@@ -21,7 +21,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// GoWebEditor: Google Fonts served from this site ("Load Google Fonts Locally", a port of
+// Golementor: Google Fonts served from this site ("Load Google Fonts Locally", a port of
 // upstream's Core\Files\Fonts\Google_Font, on by default). Visitors' browsers never contact
 // Google: the server downloads a family's stylesheet from fonts.googleapis.com and its woff2 files
 // from fonts.gstatic.com once, stores them under uploads/gowebeditor/google-fonts/{css,fonts}/,
@@ -240,7 +240,7 @@ func (s *Server) gweDownloadGoogleFont(ctx context.Context, family, typ string) 
 		}
 		return strings.TrimSuffix(strings.TrimRight(face, " \n\t}"), ";") + ";\n  font-display: swap;\n}"
 	})
-	header := "/* " + family + " — Google Fonts served locally by GoWebEditor (SIL Open Font License / Apache License, see fonts.google.com) */\n"
+	header := "/* " + family + " — Google Fonts served locally by Golementor (SIL Open Font License / Apache License, see fonts.google.com) */\n"
 	return gweWriteFileAtomic(filepath.Join(cssDir, key+".css"), []byte(header+text))
 }
 

@@ -1,6 +1,6 @@
 package builder
 
-// GoWebEditor Pro loop builder: the loop item list of the Loop Grid / Loop Carousel with
+// Golementor Pro loop builder: the loop item list of the Loop Grid / Loop Carousel with
 // alternate templates (Alternate_Templates_Trait: every Nth item, once or repeating, and
 // "static" items that take a slot without consuming a post), the per-item dynamic CSS and the
 // loop template CSS printed once per request (Loop_Css_Trait).

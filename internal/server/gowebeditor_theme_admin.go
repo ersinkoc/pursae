@@ -16,9 +16,9 @@ import (
 	"wpgo/internal/wp"
 )
 
-// Appearance › Theme Builder: the site's theme parts (the working copy of Hello GoWebEditor)
+// Appearance › Theme Builder: the site's theme parts (the working copy of Hello Golementor)
 // grouped by type, with Add New (opens the editor), conditions, delete, "Save as theme", and the
-// list of saved GoWebEditor themes with activate, preview, export, import and delete.
+// list of saved Golementor themes with activate, preview, export, import and delete.
 
 const gweThemeBuilderPath = "/wp-admin/gowebeditor-theme-builder"
 
@@ -45,7 +45,7 @@ type gweTBTheme struct {
 
 type gweTBData struct {
 	ActiveName  string
-	Hello       bool // Hello GoWebEditor is the active theme
+	Hello       bool // Hello Golementor is the active theme
 	Groups      []gweTBGroup
 	Total       int
 	Themes      []gweTBTheme
@@ -178,7 +178,7 @@ func (s *Server) gweThemeBuilder(c *gin.Context) {
 	d.Themes = s.gweSavedThemeCards(c)
 	var notices []notice
 	for key, msg := range map[string]string{"saved": "Theme saved. It is listed under <a href=\"/wp-admin/themes\">Appearance › Themes</a>.",
-		"activated": "Theme saved; Hello GoWebEditor is now the active theme. <a href=\"/\">Visit site</a>", "deleted": "Theme part deleted.",
+		"activated": "Theme saved; Hello Golementor is now the active theme. <a href=\"/\">Visit site</a>", "deleted": "Theme part deleted.",
 		"conditions": "Display conditions saved.", "imported": "Theme imported. It is listed under <a href=\"/wp-admin/themes\">Appearance › Themes</a>.",
 		"theme-deleted": "Theme deleted."} {
 		if c.Query("message") == key {

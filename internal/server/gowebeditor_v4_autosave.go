@@ -1,6 +1,6 @@
 package server
 
-// GoWebEditor v4: the editor opens a document's newer autosave (Documents_Manager::
+// Golementor v4: the editor opens a document's newer autosave (Documents_Manager::
 // get_doc_or_auto_save / Document::get_newer_autosave). The atomic editor autosaves while it
 // works (creating a component saves the page with the new instance through document/save/auto
 // and then opens the component), so switching back to the page or reloading the editor must show

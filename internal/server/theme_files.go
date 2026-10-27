@@ -103,7 +103,7 @@ func (s *Server) saveThemeFile(c *gin.Context, slug, file, content string) error
 	if !ok {
 		return &themeFileError{"unavailable", "Theme file editing is not available."}
 	}
-	th := themeBySlug(slug)
+	th := s.installedTheme(slug)
 	if th == nil || th.Custom {
 		return &themeFileError{"bad_theme_path", "Sorry, that theme cannot be edited here."}
 	}
@@ -207,7 +207,7 @@ func (s *Server) themeRenderCheck(c *gin.Context, th *Theme) error {
 // restoreThemeFile drops the edited copy of a file.
 func (s *Server) restoreThemeFile(c *gin.Context, slug, file string) error {
 	o, ok := s.overlay()
-	if !ok || themeBySlug(slug) == nil {
+	if !ok || s.installedTheme(slug) == nil {
 		return errors.New("Sorry, that theme cannot be edited here.")
 	}
 	clean := path.Clean("/" + file)[1:]

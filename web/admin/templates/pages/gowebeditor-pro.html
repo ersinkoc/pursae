@@ -3,7 +3,7 @@
 <h1 class="wp-heading-inline">{{.Title}}</h1>
 <hr class="wp-header-end">
 {{template "notices" $}}
-<nav class="nav-tab-wrapper" aria-label="GoWebEditor">{{range .Tabs}}<a href="{{.URL}}" class="nav-tab{{if .Active}} nav-tab-active{{end}}">{{.Title}}</a>{{end}}</nav>
+<nav class="nav-tab-wrapper" aria-label="Golementor">{{range .Tabs}}<a href="{{.URL}}" class="nav-tab{{if .Active}} nav-tab-active{{end}}">{{.Title}}</a>{{end}}</nav>
 <div style="margin-top:16px">{{.Body}}</div>
 </div>
 {{end}}{{template "admin-footer" .}}{{end}}

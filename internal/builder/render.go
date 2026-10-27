@@ -43,7 +43,7 @@ type renderer struct {
 	// preAttrs lets a parent widget add wrapper attributes to a child before the child's own
 	// add_render_attributes runs (the elementor/frontend/<type>/should_render filter).
 	preAttrs map[*Element]func(*attrs)
-	// GoWebEditor v4 (atomic_hook.go)
+	// Golementor v4 (atomic_hook.go)
 	atomic    *atomic.Env
 	hasAtomic bool
 }
@@ -77,8 +77,8 @@ func renderDocument(doc *Document, rc *RenderContext) (*Result, error) {
 		return &Result{}, nil
 	}
 	r := newRenderer(doc, rc)
-	r.resolveGlobals(doc.Elements) // GoWebEditor Pro: global widgets
-	r.resolveDynamic(doc)          // GoWebEditor Pro: dynamic tags
+	r.resolveGlobals(doc.Elements) // Golementor Pro: global widgets
+	r.resolveDynamic(doc)          // Golementor Pro: dynamic tags
 	res := &Result{}
 	css, fonts, _ := postCSS(doc, r.rc)
 	res.CSS = css
@@ -92,7 +92,7 @@ func renderDocument(doc *Document, rc *RenderContext) (*Result, error) {
 	a.add("data-elementor-type", docType)
 	a.add("data-elementor-id", strconv.FormatInt(doc.ID, 10))
 	a.add("class", "elementor elementor-"+strconv.FormatInt(doc.ID, 10))
-	if doc.PostType != "" { // GoWebEditor Pro (theme builder wrapper_attributes filter)
+	if doc.PostType != "" { // Golementor Pro (theme builder wrapper_attributes filter)
 		a.add("data-elementor-post-type", doc.PostType)
 	}
 	if r.rc.Editing {
@@ -125,9 +125,9 @@ func renderWidgetContent(el *Element, doc *Document, rc *RenderContext) (string,
 		lrc.Editing = true
 	}
 	r := newRenderer(doc, &lrc)
-	r.resolveGlobals([]*Element{el})                                  // GoWebEditor Pro: global widgets
-	r.resolveDynamic(&Document{ID: doc.ID, Elements: []*Element{el}}) // GoWebEditor Pro: dynamic tags
-	if atomic.IsAtomic(el.ElType, el.WidgetType) {                    // GoWebEditor v4: atomic_hook.go
+	r.resolveGlobals([]*Element{el})                                  // Golementor Pro: global widgets
+	r.resolveDynamic(&Document{ID: doc.ID, Elements: []*Element{el}}) // Golementor Pro: dynamic tags
+	if atomic.IsAtomic(el.ElType, el.WidgetType) {                    // Golementor v4: atomic_hook.go
 		return r.printAtomic(el), nil
 	}
 	e := r.newElemCtx(el)
@@ -168,7 +168,7 @@ func (r *renderer) newElemCtx(el *Element) *elemCtx {
 	e.disp = activeSettings(settings, byName)
 	if el.ElType == "widget" {
 		e.def = widgetDefs[el.WidgetType]
-		if el.globalOf != "" { // GoWebEditor Pro global widget
+		if el.globalOf != "" { // Golementor Pro global widget
 			e.def = proGlobalDef(el)
 		}
 	}
@@ -290,10 +290,10 @@ func (r *renderer) printElement(el *Element) (out string) {
 			if repanic {
 				panic(p)
 			}
-			out = "<!-- GoWebEditor: failed to render element (" + strings.ReplaceAll(el.ID, "--", "-") + ") -->\n"
+			out = "<!-- Golementor: failed to render element (" + strings.ReplaceAll(el.ID, "--", "-") + ") -->\n"
 		}
 	}()
-	if atomic.IsAtomic(el.ElType, el.WidgetType) { // GoWebEditor v4: atomic_hook.go
+	if atomic.IsAtomic(el.ElType, el.WidgetType) { // Golementor v4: atomic_hook.go
 		return r.printAtomic(el)
 	}
 	e := r.newElemCtx(el)
@@ -303,7 +303,7 @@ func (r *renderer) printElement(el *Element) (out string) {
 	if el.ElType == "widget" && e.def == nil {
 		return unsupportedComment(el)
 	}
-	if !proShouldRender(e) { // GoWebEditor Pro: display conditions
+	if !proShouldRender(e) { // Golementor Pro: display conditions
 		return ""
 	}
 	var content string
@@ -358,7 +358,7 @@ func unsupportedComment(el *Element) string {
 		name = el.WidgetType
 	}
 	name = strings.ReplaceAll(name, "--", "-")
-	return "<!-- GoWebEditor: unsupported element \"" + name + "\" (" + strings.ReplaceAll(el.ID, "--", "-") + ") -->\n"
+	return "<!-- Golementor: unsupported element \"" + name + "\" (" + strings.ReplaceAll(el.ID, "--", "-") + ") -->\n"
 }
 
 // collectAssets mirrors Elements_Iteration_Actions\Assets::element_action: assets declared by
@@ -528,7 +528,7 @@ func (e *elemCtx) addRenderAttributes() {
 		}
 		w.add("data-widget_type", wt+"."+skin)
 	}
-	proRenderAttributes(e, w) // GoWebEditor Pro: custom attributes
+	proRenderAttributes(e, w) // Golementor Pro: custom attributes
 }
 
 // frontendSettings mirrors Controls_Stack::get_frontend_settings.

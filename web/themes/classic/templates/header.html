@@ -1,0 +1,78 @@
+{{define "header"}}{{$cl := .Data.Classic}}<!doctype html>
+<html lang="en-US" class="no-js" data-color-scheme="{{$cl.Opt.Scheme}}">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>{{.DocumentTitle}}</title>
+{{.Head}}</head>
+
+<body class="{{.BodyClass}}">
+{{.BodyOpen}}<div id="page" class="site">
+	<a class="skip-link screen-reader-text" href="#main">Skip to content</a>
+
+	<header id="masthead" class="site-header">
+		<div class="site-header__inner">
+			<div class="site-branding">
+				{{if .CustomLogo}}<div class="site-logo">{{.CustomLogo}}</div>{{end}}
+				<div class="site-branding__text">
+					{{if $cl.FrontTitle}}<h1 class="site-title">{{else}}<p class="site-title">{{end}}<a href="{{.HomeURL}}" rel="home"{{if $cl.CurrentHome}} aria-current="page"{{end}}>{{.SiteName}}</a>{{if $cl.FrontTitle}}</h1>{{else}}</p>{{end}}
+					<p class="site-description">{{.Description}}</p>
+				</div>
+			</div><!-- .site-branding -->
+
+			{{if or $cl.PrimaryNav $cl.Opt.DarkToggle}}<div class="site-header__actions">
+				{{if $cl.PrimaryNav}}<nav id="site-navigation" class="primary-navigation" aria-label="Primary menu">
+					<button type="button" class="menu-toggle" aria-controls="site-navigation-menu" aria-expanded="false">
+						<span class="menu-toggle__open">{{$cl.Icons.menu}}</span><span class="menu-toggle__close">{{$cl.Icons.close}}</span>
+						<span class="menu-toggle__label">Menu</span>
+					</button>
+					<div id="site-navigation-menu" class="primary-navigation__menu">{{$cl.PrimaryNav}}</div>
+				</nav><!-- #site-navigation -->{{end}}
+				{{if $cl.Opt.DarkToggle}}<button type="button" class="scheme-toggle" aria-pressed="false" title="Toggle dark mode">
+					<span class="scheme-toggle__light">{{$cl.Icons.moon}}</span><span class="scheme-toggle__dark">{{$cl.Icons.sun}}</span>
+					<span class="screen-reader-text">Dark mode</span>
+				</button>{{end}}
+			</div>{{end}}
+		</div>
+	</header><!-- #masthead -->
+
+	<div id="content" class="site-content">
+		<main id="main" class="site-main" tabindex="-1">
+{{end}}
+
+{{define "footer"}}{{$cl := .Data.Classic}}
+		</main><!-- #main -->
+		{{with $cl.Sidebar}}<aside id="secondary" class="sidebar widget-area" aria-label="Sidebar">
+			{{.}}
+		</aside><!-- #secondary -->{{end}}
+	</div><!-- #content -->
+
+	<footer id="colophon" class="site-footer">
+		{{if $cl.FooterAreas}}<div class="footer-widgets" aria-label="Footer widgets" role="complementary">
+			{{range $cl.FooterAreas}}<div class="footer-widgets__column widget-area">{{.}}</div>
+			{{end}}
+		</div>{{end}}
+		<div class="site-info">
+			{{if $cl.FooterNav}}<nav class="footer-navigation" aria-label="Footer menu">{{$cl.FooterNav}}</nav>{{end}}
+			{{if $cl.SocialNav}}<nav class="social-navigation" aria-label="Social links">{{$cl.SocialNav}}</nav>{{end}}
+			<div class="site-info__text">
+				{{with $cl.FooterText}}<p class="footer-text">{{.}}</p>{{end}}
+				{{.PrivacyLink}}
+				{{if $cl.Opt.Credit}}<p class="powered-by">Proudly powered by <a href="https://github.com/boracomet/wordpress-go">WordPress Go</a></p>{{end}}
+			</div>
+		</div><!-- .site-info -->
+	</footer><!-- #colophon -->
+</div><!-- #page -->
+
+{{.Footer}}{{.AdminBar}}
+</body>
+</html>
+{{end}}
+
+{{define "searchform"}}
+<form role="search" method="get" class="search-form" action="{{.HomeURL}}">
+	<label for="search-field-{{.ID}}" class="screen-reader-text">Search for:</label>
+	<input type="search" id="search-field-{{.ID}}" class="search-field" placeholder="Search&hellip;" value="{{.Query}}" name="s" />
+	<button type="submit" class="search-submit">{{.Icon}}<span class="search-submit__label">Search</span></button>
+</form>
+{{end}}

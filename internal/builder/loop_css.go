@@ -1,6 +1,6 @@
 package builder
 
-// GoWebEditor Pro loop items: the per-item dynamic CSS (Loop_Css_Trait::print_dynamic_css with
+// Golementor Pro loop items: the per-item dynamic CSS (Loop_Css_Trait::print_dynamic_css with
 // Loop_Dynamic_CSS / Dynamic_CSS): style controls whose values come from dynamic tags render for
 // each item's post, scoped to .e-loop-item-<post id>.
 

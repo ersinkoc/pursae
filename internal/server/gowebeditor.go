@@ -25,7 +25,7 @@ import (
 	"wpgo/internal/wp"
 )
 
-// GoWebEditor is WordPress Go's page builder. Its editor UI is upstream 4.3.5's GPL-3.0 front end
+// Golementor is WordPress Go's page builder. Its editor UI is upstream 4.3.5's GPL-3.0 front end
 // (the built JS/CSS under web/gowebeditor, served at /wp-content/plugins/gowebeditor/assets/), rebranded
 // and talking to this Go back end: the editor page and preview (this file), the elementor_ajax protocol
 // (gowebeditor_ajax.go), the REST routes the editor shell calls (gowebeditor_rest.go), the site kit
@@ -110,8 +110,8 @@ func gweData() *gweStore {
 		gwe.widgetsCfg = gweRead("widgets-config.json.gz")
 		gwe.i18n = gweRead("i18n-rebrand.json.gz")
 		must(json.Unmarshal(gweRead("preview-styles.json"), &gwe.previewStyles))
-		gweProLoad(&gwe) // GoWebEditor Pro: Pro's widgets, document types and editor bundle (gowebeditor_pro.go)
-		gweV4Apply(&gwe) // GoWebEditor v4 (atomic): gowebeditor_v4_data.go
+		gweProLoad(&gwe) // Golementor Pro: Pro's widgets, document types and editor bundle (gowebeditor_pro.go)
+		gweV4Apply(&gwe) // Golementor v4 (atomic): gowebeditor_v4_data.go
 	})
 	return &gwe
 }
@@ -131,7 +131,7 @@ func (s *Server) gweFill(c *gin.Context, text string) string {
 			return home + gweAssetsPath
 		case "VER":
 			return gweVersion
-		case "GWEVER": // GoWebEditor's own (patched) assets: a new wpgo build must bust browser caches
+		case "GWEVER": // Golementor's own (patched) assets: a new wpgo build must bust browser caches
 			return gweVersion + "-" + Version
 		case "MAXUPLOAD":
 			return strconv.Itoa(maxUploadBytes)
@@ -155,7 +155,7 @@ func gweJSON(v any) string {
 
 // --- documents --------------------------------------------------------------------------------
 
-// gweBuilt reports whether a post is edited with GoWebEditor (_elementor_edit_mode = builder).
+// gweBuilt reports whether a post is edited with Golementor (_elementor_edit_mode = builder).
 func gweBuilt(p *store.Post) bool {
 	if p == nil {
 		return false
@@ -206,13 +206,13 @@ func gwePageSettings(p *store.Post) map[string]any {
 func gweDocument(p *store.Post) *builder.Document {
 	els, _ := builder.ParseElements(gweElementsRaw(p))
 	doc := &builder.Document{ID: p.ID, Type: gweDocType(p), Elements: els, Settings: gwePageSettings(p)}
-	doc.PostType = gweProPostType(p) // GoWebEditor Pro: data-elementor-post-type
+	doc.PostType = gweProPostType(p) // Golementor Pro: data-elementor-post-type
 	return doc
 }
 
-// gweEditable lists the content types GoWebEditor edits.
+// gweEditable lists the content types Golementor edits.
 func gweEditable(p *store.Post) bool {
-	return p != nil && (p.Type == "post" || p.Type == "page" || p.Type == gweLibrary || p.Type == gwePartType || gweV4Editable(p)) // + GoWebEditor v4 components
+	return p != nil && (p.Type == "post" || p.Type == "page" || p.Type == gweLibrary || p.Type == gwePartType || gweV4Editable(p)) // + Golementor v4 components
 }
 
 // gweEditURL is the editor URL for a post.
@@ -361,8 +361,8 @@ func (s *Server) gweDocConfig(c *gin.Context, p *store.Post) map[string]any {
 	} else {
 		out["post_type_title"] = "Template"
 	}
-	s.gweThemeDocConfig(c, p, out) // GoWebEditor theme building: Site widgets, theme part panels
-	s.gweProDocConfig(c, p, out)   // GoWebEditor Pro: conditions block, popup display settings
+	s.gweThemeDocConfig(c, p, out) // Golementor theme building: Site widgets, theme part panels
+	s.gweProDocConfig(c, p, out)   // Golementor Pro: conditions block, popup display settings
 	s.gweUsedWidgetControls(c, out)
 	return out
 }
@@ -438,7 +438,7 @@ func gwePlural(p *store.Post) string {
 	return "posts"
 }
 
-// gweInitialElements is the tree the editor opens with. A post that was never edited with GoWebEditor
+// gweInitialElements is the tree the editor opens with. A post that was never edited with Golementor
 // but has content starts with that content in a Text Editor widget, like the upstream converter.
 func (s *Server) gweInitialElements(c *gin.Context, p *store.Post) json.RawMessage {
 	if raw := s.gweV4NewerAutosave(c, p); raw != nil { // gap-atomic: newer autosave (get_doc_or_auto_save)
@@ -524,14 +524,14 @@ func gweIDCounterNext() uint32 {
 
 // --- editor page ------------------------------------------------------------------------------
 
-// gweEditor is post.php?action=elementor: the GoWebEditor editor for one post.
+// gweEditor is post.php?action=elementor: the Golementor editor for one post.
 func (s *Server) gweEditor(c *gin.Context, p *store.Post) {
 	u := currentUser(c)
 	if !gweEditable(p) {
-		c.String(http.StatusForbidden, "This item cannot be edited with GoWebEditor.")
+		c.String(http.StatusForbidden, "This item cannot be edited with Golementor.")
 		return
 	}
-	if !u.Can("edit_post", p) || s.gweProRoleExcluded(u) { // GoWebEditor Pro: Role Manager
+	if !u.Can("edit_post", p) || s.gweProRoleExcluded(u) { // Golementor Pro: Role Manager
 		c.String(http.StatusForbidden, "Sorry, you are not allowed to edit this item.")
 		return
 	}
@@ -554,7 +554,7 @@ func (s *Server) gweEditor(c *gin.Context, p *store.Post) {
 	}
 	cfg["kit_id"] = kit.ID
 	cfg["autosave_interval"] = 60
-	s.gweProEditorConfig(c, cfg) // GoWebEditor Pro: dynamic tags, display conditions, Pro controls
+	s.gweProEditorConfig(c, cfg) // Golementor Pro: dynamic tags, display conditions, Pro controls
 	cfg["user"] = map[string]any{
 		"restrictions": []any{}, "is_administrator": u.Can("manage_options", nil), "introduction": gweUserMap(u, "gwe_introduction"),
 		"dismissed_editor_notices": []any{}, "locale": "en_US", "top_bar": map[string]string{"connect_url": "", "my_elementor_url": ""},
@@ -567,9 +567,9 @@ func (s *Server) gweEditor(c *gin.Context, p *store.Post) {
 		}
 		cfg["settings"] = settings
 	}
-	title := "Edit “" + p.Title + "” with GoWebEditor"
+	title := "Edit “" + p.Title + "” with Golementor"
 	if p.Title == "" {
-		title = "GoWebEditor"
+		title = "Golementor"
 	}
 	common := map[string]any{}
 	for k, v := range d.commonCfg {
@@ -592,7 +592,7 @@ func (s *Server) gweEditor(c *gin.Context, p *store.Post) {
 		"wp-i18n-js-after":               "wp.i18n.setLocaleData( { 'text direction\\u0004ltr': [ 'ltr' ] } );\nwp.i18n.setLocaleData( " + string(d.i18n) + ", 'elementor' );",
 		"elementor-styleguide-js-extra":  `var elementorStyleguideConfig = {"activeKitId":"` + itoa64(kit.ID) + `"};`,
 	}
-	s.gweProEditorParts(c, p, parts) // GoWebEditor Pro: elementorProEditorConfig and friends
+	s.gweProEditorParts(c, p, parts) // Golementor Pro: elementorProEditorConfig and friends
 	page := d.shell
 	for id, js := range parts {
 		page = strings.Replace(page, "@@CFG:"+id+"@@", js, 1)
@@ -630,7 +630,7 @@ func (s *Server) gweSetUserMeta(ctx context.Context, u *store.User, key string, 
 	return err
 }
 
-// gweNewPost is edit.php?action=elementor_new_post: creates a draft and opens it in GoWebEditor.
+// gweNewPost is edit.php?action=elementor_new_post: creates a draft and opens it in Golementor.
 func (s *Server) gweNewPost(c *gin.Context) {
 	u := currentUser(c)
 	if !s.checkNonce(c, "elementor_action_new_post") {
@@ -652,7 +652,7 @@ func (s *Server) gweNewPost(c *gin.Context) {
 		return
 	}
 	if typ == gweLibrary {
-		if part, ok := s.gweProNewThemePart(c, tplType); ok { // GoWebEditor Pro: theme types become theme parts
+		if part, ok := s.gweProNewThemePart(c, tplType); ok { // Golementor Pro: theme types become theme parts
 			c.Redirect(http.StatusFound, gweEditURL(part.ID))
 			return
 		}
@@ -668,13 +668,13 @@ func (s *Server) gweNewPost(c *gin.Context) {
 			tplType = "page"
 		}
 		p.Meta["_elementor_template_type"] = tplType
-		p.Title = "GoWebEditor " + strings.ToUpper(tplType[:1]) + tplType[1:] + " #"
+		p.Title = "Golementor " + strings.ToUpper(tplType[:1]) + tplType[1:] + " #"
 	case typ == "page":
 		p.Meta["_elementor_template_type"] = "wp-page"
-		p.Title = "GoWebEditor #"
+		p.Title = "Golementor #"
 	default:
 		p.Meta["_elementor_template_type"] = "wp-post"
-		p.Title = "GoWebEditor #"
+		p.Title = "Golementor #"
 	}
 	p.Meta["_elementor_data"] = "[]"
 	if err := s.store.InsertPost(c, p); err != nil {
@@ -694,7 +694,7 @@ func (s *Server) gweEnsureLibraryType(ctx context.Context) error {
 	return err
 }
 
-// initGoWebEditor creates GoWebEditor's revision table (element trees per revision). Migration
+// initGoWebEditor creates Golementor's revision table (element trees per revision). Migration
 // 0005_builder.sql creates it too; this keeps databases migrated before that working.
 func (s *Server) initGoWebEditor(ctx context.Context) {
 	if _, err := s.store.Pool.Exec(ctx, `CREATE TABLE IF NOT EXISTS builder_revisions (

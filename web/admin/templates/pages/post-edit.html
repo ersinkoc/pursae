@@ -23,9 +23,20 @@
 			<input type="text" name="post_title" size="30" value="{{if ne $p.Status "auto-draft"}}{{$p.Title}}{{end}}" id="title" spellcheck="true" autocomplete="off" />
 		</div>
 		<div class="inside">
-			{{if .Permalink}}<div id="edit-slug-box" class="hide-if-no-js"><strong>Permalink:</strong>
-				<span id="sample-permalink"><a href="{{.ViewURL}}">{{.Permalink}}</a></span>
-			</div>{{end}}
+			<input type="hidden" id="post_name" name="post_name" value="{{$p.Slug}}" />
+			<div id="edit-slug-box" class="hide-if-no-js">{{.SampleLink}}</div>
+			<input type="hidden" id="samplepermalinknonce" name="samplepermalinknonce" value="{{.SampleNonce}}" />
+			{{if eq $p.Status "auto-draft"}}<script>
+			// WordPress fills the permalink of a new post after the autosave its title blur triggers
+			// (post.js "after-autosave.update-post-slug"); WordPress Go asks for it on blur directly.
+			jQuery(function($){ $('#title').on('blur', function(){
+				if ($('#edit-slug-box > *').length || !$.trim(this.value)) return;
+				$.post(ajaxurl, {action: 'sample-permalink', post_id: $('#post_ID').val(), new_title: this.value,
+					samplepermalinknonce: $('#samplepermalinknonce').val()}, function(html){
+					if (html !== '-1') { $('#edit-slug-box').html(html); $('#post_name').val($('#editable-post-name-full').text()); }
+				});
+			}); });
+			</script>{{end}}
 		</div>
 	</div>
 	<div id="postdivrich" class="postarea wp-editor-expand">
@@ -51,14 +62,15 @@
 			<div id="misc-publishing-actions">
 				<div class="misc-pub-section misc-pub-post-status">
 					Status: <span id="post-status-display">{{.StatusLabel}}</span>
-					{{if and (ne $p.Status "publish") (ne $p.Status "future") (ne $p.Status "private")}}
+					{{if or .CanPublish (and (ne $p.Status "publish") (ne $p.Status "future") (ne $p.Status "private"))}}
 					<a href="#post_status" class="edit-post-status hide-if-no-js" role="button"><span aria-hidden="true">Edit</span> <span class="screen-reader-text">Edit status</span></a>
 					<div id="post-status-select" class="hide-if-js">
 						<input type="hidden" name="hidden_post_status" id="hidden_post_status" value="{{if eq $p.Status "auto-draft"}}draft{{else}}{{$p.Status}}{{end}}" />
 						<label for="post_status" class="screen-reader-text">Set status</label>
 						<select name="post_status" id="post_status">
+							{{if eq $p.Status "publish"}}<option selected="selected" value="publish">Published</option>{{else if eq $p.Status "private"}}<option selected="selected" value="publish">Privately Published</option>{{else if eq $p.Status "future"}}<option selected="selected" value="future">Scheduled</option>{{end}}
 							<option{{if eq $p.Status "pending"}} selected="selected"{{end}} value="pending">Pending Review</option>
-							<option{{if ne $p.Status "pending"}} selected="selected"{{end}} value="draft">Draft</option>
+							<option{{if or (eq $p.Status "draft") (eq $p.Status "auto-draft")}} selected="selected"{{end}} value="draft">Draft</option>
 						</select>
 						<a href="#post_status" class="save-post-status hide-if-no-js button">OK</a>
 						<a href="#post_status" class="cancel-post-status hide-if-no-js button-cancel">Cancel</a>
@@ -117,7 +129,7 @@
 			<div id="publishing-action">
 				<span class="spinner"></span>
 				<input name="original_publish" type="hidden" id="original_publish" value="{{.PublishLabel}}" />
-				<input type="submit" name="publish" id="publish" class="button button-primary button-large" value="{{.PublishLabel}}" />
+				<input type="submit" name="{{if or (eq $p.Status "publish") (eq $p.Status "private") (eq $p.Status "future")}}save{{else}}publish{{end}}" id="publish" class="button button-primary button-large" value="{{.PublishLabel}}" />
 			</div>
 			<div class="clear"></div>
 		</div>
@@ -191,9 +203,6 @@
 			<label for="comment_status" class="selectit"><input name="comment_status" type="checkbox" id="comment_status" value="open"{{if eq $p.CommentStatus "open"}} checked="checked"{{end}} /> Allow comments</label><br />
 			<label for="ping_status" class="selectit"><input name="ping_status" type="checkbox" id="ping_status" value="open"{{if eq $p.PingStatus "open"}} checked="checked"{{end}} /> Allow <a href="https://wordpress.org/documentation/article/trackbacks-and-pingbacks/">trackbacks and pingbacks</a></label>
 		</p>
-	{{template "edit-postbox-end"}}
-	{{template "edit-postbox-start" dict "ID" "slugdiv" "Title" "Slug"}}
-		<label class="screen-reader-text" for="post_name">Slug</label><input name="post_name" type="text" class="large-text" id="post_name" value="{{$p.Slug}}" />
 	{{template "edit-postbox-end"}}
 	{{if .CanAuthor}}
 	{{template "edit-postbox-start" dict "ID" "authordiv" "Title" "Author"}}

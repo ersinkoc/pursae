@@ -14,7 +14,7 @@ import (
 	"wpgo/internal/store"
 )
 
-// Hello GoWebEditor: the blank, builder-first base theme (in the spirit of Hello).
+// Hello Golementor: the blank, builder-first base theme (in the spirit of Hello).
 // Templates live in web/themes/hello-gowebeditor. Its header, footer and content are the
 // theme-builder parts of the site's working copy (gowebeditor_theme.go); without a matching part
 // a page shows the minimal defaults from the templates.
@@ -22,7 +22,7 @@ import (
 // The site's current design (parts with their display conditions, the kit = Site Settings
 // including custom CSS) is the theme's working copy. "Save as theme" snapshots it as JSON into
 // the saved-themes list (gowebeditor_theme_custom.go); activating a saved theme loads that JSON
-// back into the working copy and makes Hello GoWebEditor the active theme, while the snapshot
+// back into the working copy and makes Hello Golementor the active theme, while the snapshot
 // itself stays as saved.
 
 const helloThemeSlug = "hello-gowebeditor"
@@ -34,15 +34,16 @@ var helloMenuLocations = []MenuLocation{{"primary", "Primary Menu"}, {"footer", 
 
 func init() {
 	registerTheme(&Theme{
-		Slug: helloThemeSlug, Name: "Hello GoWebEditor", Version: helloThemeVersion,
-		Description: "A plain-vanilla, lightweight theme for GoWebEditor: a blank canvas whose header, footer, single, archive, search and 404 templates you build with the Theme Builder. The site's design lives inside this theme as JSON; Save as theme keeps copies of it in the saved themes list, and activating a saved theme loads it back.",
+		Slug: helloThemeSlug, Name: "Hello Golementor", Version: helloThemeVersion,
+		Description: "A plain-vanilla, lightweight theme for Golementor: a blank canvas whose header, footer, single, archive, search and 404 templates you build with the Theme Builder. The site's design lives inside this theme as JSON; Save as theme keeps copies of it in the saved themes list, and activating a saved theme loads it back.",
 		Author:      "WordPress Go", AuthorURI: "https://github.com/wpgo", ThemeURI: "https://github.com/wpgo",
-		Tags:       []string{"GoWebEditor", "Flexible Header", "Custom Colors", "Custom Menu", "Custom Logo", "Featured Images", "Full Width Template", "Accessibility Ready", "Theme Builder"},
+		Tags:       []string{"Golementor", "Flexible Header", "Custom Colors", "Custom Menu", "Custom Logo", "Featured Images", "Full Width Template", "Accessibility Ready", "Theme Builder"},
 		Screenshot: "screenshot.png",
 		WidgetAreas: []WidgetArea{
-			{ID: "sidebar-1", Name: "Sidebar", Description: "Widgets for the GoWebEditor Sidebar widget. The theme itself shows no sidebar."},
+			{ID: "sidebar-1", Name: "Sidebar", Description: "Widgets for the Golementor Sidebar widget. The theme itself shows no sidebar."},
 		},
 		MenuLocations: helloMenuLocations,
+		EditorStyles:  []string{"editor-style.css"},
 		Supports: map[string]any{
 			"custom-logo":          map[string]any{"height": 100, "width": 350, "flex-height": true, "flex-width": true},
 			"title-tag":            true,
@@ -64,7 +65,7 @@ func init() {
 func helloTheme() *Theme { return themeBySlug(helloThemeSlug) }
 
 // helloHead is the theme's stylesheet; it is printed whenever a page renders through the Hello
-// GoWebEditor templates, also when the active theme is another bundled theme whose layout a
+// Golementor templates, also when the active theme is another bundled theme whose layout a
 // theme part replaced.
 func (s *Server) helloHead(c *gin.Context, v *siteView) string {
 	t := helloTheme()
@@ -78,7 +79,7 @@ func (s *Server) helloHead(c *gin.Context, v *siteView) string {
 
 // gweLoadSavedTheme loads a saved theme's JSON into the working copy: the site's current parts go
 // to the trash, the snapshot's parts become the site's parts and the kit takes the snapshot's
-// settings. The snapshot is not changed. The caller then activates Hello GoWebEditor.
+// settings. The snapshot is not changed. The caller then activates Hello Golementor.
 func (s *Server) gweLoadSavedTheme(ctx context.Context, slug string) error {
 	snap := gweSnapshotFor(slug)
 	if snap == nil {
@@ -137,9 +138,9 @@ func (s *Server) gweLoadSavedTheme(ctx context.Context, slug string) error {
 	return nil
 }
 
-// gweSavedThemeCards lists the saved GoWebEditor themes for the Themes screen and the Theme
+// gweSavedThemeCards lists the saved Golementor themes for the Themes screen and the Theme
 // Builder. Loaded marks the snapshot the working copy was last loaded from (while Hello
-// GoWebEditor is active and nothing was saved since).
+// Golementor is active and nothing was saved since).
 func (s *Server) gweSavedThemeCards(c *gin.Context) []gweTBTheme {
 	rows, _ := s.gweThemeRows(c, "")
 	nonce := s.nonce(c, "gwe-theme-builder")
@@ -177,7 +178,7 @@ func gweCloneSettings(in map[string]any) map[string]any {
 	return out
 }
 
-// gweWorkingCSS is the working copy's Additional CSS (Hello GoWebEditor's Customizer CSS).
+// gweWorkingCSS is the working copy's Additional CSS (Hello Golementor's Customizer CSS).
 func (s *Server) gweWorkingCSS() string {
 	return modString(s.themeMods(helloThemeSlug), "custom_css", "")
 }

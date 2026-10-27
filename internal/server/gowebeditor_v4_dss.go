@@ -1,6 +1,6 @@
 package server
 
-// GoWebEditor v4: design-system sync (upstream modules/design-system-sync). Color variables and
+// Golementor v4: design-system sync (upstream modules/design-system-sync). Color variables and
 // global classes marked "sync to v3" are exposed to classic widgets as v3 global custom
 // properties in uploads/elementor/design-system-sync/design-system-sync.css:
 //   - color variables:  --e-global-color-v4-<label>:var(--<label>);

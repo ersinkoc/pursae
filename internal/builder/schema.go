@@ -86,7 +86,7 @@ var (
 func loadSchema() *schemaData {
 	schemaOnce.Do(func() {
 		src := controlsGz
-		if proControlsGz != nil { // GoWebEditor Pro: the dump with Pro's widgets and element controls (pro_schema.go)
+		if proControlsGz != nil { // Golementor Pro: the dump with Pro's widgets and element controls (pro_schema.go)
 			src = proControlsGz
 		}
 		r, err := gzip.NewReader(bytes.NewReader(src))
@@ -423,7 +423,7 @@ func expandResponsive(r map[string]any, devs []device) []map[string]any {
 			cname = name + "_" + d.Name
 		}
 		c["name"] = cname
-		// GoWebEditor theme widgets: a responsive prefix_class with %s gets the device suffix, like
+		// Golementor theme widgets: a responsive prefix_class with %s gets the device suffix, like
 		// add_responsive_control's sprintf (elementor-grid%s- -> elementor-grid-tablet-).
 		if pc, ok := c["prefix_class"].(string); ok && strings.Contains(pc, "%s") {
 			suffix := ""

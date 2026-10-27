@@ -15,11 +15,11 @@ import (
 	"wpgo/internal/builder"
 )
 
-// GoWebEditor Pro payment buttons: a port of upstream Pro 4.3.0's modules/payments. The PayPal
+// Golementor Pro payment buttons: a port of upstream Pro 4.3.0's modules/payments. The PayPal
 // button posts its (legacy) form straight to PayPal, so pages that carry one get PayPal added to
 // their CSP form-action (and nothing else). The Stripe button's front-end handler posts
 // submit_stripe_form to admin-ajax; the server creates a Stripe Checkout session with the test or
-// live secret key from GoWebEditor › Settings › Integrations and the handler opens its URL.
+// live secret key from Golementor › Settings › Integrations and the handler opens its URL.
 
 // gweStripeAPI is Stripe's API base (Stripe_Handler::STRIPE_ENDPOINT_URL).
 const gweStripeAPI = "https://api.stripe.com/v1/"

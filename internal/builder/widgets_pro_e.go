@@ -1,6 +1,6 @@
 package builder
 
-// GoWebEditor Pro widgets: Nav Menu (Pro's full widget, replacing the Site widget of the same name),
+// Golementor Pro widgets: Nav Menu (Pro's full widget, replacing the Site widget of the same name),
 // Search, Form and Login. Ports of upstream Pro's modules/nav-menu/widgets/nav-menu.php,
 // modules/search/widgets/search.php, modules/forms/widgets/{form,login}.php and the form fields
 // (modules/forms/fields/*.php, honeypot and reCAPTCHA handlers). Forms only print markup here; the
@@ -17,7 +17,7 @@ import (
 var ProELoginPath = "/wp-login"
 
 // ProERecaptchaSiteKey returns the reCAPTCHA site key (v3 = reCAPTCHA v3); "" means reCAPTCHA is
-// not set up. The server sets it from the GoWebEditor integration settings.
+// not set up. The server sets it from the Golementor integration settings.
 var ProERecaptchaSiteKey func(v3 bool) string
 
 // ProEUsersCanRegister reports whether visitors may register (the login widget's Register link).
@@ -601,7 +601,7 @@ func proEFieldHTML(w *elemCtx, i string, item map[string]any, typ string) string
 			}
 			out += "<div " + ra.String() + "></div>"
 		} else if w.editing() {
-			out += "<div class=\"elementor-alert elementor-alert-info\">To use reCAPTCHA, add the keys under GoWebEditor › Settings › Integrations.</div>"
+			out += "<div class=\"elementor-alert elementor-alert-info\">To use reCAPTCHA, add the keys under Golementor › Settings › Integrations.</div>"
 		}
 		return out + "</div>"
 	}

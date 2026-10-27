@@ -77,14 +77,14 @@ type subDef struct {
 	match            []string // extra screens that highlight this item
 }
 
-func adminMenu(pending int) []menuDef {
+func adminMenu(pending int, golementor bool) []menuDef {
 	comments := "Comments"
 	if pending > 0 {
 		comments = fmt.Sprintf(`Comments <span class="awaiting-mod count-%d"><span class="pending-count" aria-hidden="true">%d</span><span class="comments-in-moderation-text screen-reader-text">%d Comments in moderation</span></span>`, pending, pending, pending)
 	} else {
 		comments = `Comments <span class="awaiting-mod count-0"><span class="pending-count" aria-hidden="true">0</span><span class="comments-in-moderation-text screen-reader-text">0 Comments in moderation</span></span>`
 	}
-	return []menuDef{
+	menu := []menuDef{
 		{slug: "", title: "Dashboard", cap: "read", id: "menu-dashboard", icon: "dashicons-dashboard", sub: []subDef{
 			{slug: "", title: "Home", cap: "read"},
 			{slug: "update-core", title: `Updates <span class="update-plugins count-0"><span class="update-count">0</span></span>`, cap: "update_core"},
@@ -106,7 +106,7 @@ func adminMenu(pending int) []menuDef {
 		}},
 		{slug: "edit-comments", title: comments, cap: "edit_posts", id: "menu-comments", icon: "dashicons-admin-comments"},
 		{separator: true, cap: "read"},
-		{slug: "gowebeditor-pro?tab=popups", title: "GoWebEditor", cap: "edit_posts", id: "menu-gowebeditor", icon: "dashicons-layout", sub: []subDef{ // GoWebEditor Pro
+		{slug: "gowebeditor-pro?tab=popups", title: "Golementor", cap: "edit_posts", id: "menu-gowebeditor", icon: "dashicons-layout", sub: []subDef{ // Golementor Pro
 			{slug: "gowebeditor-pro?tab=popups", title: "Popups", cap: "edit_posts"},
 			{slug: "gowebeditor-pro?tab=loops", title: "Loop Items", cap: "edit_posts"}, // gap-loops
 			{slug: "gowebeditor-pro?tab=submissions", title: "Form Submissions", cap: "manage_options"},
@@ -121,7 +121,7 @@ func adminMenu(pending int) []menuDef {
 			{slug: "customize", title: "Customize", cap: "edit_theme_options"},
 			{slug: "widgets", title: "Widgets", cap: "edit_theme_options"},
 			{slug: "nav-menus", title: "Menus", cap: "edit_theme_options"},
-			{slug: "gowebeditor-theme-builder", title: "Theme Builder", cap: "edit_theme_options"}, // GoWebEditor
+			{slug: "gowebeditor-theme-builder", title: "Theme Builder", cap: "edit_theme_options"}, // Golementor
 			{slug: "theme-editor", title: "Theme File Editor", cap: "edit_themes"},
 		}},
 		{slug: "plugins", title: `Plugins <span class="update-plugins count-0"><span class="plugin-count">0</span></span>`, cap: "activate_plugins", id: "menu-plugins", icon: "dashicons-admin-plugins", sub: []subDef{
@@ -161,12 +161,33 @@ func adminMenu(pending int) []menuDef {
 			{slug: "options-privacy", title: "Privacy", cap: "manage_privacy_options"},
 		}},
 	}
+	if golementor {
+		return menu
+	}
+	// Golementor is off: its top-level menu and the Theme Builder submenu are not part of the admin.
+	out := menu[:0]
+	for _, d := range menu {
+		if d.id == "menu-gowebeditor" {
+			continue
+		}
+		if d.id == "menu-appearance" {
+			subs := make([]subDef, 0, len(d.sub))
+			for _, sd := range d.sub {
+				if sd.slug != "gowebeditor-theme-builder" {
+					subs = append(subs, sd)
+				}
+			}
+			d.sub = subs
+		}
+		out = append(out, d)
+	}
+	return out
 }
 
 // buildMenu filters the menu by capability and marks the current screen, like _wp_menu_output().
-func buildMenu(u *store.User, screen string, pending int) []*menuTop {
+func buildMenu(u *store.User, screen string, pending int, golementor bool) []*menuTop {
 	var out []*menuTop
-	for _, d := range adminMenu(pending) {
+	for _, d := range adminMenu(pending, golementor) {
 		if d.separator {
 			out = append(out, &menuTop{Separator: true})
 			continue
@@ -263,7 +284,7 @@ var screenStyles = map[string][]string{
 	"admin/import":          {},
 	"admin/plugin-install":  {"wpgo/plugin-install.css"},
 	"admin/wpgo-cache":      {},
-	// GoWebEditor Theme Builder
+	// Golementor Theme Builder
 	"admin/gowebeditor-theme-builder":    {},
 	"admin/gowebeditor-theme-conditions": {},
 }
@@ -276,7 +297,7 @@ func (s *Server) adminPage(c *gin.Context, screen, title, bodyClass, tmpl string
 		Title:     title,
 		BodyClass: bodyClass,
 		Screen:    screen,
-		Menu:      buildMenu(u, screen, counts["pending"]),
+		Menu:      buildMenu(u, screen, counts["pending"], s.golementorOn()),
 		User:      u,
 		Avatar26:  s.avatarURL(c, u.Email, 26),
 		Avatar64:  s.avatarURL(c, u.Email, 64),
@@ -377,12 +398,14 @@ func (s *Server) adminAjax(c *gin.Context) {
 	if s.mediaAjax(c, action) {
 		return
 	}
-	if s.gweAjax(c, action) { // GoWebEditor: elementor_ajax, heartbeat, elementor_js_log
+	if s.gweAjax(c, action) { // Golementor: elementor_ajax, heartbeat, elementor_js_log
 		return
 	}
 	switch action {
 	case "rest-nonce":
 		c.String(http.StatusOK, s.nonce(c, "wp_rest"))
+	case "sample-permalink":
+		s.samplePermalinkAjax(c)
 	case "wp-remove-post-lock":
 		c.String(http.StatusOK, "1")
 	default:

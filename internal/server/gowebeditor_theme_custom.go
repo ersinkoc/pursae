@@ -27,7 +27,7 @@ import (
 	"wpgo/internal/wp"
 )
 
-// Saved GoWebEditor themes ("Save as theme"). A saved theme is a row of the themes table with
+// Saved Golementor themes ("Save as theme"). A saved theme is a row of the themes table with
 // custom = true and a JSON snapshot in data: the kit settings (Site Settings, custom CSS), every
 // theme part with its element tree, page settings and display conditions, and the menu locations.
 // The snapshot is fixed: it only changes when the user saves the theme again (as a new entry).
@@ -36,7 +36,7 @@ import (
 //
 // The Themes screen lists saved themes in their own section. Activating one loads its JSON into
 // the working copy (the site's parts and kit, theme_hellogowebeditor.go) and makes Hello
-// GoWebEditor the active theme. Exports and imports carry the snapshot as manifest.json.
+// Golementor the active theme. Exports and imports carry the snapshot as manifest.json.
 
 const gweThemeFormat = "gowebeditor-theme"
 
@@ -51,7 +51,7 @@ type gweSnapshot struct {
 	Kit         map[string]any `json:"kit"`
 	Parts       []*gwePart     `json:"parts"`
 	Menus       []MenuLocation `json:"menu_locations"`
-	// CustomCSS is the Customizer's Additional CSS of the working copy (Hello GoWebEditor's).
+	// CustomCSS is the Customizer's Additional CSS of the working copy (Hello Golementor's).
 	CustomCSS string    `json:"custom_css,omitempty"`
 	Saved     time.Time `json:"saved"`
 	// Media lists the attachments an export carries (file name in the zip -> original id and URL).
@@ -64,7 +64,7 @@ type gweMediaRef struct {
 	File string `json:"file"`
 }
 
-// gweMenuLocations are the menu locations of every saved theme (those of Hello GoWebEditor).
+// gweMenuLocations are the menu locations of every saved theme (those of Hello Golementor).
 var gweMenuLocations = helloMenuLocations
 
 var (
@@ -104,24 +104,24 @@ func (s *Server) gweRegisterCustom(ctx context.Context, row *gweThemeRow) {
 	}
 	desc := row.Description
 	if desc == "" {
-		desc = "A design saved from the GoWebEditor Theme Builder."
+		desc = "A design saved from the Golementor Theme Builder."
 	}
 	author := row.Author
 	if author == "" {
-		author = "GoWebEditor"
+		author = "Golementor"
 	}
 	registerTheme(&Theme{
 		Slug: row.Slug, Name: row.Name, Version: row.Version, Description: desc, Author: author,
-		Tags: []string{"GoWebEditor", "Custom Logo", "Custom Menu", "Full Width Template"}, Custom: true, ScreenshotURL: shot,
+		Tags: []string{"Golementor", "Custom Logo", "Custom Menu", "Full Width Template"}, Custom: true, ScreenshotURL: shot,
 		MenuLocations: gweMenuLocations,
-		WidgetAreas:   []WidgetArea{{ID: "sidebar-1", Name: "Sidebar", Description: "Widgets for the GoWebEditor Sidebar widget."}},
+		WidgetAreas:   []WidgetArea{{ID: "sidebar-1", Name: "Sidebar", Description: "Widgets for the Golementor Sidebar widget."}},
 		Supports: map[string]any{"custom-logo": map[string]any{"height": 100, "width": 350, "flex-height": true, "flex-width": true},
 			"title-tag": true, "post-thumbnails": true, "menus": true, "html5": true, "align-wide": true, "responsive-embeds": true},
 	})
 }
 
-// gweLoadCustomThemes registers the custom themes stored in this site's database (startup).
-func (s *Server) gweLoadCustomThemes(ctx context.Context) {
+// gweUnloadCustomThemes drops every custom theme from the registry (they stay in the database).
+func (s *Server) gweUnloadCustomThemes() {
 	themesMu.Lock()
 	for slug, t := range themes {
 		if t.Custom {
@@ -132,6 +132,11 @@ func (s *Server) gweLoadCustomThemes(ctx context.Context) {
 	gweSnapMu.Lock()
 	gweSnaps = map[string]*gweSnapshot{}
 	gweSnapMu.Unlock()
+}
+
+// gweLoadCustomThemes registers the custom themes stored in this site's database (startup).
+func (s *Server) gweLoadCustomThemes(ctx context.Context) {
+	s.gweUnloadCustomThemes()
 	rows, err := s.gweThemeRows(ctx, "")
 	if err != nil {
 		log.Printf("gowebeditor: custom themes: %v", err)
@@ -220,7 +225,7 @@ type gweSaveThemeInput struct {
 }
 
 // gweSaveAsTheme snapshots the working copy (the site's kit and theme parts) into a new saved
-// theme. With Activate, Hello GoWebEditor becomes the active theme (the working copy is already
+// theme. With Activate, Hello Golementor becomes the active theme (the working copy is already
 // the saved design).
 func (s *Server) gweSaveAsTheme(c *gin.Context, in gweSaveThemeInput) (string, error) {
 	u := currentUser(c)
@@ -288,9 +293,9 @@ func (s *Server) gweCreateTheme(c context.Context, authorID int64, slug string, 
 	return nil
 }
 
-// gweMigrateActiveSavedTheme handles databases from before Hello GoWebEditor, where a saved
+// gweMigrateActiveSavedTheme handles databases from before Hello Golementor, where a saved
 // theme could be the active theme itself: its design is loaded into the working copy and Hello
-// GoWebEditor takes over (startup, once).
+// Golementor takes over (startup, once).
 func (s *Server) gweMigrateActiveSavedTheme(ctx context.Context) {
 	t := themeBySlug(s.settings.String("stylesheet"))
 	if t == nil || !t.Custom {
@@ -316,7 +321,7 @@ func (s *Server) gweMigrateActiveSavedTheme(ctx context.Context) {
 func (s *Server) gweDeleteTheme(ctx context.Context, slug string) error {
 	t := themeBySlug(slug)
 	if t == nil || !t.Custom {
-		return errors.New("That theme is not a saved GoWebEditor theme.")
+		return errors.New("That theme is not a saved Golementor theme.")
 	}
 	if s.activeTheme().Slug == slug {
 		return errors.New("The active theme cannot be deleted. Activate another theme first.")
@@ -394,7 +399,7 @@ func (s *Server) gweThemeScreenshot(c *gin.Context) {
 	fmt.Fprintf(&sb, `<rect x="80" y="170" width="1040" height="330" rx="10" fill="%s" opacity=".18"/>`, esc(colors["primary"]))
 	fmt.Fprintf(&sb, `<text x="600" y="320" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="72" font-weight="700" fill="%s">%s</text>`,
 		esc(colors["secondary"]), esc(t.Name))
-	fmt.Fprintf(&sb, `<text x="600" y="390" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="28" fill="%s">Built with GoWebEditor</text>`, esc(colors["text"]))
+	fmt.Fprintf(&sb, `<text x="600" y="390" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="28" fill="%s">Built with Golementor</text>`, esc(colors["text"]))
 	fmt.Fprintf(&sb, `<rect x="510" y="425" width="180" height="46" rx="23" fill="%s"/>`, esc(colors["accent"]))
 	for i := 0; i < 3; i++ {
 		x := 80 + i*360
@@ -509,7 +514,7 @@ func (s *Server) gweExportTheme(c *gin.Context, slug string) ([]byte, error) {
 
 // gweImportTheme creates a saved theme from an exported zip; media files become new attachments
 // and the parts' references are rewritten to them. With activate, the imported design is loaded
-// into the working copy and Hello GoWebEditor activated.
+// into the working copy and Hello Golementor activated.
 func (s *Server) gweImportTheme(c *gin.Context, data []byte, activate bool) (string, error) {
 	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
 	if err != nil {
@@ -543,7 +548,7 @@ func (s *Server) gweImportTheme(c *gin.Context, data []byte, activate bool) (str
 		Screenshot string       `json:"screenshot"`
 	}
 	if err := json.Unmarshal(mb, &manifest); err != nil || manifest.Theme == nil || manifest.Theme.Format != gweThemeFormat {
-		return "", errors.New("The archive is not a GoWebEditor theme.")
+		return "", errors.New("The archive is not a Golementor theme.")
 	}
 	snap := manifest.Theme
 	// Media: new attachments, then rewrite ids and URLs in the parts and the kit.

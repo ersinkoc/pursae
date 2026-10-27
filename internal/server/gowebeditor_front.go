@@ -22,10 +22,10 @@ import (
 	"wpgo/internal/store"
 )
 
-// Front end: posts saved with GoWebEditor render through builder.Render inside the active theme; the
+// Front end: posts saved with Golementor render through builder.Render inside the active theme; the
 // page head gets the frontend stylesheet, the kit and per-post CSS files and the widget styles the
 // page uses, the footer gets elementorFrontendConfig and the frontend scripts. The page templates
-// "GoWebEditor Canvas" (elementor_canvas) and "GoWebEditor Full Width" (elementor_header_footer)
+// "Golementor Canvas" (elementor_canvas) and "Golementor Full Width" (elementor_header_footer)
 // replace the theme's page layout. The editor's preview iframe (?elementor-preview=ID) is the theme
 // page with an empty builder wrapper the editor fills in.
 
@@ -52,7 +52,7 @@ func gwePreviewing(c *gin.Context) bool {
 // the site.
 func (s *Server) gwePreview(c *gin.Context) {
 	raw := c.Query("elementor-preview")
-	if raw == "" || (c.Request.Method != http.MethodGet && c.Request.Method != http.MethodHead) {
+	if raw == "" || !s.golementorOn() || (c.Request.Method != http.MethodGet && c.Request.Method != http.MethodHead) {
 		c.Next()
 		return
 	}
@@ -83,14 +83,17 @@ func (s *Server) gwePreview(c *gin.Context) {
 	if s.gweRenderTemplate(c, v, http.StatusOK) {
 		return
 	}
-	if s.gweRenderShell(c, v, http.StatusOK) { // GoWebEditor custom theme / theme parts
+	if s.gweRenderShell(c, v, http.StatusOK) { // Golementor custom theme / theme parts
 		return
 	}
 	s.renderThemeTemplate(c, v.Theme.Slug, http.StatusOK, "theme/"+v.Template, v)
 }
 
-// gweContent is the_content for GoWebEditor documents; ok is false for other posts.
+// gweContent is the_content for Golementor documents; ok is false for other posts.
 func (s *Server) gweContent(c *gin.Context, p *store.Post) (string, bool) {
+	if !s.golementorOn() { // built pages show the plain-HTML fallback saved in posts.content
+		return "", false
+	}
 	if c != nil {
 		if id, ok := c.Get(ctxGwePreview); ok && id.(int64) == p.ID {
 			s.gweRecord(c, p, nil)
@@ -193,7 +196,7 @@ func (s *Server) gweKitCSS(c *gin.Context) int64 {
 	}
 	path := s.gweCSSPath(kit.ID)
 	if st, err := os.Stat(path); err != nil || st.ModTime().Before(kit.ModifiedAt) {
-		s.gweWriteCSS(kit, s.gweFixURLs(c, builder.KitCSS(gweDocument(kit), s.gweRenderContext(c, false))+s.gweV4KitCSS(c))) // + GoWebEditor v4 variables
+		s.gweWriteCSS(kit, s.gweFixURLs(c, builder.KitCSS(gweDocument(kit), s.gweRenderContext(c, false))+s.gweV4KitCSS(c))) // + Golementor v4 variables
 	}
 	return kit.ID
 }
@@ -217,7 +220,7 @@ func (s *Server) gweStyles() (map[string]string, [][2]string) {
 
 // gweStyleHref maps a frontend style handle to its file.
 func (s *Server) gweStyleHref(handle string) string {
-	if rel := s.gweProStyleHref(handle); rel != "" { // GoWebEditor Pro widget and module styles
+	if rel := s.gweProStyleHref(handle); rel != "" { // Golementor Pro widget and module styles
 		return rel
 	}
 	m, _ := s.gweStyles()
@@ -252,9 +255,12 @@ func gweScript(id, src string) string {
 	return fmt.Sprintf("<script src=\"%s\" id=\"%s-js\"></script>\n", html.EscapeString(src), id)
 }
 
-// gweHead prints GoWebEditor's stylesheets in wp_head.
+// gweHead prints Golementor's stylesheets in wp_head.
 func (s *Server) gweHead(c *gin.Context) template.HTML {
-	s.gweProRecordPopups(c) // GoWebEditor Pro: popups print on every page their conditions match
+	if !s.golementorOn() {
+		return ""
+	}
+	s.gweProRecordPopups(c) // Golementor Pro: popups print on every page their conditions match
 	results := gweResults(c)
 	if len(results) == 0 {
 		return ""
@@ -271,11 +277,11 @@ func (s *Server) gweHead(c *gin.Context) template.HTML {
 				sb.WriteString(gweLink("elementor-post-"+itoa64(kitID), s.gweCSSURL(c, kitID)))
 			}
 		}
-		sb.WriteString(s.gweV4HeadLinks(c)) // GoWebEditor v4: atomic stylesheets (gowebeditor_v4.go)
+		sb.WriteString(s.gweV4HeadLinks(c)) // Golementor v4: atomic stylesheets (gowebeditor_v4.go)
 		sb.WriteString(gweLink("gowebeditor-preview", assets+"css/gowebeditor-editor.css"+ver))
-		// GoWebEditor Site widgets (theme parts) in the preview
+		// Golementor Site widgets (theme parts) in the preview
 		sb.WriteString(gweLink("widget-theme-elements", assets+"css/widget-theme-elements.min.css"+ver))
-		sb.WriteString(s.gweProHead(c, results, true))        // GoWebEditor Pro preview styles
+		sb.WriteString(s.gweProHead(c, results, true))        // Golementor Pro preview styles
 		sb.WriteString(s.gweFontsHead(c, results))            // gap-integrations: local Google Fonts
 		sb.WriteString("<link rel='icon' href='data:,' />\n") // the iframe never needs /favicon.ico
 		sb.WriteString(gweScript("jquery-core", "/wp-includes/js/jquery/jquery.min.js?ver=3.7.1"))
@@ -287,7 +293,7 @@ func (s *Server) gweHead(c *gin.Context) template.HTML {
 	if kitID > 0 {
 		sb.WriteString(gweLink("elementor-post-"+itoa64(kitID), s.gweCSSURL(c, kitID)))
 	}
-	sb.WriteString(s.gweV4HeadLinks(c)) // GoWebEditor v4: atomic stylesheets (gowebeditor_v4.go)
+	sb.WriteString(s.gweV4HeadLinks(c)) // Golementor v4: atomic stylesheets (gowebeditor_v4.go)
 	seen := map[string]bool{}
 	for _, r := range results {
 		if r.res == nil {
@@ -308,7 +314,7 @@ func (s *Server) gweHead(c *gin.Context) template.HTML {
 			sb.WriteString(gweLink("elementor-post-"+itoa64(r.post.ID), s.gweCSSURL(c, r.post.ID)))
 		}
 	}
-	sb.WriteString(s.gweProHead(c, results, false)) // GoWebEditor Pro: popup styles, custom code
+	sb.WriteString(s.gweProHead(c, results, false)) // Golementor Pro: popup styles, custom code
 	sb.WriteString(s.gweFontsHead(c, results))      // gap-integrations: local Google Fonts, PayPal form-action
 	sb.WriteString(gweScript("jquery-core", "/wp-includes/js/jquery/jquery.min.js?ver=3.7.1"))
 	sb.WriteString(gweScript("jquery-migrate", "/wp-includes/js/jquery/jquery-migrate.min.js?ver=3.4.1"))
@@ -317,6 +323,9 @@ func (s *Server) gweHead(c *gin.Context) template.HTML {
 
 // gweFooter prints elementorFrontendConfig and the frontend scripts in wp_footer.
 func (s *Server) gweFooter(c *gin.Context) template.HTML {
+	if !s.golementorOn() {
+		return ""
+	}
 	results := gweResults(c)
 	if len(results) == 0 {
 		return ""
@@ -333,7 +342,7 @@ func (s *Server) gweFooter(c *gin.Context) template.HTML {
 		sb.WriteString(gweScript("react-dom", "/wp-includes/js/dist/vendor/react-dom.min.js?ver=18.3.1.1"))
 		sb.WriteString(gweScript("elementor-styleguide-app-initiator", assets+"js/styleguide-app-initiator.min.js"+ver))
 	}
-	sb.WriteString(s.gweV4FooterScripts(c)) // GoWebEditor v4: atomic element handlers (gowebeditor_v4.go)
+	sb.WriteString(s.gweV4FooterScripts(c)) // Golementor v4: atomic element handlers (gowebeditor_v4.go)
 	sb.WriteString(gweScript("elementor-webpack-runtime", assets+"js/webpack.runtime.min.js"+ver))
 	sb.WriteString(gweScript("elementor-frontend-modules", assets+"js/frontend-modules.min.js"+ver))
 	sb.WriteString("<script id=\"jquery-ui-core-js-before\">\njQuery.uiBackCompat = true;\n</script>\n")
@@ -353,7 +362,7 @@ func (s *Server) gweFooter(c *gin.Context) template.HTML {
 			}
 		}
 	}
-	s.gweProFrontScripts(c, results, preview, scripts) // GoWebEditor Pro: popups' widgets, dialog
+	s.gweProFrontScripts(c, results, preview, scripts) // Golementor Pro: popups' widgets, dialog
 	for _, h := range []string{"swiper", "jquery-numerator", "imagesloaded", "elementor-gallery", "share-link", "elementor-dialog"} {
 		if scripts[h] {
 			src := gweScriptFiles[h]
@@ -366,7 +375,7 @@ func (s *Server) gweFooter(c *gin.Context) template.HTML {
 	if preview {
 		sb.WriteString(gweScript("elementor-inline-editor", assets+"lib/inline-editor/js/inline-editor.min.js"+ver))
 	}
-	sb.WriteString(s.gweProFooter(c, results, preview, scripts)) // GoWebEditor Pro frontend scripts and popups
+	sb.WriteString(s.gweProFooter(c, results, preview, scripts)) // Golementor Pro frontend scripts and popups
 	return template.HTML(sb.String())
 }
 
@@ -408,9 +417,9 @@ func (s *Server) gweFrontendConfig(c *gin.Context, p *store.Post, edit bool) str
 	return s.gweFill(c, gweJSON(cfg))
 }
 
-// gweBodyClasses are the body classes of a GoWebEditor page.
+// gweBodyClasses are the body classes of a Golementor page.
 func (s *Server) gweBodyClasses(c *gin.Context, q *siteQuery) []string {
-	if q == nil || q.Post == nil {
+	if q == nil || q.Post == nil || !s.golementorOn() {
 		return nil
 	}
 	preview := gwePreviewing(c)
@@ -442,9 +451,9 @@ func gweTemplate(p *store.Post) string {
 	return t
 }
 
-// gweRenderTemplate renders the GoWebEditor page templates; false means the theme template applies.
+// gweRenderTemplate renders the Golementor page templates; false means the theme template applies.
 func (s *Server) gweRenderTemplate(c *gin.Context, v *siteView, status int) bool {
-	if v == nil || v.Q == nil || v.Q.Post == nil || (v.Template != "page" && v.Template != "single") {
+	if v == nil || v.Q == nil || v.Q.Post == nil || (v.Template != "page" && v.Template != "single") || !s.golementorOn() {
 		return false
 	}
 	p := v.Q.Post
@@ -471,7 +480,7 @@ func (s *Server) gweRenderTemplate(c *gin.Context, v *siteView, status int) bool
 		buf.WriteString("\n</body>\n</html>\n")
 	} else {
 		set := s.tmpl.getTheme(true, v.Theme.Slug)
-		if v.GWE != nil { // GoWebEditor theme parts: their header and footer around the page
+		if v.GWE != nil { // Golementor theme parts: their header and footer around the page
 			set = s.tmpl.gweShell()
 		}
 		if set.Lookup("header") == nil || set.Lookup("footer") == nil {
@@ -493,9 +502,9 @@ func (s *Server) gweRenderTemplate(c *gin.Context, v *siteView, status int) bool
 	return true
 }
 
-// gweEditorButton adds "Edit with GoWebEditor" to Gotenberg and the classic editor.
+// gweEditorButton adds "Edit with Golementor" to Gotenberg and the classic editor.
 func (s *Server) gweEditorButton(c *gin.Context, p *store.Post, block bool) {
-	if !gweEditable(p) || !currentUser(c).Can("edit_post", p) {
+	if !s.golementorOn() || !gweEditable(p) || !currentUser(c).Can("edit_post", p) {
 		return
 	}
 	url := strconvQuote(gweEditURL(p.ID))
@@ -507,7 +516,7 @@ func (s *Server) gweEditorButton(c *gin.Context, p *store.Post, block bool) {
 		var ed = wp.data.select( 'core/editor' );
 		if ( ed.isEditedPostNew() || ed.isEditedPostDirty() ) {
 			var title = ed.getEditedPostAttribute( 'title' );
-			if ( ! title ) { wp.data.dispatch( 'core/editor' ).editPost( { title: 'GoWebEditor #`+itoa64(p.ID)+`' } ); }
+			if ( ! title ) { wp.data.dispatch( 'core/editor' ).editPost( { title: 'Golementor #`+itoa64(p.ID)+`' } ); }
 			wp.data.dispatch( 'core/editor' ).savePost().then( function() { location.href = url; } );
 		} else {
 			location.href = url;
@@ -522,7 +531,7 @@ func (s *Server) gweEditorButton(c *gin.Context, p *store.Post, block bool) {
 		b.type = 'button';
 		b.className = 'components-button is-primary';
 		b.style.marginLeft = '12px';
-		b.textContent = 'Edit with GoWebEditor';
+		b.textContent = 'Edit with Golementor';
 		b.addEventListener( 'click', go );
 		bar.appendChild( b );
 		return true;
@@ -538,12 +547,12 @@ func (s *Server) gweEditorButton(c *gin.Context, p *store.Post, block bool) {
 	a.AddInline("common", `jQuery( function( $ ) {
 	var $t = $( '#titlediv' );
 	if ( ! $t.length ) { return; }
-	var $b = $( '<div id="gowebeditor-switch-mode" style="margin:12px 0"><a class="button button-primary button-hero" href='+`+url+`+'>Edit with GoWebEditor</a></div>' );
+	var $b = $( '<div id="gowebeditor-switch-mode" style="margin:12px 0"><a class="button button-primary button-hero" href='+`+url+`+'>Edit with Golementor</a></div>' );
 	$t.after( $b );
 	$b.find( 'a' ).on( 'click', function( e ) {
 		if ( $( '#original_post_status' ).val() === 'auto-draft' ) {
 			e.preventDefault();
-			if ( ! $( '#title' ).val() ) { $( '#title' ).val( 'GoWebEditor #`+itoa64(p.ID)+`' ); }
+			if ( ! $( '#title' ).val() ) { $( '#title' ).val( 'Golementor #`+itoa64(p.ID)+`' ); }
 			$( '#post' ).append( '<input type="hidden" name="gowebeditor_redirect" value="1">' );
 			$( '#save-post' ).trigger( 'click' );
 		}
@@ -551,17 +560,17 @@ func (s *Server) gweEditorButton(c *gin.Context, p *store.Post, block bool) {
 } );`)
 }
 
-// gweAfterClassicSave sends the classic editor's "save then open GoWebEditor" back to the builder.
-func gweClassicRedirect(c *gin.Context, id int64) (string, bool) {
-	if c.PostForm("gowebeditor_redirect") == "" {
+// gweAfterClassicSave sends the classic editor's "save then open Golementor" back to the builder.
+func (s *Server) gweClassicRedirect(c *gin.Context, id int64) (string, bool) {
+	if !s.golementorOn() || c.PostForm("gowebeditor_redirect") == "" {
 		return "", false
 	}
 	return gweEditURL(id), true
 }
 
-// gweRowAction is the posts list "Edit with GoWebEditor" link (empty when not applicable).
+// gweRowAction is the posts list "Edit with Golementor" link (empty when not applicable).
 func (s *Server) gweRowAction(c *gin.Context, p *store.Post) string {
-	if !gweEditable(p) || p.Status == "trash" || !currentUser(c).Can("edit_post", p) {
+	if !s.golementorOn() || !gweEditable(p) || p.Status == "trash" || !currentUser(c).Can("edit_post", p) {
 		return ""
 	}
 	return gweEditURL(p.ID)

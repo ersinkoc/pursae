@@ -11,7 +11,7 @@ import (
 	"testing"
 )
 
-// GoWebEditor v4 (atomic): the editor has the atomic experiments on, global classes and variables
+// Golementor v4 (atomic): the editor has the atomic experiments on, global classes and variables
 // round-trip through REST, and an atomic page saved with save_builder renders on the front end
 // with its stylesheets.
 func TestGoWebEditorV4(t *testing.T) {

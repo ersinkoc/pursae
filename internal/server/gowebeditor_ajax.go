@@ -40,8 +40,16 @@ func gweFail(code int, msg string) error { return &gweError{code, msg} }
 
 var errGweNotFound = gweFail(http.StatusBadRequest, "Action not found.")
 
-// gweAjax handles GoWebEditor's admin-ajax actions; it reports whether the action was one of them.
+// gweAjax handles Golementor's admin-ajax actions; it reports whether the action was one of them.
 func (s *Server) gweAjax(c *gin.Context, action string) bool {
+	if !s.golementorOn() {
+		// Heartbeat belongs to WordPress itself (the editors tick it); the rest answers like an unknown action.
+		if action == "heartbeat" {
+			s.gweHeartbeat(c)
+			return true
+		}
+		return false
+	}
 	switch action {
 	case "elementor_ajax":
 		s.gweAjaxBatch(c)
@@ -52,7 +60,7 @@ func (s *Server) gweAjax(c *gin.Context, action string) bool {
 	case "elementor_library_direct_actions":
 		s.gweLibraryDirect(c)
 	default:
-		return s.gweProAjax(c, action) // GoWebEditor Pro: form submissions
+		return s.gweProAjax(c, action) // Golementor Pro: form submissions
 	}
 	return true
 }
@@ -160,7 +168,7 @@ func (s *Server) gweAction(c *gin.Context, action string, raw json.RawMessage, e
 		return true, s.gweSetUserMeta(c, u, "gwe_introduction", map[string]any{key: true})
 	case "dismissed_editor_notices":
 		return true, nil
-	case "render_atomic_element": // GoWebEditor v4 (gowebeditor_v4.go)
+	case "render_atomic_element": // Golementor v4 (gowebeditor_v4.go)
 		return s.gweRenderAtomic(c, raw, editorID)
 	case "get_document_config":
 		p, err := s.gwePostFor(c, gweInt(data["id"]), "edit_post")
@@ -223,7 +231,7 @@ func (s *Server) gweAction(c *gin.Context, action string, raw json.RawMessage, e
 		return true, err
 	case "get_templates_quota", "get_folders", "create_folder", "get_item_children", "search_templates", "load_more_templates",
 		"bulk_undo_delete_items", "import_template", "import_from_json":
-		return nil, gweFail(http.StatusBadRequest, "The cloud template library is not available in GoWebEditor.")
+		return nil, gweFail(http.StatusBadRequest, "The cloud template library is not available in Golementor.")
 	}
 	if strings.HasPrefix(action, "save_") && strings.HasSuffix(action, "_settings") {
 		name := strings.TrimSuffix(strings.TrimPrefix(action, "save_"), "_settings")
@@ -249,7 +257,7 @@ func (s *Server) gweAction(c *gin.Context, action string, raw json.RawMessage, e
 		}
 		return map[string]any{}, nil
 	}
-	if out, ok, err := s.gweProAction(c, action, data, raw, editorID); ok { // GoWebEditor Pro actions
+	if out, ok, err := s.gweProAction(c, action, data, raw, editorID); ok { // Golementor Pro actions
 		return out, err
 	}
 	return nil, errGweNotFound
@@ -332,8 +340,8 @@ func (s *Server) gweRenderContext(ctx context.Context, editing bool) *builder.Re
 		return out
 	}
 	rc.Theme = s.gweThemeData(ctx)           // Site widgets (gowebeditor_theme.go)
-	rc.Pro = s.gweProData(ctx)               // GoWebEditor Pro: dynamic tags, queries (gowebeditor_pro_data.go)
-	rc.Atomic = s.gweAtomicEnv(ctx, editing) // GoWebEditor v4: atomic elements (gowebeditor_v4.go)
+	rc.Pro = s.gweProData(ctx)               // Golementor Pro: dynamic tags, queries (gowebeditor_pro_data.go)
+	rc.Atomic = s.gweAtomicEnv(ctx, editing) // Golementor v4: atomic elements (gowebeditor_v4.go)
 	rc.MediaURL = func(id int64, size string) string {
 		a, err := s.store.GetAttachment(ctx, id)
 		if err != nil {
@@ -374,7 +382,7 @@ func (s *Server) gweRenderWidget(c *gin.Context, raw json.RawMessage, editorID i
 // gweLabAssets is where the renderer's embedded control defaults point (placeholder images).
 var gweLabAssets = []string{"http://localhost:8095/wp-content/plugins/elementor/assets/", `http:\/\/localhost:8095\/wp-content\/plugins\/elementor\/assets\/`}
 
-// gweFixURLs points upstream asset URLs in render output at the served GoWebEditor assets.
+// gweFixURLs points upstream asset URLs in render output at the served Golementor assets.
 func (s *Server) gweFixURLs(ctx context.Context, out string) string {
 	if !strings.Contains(out, "localhost:8095") {
 		return out
@@ -517,7 +525,7 @@ func (s *Server) gweSaveBuilder(c *gin.Context, p *store.Post, data map[string]a
 	if typ == "kit" {
 		s.purgeAll(c)
 	}
-	s.gweAfterPartSave(c, p) // GoWebEditor theme parts and theme kits update their custom theme
+	s.gweAfterPartSave(c, p) // Golementor theme parts and theme kits update their custom theme
 	_ = revID
 	return s.gweSaveResponse(c, p, p.Status, p.ID, false)
 }

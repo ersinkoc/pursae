@@ -14,7 +14,7 @@ import (
 // gweCommentsHTML is comments_template() for the Post Comments widget: the comment list and
 // comment_form() of a post, printed through the active theme's own comments template (its
 // "comments" block, or Twenty Twenty's renderer), so the widget looks like the theme's comments in
-// theme-builder single templates too. GoWebEditor themes use Hello GoWebEditor's template.
+// theme-builder single templates too. Golementor themes use Hello Golementor's template.
 func (s *Server) gweCommentsHTML(c *gin.Context, p *store.Post, lb *links.Builder) string {
 	if c == nil || p == nil {
 		return ""

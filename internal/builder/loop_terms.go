@@ -1,6 +1,6 @@
 package builder
 
-// GoWebEditor Pro term loops: the Loop Grid / Loop Carousel "Post Taxonomy" skin
+// Golementor Pro term loops: the Loop Grid / Loop Carousel "Post Taxonomy" skin
 // (modules/loop-builder: Skin_Loop_Taxonomy_Base, Taxonomy_Loop_Provider and the loop filter's
 // Taxonomy_Filter_Trait / Hierarchical_Taxonomy_Trait) and the atomic Loop's "taxonomy" template
 // type (modules/collection-loop: Taxonomy_Template_Type_Base, Hierarchical_Term_Depth,

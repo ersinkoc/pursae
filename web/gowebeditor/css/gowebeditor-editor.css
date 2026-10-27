@@ -1,4 +1,4 @@
-/* GoWebEditor branding over the upstream editor UI (loaded in the editor and its preview). */
+/* Golementor branding over the upstream editor UI (loaded in the editor and its preview). */
 .eicon-elementor:before,
 .eicon-elementor-circle:before,
 .eicon-elementor-square:before {
@@ -42,7 +42,7 @@
 @keyframes gwe-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 @keyframes gwe-slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(250%); } }
 #elementor-loading .elementor-loading-title { margin-top: 8px; }
-/* Upsells and cloud features are not part of GoWebEditor. */
+/* Upsells and cloud features are not part of Golementor. */
 #elementor-panel-get-pro-elements,
 #elementor-panel-get-pro-elements-sticky,
 .elementor-panel-sticky-promotion,
@@ -330,3 +330,102 @@ header.MuiAppBar-root .MuiToolbar-root .MuiStack-root:first-child > button:first
 #elementor-editor-wrapper-v2 .MuiTab-root.Mui-selected { color: #2271b1; }
 #elementor-editor-wrapper-v2 .MuiCircularProgress-colorPrimary,
 #elementor-editor-wrapper-v2 .MuiLinearProgress-colorPrimary .MuiLinearProgress-bar { color: #2271b1; background-color: #2271b1; }
+
+/* GWE-UI-PREVIEW:BEGIN  Golementor UI: preview iframe chrome (empty-canvas area, hover/selected handles). Edited by the UI layer; keep markers. */
+.elementor-editor-active {
+	--gwe-p-accent: #2271b1;
+	--gwe-p-accent-soft: #eaf3fc;
+	--gwe-p-border: #b8c7da;
+	--gwe-p-text: #3b4859;
+	--gwe-p-muted: #5f6d82;
+}
+.elementor-editor-active .elementor-add-section:not(.elementor-dragging-on-child) .elementor-add-section-inner {
+	background-color: rgba(247, 250, 255, 0.92);
+	border: 2px dashed var(--gwe-p-border);
+	border-radius: 14px;
+	padding: 44px 0 40px;
+	transition: border-color 0.16s cubic-bezier(0.2, 0, 0, 1), background-color 0.16s cubic-bezier(0.2, 0, 0, 1);
+}
+.elementor-editor-active .elementor-add-section:not(.elementor-dragging-on-child) .elementor-add-section-inner:hover {
+	border-color: var(--gwe-p-accent);
+	background-color: var(--gwe-p-accent-soft);
+}
+.elementor-editor-active .elementor-add-section.elementor-dragging-on-child .elementor-add-section-inner {
+	border: 2px dashed var(--gwe-p-accent);
+	background-color: var(--gwe-p-accent-soft);
+	border-radius: 14px;
+}
+.elementor-editor-active .elementor-add-new-section { gap: 12px; align-items: center; }
+.elementor-editor-active .elementor-add-section-area-button {
+	width: 48px;
+	height: 48px;
+	padding: 0;
+	align-items: center;
+	justify-content: center;
+	font-size: 18px;
+	background-color: #fff;
+	color: var(--gwe-p-text);
+	box-shadow: 0 0 0 1px var(--gwe-p-border), 0 1px 2px rgba(16, 24, 40, 0.08);
+	transition: background-color 0.16s cubic-bezier(0.2, 0, 0, 1), color 0.16s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.16s cubic-bezier(0.2, 0, 0, 1), transform 0.16s cubic-bezier(0.2, 0, 0, 1);
+}
+.elementor-editor-active .elementor-add-section-area-button:hover,
+.elementor-editor-active .elementor-add-section-area-button:focus {
+	background-color: var(--gwe-p-accent-soft);
+	color: var(--gwe-p-accent);
+	box-shadow: 0 0 0 2px var(--gwe-p-accent), 0 4px 12px rgba(34, 113, 177, 0.2);
+	transform: translateY(-1px);
+}
+.elementor-editor-active .elementor-add-section-area-button.e-button-primary {
+	background-color: var(--gwe-p-accent);
+	color: #fff;
+	box-shadow: 0 2px 6px rgba(34, 113, 177, 0.35);
+}
+.elementor-editor-active .elementor-add-section-area-button.e-button-primary:hover,
+.elementor-editor-active .elementor-add-section-area-button.e-button-primary:focus {
+	background-color: #135e96;
+	color: #fff;
+	box-shadow: 0 4px 12px rgba(34, 113, 177, 0.4);
+}
+.elementor-editor-active .elementor-add-section-area-button:focus-visible { outline: 2px solid var(--gwe-p-accent); outline-offset: 3px; }
+.elementor-editor-active .elementor-add-section-drag-title {
+	font-style: normal;
+	font-size: 14px;
+	font-weight: 500;
+	line-height: 1.4;
+	color: var(--gwe-p-muted);
+	margin-block-start: 14px;
+}
+.elementor-editor-active .elementor-select-preset-title { color: var(--gwe-p-text); letter-spacing: 0.06em; font-size: 12px; }
+.elementor-editor-active .elementor-select-preset-list .elementor-preset path,
+.elementor-editor-active .elementor-select-preset-list .elementor-preset rect { fill: #d6e2f0; }
+.elementor-editor-active .elementor-select-preset-list .elementor-preset:hover path,
+.elementor-editor-active .elementor-select-preset-list .elementor-preset:hover rect { fill: var(--gwe-p-accent); }
+.elementor-editor-active .elementor-add-section-back,
+.elementor-editor-active .elementor-add-section-close {
+	width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+	color: var(--gwe-p-muted); transition: background-color 0.16s, color 0.16s;
+}
+.elementor-editor-active .elementor-add-section-back:hover,
+.elementor-editor-active .elementor-add-section-close:hover { background-color: #e3edf8; color: var(--gwe-p-accent); }
+/* Empty container "+" */
+.elementor-first-add { border: 1.5px dashed var(--gwe-p-border); border-radius: 8px; background-color: rgba(247, 250, 255, 0.6); transition: border-color 0.16s, background-color 0.16s; }
+.elementor-first-add:hover { border-color: var(--gwe-p-accent); background-color: var(--gwe-p-accent-soft); }
+.elementor-first-add .elementor-icon { color: var(--gwe-p-muted); font-size: 20px; }
+.elementor-first-add:hover .elementor-icon { color: var(--gwe-p-accent); }
+/* Drop indicator */
+.elementor-sortable-placeholder:not(.elementor-column-placeholder),
+.elementor-widget-placeholder { border-radius: 999px; box-shadow: 0 0 0 3px rgba(34, 113, 177, 0.22); }
+/* Hover / selected handles */
+.elementor-editor-element-settings { font-size: 12px; height: 28px; box-shadow: 0 2px 6px rgba(16, 24, 40, 0.22); }
+.elementor-edit-area-active .elementor-editor-element-setting { width: 28px; font-size: 12px; }
+.elementor-editor-widget-settings { border-end-start-radius: 6px; }
+.e-con:hover > .elementor-element-overlay:after,
+.elementor-widget:hover > .elementor-element-overlay:after { outline-offset: -1px; }
+.e-con.elementor-element-editable > .elementor-element-overlay:after,
+.elementor-section.elementor-element-editable > .elementor-element-overlay:after { outline-width: 2px; }
+.elementor-widget.elementor-element-editable > .elementor-element-overlay { box-shadow: 0 0 0 2px var(--e-p-border-widget-hover, #2271b1); }
+.elementor-widget-empty { border-radius: 6px; }
+@media (prefers-reduced-motion: reduce) {
+	.elementor-editor-active * { transition-duration: 0.001ms !important; animation-duration: 0.001ms !important; }
+}
+/* GWE-UI-PREVIEW:END */

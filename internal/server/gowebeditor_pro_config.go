@@ -9,7 +9,7 @@ import (
 	"wpgo/internal/store"
 )
 
-// GoWebEditor Pro: per-request patches of the captured widgets config. Pro's Nav Menu lists the
+// Golementor Pro: per-request patches of the captured widgets config. Pro's Nav Menu lists the
 // site's menus (captured from a lab without menus, so the control arrives as an "alert"), and Pro
 // widgets the capture lacks (breadcrumbs needs Yoast upstream) are added from their Go definitions.
 

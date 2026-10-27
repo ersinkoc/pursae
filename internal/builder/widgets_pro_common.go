@@ -1,6 +1,6 @@
 package builder
 
-// GoWebEditor Pro element features shared by every element: custom attributes (_attributes),
+// Golementor Pro element features shared by every element: custom attributes (_attributes),
 // custom CSS (custom_css, with "selector" standing for the element), display conditions
 // (e_display_conditions) and the helpers Pro widgets share. Ports of upstream Pro's
 // modules/custom-attributes, custom-css and display-conditions.
@@ -22,7 +22,7 @@ func (e *Element) dropSettingKey(key string) {
 	}
 }
 
-// proSupersedes lists Site widgets (widgets_theme.go) that a GoWebEditor Pro port replaces; a Pro
+// proSupersedes lists Site widgets (widgets_theme.go) that a Golementor Pro port replaces; a Pro
 // widget file adds its name from its init (which runs before widgets_theme.go's).
 var proSupersedes = map[string]bool{}
 

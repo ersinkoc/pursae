@@ -19,7 +19,7 @@ func TestUnknownWidget(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(res.HTML, `<!-- GoWebEditor: unsupported element "no-such-widget"`) || !strings.Contains(res.HTML, `"mystery"`) {
+	if !strings.Contains(res.HTML, `<!-- Golementor: unsupported element "no-such-widget"`) || !strings.Contains(res.HTML, `"mystery"`) {
 		t.Errorf("missing comments:\n%s", res.HTML)
 	}
 	if _, err := RenderWidget(els[0].Elements[0], &Document{ID: 1}, &RenderContext{}); err == nil {

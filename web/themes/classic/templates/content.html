@@ -1,0 +1,88 @@
+{{define "post-categories"}}{{if and .Opt.Categories .Categories}}<span class="cat-links"><span class="screen-reader-text">Categories: </span>{{range $i, $c := .Categories}}{{if $i}}<span class="sep" aria-hidden="true">, </span>{{end}}<a href="{{$c.URL}}" rel="category tag">{{$c.Name}}</a>{{end}}</span>{{end}}{{end}}
+
+{{define "post-meta"}}{{if eq .Type "post"}}<div class="entry-meta">
+	{{if .Opt.Author}}{{with .AuthorName}}<span class="byline">By <span class="author vcard"><a class="url fn n" href="{{$.AuthorURL}}" rel="author">{{.}}</a></span></span>{{end}}{{end}}
+	{{if .Opt.Date}}<span class="posted-on"><span class="screen-reader-text">Posted on </span><a href="{{.Permalink}}" rel="bookmark"><time class="entry-date published" datetime="{{.DateISO}}">{{.DateText}}</time></a></span>{{end}}
+	{{if .Opt.ReadingTime}}<span class="reading-time">{{.ReadingTime}}</span>{{end}}
+	{{with .FormatLabel}}<span class="entry-format">{{.}}</span>{{end}}
+	{{with .EditLink}}<span class="edit-link">{{.}}</span>{{end}}
+</div>{{else}}{{with .EditLink}}<div class="entry-meta"><span class="edit-link">{{.}}</span></div>{{end}}{{end}}{{end}}
+
+{{define "content-card"}}<article id="post-{{.ID}}" class="{{.Class}} post-card">
+	{{with .Thumb}}<a class="post-card__media" href="{{$.Permalink}}" aria-hidden="true" tabindex="-1">{{.}}</a>{{end}}
+	<div class="post-card__body">
+		{{if or .ShowFeatured (and .Opt.Categories .Categories)}}<div class="entry-kicker">
+			{{if .ShowFeatured}}<span class="sticky-badge">{{.Icons.pin}}Featured</span>{{end}}
+			{{template "post-categories" .}}
+		</div>{{end}}
+		{{if .ShowTitle}}<h2 class="entry-title"><a href="{{.Permalink}}" rel="bookmark">{{.Title}}</a></h2>{{end}}
+		<div class="{{if .IsExcerpt}}entry-summary{{else}}entry-content{{end}}">
+			{{.Body}}
+		</div>
+		{{if .IsExcerpt}}<p class="more-link-wrap"><a class="more-link" href="{{.Permalink}}">Continue reading<span class="screen-reader-text"> &ldquo;{{.Title}}&rdquo;</span> <span aria-hidden="true">&rarr;</span></a></p>{{end}}
+		{{template "post-meta" .}}
+	</div>
+</article><!-- #post-{{.ID}} -->{{end}}
+
+{{define "content-minimal"}}<article id="post-{{.ID}}" class="{{.Class}} post-minimal">
+	{{if .Opt.Date}}<time class="entry-date published" datetime="{{.DateISO}}">{{.DateText}}</time>{{end}}
+	<h2 class="entry-title"><a href="{{.Permalink}}" rel="bookmark">{{.Title}}</a>{{if .ShowFeatured}} <span class="sticky-badge">Featured</span>{{end}}</h2>
+</article>{{end}}
+
+{{define "content-single"}}<article id="post-{{.ID}}" class="{{.Class}} entry entry--single">
+	<header class="entry-header">
+		{{if and .Opt.Categories .Categories}}<div class="entry-kicker">{{template "post-categories" .}}</div>{{end}}
+		<h1 class="entry-title">{{.Title}}</h1>
+		{{template "post-meta" .}}
+	</header><!-- .entry-header -->
+	{{with .Thumb}}<figure class="entry-thumbnail alignwide">{{.}}{{with $.Caption}}<figcaption class="wp-caption-text">{{.}}</figcaption>{{end}}</figure>{{end}}
+	<div class="entry-content">
+		{{.Body}}
+	</div><!-- .entry-content -->
+	{{if and .Opt.Tags .Tags}}<footer class="entry-footer">
+		<span class="tags-links"><span class="screen-reader-text">Tags: </span>{{range .Tags}}<a href="{{.URL}}" rel="tag">{{.Name}}</a>{{end}}</span>
+	</footer>{{end}}
+	{{if .Avatar}}<aside class="author-bio" aria-label="About the author">
+		<div class="author-bio__avatar">{{.Avatar}}</div>
+		<div class="author-bio__text">
+			<h2 class="author-bio__title">Written by {{.AuthorName}}</h2>
+			<p class="author-bio__description">{{.AuthorBio}}</p>
+			<a class="author-bio__link" href="{{.AuthorURL}}" rel="author">More posts by {{.AuthorName}} <span aria-hidden="true">&rarr;</span></a>
+		</div>
+	</aside>{{end}}
+</article><!-- #post-{{.ID}} -->{{end}}
+
+{{define "content-page"}}<article id="post-{{.ID}}" class="{{.Class}} entry entry--page">
+	<header class="entry-header">
+		<h1 class="entry-title">{{.Title}}</h1>
+	</header><!-- .entry-header -->
+	{{with .Thumb}}<figure class="entry-thumbnail alignwide">{{.}}{{with $.Caption}}<figcaption class="wp-caption-text">{{.}}</figcaption>{{end}}</figure>{{end}}
+	<div class="entry-content">
+		{{.Body}}
+	</div><!-- .entry-content -->
+	{{with .EditLink}}<footer class="entry-footer"><span class="edit-link">{{.}}</span></footer>{{end}}
+</article><!-- #post-{{.ID}} -->{{end}}
+
+{{define "content-none"}}{{$cl := .Data.Classic}}<section class="no-results not-found">
+	{{if eq .Template "search"}}
+	<p>Nothing matched your search. Try different keywords.</p>
+	{{else if and (eq .Template "index") .CanPublish}}
+	<h2 class="page-title">Nothing here yet</h2>
+	<p>Ready to publish your first post? <a href="/wp-admin/post-new">Get started here</a>.</p>
+	{{else}}
+	<h2 class="page-title">Nothing here yet</h2>
+	<p>It seems we can&rsquo;t find what you&rsquo;re looking for. Perhaps searching can help.</p>
+	{{template "searchform" (dict "HomeURL" .HomeURL "ID" "none" "Query" "" "Icon" $cl.Icons.search)}}
+	{{end}}
+</section><!-- .no-results -->{{end}}
+
+{{define "comments"}}{{with .Comments}}<section id="comments" class="comments-area{{if settingBool "show_avatars"}} show-avatars{{end}}" aria-label="Comments">
+	{{if .Count}}
+	<h2 class="comments-title">{{.Title}}</h2>
+	<ol class="comment-list">
+		{{.List}}
+	</ol><!-- .comment-list -->
+	{{if not .Open}}<p class="no-comments">Comments are closed.</p>{{end}}
+	{{end}}
+	{{.Form}}
+</section><!-- #comments -->{{end}}{{end}}

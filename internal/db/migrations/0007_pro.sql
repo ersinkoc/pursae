@@ -1,4 +1,4 @@
--- GoWebEditor Pro (ported from upstream Pro 4.3.0, see NOTICE): form submissions and their
+-- Golementor Pro (ported from upstream Pro 4.3.0, see NOTICE): form submissions and their
 -- action log. Upstream keeps them in e_submissions, e_submissions_values and
 -- e_submissions_actions_log; here the field values and the action log are jsonb columns.
 

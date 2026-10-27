@@ -1,6 +1,6 @@
 package builder
 
-// GoWebEditor Pro document types: popups and loop items have their own settings stacks (the
+// Golementor Pro document types: popups and loop items have their own settings stacks (the
 // editor's document config carries their controls; the server registers them here so the CSS
 // engine styles the popup dialog and the loop item wrapper) and their own CSS wrapper selectors.
 

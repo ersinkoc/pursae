@@ -57,7 +57,7 @@ var (
 
 // proBNormalize removes the differences documented in the pro-b-*.knowndiff files: the
 // data-elementor-post-type root attribute (needs a renderDocument hook), the nested template's
-// inline CSS (GoWebEditor inlines it on the front end too), nonces, and the key order of
+// inline CSS (Golementor inlines it on the front end too), nonces, and the key order of
 // repeater items inside data-settings (compared as JSON).
 func proBNormalize(h string) string {
 	h = proBPostTypeRe.ReplaceAllString(h, "")

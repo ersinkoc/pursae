@@ -1,6 +1,6 @@
 package builder
 
-// GoWebEditor Pro widgets (group B): share-buttons, hotspot, table-of-contents, video-playlist,
+// Golementor Pro widgets (group B): share-buttons, hotspot, table-of-contents, video-playlist,
 // slides, paypal-button, stripe-button, template and global. Ports of the render() methods of
 // upstream Pro 4.3.0's modules/{share-buttons,hotspot,table-of-contents,video-playlist,slides,
 // payments,library,global-widget}/widgets/*.php (GPL-3.0, see NOTICE).
@@ -540,9 +540,9 @@ func proBSlidesStyles(w *elemCtx) []string {
 }
 
 // --- payment buttons ----------------------------------------------------------------------------------
-// GoWebEditor renders the payment buttons' markup only: the PayPal button posts its (legacy) form
+// Golementor renders the payment buttons' markup only: the PayPal button posts its (legacy) form
 // straight to PayPal; the Stripe button's form needs the submit_stripe_form ajax action, which
-// GoWebEditor does not provide (no payment processing).
+// Golementor does not provide (no payment processing).
 
 var proBPayPalCycles = map[string]string{"days": "D", "weeks": "W", "months": "M", "years": "Y"}
 
@@ -714,7 +714,7 @@ func proBRenderStripe(w *elemCtx) string {
 		b.WriteString("<input type=\"hidden\" name=\"custom_error_msg\" value=\"" + escAttr(w.s("custom_messages")) + "\" />\n")
 		b.WriteString("<input type=\"hidden\" name=\"custom_error_msg_global\" value=\"" + escAttr(w.s("error_message_global")) + "\" />\n")
 		b.WriteString("<input type=\"hidden\" name=\"custom_error_msg_payment\" value=\"" + escAttr(w.s("error_message_payment")) + "\" />\n")
-		// wp_nonce_field( 'stripe_form_submit' ): GoWebEditor does not process Stripe payments, so the
+		// wp_nonce_field( 'stripe_form_submit' ): Golementor does not process Stripe payments, so the
 		// nonce stays empty.
 		b.WriteString("<input type=\"hidden\" id=\"stripe_form_submit_nonce\" name=\"stripe_form_submit_nonce\" value=\"\" />" +
 			"<input type=\"hidden\" name=\"_wp_http_referer\" value=\"" + escAttr(referer) + "\" />")

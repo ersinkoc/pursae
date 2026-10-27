@@ -181,7 +181,7 @@
             "Title": "Gopher Wins the Race",
             "URL": "http://localhost:8095/gopher-wins-the-race/",
             "Excerpt": "A short tale about a gopher that outran every other mascot in the annual race.",
-            "RawContent": "<p>The gopher started slowly. Then it accelerated past every <strong>mascot</strong> on the track, finishing first by a wide margin.</p>\n<p>Second paragraph with more words to make the excerpt long enough for trimming tests of the posts widget in GoWebEditor.</p>",
+            "RawContent": "<p>The gopher started slowly. Then it accelerated past every <strong>mascot</strong> on the track, finishing first by a wide margin.</p>\n<p>Second paragraph with more words to make the excerpt long enough for trimming tests of the posts widget in Golementor.</p>",
             "Date": "March 5, 2026",
             "DateISO": "2026-03-05T09:15:00+00:00",
             "Time": "9:15 am",
@@ -216,7 +216,7 @@
             "ImageID": 57,
             "ImageURL": "http://localhost:8095/wp-content/uploads/2026/10/wpgo-landscape.png",
             "Class": "post-190 post type-post status-publish format-standard has-post-thumbnail hentry category-news tag-go tag-speed entry",
-            "Content": "<p>The gopher started slowly. Then it accelerated past every <strong>mascot</strong> on the track, finishing first by a wide margin.</p>\n<p>Second paragraph with more words to make the excerpt long enough for trimming tests of the posts widget in GoWebEditor.</p>\n",
+            "Content": "<p>The gopher started slowly. Then it accelerated past every <strong>mascot</strong> on the track, finishing first by a wide margin.</p>\n<p>Second paragraph with more words to make the excerpt long enough for trimming tests of the posts widget in Golementor.</p>\n",
             "TheExcerpt": "A short tale about a gopher that outran every other mascot in the annual race."
         }
     ],

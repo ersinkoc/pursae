@@ -1,0 +1,23 @@
+/* Hello Golementor: block editor canvas. The theme itself is a blank canvas, so the editor gets
+   readable defaults: a centered column with side padding and the same system font as the site. */
+.editor-styles-wrapper {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+	font-size: 18px;
+	line-height: 1.7;
+	color: #1e1e1e;
+}
+.editor-styles-wrapper .edit-post-visual-editor__post-title-wrapper,
+.editor-styles-wrapper .is-root-container,
+.editor-styles-wrapper .wp-block-post-title {
+	box-sizing: border-box;
+	max-width: 840px;
+	margin-left: auto;
+	margin-right: auto;
+	padding-left: 24px;
+	padding-right: 24px;
+}
+.editor-styles-wrapper .edit-post-visual-editor__post-title-wrapper h1,
+.editor-styles-wrapper .wp-block-post-title {
+	font-family: inherit;
+	font-weight: 700;
+}

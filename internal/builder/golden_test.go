@@ -54,7 +54,7 @@ func loadFixtures(t *testing.T) []fixture {
 				}
 			}
 		}
-		settings["__fixture_name"] = name // GoWebEditor Pro fixtures: the page is the current post
+		settings["__fixture_name"] = name // Golementor Pro fixtures: the page is the current post
 		css, _ := os.ReadFile("testdata/golden/" + name + ".css")
 		html, _ := os.ReadFile("testdata/golden/" + name + ".html")
 		doc := &Document{ID: id, Type: "wp-page", Elements: els, Settings: settings}
@@ -134,13 +134,13 @@ func testRC(t *testing.T) *RenderContext {
 		},
 		Shortcode: func(s string) string { return s },
 	}
-	if proTestRC != nil { // GoWebEditor Pro fixtures need the site data Pro widgets read
+	if proTestRC != nil { // Golementor Pro fixtures need the site data Pro widgets read
 		proTestRC(rc)
 	}
 	return rc
 }
 
-// proTestRC lets the GoWebEditor Pro tests add the site data Pro widgets read (golden_pro_test.go).
+// proTestRC lets the Golementor Pro tests add the site data Pro widgets read (golden_pro_test.go).
 var proTestRC func(rc *RenderContext)
 
 // splitRules splits a stylesheet into top-level rule sets (media blocks are split per inner rule

@@ -29,8 +29,8 @@ func TestGoWebEditor(t *testing.T) {
 
 	// The pages list links to the builder.
 	_, body, _ := get(t, c, base+"/wp-admin/edit?post_type=page")
-	if !strings.Contains(body, "/wp-admin/post?post="+pageID+"&amp;action=elementor") || !strings.Contains(body, "Edit with GoWebEditor") {
-		t.Errorf("pages list has no Edit with GoWebEditor action")
+	if !strings.Contains(body, "/wp-admin/post?post="+pageID+"&amp;action=elementor") || !strings.Contains(body, "Edit with Golementor") {
+		t.Errorf("pages list has no Edit with Golementor action")
 	}
 
 	// The editor page: skeleton, ordered assets, Backbone templates and the inline configs.
@@ -40,7 +40,7 @@ func TestGoWebEditor(t *testing.T) {
 	}
 	for _, want := range []string{`<div id="elementor-editor-wrapper">`, `id="elementor-preview-responsive-wrapper"`, "var ElementorConfig = {",
 		"var elementorCommonConfig = {", `"initial_document":{`, `id="tmpl-elementor-panel"`, "/wp-content/plugins/gowebeditor/assets/js/editor.min.js",
-		"wp.i18n.setLocaleData(", "<title>Edit “Sample Page” with GoWebEditor</title>", `"url":"` + base + `/wp-admin/admin-ajax"`,
+		"wp.i18n.setLocaleData(", "<title>Edit “Sample Page” with Golementor</title>", `"url":"` + base + `/wp-admin/admin-ajax"`,
 		"tinyMCEPreInit", `"kit_id":`} {
 		if !strings.Contains(body, want) {
 			t.Errorf("editor page misses %q", want)
@@ -226,7 +226,7 @@ func TestGoWebEditor(t *testing.T) {
 		t.Error("preview shows the admin bar")
 	}
 
-	// GoWebEditor Canvas drops the theme header and footer.
+	// Golementor Canvas drops the theme header and footer.
 	_, out = ajax(`{"s":{"action":"save_builder","data":{"status":"publish","elements":` + tree + `,"settings":{"post_title":"Builder Page","template":"elementor_canvas"}}}}`)
 	if result(out, "s")["success"] != true {
 		t.Fatalf("save canvas: %v", out)

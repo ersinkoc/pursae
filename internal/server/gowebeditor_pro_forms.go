@@ -27,7 +27,7 @@ import (
 	gomail "wpgo/internal/mail"
 )
 
-// GoWebEditor Pro forms: admin-ajax action elementor_pro_forms_send_form, a port of upstream Pro's
+// Golementor Pro forms: admin-ajax action elementor_pro_forms_send_form, a port of upstream Pro's
 // Ajax_Handler + Form_Record with the email, email2, redirect, webhook, save-to-database
 // ("Collect Submissions") and popup actions; the marketing integrations (Mailchimp, Drip,
 // ActiveCampaign, GetResponse, ConvertKit, MailerLite, Slack, Discord) live in
@@ -112,9 +112,9 @@ func (s *Server) gweProFormsEditorConfig() map[string]any {
 	}
 	return map[string]any{
 		"recaptcha": map[string]any{"enabled": s.settings.String("gwe_recaptcha_site_key") != "", "type": "v2_checkbox", "site_key": key("gwe_recaptcha_site_key"),
-			"setup_message": "To use reCAPTCHA, add the API keys under GoWebEditor › Settings › Integrations."},
+			"setup_message": "To use reCAPTCHA, add the API keys under Golementor › Settings › Integrations."},
 		"recaptcha_v3": map[string]any{"enabled": s.settings.String("gwe_recaptcha_v3_site_key") != "", "type": "v3", "site_key": key("gwe_recaptcha_v3_site_key"),
-			"setup_message": "To use reCAPTCHA V3, add the API keys under GoWebEditor › Settings › Integrations."},
+			"setup_message": "To use reCAPTCHA V3, add the API keys under Golementor › Settings › Integrations."},
 	}
 }
 
@@ -456,7 +456,7 @@ func (s *Server) gweProFormMeta(c *gin.Context, settings map[string]any) []map[s
 		case "remote_ip":
 			out = append(out, map[string]string{"id": "remote_ip", "title": "Remote IP", "value": c.ClientIP()})
 		case "credit":
-			out = append(out, map[string]string{"id": "credit", "title": "Powered by", "value": "GoWebEditor"})
+			out = append(out, map[string]string{"id": "credit", "title": "Powered by", "value": "Golementor"})
 		}
 	}
 	return out

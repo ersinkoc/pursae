@@ -27,12 +27,12 @@ func (s *Server) updateCore(c *gin.Context) {
 		return
 	}
 	s.adminPage(c, "update-core", "WordPress Go Updates", "update-core-php", "admin/update-core", map[string]any{
-		"Version": Version, "Checked": time.Now().In(s.loc()).Format("January 2, 2006 at 3:04 pm"), "Plugins": s.installedPlugins(c), "Themes": allThemes()})
+		"Version": Version, "Checked": time.Now().In(s.loc()).Format("January 2, 2006 at 3:04 pm"), "Plugins": s.installedPlugins(c), "Themes": s.installedThemes()})
 }
 
 // about is about.php: what is new in WordPress Go.
 func (s *Server) about(c *gin.Context) {
-	s.adminPage(c, "about", "About WordPress Go", "about-php", "admin/about", map[string]any{"Version": Version, "Go": runtime.Version()})
+	s.adminPage(c, "about", "About WordPress Go", "about-php", "admin/about", map[string]any{"Version": Version, "Go": runtime.Version(), "Golementor": s.golementorOn()})
 }
 
 // tools is tools.php.
@@ -100,7 +100,7 @@ func (s *Server) themeInstall(c *gin.Context) {
 		return search == "" || strings.Contains(strings.ToLower(cd.Name+" "+cd.Author+" "+cd.Description), search)
 	}
 	var cards, demos []card
-	for _, t := range allThemes() {
+	for _, t := range s.installedThemes() {
 		cd := card{Name: t.Name, Author: t.Author, Screenshot: t.ScreenshotSrc(), Slug: t.Slug, Installed: true, Active: t.Slug == active.Slug, Description: t.Description,
 			ActivateURL: "/wp-admin/themes?action=activate&stylesheet=" + t.Slug + "&_wpnonce=" + s.nonce(c, "switch-theme_"+t.Slug), PreviewURL: "/?theme=" + t.Slug, Custom: t.Custom}
 		if !match(cd) {
@@ -135,7 +135,7 @@ func (s *Server) themeInstall(c *gin.Context) {
 	default:
 		browse = "all"
 	}
-	data := map[string]any{"Cards": cards, "Demos": demos, "Browse": browse, "Search": c.Query("search"), "Count": len(cards) + len(demos)}
+	data := map[string]any{"Cards": cards, "Demos": demos, "Browse": browse, "Search": c.Query("search"), "Count": len(cards) + len(demos), "Golementor": s.golementorOn()}
 	s.adminPage(c, "themes", "Add Themes", "theme-install-php", "admin/theme-install", data)
 }
 

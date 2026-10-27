@@ -35,6 +35,7 @@ var Defaults = map[string]any{
 	"classic-editor-replace":        "block",
 	"classic-editor-allow-users":    "disallow",
 	"native_classic_editor":         true,
+	"native_golementor":             false, // the page builder is a plugin that starts switched off
 	"plugin_trusted_keys":           "",
 	"plugin_allow_unsigned":         false,
 	"wpgo_cache_enabled":            true,

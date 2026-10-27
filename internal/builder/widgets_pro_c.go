@@ -1,6 +1,6 @@
 package builder
 
-// GoWebEditor Pro carousels: media-carousel, testimonial-carousel and reviews (ports of upstream
+// Golementor Pro carousels: media-carousel, testimonial-carousel and reviews (ports of upstream
 // Pro's modules/carousel/widgets/*.php over the shared Base::print_slider).
 
 import (

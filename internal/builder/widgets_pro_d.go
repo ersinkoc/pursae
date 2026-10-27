@@ -1,6 +1,6 @@
 package builder
 
-// GoWebEditor Pro query widgets: Posts (classic, cards and full content skins, with pagination and
+// Golementor Pro query widgets: Posts (classic, cards and full content skins, with pagination and
 // load more), Portfolio, Loop Grid and Loop Carousel (each item is a loop-item template rendered
 // with the item post as the current post), Taxonomy Filter and Sitemap. Ports of upstream Pro's
 // modules/posts, modules/loop-builder, modules/loop-filter and theme-elements/widgets/sitemap.php.
@@ -627,7 +627,7 @@ func (k *proDSkin) metaData(p *PostData) string {
 	return b.String()
 }
 
-// proDPostContent mirrors Skin_Content_Base::render_post_content( true ): a GoWebEditor-built
+// proDPostContent mirrors Skin_Content_Base::render_post_content( true ): a Golementor-built
 // post renders its document inside .elementor-post__content, any other post prints the_content.
 func (e *elemCtx) proDPostContent(p *PostData) string {
 	pd := e.r.pro()

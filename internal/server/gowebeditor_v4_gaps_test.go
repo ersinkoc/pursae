@@ -12,7 +12,7 @@ import (
 	"testing"
 )
 
-// GoWebEditor v4 gaps: the Pro editor packages and cache busting in the shell, global-class style
+// Golementor v4 gaps: the Pro editor packages and cache busting in the shell, global-class style
 // validation, the design-system sync stylesheet, display conditions on atomic elements, atomic
 // form submissions through the forms back end, component element validation and the editor
 // loading a newer autosave.

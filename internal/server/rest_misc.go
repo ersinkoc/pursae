@@ -309,7 +309,7 @@ func (api *restAPI) themes(c *gin.Context, r *restRequest) {
 		}
 	}
 	if slug := r.Params["stylesheet"]; slug != "" {
-		th := themeBySlug(slug)
+		th := api.s.installedTheme(slug)
 		if th == nil {
 			restErr(c, http.StatusNotFound, "rest_theme_not_found", "Theme not found.")
 			return
@@ -318,7 +318,7 @@ func (api *restAPI) themes(c *gin.Context, r *restRequest) {
 		return
 	}
 	var out []any
-	for _, th := range allThemes() {
+	for _, th := range api.s.installedThemes() {
 		if st := c.Query("status"); st == "active" && th.Slug != active.Slug {
 			continue
 		}

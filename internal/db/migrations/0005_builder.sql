@@ -1,5 +1,5 @@
--- GoWebEditor: the template library and theme-part content types, builder revisions and
--- custom (GoWebEditor-built) themes.
+-- Golementor: the template library and theme-part content types, builder revisions and
+-- custom (Golementor-built) themes.
 
 -- elementor_library holds saved templates and the site kit; gwe_template holds theme parts
 -- (header, footer, single-post, single-page, archive, search-results, error-404).

@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// GoWebEditor Pro widgets of widgets_pro_e.go: the lab menu ("Lab Menu", id 21, made with WP-CLI in
+// Golementor Pro widgets of widgets_pro_e.go: the lab menu ("Lab Menu", id 21, made with WP-CLI in
 // the lab) for the nav-menu fixtures, and the lab's login URL.
 
 func init() {

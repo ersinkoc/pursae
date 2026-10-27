@@ -1,6 +1,6 @@
 package builder
 
-// GoWebEditor Pro atomic Loop (atomic/loop.go): the site side. Post_Template_Type::build_query_args
+// Golementor Pro atomic Loop (atomic/loop.go): the site side. Post_Template_Type::build_query_args
 // maps the loop's query settings onto a PostQuery, items become the current post while they render,
 // and dynamic tags render through the v3 tag implementations (dynamic_tags.go).
 

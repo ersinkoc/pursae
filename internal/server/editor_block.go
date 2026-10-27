@@ -179,6 +179,7 @@ func (s *Server) renderBlockEditor(c *gin.Context, p *store.Post, isNew bool) {
 			editorStyle += s.webFile("themes/"+theme.Slug+"/assets/"+f) + "\n"
 		}
 	}
+	editorStyle += s.webFile("wp-includes/css/wpgo-editor-neutral.css") + "\n"
 	resolved := ""
 	canvas := []string{
 		"/wp-includes/css/dist/block-library/style.min.css", "/wp-includes/css/dist/block-library/theme.min.css",

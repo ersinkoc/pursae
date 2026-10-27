@@ -71,7 +71,7 @@ type siteView struct {
 	CustomCSS  string
 	Customize  *czChangeset
 
-	// GWE is set when the page renders through the GoWebEditor theme shell (gowebeditor_theme.go).
+	// GWE is set when the page renders through the Golementor theme shell (gowebeditor_theme.go).
 	GWE *gweThemeView
 }
 
@@ -126,7 +126,7 @@ func (s *Server) buildSiteView(c *gin.Context, q *siteQuery) (*siteView, error) 
 		v.Theme = s.activeTheme()
 	}
 	v.ThemeURI = v.Theme.URI()
-	s.gweThemeBegin(c, v) // GoWebEditor: Site widgets read this view; previewed custom themes bring their kit
+	s.gweThemeBegin(c, v) // Golementor: Site widgets read this view; previewed custom themes bring their kit
 	v.IsFront = q.Paged <= 1 && (q.Kind == "front-page" || (q.Kind == "home" && q.PostsPage == nil))
 	v.TitleIsH1 = q.Kind == "home" && q.PostsPage == nil
 	v.IsHomeHeader = q.Kind == "home" && q.PostsPage != nil
@@ -252,7 +252,7 @@ func (s *Server) buildSiteView(c *gin.Context, q *siteQuery) (*siteView, error) 
 	if u != nil {
 		bodyClasses = append(bodyClasses, "logged-in")
 	}
-	showBar := u != nil && cs == nil && !gwePreviewing(c) // the Customizer and GoWebEditor previews have no toolbar
+	showBar := u != nil && cs == nil && !gwePreviewing(c) // the Customizer and Golementor previews have no toolbar
 	if u != nil {
 		if b, ok := u.Meta["show_admin_bar_front"].(bool); ok && !b {
 			showBar = false // the user's "Show Toolbar" choice can hide it, never bring it back into a preview
@@ -264,7 +264,7 @@ func (s *Server) buildSiteView(c *gin.Context, q *siteQuery) (*siteView, error) 
 	bodyClasses = append(bodyClasses, customizeBodyClasses(v)...)
 	bodyClasses = append(bodyClasses, s.gweBodyClasses(c, q)...)
 	bodyClasses = append(bodyClasses, "wp-embed-responsive", "wp-theme-"+v.Theme.Slug)
-	s.gweThemePrepare(c, v, &bodyClasses) // GoWebEditor theme parts / custom theme (sets v.GWE)
+	s.gweThemePrepare(c, v, &bodyClasses) // Golementor theme parts / custom theme (sets v.GWE)
 	if v.Theme.Prepare != nil && v.GWE == nil {
 		v.Theme.Prepare(s, c, v)
 	}
@@ -392,7 +392,7 @@ func (s *Server) theContent(ctx context.Context, c *gin.Context, p *store.Post, 
 <p><label for="pwbox-%d">Password: <input name="post_password" id="pwbox-%d" type="password" spellcheck="false" required size="20" /></label> <input type="submit" name="Submit" value="Enter" /></p></form>
 `, html.EscapeString(lb.Permalink(p)), p.ID, p.ID)
 	}
-	if out, ok := s.gweContent(c, p); ok { // GoWebEditor documents and the editor preview
+	if out, ok := s.gweContent(c, p); ok { // Golementor documents and the editor preview
 		return out
 	}
 	content := p.Content

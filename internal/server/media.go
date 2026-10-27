@@ -563,6 +563,14 @@ func (s *Server) enqueueMedia(c *gin.Context, postID int64) {
 		l10n.Views["setFeaturedImageTitle"] = "Featured image"
 		l10n.Views["setFeaturedImage"] = "Set featured image"
 	}
+	// wp_enqueue_media() takes these from the post type's insert_into_item / uploaded_to_this_item
+	// labels; without them the Add Media frame's primary button is blank.
+	l10n.Views["insertIntoPost"], l10n.Views["uploadedToThisPost"] = "Insert into post", "Uploaded to this post"
+	if postID > 0 {
+		if p, err := s.store.GetPost(c, postID); err == nil && p.Type == "page" {
+			l10n.Views["insertIntoPost"], l10n.Views["uploadedToThisPost"] = "Insert into page", "Uploaded to this page"
+		}
+	}
 	views, _ := json.Marshal(l10n.Views)
 
 	a := s.pageAssets(c)

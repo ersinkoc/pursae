@@ -1,6 +1,6 @@
 package server
 
-// GoWebEditor v4 (atomic): the site side of the atomic element renderer (internal/builder/atomic).
+// Golementor v4 (atomic): the site side of the atomic element renderer (internal/builder/atomic).
 //   - gweAtomicEnv gives the renderer global classes, variables, components and media;
 //   - gweAtomicCSS writes the atomic stylesheets of the rendered documents (base, default,
 //     global-<id>-<context>, local-<id>-<context>, one file per breakpoint, like upstream's
@@ -461,7 +461,7 @@ func (s *Server) gweRenderAtomic(c *gin.Context, raw json.RawMessage, editorID i
 	return map[string]any{"render": s.gweFixURLs(c, out)}, nil
 }
 
-// gweV4Editable reports whether a post is a component (edited in GoWebEditor too).
+// gweV4Editable reports whether a post is a component (edited in Golementor too).
 func gweV4Editable(p *store.Post) bool { return p != nil && p.Type == gweComponentType }
 
 // gweV4UserCaps are the atomic capabilities upstream grants by role (atomic-widgets and
@@ -495,7 +495,7 @@ func gweV4UserCaps(u *store.User) []string {
 }
 
 // gweV4TierFeatures are the license "tier features" the Pro editor packages ask for
-// (elementor-pro/v1/license/tier-features): every feature is simply enabled in GoWebEditor.
+// (elementor-pro/v1/license/tier-features): every feature is simply enabled in Golementor.
 // Without "form" the documents-extended package blocks creating e-form and its fields, without
 // "atomic-components" the components-extended package hides "save as component".
 var gweV4TierFeatures = []string{"form", "atomic-components", "atomic-loop", "display-conditions", "custom-css",

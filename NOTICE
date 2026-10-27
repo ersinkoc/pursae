@@ -1,7 +1,7 @@
 WordPress Go — third-party notices
 ==================================
 
-GoWebEditor (WordPress Go's page builder) contains material derived from Elementor and
+Golementor (WordPress Go's page builder) contains material derived from Elementor and
 Elementor Pro, both licensed under the GNU General Public License version 3.
 
 Elementor Pro 4.3.0
@@ -21,7 +21,7 @@ What WordPress Go uses, and how it is altered:
   unmodified from Elementor Pro 4.3.0.
 * internal/server/gowebeditor/pro-*.gz, internal/builder/data/pro-controls.json.gz — data
   captured from Elementor Pro 4.3.0 running in a test WordPress (editor configs, Backbone
-  templates, widget control definitions). ALTERED: product names replaced with "GoWebEditor",
+  templates, widget control definitions). ALTERED: product names replaced with "Golementor",
   links to elementor.com removed, license/Connect/upgrade/promotion entries removed, site-specific
   values (URLs, nonces, e-mail defaults) replaced with placeholders, WooCommerce and Facebook
   widgets dropped.
@@ -55,7 +55,7 @@ Elementor's servers. WordPress Go is not Elementor and is not endorsed by Elemen
 Elementor 4.3.5
 ---------------
 Copyright Elementor Ltd. Licensed under the GNU General Public License version 3. The
-GoWebEditor editor under web/gowebeditor/ (outside pro/) is Elementor's built front end, with
+Golementor editor under web/gowebeditor/ (outside pro/) is Elementor's built front end, with
 the alterations described in internal/server/gowebeditor.go.
 
 Prism 1.30.0

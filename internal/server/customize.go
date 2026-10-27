@@ -128,12 +128,7 @@ func (s *Server) czSanitize(ctx context.Context, t *Theme, values map[string]str
 			if !ok || spec == nil {
 				return nil, nil, fmt.Errorf("Unknown setting %q.", id)
 			}
-			var ctl *czControl
-			for i := range spec.Colors {
-				if spec.Colors[i].ID == name {
-					ctl = &spec.Colors[i]
-				}
-			}
+			ctl := spec.control(name)
 			if ctl == nil {
 				return nil, nil, fmt.Errorf("Unknown setting %q.", id)
 			}
@@ -175,6 +170,25 @@ func (s *Server) czSanitize(ctx context.Context, t *Theme, values map[string]str
 				} else {
 					delete(mods, name)
 				}
+			case "checkbox":
+				mods[name] = raw == "1" || raw == "true" || raw == "on"
+			case "number":
+				n, err := strconv.Atoi(strings.TrimSpace(raw))
+				if err != nil {
+					return nil, nil, errors.New("Invalid value.")
+				}
+				mods[name] = min(max(n, ctl.Min), ctl.Max)
+			case "text", "textarea":
+				if ctl.Sanitize != nil {
+					raw = ctl.Sanitize(raw)
+				} else {
+					raw = czTagRe.ReplaceAllString(raw, "")
+				}
+				if raw = strings.TrimSpace(raw); raw == "" {
+					delete(mods, name)
+				} else {
+					mods[name] = raw
+				}
 			}
 		}
 	}
@@ -206,6 +220,19 @@ type czControlView struct {
 	Setting, Value, DefaultValue string
 }
 
+// czCheckbox is a checkbox control's value on the screen: "1" or "0".
+func czCheckbox(mods map[string]any, ctl czControl) string {
+	if modBool(mods, ctl.ID, ctl.Default == "1") {
+		return "1"
+	}
+	return "0"
+}
+
+type czSectionView struct {
+	czSection
+	Controls []czControlView
+}
+
 type czImageView struct {
 	ID       int64
 	URL      string
@@ -222,6 +249,9 @@ type czPageData struct {
 	HasLogo                  bool
 	Pages                    []*store.Post
 	Colors                   []czControlView
+	Identity                 []czControlView // theme controls in Site Identity
+	Sections                 []*czSectionView
+	PostMessage              []string
 	MenuLocations            []czMenuLocation
 	WidgetAreas              []WidgetArea
 	CanUpload, CanSwitch     bool
@@ -322,6 +352,25 @@ func (s *Server) customizeScreen(c *gin.Context) {
 		d.Logo = s.czImage(ctx, int64(modInt(mods, "custom_logo", 0)))
 	}
 	if spec := czSpecs[t.Slug]; spec != nil {
+		sections := map[string]*czSectionView{}
+		for _, sec := range spec.Sections {
+			d.Sections = append(d.Sections, &czSectionView{czSection: sec})
+			sections[sec.ID] = d.Sections[len(d.Sections)-1]
+		}
+		for _, ctl := range spec.Controls {
+			def, val := ctl.Default, modString(mods, ctl.ID, ctl.Default)
+			if ctl.Type == "checkbox" {
+				val = czCheckbox(mods, ctl)
+			}
+			d.Values["mod:"+ctl.ID] = val
+			cv := czControlView{czControl: ctl, Setting: "mod:" + ctl.ID, Value: val, DefaultValue: def}
+			if ctl.Section == "title_tagline" {
+				d.Identity = append(d.Identity, cv)
+			} else if sec := sections[ctl.Section]; sec != nil {
+				sec.Controls = append(sec.Controls, cv)
+			}
+		}
+		d.PostMessage = spec.PostMessage
 		for _, ctl := range spec.Colors {
 			def := ctl.Default
 			switch {
@@ -343,6 +392,8 @@ func (s *Server) customizeScreen(c *gin.Context) {
 				if v := modString(mods, ctl.ID, ""); v != "" {
 					val = sanitizeHex(v)
 				}
+			case "checkbox":
+				val = czCheckbox(mods, ctl)
 			default:
 				val = modString(mods, ctl.ID, def)
 			}

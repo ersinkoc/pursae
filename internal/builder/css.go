@@ -21,7 +21,7 @@ type stylesheet struct {
 	bps    []Breakpoint
 	hashes []string
 	rules  map[string]*cssRuleSet
-	raw    []string // Stylesheet::add_raw_css (GoWebEditor Pro custom CSS), printed after the rules
+	raw    []string // Stylesheet::add_raw_css (Golementor Pro custom CSS), printed after the rules
 }
 
 func newStylesheet(bps []Breakpoint) *stylesheet {
@@ -345,7 +345,7 @@ func (s *stylesheet) String() string {
 			b.WriteString(body.String())
 		}
 	}
-	b.WriteString(strings.Join(s.raw, "\n")) // GoWebEditor Pro: raw custom CSS
+	b.WriteString(strings.Join(s.raw, "\n")) // Golementor Pro: raw custom CSS
 	return b.String()
 }
 
@@ -858,12 +858,12 @@ func (g *cssGen) renderStyles(el *Element, postID int64) {
 	scs := g.styleControls(st.all, st.byName, settings.m)
 	wrapper := ".elementor-" + strconv.FormatInt(postID, 10) + " .elementor-element.elementor-element-" + el.ID
 	g.stackEl, g.stackPostID = el, postID
-	if el.globalOf != "" { // GoWebEditor Pro: a global widget's styles live in its template's CSS
+	if el.globalOf != "" { // Golementor Pro: a global widget's styles live in its template's CSS
 		scs = nil
 	}
 	g.addStackStyleRules(scs, settings.m, []string{"{{ID}}", "{{WRAPPER}}"}, []string{el.ID, wrapper}, st.byName)
 	g.stackEl = nil
-	proElementCustomCSS(g, el, name, settings.m, wrapper) // GoWebEditor Pro: custom CSS
+	proElementCustomCSS(g, el, name, settings.m, wrapper) // Golementor Pro: custom CSS
 	for _, ch := range el.Elements {
 		if ch != nil {
 			g.renderStyles(ch, postID)
@@ -890,14 +890,14 @@ func (g *cssGen) renderDocumentStyles(kind string, settings map[string]any, rawO
 	scs := g.styleControls(st.all, st.byName, all.m)
 	g.stackEl = nil
 	g.addStackStyleRules(scs, all.m, []string{"{{WRAPPER}}"}, []string{wrapper}, st.byName)
-	proDocumentCustomCSS(g, all.m, wrapper) // GoWebEditor Pro: page / kit custom CSS
+	proDocumentCustomCSS(g, all.m, wrapper) // Golementor Pro: page / kit custom CSS
 }
 
 // elementStack returns the element's name (as used by .elementor-widget-<name>) and stack.
 func elementStack(el *Element, bps []Breakpoint) (string, *stack) {
 	switch el.ElType {
 	case "widget":
-		if el.globalOf != "" { // GoWebEditor Pro global widget: the original widget's controls
+		if el.globalOf != "" { // Golementor Pro global widget: the original widget's controls
 			return el.WidgetType, stackFor("widget:"+el.globalOf, bps)
 		}
 		return el.WidgetType, stackFor("widget:"+el.WidgetType, bps)
@@ -922,7 +922,7 @@ func postCSS(doc *Document, rc *RenderContext) (string, []string, []string) {
 
 func documentCSSKind(doc *Document) (string, string) {
 	id := strconv.FormatInt(doc.ID, 10)
-	if kind, wrapper, ok := proDocumentCSSKind(doc); ok { // GoWebEditor Pro: popups, loop items
+	if kind, wrapper, ok := proDocumentCSSKind(doc); ok { // Golementor Pro: popups, loop items
 		return kind, wrapper
 	}
 	if doc.Type == "kit" {

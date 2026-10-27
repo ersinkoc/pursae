@@ -1,6 +1,6 @@
 package server
 
-// GoWebEditor v4: the atomic form (e-form and its field widgets). Submissions arrive on the
+// Golementor v4: the atomic form (e-form and its field widgets). Submissions arrive on the
 // admin-ajax action elementor_pro_atomic_forms_send_form (Pro's Atomic_Form_Controller) and run
 // through the Pro forms back end (GWEFormSubmit in gowebeditor_pro_forms.go: validation, Collect
 // Submissions, e-mail, webhook, action log): the atomic form's settings are mapped onto the

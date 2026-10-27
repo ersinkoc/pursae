@@ -7,7 +7,7 @@ import (
 	"wpgo/internal/store"
 )
 
-// The kit is the site-wide GoWebEditor document behind Site Settings: global colors and fonts, theme
+// The kit is the site-wide Golementor document behind Site Settings: global colors and fonts, theme
 // style, layout, breakpoints and site identity. Like upstream it is a template post (type
 // elementor_library, _elementor_template_type=kit) whose id is the elementor_active_kit option; it is
 // created on first use and saved through save_builder with the kit's id as editor_post_id.

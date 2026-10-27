@@ -14,9 +14,14 @@ import (
 	"wpgo/internal/store"
 )
 
-// REST routes the GoWebEditor shell calls (namespace elementor/v1, kept for compatibility with the
+// REST routes the Golementor shell calls (namespace elementor/v1, kept for compatibility with the
 // upstream front end): kit globals, the current user's capabilities, recent posts for the site
 // navigation; the v4 (atomic) routes live in gowebeditor_v4_rest.go.
+
+// gweRESTNamespace reports whether a REST namespace belongs to Golementor (its routes are 404 while it is off).
+func gweRESTNamespace(ns string) bool {
+	return ns == "elementor/v1" || ns == "elementor-pro/v1"
+}
 
 func (s *Server) registerGoWebEditorREST() {
 	// Uploaded SVG icons render inline (Svg::get_inline_svg); the renderer asks for their markup.
@@ -77,7 +82,7 @@ func (s *Server) registerGoWebEditorREST() {
 			}
 		}
 		sort.Strings(list)
-		list = append(list, gweV4UserCaps(u)...) // GoWebEditor v4: atomic capabilities (gowebeditor_v4.go)
+		list = append(list, gweV4UserCaps(u)...) // Golementor v4: atomic capabilities (gowebeditor_v4.go)
 		list = append(list, u.Roles...)
 		c.JSON(http.StatusOK, map[string]any{"suppressedMessages": []any{}, "capabilities": list})
 	}), http.MethodPatch: editor(func(c *gin.Context, _ *restRequest) {
@@ -132,7 +137,7 @@ func (s *Server) registerGoWebEditorREST() {
 		c.JSON(http.StatusOK, map[string]any{"id": p.ID, "edit_url": s.links(c).HomeURL(gweEditURL(p.ID))})
 	})}, nil)
 
-	s.registerGoWebEditorV4REST() // GoWebEditor v4 (atomic): gowebeditor_v4_rest.go
+	s.registerGoWebEditorV4REST() // Golementor v4 (atomic): gowebeditor_v4_rest.go
 	api.register(ns, "/elementor/v1/template-library/templates", map[string]restHandler{http.MethodGet: static([]any{})}, nil)
 	api.register(ns, "/elementor/v1/favorites", map[string]restHandler{http.MethodGet: static([]any{})}, nil)
 	api.register(ns, "/elementor/v1/favorites/(?P<id>[\\w]+)", map[string]restHandler{http.MethodPost: static(map[string]any{}), http.MethodDelete: static(map[string]any{})}, nil)
@@ -142,5 +147,5 @@ func (s *Server) registerGoWebEditorREST() {
 		s.gweClearCSS()
 		c.JSON(http.StatusOK, map[string]any{"success": true})
 	})}, nil)
-	s.registerGoWebEditorProREST() // GoWebEditor Pro routes (gowebeditor_pro.go)
+	s.registerGoWebEditorProREST() // Golementor Pro routes (gowebeditor_pro.go)
 }

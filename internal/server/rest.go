@@ -267,7 +267,11 @@ func (api *restAPI) serve(c *gin.Context, route string) {
 		return
 	}
 	route = "/" + strings.Trim(route, "/")
+	builderOn := s.golementorOn()
 	for _, r := range api.routes {
+		if !builderOn && gweRESTNamespace(r.Namespace) {
+			continue
+		}
 		m := r.re.FindStringSubmatch(route)
 		if m == nil {
 			continue
@@ -365,7 +369,11 @@ func (api *restAPI) index(c *gin.Context) {
 	lb := s.links(c)
 	routes := map[string]any{}
 	nsSet := map[string]bool{}
+	builderOn := s.golementorOn()
 	for _, r := range api.routes {
+		if !builderOn && gweRESTNamespace(r.Namespace) {
+			continue
+		}
 		var methods []string
 		for m := range r.Methods {
 			methods = append(methods, m)

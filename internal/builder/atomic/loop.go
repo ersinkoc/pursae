@@ -1,6 +1,6 @@
 package atomic
 
-// GoWebEditor Pro atomic Loop (e-collection-loop): a port of upstream Pro 4.3's
+// Golementor Pro atomic Loop (e-collection-loop): a port of upstream Pro 4.3's
 // modules/collection-loop. The loop runs its query (Env.Loop.Query, the site's posts), publishes
 // the "collection-loop" render context (Has_Loop_Query, Collection_Loop::extend_loop_render_context)
 // and the layout renders its item template once per post (Has_Loop_Iteration) with alternate

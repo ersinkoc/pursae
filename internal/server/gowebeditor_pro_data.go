@@ -20,7 +20,7 @@ import (
 	"wpgo/internal/wp"
 )
 
-// GoWebEditor Pro: the site data behind dynamic tags, the posts/loop queries and the Pro theme
+// Golementor Pro: the site data behind dynamic tags, the posts/loop queries and the Pro theme
 // elements (RenderContext.Pro), plus the editor's render_tags action.
 
 // gweProData builds builder.ProData for a request.
@@ -84,7 +84,7 @@ func (s *Server) gweProData(ctx context.Context) *builder.ProData {
 			return p.ParentID
 		case "_gwe_raw_excerpt": // the manual excerpt only (posts widget trims the content otherwise)
 			return p.Excerpt
-		case "_gwe_the_content": // full-content skin for posts not built with GoWebEditor
+		case "_gwe_the_content": // full-content skin for posts not built with Golementor
 			if c == nil {
 				return ""
 			}

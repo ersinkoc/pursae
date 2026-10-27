@@ -55,7 +55,7 @@ type postRow struct {
 	Status               string
 	IsTrash              bool
 	ViewLabel            string
-	BuilderURL           string // "Edit with GoWebEditor"
+	BuilderURL           string // "Edit with Golementor"
 }
 
 type postsListData struct {
@@ -133,7 +133,7 @@ func newPagination(total, perPage, page int, base url.URL) pagination {
 func (s *Server) postsList(c *gin.Context) {
 	ctx := c.Request.Context()
 	u := currentUser(c)
-	if c.Query("action") == "elementor_new_post" { // GoWebEditor: create a draft and open the builder
+	if c.Query("action") == "elementor_new_post" && s.golementorOn() { // Golementor: create a draft and open the builder
 		s.gweNewPost(c)
 		return
 	}
@@ -254,6 +254,7 @@ func (s *Server) postsList(c *gin.Context) {
 	frontID := int64(s.settings.Int("page_on_front"))
 	postsPageID := int64(s.settings.Int("page_for_posts"))
 	privacyID := int64(s.settings.Int("wp_page_for_privacy_policy"))
+	builderOn := s.golementorOn()
 
 	for _, p := range posts {
 		r := postRow{ID: p.ID, Title: p.Title, Status: p.Status, IsTrash: p.Status == "trash",
@@ -296,8 +297,8 @@ func (s *Server) postsList(c *gin.Context) {
 		r.RestoreURL = "/wp-admin/post?post=" + itoa64(p.ID) + "&action=untrash&_wpnonce=" + s.nonce(c, "untrash-post_"+itoa64(p.ID))
 		r.DeleteURL = "/wp-admin/post?post=" + itoa64(p.ID) + "&action=delete&_wpnonce=" + s.nonce(c, "delete-post_"+itoa64(p.ID))
 		r.BuilderURL = s.gweRowAction(c, p)
-		if gweBuilt(p) {
-			r.States = append(r.States, "GoWebEditor")
+		if builderOn && gweBuilt(p) {
+			r.States = append(r.States, "Golementor")
 		}
 		if p.Status == "publish" || p.Status == "private" {
 			r.ViewURL, r.ViewLabel = lb.Permalink(p), "View"
@@ -572,6 +573,8 @@ type editData struct {
 	Formats      []string
 	PublishLabel string
 	SlugBase     string
+	SampleLink   template.HTML
+	SampleNonce  string
 	Editor       template.HTML
 	Thumbnail    template.HTML
 	BlockURL     string
@@ -679,7 +682,7 @@ func (s *Server) postEdit(c *gin.Context) {
 		c.String(http.StatusForbidden, "You cannot edit this item because it is in the Trash. Please restore it and try again.")
 		return
 	}
-	if c.Query("action") == "elementor" { // GoWebEditor
+	if c.Query("action") == "elementor" && s.golementorOn() { // Golementor
 		s.gweEditor(c, p)
 		return
 	}
@@ -750,6 +753,10 @@ func (s *Server) renderClassicEdit(c *gin.Context, p *store.Post, isNew bool) {
 			d.ViewURL = d.Permalink + previewSep(d.Permalink) + "preview=true"
 		}
 	}
+	if p.Status != "auto-draft" {
+		d.SampleLink = s.samplePermalinkHTML(c, p, p.Title, p.Slug)
+	}
+	d.SampleNonce = s.nonce(c, "samplepermalink")
 	d.SlugBase = strings.TrimSuffix(strings.Replace(lb.PermalinkTemplate(p), "%postname%", "", 1), "/")
 	d.SlugBase = strings.Replace(d.SlugBase, "%pagename%", "", 1)
 	d.Revisions, _ = s.store.Revisions(ctx, p.ID)
@@ -936,6 +943,9 @@ func (s *Server) postSave(c *gin.Context) {
 			if c.PostForm("post_status") == "pending" {
 				p.Status = "pending"
 			}
+		} else if st := c.PostForm("post_status"); st == "draft" || st == "pending" {
+			// Status › Edit on a published post can switch it back to Draft or Pending Review.
+			p.Status = st
 		}
 	}
 	if visibility == "private" && u.Can("publish_post", p) && (p.Status == "publish" || wasPublished) {
@@ -978,7 +988,7 @@ func (s *Server) postSave(c *gin.Context) {
 		msg = "10"
 	}
 	s.afterPostSave(ctx, p)
-	if target, ok := gweClassicRedirect(c, p.ID); ok { // classic editor's "Edit with GoWebEditor" on a new post
+	if target, ok := s.gweClassicRedirect(c, p.ID); ok { // classic editor's "Edit with Golementor" on a new post
 		c.Redirect(http.StatusFound, target)
 		return
 	}

@@ -5,3 +5,6 @@
  * screens look exactly like WordPress. Keep this file empty unless a WordPress Go-only feature
  * needs a rule; screen-specific additions live in assets/css/wpgo/<screen>.css.
  */
+
+/* Edit Post: the permalink line starts flush with the title box above it (core pads it 10px). */
+#titlediv #edit-slug-box { padding-left: 0; padding-right: 0; }

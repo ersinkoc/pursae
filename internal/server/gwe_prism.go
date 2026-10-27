@@ -1,6 +1,6 @@
 package server
 
-// Code Highlight: upstream loads Prism 1.23.0 from cdnjs. GoWebEditor ships Prism (MIT, pinned to
+// Code Highlight: upstream loads Prism 1.23.0 from cdnjs. Golementor ships Prism (MIT, pinned to
 // 1.30.0, the release with the DOM-clobbering fix) under web/gowebeditor/lib/prismjs: the core, the
 // autoloader with the components of every language the widget offers (and their dependencies) and
 // the normalize-whitespace, line-numbers, line-highlight, toolbar and copy-to-clipboard plugins.

@@ -13,7 +13,7 @@ import (
 	"sync"
 )
 
-// GoWebEditor v4 (atomic): the editor data captured from the upstream editor with the atomic / "Editor
+// Golementor v4 (atomic): the editor data captured from the upstream editor with the atomic / "Editor
 // V4" experiments on (e_atomic_elements, e_opt_in_v4 and the experiments they gate: classes, variables,
 // components, interactions, default styles). The files in internal/server/gowebeditor/v4/ are built by
 // scratchpad gwe-tools/gen_data_v4.py the same way gen_data.py builds the v3 set, but keep the v2
@@ -239,5 +239,5 @@ func gweV4PatchShell(h string) string {
 	return h
 }
 
-// gweV4AssetVer matches the editor's own asset URLs (GoWebEditor assets, upstream or Pro).
+// gweV4AssetVer matches the editor's own asset URLs (Golementor assets, upstream or Pro).
 var gweV4AssetVer = regexp.MustCompile(`@@(?:GWE)?ASSETS@@[^"'\s]*\?ver=(?:4\.3\.5|@@VER@@)`)

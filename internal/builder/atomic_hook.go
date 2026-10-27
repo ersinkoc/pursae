@@ -1,6 +1,6 @@
 package builder
 
-// GoWebEditor v4: atomic elements (e-heading, e-flexbox, ...) render through internal/builder/atomic
+// Golementor v4: atomic elements (e-heading, e-flexbox, ...) render through internal/builder/atomic
 // (their upstream Twig templates and the atomic props resolver). The atomic renderer hands
 // non-atomic children back to printElement.
 

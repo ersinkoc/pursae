@@ -15,7 +15,7 @@ import (
 	"wpgo/internal/store"
 )
 
-// GoWebEditor v4 (atomic / Editor V4) persistence: global classes, global variables, default
+// Golementor v4 (atomic / Editor V4) persistence: global classes, global variables, default
 // styles and components (migration 0006_atomic.sql). The REST routes in gowebeditor_v4_rest.go
 // write through these accessors; the CSS/rendering side reads through them.
 

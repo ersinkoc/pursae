@@ -1,6 +1,6 @@
 package builder
 
-// GoWebEditor Pro Taxonomy Filter widget: a port of Taxonomy_Filter::render and
+// Golementor Pro Taxonomy Filter widget: a port of Taxonomy_Filter::render and
 // Taxonomy_Filter_Trait (modules/loop-filter). The terms are those of the filtered loop's posts
 // (unless empty items show), minus terms the loop's query control leaves out; the selections
 // come from the e-filter-<loop id>-<taxonomy> query string (LoopState.Filters).

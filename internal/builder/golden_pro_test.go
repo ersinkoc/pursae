@@ -1,6 +1,6 @@
 package builder
 
-// GoWebEditor Pro golden fixtures (testdata/golden/pro-*.data.json, made in the lab with upstream
+// Golementor Pro golden fixtures (testdata/golden/pro-*.data.json, made in the lab with upstream
 // Pro active) render against the lab's sample content: testdata/golden/pro-posts.json is the
 // lab's post list (scratchpad elementor-lab/wp/wpgo-dump/make-content.php), the fixture page is
 // the "current post" and the site is the lab site.

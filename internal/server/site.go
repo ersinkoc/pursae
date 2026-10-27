@@ -138,8 +138,10 @@ func (s *Server) resolve(c *gin.Context, path string) (*siteQuery, error) {
 		return s.singular(c, q, p)
 	case v.Get("s") != "" || v.Has("s"):
 		q.Kind, q.Search = "search", strings.TrimSpace(v.Get("s"))
-		if q.SearchProps = v.Get("e_search_props"); q.SearchProps != "" && !s.gweSearchPropsOK(ctx, q.SearchProps) { // gap-loops2
-			return nil, errNotFound
+		if s.golementorOn() {
+			if q.SearchProps = v.Get("e_search_props"); q.SearchProps != "" && !s.gweSearchPropsOK(ctx, q.SearchProps) { // gap-loops2
+				return nil, errNotFound
+			}
 		}
 		return q, nil
 	case v.Get("cat") != "":
@@ -417,10 +419,10 @@ func (s *Server) renderSite(c *gin.Context, q *siteQuery) {
 		c.Header("Cache-Control", "no-cache, must-revalidate, max-age=0")
 	}
 	s.cacheTags(c, q)
-	if s.gweRenderTemplate(c, v, status) { // GoWebEditor Canvas / Full Width page templates
+	if s.gweRenderTemplate(c, v, status) { // Golementor Canvas / Full Width page templates
 		return
 	}
-	if s.gweRenderShell(c, v, status) { // GoWebEditor custom theme / theme parts
+	if s.gweRenderShell(c, v, status) { // Golementor custom theme / theme parts
 		return
 	}
 	s.renderThemeTemplate(c, v.Theme.Slug, status, "theme/"+v.Template, v)

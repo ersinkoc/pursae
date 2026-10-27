@@ -30,7 +30,7 @@ func (e *Element) UnmarshalJSON(data []byte) error {
 	e.TemplateID = toInt64(aux.TemplateID)
 	e.Settings = map[string]any{}
 	e.settingsKeys = nil
-	e.Raw = append(json.RawMessage(nil), data...) // GoWebEditor v4: atomic elements render from it
+	e.Raw = append(json.RawMessage(nil), data...) // Golementor v4: atomic elements render from it
 	raw := bytes.TrimSpace(aux.Settings)
 	if len(raw) > 0 && raw[0] == '{' {
 		if err := json.Unmarshal(raw, &e.Settings); err != nil {

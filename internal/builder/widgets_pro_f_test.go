@@ -1,6 +1,6 @@
 package builder
 
-// Fixture context for GoWebEditor Pro fork F (author box, post navigation, floating buttons,
+// Fixture context for Golementor Pro fork F (author box, post navigation, floating buttons,
 // link in bio): mirrors what the lab printed for the pro-f-* pages.
 
 import (

@@ -27,6 +27,7 @@
 - [Everyday commands](#everyday-commands)
 - [Editing theme files](#editing-theme-files)
 - [Plugins](#plugins)
+- [Golementor (page builder)](#golementor-page-builder)
 - [Production checklist](#production-checklist)
 - [Troubleshooting](#troubleshooting)
 - [What works in 0.1](#what-works-in-01)
@@ -224,6 +225,18 @@ tools/build-plugins.sh      # builds the example plugins into examples/plugins/d
 
 Rebuild the image afterwards and they appear under Plugins › Add New.
 
+## Golementor (page builder)
+
+Golementor is a built-in plugin, like Classic Editor and WPGo Cache, and it is **off on a fresh
+install**. Switch it on under Plugins › Golementor › **Activate** (or Plugins › Add Plugin ›
+Native Plugins). Until then it leaves no trace: no menu entries, "Edit with Golementor" links,
+builder routes, assets, front-end output or Hello Golementor theme.
+
+Deactivating it again hides everything. If Hello Golementor is the active theme the site is
+switched to Twenty Sixteen (the Plugins screen says so). Pages built with Golementor show the
+plain-text content saved with them while it is off; saved themes, theme parts and the builder
+data stay in the database and come back on the next activation.
+
 ## Production checklist
 
 - Put WordPress Go behind a TLS-terminating reverse proxy and set `WPGO_SITE_URL` to the
@@ -286,14 +299,16 @@ first build; make sure Docker has network access. Later builds are cached.
   preloading, autosaves, revisions, media, patterns, oEmbed proxy.
 - **Classic Editor** (built-in plugin) — TinyMCE + Quicktags, Add Media, featured image;
   default editor and per-user switching under Settings › Writing.
-- **GoWebEditor** — a visual page builder: classic and atomic (V4) elements, theme builder
+- **Golementor** — a visual page builder: classic and atomic (V4) elements, theme builder
   (headers, footers, archives, single templates), popups, forms with integrations, loops,
-  dynamic tags, saved themes, built on the Hello GoWebEditor base theme.
+  dynamic tags, saved themes, built on the Hello Golementor base theme.
 - **REST API `wp/v2`** — posts, pages, media, blocks, terms, users, comments, settings, types,
   taxonomies, statuses, themes, search, patterns, sidebars/widgets; `_fields`, `_embed`,
   pagination headers, cookie + nonce and Application Password authentication.
 - **Themes** — Twenty Sixteen, Twenty Seventeen, Twenty Twenty, Twenty Twenty-One and Hello
-  GoWebEditor with their original CSS/JS and markup.
+  Golementor with their original CSS/JS and markup, plus **Classic**: a white, minimal blog theme
+  written for WordPress Go (system fonts, automatic dark mode, list/grid/minimal layouts, optional
+  sidebar), configured in Appearance › Customize with a live preview.
 - **WPGo Cache** (built-in plugin) — in-process full-page cache with tag-based purges, crawler,
   gzip + ETag, CDN purge headers, lazy images, deferred scripts, font preloads.
 - **Plugins** — signed WebAssembly packages, granted permissions, hooks `init`, `the_content`,
@@ -301,7 +316,7 @@ first build; make sure Docker has network access. Later builds are cached.
 - **System** — job runner on the `jobs` table (multi-instance safe) with WordPress' scheduled
   events, e-mail, WXR import/export.
 
-Not included yet: WooCommerce and Facebook widgets for GoWebEditor.
+Not included yet: WooCommerce and Facebook widgets for Golementor.
 
 ## Project layout
 
@@ -313,7 +328,7 @@ internal/store      data access (pgx)
 internal/server     routes, admin screens, REST API, editors, themes, cron, mail glue
 internal/cache      WPGo Cache page-cache engine
 internal/plugins    Wasm plugin runtime, hooks, permissions, signed packages
-internal/builder    GoWebEditor document model, renderer and CSS engine
+internal/builder    Golementor document model, renderer and CSS engine
 internal/mail       wp_mail(): SMTP or .eml files
 internal/links      permalinks and URL builders
 internal/caps       capabilities and meta-capability mapping
@@ -327,6 +342,6 @@ web/wp-includes     vendored core CSS/JS (block library, dashicons, admin bar, j
 ## License
 
 GPL-2.0-or-later. The bundled themes and the vendored WordPress CSS/JS are GPL-licensed by the
-WordPress contributors. GoWebEditor's editor UI is GPL-3.0 licensed third-party code, so builds
+WordPress contributors. Golementor's editor UI is GPL-3.0 licensed third-party code, so builds
 that include it are distributed under GPL-3.0. "WordPress" is a trademark of its owner;
 WordPress Go is not affiliated with it. Third-party attributions are in [NOTICE](NOTICE).

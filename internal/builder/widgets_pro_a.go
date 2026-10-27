@@ -1,6 +1,6 @@
 package builder
 
-// GoWebEditor Pro widgets (group A): blockquote, flip-box, call-to-action, price-list,
+// Golementor Pro widgets (group A): blockquote, flip-box, call-to-action, price-list,
 // price-table, countdown, animated-headline, progress-tracker, code-highlight and lottie. Ports of
 // the render() methods of upstream Pro 4.3.0's modules/<name>/widgets/<name>.php.
 
@@ -20,7 +20,7 @@ func init() {
 	registerWidget("countdown", &widgetDef{render: proARenderCountdown, styles: static("widget-countdown")})
 	registerWidget("animated-headline", &widgetDef{render: proARenderAnimatedHeadline, styles: static("widget-animated-headline")})
 	registerWidget("progress-tracker", &widgetDef{render: proARenderProgressTracker, styles: static("widget-progress-tracker")})
-	// Code Highlight: upstream loads Prism from a CDN; GoWebEditor never loads external scripts, so
+	// Code Highlight: upstream loads Prism from a CDN; Golementor never loads external scripts, so
 	// the handles are declared (asset parity) but nothing is printed for them.
 	registerWidget("code-highlight", &widgetDef{render: proARenderCodeHighlight, styles: static("widget-code-highlight")})
 	registerWidget("lottie", &widgetDef{render: proARenderLottie, styles: static("widget-lottie", "e-lottie"), scripts: []string{"lottie"}})

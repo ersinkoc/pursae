@@ -60,6 +60,10 @@
 				{{if .Colors}}<li id="accordion-section-colors" class="accordion-section control-section control-section-default" data-section="colors">
 					<h3 class="accordion-section-title" tabindex="0">Colors<span class="screen-reader-text">Press return or enter to open this section</span></h3>
 				</li>{{end}}
+				{{range .Sections}}<li id="accordion-section-{{.ID}}" class="accordion-section control-section control-section-default" data-section="{{.ID}}">
+					<h3 class="accordion-section-title" tabindex="0">{{.Title}}<span class="screen-reader-text">Press return or enter to open this section</span></h3>
+				</li>
+				{{end}}
 				<li id="accordion-section-nav_menus" class="accordion-section control-section control-panel-nav_menus" data-section="nav_menus">
 					<h3 class="accordion-section-title" tabindex="0">Menus<span class="screen-reader-text">Press return or enter to open this panel</span></h3>
 				</li>
@@ -87,6 +91,8 @@
 					<label for="_customize-input-blogdescription" class="customize-control-title">Tagline</label>
 					<input id="_customize-input-blogdescription" type="text" value="{{index .Values "blogdescription"}}" data-setting="blogdescription">
 				</li>
+				{{range .Identity}}{{template "customize-control" .}}
+				{{end}}
 				<li id="customize-control-site_icon" class="customize-control customize-control-media customize-control-site_icon">
 					{{template "customize-image" (dict "Setting" "site_icon" "Label" "Site Icon" "Image" .SiteIcon "Select" "Select site icon" "Change" "Change site icon" "CanUpload" .CanUpload "Description" "Site Icons are what you see in browser tabs, bookmark bars, and within the WordPress mobile apps. It should be square and at least 512 by 512 pixels.")}}
 				</li>
@@ -94,26 +100,17 @@
 
 			{{if .Colors}}<ul id="sub-accordion-section-colors" class="customize-pane-child accordion-section-content accordion-section control-section control-section-default">
 				{{template "customize-section-title" "Colors"}}
-				{{range .Colors}}<li id="customize-control-{{.ID}}" class="customize-control customize-control-{{if eq .Type "hue"}}color{{else}}{{.Type}}{{end}}" data-control="{{.Setting}}"{{if .Hidden}} style="display:none"{{end}}>
-					{{if eq .Type "select"}}
-					<label for="_customize-input-{{.ID}}" class="customize-control-title">{{.Label}}</label>
-					<select id="_customize-input-{{.ID}}" data-setting="{{.Setting}}">{{$v := .Value}}{{range .Choices}}<option value="{{index . 0}}"{{if eq (index . 0) $v}} selected="selected"{{end}}>{{index . 1}}</option>{{end}}</select>
-					{{else if eq .Type "radio"}}
-					<span class="customize-control-title">{{.Label}}</span>
-					{{$v := .Value}}{{$id := .ID}}{{$set := .Setting}}{{range .Choices}}<span class="customize-inside-control-row">
-						<input id="_customize-input-{{$id}}-radio-{{index . 0}}" type="radio" value="{{index . 0}}" name="_customize-radio-{{$id}}" data-setting="{{$set}}"{{if eq (index . 0) $v}} checked="checked"{{end}}>
-						<label for="_customize-input-{{$id}}-radio-{{index . 0}}">{{index . 1}}</label>
-					</span>{{end}}
-					{{else if eq .Type "hue"}}
-					<label><span class="customize-control-title">{{.Label}}</span>{{if .Description}}<span class="description customize-control-description">{{.Description}}</span>{{end}}
-					<div class="customize-control-content"><input class="color-picker-hue" type="text" data-type="hue" value="{{.Value}}" data-setting="{{.Setting}}"></div></label>
-					{{else}}
-					<span class="customize-control-title">{{.Label}}</span>{{if .Description}}<span class="description customize-control-description">{{.Description}}</span>{{end}}
-					<div class="customize-control-content"><input class="color-picker-hex" type="text" maxlength="7" placeholder="Hex Value" value="{{.Value}}" data-default-color="{{.DefaultValue}}" data-setting="{{.Setting}}"></div>
-					{{end}}
-				</li>
+				{{range .Colors}}{{template "customize-control" .}}
 				{{end}}
 			</ul>{{end}}
+
+			{{range .Sections}}<ul id="sub-accordion-section-{{.ID}}" class="customize-pane-child accordion-section-content accordion-section control-section control-section-default">
+				{{template "customize-section-title" .Title}}
+				{{if .Description}}<li class="customize-section-description-container"><p class="description customize-section-description">{{.Description}}</p></li>{{end}}
+				{{range .Controls}}{{template "customize-control" .}}
+				{{end}}
+			</ul>
+			{{end}}
 
 			<ul id="sub-accordion-section-nav_menus" class="customize-pane-child accordion-section-content accordion-section control-section control-section-default">
 				{{template "customize-section-title" "Menus"}}
@@ -191,9 +188,10 @@ var wpgoCustomize = ( function( $ ) {
 		home = {{.HomeURL}},
 		previewPath = {{.PreviewURL}},
 		param = 'customize_changeset_uuid',
+		postMessage = {{json .PostMessage}} || [],
 		$overlay = $( '.wp-full-overlay' ),
 		$save = $( '#save' ),
-		timer, frames = 0, request;
+		timer, frames = 0, request, reload = false;
 
 	function dirty() {
 		var out = {};
@@ -211,6 +209,8 @@ var wpgoCustomize = ( function( $ ) {
 			var $el = $( this );
 			if ( $el.is( ':radio' ) ) {
 				$el.prop( 'checked', $el.val() === value );
+			} else if ( $el.is( ':checkbox' ) ) {
+				$el.prop( 'checked', '1' === value );
 			} else if ( $el.hasClass( 'color-picker-hex' ) && $el.data( 'wpWpColorPicker' ) ) {
 				if ( $el.val() !== value ) { $el.wpColorPicker( 'color', value ); }
 			} else if ( $el.val() !== value ) {
@@ -230,6 +230,17 @@ var wpgoCustomize = ( function( $ ) {
 		settings[ id ] = value;
 		syncControl( id, value );
 		( listeners[ id ] || [] ).forEach( function( fn ) { fn( value ); } );
+		if ( -1 !== postMessage.indexOf( id ) ) {
+			// transport postMessage: the theme's preview script applies the value in place; the changeset
+			// still follows so the next page load renders it.
+			$( '#customize-preview iframe' ).each( function() {
+				if ( this.contentWindow ) {
+					this.contentWindow.postMessage( { wpgoCustomize: 'setting', id: id, value: value }, window.location.origin );
+				}
+			} );
+		} else {
+			reload = true;
+		}
 		changed();
 	}
 	function get( id ) { return settings[ id ]; }
@@ -283,7 +294,10 @@ var wpgoCustomize = ( function( $ ) {
 		if ( request ) { request.abort(); }
 		request = $.post( '/wp-admin/customize', { action: 'preview', uuid: uuid, _wpnonce: nonce, customized: JSON.stringify( dirty() ) } )
 			.done( function( r ) {
-				if ( r && r.success ) { notify( '' ); loadFrame(); }
+				if ( r && r.success ) {
+					notify( '' );
+					if ( reload ) { reload = false; loadFrame(); }
+				}
 			} )
 			.fail( function( x ) {
 				if ( 'abort' !== x.statusText ) {
@@ -343,8 +357,11 @@ var wpgoCustomize = ( function( $ ) {
 		$( document ).on( 'keydown', function( e ) { if ( 27 === e.which && $overlay.hasClass( 'section-open' ) ) { closeSections(); } } );
 
 		// Plain controls.
-		$( 'input[type="text"][data-setting]:not(.color-picker-hex,.color-picker-hue), textarea[data-setting]' ).on( 'input', function() {
+		$( 'input[type="text"][data-setting]:not(.color-picker-hex,.color-picker-hue), input[type="number"][data-setting], textarea[data-setting]' ).on( 'input', function() {
 			set( $( this ).data( 'setting' ), $( this ).val() );
+		} );
+		$( 'input[type="checkbox"][data-setting]' ).on( 'change', function() {
+			set( $( this ).data( 'setting' ), this.checked ? '1' : '0' );
 		} );
 		$( 'select[data-setting], input[type="radio"][data-setting]' ).on( 'change', function() {
 			set( $( this ).data( 'setting' ), $( this ).val() );
@@ -463,6 +480,39 @@ var wpgoCustomize = ( function( $ ) {
 </body>
 </html>
 {{end}}
+
+{{define "customize-control"}}<li id="customize-control-{{.ID}}" class="customize-control customize-control-{{if eq .Type "hue"}}color{{else}}{{.Type}}{{end}}" data-control="{{.Setting}}"{{if .Hidden}} style="display:none"{{end}}>
+					{{if eq .Type "select"}}
+					<label for="_customize-input-{{.ID}}" class="customize-control-title">{{.Label}}</label>{{if .Description}}<span class="description customize-control-description">{{.Description}}</span>{{end}}
+					<select id="_customize-input-{{.ID}}" data-setting="{{.Setting}}">{{$v := .Value}}{{range .Choices}}<option value="{{index . 0}}"{{if eq (index . 0) $v}} selected="selected"{{end}}>{{index . 1}}</option>{{end}}</select>
+					{{else if eq .Type "radio"}}
+					<span class="customize-control-title">{{.Label}}</span>{{if .Description}}<span class="description customize-control-description">{{.Description}}</span>{{end}}
+					{{$v := .Value}}{{$id := .ID}}{{$set := .Setting}}{{range .Choices}}<span class="customize-inside-control-row">
+						<input id="_customize-input-{{$id}}-radio-{{index . 0}}" type="radio" value="{{index . 0}}" name="_customize-radio-{{$id}}" data-setting="{{$set}}"{{if eq (index . 0) $v}} checked="checked"{{end}}>
+						<label for="_customize-input-{{$id}}-radio-{{index . 0}}">{{index . 1}}</label>
+					</span>{{end}}
+					{{else if eq .Type "checkbox"}}
+					<span class="customize-inside-control-row">
+						<input id="_customize-input-{{.ID}}" type="checkbox" value="1" data-setting="{{.Setting}}"{{if eq .Value "1"}} checked="checked"{{end}}>
+						<label for="_customize-input-{{.ID}}">{{.Label}}</label>{{if .Description}}<span class="description customize-control-description">{{.Description}}</span>{{end}}
+					</span>
+					{{else if eq .Type "number"}}
+					<label for="_customize-input-{{.ID}}" class="customize-control-title">{{.Label}}</label>{{if .Description}}<span class="description customize-control-description">{{.Description}}</span>{{end}}
+					<input id="_customize-input-{{.ID}}" type="number" min="{{.Min}}" max="{{.Max}}" step="1" value="{{.Value}}" data-setting="{{.Setting}}">
+					{{else if eq .Type "text"}}
+					<label for="_customize-input-{{.ID}}" class="customize-control-title">{{.Label}}</label>{{if .Description}}<span class="description customize-control-description">{{.Description}}</span>{{end}}
+					<input id="_customize-input-{{.ID}}" type="text" value="{{.Value}}" data-setting="{{.Setting}}">
+					{{else if eq .Type "textarea"}}
+					<label for="_customize-input-{{.ID}}" class="customize-control-title">{{.Label}}</label>{{if .Description}}<span class="description customize-control-description">{{.Description}}</span>{{end}}
+					<textarea id="_customize-input-{{.ID}}" rows="4" data-setting="{{.Setting}}">{{.Value}}</textarea>
+					{{else if eq .Type "hue"}}
+					<label><span class="customize-control-title">{{.Label}}</span>{{if .Description}}<span class="description customize-control-description">{{.Description}}</span>{{end}}
+					<div class="customize-control-content"><input class="color-picker-hue" type="text" data-type="hue" value="{{.Value}}" data-setting="{{.Setting}}"></div></label>
+					{{else}}
+					<span class="customize-control-title">{{.Label}}</span>{{if .Description}}<span class="description customize-control-description">{{.Description}}</span>{{end}}
+					<div class="customize-control-content"><input class="color-picker-hex" type="text" maxlength="7" placeholder="Hex Value" value="{{.Value}}" data-default-color="{{.DefaultValue}}" data-setting="{{.Setting}}"></div>
+					{{end}}
+				</li>{{end}}
 
 {{define "customize-section-title"}}<li class="customize-section-description-container section-meta no-drag">
 	<div class="customize-section-title">

@@ -14,7 +14,7 @@ import (
 	"wpgo/internal/store"
 )
 
-// REST routes of GoWebEditor's v4 (atomic) features, namespace elementor/v1 like upstream:
+// REST routes of Golementor's v4 (atomic) features, namespace elementor/v1 like upstream:
 // global classes, global variables, components, kit element defaults, default styles and the
 // design-system stylesheet. Shapes follow upstream 4.3.5's controllers (Response_Builder wraps
 // payloads as {"data":...,"meta":...}; Error_Builder errors carry data.status and data.meta).

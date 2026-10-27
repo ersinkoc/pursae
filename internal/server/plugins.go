@@ -292,6 +292,12 @@ func (s *Server) installedPlugins(c *gin.Context) []pluginRow {
 		{Slug: "wpgo-cache", Name: "WPGo Cache", Version: "1.0.0", Native: true, Active: s.settings.Bool("wpgo_cache_enabled"),
 			Description: "Full-page cache with tag-based purging, a crawler and page optimizations. Works behind nginx, OpenLiteSpeed, Apache or on its own.",
 			Author:      "WordPress Go", SettingsURL: "/wp-admin/admin?page=wpgo-cache"},
+		{Slug: golementorSlug, Name: "Golementor", Version: Version, Native: true, Active: s.golementorOn(),
+			Description: "Visual drag-and-drop page builder and Theme Builder (headers, footers, single and archive templates), with Hello Golementor, the blank theme to build them on. While it is off, none of it is part of the site.",
+			Author:      "WordPress Go"},
+	}
+	if rows[2].Active {
+		rows[2].SettingsURL = "/wp-admin/gowebeditor-theme-builder"
 	}
 	for i := range rows {
 		rows[i].ActivateURL, rows[i].DeactivateURL = n("activate", rows[i].Slug), n("deactivate", rows[i].Slug)
@@ -391,6 +397,10 @@ func (s *Server) pluginsScreen(c *gin.Context) {
 		notices = append(notices, notice{Type: "success", Message: "Plugin activated.", Dismissible: true})
 	case c.Query("deactivate") == "true":
 		notices = append(notices, notice{Type: "success", Message: "Plugin deactivated.", Dismissible: true})
+		if c.Query("gwe_theme") == "reset" { // Golementor: Hello Golementor was the active theme
+			notices = append(notices, notice{Type: "warning", Message: template.HTML("Hello Golementor belongs to Golementor, so the site was switched to <strong>" +
+				template.HTMLEscapeString(s.activeTheme().Name) + "</strong>. Your saved themes and built pages are kept; they come back when you activate Golementor."), Dismissible: true})
+		}
 	case c.Query("deleted") == "true":
 		notices = append(notices, notice{Type: "success", Message: "The selected plugin has been deleted.", Dismissible: true})
 	case c.Query("installed") != "":
@@ -418,6 +428,25 @@ func (s *Server) pluginAction(c *gin.Context, action, slug string) {
 		_ = s.settings.Set(c, map[string]any{"wpgo_cache_enabled": action == "activate"})
 		s.configureCache()
 		c.Redirect(http.StatusFound, "/wp-admin/plugins?"+action+"=true")
+		return
+	case golementorSlug:
+		q := action + "=true"
+		if action == "activate" {
+			if err := s.golementorActivate(c); err != nil {
+				fail(err)
+				return
+			}
+		} else {
+			switched, err := s.golementorDeactivate(c)
+			if err != nil {
+				fail(err)
+				return
+			}
+			if switched {
+				q += "&gwe_theme=reset"
+			}
+		}
+		c.Redirect(http.StatusFound, "/wp-admin/plugins?"+q)
 		return
 	}
 	ctx := c.Request.Context()
@@ -563,7 +592,7 @@ func (s *Server) pluginInstall(c *gin.Context) {
 	d := pluginInstallData{Tab: c.DefaultQuery("tab", "featured"), Search: strings.TrimSpace(c.Query("s")), UploadNonce: s.nonce(c, "plugin-upload")}
 	installed := map[string]bool{}
 	var native []marketItem
-	icons := map[string][2]string{"classic-editor": {"dashicons-edit-page", "blue"}, "wpgo-cache": {"dashicons-performance", "green"}}
+	icons := map[string][2]string{"classic-editor": {"dashicons-edit-page", "blue"}, "wpgo-cache": {"dashicons-performance", "green"}, golementorSlug: {"dashicons-layout", "purple"}}
 	for _, r := range s.installedPlugins(c) {
 		installed[r.Slug] = true
 		if r.Native {
@@ -572,10 +601,6 @@ func (s *Server) pluginInstall(c *gin.Context) {
 				Native: true, Active: r.Active, SettingsURL: r.SettingsURL, ActivateURL: r.ActivateURL, Icon: ic[0], IconColor: ic[1], NativeKind: "Built in to WordPress Go"})
 		}
 	}
-	// GoWebEditor ships with the core and cannot be switched off.
-	native = append(native, marketItem{Slug: "gowebeditor", Name: "GoWebEditor", Version: Version, Author: "WordPress Go",
-		Description: "Visual drag-and-drop page builder and Theme Builder (headers, footers, single and archive templates).",
-		Native:      true, Active: true, SettingsURL: "/wp-admin/gowebeditor-theme-builder", Icon: "dashicons-layout", IconColor: "purple", NativeKind: "Part of the core"})
 	var featured []marketItem
 	for _, path := range s.plugins.market {
 		pkg, err := plugins.LoadPackageFile(path, nil, false)

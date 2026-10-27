@@ -23,11 +23,11 @@ import (
 	"wpgo/internal/builder"
 )
 
-// GoWebEditor Pro form integrations (Actions After Submit): ports of upstream Pro 4.3.0's
+// Golementor Pro form integrations (Actions After Submit): ports of upstream Pro 4.3.0's
 // Mailchimp, Drip, ActiveCampaign, GetResponse, ConvertKit, MailerLite, Slack and Discord actions
 // and their handlers (modules/forms/actions, modules/forms/classes/*-handler.php), the editor's
 // forms_panel_action_data requests that fill the list / group / field-mapping controls, and the
-// global API keys under GoWebEditor › Settings › Integrations.
+// global API keys under Golementor › Settings › Integrations.
 //
 // Outbound requests only go to each service's official API host over HTTPS (gweOutboundDo checks
 // the host before connecting), never follow redirects and time out. Tests swap the transport
@@ -98,7 +98,7 @@ func gweOutboundDo(ctx context.Context, method, raw string, header http.Header, 
 		req.Header[k] = v
 	}
 	if req.Header.Get("User-Agent") == "" {
-		req.Header.Set("User-Agent", "GoWebEditor Forms")
+		req.Header.Set("User-Agent", "Golementor Forms")
 	}
 	rt := gweOutboundTransport
 	if rt == nil {
@@ -1056,7 +1056,7 @@ func (s *Server) gweSlackRun(ctx context.Context, rec *gweFormRecord) error {
 		att["fields"] = fields
 	}
 	if rec.setting("slack_add_ts") == "yes" {
-		att["footer"] = "Powered by GoWebEditor"
+		att["footer"] = "Powered by Golementor"
 		att["ts"] = time.Now().Unix()
 	}
 	data["attachments"] = []any{att}
@@ -1095,7 +1095,7 @@ func (s *Server) gweDiscordRun(ctx context.Context, rec *gweFormRecord) error {
 	embed := map[string]any{
 		"title":       or("discord_title", "A new Submission"),
 		"description": or("discord_content", "A new Form Submission has been received"),
-		"author":      map[string]any{"name": or("discord_username", "GoWebEditor Forms"), "url": page, "icon_url": icon},
+		"author":      map[string]any{"name": or("discord_username", "Golementor Forms"), "url": page, "icon_url": icon},
 		"url":         page, "color": color,
 	}
 	if rec.setting("discord_form_data") == "yes" {
@@ -1107,7 +1107,7 @@ func (s *Server) gweDiscordRun(ctx context.Context, rec *gweFormRecord) error {
 	}
 	if rec.setting("discord_ts") == "yes" {
 		embed["timestamp"] = time.Now().UTC().Format("2006-01-02T15:04:05-0700")
-		embed["footer"] = map[string]any{"text": "Powered by GoWebEditor"}
+		embed["footer"] = map[string]any{"text": "Powered by Golementor"}
 	}
 	b, _ := json.Marshal(map[string]any{"embeds": []any{embed}})
 	res, err := gweOutboundDo(ctx, http.MethodPost, hook, http.Header{"Content-Type": {"application/json; charset=utf-8"}}, b,
@@ -1120,10 +1120,10 @@ func (s *Server) gweDiscordRun(ctx context.Context, rec *gweFormRecord) error {
 
 // --- editor widgets config --------------------------------------------------------------------------
 
-// gweIntegrationsSettingsURL is GoWebEditor › Settings › Integrations.
+// gweIntegrationsSettingsURL is Golementor › Settings › Integrations.
 const gweIntegrationsSettingsURL = "/wp-admin/gowebeditor-pro?tab=settings#integrations"
 
-// gweIntegrationsWidgetsConfig points the form and payment widgets' notices at GoWebEditor ›
+// gweIntegrationsWidgetsConfig points the form and payment widgets' notices at Golementor ›
 // Settings and turns each "API key" alert into upstream's info / warning variant depending on
 // whether the global key is set.
 func (s *Server) gweIntegrationsWidgetsConfig(c *gin.Context, cfg []byte) []byte {
@@ -1185,7 +1185,7 @@ func (s *Server) gweIntegrationsWidgetsConfig(c *gin.Context, cfg []byte) []byte
 	return b
 }
 
-// --- GoWebEditor › Settings › Integrations ------------------------------------------------------------
+// --- Golementor › Settings › Integrations ------------------------------------------------------------
 
 // gweSecretSetting is one API key field of the Integrations settings.
 type gweSecretSetting struct {
@@ -1230,7 +1230,7 @@ func gweMaskSecret(v string) string {
 	return strings.Repeat("•", 12) + tail
 }
 
-// gweIntegrationsSettingsSections renders the Integrations and Fonts sections of GoWebEditor ›
+// gweIntegrationsSettingsSections renders the Integrations and Fonts sections of Golementor ›
 // Settings (inside its form). Stored keys are never printed: the inputs show a mask, leaving it
 // untouched keeps the key, clearing the input removes it.
 func (s *Server) gweIntegrationsSettingsSections(c *gin.Context) string {
@@ -1284,7 +1284,7 @@ func (s *Server) gweIntegrationsSettingsSections(c *gin.Context) string {
 	return b.String()
 }
 
-// gweIntegrationsSaveSettings adds the Integrations and Fonts fields to GoWebEditor › Settings' save.
+// gweIntegrationsSaveSettings adds the Integrations and Fonts fields to Golementor › Settings' save.
 func (s *Server) gweIntegrationsSaveSettings(c *gin.Context, vals map[string]any) {
 	for _, sec := range gweIntegrationSettingSections {
 		for _, f := range sec.Fields {

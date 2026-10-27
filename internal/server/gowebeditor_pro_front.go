@@ -16,7 +16,7 @@ import (
 	"wpgo/internal/store"
 )
 
-// GoWebEditor Pro front end: Pro's stylesheets and scripts (frontend.min.js, elements-handlers,
+// Golementor Pro front end: Pro's stylesheets and scripts (frontend.min.js, elements-handlers,
 // the widget styles, sticky/motion/popup/transitions assets), the Pro frontend config, the popups
 // printed in the footer and the custom code snippets.
 
@@ -27,7 +27,7 @@ var gweProStyleFiles = map[string]string{
 	"pro-editor-preview": "css/preview.min.css", "elementor-pro-css": "css/editor.min.css",
 }
 
-// gweProCoreStyles are style handles Pro widgets add that live in GoWebEditor's core assets.
+// gweProCoreStyles are style handles Pro widgets add that live in Golementor's core assets.
 var gweProCoreStyles = map[string]string{"flatpickr": "lib/flatpickr/flatpickr.min.css"}
 
 // gweProScriptFiles maps Pro script handles to files (under pro/ unless absolute).
@@ -36,7 +36,7 @@ var gweProScriptFiles = map[string]string{
 	"lottie": "lib/lottie/lottie.min.js", "instant-page": "lib/instant-page/instant-page.min.js", "page-transitions": "js/page-transitions.min.js",
 	"flatpickr": "/wp-content/plugins/gowebeditor/assets/lib/flatpickr/flatpickr.min.js",
 	"elementor-pro-collection-loop-pagination-handler": "js/collection-loop-pagination-handler.min.js",
-	// reCAPTCHA (only printed when the site has keys under GoWebEditor › Settings › Integrations)
+	// reCAPTCHA (only printed when the site has keys under Golementor › Settings › Integrations)
 	"elementor-recaptcha-api":    "https://www.google.com/recaptcha/api.js?render=explicit",
 	"elementor-recaptcha_v3-api": "https://www.google.com/recaptcha/api.js?render=explicit",
 }
@@ -45,7 +45,7 @@ var gweProScriptFiles = map[string]string{
 var gweProScriptOrder = []string{"smartmenus", "lottie", "flatpickr", "elementor-recaptcha-api", "elementor-recaptcha_v3-api", "instant-page",
 	"page-transitions", "e-sticky", "elementor-sticky"}
 
-// gweProStyleHref resolves a Pro style handle to a path under the GoWebEditor assets; "" = not Pro's.
+// gweProStyleHref resolves a Pro style handle to a path under the Golementor assets; "" = not Pro's.
 func (s *Server) gweProStyleHref(handle string) string {
 	if rel, ok := gweProCoreStyles[handle]; ok {
 		return rel
@@ -141,7 +141,7 @@ func (s *Server) gweProFooter(c *gin.Context, results []gweRendered, preview boo
 	cfg["nonce"] = s.nonce(c, "elementor-pro-frontend")
 	cfg["popup"] = map[string]any{"hasPopUps": len(popups) > 0 || preview}
 	sb.WriteString("<script id=\"elementor-pro-frontend-js-before\">\nvar ElementorProFrontendConfig = " + s.gweFill(c, gweJSON(cfg)) + ";\n</script>\n")
-	// Code Highlight's handler calls Prism, which upstream loads from a CDN; GoWebEditor loads no
+	// Code Highlight's handler calls Prism, which upstream loads from a CDN; Golementor loads no
 	// third-party scripts, so the code shows unhighlighted.
 	sb.WriteString("<script id=\"gowebeditor-prism-shim\">window.Prism = window.Prism || { highlightAllUnder: function() {}, highlightElement: function() {} };</script>\n")
 	sb.WriteString(gweScript("elementor-pro-frontend", assets+"pro/js/frontend.min.js"+ver))
@@ -326,7 +326,7 @@ func (s *Server) gweProSnippets(c *gin.Context, location string) string {
 		if code == "" {
 			code = p.Content
 		}
-		sb.WriteString("<!-- GoWebEditor custom code: " + html.EscapeString(p.Title) + " -->\n" + code + "\n")
+		sb.WriteString("<!-- Golementor custom code: " + html.EscapeString(p.Title) + " -->\n" + code + "\n")
 	}
 	return sb.String()
 }
@@ -428,9 +428,9 @@ func (s *Server) gweProFrontScripts(c *gin.Context, results []gweRendered, previ
 	}
 }
 
-// gweProRecordPopups renders the page's popups and records them with the page's GoWebEditor
+// gweProRecordPopups renders the page's popups and records them with the page's Golementor
 // documents, so wp_head and wp_footer print their CSS files, widget styles and scripts (and the
-// frontend stack on pages that are not built with GoWebEditor).
+// frontend stack on pages that are not built with Golementor).
 func (s *Server) gweProRecordPopups(c *gin.Context) {
 	if c == nil || gwePreviewing(c) {
 		return

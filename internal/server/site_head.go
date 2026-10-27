@@ -46,7 +46,7 @@ func (s *Server) wpHead(c *gin.Context, q *siteQuery, lb *links.Builder, adminBa
 	sb.WriteString("<style id='wp-block-library-theme-inline-css'>\n" + s.webFile("wp-includes/css/dist/block-library/theme.min.css") + "\n</style>\n")
 	sb.WriteString("<style id='classic-theme-styles-inline-css'>\n" + s.webFile("wp-includes/css/classic-themes.min.css") + "\n</style>\n")
 	sb.WriteString("<style id='global-styles-inline-css'>\n" + s.webFile("wp-includes/css/global-styles-classic.css") + "\n</style>\n")
-	if v.GWE != nil { // GoWebEditor theme parts: Hello GoWebEditor's stylesheet instead of the theme's own assets
+	if v.GWE != nil { // Golementor theme parts: Hello Golementor's stylesheet instead of the theme's own assets
 		sb.WriteString(s.helloHead(c, v))
 	} else if v.Theme.Head != nil {
 		sb.WriteString(v.Theme.Head(s, c, v))
@@ -61,7 +61,7 @@ func (s *Server) wpHead(c *gin.Context, q *siteQuery, lb *links.Builder, adminBa
 		}
 		fmt.Fprintf(&sb, "<link rel='shortlink' href='%s' />\n", html.EscapeString(lb.HomeURL(short+itoa64(q.Post.ID))))
 	}
-	sb.WriteString(string(s.gweHead(c))) // GoWebEditor frontend styles
+	sb.WriteString(string(s.gweHead(c))) // Golementor frontend styles
 	sb.WriteString(customizeHead(v))     // custom background, site icon, Additional CSS
 	return template.HTML(sb.String())
 }
@@ -76,7 +76,7 @@ func (s *Server) wpFooter(c *gin.Context, q *siteQuery, lb *links.Builder, admin
 		sb.WriteString("<script src=\"/wp-includes/js/hoverintent-js.min.js?ver=2.2.1\" id=\"hoverintent-js-js\"></script>\n") // admin-bar.js dependency
 		sb.WriteString("<script src=\"/wp-includes/js/admin-bar.min.js?ver=" + Version + "\" id=\"admin-bar-js\"></script>\n")
 	}
-	sb.WriteString(string(s.gweFooter(c))) // GoWebEditor frontend scripts
+	sb.WriteString(string(s.gweFooter(c))) // Golementor frontend scripts
 	return template.HTML(sb.String())
 }
 

@@ -1,6 +1,6 @@
 package server
 
-// GoWebEditor Pro query widgets (posts, portfolio, loop grid / carousel, taxonomy filter, search):
+// Golementor Pro query widgets (posts, portfolio, loop grid / carousel, taxonomy filter, search):
 // the WP_Query behind Pro's query control (builder/loop_query.go builds the PostQuery) and the
 // per-request loop state (avoid list, loop filter selections from the query string).
 
@@ -536,7 +536,7 @@ func (s *Server) gweLoopPreview(c *gin.Context, r *restRequest) {
 // frontend handlers it depends on).
 func init() { gweProScriptOrder = append(gweProScriptOrder, builder.AtomicLoopPaginationScript) }
 
-// gweLoopItemsScreen is GoWebEditor Pro › Loop Items: the loop item templates (the Theme
+// gweLoopItemsScreen is Golementor Pro › Loop Items: the loop item templates (the Theme
 // Builder's "Loop Items" type) the Loop Grid, Loop Carousel and Search widgets render.
 func (s *Server) gweLoopItemsScreen(c *gin.Context) string {
 	newURL := "/wp-admin/edit?action=elementor_new_post&post_type=" + gweLibrary + "&template_type=loop-item&_wpnonce=" + s.nonce(c, "elementor_action_new_post")
@@ -547,7 +547,7 @@ func (s *Server) gweLoopItemsScreen(c *gin.Context) string {
 	list := s.gweProLibraryPosts(c, "loop-item")
 	for _, p := range list {
 		b.WriteString(`<tr><td><strong><a class="row-title" href="` + esc(gweEditURL(p.ID)) + `">` + esc(p.Title) + `</a></strong><div class="row-actions"><a href="` +
-			esc(gweEditURL(p.ID)) + `">Edit with GoWebEditor</a></div></td><td>` + esc(gweStatusLabels[p.Status]) + `</td><td>` +
+			esc(gweEditURL(p.ID)) + `">Edit with Golementor</a></div></td><td>` + esc(gweStatusLabels[p.Status]) + `</td><td>` +
 			esc(wp.FormatDate(p.ModifiedAt.In(s.loc()), "Y/m/d g:i a")) + `</td></tr>`)
 	}
 	if len(list) == 0 {

@@ -272,7 +272,7 @@ func jsonRoundTrip(v any) any {
 
 // registerThemeWidget adds a Site widget to the panel list, the schema and the renderer.
 func registerThemeWidget(w *ThemeWidget, def *widgetDef) {
-	if proSupersedes[w.Name] { // GoWebEditor Pro ships the full widget (widgets_pro_*.go)
+	if proSupersedes[w.Name] { // Golementor Pro ships the full widget (widgets_pro_*.go)
 		return
 	}
 	if len(w.Categories) == 0 {

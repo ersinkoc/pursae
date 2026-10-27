@@ -71,7 +71,11 @@ func New(ctx context.Context, cfg config.Config, pool *pgxpool.Pool) (*Server, e
 		auth:     auth.NewManager(pool, secret),
 		web:      overlayFS{base: web.FS(cfg.WebDir), dir: themeOverrideDir(cfg.UploadsDir)},
 	}
-	s.gweLoadCustomThemes(ctx) // GoWebEditor custom themes stored in this site's database
+	if s.golementorOn() {
+		s.gweLoadCustomThemes(ctx) // Golementor custom themes stored in this site's database
+	} else {
+		s.gweUnloadCustomThemes() // the theme registry is shared by every server in the process
+	}
 	tmpl, err := newTemplates(s)
 	if err != nil {
 		return nil, err
@@ -86,7 +90,9 @@ func New(ctx context.Context, cfg config.Config, pool *pgxpool.Pool) (*Server, e
 		}
 	}
 	s.configureCache()
-	s.gweMigrateActiveSavedTheme(ctx) // GoWebEditor: a saved theme active from before Hello GoWebEditor
+	if s.golementorOn() {
+		s.gweMigrateActiveSavedTheme(ctx) // Golementor: a saved theme active from before Hello Golementor
+	}
 	s.startPlugins(ctx)
 	return s, nil
 }
@@ -146,7 +152,12 @@ func (s *Server) routes() *gin.Engine {
 
 	s.static(r, "/wp-admin/assets", "admin/assets")
 	for _, th := range allThemes() {
-		if !th.Custom {
+		if th.Custom {
+			continue
+		}
+		if th.Slug == helloThemeSlug {
+			s.static(r, th.URI(), "themes/"+th.Slug+"/assets", s.golementorOnly())
+		} else {
 			s.static(r, th.URI(), "themes/"+th.Slug+"/assets")
 		}
 	}
@@ -154,8 +165,8 @@ func (s *Server) routes() *gin.Engine {
 	s.static(r, "/wp-admin/js", "wp-admin/js")
 	s.static(r, "/wp-admin/css", "wp-admin/css")
 	s.static(r, "/wp-admin/images", "wp-admin/images")
-	s.static(r, strings.TrimSuffix(gweAssetsPath, "/"), "gowebeditor") // GoWebEditor's editor and frontend assets
-	r.GET("/wp-content/gowebeditor/theme-screenshot/:slug", s.gweThemeScreenshot)
+	s.static(r, strings.TrimSuffix(gweAssetsPath, "/"), "gowebeditor", s.golementorOnly()) // Golementor's editor and frontend assets
+	r.GET("/wp-content/gowebeditor/theme-screenshot/:slug", s.golementorOnly(), s.gweThemeScreenshot)
 	uploads := http.StripPrefix("/wp-content/uploads", http.FileServer(http.Dir(s.cfg.UploadsDir)))
 	serveUpload := func(c *gin.Context) {
 		// Uploaded files are data, never code: HTML or SVG uploads run in a sandbox.
@@ -236,9 +247,9 @@ func (s *Server) routes() *gin.Engine {
 	admin.POST("/plugin-install", s.pluginInstall)
 	admin.GET("/admin", s.pluginAdmin)
 	admin.POST("/admin", s.pluginAdmin)
-	admin.GET("/gowebeditor-theme-builder", s.gweThemeBuilder) // GoWebEditor Theme Builder
-	admin.POST("/gowebeditor-theme-builder", s.gweThemeBuilder)
-	s.registerGoWebEditorProAdmin(admin) // GoWebEditor Pro screens (gowebeditor_pro_admin.go)
+	admin.GET("/gowebeditor-theme-builder", s.golementorOnly(), s.gweThemeBuilder) // Golementor Theme Builder
+	admin.POST("/gowebeditor-theme-builder", s.golementorOnly(), s.gweThemeBuilder)
+	s.registerGoWebEditorProAdmin(admin) // Golementor Pro screens (gowebeditor_pro_admin.go)
 	admin.GET("/customize", s.customizeScreen)
 	admin.POST("/customize", s.customizeSave)
 	admin.GET("/:screen", s.notYet)
@@ -251,12 +262,12 @@ func (s *Server) routes() *gin.Engine {
 		r.Handle(m, "/wp-json", restHandler)
 	}
 
-	r.NoRoute(s.gwePreview, s.site) // GoWebEditor's preview iframe, then the site
+	r.NoRoute(s.gwePreview, s.site) // Golementor's preview iframe, then the site
 	return r
 }
 
 // static serves an embedded directory with long-lived cache headers.
-func (s *Server) static(r *gin.Engine, prefix, dir string) {
+func (s *Server) static(r *gin.Engine, prefix, dir string, guards ...gin.HandlerFunc) {
 	sub, err := fs.Sub(s.web, dir)
 	if err != nil {
 		panic(err)
@@ -274,8 +285,8 @@ func (s *Server) static(r *gin.Engine, prefix, dir string) {
 		}
 		h.ServeHTTP(c.Writer, c.Request)
 	}
-	r.GET(prefix+"/*filepath", handler)
-	r.HEAD(prefix+"/*filepath", handler)
+	r.GET(prefix+"/*filepath", append(guards[:len(guards):len(guards)], handler)...)
+	r.HEAD(prefix+"/*filepath", append(guards[:len(guards):len(guards)], handler)...)
 }
 
 func accessLog() gin.HandlerFunc {
@@ -356,7 +367,7 @@ func (s *Server) requireInstall() gin.HandlerFunc {
 func (s *Server) requireLogin() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		u := currentUser(c)
-		if u == nil && gweProNoPriv(c) { // GoWebEditor Pro: visitors' form submissions (wp_ajax_nopriv_)
+		if u == nil && s.golementorOn() && gweProNoPriv(c) { // Golementor Pro: visitors' form submissions (wp_ajax_nopriv_)
 			c.Next()
 			return
 		}

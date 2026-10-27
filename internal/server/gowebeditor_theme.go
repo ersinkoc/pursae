@@ -19,16 +19,16 @@ import (
 	"wpgo/internal/wp"
 )
 
-// GoWebEditor theme building. Theme parts are GoWebEditor documents of the content type gwe_template
+// Golementor theme building. Theme parts are Golementor documents of the content type gwe_template
 // (meta _elementor_template_type = header, footer, single-post, single-page, archive,
 // search-results or error-404) with display conditions in _gwe_conditions, upstream's condition
 // strings ("include/general", "include/singular/page/12", "exclude/archive/category/3", ...).
-// The site's own parts (_gwe_theme = "") are the working copy of the Hello GoWebEditor theme
+// The site's own parts (_gwe_theme = "") are the working copy of the Hello Golementor theme
 // (theme_hellogowebeditor.go); a saved theme's parts live in its snapshot
 // (gowebeditor_theme_custom.go) and are only read while live-previewing it.
 //
-// When Hello GoWebEditor is active (or a saved theme is previewed), or when one of the site's
-// parts matches a page on another bundled theme, the page renders through the Hello GoWebEditor
+// When Hello Golementor is active (or a saved theme is previewed), or when one of the site's
+// parts matches a page on another bundled theme, the page renders through the Hello Golementor
 // templates (web/themes/hello-gowebeditor): wp_head, the header part, the single/archive/404 part
 // (or the template's own minimal markup), the footer part and wp_footer.
 
@@ -296,7 +296,7 @@ func gwePick(parts []*gwePart, location string, q *siteQuery) *gwePart {
 
 // --- front end ---------------------------------------------------------------------------------
 
-// gweThemeView is what the Hello GoWebEditor templates print: the rendered parts (empty when
+// gweThemeView is what the Hello Golementor templates print: the rendered parts (empty when
 // no part matches, so the template shows its own markup) and the data of the minimal defaults.
 type gweThemeView struct {
 	Header, Main, Footer template.HTML
@@ -304,13 +304,13 @@ type gweThemeView struct {
 	FooterPart           *gwePart
 	FooterMenu           template.HTML // the footer menu location, for the default footer
 	Year                 int
-	HideTitle            bool // the page's GoWebEditor document hides its title
+	HideTitle            bool // the page's Golementor document hides its title
 }
 
 // gweThemeBegin runs when buildSiteView knows the theme: the Site widgets find the view through
 // the request context, and a live-previewed saved theme brings its own kit.
 func (s *Server) gweThemeBegin(c *gin.Context, v *siteView) {
-	if c == nil {
+	if c == nil || !s.golementorOn() {
 		return
 	}
 	c.Set(ctxGweView, v)
@@ -323,13 +323,13 @@ func (s *Server) gweThemeBegin(c *gin.Context, v *siteView) {
 	}
 }
 
-// gweThemePrepare decides whether the page renders through the Hello GoWebEditor templates and
+// gweThemePrepare decides whether the page renders through the Hello Golementor templates and
 // renders the matching parts; it runs in buildSiteView before wp_head is printed (so the parts'
-// styles get enqueued). Hello GoWebEditor itself (and a previewed saved theme) always renders
+// styles get enqueued). Hello Golementor itself (and a previewed saved theme) always renders
 // this way; other bundled themes only when one of the site's parts matches the page.
 func (s *Server) gweThemePrepare(c *gin.Context, v *siteView, bodyClasses *[]string) {
 	q := v.Q
-	if c == nil || q == nil || q.Feed != "" {
+	if c == nil || q == nil || q.Feed != "" || !s.golementorOn() {
 		return
 	}
 	hello := v.Theme.Slug == helloThemeSlug || v.Theme.Custom
@@ -419,10 +419,10 @@ func (s *Server) gweRenderPart(c *gin.Context, part *gwePart, location string) t
 	return template.HTML(out)
 }
 
-// gweRenderShell renders the page through the Hello GoWebEditor templates when theme parts (or
+// gweRenderShell renders the page through the Hello Golementor templates when theme parts (or
 // a previewed saved theme) take over the layout.
 func (s *Server) gweRenderShell(c *gin.Context, v *siteView, status int) bool {
-	if v == nil || v.GWE == nil {
+	if v == nil || v.GWE == nil || !s.golementorOn() {
 		return false
 	}
 	s.renderTemplate(c, status, s.tmpl.gweShell(), "theme/"+v.Template, v)

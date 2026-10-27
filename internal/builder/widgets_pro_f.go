@@ -1,6 +1,6 @@
 package builder
 
-// GoWebEditor Pro theme elements: author-box, post-navigation, post-comments, breadcrumbs,
+// Golementor Pro theme elements: author-box, post-navigation, post-comments, breadcrumbs,
 // theme-page-title and theme-post-excerpt (ports of upstream Pro 4.3.0
 // modules/theme-elements/widgets/*.php and modules/theme-builder/widgets/{page-title,post-excerpt}.php).
 // They read the current post and its author from RenderContext.Theme / RenderContext.Pro.
@@ -262,7 +262,7 @@ func proFRenderPostExcerpt(w *elemCtx) string {
 // --- breadcrumbs -------------------------------------------------------------------------------------
 
 // Breadcrumbs: upstream prints Yoast SEO's trail and registers the widget only with Yoast active, so
-// the lab has no control dump. GoWebEditor builds the trail natively (ProData.Breadcrumbs: Home ›
+// the lab has no control dump. Golementor builds the trail natively (ProData.Breadcrumbs: Home ›
 // ancestors/category › current, archives, search, 404) and prints it in Yoast's markup
 // (<p id="breadcrumbs"><span><span><a>Home</a></span> » …), so upstream's widget CSS and the
 // controls' selectors apply, with schema.org BreadcrumbList microdata. The controls are upstream's

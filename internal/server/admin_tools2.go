@@ -128,6 +128,7 @@ type fileEditorData struct {
 	Nonce                      string
 	RestoreURL                 string
 	OverrideDir                string
+	Builder                    bool // Golementor is active (the read-only notice points to its Theme Builder)
 }
 
 func (s *Server) fileEditorAssets(c *gin.Context, d *fileEditorData) {
@@ -151,7 +152,7 @@ func (s *Server) themeEditor(c *gin.Context) {
 		c.String(http.StatusForbidden, "Sorry, you are not allowed to edit templates for this site.")
 		return
 	}
-	theme := themeBySlug(c.DefaultQuery("theme", s.activeTheme().Slug))
+	theme := s.installedTheme(c.DefaultQuery("theme", s.activeTheme().Slug))
 	if theme == nil {
 		theme = s.activeTheme()
 	}
@@ -193,7 +194,7 @@ func (s *Server) themeEditor(c *gin.Context) {
 			src = "themes/" + theme.Slug + "/" + file
 		}
 	}
-	d := &fileEditorData{Kind: "theme", Name: theme.Name, Slug: theme.Slug, File: file, State: "inactive"}
+	d := &fileEditorData{Kind: "theme", Name: theme.Name, Slug: theme.Slug, File: file, State: "inactive", Builder: s.golementorOn()}
 	if o, ok := s.overlay(); ok && !fileEditingDisabled() && !theme.Custom {
 		d.Editable, d.OverrideDir, d.Restored = true, filepath.Join(o.dir, theme.Slug), c.Query("restored") == "1"
 		d.Nonce = s.nonce(c, "edit-theme_"+theme.Slug+"_"+file)
@@ -214,7 +215,7 @@ func (s *Server) themeEditor(c *gin.Context) {
 	d.Tree = buildFileTree(files, []string{"style.css", "templates/functions.html"}, file, func(p string) string {
 		return "/wp-admin/theme-editor?file=" + url.QueryEscape(p) + "&theme=" + url.QueryEscape(theme.Slug)
 	})
-	for _, t := range allThemes() {
+	for _, t := range s.installedThemes() {
 		d.Choices = append(d.Choices, menuChoice{Value: t.Slug, Label: template.HTMLEscapeString(t.Name), Selected: t.Slug == theme.Slug})
 	}
 	s.fileEditorAssets(c, d)

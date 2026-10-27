@@ -1,4 +1,4 @@
-// Package builder is GoWebEditor's server side: the document model the editor saves, the front-end
+// Package builder is Golementor's server side: the document model the editor saves, the front-end
 // renderer that turns an element tree into HTML, and the CSS engine that turns control settings into
 // the per-document stylesheet. The editor UI is upstream's GPL-3.0 front end, served by
 // internal/server; nothing here depends on HTTP.
@@ -19,7 +19,7 @@ type Element struct {
 	Settings   map[string]any `json:"settings"`
 	Elements   []*Element     `json:"elements"`
 
-	// TemplateID is a global widget's template (GoWebEditor Pro); globalOf is the widget type the
+	// TemplateID is a global widget's template (Golementor Pro); globalOf is the widget type the
 	// template holds once resolved (widgets_pro_common.go).
 	TemplateID int64 `json:"templateID,omitempty"`
 	globalOf   string
@@ -31,15 +31,15 @@ type Element struct {
 	// ("key/0/url"); see element.go.
 	nestedKeys map[string][]string
 	// Raw is the element's saved JSON (atomic elements keep styles, interactions, editor settings
-	// and $$type props the renderer reads from it). GoWebEditor v4: atomic_hook.go
+	// and $$type props the renderer reads from it). Golementor v4: atomic_hook.go
 	Raw json.RawMessage `json:"-"`
 }
 
-// Document is a page, post or template built with GoWebEditor.
+// Document is a page, post or template built with Golementor.
 type Document struct {
 	ID   int64
 	Type string // wp-page, wp-post, kit, section, header, footer, single, archive, ...
-	// PostType is the content type of the post (page, post, elementor_library); GoWebEditor Pro
+	// PostType is the content type of the post (page, post, elementor_library); Golementor Pro
 	// prints it as data-elementor-post-type on the wrapper ("" = not printed).
 	PostType string
 	Elements []*Element
@@ -89,11 +89,11 @@ type RenderContext struct {
 	// Theme is the site and query data the theme-building ("Site") widgets read (widgets_theme.go);
 	// nil makes them render placeholders.
 	Theme *ThemeData
-	// Pro is what GoWebEditor Pro's dynamic tags, query widgets and documents read (dynamic_tags.go);
+	// Pro is what Golementor Pro's dynamic tags, query widgets and documents read (dynamic_tags.go);
 	// nil disables them.
 	Pro *ProData
 	// Atomic carries the site callbacks of the atomic (v4) element renderer (global classes,
-	// variables, components, media); nil renders atomic elements without them. GoWebEditor v4.
+	// variables, components, media); nil renders atomic elements without them. Golementor v4.
 	Atomic *atomic.Env
 }
 

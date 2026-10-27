@@ -4,7 +4,7 @@ package server
 //
 // securityHeaders sets a strict front-end policy on every response. A handler that knows its page
 // needs a third-party source (a YouTube player, a Vimeo iframe) adds it for that response only with
-// cspAllow; cspWriter merges the additions into the header just before it is sent. GoWebEditor
+// cspAllow; cspWriter merges the additions into the header just before it is sent. Golementor
 // pages are also checked automatically: the rendered builder documents (and popups) are scanned
 // for video widgets, background videos, video playlists, the atomic YouTube element and lightbox
 // videos, and exactly the hosts those embeds load from are allowed.
@@ -287,7 +287,7 @@ func gweEmbedWalk(v any, n *gweEmbedNeeds, api, privacy bool) {
 	}
 }
 
-// gweEmbedCSP allows the video hosts the page's GoWebEditor documents need. The editor preview
+// gweEmbedCSP allows the video hosts the page's Golementor documents need. The editor preview
 // gets every video host: widgets are added there at any time.
 func gweEmbedCSP(c *gin.Context) {
 	if c == nil {

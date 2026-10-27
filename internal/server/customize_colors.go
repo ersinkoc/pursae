@@ -15,15 +15,35 @@ import (
 // czControl is one customizer control backed by a theme mod.
 type czControl struct {
 	ID, Label, Description string
-	Type                   string // select, radio, color, hue, json (hidden, filled by the theme's script)
-	Choices                [][2]string
-	Default                string
-	Hidden                 bool // starts hidden (shown by the theme's script)
+	// Type is select, radio, color, hue, json (hidden, filled by the theme's script), checkbox ("1" or
+	// "0", stored as a boolean), number (an int within Min and Max), text or textarea.
+	Type    string
+	Choices [][2]string
+	Default string
+	Hidden  bool // starts hidden (shown by the theme's script)
+	// Section is the pane of a control in czThemeSpec.Controls: title_tagline (Site Identity) or the
+	// id of one of the spec's Sections.
+	Section  string
+	Min, Max int
+	// Sanitize cleans a text or textarea value; without it tags are stripped.
+	Sanitize func(string) string
+}
+
+// czSection is a theme's own Customizer section (add_section()).
+type czSection struct {
+	ID, Title, Description string
 }
 
 // czThemeSpec is what the Customizer knows about a theme.
 type czThemeSpec struct {
 	Colors []czControl
+	// Controls are the theme's controls outside the Colors section, each in its Section, and Sections
+	// the theme's own sections (listed after Colors).
+	Controls []czControl
+	Sections []czSection
+	// PostMessage lists setting ids the theme's preview script applies in place (transport
+	// postMessage); every other change reloads the preview.
+	PostMessage []string
 	// BackgroundDefault is add_theme_support( 'custom-background' )'s default-color (no #); nil when the
 	// theme has no custom background.
 	BackgroundDefault func(mods map[string]any) string
@@ -76,6 +96,18 @@ var czSpecs = map[string]*czThemeSpec{
 	},
 }
 
+// control finds a theme mod's control in Colors or Controls.
+func (sp *czThemeSpec) control(id string) *czControl {
+	for _, list := range [][]czControl{sp.Colors, sp.Controls} {
+		for i := range list {
+			if list[i].ID == id {
+				return &list[i]
+			}
+		}
+	}
+	return nil
+}
+
 // Theme mods ------------------------------------------------------------------------
 
 // themeMods is get_theme_mods(): the theme_mods_<slug> option.
@@ -86,7 +118,7 @@ func (s *Server) themeMods(slug string) map[string]any {
 			out[k] = v
 		}
 	}
-	if snap := gweSnapshotFor(slug); snap != nil && snap.CustomCSS != "" { // live preview of a saved GoWebEditor theme
+	if snap := gweSnapshotFor(slug); snap != nil && snap.CustomCSS != "" { // live preview of a saved Golementor theme
 		out["custom_css"] = snap.CustomCSS
 	}
 	return out
@@ -100,6 +132,19 @@ func modString(mods map[string]any, key, def string) string {
 		}
 	case float64:
 		return strconv.FormatFloat(v, 'f', -1, 64)
+	}
+	return def
+}
+
+// modBool reads a checkbox theme mod (a boolean, or "1"/"0" from older saves).
+func modBool(mods map[string]any, key string, def bool) bool {
+	switch v := mods[key].(type) {
+	case bool:
+		return v
+	case string:
+		return v == "1" || v == "true"
+	case float64:
+		return v != 0
 	}
 	return def
 }

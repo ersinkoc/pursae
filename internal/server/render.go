@@ -58,8 +58,8 @@ func (t *templates) load() error {
 	return nil
 }
 
-// gweShell is the template set GoWebEditor theme parts and saved themes render through: Hello
-// GoWebEditor's (theme_hellogowebeditor.go).
+// gweShell is the template set Golementor theme parts and saved themes render through: Hello
+// Golementor's (theme_hellogowebeditor.go).
 func (t *templates) gweShell() *template.Template {
 	return t.getTheme(true, helloThemeSlug)
 }
@@ -98,7 +98,7 @@ func (t *templates) getTheme(theme bool, slug string) *template.Template {
 		if set := t.themes[slug]; set != nil {
 			return set
 		}
-		if th := themeBySlug(slug); th != nil && th.Custom { // GoWebEditor saved theme (live preview)
+		if th := themeBySlug(slug); th != nil && th.Custom { // Golementor saved theme (live preview)
 			return t.themes[helloThemeSlug]
 		}
 		return t.themes[defaultTheme]

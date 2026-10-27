@@ -34,9 +34,9 @@
 {{template "notices" $}}
 
 <div class="gwe-tb-context">
-	{{/* GoWebEditor (hello theme): the parts are the working copy of Hello GoWebEditor */}}
-	{{if .Hello}}<p>These theme parts, with the Site Settings, are the design of <strong>Hello GoWebEditor</strong>, your active theme. Published parts whose conditions match a page replace its header, footer and content. Use <em>Save as theme</em> to keep a fixed copy in the saved themes list.</p>
-	{{else}}<p>These are your site&rsquo;s theme parts (the design of the <strong>Hello GoWebEditor</strong> theme). Published parts whose conditions match a page replace the layout of <strong>{{.ActiveName}}</strong>. Use <em>Save as theme</em> to keep a fixed copy in the saved themes list.</p>{{end}}
+	{{/* Golementor (hello theme): the parts are the working copy of Hello Golementor */}}
+	{{if .Hello}}<p>These theme parts, with the Site Settings, are the design of <strong>Hello Golementor</strong>, your active theme. Published parts whose conditions match a page replace its header, footer and content. Use <em>Save as theme</em> to keep a fixed copy in the saved themes list.</p>
+	{{else}}<p>These are your site&rsquo;s theme parts (the design of the <strong>Hello Golementor</strong> theme). Published parts whose conditions match a page replace the layout of <strong>{{.ActiveName}}</strong>. Use <em>Save as theme</em> to keep a fixed copy in the saved themes list.</p>{{end}}
 	<form class="gwe-tb-add" id="gwe-add-new" method="post" action="/wp-admin/gowebeditor-theme-builder">
 		<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
 		<input type="hidden" name="action" value="new" />
@@ -75,7 +75,7 @@
 		<tbody>
 		{{range .Rows}}<tr id="gwe-part-{{.ID}}">
 			<td class="title column-title has-row-actions column-primary" data-colname="Title"><strong><a class="row-title" href="{{.EditURL}}">{{.Title}}</a></strong>
-				<div class="row-actions"><span class="edit_with_gowebeditor"><a href="{{.EditURL}}">Edit with GoWebEditor</a> | </span><span class="conditions"><a href="{{.ConditionsURL}}">Conditions</a> | </span><span class="trash"><form method="post" action="/wp-admin/gowebeditor-theme-builder" style="display:inline" onsubmit="return confirm('Delete this theme part permanently?')"><input type="hidden" name="_wpnonce" value="{{$.Data.Nonce}}" /><input type="hidden" name="action" value="delete" /><input type="hidden" name="post" value="{{.ID}}" /><button type="submit" class="button-link submitdelete">Delete</button></form></span></div>
+				<div class="row-actions"><span class="edit_with_gowebeditor"><a href="{{.EditURL}}">Edit with Golementor</a> | </span><span class="conditions"><a href="{{.ConditionsURL}}">Conditions</a> | </span><span class="trash"><form method="post" action="/wp-admin/gowebeditor-theme-builder" style="display:inline" onsubmit="return confirm('Delete this theme part permanently?')"><input type="hidden" name="_wpnonce" value="{{$.Data.Nonce}}" /><input type="hidden" name="action" value="delete" /><input type="hidden" name="post" value="{{.ID}}" /><button type="submit" class="button-link submitdelete">Delete</button></form></span></div>
 				<button type="button" class="toggle-row"><span class="screen-reader-text">Show more details</span></button></td>
 			<td class="column-conditions" data-colname="Display Conditions">{{range .Conditions}}<span class="gwe-tb-cond{{if contains . "Exclude:"}} is-exclude{{end}}">{{.}}</span>{{else}}<span class="description">Not shown anywhere</span>{{end}}</td>
 			<td class="column-status" data-colname="Status">{{.StatusLabel}}</td>
@@ -86,8 +86,8 @@
 </div>
 {{end}}
 
-<h2 style="margin-top:36px">Saved GoWebEditor themes</h2>
-<p>Fixed copies of the design saved from the Theme Builder (JSON: theme parts, display conditions, Site Settings and custom CSS). They are also listed under <a href="/wp-admin/themes">Appearance › Themes</a>. Activating one loads its design into Hello GoWebEditor; the saved copy stays as it is until you save it again.</p>
+<h2 style="margin-top:36px">Saved Golementor themes</h2>
+<p>Fixed copies of the design saved from the Theme Builder (JSON: theme parts, display conditions, Site Settings and custom CSS). They are also listed under <a href="/wp-admin/themes">Appearance › Themes</a>. Activating one loads its design into Hello Golementor; the saved copy stays as it is until you save it again.</p>
 {{if .Themes}}<div class="gwe-tb-themes">
 {{range .Themes}}<div class="gwe-tb-theme" data-slug="{{.Slug}}">
 	<img src="{{.Screenshot}}" alt="" />
@@ -101,7 +101,7 @@
 		</div>
 	</div>
 </div>{{end}}
-</div>{{else}}<p class="description">No saved GoWebEditor themes yet.</p>{{end}}
+</div>{{else}}<p class="description">No saved Golementor themes yet.</p>{{end}}
 {{if $u.Can "upload_files" nil}}<form class="gwe-tb-import" method="post" enctype="multipart/form-data" action="/wp-admin/gowebeditor-theme-builder">
 	<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
 	<input type="hidden" name="action" value="import" />

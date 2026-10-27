@@ -1,11 +1,11 @@
 package server
 
-// GoWebEditor Custom Icons (port of upstream Pro 4.3.0's modules/assets-manager/asset-types/icons):
+// Golementor Custom Icons (port of upstream Pro 4.3.0's modules/assets-manager/asset-types/icons):
 // administrators upload an icon font exported from Fontello, IcoMoon or Fontastic as a .zip; the
 // archive is read in memory with zip-slip and size limits, recognised by its data file, and only
 // its stylesheet and web fonts are written to uploads/gowebeditor/custom-icons/<name>/. The set is
 // then listed in the editor's icon library (Icons_Manager additional tabs) and its stylesheet is
-// printed on pages whose GoWebEditor content uses one of its icons.
+// printed on pages whose Golementor content uses one of its icons.
 
 import (
 	"archive/zip"
@@ -536,7 +536,7 @@ func (s *Server) gweIconsAdmin(c *gin.Context) {
 	if e := c.Query("error"); e != "" {
 		notices = append(notices, notice{Type: "error", Message: template.HTML(esc(e)), Dismissible: true})
 	}
-	s.adminPage(c, "gowebeditor-icons", "Custom Icons ‹ GoWebEditor", "toplevel_page_gowebeditor-pro", "admin/gowebeditor-pro", d, notices...)
+	s.adminPage(c, "gowebeditor-icons", "Custom Icons ‹ Golementor", "toplevel_page_gowebeditor-pro", "admin/gowebeditor-pro", d, notices...)
 }
 
 func (s *Server) gweIconsAdminPost(c *gin.Context) (string, error) {

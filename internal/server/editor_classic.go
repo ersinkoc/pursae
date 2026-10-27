@@ -55,6 +55,7 @@ func (s *Server) wpEditor(c *gin.Context, p *store.Post) template.HTML {
 	for _, f := range theme.EditorStyles {
 		themeCSS += "," + theme.URI() + "/" + f + "?ver=" + theme.Version
 	}
+	themeCSS += ",/wp-includes/css/wpgo-editor-neutral.css?ver=1"
 	js = strings.Replace(js, `wp-content.css?ver=7.1.3"`, `wp-content.css?ver=7.1.3`+themeCSS+`"`, 1)
 	js = strings.Replace(js, "<script>\ntinymce.addI18n",
 		`<script src="/wp-includes/js/tinymce/wp-tinymce.js?ver=`+tinymceVersion+`"></script>`+"\n<script>\ntinymce.addI18n", 1)

@@ -1,6 +1,6 @@
 package builder
 
-// Theme-building ("Site") widgets: the pieces GoWebEditor theme parts (header, footer, single,
+// Theme-building ("Site") widgets: the pieces Golementor theme parts (header, footer, single,
 // archive, 404 templates) are made of. They read the site and the current query from
 // RenderContext.Theme, which the server fills; without it (or without the piece of data they need)
 // they print a placeholder in the editor and nothing on the front end. Markup follows the upstream

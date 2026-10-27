@@ -1,6 +1,6 @@
 package builder
 
-// GoWebEditor Pro query control: a port of upstream Post_Query / upstream Related_Query
+// Golementor Pro query control: a port of upstream Post_Query / upstream Related_Query
 // (modules/query-control/classes) and the loop filter's tax_query builder (modules/loop-filter:
 // Taxonomy_Query_Builder, Taxonomy_Manager and the query types). The posts, portfolio, loop grid,
 // loop carousel and search widgets build their PostQuery here; the server runs it.

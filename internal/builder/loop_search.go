@@ -1,6 +1,6 @@
 package builder
 
-// GoWebEditor Pro Search widget, live results: a port of Search::render_results and
+// Golementor Pro Search widget, live results: a port of Search::render_results and
 // render_pagination (modules/search/widgets/search.php), answered by the refresh-search endpoint.
 // Each result is the widget's loop item template rendered with the found post.
 

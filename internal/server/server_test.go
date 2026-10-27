@@ -24,6 +24,21 @@ import (
 // profile sets both. Without them the integration tests are skipped.
 func testServer(t *testing.T) (*httptest.Server, *http.Client) {
 	t.Helper()
+	ts, c, _ := newTestServer(t, true)
+	return ts, c
+}
+
+// testServerBuilderOff is testServer with Golementor left switched off, as a fresh install has it.
+func testServerBuilderOff(t *testing.T) (*httptest.Server, *http.Client, *Server) {
+	t.Helper()
+	return newTestServer(t, false)
+}
+
+// newTestServer starts the app. A fresh install has Golementor switched off; with builder set the
+// installer's answer is followed by native_golementor=true (before the client sees the response),
+// so the builder tests, which install the site themselves, find the plugin active.
+func newTestServer(t *testing.T, builder bool) (*httptest.Server, *http.Client, *Server) {
+	t.Helper()
 	adminURL, testURL := os.Getenv("WPGO_TEST_ADMIN_DB"), os.Getenv("WPGO_TEST_DB")
 	if adminURL == "" || testURL == "" {
 		t.Skip("WPGO_TEST_ADMIN_DB / WPGO_TEST_DB not set")
@@ -61,12 +76,31 @@ func testServer(t *testing.T) (*httptest.Server, *http.Client) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ts.Config.Handler = srv.Handler()
+	h := srv.Handler()
+	ts.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !builder || r.URL.Path != "/wp-admin/install" || r.URL.Query().Get("step") != "2" {
+			h.ServeHTTP(w, r)
+			return
+		}
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, r)
+		if srv.settings.Installed() {
+			if err := srv.settings.Set(r.Context(), map[string]any{golementorSetting: true}); err != nil {
+				t.Errorf("enable Golementor: %v", err)
+			}
+			srv.golementorStart(r.Context())
+		}
+		for k, v := range rec.Header() {
+			w.Header()[k] = v
+		}
+		w.WriteHeader(rec.Code)
+		_, _ = w.Write(rec.Body.Bytes())
+	})
 	ts.Start()
 	t.Cleanup(ts.Close)
 	jar, _ := cookiejar.New(nil)
 	client := &http.Client{Jar: jar, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
-	return ts, client
+	return ts, client, srv
 }
 
 func get(t *testing.T, c *http.Client, u string) (int, string, string) {
@@ -175,6 +209,54 @@ func TestInstallLoginPublishAndView(t *testing.T) {
 	if code != http.StatusFound || !strings.Contains(loc, "message=6") {
 		t.Fatalf("publish: %d %s", code, loc)
 	}
+	// The permalink under the title is edited in place like WordPress: "Permalink: …/go-publishes/ [Edit]",
+	// and admin-ajax "sample-permalink" previews a new slug without saving it.
+	_, body, _ = get(t, c, base+"/wp-admin/post?post="+id+"&action=edit")
+	if !strings.Contains(body, `<span id="editable-post-name">go-publishes</span>`) || !strings.Contains(body, `class="edit-slug button button-small hide-if-no-js"`) ||
+		!strings.Contains(body, `id="post_name" name="post_name" value="go-publishes"`) || strings.Contains(body, `id="slugdiv"`) {
+		t.Errorf("edit screen lacks the WordPress permalink editor")
+	}
+	if !strings.Contains(body, `"insertIntoPost":"Insert into post"`) {
+		t.Errorf("Add Media frame has no label for its Insert button")
+	}
+	// Like WordPress, a published post's Status has an Edit link (Published / Pending Review / Draft)
+	// and its Update button submits "save", so switching to Draft takes effect.
+	if !strings.Contains(body, `class="edit-post-status hide-if-no-js"`) || !strings.Contains(body, `<option selected="selected" value="publish">Published</option>`) ||
+		!strings.Contains(body, `name="save" id="publish"`) {
+		t.Errorf("published post lacks Status › Edit or the save-named Update button")
+	}
+	for _, st := range []string{"draft", "publish"} {
+		_, eb, _ := get(t, c, base+"/wp-admin/post?post="+id+"&action=edit")
+		btn := url.Values{"save": {"Update"}}
+		if st == "publish" {
+			btn = url.Values{"publish": {"Publish"}}
+		}
+		form := url.Values{"_wpnonce": {formNonce(t, eb)}, "post_ID": {id}, "post_status": {st}, "visibility": {"public"},
+			"comment_status": {"open"}, "post_title": {"Go publishes"}, "content": {"First paragraph.\n\nSecond paragraph."}, "post_name": {"go-publishes"}, "tax_input[post_tag]": {"golang"}}
+		for k, v := range btn {
+			form[k] = v
+		}
+		post(t, c, base+"/wp-admin/post", form)
+		var got string
+		_ = getPool(t).QueryRow(context.Background(), `SELECT status FROM posts WHERE id = $1`, id).Scan(&got)
+		if got != st {
+			t.Errorf("after Status › %s: status = %q", st, got)
+		}
+	}
+	spNonce := regexp.MustCompile(`id="samplepermalinknonce" name="samplepermalinknonce" value="([^"]+)"`).FindStringSubmatch(body)
+	if spNonce == nil {
+		t.Fatal("no samplepermalinknonce")
+	}
+	_, sample, _ := post(t, c, base+"/wp-admin/admin-ajax", url.Values{"action": {"sample-permalink"}, "post_id": {id},
+		"new_slug": {"Go Rocks"}, "new_title": {"Go publishes"}, "samplepermalinknonce": {spNonce[1]}})
+	if !strings.Contains(sample, `<span id="editable-post-name">go-rocks</span>`) || !strings.Contains(sample, `<span id="editable-post-name-full">go-rocks</span>`) {
+		t.Errorf("sample-permalink = %q", sample)
+	}
+	if _, bad, _ := post(t, c, base+"/wp-admin/admin-ajax", url.Values{"action": {"sample-permalink"}, "post_id": {id},
+		"new_slug": {"x"}, "samplepermalinknonce": {"nope"}}); bad != "-1" {
+		t.Errorf("sample-permalink without a valid nonce = %q", bad)
+	}
+
 	code, body, _ = get(t, c, base+"/")
 	if !strings.Contains(body, "Go publishes") || !strings.Contains(body, "<p>Second paragraph.</p>") {
 		t.Errorf("published post not on the home page")

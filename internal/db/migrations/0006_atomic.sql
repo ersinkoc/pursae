@@ -1,4 +1,4 @@
--- GoWebEditor v4 (atomic / Editor V4): global classes, global variables, default styles and
+-- Golementor v4 (atomic / Editor V4): global classes, global variables, default styles and
 -- components. The REST routes live in internal/server/gowebeditor_v4_rest.go, the typed
 -- accessors in gowebeditor_v4_store.go.
 

@@ -1,4 +1,4 @@
-// Package atomic renders GoWebEditor's atomic (v4) elements and their styles: a port of upstream
+// Package atomic renders Golementor's atomic (v4) elements and their styles: a port of upstream
 // 4.3's modules/atomic-widgets (props resolver, settings and style transformers, Twig templates,
 // styles renderer) plus the global classes, variables and components modules it depends on.
 //

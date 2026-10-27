@@ -1,4 +1,4 @@
-# Copies the Pro editor packages GoWebEditor's atomic editor needs from an upstream Pro 4.3.0 copy
+# Copies the Pro editor packages Golementor's atomic editor needs from an upstream Pro 4.3.0 copy
 # (SRC) into web/gowebeditor/pro/js and strips promotions / remote assets (see NOTICE).
 import shutil, sys, os
 SRC = '/Users/boradev/Desktop/WordpressGO/wp-assets/elementor-pro/assets/js'

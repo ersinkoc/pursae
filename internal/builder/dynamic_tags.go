@@ -1,6 +1,6 @@
 package builder
 
-// GoWebEditor Pro dynamic tags: settings carry "[elementor-tag id=".." name=".." settings=".."]"
+// Golementor Pro dynamic tags: settings carry "[elementor-tag id=".." name=".." settings=".."]"
 // texts under __dynamic__; before an element renders, every such control gets the tag's value
 // (text tags replace the tag inside the text, data tags return an object for media, gallery and
 // icon controls or a property of URL and slider controls). The tags are ports of upstream Pro's
