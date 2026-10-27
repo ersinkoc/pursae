@@ -1,0 +1,17 @@
+/**
+ * edit-comments.html — page-owned only.
+ * Desktop: no width/float/margin layout changes (WP list-tables + common).
+ * Mobile ≤782px: list-tables.min.css stacks rows; needs data-colname + .toggle-row + .is-expanded.
+ */
+
+/* Reply / Quick Edit are <button class="button-link"> — match link metrics, no control box */
+body.edit-comments-php #the-comment-list .row-actions .button-link {
+	font-size: inherit;
+	line-height: inherit;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	box-shadow: none;
+	min-height: 0;
+	vertical-align: baseline;
+}

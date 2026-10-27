@@ -1,0 +1,7 @@
+/**
+ * WordPress Go admin overrides.
+ *
+ * The admin loads WordPress 7.1's own stylesheets unmodified (see partials/layout.html), so
+ * screens look exactly like WordPress. Keep this file empty unless a WordPress Go-only feature
+ * needs a rule; screen-specific additions live in assets/css/wpgo/<screen>.css.
+ */

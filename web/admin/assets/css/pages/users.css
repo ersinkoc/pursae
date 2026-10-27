@@ -1,0 +1,32 @@
+/**
+ * Users screens only — no shared chrome.
+ * Layout-stable: text-decoration / underline fixes only.
+ * Mobile table/pagination come from WP list-tables.css.
+ */
+
+/* Kill underlines on pagination controls (buttons.css may be absent) */
+body.users-php .tablenav-pages a,
+body.users-php .tablenav-pages .button,
+body.users-php .tablenav-pages .tablenav-pages-navspan {
+  text-decoration: none !important;
+}
+
+body.users-php .wp-core-ui .button,
+body.user-new-php .wp-core-ui .button,
+body.profile-php .wp-core-ui .button,
+body.users-php .wp-core-ui .button-primary,
+body.user-new-php .wp-core-ui .button-primary,
+body.profile-php .wp-core-ui .button-primary {
+  text-decoration: none;
+}
+
+/* Align “1 / 1” paging text with WP without changing box sizes */
+body.users-php .tablenav-pages .paging-input,
+body.users-php .tablenav-pages .tablenav-paging-text {
+  vertical-align: middle;
+}
+
+body.users-php .tablenav-pages .current-page {
+  text-decoration: none;
+  text-align: center;
+}

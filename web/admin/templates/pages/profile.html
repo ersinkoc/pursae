@@ -1,0 +1,129 @@
+{{define "admin/profile"}}{{template "admin-header" .}}{{$u := .Data.Target}}{{with .Data}}
+<div class="wrap" id="profile-page">
+<h1 class="wp-heading-inline">{{if .Self}}Profile{{else}}Edit User {{$u.Login}}{{end}}</h1>
+{{if not .Self}}<a href="/wp-admin/user-new" class="page-title-action">Add User</a>{{end}}
+<hr class="wp-header-end">
+{{template "notices" $}}
+<form id="your-profile" action="{{.Action}}" method="post" novalidate="novalidate">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<input type="hidden" name="from" value="profile" />
+<input type="hidden" name="checkuser_id" value="{{$u.ID}}" />
+<h2>Personal Options</h2>
+<table class="form-table" role="presentation">
+<tr class="user-syntax-highlighting-wrap"><th scope="row">Syntax Highlighting</th>
+<td><label for="syntax_highlighting"><input name="syntax_highlighting" type="checkbox" id="syntax_highlighting" value="false"{{if .SyntaxOff}} checked="checked"{{end}} /> Disable syntax highlighting when editing code</label></td></tr>
+<tr class="user-admin-color-wrap"><th scope="row">Administration Color Scheme</th>
+<td><fieldset id="color-picker" class="scheme-list">
+	<legend class="screen-reader-text"><span>Administration Color Scheme</span></legend>
+	{{$cur := .Color}}{{range .Colors}}<div class="color-option{{if eq .Slug $cur}} selected{{end}}">
+		<input name="admin_color" id="admin_color_{{.Slug}}" type="radio" value="{{.Slug}}"{{if eq .Slug $cur}} checked="checked"{{end}} />
+		<input type="hidden" class="css_url" value="{{.CSS}}" />
+		<input type="hidden" class="icon_colors" value="{{.Icons}}" />
+		<label for="admin_color_{{.Slug}}">{{.Name}}</label>
+		<div class="color-palette">{{range .Colors}}<div class="color-palette-shade" style="background-color: {{.}}">&nbsp;</div>{{end}}</div>
+	</div>
+	{{end}}
+</fieldset>
+<script>
+( function() {
+	// Preview the scheme while choosing; it is saved with the profile (user-profile.js also saves it over ajax).
+	var picker = document.getElementById( 'color-picker' ), link = document.getElementById( 'colors-css' );
+	if ( ! picker ) { return; }
+	picker.addEventListener( 'click', function( e ) {
+		var opt = e.target.closest( '.color-option' );
+		if ( ! opt ) { return; }
+		picker.querySelectorAll( '.color-option' ).forEach( function( o ) { o.classList.toggle( 'selected', o === opt ); } );
+		var radio = opt.querySelector( 'input[type=radio]' ), url = opt.querySelector( '.css_url' ).value;
+		radio.checked = true;
+		if ( url ) {
+			if ( ! link ) { link = document.createElement( 'link' ); link.rel = 'stylesheet'; link.id = 'colors-css'; document.head.appendChild( link ); }
+			link.href = url;
+		} else if ( link ) {
+			link.remove(); link = null;
+		}
+		document.body.className = document.body.className.replace( /admin-color-[a-z]+/, 'admin-color-' + radio.value );
+		try { window._wpColorScheme = JSON.parse( opt.querySelector( '.icon_colors' ).value ); if ( window.wp && wp.svgPainter ) { wp.svgPainter.setColors( window._wpColorScheme ); wp.svgPainter.paint(); } } catch ( err ) {}
+	} );
+} )();
+</script></td></tr>
+<tr class="show-admin-bar user-admin-bar-front-wrap"><th scope="row">Toolbar</th>
+<td><label for="admin_bar_front"><input name="admin_bar_front" type="checkbox" id="admin_bar_front" value="1"{{if .ShowToolbar}} checked="checked"{{end}} /> Show Toolbar when viewing site</label><br /></td></tr>
+</table>
+<h2>Name</h2>
+<table class="form-table" role="presentation">
+<tr class="user-user-login-wrap"><th><label for="user_login">Username</label></th>
+<td><input type="text" name="user_login" id="user_login" value="{{$u.Login}}" disabled="disabled" class="regular-text" /> <span class="description">Usernames cannot be changed.</span></td></tr>
+{{if .CanPromote}}<tr class="user-role-wrap"><th><label for="role">Role</label></th>
+<td><select name="role" id="role">{{range .Roles}}<option value="{{.Slug}}"{{if .Primary}} selected="selected"{{end}}>{{.Name}}</option>{{end}}<option value="">&mdash; No role for this site &mdash;</option></select></td></tr>
+<tr class="user-extra-roles-wrap"><th>Additional Roles</th>
+<td><fieldset id="wpgo-extra-roles"><legend class="screen-reader-text">Additional roles</legend>{{range .Roles}}<label for="extra-role-{{.Slug}}" style="display:inline-flex;align-items:center;gap:6px;margin:0 20px 6px 0;white-space:nowrap"><input type="checkbox" id="extra-role-{{.Slug}}" name="extra_roles[]" value="{{.Slug}}" style="margin:0"{{if or .Extra .Primary}} checked{{end}}{{if .Primary}} disabled{{end}} /> <span>{{.Name}}</span><span class="description wpgo-primary-tag"{{if not .Primary}} hidden{{end}}>(primary)</span></label>{{end}}</fieldset>
+<script>
+( function() {
+	var role = document.getElementById( 'role' ), boxes = document.querySelectorAll( '#wpgo-extra-roles input' );
+	if ( ! role ) { return; }
+	role.addEventListener( 'change', function() {
+		boxes.forEach( function( box ) {
+			var primary = box.value === role.value;
+			if ( box.disabled && ! primary ) { box.checked = false; }
+			box.disabled = primary;
+			if ( primary ) { box.checked = true; }
+			box.parentNode.querySelector( '.wpgo-primary-tag' ).hidden = ! primary;
+		} );
+	} );
+} )();
+</script>
+<p class="description">The user gets every capability of all their roles. The primary role above is the one shown in lists.</p></td></tr>
+<tr class="user-caps-wrap"><th>Capability Overrides</th>
+<td><table class="widefat striped" style="max-width:520px" id="wpgo-cap-rows"><thead><tr><th>Capability</th><th>Effect</th></tr></thead><tbody>
+{{range .CapRows}}<tr><td><input type="text" name="cap_name[]" value="{{.Cap}}" class="regular-text code" /></td><td><select name="cap_effect[]"><option value="allow"{{if eq .Effect "allow"}} selected{{end}}>Allow</option><option value="deny"{{if eq .Effect "deny"}} selected{{end}}>Deny</option></select></td></tr>{{end}}
+<tr><td><input type="text" name="cap_name[]" value="" class="regular-text code" placeholder="e.g. publish_pages" /></td><td><select name="cap_effect[]"><option value="allow">Allow</option><option value="deny">Deny</option></select></td></tr>
+</tbody></table><p class="description">Per-user exceptions on top of the roles. <strong>Deny always wins.</strong> Clear a name to remove it.</p></td></tr>{{end}}
+<tr class="user-first-name-wrap"><th><label for="first_name">First Name</label></th>
+<td><input type="text" name="first_name" id="first_name" value="{{index $u.Profile "first_name"}}" class="regular-text" /></td></tr>
+<tr class="user-last-name-wrap"><th><label for="last_name">Last Name</label></th>
+<td><input type="text" name="last_name" id="last_name" value="{{index $u.Profile "last_name"}}" class="regular-text" /></td></tr>
+<tr class="user-nickname-wrap"><th><label for="nickname">Nickname <span class="description">(required)</span></label></th>
+<td><input type="text" name="nickname" id="nickname" value="{{index $u.Profile "nickname"}}" class="regular-text" /></td></tr>
+<tr class="user-display-name-wrap"><th><label for="display_name">Display name publicly as</label></th>
+<td><select name="display_name" id="display_name">{{range .DisplayOptions}}<option{{if eq . $u.DisplayName}} selected="selected"{{end}}>{{.}}</option>{{end}}</select></td></tr>
+</table>
+<h2>Contact Info</h2>
+<table class="form-table" role="presentation">
+<tr class="user-email-wrap"><th><label for="email">Email <span class="description">(required)</span></label></th>
+<td><input type="email" name="email" id="email" aria-describedby="email-description" value="{{$u.Email}}" class="regular-text ltr" />
+<p class="description" id="email-description">If you change this, an email will be sent at your new address to confirm it. <strong>The new address will not become active until confirmed.</strong></p></td></tr>
+<tr class="user-url-wrap"><th><label for="url">Website</label></th>
+<td><input type="url" name="url" id="url" value="{{$u.URL}}" class="regular-text code" /></td></tr>
+</table>
+<h2>About Yourself</h2>
+<table class="form-table" role="presentation">
+<tr class="user-description-wrap"><th><label for="description">Biographical Info</label></th>
+<td><textarea name="description" id="description" rows="5" cols="30">{{index $u.Profile "description"}}</textarea>
+<p class="description">Share a little biographical information to fill out your profile. This may be shown publicly.</p></td></tr>
+<tr class="user-profile-picture"><th>Profile Picture</th>
+<td><img alt="" src="{{.Avatar96}}" srcset="{{.Avatar96}} 2x" class="avatar avatar-96 photo" height="96" width="96" loading="lazy" decoding="async"/>
+{{if .CanUpload}}<input type="hidden" name="avatar_id" id="avatar_id" value="{{.AvatarID}}" />
+<p class="wpgo-avatar-actions"><button type="button" class="button" id="wpgo-avatar-choose">{{if .AvatarID}}Change Profile Picture{{else}}Choose Profile Picture{{end}}</button>
+<button type="button" class="button-link button-link-delete" id="wpgo-avatar-remove" style="margin-left:8px"{{if not .AvatarID}} hidden{{end}}>Remove</button></p>
+<p class="description">Pick an image from the Media Library or upload a new one. Square images look best.</p>
+{{else}}<p class="description">Your profile picture is set by a site administrator.</p>{{end}}</td></tr>
+</table>
+<h2>Account Management</h2>
+<table class="form-table" role="presentation">
+<tr id="password" class="user-pass1-wrap"><th><label for="pass1">New Password</label></th>
+<td><input type="password" name="pass1" id="pass1" class="regular-text" value="" autocomplete="new-password" spellcheck="false" aria-describedby="pass-desc" />
+<p class="description" id="pass-desc">Leave blank to keep your current password.</p></td></tr>
+<tr class="user-pass2-wrap"><th scope="row"><label for="pass2">Repeat New Password</label></th>
+<td><input type="password" name="pass2" id="pass2" class="regular-text" value="" autocomplete="new-password" spellcheck="false" aria-describedby="pass2-desc" />
+<p class="description" id="pass2-desc">Type your new password again.</p></td></tr>
+{{if .Self}}<tr class="user-sessions-wrap hide-if-no-js"><th>Sessions</th>
+<td aria-live="assertive">{{if .OtherSessions}}<div class="destroy-sessions"><button type="submit" class="button" name="action" value="destroy-sessions" id="destroy-sessions">Log Out Everywhere Else</button></div>
+<p class="description">Did you lose your phone or leave your account logged in at a public computer? You can log out everywhere else, and stay logged in here.</p>{{else}}<div class="destroy-sessions"><button type="button" disabled class="button">Log Out Everywhere Else</button></div>
+<p class="description">You are only logged in at this location.</p>{{end}}</td></tr>{{end}}
+</table>
+<input type="hidden" name="action" value="update" />
+<input type="hidden" name="user_id" id="user_id" value="{{$u.ID}}" />
+<p class="submit"><input type="submit" name="submit" id="submit" class="button button-primary" value="{{if .Self}}Update Profile{{else}}Update User{{end}}" /></p>
+</form>
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}

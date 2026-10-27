@@ -1,0 +1,19 @@
+{"name":"nested-modern","settings":{},"elements":[
+{"id":"4b20001","elType":"container","isInner":false,"settings":{},"elements":[
+ {"id":"4b20002","elType":"widget","widgetType":"nested-tabs","settings":{"tabs":[{"_id":"nt1","tab_title":"Intro <b>bold</b>","tab_icon":{"value":"fas fa-star","library":"fa-solid"},"tab_icon_active":{"value":"far fa-star","library":"fa-regular"}},{"_id":"nt2","tab_title":"Details","element_id":"my-details","tab_icon":{"value":"eicon-check","library":"eicons"}},{"_id":"nt3","tab_title":"More"}],"tabs_direction":"inline-start","tabs_direction_mobile":"block-start","hover_animation":"grow","horizontal_scroll":"enable","tabs_title_space_between":{"unit":"px","size":14,"sizes":[]},"__globals__":{"title_text_color":"globals/colors?id=primary"},"breakpoint_selector":"tablet"},"elements":[
+  {"id":"4b20003","elType":"container","isInner":true,"settings":{"_title":"Tab #1","content_width":"full"},"elements":[
+    {"id":"4b20004","elType":"widget","widgetType":"heading","settings":{"title":"Inside tab one"},"elements":[]}]},
+  {"id":"4b20005","elType":"container","isInner":true,"settings":{"_title":"Tab #2","content_width":"full","padding":{"unit":"px","top":"10","right":"10","bottom":"10","left":"10","isLinked":true}},"elements":[
+    {"id":"4b20006","elType":"widget","widgetType":"text-editor","settings":{"editor":"<p>Tab two text</p>"},"elements":[]}]},
+  {"id":"4b20007","elType":"container","isInner":true,"settings":{"_title":"Tab #3","content_width":"full"},"elements":[]}
+ ]},
+ {"id":"4b20008","elType":"widget","widgetType":"nested-accordion","settings":{"items":[{"_id":"na1","item_title":"What is it?"},{"_id":"na2","item_title":"How <em>much</em>?","element_css_id":"price-q"}],"accordion_item_title_icon":{"value":"fas fa-plus","library":"fa-solid"},"accordion_item_title_icon_active":{"value":"fas fa-minus","library":"fa-solid"},"title_tag":"h3","faq_schema":"yes","max_items_expended":"multiple","n_accordion_animation_duration":{"unit":"ms","size":600,"sizes":[]},"accordion_item_title_space_between":{"unit":"px","size":6,"sizes":[]}},"elements":[
+  {"id":"4b20009","elType":"container","isInner":true,"settings":{"_title":"item #1","content_width":"full"},"elements":[
+    {"id":"4b2000a","elType":"widget","widgetType":"text-editor","settings":{"editor":"<p>It is a thing.</p>"},"elements":[]}]},
+  {"id":"4b2000b","elType":"container","isInner":true,"settings":{"_title":"item #2","content_width":"full"},"elements":[
+    {"id":"4b2000c","elType":"widget","widgetType":"heading","settings":{"title":"Ten dollars","header_size":"h4"},"elements":[]}]}
+ ]},
+ {"id":"4b2000d","elType":"widget","widgetType":"nested-accordion","settings":{"items":[{"_id":"nb1","item_title":"Collapsed"}],"default_state":"all_collapsed","accordion_item_title_icon":{"value":"","library":""}},"elements":[
+  {"id":"4b2000e","elType":"container","isInner":true,"settings":{"_title":"item #1","content_width":"full"},"elements":[]}
+ ]}
+]}]}

@@ -1,0 +1,51 @@
+[
+ {
+  "id": "236f9d9",
+  "elType": "container",
+  "settings": [],
+  "elements": [
+   {
+    "id": "37aec74",
+    "elType": "widget",
+    "settings": {
+     "title": "Hello from GoWebEditor lab",
+     "header_size": "h1",
+     "title_color": "#C0392B",
+     "align": "center",
+     "typography_typography": "custom",
+     "typography_font_size": {
+      "unit": "px",
+      "size": 48,
+      "sizes": []
+     }
+    },
+    "elements": [],
+    "widgetType": "heading"
+   },
+   {
+    "id": "e8cd62a",
+    "elType": "widget",
+    "settings": {
+     "text": "Click me",
+     "link": {
+      "url": "https://example.com",
+      "is_external": "",
+      "nofollow": "",
+      "custom_attributes": ""
+     },
+     "background_color": "#2E86C1"
+    },
+    "elements": [],
+    "widgetType": "button"
+   },
+   {
+    "id": "d0b873f",
+    "elType": "widget",
+    "settings": [],
+    "elements": [],
+    "widgetType": "wp-widget-calendar"
+   }
+  ],
+  "isInner": false
+ }
+]

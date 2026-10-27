@@ -1,0 +1,97 @@
+{{define "admin/wpgo-cache"}}{{template "admin-header" .}}{{with .Data}}
+<div class="wrap wpgo-cache">
+<h1 class="wp-heading-inline"><span class="dashicons dashicons-performance" style="font-size:28px;width:28px;height:28px;margin-right:6px;color:#2271b1"></span>WPGo Cache <span style="font-size:13px;color:#646970;font-weight:400">v1.0 &middot; native plugin</span></h1>
+<hr class="wp-header-end">
+{{template "notices" $}}
+<nav class="nav-tab-wrapper wp-clearfix" aria-label="Secondary menu">
+	<a href="/wp-admin/admin?page=wpgo-cache" class="nav-tab{{if eq .Tab "wpgo-cache"}} nav-tab-active{{end}}">Dashboard</a>
+	<a href="/wp-admin/admin?page=wpgo-cache-settings" class="nav-tab{{if eq .Tab "wpgo-cache-settings"}} nav-tab-active{{end}}">Cache</a>
+	<a href="/wp-admin/admin?page=wpgo-cache-optimize" class="nav-tab{{if eq .Tab "wpgo-cache-optimize"}} nav-tab-active{{end}}">Page Optimization</a>
+	<a href="/wp-admin/admin?page=wpgo-cache-toolbox" class="nav-tab{{if eq .Tab "wpgo-cache-toolbox"}} nav-tab-active{{end}}">Toolbox</a>
+</nav>
+
+{{if eq .Tab "wpgo-cache"}}
+<div id="dashboard-widgets" class="metabox-holder" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:16px">
+	<div class="postbox" style="margin:0"><div class="inside"><h3 style="margin:.5em 0">Page Cache</h3>
+		<p style="font-size:28px;margin:.2em 0;color:{{if .Enabled}}#00a32a{{else}}#d63638{{end}}">{{if .Enabled}}ON{{else}}OFF{{end}}</p>
+		<p class="description">{{if .Enabled}}Public pages are served from memory.{{else}}Turn it on under <a href="/wp-admin/admin?page=wpgo-cache-settings">Cache</a>.{{end}}</p></div></div>
+	<div class="postbox" style="margin:0"><div class="inside"><h3 style="margin:.5em 0">Cached Pages</h3>
+		<p style="font-size:28px;margin:.2em 0">{{num .Stats.Entries}}</p><p class="description">{{.Size}} in memory{{if .Stats.DiskEntries}}, {{.Stats.DiskEntries}} on disk{{end}}</p></div></div>
+	<div class="postbox" style="margin:0"><div class="inside"><h3 style="margin:.5em 0">Hit Ratio</h3>
+		<p style="font-size:28px;margin:.2em 0">{{if .HitPct}}{{.HitPct}}{{else}}&ndash;{{end}}</p><p class="description">{{num .Stats.Hits}} hits &middot; {{num .Stats.Misses}} misses since start</p></div></div>
+	<div class="postbox" style="margin:0"><div class="inside"><h3 style="margin:.5em 0">Crawler</h3>
+		<p style="font-size:28px;margin:.2em 0">{{if .Warming}}Running&hellip;{{else if .WarmAt}}{{.Warm.Warmed}} warmed{{else}}Idle{{end}}</p>
+		<p class="description">{{if .WarmAt}}Last run {{.WarmAt}}: {{.Warm.Done}}/{{.Warm.Total}} URLs, {{.Warm.AlreadyCached}} already cached, {{.Warm.Failed}} failed.{{else}}Warm the cache from the Toolbox.{{end}}</p></div></div>
+</div>
+<div class="postbox" style="margin-top:16px"><div class="inside">
+	<h3>Quick Actions</h3>
+	<p>
+		<a class="button button-primary" href="/wp-admin/admin?page=wpgo-cache&amp;action=purge_all&amp;_wpnonce={{.PurgeNonce}}">Purge All</a>
+		<a class="button" href="/wp-admin/admin?page=wpgo-cache&amp;action=purge_front&amp;_wpnonce={{.PurgeNonce}}">Purge Front Page</a>
+		<a class="button" href="/wp-admin/admin?page=wpgo-cache&amp;action=purge_404&amp;_wpnonce={{.PurgeNonce}}">Purge All 404 Pages</a>
+		<a class="button" href="/wp-admin/admin?page=wpgo-cache&amp;action=warm&amp;_wpnonce={{.PurgeNonce}}">Warm Up Cache</a>
+	</p>
+	<p class="description">Pages are tagged while they render (post, term, author, date, feed&hellip;). Saving a post, approving a comment or editing a category purges exactly the pages that show it. Settings changes purge everything.</p>
+</div></div>
+{{end}}
+
+{{if eq .Tab "wpgo-cache-settings"}}
+<form method="post" action="/wp-admin/admin?page=wpgo-cache-settings">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<table class="form-table" role="presentation">
+<tr><th scope="row">Enable Cache</th><td><label><input type="checkbox" name="wpgo_cache_enabled" value="1"{{if settingBool "wpgo_cache_enabled"}} checked{{end}} /> Serve public pages from the page cache</label></td></tr>
+<tr><th scope="row"><label for="wpgo_cache_ttl_public">Default Public Cache TTL</label></th><td><input name="wpgo_cache_ttl_public" id="wpgo_cache_ttl_public" type="number" min="30" class="small-text" value="{{settingInt "wpgo_cache_ttl_public"}}" /> seconds <p class="description">Recommended: 604800 (one week). Tag purges keep pages fresh, so a long TTL is safe.</p></td></tr>
+<tr><th scope="row"><label for="wpgo_cache_ttl_front">Default Front Page TTL</label></th><td><input name="wpgo_cache_ttl_front" id="wpgo_cache_ttl_front" type="number" min="30" class="small-text" value="{{settingInt "wpgo_cache_ttl_front"}}" /> seconds</td></tr>
+<tr><th scope="row"><label for="wpgo_cache_ttl_feed">Default Feed TTL</label></th><td><input name="wpgo_cache_ttl_feed" id="wpgo_cache_ttl_feed" type="number" min="0" class="small-text" value="{{settingInt "wpgo_cache_ttl_feed"}}" /> seconds</td></tr>
+<tr><th scope="row"><label for="wpgo_cache_ttl_404">Default 404 Page TTL</label></th><td><input name="wpgo_cache_ttl_404" id="wpgo_cache_ttl_404" type="number" min="0" class="small-text" value="{{settingInt "wpgo_cache_ttl_404"}}" /> seconds <p class="description">0 disables caching of 404 pages.</p></td></tr>
+<tr><th scope="row">Cache Mobile</th><td><label><input type="checkbox" name="wpgo_cache_mobile" value="1"{{if settingBool "wpgo_cache_mobile"}} checked{{end}} /> Keep a separate copy for mobile browsers</label></td></tr>
+<tr><th scope="row">Cache Logged-in Users</th><td><label><input type="checkbox" name="wpgo_cache_logged_in" value="1"{{if settingBool "wpgo_cache_logged_in"}} checked{{end}} /> Private per-user cache</label><p class="description">Never shared with other visitors or a proxy. Leave off unless the site has many logged-in readers.</p></td></tr>
+<tr><th scope="row"><label for="wpgo_cache_exclude_uri">Do Not Cache URIs</label></th><td><textarea name="wpgo_cache_exclude_uri" id="wpgo_cache_exclude_uri" rows="4" class="large-text code" placeholder="/checkout&#10;/my-account">{{settingStr "wpgo_cache_exclude_uri"}}</textarea><p class="description">One path prefix per line. Admin, login, REST and comment URLs are always excluded.</p></td></tr>
+<tr><th scope="row"><label for="wpgo_cache_drop_qs">Drop Query Strings</label></th><td><textarea name="wpgo_cache_drop_qs" id="wpgo_cache_drop_qs" rows="3" class="large-text code" placeholder="campaign_*">{{settingStr "wpgo_cache_drop_qs"}}</textarea><p class="description">Extra tracking parameters to ignore (utm_*, fbclid, gclid&hellip; are built in). A trailing * matches a prefix.</p></td></tr>
+<tr><th scope="row">Front Server</th><td><fieldset>{{range .ServerOpts}}<label><input type="radio" name="wpgo_cache_server" value="{{.Value}}"{{if .Checked}} checked{{end}} /> {{.Label}}</label><br />{{end}}</fieldset><p class="description">WordPress Go always caches in-process. These headers let the server in front cache too, and purges are forwarded to it.</p></td></tr>
+<tr><th scope="row">Disk Persistence</th><td><label><input type="checkbox" name="wpgo_cache_disk" value="1"{{if settingBool "wpgo_cache_disk"}} checked{{end}} /> Keep cached pages on disk across restarts</label></td></tr>
+</table>
+<p class="submit"><input type="submit" class="button button-primary" value="Save Changes" /></p>
+</form>
+{{end}}
+
+{{if eq .Tab "wpgo-cache-optimize"}}
+<form method="post" action="/wp-admin/admin?page=wpgo-cache-optimize">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<p>Optimizations run once, when a page is stored in the cache, so they cost nothing on cache hits. They target the PageSpeed audits that matter for a classic theme: Largest Contentful Paint, render-blocking resources and offscreen images.</p>
+<table class="form-table" role="presentation">
+<tr><th scope="row">Lazy Load Images</th><td><label><input type="checkbox" name="wpgo_opt_lazy" value="1"{{if settingBool "wpgo_opt_lazy"}} checked{{end}} /> Add <code>loading="lazy"</code> and <code>decoding="async"</code> to images and iframes</label></td></tr>
+<tr><th scope="row"><label for="wpgo_opt_lazy_skip">Skip First Images</label></th><td><input name="wpgo_opt_lazy_skip" id="wpgo_opt_lazy_skip" type="number" min="0" class="small-text" value="{{settingInt "wpgo_opt_lazy_skip"}}" /><p class="description">The first images stay eager and get <code>fetchpriority="high"</code> to help LCP.</p></td></tr>
+<tr><th scope="row">Defer JavaScript</th><td><label><input type="checkbox" name="wpgo_opt_defer" value="1"{{if settingBool "wpgo_opt_defer"}} checked{{end}} /> Defer the scripts listed below</label>
+<textarea name="wpgo_opt_defer_list" rows="3" class="large-text code" placeholder="twentysixteen-script&#10;twentysixteen-skip-link-focus-fix">{{settingStr "wpgo_opt_defer_list"}}</textarea><p class="description">Script handles or URL fragments, one per line. Scripts with inline code that depends on them are left alone.</p></td></tr>
+<tr><th scope="row">Minify HTML</th><td><label><input type="checkbox" name="wpgo_opt_minify_html" value="1"{{if settingBool "wpgo_opt_minify_html"}} checked{{end}} /> Collapse whitespace between tags (<code>&lt;pre&gt;</code>, scripts and textareas are untouched)</label></td></tr>
+<tr><th scope="row">Preload Fonts</th><td><label><input type="checkbox" name="wpgo_opt_preload_fonts" value="1"{{if settingBool "wpgo_opt_preload_fonts"}} checked{{end}} /> Preload the theme's main web fonts</label></td></tr>
+</table>
+<p class="submit"><input type="submit" class="button button-primary" value="Save Changes" /></p>
+</form>
+{{end}}
+
+{{if eq .Tab "wpgo-cache-toolbox"}}
+<div class="card" style="max-width:none">
+	<h2 class="title">Purge</h2>
+	<p>
+		<a class="button button-primary" href="/wp-admin/admin?page=wpgo-cache-toolbox&amp;action=purge_all&amp;_wpnonce={{.PurgeNonce}}">Purge All</a>
+		<a class="button" href="/wp-admin/admin?page=wpgo-cache-toolbox&amp;action=purge_front&amp;_wpnonce={{.PurgeNonce}}">Purge Front Page</a>
+		<a class="button" href="/wp-admin/admin?page=wpgo-cache-toolbox&amp;action=purge_404&amp;_wpnonce={{.PurgeNonce}}">Purge All 404 Pages</a>
+	</p>
+	<form method="post" action="/wp-admin/admin?page=wpgo-cache-toolbox">
+		<input type="hidden" name="_wpnonce" value="{{.PurgeNonce}}" /><input type="hidden" name="action" value="purge_url" />
+		<label for="purge_url"><strong>Purge by URL</strong></label><br />
+		<input type="text" name="purge_url" id="purge_url" class="regular-text" placeholder="/2026/10/26/hello-world/" /> <input type="submit" class="button" value="Purge" />
+	</form>
+</div>
+<div class="card" style="max-width:none">
+	<h2 class="title">Crawler</h2>
+	<p>Visits the home page, every published post and page, and every category and tag archive in-process, so the first real visitor gets a cached page.</p>
+	<p><a class="button" href="/wp-admin/admin?page=wpgo-cache-toolbox&amp;action=warm&amp;_wpnonce={{.PurgeNonce}}">{{if .Warming}}Crawler running&hellip;{{else}}Warm Up Cache{{end}}</a>
+	{{if .WarmAt}}<span class="description">Last run {{.WarmAt}}: {{.Warm.Warmed}} warmed, {{.Warm.AlreadyCached}} already cached, {{.Warm.Failed}} failed of {{.Warm.Total}}.</span>{{end}}</p>
+</div>
+{{if .TopTags}}<div class="card" style="max-width:none"><h2 class="title">Cached Tags</h2><p>{{range .TopTags}}<code>{{.Tag}}</code> &times;{{.Count}} {{end}}</p></div>{{end}}
+{{end}}
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}

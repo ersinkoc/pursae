@@ -1,0 +1,12 @@
+/**
+ * WordPress Go additions to the Tools screens. Layout comes from WordPress's own CSS.
+ * Export filters: export.php hides each content type's filters until its radio is selected.
+ */
+#export-filters ul.export-filters { display: none !important; }
+#export-filters:has(input[name="content"][value="posts"]:checked) #post-filters,
+#export-filters:has(input[name="content"][value="post"]:checked) #post-filters,
+#export-filters:has(input[name="content"][value="pages"]:checked) #page-filters,
+#export-filters:has(input[name="content"][value="page"]:checked) #page-filters,
+#export-filters:has(input[name="content"][value="attachment"]:checked) #attachment-filters {
+	display: block !important;
+}

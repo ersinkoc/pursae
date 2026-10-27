@@ -1,0 +1,154 @@
+	<div class="imgedit-wrap wp-clearfix">
+	<div id="imgedit-panel-424242">
+		<div class="imgedit-panel-content imgedit-panel-tools wp-clearfix">
+		<div class="imgedit-menu wp-clearfix">
+			<button type="button" onclick="imageEdit.toggleCropTool( 424242, 'NONCEVALUE', this );" aria-expanded="false" aria-controls="imgedit-crop" class="imgedit-crop button disabled" disabled>Crop</button>
+			<button type="button" class="imgedit-scale button" onclick="imageEdit.toggleControls(this);" aria-expanded="false" aria-controls="imgedit-scale">Scale</button>
+			<div class="imgedit-rotate-menu-container">
+				<button type="button" aria-controls="imgedit-rotate-menu" class="imgedit-rotate button" aria-expanded="false" onclick="imageEdit.togglePopup(this)" onblur="imageEdit.monitorPopup()">Image Rotation</button>
+				<div id="imgedit-rotate-menu" class="imgedit-popup-menu">
+								<button type="button" class="imgedit-rleft button" onkeydown="imageEdit.browsePopup(event, this)" onclick="imageEdit.rotate( 90, 424242, 'NONCEVALUE', this)" onblur="imageEdit.monitorPopup()">Rotate 90&deg; left</button>
+					<button type="button" class="imgedit-rright button" onkeydown="imageEdit.browsePopup(event, this)" onclick="imageEdit.rotate(-90, 424242, 'NONCEVALUE', this)" onblur="imageEdit.monitorPopup()">Rotate 90&deg; right</button>
+					<button type="button" class="imgedit-rfull button" onkeydown="imageEdit.browsePopup(event, this)" onclick="imageEdit.rotate(180, 424242, 'NONCEVALUE', this)" onblur="imageEdit.monitorPopup()">Rotate 180&deg;</button>
+									<hr />
+					<button type="button" onkeydown="imageEdit.browsePopup(event, this)" onclick="imageEdit.flip(1, 424242, 'NONCEVALUE', this)" onblur="imageEdit.monitorPopup()" class="imgedit-flipv button">Flip vertical</button>
+					<button type="button" onkeydown="imageEdit.browsePopup(event, this)" onclick="imageEdit.flip(2, 424242, 'NONCEVALUE', this)" onblur="imageEdit.monitorPopup()" class="imgedit-fliph button">Flip horizontal</button>
+									</div>
+			</div>
+		</div>
+		<div class="imgedit-submit imgedit-menu">
+			<button type="button" id="image-undo-424242" onclick="imageEdit.undo(424242, 'NONCEVALUE', this)" class="imgedit-undo button disabled" disabled>Undo</button>
+			<button type="button" id="image-redo-424242" onclick="imageEdit.redo(424242, 'NONCEVALUE', this)" class="imgedit-redo button disabled" disabled>Redo</button>
+			<button type="button" onclick="imageEdit.close(424242, 1)" class="button imgedit-cancel-btn">Cancel Editing</button>
+			<button type="button" onclick="imageEdit.save(424242, 'NONCEVALUE')" disabled="disabled" class="button button-primary imgedit-submit-btn">Save Edits</button>
+		</div>
+	</div>
+
+	<div class="imgedit-panel-content wp-clearfix">
+		<div class="imgedit-tools">
+			<input type="hidden" id="imgedit-nonce-424242" value="NONCEVALUE" />
+			<input type="hidden" id="imgedit-sizer-424242" value="RATIOVALUE" />
+			<input type="hidden" id="imgedit-history-424242" value="" />
+			<input type="hidden" id="imgedit-undone-424242" value="0" />
+			<input type="hidden" id="imgedit-selection-424242" value="" />
+			<input type="hidden" id="imgedit-x-424242" value="4447" />
+			<input type="hidden" id="imgedit-y-424242" value="4448" />
+
+			<div id="imgedit-crop-424242" class="imgedit-crop-wrap">
+			<div class="imgedit-crop-grid"></div>
+			<img id="image-preview-424242" onload="imageEdit.imgLoaded('424242')"
+				src="/wp-admin/admin-ajax?action=imgedit-preview&amp;_ajax_nonce=NONCEVALUE&amp;postid=424242&amp;rand=RANDVALUE" alt="" />
+			</div>
+		</div>
+		<div class="imgedit-settings">
+			<div class="imgedit-tool-active">
+				<div class="imgedit-group">
+				<div id="imgedit-scale" tabindex="-1" class="imgedit-group-controls">
+					<div class="imgedit-group-top">
+						<h2>Scale Image</h2>
+						<button type="button" class="dashicons dashicons-editor-help imgedit-help-toggle" onclick="imageEdit.toggleHelp(this);" aria-expanded="false"><span class="screen-reader-text">
+						Scale Image Help						</span></button>
+						<div class="imgedit-help">
+						<p>You can proportionally scale the original image. For best results, scaling should be done before you crop, flip, or rotate. Images can only be scaled down, not up.</p>
+						</div>
+												<p>
+							Original dimensions <span class="imgedit-original-dimensions">4447 &times; 4448</span>						</p>
+												<div class="imgedit-submit">
+						<fieldset class="imgedit-scale-controls">
+							<legend>New dimensions:</legend>
+							<div class="nowrap">
+							<label for="imgedit-scale-width-424242" class="screen-reader-text">
+							Width							</label>
+							<input type="number" step="1" min="0" max="4447" aria-describedby="imgedit-scale-warn-424242"  id="imgedit-scale-width-424242" onkeyup="imageEdit.scaleChanged(424242, 1, this)" onblur="imageEdit.scaleChanged(424242, 1, this)" value="4447" />
+							<span class="imgedit-separator" aria-hidden="true">&times;</span>
+							<label for="imgedit-scale-height-424242" class="screen-reader-text">
+							Height							</label>
+							<input type="number" step="1" min="0" max="4448" aria-describedby="imgedit-scale-warn-424242" id="imgedit-scale-height-424242" onkeyup="imageEdit.scaleChanged(424242, 0, this)" onblur="imageEdit.scaleChanged(424242, 0, this)" value="4448" />
+							<button id="imgedit-scale-button" type="button" onclick="imageEdit.action(424242, 'NONCEVALUE', 'scale')" class="button button-primary">Scale</button>
+							</div>
+							<span class="imgedit-scale-warn" id="imgedit-scale-warn-424242"><span class="dashicons dashicons-warning" aria-hidden="true"></span>Images cannot be scaled to a size larger than the original.</span>
+						</fieldset>
+						</div>
+					</div>
+				</div>
+			</div>
+
+						<!--RESTORE--><div class="imgedit-group">
+				<div class="imgedit-group-top">
+					<h2><button type="button" onclick="imageEdit.toggleHelp(this);" class="button-link" aria-expanded="false">Restore original image <span class="dashicons dashicons-arrow-down imgedit-help-toggle"></span></button></h2>
+					<div class="imgedit-help imgedit-restore">
+					<p>
+					Discard any changes and restore the original image. Previously edited copies of the image will not be deleted.					</p>
+					<div class="imgedit-submit">
+						<input type="button" onclick="imageEdit.action(424242, 'NONCEVALUE', 'restore')" class="button button-primary" value="Restore image" />
+					</div>
+				</div>
+			</div>
+			</div><!--/RESTORE-->
+					<div class="imgedit-group">
+				<div id="imgedit-crop" tabindex="-1" class="imgedit-group-controls">
+				<div class="imgedit-group-top">
+					<h2>Crop Image</h2>
+					<button type="button" class="dashicons dashicons-editor-help imgedit-help-toggle" onclick="imageEdit.toggleHelp(this);" aria-expanded="false"><span class="screen-reader-text">
+					Image Crop Help					</span></button>
+					<div class="imgedit-help">
+						<p>To crop the image, click on it and drag to make your selection.</p>
+						<p><strong>Crop Aspect Ratio</strong><br />
+						The aspect ratio is the relationship between the width and height. You can preserve the aspect ratio by holding down the shift key while resizing your selection. Use the input box to specify the aspect ratio, e.g. 1:1 (square), 4:3, 16:9, etc.</p>
+
+						<p><strong>Crop Selection</strong><br />
+						Once you have made your selection, you can adjust it by entering the size in pixels. The minimum selection size is the thumbnail size as set in the Media settings.</p>
+					</div>
+				</div>
+				<fieldset class="imgedit-crop-ratio">
+					<legend>Aspect ratio:</legend>
+					<div class="nowrap">
+					<label for="imgedit-crop-width-424242" class="screen-reader-text">
+					crop ratio width					</label>
+					<input type="number" step="1" min="1" id="imgedit-crop-width-424242" onkeyup="imageEdit.setRatioSelection(424242, 0, this)" onblur="imageEdit.setRatioSelection(424242, 0, this)" />
+					<span class="imgedit-separator" aria-hidden="true">:</span>
+					<label for="imgedit-crop-height-424242" class="screen-reader-text">
+					crop ratio height					</label>
+					<input  type="number" step="1" min="0" id="imgedit-crop-height-424242" onkeyup="imageEdit.setRatioSelection(424242, 1, this)" onblur="imageEdit.setRatioSelection(424242, 1, this)" />
+					</div>
+				</fieldset>
+				<fieldset id="imgedit-crop-sel-424242" class="imgedit-crop-sel">
+					<legend>Selection:</legend>
+					<div class="nowrap">
+					<label for="imgedit-sel-width-424242" class="screen-reader-text">
+					selection width					</label>
+					<input  type="number" step="1" min="0" id="imgedit-sel-width-424242" onkeyup="imageEdit.setNumSelection(424242, this)" onblur="imageEdit.setNumSelection(424242, this)" />
+					<span class="imgedit-separator" aria-hidden="true">&times;</span>
+					<label for="imgedit-sel-height-424242" class="screen-reader-text">
+					selection height					</label>
+					<input  type="number" step="1" min="0" id="imgedit-sel-height-424242" onkeyup="imageEdit.setNumSelection(424242, this)" onblur="imageEdit.setNumSelection(424242, this)" />
+					</div>
+				</fieldset>
+				<fieldset id="imgedit-crop-sel-424242" class="imgedit-crop-sel">
+					<legend>Starting Coordinates:</legend>
+					<div class="nowrap">
+					<label for="imgedit-start-x-424242" class="screen-reader-text">
+					horizontal start position					</label>
+					<input  type="number" step="1" min="0" id="imgedit-start-x-424242" onkeyup="imageEdit.setNumSelection(424242, this)" onblur="imageEdit.setNumSelection(424242, this)" value="0" />
+					<span class="imgedit-separator" aria-hidden="true">&times;</span>
+					<label for="imgedit-start-y-424242" class="screen-reader-text">
+					vertical start position					</label>
+					<input  type="number" step="1" min="0" id="imgedit-start-y-424242" onkeyup="imageEdit.setNumSelection(424242, this)" onblur="imageEdit.setNumSelection(424242, this)" value="0" />
+					</div>
+				</fieldset>
+				<div class="imgedit-crop-apply imgedit-menu container">
+					<button class="button button-primary" type="button" onclick="imageEdit.handleCropToolClick( 424242, 'NONCEVALUE', this );" class="imgedit-crop-apply button">Apply Crop</button> <button type="button" onclick="imageEdit.handleCropToolClick( 424242, 'NONCEVALUE', this );" class="imgedit-crop-clear button" disabled="disabled">Clear Crop</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+			</div>
+	</div>
+
+	</div>
+
+	<div class="imgedit-wait" id="imgedit-wait-424242"></div>
+	<div class="hidden" id="imgedit-leaving-424242">There are unsaved changes that will be lost. 'OK' to continue, 'Cancel' to return to the Image Editor.</div>
+	</div>
+	

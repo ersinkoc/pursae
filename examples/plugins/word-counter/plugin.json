@@ -1,0 +1,11 @@
+{
+  "slug": "word-counter",
+  "name": "Word Counter",
+  "version": "1.0.0",
+  "description": "Adds a word_count entry to post statistics.",
+  "author": "WordPress Go Contributors",
+  "requires": "0.1.0",
+  "license": "GPL-2.0-or-later",
+  "permissions": ["posts:read"],
+  "hooks": ["wpgo_post_stats"]
+}

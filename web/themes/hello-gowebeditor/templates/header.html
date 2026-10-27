@@ -1,0 +1,45 @@
+{{/* Hello GoWebEditor: a blank, builder-first theme. Theme-builder parts (header, footer, single,
+     archive, search, 404) rendered in Go arrive in .GWE and replace the minimal markup below. */}}
+{{define "header"}}<!DOCTYPE html>
+<html lang="en-US">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="profile" href="https://gmpg.org/xfn/11">
+	<title>{{.DocumentTitle}}</title>
+{{.Head}}</head>
+
+<body class="{{.BodyClass}}">
+{{.BodyOpen}}<a class="skip-link screen-reader-text" href="#content">Skip to content</a>
+{{template "site-header" .}}
+{{end}}
+
+{{define "site-header"}}{{if and .GWE .GWE.Header}}{{.GWE.Header}}{{else}}<header id="site-header" class="site-header">
+	<div class="site-branding">
+		{{.CustomLogo}}
+		{{if .TitleIsH1}}<h1 class="site-title"><a href="{{.HomeURL}}" rel="home"{{if .IsFront}} aria-current="page"{{end}}>{{.SiteName}}</a></h1>{{else}}<p class="site-title"><a href="{{.HomeURL}}" rel="home"{{if .IsFront}} aria-current="page"{{end}}>{{.SiteName}}</a></p>{{end}}
+		{{if .Description}}<p class="site-description">{{.Description}}</p>{{end}}
+	</div>
+	{{if .PrimaryMenu}}<nav class="site-navigation" aria-label="Menu">{{.PrimaryMenu}}</nav>{{end}}
+</header>{{end}}{{end}}
+
+{{define "footer"}}{{template "site-footer" .}}
+{{.Footer}}{{.AdminBar}}
+</body>
+</html>
+{{end}}
+
+{{define "site-footer"}}{{if and .GWE .GWE.Footer}}{{.GWE.Footer}}{{else}}<footer id="site-footer" class="site-footer">
+	{{with .GWE}}{{if .FooterMenu}}<nav class="site-navigation" aria-label="Footer menu">{{.FooterMenu}}</nav>{{end}}{{end}}
+	<div class="site-info">
+		<p class="copyright">&copy; {{with .GWE}}{{.Year}}{{end}} <a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></p>
+		{{.PrivacyLink}}
+	</div>
+</footer>{{end}}{{end}}
+
+{{define "searchform"}}<form role="search" method="get" class="search-form" action="{{.HomeURL}}">
+	<label><span class="screen-reader-text">Search for:</span>
+		<input type="search" class="search-field" placeholder="Search &hellip;" value="{{.SearchQuery}}" name="s" />
+	</label>
+	<input type="submit" class="search-submit" value="Search" />
+</form>{{end}}

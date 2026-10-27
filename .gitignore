@@ -1,0 +1,5 @@
+/bin/
+/data/
+web/editor/node_modules/
+web/editor/build/
+.DS_Store

@@ -1,0 +1,116 @@
+{{define "admin/users-list"}}{{template "admin-header" .}}{{with .Data}}
+<div class="wrap">
+<h1 class="wp-heading-inline">Users</h1>
+{{if $.User.Can "create_users" nil}}<a href="/wp-admin/user-new" class="page-title-action">Add User</a>{{end}}
+{{if .Search}}<span class="subtitle">Search results for: <strong>{{.Search}}</strong></span>{{end}}
+<hr class="wp-header-end">
+{{template "notices" $}}
+<ul class="subsubsub">{{range $i, $v := .Views}}<li class="{{if $v.Slug}}{{$v.Slug}}{{else}}all{{end}}">{{if $i}} | {{end}}<a href="/wp-admin/users{{if $v.Slug}}?role={{$v.Slug}}{{end}}"{{if $v.Current}} class="current" aria-current="page"{{end}}>{{$v.Name}} <span class="count">({{$v.Count}})</span></a></li>{{end}}</ul>
+<form method="get">
+<p class="search-box">
+	<label class="screen-reader-text" for="user-search-input">Search Users:</label>
+	<input type="search" id="user-search-input" name="s" value="{{.Search}}" />
+	<input type="submit" id="search-submit" class="button button-compact" value="Search Users" />
+</p>
+<input type="hidden" name="_wpnonce" value="{{.BulkNonce}}" />
+<div class="tablenav top">
+	{{if $.User.Can "promote_users" nil}}<div class="alignleft actions">
+		<label class="screen-reader-text" for="new_role">Change role to&hellip;</label>
+		<select name="new_role" id="new_role"><option value="">Change role to&hellip;</option>{{range .Roles}}<option value="{{.Slug}}">{{.Name}}</option>{{end}}</select>
+		<input type="submit" name="changeit" id="changeit" class="button" value="Change" />
+	</div>{{end}}
+	{{template "tablenav-pages" .Pagination}}
+	<br class="clear" />
+</div>
+<h2 class="screen-reader-text">Users list</h2>
+<table class="wp-list-table widefat fixed striped table-view-list users">
+<thead>{{template "users-head" dict "Top" true "D" .}}</thead>
+<tbody id="the-list" data-wp-lists="list:user">
+{{range .Rows}}
+<tr id="user-{{.ID}}">
+	<th scope="row" class="check-column">{{if not .IsSelf}}<input type="checkbox" name="users[]" id="user_{{.ID}}" value="{{.ID}}" /><label for="user_{{.ID}}"><span class="screen-reader-text">Select {{.Login}}</span></label>{{end}}</th>
+	<td class="username column-username has-row-actions column-primary" data-colname="Username">{{.Avatar}} <strong><a href="{{.EditURL}}">{{.Login}}</a></strong><br />
+		<div class="row-actions"><span class="edit"><a href="{{.EditURL}}">Edit</a></span>{{if .DeleteURL}} | <span class="delete"><a class="submitdelete" href="{{.DeleteURL}}">Delete</a></span>{{end}}</div>
+		<button type="button" class="toggle-row"><span class="screen-reader-text">Show more details</span></button></td>
+	<td class="name column-name" data-colname="Name">{{if .Name}}{{.Name}}{{else}}<span aria-hidden="true">&#8212;</span><span class="screen-reader-text">Unknown</span>{{end}}</td>
+	<td class="email column-email" data-colname="Email"><a href="mailto:{{.Email}}">{{.Email}}</a></td>
+	<td class="role column-role" data-colname="Role">{{if .RoleNames}}{{.RoleNames}}{{else}}None{{end}}</td>
+	<td class="posts column-posts num" data-colname="Posts">{{if .Posts}}<a href="{{.PostsURL}}" class="edit"><span aria-hidden="true">{{.Posts}}</span><span class="screen-reader-text">{{.Posts}} posts by this author</span></a>{{else}}0{{end}}</td>
+</tr>
+{{else}}<tr class="no-items"><td class="colspanchange" colspan="6">No users found.</td></tr>{{end}}
+</tbody>
+<tfoot>{{template "users-head" dict "Top" false "D" .}}</tfoot>
+</table>
+<div class="tablenav bottom">
+	{{if $.User.Can "promote_users" nil}}<div class="alignleft actions">
+		<label class="screen-reader-text" for="new_role2">Change role to&hellip;</label>
+		<select name="new_role2" id="new_role2"><option value="">Change role to&hellip;</option>{{range .Roles}}<option value="{{.Slug}}">{{.Name}}</option>{{end}}</select>
+		<input type="submit" name="changeit2" id="changeit2" class="button" value="Change" />
+	</div>{{end}}
+	{{template "tablenav-pages" .Pagination}}
+	<br class="clear" />
+</div>
+</form>
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}
+
+{{define "users-head"}}<tr>
+	<td {{if .Top}}id="cb" {{end}}class="manage-column column-cb check-column"><input id="cb-select-all-{{if .Top}}1{{else}}2{{end}}" type="checkbox" /><label for="cb-select-all-{{if .Top}}1{{else}}2{{end}}"><span class="screen-reader-text">Select All</span></label></td>
+	{{template "sort-th" dict "ID" (or (and .Top "username") "") "Col" "username" "Primary" true "Label" "Username" "Link" (index .D.SortLinks "login")}}
+	<th scope="col" {{if .Top}}id="name" {{end}}class="manage-column column-name">Name</th>
+	{{template "sort-th" dict "ID" (or (and .Top "email") "") "Col" "email" "Label" "Email" "Link" (index .D.SortLinks "email")}}
+	<th scope="col" {{if .Top}}id="role" {{end}}class="manage-column column-role">Role</th>
+	<th scope="col" {{if .Top}}id="posts" {{end}}class="manage-column column-posts num">Posts</th>
+</tr>{{end}}
+
+{{define "admin/user-new"}}{{template "admin-header" .}}{{with .Data}}
+<div class="wrap">
+<h1 id="add-new-user">Add User</h1>
+{{if .Error}}<div class="error"><p>{{.Error}}</p></div>{{end}}
+<p>Create a brand new user and add them to this site.</p>
+<form method="post" name="createuser" id="createuser" class="validate" novalidate="novalidate">
+<input name="action" type="hidden" value="createuser" />
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<table class="form-table" role="presentation">
+	<tr class="form-field form-required"><th scope="row"><label for="user_login">Username <span class="description">(required)</span></label></th>
+		<td><input name="user_login" type="text" id="user_login" value="{{.Values.Get "user_login"}}" aria-required="true" autocapitalize="none" autocorrect="off" autocomplete="off" maxlength="60" /></td></tr>
+	<tr class="form-field form-required"><th scope="row"><label for="email">Email <span class="description">(required)</span></label></th>
+		<td><input name="email" type="email" id="email" value="{{.Values.Get "email"}}" /></td></tr>
+	<tr class="form-field"><th scope="row"><label for="first_name">First Name</label></th>
+		<td><input name="first_name" type="text" id="first_name" value="{{.Values.Get "first_name"}}" /></td></tr>
+	<tr class="form-field"><th scope="row"><label for="last_name">Last Name</label></th>
+		<td><input name="last_name" type="text" id="last_name" value="{{.Values.Get "last_name"}}" /></td></tr>
+	<tr class="form-field form-required user-pass1-wrap"><th scope="row"><label for="pass1">Password <span class="description">(required)</span></label></th>
+		<td><input type="text" name="pass1" id="pass1" class="regular-text" autocomplete="new-password" spellcheck="false" value="{{.Values.Get "pass1"}}" />
+		<button type="button" class="button wp-generate-pw" onclick="var a=new Uint8Array(18);crypto.getRandomValues(a);document.getElementById('pass1').value=btoa(String.fromCharCode.apply(null,a)).replace(/[+/=]/g,'');">Generate password</button></td></tr>
+	<tr><th scope="row">Send User Notification</th>
+		<td><input type="checkbox" name="send_user_notification" id="send_user_notification" value="1" checked="checked" /> <label for="send_user_notification">Send the new user an email about their account</label></td></tr>
+	<tr><th scope="row"><label for="role">Role</label></th>
+		<td><select name="role" id="role">{{$sel := .Values.Get "role"}}{{range .Roles}}<option value="{{.Slug}}"{{if eq .Slug $sel}} selected="selected"{{end}}>{{.Name}}</option>{{end}}</select></td></tr>
+</table>
+<p class="submit"><input type="submit" name="createuser" id="createusersub" class="button button-primary" value="Add User" /></p>
+</form>
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}
+
+{{define "admin/user-delete"}}{{template "admin-header" .}}{{with .Data}}
+<form method="get" name="updateusers" id="updateusers" action="/wp-admin/users">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<input type="hidden" name="action" value="dodelete" />
+<input type="hidden" name="user" value="{{.Target.ID}}" />
+<div class="wrap">
+<h1>Delete Users</h1>
+<p>You have specified this user for deletion:</p>
+<ul><li>ID #{{.Target.ID}}: {{.Target.Login}}</li></ul>
+{{if .HasPosts}}
+<fieldset><p><legend>What should be done with content owned by this user?</legend></p>
+<ul style="list-style:none;">
+	<li><input type="radio" id="delete_option0" name="delete_option" value="delete" /> <label for="delete_option0">Delete all content.</label></li>
+	<li><input type="radio" id="delete_option1" name="delete_option" value="reassign" checked="checked" /> <label for="delete_option1">Attribute all content to:</label>
+	<select name="reassign_user" id="reassign_user">{{range .Others}}<option value="{{.ID}}">{{.DisplayName}} ({{.Login}})</option>{{end}}</select></li>
+</ul></fieldset>
+{{end}}
+<p class="submit"><input type="submit" name="submit" id="submit" class="button button-primary" value="Confirm Deletion" /></p>
+</div>
+</form>
+{{end}}{{template "admin-footer" .}}{{end}}

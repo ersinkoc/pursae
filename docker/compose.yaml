@@ -1,0 +1,65 @@
+name: wpgo
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: wpgo
+      POSTGRES_USER: wpgo
+      POSTGRES_PASSWORD: wpgo
+    ports:
+      - "${WPGO_DB_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wpgo -d wpgo"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  wpgo:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://wpgo:wpgo@db:5432/wpgo?sslmode=disable
+      WPGO_SITE_URL: ${WPGO_SITE_URL:-http://localhost:8088}
+      WPGO_UPLOADS_DIR: /data/uploads
+      # Demo only: trust the development signing key of the bundled example plugins.
+      WPGO_TRUST_DEV_KEY: ${WPGO_TRUST_DEV_KEY:-1}
+    ports:
+      - "${WPGO_PORT:-8088}:8080"
+    volumes:
+      - uploads:/data/uploads
+      - plugins:/data/plugins
+      - themes:/data/themes # files edited in Appearance › Theme File Editor
+
+  # Runs the Go test suite against the same Postgres: docker compose --profile test run --rm test
+  test:
+    profiles: ["test"]
+    image: golang:1.27-alpine
+    working_dir: /src
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      WPGO_TEST_DB: postgres://wpgo:wpgo@db:5432/wpgo_test?sslmode=disable
+      WPGO_TEST_ADMIN_DB: postgres://wpgo:wpgo@db:5432/wpgo?sslmode=disable
+      CGO_ENABLED: "0"
+      GOFLAGS: -mod=mod
+    volumes:
+      - ..:/src
+      - gocache:/root/.cache/go-build
+      - gomod:/go/pkg/mod
+    command: ["go", "test", "./..."]
+
+volumes:
+  pgdata:
+  uploads:
+  plugins:
+  themes:
+  gocache:
+  gomod:

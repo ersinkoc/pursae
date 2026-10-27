@@ -1,0 +1,136 @@
+{
+ "name": "media-3",
+ "elements": [
+  {
+   "id": "a30a001",
+   "elType": "container",
+   "settings": {},
+   "elements": [
+    {
+     "id": "a30b001",
+     "elType": "widget",
+     "widgetType": "image-carousel",
+     "settings": {
+      "carousel": [
+       {
+        "id": 57,
+        "url": "http://localhost:8095/wp-content/uploads/2026/10/wpgo-landscape.png"
+       },
+       {
+        "id": 58,
+        "url": "http://localhost:8095/wp-content/uploads/2026/10/wpgo-square.png"
+       },
+       {
+        "id": 59,
+        "url": "http://localhost:8095/wp-content/uploads/2026/10/wpgo-small.png"
+       }
+      ],
+      "thumbnail_size": "medium",
+      "slides_to_show": "2",
+      "slides_to_show_mobile": "1",
+      "navigation": "both",
+      "link_to": "file",
+      "caption_type": "title",
+      "lazyload": "yes",
+      "autoplay": "no",
+      "image_stretch": "yes",
+      "carousel_name": "My gallery",
+      "arrows_size": {
+       "unit": "px",
+       "size": 30,
+       "sizes": []
+      },
+      "image_spacing": "custom",
+      "image_spacing_custom": {
+       "unit": "px",
+       "size": 12,
+       "sizes": []
+      }
+     },
+     "elements": []
+    },
+    {
+     "id": "a30b002",
+     "elType": "widget",
+     "widgetType": "image-carousel",
+     "settings": {
+      "carousel": [
+       {
+        "id": 58,
+        "url": "http://localhost:8095/wp-content/uploads/2026/10/wpgo-square.png"
+       },
+       {
+        "id": 57,
+        "url": "http://localhost:8095/wp-content/uploads/2026/10/wpgo-landscape.png"
+       }
+      ],
+      "navigation": "dots",
+      "link_to": "custom",
+      "link": {
+       "url": "https://example.com",
+       "is_external": "",
+       "nofollow": "",
+       "custom_attributes": ""
+      },
+      "direction": "rtl",
+      "navigation_next_icon": {
+       "value": "fas fa-arrow-right",
+       "library": "fa-solid"
+      }
+     },
+     "elements": []
+    },
+    {
+     "id": "a30b003",
+     "elType": "widget",
+     "widgetType": "image-gallery",
+     "settings": {
+      "wp_gallery": [
+       {
+        "id": 57,
+        "url": "http://localhost:8095/wp-content/uploads/2026/10/wpgo-landscape.png"
+       },
+       {
+        "id": 58,
+        "url": "http://localhost:8095/wp-content/uploads/2026/10/wpgo-square.png"
+       },
+       {
+        "id": 59,
+        "url": "http://localhost:8095/wp-content/uploads/2026/10/wpgo-small.png"
+       }
+      ],
+      "thumbnail_size": "thumbnail",
+      "gallery_columns": 3,
+      "gallery_link": "file",
+      "image_spacing": "custom",
+      "image_spacing_custom": {
+       "unit": "px",
+       "size": 10,
+       "sizes": []
+      }
+     },
+     "elements": []
+    },
+    {
+     "id": "a30b004",
+     "elType": "widget",
+     "widgetType": "image-gallery",
+     "settings": {
+      "wp_gallery": [
+       {
+        "id": 58,
+        "url": "http://localhost:8095/wp-content/uploads/2026/10/wpgo-square.png"
+       }
+      ],
+      "gallery_columns": 2,
+      "gallery_link": "none",
+      "thumbnail_size": "medium"
+     },
+     "elements": []
+    }
+   ],
+   "isInner": false
+  }
+ ],
+ "settings": {}
+}

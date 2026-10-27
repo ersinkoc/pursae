@@ -1,0 +1,150 @@
+[
+    {
+        "ID": 1,
+        "Type": "post",
+        "Title": "Hello world!",
+        "URL": "http://localhost:8095/hello-world/",
+        "Excerpt": "Welcome to WordPress. This is your first post. Edit or delete it, then start writing!",
+        "Date": "October 26, 2026",
+        "DateISO": "2026-10-26T21:33:53+00:00",
+        "Time": "9:33 pm",
+        "AuthorName": "labadmin",
+        "AuthorURL": "http://localhost:8095/author/labadmin/",
+        "CommentCount": 1,
+        "CommentsURL": "http://localhost:8095/hello-world/#comments",
+        "Categories": [
+            {
+                "Name": "Uncategorized",
+                "URL": "http://localhost:8095/category/uncategorized/"
+            }
+        ],
+        "Tags": [],
+        "ImageID": 0,
+        "ImageURL": "",
+        "Class": "post-1 post type-post status-publish format-standard hentry category-uncategorized entry",
+        "Content": "\n<p class=\"wp-block-paragraph\">Welcome to WordPress. This is your first post. Edit or delete it, then start writing!</p>\n"
+    },
+    {
+        "ID": 193,
+        "Type": "post",
+        "Title": "Third Quarter Notes",
+        "URL": "http://localhost:8095/third-quarter-notes/",
+        "Excerpt": "Quarterly notes about performance, caching and the new renderer.",
+        "Date": "July 1, 2026",
+        "DateISO": "2026-07-01T11:45:00+00:00",
+        "Time": "11:45 am",
+        "AuthorName": "labadmin",
+        "AuthorURL": "http://localhost:8095/author/labadmin/",
+        "CommentCount": 0,
+        "CommentsURL": "http://localhost:8095/third-quarter-notes/#respond",
+        "Categories": [
+            {
+                "Name": "Guides",
+                "URL": "http://localhost:8095/category/guides/"
+            }
+        ],
+        "Tags": [
+            {
+                "Name": "speed",
+                "URL": "http://localhost:8095/tag/speed/"
+            }
+        ],
+        "ImageID": 59,
+        "ImageURL": "http://localhost:8095/wp-content/uploads/2026/10/wpgo-small.png",
+        "Class": "post-193 post type-post status-publish format-standard has-post-thumbnail hentry category-guides tag-speed entry",
+        "Content": "<p>Quarterly notes about performance, caching and the new renderer.</p>\n"
+    },
+    {
+        "ID": 192,
+        "Type": "post",
+        "Title": "A Quiet Weekend",
+        "URL": "http://localhost:8095/a-quiet-weekend/",
+        "Excerpt": "Nothing happened. That was the point.",
+        "Date": "May 20, 2026",
+        "DateISO": "2026-05-20T08:30:00+00:00",
+        "Time": "8:30 am",
+        "AuthorName": "labadmin",
+        "AuthorURL": "http://localhost:8095/author/labadmin/",
+        "CommentCount": 0,
+        "CommentsURL": "http://localhost:8095/a-quiet-weekend/#respond",
+        "Categories": [
+            {
+                "Name": "Guides",
+                "URL": "http://localhost:8095/category/guides/"
+            },
+            {
+                "Name": "News",
+                "URL": "http://localhost:8095/category/news/"
+            }
+        ],
+        "Tags": [],
+        "ImageID": 0,
+        "ImageURL": "",
+        "Class": "post-192 post type-post status-publish format-standard hentry category-guides category-news entry",
+        "Content": "<p>We did nothing at all and it was wonderful.</p>\n"
+    },
+    {
+        "ID": 191,
+        "Type": "post",
+        "Title": "Building Pages Faster",
+        "URL": "http://localhost:8095/building-pages-faster/",
+        "Excerpt": "Pages are built from containers and widgets. This guide walks through the basics and shows how the builder stores data.",
+        "Date": "April 12, 2026",
+        "DateISO": "2026-04-12T14:00:00+00:00",
+        "Time": "2:00 pm",
+        "AuthorName": "labadmin",
+        "AuthorURL": "http://localhost:8095/author/labadmin/",
+        "CommentCount": 0,
+        "CommentsURL": "http://localhost:8095/building-pages-faster/#respond",
+        "Categories": [
+            {
+                "Name": "Guides",
+                "URL": "http://localhost:8095/category/guides/"
+            }
+        ],
+        "Tags": [
+            {
+                "Name": "go",
+                "URL": "http://localhost:8095/tag/go/"
+            }
+        ],
+        "ImageID": 58,
+        "ImageURL": "http://localhost:8095/wp-content/uploads/2026/10/wpgo-square.png",
+        "Class": "post-191 post type-post status-publish format-standard has-post-thumbnail hentry category-guides tag-go entry",
+        "Content": "<p>Pages are built from containers and widgets. This guide walks through the basics and shows how the builder stores data.</p>\n"
+    },
+    {
+        "ID": 190,
+        "Type": "post",
+        "Title": "Gopher Wins the Race",
+        "URL": "http://localhost:8095/gopher-wins-the-race/",
+        "Excerpt": "A short tale about a gopher that outran every other mascot in the annual race.",
+        "Date": "March 5, 2026",
+        "DateISO": "2026-03-05T09:15:00+00:00",
+        "Time": "9:15 am",
+        "AuthorName": "labadmin",
+        "AuthorURL": "http://localhost:8095/author/labadmin/",
+        "CommentCount": 0,
+        "CommentsURL": "http://localhost:8095/gopher-wins-the-race/#respond",
+        "Categories": [
+            {
+                "Name": "News",
+                "URL": "http://localhost:8095/category/news/"
+            }
+        ],
+        "Tags": [
+            {
+                "Name": "go",
+                "URL": "http://localhost:8095/tag/go/"
+            },
+            {
+                "Name": "speed",
+                "URL": "http://localhost:8095/tag/speed/"
+            }
+        ],
+        "ImageID": 57,
+        "ImageURL": "http://localhost:8095/wp-content/uploads/2026/10/wpgo-landscape.png",
+        "Class": "post-190 post type-post status-publish format-standard has-post-thumbnail hentry category-news tag-go tag-speed entry",
+        "Content": "<p>The gopher started slowly. Then it accelerated past every <strong>mascot</strong> on the track, finishing first by a wide margin.</p>\n<p>Second paragraph with more words to make the excerpt long enough for trimming tests of the posts widget in GoWebEditor.</p>\n"
+    }
+]

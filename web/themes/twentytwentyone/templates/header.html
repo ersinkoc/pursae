@@ -1,0 +1,92 @@
+{{define "header"}}<!doctype html>
+<html lang="en-US" >
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>{{.DocumentTitle}}</title>
+{{.Head}}</head>
+
+<body class="{{.BodyClass}}">
+{{.BodyOpen}}<div id="page" class="site">
+	<a class="skip-link screen-reader-text" href="#content">
+		Skip to content	</a>
+
+
+<header id="masthead" class="{{.Data.HeaderClass}}">
+
+
+{{if .CustomLogo}}	<div class="site-logo">{{.CustomLogo}}</div>
+{{end}}
+<div class="site-branding">
+
+
+						{{.Data.Branding}}
+			{{if .Description}}
+			<p class="site-description">
+			{{.Description}}		</p>
+	{{end}}
+</div><!-- .site-branding -->
+	{{if .Data.PrimaryNav}}
+	<nav id="site-navigation" class="primary-navigation" aria-label="Primary menu">
+		<div class="menu-button-container">
+			<button id="primary-mobile-menu" class="button" aria-controls="primary-menu-list" aria-expanded="false">
+				<span class="dropdown-icon open">Menu					{{.Data.IconMenu}}				</span>
+				<span class="dropdown-icon close">Close					{{.Data.IconClose}}				</span>
+			</button><!-- #primary-mobile-menu -->
+		</div><!-- .menu-button-container -->
+		<div class="primary-menu-container"><ul id="primary-menu-list" class="menu-wrapper">{{.Data.PrimaryNav}}</ul></div>	</nav><!-- #site-navigation -->
+	{{end}}
+
+</header><!-- #masthead -->
+
+	<div id="content" class="site-content">
+		<div id="primary" class="content-area">
+			<main id="main" class="site-main">
+{{end}}
+
+{{define "footer"}}
+			</main><!-- #main -->
+		</div><!-- #primary -->
+	</div><!-- #content -->
+
+	{{with index .Areas "sidebar-1"}}
+	<aside class="widget-area">
+		{{.}}	</aside><!-- .widget-area -->
+
+	{{end}}
+
+	<footer id="colophon" class="site-footer">
+
+		{{if .Data.FooterNav}}
+			<nav aria-label="Secondary menu" class="footer-navigation">
+				<ul class="footer-navigation-wrapper">
+					{{.Data.FooterNav}}				</ul><!-- .footer-navigation-wrapper -->
+			</nav><!-- .footer-navigation -->
+		{{end}}
+		<div class="site-info">
+			<div class="site-name">
+				{{.Data.FooterName}}
+			</div><!-- .site-name -->
+
+			{{.Data.Privacy}}
+
+			<div class="powered-by">
+				Proudly powered by <a href="https://wordpress.org/">WordPress</a>.			</div><!-- .powered-by -->
+
+		</div><!-- .site-info -->
+	</footer><!-- #colophon -->
+
+</div><!-- #page -->
+
+{{.Footer}}{{.AdminBar}}
+</body>
+</html>
+{{end}}
+
+{{define "searchform"}}
+<form role="search"  method="get" class="search-form" action="{{.HomeURL}}">
+	<label for="search-form-1">Search&hellip;</label>
+	<input type="search" id="search-form-1" class="search-field" value="{{.SearchQuery}}" name="s" />
+	<input type="submit" class="search-submit" value="Search" />
+</form>
+{{end}}

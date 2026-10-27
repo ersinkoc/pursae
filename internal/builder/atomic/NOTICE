@@ -1,0 +1,14 @@
+GoWebEditor atomic (v4) renderer — attribution
+
+This package ports the atomic widgets subsystem of Elementor 4.3.5 (modules/atomic-widgets,
+global-classes, variables, components, default-styles; https://github.com/elementor/elementor),
+Copyright Elementor Ltd., licensed under the GNU General Public License v3.
+
+It also ports parts of Elementor Pro 4.3.0 (modules/atomic-widgets, modules/attributes and the
+atomic form element templates of modules/atomic-form), Copyright Elementor Ltd., licensed under
+the GNU General Public License v3. No licensing, connect or cloud code of Elementor Pro is used.
+
+The embedded data (data/atomic.json.gz) contains the upstream Twig templates, props schemas and
+base styles, taken from the editor configuration of those GPL-3.0 releases. GoWebEditor is
+distributed under the GPL-3.0 accordingly. "Elementor" is a trademark of Elementor Ltd.; it is
+not used in the product's user interface.

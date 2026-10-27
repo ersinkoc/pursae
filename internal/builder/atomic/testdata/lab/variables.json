@@ -1,0 +1,36 @@
+{
+ "data": {
+  "e-gv-5e97a4e": {
+   "type": "global-color-variable",
+   "label": "lab-brand",
+   "value": {
+    "$$type": "color",
+    "value": "#ff5500"
+   },
+   "order": 1
+  },
+  "e-gv-0050b98": {
+   "type": "global-size-variable",
+   "label": "lab-h-size",
+   "value": {
+    "$$type": "size",
+    "value": {
+     "size": 40,
+     "unit": "px"
+    }
+   },
+   "order": 2
+  },
+  "e-gv-11ef519": {
+   "type": "global-font-variable",
+   "label": "lab-font",
+   "value": {
+    "$$type": "string",
+    "value": "Roboto"
+   },
+   "order": 3
+  }
+ },
+ "watermark": 3,
+ "version": 2
+}

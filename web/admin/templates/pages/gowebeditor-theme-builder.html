@@ -1,0 +1,145 @@
+{{define "admin/gowebeditor-theme-builder"}}{{template "admin-header" .}}{{$u := .User}}{{with .Data}}
+<style>
+.gwe-tb-context{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:16px 0;padding:14px 18px;background:#fff;border:1px solid #c3c4c7;border-left:4px solid #2271b1}
+.gwe-tb-context p{margin:0;flex:1 1 360px}
+.gwe-tb-add{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0}
+.gwe-tb-group{margin-top:28px}
+.gwe-tb-group h2{display:flex;align-items:center;gap:10px;font-size:1.15em;margin:0 0 8px}
+.gwe-tb-group h2 .count{color:#646970;font-weight:400}
+.gwe-tb-group .column-conditions{width:34%}
+.gwe-tb-group .column-status{width:12%}
+.gwe-tb-group .column-date{width:18%}
+.gwe-tb-cond{display:inline-block;margin:0 4px 4px 0;padding:2px 8px;border-radius:10px;background:#f0f0f1;font-size:12px}
+.gwe-tb-cond.is-exclude{background:#fcf0f1;color:#8a2424}
+.gwe-tb-save{margin-top:28px;padding:18px 22px;background:#fff;border:1px solid #c3c4c7}
+.gwe-tb-save[hidden]{display:none}
+.gwe-tb-save .form-table th{width:180px}
+.gwe-tb-shot{display:flex;align-items:center;gap:14px}
+.gwe-tb-shot img{width:160px;height:120px;object-fit:cover;border:1px solid #dcdcde;background:#f6f7f7}
+.gwe-tb-themes{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px;margin-top:12px}
+.gwe-tb-theme{background:#fff;border:1px solid #dcdcde;box-shadow:0 1px 1px rgba(0,0,0,.04)}
+.gwe-tb-theme img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;background:#f6f7f7;border-bottom:1px solid #dcdcde}
+.gwe-tb-theme .inner{padding:12px 14px}
+.gwe-tb-theme h3{margin:0 0 4px;font-size:14px}
+.gwe-tb-theme .meta{color:#646970;margin:0 0 10px}
+.gwe-tb-theme .actions{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.gwe-tb-theme .actions form{display:inline}
+.gwe-tb-import{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:16px}
+</style>
+<div class="wrap gwe-theme-builder">
+<h1 class="wp-heading-inline">Theme Builder</h1>
+<a href="#gwe-add-new" class="page-title-action" data-gwe-focus="gwe-new-type">Add New</a>
+{{if $u.Can "switch_themes" nil}}<a href="{{"/wp-admin/gowebeditor-theme-builder?action=save-theme"}}" class="page-title-action" id="gwe-save-theme-toggle">Save as theme</a>{{end}}
+<hr class="wp-header-end">
+{{template "notices" $}}
+
+<div class="gwe-tb-context">
+	{{/* GoWebEditor (hello theme): the parts are the working copy of Hello GoWebEditor */}}
+	{{if .Hello}}<p>These theme parts, with the Site Settings, are the design of <strong>Hello GoWebEditor</strong>, your active theme. Published parts whose conditions match a page replace its header, footer and content. Use <em>Save as theme</em> to keep a fixed copy in the saved themes list.</p>
+	{{else}}<p>These are your site&rsquo;s theme parts (the design of the <strong>Hello GoWebEditor</strong> theme). Published parts whose conditions match a page replace the layout of <strong>{{.ActiveName}}</strong>. Use <em>Save as theme</em> to keep a fixed copy in the saved themes list.</p>{{end}}
+	<form class="gwe-tb-add" id="gwe-add-new" method="post" action="/wp-admin/gowebeditor-theme-builder">
+		<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+		<input type="hidden" name="action" value="new" />
+		<label class="screen-reader-text" for="gwe-new-type">Template type</label>
+		<select name="type" id="gwe-new-type">{{range .Groups}}<option value="{{.Type}}">{{.Label}}</option>{{end}}</select>
+		<label class="screen-reader-text" for="gwe-new-title">Name</label>
+		<input type="text" name="title" id="gwe-new-title" placeholder="Name your template" />
+		<button type="submit" class="button button-primary">Create Template</button>
+	</form>
+</div>
+
+<div class="gwe-tb-save" id="gwe-save-theme"{{if not .ShowSave}} hidden{{end}}>
+	<h2>Save as theme</h2>
+	<p>Saves the Site Settings (colors, fonts, layout) and all theme parts below with their display conditions as a new theme under <a href="/wp-admin/themes">Appearance › Themes</a>.</p>
+	<form method="post" action="/wp-admin/gowebeditor-theme-builder">
+		<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+		<input type="hidden" name="action" value="save-theme" />
+		<table class="form-table" role="presentation"><tbody>
+			<tr><th scope="row"><label for="gwe-theme-name">Theme name</label></th><td><input name="name" id="gwe-theme-name" type="text" class="regular-text" value="{{.DefaultName}}" required /></td></tr>
+			<tr><th scope="row"><label for="gwe-theme-desc">Description</label></th><td><textarea name="description" id="gwe-theme-desc" rows="3" class="large-text" placeholder="A short description shown in Theme Details."></textarea></td></tr>
+			<tr><th scope="row">Screenshot</th><td><div class="gwe-tb-shot"><img id="gwe-shot-preview" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='120'%3E%3Crect width='160' height='120' fill='%23f0f0f1'/%3E%3Ctext x='80' y='64' text-anchor='middle' font-family='sans-serif' font-size='11' fill='%23787c82'%3EGenerated preview%3C/text%3E%3C/svg%3E" alt="" />
+				<div><input type="hidden" name="screenshot_id" id="gwe-shot-id" value="" />
+				<button type="button" class="button" id="gwe-shot-pick">Choose Image</button> <button type="button" class="button-link" id="gwe-shot-clear" hidden>Use generated preview</button>
+				<p class="description">Optional. Without an image a preview is generated from the theme&rsquo;s colors.</p></div></div></td></tr>
+			<tr><th scope="row">After saving</th><td><label><input type="checkbox" name="activate" value="1" /> Activate the new theme</label></td></tr>
+		</tbody></table>
+		<p class="submit"><button type="submit" class="button button-primary">Save theme</button> <button type="button" class="button" id="gwe-save-cancel">Cancel</button></p>
+	</form>
+</div>
+
+{{range .Groups}}
+<div class="gwe-tb-group" id="gwe-group-{{.Type}}">
+	<h2>{{.Plural}} <span class="count">({{len .Rows}})</span></h2>
+	<table class="wp-list-table widefat fixed striped table-view-list">
+		<thead><tr><th scope="col" class="manage-column column-title column-primary">Title</th><th scope="col" class="manage-column column-conditions">Display Conditions</th><th scope="col" class="manage-column column-status">Status</th><th scope="col" class="manage-column column-date">Last Modified</th></tr></thead>
+		<tbody>
+		{{range .Rows}}<tr id="gwe-part-{{.ID}}">
+			<td class="title column-title has-row-actions column-primary" data-colname="Title"><strong><a class="row-title" href="{{.EditURL}}">{{.Title}}</a></strong>
+				<div class="row-actions"><span class="edit_with_gowebeditor"><a href="{{.EditURL}}">Edit with GoWebEditor</a> | </span><span class="conditions"><a href="{{.ConditionsURL}}">Conditions</a> | </span><span class="trash"><form method="post" action="/wp-admin/gowebeditor-theme-builder" style="display:inline" onsubmit="return confirm('Delete this theme part permanently?')"><input type="hidden" name="_wpnonce" value="{{$.Data.Nonce}}" /><input type="hidden" name="action" value="delete" /><input type="hidden" name="post" value="{{.ID}}" /><button type="submit" class="button-link submitdelete">Delete</button></form></span></div>
+				<button type="button" class="toggle-row"><span class="screen-reader-text">Show more details</span></button></td>
+			<td class="column-conditions" data-colname="Display Conditions">{{range .Conditions}}<span class="gwe-tb-cond{{if contains . "Exclude:"}} is-exclude{{end}}">{{.}}</span>{{else}}<span class="description">Not shown anywhere</span>{{end}}</td>
+			<td class="column-status" data-colname="Status">{{.StatusLabel}}</td>
+			<td class="date column-date" data-colname="Last Modified">{{.Modified}}{{if .Author}}<br />by {{.Author}}{{end}}</td>
+		</tr>{{else}}<tr class="no-items"><td class="colspanchange" colspan="4">No {{lower .Label}} yet. <a href="#gwe-add-new" data-gwe-type="{{.Type}}">Create one</a>.</td></tr>{{end}}
+		</tbody>
+	</table>
+</div>
+{{end}}
+
+<h2 style="margin-top:36px">Saved GoWebEditor themes</h2>
+<p>Fixed copies of the design saved from the Theme Builder (JSON: theme parts, display conditions, Site Settings and custom CSS). They are also listed under <a href="/wp-admin/themes">Appearance › Themes</a>. Activating one loads its design into Hello GoWebEditor; the saved copy stays as it is until you save it again.</p>
+{{if .Themes}}<div class="gwe-tb-themes">
+{{range .Themes}}<div class="gwe-tb-theme" data-slug="{{.Slug}}">
+	<img src="{{.Screenshot}}" alt="" />
+	<div class="inner">
+		<h3>{{if .Loaded}}<span>Loaded:</span> {{end}}{{.Name}}</h3>
+		<p class="meta">{{.Parts}} theme part{{if ne .Parts 1}}s{{end}}{{if .Saved}} &middot; saved {{.Saved}}{{end}}{{if .Description}} &middot; {{.Description}}{{end}}</p>
+		<div class="actions">
+			<a class="button button-primary" href="{{.ActivateURL}}">Activate</a> <a class="button" href="{{.PreviewURL}}" target="_blank" rel="noopener">Live Preview</a>
+			<a class="button" href="{{.ExportURL}}">Export</a>
+			<form method="post" action="/wp-admin/gowebeditor-theme-builder" onsubmit="return confirm('Delete this saved theme permanently? The current design is not affected.')"><input type="hidden" name="_wpnonce" value="{{$.Data.Nonce}}" /><input type="hidden" name="action" value="delete-theme" /><input type="hidden" name="theme" value="{{.Slug}}" /><button type="submit" class="button-link submitdelete">Delete</button></form>
+		</div>
+	</div>
+</div>{{end}}
+</div>{{else}}<p class="description">No saved GoWebEditor themes yet.</p>{{end}}
+{{if $u.Can "upload_files" nil}}<form class="gwe-tb-import" method="post" enctype="multipart/form-data" action="/wp-admin/gowebeditor-theme-builder">
+	<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+	<input type="hidden" name="action" value="import" />
+	<label for="gwe-import-file"><strong>Import a theme</strong></label>
+	<input type="file" name="theme_zip" id="gwe-import-file" accept=".zip,application/zip" required />
+	<label><input type="checkbox" name="activate" value="1" /> Activate</label>
+	<button type="submit" class="button">Import</button>
+</form>{{end}}
+</div>
+<script>
+( function() {
+	var box = document.getElementById( 'gwe-save-theme' ), toggle = document.getElementById( 'gwe-save-theme-toggle' );
+	if ( toggle && box ) {
+		toggle.addEventListener( 'click', function( e ) { e.preventDefault(); box.hidden = false; box.scrollIntoView( { behavior: 'smooth', block: 'start' } ); document.getElementById( 'gwe-theme-name' ).focus(); } );
+		document.getElementById( 'gwe-save-cancel' ).addEventListener( 'click', function() { box.hidden = true; } );
+		if ( ! box.hidden ) { box.scrollIntoView(); }
+	}
+	document.querySelectorAll( '[data-gwe-type]' ).forEach( function( a ) {
+		a.addEventListener( 'click', function() { document.getElementById( 'gwe-new-type' ).value = a.dataset.gweType; document.getElementById( 'gwe-new-title' ).focus(); } );
+	} );
+	var pick = document.getElementById( 'gwe-shot-pick' ), clear = document.getElementById( 'gwe-shot-clear' ), frame;
+	var img = document.getElementById( 'gwe-shot-preview' ), input = document.getElementById( 'gwe-shot-id' ), placeholder = img ? img.src : '';
+	if ( pick ) {
+		pick.addEventListener( 'click', function() {
+			if ( ! window.wp || ! wp.media ) { return; }
+			if ( ! frame ) {
+				frame = wp.media( { title: 'Theme Screenshot', library: { type: 'image' }, button: { text: 'Use as screenshot' }, multiple: false } );
+				frame.on( 'select', function() {
+					var a = frame.state().get( 'selection' ).first().toJSON();
+					input.value = a.id;
+					img.src = ( a.sizes && ( a.sizes.medium || a.sizes.full ) || a ).url;
+					clear.hidden = false;
+				} );
+			}
+			frame.open();
+		} );
+		clear.addEventListener( 'click', function() { input.value = ''; img.src = placeholder; clear.hidden = true; } );
+	}
+} )();
+</script>
+{{end}}{{template "admin-footer" .}}{{end}}

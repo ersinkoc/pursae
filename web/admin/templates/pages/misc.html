@@ -1,0 +1,510 @@
+{{define "admin/update-core"}}{{template "admin-header" .}}{{with .Data}}
+<div class="wrap">
+<h1>WordPress Go Updates</h1>
+{{template "notices" $}}
+<p>Last checked on {{.Checked}}. <a class="button" href="/wp-admin/update-core">Check again</a></p>
+<h2>You have the latest version of WordPress Go.</h2>
+<div class="notice notice-info inline"><p>WordPress Go {{.Version}} is a single binary with everything built in: core, admin, themes and the plugin sandbox. To update, replace the binary (or pull the new container image) and restart; database migrations run automatically on start.</p></div>
+<h2>Plugins</h2>
+<p>Your plugins are all up to date.</p>
+<h2>Themes</h2>
+<p>Your themes are all up to date.</p>
+<h2>Translations</h2>
+<p>Your translations are all up to date.</p>
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}
+
+{{define "admin/about"}}{{template "admin-header" .}}{{with .Data}}
+<style>
+.wpgo-about-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:24px}
+.wpgo-about-card{background:#fff;border:1px solid #c3c4c7;border-radius:6px;padding:20px 20px 16px;box-shadow:0 1px 1px rgba(0,0,0,.04)}
+.wpgo-about-card .dashicons{font-size:28px;width:28px;height:28px;color:#2271b1;margin-bottom:10px}
+.wpgo-about-card h3{margin:0 0 8px;font-size:17px;font-weight:600;line-height:1.3;color:#1d2327}
+.wpgo-about-card p{margin:0;font-size:13px;line-height:1.6;color:#50575e}
+</style>
+
+<div class="wrap about__container">
+	<div class="about__header" style="background:linear-gradient(135deg,#1d2327 0%,#2271b1 100%);color:#fff;padding:48px 40px;border-radius:8px">
+		<div class="about__header-title" style="display:flex;align-items:center;gap:20px"><div class="wpgo-about-logo" role="img" aria-label="WordPress Go Gopher"></div><h1 style="color:#fff;font-size:48px;margin:0">WordPress Go</h1></div>
+		<div class="about__header-text" style="font-size:20px;margin-top:12px;opacity:.9">WordPress, rewritten in Go. Version {{.Version}} on {{.Go}}.</div>
+	</div>
+	<nav class="about__header-navigation nav-tab-wrapper wp-clearfix" aria-label="Secondary menu" style="margin-top:16px">
+		<a href="/wp-admin/about" class="nav-tab nav-tab-active" aria-current="page">What&#8217;s New</a>
+	</nav>
+	<div class="wpgo-about-grid">
+		<div class="wpgo-about-card"><span class="dashicons dashicons-admin-generic" aria-hidden="true"></span><h3>One binary</h3><p>The whole of WordPress &mdash; admin, REST API, themes, media, cron &mdash; compiled into a single Go binary with its assets embedded. No PHP, no extensions, no FPM pool.</p></div>
+		<div class="wpgo-about-card"><span class="dashicons dashicons-database" aria-hidden="true"></span><h3>PostgreSQL with real types</h3><p>Posts, terms, users and comments live in typed tables with JSONB where flexibility helps. Full-text search uses a generated tsvector.</p></div>
+		<div class="wpgo-about-card"><span class="dashicons dashicons-edit" aria-hidden="true"></span><h3>Gotenberg</h3><p>The block editor you know, running on WordPress Go&#8217;s REST API. Prefer the classic screen? The Classic Editor plugin is built in.</p></div>
+		<div class="wpgo-about-card"><span class="dashicons dashicons-admin-plugins" aria-hidden="true"></span><h3>Sandboxed plugins</h3><p>Plugins are signed WebAssembly modules. They ask for permissions when you activate them and can&#8217;t touch anything else; a misbehaving plugin is stopped, not your site.</p></div>
+		<div class="wpgo-about-card"><span class="dashicons dashicons-performance" aria-hidden="true"></span><h3>WPGo Cache</h3><p>A LiteSpeed-style page cache built in: tag-based purges, a crawler and page optimizations, behind any web server.</p></div>
+		<div class="wpgo-about-card"><span class="dashicons dashicons-admin-users" aria-hidden="true"></span><h3>No Gravatar</h3><p>Profile pictures come from your own Media Library. Nothing about your visitors is sent to a third party to draw an avatar.</p></div>
+		<div class="wpgo-about-card"><span class="dashicons dashicons-layout" aria-hidden="true"></span><h3>GoWebEditor</h3><p>A visual page and theme builder: design pages, headers, footers and archives, then save the result as a theme.</p></div>
+		<div class="wpgo-about-card"><span class="dashicons dashicons-admin-appearance" aria-hidden="true"></span><h3>Four classic themes</h3><p>Twenty Sixteen, Twenty Seventeen, Twenty Twenty and Twenty Twenty-One ship with their original styles and work with the Customizer.</p></div>
+	</div>
+	<div class="wpgo-about-card" style="margin-top:24px">
+		<span class="dashicons dashicons-groups" aria-hidden="true"></span>
+		<h3>Contributors</h3>
+		<p><strong>Lead Developer:</strong> Bora Ata Türkoğlu</p>
+		<p style="margin-top:6px">WordPress Go builds on WordPress by the WordPress contributors, released under the GPL. Third-party attributions are listed in the NOTICE file.</p>
+	</div>
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}
+
+{{define "admin/tools"}}{{template "admin-header" .}}
+<div class="wrap">
+<h1>Tools</h1>
+<div class="card"><h2 class="title">Import and export</h2><p>Move content between WordPress sites and WordPress Go with the standard WordPress eXtended RSS (WXR) format.</p>
+<p><a class="button" href="/wp-admin/import">Import</a> <a class="button" href="/wp-admin/export">Export</a></p></div>
+<div class="card"><h2 class="title">Site Health</h2><p>Check the status of the binary, the database, uploads, cache and plugin sandbox.</p><p><a class="button" href="/wp-admin/site-health">Open Site Health</a></p></div>
+<div class="card"><h2 class="title">Page cache</h2><p>Purge or warm the WPGo Cache.</p><p><a class="button" href="/wp-admin/admin?page=wpgo-cache-toolbox">Cache Toolbox</a></p></div>
+</div>
+{{template "admin-footer" .}}{{end}}
+
+{{define "admin/options-privacy"}}{{template "admin-header" .}}{{with .Data}}
+<div class="privacy-settings-header">
+	<div class="privacy-settings-title-section">
+		<h1>Privacy</h1>
+	</div>
+	<nav class="privacy-settings-tabs-wrapper hide-if-no-js" aria-label="Secondary menu">
+		<a href="/wp-admin/options-privacy" class="privacy-settings-tab active" aria-current="true">Settings</a>
+	</nav>
+</div>
+<hr class="wp-header-end">
+{{template "notices" $}}
+<div class="notice notice-error hide-if-js"><p>The Privacy Settings require JavaScript.</p></div>
+<div class="privacy-settings-body hide-if-no-js">
+	<h2>Privacy Settings</h2>
+	<p>As a website owner, you may need to follow national or international privacy laws. For example, you may need to create and display a privacy policy. If you already have a Privacy Policy page, please select it below. If not, please create one.</p>
+	<p>The new page will include help and suggestions for your privacy policy. However, it is your responsibility to use those resources correctly, to provide the information that your privacy policy requires, and to keep that information current and accurate.</p>
+	<p>After your Privacy Policy page is set, you should edit it. You should also review your privacy policy from time to time, especially after installing or updating any themes or plugins. There may be changes or new suggested information for you to consider adding to your policy.</p>
+	{{if .CurrentPost}}<p><strong><a href="{{.EditURL}}">Edit</a> or <a href="{{.ViewURL}}">{{if eq .CurrentPost.Status "publish"}}view{{else}}preview{{end}}</a> your Privacy Policy page content.</strong>{{if ne .CurrentPost.Status "publish"}} Your Privacy Policy page is a draft.{{end}}</p>{{end}}
+	<hr>
+	<table class="form-table tools-privacy-policy-page" role="presentation">
+		<tr>
+			<th scope="row"><label for="create-page">Create a new Privacy Policy page</label></th>
+			<td>
+				<form class="wp-create-privacy-page" method="post" action="/wp-admin/options-privacy">
+					<input type="hidden" name="action" value="create-privacy-page" />
+					<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+					<input type="submit" name="submit" id="create-page" class="button" value="Create" />
+				</form>
+			</td>
+		</tr>
+		<tr>
+			<th scope="row"><label for="page_for_privacy_policy">Change your Privacy Policy page</label></th>
+			<td>
+				<form method="post" action="/wp-admin/options-privacy">
+					<input type="hidden" name="action" value="set-privacy-page" />
+					<select name="page_for_privacy_policy" id="page_for_privacy_policy"><option value="0">&mdash; Select &mdash;</option>{{$cur := .Current}}{{range .Pages}}<option class="level-0" value="{{.ID}}"{{if eq .ID $cur}} selected="selected"{{end}}>{{if .Title}}{{.Title}}{{else}}(no title){{end}}{{if ne .Status "publish"}} (Draft){{end}}</option>{{end}}</select>
+					<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+					<input type="submit" name="submit" id="set-page" class="button button-primary" value="Use This Page" />
+				</form>
+			</td>
+		</tr>
+	</table>
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}
+
+{{define "admin/theme-install"}}{{template "admin-header" .}}{{with .Data}}
+<div class="wrap">
+	<h1 class="wp-heading-inline">Add Themes</h1>
+	<hr class="wp-header-end">
+	{{template "notices" $}}
+	<h2 class="screen-reader-text">Filter themes list</h2>
+	<div class="wp-filter">
+		<div class="filter-count"><span class="count theme-count">{{.Count}}</span></div>
+		<ul class="filter-links">
+			<li><a href="/wp-admin/theme-install"{{if eq .Browse "all"}} class="current" aria-current="page"{{end}}>All</a></li>
+			<li><a href="/wp-admin/theme-install?browse=installed"{{if eq .Browse "installed"}} class="current" aria-current="page"{{end}}>Bundled</a></li>
+			<li><a href="/wp-admin/theme-install?browse=demos"{{if eq .Browse "demos"}} class="current" aria-current="page"{{end}}>Fan-made Demos</a></li>
+		</ul>
+		<form class="search-form" method="get" action="/wp-admin/theme-install">{{if ne .Browse "all"}}<input type="hidden" name="browse" value="{{.Browse}}" />{{end}}<p class="search-box"><label for="wp-filter-search-input">Search Themes</label><input type="search" name="search" value="{{.Search}}" id="wp-filter-search-input" class="wp-filter-search" /></p></form>
+	</div>
+	<p class="wpgo-theme-install-help">Themes for WordPress Go are compiled into the binary or generated with GoWebEditor&rsquo;s <a href="/wp-admin/gowebeditor-theme-builder">Theme Builder</a>. A theme directory is on the way.</p>
+	{{if .Cards}}
+	<div class="theme-browser content-filterable rendered">
+		<div class="themes wp-clearfix">
+		{{range .Cards}}
+		<div class="theme{{if .Active}} active{{end}}" data-slug="{{.Slug}}">
+			<div class="theme-screenshot">
+				{{if .Screenshot}}<img src="{{.Screenshot}}" alt="" />{{end}}
+			</div>
+			<div class="notice notice-success notice-alt inline"><p>Installed</p></div>
+			<a class="more-details" href="/wp-admin/themes?theme={{.Slug}}">Details &amp; Preview</a>
+			<div class="theme-author">By {{.Author}}</div>
+			<div class="theme-id-container">
+				<h3 class="theme-name">{{.Name}}</h3>
+				<div class="theme-actions">
+				{{if .Active}}<button class="button button-primary button-compact disabled">Activated</button>
+					{{if .Custom}}<a class="button button-compact" href="/wp-admin/gowebeditor-theme-builder">Theme Builder</a>{{else}}<a class="button button-compact load-customize" href="/wp-admin/customize">Customize</a>{{end}}
+				{{else}}<a class="button button-primary button-compact activate" href="{{.ActivateURL}}" aria-label="Activate {{.Name}}">Activate</a>
+					<a class="button button-compact preview install-theme-preview" href="{{.PreviewURL}}" aria-label="Live Preview {{.Name}}">Live Preview</a>{{end}}
+				</div>
+			</div>
+		</div>
+		{{end}}
+		</div>
+	</div>
+	{{end}}
+	{{if .Demos}}
+	<div class="wpgo-theme-demos">
+		<h2 class="wpgo-theme-demos-title">Fan-made demos <span class="wpgo-demo-tag">Coming soon</span></h2>
+		<p class="description">Concept themes imagined by the WordPress Go community. They are previews of what is coming, not packages: they cannot be installed yet.</p>
+		<div class="theme-browser content-filterable rendered">
+			<div class="themes wp-clearfix">
+			{{range .Demos}}
+			<div class="theme wpgo-theme-demo" data-slug="{{.Slug}}">
+				<span class="wpgo-demo-ribbon" aria-hidden="true">Demo</span>
+				<div class="theme-screenshot wpgo-demo-shot wpgo-demo-shot-{{.Color}}" aria-hidden="true">
+					<div class="wpgo-demo-shot-inner">
+						<span class="wpgo-demo-initials">{{.Initials}}</span>
+						<span class="wpgo-demo-desc">{{.Description}}</span>
+					</div>
+				</div>
+				<div class="theme-author">By {{.Author}}</div>
+				<div class="theme-id-container">
+					<h3 class="theme-name">{{.Name}}</h3>
+					<div class="theme-actions"><button type="button" class="button button-compact disabled" disabled="disabled">Coming Soon</button></div>
+				</div>
+			</div>
+			{{end}}
+			</div>
+		</div>
+	</div>
+	{{end}}
+	{{if not (or .Cards .Demos)}}<p class="no-themes" style="display:block">No themes found. Try a different search.</p>{{end}}
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}
+
+{{define "health-check-issues"}}<div id="health-check-site-status-{{.Status}}" class="health-check-accordion issues">
+{{range .Tests}}
+	<h4 class="health-check-accordion-heading">
+		<button aria-expanded="false" class="health-check-accordion-trigger" aria-controls="health-check-accordion-block-{{.Slug}}" type="button">
+			<span class="title">{{.Label}}</span>
+			<span class="badge blue">{{.Badge}}</span>
+			<span class="icon"></span>
+		</button>
+	</h4>
+	<div id="health-check-accordion-block-{{.Slug}}" class="health-check-accordion-panel" hidden="hidden">
+		{{if .Description}}<p>{{.Description}}</p>{{end}}
+		{{if .Action}}<div class="actions"><p>{{.Action}}</p></div>{{end}}
+	</div>
+{{end}}
+</div>{{end}}
+
+{{define "admin/site-health"}}{{template "admin-header" .}}{{with .Data}}
+<div class="health-check-header">
+	<div class="health-check-title-section">
+		<h1>Site Health</h1>
+	</div>
+	<div class="health-check-title-section site-health-progress-wrapper {{.ProgressClass}}">
+		<div class="site-health-progress">
+			<svg aria-hidden="true" focusable="false" width="100%" height="100%" viewBox="0 0 200 200" version="1.1" xmlns="http://www.w3.org/2000/svg">
+				<circle r="90" cx="100" cy="100" fill="transparent" stroke-dasharray="565.48" stroke-dashoffset="0"></circle>
+				<circle id="bar" r="90" cx="100" cy="100" fill="transparent" stroke-dasharray="565.48" stroke-dashoffset="0" style="stroke-dashoffset: {{.DashOffset}}px;"></circle>
+			</svg>
+		</div>
+		<div class="site-health-progress-label">{{.ProgressLabel}}</div>
+	</div>
+	<nav class="health-check-tabs-wrapper hide-if-no-js tab-count-2" aria-label="Secondary menu">
+		<a href="/wp-admin/site-health" class="health-check-tab{{if ne .Tab "debug"}} active{{end}}"{{if ne .Tab "debug"}} aria-current="true"{{end}}>Status</a><a href="/wp-admin/site-health?tab=debug" class="health-check-tab{{if eq .Tab "debug"}} active{{end}}"{{if eq .Tab "debug"}} aria-current="true"{{end}}>Info</a>
+	</nav>
+</div>
+<hr class="wp-header-end">
+{{template "notices" $}}
+{{if ne .Tab "debug"}}
+<div class="health-check-body health-check-status-tab hide-if-no-js">
+	<div class="site-status-all-clear{{if or .Critical .Recommended}} hide{{end}}">
+		<p class="icon"><span class="dashicons dashicons-smiley" aria-hidden="true"></span></p>
+		<p class="encouragement">Great job!</p>
+		<p>Everything is running smoothly here.</p>
+	</div>
+	<div class="site-status-has-issues{{if not (or .Critical .Recommended)}} hide{{end}}">
+		<h2>Site Health Status</h2>
+		<p>The site health check shows information about your WordPress Go configuration and items that may need your attention.</p>
+		<div class="site-health-issues-wrapper{{if not .Critical}} hidden{{end}}" id="health-check-issues-critical">
+			<h3 class="site-health-issue-count-title"><span class="issue-count">{{.CriticalCount}}</span> critical issue{{if ne .CriticalCount 1}}s{{end}}</h3>
+			<p>Critical issues are items that may have a high impact on your site&#8217;s performance or security. Resolving these issues should be prioritized.</p>
+			{{template "health-check-issues" dict "Status" "critical" "Tests" .Critical}}
+		</div>
+		<div class="site-health-issues-wrapper{{if not .Recommended}} hidden{{end}}" id="health-check-issues-recommended">
+			<h3 class="site-health-issue-count-title"><span class="issue-count">{{.RecommendedCount}}</span> recommended improvement{{if ne .RecommendedCount 1}}s{{end}}</h3>
+			<p>Recommended items are considered beneficial to your site, although not as important to prioritize as a critical issue. They may include improvements in areas such as security, performance, and user experience.</p>
+			{{template "health-check-issues" dict "Status" "recommended" "Tests" .Recommended}}
+		</div>
+	</div>
+	<div class="site-health-view-more">
+		<button type="button" class="button site-health-view-passed" aria-expanded="false" aria-controls="health-check-issues-good">Passed tests <span class="icon"></span></button>
+	</div>
+	<div class="site-health-issues-wrapper hidden" id="health-check-issues-good">
+		<h3 class="site-health-issue-count-title"><span class="issue-count">{{.GoodCount}}</span> item{{if ne .GoodCount 1}}s{{end}} with no issues detected</h3>
+		{{template "health-check-issues" dict "Status" "good" "Tests" .Good}}
+	</div>
+</div>
+{{else}}
+<div class="health-check-body health-check-debug-tab hide-if-no-js">
+	<h2>Site Health Info</h2>
+	<p>This page can show you every detail about the configuration of your WordPress Go website. For any improvements that could be made, see the <a href="/wp-admin/site-health">Site Health Status</a> page.</p>
+	<p>If you want to export a handy list of all the information on this page, you can use the button below to copy it to the clipboard. You can then paste it in a text file and save it to your device, or paste it in an email exchange with a support engineer or theme/plugin developer for example.</p>
+	<div class="site-health-copy-buttons">
+		<div class="copy-button-wrapper">
+			<button type="button" class="button copy-button" data-clipboard-text="{{.CopyText}}">Copy site info to clipboard</button>
+			<span class="success hidden" aria-hidden="true">Copied!</span>
+		</div>
+	</div>
+	<div id="health-check-debug" class="health-check-accordion">
+	{{range .Info}}
+		<h3 class="health-check-accordion-heading">
+			<button id="health-check-section-{{.Slug}}" aria-expanded="false" class="health-check-accordion-trigger" aria-controls="health-check-accordion-block-{{.Slug}}" type="button">
+				<span class="title">{{.Title}}</span>
+				<span class="icon"></span>
+			</button>
+		</h3>
+		<div id="health-check-accordion-block-{{.Slug}}" class="health-check-accordion-panel" hidden="hidden">
+			<table class="widefat striped health-check-table">
+				<tbody>
+				{{range .Fields}}<tr><th scope="row">{{index . 0}}</th><td>{{index . 1}}</td></tr>{{end}}
+				</tbody>
+			</table>
+		</div>
+	{{end}}
+	</div>
+</div>
+{{end}}
+<script>
+( function() {
+	// The parts of wp-admin/js/site-health.js that apply to server-rendered results.
+	document.querySelectorAll( '.health-check-accordion' ).forEach( function( acc ) {
+		acc.addEventListener( 'click', function( e ) {
+			var btn = e.target.closest( '.health-check-accordion-trigger' );
+			if ( ! btn ) { return; }
+			var open = btn.getAttribute( 'aria-expanded' ) === 'true', panel = document.getElementById( btn.getAttribute( 'aria-controls' ) );
+			if ( btn.id ) { history.replaceState( null, '', '#' + btn.id ); }
+			btn.setAttribute( 'aria-expanded', open ? 'false' : 'true' );
+			if ( panel ) { panel.hidden = open; }
+		} );
+	} );
+	var passed = document.querySelector( '.site-health-view-passed' );
+	if ( passed ) {
+		passed.addEventListener( 'click', function() {
+			var good = document.getElementById( 'health-check-issues-good' ), open = passed.getAttribute( 'aria-expanded' ) === 'true';
+			good.classList.toggle( 'hidden', open );
+			passed.setAttribute( 'aria-expanded', open ? 'false' : 'true' );
+		} );
+	}
+	var copy = document.querySelector( '.site-health-copy-buttons .copy-button' );
+	if ( copy ) {
+		copy.addEventListener( 'click', function() {
+			var text = copy.getAttribute( 'data-clipboard-text' ), ok = copy.parentNode.querySelector( '.success' );
+			var done = function() {
+				ok.classList.remove( 'hidden' );
+				copy.focus();
+				if ( window.wp && wp.a11y ) { wp.a11y.speak( 'Site information has been copied to your clipboard.' ); }
+				clearTimeout( copy._t );
+				copy._t = setTimeout( function() { ok.classList.add( 'hidden' ); }, 3000 );
+			};
+			var fallback = function() {
+				var ta = document.createElement( 'textarea' );
+				ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+				document.body.appendChild( ta ); ta.select();
+				try { document.execCommand( 'copy' ); done(); } catch ( err ) {}
+				document.body.removeChild( ta );
+			};
+			if ( navigator.clipboard && window.isSecureContext ) {
+				navigator.clipboard.writeText( text ).then( done, fallback );
+			} else {
+				fallback();
+			}
+		} );
+	}
+	if ( location.hash ) {
+		var t = document.getElementById( location.hash.slice( 1 ) );
+		if ( t && t.classList.contains( 'health-check-accordion-trigger' ) ) { t.click(); }
+	}
+} )();
+</script>
+{{end}}{{template "admin-footer" .}}{{end}}
+
+{{define "admin/export"}}{{template "admin-header" .}}
+<div class="wrap">
+<h1>Export</h1>
+<p>When you click the button below WordPress Go will create an XML file for you to save to your computer.</p>
+<p>This format, which is called WordPress eXtended RSS or WXR, will contain your posts, pages, comments, categories, and tags. It can be imported by WordPress Go or any WordPress site.</p>
+<p>Once you&#8217;ve saved the download file, you can use the Import function in another WordPress installation to import the content from this site.</p>
+<h2>Choose what to export</h2>
+<form method="get" id="export-filters" action="/wp-admin/export">
+<fieldset>
+<legend class="screen-reader-text">Content to export</legend>
+<input type="hidden" name="download" value="true" />
+<p><label><input type="radio" name="content" value="all" checked="checked" aria-describedby="all-content-desc" /> All content</label></p>
+<p class="description" id="all-content-desc">This will contain all of your posts, pages, comments, categories, tags and media references.</p>
+<p><label><input type="radio" name="content" value="post" /> Posts</label></p>
+<p><label><input type="radio" name="content" value="page" /> Pages</label></p>
+<p><label><input type="radio" name="content" value="attachment" /> Media</label></p>
+</fieldset>
+<p class="submit"><input type="submit" name="submit" id="submit" class="button button-primary" value="Download Export File" /></p>
+</form>
+</div>
+{{template "admin-footer" .}}{{end}}
+
+{{define "admin/import"}}{{template "admin-header" .}}{{with .Data}}
+<div class="wrap">
+<h1>Import</h1>
+{{if .Error}}<div class="notice notice-error"><p>{{.Error}}</p></div>{{end}}
+{{with .Report}}
+<div class="notice notice-success"><p><strong>All done.</strong> Have fun!</p></div>
+<p>Imported {{.Posts}} posts, {{.Pages}} pages, {{.Comments}} comments and {{.Terms}} new categories and tags. {{if .Skipped}}{{.Skipped}} items were skipped.{{end}}{{if .Attachments}} {{.Attachments}} media items were not downloaded.{{end}}</p>
+{{if .Log}}<ul>{{range .Log}}<li>{{.}}</li>{{end}}</ul>{{end}}
+<p><a href="/wp-admin/edit">View posts</a> &middot; <a href="/wp-admin/import">Import another file</a></p>
+{{else}}
+<p>If you have posts or comments in another system, WordPress Go can import those into this site. The WordPress importer is built in.</p>
+<table class="widefat importers striped">
+<tr class="importer-item"><td class="import-system"><span class="importer-title">WordPress</span>
+<span class="importer-action"><a href="#import-upload-form">Run Importer</a></span></td>
+<td class="desc"><span class="importer-desc">Import posts, pages, comments, categories and tags from a WordPress or WordPress Go export file.</span></td></tr>
+</table>
+<h2 id="import-upload-form">Import WordPress</h2>
+<p>Choose a WXR (.xml) file to upload, then click Upload file and import.</p>
+<form enctype="multipart/form-data" id="import-upload-form" method="post" class="wp-upload-form" action="/wp-admin/import">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<p><label for="upload">Choose a file from your computer:</label> (Maximum size: 256 MB)
+<input type="file" id="upload" name="import" size="25" accept=".xml" /></p>
+<p class="submit"><input type="submit" name="submit" id="submit" class="button button-primary" value="Upload file and import" /></p>
+</form>
+{{end}}
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}
+
+{{define "file-tree"}}{{range .}}{{if .Dir}}<li role="treeitem" aria-expanded="true" tabindex="-1" aria-level="{{.Level}}" aria-setsize="{{.Size}}" aria-posinset="{{.Pos}}">
+	<span class="folder-label">{{.Name}} <span class="screen-reader-text">folder</span><span aria-hidden="true" class="icon"></span></span>
+	<ul role="group" class="tree-folder">{{template "file-tree" .Children}}</ul>
+</li>
+{{else}}<li role="none" class="{{if .Current}}current-file{{end}}">
+	<a role="treeitem" tabindex="{{if .Current}}0{{else}}-1{{end}}" href="{{.URL}}" aria-level="{{.Level}}" aria-setsize="{{.Size}}" aria-posinset="{{.Pos}}">{{if .Current}}<span class="notice notice-info">{{end}}{{if .Desc}}{{.Desc}}<br /><span class="nonessential">({{.Name}})</span>{{else}}{{.Name}}{{end}}{{if .Current}}</span>{{end}}</a>
+</li>
+{{end}}{{end}}{{end}}
+
+{{define "admin/file-editor"}}{{template "admin-header" .}}{{with .Data}}
+<div class="wrap">
+<h1>{{if eq .Kind "theme"}}Edit Themes{{else}}Edit Plugins{{end}}</h1>
+{{if .Editable}}{{if .Restored}}<div id="message" class="notice notice-success is-dismissible"><p>The original file has been restored.</p></div>{{end}}
+{{else}}<div id="message" class="notice notice-info"><p>{{if eq .Kind "theme"}}<strong>Read-only.</strong> {{if .Nonce}}{{else}}File editing is disabled on this site (<code>WPGO_DISALLOW_FILE_EDIT</code>). Build or change themes with <a href="/wp-admin/gowebeditor-theme-builder">GoWebEditor</a> or add custom CSS in the <a href="/wp-admin/customize">Customizer</a>.{{end}}{{else}}<strong>Read-only.</strong> Plugins are signed WebAssembly packages, so their files can be browsed here but not changed. Rebuild and re-sign the package to change a plugin.{{end}}</p></div>{{end}}
+{{template "notices" $}}
+{{if and (eq .Kind "plugin") (not .Choices)}}
+<p>You do not appear to have any WebAssembly plugins installed. <a href="/wp-admin/plugin-install">Add a plugin</a>.</p>
+{{else}}
+<div class="fileedit-sub">
+<div class="alignleft">
+<h2>{{if .Editable}}Editing{{else}}Browsing{{end}} <strong>{{.Name}}</strong> ({{.State}})</h2>
+ <span><strong>File: {{.File}}</strong></span></div>
+<div class="alignright">
+	<form action="/wp-admin/{{.Kind}}-editor" method="get">
+		<label for="{{.Kind}}" id="theme-plugin-editor-selector">{{if eq .Kind "theme"}}Select theme to edit:{{else}}Select plugin to edit:{{end}} </label>
+		<select name="{{.Kind}}" id="{{.Kind}}">{{range .Choices}}
+			<option value="{{.Value}}"{{if .Selected}} selected="selected"{{end}}>{{safe .Label}}</option>{{end}}
+		</select>
+		<input type="submit" name="Submit" id="Submit" class="button" value="Select" />
+	</form>
+</div>
+<br class="clear" />
+</div>
+
+<div id="templateside">
+	<h2 id="{{.Kind}}-files-label">{{if eq .Kind "theme"}}Theme Files{{else}}Plugin Files{{end}}</h2>
+	<ul role="tree" aria-labelledby="{{.Kind}}-files-label">
+		<li role="treeitem" tabindex="-1" aria-expanded="true" aria-level="1" aria-posinset="1" aria-setsize="1">
+			<ul role="group">
+				{{template "file-tree" .Tree}}
+			</ul>
+		</li>
+	</ul>
+</div>
+
+{{if .NotFound}}<div class="notice notice-error"><p>File does not exist! Please double check the name and try again.</p></div>
+{{else}}
+<form name="template" id="template" action="/wp-admin/{{.Kind}}-editor" method="post">
+	<div>
+		<label for="newcontent" id="theme-plugin-editor-label">Selected file content:</label>
+		{{if .Editable}}<input type="hidden" id="nonce" name="nonce" value="{{.Nonce}}" />{{end}}
+		<textarea cols="70" rows="30" name="newcontent" id="newcontent"{{if not .Editable}} readonly="readonly"{{end}} aria-describedby="editor-keyboard-trap-help-1 editor-keyboard-trap-help-2 editor-keyboard-trap-help-3 editor-keyboard-trap-help-4">{{.Content}}</textarea>
+		<input type="hidden" name="action" value="update" />
+		<input type="hidden" name="file" value="{{.File}}" />
+		<input type="hidden" name="{{.Kind}}" value="{{.Slug}}" />
+	</div>
+	<div>
+		<div class="editor-notices"></div>
+		{{if .Editable}}<p class="description">Saved changes apply immediately; nothing has to be rebuilt. The edited copy is stored in <code>{{.OverrideDir}}</code> and layered over the file bundled with WordPress Go. Template changes that do not parse or that break the site are rolled back.{{if .Edited}} This file has been edited. <a href="{{.RestoreURL}}" onclick="return confirm('Restore the original file? Your changes to it will be lost.');">Restore original</a>{{end}}</p>
+		<p class="submit"><input type="submit" name="submit" id="submit" class="button button-primary" value="Update File" /><span class="spinner"></span></p>
+		{{else if eq .Kind "theme"}}<p>Theme file editing is disabled on this site.</p>{{else}}<p>This file is part of a signed plugin package and cannot be changed here.</p>{{end}}
+	</div>
+	<div id="editor-keyboard-trap-help-1" class="screen-reader-text">When using a keyboard to navigate:</div>
+	<ul class="screen-reader-text">
+		<li id="editor-keyboard-trap-help-2">In the editing area, the Tab key enters a tab character.</li>
+		<li id="editor-keyboard-trap-help-3">To move away from this area, press the Esc key followed by the Tab key.</li>
+		<li id="editor-keyboard-trap-help-4">Screen reader users: when in forms mode, you may need to press the Esc key twice.</li>
+	</ul>
+	{{safe `<script type="text/html" id="tmpl-wp-file-editor-notice">
+		<div class="notice inline notice-{{ data.type || 'info' }} {{ data.alt ? 'notice-alt' : '' }} {{ data.dismissible ? 'is-dismissible' : '' }} {{ data.classes || '' }}">
+			<p>{{ data.message || data.code }}</p>
+			<# if ( data.dismissible ) { #>
+				<button type="button" class="notice-dismiss"><span class="screen-reader-text">Dismiss</span></button>
+			<# } #>
+		</div>
+	</script>`}}
+</form>
+{{end}}
+<br class="clear" />
+{{end}}
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}
+
+{{define "privacy-requests-head"}}<tr>
+	<th scope="col"{{if .}} id="email"{{end}} class="manage-column column-email column-primary">Requester</th>
+	<th scope="col"{{if .}} id="status"{{end}} class="manage-column column-status">Status</th>
+	<th scope="col"{{if .}} id="created_timestamp"{{end}} class="manage-column column-created_timestamp">Requested</th>
+	<th scope="col"{{if .}} id="next_steps"{{end}} class="manage-column column-next_steps">Next steps</th>
+</tr>{{end}}
+
+{{define "admin/privacy-tool"}}{{template "admin-header" .}}{{with .Data}}
+<div class="wrap nosubsub">
+	<h1>{{.Title}}</h1>
+	<p>This tool helps site owners comply with local laws and regulations by {{if eq .Type "export_personal_data"}}exporting known data for a given user in a .zip file{{else}}deleting or anonymizing known data for a given user{{end}}.</p>
+	<hr class="wp-header-end" />
+	{{template "notices" $}}
+	<form action="/wp-admin/{{.Screen}}" method="post" class="wp-privacy-request-form">
+		<h2>Add Data {{if eq .Type "export_personal_data"}}Export{{else}}Erasure{{end}} Request</h2>
+		<div class="wp-privacy-request-form-field">
+		<table class="form-table">
+			<tr>
+				<th scope="row"><label for="username_or_email_for_privacy_request">Username or email address</label></th>
+				<td><input type="text" required class="regular-text ltr" id="username_or_email_for_privacy_request" name="username_or_email_for_privacy_request" /></td>
+			</tr>
+		</table>
+		<p class="submit"><input type="submit" name="submit" id="submit" class="button" value="Send Request" /></p>
+		</div>
+		<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+	</form>
+	<hr />
+	<h2 class="screen-reader-text">Filter {{lower .Title}} list</h2>
+	<ul class="subsubsub"><li class="all"><a href="/wp-admin/{{.Screen}}" class="current" aria-current="page">All <span class="count">({{len .Requests}})</span></a></li></ul>
+	<div class="tablenav top">
+		<div class="tablenav-pages{{if not .Requests}} no-pages{{else}} one-page{{end}}"><span class="displaying-num">{{len .Requests}} item{{if ne (len .Requests) 1}}s{{end}}</span></div>
+		<br class="clear" />
+	</div>
+	<h2 class="screen-reader-text">{{.Title}} list</h2>
+	<table class="wp-list-table widefat fixed striped table-view-list privacy_requests">
+	<thead>{{template "privacy-requests-head" true}}</thead>
+	<tbody id="the-list">
+	{{$s := .Screen}}{{$n := .Nonce}}{{$t := .Type}}
+	{{range .Requests}}<tr>
+		<td class="email column-email column-primary" data-colname="Requester">{{.Email}}</td>
+		<td class="status column-status" data-colname="Status"><span class="status-label status-{{.Status}}">{{if eq .Status "request-completed"}}Completed{{else}}Confirmed{{end}}</span></td>
+		<td class="created_timestamp column-created_timestamp" data-colname="Requested">{{.CreatedAt.Format "2006/01/02"}}</td>
+		<td class="next_steps column-next_steps" data-colname="Next steps"><a class="button" href="/wp-admin/{{$s}}?process={{.ID}}&amp;_wpnonce={{$n}}">{{if eq $t "export_personal_data"}}Download personal data{{else}}Erase personal data{{end}}</a></td>
+	</tr>
+	{{else}}<tr class="no-items"><td class="colspanchange" colspan="4">No items found.</td></tr>{{end}}
+	</tbody>
+	<tfoot>{{template "privacy-requests-head" false}}</tfoot>
+	</table>
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}

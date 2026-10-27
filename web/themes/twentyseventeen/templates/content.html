@@ -1,0 +1,126 @@
+{{define "content"}}
+<article id="post-{{.P.ID}}" class="{{.Class}}">
+	{{if .P.Sticky}}{{template "svg" "thumb-tack"}}{{end}}
+	<header class="entry-header">
+		{{if eq .P.Type "post"}}<div class="entry-meta">{{.Meta}}</div><!-- .entry-meta -->{{end}}{{if .H3}}<h3 class="entry-title"><a href="{{.P.Permalink}}" rel="bookmark">{{.P.Title}}</a></h3>{{else}}<h2 class="entry-title"><a href="{{.P.Permalink}}" rel="bookmark">{{.P.Title}}</a></h2>{{end}}	</header><!-- .entry-header -->
+
+	{{if .Thumb}}
+		<div class="post-thumbnail">
+			<a href="{{.P.Permalink}}">
+				{{.Thumb}}
+			</a>
+		</div><!-- .post-thumbnail -->
+	{{end}}
+
+	<div class="entry-content">
+		{{.P.Content}}
+	</div><!-- .entry-content -->
+
+
+</article><!-- #post-{{.P.ID}} -->
+{{end}}
+
+{{define "content-single"}}
+<article id="post-{{.P.ID}}" class="{{.Class}}">
+		<header class="entry-header">
+		{{if eq .P.Type "post"}}<div class="entry-meta">{{.Meta}}</div><!-- .entry-meta -->{{end}}<h1 class="entry-title">{{.P.Title}}</h1>	</header><!-- .entry-header -->
+
+
+	<div class="entry-content">
+		{{.P.Content}}
+	</div><!-- .entry-content -->
+
+	{{.Footer}}
+</article><!-- #post-{{.P.ID}} -->
+{{end}}
+
+{{define "content-page"}}
+<article id="post-{{.P.ID}}" class="{{.Class}}">
+	<header class="entry-header">
+		<h1 class="entry-title">{{.P.Title}}</h1>{{.EditLink}}	</header><!-- .entry-header -->
+	<div class="entry-content">
+		{{.P.Content}}
+	</div><!-- .entry-content -->
+</article><!-- #post-{{.P.ID}} -->
+{{end}}
+
+{{define "content-front-page"}}
+<article id="post-{{.Post.P.ID}}" class="{{.Post.Class}}" >
+
+	{{with .PanelImage}}{{.}}{{end}}
+
+	<div class="panel-content">
+		<div class="wrap">
+			<header class="entry-header">
+				<h2 class="entry-title">{{.Post.P.Title}}</h2>
+				{{.Post.EditLink}}
+			</header><!-- .entry-header -->
+
+			<div class="entry-content">
+				{{.Post.P.Content}}
+			</div><!-- .entry-content -->
+
+		</div><!-- .wrap -->
+	</div><!-- .panel-content -->
+
+</article><!-- #post-{{.Post.P.ID}} -->
+{{end}}
+
+{{define "content-excerpt"}}
+<article id="post-{{.P.ID}}" class="{{.Class}}">
+
+	<header class="entry-header">
+		{{if eq .P.Type "post"}}
+			<div class="entry-meta">
+				{{.Meta}}
+			</div><!-- .entry-meta -->
+		{{else if .EditLink}}
+			<div class="entry-meta">
+				{{.EditLink}}
+			</div><!-- .entry-meta -->
+		{{end}}
+
+		<h2 class="entry-title"><a href="{{.P.Permalink}}" rel="bookmark">{{.P.Title}}</a></h2>	</header><!-- .entry-header -->
+
+	<div class="entry-summary">
+		{{.Excerpt}}
+	</div><!-- .entry-summary -->
+
+</article><!-- #post-{{.P.ID}} -->
+{{end}}
+
+{{define "content-none"}}
+<section class="no-results not-found">
+	<header class="page-header">
+		<h1 class="page-title">Nothing Found</h1>
+	</header>
+	<div class="page-content">
+		{{if and (eq .Q.Kind "home") .CanPublish}}
+			<p>
+			Ready to publish your first post? <a href="/wp-admin/post-new">Get started here</a>.			</p>
+		{{else}}
+			<p>It seems we can&rsquo;t find what you&rsquo;re looking for. Perhaps searching can help.</p>
+			{{template "searchform" .}}
+		{{end}}
+	</div><!-- .page-content -->
+</section><!-- .no-results -->
+{{end}}
+
+{{define "comments"}}{{with .Data.Comments}}
+<div id="comments" class="comments-area">
+
+	{{if .Count}}
+		<h2 class="comments-title">
+			{{.Title}}		</h2>
+
+		<ol class="comment-list">
+			{{.List}}		</ol>
+
+	{{end}}
+	{{if .ClosedNotice}}
+
+		<p class="no-comments">Comments are closed.</p>
+	{{end}}
+	{{.Form}}
+</div><!-- #comments -->
+{{end}}{{end}}

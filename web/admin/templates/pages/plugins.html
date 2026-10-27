@@ -1,0 +1,77 @@
+{{define "admin/plugins"}}{{template "admin-header" .}}{{with .Data}}
+<div class="wrap">
+<h1 class="wp-heading-inline">Plugins</h1>
+{{if $.User.Can "install_plugins" nil}}<a href="/wp-admin/plugin-install" class="page-title-action">Add Plugin</a>{{end}}
+<hr class="wp-header-end">
+{{template "notices" $}}
+{{if .RuntimeErr}}<div class="notice notice-error"><p>The WebAssembly plugin runtime could not start: {{.RuntimeErr}}</p></div>{{end}}
+
+{{with .Consent}}
+<div class="card" style="max-width:720px;margin:16px 0 24px;border-left:4px solid #2271b1">
+	<h2 class="title">Activate &#8220;{{.Name}}&#8221;?</h2>
+	<p>This plugin runs in a WebAssembly sandbox. It can only do what you allow below; anything else is refused by WordPress Go. You can deactivate it at any time.</p>
+	<form method="post" action="/wp-admin/plugins">
+		<input type="hidden" name="action" value="activate" />
+		<input type="hidden" name="plugin" value="{{.Slug}}" />
+		<input type="hidden" name="_wpnonce" value="{{$.Data.ConsentNonce}}" />
+		<fieldset><legend class="screen-reader-text">Permissions</legend>
+		{{range .Permissions}}<p><label><input type="checkbox" name="permissions[]" value="{{.Name}}" checked /> <code>{{.Name}}</code> &mdash; {{.Description}}</label></p>{{else}}<p><em>This plugin asks for no permissions.</em></p>{{end}}
+		</fieldset>
+		<p><input type="submit" class="button button-primary" value="Allow and Activate" /> <a class="button" href="/wp-admin/plugins">Cancel</a></p>
+	</form>
+</div>
+{{end}}
+
+<ul class="subsubsub">
+	<li class="all"><a href="/wp-admin/plugins"{{if eq .Status "all"}} class="current" aria-current="page"{{end}}>All <span class="count">({{add .Active .Inactive}})</span></a> |</li>
+	<li class="active"><a href="/wp-admin/plugins?plugin_status=active"{{if eq .Status "active"}} class="current" aria-current="page"{{end}}>Active <span class="count">({{.Active}})</span></a> |</li>
+	<li class="inactive"><a href="/wp-admin/plugins?plugin_status=inactive"{{if eq .Status "inactive"}} class="current" aria-current="page"{{end}}>Inactive <span class="count">({{.Inactive}})</span></a></li>
+</ul>
+<form class="search-form search-plugins" method="get" action="/wp-admin/plugins">
+	{{if ne .Status "all"}}<input type="hidden" name="plugin_status" value="{{.Status}}" />{{end}}
+	<p class="search-box">
+		<label for="plugin-search-input">Search installed plugins</label>
+		<input type="search" id="plugin-search-input" class="wp-filter-search" name="s" value="{{.Search}}" />
+		<input type="submit" id="search-submit" class="button button-compact hide-if-js" value="Search Installed Plugins" />
+	</p>
+</form>
+<form method="post" id="bulk-action-form">
+<div class="tablenav top">
+	<div class="tablenav-pages one-page"><span class="displaying-num">{{len .Rows}} item{{if ne (len .Rows) 1}}s{{end}}</span></div>
+	<br class="clear" />
+</div>
+<h2 class="screen-reader-text">Plugins list</h2>
+<table class="wp-list-table widefat plugins">
+<thead>{{template "plugins-head" true}}</thead>
+<tbody id="the-list">
+{{range .Rows}}
+<tr class="{{if .Active}}active{{else}}inactive{{end}}" data-slug="{{.Slug}}" data-plugin="{{.Slug}}">
+	<th scope="row" class="check-column"><input type="checkbox" name="checked[]" value="{{.Slug}}" id="checkbox_{{.Slug}}" /><label for="checkbox_{{.Slug}}"><span class="screen-reader-text">Select {{.Name}}</span></label></th>
+	<td class="plugin-title column-primary"><strong>{{.Name}}</strong>
+		<div class="row-actions visible">
+		{{if .Active}}{{if .SettingsURL}}<span class="settings"><a href="{{.SettingsURL}}">Settings</a> | </span>{{end}}<span class="deactivate"><a href="{{.DeactivateURL}}" aria-label="Deactivate {{.Name}}">Deactivate</a></span>
+		{{else}}<span class="activate"><a href="{{.ActivateURL}}" class="edit" aria-label="Activate {{.Name}}">Activate</a></span>{{if .DeleteURL}} | <span class="delete"><a href="{{.DeleteURL}}" class="delete" aria-label="Delete {{.Name}}" onclick="return confirm('Are you sure you want to delete {{.Name}} and its data?');">Delete</a></span>{{end}}{{end}}
+		</div>
+	</td>
+	<td class="column-description desc">
+		<div class="plugin-description"><p>{{safe .Description}}</p></div>
+		<div class="active second plugin-version-author-uri">Version {{.Version}} | By {{if .AuthorURI}}<a href="{{.AuthorURI}}">{{.Author}}</a>{{else}}{{.Author}}{{end}}{{if .Native}} | <span style="color:#2271b1">Built-in</span>{{else}} | <span style="color:#8c8f94">WebAssembly sandbox</span>{{end}}{{if .PluginURI}} | <a href="{{.PluginURI}}">Visit plugin site</a>{{end}}</div>
+		{{if .Permissions}}<p class="description" style="margin-top:6px">Permissions: {{range $i, $p := .Permissions}}{{if $i}}, {{end}}<code title="{{$p.Description}}">{{$p.Name}}</code>{{end}}</p>{{end}}
+		{{if .Disabled}}<div class="notice inline notice-error notice-alt"><p>Stopped by the sandbox: {{.DisabledWhy}}</p></div>{{end}}
+		{{if .Logs}}<details style="margin-top:6px"><summary>Recent log</summary><pre style="white-space:pre-wrap;font-size:12px">{{range .Logs}}{{.Time.Format "15:04:05"}} [{{.Level}}] {{.Message}}
+{{end}}</pre></details>{{end}}
+	</td>
+</tr>
+{{else}}<tr class="no-items"><td class="colspanchange" colspan="3">No plugins found.</td></tr>{{end}}
+</tbody>
+<tfoot>{{template "plugins-head" false}}</tfoot>
+</table>
+<div class="tablenav bottom">
+	<div class="tablenav-pages one-page"><span class="displaying-num">{{len .Rows}} item{{if ne (len .Rows) 1}}s{{end}}</span></div>
+	<br class="clear" />
+</div>
+</form>
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}
+
+{{define "plugins-head"}}<tr><td{{if .}} id="cb"{{end}} class="manage-column column-cb check-column"><input id="cb-select-all-{{if .}}1{{else}}2{{end}}" type="checkbox" /><label for="cb-select-all-{{if .}}1{{else}}2{{end}}"><span class="screen-reader-text">Select All</span></label></td><th scope="col"{{if .}} id="name"{{end}} class="manage-column column-name column-primary">Plugin</th><th scope="col"{{if .}} id="description"{{end}} class="manage-column column-description">Description</th></tr>{{end}}

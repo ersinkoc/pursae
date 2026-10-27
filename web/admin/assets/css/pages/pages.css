@@ -1,0 +1,177 @@
+/**
+ * Pages list + classic new-page only (edit-pages.html, page-new.html).
+ * Desktop: no layout shifts — rely on wp/list-tables + wp/edit.
+ * Mobile: small reinforcements only (WP already owns 782px breakpoints).
+ */
+
+/* —— Pagination: kill underlines only (no size/float changes) —— */
+body.edit-php.post-type-page .tablenav-pages a,
+body.edit-php.post-type-page .tablenav-pages .button,
+body.edit-php.post-type-page .tablenav-pages .tablenav-pages-navspan {
+  text-decoration: none !important;
+}
+
+/* Quick Edit is a button-link in WP markup */
+body.edit-php.post-type-page .wp-list-table .row-actions .button-link {
+  color: #2271b1;
+  text-decoration: none;
+  font-size: inherit;
+  line-height: inherit;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  box-shadow: none;
+}
+body.edit-php.post-type-page .wp-list-table .row-actions .button-link:hover {
+  color: #135e96;
+}
+
+/* Title prompt hide (clone; edit.css already positions #title-prompt-text) */
+body.post-new-php.post-type-page #titlewrap:focus-within #title-prompt-text,
+body.post-new-php.post-type-page #titlewrap.has-title #title-prompt-text {
+  display: none;
+}
+
+/*
+ * Publish metabox: Save Draft + Preview on one row (WP float intent).
+ * #save-action / #preview-action are block wrappers, so child floats cannot
+ * share a line; flex restores left/right pairing. Hide inactive spinner width.
+ */
+body.post-new-php.post-type-page #minor-publishing-actions {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  text-align: left;
+}
+body.post-new-php.post-type-page #minor-publishing-actions > .clear {
+  display: none;
+}
+body.post-new-php.post-type-page #save-action,
+body.post-new-php.post-type-page #preview-action {
+  float: none;
+  width: auto;
+  height: auto;
+}
+body.post-new-php.post-type-page #minor-publishing-actions #save-post,
+body.post-new-php.post-type-page #minor-publishing-actions .preview.button {
+  float: none;
+  display: inline-block;
+  vertical-align: middle;
+  text-decoration: none;
+}
+body.post-new-php.post-type-page #save-action .spinner:not(.is-active) {
+  float: none;
+  width: 0;
+  height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Classic editor chrome not fully covered by edit.css alone */
+body.post-new-php.post-type-page .wp-editor-container {
+  border: 1px solid #c3c4c7;
+  background: #fff;
+}
+body.post-new-php.post-type-page .quicktags-toolbar {
+  padding: 3px;
+  border-bottom: 1px solid #c3c4c7;
+  background: #f0f0f1;
+  min-height: 30px;
+}
+body.post-new-php.post-type-page .quicktags-toolbar .ed_button {
+  margin: 2px 1px;
+  min-width: 26px;
+}
+body.post-new-php.post-type-page .wp-editor-area {
+  font-family: Consolas, Monaco, monospace;
+  padding: 10px;
+  margin: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  border: none;
+  background: #fff;
+  color: #2c3338;
+  resize: vertical;
+  min-height: 300px;
+  line-height: 1.5;
+}
+body.post-new-php.post-type-page #post-status-info {
+  width: 100%;
+  border-spacing: 0;
+  border: 1px solid #c3c4c7;
+  border-top: none;
+  background: #f0f0f1;
+  margin: 0;
+}
+body.post-new-php.post-type-page #post-status-info td {
+  font-size: 12px;
+  padding: 4px 10px;
+  color: #646970;
+}
+body.post-new-php.post-type-page .wp-media-buttons-icon {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  vertical-align: text-top;
+  margin: 0 4px 0 0;
+}
+body.post-new-php.post-type-page .wp-media-buttons-icon:before {
+  content: "\f104";
+  font: normal 18px/1 dashicons;
+  speak: never;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* —— Mobile only (do not alter desktop) —— */
+@media screen and (max-width: 782px) {
+  /* Search sits full-width above filters on small screens */
+  body.edit-php.post-type-page .search-box {
+    float: none;
+    width: 100%;
+    margin: 0 0 12px;
+    position: static;
+  }
+  body.edit-php.post-type-page .search-box input[name="s"],
+  body.edit-php.post-type-page .search-box input[type="search"] {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Subsub views wrap cleanly */
+  body.edit-php.post-type-page .subsubsub {
+    margin-bottom: 8px;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  /* Classic editor: keep textarea usable; no desktop width change */
+  body.post-new-php.post-type-page .wp-editor-area {
+    min-height: 220px;
+    font-size: 16px; /* avoid iOS zoom on focus */
+  }
+  body.post-new-php.post-type-page #titlediv #title {
+    font-size: 1.5em;
+  }
+  body.post-new-php.post-type-page #title-prompt-text {
+    font-size: 1.5em;
+  }
+  body.post-new-php.post-type-page .quicktags-toolbar {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+  }
+  body.post-new-php.post-type-page #edit-slug-box {
+    word-break: break-all;
+  }
+  body.post-new-php.post-type-page #pageparentdiv select,
+  body.post-new-php.post-type-page #pageparentdiv input[type="text"] {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+}

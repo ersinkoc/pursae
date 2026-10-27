@@ -1,0 +1,108 @@
+{{define "content"}}
+<article id="post-{{.ID}}" class="{{.Class}}">
+	<header class="entry-header">
+		{{if .ShowFeatured}}
+			<span class="sticky-post">Featured</span>
+		{{end}}
+		<h2 class="entry-title"><a href="{{.Permalink}}" rel="bookmark">{{.Title}}</a></h2>	</header><!-- .entry-header -->
+
+	{{if .ShowExcerpt}}
+			<div class="entry-summary">
+				{{.Excerpt}}			</div><!-- .entry-summary -->
+	{{end}}
+
+	<div class="entry-content">
+		{{.Content}}
+	</div><!-- .entry-content -->
+
+	<footer class="entry-footer">
+		{{.EntryMeta}}{{if .EditLink}}<span class="edit-link">{{.EditLink}}</span>{{end}}	</footer><!-- .entry-footer -->
+</article><!-- #post-{{.ID}} -->
+{{end}}
+
+{{define "content-single"}}
+<article id="post-{{.ID}}" class="{{.Class}}">
+	<header class="entry-header">
+		<h1 class="entry-title">{{.Title}}</h1>	</header><!-- .entry-header -->
+
+	{{if .ShowExcerpt}}
+			<div class="entry-summary">
+				{{.Excerpt}}			</div><!-- .entry-summary -->
+	{{end}}
+
+	<div class="entry-content">
+		{{.Content}}{{.Biography}}
+	</div><!-- .entry-content -->
+
+	<footer class="entry-footer">
+		{{.EntryMeta}}{{if .EditLink}}<span class="edit-link">{{.EditLink}}</span>{{end}}	</footer><!-- .entry-footer -->
+</article><!-- #post-{{.ID}} -->
+{{end}}
+
+{{define "content-page"}}
+<article id="post-{{.ID}}" class="{{.Class}}">
+	<header class="entry-header">
+		<h1 class="entry-title">{{.Title}}</h1>	</header><!-- .entry-header -->
+
+	<div class="entry-content">
+		{{.Content}}
+	</div><!-- .entry-content -->
+
+	{{if .EditLink}}<footer class="entry-footer"><span class="edit-link">{{.EditLink}}</span></footer><!-- .entry-footer -->{{end}}
+</article><!-- #post-{{.ID}} -->
+{{end}}
+
+{{define "content-search"}}
+<article id="post-{{.ID}}" class="{{.Class}}">
+	<header class="entry-header">
+		<h2 class="entry-title"><a href="{{.Permalink}}" rel="bookmark">{{.Title}}</a></h2>	</header><!-- .entry-header -->
+
+			<div class="entry-summary">
+				{{.Excerpt}}			</div><!-- .entry-summary -->
+
+	{{if eq .Type "post"}}
+		<footer class="entry-footer">
+			{{.EntryMeta}}{{if .EditLink}}<span class="edit-link">{{.EditLink}}</span>{{end}}		</footer><!-- .entry-footer -->
+	{{else if .EditLink}}
+		<footer class="entry-footer"><span class="edit-link">{{.EditLink}}</span></footer><!-- .entry-footer -->
+	{{end}}
+</article><!-- #post-{{.ID}} -->
+{{end}}
+
+{{define "content-none"}}
+<section class="no-results not-found">
+	<header class="page-header">
+		<h1 class="page-title">Nothing Found</h1>
+	</header><!-- .page-header -->
+
+	<div class="page-content">
+		{{if and (eq .Q.Kind "home") .CanPublish}}
+			<p>Ready to publish your first post? <a href="/wp-admin/post-new">Get started here</a>.</p>
+		{{else if eq .Q.Kind "search"}}
+			<p>Sorry, but nothing matched your search terms. Please try again with some different keywords.</p>
+			{{template "searchform" .}}
+		{{else}}
+			<p>It seems we can&rsquo;t find what you&rsquo;re looking for. Perhaps searching can help.</p>
+			{{template "searchform" .}}
+		{{end}}
+	</div><!-- .page-content -->
+</section><!-- .no-results -->
+{{end}}
+
+{{define "comments"}}{{with .Comments}}
+<div id="comments" class="comments-area">
+	{{if .Count}}
+		<h2 class="comments-title">
+			{{.Title}}		</h2>
+
+		<ol class="comment-list">
+			{{.List}}		</ol><!-- .comment-list -->
+	{{end}}
+
+	{{if .ClosedNotice}}
+	<p class="no-comments">Comments are closed.</p>
+	{{end}}
+
+	{{.Form}}
+</div><!-- .comments-area -->
+{{end}}{{end}}

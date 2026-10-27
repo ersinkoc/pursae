@@ -1,0 +1,146 @@
+{{define "theme/index"}}{{template "header" .}}
+<div class="wrap">
+	{{if .IsHomeHeader}}
+		<header class="page-header">
+			<h1 class="page-title">{{.PostsPageTitle}}</h1>
+		</header>
+	{{else}}
+	<header class="page-header">
+		<h2 class="page-title">Posts</h2>
+	</header>
+	{{end}}
+
+	<div id="primary" class="content-area">
+		<main id="main" class="site-main">
+
+			{{if .Data.Posts}}
+				{{range .Data.Posts}}{{template "content" .}}{{end}}
+				{{.Data.Pagination}}
+			{{else}}
+				{{template "content-none" .}}
+			{{end}}
+
+		</main><!-- #main -->
+	</div><!-- #primary -->
+	{{template "sidebar" .}}
+</div><!-- .wrap -->
+
+{{template "footer" .}}{{end}}
+
+{{define "theme/single"}}{{template "header" .}}
+<div class="wrap">
+	<div id="primary" class="content-area">
+		<main id="main" class="site-main">
+
+			{{template "content-single" .Data.Post}}
+			{{template "comments" .}}
+			{{with .Data.PostNav}}{{.}}{{end}}
+
+		</main><!-- #main -->
+	</div><!-- #primary -->
+	{{template "sidebar" .}}
+</div><!-- .wrap -->
+
+{{template "footer" .}}{{end}}
+
+{{define "theme/page"}}{{template "header" .}}
+{{if .Data.StaticFront}}
+<div id="primary" class="content-area">
+	<main id="main" class="site-main">
+
+		{{template "content-front-page" .Data}}
+
+	</main><!-- #main -->
+</div><!-- #primary -->
+{{else}}
+<div class="wrap">
+	<div id="primary" class="content-area">
+		<main id="main" class="site-main">
+
+			{{template "content-page" .Data.Post}}
+			{{template "comments" .}}
+
+		</main><!-- #main -->
+	</div><!-- #primary -->
+</div><!-- .wrap -->
+{{end}}
+{{template "footer" .}}{{end}}
+
+{{define "theme/archive"}}{{template "header" .}}
+<div class="wrap">
+
+	{{if .Data.Posts}}
+		<header class="page-header">
+			<h1 class="page-title">{{.ArchiveTitle}}</h1>{{if .ArchiveDesc}}<div class="taxonomy-description">{{.ArchiveDesc}}</div>{{end}}
+		</header><!-- .page-header -->
+	{{end}}
+
+	<div id="primary" class="content-area">
+		<main id="main" class="site-main">
+
+		{{if .Data.Posts}}
+			{{range .Data.Posts}}{{template "content" .}}{{end}}
+			{{.Data.Pagination}}
+		{{else}}
+			{{template "content-none" .}}
+		{{end}}
+
+		</main><!-- #main -->
+	</div><!-- #primary -->
+	{{template "sidebar" .}}
+</div><!-- .wrap -->
+
+{{template "footer" .}}{{end}}
+
+{{define "theme/search"}}{{template "header" .}}
+<div class="wrap">
+
+	<header class="page-header">
+		{{if .Data.Posts}}
+			<h1 class="page-title">
+			Search Results for: <span>{{.SearchQuery}}</span>			</h1>
+		{{else}}
+			<h1 class="page-title">Nothing Found</h1>
+		{{end}}
+	</header><!-- .page-header -->
+
+	<div id="primary" class="content-area">
+		<main id="main" class="site-main">
+
+		{{if .Data.Posts}}
+			{{range .Data.Posts}}{{template "content-excerpt" .}}{{end}}
+			{{.Data.Pagination}}
+		{{else}}
+
+			<p>Sorry, but nothing matched your search terms. Please try again with some different keywords.</p>
+			{{template "searchform" .}}
+		{{end}}
+
+		</main><!-- #main -->
+	</div><!-- #primary -->
+	{{template "sidebar" .}}
+</div><!-- .wrap -->
+
+{{template "footer" .}}{{end}}
+
+{{define "theme/404"}}{{template "header" .}}
+<div class="wrap">
+	<div id="primary" class="content-area">
+		<main id="main" class="site-main">
+
+			<section class="error-404 not-found">
+				<header class="page-header">
+					<h1 class="page-title">Oops! That page can&rsquo;t be found.</h1>
+				</header><!-- .page-header -->
+				<div class="page-content">
+					<p>It looks like nothing was found at this location. Maybe try a search?</p>
+
+					{{template "searchform" .}}
+
+				</div><!-- .page-content -->
+			</section><!-- .error-404 -->
+		</main><!-- #main -->
+	</div><!-- #primary -->
+</div><!-- .wrap -->
+
+{{template "footer" .}}{{end}}

@@ -1,0 +1,137 @@
+{
+ "name": "pro-f-2",
+ "settings": {},
+ "elements": [
+  {
+   "id": "f200001",
+   "elType": "container",
+   "isInner": false,
+   "settings": {
+    "flex_direction": "column"
+   },
+   "elements": [
+    {
+     "id": "f200002",
+     "elType": "widget",
+     "widgetType": "contact-buttons",
+     "settings": {
+      "chat_aria_label": "Support",
+      "chat_button_platform": "Email",
+      "chat_button_mail": "hi@example.com",
+      "chat_button_mail_subject": "Hello",
+      "top_bar_title": "Ann",
+      "top_bar_subtitle": "Owner",
+      "top_bar_image": {
+       "url": "http://localhost:8095/wp-content/uploads/2026/10/wpgo-square.png",
+       "id": 58,
+       "size": ""
+      },
+      "style_chat_button_size": "large",
+      "style_chat_box_corners": "sharp",
+      "advanced_horizontal_position": "start",
+      "advanced_custom_css_id": "cb-main",
+      "style_chat_button_animation": "fadeIn",
+      "style_chat_button_animation_delay": 300
+     },
+     "elements": []
+    },
+    {
+     "id": "f200003",
+     "elType": "widget",
+     "widgetType": "contact-buttons-var-1",
+     "settings": {
+      "chat_button_icon": {
+       "value": "fas fa-comment",
+       "library": "fa-solid"
+      },
+      "contact_repeater": [
+       {
+        "_id": "f2r0001",
+        "contact_icon_platform": "Telephone",
+        "contact_icon_number": "+1555"
+       },
+       {
+        "_id": "f2r0002",
+        "contact_icon_platform": "Messenger",
+        "contact_icon_username": "ann"
+       },
+       {
+        "_id": "f2r0003",
+        "contact_icon_platform": "Viber",
+        "contact_icon_number": "+1 555",
+        "contact_icon_viber_action": "contact"
+       }
+      ],
+      "top_bar_image": {
+       "url": "https://example.com/p.png",
+       "id": "",
+       "size": ""
+      }
+     },
+     "elements": []
+    },
+    {
+     "id": "f200004",
+     "elType": "widget",
+     "widgetType": "contact-buttons-var-3",
+     "settings": {
+      "contact_repeater": [
+       {
+        "_id": "f2r0101",
+        "contact_icon_platform": "Url",
+        "contact_icon_url": {
+         "url": "https://example.org",
+         "is_external": "on",
+         "nofollow": "on",
+         "custom_attributes": ""
+        },
+        "contact_tooltip": "Site"
+       },
+       {
+        "_id": "f2r0102",
+        "contact_icon_platform": "SMS",
+        "contact_icon_number": "123",
+        "contact_tooltip": "Text us"
+       }
+      ],
+      "style_info_links_dividers": "yes",
+      "send_button_url": {
+       "url": "https://example.org/send",
+       "is_external": "",
+       "nofollow": "",
+       "custom_attributes": ""
+      }
+     },
+     "elements": []
+    },
+    {
+     "id": "f200005",
+     "elType": "widget",
+     "widgetType": "contact-buttons-var-4",
+     "settings": {
+      "style_chat_button_size": "medium",
+      "contact_repeater": [
+       {
+        "_id": "f2r0201",
+        "contact_icon_platform": "Waze",
+        "contact_icon_waze": {
+         "url": "https://waze.com/ul?q=x",
+         "is_external": "on",
+         "nofollow": "",
+         "custom_attributes": ""
+        },
+        "contact_tooltip": "Drive"
+       },
+       {
+        "_id": "f2r0202",
+        "contact_icon_platform": "Skype",
+        "contact_icon_username": "ann.s"
+       }
+      ]
+     },
+     "elements": []
+    }
+   ]
+  }
+ ]
+}

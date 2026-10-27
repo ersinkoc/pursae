@@ -1,0 +1,288 @@
+{{define "admin/dashboard"}}{{template "admin-header" .}}
+<div id="screen-meta" class="metabox-prefs">
+	<div id="screen-options-wrap" class="hidden" tabindex="-1" aria-label="Screen Options Tab">
+		<form id="adv-settings" method="post">
+			<fieldset class="metabox-prefs">
+				<legend>Screen elements</legend>
+				<p>Some screen elements can be shown or hidden by using the checkboxes. Expand or collapse the elements by clicking on their headings, and arrange them by dragging their headings or by clicking on the up and down arrows.</p>
+				<div class="metabox-prefs-container">
+					<label for="dashboard_site_health-hide"><input class="hide-postbox-tog" type="checkbox" id="dashboard_site_health-hide" checked="checked" />Site Health Status</label>
+					<label for="dashboard_right_now-hide"><input class="hide-postbox-tog" type="checkbox" id="dashboard_right_now-hide" checked="checked" />At a Glance</label>
+					<label for="dashboard_activity-hide"><input class="hide-postbox-tog" type="checkbox" id="dashboard_activity-hide" checked="checked" />Activity</label>
+					<label for="dashboard_quick_press-hide"><input class="hide-postbox-tog" type="checkbox" id="dashboard_quick_press-hide" checked="checked" /><span class="hide-if-no-js">Quick Draft</span> <span class="hide-if-js">Your Recent Drafts</span></label>
+					<label for="dashboard_primary-hide"><input class="hide-postbox-tog" type="checkbox" id="dashboard_primary-hide" checked="checked" />WordPress Events and News</label>
+					<label for="wp_welcome_panel-hide"><input type="checkbox" id="wp_welcome_panel-hide" checked="checked" />Welcome</label>
+				</div>
+			</fieldset>
+		</form>
+	</div>
+	<div id="contextual-help-wrap" class="hidden" tabindex="-1" aria-label="Contextual Help Tab">
+		<div id="contextual-help-back"></div>
+		<div id="contextual-help-columns">
+			<div class="contextual-help-tabs">
+				<ul><li id="tab-link-overview" class="active"><a href="#tab-panel-overview" aria-controls="tab-panel-overview">Overview</a></li></ul>
+			</div>
+			<div class="contextual-help-sidebar">
+				<p><strong>For more information:</strong></p>
+				<p><a href="https://wordpress.org/documentation/article/dashboard-screen/">Documentation on Dashboard</a></p>
+				<p><a href="https://wordpress.org/support/forums/">Support forums</a></p>
+			</div>
+			<div class="contextual-help-tabs-wrap">
+				<div id="tab-panel-overview" class="help-tab-content active">
+					<p>Welcome to your WordPress Dashboard!</p>
+					<p>The Dashboard is the first place you will come to every time you log into your site. It is where you will find all your WordPress tools. If you need help, just click the &#8220;Help&#8221; tab above the screen title.</p>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<div id="screen-meta-links">
+	<div id="screen-options-link-wrap" class="hide-if-no-js screen-meta-toggle">
+		<button type="button" id="show-settings-link" class="button button-compact show-settings" data-toggle-screen="screen-options-wrap" aria-controls="screen-options-wrap" aria-expanded="false">Screen Options</button>
+	</div>
+	<div id="contextual-help-link-wrap" class="hide-if-no-js screen-meta-toggle">
+		<button type="button" id="contextual-help-link" class="button button-compact show-settings" data-toggle-screen="contextual-help-wrap" aria-controls="contextual-help-wrap" aria-expanded="false">Help</button>
+	</div>
+</div>
+<div class="wrap">
+	<h1>Dashboard</h1>
+	{{template "notices" .}}
+	{{with .Data}}
+	{{if $.User.Can "edit_theme_options" nil}}
+	<div id="welcome-panel" class="welcome-panel{{if not .ShowWelcome}} hidden{{end}}">
+		<a class="welcome-panel-close" href="/wp-admin/?welcome=0" aria-label="Dismiss the welcome panel">Dismiss</a>
+		<div class="welcome-panel-content">
+		<div class="welcome-panel-header-wrap">
+			<div class="welcome-panel-header">
+				<div class="welcome-panel-header-image">
+          <svg preserveAspectRatio="xMidYMin slice" fill="none" viewBox="0 0 1232 240" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+  <g clip-path="url(#a)">
+    <path fill="#151515" d="M0 0h1232v240H0z"/>
+    <ellipse cx="616" cy="232" fill="url(#b)" opacity=".05" rx="1497" ry="249"/>
+    <mask id="d" width="1000" height="400" x="232" y="20" maskUnits="userSpaceOnUse" style="mask-type:alpha">
+      <path fill="url(#c)" d="M0 0h1000v400H0z" transform="translate(232 20)"/>
+    </mask>
+    <g stroke-width="2" mask="url(#d)">
+      <path stroke="url(#e)" d="M387 20v1635"/>
+      <path stroke="url(#f)" d="M559.5 20v1635"/>
+      <path stroke="url(#g)" d="M732 20v1635"/>
+      <path stroke="url(#h)" d="M904.5 20v1635"/>
+      <path stroke="url(#i)" d="M1077 20v1635"/>
+    </g>
+  </g>
+  <defs>
+    <linearGradient id="e" x1="387.5" x2="387.5" y1="20" y2="1655" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3858E9" stop-opacity="0"/>
+      <stop offset=".297" stop-color="#3858E9"/>
+      <stop offset=".734" stop-color="#3858E9"/>
+      <stop offset="1" stop-color="#3858E9" stop-opacity="0"/>
+      <stop offset="1" stop-color="#3858E9" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="f" x1="560" x2="560" y1="20" y2="1655" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFCB5" stop-opacity="0"/>
+      <stop offset="0" stop-color="#FFFCB5" stop-opacity="0"/>
+      <stop offset=".297" stop-color="#FFFCB5"/>
+      <stop offset=".734" stop-color="#FFFCB5"/>
+      <stop offset="1" stop-color="#FFFCB5" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="g" x1="732.5" x2="732.5" y1="20" y2="1655" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#C7FFDB" stop-opacity="0"/>
+      <stop offset=".297" stop-color="#C7FFDB"/>
+      <stop offset=".693" stop-color="#C7FFDB"/>
+      <stop offset="1" stop-color="#C7FFDB" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="h" x1="905" x2="905" y1="20" y2="1655" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFB7A7" stop-opacity="0"/>
+      <stop offset=".297" stop-color="#FFB7A7"/>
+      <stop offset=".734" stop-color="#FFB7A7"/>
+      <stop offset="1" stop-color="#3858E9" stop-opacity="0"/>
+      <stop offset="1" stop-color="#FFB7A7" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="i" x1="1077.5" x2="1077.5" y1="20" y2="1655" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7B90FF" stop-opacity="0"/>
+      <stop offset=".297" stop-color="#7B90FF"/>
+      <stop offset=".734" stop-color="#7B90FF"/>
+      <stop offset="1" stop-color="#3858E9" stop-opacity="0"/>
+      <stop offset="1" stop-color="#7B90FF" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="b" cx="0" cy="0" r="1" gradientTransform="matrix(0 249 -1497 0 616 232)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3858E9"/>
+      <stop offset="1" stop-color="#151515" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="c" cx="0" cy="0" r="1" gradientTransform="matrix(0 765 -1912.5 0 500 -110)" gradientUnits="userSpaceOnUse">
+      <stop offset=".161" stop-color="#151515" stop-opacity="0"/>
+      <stop offset=".682"/>
+    </radialGradient>
+    <clipPath id="a">
+      <path fill="#fff" d="M0 0h1232v240H0z"/>
+    </clipPath>
+  </defs>
+</svg>
+        </div>
+				<div class="wpgo-welcome-title">
+					<img class="wpgo-welcome-mascot" src="/wp-includes/images/wpgo/gopher-256.png" width="112" height="112" alt="" />
+					<div>
+						<h2>Welcome to WordPress Go!</h2>
+						<p><a href="/wp-admin/about">Learn more about the {{version}} version.</a></p>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="welcome-panel-column-container">
+			<div class="welcome-panel-column">
+				<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+				<rect width="48" height="48" rx="4" fill="#2271b1"/>
+				<path fill-rule="evenodd" clip-rule="evenodd" d="M32.0668 17.0854L28.8221 13.9454L18.2008 24.671L16.8983 29.0827L21.4257 27.8309L32.0668 17.0854ZM16 32.75H24V31.25H16V32.75Z" fill="white"/>
+			</svg>
+				<div class="welcome-panel-column-content">
+					<h3>Author rich content with blocks and patterns</h3>
+					<p>Block patterns are pre-configured block layouts. Use them to get inspired or create new pages in a flash.</p>
+					<a href="/wp-admin/post-new?post_type=page">Add a new page</a>
+				</div>
+			</div>
+			<div class="welcome-panel-column">
+				<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+				<rect width="48" height="48" rx="4" fill="#2271b1"/>
+				<path fill-rule="evenodd" clip-rule="evenodd" d="M18 16h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H18a2 2 0 0 1-2-2V18a2 2 0 0 1 2-2zm12 1.5H18a.5.5 0 0 0-.5.5v3h13v-3a.5.5 0 0 0-.5-.5zm.5 5H22v8h8a.5.5 0 0 0 .5-.5v-7.5zm-10 0h-3V30a.5.5 0 0 0 .5.5h2.5v-8z" fill="#fff"/>
+			</svg>
+				<div class="welcome-panel-column-content">
+					<h3>Start Customizing</h3>
+					<p>Configure your site&#8217;s logo, header, menus, and more in the Customizer.</p>
+					<a class="load-customize hide-if-no-customize" href="/wp-admin/customize">Open the Customizer</a>
+				</div>
+			</div>
+			<div class="welcome-panel-column">
+				<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+				<rect width="48" height="48" rx="4" fill="#2271b1"/>
+				<path fill-rule="evenodd" clip-rule="evenodd" d="M31 24a7 7 0 0 1-7 7V17a7 7 0 0 1 7 7zm-7-8a8 8 0 1 1 0 16 8 8 0 0 1 0-16z" fill="#fff"/>
+			</svg>
+				<div class="welcome-panel-column-content">
+					<h3>Discover a new way to build your site.</h3>
+					<p>There is a new kind of WordPress theme, called a block theme, that lets you build the site you&#8217;ve always wanted &#8212; with blocks and styles.</p>
+					<a href="https://wordpress.org/documentation/article/block-themes/">Learn about block themes</a>
+				</div>
+			</div>
+		</div>
+		</div>
+	</div>
+	{{end}}
+
+	<div id="dashboard-widgets-wrap">
+	<div id="dashboard-widgets" class="metabox-holder">
+	<div id="postbox-container-1" class="postbox-container">
+	<div id="normal-sortables" class="meta-box-sortables">
+		{{template "dashboard-postbox-start" dict "ID" "dashboard_site_health" "Title" "Site Health Status"}}
+			<div class="health-check-widget">
+				<div class="health-check-widget-title-section site-health-progress-wrapper loading hide-if-no-js">
+					<div class="site-health-progress"><svg aria-hidden="true" focusable="false" width="100%" height="100%" viewBox="0 0 200 200" version="1.1" xmlns="http://www.w3.org/2000/svg"><circle r="90" cx="100" cy="100" fill="transparent" stroke-dasharray="565.48" stroke-dashoffset="0"></circle><circle id="bar" r="90" cx="100" cy="100" fill="transparent" stroke-dasharray="565.48" stroke-dashoffset="0"></circle></svg></div>
+					<div class="site-health-progress-label">No information yet&hellip;</div>
+				</div>
+				<div class="site-health-details">
+					<p>Site health checks will automatically run periodically to gather information about your site. You can also <a href="/wp-admin/site-health">visit the Site Health screen</a> to gather information about your site now.</p>
+				</div>
+			</div>
+		{{template "dashboard-postbox-end"}}
+
+		{{template "dashboard-postbox-start" dict "ID" "dashboard_right_now" "Title" "At a Glance"}}
+			<div class="main">
+				<ul>
+					{{if .Posts}}<li class="post-count"><a href="/wp-admin/edit?post_type=post">{{plural .Posts "%s Post" "%s Posts"}}</a></li>{{end}}
+					{{if .Pages}}<li class="page-count"><a href="/wp-admin/edit?post_type=page">{{plural .Pages "%s Page" "%s Pages"}}</a></li>{{end}}
+					{{if .Comments}}<li class="comment-count"><a href="/wp-admin/edit-comments">{{plural .Comments "%s Comment" "%s Comments"}}</a></li>{{end}}
+					<li class="comment-mod-count{{if not .Pending}} hidden{{end}}"><a href="/wp-admin/edit-comments?comment_status=moderated" class="comments-in-moderation-text">{{plural .Pending "%s Comment in moderation" "%s Comments in moderation"}}</a></li>
+				</ul>
+				<p id="wp-version-message"><span id="wp-version">WordPress Go {{version}} running <a href="/wp-admin/themes">Twenty Sixteen</a> theme.</span></p>
+				{{if .Discouraged}}<p class="search-engines-info"><a href="/wp-admin/options-reading">Search engines discouraged</a></p>{{end}}
+			</div>
+		{{template "dashboard-postbox-end"}}
+
+		{{template "dashboard-postbox-start" dict "ID" "dashboard_activity" "Title" "Activity"}}
+			<div id="activity-widget">
+				{{if .Future}}<div id="future-posts" class="activity-block">
+					<h3>Publishing Soon</h3>
+					<ul>{{range .Future}}<li><span>{{.When}}</span> <a href="{{.EditURL}}" aria-label="Edit &#8220;{{.Title}}&#8221;">{{.Title}}</a></li>{{end}}</ul>
+				</div>{{end}}
+				{{if .Published}}<div id="published-posts" class="activity-block">
+					<h3>Recently Published</h3>
+					<ul>{{range .Published}}<li><span>{{.When}}</span> <a href="{{.EditURL}}" aria-label="Edit &#8220;{{.Title}}&#8221;">{{.Title}}</a></li>{{end}}</ul>
+				</div>{{end}}
+				{{if .RecentComments}}<div id="latest-comments" class="activity-block table-view-list">
+					<h3>Recent Comments</h3>
+					<ul id="the-comment-list" data-wp-lists="list:comment">
+					{{range .RecentComments}}<li id="comment-{{.ID}}" class="comment even thread-even depth-1 comment-item {{.Status}}">
+						<img alt="" src="{{.Avatar}}" class="avatar avatar-50 photo" height="50" width="50" loading="lazy" decoding="async"/>
+						<div class="dashboard-comment-wrap has-row-actions has-avatar">
+							<p class="comment-meta">From <cite class="comment-author">{{if .AuthorURL}}<a href="{{.AuthorURL}}" class="url" rel="ugc external nofollow">{{.Author}}</a>{{else}}{{.Author}}{{end}}</cite> on <a href="{{.PostEditURL}}">{{.PostTitle}}</a>{{if eq .Status "unapproved"}} <span class="approve">[Pending]</span>{{end}}</p>
+							<blockquote><p>{{.Excerpt}}</p></blockquote>
+							<p class="row-actions"><span class="edit"><a href="/wp-admin/edit-comments">Edit</a></span><span class="view"> | <a class="comment-link" href="{{.Link}}">View</a></span></p>
+						</div>
+					</li>{{end}}
+					</ul>
+					<h3 class="screen-reader-text">View more comments</h3>
+					<ul class="subsubsub">
+						<li class="all"><a href="/wp-admin/edit-comments?comment_status=all">All <span class="count">(<span class="all-count">{{.AllComments}}</span>)</span></a> |</li>
+						<li class="moderated"><a href="/wp-admin/edit-comments?comment_status=moderated">Pending <span class="count">(<span class="pending-count">{{.Pending}}</span>)</span></a> |</li>
+						<li class="approved"><a href="/wp-admin/edit-comments?comment_status=approved">Approved <span class="count">(<span class="approved-count">{{.Comments}}</span>)</span></a> |</li>
+						<li class="spam"><a href="/wp-admin/edit-comments?comment_status=spam">Spam <span class="count">(<span class="spam-count">{{.Spam}}</span>)</span></a> |</li>
+						<li class="trash"><a href="/wp-admin/edit-comments?comment_status=trash">Trash <span class="count">(<span class="trash-count">{{.Trash}}</span>)</span></a></li>
+					</ul>
+				</div>{{end}}
+				{{if not (or .Future .Published .RecentComments)}}<div class="no-activity"><p>No activity yet!</p></div>{{end}}
+			</div>
+		{{template "dashboard-postbox-end"}}
+	</div>
+	</div>
+	<div id="postbox-container-2" class="postbox-container">
+	<div id="side-sortables" class="meta-box-sortables">
+		{{template "dashboard-postbox-start" dict "ID" "dashboard_quick_press" "Title" "Quick Draft"}}
+			<form name="post" action="/wp-admin/index" method="post" id="quick-press" class="initial-form hide-if-no-js">
+				<div class="input-text-wrap" id="title-wrap">
+					<label for="title">Title</label>
+					<input type="text" name="post_title" id="title" autocomplete="off" />
+				</div>
+				<div class="textarea-wrap" id="description-wrap">
+					<label for="content">Content</label>
+					<textarea name="content" id="content" placeholder="What&#8217;s on your mind?" class="mceEditor" rows="3" cols="15" autocomplete="off"></textarea>
+				</div>
+				<p class="submit">
+					<input type="hidden" name="action" id="quickpost-action" value="post-quickdraft-save" />
+					<input type="hidden" name="_wpnonce" value="{{.QuickDraftNonce}}" />
+					<input type="submit" name="save" id="save-post" class="button button-primary" value="Save Draft" />
+					<br class="clear" />
+				</p>
+			</form>
+			{{if .Drafts}}<div class="drafts">
+				<p class="view-all"><a href="/wp-admin/edit?post_status=draft" aria-label="View all drafts">View all drafts</a></p>
+				<h2 class="hide-if-no-js">Your Recent Drafts</h2>
+				<ul>{{range .Drafts}}<li><div class="draft-title"><a href="{{.EditURL}}" aria-label="Edit &#8220;{{.Title}}&#8221;">{{.Title}}</a><time datetime="{{.ISO}}">{{.When}}</time></div>{{if .Excerpt}}<p>{{.Excerpt}}</p>{{end}}</li>{{end}}</ul>
+			</div>{{end}}
+		{{template "dashboard-postbox-end"}}
+
+		{{template "dashboard-postbox-start" dict "ID" "dashboard_primary" "Title" "WordPress Events and News"}}
+			<div class="wordpress-news hide-if-no-js">
+				<div class="rss-widget"><p>News feeds are not loaded yet.</p></div>
+			</div>
+			<p class="community-events-footer">
+				<a href="https://make.wordpress.org/community/meetups-landing-page" target="_blank">Meetups<span class="screen-reader-text"> (opens in a new tab)</span><span aria-hidden="true" class="dashicons dashicons-external"></span></a> |
+				<a href="https://central.wordcamp.org/schedule/" target="_blank">WordCamps<span class="screen-reader-text"> (opens in a new tab)</span><span aria-hidden="true" class="dashicons dashicons-external"></span></a> |
+				<a href="https://wordpress.org/news/" target="_blank">News<span class="screen-reader-text"> (opens in a new tab)</span><span aria-hidden="true" class="dashicons dashicons-external"></span></a>
+			</p>
+		{{template "dashboard-postbox-end"}}
+	</div>
+	</div>
+	<div id="postbox-container-3" class="postbox-container"><div id="column3-sortables" class="meta-box-sortables empty-container" data-emptystring="Drag boxes here"></div></div>
+	<div id="postbox-container-4" class="postbox-container"><div id="column4-sortables" class="meta-box-sortables empty-container" data-emptystring="Drag boxes here"></div></div>
+	</div>
+	</div>
+	{{end}}
+</div><!-- wrap -->
+{{template "admin-footer" .}}{{end}}
+
+{{define "dashboard-postbox-start"}}<div id="{{.ID}}" class="postbox">
+<div class="postbox-header"><h2 class="hndle ui-sortable-handle">{{.Title}}</h2>
+<div class="handle-actions hide-if-no-js"><button type="button" class="handle-order-higher" aria-disabled="false" aria-describedby="{{.ID}}-handle-order-higher-description"><span class="screen-reader-text">Move up</span><span class="order-higher-indicator" aria-hidden="true"></span></button><span class="hidden" id="{{.ID}}-handle-order-higher-description">Move {{.Title}} box up</span><button type="button" class="handle-order-lower" aria-disabled="false" aria-describedby="{{.ID}}-handle-order-lower-description"><span class="screen-reader-text">Move down</span><span class="order-lower-indicator" aria-hidden="true"></span></button><span class="hidden" id="{{.ID}}-handle-order-lower-description">Move {{.Title}} box down</span><button type="button" class="handlediv" aria-expanded="true"><span class="screen-reader-text">Toggle panel: {{.Title}}</span><span class="toggle-indicator" aria-hidden="true"></span></button></div></div>
+<div class="inside">
+{{end}}
+{{define "dashboard-postbox-end"}}</div>
+</div>
+{{end}}

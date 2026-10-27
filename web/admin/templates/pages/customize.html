@@ -1,0 +1,485 @@
+{{define "admin/customize"}}<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{.Title}} &lsaquo; {{.SiteName}} &#8212; WordPress Go</title>
+<link rel="stylesheet" href="/wp-includes/css/dashicons.min.css">
+<link rel="stylesheet" href="/wp-includes/css/buttons.min.css">
+<link rel="stylesheet" href="/wp-admin/css/common.min.css">
+<link rel="stylesheet" href="/wp-admin/css/forms.min.css">
+<link rel="stylesheet" href="/wp-admin/css/themes.min.css">
+<link rel="stylesheet" href="/wp-admin/css/customize-controls.min.css">
+<link rel="stylesheet" href="/wp-admin/assets/css/colors/modern/colors.min.css">
+{{.Styles}}<style>
+#customize-controls .customize-control-code_editor textarea { width: 100%; min-height: 300px; font-family: Consolas, Monaco, monospace; font-size: 12px; tab-size: 4; }
+#customize-controls .wpgo-control-links { margin: 12px 0 0; }
+#customize-controls .wpgo-locations { margin: 0 0 12px; }
+#customize-controls .wpgo-locations li { margin: 4px 0; list-style: none; }
+#customize-controls .wpgo-locations .assigned { color: #646970; }
+#customize-controls .customize-control-site_icon .attachment-thumb { width: 64px; height: 64px; }
+#customize-controls .wpgo-error { color: #d63638; }
+#customize-preview iframe.wpgo-loading { visibility: hidden; }
+</style>
+<script>var ajaxurl = '/wp-admin/admin-ajax', pagenow = 'customize', typenow = '', adminpage = 'customize-php', isRtl = 0;</script>
+{{.HeadScripts}}</head>
+<body class="wp-core-ui wp-customizer js admin-color-modern">
+<div class="wp-full-overlay expanded preview-desktop" aria-labelledby="customizer-title">
+<h1 class="screen-reader-text" id="customizer-title">Customize</h1>
+<form id="customize-controls" class="wrap wp-full-overlay-sidebar" onsubmit="return false;">
+	<div id="customize-header-actions" class="wp-full-overlay-header">
+		<div id="customize-save-button-wrapper" class="customize-save-button-wrapper">
+			<input type="submit" name="save" id="save" class="button button-primary save" value="Published" disabled>
+		</div>
+		<span class="spinner"></span>
+		<a class="customize-controls-close" href="{{.ReturnURL}}">
+			<span class="screen-reader-text">Close the Customizer and go back to the previous page</span>
+		</a>
+	</div>
+
+	<div id="widgets-right" class="wp-clearfix">
+	<div id="customize-notifications-area" class="customize-control-notifications-container"><ul></ul></div>
+	<div class="wp-full-overlay-sidebar-content" tabindex="-1">
+		<div id="customize-info" class="accordion-section customize-info">
+			<div class="accordion-section-title">
+				<span class="preview-notice">You are customizing <strong class="panel-title site-title" id="wpgo-site-title">{{.SiteName}}</strong></span>
+			</div>
+		</div>
+
+		<div id="customize-theme-controls">
+			<ul class="customize-pane-parent">
+				<li id="accordion-section-themes" class="accordion-section control-panel-themes">
+					<h3 class="accordion-section-title">
+						<span class="customize-action">Active theme</span> {{.Theme.Name}}
+						{{if .CanSwitch}}<a class="button change-theme" href="/wp-admin/themes" target="_top" aria-label="Change theme">Change</a>{{end}}
+					</h3>
+				</li>
+				<li id="accordion-section-title_tagline" class="accordion-section control-section control-section-default" data-section="title_tagline">
+					<h3 class="accordion-section-title" tabindex="0">Site Identity<span class="screen-reader-text">Press return or enter to open this section</span></h3>
+				</li>
+				{{if .Colors}}<li id="accordion-section-colors" class="accordion-section control-section control-section-default" data-section="colors">
+					<h3 class="accordion-section-title" tabindex="0">Colors<span class="screen-reader-text">Press return or enter to open this section</span></h3>
+				</li>{{end}}
+				<li id="accordion-section-nav_menus" class="accordion-section control-section control-panel-nav_menus" data-section="nav_menus">
+					<h3 class="accordion-section-title" tabindex="0">Menus<span class="screen-reader-text">Press return or enter to open this panel</span></h3>
+				</li>
+				<li id="accordion-section-widgets" class="accordion-section control-section control-panel-widgets" data-section="widgets">
+					<h3 class="accordion-section-title" tabindex="0">Widgets<span class="screen-reader-text">Press return or enter to open this panel</span></h3>
+				</li>
+				<li id="accordion-section-static_front_page" class="accordion-section control-section control-section-default" data-section="static_front_page">
+					<h3 class="accordion-section-title" tabindex="0">Homepage Settings<span class="screen-reader-text">Press return or enter to open this section</span></h3>
+				</li>
+				<li id="accordion-section-custom_css" class="accordion-section control-section control-section-default" data-section="custom_css">
+					<h3 class="accordion-section-title" tabindex="0">Additional CSS<span class="screen-reader-text">Press return or enter to open this section</span></h3>
+				</li>
+			</ul>
+
+			<ul id="sub-accordion-section-title_tagline" class="customize-pane-child accordion-section-content accordion-section control-section control-section-default">
+				{{template "customize-section-title" "Site Identity"}}
+				{{if .HasLogo}}<li id="customize-control-custom_logo" class="customize-control customize-control-media customize-control-cropped_image">
+					{{template "customize-image" (dict "Setting" "mod:custom_logo" "Label" "Logo" "Image" .Logo "Select" "Select logo" "Change" "Change logo" "CanUpload" .CanUpload "Description" "")}}
+				</li>{{end}}
+				<li id="customize-control-blogname" class="customize-control customize-control-text">
+					<label for="_customize-input-blogname" class="customize-control-title">Site Title</label>
+					<input id="_customize-input-blogname" type="text" value="{{index .Values "blogname"}}" data-setting="blogname">
+				</li>
+				<li id="customize-control-blogdescription" class="customize-control customize-control-text">
+					<label for="_customize-input-blogdescription" class="customize-control-title">Tagline</label>
+					<input id="_customize-input-blogdescription" type="text" value="{{index .Values "blogdescription"}}" data-setting="blogdescription">
+				</li>
+				<li id="customize-control-site_icon" class="customize-control customize-control-media customize-control-site_icon">
+					{{template "customize-image" (dict "Setting" "site_icon" "Label" "Site Icon" "Image" .SiteIcon "Select" "Select site icon" "Change" "Change site icon" "CanUpload" .CanUpload "Description" "Site Icons are what you see in browser tabs, bookmark bars, and within the WordPress mobile apps. It should be square and at least 512 by 512 pixels.")}}
+				</li>
+			</ul>
+
+			{{if .Colors}}<ul id="sub-accordion-section-colors" class="customize-pane-child accordion-section-content accordion-section control-section control-section-default">
+				{{template "customize-section-title" "Colors"}}
+				{{range .Colors}}<li id="customize-control-{{.ID}}" class="customize-control customize-control-{{if eq .Type "hue"}}color{{else}}{{.Type}}{{end}}" data-control="{{.Setting}}"{{if .Hidden}} style="display:none"{{end}}>
+					{{if eq .Type "select"}}
+					<label for="_customize-input-{{.ID}}" class="customize-control-title">{{.Label}}</label>
+					<select id="_customize-input-{{.ID}}" data-setting="{{.Setting}}">{{$v := .Value}}{{range .Choices}}<option value="{{index . 0}}"{{if eq (index . 0) $v}} selected="selected"{{end}}>{{index . 1}}</option>{{end}}</select>
+					{{else if eq .Type "radio"}}
+					<span class="customize-control-title">{{.Label}}</span>
+					{{$v := .Value}}{{$id := .ID}}{{$set := .Setting}}{{range .Choices}}<span class="customize-inside-control-row">
+						<input id="_customize-input-{{$id}}-radio-{{index . 0}}" type="radio" value="{{index . 0}}" name="_customize-radio-{{$id}}" data-setting="{{$set}}"{{if eq (index . 0) $v}} checked="checked"{{end}}>
+						<label for="_customize-input-{{$id}}-radio-{{index . 0}}">{{index . 1}}</label>
+					</span>{{end}}
+					{{else if eq .Type "hue"}}
+					<label><span class="customize-control-title">{{.Label}}</span>{{if .Description}}<span class="description customize-control-description">{{.Description}}</span>{{end}}
+					<div class="customize-control-content"><input class="color-picker-hue" type="text" data-type="hue" value="{{.Value}}" data-setting="{{.Setting}}"></div></label>
+					{{else}}
+					<span class="customize-control-title">{{.Label}}</span>{{if .Description}}<span class="description customize-control-description">{{.Description}}</span>{{end}}
+					<div class="customize-control-content"><input class="color-picker-hex" type="text" maxlength="7" placeholder="Hex Value" value="{{.Value}}" data-default-color="{{.DefaultValue}}" data-setting="{{.Setting}}"></div>
+					{{end}}
+				</li>
+				{{end}}
+			</ul>{{end}}
+
+			<ul id="sub-accordion-section-nav_menus" class="customize-pane-child accordion-section-content accordion-section control-section control-section-default">
+				{{template "customize-section-title" "Menus"}}
+				<li class="customize-control">
+					{{if .MenuLocations}}<p>Your theme can display menus in {{len .MenuLocations}} location{{if gt (len .MenuLocations) 1}}s{{end}}.</p>
+					<ul class="wpgo-locations">{{range .MenuLocations}}<li><strong>{{.Name}}</strong> <span class="assigned">&mdash; {{if .Menu}}{{.Menu}}{{else}}no menu assigned{{end}}</span></li>{{end}}</ul>
+					{{else}}<p>Your theme does not natively support menus.</p>{{end}}
+					<p class="wpgo-control-links"><a class="button button-secondary" href="/wp-admin/nav-menus" target="_top">Edit Menus</a></p>
+				</li>
+			</ul>
+
+			<ul id="sub-accordion-section-widgets" class="customize-pane-child accordion-section-content accordion-section control-section control-section-default">
+				{{template "customize-section-title" "Widgets"}}
+				<li class="customize-control">
+					{{if .WidgetAreas}}<p>Your theme has {{len .WidgetAreas}} widget area{{if gt (len .WidgetAreas) 1}}s{{end}}:</p>
+					<ul class="wpgo-locations">{{range .WidgetAreas}}<li><strong>{{.Name}}</strong>{{if .Description}} <span class="assigned">&mdash; {{.Description}}</span>{{end}}</li>{{end}}</ul>
+					{{else}}<p>Your theme has no widget areas.</p>{{end}}
+					<p class="wpgo-control-links"><a class="button button-secondary" href="/wp-admin/widgets" target="_top">Edit Widgets</a></p>
+				</li>
+			</ul>
+
+			<ul id="sub-accordion-section-static_front_page" class="customize-pane-child accordion-section-content accordion-section control-section control-section-default">
+				{{template "customize-section-title" "Homepage Settings"}}
+				<li class="customize-section-description-container"><p class="description customize-section-description">You can choose what&#8217;s displayed on the homepage of your site. It can be posts in reverse chronological order (classic blog), or a fixed/static page. To set a static homepage, you first need to create two Pages. One will become the homepage, and the other will be where your posts are displayed.</p></li>
+				<li id="customize-control-show_on_front" class="customize-control customize-control-radio">
+					<span class="customize-control-title">Your homepage displays</span>
+					{{$sof := index .Values "show_on_front"}}
+					<span class="customize-inside-control-row"><input id="_customize-input-show_on_front-radio-posts" type="radio" value="posts" name="_customize-radio-show_on_front" data-setting="show_on_front"{{if ne $sof "page"}} checked="checked"{{end}}><label for="_customize-input-show_on_front-radio-posts">Your latest posts</label></span>
+					<span class="customize-inside-control-row"><input id="_customize-input-show_on_front-radio-page" type="radio" value="page" name="_customize-radio-show_on_front" data-setting="show_on_front"{{if eq $sof "page"}} checked="checked"{{end}}><label for="_customize-input-show_on_front-radio-page">A static page</label></span>
+				</li>
+				{{$pages := .Pages}}
+				{{range $key := list "page_on_front" "page_for_posts"}}{{$cur := index $.Values $key}}{{$label := "Posts page"}}{{if eq $key "page_on_front"}}{{$label = "Homepage"}}{{end}}
+				<li id="customize-control-{{$key}}" class="customize-control customize-control-dropdown-pages" data-control="{{$key}}"{{if ne $sof "page"}} style="display:none"{{end}}>
+					<label for="_customize-input-{{$key}}" class="customize-control-title">{{$label}}</label>
+					<select id="_customize-input-{{$key}}" data-setting="{{$key}}"><option value="0">&mdash; Select &mdash;</option>{{range $pages}}<option value="{{.ID}}"{{if eq (printf "%d" .ID) $cur}} selected="selected"{{end}}>{{.Title}}</option>{{end}}</select>
+				</li>{{end}}
+			</ul>
+
+			<ul id="sub-accordion-section-custom_css" class="customize-pane-child accordion-section-content accordion-section control-section control-section-default">
+				{{template "customize-section-title" "Additional CSS"}}
+				<li class="customize-section-description-container"><p class="description customize-section-description">Add your own CSS code here to customize the appearance and layout of your site. These styles are saved for the {{.Theme.Name}} theme and printed after its own stylesheets.</p></li>
+				<li id="customize-control-custom_css" class="customize-control customize-control-code_editor">
+					<label for="_customize-input-custom_css" class="screen-reader-text">CSS code</label>
+					<textarea id="_customize-input-custom_css" class="code" spellcheck="false" autocapitalize="off" data-setting="custom_css">{{index .Values "custom_css"}}</textarea>
+				</li>
+			</ul>
+		</div>
+	</div>
+	</div>
+
+	<div id="customize-footer-actions" class="wp-full-overlay-footer">
+		<button type="button" class="collapse-sidebar button" aria-expanded="true" aria-label="Hide Controls">
+			<span class="collapse-sidebar-arrow" aria-hidden="true"></span>
+			<span class="collapse-sidebar-label">Hide Controls</span>
+		</button>
+		<div class="devices-wrapper">
+			<div class="devices">
+				<button type="button" class="preview-desktop active" aria-pressed="true" data-device="desktop"><span class="screen-reader-text">Enter desktop preview mode</span></button>
+				<button type="button" class="preview-tablet" aria-pressed="false" data-device="tablet"><span class="screen-reader-text">Enter tablet preview mode</span></button>
+				<button type="button" class="preview-mobile" aria-pressed="false" data-device="mobile"><span class="screen-reader-text">Enter mobile preview mode</span></button>
+			</div>
+		</div>
+	</div>
+</form>
+<div id="customize-preview" class="wp-full-overlay-main iframe-ready"></div>
+</div>
+{{.BodyHTML}}{{.FooterScripts}}{{range .ThemeScripts}}<script src="{{.}}"></script>
+{{end}}<script>
+var wpgoCustomize = ( function( $ ) {
+	var settings = {{json .Values}},
+		saved = $.extend( {}, settings ),
+		listeners = {},
+		uuid = {{.UUID}},
+		nonce = {{.Nonce}},
+		home = {{.HomeURL}},
+		previewPath = {{.PreviewURL}},
+		param = 'customize_changeset_uuid',
+		$overlay = $( '.wp-full-overlay' ),
+		$save = $( '#save' ),
+		timer, frames = 0, request;
+
+	function dirty() {
+		var out = {};
+		Object.keys( settings ).forEach( function( id ) {
+			if ( settings[ id ] !== saved[ id ] ) {
+				out[ id ] = settings[ id ];
+			}
+		} );
+		return out;
+	}
+	function isDirty() { return Object.keys( dirty() ).length > 0; }
+
+	function syncControl( id, value ) {
+		$( '[data-setting="' + id + '"]' ).each( function() {
+			var $el = $( this );
+			if ( $el.is( ':radio' ) ) {
+				$el.prop( 'checked', $el.val() === value );
+			} else if ( $el.hasClass( 'color-picker-hex' ) && $el.data( 'wpWpColorPicker' ) ) {
+				if ( $el.val() !== value ) { $el.wpColorPicker( 'color', value ); }
+			} else if ( $el.val() !== value ) {
+				$el.val( value );
+			}
+		} );
+	}
+
+	function set( id, value, defaultValue ) {
+		value = null === value || undefined === value ? '' : String( value );
+		if ( undefined !== defaultValue ) {
+			$( '[data-setting="' + id + '"].color-picker-hex' ).attr( 'data-default-color', defaultValue );
+		}
+		if ( settings[ id ] === value ) {
+			return;
+		}
+		settings[ id ] = value;
+		syncControl( id, value );
+		( listeners[ id ] || [] ).forEach( function( fn ) { fn( value ); } );
+		changed();
+	}
+	function get( id ) { return settings[ id ]; }
+	function onChange( id, fn ) { ( listeners[ id ] = listeners[ id ] || [] ).push( fn ); }
+	function toggleWith( source, target, test ) {
+		var apply = function( v ) { $( '[data-control="' + target + '"]' ).toggle( !! test( v ) ); };
+		onChange( source, apply );
+		apply( get( source ) );
+	}
+
+	function notify( message, type ) {
+		var $ul = $( '#customize-notifications-area ul' ).empty();
+		if ( message ) {
+			$ul.append( $( '<li class="notice notice-' + ( type || 'error' ) + '"></li>' ).append( $( '<p></p>' ).text( message ) ) );
+			$( '#customize-notifications-area' ).show();
+		} else {
+			$( '#customize-notifications-area' ).hide();
+		}
+	}
+
+	function changed() {
+		var d = isDirty();
+		$save.prop( 'disabled', ! d ).val( d ? 'Publish' : 'Published' );
+		$( '#wpgo-site-title' ).text( settings.blogname || '(Untitled)' );
+		clearTimeout( timer );
+		timer = setTimeout( refresh, 300 );
+	}
+
+	function previewURL() {
+		var u = new URL( previewPath, home );
+		u.searchParams.set( param, uuid );
+		return u.toString();
+	}
+
+	function loadFrame() {
+		var $old = $( '#customize-preview iframe' ),
+			$frame = $( '<iframe></iframe>', { title: 'Site Preview', name: 'customize-preview-' + ( frames++ ) } );
+		if ( $old.length ) {
+			$frame.addClass( 'wpgo-loading' );
+		}
+		$frame.on( 'load', function() {
+			$frame.removeClass( 'wpgo-loading' );
+			$old.remove();
+			$( '#customize-preview' ).removeClass( 'busy' );
+		} );
+		$( '#customize-preview' ).addClass( 'busy' ).append( $frame );
+		$frame.attr( 'src', previewURL() );
+	}
+
+	function refresh() {
+		if ( request ) { request.abort(); }
+		request = $.post( '/wp-admin/customize', { action: 'preview', uuid: uuid, _wpnonce: nonce, customized: JSON.stringify( dirty() ) } )
+			.done( function( r ) {
+				if ( r && r.success ) { notify( '' ); loadFrame(); }
+			} )
+			.fail( function( x ) {
+				if ( 'abort' !== x.statusText ) {
+					notify( ( x.responseJSON && x.responseJSON.data && x.responseJSON.data.message ) || 'Looks like something’s gone wrong. Wait a couple seconds, and then try again.' );
+				}
+			} );
+	}
+
+	function publish() {
+		var values = dirty();
+		$( document.body ).addClass( 'saving' );
+		$save.prop( 'disabled', true );
+		$.post( '/wp-admin/customize', { action: 'publish', _wpnonce: nonce, customized: JSON.stringify( values ) } )
+			.done( function( r ) {
+				if ( r && r.success ) {
+					Object.keys( values ).forEach( function( id ) { saved[ id ] = values[ id ]; } );
+					notify( '' );
+					wp.a11y && wp.a11y.speak( 'Published' );
+				}
+			} )
+			.fail( function( x ) {
+				notify( ( x.responseJSON && x.responseJSON.data && x.responseJSON.data.message ) || 'Looks like something’s gone wrong. Wait a couple seconds, and then try again.' );
+			} )
+			.always( function() {
+				$( document.body ).removeClass( 'saving' );
+				var d = isDirty();
+				$save.prop( 'disabled', ! d ).val( d ? 'Publish' : 'Published' );
+			} );
+	}
+
+	// Panes: open a section, go back.
+	function openSection( name ) {
+		var $pane = $( '#sub-accordion-section-' + name );
+		if ( ! $pane.length ) { return; }
+		$( '#accordion-section-' + name ).addClass( 'open' );
+		$pane.addClass( 'open' );
+		$overlay.addClass( 'section-open' );
+		var back = $pane.find( '.customize-section-back' ).attr( 'tabindex', 0 ).get( 0 );
+		setTimeout( function() { back.focus( { preventScroll: true } ); $( '.wp-full-overlay-sidebar-content' ).scrollLeft( 0 ).scrollTop( 0 ); }, 200 );
+	}
+	function closeSections() {
+		var $open = $( '.customize-pane-child.open' );
+		$open.removeClass( 'open' ).find( '.customize-section-back' ).attr( 'tabindex', -1 );
+		var title = $( '.customize-pane-parent .accordion-section.open' ).removeClass( 'open' ).find( '.accordion-section-title' ).get( 0 );
+		if ( title ) { title.focus( { preventScroll: true } ); }
+		$( '.wp-full-overlay-sidebar-content' ).scrollLeft( 0 );
+		$overlay.removeClass( 'section-open' );
+	}
+
+	$( function() {
+		$( '.customize-pane-parent' ).on( 'click keydown', '.control-section > .accordion-section-title', function( e ) {
+			if ( 'keydown' === e.type && 13 !== e.which ) { return; }
+			e.preventDefault();
+			openSection( $( this ).parent().data( 'section' ) );
+		} );
+		$( '.customize-section-back' ).on( 'click', function( e ) { e.preventDefault(); closeSections(); } );
+		$( document ).on( 'keydown', function( e ) { if ( 27 === e.which && $overlay.hasClass( 'section-open' ) ) { closeSections(); } } );
+
+		// Plain controls.
+		$( 'input[type="text"][data-setting]:not(.color-picker-hex,.color-picker-hue), textarea[data-setting]' ).on( 'input', function() {
+			set( $( this ).data( 'setting' ), $( this ).val() );
+		} );
+		$( 'select[data-setting], input[type="radio"][data-setting]' ).on( 'change', function() {
+			set( $( this ).data( 'setting' ), $( this ).val() );
+		} );
+		$( 'textarea[data-setting="custom_css"]' ).on( 'keydown', function( e ) {
+			if ( 9 === e.which && ! e.shiftKey && ! e.altKey && ! e.ctrlKey && ! e.metaKey ) {
+				e.preventDefault();
+				var el = this, start = el.selectionStart;
+				el.value = el.value.substring( 0, start ) + '\t' + el.value.substring( el.selectionEnd );
+				el.selectionStart = el.selectionEnd = start + 1;
+				set( 'custom_css', el.value );
+			}
+		} );
+
+		// Color pickers.
+		$( '.color-picker-hex[data-setting]' ).each( function() {
+			var $el = $( this ), id = $el.data( 'setting' );
+			$el.wpColorPicker( {
+				change: function( e, ui ) { set( id, ui.color.toString() ); },
+				clear: function() { set( id, $el.attr( 'data-default-color' ) || '' ); }
+			} );
+		} );
+		$( '.color-picker-hue[data-setting]' ).each( function() {
+			var $el = $( this ), id = $el.data( 'setting' );
+			$el.wpColorPicker( { type: 'hue', change: function( e, ui ) { set( id, String( ui.color.h() ) ); } } );
+		} );
+
+		// Homepage Settings.
+		toggleWith( 'show_on_front', 'page_on_front', function( v ) { return 'page' === v; } );
+		toggleWith( 'show_on_front', 'page_for_posts', function( v ) { return 'page' === v; } );
+
+		// Images from the media library (site icon, logo).
+		$( '.wpgo-media-control' ).each( function() {
+			var $c = $( this ), id = $c.data( 'image-setting' ), frame;
+			function render( attachment ) {
+				var $view = $c.find( '.attachment-media-view' ), size, src;
+				if ( attachment ) {
+					size = attachment.sizes && ( attachment.sizes.medium || attachment.sizes.thumbnail || attachment.sizes.full );
+					src = size ? size.url : attachment.url;
+					$view.attr( 'class', 'attachment-media-view attachment-media-view-image ' + ( attachment.height > attachment.width ? 'portrait' : 'landscape' ) );
+					$view.find( '.thumbnail' ).show().find( 'img' ).attr( 'src', src );
+				} else {
+					$view.attr( 'class', 'attachment-media-view' );
+					$view.find( '.thumbnail' ).hide().find( 'img' ).attr( 'src', '' );
+				}
+				$view.find( '.button-add-media' ).toggle( ! attachment );
+				$view.find( '.actions' ).toggle( !! attachment );
+			}
+			$c.on( 'click', '.upload-button', function( e ) {
+				e.preventDefault();
+				if ( ! window.wp || ! wp.media ) { return; }
+				if ( ! frame ) {
+					frame = wp.media( { title: $c.data( 'label' ), library: { type: 'image' }, button: { text: 'Select' }, multiple: false } );
+					frame.on( 'open', function() {
+						var current = parseInt( get( id ), 10 );
+						if ( current > 0 ) {
+							var a = wp.media.attachment( current );
+							a.fetch();
+							frame.state().get( 'selection' ).reset( [ a ] );
+						}
+					} );
+					frame.on( 'select', function() {
+						var a = frame.state().get( 'selection' ).first().toJSON();
+						render( a );
+						set( id, String( a.id ) );
+					} );
+				}
+				frame.open();
+			} );
+			$c.on( 'click', '.remove-button', function( e ) {
+				e.preventDefault();
+				render( null );
+				set( id, '0' );
+			} );
+		} );
+
+		// Footer: collapse, devices.
+		$( '.collapse-sidebar' ).on( 'click', function() {
+			var expanded = $overlay.hasClass( 'expanded' );
+			$overlay.toggleClass( 'expanded', ! expanded ).toggleClass( 'collapsed', expanded );
+			$( this ).attr( { 'aria-expanded': String( ! expanded ), 'aria-label': expanded ? 'Show Controls' : 'Hide Controls' } )
+				.find( '.collapse-sidebar-label' ).text( expanded ? 'Show Controls' : 'Hide Controls' );
+		} );
+		$( '.devices button' ).on( 'click', function() {
+			var device = $( this ).data( 'device' );
+			$overlay.removeClass( 'preview-desktop preview-tablet preview-mobile' ).addClass( 'preview-' + device );
+			$( '.devices button' ).removeClass( 'active' ).attr( 'aria-pressed', 'false' );
+			$( this ).addClass( 'active' ).attr( 'aria-pressed', 'true' );
+		} );
+
+		$save.on( 'click', function( e ) { e.preventDefault(); publish(); } );
+		$( '.customize-controls-close' ).on( 'click', function( e ) {
+			if ( isDirty() && ! window.confirm( 'The changes you made will be lost if you navigate away from this page.' ) ) {
+				e.preventDefault();
+			} else {
+				$( window ).off( 'beforeunload' );
+			}
+		} );
+		$( window ).on( 'beforeunload', function() {
+			if ( isDirty() ) { return 'The changes you made will be lost if you navigate away from this page.'; }
+		} );
+		window.addEventListener( 'message', function( e ) {
+			if ( e.origin === window.location.origin && e.data && 'url' === e.data.wpgoCustomize ) {
+				previewPath = e.data.url;
+			}
+		} );
+
+		loadFrame();
+		$( document.body ).addClass( 'ready' );
+	} );
+
+	return { get: get, set: set, onChange: onChange, toggleWith: toggleWith };
+} )( jQuery );
+{{.ThemeScript}}
+</script>
+</body>
+</html>
+{{end}}
+
+{{define "customize-section-title"}}<li class="customize-section-description-container section-meta no-drag">
+	<div class="customize-section-title">
+		<button type="button" class="customize-section-back" tabindex="-1"><span class="screen-reader-text">Back</span></button>
+		<h3><span class="customize-action">Customizing</span>{{.}}</h3>
+	</div>
+</li>{{end}}
+
+{{define "customize-image"}}<div class="wpgo-media-control" data-image-setting="{{.Setting}}" data-label="{{.Label}}">
+	<span class="customize-control-title">{{.Label}}</span>
+	{{if .Description}}<span class="description customize-control-description">{{.Description}}</span>{{end}}
+	<div class="attachment-media-view{{if .Image.ID}} attachment-media-view-image {{if .Image.Portrait}}portrait{{else}}landscape{{end}}{{end}}">
+		<div class="thumbnail thumbnail-image"{{if not .Image.ID}} style="display:none"{{end}}><img class="attachment-thumb" src="{{.Image.URL}}" draggable="false" alt=""></div>
+		{{if .CanUpload}}<button type="button" class="upload-button button-add-media"{{if .Image.ID}} style="display:none"{{end}}>{{.Select}}</button>
+		<div class="actions"{{if not .Image.ID}} style="display:none"{{end}}>
+			<button type="button" class="button remove-button">Remove</button>
+			<button type="button" class="button upload-button control-focus">{{.Change}}</button>
+		</div>{{else}}<p class="description">You need the upload_files capability to choose images.</p>{{end}}
+	</div>
+</div>{{end}}

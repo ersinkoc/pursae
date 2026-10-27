@@ -1,0 +1,211 @@
+{{define "admin/media-grid"}}{{template "admin-header" .}}
+<div class="wrap" id="wp-media-grid" data-search="{{.Data.Search}}">
+	<h1 class="wp-heading-inline">Media Library</h1>
+	{{if .User.Can "upload_files" nil}}<a href="/wp-admin/media-new" class="page-title-action aria-button-if-js">Add Media File</a>{{end}}
+	<hr class="wp-header-end">
+	{{template "notices" .}}
+	<div class="error hide-if-js"><p>The grid view for the Media Library requires JavaScript. <a href="/wp-admin/upload?mode=list">Switch to the list view</a>.</p></div>
+</div>
+{{template "admin-footer" .}}{{end}}
+
+{{define "admin/media-list"}}{{template "admin-header" .}}{{with .Data}}
+<div class="wrap">
+<h1 class="wp-heading-inline">Media Library</h1>
+<a href="/wp-admin/media-new" class="page-title-action">Add Media File</a>
+{{if .Search}}<span class="subtitle">Search results for: <strong>{{.Search}}</strong></span>{{end}}
+<hr class="wp-header-end">
+{{template "notices" $}}
+<form id="posts-filter" method="get" action="/wp-admin/upload">
+<input type="hidden" name="mode" value="list" />
+<input type="hidden" name="_wpnonce" value="{{.BulkNonce}}" />
+<div class="wp-filter">
+	<div class="filter-items">
+		<div class="view-switch">
+			<a href="/wp-admin/upload?mode=list" class="view-list current" id="view-switch-list" aria-current="page"><span class="screen-reader-text">List view</span></a>
+			<a href="/wp-admin/upload?mode=grid" class="view-grid" id="view-switch-grid"><span class="screen-reader-text">Grid view</span></a>
+		</div>
+		<label for="attachment-filter" class="screen-reader-text">Filter by type</label>
+		<select class="attachment-filters" name="attachment-filter" id="attachment-filter">
+			<option value=""{{if eq .Filter ""}} selected="selected"{{end}}>All media items</option>
+			<option value="post_mime_type:image"{{if eq .Filter "post_mime_type:image"}} selected="selected"{{end}}>Images</option>
+			<option value="post_mime_type:audio"{{if eq .Filter "post_mime_type:audio"}} selected="selected"{{end}}>Audio</option>
+			<option value="post_mime_type:video"{{if eq .Filter "post_mime_type:video"}} selected="selected"{{end}}>Video</option>
+			<option value="post_mime_type:application"{{if eq .Filter "post_mime_type:application"}} selected="selected"{{end}}>Documents</option>
+			<option value="detached"{{if eq .Filter "detached"}} selected="selected"{{end}}>Unattached</option>
+			<option value="mine"{{if eq .Filter "mine"}} selected="selected"{{end}}>Mine</option>
+		</select>
+		<div class="actions">
+		<label for="filter-by-date" class="screen-reader-text">Filter by date</label>
+		<select name="m" id="filter-by-date">
+			<option value="0">All dates</option>
+			{{range .Months}}<option value="{{.Value}}"{{if eq .Value $.Data.Month}} selected="selected"{{end}}>{{.Label}}</option>{{end}}
+		</select>
+		<input type="submit" name="filter_action" id="post-query-submit" class="button button-compact" value="Filter" />
+		</div>
+	</div>
+	<div class="search-form">
+		<p class="search-box">
+			<label class="screen-reader-text" for="media-search-input">Search Media</label>
+			<input type="search" id="media-search-input" class="search" name="s" value="{{.Search}}">
+			<input id="search-submit" type="submit" class="button button-compact" value="Search Media">
+		</p>
+	</div>
+</div>
+<div class="tablenav top">
+	<div class="alignleft actions bulkactions">
+		<label for="bulk-action-selector-top" class="screen-reader-text">Select bulk action</label>
+		<select name="action" id="bulk-action-selector-top"><option value="-1">Bulk actions</option><option value="delete">Delete permanently</option></select>
+		<input type="submit" name="bulk_action" id="doaction" class="button action button-compact" value="Apply" />
+	</div>
+	{{template "tablenav-pages" .Pagination}}
+	<br class="clear" />
+</div>
+<h2 class="screen-reader-text">Media items list</h2>
+<table class="wp-list-table widefat fixed striped table-view-list media">
+	<thead>{{template "media-head" true}}</thead>
+	<tbody id="the-list">
+	{{range .Rows}}<tr id="post-{{.ID}}" class="author-self status-inherit">
+		<th scope="row" class="check-column">{{if .CanEdit}}<input type="checkbox" name="media[]" id="cb-select-{{.ID}}" value="{{.ID}}" /><label for="cb-select-{{.ID}}"><span class="screen-reader-text">Select {{.Title}}</span></label>{{end}}</th>
+		<td class="title column-title has-row-actions column-primary" data-colname="File">
+			<strong class="has-media-icon"><a href="{{.EditURL}}" aria-label="&#8220;{{.Title}}&#8221; (Edit)"><span class="media-icon {{if .IsIcon}}document-icon{{else}}image-icon{{end}}"><img width="{{if .IsIcon}}48{{else}}60{{end}}" height="{{if .IsIcon}}64{{else}}60{{end}}" src="{{.Thumb}}" class="attachment-60x60 size-60x60" alt="" decoding="async" loading="lazy" /></span>{{.Title}}</a></strong>
+			<p class="filename"><span class="screen-reader-text">File name: </span>{{.FileName}}</p>
+			<div class="row-actions">{{if .CanEdit}}<span class="edit"><a href="{{.EditURL}}" aria-label="Edit &#8220;{{.Title}}&#8221;">Edit</a> | </span><span class="delete"><a href="{{.DeleteURL}}" class="submitdelete aria-button-if-js" onclick="return showNotice.warn();" aria-label="Delete &#8220;{{.Title}}&#8221; permanently" role="button">Delete Permanently</a> | </span>{{end}}<span class="view"><a href="{{.ViewURL}}" aria-label="View &#8220;{{.Title}}&#8221;" rel="bookmark">View</a> | </span><span class="copy"><span class="copy-to-clipboard-container"><button type="button" class="button-link copy-attachment-url media-library" data-clipboard-text="{{.FileURL}}" aria-label="Copy &#8220;{{.Title}}&#8221; URL to clipboard">Copy URL</button><span class="success hidden" aria-hidden="true">Copied!</span></span> | </span><span class="download"><a href="{{.FileURL}}" aria-label="Download &#8220;{{.Title}}&#8221;" download>Download file</a></span></div>
+			<button type="button" class="toggle-row"><span class="screen-reader-text">Show more details</span></button>
+		</td>
+		<td class="author column-author" data-colname="Author"><a href="{{.AuthorURL}}">{{.Author}}</a></td>
+		<td class="parent column-parent" data-colname="Uploaded to">{{if .ParentTitle}}<strong><a href="{{.ParentURL}}">{{.ParentTitle}}</a></strong>{{else}}(Unattached){{end}}</td>
+		<td class="comments column-comments" data-colname="Comments"><div class="post-com-count-wrapper"><span aria-hidden="true">&#8212;</span><span class="screen-reader-text">No comments</span></div></td>
+		<td class="date column-date" data-colname="Date">{{.Date}}</td>
+	</tr>
+	{{else}}<tr class="no-items"><td class="colspanchange" colspan="6">No media files found.</td></tr>
+	{{end}}
+	</tbody>
+	<tfoot>{{template "media-head" false}}</tfoot>
+</table>
+<div class="tablenav bottom">
+	<div class="alignleft actions bulkactions">
+		<label for="bulk-action-selector-bottom" class="screen-reader-text">Select bulk action</label>
+		<select name="action2" id="bulk-action-selector-bottom"><option value="-1">Bulk actions</option><option value="delete">Delete permanently</option></select>
+		<input type="submit" name="bulk_action" id="doaction2" class="button action button-compact" value="Apply" />
+	</div>
+	{{template "tablenav-pages" .Pagination}}
+	<br class="clear" />
+</div>
+</form>
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}
+
+{{define "media-head"}}<tr>
+	<td{{if .}} id="cb"{{end}} class="manage-column column-cb check-column"><input id="cb-select-all-{{if .}}1{{else}}2{{end}}" type="checkbox" /><label for="cb-select-all-{{if .}}1{{else}}2{{end}}"><span class="screen-reader-text">Select All</span></label></td>
+	<th scope="col"{{if .}} id="title"{{end}} class="manage-column column-title column-primary">File</th>
+	<th scope="col"{{if .}} id="author"{{end}} class="manage-column column-author">Author</th>
+	<th scope="col"{{if .}} id="parent"{{end}} class="manage-column column-parent">Uploaded to</th>
+	<th scope="col"{{if .}} id="comments"{{end}} class="manage-column column-comments num"><span class="vers comment-grey-bubble" title="Comments" aria-hidden="true"></span><span class="screen-reader-text">Comments</span></th>
+	<th scope="col"{{if .}} id="date"{{end}} class="manage-column column-date">Date</th>
+</tr>{{end}}
+
+{{define "admin/media-new"}}{{template "admin-header" .}}{{with .Data}}
+<div class="wrap">
+	<h1>Upload Media</h1>
+	<form enctype="multipart/form-data" method="post" action="/wp-admin/media-new" class="wp-upload-form media-upload-form type-form validate" id="file-form">
+	<div id="media-upload-notice"></div>
+	<div id="media-upload-error">{{.Error}}</div>
+	<script>
+	var resize_height = {{.LargeH}}, resize_width = {{.LargeW}},
+	wpUploaderInit = {{.UploaderInit}};
+	</script>
+	<div id="plupload-upload-ui" class="hide-if-no-js">
+	<div id="drag-drop-area">
+		<div class="drag-drop-inside">
+		<p class="drag-drop-info">Drop files to upload</p>
+		<p>or</p>
+		<p class="drag-drop-buttons"><input id="plupload-browse-button" type="button" value="Select Files" class="button" /></p>
+		</div>
+	</div>
+	</div>
+	<div id="html-upload-ui" class="hide-if-js">
+	<p id="async-upload-wrap">
+		<label class="screen-reader-text" for="async-upload">Upload</label>
+		<input type="file" name="async-upload" id="async-upload" />
+		<input type="submit" name="html-upload" id="html-upload" class="button button-primary" value="Upload" />
+	</p>
+	<div class="clear"></div>
+	</div>
+	<p class="upload-flash-bypass">You are using the multi-file uploader. Problems? Try the <a href="/wp-admin/media-new?browser-uploader" target="_blank">browser uploader</a> instead.</p>
+	<p class="max-upload-size">Maximum upload file size: {{.MaxSize}}.</p>
+	<script>
+	var post_id = 0, shortform = 3;
+	</script>
+	<input type="hidden" name="post_id" id="post_id" value="0" />
+	<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+	<div id="media-items" class="hide-if-no-js"></div>
+	</form>
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}
+
+{{define "admin/attachment-edit"}}{{template "admin-header" .}}{{with .Data}}
+<div class="wrap">
+<h1 class="wp-heading-inline">Edit Media</h1>
+<a href="/wp-admin/media-new" class="page-title-action">Add Media File</a>
+<hr class="wp-header-end">
+{{template "notices" $}}
+<form name="post" action="/wp-admin/post" method="post" id="post">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<input type="hidden" name="post_ID" value="{{.A.ID}}" />
+<input type="hidden" name="post_type" value="attachment" />
+<input type="hidden" name="action" value="editpost" />
+<div id="poststuff">
+<div id="post-body" class="metabox-holder columns-2">
+<div id="post-body-content">
+	<div id="titlediv"><div id="titlewrap"><label class="screen-reader-text" id="title-prompt-text" for="title">Add title</label><input type="text" name="post_title" size="30" value="{{.A.Title}}" id="title" spellcheck="true" autocomplete="off" /></div>
+	<div class="inside"><div id="edit-slug-box" class="hide-if-no-js"><strong>Permalink:</strong> <span id="sample-permalink"><a href="{{.ViewURL}}">{{.ViewURL}}</a></span></div></div></div>
+	<div class="wp_attachment_holder wp-clearfix">
+		<div class="wp_attachment_image wp-clearfix" id="media-head-{{.A.ID}}">
+			{{if .IsImage}}<p id="thumbnail-head-{{.A.ID}}"><img class="thumbnail" src="{{.Preview}}" style="max-width:100%" alt="" /></p>{{else}}<p><a href="{{.FileURL}}">{{.FileName}}</a></p>{{end}}
+		</div>
+	</div>
+	<div class="wp_attachment_details edit-form-section">
+		<p class="attachment-alt-text"><label for="attachment_alt"><strong>Alternative Text</strong></label><br />
+		<textarea class="widefat" name="_wp_attachment_image_alt" id="attachment_alt" aria-describedby="alt-text-description">{{.A.Alt}}</textarea></p>
+		<p class="attachment-alt-text-description" id="alt-text-description"><a href="https://www.w3.org/WAI/tutorials/images/decision-tree/" target="_blank">Learn how to describe the purpose of the image<span class="screen-reader-text"> (opens in a new tab)</span></a>. Leave empty if the image is purely decorative.</p>
+		<p><label for="attachment_caption"><strong>Caption</strong></label><br />
+		<textarea class="widefat" name="excerpt" id="attachment_caption">{{.A.Caption}}</textarea></p>
+		<label for="attachment_content" class="attachment-content-description"><strong>Description</strong></label>
+		<textarea class="widefat" rows="8" name="content" id="attachment_content">{{.A.Description}}</textarea>
+	</div>
+</div>
+<div id="postbox-container-1" class="postbox-container">
+<div id="side-sortables" class="meta-box-sortables">
+<div id="submitdiv" class="postbox">
+<div class="postbox-header"><h2 class="hndle">Save</h2></div>
+<div class="inside">
+<div class="submitbox" id="submitpost">
+	<div id="minor-publishing">
+		<div id="misc-publishing-actions">
+			<div class="misc-pub-section curtime misc-pub-curtime"><span id="timestamp">Uploaded on: <b>{{.Uploaded}}</b></span></div>
+			<div class="misc-pub-section misc-pub-uploadedby">Uploaded by: <a href="{{.UploaderURL}}">{{.Uploader}}</a></div>
+			<div class="misc-pub-section misc-pub-attachment"><label for="attachment_url">File URL:</label><input type="text" class="widefat urlfield" readonly="readonly" name="attachment_url" id="attachment_url" value="{{.FileURL}}" />
+				<span class="copy-to-clipboard-container"><button type="button" class="button copy-attachment-url edit-media" data-clipboard-target="#attachment_url">Copy URL to clipboard</button><span class="success hidden" aria-hidden="true">Copied!</span></span></div>
+			<div class="misc-pub-section misc-pub-download"><a href="{{.FileURL}}" download>Download file</a></div>
+			<div class="misc-pub-section misc-pub-filename">File name: <strong>{{.FileName}}</strong></div>
+			<div class="misc-pub-section misc-pub-filetype">File type: <strong>{{.FileType}}</strong></div>
+			<div class="misc-pub-section misc-pub-filesize">File size: <strong>{{.FileSize}}</strong></div>
+			{{if .Dimensions}}<div class="misc-pub-section misc-pub-dimensions">Dimensions: <strong>{{.Dimensions}}</strong></div>{{end}}
+		</div>
+	</div>
+	<div id="major-publishing-actions">
+		<div id="delete-action"><a class="submitdelete deletion" onclick="return showNotice.warn();" href="{{.DeleteURL}}">Delete permanently</a></div>
+		<div id="publishing-action"><span class="spinner"></span><input name="save" type="submit" class="button button-primary button-large" id="publish" value="Update" /></div>
+		<div class="clear"></div>
+	</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<br class="clear" />
+</div>
+</form>
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}

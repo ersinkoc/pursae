@@ -1,0 +1,198 @@
+/**
+ * Dashboard / Updates page-only styles for static /panel/ clone.
+ * Does not touch shared chrome. Site Health widget rules mirrored from WP site-health.css.
+ */
+
+/* —— Site Health dashboard widget —— */
+.site-health-progress-wrapper {
+	margin-bottom: 1rem;
+}
+
+.site-health-progress {
+	display: inline-block;
+	height: 20px;
+	width: 20px;
+	margin: 0;
+	border-radius: 100%;
+	position: relative;
+	font-weight: 600;
+	font-size: 0.4rem;
+}
+
+.loading .site-health-progress svg #bar {
+	stroke-dashoffset: 0;
+	stroke: #c3c4c7;
+	animation: dashboard-health-pulse 3s infinite ease-in-out;
+}
+
+.site-health-progress svg circle {
+	stroke-dashoffset: 0;
+	transition: stroke-dashoffset 1s linear;
+	stroke: #c3c4c7;
+	stroke-width: 2em;
+}
+
+.site-health-progress svg #bar {
+	stroke-dashoffset: 565;
+	stroke: #d63638;
+}
+
+.site-health-progress-label {
+	font-weight: 600;
+	line-height: 20px;
+	margin-left: 0.3rem;
+}
+
+@keyframes dashboard-health-pulse {
+	0% { stroke: #c3c4c7; }
+	50% { stroke: var(--wp-admin-theme-color, #3858e9); }
+	100% { stroke: #c3c4c7; }
+}
+
+#dashboard_site_health .site-health-details p:first-child {
+	margin-top: 0;
+}
+
+#dashboard_site_health .site-health-details p:last-child {
+	margin-bottom: 0;
+}
+
+#dashboard_site_health .health-check-widget {
+	display: grid;
+	grid-template-columns: 1fr 2fr;
+	grid-auto-rows: minmax(64px, auto);
+	column-gap: 16px;
+	align-items: center;
+}
+
+#dashboard_site_health .site-health-progress-label {
+	margin-left: 0;
+}
+
+.health-check-widget-title-section {
+	margin-bottom: 0;
+	text-align: center;
+}
+
+/* —— Updates page —— */
+.update-core-php .core-updates {
+	margin: 0;
+}
+
+.update-core-php .core-updates .button {
+	margin-top: 0.5em;
+}
+
+/* —— Mobile: reinforce WP dashboard breakpoints without breaking desktop —— */
+@media screen and (max-width: 782px) {
+	/* Single-column widgets (WP forces this under 800px via columns rules; ensure content doesn't overflow) */
+	#dashboard-widgets .postbox .inside {
+		overflow-wrap: anywhere;
+	}
+
+	#activity-widget #the-comment-list .dashboard-comment-wrap.has-avatar {
+		margin-left: 0;
+	}
+
+	#activity-widget #the-comment-list .avatar {
+		float: left;
+		margin: 0 10px 10px 0;
+	}
+
+	#activity-widget .subsubsub {
+		margin: 8px 0 0;
+		white-space: normal;
+	}
+
+	.welcome-panel .welcome-panel-column-container {
+		grid-template-columns: 1fr;
+	}
+
+	.update-core-php .wrap > p,
+	.update-core-php .wrap > h2 {
+		max-width: 100%;
+	}
+}
+
+@media screen and (max-width: 480px) {
+	#dashboard_site_health .health-check-widget {
+		grid-template-columns: 100%;
+	}
+
+	#dashboard_right_now li {
+		width: 100%;
+		float: none;
+	}
+
+	.community-events-footer {
+		line-height: 1.8;
+	}
+}
+
+/* At a Glance icons need Dashicons font (WP sets this in common/dashboard chain) */
+#dashboard_right_now li a:before,
+#dashboard_right_now li > span:before,
+#dashboard_right_now .search-engines-info:before {
+	font: normal 20px/1 dashicons;
+	speak: never;
+	display: inline-block;
+	padding: 0 5px 0 0;
+	vertical-align: top;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+/* Hide unused column drop zones when not dragging (static clone) */
+#dashboard-widgets:not(.is-dragging-metaboxes) #postbox-container-3 .meta-box-sortables:empty,
+#dashboard-widgets:not(.is-dragging-metaboxes) #postbox-container-4 .meta-box-sortables:empty {
+	display: none;
+	height: 0;
+	outline: none;
+	margin: 0;
+}
+
+/* Mobile: force single-column dashboard like WP postboxes.js at <800px */
+@media only screen and (max-width: 799px) {
+	#wpbody-content #dashboard-widgets.columns-2 .postbox-container,
+	#wpbody-content #dashboard-widgets.columns-2 #postbox-container-1,
+	#wpbody-content #dashboard-widgets.columns-2 #postbox-container-2,
+	#wpbody-content #dashboard-widgets.columns-2 #postbox-container-3,
+	#wpbody-content #dashboard-widgets.columns-2 #postbox-container-4 {
+		width: 100%;
+		float: none;
+	}
+
+	#dashboard-widgets-wrap {
+		overflow-x: hidden;
+	}
+
+	.welcome-panel-header-image {
+		max-width: 100%;
+		overflow: hidden;
+	}
+
+	.welcome-panel-header-image svg {
+		max-width: 100%;
+		height: auto;
+	}
+}
+
+@media screen and (max-width: 782px) {
+	/* Prevent horizontal scroll from admin content */
+	#wpcontent,
+	#wpbody-content,
+	.wrap {
+		max-width: 100%;
+		box-sizing: border-box;
+	}
+
+	#dashboard-widgets .postbox {
+		min-width: 0;
+	}
+
+	#quick-press .input-text-wrap input,
+	#quick-press .textarea-wrap textarea {
+		max-width: 100%;
+		box-sizing: border-box;
+	}
+}

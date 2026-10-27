@@ -1,0 +1,1 @@
+html: the nested template's CSS is printed inline (upstream enqueues post-<id>.css on the front end)

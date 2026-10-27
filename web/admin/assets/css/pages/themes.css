@@ -1,0 +1,566 @@
+/* Theme browser + install + customizer stubs — mirrors wp-admin/css/themes.css card layout */
+
+/*
+ * Card grid must match wordpress/wp-admin/css/themes.css 1:1 (3-col desktop):
+ *   .theme-browser .theme { float:left; width:30.6%; margin:0 4% 4% 0; }
+ *   .theme-browser .theme:nth-child(3n) { margin-right:0; }
+ * Kill any leftover CSS-grid stub (was: repeat(auto-fill,minmax(280px,1fr)) + gap:20px).
+ */
+.theme-browser .themes {
+  display: block;
+  clear: both;
+  padding: 0;
+  gap: 0;
+  grid-template-columns: none;
+}
+
+.theme-browser .theme {
+  cursor: pointer;
+  float: left;
+  margin: 0 4% 4% 0;
+  position: relative;
+  width: 30.6%;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.theme-browser .theme:nth-child(3n) {
+  margin-right: 0;
+}
+
+.theme-browser .theme .theme-screenshot {
+  display: block;
+  overflow: hidden;
+  position: relative;
+  aspect-ratio: auto;
+  background: #f0f0f1;
+  font-size: inherit;
+  align-items: unset;
+  justify-content: unset;
+}
+
+.theme-browser .theme .theme-screenshot:after {
+  content: "";
+  display: block;
+  padding-top: 66.66666%;
+}
+
+.theme-browser .theme .theme-screenshot img {
+  height: auto;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.theme-browser .theme .theme-screenshot.blank {
+  background: #f0f0f1;
+}
+
+.theme-browser.rendered .theme:hover .theme-screenshot img,
+.theme-browser .theme:hover .theme-screenshot img {
+  opacity: 0.4;
+}
+
+.theme-browser .theme .theme-name {
+  font-size: 15px;
+  font-weight: 600;
+  height: 18px;
+  margin: 0;
+  padding: 16px 15px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  background: #fff;
+  box-shadow: none;
+}
+
+.theme-browser .theme.active .theme-name {
+  background: #1d2327;
+  color: #fff;
+  padding-right: 115px;
+  font-weight: 300;
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.5);
+}
+
+.theme-browser .theme.active .theme-name span {
+  font-weight: 600;
+}
+
+.theme-id-container {
+  position: relative;
+}
+
+.theme-browser .theme .theme-actions {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  right: 0;
+  padding: 9px 12px;
+  opacity: 0;
+  transition: opacity 0.1s ease-in-out;
+  height: auto;
+  background: rgba(246, 247, 247, 0.7);
+  border-left: 1px solid rgba(0, 0, 0, 0.05);
+  display: block;
+  bottom: auto;
+}
+
+.theme-browser .theme:hover .theme-actions,
+.theme-browser .theme.focus .theme-actions,
+.theme-browser .theme.active .theme-actions {
+  opacity: 1;
+}
+
+.theme-browser .theme.active .theme-actions {
+  background: transparent;
+  border-left: none;
+}
+
+.theme-browser .theme:not(.active) .theme-actions {
+  box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.1);
+}
+
+.theme-browser .theme .theme-actions .button {
+  float: none;
+  margin-left: 3px;
+}
+
+.theme-browser .theme .theme-actions .button-primary {
+  margin-right: 3px;
+}
+
+.theme-browser .theme .theme-actions .button:not(.button-primary) {
+  background: #fff;
+}
+
+.theme-browser .theme .more-details {
+  opacity: 0;
+  position: absolute;
+  top: 35%;
+  right: 20%;
+  left: 20%;
+  width: 60%;
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  font-size: 15px;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
+  font-weight: 600;
+  padding: 15px 12px;
+  text-align: center;
+  border-radius: 3px;
+  border: none;
+  transition: opacity 0.1s ease-in-out;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.theme-browser .theme:hover .more-details,
+.theme-browser .theme.focus .more-details {
+  opacity: 1;
+}
+
+.theme-browser .theme .theme-author {
+  display: none;
+}
+
+/* Add new theme card */
+.theme-browser .theme.add-new-theme {
+  background: transparent;
+  border: none;
+  overflow: visible;
+}
+
+.theme-browser .theme.add-new-theme a {
+  text-decoration: none;
+  display: block;
+  position: relative;
+  z-index: 1;
+  color: #3c434a;
+}
+
+.theme-browser .theme.add-new-theme a:after {
+  display: block;
+  content: "";
+  background: transparent;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 5px dashed rgba(0, 0, 0, 0.1);
+  box-sizing: border-box;
+  border-radius: 8px;
+}
+
+.theme-browser .theme.add-new-theme span:after {
+  background: rgba(140, 143, 148, 0.1);
+  border-radius: 50%;
+  display: inline-block;
+  content: "\f132";
+  -webkit-font-smoothing: antialiased;
+  font: normal 74px/115px dashicons;
+  width: 100px;
+  height: 100px;
+  vertical-align: middle;
+  text-align: center;
+  color: #8c8f94;
+  position: absolute;
+  top: 30%;
+  left: 50%;
+  margin-left: -50px;
+  text-indent: -4px;
+  z-index: 4;
+}
+
+.theme-browser .theme.add-new-theme a:hover span:after,
+.theme-browser .theme.add-new-theme a:focus span:after {
+  background: #fff;
+  color: #2271b1;
+}
+
+.theme-browser .theme.add-new-theme a:hover:after,
+.theme-browser .theme.add-new-theme a:focus:after {
+  border-color: transparent;
+  background: #2271b1;
+}
+
+.theme-browser .theme.add-new-theme .theme-name {
+  background: none;
+  border: none;
+  text-align: center;
+  font-weight: 400;
+  position: relative;
+  top: 0;
+  margin-top: -18px;
+  padding-top: 0;
+  padding-bottom: 48px;
+  height: auto;
+}
+
+.theme-browser .theme.add-new-theme a:hover .theme-name,
+.theme-browser .theme.add-new-theme a:focus .theme-name {
+  color: #fff;
+  z-index: 2;
+}
+
+.theme-browser .theme.add-new-theme:hover .theme-screenshot,
+.theme-browser .theme.add-new-theme:hover .theme-screenshot img {
+  opacity: 1;
+}
+
+/* Themes screen header bits */
+.themes-php .search-form.search-themes {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: 100%;
+  gap: 0.5rem;
+  margin: 0 0 1em;
+}
+
+.themes-php .wp-filter-search {
+  margin: 0;
+  width: 280px;
+  max-width: 100%;
+}
+
+.theme-count,
+.title-count.theme-count {
+  display: inline-block;
+  vertical-align: top;
+}
+
+.theme-overlay {
+  display: none;
+}
+
+.no-themes {
+  display: none;
+  clear: both;
+  color: #646970;
+}
+
+/*
+ * Theme-install filter bar: use real wp-admin common.css + themes.css.
+ * Do not force flex here — WP uses float layout (search floats right).
+ * themes.min.css already sets .theme-install-php .wp-filter { padding-left: 20px }.
+ *
+ * Search label ("Tema ara") stays visible beside the input — matches WP theme.js markup.
+ */
+
+/* Neutralize list-table search-box float/absolute that fights the filter bar */
+.theme-install-php .wp-filter p.search-box {
+  float: none;
+  margin: 0;
+  position: static;
+}
+
+/* Clear floated theme cards (wp-clearfix) */
+.theme-browser .themes:before,
+.theme-browser .themes:after {
+  content: "";
+  display: table;
+}
+.theme-browser .themes:after {
+  clear: both;
+}
+
+/* Match wp-admin/css/themes.css breakpoints — desktop 3-col unchanged above */
+
+/* Two columns when screenshot max ~440px */
+@media only screen and (max-width: 1120px) {
+  .theme-browser .theme {
+    width: 47.5%;
+    margin-right: 0;
+  }
+  .theme-browser .theme:nth-child(3n) {
+    margin-right: 0;
+  }
+  .theme-browser .theme:nth-child(even) {
+    margin-right: 0;
+  }
+  .theme-browser .theme:nth-child(odd) {
+    margin-right: 5%;
+  }
+}
+
+@media only screen and (max-width: 782px) {
+  .theme-browser .theme.active .theme-name span {
+    display: none; /* Hide "Etkin:" on smaller screens (WP core) */
+  }
+  .theme-browser .theme .theme-actions {
+    padding: 5px 10px 4px;
+  }
+  .theme:not(.active):hover .theme-actions,
+  .theme:not(.active):focus .theme-actions,
+  .theme:hover .more-details,
+  .theme.focus .more-details {
+    display: none;
+  }
+  .theme-browser.rendered .theme:hover .theme-screenshot img,
+  .theme-browser.rendered .theme.focus .theme-screenshot img,
+  .theme-browser .theme:hover .theme-screenshot img {
+    opacity: 1;
+  }
+  .themes-php .wp-filter-search {
+    width: 100%;
+  }
+}
+
+/* Stack theme cards on small screens — desktop/tablet widths untouched */
+@media only screen and (max-width: 480px) {
+  .theme-browser .theme {
+    float: none;
+    width: 100%;
+    margin-right: 0;
+    margin-bottom: 4%;
+  }
+  .theme-browser .theme:nth-child(2n),
+  .theme-browser .theme:nth-child(3n),
+  .theme-browser .theme:nth-child(odd),
+  .theme-browser .theme:nth-child(even) {
+    margin-right: 0;
+  }
+}
+
+/* Customizer full-overlay stub */
+body.wp-customizer #wpcontent,
+body.wp-customizer #wpfooter,
+body.wp-customizer #adminmenumain,
+body.wp-customizer #wpadminbar {
+  display: none !important;
+}
+
+body.wp-customizer #wpwrap {
+  min-height: 100vh;
+}
+
+body.wp-customizer {
+  background: #f0f0f1;
+  margin: 0;
+}
+
+.wp-full-overlay {
+  background: #f0f0f1;
+  z-index: 500000;
+  position: fixed;
+  overflow: hidden;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 100%;
+}
+
+.wp-full-overlay-sidebar {
+  box-sizing: border-box;
+  position: fixed;
+  width: 300px;
+  height: 100%;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 10;
+  background: #f0f0f1;
+  border-right: 1px solid #dcdcde;
+  display: flex;
+  flex-direction: column;
+}
+
+.wp-full-overlay.expanded {
+  margin-left: 300px;
+}
+
+.wp-full-overlay-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 45px;
+  padding: 0 12px;
+  background: #fff;
+  border-bottom: 1px solid #dcdcde;
+  flex-shrink: 0;
+}
+
+.wp-full-overlay-header .customize-controls-close {
+  order: -1;
+  width: 45px;
+  height: 45px;
+  margin: 0 0 0 -12px;
+  border: 0;
+  border-right: 1px solid #dcdcde;
+  background: transparent;
+  color: #50575e;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.wp-full-overlay-header .customize-controls-close:before {
+  content: "\f335";
+  font: normal 22px/1 dashicons;
+  speak: never;
+}
+
+.wp-full-overlay-header .button-primary {
+  margin-left: auto;
+}
+
+.wp-full-overlay-sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+}
+
+.customize-info {
+  background: #fff;
+  border-bottom: 1px solid #dcdcde;
+  padding: 12px 16px;
+}
+
+.customize-info .preview-notice {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: #50575e;
+}
+
+.customize-info .panel-title {
+  font-weight: 600;
+  color: #1d2327;
+}
+
+.customize-pane-parent {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background: #fff;
+}
+
+.customize-pane-parent > li,
+.accordion-section-title {
+  margin: 0;
+  padding: 12px 16px;
+  border-bottom: 1px solid #dcdcde;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1d2327;
+  cursor: default;
+  position: relative;
+}
+
+.accordion-section-title:after {
+  content: "\f345";
+  font: normal 20px/1 dashicons;
+  speak: never;
+  display: block;
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #a7aaad;
+}
+
+.wp-full-overlay-footer {
+  height: 45px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border-top: 1px solid #dcdcde;
+  flex-shrink: 0;
+}
+
+.wp-full-overlay-main {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background: #ddd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #646970;
+  font-size: 15px;
+}
+
+.wp-full-overlay-main iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.wp-full-overlay-main .customize-preview-placeholder {
+  position: relative;
+  z-index: 1;
+  padding: 24px;
+  text-align: center;
+}
+
+@media only screen and (max-width: 640px) {
+  .wp-full-overlay.expanded {
+    margin-left: 0;
+  }
+  .wp-full-overlay-sidebar {
+    width: 100%;
+    max-width: none;
+  }
+  .wp-full-overlay-main {
+    display: none;
+  }
+}

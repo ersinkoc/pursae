@@ -1,0 +1,38 @@
+{{define "admin-bar"}}<div id="wpadminbar" class="nojq">
+	<div class="quicklinks" id="wp-toolbar" role="navigation" aria-label="Toolbar">
+		<ul role="menu" id="wp-admin-bar-root-default" class="ab-top-menu">
+			<li role="group" id="wp-admin-bar-menu-toggle"><a class="ab-item" role="menuitem" aria-expanded="false" href="#"><span class="ab-icon" aria-hidden="true"></span><span class="screen-reader-text">Menu</span></a></li>
+			<li role="group" id="wp-admin-bar-wp-logo"><a class="ab-item" role="menuitem" href="/wp-admin/about"><span class="ab-icon" aria-hidden="true"></span><span class="screen-reader-text">About WordPress Go</span></a></li>
+			<li role="group" id="wp-admin-bar-site-name" class="menupop"><a class="ab-item" role="menuitem" aria-expanded="false" href="{{.HomeURL}}">{{.SiteName}}</a>
+				<div class="ab-sub-wrapper">
+					<ul role="menu" id="wp-admin-bar-site-name-default" class="ab-submenu">
+						<li role="group" id="wp-admin-bar-view-site"><a class="ab-item" role="menuitem" href="{{.HomeURL}}">Visit Site</a></li>
+					</ul>
+				</div>
+			</li>
+			{{if .User.Can "moderate_comments" nil}}<li role="group" id="wp-admin-bar-comments"><a class="ab-item" role="menuitem" href="/wp-admin/edit-comments"><span class="ab-icon" aria-hidden="true"></span><span class="ab-label awaiting-mod pending-count count-{{.Pending}}" aria-hidden="true">{{.Pending}}</span><span class="screen-reader-text comments-in-moderation-text">{{plural .Pending "%s Comment in moderation" "%s Comments in moderation"}}</span></a></li>{{end}}
+			{{if .User.Can "edit_posts" nil}}<li role="group" id="wp-admin-bar-new-content" class="menupop"><a class="ab-item" role="menuitem" aria-expanded="false" href="/wp-admin/post-new"><span class="ab-icon" aria-hidden="true"></span><span class="ab-label">New</span></a>
+				<div class="ab-sub-wrapper">
+					<ul role="menu" id="wp-admin-bar-new-content-default" class="ab-submenu">
+						<li role="group" id="wp-admin-bar-new-post"><a class="ab-item" role="menuitem" href="/wp-admin/post-new">Post</a></li>
+						{{if .User.Can "upload_files" nil}}<li role="group" id="wp-admin-bar-new-media"><a class="ab-item" role="menuitem" href="/wp-admin/media-new">Media</a></li>{{end}}
+						{{if .User.Can "edit_pages" nil}}<li role="group" id="wp-admin-bar-new-page"><a class="ab-item" role="menuitem" href="/wp-admin/post-new?post_type=page">Page</a></li>{{end}}
+						{{if .User.Can "create_users" nil}}<li role="group" id="wp-admin-bar-new-user"><a class="ab-item" role="menuitem" href="/wp-admin/user-new">User</a></li>{{end}}
+					</ul>
+				</div>
+			</li>{{end}}
+			{{.CacheBar}}
+		</ul>
+		<ul role="menu" id="wp-admin-bar-top-secondary" class="ab-top-secondary ab-top-menu">
+			<li role="group" id="wp-admin-bar-my-account" class="menupop with-avatar"><a class="ab-item" role="menuitem" aria-expanded="false" href="/wp-admin/profile">Howdy, <span class="display-name">{{.User.DisplayName}}</span><img alt="" src="{{.Avatar26}}" class="avatar avatar-26 photo" height="26" width="26" decoding="async"></a>
+				<div class="ab-sub-wrapper">
+					<ul role="menu" id="wp-admin-bar-user-actions" class="ab-submenu">
+						<li role="group" id="wp-admin-bar-user-info"><a class="ab-item" tabindex="-1" role="menuitem" href="/wp-admin/profile"><img alt="" src="{{.Avatar64}}" class="avatar avatar-64 photo" height="64" width="64" decoding="async"><span class="display-name">{{.User.DisplayName}}</span><span class="display-name edit-profile">Edit Profile</span></a></li>
+						<li role="group" id="wp-admin-bar-logout"><a class="ab-item" role="menuitem" href="/wp-login?action=logout&amp;_wpnonce={{.LogoutNonce}}">Log Out</a></li>
+					</ul>
+				</div>
+			</li>
+		</ul>
+	</div>
+</div>
+{{end}}

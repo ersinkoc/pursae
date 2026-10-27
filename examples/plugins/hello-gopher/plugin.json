@@ -1,0 +1,13 @@
+{
+  "slug": "hello-gopher",
+  "name": "Hello Gopher",
+  "version": "1.0.0",
+  "description": "Appends a small footer to single posts and greets administrators with a gopher one-liner.",
+  "author": "WordPress Go Contributors",
+  "author_uri": "https://example.org/wpgo",
+  "plugin_uri": "https://example.org/wpgo/plugins/hello-gopher",
+  "requires": "0.1.0",
+  "license": "GPL-2.0-or-later",
+  "permissions": ["options:read", "content:filter", "admin:notices"],
+  "hooks": ["the_content", "admin_notices"]
+}

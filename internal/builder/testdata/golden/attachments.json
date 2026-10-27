@@ -1,0 +1,103 @@
+[
+    {
+        "ID": 57,
+        "URL": "http://localhost:8095/wp-content/uploads/2026/10/wpgo-landscape.png",
+        "Width": 1600,
+        "Height": 900,
+        "Alt": "",
+        "Title": "wpgo-landscape",
+        "Caption": "",
+        "Description": "",
+        "MimeType": "image/png",
+        "Sizes": [
+            {
+                "Name": "medium",
+                "URL": "http://localhost:8095/wp-content/uploads/2026/10/wpgo-landscape-300x169.png",
+                "Width": 300,
+                "Height": 169,
+                "MimeType": "image/png"
+            },
+            {
+                "Name": "large",
+                "URL": "http://localhost:8095/wp-content/uploads/2026/10/wpgo-landscape-1024x576.png",
+                "Width": 1024,
+                "Height": 576,
+                "MimeType": "image/png"
+            },
+            {
+                "Name": "thumbnail",
+                "URL": "http://localhost:8095/wp-content/uploads/2026/10/wpgo-landscape-150x150.png",
+                "Width": 150,
+                "Height": 150,
+                "MimeType": "image/png"
+            },
+            {
+                "Name": "medium_large",
+                "URL": "http://localhost:8095/wp-content/uploads/2026/10/wpgo-landscape-768x432.png",
+                "Width": 768,
+                "Height": 432,
+                "MimeType": "image/png"
+            },
+            {
+                "Name": "1536x1536",
+                "URL": "http://localhost:8095/wp-content/uploads/2026/10/wpgo-landscape-1536x864.png",
+                "Width": 1536,
+                "Height": 864,
+                "MimeType": "image/png"
+            },
+            {
+                "Name": "post-thumbnail",
+                "URL": "http://localhost:8095/wp-content/uploads/2026/10/wpgo-landscape-1568x882.png",
+                "Width": 1568,
+                "Height": 882,
+                "MimeType": "image/png"
+            }
+        ]
+    },
+    {
+        "ID": 58,
+        "URL": "http://localhost:8095/wp-content/uploads/2026/10/wpgo-square.png",
+        "Width": 800,
+        "Height": 800,
+        "Alt": "",
+        "Title": "wpgo-square",
+        "Caption": "",
+        "Description": "",
+        "MimeType": "image/png",
+        "Sizes": [
+            {
+                "Name": "medium",
+                "URL": "http://localhost:8095/wp-content/uploads/2026/10/wpgo-square-300x300.png",
+                "Width": 300,
+                "Height": 300,
+                "MimeType": "image/png"
+            },
+            {
+                "Name": "thumbnail",
+                "URL": "http://localhost:8095/wp-content/uploads/2026/10/wpgo-square-150x150.png",
+                "Width": 150,
+                "Height": 150,
+                "MimeType": "image/png"
+            },
+            {
+                "Name": "medium_large",
+                "URL": "http://localhost:8095/wp-content/uploads/2026/10/wpgo-square-768x768.png",
+                "Width": 768,
+                "Height": 768,
+                "MimeType": "image/png"
+            }
+        ]
+    },
+    {
+        "ID": 59,
+        "URL": "http://localhost:8095/wp-content/uploads/2026/10/wpgo-small.png",
+        "Width": 120,
+        "Height": 80,
+        "Alt": "",
+        "Title": "wpgo-small",
+        "Caption": "",
+        "Description": "",
+        "MimeType": "image/png",
+        "Sizes": []
+    }
+]

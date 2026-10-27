@@ -1,0 +1,95 @@
+{{define "admin/posts-list"}}{{template "admin-header" .}}{{$u := .User}}{{with .Data}}
+<div class="wrap">
+<h1 class="wp-heading-inline">{{.Labels.Name}}</h1>
+{{if .CanCreate}}<a href="/wp-admin/post-new{{if eq .Labels.Type "page"}}?post_type=page{{end}}" class="page-title-action">{{.Labels.AddNew}}</a>{{end}}
+{{if .Search}}<span class="subtitle">Search results for: <strong>{{.Search}}</strong></span>{{end}}
+<hr class="wp-header-end">
+{{template "notices" $}}
+<h2 class="screen-reader-text">Filter {{lower .Labels.Name}} list</h2>
+<ul class="subsubsub">
+{{range $i, $s := .Statuses}}	<li class="{{$s.Key}}">{{if $i}} |{{end}}<a href="{{$s.URL}}"{{if $s.Current}} class="current" aria-current="page"{{end}}>{{$s.Label}} <span class="count">({{num $s.Count}})</span></a></li>
+{{end}}</ul>
+<form id="posts-filter" method="get" action="/wp-admin/edit">
+<p class="search-box">
+	<label class="screen-reader-text" for="post-search-input">{{.Labels.Search}}:</label>
+	<input type="search" id="post-search-input" name="s" value="{{.Search}}" />
+	<input type="submit" id="search-submit" class="button button-compact" value="{{.Labels.Search}}" />
+</p>
+<input type="hidden" name="post_status" class="post_status_page" value="{{.Status}}" />
+<input type="hidden" name="post_type" class="post_type_page" value="{{.Labels.Type}}" />
+<input type="hidden" name="_wpnonce" value="{{.BulkNonce}}" />
+
+
+<div class="tablenav top">
+	{{template "posts-bulk" dict "Pos" "top" "Trash" .IsTrash}}
+	{{if eq .Labels.Type "post"}}<div class="alignleft actions">
+		<label for="filter-by-date" class="screen-reader-text">Filter by date</label>
+		<select name="m" id="filter-by-date">
+			<option value="0">All dates</option>
+			{{range .Months}}<option value="{{.Value}}"{{if eq .Value $.Data.Month}} selected="selected"{{end}}>{{.Label}}</option>{{end}}
+		</select>
+		<label class="screen-reader-text" for="cat">Filter by category</label>
+		<select name="cat" id="cat" class="postform">
+			<option value="0">All Categories</option>
+			{{range .Categories}}<option class="level-{{.Depth}}" value="{{.ID}}"{{if eq .ID $.Data.Cat}} selected="selected"{{end}}>{{repeat "&nbsp;&nbsp;&nbsp;" .Depth | safe}}{{.Name}}</option>{{end}}
+		</select>
+		<input type="submit" name="filter_action" id="post-query-submit" class="button button-compact" value="Filter" />
+	</div>{{end}}
+	{{if .IsTrash}}<div class="alignleft actions"></div>{{end}}
+	{{template "tablenav-pages" .Pagination}}
+	<br class="clear" />
+</div>
+<h2 class="screen-reader-text">{{.Labels.Name}} list</h2>
+<table class="wp-list-table widefat fixed striped table-view-list {{.Labels.Type}}s">
+	<caption class="screen-reader-text">Table ordered by {{if eq .Orderby "title"}}Title{{else}}Date{{end}}. {{if eq .Order "asc"}}Ascending{{else}}Descending{{end}}.</caption>
+	
+	<thead>{{template "posts-head" dict "Top" true "D" .}}</thead>
+	<tbody id="the-list">
+	{{range .Rows}}<tr id="post-{{.ID}}" class="{{.Classes}}">
+		<th scope="row" class="check-column">{{if .CanEdit}}<input id="cb-select-{{.ID}}" type="checkbox" name="post[]" value="{{.ID}}" /><label for="cb-select-{{.ID}}"><span class="screen-reader-text">Select {{.Title}}</span></label>{{end}}<div class="locked-indicator"><span class="locked-indicator-icon" aria-hidden="true"></span><span class="screen-reader-text">&#8220;{{.Title}}&#8221; is locked</span></div></th>
+		<td class="title column-title has-row-actions column-primary page-title" data-colname="Title"><div class="locked-info"><span class="locked-avatar"></span> <span class="locked-text"></span></div>
+			<strong>{{safe .Depth}}{{if and .CanEdit (not .IsTrash)}}<a class="row-title" href="{{.EditURL}}" aria-label="&#8220;{{.Title}}&#8221; (Edit)">{{.Title}}</a>{{else}}<span>{{.Title}}</span>{{end}}{{range $i, $st := .States}}{{if eq $i 0}} &mdash; {{else}}, {{end}}<span class="post-state">{{$st}}</span>{{end}}</strong>
+			<div class="row-actions">{{if .IsTrash}}<span class="untrash"><a href="{{.RestoreURL}}" aria-label="Restore &#8220;{{.Title}}&#8221; from the Trash">Restore</a> | </span><span class="delete"><a href="{{.DeleteURL}}" class="submitdelete" aria-label="Delete &#8220;{{.Title}}&#8221; permanently">Delete Permanently</a></span>{{else}}{{if .CanEdit}}{{if $.Data.EditorSwitch}}<span class="edit"><a href="{{.EditURL}}&amp;classic-editor__forget" aria-label="Edit &#8220;{{.Title}}&#8221; in Gotenberg">Edit (Gotenberg)</a> | </span><span class="classic"><a href="{{.EditURL}}&amp;classic-editor" aria-label="Edit &#8220;{{.Title}}&#8221; in the classic editor">Edit (classic editor)</a> | </span>{{else}}<span class="edit"><a href="{{.EditURL}}" aria-label="Edit &#8220;{{.Title}}&#8221;">Edit</a> | </span>{{end}}{{end}}{{if .BuilderURL}}<span class="edit_with_gowebeditor"><a href="{{.BuilderURL}}" aria-label="Edit &#8220;{{.Title}}&#8221; with GoWebEditor">Edit with GoWebEditor</a> | </span>{{end}}{{if .CanDelete}}<span class="trash"><a href="{{.TrashURL}}" class="submitdelete" aria-label="Move &#8220;{{.Title}}&#8221; to the Trash">Trash</a>{{if .ViewURL}} | {{end}}</span>{{end}}{{if .ViewURL}}<span class="view"><a href="{{.ViewURL}}" rel="bookmark" aria-label="{{.ViewLabel}} &#8220;{{.Title}}&#8221;">{{.ViewLabel}}</a></span>{{end}}{{end}}</div>
+			<button type="button" class="toggle-row"><span class="screen-reader-text">Show more details</span></button>
+		</td>
+		<td class="author column-author" data-colname="Author">{{if .Author}}<a href="{{.AuthorFilterURL}}">{{.Author}}</a>{{end}}</td>
+		{{if $.Data.ShowCatCols}}<td class="categories column-categories" data-colname="Categories">{{if .Categories}}{{.Categories}}{{else}}<span aria-hidden="true">&#8212;</span><span class="screen-reader-text">Uncategorized</span>{{end}}</td>
+		<td class="tags column-tags" data-colname="Tags">{{if .Tags}}{{.Tags}}{{else}}<span aria-hidden="true">&#8212;</span><span class="screen-reader-text">No tags</span>{{end}}</td>{{end}}
+		<td class="comments column-comments" data-colname="Comments"><div class="post-com-count-wrapper">{{if .Comments}}<a href="/wp-admin/edit-comments?p={{.ID}}&amp;comment_status=approved" class="post-com-count post-com-count-approved"><span class="comment-count-approved" aria-hidden="true">{{.Comments}}</span><span class="screen-reader-text">{{plural .Comments "%s comment" "%s comments"}}</span></a>{{else}}<span aria-hidden="true">&#8212;</span><span class="screen-reader-text">No comments</span>{{end}}<span class="post-com-count post-com-count-pending post-com-count-no-pending"><span class="comment-count comment-count-no-pending" aria-hidden="true">0</span><span class="screen-reader-text">No pending comments</span></span></div></td>
+		<td class="date column-date" data-colname="Date">{{.DateLabel}}<br />{{.DateValue}}</td>
+	</tr>
+	{{else}}<tr class="no-items"><td class="colspanchange" colspan="{{if .ShowCatCols}}7{{else}}5{{end}}">{{if .IsTrash}}{{.Labels.NotFoundTrash}}{{else}}{{.Labels.NotFound}}{{end}}</td></tr>
+	{{end}}
+	</tbody>
+	<tfoot>{{template "posts-head" dict "Top" false "D" .}}</tfoot>
+</table>
+<div class="tablenav bottom">
+	{{template "posts-bulk" dict "Pos" "bottom" "Trash" .IsTrash}}
+	<div class="alignleft actions"></div>
+	{{template "tablenav-pages" .Pagination}}
+	<br class="clear" />
+</div>
+</form>
+<div id="ajax-response"></div>
+<div class="clear"></div>
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}
+
+{{define "posts-bulk"}}<div class="alignleft actions bulkactions">
+	<label for="bulk-action-selector-{{.Pos}}" class="screen-reader-text">Select bulk action</label>
+	<select name="{{if eq .Pos "top"}}action{{else}}action2{{end}}" id="bulk-action-selector-{{.Pos}}">
+		<option value="-1">Bulk actions</option>
+		{{if .Trash}}<option value="untrash">Restore</option>
+		<option value="delete">Delete permanently</option>{{else}}<option value="trash">Move to Trash</option>{{end}}
+	</select>
+	<input type="submit" name="bulk_action" id="doaction{{if eq .Pos "bottom"}}2{{end}}" class="button action button-compact" value="Apply" />
+</div>{{end}}
+{{define "posts-head"}}<tr>
+		<td{{if .Top}} id="cb"{{end}} class="manage-column column-cb check-column"><input id="cb-select-all-{{if .Top}}1{{else}}2{{end}}" type="checkbox" /><label for="cb-select-all-{{if .Top}}1{{else}}2{{end}}"><span class="screen-reader-text">Select All</span></label></td>
+		{{template "sort-th" dict "ID" (or (and .Top "title") "") "Col" "title" "Primary" true "Label" "Title" "Link" (index .D.SortLinks "title")}}
+		{{template "sort-th" dict "ID" (or (and .Top "author") "") "Col" "author" "Label" "Author" "Link" (index .D.SortLinks "author")}}
+		{{if .D.ShowCatCols}}<th scope="col"{{if .Top}} id="categories"{{end}} class="manage-column column-categories">Categories</th>
+		<th scope="col"{{if .Top}} id="tags"{{end}} class="manage-column column-tags">Tags</th>{{end}}
+		{{template "sort-th" dict "ID" (or (and .Top "comments") "") "Col" "comments" "Num" true "Bubble" true "Label" "Comments" "Link" (index .D.SortLinks "comment_count")}}
+		{{template "sort-th" dict "ID" (or (and .Top "date") "") "Col" "date" "Label" "Date" "Link" (index .D.SortLinks "date")}}
+	</tr>{{end}}

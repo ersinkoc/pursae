@@ -1,0 +1,136 @@
+[
+ {
+  "id": "c0a1b2c",
+  "elType": "e-flexbox",
+  "settings": {
+   "classes": {
+    "$$type": "classes",
+    "value": [
+     "e-c0a1b2c-a1a1a1a"
+    ]
+   }
+  },
+  "elements": [
+   {
+    "id": "c0a1b2d",
+    "elType": "widget",
+    "settings": {
+     "classes": {
+      "$$type": "classes",
+      "value": [
+       "e-c0a1b2d-b2b2b2b"
+      ]
+     },
+     "tag": {
+      "$$type": "string",
+      "value": "h3"
+     },
+     "title": {
+      "$$type": "escaped-html",
+      "value": "Component heading"
+     }
+    },
+    "elements": [],
+    "widgetType": "e-heading",
+    "styles": {
+     "e-c0a1b2d-b2b2b2b": {
+      "id": "e-c0a1b2d-b2b2b2b",
+      "label": "local",
+      "type": "class",
+      "variants": [
+       {
+        "meta": {
+         "breakpoint": "desktop",
+         "state": null
+        },
+        "props": {
+         "color": {
+          "$$type": "color",
+          "value": "#008800"
+         }
+        },
+        "custom_css": null
+       }
+      ]
+     }
+    },
+    "version": "0.0"
+   },
+   {
+    "id": "c0a1b2e",
+    "elType": "widget",
+    "settings": {
+     "text": {
+      "$$type": "escaped-html",
+      "value": "Component button"
+     }
+    },
+    "elements": [],
+    "widgetType": "e-button",
+    "version": "0.0"
+   }
+  ],
+  "isInner": false,
+  "styles": {
+   "e-c0a1b2c-a1a1a1a": {
+    "id": "e-c0a1b2c-a1a1a1a",
+    "label": "local",
+    "type": "class",
+    "variants": [
+     {
+      "meta": {
+       "breakpoint": "desktop",
+       "state": null
+      },
+      "props": {
+       "padding": {
+        "$$type": "dimensions",
+        "value": {
+         "block-start": {
+          "$$type": "size",
+          "value": {
+           "size": 20,
+           "unit": "px"
+          }
+         },
+         "inline-end": {
+          "$$type": "size",
+          "value": {
+           "size": 20,
+           "unit": "px"
+          }
+         },
+         "block-end": {
+          "$$type": "size",
+          "value": {
+           "size": 20,
+           "unit": "px"
+          }
+         },
+         "inline-start": {
+          "$$type": "size",
+          "value": {
+           "size": 20,
+           "unit": "px"
+          }
+         }
+        }
+       },
+       "background": {
+        "$$type": "background",
+        "value": {
+         "color": {
+          "$$type": "color",
+          "value": "#eeeeff"
+         }
+        }
+       }
+      },
+      "custom_css": null
+     }
+    ]
+   }
+  },
+  "version": "0.0"
+ }
+]

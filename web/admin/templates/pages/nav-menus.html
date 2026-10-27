@@ -1,0 +1,235 @@
+{{define "menu-edit-item"}}{{$id := .Item.ID}}<li id="menu-item-{{$id}}" class="menu-item menu-item-depth-{{.Depth}} menu-item-{{.Item.Object}} menu-item-edit-inactive{{if .Pending}} pending{{end}}">
+	<div class="menu-item-bar">
+		<div class="menu-item-handle">
+			<label class="item-title" for="menu-item-checkbox-{{$id}}">
+				<input id="menu-item-checkbox-{{$id}}" type="checkbox" class="menu-item-checkbox" data-menu-item-id="{{$id}}" disabled="disabled" />
+				<span class="menu-item-title">{{.Title}}</span>
+				<span class="is-submenu"{{if eq .Depth 0}} style="display: none;"{{end}}>sub item</span>
+			</label>
+			<span class="item-controls">
+				<span class="item-type">{{.TypeLabel}}</span>
+				<span class="item-order hide-if-js"></span>
+				<a class="item-edit" id="edit-{{$id}}" href="/wp-admin/nav-menus?edit-menu-item={{$id}}#menu-item-settings-{{$id}}" aria-label="Edit menu item"><span class="screen-reader-text">Edit</span></a>
+			</span>
+		</div>
+	</div>
+	<div class="menu-item-settings wp-clearfix" id="menu-item-settings-{{$id}}">
+		{{if .IsCustom}}<p class="field-url description description-wide"><label for="edit-menu-item-url-{{$id}}">URL<br /><input type="text" id="edit-menu-item-url-{{$id}}" class="widefat code edit-menu-item-url" name="menu-item-url[{{$id}}]" value="{{.Item.URL}}" /></label></p>{{end}}
+		<p class="description description-wide"><label for="edit-menu-item-title-{{$id}}">Navigation Label<br /><input type="text" id="edit-menu-item-title-{{$id}}" class="widefat edit-menu-item-title" name="menu-item-title[{{$id}}]" value="{{.Item.Label}}" /></label></p>
+		<p class="field-title-attribute field-attr-title description description-wide"><label for="edit-menu-item-attr-title-{{$id}}">Title Attribute<br /><input type="text" id="edit-menu-item-attr-title-{{$id}}" class="widefat edit-menu-item-attr-title" name="menu-item-attr-title[{{$id}}]" value="{{.Item.AttrTitle}}" /></label></p>
+		<p class="field-link-target description"><label for="edit-menu-item-target-{{$id}}"><input type="checkbox" id="edit-menu-item-target-{{$id}}" value="_blank" name="menu-item-target[{{$id}}]"{{if .TargetOpen}} checked="checked"{{end}} /> Open link in a new tab</label></p>
+		<div class="description-group">
+			<p class="field-css-classes description description-thin"><label for="edit-menu-item-classes-{{$id}}">CSS Classes (optional)<br /><input type="text" id="edit-menu-item-classes-{{$id}}" class="widefat code edit-menu-item-classes" name="menu-item-classes[{{$id}}]" value="{{.Item.Classes}}" /></label></p>
+			<p class="field-xfn description description-thin"><label for="edit-menu-item-xfn-{{$id}}">Link Relationship (XFN)<br /><input type="text" id="edit-menu-item-xfn-{{$id}}" class="widefat code edit-menu-item-xfn" name="menu-item-xfn[{{$id}}]" value="{{.Item.XFN}}" /></label></p>
+		</div>
+		<p class="field-description description description-wide"><label for="edit-menu-item-description-{{$id}}">Description<br /><textarea id="edit-menu-item-description-{{$id}}" class="widefat edit-menu-item-description" rows="3" cols="20" name="menu-item-description[{{$id}}]">{{.Item.Description}}</textarea><span class="description">The description will be displayed in the menu if the active theme supports it.</span></label></p>
+		<div class="field-move-combo description-group">
+			<p class="description description-wide"><label for="edit-menu-item-parent-{{$id}}">Menu Parent</label><select class="edit-menu-item-parent widefat" id="edit-menu-item-parent-{{$id}}" name="menu-item-parent[{{$id}}]"></select></p>
+			<p class="description description-wide"><label for="edit-menu-item-order-{{$id}}">Menu Order</label><select class="edit-menu-item-order widefat" id="edit-menu-item-order-{{$id}}" name="menu-item-order[{{$id}}]"></select></p>
+		</div>
+		<fieldset class="field-move hide-if-no-js description description-wide">
+			<span class="field-move-visual-label" aria-hidden="true">Move</span>
+			<button type="button" class="button-link menus-move menus-move-up" data-dir="up">Up one</button>
+			<button type="button" class="button-link menus-move menus-move-down" data-dir="down">Down one</button>
+			<button type="button" class="button-link menus-move menus-move-left" data-dir="left"></button>
+			<button type="button" class="button-link menus-move menus-move-right" data-dir="right"></button>
+			<button type="button" class="button-link menus-move menus-move-top" data-dir="top">To the top</button>
+		</fieldset>
+		<div class="menu-item-actions description-wide submitbox">
+			{{if and (not .IsCustom) .Original}}<p class="link-to-original">Original: <a href="{{.OrigURL}}">{{.Original}}</a></p>{{end}}
+			<a class="item-delete submitdelete deletion" id="delete-{{$id}}" href="/wp-admin/nav-menus#menu-to-edit">Remove</a> <span class="meta-sep hide-if-no-js"> | </span>
+			<a class="item-cancel submitcancel hide-if-no-js" id="cancel-{{$id}}" href="/wp-admin/nav-menus#menu-item-settings-{{$id}}">Cancel</a>
+		</div>
+		<input class="menu-item-data-db-id" type="hidden" name="menu-item-db-id[{{$id}}]" value="{{$id}}" />
+		<input class="menu-item-data-object-id" type="hidden" name="menu-item-object-id[{{$id}}]" value="{{.Item.TargetID}}" />
+		<input class="menu-item-data-object" type="hidden" name="menu-item-object[{{$id}}]" value="{{.Item.Object}}" />
+		<input class="menu-item-data-parent-id" type="hidden" name="menu-item-parent-id[{{$id}}]" value="{{.ParentID}}" />
+		<input class="menu-item-data-position" type="hidden" name="menu-item-position[{{$id}}]" value="{{.Item.Order}}" />
+		<input class="menu-item-data-type" type="hidden" name="menu-item-type[{{$id}}]" value="{{.Item.Kind}}" />
+	</div>
+	<ul class="menu-item-transport"></ul>
+</li>
+{{end}}
+
+{{define "menu-checklist"}}{{range $i, $it := .Items}}{{checklist $it (sub -1 $i)}}{{end}}{{end}}
+
+{{define "admin/nav-menus"}}{{template "admin-header" .}}{{with .Data}}
+<div class="wrap">
+<h1 class="wp-heading-inline">Menus</h1>
+<a href="/wp-admin/customize" class="page-title-action hide-if-no-customize">Manage with Live Preview</a>
+<hr class="wp-header-end">
+<nav class="nav-tab-wrapper wp-clearfix" aria-label="Secondary menu">
+	<a href="/wp-admin/nav-menus" class="nav-tab{{if eq .Tab "edit"}} nav-tab-active{{end}}"{{if eq .Tab "edit"}} aria-current="page"{{end}}>Edit Menus</a>
+	{{if and (not .NoLocations) (gt .MenuCount 0)}}<a href="/wp-admin/nav-menus?action=locations" class="nav-tab{{if eq .Tab "locations"}} nav-tab-active{{end}}">Manage Locations</a>{{end}}
+</nav>
+{{template "notices" $}}
+{{if eq .Tab "locations"}}
+<div id="menu-locations-wrap">
+<form method="post" action="/wp-admin/nav-menus">
+	<input type="hidden" name="action" value="locations" /><input type="hidden" name="_wpnonce" value="{{.LocationsNon}}" />
+	<table class="widefat fixed" id="menu-locations-table">
+	<thead><tr><th scope="col" class="manage-column column-locations">Theme Location</th><th scope="col" class="manage-column column-menus">Assigned Menu</th></tr></thead>
+	<tbody class="menu-locations">
+	{{range .Locations}}<tr class="menu-locations-row"><td class="menu-location-title"><label for="locations-{{.Slug}}">{{.Name}}</label></td>
+		<td class="menu-location-menus"><select name="menu-locations[{{.Slug}}]" id="locations-{{.Slug}}">{{range .Options}}<option value="{{.Value}}"{{if .Selected}} selected="selected"{{end}}>{{safe .Label}}</option>{{end}}</select></td></tr>{{end}}
+	</tbody>
+	</table>
+	<p class="button-controls wp-clearfix"><input type="submit" name="nav-menu-locations" id="nav-menu-locations" class="button button-primary left" value="Save Changes" /></p>
+</form>
+</div>
+{{else}}
+<div class="manage-menus">
+	{{if lt .MenuCount 1}}<span class="first-menu-message">Create your first menu below. <span class="screen-reader-text">Fill in the Menu Name and click the Create Menu button to create your first menu.</span></span><!-- /first-menu-message -->
+	{{else if lt .MenuCount 2}}<span class="add-edit-menu-action">Edit your menu below, or <a href="/wp-admin/nav-menus?action=edit&amp;menu=0">create a new menu</a>. Do not forget to save your changes! <span class="screen-reader-text">Click the Save Menu button to save your changes.</span></span><!-- /add-edit-menu-action -->
+	{{else}}<form method="get" action="/wp-admin/nav-menus">
+		<input type="hidden" name="action" value="edit" />
+		<label for="select-menu-to-edit" class="selected-menu">Select a menu to edit:</label>
+		<select name="menu" id="select-menu-to-edit">{{if .AddNew}}<option value="0" selected="selected">&mdash; Select &mdash;</option>{{end}}{{$sel := .Selected}}{{range .Menus}}<option value="{{.ID}}"{{if and $sel (eq .ID $sel.ID)}} selected="selected"{{end}}>{{.Name}}{{if .Location}} (Set as a location){{end}}</option>{{end}}</select>
+		<span class="submit-btn"><input type="submit" class="button" value="Select"></span>
+		<span class="add-new-menu-action">or <a href="/wp-admin/nav-menus?action=edit&amp;menu=0">create a new menu</a>. Do not forget to save your changes! <span class="screen-reader-text">Click the Save Menu button to save your changes.</span></span><!-- /add-new-menu-action -->
+	</form>{{end}}
+</div><!-- /manage-menus -->
+<div id="nav-menus-frame" class="wp-clearfix">
+<div id="menu-settings-column" class="metabox-holder{{if .AddNew}} metabox-holder-disabled{{end}}">
+	<div class="clear"></div>
+	<form id="nav-menu-meta" class="nav-menu-meta" method="post" enctype="multipart/form-data">
+		<input type="hidden" name="menu" id="nav-menu-meta-object-id" value="{{if .Selected}}{{.Selected.ID}}{{else}}0{{end}}" />
+		<input type="hidden" name="action" value="add-menu-item" />
+		<input type="hidden" id="menu-settings-column-nonce" name="menu-settings-column-nonce" value="{{.ColumnNonce}}" />
+		<h2>Add menu items</h2>
+		<div id="side-sortables" class="accordion-container">
+		<ul class="outer-border">
+		{{template "menu-box" dict "ID" "page" "Title" "Pages" "Recent" .RecentPages "All" .AllPages "Kind" "posttype" "Disabled" .Disabled}}
+		{{template "menu-box" dict "ID" "post" "Title" "Posts" "Recent" .RecentPosts "All" .RecentPosts "Kind" "posttype" "Disabled" .Disabled}}
+		<li class="control-section accordion-section   add-custom-links" id="add-custom-links">
+			<h3 class="accordion-section-title hndle">
+				<button type="button" class="accordion-trigger" aria-expanded="false" aria-controls="add-custom-links-content">
+					<span class="accordion-title">Custom Links <span class="dashicons dashicons-arrow-down" aria-hidden="true"></span></span>
+				</button>
+			</h3>
+			<div class="accordion-section-content " id="add-custom-links-content">
+				<div class="inside">
+				<div class="customlinkdiv" id="customlinkdiv">
+					<input type="hidden" value="custom" name="menu-item[-1][menu-item-type]" />
+					<p id="menu-item-url-wrap" class="wp-clearfix">
+						<label for="custom-menu-item-url">URL</label>
+						<input id="custom-menu-item-url" name="menu-item[-1][menu-item-url]" type="text"{{if .Disabled}} disabled='disabled'{{end}} class="code menu-item-textbox form-required" placeholder="https://" />
+						<span id="custom-url-error" class="error-message" style="display: none;">Please provide a valid link.</span>
+					</p>
+					<p id="menu-item-name-wrap" class="wp-clearfix">
+						<label for="custom-menu-item-name">Link Text</label>
+						<input id="custom-menu-item-name" name="menu-item[-1][menu-item-title]" type="text"{{if .Disabled}} disabled='disabled'{{end}} class="regular-text menu-item-textbox" />
+					</p>
+					<p class="button-controls button-controls-customlinkdiv">
+						<span class="add-to-menu">
+							<input id="submit-customlinkdiv" name="add-custom-menu-item" type="submit"{{if .Disabled}} disabled='disabled'{{end}} class="button submit-add-to-menu right" value="Add to Menu" />
+							<span class="spinner"></span>
+						</span>
+					</p>
+				</div><!-- /.customlinkdiv -->
+				</div><!-- .inside -->
+			</div><!-- .accordion-section-content -->
+		</li><!-- .accordion-section -->
+		{{template "menu-box" dict "ID" "category" "Title" "Categories" "Recent" .Categories "All" .Categories "Kind" "taxonomy" "Disabled" .Disabled}}
+		{{template "menu-box" dict "ID" "post_tag" "Title" "Tags" "Recent" .Tags "All" .Tags "Kind" "taxonomy" "Disabled" .Disabled}}
+		</ul><!-- .outer-border -->
+		</div><!-- .accordion-container -->
+	</form>
+</div><!-- /#menu-settings-column -->
+<div id="menu-management-liquid"><div id="menu-management">
+	<form id="update-nav-menu" method="post" enctype="multipart/form-data">
+		<h2>Menu structure</h2>
+		<div class="menu-edit">
+			<input type="hidden" name="nav-menu-data" />
+			<input type="hidden" id="update-nav-menu-nonce" name="update-nav-menu-nonce" value="{{.UpdateNonce}}" />
+			<input type="hidden" name="action" value="update" />
+			<input type="hidden" name="menu" id="menu" value="{{if .Selected}}{{.Selected.ID}}{{else}}0{{end}}" />
+			<div id="nav-menu-header"><div class="major-publishing-actions wp-clearfix">
+				<label class="menu-name-label" for="menu-name">Menu Name</label>
+				<input name="menu-name" id="menu-name" type="text" class="menu-name regular-text menu-item-textbox form-required" required="required"{{if .AddNew}} aria-describedby="menu-name-desc"{{end}} value="{{if .Selected}}{{.Selected.Name}}{{end}}" />
+				<div class="publishing-action"><input type="submit" name="save_menu" id="save_menu_header" class="button button-primary button-large menu-save" value="{{if .IsNew}}Create Menu{{else}}Save Menu{{end}}" /></div>
+			</div></div>
+			<div id="post-body"><div id="post-body-content" class="wp-clearfix">
+				{{if .AddNew}}<p class="post-body-plain" id="menu-name-desc">Give your menu a name, then click Create Menu.</p>
+				{{else}}
+				<div class="drag-instructions post-body-plain"{{if not .Rows}} style="display: none;"{{end}}><p>Drag the items into the order you prefer. Click the arrow on the right of the item to reveal additional configuration options.</p></div>
+				<div id="menu-instructions" class="post-body-plain{{if .Rows}} menu-instructions-inactive{{end}}"><p>Add menu items from the column on the left.</p></div>
+				<div id="nav-menu-bulk-actions-top" class="bulk-actions"{{if not .Rows}} style="display: none;"{{end}}>
+					<label class="bulk-select-button" for="bulk-select-switcher-top"><input type="checkbox" id="bulk-select-switcher-top" name="bulk-select-switcher-top" class="bulk-select-switcher"> <span class="bulk-select-button-label">Bulk Select</span></label>
+				</div>
+				<ul class="menu" id="menu-to-edit">{{range .Rows}}{{template "menu-edit-item" .}}{{end}}</ul>
+				<div id="nav-menu-bulk-actions-bottom" class="bulk-actions"{{if not .Rows}} style="display: none;"{{end}}>
+					<label class="bulk-select-button" for="bulk-select-switcher-bottom"><input type="checkbox" id="bulk-select-switcher-bottom" name="bulk-select-switcher-top" class="bulk-select-switcher"> <span class="bulk-select-button-label">Bulk Select</span></label>
+					<input type="button" class="deletion menu-items-delete disabled" value="Remove Selected Items">
+					<div id="pending-menu-items-to-delete"><p>List of menu items selected for deletion:</p><ul></ul></div>
+				</div>
+				{{end}}
+				<div class="menu-settings">
+					<h3>Menu Settings</h3>
+					<fieldset class="menu-settings-group auto-add-pages"><legend class="menu-settings-group-name howto">Auto add pages</legend>
+						<div class="menu-settings-input checkbox-input"><input type="checkbox"{{if and .Selected .Selected.AutoAdd}} checked="checked"{{end}} name="auto-add-pages" id="auto-add-pages" value="1" /> <label for="auto-add-pages">Automatically add new top-level pages to this menu</label></div></fieldset>
+					{{if .Locations}}<fieldset class="menu-settings-group menu-theme-locations"><legend class="menu-settings-group-name howto">Menu location</legend>
+						{{range .Locations}}<div class="menu-settings-input checkbox-input"><input type="checkbox"{{if .Assigned}} checked="checked"{{end}} name="menu-locations[{{.Slug}}]" id="locations-{{.Slug}}" value="1" /> <label for="locations-{{.Slug}}">{{.Name}}</label>{{if and .CurrentName (not .Assigned)}} <span class="theme-location-set">(Currently set to: {{.CurrentName}})</span>{{end}}</div>{{end}}
+					</fieldset>{{end}}
+				</div>
+			</div></div>
+			<div id="nav-menu-footer"><div class="major-publishing-actions wp-clearfix">
+				<div class="publishing-action"><input type="submit" name="save_menu" id="save_menu_footer" class="button button-primary button-large menu-save" value="{{if .IsNew}}Create Menu{{else}}Save Menu{{end}}" /></div>
+				{{if gt .MenuCount 0}}{{if .AddNew}}<span class="cancel-action"><a class="submitcancel cancellation menu-cancel" href="/wp-admin/nav-menus">Cancel</a></span>{{else if .DeleteURL}}<span class="delete-action"><a class="submitdelete deletion menu-delete" href="{{.DeleteURL}}">Delete Menu</a></span>{{end}}{{end}}
+			</div></div>
+		</div>
+	</form>
+</div></div>
+</div>
+{{end}}
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}
+
+{{define "menu-box"}}{{$box := printf "add-%s" .ID}}{{if eq .Kind "posttype"}}{{$box = printf "add-post-type-%s" .ID}}{{end}}{{$pfx := printf "posttype-%s" .ID}}{{if eq .Kind "taxonomy"}}{{$pfx = printf "taxonomy-%s" .ID}}{{end}}<li class="control-section accordion-section  {{if eq .ID "page"}} open{{end}} {{$box}}" id="{{$box}}">
+	<h3 class="accordion-section-title hndle">
+		<button type="button" class="accordion-trigger" aria-expanded="{{if eq .ID "page"}}true{{else}}false{{end}}" aria-controls="{{$box}}-content">
+			<span class="accordion-title">{{.Title}} <span class="dashicons dashicons-arrow-down" aria-hidden="true"></span></span>
+		</button>
+	</h3>
+	<div class="accordion-section-content " id="{{$box}}-content">
+		<div class="inside">
+		<div id="{{$pfx}}" class="{{.Kind}}div">
+			{{if eq .Kind "posttype"}}<ul id="posttype-{{.ID}}-tabs" class="posttype-tabs add-menu-item-tabs">
+				<li class="tabs"><a class="nav-tab-link" data-type="tabs-panel-posttype-{{.ID}}-most-recent" href="#tabs-panel-posttype-{{.ID}}-most-recent">Most Recent</a></li>
+				<li><a class="nav-tab-link" data-type="{{.ID}}-all" href="#{{.ID}}-all">View All</a></li>
+				<li><a class="nav-tab-link" data-type="tabs-panel-posttype-{{.ID}}-search" href="#tabs-panel-posttype-{{.ID}}-search">Search</a></li>
+			</ul><!-- .posttype-tabs -->
+			<div id="tabs-panel-posttype-{{.ID}}-most-recent" class="tabs-panel tabs-panel-active" role="region" aria-label="Most Recent" tabindex="0">
+				<ul id="{{.ID}}checklist-most-recent" class="categorychecklist form-no-clear">{{$d := .Disabled}}{{range $i, $it := .Recent}}{{checklist $it (sub -100 $i) $d}}{{end}}</ul>
+			</div><!-- /.tabs-panel -->
+			<div class="tabs-panel tabs-panel-view-all tabs-panel-inactive" id="{{.ID}}-all" role="region" aria-label="View All" tabindex="0">
+				<ul id="{{.ID}}checklist" data-wp-lists="list:{{.ID}}" class="categorychecklist form-no-clear">{{range $i, $it := .All}}{{checklist $it (sub -500 $i) $d}}{{end}}</ul>
+			</div><!-- /.tabs-panel -->
+			<div class="tabs-panel tabs-panel-inactive" id="tabs-panel-posttype-{{.ID}}-search" role="region" aria-label="Search" tabindex="0">
+				<p class="quick-search-wrap"><label for="quick-search-posttype-{{.ID}}" class="screen-reader-text">Search</label><input type="search"{{if .Disabled}} disabled='disabled'{{end}} class="quick-search" value="" name="quick-search-posttype-{{.ID}}" id="quick-search-posttype-{{.ID}}" /><span class="spinner"></span> <input type="submit" name="submit" id="submit-quick-search-posttype-{{.ID}}" class="button button-small quick-search-submit hide-if-js" value="Search" /></p>
+				<ul id="{{.ID}}-search-checklist" data-wp-lists="list:{{.ID}}" class="categorychecklist form-no-clear"></ul>
+			</div><!-- /.tabs-panel -->
+			{{else}}<ul id="taxonomy-{{.ID}}-tabs" class="taxonomy-tabs add-menu-item-tabs">
+				<li class="tabs"><a class="nav-tab-link" data-type="tabs-panel-{{.ID}}-pop" href="#tabs-panel-{{.ID}}-pop">Most Used</a></li>
+				<li><a class="nav-tab-link" data-type="tabs-panel-{{.ID}}-all" href="#tabs-panel-{{.ID}}-all">View All</a></li>
+			</ul><!-- .taxonomy-tabs -->
+			<div id="tabs-panel-{{.ID}}-pop" class="tabs-panel tabs-panel-active" role="region" aria-label="Most Used" tabindex="0">
+				<ul id="{{.ID}}checklist-pop" class="categorychecklist form-no-clear">{{$d := .Disabled}}{{range $i, $it := .Recent}}{{checklist $it (sub -100 $i) $d}}{{end}}</ul>
+			</div><!-- /.tabs-panel -->
+			<div id="tabs-panel-{{.ID}}-all" class="tabs-panel tabs-panel-view-all tabs-panel-inactive" role="region" aria-label="View All" tabindex="0">
+				<ul id="{{.ID}}checklist" data-wp-lists="list:{{.ID}}" class="categorychecklist form-no-clear">{{range $i, $it := .All}}{{checklist $it (sub -500 $i) $d}}{{end}}</ul>
+			</div><!-- /.tabs-panel -->{{end}}
+			<p class="button-controls" data-items-type="{{$pfx}}">
+				<span class="list-controls hide-if-no-js">
+					<input type="checkbox"{{if .Disabled}} disabled='disabled'{{end}} id="{{.ID}}-tab" class="select-all" />
+					<label for="{{.ID}}-tab">Select All</label>
+				</span>
+				<span class="add-to-menu">
+					<input type="submit"{{if .Disabled}} disabled='disabled'{{end}} class="button submit-add-to-menu right" value="Add to Menu" name="add-{{if eq .Kind "posttype"}}post-type{{else}}taxonomy{{end}}-menu-item" id="submit-{{$pfx}}" />
+					<span class="spinner"></span>
+				</span>
+			</p>
+		</div><!-- /.{{.Kind}}div -->
+		</div><!-- .inside -->
+	</div><!-- .accordion-section-content -->
+</li><!-- .accordion-section -->{{end}}

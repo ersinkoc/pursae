@@ -1,0 +1,256 @@
+{{define "admin/options"}}{{template "admin-header" .}}{{with .Data}}
+<div class="wrap">
+<h1>{{$.Title}}</h1>
+{{template "notices" $}}
+<form method="post" action="/wp-admin/{{if eq .Page "permalink"}}options-permalink{{else}}options{{end}}" novalidate="novalidate">
+<input type="hidden" name="option_page" value="{{.Page}}" /><input type="hidden" name="action" value="update" />
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+{{if eq .Page "general"}}{{template "options-general" .}}{{end}}
+{{if eq .Page "writing"}}{{template "options-writing" .}}{{end}}
+{{if eq .Page "reading"}}{{template "options-reading" .}}{{end}}
+{{if eq .Page "discussion"}}{{template "options-discussion" .}}{{end}}
+{{if eq .Page "media"}}{{template "options-media" .}}{{end}}
+{{if eq .Page "permalink"}}{{template "options-permalink" .}}{{end}}
+<p class="submit"><input type="submit" name="submit" id="submit" class="button button-primary" value="Save Changes" /></p>
+</form>
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}
+
+{{define "options-general"}}<table class="form-table" role="presentation">
+<tr><th scope="row"><label for="blogname">Site Title</label></th>
+<td><input name="blogname" type="text" id="blogname" value="{{settingStr "blogname"}}" class="regular-text" /></td></tr>
+<tr><th scope="row"><label for="blogdescription">Tagline</label></th>
+<td><input name="blogdescription" type="text" id="blogdescription" aria-describedby="tagline-description" value="{{settingStr "blogdescription"}}" class="regular-text" placeholder="" />
+<p class="description" id="tagline-description">In a few words, explain what this site is about. Example: &#8220;Just another WordPress site.&#8221;</p></td></tr>
+<tr><th scope="row"><label for="siteurl">WordPress Address (URL)</label></th>
+<td><input name="siteurl" type="url" id="siteurl" value="{{settingStr "siteurl"}}" class="regular-text code" /></td></tr>
+<tr><th scope="row"><label for="home">Site Address (URL)</label></th>
+<td><input name="home" type="url" id="home" aria-describedby="home-description" value="{{settingStr "home"}}" class="regular-text code" />
+<p class="description" id="home-description">Enter the same address here unless you <a href="https://developer.wordpress.org/advanced-administration/server/wordpress-in-directory/">want your site home page to be different from your WordPress installation directory</a>.</p></td></tr>
+<tr><th scope="row"><label for="new_admin_email">Administration Email Address</label></th>
+<td><input name="admin_email" type="email" id="new_admin_email" aria-describedby="new-admin-email-description" value="{{settingStr "admin_email"}}" class="regular-text ltr" />
+<p class="description" id="new-admin-email-description">This address is used for admin purposes. If you change this, an email will be sent to your new address to confirm it. <strong>The new address will not become active until confirmed.</strong></p></td></tr>
+<tr><th scope="row">Membership</th>
+<td><fieldset><legend class="screen-reader-text"><span>Membership</span></legend><label for="users_can_register">
+<input name="users_can_register" type="checkbox" id="users_can_register" value="1"{{if settingBool "users_can_register"}} checked="checked"{{end}} />
+Anyone can register</label></fieldset></td></tr>
+<tr><th scope="row"><label for="default_role">New User Default Role</label></th>
+<td><select name="default_role" id="default_role">{{range .Roles}}<option{{if .Checked}} selected="selected"{{end}} value="{{.Value}}">{{.Label}}</option>{{end}}</select></td></tr>
+<tr><th scope="row"><label for="WPLANG">Site Language <span class="dashicons dashicons-translation" aria-hidden="true"></span></label></th>
+<td><select name="WPLANG" id="WPLANG"><option value="" lang="en" selected="selected" data-installed="1">English (United States)</option></select></td></tr>
+<tr><th scope="row"><label for="timezone_string">Timezone</label></th>
+<td><select id="timezone_string" name="timezone_string" aria-describedby="timezone-description">
+<optgroup label="UTC"><option value="UTC"{{if eq .TZ "UTC"}} selected="selected"{{end}}>UTC</option></optgroup>
+<optgroup label="Cities">{{range .Timezones}}<option value="{{.}}"{{if eq . $.TZ}} selected="selected"{{end}}>{{.}}</option>{{end}}</optgroup>
+<optgroup label="Manual Offsets">{{range (seq -12 14)}}{{if ne . 0}}{{$v := printf "UTC%+d" .}}<option value="{{$v}}"{{if eq $v $.TZ}} selected="selected"{{end}}>{{$v}}</option>{{end}}{{end}}</optgroup>
+</select>
+<p class="description" id="timezone-description">Choose either a city in the same timezone as you or a UTC (Coordinated Universal Time) time offset.</p>
+<p class="timezone-info"><span id="utc-time">Universal time is <code>{{.Now.UTC.Format "2006-01-02 15:04:05"}}</code>.</span>
+<span id="local-time">Local time is <code>{{date .Now "Y-m-d H:i:s"}}</code>.</span></p></td></tr>
+<tr><th scope="row">Date Format</th>
+<td><fieldset><legend class="screen-reader-text"><span>Date Format</span></legend>
+{{range .DateFormats}}<label><input type="radio" name="date_format" value="{{.Value}}"{{if .Checked}} checked="checked"{{end}} /> <span class="date-time-text format-i18n">{{.Label}}</span><code>{{.Value}}</code></label><br />
+{{end}}<label><input type="radio" name="date_format" id="date_format_custom_radio" value="\c\u\s\t\o\m"{{if .DateCustom}} checked="checked"{{end}} /> <span class="date-time-text date-time-custom-text">Custom:<span class="screen-reader-text"> enter a custom date format in the following field</span></span></label>
+<label for="date_format_custom" class="screen-reader-text">Custom date format:</label><input type="text" name="date_format_custom" id="date_format_custom" value="{{dateFormat}}" class="small-text" />
+<br /><p><strong>Preview:</strong> <span class="example">{{date .Now ""}}</span></p></fieldset></td></tr>
+<tr><th scope="row">Time Format</th>
+<td><fieldset><legend class="screen-reader-text"><span>Time Format</span></legend>
+{{range .TimeFormats}}<label><input type="radio" name="time_format" value="{{.Value}}"{{if .Checked}} checked="checked"{{end}} /> <span class="date-time-text format-i18n">{{.Label}}</span><code>{{.Value}}</code></label><br />
+{{end}}<label><input type="radio" name="time_format" id="time_format_custom_radio" value="\c\u\s\t\o\m"{{if .TimeCustom}} checked="checked"{{end}} /> <span class="date-time-text date-time-custom-text">Custom:<span class="screen-reader-text"> enter a custom time format in the following field</span></span></label>
+<label for="time_format_custom" class="screen-reader-text">Custom time format:</label><input type="text" name="time_format_custom" id="time_format_custom" value="{{timeFormat}}" class="small-text" />
+<br /><p><strong>Preview:</strong> <span class="example">{{date .Now timeFormat}}</span></p>
+<p class="date-time-doc"><a href="https://wordpress.org/documentation/article/customize-date-and-time-format/">Documentation on date and time formatting</a>.</p></fieldset></td></tr>
+<tr><th scope="row"><label for="start_of_week">Week Starts On</label></th>
+<td><select name="start_of_week" id="start_of_week">{{range $i, $d := .Weekdays}}<option value="{{$i}}"{{if eq $i (settingInt "start_of_week")}} selected="selected"{{end}}>{{$d}}</option>{{end}}</select></td></tr>
+</table>{{end}}
+
+{{define "options-writing"}}<table class="form-table" role="presentation">
+<tr><th scope="row"><label for="default_category">Default Post Category</label></th>
+<td><select name="default_category" id="default_category" class="postform">{{range .Categories}}<option class="level-{{.Depth}}" value="{{.ID}}"{{if eq .ID (settingID "default_category")}} selected="selected"{{end}}>{{repeat "&nbsp;&nbsp;&nbsp;" .Depth | safe}}{{.Name}}</option>{{end}}</select></td></tr>
+<tr><th scope="row"><label for="default_post_format">Default Post Format</label></th>
+<td><select name="default_post_format" id="default_post_format">{{range .Formats}}<option value="{{.}}"{{if eq . (settingStr "default_post_format")}} selected="selected"{{end}}>{{if eq . "0"}}Standard{{else}}{{.}}{{end}}</option>{{end}}</select></td></tr>
+<tr><th scope="row">Default editor for all users</th>
+<td id="classic-editor-options"><p><input type="radio" name="classic-editor-replace" id="classic-editor-classic" value="classic"{{if eq (settingStr "classic-editor-replace") "classic"}} checked{{end}} /> <label for="classic-editor-classic">Classic editor</label></p>
+<p><input type="radio" name="classic-editor-replace" id="classic-editor-block" value="block"{{if ne (settingStr "classic-editor-replace") "classic"}} checked{{end}} /> <label for="classic-editor-block">Gotenberg (block editor)</label></p></td></tr>
+<tr><th scope="row">Allow users to switch editors</th>
+<td><p><input type="radio" name="classic-editor-allow-users" id="classic-editor-allow" value="allow"{{if eq (settingStr "classic-editor-allow-users") "allow"}} checked{{end}} /> <label for="classic-editor-allow">Yes</label></p>
+<p><input type="radio" name="classic-editor-allow-users" id="classic-editor-disallow" value="disallow"{{if ne (settingStr "classic-editor-allow-users") "allow"}} checked{{end}} /> <label for="classic-editor-disallow">No</label></p>
+<p class="description">The Classic Editor is a built-in WordPress Go plugin. When switching is allowed, each post opens in the editor last used for it.</p></td></tr>
+</table>{{end}}
+
+{{define "options-reading"}}<table class="form-table" role="presentation">
+<tr><th scope="row">Your homepage displays</th>
+<td id="front-static-pages"><fieldset><legend class="screen-reader-text"><span>Your homepage displays</span></legend>
+<p><label><input name="show_on_front" type="radio" value="posts" class="tog"{{if ne (settingStr "show_on_front") "page"}} checked="checked"{{end}} /> Your latest posts</label></p>
+<p><label><input name="show_on_front" type="radio" value="page" class="tog"{{if eq (settingStr "show_on_front") "page"}} checked="checked"{{end}} /> A <a href="/wp-admin/edit?post_type=page">static page</a> (select below)</label></p>
+<ul>
+	<li><label for="page_on_front">Homepage: <select name="page_on_front" id="page_on_front"><option value="0">&mdash; Select &mdash;</option>{{range .Pages}}<option class="level-0" value="{{.ID}}"{{if eq .ID (settingID "page_on_front")}} selected="selected"{{end}}>{{.Title}}</option>{{end}}</select></label></li>
+	<li><label for="page_for_posts">Posts page: <select name="page_for_posts" id="page_for_posts"><option value="0">&mdash; Select &mdash;</option>{{range .Pages}}<option class="level-0" value="{{.ID}}"{{if eq .ID (settingID "page_for_posts")}} selected="selected"{{end}}>{{.Title}}</option>{{end}}</select></label></li>
+</ul>
+</fieldset>
+<script>
+	jQuery( function( $ ) {
+		var section = $( '#front-static-pages' ), staticPage = section.find( 'input:radio[value="page"]' ), selects = section.find( 'select' ),
+			check_disabled = function() { selects.prop( 'disabled', ! staticPage.prop( 'checked' ) ); };
+		check_disabled();
+		section.find( 'input:radio' ).on( 'change', check_disabled );
+	} );
+</script></td></tr>
+<tr><th scope="row"><label for="posts_per_page">Number of recent posts shown on archive pages</label></th>
+<td><input name="posts_per_page" type="number" step="1" min="1" id="posts_per_page" value="{{settingInt "posts_per_page"}}" class="small-text" /></td></tr>
+<tr><th scope="row"><label for="posts_per_rss">Number of recent items shown in syndication feeds</label></th>
+<td><input name="posts_per_rss" type="number" step="1" min="1" id="posts_per_rss" value="{{settingInt "posts_per_rss"}}" class="small-text" /></td></tr>
+<tr><th scope="row">For each post in a feed, include</th>
+<td><fieldset><legend class="screen-reader-text"><span>For each post in a feed, include</span></legend>
+<p><label><input name="rss_use_excerpt" type="radio" value="0"{{if not (settingBool "rss_use_excerpt")}} checked="checked"{{end}} /> Full text</label><br />
+<label><input name="rss_use_excerpt" type="radio" value="1"{{if settingBool "rss_use_excerpt"}} checked="checked"{{end}} /> Excerpt</label></p>
+<p class="description">Your theme determines how content is displayed in browsers. <a href="https://wordpress.org/documentation/article/customize-rss-feeds/">Learn more about feeds</a>.</p>
+</fieldset></td></tr>
+<tr class="option-site-visibility"><th scope="row">Search engine visibility</th>
+<td><fieldset><legend class="screen-reader-text"><span>Search engine visibility</span></legend>
+<label for="blog_public"><input name="blog_public" type="checkbox" id="blog_public" value="0"{{if not (settingBool "blog_public")}} checked="checked"{{end}} />
+Discourage search engines from indexing this site</label>
+<p class="description">It is up to search engines to honor this request.</p>
+</fieldset></td></tr>
+</table>{{end}}
+
+{{define "options-discussion"}}<table class="form-table indent-children" role="presentation">
+<tr><th scope="row">Default post settings</th>
+<td><fieldset><legend class="screen-reader-text"><span>Default post settings</span></legend>
+<label for="default_pingback_flag"><input name="default_pingback_flag" type="checkbox" id="default_pingback_flag" value="1"{{if settingBool "default_pingback_flag"}} checked="checked"{{end}} /> Attempt to notify any blogs linked to from the post</label><br />
+<label for="default_ping_status"><input name="default_ping_status" type="checkbox" id="default_ping_status" value="open"{{if eq (settingStr "default_ping_status") "open"}} checked="checked"{{end}} /> Allow link notifications from other blogs (pingbacks and trackbacks) on new posts</label><br />
+<label for="default_comment_status"><input name="default_comment_status" type="checkbox" id="default_comment_status" value="open"{{if eq (settingStr "default_comment_status") "open"}} checked="checked"{{end}} /> Allow people to submit comments on new posts</label><br />
+<p class="description">Individual posts may override these settings. Changes here will only be applied to new posts.</p>
+</fieldset></td></tr>
+<tr><th scope="row">Other comment settings</th>
+<td><fieldset><legend class="screen-reader-text"><span>Other comment settings</span></legend>
+<label for="require_name_email"><input type="checkbox" name="require_name_email" id="require_name_email" value="1"{{if settingBool "require_name_email"}} checked="checked"{{end}} /> Comment author must fill out name and email</label><br />
+<label for="comment_registration"><input name="comment_registration" type="checkbox" id="comment_registration" value="1"{{if settingBool "comment_registration"}} checked="checked"{{end}} /> Users must be registered and logged in to comment</label><br />
+<input name="close_comments_for_old_posts" type="checkbox" id="close_comments_for_old_posts" value="1"{{if settingBool "close_comments_for_old_posts"}} checked="checked"{{end}} /> <label for="close_comments_for_old_posts">Automatically close comments on old posts</label>
+<ul>
+	<li><label for="close_comments_days_old">Close comments when post is how many days old</label> <input name="close_comments_days_old" type="number" step="1" min="0" id="close_comments_days_old" value="{{settingInt "close_comments_days_old"}}" class="small-text" /></li>
+</ul>
+<input name="show_comments_cookies_opt_in" type="checkbox" id="show_comments_cookies_opt_in" value="1"{{if settingBool "show_comments_cookies_opt_in"}} checked="checked"{{end}} /> <label for="show_comments_cookies_opt_in">Show comments cookies opt-in checkbox, allowing comment author cookies to be set</label><br />
+<input name="thread_comments" type="checkbox" id="thread_comments" value="1"{{if settingBool "thread_comments"}} checked="checked"{{end}} /> <label for="thread_comments">Enable threaded (nested) comments</label>
+<ul>
+	<li><label for="thread_comments_depth">Number of levels for threaded (nested) comments</label> <select name="thread_comments_depth" id="thread_comments_depth">{{range .Depths}}<option value="{{.}}"{{if eq . (settingInt "thread_comments_depth")}} selected="selected"{{end}}>{{.}}</option>{{end}}</select></li>
+</ul>
+</fieldset></td></tr>
+<tr><th scope="row">Comment Pagination</th>
+<td><fieldset><legend class="screen-reader-text"><span>Comment Pagination</span></legend>
+<input name="page_comments" type="checkbox" id="page_comments" value="1"{{if settingBool "page_comments"}} checked="checked"{{end}} /> <label for="page_comments">Break comments into pages</label>
+<ul>
+	<li><label for="comments_per_page">Top level comments per page</label> <input name="comments_per_page" type="number" step="1" min="0" id="comments_per_page" value="{{settingInt "comments_per_page"}}" class="small-text" /></li>
+	<li><label for="default_comments_page">Comments page to display by default</label> <select name="default_comments_page" id="default_comments_page"><option value="newest"{{if eq (settingStr "default_comments_page") "newest"}} selected="selected"{{end}}>last page</option><option value="oldest"{{if eq (settingStr "default_comments_page") "oldest"}} selected="selected"{{end}}>first page</option></select></li>
+	<li><label for="comment_order">Comments to display at the top of each page</label> <select name="comment_order" id="comment_order"><option value="asc"{{if eq (settingStr "comment_order") "asc"}} selected="selected"{{end}}>older</option><option value="desc"{{if eq (settingStr "comment_order") "desc"}} selected="selected"{{end}}>newer</option></select></li>
+</ul>
+</fieldset></td></tr>
+<tr><th scope="row">Email me whenever</th>
+<td><fieldset><legend class="screen-reader-text"><span>Email me whenever</span></legend>
+<label for="comments_notify"><input name="comments_notify" type="checkbox" id="comments_notify" value="1"{{if settingBool "comments_notify"}} checked="checked"{{end}} /> Anyone posts a comment</label><br />
+<label for="moderation_notify"><input name="moderation_notify" type="checkbox" id="moderation_notify" value="1"{{if settingBool "moderation_notify"}} checked="checked"{{end}} /> A comment is held for moderation</label>
+</fieldset></td></tr>
+<tr><th scope="row">Before a comment appears</th>
+<td><fieldset><legend class="screen-reader-text"><span>Before a comment appears</span></legend>
+<label for="comment_moderation"><input name="comment_moderation" type="checkbox" id="comment_moderation" value="1"{{if settingBool "comment_moderation"}} checked="checked"{{end}} /> Comment must be manually approved</label><br />
+<label for="comment_previously_approved"><input type="checkbox" name="comment_previously_approved" id="comment_previously_approved" value="1"{{if settingBool "comment_previously_approved"}} checked="checked"{{end}} /> Comment author must have a previously approved comment</label>
+</fieldset></td></tr>
+<tr><th scope="row">Comment Moderation</th>
+<td><fieldset><legend class="screen-reader-text"><span>Comment Moderation</span></legend>
+<p><label for="comment_max_links">Number of links to allow in a comment before holding for moderation:</label> <input name="comment_max_links" type="number" step="1" min="0" id="comment_max_links" value="{{settingInt "comment_max_links"}}" class="small-text" aria-describedby="comment_links_moderation_desc" /> <span id="comment_links_moderation_desc">(A common characteristic of comment spam is a large number of hyperlinks.)</span></p>
+<p><label for="moderation_keys">When a comment contains any of these words in its content, author name, URL, email, IP address, or browser&#8217;s user agent string, it will be held in the <a href="/wp-admin/edit-comments?comment_status=moderated">moderation queue</a>. One word or IP address per line. It will match inside words, so &#8220;press&#8221; will match &#8220;WordPress&#8221;.</label></p>
+<p><textarea name="moderation_keys" rows="10" cols="50" id="moderation_keys" class="large-text code">{{settingStr "moderation_keys"}}</textarea></p>
+</fieldset></td></tr>
+<tr><th scope="row">Disallowed Comment Keys</th>
+<td><fieldset><legend class="screen-reader-text"><span>Disallowed Comment Keys</span></legend>
+<p><label for="disallowed_keys">When a comment contains any of these words in its content, author name, URL, email, IP address, or browser&#8217;s user agent string, it will be put in the Trash. One word or IP address per line. It will match inside words, so &#8220;press&#8221; will match &#8220;WordPress&#8221;.</label></p>
+<p><textarea name="disallowed_keys" rows="10" cols="50" id="disallowed_keys" class="large-text code">{{settingStr "disallowed_keys"}}</textarea></p>
+</fieldset></td></tr>
+</table>
+<h2 class="title">Avatars</h2>
+<p>An avatar is an image that can be associated with a user across multiple websites. In this area, you can choose to display avatars of users who interact with the site.</p>
+<table class="form-table" role="presentation">
+<tr><th scope="row">Avatar Display</th>
+<td><fieldset><legend class="screen-reader-text"><span>Avatar Display</span></legend>
+<label for="show_avatars"><input type="checkbox" id="show_avatars" name="show_avatars" value="1"{{if settingBool "show_avatars"}} checked="checked"{{end}} /> Show Avatars</label>
+</fieldset></td></tr>
+<tr class="avatar-settings"><th scope="row">Maximum Rating</th>
+<td><fieldset><legend class="screen-reader-text"><span>Maximum Rating</span></legend>
+<label><input type="radio" name="avatar_rating" value="G"{{if eq (settingStr "avatar_rating") "G"}} checked="checked"{{end}} /> G &#8212; Suitable for all audiences</label><br />
+<label><input type="radio" name="avatar_rating" value="PG"{{if eq (settingStr "avatar_rating") "PG"}} checked="checked"{{end}} /> PG &#8212; Possibly offensive, usually for audiences 13 and above</label><br />
+<label><input type="radio" name="avatar_rating" value="R"{{if eq (settingStr "avatar_rating") "R"}} checked="checked"{{end}} /> R &#8212; Intended for adult audiences above 17</label><br />
+<label><input type="radio" name="avatar_rating" value="X"{{if eq (settingStr "avatar_rating") "X"}} checked="checked"{{end}} /> X &#8212; Even more mature than above</label><br />
+</fieldset></td></tr>
+<tr class="avatar-settings"><th scope="row">Default Avatar</th>
+<td class="defaultavatarpicker"><fieldset><legend class="screen-reader-text"><span>Default Avatar</span></legend>
+<p>For users without a custom avatar of their own, you can either display a generic logo or a generated one based on their email address.</p>
+<label><input type="radio" name="avatar_default" id="avatar_mystery" value="mystery"{{if eq (settingStr "avatar_default") "mystery"}} checked="checked"{{end}} /> Mystery Person</label><br />
+<label><input type="radio" name="avatar_default" id="avatar_blank" value="blank"{{if eq (settingStr "avatar_default") "blank"}} checked="checked"{{end}} /> Blank</label><br />
+<label><input type="radio" name="avatar_default" id="avatar_gravatar_default" value="gravatar_default"{{if eq (settingStr "avatar_default") "gravatar_default"}} checked="checked"{{end}} /> Gravatar Logo</label><br />
+<label><input type="radio" name="avatar_default" id="avatar_identicon" value="identicon"{{if eq (settingStr "avatar_default") "identicon"}} checked="checked"{{end}} /> Identicon (Generated)</label><br />
+<label><input type="radio" name="avatar_default" id="avatar_wavatar" value="wavatar"{{if eq (settingStr "avatar_default") "wavatar"}} checked="checked"{{end}} /> Wavatar (Generated)</label><br />
+<label><input type="radio" name="avatar_default" id="avatar_monsterid" value="monsterid"{{if eq (settingStr "avatar_default") "monsterid"}} checked="checked"{{end}} /> MonsterID (Generated)</label><br />
+<label><input type="radio" name="avatar_default" id="avatar_retro" value="retro"{{if eq (settingStr "avatar_default") "retro"}} checked="checked"{{end}} /> Retro (Generated)</label><br />
+<label><input type="radio" name="avatar_default" id="avatar_robohash" value="robohash"{{if eq (settingStr "avatar_default") "robohash"}} checked="checked"{{end}} /> RoboHash (Generated)</label><br />
+</fieldset></td></tr>
+</table>{{end}}
+
+{{define "options-media"}}<h2 class="title">Image sizes</h2>
+<p>The sizes listed below determine the maximum dimensions in pixels to use when adding an image to the Media Library.</p>
+<table class="form-table" role="presentation">
+<tr><th scope="row">Thumbnail size</th>
+<td><fieldset><legend class="screen-reader-text"><span>Thumbnail size</span></legend>
+<label for="thumbnail_size_w">Width</label> <input name="thumbnail_size_w" type="number" step="1" min="0" id="thumbnail_size_w" value="{{settingInt "thumbnail_size_w"}}" class="small-text" /><br />
+<label for="thumbnail_size_h">Height</label> <input name="thumbnail_size_h" type="number" step="1" min="0" id="thumbnail_size_h" value="{{settingInt "thumbnail_size_h"}}" class="small-text" />
+</fieldset>
+<input name="thumbnail_crop" type="checkbox" id="thumbnail_crop" value="1"{{if settingBool "thumbnail_crop"}} checked="checked"{{end}} /> <label for="thumbnail_crop">Crop thumbnail to exact dimensions (normally thumbnails are proportional)</label></td></tr>
+<tr><th scope="row">Medium size</th>
+<td><fieldset><legend class="screen-reader-text"><span>Medium size</span></legend>
+<label for="medium_size_w">Max Width</label> <input name="medium_size_w" type="number" step="1" min="0" id="medium_size_w" value="{{settingInt "medium_size_w"}}" class="small-text" /><br />
+<label for="medium_size_h">Max Height</label> <input name="medium_size_h" type="number" step="1" min="0" id="medium_size_h" value="{{settingInt "medium_size_h"}}" class="small-text" />
+</fieldset></td></tr>
+<tr><th scope="row">Large size</th>
+<td><fieldset><legend class="screen-reader-text"><span>Large size</span></legend>
+<label for="large_size_w">Max Width</label> <input name="large_size_w" type="number" step="1" min="0" id="large_size_w" value="{{settingInt "large_size_w"}}" class="small-text" /><br />
+<label for="large_size_h">Max Height</label> <input name="large_size_h" type="number" step="1" min="0" id="large_size_h" value="{{settingInt "large_size_h"}}" class="small-text" />
+</fieldset></td></tr>
+</table>
+<h2 class="title">Uploading Files</h2>
+<table class="form-table" role="presentation">
+<tr><th scope="row" colspan="2" class="th-full"><label for="uploads_use_yearmonth_folders"><input name="uploads_use_yearmonth_folders" type="checkbox" id="uploads_use_yearmonth_folders" value="1"{{if settingBool "uploads_use_yearmonth_folders"}} checked="checked"{{end}} /> Organize my uploads into month- and year-based folders</label></th></tr>
+</table>{{end}}
+
+{{define "options-permalink"}}<p>WordPress offers you the ability to create a custom URL structure for your permalinks and archives. Custom URL structures can improve the aesthetics, usability, and forward-compatibility of your links. A <a href="https://wordpress.org/documentation/article/customize-permalinks/">number of tags are available</a>, and here are some examples to get you started.</p>
+<h2 id="wp-settings-section-common-settings" class="title">Common Settings</h2>
+<p>Select the permalink structure for your website. Including the <code>%postname%</code> tag makes links easy to understand, and can help your posts rank higher in search engines.</p>
+<table class="form-table permalink-structure" role="presentation">
+<tr><th scope="row">Permalink structure</th>
+<td><fieldset class="structure-selection"><legend class="screen-reader-text">Permalink structure</legend>
+{{range $i, $p := .Permalinks}}<div class="row">
+	<input id="permalink-input-{{$i}}" name="selection" aria-describedby="permalink-{{$i}}" type="radio" value="{{$p.Value}}"{{if $p.Checked}} checked="checked"{{end}} />
+	<div><label for="permalink-input-{{$i}}">{{$p.Label}}</label>
+	<p><code id="permalink-{{$i}}">{{$p.Example}}</code></p></div>
+</div>
+{{end}}<div class="row">
+	<input id="custom_selection" name="selection" type="radio" value="custom"{{if .PermCustom}} checked="checked"{{end}} />
+	<div><label for="custom_selection">Custom Structure</label>
+	<p><label for="permalink_structure" class="screen-reader-text">Customize permalink structure by selecting available tags</label><span class="code"><code id="permalink-custom">{{.Home | printf "%s" | trimSlash}}</code>
+	<input name="permalink_structure" id="permalink_structure" type="text" value="{{settingStr "permalink_structure"}}" aria-describedby="permalink-custom" class="regular-text code" /></span></p>
+	<div class="available-structure-tags hide-if-no-js">
+		<div id="custom_selection_updated" aria-live="assertive" class="screen-reader-text"></div>
+		<fieldset><legend>Available tags:</legend>
+		<ul role="list">{{range (list "year|The year of the post, four digits, for example 2004." "monthnum|Month of the year, for example 05." "day|Day of the month, for example 28." "hour|Hour of the day, for example 15." "minute|Minute of the hour, for example 43." "second|Second of the minute, for example 33." "post_id|The unique ID of the post, for example 423." "postname|The sanitized post title (slug)." "category|Category slug. Nested sub-categories appear as nested directories in the URL." "author|A sanitized version of the author name.")}}{{$t := split . "|"}}<li><button type="button" class="button button-secondary" aria-label="{{index $t 0}} ({{index $t 1}})" data-added="{{index $t 0}} added to permalink structure" data-removed="{{index $t 0}} removed from permalink structure" data-used="{{index $t 0}} (already used in permalink structure)">%{{index $t 0}}%</button></li>{{end}}</ul>
+		</fieldset>
+	</div>
+	</div>
+</div>
+</fieldset></td></tr>
+</table>
+<h2 class="title">Optional</h2>
+<p>If you like, you may enter custom structures for your category and tag URLs here. For example, using <code>topics</code> as your category base would make your category links like <code>{{.Home}}topics/uncategorized/</code>. If you leave these blank the defaults will be used.</p>
+<table class="form-table" role="presentation">
+<tr><th><label for="category_base">Category base</label></th>
+<td><input name="category_base" id="category_base" type="text" value="{{settingStr "category_base"}}" class="regular-text code" /></td></tr>
+<tr><th><label for="tag_base">Tag base</label></th>
+<td><input name="tag_base" id="tag_base" type="text" value="{{settingStr "tag_base"}}" class="regular-text code" /></td></tr>
+</table>{{end}}

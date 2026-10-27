@@ -1,0 +1,100 @@
+{{define "admin-header"}}<!DOCTYPE html>
+<html class="wp-toolbar" lang="en-US">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{.Title}} &lsaquo; {{.SiteName}} &#8212; WordPress Go</title>
+<link rel="stylesheet" href="/wp-includes/css/dashicons.min.css">
+<link rel="stylesheet" href="/wp-includes/css/admin-bar.min.css">
+<link rel="stylesheet" href="/wp-admin/css/common.min.css">
+<link rel="stylesheet" href="/wp-admin/css/forms.min.css">
+<link rel="stylesheet" href="/wp-admin/css/admin-menu.min.css">
+<link rel="stylesheet" href="/wp-admin/css/dashboard.min.css">
+<link rel="stylesheet" href="/wp-admin/css/list-tables.min.css">
+<link rel="stylesheet" href="/wp-admin/css/edit.min.css">
+<link rel="stylesheet" href="/wp-admin/css/revisions.min.css">
+<link rel="stylesheet" href="/wp-admin/css/media.min.css">
+<link rel="stylesheet" href="/wp-admin/css/themes.min.css">
+<link rel="stylesheet" href="/wp-admin/css/about.min.css">
+<link rel="stylesheet" href="/wp-admin/css/nav-menus.min.css">
+<link rel="stylesheet" href="/wp-includes/css/wp-pointer.min.css">
+<link rel="stylesheet" href="/wp-admin/css/widgets.min.css">
+<link rel="stylesheet" href="/wp-admin/css/site-icon.min.css">
+<link rel="stylesheet" href="/wp-admin/css/l10n.min.css">
+<link rel="stylesheet" href="/wp-includes/css/dist/base-styles/admin-schemes.min.css">
+<link rel="stylesheet" href="/wp-admin/css/wp-tooltip.min.css">
+<link rel="stylesheet" href="/wp-includes/css/buttons.min.css">
+<link rel="stylesheet" href="/wp-includes/css/wp-auth-check.min.css">
+{{range .Styles}}<link rel="stylesheet" href="{{.}}">
+{{end}}{{with .Color.CSS}}<link rel="stylesheet" id="colors-css" href="{{.}}">
+{{end}}
+<link rel="stylesheet" href="/wp-admin/assets/css/admin-overrides.css">
+<script>
+var ajaxurl = '/wp-admin/admin-ajax',
+	pagenow = '{{.PageNow}}',
+	typenow = '{{.TypeNow}}',
+	adminpage = '{{.AdminPage}}',
+	thousandsSeparator = ',',
+	decimalPoint = '.',
+	isRtl = 0;
+var _wpColorScheme = {{.Color.Icons}};
+</script>
+{{.ExtraStyles}}{{.HeadScripts}}<link rel="stylesheet" href="/wp-includes/css/wpgo-brand.css?ver={{version}}">
+<link rel="icon" href="/wp-includes/images/wpgo/gopher-32.png" sizes="32x32">
+<link rel="icon" href="/wp-includes/images/wpgo/gopher-192.png" sizes="192x192">
+<link rel="apple-touch-icon" href="/wp-includes/images/wpgo/gopher-192.png">
+</head>
+<body class="wp-admin wp-core-ui no-js {{.BodyClass}} auto-fold admin-bar branch-0-1 version-{{version}} admin-color-{{.Color.Slug}} locale-en-us svg">
+<script>document.body.className = document.body.className.replace('no-js','js');</script>
+<div id="wpwrap">
+{{template "admin-menu" .}}
+<div id="wpcontent">
+{{template "admin-bar" .}}
+<div id="wpbody" role="main">
+<div id="wpbody-content">
+{{with .Help}}<div id="screen-meta" class="metabox-prefs">
+	<div id="contextual-help-wrap" class="hidden" tabindex="-1" aria-label="Contextual Help Tab">
+		<div id="contextual-help-back"></div>
+		<div id="contextual-help-columns">
+			<div class="contextual-help-tabs">
+				<ul><li id="tab-link-overview" class="active"><a href="#tab-panel-overview" aria-controls="tab-panel-overview">Overview</a></li></ul>
+			</div>
+			<div class="contextual-help-sidebar">
+				<p><strong>For more information:</strong></p>
+				<p><a href="{{.DocURL}}">{{.Doc}}</a></p>
+				<p><a href="https://wordpress.org/support/forums/">Support forums</a></p>
+			</div>
+			<div class="contextual-help-tabs-wrap">
+				<div id="tab-panel-overview" class="help-tab-content active">{{.Overview}}</div>
+			</div>
+		</div>
+	</div>
+</div>
+<div id="screen-meta-links">
+	<div id="contextual-help-link-wrap" class="hide-if-no-js screen-meta-toggle">
+		<button type="button" id="contextual-help-link" class="button button-compact show-settings" aria-controls="contextual-help-wrap" aria-expanded="false">Help</button>
+	</div>
+</div>
+{{end}}{{end}}
+
+{{define "notices"}}{{range .Notices}}<div class="notice notice-{{.Type}}{{if .Dismissible}} is-dismissible{{end}}"><p>{{.Message}}</p>{{if .Dismissible}}<button type="button" class="notice-dismiss"><span class="screen-reader-text">Dismiss this notice.</span></button>{{end}}</div>
+{{end}}{{end}}
+
+{{define "admin-footer"}}
+<div class="clear"></div></div><!-- wpbody-content -->
+<div class="clear"></div></div><!-- wpbody -->
+<div class="clear"></div></div><!-- wpcontent -->
+
+<div id="wpfooter" role="contentinfo">
+	<p id="footer-left" class="alignleft">
+		<span id="footer-thankyou">Thank you for creating with <a href="https://wordpress.org/">WordPress</a> Go.</span>
+	</p>
+	<p id="footer-upgrade" class="alignright">WordPress Go {{version}}</p>
+	<div class="clear"></div>
+</div>
+</div><!-- wpwrap -->
+{{.ExtraBodyHTML}}{{.FooterScripts}}{{.LateFooterHTML}}
+<div class="clear"></div>
+</body>
+</html>
+{{end}}

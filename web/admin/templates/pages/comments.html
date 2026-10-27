@@ -1,0 +1,147 @@
+{{define "admin/comments-list"}}{{template "admin-header" .}}{{with .Data}}
+<div class="wrap">
+<h1 class="wp-heading-inline">{{if .PostTitle}}Comments on &#8220;{{.PostTitle}}&#8221;{{else}}Comments{{end}}</h1>
+{{if .Search}}<span class="subtitle">Search results for: <strong>{{.Search}}</strong></span>{{end}}
+<hr class="wp-header-end">
+{{template "notices" $}}
+<form id="comments-form" method="get">
+<ul class="subsubsub">
+	<li class="all"><a href="/wp-admin/edit-comments?comment_status=all"{{if eq .Status "all"}} class="current" aria-current="page"{{end}}>All <span class="count">(<span class="all-count">{{.All}}</span>)</span></a> |</li>
+	<li class="mine"><a href="/wp-admin/edit-comments?comment_status=mine"{{if eq .Status "mine"}} class="current" aria-current="page"{{end}}>Mine</a> |</li>
+	<li class="moderated"><a href="/wp-admin/edit-comments?comment_status=pending"{{if eq .Status "pending"}} class="current" aria-current="page"{{end}}>Pending <span class="count">(<span class="pending-count">{{index .Counts "pending"}}</span>)</span></a> |</li>
+	<li class="approved"><a href="/wp-admin/edit-comments?comment_status=approved"{{if eq .Status "approved"}} class="current" aria-current="page"{{end}}>Approved <span class="count">(<span class="approved-count">{{index .Counts "approved"}}</span>)</span></a> |</li>
+	<li class="spam"><a href="/wp-admin/edit-comments?comment_status=spam"{{if eq .Status "spam"}} class="current" aria-current="page"{{end}}>Spam <span class="count">(<span class="spam-count">{{index .Counts "spam"}}</span>)</span></a> |</li>
+	<li class="trash"><a href="/wp-admin/edit-comments?comment_status=trash"{{if eq .Status "trash"}} class="current" aria-current="page"{{end}}>Trash <span class="count">(<span class="trash-count">{{index .Counts "trash"}}</span>)</span></a></li>
+</ul>
+<p class="search-box">
+	<label class="screen-reader-text" for="comment-search-input">Search Comments:</label>
+	<input type="search" id="comment-search-input" name="s" value="{{.Search}}" />
+	<input type="submit" id="search-submit" class="button button-compact" value="Search Comments" />
+</p>
+<input type="hidden" name="comment_status" value="{{.Status}}" />
+<input type="hidden" name="_wpnonce" value="{{.BulkNonce}}" />
+<div class="tablenav top">
+	{{template "comments-bulk" dict "Pos" "top" "Status" .Status}}
+	<div class="alignleft actions">
+		<label class="screen-reader-text" for="filter-by-comment-type">Filter by comment type</label>
+		<select id="filter-by-comment-type" name="comment_type">
+			<option value="">All comment types</option>
+			<option value="comment"{{if eq .Type "comment"}} selected="selected"{{end}}>Replies</option>
+			<option value="pings"{{if eq .Type "pings"}} selected="selected"{{end}}>Pings</option>
+		</select>
+		<input type="submit" name="filter_action" id="post-query-submit" class="button button-compact" value="Filter" />
+	</div>
+	{{template "tablenav-pages" .Pagination}}
+	<br class="clear" />
+</div>
+<h2 class="screen-reader-text">Comments list</h2>
+<table class="wp-list-table widefat fixed striped table-view-list comments">
+<thead>{{template "comments-head" dict "Top" true "D" .}}</thead>
+<tbody id="the-comment-list" data-wp-lists="list:comment">
+{{range .Rows}}
+<tr id="comment-{{.ID}}" class="{{.Class}}">
+	<th scope="row" class="check-column"><input id="cb-select-{{.ID}}" type="checkbox" name="delete_comments[]" value="{{.ID}}" /><label for="cb-select-{{.ID}}"><span class="screen-reader-text">Select comment</span></label></th>
+	<td class="author column-author" data-colname="Author"><strong>{{.Avatar}} {{.AuthorName}}</strong><br />
+		{{if .AuthorHost}}<a href="{{.AuthorURL}}">{{.AuthorHost}}</a><br />{{end}}
+		{{if .AuthorEmail}}<a href="mailto:{{.AuthorEmail}}">{{.AuthorEmail}}</a><br />{{end}}
+		{{if .AuthorIP}}<a href="/wp-admin/edit-comments?s={{.AuthorIP}}&amp;mode=detail">{{.AuthorIP}}</a>{{end}}</td>
+	<td class="comment column-comment has-row-actions column-primary" data-colname="Comment">
+		{{if .ParentNote}}<div class="comment-author">{{.ParentNote}}</div>{{end}}
+		{{.Content}}
+		<div class="row-actions">{{range $i, $a := .Actions}}<span class="{{$a.Class}}">{{if $i}} | {{end}}<a href="{{$a.URL}}" aria-label="{{$a.Aria}}">{{$a.Label}}</a></span>{{end}}</div>
+		<button type="button" class="toggle-row"><span class="screen-reader-text">Show more details</span></button>
+	</td>
+	<td class="response column-response" data-colname="In response to"><div class="response-links"><a href="{{.PostEditURL}}" class="comments-edit-item-link">{{.PostTitle}}</a><a href="{{.PostURL}}" class="comments-view-item-link">View Post</a><span class="post-com-count-wrapper post-com-count-{{.ID}}"><a href="/wp-admin/edit-comments?p={{.ID}}&amp;comment_status=approved" class="post-com-count post-com-count-approved"><span class="comment-count-approved" aria-hidden="true">{{.PostCount}}</span><span class="screen-reader-text">{{.PostCount}} approved comments</span></a></span></div></td>
+	<td class="date column-date" data-colname="Submitted on"><div class="submitted-on">{{if .Permalink}}<a href="{{.Permalink}}">{{.Date}}</a>{{else}}{{.Date}}{{end}}</div></td>
+</tr>
+{{else}}<tr class="no-items"><td class="colspanchange" colspan="5">No comments found.</td></tr>{{end}}
+</tbody>
+<tfoot>{{template "comments-head" dict "Top" false "D" .}}</tfoot>
+</table>
+<div class="tablenav bottom">
+	{{template "comments-bulk" dict "Pos" "bottom" "Status" .Status}}
+	{{template "tablenav-pages" .Pagination}}
+	<br class="clear" />
+</div>
+</form>
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}
+
+{{define "comments-bulk"}}<div class="alignleft actions bulkactions">
+	<label for="bulk-action-selector-{{.Pos}}" class="screen-reader-text">Select bulk action</label>
+	<select name="action{{if eq .Pos "bottom"}}2{{end}}" id="bulk-action-selector-{{.Pos}}">
+		<option value="-1">Bulk actions</option>
+		{{if eq .Status "trash"}}<option value="untrash">Restore</option><option value="delete">Delete permanently</option>
+		{{else if eq .Status "spam"}}<option value="unspam">Not spam</option><option value="delete">Delete permanently</option>
+		{{else}}<option value="unapprove">Unapprove</option><option value="approve">Approve</option><option value="spam">Mark as spam</option><option value="trash">Move to Trash</option>{{end}}
+	</select>
+	<input type="submit" id="doaction{{if eq .Pos "bottom"}}2{{end}}" class="button action button-compact" value="Apply" />
+</div>{{end}}
+
+{{define "comments-head"}}<tr>
+	<td {{if .Top}}id="cb" {{end}}class="manage-column column-cb check-column"><input id="cb-select-all-{{if .Top}}1{{else}}2{{end}}" type="checkbox" /><label for="cb-select-all-{{if .Top}}1{{else}}2{{end}}"><span class="screen-reader-text">Select All</span></label></td>
+	{{template "sort-th" dict "ID" (or (and .Top "author") "") "Col" "author" "Label" "Author" "Link" (index .D.SortLinks "comment_author")}}
+	<th scope="col" {{if .Top}}id="comment" {{end}}class="manage-column column-comment column-primary">Comment</th>
+	{{template "sort-th" dict "ID" (or (and .Top "response") "") "Col" "response" "Label" "In response to" "Link" (index .D.SortLinks "comment_post_ID")}}
+	{{template "sort-th" dict "ID" (or (and .Top "date") "") "Col" "date" "Label" "Submitted on" "Link" (index .D.SortLinks "comment_date")}}
+</tr>{{end}}
+
+{{define "admin/comment-edit"}}{{template "admin-header" .}}{{with .Data}}
+<form name="post" action="/wp-admin/comment" method="post" id="post">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<input type="hidden" name="action" value="editedcomment" />
+<input type="hidden" name="comment_ID" value="{{.C.ID}}" />
+<div class="wrap">
+<h1>Edit Comment</h1>
+{{template "notices" $}}
+<div id="poststuff">
+<div id="post-body" class="metabox-holder columns-2">
+<div id="post-body-content" class="edit-form-section edit-comment-section">
+	<div id="namediv" class="stuffbox">
+		<div class="inside">
+			<h2 class="edit-comment-author">Author</h2>
+			<fieldset><legend class="screen-reader-text">Comment Author</legend>
+			<table class="form-table editcomment" role="presentation"><tbody>
+				<tr><td class="first"><label for="name">Name</label></td><td><input type="text" name="newcomment_author" size="30" value="{{.C.AuthorName}}" id="name" /></td></tr>
+				<tr><td class="first"><label for="email">Email</label></td><td><input type="text" name="newcomment_author_email" size="30" value="{{.C.AuthorEmail}}" id="email" /></td></tr>
+				<tr><td class="first"><label for="newcomment_author_url">URL</label></td><td><input type="text" id="newcomment_author_url" name="newcomment_author_url" size="30" class="code" value="{{.C.AuthorURL}}" /></td></tr>
+			</tbody></table>
+			</fieldset>
+		</div>
+	</div>
+	<div id="postdiv" class="postarea">
+		<label for="content" class="screen-reader-text">Comment</label>
+		<textarea class="wp-editor-area" rows="12" cols="40" name="content" id="content" style="width:100%">{{.C.Content}}</textarea>
+	</div>
+</div>
+<div id="postbox-container-1" class="postbox-container">
+<div id="submitdiv" class="stuffbox">
+	<h2>Save</h2>
+	<div class="inside"><div class="submitbox" id="submitcomment">
+		<div id="minor-publishing">
+			<div id="misc-publishing-actions">
+				<div class="misc-pub-section misc-pub-comment-status" id="comment-status">Status:
+					<fieldset id="comment-status-radio"><legend class="screen-reader-text">Comment status</legend>
+					<label><input type="radio"{{if eq .C.Status "approved"}} checked="checked"{{end}} name="comment_status" value="approved" />Approved</label><br />
+					<label><input type="radio"{{if eq .C.Status "pending"}} checked="checked"{{end}} name="comment_status" value="pending" />Pending</label><br />
+					<label><input type="radio"{{if eq .C.Status "spam"}} checked="checked"{{end}} name="comment_status" value="spam" />Spam</label></fieldset>
+				</div>
+				<div class="misc-pub-section curtime misc-pub-curtime"><span id="timestamp">{{safe .DateLabel}}</span>
+					<div style="margin-top:6px"><input type="date" name="comment_date" value="{{.DateInput}}" /> <input type="time" name="comment_time" value="{{.TimeInput}}" /></div></div>
+				<div class="misc-pub-section misc-pub-response-to">In response to: <b><a href="{{.PostURL}}">{{.PostTitle}}</a></b></div>
+			</div>
+			<div class="clear"></div>
+		</div>
+		<div id="major-publishing-actions">
+			<div id="delete-action"><a class="submitdelete deletion" href="{{.DeleteURL}}">Move to Trash</a></div>
+			<div id="publishing-action"><input type="submit" name="save" id="save" class="button button-primary button-large" value="Update" /></div>
+			<div class="clear"></div>
+		</div>
+	</div></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</form>
+{{end}}{{template "admin-footer" .}}{{end}}

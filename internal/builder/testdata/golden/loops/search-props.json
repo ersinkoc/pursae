@@ -1,0 +1,30 @@
+[
+ {
+  "query": "s=e&e_search_props=se00002-343",
+  "status": 200,
+  "titles": [
+   "Third Quarter Notes",
+   "A Quiet Weekend",
+   "Building Pages Faster"
+  ]
+ },
+ {
+  "query": "s=a&e_search_props=se00002-343",
+  "status": 200,
+  "titles": [
+   "Third Quarter Notes",
+   "A Quiet Weekend",
+   "Building Pages Faster"
+  ]
+ },
+ {
+  "query": "s=gopher&e_search_props=se00002-343",
+  "status": 200,
+  "titles": []
+ },
+ {
+  "query": "s=e&e_search_props=zz00000-343",
+  "status": 404,
+  "titles": []
+ }
+]

@@ -1,0 +1,5 @@
+# Build output of tools/build-plugins.sh.
+# dev-key.* is a DEVELOPMENT signing key; never commit or trust it in production.
+*.zip
+dev-key.key
+.wpgo-pkg

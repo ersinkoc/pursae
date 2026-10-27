@@ -1,0 +1,18 @@
+{{define "admin-menu"}}<div id="adminmenumain" role="navigation" aria-label="Main menu">
+<a href="#wpbody-content" class="screen-reader-shortcut">Skip to main content</a>
+<a href="#wp-toolbar" class="screen-reader-shortcut">Skip to toolbar</a>
+<div id="adminmenuback"></div>
+<div id="adminmenuwrap">
+<ul id="adminmenu">
+{{range .Menu}}{{if .Separator}}
+	<li class="wp-not-current-submenu wp-menu-separator" aria-hidden="true"><div class="separator"></div></li>
+{{else}}{{$cls := printf "%s%s%s menu-top%s%s" (or (and .First "wp-first-item ") "") (or (and .Sub "wp-has-submenu ") "") (or (and .Current "wp-has-current-submenu wp-menu-open") "wp-not-current-submenu") (or (and .First " menu-top-first") "") (or (and .Last " menu-top-last") "")}}
+	<li class="{{$cls}} {{.ID}}" id="{{.ID}}">
+	<a href="/wp-admin/{{.Slug}}" class="{{$cls}}"{{if and .Current (not .Sub)}} aria-current="page"{{end}}><div class="wp-menu-image dashicons-before {{.Icon}}" aria-hidden="true"><br /></div><div class="wp-menu-name">{{.Title}}</div></a>
+	{{if .Sub}}<ul class="wp-submenu wp-submenu-wrap"><li class="wp-submenu-head" aria-hidden="true">{{.Title}}</li>{{range .Sub}}<li class="{{if .First}}wp-first-item{{end}}{{if .Current}} current{{end}}"><a href="/wp-admin/{{.Slug}}" class="{{if .First}}wp-first-item{{end}}{{if .Current}} current{{end}}"{{if .Current}} aria-current="page"{{end}}>{{.Title}}</a></li>{{end}}</ul>{{end}}</li>
+{{end}}{{end}}
+	<li id="collapse-menu" class="hide-if-no-js"><button type="button" id="collapse-button" aria-label="Collapse Main menu" aria-expanded="true"><span class="collapse-button-icon" aria-hidden="true"></span><span class="collapse-button-label">Collapse Menu</span></button></li>
+</ul>
+</div>
+</div>
+{{end}}

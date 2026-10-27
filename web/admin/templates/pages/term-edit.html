@@ -1,0 +1,43 @@
+{{define "admin/term-edit"}}{{template "admin-header" .}}{{with .Data}}
+<div class="wrap">
+<h1>{{$.Title}}</h1>
+{{template "notices" $}}
+<div id="ajax-response"></div>
+<form name="edittag" id="edittag" method="post" action="/wp-admin/term" class="validate">
+<input type="hidden" name="action" value="editedtag" />
+<input type="hidden" name="tag_ID" value="{{.Term.ID}}" />
+<input type="hidden" name="taxonomy" value="{{.Labels.Tax}}" />
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<table class="form-table" role="presentation">
+	<tr class="form-field form-required term-name-wrap">
+		<th scope="row"><label for="name">Name</label></th>
+		<td><input name="name" id="name" type="text" value="{{.Term.Name}}" size="40" aria-required="true" aria-describedby="name-description" />
+		<p class="description" id="name-description">The name is how it appears on your site.</p></td>
+	</tr>
+	<tr class="form-field term-slug-wrap">
+		<th scope="row"><label for="slug">Slug</label></th>
+		<td><input name="slug" id="slug" type="text" value="{{.Term.Slug}}" size="40" aria-describedby="slug-description" />
+		<p class="description" id="slug-description">The &#8220;slug&#8221; is the URL-friendly version of the name. It is usually all lowercase and contains only letters, numbers, and hyphens.</p></td>
+	</tr>
+	{{if .Labels.Hierarchical}}<tr class="form-field term-parent-wrap">
+		<th scope="row"><label for="parent">{{.Labels.ParentLabel}}</label></th>
+		<td><select name="parent" id="parent" class="postform" aria-describedby="parent-description">
+			<option value="-1">None</option>
+			{{range .All}}<option class="level-{{.Depth}}" value="{{.ID}}"{{if eq .ID $.Data.Term.ParentID}} selected="selected"{{end}}>{{repeat "&nbsp;&nbsp;&nbsp;" .Depth | safe}}{{.Name}}</option>{{end}}
+		</select>
+		<p class="description" id="parent-description">{{if eq .Labels.Tax "category"}}Categories, unlike tags, can have a hierarchy. You might have a Jazz category, and under that have children categories for Bebop and Big Band. Totally optional.{{else}}Assign a parent term to create a hierarchy. The term Jazz, for example, would be the parent of Bebop and Big Band.{{end}}</p></td>
+	</tr>{{end}}
+	<tr class="form-field term-description-wrap">
+		<th scope="row"><label for="description">Description</label></th>
+		<td><textarea name="description" id="description" rows="5" cols="50" class="large-text" aria-describedby="description-description">{{.Term.Description}}</textarea>
+		<p class="description" id="description-description">{{.Labels.Description}}</p></td>
+	</tr>
+</table>
+<div class="edit-tag-actions">
+	<input type="submit" class="button button-primary" value="Update" />
+	{{if not .IsDefault}}<span id="delete-link"><a class="delete" href="{{.DeleteURL}}">Delete</a></span>{{end}}
+</div>
+</form>
+<p><a href="{{.ViewURL}}">View {{lower .Labels.Singular}} archive</a> &nbsp;|&nbsp; <a href="/wp-admin/edit-tags?taxonomy={{.Labels.Tax}}">&larr; Go to {{.Labels.Name}}</a></p>
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}

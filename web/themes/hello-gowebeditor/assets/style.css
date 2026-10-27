@@ -1,0 +1,90 @@
+/*
+Theme Name: Hello GoWebEditor
+Description: A plain-vanilla, lightweight base theme for GoWebEditor. Build the header, footer and content templates with the Theme Builder; this stylesheet only normalizes the browser defaults.
+Version: 1.0.0
+License: GNU General Public License v2 or later
+Text Domain: hello-gowebeditor
+*/
+
+/* Reset ------------------------------------------------------------------- */
+html{line-height:1.15;-webkit-text-size-adjust:100%}
+*,:after,:before{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:1rem;font-weight:400;line-height:1.5;color:#333;background-color:#fff;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+main{display:block}
+h1,h2,h3,h4,h5,h6{margin-block-start:.5rem;margin-block-end:1rem;font-family:inherit;font-weight:500;line-height:1.2;color:inherit}
+h1{font-size:2.5rem}h2{font-size:2rem}h3{font-size:1.75rem}h4{font-size:1.5rem}h5{font-size:1.25rem}h6{font-size:1rem}
+p{margin-block-start:0;margin-block-end:.9rem}
+a{background-color:transparent;color:#c36;text-decoration:none}
+a:active,a:hover{color:#336}
+abbr[title]{border-bottom:none;text-decoration:underline dotted}
+b,strong{font-weight:bolder}
+code,kbd,pre,samp{font-family:monospace,monospace;font-size:1em}
+pre{overflow:auto;white-space:pre-wrap}
+small{font-size:80%}
+sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}
+sub{bottom:-.25em}sup{top:-.5em}
+img{border-style:none;height:auto;max-width:100%}
+figure{margin:0}
+hr{box-sizing:content-box;height:0;overflow:visible;border:0;border-top:1px solid hsla(0,0%,50%,.3);margin:1.5rem 0}
+blockquote{margin:0 0 1rem;padding-inline-start:1rem;border-inline-start:3px solid hsla(0,0%,50%,.5)}
+ul,ol{margin-block-start:0;margin-block-end:1rem;padding-inline-start:1.5rem}
+table{background-color:transparent;width:100%;margin-block-end:15px;font-size:.9em;border-spacing:0;border-collapse:collapse}
+table td,table th{padding:15px;line-height:1.5;vertical-align:top;border:1px solid hsla(0,0%,50%,.5)}
+table th{font-weight:700;text-align:start}
+button,input,optgroup,select,textarea{font-family:inherit;font-size:1rem;line-height:1.15;margin:0}
+button,input{overflow:visible}
+button,select{text-transform:none}
+[type=button],[type=reset],[type=submit],button{-webkit-appearance:button}
+input[type=search],input[type=text],input[type=email],input[type=url],input[type=password],input[type=number],input[type=tel],textarea,select{width:100%;border:1px solid #666;border-radius:3px;padding:.5rem 1rem;transition:all .3s;background:#fff;color:inherit}
+textarea{overflow:auto;resize:vertical}
+button,input[type=submit],[type=button]{display:inline-block;width:auto;font-weight:400;color:#c36;text-align:center;white-space:nowrap;user-select:none;background-color:transparent;border:1px solid #c36;padding:.5rem 1rem;font-size:1rem;border-radius:3px;transition:all .3s;cursor:pointer}
+button:hover,input[type=submit]:hover,[type=button]:hover{color:#fff;background-color:#c36}
+.elementor-search-form__submit,.elementor-search-form__submit:hover,.elementor-button,.elementor-button:hover{border:0;border-radius:0;padding:0}
+[hidden],template{display:none}
+
+/* Accessibility ----------------------------------------------------------- */
+.screen-reader-text{clip:rect(1px,1px,1px,1px);height:1px;overflow:hidden;position:absolute!important;width:1px;word-wrap:normal!important}
+.skip-link:focus{clip:auto!important;display:block;height:auto;left:5px;top:5px;width:auto;z-index:100000;padding:12px 20px;background:#fff;color:#333;text-decoration:none;box-shadow:0 0 2px 2px rgba(0,0,0,.6)}
+
+/* WordPress content ------------------------------------------------------- */
+.alignleft{float:left;margin-inline-end:1.5em;margin-block-end:1.5em}
+.alignright{float:right;margin-inline-start:1.5em;margin-block-end:1.5em}
+.aligncenter{clear:both;display:block;margin:0 auto 1.5em}
+.wp-caption{max-width:100%}
+.wp-caption-text{text-align:center;font-size:.85em;margin:.5em 0 1em}
+.gallery{display:flex;flex-wrap:wrap;gap:1em}
+.sticky-post{display:inline-block;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;color:#7a7a7a}
+.post-password-form input[type=password]{width:auto}
+
+/* Minimal defaults (shown while a page has no matching theme part) --------- */
+.site-header,.site-footer,.site-main{margin-inline:auto;width:100%;max-width:1140px;padding-inline:20px}
+.site-header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;padding-block:1rem}
+.site-header .site-title{margin:0;font-size:1.5rem;font-weight:500;line-height:1.2}
+.site-header .site-title a{color:inherit}
+.site-header .site-description{margin:0;font-size:.9rem;color:#7a7a7a}
+.site-header .custom-logo{max-height:60px;width:auto;display:block}
+.site-navigation ul{display:flex;flex-wrap:wrap;gap:4px 18px;margin:0;padding:0;list-style:none}
+.site-navigation ul ul{display:none}
+.site-navigation li{position:relative}
+.site-navigation li:hover>ul,.site-navigation li:focus-within>ul{display:block;position:absolute;z-index:10;min-width:180px;margin:0;padding:8px 12px;list-style:none;background:#fff;box-shadow:0 4px 14px rgba(0,0,0,.12)}
+.site-navigation a{color:inherit}
+.site-navigation .current-menu-item>a{font-weight:700}
+.site-main{padding-block:2rem}
+.site-main .page-header .entry-title{margin-top:0}
+.site-main article.post,.site-main article.page{margin-bottom:2.5rem}
+.site-main .entry-title a{color:inherit}
+.site-main .page-content article .entry-title{font-size:1.6rem;margin-bottom:.4rem}
+.site-main .entry-meta,.site-main .entry-footer{color:#7a7a7a;font-size:.85rem}
+.site-main .post-thumbnail img{display:block;margin-block-end:1rem}
+.site-main .pagination .nav-links,.site-main .post-navigation .nav-links{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;margin-block:1.5rem}
+.site-main .comments-area{margin-block-start:2.5rem}
+.site-main .comment-list{list-style:none;padding:0}
+.site-main .comment-list .children{list-style:none;padding-inline-start:1.5rem}
+.site-main .comment-body{margin-block-end:1.5rem}
+.site-footer{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding-block:2rem;border-top:1px solid #eee;font-size:.9rem;color:#7a7a7a}
+.site-footer p{margin:0}
+.site-footer .site-info{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.site-footer a{color:inherit}
+/* Theme-builder parts and full-width pages span the viewport. */
+.elementor-location-header,.elementor-location-footer{width:100%}
+.elementor-template-full-width .site-main,.page-template-elementor_header_footer .site-main{max-width:none;padding:0}

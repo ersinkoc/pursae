@@ -1,0 +1,67 @@
+{{/* Each view: the theme-builder part for the page (.GWE.Main) or the minimal default. */}}
+{{define "theme/index"}}{{template "header" .}}
+<main id="content" class="site-main">
+{{if and .GWE .GWE.Main}}{{.GWE.Main}}{{else}}
+	{{if .IsHomeHeader}}<header class="page-header"><h1 class="entry-title">{{.PostsPageTitle}}</h1></header>{{end}}
+	<div class="page-content">
+	{{range .Posts}}{{template "content" .}}{{else}}{{template "content-none" .}}{{end}}
+	</div>
+	{{.Pagination}}
+{{end}}
+</main>
+{{template "footer" .}}{{end}}
+
+{{define "theme/single"}}{{template "header" .}}
+<main id="content" class="site-main">
+{{if and .GWE .GWE.Main}}{{.GWE.Main}}{{else}}
+	{{with .Post}}{{template "content-single" (dict "Post" . "HideTitle" (and $.GWE $.GWE.HideTitle))}}{{end}}
+	{{.PostNav}}
+	{{template "comments" .}}
+{{end}}
+</main>
+{{template "footer" .}}{{end}}
+
+{{define "theme/page"}}{{template "header" .}}
+<main id="content" class="site-main">
+{{if and .GWE .GWE.Main}}{{.GWE.Main}}{{else}}
+	{{with .Post}}{{template "content-page" (dict "Post" . "HideTitle" (and $.GWE $.GWE.HideTitle))}}{{end}}
+	{{template "comments" .}}
+{{end}}
+</main>
+{{template "footer" .}}{{end}}
+
+{{define "theme/archive"}}{{template "header" .}}
+<main id="content" class="site-main">
+{{if and .GWE .GWE.Main}}{{.GWE.Main}}{{else}}
+	<header class="page-header"><h1 class="entry-title">{{.ArchiveTitle}}</h1>{{if .ArchiveDesc}}<div class="archive-description">{{.ArchiveDesc}}</div>{{end}}</header>
+	<div class="page-content">
+	{{range .Posts}}{{template "content" .}}{{else}}{{template "content-none" .}}{{end}}
+	</div>
+	{{.Pagination}}
+{{end}}
+</main>
+{{template "footer" .}}{{end}}
+
+{{define "theme/search"}}{{template "header" .}}
+<main id="content" class="site-main">
+{{if and .GWE .GWE.Main}}{{.GWE.Main}}{{else}}
+	<header class="page-header"><h1 class="entry-title">Search results for: <span>{{.SearchQuery}}</span></h1></header>
+	<div class="page-content">
+	{{range .Posts}}{{template "content" .}}{{else}}{{template "content-none" .}}{{end}}
+	</div>
+	{{.Pagination}}
+{{end}}
+</main>
+{{template "footer" .}}{{end}}
+
+{{define "theme/404"}}{{template "header" .}}
+<main id="content" class="site-main">
+{{if and .GWE .GWE.Main}}{{.GWE.Main}}{{else}}
+	<header class="page-header"><h1 class="entry-title">The page can&rsquo;t be found.</h1></header>
+	<div class="page-content">
+		<p>It looks like nothing was found at this location.</p>
+		{{template "searchform" .}}
+	</div>
+{{end}}
+</main>
+{{template "footer" .}}{{end}}

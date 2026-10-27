@@ -1,0 +1,8 @@
+{{define "admin/widgets"}}{{template "admin-header" .}}
+<div id="widgets-editor" class="blocks-widgets-container">
+	<div class="wrap hide-if-js widgets-editor-no-js">
+		<h1 class="wp-heading-inline">{{.Title}}</h1>
+		<div class="notice notice-error hide-if-js"><p>The block widgets require JavaScript. Please enable JavaScript in your browser settings.</p></div>
+	</div>
+</div>
+{{template "admin-footer" .}}{{end}}

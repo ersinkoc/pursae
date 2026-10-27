@@ -1,0 +1,130 @@
+{{define "admin/login"}}<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>{{.Title}} &lsaquo; {{.SiteName}} &#8212; WordPress Go</title>
+<meta name='robots' content='noindex, nofollow, noarchive' />
+<meta name="referrer" content="strict-origin-when-cross-origin" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="stylesheet" href="/wp-admin/assets/css/dashicons.min.css">
+<link rel="stylesheet" href="/wp-admin/assets/css/wp/buttons.min.css">
+<link rel="stylesheet" href="/wp-admin/assets/css/wp/forms.min.css">
+<link rel="stylesheet" href="/wp-admin/assets/css/wp/l10n.min.css">
+<link rel="stylesheet" href="/wp-admin/assets/css/wp/login.min.css">
+<link rel="stylesheet" href="/wp-admin/assets/css/pages/login.css">
+<link rel="stylesheet" href="/wp-admin/assets/css/responsive.css">
+<link rel="stylesheet" href="/wp-includes/css/wpgo-brand.css?ver={{version}}">
+<link rel="icon" href="/wp-includes/images/wpgo/gopher-32.png" sizes="32x32">
+<link rel="icon" href="/wp-includes/images/wpgo/gopher-192.png" sizes="192x192">
+<link rel="apple-touch-icon" href="/wp-includes/images/wpgo/gopher-192.png">
+</head>
+<body class="login no-js login-action-{{.Action}} wp-core-ui admin-color-modern locale-en-us">
+<script>document.body.className = document.body.className.replace('no-js','js');</script>
+<h1 class="screen-reader-text">{{.Title}}</h1>
+<div id="login">
+	<h1 role="presentation" class="wp-login-logo"><a href="{{.HomeURL}}">Powered by WordPress Go</a></h1>
+	{{if .Error}}<div id="login_error" class="notice notice-error"><p>{{.Error}}</p></div>{{end}}
+	{{if .Message}}<div class="notice notice-info message"><p>{{.Message}}</p></div>{{end}}
+	<form name="loginform" id="loginform" action="/wp-login" method="post">
+		<p>
+			<label for="user_login">Username or Email Address</label>
+			<input type="text" name="log" id="user_login"{{if .Error}} aria-describedby="login_error"{{end}} class="input" value="{{.Login}}" size="20" autocapitalize="off" autocomplete="username" required="required" />
+		</p>
+		<div class="user-pass-wrap">
+			<label for="user_pass">Password</label>
+			<div class="wp-pwd">
+				<input type="password" name="pwd" id="user_pass"{{if .Error}} aria-describedby="login_error"{{end}} class="input password-input" value="" size="20" autocomplete="current-password" spellcheck="false" required="required" />
+				<button type="button" class="button button-secondary wp-hide-pw hide-if-no-js" data-toggle="0" aria-label="Show password">
+					<span class="dashicons dashicons-visibility" aria-hidden="true"></span>
+				</button>
+			</div>
+		</div>
+		<p class="forgetmenot"><input name="rememberme" type="checkbox" id="rememberme" value="forever" {{if .Remember}}checked="checked"{{end}} /> <label for="rememberme">Remember Me</label></p>
+		<p class="submit">
+			<input type="submit" name="wp-submit" id="wp-submit" class="button button-primary button-large" value="Log In" />
+			<input type="hidden" name="redirect_to" value="{{.RedirectTo}}" />
+			<input type="hidden" name="testcookie" value="1" />
+		</p>
+	</form>
+	<p id="nav">
+		<a class="wp-login-lost-password" href="/wp-login?action=lostpassword">Lost your password?</a>
+	</p>
+	<p id="backtoblog"><a href="{{.HomeURL}}">&larr; Go to {{.SiteName}}</a></p>
+</div>
+<script>
+(function () {
+	var input = document.getElementById('user_login');
+	if (input && !input.value) { setTimeout(function () { try { input.focus(); input.select(); } catch (e) {} }, 200); }
+	var btn = document.querySelector('.wp-hide-pw'), pass = document.getElementById('user_pass');
+	if (!btn || !pass) return;
+	btn.addEventListener('click', function () {
+		var show = pass.type === 'password';
+		pass.type = show ? 'text' : 'password';
+		btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+		btn.setAttribute('data-toggle', show ? '1' : '0');
+		var icon = btn.querySelector('.dashicons');
+		icon.classList.toggle('dashicons-visibility', !show);
+		icon.classList.toggle('dashicons-hidden', show);
+	});
+})();
+</script>
+</body>
+</html>
+{{end}}
+
+{{define "login-head"}}<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>{{.Title}} &lsaquo; {{.SiteName}} &#8212; WordPress Go</title>
+<meta name='robots' content='noindex, nofollow, noarchive' />
+<meta name="referrer" content="strict-origin-when-cross-origin" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="stylesheet" href="/wp-admin/assets/css/dashicons.min.css">
+<link rel="stylesheet" href="/wp-admin/assets/css/wp/buttons.min.css">
+<link rel="stylesheet" href="/wp-admin/assets/css/wp/forms.min.css">
+<link rel="stylesheet" href="/wp-admin/assets/css/wp/l10n.min.css">
+<link rel="stylesheet" href="/wp-admin/assets/css/wp/login.min.css">
+<link rel="stylesheet" href="/wp-admin/assets/css/pages/login.css">
+<link rel="stylesheet" href="/wp-admin/assets/css/responsive.css">
+<link rel="stylesheet" href="/wp-includes/css/wpgo-brand.css?ver={{version}}">
+<link rel="icon" href="/wp-includes/images/wpgo/gopher-32.png" sizes="32x32">
+<link rel="icon" href="/wp-includes/images/wpgo/gopher-192.png" sizes="192x192">
+<link rel="apple-touch-icon" href="/wp-includes/images/wpgo/gopher-192.png">
+</head>
+<body class="login no-js login-action-{{.Action}} wp-core-ui admin-color-modern locale-en-us">
+<script>document.body.className = document.body.className.replace('no-js','js');</script>
+<h1 class="screen-reader-text">{{.Title}}</h1>
+<div id="login">
+	<h1 role="presentation" class="wp-login-logo"><a href="{{.HomeURL}}">Powered by WordPress Go</a></h1>
+	{{if .Error}}<div id="login_error" class="notice notice-error"><p>{{.Error}}</p></div>{{end}}{{end}}
+
+{{define "admin/login-lost"}}{{template "login-head" .}}
+	<div class="notice notice-info message"><p>Please enter your username or email address. You will receive an email message with instructions on how to reset your password.</p></div>
+	<form name="lostpasswordform" id="lostpasswordform" action="/wp-login?action=lostpassword" method="post">
+		<p><label for="user_login">Username or Email Address</label>
+		<input type="text" name="user_login" id="user_login" class="input" value="" size="20" autocapitalize="off" autocomplete="username" required="required" /></p>
+		<p class="submit"><input type="submit" name="wp-submit" id="wp-submit" class="button button-primary button-large" value="Get New Password" /></p>
+	</form>
+	<p id="nav"><a class="wp-login-log-in" href="/wp-login">Log in</a></p>
+	<p id="backtoblog"><a href="{{.HomeURL}}">&larr; Go to {{.SiteName}}</a></p>
+</div>
+</body></html>{{end}}
+
+{{define "admin/login-reset"}}{{template "login-head" .}}
+	<div class="notice notice-info message reset-pass"><p>Enter your new password below.</p></div>
+	<form name="resetpassform" id="resetpassform" action="/wp-login?action=resetpass" method="post" autocomplete="off">
+		<input type="hidden" id="user_login" value="{{.Login}}" autocomplete="off" />
+		<input type="hidden" name="rp_login" value="{{.Login}}" />
+		<input type="hidden" name="rp_key" value="{{.ResetKey}}" />
+		<div class="user-pass1-wrap"><p><label for="pass1">New password</label></p>
+			<div class="wp-pwd"><input type="password" name="pass1" id="pass1" class="input password-input" size="24" value="" autocomplete="new-password" spellcheck="false" required /></div></div>
+		<p class="user-pass2-wrap"><label for="pass2">Confirm new password</label><br />
+			<input type="password" name="pass2" id="pass2" class="input" size="20" value="" autocomplete="new-password" spellcheck="false" required /></p>
+		<p class="description indicator-hint">Hint: The password should be at least twelve characters long. To make it stronger, use upper and lower case letters, numbers, and symbols like ! " ? $ % ^ &amp; ).</p>
+		<p class="submit reset-pass-submit"><input type="submit" name="wp-submit" id="wp-submit" class="button button-primary button-large" value="Save Password" /></p>
+	</form>
+	<p id="nav"><a class="wp-login-log-in" href="/wp-login">Log in</a></p>
+	<p id="backtoblog"><a href="{{.HomeURL}}">&larr; Go to {{.SiteName}}</a></p>
+</div>
+</body></html>{{end}}
