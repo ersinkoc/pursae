@@ -332,6 +332,23 @@ func (s *Server) themeInstall(c *gin.Context) {
 		c.String(http.StatusForbidden, "Sorry, you are not allowed to install themes on this site.")
 		return
 	}
+	if c.Query("action") == "install-theme" { // reinstall a deleted bundled theme (theme_delete.go)
+		slug := c.Query("theme")
+		if !s.checkNonce(c, "install-theme_"+slug) {
+			s.denyNonce(c)
+			return
+		}
+		if t := themeBySlug(slug); t == nil || t.Package != nil || t.Custom {
+			c.Redirect(http.StatusFound, "/wp-admin/theme-install?error="+url.QueryEscape("The requested theme does not exist."))
+			return
+		}
+		if err := s.restoreTheme(c, slug); err != nil {
+			c.Redirect(http.StatusFound, "/wp-admin/theme-install?error="+url.QueryEscape(err.Error()))
+			return
+		}
+		c.Redirect(http.StatusFound, "/wp-admin/themes?installed="+url.QueryEscape(slug))
+		return
+	}
 	if c.Request.Method == http.MethodPost {
 		if !s.checkNonce(c, "theme-upload") {
 			s.denyNonce(c)
@@ -363,14 +380,25 @@ func (s *Server) themeInstall(c *gin.Context) {
 		ActivateURL, PreviewURL        string
 		Custom                         bool
 		Version                        string
+		InstallURL                     string // a deleted bundled theme: Install puts it back
 	}
 	browse := c.DefaultQuery("browse", "all")
 	search := strings.ToLower(strings.TrimSpace(c.Query("search")))
 	var cards []card
-	for _, t := range s.installedThemes() {
+	list := s.installedThemes()
+	for _, slug := range s.deletedThemes() {
+		if t := themeBySlug(slug); t != nil && t.Package == nil && !t.Custom && (t.Slug != helloThemeSlug || s.golementorOn()) {
+			list = append(list, t)
+		}
+	}
+	for _, t := range list {
 		cd := card{Name: t.Name, Author: t.Author, Screenshot: t.ScreenshotSrc(), Slug: t.Slug, Installed: true, Active: t.Slug == active.Slug,
 			Description: t.Description, Package: t.Package != nil, Version: t.Version,
 			ActivateURL: "/wp-admin/themes?action=activate&stylesheet=" + t.Slug + "&_wpnonce=" + s.nonce(c, "switch-theme_"+t.Slug), PreviewURL: "/?theme=" + t.Slug, Custom: t.Custom}
+		if s.themeDeleted(t.Slug) {
+			cd.Installed, cd.ActivateURL = false, ""
+			cd.InstallURL = "/wp-admin/theme-install?action=install-theme&theme=" + t.Slug + "&_wpnonce=" + s.nonce(c, "install-theme_"+t.Slug)
+		}
 		if search != "" && !strings.Contains(strings.ToLower(cd.Name+" "+cd.Author+" "+cd.Description), search) {
 			continue
 		}

@@ -149,13 +149,14 @@
 			<div class="theme-screenshot">
 				{{if .Screenshot}}<img src="{{.Screenshot}}?ver={{.Version}}" alt="" />{{end}}
 			</div>
-			<div class="notice notice-success notice-alt inline"><p>Installed{{if .Package}} &middot; uploaded package{{end}}</p></div>
-			<a class="more-details" href="/wp-admin/themes?theme={{.Slug}}">Details &amp; Preview</a>
+			{{if .Installed}}<div class="notice notice-success notice-alt inline"><p>Installed{{if .Package}} &middot; uploaded package{{end}}</p></div>
+			<a class="more-details" href="/wp-admin/themes?theme={{.Slug}}">Details &amp; Preview</a>{{end}}
 			<div class="theme-author">By {{.Author}}</div>
 			<div class="theme-id-container">
 				<h3 class="theme-name">{{.Name}}</h3>
 				<div class="theme-actions">
-				{{if .Active}}<button class="button button-primary button-compact disabled">Activated</button>
+				{{if .InstallURL}}<a class="button button-primary button-compact theme-install" href="{{.InstallURL}}" aria-label="Install {{.Name}}">Install</a>
+				{{else if .Active}}<button class="button button-primary button-compact disabled">Activated</button>
 					{{if .Custom}}<a class="button button-compact" href="/wp-admin/gowebeditor-theme-builder">Theme Builder</a>{{else}}<a class="button button-compact load-customize" href="/wp-admin/customize">Customize</a>{{end}}
 				{{else}}<a class="button button-primary button-compact activate" href="{{.ActivateURL}}" aria-label="Activate {{.Name}}">Activate</a>
 					<a class="button button-compact preview install-theme-preview" href="{{.PreviewURL}}" aria-label="Live Preview {{.Name}}">Live Preview</a>{{end}}

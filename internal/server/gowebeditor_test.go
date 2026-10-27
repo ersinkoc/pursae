@@ -29,12 +29,12 @@ func TestGoWebEditor(t *testing.T) {
 
 	// The pages list links to the builder.
 	_, body, _ := get(t, c, base+"/wp-admin/edit?post_type=page")
-	if !strings.Contains(body, "/wp-admin/post?post="+pageID+"&amp;action=elementor") || !strings.Contains(body, "Edit with Golementor") {
+	if !strings.Contains(body, "/wp-admin/post?post="+pageID+"&amp;action=golementor") || !strings.Contains(body, "Edit with Golementor") {
 		t.Errorf("pages list has no Edit with Golementor action")
 	}
 
 	// The editor page: skeleton, ordered assets, Backbone templates and the inline configs.
-	code, body, _ := get(t, c, base+"/wp-admin/post?post="+pageID+"&action=elementor")
+	code, body, _ := get(t, c, base+"/wp-admin/post?post="+pageID+"&action=golementor")
 	if code != http.StatusOK {
 		t.Fatalf("editor: %d %.300s", code, body)
 	}

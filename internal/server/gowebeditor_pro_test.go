@@ -50,7 +50,7 @@ func TestGoWebEditorPro(t *testing.T) {
 	}
 
 	// --- the editor ---------------------------------------------------------------------------------
-	code, body, _ := get(t, c, base+"/wp-admin/post?post="+pageID+"&action=elementor")
+	code, body, _ := get(t, c, base+"/wp-admin/post?post="+pageID+"&action=golementor")
 	if code != http.StatusOK {
 		t.Fatalf("editor: %d", code)
 	}

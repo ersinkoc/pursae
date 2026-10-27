@@ -11,6 +11,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -132,7 +133,7 @@ func (s *Server) gweFill(c *gin.Context, text string) string {
 		case "VER":
 			return gweVersion
 		case "GWEVER": // Golementor's own (patched) assets: a new wpgo build must bust browser caches
-			return gweVersion + "-" + Version
+			return gweAssetVer()
 		case "MAXUPLOAD":
 			return strconv.Itoa(maxUploadBytes)
 		case "MAXUPLOADMB":
@@ -215,10 +216,29 @@ func gweEditable(p *store.Post) bool {
 	return p != nil && (p.Type == "post" || p.Type == "page" || p.Type == gweLibrary || p.Type == gwePartType || gweV4Editable(p)) // + Golementor v4 components
 }
 
-// gweEditURL is the editor URL for a post.
+// gweAssetVer is the ?ver= of Golementor's own assets: the upstream build, the wpgo version and a
+// stamp of this binary, so a rebuilt server never serves stale editor CSS/JS from browser caches.
+func gweAssetVer() string { return gweVersion + "-" + Version + "." + buildStamp }
+
+// buildStamp identifies this binary (its modification time); "dev" when it cannot be read.
+var buildStamp = func() string {
+	exe, err := os.Executable()
+	if err != nil {
+		return "dev"
+	}
+	st, err := os.Stat(exe)
+	if err != nil {
+		return "dev"
+	}
+	return strconv.FormatInt(st.ModTime().Unix(), 36)
+}()
+
+// gweEditURL is the editor URL for a post. Upstream's action=elementor still opens it (redirected).
 func gweEditURL(id int64) string {
-	return "/wp-admin/post?post=" + itoa64(id) + "&action=elementor"
+	return "/wp-admin/post?post=" + itoa64(id) + "&action=" + gweEditAction
 }
+
+const gweEditAction = "golementor"
 
 var gweStatusLabels = map[string]string{"publish": "Published", "draft": "Draft", "pending": "Pending", "private": "Private",
 	"future": "Scheduled", "auto-draft": "Draft", "inherit": "Revision", "trash": "Trash"}
@@ -524,7 +544,7 @@ func gweIDCounterNext() uint32 {
 
 // --- editor page ------------------------------------------------------------------------------
 
-// gweEditor is post.php?action=elementor: the Golementor editor for one post.
+// gweEditor is post.php?action=golementor: the Golementor editor for one post.
 func (s *Server) gweEditor(c *gin.Context, p *store.Post) {
 	u := currentUser(c)
 	if !gweEditable(p) {
@@ -554,6 +574,11 @@ func (s *Server) gweEditor(c *gin.Context, p *store.Post) {
 	}
 	cfg["kit_id"] = kit.ID
 	cfg["autosave_interval"] = 60
+	// The template library looks up the plan of every listing (accessTier) in subscription_plans; every
+	// Golementor template is free and inserts directly, so only that plan exists.
+	freePlan := map[string]any{"free": map[string]any{"label": "Free", "promotion_url": "", "color": ""}}
+	cfg["library_connect"] = map[string]any{"is_connected": false, "user_id": nil, "user_roles": []any{}, "subscription_plans": freePlan,
+		"base_access_level": 0, "base_access_tier": "free", "current_access_level": 0, "current_access_tier": "free", "plan_type": "free", "user_email": nil}
 	s.gweProEditorConfig(c, cfg) // Golementor Pro: dynamic tags, display conditions, Pro controls
 	cfg["user"] = map[string]any{
 		"restrictions": []any{}, "is_administrator": u.Can("manage_options", nil), "introduction": gweUserMap(u, "gwe_introduction"),
@@ -598,9 +623,14 @@ func (s *Server) gweEditor(c *gin.Context, p *store.Post) {
 		page = strings.Replace(page, "@@CFG:"+id+"@@", js, 1)
 	}
 	page = strings.ReplaceAll(page, "@@TITLE@@", html.EscapeString(title))
+	page = gweWithSplash(page) // the loading screen (gowebeditor_splash.go); @@ASSETS@@ is filled next
+	// The Pages panel: every page of the site, opened, added, duplicated or set as the homepage from the builder.
+	page = strings.Replace(page, `"is_pages_panel_active":false`, `"is_pages_panel_active":true`, 1)
 	page = s.gweFill(c, page)
 	// gap-integrations: local Google Fonts in the preview
 	page = strings.Replace(page, "</body>", s.gweFontsEditorScript(c)+"</body>", 1)
+	// Homepage designs insert without Connect (gowebeditor_designs.go).
+	page = strings.Replace(page, "</body>", gweDesignsScript+"</body>", 1)
 	if js := s.gweEditorThemeScript(c, p); js != "" { // theme parts: Theme Builder / Save as theme
 		page = strings.Replace(page, "</body>", js+"</body>", 1)
 	}

@@ -51,6 +51,7 @@ func (s *Server) gweLibraryData(c *gin.Context, data map[string]any) (any, error
 			templates = append(templates, s.gweTemplateItem(c, p))
 		}
 	}
+	templates = append(templates, s.gweDesignItems(c)...) // ready-made homepage designs (gowebeditor_designs.go)
 	return map[string]any{"templates": templates, "config": map[string]any{}}, nil
 }
 
@@ -97,6 +98,16 @@ func (s *Server) gweSaveTemplate(c *gin.Context, data map[string]any, editorID i
 }
 
 func (s *Server) gweTemplateData(c *gin.Context, data map[string]any) (any, error) {
+	if src, _ := data["source"].(string); src == "remote" {
+		id, _ := data["template_id"].(string)
+		d := gweDesignByID(id)
+		if d == nil {
+			return nil, gweFail(http.StatusNotFound, "Template not found.")
+		}
+		tree := d.Build()
+		gweNewIDs(tree)
+		return map[string]any{"content": tree, "page_settings": map[string]any{}}, nil
+	}
 	p, err := s.gwePostFor(c, gweInt(data["template_id"]), "edit_post")
 	if err != nil {
 		return nil, err

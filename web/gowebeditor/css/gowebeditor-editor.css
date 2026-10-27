@@ -55,7 +55,6 @@
 .elementor-control-type-promotion_control,
 .e-promotion-react-wrapper,
 #elementor-template-library-header-menu .elementor-template-library-menu-item[data-tab="templates/blocks"],
-#elementor-template-library-header-menu .elementor-template-library-menu-item[data-tab="templates/pages"],
 .elementor-template-library-cloud-empty__button,
 .elementor-dynamic-tags-promo,
 .elementor-panel-menu-item-site-editor,
@@ -429,3 +428,8 @@ header.MuiAppBar-root .MuiToolbar-root .MuiStack-root:first-child > button:first
 	.elementor-editor-active * { transition-duration: 0.001ms !important; animation-duration: 0.001ms !important; }
 }
 /* GWE-UI-PREVIEW:END */
+
+/* Ready-made homepage designs in the library's Pages tab: no cloud preview or favorites behind them. */
+.elementor-template-library-template-remote .elementor-template-library-template-preview,
+.elementor-template-library-template-remote .elementor-template-library-favorite { display: none; }
+.elementor-template-library-template-remote .elementor-template-library-template-screenshot { background-size: cover; background-position: top center; }

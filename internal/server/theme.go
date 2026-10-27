@@ -329,7 +329,7 @@ func (s *Server) themesScreen(c *gin.Context) {
 		c.Redirect(http.StatusFound, "/wp-admin/themes?activated=true")
 		return
 	}
-	if c.Query("action") == "delete" { // delete_theme(): uploaded packages only (theme_install.go)
+	if c.Query("action") == "delete" { // delete_theme() (theme_delete.go)
 		slug := c.Query("stylesheet")
 		if !u.Can("delete_themes", nil) {
 			c.String(http.StatusForbidden, "Sorry, you are not allowed to delete themes on this site.")
@@ -339,7 +339,7 @@ func (s *Server) themesScreen(c *gin.Context) {
 			s.denyNonce(c)
 			return
 		}
-		if err := s.deleteThemePackage(c, slug); err != nil {
+		if err := s.deleteTheme(c, slug); err != nil {
 			c.String(http.StatusBadRequest, err.Error())
 			return
 		}
@@ -389,7 +389,7 @@ func (s *Server) themesScreen(c *gin.Context) {
 		if t.Slug == helloThemeSlug { // Golementor: the hello theme is built in the Theme Builder
 			j.Builder = "/wp-admin/gowebeditor-theme-builder"
 		}
-		if t.Package != nil && !t.Active && u.Can("delete_themes", nil) { // an uploaded package can be deleted
+		if !t.Active && u.Can("delete_themes", nil) { // every inactive theme can be deleted (theme_delete.go)
 			j.Actions["delete"] = "/wp-admin/themes?action=delete&stylesheet=" + t.Slug + "&_wpnonce=" + s.nonce(c, "delete-theme_"+t.Slug)
 		}
 		js = append(js, j)
@@ -416,7 +416,7 @@ func (s *Server) themesScreen(c *gin.Context) {
 	if c.Query("deleted") == "true" {
 		notices = append(notices, notice{Type: "success", Message: "The theme has been deleted.", Dismissible: true})
 	}
-	if t := themeBySlug(c.Query("installed")); t != nil && t.Package != nil {
+	if t := themeBySlug(c.Query("installed")); t != nil && !t.Custom { // an uploaded package or a reinstalled bundled theme
 		msg := template.HTMLEscapeString(t.Name) + " " + template.HTMLEscapeString(t.Version) + " has been installed."
 		if t.Slug != active.Slug {
 			msg += ` <a href="` + template.HTMLEscapeString("/wp-admin/themes?action=activate&stylesheet="+t.Slug+"&_wpnonce="+s.nonce(c, "switch-theme_"+t.Slug)) + `">Activate</a>`

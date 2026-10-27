@@ -1589,8 +1589,13 @@ func (s *Server) postEdit(c *gin.Context) {
 		c.String(http.StatusForbidden, "You cannot edit this item because it is in the Trash. Please restore it and try again.")
 		return
 	}
-	if c.Query("action") == "elementor" && s.golementorOn() { // Golementor
+	switch action := c.Query("action"); {
+	case action == gweEditAction && s.golementorOn(): // Golementor
 		s.gweEditor(c, p)
+		return
+	case action == "elementor" && s.golementorOn():
+		// Upstream's editor URL (bundled JS, old links): the browser keeps the #fragment across the redirect.
+		c.Redirect(http.StatusMovedPermanently, gweEditURL(p.ID))
 		return
 	}
 	s.renderEdit(c, p, false)

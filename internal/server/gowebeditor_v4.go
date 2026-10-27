@@ -422,7 +422,7 @@ func (s *Server) gweV4FooterScripts(c *gin.Context) string {
 		}
 	}
 	assets := s.links(c).HomeURL(gweAssetsPath)
-	ver := "?ver=" + gweVersion + "-" + Version
+	ver := "?ver=" + gweAssetVer()
 	seen := map[string]bool{}
 	var sb strings.Builder
 	for _, h := range handles {

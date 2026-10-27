@@ -288,7 +288,7 @@ func TestGapWidgetsSite(t *testing.T) {
 	if plain, _ := fetch("/gap-plain/"); strings.Contains(plain, "elementor-icons-gaptest") {
 		t.Error("custom icon stylesheet printed on a page without its icons")
 	}
-	_, editor, _ := get(t, c, base+"/wp-admin/post?post="+itoa64(videoPage)+"&action=elementor")
+	_, editor, _ := get(t, c, base+"/wp-admin/post?post="+itoa64(videoPage)+"&action=golementor")
 	if !strings.Contains(editor, `"custom_icon_type":"Fontello"`) || !strings.Contains(editor, `"label":"Gap Icons"`) ||
 		!strings.Contains(editor, `"customIconsURL":"`+base+`/wp-admin/gowebeditor-icons"`) {
 		t.Error("editor icon library misses the custom set")
@@ -310,7 +310,7 @@ func TestGapWidgetsSite(t *testing.T) {
 	}
 
 	// Popup editor: page settings CSS targets this popup's dialog.
-	_, popupEditor, _ := get(t, c, base+"/wp-admin/post?post="+itoa64(popupID)+"&action=elementor")
+	_, popupEditor, _ := get(t, c, base+"/wp-admin/post?post="+itoa64(popupID)+"&action=golementor")
 	if !strings.Contains(popupEditor, `"cssWrapperSelector":"#elementor-popup-modal-`+itoa64(popupID)+`"`) {
 		t.Error("popup document cssWrapperSelector is not the popup's modal")
 	}

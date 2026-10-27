@@ -53,7 +53,7 @@ func TestGoWebEditorThemeBuilder(t *testing.T) {
 	newPart := func(typ, title string) string {
 		t.Helper()
 		code, _, loc := post(t, c, base+"/wp-admin/gowebeditor-theme-builder", url.Values{"_wpnonce": {nonce}, "action": {"new"}, "type": {typ}, "title": {title}})
-		m := regexp.MustCompile(`^/wp-admin/post\?post=(\d+)&action=elementor$`).FindStringSubmatch(loc)
+		m := regexp.MustCompile(`^/wp-admin/post\?post=(\d+)&action=golementor$`).FindStringSubmatch(loc)
 		if code != http.StatusFound || m == nil {
 			t.Fatalf("new %s: %d %q", typ, code, loc)
 		}
@@ -62,7 +62,7 @@ func TestGoWebEditorThemeBuilder(t *testing.T) {
 	headerID := newPart("header", "Main Header")
 
 	// The editor opens a theme part like a page: header document, Site widgets, links back.
-	code, body, _ = get(t, c, base+"/wp-admin/post?post="+headerID+"&action=elementor")
+	code, body, _ = get(t, c, base+"/wp-admin/post?post="+headerID+"&action=golementor")
 	if code != http.StatusOK {
 		t.Fatalf("editor: %d %.300s", code, body)
 	}

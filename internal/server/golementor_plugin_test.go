@@ -129,7 +129,7 @@ func TestGolementorOffByDefault(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, p := range []string{"/wp-admin/edit?post_type=page", "/wp-admin/post?post=" + pageID + "&action=edit", "/wp-admin/post?post=" + pageID + "&action=edit&classic-editor",
-		"/wp-admin/post?post=" + pageID + "&action=elementor", "/wp-admin/edit?action=elementor_new_post&post_type=page&_wpnonce=x"} {
+		"/wp-admin/post?post=" + pageID + "&action=golementor", "/wp-admin/edit?action=elementor_new_post&post_type=page&_wpnonce=x"} {
 		code, body, _ := get(t, c, base+p)
 		if code != http.StatusOK {
 			t.Errorf("%s: %d", p, code)
@@ -203,10 +203,10 @@ func TestGolementorActivate(t *testing.T) {
 		t.Errorf("REST themes lack Hello Golementor: %d", code)
 	}
 	_, body, _ = get(t, c, base+"/wp-admin/edit?post_type=page")
-	if !strings.Contains(body, "/wp-admin/post?post="+pageID+"&amp;action=elementor") || !strings.Contains(body, "Edit with Golementor") {
+	if !strings.Contains(body, "/wp-admin/post?post="+pageID+"&amp;action=golementor") || !strings.Contains(body, "Edit with Golementor") {
 		t.Error("the pages list has no Edit with Golementor action")
 	}
-	_, body, _ = get(t, c, base+"/wp-admin/post?post="+pageID+"&action=elementor")
+	_, body, _ = get(t, c, base+"/wp-admin/post?post="+pageID+"&action=golementor")
 	if !strings.Contains(body, "var ElementorConfig = {") {
 		t.Error("the builder does not open")
 	}
@@ -235,13 +235,16 @@ func TestGolementorDeactivateFallsBackToDefaultTheme(t *testing.T) {
 	installAndLogin(t, ts, c)
 	ctx := context.Background()
 
-	togglePlugin(t, c, base, "activate")
-	if err := srv.switchTheme(ctx, helloThemeSlug); err != nil {
-		t.Fatal(err)
+	// Activating moves the site to Hello Golementor, the blank canvas, and says so.
+	if loc := togglePlugin(t, c, base, "activate"); !strings.Contains(loc, "gwe_theme=hello") {
+		t.Errorf("activate redirect %q lacks the theme notice", loc)
+	} else if _, body, _ := get(t, c, base+loc); !strings.Contains(body, "is now the active theme") {
+		t.Error("the Plugins screen does not say Hello Golementor is active")
 	}
 	if got := srv.settings.String("stylesheet"); got != helloThemeSlug {
-		t.Fatalf("stylesheet %q, want Hello Golementor", got)
+		t.Fatalf("stylesheet %q after activating, want Hello Golementor", got)
 	}
+	_ = ctx
 	if _, body, _ := get(t, c, base+"/"); !strings.Contains(body, "wp-theme-"+helloThemeSlug) {
 		t.Error("the site does not render with Hello Golementor while it is active")
 	}
@@ -315,5 +318,56 @@ func TestGolementorBuiltPageWhileOff(t *testing.T) {
 	togglePlugin(t, c, base, "activate")
 	if _, body, _ = get(t, c, base+"/sample-page/"); !strings.Contains(body, "elementor-widget-heading") {
 		t.Error("the built page is not rendered by the builder after activating again")
+	}
+}
+
+// An inactive native plugin adds nothing to the admin, like WordPress: no menu, no toolbar node,
+// no screens, no Settings link. WPGo Cache starts active.
+func TestInactiveNativePluginLeavesAdmin(t *testing.T) {
+	ts, c, _ := testServerBuilderOff(t)
+	base := ts.URL
+	installAndLogin(t, ts, c)
+	_, body, _ := get(t, c, base+"/wp-admin/")
+	if !strings.Contains(body, "toplevel_page_wpgo-cache") || !strings.Contains(body, "wp-admin-bar-wpgo-cache") {
+		t.Fatal("an active WPGo Cache is missing from the menu or the toolbar")
+	}
+	_, body, _ = get(t, c, base+"/wp-admin/plugins")
+	m := regexp.MustCompile(`href="(/wp-admin/plugins\?action=deactivate&amp;plugin=wpgo-cache[^"]*)"`).FindStringSubmatch(body)
+	if m == nil {
+		t.Fatal("no Deactivate link for WPGo Cache")
+	}
+	if code, _, _ := get(t, c, base+html.UnescapeString(m[1])); code != http.StatusFound {
+		t.Fatalf("deactivate WPGo Cache: %d", code)
+	}
+	_, body, _ = get(t, c, base+"/wp-admin/")
+	for _, gone := range []string{"toplevel_page_wpgo-cache", "wp-admin-bar-wpgo-cache", "menu-gowebeditor", "gowebeditor-theme-builder"} {
+		if strings.Contains(body, gone) {
+			t.Errorf("inactive plugin still in the admin: %s", gone)
+		}
+	}
+	if code, _, _ := get(t, c, base+"/wp-admin/admin?page=wpgo-cache-settings"); code != http.StatusForbidden {
+		t.Errorf("inactive WPGo Cache screen: %d, want 403", code)
+	}
+	_, body, _ = get(t, c, base+"/wp-admin/plugins")
+	if strings.Contains(body, `href="/wp-admin/admin?page=wpgo-cache"`) {
+		t.Error("the Plugins screen links to the settings of an inactive plugin")
+	}
+}
+
+// Deactivating goes back to the theme that was active before Golementor, not always the default.
+func TestGolementorRestoresPreviousTheme(t *testing.T) {
+	ts, c, srv := testServerBuilderOff(t)
+	base := ts.URL
+	installAndLogin(t, ts, c)
+	if err := srv.switchTheme(context.Background(), "classic"); err != nil {
+		t.Fatal(err)
+	}
+	togglePlugin(t, c, base, "activate")
+	if got := srv.settings.String("stylesheet"); got != helloThemeSlug {
+		t.Fatalf("stylesheet %q after activating, want Hello Golementor", got)
+	}
+	togglePlugin(t, c, base, "deactivate")
+	if got := srv.settings.String("stylesheet"); got != "classic" {
+		t.Errorf("stylesheet %q after deactivating, want classic back", got)
 	}
 }

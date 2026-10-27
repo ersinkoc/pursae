@@ -78,7 +78,7 @@ type subDef struct {
 	match            []string // extra screens that highlight this item
 }
 
-func adminMenu(pending int, golementor bool) []menuDef {
+func adminMenu(pending int, golementor, cache bool) []menuDef {
 	comments := "Comments"
 	if pending > 0 {
 		comments = fmt.Sprintf(`Comments <span class="awaiting-mod count-%d"><span class="pending-count" aria-hidden="true">%d</span><span class="comments-in-moderation-text screen-reader-text">%d Comments in moderation</span></span>`, pending, pending, pending)
@@ -162,16 +162,17 @@ func adminMenu(pending int, golementor bool) []menuDef {
 			{slug: "options-privacy", title: "Privacy", cap: "manage_privacy_options"},
 		}},
 	}
-	if golementor {
+	if golementor && cache {
 		return menu
 	}
-	// Golementor is off: its top-level menu and the Theme Builder submenu are not part of the admin.
+	// Like WordPress, an inactive plugin adds nothing to the admin menu: without Golementor its
+	// top-level menu and the Theme Builder submenu go, without WPGo Cache its top-level menu.
 	out := menu[:0]
 	for _, d := range menu {
-		if d.id == "menu-gowebeditor" {
+		if (!golementor && d.id == "menu-gowebeditor") || (!cache && d.id == "toplevel_page_wpgo-cache") {
 			continue
 		}
-		if d.id == "menu-appearance" {
+		if !golementor && d.id == "menu-appearance" {
 			subs := make([]subDef, 0, len(d.sub))
 			for _, sd := range d.sub {
 				if sd.slug != "gowebeditor-theme-builder" {
@@ -186,9 +187,9 @@ func adminMenu(pending int, golementor bool) []menuDef {
 }
 
 // buildMenu filters the menu by capability and marks the current screen, like _wp_menu_output().
-func buildMenu(u *store.User, screen string, pending int, golementor bool) []*menuTop {
+func buildMenu(u *store.User, screen string, pending int, golementor, cache bool) []*menuTop {
 	var out []*menuTop
-	for _, d := range adminMenu(pending, golementor) {
+	for _, d := range adminMenu(pending, golementor, cache) {
 		if d.separator {
 			out = append(out, &menuTop{Separator: true})
 			continue
@@ -299,7 +300,7 @@ func (s *Server) adminPage(c *gin.Context, screen, title, bodyClass, tmpl string
 		Title:     title,
 		BodyClass: bodyClass,
 		Screen:    screen,
-		Menu:      buildMenu(u, screen, counts["pending"], s.golementorOn()),
+		Menu:      buildMenu(u, screen, counts["pending"], s.golementorOn(), s.settings.Bool("wpgo_cache_enabled")),
 		User:      u,
 		Avatar26:  s.avatarURL(c, u.Email, 26),
 		Avatar64:  s.avatarURL(c, u.Email, 64),

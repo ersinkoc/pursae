@@ -301,6 +301,9 @@ func (s *Server) installedPlugins(c *gin.Context) []pluginRow {
 			Description: "Visual drag-and-drop page builder and Theme Builder (headers, footers, single and archive templates), with Hello Golementor, the blank theme to build them on. While it is off, none of it is part of the site.",
 			Author:      "WordPress Go"},
 	}
+	if !rows[1].Active {
+		rows[1].SettingsURL = "" // WordPress shows a plugin's Settings link only while it is active
+	}
 	if rows[2].Active {
 		rows[2].SettingsURL = "/wp-admin/gowebeditor-theme-builder"
 	}
@@ -400,6 +403,9 @@ func (s *Server) pluginsScreen(c *gin.Context) {
 	switch {
 	case c.Query("activate") == "true":
 		notices = append(notices, notice{Type: "success", Message: "Plugin activated.", Dismissible: true})
+		if c.Query("gwe_theme") == "hello" { // Golementor moved the site to its blank canvas theme
+			notices = append(notices, notice{Type: "info", Message: template.HTML("<strong>Hello Golementor</strong> is now the active theme: a blank canvas for Golementor. Design the header, footer and pages under <a href=\"/wp-admin/gowebeditor-theme-builder\">Appearance &rsaquo; Theme Builder</a>. Deactivating Golementor brings back your previous theme."), Dismissible: true})
+		}
 	case c.Query("deactivate") == "true":
 		notices = append(notices, notice{Type: "success", Message: "Plugin deactivated.", Dismissible: true})
 		if c.Query("gwe_theme") == "reset" { // Golementor: Hello Golementor was the active theme
@@ -437,9 +443,13 @@ func (s *Server) pluginAction(c *gin.Context, action, slug string) {
 	case golementorSlug:
 		q := action + "=true"
 		if action == "activate" {
+			before := s.settings.String("stylesheet")
 			if err := s.golementorActivate(c); err != nil {
 				fail(err)
 				return
+			}
+			if s.settings.String("stylesheet") != before {
+				q += "&gwe_theme=hello"
 			}
 		} else {
 			switched, err := s.golementorDeactivate(c)

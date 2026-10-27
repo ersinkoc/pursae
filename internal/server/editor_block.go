@@ -185,6 +185,8 @@ func (s *Server) renderBlockEditor(c *gin.Context, p *store.Post, isNew bool) {
 		"/wp-includes/css/dist/block-library/style.min.css", "/wp-includes/css/dist/block-library/theme.min.css",
 		"/wp-includes/css/dist/block-library/editor.min.css", "/wp-includes/css/dist/block-library/editor-elements.min.css",
 		"/wp-includes/css/dist/block-editor/content.min.css", "/wp-includes/css/dist/block-library/common.min.css",
+		// Classic (non block) themes: WordPress centers blocks in an 840px column (wp-edit-post's classic.css).
+		"/wp-includes/css/dist/edit-post/classic.min.css",
 	}
 	for _, f := range append(append([]string{}, theme.EditorStyles...), theme.EditorBlockStyles...) {
 		if strings.HasPrefix(f, "fonts/") || strings.Contains(f, "genericons") || strings.Contains(f, "editor-blocks") || strings.Contains(f, "block") {

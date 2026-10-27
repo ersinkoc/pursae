@@ -238,7 +238,8 @@ func (s *Server) pluginAdmin(c *gin.Context) {
 		return
 	}
 	u := currentUser(c)
-	if !u.Can("manage_options", nil) {
+	// An inactive plugin's screens are gone, as in WordPress (the menu hides them too).
+	if !u.Can("manage_options", nil) || !s.settings.Bool("wpgo_cache_enabled") {
 		c.String(http.StatusForbidden, "Sorry, you are not allowed to access this page.")
 		return
 	}
@@ -388,7 +389,7 @@ func (s *Server) startWarmup(c *gin.Context) {
 
 // cacheAdminBar is the toolbar node with LiteSpeed-style purge shortcuts.
 func (s *Server) cacheAdminBar(c *gin.Context, u *store.User) template.HTML {
-	if !u.Can("manage_options", nil) {
+	if !u.Can("manage_options", nil) || !s.settings.Bool("wpgo_cache_enabled") {
 		return ""
 	}
 	n := s.nonce(c, "wpgo-cache-purge")

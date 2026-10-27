@@ -105,6 +105,11 @@ func (s *Server) restPost(c *gin.Context, p *store.Post, ctxName string) map[str
 		out["parent"] = p.ParentID
 		out["menu_order"] = p.MenuOrder
 	}
+	if s.golementorOn() && (p.Type == "page" || p.Type == "post") {
+		// Golementor's user_can REST field (upstream registers it): the editor's Pages panel enables
+		// Edit, Duplicate and Delete with it.
+		out["user_can"] = map[string]bool{"edit": u.Can("edit_post", p), "delete": u.Can("delete_post", p)}
+	}
 	if p.Type == "wp_block" {
 		out["wp_pattern_sync_status"] = metaString(p.Meta, "wp_pattern_sync_status")
 		out["wp_pattern_category"] = []int64{}

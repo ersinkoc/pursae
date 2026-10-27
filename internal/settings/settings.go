@@ -36,6 +36,7 @@ var Defaults = map[string]any{
 	"classic-editor-allow-users":    "disallow",
 	"native_classic_editor":         true,
 	"native_golementor":             false, // the page builder is a plugin that starts switched off
+	"golementor_previous_theme":     "",    // the theme Golementor left for Hello Golementor; restored on deactivation
 	"plugin_trusted_keys":           "",
 	"plugin_allow_unsigned":         false,
 	"wpgo_hub_url":                  "",   // overrides WPGO_HUB_URL when set

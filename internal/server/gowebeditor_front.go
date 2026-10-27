@@ -266,7 +266,7 @@ func (s *Server) gweHead(c *gin.Context) template.HTML {
 		return ""
 	}
 	assets := s.links(c).HomeURL(gweAssetsPath)
-	ver := "?ver=" + gweVersion + "-" + Version
+	ver := "?ver=" + gweAssetVer()
 	var sb strings.Builder
 	kitID := s.gweKitCSS(c)
 	if gwePreviewing(c) {
@@ -331,7 +331,7 @@ func (s *Server) gweFooter(c *gin.Context) template.HTML {
 		return ""
 	}
 	assets := s.links(c).HomeURL(gweAssetsPath)
-	ver := "?ver=" + gweVersion + "-" + Version
+	ver := "?ver=" + gweAssetVer()
 	preview := gwePreviewing(c)
 	var sb strings.Builder
 	if preview {

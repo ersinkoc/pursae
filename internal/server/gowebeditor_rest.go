@@ -118,6 +118,44 @@ func (s *Server) registerGoWebEditorREST() {
 		c.JSON(http.StatusOK, out)
 	})}, nil)
 
+	// The Pages panel (editor-site-navigation): the static front page it marks with the home icon, and
+	// Duplicate. "Set as homepage" posts show_on_front/page_on_front to wp/v2/settings, so it is the
+	// same setting as Settings › Reading.
+	api.register(ns, "/elementor/v1/site-navigation/homepage", map[string]restHandler{http.MethodGet: editor(func(c *gin.Context, _ *restRequest) {
+		id := 0
+		if s.settings.String("show_on_front") == "page" {
+			id = s.settings.Int("page_on_front")
+		}
+		c.JSON(http.StatusOK, id)
+	})}, nil)
+	api.register(ns, "/elementor/v1/site-navigation/duplicate-post", map[string]restHandler{http.MethodPost: editor(func(c *gin.Context, r *restRequest) {
+		id, _ := r.Int(c, "post_id")
+		src, err := s.store.GetPost(c, int64(id))
+		u := restCurrent(c)
+		if err != nil || (src.Type != "page" && src.Type != "post") || !u.Can("edit_post", src) || !u.Can("edit_"+src.Type+"s", nil) {
+			restErr(c, http.StatusNotFound, "rest_post_invalid_id", "Invalid post ID.")
+			return
+		}
+		title, _ := r.Str(c, "title")
+		if title == "" {
+			title = src.Title
+		}
+		meta := map[string]any{}
+		for k, v := range src.Meta {
+			if k != "_wp_old_slug" && k != "_edit_lock" {
+				meta[k] = v
+			}
+		}
+		p := &store.Post{Type: src.Type, AuthorID: u.ID, Status: "draft", Title: title + " (copy)", Content: src.Content,
+			Excerpt: src.Excerpt, ParentID: src.ParentID, Meta: meta}
+		if err := s.store.InsertPost(c, p); err != nil {
+			restErr(c, http.StatusInternalServerError, "rest_error", err.Error())
+			return
+		}
+		s.gweClearCSS()
+		c.JSON(http.StatusOK, p.ID)
+	})}, nil)
+
 	api.register(ns, "/elementor/v1/site-navigation/add-new-post", map[string]restHandler{http.MethodPost: editor(func(c *gin.Context, r *restRequest) {
 		typ, _ := r.Str(c, "post_type")
 		if typ != "post" && typ != "page" {
@@ -138,7 +176,24 @@ func (s *Server) registerGoWebEditorREST() {
 	})}, nil)
 
 	s.registerGoWebEditorV4REST() // Golementor v4 (atomic): gowebeditor_v4_rest.go
-	api.register(ns, "/elementor/v1/template-library/templates", map[string]restHandler{http.MethodGet: static([]any{})}, nil)
+	// The template library's list ($e.data "library/templates"): saved templates (source local) and the
+	// ready-made homepage designs (source remote, the Pages tab).
+	api.register(ns, "/elementor/v1/template-library/templates", map[string]restHandler{http.MethodGet: editor(func(c *gin.Context, _ *restRequest) {
+		res, err := s.gweLibraryData(c, nil)
+		if err != nil {
+			restErr(c, http.StatusInternalServerError, "rest_error", err.Error())
+			return
+		}
+		all, _ := res.(map[string]any)["templates"].([]map[string]any)
+		out := []map[string]any{}
+		src := c.Query("source")
+		for _, t := range all {
+			if src == "" || t["source"] == src {
+				out = append(out, t)
+			}
+		}
+		c.JSON(http.StatusOK, map[string]any{"templates": out, "config": map[string]any{}})
+	})}, nil)
 	api.register(ns, "/elementor/v1/favorites", map[string]restHandler{http.MethodGet: static([]any{})}, nil)
 	api.register(ns, "/elementor/v1/favorites/(?P<id>[\\w]+)", map[string]restHandler{http.MethodPost: static(map[string]any{}), http.MethodDelete: static(map[string]any{})}, nil)
 	api.register(ns, "/elementor/v1/settings/(?P<key>[\\w_-]+)", map[string]restHandler{http.MethodPost: static(map[string]any{"success": true}), http.MethodPut: static(map[string]any{"success": true})}, nil)

@@ -581,7 +581,7 @@ func TestGWEIntegrationsServer(t *testing.T) {
 	}
 
 	// --- editor: panel data, tax rates, alerts, local fonts --------------------------------------------
-	_, ebody, _ := get(t, c, base+"/wp-admin/post?post="+pageID+"&action=elementor")
+	_, ebody, _ := get(t, c, base+"/wp-admin/post?post="+pageID+"&action=golementor")
 	if !strings.Contains(ebody, `id="gwe-local-google-fonts-js"`) {
 		t.Errorf("editor misses the local fonts script")
 	}
