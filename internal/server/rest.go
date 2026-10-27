@@ -216,6 +216,7 @@ func (s *Server) checkAppPassword(c *gin.Context, u *store.User, pass string) bo
 			continue
 		}
 		if ok, _ := auth.CheckPassword(pass, hash); ok {
+			c.Set(restAppPasswordKey, id) // the password in use (/application-passwords/introspect)
 			go s.store.Pool.Exec(c.Copy(), `UPDATE app_passwords SET last_used_at = now(), last_ip = $2 WHERE id = $1`, id, clientIP(c))
 			return true
 		}
@@ -223,7 +224,10 @@ func (s *Server) checkAppPassword(c *gin.Context, u *store.User, pass string) bo
 	return false
 }
 
-const restUserKey = "wpgo.restUser"
+const (
+	restUserKey        = "wpgo.restUser"
+	restAppPasswordKey = "wpgo.restAppPassword" // app_passwords.id that authenticated the request
+)
 
 func restCurrent(c *gin.Context) *store.User {
 	if v, ok := c.Get(restUserKey); ok && v != nil {
@@ -315,6 +319,9 @@ func (api *restAPI) serve(c *gin.Context, route string) {
 		h(c, req)
 		return
 	}
+	if s.servePluginRest(c, route, method) { // plugin routes (plugins_host.go), never shadowing core ones
+		return
+	}
 	restErr(c, http.StatusNotFound, "rest_no_route", "No route was found matching the URL and request method.")
 }
 
@@ -358,7 +365,12 @@ func (api *restAPI) canWrite(u *store.User, pattern string) bool {
 		return u.Can("manage_categories", nil) || u.Can("edit_posts", nil)
 	case strings.HasPrefix(pattern, "/wp/v2/templates"):
 		return false
-	case strings.HasPrefix(pattern, "/wp/v2/sidebars"), strings.HasPrefix(pattern, "/wp/v2/widgets"), strings.HasPrefix(pattern, "/wp/v2/widget-types"):
+	case strings.HasPrefix(pattern, "/wp/v2/users"):
+		return u.Can("create_users", nil) || u.Can("edit_users", nil)
+	case strings.HasPrefix(pattern, "/wp/v2/comments"):
+		return u.Can("moderate_comments", nil) || u.Can("edit_posts", nil)
+	case strings.HasPrefix(pattern, "/wp/v2/sidebars"), strings.HasPrefix(pattern, "/wp/v2/widgets"), strings.HasPrefix(pattern, "/wp/v2/widget-types"),
+		strings.HasPrefix(pattern, "/wp/v2/menus"), strings.HasPrefix(pattern, "/wp/v2/menu-items"), strings.HasPrefix(pattern, "/wp/v2/menu-locations"):
 		return u.Can("edit_theme_options", nil)
 	}
 	return u.Can("edit_posts", nil)
@@ -380,6 +392,10 @@ func (api *restAPI) index(c *gin.Context) {
 		}
 		sort.Strings(methods)
 		routes[r.Pattern] = map[string]any{"namespace": r.Namespace, "methods": methods}
+		nsSet[r.Namespace] = true
+	}
+	for _, r := range s.pluginRestRoutes() { // plugin routes (plugins_host.go)
+		routes[r.Path()] = map[string]any{"namespace": r.Namespace, "methods": r.Methods}
 		nsSet[r.Namespace] = true
 	}
 	var namespaces []string

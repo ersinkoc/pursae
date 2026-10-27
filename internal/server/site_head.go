@@ -27,7 +27,7 @@ func (s *Server) wpHead(c *gin.Context, q *siteQuery, lb *links.Builder, adminBa
 	}
 	fmt.Fprintf(&sb, "<link rel=\"alternate\" type=\"application/rss+xml\" title=\"%s &raquo; Feed\" href=\"%s\" />\n", site, html.EscapeString(lb.FeedLink("")))
 	fmt.Fprintf(&sb, "<link rel=\"alternate\" type=\"application/rss+xml\" title=\"%s &raquo; Comments Feed\" href=\"%s\" />\n", site, html.EscapeString(lb.FeedLink("comments_rss2")))
-	if (q.Kind == "single" || q.Kind == "page") && q.Post != nil && (q.Post.CommentStatus == "open" || q.Post.CommentCount > 0) {
+	if (q.Kind == "single" || q.Kind == "page") && q.Post != nil && (s.commentsOpen(q.Post) || q.Post.PingStatus == "open" || q.Post.CommentCount > 0) {
 		fmt.Fprintf(&sb, "<link rel=\"alternate\" type=\"application/rss+xml\" title=\"%s &raquo; %s Comments Feed\" href=\"%s\" />\n",
 			site, html.EscapeString(q.Post.Title), html.EscapeString(lb.PostCommentsFeed(q.Post)))
 	}
@@ -52,6 +52,7 @@ func (s *Server) wpHead(c *gin.Context, q *siteQuery, lb *links.Builder, adminBa
 		sb.WriteString(v.Theme.Head(s, c, v))
 	}
 	sb.WriteString("<link rel=\"https://api.w.org/\" href=\"" + html.EscapeString(lb.HomeURL("/wp-json/")) + "\" />\n")
+	sb.WriteString(oembedDiscoveryLinks(lb, q)) // wp_oembed_add_discovery_links() (rest_oembed.go)
 	sb.WriteString("<meta name=\"generator\" content=\"WordPress Go " + Version + "\" />\n")
 	if (q.Kind == "single" || q.Kind == "page" || q.Kind == "front-page") && q.Post != nil {
 		fmt.Fprintf(&sb, "<link rel=\"canonical\" href=\"%s\" />\n", html.EscapeString(lb.Permalink(q.Post)))
@@ -61,22 +62,24 @@ func (s *Server) wpHead(c *gin.Context, q *siteQuery, lb *links.Builder, adminBa
 		}
 		fmt.Fprintf(&sb, "<link rel='shortlink' href='%s' />\n", html.EscapeString(lb.HomeURL(short+itoa64(q.Post.ID))))
 	}
-	sb.WriteString(string(s.gweHead(c))) // Golementor frontend styles
-	sb.WriteString(customizeHead(v))     // custom background, site icon, Additional CSS
+	sb.WriteString(string(s.gweHead(c)))                                                            // Golementor frontend styles
+	sb.WriteString(customizeHead(v))                                                                // custom background, site icon, Additional CSS
+	sb.WriteString(string(s.pluginStyleTags("front")) + string(s.pluginScriptTags("front", false))) // plugin assets
 	return template.HTML(sb.String())
 }
 
 // wpFooter is wp_footer(): comment-reply on singular views with threaded comments, and the admin bar script.
 func (s *Server) wpFooter(c *gin.Context, q *siteQuery, lb *links.Builder, adminBar bool) template.HTML {
 	var sb strings.Builder
-	if (q.Kind == "single" || q.Kind == "page" || q.Kind == "front-page") && q.Post != nil && q.Post.CommentStatus == "open" && s.settings.Bool("thread_comments") {
+	if (q.Kind == "single" || q.Kind == "page" || q.Kind == "front-page") && q.Post != nil && s.commentsOpen(q.Post) && s.settings.Bool("thread_comments") {
 		sb.WriteString("<script src=\"/wp-includes/js/comment-reply.min.js?ver=" + Version + "\" id=\"comment-reply-js\" async data-wp-strategy=\"async\"></script>\n")
 	}
 	if adminBar {
 		sb.WriteString("<script src=\"/wp-includes/js/hoverintent-js.min.js?ver=2.2.1\" id=\"hoverintent-js-js\"></script>\n") // admin-bar.js dependency
 		sb.WriteString("<script src=\"/wp-includes/js/admin-bar.min.js?ver=" + Version + "\" id=\"admin-bar-js\"></script>\n")
 	}
-	sb.WriteString(string(s.gweFooter(c))) // Golementor frontend scripts
+	sb.WriteString(string(s.gweFooter(c)))                    // Golementor frontend scripts
+	sb.WriteString(string(s.pluginScriptTags("front", true))) // plugin footer scripts
 	return template.HTML(sb.String())
 }
 

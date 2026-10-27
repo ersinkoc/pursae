@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"html"
 	"html/template"
 	"io"
 	"log/slog"
@@ -29,7 +30,9 @@ import (
 
 // Plugins are signed zip packages holding a WebAssembly module and a plugin.json manifest. They run
 // sandboxed (internal/plugins) and reach the site only through the Host below and the hooks the
-// core fires: init, the_content, admin_notices and wpgo_post_stats.
+// core fires: init, the_content, admin_notices, wpgo_post_stats and the cron_* events they schedule.
+// plugins_host.go holds the rest of the Host and the core side of shortcodes, REST routes, settings
+// pages and package assets.
 
 type pluginSystem struct {
 	hooks   *plugins.Registry
@@ -107,6 +110,7 @@ func (s *Server) startPlugins(ctx context.Context) {
 		}
 	}
 	ps.hooks.DoAction(ctx, "init")
+	s.hubTrustCached(ctx)
 }
 
 func lastLine(v string) string {
@@ -177,18 +181,19 @@ func hiddenOption(name string) bool {
 		strings.HasPrefix(name, "plugin_") || name == "admin_email" || name == "mailserver_pass"
 }
 
-func (h *pluginHost) GetOption(_ context.Context, _ string, name string) (any, bool, error) {
-	if hiddenOption(name) {
+func (h *pluginHost) GetOption(_ context.Context, plugin string, name string) (any, bool, error) {
+	if hiddenOption(name) && !strings.HasPrefix(name, plugins.SettingsOptionPrefix(plugin)) {
 		return nil, false, nil
 	}
 	v := h.s.settings.Get(name)
 	return v, v != nil, nil
 }
 
-// UpdateOption only writes options in the plugin's own namespace (<slug>_* with dashes as underscores).
+// UpdateOption only writes options in the plugin's own namespace (<slug>_* with dashes as underscores,
+// and the plugin_<slug>_* options of its settings page).
 func (h *pluginHost) UpdateOption(ctx context.Context, plugin, name string, value any) error {
 	prefix := strings.ReplaceAll(plugin, "-", "_") + "_"
-	if !strings.HasPrefix(name, prefix) {
+	if !strings.HasPrefix(name, prefix) && !strings.HasPrefix(name, plugins.SettingsOptionPrefix(plugin)) {
 		return fmt.Errorf("plugins may only write options starting with %q", prefix)
 	}
 	return h.s.settings.Set(ctx, map[string]any{name: value})
@@ -524,6 +529,12 @@ type marketItem struct {
 	Demo                                     bool
 	Icon                                     string
 	IconColor                                string // wpgo-plugin-icon-<color> background for the generated icon
+	// Marketplace (Hub) listings.
+	Hub       bool
+	IconURL   string
+	Homepage  string
+	Downloads int
+	Updated   string
 	// Native (built-in) plugins.
 	Native, Active           bool
 	SettingsURL, ActivateURL string
@@ -572,6 +583,15 @@ func (s *Server) pluginInstall(c *gin.Context) {
 			s.denyNonce(c)
 			return
 		}
+		if c.Query("source") == "hub" {
+			m, err := s.hubInstallPlugin(ctx, slug)
+			if err != nil {
+				c.Redirect(http.StatusFound, "/wp-admin/plugins?error="+url.QueryEscape("Installation failed: "+err.Error()))
+				return
+			}
+			c.Redirect(http.StatusFound, "/wp-admin/plugins?installed="+url.QueryEscape(m.Name))
+			return
+		}
 		for _, path := range s.plugins.market {
 			pkg, err := plugins.LoadPackageFile(path, nil, false)
 			if err != nil || pkg.Manifest.Slug != slug {
@@ -602,12 +622,39 @@ func (s *Server) pluginInstall(c *gin.Context) {
 		}
 	}
 	var featured []marketItem
+	var notices []notice
+	// The marketplace: packages published on the WordPress Go Hub.
+	if s.hubBase() != "" {
+		items, err := s.hubCatalog(ctx, "plugins")
+		if err != nil {
+			notices = append(notices, notice{Type: "warning", Message: template.HTML("The WordPress Go Hub could not be reached (" + html.EscapeString(err.Error()) + "). Only locally available packages are listed."), Dismissible: true})
+		}
+		for _, h := range items {
+			it := marketItem{Slug: h.Slug, Name: h.Name, Version: h.Version, Description: h.Description, Author: h.Author, Hub: true,
+				IconURL: h.IconURL, Homepage: h.Homepage, Downloads: h.Downloads, Installed: installed[h.Slug], Icon: "dashicons-admin-plugins", IconColor: "teal",
+				InstallURL: "/wp-admin/plugin-install?action=install-plugin&source=hub&plugin=" + h.Slug + "&_wpnonce=" + s.nonce(c, "install-plugin_"+h.Slug)}
+			if t, err := time.Parse(time.RFC3339, h.Updated); err == nil {
+				it.Updated = t.In(s.loc()).Format("January 2, 2006")
+			}
+			for _, p := range h.Permissions {
+				it.Permissions = append(it.Permissions, permRow{p, plugins.Permission(p).Description()})
+			}
+			featured = append(featured, it)
+		}
+	}
+	hubSlugs := map[string]bool{}
+	for _, it := range featured {
+		hubSlugs[it.Slug] = true
+	}
 	for _, path := range s.plugins.market {
 		pkg, err := plugins.LoadPackageFile(path, nil, false)
 		if err != nil {
 			continue
 		}
 		m := pkg.Manifest
+		if hubSlugs[m.Slug] {
+			continue
+		}
 		it := marketItem{Slug: m.Slug, Name: m.Name, Version: m.Version, Description: m.Description, Author: m.Author,
 			Installed: installed[m.Slug], InstallURL: "/wp-admin/plugin-install?action=install-plugin&plugin=" + m.Slug + "&_wpnonce=" + s.nonce(c, "install-plugin_"+m.Slug), Icon: "dashicons-admin-plugins", IconColor: "teal"}
 		for _, p := range m.Permissions {
@@ -615,7 +662,12 @@ func (s *Server) pluginInstall(c *gin.Context) {
 		}
 		featured = append(featured, it)
 	}
-	sort.Slice(featured, func(i, j int) bool { return featured[i].Name < featured[j].Name })
+	sort.SliceStable(featured, func(i, j int) bool {
+		if featured[i].Hub != featured[j].Hub {
+			return featured[i].Hub
+		}
+		return featured[i].Name < featured[j].Name
+	})
 	// Fan-made concept listings: not real packages, shown on their own tab so they never look installable.
 	demos := []marketItem{
 		{Name: "GoForms", Description: "Drag-and-drop contact forms with spam protection, stored submissions and e-mail notifications.", Author: "WordPress Go fans", Icon: "dashicons-feedback"},
@@ -650,7 +702,7 @@ func (s *Server) pluginInstall(c *gin.Context) {
 	if d.Tab == "upload" {
 		body += " show-upload-view"
 	}
-	s.adminPage(c, "plugin-install", "Add Plugins", body, "admin/plugin-install", d)
+	s.adminPage(c, "plugin-install", "Add Plugins", body, "admin/plugin-install", d, notices...)
 }
 
 // pluginPostStats lets plugins add numbers to the classic editor's publish box (wpgo_post_stats).

@@ -13,6 +13,7 @@ type Config struct {
 	UploadsDir  string
 	Secret      string // optional; generated and stored in settings when empty
 	WebDir      string // when set, web assets and templates are read from this directory and reloaded per request
+	HubURL      string // the WordPress Go Hub (marketplace, release checks, site count); "off" disables it
 
 	// Outgoing mail. Without SMTPHost, messages are written as .eml files to MailDir (development).
 	SMTPHost, SMTPUser, SMTPPass, MailFrom string
@@ -28,6 +29,7 @@ func Load() Config {
 		UploadsDir:  env("WPGO_UPLOADS_DIR", "./data/uploads"),
 		Secret:      os.Getenv("WPGO_SECRET"),
 		WebDir:      os.Getenv("WPGO_WEB_DIR"),
+		HubURL:      strings.TrimRight(env("WPGO_HUB_URL", "https://hub.wordpressgo.dev"), "/"),
 		SMTPHost:    os.Getenv("WPGO_SMTP_HOST"),
 		SMTPPort:    env("WPGO_SMTP_PORT", "587"),
 		SMTPUser:    os.Getenv("WPGO_SMTP_USER"),

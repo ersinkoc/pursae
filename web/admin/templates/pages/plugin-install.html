@@ -17,7 +17,7 @@
 </div>
 {{if ne .Tab "upload"}}
 <h2 class="screen-reader-text">Filter plugins list</h2>
-<p>Plugins extend and expand the functionality of WordPress Go. Plugins are written in Go (or any language that compiles to WebAssembly), run in a sandbox and must be signed. Install them from the list below, or upload a plugin package in .zip format by clicking the button above. <a href="https://example.org/wpgo/plugins">Learn how to build one</a>.</p>
+<p>Plugins extend and expand the functionality of WordPress Go. Plugins are written in Go (or any language that compiles to WebAssembly), run in a sandbox and must be signed. Install them from the WordPress Go Hub marketplace below, or upload a plugin package in .zip format by clicking the button above. <a href="https://wordpressgo.dev/docs/plugins/">Learn how to build one</a>.</p>
 <div class="wp-filter">
 	<ul class="filter-links">
 		<li class="plugin-install-featured"><a href="/wp-admin/plugin-install?tab=featured"{{if eq .Tab "featured"}} class="current" aria-current="page"{{end}}>Featured <span class="count">({{index .Counts "featured"}})</span></a> </li>
@@ -45,8 +45,8 @@
 		<div class="plugin-card-top">
 			<div class="name column-name">
 				<h3>
-					{{.Name}}
-					<span class="plugin-icon wpgo-plugin-icon wpgo-plugin-icon-{{if .Demo}}demo{{else}}{{.IconColor}}{{end}}" aria-hidden="true"><span class="dashicons {{.Icon}}"></span></span>
+					{{if .Homepage}}<a href="{{.Homepage}}" target="_blank" rel="noopener">{{.Name}}</a>{{else}}{{.Name}}{{end}}
+					{{if .IconURL}}<img src="{{.IconURL}}" class="plugin-icon" alt="" width="128" height="128">{{else}}<span class="plugin-icon wpgo-plugin-icon wpgo-plugin-icon-{{if .Demo}}demo{{else}}{{.IconColor}}{{end}}" aria-hidden="true"><span class="dashicons {{.Icon}}"></span></span>{{end}}
 				</h3>
 			</div>
 			<div class="action-links">
@@ -74,8 +74,8 @@
 			<div class="column-compatibility"><span class="compatibility-compatible"><strong>Native</strong> Go code, no sandbox needed</span></div>
 		{{else}}
 			<div class="vers column-rating">{{if .Permissions}}<span class="wpgo-plugin-permissions">Permissions: {{range $i, $p := .Permissions}}{{if $i}}, {{end}}<code title="{{$p.Description}}">{{$p.Name}}</code>{{end}}</span>{{else}}No special permissions{{end}}</div>
-			<div class="column-updated"><strong>Version:</strong> {{.Version}}</div>
-			<div class="column-downloaded">Signed package</div>
+			<div class="column-updated"><strong>Version:</strong> {{.Version}}{{if .Updated}} &middot; <strong>Last Updated:</strong> {{.Updated}}{{end}}</div>
+			<div class="column-downloaded">{{if .Hub}}{{.Downloads}} Installations{{else}}Signed package{{end}}</div>
 			<div class="column-compatibility"><span class="compatibility-compatible"><strong>Sandboxed</strong> WebAssembly plugin</span></div>
 		{{end}}
 		</div>

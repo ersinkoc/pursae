@@ -37,6 +37,7 @@ type adminView struct {
 	CacheBar       template.HTML // wpgo-cache toolbar node
 	LateFooterHTML template.HTML // markup printed after the footer scripts (TinyMCE settings, link dialog)
 	Help           *helpTab      // contextual Help panel (screen-meta), nil when the screen has none
+	ScreenOptions  template.HTML // the Screen Options tab (screen-options-wrap), empty when the screen has none
 	Color          adminColor    // the user's admin color scheme
 }
 
@@ -253,37 +254,38 @@ func buildMenu(u *store.User, screen string, pending int, golementor bool) []*me
 // (the wp-admin style handle: common, forms, list-tables, edit, media, themes, nav-menus, … — see
 // partials/layout.html). Paths are relative to /wp-admin/assets/css/ unless they start with "/".
 var screenStyles = map[string][]string{
-	"admin/dashboard":       {"/wp-admin/css/site-health.min.css"},
-	"admin/posts-list":      {},
-	"admin/post-edit":       {},
-	"admin/terms":           {},
-	"admin/term-edit":       {},
-	"admin/options":         {},
-	"admin/profile":         {},
-	"admin/not-yet":         {},
-	"admin/media-grid":      {"pages/media.css"},
-	"admin/media-list":      {"pages/media.css"},
-	"admin/media-new":       {"pages/media.css"},
-	"admin/attachment-edit": {"pages/media.css"},
-	"admin/plugins":         {},
-	"admin/themes":          {},
-	"admin/comments-list":   {"pages/comments.css"},
-	"admin/comment-edit":    {"pages/comments.css"},
-	"admin/users-list":      {"pages/users.css"},
-	"admin/user-new":        {"pages/users.css"},
-	"admin/user-delete":     {"pages/users.css"},
-	"admin/update-core":     {},
-	"admin/about":           {},
-	"admin/tools":           {},
-	"admin/options-privacy": {},
-	"admin/theme-install":   {"wpgo/theme-install.css"},
-	"admin/site-health":     {"/wp-admin/css/site-health.min.css"},
-	"admin/export":          {"wpgo/tools.css"},
-	"admin/file-editor":     {},
-	"admin/privacy-tool":    {},
-	"admin/import":          {},
-	"admin/plugin-install":  {"wpgo/plugin-install.css"},
-	"admin/wpgo-cache":      {},
+	"admin/dashboard":            {"/wp-admin/css/site-health.min.css"},
+	"admin/posts-list":           {},
+	"admin/post-edit":            {},
+	"admin/terms":                {},
+	"admin/term-edit":            {},
+	"admin/options":              {},
+	"admin/profile":              {},
+	"admin/not-yet":              {},
+	"admin/media-grid":           {"pages/media.css"},
+	"admin/media-list":           {"pages/media.css"},
+	"admin/media-new":            {"pages/media.css"},
+	"admin/attachment-edit":      {"pages/media.css"},
+	"admin/plugins":              {},
+	"admin/themes":               {},
+	"admin/comments-list":        {"pages/comments.css"},
+	"admin/comment-edit":         {"pages/comments.css"},
+	"admin/users-list":           {"pages/users.css"},
+	"admin/user-new":             {"pages/users.css"},
+	"admin/user-delete":          {"pages/users.css"},
+	"admin/update-core":          {},
+	"admin/about":                {},
+	"admin/tools":                {},
+	"admin/options-privacy":      {},
+	"admin/privacy-policy-guide": {},
+	"admin/theme-install":        {"wpgo/theme-install.css"},
+	"admin/site-health":          {"/wp-admin/css/site-health.min.css"},
+	"admin/export":               {"wpgo/tools.css"},
+	"admin/file-editor":          {},
+	"admin/privacy-tool":         {},
+	"admin/import":               {},
+	"admin/plugin-install":       {"wpgo/plugin-install.css"},
+	"admin/wpgo-cache":           {},
 	// Golementor Theme Builder
 	"admin/gowebeditor-theme-builder":    {},
 	"admin/gowebeditor-theme-conditions": {},
@@ -330,6 +332,16 @@ func (s *Server) adminPage(c *gin.Context, screen, title, bodyClass, tmpl string
 			}
 		}
 	}
+	if strings.HasPrefix(v.PageNow, "edit-tags") || strings.HasPrefix(v.PageNow, "term") { // WP_Screen ids: edit-category, edit-post_tag
+		for _, cl := range strings.Fields(bodyClass) {
+			if tax, ok := strings.CutPrefix(cl, "taxonomy-"); ok {
+				v.PageNow = map[bool]string{true: "edit-", false: "term-"}[v.PageNow == "edit-tags"] + tax
+			}
+		}
+	}
+	if so, ok := c.Get("wpgo.screenOptions"); ok {
+		v.ScreenOptions = so.(template.HTML)
+	}
 	v.Color = adminColorFor(u)
 	if tmpl != "admin/block-editor" && tmpl != "admin/dashboard" {
 		v.Help = helpFor(v.AdminPage, v.TypeNow)
@@ -339,11 +351,12 @@ func (s *Server) adminPage(c *gin.Context, screen, title, bodyClass, tmpl string
 		v.BodyClass += " folded"
 	}
 	v.CacheBar = s.cacheAdminBar(c, u)
+	s.pluginMenuEntries(v.Menu, screen) // plugin settings pages under Settings (plugins_host.go)
 	a := s.pageAssets(c)
 	a.Script("common", "admin-bar", "utils", "svg-painter")
-	v.ExtraStyles = s.styleTags(a)
-	v.HeadScripts = template.HTML(s.importMap()) + s.scriptTags(c, a, false)
-	v.FooterScripts = s.scriptTags(c, a, true)
+	v.ExtraStyles = s.styleTags(a) + s.pluginStyleTags("admin")
+	v.HeadScripts = template.HTML(s.importMap()) + s.scriptTags(c, a, false) + s.pluginScriptTags("admin", false)
+	v.FooterScripts = s.scriptTags(c, a, true) + s.pluginScriptTags("admin", true)
 	if extra, ok := c.Get("wpgo.bodyHTML"); ok {
 		v.ExtraBodyHTML = extra.(template.HTML)
 	}
@@ -371,7 +384,10 @@ func flashNotices(c *gin.Context) []notice {
 // notYet keeps every wp-admin URL inside the chrome while its screen is still being ported.
 func (s *Server) notYet(c *gin.Context) {
 	screen := c.Param("screen")
-	if strings.Contains(screen, ".") {
+	if screen == "" { // admin?page=… of a plugin that isn't there
+		screen = c.Query("page")
+	}
+	if screen == "" || strings.Contains(screen, ".") {
 		c.Status(http.StatusNotFound)
 		return
 	}
@@ -408,6 +424,28 @@ func (s *Server) adminAjax(c *gin.Context) {
 		s.samplePermalinkAjax(c)
 	case "wp-remove-post-lock":
 		c.String(http.StatusOK, "1")
+	case "inline-save":
+		s.inlineSave(c)
+	case "inline-save-tax":
+		s.inlineSaveTax(c)
+	case "ajax-tag-search":
+		s.tagSearchAjax(c)
+	case "replyto-comment":
+		s.replyToCommentAjax(c)
+	case "edit-comment":
+		s.editCommentAjax(c)
+	case "dim-comment":
+		s.dimCommentAjax(c)
+	case "delete-comment":
+		s.deleteCommentAjax(c)
+	case "add-meta":
+		s.addMetaAjax(c)
+	case "delete-meta":
+		s.deleteMetaAjax(c)
+	case "hidden-columns":
+		s.hiddenColumnsAjax(c)
+	case "closed-postboxes":
+		s.closedPostboxesAjax(c)
 	default:
 		c.String(http.StatusBadRequest, "0")
 	}

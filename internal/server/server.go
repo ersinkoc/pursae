@@ -76,6 +76,7 @@ func New(ctx context.Context, cfg config.Config, pool *pgxpool.Pool) (*Server, e
 	} else {
 		s.gweUnloadCustomThemes() // the theme registry is shared by every server in the process
 	}
+	s.loadThemePackages() // theme packages installed under <data>/themes (theme_install.go)
 	tmpl, err := newTemplates(s)
 	if err != nil {
 		return nil, err
@@ -152,7 +153,7 @@ func (s *Server) routes() *gin.Engine {
 
 	s.static(r, "/wp-admin/assets", "admin/assets")
 	for _, th := range allThemes() {
-		if th.Custom {
+		if th.Custom || th.Package != nil { // packages are installed at run time: packageThemeAsset serves them
 			continue
 		}
 		if th.Slug == helloThemeSlug {
@@ -176,6 +177,8 @@ func (s *Server) routes() *gin.Engine {
 	}
 	r.GET("/wp-content/uploads/*filepath", serveUpload)
 	r.HEAD("/wp-content/uploads/*filepath", serveUpload)
+	r.GET(pluginAssetsPath+"/:slug/assets/*filepath", s.pluginAsset) // plugin package assets (plugins_host.go)
+	r.HEAD(pluginAssetsPath+"/:slug/assets/*filepath", s.pluginAsset)
 
 	r.GET("/wp-admin/install", s.installForm)
 	r.POST("/wp-admin/install", s.installSubmit)
@@ -202,7 +205,10 @@ func (s *Server) routes() *gin.Engine {
 	admin.GET("/options-discussion", s.optionsScreen("discussion"))
 	admin.GET("/options-media", s.optionsScreen("media"))
 	admin.GET("/options-permalink", s.optionsScreen("permalink"))
+	admin.GET("/options", s.optionsConfirm) // ?adminhash= / ?dismiss= of a pending admin e-mail change
 	admin.POST("/options", s.optionsSave)
+	admin.GET("/authorize-application", s.authorizeApplication)
+	admin.POST("/authorize-application", s.authorizeApplication)
 	admin.POST("/options-permalink", s.optionsSave)
 	admin.GET("/profile", s.profile)
 	admin.POST("/profile", s.profileSave)
@@ -218,6 +224,8 @@ func (s *Server) routes() *gin.Engine {
 	admin.GET("/nav-menus", s.navMenus)
 	admin.POST("/nav-menus", s.navMenus)
 	admin.GET("/edit-comments", s.commentsScreen)
+	admin.POST("/edit-comments", s.commentsScreen) // Screen Options form
+	admin.GET("/revision", s.revisionScreen)
 	admin.GET("/users", s.usersScreen)
 	admin.GET("/update-core", s.updateCore)
 	admin.GET("/about", s.about)
@@ -225,6 +233,7 @@ func (s *Server) routes() *gin.Engine {
 	admin.GET("/options-privacy", s.optionsPrivacy)
 	admin.POST("/options-privacy", s.optionsPrivacy)
 	admin.GET("/theme-install", s.themeInstall)
+	admin.POST("/theme-install", s.themeInstall)
 	admin.GET("/site-health", s.siteHealth)
 	admin.GET("/export", s.exportScreen)
 	admin.GET("/theme-editor", s.themeEditor)
@@ -262,7 +271,7 @@ func (s *Server) routes() *gin.Engine {
 		r.Handle(m, "/wp-json", restHandler)
 	}
 
-	r.NoRoute(s.gwePreview, s.site) // Golementor's preview iframe, then the site
+	r.NoRoute(s.gwePreview, s.packageThemeAsset, s.embedRoute, s.site) // Golementor preview iframe, theme package assets, /<post>/embed/, then the site
 	return r
 }
 
@@ -342,6 +351,7 @@ func (s *Server) loadUser() gin.HandlerFunc {
 				if u, err := s.store.UserByID(c, sess.UserID); err == nil {
 					c.Set(ctxUser, u)
 					c.Set(ctxSession, sess)
+					c.Request = c.Request.WithContext(withPluginUser(c.Request.Context(), u)) // get_current_user for plugins
 				}
 			}
 		}

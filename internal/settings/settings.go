@@ -38,6 +38,9 @@ var Defaults = map[string]any{
 	"native_golementor":             false, // the page builder is a plugin that starts switched off
 	"plugin_trusted_keys":           "",
 	"plugin_allow_unsigned":         false,
+	"wpgo_hub_url":                  "",   // overrides WPGO_HUB_URL when set
+	"wpgo_hub_ping":                 true, // tell the Hub this site's URL host and version once a day
+	"wpgo_hub_trust_keys":           true, // packages signed by the Hub install without extra setup
 	"wpgo_cache_enabled":            true,
 	"wpgo_cache_ttl_public":         604800,
 	"wpgo_cache_ttl_front":          604800,

@@ -217,6 +217,16 @@ func TestGolementorActivate(t *testing.T) {
 	if code, _, _ := post(t, c, base+"/wp-admin/admin-ajax", url.Values{"action": {"elementor_js_log"}}); code != http.StatusOK {
 		t.Errorf("elementor_js_log: %d", code)
 	}
+	// The editor's upstream admin links (Theme Builder app, settings…) land on the native screens.
+	for page, want := range map[string]string{"elementor-app&ver=4.3.5": "/wp-admin/gowebeditor-theme-builder",
+		"elementor-settings": "/wp-admin/gowebeditor-pro?tab=settings", "e-form-submissions": "/wp-admin/gowebeditor-pro?tab=submissions"} {
+		if code, _, loc := get(t, c, base+"/wp-admin/admin?page="+page); code != http.StatusFound || loc != want {
+			t.Errorf("admin?page=%s: %d %q, want a redirect to %s", page, code, loc, want)
+		}
+	}
+	if code, body, _ := get(t, c, base+"/wp-admin/admin?page=no-such-plugin"); code != http.StatusOK || !strings.Contains(body, "No such plugin") {
+		t.Errorf("admin?page of a missing plugin: %d", code)
+	}
 }
 
 func TestGolementorDeactivateFallsBackToDefaultTheme(t *testing.T) {
