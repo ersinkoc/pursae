@@ -351,8 +351,9 @@ func (s *Server) adminPage(c *gin.Context, screen, title, bodyClass, tmpl string
 	if ck, err := c.Cookie("wp-settings-" + itoa64(u.ID)); err == nil && strings.Contains("&"+ck+"&", "&mfold=f&") {
 		v.BodyClass += " folded"
 	}
-	v.CacheBar = s.cacheAdminBar(c, u)
+	v.CacheBar = s.cacheAdminBar(c, u) + s.maintAdminBar(c, u)
 	s.pluginMenuEntries(v.Menu, screen) // plugin settings pages under Settings (plugins_host.go)
+	v.Menu = s.maintMenu(v.Menu, u, screen)
 	a := s.pageAssets(c)
 	a.Script("common", "admin-bar", "utils", "svg-painter")
 	v.ExtraStyles = s.styleTags(a) + s.pluginStyleTags("admin")

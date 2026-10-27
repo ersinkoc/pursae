@@ -233,6 +233,10 @@ func (s *Server) pluginAdmin(c *gin.Context) {
 		c.Redirect(http.StatusFound, to)
 		return
 	}
+	if page == maintSlug { // Maintenance-Go (maintenance_admin.go)
+		s.maintAdmin(c)
+		return
+	}
 	if !strings.HasPrefix(page, "wpgo-cache") {
 		s.notYet(c)
 		return
