@@ -1,0 +1,12 @@
+<article id="post-{{.ID}}" class="{{.Class}} entry card">
+	{{with .Thumbnail}}<a class="post-thumbnail card__media" href="{{$.Permalink}}" aria-hidden="true" tabindex="-1">{{.}}</a>{{end}}
+	<div class="card__body">
+		<div class="card__labels">{{if .ShowFeatured}}<span class="sticky-badge">Featured</span>{{end}}{{with .Categories}}{{with index . 0}}<a class="card__stamp" href="{{.URL}}">{{.Name}}</a>{{end}}{{end}}</div>
+		<h2 class="entry-title"><a href="{{.Permalink}}" rel="bookmark">{{.Title}}</a></h2>
+		{{template "entry-meta" .}}
+		<div class="entry-summary{{if not .ShowExcerpt}} is-full{{end}}">
+			{{if .ShowExcerpt}}{{.Excerpt}}{{else}}{{.Content}}{{end}}
+		</div>
+		<p class="more-link-wrap"><a class="more-link" href="{{.Permalink}}">Read the story<span class="screen-reader-text"> &ldquo;{{.Title}}&rdquo;</span> <span aria-hidden="true">&rarr;</span></a></p>
+	</div>
+</article><!-- #post-{{.ID}} -->

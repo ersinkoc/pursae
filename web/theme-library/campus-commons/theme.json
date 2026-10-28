@@ -1,0 +1,379 @@
+{
+  "slug": "campus-commons",
+  "name": "Campus Commons",
+  "version": "1.0.0",
+  "description": "A friendly academic theme for schools, colleges and online course providers: a notice bar, a crest-style logo mark, a navy navigation bar, a grid-paper hero with a course search, course and faculty cards, bulletin-board news with date badges, events tables and an apply band in the footer.",
+  "author": "WordPress Go",
+  "author_url": "https://github.com/boracomet/wordpress-go",
+  "theme_url": "https://github.com/boracomet/wordpress-go/tree/main/web/theme-library/campus-commons",
+  "tags": [
+    "Education",
+    "Blog",
+    "Grid Layout",
+    "Right Sidebar",
+    "Left Sidebar",
+    "Custom Colors",
+    "Custom Logo",
+    "Custom Menu",
+    "Featured Images",
+    "Sticky Post",
+    "Threaded Comments",
+    "Wide Blocks",
+    "Editor Style",
+    "Accessibility Ready"
+  ],
+  "requires_core": "0.1.0",
+  "screenshot": "assets/screenshot.png",
+  "category": "education",
+  "style": "Friendly academic theme for schools and online courses, navy and mustard",
+  "demo": "demo/demo.json",
+  "widget_areas": [
+    {
+      "id": "sidebar-1",
+      "name": "Sidebar",
+      "description": "Beside news and archives."
+    },
+    {
+      "id": "footer-1",
+      "name": "Footer",
+      "description": "Columns in the navy footer."
+    }
+  ],
+  "menu_locations": [
+    {
+      "id": "primary",
+      "name": "Primary Menu"
+    },
+    {
+      "id": "utility",
+      "name": "Utility Links (top bar)"
+    },
+    {
+      "id": "footer",
+      "name": "Footer Menu"
+    }
+  ],
+  "styles": [
+    {
+      "handle": "campus-commons-style",
+      "src": "assets/style.css",
+      "deps": [
+        "wp-block-library"
+      ],
+      "media": "all"
+    }
+  ],
+  "scripts": [
+    {
+      "handle": "campus-commons-navigation",
+      "src": "assets/js/navigation.js",
+      "deps": [],
+      "in_footer": true
+    }
+  ],
+  "editor_styles": [
+    "assets/editor-style.css"
+  ],
+  "preload_fonts": [
+    "assets/fonts/lexend.woff2",
+    "assets/fonts/sourceserif.woff2"
+  ],
+  "palette": [
+    {
+      "name": "Navy",
+      "slug": "navy",
+      "color": "#1d3557"
+    },
+    {
+      "name": "Mustard",
+      "slug": "mustard",
+      "color": "#f2a900"
+    },
+    {
+      "name": "Brick",
+      "slug": "brick",
+      "color": "#b5452f"
+    },
+    {
+      "name": "Sky",
+      "slug": "sky",
+      "color": "#dbe8f5"
+    },
+    {
+      "name": "Paper",
+      "slug": "paper",
+      "color": "#f8f6f1"
+    },
+    {
+      "name": "Ink",
+      "slug": "ink",
+      "color": "#1b2433"
+    }
+  ],
+  "supports": {
+    "post-thumbnails": true,
+    "custom-logo": {
+      "width": 240,
+      "height": 80,
+      "flex-width": true,
+      "flex-height": true,
+      "header-text": [
+        "site-title",
+        "site-description"
+      ]
+    },
+    "title-tag": true,
+    "html5": [
+      "search-form",
+      "comment-form",
+      "comment-list",
+      "gallery",
+      "caption",
+      "script",
+      "style"
+    ],
+    "responsive-embeds": true,
+    "align-wide": true,
+    "wp-block-styles": true
+  },
+  "customizer": {
+    "sections": [
+      {
+        "id": "cc_colors",
+        "title": "Campus Colors",
+        "priority": 30,
+        "settings": [
+          {
+            "id": "primary",
+            "label": "School color (navy)",
+            "description": "Navigation bar, footer, headings.",
+            "type": "color",
+            "default": "#1d3557",
+            "transport": "postMessage",
+            "css_var": "--cc-primary"
+          },
+          {
+            "id": "accent",
+            "label": "Accent (mustard)",
+            "description": "Buttons, badges and highlights.",
+            "type": "color",
+            "default": "#f2a900",
+            "transport": "postMessage",
+            "css_var": "--cc-accent"
+          },
+          {
+            "id": "paper",
+            "label": "Page background",
+            "type": "color",
+            "default": "#f8f6f1",
+            "transport": "postMessage",
+            "css_var": "--cc-paper"
+          }
+        ]
+      },
+      {
+        "id": "cc_layout",
+        "title": "Campus Layout",
+        "priority": 31,
+        "settings": [
+          {
+            "id": "header_style",
+            "label": "Header",
+            "type": "select",
+            "default": "stacked",
+            "transport": "postMessage",
+            "body_class": "cc-header-{value}",
+            "choices": [
+              {
+                "value": "stacked",
+                "label": "Logo row and a navy menu bar"
+              },
+              {
+                "value": "inline",
+                "label": "One navy bar"
+              }
+            ]
+          },
+          {
+            "id": "post_layout",
+            "label": "News layout",
+            "type": "select",
+            "default": "board",
+            "transport": "postMessage",
+            "body_class": "cc-layout-{value}",
+            "choices": [
+              {
+                "value": "board",
+                "label": "Bulletin board with date badges"
+              },
+              {
+                "value": "grid",
+                "label": "Card grid"
+              },
+              {
+                "value": "list",
+                "label": "Simple list"
+              }
+            ]
+          },
+          {
+            "id": "sidebar",
+            "label": "Sidebar",
+            "type": "select",
+            "default": "right",
+            "transport": "postMessage",
+            "body_class": "sidebar-{value}",
+            "choices": [
+              {
+                "value": "right",
+                "label": "Right"
+              },
+              {
+                "value": "left",
+                "label": "Left"
+              },
+              {
+                "value": "none",
+                "label": "No sidebar"
+              }
+            ]
+          },
+          {
+            "id": "container",
+            "label": "Container width",
+            "type": "select",
+            "default": "normal",
+            "transport": "postMessage",
+            "body_class": "cc-width-{value}",
+            "choices": [
+              {
+                "value": "normal",
+                "label": "Normal (1200px)"
+              },
+              {
+                "value": "wide",
+                "label": "Wide (1400px)"
+              }
+            ]
+          },
+          {
+            "id": "font_pairing",
+            "label": "Typography",
+            "type": "select",
+            "default": "lexend",
+            "transport": "postMessage",
+            "body_class": "cc-fonts-{value}",
+            "choices": [
+              {
+                "value": "lexend",
+                "label": "Lexend headings, serif text"
+              },
+              {
+                "value": "scholar",
+                "label": "Scholarly (all serif)"
+              },
+              {
+                "value": "plain",
+                "label": "Plain (Lexend)"
+              }
+            ]
+          },
+          {
+            "id": "sticky_header",
+            "label": "Sticky menu bar",
+            "type": "checkbox",
+            "default": false,
+            "transport": "postMessage",
+            "body_class": "sticky-header"
+          },
+          {
+            "id": "show_thumbs",
+            "label": "Show featured images",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "show-thumbs"
+          },
+          {
+            "id": "show_author",
+            "label": "Show the author",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "show-author"
+          }
+        ]
+      },
+      {
+        "id": "cc_campus",
+        "title": "Notices, Hero & Admissions",
+        "priority": 32,
+        "settings": [
+          {
+            "id": "show_notice",
+            "label": "Show the notice bar",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "cc-notice"
+          },
+          {
+            "id": "notice_text",
+            "label": "Notice",
+            "type": "text",
+            "default": "Spring term enrolment is open until 15 January."
+          },
+          {
+            "id": "apply_label",
+            "label": "Apply button label",
+            "type": "text",
+            "default": "Apply now"
+          },
+          {
+            "id": "apply_link",
+            "label": "Apply button link",
+            "type": "text",
+            "default": "#apply"
+          },
+          {
+            "id": "hero_image",
+            "label": "Hero image",
+            "type": "image"
+          },
+          {
+            "id": "hero_kicker",
+            "label": "Small line above the title",
+            "type": "text",
+            "default": "Learning for every age"
+          },
+          {
+            "id": "hero_title",
+            "label": "Hero title",
+            "type": "text",
+            "default": "Curious minds, open doors"
+          },
+          {
+            "id": "hero_text",
+            "label": "Hero text",
+            "type": "textarea",
+            "default": "Day classes, evening courses and online learning taught by people who love their subjects."
+          },
+          {
+            "id": "hero_search",
+            "label": "Show the course search in the hero",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "cc-hero-search"
+          },
+          {
+            "id": "footer_text",
+            "label": "Footer text",
+            "type": "text",
+            "default": ""
+          }
+        ]
+      }
+    ]
+  }
+}

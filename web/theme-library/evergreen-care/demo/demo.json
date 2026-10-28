@@ -1,0 +1,467 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Evergreen Care",
+  "blogdescription": "Family medicine on Linden Avenue",
+  "posts_per_page": 9
+ },
+ "categories": [
+  {
+   "slug": "prevention",
+   "name": "Prevention",
+   "description": "Staying well: screening, exercise and check-ups."
+  },
+  {
+   "slug": "nutrition",
+   "name": "Nutrition",
+   "description": "Realistic advice about food and drink."
+  },
+  {
+   "slug": "wellbeing",
+   "name": "Mental Wellbeing",
+   "description": "Sleep, mood and looking after your mind."
+  },
+  {
+   "slug": "family-health",
+   "name": "Family Health",
+   "description": "Children, parents and everyone in between."
+  },
+  {
+   "slug": "clinic-news",
+   "name": "Clinic News",
+   "description": "Updates from the practice."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "sleep",
+   "name": "Sleep"
+  },
+  {
+   "slug": "routines",
+   "name": "Routines"
+  },
+  {
+   "slug": "exercise",
+   "name": "Exercise"
+  },
+  {
+   "slug": "heart-health",
+   "name": "Heart health"
+  },
+  {
+   "slug": "food",
+   "name": "Food"
+  },
+  {
+   "slug": "check-ups",
+   "name": "Check-ups"
+  },
+  {
+   "slug": "mental-health",
+   "name": "Mental health"
+  },
+  {
+   "slug": "children",
+   "name": "Children"
+  },
+  {
+   "slug": "practice-news",
+   "name": "Practice news"
+  }
+ ],
+ "media": [
+  {
+   "id": "hero",
+   "file": "demo/images/hero.jpg",
+   "alt": "Soft teal shapes around a sunlit window",
+   "caption": ""
+  },
+  {
+   "id": "hero-alt",
+   "file": "demo/images/hero-alt.jpg",
+   "alt": "Leaves and soft light in teal and white",
+   "caption": ""
+  },
+  {
+   "id": "sleep",
+   "file": "demo/images/sleep.jpg",
+   "alt": "A crescent moon over calm blue waves",
+   "caption": ""
+  },
+  {
+   "id": "walk",
+   "file": "demo/images/walk.jpg",
+   "alt": "A gentle path winding through green hills",
+   "caption": ""
+  },
+  {
+   "id": "bowl",
+   "file": "demo/images/bowl.jpg",
+   "alt": "A colourful bowl of vegetables, grains and herbs from above",
+   "caption": ""
+  },
+  {
+   "id": "clinic",
+   "file": "demo/images/clinic.jpg",
+   "alt": "A bright, calm consultation room",
+   "caption": ""
+  },
+  {
+   "id": "winter",
+   "file": "demo/images/winter.jpg",
+   "alt": "A warm window glowing on a snowy evening",
+   "caption": ""
+  },
+  {
+   "id": "family",
+   "file": "demo/images/family.jpg",
+   "alt": "Abstract shapes of a family under a sun",
+   "caption": ""
+  },
+  {
+   "id": "water",
+   "file": "demo/images/water.jpg",
+   "alt": "A glass of water with lemon slices on a teal background",
+   "caption": ""
+  },
+  {
+   "id": "team",
+   "file": "demo/images/team.jpg",
+   "alt": "Abstract portraits of the practice team",
+   "caption": ""
+  },
+  {
+   "id": "doctor-1",
+   "file": "demo/images/doctor-1.jpg",
+   "alt": "Abstract portrait illustration of Dr. Lena Okafor",
+   "caption": ""
+  },
+  {
+   "id": "doctor-2",
+   "file": "demo/images/doctor-2.jpg",
+   "alt": "Abstract portrait illustration of Dr. Samir Haddou",
+   "caption": ""
+  },
+  {
+   "id": "doctor-3",
+   "file": "demo/images/doctor-3.jpg",
+   "alt": "Abstract portrait illustration of Ines Varga",
+   "caption": ""
+  },
+  {
+   "id": "map",
+   "file": "demo/images/map.jpg",
+   "alt": "A simple illustrated map of Linden Avenue",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Home",
+   "content": "<!-- wp:group {\"align\":\"full\",\"className\":\"ec-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull ec-section\"><!-- wp:paragraph {\"className\":\"ec-eyebrow\"} --><p class=\"ec-eyebrow\">How we can help</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Services for the whole family</h2><!-- /wp:heading --><!-- wp:paragraph --><p>From first vaccinations to retirement check-ups, our team looks after people at every stage of life.</p><!-- /wp:paragraph --><!-- wp:columns {\"align\":\"wide\",\"className\":\"ec-services\"} --><div class=\"wp-block-columns alignwide ec-services\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Family medicine</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Check-ups, everyday illnesses and long-term care for all ages.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Children's health</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Growth checks, vaccinations and advice for worried parents.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Women's health</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Contraception, pregnancy care, screening and menopause support.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:columns {\"align\":\"wide\",\"className\":\"ec-services\"} --><div class=\"wp-block-columns alignwide ec-services\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Heart & blood pressure</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Monitoring, lifestyle plans and medicine reviews.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Mental wellbeing</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Time to talk, referrals and follow-up you can count on.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Travel clinic</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Vaccines and practical advice before you go.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:services}}\">All services</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --><!-- wp:group {\"align\":\"full\",\"className\":\"ec-section ec-section--soft\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull ec-section ec-section--soft\"><!-- wp:paragraph {\"className\":\"ec-eyebrow\"} --><p class=\"ec-eyebrow\">Meet the team</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Clinicians who listen</h2><!-- /wp:heading --><!-- wp:columns {\"className\":\"ec-doctors\"} --><div class=\"wp-block-columns ec-doctors\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:doctor-1}}\" alt=\"Abstract portrait illustration of Dr. Lena Okafor\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Dr. Lena Okafor</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"ec-role\"} --><p class=\"ec-role\">Lead physician</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Twenty years in family medicine; believes the best tool in medicine is a good question.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:doctor-2}}\" alt=\"Abstract portrait illustration of Dr. Samir Haddou\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Dr. Samir Haddou</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"ec-role\"} --><p class=\"ec-role\">Family physician</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Sports medicine and joint pain; cycles to work in every weather.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:doctor-3}}\" alt=\"Abstract portrait illustration of Ines Varga, NP\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Ines Varga, NP</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"ec-role\"} --><p class=\"ec-role\">Nurse practitioner</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Runs our diabetes and blood-pressure clinics with patience and humour.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:buttons {\"layout\":{\"type\":\"flex\",\"justifyContent\":\"center\"}} --><div class=\"wp-block-buttons is-content-justification-center\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:doctors}}\">Our doctors</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --><!-- wp:group {\"align\":\"full\",\"className\":\"ec-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull ec-section\"><!-- wp:paragraph {\"className\":\"ec-eyebrow\"} --><p class=\"ec-eyebrow\">New here?</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Booking a first visit is easy</h2><!-- /wp:heading --><!-- wp:columns {\"align\":\"wide\",\"className\":\"ec-steps\"} --><div class=\"wp-block-columns alignwide ec-steps\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Call or book online</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Tell us a little about why you are coming, and we will find the right clinician.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Bring your questions</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Arrive ten minutes early with your medicines and anything you would like to discuss.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Leave with a plan</h3><!-- /wp:heading --><!-- wp:paragraph --><p>You will go home with clear next steps and a written summary.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group --><!-- wp:group {\"align\":\"full\",\"className\":\"ec-section ec-section--soft\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull ec-section ec-section--soft\"><!-- wp:paragraph {\"className\":\"ec-eyebrow\"} --><p class=\"ec-eyebrow\">Health library</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Latest articles</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":3,\"displayPostContent\":true,\"excerptLength\":18,\"displayPostDate\":true,\"postLayout\":\"grid\",\"columns\":3} /--><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:articles}}\">Read more articles</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "template": "",
+   "front_page": true
+  },
+  {
+   "slug": "articles",
+   "title": "Health Articles",
+   "content": "",
+   "template": "",
+   "posts_page": true
+  },
+  {
+   "slug": "services",
+   "title": "Services",
+   "content": "<!-- wp:paragraph --><p>We offer a full range of family medicine services under one roof, with same-week appointments for most concerns.</p><!-- /wp:paragraph --><!-- wp:columns {\"align\":\"wide\",\"className\":\"ec-services\"} --><div class=\"wp-block-columns alignwide ec-services\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Family medicine</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Check-ups, everyday illnesses and long-term care for all ages.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Children's health</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Growth checks, vaccinations and advice for worried parents.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Women's health</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Contraception, pregnancy care, screening and menopause support.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:columns {\"align\":\"wide\",\"className\":\"ec-services\"} --><div class=\"wp-block-columns alignwide ec-services\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Heart & blood pressure</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Monitoring, lifestyle plans and medicine reviews.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Mental wellbeing</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Time to talk, referrals and follow-up you can count on.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Travel clinic</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Vaccines and practical advice before you go.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:heading --><h2 class=\"wp-block-heading\">Common questions</h2><!-- /wp:heading --><!-- wp:details --><details class=\"wp-block-details\"><summary>Do I need a referral?</summary><!-- wp:paragraph --><p>No. You can book directly with any of our clinicians.</p><!-- /wp:paragraph --></details><!-- /wp:details --><!-- wp:details --><details class=\"wp-block-details\"><summary>Can I get a same-day appointment?</summary><!-- wp:paragraph --><p>We keep a number of appointments free every morning for urgent but non-emergency problems. Call us at 8:00.</p><!-- /wp:paragraph --></details><!-- /wp:details --><!-- wp:details --><details class=\"wp-block-details\"><summary>Do you offer video consultations?</summary><!-- wp:paragraph --><p>Yes, for follow-ups and many first conversations. Ask when you book.</p><!-- /wp:paragraph --></details><!-- /wp:details -->",
+   "template": "",
+   "featured_media": "clinic"
+  },
+  {
+   "slug": "doctors",
+   "title": "Our Doctors",
+   "content": "<!-- wp:paragraph --><p>A small team means you see the same faces each time. Here are the people you will meet.</p><!-- /wp:paragraph --><!-- wp:columns {\"className\":\"ec-doctors\"} --><div class=\"wp-block-columns ec-doctors\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:doctor-1}}\" alt=\"Abstract portrait illustration of Dr. Lena Okafor\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Dr. Lena Okafor</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"ec-role\"} --><p class=\"ec-role\">Lead physician</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Twenty years in family medicine; believes the best tool in medicine is a good question.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:doctor-2}}\" alt=\"Abstract portrait illustration of Dr. Samir Haddou\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Dr. Samir Haddou</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"ec-role\"} --><p class=\"ec-role\">Family physician</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Sports medicine and joint pain; cycles to work in every weather.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:doctor-3}}\" alt=\"Abstract portrait illustration of Ines Varga, NP\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Ines Varga, NP</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"ec-role\"} --><p class=\"ec-role\">Nurse practitioner</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Runs our diabetes and blood-pressure clinics with patience and humour.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:heading --><h2 class=\"wp-block-heading\">Also on the team</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Two practice nurses for vaccinations, dressings and screening</li><!-- /wp:list-item --><!-- wp:list-item --><li>A clinical pharmacist for medicine reviews</li><!-- /wp:list-item --><!-- wp:list-item --><li>A friendly front desk who will always call you back</li><!-- /wp:list-item --></ul><!-- /wp:list -->",
+   "template": "",
+   "featured_media": "team"
+  },
+  {
+   "slug": "appointments",
+   "title": "Appointments",
+   "content": "<!-- wp:paragraph --><p>You can book by phone, at the front desk or by sending us a message. We aim to offer every patient an appointment within the same week.</p><!-- /wp:paragraph --><!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Day</th><th>Hours</th></tr></thead><tbody><tr><td>Monday – Friday</td><td>8:00 – 18:00</td></tr><tr><td>Saturday</td><td>9:00 – 13:00 (pre-booked only)</td></tr><tr><td>Sunday</td><td>Closed</td></tr></tbody></table></figure><!-- /wp:table --><!-- wp:heading --><h2 class=\"wp-block-heading\">Before your visit</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Bring a list of medicines and allergies</li><!-- /wp:list-item --><!-- wp:list-item --><li>Arrive ten minutes early for a first visit</li><!-- /wp:list-item --><!-- wp:list-item --><li>Let us know if you need an interpreter or step-free access</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph {\"className\":\"ec-note\"} --><p class=\"ec-note\">If you need to cancel, please tell us at least 24 hours ahead so we can offer the slot to someone else.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Contact the front desk</a></div><!-- /wp:button --></div><!-- /wp:buttons -->",
+   "template": ""
+  },
+  {
+   "slug": "about",
+   "title": "About Us",
+   "content": "<!-- wp:paragraph --><p>Evergreen Care opened its doors in a converted bakery on Linden Avenue, with one doctor, one nurse and a waiting room that still smelled faintly of bread. Today we are a team of twelve, but the idea is the same: unhurried care from people who know your name.</p><!-- /wp:paragraph --><!-- wp:media-text {\"mediaType\":\"image\"} --><div class=\"wp-block-media-text is-stacked-on-mobile\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:clinic}}\" alt=\"A calm, bright consultation room\" class=\"size-full\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Our promise</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Appointments that start on time</li><!-- /wp:list-item --><!-- wp:list-item --><li>Time to ask questions</li><!-- /wp:list-item --><!-- wp:list-item --><li>Clear, written next steps</li><!-- /wp:list-item --></ul><!-- /wp:list --></div></div><!-- /wp:media-text --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>We want every visit to feel like a conversation, not a queue.</p><!-- /wp:paragraph --><cite>Dr. Lena Okafor</cite></blockquote><!-- /wp:quote -->",
+   "template": "",
+   "featured_media": "hero-alt"
+  },
+  {
+   "slug": "contact",
+   "title": "Contact",
+   "content": "<!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Visit</h3><!-- /wp:heading --><!-- wp:paragraph --><p>12 Linden Avenue, Riverside<br>Step-free entrance and parking at the rear.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Call</h3><!-- /wp:heading --><!-- wp:paragraph --><p>(555) 010-2040<br>Lines open from 8:00, Monday to Saturday.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Write</h3><!-- /wp:heading --><!-- wp:paragraph --><p>hello@evergreencare.example<br>For non-urgent questions; we reply within two working days.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:paragraph {\"className\":\"ec-note\"} --><p class=\"ec-note\">In an emergency, call your local emergency number. Please do not use email for urgent medical problems.</p><!-- /wp:paragraph -->",
+   "template": "",
+   "featured_media": "map"
+  }
+ ],
+ "posts": [
+  {
+   "slug": "seven-small-habits-for-better-sleep",
+   "title": "Seven Small Habits for Better Sleep",
+   "date": "2026-10-02T09:00:00",
+   "excerpt": "Good sleep is less about one big change than a handful of small, boring habits repeated every evening. Here are the seven we recommend most.",
+   "content": "<!-- wp:paragraph --><p>Almost every week someone tells us they are tired all the time. Sometimes there is a medical reason we need to look into, but very often the first step is simpler: a calmer, more regular evening.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">The seven habits</h2><!-- /wp:heading --><!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Wake up at the same time every day, weekends included.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Get daylight on your face within an hour of waking.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Keep caffeine to the morning.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Give your evening a slow last hour: dim lights, no work email.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Keep the bedroom cool, dark and boring.</li><!-- /wp:list-item --><!-- wp:list-item --><li>If you cannot sleep after twenty minutes, get up and read somewhere else.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Keep naps short and early.</li><!-- /wp:list-item --></ol><!-- /wp:list --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Your body loves a routine. Sleep is often the first thing to improve when the day has a predictable shape.</p><!-- /wp:paragraph --><cite>Dr. Lena Okafor, family physician</cite></blockquote><!-- /wp:quote --><!-- wp:heading --><h2 class=\"wp-block-heading\">When to talk to us</h2><!-- /wp:heading --><!-- wp:paragraph --><p>If you snore loudly, wake up gasping, or feel exhausted despite a full night in bed, please book a visit. These can be signs of conditions that are very treatable.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"ec-note\"} --><p class=\"ec-note\">This article is general information to help you look after yourself. It is not a diagnosis; if you are worried about your health, please book an appointment.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "wellbeing"
+   ],
+   "tags": [
+    "sleep",
+    "routines"
+   ],
+   "featured_media": "sleep",
+   "format": "standard",
+   "sticky": true,
+   "comments": [
+    {
+     "author": "Hannah",
+     "email": "hannah@example.com",
+     "content": "The twenty-minute rule changed everything for me. Thank you!",
+     "date": "2026-10-03T08:00:00"
+    }
+   ]
+  },
+  {
+   "slug": "a-gentle-guide-to-starting-to-walk",
+   "title": "A Gentle Guide to Starting to Walk Again",
+   "date": "2026-09-20T10:00:00",
+   "excerpt": "You do not need a gym or a plan. Ten minutes after lunch is a perfectly good place to start, and here is how to build from there.",
+   "content": "<!-- wp:paragraph --><p>Walking is the most underrated thing we prescribe. It is free, gentle on the joints, good for the heart, and it tends to improve sleep and mood as a side effect.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">A four-week starting plan</h2><!-- /wp:heading --><!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Week</th><th>What to aim for</th></tr></thead><tbody><tr><td>1</td><td>10 minutes on most days, at a pace where you can still chat</td></tr><tr><td>2</td><td>15 minutes, add one slightly hilly route</td></tr><tr><td>3</td><td>20 minutes, try a brisker middle section</td></tr><tr><td>4</td><td>25–30 minutes, five days a week</td></tr></tbody></table></figure><!-- /wp:table --><!-- wp:paragraph --><p>Go slower than you think you need to. The goal of the first month is not fitness; it is making walking a normal part of your day.</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Comfortable from the start</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Wear shoes you already find comfortable.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Walk with a friend or a podcast.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Choose a route with somewhere to sit halfway.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph {\"className\":\"ec-note\"} --><p class=\"ec-note\">This article is general information to help you look after yourself. It is not a diagnosis; if you are worried about your health, please book an appointment.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "prevention"
+   ],
+   "tags": [
+    "exercise",
+    "heart-health"
+   ],
+   "featured_media": "walk",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "eating-well-on-a-busy-week",
+   "title": "Eating Well on a Busy Week",
+   "date": "2026-09-08T12:00:00",
+   "excerpt": "No perfect diet required: a few reliable meals, a well-stocked cupboard and a plan for the evenings when cooking feels impossible.",
+   "content": "<!-- wp:paragraph --><p>Most of us know roughly what a balanced plate looks like. The hard part is Wednesday at seven in the evening, when everyone is hungry and nobody has a plan.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Keep in the cupboard</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Tinned beans and lentils</li><!-- /wp:list-item --><!-- wp:list-item --><li>Wholegrain pasta and rice</li><!-- /wp:list-item --><!-- wp:list-item --><li>Tinned tomatoes</li><!-- /wp:list-item --><!-- wp:list-item --><li>Frozen vegetables</li><!-- /wp:list-item --><!-- wp:list-item --><li>Oats</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Three fallback meals</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Bean and vegetable soup</li><!-- /wp:list-item --><!-- wp:list-item --><li>Eggs, greens and toast</li><!-- /wp:list-item --><!-- wp:list-item --><li>Lentil pasta with tomatoes</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:paragraph --><p>Cook once, eat twice: double the recipe on Sunday and the busiest evening of the week is already solved.</p><!-- /wp:paragraph --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>A good diet is mostly a good shopping list.</p><!-- /wp:paragraph --></blockquote><!-- /wp:quote --><!-- wp:paragraph --><p>If you are managing diabetes, kidney disease or food allergies, our practice nurse can help you adapt these ideas.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"ec-note\"} --><p class=\"ec-note\">This article is general information to help you look after yourself. It is not a diagnosis; if you are worried about your health, please book an appointment.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "nutrition"
+   ],
+   "tags": [
+    "food",
+    "routines"
+   ],
+   "featured_media": "bowl",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "what-to-expect-at-your-annual-check-up",
+   "title": "What to Expect at Your Annual Check-up",
+   "date": "2026-08-25T09:30:00",
+   "excerpt": "From blood pressure to the questions we ask about sleep and mood, here is what happens at a yearly check-up and how to prepare.",
+   "content": "<!-- wp:paragraph --><p>An annual check-up is the one appointment where nothing is wrong, and that is exactly why it is useful. It gives us a baseline and gives you time to ask the questions that never fit into a rushed visit.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Before your visit</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Bring a list of your medicines, including vitamins.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Write down any questions in advance.</li><!-- /wp:list-item --><!-- wp:list-item --><li>If we have asked for a blood test, book it a week before.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:heading --><h2 class=\"wp-block-heading\">During the visit</h2><!-- /wp:heading --><!-- wp:paragraph --><p>We will check your blood pressure, weight and any routine screening that is due for your age. We will also ask about sleep, mood, movement and alcohol, without judgement.</p><!-- /wp:paragraph --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:clinic}}\" alt=\"A bright, calm consultation room\"/><figcaption class=\"wp-element-caption\">One of our consultation rooms on Linden Avenue.</figcaption></figure><!-- /wp:image --><!-- wp:paragraph --><p>Most check-ups take around thirty minutes. You will leave with a short written summary.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "clinic-news",
+    "prevention"
+   ],
+   "tags": [
+    "check-ups"
+   ],
+   "featured_media": "clinic",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "looking-after-your-mind-in-winter",
+   "title": "Looking After Your Mind in Winter",
+   "date": "2026-08-12T08:00:00",
+   "excerpt": "Shorter days affect many of us. Simple ways to protect your mood through the darker months, and when to ask for more help.",
+   "content": "<!-- wp:paragraph --><p>When the days get shorter, many people notice lower energy, more sleep and less interest in things they usually enjoy. For some, it is a passing dip; for others, it is more.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Small things that help</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>A daily walk in daylight, ideally in the morning.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Plans with other people, even small ones.</li><!-- /wp:list-item --><!-- wp:list-item --><li>A regular bedtime and wake time.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Moving your body most days.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Asking for help early is a sign of good self-care, not weakness.</p><!-- /wp:paragraph --></blockquote><!-- /wp:quote --><!-- wp:paragraph --><p>If low mood lasts more than two weeks or affects your daily life, please talk to us. There are many good options, and you do not need to wait until things feel serious.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"ec-note\"} --><p class=\"ec-note\">This article is general information to help you look after yourself. It is not a diagnosis; if you are worried about your health, please book an appointment.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "wellbeing"
+   ],
+   "tags": [
+    "mental-health",
+    "routines"
+   ],
+   "featured_media": "winter",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Tomas",
+     "email": "tomas@example.com",
+     "content": "Gentle and practical. Sharing this with my dad.",
+     "date": "2026-08-13T19:00:00"
+    }
+   ]
+  },
+  {
+   "slug": "keeping-children-well-through-school-season",
+   "title": "Keeping Children Well Through School Season",
+   "date": "2026-07-30T09:00:00",
+   "excerpt": "Sleep, snacks, hand-washing and the paperwork nobody remembers: a practical checklist for families at the start of the school year.",
+   "content": "<!-- wp:paragraph --><p>The first weeks of school bring new routines, new friends and, almost inevitably, new colds. Most of these pass on their own, but a little preparation helps.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Back-to-school checklist</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Check that routine vaccinations are up to date.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Book an eye test if your child squints at screens or the board.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Agree on a school-night bedtime before term starts.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Pack a water bottle every day.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">When to keep them at home</h3><!-- /wp:heading --><!-- wp:paragraph --><p>A high temperature, vomiting, or a child who is simply too unwell to take part should stay home. If you are unsure, call our nurse line for advice.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"ec-note\"} --><p class=\"ec-note\">This article is general information to help you look after yourself. It is not a diagnosis; if you are worried about your health, please book an appointment.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "family-health"
+   ],
+   "tags": [
+    "children",
+    "check-ups"
+   ],
+   "featured_media": "family",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "hydration-myths-and-facts",
+   "title": "Hydration: Myths and Facts",
+   "date": "2026-07-14T11:00:00",
+   "excerpt": "Do you really need eight glasses a day? Does coffee count? A short, calm look at what we actually know about drinking enough.",
+   "content": "<!-- wp:paragraph --><p>Few health topics attract as many confident rules as water. Most healthy adults can simply drink when thirsty, a little more in hot weather or when exercising.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Myth</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Everyone needs exactly eight glasses a day.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Fact</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Needs vary with size, weather and activity. Pale yellow urine is a good everyday guide.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Myth</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Coffee and tea do not count.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Fact</h3><!-- /wp:heading --><!-- wp:paragraph --><p>They do count towards your daily fluids for most people.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:paragraph --><p>Older adults can feel less thirsty, so a glass with each meal is a sensible habit. If you have heart or kidney conditions, follow the advice your clinician gave you.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "nutrition"
+   ],
+   "tags": [
+    "food"
+   ],
+   "featured_media": "water",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "welcoming-two-new-clinicians",
+   "title": "Welcoming Two New Clinicians to the Practice",
+   "date": "2026-06-30T09:00:00",
+   "excerpt": "We are delighted to introduce a new family physician and a nurse practitioner, which means more appointments and shorter waits from July.",
+   "content": "<!-- wp:paragraph --><p>We have grown. From July, two new colleagues join the Evergreen team, adding more than forty appointments a week.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:doctor-2}}\" alt=\"Abstract portrait illustration of Dr. Samir Haddou\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Dr. Samir Haddou</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Family physician with a special interest in sports medicine and joint pain.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:doctor-3}}\" alt=\"Abstract portrait illustration of Nurse Practitioner Ines Varga\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Ines Varga, NP</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Nurse practitioner leading our diabetes and blood-pressure clinics.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:paragraph --><p>Existing patients can book with either of them from today. We are also accepting new patients again — just call the front desk or use the appointment form.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "clinic-news"
+   ],
+   "tags": [
+    "practice-news"
+   ],
+   "featured_media": "team",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Home",
+     "page": "home"
+    },
+    {
+     "title": "Services",
+     "page": "services",
+     "children": [
+      {
+       "title": "Appointments",
+       "page": "appointments"
+      },
+      {
+       "title": "Our Doctors",
+       "page": "doctors"
+      }
+     ]
+    },
+    {
+     "title": "Health Articles",
+     "page": "articles",
+     "children": [
+      {
+       "title": "Prevention",
+       "category": "prevention"
+      },
+      {
+       "title": "Nutrition",
+       "category": "nutrition"
+      },
+      {
+       "title": "Mental Wellbeing",
+       "category": "wellbeing"
+      },
+      {
+       "title": "Family Health",
+       "category": "family-health"
+      }
+     ]
+    },
+    {
+     "title": "About",
+     "page": "about"
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    }
+   ]
+  },
+  {
+   "name": "Footer",
+   "location": "footer",
+   "items": [
+    {
+     "title": "Appointments",
+     "page": "appointments"
+    },
+    {
+     "title": "Clinic News",
+     "category": "clinic-news"
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "sidebar-1": [
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Need an appointment?</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Call (555) 010-2040 from 8:00, or ask at the front desk. Same-week appointments for most concerns.</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:search {\"label\":\"Search\",\"buttonText\":\"Search\"} /-->",
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Topics</h2><!-- /wp:heading --><!-- wp:categories {\"showPostCounts\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Recent articles</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":4,\"displayPostDate\":true} /--></div><!-- /wp:group -->"
+  ],
+  "footer-1": [
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">From the health library</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":3,\"displayPostDate\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Topics</h2><!-- /wp:heading --><!-- wp:categories {\"showPostCounts\":true} /--></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "hero_image": "hero",
+  "accent": "#0f766e",
+  "soft": "#e7f5f2",
+  "header_layout": "split",
+  "post_layout": "cards",
+  "sidebar": "right",
+  "corners": "rounded",
+  "font_pairing": "friendly",
+  "show_topbar": true,
+  "show_cta_band": true,
+  "cta_link": "/appointments/",
+  "footer_text": "© Evergreen Care Family Practice"
+ }
+}

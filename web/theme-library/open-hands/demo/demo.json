@@ -1,0 +1,467 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Open Hands",
+  "blogdescription": "Neighbours helping neighbours since 2011",
+  "posts_per_page": 9
+ },
+ "categories": [
+  {
+   "slug": "stories",
+   "name": "Stories",
+   "description": "The people behind our work."
+  },
+  {
+   "slug": "food",
+   "name": "Food",
+   "description": "The Tuesday Kitchen, the pantry and the garden."
+  },
+  {
+   "slug": "education",
+   "name": "Education",
+   "description": "Reading club, homework help and holiday clubs."
+  },
+  {
+   "slug": "volunteers",
+   "name": "Volunteers",
+   "description": "The people who make it all happen."
+  },
+  {
+   "slug": "news",
+   "name": "News",
+   "description": "Appeals, updates and announcements."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "meals",
+   "name": "Meals"
+  },
+  {
+   "slug": "volunteers",
+   "name": "Volunteers"
+  },
+  {
+   "slug": "children",
+   "name": "Children"
+  },
+  {
+   "slug": "reading",
+   "name": "Reading"
+  },
+  {
+   "slug": "appeal",
+   "name": "Appeal"
+  },
+  {
+   "slug": "community",
+   "name": "Community"
+  },
+  {
+   "slug": "garden",
+   "name": "Garden"
+  },
+  {
+   "slug": "transparency",
+   "name": "Transparency"
+  },
+  {
+   "slug": "thank-you",
+   "name": "Thank you"
+  }
+ ],
+ "media": [
+  {
+   "id": "hero",
+   "file": "demo/images/hero.jpg",
+   "alt": "Warm paper-cut shapes of people gathered under a rising sun",
+   "caption": ""
+  },
+  {
+   "id": "kitchen",
+   "file": "demo/images/kitchen.jpg",
+   "alt": "A busy community kitchen in warm colours",
+   "caption": ""
+  },
+  {
+   "id": "reading",
+   "file": "demo/images/reading.jpg",
+   "alt": "Brightly coloured children's books on shelves",
+   "caption": ""
+  },
+  {
+   "id": "coats",
+   "file": "demo/images/coats.jpg",
+   "alt": "Colourful winter coats hanging in a row",
+   "caption": ""
+  },
+  {
+   "id": "hands",
+   "file": "demo/images/hands.jpg",
+   "alt": "Many hands joined together in warm colours",
+   "caption": ""
+  },
+  {
+   "id": "garden",
+   "file": "demo/images/garden.jpg",
+   "alt": "Raised beds of vegetables in a community garden",
+   "caption": ""
+  },
+  {
+   "id": "harvest",
+   "file": "demo/images/harvest.jpg",
+   "alt": "Baskets full of harvested vegetables",
+   "caption": ""
+  },
+  {
+   "id": "fixers",
+   "file": "demo/images/fixers.jpg",
+   "alt": "Tools and a bicycle wheel on a workbench",
+   "caption": ""
+  },
+  {
+   "id": "volunteers",
+   "file": "demo/images/volunteers.jpg",
+   "alt": "Volunteers gathered together, illustrated in warm shapes",
+   "caption": ""
+  },
+  {
+   "id": "sunrise",
+   "file": "demo/images/sunrise.jpg",
+   "alt": "A sunrise over gentle hills",
+   "caption": ""
+  },
+  {
+   "id": "heart",
+   "file": "demo/images/heart.jpg",
+   "alt": "A heart made of overlapping paper shapes",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Home",
+   "content": "<!-- wp:group {\"align\":\"full\",\"className\":\"oh-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull oh-section\"><!-- wp:paragraph {\"className\":\"oh-eyebrow\"} --><p class=\"oh-eyebrow\">What we do</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Three programs, one simple idea: show up for each other</h2><!-- /wp:heading --><!-- wp:columns {\"align\":\"wide\",\"className\":\"oh-programs\"} --><div class=\"wp-block-columns alignwide oh-programs\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:kitchen}}\" alt=\"The Tuesday Kitchen\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">The Tuesday Kitchen</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Hot meals for anyone who walks in, cooked by neighbours from rescued food.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:reading}}\" alt=\"Reading Club\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Reading Club</h3><!-- /wp:heading --><!-- wp:paragraph --><p>After-school reading buddies, homework help and a lending library for children.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:garden}}\" alt=\"Community Garden\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Community Garden</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Forty families growing food together on what used to be a car park.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:programs}}\">All our programs</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --><!-- wp:group {\"align\":\"full\",\"className\":\"oh-section oh-section--clay\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull oh-section oh-section--clay\"><!-- wp:media-text {\"mediaType\":\"image\",\"className\":\"alignwide\"} --><div class=\"wp-block-media-text is-stacked-on-mobile alignwide\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:hands}}\" alt=\"Many hands joined together in warm colours\" class=\"size-full\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:paragraph {\"className\":\"oh-eyebrow\"} --><p class=\"oh-eyebrow\">Why we exist</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Hard times are easier together</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Open Hands started at a kitchen table with five neighbours and one question: what if nobody in our town had to face a hard winter alone? Fifteen years later, the question is the same. The table is just bigger.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:about}}\">Our story</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div></div><!-- /wp:media-text --></div><!-- /wp:group --><!-- wp:group {\"align\":\"full\",\"className\":\"oh-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull oh-section\"><!-- wp:paragraph {\"className\":\"oh-eyebrow\"} --><p class=\"oh-eyebrow\">Stories of change</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Latest from our community</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":3,\"displayPostContent\":true,\"excerptLength\":20,\"displayPostDate\":true,\"postLayout\":\"grid\",\"columns\":3} /--><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:stories}}\">Read all stories</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --><!-- wp:group {\"align\":\"full\",\"className\":\"oh-section oh-section--fern\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull oh-section oh-section--fern\"><!-- wp:paragraph {\"className\":\"oh-eyebrow\"} --><p class=\"oh-eyebrow\">Get involved</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Three ways to help this month</h2><!-- /wp:heading --><!-- wp:columns {\"align\":\"wide\",\"className\":\"oh-ways\"} --><div class=\"wp-block-columns alignwide oh-ways\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Give</h3><!-- /wp:heading --><!-- wp:paragraph --><p>A monthly gift of any size helps us plan ahead.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:donate}}\">Donate</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Volunteer</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Two hours a month is enough to make a difference.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:volunteer}}\">Volunteer</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Spread the word</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Tell a friend, share a story or bring a colleague along to a Tuesday.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->",
+   "template": "",
+   "front_page": true
+  },
+  {
+   "slug": "stories",
+   "title": "Stories",
+   "content": "",
+   "template": "",
+   "posts_page": true
+  },
+  {
+   "slug": "about",
+   "title": "Our Mission",
+   "content": "<!-- wp:paragraph --><p>Open Hands is a community charity that believes nobody in our town should face hard times alone. We share meals, run children's programs and stand beside families through difficult seasons.</p><!-- /wp:paragraph --><!-- wp:pullquote --><figure class=\"wp-block-pullquote\"><blockquote><p>Charity is not something we do for people. It is something we do with them.</p><cite>Our founding idea</cite></blockquote></figure><!-- /wp:pullquote --><!-- wp:heading --><h2 class=\"wp-block-heading\">What we believe</h2><!-- /wp:heading --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Dignity first</h3><!-- /wp:heading --><!-- wp:paragraph --><p>No forms at the door, no queues outside, no questions asked.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Neighbours, not clients</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Most of our volunteers once came through our doors for help.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Every penny counts</h3><!-- /wp:heading --><!-- wp:paragraph --><p>We publish our accounts every year, in plain language.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-image size-large alignwide\"><img src=\"{{media:volunteers}}\" alt=\"Volunteers gathered together, illustrated in warm shapes\"/><figcaption class=\"wp-element-caption\">Our volunteers at the summer picnic.</figcaption></figure><!-- /wp:image -->",
+   "template": "",
+   "featured_media": "hands"
+  },
+  {
+   "slug": "programs",
+   "title": "Programs",
+   "content": "<!-- wp:paragraph --><p>Everything we do is shaped by the people who use it. These are our three main programs; each is run by volunteers and a small staff team.</p><!-- /wp:paragraph --><!-- wp:columns {\"align\":\"wide\",\"className\":\"oh-programs\"} --><div class=\"wp-block-columns alignwide oh-programs\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:kitchen}}\" alt=\"The Tuesday Kitchen\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">The Tuesday Kitchen</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Hot meals for anyone who walks in, cooked by neighbours from rescued food.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:reading}}\" alt=\"Reading Club\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Reading Club</h3><!-- /wp:heading --><!-- wp:paragraph --><p>After-school reading buddies, homework help and a lending library for children.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:garden}}\" alt=\"Community Garden\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Community Garden</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Forty families growing food together on what used to be a car park.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:heading --><h2 class=\"wp-block-heading\">Also throughout the year</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>The winter coat drive (October–December)</li><!-- /wp:list-item --><!-- wp:list-item --><li>The repair café, first Saturday of every month</li><!-- /wp:list-item --><!-- wp:list-item --><li>Holiday lunch clubs during school breaks</li><!-- /wp:list-item --></ul><!-- /wp:list -->",
+   "template": "",
+   "featured_media": "garden"
+  },
+  {
+   "slug": "get-involved",
+   "title": "Get Involved",
+   "content": "<!-- wp:paragraph --><p>There is a place for everyone at Open Hands, whether you have two hours a month or two days a week.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Volunteer</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Cook, read, sort, fix or drive. Training is provided.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:volunteer}}\">Find a role</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Fundraise</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Run, bake, sing or shave your head. We will send you a starter pack.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Partner with us</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Local businesses can sponsor a program or give staff volunteering days.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->",
+   "template": "",
+   "featured_media": "volunteers"
+  },
+  {
+   "slug": "volunteer",
+   "title": "Volunteer",
+   "content": "<!-- wp:paragraph --><p>Our volunteers are the heart of everything we do. Here are the roles we are recruiting for right now.</p><!-- /wp:paragraph --><!-- wp:details --><details class=\"wp-block-details\"><summary>Tuesday Kitchen helper</summary><!-- wp:paragraph --><p>Tuesdays 16:00–20:00. Prep, serving, washing up and conversation. No cooking experience needed.</p><!-- /wp:paragraph --></details><!-- /wp:details --><!-- wp:details --><details class=\"wp-block-details\"><summary>Reading buddy</summary><!-- wp:paragraph --><p>One afternoon a week during term time. A background check is required; we arrange it for free.</p><!-- /wp:paragraph --></details><!-- /wp:details --><!-- wp:details --><details class=\"wp-block-details\"><summary>Garden volunteer</summary><!-- wp:paragraph --><p>Saturday mornings from March to October. Bring gloves and good humour.</p><!-- /wp:paragraph --></details><!-- /wp:details --><!-- wp:details --><details class=\"wp-block-details\"><summary>Driver</summary><!-- wp:paragraph --><p>Collecting food donations from farms and shops. You need a clean licence; we provide the van.</p><!-- /wp:paragraph --></details><!-- /wp:details --><!-- wp:paragraph --><p>Not sure which role fits? Write to us and we will find something that suits you.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Contact our volunteer team</a></div><!-- /wp:button --></div><!-- /wp:buttons -->",
+   "template": "",
+   "featured_media": "fixers",
+   "parent": "get-involved"
+  },
+  {
+   "slug": "donate",
+   "title": "Donate",
+   "content": "<!-- wp:paragraph --><p>Your gift goes straight to meals, children's programs and families who need a hand this winter. Thank you.</p><!-- /wp:paragraph --><!-- wp:columns {\"className\":\"oh-amounts\"} --><div class=\"wp-block-columns oh-amounts\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"oh-amount\"} --><p class=\"oh-amount\">$10</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>cooks five hot meals</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"oh-amount\"} --><p class=\"oh-amount\">$25</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>buys a child a winter coat</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"oh-amount\"} --><p class=\"oh-amount\">$50</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>runs the reading club for an afternoon</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"oh-amount\"} --><p class=\"oh-amount\">$100</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>fills the pantry for a family for a month</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:heading --><h2 class=\"wp-block-heading\">Ways to give</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><strong>Monthly:</strong> the most useful gift of all, because it helps us plan.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Once:</strong> by card, bank transfer or cheque.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>In kind:</strong> food, coats and books are always welcome at the centre.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph --><p>Open Hands is a registered charity. This is demo content: connect your own donation form or payment page here.</p><!-- /wp:paragraph -->",
+   "template": "",
+   "featured_media": "harvest"
+  },
+  {
+   "slug": "contact",
+   "title": "Contact",
+   "content": "<!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Visit</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Open Hands Community Centre<br>4 Mill Lane, Eastbridge<br>Monday–Saturday, 9:00–17:00</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Write</h3><!-- /wp:heading --><!-- wp:paragraph --><p>hello@openhands.example<br>We reply within three working days.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Call</h3><!-- /wp:heading --><!-- wp:paragraph --><p>(555) 013-4400<br>If you need urgent help, please call and we will do our best to point you the right way.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->",
+   "template": ""
+  }
+ ],
+ "posts": [
+  {
+   "slug": "the-tuesday-kitchen",
+   "title": "The Tuesday Kitchen That Feeds a Whole Street",
+   "date": "2026-10-06T10:00:00",
+   "excerpt": "Every Tuesday, a church hall becomes the warmest room in town. Inside the kitchen where 180 hot meals are cooked by neighbours, for neighbours.",
+   "content": "<!-- wp:paragraph --><p>At four o'clock on a Tuesday the hall smells of onions and rosemary. By six, there are 180 people at long tables, and you cannot tell who is a volunteer and who came for dinner. That is exactly the point.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The Tuesday Kitchen began five years ago with one pot of soup and eleven guests. Today it runs on donated vegetables from three farms, a rota of sixty volunteers, and a head cook who used to run a restaurant and says this is the best job she has ever had.</p><!-- /wp:paragraph --><!-- wp:pullquote --><figure class=\"wp-block-pullquote\"><blockquote><p>Nobody is served here. We all just have dinner together.</p><cite>Rosa, head cook</cite></blockquote></figure><!-- /wp:pullquote --><!-- wp:heading --><h2 class=\"wp-block-heading\">What a Tuesday takes</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>40 kilograms of vegetables, mostly rescued from farm surplus</li><!-- /wp:list-item --><!-- wp:list-item --><li>12 volunteers in the kitchen, 8 at the tables, 4 washing up</li><!-- /wp:list-item --><!-- wp:list-item --><li>One very old dishwasher named Gerald</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph --><p>If you would like to help, you do not need to cook. We always need people to set tables, pour drinks and, most of all, sit down and talk.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:volunteer}}\">Volunteer on a Tuesday</a></div><!-- /wp:button --></div><!-- /wp:buttons -->",
+   "categories": [
+    "stories",
+    "food"
+   ],
+   "tags": [
+    "meals",
+    "volunteers"
+   ],
+   "featured_media": "kitchen",
+   "format": "standard",
+   "sticky": true,
+   "comments": [
+    {
+     "author": "Maren",
+     "email": "maren@example.com",
+     "content": "I have been washing up on Tuesdays for a year. Gerald is a legend.",
+     "date": "2026-10-07T09:20:00"
+    },
+    {
+     "author": "Felix",
+     "email": "felix@example.com",
+     "content": "Came for dinner during a hard winter, stayed as a volunteer. Thank you all.",
+     "date": "2026-10-08T18:05:00"
+    }
+   ]
+  },
+  {
+   "slug": "reading-club-turns-five",
+   "title": "Our After-School Reading Club Turns Five",
+   "date": "2026-09-22T15:00:00",
+   "excerpt": "Five years, 1,350 children and more than 9,000 books borrowed. The reading club celebrates with a party, a parade and a very large cake.",
+   "content": "<!-- wp:paragraph --><p>When the reading club opened, it had one shelf of donated books and four children who came mostly for the biscuits. Last month it celebrated its fifth birthday with two hundred guests and a cake shaped like an open book.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">1,350</h3><!-- /wp:heading --><!-- wp:paragraph --><p>children have joined since the first session.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">9,000+</h3><!-- /wp:heading --><!-- wp:paragraph --><p>books borrowed, and most of them returned.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">38</h3><!-- /wp:heading --><!-- wp:paragraph --><p>volunteer reading buddies every week.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>My son used to hide from books. Now he hides with them, under the duvet, with a torch.</p><!-- /wp:paragraph --><cite>A parent at the party</cite></blockquote><!-- /wp:quote --><!-- wp:paragraph --><p>The club meets four afternoons a week in the library annex. Children read with a buddy, choose a book to take home and, yes, there are still biscuits.</p><!-- /wp:paragraph --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:reading}}\" alt=\"Children&#x27;s books stacked in bright colours\"/><figcaption class=\"wp-element-caption\">The new shelves, built by volunteers in the spring.</figcaption></figure><!-- /wp:image -->",
+   "categories": [
+    "education",
+    "stories"
+   ],
+   "tags": [
+    "children",
+    "reading"
+   ],
+   "featured_media": "reading",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "a-winter-coat-for-every-child",
+   "title": "A Winter Coat for Every Child",
+   "date": "2026-09-05T09:00:00",
+   "excerpt": "This year's coat drive aims to make sure no child in our town walks to school cold. Here is how it works and how you can help.",
+   "content": "<!-- wp:paragraph --><p>Last winter, our school partners told us that dozens of children were arriving in thin jackets. So this year we are running our biggest coat drive yet: 600 new and nearly new coats, sorted by size and given out with dignity, no questions asked.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">How to help</h2><!-- /wp:heading --><!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Drop off clean coats at the community centre, Monday to Saturday.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Sponsor a new coat for a child for 25 dollars.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Join a sorting evening in November.</li><!-- /wp:list-item --></ol><!-- /wp:list --><!-- wp:paragraph --><p>Every coat goes to a family referred by a school, a health visitor or a neighbour. Parents choose the coat with their child, just like in a shop.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:donate}}\">Sponsor a coat</a></div><!-- /wp:button --></div><!-- /wp:buttons --><!-- wp:paragraph --><p>Last year's drive gave out 420 coats. With your help, this winter we want every child on the list to have one before the first frost.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "news"
+   ],
+   "tags": [
+    "appeal",
+    "children"
+   ],
+   "featured_media": "coats",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Amira",
+     "email": "amira@example.com",
+     "content": "Dropped off three coats this morning. Lovely team at the centre!",
+     "date": "2026-09-06T11:00:00"
+    }
+   ]
+  },
+  {
+   "slug": "from-guest-to-volunteer",
+   "title": "From Guest to Volunteer: Daniel's Year",
+   "date": "2026-08-18T12:00:00",
+   "excerpt": "A year ago Daniel came to the Tuesday Kitchen for a hot meal. Today he runs the washing-up team and mentors new volunteers.",
+   "content": "<!-- wp:paragraph --><p>Daniel does not like being called inspiring. \"I just kept coming back,\" he says, \"and one day somebody handed me a tea towel.\"</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>He had lost his job, then his flat, in the same autumn. The Tuesday Kitchen was the first place he went where nobody asked him to explain himself.</p><!-- /wp:paragraph --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>They gave me dinner. Then they gave me something to do. I am not sure which one mattered more.</p><!-- /wp:paragraph --><cite>Daniel</cite></blockquote><!-- /wp:quote --><!-- wp:paragraph --><p>Today he has a part-time job, a small flat near the river, and a Tuesday-evening team of six who follow his washing-up system to the letter.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Stories like Daniel's are why we do this. Not because they are rare, but because they are possible.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "stories",
+    "volunteers"
+   ],
+   "tags": [
+    "volunteers",
+    "community"
+   ],
+   "featured_media": "hands",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "community-garden-harvest",
+   "title": "The Community Garden's Best Harvest Yet",
+   "date": "2026-08-02T08:30:00",
+   "excerpt": "Two tonnes of vegetables, grown by forty families on an old car park, and every bit of it shared.",
+   "content": "<!-- wp:paragraph --><p>Three years ago, the land behind the community centre was a cracked car park. This summer it produced two tonnes of potatoes, beans, squash and tomatoes.</p><!-- /wp:paragraph --><!-- wp:gallery {\"columns\":3,\"linkTo\":\"none\"} --><figure class=\"wp-block-gallery has-nested-images columns-3 is-cropped\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:garden}}\" alt=\"Raised beds full of vegetables\"/></figure><!-- /wp:image --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:harvest}}\" alt=\"Baskets of harvested vegetables\"/></figure><!-- /wp:image --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:kitchen}}\" alt=\"Volunteers cooking in the kitchen\"/></figure><!-- /wp:image --></figure><!-- /wp:gallery --><!-- wp:heading --><h2 class=\"wp-block-heading\">Where the harvest goes</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Half to the Tuesday Kitchen</li><!-- /wp:list-item --><!-- wp:list-item --><li>A quarter to the families who grow it</li><!-- /wp:list-item --><!-- wp:list-item --><li>A quarter to the weekly pantry</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph --><p>Next year we hope to add a greenhouse, so the garden can keep growing through the winter.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Anyone can join a growing team. Beds are shared, tools are provided, and the only rule is that the first tomato of the summer goes to the youngest gardener.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "food"
+   ],
+   "tags": [
+    "garden",
+    "meals"
+   ],
+   "featured_media": "garden",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "what-your-gift-does",
+   "title": "What Your Gift Actually Does",
+   "date": "2026-07-20T10:00:00",
+   "excerpt": "People often ask where their money goes. Here is a plain breakdown of what we spent last year and what one gift can buy.",
+   "content": "<!-- wp:paragraph --><p>We believe you should know exactly what happens to your money. So here is last year's spending, in plain words.</p><!-- /wp:paragraph --><!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Where it went</th><th>Share</th></tr></thead><tbody><tr><td>Meals and the pantry</td><td>41%</td></tr><tr><td>Children's programs</td><td>29%</td></tr><tr><td>Emergency support for families</td><td>17%</td></tr><tr><td>Running costs (rent, insurance, accounts)</td><td>13%</td></tr></tbody></table></figure><!-- /wp:table --><!-- wp:heading --><h2 class=\"wp-block-heading\">What one gift can do</h2><!-- /wp:heading --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">$10</h3><!-- /wp:heading --><!-- wp:paragraph --><p>cooks five hot meals at the Tuesday Kitchen.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">$25</h3><!-- /wp:heading --><!-- wp:paragraph --><p>buys a new winter coat for a child.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">$50</h3><!-- /wp:heading --><!-- wp:paragraph --><p>keeps the reading club open for an afternoon.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:paragraph --><p>Our accounts are checked by an independent accountant every year, and the full report is always on our website.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "news"
+   ],
+   "tags": [
+    "appeal",
+    "transparency"
+   ],
+   "featured_media": "harvest",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "meet-the-saturday-fixers",
+   "title": "Meet the Saturday Fixers",
+   "date": "2026-07-04T11:00:00",
+   "excerpt": "Bikes, toasters, school bags and, once, a wedding dress: the repair café keeps things out of landfill and money in people's pockets.",
+   "content": "<!-- wp:paragraph --><p>On the first Saturday of every month, the community centre fills with screwdrivers, sewing machines and people who are very good at fixing things.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The repair café is free. Bring something broken, sit with a volunteer, and learn to fix it together. Most things leave working; everything leaves a little better.</p><!-- /wp:paragraph --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>412 items repaired last year</li><!-- /wp:list-item --><!-- wp:list-item --><li>Bikes are the most common, toasters the most stubborn</li><!-- /wp:list-item --><!-- wp:list-item --><li>Tea and cake are, as always, compulsory</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Fixing something with your own hands is a small kind of hope.</p><!-- /wp:paragraph --><cite>Ines, sewing volunteer</cite></blockquote><!-- /wp:quote -->",
+   "categories": [
+    "volunteers"
+   ],
+   "tags": [
+    "volunteers",
+    "community"
+   ],
+   "featured_media": "fixers",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "a-thank-you-to-our-volunteers",
+   "title": "A Thank-You Letter to Our 640 Volunteers",
+   "date": "2026-06-20T17:00:00",
+   "excerpt": "Volunteers' week is over, but our gratitude is not. A short letter from the whole team to everyone who gives their time.",
+   "content": "<!-- wp:paragraph --><p>Dear volunteers, you chopped, read, carried, sorted, fixed, drove, listened and washed up. You turned up in the rain and stayed late when we were short.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Last year you gave more than 31,000 hours. That is three and a half years of time, given away to your neighbours.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>We cannot pay you, but we can say it clearly and often: thank you. This town is kinder because of you.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>With love, from everyone at Open Hands.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "volunteers",
+    "news"
+   ],
+   "tags": [
+    "volunteers",
+    "thank-you"
+   ],
+   "featured_media": "volunteers",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Home",
+     "page": "home"
+    },
+    {
+     "title": "Our Mission",
+     "page": "about"
+    },
+    {
+     "title": "Programs",
+     "page": "programs",
+     "children": [
+      {
+       "title": "Food",
+       "category": "food"
+      },
+      {
+       "title": "Education",
+       "category": "education"
+      }
+     ]
+    },
+    {
+     "title": "Stories",
+     "page": "stories"
+    },
+    {
+     "title": "Get Involved",
+     "page": "get-involved",
+     "children": [
+      {
+       "title": "Volunteer",
+       "page": "volunteer"
+      },
+      {
+       "title": "Contact",
+       "page": "contact"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Footer",
+   "location": "footer",
+   "items": [
+    {
+     "title": "Donate",
+     "page": "donate"
+    },
+    {
+     "title": "Volunteer",
+     "page": "volunteer"
+    },
+    {
+     "title": "News",
+     "category": "news"
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "sidebar-1": [
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">About Open Hands</h2><!-- /wp:heading --><!-- wp:paragraph --><p>A community charity sharing meals, books and a helping hand since 2011.</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:search {\"label\":\"Search\",\"buttonText\":\"Search\"} /-->",
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Topics</h2><!-- /wp:heading --><!-- wp:categories {\"showPostCounts\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">More stories</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":4,\"displayPostDate\":true} /--></div><!-- /wp:group -->"
+  ],
+  "footer-1": [
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Visit us</h2><!-- /wp:heading --><!-- wp:paragraph --><p>4 Mill Lane, Eastbridge<br>Monday–Saturday, 9:00–17:00</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Latest stories</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":3,\"displayPostDate\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Topics</h2><!-- /wp:heading --><!-- wp:categories {\"showPostCounts\":true} /--></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "hero_image": "hero",
+  "accent": "#e8590c",
+  "sun": "#fcc419",
+  "post_layout": "feature",
+  "sidebar": "none",
+  "header_style": "classic",
+  "font_pairing": "warm",
+  "image_tone": "warm",
+  "show_banner": true,
+  "mobile_donate": true,
+  "banner_link": "/donate/",
+  "donate_link": "/donate/",
+  "footer_text": "© Open Hands Community Charity · Registered charity (demo)"
+ }
+}

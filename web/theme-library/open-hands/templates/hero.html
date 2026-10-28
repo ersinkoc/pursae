@@ -1,0 +1,12 @@
+{{with .Data.Settings}}<section class="oh-hero" aria-label="Our mission">
+	<div class="oh-hero__statement">
+		{{with .hero_kicker}}<p class="oh-hero__kicker">{{.}}</p>{{end}}
+		<p class="oh-hero__title">{{with .hero_title}}{{.}}{{else}}{{$.SiteName}}{{end}}{{with .hero_highlight}} <span class="oh-mark">{{.}}</span>{{end}}</p>
+		{{with .hero_text}}<p class="oh-hero__text">{{.}}</p>{{end}}
+		<p class="oh-hero__actions">{{with .donate_label}}<a class="button" href="{{$.Data.Settings.donate_link}}">{{.}} today</a>{{end}}<a class="button button--line" href="#main">See our work</a></p>
+	</div>
+	<div class="oh-hero__visual">
+		<img class="oh-hero__img" src="{{with .hero_image}}{{.}}{{else}}{{$.ThemeURI}}/images/hero.jpg{{end}}" alt="" />
+		{{with .impact_stats}}<ul class="oh-impact" aria-label="Our impact">{{range split . ";"}}{{$p := split . "|"}}<li><strong>{{index $p 0}}</strong>{{if gt (len $p) 1}}<span>{{index $p 1}}</span>{{end}}</li>{{end}}</ul>{{end}}
+	</div>
+</section>{{end}}

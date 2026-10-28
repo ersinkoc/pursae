@@ -1,0 +1,22 @@
+	{{template "wrap-close" .}}
+	<footer id="colophon" class="site-footer">
+		<div class="cc-applyband">
+			<div class="cc-applyband__inner">
+				<p class="cc-applyband__title">Ready to start learning?</p>
+				<p class="cc-applyband__text">New courses start every term, online and on campus.</p>
+				{{with .Data.Settings.apply_label}}<a class="button" href="{{$.Data.Settings.apply_link}}">{{.}}</a>{{end}}
+			</div>
+		</div>
+		<div class="site-footer__inner">
+			<div class="cc-footer__grid">
+				<div class="cc-footer__brand"><p class="cc-footer__name"><span class="cc-crest" aria-hidden="true"></span>{{.SiteName}}</p>{{with .Description}}<p>{{.}}</p>{{end}}</div>
+				{{if is_active_sidebar . "footer-1"}}<div class="footer-widgets">{{dynamic_sidebar . "footer-1"}}</div>{{end}}
+			</div>
+			<div class="cc-footer__bottom">
+				{{if has_nav_menu . "footer"}}<nav class="footer-navigation" aria-label="Footer menu">{{nav_menu . "footer"}}</nav>{{end}}
+				{{template "site-info" .}}
+			</div>
+		</div>
+	</footer><!-- #colophon -->
+</div><!-- #page -->
+{{template "foot" .}}

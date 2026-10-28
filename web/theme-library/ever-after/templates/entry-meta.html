@@ -1,0 +1,6 @@
+{{if eq .Type "post"}}<div class="entry-meta">
+	{{with .AuthorName}}<span class="byline">Written by <a class="author" href="{{$.AuthorURL}}" rel="author">{{.}}</a></span>{{end}}
+	<span class="posted-on"><a href="{{.Permalink}}" rel="bookmark"><time class="entry-date published" datetime="{{.DateISO}}">{{.DateText}}</time></a></span>
+	{{if or .CommentsOpen .CommentCount}}<span class="comments-link"><a href="{{.CommentsURL}}">{{plural .CommentCount "%s comment" "%s comments"}}</a></span>{{end}}
+	{{with .EditLink}}<span class="edit-link">{{.}}</span>{{end}}
+</div>{{else}}{{with .EditLink}}<div class="entry-meta"><span class="edit-link">{{.}}</span></div>{{end}}{{end}}

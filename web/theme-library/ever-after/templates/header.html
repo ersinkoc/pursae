@@ -1,0 +1,17 @@
+{{template "head" .}}
+<body class="{{.BodyClass}}">
+{{.BodyOpen}}<div id="page" class="site">
+	<a class="skip-link screen-reader-text" href="#main">Skip to content</a>
+	<header id="masthead" class="site-header">
+		<div class="site-header__inner">
+			{{template "branding" .}}
+			{{with .Data.Settings.wedding_date}}<p class="ea-header-date">{{.}}</p>{{end}}
+			{{if has_nav_menu . "primary"}}<nav id="site-navigation" class="main-navigation" aria-label="Primary menu">
+				{{template "menu-toggle" .}}
+				<div id="primary-menu-wrap" class="menu-wrap">{{nav_menu . "primary"}}</div>
+			</nav><!-- #site-navigation -->{{end}}
+			{{with .Data.Settings.rsvp_label}}<a class="button ea-rsvp" href="{{$.Data.Settings.rsvp_link}}">{{.}}</a>{{end}}
+		</div>
+	</header><!-- #masthead -->
+	{{if .IsFront}}{{template "hero" .}}{{end}}
+	{{template "wrap-open" .}}

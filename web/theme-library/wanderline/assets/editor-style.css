@@ -1,0 +1,7 @@
+@font-face { font-family: "Anton"; src: url("fonts/anton.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Karla"; src: url("fonts/karla.woff2") format("woff2"); font-weight: 400 700; font-display: swap; }
+body { font-family: "Karla", system-ui, sans-serif; font-size: 1.08rem; line-height: 1.7; color: #23202b; background: #fffaf3; }
+h1, h2, h3, h4, .editor-post-title__input { font-family: "Anton", Impact, sans-serif; font-weight: 400; text-transform: uppercase; color: #1b1a25; line-height: 1.1; }
+a { color: #a63d1f; }
+blockquote { border-left: 4px solid #e4572e; padding-left: 1.2em; }
+.wp-block-button__link { background: #e4572e; color: #fff; border-radius: 999px; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; }

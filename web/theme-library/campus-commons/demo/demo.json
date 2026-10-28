@@ -1,0 +1,508 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Campus Commons",
+  "blogdescription": "Alder Hill's college for lifelong learning",
+  "posts_per_page": 9
+ },
+ "categories": [
+  {
+   "slug": "news",
+   "name": "News",
+   "description": "Announcements from the college."
+  },
+  {
+   "slug": "events",
+   "name": "Events",
+   "description": "Open evenings, talks and festivals."
+  },
+  {
+   "slug": "courses",
+   "name": "Courses",
+   "description": "New courses and learning tips."
+  },
+  {
+   "slug": "student-life",
+   "name": "Student Life",
+   "description": "Clubs, spaces and the people who make the Commons."
+  },
+  {
+   "slug": "faculty",
+   "name": "Faculty",
+   "description": "News about our teachers."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "enrolment",
+   "name": "Enrolment"
+  },
+  {
+   "slug": "spring-term",
+   "name": "Spring term"
+  },
+  {
+   "slug": "science",
+   "name": "Science"
+  },
+  {
+   "slug": "awards",
+   "name": "Awards"
+  },
+  {
+   "slug": "open-evening",
+   "name": "Open evening"
+  },
+  {
+   "slug": "admissions",
+   "name": "Admissions"
+  },
+  {
+   "slug": "languages",
+   "name": "Languages"
+  },
+  {
+   "slug": "study-skills",
+   "name": "Study skills"
+  },
+  {
+   "slug": "campus",
+   "name": "Campus"
+  },
+  {
+   "slug": "staff",
+   "name": "Staff"
+  },
+  {
+   "slug": "summer-school",
+   "name": "Summer school"
+  }
+ ],
+ "media": [
+  {
+   "id": "hero",
+   "file": "demo/images/hero.jpg",
+   "alt": "Stacked books, a globe and a lamp in bold geometric shapes",
+   "caption": ""
+  },
+  {
+   "id": "library",
+   "file": "demo/images/library.jpg",
+   "alt": "Bookshelves in the library reading room",
+   "caption": ""
+  },
+  {
+   "id": "science",
+   "file": "demo/images/science.jpg",
+   "alt": "Science fair projects with beakers and a small robot",
+   "caption": ""
+  },
+  {
+   "id": "campus",
+   "file": "demo/images/campus.jpg",
+   "alt": "The main building and lawn of the campus",
+   "caption": ""
+  },
+  {
+   "id": "languages",
+   "file": "demo/images/languages.jpg",
+   "alt": "Speech bubbles in many colours",
+   "caption": ""
+  },
+  {
+   "id": "lab",
+   "file": "demo/images/lab.jpg",
+   "alt": "Plants and glassware in the glasshouse classroom",
+   "caption": ""
+  },
+  {
+   "id": "faculty",
+   "file": "demo/images/faculty.jpg",
+   "alt": "Abstract portraits of teachers",
+   "caption": ""
+  },
+  {
+   "id": "study",
+   "file": "demo/images/study.jpg",
+   "alt": "A desk with a notebook, pencil and lamp",
+   "caption": ""
+  },
+  {
+   "id": "art",
+   "file": "demo/images/art.jpg",
+   "alt": "Paint swatches and brushes",
+   "caption": ""
+  },
+  {
+   "id": "teacher-1",
+   "file": "demo/images/teacher-1.jpg",
+   "alt": "Abstract portrait illustration of a teacher",
+   "caption": ""
+  },
+  {
+   "id": "teacher-2",
+   "file": "demo/images/teacher-2.jpg",
+   "alt": "Abstract portrait illustration of a teacher",
+   "caption": ""
+  },
+  {
+   "id": "teacher-3",
+   "file": "demo/images/teacher-3.jpg",
+   "alt": "Abstract portrait illustration of a teacher",
+   "caption": ""
+  },
+  {
+   "id": "teacher-4",
+   "file": "demo/images/teacher-4.jpg",
+   "alt": "Abstract portrait illustration of a teacher",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Home",
+   "content": "<!-- wp:group {\"align\":\"full\",\"className\":\"cc-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull cc-section\"><!-- wp:paragraph {\"className\":\"cc-eyebrow\"} --><p class=\"cc-eyebrow\">Popular this term</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Courses starting soon</h2><!-- /wp:heading --><!-- wp:columns {\"align\":\"wide\",\"className\":\"cc-courses\"} --><div class=\"wp-block-columns alignwide cc-courses\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Introduction to Botany</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Plants, soil and the science of growing things.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"cc-meta\"} --><p class=\"cc-meta\">Thursdays · 10 weeks · On campus</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Conversational Portuguese</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Real conversations from the very first class.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"cc-meta\"} --><p class=\"cc-meta\">Tue & Thu evenings · Online</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Watercolour Foundations</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Washes, colour mixing and painting outdoors.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"cc-meta\"} --><p class=\"cc-meta\">Saturdays · 8 weeks · Studio</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Data Skills for Everyday Life</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Spreadsheets, charts and clear thinking.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"cc-meta\"} --><p class=\"cc-meta\">Self-paced · Online</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:courses}}\">Browse all courses</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --><!-- wp:group {\"align\":\"full\",\"className\":\"cc-section cc-section--navy\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull cc-section cc-section--navy\"><!-- wp:columns {\"align\":\"wide\",\"className\":\"cc-numbers\"} --><div class=\"wp-block-columns alignwide cc-numbers\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"cc-big\"} --><p class=\"cc-big\">42</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>courses this term</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"cc-big\"} --><p class=\"cc-big\">1,800</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>students of every age</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"cc-big\"} --><p class=\"cc-big\">36</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>teachers and tutors</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"cc-big\"} --><p class=\"cc-big\">1974</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>year we opened</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group --><!-- wp:group {\"align\":\"full\",\"className\":\"cc-section cc-section--sky\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull cc-section cc-section--sky\"><!-- wp:paragraph {\"className\":\"cc-eyebrow\"} --><p class=\"cc-eyebrow\">Around the commons</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">News & announcements</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":3,\"displayPostContent\":true,\"excerptLength\":18,\"displayPostDate\":true,\"postLayout\":\"grid\",\"columns\":3} /--><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:news}}\">All news</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --><!-- wp:group {\"align\":\"full\",\"className\":\"cc-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull cc-section\"><!-- wp:paragraph {\"className\":\"cc-eyebrow\"} --><p class=\"cc-eyebrow\">The people who teach</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Meet the faculty</h2><!-- /wp:heading --><!-- wp:columns {\"align\":\"wide\",\"className\":\"cc-faculty\"} --><div class=\"wp-block-columns alignwide cc-faculty\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:teacher-1}}\" alt=\"Abstract portrait illustration of Hana Brightwater\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Hana Brightwater</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Botany & Biology</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:teacher-2}}\" alt=\"Abstract portrait illustration of Tomas Ferreira\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Tomas Ferreira</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Languages</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:teacher-3}}\" alt=\"Abstract portrait illustration of Robin Ashby\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Robin Ashby</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Woodwork & Design</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:teacher-4}}\" alt=\"Abstract portrait illustration of Grace Okonjo\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Grace Okonjo</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Mathematics</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:buttons {\"layout\":{\"type\":\"flex\",\"justifyContent\":\"center\"}} --><div class=\"wp-block-buttons is-content-justification-center\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:faculty}}\">All faculty</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --><!-- wp:group {\"align\":\"full\",\"className\":\"cc-section cc-section--sky\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull cc-section cc-section--sky\"><!-- wp:media-text {\"mediaType\":\"image\",\"className\":\"alignwide\"} --><div class=\"wp-block-media-text is-stacked-on-mobile alignwide\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:campus}}\" alt=\"The campus lawn and main building\" class=\"size-full\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:paragraph {\"className\":\"cc-eyebrow\"} --><p class=\"cc-eyebrow\">Visit us</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Open evening on 14 November</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Tour the classrooms, try a taster class and meet the teachers. Everyone is welcome.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:events}}\">See all events</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div></div><!-- /wp:media-text --></div><!-- /wp:group -->",
+   "template": "",
+   "front_page": true
+  },
+  {
+   "slug": "news",
+   "title": "News",
+   "content": "",
+   "template": "",
+   "posts_page": true
+  },
+  {
+   "slug": "courses",
+   "title": "Courses",
+   "content": "<!-- wp:paragraph --><p>Our courses run in three terms: autumn, spring and summer. Most meet once a week for eight to twelve weeks; online courses can be started at any time.</p><!-- /wp:paragraph --><!-- wp:columns {\"align\":\"wide\",\"className\":\"cc-courses\"} --><div class=\"wp-block-columns alignwide cc-courses\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Introduction to Botany</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Plants, soil and the science of growing things.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"cc-meta\"} --><p class=\"cc-meta\">Thursdays · 10 weeks · On campus</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Conversational Portuguese</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Real conversations from the very first class.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"cc-meta\"} --><p class=\"cc-meta\">Tue & Thu evenings · Online</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Watercolour Foundations</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Washes, colour mixing and painting outdoors.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"cc-meta\"} --><p class=\"cc-meta\">Saturdays · 8 weeks · Studio</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Data Skills for Everyday Life</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Spreadsheets, charts and clear thinking.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"cc-meta\"} --><p class=\"cc-meta\">Self-paced · Online</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:heading --><h2 class=\"wp-block-heading\">By subject</h2><!-- /wp:heading --><!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Subject</th><th>Courses</th><th>Levels</th><th>Where</th></tr></thead><tbody><tr><td>Languages</td><td>Spanish, Portuguese, Italian, German, Japanese</td><td>Beginner to advanced</td><td>Campus & online</td></tr><tr><td>Sciences</td><td>Botany, astronomy, everyday chemistry</td><td>Introductory</td><td>Campus</td></tr><tr><td>Arts & making</td><td>Watercolour, pottery, woodwork, photography</td><td>All levels</td><td>Studio & workshop</td></tr><tr><td>Practical skills</td><td>Data skills, bookkeeping, first aid</td><td>Introductory</td><td>Online</td></tr></tbody></table></figure><!-- /wp:table --><!-- wp:details --><details class=\"wp-block-details\"><summary>Do I need any qualifications?</summary><!-- wp:paragraph --><p>No. Most courses are open to everyone; advanced language levels ask for a short placement chat.</p><!-- /wp:paragraph --></details><!-- /wp:details --><!-- wp:details --><details class=\"wp-block-details\"><summary>Can I get a certificate?</summary><!-- wp:paragraph --><p>Yes, every course includes a certificate of completion, and some lead to recognised qualifications.</p><!-- /wp:paragraph --></details><!-- /wp:details -->",
+   "template": "",
+   "featured_media": "library"
+  },
+  {
+   "slug": "events",
+   "title": "Events",
+   "content": "<!-- wp:paragraph --><p>Talks, open evenings, exhibitions and festivals: everyone is welcome at the Commons.</p><!-- /wp:paragraph --><!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Date</th><th>Event</th><th>Where</th></tr></thead><tbody><tr><td>14 November</td><td>Open evening and taster classes</td><td>Main hall</td></tr><tr><td>28 November</td><td>Winter science lecture: the night sky</td><td>Lecture theatre</td></tr><tr><td>6 December</td><td>Student art exhibition opens</td><td>Library gallery</td></tr><tr><td>12 December</td><td>Winter concert</td><td>Main hall</td></tr><tr><td>20 January</td><td>Spring term begins</td><td>Everywhere</td></tr></tbody></table></figure><!-- /wp:table --><!-- wp:paragraph --><p>Events are free unless marked otherwise. Follow the news page for updates and new dates.</p><!-- /wp:paragraph -->",
+   "template": "",
+   "featured_media": "campus"
+  },
+  {
+   "slug": "faculty",
+   "title": "Faculty",
+   "content": "<!-- wp:paragraph --><p>Our teachers are scientists, artists, linguists and makers who love sharing what they know.</p><!-- /wp:paragraph --><!-- wp:columns {\"align\":\"wide\",\"className\":\"cc-faculty\"} --><div class=\"wp-block-columns alignwide cc-faculty\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:teacher-1}}\" alt=\"Abstract portrait illustration of Hana Brightwater\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Hana Brightwater</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Botany & Biology</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:teacher-2}}\" alt=\"Abstract portrait illustration of Tomas Ferreira\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Tomas Ferreira</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Languages</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:teacher-3}}\" alt=\"Abstract portrait illustration of Robin Ashby\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Robin Ashby</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Woodwork & Design</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:teacher-4}}\" alt=\"Abstract portrait illustration of Grace Okonjo\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Grace Okonjo</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Mathematics</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:heading --><h2 class=\"wp-block-heading\">Office hours</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Every teacher holds a weekly drop-in hour. Ask at the front office for the timetable.</p><!-- /wp:paragraph -->",
+   "template": "",
+   "featured_media": "faculty"
+  },
+  {
+   "slug": "admissions",
+   "title": "Admissions",
+   "content": "<!-- wp:paragraph --><p>Joining the Commons is simple. There are no entrance exams for most courses, and our admissions team is happy to help you choose.</p><!-- /wp:paragraph --><!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Choose a course from the course guide.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Apply online or at the front office.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Pay your fee, or ask about concessions and instalments.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Receive your welcome pack and timetable.</li><!-- /wp:list-item --></ol><!-- /wp:list --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:apply}}\">Apply now</a></div><!-- /wp:button --></div><!-- /wp:buttons -->",
+   "template": "",
+   "featured_media": "study"
+  },
+  {
+   "slug": "apply",
+   "title": "Apply",
+   "content": "<!-- wp:paragraph --><p>Applications for the spring term close on 15 January. It takes about ten minutes.</p><!-- /wp:paragraph --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Your contact details</li><!-- /wp:list-item --><!-- wp:list-item --><li>The courses you would like to take</li><!-- /wp:list-item --><!-- wp:list-item --><li>Any access needs we should know about</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph --><p>This is demo content: connect your own application form here, or link to your student information system.</p><!-- /wp:paragraph -->",
+   "template": "",
+   "parent": "admissions"
+  },
+  {
+   "slug": "about",
+   "title": "About",
+   "content": "<!-- wp:paragraph --><p>The Commons opened in 1974 in a former railway office, with six courses and a borrowed piano. Today we welcome 1,800 students a year, aged sixteen to ninety-one.</p><!-- /wp:paragraph --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Learning is for everyone, at every age, for its own sake.</p><!-- /wp:paragraph --><cite>Our founding charter</cite></blockquote><!-- /wp:quote --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Open to all</h3><!-- /wp:heading --><!-- wp:paragraph --><p>No entrance exams for most courses and concessions for anyone who needs them.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Small classes</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Never more than eighteen students, so everyone is heard.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Taught with joy</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Teachers who are still curious about their own subjects.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->",
+   "template": "",
+   "featured_media": "campus"
+  },
+  {
+   "slug": "contact",
+   "title": "Contact",
+   "content": "<!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Front office</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Monday–Friday, 8:30–19:00<br>(555) 014-1974<br>office@campuscommons.example</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Find us</h3><!-- /wp:heading --><!-- wp:paragraph --><p>1 Station Square, Alder Hill<br>Five minutes' walk from the station; bike racks by the library.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->",
+   "template": ""
+  }
+ ],
+ "posts": [
+  {
+   "slug": "spring-term-enrolment-is-open",
+   "title": "Spring Term Enrolment Is Open",
+   "date": "2026-10-10T09:00:00",
+   "excerpt": "Forty-two courses, eleven of them new, start in January. Here is what is on offer and how to secure your place before the 15th.",
+   "content": "<!-- wp:paragraph --><p>Enrolment for the spring term is now open. We are offering forty-two courses across languages, sciences, arts and practical skills, with eleven brand-new options designed with this year's students.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">New this spring</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><strong>Introduction to Botany</strong>: Thursdays, in the glasshouse.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Conversational Portuguese</strong>: online, two evenings a week.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Woodwork for Beginners</strong>: Saturday mornings in the workshop.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Data Skills for Everyday Life</strong>: spreadsheets without fear.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:heading --><h2 class=\"wp-block-heading\">How to enrol</h2><!-- /wp:heading --><!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Choose your courses in the course guide.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Complete the short online form or visit the front office.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Pay in full or choose three monthly instalments.</li><!-- /wp:list-item --></ol><!-- /wp:list --><!-- wp:paragraph --><p>Concessions are available for students, carers and anyone receiving income support. Ask us — it is a quick, private conversation.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:courses}}\">See all courses</a></div><!-- /wp:button --></div><!-- /wp:buttons --><!-- wp:paragraph --><p>Popular courses fill quickly, so we recommend enrolling early. If a course is full, join the waiting list: places often open up in the first week.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "news",
+    "courses"
+   ],
+   "tags": [
+    "enrolment",
+    "spring-term"
+   ],
+   "featured_media": "library",
+   "format": "standard",
+   "sticky": true,
+   "comments": [
+    {
+     "author": "Priya",
+     "email": "priya@example.com",
+     "content": "Signed up for botany within five minutes of reading this!",
+     "date": "2026-10-11T08:12:00"
+    }
+   ]
+  },
+  {
+   "slug": "science-fair-winners",
+   "title": "Meet This Year's Science Fair Winners",
+   "date": "2026-09-28T14:00:00",
+   "excerpt": "A water filter made from sand and charcoal, a bee-friendly balcony and a very determined robot. Congratulations to all forty entries.",
+   "content": "<!-- wp:paragraph --><p>The main hall was packed on Friday for our annual science fair. Forty projects, three judges, and more cardboard than anyone thought possible.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">First place</h3><!-- /wp:heading --><!-- wp:paragraph --><p>A gravity-fed water filter built from sand, gravel and charcoal, tested for a whole month.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Second place</h3><!-- /wp:heading --><!-- wp:paragraph --><p>A balcony garden designed to attract bees, with a careful count of every visitor.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Judges' prize</h3><!-- /wp:heading --><!-- wp:paragraph --><p>A line-following robot that refused to give up, even when the line ran out.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>The best projects were the ones where something went wrong and the students explained why.</p><!-- /wp:paragraph --><cite>Head of Science</cite></blockquote><!-- /wp:quote --><!-- wp:paragraph --><p>All projects will be on display in the library until the end of the month. Come and see them.</p><!-- /wp:paragraph --><!-- wp:gallery {\"columns\":3,\"linkTo\":\"none\"} --><figure class=\"wp-block-gallery has-nested-images columns-3 is-cropped\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:science}}\" alt=\"Science fair projects on tables\"/></figure><!-- /wp:image --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:lab}}\" alt=\"Glassware and plants in the lab\"/></figure><!-- /wp:image --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:library}}\" alt=\"The library reading room\"/></figure><!-- /wp:image --></figure><!-- /wp:gallery -->",
+   "categories": [
+    "student-life"
+   ],
+   "tags": [
+    "science",
+    "awards"
+   ],
+   "featured_media": "science",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "open-evening-november",
+   "title": "Open Evening: Visit the Commons on 14 November",
+   "date": "2026-09-15T10:00:00",
+   "excerpt": "Tour the classrooms, meet the teachers and try a ten-minute taster class. Everyone is welcome, no booking needed.",
+   "content": "<!-- wp:paragraph --><p>Thinking about joining us? Our autumn open evening is the best way to see what learning at the Commons feels like.</p><!-- /wp:paragraph --><!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Time</th><th>What is happening</th></tr></thead><tbody><tr><td>17:30</td><td>Doors open, welcome in the main hall</td></tr><tr><td>18:00</td><td>Taster classes (ten minutes each, try as many as you like)</td></tr><tr><td>19:00</td><td>Talk: how our courses work</td></tr><tr><td>19:30</td><td>Questions and tea with the teachers</td></tr></tbody></table></figure><!-- /wp:table --><!-- wp:paragraph --><p>The building is step-free and there is free parking behind the library. Children are very welcome.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:events}}\">All events</a></div><!-- /wp:button --></div><!-- /wp:buttons --><!-- wp:paragraph --><p>Can't make it on the night? Our front office runs short guided tours every Wednesday afternoon during term time.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "events"
+   ],
+   "tags": [
+    "open-evening",
+    "admissions"
+   ],
+   "featured_media": "campus",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "five-tips-for-learning-a-language-as-an-adult",
+   "title": "Five Tips for Learning a Language as an Adult",
+   "date": "2026-09-02T08:00:00",
+   "excerpt": "Our languages team shares what actually works for adult learners, from ten-minute habits to the courage to sound silly.",
+   "content": "<!-- wp:paragraph --><p>Adults are excellent language learners. You bring discipline, life experience and a clear reason to learn. What you often lack is permission to make mistakes.</p><!-- /wp:paragraph --><!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li><strong>Little and often beats long and rare.</strong> Ten minutes a day is better than two hours on Sunday.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Speak from week one.</strong> Even badly. Especially badly.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Learn phrases, not just words.</strong> \"Could I have…\" is more useful than \"cup\".</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Listen to things you enjoy.</strong> Cooking shows, football, music.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Find a partner.</strong> Our conversation café meets every Wednesday.</li><!-- /wp:list-item --></ol><!-- /wp:list --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>You do not need a talent for languages. You need a habit.</p><!-- /wp:paragraph --><cite>Languages coordinator</cite></blockquote><!-- /wp:quote --><!-- wp:paragraph --><p>Our spring languages courses include Spanish, Portuguese, Italian, German and Japanese, at four levels each.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "courses",
+    "student-life"
+   ],
+   "tags": [
+    "languages",
+    "study-skills"
+   ],
+   "featured_media": "languages",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "new-glasshouse-classroom",
+   "title": "Our New Glasshouse Classroom Is Finished",
+   "date": "2026-08-20T11:00:00",
+   "excerpt": "After two years of fundraising and one long summer of building, the glasshouse classroom is ready for its first students.",
+   "content": "<!-- wp:paragraph --><p>It started as a rough sketch on a staff-room whiteboard. Now it is a bright glass classroom with room for twenty-four students, a rainwater tank and benches made from the old gym floor.</p><!-- /wp:paragraph --><!-- wp:media-text {\"mediaType\":\"image\"} --><div class=\"wp-block-media-text is-stacked-on-mobile\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:lab}}\" alt=\"Plants and glassware in the glasshouse\" class=\"size-full\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">What happens here</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Botany and biology practicals</li><!-- /wp:list-item --><!-- wp:list-item --><li>The gardening club</li><!-- /wp:list-item --><!-- wp:list-item --><li>Evening talks in summer</li><!-- /wp:list-item --></ul><!-- /wp:list --></div></div><!-- /wp:media-text --><!-- wp:paragraph --><p>Thank you to the 300 families and local businesses who donated. Every name is on the plaque by the door.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The first classes in the glasshouse begin in the spring term, starting with Introduction to Botany on Thursday mornings.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "news"
+   ],
+   "tags": [
+    "campus",
+    "science"
+   ],
+   "featured_media": "lab",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Jon",
+     "email": "jon@example.com",
+     "content": "Beautiful space. The gym-floor benches are a lovely touch.",
+     "date": "2026-08-21T16:30:00"
+    }
+   ]
+  },
+  {
+   "slug": "welcome-to-our-new-teachers",
+   "title": "Welcome to Our New Teachers",
+   "date": "2026-08-05T09:00:00",
+   "excerpt": "Three new teachers join the Commons this term, bringing botany, woodwork and Portuguese to the timetable.",
+   "content": "<!-- wp:paragraph --><p>Every new term brings new faces, and this one brings three. Please give them a warm welcome when you see them in the corridors.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:teacher-1}}\" alt=\"Abstract portrait illustration of a teacher\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Ms. Hana Brightwater</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Botany and biology. Has never met a plant she could not name.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:teacher-2}}\" alt=\"Abstract portrait illustration of a teacher\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Mr. Tomas Ferreira</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Portuguese and Spanish. Teaches with music, food and maps.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:teacher-3}}\" alt=\"Abstract portrait illustration of a teacher\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Mx. Robin Ashby</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Woodwork. Believes every student can make a chair.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:paragraph --><p>You can find all our staff on the faculty page.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "faculty"
+   ],
+   "tags": [
+    "staff"
+   ],
+   "featured_media": "faculty",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "study-spaces-guide",
+   "title": "A Guide to Quiet Study Spaces on Campus",
+   "date": "2026-07-18T13:00:00",
+   "excerpt": "From the silent reading room to the sunny bench behind the workshop, here is where to go when you need to concentrate.",
+   "content": "<!-- wp:paragraph --><p>Everyone studies differently. Some people need silence; others need a little background noise and a window. We asked students for their favourite spots.</p><!-- /wp:paragraph --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><strong>The reading room</strong>: silent, bright, open until 21:00.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>The group rooms</strong>: bookable for up to six people.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>The glasshouse</strong>: warm and green, quiet outside class times.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>The bench behind the workshop</strong>: the best-kept secret on campus.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph --><p>Wi-Fi is available everywhere. Power sockets are, sadly, a different story; the reading room has the most.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Know a better spot? Tell us at the front office and we may add it to next year's guide.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "student-life"
+   ],
+   "tags": [
+    "study-skills",
+    "campus"
+   ],
+   "featured_media": "study",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "summer-school-recap",
+   "title": "Summer School in Pictures",
+   "date": "2026-07-02T16:00:00",
+   "excerpt": "Two weeks, 180 students, 14 workshops and one unforgettable water-rocket launch. A look back at this year's summer school.",
+   "content": "<!-- wp:paragraph --><p>Summer school is always the loudest, happiest fortnight of the year. This year we tried something new: every workshop ended with something to take home.</p><!-- /wp:paragraph --><!-- wp:gallery {\"columns\":3,\"linkTo\":\"none\"} --><figure class=\"wp-block-gallery has-nested-images columns-3 is-cropped\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:science}}\" alt=\"Students&#x27; science projects\"/></figure><!-- /wp:image --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:art}}\" alt=\"Paint and paper in the art studio\"/></figure><!-- /wp:image --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:campus}}\" alt=\"The campus lawn in summer\"/></figure><!-- /wp:image --></figure><!-- /wp:gallery --><!-- wp:paragraph --><p>Highlights included a water-rocket launch that reached the library roof, a poetry slam in the courtyard and a cooking class that set off exactly one smoke alarm.</p><!-- /wp:paragraph --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>I came for the robots and stayed for the poetry.</p><!-- /wp:paragraph --><cite>A summer school student</cite></blockquote><!-- /wp:quote -->",
+   "categories": [
+    "events",
+    "student-life"
+   ],
+   "tags": [
+    "summer-school"
+   ],
+   "featured_media": "campus",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Home",
+     "page": "home"
+    },
+    {
+     "title": "Courses",
+     "page": "courses",
+     "children": [
+      {
+       "title": "Course news",
+       "category": "courses"
+      },
+      {
+       "title": "Faculty",
+       "page": "faculty"
+      }
+     ]
+    },
+    {
+     "title": "Admissions",
+     "page": "admissions",
+     "children": [
+      {
+       "title": "Apply",
+       "page": "apply"
+      }
+     ]
+    },
+    {
+     "title": "Events",
+     "page": "events"
+    },
+    {
+     "title": "News",
+     "page": "news",
+     "children": [
+      {
+       "title": "Student Life",
+       "category": "student-life"
+      },
+      {
+       "title": "Announcements",
+       "category": "news"
+      }
+     ]
+    },
+    {
+     "title": "About",
+     "page": "about"
+    }
+   ]
+  },
+  {
+   "name": "Utility",
+   "location": "utility",
+   "items": [
+    {
+     "title": "Contact",
+     "page": "contact"
+    },
+    {
+     "title": "Student portal",
+     "url": "https://example.com/portal"
+    },
+    {
+     "title": "Library",
+     "url": "https://example.com/library"
+    }
+   ]
+  },
+  {
+   "name": "Footer",
+   "location": "footer",
+   "items": [
+    {
+     "title": "Admissions",
+     "page": "admissions"
+    },
+    {
+     "title": "Events",
+     "page": "events"
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "sidebar-1": [
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Front office</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Monday–Friday, 8:30–19:00<br>(555) 014-1974</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:search {\"label\":\"Search\",\"buttonText\":\"Search\"} /-->",
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Sections</h2><!-- /wp:heading --><!-- wp:categories {\"showPostCounts\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Recent news</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":4,\"displayPostDate\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Topics</h2><!-- /wp:heading --><!-- wp:tag-cloud /--></div><!-- /wp:group -->"
+  ],
+  "footer-1": [
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Visit</h2><!-- /wp:heading --><!-- wp:paragraph --><p>1 Station Square, Alder Hill</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Latest news</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":3,\"displayPostDate\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Sections</h2><!-- /wp:heading --><!-- wp:categories {\"showPostCounts\":true} /--></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "hero_image": "hero",
+  "primary": "#1d3557",
+  "accent": "#f2a900",
+  "header_style": "stacked",
+  "post_layout": "board",
+  "sidebar": "right",
+  "container": "normal",
+  "font_pairing": "lexend",
+  "show_notice": true,
+  "hero_search": true,
+  "apply_link": "/admissions/",
+  "footer_text": "© Campus Commons College of Lifelong Learning"
+ }
+}

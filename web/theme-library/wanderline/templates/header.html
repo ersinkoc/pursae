@@ -1,0 +1,16 @@
+{{template "head" .}}
+<body class="{{.BodyClass}}">
+{{.BodyOpen}}<div id="page" class="site{{if .IsFront}} has-hero{{end}}">
+	<a class="skip-link screen-reader-text" href="#main">Skip to content</a>
+
+	<header id="masthead" class="site-header">
+		<div class="site-header__inner">
+			{{template "branding" .}}
+			{{if has_nav_menu . "primary"}}<nav id="site-navigation" class="main-navigation" aria-label="Primary menu">
+				{{template "menu-toggle" .}}
+				<div id="primary-menu-wrap" class="menu-wrap">{{nav_menu . "primary"}}</div>
+			</nav><!-- #site-navigation -->{{end}}
+		</div>
+	</header><!-- #masthead -->
+	{{if .IsFront}}{{template "hero" .}}{{end}}
+	{{template "wrap-open" .}}

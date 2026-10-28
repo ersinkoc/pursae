@@ -1,0 +1,6 @@
+@font-face { font-family: "Figtree"; src: url("fonts/figtree.woff2") format("woff2"); font-weight: 400 700; font-display: swap; }
+body { font-family: "Figtree", system-ui, sans-serif; font-size: 1.07rem; line-height: 1.7; color: #22403c; background: #fbfdfc; }
+h1, h2, h3, h4, .editor-post-title__input { font-family: "Figtree", system-ui, sans-serif; color: #0b3d3a; letter-spacing: -.015em; }
+a { color: #0d655e; }
+blockquote { background: #e7f5f2; border-radius: 18px; padding: 1.25em 1.5em; border: 0; }
+.wp-block-button__link { background: #0f766e; color: #fff; border-radius: 999px; font-weight: 700; }

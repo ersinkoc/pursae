@@ -1,0 +1,13 @@
+	{{template "wrap-close" .}}
+	<footer id="colophon" class="site-footer">
+		<div class="site-footer__inner">
+			<div class="wl-footer__top">
+				<p class="wl-footer__tagline">Keep wandering.</p>
+				{{if has_nav_menu . "social"}}<nav class="social-navigation" aria-label="Social links">{{nav_menu . "social"}}</nav>{{end}}
+			</div>
+			{{if is_active_sidebar . "footer-1"}}<div class="footer-widgets widget-area--footer">{{dynamic_sidebar . "footer-1"}}</div>{{end}}
+			{{template "site-info" .}}
+		</div>
+	</footer><!-- #colophon -->
+</div><!-- #page -->
+{{template "foot" .}}

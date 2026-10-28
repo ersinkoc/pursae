@@ -1,0 +1,435 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Clara & Theo",
+  "blogdescription": "Getting married in the orchard · June 2027",
+  "posts_per_page": 9
+ },
+ "categories": [
+  {
+   "slug": "our-story",
+   "name": "Our Story",
+   "description": "How we got here."
+  },
+  {
+   "slug": "planning",
+   "name": "Planning",
+   "description": "Venues, flowers, food and everything in between."
+  },
+  {
+   "slug": "guest-info",
+   "name": "Guest Info",
+   "description": "Travel, stay and what to wear."
+  },
+  {
+   "slug": "wedding-party",
+   "name": "Wedding Party",
+   "description": "The people beside us."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "memories",
+   "name": "Memories"
+  },
+  {
+   "slug": "proposal",
+   "name": "Proposal"
+  },
+  {
+   "slug": "venue",
+   "name": "Venue"
+  },
+  {
+   "slug": "food",
+   "name": "Food"
+  },
+  {
+   "slug": "flowers",
+   "name": "Flowers"
+  },
+  {
+   "slug": "travel",
+   "name": "Travel"
+  },
+  {
+   "slug": "dress-code",
+   "name": "Dress code"
+  },
+  {
+   "slug": "friends",
+   "name": "Friends"
+  }
+ ],
+ "media": [
+  {
+   "id": "hero",
+   "file": "demo/images/hero.jpg",
+   "alt": "Blush roses and greenery framing a soft golden light",
+   "caption": ""
+  },
+  {
+   "id": "rain",
+   "file": "demo/images/rain.jpg",
+   "alt": "Two figures sharing an umbrella in the rain",
+   "caption": ""
+  },
+  {
+   "id": "lighthouse",
+   "file": "demo/images/lighthouse.jpg",
+   "alt": "A lighthouse on a cliff at sunset",
+   "caption": ""
+  },
+  {
+   "id": "venue",
+   "file": "demo/images/venue.jpg",
+   "alt": "A stone barn among apple trees",
+   "caption": ""
+  },
+  {
+   "id": "table",
+   "file": "demo/images/table.jpg",
+   "alt": "A long table set with candles and flowers",
+   "caption": ""
+  },
+  {
+   "id": "bouquet",
+   "file": "demo/images/bouquet.jpg",
+   "alt": "A bouquet of blush garden roses",
+   "caption": ""
+  },
+  {
+   "id": "garden",
+   "file": "demo/images/garden.jpg",
+   "alt": "A garden path lined with flowers",
+   "caption": ""
+  },
+  {
+   "id": "invitation",
+   "file": "demo/images/invitation.jpg",
+   "alt": "A wedding invitation with a ribbon and a sprig",
+   "caption": ""
+  },
+  {
+   "id": "rings",
+   "file": "demo/images/rings.jpg",
+   "alt": "Two gold rings on a silk ribbon",
+   "caption": ""
+  },
+  {
+   "id": "cake",
+   "file": "demo/images/cake.jpg",
+   "alt": "A three-tier cake decorated with flowers",
+   "caption": ""
+  },
+  {
+   "id": "candles",
+   "file": "demo/images/candles.jpg",
+   "alt": "Candles and soft golden lights",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Home",
+   "content": "<!-- wp:group {\"align\":\"full\",\"className\":\"ea-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull ea-section\"><!-- wp:paragraph {\"className\":\"ea-script ea-center\"} --><p class=\"ea-script ea-center\">Our story</p><!-- /wp:paragraph --><!-- wp:heading {\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center\">Eight years, one umbrella</h2><!-- /wp:heading --><!-- wp:media-text {\"mediaType\":\"image\",\"className\":\"alignwide\"} --><div class=\"wp-block-media-text is-stacked-on-mobile alignwide\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:rain}}\" alt=\"Two figures sharing an umbrella in the rain\" class=\"size-full\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:paragraph --><p>It started at a bus stop in the rain, with one umbrella and a lot of talking. Eight years, two cities and one windy lighthouse later, we are getting married — and we would love you to be there.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:our-story}}\">Read our story</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div></div><!-- /wp:media-text --></div><!-- /wp:group --><!-- wp:group {\"align\":\"full\",\"className\":\"ea-section ea-section--blush\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull ea-section ea-section--blush\"><!-- wp:paragraph {\"className\":\"ea-script ea-center\"} --><p class=\"ea-script ea-center\">The day</p><!-- /wp:paragraph --><!-- wp:heading {\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center\">Schedule</h2><!-- /wp:heading --><!-- wp:group {\"className\":\"ea-timeline\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group ea-timeline\"><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph --><p>14:00</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Guests arrive</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Lemonade under the apple trees.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph --><p>14:30</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Ceremony</h3><!-- /wp:heading --><!-- wp:paragraph --><p>In the orchard, beneath the oldest tree.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph --><p>15:30</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Photographs &amp; drinks</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Lawn games and a string trio.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph --><p>18:00</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Dinner</h3><!-- /wp:heading --><!-- wp:paragraph --><p>One long table in the stone barn.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph --><p>20:30</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Cake &amp; speeches</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Bring tissues; Felix is speaking.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph --><p>21:00</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Dancing</h3><!-- /wp:heading --><!-- wp:paragraph --><p>On the terrace until late.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph --><p>23:30</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Carriages</h3><!-- /wp:heading --><!-- wp:paragraph --><p>A coach to the station and hotels.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group --><!-- wp:separator --><hr class=\"wp-block-separator has-alpha-channel-opacity\"/><!-- /wp:separator --></div><!-- /wp:group --><!-- wp:group {\"align\":\"full\",\"className\":\"ea-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull ea-section\"><!-- wp:paragraph {\"className\":\"ea-script ea-center\"} --><p class=\"ea-script ea-center\">Details</p><!-- /wp:paragraph --><!-- wp:heading {\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center\">Where &amp; when</h2><!-- /wp:heading --><!-- wp:columns {\"align\":\"wide\",\"className\":\"ea-details-cols\"} --><div class=\"wp-block-columns alignwide ea-details-cols\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Ceremony</h3><!-- /wp:heading --><!-- wp:paragraph --><p>14:30, in the orchard</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The Orchard House, Willowmere</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Reception</h3><!-- /wp:heading --><!-- wp:paragraph --><p>From 18:00 in the stone barn</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Dinner, cake and dancing</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Stay</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Rooms held at The Willow Inn</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{page:travel}}\">Travel &amp; stay guide</a></p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group --><!-- wp:group {\"align\":\"full\",\"className\":\"ea-section ea-section--sage\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull ea-section ea-section--sage\"><!-- wp:paragraph {\"className\":\"ea-script ea-center\"} --><p class=\"ea-script ea-center\">Moments</p><!-- /wp:paragraph --><!-- wp:heading {\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center\">A few favourite pictures</h2><!-- /wp:heading --><!-- wp:gallery {\"columns\":3,\"linkTo\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-gallery has-nested-images columns-3 is-cropped alignwide\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:lighthouse}}\" alt=\"The lighthouse at sunset\"/></figure><!-- /wp:image --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:bouquet}}\" alt=\"A bouquet of blush roses\"/></figure><!-- /wp:image --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:venue}}\" alt=\"The stone barn\"/></figure><!-- /wp:image --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:rings}}\" alt=\"Two rings on a ribbon\"/></figure><!-- /wp:image --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:table}}\" alt=\"A table set with candles\"/></figure><!-- /wp:image --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:garden}}\" alt=\"A garden path\"/></figure><!-- /wp:image --></figure><!-- /wp:gallery --></div><!-- /wp:group --><!-- wp:group {\"align\":\"full\",\"className\":\"ea-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull ea-section\"><!-- wp:paragraph {\"className\":\"ea-script ea-center\"} --><p class=\"ea-script ea-center\">Kindly reply</p><!-- /wp:paragraph --><!-- wp:heading {\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center\">Will you join us?</h2><!-- /wp:heading --><!-- wp:paragraph {\"align\":\"center\"} --><p class=\"has-text-align-center\">Please let us know by 1 May 2027 whether you can come, and tell us about any dietary needs.</p><!-- /wp:paragraph --><!-- wp:buttons {\"layout\":{\"type\":\"flex\",\"justifyContent\":\"center\"}} --><div class=\"wp-block-buttons is-content-justification-center\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:rsvp}}\">RSVP</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "template": "",
+   "front_page": true
+  },
+  {
+   "slug": "journal",
+   "title": "Journal",
+   "content": "",
+   "template": "",
+   "posts_page": true
+  },
+  {
+   "slug": "our-story",
+   "title": "Our Story",
+   "content": "<!-- wp:paragraph --><p>We met at a bus stop in the rain. Eight years, two cities, one very small flat and one very large dog later, we are getting married.</p><!-- /wp:paragraph --><!-- wp:media-text {\"mediaType\":\"image\"} --><div class=\"wp-block-media-text is-stacked-on-mobile\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:rain}}\" alt=\"Two figures sharing an umbrella\" class=\"size-full\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:paragraph {\"className\":\"ea-script\"} --><p class=\"ea-script\">2018</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">The umbrella</h3><!-- /wp:heading --><!-- wp:paragraph --><p>A late bus, a borrowed umbrella and three missed stops.</p><!-- /wp:paragraph --></div></div><!-- /wp:media-text --><!-- wp:media-text {\"mediaType\":\"image\",\"mediaPosition\":\"right\"} --><div class=\"wp-block-media-text is-stacked-on-mobile has-media-on-the-right\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:lighthouse}}\" alt=\"A lighthouse at sunset\" class=\"size-full\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:paragraph {\"className\":\"ea-script\"} --><p class=\"ea-script\">2025</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">The question</h3><!-- /wp:heading --><!-- wp:paragraph --><p>One hundred and twelve steps on a windy evening at Gull Point.</p><!-- /wp:paragraph --></div></div><!-- /wp:media-text --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Whatever our souls are made of, his and mine are the same — or so it felt on that bus.</p><!-- /wp:paragraph --><cite>Clara, paraphrasing her favourite novel</cite></blockquote><!-- /wp:quote --><!-- wp:separator --><hr class=\"wp-block-separator has-alpha-channel-opacity\"/><!-- /wp:separator --><!-- wp:paragraph {\"align\":\"center\"} --><p class=\"has-text-align-center\">Read the whole story in our journal.</p><!-- /wp:paragraph -->",
+   "template": "",
+   "featured_media": "rain"
+  },
+  {
+   "slug": "schedule",
+   "title": "Schedule",
+   "content": "<!-- wp:paragraph {\"align\":\"center\"} --><p class=\"has-text-align-center\">Here is how the day will unfold. Times are approximate — weddings, like buses, run on their own schedule.</p><!-- /wp:paragraph --><!-- wp:group {\"className\":\"ea-timeline\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group ea-timeline\"><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph --><p>14:00</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Guests arrive</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Lemonade under the apple trees.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph --><p>14:30</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Ceremony</h3><!-- /wp:heading --><!-- wp:paragraph --><p>In the orchard, beneath the oldest tree.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph --><p>15:30</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Photographs &amp; drinks</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Lawn games and a string trio.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph --><p>18:00</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Dinner</h3><!-- /wp:heading --><!-- wp:paragraph --><p>One long table in the stone barn.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph --><p>20:30</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Cake &amp; speeches</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Bring tissues; Felix is speaking.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph --><p>21:00</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Dancing</h3><!-- /wp:heading --><!-- wp:paragraph --><p>On the terrace until late.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph --><p>23:30</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Carriages</h3><!-- /wp:heading --><!-- wp:paragraph --><p>A coach to the station and hotels.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->",
+   "template": "",
+   "featured_media": "venue"
+  },
+  {
+   "slug": "travel",
+   "title": "Travel & Stay",
+   "content": "<!-- wp:paragraph --><p>Willowmere is small and lovely. Here is how to get there, where to stay and how to get home after the dancing.</p><!-- /wp:paragraph --><!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Place</th><th>Distance</th><th>Note</th></tr></thead><tbody><tr><td>The Willow Inn</td><td>5 minutes</td><td>Rooms held for guests until March</td></tr><tr><td>Mill House B&amp;B</td><td>10 minutes</td><td>Lovely breakfasts</td></tr><tr><td>Station Hotel</td><td>15 minutes</td><td>Coach stops outside</td></tr></tbody></table></figure><!-- /wp:table --><!-- wp:details --><details class=\"wp-block-details\"><summary>Is there parking?</summary><!-- wp:paragraph --><p>Yes, free parking at the venue. Please car-share if you can.</p><!-- /wp:paragraph --></details><!-- /wp:details --><!-- wp:details --><details class=\"wp-block-details\"><summary>Can we bring children?</summary><!-- wp:paragraph --><p>Absolutely. There will be a children's table, games and a quiet room.</p><!-- /wp:paragraph --></details><!-- /wp:details --><!-- wp:details --><details class=\"wp-block-details\"><summary>What if it rains?</summary><!-- wp:paragraph --><p>The ceremony moves into the stone barn. Bring a pretty umbrella anyway; it is a family tradition.</p><!-- /wp:paragraph --></details><!-- /wp:details -->",
+   "template": "",
+   "featured_media": "garden",
+   "parent": "schedule"
+  },
+  {
+   "slug": "gallery",
+   "title": "Gallery",
+   "content": "<!-- wp:paragraph {\"align\":\"center\"} --><p class=\"has-text-align-center\">A few of our favourite moments together, and some sneak peeks of the venue.</p><!-- /wp:paragraph --><!-- wp:gallery {\"columns\":3,\"linkTo\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-gallery has-nested-images columns-3 is-cropped alignwide\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:lighthouse}}\" alt=\"The lighthouse at sunset\"/></figure><!-- /wp:image --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:rain}}\" alt=\"Umbrella in the rain\"/></figure><!-- /wp:image --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:bouquet}}\" alt=\"Blush roses\"/></figure><!-- /wp:image --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:venue}}\" alt=\"The stone barn\"/></figure><!-- /wp:image --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:rings}}\" alt=\"Rings on a ribbon\"/></figure><!-- /wp:image --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:table}}\" alt=\"Candlelit table\"/></figure><!-- /wp:image --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:cake}}\" alt=\"A three-tier cake with flowers\"/></figure><!-- /wp:image --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:garden}}\" alt=\"The garden path\"/></figure><!-- /wp:image --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:candles}}\" alt=\"Candles and soft lights\"/></figure><!-- /wp:image --></figure><!-- /wp:gallery -->",
+   "template": "",
+   "parent": "our-story"
+  },
+  {
+   "slug": "rsvp",
+   "title": "RSVP",
+   "content": "<!-- wp:paragraph {\"align\":\"center\"} --><p class=\"has-text-align-center\">We would be so happy to celebrate with you. Please reply by <strong>1 May 2027</strong>.</p><!-- /wp:paragraph --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>The names of everyone in your party</li><!-- /wp:list-item --><!-- wp:list-item --><li>Whether you can join us for the ceremony and the dinner</li><!-- /wp:list-item --><!-- wp:list-item --><li>Any allergies or dietary needs</li><!-- /wp:list-item --><!-- wp:list-item --><li>A song that will get you on the dance floor</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph {\"align\":\"center\"} --><p class=\"has-text-align-center\">This is demo content: add your own RSVP form here (for example with a contact form block), or link to your RSVP service.</p><!-- /wp:paragraph --><!-- wp:buttons {\"layout\":{\"type\":\"flex\",\"justifyContent\":\"center\"}} --><div class=\"wp-block-buttons is-content-justification-center\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"mailto:hello@example.com\">Email us your reply</a></div><!-- /wp:button --></div><!-- /wp:buttons -->",
+   "template": "",
+   "featured_media": "invitation"
+  }
+ ],
+ "posts": [
+  {
+   "slug": "how-we-met",
+   "title": "How We Met: A Borrowed Umbrella",
+   "date": "2026-05-02T10:00:00",
+   "excerpt": "It was raining, the bus was late, and one of us had an umbrella big enough for two. Eight years later, we still argue about who offered first.",
+   "content": "<!-- wp:paragraph --><p>Clara says Theo offered. Theo says Clara simply stepped under the umbrella and started talking about the weather. Both of us agree it was raining very hard, that the number 9 bus was twenty minutes late, and that neither of us minded.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>We talked about the rain, then about books, then about a terrible film we had both seen that week. When the bus finally came, we sat together. When it reached Clara's stop, she stayed on for three more.</p><!-- /wp:paragraph --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>I missed my stop on purpose. I have never told him that until now.</p><!-- /wp:paragraph --><cite>Clara</cite></blockquote><!-- /wp:quote --><!-- wp:paragraph --><p>The umbrella, by the way, still lives by our front door. It has a broken spoke and a lot of sentimental value.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Thank you for being part of our story. We cannot wait to celebrate the next chapter with you.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "our-story"
+   ],
+   "tags": [
+    "memories"
+   ],
+   "featured_media": "rain",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Aunt Marguerite",
+     "email": "marguerite@example.com",
+     "content": "I knew that umbrella was important! Can't wait for June.",
+     "date": "2026-05-03T09:00:00"
+    },
+    {
+     "author": "Sam",
+     "email": "sam@example.com",
+     "content": "Three extra stops. Legendary.",
+     "date": "2026-05-03T21:10:00"
+    }
+   ]
+  },
+  {
+   "slug": "the-proposal",
+   "title": "The Proposal on the Lighthouse Steps",
+   "date": "2026-06-14T19:00:00",
+   "excerpt": "One hundred and twelve steps, one very windy evening and a ring that almost blew away. Theo tells the story of the question.",
+   "content": "<!-- wp:paragraph --><p>I had planned everything: the walk along the cliffs, the picnic, the sunset from the top of the old lighthouse. I had not planned for the wind.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>By step eighty I was holding the ring box in my fist inside my pocket, terrified. By step one hundred and twelve, Clara was laughing so hard at my hair that I almost forgot what I was there to do.</p><!-- /wp:paragraph --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>She said yes before I finished the question. I am still a little offended.</p><!-- /wp:paragraph --><cite>Theo</cite></blockquote><!-- /wp:quote --><!-- wp:paragraph --><p>We ate the picnic on the lighthouse steps, out of the wind, watching the light come on for the night. It was perfect, mostly because nothing went to plan.</p><!-- /wp:paragraph --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:lighthouse}}\" alt=\"A lighthouse on a cliff at sunset\"/><figcaption class=\"wp-element-caption\">The lighthouse at Gull Point, where it all happened.</figcaption></figure><!-- /wp:image -->",
+   "categories": [
+    "our-story"
+   ],
+   "tags": [
+    "memories",
+    "proposal"
+   ],
+   "featured_media": "lighthouse",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "choosing-our-venue",
+   "title": "Choosing Our Venue: Why The Orchard House",
+   "date": "2026-07-20T11:00:00",
+   "excerpt": "We visited nine venues and fell for the one with crooked apple trees, a stone barn and a long table under the branches.",
+   "content": "<!-- wp:paragraph --><p>We had a list of requirements: room for a hundred people, somewhere for the children to run, and a place that felt like us. The Orchard House ticked every box, and then added a few we had not thought of.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">The ceremony</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Under the oldest apple tree, with the hills behind.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">The dinner</h3><!-- /wp:heading --><!-- wp:paragraph --><p>One long table in the stone barn, lit by candles.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">The dancing</h3><!-- /wp:heading --><!-- wp:paragraph --><p>On the terrace, until the stars come out and beyond.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:paragraph --><p>If it rains, the ceremony moves into the barn, which is also beautiful, and drier.</p><!-- /wp:paragraph --><!-- wp:gallery {\"columns\":3,\"linkTo\":\"none\"} --><figure class=\"wp-block-gallery has-nested-images columns-3 is-cropped\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:venue}}\" alt=\"The stone barn at The Orchard House\"/></figure><!-- /wp:image --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:table}}\" alt=\"A long table set for dinner\"/></figure><!-- /wp:image --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:garden}}\" alt=\"The garden path to the orchard\"/></figure><!-- /wp:image --></figure><!-- /wp:gallery -->",
+   "categories": [
+    "planning"
+   ],
+   "tags": [
+    "venue"
+   ],
+   "featured_media": "venue",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "menu-tasting-day",
+   "title": "Menu Tasting Day (We Ate Everything)",
+   "date": "2026-08-15T14:00:00",
+   "excerpt": "Six starters, four mains, three desserts and one very patient chef. Here is what made the menu, and what did not.",
+   "content": "<!-- wp:paragraph --><p>Menu tasting is, without question, the best part of wedding planning. We arrived hungry and left about four hours later, very full and slightly emotional about a lemon tart.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">What made the menu</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Summer tomato salad with herbs from the orchard garden</li><!-- /wp:list-item --><!-- wp:list-item --><li>Slow-roasted lamb, or a wild mushroom pie for vegetarians</li><!-- /wp:list-item --><!-- wp:list-item --><li>Lemon tart with crème fraîche, of course</li><!-- /wp:list-item --><!-- wp:list-item --><li>A late-night cheese table for the dancers</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph --><p>Please tell us about any allergies or dietary needs on your RSVP. The kitchen is wonderful and happy to adapt everything.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The cake, by the way, is still a secret. We have been sworn to silence by the baker, who takes these things very seriously.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "planning"
+   ],
+   "tags": [
+    "food"
+   ],
+   "featured_media": "table",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Priya",
+     "email": "priya.r@example.com",
+     "content": "The lemon tart better be as good as it sounds!",
+     "date": "2026-08-16T08:00:00"
+    }
+   ]
+  },
+  {
+   "slug": "our-flowers",
+   "title": "Our Flowers: Garden Roses and Wild Things",
+   "date": "2026-09-05T10:30:00",
+   "excerpt": "Blush garden roses, sweet peas, a little wild grass and as much greenery as the florist would allow.",
+   "content": "<!-- wp:paragraph --><p>We wanted the flowers to look as though someone had just walked through the orchard and picked them. Our florist understood immediately.</p><!-- /wp:paragraph --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Blush garden roses and pale peonies</li><!-- /wp:list-item --><!-- wp:list-item --><li>Sweet peas in white and lilac</li><!-- /wp:list-item --><!-- wp:list-item --><li>Olive branches, wild grasses and trailing ivy</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph --><p>After the wedding, the table flowers will go home with guests and the rest to the care home down the lane. Nothing will be wasted.</p><!-- /wp:paragraph --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Make it look like June.</p><!-- /wp:paragraph --><cite>Our only instruction to the florist</cite></blockquote><!-- /wp:quote -->",
+   "categories": [
+    "planning"
+   ],
+   "tags": [
+    "flowers"
+   ],
+   "featured_media": "bouquet",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "travel-and-stay-guide",
+   "title": "Travel and Stay: A Guide for Our Guests",
+   "date": "2026-09-25T09:00:00",
+   "excerpt": "Trains, parking, the best places to stay nearby and the bus we have booked to take everyone home after the dancing.",
+   "content": "<!-- wp:paragraph --><p>Willowmere is a small village, so here is everything you need to know to arrive relaxed and leave happy.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Getting there</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>By train: Willowmere station is a ten-minute walk; we will have a shuttle at 13:30.</li><!-- /wp:list-item --><!-- wp:list-item --><li>By car: free parking at the venue; please car-share if you can.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Going home: a coach leaves at 23:30 for the station and the two hotels below.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:heading --><h2 class=\"wp-block-heading\">Where to stay</h2><!-- /wp:heading --><!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Place</th><th>Distance</th><th>Note</th></tr></thead><tbody><tr><td>The Willow Inn</td><td>5 minutes</td><td>Rooms held for guests until March</td></tr><tr><td>Mill House B&amp;B</td><td>10 minutes</td><td>Lovely breakfasts</td></tr><tr><td>Station Hotel</td><td>15 minutes</td><td>Coach stops outside</td></tr></tbody></table></figure><!-- /wp:table --><!-- wp:paragraph --><p>Questions? Message either of us any time.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>If you are travelling from further away and would like help planning, just ask: we have favourite cafés, walks and a very good bakery to recommend.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "guest-info"
+   ],
+   "tags": [
+    "travel"
+   ],
+   "featured_media": "garden",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "dress-code-explained",
+   "title": "The Dress Code, Explained",
+   "date": "2026-10-05T12:00:00",
+   "excerpt": "\"Garden formal\" sounds mysterious. It mostly means: dress up, but wear shoes you can walk on grass in.",
+   "content": "<!-- wp:paragraph --><p>Our invitations say garden formal. We have had several worried messages, so here is what we mean.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Yes, please</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Summer suits, linen, lighter colours</li><!-- /wp:list-item --><!-- wp:list-item --><li>Dresses of any length</li><!-- /wp:list-item --><!-- wp:list-item --><li>Comfortable shoes or block heels</li><!-- /wp:list-item --><!-- wp:list-item --><li>A layer for the evening</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Maybe not</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Stiletto heels (the lawn will win)</li><!-- /wp:list-item --><!-- wp:list-item --><li>Head-to-toe white</li><!-- /wp:list-item --><!-- wp:list-item --><li>Anything you would be sad to get a little grass on</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:paragraph --><p>Most of all, wear something you feel happy in. That is the only rule that really matters.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>And if the evening turns cool, there will be blankets on the terrace and a basket of spare flat shoes by the dance floor.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "guest-info"
+   ],
+   "tags": [
+    "dress-code"
+   ],
+   "featured_media": "invitation",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "meet-the-wedding-party",
+   "title": "Meet the Wedding Party",
+   "date": "2026-10-18T16:00:00",
+   "excerpt": "The friends and family who will stand beside us, keep us calm and, almost certainly, give speeches we will never live down.",
+   "content": "<!-- wp:paragraph --><p>We are lucky to be surrounded by wonderful people. Here are the ones who will be standing next to us on the day.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Juno</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Clara's sister and maid of honour. In charge of tissues and timekeeping.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Felix</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Theo's oldest friend and best man. In charge of the rings, which worries everyone.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Ada &amp; Leo</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Our niece and nephew, flower girl and ring bearer. In charge of chaos.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:paragraph --><p>If you need anything on the day, find Juno. She will have a plan, a spare hair pin and probably a snack.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "wedding-party"
+   ],
+   "tags": [
+    "friends"
+   ],
+   "featured_media": "rings",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Home",
+     "page": "home"
+    },
+    {
+     "title": "Our Story",
+     "page": "our-story",
+     "children": [
+      {
+       "title": "Gallery",
+       "page": "gallery"
+      },
+      {
+       "title": "Journal",
+       "page": "journal"
+      }
+     ]
+    },
+    {
+     "title": "The Day",
+     "page": "schedule",
+     "children": [
+      {
+       "title": "Schedule",
+       "page": "schedule"
+      },
+      {
+       "title": "Travel & Stay",
+       "page": "travel"
+      },
+      {
+       "title": "Guest Info",
+       "category": "guest-info"
+      }
+     ]
+    },
+    {
+     "title": "RSVP",
+     "page": "rsvp"
+    }
+   ]
+  },
+  {
+   "name": "Footer",
+   "location": "footer",
+   "items": [
+    {
+     "title": "Schedule",
+     "page": "schedule"
+    },
+    {
+     "title": "Travel & Stay",
+     "page": "travel"
+    },
+    {
+     "title": "RSVP",
+     "page": "rsvp"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "sidebar-1": [
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Hello</h2><!-- /wp:heading --><!-- wp:paragraph --><p>We are Clara and Theo, and we are getting married in June. Thank you for reading.</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:search {\"label\":\"Search\",\"buttonText\":\"Search\"} /-->",
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Topics</h2><!-- /wp:heading --><!-- wp:categories {\"showPostCounts\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Latest notes</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":4,\"displayPostDate\":true} /--></div><!-- /wp:group -->"
+  ],
+  "footer-1": [
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Questions?</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Message us any time, or ask Juno, our maid of honour, who knows everything.</p><!-- /wp:paragraph --></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "hero_image": "hero",
+  "rose": "#9d5c63",
+  "blush": "#ecd2cd",
+  "header_style": "centered",
+  "post_layout": "masonry",
+  "sidebar": "none",
+  "font_pairing": "romantic",
+  "ornaments": true,
+  "couple_names": "Clara & Theo",
+  "wedding_date": "Saturday, 12 June 2027",
+  "venue": "The Orchard House · Willowmere",
+  "rsvp_link": "/rsvp/",
+  "footer_text": "Made with love for our family and friends"
+ }
+}

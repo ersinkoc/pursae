@@ -1,0 +1,12 @@
+<article id="post-{{.ID}}" class="{{.Class}} entry ea-card">
+	{{with .Thumbnail}}<a class="post-thumbnail ea-card__media" href="{{$.Permalink}}" aria-hidden="true" tabindex="-1">{{.}}</a>{{end}}
+	<div class="ea-card__body">
+		<p class="ea-card__meta">{{if .ShowFeatured}}<span class="sticky-badge">Featured</span> {{end}}{{with .Categories}}{{with index . 0}}<a href="{{.URL}}">{{.Name}}</a> &middot; {{end}}{{end}}<time datetime="{{.DateISO}}">{{.DateText}}</time></p>
+		<h2 class="entry-title"><a href="{{.Permalink}}" rel="bookmark">{{.Title}}</a></h2>
+		<div class="entry-summary{{if not .ShowExcerpt}} is-full{{end}}">
+			{{if .ShowExcerpt}}{{.Excerpt}}{{else}}{{.Content}}{{end}}
+		</div>
+		{{with .AuthorName}}<p class="byline">by {{.}}</p>{{end}}
+		<p class="more-link-wrap"><a class="more-link" href="{{.Permalink}}">Continue reading<span class="screen-reader-text"> &ldquo;{{.Title}}&rdquo;</span></a></p>
+	</div>
+</article><!-- #post-{{.ID}} -->
