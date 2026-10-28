@@ -49,9 +49,22 @@ type Server struct {
 	cache   atomic.Pointer[pageCache] // wpgo-cache, rebuilt when its options change
 	plugins *pluginSystem
 	warm    warmState
+
+	// sandbox is set on a theme-preview sandbox (theme_preview.go): a second Server over its own
+	// database schema, uploads and themes directory, served under /wp-admin/theme-preview/<slug>/.
+	sandbox *sandboxInfo
+	// previews are the site's theme-preview sandboxes (nil on a sandbox).
+	previews *previewManager
 }
 
+// New builds the server of the site.
 func New(ctx context.Context, cfg config.Config, pool *pgxpool.Pool) (*Server, error) {
+	return newServer(ctx, cfg, pool, nil)
+}
+
+// newServer builds the site's server, or with sb a theme-preview sandbox: no page cache, plugin
+// runtime, Golementor or ACF-Go start-up, and nothing written to the process-wide registries.
+func newServer(ctx context.Context, cfg config.Config, pool *pgxpool.Pool, sb *sandboxInfo) (*Server, error) {
 	st := settings.New(pool)
 	if err := st.Load(ctx); err != nil {
 		return nil, err
@@ -72,10 +85,15 @@ func New(ctx context.Context, cfg config.Config, pool *pgxpool.Pool) (*Server, e
 		settings: st,
 		auth:     auth.NewManager(pool, secret),
 		web:      overlayFS{base: web.FS(cfg.WebDir), dir: themeOverrideDir(cfg.UploadsDir)},
+		sandbox:  sb,
 	}
 	if lib, err := fs.Sub(web.FS(cfg.WebDir), "theme-library"); err == nil {
 		s.themeLibrary = lib
 	}
+	if sb != nil {
+		return s.startSandbox(ctx)
+	}
+	s.previews = newPreviewManager(s)
 	if s.golementorOn() {
 		s.gweLoadCustomThemes(ctx) // Golementor custom themes stored in this site's database
 	} else {
@@ -247,6 +265,11 @@ func (s *Server) routes() *gin.Engine {
 	admin.POST("/options-privacy", s.optionsPrivacy)
 	admin.GET("/theme-install", s.themeInstall)
 	admin.POST("/theme-install", s.themeInstall)
+	if s.sandbox == nil { // theme previews with demo content (theme_preview.go)
+		admin.GET("/theme-preview", s.themePreviewScreen)
+		admin.POST("/theme-preview", s.themePreviewScreen)
+		admin.Any("/theme-preview/*rest", s.themePreviewSite)
+	}
 	admin.GET("/site-health", s.siteHealth)
 	admin.GET("/export", s.exportScreen)
 	admin.GET("/theme-editor", s.themeEditor)

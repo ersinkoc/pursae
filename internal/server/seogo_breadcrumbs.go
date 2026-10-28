@@ -190,9 +190,15 @@ func (s *Server) seogoContent(ctx context.Context, content string) string {
 }
 
 // seogoRegisterBlocks registers the server renderers of SEO-Go's blocks. They return the saved
-// markup untouched while the plugin is off, so the content looks the same either way.
+// markup untouched while the plugin is off, so the content looks the same either way. The block
+// registry is shared by every Server in the process: the renderer uses the server of the render
+// context (a theme-preview sandbox has its own), falling back to the one that registered it.
 func (s *Server) seogoRegisterBlocks() {
 	bc := func(ctx context.Context, _ *blocks.Block, content string) string {
+		s := s
+		if rc := renderFrom(ctx); rc != nil && rc.s != nil {
+			s = rc.s
+		}
 		if !s.seogoOn() {
 			return content
 		}

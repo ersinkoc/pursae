@@ -42,7 +42,7 @@ func (s *Server) themeVisible(t *Theme) bool {
 
 // installedThemes is allThemes without the themes of an inactive Golementor.
 func (s *Server) installedThemes() []*Theme {
-	all := allThemes()
+	all := s.themeList()
 	out := all[:0]
 	for _, t := range all {
 		if s.themeVisible(t) {
@@ -54,7 +54,7 @@ func (s *Server) installedThemes() []*Theme {
 
 // installedTheme is themeBySlug for the themes of this site (nil for Golementor's themes while it is off).
 func (s *Server) installedTheme(slug string) *Theme {
-	if t := themeBySlug(slug); s.themeVisible(t) {
+	if t := s.themeFor(slug); s.themeVisible(t) {
 		return t
 	}
 	return nil

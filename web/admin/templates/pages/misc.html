@@ -147,7 +147,8 @@
 		{{range $i, $c := .Categories}}<li class="{{if $c.Slug}}{{$c.Slug}}{{else}}all{{end}}">{{if $i}} |{{end}} <a href="{{$c.URL}}"{{if $c.Current}} class="current" aria-current="page"{{end}}>{{$c.Label}} <span class="count">({{$c.Count}})</span></a></li>
 		{{end}}
 	</ul>{{end}}
-	<p class="wpgo-theme-install-help">Ready-made themes that ship with WordPress Go. <strong>Install</strong> adds a theme to Appearance &rsaquo; Themes like an uploaded package; themes with demo content can be installed, activated and filled with their sample pages, posts, menus and widgets in one step.</p>
+	<p class="wpgo-theme-install-help">Ready-made themes that ship with WordPress Go. <strong>Install</strong> adds a theme to Appearance &rsaquo; Themes like an uploaded package; themes with demo content can be installed, activated and filled with their sample pages, posts, menus and widgets in one step. <strong>Live Preview</strong> shows a theme with its demo content before you install anything.</p>
+	{{if .Previews}}<form method="post" action="/wp-admin/theme-preview" class="wpgo-clear-previews"><input type="hidden" name="_wpnonce" value="{{.PreviewsNonce}}" /><input type="hidden" name="action" value="clear" /><span class="description">{{.Previews}} theme preview{{if ne .Previews 1}}s are{{else}} is{{end}} kept for quick viewing.</span> <button type="submit" class="button-link">Clear theme previews</button></form>{{end}}
 	{{else}}
 	<p class="wpgo-theme-install-help">Bundled themes are compiled into WordPress Go{{if .Golementor}}, Golementor&rsquo;s <a href="/wp-admin/gowebeditor-theme-builder">Theme Builder</a> generates themes{{end}}, and theme packages (a zip of <code>theme.json</code>, templates and assets, no code) are installed from the <a href="/wp-admin/theme-install">Library</a> or with <strong>Upload Theme</strong>.</p>
 	{{end}}
@@ -161,19 +162,21 @@
 			</div>
 			{{if .UpdateURL}}<div class="update-message notice inline notice-warning notice-alt"><p>New version available. <a class="button-link" href="{{.UpdateURL}}" aria-label="Update {{.Name}} now">Update now</a></p></div>
 			{{else if .Installed}}<div class="notice notice-success notice-alt inline"><p>Installed{{if and .Package (not .Library)}} &middot; uploaded package{{end}}</p></div>{{end}}
-			{{if .Installed}}<a class="more-details" href="/wp-admin/themes?theme={{.Slug}}">Details &amp; Preview</a>{{end}}
+			{{if .Installed}}<a class="more-details" href="/wp-admin/themes?theme={{.Slug}}">Details &amp; Preview</a>{{else if .DemoPreviewURL}}<a class="more-details wpgo-live-preview" href="{{.DemoPreviewURL}}" aria-label="Live Preview {{.Name}} with its demo content">Live Preview</a>{{end}}
 			<div class="theme-author">By {{.Author}}</div>
 			<div class="theme-id-container">
 				<h3 class="theme-name">{{.Name}}{{if or .CategoryLabel .Style}}<span class="wpgo-theme-meta">{{.CategoryLabel}}{{if and .CategoryLabel .Style}} &middot; {{end}}{{.Style}}</span>{{end}}</h3>
 				<div class="theme-actions">
 				{{if .InstallURL}}<a class="button button-primary button-compact theme-install" data-slug="{{.Slug}}" href="{{.InstallURL}}" aria-label="Install {{.Name}}">Install</a>
 					{{if .DemoURL}}<a class="button button-compact theme-install wpgo-install-demo" href="{{.DemoURL}}" aria-label="Install {{.Name}}, activate it and import its demo content">Install &amp; Import Demo</a>{{end}}
+					{{if and .DemoPreviewURL (not .DemoURL)}}<a class="button button-compact preview install-theme-preview" href="{{.DemoPreviewURL}}" aria-label="Live Preview {{.Name}}">Live Preview</a>{{end}}
 				{{else if .UpdateURL}}<a class="button button-primary button-compact theme-install update" href="{{.UpdateURL}}" aria-label="Update {{.Name}} to version {{.NewVersion}}">Update</a>
 					{{if not .Active}}<a class="button button-compact activate" href="{{.ActivateURL}}" aria-label="Activate {{.Name}}">Activate</a>{{end}}
+					{{if .DemoPreviewURL}}<a class="button button-compact preview install-theme-preview" href="{{.DemoPreviewURL}}" aria-label="Live Preview {{.Name}} {{.NewVersion}}">Live Preview</a>{{end}}
 				{{else if .Active}}<button class="button button-primary button-compact disabled">Activated</button>
 					{{if .Custom}}<a class="button button-compact" href="/wp-admin/gowebeditor-theme-builder">Theme Builder</a>{{else}}<a class="button button-compact load-customize" href="/wp-admin/customize">Customize</a>{{end}}
 				{{else}}<a class="button button-primary button-compact activate" href="{{.ActivateURL}}" aria-label="Activate {{.Name}}">Activate</a>
-					<a class="button button-compact preview install-theme-preview" href="{{.PreviewURL}}" aria-label="Live Preview {{.Name}}">Live Preview</a>{{end}}
+					<a class="button button-compact preview install-theme-preview" href="{{if .DemoPreviewURL}}{{.DemoPreviewURL}}{{else}}{{.PreviewURL}}{{end}}" aria-label="Live Preview {{.Name}}">Live Preview</a>{{end}}
 				</div>
 			</div>
 		</div>

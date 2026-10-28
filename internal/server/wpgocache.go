@@ -93,6 +93,9 @@ func lines(v string) []string {
 // configureCache (re)builds the page cache from the current options. Entries are dropped, like
 // LiteSpeed Cache purging everything when its settings change.
 func (s *Server) configureCache() {
+	if s.sandbox != nil { // a theme-preview sandbox is served without the page cache
+		return
+	}
 	c := cache.New(s.cacheConfig(), cache.Options{LoginCookie: auth.CookieName, Logger: slog.Default()})
 	s.cache.Store(&pageCache{c: c, h: c.Middleware(s.appHandler())})
 }

@@ -23,8 +23,8 @@ func gweRESTNamespace(ns string) bool {
 	return ns == "elementor/v1" || ns == "elementor-pro/v1"
 }
 
-func (s *Server) registerGoWebEditorREST() {
-	// Uploaded SVG icons render inline (Svg::get_inline_svg); the renderer asks for their markup.
+// gweSetSVGLoader points builder.SVGLoader at this site's uploads.
+func (s *Server) gweSetSVGLoader() {
 	builder.SVGLoader = func(id int64) string {
 		a, err := s.store.GetAttachment(context.Background(), id)
 		if err != nil || a.Mime != "image/svg+xml" || a.FileSize > 1<<20 {
@@ -35,6 +35,14 @@ func (s *Server) registerGoWebEditorREST() {
 			return ""
 		}
 		return string(b)
+	}
+}
+
+func (s *Server) registerGoWebEditorREST() {
+	// Uploaded SVG icons render inline (Svg::get_inline_svg); the renderer asks for their markup.
+	// The hook is process-wide: a theme-preview sandbox (no Golementor) leaves the site's in place.
+	if s.sandbox == nil {
+		s.gweSetSVGLoader()
 	}
 	api := s.rest
 	const ns = "elementor/v1"

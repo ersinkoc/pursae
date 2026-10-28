@@ -92,3 +92,25 @@ func Migrate(ctx context.Context, pool *pgxpool.Pool) ([]string, error) {
 	}
 	return applied, nil
 }
+
+// ConnectSchema opens a pool on the database of base whose connections see only the given schema
+// (search_path): a second, separate site in the same database, migrated with Migrate like the
+// first (theme previews). The schema must exist.
+func ConnectSchema(ctx context.Context, base *pgxpool.Config, schema string, maxConns int32) (*pgxpool.Pool, error) {
+	cfg := base.Copy()
+	if cfg.ConnConfig.RuntimeParams == nil {
+		cfg.ConnConfig.RuntimeParams = map[string]string{}
+	}
+	cfg.ConnConfig.RuntimeParams["search_path"] = pgx.Identifier{schema}.Sanitize()
+	cfg.MaxConns, cfg.MinConns = maxConns, 0
+	cfg.MaxConnIdleTime = 5 * time.Minute
+	pool, err := pgxpool.NewWithConfig(ctx, cfg)
+	if err != nil {
+		return nil, err
+	}
+	if err := pool.Ping(ctx); err != nil {
+		pool.Close()
+		return nil, err
+	}
+	return pool, nil
+}

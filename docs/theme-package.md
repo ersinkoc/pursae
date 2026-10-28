@@ -302,3 +302,36 @@ installer as Upload Theme, so the package lands in `<data>/themes` with the same
 library carries a higher `version` than the installed one the card offers **Update** (theme
 mods and widgets are kept). The installed theme can be customized and deleted like any
 package. The All, Bundled and Uploaded tabs list the installed themes as before.
+
+## Live Preview with demo content
+
+Every card of Add Themes › Library has **Live Preview** (the screenshot, or a button when the
+card has no Install & Import Demo), and the details of an installed package theme that ships a
+demo have **Preview with demo content** on Appearance › Themes. Both open
+`/wp-admin/theme-preview?theme=<slug>` (`&source=installed` for the installed files): WordPress's
+full-screen theme-install overlay with the theme's name, author, version, description and the
+actions Add Themes or Themes would offer (Install, Install & Import Demo, Update, Activate, Import
+Demo Content), previous/next library theme, collapse, and the desktop/tablet/mobile switcher. The
+iframe shows the theme as it looks with its demo content imported — pages, posts, menus, widgets,
+images and Customizer values — while the site, its database, uploads and settings stay untouched.
+Previews need `switch_themes` (and `install_themes` for a library theme).
+
+Each previewed theme gets a **sandbox**: a second, complete site in the PostgreSQL schema
+`wpgo_preview_<slug with _>` of the same database (the pool's `search_path`; migrated with the
+normal migrations) with its uploads and themes directory in `<data>/preview/<slug>/`. It is
+installed like a fresh site that copies the site's address, permalink, time zone and date settings,
+and the theme is installed, activated and given its demo with the same code as on the site. The
+first preview builds it in the background (a few seconds; the iframe shows *Preparing preview…*
+and reloads when it is ready); later previews reuse it, also after a restart. It is rebuilt when
+the theme's files or version, or the copied settings, change. At most 8 sandboxes are kept, the
+least recently used go first; **Clear theme previews** on the Library tab drops them all (schemas
+and files).
+
+The sandbox is served under `/wp-admin/theme-preview/<slug>/` as an anonymous visitor: no
+cookies reach it and none come back, only GET and HEAD are allowed (comments, forms and REST
+writes are refused), and its dashboard, login and comment posting answer 403. Responses carry
+`X-Robots-Tag: noindex, nofollow` (the sandbox also discourages search engines). The sandbox runs
+as if it were the site at the site's own address; the preview prefix is added to every URL of its
+responses on the way out (absolute and root-relative links, assets, uploads, `srcset`, `url()`,
+JSON-escaped URLs, redirects), so navigation stays inside the preview. A sandbox keeps its theme
+packages in its own registry and has no page cache, plugin runtime, scheduler, mail or Hub.

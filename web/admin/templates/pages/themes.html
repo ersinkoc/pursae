@@ -154,9 +154,15 @@
 				<# } else if ( data.wpgoDemoRemove ) { #>
 					<a class="button button-compact wpgo-remove-demo" href="{{{ data.wpgoDemoRemove }}}" onclick="return window.confirm( _wpThemeSettings.settings.confirmRemoveDemo );">Remove Demo Content</a>
 				<# } #>
+				<# if ( data.wpgoDemoPreview ) { #>
+					<a class="button button-compact wpgo-demo-preview" href="{{{ data.wpgoDemoPreview }}}">Preview with demo content</a>
+				<# } #>
 			</div>
 			<div class="inactive-theme">
 				<a class="button button-compact button-primary load-customize hide-if-no-customize" href="{{{ data.actions.customize }}}" aria-label="Live Preview {{ data.name }}">Live Preview</a>
+				<# if ( data.wpgoDemoPreview ) { #>
+					<a class="button button-compact wpgo-demo-preview" href="{{{ data.wpgoDemoPreview }}}" aria-label="Preview {{ data.name }} with demo content">Preview with demo content</a>
+				<# } #>
 				<# if ( data.actions.activate ) { #>
 					<a class="button button-compact activate" href="{{{ data.actions.activate }}}" aria-label="Activate {{ data.name }}">Activate</a>
 				<# } #>

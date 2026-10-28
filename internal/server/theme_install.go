@@ -167,8 +167,10 @@ func (s *Server) themesDir() string {
 // shared by every Server in the process, so the packages registered before are dropped first. A
 // broken package is logged and skipped.
 func (s *Server) loadThemePackages() {
-	for _, t := range packageThemes() {
-		unregisterTheme(t.Slug)
+	if s.sandbox == nil { // a theme-preview sandbox keeps its packages to itself (theme_preview.go)
+		for _, t := range packageThemes() {
+			unregisterTheme(t.Slug)
+		}
 	}
 	dir := s.themesDir()
 	entries, err := os.ReadDir(dir)
@@ -188,7 +190,7 @@ func (s *Server) loadThemePackages() {
 			log.Printf("theme package %s skipped: %v", e.Name(), err)
 			continue
 		}
-		registerThemePackage(t)
+		s.registerPackage(t)
 	}
 }
 
@@ -199,7 +201,7 @@ func (s *Server) installThemePackage(ctx context.Context, data []byte) (*Theme, 
 	if err != nil {
 		return nil, err
 	}
-	if t := themeBySlug(m.Slug); t != nil {
+	if t := s.themeFor(m.Slug); t != nil {
 		if t.Package == nil {
 			return nil, fmt.Errorf("the slug %q belongs to a bundled theme", m.Slug)
 		}
@@ -261,7 +263,7 @@ func (s *Server) installThemePackage(ctx context.Context, data []byte) (*Theme, 
 	if err != nil {
 		return nil, err
 	}
-	registerThemePackage(t)
+	s.registerPackage(t)
 	s.afterThemeChange(ctx, t.Slug)
 	return t, nil
 }
@@ -308,7 +310,7 @@ func (s *Server) packageThemeAsset(c *gin.Context) {
 		return
 	}
 	slug, file, ok := strings.Cut(rel, "/")
-	t := themeBySlug(slug)
+	t := s.themeFor(slug)
 	if !ok || t == nil || t.Package == nil || file == "" || strings.HasSuffix(file, "/") || !fs.ValidPath(file) {
 		return
 	}
@@ -341,6 +343,7 @@ type themeInstallCard struct {
 	DemoURL              string // Install & Import Demo
 	UpdateURL            string // an older version is installed
 	NewVersion           string
+	DemoPreviewURL       string // Live Preview with demo content (theme_preview.go)
 }
 
 // themeCategoryLink is a category filter of the Library tab.
@@ -430,6 +433,9 @@ func (s *Server) themeInstall(c *gin.Context) {
 			cd := themeInstallCard{Name: m.Name, Author: m.Author, Slug: m.Slug, Description: m.Description, Version: m.Version,
 				Screenshot: "/wp-admin/theme-install?action=library-screenshot&theme=" + m.Slug + "&ver=" + m.Version,
 				Library:    true, Style: m.Style, CategoryLabel: themeCategoryLabel(m.Category), Package: true}
+			if canPreview(u, true) {
+				cd.DemoPreviewURL = previewURL(m.Slug, false)
+			}
 			if t := s.installedTheme(m.Slug); t != nil && t.Package != nil {
 				cd.Installed, cd.Active = true, t.Slug == active.Slug
 				cd.ActivateURL, cd.PreviewURL = activateURL(t.Slug), "/?theme="+t.Slug
@@ -486,6 +492,9 @@ func (s *Server) themeInstall(c *gin.Context) {
 	if msg := c.Query("error"); msg != "" {
 		notices = append(notices, notice{Type: "error", Message: template.HTML(template.HTMLEscapeString(msg)), Dismissible: true})
 	}
+	if c.Query("previews") == "cleared" {
+		notices = append(notices, notice{Type: "success", Message: "The theme previews have been cleared.", Dismissible: true})
+	}
 	bodyClass := "theme-install-php"
 	if browse == "upload" {
 		bodyClass += " show-upload-view"
@@ -493,6 +502,9 @@ func (s *Server) themeInstall(c *gin.Context) {
 	data := map[string]any{"Cards": cards, "Browse": browse, "Search": c.Query("search"), "Count": len(cards), "Golementor": s.golementorOn(),
 		"UploadNonce": s.nonce(c, "theme-upload"), "MaxSize": fmt.Sprintf("%d MB", themeZipMaxBytes>>20),
 		"Categories": categories, "Category": category}
+	if browse == "library" && canPreview(u, true) {
+		data["Previews"], data["PreviewsNonce"] = s.previewCount(c), s.nonce(c, "clear-theme-previews")
+	}
 	s.adminPage(c, "themes", "Add Themes", bodyClass, "admin/theme-install", data, notices...)
 }
 

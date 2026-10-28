@@ -1,0 +1,81 @@
+{{define "admin/theme-preview"}}{{template "admin-header" .}}{{with .Data}}
+{{/* WordPress's theme-install overlay (wp-admin/theme-install.php, tmpl-theme-preview): the theme's
+     details and actions in the sidebar, its sandbox with demo content in the iframe (theme_preview.go). */}}
+<div class="theme-install-overlay wp-full-overlay expanded preview-desktop wpgo-theme-preview" style="display:block">
+	<div class="wp-full-overlay-sidebar">
+		<div class="wp-full-overlay-header">
+			<a class="close-full-overlay" href="{{.Back}}"><span class="screen-reader-text">Close</span></a>
+			{{if .Library}}
+			{{if .Prev}}<a class="previous-theme" href="{{.Prev.URL}}" title="{{.Prev.Name}}"><span class="screen-reader-text">Previous theme</span></a>{{else}}<span class="previous-theme disabled" aria-disabled="true"><span class="screen-reader-text">Previous theme</span></span>{{end}}
+			{{if .Next}}<a class="next-theme" href="{{.Next.URL}}" title="{{.Next.Name}}"><span class="screen-reader-text">Next theme</span></a>{{else}}<span class="next-theme disabled" aria-disabled="true"><span class="screen-reader-text">Next theme</span></span>{{end}}
+			{{end}}
+			{{if .Primary}}<a class="button button-primary theme-install" href="{{.Primary}}">{{.PrimaryLabel}}</a>{{end}}
+		</div>
+		<div class="wp-full-overlay-sidebar-content">
+			<div class="install-theme-info">
+				<h3 class="theme-name">{{.Name}}</h3>
+				<span class="theme-by">By {{.Author}}</span>
+				{{if .Screenshot}}<div class="theme-screenshot"><img class="theme-screenshot" src="{{.Screenshot}}" alt="" /></div>{{end}}
+				<div class="theme-details">
+					<div class="theme-version">Version: {{.Version}}</div>
+					{{if or .Category .Style}}<div class="wpgo-theme-meta">{{.Category}}{{if and .Category .Style}} &middot; {{end}}{{.Style}}</div>{{end}}
+					<div class="theme-description">{{.Description}}</div>
+					<p class="wpgo-preview-note">{{if .HasDemo}}You are looking at the theme with its demo content: a private copy of the site that only administrators see. Nothing is installed{{if .Installed}} or changed{{end}} until you choose to.{{else}}You are looking at the theme on a fresh site: a private copy that only administrators see. Nothing is installed until you choose to.{{end}}</p>
+					{{if .DemoURL}}<p><a class="button wpgo-install-demo" href="{{.DemoURL}}">Install &amp; Import Demo</a></p>{{end}}
+					{{if .ImportURL}}<p><a class="button wpgo-import-demo" href="{{.ImportURL}}">Import Demo Content</a></p>{{end}}
+				</div>
+			</div>
+		</div>
+		<div class="wp-full-overlay-footer">
+			<button type="button" class="collapse-sidebar button" aria-expanded="true" aria-label="Collapse Sidebar">
+				<span class="collapse-sidebar-arrow"></span>
+				<span class="collapse-sidebar-label">Collapse</span>
+			</button>
+			<div class="devices-wrapper">
+				<div class="devices">
+					<button type="button" class="preview-desktop active" aria-pressed="true" data-device="desktop"><span class="screen-reader-text">Enter desktop preview mode</span></button>
+					<button type="button" class="preview-tablet" aria-pressed="false" data-device="tablet"><span class="screen-reader-text">Enter tablet preview mode</span></button>
+					<button type="button" class="preview-mobile" aria-pressed="false" data-device="mobile"><span class="screen-reader-text">Enter mobile preview mode</span></button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="wp-full-overlay-main">
+		<iframe src="{{.Frame}}" title="Preview of {{.Name}}"></iframe>
+	</div>
+</div>
+<style>
+.wpgo-theme-preview .install-theme-info .theme-by{color:#50575e}
+.wpgo-theme-preview .wpgo-theme-meta{margin:-8px 0 12px;color:#50575e}
+.wpgo-theme-preview .wpgo-preview-note{clear:both;margin:16px 0 0;padding-top:12px;border-top:1px solid #dcdcde;color:#50575e;font-size:12px}
+.wpgo-theme-preview .theme-details .theme-description{float:none}
+.wpgo-theme-preview .wp-full-overlay-header a.previous-theme,.wpgo-theme-preview .wp-full-overlay-header a.next-theme,.wpgo-theme-preview .wp-full-overlay-header span.previous-theme,.wpgo-theme-preview .wp-full-overlay-header span.next-theme,.wpgo-theme-preview .wp-full-overlay-header a.close-full-overlay{display:block;text-decoration:none;box-sizing:border-box}
+.wpgo-theme-preview .wp-full-overlay-main iframe{border:0;background:#fff;display:block}
+</style>
+<script>
+(function () {
+	var overlay = document.querySelector('.wpgo-theme-preview'), frame = overlay.querySelector('iframe');
+	frame.addEventListener('load', function () { overlay.classList.add('iframe-ready'); });
+	overlay.querySelector('.collapse-sidebar').addEventListener('click', function () {
+		var collapsed = overlay.classList.toggle('collapsed');
+		overlay.classList.toggle('expanded', !collapsed);
+		this.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+		this.querySelector('.collapse-sidebar-label').textContent = collapsed ? 'Expand' : 'Collapse';
+		this.setAttribute('aria-label', collapsed ? 'Expand Sidebar' : 'Collapse Sidebar');
+	});
+	overlay.querySelectorAll('.devices button').forEach(function (btn) {
+		btn.addEventListener('click', function () {
+			overlay.classList.remove('preview-desktop', 'preview-tablet', 'preview-mobile');
+			overlay.classList.add('preview-' + btn.dataset.device);
+			overlay.querySelectorAll('.devices button').forEach(function (b) {
+				b.classList.toggle('active', b === btn);
+				b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
+			});
+		});
+	});
+	document.addEventListener('keyup', function (e) {
+		if (e.key === 'Escape') { window.location.href = overlay.querySelector('.close-full-overlay').getAttribute('href'); }
+	});
+})();
+</script>
+{{end}}{{template "admin-footer" .}}{{end}}

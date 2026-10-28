@@ -42,7 +42,7 @@ func (t *templates) load() error {
 		return fmt.Errorf("admin templates: %w", err)
 	}
 	sets := map[string]*template.Template{}
-	for _, th := range allThemes() {
+	for _, th := range t.s.themeList() {
 		if th.Custom {
 			continue
 		}

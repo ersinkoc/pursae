@@ -69,7 +69,7 @@ var czTagRe = regexp.MustCompile(`<[a-zA-Z/!?][^>]*>?`)
 func (s *Server) czSanitize(ctx context.Context, t *Theme, values map[string]string) (map[string]any, map[string]any, error) {
 	opts := map[string]any{}
 	mods := s.themeMods(t.Slug)
-	spec := czSpecs[t.Slug]
+	spec := czSpecFor(t)
 	image := func(raw string) (int64, error) {
 		id, _ := strconv.ParseInt(strings.TrimSpace(raw), 10, 64)
 		if id <= 0 {
@@ -364,7 +364,7 @@ func (s *Server) customizeScreen(c *gin.Context) {
 		d.Values["mod:custom_logo"] = strconv.Itoa(modInt(mods, "custom_logo", 0))
 		d.Logo = s.czImage(ctx, int64(modInt(mods, "custom_logo", 0)))
 	}
-	if spec := czSpecs[t.Slug]; spec != nil {
+	if spec := czSpecFor(t); spec != nil {
 		sections := map[string]*czSectionView{}
 		for _, sec := range spec.Sections {
 			d.Sections = append(d.Sections, &czSectionView{czSection: sec})
