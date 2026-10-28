@@ -1,0 +1,246 @@
+{{define "acfgo-header"}}<div class="acf-admin-toolbar">
+	<h2><span class="dashicons dashicons-welcome-widgets-menus"></span> ACF-Go</h2>
+	<a href="/wp-admin/acf-field-groups" class="acf-tab{{if eq .Screen "acf-field-groups" "acf-field-group"}} is-active{{end}}"><span class="dashicons dashicons-feedback"></span> Field Groups</a>
+	<a href="/wp-admin/acf-post-types" class="acf-tab{{if eq .Screen "acf-post-types" "acf-post-type"}} is-active{{end}}"><span class="dashicons dashicons-admin-post"></span> Post Types</a>
+	<a href="/wp-admin/acf-taxonomies" class="acf-tab{{if eq .Screen "acf-taxonomies" "acf-taxonomy"}} is-active{{end}}"><span class="dashicons dashicons-tag"></span> Taxonomies</a>
+	<a href="/wp-admin/acf-options-pages" class="acf-tab{{if eq .Screen "acf-options-pages" "acf-options-page"}} is-active{{end}}"><span class="dashicons dashicons-admin-generic"></span> Options Pages</a>
+	<a href="/wp-admin/acf-tools" class="acf-tab{{if eq .Screen "acf-tools"}} is-active{{end}}"><span class="dashicons dashicons-admin-tools"></span> Tools</a>
+</div>{{end}}
+
+{{define "admin/acfgo-groups"}}{{template "admin-header" .}}{{template "acfgo-header" .}}{{with .Data}}
+<div class="wrap acf-wrap">
+<h1 class="wp-heading-inline">Field Groups</h1>
+<a href="/wp-admin/acf-field-group" class="page-title-action acf-btn">Add New</a>
+{{if .Search}}<span class="subtitle">Search results for: <strong>{{.Search}}</strong></span>{{end}}
+<hr class="wp-header-end">
+{{template "notices" $}}
+<ul class="subsubsub">
+{{range $i, $v := .Views}}	<li class="{{$v.Key}}">{{if $i}} |{{end}}<a href="{{$v.URL}}"{{if $v.Current}} class="current" aria-current="page"{{end}}>{{$v.Label}} <span class="count">({{num $v.Count}})</span></a></li>
+{{end}}</ul>
+<form method="get" action="/wp-admin/acf-field-groups">
+<p class="search-box"><label class="screen-reader-text" for="post-search-input">Search Field Groups:</label>
+<input type="search" id="post-search-input" name="s" value="{{.Search}}" /> <input type="submit" id="search-submit" class="button" value="Search Field Groups" />
+{{if ne .Status "all"}}<input type="hidden" name="post_status" value="{{.Status}}" />{{end}}</p>
+</form>
+<form id="posts-filter" method="post" action="/wp-admin/acf-field-groups">
+<input type="hidden" name="_wpnonce" value="{{.BulkNonce}}" />
+<div class="tablenav top"><div class="alignleft actions bulkactions">
+	<label for="bulk-action-selector-top" class="screen-reader-text">Select bulk action</label>
+	<select name="action" id="bulk-action-selector-top"><option value="-1">Bulk actions</option>
+	{{if .IsTrash}}<option value="untrash">Restore</option><option value="delete">Delete permanently</option>
+	{{else if .IsSync}}<option value="sync">Sync changes</option>
+	{{else}}<option value="activate">Activate</option><option value="deactivate">Deactivate</option><option value="trash">Move to Trash</option>{{end}}</select>
+	<input type="submit" id="doaction" class="button action" value="Apply" />
+</div><br class="clear" /></div>
+<table class="wp-list-table widefat fixed striped table-view-list posts acf-field-group-list">
+<thead><tr><td id="cb" class="manage-column column-cb check-column"><input id="cb-select-all-1" type="checkbox" /></td>
+<th scope="col" class="manage-column column-title column-primary">Title</th>
+<th scope="col" class="manage-column column-acf-key">Key</th>
+<th scope="col" class="manage-column column-acf-location">Location</th>
+<th scope="col" class="manage-column column-acf-json">Local JSON</th>
+<th scope="col" class="manage-column column-acf-count">Fields</th></tr></thead>
+<tbody id="the-list">
+{{range .Rows}}<tr id="post-{{.ID}}" class="{{if not .Active}}acf-inactive {{end}}status-{{.Status}}">
+	<th scope="row" class="check-column">{{if .InDB}}<input type="checkbox" name="post[]" value="{{.ID}}" />{{else if .SyncAvailable}}<input type="checkbox" name="sync[]" value="{{.Key}}" />{{end}}</th>
+	<td class="title column-title has-row-actions column-primary page-title"><strong>{{if .EditURL}}<a class="row-title" href="{{.EditURL}}">{{.Title}}</a>{{else}}{{.Title}}{{end}}{{if not .Active}} <span class="post-state">— Inactive</span>{{end}}</strong>
+		{{with .Description}}<p class="acf-description">{{.}}</p>{{end}}
+		<div class="row-actions">{{if eq .Status "trash"}}<span class="untrash"><a href="{{.RestoreURL}}">Restore</a> | </span><span class="delete"><a class="submitdelete" href="{{.DeleteURL}}">Delete Permanently</a></span>
+		{{else if .InDB}}<span class="edit"><a href="{{.EditURL}}">Edit</a> | </span><span class="duplicate"><a href="{{.DuplicateURL}}">Duplicate</a> | </span><span class="toggle"><a href="{{.ToggleURL}}">{{if .Active}}Deactivate{{else}}Activate{{end}}</a> | </span><span class="trash"><a class="submitdelete" href="{{.TrashURL}}">Trash</a></span>{{if .SyncURL}}<span class="sync"> | <a href="{{.SyncURL}}">Sync changes</a></span>{{end}}
+		{{else}}<span class="sync"><a href="{{.SyncURL}}">Sync</a></span>{{end}}</div></td>
+	<td class="column-acf-key"><code>{{.Key}}</code></td>
+	<td class="column-acf-location">{{range .Locations}}<span class="acf-location">{{.}}</span><br />{{else}}—{{end}}</td>
+	<td class="column-acf-json">{{if .SyncAvailable}}<span class="acf-sync-available">{{if .InDB}}Sync available{{else}}Local only — Sync to edit{{end}}</span>{{else if .LocalFile}}Saved{{else if eq .Local "go"}}Registered in code{{else}}—{{end}}</td>
+	<td class="column-acf-count">{{.Fields}}</td>
+</tr>
+{{else}}<tr class="no-items"><td class="colspanchange" colspan="6">{{if .IsTrash}}No Field Groups found in Trash{{else}}No Field Groups found. <a href="/wp-admin/acf-field-group">Add your first Field Group</a>{{end}}</td></tr>
+{{end}}</tbody></table>
+</form>
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}
+
+{{define "admin/acfgo-group-edit"}}{{template "admin-header" .}}{{template "acfgo-header" .}}{{with .Data}}
+<div class="wrap acf-wrap acf-field-group-edit">
+<h1 class="wp-heading-inline">{{if .IsNew}}Add New Field Group{{else}}Edit Field Group{{end}}</h1>
+{{if not .IsNew}}<a href="/wp-admin/acf-field-group" class="page-title-action">Add New</a>{{end}}
+<hr class="wp-header-end">
+{{template "notices" $}}
+<form name="post" action="/wp-admin/acf-field-group" method="post" id="post">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<input type="hidden" name="post_ID" value="{{.Group.ID}}" />
+<input type="hidden" name="acfgo_group" id="acfgo-group-json" value="" />
+<div id="poststuff"><div id="post-body" class="metabox-holder columns-2">
+<div id="post-body-content">
+	<div id="titlediv"><div id="titlewrap">
+		<label class="screen-reader-text" id="title-prompt-text" for="title">Field Group Title</label>
+		<input type="text" name="post_title" size="30" value="{{.Group.Title}}" id="title" spellcheck="true" autocomplete="off" placeholder="Field Group Title" required />
+	</div></div>
+</div>
+<div id="postbox-container-1" class="postbox-container">
+	<div id="submitdiv" class="postbox"><div class="postbox-header"><h2 class="hndle">Save</h2></div><div class="inside">
+		<div class="submitbox" id="submitpost"><div id="minor-publishing" class="acf-publish-active">
+			<p><label class="acf-switch-label"><input type="checkbox" id="acf-active" {{if .Group.Active}}checked{{end}} /><span class="acf-switch{{if .Group.Active}} -on{{end}}"><span class="acf-switch-slider"></span></span> <strong>Active</strong></label></p>
+			{{if .Group.Key}}<p class="acf-key-info">Key: <code>{{.Group.Key}}</code></p>{{end}}
+		</div>
+		<div id="major-publishing-actions"><div id="publishing-action"><input type="submit" name="save" id="publish" class="button button-primary button-large" value="Save Changes" /></div><div class="clear"></div></div></div>
+	</div></div>
+</div>
+<div id="postbox-container-2" class="postbox-container">
+	<div id="acf-field-group-fields" class="postbox"><div class="postbox-header"><h2 class="hndle">Fields</h2></div>
+		<div class="inside"><div id="acfgo-fields-editor" class="acf-field-list-wrap"></div></div></div>
+	<div id="acf-field-group-options" class="postbox"><div class="postbox-header"><h2 class="hndle">Settings</h2></div>
+		<div class="inside"><div id="acfgo-settings-editor"></div></div></div>
+</div>
+</div><br class="clear" /></div>
+</form>
+</div>
+<script id="acfgo-group-data" type="application/json">{{.GroupJSON}}</script>
+<script id="acfgo-schema" type="application/json">{{.Schema}}</script>
+{{end}}{{template "admin-footer" .}}{{end}}
+
+{{define "admin/acfgo-types"}}{{template "admin-header" .}}{{template "acfgo-header" .}}{{with .Data}}
+<div class="wrap acf-wrap">
+<h1 class="wp-heading-inline">{{.Title}}</h1>
+<a href="{{.AddURL}}" class="page-title-action">Add New</a>
+<hr class="wp-header-end">
+{{template "notices" $}}
+<ul class="subsubsub">
+{{range $i, $v := .Views}}	<li class="{{$v.Key}}">{{if $i}} |{{end}}<a href="{{$v.URL}}"{{if $v.Current}} class="current" aria-current="page"{{end}}>{{$v.Label}} <span class="count">({{num $v.Count}})</span></a></li>
+{{end}}</ul>
+<table class="wp-list-table widefat fixed striped table-view-list posts">
+<thead><tr><th scope="col" class="manage-column column-title column-primary">{{.Singular}}</th><th scope="col">Key</th>
+{{if eq .Kind "acf-post-type"}}<th scope="col">Taxonomies</th><th scope="col">Count</th>{{else if eq .Kind "acf-taxonomy"}}<th scope="col">Post Types</th><th scope="col">Terms</th>{{else}}<th scope="col">Parent Page</th><th scope="col">Screen</th>{{end}}</tr></thead>
+<tbody id="the-list">
+{{range .Rows}}<tr class="status-{{.Status}}">
+	<td class="title column-title has-row-actions column-primary"><strong><a class="row-title" href="{{.EditURL}}">{{.Title}}</a>{{if not .Active}} <span class="post-state">— {{if eq .Status "trash"}}Trash{{else}}Inactive{{end}}</span>{{end}}</strong>
+	<div class="row-actions">{{if eq .Status "trash"}}<span class="untrash"><a href="{{.RestoreURL}}">Restore</a> | </span><span class="delete"><a class="submitdelete" href="{{.DeleteURL}}">Delete Permanently</a></span>{{else}}<span class="edit"><a href="{{.EditURL}}">Edit</a> | </span><span class="duplicate"><a href="{{.DuplicateURL}}">Duplicate</a> | </span><span class="toggle"><a href="{{.ToggleURL}}">{{.ToggleLabel}}</a> | </span><span class="trash"><a class="submitdelete" href="{{.TrashURL}}">Trash</a></span>{{end}}</div></td>
+	<td><code>{{.Slug}}</code></td><td>{{with .Extra}}{{.}}{{else}}—{{end}}</td>
+	<td>{{if eq $.Data.Kind "acf-ui-options-page"}}{{if .Active}}<a href="/wp-admin/{{.Count}}">Open</a>{{else}}—{{end}}{{else}}{{.Count}}{{end}}</td>
+</tr>
+{{else}}<tr class="no-items"><td colspan="4">No {{.Title}} found. <a href="{{.AddURL}}">Add your first {{.Singular}}</a></td></tr>
+{{end}}</tbody></table>
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}
+
+{{define "admin/acfgo-type-edit"}}{{template "admin-header" .}}{{template "acfgo-header" .}}{{with .Data}}
+<div class="wrap acf-wrap acf-type-edit">
+<h1 class="wp-heading-inline">{{if .IsNew}}Add New {{.Singular}}{{else}}Edit {{.Singular}}{{end}}</h1>
+<a href="{{.ListURL}}" class="page-title-action">All {{.Title}}</a>
+<hr class="wp-header-end">
+{{template "notices" $}}
+<form method="post" id="post" class="acf-type-form">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="post_ID" value="{{.ID}}" />
+<div id="poststuff"><div class="postbox"><div class="postbox-header"><h2 class="hndle">Basic Settings</h2></div><div class="inside">
+<table class="form-table" role="presentation">
+{{if eq .Kind "acf-ui-options-page"}}
+<tr><th scope="row"><label for="page_title">Page Title <span class="acf-required">*</span></label></th><td><input type="text" name="page_title" id="page_title" class="regular-text" value="{{.Str "page_title"}}" placeholder="Site Settings" required /></td></tr>
+<tr><th scope="row"><label for="menu_slug">Menu Slug</label></th><td><input type="text" name="menu_slug" id="menu_slug" class="regular-text" value="{{.Str "menu_slug"}}" placeholder="site-settings" /><p class="description">The URL of the page: /wp-admin/admin?page=&lt;menu slug&gt;</p></td></tr>
+<tr><th scope="row"><label for="parent_slug">Parent Page</label></th><td><select name="parent_slug" id="parent_slug">{{$p := .Str "parent_slug"}}{{range .MenuParents}}<option value="{{.Value}}"{{if or (eq .Value $p) (and (eq .Value "") (eq $p "none"))}} selected{{end}}>{{.Label}}</option>{{end}}</select></td></tr>
+{{else}}
+<tr><th scope="row"><label for="plural_label">Plural Label <span class="acf-required">*</span></label></th><td><input type="text" name="plural_label" id="plural_label" class="regular-text" value="{{index .Data "labels" | acfgoLabelOf "name"}}" placeholder="{{if eq .Kind "acf-post-type"}}Movies{{else}}Genres{{end}}" required /></td></tr>
+<tr><th scope="row"><label for="singular_label">Singular Label <span class="acf-required">*</span></label></th><td><input type="text" name="singular_label" id="singular_label" class="regular-text" value="{{index .Data "labels" | acfgoLabelOf "singular_name"}}" placeholder="{{if eq .Kind "acf-post-type"}}Movie{{else}}Genre{{end}}" required /></td></tr>
+<tr><th scope="row"><label for="slug">{{if eq .Kind "acf-post-type"}}Post Type Key{{else}}Taxonomy Key{{end}}</label></th><td><input type="text" name="slug" id="slug" class="regular-text" maxlength="{{if eq .Kind "acf-post-type"}}20{{else}}32{{end}}" value="{{if eq .Kind "acf-post-type"}}{{.Str "post_type"}}{{else}}{{.Str "taxonomy"}}{{end}}" />
+<p class="description">Lower case letters, underscores and dashes only. Generated from the singular label when empty.</p></td></tr>
+{{if eq .Kind "acf-post-type"}}<tr><th scope="row">Taxonomies</th><td><fieldset>{{range .Taxonomies}}<label><input type="checkbox" name="taxonomies[]" value="{{.Value}}"{{if index $.Data.Selected (print "tax:" .Value)}} checked{{end}} /> {{.Label}}</label><br />{{end}}</fieldset><p class="description">Select existing taxonomies to classify items of the post type.</p></td></tr>
+{{else}}<tr><th scope="row">Post Types</th><td><fieldset>{{range .PostTypes}}<label><input type="checkbox" name="object_type[]" value="{{.Value}}"{{if index $.Data.Selected (print "obj:" .Value)}} checked{{end}} /> {{.Label}}</label><br />{{end}}</fieldset><p class="description">One or many post types that can be classified with this taxonomy.</p></td></tr>{{end}}
+<tr><th scope="row">Public</th><td><label><input type="checkbox" name="public" value="1"{{if .Bool "public"}} checked{{end}} /> Visible on the frontend and in the admin dashboard.</label></td></tr>
+<tr><th scope="row">Hierarchical</th><td><label><input type="checkbox" name="hierarchical" value="1"{{if .Bool "hierarchical"}} checked{{end}} /> {{if eq .Kind "acf-post-type"}}Hierarchical post types can have descendants (like pages).{{else}}Hierarchical taxonomies can have descendants (like categories).{{end}}</label></td></tr>
+{{end}}
+<tr><th scope="row">Active</th><td><label><input type="checkbox" name="active" value="1"{{if .Bool "active"}} checked{{end}} /> Active</label></td></tr>
+<tr><th scope="row"><label for="description">Description</label></th><td><input type="text" name="description" id="description" class="large-text" value="{{.Str "description"}}" /></td></tr>
+<tr><th scope="row">Advanced Configuration</th><td><label><input type="checkbox" name="advanced_configuration" value="1" id="acf-advanced-toggle"{{if .Bool "advanced_configuration"}} checked{{end}} /> Show the advanced settings</label></td></tr>
+</table></div></div>
+
+<div class="postbox acf-advanced-settings"{{if not (.Bool "advanced_configuration")}} style="display:none"{{end}}><div class="postbox-header"><h2 class="hndle">Advanced Settings</h2></div><div class="inside">
+<table class="form-table" role="presentation">
+{{if eq .Kind "acf-ui-options-page"}}
+<tr><th scope="row"><label for="menu_title">Menu Title</label></th><td><input type="text" name="menu_title" id="menu_title" class="regular-text" value="{{.Str "menu_title"}}" /></td></tr>
+<tr><th scope="row"><label for="menu_icon">Menu Icon</label></th><td><input type="text" name="menu_icon" id="menu_icon" class="regular-text" value="{{.Icon}}" placeholder="dashicons-admin-generic" /> <span class="dashicons {{.Icon}}"></span></td></tr>
+<tr><th scope="row"><label for="position">Menu Position</label></th><td><input type="number" name="position" id="position" class="small-text" value="{{.Str "position"}}" /></td></tr>
+<tr><th scope="row">Redirect to Child Page</th><td><label><input type="checkbox" name="redirect" value="1"{{if .Bool "redirect"}} checked{{end}} /> Open the first child page instead of this page</label></td></tr>
+<tr><th scope="row"><label for="capability">Capability</label></th><td><input type="text" name="capability" id="capability" class="regular-text" value="{{with .Str "capability"}}{{.}}{{else}}edit_posts{{end}}" /></td></tr>
+<tr><th scope="row"><label for="update_button">Update Button Label</label></th><td><input type="text" name="update_button" id="update_button" class="regular-text" value="{{with .Str "update_button"}}{{.}}{{else}}Update{{end}}" /></td></tr>
+<tr><th scope="row"><label for="updated_message">Updated Message</label></th><td><input type="text" name="updated_message" id="updated_message" class="regular-text" value="{{with .Str "updated_message"}}{{.}}{{else}}Options Updated{{end}}" /></td></tr>
+<tr><th scope="row">Data Storage</th><td>{{$ds := .Str "data_storage"}}<label><input type="radio" name="data_storage" value="options"{{if ne $ds "post_id"}} checked{{end}} /> Options</label> <label><input type="radio" name="data_storage" value="post_id"{{if eq $ds "post_id"}} checked{{end}} /> Custom storage</label>
+<p><input type="text" name="post_id" class="regular-text" value="{{.Str "post_id"}}" placeholder="123, user_1, term_5 or an options prefix" /></p></td></tr>
+<tr><th scope="row">Autoload Options</th><td><label><input type="checkbox" name="autoload" value="1"{{if .Bool "autoload"}} checked{{end}} /> Load the values when WordPress Go starts</label></td></tr>
+{{else}}
+<tr><th scope="row">Labels</th><td><table class="acf-labels-table">{{range .Labels}}<tr><td><label for="label-{{.Name}}">{{.Label}}</label></td><td><input type="text" id="label-{{.Name}}" name="labels[{{.Name}}]" class="regular-text" value="{{.Value}}" /></td></tr>{{end}}</table><p class="description">Generated from the singular and plural labels when left empty.</p></td></tr>
+<tr><th scope="row">Show In UI</th><td><label><input type="hidden" name="show_ui" value="0" /><input type="checkbox" name="show_ui" value="1"{{if .Bool "show_ui"}} checked{{end}} /> Items can be edited and managed in the admin dashboard.</label></td></tr>
+<tr><th scope="row">Show In Admin Menu</th><td><label><input type="hidden" name="show_in_menu" value="0" /><input type="checkbox" name="show_in_menu" value="1"{{if .Bool "show_in_menu"}} checked{{end}} /> Admin editor navigation in the sidebar menu.</label></td></tr>
+<tr><th scope="row">Show In REST API</th><td><label><input type="checkbox" name="show_in_rest" value="1"{{if .Bool "show_in_rest"}} checked{{end}} /> Exposes this item in the REST API.</label></td></tr>
+<tr><th scope="row"><label for="rest_base">REST API Base URL</label></th><td><input type="text" name="rest_base" id="rest_base" class="regular-text" value="{{.Str "rest_base"}}" /></td></tr>
+<tr><th scope="row"><label for="rewrite_slug">URL Slug</label></th><td><input type="text" name="rewrite_slug" id="rewrite_slug" class="regular-text" value="{{.Rewrite}}" /></td></tr>
+{{if eq .Kind "acf-post-type"}}
+<tr><th scope="row">Supports</th><td><fieldset>{{range .Supports}}<label><input type="checkbox" name="supports[]" value="{{.Value}}"{{if index $.Data.Selected (print "sup:" .Value)}} checked{{end}} /> {{.Label}}</label><br />{{end}}</fieldset></td></tr>
+<tr><th scope="row"><label for="menu_icon">Menu Icon</label></th><td><input type="text" name="menu_icon" id="menu_icon" class="regular-text" value="{{.Icon}}" placeholder="dashicons-admin-post" /> <span class="dashicons {{.Icon}}"></span></td></tr>
+<tr><th scope="row"><label for="menu_position">Menu Position</label></th><td><input type="number" name="menu_position" id="menu_position" class="small-text" value="{{.Str "menu_position"}}" /></td></tr>
+<tr><th scope="row"><label for="enter_title_here">Title Placeholder</label></th><td><input type="text" name="enter_title_here" id="enter_title_here" class="regular-text" value="{{.Str "enter_title_here"}}" placeholder="Add title" /></td></tr>
+<tr><th scope="row">Archive</th><td><label><input type="checkbox" name="has_archive" value="1"{{if .Bool "has_archive"}} checked{{end}} /> Has an item archive</label> <input type="text" name="has_archive_slug" value="{{.Str "has_archive_slug"}}" placeholder="Archive slug" /></td></tr>
+<tr><th scope="row">Exclude From Search</th><td><label><input type="checkbox" name="exclude_from_search" value="1"{{if .Bool "exclude_from_search"}} checked{{end}} /> Hide items from search results</label></td></tr>
+<tr><th scope="row">Delete With User</th><td><label><input type="checkbox" name="delete_with_user" value="1"{{if .Bool "delete_with_user"}} checked{{end}} /> Delete items by a user when that user is deleted</label></td></tr>
+{{else}}
+<tr><th scope="row">Show Admin Column</th><td><label><input type="checkbox" name="show_admin_column" value="1"{{if .Bool "show_admin_column"}} checked{{end}} /> Display a column for the taxonomy on post type listing screens.</label></td></tr>
+<tr><th scope="row">Tag Cloud</th><td><label><input type="checkbox" name="show_tagcloud" value="1"{{if .Bool "show_tagcloud"}} checked{{end}} /> List the taxonomy in the Tag Cloud widget</label></td></tr>
+<tr><th scope="row">Quick Edit</th><td><label><input type="checkbox" name="show_in_quick_edit" value="1"{{if .Bool "show_in_quick_edit"}} checked{{end}} /> Show the taxonomy in the quick/bulk edit panel</label></td></tr>
+{{end}}
+{{end}}
+</table></div></div>
+<p class="submit"><input type="submit" class="button button-primary button-large" value="Save Changes" /></p>
+</div>
+</form>
+</div>
+<script>document.getElementById('acf-advanced-toggle').addEventListener('change', function () { document.querySelector('.acf-advanced-settings').style.display = this.checked ? '' : 'none'; });</script>
+{{end}}{{template "admin-footer" .}}{{end}}
+
+{{define "admin/acfgo-tools"}}{{template "admin-header" .}}{{template "acfgo-header" .}}{{with .Data}}
+<div class="wrap acf-wrap acf-tools">
+<h1>Tools</h1>
+{{template "notices" $}}
+<div id="poststuff"><div class="metabox-holder columns-2 acf-tools-columns">
+<div class="postbox"><div class="postbox-header"><h2 class="hndle">Export</h2></div><div class="inside">
+<form method="post" action="/wp-admin/acf-tools">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="tool" value="export" />
+<p>Select the items you would like to export and then select your export method. Export As JSON to export to a .json file which you can then import to another ACF or ACF-Go installation.</p>
+<p><label><input type="checkbox" class="acf-toggle-all" onclick="var c=this.checked;document.querySelectorAll('.acf-export-item').forEach(function(i){i.checked=c})" /> <strong>Toggle All</strong></label></p>
+<h4>Field Groups</h4>
+<ul class="acf-checkbox-list">{{range .Groups}}<li><label><input type="checkbox" class="acf-export-item" name="keys[]" value="{{.Key}}" /> {{.Title}}</label></li>{{else}}<li>No field groups.</li>{{end}}</ul>
+{{if .Items}}<h4>Post Types, Taxonomies and Options Pages</h4>
+<ul class="acf-checkbox-list">{{range .Items}}<li><label><input type="checkbox" class="acf-export-item" name="keys[]" value="{{.Key}}" /> {{.Title}} <span class="description">({{.Type}})</span></label></li>{{end}}</ul>{{end}}
+<p class="acf-submit"><button type="submit" name="action" value="download" class="button button-primary">Export As JSON</button> <button type="submit" name="action" value="generate" class="button">Show JSON</button></p>
+</form>
+{{with .ExportJSON}}<textarea class="large-text code acf-export-json" rows="18" readonly>{{.}}</textarea>{{end}}
+</div></div>
+<div class="postbox"><div class="postbox-header"><h2 class="hndle">Import</h2></div><div class="inside">
+<form method="post" action="/wp-admin/acf-tools" enctype="multipart/form-data">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="tool" value="import" />
+<p>Select the ACF JSON file you would like to import. When you click the import button below, ACF-Go will import the items in that file (existing items with the same key are updated).</p>
+<p><label for="acf_import_file">Select File</label><br /><input type="file" name="acf_import_file" id="acf_import_file" accept=".json,application/json" /></p>
+<p class="acf-submit"><input type="submit" class="button button-primary" value="Import JSON" /></p>
+</form>
+</div></div>
+</div></div>
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}
+
+{{define "admin/acfgo-options-page"}}{{template "admin-header" .}}{{with .Data}}
+<div class="wrap acf-settings-wrap">
+<h1>{{.Page.PageTitle}}</h1>
+{{template "notices" $}}
+{{with .Page.Description}}<p>{{.}}</p>{{end}}
+<form id="post" method="post" name="post" class="acf-options-form">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<div id="poststuff" class="poststuff"><div id="post-body" class="metabox-holder columns-2">
+<div id="postbox-container-1" class="postbox-container"><div id="side-sortables" class="meta-box-sortables">
+	<div id="submitdiv" class="postbox"><div class="postbox-header"><h2 class="hndle">Publish</h2></div><div class="inside">
+		<div id="major-publishing-actions"><div id="publishing-action"><span class="spinner"></span><input type="submit" accesskey="p" value="{{.Page.UpdateButton}}" class="button button-primary button-large" id="publish" name="publish" /></div><div class="clear"></div></div>
+	</div></div>
+	{{.SideBoxes}}
+</div></div>
+<div id="postbox-container-2" class="postbox-container"><div id="normal-sortables" class="meta-box-sortables">
+	{{if .HasBoxes}}{{.Boxes}}{{else}}<div class="postbox"><div class="inside"><p>No Custom Field Groups found for this options page. <a href="/wp-admin/acf-field-group">Create a Custom Field Group</a></p></div></div>{{end}}
+</div></div>
+</div><br class="clear" /></div>
+</form>
+<div id="acfgo-options-config" data-validate="{{.Validate}}" hidden></div>
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}

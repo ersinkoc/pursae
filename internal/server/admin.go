@@ -358,6 +358,8 @@ func (s *Server) adminPage(c *gin.Context, screen, title, bodyClass, tmpl string
 	v.Menu = s.maintMenu(v.Menu, u, screen)
 	v.Menu = s.mailSMTPMenu(c, v.Menu, screen)
 	v.Notices = append(v.Notices, s.mailSMTPNotices(c)...)
+	// ACF-Go: its menu, options pages and post types (acfgo.go)
+	v.Menu = s.acfgoMenu(c, v.Menu, screen)
 	a := s.pageAssets(c)
 	a.Script("common", "admin-bar", "utils", "svg-painter")
 	v.ExtraStyles = s.styleTags(a) + s.pluginStyleTags("admin")
@@ -421,6 +423,9 @@ func (s *Server) adminAjax(c *gin.Context) {
 		return
 	}
 	if s.gweAjax(c, action) { // Golementor: elementor_ajax, heartbeat, elementor_js_log
+		return
+	}
+	if s.acfgoAjax(c, action) { // ACF-Go: acfgo/* actions
 		return
 	}
 	switch action {

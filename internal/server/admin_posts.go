@@ -33,6 +33,9 @@ func labelsFor(typ string) typeLabels {
 	if typ == "page" {
 		return typeLabels{"page", "Pages", "Page", "Add Page", "Search Pages", "No pages found.", "No pages found in Trash."}
 	}
+	if l, ok := acfgoTypeLabels(typ); ok { // ACF-Go post types
+		return l
+	}
 	return typeLabels{"post", "Posts", "Post", "Add Post", "Search Posts", "No posts found.", "No posts found in Trash."}
 }
 
@@ -187,7 +190,7 @@ func (s *Server) postsList(c *gin.Context) {
 		return
 	}
 	typ := c.DefaultQuery("post_type", "post")
-	if typ != "post" && typ != "page" {
+	if typ != "post" && typ != "page" && !acfgoIsPostType(typ) {
 		c.String(http.StatusBadRequest, "Invalid post type.")
 		return
 	}
@@ -1504,7 +1507,7 @@ type monthChoice struct {
 func (s *Server) postNew(c *gin.Context) {
 	u := currentUser(c)
 	typ := c.DefaultQuery("post_type", "post")
-	if typ != "post" && typ != "page" {
+	if typ != "post" && typ != "page" && !acfgoIsPostType(typ) {
 		c.String(http.StatusBadRequest, "Invalid post type.")
 		return
 	}

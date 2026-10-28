@@ -94,6 +94,9 @@ func New(ctx context.Context, cfg config.Config, pool *pgxpool.Pool) (*Server, e
 	if s.golementorOn() {
 		s.gweMigrateActiveSavedTheme(ctx) // Golementor: a saved theme active from before Hello Golementor
 	}
+	if s.acfgoOn() {
+		s.acfgoStart(ctx) // ACF-Go: content types, post types and taxonomies
+	}
 	s.startPlugins(ctx)
 	return s, nil
 }
@@ -151,7 +154,7 @@ func stripPHP(p string) (string, bool) {
 func (s *Server) routes() *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
-	r.Use(gin.Recovery(), accessLog(), requestOrigin(), securityHeaders(), s.loadUser(), s.requireInstall())
+	r.Use(gin.Recovery(), accessLog(), requestOrigin(), securityHeaders(), s.loadUser(), s.requireInstall(), s.acfgoMiddleware())
 	r.HandleMethodNotAllowed = false
 
 	s.static(r, "/wp-admin/assets", "admin/assets")
@@ -263,6 +266,7 @@ func (s *Server) routes() *gin.Engine {
 	admin.GET("/gowebeditor-theme-builder", s.golementorOnly(), s.gweThemeBuilder) // Golementor Theme Builder
 	admin.POST("/gowebeditor-theme-builder", s.golementorOnly(), s.gweThemeBuilder)
 	s.registerGoWebEditorProAdmin(admin) // Golementor Pro screens (gowebeditor_pro_admin.go)
+	s.acfgoRegisterRoutes(admin)         // ACF-Go screens (acfgo.go)
 	admin.GET("/customize", s.customizeScreen)
 	admin.POST("/customize", s.customizeSave)
 	admin.GET("/:screen", s.notYet)

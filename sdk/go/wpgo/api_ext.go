@@ -149,6 +149,7 @@ type Post struct {
 	Link     string            `json:"link,omitempty"`
 	Terms    map[string][]Term `json:"terms"` // by taxonomy: category, post_tag
 	Meta     map[string]any    `json:"meta,omitempty"`
+	ACF      map[string]any    `json:"acf,omitempty"` // field values of the ACF-Go plugin (get_fields, unformatted)
 }
 
 // Term is a term attached to a post.

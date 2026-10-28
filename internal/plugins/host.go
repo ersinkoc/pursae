@@ -98,6 +98,7 @@ type PostData struct {
 	Link     string                `json:"link,omitempty"`
 	Terms    map[string][]TermData `json:"terms"` // by taxonomy: category, post_tag
 	Meta     map[string]any        `json:"meta,omitempty"`
+	ACF      map[string]any        `json:"acf,omitempty"` // ACF-Go field values (stored format), when that plugin is active
 }
 
 // TermData is a term attached to a post.
