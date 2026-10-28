@@ -1,0 +1,11 @@
+{{template "header" .}}
+<main id="main" class="site-main site-main--404" tabindex="-1">
+	<section class="error-404 not-found wrap wrap--content">
+		<span class="error-404__bloom" aria-hidden="true"></span>
+		<p class="error-404__code" aria-hidden="true">404</p>
+		<h1 class="page-title">This stem has wilted.</h1>
+		<p>The page you were looking for is not here. Try a search, or wander back to the <a href="{{.HomeURL}}">flower shop</a>.</p>
+		{{template "searchform" .}}
+	</section><!-- .error-404 -->
+</main>
+{{template "footer" .}}

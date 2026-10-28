@@ -1,0 +1,11 @@
+{{template "header" .}}
+<main id="main" class="site-main site-main--404" tabindex="-1">
+	<section class="error-404 not-found wrap wrap--content">
+		
+		<p class="error-404__code" aria-hidden="true">404</p>
+		<h1 class="page-title">This room is still being designed.</h1>
+		<p>We could not find that page. Try searching, or return to the <a href="{{.HomeURL}}">entrance hall</a>.</p>
+		{{template "searchform" .}}
+	</section><!-- .error-404 -->
+</main>
+{{template "footer" .}}

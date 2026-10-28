@@ -1,0 +1,521 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Sugar & Saffron",
+  "blogdescription": "Cakes, tarts & buns from a pastry chef's kitchen",
+  "posts_per_page": 9
+ },
+ "categories": [
+  {
+   "slug": "cakes",
+   "name": "Cakes",
+   "description": "Sponges, layer cakes and showstoppers."
+  },
+  {
+   "slug": "tarts-pastry",
+   "name": "Tarts & Pastry",
+   "description": "Crisp shells, silky fillings and flaky layers."
+  },
+  {
+   "slug": "breads-buns",
+   "name": "Breads & Buns",
+   "description": "Enriched doughs and slow weekend bakes."
+  },
+  {
+   "slug": "small-bakes",
+   "name": "Small Bakes",
+   "description": "Cookies, bars and little cakes for sharing."
+  },
+  {
+   "slug": "baking-notes",
+   "name": "Baking Notes",
+   "description": "Techniques and lessons from the pastry kitchen."
+  },
+  {
+   "slug": "seasons",
+   "name": "Seasons",
+   "description": "Recipe collections for every time of year."
+  },
+  {
+   "slug": "spring",
+   "name": "Spring",
+   "parent": "seasons",
+   "description": "Blossoms, rhubarb and the first strawberries."
+  },
+  {
+   "slug": "summer",
+   "name": "Summer",
+   "parent": "seasons",
+   "description": "Stone fruit, berries and no-fuss bakes."
+  },
+  {
+   "slug": "autumn",
+   "name": "Autumn",
+   "parent": "seasons",
+   "description": "Pears, spice and toasted nuts."
+  },
+  {
+   "slug": "winter",
+   "name": "Winter",
+   "parent": "seasons",
+   "description": "Citrus, chocolate and festive showstoppers."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "saffron",
+   "name": "Saffron"
+  },
+  {
+   "slug": "chocolate",
+   "name": "Chocolate"
+  },
+  {
+   "slug": "berries",
+   "name": "Berries"
+  },
+  {
+   "slug": "citrus",
+   "name": "Citrus"
+  },
+  {
+   "slug": "nuts",
+   "name": "Nuts"
+  },
+  {
+   "slug": "make-ahead",
+   "name": "Make ahead"
+  },
+  {
+   "slug": "celebration",
+   "name": "Celebration"
+  }
+ ],
+ "media": [
+  {
+   "id": "hero",
+   "file": "demo/images/ss-hero.jpg",
+   "alt": "A cake stand with a strawberry layer cake, a teapot and pink flowers on a cream table",
+   "caption": ""
+  },
+  {
+   "id": "about",
+   "file": "demo/images/ss-about.jpg",
+   "alt": "A baker's workbench with flour, eggs, a whisk and a small cake",
+   "caption": ""
+  },
+  {
+   "id": "buns",
+   "file": "demo/images/ss-buns.jpg",
+   "alt": "Golden twisted saffron buns on a baking tray",
+   "caption": ""
+  },
+  {
+   "id": "sponge",
+   "file": "demo/images/ss-sponge.jpg",
+   "alt": "A two-layer sponge cake with cream and strawberries",
+   "caption": ""
+  },
+  {
+   "id": "financiers",
+   "file": "demo/images/ss-financiers.jpg",
+   "alt": "Rows of small pistachio cakes topped with raspberries",
+   "caption": ""
+  },
+  {
+   "id": "blondies",
+   "file": "demo/images/ss-blondies.jpg",
+   "alt": "Squares of pecan blondie on parchment paper",
+   "caption": ""
+  },
+  {
+   "id": "tartlets",
+   "file": "demo/images/ss-tartlets.jpg",
+   "alt": "Lemon tartlets with toasted meringue swirls",
+   "caption": ""
+  },
+  {
+   "id": "pear-tart",
+   "file": "demo/images/ss-pear-tart.jpg",
+   "alt": "A round tart with fanned pear slices",
+   "caption": ""
+  },
+  {
+   "id": "yule-log",
+   "file": "demo/images/ss-yule-log.jpg",
+   "alt": "A chocolate yule log with candied orange slices",
+   "caption": ""
+  },
+  {
+   "id": "pastry",
+   "file": "demo/images/ss-pastry.jpg",
+   "alt": "Pastry dough with a rolling pin, butter and a dusting of flour",
+   "caption": ""
+  },
+  {
+   "id": "spring",
+   "file": "demo/images/ss-spring.jpg",
+   "alt": "Cherry blossoms, lemons and strawberries on pale pink",
+   "caption": ""
+  },
+  {
+   "id": "summer",
+   "file": "demo/images/ss-summer.jpg",
+   "alt": "Raspberries, cherries and apricots on pale yellow",
+   "caption": ""
+  },
+  {
+   "id": "autumn",
+   "file": "demo/images/ss-autumn.jpg",
+   "alt": "Pears, pecans and cinnamon sticks on peach",
+   "caption": ""
+  },
+  {
+   "id": "winter",
+   "file": "demo/images/ss-winter.jpg",
+   "alt": "Oranges, star anise and chocolate on lilac",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Sweet things, baked slowly",
+   "front_page": true,
+   "featured_media": "hero",
+   "excerpt": "Hi, I&rsquo;m Noor, a pastry chef sharing the cakes, tarts and buns I bake at home, with all the little tricks that make them work.",
+   "content": "<!-- wp:group {\"align\":\"full\",\"className\":\"section-cream\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-cream\"><!-- wp:paragraph {\"className\":\"script-kicker\"} --><p class=\"script-kicker\">A little about me</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\",\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center section-title\">Pastry chef, recipe tester, butter enthusiast</h2><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"section-lead\",\"align\":\"center\"} --><p class=\"has-text-align-center section-lead\">I spent twelve years in hotel pastry kitchens before trading early shifts for my own small kitchen and this blog. Here you will find the cakes, tarts and buns I bake for the people I love, written so they work in yours too.</p><!-- /wp:paragraph --><!-- wp:buttons {\"layout\":{\"type\":\"flex\",\"justifyContent\":\"center\"}} --><div class=\"wp-block-buttons is-content-justification-center\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:about}}\">Read my story</a></div><!-- /wp:button --><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:recipes}}\">Browse the recipe box</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->\n\n<!-- wp:paragraph {\"className\":\"script-kicker\"} --><p class=\"script-kicker\">Bake with the seasons</p><!-- /wp:paragraph -->\n\n<!-- wp:heading {\"className\":\"section-title\",\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center section-title\">Seasonal collections</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph {\"className\":\"section-lead\",\"align\":\"center\"} --><p class=\"has-text-align-center section-lead\">Recipes gathered by what is ripe, fragrant and comforting right now.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns {\"align\":\"wide\",\"className\":\"season-tiles\"} --><div class=\"wp-block-columns alignwide season-tiles\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"season-tile\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group season-tile\"><!-- wp:image {\"id\":{{media_id:spring}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><a href=\"{{category:spring}}\"><img src=\"{{media:spring}}\" alt=\"Spring baking ingredients arranged on a pastel background\" class=\"wp-image-{{media_id:spring}}\"/></a></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"{{category:spring}}\">Spring</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p>Blossoms, rhubarb and the first strawberries.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"season-tile\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group season-tile\"><!-- wp:image {\"id\":{{media_id:summer}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><a href=\"{{category:summer}}\"><img src=\"{{media:summer}}\" alt=\"Summer baking ingredients arranged on a pastel background\" class=\"wp-image-{{media_id:summer}}\"/></a></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"{{category:summer}}\">Summer</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p>Stone fruit, berries and no-fuss bakes.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"season-tile\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group season-tile\"><!-- wp:image {\"id\":{{media_id:autumn}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><a href=\"{{category:autumn}}\"><img src=\"{{media:autumn}}\" alt=\"Autumn baking ingredients arranged on a pastel background\" class=\"wp-image-{{media_id:autumn}}\"/></a></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"{{category:autumn}}\">Autumn</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p>Pears, spice and toasted nuts.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"season-tile\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group season-tile\"><!-- wp:image {\"id\":{{media_id:winter}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><a href=\"{{category:winter}}\"><img src=\"{{media:winter}}\" alt=\"Winter baking ingredients arranged on a pastel background\" class=\"wp-image-{{media_id:winter}}\"/></a></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"{{category:winter}}\">Winter</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p>Citrus, chocolate and festive showstoppers.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"section-blush\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-blush\"><!-- wp:paragraph {\"className\":\"script-kicker\"} --><p class=\"script-kicker\">Fresh from the oven</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\",\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center section-title\">Most-loved recipes</h2><!-- /wp:heading --><!-- wp:columns {\"align\":\"wide\",\"className\":\"recipe-tiles\"} --><div class=\"wp-block-columns alignwide recipe-tiles\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"recipe-tile\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group recipe-tile\"><!-- wp:image {\"id\":{{media_id:buns}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><a href=\"{{post:saffron-cardamom-morning-buns}}\"><img src=\"{{media:buns}}\" alt=\"Photo of Saffron and Cardamom Buns\" class=\"wp-image-{{media_id:buns}}\"/></a></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"{{post:saffron-cardamom-morning-buns}}\">Saffron &amp; Cardamom Buns</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p>Breads &amp; buns</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"recipe-tile\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group recipe-tile\"><!-- wp:image {\"id\":{{media_id:tartlets}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><a href=\"{{post:lemon-meringue-tartlets}}\"><img src=\"{{media:tartlets}}\" alt=\"Photo of Lemon Meringue Tartlets\" class=\"wp-image-{{media_id:tartlets}}\"/></a></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"{{post:lemon-meringue-tartlets}}\">Lemon Meringue Tartlets</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p>Tarts &amp; pastry</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"recipe-tile\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group recipe-tile\"><!-- wp:image {\"id\":{{media_id:sponge}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><a href=\"{{post:strawberry-rose-sponge-cake}}\"><img src=\"{{media:sponge}}\" alt=\"Photo of Strawberry and Rose Sponge\" class=\"wp-image-{{media_id:sponge}}\"/></a></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"{{post:strawberry-rose-sponge-cake}}\">Strawberry &amp; Rose Sponge</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p>Cakes</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:buttons {\"layout\":{\"type\":\"flex\",\"justifyContent\":\"center\"}} --><div class=\"wp-block-buttons is-content-justification-center\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:recipes}}\">See every recipe</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Baking is how I say I love you, I am sorry, and welcome home. Usually with butter.</p><!-- /wp:paragraph --><cite>Noor</cite></blockquote><!-- /wp:quote -->\n\n<!-- wp:group {\"align\":\"wide\",\"className\":\"newsletter\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignwide newsletter\"><!-- wp:heading {\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center\">Letters from the kitchen</h2><!-- /wp:heading --><!-- wp:paragraph {\"align\":\"center\"} --><p class=\"has-text-align-center\">One email a month with a new recipe, a seasonal shopping list and whatever I am testing next. No spam, only sugar.</p><!-- /wp:paragraph --><!-- wp:buttons {\"layout\":{\"type\":\"flex\",\"justifyContent\":\"center\"}} --><div class=\"wp-block-buttons is-content-justification-center\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Say hello</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->"
+  },
+  {
+   "slug": "recipes",
+   "title": "Recipes",
+   "posts_page": true,
+   "content": ""
+  },
+  {
+   "slug": "about",
+   "title": "About the Baker",
+   "content": "<!-- wp:columns {\"align\":\"wide\",\"className\":\"about-split\"} --><div class=\"wp-block-columns alignwide about-split\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:about}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:about}}\" alt=\"A baker&#x27;s workbench with flour, eggs, a whisk and a cake stand\" class=\"wp-image-{{media_id:about}}\"/></figure><!-- /wp:image --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"script-kicker\"} --><p class=\"script-kicker\">Hello, I&rsquo;m Noor</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">From hotel kitchens to my own little oven</h2><!-- /wp:heading --><!-- wp:paragraph --><p>I trained as a pastry chef and spent over a decade working in hotel kitchens, piping hundreds of éclairs before sunrise. I loved the precision, but I missed baking for people I could actually see enjoy it.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Sugar &amp; Saffron began as a notebook of recipes I scaled down for home ovens. Saffron came from my grandmother, who put it in everything from rice to biscuits. Sugar came from me.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"signature\"} --><p class=\"signature\">Noor</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">A few facts</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"className\":\"fact-list\"} --><ul class=\"wp-block-list fact-list\"><!-- wp:list-item --><li><strong>12</strong> years in pastry kitchens</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>200+</strong> tested recipes</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>3</strong> ovens, one temperamental</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>1</strong> sourdough starter called Bun</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What you will find here</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Every recipe is tested at least three times in a regular home oven, with weights in grams and cups where it makes sense. I write down what can go wrong as carefully as what should go right.</p><!-- /wp:paragraph -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Measure carefully, taste often, and never apologise for a second slice.</p><!-- /wp:paragraph --><cite>My kitchen rule</cite></blockquote><!-- /wp:quote -->"
+  },
+  {
+   "slug": "collections",
+   "title": "Seasonal Collections",
+   "content": "<!-- wp:paragraph --><p>Baking with the seasons means better flavour and a reason to look forward to every month. Choose a season to see its recipes.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns {\"align\":\"wide\",\"className\":\"season-tiles\"} --><div class=\"wp-block-columns alignwide season-tiles\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"season-tile\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group season-tile\"><!-- wp:image {\"id\":{{media_id:spring}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><a href=\"{{category:spring}}\"><img src=\"{{media:spring}}\" alt=\"Spring baking ingredients arranged on a pastel background\" class=\"wp-image-{{media_id:spring}}\"/></a></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"{{category:spring}}\">Spring</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p>Blossoms, rhubarb and the first strawberries.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"season-tile\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group season-tile\"><!-- wp:image {\"id\":{{media_id:summer}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><a href=\"{{category:summer}}\"><img src=\"{{media:summer}}\" alt=\"Summer baking ingredients arranged on a pastel background\" class=\"wp-image-{{media_id:summer}}\"/></a></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"{{category:summer}}\">Summer</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p>Stone fruit, berries and no-fuss bakes.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"season-tile\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group season-tile\"><!-- wp:image {\"id\":{{media_id:autumn}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><a href=\"{{category:autumn}}\"><img src=\"{{media:autumn}}\" alt=\"Autumn baking ingredients arranged on a pastel background\" class=\"wp-image-{{media_id:autumn}}\"/></a></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"{{category:autumn}}\">Autumn</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p>Pears, spice and toasted nuts.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"season-tile\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group season-tile\"><!-- wp:image {\"id\":{{media_id:winter}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><a href=\"{{category:winter}}\"><img src=\"{{media:winter}}\" alt=\"Winter baking ingredients arranged on a pastel background\" class=\"wp-image-{{media_id:winter}}\"/></a></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"{{category:winter}}\">Winter</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p>Citrus, chocolate and festive showstoppers.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">How I plan a seasonal bake</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Start at the market and see what smells best.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Pick one star ingredient and let it lead.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Add a spice or a flower water to make it feel special.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Keep the rest simple.</li><!-- /wp:list-item --></ol><!-- /wp:list -->",
+   "excerpt": "Recipes grouped by the best of each season."
+  },
+  {
+   "slug": "baking-classes",
+   "title": "Baking Classes",
+   "parent": "about",
+   "content": "<!-- wp:paragraph --><p>Twice a month I open my kitchen to six bakers for a hands-on afternoon. We bake, we taste, and everyone leaves with a box of pastries and the recipes.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Upcoming classes</h2><!-- /wp:heading -->\n\n<!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Class</th><th>What we bake</th><th>Length</th></tr></thead><tbody><tr><td>Butter &amp; layers</td><td>Croissant dough and morning buns</td><td>4 hours</td></tr><tr><td>Tart week</td><td>Sweet pastry, curd and meringue</td><td>3 hours</td></tr><tr><td>Celebration cakes</td><td>Sponges, fillings and simple decorating</td><td>4 hours</td></tr></tbody></table></figure><!-- /wp:table -->\n\n<!-- wp:paragraph --><p>All equipment and ingredients are provided. Classes are suitable for confident beginners.</p><!-- /wp:paragraph -->\n\n<!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Ask about dates</a></div><!-- /wp:button --></div><!-- /wp:buttons -->"
+  },
+  {
+   "slug": "contact",
+   "title": "Contact",
+   "content": "<!-- wp:paragraph --><p>I love hearing about your bakes. Send me a photo, a question or a recipe request and I will do my best to reply within a few days.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Write to me</h3><!-- /wp:heading --><!-- wp:paragraph --><p><a href=\"mailto:hello@example.com\">hello@example.com</a></p><!-- /wp:paragraph --><!-- wp:paragraph --><p>For recipe questions, the comments under each post are the fastest way to get an answer, and other readers can help too.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Collaborations</h3><!-- /wp:heading --><!-- wp:paragraph --><p>I work with a small number of brands whose ingredients I already use at home. Get in touch with a short note about your idea.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Please do send pictures of your lopsided cakes. They are my favourite kind.</p><!-- /wp:paragraph --><cite>Noor</cite></blockquote><!-- /wp:quote -->"
+  }
+ ],
+ "posts": [
+  {
+   "slug": "saffron-cardamom-morning-buns",
+   "title": "Saffron & Cardamom Morning Buns",
+   "date": "2026-10-18T08:30:00",
+   "excerpt": "Golden, pillowy buns twisted with cardamom sugar and glazed with a whisper of saffron syrup. The bake I make when the first frost arrives.",
+   "categories": [
+    "breads-buns",
+    "autumn"
+   ],
+   "tags": [
+    "saffron",
+    "make-ahead"
+   ],
+   "featured_media": "buns",
+   "sticky": true,
+   "content": "<!-- wp:paragraph --><p>Every year, on the first morning the windows fog over, I bloom a pinch of saffron in warm milk and the whole kitchen turns gold. These buns are the result: soft, rich and spiralled with cardamom sugar that caramelises at the edges.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>The dough is an enriched one, so it is a little sticky at first. Resist the urge to add more flour. A long, slow rise in the fridge overnight does the work for you and makes shaping a dream in the morning.</p><!-- /wp:paragraph -->\n\n<!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"#recipe\">Jump to the recipe</a></div><!-- /wp:button --></div><!-- /wp:buttons -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">A few notes before you start</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Crush the saffron threads with a pinch of sugar for the most colour.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Use freshly ground cardamom if you can; the pre-ground kind loses its perfume quickly.</li><!-- /wp:list-item --><!-- wp:list-item --><li>The shaped buns can rest in the fridge for up to 16 hours.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:image {\"id\":{{media_id:buns}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:buns}}\" alt=\"Twisted golden buns on a baking tray\" class=\"wp-image-{{media_id:buns}}\"/><figcaption class=\"wp-element-caption\">Twisted, proved and ready for the oven.</figcaption></figure><!-- /wp:image -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Bake them until they are deeply golden. Pale buns are polite buns, and polite is not what we are after.</p><!-- /wp:paragraph --><cite>From my notebook</cite></blockquote><!-- /wp:quote -->\n\n<!-- wp:paragraph --><p>If you have never twisted buns before, do not worry about perfection. Even the wonky ones come out of the oven looking like they belong in a bakery window.</p><!-- /wp:paragraph -->\n\n<!-- wp:group {\"anchor\":\"recipe\",\"className\":\"recipe-card\",\"layout\":{\"type\":\"constrained\"}} --><div id=\"recipe\" class=\"wp-block-group recipe-card\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Saffron &amp; cardamom morning buns</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"recipe-facts\"} --><ul class=\"wp-block-list recipe-facts\"><!-- wp:list-item --><li><strong>Prep</strong>40 min</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Rise</strong>overnight</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Bake</strong>18 min</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Makes</strong>12 buns</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column {\"width\":\"40%\"} --><div class=\"wp-block-column\" style=\"flex-basis:40%\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Ingredients</h3><!-- /wp:heading --><!-- wp:list {\"className\":\"ingredients\"} --><ul class=\"wp-block-list ingredients\"><!-- wp:list-item --><li>250 ml whole milk, warmed</li><!-- /wp:list-item --><!-- wp:list-item --><li>A generous pinch of saffron threads</li><!-- /wp:list-item --><!-- wp:list-item --><li>7 g instant yeast</li><!-- /wp:list-item --><!-- wp:list-item --><li>500 g strong white flour</li><!-- /wp:list-item --><!-- wp:list-item --><li>60 g caster sugar</li><!-- /wp:list-item --><!-- wp:list-item --><li>1 egg, plus 1 for glazing</li><!-- /wp:list-item --><!-- wp:list-item --><li>80 g soft butter</li><!-- /wp:list-item --><!-- wp:list-item --><li><em>Filling:</em> 100 g butter, 80 g light brown sugar, 2 tsp ground cardamom</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column {\"width\":\"60%\"} --><div class=\"wp-block-column\" style=\"flex-basis:60%\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Method</h3><!-- /wp:heading --><!-- wp:list {\"ordered\":true,\"className\":\"steps\"} --><ol class=\"wp-block-list steps\"><!-- wp:list-item --><li>Steep the crushed saffron in the warm milk for 15 minutes.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Mix in the yeast, flour, sugar, egg and a pinch of salt, then knead in the butter until glossy.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Cover and chill overnight.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Roll into a rectangle, spread with the filling, fold in thirds and cut into 12 strips.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Twist each strip and knot it into a bun. Prove for 45 minutes until puffy.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Brush with egg and bake at 200&deg;C for 16&ndash;18 minutes.</li><!-- /wp:list-item --></ol><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:paragraph {\"className\":\"recipe-note\"} --><p class=\"recipe-note\">Brush the hot buns with a syrup of 50 g sugar, 50 ml water and a few saffron threads for a glossy finish.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"#print\">Print this recipe</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "comments": [
+    {
+     "author": "Hanna",
+     "content": "Made these on Sunday and the house smelled incredible. The overnight rise is genius.",
+     "date": "2026-10-19T10:12:00",
+     "email": "hanna@example.com"
+    },
+    {
+     "author": "Theo",
+     "content": "Could I use oat milk instead of whole milk?",
+     "date": "2026-10-20T08:40:00",
+     "email": "theo@example.com"
+    },
+    {
+     "author": "Noor",
+     "content": "Yes! Oat milk works well; the buns are just a touch less rich.",
+     "date": "2026-10-20T11:05:00",
+     "email": "noor@example.com"
+    }
+   ]
+  },
+  {
+   "slug": "strawberry-rose-sponge-cake",
+   "title": "Strawberry & Rose Sponge Cake",
+   "date": "2026-05-24T15:00:00",
+   "excerpt": "Two feather-light sponges, rose-scented cream and the first sweet strawberries of the year. A cake for garden tables and long afternoons.",
+   "categories": [
+    "cakes",
+    "spring"
+   ],
+   "tags": [
+    "berries",
+    "celebration"
+   ],
+   "featured_media": "sponge",
+   "content": "<!-- wp:paragraph --><p>This is the cake I bake for birthdays in May. It is simple at heart, a classic sponge, but a few drops of rose water in the cream make it taste like a garden in bloom.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>The secret to a tall, tender sponge is patience: whisk the eggs and sugar until they leave a ribbon trail that sits on the surface for a few seconds before sinking.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Choosing your strawberries</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Smaller berries often have more flavour than giant ones. Slice half of them for the middle and keep the prettiest whole for the top, with their green hulls still on.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:sponge}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:sponge}}\" alt=\"A layered sponge cake with cream and strawberries\" class=\"wp-image-{{media_id:sponge}}\"/></figure><!-- /wp:image --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph --><p>Assemble the cake no more than an hour before serving so the cream stays light and the sponge does not soften too much.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Leftovers keep in the fridge for a day, covered, though I have rarely had any.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:group {\"anchor\":\"recipe\",\"className\":\"recipe-card\",\"layout\":{\"type\":\"constrained\"}} --><div id=\"recipe\" class=\"wp-block-group recipe-card\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Strawberry &amp; rose sponge</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"recipe-facts\"} --><ul class=\"wp-block-list recipe-facts\"><!-- wp:list-item --><li><strong>Prep</strong>30 min</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Bake</strong>22 min</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Serves</strong>10</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Level</strong>Easy</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column {\"width\":\"40%\"} --><div class=\"wp-block-column\" style=\"flex-basis:40%\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Ingredients</h3><!-- /wp:heading --><!-- wp:list {\"className\":\"ingredients\"} --><ul class=\"wp-block-list ingredients\"><!-- wp:list-item --><li>4 eggs</li><!-- /wp:list-item --><!-- wp:list-item --><li>200 g caster sugar</li><!-- /wp:list-item --><!-- wp:list-item --><li>200 g self-raising flour</li><!-- /wp:list-item --><!-- wp:list-item --><li>200 g butter, melted and cooled</li><!-- /wp:list-item --><!-- wp:list-item --><li>300 ml double cream</li><!-- /wp:list-item --><!-- wp:list-item --><li>1 tsp rose water</li><!-- /wp:list-item --><!-- wp:list-item --><li>2 tbsp icing sugar</li><!-- /wp:list-item --><!-- wp:list-item --><li>400 g strawberries</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column {\"width\":\"60%\"} --><div class=\"wp-block-column\" style=\"flex-basis:60%\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Method</h3><!-- /wp:heading --><!-- wp:list {\"ordered\":true,\"className\":\"steps\"} --><ol class=\"wp-block-list steps\"><!-- wp:list-item --><li>Heat the oven to 180&deg;C and line two 20 cm tins.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Whisk eggs and sugar until pale and thick, about 6 minutes.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Fold in the flour, then the butter, in three additions.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Divide between the tins and bake for 20&ndash;22 minutes.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Whip the cream with rose water and icing sugar to soft peaks.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Layer the cooled sponges with cream and sliced strawberries.</li><!-- /wp:list-item --></ol><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:paragraph {\"className\":\"recipe-note\"} --><p class=\"recipe-note\">Rose water varies a lot in strength. Add half, taste, then add more.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"#print\">Print this recipe</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "comments": [
+    {
+     "author": "Mireille",
+     "content": "The rose cream is so delicate. My mother asked for the recipe straight away!",
+     "date": "2026-05-26T17:20:00",
+     "email": "mireille@example.com"
+    }
+   ]
+  },
+  {
+   "slug": "pistachio-raspberry-financiers",
+   "title": "Pistachio Raspberry Financiers",
+   "date": "2026-07-12T10:00:00",
+   "excerpt": "Little brown-butter almond cakes with a jewel of raspberry in the middle and a crunch of pistachio on top. Ready in thirty minutes.",
+   "categories": [
+    "small-bakes",
+    "summer"
+   ],
+   "tags": [
+    "berries",
+    "nuts"
+   ],
+   "featured_media": "financiers",
+   "content": "<!-- wp:paragraph --><p>Financiers are the little cakes I reach for when friends text to say they are on their way. They are made with egg whites, ground nuts and nutty browned butter, and they come together in one bowl.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>Traditionally they are baked in small rectangular moulds, said to resemble gold bars. A mini muffin tin works perfectly well, so do not let the lack of a special mould stop you.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Browning the butter</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Melt the butter over a medium heat in a light-coloured pan so you can see it change.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Let it foam, then watch for golden-brown flecks at the bottom.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Pour it into a cold bowl the moment it smells of toasted hazelnuts.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:image {\"id\":{{media_id:financiers}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:financiers}}\" alt=\"Rows of small golden cakes topped with raspberries and pistachios\" class=\"wp-image-{{media_id:financiers}}\"/></figure><!-- /wp:image -->\n\n<!-- wp:paragraph --><p>They are best on the day they are baked, while the edges are still crisp. By day two they turn soft and fudgy, which some people prefer.</p><!-- /wp:paragraph -->\n\n<!-- wp:group {\"anchor\":\"recipe\",\"className\":\"recipe-card\",\"layout\":{\"type\":\"constrained\"}} --><div id=\"recipe\" class=\"wp-block-group recipe-card\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Pistachio raspberry financiers</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"recipe-facts\"} --><ul class=\"wp-block-list recipe-facts\"><!-- wp:list-item --><li><strong>Prep</strong>15 min</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Bake</strong>14 min</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Makes</strong>16</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Level</strong>Easy</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column {\"width\":\"40%\"} --><div class=\"wp-block-column\" style=\"flex-basis:40%\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Ingredients</h3><!-- /wp:heading --><!-- wp:list {\"className\":\"ingredients\"} --><ul class=\"wp-block-list ingredients\"><!-- wp:list-item --><li>90 g butter</li><!-- /wp:list-item --><!-- wp:list-item --><li>60 g ground almonds</li><!-- /wp:list-item --><!-- wp:list-item --><li>30 g pistachios, finely ground, plus extra to sprinkle</li><!-- /wp:list-item --><!-- wp:list-item --><li>110 g icing sugar</li><!-- /wp:list-item --><!-- wp:list-item --><li>40 g plain flour</li><!-- /wp:list-item --><!-- wp:list-item --><li>3 egg whites</li><!-- /wp:list-item --><!-- wp:list-item --><li>16 raspberries</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column {\"width\":\"60%\"} --><div class=\"wp-block-column\" style=\"flex-basis:60%\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Method</h3><!-- /wp:heading --><!-- wp:list {\"ordered\":true,\"className\":\"steps\"} --><ol class=\"wp-block-list steps\"><!-- wp:list-item --><li>Brown the butter and let it cool slightly.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Whisk the nuts, sugar and flour, then the egg whites.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Stir in the brown butter until smooth.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Fill buttered moulds two-thirds full and press in a raspberry.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Sprinkle with pistachios and bake at 200&deg;C for 12&ndash;14 minutes.</li><!-- /wp:list-item --></ol><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"#print\">Print this recipe</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "comments": []
+  },
+  {
+   "slug": "brown-butter-pecan-blondies",
+   "title": "Brown Butter Pecan Blondies",
+   "date": "2026-09-27T16:45:00",
+   "excerpt": "Chewy, caramel-edged blondies with toasted pecans and a flake of sea salt. The traybake that disappears first at every bake sale.",
+   "categories": [
+    "small-bakes",
+    "autumn"
+   ],
+   "tags": [
+    "nuts",
+    "make-ahead"
+   ],
+   "featured_media": "blondies",
+   "content": "<!-- wp:paragraph --><p>A good blondie should taste of butterscotch, with a crackly top and a middle that bends rather than crumbles. Browning the butter and using plenty of dark sugar gets you there.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>I toast the pecans until they are fragrant, then chop them roughly so every square has a few big pieces.</p><!-- /wp:paragraph -->\n\n<!-- wp:pullquote --><figure class=\"wp-block-pullquote\"><blockquote><p>Under-bake them slightly. They keep cooking in the tin, and fudgy is the goal.</p><cite>The one rule</cite></blockquote></figure><!-- /wp:pullquote -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Make them your own</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Swap pecans for walnuts or hazelnuts.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Fold in a handful of white chocolate chunks.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Ripple through two spoonfuls of salted caramel before baking.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:image {\"id\":{{media_id:blondies}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:blondies}}\" alt=\"Squares of blondie with pecans on parchment\" class=\"wp-image-{{media_id:blondies}}\"/></figure><!-- /wp:image -->\n\n<!-- wp:group {\"anchor\":\"recipe\",\"className\":\"recipe-card\",\"layout\":{\"type\":\"constrained\"}} --><div id=\"recipe\" class=\"wp-block-group recipe-card\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Brown butter pecan blondies</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"recipe-facts\"} --><ul class=\"wp-block-list recipe-facts\"><!-- wp:list-item --><li><strong>Prep</strong>20 min</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Bake</strong>28 min</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Makes</strong>16 squares</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Keeps</strong>5 days</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column {\"width\":\"40%\"} --><div class=\"wp-block-column\" style=\"flex-basis:40%\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Ingredients</h3><!-- /wp:heading --><!-- wp:list {\"className\":\"ingredients\"} --><ul class=\"wp-block-list ingredients\"><!-- wp:list-item --><li>170 g butter, browned</li><!-- /wp:list-item --><!-- wp:list-item --><li>220 g dark brown sugar</li><!-- /wp:list-item --><!-- wp:list-item --><li>50 g caster sugar</li><!-- /wp:list-item --><!-- wp:list-item --><li>2 eggs</li><!-- /wp:list-item --><!-- wp:list-item --><li>2 tsp vanilla extract</li><!-- /wp:list-item --><!-- wp:list-item --><li>220 g plain flour</li><!-- /wp:list-item --><!-- wp:list-item --><li>1/2 tsp baking powder</li><!-- /wp:list-item --><!-- wp:list-item --><li>120 g toasted pecans</li><!-- /wp:list-item --><!-- wp:list-item --><li>Flaky sea salt</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column {\"width\":\"60%\"} --><div class=\"wp-block-column\" style=\"flex-basis:60%\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Method</h3><!-- /wp:heading --><!-- wp:list {\"ordered\":true,\"className\":\"steps\"} --><ol class=\"wp-block-list steps\"><!-- wp:list-item --><li>Heat the oven to 175&deg;C and line a 20 cm square tin.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Whisk the warm brown butter with both sugars.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Beat in the eggs and vanilla until glossy.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Fold in flour, baking powder and pecans.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Spread in the tin, sprinkle with salt and bake for 26&ndash;28 minutes.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Cool completely before cutting.</li><!-- /wp:list-item --></ol><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"#print\">Print this recipe</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->\n\n<!-- wp:paragraph --><p>They keep for five days in a tin and freeze beautifully. I cut the whole tray, wrap squares individually and pull one out whenever an afternoon needs rescuing.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Ines",
+     "content": "I added white chocolate and they were gone in an hour. Thank you!",
+     "date": "2026-09-29T12:00:00",
+     "email": "ines@example.com"
+    }
+   ]
+  },
+  {
+   "slug": "lemon-meringue-tartlets",
+   "title": "Lemon Meringue Tartlets",
+   "date": "2026-04-11T11:20:00",
+   "excerpt": "Crisp butter pastry, sharp lemon curd and toasted meringue swirls. Small enough to eat in three bites, pretty enough for a celebration.",
+   "categories": [
+    "tarts-pastry",
+    "spring"
+   ],
+   "tags": [
+    "citrus",
+    "celebration"
+   ],
+   "featured_media": "tartlets",
+   "content": "<!-- wp:paragraph --><p>A lemon tart should make you pucker just a little. I make the curd with plenty of zest and only enough sugar to round it off, then pile soft meringue on top for contrast.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>You can make every part of these ahead: the pastry cases keep in a tin for three days and the curd keeps in the fridge for a week. Top with meringue just before serving.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">The pastry</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>I use a simple sweet shortcrust with icing sugar, which gives a fine, sandy texture. Keep everything cold and handle it as little as you can.</p><!-- /wp:paragraph -->\n\n<!-- wp:gallery {\"columns\":3,\"linkTo\":\"none\"} --><figure class=\"wp-block-gallery has-nested-images columns-3 is-cropped\"><!-- wp:image {\"id\":{{media_id:tartlets}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:tartlets}}\" alt=\"Lemon tartlets with toasted meringue\" class=\"wp-image-{{media_id:tartlets}}\"/></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:pastry}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:pastry}}\" alt=\"Pastry dough with a rolling pin and butter\" class=\"wp-image-{{media_id:pastry}}\"/></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:spring}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:spring}}\" alt=\"Spring blossoms, lemons and strawberries\" class=\"wp-image-{{media_id:spring}}\"/></figure><!-- /wp:image --></figure><!-- /wp:gallery -->\n\n<!-- wp:group {\"anchor\":\"recipe\",\"className\":\"recipe-card\",\"layout\":{\"type\":\"constrained\"}} --><div id=\"recipe\" class=\"wp-block-group recipe-card\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Lemon meringue tartlets</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"recipe-facts\"} --><ul class=\"wp-block-list recipe-facts\"><!-- wp:list-item --><li><strong>Prep</strong>1 hr</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Chill</strong>30 min</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Bake</strong>25 min</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Makes</strong>12</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column {\"width\":\"40%\"} --><div class=\"wp-block-column\" style=\"flex-basis:40%\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Ingredients</h3><!-- /wp:heading --><!-- wp:list {\"className\":\"ingredients\"} --><ul class=\"wp-block-list ingredients\"><!-- wp:list-item --><li><em>Pastry:</em> 200 g plain flour, 120 g cold butter, 50 g icing sugar, 1 egg yolk</li><!-- /wp:list-item --><!-- wp:list-item --><li><em>Curd:</em> zest and juice of 3 lemons, 120 g sugar, 3 eggs, 90 g butter</li><!-- /wp:list-item --><!-- wp:list-item --><li><em>Meringue:</em> 3 egg whites, 150 g caster sugar</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column {\"width\":\"60%\"} --><div class=\"wp-block-column\" style=\"flex-basis:60%\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Method</h3><!-- /wp:heading --><!-- wp:list {\"ordered\":true,\"className\":\"steps\"} --><ol class=\"wp-block-list steps\"><!-- wp:list-item --><li>Rub the butter into flour and sugar, bind with the yolk and chill.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Line 12 tartlet tins, chill again, then blind bake at 180&deg;C for 15 minutes.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Cook the curd ingredients gently, stirring, until thick. Strain and cool.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Fill the cases with curd.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Whisk the whites to stiff peaks, adding sugar a spoonful at a time.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Pipe swirls on top and toast with a torch or under a hot grill.</li><!-- /wp:list-item --></ol><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"#print\">Print this recipe</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "comments": [
+    {
+     "author": "Clara",
+     "content": "Beautiful! Do the cases go soft once filled?",
+     "date": "2026-04-12T09:30:00",
+     "email": "clara@example.com"
+    },
+    {
+     "author": "Noor",
+     "content": "They stay crisp for about six hours. Brushing the baked cases with a little egg white helps.",
+     "date": "2026-04-12T13:15:00",
+     "email": "noor@example.com"
+    }
+   ]
+  },
+  {
+   "slug": "spiced-pear-frangipane-tart",
+   "title": "Spiced Pear Frangipane Tart",
+   "date": "2026-10-04T14:10:00",
+   "excerpt": "Poached pears fanned over almond cream in a crisp tart shell, with cinnamon, clove and a glaze of apricot jam.",
+   "categories": [
+    "tarts-pastry",
+    "autumn"
+   ],
+   "tags": [
+    "nuts",
+    "celebration"
+   ],
+   "featured_media": "pear-tart",
+   "content": "<!-- wp:paragraph --><p>When pears arrive at the market, this tart appears on my table every Sunday until they are gone. Poaching them in spiced syrup first means they stay juicy and hold their shape.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>Frangipane is an almond cream that puffs gently around the fruit as it bakes. It is forgiving, quick to make and tastes wonderful warm or cold.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Fanning the pears</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Halve and core the poached pears, then slice each half thinly across, keeping the slices together. Slide a palette knife underneath, press gently to fan them, and lift them onto the frangipane.</p><!-- /wp:paragraph -->\n\n<!-- wp:media-text {\"mediaId\":{{media_id:pear-tart}},\"mediaType\":\"image\"} --><div class=\"wp-block-media-text is-stacked-on-mobile\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:pear-tart}}\" alt=\"A round tart with fanned pear slices\" class=\"wp-image-{{media_id:pear-tart}} size-full\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:paragraph --><p>Use pears that are ripe but still firm. Conference and Bosc are my favourites.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>A spoonful of crème fraîche on the side is all it needs.</p><!-- /wp:paragraph --></div></div><!-- /wp:media-text -->\n\n<!-- wp:group {\"anchor\":\"recipe\",\"className\":\"recipe-card\",\"layout\":{\"type\":\"constrained\"}} --><div id=\"recipe\" class=\"wp-block-group recipe-card\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Spiced pear frangipane tart</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"recipe-facts\"} --><ul class=\"wp-block-list recipe-facts\"><!-- wp:list-item --><li><strong>Prep</strong>45 min</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Bake</strong>40 min</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Serves</strong>8</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Level</strong>Intermediate</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column {\"width\":\"40%\"} --><div class=\"wp-block-column\" style=\"flex-basis:40%\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Ingredients</h3><!-- /wp:heading --><!-- wp:list {\"className\":\"ingredients\"} --><ul class=\"wp-block-list ingredients\"><!-- wp:list-item --><li>1 sweet pastry case, blind baked (23 cm)</li><!-- /wp:list-item --><!-- wp:list-item --><li>4 pears, peeled</li><!-- /wp:list-item --><!-- wp:list-item --><li>500 ml water, 150 g sugar, 1 cinnamon stick, 3 cloves</li><!-- /wp:list-item --><!-- wp:list-item --><li>125 g butter, soft</li><!-- /wp:list-item --><!-- wp:list-item --><li>125 g caster sugar</li><!-- /wp:list-item --><!-- wp:list-item --><li>2 eggs</li><!-- /wp:list-item --><!-- wp:list-item --><li>125 g ground almonds</li><!-- /wp:list-item --><!-- wp:list-item --><li>2 tbsp apricot jam</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column {\"width\":\"60%\"} --><div class=\"wp-block-column\" style=\"flex-basis:60%\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Method</h3><!-- /wp:heading --><!-- wp:list {\"ordered\":true,\"className\":\"steps\"} --><ol class=\"wp-block-list steps\"><!-- wp:list-item --><li>Poach the pears in the spiced syrup for 15 minutes; cool.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Beat butter and sugar, then the eggs, then fold in the almonds.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Spread the frangipane in the tart case.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Fan the sliced pear halves over the top.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Bake at 180&deg;C for 35&ndash;40 minutes until golden.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Warm the jam with a spoon of syrup and brush over the tart.</li><!-- /wp:list-item --></ol><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"#print\">Print this recipe</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "comments": []
+  },
+  {
+   "slug": "chocolate-orange-yule-log",
+   "title": "Chocolate Orange Yule Log",
+   "date": "2026-01-03T12:00:00",
+   "excerpt": "A rolled chocolate sponge filled with orange-scented cream and covered in glossy ganache bark. Festive, and easier than it looks.",
+   "categories": [
+    "cakes",
+    "winter"
+   ],
+   "tags": [
+    "chocolate",
+    "citrus",
+    "celebration"
+   ],
+   "featured_media": "yule-log",
+   "content": "<!-- wp:paragraph --><p>Every winter I promise myself a simpler dessert, and every winter I make this yule log anyway. It looks grand, but it is really a thin sponge rolled around whipped cream.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>The trick to a roll that does not crack is to roll the sponge while it is still warm, in a clean tea towel dusted with cocoa, then let it cool in that shape.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Decorating</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Drag a fork through the ganache to make bark lines.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Dust with icing sugar for snow.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Add candied orange slices and a sprig of rosemary.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:image {\"id\":{{media_id:yule-log}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:yule-log}}\" alt=\"A chocolate yule log decorated with orange slices\" class=\"wp-image-{{media_id:yule-log}}\"/><figcaption class=\"wp-element-caption\">Candied orange slices make it glow.</figcaption></figure><!-- /wp:image -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Cracks are fine. Ganache covers a multitude of sins.</p><!-- /wp:paragraph --><cite>Said every December</cite></blockquote><!-- /wp:quote -->\n\n<!-- wp:group {\"anchor\":\"recipe\",\"className\":\"recipe-card\",\"layout\":{\"type\":\"constrained\"}} --><div id=\"recipe\" class=\"wp-block-group recipe-card\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Chocolate orange yule log</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"recipe-facts\"} --><ul class=\"wp-block-list recipe-facts\"><!-- wp:list-item --><li><strong>Prep</strong>50 min</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Bake</strong>12 min</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Serves</strong>10</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Level</strong>Intermediate</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column {\"width\":\"40%\"} --><div class=\"wp-block-column\" style=\"flex-basis:40%\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Ingredients</h3><!-- /wp:heading --><!-- wp:list {\"className\":\"ingredients\"} --><ul class=\"wp-block-list ingredients\"><!-- wp:list-item --><li>4 eggs</li><!-- /wp:list-item --><!-- wp:list-item --><li>100 g caster sugar</li><!-- /wp:list-item --><!-- wp:list-item --><li>65 g plain flour</li><!-- /wp:list-item --><!-- wp:list-item --><li>25 g cocoa</li><!-- /wp:list-item --><!-- wp:list-item --><li>300 ml double cream</li><!-- /wp:list-item --><!-- wp:list-item --><li>Zest of 1 orange</li><!-- /wp:list-item --><!-- wp:list-item --><li>200 g dark chocolate</li><!-- /wp:list-item --><!-- wp:list-item --><li>200 ml cream for the ganache</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column {\"width\":\"60%\"} --><div class=\"wp-block-column\" style=\"flex-basis:60%\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Method</h3><!-- /wp:heading --><!-- wp:list {\"ordered\":true,\"className\":\"steps\"} --><ol class=\"wp-block-list steps\"><!-- wp:list-item --><li>Whisk eggs and sugar until tripled in volume.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Sift in flour and cocoa and fold gently.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Spread in a lined Swiss roll tin and bake at 200&deg;C for 10&ndash;12 minutes.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Roll up in a cocoa-dusted towel and cool.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Whip the cream with zest, unroll, fill and re-roll.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Cover with ganache and decorate.</li><!-- /wp:list-item --></ol><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"#print\">Print this recipe</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "comments": [
+    {
+     "author": "Pieter",
+     "content": "Made this for New Year's Eve. It looked like it came from a patisserie.",
+     "date": "2026-01-05T19:30:00",
+     "email": "pieter@example.com"
+    }
+   ]
+  },
+  {
+   "slug": "how-i-keep-pastry-cold",
+   "title": "How I Keep Pastry Cold (and Why It Matters)",
+   "date": "2026-08-30T09:00:00",
+   "excerpt": "Flaky, tender pastry comes down to temperature. Here are the small habits from my years in pastry kitchens that make the biggest difference.",
+   "categories": [
+    "tarts-pastry",
+    "baking-notes"
+   ],
+   "tags": [
+    "make-ahead"
+   ],
+   "featured_media": "pastry",
+   "content": "<!-- wp:paragraph --><p>The first thing I learned in a professional kitchen was that pastry is all about temperature. Butter that stays cold makes steam in the oven, and steam makes layers.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>You do not need a marble counter or a walk-in fridge. You just need a few habits, and a willingness to put things back in the fridge more often than feels necessary.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">My cold-pastry habits</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Cube the butter and freeze it for ten minutes before you start.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Use ice water, measured from a jug with ice still floating in it.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Mix with your fingertips, never your palms.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Chill the dough after mixing, after rolling and after lining the tin.</li><!-- /wp:list-item --><!-- wp:list-item --><li>If the butter looks shiny or greasy, stop and chill everything for fifteen minutes.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:image {\"id\":{{media_id:pastry}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:pastry}}\" alt=\"Pastry dough on a floured counter with a rolling pin\" class=\"wp-image-{{media_id:pastry}}\"/></figure><!-- /wp:image -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">When it goes wrong</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Shrinking pastry has usually been stretched or not rested. Soggy bases often need a hotter oven or a baking tray preheated underneath the tin. Tough pastry was probably worked too much; next time, stop mixing as soon as it holds together.</p><!-- /wp:paragraph -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Cold hands, warm heart, and an extra shelf in the fridge.</p><!-- /wp:paragraph --><cite>Pastry kitchen proverb, more or less</cite></blockquote><!-- /wp:quote -->",
+   "comments": [
+    {
+     "author": "Sami",
+     "content": "Freezing the butter cubes changed everything for me. Thank you for this.",
+     "date": "2026-09-01T07:50:00",
+     "email": "sami@example.com"
+    }
+   ]
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Home",
+     "page": "home"
+    },
+    {
+     "title": "Recipes",
+     "page": "recipes",
+     "children": [
+      {
+       "category": "cakes"
+      },
+      {
+       "category": "tarts-pastry"
+      },
+      {
+       "category": "breads-buns"
+      },
+      {
+       "category": "small-bakes"
+      }
+     ]
+    },
+    {
+     "title": "Collections",
+     "page": "collections",
+     "children": [
+      {
+       "category": "spring"
+      },
+      {
+       "category": "summer"
+      },
+      {
+       "category": "autumn"
+      },
+      {
+       "category": "winter"
+      }
+     ]
+    },
+    {
+     "title": "Baking Notes",
+     "category": "baking-notes"
+    },
+    {
+     "title": "About",
+     "page": "about",
+     "children": [
+      {
+       "page": "baking-classes"
+      },
+      {
+       "page": "contact"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Social",
+   "location": "social",
+   "items": [
+    {
+     "title": "Instagram",
+     "url": "https://instagram.com/"
+    },
+    {
+     "title": "Pinterest",
+     "url": "https://pinterest.com/"
+    },
+    {
+     "title": "YouTube",
+     "url": "https://youtube.com/"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "sidebar-1": [
+   "<!-- wp:group {\"className\":\"about-baker\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group about-baker\"><!-- wp:image {\"id\":{{media_id:about}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:about}}\" alt=\"A baker&#x27;s workbench\" class=\"wp-image-{{media_id:about}}\"/></figure><!-- /wp:image --><!-- wp:paragraph --><p>Hi, I&rsquo;m Noor! A pastry chef baking cakes, tarts and buns at home, and writing down every trick.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{page:about}}\">Read my story &rarr;</a></p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:search {\"label\":\"Search recipes\",\"placeholder\":\"Lemon, pistachio&hellip;\",\"buttonText\":\"Search\"} /-->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Collections</h2><!-- /wp:heading --><!-- wp:categories {\"showPostCounts\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Recent notes</h2><!-- /wp:heading --><!-- wp:latest-comments {\"commentsToShow\":3,\"displayAvatar\":false,\"displayExcerpt\":false} /--></div><!-- /wp:group -->"
+  ],
+  "footer-1": [
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Recipe box</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><a href=\"{{category:cakes}}\">Cakes</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{category:tarts-pastry}}\">Tarts &amp; pastry</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{category:breads-buns}}\">Breads &amp; buns</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{category:small-bakes}}\">Small bakes</a></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Kitchen</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><a href=\"{{page:about}}\">About the baker</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{page:baking-classes}}\">Baking classes</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{page:contact}}\">Contact</a></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Newsletter</h2><!-- /wp:heading --><!-- wp:paragraph --><p>A recipe, a shopping list and a little kitchen news, once a month.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Join the list</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "hero_image": "hero",
+  "hero_kicker": "Hello, I'm Noor",
+  "announcement": "New: autumn baking classes are open",
+  "blog_layout": "grid",
+  "image_shape": "arch",
+  "show_featured": true,
+  "sticky_header": false
+ }
+}

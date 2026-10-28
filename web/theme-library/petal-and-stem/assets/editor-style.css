@@ -1,0 +1,38 @@
+@font-face { font-family: "Instrument Serif"; src: url("fonts/instrument-serif.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Instrument Serif"; src: url("fonts/instrument-serif-italic.woff2") format("woff2"); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: "Hanken Grotesk"; src: url("fonts/hanken-grotesk.woff2") format("woff2"); font-weight: 300 700; font-style: normal; font-display: swap; }
+
+:root, .editor-styles-wrapper {
+	--bg: #fbf8f2;
+	--surface: #f4e6e1;
+	--paper: #ffffff;
+	--text: #24302a;
+	--heading: #1d2a22;
+	--muted: #63706a;
+	--accent: #b8475f;
+	--accent-ink: #ffffff;
+	--accent-hover: #2f4a35;
+	--moss: #2f4a35;
+	--sage: #c9d5c0;
+	--blush: #f4d9d6;
+	--butter: #e3b04b;
+	--line: #e3ddd2;
+	--field-bg: #ffffff;
+	--font-body: "Hanken Grotesk", "Helvetica Neue", Arial, sans-serif;
+	--font-head: "Instrument Serif", "Iowan Old Style", Georgia, serif;
+	--radius: 14px;
+	--radius-sm: 8px;
+	--btn-radius: 999px;
+	--wrap: 1220px;
+	--content: 700px;
+	--single: 740px;
+	--gap: 2.5rem 2rem;
+}
+
+.editor-styles-wrapper { background: var(--bg); color: var(--text); font-family: var(--font-body); line-height: 1.7; }
+.editor-styles-wrapper h1, .editor-styles-wrapper h2, .editor-styles-wrapper h3, .editor-styles-wrapper .editor-post-title__input { font-family: var(--font-head); font-weight: 400; }
+.editor-styles-wrapper a { color: var(--accent); }
+.editor-styles-wrapper .wp-block-quote { background: var(--blush); border: 0; border-radius: 14px; padding: 1.5rem; font-family: var(--font-head); font-style: italic; font-size: 1.5rem; }
+.editor-styles-wrapper .wp-block-button__link { background: var(--accent); color: #fff; border-radius: 999px; }
+.editor-styles-wrapper .bouquet { border: 1px solid var(--line); border-radius: 14px; padding: 1rem; text-align: center; background: #fff; }
+.editor-styles-wrapper .care-card { border: 1px solid var(--line); border-radius: 14px; padding: 1.2rem; background: #fff; }

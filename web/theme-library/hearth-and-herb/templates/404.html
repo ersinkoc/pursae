@@ -1,0 +1,11 @@
+{{template "header" .}}
+<main id="main" class="site-main site-main--404" tabindex="-1">
+	<section class="error-404 not-found wrap wrap--content">
+		<svg class="error-404__pot" viewBox="0 0 120 80" width="120" height="80" aria-hidden="true" focusable="false"><path d="M10 30h100v10c0 22-18 36-50 36S10 62 10 40Z" fill="currentColor"/><rect x="2" y="30" width="116" height="7" rx="3.5" fill="currentColor"/><path d="M44 22c0-8 8-8 8-16M64 22c0-8 8-8 8-16" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round"/></svg>
+		<p class="error-404__code" aria-hidden="true">404</p>
+		<h1 class="page-title">This pot is empty.</h1>
+		<p>We could not find that page. Search the recipe drawer or head back to the <a href="{{.HomeURL}}">kitchen table</a>.</p>
+		{{template "searchform" .}}
+	</section><!-- .error-404 -->
+</main>
+{{template "footer" .}}

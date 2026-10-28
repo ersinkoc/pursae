@@ -1,0 +1,40 @@
+@font-face { font-family: "Young Serif"; src: url("fonts/young-serif.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Outfit"; src: url("fonts/outfit.woff2") format("woff2"); font-weight: 300 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Chivo Mono"; src: url("fonts/chivo-mono.woff2") format("woff2"); font-weight: 400 600; font-style: normal; font-display: swap; }
+
+:root, .editor-styles-wrapper {
+	--bg: #f7f1ea;
+	--surface: #efe4d6;
+	--paper: #fffaf4;
+	--text: #2a1a14;
+	--heading: #22140f;
+	--muted: #6e5a4f;
+	--accent: #1f7a62;
+	--accent-ink: #ffffff;
+	--accent-hover: #2a1a14;
+	--mint: #8fe0c5;
+	--roast: #2a1a14;
+	--crema: #c8a27a;
+	--line: #e0d2c1;
+	--field-bg: #fffdf9;
+	--font-body: "Outfit", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+	--font-head: "Young Serif", "Cooper", Georgia, serif;
+	--font-mono: "Chivo Mono", ui-monospace, Menlo, monospace;
+	--radius: 18px;
+	--radius-sm: 10px;
+	--btn-radius: 999px;
+	--wrap: 1200px;
+	--content: 700px;
+	--single: 760px;
+	--gap: 2rem;
+}
+
+.editor-styles-wrapper { background: var(--bg); color: var(--text); font-family: var(--font-body); line-height: 1.7; }
+.editor-styles-wrapper h1, .editor-styles-wrapper h2, .editor-styles-wrapper h3, .editor-styles-wrapper .editor-post-title__input { font-family: var(--font-head); font-weight: 400; }
+.editor-styles-wrapper a { color: var(--accent); }
+.editor-styles-wrapper .wp-block-quote { background: var(--roast); color: #f4ebe1; border-radius: 18px; padding: 1.4rem; border: 0; }
+.editor-styles-wrapper .wp-block-button__link { background: var(--accent); color: #fff; border-radius: 999px; }
+.editor-styles-wrapper .menu-board { background: var(--roast); color: #f4ebe1; border-radius: 20px; padding: 1.5rem; }
+.editor-styles-wrapper .menu-list { list-style: none; padding: 0; }
+.editor-styles-wrapper .price { font-family: var(--font-mono); color: var(--crema); float: right; }
+.editor-styles-wrapper .brew-specs { border: 1px solid var(--line); border-radius: 18px; padding: 1.2rem; background: #fff; }

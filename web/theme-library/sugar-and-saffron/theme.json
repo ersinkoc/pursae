@@ -1,0 +1,351 @@
+{
+  "slug": "sugar-and-saffron",
+  "name": "Sugar & Saffron",
+  "version": "1.0.0",
+  "description": "A sweet, elegant baking blog for a pastry chef: pastel blush and cream with a saffron accent, Parisienne script with Gilda Display serif, arched photo frames, a cozy “about the baker” home page, seasonal recipe collections and printable recipe cards with bake times, heart-bulleted ingredients and script step numbers.",
+  "author": "WordPress Go",
+  "author_url": "https://github.com/boracomet/wordpress-go",
+  "theme_url": "https://github.com/boracomet/wordpress-go/tree/main/web/theme-library/sugar-and-saffron",
+  "tags": [
+    "Food",
+    "Blog",
+    "Baking",
+    "Recipes",
+    "Grid Layout",
+    "Custom Colors",
+    "Custom Logo",
+    "Custom Menu",
+    "Editor Style",
+    "Featured Images",
+    "Footer Widgets",
+    "Threaded Comments",
+    "Wide Blocks"
+  ],
+  "requires_core": "0.1.0",
+  "screenshot": "assets/screenshot.png",
+  "category": "food",
+  "style": "Pastel pastry blog, script and serif type, arched photos",
+  "demo": "demo/demo.json",
+  "widget_areas": [
+    {
+      "id": "sidebar-1",
+      "name": "Sidebar",
+      "description": "Beside recipes when Customize › Layout › Sidebar is on."
+    },
+    {
+      "id": "footer-1",
+      "name": "Footer",
+      "description": "Columns in the blush footer."
+    }
+  ],
+  "menu_locations": [
+    {
+      "id": "primary",
+      "name": "Primary Menu"
+    },
+    {
+      "id": "social",
+      "name": "Social Links"
+    }
+  ],
+  "styles": [
+    {
+      "handle": "sugar-and-saffron-style",
+      "src": "assets/style.css",
+      "deps": [
+        "wp-block-library"
+      ],
+      "media": "all"
+    }
+  ],
+  "scripts": [
+    {
+      "handle": "sugar-and-saffron-navigation",
+      "src": "assets/js/navigation.js",
+      "deps": [],
+      "in_footer": true
+    }
+  ],
+  "editor_styles": [
+    "assets/editor-style.css"
+  ],
+  "preload_fonts": [
+    "assets/fonts/mulish.woff2",
+    "assets/fonts/parisienne.woff2"
+  ],
+  "palette": [
+    {
+      "name": "Rose",
+      "slug": "rose",
+      "color": "#b04a6c"
+    },
+    {
+      "name": "Blush",
+      "slug": "blush",
+      "color": "#f9e3e6"
+    },
+    {
+      "name": "Saffron",
+      "slug": "saffron",
+      "color": "#e3a13b"
+    },
+    {
+      "name": "Pistachio",
+      "slug": "pistachio",
+      "color": "#a9c49a"
+    },
+    {
+      "name": "Plum",
+      "slug": "plum",
+      "color": "#4b2a36"
+    },
+    {
+      "name": "Cream",
+      "slug": "cream",
+      "color": "#fff8f1"
+    }
+  ],
+  "supports": {
+    "post-thumbnails": true,
+    "custom-logo": {
+      "width": 240,
+      "height": 80,
+      "flex-width": true,
+      "flex-height": true,
+      "header-text": [
+        "site-title",
+        "site-description"
+      ]
+    },
+    "title-tag": true,
+    "html5": [
+      "search-form",
+      "comment-form",
+      "comment-list",
+      "gallery",
+      "caption",
+      "script",
+      "style"
+    ],
+    "responsive-embeds": true,
+    "align-wide": true,
+    "wp-block-styles": true
+  },
+  "customizer": {
+    "sections": [
+      {
+        "id": "ss_colors",
+        "title": "Colors & Type",
+        "priority": 40,
+        "settings": [
+          {
+            "id": "accent_color",
+            "label": "Accent",
+            "type": "color",
+            "default": "#b04a6c",
+            "transport": "postMessage",
+            "css_var": "--accent",
+            "description": "Buttons, links, script labels and recipe step numbers."
+          },
+          {
+            "id": "blush_color",
+            "label": "Blush",
+            "type": "color",
+            "default": "#f9e3e6",
+            "transport": "postMessage",
+            "css_var": "--surface",
+            "description": "Quotes, the footer and section backgrounds."
+          },
+          {
+            "id": "background_color",
+            "label": "Page background",
+            "type": "color",
+            "default": "#fff8f1",
+            "transport": "postMessage",
+            "css_var": "--bg"
+          },
+          {
+            "id": "text_color",
+            "label": "Text",
+            "type": "color",
+            "default": "#4b2a36",
+            "transport": "postMessage",
+            "css_var": "--text"
+          },
+          {
+            "id": "font_pairing",
+            "label": "Typefaces",
+            "type": "select",
+            "default": "script",
+            "transport": "postMessage",
+            "body_class": "ss-font-{value}",
+            "choices": [
+              {
+                "value": "script",
+                "label": "Parisienne script with Gilda Display and Mulish"
+              },
+              {
+                "value": "classic",
+                "label": "Gilda Display only, italic accents"
+              },
+              {
+                "value": "system",
+                "label": "System fonts"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "ss_layout",
+        "title": "Layout",
+        "priority": 41,
+        "settings": [
+          {
+            "id": "header_style",
+            "label": "Header",
+            "type": "select",
+            "default": "centered",
+            "transport": "postMessage",
+            "body_class": "ss-header-{value}",
+            "choices": [
+              {
+                "value": "centered",
+                "label": "Centered script title, menu below"
+              },
+              {
+                "value": "inline",
+                "label": "Title left, menu right"
+              }
+            ]
+          },
+          {
+            "id": "blog_layout",
+            "label": "Recipe list",
+            "type": "select",
+            "default": "grid",
+            "transport": "postMessage",
+            "body_class": "ss-layout-{value}",
+            "choices": [
+              {
+                "value": "grid",
+                "label": "Grid of cards"
+              },
+              {
+                "value": "list",
+                "label": "List with images beside"
+              }
+            ]
+          },
+          {
+            "id": "image_shape",
+            "label": "Image shape",
+            "type": "select",
+            "default": "arch",
+            "transport": "postMessage",
+            "body_class": "ss-shape-{value}",
+            "choices": [
+              {
+                "value": "arch",
+                "label": "Arched windows"
+              },
+              {
+                "value": "rounded",
+                "label": "Rounded squares"
+              },
+              {
+                "value": "square",
+                "label": "Square corners"
+              }
+            ]
+          },
+          {
+            "id": "sidebar",
+            "label": "Sidebar",
+            "type": "select",
+            "default": "none",
+            "transport": "postMessage",
+            "body_class": "ss-sidebar-{value}",
+            "choices": [
+              {
+                "value": "none",
+                "label": "No sidebar"
+              },
+              {
+                "value": "right",
+                "label": "Right"
+              },
+              {
+                "value": "left",
+                "label": "Left"
+              }
+            ],
+            "description": "Beside posts and recipe lists."
+          },
+          {
+            "id": "show_featured",
+            "label": "Show featured images",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "ss-thumbs"
+          },
+          {
+            "id": "show_author",
+            "label": "Show the author on posts",
+            "type": "checkbox",
+            "default": false,
+            "transport": "postMessage",
+            "body_class": "ss-author"
+          },
+          {
+            "id": "sticky_header",
+            "label": "Keep the header visible while scrolling",
+            "type": "checkbox",
+            "default": false,
+            "transport": "postMessage",
+            "body_class": "ss-sticky"
+          }
+        ]
+      },
+      {
+        "id": "ss_home",
+        "title": "Home Page & Footer",
+        "priority": 42,
+        "settings": [
+          {
+            "id": "hero_image",
+            "label": "Baker photo",
+            "type": "image",
+            "description": "The arched picture on a static front page. Empty uses the page's featured image."
+          },
+          {
+            "id": "hero_kicker",
+            "label": "Greeting",
+            "type": "text",
+            "default": "Hello, lovely!",
+            "transport": "refresh",
+            "description": "The script line above the front page title."
+          },
+          {
+            "id": "announcement",
+            "label": "Announcement bar",
+            "type": "text",
+            "default": "",
+            "transport": "refresh",
+            "description": "A line above the header. Empty hides the bar."
+          },
+          {
+            "id": "footer_text",
+            "label": "Footer text",
+            "type": "text",
+            "default": "",
+            "transport": "refresh",
+            "description": "Replaces the copyright line."
+          }
+        ],
+        "description": "The front page hero, the announcement bar and the footer line."
+      }
+    ]
+  }
+}

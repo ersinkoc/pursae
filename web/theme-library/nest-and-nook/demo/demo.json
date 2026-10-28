@@ -1,0 +1,493 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Nest & Nook",
+  "blogdescription": "Interiors for slow living",
+  "posts_per_page": 9
+ },
+ "categories": [
+  {
+   "slug": "rooms",
+   "name": "Rooms",
+   "description": "Ideas and projects, room by room."
+  },
+  {
+   "slug": "living-room",
+   "name": "Living Room",
+   "parent": "rooms",
+   "description": "Calm spaces for gathering and resting."
+  },
+  {
+   "slug": "kitchen",
+   "name": "Kitchen",
+   "parent": "rooms",
+   "description": "Practical, beautiful kitchens."
+  },
+  {
+   "slug": "bedroom",
+   "name": "Bedroom",
+   "parent": "rooms",
+   "description": "Restful rooms, layered in texture."
+  },
+  {
+   "slug": "bathroom",
+   "name": "Bathroom",
+   "parent": "rooms",
+   "description": "Small spaces with a spa feeling."
+  },
+  {
+   "slug": "outdoor",
+   "name": "Outdoor",
+   "parent": "rooms",
+   "description": "Balconies, terraces and garden rooms."
+  },
+  {
+   "slug": "before-after",
+   "name": "Before & After",
+   "description": "Transformations from our studio."
+  },
+  {
+   "slug": "projects",
+   "name": "Projects",
+   "description": "Complete homes we have designed."
+  },
+  {
+   "slug": "styling-tips",
+   "name": "Styling Tips",
+   "description": "Simple ideas to try at home."
+  },
+  {
+   "slug": "shop-the-look",
+   "name": "Shop the Look",
+   "description": "The pieces behind our favourite rooms."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "neutral",
+   "name": "Neutral"
+  },
+  {
+   "slug": "oak",
+   "name": "Oak"
+  },
+  {
+   "slug": "linen",
+   "name": "Linen"
+  },
+  {
+   "slug": "small-spaces",
+   "name": "Small spaces"
+  },
+  {
+   "slug": "tiles",
+   "name": "Tiles"
+  },
+  {
+   "slug": "plants",
+   "name": "Plants"
+  },
+  {
+   "slug": "styling",
+   "name": "Styling"
+  },
+  {
+   "slug": "ceramics",
+   "name": "Ceramics"
+  },
+  {
+   "slug": "paint",
+   "name": "Paint"
+  }
+ ],
+ "media": [
+  {
+   "id": "hero",
+   "file": "demo/images/nn-hero.jpg",
+   "alt": "A bright living room with a linen sofa, an oak table and a large window",
+   "caption": ""
+  },
+  {
+   "id": "living",
+   "file": "demo/images/nn-living.jpg",
+   "alt": "A calm living room with a linen sofa and an olive armchair",
+   "caption": ""
+  },
+  {
+   "id": "dining",
+   "file": "demo/images/nn-dining.jpg",
+   "alt": "A dining corner with a round oak table and a pendant lamp",
+   "caption": ""
+  },
+  {
+   "id": "shelves",
+   "file": "demo/images/nn-shelves.jpg",
+   "alt": "Oak shelves with books, ceramics and a plant",
+   "caption": ""
+  },
+  {
+   "id": "kitchen-before",
+   "file": "demo/images/nn-kitchen-before.jpg",
+   "alt": "A dark galley kitchen with pine units before the renovation",
+   "caption": ""
+  },
+  {
+   "id": "kitchen-after",
+   "file": "demo/images/nn-kitchen-after.jpg",
+   "alt": "A pale galley kitchen with an oak worktop and open shelves",
+   "caption": ""
+  },
+  {
+   "id": "bedroom",
+   "file": "demo/images/nn-bedroom.jpg",
+   "alt": "A bed layered in linen with a wooden headboard and lamps",
+   "caption": ""
+  },
+  {
+   "id": "bath-before",
+   "file": "demo/images/nn-bath-before.jpg",
+   "alt": "A plain white bathroom with a strip light before the renovation",
+   "caption": ""
+  },
+  {
+   "id": "bath-after",
+   "file": "demo/images/nn-bath-after.jpg",
+   "alt": "A bathroom with pink plaster walls, handmade tiles and a round mirror",
+   "caption": ""
+  },
+  {
+   "id": "balcony",
+   "file": "demo/images/nn-balcony.jpg",
+   "alt": "A small balcony with olive trees and a bistro set",
+   "caption": ""
+  },
+  {
+   "id": "paint",
+   "file": "demo/images/nn-paint.jpg",
+   "alt": "Painted swatches in warm whites and neutrals",
+   "caption": ""
+  },
+  {
+   "id": "nook",
+   "file": "demo/images/nn-nook.jpg",
+   "alt": "A reading nook under the stairs with a cushioned bench",
+   "caption": ""
+  },
+  {
+   "id": "moodboard",
+   "file": "demo/images/nn-moodboard.jpg",
+   "alt": "A moodboard of fabric, wood and paint samples",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Rooms that feel like an exhale",
+   "front_page": true,
+   "featured_media": "hero",
+   "excerpt": "We design calm, light-filled homes with natural materials and a lot of patience. Explore our rooms, projects and ideas.",
+   "content": "<!-- wp:paragraph {\"className\":\"kicker\",\"align\":\"center\"} --><p class=\"has-text-align-center kicker\">Room by room</p><!-- /wp:paragraph -->\n\n<!-- wp:heading {\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center\">Find inspiration for every corner</h2><!-- /wp:heading -->\n\n<!-- wp:columns {\"align\":\"wide\",\"className\":\"room-tiles\"} --><div class=\"wp-block-columns alignwide room-tiles\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"room-tile\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group room-tile\"><!-- wp:image {\"id\":{{media_id:living}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><a href=\"{{category:living-room}}\"><img src=\"{{media:living}}\" alt=\"Living room photo\" class=\"wp-image-{{media_id:living}}\"/></a></figure><!-- /wp:image --><!-- wp:paragraph --><p><a href=\"{{category:living-room}}\">Living</a></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"room-tile\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group room-tile\"><!-- wp:image {\"id\":{{media_id:kitchen-after}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><a href=\"{{category:kitchen}}\"><img src=\"{{media:kitchen-after}}\" alt=\"Kitchen room photo\" class=\"wp-image-{{media_id:kitchen-after}}\"/></a></figure><!-- /wp:image --><!-- wp:paragraph --><p><a href=\"{{category:kitchen}}\">Kitchen</a></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"room-tile\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group room-tile\"><!-- wp:image {\"id\":{{media_id:bedroom}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><a href=\"{{category:bedroom}}\"><img src=\"{{media:bedroom}}\" alt=\"Bedroom room photo\" class=\"wp-image-{{media_id:bedroom}}\"/></a></figure><!-- /wp:image --><!-- wp:paragraph --><p><a href=\"{{category:bedroom}}\">Bedroom</a></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"room-tile\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group room-tile\"><!-- wp:image {\"id\":{{media_id:bath-after}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><a href=\"{{category:bathroom}}\"><img src=\"{{media:bath-after}}\" alt=\"Bathroom room photo\" class=\"wp-image-{{media_id:bath-after}}\"/></a></figure><!-- /wp:image --><!-- wp:paragraph --><p><a href=\"{{category:bathroom}}\">Bathroom</a></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"room-tile\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group room-tile\"><!-- wp:image {\"id\":{{media_id:balcony}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><a href=\"{{category:outdoor}}\"><img src=\"{{media:balcony}}\" alt=\"Outdoor room photo\" class=\"wp-image-{{media_id:balcony}}\"/></a></figure><!-- /wp:image --><!-- wp:paragraph --><p><a href=\"{{category:outdoor}}\">Outdoor</a></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"band-linen\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull band-linen\"><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column {\"width\":\"38%\"} --><div class=\"wp-block-column\" style=\"flex-basis:38%\"><!-- wp:paragraph {\"className\":\"kicker\"} --><p class=\"kicker\">Before &amp; after</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">The galley kitchen</h2><!-- /wp:heading --><!-- wp:paragraph --><p>A narrow 1970s kitchen became a bright workspace with one long oak counter. We kept the layout and changed the light.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{post:before-and-after-galley-kitchen}}\">See the transformation</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:column --><!-- wp:column {\"width\":\"62%\"} --><div class=\"wp-block-column\" style=\"flex-basis:62%\"><!-- wp:columns {\"className\":\"before-after\"} --><div class=\"wp-block-columns before-after\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:kitchen-before}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:kitchen-before}}\" alt=\"The kitchen before\" class=\"wp-image-{{media_id:kitchen-before}}\"/><figcaption class=\"wp-element-caption\">Before</figcaption></figure><!-- /wp:image --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:kitchen-after}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:kitchen-after}}\" alt=\"The kitchen after\" class=\"wp-image-{{media_id:kitchen-after}}\"/><figcaption class=\"wp-element-caption\">After</figcaption></figure><!-- /wp:image --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:paragraph {\"className\":\"kicker\",\"align\":\"center\"} --><p class=\"has-text-align-center kicker\">How we can help</p><!-- /wp:paragraph -->\n\n<!-- wp:heading {\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center\">Studio services</h2><!-- /wp:heading -->\n\n<!-- wp:columns {\"align\":\"wide\",\"className\":\"services\"} --><div class=\"wp-block-columns alignwide services\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"num\"} --><p class=\"num\">01</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Design consultation</h3><!-- /wp:heading --><!-- wp:paragraph --><p>A two-hour visit with a clear plan, a colour palette and a shopping list you can follow yourself.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"num\"} --><p class=\"num\">02</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Room design</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Full concept, layout drawings, sourcing and styling for a single room.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"num\"} --><p class=\"num\">03</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Renovation</h3><!-- /wp:heading --><!-- wp:paragraph --><p>From planning to the final cushion: we manage trades, budgets and timelines.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"band-dark\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull band-dark\"><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Shop the look</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Every project ends with a list of the pieces we used, so you can bring the feeling home.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{category:shop-the-look}}\">Browse shop-the-look</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>A home should look like the people who live in it, only a little more rested.</p><!-- /wp:paragraph --><cite>Nest &amp; Nook</cite></blockquote><!-- /wp:quote -->"
+  },
+  {
+   "slug": "journal",
+   "title": "Journal",
+   "posts_page": true,
+   "content": ""
+  },
+  {
+   "slug": "rooms-gallery",
+   "title": "Room by Room",
+   "template": "page-wide",
+   "content": "<!-- wp:paragraph --><p>A selection of rooms from recent projects, gathered by space. Click a room to read the full story.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Living rooms</h2><!-- /wp:heading -->\n\n<!-- wp:gallery {\"columns\":3,\"linkTo\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-gallery has-nested-images columns-3 is-cropped alignwide\"><!-- wp:image {\"id\":{{media_id:living}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:living}}\" alt=\"Living room with a linen sofa\" class=\"wp-image-{{media_id:living}}\"/></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:nook}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:nook}}\" alt=\"Reading nook under the stairs\" class=\"wp-image-{{media_id:nook}}\"/></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:dining}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:dining}}\" alt=\"Dining corner with a round table\" class=\"wp-image-{{media_id:dining}}\"/></figure><!-- /wp:image --></figure><!-- /wp:gallery -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Kitchens</h2><!-- /wp:heading -->\n\n<!-- wp:gallery {\"columns\":2,\"linkTo\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-gallery has-nested-images columns-2 is-cropped alignwide\"><!-- wp:image {\"id\":{{media_id:kitchen-after}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:kitchen-after}}\" alt=\"Galley kitchen with an oak counter\" class=\"wp-image-{{media_id:kitchen-after}}\"/></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:shelves}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:shelves}}\" alt=\"Open oak shelves\" class=\"wp-image-{{media_id:shelves}}\"/></figure><!-- /wp:image --></figure><!-- /wp:gallery -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Bedrooms &amp; bathrooms</h2><!-- /wp:heading -->\n\n<!-- wp:gallery {\"columns\":3,\"linkTo\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-gallery has-nested-images columns-3 is-cropped alignwide\"><!-- wp:image {\"id\":{{media_id:bedroom}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:bedroom}}\" alt=\"Bedroom in layered linen\" class=\"wp-image-{{media_id:bedroom}}\"/></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:bath-after}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:bath-after}}\" alt=\"Pink plaster bathroom\" class=\"wp-image-{{media_id:bath-after}}\"/></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:moodboard}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:moodboard}}\" alt=\"Material samples and moodboard\" class=\"wp-image-{{media_id:moodboard}}\"/></figure><!-- /wp:image --></figure><!-- /wp:gallery -->\n\n<!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Start a project</a></div><!-- /wp:button --></div><!-- /wp:buttons -->",
+   "excerpt": "A gallery of recent rooms from the studio."
+  },
+  {
+   "slug": "services",
+   "title": "Services",
+   "content": "<!-- wp:paragraph --><p>Every home is different, so our services are flexible. Most clients start with a consultation and decide from there.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns {\"align\":\"wide\",\"className\":\"services\"} --><div class=\"wp-block-columns alignwide services\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"num\"} --><p class=\"num\">01</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Consultation</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Two hours at your home. You receive a written plan, palette and shopping list within a week.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"num\"} --><p class=\"num\">02</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Room design</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Concept, moodboard, layout drawings and a full sourcing list for one room.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"num\"} --><p class=\"num\">03</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Full renovation</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Design, trades, budget and timeline, managed from start to finish.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:image {\"id\":{{media_id:moodboard}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:moodboard}}\" alt=\"A moodboard with fabric, wood and paint samples\" class=\"wp-image-{{media_id:moodboard}}\"/><figcaption class=\"wp-element-caption\">Every project starts with a moodboard of real materials.</figcaption></figure><!-- /wp:image -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">How it works</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>A short call to understand the space and the budget.</li><!-- /wp:list-item --><!-- wp:list-item --><li>A visit to measure, photograph and listen.</li><!-- /wp:list-item --><!-- wp:list-item --><li>A concept presentation with materials you can touch.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Ordering, building and styling.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Book a consultation</a></div><!-- /wp:button --></div><!-- /wp:buttons -->"
+  },
+  {
+   "slug": "about",
+   "title": "About the Studio",
+   "content": "<!-- wp:media-text {\"mediaId\":{{media_id:moodboard}},\"mediaType\":\"image\"} --><div class=\"wp-block-media-text is-stacked-on-mobile\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:moodboard}}\" alt=\"A moodboard with fabric and wood samples\" class=\"wp-image-{{media_id:moodboard}} size-full\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:paragraph {\"className\":\"kicker\"} --><p class=\"kicker\">About the studio</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Quiet rooms, made by hand</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Nest &amp; Nook is a small interior design studio of three designers and a dog. We design calm, practical homes using natural materials, local makers and as much of what you already own as possible.</p><!-- /wp:paragraph --></div></div><!-- /wp:media-text -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What we believe</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Light first, furniture second.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Fewer, better things.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Natural materials that age well.</li><!-- /wp:list-item --><!-- wp:list-item --><li>A home is never finished, and that is fine.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>We would rather reupholster your grandmother&rsquo;s chair than sell you a new one.</p><!-- /wp:paragraph --><cite>The studio</cite></blockquote><!-- /wp:quote -->"
+  },
+  {
+   "slug": "contact",
+   "title": "Contact",
+   "parent": "about",
+   "content": "<!-- wp:paragraph --><p>Tell us about your home: the room, what is not working and what you dream it could be. We reply to every enquiry within three working days.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Studio</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Atelier 4, The Old Mill<br>By appointment only</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Email</h3><!-- /wp:heading --><!-- wp:paragraph --><p><a href=\"mailto:studio@example.com\">studio@example.com</a></p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Press</h3><!-- /wp:heading --><!-- wp:paragraph --><p>For images and features, write to us with the project you are interested in.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->"
+  }
+ ],
+ "posts": [
+  {
+   "slug": "a-calm-living-room-in-oat-and-oak",
+   "title": "A Calm Living Room in Oat & Oak",
+   "date": "2026-10-16T09:00:00",
+   "sticky": true,
+   "excerpt": "How we turned a dark, busy front room into a soft, layered space for slow evenings, without knocking down a single wall.",
+   "categories": [
+    "living-room",
+    "projects",
+    "shop-the-look"
+   ],
+   "tags": [
+    "neutral",
+    "oak",
+    "linen"
+   ],
+   "featured_media": "living",
+   "content": "<!-- wp:paragraph --><p>The brief for this Victorian terrace was simple: a living room that feels like an exhale. The owners work from home, so the room needed to separate the end of the day from everything before it.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>We started by removing rather than adding. Two bulky cabinets went, the curtains came down, and the walls went from grey-blue to a warm oat white that changes with the light.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">The palette</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Walls in warm oat, ceiling a shade lighter</li><!-- /wp:list-item --><!-- wp:list-item --><li>Pale oak for the coffee table and shelving</li><!-- /wp:list-item --><!-- wp:list-item --><li>Undyed linen, bouclé and wool for texture</li><!-- /wp:list-item --><!-- wp:list-item --><li>A single deep olive accent in the armchair</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:gallery {\"columns\":3,\"linkTo\":\"none\"} --><figure class=\"wp-block-gallery has-nested-images columns-3 is-cropped\"><!-- wp:image {\"id\":{{media_id:living}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:living}}\" alt=\"A calm living room with a linen sofa and oak table\" class=\"wp-image-{{media_id:living}}\"/><figcaption class=\"wp-element-caption\">The sofa now faces the fireplace, not the television.</figcaption></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:shelves}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:shelves}}\" alt=\"Oak shelves styled with ceramics and books\" class=\"wp-image-{{media_id:shelves}}\"/><figcaption class=\"wp-element-caption\">Shelves styled in groups of three.</figcaption></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:dining}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:dining}}\" alt=\"A dining corner with a round table\" class=\"wp-image-{{media_id:dining}}\"/><figcaption class=\"wp-element-caption\">The corner dining table borrows light from the bay window.</figcaption></figure><!-- /wp:image --></figure><!-- /wp:gallery -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Calm rooms are not empty rooms. They are rooms where everything has a reason.</p><!-- /wp:paragraph --><cite>From our studio notes</cite></blockquote><!-- /wp:quote -->\n\n<!-- wp:group {\"className\":\"shop-look\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group shop-look\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Living room</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"shop-list\"} --><ul class=\"wp-block-list shop-list\"><!-- wp:list-item --><li><span>Linen sofa, three seat<em>Natural, deep seat</em></span><span class=\"price\">&euro;1,890</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><span>Round oak coffee table<em>Oiled, 90 cm</em></span><span class=\"price\">&euro;640</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><span>Bouclé armchair<em>Olive</em></span><span class=\"price\">&euro;720</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><span>Paper floor lamp<em>Rice paper shade</em></span><span class=\"price\">&euro;210</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><span>Wool rug<em>Undyed, 200 &times; 300</em></span><span class=\"price\">&euro;480</span></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group -->",
+   "comments": [
+    {
+     "author": "Annelise",
+     "content": "That olive armchair against the oat walls is perfect.",
+     "date": "2026-10-17T12:30:00",
+     "email": "annelise@example.com"
+    },
+    {
+     "author": "Ravi",
+     "content": "What is the name of the wall colour?",
+     "date": "2026-10-18T08:10:00",
+     "email": "ravi@example.com"
+    }
+   ]
+  },
+  {
+   "slug": "before-and-after-galley-kitchen",
+   "title": "Before & After: The Galley Kitchen",
+   "date": "2026-09-29T10:00:00",
+   "excerpt": "A narrow 1970s kitchen with orange pine and no daylight became a bright workspace with a long oak counter. Here is how.",
+   "categories": [
+    "kitchen",
+    "before-after"
+   ],
+   "tags": [
+    "oak",
+    "small-spaces"
+   ],
+   "featured_media": "kitchen-after",
+   "content": "<!-- wp:paragraph --><p>Galley kitchens are often the hardest working room in a flat and the least loved. This one was 2.2 metres wide, lined with orange pine and lit by a single tube light.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>We kept the layout, which saved a great deal of plumbing, and focused on light, storage and one beautiful material.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns {\"align\":\"wide\",\"className\":\"before-after\"} --><div class=\"wp-block-columns alignwide before-after\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:kitchen-before}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:kitchen-before}}\" alt=\"The kitchen before, with dark pine units\" class=\"wp-image-{{media_id:kitchen-before}}\"/><figcaption class=\"wp-element-caption\">Before</figcaption></figure><!-- /wp:image --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:kitchen-after}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:kitchen-after}}\" alt=\"The kitchen after, with pale units and an oak counter\" class=\"wp-image-{{media_id:kitchen-after}}\"/><figcaption class=\"wp-element-caption\">After</figcaption></figure><!-- /wp:image --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What changed</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Flat-front units painted in a soft putty colour</li><!-- /wp:list-item --><!-- wp:list-item --><li>A continuous oak worktop running the full length</li><!-- /wp:list-item --><!-- wp:list-item --><li>Open shelves instead of upper cupboards on one wall</li><!-- /wp:list-item --><!-- wp:list-item --><li>Warm under-cabinet lighting and a linen-shaded pendant</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>Removing the upper cupboards on the window side made the biggest difference. Light now reaches the far end of the room for most of the day.</p><!-- /wp:paragraph -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Small rooms reward restraint. Choose one hero material and let it run.</p><!-- /wp:paragraph --><cite>Our lead designer</cite></blockquote><!-- /wp:quote -->",
+   "comments": [
+    {
+     "author": "Tomas",
+     "content": "We have nearly the same kitchen. This gives me hope!",
+     "date": "2026-09-30T19:00:00",
+     "email": "tomas@example.com"
+    }
+   ]
+  },
+  {
+   "slug": "layering-a-bedroom-in-linen",
+   "title": "Layering a Bedroom in Linen",
+   "date": "2026-09-12T08:30:00",
+   "excerpt": "Crumpled linen, soft wool and warm lamplight. Our guide to a bedroom that feels restful in every season.",
+   "categories": [
+    "bedroom",
+    "styling-tips",
+    "shop-the-look"
+   ],
+   "tags": [
+    "linen",
+    "neutral"
+   ],
+   "featured_media": "bedroom",
+   "content": "<!-- wp:paragraph --><p>A restful bedroom is mostly about texture. When the colours are quiet, layers of different fabrics keep the room from feeling flat.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>We like to build a bed from the bottom up: a fitted sheet in washed linen, a cotton percale duvet, a waffle blanket folded at the foot and two sizes of pillows.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Our layering formula</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>One crisp layer: cotton percale</li><!-- /wp:list-item --><!-- wp:list-item --><li>One soft layer: washed linen</li><!-- /wp:list-item --><!-- wp:list-item --><li>One textured layer: waffle or wool</li><!-- /wp:list-item --><!-- wp:list-item --><li>One accent: a single cushion in clay or ochre</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:image {\"id\":{{media_id:bedroom}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:bedroom}}\" alt=\"A bed layered in linen and wool with a wooden headboard\" class=\"wp-image-{{media_id:bedroom}}\"/></figure><!-- /wp:image -->\n\n<!-- wp:paragraph --><p>Lighting finishes the room. Swap the overhead light for two low lamps with warm bulbs and the room will feel different by tonight.</p><!-- /wp:paragraph -->\n\n<!-- wp:group {\"className\":\"shop-look\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group shop-look\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Bedroom</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"shop-list\"} --><ul class=\"wp-block-list shop-list\"><!-- wp:list-item --><li><span>Washed linen sheet set<em>Oat</em></span><span class=\"price\">&euro;180</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><span>Waffle blanket<em>Cotton, ecru</em></span><span class=\"price\">&euro;95</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><span>Clay cushion cover<em>Linen</em></span><span class=\"price\">&euro;38</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><span>Ceramic bedside lamp<em>Matte stone</em></span><span class=\"price\">&euro;160</span></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group -->",
+   "comments": []
+  },
+  {
+   "slug": "small-bathroom-spa-feeling",
+   "title": "A Small Bathroom with a Spa Feeling",
+   "date": "2026-08-25T11:00:00",
+   "excerpt": "Plaster-pink walls, a round mirror and handmade tiles brought warmth to a windowless bathroom. Before and after inside.",
+   "categories": [
+    "bathroom",
+    "before-after"
+   ],
+   "tags": [
+    "small-spaces",
+    "tiles"
+   ],
+   "featured_media": "bath-after",
+   "content": "<!-- wp:paragraph --><p>Windowless bathrooms can feel clinical. For this project we leaned into warmth: a pink plaster finish, a wall of handmade tiles and lighting at eye level instead of above.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns {\"align\":\"wide\",\"className\":\"before-after\"} --><div class=\"wp-block-columns alignwide before-after\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:bath-before}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:bath-before}}\" alt=\"The bathroom before, with white tiles and a strip light\" class=\"wp-image-{{media_id:bath-before}}\"/><figcaption class=\"wp-element-caption\">Before</figcaption></figure><!-- /wp:image --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:bath-after}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:bath-after}}\" alt=\"The bathroom after, with pink plaster and handmade tiles\" class=\"wp-image-{{media_id:bath-after}}\"/><figcaption class=\"wp-element-caption\">After</figcaption></figure><!-- /wp:image --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">The details</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Tadelakt-style plaster, sealed for wet areas</li><!-- /wp:list-item --><!-- wp:list-item --><li>Handmade zellige tiles behind the basin</li><!-- /wp:list-item --><!-- wp:list-item --><li>A round mirror with wall lights either side</li><!-- /wp:list-item --><!-- wp:list-item --><li>A teak stool for towels and plants</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>The whole renovation took three weeks. The plumbing stayed where it was, which kept the budget sensible.</p><!-- /wp:paragraph -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Light from the side is kinder than light from above. Especially at seven in the morning.</p><!-- /wp:paragraph --><cite>Studio rule</cite></blockquote><!-- /wp:quote -->",
+   "comments": [
+    {
+     "author": "Leah",
+     "content": "I did not know plaster could be used in a bathroom. Beautiful.",
+     "date": "2026-08-27T09:45:00",
+     "email": "leah@example.com"
+    }
+   ]
+  },
+  {
+   "slug": "balcony-garden-room",
+   "title": "A Balcony That Became a Garden Room",
+   "date": "2026-07-18T17:00:00",
+   "excerpt": "Four square metres, three pots of olive and one folding bistro set. Small outdoor spaces deserve design too.",
+   "categories": [
+    "outdoor"
+   ],
+   "tags": [
+    "small-spaces",
+    "plants"
+   ],
+   "featured_media": "balcony",
+   "content": "<!-- wp:paragraph --><p>A balcony is a room, just one with a better ceiling. We treat them the same way as any interior: zones, materials and lighting.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>This city balcony faces west, so it gets hot afternoon sun. We chose plants that like it dry and a slatted screen for privacy from the neighbours.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Plant list</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Olive trees in large terracotta pots</li><!-- /wp:list-item --><!-- wp:list-item --><li>Rosemary and thyme along the railing</li><!-- /wp:list-item --><!-- wp:list-item --><li>A trailing jasmine on the screen</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:image {\"id\":{{media_id:balcony}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:balcony}}\" alt=\"A small balcony with olive trees and a bistro set\" class=\"wp-image-{{media_id:balcony}}\"/></figure><!-- /wp:image -->\n\n<!-- wp:paragraph --><p>Solar string lights and an outdoor rug finish the space. It is now the most-used room in the flat from May to September.</p><!-- /wp:paragraph -->",
+   "comments": []
+  },
+  {
+   "slug": "five-rules-for-styling-shelves",
+   "title": "Five Rules for Styling Shelves",
+   "date": "2026-10-05T09:30:00",
+   "excerpt": "Open shelves can look serene or chaotic. These five simple rules from our studio make the difference.",
+   "categories": [
+    "styling-tips"
+   ],
+   "tags": [
+    "styling",
+    "ceramics"
+   ],
+   "featured_media": "shelves",
+   "content": "<!-- wp:paragraph --><p>Every client asks us about shelves. They are the place where a home shows its personality, and the place where clutter gathers fastest.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">The rules</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Start with books, laid both upright and in small stacks.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Group objects in threes of different heights.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Leave a third of each shelf empty.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Repeat one colour across the whole unit.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Add one living thing: a plant or a branch in a vase.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:image {\"id\":{{media_id:shelves}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:shelves}}\" alt=\"Oak shelves with books, ceramics and a plant\" class=\"wp-image-{{media_id:shelves}}\"/></figure><!-- /wp:image -->\n\n<!-- wp:paragraph --><p>Step back and squint. If your eye knows where to rest, you are done. If it jumps around, take one thing away.</p><!-- /wp:paragraph -->\n\n<!-- wp:pullquote --><figure class=\"wp-block-pullquote\"><blockquote><p>When in doubt, remove one object.</p></blockquote></figure><!-- /wp:pullquote -->\n\n<!-- wp:paragraph --><p>Most of all, use your shelves to tell your story. A pebble from a holiday or a bowl a friend made says more than anything bought to fill a gap.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Ines",
+     "content": "The empty third rule changed my bookcase completely.",
+     "date": "2026-10-07T20:15:00",
+     "email": "ines@example.com"
+    }
+   ]
+  },
+  {
+   "slug": "choosing-a-warm-white-paint",
+   "title": "Choosing a Warm White Paint",
+   "date": "2026-06-30T10:00:00",
+   "excerpt": "There are hundreds of whites. Here is how we choose the right one for north-facing, south-facing and everything in between.",
+   "categories": [
+    "styling-tips"
+   ],
+   "tags": [
+    "paint",
+    "neutral"
+   ],
+   "featured_media": "paint",
+   "content": "<!-- wp:paragraph --><p>White is never just white. It takes on the colour of the light, the floor and even the trees outside the window.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>In north-facing rooms, cool light makes many whites look grey. Choose a white with a yellow or red base. In south-facing rooms you can go cleaner and cooler.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">How to test</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Paint large swatches, at least A3, on two walls.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Look at them in the morning, afternoon and under lamps.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Hold them next to your floor and largest furniture.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Live with them for three days before deciding.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:image {\"id\":{{media_id:paint}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:paint}}\" alt=\"Paint swatches in warm whites and neutrals\" class=\"wp-image-{{media_id:paint}}\"/></figure><!-- /wp:image -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>If you cannot decide between two whites, choose the warmer one.</p><!-- /wp:paragraph --><cite>Our colour consultant</cite></blockquote><!-- /wp:quote -->",
+   "comments": []
+  },
+  {
+   "slug": "a-reading-nook-under-the-stairs",
+   "title": "A Reading Nook Under the Stairs",
+   "date": "2026-08-08T14:00:00",
+   "excerpt": "An awkward triangle of wasted space became the favourite spot in the house, with a built-in bench, a wall light and a lot of cushions.",
+   "categories": [
+    "living-room",
+    "projects",
+    "shop-the-look"
+   ],
+   "tags": [
+    "small-spaces",
+    "oak"
+   ],
+   "featured_media": "nook",
+   "content": "<!-- wp:paragraph --><p>Under-stair spaces usually end up as storage for coats, shoes and things nobody wants to sort. In this family home we gave the space a better job.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>A built-in oak bench with drawers underneath keeps the storage, while a thick cushion and a stack of pillows invite you to stay.</p><!-- /wp:paragraph -->\n\n<!-- wp:image {\"id\":{{media_id:nook}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:nook}}\" alt=\"A reading nook with a cushioned bench and a wall lamp\" class=\"wp-image-{{media_id:nook}}\"/></figure><!-- /wp:image -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Make your own</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Measure the lowest headroom and keep the seat beneath it.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Use a wall light so the bench stays free.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Paint the nook a shade darker than the hall for a cocooning feel.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:group {\"className\":\"shop-look\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group shop-look\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Reading nook</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"shop-list\"} --><ul class=\"wp-block-list shop-list\"><!-- wp:list-item --><li><span>Bench cushion<em>Made to measure, linen</em></span><span class=\"price\">&euro;240</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><span>Brass wall light<em>With switch</em></span><span class=\"price\">&euro;130</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><span>Wool throw<em>Ochre</em></span><span class=\"price\">&euro;110</span></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group -->\n\n<!-- wp:paragraph --><p>The whole project took a carpenter four days. It is now where the children read after school and where their parents hide with a coffee on Sunday mornings.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Ben",
+     "content": "Our kids would never leave this spot.",
+     "date": "2026-08-10T16:40:00",
+     "email": "ben@example.com"
+    }
+   ]
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Rooms",
+     "page": "rooms-gallery",
+     "children": [
+      {
+       "category": "living-room"
+      },
+      {
+       "category": "kitchen"
+      },
+      {
+       "category": "bedroom"
+      },
+      {
+       "category": "bathroom"
+      },
+      {
+       "category": "outdoor"
+      }
+     ]
+    },
+    {
+     "title": "Journal",
+     "page": "journal",
+     "children": [
+      {
+       "category": "before-after"
+      },
+      {
+       "category": "styling-tips"
+      },
+      {
+       "category": "shop-the-look"
+      }
+     ]
+    },
+    {
+     "title": "Services",
+     "page": "services"
+    },
+    {
+     "title": "Studio",
+     "page": "about",
+     "children": [
+      {
+       "page": "contact"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Social",
+   "location": "social",
+   "items": [
+    {
+     "title": "Instagram",
+     "url": "https://instagram.com/"
+    },
+    {
+     "title": "Pinterest",
+     "url": "https://pinterest.com/"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "sidebar-1": [
+   "<!-- wp:search {\"label\":\"Search\",\"placeholder\":\"Rooms, colours&hellip;\",\"buttonText\":\"Search\"} /-->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Rooms</h2><!-- /wp:heading --><!-- wp:categories {\"showPostCounts\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Details</h2><!-- /wp:heading --><!-- wp:tag-cloud /--></div><!-- /wp:group -->"
+  ],
+  "footer-1": [
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Explore</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><a href=\"{{page:rooms-gallery}}\">Room by room</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{category:before-after}}\">Before &amp; after</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{category:shop-the-look}}\">Shop the look</a></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Studio</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><a href=\"{{page:services}}\">Services</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{page:about}}\">About</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{page:contact}}\">Contact</a></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Visit</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Atelier 4, The Old Mill<br>By appointment, Tuesday to Friday</p><!-- /wp:paragraph --></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "hero_image": "hero",
+  "hero_caption": "Interior design studio",
+  "post_layout": "masonry",
+  "header_style": "split",
+  "show_frame": false
+ }
+}

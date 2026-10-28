@@ -1,0 +1,37 @@
+@font-face { font-family: "Marcellus"; src: url("fonts/marcellus.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Albert Sans"; src: url("fonts/albert-sans.woff2") format("woff2"); font-weight: 300 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Albert Sans"; src: url("fonts/albert-sans-italic.woff2") format("woff2"); font-weight: 300 500; font-style: italic; font-display: swap; }
+
+:root, .editor-styles-wrapper {
+	--bg: #f8f5f0;
+	--surface: #ece5da;
+	--paper: #ffffff;
+	--text: #2e2b28;
+	--heading: #23201d;
+	--muted: #756d64;
+	--accent: #8a5d42;
+	--accent-ink: #ffffff;
+	--accent-hover: #23201d;
+	--taupe: #a89886;
+	--sage: #b7bfa8;
+	--line: #e0d8cc;
+	--field-bg: #ffffff;
+	--font-body: "Albert Sans", "Helvetica Neue", Arial, sans-serif;
+	--font-head: "Marcellus", "Optima", "Candara", Georgia, serif;
+	--radius: 2px;
+	--radius-sm: 2px;
+	--btn-radius: 0;
+	--wrap: 1280px;
+	--content: 680px;
+	--single: 760px;
+	--gap: 3rem 2.5rem;
+}
+
+.editor-styles-wrapper { background: var(--bg); color: var(--text); font-family: var(--font-body); line-height: 1.7; }
+.editor-styles-wrapper h1, .editor-styles-wrapper h2, .editor-styles-wrapper .editor-post-title__input { font-family: var(--font-head); font-weight: 400; }
+.editor-styles-wrapper h3 { font-size: .8rem; text-transform: uppercase; letter-spacing: .2em; }
+.editor-styles-wrapper a { color: var(--accent); }
+.editor-styles-wrapper .wp-block-quote { border: 0; text-align: center; font-family: var(--font-head); font-size: 1.6rem; }
+.editor-styles-wrapper .wp-block-button__link { background: var(--heading); color: #fff; border-radius: 0; text-transform: uppercase; letter-spacing: .16em; font-size: .78rem; }
+.editor-styles-wrapper .shop-look { background: var(--surface); padding: 1.5rem; }
+.editor-styles-wrapper .shop-list { list-style: decimal-leading-zero; }

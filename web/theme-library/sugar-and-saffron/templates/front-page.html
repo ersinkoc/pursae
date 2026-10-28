@@ -1,0 +1,22 @@
+{{template "header" .}}
+<main id="main" class="site-main site-main--front" tabindex="-1">
+{{with .Post}}{{$img := theme_mod $ "hero_image"}}{{if not $img}}{{$img = .ThumbnailURL}}{{end}}
+	<article id="post-{{.ID}}" class="{{.Class}} entry entry--front">
+		<section class="baker-hero{{if $img}} baker-hero--has-media{{end}}" aria-labelledby="front-title">
+			<div class="wrap baker-hero__inner">
+				{{if $img}}<figure class="baker-hero__media"><img src="{{$img}}" alt="" /></figure>{{end}}
+				<div class="baker-hero__text">
+					{{with theme_mod $ "hero_kicker"}}<p class="baker-hero__hello">{{.}}</p>{{end}}
+					<h1 id="front-title" class="baker-hero__title">{{.Title}}</h1>
+					{{with .Excerpt}}<div class="baker-hero__lead">{{.}}</div>{{end}}
+				</div>
+			</div>
+		</section>
+		<div class="entry-content front-content">
+			{{.Content}}
+		</div>
+		{{with .EditLink}}<footer class="wrap entry-footer"><span class="edit-link">{{.}}</span></footer>{{end}}
+	</article>
+{{end}}
+</main><!-- #main -->
+{{template "footer" .}}

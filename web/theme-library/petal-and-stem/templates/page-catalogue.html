@@ -1,0 +1,18 @@
+{{template "header" .}}
+<main id="main" class="site-main site-main--page site-main--wide" tabindex="-1">
+{{with .Post}}
+	<article id="post-{{.ID}}" class="{{.Class}} entry entry--page entry--wide catalogue">
+		<header class="page-header page-header--page page-header--catalogue">
+			<div class="wrap">
+				<h1 class="page-title entry-title">{{.Title}}</h1>
+				{{with .Excerpt}}<div class="page-header__lead">{{.}}</div>{{end}}
+			</div>
+		</header>
+		<div class="entry-content">
+			{{.Content}}
+		</div>
+		{{with .EditLink}}<footer class="entry-footer wrap wrap--content"><span class="edit-link">{{.}}</span></footer>{{end}}
+	</article>
+{{end}}
+</main><!-- #main -->
+{{template "footer" .}}
