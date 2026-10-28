@@ -1,0 +1,425 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Archform",
+  "blogdescription": "Architecture studio, Westmere"
+ },
+ "categories": [
+  {
+   "slug": "projects",
+   "name": "Projects",
+   "description": "Buildings and landscapes by the studio."
+  },
+  {
+   "slug": "essays",
+   "name": "Essays",
+   "description": "Notes on light, materials and making."
+  },
+  {
+   "slug": "materials",
+   "name": "Materials",
+   "description": "Concrete, timber, stone and steel."
+  },
+  {
+   "slug": "studio",
+   "name": "Studio",
+   "description": "How we work."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "light",
+   "name": "Light"
+  },
+  {
+   "slug": "threshold",
+   "name": "Threshold"
+  },
+  {
+   "slug": "concrete",
+   "name": "Concrete"
+  },
+  {
+   "slug": "residential",
+   "name": "Residential"
+  },
+  {
+   "slug": "civic",
+   "name": "Civic"
+  },
+  {
+   "slug": "process",
+   "name": "Process"
+  },
+  {
+   "slug": "landscape",
+   "name": "Landscape"
+  }
+ ],
+ "media": [
+  {
+   "id": "hero",
+   "file": "demo/images/hero.jpg",
+   "alt": "A concrete house with deep rectangular openings in raking light",
+   "caption": ""
+  },
+  {
+   "id": "stair",
+   "file": "demo/images/stair.jpg",
+   "alt": "A concrete stair rising towards a bright opening",
+   "caption": ""
+  },
+  {
+   "id": "facade",
+   "file": "demo/images/facade.jpg",
+   "alt": "A concrete façade of deep square window reveals",
+   "caption": ""
+  },
+  {
+   "id": "arch",
+   "file": "demo/images/arch.jpg",
+   "alt": "A single deep arch cut into a pale concrete wall",
+   "caption": ""
+  },
+  {
+   "id": "courtyard",
+   "file": "demo/images/courtyard.jpg",
+   "alt": "A slot of light falling across a dark courtyard",
+   "caption": ""
+  },
+  {
+   "id": "tower",
+   "file": "demo/images/tower.jpg",
+   "alt": "A slender dark tower against a pale sky",
+   "caption": ""
+  },
+  {
+   "id": "beams",
+   "file": "demo/images/beams.jpg",
+   "alt": "A ceiling of deep beams converging on a bright window",
+   "caption": ""
+  },
+  {
+   "id": "cantilever",
+   "file": "demo/images/cantilever.jpg",
+   "alt": "A long horizontal house cantilevered over a hillside",
+   "caption": ""
+  },
+  {
+   "id": "pavilion",
+   "file": "demo/images/pavilion.jpg",
+   "alt": "A thin roof plane on slender columns beside water",
+   "caption": ""
+  },
+  {
+   "id": "model",
+   "file": "demo/images/model.jpg",
+   "alt": "A white study model of three volumes on a table",
+   "caption": ""
+  },
+  {
+   "id": "sketch",
+   "file": "demo/images/sketch.jpg",
+   "alt": "Construction lines and a house outline sketched on paper",
+   "caption": ""
+  },
+  {
+   "id": "concrete",
+   "file": "demo/images/concrete.jpg",
+   "alt": "Board-marked concrete with tie holes",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Quiet buildings, made to last",
+   "content": "<!-- wp:paragraph {\"className\":\"statement\"} --><p class=\"statement\">We design buildings that are <em>quiet</em>, durable and generous with light: houses, libraries and workplaces made from few materials, carefully joined.</p><!-- /wp:paragraph -->\n\n<!-- wp:separator --><hr class=\"wp-block-separator has-alpha-channel-opacity\"/><!-- /wp:separator -->\n\n<!-- wp:group {\"anchor\":\"index\",\"align\":\"full\",\"layout\":{\"type\":\"constrained\"}} --><div id=\"index\" class=\"wp-block-group alignfull\"><!-- wp:paragraph {\"className\":\"kicker\"} --><p class=\"kicker\">Project index</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">Selected work, 2022–2026</h2><!-- /wp:heading --><!-- wp:table {\"className\":\"project-index\"} --><figure class=\"wp-block-table project-index\"><table><thead><tr><th>No.</th><th>Project</th><th>Type</th><th>Place</th><th>Year</th></tr></thead><tbody><tr><td>01</td><td>House on the Ridge</td><td>Residential</td><td>Westmere Hills</td><td>2026</td></tr><tr><td>02</td><td>Kiln Lane Library</td><td>Civic</td><td>Westmere</td><td>2025</td></tr><tr><td>03</td><td>Lakeside Pavilion</td><td>Landscape</td><td>Lake Orra</td><td>2025</td></tr><tr><td>04</td><td>Foundry Yard Studios</td><td>Workplace</td><td>Westmere</td><td>2024</td></tr><tr><td>05</td><td>Chapel of Light</td><td>Sacred</td><td>Eastvale</td><td>2023</td></tr><tr><td>06</td><td>Tower 9 Housing</td><td>Housing</td><td>Northbank</td><td>2022</td></tr></tbody></table></figure><!-- /wp:table --></div><!-- /wp:group -->\n\n<!-- wp:columns {\"align\":\"wide\",\"className\":\"duo\"} --><div class=\"wp-block-columns alignwide duo\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:cantilever}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:cantilever}}\" alt=\"House on the Ridge\" class=\"wp-image-{{media_id:cantilever}}\"/><figcaption class=\"wp-element-caption\">House on the Ridge <span>2026</span></figcaption></figure><!-- /wp:image --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:pavilion}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:pavilion}}\" alt=\"Lakeside Pavilion\" class=\"wp-image-{{media_id:pavilion}}\"/><figcaption class=\"wp-element-caption\">Lakeside Pavilion <span>2025</span></figcaption></figure><!-- /wp:image --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:image {\"id\":{{media_id:courtyard}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"align\":\"wide\",\"className\":\"wide-plate\"} --><figure class=\"wp-block-image alignwide size-large wide-plate\"><img src=\"{{media:courtyard}}\" alt=\"Light in the courtyard of the Chapel of Light\" class=\"wp-image-{{media_id:courtyard}}\"/><figcaption class=\"wp-element-caption\">Chapel of Light, courtyard <span>2023</span></figcaption></figure><!-- /wp:image -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"section-ink\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-ink\"><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column {\"width\":\"34%\"} --><div class=\"wp-block-column\" style=\"flex-basis:34%\"><!-- wp:paragraph {\"className\":\"kicker\"} --><p class=\"kicker\">Recognition</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">Awards</h2><!-- /wp:heading --></div><!-- /wp:column --><!-- wp:column {\"width\":\"66%\"} --><div class=\"wp-block-column\" style=\"flex-basis:66%\"><!-- wp:table {\"className\":\"awards is-style-left\"} --><figure class=\"wp-block-table awards is-style-left\"><table><thead><tr><th>Year</th><th>Award</th><th>Project</th></tr></thead><tbody><tr><td>2026</td><td>Regional Architecture Prize, Residential</td><td>House on the Ridge</td></tr><tr><td>2025</td><td>Civic Trust Award</td><td>Kiln Lane Library</td></tr><tr><td>2025</td><td>Concrete Society, Commendation</td><td>Lakeside Pavilion</td></tr><tr><td>2024</td><td>Young Practice of the Year, shortlist</td><td>Studio</td></tr><tr><td>2023</td><td>Sacred Spaces Award</td><td>Chapel of Light</td></tr></tbody></table></figure><!-- /wp:table --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull\"><!-- wp:paragraph {\"className\":\"kicker\"} --><p class=\"kicker\">Journal</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">Essays on making</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":3,\"displayPostDate\":true,\"postLayout\":\"grid\",\"columns\":3,\"displayPostContent\":true,\"excerptLength\":22} /--></div><!-- /wp:group -->",
+   "featured_media": "hero",
+   "front_page": true
+  },
+  {
+   "slug": "journal",
+   "title": "Journal",
+   "content": "",
+   "posts_page": true
+  },
+  {
+   "slug": "projects",
+   "title": "Projects",
+   "content": "<!-- wp:paragraph {\"className\":\"statement\"} --><p class=\"statement\">Six recent works. Each began with a site visit at dawn and a list of what should <em>not</em> change.</p><!-- /wp:paragraph -->\n\n<!-- wp:table {\"className\":\"project-index\"} --><figure class=\"wp-block-table project-index\"><table><thead><tr><th>No.</th><th>Project</th><th>Type</th><th>Place</th><th>Year</th></tr></thead><tbody><tr><td>01</td><td>House on the Ridge</td><td>Residential</td><td>Westmere Hills</td><td>2026</td></tr><tr><td>02</td><td>Kiln Lane Library</td><td>Civic</td><td>Westmere</td><td>2025</td></tr><tr><td>03</td><td>Lakeside Pavilion</td><td>Landscape</td><td>Lake Orra</td><td>2025</td></tr><tr><td>04</td><td>Foundry Yard Studios</td><td>Workplace</td><td>Westmere</td><td>2024</td></tr><tr><td>05</td><td>Chapel of Light</td><td>Sacred</td><td>Eastvale</td><td>2023</td></tr><tr><td>06</td><td>Tower 9 Housing</td><td>Housing</td><td>Northbank</td><td>2022</td></tr></tbody></table></figure><!-- /wp:table -->\n\n<!-- wp:image {\"id\":{{media_id:hero}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"align\":\"wide\",\"className\":\"wide-plate\"} --><figure class=\"wp-block-image alignwide size-large wide-plate\"><img src=\"{{media:hero}}\" alt=\"House on the Ridge\" class=\"wp-image-{{media_id:hero}}\"/><figcaption class=\"wp-element-caption\">01 — House on the Ridge <span>Westmere Hills, 2026</span></figcaption></figure><!-- /wp:image -->\n\n<!-- wp:columns {\"align\":\"wide\",\"className\":\"duo\"} --><div class=\"wp-block-columns alignwide duo\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:facade}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:facade}}\" alt=\"Kiln Lane Library façade\" class=\"wp-image-{{media_id:facade}}\"/><figcaption class=\"wp-element-caption\">02 — Kiln Lane Library <span>2025</span></figcaption></figure><!-- /wp:image --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:stair}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:stair}}\" alt=\"Foundry Yard Studios stair\" class=\"wp-image-{{media_id:stair}}\"/><figcaption class=\"wp-element-caption\">04 — Foundry Yard Studios <span>2024</span></figcaption></figure><!-- /wp:image --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:columns {\"align\":\"wide\",\"className\":\"duo\"} --><div class=\"wp-block-columns alignwide duo\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:arch}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:arch}}\" alt=\"Chapel of Light entrance\" class=\"wp-image-{{media_id:arch}}\"/><figcaption class=\"wp-element-caption\">05 — Chapel of Light <span>2023</span></figcaption></figure><!-- /wp:image --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:tower}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:tower}}\" alt=\"Tower 9 Housing\" class=\"wp-image-{{media_id:tower}}\"/><figcaption class=\"wp-element-caption\">06 — Tower 9 Housing <span>2022</span></figcaption></figure><!-- /wp:image --></div><!-- /wp:column --></div><!-- /wp:columns -->",
+   "template": "page-wide",
+   "menu_order": 1
+  },
+  {
+   "slug": "studio",
+   "title": "Studio",
+   "content": "<!-- wp:paragraph {\"className\":\"statement\"} --><p class=\"statement\">Archform is a studio of nine architects working from a former foundry in Westmere. We take on few projects at a time and see each one through to the last detail.</p><!-- /wp:paragraph -->\n\n<!-- wp:image {\"id\":{{media_id:model}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:model}}\" alt=\"A white study model\" class=\"wp-image-{{media_id:model}}\"/><figcaption class=\"wp-element-caption\">Every project is tested in white card models before it is drawn in detail.</figcaption></figure><!-- /wp:image -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Principles</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"className\":\"facts\"} --><ul class=\"wp-block-list facts\"><!-- wp:list-item --><li>Build less, and build it well.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Use a small palette of honest materials.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Design for the light of the site, at every hour.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Make buildings that are easy to repair.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Practice</h2><!-- /wp:heading -->\n\n<!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Services</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Feasibility, architecture, interiors, landscape coordination and site supervision.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Team</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Nine architects, two model makers and a studio dog. We collaborate with the same engineers on most projects.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->",
+   "template": "page-wide",
+   "menu_order": 2
+  },
+  {
+   "slug": "awards",
+   "title": "Awards",
+   "content": "<!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">Prizes are not why we work, but they are a welcome sign that a building is doing its job.</p><!-- /wp:paragraph -->\n\n<!-- wp:table {\"className\":\"awards is-style-left\"} --><figure class=\"wp-block-table awards is-style-left\"><table><thead><tr><th>Year</th><th>Award</th><th>Project</th></tr></thead><tbody><tr><td>2026</td><td>Regional Architecture Prize, Residential</td><td>House on the Ridge</td></tr><tr><td>2025</td><td>Civic Trust Award</td><td>Kiln Lane Library</td></tr><tr><td>2025</td><td>Concrete Society, Commendation</td><td>Lakeside Pavilion</td></tr><tr><td>2024</td><td>Young Practice of the Year, shortlist</td><td>Studio</td></tr><tr><td>2023</td><td>Sacred Spaces Award</td><td>Chapel of Light</td></tr><tr><td>2022</td><td>Housing Design Award</td><td>Tower 9 Housing</td></tr></tbody></table></figure><!-- /wp:table -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Publications</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"className\":\"facts\"} --><ul class=\"wp-block-list facts\"><!-- wp:list-item --><li><em>Quiet Concrete</em>, monograph, 2025</li><!-- /wp:list-item --><!-- wp:list-item --><li>Feature: Kiln Lane Library, quarterly architecture review, 2025</li><!-- /wp:list-item --><!-- wp:list-item --><li>Essay: \"On Thresholds\", studio journal, 2024</li><!-- /wp:list-item --></ul><!-- /wp:list -->",
+   "parent": "studio",
+   "menu_order": 3
+  },
+  {
+   "slug": "contact",
+   "title": "Contact",
+   "content": "<!-- wp:paragraph {\"className\":\"statement\"} --><p class=\"statement\">We take on four to six new commissions a year. Tell us about your site and your intentions; we reply to every enquiry personally.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Studio</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Studio 4, Foundry Yard<br>18 Kiln Lane<br>Westmere</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Write</h3><!-- /wp:heading --><!-- wp:paragraph --><p><a href=\"mailto:studio@archform.example\">studio@archform.example</a><br><a href=\"tel:+15550192200\">+1 (555) 019-2200</a></p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->",
+   "menu_order": 4
+  }
+ ],
+ "posts": [
+  {
+   "slug": "on-thresholds",
+   "title": "On thresholds",
+   "date": "2026-10-19T08:00:00",
+   "categories": [
+    "essays"
+   ],
+   "tags": [
+    "light",
+    "threshold"
+   ],
+   "featured_media": "arch",
+   "excerpt": "The moment between outside and inside is the most important square metre of a building.",
+   "content": "<!-- wp:paragraph --><p>Every building has a moment where the outside world stops and the inside begins. We call it the threshold, and we spend more time on it than on any other square metre of a project.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>A good threshold slows you down. It might be a deep reveal in a thick wall, a change in floor material, a step, or simply a drop in light. It tells your body that something is about to change.</p><!-- /wp:paragraph -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>A door is a hinge in time as much as in space.</p><!-- /wp:paragraph --><cite>Studio notebook</cite></blockquote><!-- /wp:quote -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Three thresholds we return to</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><strong>The deep reveal.</strong> A wall thick enough to stand inside.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>The low ceiling.</strong> A compressed entry before a tall room.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>The turn.</strong> A path that makes you face the light before you enter.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:image {\"id\":{{media_id:courtyard}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:courtyard}}\" alt=\"Light falling into a courtyard\" class=\"wp-image-{{media_id:courtyard}}\"/><figcaption class=\"wp-element-caption\">Chapel of Light: the threshold is a courtyard you cross in shade.</figcaption></figure><!-- /wp:image -->\n\n<!-- wp:paragraph --><p>None of these costs much. They cost attention, which is the only thing a small studio can promise in unlimited quantity.</p><!-- /wp:paragraph -->",
+   "sticky": true,
+   "format": "standard",
+   "comments": [
+    {
+     "author": "M. Lindqvist",
+     "email": "ml@example.com",
+     "content": "Beautifully put. The compressed entry before the tall room is everything.",
+     "date": "2026-10-20T07:44:00"
+    }
+   ]
+  },
+  {
+   "slug": "house-on-the-ridge",
+   "title": "House on the Ridge",
+   "date": "2026-10-02T09:00:00",
+   "categories": [
+    "projects"
+   ],
+   "tags": [
+    "concrete",
+    "residential"
+   ],
+   "featured_media": "cantilever",
+   "excerpt": "A single concrete bar, cantilevered six metres over the slope, frames one view and hides all the others.",
+   "content": "<!-- wp:paragraph --><p>The site was a steep ridge with a view in every direction. Our clients asked for all of them. We gave them one, framed by a single concrete bar that reaches six metres beyond the slope.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">The plan</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Bedrooms sit in the half anchored to the hill. The living room occupies the cantilever, with a single window the full width of the room. From the sofa you see sky and the far valley, never the neighbours.</p><!-- /wp:paragraph -->\n\n<!-- wp:list {\"className\":\"facts\"} --><ul class=\"wp-block-list facts\"><!-- wp:list-item --><li>Board-marked concrete, left untreated</li><!-- /wp:list-item --><!-- wp:list-item --><li>Oak floors and joinery</li><!-- /wp:list-item --><!-- wp:list-item --><li>One window, 11 metres wide</li><!-- /wp:list-item --><!-- wp:list-item --><li>Ground-source heating and a green roof</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Choosing one view made the house feel bigger than showing them all.</p><!-- /wp:paragraph --><cite>Project architect</cite></blockquote><!-- /wp:quote -->",
+   "sticky": false,
+   "format": "standard",
+   "comments": []
+  },
+  {
+   "slug": "concrete-that-ages-well",
+   "title": "Concrete that ages well",
+   "date": "2026-09-18T10:00:00",
+   "categories": [
+    "essays",
+    "materials"
+   ],
+   "tags": [
+    "concrete"
+   ],
+   "featured_media": "concrete",
+   "excerpt": "Board marks, tie holes and rain stains: designing concrete to look better in twenty years than on opening day.",
+   "content": "<!-- wp:paragraph --><p>Concrete has a reputation for ageing badly. Most of the time the material is not to blame; the detailing is. Water, more than time, decides how a concrete building looks in twenty years.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What we do</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Shape every top edge so rain drips clear of the façade.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Use rough board-marked formwork so stains read as texture.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Set tie holes on a deliberate grid.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Avoid paint and sealers that peel.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>The result is a surface that records the weather slowly and evenly, like stone.</p><!-- /wp:paragraph -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Design the stain before the rain designs it for you.</p><!-- /wp:paragraph --><cite>Studio maxim</cite></blockquote><!-- /wp:quote -->",
+   "sticky": false,
+   "format": "standard",
+   "comments": [
+    {
+     "author": "R. Okoye",
+     "email": "ro@example.com",
+     "content": "The drip-edge point is underrated. Thank you for sharing your details.",
+     "date": "2026-09-19T12:00:00"
+    }
+   ]
+  },
+  {
+   "slug": "kiln-lane-library",
+   "title": "Kiln Lane Library",
+   "date": "2026-09-04T08:30:00",
+   "categories": [
+    "projects"
+   ],
+   "tags": [
+    "civic",
+    "light"
+   ],
+   "featured_media": "facade",
+   "excerpt": "A neighbourhood library behind a façade of deep reveals, where the reading room is lit from above.",
+   "content": "<!-- wp:paragraph --><p>Kiln Lane Library sits on a busy street. We wanted it to feel open without exposing readers to the traffic. The answer was a façade of deep square reveals: transparent when you face it, almost solid when you pass at an angle.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Inside</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>The reading room is lit by north-facing rooflights, so the light is even all day and never falls on a page. The children's library opens onto a small walled garden.</p><!-- /wp:paragraph -->\n\n<!-- wp:image {\"id\":{{media_id:beams}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:beams}}\" alt=\"Deep beams over the reading room\" class=\"wp-image-{{media_id:beams}}\"/><figcaption class=\"wp-element-caption\">The reading room: deep beams soften the light from the rooflights.</figcaption></figure><!-- /wp:image -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>A library should feel like a shelter from the street, not a shop window.</p><!-- /wp:paragraph --><cite>Project architect</cite></blockquote><!-- /wp:quote -->\n\n<!-- wp:paragraph --><p>The library opened in 2025 and now lends more books than any other branch in the city.</p><!-- /wp:paragraph -->",
+   "sticky": false,
+   "format": "standard",
+   "comments": []
+  },
+  {
+   "slug": "drawing-by-hand",
+   "title": "Why we still draw by hand",
+   "date": "2026-08-21T09:00:00",
+   "categories": [
+    "essays",
+    "studio"
+   ],
+   "tags": [
+    "process"
+   ],
+   "featured_media": "sketch",
+   "excerpt": "Every project starts with a soft pencil and tracing paper. Here is why we have not given it up.",
+   "content": "<!-- wp:paragraph --><p>Our studio runs on the same software as everyone else. But every project still begins on tracing paper, with a soft pencil and a scale ruler.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>A hand drawing is honest about its uncertainty. A wobbly line invites a question; a crisp digital line looks finished long before it is.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What the pencil is good for</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Testing many ideas quickly, without committing to any.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Drawing light and shadow, which are hard to fake on screen.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Talking with clients across a table rather than a monitor.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>The computer is for being right. The pencil is for being curious.</p><!-- /wp:paragraph --><cite>Studio partner</cite></blockquote><!-- /wp:quote -->",
+   "sticky": false,
+   "format": "standard",
+   "comments": []
+  },
+  {
+   "slug": "lakeside-pavilion",
+   "title": "Lakeside Pavilion",
+   "date": "2026-08-07T10:00:00",
+   "categories": [
+    "projects"
+   ],
+   "tags": [
+    "landscape"
+   ],
+   "featured_media": "pavilion",
+   "excerpt": "A roof plane eleven centimetres thick, eight slender columns and nothing else.",
+   "content": "<!-- wp:paragraph --><p>The pavilion is a shelter for walkers on the lake path. It is a single roof plane, eleven centimetres thick, resting on eight steel columns. There are no walls.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>We spent most of the design time on the edge of the roof. It had to be thin enough to disappear against the water, and stiff enough to span twelve metres.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Facts</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"className\":\"facts\"} --><ul class=\"wp-block-list facts\"><!-- wp:list-item --><li>Span: 12 m</li><!-- /wp:list-item --><!-- wp:list-item --><li>Roof: post-tensioned concrete, 110 mm</li><!-- /wp:list-item --><!-- wp:list-item --><li>Columns: solid steel, 90 mm diameter</li><!-- /wp:list-item --><!-- wp:list-item --><li>Cost: less than a single family car park</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>On still mornings the underside of the roof reflects the water, and the pavilion seems to float.</p><!-- /wp:paragraph -->",
+   "sticky": false,
+   "format": "standard",
+   "comments": [
+    {
+     "author": "J. Aalto-Price",
+     "email": "jap@example.com",
+     "content": "Walked under it last weekend. The thin edge really does disappear against the lake.",
+     "date": "2026-08-10T11:05:00"
+    }
+   ]
+  },
+  {
+   "slug": "the-white-model",
+   "title": "The white model",
+   "date": "2026-07-24T09:30:00",
+   "categories": [
+    "studio"
+   ],
+   "tags": [
+    "process"
+   ],
+   "featured_media": "model",
+   "excerpt": "Before colour, before material, a building has to work as pure form. Our card models test exactly that.",
+   "content": "<!-- wp:paragraph --><p>Every project in the studio is built at least once as a white card model. No colour, no texture, no people: just volumes, openings and light.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>White models are cruel. A weak proportion has nowhere to hide. If a building works in white card under a desk lamp, it will usually work in stone in the sun.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Our rules for models</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Same scale for every option, so they can be compared.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Photograph each one at the site's sunrise angle.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Never throw one away until the building is finished.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>The model is the first building. The real one is the second attempt.</p><!-- /wp:paragraph --><cite>Model maker</cite></blockquote><!-- /wp:quote -->",
+   "sticky": false,
+   "format": "standard",
+   "comments": []
+  },
+  {
+   "slug": "stairs-as-rooms",
+   "title": "Stairs as rooms",
+   "date": "2026-07-09T08:00:00",
+   "categories": [
+    "essays"
+   ],
+   "tags": [
+    "light"
+   ],
+   "featured_media": "stair",
+   "excerpt": "A stair can be the most generous space in a building, if it is given light and room to pause.",
+   "content": "<!-- wp:paragraph --><p>In most buildings the stair is a shaft hidden behind a fire door. In ours it is often the best room in the house.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>A stair is where you move between worlds: from the street to the bedroom, from work to rest. Given width, a window and a landing to stop on, it becomes a place rather than a route.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What makes a good stair</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>A gentle pitch: low risers and deep treads.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Daylight at the top, drawing you up.</li><!-- /wp:list-item --><!-- wp:list-item --><li>A landing wide enough for a chair.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:image {\"id\":{{media_id:stair}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:stair}}\" alt=\"A concrete stair rising to the light\" class=\"wp-image-{{media_id:stair}}\"/><figcaption class=\"wp-element-caption\">Foundry Yard Studios: the stair is lit from a rooflight at the top.</figcaption></figure><!-- /wp:image -->\n\n<!-- wp:paragraph --><p>When a client asks where to save money, we rarely suggest the stair.</p><!-- /wp:paragraph -->",
+   "sticky": false,
+   "format": "standard",
+   "comments": []
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Projects",
+     "page": "projects"
+    },
+    {
+     "title": "Studio",
+     "page": "studio",
+     "children": [
+      {
+       "title": "Awards",
+       "page": "awards"
+      }
+     ]
+    },
+    {
+     "title": "Journal",
+     "page": "journal",
+     "children": [
+      {
+       "title": "Essays",
+       "category": "essays"
+      },
+      {
+       "title": "Materials",
+       "category": "materials"
+      }
+     ]
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    }
+   ]
+  },
+  {
+   "name": "Footer menu",
+   "location": "footer",
+   "items": [
+    {
+     "title": "Projects",
+     "page": "projects"
+    },
+    {
+     "title": "Studio",
+     "page": "studio"
+    },
+    {
+     "title": "Journal",
+     "page": "journal"
+    },
+    {
+     "title": "Instagram",
+     "url": "https://instagram.com/"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "sidebar-1": [
+   "<!-- wp:search {\"label\":\"Search\",\"buttonText\":\"Search\",\"placeholder\":\"Search essays…\"} /-->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Index</h2><!-- /wp:heading --><!-- wp:categories /--></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Recent</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":5,\"displayPostDate\":true} /--></div><!-- /wp:group -->"
+  ],
+  "footer-1": [
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Studio</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Studio 4, Foundry Yard<br>18 Kiln Lane, Westmere</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Enquiries</h2><!-- /wp:heading --><!-- wp:paragraph --><p><a href=\"mailto:studio@archform.example\">studio@archform.example</a><br>+1 (555) 019-2200</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Index</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><a href=\"{{category:projects}}\">Projects</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{category:essays}}\">Essays</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{category:materials}}\">Materials</a></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "hero_image": "hero",
+  "hero_heading": "Quiet buildings, made to last",
+  "hero_text": "Archform designs houses, libraries and workplaces from few materials, carefully joined and generous with light.",
+  "hero_label": "01 — House on the Ridge, 2026",
+  "hero_button_label": "Project index",
+  "hero_button_url": "#index",
+  "cta_label": "Start a project",
+  "cta_url": "{{page:contact}}",
+  "blog_layout": "index",
+  "sidebar_position": "none"
+ }
+}

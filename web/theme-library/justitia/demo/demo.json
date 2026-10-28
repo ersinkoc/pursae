@@ -1,0 +1,474 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Calder & Vane",
+  "blogdescription": "Attorneys at law, Old Harbour"
+ },
+ "categories": [
+  {
+   "slug": "family-law",
+   "name": "Family law",
+   "description": "Separation, children, support and mediation."
+  },
+  {
+   "slug": "property-housing",
+   "name": "Property & housing",
+   "description": "Tenancies, deposits, boundaries and buying a home."
+  },
+  {
+   "slug": "employment",
+   "name": "Employment",
+   "description": "Dismissal, pay and rights at work."
+  },
+  {
+   "slug": "personal-injury",
+   "name": "Personal injury",
+   "description": "Accidents, insurance and compensation."
+  },
+  {
+   "slug": "wills-estates",
+   "name": "Wills & estates",
+   "description": "Wills, powers of attorney and probate."
+  },
+  {
+   "slug": "business-contracts",
+   "name": "Business & contracts",
+   "description": "Contracts and disputes for small businesses and freelancers."
+  },
+  {
+   "slug": "firm-news",
+   "name": "Firm news",
+   "description": "News from Calder & Vane."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "tenancy",
+   "name": "Tenancy"
+  },
+  {
+   "slug": "consumer-rights",
+   "name": "Consumer rights"
+  },
+  {
+   "slug": "insurance",
+   "name": "Insurance"
+  },
+  {
+   "slug": "inheritance",
+   "name": "Inheritance"
+  },
+  {
+   "slug": "workplace",
+   "name": "Workplace"
+  },
+  {
+   "slug": "divorce",
+   "name": "Divorce"
+  },
+  {
+   "slug": "contracts",
+   "name": "Contracts"
+  }
+ ],
+ "media": [
+  {
+   "id": "hero",
+   "file": "demo/images/hero.jpg",
+   "alt": "A classical colonnade at dusk, warm light glowing between the columns",
+   "caption": ""
+  },
+  {
+   "id": "library",
+   "file": "demo/images/library.jpg",
+   "alt": "Shelves of law books in burgundy, gold and ivory bindings",
+   "caption": ""
+  },
+  {
+   "id": "scales",
+   "file": "demo/images/scales.jpg",
+   "alt": "Gold scales of justice on a deep burgundy background",
+   "caption": ""
+  },
+  {
+   "id": "documents",
+   "file": "demo/images/documents.jpg",
+   "alt": "A stack of signed documents with a fountain pen",
+   "caption": ""
+  },
+  {
+   "id": "key",
+   "file": "demo/images/key.jpg",
+   "alt": "A large brass key on a dark background",
+   "caption": ""
+  },
+  {
+   "id": "family",
+   "file": "demo/images/family.jpg",
+   "alt": "A stylised family tree with burgundy and gold leaves",
+   "caption": ""
+  },
+  {
+   "id": "road",
+   "file": "demo/images/road.jpg",
+   "alt": "A road at night with headlights in the distance",
+   "caption": ""
+  },
+  {
+   "id": "office",
+   "file": "demo/images/office.jpg",
+   "alt": "An office building at evening with some windows lit",
+   "caption": ""
+  },
+  {
+   "id": "rings",
+   "file": "demo/images/rings.jpg",
+   "alt": "Two interlocking rings, one burgundy and one gold",
+   "caption": ""
+  },
+  {
+   "id": "attorney-1",
+   "file": "demo/images/attorney-1.jpg",
+   "alt": "Illustrated portrait of a partner in a charcoal suit",
+   "caption": ""
+  },
+  {
+   "id": "attorney-2",
+   "file": "demo/images/attorney-2.jpg",
+   "alt": "Illustrated portrait of a senior associate",
+   "caption": ""
+  },
+  {
+   "id": "attorney-3",
+   "file": "demo/images/attorney-3.jpg",
+   "alt": "Illustrated portrait of an associate in a burgundy jacket",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Steady counsel for life's hardest questions",
+   "content": "<!-- wp:group {\"anchor\":\"practice\",\"align\":\"full\",\"className\":\"section-practice\",\"layout\":{\"type\":\"constrained\"}} --><div id=\"practice\" class=\"wp-block-group alignfull section-practice\"><!-- wp:paragraph {\"className\":\"kicker\",\"align\":\"center\"} --><p class=\"has-text-align-center kicker\">What we do</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\",\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center section-title\">Practice areas</h2><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"section-intro\",\"align\":\"center\"} --><p class=\"has-text-align-center section-intro\">Six areas of law, one standard: clear advice, honest fees and a lawyer who answers the phone.</p><!-- /wp:paragraph --><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"practice-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group practice-card\"><!-- wp:paragraph {\"className\":\"numeral\"} --><p class=\"numeral\">I</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Family law</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Separation, custody and support, handled with discretion and a preference for agreement over litigation.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{category:family-law}}\">Read articles &rarr;</a></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"practice-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group practice-card\"><!-- wp:paragraph {\"className\":\"numeral\"} --><p class=\"numeral\">II</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Property &amp; housing</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Leases, deposits, boundary disputes and purchases, for tenants, landlords and first-time buyers.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{category:property-housing}}\">Read articles &rarr;</a></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"practice-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group practice-card\"><!-- wp:paragraph {\"className\":\"numeral\"} --><p class=\"numeral\">III</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Employment</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Dismissal, discrimination, unpaid wages and settlement agreements, for employees and small employers.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{category:employment}}\">Read articles &rarr;</a></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"practice-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group practice-card\"><!-- wp:paragraph {\"className\":\"numeral\"} --><p class=\"numeral\">IV</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Personal injury</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Road accidents, slips and workplace injuries. No fee unless we recover compensation for you.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{category:personal-injury}}\">Read articles &rarr;</a></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"practice-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group practice-card\"><!-- wp:paragraph {\"className\":\"numeral\"} --><p class=\"numeral\">V</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Wills &amp; estates</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Wills, powers of attorney and probate, explained in plain words and kept up to date.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{category:wills-estates}}\">Read articles &rarr;</a></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"practice-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group practice-card\"><!-- wp:paragraph {\"className\":\"numeral\"} --><p class=\"numeral\">VI</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Business &amp; contracts</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Contracts, debt recovery and disputes for freelancers, founders and family businesses.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{category:business-contracts}}\">Read articles &rarr;</a></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"section-results\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-results\"><!-- wp:paragraph {\"className\":\"kicker\"} --><p class=\"kicker\">Results</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">Recent outcomes for our clients</h2><!-- /wp:heading --><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column {\"className\":\"result\"} --><div class=\"wp-block-column result\"><!-- wp:paragraph {\"className\":\"result-num\"} --><p class=\"result-num\">$1.2M</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Settlement for a cyclist injured by a delivery van, reached before trial.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column {\"className\":\"result\"} --><div class=\"wp-block-column result\"><!-- wp:paragraph {\"className\":\"result-num\"} --><p class=\"result-num\">94%</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Of family matters resolved by agreement in the last three years.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column {\"className\":\"result\"} --><div class=\"wp-block-column result\"><!-- wp:paragraph {\"className\":\"result-num\"} --><p class=\"result-num\">$310K</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Unpaid overtime recovered for a group of warehouse employees.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column {\"className\":\"result\"} --><div class=\"wp-block-column result\"><!-- wp:paragraph {\"className\":\"result-num\"} --><p class=\"result-num\">1,400+</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Wills and estate plans drafted since the firm opened.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:paragraph {\"className\":\"result-note\"} --><p class=\"result-note\">Every case is different; past results do not guarantee a similar outcome.</p><!-- /wp:paragraph --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"section-attorneys\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-attorneys\"><!-- wp:paragraph {\"className\":\"kicker\"} --><p class=\"kicker\">The firm</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">Our attorneys</h2><!-- /wp:heading --><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column {\"className\":\"attorney\"} --><div class=\"wp-block-column attorney\"><!-- wp:image {\"id\":{{media_id:attorney-1}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:attorney-1}}\" alt=\"Illustrated portrait of Helena Varga-Lind\" class=\"wp-image-{{media_id:attorney-1}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Helena Varga-Lind</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"role\"} --><p class=\"role\">Managing partner</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Twenty-five years in family and property law. Known for settling difficult cases without a hearing.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column {\"className\":\"attorney\"} --><div class=\"wp-block-column attorney\"><!-- wp:image {\"id\":{{media_id:attorney-2}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:attorney-2}}\" alt=\"Illustrated portrait of Tomas Achterberg\" class=\"wp-image-{{media_id:attorney-2}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Tomas Achterberg</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"role\"} --><p class=\"role\">Partner, litigation</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Leads our injury and employment work. Former trial advocate with a calm courtroom manner.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column {\"className\":\"attorney\"} --><div class=\"wp-block-column attorney\"><!-- wp:image {\"id\":{{media_id:attorney-3}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:attorney-3}}\" alt=\"Illustrated portrait of Nadia Okonkwo-Reyes\" class=\"wp-image-{{media_id:attorney-3}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Nadia Okonkwo-Reyes</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"role\"} --><p class=\"role\">Associate</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Advises on wills, estates and small-business contracts, in English and Spanish.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:attorneys}}\">Meet the whole team</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"section-quote\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-quote\"><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>They explained every option before we chose one, and they never once made us feel foolish for asking. The case settled in four months.</p><!-- /wp:paragraph --><cite>A client, after a tenancy dispute</cite></blockquote><!-- /wp:quote --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"section-articles\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-articles\"><!-- wp:paragraph {\"className\":\"kicker\"} --><p class=\"kicker\">From the blog</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">Everyday law, explained</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":3,\"displayPostDate\":true,\"postLayout\":\"grid\",\"columns\":3,\"displayPostContent\":true,\"excerptLength\":22} /--><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:articles}}\">All articles</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "featured_media": "hero",
+   "front_page": true
+  },
+  {
+   "slug": "articles",
+   "title": "Articles",
+   "content": "",
+   "posts_page": true
+  },
+  {
+   "slug": "practice-areas",
+   "title": "Practice areas",
+   "excerpt": "Six areas of law, each led by a partner.",
+   "content": "<!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">We focus on the matters that shape ordinary lives: homes, families, jobs, health and the work people do for themselves. Each area is led by a partner and supported by a small, steady team.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"practice-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group practice-card\"><!-- wp:paragraph {\"className\":\"numeral\"} --><p class=\"numeral\">I</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Family law</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Separation, custody and support, handled with discretion and a preference for agreement over litigation.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{category:family-law}}\">Read articles &rarr;</a></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"practice-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group practice-card\"><!-- wp:paragraph {\"className\":\"numeral\"} --><p class=\"numeral\">II</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Property &amp; housing</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Leases, deposits, boundary disputes and purchases, for tenants, landlords and first-time buyers.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{category:property-housing}}\">Read articles &rarr;</a></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"practice-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group practice-card\"><!-- wp:paragraph {\"className\":\"numeral\"} --><p class=\"numeral\">III</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Employment</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Dismissal, discrimination, unpaid wages and settlement agreements, for employees and small employers.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{category:employment}}\">Read articles &rarr;</a></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"practice-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group practice-card\"><!-- wp:paragraph {\"className\":\"numeral\"} --><p class=\"numeral\">IV</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Personal injury</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Road accidents, slips and workplace injuries. No fee unless we recover compensation for you.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{category:personal-injury}}\">Read articles &rarr;</a></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"practice-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group practice-card\"><!-- wp:paragraph {\"className\":\"numeral\"} --><p class=\"numeral\">V</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Wills &amp; estates</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Wills, powers of attorney and probate, explained in plain words and kept up to date.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{category:wills-estates}}\">Read articles &rarr;</a></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"practice-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group practice-card\"><!-- wp:paragraph {\"className\":\"numeral\"} --><p class=\"numeral\">VI</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Business &amp; contracts</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Contracts, debt recovery and disputes for freelancers, founders and family businesses.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{category:business-contracts}}\">Read articles &rarr;</a></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">How we charge</h2><!-- /wp:heading -->\n\n<!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Matter</th><th>Usual fee basis</th><th>First meeting</th></tr></thead><tbody><tr><td>Personal injury</td><td>No win, no fee (agreed percentage)</td><td>Free</td></tr><tr><td>Family law</td><td>Fixed stages or hourly, estimated in writing</td><td>Free, 45 minutes</td></tr><tr><td>Wills &amp; estates</td><td>Fixed fee per document</td><td>Free</td></tr><tr><td>Employment</td><td>Fixed fee for advice; hourly for claims</td><td>Free, 30 minutes</td></tr><tr><td>Property &amp; business</td><td>Fixed fee or hourly, estimated in writing</td><td>Free, 30 minutes</td></tr></tbody></table><figcaption class=\"wp-element-caption\">Estimates are confirmed in an engagement letter before any work starts.</figcaption></figure><!-- /wp:table -->\n\n<!-- wp:paragraph --><p>Not sure which area your question belongs to? That is what the free consultation is for. <a href=\"{{page:contact}}\">Book a time</a> and we will point you in the right direction, even if the right direction is another firm.</p><!-- /wp:paragraph -->",
+   "template": "page-wide",
+   "menu_order": 1
+  },
+  {
+   "slug": "attorneys",
+   "title": "Our attorneys",
+   "excerpt": "The people who will work on your matter.",
+   "content": "<!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">We are a firm of nine: three attorneys, two paralegals, an office manager and three trainees. Small enough that you always know who is working on your matter, large enough to cover a trial.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column {\"className\":\"attorney\"} --><div class=\"wp-block-column attorney\"><!-- wp:image {\"id\":{{media_id:attorney-1}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:attorney-1}}\" alt=\"Illustrated portrait of Helena Varga-Lind\" class=\"wp-image-{{media_id:attorney-1}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Helena Varga-Lind</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"role\"} --><p class=\"role\">Managing partner</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Twenty-five years in family and property law. Known for settling difficult cases without a hearing. She also chairs the firm's pro bono committee.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column {\"className\":\"attorney\"} --><div class=\"wp-block-column attorney\"><!-- wp:image {\"id\":{{media_id:attorney-2}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:attorney-2}}\" alt=\"Illustrated portrait of Tomas Achterberg\" class=\"wp-image-{{media_id:attorney-2}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Tomas Achterberg</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"role\"} --><p class=\"role\">Partner, litigation</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Leads our injury and employment work. Former trial advocate with a calm courtroom manner.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column {\"className\":\"attorney\"} --><div class=\"wp-block-column attorney\"><!-- wp:image {\"id\":{{media_id:attorney-3}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:attorney-3}}\" alt=\"Illustrated portrait of Nadia Okonkwo-Reyes\" class=\"wp-image-{{media_id:attorney-3}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Nadia Okonkwo-Reyes</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"role\"} --><p class=\"role\">Associate</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Advises on wills, estates and small-business contracts, in English and Spanish.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Memberships and service</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Members of the county bar association and its family-law section</li><!-- /wp:list-item --><!-- wp:list-item --><li>Accredited mediators for family and workplace disputes</li><!-- /wp:list-item --><!-- wp:list-item --><li>Volunteer attorneys at the weekly community legal clinic</li><!-- /wp:list-item --><!-- wp:list-item --><li>Guest lecturers on tenancy law at the city college</li><!-- /wp:list-item --></ul><!-- /wp:list -->",
+   "template": "page-wide",
+   "menu_order": 2
+  },
+  {
+   "slug": "case-results",
+   "title": "Case results",
+   "content": "<!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">A selection of matters from the past five years, shared with our clients' permission and without identifying details.</p><!-- /wp:paragraph -->\n\n<!-- wp:table {\"className\":\"is-style-left\"} --><figure class=\"wp-block-table is-style-left\"><table><thead><tr><th>Year</th><th>Matter</th><th>Outcome</th></tr></thead><tbody><tr><td>2026</td><td>Cyclist struck by a delivery van</td><td>$1.2M settlement before trial</td></tr><tr><td>2025</td><td>Unpaid overtime, 23 warehouse employees</td><td>$310,000 recovered in full</td></tr><tr><td>2025</td><td>Contested will between three siblings</td><td>Resolved at mediation in one day</td></tr><tr><td>2024</td><td>Wrongful dismissal of a hospital administrator</td><td>Reinstatement and back pay</td></tr><tr><td>2024</td><td>Deposit withheld by a corporate landlord</td><td>Deposit returned plus statutory penalty</td></tr><tr><td>2023</td><td>Supplier refused to deliver under contract</td><td>Specific performance ordered</td></tr></tbody></table></figure><!-- /wp:table -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Past results do not guarantee a similar outcome. What they show is how we work: prepared, persistent and honest about the odds.</p><!-- /wp:paragraph --><cite>Helena Varga-Lind, managing partner</cite></blockquote><!-- /wp:quote -->",
+   "parent": "attorneys",
+   "menu_order": 3
+  },
+  {
+   "slug": "about",
+   "title": "About the firm",
+   "content": "<!-- wp:image {\"id\":{{media_id:library}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:library}}\" alt=\"Shelves of law books\" class=\"wp-image-{{media_id:library}}\"/><figcaption class=\"wp-element-caption\">The firm's library, which every client is welcome to use.</figcaption></figure><!-- /wp:image -->\n\n<!-- wp:paragraph --><p>Calder &amp; Vane was founded in 1987 by two attorneys who believed that ordinary people deserve the same careful advice as large companies. We still work from the same brick building on Wharf Street, and we still answer our own phones.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What you can expect</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"className\":\"steps\"} --><ul class=\"wp-block-list steps\"><!-- wp:list-item --><li>A written estimate before any work begins, and no surprises on the invoice.</li><!-- /wp:list-item --><!-- wp:list-item --><li>A named attorney who returns calls within one working day.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Plain explanations of your options, including the option of doing nothing.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Evening appointments on Thursdays and video meetings on request.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Community</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Every attorney gives at least forty hours a year to the community legal clinic, and the firm funds two scholarships for first-generation law students at the city college.</p><!-- /wp:paragraph -->",
+   "menu_order": 4
+  },
+  {
+   "slug": "contact",
+   "title": "Free consultation",
+   "excerpt": "Confidential, no obligation, within one working day.",
+   "content": "<!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">The first consultation is free and confidential. Tell us briefly what happened and we will call you back within one working day.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Visit</h3><!-- /wp:heading --><!-- wp:paragraph --><p>14 Wharf Street, Second Floor<br>Old Harbour, OH 20114</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Mon–Fri 8:30–18:00<br>Thursdays until 20:00</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Call or write</h3><!-- /wp:heading --><!-- wp:paragraph --><p><a href=\"tel:+15550147700\">+1 (555) 014-7700</a><br><a href=\"mailto:office@calder-vane.example\">office@calder-vane.example</a></p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Urgent family or arrest matters: +1 (555) 014-7799, any hour.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">How a first consultation works</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true,\"className\":\"steps\"} --><ol class=\"wp-block-list steps\"><!-- wp:list-item --><li>You describe the situation by phone or with our short form.</li><!-- /wp:list-item --><!-- wp:list-item --><li>We check for conflicts of interest and confirm a time within two days.</li><!-- /wp:list-item --><!-- wp:list-item --><li>You meet an attorney for 30 to 45 minutes, in person or by video.</li><!-- /wp:list-item --><!-- wp:list-item --><li>You leave with a clear next step and a written fee estimate if you want to go ahead.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>Please bring any letters, contracts, photos or notices you have received. If something has a deadline on it, bring that first.</p><!-- /wp:paragraph -->",
+   "menu_order": 5
+  }
+ ],
+ "posts": [
+  {
+   "slug": "can-my-landlord-keep-my-deposit",
+   "title": "Can my landlord keep my security deposit?",
+   "date": "2026-10-21T09:00:00",
+   "categories": [
+    "property-housing"
+   ],
+   "tags": [
+    "tenancy",
+    "consumer-rights"
+   ],
+   "featured_media": "key",
+   "excerpt": "Most deposits must be returned in full, minus documented damage beyond normal wear and tear. Here is how to get yours back.",
+   "content": "<!-- wp:paragraph --><p>Moving out is stressful enough without a fight over money you already paid. The good news is that the law is largely on the tenant's side: a deposit is your money, held as security, and the landlord has to justify every dollar they keep.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What a landlord may deduct</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Unpaid rent or utility bills that the lease made your responsibility.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Damage beyond <strong>normal wear and tear</strong>, such as holes in walls or broken fixtures.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Cleaning costs, but only to return the home to the condition it was in when you moved in.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>Faded paint, worn carpet in walkways and small nail holes for pictures are usually wear and tear. A landlord who deducts for them is on weak ground.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Deadlines matter</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>In most places the landlord must return the deposit, or send an itemised list of deductions, within a fixed number of days after you leave. If they miss that deadline, many statutes let the tenant claim the deposit back plus a penalty.</p><!-- /wp:paragraph -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Photograph every room on the day you move in and the day you move out. Those photos win more deposit disputes than any lawyer.</p><!-- /wp:paragraph --><cite>Helena Varga-Lind</cite></blockquote><!-- /wp:quote -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">If the landlord will not pay</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Write a short, polite letter asking for the deposit and citing the deadline.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Keep copies of the lease, the check-in report and your photos.</li><!-- /wp:list-item --><!-- wp:list-item --><li>If there is no answer within two weeks, small-claims court is usually quick and inexpensive.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>If the amount is large or the landlord is a company with lawyers of its own, a short consultation can tell you whether a letter from us would settle it.</p><!-- /wp:paragraph -->",
+   "sticky": true,
+   "format": "standard",
+   "comments": [
+    {
+     "author": "Ruth A.",
+     "email": "ruth@example.com",
+     "content": "The photo tip saved me $900 last spring. The landlord dropped the claim as soon as he saw them.",
+     "date": "2026-10-22T11:20:00"
+    },
+    {
+     "author": "Marco P.",
+     "email": "marco@example.com",
+     "content": "Does this apply to a room I rent in a shared house?",
+     "date": "2026-10-23T08:05:00"
+    }
+   ]
+  },
+  {
+   "slug": "first-48-hours-after-a-car-accident",
+   "title": "What to do in the first 48 hours after a car accident",
+   "date": "2026-10-14T08:30:00",
+   "categories": [
+    "personal-injury"
+   ],
+   "tags": [
+    "insurance"
+   ],
+   "featured_media": "road",
+   "excerpt": "A short checklist for the hours after a collision, when shock makes it easy to forget the steps that protect your claim.",
+   "content": "<!-- wp:paragraph --><p>Nobody plans for a collision, and in the minutes afterwards almost everyone feels shaken. That is exactly when the details that decide an injury claim are easiest to lose. Keep this list somewhere you can find it.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">At the scene</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Check for injuries and call emergency services if anyone is hurt.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Move to safety if you can, and switch on hazard lights.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Exchange names, licence plates and insurance details with the other driver.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Photograph the vehicles, the road, any signs and any visible injuries.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Ask witnesses for a phone number. Most are happy to help, but few wait around.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Within two days</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>See a doctor, even if you feel fine. Some injuries, particularly to the neck and back, only show themselves a day or two later, and a medical record made early is strong evidence.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>Report the accident to your insurer, but stick to the facts. You do not need to give a recorded statement to the other driver's insurer, and you should not accept an early settlement offer before you know how badly you are hurt.</p><!-- /wp:paragraph -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>The first offer is almost never the right one. It arrives before anyone knows what your recovery will cost.</p><!-- /wp:paragraph --><cite>Tomas Achterberg</cite></blockquote><!-- /wp:quote -->\n\n<!-- wp:paragraph --><p>If someone else was at fault and you were injured, we can review your case for free. Our injury work is on a no-win, no-fee basis, so you will never pay us out of your own pocket.</p><!-- /wp:paragraph -->",
+   "sticky": false,
+   "format": "standard",
+   "comments": [
+    {
+     "author": "Dee K.",
+     "email": "dee@example.com",
+     "content": "Printed this and put it in the glove box. Thank you.",
+     "date": "2026-10-15T19:42:00"
+    }
+   ]
+  },
+  {
+   "slug": "do-i-need-a-will",
+   "title": "Do I really need a will if I don't own much?",
+   "date": "2026-10-07T10:00:00",
+   "categories": [
+    "wills-estates"
+   ],
+   "tags": [
+    "inheritance"
+   ],
+   "featured_media": "family",
+   "excerpt": "A will is less about money than about decisions: who looks after your children, who sorts out your affairs and who gets the things that matter.",
+   "content": "<!-- wp:paragraph --><p>We hear this question every week, usually from people in their thirties with a rented flat, a car and some savings. The honest answer is that a will is not really about how much you own. It is about who decides what happens next.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What happens without one</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>If you die without a will, the law decides who inherits, in a fixed order that may not match your wishes. Unmarried partners, stepchildren and close friends are often left out entirely.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Three reasons to write one now</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li><strong>Children.</strong> A will lets you name a guardian for children under 18.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Partners.</strong> If you are not married, a will is often the only way to provide for your partner.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Executors.</strong> You choose the person who will sort out your affairs, rather than leaving it to whoever applies.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">A simple will</h3><!-- /wp:heading --><!-- wp:paragraph --><p>For most people with straightforward wishes. Usually one meeting and a fixed fee.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">A will with a trust</h3><!-- /wp:heading --><!-- wp:paragraph --><p>For young children, blended families or someone who needs support managing an inheritance.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:paragraph --><p>Whatever you choose, review it after marriage, divorce, a new child or a move abroad. A will that was right ten years ago may be wrong today.</p><!-- /wp:paragraph -->",
+   "sticky": false,
+   "format": "standard",
+   "comments": [
+    {
+     "author": "Ines V.",
+     "email": "ines@example.com",
+     "content": "We finally did ours after reading this. It took one afternoon.",
+     "date": "2026-10-09T14:10:00"
+    }
+   ]
+  },
+  {
+   "slug": "fired-without-warning",
+   "title": "Fired without warning: when is a dismissal unfair?",
+   "date": "2026-09-29T09:15:00",
+   "categories": [
+    "employment"
+   ],
+   "tags": [
+    "workplace"
+   ],
+   "featured_media": "office",
+   "excerpt": "Being dismissed suddenly is a shock, but not every dismissal is lawful. These are the questions we ask first.",
+   "content": "<!-- wp:paragraph --><p>A sudden dismissal can feel final, but the law asks more of employers than many people expect. Whether a dismissal was unfair usually depends on three things: the reason, the process and the timing.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">The reason</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Employers can dismiss for conduct, capability, redundancy or a handful of other fair reasons. They cannot dismiss because you raised a safety concern, took protected leave, joined a union or reported wrongdoing.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">The process</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Were you told what the problem was, in writing?</li><!-- /wp:list-item --><!-- wp:list-item --><li>Were you given a chance to respond, and to bring a colleague?</li><!-- /wp:list-item --><!-- wp:list-item --><li>Were you offered an appeal?</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>A fair reason handled with an unfair process can still make the dismissal unlawful.</p><!-- /wp:paragraph -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Write down everything you remember about the dismissal meeting the same day: who was there, what was said and what you were handed.</p><!-- /wp:paragraph --><cite>Tomas Achterberg</cite></blockquote><!-- /wp:quote -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Watch the clock</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Claims usually have short time limits, sometimes only three months from the date of dismissal. If you think something was wrong, take advice early, even if you are not sure you want to make a claim.</p><!-- /wp:paragraph -->",
+   "sticky": false,
+   "format": "standard",
+   "comments": []
+  },
+  {
+   "slug": "divorce-without-a-courtroom",
+   "title": "Divorce without a courtroom: how mediation works",
+   "date": "2026-09-18T11:00:00",
+   "categories": [
+    "family-law"
+   ],
+   "tags": [
+    "divorce"
+   ],
+   "featured_media": "rings",
+   "excerpt": "Most separating couples never see a judge. Mediation is quicker, cheaper and usually kinder, especially when there are children.",
+   "content": "<!-- wp:paragraph --><p>Television makes divorce look like a courtroom drama. In reality, the large majority of separating couples settle their arrangements by agreement, and mediation is one of the most reliable ways to get there.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What a mediator does</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>A mediator is a neutral, trained professional who helps both of you discuss money, property and arrangements for the children. They do not take sides or make decisions; they keep the conversation productive and make sure nothing important is forgotten.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">A typical timeline</h2><!-- /wp:heading -->\n\n<!-- wp:table {\"className\":\"is-style-left\"} --><figure class=\"wp-block-table is-style-left\"><table><thead><tr><th>Stage</th><th>What happens</th><th>Usual length</th></tr></thead><tbody><tr><td>Intake</td><td>Separate meetings with each person</td><td>1 week</td></tr><tr><td>Disclosure</td><td>Both share financial information</td><td>2–4 weeks</td></tr><tr><td>Sessions</td><td>Two to four joint meetings</td><td>1–3 months</td></tr><tr><td>Agreement</td><td>Lawyers turn it into a binding order</td><td>2–6 weeks</td></tr></tbody></table></figure><!-- /wp:table -->\n\n<!-- wp:paragraph --><p>Mediation is not right for everyone. Where there has been abuse or one person is hiding assets, we will advise a different route.</p><!-- /wp:paragraph -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>The best outcome for children is two parents who can still talk to each other in five years' time.</p><!-- /wp:paragraph --><cite>Helena Varga-Lind</cite></blockquote><!-- /wp:quote -->",
+   "sticky": false,
+   "format": "standard",
+   "comments": [
+    {
+     "author": "Sam O.",
+     "email": "sam@example.com",
+     "content": "We did four sessions and kept the house sale amicable. I wish more people knew this was an option.",
+     "date": "2026-09-20T21:03:00"
+    }
+   ]
+  },
+  {
+   "slug": "five-clauses-every-freelance-contract-needs",
+   "title": "Five clauses every freelance contract should have",
+   "date": "2026-09-08T08:45:00",
+   "categories": [
+    "business-contracts"
+   ],
+   "tags": [
+    "contracts"
+   ],
+   "featured_media": "documents",
+   "excerpt": "A one-page agreement prevents most freelance disputes. These five clauses do the heavy lifting.",
+   "content": "<!-- wp:paragraph --><p>Most disputes between freelancers and clients are not about bad faith. They come from a missing sentence: nobody wrote down when payment was due, or what counted as finished. A short written agreement fixes most of that.</p><!-- /wp:paragraph -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li><strong>Scope.</strong> What you will deliver, and what you will not.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Payment terms.</strong> Amount, due date and what happens if payment is late.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Revisions.</strong> How many rounds are included before extra fees apply.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Ownership.</strong> When the client owns the work, usually on full payment.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Ending the contract.</strong> How either side can end it, and what is paid for work done so far.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Keep it readable</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>A contract does not need to be long to be enforceable. Plain sentences that both sides understand are more useful than pages of boilerplate nobody reads.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>We offer a fixed-fee review of freelance and small-business templates. Bring the one you use today and we will tell you what is missing.</p><!-- /wp:paragraph -->",
+   "sticky": false,
+   "format": "standard",
+   "comments": []
+  },
+  {
+   "slug": "disputes-with-neighbours",
+   "title": "Noise, fences and trees: settling disputes with neighbours",
+   "date": "2026-08-27T10:30:00",
+   "categories": [
+    "property-housing"
+   ],
+   "tags": [
+    "tenancy"
+   ],
+   "featured_media": "library",
+   "excerpt": "Neighbour disputes are rarely about the fence. A calm, staged approach settles most of them without a lawsuit.",
+   "content": "<!-- wp:paragraph --><p>A leaning fence, a tree that blocks the light, music at two in the morning: neighbour disputes are small on paper and enormous in daily life. They are also some of the hardest cases to win in court, which is why we start elsewhere.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Start with a conversation</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Most people do not know they are causing a problem. A friendly conversation, followed by a short note summarising what you agreed, resolves more disputes than any letter from a lawyer.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">If that does not work</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Check the title documents to see who owns the boundary.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Keep a simple diary of noise or nuisance, with dates and times.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Ask your local council about community mediation, which is often free.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Only then consider a formal letter or a claim.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Remember that you will still live next door when the dispute is over.</p><!-- /wp:paragraph --><cite>Nadia Okonkwo-Reyes</cite></blockquote><!-- /wp:quote -->",
+   "sticky": false,
+   "format": "standard",
+   "comments": []
+  },
+  {
+   "slug": "what-to-bring-to-a-free-consultation",
+   "title": "What happens at a free consultation (and what to bring)",
+   "date": "2026-08-12T09:00:00",
+   "categories": [
+    "firm-news"
+   ],
+   "tags": [],
+   "featured_media": "scales",
+   "excerpt": "Thirty to forty-five minutes, no obligation and no invoice. Here is how to get the most out of it.",
+   "content": "<!-- wp:paragraph --><p>Many people put off seeing a lawyer because they are worried about the cost of the first meeting. At our firm the first consultation is free, and there is no obligation to instruct us afterwards.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Before the meeting</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Write a short timeline of what happened, with dates if you have them.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Gather letters, contracts, photos, emails and anything with a deadline.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Note the outcome you would like. It is fine if you are not sure yet.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">During the meeting</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>The attorney will listen first, then ask questions. By the end you should understand your options, the likely costs and the risks of each route, including the route of doing nothing.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>If we are not the right firm for your matter, we will say so and suggest who might be.</p><!-- /wp:paragraph -->",
+   "sticky": false,
+   "format": "standard",
+   "comments": []
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Home",
+     "page": "home"
+    },
+    {
+     "title": "Practice areas",
+     "page": "practice-areas",
+     "children": [
+      {
+       "title": "Family law",
+       "category": "family-law"
+      },
+      {
+       "title": "Property & housing",
+       "category": "property-housing"
+      },
+      {
+       "title": "Employment",
+       "category": "employment"
+      },
+      {
+       "title": "Personal injury",
+       "category": "personal-injury"
+      },
+      {
+       "title": "Wills & estates",
+       "category": "wills-estates"
+      }
+     ]
+    },
+    {
+     "title": "Attorneys",
+     "page": "attorneys",
+     "children": [
+      {
+       "title": "Case results",
+       "page": "case-results"
+      }
+     ]
+    },
+    {
+     "title": "Articles",
+     "page": "articles"
+    },
+    {
+     "title": "About",
+     "page": "about"
+    }
+   ]
+  },
+  {
+   "name": "Footer menu",
+   "location": "footer",
+   "items": [
+    {
+     "title": "About",
+     "page": "about"
+    },
+    {
+     "title": "Case results",
+     "page": "case-results"
+    },
+    {
+     "title": "Articles",
+     "page": "articles"
+    },
+    {
+     "title": "Free consultation",
+     "page": "contact"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "sidebar-1": [
+   "<!-- wp:search {\"label\":\"Search articles\",\"buttonText\":\"Search\",\"placeholder\":\"Search articles…\"} /-->",
+   "<!-- wp:group {\"className\":\"consult-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group consult-card\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Free consultation</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Thirty minutes with an attorney, confidential and without obligation.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Book a time</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Topics</h2><!-- /wp:heading --><!-- wp:categories {\"showPostCounts\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Recent articles</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":4,\"displayPostDate\":true} /--></div><!-- /wp:group -->"
+  ],
+  "footer-1": [
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Office</h2><!-- /wp:heading --><!-- wp:paragraph --><p>14 Wharf Street, Second Floor<br>Old Harbour, OH 20114<br><a href=\"tel:+15550147700\">+1 (555) 014-7700</a></p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Practice</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><a href=\"{{category:family-law}}\">Family law</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{category:property-housing}}\">Property &amp; housing</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{category:employment}}\">Employment</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{category:personal-injury}}\">Personal injury</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{category:wills-estates}}\">Wills &amp; estates</a></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Hours</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Mon–Fri 8:30–18:00<br>Thursday evenings until 20:00<br>Urgent line, any hour</p><!-- /wp:paragraph --></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "hero_image": "hero",
+  "hero_heading": "Steady counsel for life's hardest questions",
+  "hero_text": "Calder & Vane has advised families, employees and small businesses in Old Harbour since 1987. Clear advice, honest fees and an attorney who answers the phone.",
+  "hero_kicker": "Attorneys at law · Since 1987",
+  "hero_button_label": "Practice areas",
+  "hero_button_url": "#practice",
+  "header_style": "classic",
+  "blog_layout": "list",
+  "sidebar_position": "right",
+  "cta_label": "Free consultation",
+  "cta_url": "{{page:contact}}"
+ }
+}

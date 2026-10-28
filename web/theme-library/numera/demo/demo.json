@@ -1,0 +1,437 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Numera",
+  "blogdescription": "Accounting & tax advisers for people and small businesses"
+ },
+ "categories": [
+  {
+   "slug": "tax",
+   "name": "Tax",
+   "description": "Returns, deductions and deadlines."
+  },
+  {
+   "slug": "bookkeeping",
+   "name": "Bookkeeping",
+   "description": "Keeping clean, current books."
+  },
+  {
+   "slug": "payroll",
+   "name": "Payroll",
+   "description": "Paying people correctly and on time."
+  },
+  {
+   "slug": "small-business",
+   "name": "Small business",
+   "description": "Cash, planning and growth."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "deductions",
+   "name": "Deductions"
+  },
+  {
+   "slug": "freelancers",
+   "name": "Freelancers"
+  },
+  {
+   "slug": "deadlines",
+   "name": "Deadlines"
+  },
+  {
+   "slug": "records",
+   "name": "Records"
+  },
+  {
+   "slug": "employers",
+   "name": "Employers"
+  },
+  {
+   "slug": "online-sales",
+   "name": "Online sales"
+  },
+  {
+   "slug": "planning",
+   "name": "Planning"
+  }
+ ],
+ "media": [
+  {
+   "id": "hero",
+   "file": "demo/images/hero.jpg",
+   "alt": "Rounded dashboard panels with a bar chart, a donut chart and a rising line",
+   "caption": ""
+  },
+  {
+   "id": "calendar",
+   "file": "demo/images/calendar.jpg",
+   "alt": "A monthly calendar with a few highlighted deadline days",
+   "caption": ""
+  },
+  {
+   "id": "coins",
+   "file": "demo/images/coins.jpg",
+   "alt": "Growing stacks of coins with an upward trend arrow",
+   "caption": ""
+  },
+  {
+   "id": "receipts",
+   "file": "demo/images/receipts.jpg",
+   "alt": "Three paper receipts side by side",
+   "caption": ""
+  },
+  {
+   "id": "pie",
+   "file": "demo/images/pie.jpg",
+   "alt": "A donut chart and three progress bars on dark teal",
+   "caption": ""
+  },
+  {
+   "id": "home-office",
+   "file": "demo/images/home-office.jpg",
+   "alt": "A house outline with a laptop showing a small chart",
+   "caption": ""
+  },
+  {
+   "id": "payroll",
+   "file": "demo/images/payroll.jpg",
+   "alt": "A list of four people with amounts beside each",
+   "caption": ""
+  },
+  {
+   "id": "growth",
+   "file": "demo/images/growth.jpg",
+   "alt": "A staircase of bars rising from teal to mint",
+   "caption": ""
+  },
+  {
+   "id": "audit",
+   "file": "demo/images/audit.jpg",
+   "alt": "A magnifying glass over a ledger",
+   "caption": ""
+  },
+  {
+   "id": "partners",
+   "file": "demo/images/partners.jpg",
+   "alt": "Two rounded shapes meeting in the middle of a circle of dots",
+   "caption": ""
+  },
+  {
+   "id": "invoice",
+   "file": "demo/images/invoice.jpg",
+   "alt": "An invoice with a large percent badge",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Calm, clear accounting for growing businesses",
+   "content": "<!-- wp:group {\"anchor\":\"services\",\"align\":\"full\",\"className\":\"section-services\",\"layout\":{\"type\":\"constrained\"}} --><div id=\"services\" class=\"wp-block-group alignfull section-services\"><!-- wp:paragraph {\"className\":\"kicker\"} --><p class=\"kicker\">What we do</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">Services for people and small businesses</h2><!-- /wp:heading --><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"service-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group service-card\"><!-- wp:paragraph {\"className\":\"icon-dot\"} --><p class=\"icon-dot\">Tx</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Tax returns</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Personal and business returns, prepared by a CPA and reviewed by a second one.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{category:tax}}\">Tips on tax returns &rarr;</a></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"service-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group service-card\"><!-- wp:paragraph {\"className\":\"icon-dot\"} --><p class=\"icon-dot\">Bk</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Bookkeeping</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Monthly books, bank reconciliations and a one-page report you can actually read.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{category:bookkeeping}}\">Tips on bookkeeping &rarr;</a></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"service-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group service-card\"><!-- wp:paragraph {\"className\":\"icon-dot\"} --><p class=\"icon-dot\">Py</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Payroll</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Payroll, filings and year-end forms for teams of one to two hundred.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{category:payroll}}\">Tips on payroll &rarr;</a></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"service-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group service-card\"><!-- wp:paragraph {\"className\":\"icon-dot\"} --><p class=\"icon-dot\">Ad</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Advisory</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Cash-flow forecasts, pricing reviews and help preparing for a loan or investment.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{category:small-business}}\">Tips on advisory &rarr;</a></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"section-soft\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-soft\"><!-- wp:paragraph {\"className\":\"kicker\",\"align\":\"center\"} --><p class=\"has-text-align-center kicker\">Pricing</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\",\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center section-title\">Simple monthly plans</h2><!-- /wp:heading --><!-- wp:paragraph {\"align\":\"center\"} --><p class=\"has-text-align-center\">No hourly surprises. Every plan includes a free first call and a named accountant.</p><!-- /wp:paragraph --><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"plan\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group plan\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Personal</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"price\"} --><p class=\"price\">$45<small> / month</small></p><!-- /wp:paragraph --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Federal and state return</li><!-- /wp:list-item --><!-- wp:list-item --><li>Deduction review</li><!-- /wp:list-item --><!-- wp:list-item --><li>Year-round questions by email</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Choose plan</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"plan plan--featured\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group plan plan--featured\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Small business</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"price\"} --><p class=\"price\">$290<small> / month</small></p><!-- /wp:paragraph --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Monthly bookkeeping</li><!-- /wp:list-item --><!-- wp:list-item --><li>Quarterly estimated taxes</li><!-- /wp:list-item --><!-- wp:list-item --><li>Business and owner returns</li><!-- /wp:list-item --><!-- wp:list-item --><li>A named accountant</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Most popular</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"plan\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group plan\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Growing team</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"price\"} --><p class=\"price\">$640<small> / month</small></p><!-- /wp:paragraph --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Everything in Small business</li><!-- /wp:list-item --><!-- wp:list-item --><li>Payroll for up to 25 people</li><!-- /wp:list-item --><!-- wp:list-item --><li>Quarterly advisory call</li><!-- /wp:list-item --><!-- wp:list-item --><li>Budget and forecast</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Choose plan</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull\"><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column {\"width\":\"40%\"} --><div class=\"wp-block-column\" style=\"flex-basis:40%\"><!-- wp:paragraph {\"className\":\"kicker\"} --><p class=\"kicker\">Upcoming deadlines</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">Never miss a filing date</h2><!-- /wp:heading --><!-- wp:paragraph --><p>We send every client a reminder two weeks before each deadline that applies to them, and we file well before the last day.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:tax-calendar}}\">Full tax calendar</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:column --><!-- wp:column {\"width\":\"60%\"} --><div class=\"wp-block-column\" style=\"flex-basis:60%\"><!-- wp:table {\"className\":\"deadline-table is-style-left\"} --><figure class=\"wp-block-table deadline-table is-style-left\"><table><thead><tr><th>Date</th><th>What is due</th><th>Who</th></tr></thead><tbody><tr><td>Jan 15</td><td>Fourth-quarter estimated tax payment</td><td>Individuals, sole traders</td></tr><tr><td>Jan 31</td><td>Employee wage statements and contractor forms</td><td>Employers</td></tr><tr><td>Mar 15</td><td>Partnership and S-corporation returns</td><td>Partnerships, S-corps</td></tr><tr><td>Apr 15</td><td>Individual returns and first-quarter estimates</td><td>Individuals</td></tr></tbody></table></figure><!-- /wp:table --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"section-soft\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-soft\"><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"quote-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group quote-card\"><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Numera turned a shoebox of receipts into clean books in three weeks. Our loan application went through first time.</p><!-- /wp:paragraph --><cite>Owner of a family bakery</cite></blockquote><!-- /wp:quote --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"quote-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group quote-card\"><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>I finally understand my own payroll. The monthly one-page report is the best thing about them.</p><!-- /wp:paragraph --><cite>Founder of a design studio</cite></blockquote><!-- /wp:quote --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull\"><!-- wp:paragraph {\"className\":\"kicker\"} --><p class=\"kicker\">Finance tips</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">Plain answers to money questions</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":3,\"displayPostDate\":true,\"postLayout\":\"grid\",\"columns\":3,\"displayPostContent\":true,\"excerptLength\":22} /--></div><!-- /wp:group -->",
+   "featured_media": "hero",
+   "front_page": true
+  },
+  {
+   "slug": "tips",
+   "title": "Finance tips",
+   "content": "",
+   "posts_page": true
+  },
+  {
+   "slug": "pricing",
+   "title": "Services & pricing",
+   "excerpt": "Fixed monthly fees, agreed in writing.",
+   "content": "<!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">Three plans cover most of our clients. If yours is unusual, we will quote a fixed monthly fee after a free call.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"plan\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group plan\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Personal</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"price\"} --><p class=\"price\">$45<small> / month</small></p><!-- /wp:paragraph --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Federal and state return</li><!-- /wp:list-item --><!-- wp:list-item --><li>Deduction review</li><!-- /wp:list-item --><!-- wp:list-item --><li>Year-round questions by email</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Choose plan</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"plan plan--featured\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group plan plan--featured\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Small business</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"price\"} --><p class=\"price\">$290<small> / month</small></p><!-- /wp:paragraph --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Monthly bookkeeping</li><!-- /wp:list-item --><!-- wp:list-item --><li>Quarterly estimated taxes</li><!-- /wp:list-item --><!-- wp:list-item --><li>Business and owner returns</li><!-- /wp:list-item --><!-- wp:list-item --><li>A named accountant</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Most popular</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"plan\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group plan\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Growing team</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"price\"} --><p class=\"price\">$640<small> / month</small></p><!-- /wp:paragraph --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Everything in Small business</li><!-- /wp:list-item --><!-- wp:list-item --><li>Payroll for up to 25 people</li><!-- /wp:list-item --><!-- wp:list-item --><li>Quarterly advisory call</li><!-- /wp:list-item --><!-- wp:list-item --><li>Budget and forecast</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Choose plan</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Compare plans</h2><!-- /wp:heading -->\n\n<!-- wp:table {\"className\":\"compare-table\"} --><figure class=\"wp-block-table compare-table\"><table><thead><tr><th></th><th>Personal</th><th>Small business</th><th>Growing team</th></tr></thead><tbody><tr><td>Tax returns</td><td>✓</td><td>✓</td><td>✓</td></tr><tr><td>Bookkeeping</td><td>–</td><td>Monthly</td><td>Monthly</td></tr><tr><td>Estimated taxes</td><td>Reminders</td><td>Calculated and filed</td><td>Calculated and filed</td></tr><tr><td>Payroll</td><td>–</td><td>Add-on</td><td>Up to 25 people</td></tr><tr><td>Advisory calls</td><td>–</td><td>Yearly</td><td>Quarterly</td></tr><tr><td>Response time</td><td>2 days</td><td>1 day</td><td>Same day</td></tr></tbody></table></figure><!-- /wp:table -->\n\n<!-- wp:paragraph --><p>All prices exclude state filing fees. Annual billing saves one month.</p><!-- /wp:paragraph -->",
+   "template": "page-wide",
+   "menu_order": 1
+  },
+  {
+   "slug": "tax-calendar",
+   "title": "Tax-deadline calendar",
+   "excerpt": "Every key federal date for the year ahead.",
+   "content": "<!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">The key federal dates for the coming year. If a date falls on a weekend or holiday, the deadline moves to the next business day.</p><!-- /wp:paragraph -->\n\n<!-- wp:table {\"className\":\"deadline-table is-style-left\"} --><figure class=\"wp-block-table deadline-table is-style-left\"><table><thead><tr><th>Date</th><th>What is due</th><th>Who it applies to</th></tr></thead><tbody><tr><td>Jan 15</td><td>Fourth-quarter estimated tax payment</td><td>Individuals, sole traders</td></tr><tr><td>Jan 31</td><td>Employee wage statements and contractor forms</td><td>Employers</td></tr><tr><td>Mar 15</td><td>Partnership and S-corporation returns</td><td>Partnerships, S-corps</td></tr><tr><td>Apr 15</td><td>Individual returns and first-quarter estimates</td><td>Individuals</td></tr><tr><td>Jun 15</td><td>Second-quarter estimated tax payment</td><td>Individuals, sole traders</td></tr><tr><td>Sep 15</td><td>Third-quarter estimates; extended business returns</td><td>Individuals, businesses</td></tr><tr><td>Oct 15</td><td>Extended individual returns</td><td>Individuals</td></tr><tr><td>Dec 31</td><td>Last day for most deductible contributions and gifts</td><td>Everyone</td></tr></tbody></table><figcaption class=\"wp-element-caption\">Clients receive a personal reminder two weeks before each date that applies to them.</figcaption></figure><!-- /wp:table -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Tips for a calm tax season</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"className\":\"ticks\"} --><ul class=\"wp-block-list ticks\"><!-- wp:list-item --><li>Keep one folder, paper or digital, for every tax document as it arrives.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Schedule estimated payments in your bank on the day you file the previous one.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Send us your documents by the first of the month before a deadline.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:group {\"className\":\"tip-box\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group tip-box\"><!-- wp:paragraph --><p><strong>Need an extension?</strong> An extension gives you more time to file, not more time to pay. We can estimate what you owe so you avoid penalties.</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "menu_order": 2
+  },
+  {
+   "slug": "about",
+   "title": "About Numera",
+   "content": "<!-- wp:media-text {\"mediaId\":{{media_id:partners}},\"mediaType\":\"image\"} --><div class=\"wp-block-media-text is-stacked-on-mobile\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:partners}}\" alt=\"Two shapes meeting\" class=\"wp-image-{{media_id:partners}} size-full\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Accounting without the jargon</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Numera is a team of eleven accountants and tax advisers. We started in 2012 because we were tired of seeing small-business owners pay for advice they could not understand.</p><!-- /wp:paragraph --></div></div><!-- /wp:media-text -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">How we work</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"className\":\"ticks\"} --><ul class=\"wp-block-list ticks\"><!-- wp:list-item --><li>Every client has one named accountant who knows their business.</li><!-- /wp:list-item --><!-- wp:list-item --><li>We answer questions within one working day.</li><!-- /wp:list-item --><!-- wp:list-item --><li>We explain every number in plain language.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Fixed monthly fees, agreed in writing.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Credentials</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Our partners are certified public accountants and enrolled agents, and every return is reviewed by a second accountant before it is filed.</p><!-- /wp:paragraph -->",
+   "menu_order": 3
+  },
+  {
+   "slug": "contact",
+   "title": "Book a free call",
+   "excerpt": "Twenty minutes, no obligation.",
+   "content": "<!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">Book a free 20-minute call. Tell us what you need and we will tell you which plan fits, or whether you need us at all.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Office</h3><!-- /wp:heading --><!-- wp:paragraph --><p>220 Orchard Avenue, Suite 5<br>Lakeview, LV3 7QP</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Mon–Fri 9:00–17:30<br>Saturdays in March and April</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Get in touch</h3><!-- /wp:heading --><!-- wp:paragraph --><p><a href=\"tel:+15550168800\">+1 (555) 016-8800</a><br><a href=\"mailto:hello@numera.example\">hello@numera.example</a></p><!-- /wp:paragraph --><!-- wp:paragraph --><p>We reply within one working day.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:group {\"className\":\"tip-box\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group tip-box\"><!-- wp:paragraph --><p><strong>Bring to your first meeting:</strong> last year's return, any letters from the tax office and a rough list of income and expenses.</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "menu_order": 4
+  }
+ ],
+ "posts": [
+  {
+   "slug": "home-office-deduction-explained",
+   "title": "The home office deduction, explained in five minutes",
+   "date": "2026-10-22T08:00:00",
+   "categories": [
+    "tax"
+   ],
+   "tags": [
+    "deductions",
+    "freelancers"
+   ],
+   "featured_media": "home-office",
+   "excerpt": "If you work from home for yourself, part of your rent and bills may be deductible. Here is who qualifies and how to calculate it.",
+   "content": "<!-- wp:paragraph --><p>If you are self-employed and work from home, a share of your housing costs may be deductible. The rules are stricter than many people think, but for those who qualify, the saving is real.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Who qualifies</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"className\":\"ticks\"} --><ul class=\"wp-block-list ticks\"><!-- wp:list-item --><li>The space is used <strong>regularly and only</strong> for work. A kitchen table does not count.</li><!-- /wp:list-item --><!-- wp:list-item --><li>It is your main place of business, or where you meet clients.</li><!-- /wp:list-item --><!-- wp:list-item --><li>You are self-employed. Most employees cannot claim it.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Two ways to calculate it</h2><!-- /wp:heading -->\n\n<!-- wp:table {\"className\":\"is-style-left\"} --><figure class=\"wp-block-table is-style-left\"><table><thead><tr><th>Method</th><th>How it works</th><th>Best for</th></tr></thead><tbody><tr><td>Simplified</td><td>A fixed rate per square foot, up to a limit</td><td>Small spaces, little paperwork</td></tr><tr><td>Actual expenses</td><td>A share of rent, utilities and insurance by floor area</td><td>Larger spaces, higher costs</td></tr></tbody></table></figure><!-- /wp:table -->\n\n<!-- wp:group {\"className\":\"tip-box\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group tip-box\"><!-- wp:paragraph --><p><strong>Tip:</strong> measure the room and take a photo of it set up for work. If you are ever asked, that is your best evidence.</p><!-- /wp:paragraph --></div><!-- /wp:group -->\n\n<!-- wp:paragraph --><p>Not sure which method gives the bigger deduction? We run both for every freelance client and use the better one.</p><!-- /wp:paragraph -->",
+   "sticky": true,
+   "format": "standard",
+   "comments": [
+    {
+     "author": "Priyanka S.",
+     "email": "priya@example.com",
+     "content": "The simplified method saved me hours this year. Thanks for the clear table.",
+     "date": "2026-10-23T10:15:00"
+    },
+    {
+     "author": "Jon B.",
+     "email": "jon@example.com",
+     "content": "Does a garage workshop count if I only use it for my business?",
+     "date": "2026-10-24T17:40:00"
+    }
+   ]
+  },
+  {
+   "slug": "quarterly-estimated-taxes-for-freelancers",
+   "title": "Quarterly estimated taxes: a calm guide for freelancers",
+   "date": "2026-10-11T09:00:00",
+   "categories": [
+    "tax"
+   ],
+   "tags": [
+    "freelancers",
+    "deadlines"
+   ],
+   "featured_media": "calendar",
+   "excerpt": "No employer is withholding tax for you, so you pay it four times a year. A simple system takes the stress out of it.",
+   "content": "<!-- wp:paragraph --><p>When you work for yourself, nobody withholds tax from your income. Instead you pay estimated tax four times a year. Miss a payment and you face penalties; overpay and you lend the government money for free.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">A simple system</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Open a separate savings account just for tax.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Move 25–30% of every payment you receive into it the same day.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Pay each quarterly estimate from that account.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Adjust the percentage after your first year's return.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">The four dates</h2><!-- /wp:heading -->\n\n<!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Payment</th><th>Covers income from</th><th>Due</th></tr></thead><tbody><tr><td>Q1</td><td>January–March</td><td>April 15</td></tr><tr><td>Q2</td><td>April–May</td><td>June 15</td></tr><tr><td>Q3</td><td>June–August</td><td>September 15</td></tr><tr><td>Q4</td><td>September–December</td><td>January 15</td></tr></tbody></table></figure><!-- /wp:table -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>The savings account is the whole trick. Once the money is set aside, the deadline is just a transfer.</p><!-- /wp:paragraph --><cite>Senior tax adviser</cite></blockquote><!-- /wp:quote -->\n\n<!-- wp:paragraph --><p>In your first year, the safe-harbour rule usually lets you base payments on last year's tax, which avoids penalties even if you earn more.</p><!-- /wp:paragraph -->",
+   "sticky": false,
+   "format": "standard",
+   "comments": [
+    {
+     "author": "Mei L.",
+     "email": "mei@example.com",
+     "content": "Separate account changed my life. No more panic in April.",
+     "date": "2026-10-12T21:00:00"
+    }
+   ]
+  },
+  {
+   "slug": "bookkeeping-habits-that-save-hours",
+   "title": "Five bookkeeping habits that save hours at year end",
+   "date": "2026-09-30T08:30:00",
+   "categories": [
+    "bookkeeping",
+    "small-business"
+   ],
+   "tags": [
+    "records"
+   ],
+   "featured_media": "receipts",
+   "excerpt": "Fifteen minutes a week now is worth two days in March. These habits keep your books ready for tax season.",
+   "content": "<!-- wp:paragraph --><p>Most year-end stress comes from twelve months of small things left undone. A short weekly routine keeps the books current and makes tax season almost boring.</p><!-- /wp:paragraph -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li><strong>Snap receipts</strong> the moment you get them.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Reconcile weekly</strong>, not monthly.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Separate accounts</strong> for business and personal spending.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Invoice on the day</strong> the work is finished.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Review one report</strong> every month: profit and cash, side by side.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Which software?</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>The best bookkeeping software is the one you will actually open. All the common packages are good enough; we work with all of them and can help you choose.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>If your books are already behind, our catch-up service brings them up to date in a few weeks.</p><!-- /wp:paragraph -->",
+   "sticky": false,
+   "format": "standard",
+   "comments": []
+  },
+  {
+   "slug": "hiring-your-first-employee",
+   "title": "Hiring your first employee: the payroll checklist",
+   "date": "2026-09-17T10:00:00",
+   "categories": [
+    "payroll",
+    "small-business"
+   ],
+   "tags": [
+    "employers"
+   ],
+   "featured_media": "payroll",
+   "excerpt": "Your first hire is exciting and a little intimidating. Here is the paperwork, in the order you need it.",
+   "content": "<!-- wp:paragraph --><p>Taking on your first employee is a sign that the business is growing. It also brings a set of new obligations. None of them is difficult, but they need to be done in the right order.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Before the first day</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"className\":\"ticks\"} --><ul class=\"wp-block-list ticks\"><!-- wp:list-item --><li>Register as an employer with the tax office and your state.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Set up workers' compensation insurance.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Collect the employee's tax and eligibility forms.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Every pay day</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"className\":\"ticks\"} --><ul class=\"wp-block-list ticks\"><!-- wp:list-item --><li>Calculate gross pay, withholding and employer taxes.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Pay the employee and keep a pay record.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Deposit withheld taxes on the required schedule.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Every quarter and year end</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>File quarterly payroll returns and, in January, give each employee their annual wage statement. Our payroll service handles all of this for a flat fee per employee.</p><!-- /wp:paragraph -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Get payroll right from the first pay check. Fixing it later always costs more.</p><!-- /wp:paragraph --><cite>Payroll manager</cite></blockquote><!-- /wp:quote -->",
+   "sticky": false,
+   "format": "standard",
+   "comments": []
+  },
+  {
+   "slug": "vat-and-sales-tax-for-online-sellers",
+   "title": "Sales tax for online sellers: what changed this year",
+   "date": "2026-09-03T09:15:00",
+   "categories": [
+    "tax",
+    "small-business"
+   ],
+   "tags": [
+    "online-sales"
+   ],
+   "featured_media": "invoice",
+   "excerpt": "Selling across state lines can create obligations even without a physical presence. Here is how to check where you need to register.",
+   "content": "<!-- wp:paragraph --><p>If you sell online, you may owe sales tax in states where you have no office, warehouse or employee. Most states now use an economic threshold, based on sales or number of transactions, to decide.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">How to check</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Export a report of sales by destination state for the last twelve months.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Compare each state's total to its threshold.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Register in any state where you exceed it, before you collect tax there.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>Marketplaces often collect and remit tax for sales made through them, but sales from your own website are your responsibility.</p><!-- /wp:paragraph -->\n\n<!-- wp:group {\"className\":\"tip-box\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group tip-box\"><!-- wp:paragraph --><p><strong>Good to know:</strong> registering late usually means paying the tax you should have collected out of your own pocket.</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "sticky": false,
+   "format": "standard",
+   "comments": []
+  },
+  {
+   "slug": "cash-flow-forecast-for-small-business",
+   "title": "A cash-flow forecast you will actually keep up to date",
+   "date": "2026-08-21T08:00:00",
+   "categories": [
+    "small-business"
+   ],
+   "tags": [
+    "planning"
+   ],
+   "featured_media": "growth",
+   "excerpt": "Profit is not cash. A simple thirteen-week forecast shows you the tight weeks before they arrive.",
+   "content": "<!-- wp:paragraph --><p>Many profitable businesses still run out of cash. Customers pay late, tax bills arrive together, a big order needs stock up front. A cash-flow forecast shows you those weeks in advance.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Keep it simple</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"className\":\"ticks\"} --><ul class=\"wp-block-list ticks\"><!-- wp:list-item --><li>One row per week for the next thirteen weeks.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Money in: expected customer payments, by when they really pay.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Money out: payroll, rent, suppliers, tax and loan payments.</li><!-- /wp:list-item --><!-- wp:list-item --><li>A running balance, with a minimum you never want to go below.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>Update it every Monday with the actual numbers from the week before. After a month it takes ten minutes.</p><!-- /wp:paragraph -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>The forecast is never exactly right. It is right enough to make a phone call to the bank in March instead of June.</p><!-- /wp:paragraph --><cite>Advisory partner</cite></blockquote><!-- /wp:quote -->",
+   "sticky": false,
+   "format": "standard",
+   "comments": [
+    {
+     "author": "Carla M.",
+     "email": "carla@example.com",
+     "content": "We built ours with your template and spotted a crunch in December. Huge help.",
+     "date": "2026-08-23T09:00:00"
+    }
+   ]
+  },
+  {
+   "slug": "what-to-do-if-you-get-a-tax-letter",
+   "title": "What to do if you get a letter from the tax office",
+   "date": "2026-08-06T11:00:00",
+   "categories": [
+    "tax"
+   ],
+   "tags": [
+    "records"
+   ],
+   "featured_media": "audit",
+   "excerpt": "Most letters are routine and easily answered. The key is not to ignore them.",
+   "content": "<!-- wp:paragraph --><p>A letter from the tax office can be alarming, but most are routine: a question about a number, a missing form or a small adjustment. The worst thing you can do is put it in a drawer.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Step by step</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Read the letter fully and note the response deadline.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Check what it refers to against your return.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Gather any documents that support your figures.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Reply in writing before the deadline, or ask for more time.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>If the letter mentions an audit or proposes a large change, send us a copy. Clients on any plan get help with tax-office letters at no extra charge.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>Keep a copy of everything you send, and note the date and the name of anyone you speak to on the phone.</p><!-- /wp:paragraph -->",
+   "sticky": false,
+   "format": "standard",
+   "comments": []
+  },
+  {
+   "slug": "year-end-tax-moves",
+   "title": "Six year-end tax moves to make before December 31",
+   "date": "2026-07-24T09:00:00",
+   "categories": [
+    "tax",
+    "small-business"
+   ],
+   "tags": [
+    "deadlines",
+    "planning"
+   ],
+   "featured_media": "coins",
+   "excerpt": "A few decisions made before the year closes can lower this year's bill legally and simply.",
+   "content": "<!-- wp:paragraph --><p>Once the year ends, most tax decisions are locked in. A short review in November or December is the best chance to make the most of the rules.</p><!-- /wp:paragraph -->\n\n<!-- wp:list {\"className\":\"ticks\"} --><ul class=\"wp-block-list ticks\"><!-- wp:list-item --><li>Top up retirement contributions to the yearly limit.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Buy equipment you need anyway before year end.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Send invoices early, or late, depending on your bracket.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Make charitable gifts and keep the receipts.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Review losses you can use to offset gains.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Check your estimated payments cover this year's income.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Book a review</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Every client on the Small business and Growing team plans gets a year-end planning call in November. Personal plan clients can add one for a small fixed fee.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>Bring a rough figure for this year's income and any large purchases you are planning. Twenty minutes is usually enough.</p><!-- /wp:paragraph -->",
+   "sticky": false,
+   "format": "standard",
+   "comments": []
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Home",
+     "page": "home"
+    },
+    {
+     "title": "Services & pricing",
+     "page": "pricing"
+    },
+    {
+     "title": "Tax calendar",
+     "page": "tax-calendar"
+    },
+    {
+     "title": "Tips",
+     "page": "tips",
+     "children": [
+      {
+       "title": "Tax",
+       "category": "tax"
+      },
+      {
+       "title": "Bookkeeping",
+       "category": "bookkeeping"
+      },
+      {
+       "title": "Payroll",
+       "category": "payroll"
+      },
+      {
+       "title": "Small business",
+       "category": "small-business"
+      }
+     ]
+    },
+    {
+     "title": "About",
+     "page": "about"
+    }
+   ]
+  },
+  {
+   "name": "Footer menu",
+   "location": "footer",
+   "items": [
+    {
+     "title": "Pricing",
+     "page": "pricing"
+    },
+    {
+     "title": "Tax calendar",
+     "page": "tax-calendar"
+    },
+    {
+     "title": "About",
+     "page": "about"
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "sidebar-1": [
+   "<!-- wp:search {\"label\":\"Search tips\",\"buttonText\":\"Search\",\"placeholder\":\"Search finance tips…\"} /-->",
+   "<!-- wp:group {\"className\":\"help-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group help-card\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Questions about your taxes?</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Book a free 20-minute call with an accountant.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Book a call</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Topics</h2><!-- /wp:heading --><!-- wp:categories {\"showPostCounts\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Recent tips</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":4,\"displayPostDate\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Tags</h2><!-- /wp:heading --><!-- wp:tag-cloud /--></div><!-- /wp:group -->"
+  ],
+  "footer-1": [
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Office</h2><!-- /wp:heading --><!-- wp:paragraph --><p>220 Orchard Avenue, Suite 5<br>Lakeview, LV3 7QP<br><a href=\"tel:+15550168800\">+1 (555) 016-8800</a></p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Services</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Tax returns</li><!-- /wp:list-item --><!-- wp:list-item --><li>Bookkeeping</li><!-- /wp:list-item --><!-- wp:list-item --><li>Payroll</li><!-- /wp:list-item --><!-- wp:list-item --><li>Advisory</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Next deadline</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Fourth-quarter estimated tax: January 15. <a href=\"{{page:tax-calendar}}\">Full calendar</a></p><!-- /wp:paragraph --></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "hero_image": "hero",
+  "hero_heading": "Calm, clear accounting for growing businesses",
+  "hero_text": "Tax returns, bookkeeping and payroll for freelancers and small teams, with fixed monthly fees and a named accountant who explains every number.",
+  "hero_kicker": "Accounting · Tax · Payroll",
+  "hero_button_label": "See pricing",
+  "hero_button_url": "{{page:pricing}}",
+  "cta_label": "Book a free call",
+  "cta_url": "{{page:contact}}",
+  "deadline_url": "{{page:tax-calendar}}",
+  "table_style": "striped",
+  "blog_layout": "grid"
+ }
+}

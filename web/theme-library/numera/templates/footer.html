@@ -1,0 +1,21 @@
+	<footer id="colophon" class="site-footer">
+		<div class="wrap site-footer__grid">
+			<div class="footer-brand">
+				<p class="footer-brand__name"><span class="site-mark" aria-hidden="true"><svg viewBox="0 0 40 40" width="40" height="40" focusable="false"><rect x="2" y="2" width="36" height="36" rx="10" fill="currentColor"/><path d="M12 27V19M18 27V13M24 27v-6M30 27V10" stroke="#fff" stroke-width="3.2" stroke-linecap="round"/></svg></span>{{.SiteName}}</p>
+				{{with .Description}}<p class="footer-brand__text">{{.}}</p>{{end}}
+				{{with theme_mod . "cta_label"}}<a class="button button--small" href="{{theme_mod $ "cta_url"}}">{{.}}</a>{{end}}
+			</div>
+			{{if is_active_sidebar . "footer-1"}}<div class="footer-widgets">
+				{{dynamic_sidebar . "footer-1"}}
+			</div>{{end}}
+		</div>
+		<div class="wrap site-info">
+			{{if has_nav_menu . "footer"}}<nav class="footer-navigation" aria-label="Footer menu">{{nav_menu . "footer"}}</nav>{{end}}
+			<p class="site-info__text">{{.PrivacyLink}}<span>{{with theme_mod . "footer_text"}}{{.}}{{else}}&copy; {{$.SiteName}}. All rights reserved.{{end}}</span><span class="site-info__credit">Powered by <a href="https://github.com/boracomet/wordpress-go">WordPress Go</a></span></p>
+		</div>
+	</footer><!-- #colophon -->
+</div><!-- #page -->
+
+{{.Footer}}{{.AdminBar}}
+</body>
+</html>
