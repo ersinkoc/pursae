@@ -1,0 +1,19 @@
+{{template "head" .}}
+<body class="{{.BodyClass}}">
+{{.BodyOpen}}<div id="page" class="site">
+	<a class="skip-link screen-reader-text" href="#main">Skip to content</a>
+	{{with .Data.Settings.announcement}}<div class="aa-announce">
+		<p class="aa-announce__inner"><span class="aa-announce__tag">New</span> <span>{{.}}</span>{{with $.Data.Settings.enroll_link}} <a class="aa-announce__link" href="{{.}}">Learn more <span aria-hidden="true">&rarr;</span></a>{{end}}</p>
+	</div>{{end}}
+	<header id="masthead" class="site-header">
+		<div class="site-header__inner">
+			{{template "branding" .}}
+			{{if has_nav_menu . "primary"}}<nav id="site-navigation" class="main-navigation" aria-label="Primary menu">
+				{{template "menu-toggle" .}}
+				<div id="primary-menu-wrap" class="menu-wrap">{{nav_menu . "primary"}}</div>
+			</nav><!-- #site-navigation -->{{end}}
+			{{with .Data.Settings.enroll_label}}<a class="button aa-enroll" href="{{$.Data.Settings.enroll_link}}">{{.}}</a>{{end}}
+		</div>
+	</header><!-- #masthead -->
+	{{if .IsFront}}{{template "hero" .}}{{end}}
+	{{template "wrap-open" .}}

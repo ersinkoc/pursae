@@ -1,0 +1,28 @@
+	{{template "wrap-close" .}}
+	<footer id="colophon" class="site-footer">
+		<div class="gp-signup">
+			<div class="gp-signup__inner">
+				<div>
+					<p class="gp-signup__title">{{with .Data.Settings.signup_title}}{{.}}{{else}}The Friday Pulse{{end}}</p>
+					<p class="gp-signup__text">{{with .Data.Settings.signup_text}}{{.}}{{else}}One email a week: the numbers that moved, the wins worth celebrating and one thing you can do.{{end}}</p>
+				</div>
+				{{with .Data.Settings.signup_label}}<a class="button button--lime" href="{{$.Data.Settings.signup_link}}">{{.}}</a>{{end}}
+			</div>
+		</div>
+		<div class="site-footer__inner">
+			<div class="gp-footer__grid">
+				<div class="gp-footer__brand">
+					<p class="gp-footer__name"><svg viewBox="0 0 40 40" width="28" height="28" aria-hidden="true" focusable="false"><path d="M3 21h9l3-8 5 15 4-11 2 4h11" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>{{.SiteName}}</p>
+					{{with .Description}}<p class="gp-footer__desc">{{.}}</p>{{end}}
+					{{if has_nav_menu . "social"}}<nav class="social-navigation" aria-label="Social links">{{nav_menu . "social"}}</nav>{{end}}
+				</div>
+				{{if is_active_sidebar . "footer-1"}}<div class="footer-widgets">{{dynamic_sidebar . "footer-1"}}</div>{{end}}
+			</div>
+			<div class="gp-footer__bottom">
+				{{if has_nav_menu . "footer"}}<nav class="footer-navigation" aria-label="Footer menu">{{nav_menu . "footer"}}</nav>{{end}}
+				{{template "site-info" .}}
+			</div>
+		</div>
+	</footer><!-- #colophon -->
+</div><!-- #page -->
+{{template "foot" .}}

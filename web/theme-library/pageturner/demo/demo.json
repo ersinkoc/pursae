@@ -1,0 +1,520 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Odile Hartwell",
+  "blogdescription": "Novelist, essayist, reader",
+  "posts_per_page": 6
+ },
+ "categories": [
+  {
+   "slug": "reading-notes",
+   "name": "Reading Notes",
+   "description": "Notes on the books I am reading, loving and arguing with."
+  },
+  {
+   "slug": "writing-life",
+   "name": "Writing Life",
+   "description": "Drafts, revisions, routines and the long middle of a novel."
+  },
+  {
+   "slug": "events",
+   "name": "Events",
+   "description": "Readings, signings, festivals and the occasional train journey."
+  },
+  {
+   "slug": "news",
+   "name": "News",
+   "description": "Publication news, translations and new editions."
+  },
+  {
+   "slug": "short-fiction",
+   "name": "Short Fiction",
+   "description": "Stories and excerpts, some finished, some still becoming."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "novels",
+   "name": "Novels"
+  },
+  {
+   "slug": "poetry",
+   "name": "Poetry"
+  },
+  {
+   "slug": "revision",
+   "name": "Revision"
+  },
+  {
+   "slug": "notebooks",
+   "name": "Notebooks"
+  },
+  {
+   "slug": "the-salt-orchard",
+   "name": "The Salt Orchard"
+  },
+  {
+   "slug": "book-tour",
+   "name": "Book tour"
+  },
+  {
+   "slug": "winter",
+   "name": "Winter"
+  },
+  {
+   "slug": "interviews",
+   "name": "Interviews"
+  }
+ ],
+ "media": [
+  {
+   "id": "hero",
+   "file": "demo/images/hero.jpg",
+   "alt": "Cover of The Salt Orchard: an orange moon rising over dark orchard trees",
+   "caption": ""
+  },
+  {
+   "id": "salt-orchard",
+   "file": "demo/images/salt-orchard.jpg",
+   "alt": "Cover of The Salt Orchard, a novel by Odile Hartwell",
+   "caption": ""
+  },
+  {
+   "id": "lighthouse",
+   "file": "demo/images/lighthouse.jpg",
+   "alt": "Cover of The Lighthouse Keeper's Daughter: a striped lighthouse under a starry sky",
+   "caption": ""
+  },
+  {
+   "id": "winter-letters",
+   "file": "demo/images/winter-letters.jpg",
+   "alt": "Cover of Winter Letters: an envelope sealed with gold among snowflakes on oxblood",
+   "caption": ""
+  },
+  {
+   "id": "small-rooms",
+   "file": "demo/images/small-rooms.jpg",
+   "alt": "Cover of A Map of Small Rooms: a mustard grid of tiny coloured rooms",
+   "caption": ""
+  },
+  {
+   "id": "open-book",
+   "file": "demo/images/open-book.jpg",
+   "alt": "An open book with a red ribbon marker on a wooden table",
+   "caption": ""
+  },
+  {
+   "id": "lamp",
+   "file": "demo/images/lamp.jpg",
+   "alt": "A reading lamp casting warm light over books and a teacup at night",
+   "caption": ""
+  },
+  {
+   "id": "stack",
+   "file": "demo/images/stack.jpg",
+   "alt": "A tall stack of colourful books with a cup on top",
+   "caption": ""
+  },
+  {
+   "id": "ink",
+   "file": "demo/images/ink.jpg",
+   "alt": "Lines of handwriting and ink blots on cream paper with a fountain pen",
+   "caption": ""
+  },
+  {
+   "id": "train",
+   "file": "demo/images/train.jpg",
+   "alt": "Hills at sunset seen through a train window, a notebook on the table",
+   "caption": ""
+  },
+  {
+   "id": "ladder",
+   "file": "demo/images/ladder.jpg",
+   "alt": "Library shelves full of books with a wooden ladder",
+   "caption": ""
+  },
+  {
+   "id": "commonplace",
+   "file": "demo/images/commonplace.jpg",
+   "alt": "An open notebook with handwritten notes and a pasted card",
+   "caption": ""
+  },
+  {
+   "id": "revision",
+   "file": "demo/images/revision.jpg",
+   "alt": "Manuscript pages marked in red ink scattered beside a cup of coffee",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Home",
+   "content": "<!-- wp:group {\"align\":\"full\",\"className\":\"pt-section pt-center\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull pt-section pt-center\"><!-- wp:paragraph {\"align\":\"center\",\"className\":\"pt-kicker\"} --><p class=\"has-text-align-center pt-kicker\">The shelf</p><!-- /wp:paragraph --><!-- wp:heading {\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center\">Books by Odile Hartwell</h2><!-- /wp:heading --><!-- wp:paragraph {\"align\":\"center\",\"className\":\"pt-lead\"} --><p class=\"has-text-align-center pt-lead\">Four books, written at kitchen tables, on trains and in one very cold lighthouse.</p><!-- /wp:paragraph --><!-- wp:columns {\"align\":\"wide\",\"className\":\"pt-shelf\"} --><div class=\"wp-block-columns alignwide pt-shelf\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:salt-orchard}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:salt-orchard}}\" alt=\"Cover of The Salt Orchard, a novel by Odile Hartwell\" class=\"wp-image-{{media_id:salt-orchard}}\"/></figure><!-- /wp:image --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:lighthouse}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:lighthouse}}\" alt=\"Cover of The Lighthouse Keeper&#x27;s Daughter\" class=\"wp-image-{{media_id:lighthouse}}\"/></figure><!-- /wp:image --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:winter-letters}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:winter-letters}}\" alt=\"Cover of Winter Letters\" class=\"wp-image-{{media_id:winter-letters}}\"/></figure><!-- /wp:image --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:small-rooms}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:small-rooms}}\" alt=\"Cover of A Map of Small Rooms\" class=\"wp-image-{{media_id:small-rooms}}\"/></figure><!-- /wp:image --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:columns {\"align\":\"wide\",\"className\":\"pt-shelf-titles\"} --><div class=\"wp-block-columns alignwide pt-shelf-titles\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"pt-year\"} --><p class=\"pt-year\">2026 &middot; Novel</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">The Salt Orchard</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Three generations, one orchard and a sea that will not stay put.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"pt-year\"} --><p class=\"pt-year\">2022 &middot; Novel</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">The Lighthouse Keeper's Daughter</h3><!-- /wp:heading --><!-- wp:paragraph --><p>A girl, a lamp and a long winter at the edge of the map.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"pt-year\"} --><p class=\"pt-year\">2019 &middot; Essays</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Winter Letters</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Twelve letters on reading, walking and waiting for spring.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"pt-year\"} --><p class=\"pt-year\">2016 &middot; Debut</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">A Map of Small Rooms</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Stories set in the rooms of one apartment building.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:buttons {\"layout\":{\"type\":\"flex\",\"justifyContent\":\"center\"}} --><div class=\"wp-block-buttons is-content-justification-center\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:books}}\">All books</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --><!-- wp:group {\"align\":\"full\",\"className\":\"pt-section pt-section--vellum pt-center\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull pt-section pt-section--vellum pt-center\"><!-- wp:paragraph {\"align\":\"center\",\"className\":\"pt-kicker\"} --><p class=\"has-text-align-center pt-kicker\">From the journal</p><!-- /wp:paragraph --><!-- wp:heading {\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center\">Recent reading notes</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":3,\"displayPostContent\":true,\"excerptLength\":20,\"displayPostDate\":true,\"postLayout\":\"grid\",\"columns\":3} /--><!-- wp:buttons {\"layout\":{\"type\":\"flex\",\"justifyContent\":\"center\"}} --><div class=\"wp-block-buttons is-content-justification-center\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:journal}}\">Read the journal</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --><!-- wp:group {\"align\":\"full\",\"className\":\"pt-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull pt-section\"><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:lamp}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:lamp}}\" alt=\"A reading lamp casting warm light over books and a teacup at night\" class=\"wp-image-{{media_id:lamp}}\"/></figure><!-- /wp:image --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"pt-kicker\"} --><p class=\"pt-kicker\">About the author</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Odile Hartwell writes novels about families, weather and the places people refuse to leave.</h2><!-- /wp:heading --><!-- wp:paragraph --><p>She grew up on a fruit farm, studied botany before she studied literature, and now lives in a small coastal town with a large number of books and a small, opinionated cat.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Her novels have been translated into eleven languages. She teaches a summer workshop on revision and writes a monthly letter about reading.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:about}}\">More about Odile</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group --><!-- wp:group {\"align\":\"full\",\"className\":\"pt-section pt-section--vellum pt-center\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull pt-section pt-section--vellum pt-center\"><!-- wp:paragraph {\"align\":\"center\",\"className\":\"pt-kicker\"} --><p class=\"has-text-align-center pt-kicker\">On the road</p><!-- /wp:paragraph --><!-- wp:heading {\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center\">Readings &amp; signings</h2><!-- /wp:heading --><!-- wp:table {\"className\":\"pt-events\"} --><figure class=\"wp-block-table pt-events\"><table><thead><tr><th>Date</th><th>Where</th><th>What</th></tr></thead><tbody><tr><td>12 Nov</td><td>Quay Street Books, Saltmarsh</td><td>Launch reading and apple cake</td></tr><tr><td>19 Nov</td><td>The Lantern, Easterby</td><td>In conversation, with questions</td></tr><tr><td>28 Nov</td><td>Winter Words Festival</td><td>The Salt Orchard on the main stage</td></tr><tr><td>5 Dec</td><td>Online</td><td>Book club evening, free with registration</td></tr></tbody></table></figure><!-- /wp:table --><!-- wp:buttons {\"layout\":{\"type\":\"flex\",\"justifyContent\":\"center\"}} --><div class=\"wp-block-buttons is-content-justification-center\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:events}}\">All events</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "front_page": true
+  },
+  {
+   "slug": "journal",
+   "title": "Journal",
+   "content": "",
+   "posts_page": true
+  },
+  {
+   "slug": "books",
+   "title": "Books",
+   "content": "<!-- wp:paragraph {\"className\":\"pt-lead\"} --><p class=\"pt-lead\">Four books so far, and a fifth taking shape in a notebook by the window.</p><!-- /wp:paragraph --><!-- wp:media-text {\"mediaId\":{{media_id:salt-orchard}},\"mediaType\":\"image\"} --><div class=\"wp-block-media-text is-stacked-on-mobile\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:salt-orchard}}\" alt=\"Cover of The Salt Orchard\" class=\"wp-image-{{media_id:salt-orchard}} size-full\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:paragraph {\"className\":\"pt-year\"} --><p class=\"pt-year\">2026 &middot; Novel</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">The Salt Orchard</h2><!-- /wp:heading --><!-- wp:paragraph --><p>On a strip of coast where the sea keeps creeping inland, three generations of a family fight, love and argue over the future of their apple orchard.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:the-salt-orchard}}\">Read more</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div></div><!-- /wp:media-text --><!-- wp:media-text {\"mediaId\":{{media_id:lighthouse}},\"mediaType\":\"image\",\"mediaPosition\":\"right\"} --><div class=\"wp-block-media-text is-stacked-on-mobile has-media-on-the-right\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:lighthouse}}\" alt=\"Cover of The Lighthouse Keeper&#x27;s Daughter\" class=\"wp-image-{{media_id:lighthouse}} size-full\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:paragraph {\"className\":\"pt-year\"} --><p class=\"pt-year\">2022 &middot; Novel</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">The Lighthouse Keeper's Daughter</h2><!-- /wp:heading --><!-- wp:paragraph --><p>When her father falls ill, twelve-year-old Nell keeps the lamp burning through the longest winter the island has known.</p><!-- /wp:paragraph --></div></div><!-- /wp:media-text --><!-- wp:media-text {\"mediaId\":{{media_id:winter-letters}},\"mediaType\":\"image\"} --><div class=\"wp-block-media-text is-stacked-on-mobile\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:winter-letters}}\" alt=\"Cover of Winter Letters\" class=\"wp-image-{{media_id:winter-letters}} size-full\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:paragraph {\"className\":\"pt-year\"} --><p class=\"pt-year\">2019 &middot; Essays</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Winter Letters</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Twelve essays written as letters to friends, one for each week of a hard winter, about reading, walking and waiting.</p><!-- /wp:paragraph --></div></div><!-- /wp:media-text --><!-- wp:media-text {\"mediaId\":{{media_id:small-rooms}},\"mediaType\":\"image\",\"mediaPosition\":\"right\"} --><div class=\"wp-block-media-text is-stacked-on-mobile has-media-on-the-right\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:small-rooms}}\" alt=\"Cover of A Map of Small Rooms\" class=\"wp-image-{{media_id:small-rooms}} size-full\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:paragraph {\"className\":\"pt-year\"} --><p class=\"pt-year\">2016 &middot; Stories</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">A Map of Small Rooms</h2><!-- /wp:heading --><!-- wp:paragraph --><p>A debut collection of linked stories set in the rooms of one city apartment building, from the basement to the roof garden.</p><!-- /wp:paragraph --></div></div><!-- /wp:media-text -->",
+   "template": "page-wide",
+   "featured_media": "ladder"
+  },
+  {
+   "slug": "the-salt-orchard",
+   "title": "The Salt Orchard",
+   "content": "<!-- wp:paragraph {\"className\":\"pt-lead\"} --><p class=\"pt-lead\">Agathe has walked the rows of her orchard every morning for fifty years. Now the sea is coming, a little closer every winter, and her family cannot agree on whether to fight it or let the orchard go.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:salt-orchard}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:salt-orchard}}\" alt=\"Cover of The Salt Orchard\" class=\"wp-image-{{media_id:salt-orchard}}\"/></figure><!-- /wp:image --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Praise</h3><!-- /wp:heading --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>A novel to read slowly, by a window, with an apple.</p><!-- /wp:paragraph --><cite>A bookseller in Easterby</cite></blockquote><!-- /wp:quote --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Tender, funny and quietly devastating.</p><!-- /wp:paragraph --><cite>An early reader</cite></blockquote><!-- /wp:quote --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Hardback, 384 pages</li><!-- /wp:list-item --><!-- wp:list-item --><li>Audiobook, 11 hours</li><!-- /wp:list-item --><!-- wp:list-item --><li>Published 22 October 2026</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:heading --><h2 class=\"wp-block-heading\">Read the opening</h2><!-- /wp:heading --><!-- wp:paragraph --><p>The first pages are available on the journal, and a longer excerpt is coming in the next letter.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{post:an-excerpt-the-first-frost}}\">Read the excerpt</a></div><!-- /wp:button --><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{post:ten-questions-about-the-salt-orchard}}\">Questions &amp; answers</a></div><!-- /wp:button --></div><!-- /wp:buttons -->",
+   "parent": "books"
+  },
+  {
+   "slug": "events",
+   "title": "Events",
+   "content": "<!-- wp:paragraph {\"className\":\"pt-lead\"} --><p class=\"pt-lead\">Readings, signings and festivals this season. All events are free unless noted; bookshops appreciate it if you buy your copy from them.</p><!-- /wp:paragraph --><!-- wp:table {\"className\":\"pt-events\"} --><figure class=\"wp-block-table pt-events\"><table><thead><tr><th>Date</th><th>Where</th><th>What</th></tr></thead><tbody><tr><td>12 Nov, 19:00</td><td>Quay Street Books, Saltmarsh</td><td>Launch reading, signing and apple cake</td></tr><tr><td>19 Nov, 18:30</td><td>The Lantern, Easterby</td><td>In conversation with the bookshop's founder</td></tr><tr><td>28 Nov, 14:00</td><td>Winter Words Festival</td><td>Main stage talk (festival ticket required)</td></tr><tr><td>5 Dec, 20:00</td><td>Online</td><td>Book club evening with questions</td></tr><tr><td>14 Jan, 11:00</td><td>Saltmarsh Library</td><td>Writing workshop: beginnings</td></tr></tbody></table></figure><!-- /wp:table --><!-- wp:heading --><h2 class=\"wp-block-heading\">Book clubs</h2><!-- /wp:heading --><!-- wp:paragraph --><p>I love visiting book clubs, in person when I can and by video when I cannot. Write through the contact page with your club's name, how many of you there are and a few dates that suit.</p><!-- /wp:paragraph --><!-- wp:image {\"id\":{{media_id:open-book}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:open-book}}\" alt=\"An open book with a red ribbon marker on a wooden table\" class=\"wp-image-{{media_id:open-book}}\"/></figure><!-- /wp:image -->"
+  },
+  {
+   "slug": "about",
+   "title": "About",
+   "content": "<!-- wp:media-text {\"mediaId\":{{media_id:lamp}},\"mediaType\":\"image\"} --><div class=\"wp-block-media-text is-stacked-on-mobile\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:lamp}}\" alt=\"A reading lamp casting warm light over books and a teacup at night\" class=\"wp-image-{{media_id:lamp}} size-full\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:paragraph --><p>Odile Hartwell grew up on a fruit farm on a windy coast, where she learned to prune trees before she learned to read. She studied botany, then literature, then spent ten years working in bookshops before her first book was published.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>She is the author of two novels, a book of essays and a collection of stories, translated into eleven languages.</p><!-- /wp:paragraph --></div></div><!-- /wp:media-text --><!-- wp:heading --><h2 class=\"wp-block-heading\">Writing</h2><!-- /wp:heading --><!-- wp:paragraph --><p>She writes in the mornings, by hand first, at a table by a window that looks onto a small and disorderly garden. Afternoons are for reading, walking and answering letters, which she does very slowly but always does.</p><!-- /wp:paragraph --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>I write about people who stay. It is the bravest thing I know.</p><!-- /wp:paragraph --><cite>From an interview</cite></blockquote><!-- /wp:quote --><!-- wp:heading --><h2 class=\"wp-block-heading\">Teaching</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Each summer she teaches a week-long workshop on revision for writers who have finished a first draft and do not know what to do next. Details are announced in the monthly letter.</p><!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "contact",
+   "title": "Contact",
+   "content": "<!-- wp:paragraph {\"className\":\"pt-lead\"} --><p class=\"pt-lead\">Letters are always welcome, and I read every one, though replies can take a while.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Readers</h3><!-- /wp:heading --><!-- wp:paragraph --><p>letters@odilehartwell.example<br>Or by post, care of the publisher.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Rights &amp; press</h3><!-- /wp:heading --><!-- wp:paragraph --><p>The literary agency handles translation and film rights, interviews and review copies.<br>agency@example.com</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Events</h3><!-- /wp:heading --><!-- wp:paragraph --><p>For festivals, bookshops and book clubs:<br>events@odilehartwell.example</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:separator --><hr class=\"wp-block-separator has-alpha-channel-opacity\"/><!-- /wp:separator --><!-- wp:paragraph --><p>Please note that I am not able to read unpublished manuscripts, but the revision workshop is a good place to share your work.</p><!-- /wp:paragraph -->"
+  }
+ ],
+ "posts": [
+  {
+   "slug": "the-salt-orchard-is-out-today",
+   "title": "The Salt Orchard Is Out Today",
+   "date": "2026-10-22T09:00:00",
+   "excerpt": "Seven years, four drafts and one orchard that refused to stay fictional. The new novel is in bookshops from this morning.",
+   "categories": [
+    "news"
+   ],
+   "tags": [
+    "the-salt-orchard",
+    "novels"
+   ],
+   "featured_media": "salt-orchard",
+   "format": "standard",
+   "sticky": true,
+   "content": "<!-- wp:paragraph --><p>This morning, The Salt Orchard arrived in bookshops. I walked to the little shop on Quay Street before it opened, just to see it in the window, and found the owner already arranging copies into a small, unsteady tower.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The novel follows three generations of a family who farm apples on a strip of coast where the sea keeps creeping inland. It began as a short story in 2019 and grew, slowly and stubbornly, into the longest thing I have ever written.</p><!-- /wp:paragraph --><!-- wp:pullquote --><figure class=\"wp-block-pullquote\"><blockquote><p>Every orchard is a bet on a future you will not live to see.</p><cite>The Salt Orchard</cite></blockquote></figure><!-- /wp:pullquote --><!-- wp:heading --><h2 class=\"wp-block-heading\">Where to find it</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>In hardback from your local independent bookshop</li><!-- /wp:list-item --><!-- wp:list-item --><li>As an audiobook, read beautifully by an actor whose voice I now hear in my sleep</li><!-- /wp:list-item --><!-- wp:list-item --><li>In libraries from November: please ask for it, librarians do listen</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph --><p>Thank you to everyone who read early drafts, sent encouraging letters and asked, kindly and repeatedly, whether it was finished yet. It is. I hope it keeps you up a little past your bedtime.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:the-salt-orchard}}\">About the book</a></div><!-- /wp:button --><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{post:an-excerpt-the-first-frost}}\">Read an excerpt</a></div><!-- /wp:button --></div><!-- /wp:buttons -->",
+   "comments": [
+    {
+     "author": "Wren",
+     "email": "wren@example.com",
+     "content": "Bought it at nine, finished part one by lunch. The grandmother is going to stay with me for a long time.",
+     "date": "2026-10-23T14:10:00"
+    },
+    {
+     "author": "Callum",
+     "email": "callum@example.com",
+     "content": "Our book club has picked it for December. Any chance of a video visit?",
+     "date": "2026-10-24T19:02:00"
+    }
+   ]
+  },
+  {
+   "slug": "on-keeping-a-commonplace-book",
+   "title": "On Keeping a Commonplace Book",
+   "date": "2026-10-14T08:30:00",
+   "excerpt": "A notebook for other people's sentences: why I have kept one for twenty years, and how to start your own.",
+   "categories": [
+    "writing-life",
+    "reading-notes"
+   ],
+   "tags": [
+    "notebooks"
+   ],
+   "featured_media": "commonplace",
+   "format": "standard",
+   "sticky": false,
+   "content": "<!-- wp:paragraph --><p>For twenty years I have kept a commonplace book: a notebook where I copy out sentences that stop me in my tracks. Not my own sentences, but other people's, from novels, letters, recipes, overheard conversations and the backs of seed packets.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The habit is centuries old. Readers once kept these books as a way of building a private library of thought, and I have come to think of mine as a conversation with every writer I have loved.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">How to begin</h2><!-- /wp:heading --><!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Choose a notebook you are not afraid to ruin.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Copy by hand. The slowness is the point.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Write where the sentence came from, and the date.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Re-read it in winter, when you need it most.</li><!-- /wp:list-item --></ol><!-- /wp:list --><!-- wp:image {\"id\":{{media_id:commonplace}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:commonplace}}\" alt=\"An open notebook with handwritten notes and a pasted card\" class=\"wp-image-{{media_id:commonplace}}\"/><figcaption class=\"wp-element-caption\">Volume eleven, currently held together with tape.</figcaption></figure><!-- /wp:image --><!-- wp:paragraph --><p>Copying a sentence by hand teaches you how it is built: where it breathes, where it turns. Half of what I know about rhythm I learned from the ink on my own fingers.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Juno",
+     "email": "juno@example.com",
+     "content": "I started one after your reading in the spring. It is already my favourite object in the house.",
+     "date": "2026-10-15T21:40:00"
+    }
+   ]
+  },
+  {
+   "slug": "notes-on-revision-the-fourth-draft",
+   "title": "Notes on Revision: The Fourth Draft",
+   "date": "2026-10-02T10:00:00",
+   "excerpt": "The first draft is a conversation with yourself. The fourth is a conversation with the reader. What changed, and what I cut.",
+   "categories": [
+    "writing-life"
+   ],
+   "tags": [
+    "revision",
+    "the-salt-orchard"
+   ],
+   "featured_media": "revision",
+   "format": "standard",
+   "sticky": false,
+   "content": "<!-- wp:paragraph --><p>People often ask how many drafts a novel takes. The honest answer is: as many as it takes to stop lying. The Salt Orchard needed four.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The first draft was three hundred pages of me finding out what the story was about. The second cut a whole point of view. The third moved the ending to the middle. The fourth, the one you can now read, was mostly about trust: trusting the reader to notice what I no longer needed to say.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">What I cut</h2><!-- /wp:heading --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>A seventy-page flashback to 1952</li><!-- /wp:list-item --><!-- wp:list-item --><li>A talking dog (I am not sorry)</li><!-- /wp:list-item --><!-- wp:list-item --><li>Every sentence beginning with 'Suddenly'</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>The prologue, twice</li><!-- /wp:list-item --><!-- wp:list-item --><li>Two weddings and one funeral</li><!-- /wp:list-item --><!-- wp:list-item --><li>Eleven thousand words about apple varieties</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Revision is not fixing what is broken. It is finding out what the book has been trying to be all along.</p><!-- /wp:paragraph --></blockquote><!-- /wp:quote --><!-- wp:paragraph --><p>If you are in the middle of your own revision, take heart. The pages you cut are not wasted. They are the scaffolding the finished book stood on while it was being built.</p><!-- /wp:paragraph -->",
+   "comments": []
+  },
+  {
+   "slug": "a-signing-tour-diary-by-train",
+   "title": "A Signing Tour Diary, by Train",
+   "date": "2026-09-24T18:00:00",
+   "excerpt": "Nine cities, eleven bookshops, one lost umbrella. Notes scribbled between stations on the first leg of the tour.",
+   "categories": [
+    "events"
+   ],
+   "tags": [
+    "book-tour"
+   ],
+   "featured_media": "train",
+   "format": "standard",
+   "sticky": false,
+   "content": "<!-- wp:paragraph --><p>I am writing this on the 16:42, somewhere between the river towns and the hills, with a cold coffee and a tote bag full of pens that may or may not work.</p><!-- /wp:paragraph --><!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Day</th><th>Town</th><th>A note</th></tr></thead><tbody><tr><td>Monday</td><td>Harrowgate Lane Books</td><td>A reader brought her grandmother's apple cake</td></tr><tr><td>Tuesday</td><td>The Lantern, Easterby</td><td>Sold out of chairs; people sat on the stairs</td></tr><tr><td>Thursday</td><td>Morrow &amp; Daughters</td><td>Signed a copy for a dog, at the owner's insistence</td></tr></tbody></table></figure><!-- /wp:table --><!-- wp:paragraph --><p>The thing nobody tells you about touring is how much listening you do. I arrive with a reading prepared, but the best part of every evening is the questions, and the stories readers tell me about their own families and their own orchards.</p><!-- /wp:paragraph --><!-- wp:image {\"id\":{{media_id:train}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:train}}\" alt=\"Hills at sunset seen through a train window, a notebook on the table\" class=\"wp-image-{{media_id:train}}\"/><figcaption class=\"wp-element-caption\">The view somewhere after Easterby.</figcaption></figure><!-- /wp:image --><!-- wp:paragraph --><p>Next week: the coast, a literary festival in a marquee, and, I am told, a lighthouse. Fittingly.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Ada",
+     "email": "ada@example.com",
+     "content": "The stairs at The Lantern were the best seats in the house. Thank you for staying so late.",
+     "date": "2026-09-25T10:15:00"
+    }
+   ]
+  },
+  {
+   "slug": "an-excerpt-the-first-frost",
+   "title": "An Excerpt: The First Frost",
+   "date": "2026-09-12T12:00:00",
+   "excerpt": "The opening pages of The Salt Orchard, in which a grandmother walks the rows before dawn and the sea comes a little closer.",
+   "categories": [
+    "short-fiction"
+   ],
+   "tags": [
+    "the-salt-orchard",
+    "novels"
+   ],
+   "featured_media": "hero",
+   "format": "standard",
+   "sticky": false,
+   "content": "<!-- wp:paragraph --><p>The first frost came in the night, the way it always did, without asking. By morning the orchard had turned to glass, and Agathe walked the rows with a lantern though the sky was already greying, because she had walked them with a lantern for fifty years and saw no reason to stop now.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>She counted the trees as she went. Not the apples, which would come in their own time, but the trees themselves, as if one might have slipped away to the sea while she slept. Four hundred and twelve. The same as yesterday. The same, very nearly, as the year her husband planted the last of them.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>At the end of the twelfth row the ground changed. It was soft there, and smelled of salt, and the grass had a grey edge to it that had not been there in spring. Agathe stood a long time looking at it, the lantern hissing in her hand.</p><!-- /wp:paragraph --><!-- wp:separator --><hr class=\"wp-block-separator has-alpha-channel-opacity\"/><!-- /wp:separator --><!-- wp:paragraph --><p>Behind her, the farmhouse windows were lighting one by one: her son, who would want to talk about selling; her granddaughter, who would want to talk about anything else. Agathe turned her back on the sea and went in to make the porridge. There would be time enough for the twelfth row.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><em>From The Salt Orchard, chapter one.</em></p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Pell",
+     "email": "pell@example.com",
+     "content": "That last line. I had to put the book down and look out of the window for a while.",
+     "date": "2026-09-13T08:44:00"
+    }
+   ]
+  },
+  {
+   "slug": "five-novels-for-a-long-winter",
+   "title": "Five Novels for a Long Winter",
+   "date": "2026-09-03T09:30:00",
+   "excerpt": "Thick books, slow books, books for the dark evenings. A reading list for the months when the lamp goes on at four.",
+   "categories": [
+    "reading-notes"
+   ],
+   "tags": [
+    "winter",
+    "novels"
+   ],
+   "featured_media": "lamp",
+   "format": "standard",
+   "sticky": false,
+   "content": "<!-- wp:paragraph --><p>Every year, around the time the clocks change, I start building a winter pile. These are the books I save for the dark months, when there is nothing better than a long story and a lamp.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">This year's pile</h2><!-- /wp:heading --><!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li><strong>The Glass Valley</strong>: a family saga set in a glassblowing town, four hundred pages of heat and light.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Ninety Letters to the Lighthouse</strong>: an epistolary novel that will make you want to write to someone.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>The Cartographer's Apprentice</strong>: maps, mountains and a mystery that unfolds very, very slowly.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Small Hours</strong>: a quiet, funny novel about a night-shift baker. Read it with toast.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>A Year of Rivers</strong>: not a novel, strictly, but a book of seasons to dip into all winter.</li><!-- /wp:list-item --></ol><!-- /wp:list --><!-- wp:media-text {\"mediaId\":{{media_id:stack}},\"mediaType\":\"image\"} --><div class=\"wp-block-media-text is-stacked-on-mobile\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:stack}}\" alt=\"A tall stack of colourful books with a cup on top\" class=\"wp-image-{{media_id:stack}} size-full\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">How I read in winter</h3><!-- /wp:heading --><!-- wp:paragraph --><p>One long book at a time, one chapter a night, and never on a screen after nine. I keep a pencil in every book for underlining and for writing the date I finished it on the last page.</p><!-- /wp:paragraph --></div></div><!-- /wp:media-text --><!-- wp:paragraph --><p>What is on your winter pile? Tell me in the comments: I am always looking for the next one.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Mina",
+     "email": "mina@example.com",
+     "content": "Small Hours is my favourite book of the decade. Toast is essential.",
+     "date": "2026-09-04T22:30:00"
+    },
+    {
+     "author": "Rafe",
+     "email": "rafe@example.com",
+     "content": "Adding The Glass Valley to my list. I need something long for January.",
+     "date": "2026-09-05T07:55:00"
+    }
+   ]
+  },
+  {
+   "slug": "reading-notes-the-quiet-shelf",
+   "title": "Reading Notes: The Quiet Shelf",
+   "date": "2026-08-20T16:00:00",
+   "excerpt": "On books that do not shout: short novels, small presses and the pleasure of a story that trusts you to lean in.",
+   "categories": [
+    "reading-notes"
+   ],
+   "tags": [
+    "novels",
+    "poetry"
+   ],
+   "featured_media": "ladder",
+   "format": "standard",
+   "sticky": false,
+   "content": "<!-- wp:paragraph --><p>In my study there is one shelf I call the quiet shelf. It holds the books that never made a splash: short novels from small presses, collections of poems with plain covers, memoirs about gardens and grief and the weather.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>They are the books I press into friends' hands most often, precisely because nobody else will. A quiet book asks you to lean in. It does not explain itself. It trusts you.</p><!-- /wp:paragraph --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>The quietest books are often the ones that keep talking long after you close them.</p><!-- /wp:paragraph --></blockquote><!-- /wp:quote --><!-- wp:heading --><h2 class=\"wp-block-heading\">Three from the shelf</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><em>The Ferryman's Almanac</em>, a slim novel told in tide tables and weather notes.</li><!-- /wp:list-item --><!-- wp:list-item --><li><em>Salt and Ash</em>, poems about a fishing village, read aloud in one sitting.</li><!-- /wp:list-item --><!-- wp:list-item --><li><em>A Patient Garden</em>, a year in a walled garden, month by month.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph --><p>If you run a small press or a bookshop with a quiet shelf of your own, I would love to hear what is on it.</p><!-- /wp:paragraph -->",
+   "comments": []
+  },
+  {
+   "slug": "ten-questions-about-the-salt-orchard",
+   "title": "Ten Questions About The Salt Orchard",
+   "date": "2026-08-08T11:00:00",
+   "excerpt": "Readers sent questions; I tried to answer them honestly. On orchards, endings, grandmothers and the sea.",
+   "categories": [
+    "news",
+    "writing-life"
+   ],
+   "tags": [
+    "interviews",
+    "the-salt-orchard"
+   ],
+   "featured_media": "open-book",
+   "format": "standard",
+   "sticky": false,
+   "content": "<!-- wp:paragraph --><p>Before publication I asked readers of this letter what they wanted to know about the new novel. Hundreds of you wrote in. Here are ten of my favourite questions, with the most honest answers I could manage.</p><!-- /wp:paragraph --><!-- wp:details --><details class=\"wp-block-details\"><summary>Is the orchard real?</summary><!-- wp:paragraph --><p>Not exactly. It is three orchards I know, stitched together and moved closer to the sea than any sensible farmer would plant.</p><!-- /wp:paragraph --></details><!-- /wp:details --><!-- wp:details --><details class=\"wp-block-details\"><summary>Who is Agathe based on?</summary><!-- wp:paragraph --><p>Nobody and everybody. She has my grandmother's hands and my own stubbornness, and a temper all her own.</p><!-- /wp:paragraph --></details><!-- /wp:details --><!-- wp:details --><details class=\"wp-block-details\"><summary>Why did the ending change?</summary><!-- wp:paragraph --><p>Because the first ending was the one I wanted, and the final ending is the one the book needed.</p><!-- /wp:paragraph --></details><!-- /wp:details --><!-- wp:details --><details class=\"wp-block-details\"><summary>What are you writing next?</summary><!-- wp:paragraph --><p>Something shorter, set in a lighthouse, with far fewer apples.</p><!-- /wp:paragraph --></details><!-- /wp:details --><!-- wp:paragraph --><p>Thank you for every question, including the one about whether I have ever eaten a salted apple. (Yes. Do not.)</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The rest of the questions and answers will go out in next month's letter, along with a recipe for the apple cake from chapter nine.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Odile Hartwell",
+     "email": "odile@example.com",
+     "content": "Thank you all for such generous questions. More answers in the next letter!",
+     "date": "2026-08-09T09:00:00"
+    }
+   ]
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Home",
+     "page": "home"
+    },
+    {
+     "title": "Books",
+     "page": "books",
+     "children": [
+      {
+       "title": "The Salt Orchard",
+       "page": "the-salt-orchard"
+      },
+      {
+       "title": "Read an excerpt",
+       "post": "an-excerpt-the-first-frost"
+      }
+     ]
+    },
+    {
+     "title": "Journal",
+     "page": "journal",
+     "children": [
+      {
+       "title": "Reading notes",
+       "category": "reading-notes"
+      },
+      {
+       "title": "Writing life",
+       "category": "writing-life"
+      },
+      {
+       "title": "Short fiction",
+       "category": "short-fiction"
+      }
+     ]
+    },
+    {
+     "title": "Events",
+     "page": "events"
+    },
+    {
+     "title": "About",
+     "page": "about"
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    }
+   ]
+  },
+  {
+   "name": "Footer",
+   "location": "footer",
+   "items": [
+    {
+     "title": "Books",
+     "page": "books"
+    },
+    {
+     "title": "Events",
+     "page": "events"
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    }
+   ]
+  },
+  {
+   "name": "Social",
+   "location": "social",
+   "items": [
+    {
+     "title": "Newsletter",
+     "url": "#newsletter"
+    },
+    {
+     "title": "Instagram",
+     "url": "https://instagram.com/"
+    },
+    {
+     "title": "Bookshop",
+     "url": "https://example.com/bookshop"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "sidebar-1": [
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">The new novel</h2><!-- /wp:heading --><!-- wp:image {\"id\":{{media_id:salt-orchard}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:salt-orchard}}\" alt=\"Cover of The Salt Orchard\" class=\"wp-image-{{media_id:salt-orchard}}\"/></figure><!-- /wp:image --><!-- wp:paragraph {\"className\":\"pt-widget-book\"} --><p class=\"pt-widget-book\"><em>The Salt Orchard</em> is out now in hardback and audio.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:the-salt-orchard}}\">About the book</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "<!-- wp:search {\"label\":\"Search\",\"buttonText\":\"Search\"} /-->",
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Shelves</h2><!-- /wp:heading --><!-- wp:categories {\"showPostCounts\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Recent entries</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":4,\"displayPostDate\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Index</h2><!-- /wp:heading --><!-- wp:tag-cloud /--></div><!-- /wp:group -->"
+  ],
+  "footer-1": [
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Next reading</h2><!-- /wp:heading --><!-- wp:paragraph --><p>12 November, 19:00<br>Quay Street Books, Saltmarsh</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">From the journal</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":3,\"displayPostDate\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Shelves</h2><!-- /wp:heading --><!-- wp:categories {\"showPostCounts\":true} /--></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "hero_image": "hero",
+  "accent": "#7a1f2b",
+  "secondary": "#3e5c5a",
+  "post_layout": "journal",
+  "sidebar": "right",
+  "font_pairing": "caslon",
+  "text_size": "normal",
+  "drop_caps": true,
+  "night_mode": false,
+  "announce_text": "The Salt Orchard, a new novel, is out now",
+  "announce_link": "{{page:the-salt-orchard}}",
+  "hero_kicker": "The new novel",
+  "hero_title": "The Salt Orchard",
+  "hero_text": "Three generations, four hundred apple trees and a sea that will not stay where it belongs. A novel about the places we refuse to leave.",
+  "hero_button_label": "Buy the book",
+  "hero_button_link": "{{page:the-salt-orchard}}",
+  "hero_second_label": "Read the first pages",
+  "hero_second_link": "{{post:an-excerpt-the-first-frost}}",
+  "newsletter_title": "Letters from the writing desk",
+  "newsletter_link": "{{page:contact}}",
+  "footer_text": "© Odile Hartwell · All rights reserved"
+ }
+}

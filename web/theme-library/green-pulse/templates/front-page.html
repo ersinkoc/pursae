@@ -1,0 +1,9 @@
+{{template "header" .}}
+{{with .Post}}<article id="post-{{.ID}}" class="{{.Class}} entry entry--front">
+	<h1 class="screen-reader-text">{{.Title}}</h1>
+	<div class="entry-content">
+		{{.Content}}
+	</div><!-- .entry-content -->
+	{{with .EditLink}}<footer class="entry-footer"><span class="edit-link">{{.}}</span></footer>{{end}}
+</article>{{end}}
+{{template "footer" .}}

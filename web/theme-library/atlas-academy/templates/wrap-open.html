@@ -1,0 +1,3 @@
+<div id="content" class="site-content">
+	<div class="content-wrap{{if and (is_active_sidebar . "sidebar-1") (or (eq .Q.Kind "single") (eq .Q.Kind "home") (eq .Q.Kind "category") (eq .Q.Kind "tag") (eq .Q.Kind "author") (eq .Q.Kind "date") (eq .Q.Kind "search"))}} has-sidebar{{end}}{{if eq .Q.Kind "front-page"}} is-front{{end}}{{if or (eq .Q.Kind "page") (eq .Q.Kind "front-page")}} is-page{{end}}">
+		<main id="main" class="site-main" tabindex="-1">

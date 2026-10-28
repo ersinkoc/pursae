@@ -1,0 +1,9 @@
+{{template "header" .}}
+<section class="error-404 not-found">
+	<span class="fc-arch-outline" aria-hidden="true"><span>404</span></span>
+	<h1 class="page-title">This door leads nowhere</h1>
+	<p class="error-404__text">The page you were looking for has moved or never existed. You are still welcome here: try a search, or head back to the front steps.</p>
+	{{template "searchform" .}}
+	<p class="error-404__home"><a class="button" href="{{.HomeURL}}">Return home</a></p>
+</section><!-- .error-404 -->
+{{template "footer" .}}

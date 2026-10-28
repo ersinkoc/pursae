@@ -1,0 +1,502 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Faithful Commons",
+  "blogdescription": "A welcoming community on Linden Street",
+  "posts_per_page": 6
+ },
+ "categories": [
+  {
+   "slug": "reflections",
+   "name": "Reflections",
+   "description": "Notes from Sunday gatherings and thoughts for the week ahead."
+  },
+  {
+   "slug": "community-life",
+   "name": "Community Life",
+   "description": "Stories from the people, groups and neighbours who make this place."
+  },
+  {
+   "slug": "events",
+   "name": "Events",
+   "description": "Suppers, concerts, retreats and everything on the calendar."
+  },
+  {
+   "slug": "serve",
+   "name": "Serve & Volunteer",
+   "description": "Ways to give time, skills and care to the neighbourhood."
+  },
+  {
+   "slug": "families",
+   "name": "Children & Families",
+   "description": "Youth group, family mornings and growing up together."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "hospitality",
+   "name": "Hospitality"
+  },
+  {
+   "slug": "gratitude",
+   "name": "Gratitude"
+  },
+  {
+   "slug": "music",
+   "name": "Music"
+  },
+  {
+   "slug": "food-pantry",
+   "name": "Food pantry"
+  },
+  {
+   "slug": "prayer",
+   "name": "Prayer"
+  },
+  {
+   "slug": "seasons",
+   "name": "Seasons"
+  },
+  {
+   "slug": "rest",
+   "name": "Rest"
+  },
+  {
+   "slug": "youth",
+   "name": "Youth"
+  }
+ ],
+ "media": [
+  {
+   "id": "hero",
+   "file": "demo/images/hero.jpg",
+   "alt": "Warm light falling through a tall arched window onto a stone floor",
+   "caption": ""
+  },
+  {
+   "id": "table",
+   "file": "demo/images/table.jpg",
+   "alt": "A long wooden table set with plates and candles, seen from above",
+   "caption": ""
+  },
+  {
+   "id": "rest",
+   "file": "demo/images/rest.jpg",
+   "alt": "Layers of quiet hills under a pale evening moon",
+   "caption": ""
+  },
+  {
+   "id": "food-drive",
+   "file": "demo/images/food-drive.jpg",
+   "alt": "Wooden crates stacked high and filled with fruit and vegetables",
+   "caption": ""
+  },
+  {
+   "id": "choir",
+   "file": "demo/images/choir.jpg",
+   "alt": "Golden sound waves and notes drifting across a dark background",
+   "caption": ""
+  },
+  {
+   "id": "harvest",
+   "file": "demo/images/harvest.jpg",
+   "alt": "Golden fields rolling away under a low autumn sun",
+   "caption": ""
+  },
+  {
+   "id": "community",
+   "file": "demo/images/community.jpg",
+   "alt": "Overlapping circles in stone, olive and rose around a warm light",
+   "caption": ""
+  },
+  {
+   "id": "quiet-morning",
+   "file": "demo/images/quiet-morning.jpg",
+   "alt": "A row of lit candles in a dim, peaceful room",
+   "caption": ""
+  },
+  {
+   "id": "sanctuary",
+   "file": "demo/images/sanctuary.jpg",
+   "alt": "A row of tall arches filled with soft daylight",
+   "caption": ""
+  },
+  {
+   "id": "garden",
+   "file": "demo/images/garden.jpg",
+   "alt": "Raised garden beds full of young green plants",
+   "caption": ""
+  },
+  {
+   "id": "visit",
+   "file": "demo/images/visit.jpg",
+   "alt": "A stone path leading up to an arched wooden door",
+   "caption": ""
+  },
+  {
+   "id": "neighbourhood",
+   "file": "demo/images/neighbourhood.jpg",
+   "alt": "Rooftops of a neighbourhood at dusk with one glowing arched window",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Home",
+   "content": "<!-- wp:group {\"align\":\"full\",\"className\":\"fc-section fc-center\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull fc-section fc-center\"><!-- wp:paragraph {\"align\":\"center\",\"className\":\"fc-eyebrow\"} --><p class=\"has-text-align-center fc-eyebrow\">Gather with us</p><!-- /wp:paragraph --><!-- wp:heading {\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center\">Every week, all are welcome</h2><!-- /wp:heading --><!-- wp:paragraph {\"align\":\"center\",\"className\":\"fc-lead\"} --><p class=\"has-text-align-center fc-lead\">Come as you are. There is no dress code, no expected answer and always a warm drink at the door.</p><!-- /wp:paragraph --><!-- wp:columns {\"align\":\"wide\",\"className\":\"fc-times\"} --><div class=\"wp-block-columns alignwide fc-times\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"fc-eyebrow\"} --><p class=\"fc-eyebrow\">Sundays</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Morning Gathering</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"fc-big\"} --><p class=\"fc-big\">10:00</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Songs, a short reflection and time to share news. Children's corner in the side room.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"fc-eyebrow\"} --><p class=\"fc-eyebrow\">Wednesdays</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Open Supper</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"fc-big\"} --><p class=\"fc-big\">19:00</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>A simple, free meal at long tables. Everyone eats together, and everyone helps clear.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"fc-eyebrow\"} --><p class=\"fc-eyebrow\">Thursdays</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Quiet Mornings</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"fc-big\"} --><p class=\"fc-big\">07:00</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>An hour of silence and candlelight in the sanctuary. Come for five minutes or stay.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group --><!-- wp:group {\"align\":\"full\",\"className\":\"fc-section fc-section--stone\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull fc-section fc-section--stone\"><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:sanctuary}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:sanctuary}}\" alt=\"A row of tall arches filled with soft daylight\" class=\"wp-image-{{media_id:sanctuary}}\"/></figure><!-- /wp:image --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"fc-eyebrow\"} --><p class=\"fc-eyebrow\">Who we are</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">A community for the whole neighbourhood</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Faithful Commons began in 1962 as a handful of families meeting in a front room. Today we are several hundred neighbours of every age who share a building, a weekly rhythm and a commitment to look after one another.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>We hold our beliefs with conviction and our questions with honesty. Whether you have belonged to a faith community all your life or have never set foot in one, you will find people here who are glad you came.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:about}}\">Our story</a></div><!-- /wp:button --><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:visit}}\">Plan a visit</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group --><!-- wp:group {\"align\":\"full\",\"className\":\"fc-section fc-center\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull fc-section fc-center\"><!-- wp:paragraph {\"align\":\"center\",\"className\":\"fc-eyebrow\"} --><p class=\"has-text-align-center fc-eyebrow\">This season</p><!-- /wp:paragraph --><!-- wp:heading {\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center\">Coming up</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"fc-events\"} --><ul class=\"wp-block-list fc-events\"><!-- wp:list-item --><li><strong>Sat 14 Nov</strong> Harvest Supper and ceilidh, for the whole neighbourhood</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Every Sat</strong> Food drive sorting, 9:00 to 11:30 in the hall</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Thu 19 Nov</strong> Community choir open rehearsal, 19:30</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Sun 29 Nov</strong> Lantern walk and evening carols, 17:00</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:buttons {\"layout\":{\"type\":\"flex\",\"justifyContent\":\"center\"}} --><div class=\"wp-block-buttons is-content-justification-center\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{category:events}}\">All events</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --><!-- wp:group {\"align\":\"full\",\"className\":\"fc-section fc-section--surface\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull fc-section fc-section--surface\"><!-- wp:paragraph {\"align\":\"center\",\"className\":\"fc-eyebrow\"} --><p class=\"has-text-align-center fc-eyebrow\">Reflections &amp; news</p><!-- /wp:paragraph --><!-- wp:heading {\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center\">Notes from our gatherings</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":3,\"displayPostContent\":true,\"excerptLength\":20,\"displayPostDate\":true,\"displayFeaturedImage\":true,\"featuredImageSizeSlug\":\"medium\",\"postLayout\":\"grid\",\"columns\":3} /--><!-- wp:buttons {\"layout\":{\"type\":\"flex\",\"justifyContent\":\"center\"}} --><div class=\"wp-block-buttons is-content-justification-center\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:reflections}}\">Read all reflections</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --><!-- wp:group {\"align\":\"full\",\"className\":\"fc-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull fc-section\"><!-- wp:group {\"align\":\"wide\",\"className\":\"fc-cta\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignwide fc-cta\"><!-- wp:paragraph {\"align\":\"center\",\"className\":\"fc-eyebrow\"} --><p class=\"has-text-align-center fc-eyebrow\">Serve with us</p><!-- /wp:paragraph --><!-- wp:heading {\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center\">Give an hour, change a week</h2><!-- /wp:heading --><!-- wp:paragraph {\"align\":\"center\"} --><p class=\"has-text-align-center\">From sorting the food pantry to driving a neighbour to an appointment, there is a place for your time and your gifts.</p><!-- /wp:paragraph --><!-- wp:buttons {\"layout\":{\"type\":\"flex\",\"justifyContent\":\"center\"}} --><div class=\"wp-block-buttons is-content-justification-center\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:get-involved}}\">Find a way to help</a></div><!-- /wp:button --><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{post:autumn-food-drive-starts-this-week}}\">Food drive</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --></div><!-- /wp:group -->",
+   "front_page": true,
+   "featured_media": "hero"
+  },
+  {
+   "slug": "reflections",
+   "title": "Reflections & News",
+   "content": "",
+   "posts_page": true
+  },
+  {
+   "slug": "about",
+   "title": "Our Story",
+   "content": "<!-- wp:paragraph --><p>Faithful Commons began in 1962, when four families started meeting in a front room on Linden Street to sing, read and share a meal. They outgrew the room within a year, then a borrowed school hall, and in 1971 they built the stone hall and sanctuary we still use today.</p><!-- /wp:paragraph --><!-- wp:image {\"id\":{{media_id:sanctuary}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:sanctuary}}\" alt=\"A row of tall arches filled with soft daylight\" class=\"wp-image-{{media_id:sanctuary}}\"/><figcaption class=\"wp-element-caption\">The sanctuary, restored in 2019 by volunteers and local craftspeople.</figcaption></figure><!-- /wp:image --><!-- wp:heading --><h2 class=\"wp-block-heading\">What matters to us</h2><!-- /wp:heading --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Welcome</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Everyone belongs here before they believe anything. We would rather have an honest question than a polite pretence.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Rhythm</h3><!-- /wp:heading --><!-- wp:paragraph --><p>We gather, we rest and we serve, week after week. Small faithful habits shape us more than big moments.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Neighbourliness</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Our building belongs to the street. The pantry, the suppers and the garden are open to everyone.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:heading --><h2 class=\"wp-block-heading\">Who leads</h2><!-- /wp:heading --><!-- wp:paragraph --><p>A council of nine members, elected every two years, looks after the life of the community, and a small staff team of three keeps the building, the pantry and the calendar running. Every gathering is led by a different member of the community.</p><!-- /wp:paragraph --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>We do not have all the answers. We do have soup, and a chair, and time to listen.</p><!-- /wp:paragraph --><cite>A long-time member</cite></blockquote><!-- /wp:quote --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:visit}}\">Plan your first visit</a></div><!-- /wp:button --></div><!-- /wp:buttons -->",
+   "featured_media": "neighbourhood"
+  },
+  {
+   "slug": "visit",
+   "title": "Plan Your Visit",
+   "content": "<!-- wp:paragraph {\"className\":\"fc-lead\"} --><p class=\"fc-lead\">Visiting somewhere new for the first time can feel daunting. Here is everything we wish someone had told us before our first Sunday.</p><!-- /wp:paragraph --><!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Gathering</th><th>When</th><th>Where</th></tr></thead><tbody><tr><td>Morning Gathering</td><td>Sundays, 10:00 to 11:15</td><td>Sanctuary</td></tr><tr><td>Children's corner</td><td>Sundays, during the gathering</td><td>Side room, ages 3 to 10</td></tr><tr><td>Open Supper</td><td>Wednesdays, 19:00</td><td>The hall</td></tr><tr><td>Quiet Mornings</td><td>Thursdays, 07:00 to 08:00</td><td>Sanctuary</td></tr></tbody></table></figure><!-- /wp:table --><!-- wp:heading --><h2 class=\"wp-block-heading\">What to expect</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>A friendly welcome at the door, and nobody will single you out.</li><!-- /wp:list-item --><!-- wp:list-item --><li>About an hour of songs, a short reflection and time to share news.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Tea, coffee and something baked afterwards in the hall.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Clothes: whatever you are comfortable in.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:media-text {\"mediaId\":{{media_id:visit}},\"mediaType\":\"image\"} --><div class=\"wp-block-media-text is-stacked-on-mobile\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:visit}}\" alt=\"A stone path leading up to an arched wooden door\" class=\"wp-image-{{media_id:visit}} size-full\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Finding us</h3><!-- /wp:heading --><!-- wp:paragraph --><p>We are at 24 Linden Street, five minutes from the station. The side entrance on Orchard Lane has step-free access, and there is a hearing loop in the sanctuary.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Bicycle racks are by the garden gate; on-street parking is free on Sundays.</p><!-- /wp:paragraph --></div></div><!-- /wp:media-text --><!-- wp:heading --><h2 class=\"wp-block-heading\">Common questions</h2><!-- /wp:heading --><!-- wp:details --><details class=\"wp-block-details\"><summary>Do I have to believe anything to come?</summary><!-- wp:paragraph --><p>No. You are welcome to come, listen, ask questions and make up your own mind.</p><!-- /wp:paragraph --></details><!-- /wp:details --><!-- wp:details --><details class=\"wp-block-details\"><summary>Are children welcome?</summary><!-- wp:paragraph --><p>Very. Children can stay with you or join the children's corner, and nobody minds a bit of noise.</p><!-- /wp:paragraph --></details><!-- /wp:details --><!-- wp:details --><details class=\"wp-block-details\"><summary>Will I be asked for money?</summary><!-- wp:paragraph --><p>No. A collection box sits by the door for anyone who wishes to give, and that is all.</p><!-- /wp:paragraph --></details><!-- /wp:details -->",
+   "parent": "about",
+   "featured_media": "visit"
+  },
+  {
+   "slug": "get-involved",
+   "title": "Get Involved",
+   "content": "<!-- wp:paragraph {\"className\":\"fc-lead\"} --><p class=\"fc-lead\">There is a place here for your time and your gifts, whether you can offer an hour a year or an afternoon every week.</p><!-- /wp:paragraph --><!-- wp:columns {\"align\":\"wide\",\"className\":\"fc-cards\"} --><div class=\"wp-block-columns alignwide fc-cards\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:food-drive}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:food-drive}}\" alt=\"Wooden crates stacked high and filled with fruit and vegetables\" class=\"wp-image-{{media_id:food-drive}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Food pantry</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Sort, shelve and welcome guests on Saturday mornings.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:table}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:table}}\" alt=\"A long wooden table set with plates and candles, seen from above\" class=\"wp-image-{{media_id:table}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Open Supper</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Cook, set tables or wash up on a Wednesday evening.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:garden}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:garden}}\" alt=\"Raised garden beds full of young green plants\" class=\"wp-image-{{media_id:garden}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Garden crew</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Grow vegetables for the pantry alongside the youth group.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:heading --><h2 class=\"wp-block-heading\">How to start</h2><!-- /wp:heading --><!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Choose a role that fits your week.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Tell us through the contact page, or catch someone wearing a gold lanyard.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Join a buddy for your first session. That is it.</li><!-- /wp:list-item --></ol><!-- /wp:list --><!-- wp:paragraph --><p>Volunteers who work with children or vulnerable adults complete a short safeguarding course, which we arrange and pay for.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Say hello</a></div><!-- /wp:button --></div><!-- /wp:buttons -->",
+   "template": "page-wide"
+  },
+  {
+   "slug": "contact",
+   "title": "Contact",
+   "content": "<!-- wp:paragraph {\"className\":\"fc-lead\"} --><p class=\"fc-lead\">We would love to hear from you, whether you have a question about visiting, want to help, or simply need someone to talk to.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Visit</h3><!-- /wp:heading --><!-- wp:paragraph --><p>24 Linden Street<br>Alder Vale<br>Step-free entrance on Orchard Lane</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Call or write</h3><!-- /wp:heading --><!-- wp:paragraph --><p>(555) 018-1962<br>hello@faithfulcommons.example</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Office hours</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Tuesday to Friday<br>10:00 to 15:00</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:heading --><h2 class=\"wp-block-heading\">Need to talk?</h2><!-- /wp:heading --><!-- wp:paragraph --><p>If you are going through a hard time and would like someone to listen, leave a message on the number above and one of our pastoral team will call you back within a day. Conversations are always confidential.</p><!-- /wp:paragraph --><!-- wp:separator --><hr class=\"wp-block-separator has-alpha-channel-opacity\"/><!-- /wp:separator --><!-- wp:paragraph --><p>For the Harvest Supper, just let us know how many are coming and any dietary needs. A short message is plenty.</p><!-- /wp:paragraph -->"
+  }
+ ],
+ "posts": [
+  {
+   "slug": "making-room-at-the-table",
+   "title": "Making Room at the Table",
+   "date": "2026-10-25T11:30:00",
+   "excerpt": "Hospitality is less about a perfect meal and more about pulling up one more chair. Notes from Sunday's gathering.",
+   "categories": [
+    "reflections"
+   ],
+   "tags": [
+    "hospitality",
+    "gratitude"
+   ],
+   "featured_media": "table",
+   "format": "standard",
+   "sticky": true,
+   "content": "<!-- wp:paragraph --><p>On Sunday we talked about tables: the kitchen table where homework gets done, the folding tables in our hall on supper nights, and the small café tables where people finally say the thing they have been carrying for weeks.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Hospitality is easy to confuse with entertaining. Entertaining asks whether the house is tidy enough and the food impressive enough. Hospitality asks a simpler question: is there room for one more?</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Three small habits</h2><!-- /wp:heading --><!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li><strong>Notice who is standing.</strong> At every gathering someone is hovering at the edge. Invite them to sit.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Learn one name a week.</strong> Write it down if you need to. Use it next time.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Keep a spare chair.</strong> Literally or otherwise, leave space in your week for an unexpected guest.</li><!-- /wp:list-item --></ol><!-- /wp:list --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>The table does not need to be bigger. It needs to be shared.</p><!-- /wp:paragraph --><cite>From Sunday's gathering</cite></blockquote><!-- /wp:quote --><!-- wp:paragraph --><p>This week, try one of the habits above and tell us how it went at Wednesday's open supper. There will, of course, be a seat saved for you.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Marion",
+     "email": "marion@example.com",
+     "content": "The spare chair idea stayed with me all week. We had three unexpected guests on Friday and nobody felt like an afterthought.",
+     "date": "2026-10-26T09:12:00"
+    },
+    {
+     "author": "Theo",
+     "email": "theo@example.com",
+     "content": "Learning one name a week is a habit I can actually keep. Thank you.",
+     "date": "2026-10-26T18:40:00"
+    }
+   ]
+  },
+  {
+   "slug": "autumn-food-drive-starts-this-week",
+   "title": "The Autumn Food Drive Starts This Week",
+   "date": "2026-10-21T09:00:00",
+   "excerpt": "From Monday the collection crates are back in the porch. Here is what the pantry needs most and how to help sort on Saturday.",
+   "categories": [
+    "community-life",
+    "serve"
+   ],
+   "tags": [
+    "food-pantry",
+    "seasons"
+   ],
+   "featured_media": "food-drive",
+   "format": "standard",
+   "sticky": false,
+   "content": "<!-- wp:paragraph --><p>Our neighbourhood pantry feeds around ninety households every week, and the weeks before winter are always the busiest. From Monday, the wooden collection crates are back in the porch and will stay there until the end of November.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">What the pantry needs most</h2><!-- /wp:heading --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Tinned fish and beans</li><!-- /wp:list-item --><!-- wp:list-item --><li>Rice, pasta and oats</li><!-- /wp:list-item --><!-- wp:list-item --><li>Cooking oil</li><!-- /wp:list-item --><!-- wp:list-item --><li>Tea and coffee</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Nappies in sizes 4 and 5</li><!-- /wp:list-item --><!-- wp:list-item --><li>Soap and toothpaste</li><!-- /wp:list-item --><!-- wp:list-item --><li>Warm socks and gloves</li><!-- /wp:list-item --><!-- wp:list-item --><li>Long-life milk</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:paragraph --><p>Please check dates before you donate: we cannot give out anything past its best-before date, and sorting expired items takes volunteers away from the people we are here to serve.</p><!-- /wp:paragraph --><!-- wp:image {\"id\":{{media_id:food-drive}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:food-drive}}\" alt=\"Wooden crates stacked high and filled with fruit and vegetables\" class=\"wp-image-{{media_id:food-drive}}\"/><figcaption class=\"wp-element-caption\">Last year's crates on the first Saturday of sorting.</figcaption></figure><!-- /wp:image --><!-- wp:heading --><h2 class=\"wp-block-heading\">Sorting Saturdays</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Every Saturday morning from 9:00 to 11:30 we sort, weigh and shelve what has come in. No experience is needed, children are welcome with an adult, and there is always tea. Just come to the side door of the hall.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Nadia",
+     "email": "nadia@example.com",
+     "content": "Dropped off two bags this morning. The crates are already filling up!",
+     "date": "2026-10-22T08:05:00"
+    }
+   ]
+  },
+  {
+   "slug": "rest-is-not-a-reward",
+   "title": "Notes from Sunday: Rest Is Not a Reward",
+   "date": "2026-10-18T12:00:00",
+   "excerpt": "We often treat rest as something to earn once the list is done. What if it is where the week begins instead of where it ends?",
+   "categories": [
+    "reflections"
+   ],
+   "tags": [
+    "rest",
+    "prayer"
+   ],
+   "featured_media": "rest",
+   "format": "standard",
+   "sticky": false,
+   "content": "<!-- wp:paragraph --><p>Most of us were taught, quietly, that rest is a reward. Finish the work, clear the inbox, tidy the kitchen, and then, maybe, sit down. The list never ends, so neither does the waiting.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>On Sunday we wondered aloud what would change if rest came first: if the week began with a pause instead of ending with exhaustion.</p><!-- /wp:paragraph --><!-- wp:pullquote --><figure class=\"wp-block-pullquote\"><blockquote><p>Rest is not the prize at the end of the race. It is the ground we stand on to run at all.</p></blockquote></figure><!-- /wp:pullquote --><!-- wp:heading --><h2 class=\"wp-block-heading\">Practising a pause</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Begin one meal a day without a screen at the table.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Take a ten-minute walk with no destination and no headphones.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Name three things you are grateful for before you sleep.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph --><p>None of these will fix a hard week. But they are small doors into a different way of living, and we would love to hear which ones you try. Our Quiet Mornings hour on Thursdays is open to anyone who wants to practise together.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Ruth",
+     "email": "ruth@example.com",
+     "content": "The walk without headphones was harder than I expected, and better than I expected.",
+     "date": "2026-10-19T20:15:00"
+    }
+   ]
+  },
+  {
+   "slug": "the-choir-anyone-can-join",
+   "title": "Meet the Choir That Anyone Can Join",
+   "date": "2026-10-12T15:00:00",
+   "excerpt": "No auditions, no sheet music required, and nobody minds a wrong note. Inside the Thursday evening community choir.",
+   "categories": [
+    "community-life"
+   ],
+   "tags": [
+    "music"
+   ],
+   "featured_media": "choir",
+   "format": "standard",
+   "sticky": false,
+   "content": "<!-- wp:paragraph --><p>Every Thursday at half past seven, around thirty people gather in the hall with mugs of tea and sing. Some have sung all their lives. Some had not sung a note since school until a friend dragged them along.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The choir has one rule: there are no auditions. Songs are taught by ear, harmonies are learned in small groups, and the director is famous for saying that a confident wrong note is better than a timid right one.</p><!-- /wp:paragraph --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>I came for one week to keep my neighbour company. That was four years ago.</p><!-- /wp:paragraph --><cite>A tenor who never planned to be a tenor</cite></blockquote><!-- /wp:quote --><!-- wp:heading --><h2 class=\"wp-block-heading\">What we sing</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Folk songs from around the world, gospel and spirituals, a few rounds and, every December, the carols the whole neighbourhood seems to know. The choir sings at Sunday gatherings once a month and at the Harvest Supper.</p><!-- /wp:paragraph --><!-- wp:media-text {\"mediaId\":{{media_id:choir}},\"mediaType\":\"image\",\"mediaPosition\":\"right\"} --><div class=\"wp-block-media-text is-stacked-on-mobile has-media-on-the-right\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:choir}}\" alt=\"Golden sound waves and notes drifting across a dark background\" class=\"wp-image-{{media_id:choir}} size-full\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Come and listen first</h3><!-- /wp:heading --><!-- wp:paragraph --><p>You are welcome to sit in on a rehearsal before joining. Bring a friend, bring a mug, and stay for the last song.</p><!-- /wp:paragraph --></div></div><!-- /wp:media-text -->",
+   "comments": []
+  },
+  {
+   "slug": "harvest-supper-for-the-whole-neighbourhood",
+   "title": "Harvest Supper: An Evening for the Whole Neighbourhood",
+   "date": "2026-10-05T10:00:00",
+   "excerpt": "Long tables, soup made from the garden, the choir and a ceilidh band. Everyone is welcome and the meal is free.",
+   "categories": [
+    "events"
+   ],
+   "tags": [
+    "hospitality",
+    "seasons",
+    "music"
+   ],
+   "featured_media": "harvest",
+   "format": "standard",
+   "sticky": false,
+   "content": "<!-- wp:paragraph --><p>Our Harvest Supper is the one night of the year when the hall is too small and nobody minds. Saturday 14 November, from six o'clock, the long tables go up and the soup pots come out.</p><!-- /wp:paragraph --><!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Time</th><th>What is happening</th></tr></thead><tbody><tr><td>18:00</td><td>Doors open, warm drinks and children's lantern making</td></tr><tr><td>18:45</td><td>Supper: three soups, fresh bread and apple crumble</td></tr><tr><td>20:00</td><td>The community choir sings</td></tr><tr><td>20:30</td><td>Ceilidh band and dancing until late</td></tr></tbody></table></figure><!-- /wp:table --><!-- wp:paragraph --><p>The meal is free and there is no need to book, although it helps the kitchen team if you let us know you are coming. Vegetarian, vegan and gluten-free options are always on the table.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Bring something to share</h2><!-- /wp:heading --><!-- wp:paragraph --><p>If you would like to contribute, bring a dessert, a jar of something you made this summer, or a story about this year's harvest. Every year someone brings a cake that becomes a legend.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Tell us you are coming</a></div><!-- /wp:button --></div><!-- /wp:buttons -->",
+   "comments": [
+    {
+     "author": "Ines",
+     "email": "ines@example.com",
+     "content": "Our family has not missed one of these in six years. The crumble alone is worth it.",
+     "date": "2026-10-06T19:30:00"
+    },
+    {
+     "author": "Samuel",
+     "email": "samuel@example.com",
+     "content": "Can we bring a guitar for the ceilidh?",
+     "date": "2026-10-07T11:02:00"
+    }
+   ]
+  },
+  {
+   "slug": "five-ways-to-volunteer-this-season",
+   "title": "Five Ways to Volunteer This Season",
+   "date": "2026-09-28T09:30:00",
+   "excerpt": "Not everyone can give a whole Saturday. Here are five ways to serve, from one hour a month to a weekly commitment.",
+   "categories": [
+    "serve"
+   ],
+   "tags": [
+    "food-pantry",
+    "hospitality"
+   ],
+   "featured_media": "community",
+   "format": "standard",
+   "sticky": false,
+   "content": "<!-- wp:paragraph --><p>Every autumn we ask the same question: how can more people share in the work without anyone burning out? The answer is usually smaller roles, shared well.</p><!-- /wp:paragraph --><!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li><strong>Welcome team.</strong> Greet people at the door on Sundays, once a month.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Pantry sorting.</strong> Saturday mornings, as often or as rarely as you like.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Supper cooks.</strong> Join a kitchen team for one Wednesday each term.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Lifts and errands.</strong> Drive a neighbour to an appointment or pick up a prescription.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Garden crew.</strong> Weed, water and harvest with the youth group.</li><!-- /wp:list-item --></ol><!-- /wp:list --><!-- wp:paragraph --><p>Every role comes with a buddy for your first time, and none of them require you to share our beliefs. Neighbours of every faith and none serve alongside us.</p><!-- /wp:paragraph --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>We are not looking for heroes. We are looking for people who will show up for an hour.</p><!-- /wp:paragraph --><cite>The volunteer coordinators</cite></blockquote><!-- /wp:quote --><!-- wp:paragraph --><p>If one of these sounds like you, visit the Get Involved page or simply catch someone in a gold lanyard after a gathering.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:get-involved}}\">Get involved</a></div><!-- /wp:button --></div><!-- /wp:buttons -->",
+   "comments": []
+  },
+  {
+   "slug": "quiet-mornings-midweek-prayer-hour",
+   "title": "Quiet Mornings: A New Midweek Prayer Hour",
+   "date": "2026-09-20T08:00:00",
+   "excerpt": "From October, the sanctuary is open every Thursday from seven to eight for silence, candles and a short reading.",
+   "categories": [
+    "events",
+    "reflections"
+   ],
+   "tags": [
+    "prayer",
+    "rest"
+   ],
+   "featured_media": "quiet-morning",
+   "format": "standard",
+   "sticky": false,
+   "content": "<!-- wp:paragraph --><p>Many of you asked for a quieter space in the middle of the week, so from the first Thursday of October the sanctuary will be open from seven until eight in the morning.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>There is no programme. The candles will be lit, the heating will be on, and at half past seven someone will read a short passage of poetry or prose, followed by more silence. Come for five minutes or the full hour.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">A few gentle guidelines</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Arrive and leave whenever you like.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Phones on silent, please.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Tea is served in the porch afterwards for anyone who wants to talk.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:image {\"id\":{{media_id:sanctuary}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:sanctuary}}\" alt=\"A row of tall arches filled with soft daylight\" class=\"wp-image-{{media_id:sanctuary}}\"/><figcaption class=\"wp-element-caption\">The sanctuary at seven in the morning.</figcaption></figure><!-- /wp:image --><!-- wp:paragraph --><p>Quiet Mornings are open to everyone, whatever you believe or are still working out.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Agnes",
+     "email": "agnes@example.com",
+     "content": "This has become the anchor of my week. Thank you to whoever lights the candles so early.",
+     "date": "2026-10-09T08:20:00"
+    }
+   ]
+  },
+  {
+   "slug": "what-the-youth-group-learned-building-a-garden",
+   "title": "What the Youth Group Learned Building a Garden",
+   "date": "2026-09-10T16:00:00",
+   "excerpt": "Eight raised beds, one stubborn compost heap and a summer of teamwork. The youth group on what the garden taught them.",
+   "categories": [
+    "families",
+    "community-life"
+   ],
+   "tags": [
+    "youth",
+    "seasons"
+   ],
+   "featured_media": "garden",
+   "format": "standard",
+   "sticky": false,
+   "content": "<!-- wp:paragraph --><p>In April, the patch of grass behind the hall was just that: a patch of grass. By September it held eight raised beds, a compost heap, a bench built from reclaimed timber and enough courgettes to feed half the street.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The youth group, aged eleven to sixteen, planned, built and tended it themselves, with a little help from a retired carpenter and a lot of watering cans.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">In their own words</h2><!-- /wp:heading --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>You cannot rush a tomato. I tried.</p><!-- /wp:paragraph --><cite>Age 13</cite></blockquote><!-- /wp:quote --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>The best part was giving the vegetables to the pantry and seeing them go home with people.</p><!-- /wp:paragraph --><cite>Age 15</cite></blockquote><!-- /wp:quote --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:garden}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:garden}}\" alt=\"Raised garden beds full of young green plants\" class=\"wp-image-{{media_id:garden}}\"/></figure><!-- /wp:image --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">What grew</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Courgettes, far too many</li><!-- /wp:list-item --><!-- wp:list-item --><li>Runner beans</li><!-- /wp:list-item --><!-- wp:list-item --><li>Three kinds of tomato</li><!-- /wp:list-item --><!-- wp:list-item --><li>Sunflowers taller than the leaders</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:paragraph --><p>Next spring the group plans to add a herb spiral and a small pond. If you have spare tools, seeds or an afternoon, they would love the help.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Daniel",
+     "email": "daniel@example.com",
+     "content": "So proud of these young people. The courgette soup at harvest supper came straight from their beds!",
+     "date": "2026-09-12T13:00:00"
+    }
+   ]
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Home",
+     "page": "home"
+    },
+    {
+     "title": "About",
+     "page": "about",
+     "children": [
+      {
+       "title": "Plan Your Visit",
+       "page": "visit"
+      },
+      {
+       "title": "Contact",
+       "page": "contact"
+      }
+     ]
+    },
+    {
+     "title": "Reflections",
+     "page": "reflections",
+     "children": [
+      {
+       "title": "Sunday notes",
+       "category": "reflections"
+      },
+      {
+       "title": "Community life",
+       "category": "community-life"
+      },
+      {
+       "title": "Children & families",
+       "category": "families"
+      }
+     ]
+    },
+    {
+     "title": "Events",
+     "category": "events"
+    },
+    {
+     "title": "Get Involved",
+     "page": "get-involved"
+    }
+   ]
+  },
+  {
+   "name": "Footer",
+   "location": "footer",
+   "items": [
+    {
+     "title": "Plan Your Visit",
+     "page": "visit"
+    },
+    {
+     "title": "Events",
+     "category": "events"
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    }
+   ]
+  },
+  {
+   "name": "Social",
+   "location": "social",
+   "items": [
+    {
+     "title": "Newsletter",
+     "url": "#newsletter"
+    },
+    {
+     "title": "Instagram",
+     "url": "https://instagram.com/"
+    },
+    {
+     "title": "Podcast",
+     "url": "https://example.com/podcast"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "sidebar-1": [
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Gather with us</h2><!-- /wp:heading --><!-- wp:paragraph --><p><strong>Sundays</strong> 10:00 Morning Gathering<br><strong>Wednesdays</strong> 19:00 Open Supper<br><strong>Thursdays</strong> 07:00 Quiet Mornings</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:search {\"label\":\"Search\",\"buttonText\":\"Search\"} /-->",
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Topics</h2><!-- /wp:heading --><!-- wp:categories {\"showPostCounts\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Recent notes</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":4,\"displayPostDate\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Tags</h2><!-- /wp:heading --><!-- wp:tag-cloud /--></div><!-- /wp:group -->"
+  ],
+  "footer-1": [
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Find us</h2><!-- /wp:heading --><!-- wp:paragraph --><p>24 Linden Street, Alder Vale<br>(555) 018-1962</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Latest</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":3,\"displayPostDate\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Sections</h2><!-- /wp:heading --><!-- wp:categories {\"showPostCounts\":true} /--></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "hero_image": "hero",
+  "gold": "#b08a3e",
+  "background": "#f4efe6",
+  "header_style": "centered",
+  "post_layout": "cards",
+  "sidebar": "right",
+  "font_pairing": "inscription",
+  "arches": true,
+  "show_service_bar": true,
+  "service_times": "Sundays 10:00 · Wednesdays 19:00 · Thursdays 07:00",
+  "visit_link": "{{page:visit}}",
+  "hero_second_link": "{{page:reflections}}",
+  "footer_text": "© Faithful Commons · 24 Linden Street, Alder Vale"
+ }
+}

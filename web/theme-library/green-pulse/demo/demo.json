@@ -1,0 +1,474 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Green Pulse",
+  "blogdescription": "Climate news, data and action",
+  "posts_per_page": 7
+ },
+ "categories": [
+  {
+   "slug": "news",
+   "name": "News",
+   "description": "Reporting on climate, energy and nature, from the street to the summit."
+  },
+  {
+   "slug": "data",
+   "name": "Data",
+   "description": "The numbers behind the headlines, explained without the jargon."
+  },
+  {
+   "slug": "action-guides",
+   "name": "Action Guides",
+   "description": "Practical, tested ways to cut emissions and protect nature where you live."
+  },
+  {
+   "slug": "campaigns",
+   "name": "Campaigns",
+   "description": "Updates from the campaigns our readers started and support."
+  },
+  {
+   "slug": "nature",
+   "name": "Nature",
+   "description": "Wildlife, habitats and the people bringing them back."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "energy",
+   "name": "Energy"
+  },
+  {
+   "slug": "cities",
+   "name": "Cities"
+  },
+  {
+   "slug": "rivers",
+   "name": "Rivers"
+  },
+  {
+   "slug": "heat",
+   "name": "Heat"
+  },
+  {
+   "slug": "biodiversity",
+   "name": "Biodiversity"
+  },
+  {
+   "slug": "repair",
+   "name": "Repair"
+  },
+  {
+   "slug": "oceans",
+   "name": "Oceans"
+  },
+  {
+   "slug": "solar",
+   "name": "Solar"
+  },
+  {
+   "slug": "community",
+   "name": "Community"
+  }
+ ],
+ "media": [
+  {
+   "id": "hero",
+   "file": "demo/images/hero.jpg",
+   "alt": "Sunlight breaking through a dense canopy of green leaves",
+   "caption": ""
+  },
+  {
+   "id": "heat-islands",
+   "file": "demo/images/heat-islands.jpg",
+   "alt": "A thermal map glowing orange and red over a dark city skyline",
+   "caption": ""
+  },
+  {
+   "id": "community-solar",
+   "file": "demo/images/community-solar.jpg",
+   "alt": "Rows of solar panels on a green field under a bright sky",
+   "caption": ""
+  },
+  {
+   "id": "river-data",
+   "file": "demo/images/river-data.jpg",
+   "alt": "A winding blue river seen from above, with a bright data line across it",
+   "caption": ""
+  },
+  {
+   "id": "home-energy",
+   "file": "demo/images/home-energy.jpg",
+   "alt": "A small house beside a bar chart of falling energy use",
+   "caption": ""
+  },
+  {
+   "id": "verges",
+   "file": "demo/images/verges.jpg",
+   "alt": "A roadside verge full of tall grass and colourful wildflowers",
+   "caption": ""
+  },
+  {
+   "id": "repair-cafe",
+   "file": "demo/images/repair-cafe.jpg",
+   "alt": "A toaster, a desk lamp, a radio and tools on a workbench",
+   "caption": ""
+  },
+  {
+   "id": "ocean-plastics",
+   "file": "demo/images/ocean-plastics.jpg",
+   "alt": "Colourful fragments of plastic scattered through dark ocean water",
+   "caption": ""
+  },
+  {
+   "id": "campaign",
+   "file": "demo/images/campaign.jpg",
+   "alt": "A crowd of people holding banners against a bright lime background",
+   "caption": ""
+  },
+  {
+   "id": "wind",
+   "file": "demo/images/wind.jpg",
+   "alt": "Wind turbines on green hills at sunset",
+   "caption": ""
+  },
+  {
+   "id": "chart",
+   "file": "demo/images/chart.jpg",
+   "alt": "A rising bar chart with a bright final bar on a deep green background",
+   "caption": ""
+  },
+  {
+   "id": "canopy",
+   "file": "demo/images/canopy.jpg",
+   "alt": "Overlapping leaves in many shades of green",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Home",
+   "content": "<!-- wp:group {\"align\":\"full\",\"className\":\"gp-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull gp-section\"><!-- wp:paragraph {\"className\":\"gp-kicker\"} --><p class=\"gp-kicker\">Top story</p><!-- /wp:paragraph --><!-- wp:columns {\"align\":\"wide\",\"className\":\"gp-lead-story\"} --><div class=\"wp-block-columns alignwide gp-lead-story\"><!-- wp:column {\"width\":\"58%\"} --><div class=\"wp-block-column\" style=\"flex-basis:58%\"><!-- wp:image {\"id\":{{media_id:heat-islands}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:heat-islands}}\" alt=\"A thermal map glowing orange and red over a dark city skyline\" class=\"wp-image-{{media_id:heat-islands}}\"/></figure><!-- /wp:image --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading --><h2 class=\"wp-block-heading\"><a href=\"{{post:mapping-the-heat-islands-of-our-city}}\">Mapping the heat islands of our city</a></h2><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"gp-lead\"} --><p class=\"gp-lead\">Forty volunteers, eleven thousand readings and a 7 °C gap between the hottest and coolest streets on the same afternoon.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{post:mapping-the-heat-islands-of-our-city}}\">Read the story</a></div><!-- /wp:button --><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{category:data}}\">See the data</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group --><!-- wp:group {\"align\":\"full\",\"className\":\"gp-section gp-section--forest\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull gp-section gp-section--forest\"><!-- wp:paragraph {\"className\":\"gp-kicker\"} --><p class=\"gp-kicker\">The pulse in numbers</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"gp-section-head\"} --><h2 class=\"wp-block-heading gp-section-head\">This year so far</h2><!-- /wp:heading --><!-- wp:columns {\"align\":\"wide\",\"className\":\"gp-numbers\"} --><div class=\"wp-block-columns alignwide gp-numbers\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"gp-big\"} --><p class=\"gp-big\">5,240</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>street trees planted or funded by our readers' campaign</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"gp-big\"} --><p class=\"gp-big\">1.1 GWh</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>of clean power from one street's community solar farm</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"gp-big\"} --><p class=\"gp-big\">612</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>broken things brought to the repair café, 71% fixed</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"gp-big\"} --><p class=\"gp-big\">40 km</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>of road verge turned back into wildflower meadow</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group --><!-- wp:group {\"align\":\"full\",\"className\":\"gp-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull gp-section\"><!-- wp:paragraph {\"className\":\"gp-kicker\"} --><p class=\"gp-kicker\">Latest</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"gp-section-head\"} --><h2 class=\"wp-block-heading gp-section-head\">Fresh from the newsroom</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":3,\"displayPostContent\":true,\"excerptLength\":20,\"displayPostDate\":true,\"postLayout\":\"grid\",\"columns\":3} /--><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:news}}\">All stories</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --><!-- wp:group {\"align\":\"full\",\"className\":\"gp-section gp-section--moss\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull gp-section gp-section--moss\"><!-- wp:paragraph {\"className\":\"gp-kicker\"} --><p class=\"gp-kicker\">Act now</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"gp-section-head\"} --><h2 class=\"wp-block-heading gp-section-head\">Four things you can do this month</h2><!-- /wp:heading --><!-- wp:columns {\"align\":\"wide\",\"className\":\"gp-guides\"} --><div class=\"wp-block-columns alignwide gp-guides\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Turn the boiler down</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Set the flow temperature to 60 °C. It takes two minutes and saves around 8% on gas.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{post:cut-your-home-energy-use-by-a-third}}\">Read the guide</a></p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Sponsor a street tree</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Ten thousand by spring. Pick a street from the heat map and give it shade.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{post:campaign-update-ten-thousand-trees}}\">Join the campaign</a></p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Fix before you buy</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Bring something broken to the repair café on the last Saturday of the month.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{post:inside-the-repair-cafe-movement}}\">How it works</a></p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Test your river</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Join a sampling team for one morning a fortnight. Kits and training provided.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{post:what-a-year-of-river-sampling-revealed}}\">See the results</a></p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group --><!-- wp:group {\"align\":\"full\",\"className\":\"gp-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull gp-section\"><!-- wp:group {\"align\":\"wide\",\"className\":\"gp-campaign\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignwide gp-campaign\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Ten thousand trees by spring</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Our readers' campaign is past halfway. Sponsor a tree, become a street steward or nominate the street that needs shade most.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:take-action}}\">Back the campaign</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --></div><!-- /wp:group -->",
+   "front_page": true,
+   "featured_media": "hero"
+  },
+  {
+   "slug": "news",
+   "title": "Latest News",
+   "content": "",
+   "posts_page": true
+  },
+  {
+   "slug": "about",
+   "title": "About Green Pulse",
+   "content": "<!-- wp:paragraph {\"className\":\"gp-lead\"} --><p class=\"gp-lead\">Green Pulse is an independent, reader-funded newsroom covering climate, energy and nature. We report on what is happening, explain the numbers behind it and show what people are doing about it, starting with our own streets.</p><!-- /wp:paragraph --><!-- wp:image {\"id\":{{media_id:canopy}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:canopy}}\" alt=\"Overlapping leaves in many shades of green\" class=\"wp-image-{{media_id:canopy}}\"/></figure><!-- /wp:image --><!-- wp:heading --><h2 class=\"wp-block-heading\">What we believe</h2><!-- /wp:heading --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Data before drama</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Every story links to its sources. When we are unsure, we say so.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Local first</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Global change is made of local decisions. We cover both, and the line between them.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Action, not anxiety</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Each story ends with something a reader can do, however small.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:heading --><h2 class=\"wp-block-heading\">How we are funded</h2><!-- /wp:heading --><!-- wp:paragraph --><p>More than four thousand readers support us with a monthly contribution. We take no money from fossil fuel companies and no advertising from airlines or car makers. Our accounts are published every April.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Corrections</h2><!-- /wp:heading --><!-- wp:paragraph --><p>If we get something wrong, we fix it quickly and say what changed at the foot of the story. Write to us through the contact page.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:take-action}}\">Take action with us</a></div><!-- /wp:button --><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Contact the newsroom</a></div><!-- /wp:button --></div><!-- /wp:buttons -->",
+   "featured_media": "wind"
+  },
+  {
+   "slug": "take-action",
+   "title": "Take Action",
+   "content": "<!-- wp:paragraph {\"className\":\"gp-lead\"} --><p class=\"gp-lead\">Our readers started every one of these campaigns. Pick one that fits your time and your street.</p><!-- /wp:paragraph --><!-- wp:columns {\"align\":\"wide\",\"className\":\"gp-guides\"} --><div class=\"wp-block-columns alignwide gp-guides\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Ten thousand trees</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Sponsor a street tree for the six hottest neighbourhoods, or volunteer as a street steward to water it for two years.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Watch the Alder</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Join a river sampling team. One morning a fortnight, waders and kits provided.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Fix it Saturday</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Volunteer at the repair café, whether you can solder, sew or simply make tea.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:heading --><h2 class=\"wp-block-heading\">This month's checklist</h2><!-- /wp:heading --><!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Lower your boiler flow temperature to 60 °C.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Write to your councillor about the next round of street trees.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Sign up for the Friday Pulse newsletter.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Share one story with someone who would not usually read about climate.</li><!-- /wp:list-item --></ol><!-- /wp:list --><!-- wp:group {\"className\":\"gp-stat\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group gp-stat\"><!-- wp:paragraph {\"className\":\"gp-big\"} --><p class=\"gp-big\">4,180</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Readers who completed at least one action from this page last month</p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Tell us what you did</a></div><!-- /wp:button --></div><!-- /wp:buttons -->",
+   "parent": "about",
+   "template": "page-wide"
+  },
+  {
+   "slug": "contact",
+   "title": "Contact",
+   "content": "<!-- wp:paragraph {\"className\":\"gp-lead\"} --><p class=\"gp-lead\">Tips, corrections, story ideas and campaign questions all reach a real person in the newsroom.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Newsroom</h3><!-- /wp:heading --><!-- wp:paragraph --><p>news@greenpulse.example<br>(555) 014-2030</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Tips and leaks</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Use our secure tip line for anything sensitive. We protect our sources.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Newsletter</h3><!-- /wp:heading --><!-- wp:paragraph --><p>The Friday Pulse arrives every Friday at 7:00. Unsubscribe in one click.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:heading --><h2 class=\"wp-block-heading\">Visit</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Green Pulse, Unit 4, The Old Dairy, Mill Lane. We share the building with the repair café, so you may hear a radio being fixed.</p><!-- /wp:paragraph --><!-- wp:details --><details class=\"wp-block-details\"><summary>Can I republish your stories?</summary><!-- wp:paragraph --><p>Yes, under a Creative Commons licence, as long as you credit Green Pulse and link to the original.</p><!-- /wp:paragraph --></details><!-- /wp:details --><!-- wp:details --><details class=\"wp-block-details\"><summary>Do you accept guest articles?</summary><!-- wp:paragraph --><p>We welcome pitches from researchers and campaigners. Send a short outline first.</p><!-- /wp:paragraph --></details><!-- /wp:details -->"
+  }
+ ],
+ "posts": [
+  {
+   "slug": "mapping-the-heat-islands-of-our-city",
+   "title": "Mapping the Heat Islands of Our City",
+   "date": "2026-10-26T08:30:00",
+   "excerpt": "Volunteers with cheap thermometers recorded a 7 °C gap between the hottest and coolest streets on the same afternoon. Here is what makes the difference.",
+   "categories": [
+    "news",
+    "data"
+   ],
+   "tags": [
+    "heat",
+    "cities"
+   ],
+   "featured_media": "heat-islands",
+   "format": "standard",
+   "sticky": true,
+   "content": "<!-- wp:paragraph --><p>On the hottest afternoon of August, forty volunteers cycled set routes across the city with thermometers clipped to their handlebars. By the evening they had logged more than eleven thousand readings, and the map they produced tells a story every planner should see.</p><!-- /wp:paragraph --><!-- wp:group {\"className\":\"gp-stat\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group gp-stat\"><!-- wp:paragraph {\"className\":\"gp-big\"} --><p class=\"gp-big\">7.2 °C</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The difference between the hottest car park and the coolest tree-lined street, measured within the same hour.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"gp-source\"} --><p class=\"gp-source\">Source: Green Pulse reader survey, 18 August</p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:heading --><h2 class=\"wp-block-heading\">What makes a street hot</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><strong>Dark surfaces.</strong> Car parks and flat black roofs were consistently the hottest places on the map.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>No shade.</strong> Streets without trees ran 3 to 4 °C hotter than similar streets with a full canopy.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Trapped air.</strong> Narrow streets with tall buildings held the heat long after sunset.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Street type</th><th>Average reading</th><th>Gap to coolest</th></tr></thead><tbody><tr><td>Tree-lined residential</td><td>29.1 °C</td><td>baseline</td></tr><tr><td>Park edge</td><td>29.6 °C</td><td>+0.5 °C</td></tr><tr><td>Shopping street, no trees</td><td>33.4 °C</td><td>+4.3 °C</td></tr><tr><td>Retail car park</td><td>36.3 °C</td><td>+7.2 °C</td></tr></tbody></table></figure><!-- /wp:table --><!-- wp:paragraph --><p>The good news is that the coolest streets were not the richest ones: they were the ones with mature trees and lighter surfaces. Both are things a city can change within a decade.</p><!-- /wp:paragraph --><!-- wp:pullquote --><figure class=\"wp-block-pullquote\"><blockquote><p>Shade is not a luxury in a warming city. It is infrastructure.</p><cite>Survey coordinator</cite></blockquote></figure><!-- /wp:pullquote --><!-- wp:paragraph --><p>The full dataset is open for anyone to download, and the council has agreed to use it when choosing where to plant next winter's two thousand street trees.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Lena",
+     "email": "lena@example.com",
+     "content": "I did the river route! Amazing to see all the readings come together on one map.",
+     "date": "2026-10-26T12:10:00"
+    },
+    {
+     "author": "Omar",
+     "email": "omar@example.com",
+     "content": "Would love to see this repeated next summer to check whether the new trees make a difference.",
+     "date": "2026-10-27T07:45:00"
+    }
+   ]
+  },
+  {
+   "slug": "the-street-that-built-its-own-solar-farm",
+   "title": "The Street That Built Its Own Solar Farm",
+   "date": "2026-10-22T09:00:00",
+   "excerpt": "Sixty households pooled their savings to put panels on a disused field. Two years on, the co-op is paying dividends and cutting bills.",
+   "categories": [
+    "news"
+   ],
+   "tags": [
+    "solar",
+    "energy",
+    "community"
+   ],
+   "featured_media": "community-solar",
+   "format": "standard",
+   "sticky": false,
+   "content": "<!-- wp:paragraph --><p>Two years ago, the field at the end of Hawthorn Road was a patch of rough grass behind the bus depot. Today it holds 1,400 solar panels, owned by the people who live a few hundred metres away.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The Hawthorn Energy Co-operative raised its money through community shares: residents bought in from as little as fifty pounds, and a local credit union lent the rest.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"gp-stat\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group gp-stat\"><!-- wp:paragraph {\"className\":\"gp-big\"} --><p class=\"gp-big\">1.1 GWh</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Electricity generated in the first full year</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"gp-stat\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group gp-stat\"><!-- wp:paragraph {\"className\":\"gp-big\"} --><p class=\"gp-big\">4.1%</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Annual return paid to members</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:heading --><h2 class=\"wp-block-heading\">How they did it</h2><!-- /wp:heading --><!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>A residents' meeting in a church hall, where someone asked who owned the field.</li><!-- /wp:list-item --><!-- wp:list-item --><li>A feasibility study paid for by a small council grant.</li><!-- /wp:list-item --><!-- wp:list-item --><li>A share offer that sold out in nine weeks.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Eight days of installation, with a party on the ninth.</li><!-- /wp:list-item --></ol><!-- /wp:list --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>We were tired of waiting for someone else to fix our energy bills. So we became the someone else.</p><!-- /wp:paragraph --><cite>Co-op chair</cite></blockquote><!-- /wp:quote --><!-- wp:paragraph --><p>Surplus income goes into a fund that insulates the homes of members on low incomes. So far, twenty-three homes have been draught-proofed and fitted with new loft insulation.</p><!-- /wp:paragraph -->",
+   "comments": []
+  },
+  {
+   "slug": "what-a-year-of-river-sampling-revealed",
+   "title": "What a Year of River Sampling Revealed",
+   "date": "2026-10-17T10:00:00",
+   "excerpt": "Every fortnight for a year, citizen scientists tested the Alder at twelve points. The results show where the pollution comes from, and when.",
+   "categories": [
+    "data",
+    "nature"
+   ],
+   "tags": [
+    "rivers",
+    "biodiversity"
+   ],
+   "featured_media": "river-data",
+   "format": "standard",
+   "sticky": false,
+   "content": "<!-- wp:paragraph --><p>Every other Sunday morning for a year, small teams of volunteers waded into the River Alder at twelve sampling points and tested the water for nitrates, phosphates and bacteria. They have now published everything they found.</p><!-- /wp:paragraph --><!-- wp:image {\"id\":{{media_id:river-data}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:river-data}}\" alt=\"A winding blue river seen from above, with a bright data line across it\" class=\"wp-image-{{media_id:river-data}}\"/><figcaption class=\"wp-element-caption\">The twelve sampling points run from the springs to the estuary.</figcaption></figure><!-- /wp:image --><!-- wp:heading --><h2 class=\"wp-block-heading\">Three findings</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Phosphate levels spiked within 48 hours of heavy rain at four points downstream of storm overflows.</li><!-- /wp:list-item --><!-- wp:list-item --><li>The two stretches with restored riverside trees had the lowest water temperatures all summer.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Mayfly larvae, a sign of clean water, returned to three sites where they had not been recorded for a decade.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Season</th><th>Sites rated good</th><th>Sites rated poor</th></tr></thead><tbody><tr><td>Winter</td><td>7 of 12</td><td>2 of 12</td></tr><tr><td>Spring</td><td>8 of 12</td><td>1 of 12</td></tr><tr><td>Summer</td><td>5 of 12</td><td>4 of 12</td></tr><tr><td>Autumn</td><td>6 of 12</td><td>3 of 12</td></tr></tbody></table></figure><!-- /wp:table --><!-- wp:paragraph --><p>The group has shared its data with the water company and the environment regulator, and is asking for real-time monitoring at every overflow on the river.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>New volunteers are always welcome. Training takes one morning, and the kits are provided.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Priya",
+     "email": "priya@example.com",
+     "content": "The mayfly news made my week. Thank you to everyone who stood in a cold river for this.",
+     "date": "2026-10-18T09:30:00"
+    }
+   ]
+  },
+  {
+   "slug": "cut-your-home-energy-use-by-a-third",
+   "title": "A Practical Guide to Cutting Your Home Energy Use by a Third",
+   "date": "2026-10-11T07:30:00",
+   "excerpt": "No new boiler, no solar panels: twelve changes, ranked by cost and impact, that together can cut a typical home's energy use by around a third.",
+   "categories": [
+    "action-guides"
+   ],
+   "tags": [
+    "energy"
+   ],
+   "featured_media": "home-energy",
+   "format": "standard",
+   "sticky": false,
+   "content": "<!-- wp:paragraph --><p>Most energy-saving advice is either too vague (\"be mindful\") or too expensive (\"install a heat pump\"). This guide sits in between: changes most households can make this winter, ranked by what they cost and what they save.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Free, this weekend</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Turn the thermostat down by one degree: around 8% less heating energy.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Lower the boiler flow temperature to 60 °C or below.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Wash clothes at 30 °C and skip the tumble dryer when you can.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Close curtains at dusk and open them on sunny mornings.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:heading --><h2 class=\"wp-block-heading\">Under fifty pounds</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Draught-proof doors, windows and letterboxes.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Fit radiator reflector panels on external walls.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Insulate the hot water cylinder and exposed pipes.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Swap the last old bulbs for LEDs.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:group {\"className\":\"gp-stat\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group gp-stat\"><!-- wp:paragraph {\"className\":\"gp-big\"} --><p class=\"gp-big\">−31%</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Average fall in energy use across the 48 reader households who tried every free and low-cost step for one winter.</p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:heading --><h2 class=\"wp-block-heading\">Worth saving for</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Loft insulation, cavity wall insulation and a smart thermostat take more money and planning, but they pay back within a few years. Check whether your council or energy supplier offers a grant first.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{category:action-guides}}\">More action guides</a></div><!-- /wp:button --></div><!-- /wp:buttons -->",
+   "comments": []
+  },
+  {
+   "slug": "why-our-verges-are-turning-wild",
+   "title": "Why Our Road Verges Are Turning Wild",
+   "date": "2026-10-04T12:00:00",
+   "excerpt": "Mowing less has turned forty kilometres of grass into wildflower meadow. Bees, beetles and some unexpected birds have noticed.",
+   "categories": [
+    "nature",
+    "news"
+   ],
+   "tags": [
+    "biodiversity",
+    "cities"
+   ],
+   "featured_media": "verges",
+   "format": "standard",
+   "sticky": false,
+   "content": "<!-- wp:paragraph --><p>Three summers ago, the county cut back its mowing on forty kilometres of road verge from eight times a year to twice. Residents who complained about the \"untidy\" grass in the first year are now some of its biggest fans.</p><!-- /wp:paragraph --><!-- wp:media-text {\"mediaId\":{{media_id:verges}},\"mediaType\":\"image\"} --><div class=\"wp-block-media-text is-stacked-on-mobile\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:verges}}\" alt=\"A roadside verge full of tall grass and colourful wildflowers\" class=\"wp-image-{{media_id:verges}} size-full\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">What came back</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Twenty-six species of wildflower, including two orchids</li><!-- /wp:list-item --><!-- wp:list-item --><li>Twice as many bumblebees in summer counts</li><!-- /wp:list-item --><!-- wp:list-item --><li>Barn owls hunting along the long grass at dusk</li><!-- /wp:list-item --></ul><!-- /wp:list --></div></div><!-- /wp:media-text --><!-- wp:paragraph --><p>Road verges cover a surprising amount of land: across the country they add up to an area larger than many national parks. Managed well, they become corridors that let wildlife move between fragmented habitats.</p><!-- /wp:paragraph --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>We did not plant a single seed. We just stopped cutting.</p><!-- /wp:paragraph --><cite>County roads manager</cite></blockquote><!-- /wp:quote --><!-- wp:paragraph --><p>Safety comes first: sight lines at junctions and bends are still cut short. But everywhere else, the verges are being allowed to flower and set seed before the late-summer cut.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Gareth",
+     "email": "gareth@example.com",
+     "content": "We spotted an owl on the bypass verge last week. Never seen one there before.",
+     "date": "2026-10-05T21:40:00"
+    }
+   ]
+  },
+  {
+   "slug": "inside-the-repair-cafe-movement",
+   "title": "Inside the Repair Café Movement",
+   "date": "2026-09-27T14:00:00",
+   "excerpt": "Toasters, lamps and radios get a second life at a monthly repair café, and so does the idea that broken does not mean finished.",
+   "categories": [
+    "news",
+    "action-guides"
+   ],
+   "tags": [
+    "repair",
+    "community"
+   ],
+   "featured_media": "repair-cafe",
+   "format": "standard",
+   "sticky": false,
+   "content": "<!-- wp:paragraph --><p>On the last Saturday of every month, the library meeting room fills with broken things. A volunteer electrician sits at one table, a seamstress at another, and a retired engineer who can fix almost any radio holds court by the window.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>In its first year, the repair café saw 612 items and fixed 71% of them. Each repair kept something out of landfill and, just as importantly, taught its owner a little about how it worked.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"gp-stat\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group gp-stat\"><!-- wp:paragraph {\"className\":\"gp-big\"} --><p class=\"gp-big\">612</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Items brought in</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"gp-stat\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group gp-stat\"><!-- wp:paragraph {\"className\":\"gp-big\"} --><p class=\"gp-big\">71%</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Fixed on the day</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"gp-stat\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group gp-stat\"><!-- wp:paragraph {\"className\":\"gp-big\"} --><p class=\"gp-big\">2.4 t</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Kept out of landfill</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:heading --><h2 class=\"wp-block-heading\">How to start one</h2><!-- /wp:heading --><!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Find a free room and a regular date.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Recruit three or four fixers with different skills.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Get basic public liability insurance.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Put the kettle on and let people queue.</li><!-- /wp:list-item --></ol><!-- /wp:list --><!-- wp:paragraph --><p>Nobody is charged for repairs, though most visitors leave something in the tin for spare parts and biscuits.</p><!-- /wp:paragraph -->",
+   "comments": []
+  },
+  {
+   "slug": "the-numbers-behind-ocean-plastics",
+   "title": "The Numbers Behind Ocean Plastics",
+   "date": "2026-09-19T09:15:00",
+   "excerpt": "How much plastic reaches the sea, where it comes from, and which interventions actually reduce it. A data explainer.",
+   "categories": [
+    "data"
+   ],
+   "tags": [
+    "oceans"
+   ],
+   "featured_media": "ocean-plastics",
+   "format": "standard",
+   "sticky": false,
+   "content": "<!-- wp:paragraph --><p>Ocean plastic is one of the most visible environmental problems and one of the most misunderstood. Headlines tend to swing between apocalyptic and dismissive. The data tells a more useful story.</p><!-- /wp:paragraph --><!-- wp:group {\"className\":\"gp-stat\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group gp-stat\"><!-- wp:paragraph {\"className\":\"gp-big\"} --><p class=\"gp-big\">80%</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Share of ocean plastic estimated to arrive from land, mostly via rivers, rather than from ships or fishing.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"gp-source\"} --><p class=\"gp-source\">Source: synthesis of published river-flux studies</p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:heading --><h2 class=\"wp-block-heading\">Where it comes from</h2><!-- /wp:heading --><!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Source</th><th>Approximate share</th><th>Main fix</th></tr></thead><tbody><tr><td>Mismanaged household waste</td><td>High</td><td>Collection services</td></tr><tr><td>Lost fishing gear</td><td>Medium</td><td>Gear marking and return schemes</td></tr><tr><td>Tyre and textile fibres</td><td>Medium</td><td>Filters and better materials</td></tr><tr><td>Litter from beaches</td><td>Low</td><td>Bins, deposits, clean-ups</td></tr></tbody></table></figure><!-- /wp:table --><!-- wp:paragraph --><p>The biggest gains come from making sure waste is collected in the first place, especially in fast-growing cities. Clean-ups matter for local wildlife, but they treat the symptom rather than the source.</p><!-- /wp:paragraph --><!-- wp:pullquote --><figure class=\"wp-block-pullquote\"><blockquote><p>Turn off the tap before you mop the floor.</p></blockquote></figure><!-- /wp:pullquote --><!-- wp:paragraph --><p>For individuals, the most effective steps are unglamorous: avoid single-use items where there is a reusable alternative, and support deposit return schemes that put a value on every bottle.</p><!-- /wp:paragraph -->",
+   "comments": []
+  },
+  {
+   "slug": "campaign-update-ten-thousand-trees",
+   "title": "Campaign Update: Ten Thousand Trees by Spring",
+   "date": "2026-09-08T11:00:00",
+   "excerpt": "The readers' campaign for more street trees has passed its halfway mark. Here is where the money went and what happens next.",
+   "categories": [
+    "campaigns"
+   ],
+   "tags": [
+    "cities",
+    "community",
+    "heat"
+   ],
+   "featured_media": "campaign",
+   "format": "standard",
+   "sticky": false,
+   "content": "<!-- wp:paragraph --><p>In March, Green Pulse readers set themselves a goal: ten thousand new street trees in the city before next spring. As of this week, 5,240 have been planted, funded or promised.</p><!-- /wp:paragraph --><!-- wp:group {\"className\":\"gp-stat\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group gp-stat\"><!-- wp:paragraph {\"className\":\"gp-big\"} --><p class=\"gp-big\">5,240</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Trees planted or funded out of the 10,000 target</p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:heading --><h2 class=\"wp-block-heading\">Where the trees are going</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Following the heat island map, the first plantings are focused on the six neighbourhoods with the least canopy cover. Each tree comes with two years of watering by a volunteer street steward.</p><!-- /wp:paragraph --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>2,100 trees planted by the council with campaign match funding</li><!-- /wp:list-item --><!-- wp:list-item --><li>1,890 funded by readers and local businesses</li><!-- /wp:list-item --><!-- wp:list-item --><li>1,250 promised by schools and housing associations</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>For the first time in years, the kids on our estate will grow up under trees.</p><!-- /wp:paragraph --><cite>A street steward</cite></blockquote><!-- /wp:quote --><!-- wp:paragraph --><p>Planting season runs from November to March. You can sponsor a tree, become a steward or nominate your own street.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:take-action}}\">Join the campaign</a></div><!-- /wp:button --><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{post:mapping-the-heat-islands-of-our-city}}\">Read the heat map story</a></div><!-- /wp:button --></div><!-- /wp:buttons -->",
+   "comments": [
+    {
+     "author": "Maya",
+     "email": "maya@example.com",
+     "content": "Our school is planting thirty in November. The children have already named them.",
+     "date": "2026-09-09T16:20:00"
+    }
+   ]
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "News",
+     "page": "news",
+     "children": [
+      {
+       "title": "Latest",
+       "category": "news"
+      },
+      {
+       "title": "Nature",
+       "category": "nature"
+      },
+      {
+       "title": "Campaigns",
+       "category": "campaigns"
+      }
+     ]
+    },
+    {
+     "title": "Data",
+     "category": "data"
+    },
+    {
+     "title": "Action Guides",
+     "category": "action-guides"
+    },
+    {
+     "title": "Take Action",
+     "page": "take-action"
+    },
+    {
+     "title": "About",
+     "page": "about",
+     "children": [
+      {
+       "title": "Contact",
+       "page": "contact"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Footer",
+   "location": "footer",
+   "items": [
+    {
+     "title": "About",
+     "page": "about"
+    },
+    {
+     "title": "Take Action",
+     "page": "take-action"
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    }
+   ]
+  },
+  {
+   "name": "Social",
+   "location": "social",
+   "items": [
+    {
+     "title": "Mastodon",
+     "url": "https://mastodon.social/"
+    },
+    {
+     "title": "Instagram",
+     "url": "https://instagram.com/"
+    },
+    {
+     "title": "RSS",
+     "url": "/feed/"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "sidebar-1": [
+   "<!-- wp:group {\"className\":\"widget-block gp-widget-stat\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block gp-widget-stat\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Campaign tracker</h2><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"gp-big\"} --><p class=\"gp-big\">5,240</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>of 10,000 street trees planted or funded.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{page:take-action}}\">Back the campaign →</a></p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:search {\"label\":\"Search\",\"buttonText\":\"Search\"} /-->",
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Sections</h2><!-- /wp:heading --><!-- wp:categories {\"showPostCounts\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Most recent</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":4,\"displayPostDate\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Topics</h2><!-- /wp:heading --><!-- wp:tag-cloud /--></div><!-- /wp:group -->"
+  ],
+  "footer-1": [
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Newsroom</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Unit 4, The Old Dairy, Mill Lane<br>news@greenpulse.example</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Latest</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":3,\"displayPostDate\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Sections</h2><!-- /wp:heading --><!-- wp:categories {\"showPostCounts\":true} /--></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "hero_image": "hero",
+  "post_layout": "magazine",
+  "sidebar": "right",
+  "font_pairing": "epilogue",
+  "sticky_header": true,
+  "show_ticker": true,
+  "ticker_text": "CO₂ 424 ppm · Global temperature +1.3 °C · Street trees: 5,240 of 10,000 · Next repair café: Saturday",
+  "hero_button_link": "{{page:take-action}}",
+  "signup_link": "{{page:contact}}",
+  "footer_text": "© Green Pulse · Independent, reader-funded climate journalism"
+ }
+}

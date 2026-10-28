@@ -1,0 +1,11 @@
+{{template "header" .}}
+{{with .Post}}<article id="post-{{.ID}}" class="{{.Class}} entry entry--page entry--wide">
+	<header class="entry-header">
+		<h1 class="entry-title"><span class="gp-mark-title">{{.Title}}</span></h1>
+	</header><!-- .entry-header -->
+	<div class="entry-content">
+		{{.Content}}
+	</div><!-- .entry-content -->
+	{{with .EditLink}}<footer class="entry-footer"><span class="edit-link">{{.}}</span></footer>{{end}}
+</article>{{end}}
+{{template "footer" .}}

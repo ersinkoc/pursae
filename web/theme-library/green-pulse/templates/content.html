@@ -1,0 +1,11 @@
+<article id="post-{{.ID}}" class="{{.Class}} entry gp-card">
+	{{with .Thumbnail}}<a class="post-thumbnail gp-card__media" href="{{$.Permalink}}" aria-hidden="true" tabindex="-1">{{.}}</a>{{end}}
+	<div class="gp-card__body">
+		<p class="gp-card__labels">{{if .ShowFeatured}}<span class="sticky-badge">Featured</span>{{end}}{{range .Categories}}<a class="gp-pill" href="{{.URL}}">{{.Name}}</a>{{end}}</p>
+		<h2 class="entry-title"><a href="{{.Permalink}}" rel="bookmark">{{.Title}}</a></h2>
+		<div class="entry-summary{{if not .ShowExcerpt}} is-full{{end}}">
+			{{if .ShowExcerpt}}{{.Excerpt}}{{else}}{{.Content}}{{end}}
+		</div>
+		<p class="gp-card__foot">{{with .AuthorName}}<span class="byline">{{.}}</span>{{end}}<time datetime="{{.DateISO}}">{{.DateText}}</time>{{if .CommentCount}}<span class="gp-card__comments">{{plural .CommentCount "%s comment" "%s comments"}}</span>{{end}}</p>
+	</div>
+</article><!-- #post-{{.ID}} -->

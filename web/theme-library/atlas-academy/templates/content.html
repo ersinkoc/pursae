@@ -1,0 +1,12 @@
+<article id="post-{{.ID}}" class="{{.Class}} entry aa-card">
+	{{with .Thumbnail}}<a class="post-thumbnail aa-card__media" href="{{$.Permalink}}" aria-hidden="true" tabindex="-1">{{.}}</a>{{end}}
+	{{if .ShowFeatured}}<span class="aa-badge sticky-badge">Featured</span>{{end}}
+	<div class="aa-card__body">
+		{{if .Categories}}<p class="aa-card__cats">{{range .Categories}}<a class="aa-pill" href="{{.URL}}">{{.Name}}</a>{{end}}</p>{{end}}
+		<h2 class="entry-title"><a href="{{.Permalink}}" rel="bookmark">{{.Title}}</a></h2>
+		<div class="entry-summary{{if not .ShowExcerpt}} is-full{{end}}">
+			{{if .ShowExcerpt}}{{.Excerpt}}{{else}}{{.Content}}{{end}}
+		</div>
+		<p class="aa-card__foot"><time datetime="{{.DateISO}}">{{.DateText}}</time>{{with .AuthorName}}<span class="byline">{{.}}</span>{{end}}<a class="more-link" href="{{.Permalink}}">Start lesson<span class="screen-reader-text">: {{.Title}}</span></a></p>
+	</div>
+</article><!-- #post-{{.ID}} -->

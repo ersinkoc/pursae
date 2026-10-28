@@ -1,0 +1,14 @@
+{{with .Data.Settings}}<section class="fc-hero" aria-label="Welcome">
+	<div class="fc-hero__inner">
+		<div class="fc-hero__text">
+			{{with .hero_kicker}}<p class="fc-hero__kicker">{{.}}</p>{{end}}
+			<p class="fc-hero__title">{{with .hero_title}}{{.}}{{else}}{{$.SiteName}}{{end}}</p>
+			{{with .hero_text}}<p class="fc-hero__lead">{{.}}</p>{{end}}
+			<p class="fc-hero__actions">{{with .visit_label}}<a class="button" href="{{$.Data.Settings.visit_link}}">{{.}}</a>{{end}}{{with .hero_second_label}}<a class="button button--ghost" href="{{$.Data.Settings.hero_second_link}}">{{.}}</a>{{end}}</p>
+			{{with .service_times}}<p class="fc-hero__times"><span class="fc-hero__times-label">Gatherings</span>{{.}}</p>{{end}}
+		</div>
+		<figure class="fc-hero__arch">
+			<img src="{{with .hero_image}}{{.}}{{else}}{{$.ThemeURI}}/images/hero.jpg{{end}}" alt="" />
+		</figure>
+	</div>
+</section>{{end}}

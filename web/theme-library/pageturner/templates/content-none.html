@@ -1,0 +1,12 @@
+<section class="no-results not-found">
+	<h2 class="no-results__title">A blank page</h2>
+	{{if eq .Template "search"}}
+		<p>Nothing matched your search. Try other words, or browse the journal from the menu.</p>
+		{{template "searchform" .}}
+	{{else if and (eq .Template "index") .CanPublish}}
+		<p>Ready to write the first entry? <a href="/wp-admin/post-new">Get started here</a>.</p>
+	{{else}}
+		<p>Nothing has been written here yet. Try a search instead.</p>
+		{{template "searchform" .}}
+	{{end}}
+</section><!-- .no-results -->

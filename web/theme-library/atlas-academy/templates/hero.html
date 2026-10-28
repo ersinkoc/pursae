@@ -1,0 +1,15 @@
+{{with .Data.Settings}}<section class="aa-hero" aria-label="Introduction">
+	<div class="aa-hero__inner">
+		<div class="aa-hero__text">
+			{{with .hero_kicker}}<p class="aa-hero__kicker"><span class="aa-dot" aria-hidden="true"></span>{{.}}</p>{{end}}
+			<p class="aa-hero__title">{{with .hero_title}}{{.}}{{else}}{{$.SiteName}}{{end}}{{with .hero_highlight}} <span class="aa-swash">{{.}}</span>{{end}}</p>
+			{{with .hero_text}}<p class="aa-hero__lead">{{.}}</p>{{end}}
+			<p class="aa-hero__actions">{{with .enroll_label}}<a class="button" href="{{$.Data.Settings.enroll_link}}">{{.}}</a>{{end}}{{with .hero_second_label}}<a class="button button--ghost" href="{{$.Data.Settings.hero_second_link}}">{{.}}</a>{{end}}</p>
+		</div>
+		<div class="aa-hero__media">
+			<figure class="aa-hero__card"><img src="{{with .hero_image}}{{.}}{{else}}{{$.ThemeURI}}/images/hero.jpg{{end}}" alt="" /></figure>
+			{{with .stat_one}}<p class="aa-sticker aa-sticker--one">{{.}}</p>{{end}}
+			{{with .stat_two}}<p class="aa-sticker aa-sticker--two">{{.}}</p>{{end}}
+		</div>
+	</div>
+</section>{{end}}

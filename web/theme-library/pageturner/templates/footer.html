@@ -1,0 +1,27 @@
+	{{template "wrap-close" .}}
+	<footer id="colophon" class="site-footer">
+		{{with .Data.Settings.newsletter_title}}<div class="pt-letter">
+			<div class="pt-letter__inner">
+				<p class="pt-letter__kicker">The letter</p>
+				<p class="pt-letter__title">{{.}}</p>
+				{{with $.Data.Settings.newsletter_text}}<p class="pt-letter__text">{{.}}</p>{{end}}
+				{{with $.Data.Settings.newsletter_link}}<a class="button" href="{{.}}">Subscribe</a>{{end}}
+			</div>
+		</div>{{end}}
+		<div class="site-footer__inner">
+			<div class="pt-footer__grid">
+				<div class="pt-footer__brand">
+					<p class="pt-footer__name">{{.SiteName}}</p>
+					{{with .Description}}<p class="pt-footer__desc">{{.}}</p>{{end}}
+					{{if has_nav_menu . "social"}}<nav class="social-navigation" aria-label="Social links">{{nav_menu . "social"}}</nav>{{end}}
+				</div>
+				{{if is_active_sidebar . "footer-1"}}<div class="footer-widgets">{{dynamic_sidebar . "footer-1"}}</div>{{end}}
+			</div>
+			<div class="pt-footer__bottom">
+				{{if has_nav_menu . "footer"}}<nav class="footer-navigation" aria-label="Footer menu">{{nav_menu . "footer"}}</nav>{{end}}
+				{{template "site-info" .}}
+			</div>
+		</div>
+	</footer><!-- #colophon -->
+</div><!-- #page -->
+{{template "foot" .}}

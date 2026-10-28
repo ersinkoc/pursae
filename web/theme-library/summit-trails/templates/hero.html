@@ -1,0 +1,11 @@
+{{with .Data.Settings}}<section class="st-hero" aria-label="Welcome">
+	<img class="st-hero__img" src="{{with .hero_image}}{{.}}{{else}}{{$.ThemeURI}}/images/hero.jpg{{end}}" alt="" />
+	<div class="st-hero__topo" aria-hidden="true"></div>
+	<div class="st-hero__inner">
+		{{with .hero_kicker}}<p class="st-hero__kicker"><span class="st-hero__coord" aria-hidden="true">&#9650;</span> {{.}}</p>{{end}}
+		<p class="st-hero__title">{{with .hero_title}}{{.}}{{else}}{{$.SiteName}}{{end}}</p>
+		{{with .hero_text}}<p class="st-hero__lead">{{.}}</p>{{end}}
+		<p class="st-hero__actions">{{with .join_label}}<a class="button" href="{{$.Data.Settings.join_link}}">{{.}}</a>{{end}}{{with .hero_second_label}}<a class="button button--ghost" href="{{$.Data.Settings.hero_second_link}}">{{.}}</a>{{end}}</p>
+	</div>
+	{{with .hero_stats}}<div class="st-hero__stats"><p class="st-hero__stats-inner">{{.}}</p></div>{{end}}
+</section>{{end}}

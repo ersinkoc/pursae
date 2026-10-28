@@ -1,0 +1,7 @@
+<div class="site-branding">
+	{{with .CustomLogo}}<div class="site-logo">{{.}}</div>{{else}}<a class="gp-mark" href="{{.HomeURL}}" aria-hidden="true" tabindex="-1"><svg viewBox="0 0 40 40" width="40" height="40" focusable="false"><circle cx="20" cy="20" r="19" fill="currentColor" opacity=".16"/><path d="M3 21h9l3-8 5 15 4-11 2 4h11" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></a>{{end}}
+	<div class="site-branding__text">
+		{{if .TitleIsH1}}<h1 class="site-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></h1>{{else}}<p class="site-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></p>{{end}}
+		{{with .Description}}<p class="site-description">{{.}}</p>{{end}}
+	</div>
+</div><!-- .site-branding -->

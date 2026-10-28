@@ -1,0 +1,3 @@
+{{if and (is_active_sidebar . "sidebar-1") (or (eq .Q.Kind "single") (eq .Q.Kind "home") (eq .Q.Kind "category") (eq .Q.Kind "tag") (eq .Q.Kind "author") (eq .Q.Kind "date") (eq .Q.Kind "search"))}}<aside id="secondary" class="widget-area" aria-label="Sidebar">
+	{{dynamic_sidebar . "sidebar-1"}}
+</aside><!-- #secondary -->{{end}}

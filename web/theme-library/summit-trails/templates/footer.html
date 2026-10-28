@@ -1,0 +1,21 @@
+	{{template "wrap-close" .}}
+	<footer id="colophon" class="site-footer">
+		<div class="st-footer__ridge" aria-hidden="true"></div>
+		<div class="site-footer__inner">
+			<div class="st-footer__grid">
+				<div class="st-footer__brand">
+					<p class="st-footer__name"><span class="st-peak st-peak--small" aria-hidden="true"><span class="st-peak__back"></span><span class="st-peak__front"></span></span>{{.SiteName}}</p>
+					{{with .Description}}<p class="st-footer__desc">{{.}}</p>{{end}}
+					{{with .Data.Settings.join_label}}<a class="button" href="{{$.Data.Settings.join_link}}">{{.}}</a>{{end}}
+					{{if has_nav_menu . "social"}}<nav class="social-navigation" aria-label="Social links">{{nav_menu . "social"}}</nav>{{end}}
+				</div>
+				{{if is_active_sidebar . "footer-1"}}<div class="footer-widgets">{{dynamic_sidebar . "footer-1"}}</div>{{end}}
+			</div>
+			<div class="st-footer__bottom">
+				{{if has_nav_menu . "footer"}}<nav class="footer-navigation" aria-label="Footer menu">{{nav_menu . "footer"}}</nav>{{end}}
+				{{template "site-info" .}}
+			</div>
+		</div>
+	</footer><!-- #colophon -->
+</div><!-- #page -->
+{{template "foot" .}}

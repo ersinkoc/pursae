@@ -1,0 +1,14 @@
+{{with .Data.Settings}}<section class="gp-hero" aria-label="Lead story">
+	<div class="gp-hero__inner">
+		<div class="gp-hero__text">
+			{{with .hero_kicker}}<p class="gp-hero__kicker">{{.}}</p>{{end}}
+			<p class="gp-hero__title">{{with .hero_title}}{{.}}{{else}}{{$.SiteName}}{{end}}</p>
+			{{with .hero_text}}<p class="gp-hero__lead">{{.}}</p>{{end}}
+			{{with .hero_button_label}}<p class="gp-hero__actions"><a class="button button--lime" href="{{$.Data.Settings.hero_button_link}}">{{.}}</a></p>{{end}}
+		</div>
+		<figure class="gp-hero__media">
+			<img src="{{with .hero_image}}{{.}}{{else}}{{$.ThemeURI}}/images/hero.jpg{{end}}" alt="" />
+			<span class="gp-hero__pulse" aria-hidden="true"><svg viewBox="0 0 200 40" preserveAspectRatio="none"><path d="M0 22h60l8-14 10 28 10-20 6 6h106" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/></svg></span>
+		</figure>
+	</div>
+</section>{{end}}
