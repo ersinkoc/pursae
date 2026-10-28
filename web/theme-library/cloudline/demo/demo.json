@@ -1,0 +1,391 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Cloudline",
+  "blogdescription": "Managed IT and cloud services",
+  "posts_per_page": 6
+ },
+ "categories": [
+  {
+   "slug": "security-advisories",
+   "name": "Security advisories",
+   "description": "Vulnerabilities that affect our clients, with clear actions."
+  },
+  {
+   "slug": "case-studies",
+   "name": "Case studies",
+   "description": "Projects we delivered, with the numbers."
+  },
+  {
+   "slug": "guides",
+   "name": "Guides",
+   "description": "Practical advice for IT leads."
+  },
+  {
+   "slug": "company-news",
+   "name": "Company news",
+   "description": "News from the Cloudline team."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "patching",
+   "name": "Patching"
+  },
+  {
+   "slug": "backups",
+   "name": "Backups"
+  },
+  {
+   "slug": "cloud-migration",
+   "name": "Cloud migration"
+  },
+  {
+   "slug": "zero-trust",
+   "name": "Zero trust"
+  },
+  {
+   "slug": "compliance",
+   "name": "Compliance"
+  }
+ ],
+ "media": [
+  {
+   "id": "hero-datacenter",
+   "file": "demo/images/hero-datacenter.jpg",
+   "alt": "Isometric server racks on a pale blue grid, linked by glowing arcs",
+   "caption": ""
+  },
+  {
+   "id": "noc-night",
+   "file": "demo/images/noc-night.jpg",
+   "alt": "Isometric server racks on a dark navy grid",
+   "caption": ""
+  },
+  {
+   "id": "network-mesh",
+   "file": "demo/images/network-mesh.jpg",
+   "alt": "A network of glowing nodes on a navy background",
+   "caption": ""
+  },
+  {
+   "id": "zero-trust",
+   "file": "demo/images/zero-trust.jpg",
+   "alt": "Clusters of connected nodes on a dark blue background",
+   "caption": ""
+  },
+  {
+   "id": "advisory-critical",
+   "file": "demo/images/advisory-critical.jpg",
+   "alt": "A red shield with an exclamation mark on a dark grid",
+   "caption": ""
+  },
+  {
+   "id": "advisory-high",
+   "file": "demo/images/advisory-high.jpg",
+   "alt": "An amber shield with an exclamation mark on a dark grid",
+   "caption": ""
+  },
+  {
+   "id": "security-baseline",
+   "file": "demo/images/security-baseline.jpg",
+   "alt": "A blue shield on a navy grid",
+   "caption": ""
+  },
+  {
+   "id": "case-logistics",
+   "file": "demo/images/case-logistics.jpg",
+   "alt": "A stylised skyline of blue office towers",
+   "caption": ""
+  },
+  {
+   "id": "case-clinic",
+   "file": "demo/images/case-clinic.jpg",
+   "alt": "A stylised skyline of light blue buildings",
+   "caption": ""
+  },
+  {
+   "id": "case-retail",
+   "file": "demo/images/case-retail.jpg",
+   "alt": "A stylised skyline of indigo buildings",
+   "caption": ""
+  },
+  {
+   "id": "uptime-board",
+   "file": "demo/images/uptime-board.jpg",
+   "alt": "A service health board with ninety days of green bars",
+   "caption": ""
+  },
+  {
+   "id": "cloud-migration",
+   "file": "demo/images/cloud-migration.jpg",
+   "alt": "Isometric racks in sky blue with network arcs",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Managed IT that keeps your business running",
+   "content": "<!-- wp:group {\"anchor\":\"services\",\"align\":\"full\",\"layout\":{\"type\":\"constrained\"}} --><div id=\"services\" class=\"wp-block-group alignfull\"><!-- wp:paragraph {\"className\":\"kicker\",\"align\":\"center\"} --><p class=\"has-text-align-center kicker\">What we do</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\",\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center section-title\">Managed IT that stays out of your way</h2><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"lead\",\"align\":\"center\"} --><p class=\"has-text-align-center lead\">One team for your devices, network, cloud and security, with a named engineer who knows your business.</p><!-- /wp:paragraph --><!-- wp:columns {\"align\":\"wide\",\"className\":\"services\"} --><div class=\"wp-block-columns alignwide services\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"service-icon\"} --><p class=\"service-icon\">01</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Managed workplace</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Laptops, phones and accounts set up, patched and supported, with a helpdesk that answers in minutes.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{page:services}}\">Workplace plans →</a></p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"service-icon\"} --><p class=\"service-icon\">02</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Cloud & infrastructure</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Migrations, monitoring and cost control for your servers and cloud accounts, around the clock.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{page:services}}\">Cloud services →</a></p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"service-icon\"} --><p class=\"service-icon\">03</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Security operations</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Endpoint protection, email filtering, backups and a 24/7 response team watching for trouble.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{page:services}}\">Security services →</a></p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"sla\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull sla\"><!-- wp:paragraph {\"className\":\"kicker\"} --><p class=\"kicker\">Service levels</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">Numbers we sign up to</h2><!-- /wp:heading --><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"figure\"} --><p class=\"figure\">99.98<span>%</span></p><!-- /wp:paragraph --><!-- wp:paragraph --><p>measured uptime for managed infrastructure in the last 12 months</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"figure\"} --><p class=\"figure\">4<span> min</span></p><!-- /wp:paragraph --><!-- wp:paragraph --><p>median first response on the helpdesk, day or night</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"figure\"} --><p class=\"figure\">15<span> min</span></p><!-- /wp:paragraph --><!-- wp:paragraph --><p>to engage an engineer on a critical security alert</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"figure\"} --><p class=\"figure\">1,900</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>devices and 240 servers under management today</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:group {\"anchor\":\"plans\",\"align\":\"full\",\"className\":\"section-tint\",\"layout\":{\"type\":\"constrained\"}} --><div id=\"plans\" class=\"wp-block-group alignfull section-tint\"><!-- wp:paragraph {\"className\":\"kicker\",\"align\":\"center\"} --><p class=\"has-text-align-center kicker\">Plans</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\",\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center section-title\">Pick the level of care you need</h2><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"lead\",\"align\":\"center\"} --><p class=\"has-text-align-center lead\">Fixed monthly pricing per user. No surprise invoices, no long contracts: every plan runs month to month after the first quarter.</p><!-- /wp:paragraph --><!-- wp:columns {\"align\":\"wide\",\"className\":\"plans\"} --><div class=\"wp-block-columns alignwide plans\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Essentials</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"plan-price\"} --><p class=\"plan-price\">$49<span> / user / month</span></p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Helpdesk and device care for small offices.</p><!-- /wp:paragraph --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Business-hours helpdesk</li><!-- /wp:list-item --><!-- wp:list-item --><li>Patching and antivirus</li><!-- /wp:list-item --><!-- wp:list-item --><li>Email security and backups</li><!-- /wp:list-item --><!-- wp:list-item --><li>Quarterly review</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Get started</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:column --><!-- wp:column {\"className\":\"plan--recommended\"} --><div class=\"wp-block-column plan--recommended\"><!-- wp:paragraph {\"className\":\"plan-flag\"} --><p class=\"plan-flag\">Recommended</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Professional</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"plan-price\"} --><p class=\"plan-price\">$89<span> / user / month</span></p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Round-the-clock cover for growing teams.</p><!-- /wp:paragraph --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>24/7 helpdesk and monitoring</li><!-- /wp:list-item --><!-- wp:list-item --><li>Managed detection and response</li><!-- /wp:list-item --><!-- wp:list-item --><li>Cloud and network management</li><!-- /wp:list-item --><!-- wp:list-item --><li>Named engineer, monthly review</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Talk to an engineer</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Enterprise</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"plan-price\"} --><p class=\"plan-price\">Custom</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Co-managed IT for in-house teams.</p><!-- /wp:paragraph --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Dedicated engineering pod</li><!-- /wp:list-item --><!-- wp:list-item --><li>Compliance reporting</li><!-- /wp:list-item --><!-- wp:list-item --><li>Custom SLAs up to 99.99%</li><!-- /wp:list-item --><!-- wp:list-item --><li>On-site visits included</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Request a proposal</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull\"><!-- wp:paragraph {\"className\":\"kicker\"} --><p class=\"kicker\">How onboarding works</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">Up and running in thirty days</h2><!-- /wp:heading --><!-- wp:list {\"ordered\":true,\"className\":\"steps\"} --><ol class=\"wp-block-list steps\"><!-- wp:list-item --><li><strong>Discover</strong>We audit devices, accounts, network and backups in the first week.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Stabilise</strong>Critical patches, backup fixes and security basics come first.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Migrate</strong>We move monitoring and support to our tools without downtime.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Improve</strong>A roadmap for the next year, reviewed with you every month.</li><!-- /wp:list-item --></ol><!-- /wp:list --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"section-tint\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-tint\"><!-- wp:paragraph {\"className\":\"kicker\"} --><p class=\"kicker\">Recent work</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">Case studies and advisories</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":3,\"displayPostDate\":true,\"displayPostContent\":true,\"excerptLength\":18,\"postLayout\":\"grid\",\"columns\":3} /--></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"cta-band\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull cta-band\"><!-- wp:heading {\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center\">Talk to an engineer, not a salesperson</h2><!-- /wp:heading --><!-- wp:paragraph {\"align\":\"center\"} --><p class=\"has-text-align-center\">A thirty-minute call, a straight answer about what you need, and a fixed quote within two days.</p><!-- /wp:paragraph --><!-- wp:buttons {\"layout\":{\"type\":\"flex\",\"justifyContent\":\"center\"}} --><div class=\"wp-block-buttons is-content-justification-center\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Book a call</a></div><!-- /wp:button --><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"#plans\">See plans</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "featured_media": "hero-datacenter",
+   "front_page": true
+  },
+  {
+   "slug": "services",
+   "title": "Services & plans",
+   "excerpt": "Fixed monthly pricing, clear service levels and engineers who know your setup.",
+   "content": "<!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">Every Cloudline plan covers the basics properly: patched devices, tested backups, filtered email and a helpdesk that picks up. The difference between plans is how much we watch, and when.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What each plan includes</h2><!-- /wp:heading -->\n\n<!-- wp:table {\"className\":\"is-style-stripes\"} --><figure class=\"wp-block-table is-style-stripes\"><table><thead><tr><th></th><th>Essentials</th><th>Professional</th><th>Enterprise</th></tr></thead><tbody><tr><td>Helpdesk hours</td><td>Mon–Fri, 8–18</td><td>24/7</td><td>24/7, dedicated pod</td></tr><tr><td>First response target</td><td>30 min</td><td>15 min</td><td>10 min</td></tr><tr><td>Patching and antivirus</td><td>✓</td><td>✓</td><td>✓</td></tr><tr><td>Managed detection and response</td><td>—</td><td>✓</td><td>✓</td></tr><tr><td>Cloud cost reviews</td><td>—</td><td>Quarterly</td><td>Monthly</td></tr><tr><td>Uptime commitment</td><td>99.9%</td><td>99.95%</td><td>Up to 99.99%</td></tr></tbody></table><figcaption class=\"wp-element-caption\">Service levels by plan. Response times are measured from the first ticket update.</figcaption></figure><!-- /wp:table -->\n\n<!-- wp:image {\"id\":{{media_id:uptime-board}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:uptime-board}}\" alt=\"A service health board with ninety days of green bars\" class=\"wp-image-{{media_id:uptime-board}}\"/><figcaption class=\"wp-element-caption\">Every client gets a live health board for the services we run.</figcaption></figure><!-- /wp:image -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Projects we run</h2><!-- /wp:heading -->\n\n<!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Cloud migrations</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Lift-and-improve moves from on-premises servers, with a rollback plan for every step.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Security hardening</h3><!-- /wp:heading --><!-- wp:paragraph --><p>A baseline review against recognised controls, then the fixes, then a report you can hand to auditors.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Office moves</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Network, Wi-Fi and phones ready before the first box arrives.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Ask for a quote</a></div><!-- /wp:button --></div><!-- /wp:buttons -->",
+   "featured_media": "cloud-migration",
+   "menu_order": 1
+  },
+  {
+   "slug": "insights",
+   "title": "Insights",
+   "content": "",
+   "posts_page": true,
+   "menu_order": 2
+  },
+  {
+   "slug": "about",
+   "title": "About Cloudline",
+   "excerpt": "Fifty-four engineers, two operations centres, one rule: answer the phone.",
+   "content": "<!-- wp:paragraph --><p>Cloudline started in 2012 with three engineers and one rule: answer the phone. Today we are fifty-four people supporting 120 organisations from two operations centres, and we still answer the phone.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">How we work</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><strong>Named engineers.</strong> Every client has a person, not a queue.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Plain language.</strong> Reports explain risk in business terms.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>No lock-in.</strong> Documentation and admin access are always yours.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:image {\"id\":{{media_id:noc-night}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:noc-night}}\" alt=\"Isometric server racks on a dark navy grid\" class=\"wp-image-{{media_id:noc-night}}\"/><figcaption class=\"wp-element-caption\">Our network operations centre is staffed around the clock.</figcaption></figure><!-- /wp:image -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Certifications</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>We hold ISO/IEC 27001 certification for our managed services and are audited every year. Our engineers carry current vendor certifications for every platform we manage.</p><!-- /wp:paragraph -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>The best compliment we get is that clients forget we exist until the quarterly review.</p><!-- /wp:paragraph --><cite>Service delivery lead</cite></blockquote><!-- /wp:quote -->",
+   "menu_order": 3
+  },
+  {
+   "slug": "contact",
+   "title": "Contact",
+   "content": "<!-- wp:paragraph --><p>Tell us a little about your organisation and what is not working. An engineer will reply within one business day.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">New business</h3><!-- /wp:heading --><!-- wp:paragraph --><p><a href=\"mailto:hello@cloudline.example\">hello@cloudline.example</a><br>+1 555 010 4410</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Existing clients</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Open a ticket from the portal or call <a href=\"tel:+15550104400\">+1 555 010 4400</a>, any time.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Security incident?</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Call the 24/7 line and say “incident”. An engineer joins within fifteen minutes.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Offices</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Operations centre: 18 Foundry Road, Lakeport<br>Second site: 7 Mill Street, Easton</p><!-- /wp:paragraph -->",
+   "menu_order": 4
+  }
+ ],
+ "posts": [
+  {
+   "slug": "advisory-cl-2026-014-vpn-appliance-rce",
+   "title": "Advisory CL-2026-014: critical remote code execution in edge VPN appliances",
+   "date": "2026-10-24T07:30:00",
+   "categories": [
+    "security-advisories"
+   ],
+   "tags": [
+    "patching"
+   ],
+   "featured_media": "advisory-critical",
+   "sticky": true,
+   "excerpt": "A pre-authentication flaw in a widely deployed family of edge VPN appliances is being exploited. Patch or isolate today.",
+   "content": "<!-- wp:group {\"className\":\"advisory-box\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group advisory-box\"><!-- wp:table --><figure class=\"wp-block-table\"><table><tbody><tr><th>Severity</th><td><span class=\"severity\">Critical</span></td></tr><tr><th>Status</th><td>Actively exploited</td></tr><tr><th>Affected</th><td>Edge VPN appliances, firmware 9.1 to 9.4</td></tr><tr><th>Fixed in</th><td>Firmware 9.4.2 and 9.5.0</td></tr><tr><th>Cloudline clients</th><td>Patched on 24 October, no action needed</td></tr></tbody></table></figure><!-- /wp:table --></div><!-- /wp:group -->\n\n<!-- wp:paragraph --><p>The vendor has disclosed a vulnerability in the web portal of its edge VPN appliances that lets an unauthenticated attacker run code on the device. Exploitation in the wild was confirmed on 23 October and public proof-of-concept code is circulating.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What to do now</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Upgrade to firmware 9.4.2 or later. The update takes about ten minutes and needs one reboot.</li><!-- /wp:list-item --><!-- wp:list-item --><li>If you cannot patch today, disable the web portal on the external interface.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Reset the local administrator password and review VPN accounts created in the last 30 days.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Check the appliance logs for requests to unusual portal paths since 15 October.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">How we responded</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Our security operations team patched all managed appliances within six hours of the vendor release and found no signs of compromise. We will keep monitoring for related activity and update this advisory if anything changes.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>If you are not a Cloudline client and need help checking an appliance, call our incident line. We will tell you honestly whether you need us.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Rafael M.",
+     "email": "rafael@example.com",
+     "content": "Thanks for the clear steps. We are not clients but your workaround got us through the night.",
+     "date": "2026-10-24T21:10:00"
+    },
+    {
+     "author": "Cloudline SOC",
+     "email": "soc@cloudline.example",
+     "content": "Update: the vendor has added indicators of compromise to its own advisory. Our detection rules already cover them.",
+     "date": "2026-10-25T09:00:00"
+    }
+   ]
+  },
+  {
+   "slug": "advisory-cl-2026-012-print-server-flaw",
+   "title": "Advisory CL-2026-012: high-severity privilege escalation in shared print servers",
+   "date": "2026-10-02T08:00:00",
+   "categories": [
+    "security-advisories"
+   ],
+   "tags": [
+    "patching"
+   ],
+   "featured_media": "advisory-high",
+   "excerpt": "A local privilege escalation in the print spooler lets any signed-in user become an administrator. The monthly update fixes it.",
+   "content": "<!-- wp:group {\"className\":\"advisory-box is-high\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group advisory-box is-high\"><!-- wp:table --><figure class=\"wp-block-table\"><table><tbody><tr><th>Severity</th><td><span class=\"severity high\">High</span></td></tr><tr><th>Status</th><td>No known exploitation</td></tr><tr><th>Affected</th><td>Servers running the shared print spooler role</td></tr><tr><th>Fixed in</th><td>October cumulative update</td></tr><tr><th>Cloudline clients</th><td>Scheduled for the 5 October window</td></tr></tbody></table></figure><!-- /wp:table --></div><!-- /wp:group -->\n\n<!-- wp:paragraph --><p>This month’s operating system update fixes a flaw in the print spooler that lets a signed-in user run code with system privileges. It is not remotely exploitable on its own, but attackers often chain this kind of bug with a phishing foothold.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Recommended actions</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Apply the October cumulative update to every server with the print role.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Disable the spooler service on servers that do not print, including domain controllers.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Restrict driver installation to administrators with group policy.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>We will update this advisory if exploitation is reported. Clients will see the patch status for each server in their monthly report.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>Most small offices only need one print server. If yours has several, this is a good moment to consolidate.</p><!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "case-study-logistics-cloud-in-90-days",
+   "title": "Case study: moving a regional logistics firm to the cloud in 90 days",
+   "date": "2026-09-18T10:00:00",
+   "categories": [
+    "case-studies"
+   ],
+   "tags": [
+    "cloud-migration",
+    "backups"
+   ],
+   "featured_media": "case-logistics",
+   "excerpt": "Fourteen ageing servers, three depots and a dispatch system that could not go down. Here is how we moved it all without a missed delivery.",
+   "content": "<!-- wp:paragraph --><p>A family-owned logistics company with three depots ran its dispatch, accounts and file shares on fourteen servers in a back office. The hardware was out of warranty and the last full restore test was a memory.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns {\"className\":\"result-figures\"} --><div class=\"wp-block-columns result-figures\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"figure\"} --><p class=\"figure\">14 → 3</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>servers after consolidation</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"figure\"} --><p class=\"figure\">31%</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>lower monthly running cost</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"figure\"} --><p class=\"figure\">0</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>missed deliveries during the move</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">The approach</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Weeks 1–2: inventory, dependency mapping and a tested backup of everything.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Weeks 3–6: file shares and email first, because they are easiest to roll back.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Weeks 7–11: accounts and dispatch, moved over two Sunday nights.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Week 12: old servers wiped, recycled and certificates issued.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:image {\"id\":{{media_id:cloud-migration}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:cloud-migration}}\" alt=\"Isometric racks in sky blue with network arcs\" class=\"wp-image-{{media_id:cloud-migration}}\"/><figcaption class=\"wp-element-caption\">The target design: three right-sized cloud servers and a site-to-site network.</figcaption></figure><!-- /wp:image -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Monday after the dispatch move, the drivers didn’t notice anything. That was the whole point.</p><!-- /wp:paragraph --><cite>Operations director, client</cite></blockquote><!-- /wp:quote -->\n\n<!-- wp:paragraph --><p>The company now runs on Cloudline’s Professional plan, with monthly cost reviews that have found further savings each quarter.</p><!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "case-study-clinic-ransomware-ready-backups",
+   "title": "Case study: a 40-seat clinic gets ransomware-ready backups",
+   "date": "2026-09-03T09:00:00",
+   "categories": [
+    "case-studies"
+   ],
+   "tags": [
+    "backups",
+    "compliance"
+   ],
+   "featured_media": "case-clinic",
+   "excerpt": "Immutable copies, a four-hour restore target and a rehearsal every quarter turned backups from a hope into a plan.",
+   "content": "<!-- wp:paragraph --><p>A private clinic with forty staff relied on a single network drive that copied itself to a USB disk every night. When a neighbouring practice was hit by ransomware, the partners asked a simple question: how long would it take us to come back?</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What we changed</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Nightly backups to two locations, one of them immutable for 30 days.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Patient records replicated every fifteen minutes.</li><!-- /wp:list-item --><!-- wp:list-item --><li>A documented four-hour restore target for the scheduling system.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Proving it works</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Every quarter we restore the scheduling system to an isolated network and time it. The first rehearsal took five hours and forty minutes; the latest took two hours and ten.</p><!-- /wp:paragraph -->\n\n<!-- wp:image {\"id\":{{media_id:security-baseline}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:security-baseline}}\" alt=\"A blue shield on a navy grid\" class=\"wp-image-{{media_id:security-baseline}}\"/></figure><!-- /wp:image -->\n\n<!-- wp:paragraph --><p>The clinic also passed its regulator’s data protection review with no findings, using the reports our platform produces each month.</p><!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "case-study-retail-helpdesk-tickets-down",
+   "title": "Case study: retail chain cuts helpdesk tickets by 38%",
+   "date": "2026-08-20T09:00:00",
+   "categories": [
+    "case-studies"
+   ],
+   "tags": [
+    "patching"
+   ],
+   "featured_media": "case-retail",
+   "excerpt": "Twenty-two shops, one overworked IT manager and a ticket queue that never emptied. Most of the fix was standardisation.",
+   "content": "<!-- wp:paragraph --><p>A chain of twenty-two homeware shops had grown by acquisition, and every shop had a slightly different till, router and laptop. The in-house IT manager spent his days on the phone instead of on projects.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Standardise, then automate</h2><!-- /wp:heading -->\n\n<!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Area</th><th>Before</th><th>After</th></tr></thead><tbody><tr><td>Router models</td><td>6</td><td>1</td></tr><tr><td>Laptop images</td><td>9</td><td>2</td></tr><tr><td>Average tickets per week</td><td>142</td><td>88</td></tr><tr><td>Median time to fix</td><td>6.5 h</td><td>1.8 h</td></tr></tbody></table><figcaption class=\"wp-element-caption\">Six months after onboarding.</figcaption></figure><!-- /wp:table -->\n\n<!-- wp:paragraph --><p>We replaced routers shop by shop overnight, rebuilt laptops from two standard images and set up self-service password resets, which alone removed a fifth of all tickets.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What the IT manager does now</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>He runs the projects he was hired for, starting with a new stock system, while our helpdesk handles the day-to-day.</p><!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "zero-trust-for-small-businesses",
+   "title": "Zero trust for small businesses, without the buzzwords",
+   "date": "2026-08-06T08:30:00",
+   "categories": [
+    "guides"
+   ],
+   "tags": [
+    "zero-trust",
+    "compliance"
+   ],
+   "featured_media": "zero-trust",
+   "excerpt": "Zero trust sounds like an enterprise programme. For a twenty-person company it comes down to five practical habits.",
+   "content": "<!-- wp:paragraph --><p>The idea behind zero trust is simple: being on the office network should not make a device or a person trusted. For a small business, that translates into a handful of changes you can make this quarter.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Five habits</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li><strong>Phishing-resistant sign-in</strong> for email and admin accounts.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Managed devices only</strong> for company data, checked at every sign-in.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Least privilege:</strong> nobody uses an admin account for daily work.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Segment the network</strong> so guest Wi-Fi and printers cannot reach laptops.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Log and alert</strong> on sign-ins from new countries and devices.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>None of these require new hardware. Most are settings in tools you already pay for, and together they block the attacks we see most often.</p><!-- /wp:paragraph -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Security isn’t a product you buy, it’s a set of defaults you stop compromising on.</p><!-- /wp:paragraph --><cite>Head of security operations</cite></blockquote><!-- /wp:quote -->"
+  },
+  {
+   "slug": "the-3-2-1-1-backup-rule",
+   "title": "The 3-2-1-1 backup rule, explained",
+   "date": "2026-07-23T09:00:00",
+   "categories": [
+    "guides"
+   ],
+   "tags": [
+    "backups"
+   ],
+   "featured_media": "security-baseline",
+   "excerpt": "Three copies, two media, one off-site, one immutable. Why the extra one matters now, and how to check yours in an afternoon.",
+   "content": "<!-- wp:paragraph --><p>The classic 3-2-1 rule served businesses well for decades. Ransomware changed the threat: attackers now look for backups first and encrypt or delete them before anything else.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">The rule</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><strong>3</strong> copies of your data</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>2</strong> different kinds of storage</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>1</strong> copy off-site</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>1</strong> copy immutable or offline</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Check yours this afternoon</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Pick one important file from last Tuesday and try to restore it without help. Time it. If it takes more than an hour or you are not sure which copy is the newest, your backups need attention.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>If you want a second pair of eyes, our engineers run a free backup review for organisations under fifty people.</p><!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "new-network-operations-centre",
+   "title": "Our new network operations centre is live",
+   "date": "2026-07-08T12:00:00",
+   "categories": [
+    "company-news"
+   ],
+   "tags": [
+    "compliance"
+   ],
+   "featured_media": "noc-night",
+   "excerpt": "A second operations centre in Easton gives every client geographic redundancy and our night shift a much better coffee machine.",
+   "content": "<!-- wp:paragraph --><p>This month we opened our second network operations centre, in Easton. It mirrors the Lakeport site, so either can run all of our monitoring and support on its own.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What it means for clients</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>No single building can take our support offline.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Night-shift handovers happen between sites, so engineers are fresh.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Monitoring data is stored in two regions.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:image {\"id\":{{media_id:uptime-board}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:uptime-board}}\" alt=\"A service health board with ninety days of green bars\" class=\"wp-image-{{media_id:uptime-board}}\"/><figcaption class=\"wp-element-caption\">The shared health board on the operations floor.</figcaption></figure><!-- /wp:image -->\n\n<!-- wp:paragraph --><p>Both sites run on independent power and network providers, and we test a full failover from one to the other every quarter.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>We are hiring engineers for both sites. If you like solving problems before anyone notices them, say hello.</p><!-- /wp:paragraph -->"
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Services",
+     "page": "services"
+    },
+    {
+     "title": "Insights",
+     "page": "insights",
+     "children": [
+      {
+       "category": "security-advisories"
+      },
+      {
+       "category": "case-studies"
+      },
+      {
+       "category": "guides"
+      }
+     ]
+    },
+    {
+     "title": "About",
+     "page": "about",
+     "children": [
+      {
+       "title": "Company news",
+       "category": "company-news"
+      },
+      {
+       "title": "Contact",
+       "page": "contact"
+      }
+     ]
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    }
+   ]
+  },
+  {
+   "name": "Footer menu",
+   "location": "footer",
+   "items": [
+    {
+     "title": "Services",
+     "page": "services"
+    },
+    {
+     "title": "Advisories",
+     "category": "security-advisories"
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    },
+    {
+     "title": "Status",
+     "url": "#"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "sidebar-1": [
+   "<!-- wp:search {\"label\":\"Search insights\",\"buttonText\":\"Search\"} /-->",
+   "<!-- wp:group {\"className\":\"callout\"} --><div class=\"wp-block-group callout\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Need help now?</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Clients can reach an engineer around the clock.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Contact support</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Topics</h2><!-- /wp:heading --><!-- wp:categories {\"showPostCounts\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Latest</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":4,\"displayPostDate\":true} /--></div><!-- /wp:group -->"
+  ],
+  "footer-1": [
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Services</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><a href=\"{{page:services}}\">Managed workplace</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{page:services}}\">Cloud &amp; infrastructure</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{page:services}}\">Security operations</a></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Resources</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><a href=\"{{category:security-advisories}}\">Security advisories</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{category:case-studies}}\">Case studies</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{category:guides}}\">Guides</a></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Contact</h2><!-- /wp:heading --><!-- wp:paragraph --><p>18 Foundry Road, Lakeport<br><a href=\"tel:+15550104400\">+1 555 010 4400</a><br><a href=\"mailto:hello@cloudline.example\">hello@cloudline.example</a></p><!-- /wp:paragraph --></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "hero_image": "hero-datacenter",
+  "hero_kicker": "Managed IT & cloud · since 2012",
+  "hero_heading": "Managed IT that keeps your business running",
+  "hero_text": "Cloudline looks after your devices, network, cloud and security around the clock, with fixed monthly pricing and engineers who know your setup.",
+  "hero_button_label": "See plans",
+  "hero_button_url": "#plans",
+  "cta_label": "Get support",
+  "cta_url": "{{page:contact}}",
+  "uptime_figure": "99.98%",
+  "status_text": "All systems operational",
+  "status_phone": "+1 555 010 4400",
+  "sidebar": "right",
+  "post_layout": "cards",
+  "footer_text": "© 2026 Cloudline Managed Services. ISO/IEC 27001 certified."
+ }
+}

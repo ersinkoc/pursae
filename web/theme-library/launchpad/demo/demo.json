@@ -1,0 +1,425 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Orbitly",
+  "blogdescription": "The calm workspace for product teams",
+  "posts_per_page": 6
+ },
+ "categories": [
+  {
+   "slug": "releases",
+   "name": "Releases",
+   "description": "New features and major versions."
+  },
+  {
+   "slug": "improvements",
+   "name": "Improvements",
+   "description": "Smaller upgrades and fixes."
+  },
+  {
+   "slug": "company",
+   "name": "Company",
+   "description": "News and notes from the team."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "automations",
+   "name": "Automations"
+  },
+  {
+   "slug": "reports",
+   "name": "Reports"
+  },
+  {
+   "slug": "api",
+   "name": "API"
+  },
+  {
+   "slug": "security",
+   "name": "Security"
+  },
+  {
+   "slug": "integrations",
+   "name": "Integrations"
+  },
+  {
+   "slug": "performance",
+   "name": "Performance"
+  }
+ ],
+ "media": [
+  {
+   "id": "hero-dashboard",
+   "file": "demo/images/hero-dashboard.jpg",
+   "alt": "The Orbitly overview dashboard with usage cards and a rising chart",
+   "caption": ""
+  },
+  {
+   "id": "ui-automations",
+   "file": "demo/images/ui-automations.jpg",
+   "alt": "An automation flow with five connected steps",
+   "caption": ""
+  },
+  {
+   "id": "ui-reports",
+   "file": "demo/images/ui-reports.jpg",
+   "alt": "A weekly report screen with three metric cards and a line chart",
+   "caption": ""
+  },
+  {
+   "id": "ui-board",
+   "file": "demo/images/ui-board.jpg",
+   "alt": "A sprint board with four columns of task cards",
+   "caption": ""
+  },
+  {
+   "id": "release-two",
+   "file": "demo/images/release-two.jpg",
+   "alt": "The number 2.0 in frosted glass over a violet and pink gradient",
+   "caption": ""
+  },
+  {
+   "id": "api-launch",
+   "file": "demo/images/api-launch.jpg",
+   "alt": "The word API in frosted glass over a green and blue gradient",
+   "caption": ""
+  },
+  {
+   "id": "security",
+   "file": "demo/images/security.jpg",
+   "alt": "The letters SSO in frosted glass over a blue gradient",
+   "caption": ""
+  },
+  {
+   "id": "integrations",
+   "file": "demo/images/integrations.jpg",
+   "alt": "A grid of rounded app icons in bright colors",
+   "caption": ""
+  },
+  {
+   "id": "milestone",
+   "file": "demo/images/milestone.jpg",
+   "alt": "The text 100k over a warm gradient",
+   "caption": ""
+  },
+  {
+   "id": "mesh-aurora",
+   "file": "demo/images/mesh-aurora.jpg",
+   "alt": "A soft violet and sky-blue gradient mesh",
+   "caption": ""
+  },
+  {
+   "id": "mesh-sunset",
+   "file": "demo/images/mesh-sunset.jpg",
+   "alt": "A soft amber and pink gradient mesh",
+   "caption": ""
+  },
+  {
+   "id": "avatar-one",
+   "file": "demo/images/avatar-one.jpg",
+   "alt": "Abstract avatar on a violet and pink gradient",
+   "caption": ""
+  },
+  {
+   "id": "avatar-two",
+   "file": "demo/images/avatar-two.jpg",
+   "alt": "Abstract avatar on an amber gradient",
+   "caption": ""
+  },
+  {
+   "id": "avatar-three",
+   "file": "demo/images/avatar-three.jpg",
+   "alt": "Abstract avatar on a teal and blue gradient",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Plan, ship and measure in one calm workspace",
+   "content": "<!-- wp:group {\"align\":\"full\",\"className\":\"logos\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull logos\"><!-- wp:paragraph {\"align\":\"center\"} --><p class=\"has-text-align-center\">Trusted by product teams at</p><!-- /wp:paragraph --><!-- wp:list {\"className\":\"logo-row\"} --><ul class=\"wp-block-list logo-row\"><!-- wp:list-item --><li>Northwind</li><!-- /wp:list-item --><!-- wp:list-item --><li>Lumen Labs</li><!-- /wp:list-item --><!-- wp:list-item --><li>Parcelpost</li><!-- /wp:list-item --><!-- wp:list-item --><li>Quillfeather</li><!-- /wp:list-item --><!-- wp:list-item --><li>Arcadia Health</li><!-- /wp:list-item --><!-- wp:list-item --><li>Tidepool</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group -->\n\n<!-- wp:group {\"anchor\":\"features\",\"align\":\"full\",\"layout\":{\"type\":\"constrained\"}} --><div id=\"features\" class=\"wp-block-group alignfull\"><!-- wp:paragraph {\"className\":\"kicker\",\"align\":\"center\"} --><p class=\"has-text-align-center kicker\">Why Orbitly</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\",\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center section-title\">Everything your team needs to ship, nothing it doesn’t</h2><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"lead\",\"align\":\"center\"} --><p class=\"has-text-align-center lead\">Plans, tasks, docs and dashboards live in one fast workspace. Fewer tabs, fewer status meetings, more finished work.</p><!-- /wp:paragraph --><!-- wp:columns {\"align\":\"wide\",\"className\":\"feature-grid\"} --><div class=\"wp-block-columns alignwide feature-grid\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"feature-icon\"} --><p class=\"feature-icon\">⚡</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Automations</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Route requests, assign owners and nudge reviewers with flows you draw in minutes.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"feature-icon\"} --><p class=\"feature-icon\">◎</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Live reports</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Cycle time, throughput and goals update as work moves, with a weekly summary written for you.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"feature-icon\"} --><p class=\"feature-icon\">▦</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Sprint boards</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Drag, filter and plan with keyboard shortcuts and work-in-progress limits that keep focus.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:columns {\"align\":\"wide\",\"className\":\"feature-grid\"} --><div class=\"wp-block-columns alignwide feature-grid\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"feature-icon\"} --><p class=\"feature-icon\">⇄</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">120+ integrations</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Connect your repository, chat, calendar and CRM. Updates flow both ways.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"feature-icon\"} --><p class=\"feature-icon\">🔒</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Enterprise security</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Single sign-on, audit logs, data residency and granular roles on every Team plan.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"feature-icon\"} --><p class=\"feature-icon\">{ }</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Open API</h3><!-- /wp:heading --><!-- wp:paragraph --><p>A documented REST API and signed webhooks for everything you can do in the app.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"section-soft\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-soft\"><!-- wp:media-text {\"mediaId\":{{media_id:ui-automations}},\"mediaType\":\"image\",\"align\":\"wide\"} --><div class=\"wp-block-media-text alignwide is-stacked-on-mobile\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:ui-automations}}\" alt=\"An automation flow with five connected steps\" class=\"wp-image-{{media_id:ui-automations}} size-full\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:paragraph {\"className\":\"kicker\"} --><p class=\"kicker\">Automations 2.0</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">Draw the process once. Let it run forever.</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Branches, delays and approvals in a visual editor that reads like a sentence. Start from forty templates or build your own.</p><!-- /wp:paragraph --><!-- wp:list {\"className\":\"check-list\"} --><ul class=\"wp-block-list check-list\"><!-- wp:list-item --><li>Trigger on forms, status changes or a schedule</li><!-- /wp:list-item --><!-- wp:list-item --><li>Branch on any field, with a preview of every path</li><!-- /wp:list-item --><!-- wp:list-item --><li>Pause for approvals and pick up where you left off</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{post:automations-branches-delays-visual-editor}}\">See how automations work</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div></div><!-- /wp:media-text --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull\"><!-- wp:columns {\"align\":\"wide\",\"className\":\"stats\"} --><div class=\"wp-block-columns alignwide stats\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"stat\"} --><p class=\"stat\">100k+</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>teams plan their week in Orbitly</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"stat\"} --><p class=\"stat\">4.2×</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>fewer status meetings after one quarter</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"stat\"} --><p class=\"stat\">99.99%</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>uptime over the last twelve months</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"stat\"} --><p class=\"stat\">< 80ms</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>median response time worldwide</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"section-soft\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-soft\"><!-- wp:paragraph {\"className\":\"kicker\",\"align\":\"center\"} --><p class=\"has-text-align-center kicker\">Loved by makers</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\",\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center section-title\">Teams that switched don’t switch back</h2><!-- /wp:heading --><!-- wp:columns {\"align\":\"wide\",\"className\":\"testimonials\"} --><div class=\"wp-block-columns alignwide testimonials\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:avatar-one}},\"sizeSlug\":\"thumbnail\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-thumbnail\"><img src=\"{{media:avatar-one}}\" alt=\"Abstract avatar on a violet and pink gradient\" class=\"wp-image-{{media_id:avatar-one}}\"/></figure><!-- /wp:image --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>We replaced three tools and a spreadsheet nobody trusted. Our Monday planning takes twenty minutes now.</p><!-- /wp:paragraph --><cite>Head of Product, a logistics startup</cite></blockquote><!-- /wp:quote --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:avatar-two}},\"sizeSlug\":\"thumbnail\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-thumbnail\"><img src=\"{{media:avatar-two}}\" alt=\"Abstract avatar on an amber gradient\" class=\"wp-image-{{media_id:avatar-two}}\"/></figure><!-- /wp:image --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>The weekly summary is the first status report people actually read. It writes itself from real work.</p><!-- /wp:paragraph --><cite>Engineering Manager, a fintech team</cite></blockquote><!-- /wp:quote --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:avatar-three}},\"sizeSlug\":\"thumbnail\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-thumbnail\"><img src=\"{{media:avatar-three}}\" alt=\"Abstract avatar on a teal and blue gradient\" class=\"wp-image-{{media_id:avatar-three}}\"/></figure><!-- /wp:image --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Single sign-on and audit logs on the Team plan sealed it for our security review.</p><!-- /wp:paragraph --><cite>IT Lead, a health software company</cite></blockquote><!-- /wp:quote --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:group {\"anchor\":\"pricing\",\"align\":\"full\",\"layout\":{\"type\":\"constrained\"}} --><div id=\"pricing\" class=\"wp-block-group alignfull\"><!-- wp:paragraph {\"className\":\"kicker\",\"align\":\"center\"} --><p class=\"has-text-align-center kicker\">Pricing</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\",\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center section-title\">Simple plans that grow with you</h2><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"lead\",\"align\":\"center\"} --><p class=\"has-text-align-center lead\">Start free. Upgrade when your team does. Every plan includes unlimited projects.</p><!-- /wp:paragraph --><!-- wp:columns {\"align\":\"wide\",\"className\":\"pricing\"} --><div class=\"wp-block-columns alignwide pricing\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Starter</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"price\"} --><p class=\"price\">$0<span> / forever</span></p><!-- /wp:paragraph --><!-- wp:paragraph --><p>For individuals and tiny teams getting organised.</p><!-- /wp:paragraph --><!-- wp:list {\"className\":\"check-list\"} --><ul class=\"wp-block-list check-list\"><!-- wp:list-item --><li>Up to 5 members</li><!-- /wp:list-item --><!-- wp:list-item --><li>Boards, docs and tasks</li><!-- /wp:list-item --><!-- wp:list-item --><li>10 automations a month</li><!-- /wp:list-item --><!-- wp:list-item --><li>Community support</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Start free</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:column --><!-- wp:column {\"className\":\"tier--featured\"} --><div class=\"wp-block-column tier--featured\"><!-- wp:paragraph {\"className\":\"tier-badge\"} --><p class=\"tier-badge\">Most popular</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Team</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"price\"} --><p class=\"price\">$12<span> / member / month</span></p><!-- /wp:paragraph --><!-- wp:paragraph --><p>For product teams shipping every week.</p><!-- /wp:paragraph --><!-- wp:list {\"className\":\"check-list\"} --><ul class=\"wp-block-list check-list\"><!-- wp:list-item --><li>Unlimited members</li><!-- /wp:list-item --><!-- wp:list-item --><li>Unlimited automations</li><!-- /wp:list-item --><!-- wp:list-item --><li>Live reports and weekly summary</li><!-- /wp:list-item --><!-- wp:list-item --><li>SSO and audit logs</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Start a 14-day trial</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Enterprise</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"price\"} --><p class=\"price\">Custom</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>For organisations with advanced security needs.</p><!-- /wp:paragraph --><!-- wp:list {\"className\":\"check-list\"} --><ul class=\"wp-block-list check-list\"><!-- wp:list-item --><li>Data residency in the EU or US</li><!-- /wp:list-item --><!-- wp:list-item --><li>Dedicated success manager</li><!-- /wp:list-item --><!-- wp:list-item --><li>Custom contracts and invoicing</li><!-- /wp:list-item --><!-- wp:list-item --><li>99.99% uptime SLA</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Talk to sales</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"cta-band\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull cta-band\"><!-- wp:heading {\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center\">Ready when you are</h2><!-- /wp:heading --><!-- wp:paragraph {\"align\":\"center\"} --><p class=\"has-text-align-center\">Set up your workspace in under five minutes. No credit card, no sales call, no catch.</p><!-- /wp:paragraph --><!-- wp:buttons {\"layout\":{\"type\":\"flex\",\"justifyContent\":\"center\"}} --><div class=\"wp-block-buttons is-content-justification-center\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Start free trial</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "featured_media": "hero-dashboard",
+   "front_page": true
+  },
+  {
+   "slug": "features",
+   "title": "Features",
+   "content": "<!-- wp:group {\"align\":\"full\",\"className\":\"logos\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull logos\"><!-- wp:paragraph {\"className\":\"kicker\",\"align\":\"center\"} --><p class=\"has-text-align-center kicker\">Features</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\",\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center section-title\">One workspace for the whole product cycle</h2><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"lead\",\"align\":\"center\"} --><p class=\"has-text-align-center lead\">From the first idea to the release note, Orbitly keeps context in one place so nobody has to ask where things stand.</p><!-- /wp:paragraph --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull\"><!-- wp:media-text {\"mediaId\":{{media_id:ui-board}},\"mediaType\":\"image\",\"align\":\"wide\"} --><div class=\"wp-block-media-text alignwide is-stacked-on-mobile\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:ui-board}}\" alt=\"A sprint board with four columns of task cards\" class=\"wp-image-{{media_id:ui-board}} size-full\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:paragraph {\"className\":\"kicker\"} --><p class=\"kicker\">Plan</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">Boards that keep up with you</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Move cards with the keyboard, set work-in-progress limits per column and split a sprint without losing history.</p><!-- /wp:paragraph --><!-- wp:list {\"className\":\"check-list\"} --><ul class=\"wp-block-list check-list\"><!-- wp:list-item --><li>Keyboard-first: J, K and arrow keys everywhere</li><!-- /wp:list-item --><!-- wp:list-item --><li>Swimlanes by owner, priority or label</li><!-- /wp:list-item --><!-- wp:list-item --><li>Sprint scope changes recorded automatically</li><!-- /wp:list-item --></ul><!-- /wp:list --></div></div><!-- /wp:media-text --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"section-soft\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-soft\"><!-- wp:media-text {\"mediaId\":{{media_id:ui-reports}},\"mediaType\":\"image\",\"mediaPosition\":\"right\",\"align\":\"wide\"} --><div class=\"wp-block-media-text alignwide is-stacked-on-mobile has-media-on-the-right\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:ui-reports}}\" alt=\"A weekly report screen with three metric cards and a line chart\" class=\"wp-image-{{media_id:ui-reports}} size-full\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:paragraph {\"className\":\"kicker\"} --><p class=\"kicker\">Measure</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">Reports without the spreadsheet</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Cycle time, throughput and goal progress update live. Every Friday, a plain-language summary lands in your inbox.</p><!-- /wp:paragraph --><!-- wp:list {\"className\":\"check-list\"} --><ul class=\"wp-block-list check-list\"><!-- wp:list-item --><li>Twelve built-in charts and a custom chart builder</li><!-- /wp:list-item --><!-- wp:list-item --><li>Share a read-only link with stakeholders</li><!-- /wp:list-item --><!-- wp:list-item --><li>Export to CSV or straight to your data warehouse</li><!-- /wp:list-item --></ul><!-- /wp:list --></div></div><!-- /wp:media-text --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull\"><!-- wp:media-text {\"mediaId\":{{media_id:integrations}},\"mediaType\":\"image\",\"align\":\"wide\"} --><div class=\"wp-block-media-text alignwide is-stacked-on-mobile\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:integrations}}\" alt=\"A grid of rounded app icons in bright colors\" class=\"wp-image-{{media_id:integrations}} size-full\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:paragraph {\"className\":\"kicker\"} --><p class=\"kicker\">Connect</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">Plays well with your stack</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Link commits to tasks, post updates to chat and sync due dates with your calendar. Two-way, real time, no glue code.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{post:forty-new-integrations}}\">Browse integrations</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div></div><!-- /wp:media-text --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"cta-band\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull cta-band\"><!-- wp:heading {\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center\">See it with your own data</h2><!-- /wp:heading --><!-- wp:paragraph {\"align\":\"center\"} --><p class=\"has-text-align-center\">Import from your current tool in one click and keep your history.</p><!-- /wp:paragraph --><!-- wp:buttons {\"layout\":{\"type\":\"flex\",\"justifyContent\":\"center\"}} --><div class=\"wp-block-buttons is-content-justification-center\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Start free trial</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "template": "page-landing",
+   "menu_order": 1
+  },
+  {
+   "slug": "pricing",
+   "title": "Pricing",
+   "content": "<!-- wp:group {\"align\":\"full\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull\"><!-- wp:paragraph {\"className\":\"kicker\",\"align\":\"center\"} --><p class=\"has-text-align-center kicker\">Pricing</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\",\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center section-title\">Fair pricing, billed per active member</h2><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"lead\",\"align\":\"center\"} --><p class=\"has-text-align-center lead\">Members who don’t log in during a month are not billed for it. Annual plans save two months.</p><!-- /wp:paragraph --><!-- wp:columns {\"align\":\"wide\",\"className\":\"pricing\"} --><div class=\"wp-block-columns alignwide pricing\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Starter</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"price\"} --><p class=\"price\">$0<span> / forever</span></p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Everything you need to get organised.</p><!-- /wp:paragraph --><!-- wp:list {\"className\":\"check-list\"} --><ul class=\"wp-block-list check-list\"><!-- wp:list-item --><li>Up to 5 members</li><!-- /wp:list-item --><!-- wp:list-item --><li>Boards, docs and tasks</li><!-- /wp:list-item --><!-- wp:list-item --><li>10 automations a month</li><!-- /wp:list-item --><!-- wp:list-item --><li>Community support</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Start free</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:column --><!-- wp:column {\"className\":\"tier--featured\"} --><div class=\"wp-block-column tier--featured\"><!-- wp:paragraph {\"className\":\"tier-badge\"} --><p class=\"tier-badge\">Most popular</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Team</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"price\"} --><p class=\"price\">$12<span> / member / month</span></p><!-- /wp:paragraph --><!-- wp:paragraph --><p>For product teams shipping every week.</p><!-- /wp:paragraph --><!-- wp:list {\"className\":\"check-list\"} --><ul class=\"wp-block-list check-list\"><!-- wp:list-item --><li>Unlimited members and automations</li><!-- /wp:list-item --><!-- wp:list-item --><li>Live reports and weekly summary</li><!-- /wp:list-item --><!-- wp:list-item --><li>SSO, SCIM and audit logs</li><!-- /wp:list-item --><!-- wp:list-item --><li>Priority support</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Start a 14-day trial</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Enterprise</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"price\"} --><p class=\"price\">Custom</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Advanced security and dedicated support.</p><!-- /wp:paragraph --><!-- wp:list {\"className\":\"check-list\"} --><ul class=\"wp-block-list check-list\"><!-- wp:list-item --><li>Data residency in the EU or US</li><!-- /wp:list-item --><!-- wp:list-item --><li>Dedicated success manager</li><!-- /wp:list-item --><!-- wp:list-item --><li>Custom contracts</li><!-- /wp:list-item --><!-- wp:list-item --><li>99.99% uptime SLA</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Talk to sales</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"faq-list section-soft\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull faq-list section-soft\"><!-- wp:heading {\"className\":\"section-title\",\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center section-title\">Questions, answered</h2><!-- /wp:heading --><!-- wp:details --><details class=\"wp-block-details\"><summary>Can I change plans later?</summary><!-- wp:paragraph --><p>Yes. Upgrades apply immediately and are prorated; downgrades take effect at the end of the billing period.</p><!-- /wp:paragraph --></details><!-- /wp:details --><!-- wp:details --><details class=\"wp-block-details\"><summary>What counts as an active member?</summary><!-- wp:paragraph --><p>Anyone who signs in or is mentioned in a comment during the billing month. Guests and viewers are always free.</p><!-- /wp:paragraph --></details><!-- /wp:details --><!-- wp:details --><details class=\"wp-block-details\"><summary>Do you offer discounts for non-profits and schools?</summary><!-- wp:paragraph --><p>We offer 50% off the Team plan for registered non-profits and accredited schools. Write to us from the contact page.</p><!-- /wp:paragraph --></details><!-- /wp:details --><!-- wp:details --><details class=\"wp-block-details\"><summary>Where is my data stored?</summary><!-- wp:paragraph --><p>In the EU or the US, your choice, encrypted at rest and in transit. Enterprise plans can pin data to a single region.</p><!-- /wp:paragraph --></details><!-- /wp:details --></div><!-- /wp:group -->",
+   "template": "page-landing",
+   "menu_order": 2
+  },
+  {
+   "slug": "changelog",
+   "title": "Changelog",
+   "content": "",
+   "posts_page": true,
+   "menu_order": 3
+  },
+  {
+   "slug": "about",
+   "title": "About Orbitly",
+   "excerpt": "A remote team of sixty-two building a calmer way to plan.",
+   "content": "<!-- wp:paragraph --><p>Orbitly started in 2021 as a side project between three people who were tired of spending Monday mornings asking where things stood. Today we are a remote team of sixty-two across eleven time zones, and we still plan every week in our own product.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What we believe</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><strong>Calm beats busy.</strong> Software should reduce noise, not add to it.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Defaults matter.</strong> Most teams never change settings, so ours should be good ones.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Ship small, ship often.</strong> We release something every week and write about it in the changelog.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:image {\"id\":{{media_id:mesh-aurora}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:mesh-aurora}}\" alt=\"A soft violet and sky-blue gradient mesh\" class=\"wp-image-{{media_id:mesh-aurora}}\"/><figcaption class=\"wp-element-caption\">Our office is wherever the team is: we meet in person twice a year.</figcaption></figure><!-- /wp:image -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">By the numbers</h2><!-- /wp:heading -->\n\n<!-- wp:columns {\"className\":\"stats\"} --><div class=\"wp-block-columns stats\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"stat\"} --><p class=\"stat\">62</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>people in 14 countries</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"stat\"} --><p class=\"stat\">2021</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>first line of code</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"stat\"} --><p class=\"stat\">100k+</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>teams using Orbitly</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>We build the tool we want to use on a Monday morning: quiet, quick and honest about where things stand.</p><!-- /wp:paragraph --><cite>The founding team</cite></blockquote><!-- /wp:quote -->",
+   "featured_media": "mesh-aurora",
+   "menu_order": 4
+  },
+  {
+   "slug": "contact",
+   "title": "Contact",
+   "content": "<!-- wp:paragraph --><p>We usually reply within one working day. For urgent issues on a paid plan, use the in-app chat and we will pick it up within the hour.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Sales</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Questions about plans, security reviews or a pilot for your organisation.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"mailto:sales@orbitly.example\">sales@orbitly.example</a></p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Support</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Help with your workspace, billing or an integration that misbehaves.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"mailto:help@orbitly.example\">help@orbitly.example</a></p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Press</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Logos, screenshots and background for stories about Orbitly.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"mailto:press@orbitly.example\">press@orbitly.example</a></p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Visit us</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Our small hub is at 40 Harbour Lane, Second Floor, Port Ellis. Coffee is on us if you let us know you are coming.</p><!-- /wp:paragraph -->",
+   "parent": "about",
+   "menu_order": 5
+  }
+ ],
+ "posts": [
+  {
+   "slug": "orbitly-two-point-oh",
+   "title": "Orbitly 2.0: a calmer workspace, rebuilt from the ground up",
+   "date": "2026-10-21T10:00:00",
+   "categories": [
+    "releases"
+   ],
+   "tags": [
+    "performance",
+    "reports"
+   ],
+   "featured_media": "release-two",
+   "sticky": true,
+   "excerpt": "A new navigation, a three-times faster editor, dark mode and a home screen that shows only what changed since you last looked.",
+   "content": "<!-- wp:paragraph --><p>Two years ago we shipped the first version of Orbitly to forty teams. Today more than a hundred thousand plan their week with it, and the product had grown in every direction at once. Version 2.0 is the result of six months spent putting it back in order.</p><!-- /wp:paragraph -->\n\n<!-- wp:list {\"className\":\"release-meta\"} --><ul class=\"wp-block-list release-meta\"><!-- wp:list-item --><li>Released: 21 October 2026</li><!-- /wp:list-item --><!-- wp:list-item --><li>Plans: all</li><!-- /wp:list-item --><!-- wp:list-item --><li>Migration: automatic</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What changed</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"className\":\"changes\"} --><ul class=\"wp-block-list changes\"><!-- wp:list-item --><li><span class=\"tag-new\">New</span>A home screen that shows only what changed since your last visit.</li><!-- /wp:list-item --><!-- wp:list-item --><li><span class=\"tag-new\">New</span>Dark mode that follows your system, with a high-contrast option.</li><!-- /wp:list-item --><!-- wp:list-item --><li><span class=\"tag-improved\">Improved</span>The editor is three times faster on large documents.</li><!-- /wp:list-item --><!-- wp:list-item --><li><span class=\"tag-improved\">Improved</span>Navigation fits on one line: Home, Work, Reports, Settings.</li><!-- /wp:list-item --><!-- wp:list-item --><li><span class=\"tag-fixed\">Fixed</span>Comments no longer jump when someone edits above them.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:image {\"id\":{{media_id:hero-dashboard}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:hero-dashboard}}\" alt=\"The new Orbitly home screen\" class=\"wp-image-{{media_id:hero-dashboard}}\"/><figcaption class=\"wp-element-caption\">The new home screen: three cards, one chart, no noise.</figcaption></figure><!-- /wp:image -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Why we rebuilt instead of patching</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Every feature we added made the next one harder. The sidebar had nineteen entries; settings lived in four places. We wrote down the ten things people do most and designed around those, then found homes for everything else.</p><!-- /wp:paragraph -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>The best compliment we heard in the beta was that it felt like the app had gone quiet.</p><!-- /wp:paragraph --><cite>Product design team</cite></blockquote><!-- /wp:quote -->\n\n<!-- wp:paragraph --><p>Your workspace moves to 2.0 automatically over the next week. Nothing is deleted, and you can switch back from Settings until the end of the year if you need more time.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Maya R.",
+     "email": "maya@example.com",
+     "content": "The new home screen is exactly what I wanted. I open Orbitly and know in ten seconds what changed.",
+     "date": "2026-10-21T14:12:00"
+    },
+    {
+     "author": "Devin K.",
+     "email": "devin@example.com",
+     "content": "Dark mode with high contrast is a lovely touch. Thank you for thinking about it.",
+     "date": "2026-10-22T09:30:00"
+    }
+   ]
+  },
+  {
+   "slug": "automations-branches-delays-visual-editor",
+   "title": "Automations get branches, delays and a visual editor",
+   "date": "2026-10-09T09:00:00",
+   "categories": [
+    "releases"
+   ],
+   "tags": [
+    "automations"
+   ],
+   "featured_media": "ui-automations",
+   "excerpt": "Draw a process as a flow, branch on any field, wait for approvals and see a preview of every path before you switch it on.",
+   "content": "<!-- wp:paragraph --><p>Automations were the most used and the most confusing part of Orbitly. People loved what they did and hated building them in a list of dropdowns. Today the builder becomes a canvas.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Branches and delays</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Any step can now split on a condition: plan, priority, a custom field or the person who made the request. Delays wait for a fixed time, a date field or until someone approves.</p><!-- /wp:paragraph -->\n\n<!-- wp:list {\"className\":\"changes\"} --><ul class=\"wp-block-list changes\"><!-- wp:list-item --><li><span class=\"tag-new\">New</span>Visual flow editor with drag-and-drop steps.</li><!-- /wp:list-item --><!-- wp:list-item --><li><span class=\"tag-new\">New</span>Branch on any field, with up to five paths per step.</li><!-- /wp:list-item --><!-- wp:list-item --><li><span class=\"tag-new\">New</span>Delay until a time, a date field or an approval.</li><!-- /wp:list-item --><!-- wp:list-item --><li><span class=\"tag-improved\">Improved</span>Every automation shows its last fifty runs with inputs and outputs.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:image {\"id\":{{media_id:ui-automations}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:ui-automations}}\" alt=\"An automation flow with five connected steps\" class=\"wp-image-{{media_id:ui-automations}}\"/><figcaption class=\"wp-element-caption\">A lead-routing flow built from one of the forty templates.</figcaption></figure><!-- /wp:image -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Test before you trust</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Preview mode runs your flow against a real item without changing anything and highlights the path it would take. It is the feature beta testers asked for most, and the one we use the most ourselves.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>Automations 2.0 is available on every plan. Starter workspaces keep their limit of ten runs a month.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Tomás L.",
+     "email": "tomas@example.com",
+     "content": "Preview mode saved me from emailing two hundred customers by accident. Great addition.",
+     "date": "2026-10-10T11:05:00"
+    }
+   ]
+  },
+  {
+   "slug": "public-rest-api-and-webhooks",
+   "title": "Introducing the public REST API and webhooks",
+   "date": "2026-09-24T15:00:00",
+   "categories": [
+    "releases"
+   ],
+   "tags": [
+    "api",
+    "integrations"
+   ],
+   "featured_media": "api-launch",
+   "excerpt": "Everything you can do in the app, you can now do with a documented REST API, plus signed webhooks for every event.",
+   "content": "<!-- wp:paragraph --><p>Our internal API has powered the Orbitly apps since day one. Starting today, the same API is public, versioned and documented, with personal tokens and OAuth apps.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">A first request</h2><!-- /wp:heading -->\n\n<!-- wp:code --><pre class=\"wp-block-code\"><code>curl https://api.orbitly.example/v1/tasks \\\n  -H &quot;Authorization: Bearer $ORBITLY_TOKEN&quot; \\\n  -d title=&quot;Draft the release note&quot; \\\n  -d project=launch-week</code></pre><!-- /wp:code -->\n\n<!-- wp:paragraph --><p>Responses are JSON, lists are paginated with cursors and every write accepts an idempotency key, so retries are safe.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Webhooks</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Subscribe to forty event types, from task.created to sprint.closed.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Every delivery is signed with a secret you can rotate.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Failed deliveries retry with backoff for twenty-four hours.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>Read the reference, try requests in the browser and generate a token from Settings, then Developer. Rate limits are generous: six hundred requests a minute per workspace.</p><!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "weekly-reports-write-their-own-summary",
+   "title": "Weekly reports now write their own summary",
+   "date": "2026-09-10T09:30:00",
+   "categories": [
+    "improvements"
+   ],
+   "tags": [
+    "reports"
+   ],
+   "featured_media": "ui-reports",
+   "excerpt": "Every Friday, a short plain-language summary of what shipped, what slipped and what is at risk, built from the work itself.",
+   "content": "<!-- wp:paragraph --><p>Status reports take time to write and are out of date when they are read. The new weekly summary is assembled from what actually happened in your workspace, so nobody has to write it.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What it includes</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>What shipped, grouped by project</li><!-- /wp:list-item --><!-- wp:list-item --><li>What slipped and by how much</li><!-- /wp:list-item --><!-- wp:list-item --><li>Items at risk, with the reason in one line</li><!-- /wp:list-item --><!-- wp:list-item --><li>Cycle time compared with the previous four weeks</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:image {\"id\":{{media_id:ui-reports}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:ui-reports}}\" alt=\"A weekly report screen with three metric cards and a line chart\" class=\"wp-image-{{media_id:ui-reports}}\"/><figcaption class=\"wp-element-caption\">The summary sits above the charts, so context comes before numbers.</figcaption></figure><!-- /wp:image -->\n\n<!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Private by design</h3><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Summaries are generated in your workspace region and never leave it. You can edit one before it is sent, and turn the feature off per project.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>Early teams told us the summary changed how their Friday felt: instead of writing about the week, they read about it, added a sentence of context and moved on.</p><!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "single-sign-on-and-audit-logs-for-team",
+   "title": "Single sign-on and audit logs for every Team plan",
+   "date": "2026-08-27T10:00:00",
+   "categories": [
+    "improvements"
+   ],
+   "tags": [
+    "security"
+   ],
+   "featured_media": "security",
+   "excerpt": "Security features should not be a reason to buy a bigger plan. SAML single sign-on, SCIM provisioning and audit logs are now part of Team.",
+   "content": "<!-- wp:paragraph --><p>Until now, single sign-on was an Enterprise feature. We heard from many small teams that went through a security review and had to explain why the tool they liked did not support it. That changes today.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Now on the Team plan</h2><!-- /wp:heading -->\n\n<!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Feature</th><th>Starter</th><th>Team</th><th>Enterprise</th></tr></thead><tbody><tr><td>SAML single sign-on</td><td>—</td><td>✓</td><td>✓</td></tr><tr><td>SCIM provisioning</td><td>—</td><td>✓</td><td>✓</td></tr><tr><td>Audit log retention</td><td>—</td><td>1 year</td><td>Unlimited</td></tr><tr><td>Data residency</td><td>—</td><td>—</td><td>✓</td></tr></tbody></table><figcaption class=\"wp-element-caption\">Security features by plan.</figcaption></figure><!-- /wp:table -->\n\n<!-- wp:paragraph --><p>Audit logs record sign-ins, permission changes, exports and deletions. You can filter them in the app or stream them to your security tooling with a webhook.</p><!-- /wp:paragraph -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Paying more for basic security made us the bad guys in every review. We would rather be the easy yes.</p><!-- /wp:paragraph --><cite>Our security lead</cite></blockquote><!-- /wp:quote -->"
+  },
+  {
+   "slug": "sprint-boards-faster-keyboard-wip",
+   "title": "Sprint boards: faster drag, keyboard moves and WIP limits",
+   "date": "2026-08-12T09:00:00",
+   "categories": [
+    "improvements"
+   ],
+   "tags": [
+    "performance"
+   ],
+   "featured_media": "ui-board",
+   "excerpt": "Boards with a thousand cards now scroll at sixty frames a second, cards move with the keyboard, and columns can limit work in progress.",
+   "content": "<!-- wp:paragraph --><p>Boards are where most teams spend their day, so small frictions add up. This release is a collection of fixes for the ones you reported most.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">In this release</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"className\":\"changes\"} --><ul class=\"wp-block-list changes\"><!-- wp:list-item --><li><span class=\"tag-improved\">Improved</span>Rendering is virtualised: large boards stay smooth.</li><!-- /wp:list-item --><!-- wp:list-item --><li><span class=\"tag-new\">New</span>Move a card with Shift and the arrow keys.</li><!-- /wp:list-item --><!-- wp:list-item --><li><span class=\"tag-new\">New</span>Work-in-progress limits per column, with a gentle warning.</li><!-- /wp:list-item --><!-- wp:list-item --><li><span class=\"tag-fixed\">Fixed</span>Filters are kept when you switch between board and list.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:image {\"id\":{{media_id:ui-board}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:ui-board}}\" alt=\"A sprint board with four columns of task cards\" class=\"wp-image-{{media_id:ui-board}}\"/><figcaption class=\"wp-element-caption\">A thousand-card board, now as smooth as a ten-card one.</figcaption></figure><!-- /wp:image -->\n\n<!-- wp:paragraph --><p>The new renderer only draws the cards you can see, which also cut memory use on large boards by two thirds. Older laptops and tablets benefit the most.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Limits that nudge, not block</h3><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Work-in-progress limits are off by default. Turn them on from a column’s menu; the column header turns amber when the limit is reached and nothing is ever blocked.</p><!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "forty-new-integrations",
+   "title": "40 new integrations, and how we pick what to build",
+   "date": "2026-07-29T11:00:00",
+   "categories": [
+    "company"
+   ],
+   "tags": [
+    "integrations"
+   ],
+   "featured_media": "integrations",
+   "excerpt": "Calendars, design tools, support desks and two dozen more. Here is the list, and the simple rule we use to decide what comes next.",
+   "content": "<!-- wp:paragraph --><p>This quarter we shipped forty new integrations, bringing the total past one hundred and twenty. Rather than a long list, here is how we choose.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">The rule</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>We build an integration when at least two hundred workspaces ask for it and we can make it two-way. A one-way sync that copies data and forgets about it creates more questions than it answers.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Most requested</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Calendar sync</li><!-- /wp:list-item --><!-- wp:list-item --><li>Design file previews</li><!-- /wp:list-item --><!-- wp:list-item --><li>Support desk tickets</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Coming next</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Accounting exports</li><!-- /wp:list-item --><!-- wp:list-item --><li>Video call recaps</li><!-- /wp:list-item --><!-- wp:list-item --><li>Status page updates</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:paragraph --><p>Vote for the next ones from Settings, then Integrations. Every request is read by the team that builds them.</p><!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "one-hundred-thousand-teams",
+   "title": "100,000 teams: what we learned getting here",
+   "date": "2026-07-14T08:30:00",
+   "categories": [
+    "company"
+   ],
+   "tags": [
+    "performance"
+   ],
+   "featured_media": "milestone",
+   "excerpt": "Five lessons from four years of building a planning tool, from the feature we deleted to the support habit we will never drop.",
+   "content": "<!-- wp:paragraph --><p>Last week the hundred-thousandth team created a workspace. Milestones are a good excuse to look back, so here are five things we learned on the way.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Five lessons</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li><strong>Delete more.</strong> Removing our timeline view made the product better and almost nobody missed it.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Answer every email.</strong> Engineers rotate through support every month.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Write it down.</strong> The changelog keeps us honest about what we actually shipped.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Price for small teams.</strong> They grow into big ones.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Stay boring about infrastructure.</strong> Uptime is a feature.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:image {\"id\":{{media_id:mesh-sunset}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:mesh-sunset}}\" alt=\"A soft amber and pink gradient mesh\" class=\"wp-image-{{media_id:mesh-sunset}}\"/></figure><!-- /wp:image -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What comes next</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>The next year is about depth rather than breadth: faster search, better offline support and the reporting features larger teams keep asking for.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>Thank you to every team that took a chance on a small product. We are just getting started.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Ingrid S.",
+     "email": "ingrid@example.com",
+     "content": "Congratulations! We were team number four hundred and something and still use it every day.",
+     "date": "2026-07-15T08:00:00"
+    }
+   ]
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Features",
+     "page": "features"
+    },
+    {
+     "title": "Pricing",
+     "page": "pricing"
+    },
+    {
+     "title": "Changelog",
+     "page": "changelog",
+     "children": [
+      {
+       "category": "releases"
+      },
+      {
+       "category": "improvements"
+      },
+      {
+       "category": "company"
+      }
+     ]
+    },
+    {
+     "title": "Company",
+     "page": "about",
+     "children": [
+      {
+       "title": "About",
+       "page": "about"
+      },
+      {
+       "title": "Contact",
+       "page": "contact"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Footer menu",
+   "location": "footer",
+   "items": [
+    {
+     "title": "Pricing",
+     "page": "pricing"
+    },
+    {
+     "title": "Changelog",
+     "page": "changelog"
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    },
+    {
+     "title": "Status",
+     "url": "#"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "sidebar-1": [
+   "<!-- wp:search {\"label\":\"Search the changelog\",\"buttonText\":\"Search\"} /-->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Release types</h2><!-- /wp:heading --><!-- wp:categories {\"showPostCounts\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Recent updates</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":4,\"displayPostDate\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group {\"className\":\"callout\"} --><div class=\"wp-block-group callout\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Try Orbitly</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Free for up to five people, forever.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Start free</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->"
+  ],
+  "footer-1": [
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Product</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><a href=\"{{page:features}}\">Features</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{page:pricing}}\">Pricing</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{page:changelog}}\">Changelog</a></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Company</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><a href=\"{{page:about}}\">About</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{page:contact}}\">Contact</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{category:company}}\">News</a></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Latest release</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":2,\"displayPostDate\":true} /--></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "hero_image": "hero-dashboard",
+  "hero_kicker": "New: Orbitly 2.0 is here",
+  "hero_heading": "Plan, ship and measure in one calm workspace",
+  "hero_text": "Orbitly brings tasks, docs, automations and live reports together, so your team spends less time on status and more on the work.",
+  "cta_label": "Start free trial",
+  "cta_url": "{{page:pricing}}",
+  "hero_secondary_label": "Book a demo",
+  "hero_secondary_url": "{{page:contact}}",
+  "announce_show": true,
+  "announce_text": "Orbitly 2.0 is here: a calmer workspace, rebuilt from the ground up",
+  "announce_url": "{{post:orbitly-two-point-oh}}",
+  "blog_layout": "timeline",
+  "header_style": "floating",
+  "footer_text": "© 2026 Orbitly Labs. Made by a small remote team."
+ }
+}

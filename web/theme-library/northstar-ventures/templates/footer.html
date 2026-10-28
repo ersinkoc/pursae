@@ -1,0 +1,19 @@
+	<footer id="colophon" class="site-footer">
+		<div class="wrap site-footer__statement">
+			<span class="site-mark" aria-hidden="true"><svg viewBox="0 0 32 32" width="26" height="26"><path d="M16 1 18.6 13.4 31 16 18.6 18.6 16 31 13.4 18.6 1 16 13.4 13.4Z" fill="currentColor"/></svg></span>
+			<p class="site-footer__name">{{.SiteName}}</p>
+			{{with .Description}}<p class="site-footer__desc">{{.}}</p>{{end}}
+		</div>
+		{{if is_active_sidebar . "footer-1"}}<div class="wrap footer-widgets">
+			{{dynamic_sidebar . "footer-1"}}
+		</div>{{end}}
+		<div class="wrap site-info">
+			<p class="site-info__text">{{with theme_mod . "footer_text"}}{{.}}{{else}}&copy; {{$.SiteName}}{{end}}{{.PrivacyLink}}</p>
+			{{if has_nav_menu . "footer"}}<nav class="footer-navigation" aria-label="Footer menu">{{nav_menu . "footer"}}</nav>{{end}}
+		</div>
+	</footer><!-- #colophon -->
+</div><!-- #page -->
+
+{{.Footer}}{{.AdminBar}}
+</body>
+</html>

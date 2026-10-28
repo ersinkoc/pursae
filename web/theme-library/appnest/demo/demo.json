@@ -1,0 +1,372 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Nestly",
+  "blogdescription": "The calm planner for your day",
+  "posts_per_page": 6
+ },
+ "categories": [
+  {
+   "slug": "release-notes",
+   "name": "Release notes",
+   "description": "What changed in each version of Nestly."
+  },
+  {
+   "slug": "tips",
+   "name": "Tips",
+   "description": "Ways to get more from Nestly."
+  },
+  {
+   "slug": "design",
+   "name": "Design",
+   "description": "Notes from the people who build the app."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "focus",
+   "name": "Focus"
+  },
+  {
+   "slug": "widgets",
+   "name": "Widgets"
+  },
+  {
+   "slug": "sync",
+   "name": "Sync"
+  },
+  {
+   "slug": "habits",
+   "name": "Habits"
+  },
+  {
+   "slug": "planning",
+   "name": "Planning"
+  }
+ ],
+ "media": [
+  {
+   "id": "hero-phone",
+   "file": "demo/images/hero-phone.jpg",
+   "alt": "A phone showing the Nestly Today screen over a teal and violet glow",
+   "caption": ""
+  },
+  {
+   "id": "screen-today",
+   "file": "demo/images/screen-today.jpg",
+   "alt": "The Nestly Today screen with five tasks, two of them done",
+   "caption": ""
+  },
+  {
+   "id": "screen-focus",
+   "file": "demo/images/screen-focus.jpg",
+   "alt": "The Nestly Focus screen with a circular timer at 18:24",
+   "caption": ""
+  },
+  {
+   "id": "screen-habits",
+   "file": "demo/images/screen-habits.jpg",
+   "alt": "The Nestly Habits screen with a week of dots for each habit",
+   "caption": ""
+  },
+  {
+   "id": "screen-week",
+   "file": "demo/images/screen-week.jpg",
+   "alt": "The Nestly week view with tasks for the coming days",
+   "caption": ""
+  },
+  {
+   "id": "feature-focus",
+   "file": "demo/images/feature-focus.jpg",
+   "alt": "A tilted phone showing a focus timer over a violet background",
+   "caption": ""
+  },
+  {
+   "id": "feature-habits",
+   "file": "demo/images/feature-habits.jpg",
+   "alt": "A tilted phone showing habit tracking over a coral and yellow background",
+   "caption": ""
+  },
+  {
+   "id": "feature-week",
+   "file": "demo/images/feature-week.jpg",
+   "alt": "A phone showing the week view over a teal background",
+   "caption": ""
+  },
+  {
+   "id": "release-three",
+   "file": "demo/images/release-three.jpg",
+   "alt": "The Nestly app icon above the words Version 3.0",
+   "caption": ""
+  },
+  {
+   "id": "release-two-nine",
+   "file": "demo/images/release-two-nine.jpg",
+   "alt": "The Nestly app icon above the words Version 2.9",
+   "caption": ""
+  },
+  {
+   "id": "widgets",
+   "file": "demo/images/widgets.jpg",
+   "alt": "The Nestly app icon above the word Widgets",
+   "caption": ""
+  },
+  {
+   "id": "sync-devices",
+   "file": "demo/images/sync-devices.jpg",
+   "alt": "A tilted phone showing the Today screen over a sky-blue background",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Plan less. Do more. Feel calmer.",
+   "content": "<!-- wp:group {\"anchor\":\"features\",\"align\":\"full\",\"layout\":{\"type\":\"constrained\"}} --><div id=\"features\" class=\"wp-block-group alignfull\"><!-- wp:paragraph {\"className\":\"kicker\",\"align\":\"center\"} --><p class=\"has-text-align-center kicker\">Why people switch</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\",\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center section-title\">A planner that feels like a deep breath</h2><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"lead\",\"align\":\"center\"} --><p class=\"has-text-align-center lead\">Nestly keeps today short, the week visible and everything else out of the way.</p><!-- /wp:paragraph --><!-- wp:columns {\"align\":\"wide\",\"className\":\"chips\"} --><div class=\"wp-block-columns alignwide chips\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"chip-icon\"} --><p class=\"chip-icon\">☀️</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Today, not someday</h3><!-- /wp:heading --><!-- wp:paragraph --><p>A short list for today, picked from everything else in seconds each morning.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"chip-icon\"} --><p class=\"chip-icon\">⏳</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Focus sessions</h3><!-- /wp:heading --><!-- wp:paragraph --><p>A gentle timer that silences notifications and logs what you finished.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"chip-icon\"} --><p class=\"chip-icon\">🌱</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Habits that stick</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Tiny daily goals with a week view that forgives a missed day.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"chip-icon\"} --><p class=\"chip-icon\">🔄</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Sync everywhere</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Phone, tablet and laptop stay in step, even offline.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"tour\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull tour\"><!-- wp:paragraph {\"className\":\"kicker\",\"align\":\"center\"} --><p class=\"has-text-align-center kicker\">Feature tour</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\",\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center section-title\">Three screens, one calm day</h2><!-- /wp:heading --><!-- wp:media-text {\"mediaId\":{{media_id:feature-week}},\"mediaType\":\"image\",\"align\":\"wide\"} --><div class=\"wp-block-media-text alignwide is-stacked-on-mobile\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:feature-week}}\" alt=\"A phone showing the week view over a teal background\" class=\"wp-image-{{media_id:feature-week}} size-full\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:paragraph {\"className\":\"step\"} --><p class=\"step\">Plan</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">See the week at a glance</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Drag tasks between days, spot the overloaded Thursday and move things before it happens. Calendar events appear alongside, read-only.</p><!-- /wp:paragraph --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Drag and drop between days</li><!-- /wp:list-item --><!-- wp:list-item --><li>Calendar events alongside tasks</li><!-- /wp:list-item --><!-- wp:list-item --><li>Gentle warnings for overloaded days</li><!-- /wp:list-item --></ul><!-- /wp:list --></div></div><!-- /wp:media-text --><!-- wp:media-text {\"mediaId\":{{media_id:feature-focus}},\"mediaType\":\"image\",\"mediaPosition\":\"right\",\"align\":\"wide\"} --><div class=\"wp-block-media-text alignwide is-stacked-on-mobile has-media-on-the-right\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:feature-focus}}\" alt=\"A tilted phone showing a focus timer over a violet background\" class=\"wp-image-{{media_id:feature-focus}} size-full\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:paragraph {\"className\":\"step\"} --><p class=\"step\">Focus</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Do one thing at a time</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Start a session from any task. Nestly silences notifications, keeps the screen calm and asks what you finished when the timer ends.</p><!-- /wp:paragraph --></div></div><!-- /wp:media-text --><!-- wp:media-text {\"mediaId\":{{media_id:feature-habits}},\"mediaType\":\"image\",\"align\":\"wide\"} --><div class=\"wp-block-media-text alignwide is-stacked-on-mobile\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:feature-habits}}\" alt=\"A tilted phone showing habit tracking over a coral and yellow background\" class=\"wp-image-{{media_id:feature-habits}} size-full\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:paragraph {\"className\":\"step\"} --><p class=\"step\">Grow</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Habits without the guilt</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Track up to ten small habits with a dot for each day. Missed one? The week view shows progress, not broken streaks.</p><!-- /wp:paragraph --></div></div><!-- /wp:media-text --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"section-tint\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-tint\"><!-- wp:columns {\"align\":\"wide\",\"className\":\"phone-row\"} --><div class=\"wp-block-columns alignwide phone-row\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:screen-today}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"className\":\"phone-frame\"} --><figure class=\"wp-block-image size-large phone-frame\"><img src=\"{{media:screen-today}}\" alt=\"The Nestly Today screen with five tasks, two of them done\" class=\"wp-image-{{media_id:screen-today}}\"/></figure><!-- /wp:image --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:screen-focus}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"className\":\"phone-frame\"} --><figure class=\"wp-block-image size-large phone-frame\"><img src=\"{{media:screen-focus}}\" alt=\"The Nestly Focus screen with a circular timer at 18:24\" class=\"wp-image-{{media_id:screen-focus}}\"/></figure><!-- /wp:image --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:screen-habits}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"className\":\"phone-frame\"} --><figure class=\"wp-block-image size-large phone-frame\"><img src=\"{{media:screen-habits}}\" alt=\"The Nestly Habits screen with a week of dots for each habit\" class=\"wp-image-{{media_id:screen-habits}}\"/></figure><!-- /wp:image --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull\"><!-- wp:paragraph {\"className\":\"kicker\",\"align\":\"center\"} --><p class=\"has-text-align-center kicker\">Reviews</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\",\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center section-title\">Small app, big difference</h2><!-- /wp:heading --><!-- wp:columns {\"align\":\"wide\",\"className\":\"quotes\"} --><div class=\"wp-block-columns alignwide quotes\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>The first planner I have kept using past the second week. The Today list is short on purpose and that is the magic.</p><!-- /wp:paragraph --><cite>Reviewer on the app store</cite></blockquote><!-- /wp:quote --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Focus sessions replaced three separate timer apps. The end-of-session question is oddly motivating.</p><!-- /wp:paragraph --><cite>Graduate student</cite></blockquote><!-- /wp:quote --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Widgets on the home screen mean I plan without opening anything. Beautiful and fast.</p><!-- /wp:paragraph --><cite>Freelance designer</cite></blockquote><!-- /wp:quote --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:group {\"anchor\":\"pricing\",\"align\":\"full\",\"layout\":{\"type\":\"constrained\"}} --><div id=\"pricing\" class=\"wp-block-group alignfull\"><!-- wp:paragraph {\"className\":\"kicker\",\"align\":\"center\"} --><p class=\"has-text-align-center kicker\">Pricing</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\",\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center section-title\">Free to start. Plus when you’re ready.</h2><!-- /wp:heading --><!-- wp:columns {\"align\":\"wide\",\"className\":\"plans\"} --><div class=\"wp-block-columns alignwide plans\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Free</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"plan-price\"} --><p class=\"plan-price\">$0</p><!-- /wp:paragraph --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Tasks, lists and Today</li><!-- /wp:list-item --><!-- wp:list-item --><li>Three habits</li><!-- /wp:list-item --><!-- wp:list-item --><li>One device</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"#download\">Download</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:column --><!-- wp:column {\"className\":\"plan--pro\"} --><div class=\"wp-block-column plan--pro\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Nestly Plus</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"plan-price\"} --><p class=\"plan-price\">$3.99<span> / month</span></p><!-- /wp:paragraph --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Sync across all devices</li><!-- /wp:list-item --><!-- wp:list-item --><li>Focus sessions and history</li><!-- /wp:list-item --><!-- wp:list-item --><li>Home and lock screen widgets</li><!-- /wp:list-item --><!-- wp:list-item --><li>Unlimited habits and themes</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"#download\">Try Plus free for 14 days</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:group {\"className\":\"faq\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group faq\"><!-- wp:paragraph {\"className\":\"kicker\",\"align\":\"center\"} --><p class=\"has-text-align-center kicker\">FAQ</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\",\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center section-title\">Questions people ask</h2><!-- /wp:heading --><!-- wp:details --><details class=\"wp-block-details\"><summary>Is Nestly free?</summary><!-- wp:paragraph --><p>Yes. The free plan covers tasks, lists and three habits on one device. Nestly Plus adds sync, Focus sessions, widgets and unlimited habits.</p><!-- /wp:paragraph --></details><!-- /wp:details --><!-- wp:details --><details class=\"wp-block-details\"><summary>Which devices does it run on?</summary><!-- wp:paragraph --><p>Phones and tablets on both major mobile platforms, plus a web app for your laptop. Your data syncs between all of them on Nestly Plus.</p><!-- /wp:paragraph --></details><!-- /wp:details --><!-- wp:details --><details class=\"wp-block-details\"><summary>Can I import from another app?</summary><!-- wp:paragraph --><p>Nestly imports plain text, CSV and calendar files. Paste a list and every line becomes a task.</p><!-- /wp:paragraph --></details><!-- /wp:details --><!-- wp:details --><details class=\"wp-block-details\"><summary>Where is my data stored?</summary><!-- wp:paragraph --><p>On your device first, and encrypted in our cloud if you turn on sync. We never sell data or show ads.</p><!-- /wp:paragraph --></details><!-- /wp:details --></div><!-- /wp:group -->",
+   "featured_media": "screen-today",
+   "front_page": true
+  },
+  {
+   "slug": "pricing",
+   "title": "Pricing",
+   "excerpt": "Free for everyday planning. Plus when you want more.",
+   "content": "<!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">Nestly is free for everyday planning. Nestly Plus is for people who use it on more than one device or want the extra tools.</p><!-- /wp:paragraph -->\n\n<!-- wp:table {\"className\":\"is-style-stripes\"} --><figure class=\"wp-block-table is-style-stripes\"><table><thead><tr><th></th><th>Free</th><th>Plus</th></tr></thead><tbody><tr><td>Tasks, lists, Today view</td><td>✓</td><td>✓</td></tr><tr><td>Habits</td><td>3</td><td>Unlimited</td></tr><tr><td>Devices</td><td>1</td><td>Unlimited, synced</td></tr><tr><td>Focus sessions</td><td>—</td><td>✓</td></tr><tr><td>Widgets</td><td>—</td><td>✓</td></tr><tr><td>Themes and app icons</td><td>2</td><td>14</td></tr></tbody></table><figcaption class=\"wp-element-caption\">Plus costs $3.99 a month or $29.99 a year.</figcaption></figure><!-- /wp:table -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Family and education</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Nestly Plus Family covers up to five people for $49.99 a year. Students and teachers get Plus at half price with a school email address.</p><!-- /wp:paragraph -->\n\n<!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:home}}\">Start your free trial</a></div><!-- /wp:button --></div><!-- /wp:buttons -->",
+   "menu_order": 1
+  },
+  {
+   "slug": "help",
+   "title": "Help & FAQ",
+   "content": "<!-- wp:paragraph --><p>Most answers are here. If yours is not, write to us from <a href=\"{{page:contact}}\">the contact page</a> and a real person will reply.</p><!-- /wp:paragraph -->\n\n<!-- wp:group {\"className\":\"faq\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group faq\"><!-- wp:details --><details class=\"wp-block-details\"><summary>Is Nestly free?</summary><!-- wp:paragraph --><p>Yes. The free plan covers tasks, lists and three habits on one device. Nestly Plus adds sync, Focus sessions, widgets and unlimited habits.</p><!-- /wp:paragraph --></details><!-- /wp:details --><!-- wp:details --><details class=\"wp-block-details\"><summary>Which devices does it run on?</summary><!-- wp:paragraph --><p>Phones and tablets on both major mobile platforms, plus a web app for your laptop. Your data syncs between all of them on Nestly Plus.</p><!-- /wp:paragraph --></details><!-- /wp:details --><!-- wp:details --><details class=\"wp-block-details\"><summary>Can I import from another app?</summary><!-- wp:paragraph --><p>Nestly imports plain text, CSV and calendar files. Paste a list and every line becomes a task.</p><!-- /wp:paragraph --></details><!-- /wp:details --><!-- wp:details --><details class=\"wp-block-details\"><summary>Where is my data stored?</summary><!-- wp:paragraph --><p>On your device first, and encrypted in our cloud if you turn on sync. We never sell data or show ads.</p><!-- /wp:paragraph --></details><!-- /wp:details --><!-- wp:details --><details class=\"wp-block-details\"><summary>How do I cancel Plus?</summary><!-- wp:paragraph --><p>From your app store subscription settings. You keep Plus until the end of the period and your data stays on your devices.</p><!-- /wp:paragraph --></details><!-- /wp:details --></div><!-- /wp:group -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Still stuck?</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Shake your phone inside Nestly to send a report with a screenshot. It goes straight to the team that builds the feature.</p><!-- /wp:paragraph -->",
+   "menu_order": 2
+  },
+  {
+   "slug": "blog",
+   "title": "Blog",
+   "content": "",
+   "posts_page": true,
+   "menu_order": 3
+  },
+  {
+   "slug": "about",
+   "title": "About us",
+   "content": "<!-- wp:paragraph --><p>Nestly is made by a team of nine in a small studio by the river. We started it because every planner we tried wanted us to plan more, and we wanted to plan less.</p><!-- /wp:paragraph -->\n\n<!-- wp:image {\"id\":{{media_id:sync-devices}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:sync-devices}}\" alt=\"A tilted phone showing the Today screen over a sky-blue background\" class=\"wp-image-{{media_id:sync-devices}}\"/></figure><!-- /wp:image -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What we promise</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>No ads, ever.</li><!-- /wp:list-item --><!-- wp:list-item --><li>No selling or sharing of your data.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Your data stays on your device unless you turn on sync.</li><!-- /wp:list-item --><!-- wp:list-item --><li>A free plan that is genuinely useful.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>We are funded by Nestly Plus subscribers and nobody else, which keeps our incentives simple.</p><!-- /wp:paragraph -->",
+   "menu_order": 4
+  },
+  {
+   "slug": "contact",
+   "title": "Contact",
+   "content": "<!-- wp:paragraph --><p>Questions, bug reports and feature ideas are all welcome. We answer within two working days.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Support</h3><!-- /wp:heading --><!-- wp:paragraph --><p><a href=\"mailto:help@nestly.example\">help@nestly.example</a></p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Press</h3><!-- /wp:heading --><!-- wp:paragraph --><p><a href=\"mailto:press@nestly.example\">press@nestly.example</a></p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Schools</h3><!-- /wp:heading --><!-- wp:paragraph --><p><a href=\"mailto:edu@nestly.example\">edu@nestly.example</a></p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:paragraph --><p>Studio: 3 Wharf Row, Millbrook.</p><!-- /wp:paragraph -->",
+   "parent": "about",
+   "menu_order": 5
+  }
+ ],
+ "posts": [
+  {
+   "slug": "nestly-3-0-focus-today-widgets",
+   "title": "Nestly 3.0: Focus sessions, a new Today view and widgets everywhere",
+   "date": "2026-10-20T09:00:00",
+   "categories": [
+    "release-notes"
+   ],
+   "tags": [
+    "focus",
+    "widgets"
+   ],
+   "featured_media": "release-three",
+   "sticky": true,
+   "excerpt": "Our biggest update yet: a rebuilt Today view, Focus sessions with history, and widgets for the home and lock screens.",
+   "content": "<!-- wp:paragraph {\"className\":\"release-pill\"} --><p class=\"release-pill\">Version 3</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>Nestly 3.0 is rolling out now. It is the update we have been working on all year, shaped by more than four thousand replies to our spring survey.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What’s new</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"className\":\"version-list\"} --><ul class=\"wp-block-list version-list\"><!-- wp:list-item --><li><strong>Today, rebuilt.</strong> Swipe to pick tasks for today from your inbox in seconds.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Focus sessions.</strong> A calm timer with a history of what you finished.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Widgets.</strong> Today, Focus and Habits on your home and lock screens.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>New themes.</strong> Six colour themes and four app icons.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:image {\"id\":{{media_id:feature-focus}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:feature-focus}}\" alt=\"A tilted phone showing a focus timer over a violet background\" class=\"wp-image-{{media_id:feature-focus}}\"/><figcaption class=\"wp-element-caption\">Focus sessions log what you finished when the timer ends.</figcaption></figure><!-- /wp:image -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Fixed</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Reminders no longer fire twice after a time-zone change.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Habits marked on a tablet appear on the phone immediately.</li><!-- /wp:list-item --><!-- wp:list-item --><li>VoiceOver reads task due dates in full.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>Update from your app store. Your lists, habits and settings carry over automatically.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Sana P.",
+     "email": "sana@example.com",
+     "content": "The new Today swipe is so satisfying. Planning takes a minute now.",
+     "date": "2026-10-20T19:44:00"
+    },
+    {
+     "author": "Leo W.",
+     "email": "leo@example.com",
+     "content": "Lock screen widget for Focus is exactly what I wanted. Thank you!",
+     "date": "2026-10-21T07:12:00"
+    }
+   ]
+  },
+  {
+   "slug": "version-2-9-faster-sync-calmer-notifications",
+   "title": "Version 2.9: faster sync and a calmer notification centre",
+   "date": "2026-09-15T09:00:00",
+   "categories": [
+    "release-notes"
+   ],
+   "tags": [
+    "sync"
+   ],
+   "featured_media": "release-two-nine",
+   "excerpt": "Sync is now up to five times faster, and notifications are grouped so your phone buzzes less.",
+   "content": "<!-- wp:paragraph {\"className\":\"release-pill\"} --><p class=\"release-pill\">Version 2.9</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>A smaller release with two improvements you will feel every day.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Improvements</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"className\":\"version-list\"} --><ul class=\"wp-block-list version-list\"><!-- wp:list-item --><li>Sync rewritten on a new protocol: changes arrive in under a second.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Notifications grouped by list, with a single morning summary option.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Search finds tasks by note text as well as title.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Fixes</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Completed recurring tasks no longer reappear for a moment.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Dark mode colours corrected on older tablets.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>Thank you to the beta group for a month of very detailed bug reports.</p><!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "designing-home-screen-widgets",
+   "title": "Home screen widgets: how we designed them",
+   "date": "2026-10-27T08:00:00",
+   "categories": [
+    "design"
+   ],
+   "tags": [
+    "widgets"
+   ],
+   "featured_media": "widgets",
+   "excerpt": "Widgets are tiny, glanceable and updated rarely. Designing for those limits made our main app better too.",
+   "content": "<!-- wp:paragraph --><p>A widget gets a second of attention and refreshes on the system’s schedule, not ours. That forced us to decide what matters most about each screen.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Three rules we kept</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>One question per widget: What’s next? How long is left? Did I do it today?</li><!-- /wp:list-item --><!-- wp:list-item --><li>No numbers without context: “3 left” beats “3”.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Every tap goes somewhere specific, never just to the app’s home.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:image {\"id\":{{media_id:screen-today}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"className\":\"phone-frame\"} --><figure class=\"wp-block-image size-large phone-frame\"><img src=\"{{media:screen-today}}\" alt=\"The Nestly Today screen with five tasks, two of them done\" class=\"wp-image-{{media_id:screen-today}}\"/></figure><!-- /wp:image -->\n\n<!-- wp:paragraph --><p>The Today widget turned out to be the clearest version of the Today view, so we brought its layout back into the app in 3.0.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>Widgets are part of Nestly Plus. Add them from your home screen’s edit mode, then pick Today, Focus or Habits in three sizes.</p><!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "building-a-habit-that-sticks",
+   "title": "Building a habit that sticks: what our data says",
+   "date": "2026-08-28T09:00:00",
+   "categories": [
+    "tips"
+   ],
+   "tags": [
+    "habits"
+   ],
+   "featured_media": "feature-habits",
+   "excerpt": "Anonymous, aggregated data from habit tracking points to three simple things that help habits last past the first month.",
+   "content": "<!-- wp:paragraph --><p>We looked at anonymous, aggregated habit data from people who opted in to share it. Three patterns stood out among habits still going after sixty days.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What lasting habits have in common</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><strong>They are small.</strong> “Read one page” outlasts “read for an hour” by a wide margin.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>They have a time.</strong> Habits tied to a moment in the day last longer.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>They survive a miss.</strong> People who came back after a missed day were the most consistent later.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Missing once is an accident. Missing twice is the start of a new habit.</p><!-- /wp:paragraph --><cite>A line from our onboarding screen</cite></blockquote><!-- /wp:quote -->\n\n<!-- wp:paragraph --><p>That last finding is why Nestly shows a week of dots instead of a streak counter. A broken streak feels like failure; a week with five dots feels like progress.</p><!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "sync-across-devices-without-thinking",
+   "title": "Sync across phone, tablet and laptop without thinking about it",
+   "date": "2026-08-12T09:00:00",
+   "categories": [
+    "tips"
+   ],
+   "tags": [
+    "sync"
+   ],
+   "featured_media": "sync-devices",
+   "excerpt": "How Nestly keeps your devices in step, what happens offline, and three settings worth checking.",
+   "content": "<!-- wp:paragraph --><p>Sync is the feature you should never notice. Here is what happens behind the scenes, and the few settings that are worth a look.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Offline first</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Every change is saved on your device immediately and sent when a connection is available. If two devices edit the same task, the most recent change to each field wins, so nothing is lost.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Three settings to check</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Background refresh on, so widgets stay current.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Notifications on one device only, if you prefer a quiet tablet.</li><!-- /wp:list-item --><!-- wp:list-item --><li>The web app signed in with the same account.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>Sync is part of Nestly Plus and is end-to-end encrypted for notes and task titles.</p><!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "plan-a-week-in-ten-minutes",
+   "title": "Five ways to plan a week in ten minutes",
+   "date": "2026-07-29T08:00:00",
+   "categories": [
+    "tips"
+   ],
+   "tags": [
+    "planning"
+   ],
+   "featured_media": "feature-week",
+   "excerpt": "A short Sunday ritual that makes Monday easier, using nothing but the week view and a cup of tea.",
+   "content": "<!-- wp:paragraph --><p>Weekly planning does not need a framework. Ten minutes with the week view on a Sunday evening is enough for most people.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">The ritual</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Empty your inbox into lists, without deciding anything yet.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Put fixed commitments on their days first.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Give each day one important task, no more.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Leave Friday afternoon empty on purpose.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Pick tomorrow’s Today list and close the app.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:image {\"id\":{{media_id:screen-week}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"className\":\"phone-frame\"} --><figure class=\"wp-block-image size-large phone-frame\"><img src=\"{{media:screen-week}}\" alt=\"The Nestly week view with tasks for the coming days\" class=\"wp-image-{{media_id:screen-week}}\"/></figure><!-- /wp:image -->\n\n<!-- wp:paragraph --><p>If a day looks overloaded, Nestly tints it gently. Move something before the day arrives rather than during it.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>After a few weeks the ritual takes less than ten minutes, and Monday mornings start with a plan instead of a pile.</p><!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "why-focus-sessions-have-no-streaks",
+   "title": "Why Focus sessions have no streaks",
+   "date": "2026-07-15T08:00:00",
+   "categories": [
+    "design"
+   ],
+   "tags": [
+    "focus"
+   ],
+   "featured_media": "feature-focus",
+   "excerpt": "We prototyped streaks, badges and leaderboards for Focus. Then we removed all of them. Here is why.",
+   "content": "<!-- wp:paragraph --><p>Early versions of Focus sessions had streaks, badges and a weekly leaderboard among friends. Testers used it more in the first week and much less by the third.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What we saw</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Streaks turned a missed day into a reason to quit.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Badges rewarded long sessions, not finished work.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Leaderboards made people anxious rather than focused.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>The version we shipped asks one question when the timer ends: what did you finish? The history shows completed work, not minutes.</p><!-- /wp:paragraph -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>We wanted Focus to feel like closing a door, not like entering a competition.</p><!-- /wp:paragraph --><cite>Nestly design team</cite></blockquote><!-- /wp:quote -->"
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Features",
+     "url": "/#features"
+    },
+    {
+     "title": "Pricing",
+     "page": "pricing"
+    },
+    {
+     "title": "Blog",
+     "page": "blog",
+     "children": [
+      {
+       "category": "release-notes"
+      },
+      {
+       "category": "tips"
+      },
+      {
+       "category": "design"
+      }
+     ]
+    },
+    {
+     "title": "Help",
+     "page": "help",
+     "children": [
+      {
+       "title": "About us",
+       "page": "about"
+      },
+      {
+       "title": "Contact",
+       "page": "contact"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Footer menu",
+   "location": "footer",
+   "items": [
+    {
+     "title": "Pricing",
+     "page": "pricing"
+    },
+    {
+     "title": "Help",
+     "page": "help"
+    },
+    {
+     "title": "About",
+     "page": "about"
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "sidebar-1": [
+   "<!-- wp:search {\"label\":\"Search the blog\",\"buttonText\":\"Search\"} /-->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Topics</h2><!-- /wp:heading --><!-- wp:categories {\"showPostCounts\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Latest</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":4,\"displayPostDate\":true} /--></div><!-- /wp:group -->"
+  ],
+  "footer-1": [
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Product</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><a href=\"/#features\">Features</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{page:pricing}}\">Pricing</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{category:release-notes}}\">Release notes</a></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Support</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><a href=\"{{page:help}}\">Help &amp; FAQ</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{page:contact}}\">Contact</a></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Our promise</h2><!-- /wp:heading --><!-- wp:paragraph --><p>No ads, no data selling, and a free plan that is genuinely useful.</p><!-- /wp:paragraph --></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "hero_image": "screen-today",
+  "hero_kicker": "Nestly 3.0 is here",
+  "hero_heading": "Plan less. Do more. Feel calmer.",
+  "hero_text": "Nestly is the calm planner for your phone: a short list for today, focus sessions that silence the noise and habits that forgive a missed day.",
+  "rating_text": "4.8 from 12,000 reviews",
+  "cta_label": "Get the app",
+  "cta_url": "/#download",
+  "store_ios_url": "/#download",
+  "store_android_url": "/#download",
+  "blog_layout": "cards",
+  "phone_finish": "midnight",
+  "footer_text": "© 2026 Nestly Studio. Made with care by a team of nine."
+ }
+}

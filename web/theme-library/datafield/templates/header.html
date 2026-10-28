@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>{{.DocumentTitle}}</title>
+{{.Head}}</head>
+
+<body class="{{.BodyClass}}">
+{{.BodyOpen}}<div id="page" class="site">
+	<a class="skip-link screen-reader-text" href="#main">Skip to content</a>
+	<header id="masthead" class="site-header">
+		<div class="wrap site-header__inner">
+			<div class="site-branding">
+				{{with .CustomLogo}}<div class="site-logo">{{.}}</div>{{else}}<a class="site-mark" href="{{$.HomeURL}}" aria-hidden="true" tabindex="-1"><svg viewBox="0 0 32 32" width="30" height="30"><rect x="4" y="16" width="5" height="12"/><rect x="13.5" y="9" width="5" height="19"/><rect x="23" y="4" width="5" height="24"/></svg></a>{{end}}
+				<div class="site-branding__text">
+					{{if .TitleIsH1}}<h1 class="site-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></h1>{{else}}<p class="site-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></p>{{end}}
+					{{with .Description}}<p class="site-description">{{.}}</p>{{end}}
+				</div>
+			</div><!-- .site-branding -->
+			{{if has_nav_menu . "primary"}}<nav id="site-navigation" class="main-navigation" aria-label="Primary menu">
+				<button type="button" class="menu-toggle" aria-controls="primary-menu-wrap" aria-expanded="false"><span class="menu-toggle__bars" aria-hidden="true"><span></span></span><span class="menu-toggle__label">Menu</span></button>
+				<div id="primary-menu-wrap" class="primary-menu-wrap">
+					{{nav_menu . "primary"}}
+					
+				</div>
+			</nav><!-- #site-navigation -->{{end}}
+		</div>
+		<svg class="masthead-chart" viewBox="0 0 600 80" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path class="s1" d="M0 62 L40 58 L80 60 L120 49 L160 52 L200 40 L240 44 L280 31 L320 35 L360 26 L400 29 L440 18 L480 22 L520 12 L560 15 L600 6"/><path class="s2" d="M0 70 L40 69 L80 64 L120 66 L160 60 L200 61 L240 55 L280 57 L320 50 L360 52 L400 47 L440 48 L480 41 L520 43 L560 38 L600 36"/></svg>
+	</header><!-- #masthead -->

@@ -1,0 +1,384 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Margin of Error",
+  "blogdescription": "Working notes on data, models and measurement",
+  "posts_per_page": 8
+ },
+ "categories": [
+  {
+   "slug": "essays",
+   "name": "Essays",
+   "description": "Arguments about how analysis should be done."
+  },
+  {
+   "slug": "notebooks",
+   "name": "Notebooks",
+   "description": "Code you can run, with the outputs."
+  },
+  {
+   "slug": "methods",
+   "name": "Methods",
+   "description": "Notes on statistical tools and their limits."
+  },
+  {
+   "slug": "series",
+   "name": "Series",
+   "description": "Topics taken apart over several posts."
+  },
+  {
+   "slug": "measurement-series",
+   "name": "Measuring what matters",
+   "description": "A series on metrics as proxies.",
+   "parent": "series"
+  },
+  {
+   "slug": "causal-inference-series",
+   "name": "Causal inference notes",
+   "description": "A series on experiments and observational data.",
+   "parent": "series"
+  }
+ ],
+ "tags": [
+  {
+   "slug": "python",
+   "name": "Python"
+  },
+  {
+   "slug": "statistics",
+   "name": "Statistics"
+  },
+  {
+   "slug": "forecasting",
+   "name": "Forecasting"
+  },
+  {
+   "slug": "experiments",
+   "name": "Experiments"
+  },
+  {
+   "slug": "visualization",
+   "name": "Visualization"
+  },
+  {
+   "slug": "bayesian",
+   "name": "Bayesian"
+  }
+ ],
+ "media": [
+  {
+   "id": "small-multiples",
+   "file": "demo/images/small-multiples.jpg",
+   "alt": "Twelve small line charts in a grid, each a different metric",
+   "caption": ""
+  },
+  {
+   "id": "calibration",
+   "file": "demo/images/calibration.jpg",
+   "alt": "A reliability diagram: three model curves around the diagonal",
+   "caption": ""
+  },
+  {
+   "id": "residuals",
+   "file": "demo/images/residuals.jpg",
+   "alt": "A scatter plot of residuals in three colored groups with a regression line",
+   "caption": ""
+  },
+  {
+   "id": "forecast-interval",
+   "file": "demo/images/forecast-interval.jpg",
+   "alt": "Two time series, one with a shaded interval widening into the future",
+   "caption": ""
+  },
+  {
+   "id": "drift-lines",
+   "file": "demo/images/drift-lines.jpg",
+   "alt": "Two time series drifting apart after a vertical marker",
+   "caption": ""
+  },
+  {
+   "id": "session-histogram",
+   "file": "demo/images/session-histogram.jpg",
+   "alt": "A right-skewed histogram of session lengths with a density curve",
+   "caption": ""
+  },
+  {
+   "id": "correlation-matrix",
+   "file": "demo/images/correlation-matrix.jpg",
+   "alt": "A twelve by twelve correlation heatmap in blue and orange",
+   "caption": ""
+  },
+  {
+   "id": "effect-sizes",
+   "file": "demo/images/effect-sizes.jpg",
+   "alt": "Bar chart of effect sizes by cohort with error bars",
+   "caption": ""
+  },
+  {
+   "id": "ab-test-bars",
+   "file": "demo/images/ab-test-bars.jpg",
+   "alt": "Bar chart comparing eight test variants with confidence intervals",
+   "caption": ""
+  },
+  {
+   "id": "density-clusters",
+   "file": "demo/images/density-clusters.jpg",
+   "alt": "Contour lines of three overlapping clusters with sample points",
+   "caption": ""
+  },
+  {
+   "id": "citation-network",
+   "file": "demo/images/citation-network.jpg",
+   "alt": "A network graph of papers colored by community",
+   "caption": ""
+  },
+  {
+   "id": "notebook-cell",
+   "file": "demo/images/notebook-cell.jpg",
+   "alt": "A notebook cell with pandas code, a summary table and a histogram",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "about",
+   "title": "About",
+   "excerpt": "A working notebook about data, models and measurement.",
+   "content": "<!-- wp:paragraph --><p><em>Margin of Error</em> is a working notebook about data, models and measurement, written by a small group of practitioners who spend their days in analytics teams and their evenings arguing about error bars.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What you will find here</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><strong>Essays</strong> on the habits that make analysis trustworthy.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Notebooks</strong> with code you can run and adapt.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Series</strong> that take a topic apart over several posts.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Methods</strong> notes on the tools behind it all.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:image {\"id\":{{media_id:small-multiples}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:small-multiples}}\" alt=\"Twelve small line charts in a grid, each a different metric\" class=\"wp-image-{{media_id:small-multiples}}\"/><figcaption class=\"wp-element-caption\">Small multiples: our favourite chart, and the reason for this site’s look.</figcaption></figure><!-- /wp:image -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Principles</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Every figure has a caption that says what to look at. Every claim links to the data or the code. When we get something wrong, we correct it in place and say so at the top of the post.</p><!-- /wp:paragraph -->",
+   "menu_order": 1
+  },
+  {
+   "slug": "series-index",
+   "title": "Series",
+   "content": "<!-- wp:paragraph --><p>Some topics need more than one post. Each series is written to be read in order, but every part stands on its own.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Measuring what matters</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>How metrics stand in for goals, and how they fail. Two parts so far.</p><!-- /wp:paragraph -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li><a href=\"{{post:measuring-what-matters-part-one-proxies}}\">Part 1: proxies and their failure modes</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{post:measuring-what-matters-part-two-session-length}}\">Part 2: session length is a trap</a></li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Causal inference notes</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Experiments, observational data and the gap between them.</p><!-- /wp:paragraph -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li><a href=\"{{post:causal-notes-part-one-pre-registered-metrics}}\">Part 1: pre-register your primary metric</a></li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:group {\"className\":\"note-box\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group note-box\"><!-- wp:paragraph --><p>New parts appear in the <a href=\"{{category:series}}\">Series</a> archive and in the feed.</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "menu_order": 2
+  },
+  {
+   "slug": "contact",
+   "title": "Contact",
+   "content": "<!-- wp:paragraph --><p>Corrections, questions and ideas for future posts are always welcome. We read everything and reply to most.</p><!-- /wp:paragraph -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Email: <a href=\"mailto:notes@datafield.example\">notes@datafield.example</a></li><!-- /wp:list-item --><!-- wp:list-item --><li>Corrections: please include the post title and the figure or paragraph number.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Datasets: we only publish data we are allowed to share, with its source.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>We do not accept sponsored posts, and we do not track readers beyond anonymous page counts.</p><!-- /wp:paragraph -->",
+   "parent": "about",
+   "menu_order": 3
+  }
+ ],
+ "posts": [
+  {
+   "slug": "calibration-is-the-forecast-quality-nobody-checks",
+   "title": "Calibration is the forecast quality nobody checks",
+   "date": "2026-10-22T08:00:00",
+   "categories": [
+    "essays"
+   ],
+   "tags": [
+    "forecasting",
+    "statistics"
+   ],
+   "featured_media": "calibration",
+   "sticky": true,
+   "excerpt": "Accuracy tells you how often a model is right. Calibration tells you whether its confidence means anything, and most dashboards never look.",
+   "content": "<!-- wp:paragraph --><p>A model that says “70% chance of rain” should be right about seven times in ten when it says so. That property, calibration, is separate from accuracy: a model can rank cases perfectly and still be wildly over-confident.<sup class=\"fn\"><a href=\"#fn-1\" id=\"fn-1-ref\">1</a></sup></p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">A quick check</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Bin your predictions by stated probability, then compare each bin’s average prediction with the observed frequency. Plotted, a calibrated model hugs the diagonal.</p><!-- /wp:paragraph -->\n\n<!-- wp:image {\"id\":{{media_id:calibration}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:calibration}}\" alt=\"A reliability diagram: three model curves around the diagonal\" class=\"wp-image-{{media_id:calibration}}\"/><figcaption class=\"wp-element-caption\">Predicted probability (x) against observed frequency (y) for three models. Blue sits above the diagonal (under-confident), orange below it (over-confident); teal, recalibrated, follows it.</figcaption></figure><!-- /wp:image -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Why it matters</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Decisions use the probability, not the ranking: thresholds, budgets, staffing.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Over-confident models fail silently until an expensive miss.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Calibration drifts faster than accuracy when the population shifts.<sup class=\"fn\"><a href=\"#fn-2\" id=\"fn-2-ref\">2</a></sup></li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Model</th><th>AUC</th><th>Brier</th><th>ECE</th></tr></thead><tbody><tr><td>Baseline logistic</td><td>0.781</td><td>0.162</td><td>0.041</td></tr><tr><td>Gradient boosted</td><td>0.824</td><td>0.149</td><td>0.067</td></tr><tr><td>Boosted + isotonic</td><td>0.823</td><td>0.141</td><td>0.012</td></tr></tbody></table><figcaption class=\"wp-element-caption\">Ranking barely moves after recalibration; the expected calibration error (ECE) drops by four fifths.</figcaption></figure><!-- /wp:table -->\n\n<!-- wp:paragraph --><p>Recalibration is cheap: isotonic regression or Platt scaling on a held-out set takes a few lines and rarely costs accuracy. Checking it should be as routine as checking AUC.</p><!-- /wp:paragraph -->\n\n<!-- wp:list {\"ordered\":true,\"className\":\"footnotes\"} --><ol class=\"wp-block-list footnotes\"><!-- wp:list-item --><li><span id=\"fn-1\"></span>The distinction goes back to the verification of weather forecasts, where reliability diagrams have been standard for decades. <a href=\"#fn-1-ref\" aria-label=\"Back to reference 1\">↩</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><span id=\"fn-2\"></span>We saw this in a churn model last year: AUC moved by 0.01 while ECE tripled over two quarters. <a href=\"#fn-2-ref\" aria-label=\"Back to reference 2\">↩</a></li><!-- /wp:list-item --></ol><!-- /wp:list -->",
+   "comments": [
+    {
+     "author": "Ines V.",
+     "email": "ines@example.com",
+     "content": "The table makes the point well. Do you recalibrate on a rolling window or a fixed holdout?",
+     "date": "2026-10-22T15:20:00"
+    },
+    {
+     "author": "Margin of Error",
+     "email": "notes@datafield.example",
+     "content": "Rolling, 90 days, refit monthly. A fixed holdout goes stale surprisingly fast once the population shifts.",
+     "date": "2026-10-23T08:05:00"
+    }
+   ]
+  },
+  {
+   "slug": "notebook-drift-monitor-in-forty-lines",
+   "title": "Notebook: a drift monitor in forty lines of pandas",
+   "date": "2026-10-08T09:00:00",
+   "categories": [
+    "notebooks"
+   ],
+   "tags": [
+    "python",
+    "visualization"
+   ],
+   "featured_media": "drift-lines",
+   "excerpt": "Population stability index, a rolling window and one chart: a feature drift monitor you can run before buying a platform.",
+   "content": "<!-- wp:paragraph --><p>Before reaching for a monitoring product, it is worth knowing how far a few lines of pandas will take you. This notebook computes the population stability index (PSI) for each feature against a reference window.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Setup</h2><!-- /wp:heading -->\n\n<!-- wp:code --><pre class=\"wp-block-code\"><code>import numpy as np\nimport pandas as pd\n\nref = df[df.ts &lt; &quot;2026-07-01&quot;]\ncur = df[df.ts &gt;= &quot;2026-09-01&quot;]</code></pre><!-- /wp:code -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">The index</h2><!-- /wp:heading -->\n\n<!-- wp:code --><pre class=\"wp-block-code\"><code>def psi(ref, cur, bins=10):\n    edges = np.quantile(ref, np.linspace(0, 1, bins + 1))\n    r = np.histogram(ref, edges)[0] / len(ref)\n    c = np.histogram(cur, edges)[0] / len(cur)\n    r, c = np.clip(r, 1e-6, None), np.clip(c, 1e-6, None)\n    return float(np.sum((c - r) * np.log(c / r)))</code></pre><!-- /wp:code -->\n\n<!-- wp:paragraph --><p>A common rule of thumb reads PSI below 0.1 as stable, 0.1–0.25 as worth a look and above 0.25 as a real shift. Treat these as conventions, not laws.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>Quantile bins from the reference window keep the index stable for skewed features; clipping avoids dividing by zero in empty bins.</p><!-- /wp:paragraph -->\n\n<!-- wp:image {\"id\":{{media_id:drift-lines}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:drift-lines}}\" alt=\"Two time series drifting apart after a vertical marker\" class=\"wp-image-{{media_id:drift-lines}}\"/><figcaption class=\"wp-element-caption\">Weekly mean of two features. The marker is the release that changed the sign-up form.</figcaption></figure><!-- /wp:image -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Run it weekly per feature, store the results, plot the history.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Alert on sustained change, not one noisy week.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Always look at the raw distributions before acting.</li><!-- /wp:list-item --></ul><!-- /wp:list -->"
+  },
+  {
+   "slug": "measuring-what-matters-part-one-proxies",
+   "title": "Measuring what matters, part 1: proxies and their failure modes",
+   "date": "2026-09-25T08:30:00",
+   "categories": [
+    "measurement-series"
+   ],
+   "tags": [
+    "statistics",
+    "experiments"
+   ],
+   "featured_media": "effect-sizes",
+   "excerpt": "Every metric is a proxy for something you care about. The first part of this series catalogues the ways proxies break.",
+   "content": "<!-- wp:group {\"className\":\"series-nav\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group series-nav\"><!-- wp:paragraph --><p><strong>Series:</strong> Measuring what matters</p><!-- /wp:paragraph --><!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li><strong>Part 1: proxies and their failure modes</strong></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{post:measuring-what-matters-part-two-session-length}}\">Part 2: session length is a trap</a></li><!-- /wp:list-item --></ol><!-- /wp:list --></div><!-- /wp:group -->\n\n<!-- wp:paragraph --><p>Nobody wants “clicks”. We want people to find what they came for. Clicks are a proxy, and proxies fail in a handful of recurring ways.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Four failure modes</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li><strong>Saturation:</strong> the proxy stops moving while the goal keeps improving.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Inversion:</strong> more of the proxy means less of the goal (more searches because results got worse).</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Gaming:</strong> the proxy becomes a target and detaches from the goal.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Heterogeneity:</strong> the proxy means different things for different groups.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:image {\"id\":{{media_id:effect-sizes}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:effect-sizes}}\" alt=\"Bar chart of effect sizes by cohort with error bars\" class=\"wp-image-{{media_id:effect-sizes}}\"/><figcaption class=\"wp-element-caption\">Effect of the same change on the proxy, by cohort. Two cohorts move in the opposite direction.</figcaption></figure><!-- /wp:image -->\n\n<!-- wp:paragraph --><p>The defence is not a better proxy but several, chosen so that their failure modes do not overlap, and a habit of checking them against qualitative evidence.<sup class=\"fn\"><a href=\"#fn-1\" id=\"fn-1-ref\">1</a></sup></p><!-- /wp:paragraph -->\n\n<!-- wp:list {\"ordered\":true,\"className\":\"footnotes\"} --><ol class=\"wp-block-list footnotes\"><!-- wp:list-item --><li><span id=\"fn-1\"></span>Interviews and support tickets are slow and noisy, but they rarely fail in the same direction as an engagement metric. <a href=\"#fn-1-ref\" aria-label=\"Back to reference 1\">↩</a></li><!-- /wp:list-item --></ol><!-- /wp:list -->"
+  },
+  {
+   "slug": "measuring-what-matters-part-two-session-length",
+   "title": "Measuring what matters, part 2: session length is a trap",
+   "date": "2026-10-01T08:30:00",
+   "categories": [
+    "measurement-series"
+   ],
+   "tags": [
+    "statistics",
+    "visualization"
+   ],
+   "featured_media": "session-histogram",
+   "excerpt": "Longer sessions look like engagement. Often they are confusion. A closer look at a heavily skewed distribution.",
+   "content": "<!-- wp:group {\"className\":\"series-nav\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group series-nav\"><!-- wp:paragraph --><p><strong>Series:</strong> Measuring what matters</p><!-- /wp:paragraph --><!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li><a href=\"{{post:measuring-what-matters-part-one-proxies}}\">Part 1: proxies and their failure modes</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Part 2: session length is a trap</strong></li><!-- /wp:list-item --></ol><!-- /wp:list --></div><!-- /wp:group -->\n\n<!-- wp:paragraph --><p>Session length is the classic inverted proxy: when a task gets harder, sessions get longer. Averages make this worse, because the distribution is heavily skewed.</p><!-- /wp:paragraph -->\n\n<!-- wp:image {\"id\":{{media_id:session-histogram}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:session-histogram}}\" alt=\"A right-skewed histogram of session lengths with a density curve\" class=\"wp-image-{{media_id:session-histogram}}\"/><figcaption class=\"wp-element-caption\">Distribution of session length for 4,000 sampled sessions. The mean sits well to the right of the typical session.</figcaption></figure><!-- /wp:image -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Look at the shape first</h2><!-- /wp:heading -->\n\n<!-- wp:columns {\"className\":\"stat-row\"} --><div class=\"wp-block-columns stat-row\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"stat\"} --><p class=\"stat\">6.4</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>mean minutes</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"stat\"} --><p class=\"stat\">4.9</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>median minutes</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"stat\"} --><p class=\"stat\">23.1</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>99th percentile</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:paragraph --><p>A handful of very long sessions drag the mean upward. When those sessions turn out to be people stuck in a broken checkout, “engagement is up” is the opposite of good news.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Better questions</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Did people complete what they started?</li><!-- /wp:list-item --><!-- wp:list-item --><li>How long did completion take, for those who completed?</li><!-- /wp:list-item --><!-- wp:list-item --><li>Where did the long sessions spend their time?</li><!-- /wp:list-item --></ul><!-- /wp:list -->"
+  },
+  {
+   "slug": "causal-notes-part-one-pre-registered-metrics",
+   "title": "Causal inference notes, part 1: pre-register your primary metric",
+   "date": "2026-09-11T09:00:00",
+   "categories": [
+    "causal-inference-series"
+   ],
+   "tags": [
+    "experiments",
+    "statistics"
+   ],
+   "featured_media": "ab-test-bars",
+   "excerpt": "With twenty metrics on the dashboard, one will move by chance in almost every test. Writing down the primary metric first is the cheapest fix.",
+   "content": "<!-- wp:paragraph --><p>A/B tests are the closest most teams get to a controlled experiment. They are also easy to misread, mostly because of what happens after the test, not during it.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">The garden of forking metrics</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Track twenty independent metrics at a 5% significance level and the chance that at least one shows a “significant” change by luck alone is about 64%.<sup class=\"fn\"><a href=\"#fn-1\" id=\"fn-1-ref\">1</a></sup> Pick the winner afterwards and you have a story, not a result.</p><!-- /wp:paragraph -->\n\n<!-- wp:image {\"id\":{{media_id:ab-test-bars}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:ab-test-bars}}\" alt=\"Bar chart comparing eight test variants with confidence intervals\" class=\"wp-image-{{media_id:ab-test-bars}}\"/><figcaption class=\"wp-element-caption\">Eight variants, one metric. Most intervals overlap; only the plum variant is clearly different from control.</figcaption></figure><!-- /wp:image -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">A one-paragraph pre-registration</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>The primary metric and the direction you expect.</li><!-- /wp:list-item --><!-- wp:list-item --><li>The minimum effect you would act on.</li><!-- /wp:list-item --><!-- wp:list-item --><li>The sample size and stopping rule.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Two or three guardrail metrics that must not get worse.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>If you did not write it down before the test, it is a hypothesis for the next one.</p><!-- /wp:paragraph --><cite>A rule we keep pinned above our desks</cite></blockquote><!-- /wp:quote -->\n\n<!-- wp:list {\"ordered\":true,\"className\":\"footnotes\"} --><ol class=\"wp-block-list footnotes\"><!-- wp:list-item --><li><span id=\"fn-1\"></span>1 − 0.95<sup>20</sup> ≈ 0.64, assuming independence. Real metrics are correlated, which helps a little but not enough. <a href=\"#fn-1-ref\" aria-label=\"Back to reference 1\">↩</a></li><!-- /wp:list-item --></ol><!-- /wp:list -->"
+  },
+  {
+   "slug": "reading-a-correlation-matrix",
+   "title": "Reading a correlation matrix without fooling yourself",
+   "date": "2026-08-27T08:00:00",
+   "categories": [
+    "methods"
+   ],
+   "tags": [
+    "statistics",
+    "visualization"
+   ],
+   "featured_media": "correlation-matrix",
+   "excerpt": "Heatmaps of correlations are everywhere in exploratory analysis. Here are the four mistakes they invite and how to avoid them.",
+   "content": "<!-- wp:paragraph --><p>A correlation heatmap is a good first look at a new dataset and a poor last one. It compresses each pair of variables into a single number and invites stories the data cannot support.</p><!-- /wp:paragraph -->\n\n<!-- wp:image {\"id\":{{media_id:correlation-matrix}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:correlation-matrix}}\" alt=\"A twelve by twelve correlation heatmap in blue and orange\" class=\"wp-image-{{media_id:correlation-matrix}}\"/><figcaption class=\"wp-element-caption\">Pearson correlations among twelve features. Orange is positive, blue negative; the diagonal is one by definition.</figcaption></figure><!-- /wp:image -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Four traps</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Pearson’s r only sees linear relationships; a perfect U-shape scores near zero.</li><!-- /wp:list-item --><!-- wp:list-item --><li>A single outlier can create or hide a strong correlation.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Correlated features are often both caused by a third you did not measure.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Ordering the matrix by clustering makes patterns look cleaner than they are.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Do this instead</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Use the heatmap to choose which pairs to plot, then look at the scatter plots. Add rank correlations alongside Pearson. And treat anything you find as a question for an experiment, not an answer.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>The figure below is the reason: pooled, these three groups show almost no correlation; within each group, the relationship is strong and consistent.</p><!-- /wp:paragraph -->\n\n<!-- wp:image {\"id\":{{media_id:density-clusters}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:density-clusters}}\" alt=\"Contour lines of three overlapping clusters with sample points\" class=\"wp-image-{{media_id:density-clusters}}\"/><figcaption class=\"wp-element-caption\">Three clusters that produce a weak overall correlation and strong ones within each group.</figcaption></figure><!-- /wp:image -->"
+  },
+  {
+   "slug": "forecast-intervals-that-widen-honestly",
+   "title": "Forecast intervals that widen honestly",
+   "date": "2026-08-13T08:00:00",
+   "categories": [
+    "methods"
+   ],
+   "tags": [
+    "forecasting",
+    "bayesian"
+   ],
+   "featured_media": "forecast-interval",
+   "excerpt": "A forecast without an interval is a guess dressed as a fact. How to produce intervals that grow with the horizon, and how to check them.",
+   "content": "<!-- wp:paragraph --><p>Point forecasts are easy to read and easy to over-trust. An interval says how wrong the forecast might be, and a good one grows the further ahead you look.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>Intervals that stay the same width at every horizon are a warning sign: the model is ignoring how errors accumulate over time.</p><!-- /wp:paragraph -->\n\n<!-- wp:image {\"id\":{{media_id:forecast-interval}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:forecast-interval}}\" alt=\"Two time series, one with a shaded interval widening into the future\" class=\"wp-image-{{media_id:forecast-interval}}\"/><figcaption class=\"wp-element-caption\">An 80% interval from a simple state-space model. The vertical line marks the forecast origin.</figcaption></figure><!-- /wp:image -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Three ways to get intervals</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><strong>Model-based:</strong> state-space and ARIMA models give them analytically.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Simulation:</strong> resample residuals and roll the model forward many times.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Bayesian:</strong> sample from the posterior predictive distribution.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Check the coverage</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Backtest: for each past origin, record whether the actual value fell inside the 80% interval. Over many origins, it should do so about 80% of the time. Ours covered 71% at first, which is how we found an unmodelled holiday effect.</p><!-- /wp:paragraph -->\n\n<!-- wp:code --><pre class=\"wp-block-code\"><code>coverage = ((y &gt;= lo) &amp; (y &lt;= hi)).mean()\nprint(f&quot;80% interval covers {coverage:.0%}&quot;)</code></pre><!-- /wp:code -->"
+  },
+  {
+   "slug": "mapping-a-research-field-from-citations",
+   "title": "Mapping a research field from its citations",
+   "date": "2026-07-30T09:00:00",
+   "categories": [
+    "notebooks"
+   ],
+   "tags": [
+    "python",
+    "visualization"
+   ],
+   "featured_media": "citation-network",
+   "excerpt": "A co-citation network of 600 papers, community detection in three lines, and what the clusters say about how a field grew.",
+   "content": "<!-- wp:paragraph --><p>Two papers are co-cited when a third paper cites both. Build a graph of those pairs and communities of related work appear on their own, without anyone tagging topics by hand.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">The pipeline</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Collect references for a seed set of papers and their citers.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Count co-citations and keep pairs cited together at least three times.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Detect communities with a modularity-based algorithm.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Label each community by its most-cited papers.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:image {\"id\":{{media_id:citation-network}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:citation-network}}\" alt=\"A network graph of papers colored by community\" class=\"wp-image-{{media_id:citation-network}}\"/><figcaption class=\"wp-element-caption\">Three communities: methods (blue), applications (orange) and a younger evaluation cluster (teal) bridging the two.</figcaption></figure><!-- /wp:image -->\n\n<!-- wp:paragraph --><p>The bridging cluster is the interesting one. Its papers are recent and cite both older communities, which is what a field looks like when it starts to argue about how to measure itself.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>The full notebook, with the reference data and the plotting code, is linked from the series page. It runs in under a minute on a laptop.</p><!-- /wp:paragraph -->\n\n<!-- wp:image {\"id\":{{media_id:notebook-cell}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:notebook-cell}}\" alt=\"A notebook cell with pandas code, a summary table and a histogram\" class=\"wp-image-{{media_id:notebook-cell}}\"/><figcaption class=\"wp-element-caption\">The summary cell that opens the notebook.</figcaption></figure><!-- /wp:image -->"
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "category": "essays"
+    },
+    {
+     "category": "notebooks"
+    },
+    {
+     "category": "methods"
+    },
+    {
+     "title": "Series",
+     "page": "series-index",
+     "children": [
+      {
+       "category": "measurement-series"
+      },
+      {
+       "category": "causal-inference-series"
+      }
+     ]
+    },
+    {
+     "title": "About",
+     "page": "about",
+     "children": [
+      {
+       "title": "Contact",
+       "page": "contact"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Footer",
+   "location": "footer",
+   "items": [
+    {
+     "title": "About",
+     "page": "about"
+    },
+    {
+     "title": "Series",
+     "page": "series-index"
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    },
+    {
+     "title": "Feed",
+     "url": "/feed/"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "sidebar-1": [
+   "<!-- wp:search {\"label\":\"Search\",\"buttonText\":\"Search\"} /-->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Sections</h2><!-- /wp:heading --><!-- wp:categories {\"showPostCounts\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Keywords</h2><!-- /wp:heading --><!-- wp:tag-cloud /--></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Recent entries</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":5,\"displayPostDate\":true} /--></div><!-- /wp:group -->"
+  ],
+  "footer-1": [
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">About this notebook</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Essays, notebooks and series on statistics, machine learning and measurement. Corrections are made in place and noted.</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Series</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><a href=\"{{category:measurement-series}}\">Measuring what matters</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{category:causal-inference-series}}\">Causal inference notes</a></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Recent</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":3,\"displayPostDate\":true} /--></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "intro_kicker": "Working notes · est. 2021",
+  "intro_title": "Careful notes on data, models and the questions behind them.",
+  "intro_text": "Essays, reproducible notebooks and multi-part series on statistics, machine learning and measurement. Every figure is captioned; every claim links to its data.",
+  "list_layout": "index",
+  "figure_numbers": true,
+  "gridlines": true,
+  "sidebar": "none"
+ }
+}

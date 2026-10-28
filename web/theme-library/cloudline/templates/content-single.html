@@ -1,0 +1,15 @@
+<article id="post-{{.ID}}" class="{{.Class}} entry entry--single">
+	<header class="entry-header">
+		{{if .Categories}}<p class="entry-kicker">{{range $i, $c := .Categories}}{{if $i}}<span class="sep" aria-hidden="true"> / </span>{{end}}<a href="{{$c.URL}}" rel="category tag">{{$c.Name}}</a>{{end}}</p>{{end}}
+		<h1 class="entry-title">{{.Title}}</h1>
+		{{template "entry-meta" .}}
+	</header><!-- .entry-header -->
+	{{with .Thumbnail}}<figure class="post-thumbnail">{{.}}</figure>{{end}}
+	<div class="entry-content">
+		{{.Content}}
+	</div><!-- .entry-content -->
+	{{if .Tags}}<footer class="entry-footer">
+		<span class="tags-links"><span class="tags-links__label">Topics</span>{{range .Tags}}<a href="{{.URL}}" rel="tag">{{.Name}}</a>{{end}}</span>
+	</footer>{{end}}
+	{{.Biography}}
+</article><!-- #post-{{.ID}} -->

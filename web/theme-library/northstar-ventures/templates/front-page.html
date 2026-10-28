@@ -1,0 +1,24 @@
+{{template "header" .}}
+<main id="main" class="site-main site-main--front" tabindex="-1">
+{{with .Post}}{{$img := theme_mod $ "hero_image"}}{{if not $img}}{{$img = .ThumbnailURL}}{{end}}
+	<section class="hero{{if $img}} hero--has-media{{end}}" aria-label="Introduction">
+		{{if $img}}<div class="hero__bg" style="background-image: url('{{$img}}');" aria-hidden="true"></div>{{end}}
+		<div class="hero__stars" aria-hidden="true"></div>
+		<div class="wrap hero__inner">
+			{{with theme_mod $ "hero_kicker"}}<p class="hero__kicker">{{.}}</p>{{end}}
+			<h1 class="hero__title">{{with theme_mod $ "hero_heading"}}{{.}}{{else}}{{$.Post.Title}}{{end}}</h1>
+			<div class="hero__foot">
+				{{with theme_mod $ "hero_text"}}<p class="hero__lead">{{.}}</p>{{end}}
+				{{with theme_mod $ "cta_label"}}<a class="hero__link" href="{{theme_mod $ "cta_url"}}">{{.}} <span aria-hidden="true">&rarr;</span></a>{{end}}
+			</div>
+		</div>
+	</section>
+	<article id="post-{{.ID}}" class="{{.Class}} entry entry--front">
+		<div class="entry-content front-content">
+			{{.Content}}
+		</div>
+		{{with .EditLink}}<footer class="wrap entry-footer"><span class="edit-link">{{.}}</span></footer>{{end}}
+	</article>
+{{end}}
+</main><!-- #main -->
+{{template "footer" .}}

@@ -1,0 +1,24 @@
+{{template "header" .}}
+{{if and .IsFront (theme_mod . "intro_show")}}<section class="intro" aria-label="About this site">
+	<div class="wrap intro__inner">
+		{{with theme_mod . "intro_kicker"}}<p class="intro__kicker">{{.}}</p>{{end}}
+		<h1 class="intro__title">{{theme_mod . "intro_title"}}</h1>
+		{{with theme_mod . "intro_text"}}<p class="intro__text">{{.}}</p>{{end}}
+	</div>
+</section>{{else}}<header class="page-header page-header--blog">
+	<div class="wrap">
+		<p class="page-header__kicker">Index</p>
+		{{if .IsHomeHeader}}<h1 class="page-title">{{.PostsPageTitle}}</h1>{{else}}<h1 class="page-title">All entries</h1>{{end}}
+	</div>
+</header>{{end}}
+<div class="wrap layout">
+	<main id="main" class="site-main" tabindex="-1">
+		{{if .Posts}}<div class="post-list">
+			{{range .Posts}}{{template "content" .}}
+			{{end}}
+		</div>
+		{{.Pagination}}{{else}}{{template "content-none" .}}{{end}}
+	</main><!-- #main -->
+	{{template "sidebar" .}}
+</div>
+{{template "footer" .}}

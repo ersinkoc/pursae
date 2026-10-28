@@ -1,0 +1,11 @@
+{{template "header" .}}
+<main id="main" class="site-main site-main--landing" tabindex="-1">
+{{with .Post}}	<article id="post-{{.ID}}" class="{{.Class}} entry entry--page entry--landing">
+		<h1 class="screen-reader-text">{{.Title}}</h1>
+		<div class="entry-content front-content">
+			{{.Content}}
+		</div>
+		{{with .EditLink}}<footer class="entry-footer wrap"><span class="edit-link">{{.}}</span></footer>{{end}}
+	</article>
+{{end}}</main><!-- #main -->
+{{template "footer" .}}

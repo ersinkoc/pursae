@@ -1,0 +1,14 @@
+/* Datafield — block editor styles */
+@font-face { font-family: "Newsreader"; src: url("fonts/newsreader.woff2") format("woff2"); font-weight: 400 700; font-display: swap; }
+@font-face { font-family: "Spline Sans Mono"; src: url("fonts/spline-sans-mono.woff2") format("woff2"); font-weight: 400 600; font-display: swap; }
+body { font-family: "Newsreader", Charter, Georgia, serif; font-size: 19px; line-height: 1.68; color: #2b2f35; background: #fbfaf6; }
+h1, h2, h3, h4 { color: #1b1f24; font-weight: 600; letter-spacing: -.015em; line-height: 1.15; }
+a { color: #2b6cb0; text-underline-offset: 3px; }
+figcaption, .wp-element-caption, code, pre { font-family: "Spline Sans Mono", ui-monospace, Menlo, monospace; }
+figcaption, .wp-element-caption { font-size: .8rem; color: #59606b; text-align: left; }
+blockquote { border-left: 3px solid #dd6b20; padding-left: 1.2em; font-style: italic; }
+.wp-block-button__link { background: #1b1f24; color: #fbfaf6; border-radius: 3px; font-family: "Spline Sans Mono", monospace; }
+table { border-top: 2px solid #1b1f24; border-bottom: 2px solid #1b1f24; }
+.has-series-blue-color { color: #2b6cb0; } .has-series-orange-color { color: #dd6b20; } .has-series-teal-color { color: #2c7a7b; }
+.has-series-plum-color { color: #805ad5; } .has-ink-color { color: #1b1f24; } .has-graphite-color { color: #59606b; }
+.has-paper-background-color { background-color: #fbfaf6; } .has-grid-background-color { background-color: #e4e1d8; }
