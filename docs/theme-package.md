@@ -173,3 +173,81 @@ per package, 4 MiB per file, 64 MiB extracted, 2000 files, only these extensions
 `install_themes` capability; a package whose slug is already installed replaces it only
 when its version is higher (theme mods and widgets are kept). Themes carry no executable
 code, so they are not signed; the Hub and the installer verify the SHA-256 of the zip.
+
+## Library metadata
+
+`theme.json` may also carry, for the theme library (Appearance › Add Themes › Library) and the
+Hub:
+
+```json
+"category": "blog",
+"style": "Minimal, editorial serif",
+"demo": "demo/demo.json"
+```
+
+- `category` (one of): `blog`, `magazine`, `portfolio`, `photography`, `business`, `agency`,
+  `restaurant`, `food`, `travel`, `fashion`, `technology`, `education`, `health`, `fitness`,
+  `nonprofit`, `music`, `wedding`, `real-estate`, `personal`, `minimal`.
+- `style`: a short phrase shown on the library card.
+- `demo`: path of the demo content file inside the package (below).
+
+## Demo content
+
+A theme may ship one-click demo content: `demo/demo.json` plus images under `demo/images/`
+(`.jpg`, `.png` or `.webp`, each ≤ 1 MiB, ≤ 24 images). Appearance › Themes shows **Import
+Demo Content** for the active theme when it has a demo (and Add Themes offers "Install,
+activate and import demo"). Importing is idempotent: every created item carries the post
+meta / term meta `_wpgo_demo = "<theme slug>"`, so a second import skips existing items and
+**Remove Demo Content** deletes exactly them (and restores the reading settings it changed).
+
+```json
+{
+  "version": 1,
+  "options": { "blogname": "Northwind Journal", "blogdescription": "Notes on slow living" },
+  "categories": [
+    { "slug": "travel", "name": "Travel", "description": "Places we loved." }
+  ],
+  "tags": [ { "slug": "coffee", "name": "Coffee" } ],
+  "media": [
+    { "id": "hero", "file": "demo/images/hero.jpg", "alt": "Morning light over the harbour", "caption": "" }
+  ],
+  "pages": [
+    { "slug": "home", "title": "Home", "content": "<!-- wp:paragraph --><p>…</p><!-- /wp:paragraph -->",
+      "template": "", "featured_media": "hero", "front_page": true },
+    { "slug": "blog", "title": "Blog", "content": "", "posts_page": true },
+    { "slug": "about", "title": "About", "content": "…", "parent": "" }
+  ],
+  "posts": [
+    { "slug": "a-week-in-lisbon", "title": "A week in Lisbon", "date": "2026-09-12T09:30:00",
+      "excerpt": "…", "content": "<!-- wp:paragraph -->…", "categories": ["travel"], "tags": ["coffee"],
+      "featured_media": "hero", "format": "standard", "sticky": false,
+      "comments": [ { "author": "Ada", "email": "ada@example.com", "content": "Lovely!", "date": "2026-09-13T10:00:00" } ] }
+  ],
+  "menus": [
+    { "name": "Main menu", "location": "primary", "items": [
+      { "title": "Home", "page": "home" },
+      { "title": "Travel", "category": "travel" },
+      { "title": "About", "page": "about", "children": [ { "title": "Contact", "page": "contact" } ] },
+      { "title": "Instagram", "url": "https://instagram.com/" }
+    ] }
+  ],
+  "widgets": { "sidebar-1": [ "<!-- wp:search /-->", "<!-- wp:latest-posts {\"postsToShow\":4} /-->" ] },
+  "customizer": { "accent": "#c2410c", "layout": "grid" }
+}
+```
+
+Rules: content is block markup (Gotenberg/WordPress block comments) or plain HTML; inside
+content, `{{media:hero}}` is replaced by the imported image's URL and `{{page:about}}` /
+`{{post:a-week-in-lisbon}}` / `{{category:travel}}` by permalinks. `front_page` / `posts_page`
+set Settings › Reading (`show_on_front=page`). `customizer` keys are the theme's own setting
+ids. `options` may only set `blogname`, `blogdescription`, `posts_per_page`, `date_format`.
+Demo text is original (no lorem ipsum, no copyrighted text) and images are original
+(generated) artwork.
+
+## Theme library
+
+WordPress Go ships a library of ready themes in `web/theme-library/<slug>/` (each a complete
+theme package directory, embedded in the binary). Appearance › Add Themes › Library lists
+them with category filters and search; **Install** copies the package into `<data>/themes`
+exactly like an upload, and the installed theme can be updated, customized and deleted like
+any package.
