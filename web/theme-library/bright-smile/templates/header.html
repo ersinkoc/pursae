@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>{{.DocumentTitle}}</title>
+{{.Head}}</head>
+
+<body class="{{.BodyClass}}">
+{{.BodyOpen}}<div id="page" class="site">
+	<a class="skip-link screen-reader-text" href="#main">Skip to content</a>
+	{{if theme_mod . "show_topbar"}}<div class="topbar">
+		<div class="wrap topbar__inner">
+			{{with theme_mod . "hours"}}<span class="topbar__item topbar__item--hours">{{.}}</span>{{end}}
+			{{with theme_mod . "phone"}}<a class="topbar__item topbar__item--phone" href="tel:{{.}}">{{.}}</a>{{end}}
+		</div>
+	</div>{{end}}
+	<div class="header-shell">
+	<header id="masthead" class="site-header">
+		<div class="wrap site-header__inner">
+			<div class="site-branding">
+				{{with .CustomLogo}}<div class="site-logo">{{.}}</div>{{else}}<span class="site-mark" aria-hidden="true"><svg viewBox="0 0 40 40" width="40" height="40" focusable="false"><circle cx="20" cy="20" r="19" fill="currentColor"/><path fill="#fff" d="M13.5 11c2.4-.8 4.3.4 6.5.4s4.1-1.2 6.5-.4c3 1 3.6 4.8 2.6 8.3-.9 3-1.4 5.8-2.2 8.7-.5 1.8-2.6 1.9-3.1.1l-1.4-5c-.5-1.8-2.3-1.8-2.8 0l-1.4 5c-.5 1.8-2.6 1.7-3.1-.1-.8-2.9-1.3-5.7-2.2-8.7-1-3.5-.4-7.3 2.6-8.3z"/><path d="M15 15.5c1.5 1 3 1.4 5 1.4" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg></span>{{end}}
+				<div class="site-branding__text">
+					{{if .TitleIsH1}}<h1 class="site-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></h1>{{else}}<p class="site-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></p>{{end}}
+					{{with .Description}}<p class="site-description">{{.}}</p>{{end}}
+				</div>
+			</div><!-- .site-branding -->
+			{{if has_nav_menu . "primary"}}<nav id="site-navigation" class="main-navigation" aria-label="Primary menu">
+				<button type="button" class="menu-toggle" aria-controls="primary-menu-wrap" aria-expanded="false"><span class="menu-toggle__bars" aria-hidden="true"><span></span></span><span class="menu-toggle__label">Menu</span></button>
+				<div id="primary-menu-wrap" class="primary-menu-wrap">
+					{{nav_menu . "primary"}}
+					{{with theme_mod . "cta_label"}}<a class="button header-cta" href="{{theme_mod $ "cta_url"}}">{{.}}</a>{{end}}
+				</div>
+			</nav><!-- #site-navigation -->{{else}}{{with theme_mod . "cta_label"}}<a class="button header-cta header-cta--solo" href="{{theme_mod $ "cta_url"}}">{{.}}</a>{{end}}{{end}}
+		</div>
+	</header><!-- #masthead -->
+	</div>

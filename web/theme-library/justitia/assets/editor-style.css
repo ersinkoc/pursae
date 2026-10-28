@@ -1,0 +1,10 @@
+/* justitia: editor styles, so posts look in the block editor as they will on the site. */
+@font-face { font-family: "Libre Caslon Text"; font-style: normal; font-weight: 400; font-display: swap; src: url("fonts/libre-caslon-text-400.woff2") format("woff2"); }
+@font-face { font-family: "Libre Caslon Text"; font-style: italic; font-weight: 400; font-display: swap; src: url("fonts/libre-caslon-text-italic.woff2") format("woff2"); }
+@font-face { font-family: "Source Sans 3"; font-style: normal; font-weight: 300 800; font-display: swap; src: url("fonts/source-sans-3.woff2") format("woff2"); }
+.editor-styles-wrapper { background: #faf7f2; color: #23201f; font-family: "Source Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 17px; line-height: 1.7; }
+.editor-styles-wrapper h1, .editor-styles-wrapper h2, .editor-styles-wrapper h3, .editor-styles-wrapper h4, .editor-styles-wrapper .editor-post-title__input { font-family: "Libre Caslon Text", Georgia, serif; font-weight: 400; line-height: 1.15; color: #23201f; }
+.editor-styles-wrapper a { color: #6b1f2a; }
+.editor-styles-wrapper .wp-block-quote { border-left: 3px solid #b4914b; padding-left: 1.2em; }
+.editor-styles-wrapper .wp-block-button__link { background: #6b1f2a; color: #fff; }
+.editor-styles-wrapper table th { text-align: left; }

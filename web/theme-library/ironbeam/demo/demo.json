@@ -1,0 +1,453 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Ironbeam Construction",
+  "blogdescription": "General contractors since 1988"
+ },
+ "categories": [
+  {
+   "slug": "commercial",
+   "name": "Commercial",
+   "description": "Offices, schools and public buildings."
+  },
+  {
+   "slug": "industrial",
+   "name": "Industrial",
+   "description": "Warehouses, plants and parking structures."
+  },
+  {
+   "slug": "infrastructure",
+   "name": "Infrastructure",
+   "description": "Bridges, roads and site works."
+  },
+  {
+   "slug": "safety",
+   "name": "Safety",
+   "description": "How we keep every crew safe."
+  },
+  {
+   "slug": "company-news",
+   "name": "Company news",
+   "description": "People, milestones and careers."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "steel",
+   "name": "Steel"
+  },
+  {
+   "slug": "milestone",
+   "name": "Milestone"
+  },
+  {
+   "slug": "safety-culture",
+   "name": "Safety culture"
+  },
+  {
+   "slug": "bridges",
+   "name": "Bridges"
+  },
+  {
+   "slug": "design-build",
+   "name": "Design-build"
+  },
+  {
+   "slug": "concrete",
+   "name": "Concrete"
+  },
+  {
+   "slug": "careers",
+   "name": "Careers"
+  },
+  {
+   "slug": "community",
+   "name": "Community"
+  }
+ ],
+ "media": [
+  {
+   "id": "hero",
+   "file": "demo/images/hero.jpg",
+   "alt": "A steel-frame building and a tower crane silhouetted against an orange sunset",
+   "caption": ""
+  },
+  {
+   "id": "beams",
+   "file": "demo/images/beams.jpg",
+   "alt": "Rows of bolted steel I-beams with a yellow column",
+   "caption": ""
+  },
+  {
+   "id": "blueprint",
+   "file": "demo/images/blueprint.jpg",
+   "alt": "A blueprint floor plan on a blue grid",
+   "caption": ""
+  },
+  {
+   "id": "pour",
+   "file": "demo/images/pour.jpg",
+   "alt": "A yellow concrete pump boom over a fresh slab",
+   "caption": ""
+  },
+  {
+   "id": "bridge",
+   "file": "demo/images/bridge.jpg",
+   "alt": "A cable-stayed bridge over grey water",
+   "caption": ""
+  },
+  {
+   "id": "warehouse",
+   "file": "demo/images/warehouse.jpg",
+   "alt": "A warehouse with a sawtooth roof and yellow-trimmed loading doors",
+   "caption": ""
+  },
+  {
+   "id": "hardhat",
+   "file": "demo/images/hardhat.jpg",
+   "alt": "A yellow hard hat on a dark background",
+   "caption": ""
+  },
+  {
+   "id": "tower",
+   "file": "demo/images/tower.jpg",
+   "alt": "A glass office tower with its top floors still under construction",
+   "caption": ""
+  },
+  {
+   "id": "school",
+   "file": "demo/images/school.jpg",
+   "alt": "A brick school building with a yellow entrance canopy",
+   "caption": ""
+  },
+  {
+   "id": "careers",
+   "file": "demo/images/careers.jpg",
+   "alt": "A row of hard hats hanging on pegs above a hazard stripe",
+   "caption": ""
+  },
+  {
+   "id": "excavator",
+   "file": "demo/images/excavator.jpg",
+   "alt": "An excavator digging at dawn",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "We build what cities run on",
+   "content": "<!-- wp:group {\"anchor\":\"services\",\"align\":\"full\",\"className\":\"section-services\",\"layout\":{\"type\":\"constrained\"}} --><div id=\"services\" class=\"wp-block-group alignfull section-services\"><!-- wp:paragraph {\"className\":\"kicker\"} --><p class=\"kicker\">What we build</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">Services</h2><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">Commercial, industrial and civil work across the region, delivered by our own supervisors and self-performing crews.</p><!-- /wp:paragraph --><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"service-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group service-card\"><!-- wp:paragraph {\"className\":\"service-num\"} --><p class=\"service-num\">01</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">General contracting</h3><!-- /wp:heading --><!-- wp:paragraph --><p>One accountable team from groundbreaking to handover, with a fixed schedule and open-book costs.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{category:commercial}}\">Project updates &rarr;</a></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"service-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group service-card\"><!-- wp:paragraph {\"className\":\"service-num\"} --><p class=\"service-num\">02</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Design-build</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Architects, engineers and builders under one contract. Faster decisions, fewer change orders.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{category:commercial}}\">Project updates &rarr;</a></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"service-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group service-card\"><!-- wp:paragraph {\"className\":\"service-num\"} --><p class=\"service-num\">03</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Steel &amp; concrete</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Our own crews for structural steel, post-tensioned slabs and precast erection.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{category:industrial}}\">Project updates &rarr;</a></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"service-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group service-card\"><!-- wp:paragraph {\"className\":\"service-num\"} --><p class=\"service-num\">04</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Civil &amp; infrastructure</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Bridges, site works, utilities and roads for cities and transit agencies.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{category:infrastructure}}\">Project updates &rarr;</a></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"section-numbers\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-numbers\"><!-- wp:paragraph {\"className\":\"kicker\"} --><p class=\"kicker\">Safety record</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">The numbers we are proudest of</h2><!-- /wp:heading --><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"big-num\"} --><p class=\"big-num\">0.42</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Lost-time incident rate, a third of the industry average</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"big-num\"} --><p class=\"big-num\">1.9M</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Work hours in the last twelve months</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"big-num\"} --><p class=\"big-num\">100%</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Of site staff with current fall-protection training</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"big-num\"} --><p class=\"big-num\">38</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Years in business, family owned</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:group {\"anchor\":\"projects\",\"align\":\"full\",\"className\":\"section-projects\",\"layout\":{\"type\":\"constrained\"}} --><div id=\"projects\" class=\"wp-block-group alignfull section-projects\"><!-- wp:paragraph {\"className\":\"kicker\"} --><p class=\"kicker\">Completed work</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">Recent projects</h2><!-- /wp:heading --><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:tower}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"className\":\"project-tile\"} --><figure class=\"wp-block-image size-large project-tile\"><img src=\"{{media:tower}}\" alt=\"Harbourline Tower\" class=\"wp-image-{{media_id:tower}}\"/><figcaption class=\"wp-element-caption\">Harbourline Tower</figcaption></figure><!-- /wp:image --><!-- wp:paragraph {\"className\":\"project-meta\"} --><p class=\"project-meta\">28 storeys · Commercial · 2025</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:bridge}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"className\":\"project-tile\"} --><figure class=\"wp-block-image size-large project-tile\"><img src=\"{{media:bridge}}\" alt=\"Millrace Crossing\" class=\"wp-image-{{media_id:bridge}}\"/><figcaption class=\"wp-element-caption\">Millrace Crossing</figcaption></figure><!-- /wp:image --><!-- wp:paragraph {\"className\":\"project-meta\"} --><p class=\"project-meta\">Cable-stayed bridge · Civil · 2024</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:warehouse}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"className\":\"project-tile\"} --><figure class=\"wp-block-image size-large project-tile\"><img src=\"{{media:warehouse}}\" alt=\"Northgate Logistics Hub\" class=\"wp-image-{{media_id:warehouse}}\"/><figcaption class=\"wp-element-caption\">Northgate Logistics Hub</figcaption></figure><!-- /wp:image --><!-- wp:paragraph {\"className\":\"project-meta\"} --><p class=\"project-meta\">42,000 m² · Industrial · 2025</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:projects}}\">All projects</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"section-careers\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-careers\"><!-- wp:media-text {\"mediaId\":{{media_id:careers}},\"mediaType\":\"image\"} --><div class=\"wp-block-media-text is-stacked-on-mobile\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:careers}}\" alt=\"A row of hard hats on pegs\" class=\"wp-image-{{media_id:careers}} size-full\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:paragraph {\"className\":\"kicker\"} --><p class=\"kicker\">Careers</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Build a career, not just a building</h2><!-- /wp:heading --><!-- wp:paragraph --><p>We hire apprentices every spring and promote from within: eleven of our fourteen superintendents started on our crews.</p><!-- /wp:paragraph --><!-- wp:list {\"className\":\"check-list\"} --><ul class=\"wp-block-list check-list\"><!-- wp:list-item --><li>Paid apprenticeships in carpentry, ironwork and concrete</li><!-- /wp:list-item --><!-- wp:list-item --><li>Full benefits from the first day</li><!-- /wp:list-item --><!-- wp:list-item --><li>Safety training on company time</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:careers}}\">Open positions</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div></div><!-- /wp:media-text --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"section-updates\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-updates\"><!-- wp:paragraph {\"className\":\"kicker\"} --><p class=\"kicker\">From the site</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">Project updates</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":3,\"displayPostDate\":true,\"postLayout\":\"grid\",\"columns\":3,\"displayPostContent\":true,\"excerptLength\":22} /--></div><!-- /wp:group -->",
+   "featured_media": "hero",
+   "front_page": true
+  },
+  {
+   "slug": "updates",
+   "title": "Project updates",
+   "content": "",
+   "posts_page": true
+  },
+  {
+   "slug": "projects",
+   "title": "Projects",
+   "excerpt": "Completed buildings and infrastructure.",
+   "content": "<!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">A selection of buildings and infrastructure completed in the last five years. Every project was delivered by our own superintendents.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:tower}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"className\":\"project-tile\"} --><figure class=\"wp-block-image size-large project-tile\"><img src=\"{{media:tower}}\" alt=\"Harbourline Tower\" class=\"wp-image-{{media_id:tower}}\"/><figcaption class=\"wp-element-caption\">Harbourline Tower</figcaption></figure><!-- /wp:image --><!-- wp:paragraph {\"className\":\"project-meta\"} --><p class=\"project-meta\">28 storeys · Commercial · 2025</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:bridge}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"className\":\"project-tile\"} --><figure class=\"wp-block-image size-large project-tile\"><img src=\"{{media:bridge}}\" alt=\"Millrace Crossing\" class=\"wp-image-{{media_id:bridge}}\"/><figcaption class=\"wp-element-caption\">Millrace Crossing</figcaption></figure><!-- /wp:image --><!-- wp:paragraph {\"className\":\"project-meta\"} --><p class=\"project-meta\">Cable-stayed bridge · Civil · 2024</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:warehouse}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"className\":\"project-tile\"} --><figure class=\"wp-block-image size-large project-tile\"><img src=\"{{media:warehouse}}\" alt=\"Northgate Logistics Hub\" class=\"wp-image-{{media_id:warehouse}}\"/><figcaption class=\"wp-element-caption\">Northgate Logistics Hub</figcaption></figure><!-- /wp:image --><!-- wp:paragraph {\"className\":\"project-meta\"} --><p class=\"project-meta\">42,000 m² · Industrial · 2025</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:school}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"className\":\"project-tile\"} --><figure class=\"wp-block-image size-large project-tile\"><img src=\"{{media:school}}\" alt=\"Westfield Primary School\" class=\"wp-image-{{media_id:school}}\"/><figcaption class=\"wp-element-caption\">Westfield Primary School</figcaption></figure><!-- /wp:image --><!-- wp:paragraph {\"className\":\"project-meta\"} --><p class=\"project-meta\">Education · Design-build · 2024</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:pour}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"className\":\"project-tile\"} --><figure class=\"wp-block-image size-large project-tile\"><img src=\"{{media:pour}}\" alt=\"Riverside Parking Structure\" class=\"wp-image-{{media_id:pour}}\"/><figcaption class=\"wp-element-caption\">Riverside Parking Structure</figcaption></figure><!-- /wp:image --><!-- wp:paragraph {\"className\":\"project-meta\"} --><p class=\"project-meta\">Post-tensioned concrete · 2023</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:excavator}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"className\":\"project-tile\"} --><figure class=\"wp-block-image size-large project-tile\"><img src=\"{{media:excavator}}\" alt=\"Eastline Interchange\" class=\"wp-image-{{media_id:excavator}}\"/><figcaption class=\"wp-element-caption\">Eastline Interchange</figcaption></figure><!-- /wp:image --><!-- wp:paragraph {\"className\":\"project-meta\"} --><p class=\"project-meta\">Site works and utilities · 2026</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">By the numbers</h2><!-- /wp:heading -->\n\n<!-- wp:table {\"className\":\"spec-table\"} --><figure class=\"wp-block-table spec-table\"><table><thead><tr><th>Project</th><th>Sector</th><th>Value</th><th>Delivered</th></tr></thead><tbody><tr><td>Harbourline Tower</td><td>Commercial</td><td>$184M</td><td>On time</td></tr><tr><td>Millrace Crossing</td><td>Civil</td><td>$96M</td><td>3 weeks early</td></tr><tr><td>Northgate Logistics Hub</td><td>Industrial</td><td>$58M</td><td>On time</td></tr><tr><td>Westfield Primary School</td><td>Education</td><td>$31M</td><td>Before term start</td></tr><tr><td>Riverside Parking Structure</td><td>Civic</td><td>$22M</td><td>On time</td></tr></tbody></table></figure><!-- /wp:table -->",
+   "template": "page-wide",
+   "menu_order": 1
+  },
+  {
+   "slug": "safety-record",
+   "title": "Safety record",
+   "excerpt": "Everyone goes home safe.",
+   "content": "<!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">Every person on our sites goes home in the same condition they arrived. That is not a slogan; it is the first item on every daily briefing.</p><!-- /wp:paragraph -->\n\n<!-- wp:image {\"id\":{{media_id:hardhat}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:hardhat}}\" alt=\"A yellow hard hat\" class=\"wp-image-{{media_id:hardhat}}\"/></figure><!-- /wp:image -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">How we work</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"className\":\"check-list\"} --><ul class=\"wp-block-list check-list\"><!-- wp:list-item --><li>A ten-minute toolbox talk at the start of every shift, led by the crew foreman.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Stop-work authority for every worker, with no questions asked afterwards.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Weekly site walks by a director, not just the safety team.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Near misses reported and shared across all sites within 24 hours.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Our record</h2><!-- /wp:heading -->\n\n<!-- wp:table {\"className\":\"spec-table\"} --><figure class=\"wp-block-table spec-table\"><table><thead><tr><th>Year</th><th>Hours worked</th><th>Lost-time incidents</th><th>Rate</th></tr></thead><tbody><tr><td>2026 (to date)</td><td>1,520,000</td><td>3</td><td>0.39</td></tr><tr><td>2025</td><td>1,880,000</td><td>4</td><td>0.42</td></tr><tr><td>2024</td><td>1,610,000</td><td>5</td><td>0.62</td></tr><tr><td>2023</td><td>1,450,000</td><td>6</td><td>0.83</td></tr></tbody></table></figure><!-- /wp:table -->",
+   "menu_order": 2
+  },
+  {
+   "slug": "about",
+   "title": "About Ironbeam",
+   "content": "<!-- wp:media-text {\"mediaId\":{{media_id:beams}},\"mediaType\":\"image\"} --><div class=\"wp-block-media-text is-stacked-on-mobile\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:beams}}\" alt=\"Steel beams\" class=\"wp-image-{{media_id:beams}} size-full\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Since 1988</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Ironbeam started as a two-truck steel erection crew. Today we are a general contractor with 420 employees, but we still self-perform the structure on most of our projects, because that is where schedules are won or lost.</p><!-- /wp:paragraph --></div></div><!-- /wp:media-text -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What we believe</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"className\":\"check-list\"} --><ul class=\"wp-block-list check-list\"><!-- wp:list-item --><li><strong>Safety first, always.</strong> No deadline is worth an injury.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Open books.</strong> Clients see the same cost reports we do.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Own the work.</strong> Our crews build the structure; we don't just manage subcontractors.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Finish clean.</strong> Handover includes a complete set of as-built drawings.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Build it as if your own family will work inside it.</p><!-- /wp:paragraph --><cite>Founding principle, painted on the wall of the yard</cite></blockquote><!-- /wp:quote -->",
+   "menu_order": 3
+  },
+  {
+   "slug": "careers",
+   "title": "Careers",
+   "excerpt": "Now hiring on three sites.",
+   "content": "<!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">We are hiring on three sites this season. If you take pride in doing the job properly, we would like to hear from you.</p><!-- /wp:paragraph -->\n\n<!-- wp:table {\"className\":\"spec-table\"} --><figure class=\"wp-block-table spec-table\"><table><thead><tr><th>Role</th><th>Location</th><th>Type</th></tr></thead><tbody><tr><td>Site superintendent</td><td>Harbour district</td><td>Full time</td></tr><tr><td>Project engineer</td><td>Head office</td><td>Full time</td></tr><tr><td>Ironworker apprentice</td><td>Northgate</td><td>Apprenticeship</td></tr><tr><td>Concrete finisher</td><td>Eastline</td><td>Full time</td></tr><tr><td>Safety coordinator</td><td>All sites</td><td>Full time</td></tr></tbody></table></figure><!-- /wp:table -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What you get</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"className\":\"check-list\"} --><ul class=\"wp-block-list check-list\"><!-- wp:list-item --><li>Union-scale wages or better</li><!-- /wp:list-item --><!-- wp:list-item --><li>Health, dental and pension from day one</li><!-- /wp:list-item --><!-- wp:list-item --><li>Paid training and certification</li><!-- /wp:list-item --><!-- wp:list-item --><li>Company vehicle for supervisors</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>Send a short note and your CV to <a href=\"mailto:jobs@ironbeam.example\">jobs@ironbeam.example</a>, or visit the site office at any of our projects.</p><!-- /wp:paragraph -->",
+   "parent": "about",
+   "menu_order": 4
+  },
+  {
+   "slug": "contact",
+   "title": "Request a bid",
+   "content": "<!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">Tell us about your project. A pre-construction manager will reply within two working days with next steps and, where possible, an early cost range.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Head office</h3><!-- /wp:heading --><!-- wp:paragraph --><p>400 Foundry Road<br>Northgate, NG4 2AB</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"tel:+15550134400\">+1 (555) 013-4400</a><br><a href=\"mailto:bids@ironbeam.example\">bids@ironbeam.example</a></p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Request a bid</h3><!-- /wp:heading --><!-- wp:list {\"className\":\"check-list\"} --><ul class=\"wp-block-list check-list\"><!-- wp:list-item --><li>Project location and site size</li><!-- /wp:list-item --><!-- wp:list-item --><li>Drawings or a brief, if you have them</li><!-- /wp:list-item --><!-- wp:list-item --><li>Target start and completion dates</li><!-- /wp:list-item --><!-- wp:list-item --><li>Budget range</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns -->",
+   "menu_order": 5
+  }
+ ],
+ "posts": [
+  {
+   "slug": "harbourline-tower-tops-out",
+   "title": "Harbourline Tower tops out at 28 storeys",
+   "date": "2026-10-20T07:30:00",
+   "categories": [
+    "commercial",
+    "company-news"
+   ],
+   "tags": [
+    "steel",
+    "milestone"
+   ],
+   "featured_media": "tower",
+   "excerpt": "The last beam went up on Friday, eleven days ahead of schedule. Here is what comes next on the harbour's newest office tower.",
+   "content": "<!-- wp:paragraph --><p>On Friday afternoon the final steel beam was lifted to the roof of Harbourline Tower, signed by every member of the crew. At 28 storeys and 112 metres, it is the tallest building our company has topped out, and we did it eleven days ahead of schedule.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">How we gained the time</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"className\":\"check-list\"} --><ul class=\"wp-block-list check-list\"><!-- wp:list-item --><li>Steel was pre-assembled into two-storey modules on the ground.</li><!-- /wp:list-item --><!-- wp:list-item --><li>A second tower crane joined in month four for the core walls.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Concrete decks were poured at night during the summer heat.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Eleven days early on the structure means eleven days of float for the façade and fit-out teams. That's where projects usually slip.</p><!-- /wp:paragraph --><cite>Site superintendent, Harbourline</cite></blockquote><!-- /wp:quote -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What happens next</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>The curtain wall is already on the lower twelve floors. Over the winter the building will be closed in, and interior fit-out starts in February. Tenants move in next autumn.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>Thank you to the 340 people who have worked on site so far, and to our neighbours for their patience with the early-morning deliveries.</p><!-- /wp:paragraph -->",
+   "sticky": true,
+   "format": "standard",
+   "comments": [
+    {
+     "author": "Lena F.",
+     "email": "lena@example.com",
+     "content": "Watched it go up from my office window every day. Congratulations to the crew!",
+     "date": "2026-10-21T09:12:00"
+    },
+    {
+     "author": "Owen T.",
+     "email": "owen@example.com",
+     "content": "The night pours were a smart call this summer.",
+     "date": "2026-10-22T18:30:00"
+    }
+   ]
+  },
+  {
+   "slug": "1000-days-without-lost-time",
+   "title": "1,000 days without a lost-time incident at Northgate",
+   "date": "2026-10-09T08:00:00",
+   "categories": [
+    "safety",
+    "industrial"
+   ],
+   "tags": [
+    "safety-culture"
+   ],
+   "featured_media": "hardhat",
+   "excerpt": "Our Northgate crews passed a milestone this month. The superintendent explains the habits behind it.",
+   "content": "<!-- wp:paragraph --><p>This month our Northgate team passed 1,000 consecutive days without a lost-time incident. Across a site that has moved 80,000 cubic metres of earth and erected 4,200 tonnes of steel, that is a record we are genuinely proud of.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Three habits that made the difference</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li><strong>Ten minutes every morning.</strong> The toolbox talk is never skipped, even on pour days.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Stop-work cards.</strong> Every worker carries one and uses it without fear.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Fix it today.</strong> Hazards reported in the morning are closed by the end of the shift.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>None of these ideas is new. What is different is that they are done every single day, by everyone, including the people in the site office.</p><!-- /wp:paragraph -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>The milestone belongs to the crew. My job was just to keep asking the question: what could hurt someone here today?</p><!-- /wp:paragraph --><cite>Northgate superintendent</cite></blockquote><!-- /wp:quote -->",
+   "sticky": false,
+   "format": "standard",
+   "comments": [
+    {
+     "author": "Ana R.",
+     "email": "ana@example.com",
+     "content": "Proud to be part of this crew.",
+     "date": "2026-10-10T06:45:00"
+    }
+   ]
+  },
+  {
+   "slug": "millrace-crossing-opens",
+   "title": "Millrace Crossing opens to traffic",
+   "date": "2026-09-26T10:00:00",
+   "categories": [
+    "infrastructure"
+   ],
+   "tags": [
+    "milestone",
+    "bridges"
+   ],
+   "featured_media": "bridge",
+   "excerpt": "The cable-stayed bridge opened three weeks early after two years of work over the river.",
+   "content": "<!-- wp:paragraph --><p>Millrace Crossing opened to traffic this week, three weeks ahead of the contract date. The 320-metre cable-stayed bridge replaces a 1960s crossing and adds a protected cycle lane and a wide footpath.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Project facts</h2><!-- /wp:heading -->\n\n<!-- wp:table {\"className\":\"spec-table\"} --><figure class=\"wp-block-table spec-table\"><table><thead><tr><th>Item</th><th>Figure</th></tr></thead><tbody><tr><td>Main span</td><td>180 m</td></tr><tr><td>Stay cables</td><td>48</td></tr><tr><td>Concrete</td><td>21,000 m³</td></tr><tr><td>Steel</td><td>3,600 t</td></tr><tr><td>Peak workforce</td><td>190</td></tr></tbody></table></figure><!-- /wp:table -->\n\n<!-- wp:paragraph --><p>The towers were slip-formed in continuous pours, and the deck segments were cast on the riverbank and lifted into place, which kept most of the work out of the water during the fish migration season.</p><!-- /wp:paragraph -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Keeping the work out of the water was the hardest constraint and the best decision we made.</p><!-- /wp:paragraph --><cite>Bridge project manager</cite></blockquote><!-- /wp:quote -->\n\n<!-- wp:paragraph --><p>Our thanks to the city's engineers, the river authority and the residents of the east bank.</p><!-- /wp:paragraph -->",
+   "sticky": false,
+   "format": "standard",
+   "comments": []
+  },
+  {
+   "slug": "design-build-school-in-14-months",
+   "title": "Designing and building a school in fourteen months",
+   "date": "2026-09-12T09:00:00",
+   "categories": [
+    "commercial"
+   ],
+   "tags": [
+    "design-build"
+   ],
+   "featured_media": "school",
+   "excerpt": "How the design-build route let Westfield Primary open before the new school year.",
+   "content": "<!-- wp:paragraph --><p>When Westfield's old primary school failed its structural survey, the district had fourteen months to replace it before the new school year. A traditional design-bid-build process would have taken that long just to reach the start of construction.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Why design-build worked</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"className\":\"check-list\"} --><ul class=\"wp-block-list check-list\"><!-- wp:list-item --><li>The architect, engineer and builder sat at one table from week one.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Steel was ordered while the interior layout was still being finalised.</li><!-- /wp:list-item --><!-- wp:list-item --><li>The district made decisions in weekly two-hour workshops, not monthly meetings.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:image {\"id\":{{media_id:blueprint}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:blueprint}}\" alt=\"A blueprint floor plan\" class=\"wp-image-{{media_id:blueprint}}\"/><figcaption class=\"wp-element-caption\">The first floor plan, sketched in week two and largely unchanged.</figcaption></figure><!-- /wp:image -->\n\n<!-- wp:paragraph --><p>The school opened on schedule, under budget, with a gym that doubles as a community hall in the evenings.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>Design-build is not right for every project, but when time is the hardest constraint, it is usually the fastest honest route.</p><!-- /wp:paragraph -->",
+   "sticky": false,
+   "format": "standard",
+   "comments": []
+  },
+  {
+   "slug": "post-tensioned-slabs-explained",
+   "title": "Post-tensioned slabs, explained for owners",
+   "date": "2026-08-30T08:15:00",
+   "categories": [
+    "industrial"
+   ],
+   "tags": [
+    "concrete"
+   ],
+   "featured_media": "pour",
+   "excerpt": "Thinner floors, longer spans and fewer columns. A plain-language guide to the technique we use in most parking structures.",
+   "content": "<!-- wp:paragraph --><p>Post-tensioned concrete sounds technical, but the idea is simple: steel tendons inside the slab are pulled tight after the concrete hardens, squeezing it so it can span further without cracking.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What owners gain</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Thinner slabs, which means lower building height or more floors.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Longer spans and fewer columns, which makes better parking layouts.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Less reinforcing steel overall.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What to watch</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Never core or drill a post-tensioned slab without scanning it first. Cutting a tendon is dangerous and expensive. We hand every owner a tendon map with the as-built drawings.</p><!-- /wp:paragraph -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>It's the most efficient floor we build, as long as everyone respects the cables inside it.</p><!-- /wp:paragraph --><cite>Structural engineer</cite></blockquote><!-- /wp:quote -->",
+   "sticky": false,
+   "format": "standard",
+   "comments": []
+  },
+  {
+   "slug": "apprentice-class-of-2026",
+   "title": "Meet our apprentice class of 2026",
+   "date": "2026-08-14T12:00:00",
+   "categories": [
+    "company-news"
+   ],
+   "tags": [
+    "careers"
+   ],
+   "featured_media": "careers",
+   "excerpt": "Twenty-two new apprentices joined our crews this summer. Four of them tell us why they chose the trades.",
+   "content": "<!-- wp:paragraph --><p>Twenty-two apprentices joined Ironbeam this summer, our largest intake yet. They will spend the next four years rotating between ironwork, carpentry and concrete, with one day a week at the technical college.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Why the trades?</h2><!-- /wp:heading -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>I wanted to see something I'd built when I drove home.</p><!-- /wp:paragraph --><cite>First-year ironworker</cite></blockquote><!-- /wp:quote -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>No student debt, and I'm paid while I learn.</p><!-- /wp:paragraph --><cite>First-year carpenter</cite></blockquote><!-- /wp:quote -->\n\n<!-- wp:paragraph --><p>Applications for the 2027 class open in February. If you know someone who would be a good fit, send them to our careers page.</p><!-- /wp:paragraph -->",
+   "sticky": false,
+   "format": "standard",
+   "comments": [
+    {
+     "author": "Mia D.",
+     "email": "mia@example.com",
+     "content": "My son is in this class and loves it already.",
+     "date": "2026-08-16T20:01:00"
+    }
+   ]
+  },
+  {
+   "slug": "northgate-hub-steel-complete",
+   "title": "Northgate Logistics Hub: steel complete",
+   "date": "2026-07-28T07:00:00",
+   "categories": [
+    "industrial"
+   ],
+   "tags": [
+    "steel",
+    "milestone"
+   ],
+   "featured_media": "warehouse",
+   "excerpt": "The last of 4,200 tonnes of steel is up at the region's largest distribution centre.",
+   "content": "<!-- wp:paragraph --><p>The structural steel for the Northgate Logistics Hub is complete. The 42,000-square-metre building now has its full sawtooth roof frame, and roofing crews are working along the north lights.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Next steps</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Roof cladding and north lights through August.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Slab-on-grade pours in nine sections.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Dock doors and levellers in October.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>The client will start racking installation in December, ahead of an opening in the new year.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>The sawtooth north lights mean the floor will need artificial light for only a few hours on winter afternoons, cutting the building's energy use by a third.</p><!-- /wp:paragraph -->",
+   "sticky": false,
+   "format": "standard",
+   "comments": []
+  },
+  {
+   "slug": "night-work-and-neighbours",
+   "title": "Night work and neighbours: how we keep the peace",
+   "date": "2026-07-10T09:30:00",
+   "categories": [
+    "safety",
+    "company-news"
+   ],
+   "tags": [
+    "community"
+   ],
+   "featured_media": "excavator",
+   "excerpt": "Building in a city means working around people's lives. These are the commitments we make to every neighbourhood.",
+   "content": "<!-- wp:paragraph --><p>Most of our projects are surrounded by homes, schools and businesses. Building there is a privilege, and it comes with obligations to the people who live next door.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Our neighbourhood commitments</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"className\":\"check-list\"} --><ul class=\"wp-block-list check-list\"><!-- wp:list-item --><li>A named community liaison with a phone number on the hoarding.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Two weeks' notice of any night work or road closures.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Noise and dust monitors with public readings.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Clean streets at the end of every shift.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>If something on one of our sites is bothering you, call the number on the fence. We would rather hear about it today than read about it next week.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>Last year our liaison team answered 412 calls across five sites, and closed nine out of ten within a day.</p><!-- /wp:paragraph -->",
+   "sticky": false,
+   "format": "standard",
+   "comments": []
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Home",
+     "page": "home"
+    },
+    {
+     "title": "Projects",
+     "page": "projects",
+     "children": [
+      {
+       "title": "Commercial",
+       "category": "commercial"
+      },
+      {
+       "title": "Industrial",
+       "category": "industrial"
+      },
+      {
+       "title": "Infrastructure",
+       "category": "infrastructure"
+      }
+     ]
+    },
+    {
+     "title": "Safety",
+     "page": "safety-record"
+    },
+    {
+     "title": "About",
+     "page": "about",
+     "children": [
+      {
+       "title": "Careers",
+       "page": "careers"
+      }
+     ]
+    },
+    {
+     "title": "Updates",
+     "page": "updates"
+    }
+   ]
+  },
+  {
+   "name": "Footer menu",
+   "location": "footer",
+   "items": [
+    {
+     "title": "Projects",
+     "page": "projects"
+    },
+    {
+     "title": "Safety",
+     "page": "safety-record"
+    },
+    {
+     "title": "Careers",
+     "page": "careers"
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "sidebar-1": [
+   "<!-- wp:search {\"label\":\"Search updates\",\"buttonText\":\"Search\",\"placeholder\":\"Search updates…\"} /-->",
+   "<!-- wp:group {\"className\":\"bid-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group bid-card\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Request a bid</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Send us your drawings or a short brief. We reply within two working days.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Start a request</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Sectors</h2><!-- /wp:heading --><!-- wp:categories {\"showPostCounts\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Latest updates</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":4,\"displayPostDate\":true} /--></div><!-- /wp:group -->"
+  ],
+  "footer-1": [
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Head office</h2><!-- /wp:heading --><!-- wp:paragraph --><p>400 Foundry Road<br>Northgate, NG4 2AB<br><a href=\"tel:+15550134400\">+1 (555) 013-4400</a></p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Services</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>General contracting</li><!-- /wp:list-item --><!-- wp:list-item --><li>Design-build</li><!-- /wp:list-item --><!-- wp:list-item --><li>Steel &amp; concrete</li><!-- /wp:list-item --><!-- wp:list-item --><li>Civil &amp; infrastructure</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Careers</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Apprenticeships open every February. <a href=\"{{page:careers}}\">See open roles</a>.</p><!-- /wp:paragraph --></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "hero_image": "hero",
+  "hero_heading": "We build what cities run on",
+  "hero_text": "Offices, schools, bridges and logistics hubs, delivered by our own crews with open-book costs and a safety record we publish every month.",
+  "hero_kicker": "General contractor · Design-build",
+  "hero_button_label": "See our projects",
+  "hero_button_url": "#projects",
+  "cta_label": "Request a bid",
+  "cta_url": "{{page:contact}}",
+  "safety_days": 1284,
+  "header_style": "dark",
+  "blog_layout": "grid"
+ }
+}

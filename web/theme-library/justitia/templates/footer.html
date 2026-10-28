@@ -1,0 +1,33 @@
+	{{with theme_mod . "consult_heading"}}<section class="consult-band" aria-label="Free consultation">
+		<div class="wrap consult-band__inner">
+			<div>
+				<p class="kicker kicker--gold">Free consultation</p>
+				<h2 class="consult-band__title">{{.}}</h2>
+			</div>
+			<div class="consult-band__actions">
+				{{with theme_mod $ "phone"}}<a class="consult-band__phone" href="tel:{{.}}">{{.}}</a>{{end}}
+				{{with theme_mod $ "cta_label"}}<a class="button button--gold" href="{{theme_mod $ "cta_url"}}">{{.}}</a>{{end}}
+			</div>
+		</div>
+	</section>{{end}}
+	<footer id="colophon" class="site-footer">
+		<div class="wrap site-footer__grid">
+			<div class="footer-brand">
+				<p class="footer-brand__name"><span class="site-mark" aria-hidden="true"><svg viewBox="0 0 40 40" width="40" height="40" focusable="false"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6v27M11 33h18M8 12h24M20 6l-1.5 2.5h3z"/><path d="M8 12l-5 10h10zM32 12l-5 10h10z"/><path d="M3 22a5 3 0 0 0 10 0M27 22a5 3 0 0 0 10 0"/></g></svg></span>{{.SiteName}}</p>
+				{{with .Description}}<p class="footer-brand__text">{{.}}</p>{{end}}
+			</div>
+			{{if is_active_sidebar . "footer-1"}}<div class="footer-widgets">
+				{{dynamic_sidebar . "footer-1"}}
+			</div>{{end}}
+		</div>
+		{{with theme_mod . "disclaimer"}}<div class="wrap footer-disclaimer"><p>{{.}}</p></div>{{end}}
+		<div class="wrap site-info">
+			{{if has_nav_menu . "footer"}}<nav class="footer-navigation" aria-label="Footer menu">{{nav_menu . "footer"}}</nav>{{end}}
+			<p class="site-info__text">{{.PrivacyLink}}<span>{{with theme_mod . "footer_text"}}{{.}}{{else}}&copy; {{$.SiteName}}. All rights reserved.{{end}}</span><span class="site-info__credit">Powered by <a href="https://github.com/boracomet/wordpress-go">WordPress Go</a></span></p>
+		</div>
+	</footer><!-- #colophon -->
+</div><!-- #page -->
+
+{{.Footer}}{{.AdminBar}}
+</body>
+</html>

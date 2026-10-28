@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>{{.DocumentTitle}}</title>
+{{.Head}}</head>
+
+<body class="{{.BodyClass}}">
+{{.BodyOpen}}<div id="page" class="site">
+	<a class="skip-link screen-reader-text" href="#main">Skip to content</a>
+	{{with theme_mod . "deadline_banner"}}<div class="deadline-banner">
+		<div class="wrap deadline-banner__inner">
+			<span class="deadline-banner__icon" aria-hidden="true"></span>
+			<p>{{.}}</p>
+			{{with theme_mod $ "deadline_url"}}<a href="{{.}}">See all deadlines <span aria-hidden="true">&rarr;</span></a>{{end}}
+		</div>
+	</div>{{end}}
+	<header id="masthead" class="site-header">
+		<div class="wrap site-header__inner">
+			<div class="site-branding">
+				{{with .CustomLogo}}<div class="site-logo">{{.}}</div>{{else}}<span class="site-mark" aria-hidden="true"><svg viewBox="0 0 40 40" width="40" height="40" focusable="false"><rect x="2" y="2" width="36" height="36" rx="10" fill="currentColor"/><path d="M12 27V19M18 27V13M24 27v-6M30 27V10" stroke="#fff" stroke-width="3.2" stroke-linecap="round"/></svg></span>{{end}}
+				<div class="site-branding__text">
+					{{if .TitleIsH1}}<h1 class="site-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></h1>{{else}}<p class="site-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></p>{{end}}
+					{{with .Description}}<p class="site-description">{{.}}</p>{{end}}
+				</div>
+			</div><!-- .site-branding -->
+			{{if has_nav_menu . "primary"}}<nav id="site-navigation" class="main-navigation" aria-label="Primary menu">
+				<button type="button" class="menu-toggle" aria-controls="primary-menu-wrap" aria-expanded="false"><span class="menu-toggle__bars" aria-hidden="true"><span></span></span><span class="menu-toggle__label">Menu</span></button>
+				<div id="primary-menu-wrap" class="primary-menu-wrap">
+					{{nav_menu . "primary"}}
+					{{with theme_mod . "cta_label"}}<a class="button header-cta" href="{{theme_mod $ "cta_url"}}">{{.}}</a>{{end}}
+				</div>
+			</nav><!-- #site-navigation -->{{else}}{{with theme_mod . "cta_label"}}<a class="button header-cta header-cta--solo" href="{{theme_mod $ "cta_url"}}">{{.}}</a>{{end}}{{end}}
+		</div>
+	</header><!-- #masthead -->

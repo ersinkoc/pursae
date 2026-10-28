@@ -1,0 +1,447 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Bright Smile Dental",
+  "blogdescription": "Family & cosmetic dentistry in Brightwater"
+ },
+ "categories": [
+  {
+   "slug": "everyday-care",
+   "name": "Everyday care",
+   "description": "Brushing, flossing and healthy habits."
+  },
+  {
+   "slug": "kids",
+   "name": "Kids",
+   "description": "Happy teeth from the very first tooth."
+  },
+  {
+   "slug": "orthodontics",
+   "name": "Orthodontics",
+   "description": "Aligners, braces and straighter smiles."
+  },
+  {
+   "slug": "cosmetic",
+   "name": "Cosmetic",
+   "description": "Whitening, crowns and smile makeovers."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "brushing",
+   "name": "Brushing"
+  },
+  {
+   "slug": "habits",
+   "name": "Habits"
+  },
+  {
+   "slug": "children",
+   "name": "Children"
+  },
+  {
+   "slug": "first-visit",
+   "name": "First visit"
+  },
+  {
+   "slug": "flossing",
+   "name": "Flossing"
+  },
+  {
+   "slug": "aligners",
+   "name": "Aligners"
+  },
+  {
+   "slug": "nutrition",
+   "name": "Nutrition"
+  },
+  {
+   "slug": "whitening",
+   "name": "Whitening"
+  },
+  {
+   "slug": "emergencies",
+   "name": "Emergencies"
+  }
+ ],
+ "media": [
+  {
+   "id": "hero",
+   "file": "demo/images/hero.jpg",
+   "alt": "A cheerful aqua illustration with a toothbrush, bubbles and a coral smile curve",
+   "caption": ""
+  },
+  {
+   "id": "before",
+   "file": "demo/images/before.jpg",
+   "alt": "Illustration of uneven, stained teeth before treatment",
+   "caption": ""
+  },
+  {
+   "id": "after",
+   "file": "demo/images/after.jpg",
+   "alt": "Illustration of white, even teeth after treatment, with sparkles",
+   "caption": ""
+  },
+  {
+   "id": "toothbrush",
+   "file": "demo/images/toothbrush.jpg",
+   "alt": "An aqua toothbrush and a tube of toothpaste on a sunny yellow background",
+   "caption": ""
+  },
+  {
+   "id": "floss",
+   "file": "demo/images/floss.jpg",
+   "alt": "A ribbon of dental floss curving out of its case",
+   "caption": ""
+  },
+  {
+   "id": "kids",
+   "file": "demo/images/kids.jpg",
+   "alt": "A friendly smiling tooth character surrounded by colourful bubbles",
+   "caption": ""
+  },
+  {
+   "id": "aligner",
+   "file": "demo/images/aligner.jpg",
+   "alt": "A clear aligner tray on an aqua background",
+   "caption": ""
+  },
+  {
+   "id": "clinic",
+   "file": "demo/images/clinic.jpg",
+   "alt": "A bright treatment room with an aqua dental chair and a lamp",
+   "caption": ""
+  },
+  {
+   "id": "snacks",
+   "file": "demo/images/snacks.jpg",
+   "alt": "A red apple and a glass of water",
+   "caption": ""
+  },
+  {
+   "id": "team-1",
+   "file": "demo/images/team-1.jpg",
+   "alt": "Illustrated portrait of a dentist in a white coat",
+   "caption": ""
+  },
+  {
+   "id": "team-2",
+   "file": "demo/images/team-2.jpg",
+   "alt": "Illustrated portrait of an orthodontist in a white coat",
+   "caption": ""
+  },
+  {
+   "id": "team-3",
+   "file": "demo/images/team-3.jpg",
+   "alt": "Illustrated portrait of a dental hygienist in a white coat",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Gentle dentistry for the whole family",
+   "content": "<!-- wp:group {\"anchor\":\"treatments\",\"align\":\"full\",\"layout\":{\"type\":\"constrained\"}} --><div id=\"treatments\" class=\"wp-block-group alignfull\"><!-- wp:paragraph {\"className\":\"kicker\",\"align\":\"center\"} --><p class=\"has-text-align-center kicker\">Treatments</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\",\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center section-title\">Everything your smile needs, under one roof</h2><!-- /wp:heading --><!-- wp:paragraph {\"align\":\"center\"} --><p class=\"has-text-align-center\">From a child's first check-up to a full smile makeover, our team takes care of the whole family.</p><!-- /wp:paragraph --><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"treat-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group treat-card\"><!-- wp:paragraph {\"className\":\"treat-icon\"} --><p class=\"treat-icon\">✓</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Check-ups &amp; cleaning</h3><!-- /wp:heading --><!-- wp:paragraph --><p>A gentle exam, a polish and an honest chat about your teeth, every six months.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{category:everyday-care}}\">Learn more &rarr;</a></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"treat-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group treat-card\"><!-- wp:paragraph {\"className\":\"treat-icon treat-icon--coral\"} --><p class=\"treat-icon treat-icon--coral\">★</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Whitening</h3><!-- /wp:heading --><!-- wp:paragraph --><p>In-clinic or take-home whitening that brightens safely, without the sensitivity.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{category:cosmetic}}\">Learn more &rarr;</a></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"treat-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group treat-card\"><!-- wp:paragraph {\"className\":\"treat-icon treat-icon--sunny\"} --><p class=\"treat-icon treat-icon--sunny\">◡</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Clear aligners</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Straighter teeth with nearly invisible trays and check-ins every eight weeks.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{category:orthodontics}}\">Learn more &rarr;</a></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"treat-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group treat-card\"><!-- wp:paragraph {\"className\":\"treat-icon\"} --><p class=\"treat-icon\">♥</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Kids' dentistry</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Happy first visits, sealants and lots of high fives. Children under 5 see us free.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{category:kids}}\">Learn more &rarr;</a></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"treat-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group treat-card\"><!-- wp:paragraph {\"className\":\"treat-icon treat-icon--coral\"} --><p class=\"treat-icon treat-icon--coral\">+</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Implants &amp; crowns</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Natural-looking replacements for missing or broken teeth, planned in 3D.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{category:cosmetic}}\">Learn more &rarr;</a></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"treat-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group treat-card\"><!-- wp:paragraph {\"className\":\"treat-icon treat-icon--sunny\"} --><p class=\"treat-icon treat-icon--sunny\">!</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Emergencies</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Toothache or a chipped tooth? We keep same-day slots open every morning.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{category:everyday-care}}\">Learn more &rarr;</a></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"section-foam\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-foam\"><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column {\"width\":\"36%\"} --><div class=\"wp-block-column\" style=\"flex-basis:36%\"><!-- wp:paragraph {\"className\":\"kicker\"} --><p class=\"kicker\">Real results</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">Before &amp; after</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Six months of clear aligners and one whitening session. Our patient said it was the first time in years she smiled in photos.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:treatments}}\">See treatments</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:column --><!-- wp:column {\"width\":\"64%\"} --><div class=\"wp-block-column\" style=\"flex-basis:64%\"><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column {\"className\":\"before-after\"} --><div class=\"wp-block-column before-after\"><!-- wp:image {\"id\":{{media_id:before}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:before}}\" alt=\"Teeth before treatment\" class=\"wp-image-{{media_id:before}}\"/><figcaption class=\"wp-element-caption\">Before</figcaption></figure><!-- /wp:image --></div><!-- /wp:column --><!-- wp:column {\"className\":\"before-after\"} --><div class=\"wp-block-column before-after\"><!-- wp:image {\"id\":{{media_id:after}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:after}}\" alt=\"Teeth after treatment\" class=\"wp-image-{{media_id:after}}\"/><figcaption class=\"wp-element-caption\">After</figcaption></figure><!-- /wp:image --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull\"><!-- wp:paragraph {\"className\":\"kicker\",\"align\":\"center\"} --><p class=\"has-text-align-center kicker\">Meet the team</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\",\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center section-title\">Friendly faces, gentle hands</h2><!-- /wp:heading --><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column {\"className\":\"team-member\"} --><div class=\"wp-block-column team-member\"><!-- wp:image {\"id\":{{media_id:team-1}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:team-1}}\" alt=\"Illustrated portrait of Dr. Aria Holloway\" class=\"wp-image-{{media_id:team-1}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Dr. Aria Holloway</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"team-role\"} --><p class=\"team-role\">Lead dentist</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Fifteen years of family dentistry and a famously steady hand.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column {\"className\":\"team-member\"} --><div class=\"wp-block-column team-member\"><!-- wp:image {\"id\":{{media_id:team-2}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:team-2}}\" alt=\"Illustrated portrait of Dr. Kenji Marlowe\" class=\"wp-image-{{media_id:team-2}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Dr. Kenji Marlowe</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"team-role\"} --><p class=\"team-role\">Orthodontist</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Plans every aligner case in 3D and explains it with a model.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column {\"className\":\"team-member\"} --><div class=\"wp-block-column team-member\"><!-- wp:image {\"id\":{{media_id:team-3}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:team-3}}\" alt=\"Illustrated portrait of Sofia Ruiz-Ellery\" class=\"wp-image-{{media_id:team-3}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Sofia Ruiz-Ellery</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"team-role\"} --><p class=\"team-role\">Dental hygienist</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Makes cleanings relaxing, and remembers every patient's dog's name.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"section-foam\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-foam\"><!-- wp:paragraph {\"className\":\"kicker\",\"align\":\"center\"} --><p class=\"has-text-align-center kicker\">Happy patients</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\",\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center section-title\">What families say</h2><!-- /wp:heading --><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"review\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group review\"><!-- wp:paragraph {\"className\":\"stars\"} --><p class=\"stars\">★★★★★</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>My son used to cry at the dentist. Now he asks when we're going back to see Sofia.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"reviewer\"} --><p class=\"reviewer\">Parent of a 6-year-old</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"review\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group review\"><!-- wp:paragraph {\"className\":\"stars\"} --><p class=\"stars\">★★★★★</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The aligners were easier than I expected and Dr. Marlowe explained every step.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"reviewer\"} --><p class=\"reviewer\">Aligner patient</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"review\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group review\"><!-- wp:paragraph {\"className\":\"stars\"} --><p class=\"stars\">★★★★★</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Called at 8 with a cracked tooth, was fixed by 11. Lovely, calm team.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"reviewer\"} --><p class=\"reviewer\">Emergency patient</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull\"><!-- wp:paragraph {\"className\":\"kicker\",\"align\":\"center\"} --><p class=\"has-text-align-center kicker\">Smile tips</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\",\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center section-title\">Oral-care articles</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":3,\"displayPostDate\":true,\"postLayout\":\"grid\",\"columns\":3,\"displayPostContent\":true,\"excerptLength\":22} /--></div><!-- /wp:group -->",
+   "featured_media": "kids",
+   "front_page": true
+  },
+  {
+   "slug": "smile-tips",
+   "title": "Smile tips",
+   "content": "",
+   "posts_page": true
+  },
+  {
+   "slug": "treatments",
+   "title": "Treatments",
+   "excerpt": "Prices, options and real results.",
+   "content": "<!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">All our treatments start with a conversation. We explain what we see, what we recommend and what it costs, and you decide.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"treat-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group treat-card\"><!-- wp:paragraph {\"className\":\"treat-icon\"} --><p class=\"treat-icon\">✓</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Check-ups &amp; cleaning</h3><!-- /wp:heading --><!-- wp:paragraph --><p>A gentle exam, a polish and an honest chat about your teeth, every six months.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{category:everyday-care}}\">Learn more &rarr;</a></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"treat-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group treat-card\"><!-- wp:paragraph {\"className\":\"treat-icon treat-icon--coral\"} --><p class=\"treat-icon treat-icon--coral\">★</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Whitening</h3><!-- /wp:heading --><!-- wp:paragraph --><p>In-clinic or take-home whitening that brightens safely, without the sensitivity.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{category:cosmetic}}\">Learn more &rarr;</a></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"treat-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group treat-card\"><!-- wp:paragraph {\"className\":\"treat-icon treat-icon--sunny\"} --><p class=\"treat-icon treat-icon--sunny\">◡</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Clear aligners</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Straighter teeth with nearly invisible trays and check-ins every eight weeks.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{category:orthodontics}}\">Learn more &rarr;</a></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"treat-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group treat-card\"><!-- wp:paragraph {\"className\":\"treat-icon\"} --><p class=\"treat-icon\">♥</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Kids' dentistry</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Happy first visits, sealants and lots of high fives. Children under 5 see us free.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{category:kids}}\">Learn more &rarr;</a></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"treat-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group treat-card\"><!-- wp:paragraph {\"className\":\"treat-icon treat-icon--coral\"} --><p class=\"treat-icon treat-icon--coral\">+</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Implants &amp; crowns</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Natural-looking replacements for missing or broken teeth, planned in 3D.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{category:cosmetic}}\">Learn more &rarr;</a></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"treat-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group treat-card\"><!-- wp:paragraph {\"className\":\"treat-icon treat-icon--sunny\"} --><p class=\"treat-icon treat-icon--sunny\">!</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Emergencies</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Toothache or a chipped tooth? We keep same-day slots open every morning.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{category:everyday-care}}\">Learn more &rarr;</a></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Prices at a glance</h2><!-- /wp:heading -->\n\n<!-- wp:table {\"className\":\"is-style-left\"} --><figure class=\"wp-block-table is-style-left\"><table><thead><tr><th>Treatment</th><th>From</th><th>Good to know</th></tr></thead><tbody><tr><td>Check-up and cleaning</td><td>$85</td><td>Covered by most insurance plans</td></tr><tr><td>Children's check-up</td><td>Free under 5</td><td>$45 for ages 5–12</td></tr><tr><td>Whitening (take-home)</td><td>$290</td><td>Custom trays included</td></tr><tr><td>Clear aligners</td><td>$2,900</td><td>Payment plans from $120/month</td></tr><tr><td>Emergency visit</td><td>$95</td><td>Same-day slots every morning</td></tr></tbody></table></figure><!-- /wp:table -->\n\n<!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column {\"className\":\"before-after\"} --><div class=\"wp-block-column before-after\"><!-- wp:image {\"id\":{{media_id:before}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:before}}\" alt=\"Teeth before treatment\" class=\"wp-image-{{media_id:before}}\"/><figcaption class=\"wp-element-caption\">Before</figcaption></figure><!-- /wp:image --></div><!-- /wp:column --><!-- wp:column {\"className\":\"before-after\"} --><div class=\"wp-block-column before-after\"><!-- wp:image {\"id\":{{media_id:after}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:after}}\" alt=\"Teeth after treatment\" class=\"wp-image-{{media_id:after}}\"/><figcaption class=\"wp-element-caption\">After</figcaption></figure><!-- /wp:image --></div><!-- /wp:column --></div><!-- /wp:columns -->",
+   "template": "page-wide",
+   "menu_order": 1
+  },
+  {
+   "slug": "team",
+   "title": "Meet the team",
+   "content": "<!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">Seven people, one goal: that you leave with a healthier smile than you arrived with, and without any fear of coming back.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column {\"className\":\"team-member\"} --><div class=\"wp-block-column team-member\"><!-- wp:image {\"id\":{{media_id:team-1}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:team-1}}\" alt=\"Illustrated portrait of Dr. Aria Holloway\" class=\"wp-image-{{media_id:team-1}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Dr. Aria Holloway</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"team-role\"} --><p class=\"team-role\">Lead dentist</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Fifteen years of family dentistry and a famously steady hand.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column {\"className\":\"team-member\"} --><div class=\"wp-block-column team-member\"><!-- wp:image {\"id\":{{media_id:team-2}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:team-2}}\" alt=\"Illustrated portrait of Dr. Kenji Marlowe\" class=\"wp-image-{{media_id:team-2}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Dr. Kenji Marlowe</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"team-role\"} --><p class=\"team-role\">Orthodontist</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Plans every aligner case in 3D and explains it with a model.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column {\"className\":\"team-member\"} --><div class=\"wp-block-column team-member\"><!-- wp:image {\"id\":{{media_id:team-3}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:team-3}}\" alt=\"Illustrated portrait of Sofia Ruiz-Ellery\" class=\"wp-image-{{media_id:team-3}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Sofia Ruiz-Ellery</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"team-role\"} --><p class=\"team-role\">Dental hygienist</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Makes cleanings relaxing, and remembers every patient's dog's name.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Our promise</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"className\":\"fun-list\"} --><ul class=\"wp-block-list fun-list\"><!-- wp:list-item --><li>We never rush a nervous patient.</li><!-- /wp:list-item --><!-- wp:list-item --><li>We always explain before we start.</li><!-- /wp:list-item --><!-- wp:list-item --><li>We give you a written estimate before any treatment.</li><!-- /wp:list-item --><!-- wp:list-item --><li>We say so when something can wait.</li><!-- /wp:list-item --></ul><!-- /wp:list -->",
+   "template": "page-wide",
+   "menu_order": 2
+  },
+  {
+   "slug": "about",
+   "title": "About the clinic",
+   "content": "<!-- wp:image {\"id\":{{media_id:clinic}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:clinic}}\" alt=\"The bright treatment room\" class=\"wp-image-{{media_id:clinic}}\"/><figcaption class=\"wp-element-caption\">Our treatment rooms have ceiling screens, so you can watch something calm while we work.</figcaption></figure><!-- /wp:image -->\n\n<!-- wp:paragraph --><p>Bright Smile opened in 2014 with one chair and a simple idea: a dental visit should feel like visiting friends who happen to be very good at teeth.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>Today we have four treatment rooms, a kids' corner with books and a fish tank, and a team of seven who genuinely love what they do.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Why families choose us</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"className\":\"fun-list\"} --><ul class=\"wp-block-list fun-list\"><!-- wp:list-item --><li>Evening and Saturday appointments</li><!-- /wp:list-item --><!-- wp:list-item --><li>Gentle, explained treatment for nervous patients</li><!-- /wp:list-item --><!-- wp:list-item --><li>Free check-ups for children under five</li><!-- /wp:list-item --><!-- wp:list-item --><li>Same-day emergency slots</li><!-- /wp:list-item --></ul><!-- /wp:list -->",
+   "menu_order": 3
+  },
+  {
+   "slug": "book",
+   "title": "Book a visit",
+   "excerpt": "New patients always welcome.",
+   "content": "<!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">New patients are always welcome. Call us, or send a message with a few times that suit you and we will confirm the same day.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Call or visit</h3><!-- /wp:heading --><!-- wp:paragraph --><p><a href=\"tel:+15550173300\">+1 (555) 017-3300</a><br>27 Seaside Parade, Brightwater</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Mon–Fri 8:00–19:00<br>Sat 9:00–14:00</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Your first visit</h3><!-- /wp:heading --><!-- wp:list {\"className\":\"fun-list\"} --><ul class=\"wp-block-list fun-list\"><!-- wp:list-item --><li>Arrive ten minutes early to fill in a short health form</li><!-- /wp:list-item --><!-- wp:list-item --><li>Bring any previous X-rays and your insurance card</li><!-- /wp:list-item --><!-- wp:list-item --><li>Kids can bring a favourite toy for the chair</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:group {\"className\":\"tip-bubble\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group tip-bubble\"><!-- wp:paragraph --><p><strong>Toothache right now?</strong> Call before 10 am and we will see you today.</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "menu_order": 4
+  }
+ ],
+ "posts": [
+  {
+   "slug": "how-to-brush-properly",
+   "title": "Are you brushing right? A two-minute guide",
+   "date": "2026-10-23T09:00:00",
+   "categories": [
+    "everyday-care"
+   ],
+   "tags": [
+    "brushing",
+    "habits"
+   ],
+   "featured_media": "toothbrush",
+   "excerpt": "Most of us brush every day, but few of us brush well. Here is the technique our hygienists teach.",
+   "content": "<!-- wp:paragraph --><p>You have probably brushed your teeth more than ten thousand times. Even so, our hygienists see the same missed spots every day: the gum line, the backs of the front teeth and the last molar on each side.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">The two-minute routine</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Hold the brush at a 45° angle to the gum line.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Use small, gentle circles, not hard scrubbing.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Spend 30 seconds on each quarter of your mouth.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Finish with the tongue to freshen your breath.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:group {\"className\":\"tip-bubble\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group tip-bubble\"><!-- wp:paragraph --><p><strong>Tip:</strong> brush before breakfast, or wait 30 minutes after eating. Acidic food softens enamel for a while.</p><!-- /wp:paragraph --></div><!-- /wp:group -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Manual or electric?</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Both work when used properly. An electric brush with a two-minute timer helps many people brush longer and more gently, which is why we often recommend one.</p><!-- /wp:paragraph -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Pressing harder does not clean better. A soft brush and patience beat a hard brush every time.</p><!-- /wp:paragraph --><cite>Sofia, dental hygienist</cite></blockquote><!-- /wp:quote -->",
+   "sticky": true,
+   "format": "standard",
+   "comments": [
+    {
+     "author": "Hannah W.",
+     "email": "hannah@example.com",
+     "content": "I didn't know about waiting after breakfast! Changing my routine today.",
+     "date": "2026-10-24T08:30:00"
+    },
+    {
+     "author": "Leo P.",
+     "email": "leo@example.com",
+     "content": "My kids love the 30-seconds-per-corner game.",
+     "date": "2026-10-25T19:10:00"
+    }
+   ]
+  },
+  {
+   "slug": "first-dental-visit-for-kids",
+   "title": "Your child's first dental visit: what to expect",
+   "date": "2026-10-12T10:00:00",
+   "categories": [
+    "kids"
+   ],
+   "tags": [
+    "children",
+    "first-visit"
+   ],
+   "featured_media": "kids",
+   "excerpt": "Book it by the first birthday. Here is how to make it fun, short and tear-free.",
+   "content": "<!-- wp:paragraph --><p>We recommend a first visit by your child's first birthday, or when the first tooth appears. It is short, playful and mostly about getting to know us.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Before the visit</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"className\":\"fun-list\"} --><ul class=\"wp-block-list fun-list\"><!-- wp:list-item --><li>Read a picture book about the dentist together.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Play dentist at home with a toothbrush and a mirror.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Avoid words like 'hurt' or 'needle', even to reassure.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">During the visit</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Your child sits on your lap or rides up and down in the chair. We count teeth, look at the gums and give you tips for brushing at home. Most first visits take about fifteen minutes.</p><!-- /wp:paragraph -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>The goal of the first visit is not perfect teeth. It is a child who wants to come back.</p><!-- /wp:paragraph --><cite>Dr. Aria Holloway</cite></blockquote><!-- /wp:quote -->",
+   "sticky": false,
+   "format": "standard",
+   "comments": [
+    {
+     "author": "Mona T.",
+     "email": "mona@example.com",
+     "content": "Our daughter's first visit was exactly like this. She talked about the chair ride for a week!",
+     "date": "2026-10-13T16:20:00"
+    }
+   ]
+  },
+  {
+   "slug": "flossing-myths",
+   "title": "Five flossing myths, gently busted",
+   "date": "2026-09-29T09:30:00",
+   "categories": [
+    "everyday-care"
+   ],
+   "tags": [
+    "flossing",
+    "habits"
+   ],
+   "featured_media": "floss",
+   "excerpt": "Bleeding gums? Not enough time? We answer the excuses we hear most often.",
+   "content": "<!-- wp:paragraph --><p>Flossing is the habit everyone means to start. Here are the five reasons we hear most for skipping it, and why they don't quite hold up.</p><!-- /wp:paragraph -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li><strong>'My gums bleed, so I stop.'</strong> Bleeding usually means the gums need flossing. It stops within two weeks.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>'I don't have time.'</strong> It takes about ninety seconds.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>'My teeth are too tight.'</strong> Try waxed floss or tape.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>'Water flossers don't count.'</strong> They do, and they are great with braces.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>'Brushing is enough.'</strong> A brush can't reach between teeth.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Make it stick</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Keep floss next to your toothbrush, floss before you brush and pair it with something you already do every evening. In a month it will feel strange to skip.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>Not sure you are doing it right? Ask Sofia for a two-minute demo at your next cleaning.</p><!-- /wp:paragraph -->",
+   "sticky": false,
+   "format": "standard",
+   "comments": []
+  },
+  {
+   "slug": "clear-aligners-questions",
+   "title": "Clear aligners: your questions answered",
+   "date": "2026-09-15T11:00:00",
+   "categories": [
+    "orthodontics"
+   ],
+   "tags": [
+    "aligners"
+   ],
+   "featured_media": "aligner",
+   "excerpt": "How long, how much and does it hurt? Dr. Marlowe answers the questions he hears every week.",
+   "content": "<!-- wp:paragraph --><p>Clear aligners straighten teeth with a series of thin, removable trays. They are nearly invisible and you take them out to eat. Here are the questions we hear most.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">How long does it take?</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Most adult cases take six to eighteen months. Mild crowding can be done in as little as four. We show you a 3D preview of the result before you start.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Does it hurt?</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Each new tray feels tight for a day or two. Most people describe it as pressure rather than pain.</p><!-- /wp:paragraph -->\n\n<!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th></th><th>Aligners</th><th>Fixed braces</th></tr></thead><tbody><tr><td>Visible</td><td>Barely</td><td>Yes</td></tr><tr><td>Removable</td><td>Yes</td><td>No</td></tr><tr><td>Wear time</td><td>22 hours a day</td><td>Always</td></tr><tr><td>Check-ups</td><td>Every 8 weeks</td><td>Every 4–6 weeks</td></tr></tbody></table></figure><!-- /wp:table -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>The best results come from patients who wear their trays every day. The plastic only works when it's in your mouth.</p><!-- /wp:paragraph --><cite>Dr. Kenji Marlowe</cite></blockquote><!-- /wp:quote -->",
+   "sticky": false,
+   "format": "standard",
+   "comments": []
+  },
+  {
+   "slug": "tooth-friendly-snacks",
+   "title": "Tooth-friendly snacks for school lunch boxes",
+   "date": "2026-09-02T08:00:00",
+   "categories": [
+    "kids",
+    "everyday-care"
+   ],
+   "tags": [
+    "nutrition",
+    "children"
+   ],
+   "featured_media": "snacks",
+   "excerpt": "Crunchy, cheesy and water-first: snacks that kids like and teeth love.",
+   "content": "<!-- wp:paragraph --><p>It is not just how much sugar children eat, but how often. Every sugary snack starts a twenty-minute acid attack on the enamel. Fewer, better snacks make a big difference.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Our favourites</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"className\":\"fun-list\"} --><ul class=\"wp-block-list fun-list\"><!-- wp:list-item --><li>Apple slices and carrot sticks: crunchy foods help clean teeth.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Cheese cubes: they help neutralise acid.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Plain yogurt with a few berries.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Water instead of juice, every time.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:group {\"className\":\"tip-bubble\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group tip-bubble\"><!-- wp:paragraph --><p><strong>Sticky sweets</strong> like dried fruit cling to teeth for hours. If they are in the lunch box, pack them with lunch rather than as a separate snack.</p><!-- /wp:paragraph --></div><!-- /wp:group -->\n\n<!-- wp:paragraph --><p>Ask us at your child's next check-up for a free lunch-box sticker sheet.</p><!-- /wp:paragraph -->",
+   "sticky": false,
+   "format": "standard",
+   "comments": [
+    {
+     "author": "Ravi N.",
+     "email": "ravi@example.com",
+     "content": "The cheese tip is a winner in our house.",
+     "date": "2026-09-04T12:45:00"
+    }
+   ]
+  },
+  {
+   "slug": "is-whitening-safe",
+   "title": "Is teeth whitening safe? What you should know",
+   "date": "2026-08-19T10:30:00",
+   "categories": [
+    "cosmetic"
+   ],
+   "tags": [
+    "whitening"
+   ],
+   "featured_media": "after",
+   "excerpt": "Professional whitening is safe and effective. Here is how it differs from strips and whitening toothpaste.",
+   "content": "<!-- wp:paragraph --><p>A brighter smile is one of the most common requests we hear. The good news: when supervised by a dentist, whitening is safe for most adults.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Your options</h2><!-- /wp:heading -->\n\n<!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Option</th><th>How white</th><th>How long</th></tr></thead><tbody><tr><td>Whitening toothpaste</td><td>Removes surface stains</td><td>Ongoing</td></tr><tr><td>Shop strips</td><td>1–2 shades</td><td>2–4 weeks</td></tr><tr><td>Take-home trays</td><td>3–6 shades</td><td>2 weeks</td></tr><tr><td>In-clinic session</td><td>4–8 shades</td><td>1 hour</td></tr></tbody></table></figure><!-- /wp:table -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Before you whiten</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"className\":\"fun-list\"} --><ul class=\"wp-block-list fun-list\"><!-- wp:list-item --><li>Have a check-up: cavities and gum problems should be treated first.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Crowns and fillings do not whiten, so plan any replacements afterwards.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Expect mild sensitivity for a day or two.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>Avoid coffee, tea and red wine for 48 hours after each session to keep the result.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>Results usually last one to three years. A short top-up with your take-home trays keeps the shade.</p><!-- /wp:paragraph -->",
+   "sticky": false,
+   "format": "standard",
+   "comments": []
+  },
+  {
+   "slug": "dental-emergency-what-to-do",
+   "title": "Knocked-out tooth? What to do in the first hour",
+   "date": "2026-08-05T09:00:00",
+   "categories": [
+    "everyday-care"
+   ],
+   "tags": [
+    "emergencies"
+   ],
+   "featured_media": "clinic",
+   "excerpt": "A knocked-out adult tooth can often be saved if you act fast. Keep this guide handy.",
+   "content": "<!-- wp:paragraph --><p>Accidents happen, especially in summer. If an adult tooth is knocked out, the first hour matters most.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Step by step</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Pick the tooth up by the crown, never the root.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Rinse it briefly in milk or water. Do not scrub.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Try to put it back in the socket and bite on a clean cloth.</li><!-- /wp:list-item --><!-- wp:list-item --><li>If you can't, keep it in milk or inside the cheek.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Call us straight away. We keep emergency slots every morning.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:group {\"className\":\"tip-bubble\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group tip-bubble\"><!-- wp:paragraph --><p><strong>Baby teeth</strong> should not be put back. Bring your child in so we can check the gum and the adult tooth underneath.</p><!-- /wp:paragraph --></div><!-- /wp:group -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Milk is the best emergency kit there is. Every school bag should know that.</p><!-- /wp:paragraph --><cite>Dr. Aria Holloway</cite></blockquote><!-- /wp:quote -->",
+   "sticky": false,
+   "format": "standard",
+   "comments": []
+  },
+  {
+   "slug": "sensitive-teeth-causes",
+   "title": "Why are my teeth sensitive to cold?",
+   "date": "2026-07-22T10:00:00",
+   "categories": [
+    "everyday-care"
+   ],
+   "tags": [
+    "habits"
+   ],
+   "featured_media": "before",
+   "excerpt": "That sudden zing with ice cream has a cause, and usually a simple fix.",
+   "content": "<!-- wp:paragraph --><p>A short, sharp twinge with cold drinks or sweet food is one of the most common things people tell us about. It usually means the softer layer under the enamel, called dentine, has become exposed.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Common causes</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"className\":\"fun-list\"} --><ul class=\"wp-block-list fun-list\"><!-- wp:list-item --><li>Brushing too hard, which wears enamel and pushes gums back.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Acidic drinks such as fizzy drinks, juice and sports drinks.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Grinding your teeth at night.</li><!-- /wp:list-item --><!-- wp:list-item --><li>A small crack or an old filling.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What helps</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>A soft brush, a sensitivity toothpaste used for a few weeks and fewer acidic drinks solve most cases. If the pain lingers or is in one tooth only, book a check-up so we can rule out a cavity.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>If you grind at night, a thin custom night guard protects your enamel while you sleep.</p><!-- /wp:paragraph -->",
+   "sticky": false,
+   "format": "standard",
+   "comments": []
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Home",
+     "page": "home"
+    },
+    {
+     "title": "Treatments",
+     "page": "treatments",
+     "children": [
+      {
+       "title": "Everyday care",
+       "category": "everyday-care"
+      },
+      {
+       "title": "Kids",
+       "category": "kids"
+      },
+      {
+       "title": "Orthodontics",
+       "category": "orthodontics"
+      },
+      {
+       "title": "Cosmetic",
+       "category": "cosmetic"
+      }
+     ]
+    },
+    {
+     "title": "Our team",
+     "page": "team"
+    },
+    {
+     "title": "Smile tips",
+     "page": "smile-tips"
+    },
+    {
+     "title": "About",
+     "page": "about"
+    }
+   ]
+  },
+  {
+   "name": "Footer menu",
+   "location": "footer",
+   "items": [
+    {
+     "title": "Treatments",
+     "page": "treatments"
+    },
+    {
+     "title": "Team",
+     "page": "team"
+    },
+    {
+     "title": "Smile tips",
+     "page": "smile-tips"
+    },
+    {
+     "title": "Book",
+     "page": "book"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "sidebar-1": [
+   "<!-- wp:search {\"label\":\"Search tips\",\"buttonText\":\"Search\",\"placeholder\":\"Search smile tips…\"} /-->",
+   "<!-- wp:group {\"className\":\"book-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group book-card\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Book a visit</h2><!-- /wp:heading --><!-- wp:paragraph --><p>New patients welcome. Same-day emergency slots every morning.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:book}}\">Book now</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Topics</h2><!-- /wp:heading --><!-- wp:categories {\"showPostCounts\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Latest tips</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":4,\"displayPostDate\":true} /--></div><!-- /wp:group -->"
+  ],
+  "footer-1": [
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Visit us</h2><!-- /wp:heading --><!-- wp:paragraph --><p>27 Seaside Parade<br>Brightwater, BW2 9SM<br><a href=\"tel:+15550173300\">+1 (555) 017-3300</a></p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Treatments</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><a href=\"{{category:everyday-care}}\">Everyday care</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{category:kids}}\">Kids</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{category:orthodontics}}\">Orthodontics</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{category:cosmetic}}\">Cosmetic</a></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Emergencies</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Toothache or a broken tooth? Call before 10 am and we'll see you today.</p><!-- /wp:paragraph --></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "hero_image": "hero",
+  "hero_heading": "Gentle dentistry for the whole family",
+  "hero_text": "Check-ups, aligners and whitening in a bright, friendly clinic where nervous patients and little ones feel right at home.",
+  "hero_kicker": "Family & cosmetic dentistry",
+  "hero_button_label": "Our treatments",
+  "hero_button_url": "#treatments",
+  "cta_label": "Book a visit",
+  "cta_url": "{{page:book}}",
+  "header_style": "floating",
+  "blog_layout": "grid"
+ }
+}

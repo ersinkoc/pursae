@@ -1,0 +1,9 @@
+/* bright-smile: editor styles, so posts look in the block editor as they will on the site. */
+@font-face { font-family: "None"; font-style: normal; font-weight: 400 700; font-display: swap; src: url("fonts/fredoka.woff2") format("woff2"); }
+@font-face { font-family: "None"; font-style: normal; font-weight: 300 800; font-display: swap; src: url("fonts/mulish.woff2") format("woff2"); }
+.editor-styles-wrapper { background: #ffffff; color: #0e3b4a; font-family: "Mulish", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 17px; line-height: 1.7; }
+.editor-styles-wrapper h1, .editor-styles-wrapper h2, .editor-styles-wrapper h3, .editor-styles-wrapper h4, .editor-styles-wrapper .editor-post-title__input { font-family: "Fredoka", Georgia, serif; font-weight: 600; line-height: 1.15; color: #0e3b4a; }
+.editor-styles-wrapper a { color: #14a9b8; }
+.editor-styles-wrapper .wp-block-quote { border-left: 3px solid #ff7a6b; padding-left: 1.2em; }
+.editor-styles-wrapper .wp-block-button__link { background: #14a9b8; color: #fff; }
+.editor-styles-wrapper table th { text-align: left; }

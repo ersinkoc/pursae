@@ -1,0 +1,435 @@
+{
+  "slug": "archform",
+  "name": "Archform",
+  "version": "1.0.0",
+  "description": "A monochrome theme for architecture studios: huge project imagery, a concrete-textured paper ground, Instrument Sans with serif italics, a project index, awards table, essays in an index, grid or masonry layout, and an optional dark mode.",
+  "author": "WordPress Go",
+  "author_url": "https://github.com/boracomet/wordpress-go",
+  "theme_url": "https://github.com/boracomet/wordpress-go/tree/main/web/theme-library/archform",
+  "tags": [
+    "Architecture",
+    "Portfolio",
+    "Minimal",
+    "Blog",
+    "One Column",
+    "Two Columns",
+    "Grid Layout",
+    "Custom Colors",
+    "Custom Logo",
+    "Custom Menu",
+    "Editor Style",
+    "Featured Images",
+    "Footer Widgets",
+    "Sticky Header",
+    "Threaded Comments",
+    "Wide Blocks",
+    "Full Width Template"
+  ],
+  "requires_core": "0.1.0",
+  "screenshot": "assets/screenshot.png",
+  "category": "architecture",
+  "style": "Monochrome, concrete texture, huge imagery, grotesk and serif italics",
+  "demo": "demo/demo.json",
+  "widget_areas": [
+    {
+      "id": "sidebar-1",
+      "name": "Sidebar",
+      "description": "Beside posts, archives and search results (Customize sets the side or hides it)."
+    },
+    {
+      "id": "footer-1",
+      "name": "Footer",
+      "description": "Columns in the footer, next to the site name and description."
+    }
+  ],
+  "menu_locations": [
+    {
+      "id": "primary",
+      "name": "Primary Menu"
+    },
+    {
+      "id": "footer",
+      "name": "Footer Menu"
+    }
+  ],
+  "styles": [
+    {
+      "handle": "archform-style",
+      "src": "assets/style.css",
+      "deps": [
+        "wp-block-library"
+      ],
+      "media": "all"
+    }
+  ],
+  "scripts": [
+    {
+      "handle": "archform-navigation",
+      "src": "assets/js/navigation.js",
+      "deps": [],
+      "in_footer": true
+    }
+  ],
+  "editor_styles": [
+    "assets/editor-style.css"
+  ],
+  "preload_fonts": [
+    "assets/fonts/instrument-sans.woff2",
+    "assets/fonts/instrument-serif-italic.woff2"
+  ],
+  "palette": [
+    {
+      "name": "Ink",
+      "slug": "ink",
+      "color": "#141414"
+    },
+    {
+      "name": "Concrete",
+      "slug": "concrete",
+      "color": "#8c8a85"
+    },
+    {
+      "name": "Ash",
+      "slug": "ash",
+      "color": "#d9d7d2"
+    },
+    {
+      "name": "Paper",
+      "slug": "paper",
+      "color": "#f1f0ec"
+    },
+    {
+      "name": "White",
+      "slug": "white",
+      "color": "#ffffff"
+    },
+    {
+      "name": "Signal",
+      "slug": "signal",
+      "color": "#d63c1f"
+    }
+  ],
+  "supports": {
+    "post-thumbnails": true,
+    "custom-logo": {
+      "width": 240,
+      "height": 64,
+      "flex-width": true,
+      "flex-height": true,
+      "header-text": [
+        "site-title",
+        "site-description"
+      ]
+    },
+    "title-tag": true,
+    "html5": [
+      "search-form",
+      "comment-form",
+      "comment-list",
+      "gallery",
+      "caption",
+      "script",
+      "style"
+    ],
+    "responsive-embeds": true,
+    "align-wide": true,
+    "wp-block-styles": true
+  },
+  "customizer": {
+    "sections": [
+      {
+        "id": "archform_mono",
+        "title": "Monochrome",
+        "priority": 40,
+        "settings": [
+          {
+            "id": "ink_color",
+            "label": "Ink",
+            "type": "color",
+            "default": "#141414",
+            "transport": "postMessage",
+            "css_var": "--af-ink",
+            "description": "Text, rules and the dark surfaces."
+          },
+          {
+            "id": "paper_color",
+            "label": "Paper",
+            "type": "color",
+            "default": "#f1f0ec",
+            "transport": "postMessage",
+            "css_var": "--af-paper",
+            "description": "The page ground."
+          },
+          {
+            "id": "accent_color",
+            "label": "Accent",
+            "type": "color",
+            "default": "#141414",
+            "transport": "postMessage",
+            "css_var": "--af-accent",
+            "description": "Hover states and the index numbers; keep it black for a strict monochrome."
+          },
+          {
+            "id": "dark_mode",
+            "label": "Dark mode (ink ground, paper text)",
+            "type": "checkbox",
+            "default": false,
+            "transport": "postMessage",
+            "body_class": "af-dark"
+          },
+          {
+            "id": "concrete_texture",
+            "label": "Concrete texture on the page ground",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "af-texture"
+          },
+          {
+            "id": "font_pairing",
+            "label": "Typefaces",
+            "type": "select",
+            "default": "grotesk",
+            "transport": "postMessage",
+            "body_class": "af-font-{value}",
+            "choices": [
+              {
+                "value": "grotesk",
+                "label": "Instrument Sans with serif italics"
+              },
+              {
+                "value": "serif",
+                "label": "Instrument Serif headings"
+              },
+              {
+                "value": "system",
+                "label": "System fonts"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "archform_layout",
+        "title": "Header & Layout",
+        "priority": 41,
+        "settings": [
+          {
+            "id": "header_style",
+            "label": "Header style",
+            "type": "select",
+            "default": "minimal",
+            "transport": "postMessage",
+            "body_class": "af-header-{value}",
+            "choices": [
+              {
+                "value": "minimal",
+                "label": "Minimal, over the hero on the front page"
+              },
+              {
+                "value": "bordered",
+                "label": "Hairline border"
+              },
+              {
+                "value": "inverted",
+                "label": "Inverted ink bar"
+              }
+            ]
+          },
+          {
+            "id": "sticky_header",
+            "label": "Keep the header visible while scrolling",
+            "type": "checkbox",
+            "default": false,
+            "transport": "postMessage",
+            "body_class": "af-sticky"
+          },
+          {
+            "id": "container_width",
+            "label": "Container width",
+            "type": "select",
+            "default": "wide",
+            "transport": "postMessage",
+            "body_class": "af-width-{value}",
+            "choices": [
+              {
+                "value": "narrow",
+                "label": "Narrow (1040px)"
+              },
+              {
+                "value": "wide",
+                "label": "Wide (1320px)"
+              },
+              {
+                "value": "full",
+                "label": "Full bleed (1680px)"
+              }
+            ]
+          },
+          {
+            "id": "uppercase_titles",
+            "label": "Uppercase titles",
+            "type": "checkbox",
+            "default": false,
+            "transport": "postMessage",
+            "body_class": "af-upper"
+          },
+          {
+            "id": "cta_label",
+            "label": "Contact link label",
+            "type": "text",
+            "default": "Start a project",
+            "transport": "refresh",
+            "description": "In the header and the footer; leave empty to hide it."
+          },
+          {
+            "id": "cta_url",
+            "label": "Contact link",
+            "type": "text",
+            "default": "/contact/",
+            "transport": "refresh"
+          }
+        ]
+      },
+      {
+        "id": "archform_hero",
+        "title": "Front Page",
+        "priority": 42,
+        "settings": [
+          {
+            "id": "hero_image",
+            "label": "Hero image",
+            "description": "Without an image the front page's featured image is used.",
+            "type": "image"
+          },
+          {
+            "id": "hero_label",
+            "label": "Project label",
+            "type": "text",
+            "default": "01 — Selected work",
+            "transport": "refresh"
+          },
+          {
+            "id": "hero_heading",
+            "label": "Heading",
+            "type": "text",
+            "default": "",
+            "transport": "refresh",
+            "description": "Empty uses the page title."
+          },
+          {
+            "id": "hero_text",
+            "label": "Text",
+            "type": "textarea",
+            "default": "",
+            "transport": "refresh"
+          },
+          {
+            "id": "hero_button_label",
+            "label": "Link label",
+            "type": "text",
+            "default": "Project index",
+            "transport": "refresh"
+          },
+          {
+            "id": "hero_button_url",
+            "label": "Link URL",
+            "type": "text",
+            "default": "#index",
+            "transport": "refresh"
+          }
+        ],
+        "description": "The full-viewport hero on a static front page."
+      },
+      {
+        "id": "archform_journal",
+        "title": "Journal & Footer",
+        "priority": 43,
+        "settings": [
+          {
+            "id": "blog_layout",
+            "label": "Post list layout",
+            "type": "select",
+            "default": "grid",
+            "transport": "postMessage",
+            "body_class": "af-blog-{value}",
+            "choices": [
+              {
+                "value": "index",
+                "label": "Numbered index"
+              },
+              {
+                "value": "grid",
+                "label": "Grid"
+              },
+              {
+                "value": "masonry",
+                "label": "Masonry"
+              }
+            ]
+          },
+          {
+            "id": "sidebar_position",
+            "label": "Sidebar",
+            "type": "select",
+            "default": "none",
+            "transport": "postMessage",
+            "body_class": "af-sidebar-{value}",
+            "choices": [
+              {
+                "value": "right",
+                "label": "Right"
+              },
+              {
+                "value": "left",
+                "label": "Left"
+              },
+              {
+                "value": "none",
+                "label": "No sidebar"
+              }
+            ]
+          },
+          {
+            "id": "show_featured",
+            "label": "Show featured images",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "af-thumbs"
+          },
+          {
+            "id": "show_author",
+            "label": "Show the author on posts and cards",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "af-show-author"
+          },
+          {
+            "id": "footer_statement",
+            "label": "Footer statement",
+            "type": "text",
+            "default": "Buildings that age well.",
+            "transport": "refresh"
+          },
+          {
+            "id": "address",
+            "label": "Studio address",
+            "type": "text",
+            "default": "Studio 4, Foundry Yard · 18 Kiln Lane · Westmere",
+            "transport": "refresh"
+          },
+          {
+            "id": "footer_text",
+            "label": "Footer text",
+            "type": "text",
+            "default": "",
+            "transport": "refresh",
+            "description": "Replaces the copyright line."
+          }
+        ]
+      }
+    ]
+  }
+}
