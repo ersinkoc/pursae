@@ -72,7 +72,11 @@ func (s *Server) site(c *gin.Context) {
 		c.Status(http.StatusNotFound)
 		return
 	}
-	path := s.golylangSitePath(c, strings.Trim(c.Request.URL.Path, "/")) // Golylang: without the language code
+	raw := strings.Trim(c.Request.URL.Path, "/")
+	if s.seogoIntercept(c, raw) { // SEO-Go: redirections, robots.txt, sitemaps (seogo_front.go)
+		return
+	}
+	path := s.golylangSitePath(c, raw) // Golylang: without the language code
 	switch path {
 	case "robots.txt":
 		s.robots(c)
@@ -126,6 +130,9 @@ func (s *Server) site(c *gin.Context) {
 	s.golylangResolved(c, q)
 	if target := s.canonicalRedirect(c, q, path); target != "" { // redirect_canonical()
 		c.Redirect(http.StatusMovedPermanently, target)
+		return
+	}
+	if s.seogoQueryRedirect(c, q) { // SEO-Go: disabled author/date archives
 		return
 	}
 	c.Set(ctxSiteQuery, q)
@@ -502,6 +509,9 @@ func (s *Server) renderSite(c *gin.Context, q *siteQuery) {
 	status := http.StatusOK
 	if q.Kind == "404" {
 		status = http.StatusNotFound
+		if s.seogo404(c) { // SEO-Go: 404 monitor and fallback redirect
+			return
+		}
 	}
 	if q.Preview || q.Kind == "search" {
 		c.Header("Cache-Control", "no-cache, must-revalidate, max-age=0")

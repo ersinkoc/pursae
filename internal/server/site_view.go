@@ -281,6 +281,9 @@ func (s *Server) buildSiteView(c *gin.Context, q *siteQuery) (*siteView, error) 
 	v.BodyClass = strings.Join(bodyClasses, " ")
 
 	v.DocumentTitle = template.HTML(s.documentTitle(q, plainTitle))
+	if t := s.seogoDocumentTitle(c, q); t != "" { // SEO-Go title (seogo_head.go)
+		v.DocumentTitle = t
+	}
 	v.Head = s.wpHead(c, q, lb, showBar, v)
 	v.BodyOpen = s.wpBodyOpen(c, v) // gap-widgets: wp_body_open (site_body_open.go)
 	v.Footer = s.wpFooter(c, q, lb, showBar)
@@ -439,6 +442,7 @@ func (s *Server) theContent(ctx context.Context, c *gin.Context, p *store.Post, 
 	}
 	content = s.doShortcodes(ctx, content)      // plugin shortcodes (do_shortcode at priority 11)
 	content = s.gontactShortcodes(ctx, content) // Gontact Form's [contact-form-7]
+	content = s.seogoContent(ctx, content)      // SEO-Go breadcrumb shortcodes and Image SEO
 	content = s.filterContentTags(ctx, content) // wp_filter_content_tags (priority 12)
 	content = s.convertSmilies(lb, content)     // convert_smilies (priority 20)
 	out, _ := s.applyFilters(ctx, "the_content", content, map[string]any{"id": p.ID, "type": p.Type, "is_single": singular}).(string)

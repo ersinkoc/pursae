@@ -20,7 +20,10 @@ func (s *Server) wpHead(c *gin.Context, q *siteQuery, lb *links.Builder, adminBa
 	if v.GWE == nil {
 		sb.WriteString(v.Theme.HeadTop)
 	}
-	if s.settings.Bool("blog_public") && q.Kind != "404" && !q.Preview {
+	seo := s.seogoHead(c, q, lb) // SEO-Go replaces the robots meta and the canonical link (seogo_head.go)
+	if seo != "" {
+		sb.WriteString(seo)
+	} else if s.settings.Bool("blog_public") && q.Kind != "404" && !q.Preview {
 		sb.WriteString("<meta name='robots' content='max-image-preview:large' />\n")
 	} else {
 		sb.WriteString("<meta name='robots' content='noindex, nofollow' />\n")
@@ -55,7 +58,9 @@ func (s *Server) wpHead(c *gin.Context, q *siteQuery, lb *links.Builder, adminBa
 	sb.WriteString(oembedDiscoveryLinks(lb, q)) // wp_oembed_add_discovery_links() (rest_oembed.go)
 	sb.WriteString("<meta name=\"generator\" content=\"WordPress Go " + Version + "\" />\n")
 	if (q.Kind == "single" || q.Kind == "page" || q.Kind == "front-page") && q.Post != nil {
-		fmt.Fprintf(&sb, "<link rel=\"canonical\" href=\"%s\" />\n", html.EscapeString(lb.Permalink(q.Post)))
+		if seo == "" {
+			fmt.Fprintf(&sb, "<link rel=\"canonical\" href=\"%s\" />\n", html.EscapeString(lb.Permalink(q.Post)))
+		}
 		short := "/?p="
 		if q.Post.Type == "page" {
 			short = "/?page_id="

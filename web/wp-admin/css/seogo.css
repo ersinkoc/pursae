@@ -1,0 +1,127 @@
+/* SEO-Go: admin screens and the editor box. Native wp-admin look, WordPress blues. */
+.seogo-logo { font-size: 26px; width: 26px; height: 26px; margin-right: 8px; color: #2271b1; vertical-align: -3px; }
+.seogo-wrap .notice.inline { margin: 12px 0; }
+.seogo-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 16px; }
+.seogo-card { margin: 0; }
+.seogo-card h2 { font-size: 14px; margin: .4em 0 .8em; }
+.seogo-dist { margin: 0; }
+.seogo-dist li { display: flex; align-items: center; gap: 6px; margin: 0 0 6px; }
+.seogo-dist li strong { margin-left: auto; }
+.seogo-dist .dashicons { color: #646970; font-size: 17px; width: 17px; height: 17px; }
+.seogo-section-title { margin-top: 28px; }
+.seogo-modules { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; margin-top: 12px; }
+.seogo-module { background: #fff; border: 1px solid #c3c4c7; border-radius: 4px; padding: 16px; position: relative; display: flex; flex-direction: column; }
+.seogo-module.is-active { border-color: #2271b1; box-shadow: inset 3px 0 0 #2271b1; }
+.seogo-module > .dashicons { font-size: 28px; width: 28px; height: 28px; color: #2271b1; }
+.seogo-module h3 { margin: 8px 0 4px; font-size: 14px; }
+.seogo-module p { color: #50575e; margin: 0 0 12px; flex: 1; }
+.seogo-module form { display: flex; align-items: center; gap: 10px; }
+.seogo-module-status { color: #646970; font-size: 12px; }
+.seogo-module.is-active .seogo-module-status { color: #00a32a; }
+
+.seogo-bullet { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #c3c4c7; flex: none; }
+.seogo-bullet.good { background: #00a32a; }
+.seogo-bullet.ok { background: #dba617; }
+.seogo-bullet.bad { background: #d63638; }
+.seogo-bullet.na { background: #c3c4c7; }
+.seogo-tag { display: inline-block; font-size: 11px; line-height: 1.6; padding: 0 6px; border-radius: 3px; background: #f0f0f1; color: #50575e; }
+.seogo-inactive td, .seogo-inactive th { opacity: .65; }
+.seogo-inline { display: inline-block; margin-right: 16px; }
+.seogo-inline-form { display: inline-block; margin-right: 8px; }
+.seogo-ellipsis { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.seogo-star { color: #dba617; font-size: 16px; }
+.seogo-warning { color: #d63638; }
+.seogo-type-box { margin-top: 16px; }
+.seogo-type-box .form-table th { width: 180px; }
+.seogo-vars-help code { margin-right: 2px; font-size: 12px; }
+.seogo-separators { display: flex; flex-wrap: wrap; gap: 6px; }
+.seogo-separators label { position: relative; }
+.seogo-separators input { position: absolute; opacity: 0; }
+.seogo-separators span { display: inline-block; min-width: 32px; padding: 6px 8px; text-align: center; border: 1px solid #c3c4c7; border-radius: 3px; background: #fff; font-size: 16px; cursor: pointer; }
+.seogo-separators input:checked + span { border-color: #2271b1; background: #2271b1; color: #fff; }
+.seogo-separators input:focus-visible + span { box-shadow: 0 0 0 2px #fff, 0 0 0 4px #2271b1; }
+.seogo-caps { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
+.seogo-tools .postbox { margin-top: 16px; }
+.seogo-bulk input.widefat, .seogo-bulk textarea.widefat { font-size: 13px; }
+.seogo-score-num { display: inline-flex; align-items: center; gap: 4px; }
+.seogo-image-field { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+
+/* Setup wizard */
+.seogo-wizard { max-width: 860px; }
+.seogo-steps { display: flex; list-style: none; margin: 16px 0; padding: 0; counter-reset: step; gap: 4px; }
+.seogo-steps li { flex: 1; text-align: center; padding: 10px 4px; background: #f0f0f1; color: #50575e; border-radius: 3px; counter-increment: step; font-weight: 600; margin: 0; }
+.seogo-steps li::before { content: counter(step) ". "; }
+.seogo-steps li.current { background: #2271b1; color: #fff; }
+.seogo-steps li.done { background: #c5d9ed; color: #135e96; }
+.seogo-wizard .postbox .inside { padding: 8px 24px 16px; }
+.seogo-skip { margin-left: 12px !important; }
+
+/* Editor box */
+.seogo-box .hndle { display: flex; align-items: center; gap: 12px; }
+.seogo-head-scores { margin-left: auto; display: inline-flex; gap: 12px; font-weight: 400; font-size: 12px; }
+.seogo-head-score { display: inline-flex; align-items: center; gap: 4px; }
+.seogo-tabs { display: flex; flex-wrap: wrap; border-bottom: 1px solid #c3c4c7; margin: 0 -12px 12px; padding: 0 12px; }
+.seogo-tab { background: none; border: 0; border-bottom: 3px solid transparent; padding: 8px 10px; cursor: pointer; color: #1d2327; font-size: 13px; display: inline-flex; align-items: center; gap: 4px; margin-bottom: -1px; }
+.seogo-tab .dashicons { font-size: 16px; width: 16px; height: 16px; color: #646970; }
+.seogo-tab.is-active { border-bottom-color: #2271b1; color: #2271b1; font-weight: 600; }
+.seogo-tab.is-active .dashicons { color: #2271b1; }
+.seogo-tab:focus-visible { outline: 2px solid #2271b1; outline-offset: -2px; }
+.seogo-field { margin: 0 0 16px; }
+.seogo-field > label { display: block; margin-bottom: 4px; }
+.seogo-field .description { display: block; margin-top: 4px; }
+.seogo-cols3 { display: flex; flex-wrap: wrap; gap: 16px; }
+.seogo-cols3 label { display: inline-flex !important; gap: 6px; align-items: center; }
+.seogo-var-wrap { display: block; position: relative; }
+.seogo-vars { display: inline-block; position: relative; margin-top: 4px; }
+.seogo-vars-menu { position: absolute; z-index: 100; top: 100%; left: 0; background: #fff; border: 1px solid #c3c4c7; box-shadow: 0 3px 8px rgba(0,0,0,.15); max-height: 260px; overflow: auto; min-width: 260px; }
+.seogo-vars-menu[hidden] { display: none; }
+.seogo-var { display: flex; justify-content: space-between; gap: 12px; width: 100%; text-align: left; background: none; border: 0; padding: 6px 10px; cursor: pointer; }
+.seogo-var:hover, .seogo-var:focus { background: #f0f6fc; }
+.seogo-progress { display: block; height: 4px; background: #f0f0f1; border-radius: 2px; margin-top: 6px; overflow: hidden; }
+.seogo-progress span { display: block; height: 100%; width: 0; background: #d63638; transition: width .2s; }
+.seogo-progress.good span { background: #00a32a; }
+.seogo-progress.ok span { background: #dba617; }
+.seogo-snippet { margin: 4px 0 16px; }
+.seogo-snippet-modes { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+.seogo-serp { font-family: arial, sans-serif; background: #fff; border: 1px solid #dcdcde; border-radius: 8px; padding: 12px 16px; max-width: 600px; }
+.seogo-serp.is-mobile { max-width: 380px; box-shadow: 0 1px 6px rgba(32,33,36,.18); }
+.seogo-serp-site { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #202124; line-height: 1.3; }
+.seogo-serp-site > span:last-child { display: flex; flex-direction: column; }
+.seogo-serp-favicon { width: 26px; height: 26px; border-radius: 50%; background: #f1f3f4 url(/wp-includes/images/wpgo/gopher-32.png) center / 18px no-repeat; flex: none; }
+.seogo-serp-url { color: #4d5156; font-size: 12px; }
+.seogo-serp-title { color: #1a0dab; font-size: 20px; line-height: 1.3; margin: 6px 0 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.seogo-serp.is-mobile .seogo-serp-title { white-space: normal; font-size: 18px; }
+.seogo-serp-desc { color: #4d5156; font-size: 14px; line-height: 1.58; }
+.seogo-serp-desc .seogo-date { color: #70757a; }
+.seogo-serp mark { background: none; font-weight: 700; color: inherit; }
+.seogo-analysis h3 { display: flex; align-items: center; gap: 8px; font-size: 13px; margin: 16px 0 8px; }
+.seogo-points { font-weight: 400; color: #50575e; font-size: 12px; }
+.seogo-results { margin: 0; }
+.seogo-results li { display: flex; gap: 8px; align-items: flex-start; margin: 0 0 8px; }
+.seogo-results li .seogo-bullet { margin-top: 5px; }
+.seogo-results li.extra { color: #50575e; }
+.seogo-results .seogo-group { font-weight: 600; color: #1d2327; margin-top: 12px; }
+.seogo-suggestions li { display: flex; gap: 8px; align-items: center; justify-content: space-between; border-bottom: 1px solid #f0f0f1; padding: 6px 0; margin: 0; }
+.seogo-suggestions li a { flex: 1; }
+.seogo-social-preview { display: flex; border: 1px solid #dadde1; max-width: 500px; margin-bottom: 12px; background: #f0f2f5; flex-direction: column; }
+.seogo-fb-image { aspect-ratio: 1.91 / 1; background: #e4e6eb center / cover no-repeat; }
+.seogo-fb-text { padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; font-family: Helvetica, Arial, sans-serif; }
+.seogo-fb-host { text-transform: uppercase; color: #606770; font-size: 12px; }
+.seogo-fb-title { color: #1d2129; font-size: 16px; }
+.seogo-fb-desc { color: #606770; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.seogo-product label { display: block; margin: 6px 0; }
+.seogo-product[hidden] { display: none; }
+.seogo-termbox { margin-top: 24px; }
+
+/* Gotenberg sidebar: the box without its postbox chrome */
+.seogo-sidebar .seogo-box { border: 0; box-shadow: none; margin: 0; }
+.seogo-sidebar .seogo-box > .postbox-header { display: none; }
+.seogo-sidebar .seogo-box > .inside { padding: 0 16px 16px; margin: 0; }
+.seogo-sidebar .seogo-tabs { margin: 0 -16px 12px; padding: 0 8px; }
+.seogo-sidebar .seogo-serp, .seogo-sidebar .seogo-serp.is-mobile { max-width: 100%; }
+.seogo-sidebar .seogo-serp-title { white-space: normal; font-size: 17px; }
+.seogo-doc-panel { display: flex; flex-direction: column; gap: 6px; }
+.seogo-doc-panel span { display: inline-flex; align-items: center; gap: 6px; }
+
+/* Front end: breadcrumbs */
+.seogo-breadcrumb p { margin: 0 0 1em; }

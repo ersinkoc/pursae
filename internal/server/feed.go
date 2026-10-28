@@ -120,7 +120,7 @@ func (s *Server) feedContent(ctx context.Context, c *gin.Context, p *store.Post,
 	if p.Password != "" {
 		return "There is no excerpt because this is a protected post."
 	}
-	return s.theContent(ctx, c, p, true, lb)
+	return s.seogoFeedContent(ctx, p, s.theContent(ctx, c, p, true, lb)) // SEO-Go RSS before/after
 }
 
 func (s *Server) feedExcerpt(p *store.Post) string {

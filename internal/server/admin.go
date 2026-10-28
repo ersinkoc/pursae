@@ -360,6 +360,8 @@ func (s *Server) adminPage(c *gin.Context, screen, title, bodyClass, tmpl string
 	v.Notices = append(v.Notices, s.mailSMTPNotices(c)...)
 	// ACF-Go: its menu, options pages and post types (acfgo.go)
 	v.Menu = s.acfgoMenu(c, v.Menu, screen)
+	// SEO-Go's menu (seogo.go)
+	v.Menu = s.seogoMenu(v.Menu, u, screen)
 	a := s.pageAssets(c)
 	a.Script("common", "admin-bar", "utils", "svg-painter")
 	v.ExtraStyles = s.styleTags(a) + s.pluginStyleTags("admin")

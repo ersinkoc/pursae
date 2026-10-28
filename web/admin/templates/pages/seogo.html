@@ -1,0 +1,557 @@
+{{define "admin/seogo"}}{{template "admin-header" .}}{{with .Data}}
+<link rel="stylesheet" id="seogo-css" href="/wp-admin/css/seogo.css?ver=1.0.0" media="all" />
+<div class="wrap seogo-wrap seogo-page-{{if .Page}}{{.Page}}{{else}}dashboard{{end}}">
+<h1 class="wp-heading-inline"><span class="dashicons dashicons-chart-line seogo-logo" aria-hidden="true"></span>{{if eq .Page ""}}SEO-Go{{else}}{{.Title}}{{end}}</h1>
+{{if eq .Page "redirections"}}<a href="/wp-admin/seogo?page=redirections#seogo-redirect-form" class="page-title-action">Add New Redirection</a>
+<a href="/wp-admin/seogo?page=redirections&amp;action=export&amp;_wpnonce={{.Nonce}}" class="page-title-action">Export CSV</a>{{end}}
+<hr class="wp-header-end">
+{{template "notices" $}}
+
+{{/* ============================== Dashboard ============================== */}}
+{{if eq .Page ""}}
+{{if not .Opts.WizardDone}}<div class="notice notice-info inline seogo-wizard-notice"><p><strong>Welcome to SEO-Go!</strong> Run the setup wizard to tell search engines who is behind this site and pick the features you need.</p>
+<p><a class="button button-primary" href="/wp-admin/seogo?page=wizard">Start the Setup Wizard</a></p></div>{{end}}
+{{with .Data.Problems}}<div class="notice notice-warning inline"><p><strong>SEO problems</strong></p><ul class="ul-disc">{{range .}}<li>{{.}}</li>{{end}}</ul></div>{{end}}
+<div class="seogo-cards">
+	<div class="postbox seogo-card"><div class="inside"><h2>SEO scores</h2>
+		{{with .Data.SEO}}<ul class="seogo-dist">
+		<li><span class="seogo-bullet good"></span> Good <strong>{{.Good}}</strong></li>
+		<li><span class="seogo-bullet ok"></span> OK <strong>{{.OK}}</strong></li>
+		<li><span class="seogo-bullet bad"></span> Needs improvement <strong>{{.Bad}}</strong></li>
+		<li><span class="seogo-bullet na"></span> No focus keyphrase <strong>{{.NA}}</strong></li></ul>{{end}}
+		<p class="description">Of {{.Data.Total}} published posts and pages.</p></div></div>
+	<div class="postbox seogo-card"><div class="inside"><h2>Readability</h2>
+		{{with .Data.Read}}<ul class="seogo-dist">
+		<li><span class="seogo-bullet good"></span> Good <strong>{{.Good}}</strong></li>
+		<li><span class="seogo-bullet ok"></span> OK <strong>{{.OK}}</strong></li>
+		<li><span class="seogo-bullet bad"></span> Needs improvement <strong>{{.Bad}}</strong></li>
+		<li><span class="seogo-bullet na"></span> Not analyzed <strong>{{.NA}}</strong></li></ul>{{end}}</div></div>
+	<div class="postbox seogo-card"><div class="inside"><h2>At a glance</h2>
+		<ul class="seogo-dist">
+		<li><span class="dashicons dashicons-star-filled"></span> Cornerstone content <strong>{{.Data.Cornerstone}}</strong></li>
+		<li><span class="dashicons dashicons-admin-links"></span> <a href="/wp-admin/seogo?page=links&amp;filter=orphaned">Orphaned content</a> <strong>{{.Data.Orphans}}</strong></li>
+		<li><span class="dashicons dashicons-randomize"></span> <a href="/wp-admin/seogo?page=redirections">Redirections</a> <strong>{{.Data.Redirects}}</strong></li>
+		<li><span class="dashicons dashicons-dismiss"></span> <a href="/wp-admin/seogo?page=404">Logged 404s</a> <strong>{{.Data.NotFound}}</strong></li></ul>
+		{{if index .Opts.Modules "sitemap"}}<p><a href="{{.Home}}sitemap_index.xml" target="_blank" rel="noopener">View the XML sitemap</a></p>{{end}}</div></div>
+</div>
+<h2 class="seogo-section-title">Modules</h2>
+<p class="description">Turn on only what you need. A module that is off adds nothing to the site.</p>
+<div class="seogo-modules">
+{{range .Modules}}<div class="seogo-module{{if .On}} is-active{{end}}">
+	<span class="dashicons {{.Icon}}" aria-hidden="true"></span>
+	<h3>{{.Name}}</h3><p>{{.Desc}}</p>
+	<form method="post" action="/wp-admin/seogo"><input type="hidden" name="_wpnonce" value="{{$.Data.Nonce}}" /><input type="hidden" name="module" value="{{.Key}}" />
+	<input type="hidden" name="state" value="{{if .On}}off{{else}}on{{end}}" />
+	<button type="submit" class="button{{if not .On}} button-primary{{end}}">{{if .On}}Deactivate{{else}}Activate{{end}}</button>
+	<span class="seogo-module-status">{{if .On}}Active{{else}}Inactive{{end}}</span></form>
+</div>{{end}}
+</div>
+{{end}}
+
+{{/* ============================== Setup wizard ============================== */}}
+{{if eq .Page "wizard"}}
+<div class="seogo-wizard">
+<ol class="seogo-steps">{{$st := .Step}}{{range $i, $n := list "Site representation" "Social profiles" "Search engines" "Import" "Done"}}<li class="{{if eq (add $i 1) $st}}current{{else if lt (add $i 1) $st}}done{{end}}">{{$n}}</li>{{end}}</ol>
+<div class="postbox"><div class="inside">
+<form method="post" action="/wp-admin/seogo?page=wizard">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="step" value="{{.Step}}" />
+{{if eq .Step 1}}
+<h2>Who is behind this site?</h2>
+<p>Search engines show this in the Knowledge Graph. It becomes the publisher of every page in the schema graph.</p>
+<table class="form-table" role="presentation">
+<tr><th scope="row">This site represents</th><td><fieldset>
+	<label><input type="radio" name="kg_type" value="organization"{{if ne .Opts.KGType "person"}} checked{{end}} /> An organization</label><br />
+	<label><input type="radio" name="kg_type" value="person"{{if eq .Opts.KGType "person"}} checked{{end}} /> A person</label></fieldset></td></tr>
+<tr><th scope="row"><label for="kg_name">Organization name</label></th><td><input name="kg_name" id="kg_name" type="text" class="regular-text" value="{{.Opts.KGName}}" placeholder="{{settingStr "blogname"}}" /></td></tr>
+<tr><th scope="row"><label for="kg_logo">Organization logo</label></th><td>{{template "seogo-image" dict "Name" "kg_logo" "Value" .Opts.KGLogo}}</td></tr>
+<tr><th scope="row"><label for="kg_person">Person</label></th><td><select name="kg_person" id="kg_person"><option value="0">Select a user</option>{{$p := .Opts.KGPersonID}}{{range .Data.Users}}<option value="{{.ID}}"{{if eq .ID $p}} selected{{end}}>{{.DisplayName}}</option>{{end}}</select></td></tr>
+<tr><th scope="row">Title separator</th><td>{{template "seogo-separators" .Opts.Separator}}</td></tr>
+</table>
+{{else if eq .Step 2}}
+<h2>Social profiles</h2>
+<p>Tell search engines which profiles belong to this site (schema <code>sameAs</code>).</p>
+<table class="form-table" role="presentation">
+<tr><th scope="row"><label for="facebook_url">Facebook page URL</label></th><td><input name="facebook_url" id="facebook_url" type="url" class="regular-text" value="{{.Opts.FacebookURL}}" /></td></tr>
+<tr><th scope="row"><label for="twitter_user">X (Twitter) username</label></th><td><input name="twitter_user" id="twitter_user" type="text" class="regular-text" value="{{.Opts.TwitterUser}}" placeholder="username" /></td></tr>
+<tr><th scope="row"><label for="profiles">Other profiles</label></th><td><textarea name="profiles" id="profiles" rows="5" class="large-text code" placeholder="https://www.instagram.com/…">{{range .Opts.Profiles}}{{.}}
+{{end}}</textarea><p class="description">One URL per line: Instagram, LinkedIn, YouTube, Pinterest, Wikipedia…</p></td></tr>
+</table>
+{{else if eq .Step 3}}
+<h2>Search engines</h2>
+<table class="form-table" role="presentation">
+<tr><th scope="row">Features</th><td><fieldset>
+	<label><input type="checkbox" name="sitemap" value="1"{{if index .Opts.Modules "sitemap"}} checked{{end}} /> XML sitemaps (replace <code>wp-sitemap.xml</code> with <code>sitemap_index.xml</code>)</label><br />
+	<label><input type="checkbox" name="redirections" value="1"{{if index .Opts.Modules "redirections"}} checked{{end}} /> Redirections, with automatic redirects when a slug changes</label><br />
+	<label><input type="checkbox" name="monitor" value="1"{{if index .Opts.Modules "monitor"}} checked{{end}} /> 404 monitor</label><br />
+	<label><input type="checkbox" name="breadcrumbs" value="1"{{if index .Opts.Modules "breadcrumbs"}} checked{{end}} /> Breadcrumbs</label><br />
+	<label><input type="checkbox" name="indexnow" value="1"{{if index .Opts.Modules "indexnow"}} checked{{end}} /> Instant indexing with IndexNow (Bing, Yandex, Seznam…)</label></fieldset></td></tr>
+<tr><th scope="row">Archives</th><td><fieldset>
+	<label><input type="checkbox" name="single_author" value="1"{{if (index .Opts.Types "author").Disabled}} checked{{end}} /> This is a single-author site: redirect author archives to the home page</label><br />
+	<label><input type="checkbox" name="noindex_empty_terms" value="1"{{if .Opts.NoindexEmptyTerms}} checked{{end}} /> Keep empty categories and tags out of search results</label></fieldset></td></tr>
+<tr><th scope="row">Visibility</th><td>{{if settingBool "blog_public"}}<p>Search engines may index this site.</p>{{else}}<p class="seogo-warning">Search engines are asked not to index this site. Change it under <a href="/wp-admin/options-reading">Settings › Reading</a>.</p>{{end}}</td></tr>
+</table>
+{{else if eq .Step 4}}
+<h2>Import SEO data</h2>
+{{if or .Data.Detected.Yoast .Data.Detected.RankMath}}
+<p>Content imported from WordPress carries SEO data: <strong>{{.Data.Detected.Yoast}}</strong> item(s) from Yoast SEO and <strong>{{.Data.Detected.RankMath}}</strong> from Rank Math. SEO-Go reads it as it is; importing copies it into SEO-Go's own fields.</p>
+<p><label><input type="checkbox" name="import" value="1" checked /> Import titles, descriptions, focus keyphrases, robots settings, canonical URLs, social fields and cornerstone flags</label></p>
+{{else}}<p>No Yoast SEO or Rank Math data was found. Nothing to import.</p>{{end}}
+{{else}}
+<h2>SEO-Go is ready</h2>
+<p>Open any post or page to see the SEO-Go box: the snippet preview, the focus keyphrase and the SEO and readability analysis.</p>
+{{end}}
+<p class="submit">
+	{{if lt .Step 5}}<button type="submit" class="button button-primary button-large">Save and Continue</button>{{else}}<button type="submit" class="button button-primary button-large">Go to the Dashboard</button>{{end}}
+	{{if lt .Step 5}}<button type="submit" name="skip" value="1" class="button-link seogo-skip">Skip the wizard</button>{{end}}
+</p>
+</form>
+</div></div>
+</div>
+{{end}}
+
+{{/* ============================== General settings ============================== */}}
+{{if eq .Page "general"}}
+<nav class="nav-tab-wrapper wp-clearfix" aria-label="Secondary menu">
+{{$tab := .Tab}}{{range list "links:Links &amp; Robots" "webmaster:Webmaster Tools" "breadcrumbs:Breadcrumbs" "rss:RSS" "images:Image SEO"}}{{$p := split . ":"}}<a href="/wp-admin/seogo?page=general&amp;tab={{index $p 0}}" class="nav-tab{{if or (eq $tab (index $p 0)) (and (eq $tab "") (eq (index $p 0) "links"))}} nav-tab-active{{end}}">{{safe (index $p 1)}}</a>{{end}}
+</nav>
+<form method="post" action="/wp-admin/seogo?page=general">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="tab" value="{{if .Tab}}{{.Tab}}{{else}}links{{end}}" />
+<table class="form-table" role="presentation">
+{{if or (eq .Tab "") (eq .Tab "links")}}
+<tr><th scope="row">Title separator</th><td>{{template "seogo-separators" .Opts.Separator}}<p class="description">Used as <code>%sep%</code> in titles.</p></td></tr>
+<tr><th scope="row"><label for="robots_defaults">Robots meta limits</label></th><td><input name="robots_defaults" id="robots_defaults" type="text" class="large-text code" value="{{.Opts.RobotsDefaults}}" />
+	<p class="description">Added to indexable pages: <code>max-snippet</code>, <code>max-image-preview</code>, <code>max-video-preview</code>.</p></td></tr>
+<tr><th scope="row">Indexing</th><td><fieldset>
+	<label><input type="checkbox" name="noindex_empty_terms" value="1"{{if .Opts.NoindexEmptyTerms}} checked{{end}} /> Noindex empty category and tag archives</label><br />
+	<label><input type="checkbox" name="noindex_paged" value="1"{{if .Opts.NoindexPaged}} checked{{end}} /> Noindex paginated archive pages (page 2 and later)</label></fieldset></td></tr>
+<tr><th scope="row">Redirections</th><td><fieldset>
+	<label><input type="checkbox" name="auto_redirect" value="1"{{if .Opts.AutoRedirect}} checked{{end}} /> Redirect the old URL when the slug of a published post or page changes</label></fieldset></td></tr>
+<tr><th scope="row"><label for="redirect_404">Fallback for 404s</label></th><td><input name="redirect_404" id="redirect_404" type="url" class="regular-text code" value="{{.Opts.Redirect404}}" placeholder="Show the theme's 404 page" />
+	<p class="description">Leave empty to show the 404 page; or send every 404 to this URL with a 301 redirect.</p></td></tr>
+<tr><th scope="row"><label for="monitor_limit">404 log size</label></th><td><input name="monitor_limit" id="monitor_limit" type="number" min="0" class="small-text" value="{{.Opts.MonitorLimit}}" /> entries
+	<p class="description">0 keeps every entry.</p></td></tr>
+<tr><th scope="row"><label for="monitor_ignore">Do not log</label></th><td><textarea name="monitor_ignore" id="monitor_ignore" rows="4" class="large-text code" placeholder="/wp-content/&#10;.map">{{.Opts.MonitorIgnore}}</textarea>
+	<p class="description">One URL part per line; 404s whose URL contains one are not logged.</p></td></tr>
+{{else if eq .Tab "webmaster"}}
+{{range list "google|Google Search Console|google-site-verification" "bing|Bing Webmaster Tools|msvalidate.01" "baidu|Baidu Webmaster Tools|baidu-site-verification" "yandex|Yandex Webmaster|yandex-verification" "pinterest|Pinterest|p:domain_verify" "naver|Naver Webmaster|naver-site-verification"}}{{$p := split . "|"}}
+<tr><th scope="row"><label for="verify_{{index $p 0}}">{{index $p 1}}</label></th><td><input name="verify_{{index $p 0}}" id="verify_{{index $p 0}}" type="text" class="regular-text code" value="{{index $.Data.Opts.Verify (index $p 0)}}" />
+	<p class="description">The verification code or the whole <code>&lt;meta name="{{index $p 2}}"…&gt;</code> tag.</p></td></tr>{{end}}
+{{else if eq .Tab "breadcrumbs"}}
+<tr><th scope="row"><label for="bc_sep">Separator</label></th><td><input name="bc_sep" id="bc_sep" type="text" class="small-text" value="{{.Opts.BCSep}}" /></td></tr>
+<tr><th scope="row"><label for="bc_home">Anchor text for the homepage</label></th><td><input name="bc_home" id="bc_home" type="text" class="regular-text" value="{{.Opts.BCHome}}" /></td></tr>
+<tr><th scope="row"><label for="bc_prefix">Prefix for the breadcrumb path</label></th><td><input name="bc_prefix" id="bc_prefix" type="text" class="regular-text" value="{{.Opts.BCPrefix}}" /></td></tr>
+<tr><th scope="row"><label for="bc_archive">Prefix for archive breadcrumbs</label></th><td><input name="bc_archive" id="bc_archive" type="text" class="regular-text" value="{{.Opts.BCArchive}}" /></td></tr>
+<tr><th scope="row"><label for="bc_search">Prefix for search page breadcrumbs</label></th><td><input name="bc_search" id="bc_search" type="text" class="regular-text" value="{{.Opts.BCSearch}}" /></td></tr>
+<tr><th scope="row"><label for="bc_404">Breadcrumb for 404 page</label></th><td><input name="bc_404" id="bc_404" type="text" class="regular-text" value="{{.Opts.BC404}}" /></td></tr>
+<tr><th scope="row">Display</th><td><fieldset>
+	<label><input type="checkbox" name="bc_bold_last" value="1"{{if .Opts.BCBoldLast}} checked{{end}} /> Bold the last page</label><br />
+	<label><input type="checkbox" name="bc_show_blog" value="1"{{if .Opts.BCShowBlog}} checked{{end}} /> Show the blog page</label><br />
+	<label><input type="checkbox" name="bc_hide_title" value="1"{{if .Opts.BCHideTitle}} checked{{end}} /> Hide the title of the current page</label></fieldset></td></tr>
+<tr><th scope="row">How to add breadcrumbs</th><td><p>Insert the <strong>Breadcrumbs</strong> block (SEO-Go category) or the <code>[seogo_breadcrumb]</code> shortcode. Yoast's <code>[wpseo_breadcrumb]</code> and Rank Math's <code>[rank_math_breadcrumb]</code> work as well.</p></td></tr>
+{{else if eq .Tab "rss"}}
+<tr><th scope="row"><label for="rss_before">Content to put before each post in the feed</label></th><td><textarea name="rss_before" id="rss_before" rows="3" class="large-text code">{{.Opts.RSSBefore}}</textarea></td></tr>
+<tr><th scope="row"><label for="rss_after">Content to put after each post in the feed</label></th><td><textarea name="rss_after" id="rss_after" rows="3" class="large-text code">{{.Opts.RSSAfter}}</textarea>
+	<p class="description">Available: <code>%postlink%</code>, <code>%bloglink%</code>, <code>%blogdesclink%</code>, <code>%authorlink%</code> and every title variable. Protects against content scrapers.</p></td></tr>
+{{else if eq .Tab "images"}}
+<tr><th scope="row"><label for="img_alt">Add missing alt attributes</label></th><td><input name="img_alt" id="img_alt" type="text" class="regular-text code" value="{{.Opts.ImgAlt}}" />
+	<p class="description">For images without an alt text, when the Image SEO module is active. <code>%filename%</code>, <code>%title%</code>, <code>%sitename%</code>… Empty: leave alone.</p></td></tr>
+<tr><th scope="row"><label for="img_title">Add missing title attributes</label></th><td><input name="img_title" id="img_title" type="text" class="regular-text code" value="{{.Opts.ImgTitle}}" /></td></tr>
+<tr><th scope="row">Module</th><td>{{if index .Opts.Modules "image_seo"}}<p>Image SEO is active.</p>{{else}}<p>Image SEO is inactive. Activate it on the <a href="/wp-admin/seogo">Dashboard</a>.</p>{{end}}</td></tr>
+{{end}}
+</table>
+<p class="submit"><input type="submit" class="button button-primary" value="Save Changes" /></p>
+</form>
+{{end}}
+
+{{/* ============================== Search appearance ============================== */}}
+{{if eq .Page "titles"}}
+<p>Templates for the SEO title and meta description of each kind of page. A post's own values in the SEO-Go box win.</p>
+<p class="seogo-vars-help">Variables: {{range .Vars}}<code title="{{index . 1}}">{{index . 0}}</code> {{end}}</p>
+<form method="post" action="/wp-admin/seogo?page=titles">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+{{range .Types}}
+<div class="postbox seogo-type-box"><div class="postbox-header"><h2 class="hndle">{{.Label}}</h2></div><div class="inside">
+<table class="form-table" role="presentation">
+{{if .Archive}}{{if or (eq .Key "author") (eq .Key "date")}}<tr><th scope="row">Archive</th><td><label><input type="checkbox" name="disabled_{{.Key}}" value="1"{{if .Opts.Disabled}} checked{{end}} /> Disable {{lower .Label}} (redirect them to the home page)</label></td></tr>{{end}}{{end}}
+<tr><th scope="row"><label for="title_{{.Key}}">SEO title</label></th><td><input name="title_{{.Key}}" id="title_{{.Key}}" type="text" class="large-text seogo-var-input" value="{{.Opts.Title}}" /></td></tr>
+{{if ne .Key "404"}}<tr><th scope="row"><label for="desc_{{.Key}}">Meta description</label></th><td><textarea name="desc_{{.Key}}" id="desc_{{.Key}}" rows="2" class="large-text seogo-var-input">{{.Opts.Description}}</textarea></td></tr>{{end}}
+{{if not .Special}}<tr><th scope="row">Search results</th><td><fieldset>
+	<label><input type="checkbox" name="noindex_{{.Key}}" value="1"{{if .Opts.Noindex}} checked{{end}} /> Hide {{lower .Label}} from search results (noindex)</label><br />
+	<label><input type="checkbox" name="nositemap_{{.Key}}" value="1"{{if not .Opts.Sitemap}} checked{{end}} /> Leave {{lower .Label}} out of the XML sitemap</label></fieldset></td></tr>{{end}}
+{{if or (eq .Key "post") (eq .Key "page")}}<tr><th scope="row">Schema</th><td>
+	<label>Page type <select name="schema_page_{{.Key}}">{{$v := .Opts.SchemaPage}}{{range $.Data.PageTypes}}<option{{if eq . $v}} selected{{end}}>{{.}}</option>{{end}}</select></label>
+	<label>Article type <select name="schema_art_{{.Key}}">{{$v := .Opts.SchemaArt}}{{range $.Data.ArtTypes}}<option{{if eq . $v}} selected{{end}}>{{.}}</option>{{end}}</select></label></td></tr>{{end}}
+</table></div></div>
+{{end}}
+<p class="submit"><input type="submit" class="button button-primary" value="Save Changes" /></p>
+</form>
+{{end}}
+
+{{/* ============================== Social ============================== */}}
+{{if eq .Page "social"}}
+<form method="post" action="/wp-admin/seogo?page=social">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<table class="form-table" role="presentation">
+<tr><th scope="row">Open Graph</th><td><label><input type="checkbox" name="opengraph" value="1"{{if .Opts.OpenGraph}} checked{{end}} /> Add Open Graph meta data (Facebook, LinkedIn, WhatsApp, Slack…)</label></td></tr>
+<tr><th scope="row">X (Twitter) cards</th><td><label><input type="checkbox" name="twitter_cards" value="1"{{if .Opts.TwitterCards}} checked{{end}} /> Add X card meta data</label><br />
+	<select name="twitter_card"><option value="summary_large_image"{{if ne .Opts.TwitterCard "summary"}} selected{{end}}>Summary with large image</option><option value="summary"{{if eq .Opts.TwitterCard "summary"}} selected{{end}}>Summary</option></select></td></tr>
+<tr><th scope="row"><label for="default_image">Default image</label></th><td>{{template "seogo-image" dict "Name" "default_image" "Value" .Opts.DefaultImage}}<p class="description">Used when a page has no image of its own.</p></td></tr>
+<tr><th scope="row"><label for="home_og_image">Homepage image</label></th><td>{{template "seogo-image" dict "Name" "home_og_image" "Value" .Opts.HomeOGImage}}</td></tr>
+<tr><th scope="row"><label for="facebook_url">Facebook page URL</label></th><td><input name="facebook_url" id="facebook_url" type="url" class="regular-text" value="{{.Opts.FacebookURL}}" /></td></tr>
+<tr><th scope="row"><label for="facebook_app_id">Facebook app ID</label></th><td><input name="facebook_app_id" id="facebook_app_id" type="text" class="regular-text" value="{{.Opts.FacebookAppID}}" /></td></tr>
+<tr><th scope="row"><label for="twitter_user">X username</label></th><td><input name="twitter_user" id="twitter_user" type="text" class="regular-text" value="{{.Opts.TwitterUser}}" /></td></tr>
+<tr><th scope="row"><label for="profiles">Other profiles</label></th><td><textarea name="profiles" id="profiles" rows="5" class="large-text code">{{range .Opts.Profiles}}{{.}}
+{{end}}</textarea><p class="description">One URL per line.</p></td></tr>
+</table>
+<p class="submit"><input type="submit" class="button button-primary" value="Save Changes" /></p>
+</form>
+{{end}}
+
+{{/* ============================== Schema ============================== */}}
+{{if eq .Page "schema"}}
+<form method="post" action="/wp-admin/seogo?page=schema">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<h2>Site representation</h2>
+<table class="form-table" role="presentation">
+<tr><th scope="row">This site represents</th><td><fieldset>
+	<label><input type="radio" name="kg_type" value="organization"{{if ne .Opts.KGType "person"}} checked{{end}} /> An organization</label><br />
+	<label><input type="radio" name="kg_type" value="person"{{if eq .Opts.KGType "person"}} checked{{end}} /> A person</label></fieldset></td></tr>
+<tr><th scope="row"><label for="kg_name">Organization name</label></th><td><input name="kg_name" id="kg_name" type="text" class="regular-text" value="{{.Opts.KGName}}" placeholder="{{settingStr "blogname"}}" /></td></tr>
+<tr><th scope="row"><label for="kg_alt_name">Alternate name</label></th><td><input name="kg_alt_name" id="kg_alt_name" type="text" class="regular-text" value="{{.Opts.KGAltName}}" /></td></tr>
+<tr><th scope="row"><label for="kg_logo">Logo</label></th><td>{{template "seogo-image" dict "Name" "kg_logo" "Value" .Opts.KGLogo}}</td></tr>
+<tr><th scope="row"><label for="kg_person">Person</label></th><td><select name="kg_person" id="kg_person"><option value="0">Select a user</option>{{$p := .Opts.KGPersonID}}{{range .Data.Users}}<option value="{{.ID}}"{{if eq .ID $p}} selected{{end}}>{{.DisplayName}}</option>{{end}}</select></td></tr>
+</table>
+<h2>Local SEO</h2>
+<p>{{if index .Opts.Modules "local"}}The organization is described as a local business with these details.{{else}}Activate the Local SEO module on the <a href="/wp-admin/seogo">Dashboard</a> to use these details.{{end}}</p>
+<table class="form-table" role="presentation">
+<tr><th scope="row"><label for="local_type">Business type</label></th><td><select name="local_type" id="local_type">{{$t := .Opts.Local.Type}}{{range list "LocalBusiness" "Store" "Restaurant" "CafeOrCoffeeShop" "Bakery" "BarOrPub" "Dentist" "MedicalClinic" "Physician" "LegalService" "Attorney" "AccountingService" "RealEstateAgent" "AutoRepair" "BeautySalon" "HairSalon" "HealthClub" "Hotel" "TravelAgency" "ProfessionalService" "HomeAndConstructionBusiness" "EducationalOrganization"}}<option{{if eq . $t}} selected{{end}}>{{.}}</option>{{end}}</select></td></tr>
+<tr><th scope="row"><label for="local_name">Business name</label></th><td><input name="local_name" id="local_name" type="text" class="regular-text" value="{{.Opts.Local.Name}}" /></td></tr>
+<tr><th scope="row"><label for="local_street">Street address</label></th><td><input name="local_street" id="local_street" type="text" class="regular-text" value="{{.Opts.Local.Street}}" /></td></tr>
+<tr><th scope="row"><label for="local_city">City</label></th><td><input name="local_city" id="local_city" type="text" class="regular-text" value="{{.Opts.Local.City}}" /></td></tr>
+<tr><th scope="row"><label for="local_region">State / region</label></th><td><input name="local_region" id="local_region" type="text" class="regular-text" value="{{.Opts.Local.Region}}" /></td></tr>
+<tr><th scope="row"><label for="local_postal">Postal code</label></th><td><input name="local_postal" id="local_postal" type="text" class="small-text" value="{{.Opts.Local.Postal}}" /></td></tr>
+<tr><th scope="row"><label for="local_country">Country</label></th><td><input name="local_country" id="local_country" type="text" class="small-text" value="{{.Opts.Local.Country}}" placeholder="US" /></td></tr>
+<tr><th scope="row"><label for="local_phone">Phone</label></th><td><input name="local_phone" id="local_phone" type="tel" class="regular-text" value="{{.Opts.Local.Phone}}" /></td></tr>
+<tr><th scope="row"><label for="local_email">Email</label></th><td><input name="local_email" id="local_email" type="email" class="regular-text" value="{{.Opts.Local.Email}}" /></td></tr>
+<tr><th scope="row"><label for="local_price">Price range</label></th><td><input name="local_price" id="local_price" type="text" class="small-text" value="{{.Opts.Local.PriceRange}}" placeholder="$$" /></td></tr>
+<tr><th scope="row">Coordinates</th><td><input name="local_lat" type="text" class="small-text" value="{{.Opts.Local.Lat}}" placeholder="Latitude" aria-label="Latitude" /> <input name="local_lng" type="text" class="small-text" value="{{.Opts.Local.Lng}}" placeholder="Longitude" aria-label="Longitude" /></td></tr>
+<tr><th scope="row"><label for="local_hours">Opening hours</label></th><td><textarea name="local_hours" id="local_hours" rows="4" class="large-text code" placeholder="Mo-Fr 09:00-17:00&#10;Sa 10:00-14:00">{{.Opts.Local.Hours}}</textarea></td></tr>
+</table>
+<p class="description">Page and article types per post type are set under <a href="/wp-admin/seogo?page=titles">Search Appearance</a>; each post can override them, add Product data or custom JSON-LD in its SEO-Go box. FAQ and How-to blocks add their own schema.</p>
+<p class="submit"><input type="submit" class="button button-primary" value="Save Changes" /></p>
+</form>
+{{end}}
+
+{{/* ============================== Sitemaps ============================== */}}
+{{if eq .Page "sitemap"}}
+{{if not .Data.Public}}<div class="notice notice-warning inline"><p>Search engines are asked not to index this site, so the sitemaps answer with 404.</p></div>{{end}}
+{{if index .Opts.Modules "sitemap"}}
+<p>Your sitemap index: <a href="{{.Data.Index}}" target="_blank" rel="noopener">{{.Data.Index}}</a>. While SEO-Go is active, <code>wp-sitemap.xml</code> redirects here.</p>
+{{with .Data.Links}}<ul class="ul-disc">{{range .}}<li><a href="{{.}}" target="_blank" rel="noopener">{{.}}</a></li>{{end}}</ul>{{end}}
+{{else}}<div class="notice notice-info inline"><p>The XML Sitemaps module is inactive; WordPress Go's core sitemap is used. Activate it on the <a href="/wp-admin/seogo">Dashboard</a>.</p></div>{{end}}
+<form method="post" action="/wp-admin/seogo?page=sitemap">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<table class="form-table" role="presentation">
+<tr><th scope="row"><label for="sitemap_per_page">Links per sitemap</label></th><td><input name="sitemap_per_page" id="sitemap_per_page" type="number" min="1" max="50000" class="small-text" value="{{.Opts.SitemapPerPage}}" /></td></tr>
+<tr><th scope="row">Images</th><td><label><input type="checkbox" name="sitemap_images" value="1"{{if .Opts.SitemapImages}} checked{{end}} /> Include images (featured image and images in the content)</label></td></tr>
+<tr><th scope="row"><label for="sitemap_exclude">Exclude posts</label></th><td><input name="sitemap_exclude" id="sitemap_exclude" type="text" class="regular-text code" value="{{.Opts.SitemapExclude}}" placeholder="12, 34" /><p class="description">Comma-separated post and page IDs. Noindexed and password-protected content is always left out.</p></td></tr>
+<tr><th scope="row"><label for="sitemap_exclude_terms">Exclude terms</label></th><td><input name="sitemap_exclude_terms" id="sitemap_exclude_terms" type="text" class="regular-text code" value="{{.Opts.SitemapExcludeT}}" /></td></tr>
+<tr><th scope="row"><label for="sitemap_news_name">News publication name</label></th><td><input name="sitemap_news_name" id="sitemap_news_name" type="text" class="regular-text" value="{{.Opts.SitemapNewsTypes}}" placeholder="{{settingStr "blogname"}}" /><p class="description">For the News Sitemap module (<code>news-sitemap.xml</code>).</p></td></tr>
+</table>
+<p class="description">Which post types and archives are in the sitemap is set under <a href="/wp-admin/seogo?page=titles">Search Appearance</a>.</p>
+<p class="submit"><input type="submit" class="button button-primary" value="Save Changes" /></p>
+</form>
+{{end}}
+
+{{/* ============================== Redirections ============================== */}}
+{{if eq .Page "redirections"}}
+{{if not (index .Opts.Modules "redirections")}}<div class="notice notice-warning inline"><p>The Redirections module is inactive, so these redirects are not applied. Activate it on the <a href="/wp-admin/seogo">Dashboard</a>.</p></div>{{end}}
+{{with .Data.Edit}}
+<div class="postbox" id="seogo-redirect-form"><div class="postbox-header"><h2 class="hndle">{{if .ID}}Edit Redirection{{else}}Add New Redirection{{end}}</h2></div><div class="inside">
+<form method="post" action="/wp-admin/seogo?page=redirections">
+<input type="hidden" name="_wpnonce" value="{{$.Data.Nonce}}" /><input type="hidden" name="action" value="save" /><input type="hidden" name="id" value="{{.ID}}" />
+<table class="form-table" role="presentation">
+<tr><th scope="row"><label for="source">Source URL</label></th><td>
+	<select name="match_type" aria-label="Match type">{{$m := .MatchType}}{{range list "exact:Exact" "contains:Contains" "start:Starts with" "end:Ends with" "regex:Regex"}}{{$p := split . ":"}}<option value="{{index $p 0}}"{{if eq (index $p 0) $m}} selected{{end}}>{{index $p 1}}</option>{{end}}</select>
+	<input name="source" id="source" type="text" class="regular-text code" value="{{.Source}}" required placeholder="/old-page/" /></td></tr>
+<tr><th scope="row"><label for="target">Destination URL</label></th><td><input name="target" id="target" type="text" class="regular-text code" value="{{.Target}}" placeholder="/new-page/ or https://…" /><p class="description">Regex redirects may use <code>$1</code>, <code>$2</code>… Not needed for 410 and 451.</p></td></tr>
+<tr><th scope="row">Redirection type</th><td><fieldset>{{$c := .Code}}{{range list "301:301 Permanent Move" "302:302 Temporary Move" "307:307 Temporary Redirect" "410:410 Content Deleted" "451:451 Unavailable for Legal Reasons"}}{{$p := split . ":"}}<label class="seogo-inline"><input type="radio" name="code" value="{{index $p 0}}"{{if eq (index $p 0) (printf "%d" $c)}} checked{{end}} /> {{index $p 1}}</label>{{end}}</fieldset></td></tr>
+<tr><th scope="row"><label for="category">Category</label></th><td><input name="category" id="category" type="text" class="regular-text" value="{{.Category}}" /></td></tr>
+<tr><th scope="row">Status</th><td><label class="seogo-inline"><input type="radio" name="status" value="active"{{if ne .Status "inactive"}} checked{{end}} /> Active</label><label class="seogo-inline"><input type="radio" name="status" value="inactive"{{if eq .Status "inactive"}} checked{{end}} /> Inactive</label></td></tr>
+</table>
+<p class="submit"><input type="submit" class="button button-primary" value="{{if .ID}}Update Redirection{{else}}Add Redirection{{end}}" />{{if .ID}} <a class="button" href="/wp-admin/seogo?page=redirections">Cancel</a>{{end}}</p>
+</form></div></div>
+{{end}}
+<ul class="subsubsub"><li><a href="/wp-admin/seogo?page=redirections"{{if eq .Data.Filter ""}} class="current"{{end}}>All</a> |</li> <li><a href="/wp-admin/seogo?page=redirections&amp;status=active"{{if eq .Data.Filter "active"}} class="current"{{end}}>Active</a> |</li> <li><a href="/wp-admin/seogo?page=redirections&amp;status=inactive"{{if eq .Data.Filter "inactive"}} class="current"{{end}}>Inactive</a></li></ul>
+<form method="post" action="/wp-admin/seogo?page=redirections">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<div class="tablenav top"><div class="alignleft actions bulkactions"><label for="bulk-action-selector-top" class="screen-reader-text">Select bulk action</label>
+<select name="action" id="bulk-action-selector-top"><option value="">Bulk actions</option><option value="activate">Activate</option><option value="deactivate">Deactivate</option><option value="delete">Delete</option></select>
+<input type="submit" class="button action" value="Apply" /></div><br class="clear" /></div>
+<table class="wp-list-table widefat fixed striped table-view-list">
+<thead><tr><td class="manage-column column-cb check-column"><input type="checkbox" aria-label="Select all" /></td><th scope="col" class="column-primary">From</th><th scope="col">To</th><th scope="col" style="width:7em">Type</th><th scope="col" style="width:7em">Hits</th><th scope="col" style="width:12em">Last accessed</th></tr></thead>
+<tbody>
+{{range .Data.Rows}}<tr class="{{if eq .Status "inactive"}}seogo-inactive{{end}}">
+	<th scope="row" class="check-column"><input type="checkbox" name="ids[]" value="{{.ID}}" /></th>
+	<td class="column-primary"><strong><code>{{.Source}}</code></strong> <span class="seogo-tag">{{.MatchType}}</span>{{if eq .Origin "auto"}} <span class="seogo-tag">auto</span>{{end}}{{with .Category}} <span class="seogo-tag">{{.}}</span>{{end}}{{if eq .Status "inactive"}} — <span class="post-state">Inactive</span>{{end}}
+		<div class="row-actions"><span class="edit"><a href="/wp-admin/seogo?page=redirections&amp;edit={{.ID}}#seogo-redirect-form">Edit</a></span></div></td>
+	<td>{{if .Target}}<code>{{.Target}}</code>{{else}}&mdash;{{end}}</td><td>{{.Code}}</td><td>{{.Hits}}</td><td>{{if .LastHit}}{{.LastHit.Format "2006-01-02 15:04"}}{{else}}&mdash;{{end}}</td></tr>
+{{else}}<tr class="no-items"><td class="colspanchange" colspan="6">No redirections found.</td></tr>{{end}}
+</tbody></table>
+</form>
+<div class="postbox seogo-import"><div class="postbox-header"><h2 class="hndle">Import redirections</h2></div><div class="inside">
+<form method="post" action="/wp-admin/seogo?page=redirections" enctype="multipart/form-data">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="action" value="import" />
+<p>A CSV file with the columns <code>source,target,code,match_type</code> (Rank Math, Yoast and Redirection exports use the same order), or paste the lines below.</p>
+<p><input type="file" name="file" accept=".csv,text/csv" /></p>
+<p><textarea name="csv" rows="4" class="large-text code" placeholder="/old-page/,/new-page/,301"></textarea></p>
+<p><input type="submit" class="button" value="Import" /></p>
+</form></div></div>
+{{end}}
+
+{{/* ============================== 404 monitor ============================== */}}
+{{if eq .Page "404"}}
+{{if not (index .Opts.Modules "monitor")}}<div class="notice notice-warning inline"><p>The 404 Monitor module is inactive, so no new 404s are logged.</p></div>{{end}}
+<form method="get" action="/wp-admin/seogo"><input type="hidden" name="page" value="404" /><p class="search-box"><label class="screen-reader-text" for="seogo-404-search">Search URLs</label><input type="search" id="seogo-404-search" name="s" value="{{.Data.Search}}" /><input type="submit" class="button" value="Search URLs" /></p></form>
+<form method="post" action="/wp-admin/seogo?page=404">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<div class="tablenav top"><div class="alignleft actions bulkactions"><select name="action"><option value="">Bulk actions</option><option value="delete">Delete</option></select><input type="submit" class="button action" value="Apply" /></div>
+<div class="alignleft actions"><button type="submit" name="action" value="clear" class="button">Clear the log</button></div><br class="clear" /></div>
+<table class="wp-list-table widefat fixed striped table-view-list">
+<thead><tr><td class="manage-column column-cb check-column"><input type="checkbox" aria-label="Select all" /></td><th scope="col" class="column-primary">URI</th><th scope="col">Referer</th><th scope="col" style="width:6em">Hits</th><th scope="col" style="width:12em">Last accessed</th></tr></thead>
+<tbody>
+{{range .Data.Rows}}<tr><th scope="row" class="check-column"><input type="checkbox" name="ids[]" value="{{.ID}}" /></th>
+	<td class="column-primary"><code>{{.URI}}</code><div class="row-actions"><span><a href="/wp-admin/seogo?page=redirections&amp;source={{.URI}}#seogo-redirect-form">Redirect</a></span></div></td>
+	<td>{{with .Referer}}<span class="seogo-ellipsis" title="{{.}}">{{.}}</span>{{else}}&mdash;{{end}}</td><td>{{.Hits}}</td><td>{{.LastSeen.Format "2006-01-02 15:04"}}</td></tr>
+{{else}}<tr class="no-items"><td class="colspanchange" colspan="5">No 404s logged.</td></tr>{{end}}
+</tbody></table></form>
+{{end}}
+
+{{/* ============================== Link counter ============================== */}}
+{{if eq .Page "links"}}
+<p>Internal links help search engines understand your site. Content that no other content links to is <strong>orphaned</strong>; link to it from related posts, especially cornerstone content.</p>
+<ul class="subsubsub"><li><a href="/wp-admin/seogo?page=links"{{if eq .Data.Filter ""}} class="current"{{end}}>All</a> |</li> <li><a href="/wp-admin/seogo?page=links&amp;filter=orphaned"{{if eq .Data.Filter "orphaned"}} class="current"{{end}}>Orphaned content</a></li></ul>
+<table class="wp-list-table widefat fixed striped table-view-list">
+<thead><tr><th scope="col" class="column-primary">Title</th><th scope="col" style="width:6em">Type</th><th scope="col" style="width:9em" title="Links to other content of this site">Internal links</th><th scope="col" style="width:9em" title="Links to other sites">Outbound links</th><th scope="col" style="width:9em" title="Content of this site linking here">Received links</th></tr></thead>
+<tbody>
+{{range .Data.Rows}}<tr><td class="column-primary"><strong><a href="{{.EditURL}}">{{.Title}}</a></strong>{{if .Cornerstone}} <span class="dashicons dashicons-star-filled seogo-star" title="Cornerstone content"></span>{{end}}<div class="row-actions"><span class="view"><a href="{{.URL}}">View</a></span></div></td>
+	<td>{{.Type}}</td><td>{{.Internal}}</td><td>{{.External}}</td><td>{{if eq .Inbound 0}}<span class="seogo-bullet bad"></span> 0{{else}}{{.Inbound}}{{end}}</td></tr>
+{{else}}<tr class="no-items"><td class="colspanchange" colspan="5">No content found.</td></tr>{{end}}
+</tbody></table>
+{{end}}
+
+{{/* ============================== Bulk editor ============================== */}}
+{{if eq .Page "bulk"}}
+<ul class="subsubsub"><li><a href="/wp-admin/seogo?page=bulk&amp;post_type=post"{{if eq .Data.Type "post"}} class="current"{{end}}>Posts</a> |</li> <li><a href="/wp-admin/seogo?page=bulk&amp;post_type=page"{{if eq .Data.Type "page"}} class="current"{{end}}>Pages</a></li></ul>
+<form method="post" action="/wp-admin/seogo?page=bulk">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="post_type" value="{{.Data.Type}}" />
+<table class="wp-list-table widefat fixed striped table-view-list seogo-bulk">
+<thead><tr><th scope="col" class="column-primary" style="width:20%">Title</th><th scope="col" style="width:14%">Focus keyphrase</th><th scope="col">SEO title</th><th scope="col">Meta description</th><th scope="col" style="width:6em">SEO</th><th scope="col" style="width:7em">Readability</th></tr></thead>
+<tbody>
+{{range .Data.Rows}}<tr><td class="column-primary"><input type="hidden" name="ids[]" value="{{.ID}}" /><strong><a href="/wp-admin/post?post={{.ID}}&amp;action=edit">{{if .Title}}{{.Title}}{{else}}(no title){{end}}</a></strong>{{if ne .Status "publish"}} — <span class="post-state">{{ucfirst .Status}}</span>{{end}}{{if .Noindex}} <span class="seogo-tag">noindex</span>{{end}}</td>
+	<td><input type="text" name="focus_{{.ID}}" value="{{.Focus}}" class="widefat" /></td>
+	<td><input type="text" name="title_{{.ID}}" value="{{.SEOTitle}}" placeholder="{{.TitlePlaceholder}}" class="widefat" /></td>
+	<td><textarea name="desc_{{.ID}}" rows="2" class="widefat" placeholder="{{.DescPlaceholder}}">{{.Desc}}</textarea></td>
+	<td>{{template "seogo-score" .SEOScore}}</td><td>{{template "seogo-score" .ReadScore}}</td></tr>
+{{else}}<tr class="no-items"><td class="colspanchange" colspan="6">Nothing found.</td></tr>{{end}}
+</tbody></table>
+<p class="submit"><input type="submit" class="button button-primary" value="Save All" /></p>
+</form>
+{{end}}
+
+{{/* ============================== Tools ============================== */}}
+{{if eq .Page "tools"}}
+<div class="seogo-tools">
+<div class="postbox"><div class="postbox-header"><h2 class="hndle">Import from Yoast SEO and Rank Math</h2></div><div class="inside">
+	<p>Found SEO data on <strong>{{.Data.Detected.Yoast}}</strong> item(s) from Yoast SEO and <strong>{{.Data.Detected.RankMath}}</strong> from Rank Math (for example after a WordPress import). SEO-Go reads it already; importing copies it into SEO-Go's own fields so it can be edited. The original data stays.</p>
+	<form method="post" action="/wp-admin/seogo?page=tools"><input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="action" value="import_meta" />
+	<input type="submit" class="button button-primary" value="Import SEO data" /></form>
+	<p class="description">Redirects can be imported as CSV under <a href="/wp-admin/seogo?page=redirections#seogo-redirect-form">Redirections</a>.</p></div></div>
+<div class="postbox"><div class="postbox-header"><h2 class="hndle">robots.txt editor</h2></div><div class="inside">
+	<form method="post" action="/wp-admin/seogo?page=tools"><input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="action" value="robots" />
+	<p><textarea name="robots_txt" rows="10" class="large-text code" placeholder="{{.Data.RobotsDefault}}">{{.Opts.RobotsTxt}}</textarea></p>
+	<p class="description">Leave empty to serve the default shown in grey. <a href="{{.Home}}robots.txt" target="_blank" rel="noopener">View robots.txt</a>. WordPress Go serves it itself; there is no .htaccess to edit.</p>
+	<p><input type="submit" class="button button-primary" value="Save robots.txt" /></p></form></div></div>
+<div class="postbox"><div class="postbox-header"><h2 class="hndle">Instant Indexing (IndexNow)</h2></div><div class="inside">
+	{{if index .Opts.Modules "indexnow"}}
+	<p>Published and updated posts are submitted automatically. Key: <code>{{.Opts.IndexNowKey}}</code> (<a href="{{.Home}}{{.Opts.IndexNowKey}}.txt" target="_blank" rel="noopener">key file</a>).</p>
+	<form method="post" action="/wp-admin/seogo?page=tools"><input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="action" value="indexnow" />
+	<p><textarea name="urls" rows="4" class="large-text code" placeholder="{{.Home}}"></textarea></p>
+	<p><input type="submit" class="button" value="Submit URLs" /></p></form>
+	<form method="post" action="/wp-admin/seogo?page=tools"><input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="action" value="indexnow_key" /><p><input type="submit" class="button-link" value="Change the key" /></p></form>
+	{{with .Data.IndexNow}}<table class="widefat striped"><thead><tr><th>Time</th><th>URLs</th><th>Response</th></tr></thead><tbody>{{range .}}<tr><td>{{.Time.Format "2006-01-02 15:04:05"}}</td><td>{{range .URLs}}<code>{{.}}</code> {{end}}</td><td>{{.Status}}</td></tr>{{end}}</tbody></table>{{end}}
+	{{else}}<p>Activate the Instant Indexing module on the <a href="/wp-admin/seogo">Dashboard</a>.</p>{{end}}</div></div>
+<div class="postbox"><div class="postbox-header"><h2 class="hndle">Maintenance</h2></div><div class="inside">
+	<form method="post" action="/wp-admin/seogo?page=tools" class="seogo-inline-form"><input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="action" value="recalc" />
+	<input type="submit" class="button" value="Recalculate SEO scores" /></form>
+	<form method="post" action="/wp-admin/seogo?page=tools" class="seogo-inline-form"><input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="action" value="image_alt" />
+	<input type="submit" class="button" value="Add missing alt texts to the Media Library" /></form></div></div>
+<div class="postbox"><div class="postbox-header"><h2 class="hndle">Import and export settings</h2></div><div class="inside">
+	<p><a class="button" href="/wp-admin/seogo?page=tools&amp;action=export&amp;_wpnonce={{.Nonce}}">Export settings</a></p>
+	<form method="post" action="/wp-admin/seogo?page=tools" enctype="multipart/form-data"><input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="action" value="import_settings" />
+	<p><input type="file" name="file" accept=".json,application/json" /> <input type="submit" class="button" value="Import settings" /></p></form></div></div>
+</div>
+{{end}}
+
+{{/* ============================== Role manager ============================== */}}
+{{if eq .Page "roles"}}
+<p>Choose what each role may do with SEO-Go. Administrators can always do everything.</p>
+<form method="post" action="/wp-admin/seogo?page=roles">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+{{range $r := .Roles}}
+<div class="postbox"><div class="postbox-header"><h2 class="hndle">{{$r.Name}}</h2></div><div class="inside seogo-caps">
+{{range $.Data.Caps}}<label><input type="checkbox" name="cap_{{$r.Slug}}_{{.Key}}" value="1"{{if index $r.Caps .Key}} checked{{end}} /> {{.Label}}</label>{{end}}
+</div></div>
+{{end}}
+<p class="submit"><input type="submit" class="button button-primary" value="Save Changes" /></p>
+</form>
+{{end}}
+</div>
+<script src="/wp-admin/js/seogo-admin.js?ver=1.0.0" defer></script>
+{{end}}{{template "admin-footer" .}}{{end}}
+
+{{define "seogo-score"}}{{if eq . ""}}<span class="seogo-bullet na" title="Not analyzed"></span>{{else}}{{$n := printf "%s" .}}<span class="seogo-score-num" data-score="{{$n}}"><span class="seogo-bullet"></span> {{$n}}</span>{{end}}{{end}}
+
+{{define "seogo-image"}}<span class="seogo-image-field"><input name="{{.Name}}" id="{{.Name}}" type="url" class="regular-text code" value="{{.Value}}" />
+<button type="button" class="button seogo-pick-image" data-target="{{.Name}}">Select image</button></span>{{end}}
+
+{{define "seogo-separators"}}{{$cur := .}}<fieldset class="seogo-separators"><legend class="screen-reader-text">Title separator</legend>
+{{range list "-" "–" "—" ":" "·" "•" "*" "⋆" "|" "~" "«" "»" "<" ">"}}<label><input type="radio" name="separator" value="{{.}}"{{if eq . $cur}} checked{{end}} /><span>{{.}}</span></label>{{end}}</fieldset>{{end}}
+
+{{/* The SEO-Go box: classic editor meta box and Gotenberg sidebar share this markup. */}}
+{{define "seogo/metabox"}}
+<div id="seogo-metabox" class="postbox seogo-box" data-mode="{{.Mode}}">
+<div class="postbox-header"><h2 class="hndle">SEO-Go <span class="seogo-head-scores"><span class="seogo-head-score" data-kind="seo"><span class="seogo-bullet na"></span> SEO</span> <span class="seogo-head-score" data-kind="readability"><span class="seogo-bullet na"></span> Readability</span></span></h2>
+<div class="handle-actions hide-if-no-js"><button type="button" class="handlediv" aria-expanded="true"><span class="screen-reader-text">Toggle panel: SEO-Go</span><span class="toggle-indicator" aria-hidden="true"></span></button></div></div>
+<div class="inside">
+<input type="hidden" name="seogo_present" value="1" />
+<div class="seogo-tabs" role="tablist">
+	<button type="button" role="tab" class="seogo-tab is-active" data-tab="seo" aria-selected="true"><span class="dashicons dashicons-search"></span> SEO</button>
+	{{if index .Modules "analysis"}}<button type="button" role="tab" class="seogo-tab" data-tab="readability"><span class="dashicons dashicons-text-page"></span> Readability</button>{{end}}
+	{{if index .Can "seogo_onpage_snippet"}}{{if index .Modules "schema"}}<button type="button" role="tab" class="seogo-tab" data-tab="schema"><span class="dashicons dashicons-editor-code"></span> Schema</button>{{end}}{{end}}
+	{{if index .Can "seogo_onpage_social"}}<button type="button" role="tab" class="seogo-tab" data-tab="social"><span class="dashicons dashicons-share"></span> Social</button>{{end}}
+	{{if index .Can "seogo_onpage_advanced"}}<button type="button" role="tab" class="seogo-tab" data-tab="advanced"><span class="dashicons dashicons-admin-generic"></span> Advanced</button>{{end}}
+	{{if index .Modules "links"}}<button type="button" role="tab" class="seogo-tab" data-tab="links"><span class="dashicons dashicons-admin-links"></span> Links</button>{{end}}
+</div>
+
+<div class="seogo-panel is-active" data-panel="seo">
+	<p class="seogo-field"><label for="seogo-focus"><strong>Focus keyphrase</strong></label>
+	<input type="text" id="seogo-focus" name="seogo[focus]" value="{{index .Fields "focus"}}" class="widefat" autocomplete="off" placeholder="The search term this page should rank for" />
+	<span class="description">Add related keyphrases after a comma: the first is the focus keyphrase.</span></p>
+
+	<div class="seogo-snippet">
+		<div class="seogo-snippet-modes"><strong>Search appearance</strong>
+			<label><input type="radio" name="seogo_preview_mode" value="mobile" checked /> Mobile result</label>
+			<label><input type="radio" name="seogo_preview_mode" value="desktop" /> Desktop result</label></div>
+		<div class="seogo-serp is-mobile" aria-live="polite">
+			<div class="seogo-serp-site"><span class="seogo-serp-favicon"></span><span><span class="seogo-serp-sitename">{{.SiteName}}</span><span class="seogo-serp-url"></span></span></div>
+			<div class="seogo-serp-title"></div>
+			<div class="seogo-serp-desc"></div>
+		</div>
+	</div>
+	<p class="seogo-field"><label for="seogo-title"><strong>SEO title</strong></label>
+		<span class="seogo-var-wrap"><input type="text" id="seogo-title" name="seogo[title]" value="{{index .Fields "title"}}" class="widefat seogo-var-input" placeholder="{{.TitleTpl}}" />
+		{{template "seogo-vars" .Vars}}</span>
+		<span class="seogo-progress" data-for="title"><span></span></span></p>
+	<p class="seogo-field"><label for="seogo-description"><strong>Meta description</strong></label>
+		<span class="seogo-var-wrap"><textarea id="seogo-description" name="seogo[description]" rows="3" class="widefat seogo-var-input" placeholder="{{if .DescTpl}}{{.DescTpl}}{{else}}Write a description of 120–156 characters, or let search engines pick text from the page.{{end}}">{{index .Fields "description"}}</textarea>
+		{{template "seogo-vars" .Vars}}</span>
+		<span class="seogo-progress" data-for="description"><span></span></span></p>
+	<p class="seogo-field"><label><input type="checkbox" name="seogo[cornerstone]" value="1"{{if eq (index .Fields "cornerstone") "1"}} checked{{end}} /> <strong>Cornerstone content</strong> (pillar content)</label>
+		<span class="description">Your most important, most complete articles. They get stricter analysis and come first in internal linking suggestions.</span></p>
+	{{if index .Modules "analysis"}}
+	<div class="seogo-analysis" data-kind="seo"><h3>SEO analysis <span class="seogo-points" title="Rank Math-style 100-point score"></span></h3><ul class="seogo-results"></ul></div>
+	{{end}}
+</div>
+
+{{if index .Modules "analysis"}}
+<div class="seogo-panel" data-panel="readability" hidden>
+	<div class="seogo-analysis" data-kind="readability"><h3>Readability analysis</h3><ul class="seogo-results"></ul></div>
+</div>
+{{end}}
+
+{{if index .Can "seogo_onpage_snippet"}}{{if index .Modules "schema"}}
+<div class="seogo-panel" data-panel="schema" hidden>
+	<p class="seogo-field"><label for="seogo-schema-page"><strong>Page type</strong></label>
+	<select id="seogo-schema-page" name="seogo[schema_page]" class="widefat">{{$v := index .Fields "schema_page"}}<option value="">Default ({{.DefaultPage}})</option>{{range .PageTypes}}<option{{if eq . $v}} selected{{end}}>{{.}}</option>{{end}}</select></p>
+	<p class="seogo-field"><label for="seogo-schema-article"><strong>Article type</strong></label>
+	<select id="seogo-schema-article" name="seogo[schema_article]" class="widefat seogo-art-type">{{$v := index .Fields "schema_article"}}<option value="">Default ({{.DefaultArt}})</option>{{range .ArtTypes}}<option{{if eq . $v}} selected{{end}}>{{.}}</option>{{end}}</select></p>
+	<fieldset class="seogo-product"{{if ne (index .Fields "schema_article") "Product"}} hidden{{end}}><legend><strong>Product</strong></legend>
+		{{range list "price:Price" "currency:Currency (USD, EUR…)" "sku:SKU" "brand:Brand" "rating:Rating (1–5)" "review_count:Review count"}}{{$p := split . ":"}}<label>{{index $p 1}} <input type="text" name="seogo_product[{{index $p 0}}]" value="{{index $.Product (index $p 0)}}" class="widefat" /></label>{{end}}
+		<label>Availability <select name="seogo_product[availability]" class="widefat">{{$a := index .Product "availability"}}{{range list "InStock" "OutOfStock" "PreOrder" "BackOrder" "Discontinued"}}<option{{if eq . $a}} selected{{end}}>{{.}}</option>{{end}}</select></label>
+	</fieldset>
+	<p class="seogo-field"><label for="seogo-schema-custom"><strong>Custom JSON-LD</strong></label>
+	<textarea id="seogo-schema-custom" name="seogo[schema_custom]" rows="6" class="widefat code" placeholder='{"@type": "Event", "name": "…"}'>{{index .Fields "schema_custom"}}</textarea>
+	<span class="description">One node, a list of nodes or an object with <code>@graph</code>; it joins the page's schema graph. FAQ and How-to blocks add their own schema.</span></p>
+</div>
+{{end}}{{end}}
+
+{{if index .Can "seogo_onpage_social"}}
+<div class="seogo-panel" data-panel="social" hidden>
+	<div class="seogo-social-preview"><div class="seogo-fb-image"></div><div class="seogo-fb-text"><span class="seogo-fb-host"></span><strong class="seogo-fb-title"></strong><span class="seogo-fb-desc"></span></div></div>
+	<h3>Facebook &amp; Open Graph</h3>
+	<p class="seogo-field"><label for="seogo-og-image">Image</label>{{template "seogo-image" dict "Name" "seogo[og_image]" "Value" (index .Fields "og_image")}}</p>
+	<p class="seogo-field"><label for="seogo-og-title">Title</label><input type="text" id="seogo-og-title" name="seogo[og_title]" value="{{index .Fields "og_title"}}" class="widefat seogo-var-input" placeholder="The SEO title" /></p>
+	<p class="seogo-field"><label for="seogo-og-description">Description</label><textarea id="seogo-og-description" name="seogo[og_description]" rows="2" class="widefat seogo-var-input" placeholder="The meta description">{{index .Fields "og_description"}}</textarea></p>
+	<h3>X (Twitter)</h3>
+	<p class="seogo-field"><label>Image</label>{{template "seogo-image" dict "Name" "seogo[tw_image]" "Value" (index .Fields "tw_image")}}</p>
+	<p class="seogo-field"><label for="seogo-tw-title">Title</label><input type="text" id="seogo-tw-title" name="seogo[tw_title]" value="{{index .Fields "tw_title"}}" class="widefat seogo-var-input" placeholder="The Open Graph title" /></p>
+	<p class="seogo-field"><label for="seogo-tw-description">Description</label><textarea id="seogo-tw-description" name="seogo[tw_description]" rows="2" class="widefat seogo-var-input" placeholder="The Open Graph description">{{index .Fields "tw_description"}}</textarea></p>
+</div>
+{{end}}
+
+{{if index .Can "seogo_onpage_advanced"}}
+<div class="seogo-panel" data-panel="advanced" hidden>
+	<p class="seogo-field"><label for="seogo-noindex"><strong>Allow search engines to show this page in search results?</strong></label>
+	<select id="seogo-noindex" name="seogo[noindex]" class="widefat">{{$v := index .Fields "noindex"}}<option value="">Default for this type</option><option value="index"{{if eq $v "index"}} selected{{end}}>Yes (index)</option><option value="noindex"{{if eq $v "noindex"}} selected{{end}}>No (noindex)</option></select></p>
+	<p class="seogo-field"><label><input type="checkbox" name="seogo[nofollow]" value="1"{{if eq (index .Fields "nofollow") "1"}} checked{{end}} /> Ask search engines not to follow the links on this page (nofollow)</label></p>
+	<fieldset class="seogo-field"><legend><strong>Advanced robots</strong></legend>{{$adv := index .Fields "robots_adv"}}
+		<label class="seogo-inline"><input type="checkbox" name="seogo[robots_adv][]" value="noarchive"{{if contains $adv "noarchive"}} checked{{end}} /> No Archive</label>
+		<label class="seogo-inline"><input type="checkbox" name="seogo[robots_adv][]" value="nosnippet"{{if contains $adv "nosnippet"}} checked{{end}} /> No Snippet</label>
+		<label class="seogo-inline"><input type="checkbox" name="seogo[robots_adv][]" value="noimageindex"{{if contains $adv "noimageindex"}} checked{{end}} /> No Image Index</label></fieldset>
+	<p class="seogo-field seogo-cols3">
+		<label>Max snippet <input type="text" name="seogo[max_snippet]" value="{{index .Fields "max_snippet"}}" class="small-text" placeholder="-1" /></label>
+		<label>Max image preview <select name="seogo[max_image_preview]">{{$v := index .Fields "max_image_preview"}}<option value="">Default</option>{{range list "large" "standard" "none"}}<option{{if eq . $v}} selected{{end}}>{{.}}</option>{{end}}</select></label>
+		<label>Max video preview <input type="text" name="seogo[max_video_preview]" value="{{index .Fields "max_video_preview"}}" class="small-text" placeholder="-1" /></label></p>
+	<p class="seogo-field"><label for="seogo-canonical"><strong>Canonical URL</strong></label><input type="url" id="seogo-canonical" name="seogo[canonical]" value="{{index .Fields "canonical"}}" class="widefat code" placeholder="The permalink" /></p>
+	{{if index .Modules "breadcrumbs"}}<p class="seogo-field"><label for="seogo-bc-title"><strong>Breadcrumbs title</strong></label><input type="text" id="seogo-bc-title" name="seogo[bc_title]" value="{{index .Fields "bc_title"}}" class="widefat" placeholder="The title" /></p>{{end}}
+	{{with .Categories}}<p class="seogo-field"><label for="seogo-primary-cat"><strong>Primary category</strong></label>
+	<select id="seogo-primary-cat" name="seogo[primary_category]" class="widefat">{{$v := index $.Fields "primary_category"}}<option value="">The first category</option>{{range .}}<option value="{{.ID}}"{{if eq (printf "%d" .ID) $v}} selected{{end}}>{{repeat "— " .Depth}}{{.Name}}</option>{{end}}</select>
+	<span class="description">Used in breadcrumbs, <code>%primary_category%</code> and the permalink's category.</span></p>{{end}}
+</div>
+{{end}}
+
+{{if index .Modules "links"}}
+<div class="seogo-panel" data-panel="links" hidden>
+	<h3>Internal linking suggestions</h3>
+	<p class="description">Related content of this site to link to. Cornerstone content comes first.</p>
+	<ul class="seogo-suggestions"><li class="description">Start writing to get suggestions.</li></ul>
+</div>
+{{end}}
+</div></div>
+{{end}}
+
+{{define "seogo-vars"}}<span class="seogo-vars"><button type="button" class="button button-small seogo-vars-toggle" aria-expanded="false">Insert variable</button>
+<span class="seogo-vars-menu" hidden>{{range .}}<button type="button" class="seogo-var" data-var="{{index . 0}}">{{index . 1}} <code>{{index . 0}}</code></button>{{end}}</span></span>{{end}}
+
+{{define "seogo/termbox"}}
+<div class="seogo-termbox">
+<h2>SEO-Go</h2>
+<input type="hidden" name="seogo_present" value="1" />
+<table class="form-table" role="presentation">
+<tr class="form-field"><th scope="row"><label for="seogo-focus">Focus keyphrase</label></th><td><input type="text" id="seogo-focus" name="seogo[focus]" value="{{index .Fields "focus"}}" /></td></tr>
+<tr class="form-field"><th scope="row"><label for="seogo-title">SEO title</label></th><td><input type="text" id="seogo-title" name="seogo[title]" value="{{index .Fields "title"}}" placeholder="{{.TitleTpl}}" /></td></tr>
+<tr class="form-field"><th scope="row"><label for="seogo-description">Meta description</label></th><td><textarea id="seogo-description" name="seogo[description]" rows="3" placeholder="{{.DescTpl}}">{{index .Fields "description"}}</textarea></td></tr>
+{{if index .Can "seogo_onpage_advanced"}}
+<tr class="form-field"><th scope="row"><label for="seogo-noindex">Show in search results?</label></th><td><select id="seogo-noindex" name="seogo[noindex]">{{$v := index .Fields "noindex"}}<option value="">Default for this taxonomy</option><option value="index"{{if eq $v "index"}} selected{{end}}>Yes (index)</option><option value="noindex"{{if eq $v "noindex"}} selected{{end}}>No (noindex)</option></select></td></tr>
+<tr class="form-field"><th scope="row"><label for="seogo-canonical">Canonical URL</label></th><td><input type="url" id="seogo-canonical" name="seogo[canonical]" value="{{index .Fields "canonical"}}" /></td></tr>
+<tr class="form-field"><th scope="row"><label for="seogo-bc-title">Breadcrumbs title</label></th><td><input type="text" id="seogo-bc-title" name="seogo[bc_title]" value="{{index .Fields "bc_title"}}" /></td></tr>
+{{end}}
+{{if index .Can "seogo_onpage_social"}}
+<tr class="form-field"><th scope="row"><label for="seogo-og-title">Social title</label></th><td><input type="text" id="seogo-og-title" name="seogo[og_title]" value="{{index .Fields "og_title"}}" /></td></tr>
+<tr class="form-field"><th scope="row"><label for="seogo-og-description">Social description</label></th><td><textarea id="seogo-og-description" name="seogo[og_description]" rows="2">{{index .Fields "og_description"}}</textarea></td></tr>
+<tr class="form-field"><th scope="row"><label for="seogo-og-image">Social image</label></th><td><input type="url" id="seogo-og-image" name="seogo[og_image]" value="{{index .Fields "og_image"}}" /></td></tr>
+{{end}}
+</table>
+</div>
+{{end}}
