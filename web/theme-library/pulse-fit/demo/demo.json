@@ -1,0 +1,398 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Pulse Fit",
+  "blogdescription": "Open 5am – 11pm, seven days",
+  "posts_per_page": 7
+ },
+ "categories": [
+  {
+   "slug": "workouts",
+   "name": "Workouts",
+   "description": "Sessions you can do in the studio or at home."
+  },
+  {
+   "slug": "nutrition",
+   "name": "Nutrition",
+   "description": "Simple fuel for training."
+  },
+  {
+   "slug": "recovery",
+   "name": "Recovery",
+   "description": "Sleep, mobility and the art of resting."
+  },
+  {
+   "slug": "studio-news",
+   "name": "Studio News",
+   "description": "New classes, events and timetable changes."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "kettlebell",
+   "name": "Kettlebell"
+  },
+  {
+   "slug": "beginner",
+   "name": "Beginner"
+  },
+  {
+   "slug": "hiit",
+   "name": "HIIT"
+  },
+  {
+   "slug": "strength",
+   "name": "Strength"
+  },
+  {
+   "slug": "cardio",
+   "name": "Cardio"
+  },
+  {
+   "slug": "mobility",
+   "name": "Mobility"
+  }
+ ],
+ "media": [
+  {
+   "id": "hero",
+   "file": "demo/images/hero.jpg",
+   "alt": "A dark gym with dumbbells on a rack and kettlebells on the floor under lime light",
+   "caption": ""
+  },
+  {
+   "id": "kettlebells",
+   "file": "demo/images/kettlebells.jpg",
+   "alt": "Two kettlebells, one marked lime and one marked orange",
+   "caption": ""
+  },
+  {
+   "id": "barbell",
+   "file": "demo/images/barbell.jpg",
+   "alt": "A loaded barbell on a dark gym floor",
+   "caption": ""
+  },
+  {
+   "id": "spin",
+   "file": "demo/images/spin.jpg",
+   "alt": "Three spin bikes under purple and lime light",
+   "caption": ""
+  },
+  {
+   "id": "bottle",
+   "file": "demo/images/bottle.jpg",
+   "alt": "A lime water bottle and a folded towel",
+   "caption": ""
+  },
+  {
+   "id": "yoga",
+   "file": "demo/images/yoga.jpg",
+   "alt": "A green yoga mat with blocks and a foam roller",
+   "caption": ""
+  },
+  {
+   "id": "ropes",
+   "file": "demo/images/ropes.jpg",
+   "alt": "Two battle ropes making waves across the frame",
+   "caption": ""
+  },
+  {
+   "id": "track",
+   "file": "demo/images/track.jpg",
+   "alt": "Running track lanes curving around a finish line",
+   "caption": ""
+  },
+  {
+   "id": "heartbeat",
+   "file": "demo/images/heartbeat.jpg",
+   "alt": "A glowing heart-rate line on a dark grid",
+   "caption": ""
+  },
+  {
+   "id": "plates",
+   "file": "demo/images/plates.jpg",
+   "alt": "Three weight plates with lime and orange rings",
+   "caption": ""
+  },
+  {
+   "id": "stopwatch",
+   "file": "demo/images/stopwatch.jpg",
+   "alt": "A stopwatch with a lime rim and an orange hand",
+   "caption": ""
+  },
+  {
+   "id": "trainers",
+   "file": "demo/images/trainers.jpg",
+   "alt": "Three coaches standing together in team shirts",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Stronger every week",
+   "content": "<!-- wp:group {\"align\":\"full\",\"className\":\"section-programs\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-programs\"><!-- wp:paragraph {\"className\":\"kicker\"} --><p class=\"kicker\">Programs</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">Train <span class=\"outline-text\">your</span> way</h2><!-- /wp:heading --><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"program\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group program\"><!-- wp:paragraph {\"className\":\"num\"} --><p class=\"num\">01</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Strength</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Barbells, kettlebells and coaching on every rep. Get strong, safely.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"program\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group program\"><!-- wp:paragraph {\"className\":\"num\"} --><p class=\"num\">02</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">HIIT</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Short, sharp intervals that leave you buzzing, in thirty or forty-five minutes.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"program\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group program\"><!-- wp:paragraph {\"className\":\"num\"} --><p class=\"num\">03</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Spin</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Lights down, music up. Rhythm rides and climbs for every fitness level.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"program\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group program\"><!-- wp:paragraph {\"className\":\"num\"} --><p class=\"num\">04</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Mobility</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Stretch, breathe and move better. The class your other classes need.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"section-trial\",\"backgroundColor\":\"lime\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-trial has-lime-background-color has-background\"><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"kicker\"} --><p class=\"kicker\">Free trial</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">Your first week is <span class=\"outline-text\">on us</span></h2><!-- /wp:heading --><!-- wp:paragraph --><p>Seven days of unlimited classes, a welcome session with a coach and no contract. Bring a friend and you both get a second week free.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:membership}}\">Claim your free week</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:trainers}}\" alt=\"Three coaches standing together\"/></figure><!-- /wp:image --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"section-schedule\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-schedule\"><!-- wp:paragraph {\"className\":\"kicker\"} --><p class=\"kicker\">Timetable</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">This week at the studio</h2><!-- /wp:heading --><!-- wp:table {\"className\":\"schedule alignwide\"} --><figure class=\"wp-block-table schedule alignwide\"><table><thead><tr><th>Time</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat / Sun</th></tr></thead><tbody><tr><td>06:00</td><td><strong>Strength</strong>Coach Mira</td><td><strong>HIIT</strong>Coach Dev<span class=\"intensity\">High</span></td><td><strong>Strength</strong>Coach Mira</td><td><strong>HIIT</strong>Coach Dev<span class=\"intensity\">High</span></td><td><strong>Strength</strong>Coach Mira</td><td><strong>Track</strong>Open session</td></tr><tr><td>07:15</td><td><strong>Spin 45</strong>Coach Rae</td><td><strong>Mobility</strong>Coach Jun<span class=\"intensity intensity--low\">Low</span></td><td><strong>Spin 45</strong>Coach Rae</td><td><strong>Boxing</strong>Coach Tomi</td><td><strong>Spin 45</strong>Coach Rae</td><td><strong>Mobility</strong>Coach Jun<span class=\"intensity intensity--low\">Low</span></td></tr><tr><td>12:30</td><td><strong>Express HIIT</strong>30 min</td><td><strong>Kettlebells</strong>Coach Dev</td><td><strong>Express HIIT</strong>30 min</td><td><strong>Kettlebells</strong>Coach Dev</td><td><strong>Express HIIT</strong>30 min</td><td>—</td></tr></tbody></table></figure><!-- /wp:table --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:schedule}}\">Full schedule</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"section-plans\",\"backgroundColor\":\"graphite\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-plans has-graphite-background-color has-background\"><!-- wp:paragraph {\"className\":\"kicker\"} --><p class=\"kicker\">Membership</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">Pick a plan, start today</h2><!-- /wp:heading --><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"plan\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group plan\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Flex</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"price\"} --><p class=\"price\">$59<small> / month</small></p><!-- /wp:paragraph --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>8 classes a month</li><!-- /wp:list-item --><!-- wp:list-item --><li>Open gym off-peak</li><!-- /wp:list-item --><!-- wp:list-item --><li>App booking</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:membership}}\">Choose Flex</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"plan is-featured\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group plan is-featured\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Unlimited</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"price\"} --><p class=\"price\">$89<small> / month</small></p><!-- /wp:paragraph --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Unlimited classes</li><!-- /wp:list-item --><!-- wp:list-item --><li>Open gym 5am–11pm</li><!-- /wp:list-item --><!-- wp:list-item --><li>Monthly coach check-in</li><!-- /wp:list-item --><!-- wp:list-item --><li>Bring a friend on Fridays</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:membership}}\">Choose Unlimited</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"plan\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group plan\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Coached</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"price\"} --><p class=\"price\">$149<small> / month</small></p><!-- /wp:paragraph --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Everything in Unlimited</li><!-- /wp:list-item --><!-- wp:list-item --><li>Two personal sessions</li><!-- /wp:list-item --><!-- wp:list-item --><li>Written programme</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:membership}}\">Choose Coached</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"section-journal\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-journal\"><!-- wp:paragraph {\"className\":\"kicker\"} --><p class=\"kicker\">Journal</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">Workouts &amp; advice</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":3,\"displayPostContent\":true,\"excerptLength\":18,\"displayPostDate\":true,\"postLayout\":\"grid\",\"columns\":3,\"align\":\"wide\"} /--></div><!-- /wp:group -->",
+   "featured_media": "hero",
+   "front_page": true
+  },
+  {
+   "slug": "journal",
+   "title": "Journal",
+   "posts_page": true
+  },
+  {
+   "slug": "schedule",
+   "title": "Class schedule",
+   "content": "<!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">Classes run all year except public holidays. Book in the app up to seven days ahead; cancel up to two hours before so someone else can take your spot.</p><!-- /wp:paragraph -->\n\n<!-- wp:table {\"className\":\"schedule alignwide\"} --><figure class=\"wp-block-table schedule alignwide\"><table><thead><tr><th>Time</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat / Sun</th></tr></thead><tbody><tr><td>06:00</td><td><strong>Strength</strong>Coach Mira</td><td><strong>HIIT</strong>Coach Dev<span class=\"intensity\">High</span></td><td><strong>Strength</strong>Coach Mira</td><td><strong>HIIT</strong>Coach Dev<span class=\"intensity\">High</span></td><td><strong>Strength</strong>Coach Mira</td><td><strong>Track</strong>Open session</td></tr><tr><td>07:15</td><td><strong>Spin 45</strong>Coach Rae</td><td><strong>Mobility</strong>Coach Jun<span class=\"intensity intensity--low\">Low</span></td><td><strong>Spin 45</strong>Coach Rae</td><td><strong>Boxing</strong>Coach Tomi</td><td><strong>Spin 45</strong>Coach Rae</td><td><strong>Mobility</strong>Coach Jun<span class=\"intensity intensity--low\">Low</span></td></tr><tr><td>12:30</td><td><strong>Express HIIT</strong>30 min</td><td><strong>Kettlebells</strong>Coach Dev</td><td><strong>Express HIIT</strong>30 min</td><td><strong>Kettlebells</strong>Coach Dev</td><td><strong>Express HIIT</strong>30 min</td><td>—</td></tr><tr><td>18:00</td><td><strong>Boxing</strong>Coach Tomi<span class=\"intensity\">High</span></td><td><strong>Strength</strong>Coach Mira</td><td><strong>Boxing</strong>Coach Tomi<span class=\"intensity\">High</span></td><td><strong>Spin 45</strong>Coach Rae</td><td><strong>Team WOD</strong>All coaches</td><td>—</td></tr><tr><td>19:30</td><td><strong>Mobility</strong>Coach Jun<span class=\"intensity intensity--low\">Low</span></td><td><strong>Spin 45</strong>Coach Rae</td><td><strong>Strength</strong>Coach Mira</td><td><strong>Mobility</strong>Coach Jun<span class=\"intensity intensity--low\">Low</span></td><td>—</td><td>—</td></tr></tbody></table></figure><!-- /wp:table -->\n\n<!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">High intensity</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Marked <span class=\"intensity\">High</span>: fast, sweaty and scalable. Tell your coach if it is your first time.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Low intensity</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Marked <span class=\"intensity intensity--low\">Low</span>: mobility and recovery. Perfect on rest days.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Open gym</h3><!-- /wp:heading --><!-- wp:paragraph --><p>The gym floor is open from 5am to 11pm whenever there is no class in the main room.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->"
+  },
+  {
+   "slug": "trainers",
+   "title": "Trainers",
+   "content": "<!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">Every coach at Pulse Fit holds a recognised qualification, first-aid certificate and, most importantly, a genuine love of helping people move better.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"trainer\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group trainer\"><!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:plates}}\" alt=\"Weight plates\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Mira</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"role\"} --><p class=\"role\">Strength coach</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Former competitive lifter who now teaches beginners to love the barbell.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"trainer\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group trainer\"><!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:stopwatch}}\" alt=\"A stopwatch\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Dev</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"role\"} --><p class=\"role\">HIIT &amp; kettlebells</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Builds sessions that are hard, fun and over before you know it.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"trainer\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group trainer\"><!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:spin}}\" alt=\"Spin bikes\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Rae</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"role\"} --><p class=\"role\">Spin lead</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Plays the best playlists in the building. Rides every class with you.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"trainer\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group trainer\"><!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:yoga}}\" alt=\"A yoga mat\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Jun</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"role\"} --><p class=\"role\">Mobility &amp; recovery</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Helps stiff hips and busy minds slow down for an hour.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:pullquote --><figure class=\"wp-block-pullquote\"><blockquote><p>We coach people, not workouts.</p><cite>The Pulse Fit team</cite></blockquote></figure><!-- /wp:pullquote -->",
+   "parent": "schedule"
+  },
+  {
+   "slug": "membership",
+   "title": "Membership",
+   "content": "<!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">No joining fee, no long contracts. Every plan can be paused for up to two months a year.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"plan\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group plan\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Flex</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"price\"} --><p class=\"price\">$59<small> / month</small></p><!-- /wp:paragraph --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>8 classes a month</li><!-- /wp:list-item --><!-- wp:list-item --><li>Open gym off-peak</li><!-- /wp:list-item --><!-- wp:list-item --><li>App booking</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"plan is-featured\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group plan is-featured\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Unlimited</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"price\"} --><p class=\"price\">$89<small> / month</small></p><!-- /wp:paragraph --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Unlimited classes</li><!-- /wp:list-item --><!-- wp:list-item --><li>Open gym 5am–11pm</li><!-- /wp:list-item --><!-- wp:list-item --><li>Monthly coach check-in</li><!-- /wp:list-item --><!-- wp:list-item --><li>Bring a friend on Fridays</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"plan\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group plan\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Coached</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"price\"} --><p class=\"price\">$149<small> / month</small></p><!-- /wp:paragraph --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Everything in Unlimited</li><!-- /wp:list-item --><!-- wp:list-item --><li>Two personal sessions</li><!-- /wp:list-item --><!-- wp:list-item --><li>Written programme</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Questions</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><strong>Can I try before I join?</strong> Yes: your first week is free.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Is there a student rate?</strong> Twenty percent off any plan with a valid card.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>How do I cancel?</strong> One month's notice from the app or at the desk.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Start your free week</a></div><!-- /wp:button --></div><!-- /wp:buttons -->"
+  },
+  {
+   "slug": "contact",
+   "title": "Contact",
+   "content": "<!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">Questions about classes or membership? Drop in, call or write. The desk is staffed whenever we are open.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Studio</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Unit 3, Foundry Yard<br>Eastgate, EG4 1PF</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Call</h3><!-- /wp:heading --><!-- wp:paragraph --><p><a href=\"tel:+15550193300\">+1 (555) 019-3300</a></p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Email</h3><!-- /wp:heading --><!-- wp:paragraph --><p><a href=\"mailto:team@pulse.example\">team@pulse.example</a></p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:image {\"sizeSlug\":\"large\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:hero}}\" alt=\"The gym floor\"/></figure><!-- /wp:image -->"
+  }
+ ],
+ "posts": [
+  {
+   "slug": "twenty-minute-kettlebell-burner",
+   "title": "The 20-minute kettlebell burner",
+   "date": "2026-10-21T06:00:00",
+   "categories": [
+    "workouts"
+   ],
+   "tags": [
+    "kettlebell",
+    "hiit"
+   ],
+   "featured_media": "kettlebells",
+   "sticky": true,
+   "excerpt": "One bell, five moves, four rounds. A full-body session you can do in the studio or the living room.",
+   "content": "<!-- wp:paragraph --><p>No time? No problem. This circuit hits legs, back, core and lungs in twenty minutes with a single kettlebell. Pick a weight you can swing for fifteen clean reps.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns {\"className\":\"stat-row\"} --><div class=\"wp-block-columns stat-row\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"big\"} --><p class=\"big\">20 min</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Time</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"big\"} --><p class=\"big\">4</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Rounds</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"big\"} --><p class=\"big\">All</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Level</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">The circuit</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true,\"className\":\"workout\"} --><ol class=\"wp-block-list workout\"><!-- wp:list-item --><li><strong>Swings × 15</strong> Hinge, snap the hips, let the bell float.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Goblet squats × 10</strong> Elbows inside the knees, chest proud.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Single-arm rows × 8 each</strong> Pull to the hip, not the shoulder.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Push-ups × 10</strong> Knees down is fine; quality first.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Farmer carry × 40 m</strong> Switch hands halfway. Walk tall.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>Rest 60 seconds between rounds. Write down your weight and time so you can beat it next week.</p><!-- /wp:paragraph -->\n\n<!-- wp:pullquote --><figure class=\"wp-block-pullquote\"><blockquote><p>Fast is fine. Accurate is final.</p><cite>Coach's rule</cite></blockquote></figure><!-- /wp:pullquote -->\n\n<!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:stopwatch}}\" alt=\"A stopwatch with a lime rim\"/><figcaption class=\"wp-element-caption\">Use a timer: twenty minutes, every minute counted.</figcaption></figure><!-- /wp:image -->",
+   "comments": [
+    {
+     "author": "Kai R.",
+     "email": "kai@example.com",
+     "content": "Did this at 6am before work. Legs are toast. Great session.",
+     "date": "2026-10-21T08:15:00"
+    },
+    {
+     "author": "Lena V.",
+     "email": "lena@example.com",
+     "content": "What weight do you suggest for a beginner?",
+     "date": "2026-10-22T19:40:00"
+    }
+   ],
+   "format": "standard"
+  },
+  {
+   "slug": "first-week-of-strength-training",
+   "title": "Your first week of strength training",
+   "date": "2026-10-09T07:30:00",
+   "categories": [
+    "workouts"
+   ],
+   "tags": [
+    "strength",
+    "beginner"
+   ],
+   "featured_media": "barbell",
+   "excerpt": "Three sessions, three big lifts, zero ego. A calm start that builds habits before it builds max weights.",
+   "content": "<!-- wp:paragraph --><p>The first week is not about lifting heavy. It is about learning the movements, finding your starting weights and leaving the gym wanting to come back.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Monday</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Squat 3 × 8</li><!-- /wp:list-item --><!-- wp:list-item --><li>Push-up 3 × 10</li><!-- /wp:list-item --><!-- wp:list-item --><li>Plank 3 × 30 s</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Wednesday</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Deadlift 3 × 6</li><!-- /wp:list-item --><!-- wp:list-item --><li>Row 3 × 10</li><!-- /wp:list-item --><!-- wp:list-item --><li>Dead bug 3 × 10</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Friday</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Squat 3 × 8</li><!-- /wp:list-item --><!-- wp:list-item --><li>Overhead press 3 × 8</li><!-- /wp:list-item --><!-- wp:list-item --><li>Carry 3 × 40 m</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Three rules</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Stop every set with two good reps left in the tank.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Add a little weight only when every rep looks the same.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Sleep counts as training.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Everyone in the gym started with an empty bar. Nobody is watching you as closely as you think.</p><!-- /wp:paragraph --><cite>Head coach</cite></blockquote><!-- /wp:quote -->\n\n<!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:plates}}\" alt=\"Weight plates with lime rings\"/></figure><!-- /wp:image -->",
+   "format": "standard"
+  },
+  {
+   "slug": "spin-class-survival-guide",
+   "title": "Spin class survival guide",
+   "date": "2026-09-29T18:00:00",
+   "categories": [
+    "workouts"
+   ],
+   "tags": [
+    "cardio",
+    "beginner"
+   ],
+   "featured_media": "spin",
+   "excerpt": "Bike set-up, what the numbers mean and how to finish your first class smiling.",
+   "content": "<!-- wp:paragraph --><p>Spin is loud, dark and brilliant fun. A few minutes of preparation make the difference between loving it and limping out.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Set up the bike</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Saddle at hip height when you stand beside the bike.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Slight bend in the knee at the bottom of the pedal stroke.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Handlebars level with the saddle for your first class.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Zone</th><th>Feels like</th><th>You can…</th></tr></thead><tbody><tr><td>1–2</td><td>Easy</td><td>Chat in full sentences</td></tr><tr><td>3</td><td>Steady</td><td>Speak a few words</td></tr><tr><td>4</td><td>Hard</td><td>Grunt</td></tr><tr><td>5</td><td>All out</td><td>Only breathe</td></tr></tbody></table></figure><!-- /wp:table -->\n\n<!-- wp:paragraph --><p>Bring water, a small towel and arrive ten minutes early so the instructor can check your set-up.</p><!-- /wp:paragraph -->\n\n<!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:heartbeat}}\" alt=\"A glowing heart-rate line\"/><figcaption class=\"wp-element-caption\">Most of a class sits in zones 2 to 4.</figcaption></figure><!-- /wp:image -->",
+   "format": "standard"
+  },
+  {
+   "slug": "eating-around-early-workouts",
+   "title": "Eating around early workouts",
+   "date": "2026-09-18T06:30:00",
+   "categories": [
+    "nutrition"
+   ],
+   "tags": [
+    "beginner"
+   ],
+   "featured_media": "bottle",
+   "excerpt": "Train at 6am? Here is what to eat before, after and the night before, without a meal plan.",
+   "content": "<!-- wp:paragraph --><p>Early sessions are great for consistency, but an empty tank can make them feel brutal. You do not need special products, just a little planning.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":4} --><h4 class=\"wp-block-heading\">The night before</h4><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>A normal dinner with carbohydrates</li><!-- /wp:list-item --><!-- wp:list-item --><li>A big glass of water</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":4} --><h4 class=\"wp-block-heading\">Before (if you can)</h4><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Half a banana or a slice of toast</li><!-- /wp:list-item --><!-- wp:list-item --><li>Coffee is fine</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":4} --><h4 class=\"wp-block-heading\">After</h4><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Protein and carbs within two hours</li><!-- /wp:list-item --><!-- wp:list-item --><li>Eggs on toast, yogurt and fruit</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Your best pre-workout is last night's sleep.</p><!-- /wp:paragraph --><cite>Studio nutrition coach</cite></blockquote><!-- /wp:quote -->\n\n<!-- wp:paragraph --><p>If you feel dizzy or sick training fasted, eat something small. Listen to your body before you listen to the internet.</p><!-- /wp:paragraph -->",
+   "format": "standard"
+  },
+  {
+   "slug": "why-rest-days-build-muscle",
+   "title": "Why rest days build muscle",
+   "date": "2026-09-07T09:00:00",
+   "categories": [
+    "recovery"
+   ],
+   "tags": [
+    "mobility"
+   ],
+   "featured_media": "yoga",
+   "excerpt": "Training breaks muscle down; rest builds it back stronger. How to plan recovery like a pro.",
+   "content": "<!-- wp:paragraph --><p>Muscles do not grow during a workout. They grow afterwards, while you sleep, eat and move gently. Skip the rest and you skip the results.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">A good rest day</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>A 30-minute walk or easy ride</li><!-- /wp:list-item --><!-- wp:list-item --><li>Ten minutes of mobility work</li><!-- /wp:list-item --><!-- wp:list-item --><li>Protein at every meal</li><!-- /wp:list-item --><!-- wp:list-item --><li>Eight hours in bed</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:yoga}}\" alt=\"A yoga mat with blocks\"/><figcaption class=\"wp-element-caption\">Our Sunday mobility class is built for rest days.</figcaption></figure><!-- /wp:image -->\n\n<!-- wp:paragraph --><p>Two or three rest days a week is normal for most people. Feeling flat for days, sleeping badly or picking up niggles are signs you need more.</p><!-- /wp:paragraph -->",
+   "format": "standard"
+  },
+  {
+   "slug": "battle-ropes-three-finishers",
+   "title": "Battle ropes: three finishers",
+   "date": "2026-08-25T17:30:00",
+   "categories": [
+    "workouts"
+   ],
+   "tags": [
+    "hiit",
+    "cardio"
+   ],
+   "featured_media": "ropes",
+   "excerpt": "Thirty seconds on, thirty off. Three rope finishers to end any session on a high.",
+   "content": "<!-- wp:paragraph --><p>Ropes are the most honest piece of kit in the gym: they move exactly as hard as you do. Add one of these finishers to the end of a session.</p><!-- /wp:paragraph -->\n\n<!-- wp:list {\"ordered\":true,\"className\":\"workout\"} --><ol class=\"wp-block-list workout\"><!-- wp:list-item --><li><strong>Waves</strong> Alternate arms, 30 seconds on, 30 off, × 6.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Slams</strong> Both arms overhead and down, 20 seconds on, 40 off, × 6.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Circles</strong> Draw big circles, switch direction every round, × 6.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>Keep your knees soft and your back flat. The power comes from your legs and hips, not just your arms.</p><!-- /wp:paragraph -->",
+   "format": "standard"
+  },
+  {
+   "slug": "sunday-open-track-sessions",
+   "title": "New: Sunday open track sessions",
+   "date": "2026-08-12T10:00:00",
+   "categories": [
+    "studio-news"
+   ],
+   "tags": [
+    "cardio"
+   ],
+   "featured_media": "track",
+   "excerpt": "From September, members can join coached running sessions at the city track every Sunday morning.",
+   "content": "<!-- wp:paragraph --><p>We are taking training outside. Every Sunday at 8:00, one of our coaches will run a free session at the city track for members of every level.</p><!-- /wp:paragraph -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Warm-up and running drills</li><!-- /wp:list-item --><!-- wp:list-item --><li>Intervals in three pace groups</li><!-- /wp:list-item --><!-- wp:list-item --><li>Cool-down and stretching</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>Bring trainers and water. No booking needed; just turn up and find the lime flag.</p><!-- /wp:paragraph -->\n\n<!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:trainers}}\" alt=\"Three coaches standing together\"/><figcaption class=\"wp-element-caption\">Our coaches lead every Sunday session.</figcaption></figure><!-- /wp:image -->",
+   "format": "standard"
+  },
+  {
+   "slug": "reading-heart-rate-zones",
+   "title": "How to read your heart-rate zones",
+   "date": "2026-07-30T07:00:00",
+   "categories": [
+    "recovery",
+    "workouts"
+   ],
+   "tags": [
+    "cardio"
+   ],
+   "featured_media": "heartbeat",
+   "excerpt": "Five zones, one simple idea: most training should feel easier than you think.",
+   "content": "<!-- wp:paragraph --><p>Heart-rate zones help you train at the right effort on the right day. The simplest way to find yours is a rough maximum of 220 minus your age, then work out the percentages.</p><!-- /wp:paragraph -->\n\n<!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Zone</th><th>% of max</th><th>Use it for</th></tr></thead><tbody><tr><td>1</td><td>50–60%</td><td>Warm-ups and recovery</td></tr><tr><td>2</td><td>60–70%</td><td>Building your base</td></tr><tr><td>3</td><td>70–80%</td><td>Steady endurance</td></tr><tr><td>4</td><td>80–90%</td><td>Hard intervals</td></tr><tr><td>5</td><td>90–100%</td><td>Short, all-out efforts</td></tr></tbody></table></figure><!-- /wp:table -->\n\n<!-- wp:paragraph --><p>A good week spends most of its time in zones 1 and 2, with small doses of 4 and 5. Easy days easy, hard days hard.</p><!-- /wp:paragraph -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Train slow to get fast. It sounds wrong until you try it.</p><!-- /wp:paragraph --><cite>Endurance coach</cite></blockquote><!-- /wp:quote -->",
+   "format": "standard"
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Home",
+     "page": "home"
+    },
+    {
+     "title": "Classes",
+     "page": "schedule",
+     "children": [
+      {
+       "title": "Schedule",
+       "page": "schedule"
+      },
+      {
+       "title": "Trainers",
+       "page": "trainers"
+      }
+     ]
+    },
+    {
+     "title": "Membership",
+     "page": "membership"
+    },
+    {
+     "title": "Journal",
+     "page": "journal",
+     "children": [
+      {
+       "title": "Workouts",
+       "category": "workouts"
+      },
+      {
+       "title": "Nutrition",
+       "category": "nutrition"
+      },
+      {
+       "title": "Recovery",
+       "category": "recovery"
+      }
+     ]
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    }
+   ]
+  },
+  {
+   "name": "Social",
+   "location": "social",
+   "items": [
+    {
+     "title": "Instagram",
+     "url": "https://instagram.com/"
+    },
+    {
+     "title": "TikTok",
+     "url": "https://tiktok.com/"
+    },
+    {
+     "title": "Strava",
+     "url": "https://strava.com/"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "sidebar-1": [
+   "<!-- wp:group {\"className\":\"promo\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group promo\"><!-- wp:heading --><h2 class=\"wp-block-heading\">First week free</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Unlimited classes for seven days. No contract.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:membership}}\">Claim it</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "<!-- wp:search {\"label\":\"Search the journal\",\"buttonText\":\"Go\"} /-->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Topics</h2><!-- /wp:heading --><!-- wp:categories {\"showPostCounts\":true} /--></div><!-- /wp:group -->"
+  ],
+  "footer-1": [
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Hours</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Mon–Fri 5:00–23:00<br>Sat–Sun 7:00–20:00</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Studio</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Unit 3, Foundry Yard<br>Eastgate, EG4 1PF</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Explore</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><a href=\"{{page:schedule}}\">Schedule</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{page:trainers}}\">Trainers</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{page:membership}}\">Membership</a></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "hero_image": "hero",
+  "hero_heading": "Stronger every week",
+  "hero_text": "Coached classes, a gym floor open from 5am to 11pm and a community that shows up. Your first week is free.",
+  "cta_url": "{{page:membership}}",
+  "hero_button_url": "{{page:schedule}}",
+  "blog_layout": "magazine",
+  "dark_mode": true
+ }
+}

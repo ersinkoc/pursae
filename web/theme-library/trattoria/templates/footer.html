@@ -1,0 +1,28 @@
+	<footer id="colophon" class="site-footer">
+		<div class="site-footer__ornament" aria-hidden="true"><span></span></div>
+		<div class="wrap site-footer__grid">
+			<section class="footer-col footer-col--hours" aria-labelledby="footer-hours-title">
+				<h2 id="footer-hours-title" class="footer-col__title">Opening hours</h2>
+				{{with theme_mod . "hours_text"}}<p class="footer-hours">{{.}}</p>{{end}}
+			</section>
+			<section class="footer-col footer-col--brand" aria-label="{{.SiteName}}">
+				<p class="footer-brand">{{.SiteName}}</p>
+				{{with .Description}}<p class="footer-tagline">{{.}}</p>{{end}}
+				{{with theme_mod . "address"}}<p class="footer-address">{{.}}</p>{{end}}
+				{{with theme_mod . "phone"}}<p class="footer-phone"><a href="tel:{{.}}">{{.}}</a></p>{{end}}
+				{{with theme_mod . "reservation_label"}}<a class="button button--light" href="{{theme_mod $ "reservation_url"}}">{{.}}</a>{{end}}
+			</section>
+			<section class="footer-col footer-col--widgets" aria-label="More">
+				{{if is_active_sidebar . "footer-1"}}{{dynamic_sidebar . "footer-1"}}{{else}}<h2 class="footer-col__title">Find us</h2><p>We are in the old town, two streets from the market square.</p>{{end}}
+			</section>
+		</div>
+		<div class="wrap site-info">
+			{{if has_nav_menu . "social"}}<nav class="social-navigation" aria-label="Social links">{{nav_menu . "social"}}</nav>{{end}}
+			<p class="site-info__text">{{.PrivacyLink}}<span>{{with theme_mod . "footer_text"}}{{.}}{{else}}&copy; {{$.SiteName}} &middot; Cucina di casa{{end}}</span><span class="site-info__credit">Powered by <a href="https://github.com/boracomet/wordpress-go">WordPress Go</a></span></p>
+		</div>
+	</footer><!-- #colophon -->
+</div><!-- #page -->
+
+{{.Footer}}{{.AdminBar}}
+</body>
+</html>

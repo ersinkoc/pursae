@@ -1,0 +1,91 @@
+{
+  "slug": "pulse-fit",
+  "name": "Pulse Fit",
+  "version": "1.0.0",
+  "description": "A high-energy gym and fitness studio theme: electric lime on black, Bebas Neue headlines, a full-bleed hero with a scrolling class ticker, a weekly class schedule table, trainer profiles, membership plans and a workout journal with grid or magazine layouts.",
+  "author": "WordPress Go",
+  "author_url": "https://github.com/boracomet/wordpress-go",
+  "theme_url": "https://github.com/boracomet/wordpress-go/tree/main/web/theme-library/pulse-fit",
+  "tags": ["Fitness", "Sports", "Health", "Dark", "Grid Layout", "Right Sidebar", "Custom Colors", "Custom Logo", "Custom Menu", "Editor Style", "Featured Images", "Footer Widgets", "Sticky Header", "Wide Blocks"],
+  "requires_core": "0.1.0",
+  "screenshot": "assets/screenshot.png",
+  "category": "fitness",
+  "style": "High-energy dark gym, electric lime, bold condensed type",
+  "demo": "demo/demo.json",
+
+  "widget_areas": [
+    {"id": "sidebar-1", "name": "Sidebar", "description": "Beside journal posts while Customize › Journal & Footer shows the sidebar."},
+    {"id": "footer-1", "name": "Footer", "description": "Columns in the footer, next to the studio name."}
+  ],
+  "menu_locations": [
+    {"id": "primary", "name": "Primary Menu"},
+    {"id": "social", "name": "Social Links"}
+  ],
+
+  "styles": [
+    {"handle": "pulse-fit-style", "src": "assets/style.css", "deps": ["wp-block-library"], "media": "all"}
+  ],
+  "scripts": [
+    {"handle": "pulse-fit-navigation", "src": "assets/js/navigation.js", "deps": [], "in_footer": true}
+  ],
+  "editor_styles": ["assets/editor-style.css"],
+  "preload_fonts": ["assets/fonts/bebas-neue-400.woff2", "assets/fonts/barlow-400.woff2"],
+
+  "palette": [
+    {"name": "Lime", "slug": "lime", "color": "#c6f432"},
+    {"name": "Hot", "slug": "hot", "color": "#ff4d2e"},
+    {"name": "Black", "slug": "black", "color": "#0b0b0c"},
+    {"name": "Graphite", "slug": "graphite", "color": "#1c1d21"},
+    {"name": "Steel", "slug": "steel", "color": "#8b8f97"},
+    {"name": "White", "slug": "white", "color": "#ffffff"}
+  ],
+  "supports": {
+    "post-thumbnails": true,
+    "custom-logo": {"width": 200, "height": 56, "flex-width": true, "flex-height": true, "header-text": ["site-title", "site-description"]},
+    "title-tag": true,
+    "html5": ["search-form", "comment-form", "comment-list", "gallery", "caption", "script", "style"],
+    "responsive-embeds": true,
+    "align-wide": true,
+    "wp-block-styles": true
+  },
+
+  "customizer": {
+    "sections": [
+      {
+        "id": "pulse_colors", "title": "Colors & Type", "priority": 40,
+        "settings": [
+          {"id": "accent_color", "label": "Accent (lime)", "description": "Buttons, highlights, the ticker and focus rings.", "type": "color", "default": "#c6f432", "transport": "postMessage", "css_var": "--pf-accent"},
+          {"id": "hot_color", "label": "Second accent", "description": "Badges, live dot and intensity labels.", "type": "color", "default": "#ff4d2e", "transport": "postMessage", "css_var": "--pf-hot"},
+          {"id": "dark_mode", "label": "Dark mode (black background)", "description": "Off switches to a light, white-background version.", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "pf-dark"},
+          {"id": "font_pairing", "label": "Typefaces", "type": "select", "default": "bebas", "transport": "postMessage", "body_class": "pf-font-{value}",
+            "choices": [{"value": "bebas", "label": "Bebas Neue headlines, Barlow text"}, {"value": "barlow", "label": "Barlow extra-bold italic headlines"}, {"value": "system", "label": "System fonts"}]},
+          {"id": "angled_sections", "label": "Angled section edges", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "pf-angles"}
+        ]
+      },
+      {
+        "id": "pulse_hero", "title": "Header & Hero", "description": "The hero of a static front page. Without an image the page's featured image is used.", "priority": 41,
+        "settings": [
+          {"id": "sticky_header", "label": "Keep the header visible while scrolling", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "pf-sticky"},
+          {"id": "cta_label", "label": "Main button label", "description": "Header, hero and footer. Empty hides it.", "type": "text", "default": "Start free trial", "transport": "refresh"},
+          {"id": "cta_url", "label": "Main button link", "type": "text", "default": "/membership/", "transport": "refresh"},
+          {"id": "hero_image", "label": "Hero image", "type": "image"},
+          {"id": "hero_heading", "label": "Heading", "description": "Empty uses the page title.", "type": "text", "default": "", "transport": "refresh"},
+          {"id": "hero_text", "label": "Text", "type": "textarea", "default": "", "transport": "refresh"},
+          {"id": "hero_button_label", "label": "Second button label", "type": "text", "default": "See the schedule", "transport": "refresh"},
+          {"id": "hero_button_url", "label": "Second button link", "type": "text", "default": "/schedule/", "transport": "refresh"},
+          {"id": "ticker_text", "label": "Scrolling ticker under the hero", "description": "Empty hides the ticker.", "type": "text", "default": "Strength ✦ HIIT ✦ Spin ✦ Boxing ✦ Mobility ✦ Open 5am–11pm ✦", "transport": "refresh"}
+        ]
+      },
+      {
+        "id": "pulse_journal", "title": "Journal & Footer", "priority": 42,
+        "settings": [
+          {"id": "blog_layout", "label": "Journal layout", "type": "select", "default": "magazine", "transport": "postMessage", "body_class": "pf-blog-{value}",
+            "choices": [{"value": "magazine", "label": "Magazine (first post large)"}, {"value": "grid", "label": "Even grid"}]},
+          {"id": "show_sidebar", "label": "Show the sidebar beside the journal", "type": "checkbox", "default": false, "transport": "postMessage", "body_class": "pf-has-sidebar"},
+          {"id": "footer_slogan", "label": "Footer slogan", "type": "text", "default": "No excuses. Just results.", "transport": "refresh"},
+          {"id": "footer_text", "label": "Footer text", "description": "Replaces the copyright line.", "type": "text", "default": "", "transport": "refresh"}
+        ]
+      }
+    ]
+  }
+}

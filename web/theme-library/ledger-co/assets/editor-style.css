@@ -1,0 +1,13 @@
+/* Ledger & Co. — block editor styles */
+@font-face { font-family: "IBM Plex Sans"; src: url("fonts/ibm-plex-sans-var.woff2") format("woff2"); font-weight: 400 600; font-display: swap; }
+@font-face { font-family: "Source Serif 4"; src: url("fonts/source-serif-4-600.woff2") format("woff2"); font-weight: 600; font-display: swap; }
+body { font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 17px; line-height: 1.7; color: #33415a; }
+h1, h2, h3, h4 { font-family: "Source Serif 4", Georgia, serif; font-weight: 600; color: #0f1b2d; line-height: 1.18; letter-spacing: -.012em; }
+a { color: #13294b; text-decoration-color: #b08d57; text-underline-offset: 3px; }
+blockquote { border-left: 3px solid #b08d57; padding-left: 1.4em; font-family: "Source Serif 4", Georgia, serif; font-size: 1.2em; color: #0f1b2d; }
+.wp-block-button__link { background: #13294b; color: #fff; border-radius: 6px; font-weight: 600; }
+.kicker { font-size: .76rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: #8a6c3e; }
+.has-navy-background-color { background-color: #13294b; } .has-navy-color { color: #13294b; }
+.has-deep-navy-background-color { background-color: #0b1a33; } .has-brass-color { color: #b08d57; }
+.has-brass-background-color { background-color: #b08d57; } .has-mist-background-color { background-color: #f3f5f8; }
+.has-slate-color { color: #475569; } .has-slate-background-color { background-color: #475569; }

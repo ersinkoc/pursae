@@ -1,0 +1,27 @@
+{{template "header" .}}
+<main id="main" class="site-main site-main--front" tabindex="-1">
+{{with .Post}}{{$img := theme_mod $ "hero_image"}}{{if not $img}}{{$img = .ThumbnailURL}}{{end}}
+	<section class="hero{{if $img}} hero--has-media{{end}}" aria-label="Find a home">
+		{{if $img}}<img class="hero__bg" src="{{$img}}" alt="" />{{end}}
+		<div class="wrap hero__inner">
+			<h1 class="hero__title">{{with theme_mod $ "hero_heading"}}{{.}}{{else}}{{$.Post.Title}}{{end}}</h1>
+			{{with theme_mod $ "hero_text"}}<p class="hero__lead">{{.}}</p>{{end}}
+			<form role="search" method="get" class="hero-search" action="{{$.HomeURL}}">
+				<label for="hero-search-field" class="hero-search__label">Search listings</label>
+				<div class="hero-search__row">
+					<input type="search" id="hero-search-field" name="s" placeholder="{{with theme_mod $ "search_placeholder"}}{{.}}{{else}}Neighbourhood, street or feature&hellip;{{end}}" />
+					<button type="submit" class="button">Search homes</button>
+				</div>
+			</form>
+			{{if has_nav_menu $ "hero"}}<nav class="hero-links" aria-label="Popular searches"><span class="hero-links__label">Popular:</span>{{nav_menu $ "hero"}}</nav>{{end}}
+		</div>
+	</section>
+	<article id="post-{{.ID}}" class="{{.Class}} front-entry">
+		<div class="entry-content front-content">
+			{{.Content}}
+		</div>
+		{{with .EditLink}}<footer class="wrap entry-footer"><span class="edit-link">{{.}}</span></footer>{{end}}
+	</article>
+{{end}}
+</main><!-- #main -->
+{{template "footer" .}}

@@ -1,0 +1,406 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Keystone Estates",
+  "blogdescription": "Homes in Millbrook and the valley",
+  "posts_per_page": 9
+ },
+ "categories": [
+  {
+   "slug": "for-sale",
+   "name": "For Sale",
+   "description": "Homes currently on the market."
+  },
+  {
+   "slug": "for-rent",
+   "name": "For Rent",
+   "description": "Homes available to let."
+  },
+  {
+   "slug": "sold",
+   "name": "Sold",
+   "description": "Recently sold through Keystone."
+  },
+  {
+   "slug": "market-news",
+   "name": "Market News",
+   "description": "Reports and advice from our agents."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "old-town",
+   "name": "Old Town"
+  },
+  {
+   "slug": "riverside",
+   "name": "Riverside"
+  },
+  {
+   "slug": "hillcrest",
+   "name": "Hillcrest"
+  },
+  {
+   "slug": "lakeside",
+   "name": "Lakeside"
+  }
+ ],
+ "media": [
+  {
+   "id": "hero",
+   "file": "demo/images/hero.jpg",
+   "alt": "A modern two-storey house with a pool at dusk, hills behind",
+   "caption": ""
+  },
+  {
+   "id": "modern-home",
+   "file": "demo/images/modern-home.jpg",
+   "alt": "A white modern house with timber cladding on a green lawn",
+   "caption": ""
+  },
+  {
+   "id": "cottage",
+   "file": "demo/images/cottage.jpg",
+   "alt": "A cream stone cottage with a gabled roof and a garden path",
+   "caption": ""
+  },
+  {
+   "id": "townhouses",
+   "file": "demo/images/townhouses.jpg",
+   "alt": "A row of colourful townhouses with arched doors",
+   "caption": ""
+  },
+  {
+   "id": "apartments",
+   "file": "demo/images/apartments.jpg",
+   "alt": "A tall apartment building with balconies between trees",
+   "caption": ""
+  },
+  {
+   "id": "living-room",
+   "file": "demo/images/living-room.jpg",
+   "alt": "A bright living room with a sage sofa and a large window",
+   "caption": ""
+  },
+  {
+   "id": "kitchen",
+   "file": "demo/images/kitchen.jpg",
+   "alt": "A kitchen with green cabinets, an island and pendant lights",
+   "caption": ""
+  },
+  {
+   "id": "neighbourhood",
+   "file": "demo/images/neighbourhood.jpg",
+   "alt": "An aerial view of a leafy neighbourhood with houses and gardens",
+   "caption": ""
+  },
+  {
+   "id": "lake-cabin",
+   "file": "demo/images/lake-cabin.jpg",
+   "alt": "A timber cabin by a lake at sunset with a small jetty",
+   "caption": ""
+  },
+  {
+   "id": "front-door",
+   "file": "demo/images/front-door.jpg",
+   "alt": "A green front door between two potted trees",
+   "caption": ""
+  },
+  {
+   "id": "garden",
+   "file": "demo/images/garden.jpg",
+   "alt": "A back garden with a lawn, a path and a bench",
+   "caption": ""
+  },
+  {
+   "id": "agents",
+   "file": "demo/images/agents.jpg",
+   "alt": "Three stylised agents standing together",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Find a home you will love",
+   "content": "<!-- wp:group {\"align\":\"full\",\"className\":\"section-featured\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-featured\"><!-- wp:paragraph {\"className\":\"kicker\"} --><p class=\"kicker\">Featured homes</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">New on the market this month</h2><!-- /wp:heading --><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"service-box listing-tile\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group service-box listing-tile\"><!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:modern-home}}\" alt=\"A modern white house\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"{{post:modern-four-bed-hillcrest}}\">Modern four-bedroom home, Hillcrest</a></h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"listing-price\"} --><p class=\"listing-price\">$685,000</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"service-box listing-tile\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group service-box listing-tile\"><!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:cottage}}\" alt=\"A stone cottage\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"{{post:stone-cottage-wildflower-garden}}\">Stone cottage with a wildflower garden</a></h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"listing-price\"} --><p class=\"listing-price\">$415,000</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"service-box listing-tile\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group service-box listing-tile\"><!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:townhouses}}\" alt=\"Colourful townhouses\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"{{post:colourful-townhouse-near-market}}\">Colourful townhouse near the market</a></h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"listing-price\"} --><p class=\"listing-price\">$529,000</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:listings}}\">View all listings</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"backgroundColor\":\"forest\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull has-forest-background-color has-background\"><!-- wp:paragraph {\"className\":\"kicker\"} --><p class=\"kicker\">Why Keystone</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">Local agents, honest numbers</h2><!-- /wp:heading --><!-- wp:columns {\"className\":\"stats\",\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide stats\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"stat-num\"} --><p class=\"stat-num\">1,240</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>homes sold in the valley since 2009</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"stat-num\"} --><p class=\"stat-num\">19 days</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>average time from listing to offer</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"stat-num\"} --><p class=\"stat-num\">98.6%</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>of asking price achieved on average</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"stat-num\"} --><p class=\"stat-num\">4.9 / 5</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>from more than 600 client reviews</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"backgroundColor\":\"stone\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull has-stone-background-color has-background\"><!-- wp:paragraph {\"className\":\"kicker\"} --><p class=\"kicker\">Neighbourhoods</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">Find your corner of the valley</h2><!-- /wp:heading --><!-- wp:columns {\"className\":\"area-tiles\",\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide area-tiles\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"area-tile\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group area-tile\"><!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:townhouses}}\" alt=\"Old Town townhouses\"/></figure><!-- /wp:image --><!-- wp:paragraph --><p><a href=\"{{tag:old-town}}\">Old Town</a>Cobbles, cafés and the Saturday market</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"area-tile\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group area-tile\"><!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:apartments}}\" alt=\"Riverside apartments\"/></figure><!-- /wp:image --><!-- wp:paragraph --><p><a href=\"{{tag:riverside}}\">Riverside</a>Apartments by the river and tram</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"area-tile\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group area-tile\"><!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:neighbourhood}}\" alt=\"Hillcrest streets from above\"/></figure><!-- /wp:image --><!-- wp:paragraph --><p><a href=\"{{tag:hillcrest}}\">Hillcrest</a>Family homes and good schools</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"area-tile\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group area-tile\"><!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:lake-cabin}}\" alt=\"A cabin on the lake\"/></figure><!-- /wp:image --><!-- wp:paragraph --><p><a href=\"{{tag:lakeside}}\">Lakeside</a>Cabins, water and quiet evenings</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull\"><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"service-box\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group service-box\"><!-- wp:paragraph {\"className\":\"num\"} --><p class=\"num\">01</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Buying</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Early access to new listings, honest advice on price and a guide through every step to the keys.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"service-box\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group service-box\"><!-- wp:paragraph {\"className\":\"num\"} --><p class=\"num\">02</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Selling</h3><!-- /wp:heading --><!-- wp:paragraph --><p>A free valuation, professional photographs and viewings run by the agent who knows your home.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"service-box\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group service-box\"><!-- wp:paragraph {\"className\":\"num\"} --><p class=\"num\">03</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Renting</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Carefully checked tenants, clear agreements and repairs handled quickly for landlords.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:spacer {\"height\":\"48px\"} --><div style=\"height:48px\" aria-hidden=\"true\" class=\"wp-block-spacer\"></div><!-- /wp:spacer --><!-- wp:media-text {\"align\":\"wide\",\"mediaPosition\":\"right\",\"mediaType\":\"image\"} --><div class=\"wp-block-media-text alignwide has-media-on-the-right is-stacked-on-mobile\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:agents}}\" alt=\"Three agents standing together\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:paragraph {\"className\":\"kicker\"} --><p class=\"kicker\">Our team</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">Twelve agents who live where they sell</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Every Keystone agent lives in the valley. We know which streets flood, which schools have waiting lists and where the morning sun falls in the garden.</p><!-- /wp:paragraph --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>They sold our house in eleven days and found us the cottage we now call home.</p><!-- /wp:paragraph --><cite>A family who moved to the Old Town</cite></blockquote><!-- /wp:quote --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:about}}\">Meet the agents</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div></div><!-- /wp:media-text --></div><!-- /wp:group -->\n\n<!-- wp:cover {\"url\":\"{{media:hero}}\",\"dimRatio\":60,\"overlayColor\":\"charcoal\",\"align\":\"full\",\"minHeight\":420} --><div class=\"wp-block-cover alignfull\" style=\"min-height:420px\"><span aria-hidden=\"true\" class=\"wp-block-cover__background has-charcoal-background-color has-background-dim-60 has-background-dim\"></span><img class=\"wp-block-cover__image-background\" alt=\"\" src=\"{{media:hero}}\" data-object-fit=\"cover\"/><div class=\"wp-block-cover__inner-container\"><!-- wp:heading {\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center\">What is your home worth?</h2><!-- /wp:heading --><!-- wp:paragraph {\"align\":\"center\"} --><p class=\"has-text-align-center\">Book a free, no-obligation valuation with a local agent. It takes about forty minutes.</p><!-- /wp:paragraph --><!-- wp:buttons {\"layout\":{\"type\":\"flex\",\"justifyContent\":\"center\"}} --><div class=\"wp-block-buttons is-content-justification-center\"><!-- wp:button {\"className\":\"is-style-accent\"} --><div class=\"wp-block-button is-style-accent\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Book a valuation</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div></div><!-- /wp:cover -->",
+   "featured_media": "hero",
+   "front_page": true
+  },
+  {
+   "slug": "listings",
+   "title": "Listings",
+   "posts_page": true
+  },
+  {
+   "slug": "about",
+   "title": "About Keystone",
+   "content": "<!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">Keystone Estates was founded in 2009 by two agents who wanted to run the kind of agency they would trust with their own homes: local, plain-spoken and properly organised.</p><!-- /wp:paragraph -->\n\n<!-- wp:media-text {\"align\":\"wide\",\"mediaType\":\"image\"} --><div class=\"wp-block-media-text alignwide is-stacked-on-mobile\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:agents}}\" alt=\"Three stylised agents\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:heading --><h2 class=\"wp-block-heading\">How we work</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"feature-list\"} --><ul class=\"wp-block-list feature-list\"><!-- wp:list-item --><li>One agent looks after you from valuation to keys.</li><!-- /wp:list-item --><!-- wp:list-item --><li>No long contracts: four weeks' notice, always.</li><!-- /wp:list-item --><!-- wp:list-item --><li>We publish our fees on this page.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Every viewing is accompanied.</li><!-- /wp:list-item --></ul><!-- /wp:list --></div></div><!-- /wp:media-text -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Our fees</h2><!-- /wp:heading -->\n\n<!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Service</th><th>Fee</th></tr></thead><tbody><tr><td>Selling</td><td>1.2% of the sale price</td></tr><tr><td>Letting, tenant find</td><td>One month's rent</td></tr><tr><td>Full management</td><td>10% of monthly rent</td></tr><tr><td>Valuation</td><td>Free</td></tr></tbody></table></figure><!-- /wp:table -->\n\n<!-- wp:pullquote --><figure class=\"wp-block-pullquote\"><blockquote><p>A good agent should make moving feel smaller, not bigger.</p></blockquote></figure><!-- /wp:pullquote -->"
+  },
+  {
+   "slug": "selling",
+   "title": "Selling with us",
+   "content": "<!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">Selling a home is a big step. This guide explains what happens, week by week, when you sell with Keystone.</p><!-- /wp:paragraph -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li><strong>Valuation.</strong> An agent visits, looks at recent sales and recommends a price.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Preparation.</strong> We suggest small improvements and book photographs.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Launch.</strong> Your home goes live online and to our buyer list on the same day.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Viewings and offers.</strong> We accompany every viewing and report back the same evening.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Sale agreed.</strong> We chase solicitors and surveyors until the keys change hands.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:image {\"sizeSlug\":\"large\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:front-door}}\" alt=\"A green front door\"/></figure><!-- /wp:image -->\n\n<!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Book a valuation</a></div><!-- /wp:button --></div><!-- /wp:buttons -->"
+  },
+  {
+   "slug": "contact",
+   "title": "Contact",
+   "content": "<!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">Call, write or drop in. We answer the phone six days a week.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Office</h3><!-- /wp:heading --><!-- wp:paragraph --><p>48 Orchard Row<br>Millbrook, MB2 7KE</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Phone</h3><!-- /wp:heading --><!-- wp:paragraph --><p><a href=\"tel:+15550167700\">+1 (555) 016-7700</a><br>Mon–Sat 9:00–18:00</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Email</h3><!-- /wp:heading --><!-- wp:paragraph --><p><a href=\"mailto:homes@keystone.example\">homes@keystone.example</a></p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:image {\"sizeSlug\":\"large\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:neighbourhood}}\" alt=\"An aerial view of the neighbourhood\"/><figcaption class=\"wp-element-caption\">We cover Millbrook, the Old Town, Riverside, Hillcrest and the lake villages.</figcaption></figure><!-- /wp:image -->"
+  }
+ ],
+ "posts": [
+  {
+   "slug": "modern-four-bed-hillcrest",
+   "title": "Modern four-bedroom home with pool, Hillcrest",
+   "date": "2026-10-20T09:00:00",
+   "categories": [
+    "for-sale"
+   ],
+   "tags": [
+    "hillcrest"
+   ],
+   "featured_media": "modern-home",
+   "sticky": true,
+   "excerpt": "$685,000 · 4 bedrooms · 3 bathrooms · 2,450 sq ft",
+   "content": "<!-- wp:paragraph {\"className\":\"listing-price\"} --><p class=\"listing-price\">$685,000 <small>Freehold</small></p><!-- /wp:paragraph -->\n\n<!-- wp:list {\"className\":\"property-facts\"} --><ul class=\"wp-block-list property-facts\"><!-- wp:list-item --><li><strong>Bedrooms</strong>4</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Bathrooms</strong>3</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Living area</strong>2,450 sq ft</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Lot</strong>0.3 acres</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Built</strong>2019</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Parking</strong>Double garage</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>Set on a quiet crescent at the top of Hillcrest, this architect-designed home is all clean lines, timber and glass. The ground floor opens onto a terrace and a heated pool with views across the valley.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>Upstairs, a cantilevered wing holds three bedrooms and a principal suite with a dressing room and a bathroom lit by a long skylight.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Features</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"className\":\"feature-list\"} --><ul class=\"wp-block-list feature-list\"><!-- wp:list-item --><li>Open-plan kitchen and living space</li><!-- /wp:list-item --><!-- wp:list-item --><li>Heated outdoor pool</li><!-- /wp:list-item --><!-- wp:list-item --><li>Underfloor heating throughout</li><!-- /wp:list-item --><!-- wp:list-item --><li>Solar panels and battery</li><!-- /wp:list-item --><!-- wp:list-item --><li>Home office with separate entrance</li><!-- /wp:list-item --><!-- wp:list-item --><li>Landscaped, low-maintenance garden</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:image {\"sizeSlug\":\"large\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:living-room}}\" alt=\"The living room with a sage sofa\"/></figure><!-- /wp:image -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Location</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Hillcrest is a ten-minute drive from the town centre and a short walk from the primary school and the ridge trail.</p><!-- /wp:paragraph -->\n\n<!-- wp:group {\"className\":\"agent-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group agent-card\"><!-- wp:paragraph --><p><strong>Want to see it?</strong> Viewings are available six days a week, including early evenings.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Book a viewing</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "comments": [
+    {
+     "author": "Dana F.",
+     "email": "dana@example.com",
+     "content": "Is the home office soundproofed? We both work from home.",
+     "date": "2026-10-21T13:00:00"
+    }
+   ],
+   "format": "standard"
+  },
+  {
+   "slug": "stone-cottage-wildflower-garden",
+   "title": "Stone cottage with a wildflower garden",
+   "date": "2026-10-12T10:00:00",
+   "categories": [
+    "for-sale"
+   ],
+   "tags": [
+    "old-town"
+   ],
+   "featured_media": "cottage",
+   "excerpt": "$415,000 · 2 bedrooms · 1 bathroom · 980 sq ft",
+   "content": "<!-- wp:paragraph {\"className\":\"listing-price\"} --><p class=\"listing-price\">$415,000 <small>Freehold</small></p><!-- /wp:paragraph -->\n\n<!-- wp:list {\"className\":\"property-facts\"} --><ul class=\"wp-block-list property-facts\"><!-- wp:list-item --><li><strong>Bedrooms</strong>2</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Bathrooms</strong>1</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Living area</strong>980 sq ft</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Lot</strong>0.15 acres</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Built</strong>1890</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Parking</strong>Street</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>A pretty stone cottage at the quiet end of the Old Town, with deep window sills, a wood-burning stove and a garden that bursts into colour every June.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>It has been lovingly kept by the same owners for twenty years, with a new roof and rewiring in 2024.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Features</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"className\":\"feature-list\"} --><ul class=\"wp-block-list feature-list\"><!-- wp:list-item --><li>Wood-burning stove</li><!-- /wp:list-item --><!-- wp:list-item --><li>Original beams and floorboards</li><!-- /wp:list-item --><!-- wp:list-item --><li>Walled garden with fruit trees</li><!-- /wp:list-item --><!-- wp:list-item --><li>New roof (2024)</li><!-- /wp:list-item --><!-- wp:list-item --><li>Garden studio with power</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:image {\"sizeSlug\":\"large\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:front-door}}\" alt=\"The green front door\"/></figure><!-- /wp:image -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Location</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Five minutes' walk to the market square, the station and the river path.</p><!-- /wp:paragraph -->\n\n<!-- wp:group {\"className\":\"agent-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group agent-card\"><!-- wp:paragraph --><p><strong>Want to see it?</strong> Viewings are available six days a week, including early evenings.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Book a viewing</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "format": "standard"
+  },
+  {
+   "slug": "colourful-townhouse-near-market",
+   "title": "Colourful townhouse near the market",
+   "date": "2026-10-03T11:30:00",
+   "categories": [
+    "for-sale"
+   ],
+   "tags": [
+    "old-town"
+   ],
+   "featured_media": "townhouses",
+   "excerpt": "$529,000 · 3 bedrooms · 2 bathrooms · 1,600 sq ft",
+   "content": "<!-- wp:paragraph {\"className\":\"listing-price\"} --><p class=\"listing-price\">$529,000 <small>Freehold</small></p><!-- /wp:paragraph -->\n\n<!-- wp:list {\"className\":\"property-facts\"} --><ul class=\"wp-block-list property-facts\"><!-- wp:list-item --><li><strong>Bedrooms</strong>3</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Bathrooms</strong>2</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Living area</strong>1,600 sq ft</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Floors</strong>Three</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Built</strong>1912</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Parking</strong>Permit</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>The terracotta house in a row of painted townhouses, with tall ceilings, an arched front door and a roof terrace for summer evenings.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>The kitchen was rebuilt last year and opens onto a sheltered courtyard.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Features</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"className\":\"feature-list\"} --><ul class=\"wp-block-list feature-list\"><!-- wp:list-item --><li>Roof terrace</li><!-- /wp:list-item --><!-- wp:list-item --><li>Rebuilt kitchen (2025)</li><!-- /wp:list-item --><!-- wp:list-item --><li>Two bathrooms</li><!-- /wp:list-item --><!-- wp:list-item --><li>Original fireplaces</li><!-- /wp:list-item --><!-- wp:list-item --><li>Cellar storage</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:image {\"sizeSlug\":\"large\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:kitchen}}\" alt=\"A kitchen with green cabinets\"/></figure><!-- /wp:image -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Location</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>In the heart of the Old Town; the Saturday market is at the end of the street.</p><!-- /wp:paragraph -->\n\n<!-- wp:group {\"className\":\"agent-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group agent-card\"><!-- wp:paragraph --><p><strong>Want to see it?</strong> Viewings are available six days a week, including early evenings.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Book a viewing</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "format": "standard"
+  },
+  {
+   "slug": "two-bedroom-apartment-city-views",
+   "title": "Two-bedroom apartment with city views",
+   "date": "2026-09-26T09:30:00",
+   "categories": [
+    "for-rent"
+   ],
+   "tags": [
+    "riverside"
+   ],
+   "featured_media": "apartments",
+   "excerpt": "$1,850 per month · 2 bedrooms · 1 bathroom · 840 sq ft",
+   "content": "<!-- wp:paragraph {\"className\":\"listing-price\"} --><p class=\"listing-price\">$1,850 <small>per month</small></p><!-- /wp:paragraph -->\n\n<!-- wp:list {\"className\":\"property-facts\"} --><ul class=\"wp-block-list property-facts\"><!-- wp:list-item --><li><strong>Bedrooms</strong>2</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Bathrooms</strong>1</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Living area</strong>840 sq ft</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Floor</strong>Seventh</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Available</strong>1 December</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Term</strong>12 months</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>A light-filled corner apartment on the seventh floor of the Riverside building, with long views over the rooftops to the hills.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Features</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"className\":\"feature-list\"} --><ul class=\"wp-block-list feature-list\"><!-- wp:list-item --><li>Balcony facing south-west</li><!-- /wp:list-item --><!-- wp:list-item --><li>Lift and concierge</li><!-- /wp:list-item --><!-- wp:list-item --><li>Bike storage</li><!-- /wp:list-item --><!-- wp:list-item --><li>Energy rating A</li><!-- /wp:list-item --><!-- wp:list-item --><li>Pets considered</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:image {\"sizeSlug\":\"large\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:living-room}}\" alt=\"A bright living room\"/></figure><!-- /wp:image -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Location</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Riverside is a two-minute walk from the tram stop and the river path.</p><!-- /wp:paragraph -->\n\n<!-- wp:group {\"className\":\"agent-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group agent-card\"><!-- wp:paragraph --><p><strong>Want to see it?</strong> Viewings are available six days a week, including early evenings.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Book a viewing</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "format": "standard"
+  },
+  {
+   "slug": "lakeside-cabin-private-jetty",
+   "title": "Lakeside cabin with a private jetty",
+   "date": "2026-09-17T15:00:00",
+   "categories": [
+    "for-sale"
+   ],
+   "tags": [
+    "lakeside"
+   ],
+   "featured_media": "lake-cabin",
+   "excerpt": "$372,000 · 2 bedrooms · 1 bathroom · 760 sq ft",
+   "content": "<!-- wp:paragraph {\"className\":\"listing-price\"} --><p class=\"listing-price\">$372,000 <small>Freehold</small></p><!-- /wp:paragraph -->\n\n<!-- wp:list {\"className\":\"property-facts\"} --><ul class=\"wp-block-list property-facts\"><!-- wp:list-item --><li><strong>Bedrooms</strong>2</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Bathrooms</strong>1</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Living area</strong>760 sq ft</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Lot</strong>0.6 acres</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Built</strong>1974</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Water frontage</strong>120 ft</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>A timber cabin on the quiet western shore, with its own jetty, a wide deck and sunsets straight across the water.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>Used as a family retreat, it is fully winterised and could be a year-round home.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Features</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"className\":\"feature-list\"} --><ul class=\"wp-block-list feature-list\"><!-- wp:list-item --><li>Private jetty and boathouse</li><!-- /wp:list-item --><!-- wp:list-item --><li>Wraparound deck</li><!-- /wp:list-item --><!-- wp:list-item --><li>Wood stove</li><!-- /wp:list-item --><!-- wp:list-item --><li>Winterised plumbing</li><!-- /wp:list-item --><!-- wp:list-item --><li>Woodland lot</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:image {\"sizeSlug\":\"large\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:garden}}\" alt=\"A back garden with a bench\"/></figure><!-- /wp:image -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Location</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Twenty-five minutes from Millbrook; the village shop is a ten-minute walk along the shore.</p><!-- /wp:paragraph -->\n\n<!-- wp:group {\"className\":\"agent-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group agent-card\"><!-- wp:paragraph --><p><strong>Want to see it?</strong> Viewings are available six days a week, including early evenings.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Book a viewing</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "format": "standard"
+  },
+  {
+   "slug": "bright-family-home-open-plan-kitchen",
+   "title": "Bright family home with an open-plan kitchen",
+   "date": "2026-09-05T10:00:00",
+   "categories": [
+    "sold"
+   ],
+   "tags": [
+    "hillcrest"
+   ],
+   "featured_media": "kitchen",
+   "excerpt": "Sold for $598,000 · 4 bedrooms · 2 bathrooms · 2,100 sq ft",
+   "content": "<!-- wp:paragraph {\"className\":\"listing-price\"} --><p class=\"listing-price\">Sold <small>above asking, in 9 days</small></p><!-- /wp:paragraph -->\n\n<!-- wp:list {\"className\":\"property-facts\"} --><ul class=\"wp-block-list property-facts\"><!-- wp:list-item --><li><strong>Bedrooms</strong>4</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Bathrooms</strong>2</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Living area</strong>2,100 sq ft</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Lot</strong>0.2 acres</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Built</strong>2004</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Days on market</strong>9</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>This family home in Hillcrest attracted eleven viewings in its first weekend. The open-plan kitchen and the big garden were the stars of every visit.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Features</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"className\":\"feature-list\"} --><ul class=\"wp-block-list feature-list\"><!-- wp:list-item --><li>Open-plan kitchen with island</li><!-- /wp:list-item --><!-- wp:list-item --><li>Four double bedrooms</li><!-- /wp:list-item --><!-- wp:list-item --><li>Large level garden</li><!-- /wp:list-item --><!-- wp:list-item --><li>Close to two schools</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:image {\"sizeSlug\":\"large\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:garden}}\" alt=\"The back garden\"/></figure><!-- /wp:image -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Location</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Thinking of selling in Hillcrest? Demand remains strong for family homes near the schools.</p><!-- /wp:paragraph -->\n\n<!-- wp:group {\"className\":\"agent-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group agent-card\"><!-- wp:paragraph --><p><strong>Want to see it?</strong> Viewings are available six days a week, including early evenings.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Book a viewing</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "format": "standard"
+  },
+  {
+   "slug": "garden-flat-south-facing-patio",
+   "title": "Garden flat with a south-facing patio",
+   "date": "2026-08-28T12:00:00",
+   "categories": [
+    "for-rent"
+   ],
+   "tags": [
+    "riverside"
+   ],
+   "featured_media": "garden",
+   "excerpt": "$1,420 per month · 1 bedroom · 1 bathroom · 610 sq ft",
+   "content": "<!-- wp:paragraph {\"className\":\"listing-price\"} --><p class=\"listing-price\">$1,420 <small>per month</small></p><!-- /wp:paragraph -->\n\n<!-- wp:list {\"className\":\"property-facts\"} --><ul class=\"wp-block-list property-facts\"><!-- wp:list-item --><li><strong>Bedrooms</strong>1</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Bathrooms</strong>1</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Living area</strong>610 sq ft</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Outdoor</strong>Private patio</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Available</strong>Now</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Term</strong>6–12 months</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>A calm ground-floor flat in a converted villa, with its own entrance and a sunny patio opening onto the shared garden.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Features</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"className\":\"feature-list\"} --><ul class=\"wp-block-list feature-list\"><!-- wp:list-item --><li>Private entrance</li><!-- /wp:list-item --><!-- wp:list-item --><li>South-facing patio</li><!-- /wp:list-item --><!-- wp:list-item --><li>Shared garden</li><!-- /wp:list-item --><!-- wp:list-item --><li>Washer-dryer</li><!-- /wp:list-item --><!-- wp:list-item --><li>Furnished or unfurnished</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:image {\"sizeSlug\":\"large\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:front-door}}\" alt=\"A green front door\"/></figure><!-- /wp:image -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Location</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>On a leafy Riverside street, ten minutes' walk from the station.</p><!-- /wp:paragraph -->\n\n<!-- wp:group {\"className\":\"agent-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group agent-card\"><!-- wp:paragraph --><p><strong>Want to see it?</strong> Viewings are available six days a week, including early evenings.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Book a viewing</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "format": "standard"
+  },
+  {
+   "slug": "autumn-market-report",
+   "title": "Autumn market report: what buyers are paying in the valley",
+   "date": "2026-10-15T08:00:00",
+   "categories": [
+    "market-news"
+   ],
+   "tags": [
+    "old-town",
+    "hillcrest"
+   ],
+   "featured_media": "neighbourhood",
+   "excerpt": "Prices held steady through the summer, but homes with gardens are selling fastest. Here is our quarterly view.",
+   "content": "<!-- wp:paragraph --><p>The valley market had a steady summer. Prices are broadly flat on last year, but the speed of sales tells a more interesting story: homes with outdoor space are moving twice as fast as those without.</p><!-- /wp:paragraph -->\n\n<!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Area</th><th>Average price</th><th>Change on last year</th><th>Average days to sell</th></tr></thead><tbody><tr><td>Old Town</td><td>$468,000</td><td>+2%</td><td>21</td></tr><tr><td>Riverside</td><td>$402,000</td><td>0%</td><td>34</td></tr><tr><td>Hillcrest</td><td>$612,000</td><td>+4%</td><td>17</td></tr><tr><td>Lakeside</td><td>$355,000</td><td>−1%</td><td>46</td></tr></tbody></table></figure><!-- /wp:table -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What it means for sellers</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Price realistically from the start; overpriced homes sit.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Spend on the garden before the kitchen: buyers are paying for outdoor space.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Good photographs still matter more than anything else online.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Buyers are cautious, not absent. Well-presented homes at the right price are still selling within three weeks.</p><!-- /wp:paragraph --><cite>Keystone sales team</cite></blockquote><!-- /wp:quote -->\n\n<!-- wp:paragraph --><p>Ask us for a free valuation and a copy of the full report for your street.</p><!-- /wp:paragraph -->",
+   "format": "standard"
+  },
+  {
+   "slug": "preparing-your-home-for-viewings",
+   "title": "Preparing your home for viewings: a checklist",
+   "date": "2026-08-14T09:00:00",
+   "categories": [
+    "market-news"
+   ],
+   "tags": [
+    "riverside"
+   ],
+   "featured_media": "living-room",
+   "excerpt": "Small, inexpensive changes that help buyers picture themselves living in your home.",
+   "content": "<!-- wp:paragraph --><p>Buyers decide within minutes whether a home feels right. The good news is that the changes that matter most cost very little.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">A week before</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Fix dripping taps and sticky doors</li><!-- /wp:list-item --><!-- wp:list-item --><li>Clear the hallway and stairs</li><!-- /wp:list-item --><!-- wp:list-item --><li>Store half of what is on shelves</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">On the day</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Open curtains and switch lamps on</li><!-- /wp:list-item --><!-- wp:list-item --><li>Fresh towels and a made bed</li><!-- /wp:list-item --><!-- wp:list-item --><li>Pets and their bowls out of sight</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:front-door}}\" alt=\"A green front door between two potted trees\"/><figcaption class=\"wp-element-caption\">First impressions start at the front door.</figcaption></figure><!-- /wp:image -->\n\n<!-- wp:paragraph --><p>Our agents walk through every home before the first viewing and leave a short list of suggestions. It is part of the service.</p><!-- /wp:paragraph -->",
+   "format": "standard"
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Home",
+     "page": "home"
+    },
+    {
+     "title": "Listings",
+     "page": "listings",
+     "children": [
+      {
+       "title": "For sale",
+       "category": "for-sale"
+      },
+      {
+       "title": "For rent",
+       "category": "for-rent"
+      },
+      {
+       "title": "Recently sold",
+       "category": "sold"
+      }
+     ]
+    },
+    {
+     "title": "Sell",
+     "page": "selling",
+     "children": [
+      {
+       "title": "Market news",
+       "category": "market-news"
+      }
+     ]
+    },
+    {
+     "title": "About",
+     "page": "about"
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    }
+   ]
+  },
+  {
+   "name": "Popular searches",
+   "location": "hero",
+   "items": [
+    {
+     "title": "For sale",
+     "category": "for-sale"
+    },
+    {
+     "title": "For rent",
+     "category": "for-rent"
+    },
+    {
+     "title": "Old Town",
+     "url": "/tag/old-town/"
+    },
+    {
+     "title": "Lakeside",
+     "url": "/tag/lakeside/"
+    }
+   ]
+  },
+  {
+   "name": "Footer menu",
+   "location": "footer",
+   "items": [
+    {
+     "title": "Selling guide",
+     "page": "selling"
+    },
+    {
+     "title": "About",
+     "page": "about"
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "sidebar-1": [
+   "<!-- wp:search {\"label\":\"Search listings\",\"buttonText\":\"Search\"} /-->",
+   "<!-- wp:group {\"className\":\"valuation\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group valuation\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Free valuation</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Find out what your home is worth from a local agent.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-accent\"} --><div class=\"wp-block-button is-style-accent\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Book now</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Browse</h2><!-- /wp:heading --><!-- wp:categories {\"showPostCounts\":true} /--></div><!-- /wp:group -->"
+  ],
+  "footer-1": [
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Listings</h2><!-- /wp:heading --><!-- wp:categories /--></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Recent</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":3} /--></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "hero_image": "hero",
+  "hero_heading": "Find a home you will love in the valley",
+  "hero_text": "Houses, cottages and apartments in Millbrook, the Old Town and the lake villages, sold and let by agents who live here.",
+  "cta_url": "{{page:contact}}",
+  "header_style": "overlay",
+  "listing_layout": "grid",
+  "hero_overlay": 55
+ }
+}

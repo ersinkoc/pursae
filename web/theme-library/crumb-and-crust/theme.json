@@ -1,0 +1,90 @@
+{
+  "slug": "crumb-and-crust",
+  "name": "Crumb & Crust",
+  "version": "1.0.0",
+  "description": "A bright, appetizing recipe blog theme: coral and butter-yellow on cream, rounded cards with category stickers, category tiles on the home page, and recipe cards inside posts with timing facts, tickable ingredients and big numbered steps.",
+  "author": "WordPress Go",
+  "author_url": "https://github.com/boracomet/wordpress-go",
+  "theme_url": "https://github.com/boracomet/wordpress-go/tree/main/web/theme-library/crumb-and-crust",
+  "tags": ["Food", "Blog", "Recipes", "Grid Layout", "Right Sidebar", "Custom Colors", "Custom Logo", "Custom Menu", "Editor Style", "Featured Images", "Footer Widgets", "Threaded Comments", "Wide Blocks"],
+  "requires_core": "0.1.0",
+  "screenshot": "assets/screenshot.png",
+  "category": "food",
+  "style": "Bright recipe blog, rounded cards, coral and butter yellow",
+  "demo": "demo/demo.json",
+
+  "widget_areas": [
+    {"id": "sidebar-1", "name": "Sidebar", "description": "Beside recipes and archives while Customize › Layout shows the sidebar."},
+    {"id": "footer-1", "name": "Footer", "description": "Columns in the footer, next to the site description."}
+  ],
+  "menu_locations": [
+    {"id": "primary", "name": "Primary Menu"},
+    {"id": "social", "name": "Social Links"}
+  ],
+
+  "styles": [
+    {"handle": "crumb-and-crust-style", "src": "assets/style.css", "deps": ["wp-block-library"], "media": "all"}
+  ],
+  "scripts": [
+    {"handle": "crumb-and-crust-navigation", "src": "assets/js/navigation.js", "deps": [], "in_footer": true}
+  ],
+  "editor_styles": ["assets/editor-style.css"],
+  "preload_fonts": ["assets/fonts/nunito-400-800.woff2", "assets/fonts/dm-serif-display-400.woff2"],
+
+  "palette": [
+    {"name": "Coral", "slug": "coral", "color": "#e4572e"},
+    {"name": "Butter", "slug": "butter", "color": "#ffd166"},
+    {"name": "Mint", "slug": "mint", "color": "#cdeedb"},
+    {"name": "Peach", "slug": "peach", "color": "#ffe3d3"},
+    {"name": "Cocoa", "slug": "cocoa", "color": "#3b2418"},
+    {"name": "Cream", "slug": "cream", "color": "#fffaf3"}
+  ],
+  "supports": {
+    "post-thumbnails": true,
+    "custom-logo": {"width": 200, "height": 64, "flex-width": true, "flex-height": true, "header-text": ["site-title", "site-description"]},
+    "title-tag": true,
+    "html5": ["search-form", "comment-form", "comment-list", "gallery", "caption", "script", "style"],
+    "responsive-embeds": true,
+    "align-wide": true,
+    "wp-block-styles": true
+  },
+
+  "customizer": {
+    "sections": [
+      {
+        "id": "crumb_colors", "title": "Colors & Type", "priority": 40,
+        "settings": [
+          {"id": "accent_color", "label": "Accent", "description": "Buttons, links, step numbers and stickers.", "type": "color", "default": "#e4572e", "transport": "postMessage", "css_var": "--cc-accent"},
+          {"id": "highlight_color", "label": "Highlight", "description": "The hero, recipe card header and marker underlines.", "type": "color", "default": "#ffd166", "transport": "postMessage", "css_var": "--cc-highlight"},
+          {"id": "background_color", "label": "Page background", "type": "color", "default": "#fffaf3", "transport": "postMessage", "css_var": "--cc-bg"},
+          {"id": "font_pairing", "label": "Typefaces", "type": "select", "default": "serif", "transport": "postMessage", "body_class": "cc-font-{value}",
+            "choices": [{"value": "serif", "label": "DM Serif Display headings, Nunito text"}, {"value": "rounded", "label": "Nunito throughout (extra bold headings)"}, {"value": "system", "label": "System fonts"}]}
+        ]
+      },
+      {
+        "id": "crumb_layout", "title": "Layout", "priority": 41,
+        "settings": [
+          {"id": "header_layout", "label": "Header layout", "type": "select", "default": "inline", "transport": "postMessage", "body_class": "cc-header-{value}",
+            "choices": [{"value": "inline", "label": "Logo and menu on one line"}, {"value": "stacked", "label": "Centered logo, menu below"}]},
+          {"id": "card_style", "label": "Recipe card style", "type": "select", "default": "soft", "transport": "postMessage", "body_class": "cc-cards-{value}",
+            "choices": [{"value": "soft", "label": "Soft shadow"}, {"value": "outlined", "label": "Outlined"}, {"value": "flat", "label": "Flat, no frame"}]},
+          {"id": "blog_columns", "label": "Recipes per row", "type": "select", "default": "3", "transport": "postMessage", "body_class": "cc-cols-{value}",
+            "choices": [{"value": "2", "label": "Two"}, {"value": "3", "label": "Three"}]},
+          {"id": "show_sidebar", "label": "Show the sidebar on recipes and archives", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "cc-has-sidebar"},
+          {"id": "show_featured", "label": "Show featured images", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "cc-thumbs"}
+        ]
+      },
+      {
+        "id": "crumb_home", "title": "Home Page & Footer", "description": "The hero of a static front page. Without an image the page's featured image is used.", "priority": 42,
+        "settings": [
+          {"id": "hero_image", "label": "Hero image", "type": "image"},
+          {"id": "hero_heading", "label": "Heading", "description": "Empty uses the page title.", "type": "text", "default": "", "transport": "refresh"},
+          {"id": "hero_text", "label": "Text", "type": "textarea", "default": "", "transport": "refresh"},
+          {"id": "hero_button_label", "label": "Button label", "type": "text", "default": "Browse recipes", "transport": "refresh"},
+          {"id": "hero_button_url", "label": "Button link", "type": "text", "default": "/recipes/", "transport": "refresh"},
+          {"id": "footer_text", "label": "Footer text", "description": "Replaces the copyright line.", "type": "text", "default": "", "transport": "refresh"}
+        ]
+      }
+    ]
+  }
+}

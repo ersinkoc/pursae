@@ -1,0 +1,410 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Trattoria Rosmarino",
+  "blogdescription": "Cucina di casa since 1987",
+  "posts_per_page": 6
+ },
+ "categories": [
+  {
+   "slug": "kitchen",
+   "name": "From the Kitchen",
+   "description": "How we cook, and why."
+  },
+  {
+   "slug": "seasonal",
+   "name": "Seasonal",
+   "description": "What the market brings each month."
+  },
+  {
+   "slug": "wine",
+   "name": "Wine",
+   "description": "Growers, bottles and evenings at the bar."
+  },
+  {
+   "slug": "events",
+   "name": "Events",
+   "description": "Suppers, celebrations and the back room."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "pasta",
+   "name": "Pasta"
+  },
+  {
+   "slug": "autumn",
+   "name": "Autumn"
+  },
+  {
+   "slug": "summer",
+   "name": "Summer"
+  },
+  {
+   "slug": "baking",
+   "name": "Baking"
+  },
+  {
+   "slug": "dessert",
+   "name": "Dessert"
+  },
+  {
+   "slug": "tasting",
+   "name": "Tasting"
+  }
+ ],
+ "media": [
+  {
+   "id": "hero",
+   "file": "demo/images/hero.jpg",
+   "alt": "A wooden table from above with two plates of pasta, tomatoes and olive oil",
+   "caption": ""
+  },
+  {
+   "id": "pasta",
+   "file": "demo/images/pasta.jpg",
+   "alt": "A plate of spaghetti with tomato sauce and basil",
+   "caption": ""
+  },
+  {
+   "id": "pizza",
+   "file": "demo/images/pizza.jpg",
+   "alt": "A wood-fired pizza with tomato, mozzarella and basil on a wooden board",
+   "caption": ""
+  },
+  {
+   "id": "tomatoes",
+   "file": "demo/images/tomatoes.jpg",
+   "alt": "Ripe tomatoes scattered on a terracotta checked cloth",
+   "caption": ""
+  },
+  {
+   "id": "hills",
+   "file": "demo/images/hills.jpg",
+   "alt": "Rolling hills with cypress trees in warm evening light",
+   "caption": ""
+  },
+  {
+   "id": "wine",
+   "file": "demo/images/wine.jpg",
+   "alt": "A bottle of red wine and two glasses in candlelight",
+   "caption": ""
+  },
+  {
+   "id": "olive",
+   "file": "demo/images/olive.jpg",
+   "alt": "An olive branch with dark olives",
+   "caption": ""
+  },
+  {
+   "id": "facade",
+   "file": "demo/images/facade.jpg",
+   "alt": "The arched doorways of the trattoria, one lit from within",
+   "caption": ""
+  },
+  {
+   "id": "bread",
+   "file": "demo/images/bread.jpg",
+   "alt": "A rustic loaf with a dish of olive oil and green olives",
+   "caption": ""
+  },
+  {
+   "id": "tiramisu",
+   "file": "demo/images/tiramisu.jpg",
+   "alt": "A slice of tiramisu on a white plate",
+   "caption": ""
+  },
+  {
+   "id": "candle",
+   "file": "demo/images/candle.jpg",
+   "alt": "A candle and two glasses of red wine on a table",
+   "caption": ""
+  },
+  {
+   "id": "kitchen",
+   "file": "demo/images/kitchen.jpg",
+   "alt": "Copper pans hanging on a tiled kitchen wall",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Benvenuti a tavola",
+   "content": "<!-- wp:group {\"align\":\"full\",\"className\":\"section-intro\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-intro\"><!-- wp:paragraph {\"className\":\"eyebrow has-text-align-center\"} --><p class=\"eyebrow has-text-align-center\">Benvenuti</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\",\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center section-title\">Cooking the way <em>nonna</em> taught us</h2><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"lead has-text-align-center\"} --><p class=\"lead has-text-align-center\">Fresh pasta rolled every morning, bread from a wood-fired oven, and a menu that follows the market. Pull up a chair; we have been saving it for you.</p><!-- /wp:paragraph --><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"signature-dish\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group signature-dish\"><!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:pasta}}\" alt=\"A plate of spaghetti with tomato sauce\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Spaghetti al pomodoro</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Our tomatoes from August, slow-cooked with garlic and basil.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"signature-dish\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group signature-dish\"><!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:pizza}}\" alt=\"A wood-fired pizza with mozzarella\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Pizza della casa</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Ninety seconds in the oak-fired oven, blistered and soft.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"signature-dish\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group signature-dish\"><!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:tiramisu}}\" alt=\"A slice of tiramisu\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Tiramisu</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Made the day before, as it should be. Our most requested recipe.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:buttons {\"layout\":{\"type\":\"flex\",\"justifyContent\":\"center\"}} --><div class=\"wp-block-buttons is-content-justification-center\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:menu}}\">See the full menu</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"band-olive\",\"backgroundColor\":\"olive\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull band-olive has-olive-background-color has-background\"><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"eyebrow\"} --><p class=\"eyebrow\">Opening hours</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">Come hungry</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"hours-list\"} --><ul class=\"wp-block-list hours-list\"><!-- wp:list-item --><li><strong>Tuesday – Thursday</strong> 12:00 – 22:00</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Friday – Saturday</strong> 12:00 – 23:30</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Sunday</strong> 12:00 – 21:00</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Monday</strong> closed</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"eyebrow\"} --><p class=\"eyebrow\">Reservations</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">Book a table</h2><!-- /wp:heading --><!-- wp:paragraph --><p>We keep half the room for walk-ins, but at weekends it is wise to book. Groups of eight or more can reserve the back room.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Call <a href=\"tel:+15550184410\">+1 (555) 018-4410</a> or book online.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:reservations}}\">Reserve a table</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"section-story\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-story\"><!-- wp:media-text {\"align\":\"wide\",\"mediaType\":\"image\"} --><div class=\"wp-block-media-text alignwide is-stacked-on-mobile\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:facade}}\" alt=\"The arched doorways of the trattoria\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:paragraph {\"className\":\"eyebrow\"} --><p class=\"eyebrow\">Our story</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">Three arches on Via dei Fornai</h2><!-- /wp:heading --><!-- wp:paragraph --><p>The trattoria opened in 1987 in an old bakery, and the oven is still where the bakers left it. Two generations later we cook the same dishes, with the same suppliers, for the grandchildren of our first guests.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:about}}\">Read our story</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div></div><!-- /wp:media-text --><!-- wp:spacer {\"height\":\"56px\"} --><div style=\"height:56px\" aria-hidden=\"true\" class=\"wp-block-spacer\"></div><!-- /wp:spacer --><!-- wp:quote {\"className\":\"testimonial\"} --><blockquote class=\"wp-block-quote testimonial\"><!-- wp:paragraph --><p>The kind of place where the waiter remembers your order and the chef comes out to ask about your mother.</p><!-- /wp:paragraph --><cite>A regular since 1994</cite></blockquote><!-- /wp:quote --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"section-news\",\"backgroundColor\":\"parchment\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-news has-parchment-background-color has-background\"><!-- wp:paragraph {\"className\":\"eyebrow has-text-align-center\"} --><p class=\"eyebrow has-text-align-center\">Notizie</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\",\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center section-title\">News from the kitchen</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":3,\"displayPostContent\":true,\"excerptLength\":18,\"displayPostDate\":true,\"postLayout\":\"grid\",\"columns\":3,\"align\":\"wide\"} /--></div><!-- /wp:group -->\n\n<!-- wp:cover {\"url\":\"{{media:hills}}\",\"dimRatio\":50,\"overlayColor\":\"espresso\",\"align\":\"full\",\"minHeight\":460} --><div class=\"wp-block-cover alignfull\" style=\"min-height:460px\"><span aria-hidden=\"true\" class=\"wp-block-cover__background has-espresso-background-color has-background-dim-50 has-background-dim\"></span><img class=\"wp-block-cover__image-background\" alt=\"\" src=\"{{media:hills}}\" data-object-fit=\"cover\"/><div class=\"wp-block-cover__inner-container\"><!-- wp:heading {\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center\">Celebrations in the back room</h2><!-- /wp:heading --><!-- wp:paragraph {\"align\":\"center\"} --><p class=\"has-text-align-center\">Birthdays, anniversaries and long Sunday lunches for up to eighteen guests at one table.</p><!-- /wp:paragraph --><!-- wp:buttons {\"layout\":{\"type\":\"flex\",\"justifyContent\":\"center\"}} --><div class=\"wp-block-buttons is-content-justification-center\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{post:private-dining-back-room}}\">Plan a private dinner</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div></div><!-- /wp:cover -->",
+   "featured_media": "hero",
+   "front_page": true
+  },
+  {
+   "slug": "news",
+   "title": "News",
+   "posts_page": true
+  },
+  {
+   "slug": "menu",
+   "title": "Menu",
+   "content": "<!-- wp:paragraph {\"className\":\"lead has-text-align-center\"} --><p class=\"lead has-text-align-center\">Our menu follows the seasons and the market. Dishes marked <em>v</em> are vegetarian; ask us about allergies, we are happy to adapt.</p><!-- /wp:paragraph -->\n\n<!-- wp:group {\"align\":\"wide\",\"className\":\"menu-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignwide menu-card\"><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"menu-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group menu-section\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Antipasti</h3><!-- /wp:heading --><!-- wp:list {\"className\":\"menu-list\"} --><ul class=\"wp-block-list menu-list\"><!-- wp:list-item --><li><span class=\"dish\">Bruschetta al pomodoro<span class=\"tag\">v</span></span><span class=\"price\">8</span><span class=\"desc\">Grilled bread, August tomatoes, garlic, new oil</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><span class=\"dish\">Burrata e fichi<span class=\"tag\">v</span></span><span class=\"price\">13</span><span class=\"desc\">Creamy burrata, roasted figs, chestnut honey</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><span class=\"dish\">Carpaccio di manzo</span><span class=\"price\">14</span><span class=\"desc\">Thin beef, rocket, aged pecorino, lemon</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><span class=\"dish\">Fritto misto</span><span class=\"price\">15</span><span class=\"desc\">Squid, prawns and courgette flowers, lightly fried</span></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"menu-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group menu-section\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Primi</h3><!-- /wp:heading --><!-- wp:list {\"className\":\"menu-list\"} --><ul class=\"wp-block-list menu-list\"><!-- wp:list-item --><li><span class=\"dish\">Tagliatelle ai porcini<span class=\"tag\">v</span></span><span class=\"price\">18</span><span class=\"desc\">Fresh egg pasta, porcini, butter, thyme</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><span class=\"dish\">Spaghetti al pomodoro<span class=\"tag\">v</span></span><span class=\"price\">14</span><span class=\"desc\">Our preserved tomatoes, garlic, basil</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><span class=\"dish\">Pappardelle al cinghiale</span><span class=\"price\">21</span><span class=\"desc\">Wild boar ragù slow-cooked in red wine</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><span class=\"dish\">Risotto al limone<span class=\"tag\">v</span></span><span class=\"price\">17</span><span class=\"desc\">Carnaroli rice, lemon, parmigiano</span></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:spacer {\"height\":\"24px\"} --><div style=\"height:24px\" aria-hidden=\"true\" class=\"wp-block-spacer\"></div><!-- /wp:spacer --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"menu-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group menu-section\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Secondi</h3><!-- /wp:heading --><!-- wp:list {\"className\":\"menu-list\"} --><ul class=\"wp-block-list menu-list\"><!-- wp:list-item --><li><span class=\"dish\">Porchetta</span><span class=\"price\">24</span><span class=\"desc\">Slow-roasted pork shoulder, fennel, apples</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><span class=\"dish\">Branzino al forno</span><span class=\"price\">26</span><span class=\"desc\">Whole sea bass from the wood oven, herbs</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><span class=\"dish\">Melanzane alla parmigiana<span class=\"tag\">v</span></span><span class=\"price\">19</span><span class=\"desc\">Layered aubergine, tomato, mozzarella</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><span class=\"dish\">Bistecca for two</span><span class=\"price\">62</span><span class=\"desc\">Grilled T-bone, rosemary potatoes, greens</span></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"menu-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group menu-section\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Dolci</h3><!-- /wp:heading --><!-- wp:list {\"className\":\"menu-list\"} --><ul class=\"wp-block-list menu-list\"><!-- wp:list-item --><li><span class=\"dish\">Tiramisu<span class=\"tag\">v</span></span><span class=\"price\">9</span><span class=\"desc\">The house recipe, made the day before</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><span class=\"dish\">Panna cotta<span class=\"tag\">v</span></span><span class=\"price\">8</span><span class=\"desc\">Vanilla cream, seasonal fruit</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><span class=\"dish\">Castagnaccio<span class=\"tag\">v</span></span><span class=\"price\">9</span><span class=\"desc\">Chestnut-flour cake, pine nuts, rosemary</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><span class=\"dish\">Affogato<span class=\"tag\">v</span></span><span class=\"price\">7</span><span class=\"desc\">Vanilla gelato drowned in espresso</span></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:spacer {\"height\":\"40px\"} --><div style=\"height:40px\" aria-hidden=\"true\" class=\"wp-block-spacer\"></div><!-- /wp:spacer -->\n\n<!-- wp:heading {\"className\":\"section-title\",\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center section-title\">Pizza from the wood oven</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph {\"className\":\"has-text-align-center\"} --><p class=\"has-text-align-center\">Evenings only, from Thursday to Sunday.</p><!-- /wp:paragraph -->\n\n<!-- wp:group {\"align\":\"wide\",\"className\":\"menu-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignwide menu-section\"><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:list {\"className\":\"menu-list\"} --><ul class=\"wp-block-list menu-list\"><!-- wp:list-item --><li><span class=\"dish\">Marinara<span class=\"tag\">v</span></span><span class=\"price\">10</span><span class=\"desc\">Tomato, garlic, oregano, oil</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><span class=\"dish\">Margherita<span class=\"tag\">v</span></span><span class=\"price\">12</span><span class=\"desc\">Tomato, mozzarella, basil</span></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:list {\"className\":\"menu-list\"} --><ul class=\"wp-block-list menu-list\"><!-- wp:list-item --><li><span class=\"dish\">Salsiccia e friarielli</span><span class=\"price\">16</span><span class=\"desc\">Fennel sausage, bitter greens, mozzarella</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><span class=\"dish\">Quattro formaggi<span class=\"tag\">v</span></span><span class=\"price\">15</span><span class=\"desc\">Four cheeses and a drizzle of honey</span></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:separator --><hr class=\"wp-block-separator has-alpha-channel-opacity\"/><!-- /wp:separator -->\n\n<!-- wp:paragraph {\"className\":\"has-text-align-center\"} --><p class=\"has-text-align-center\">Bread, oil and olives are on the house. Service is not included; thank you for anything you leave for the team.</p><!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "wine-list",
+   "title": "Wine list",
+   "content": "<!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">A short list from small growers we know by name. Every wine is available by the glass on the evening it is opened.</p><!-- /wp:paragraph -->\n\n<!-- wp:group {\"align\":\"wide\",\"className\":\"menu-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignwide menu-card\"><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"menu-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group menu-section\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Bianchi</h3><!-- /wp:heading --><!-- wp:list {\"className\":\"menu-list\"} --><ul class=\"wp-block-list menu-list\"><!-- wp:list-item --><li><span class=\"dish\">Vermentino, coast</span><span class=\"price\">8 / 34</span><span class=\"desc\">Crisp, saline, lemon peel</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><span class=\"dish\">Trebbiano, hills</span><span class=\"price\">7 / 30</span><span class=\"desc\">Soft, almond, a touch of honey</span></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"menu-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group menu-section\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Rossi</h3><!-- /wp:heading --><!-- wp:list {\"className\":\"menu-list\"} --><ul class=\"wp-block-list menu-list\"><!-- wp:list-item --><li><span class=\"dish\">Sangiovese, young</span><span class=\"price\">8 / 36</span><span class=\"desc\">Cherries and violets, light enough for fish</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><span class=\"dish\">Riserva, five years</span><span class=\"price\">14 / 68</span><span class=\"desc\">Leather, dried plums, long finish</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><span class=\"dish\">Field blend</span><span class=\"price\">9 / 40</span><span class=\"desc\">Whatever the grower picked together</span></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:image {\"sizeSlug\":\"large\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:wine}}\" alt=\"A bottle of red wine and two glasses\"/><figcaption class=\"wp-element-caption\">Ask about the bottles behind the bar; some are not on the list.</figcaption></figure><!-- /wp:image -->",
+   "parent": "menu"
+  },
+  {
+   "slug": "about",
+   "title": "Our story",
+   "content": "<!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">The trattoria opened in 1987 in a bakery that had closed after a hundred years. The oven was too beautiful to remove, so the menu was built around it.</p><!-- /wp:paragraph -->\n\n<!-- wp:media-text {\"align\":\"wide\",\"mediaType\":\"image\"} --><div class=\"wp-block-media-text alignwide is-stacked-on-mobile\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:kitchen}}\" alt=\"Copper pans hanging on a tiled kitchen wall\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">A family kitchen</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Two generations cook here today. The recipes are written in a notebook that lives on a shelf above the pass, stained with tomato and flour.</p><!-- /wp:paragraph --></div></div><!-- /wp:media-text -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What we promise</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Pasta made by hand every morning.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Vegetables from growers within an hour of the city.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Bread, oil and olives free at every table, always.</li><!-- /wp:list-item --><!-- wp:list-item --><li>A table for walk-ins, every evening we are open.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:pullquote --><figure class=\"wp-block-pullquote\"><blockquote><p>We cook for guests the way we cook for family on Sunday: generously, and without hurry.</p></blockquote></figure><!-- /wp:pullquote -->\n\n<!-- wp:image {\"sizeSlug\":\"large\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:hills}}\" alt=\"Rolling hills with cypress trees\"/><figcaption class=\"wp-element-caption\">Most of what we cook comes from the hills you can see from the terrace on a clear day.</figcaption></figure><!-- /wp:image -->"
+  },
+  {
+   "slug": "reservations",
+   "title": "Reservations",
+   "content": "<!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">We would love to cook for you. For tables of up to seven, call us or send a message; for the back room, tell us the date and the occasion.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">By phone</h3><!-- /wp:heading --><!-- wp:paragraph --><p><a href=\"tel:+15550184410\">+1 (555) 018-4410</a><br>Every day we are open, from 10:00.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">By email</h3><!-- /wp:heading --><!-- wp:paragraph --><p><a href=\"mailto:tavola@rosmarino.example\">tavola@rosmarino.example</a><br>We reply within a few hours.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Find us</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Via dei Fornai 14, Old Town<br>Two streets from the market square.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Good to know</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>We hold tables for fifteen minutes after the booking time.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Children are very welcome; we have high chairs and small portions.</li><!-- /wp:list-item --><!-- wp:list-item --><li>The dining room is step-free; the back room has two steps.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Dogs are welcome on the terrace.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:image {\"sizeSlug\":\"large\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:candle}}\" alt=\"A candle and two glasses of red wine on a table\"/></figure><!-- /wp:image -->"
+  }
+ ],
+ "posts": [
+  {
+   "slug": "autumn-menu-chestnuts-porcini",
+   "title": "Autumn menu: chestnuts, porcini and the first new oil",
+   "date": "2026-10-18T11:00:00",
+   "categories": [
+    "seasonal"
+   ],
+   "tags": [
+    "autumn",
+    "pasta"
+   ],
+   "featured_media": "pasta",
+   "sticky": true,
+   "excerpt": "The days shorten, the oven stays lit longer, and the menu turns towards the woods. Here is what is new this month.",
+   "content": "<!-- wp:paragraph --><p>Every October the kitchen changes its mind. The tomatoes are in jars, the basil has gone to seed, and the first crates of porcini arrive from the hills wrapped in damp newspaper. This is our favourite month to cook.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">New on the menu</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><strong>Tagliatelle with porcini</strong>, butter and a little thyme.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Chestnut soup</strong> with rosemary oil and toasted bread.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Slow-roasted pork shoulder</strong> with fennel and apples.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Castagnaccio</strong>, the old chestnut-flour cake with pine nuts.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:olive}}\" alt=\"An olive branch with dark olives\"/><figcaption class=\"wp-element-caption\">The new season's oil arrives at the end of the month.</figcaption></figure><!-- /wp:image -->\n\n<!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">The new oil</h3><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>At the end of the month we open the first tins of this year's olive oil from a small press in the hills. It is green, peppery and almost bitter, and for a few weeks we pour it over everything: soup, beans, toasted bread, even the vanilla ice cream.</p><!-- /wp:paragraph -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>New oil on warm bread is the whole of autumn in one bite.</p><!-- /wp:paragraph --><cite>Our head chef</cite></blockquote><!-- /wp:quote -->\n\n<!-- wp:paragraph --><p>The autumn menu starts on Tuesday. As always, ask your waiter what came in this morning; the board by the bar changes daily.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Giulia M.",
+     "email": "giulia@example.com",
+     "content": "The chestnut soup last year was unforgettable. Booking for Saturday!",
+     "date": "2026-10-19T09:30:00"
+    },
+    {
+     "author": "Ben A.",
+     "email": "ben@example.com",
+     "content": "Is the castagnaccio gluten free? Asking for my sister.",
+     "date": "2026-10-20T18:05:00"
+    }
+   ],
+   "format": "standard"
+  },
+  {
+   "slug": "fresh-pasta-every-morning",
+   "title": "How we make our fresh pasta every morning",
+   "date": "2026-10-04T09:00:00",
+   "categories": [
+    "kitchen"
+   ],
+   "tags": [
+    "pasta"
+   ],
+   "featured_media": "kitchen",
+   "excerpt": "Flour, eggs, a wooden board and about two hours before the doors open: the quiet start to every day in our kitchen.",
+   "content": "<!-- wp:paragraph --><p>Long before the first guest arrives, the kitchen is quiet except for the sound of a rolling pin. Every pasta on our menu is made that morning, by hand, from flour, eggs and a pinch of salt.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">The method</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Make a well of flour on the board, about one hundred grams for each egg.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Break the eggs into the middle and beat them with a fork, pulling in flour little by little.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Knead for ten minutes until the dough is smooth and springs back.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Wrap it and let it rest for half an hour; the gluten relaxes and the dough becomes easy to roll.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Roll thin enough to see the grain of the board through it, then cut.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:pasta}}\" alt=\"A plate of spaghetti with tomato sauce and basil\"/></figure><!-- /wp:image -->\n\n<!-- wp:paragraph --><p>The shapes change with the sauces. Tagliatelle for ragù and mushrooms, pappardelle for the wild boar in winter, and little hand-pinched orecchiette for anything with greens.</p><!-- /wp:paragraph -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>If the dough is too dry, it is the flour's fault. If it is too wet, it is the cook's.</p><!-- /wp:paragraph --><cite>Kitchen saying</cite></blockquote><!-- /wp:quote -->",
+   "comments": [
+    {
+     "author": "Hana K.",
+     "email": "hana@example.com",
+     "content": "I tried this at home with my kids. The board looked like a snowstorm but the pasta was wonderful.",
+     "date": "2026-10-06T20:11:00"
+    }
+   ],
+   "format": "standard"
+  },
+  {
+   "slug": "wine-evening-hill-growers",
+   "title": "A Tuesday wine evening with the hill growers",
+   "date": "2026-09-23T17:30:00",
+   "categories": [
+    "wine",
+    "events"
+   ],
+   "tags": [
+    "tasting"
+   ],
+   "featured_media": "wine",
+   "excerpt": "Four small growers, eight wines and a long table: our autumn tasting returns on the first Tuesday of November.",
+   "content": "<!-- wp:paragraph --><p>Once a season we push the tables together, invite a handful of growers from the hills, and let them pour their own wines while the kitchen sends out small plates to match.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What to expect</h2><!-- /wp:heading -->\n\n<!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">The wines</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Two whites from limestone slopes</li><!-- /wp:list-item --><!-- wp:list-item --><li>A rosato made for the table</li><!-- /wp:list-item --><!-- wp:list-item --><li>Five reds, young and old</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">The plates</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Crostini with new oil</li><!-- /wp:list-item --><!-- wp:list-item --><li>Pecorino with chestnut honey</li><!-- /wp:list-item --><!-- wp:list-item --><li>Wild boar ragù on polenta</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:paragraph --><p>Tickets include all eight wines and the food. Places are limited to twenty-four, and the evening usually ends with someone singing.</p><!-- /wp:paragraph -->\n\n<!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:reservations}}\">Reserve a place</a></div><!-- /wp:button --></div><!-- /wp:buttons -->",
+   "format": "standard"
+  },
+  {
+   "slug": "story-of-our-wood-fired-oven",
+   "title": "The story of our wood-fired oven",
+   "date": "2026-09-09T10:15:00",
+   "categories": [
+    "kitchen"
+   ],
+   "tags": [
+    "baking"
+   ],
+   "featured_media": "pizza",
+   "excerpt": "Built brick by brick in 1987 and lit almost every day since, the oven is the warm heart of the trattoria.",
+   "content": "<!-- wp:paragraph --><p>The oven was the first thing built in the trattoria, before the tables, before the bar, even before the sign over the door. A mason from the next valley laid every brick by hand over three weeks.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>It takes two hours to heat and holds its warmth until morning. We bake bread in it at dawn, roast vegetables at midday and pizza in the evening, when the floor of the oven is hot enough to cook one in ninety seconds.</p><!-- /wp:paragraph -->\n\n<!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:bread}}\" alt=\"A rustic loaf with a dish of olive oil\"/><figcaption class=\"wp-element-caption\">The morning bread, baked while the oven is still too hot for anything else.</figcaption></figure><!-- /wp:image -->\n\n<!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Why wood</h3><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Oak and olive wood give a gentle smoke you can taste in the crust. We buy prunings from olive growers we know, which would otherwise be burned in the fields.</p><!-- /wp:paragraph -->\n\n<!-- wp:pullquote --><figure class=\"wp-block-pullquote\"><blockquote><p>The oven is the only member of staff who has never taken a day off.</p></blockquote></figure><!-- /wp:pullquote -->",
+   "format": "standard"
+  },
+  {
+   "slug": "why-we-preserve-tomatoes",
+   "title": "Tomatoes, briefly: why we preserve four hundred jars in August",
+   "date": "2026-08-28T08:30:00",
+   "categories": [
+    "seasonal",
+    "kitchen"
+   ],
+   "tags": [
+    "summer"
+   ],
+   "featured_media": "tomatoes",
+   "excerpt": "One week every summer the whole team becomes a tomato factory. The reward arrives in February.",
+   "content": "<!-- wp:paragraph --><p>In the last week of August the dining room closes for three days and the whole team gathers around big pots in the courtyard. We peel, crush, bottle and boil until the shelves of the cellar are full.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">The jars, by the numbers</h2><!-- /wp:heading -->\n\n<!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th></th><th>This year</th></tr></thead><tbody><tr><td>Tomatoes</td><td>About 900 kilos</td></tr><tr><td>Jars</td><td>412</td></tr><tr><td>Basil leaves</td><td>One in every jar</td></tr><tr><td>Days</td><td>Three, plus one to clean up</td></tr></tbody></table></figure><!-- /wp:table -->\n\n<!-- wp:paragraph --><p>In winter, when tomatoes in the shops taste of nothing, we open a jar and summer comes back. Our winter sauces, from the simple sugo to the Sunday ragù, all start here.</p><!-- /wp:paragraph -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Nobody remembers who started the tradition. Everybody remembers the tomato fights.</p><!-- /wp:paragraph --><cite>A long-serving waiter</cite></blockquote><!-- /wp:quote -->",
+   "format": "standard"
+  },
+  {
+   "slug": "tiramisu-the-house-way",
+   "title": "Tiramisu, the house way",
+   "date": "2026-08-12T15:00:00",
+   "categories": [
+    "kitchen"
+   ],
+   "tags": [
+    "dessert"
+   ],
+   "featured_media": "tiramisu",
+   "excerpt": "Our most requested recipe, finally written down. Make it the day before.",
+   "content": "<!-- wp:paragraph --><p>Guests ask for this recipe more than any other. It is not complicated, but it rewards patience: it must rest overnight, and it is better on the second day.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">You need</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>4 very fresh eggs, separated</li><!-- /wp:list-item --><!-- wp:list-item --><li>100 g sugar</li><!-- /wp:list-item --><!-- wp:list-item --><li>500 g mascarpone</li><!-- /wp:list-item --><!-- wp:list-item --><li>300 ml strong coffee, cooled</li><!-- /wp:list-item --><!-- wp:list-item --><li>A splash of marsala (optional)</li><!-- /wp:list-item --><!-- wp:list-item --><li>About 30 savoiardi biscuits</li><!-- /wp:list-item --><!-- wp:list-item --><li>Cocoa for dusting</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Method</h3><!-- /wp:heading --><!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Beat yolks with sugar until pale, then fold in the mascarpone.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Whisk the whites to soft peaks and fold them in gently.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Dip each biscuit quickly in coffee and lay them in a dish.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Cover with cream, repeat, and finish with cream.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Chill overnight; dust with cocoa just before serving.</li><!-- /wp:list-item --></ol><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:paragraph --><p>Do not soak the biscuits. One second on each side is enough, or the tiramisu turns to soup.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Leo P.",
+     "email": "leo@example.com",
+     "content": "Made it for my mother's birthday. She asked which bakery I went to.",
+     "date": "2026-08-14T12:00:00"
+    }
+   ],
+   "format": "standard"
+  },
+  {
+   "slug": "private-dining-back-room",
+   "title": "Private dining in the back room",
+   "date": "2026-07-30T12:00:00",
+   "categories": [
+    "events"
+   ],
+   "tags": [
+    "tasting"
+   ],
+   "featured_media": "candle",
+   "excerpt": "Birthdays, anniversaries and long Sunday lunches: the back room seats up to eighteen at one table.",
+   "content": "<!-- wp:paragraph --><p>Behind the kitchen is a small vaulted room that used to be the baker's store. Today it holds one long table, a sideboard of old plates and enough candles to make anyone look good.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">How it works</h3><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Seats eight to eighteen guests at one table.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Set menus of four or five courses, planned with you.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Wines chosen with our sommelier, by the bottle or paired.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Available for lunch and dinner, every day we are open.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:facade}}\" alt=\"The arched doorways of the trattoria\"/></figure><!-- /wp:image -->\n\n<!-- wp:paragraph --><p>Write to us through the reservations page with your date and number of guests, and we will send menu ideas within a day.</p><!-- /wp:paragraph -->",
+   "format": "standard"
+  },
+  {
+   "slug": "bread-and-olive-oil-ritual",
+   "title": "Bread and olive oil: a small ritual",
+   "date": "2026-07-14T10:00:00",
+   "categories": [
+    "kitchen"
+   ],
+   "tags": [
+    "baking"
+   ],
+   "featured_media": "bread",
+   "excerpt": "Why every table starts with warm bread, a dish of oil and a bowl of olives, and why we never charge for it.",
+   "content": "<!-- wp:paragraph --><p>The first thing that arrives at every table is the same: a basket of warm bread, a small dish of our oil and a bowl of olives. We have never charged for it and we never will.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>It is how a meal begins at home, and it gives the kitchen a few quiet minutes to prepare your first course properly.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">A few words on tasting oil</h3><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Pour a little into a small glass and warm it in your hand.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Smell it: fresh grass, artichoke or tomato leaf are good signs.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Sip and draw in air; a peppery cough means it is young and full of goodness.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Good oil should make you cough a little. That is the oil saying hello.</p><!-- /wp:paragraph --><cite>Our olive grower</cite></blockquote><!-- /wp:quote -->",
+   "format": "standard"
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Home",
+     "page": "home"
+    },
+    {
+     "title": "Menu",
+     "page": "menu",
+     "children": [
+      {
+       "title": "Food menu",
+       "page": "menu"
+      },
+      {
+       "title": "Wine list",
+       "page": "wine-list"
+      }
+     ]
+    },
+    {
+     "title": "News",
+     "page": "news",
+     "children": [
+      {
+       "title": "From the kitchen",
+       "category": "kitchen"
+      },
+      {
+       "title": "Seasonal",
+       "category": "seasonal"
+      },
+      {
+       "title": "Events",
+       "category": "events"
+      }
+     ]
+    },
+    {
+     "title": "Our story",
+     "page": "about"
+    },
+    {
+     "title": "Reservations",
+     "page": "reservations"
+    }
+   ]
+  },
+  {
+   "name": "Social",
+   "location": "social",
+   "items": [
+    {
+     "title": "Instagram",
+     "url": "https://instagram.com/"
+    },
+    {
+     "title": "Facebook",
+     "url": "https://facebook.com/"
+    },
+    {
+     "title": "Maps",
+     "url": "https://www.openstreetmap.org/"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "sidebar-1": [
+   "<!-- wp:search {\"label\":\"Search\",\"buttonText\":\"Search\"} /-->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Categories</h2><!-- /wp:heading --><!-- wp:categories /--></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Recent news</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":4,\"displayPostDate\":true} /--></div><!-- /wp:group -->"
+  ],
+  "footer-1": [
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Gift vouchers</h2><!-- /wp:heading --><!-- wp:paragraph --><p>A dinner for two makes a fine present. Vouchers are available at the bar or by phone.</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Explore</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><a href=\"{{page:menu}}\">Menu</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{page:wine-list}}\">Wine list</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{page:news}}\">News</a></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "hero_image": "hero",
+  "hero_heading": "Pasta by hand, bread from the oven, a table for you",
+  "hero_text": "A family trattoria in the old town, cooking the food of the hills since 1987.",
+  "reservation_url": "{{page:reservations}}",
+  "menu_button_url": "{{page:menu}}",
+  "blog_layout": "cards"
+ }
+}

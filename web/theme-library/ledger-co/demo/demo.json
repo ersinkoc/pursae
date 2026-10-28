@@ -1,0 +1,450 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Ledger & Co.",
+  "blogdescription": "Advisory for growing businesses",
+  "posts_per_page": 6
+ },
+ "categories": [
+  {
+   "slug": "strategy",
+   "name": "Strategy",
+   "description": "Pricing, growth and the choices that shape a business."
+  },
+  {
+   "slug": "finance",
+   "name": "Finance",
+   "description": "Cash, reporting and the numbers behind every decision."
+  },
+  {
+   "slug": "operations",
+   "name": "Operations",
+   "description": "Suppliers, processes and risk, made manageable."
+  },
+  {
+   "slug": "leadership",
+   "name": "Leadership",
+   "description": "Boards, hiring and running a steady management team."
+  },
+  {
+   "slug": "firm-news",
+   "name": "Firm News",
+   "description": "What is new at Ledger & Co."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "cash-flow",
+   "name": "Cash flow"
+  },
+  {
+   "slug": "pricing",
+   "name": "Pricing"
+  },
+  {
+   "slug": "planning",
+   "name": "Planning"
+  },
+  {
+   "slug": "hiring",
+   "name": "Hiring"
+  },
+  {
+   "slug": "risk",
+   "name": "Risk"
+  },
+  {
+   "slug": "growth",
+   "name": "Growth"
+  },
+  {
+   "slug": "reporting",
+   "name": "Reporting"
+  },
+  {
+   "slug": "governance",
+   "name": "Governance"
+  }
+ ],
+ "media": [
+  {
+   "id": "hero",
+   "file": "demo/images/hero.jpg",
+   "alt": "A city skyline of geometric towers at dusk, lit windows against a navy sky",
+   "caption": ""
+  },
+  {
+   "id": "growth",
+   "file": "demo/images/growth.jpg",
+   "alt": "A bar chart rising to the right with a brass trend line",
+   "caption": ""
+  },
+  {
+   "id": "facade",
+   "file": "demo/images/facade.jpg",
+   "alt": "Glass facade panels in shades of blue seen at an angle",
+   "caption": ""
+  },
+  {
+   "id": "network",
+   "file": "demo/images/network.jpg",
+   "alt": "Connected nodes forming a network on a navy background",
+   "caption": ""
+  },
+  {
+   "id": "stairs",
+   "file": "demo/images/stairs.jpg",
+   "alt": "Isometric blocks rising like a staircase, the last one capped in brass",
+   "caption": ""
+  },
+  {
+   "id": "compass",
+   "file": "demo/images/compass.jpg",
+   "alt": "A compass needle over concentric rings",
+   "caption": ""
+  },
+  {
+   "id": "globe",
+   "file": "demo/images/globe.jpg",
+   "alt": "A navy globe with meridian lines and a brass arc",
+   "caption": ""
+  },
+  {
+   "id": "ledger",
+   "file": "demo/images/ledger.jpg",
+   "alt": "Ruled ledger paper with bars of figures and a calculator",
+   "caption": ""
+  },
+  {
+   "id": "meeting",
+   "file": "demo/images/meeting.jpg",
+   "alt": "A meeting table seen from above with papers at every seat",
+   "caption": ""
+  },
+  {
+   "id": "bridge",
+   "file": "demo/images/bridge.jpg",
+   "alt": "An arched bridge over a river at sunrise",
+   "caption": ""
+  },
+  {
+   "id": "team",
+   "file": "demo/images/team.jpg",
+   "alt": "Five stylised figures standing together",
+   "caption": ""
+  },
+  {
+   "id": "bands",
+   "file": "demo/images/bands.jpg",
+   "alt": "Diagonal light bands across a deep navy background",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Clear numbers for confident decisions",
+   "content": "<!-- wp:group {\"anchor\":\"services\",\"align\":\"full\",\"className\":\"section-services\",\"layout\":{\"type\":\"constrained\"}} --><div id=\"services\" class=\"wp-block-group alignfull section-services\"><!-- wp:paragraph {\"className\":\"kicker\"} --><p class=\"kicker\">What we do</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">Clear numbers. Calm decisions.</h2><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">We are a team of accountants, operators and strategists who work alongside owners and boards. Every engagement ends with something your own people can run.</p><!-- /wp:paragraph --><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"service-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group service-card\"><!-- wp:paragraph {\"className\":\"service-num\"} --><p class=\"service-num\">01</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Finance &amp; reporting</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Cash flow forecasting, management accounts and board packs that make the numbers easy to act on.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{page:services}}\">Explore finance →</a></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"service-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group service-card\"><!-- wp:paragraph {\"className\":\"service-num\"} --><p class=\"service-num\">02</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Strategy &amp; pricing</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Pricing reviews, growth plans and market entry, grounded in the economics of your business.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{page:services}}\">Explore strategy →</a></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"service-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group service-card\"><!-- wp:paragraph {\"className\":\"service-num\"} --><p class=\"service-num\">03</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Operations &amp; risk</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Supplier reviews, process design and practical risk registers that people actually use.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{page:services}}\">Explore operations →</a></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"figures\",\"backgroundColor\":\"navy\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull figures has-navy-background-color has-background\"><!-- wp:paragraph {\"className\":\"kicker\"} --><p class=\"kicker\">By the numbers</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">Twenty-seven years of steady advice</h2><!-- /wp:heading --><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"figure-num\"} --><p class=\"figure-num\">27<span>+</span></p><!-- /wp:paragraph --><!-- wp:paragraph --><p>years advising owner-led and family businesses</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"figure-num\"} --><p class=\"figure-num\">340</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>clients served across services, retail and manufacturing</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"figure-num\"} --><p class=\"figure-num\">96<span>%</span></p><!-- /wp:paragraph --><!-- wp:paragraph --><p>of clients renew or return within two years</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"figure-num\"} --><p class=\"figure-num\">14</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>partners and senior advisors, each leading their own work</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"section-approach\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-approach\"><!-- wp:media-text {\"align\":\"wide\",\"mediaType\":\"image\"} --><div class=\"wp-block-media-text alignwide is-stacked-on-mobile\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:meeting}}\" alt=\"A meeting table seen from above\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:paragraph {\"className\":\"kicker\"} --><p class=\"kicker\">How we work</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">An engagement in four steps</h2><!-- /wp:heading --><!-- wp:list {\"ordered\":true,\"className\":\"steps\"} --><ol class=\"wp-block-list steps\"><!-- wp:list-item --><li><strong>Listen.</strong> A fixed-fee diagnostic with the leadership team.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Measure.</strong> We build the numbers you are missing, with your data.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Decide.</strong> Options with costs, risks and a clear recommendation.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Hand over.</strong> Your people own the tools and the routine.</li><!-- /wp:list-item --></ol><!-- /wp:list --></div></div><!-- /wp:media-text --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"section-clients\",\"backgroundColor\":\"mist\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-clients has-mist-background-color has-background\"><!-- wp:paragraph {\"className\":\"kicker has-text-align-center\"} --><p class=\"kicker has-text-align-center\">Trusted by</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\",\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center section-title\">Owners and boards who value straight answers</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"client-logos\"} --><ul class=\"wp-block-list client-logos\"><!-- wp:list-item --><li>Northwind Mills</li><!-- /wp:list-item --><!-- wp:list-item --><li>Harrow Lane</li><!-- /wp:list-item --><!-- wp:list-item --><li>Brightwater &amp; Sons</li><!-- /wp:list-item --><!-- wp:list-item --><li>Quillfield</li><!-- /wp:list-item --><!-- wp:list-item --><li>Tidewater Freight</li><!-- /wp:list-item --><!-- wp:list-item --><li>Osprey Health</li><!-- /wp:list-item --><!-- wp:list-item --><li>Marlow Ceramics</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:spacer {\"height\":\"24px\"} --><div style=\"height:24px\" aria-hidden=\"true\" class=\"wp-block-spacer\"></div><!-- /wp:spacer --><!-- wp:quote {\"className\":\"testimonial\"} --><blockquote class=\"wp-block-quote testimonial\"><!-- wp:paragraph --><p>Ledger &amp; Co. gave us a forecast we believe and a board that finally talks about the future instead of last month.</p><!-- /wp:paragraph --><cite>Managing director, family-owned manufacturer</cite></blockquote><!-- /wp:quote --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"section-insights\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-insights\"><!-- wp:paragraph {\"className\":\"kicker\"} --><p class=\"kicker\">Insights</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">Thinking from our advisors</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":3,\"displayPostContent\":true,\"excerptLength\":20,\"displayPostDate\":true,\"postLayout\":\"grid\",\"columns\":3,\"align\":\"wide\"} /--><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:insights}}\">All insights</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->\n\n<!-- wp:cover {\"url\":\"{{media:bands}}\",\"dimRatio\":70,\"overlayColor\":\"navy\",\"align\":\"full\",\"minHeight\":420} --><div class=\"wp-block-cover alignfull\" style=\"min-height:420px\"><span aria-hidden=\"true\" class=\"wp-block-cover__background has-navy-background-color has-background-dim-70 has-background-dim\"></span><img class=\"wp-block-cover__image-background\" alt=\"\" src=\"{{media:bands}}\" data-object-fit=\"cover\"/><div class=\"wp-block-cover__inner-container\"><!-- wp:heading {\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center\">Start with a conversation</h2><!-- /wp:heading --><!-- wp:paragraph {\"align\":\"center\"} --><p class=\"has-text-align-center\">A first meeting is free and confidential. Bring your questions; we will bring a notebook.</p><!-- /wp:paragraph --><!-- wp:buttons {\"layout\":{\"type\":\"flex\",\"justifyContent\":\"center\"}} --><div class=\"wp-block-buttons is-content-justification-center\"><!-- wp:button {\"className\":\"is-style-accent\"} --><div class=\"wp-block-button is-style-accent\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Book a consultation</a></div><!-- /wp:button --><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"tel:+15550142200\">Call +1 (555) 014-2200</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div></div><!-- /wp:cover -->",
+   "featured_media": "hero",
+   "front_page": true
+  },
+  {
+   "slug": "insights",
+   "title": "Insights",
+   "posts_page": true
+  },
+  {
+   "slug": "services",
+   "title": "Services",
+   "content": "<!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">We focus on three practices. Most clients start with one and later draw on the others; the same partner coordinates everything.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Finance &amp; reporting</h2><!-- /wp:heading -->\n\n<!-- wp:media-text {\"align\":\"wide\",\"mediaType\":\"image\"} --><div class=\"wp-block-media-text alignwide is-stacked-on-mobile\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:ledger}}\" alt=\"Ruled ledger paper with bars of figures\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Thirteen-week cash flow forecasts</li><!-- /wp:list-item --><!-- wp:list-item --><li>Monthly management accounts and dashboards</li><!-- /wp:list-item --><!-- wp:list-item --><li>Board packs and investor reporting</li><!-- /wp:list-item --><!-- wp:list-item --><li>Interim finance leadership</li><!-- /wp:list-item --></ul><!-- /wp:list --></div></div><!-- /wp:media-text -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Strategy &amp; pricing</h2><!-- /wp:heading -->\n\n<!-- wp:media-text {\"align\":\"wide\",\"mediaPosition\":\"right\",\"mediaType\":\"image\"} --><div class=\"wp-block-media-text alignwide has-media-on-the-right is-stacked-on-mobile\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:growth}}\" alt=\"A bar chart rising to the right\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Pricing reviews for service and product businesses</li><!-- /wp:list-item --><!-- wp:list-item --><li>Three-year growth plans with funding needs</li><!-- /wp:list-item --><!-- wp:list-item --><li>Market entry and acquisition screening</li><!-- /wp:list-item --><!-- wp:list-item --><li>Owner succession planning</li><!-- /wp:list-item --></ul><!-- /wp:list --></div></div><!-- /wp:media-text -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Operations &amp; risk</h2><!-- /wp:heading -->\n\n<!-- wp:media-text {\"align\":\"wide\",\"mediaType\":\"image\"} --><div class=\"wp-block-media-text alignwide is-stacked-on-mobile\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:network}}\" alt=\"Connected nodes forming a network\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Supplier and concentration risk reviews</li><!-- /wp:list-item --><!-- wp:list-item --><li>Process mapping and month-end improvement</li><!-- /wp:list-item --><!-- wp:list-item --><li>Risk registers that people use</li><!-- /wp:list-item --><!-- wp:list-item --><li>Plain-language ESG reporting</li><!-- /wp:list-item --></ul><!-- /wp:list --></div></div><!-- /wp:media-text -->\n\n<!-- wp:separator --><hr class=\"wp-block-separator has-alpha-channel-opacity\"/><!-- /wp:separator -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Fees</h2><!-- /wp:heading -->\n\n<!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Engagement</th><th>Typical length</th><th>How we charge</th></tr></thead><tbody><tr><td>Diagnostic</td><td>2–3 weeks</td><td>Fixed fee, agreed up front</td></tr><tr><td>Project</td><td>1–4 months</td><td>Fixed fee per phase</td></tr><tr><td>Ongoing support</td><td>Monthly</td><td>Retainer, cancel with 30 days' notice</td></tr></tbody></table></figure><!-- /wp:table -->\n\n<!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Book a consultation</a></div><!-- /wp:button --></div><!-- /wp:buttons -->"
+  },
+  {
+   "slug": "about",
+   "title": "About the firm",
+   "content": "<!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">Ledger &amp; Co. was founded on a simple idea: business owners deserve advisors who explain, not advisors who impress. Twenty-seven years later the firm has grown to fourteen partners and senior advisors, and the idea has not changed.</p><!-- /wp:paragraph -->\n\n<!-- wp:media-text {\"align\":\"wide\",\"mediaType\":\"image\"} --><div class=\"wp-block-media-text alignwide is-stacked-on-mobile\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:team}}\" alt=\"Five stylised figures standing together\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:heading --><h2 class=\"wp-block-heading\">People first, then spreadsheets</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Every engagement is led by a partner who stays with it from the first meeting to the final handover. We keep teams small so that you always know who is working on your business.</p><!-- /wp:paragraph --></div></div><!-- /wp:media-text -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What we believe</h2><!-- /wp:heading -->\n\n<!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Plain language</h3><!-- /wp:heading --><!-- wp:paragraph --><p>If we cannot explain it in a sentence, we have not understood it yet.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Ownership</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Our work is finished when your team can run it without us.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Independence</h3><!-- /wp:heading --><!-- wp:paragraph --><p>We take no commissions and sell no software. Our only product is advice.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:pullquote --><figure class=\"wp-block-pullquote\"><blockquote><p>Good advice should make the next decision easier, not the advisor more necessary.</p></blockquote></figure><!-- /wp:pullquote -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Our offices</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>We work from two offices in the city: the original head office on Market Street and a riverside studio opened in 2026. Most of our clients are within an hour's travel, and we are happy to work on site.</p><!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "careers",
+   "title": "Careers",
+   "content": "<!-- wp:paragraph --><p>We hire curious people who like explaining things. Most of our advisors have worked inside businesses before joining us, as finance leads, operators or founders.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What you can expect</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Small teams led by a partner on every engagement</li><!-- /wp:list-item --><!-- wp:list-item --><li>Four weeks of paid leave plus public holidays</li><!-- /wp:list-item --><!-- wp:list-item --><li>A training budget you choose how to spend</li><!-- /wp:list-item --><!-- wp:list-item --><li>Hybrid working between our two offices</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Open roles</h2><!-- /wp:heading -->\n\n<!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Role</th><th>Practice</th><th>Location</th></tr></thead><tbody><tr><td>Senior advisor</td><td>Finance &amp; reporting</td><td>Market Street</td></tr><tr><td>Analyst</td><td>Strategy &amp; pricing</td><td>Riverside</td></tr><tr><td>Office coordinator</td><td>Firm</td><td>Market Street</td></tr></tbody></table></figure><!-- /wp:table -->\n\n<!-- wp:paragraph --><p>Send a short note about yourself to <a href=\"mailto:careers@ledger.example\">careers@ledger.example</a>. We reply to every application.</p><!-- /wp:paragraph -->",
+   "parent": "about"
+  },
+  {
+   "slug": "contact",
+   "title": "Contact",
+   "content": "<!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">Tell us a little about your business and what is on your mind. A partner will reply within one working day.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Head office</h3><!-- /wp:heading --><!-- wp:paragraph --><p>12 Market Street, Floor 4<br>Northbridge, NB1 4LC</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"tel:+15550142200\">+1 (555) 014-2200</a><br><a href=\"mailto:hello@ledger.example\">hello@ledger.example</a></p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Riverside studio</h3><!-- /wp:heading --><!-- wp:paragraph --><p>The Wool Exchange, Unit 7<br>Riverside Quay, NB3 9RQ</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Meeting rooms available to clients on request.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Hours</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Monday to Friday: 8:00 – 18:00</li><!-- /wp:list-item --><!-- wp:list-item --><li>Saturday: by appointment</li><!-- /wp:list-item --><!-- wp:list-item --><li>Sunday: closed</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:image {\"sizeSlug\":\"large\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:facade}}\" alt=\"Glass facade panels in shades of blue\"/></figure><!-- /wp:image -->"
+  }
+ ],
+ "posts": [
+  {
+   "slug": "thirteen-week-cash-flow-forecast",
+   "title": "The thirteen-week cash flow forecast, explained",
+   "date": "2026-10-14T09:00:00",
+   "categories": [
+    "finance"
+   ],
+   "tags": [
+    "cash-flow",
+    "planning"
+   ],
+   "featured_media": "ledger",
+   "sticky": true,
+   "excerpt": "A rolling quarter of weekly cash, built from receipts and payments rather than accounting profit, is the most useful spreadsheet a growing business can keep.",
+   "content": "<!-- wp:paragraph --><p>Profit tells you whether the business works. Cash tells you whether it survives the next quarter. The thirteen-week forecast sits between the two: detailed enough to act on, short enough to stay honest, and refreshed every week so that surprises arrive early rather than on payroll day.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Why thirteen weeks</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>A quarter is long enough to see the seasonal dip, the annual insurance renewal and the tax payment that everyone forgot. It is short enough that every line can be tied to a real invoice, contract or payroll run. Beyond thirteen weeks, a forecast turns into a budget; shorter than that, and it becomes a bank statement.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">What goes into it</h3><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><strong>Opening cash</strong> taken from the bank, not from the ledger.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Receipts</strong> by customer, using how they actually pay rather than their terms.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Payments</strong> grouped into payroll, suppliers, rent, tax and debt service.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Headroom</strong>: closing cash plus any undrawn facility, against a minimum you agree in advance.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:growth}}\" alt=\"A bar chart rising to the right with a brass trend line\"/><figcaption class=\"wp-element-caption\">Weekly columns, one line per real-world payment, and the trend becomes visible.</figcaption></figure><!-- /wp:image -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Making it a habit</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Update actuals every Monday morning before anything else.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Roll the window forward one week and add the new thirteenth week.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Explain every variance larger than an agreed threshold in a single sentence.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Share the one-page summary with the leadership team by Tuesday.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>The first forecast is always wrong. The fourth one is the first that people start to trust.</p><!-- /wp:paragraph --><cite>Engagement notes, finance practice</cite></blockquote><!-- /wp:quote -->\n\n<!-- wp:paragraph --><p>If you only change one thing this quarter, start the forecast. Our team can build the first version with you in about a week, and then hand it over so your own people own it.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Maren Q.",
+     "email": "maren@example.com",
+     "content": "We started one after a rough January and it changed how our Monday meeting works. The variance sentences are the best part.",
+     "date": "2026-10-15T08:12:00"
+    },
+    {
+     "author": "Tobias L.",
+     "email": "tobias@example.com",
+     "content": "Do you recommend direct or indirect method for a business with lots of deposits?",
+     "date": "2026-10-16T13:40:00"
+    }
+   ],
+   "format": "standard"
+  },
+  {
+   "slug": "pricing-review-for-service-firms",
+   "title": "Pricing without fear: a practical review for service firms",
+   "date": "2026-10-02T10:30:00",
+   "categories": [
+    "strategy"
+   ],
+   "tags": [
+    "pricing",
+    "growth"
+   ],
+   "featured_media": "growth",
+   "excerpt": "Most service firms under-price by habit, not by strategy. A structured review shows where value is being given away and how to change it calmly.",
+   "content": "<!-- wp:paragraph --><p>Pricing is the fastest lever on profit and the one leadership teams touch least. Prices drift for years because changing them feels risky, and because nobody owns the question. A short, structured review takes the fear out of it.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Start with the evidence</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Before discussing new prices, look at what you already know: win rates by proposal size, discounts granted and by whom, hours overrun on fixed-fee work, and which clients pay late. Patterns appear quickly.</p><!-- /wp:paragraph -->\n\n<!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Model</th><th>Works well when</th><th>Watch out for</th></tr></thead><tbody><tr><td>Hourly</td><td>Scope is genuinely unknown</td><td>Clients managing your timesheets</td></tr><tr><td>Fixed fee</td><td>Work is repeatable and well defined</td><td>Scope creep with no change process</td></tr><tr><td>Retainer</td><td>Demand is steady month to month</td><td>Unused hours eroding perceived value</td></tr><tr><td>Value based</td><td>Outcomes are measurable and large</td><td>Long negotiations and weak evidence</td></tr></tbody></table></figure><!-- /wp:table -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Change in small, visible steps</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Raise prices for new clients first, then for renewals, and explain the change in terms of what clients receive. Give your team a short script and the authority to hold the line. Track win rates for two quarters before the next move.</p><!-- /wp:paragraph -->\n\n<!-- wp:pullquote --><figure class=\"wp-block-pullquote\"><blockquote><p>A five percent price change on a ten percent margin business is a fifty percent increase in profit.</p><cite>The arithmetic every partner should know</cite></blockquote></figure><!-- /wp:pullquote -->\n\n<!-- wp:paragraph --><p>Done well, a pricing review is not about charging more for the same work. It is about being paid properly for the work you already do well.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Inés R.",
+     "email": "ines@example.com",
+     "content": "The table of models is going straight into our partners' meeting. Thank you.",
+     "date": "2026-10-03T09:05:00"
+    }
+   ],
+   "format": "standard"
+  },
+  {
+   "slug": "what-a-good-board-pack-looks-like",
+   "title": "What a good board pack looks like",
+   "date": "2026-09-22T08:45:00",
+   "categories": [
+    "leadership"
+   ],
+   "tags": [
+    "governance",
+    "reporting"
+   ],
+   "featured_media": "meeting",
+   "excerpt": "Shorter, earlier and built around decisions: the board pack that directors actually read.",
+   "content": "<!-- wp:paragraph --><p>A board pack is a tool for decisions, not an archive of everything that happened last month. Yet many packs run to eighty pages, arrive the night before, and leave directors guessing which pages matter.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Lead with the decisions</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>The first page should list the decisions the board is being asked to make, each with a recommendation and the page where the evidence sits. Everything else supports those choices or belongs in an appendix.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Our checklist</h3><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Sent at least five working days before the meeting.</li><!-- /wp:list-item --><!-- wp:list-item --><li>A one-page dashboard of no more than twelve measures, with trends.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Commentary that explains movements rather than repeating numbers.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Risks with named owners and dates, not adjectives.</li><!-- /wp:list-item --><!-- wp:list-item --><li>An appendix for anything a director might want but does not need.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:team}}\" alt=\"Five stylised figures standing together\"/><figcaption class=\"wp-element-caption\">A good pack makes the meeting shorter and the conversation better.</figcaption></figure><!-- /wp:image -->\n\n<!-- wp:paragraph --><p>Directors notice the difference within one cycle. Meetings get shorter, questions get sharper, and management spends less time preparing slides and more time running the business.</p><!-- /wp:paragraph -->",
+   "format": "standard"
+  },
+  {
+   "slug": "supplier-risk-review-in-a-week",
+   "title": "Running a supplier risk review in a week",
+   "date": "2026-09-08T11:00:00",
+   "categories": [
+    "operations"
+   ],
+   "tags": [
+    "risk",
+    "planning"
+   ],
+   "featured_media": "network",
+   "excerpt": "Map who you depend on, score what could go wrong and agree three actions, all in five working days.",
+   "content": "<!-- wp:paragraph --><p>Most businesses discover their supplier risk the hard way: a single shipment late, a key component discontinued, a contractor that quietly closes. A focused one-week review will not remove every risk, but it will show you where the real exposure sits.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Days 1–2</h3><!-- /wp:heading --><!-- wp:paragraph --><p>List every supplier above a spend threshold, plus any you could not replace within a month regardless of spend. Note what they provide and who owns the relationship.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Days 3–4</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Score each supplier on impact and likelihood of disruption. Check concentration: how much of a product depends on one source, one region or one route.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Day 5</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Agree three actions with owners and dates. Typical ones are a second source, a longer contract or a small buffer stock.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Keep it proportionate</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>The goal is a short register that people use, not a binder. Revisit it each quarter and whenever a supplier changes ownership, prices or lead times.</p><!-- /wp:paragraph -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>We found that one specialist courier carried most of our urgent orders. Nobody had ever written that down.</p><!-- /wp:paragraph --><cite>Operations director, manufacturing client</cite></blockquote><!-- /wp:quote -->",
+   "format": "standard"
+  },
+  {
+   "slug": "five-signals-ready-to-scale",
+   "title": "Five signals a business is ready to scale",
+   "date": "2026-08-26T09:15:00",
+   "categories": [
+    "strategy"
+   ],
+   "tags": [
+    "growth",
+    "planning"
+   ],
+   "featured_media": "stairs",
+   "excerpt": "Growth stresses every weak joint in a business. These five signals suggest the foundations are ready.",
+   "content": "<!-- wp:paragraph --><p>Scaling is not simply doing more of the same. It multiplies whatever is already there: good processes become a strength, and quiet workarounds become daily emergencies. Before you push for growth, check for these signals.</p><!-- /wp:paragraph -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li><strong>Your unit economics hold at volume.</strong> Margins do not depend on the founder personally handling every sale.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Cash conversion is predictable.</strong> You know how long it takes for a sale to become money in the bank.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>The management team can run a month without you.</strong> Decisions get made where the information is.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Systems are boring.</strong> Month-end closes on time without heroics.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>You can say no.</strong> There is a clear picture of the customers and work you do not want.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:facade}}\" alt=\"Glass facade panels in shades of blue seen at an angle\"/></figure><!-- /wp:image -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">If two or more are missing</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>That is not a reason to stop. It is a reason to fix the foundations first, usually over two or three quarters, so that growth adds value rather than strain.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Priya N.",
+     "email": "priya@example.com",
+     "content": "Number four hit home. Our close takes nine days and three late nights.",
+     "date": "2026-08-27T17:20:00"
+    }
+   ],
+   "format": "standard"
+  },
+  {
+   "slug": "ledger-and-co-opens-riverside-office",
+   "title": "Ledger & Co. opens a riverside office",
+   "date": "2026-08-12T12:00:00",
+   "categories": [
+    "firm-news"
+   ],
+   "tags": [
+    "growth"
+   ],
+   "featured_media": "bridge",
+   "excerpt": "Our second office brings the advisory team closer to clients in the east of the city.",
+   "content": "<!-- wp:paragraph --><p>We are pleased to announce our second office, a bright floor in a converted warehouse by the river. It gives our growing advisory team room to work and puts us within a short walk of many of the clients we already serve.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>The new office includes two meeting rooms that clients may book for their own workshops, free of charge, during business hours.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What stays the same</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>The same partners lead every engagement.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Our fees and terms do not change.</li><!-- /wp:list-item --><!-- wp:list-item --><li>The original office remains our head office.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>We would be glad to welcome you for coffee. Get in touch through our <a href=\"{{page:contact}}\">contact page</a> to arrange a visit.</p><!-- /wp:paragraph -->",
+   "format": "standard"
+  },
+  {
+   "slug": "hiring-a-finance-lead",
+   "title": "Hiring a finance lead: the questions we ask",
+   "date": "2026-07-29T10:00:00",
+   "categories": [
+    "leadership"
+   ],
+   "tags": [
+    "hiring"
+   ],
+   "featured_media": "compass",
+   "excerpt": "The first senior finance hire shapes a company for years. Here are the questions that separate a good bookkeeper from a strategic partner.",
+   "content": "<!-- wp:paragraph --><p>For many growing companies the first finance lead is the most important hire after the founding team. Get it right and the business gains a partner who turns numbers into decisions. Get it wrong and the founder ends up checking every spreadsheet.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Questions worth asking</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Tell us about a forecast you built that turned out to be wrong. What did you change?</li><!-- /wp:list-item --><!-- wp:list-item --><li>How would you explain our gross margin to a new sales hire?</li><!-- /wp:list-item --><!-- wp:list-item --><li>Which month-end task would you automate first, and why?</li><!-- /wp:list-item --><!-- wp:list-item --><li>Describe a time you disagreed with a chief executive about spending.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Look for someone who asks about the business before they ask about the software.</p><!-- /wp:paragraph --><cite>Partner, Ledger & Co.</cite></blockquote><!-- /wp:quote -->\n\n<!-- wp:paragraph --><p>We help clients define the role, run a structured interview process and, where useful, provide an interim finance lead while the search runs.</p><!-- /wp:paragraph -->",
+   "format": "standard"
+  },
+  {
+   "slug": "plain-language-esg-reporting",
+   "title": "Plain-language ESG reporting for mid-sized firms",
+   "date": "2026-07-15T09:30:00",
+   "categories": [
+    "operations"
+   ],
+   "tags": [
+    "reporting",
+    "governance"
+   ],
+   "featured_media": "globe",
+   "excerpt": "Customers and lenders increasingly ask about environmental and social measures. You can answer clearly without a large team.",
+   "content": "<!-- wp:paragraph --><p>Environmental, social and governance questions now arrive in tender forms, bank reviews and customer audits. For a mid-sized firm the challenge is rarely the measures themselves; it is collecting the data once and answering consistently.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">A sensible starting set</h2><!-- /wp:heading -->\n\n<!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":4} --><h4 class=\"wp-block-heading\">Environment</h4><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Energy use by site</li><!-- /wp:list-item --><!-- wp:list-item --><li>Business travel</li><!-- /wp:list-item --><!-- wp:list-item --><li>Waste and recycling rates</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":4} --><h4 class=\"wp-block-heading\">Social</h4><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Staff turnover</li><!-- /wp:list-item --><!-- wp:list-item --><li>Training hours</li><!-- /wp:list-item --><!-- wp:list-item --><li>Health and safety incidents</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":4} --><h4 class=\"wp-block-heading\">Governance</h4><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Board composition</li><!-- /wp:list-item --><!-- wp:list-item --><li>Policies in place</li><!-- /wp:list-item --><!-- wp:list-item --><li>Supplier code of conduct</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:paragraph --><p>Start with measures you can already collect accurately, publish them once a year in plain language, and improve the data before expanding the list.</p><!-- /wp:paragraph -->\n\n<!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:network}}\" alt=\"Connected nodes forming a network\"/><figcaption class=\"wp-element-caption\">Answer once, reuse everywhere: one data set for tenders, lenders and customers.</figcaption></figure><!-- /wp:image -->",
+   "format": "standard"
+  },
+  {
+   "slug": "reading-a-balance-sheet-in-ten-minutes",
+   "title": "Reading a balance sheet in ten minutes",
+   "date": "2026-07-01T08:00:00",
+   "categories": [
+    "finance"
+   ],
+   "tags": [
+    "reporting"
+   ],
+   "featured_media": "facade",
+   "excerpt": "A quick routine for non-financial managers: four questions that reveal how healthy a balance sheet really is.",
+   "content": "<!-- wp:paragraph --><p>Balance sheets look intimidating, but a manager can learn a great deal in ten minutes by asking four questions in order. None of them requires an accounting qualification.</p><!-- /wp:paragraph -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li><strong>Can the business pay its bills?</strong> Compare current assets with current liabilities.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Where is cash tied up?</strong> Look at receivables and inventory against the size of sales.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>How is it funded?</strong> Compare debt with equity and note when loans fall due.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>What changed?</strong> Read the comparison column; movements tell the story.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>Write one sentence for each answer. Those four sentences are often more useful in a meeting than the statement itself.</p><!-- /wp:paragraph -->",
+   "format": "standard"
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Home",
+     "page": "home"
+    },
+    {
+     "title": "Services",
+     "page": "services"
+    },
+    {
+     "title": "Insights",
+     "page": "insights",
+     "children": [
+      {
+       "title": "Strategy",
+       "category": "strategy"
+      },
+      {
+       "title": "Finance",
+       "category": "finance"
+      },
+      {
+       "title": "Operations",
+       "category": "operations"
+      },
+      {
+       "title": "Leadership",
+       "category": "leadership"
+      }
+     ]
+    },
+    {
+     "title": "About",
+     "page": "about",
+     "children": [
+      {
+       "title": "Careers",
+       "page": "careers"
+      }
+     ]
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    }
+   ]
+  },
+  {
+   "name": "Footer menu",
+   "location": "footer",
+   "items": [
+    {
+     "title": "About",
+     "page": "about"
+    },
+    {
+     "title": "Careers",
+     "page": "careers"
+    },
+    {
+     "title": "Insights",
+     "page": "insights"
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "sidebar-1": [
+   "<!-- wp:search {\"label\":\"Search insights\",\"buttonText\":\"Search\"} /-->",
+   "<!-- wp:group {\"className\":\"callout\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group callout\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Talk to an advisor</h2><!-- /wp:heading --><!-- wp:paragraph --><p>A first conversation is free and confidential.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-accent\"} --><div class=\"wp-block-button is-style-accent\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Book a call</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Topics</h2><!-- /wp:heading --><!-- wp:categories {\"showPostCounts\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Recent insights</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":4,\"displayPostDate\":true} /--></div><!-- /wp:group -->"
+  ],
+  "footer-1": [
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Head office</h2><!-- /wp:heading --><!-- wp:paragraph --><p>12 Market Street, Floor 4<br>Northbridge, NB1 4LC<br><a href=\"tel:+15550142200\">+1 (555) 014-2200</a></p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Practices</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><a href=\"{{category:finance}}\">Finance &amp; reporting</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{category:strategy}}\">Strategy &amp; pricing</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{category:operations}}\">Operations &amp; risk</a></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Newsletter</h2><!-- /wp:heading --><!-- wp:paragraph --><p>One practical note a month on cash, pricing and leadership. <a href=\"{{page:contact}}\">Ask to join</a>.</p><!-- /wp:paragraph --></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "hero_image": "hero",
+  "hero_heading": "Clear numbers for confident decisions",
+  "hero_text": "Ledger & Co. helps owner-led businesses forecast cash, price with confidence and build boards that look forward. Practical advice, plainly explained.",
+  "hero_kicker": "Advisory · Finance · Operations",
+  "hero_button_label": "Our services",
+  "hero_button_url": "#services",
+  "blog_layout": "grid",
+  "sidebar_position": "right",
+  "header_style": "light"
+ }
+}

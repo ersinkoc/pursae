@@ -1,0 +1,14 @@
+<article id="post-{{.ID}}" class="{{.Class}} entry entry--single">
+	<header class="entry-header">
+		<p class="entry-badges">{{range .Categories}}<a class="badge" href="{{.URL}}" rel="category tag">{{.Name}}</a>{{end}}{{range .Tags}}<a class="badge badge--light" href="{{.URL}}" rel="tag">{{.Name}}</a>{{end}}</p>
+		<h1 class="entry-title">{{.Title}}</h1>
+		{{with .Excerpt}}<div class="entry-standfirst">{{.}}</div>{{end}}
+		{{template "entry-meta" .}}
+	</header><!-- .entry-header -->
+	{{with .Thumbnail}}<figure class="post-thumbnail">{{.}}</figure>{{end}}
+	<div class="entry-content">
+		{{.Content}}
+	</div><!-- .entry-content -->
+	{{with .EditLink}}<footer class="entry-footer"><span class="edit-link">{{.}}</span></footer>{{end}}
+	{{.Biography}}
+</article><!-- #post-{{.ID}} -->
