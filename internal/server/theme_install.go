@@ -326,27 +326,44 @@ func (s *Server) packageThemeAsset(c *gin.Context) {
 
 // Screens -------------------------------------------------------------------------------
 
-// themeInstall is theme-install.php: the bundled and uploaded themes, and the Upload Theme form.
+// themeInstallCard is one card of Add Themes.
+type themeInstallCard struct {
+	Name, Author, Screenshot, Slug string
+	Installed, Active, Package     bool
+	Description                    string
+	ActivateURL, PreviewURL        string
+	Custom                         bool
+	Version                        string
+	InstallURL                     string // a deleted bundled theme or a library theme: Install puts it in place
+	// Library themes.
+	Library              bool
+	Style, CategoryLabel string
+	DemoURL              string // Install & Import Demo
+	UpdateURL            string // an older version is installed
+	NewVersion           string
+}
+
+// themeCategoryLink is a category filter of the Library tab.
+type themeCategoryLink struct {
+	Slug, Label, URL string
+	Count            int
+	Current          bool
+}
+
+// themeInstall is theme-install.php: the theme library, the bundled and uploaded themes, and the
+// Upload Theme form.
 func (s *Server) themeInstall(c *gin.Context) {
-	if !currentUser(c).Can("install_themes", nil) {
+	u := currentUser(c)
+	if !u.Can("install_themes", nil) {
 		c.String(http.StatusForbidden, "Sorry, you are not allowed to install themes on this site.")
 		return
 	}
-	if c.Query("action") == "install-theme" { // reinstall a deleted bundled theme (theme_delete.go)
-		slug := c.Query("theme")
-		if !s.checkNonce(c, "install-theme_"+slug) {
-			s.denyNonce(c)
-			return
-		}
-		if t := themeBySlug(slug); t == nil || t.Package != nil || t.Custom {
-			c.Redirect(http.StatusFound, "/wp-admin/theme-install?error="+url.QueryEscape("The requested theme does not exist."))
-			return
-		}
-		if err := s.restoreTheme(c, slug); err != nil {
-			c.Redirect(http.StatusFound, "/wp-admin/theme-install?error="+url.QueryEscape(err.Error()))
-			return
-		}
-		c.Redirect(http.StatusFound, "/wp-admin/themes?installed="+url.QueryEscape(slug))
+	switch c.Query("action") {
+	case "library-screenshot":
+		s.serveLibraryScreenshot(c)
+		return
+	case "install-theme": // a deleted bundled theme (theme_delete.go) or a library theme (theme_library.go)
+		s.themeInstallAction(c)
 		return
 	}
 	if c.Request.Method == http.MethodPost {
@@ -373,51 +390,94 @@ func (s *Server) themeInstall(c *gin.Context) {
 		return
 	}
 	active := s.activeTheme()
-	type card struct {
-		Name, Author, Screenshot, Slug string
-		Installed, Active, Package     bool
-		Description                    string
-		ActivateURL, PreviewURL        string
-		Custom                         bool
-		Version                        string
-		InstallURL                     string // a deleted bundled theme: Install puts it back
-	}
-	browse := c.DefaultQuery("browse", "all")
+	browse := c.DefaultQuery("browse", "library")
 	search := strings.ToLower(strings.TrimSpace(c.Query("search")))
-	var cards []card
-	list := s.installedThemes()
-	for _, slug := range s.deletedThemes() {
-		if t := themeBySlug(slug); t != nil && t.Package == nil && !t.Custom && (t.Slug != helloThemeSlug || s.golementorOn()) {
-			list = append(list, t)
-		}
+	category := c.Query("category")
+	var cards []themeInstallCard
+	var categories []themeCategoryLink
+	installURL := func(slug string) string {
+		return "/wp-admin/theme-install?action=install-theme&theme=" + slug + "&_wpnonce=" + s.nonce(c, "install-theme_"+slug)
 	}
-	for _, t := range list {
-		cd := card{Name: t.Name, Author: t.Author, Screenshot: t.ScreenshotSrc(), Slug: t.Slug, Installed: true, Active: t.Slug == active.Slug,
-			Description: t.Description, Package: t.Package != nil, Version: t.Version,
-			ActivateURL: "/wp-admin/themes?action=activate&stylesheet=" + t.Slug + "&_wpnonce=" + s.nonce(c, "switch-theme_"+t.Slug), PreviewURL: "/?theme=" + t.Slug, Custom: t.Custom}
-		if s.themeDeleted(t.Slug) {
-			cd.Installed, cd.ActivateURL = false, ""
-			cd.InstallURL = "/wp-admin/theme-install?action=install-theme&theme=" + t.Slug + "&_wpnonce=" + s.nonce(c, "install-theme_"+t.Slug)
+	activateURL := func(slug string) string {
+		return "/wp-admin/themes?action=activate&stylesheet=" + slug + "&_wpnonce=" + s.nonce(c, "switch-theme_"+slug)
+	}
+	canDemo := u.Can("switch_themes", nil) && u.Can("import", nil)
+	if browse == "library" {
+		library := s.libraryThemes()
+		counts := map[string]int{}
+		for _, lt := range library {
+			counts[lt.Manifest.Category]++
 		}
-		if search != "" && !strings.Contains(strings.ToLower(cd.Name+" "+cd.Author+" "+cd.Description), search) {
-			continue
+		if category != "" && counts[category] == 0 {
+			category = ""
 		}
-		switch browse {
-		case "bundled":
-			if cd.Package || cd.Custom {
+		categories = append(categories, themeCategoryLink{Label: "All", URL: "/wp-admin/theme-install", Count: len(library), Current: category == ""})
+		for _, cat := range themeCategories {
+			if counts[cat] > 0 {
+				categories = append(categories, themeCategoryLink{Slug: cat, Label: themeCategoryLabel(cat), Count: counts[cat],
+					URL: "/wp-admin/theme-install?browse=library&category=" + cat, Current: category == cat})
+			}
+		}
+		for _, lt := range library {
+			m := lt.Manifest
+			if category != "" && m.Category != category {
 				continue
 			}
-		case "uploaded":
-			if !cd.Package {
+			if search != "" && !strings.Contains(strings.ToLower(strings.Join([]string{m.Name, m.Author, m.Description, m.Style,
+				themeCategoryLabel(m.Category), strings.Join(m.Tags, " ")}, " ")), search) {
 				continue
 			}
-		case "upload":
-		default:
-			browse = "all"
+			cd := themeInstallCard{Name: m.Name, Author: m.Author, Slug: m.Slug, Description: m.Description, Version: m.Version,
+				Screenshot: "/wp-admin/theme-install?action=library-screenshot&theme=" + m.Slug + "&ver=" + m.Version,
+				Library:    true, Style: m.Style, CategoryLabel: themeCategoryLabel(m.Category), Package: true}
+			if t := s.installedTheme(m.Slug); t != nil && t.Package != nil {
+				cd.Installed, cd.Active = true, t.Slug == active.Slug
+				cd.ActivateURL, cd.PreviewURL = activateURL(t.Slug), "/?theme="+t.Slug
+				if semverLess(t.Version, m.Version) {
+					cd.UpdateURL, cd.NewVersion = installURL(m.Slug), m.Version
+				}
+			} else {
+				cd.InstallURL = installURL(m.Slug)
+				if m.Demo != "" && canDemo {
+					cd.DemoURL = cd.InstallURL + "&demo=1"
+				}
+			}
+			cards = append(cards, cd)
 		}
-		if cd.Active {
-			cards = append([]card{cd}, cards...)
-		} else {
+	} else {
+		list := s.installedThemes()
+		for _, slug := range s.deletedThemes() {
+			if t := themeBySlug(slug); t != nil && t.Package == nil && !t.Custom && (t.Slug != helloThemeSlug || s.golementorOn()) {
+				list = append(list, t)
+			}
+		}
+		for _, t := range list {
+			cd := themeInstallCard{Name: t.Name, Author: t.Author, Screenshot: t.ScreenshotSrc() + "?ver=" + t.Version, Slug: t.Slug,
+				Installed: true, Active: t.Slug == active.Slug, Description: t.Description, Package: t.Package != nil, Version: t.Version,
+				ActivateURL: activateURL(t.Slug), PreviewURL: "/?theme=" + t.Slug, Custom: t.Custom}
+			if t.Package != nil {
+				cd.Style, cd.CategoryLabel = t.Package.Manifest.Style, themeCategoryLabel(t.Package.Manifest.Category)
+			}
+			if s.themeDeleted(t.Slug) {
+				cd.Installed, cd.ActivateURL = false, ""
+				cd.InstallURL = installURL(t.Slug)
+			}
+			if search != "" && !strings.Contains(strings.ToLower(cd.Name+" "+cd.Author+" "+cd.Description+" "+cd.Style), search) {
+				continue
+			}
+			switch browse {
+			case "bundled":
+				if cd.Package || cd.Custom {
+					continue
+				}
+			case "uploaded":
+				if !cd.Package {
+					continue
+				}
+			case "upload":
+			default:
+				browse = "all"
+			}
 			cards = append(cards, cd)
 		}
 	}
@@ -431,6 +491,75 @@ func (s *Server) themeInstall(c *gin.Context) {
 		bodyClass += " show-upload-view"
 	}
 	data := map[string]any{"Cards": cards, "Browse": browse, "Search": c.Query("search"), "Count": len(cards), "Golementor": s.golementorOn(),
-		"UploadNonce": s.nonce(c, "theme-upload"), "MaxSize": fmt.Sprintf("%d MB", themeZipMaxBytes>>20)}
+		"UploadNonce": s.nonce(c, "theme-upload"), "MaxSize": fmt.Sprintf("%d MB", themeZipMaxBytes>>20),
+		"Categories": categories, "Category": category}
 	s.adminPage(c, "themes", "Add Themes", bodyClass, "admin/theme-install", data, notices...)
+}
+
+// themeInstallAction is Add Themes › Install (and Update, and Install & Import Demo): a deleted
+// bundled theme is put back; a library theme is installed or updated through the package installer
+// and, with demo=1, activated and given its demo content.
+func (s *Server) themeInstallAction(c *gin.Context) {
+	slug := c.Query("theme")
+	if !s.checkNonce(c, "install-theme_"+slug) {
+		s.denyNonce(c)
+		return
+	}
+	fail := func(msg string) {
+		c.Redirect(http.StatusFound, "/wp-admin/theme-install?error="+url.QueryEscape(msg))
+	}
+	if t := themeBySlug(slug); t != nil && t.Package == nil {
+		if t.Custom {
+			fail("The requested theme does not exist.")
+			return
+		}
+		if err := s.restoreTheme(c, slug); err != nil {
+			fail(err.Error())
+			return
+		}
+		c.Redirect(http.StatusFound, "/wp-admin/themes?installed="+url.QueryEscape(slug))
+		return
+	}
+	lt := s.libraryTheme(slug)
+	if lt == nil {
+		fail("The requested theme does not exist.")
+		return
+	}
+	u := currentUser(c)
+	demo := c.Query("demo") == "1"
+	if demo && (lt.Manifest.Demo == "" || !u.Can("switch_themes", nil) || !u.Can("import", nil)) {
+		fail("This theme’s demo content cannot be imported here.")
+		return
+	}
+	installed := themeBySlug(slug)
+	updated := false
+	if installed == nil || semverLess(installed.Version, lt.Manifest.Version) {
+		updated = installed != nil
+		t, err := s.installLibraryTheme(c, lt)
+		if err != nil {
+			fail("Installation failed: " + err.Error())
+			return
+		}
+		installed = t
+	}
+	if !demo {
+		if updated {
+			c.Redirect(http.StatusFound, "/wp-admin/themes?updated="+url.QueryEscape(slug))
+		} else {
+			c.Redirect(http.StatusFound, "/wp-admin/themes?installed="+url.QueryEscape(slug))
+		}
+		return
+	}
+	if s.activeTheme().Slug != slug {
+		if err := s.switchTheme(c, slug); err != nil {
+			fail(err.Error())
+			return
+		}
+	}
+	rep, err := s.importThemeDemo(c.Request.Context(), u.ID, installed)
+	if err != nil {
+		c.Redirect(http.StatusFound, "/wp-admin/themes?activated=true&error="+url.QueryEscape("The demo content could not be imported: "+err.Error()))
+		return
+	}
+	c.Redirect(http.StatusFound, "/wp-admin/themes?activated=true&"+rep.query())
 }

@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "options": {"blogname": "Fixture Journal", "blogdescription": "Notes from the test bench", "posts_per_page": 5},
+  "categories": [
+    {"slug": "travel", "name": "Travel", "description": "Places we went."},
+    {"slug": "coastal", "name": "Coastal", "parent": "travel"},
+    {"slug": "kitchen", "name": "Kitchen"}
+  ],
+  "tags": [{"slug": "coffee", "name": "Coffee"}],
+  "media": [
+    {"id": "hero", "file": "demo/images/hero.jpg", "alt": "A warm gradient sky", "title": "Hero"},
+    {"id": "cup", "file": "demo/images/cup.png", "alt": "A brown gradient", "caption": "Morning"}
+  ],
+  "pages": [
+    {"slug": "contact", "title": "Contact", "content": "<!-- wp:paragraph --><p>Write to us.</p><!-- /wp:paragraph -->", "parent": "about"},
+    {"slug": "home", "title": "Home", "front_page": true, "featured_media": "hero", "template": "page-wide",
+     "content": "<!-- wp:paragraph --><p>Read <a href=\"{{post:first-light}}\">the first post</a>, see <a href=\"{{page:about}}\">about</a> and <a href=\"{{category:travel}}\">travel</a>.</p><!-- /wp:paragraph --><!-- wp:image {\"id\":{{media_id:hero}}} --><figure class=\"wp-block-image\"><img src=\"{{media:hero}}\" alt=\"\" class=\"wp-image-{{media_id:hero}}\"/></figure><!-- /wp:image -->"},
+    {"slug": "blog", "title": "Journal", "posts_page": true},
+    {"slug": "about", "title": "About", "content": "<!-- wp:paragraph --><p>We test things.</p><!-- /wp:paragraph -->"}
+  ],
+  "posts": [
+    {"slug": "first-light", "title": "First light", "date": "2026-09-12T09:30:00", "excerpt": "Morning on the coast.",
+     "content": "<!-- wp:paragraph --><p>The sea was still. Back to <a href=\"{{page:home}}\">home</a>.</p><!-- /wp:paragraph -->",
+     "categories": ["coastal"], "tags": ["coffee"], "featured_media": "hero", "sticky": true,
+     "comments": [{"author": "Ada", "email": "ada@example.com", "content": "Lovely!", "date": "2026-09-13T10:00:00"}]},
+    {"slug": "slow-coffee", "title": "Slow coffee", "date": "2026-09-01 08:00:00", "format": "aside",
+     "content": "<!-- wp:paragraph --><p>Grind, wait, pour.</p><!-- /wp:paragraph -->", "categories": ["kitchen"], "featured_media": "cup"},
+    {"slug": "no-category", "title": "Unfiled", "date": "2026-08-01T08:00:00", "content": "<p>Plain HTML.</p>"}
+  ],
+  "menus": [
+    {"name": "Main menu", "location": "primary", "items": [
+      {"title": "Home", "page": "home"},
+      {"title": "Travel", "category": "travel"},
+      {"page": "about", "children": [{"title": "Contact", "page": "contact"}]},
+      {"title": "First light", "post": "first-light"},
+      {"title": "Elsewhere", "url": "https://example.org/"}
+    ]}
+  ],
+  "widgets": {"sidebar-1": ["<!-- wp:search /-->", "<!-- wp:paragraph --><p>See <a href=\"{{page:about}}\">about us</a>.</p><!-- /wp:paragraph -->"]},
+  "customizer": {"accent": "#c2410c", "layout": "grid", "hero_image": "{{media:hero}}", "show_hero": true}
+}

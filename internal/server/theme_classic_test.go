@@ -67,7 +67,7 @@ func TestClassicTheme(t *testing.T) {
 	if m == nil || !strings.Contains(body, "/wp-content/themes/classic/screenshot.png") {
 		t.Fatal("no Classic card on the Themes screen")
 	}
-	if _, body, _ := get(t, c, base+"/wp-admin/theme-install"); !strings.Contains(body, "Classic") {
+	if _, body, _ := get(t, c, base+"/wp-admin/theme-install?browse=all"); !strings.Contains(body, "Classic") {
 		t.Error("Add Themes misses Classic")
 	}
 	if code, b := restGet(t, c, base, "/wp-json/wp/v2/themes/classic"); code != http.StatusOK || !strings.Contains(b, `"editor-styles":true`) {

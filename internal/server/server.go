@@ -36,9 +36,11 @@ type Server struct {
 	settings *settings.Store
 	auth     *auth.Manager
 	web      fs.FS
-	tmpl     *templates
-	engine   *gin.Engine
-	rest     *restAPI
+	// themeLibrary is web/theme-library: one theme package directory per slug (theme_library.go).
+	themeLibrary fs.FS
+	tmpl         *templates
+	engine       *gin.Engine
+	rest         *restAPI
 
 	// onPostSaved runs after any post or comment change (cache purge, plugin hooks).
 	onPostSaved func(ctx context.Context, p *store.Post)
@@ -70,6 +72,9 @@ func New(ctx context.Context, cfg config.Config, pool *pgxpool.Pool) (*Server, e
 		settings: st,
 		auth:     auth.NewManager(pool, secret),
 		web:      overlayFS{base: web.FS(cfg.WebDir), dir: themeOverrideDir(cfg.UploadsDir)},
+	}
+	if lib, err := fs.Sub(web.FS(cfg.WebDir), "theme-library"); err == nil {
+		s.themeLibrary = lib
 	}
 	if s.golementorOn() {
 		s.gweLoadCustomThemes(ctx) // Golementor custom themes stored in this site's database

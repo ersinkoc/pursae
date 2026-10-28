@@ -1,0 +1,25 @@
+{
+  "slug": "wpgo-fixture",
+  "name": "Fixture Journal",
+  "version": "1.1.0",
+  "description": "A test fixture for the theme library and demo content.",
+  "author": "WordPress Go",
+  "tags": ["Blog"],
+  "requires_core": "0.1.0",
+  "category": "blog",
+  "style": "Quiet serif journal",
+  "demo": "demo/demo.json",
+  "widget_areas": [{"id": "sidebar-1", "name": "Sidebar"}],
+  "menu_locations": [{"id": "primary", "name": "Primary Menu"}, {"id": "footer", "name": "Footer Menu"}],
+  "styles": [{"handle": "fixture-style", "src": "assets/style.css"}],
+  "customizer": {
+    "sections": [
+      {"id": "fixture_options", "title": "Fixture", "settings": [
+        {"id": "accent", "label": "Accent", "type": "color", "default": "#2271b1", "css_var": "--fixture-accent"},
+        {"id": "layout", "label": "Layout", "type": "select", "default": "list", "choices": [{"value": "list", "label": "List"}, {"value": "grid", "label": "Grid"}]},
+        {"id": "hero_image", "label": "Hero image", "type": "image"},
+        {"id": "show_hero", "label": "Show hero", "type": "checkbox", "default": false}
+      ]}
+    ]
+  }
+}
