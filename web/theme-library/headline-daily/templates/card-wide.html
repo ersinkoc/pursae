@@ -1,0 +1,9 @@
+<article id="post-{{.ID}}" class="{{.Class}} hd-card hd-wide">
+	{{with .Thumbnail}}<a class="hd-card__media" href="{{$.Permalink}}" aria-hidden="true" tabindex="-1">{{.}}</a>{{end}}
+	<div class="hd-card__body">
+		{{template "kicker" .}}
+		<h3 class="hd-card__title"><a href="{{.Permalink}}" rel="bookmark">{{.Title}}</a></h3>
+		{{if .ShowExcerpt}}<div class="hd-card__excerpt">{{.Excerpt}}</div>{{end}}
+		{{template "meta" .}}
+	</div>
+</article>

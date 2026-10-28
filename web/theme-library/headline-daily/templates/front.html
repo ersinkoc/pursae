@@ -1,0 +1,52 @@
+{{$posts := .Posts}}{{$n := len $posts}}
+<section class="hd-wrap hd-lead" aria-label="Top stories">
+	{{with index $posts 0}}{{$lead := .}}<article id="post-{{.ID}}" class="{{.Class}} hd-lead__main">
+		{{with .Thumbnail}}<a class="hd-lead__media" href="{{$lead.Permalink}}" aria-hidden="true" tabindex="-1">{{.}}</a>{{end}}
+		<div class="hd-lead__body">
+			{{template "kicker" .}}
+			<h2 class="hd-lead__title"><a href="{{.Permalink}}" rel="bookmark">{{.Title}}</a></h2>
+			{{if .ShowExcerpt}}<div class="hd-lead__excerpt">{{.Excerpt}}</div>{{end}}
+			{{template "meta" .}}
+		</div>
+	</article>{{end}}
+	{{if gt $n 1}}<div class="hd-lead__side">
+		{{range $i, $p := $posts}}{{if and (ge $i 1) (le $i 2)}}<article id="post-{{$p.ID}}" class="{{$p.Class}} hd-side">
+			{{with $p.Thumbnail}}<a class="hd-side__media" href="{{$p.Permalink}}" aria-hidden="true" tabindex="-1">{{.}}</a>{{end}}
+			{{template "kicker" $p}}
+			<h3 class="hd-side__title"><a href="{{$p.Permalink}}" rel="bookmark">{{$p.Title}}</a></h3>
+			{{template "meta" $p}}
+		</article>{{end}}{{end}}
+	</div>{{end}}
+	{{if gt $n 7}}<div class="hd-lead__rail">
+		<h2 class="hd-rail-title">More headlines</h2>
+		<ol class="hd-rail">
+			{{range $i, $p := $posts}}{{if and (ge $i 7) (le $i 11)}}<li class="hd-rail__item">
+				{{template "kicker" $p}}
+				<a class="hd-rail__link" href="{{$p.Permalink}}">{{$p.Title}}</a>
+				<time class="hd-rail__time" datetime="{{$p.DateISO}}">{{$p.DateText}}</time>
+			</li>{{end}}{{end}}
+		</ol>
+	</div>{{end}}
+</section>
+
+{{template "layout-open" .}}
+	{{if gt $n 3}}<section class="hd-block" aria-labelledby="hd-latest-title">
+		<h2 class="hd-section-title" id="hd-latest-title"><span>Latest news</span></h2>
+		<div class="hd-grid">
+			{{range $i, $p := $posts}}{{if and (ge $i 3) (le $i 6)}}{{template "card" $p}}{{end}}{{end}}
+		</div>
+	</section>{{end}}
+
+	{{range $k, $raw := split (theme_mod $ "front_sections") ","}}
+		{{$name := ""}}{{$url := ""}}{{$count := 0}}
+		{{range $posts}}{{range .Categories}}{{if or (eq .Slug $raw) (eq (printf " %s" .Slug) $raw)}}{{$name = .Name}}{{$url = .URL}}{{end}}{{end}}{{end}}
+		{{if $name}}<section class="hd-block hd-section-row" aria-labelledby="hd-row-{{$k}}">
+			<h2 class="hd-section-title" id="hd-row-{{$k}}"><a href="{{$url}}"><span>{{$name}}</span></a><a class="hd-section-more" href="{{$url}}">More {{$name}} <span aria-hidden="true">&rarr;</span></a></h2>
+			<div class="hd-row-grid">
+			{{range $posts}}{{$in := false}}{{range .Categories}}{{if or (eq .Slug $raw) (eq (printf " %s" .Slug) $raw)}}{{$in = true}}{{end}}{{end}}{{if and $in (lt $count 4)}}{{$count = add $count 1}}{{template "card-wide" .}}{{end}}{{end}}
+			</div>
+		</section>{{end}}
+	{{end}}
+
+	{{.Pagination}}
+{{template "layout-close" .}}

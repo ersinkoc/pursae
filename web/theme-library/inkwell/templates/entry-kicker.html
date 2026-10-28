@@ -1,0 +1,1 @@
+{{if .Categories}}<p class="entry-kicker">{{range $i, $c := .Categories}}{{if $i}}<span class="sep" aria-hidden="true"> &middot; </span>{{end}}<a href="{{$c.URL}}" rel="category tag">{{$c.Name}}</a>{{end}}</p>{{end}}

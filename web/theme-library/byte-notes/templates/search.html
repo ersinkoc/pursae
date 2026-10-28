@@ -1,0 +1,13 @@
+{{template "header" .}}
+<header class="page-header">
+	<p class="page-kicker">Search</p>
+	<h1 class="page-title">Results for <span class="search-term">&ldquo;{{.SearchQuery}}&rdquo;</span></h1>
+	<p class="page-count">{{plural .TotalPosts "%s result" "%s results"}}</p>
+	{{template "searchform" .}}
+</header><!-- .page-header -->
+{{if .Posts}}<div class="post-list">
+	{{range .Posts}}{{template "content" .}}
+	{{end}}
+</div>
+{{.Pagination}}{{else}}{{template "content-none" .}}{{end}}
+{{template "footer" .}}

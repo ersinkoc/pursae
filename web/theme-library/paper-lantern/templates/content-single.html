@@ -1,0 +1,15 @@
+<article id="post-{{.ID}}" class="{{.Class}} entry entry--single">
+	<header class="entry-header">
+		{{template "entry-meta" .}}
+		<h1 class="entry-title">{{.Title}}</h1>
+	</header><!-- .entry-header -->
+	{{with .Thumbnail}}<figure class="post-thumbnail"><span class="photo">{{.}}</span></figure>{{end}}
+	<div class="entry-content">
+		{{.Content}}
+	</div><!-- .entry-content -->
+	<footer class="entry-footer">
+		<p class="entry-signoff" aria-hidden="true">&mdash; with love, from the lantern desk</p>
+		{{if .Tags}}<div class="tags-links"><span class="tags-links__label">Tucked under</span>{{range .Tags}}<a href="{{.URL}}" rel="tag">{{.Name}}</a>{{end}}</div>{{end}}
+	</footer>
+	{{.Biography}}
+</article><!-- #post-{{.ID}} -->

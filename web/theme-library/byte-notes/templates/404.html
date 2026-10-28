@@ -1,0 +1,18 @@
+{{template "header" .}}
+<section class="error-404 not-found">
+	<div class="terminal" aria-hidden="true">
+		<div class="terminal__bar"><span></span><span></span><span></span></div>
+		<pre class="terminal__body"><span class="t-prompt">$</span> curl -I {{.HomeURL}}&hellip;
+<span class="t-err">HTTP/1.1 404 Not Found</span>
+<span class="t-dim"># the page you asked for is not here</span></pre>
+	</div>
+	<header class="page-header">
+		<p class="page-kicker">Error 404</p>
+		<h1 class="page-title">This page returned nothing.</h1>
+	</header>
+	<div class="page-content">
+		<p>The link may be old or mistyped. Try a search, or head back to the <a href="{{.HomeURL}}">latest notes</a>.</p>
+		{{template "searchform" .}}
+	</div>
+</section><!-- .error-404 -->
+{{template "footer" .}}

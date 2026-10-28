@@ -1,0 +1,15 @@
+{{template "header" .}}
+<section class="error-404 not-found entry entry--note">
+	<div class="error-404__lantern" aria-hidden="true">
+		<svg viewBox="0 0 120 150" focusable="false"><line x1="60" y1="0" x2="60" y2="22"/><rect x="44" y="20" width="32" height="8" rx="3"/><ellipse cx="60" cy="72" rx="44" ry="46"/><path d="M42 72a18 46 0 0 0 36 0a18 46 0 0 0-36 0"/><rect x="46" y="114" width="28" height="8" rx="3"/><line x1="60" y1="122" x2="60" y2="142"/></svg>
+	</div>
+	<header class="page-header">
+		<p class="page-kicker">Page 404</p>
+		<h1 class="page-title">This page has wandered off</h1>
+	</header>
+	<div class="page-content">
+		<p>Maybe it blew away with the autumn leaves. Try a search, or wander back to the <a href="{{.HomeURL}}">first page of the journal</a>.</p>
+		{{template "searchform" .}}
+	</div>
+</section><!-- .error-404 -->
+{{template "footer" .}}

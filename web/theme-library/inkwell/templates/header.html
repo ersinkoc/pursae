@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>{{.DocumentTitle}}</title>
+{{.Head}}</head>
+
+<body class="{{.BodyClass}}">
+{{.BodyOpen}}<div id="page" class="site">
+	<a class="skip-link screen-reader-text" href="#main">Skip to content</a>
+
+	<header id="masthead" class="site-header">
+		<div class="masthead">
+			<p class="masthead-kicker">{{theme_mod . "masthead_kicker"}}</p>
+			<div class="masthead-rule masthead-rule--top" aria-hidden="true"><span class="fleuron">&#10086;</span></div>
+			<div class="site-branding">
+				{{with .CustomLogo}}<div class="site-logo">{{.}}</div>{{end}}
+				{{if .TitleIsH1}}<h1 class="site-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></h1>{{else}}<p class="site-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></p>{{end}}
+				{{with .Description}}<p class="site-description">{{.}}</p>{{end}}
+			</div><!-- .site-branding -->
+			<div class="masthead-rule masthead-rule--bottom" aria-hidden="true"><span class="fleuron">&#9673;</span></div>
+		</div>
+		{{if has_nav_menu . "primary"}}<div class="nav-bar">
+			<nav id="site-navigation" class="main-navigation" aria-label="Primary menu">
+				<button type="button" class="menu-toggle" aria-controls="menu-primary-menu-container" aria-expanded="false"><span class="menu-toggle__icon" aria-hidden="true"></span>Menu</button>
+				{{nav_menu . "primary"}}
+			</nav><!-- #site-navigation -->
+		</div>{{end}}
+	</header><!-- #masthead -->
+
+	<div id="content" class="site-content">
+		<main id="main" class="site-main" tabindex="-1">

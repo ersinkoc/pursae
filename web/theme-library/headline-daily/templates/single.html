@@ -1,0 +1,19 @@
+{{template "header" .}}
+{{with .Post}}
+<div class="hd-article-top">{{template "content-single" .}}</div>
+{{end}}
+{{template "layout-open" .}}
+	{{with .Post}}<div class="hd-article__content">
+		<div class="entry-content">
+			{{.Content}}
+		</div><!-- .entry-content -->
+		{{if or .Tags .EditLink}}<footer class="hd-article__foot">
+			{{if .Tags}}<div class="hd-tags"><span class="hd-tags__label">Topics</span>{{range .Tags}}<a href="{{.URL}}" rel="tag">{{.Name}}</a>{{end}}</div>{{end}}
+			{{with .EditLink}}<span class="edit-link">{{.}}</span>{{end}}
+		</footer>{{end}}
+		{{.Biography}}
+	</div>{{end}}
+	{{.PostNav}}
+	{{template "comments" .}}
+{{template "layout-close" .}}
+{{template "footer" .}}

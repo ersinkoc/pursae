@@ -1,0 +1,5 @@
+<div class="hd-meta">
+	{{with .AuthorName}}<span class="byline">By <a class="author" href="{{$.AuthorURL}}" rel="author">{{.}}</a></span>{{end}}
+	<span class="posted-on"><time class="entry-date published" datetime="{{.DateISO}}">{{.DateText}}</time></span>
+	{{if .CommentCount}}<span class="comments-link"><a href="{{.CommentsURL}}">{{plural .CommentCount "%s comment" "%s comments"}}</a></span>{{end}}
+</div>

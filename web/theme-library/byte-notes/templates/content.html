@@ -1,0 +1,15 @@
+<article id="post-{{.ID}}" class="{{.Class}} card{{if .Thumbnail}} card--has-thumb{{end}}">
+	{{with .Thumbnail}}<a class="card__thumb post-thumbnail" href="{{$.Permalink}}" aria-hidden="true" tabindex="-1">{{.}}</a>{{end}}
+	<div class="card__body">
+		<div class="card__top">
+			{{if .Categories}}<a class="cat-label" href="{{(index .Categories 0).URL}}">{{(index .Categories 0).Name}}</a>{{end}}
+			{{if .ShowFeatured}}<span class="sticky-badge">Pinned</span>{{end}}
+		</div>
+		<h2 class="entry-title card__title"><a href="{{.Permalink}}" rel="bookmark">{{.Title}}</a></h2>
+		<div class="entry-summary card__excerpt">
+			{{if .ShowExcerpt}}{{.Excerpt}}{{else}}{{.Content}}{{end}}
+		</div>
+		{{if .Tags}}<ul class="tag-pills" aria-label="Tags">{{range .Tags}}<li><a href="{{.URL}}" rel="tag">#{{.Name}}</a></li>{{end}}</ul>{{end}}
+		{{template "entry-meta" .}}
+	</div>
+</article><!-- #post-{{.ID}} -->

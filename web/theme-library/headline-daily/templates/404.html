@@ -1,0 +1,10 @@
+{{template "header" .}}
+<div class="hd-wrap">
+	<main id="main" class="site-main hd-404" tabindex="-1">
+		<p class="hd-404__code" aria-hidden="true">404</p>
+		<h1 class="hd-404__title">This story has been spiked.</h1>
+		<p class="hd-404__text">The page you were looking for was moved, retired or never filed. Search the archive or head back to the <a href="{{.HomeURL}}">front page</a>.</p>
+		{{template "searchform" (dict "HomeURL" .HomeURL "SearchQuery" .SearchQuery "ID" "404")}}
+	</main>
+</div>
+{{template "footer" .}}

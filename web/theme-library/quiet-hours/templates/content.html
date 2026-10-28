@@ -1,0 +1,12 @@
+<li id="post-{{.ID}}" class="{{.Class}} post-row">
+	<article class="post-row__inner">
+		<time class="post-row__date" datetime="{{.DateISO}}">{{if .ShowFeatured}}{{date .Date "M Y"}}{{else}}{{date .Date "M d"}}{{end}}</time>
+		<div class="post-row__body">
+			<h3 class="post-row__title"><a href="{{.Permalink}}" rel="bookmark">{{.Title}}</a>{{if and .Sticky (not .ShowFeatured)}} <span class="post-row__pin">pinned</span>{{end}}</h3>
+			<div class="post-row__excerpt">
+				{{.Excerpt}}
+				{{if .Categories}}<p class="post-row__cats">{{range $i, $c := .Categories}}{{if $i}}, {{end}}<a href="{{$c.URL}}">{{$c.Name}}</a>{{end}}</p>{{end}}
+			</div>
+		</div>
+	</article>
+</li>

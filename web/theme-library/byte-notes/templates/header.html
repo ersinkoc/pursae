@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<meta name="color-scheme" content="dark light" />
+	<title>{{.DocumentTitle}}</title>
+{{.Head}}</head>
+
+<body class="{{.BodyClass}}">
+{{.BodyOpen}}<div id="page" class="site">
+	<a class="skip-link screen-reader-text" href="#main">Skip to content</a>
+
+	<header id="masthead" class="site-header">
+		<div class="site-header__inner bn-container">
+			<div class="site-branding">
+				{{with .CustomLogo}}<div class="site-logo">{{.}}</div>{{else}}<span class="site-mark" aria-hidden="true">&gt;_</span>{{end}}
+				<div class="site-branding__text">
+					{{if .TitleIsH1}}<h1 class="site-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></h1>{{else}}<p class="site-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></p>{{end}}
+					{{with .Description}}<p class="site-description">{{.}}</p>{{end}}
+				</div>
+			</div><!-- .site-branding -->
+			<div class="site-header__actions">
+				{{if has_nav_menu . "primary"}}<nav id="site-navigation" class="main-navigation" aria-label="Primary menu">
+					<button type="button" class="menu-toggle" aria-controls="site-navigation-menu" aria-expanded="false"><span class="menu-toggle__bars" aria-hidden="true"></span><span class="menu-toggle__label">Menu</span></button>
+					<div id="site-navigation-menu" class="main-navigation__panel">{{nav_menu . "primary"}}</div>
+				</nav><!-- #site-navigation -->{{end}}
+				<button type="button" class="header-search" aria-controls="header-search-panel" aria-expanded="false"><span class="screen-reader-text">Search</span><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="m20 20-4.2-4.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+				<button type="button" class="scheme-toggle" aria-pressed="false" title="Toggle light and dark mode">
+					<span class="screen-reader-text">Dark mode</span>
+					<svg class="scheme-toggle__sun" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><g stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></g></svg>
+					<svg class="scheme-toggle__moon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z" fill="currentColor"/></svg>
+				</button>
+			</div>
+		</div>
+		<div id="header-search-panel" class="header-search-panel" hidden>
+			<form role="search" method="get" class="search-form bn-container" action="{{.HomeURL}}">
+				<label for="header-search-field" class="screen-reader-text">Search for:</label>
+				<input type="search" id="header-search-field" class="search-field" placeholder="Search notes&hellip;" name="s" />
+				<button type="submit" class="search-submit">Search</button>
+			</form>
+		</div>
+	</header><!-- #masthead -->
+
+	<div id="content" class="site-content bn-container">
+		<main id="main" class="site-main" tabindex="-1">

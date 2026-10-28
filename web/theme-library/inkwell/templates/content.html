@@ -1,0 +1,17 @@
+<article id="post-{{.ID}}" class="{{.Class}} entry entry--card">
+	{{with .Thumbnail}}<a class="post-thumbnail" href="{{$.Permalink}}" aria-hidden="true" tabindex="-1">{{.}}</a>{{end}}
+	<div class="entry-body">
+		<header class="entry-header">
+			{{if .ShowFeatured}}<span class="sticky-badge">Featured</span>{{end}}
+			{{template "entry-kicker" .}}
+			<h2 class="entry-title"><a href="{{.Permalink}}" rel="bookmark">{{.Title}}</a></h2>
+			<span class="entry-leader" aria-hidden="true"></span>
+			<time class="entry-index-date" datetime="{{.DateISO}}">{{.DateText}}</time>
+			{{template "entry-meta" .}}
+		</header><!-- .entry-header -->
+		<div class="entry-summary">
+			{{if .ShowExcerpt}}{{.Excerpt}}{{else}}{{.Content}}{{end}}
+		</div><!-- .entry-summary -->
+		{{if .ShowExcerpt}}<p class="more-link-wrap"><a class="more-link" href="{{.Permalink}}">Continue reading<span class="screen-reader-text"> &ldquo;{{.Title}}&rdquo;</span> <span aria-hidden="true">&rarr;</span></a></p>{{end}}
+	</div>
+</article><!-- #post-{{.ID}} -->

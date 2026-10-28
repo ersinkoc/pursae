@@ -1,0 +1,9 @@
+{{template "header" .}}
+<header class="page-header">
+	<h1 class="page-title">{{.ArchiveTitle}}</h1>
+	{{with .ArchiveDesc}}<div class="archive-description">{{.}}</div>{{end}}
+	<p class="page-count">{{plural .TotalPosts "%s entry" "%s entries"}}</p>
+</header><!-- .page-header -->
+{{if .Posts}}{{template "post-list" .}}
+{{.Pagination}}{{else}}{{template "content-none" .}}{{end}}
+{{template "footer" .}}

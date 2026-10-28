@@ -1,0 +1,11 @@
+{{with .Comments}}<section id="comments" class="comments-area" aria-label="Comments">
+	{{if .Count}}
+	<h2 class="comments-title">{{.Title}}</h2>
+	<p class="comments-kicker" aria-hidden="true">notes left on the doorstep</p>
+	<ol class="comment-list">
+		{{.List}}
+	</ol><!-- .comment-list -->
+	{{if not .Open}}<p class="no-comments">Comments are closed.</p>{{end}}
+	{{end}}
+	{{.Form}}
+</section><!-- #comments -->{{end}}

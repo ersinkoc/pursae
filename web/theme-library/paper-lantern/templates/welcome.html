@@ -1,0 +1,7 @@
+{{$greeting := theme_mod . "greeting"}}{{$img := theme_mod . "welcome_image"}}{{if or $greeting $img}}<section class="welcome{{if $img}} welcome--has-image{{end}}" aria-label="Welcome">
+	{{with $img}}<figure class="welcome__photo"><span class="photo"><img src="{{.}}" alt="" loading="lazy" /></span></figure>{{end}}
+	<div class="welcome__note">
+		{{with $greeting}}<p class="welcome__greeting">{{.}}</p>{{end}}
+		{{with $.Description}}<p class="welcome__text">{{.}}</p>{{end}}
+	</div>
+</section>{{end}}

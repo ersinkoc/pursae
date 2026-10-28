@@ -1,0 +1,6 @@
+{{template "header" .}}
+{{if .IsHomeHeader}}<header class="page-header">
+	<h1 class="page-title">{{.PostsPageTitle}}</h1>
+</header>{{else}}<h2 class="screen-reader-text">Latest posts</h2>{{end}}
+{{template "post-list" .}}
+{{template "footer" .}}

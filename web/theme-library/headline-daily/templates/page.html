@@ -1,0 +1,15 @@
+{{template "header" .}}
+{{template "layout-open" .}}
+	{{with .Post}}<article id="post-{{.ID}}" class="{{.Class}} hd-page">
+		<header class="hd-page-head">
+			<h1 class="hd-page-head__title">{{.Title}}</h1>
+		</header>
+		{{with .Thumbnail}}<figure class="hd-page__media">{{.}}</figure>{{end}}
+		<div class="entry-content">
+			{{.Content}}
+		</div><!-- .entry-content -->
+		{{with .EditLink}}<footer class="hd-article__foot"><span class="edit-link">{{.}}</span></footer>{{end}}
+	</article>{{end}}
+	{{with .Comments}}{{if .Count}}{{template "comments" $}}{{end}}{{end}}
+{{template "layout-close" .}}
+{{template "footer" .}}

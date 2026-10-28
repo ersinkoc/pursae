@@ -1,0 +1,89 @@
+{
+  "slug": "paper-lantern",
+  "name": "Paper Lantern",
+  "version": "1.0.0",
+  "description": "A warm, cosy personal journal: one comfortable column on cream paper, handwritten accents, polaroid-style photos with washi tape and a string of lanterns over the masthead. Made for diaries, family notes, recipes and slow-living blogs.",
+  "author": "WordPress Go",
+  "author_url": "https://github.com/boracomet/wordpress-go",
+  "theme_url": "https://github.com/boracomet/wordpress-go/tree/main/web/theme-library/paper-lantern",
+  "tags": ["Blog", "Personal", "One Column", "Custom Colors", "Custom Logo", "Custom Menu", "Editor Style", "Featured Images", "Footer Widgets", "Threaded Comments", "Wide Blocks"],
+  "requires_core": "0.1.0",
+  "screenshot": "assets/screenshot.png",
+
+  "category": "personal",
+  "style": "Cosy handwritten journal on cream paper",
+  "demo": "demo/demo.json",
+
+  "widget_areas": [
+    {"id": "footer-1", "name": "Footer notes", "description": "Little notes pinned below every page, in up to three columns."}
+  ],
+  "menu_locations": [
+    {"id": "primary", "name": "Primary Menu"},
+    {"id": "social", "name": "Footer Links"}
+  ],
+
+  "styles": [
+    {"handle": "paper-lantern-style", "src": "assets/style.css", "deps": ["wp-block-library"], "media": "all"}
+  ],
+  "scripts": [
+    {"handle": "paper-lantern-navigation", "src": "assets/js/navigation.js", "deps": [], "in_footer": true}
+  ],
+  "editor_styles": ["assets/editor-style.css"],
+  "preload_fonts": ["assets/fonts/caveat.woff2", "assets/fonts/nunito.woff2"],
+
+  "palette": [
+    {"name": "Terracotta", "slug": "terracotta", "color": "#a54a25"},
+    {"name": "Lantern gold", "slug": "lantern", "color": "#e2a33c"},
+    {"name": "Sage", "slug": "sage", "color": "#56703f"},
+    {"name": "Plum", "slug": "plum", "color": "#7c5c8a"},
+    {"name": "Walnut ink", "slug": "ink", "color": "#3b2f2a"},
+    {"name": "Cream paper", "slug": "paper", "color": "#f7f0e3"}
+  ],
+  "supports": {
+    "post-thumbnails": true,
+    "custom-logo": {"width": 120, "height": 120, "flex-width": true, "flex-height": true, "header-text": ["site-title", "site-description"]},
+    "title-tag": true,
+    "html5": ["search-form", "comment-form", "comment-list", "gallery", "caption", "script", "style"],
+    "responsive-embeds": true,
+    "align-wide": true,
+    "wp-block-styles": true
+  },
+
+  "customizer": {
+    "sections": [
+      {
+        "id": "paper_lantern_colors", "title": "Paper & ink", "description": "The colours of the paper, the ink and the little accents.", "priority": 40,
+        "settings": [
+          {"id": "accent", "label": "Accent color", "description": "Links, dates, buttons and the washi tape.", "type": "color", "default": "#a54a25", "transport": "postMessage", "css_var": "--pl-accent"},
+          {"id": "paper_color", "label": "Paper color", "description": "The page background.", "type": "color", "default": "#f7f0e3", "transport": "postMessage", "css_var": "--pl-paper"},
+          {"id": "ink_color", "label": "Ink color", "description": "Body text and headings.", "type": "color", "default": "#3b2f2a", "transport": "postMessage", "css_var": "--pl-ink"},
+          {"id": "paper_texture", "label": "Paper grain", "description": "A soft paper-fibre texture over the background.", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "pl-texture"}
+        ]
+      },
+      {
+        "id": "paper_lantern_journal", "title": "Journal layout", "description": "How entries, photos and type look.", "priority": 41,
+        "settings": [
+          {"id": "font_pairing", "label": "Font pairing", "type": "select", "default": "cozy", "transport": "postMessage", "body_class": "pl-fonts-{value}",
+            "choices": [{"value": "cozy", "label": "Cosy — Caveat with rounded Nunito"}, {"value": "storybook", "label": "Storybook — Caveat with Lora serif"}, {"value": "plain", "label": "Plain — system fonts only"}]},
+          {"id": "entry_style", "label": "Entry list style", "type": "select", "default": "cards", "transport": "postMessage", "body_class": "pl-entries-{value}",
+            "choices": [{"value": "cards", "label": "Paper cards"}, {"value": "diary", "label": "Diary pages (dates in the margin)"}, {"value": "compact", "label": "Compact list without pictures"}]},
+          {"id": "photo_style", "label": "Photo style", "type": "select", "default": "polaroid", "transport": "postMessage", "body_class": "pl-photos-{value}",
+            "choices": [{"value": "polaroid", "label": "Polaroid with tape"}, {"value": "rounded", "label": "Soft rounded corners"}, {"value": "plain", "label": "Plain"}]},
+          {"id": "content_width", "label": "Column width", "type": "select", "default": "normal", "transport": "postMessage", "body_class": "pl-width-{value}",
+            "choices": [{"value": "narrow", "label": "Narrow (600px)"}, {"value": "normal", "label": "Comfortable (680px)"}, {"value": "wide", "label": "Roomy (780px)"}]},
+          {"id": "show_author", "label": "Show the author's name", "description": "The \"written by\" line on entries.", "type": "checkbox", "default": false, "transport": "postMessage", "body_class": "pl-show-author"}
+        ]
+      },
+      {
+        "id": "paper_lantern_header", "title": "Masthead & footer", "description": "The lantern string, the greeting and the footer line.", "priority": 42,
+        "settings": [
+          {"id": "show_lanterns", "label": "Show the string of lanterns", "description": "The little illustration above the site title.", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "pl-lanterns"},
+          {"id": "show_welcome", "label": "Show the welcome note", "description": "A pinned note with the greeting and the tagline on the journal's first page.", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "pl-welcome"},
+          {"id": "greeting", "label": "Greeting", "description": "The handwritten line on the welcome note.", "type": "text", "default": "Pull up a chair, the kettle's on.", "transport": "refresh"},
+          {"id": "welcome_image", "label": "Welcome picture", "description": "A picture pinned beside the greeting on the journal's first page.", "type": "image", "transport": "refresh"},
+          {"id": "footer_text", "label": "Footer note", "description": "Replaces the copyright line.", "type": "text", "default": "", "transport": "refresh"}
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,21 @@
+		</main><!-- #main -->
+		{{template "sidebar" .}}
+	</div><!-- #content -->
+
+	{{if ne .Template "404"}}{{template "newsletter" .}}{{end}}
+
+	<footer id="colophon" class="site-footer">
+		{{if is_active_sidebar . "footer-1"}}<div class="footer-widgets bn-container">
+			{{dynamic_sidebar . "footer-1"}}
+		</div>{{end}}
+		<div class="site-info bn-container">
+			<p class="site-info__brand"><span class="site-mark site-mark--small" aria-hidden="true">&gt;_</span> <span class="site-info__text">{{with theme_mod . "footer_text"}}{{.}}{{else}}&copy; {{$.SiteName}}{{end}}</span></p>
+			{{if has_nav_menu . "footer"}}<nav class="footer-navigation" aria-label="Footer links">{{nav_menu . "footer"}}</nav>{{end}}
+			<p class="site-info__credit">{{.PrivacyLink}} Built with <a href="https://github.com/boracomet/wordpress-go">WordPress Go</a></p>
+		</div><!-- .site-info -->
+	</footer><!-- #colophon -->
+</div><!-- #page -->
+
+{{.Footer}}{{.AdminBar}}
+</body>
+</html>

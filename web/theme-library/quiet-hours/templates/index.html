@@ -1,0 +1,8 @@
+{{template "header" .}}
+{{if .IsHomeHeader}}<header class="page-header">
+	<h1 class="page-title">{{.PostsPageTitle}}</h1>
+</header>{{end}}
+{{if and (or .IsFront .IsHomeHeader) (le .Q.Paged 1)}}{{with theme_mod . "intro_text"}}<div class="home-intro">{{range split . "\n"}}{{with .}}<p>{{.}}</p>{{end}}{{end}}</div>{{end}}{{end}}
+{{if .Posts}}{{template "post-list" .}}
+{{.Pagination}}{{else}}{{template "content-none" .}}{{end}}
+{{template "footer" .}}

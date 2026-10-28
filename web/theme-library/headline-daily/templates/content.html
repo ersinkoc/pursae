@@ -1,0 +1,10 @@
+<article id="post-{{.ID}}" class="{{.Class}} hd-row">
+	{{with .Thumbnail}}<a class="hd-row__media" href="{{$.Permalink}}" aria-hidden="true" tabindex="-1">{{.}}</a>{{end}}
+	<div class="hd-row__body">
+		{{if .ShowFeatured}}<span class="hd-badge">Featured</span>{{end}}
+		{{template "kicker" .}}
+		<h2 class="hd-row__title"><a href="{{.Permalink}}" rel="bookmark">{{.Title}}</a></h2>
+		{{if .ShowExcerpt}}<div class="hd-row__excerpt">{{.Excerpt}}</div>{{end}}
+		{{template "meta" .}}
+	</div>
+</article><!-- #post-{{.ID}} -->

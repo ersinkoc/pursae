@@ -1,0 +1,16 @@
+{{/* The post list: pinned (sticky) posts first, then titles grouped under year headings. Data: the site view. */}}
+{{$pinned := false}}{{range .Posts}}{{if .ShowFeatured}}{{$pinned = true}}{{end}}{{end}}
+<div class="post-list">
+{{if $pinned}}<section class="year-group year-group--pinned" aria-labelledby="year-pinned">
+	<h2 class="year-group__title" id="year-pinned">pinned</h2>
+	<ol class="post-rows" role="list">
+{{range .Posts}}{{if .ShowFeatured}}{{template "content" .}}
+{{end}}{{end}}	</ol>
+</section>
+{{end}}{{$year := 0}}{{range .Posts}}{{if not .ShowFeatured}}{{if ne .Date.Year $year}}{{if $year}}</ol></section>
+{{end}}{{$year = .Date.Year}}<section class="year-group" aria-labelledby="year-{{$year}}">
+	<h2 class="year-group__title" id="year-{{$year}}">{{$year}}</h2>
+	<ol class="post-rows" role="list">
+{{end}}{{template "content" .}}
+{{end}}{{end}}{{if $year}}</ol></section>{{end}}
+</div>

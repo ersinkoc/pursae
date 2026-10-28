@@ -1,0 +1,24 @@
+		</main><!-- #main -->
+		{{template "sidebar" .}}
+	</div><!-- #content -->
+
+	<footer id="colophon" class="site-footer">
+		{{if is_active_sidebar . "footer-1"}}<div class="footer-widgets">
+			<div class="footer-widgets__inner">{{dynamic_sidebar . "footer-1"}}</div>
+		</div>{{end}}
+		<div class="site-footer__colophon">
+			<div class="masthead-rule" aria-hidden="true"><span class="fleuron">&#10086;</span></div>
+			<p class="footer-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></p>
+			{{if has_nav_menu . "footer"}}<nav class="footer-navigation" aria-label="Footer menu">{{nav_menu . "footer"}}</nav>{{end}}
+			<div class="site-info">
+				<span class="site-info__text">{{with theme_mod . "footer_text"}}{{.}}{{else}}&copy; {{$.SiteName}}{{end}}</span>
+				{{with .PrivacyLink}}<span class="site-info__privacy">{{.}}</span>{{end}}
+				<span class="site-info__credit">Set in Inkwell &middot; Powered by <a href="https://github.com/boracomet/wordpress-go">WordPress Go</a></span>
+			</div><!-- .site-info -->
+		</div>
+	</footer><!-- #colophon -->
+</div><!-- #page -->
+
+{{.Footer}}{{.AdminBar}}
+</body>
+</html>

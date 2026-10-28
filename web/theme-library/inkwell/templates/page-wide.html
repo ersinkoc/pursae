@@ -1,0 +1,6 @@
+{{template "header" .}}
+<div class="page-wide">
+{{template "content-page" .Post}}
+{{if .Comments}}{{if .Comments.Count}}{{template "comments" .}}{{end}}{{end}}
+</div>
+{{template "footer" .}}
