@@ -35,8 +35,19 @@
 		<input type="submit" id="search-submit" class="button button-compact hide-if-js" value="Search Installed Plugins" />
 	</p>
 </form>
-<form method="post" id="bulk-action-form">
+<form method="post" id="bulk-action-form" action="/wp-admin/plugins" onsubmit="var a=this.querySelector('[name=action]').value,b=this.querySelector('[name=action2]').value;return (a!=='delete-selected'&&b!=='delete-selected')||confirm('You are about to remove the selected plugins and their packages.\n\'Cancel\' to stop, \'OK\' to delete.');">
+<input type="hidden" name="_wpnonce" value="{{.BulkNonce}}" />
 <div class="tablenav top">
+	<div class="alignleft actions bulkactions">
+		<label for="bulk-action-selector-top" class="screen-reader-text">Select bulk action</label>
+		<select name="action" id="bulk-action-selector-top">
+			<option value="-1">Bulk actions</option>
+			<option value="activate-selected">Activate</option>
+			<option value="deactivate-selected">Deactivate</option>
+			{{if .CanDelete}}<option value="delete-selected">Delete</option>{{end}}
+		</select>
+		<input type="submit" id="doaction" class="button action" value="Apply" />
+	</div>
 	<div class="tablenav-pages one-page"><span class="displaying-num">{{len .Rows}} item{{if ne (len .Rows) 1}}s{{end}}</span></div>
 	<br class="clear" />
 </div>
@@ -67,6 +78,16 @@
 <tfoot>{{template "plugins-head" false}}</tfoot>
 </table>
 <div class="tablenav bottom">
+	<div class="alignleft actions bulkactions">
+		<label for="bulk-action-selector-bottom" class="screen-reader-text">Select bulk action</label>
+		<select name="action2" id="bulk-action-selector-bottom">
+			<option value="-1">Bulk actions</option>
+			<option value="activate-selected">Activate</option>
+			<option value="deactivate-selected">Deactivate</option>
+			{{if .CanDelete}}<option value="delete-selected">Delete</option>{{end}}
+		</select>
+		<input type="submit" id="doaction2" class="button action" value="Apply" />
+	</div>
 	<div class="tablenav-pages one-page"><span class="displaying-num">{{len .Rows}} item{{if ne (len .Rows) 1}}s{{end}}</span></div>
 	<br class="clear" />
 </div>

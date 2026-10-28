@@ -284,6 +284,8 @@ type pluginsData struct {
 	Consent          *pluginRow
 	ConsentNonce     string
 	RuntimeErr       string
+	BulkNonce        string
+	CanDelete        bool
 }
 
 func (s *Server) installedPlugins(c *gin.Context) []pluginRow {
@@ -382,10 +384,18 @@ func (s *Server) pluginsScreen(c *gin.Context) {
 		return
 	}
 	if c.Request.Method == http.MethodPost {
+		bulk := c.PostForm("action")
+		if bulk == "" || bulk == "-1" {
+			bulk = c.PostForm("action2")
+		}
+		if strings.HasSuffix(bulk, "-selected") {
+			s.pluginsBulk(c, bulk)
+			return
+		}
 		s.pluginAction(c, c.PostForm("action"), c.PostForm("plugin"))
 		return
 	}
-	d := pluginsData{Status: c.DefaultQuery("plugin_status", "all")}
+	d := pluginsData{Status: c.DefaultQuery("plugin_status", "all"), BulkNonce: s.nonce(c, "bulk-plugins"), CanDelete: u.Can("delete_plugins", nil)}
 	if s.plugins.initErr != nil {
 		d.RuntimeErr = s.plugins.initErr.Error()
 	}
@@ -436,12 +446,22 @@ func (s *Server) pluginsScreen(c *gin.Context) {
 			notices = append(notices, notice{Type: "warning", Message: template.HTML("Hello Golementor belongs to Golementor, so the site was switched to <strong>" +
 				template.HTMLEscapeString(s.activeTheme().Name) + "</strong>. Your saved themes and built pages are kept; they come back when you activate Golementor."), Dismissible: true})
 		}
+	case c.Query("activate-multi") != "":
+		notices = append(notices, notice{Type: "success", Message: "Selected plugins activated.", Dismissible: true})
+	case c.Query("deactivate-multi") != "":
+		notices = append(notices, notice{Type: "success", Message: "Selected plugins deactivated.", Dismissible: true})
+	case c.Query("deleted-multi") != "":
+		notices = append(notices, notice{Type: "success", Message: "The selected plugins have been deleted.", Dismissible: true})
 	case c.Query("deleted") == "true":
 		notices = append(notices, notice{Type: "success", Message: "The selected plugin has been deleted.", Dismissible: true})
 	case c.Query("installed") != "":
 		notices = append(notices, notice{Type: "success", Message: template.HTML("Plugin <strong>" + template.HTMLEscapeString(c.Query("installed")) + "</strong> installed. Activate it to review and grant its permissions."), Dismissible: true})
 	case c.Query("error") != "":
 		notices = append(notices, notice{Type: "error", Message: template.HTML(template.HTMLEscapeString(c.Query("error")))})
+	}
+	if sk := c.Query("skipped"); sk != "" {
+		notices = append(notices, notice{Type: "warning", Message: template.HTML("Skipped: <strong>" + template.HTMLEscapeString(sk) +
+			"</strong>. Plugins that ask for permissions are activated one by one, from their own Activate link, so you can review what they may do; built-in and active plugins cannot be deleted."), Dismissible: true})
 	}
 	s.adminPage(c, "plugins", "Plugins", "plugins-php", "admin/plugins", d, notices...)
 }
