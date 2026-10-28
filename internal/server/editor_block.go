@@ -288,6 +288,7 @@ func (s *Server) renderBlockEditor(c *gin.Context, p *store.Post, isNew bool) {
 } } );`)
 	}
 	s.enqueueMedia(c, p.ID)
+	s.gontactEditorAssets(c, a) // Gontact Form's contact form block
 
 	lab := labelsFor(p.Type)
 	title := "Edit " + lab.Singular

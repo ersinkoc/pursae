@@ -352,6 +352,7 @@ func (s *Server) adminPage(c *gin.Context, screen, title, bodyClass, tmpl string
 		v.BodyClass += " folded"
 	}
 	v.CacheBar = s.cacheAdminBar(c, u)
+	v.Menu = s.gontactMenu(v.Menu, u, screen)
 	s.pluginMenuEntries(v.Menu, screen) // plugin settings pages under Settings (plugins_host.go)
 	a := s.pageAssets(c)
 	a.Script("common", "admin-bar", "utils", "svg-painter")

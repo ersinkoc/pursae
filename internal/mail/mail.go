@@ -7,6 +7,7 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/tls"
+	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"mime"
@@ -21,12 +22,25 @@ import (
 )
 
 // Message is one e-mail. Body is plain text; HTML is optional and sent as multipart/alternative.
+// From overrides the mailer's From address; Cc and Bcc are extra recipients (Bcc never shows in the
+// headers); Attachments are sent as multipart/mixed parts.
 type Message struct {
-	To      []string
-	Subject string
-	Body    string
-	HTML    string
-	ReplyTo string
+	To          []string
+	Subject     string
+	Body        string
+	HTML        string
+	ReplyTo     string
+	From        string       `json:",omitempty"`
+	Cc          []string     `json:",omitempty"`
+	Bcc         []string     `json:",omitempty"`
+	Attachments []Attachment `json:",omitempty"`
+}
+
+// Attachment is a file attached to a message.
+type Attachment struct {
+	Name        string
+	ContentType string
+	Data        []byte
 }
 
 // Mailer delivers messages.
@@ -44,7 +58,7 @@ func (m *Mailer) Build(msg Message) ([]byte, error) {
 	if len(msg.To) == 0 {
 		return nil, fmt.Errorf("mail: no recipients")
 	}
-	for _, to := range msg.To {
+	for _, to := range append(append(append([]string{}, msg.To...), msg.Cc...), msg.Bcc...) {
 		if _, err := mail.ParseAddress(to); err != nil {
 			return nil, fmt.Errorf("mail: invalid recipient %q", to)
 		}
@@ -59,8 +73,11 @@ func (m *Mailer) Build(msg Message) ([]byte, error) {
 		}
 	}
 	h := func(k, v string) { fmt.Fprintf(&b, "%s: %s\r\n", k, v) }
-	h("From", m.From)
+	h("From", m.from(msg))
 	h("To", strings.Join(msg.To, ", "))
+	if len(msg.Cc) > 0 {
+		h("Cc", strings.Join(msg.Cc, ", "))
+	}
 	if msg.ReplyTo != "" {
 		h("Reply-To", msg.ReplyTo)
 	}
@@ -76,6 +93,57 @@ func (m *Mailer) Build(msg Message) ([]byte, error) {
 		_ = w.Close()
 		return q.String()
 	}
+	if len(msg.Attachments) > 0 {
+		mixed := "wpgo-mixed-" + hex.EncodeToString(id)
+		h("Content-Type", `multipart/mixed; boundary="`+mixed+`"`)
+		b.WriteString("\r\n--" + mixed + "\r\n")
+		body := msg
+		body.Attachments = nil
+		part, err := m.bodyPart(body, id, qp)
+		if err != nil {
+			return nil, err
+		}
+		b.Write(part)
+		for _, a := range msg.Attachments {
+			ct := a.ContentType
+			if ct == "" {
+				ct = "application/octet-stream"
+			}
+			name := mime.QEncoding.Encode("utf-8", a.Name)
+			b.WriteString("\r\n--" + mixed + "\r\nContent-Type: " + ct + `; name="` + name + `"` + "\r\nContent-Transfer-Encoding: base64\r\n" +
+				`Content-Disposition: attachment; filename="` + name + `"` + "\r\n\r\n")
+			enc := base64.StdEncoding.EncodeToString(a.Data)
+			for len(enc) > 76 {
+				b.WriteString(enc[:76] + "\r\n")
+				enc = enc[76:]
+			}
+			b.WriteString(enc + "\r\n")
+		}
+		b.WriteString("--" + mixed + "--\r\n")
+		return b.Bytes(), nil
+	}
+	part, err := m.bodyPart(msg, id, qp)
+	if err != nil {
+		return nil, err
+	}
+	b.Write(part)
+	return b.Bytes(), nil
+}
+
+// from is the From header: the message's own From when set, else the mailer's.
+func (m *Mailer) from(msg Message) string {
+	if msg.From != "" {
+		if _, err := mail.ParseAddress(msg.From); err == nil {
+			return msg.From
+		}
+	}
+	return m.From
+}
+
+// bodyPart renders the Content-Type headers and the text (and HTML) body of a message.
+func (m *Mailer) bodyPart(msg Message, id []byte, qp func(string) string) ([]byte, error) {
+	var b bytes.Buffer
+	h := func(k, v string) { fmt.Fprintf(&b, "%s: %s\r\n", k, v) }
 	if msg.HTML == "" {
 		h("Content-Type", "text/plain; charset=UTF-8")
 		h("Content-Transfer-Encoding", "quoted-printable")
@@ -106,12 +174,12 @@ func (m *Mailer) Send(ctx context.Context, msg Message) error {
 		name := time.Now().Format("20060102-150405.000000000") + ".eml"
 		return os.WriteFile(filepath.Join(m.Dir, name), raw, 0o644)
 	}
-	from := m.From
-	if a, err := mail.ParseAddress(m.From); err == nil {
+	from := m.from(msg)
+	if a, err := mail.ParseAddress(from); err == nil {
 		from = a.Address
 	}
 	var rcpt []string
-	for _, to := range msg.To {
+	for _, to := range append(append(append([]string{}, msg.To...), msg.Cc...), msg.Bcc...) {
 		a, _ := mail.ParseAddress(to)
 		rcpt = append(rcpt, a.Address)
 	}

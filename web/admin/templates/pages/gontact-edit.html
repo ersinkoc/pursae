@@ -1,0 +1,143 @@
+{{define "admin/gontact-edit"}}{{template "admin-header" .}}{{with .Data}}
+<link rel="stylesheet" id="contact-form-7-admin-css" href="/wp-content/gontact-form/admin.css?ver=6.2.3" media="all" />
+<div class="wrap" id="wpcf7-contact-form-editor">
+<h1 class="wp-heading-inline">{{if .New}}Add Contact Form{{else}}Edit Contact Form{{end}}</h1>
+{{if not .New}}<a href="/wp-admin/admin?page=wpcf7-new" class="page-title-action">Add Contact Form</a>{{end}}
+<hr class="wp-header-end">
+{{template "notices" $}}
+{{if .WarningCount}}<div class="notice notice-warning inline"><p>{{if eq .WarningCount 1}}1 configuration error detected in this tab panel.{{else}}{{.WarningCount}} configuration errors detected.{{end}} Check the tabs marked with <span class="icon-in-circle" aria-hidden="true">!</span>.</p></div>{{end}}
+<form method="post" action="{{.Action}}" id="wpcf7-admin-form-element">
+<input type="hidden" name="post_ID" value="{{if .New}}-1{{else}}{{.Form.ID}}{{end}}" />
+<input type="hidden" name="wpcf7-locale" value="{{.Form.Locale}}" />
+<input type="hidden" name="action" value="save" />
+<input type="hidden" name="active-tab" value="{{.ActiveTab}}" id="active-tab" />
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<div id="poststuff">
+<div id="post-body" class="metabox-holder columns-2 wp-clearfix">
+<div id="post-body-content">
+	<div id="titlediv">
+		<div id="titlewrap">
+			<label class="screen-reader-text" id="title-prompt-text" for="title">Enter title here</label>
+			<input type="text" name="post_title" size="30" value="{{.Form.Title}}" id="title" spellcheck="true" autocomplete="off" placeholder="Enter title here" />
+		</div>
+		<div class="inside">
+		{{if .Shortcode}}<p class="description">
+			<label for="wpcf7-shortcode">Copy this shortcode and paste it into your post, page, or text widget content:</label>
+			<span class="shortcode wp-ui-highlight"><input type="text" id="wpcf7-shortcode" onfocus="this.select();" readonly="readonly" class="large-text code selectable" value="{{.Shortcode}}" /></span>
+		</p>
+		<p class="description">
+			<label for="wpcf7-shortcode-old">You can also use this old-style shortcode:</label>
+			<span class="shortcode old"><input type="text" id="wpcf7-shortcode-old" onfocus="this.select();" readonly="readonly" class="large-text code selectable" value="{{.OldShortcode}}" /></span>
+		</p>{{end}}
+		</div>
+	</div>
+</div>
+
+<div id="postbox-container-1" class="postbox-container">
+	<section id="submitdiv" class="postbox">
+		<h2>Status</h2>
+		<div class="inside">
+		<div class="submitbox" id="submitpost">
+			<div id="minor-publishing-actions">
+				<div class="hidden"><input type="submit" class="button-primary" name="wpcf7-save" value="Save" /></div>
+				{{if not .New}}<input type="submit" name="wpcf7-copy" class="copy button" value="Duplicate" />{{end}}
+			</div>
+			<div id="misc-publishing-actions">
+				<div class="misc-pub-section"><span class="dashicons dashicons-yes-alt" aria-hidden="true"></span> {{if .WarningCount}}{{.WarningCount}} configuration error(s){{else}}No configuration errors detected.{{end}}</div>
+			</div>
+			<div id="major-publishing-actions">
+				{{if not .New}}<div id="delete-action"><a class="submitdelete deletion" href="{{.DeleteURL}}" onclick="return confirm('You are about to delete this contact form.\n  \'Cancel\' to stop, \'OK\' to delete.');">Delete</a></div>{{end}}
+				<div id="publishing-action"><span class="spinner"></span><input type="submit" name="wpcf7-save" class="button-primary" value="Save" /></div>
+				<div class="clear"></div>
+			</div>
+		</div>
+		</div>
+	</section>
+	<section id="informationdiv" class="postbox">
+		<h2>Do you need help?</h2>
+		<div class="inside">
+			<p>Here are some available options to help solve your problems.</p>
+			<ol>
+				<li><a href="https://contactform7.com/faq/" target="_blank" rel="noopener">FAQ</a> and <a href="https://contactform7.com/docs/" target="_blank" rel="noopener">docs</a></li>
+				<li>The Gontact Form feature list ships with WordPress Go (docs/gontact-form-features.md).</li>
+			</ol>
+		</div>
+	</section>
+</div>
+
+<div id="postbox-container-2" class="postbox-container">
+<div id="contact-form-editor" data-active-tab="{{.ActiveTab}}">
+<nav class="nav-tab-wrapper wpcf7-editor-tabs" role="tablist">
+	<a href="#form-panel" class="nav-tab" role="tab" id="form-panel-tab" aria-controls="form-panel">Form</a>
+	<a href="#mail-panel" class="nav-tab" role="tab" id="mail-panel-tab" aria-controls="mail-panel">Mail{{if or (index .Warnings "mail") (index .Warnings "mail_2")}} <span class="icon-in-circle" aria-hidden="true">!</span>{{end}}</a>
+	<a href="#messages-panel" class="nav-tab" role="tab" id="messages-panel-tab" aria-controls="messages-panel">Messages</a>
+	<a href="#additional-settings-panel" class="nav-tab" role="tab" id="additional-settings-panel-tab" aria-controls="additional-settings-panel">Additional Settings{{if .SettingsCount}} <span class="additional-settings-count">({{.SettingsCount}})</span>{{end}}{{if index .Warnings "additional_settings"}} <span class="icon-in-circle" aria-hidden="true">!</span>{{end}}</a>
+</nav>
+
+<section class="contact-form-editor-panel" id="form-panel" role="tabpanel" aria-labelledby="form-panel-tab">
+	<h2>Form</h2>
+	<fieldset>
+		<legend>You can edit the form template here. For details, see <a href="https://contactform7.com/editing-form-template/" target="_blank" rel="noopener">Editing form template</a>.</legend>
+		<span id="tag-generator-list" class="hide-if-no-js">{{range .TagGenerators}}<button type="button" class="button" data-taggen="open-dialog" data-type="{{.Type}}" title="Form-tag Generator: {{.Label}}">{{.Label}}</button> {{end}}</span>
+		<textarea id="wpcf7-form" name="wpcf7-form" cols="100" rows="24" class="large-text code" data-config-field="form.body">{{.Form.Form}}</textarea>
+	</fieldset>
+</section>
+
+<section class="contact-form-editor-panel" id="mail-panel" role="tabpanel" aria-labelledby="mail-panel-tab">
+	{{template "gontact-mail-box" dict "ID" "wpcf7-mail" "Title" "Mail" "M" .Form.Mail "Tags" .MailTags "Warnings" (index .Warnings "mail") "Second" false}}
+	<br class="clear" />
+	{{template "gontact-mail-box" dict "ID" "wpcf7-mail-2" "Title" "Mail (2)" "M" .Form.Mail2 "Tags" .MailTags "Warnings" (index .Warnings "mail_2") "Second" true}}
+</section>
+
+<section class="contact-form-editor-panel" id="messages-panel" role="tabpanel" aria-labelledby="messages-panel-tab">
+	<h2>Messages</h2>
+	<fieldset>
+		<legend>You can edit messages used in various situations here. For details, see <a href="https://contactform7.com/editing-messages/" target="_blank" rel="noopener">Editing messages</a>.</legend>
+		{{range .Messages}}<p class="description">
+			<label for="wpcf7-message-{{.Key}}">{{.Description}}<br />
+			<input type="text" id="wpcf7-message-{{.Key}}" name="wpcf7-messages[{{.Key}}]" class="large-text" size="70" value="{{.Value}}" data-config-field="messages.{{.Key}}" /></label>
+		</p>
+		{{end}}
+	</fieldset>
+</section>
+
+<section class="contact-form-editor-panel" id="additional-settings-panel" role="tabpanel" aria-labelledby="additional-settings-panel-tab">
+	<h2>Additional Settings</h2>
+	<fieldset>
+		<legend>You can add customization code snippets here. For details, see <a href="https://contactform7.com/additional-settings/" target="_blank" rel="noopener">Additional settings</a>.</legend>
+		{{range index .Warnings "additional_settings"}}<p class="config-error"><span class="icon-in-circle" aria-hidden="true">!</span> {{.}}</p>{{end}}
+		<textarea id="wpcf7-additional-settings" name="wpcf7-additional-settings" cols="100" rows="8" class="large-text" data-config-field="additional_settings.body">{{.Form.Additional}}</textarea>
+		<p class="description">Available: <code>demo_mode: on</code>, <code>skip_mail: on</code>, <code>subscribers_only: true</code>, <code>acceptance_as_validation: on</code>, <code>do_not_store: true</code>.</p>
+	</fieldset>
+</section>
+</div>
+</div><!-- #postbox-container-2 -->
+</div><!-- #post-body -->
+<br class="clear" />
+</div><!-- #poststuff -->
+<p class="submit"><input type="submit" class="button-primary" name="wpcf7-save" value="Save" /></p>
+</form>
+</div>
+<script src="/wp-content/gontact-form/admin.js?ver=6.2.3" defer></script>
+{{end}}{{template "admin-footer" .}}{{end}}
+
+{{define "gontact-mail-box"}}{{$id := .ID}}{{with .M}}<div class="contact-form-editor-box-mail" id="{{$id}}">
+	<h2>{{$.Title}}</h2>
+	{{if $.Second}}<label for="{{$id}}-active"><input type="checkbox" id="{{$id}}-active" name="{{$id}}[active]" class="toggle-form-table" value="1"{{if .Active}} checked="checked"{{end}} /> Use Mail (2)</label>
+	<p class="description">Mail (2) is an additional mail template often used as an autoresponder.</p>{{end}}
+	<fieldset{{if $.Second}} data-toggle="{{$id}}-active"{{end}}>
+		<legend>You can edit the mail template here. For details, see <a href="https://contactform7.com/setting-up-mail/" target="_blank" rel="noopener">Setting up mail</a>.<br />
+		In the following fields, you can use these mail-tags:<br />{{range $.Tags}}<span class="mailtag code used">{{.}}</span> {{end}}</legend>
+		{{range $.Warnings}}<p class="config-error"><span class="icon-in-circle" aria-hidden="true">!</span> {{.}}</p>{{end}}
+		<table class="form-table"><tbody>
+			<tr><th scope="row"><label for="{{$id}}-recipient">To</label></th><td><input type="text" id="{{$id}}-recipient" name="{{$id}}[recipient]" class="large-text code" size="70" value="{{.Recipient}}" /></td></tr>
+			<tr><th scope="row"><label for="{{$id}}-sender">From</label></th><td><input type="text" id="{{$id}}-sender" name="{{$id}}[sender]" class="large-text code" size="70" value="{{.Sender}}" /></td></tr>
+			<tr><th scope="row"><label for="{{$id}}-subject">Subject</label></th><td><input type="text" id="{{$id}}-subject" name="{{$id}}[subject]" class="large-text code" size="70" value="{{.Subject}}" /></td></tr>
+			<tr><th scope="row"><label for="{{$id}}-additional-headers">Additional headers</label></th><td><textarea id="{{$id}}-additional-headers" name="{{$id}}[additional_headers]" cols="100" rows="4" class="large-text code">{{.AdditionalHeaders}}</textarea></td></tr>
+			<tr><th scope="row"><label for="{{$id}}-body">Message body</label></th><td><textarea id="{{$id}}-body" name="{{$id}}[body]" cols="100" rows="18" class="large-text code">{{.Body}}</textarea>
+				<p><label for="{{$id}}-exclude-blank"><input type="checkbox" id="{{$id}}-exclude-blank" name="{{$id}}[exclude_blank]" value="1"{{if .ExcludeBlank}} checked="checked"{{end}} /> Exclude lines with blank mail-tags from output</label></p>
+				<p><label for="{{$id}}-use-html"><input type="checkbox" id="{{$id}}-use-html" name="{{$id}}[use_html]" value="1"{{if .UseHTML}} checked="checked"{{end}} /> Use HTML content type</label></p></td></tr>
+			<tr><th scope="row"><label for="{{$id}}-attachments">File attachments</label></th><td><textarea id="{{$id}}-attachments" name="{{$id}}[attachments]" cols="100" rows="4" class="large-text code">{{.Attachments}}</textarea></td></tr>
+		</tbody></table>
+	</fieldset>
+</div>{{end}}{{end}}

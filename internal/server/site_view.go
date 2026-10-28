@@ -437,6 +437,7 @@ func (s *Server) theContent(ctx context.Context, c *gin.Context, p *store.Post, 
 		content = wp.Autop(wp.Texturize(content))
 	}
 	content = s.doShortcodes(ctx, content)      // plugin shortcodes (do_shortcode at priority 11)
+	content = s.gontactShortcodes(ctx, content) // Gontact Form's [contact-form-7]
 	content = s.filterContentTags(ctx, content) // wp_filter_content_tags (priority 12)
 	content = s.convertSmilies(lb, content)     // convert_smilies (priority 20)
 	out, _ := s.applyFilters(ctx, "the_content", content, map[string]any{"id": p.ID, "type": p.Type, "is_single": singular}).(string)

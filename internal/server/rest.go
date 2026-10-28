@@ -191,6 +191,9 @@ func (s *Server) restAuthUser(c *gin.Context) (*store.User, error) {
 	if nonce == "" {
 		nonce = c.Query("_wpnonce")
 	}
+	if nonce == "" && strings.HasPrefix(c.ContentType(), "multipart/form-data") {
+		nonce = c.PostForm("_wpnonce") // $_REQUEST['_wpnonce'] of rest_cookie_check_errors (form posts)
+	}
 	if nonce == "" {
 		// Cookie without nonce: treated as logged out, like WordPress (CSRF protection).
 		return nil, nil
@@ -273,7 +276,7 @@ func (api *restAPI) serve(c *gin.Context, route string) {
 	route = "/" + strings.Trim(route, "/")
 	builderOn := s.golementorOn()
 	for _, r := range api.routes {
-		if !builderOn && gweRESTNamespace(r.Namespace) {
+		if (!builderOn && gweRESTNamespace(r.Namespace)) || s.gontactRESTHidden(r.Namespace) {
 			continue
 		}
 		m := r.re.FindStringSubmatch(route)
@@ -383,7 +386,7 @@ func (api *restAPI) index(c *gin.Context) {
 	nsSet := map[string]bool{}
 	builderOn := s.golementorOn()
 	for _, r := range api.routes {
-		if !builderOn && gweRESTNamespace(r.Namespace) {
+		if (!builderOn && gweRESTNamespace(r.Namespace)) || s.gontactRESTHidden(r.Namespace) {
 			continue
 		}
 		var methods []string

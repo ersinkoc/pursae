@@ -233,6 +233,9 @@ func (s *Server) pluginAdmin(c *gin.Context) {
 		c.Redirect(http.StatusFound, to)
 		return
 	}
+	if s.gontactAdmin(c) { // Gontact Form: admin?page=wpcf7… (gontact_admin.go)
+		return
+	}
 	if !strings.HasPrefix(page, "wpgo-cache") {
 		s.notYet(c)
 		return
