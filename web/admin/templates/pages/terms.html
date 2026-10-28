@@ -47,6 +47,7 @@
 	<textarea name="description" id="tag-description" rows="5" cols="40" aria-describedby="description-description">{{with .Form}}{{.Description}}{{end}}</textarea>
 	<p id="description-description">{{.Labels.Description}}</p>
 </div>
+{{.PluginFields}}
 <p class="submit"><input type="submit" name="submit" id="submit" class="button button-primary" value="{{.Labels.AddNew}}" /><span class="spinner"></span></p>
 </form>
 </div>
@@ -107,6 +108,7 @@
 			<button type="button" class="toggle-row"><span class="screen-reader-text">Show more details</span></button></td>
 		<td class="description column-description{{if index $d.Hidden "description"}} hidden{{end}}" data-colname="Description">{{if .Description}}<p>{{.Description}}</p>{{else}}<span aria-hidden="true">&#8212;</span><span class="screen-reader-text">No description</span>{{end}}</td>
 		<td class="slug column-slug{{if index $d.Hidden "slug"}} hidden{{end}}" data-colname="Slug">{{.Slug}}</td>
+		{{range .PluginCols}}{{.}}{{end}}
 		<td class="posts column-posts{{if index $d.Hidden "posts"}} hidden{{end}}" data-colname="Count"><a href="{{.CountURL}}">{{.Count}}</a></td>
 	</tr>{{end}}{{end}}
 
@@ -115,6 +117,7 @@
 	{{template "sort-th" dict "ID" (or (and .Top "name") "") "Col" "name" "Primary" true "Label" "Name" "Link" (index .D.SortLinks "name")}}
 	{{template "sort-th" dict "ID" (or (and .Top "description") "") "Col" "description" "Label" "Description" "Link" (index .D.SortLinks "description") "Hidden" (index .D.Hidden "description")}}
 	{{template "sort-th" dict "ID" (or (and .Top "slug") "") "Col" "slug" "Label" "Slug" "Link" (index .D.SortLinks "slug") "Hidden" (index .D.Hidden "slug")}}
+	{{range .D.PluginHeads}}{{.}}{{end}}
 	{{template "sort-th" dict "ID" (or (and .Top "posts") "") "Col" "posts" "Num" true "Label" "Count" "Link" (index .D.SortLinks "count") "Hidden" (index .D.Hidden "posts")}}
 </tr>{{end}}
 

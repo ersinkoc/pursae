@@ -131,7 +131,7 @@ func (s *Server) renderTemplate(c *gin.Context, status int, set *template.Templa
 		c.String(http.StatusInternalServerError, "Template error")
 		return
 	}
-	c.Data(status, "text/html; charset=UTF-8", buf.Bytes())
+	c.Data(status, "text/html; charset=UTF-8", s.golylangHTML(c, buf.Bytes()))
 }
 
 func (t *templates) funcs() template.FuncMap {
@@ -141,6 +141,9 @@ func (t *templates) funcs() template.FuncMap {
 		m[k] = f
 	}
 	for k, f := range s.acfgoTemplateFuncs() { // get_field, have_rows, … (acfgo_api.go)
+		m[k] = f
+	}
+	for k, f := range s.golylangTemplateFuncs() { // pll_* template functions
 		m[k] = f
 	}
 	return m

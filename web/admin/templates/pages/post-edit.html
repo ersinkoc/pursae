@@ -139,6 +139,7 @@
 		</div>
 	</div>
 	{{template "edit-postbox-end"}}
+	{{.PluginBoxes}}
 
 	{{if eq $p.Type "post"}}
 	{{template "edit-postbox-start" dict "ID" "formatdiv" "Title" "Format" "Class" (index .BoxClass "formatdiv")}}

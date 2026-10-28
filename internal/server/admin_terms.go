@@ -41,6 +41,7 @@ type termRow struct {
 	EditURL, DeleteURL string
 	ViewURL, CountURL  string
 	IsDefault          bool
+	PluginCols         []template.HTML // cells of plugin columns (Golylang's languages), before Count
 }
 
 type termsData struct {
@@ -56,6 +57,9 @@ type termsData struct {
 	SortLinks   map[string]sortLink
 	Hidden      map[string]bool // columns hidden through Screen Options
 	ColCount    int
+	// Plugin additions (Golylang): column headers before Count and fields of the add form.
+	PluginHeads  []template.HTML
+	PluginFields template.HTML
 }
 
 // termListColumns are the Screen Options column toggles of edit-tags.php.
@@ -130,6 +134,7 @@ func (s *Server) renderTerms(c *gin.Context, lab taxLabels, form *store.Term, no
 		d.All, _ = s.store.HierarchicalTerms(ctx, lab.Tax, false)
 	}
 	d.Pagination = newPagination(total, perPage, page, *c.Request.URL)
+	s.golylangTermsList(c, lab.Tax, &d) // Golylang: language columns and the Language field
 	s.setScreenOptions(c, screenOptions{Screen: "edit-" + lab.Tax, Columns: termListColumns, Hidden: d.Hidden,
 		PerPageOption: "edit_" + lab.Tax + "_per_page", PerPage: perPage})
 	s.pageAssets(c).Script("inline-edit-tax")
@@ -144,6 +149,7 @@ func (s *Server) termRow(c *gin.Context, lab taxLabels, t *store.Term) termRow {
 		ViewURL:   s.links(c).TermLink(t),
 		CountURL:  "/wp-admin/edit?" + lab.FilterParam + "=" + t.Slug,
 	}
+	r.PluginCols = s.golylangTermCols(c, t)
 	if t.Depth > 0 {
 		r.Indent = template.HTML(strings.Repeat("&#8212; ", t.Depth))
 	}
@@ -302,6 +308,7 @@ func (s *Server) termsAction(c *gin.Context) {
 		s.renderTerms(c, lab, t, notice{Type: "error", Message: msg})
 		return
 	}
+	s.golylangTermSaved(c, t) // Golylang: language and translations from the form
 	c.Redirect(http.StatusFound, back+"&message=1")
 }
 
@@ -313,6 +320,8 @@ type termEditData struct {
 	DeleteURL string
 	ViewURL   string
 	IsDefault bool
+	// PluginFields are extra form rows (Golylang's Language and Translations).
+	PluginFields template.HTML
 }
 
 func (s *Server) termEdit(c *gin.Context) {
@@ -341,6 +350,7 @@ func (s *Server) termEdit(c *gin.Context) {
 			}
 		}
 	}
+	d.PluginFields = s.golylangTermFields(c, t)
 	var notices []notice
 	if c.Query("message") == "3" {
 		notices = append(notices, notice{Type: "success", Message: template.HTML(lab.Singular + " updated."), Dismissible: true})
@@ -383,6 +393,7 @@ func (s *Server) termSave(c *gin.Context) {
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
+	s.golylangTermSaved(c, t) // Golylang: language and translations from the form
 	s.purgeTags("term:"+itoa64(t.ID), "widgets")
 	c.Redirect(http.StatusFound, "/wp-admin/term?taxonomy="+lab.Tax+"&tag_ID="+itoa64(t.ID)+"&message=3")
 }

@@ -1,0 +1,284 @@
+{{/* Golylang (Polylang Pro clone): Languages > Languages, Translations and Settings. */}}
+
+{{define "golylang-tabs"}}<nav class="nav-tab-wrapper wp-clearfix" aria-label="Secondary menu">{{range .}}<a href="/wp-admin/admin?page={{.Slug}}" class="nav-tab{{if .Current}} nav-tab-active{{end}}"{{if .Current}} aria-current="page"{{end}}>{{.Label}}</a>{{end}}</nav>{{end}}
+
+{{define "admin/golylang-languages"}}{{template "admin-header" .}}{{with .Data}}
+<div class="wrap">
+<h1 class="wp-heading-inline">Languages</h1>
+<hr class="wp-header-end">
+{{template "golylang-tabs" .Tabs}}
+{{template "notices" $}}
+{{if .Untranslated}}<div class="notice notice-warning"><p>There are posts, pages, categories or tags without language. <a href="{{.AssignURL}}">You can set them all to the default language.</a></p></div>{{end}}
+<div id="col-container" class="wp-clearfix">
+<div id="col-left"><div class="col-wrap"><div class="form-wrap">
+	<h2>{{if .Edit}}Edit language{{else}}Add new language{{end}}</h2>
+	<form id="add-lang" method="post" action="/wp-admin/admin?page=mlang" class="validate">
+	<input type="hidden" name="pll_action" value="{{if .Edit}}update{{else}}add{{end}}" />
+	<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+	{{if .Edit}}<input type="hidden" name="lang_id" value="{{.Edit.ID}}" />{{end}}
+	{{if not .Edit}}<div class="form-field">
+		<label for="lang_list">Choose a language</label>
+		<select name="lang_list" id="lang_list">
+			<option value=""></option>
+			{{range .Predefined}}<option value="{{.Locale}}" data-name="{{.Name}}" data-code="{{.Code}}" data-flag="{{.Flag}}" data-rtl="{{if .RTL}}1{{else}}0{{end}}">{{.Name}} - {{.Locale}}</option>{{end}}
+		</select>
+		<p>You can choose a language in the list or directly edit it below.</p>
+	</div>{{end}}
+	<div class="form-field form-required">
+		<label for="lang_name">Full name</label>
+		<input name="name" id="lang_name" type="text" value="{{.Form.Name}}" size="40" aria-required="true" />
+		<p>The name is how it is displayed on your site (for example: English).</p>
+	</div>
+	<div class="form-field form-required">
+		<label for="lang_locale">Locale</label>
+		<input name="locale" id="lang_locale" type="text" value="{{.Form.Locale}}" size="40" aria-required="true" />
+		<p>WordPress Locale for the language (for example: en_US).</p>
+	</div>
+	<div class="form-field">
+		<label for="lang_slug">Language code</label>
+		<input name="slug" id="lang_slug" type="text" value="{{.Form.Slug}}" size="40" />
+		<p>Language code - preferably 2-letters ISO 639-1 (for example: en)</p>
+	</div>
+	<div class="form-field"><fieldset>
+		<legend>Text direction</legend>
+		<label><input name="rtl" type="radio" value="0"{{if not .Form.RTL}} checked="checked"{{end}} /> left to right</label>
+		<label><input name="rtl" type="radio" value="1"{{if .Form.RTL}} checked="checked"{{end}} /> right to left</label>
+		<p>Choose the text direction for the language</p>
+	</fieldset></div>
+	<div class="form-field">
+		<label for="flag_list">Flag</label>
+		<input name="flag" id="flag_list" type="text" value="{{.Form.Flag}}" size="6" maxlength="20" class="code" />
+		<span id="flag_preview" class="pll-flag" aria-hidden="true">{{.Form.FlagEmoji}}</span>
+		<p>Choose a flag for the language: a two-letter country code (for example: fr). Leave empty for no flag.</p>
+	</div>
+	<div class="form-field">
+		<label for="lang_order">Order</label>
+		<input name="term_group" id="lang_order" type="text" value="{{.Form.Order}}" size="5" />
+		<p>Position of the language in the language switcher</p>
+	</div>
+	<p class="submit">
+		<input type="submit" name="submit" id="submit" class="button button-primary" value="{{if .Edit}}Update{{else}}Add new language{{end}}" />
+		{{if .Edit}}<a class="button" href="/wp-admin/admin?page=mlang">Cancel</a>{{end}}
+	</p>
+	</form>
+</div></div></div>
+<div id="col-right"><div class="col-wrap">
+	<h2 class="screen-reader-text">Languages list</h2>
+	<table class="wp-list-table widefat fixed striped table-view-list languages pll-language-list">
+	<thead><tr>
+		<th scope="col" id="name" class="manage-column column-name column-primary">Full name</th>
+		<th scope="col" id="locale" class="manage-column column-locale">Locale</th>
+		<th scope="col" id="slug" class="manage-column column-slug">Code</th>
+		<th scope="col" id="default_lang" class="manage-column column-default_lang" style="width:4em"><span class="dashicons dashicons-star-filled" title="Default language"></span><span class="screen-reader-text">Default language</span></th>
+		<th scope="col" id="term_group" class="manage-column column-term_group" style="width:4em">Order</th>
+		<th scope="col" id="flag" class="manage-column column-flag" style="width:3em">Flag</th>
+		<th scope="col" id="count" class="manage-column column-count num" style="width:4em">Posts</th>
+	</tr></thead>
+	<tbody id="the-list">
+	{{range .Rows}}<tr id="lang-{{.ID}}"{{if not .Active}}{{if not .IsDefault}} class="inactive"{{end}}{{end}}>
+		<td class="name column-name has-row-actions column-primary" data-colname="Full name"><strong><a class="row-title" href="{{.EditURL}}" title="Edit this language">{{.Name}}</a></strong>{{if not .Active}}{{if not .IsDefault}} &mdash; <span class="post-state">Deactivated</span>{{end}}{{end}}
+			<div class="row-actions"><span class="edit"><a href="{{.EditURL}}" title="Edit this language">Edit</a> | </span>{{if .ToggleURL}}<span class="{{if .Active}}deactivate{{else}}activate{{end}}"><a href="{{.ToggleURL}}">{{.ToggleLbl}}</a> | </span>{{end}}<span class="delete"><a href="{{.DeleteURL}}" class="delete" title="Delete this language and all its associated data" onclick="return confirm('You are about to permanently delete this language. Are you sure?');">Delete</a></span></div>
+			<button type="button" class="toggle-row"><span class="screen-reader-text">Show more details</span></button></td>
+		<td class="locale column-locale" data-colname="Locale">{{.Locale}}</td>
+		<td class="slug column-slug" data-colname="Code">{{.Slug}}</td>
+		<td class="default_lang column-default_lang{{if .IsDefault}} default-lang{{end}}" data-colname="Default language">{{if .IsDefault}}<span class="dashicons dashicons-star-filled" title="Default language"></span><span class="screen-reader-text">Default language</span>{{else}}<a href="{{.DefaultURL}}" title="Choose {{.Name}} as default language"><span class="dashicons dashicons-star-empty" aria-hidden="true"></span><span class="screen-reader-text">Choose {{.Name}} as default language</span></a>{{end}}</td>
+		<td class="term_group column-term_group" data-colname="Order">{{.Order}}</td>
+		<td class="flag column-flag" data-colname="Flag">{{.FlagHTML}}</td>
+		<td class="count column-count num" data-colname="Posts">{{.Count}}</td>
+	</tr>{{else}}<tr class="no-items"><td class="colspanchange" colspan="7">No languages found.</td></tr>{{end}}
+	</tbody>
+	</table>
+	<div class="card" style="max-width:none">
+		<h2 class="title">About Golylang</h2>
+		<p>Golylang is WordPress Go's built-in multilingual plugin, a clone of Polylang Pro. Add the languages here, then translate posts, pages, categories and tags from their lists and editors, strings under Translations, and choose how URLs carry the language under Settings. Add a language switcher with the <em>Language switcher</em> block, the <em>Languages</em> item of Appearance &rsaquo; Menus, or <code>{{"{{"}}pll_the_languages .{{"}}"}}</code> in a theme.</p>
+	</div>
+</div></div>
+</div>
+</div>
+<script>
+(function(){
+	var list = document.getElementById('lang_list'), flag = document.getElementById('flag_list'), prev = document.getElementById('flag_preview');
+	function emoji(code){ code = (code || '').toUpperCase(); if (!/^[A-Z]{2}$/.test(code)) { return ''; } return String.fromCodePoint(0x1F1E6 + code.charCodeAt(0) - 65, 0x1F1E6 + code.charCodeAt(1) - 65); }
+	if (flag) { flag.addEventListener('input', function(){ prev.textContent = emoji(flag.value); }); }
+	if (!list) { return; }
+	list.addEventListener('change', function(){
+		var o = list.options[list.selectedIndex];
+		if (!o.value) { return; }
+		document.getElementById('lang_name').value = o.getAttribute('data-name');
+		document.getElementById('lang_locale').value = o.value;
+		document.getElementById('lang_slug').value = o.getAttribute('data-code');
+		flag.value = o.getAttribute('data-flag').length === 2 ? o.getAttribute('data-flag') : '';
+		prev.textContent = emoji(flag.value);
+		document.querySelector('input[name=rtl][value="' + o.getAttribute('data-rtl') + '"]').checked = true;
+	});
+})();
+</script>
+{{end}}{{template "admin-footer" .}}{{end}}
+
+{{define "admin/golylang-settings"}}{{template "admin-header" .}}{{with .Data}}{{$d := .}}
+<div class="wrap">
+<h1 class="wp-heading-inline">Languages</h1>
+<hr class="wp-header-end">
+{{template "golylang-tabs" .Tabs}}
+{{template "notices" $}}
+<table class="wp-list-table widefat plugins pll-modules">
+<thead><tr><th scope="col" class="manage-column column-name column-primary">Module</th><th scope="col" class="manage-column column-description">Description</th></tr></thead>
+<tbody id="the-list">
+{{range .Modules}}<tr id="pll-module-{{.Key}}" class="pll-module {{if .Toggle}}{{if .Active}}active{{else}}inactive{{end}}{{else}}active{{end}}" data-module="{{.Key}}">
+	<td class="plugin-title column-primary"><strong>{{.Title}}</strong>{{if .Pro}} <span class="post-state">Pro</span>{{end}}
+		<div class="row-actions visible">
+		{{if .Unavailable}}<span class="description">Not available</span>{{else}}
+		{{if or (eq .Key "url") (eq .Key "cpt") (eq .Key "sync") (and (eq .Key "media") .Active)}}<span class="configure"><a href="/wp-admin/admin?page=mlang_settings&amp;module={{.Key}}#pll-module-{{.Key}}" class="pll-configure-link" data-module="{{.Key}}" title="Configure this module">Settings</a>{{if .Toggle}} | {{end}}</span>{{end}}
+		{{if .Toggle}}{{if .Active}}<span class="deactivate"><a href="/wp-admin/admin?page=mlang_settings&amp;pll_action=deactivate&amp;module={{.Key}}&amp;_wpnonce={{$d.Nonce}}">Deactivate</a></span>{{else}}<span class="activate"><a href="/wp-admin/admin?page=mlang_settings&amp;pll_action=activate&amp;module={{.Key}}&amp;_wpnonce={{$d.Nonce}}">Activate</a></span>{{end}}{{end}}
+		{{end}}
+		</div></td>
+	<td class="column-description desc"><div class="plugin-description"><p>{{.Description}}</p>{{if .Unavailable}}<p class="description">{{.Unavailable}}</p>{{end}}</div>
+		{{if .Toggle}}<div class="active second plugin-version-author-uri">{{if .Active}}Activated{{else}}Deactivated{{end}}</div>{{end}}</td>
+</tr>
+<tr id="pll-configure-{{.Key}}" class="pll-configure"{{if not .Open}} style="display:none"{{end}}><td colspan="2">
+{{if eq .Key "url"}}
+	<form method="post" action="/wp-admin/admin?page=mlang_settings">
+	<input type="hidden" name="module" value="url" /><input type="hidden" name="_wpnonce" value="{{$d.Nonce}}" />
+	<fieldset class="pll-col-left" style="float:left;width:48%;margin-right:2%">
+		<p class="description">Some themes or plugins may not be fully compatible with the language defined by the content or by domains.</p>
+		<label><input name="force_lang" type="radio" value="0"{{if eq $d.O.ForceLang 0}} checked="checked"{{end}} /> The language is set from content</label>
+		<p class="description">Posts, pages, categories and tags URLs will not be modified.</p>
+		<label><input name="force_lang" type="radio" value="1"{{if eq $d.O.ForceLang 1}} checked="checked"{{end}} /> {{if $d.Pretty}}The language is set from the directory name in pretty permalinks{{else}}The language is set from the code in the URL{{end}}</label>
+		<p class="description"><code>{{if $d.Pretty}}{{trimSlash $.HomeURL}}/en/my-post/{{else}}{{trimSlash $.HomeURL}}/?lang=en&amp;p=1{{end}}</code></p>
+		<label><input name="force_lang" type="radio" value="2"{{if eq $d.O.ForceLang 2}} checked="checked"{{end}}{{if not $d.Pretty}} disabled="disabled"{{end}} /> The language is set from the subdomain name in pretty permalinks</label>
+		<p class="description"><code>https://en.example.com/my-post/</code></p>
+		<label><input name="force_lang" type="radio" value="3"{{if eq $d.O.ForceLang 3}} checked="checked"{{end}}{{if not $d.Pretty}} disabled="disabled"{{end}} /> The language is set from different domains</label>
+		<table class="form-table" role="presentation" id="pll-domains-table">
+		{{range $d.Langs}}<tr><th scope="row"><label for="pll-domain-{{.Slug}}">{{.Name}}</label></th><td><input name="domains[{{.Slug}}]" id="pll-domain-{{.Slug}}" type="text" class="regular-text code" value="{{index $d.O.Domains .Slug}}" /></td></tr>{{end}}
+		</table>
+	</fieldset>
+	<fieldset class="pll-col-right" style="float:left;width:48%">
+		<label><input name="hide_default" type="checkbox" value="1"{{if $d.O.HideDefault}} checked="checked"{{end}} /> Hide URL language information for default language</label>
+		{{if $d.Pretty}}<p><label><input name="rewrite" type="radio" value="1"{{if $d.O.Rewrite}} checked="checked"{{end}} /> Remove /language/ in pretty permalinks</label><br /><code class="description">{{trimSlash $.HomeURL}}/en/</code><br />
+		<label><input name="rewrite" type="radio" value="0"{{if not $d.O.Rewrite}} checked="checked"{{end}} /> Keep /language/ in pretty permalinks</label><br /><code class="description">{{trimSlash $.HomeURL}}/language/en/</code></p>{{end}}
+		{{if $d.StaticFront}}<p><label><input name="redirect_lang" type="checkbox" value="1"{{if $d.O.RedirectLang}} checked="checked"{{end}} /> The front page URL contains the language code instead of the page name or page id</label></p>{{end}}
+	</fieldset>
+	<p class="submit" style="clear:both"><a class="button pll-cancel" href="/wp-admin/admin?page=mlang_settings">Cancel</a> <input type="submit" class="button button-primary" value="Save Changes" /></p>
+	</form>
+{{else if eq .Key "media"}}
+	<form method="post" action="/wp-admin/admin?page=mlang_settings">
+	<input type="hidden" name="module" value="media" /><input type="hidden" name="_wpnonce" value="{{$d.Nonce}}" />
+	<label><input name="media_duplicate" type="checkbox" value="1"{{if $d.O.MediaDuplicate}} checked="checked"{{end}} /> Automatically duplicate media in all languages when uploading a new file</label>
+	<p class="submit"><a class="button pll-cancel" href="/wp-admin/admin?page=mlang_settings">Cancel</a> <input type="submit" class="button button-primary" value="Save Changes" /></p>
+	</form>
+{{else if eq .Key "cpt"}}
+	<form method="post" action="/wp-admin/admin?page=mlang_settings">
+	<input type="hidden" name="module" value="cpt" /><input type="hidden" name="_wpnonce" value="{{$d.Nonce}}" />
+	<h4>Custom post types</h4>
+	{{range $d.PostTypes}}<label style="display:inline-block;min-width:16em"><input name="post_types[]" type="checkbox" value="{{.Value}}"{{if .Checked}} checked="checked"{{end}} /> {{.Label}}</label>{{else}}<p class="description">There are no custom post types.</p>{{end}}
+	<p class="description">Activate languages and translations for custom post types.</p>
+	<h4>Custom taxonomies</h4>
+	{{range $d.Taxonomies}}<label style="display:inline-block;min-width:16em"><input name="taxonomies[]" type="checkbox" value="{{.Value}}"{{if .Checked}} checked="checked"{{end}} /> {{.Label}}</label>{{else}}<p class="description">There are no custom taxonomies.</p>{{end}}
+	<p class="description">Activate languages and translations for custom taxonomies.</p>
+	<p class="submit"><a class="button pll-cancel" href="/wp-admin/admin?page=mlang_settings">Cancel</a> <input type="submit" class="button button-primary" value="Save Changes" /></p>
+	</form>
+{{else if eq .Key "sync"}}
+	<form method="post" action="/wp-admin/admin?page=mlang_settings">
+	<input type="hidden" name="module" value="sync" /><input type="hidden" name="_wpnonce" value="{{$d.Nonce}}" />
+	<ul class="pll-inline-block-list">{{range $d.SyncItems}}<li style="display:inline-block;min-width:14em"><label><input name="sync[{{.Value}}]" type="checkbox" value="1"{{if .Checked}} checked="checked"{{end}} /> {{.Label}}</label></li>{{end}}</ul>
+	<p class="submit"><a class="button pll-cancel" href="/wp-admin/admin?page=mlang_settings">Cancel</a> <input type="submit" class="button button-primary" value="Save Changes" /></p>
+	</form>
+{{end}}
+</td></tr>
+{{end}}
+</tbody>
+</table>
+</div>
+<script>
+document.querySelectorAll('.pll-configure-link').forEach(function(a){
+	a.addEventListener('click', function(e){
+		var row = document.getElementById('pll-configure-' + a.getAttribute('data-module'));
+		if (!row) { return; }
+		e.preventDefault();
+		row.style.display = row.style.display === 'none' ? '' : 'none';
+	});
+});
+</script>
+{{end}}{{template "admin-footer" .}}{{end}}
+
+{{define "admin/golylang-strings"}}{{template "admin-header" .}}{{with .Data}}{{$d := .}}
+<div class="wrap">
+<h1 class="wp-heading-inline">Languages</h1>
+<hr class="wp-header-end">
+{{template "golylang-tabs" .Tabs}}
+{{template "notices" $}}
+<form method="get" action="/wp-admin/admin">
+<input type="hidden" name="page" value="mlang_strings" />
+<p class="search-box">
+	<label class="screen-reader-text" for="string-search-input">Search translations:</label>
+	<input type="search" id="string-search-input" name="s" value="{{.Search}}" />
+	<input type="submit" id="search-submit" class="button" value="Search translations" />
+</p>
+<div class="tablenav top">
+	<div class="alignleft actions">
+		<label for="select-group" class="screen-reader-text">Filter by group</label>
+		<select name="group" id="select-group"><option value="">View all groups</option>{{range .Groups}}<option value="{{.}}"{{if eq . $d.Group}} selected="selected"{{end}}>{{.}}</option>{{end}}</select>
+		<input type="submit" class="button" value="Filter" />
+	</div>
+	{{template "tablenav-pages" .Pagination}}
+	<br class="clear" />
+</div>
+</form>
+<form id="string-translation" method="post" action="/wp-admin/admin?page=mlang_strings">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<input type="hidden" name="group" value="{{.Group}}" />
+<div class="tablenav top">
+	<div class="alignleft actions bulkactions">
+		<label for="bulk-action-selector-top" class="screen-reader-text">Select bulk action</label>
+		<select name="action" id="bulk-action-selector-top"><option value="-1">Bulk actions</option><option value="delete">Delete</option></select>
+		<input type="submit" class="button action" value="Apply" />
+	</div>
+	<br class="clear" />
+</div>
+<table class="wp-list-table widefat fixed striped table-view-list strings pll-strings-table">
+<thead><tr>
+	<td id="cb" class="manage-column column-cb check-column"><input id="cb-select-all-1" type="checkbox" /><label for="cb-select-all-1"><span class="screen-reader-text">Select All</span></label></td>
+	<th scope="col" class="manage-column column-string column-primary">String</th>
+	<th scope="col" class="manage-column column-name">Name</th>
+	<th scope="col" class="manage-column column-context">Group</th>
+	<th scope="col" class="manage-column column-translations">Translations</th>
+</tr></thead>
+<tbody id="the-list">
+{{range .Rows}}<tr>
+	<th scope="row" class="check-column">{{if .Deletable}}<input type="checkbox" name="strings[]" value="{{.String}}" id="cb-string-{{.Index}}" /><label for="cb-string-{{.Index}}"><span class="screen-reader-text">Select {{.Name}}</span></label>{{else}}<input type="checkbox" disabled="disabled" />{{end}}</th>
+	<td class="string column-string column-primary" data-colname="String">{{.String}}<input type="hidden" name="original[{{.Index}}]" value="{{.String}}" /><button type="button" class="toggle-row"><span class="screen-reader-text">Show more details</span></button></td>
+	<td class="name column-name" data-colname="Name">{{.Name}}</td>
+	<td class="context column-context" data-colname="Group">{{.Group}}</td>
+	<td class="translations column-translations" data-colname="Translations">{{$i := .Index}}{{$ml := .Multiline}}{{range .Translations}}<div class="translation"><label for="pll-tr-{{.Lang.Slug}}-{{$i}}">{{.Lang.FlagHTML}} {{.Lang.Name}}</label>{{if $ml}}<textarea name="translation[{{.Lang.Slug}}][{{$i}}]" id="pll-tr-{{.Lang.Slug}}-{{$i}}" rows="3">{{.Value}}</textarea>{{else}}<input type="text" name="translation[{{.Lang.Slug}}][{{$i}}]" id="pll-tr-{{.Lang.Slug}}-{{$i}}" value="{{.Value}}" />{{end}}</div>{{end}}</td>
+</tr>{{else}}<tr class="no-items"><td class="colspanchange" colspan="5">No string translation found.</td></tr>{{end}}
+</tbody>
+</table>
+<p><label><input name="clean" type="checkbox" value="1" /> Clean strings translation database</label><br /><span class="description">Use this to remove unused strings from database, for example after a plugin has been uninstalled.</span></p>
+<p class="submit"><input type="submit" name="submit" class="button button-primary" value="Save changes" /></p>
+</form>
+
+<div id="pll-import-export" class="metabox-holder">
+<div class="postbox"><div class="postbox-header"><h2 class="hndle">Export translations</h2></div><div class="inside">
+	<form method="post" action="/wp-admin/admin?page=mlang_strings">
+	<input type="hidden" name="_wpnonce" value="{{.IENonce}}" /><input type="hidden" name="pll_action" value="export" />
+	<p><label for="pll-export-lang">Target language</label>
+	<select name="lang" id="pll-export-lang">{{range .Langs}}<option value="{{.Slug}}">{{.Name}}</option>{{end}}</select>
+	<label for="pll-export-group">Group</label>
+	<select name="group" id="pll-export-group"><option value="">Export all groups</option>{{range .Groups}}<option value="{{.}}">{{.}}</option>{{end}}</select>
+	<span class="description">File format: PO</span></p>
+	<p><input type="submit" class="button" value="Download" /></p>
+	</form>
+</div></div>
+<div class="postbox"><div class="postbox-header"><h2 class="hndle">Import translations</h2></div><div class="inside">
+	<form method="post" action="/wp-admin/admin?page=mlang_strings" enctype="multipart/form-data">
+	<input type="hidden" name="_wpnonce" value="{{.IENonce}}" /><input type="hidden" name="pll_action" value="import" />
+	<p><label for="pll-import-file">Choose a .po file to import</label> <input type="file" name="po" id="pll-import-file" accept=".po" />
+	<label for="pll-import-lang">Language</label>
+	<select name="lang" id="pll-import-lang">{{range .Langs}}<option value="{{.Slug}}">{{.Name}}</option>{{end}}</select></p>
+	<p class="description">The Language header of the file wins over the selected language.</p>
+	<p><input type="submit" class="button" value="Upload" /></p>
+	</form>
+</div></div>
+</div>
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}

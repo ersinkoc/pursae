@@ -102,6 +102,7 @@
 		<td class="author column-author{{if index $d.Hidden "author"}} hidden{{end}}" data-colname="Author">{{if .Author}}<a href="{{.AuthorFilterURL}}">{{.Author}}</a>{{end}}</td>
 		{{if $d.ShowCatCols}}<td class="categories column-categories{{if index $d.Hidden "categories"}} hidden{{end}}" data-colname="Categories">{{if .Categories}}{{.Categories}}{{else}}<span aria-hidden="true">&#8212;</span><span class="screen-reader-text">Uncategorized</span>{{end}}</td>
 		<td class="tags column-tags{{if index $d.Hidden "tags"}} hidden{{end}}" data-colname="Tags">{{if .Tags}}{{.Tags}}{{else}}<span aria-hidden="true">&#8212;</span><span class="screen-reader-text">No tags</span>{{end}}</td>{{end}}
+		{{range .PluginCols}}{{.}}{{end}}
 		<td class="comments column-comments{{if index $d.Hidden "comments"}} hidden{{end}}" data-colname="Comments"><div class="post-com-count-wrapper">{{if .Comments}}<a href="/wp-admin/edit-comments?p={{.ID}}&amp;comment_status=approved" class="post-com-count post-com-count-approved"><span class="comment-count-approved" aria-hidden="true">{{.Comments}}</span><span class="screen-reader-text">{{plural .Comments "%s comment" "%s comments"}}</span></a>{{else}}<span aria-hidden="true">&#8212;</span><span class="screen-reader-text">No comments</span>{{end}}<span class="post-com-count post-com-count-pending post-com-count-no-pending"><span class="comment-count comment-count-no-pending" aria-hidden="true">0</span><span class="screen-reader-text">No pending comments</span></span></div></td>
 		<td class="date column-date{{if index $d.Hidden "date"}} hidden{{end}}" data-colname="Date">{{.DateLabel}}<br />{{.DateValue}}</td>
 	</tr>{{end}}{{end}}
@@ -122,6 +123,7 @@
 		{{template "sort-th" dict "ID" (or (and .Top "author") "") "Col" "author" "Label" "Author" "Link" (index .D.SortLinks "author") "Hidden" (index .D.Hidden "author")}}
 		{{if .D.ShowCatCols}}<th scope="col"{{if .Top}} id="categories"{{end}} class="manage-column column-categories{{if index .D.Hidden "categories"}} hidden{{end}}">Categories</th>
 		<th scope="col"{{if .Top}} id="tags"{{end}} class="manage-column column-tags{{if index .D.Hidden "tags"}} hidden{{end}}">Tags</th>{{end}}
+		{{range .D.PluginHeads}}{{.}}{{end}}
 		{{template "sort-th" dict "ID" (or (and .Top "comments") "") "Col" "comments" "Num" true "Bubble" true "Label" "Comments" "Link" (index .D.SortLinks "comment_count") "Hidden" (index .D.Hidden "comments")}}
 		{{template "sort-th" dict "ID" (or (and .Top "date") "") "Col" "date" "Label" "Date" "Link" (index .D.SortLinks "date") "Hidden" (index .D.Hidden "date")}}
 	</tr>{{end}}

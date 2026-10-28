@@ -418,7 +418,7 @@ func (s *Server) sitemapIndex(c *gin.Context) {
 	var sb strings.Builder
 	sb.WriteString(xml.Header + `<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">`)
 	for _, part := range []string{"posts-post-1", "posts-page-1", "taxonomies-category-1", "taxonomies-post_tag-1", "users-1"} {
-		fmt.Fprintf(&sb, "<sitemap><loc>%s</loc></sitemap>", html.EscapeString(lb.HomeURL("/wp-sitemap-"+part+".xml")))
+		fmt.Fprintf(&sb, "<sitemap><loc>%s</loc></sitemap>", html.EscapeString(s.golylangURL(c, lb.HomeURL("/wp-sitemap-"+part+".xml")))) // Golylang: per language
 	}
 	sb.WriteString("</sitemapindex>\n")
 	c.Data(http.StatusOK, "application/xml; charset=UTF-8", []byte(sb.String()))

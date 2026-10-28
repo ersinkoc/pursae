@@ -133,6 +133,26 @@ func (s *Store) Ancestors(ctx context.Context, p *Post) ([]*Post, error) {
 	return chain, nil
 }
 
+// QueryFilter, when set, narrows QueryPosts and QueryTerms by request context (Golylang's language
+// filter). kind is "post" or "term"; add binds an argument and returns its placeholder.
+var QueryFilter QueryFilterFunc
+
+type QueryFilterFunc func(ctx context.Context, kind string, add func(v any) string) string
+
+func (f QueryFilterFunc) cond(ctx context.Context, kind string, args *[]any) string {
+	if f == nil {
+		return ""
+	}
+	c := f(ctx, kind, func(v any) string {
+		*args = append(*args, v)
+		return "$" + strconv.Itoa(len(*args))
+	})
+	if c == "" {
+		return ""
+	}
+	return " AND " + c
+}
+
 type PostQuery struct {
 	Types       []string
 	Statuses    []string
@@ -240,7 +260,7 @@ func (q *PostQuery) orderBy() string {
 // QueryPosts is WP_Query for the parts the admin and the theme need.
 func (s *Store) QueryPosts(ctx context.Context, q PostQuery) ([]*Post, int, error) {
 	var args []any
-	where := q.where(&args)
+	where := q.where(&args) + QueryFilter.cond(ctx, "post", &args)
 	var total int
 	if err := s.Pool.QueryRow(ctx, `SELECT count(*) FROM posts WHERE `+where, args...).Scan(&total); err != nil {
 		return nil, 0, err

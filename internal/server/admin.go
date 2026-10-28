@@ -371,6 +371,7 @@ func (s *Server) adminPage(c *gin.Context, screen, title, bodyClass, tmpl string
 	if late, ok := c.Get("wpgo.lateFooterHTML"); ok {
 		v.LateFooterHTML = late.(template.HTML)
 	}
+	s.golylangAdminView(c, v) // Golylang: Languages menu and admin bar language filter
 	s.renderAdminTemplate(c, http.StatusOK, tmpl, v)
 }
 
@@ -426,6 +427,9 @@ func (s *Server) adminAjax(c *gin.Context) {
 		return
 	}
 	if s.acfgoAjax(c, action) { // ACF-Go: acfgo/* actions
+		return
+	}
+	if s.golylangAjax(c, action) { // Golylang: pll_* actions
 		return
 	}
 	switch action {

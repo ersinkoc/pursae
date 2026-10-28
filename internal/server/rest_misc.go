@@ -376,7 +376,8 @@ func (s *Server) restTerm(c *gin.Context, t *store.Term, ctxName string) map[str
 	if t.Taxonomy == "category" {
 		out["parent"] = t.ParentID
 	}
-	s.acfgoRESTTerm(c, t, out) // ACF-Go
+	s.acfgoRESTTerm(c, t, out)                              // ACF-Go
+	s.golylangRESTFields(c, pllTerm, t.ID, t.Taxonomy, out) // Golylang: lang and translations
 	if ctxName == "embed" {
 		return map[string]any{"id": t.ID, "link": out["link"], "name": t.Name, "slug": t.Slug, "taxonomy": t.Taxonomy, "_links": out["_links"]}
 	}
@@ -502,6 +503,7 @@ func (api *restAPI) saveTerm(c *gin.Context, r *restRequest, tax string, id int6
 		restErr(c, http.StatusInternalServerError, "rest_term_error", err.Error())
 		return
 	}
+	s.golylangRESTSaved(c, pllTerm, t.ID) // Golylang: lang and translations parameters
 	status := http.StatusOK
 	if id == 0 {
 		status = http.StatusCreated

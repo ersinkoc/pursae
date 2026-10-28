@@ -247,6 +247,9 @@ func (s *Server) pluginAdmin(c *gin.Context) {
 	if s.gontactAdmin(c) { // Gontact Form: admin?page=wpcf7… (gontact_admin.go)
 		return
 	}
+	if s.golylangAdmin(c, page) { // Golylang: Languages screens (mlang, mlang_strings, mlang_settings)
+		return
+	}
 	if !strings.HasPrefix(page, "wpgo-cache") {
 		s.notYet(c)
 		return

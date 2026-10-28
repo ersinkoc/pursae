@@ -276,7 +276,7 @@ func (api *restAPI) serve(c *gin.Context, route string) {
 	route = "/" + strings.Trim(route, "/")
 	builderOn := s.golementorOn()
 	for _, r := range api.routes {
-		if (!builderOn && gweRESTNamespace(r.Namespace)) || s.gontactRESTHidden(r.Namespace) {
+		if (!builderOn && gweRESTNamespace(r.Namespace)) || s.gontactRESTHidden(r.Namespace) || (r.Namespace == pllRESTNamespace && !s.golylangOn()) {
 			continue
 		}
 		m := r.re.FindStringSubmatch(route)
@@ -386,7 +386,7 @@ func (api *restAPI) index(c *gin.Context) {
 	nsSet := map[string]bool{}
 	builderOn := s.golementorOn()
 	for _, r := range api.routes {
-		if (!builderOn && gweRESTNamespace(r.Namespace)) || s.gontactRESTHidden(r.Namespace) {
+		if (!builderOn && gweRESTNamespace(r.Namespace)) || s.gontactRESTHidden(r.Namespace) || (r.Namespace == pllRESTNamespace && !s.golylangOn()) {
 			continue
 		}
 		var methods []string

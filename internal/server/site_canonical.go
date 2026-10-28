@@ -103,9 +103,9 @@ func (s *Server) canonicalRedirect(c *gin.Context, q *siteQuery, requestPath str
 	case "single", "page":
 		base = lb.Permalink(q.Post)
 	case "front-page":
-		base = lb.HomeURL("/")
+		base = lb.Front()
 	case "home":
-		base = lb.HomeURL("/")
+		base = lb.Front()
 		if q.PostsPage != nil {
 			base = lb.Permalink(q.PostsPage)
 		}
