@@ -1,0 +1,25 @@
+{{template "header" .}}
+<main id="main" class="site-main site-main--front" tabindex="-1">
+{{with .Post}}{{$img := theme_mod $ "hero_image"}}{{if not $img}}{{$img = .ThumbnailURL}}{{end}}
+	<section class="hero{{if $img}} hero--has-media{{end}}" aria-label="Welcome">
+		{{if $img}}<img class="hero__bg" src="{{$img}}" alt="" />{{end}}
+		<div class="wrap hero__inner">
+			<p class="hero__eyebrow"><span class="hero__tick" aria-hidden="true"></span>{{$.SiteName}}</p>
+			<h1 class="hero__title">{{with theme_mod $ "hero_heading"}}{{.}}{{else}}{{$.Post.Title}}{{end}}</h1>
+			{{with theme_mod $ "hero_text"}}<p class="hero__lead">{{.}}</p>{{end}}
+			<div class="hero__actions">
+				{{with theme_mod $ "booking_label"}}<a class="button" href="{{theme_mod $ "booking_url"}}">{{.}}</a>{{end}}
+				{{with theme_mod $ "phone"}}<a class="button button--ghost" href="tel:{{.}}">{{.}}</a>{{end}}
+			</div>
+		</div>
+		{{with theme_mod $ "hours_text"}}<div class="hero__hours"><div class="wrap"><p class="hero__hours-title">Workshop hours</p><p class="hero__hours-text">{{.}}</p></div></div>{{end}}
+	</section>
+	<article id="post-{{.ID}}" class="{{.Class}} entry entry--front front-entry">
+		<div class="entry-content front-content">
+			{{.Content}}
+		</div>
+		{{with .EditLink}}<footer class="wrap entry-footer"><span class="edit-link">{{.}}</span></footer>{{end}}
+	</article>
+{{end}}
+</main><!-- #main -->
+{{template "footer" .}}

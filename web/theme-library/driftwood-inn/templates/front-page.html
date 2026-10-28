@@ -1,0 +1,25 @@
+{{template "header" .}}
+<main id="main" class="site-main site-main--front" tabindex="-1">
+{{with .Post}}{{$img := theme_mod $ "hero_image"}}{{if not $img}}{{$img = .ThumbnailURL}}{{end}}
+	<section class="hero{{if $img}} hero--has-media{{end}}" aria-label="Welcome">
+		{{if $img}}<img class="hero__bg" src="{{$img}}" alt="" />{{end}}
+		<div class="hero__inner wrap">
+			<p class="hero__eyebrow">{{$.SiteName}}</p>
+			<h1 class="hero__title">{{with theme_mod $ "hero_heading"}}{{.}}{{else}}{{$.Post.Title}}{{end}}</h1>
+			{{with theme_mod $ "hero_text"}}<p class="hero__lead">{{.}}</p>{{end}}
+		</div>
+		<div class="staybar wrap">
+			<div class="staybar__item"><span class="staybar__label">Arrive</span><span class="staybar__value">{{theme_mod $ "checkin_text"}}</span></div>
+			<div class="staybar__item"><span class="staybar__label">Rooms from</span><span class="staybar__value">{{theme_mod $ "rate_text"}}</span></div>
+			{{with theme_mod $ "booking_label"}}<a class="button staybar__button" href="{{theme_mod $ "booking_url"}}">{{.}}</a>{{end}}
+		</div>
+	</section>
+	<article id="post-{{.ID}}" class="{{.Class}} entry entry--front front-entry">
+		<div class="entry-content front-content">
+			{{.Content}}
+		</div>
+		{{with .EditLink}}<footer class="wrap entry-footer"><span class="edit-link">{{.}}</span></footer>{{end}}
+	</article>
+{{end}}
+</main><!-- #main -->
+{{template "footer" .}}

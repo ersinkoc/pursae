@@ -1,0 +1,39 @@
+@font-face {
+	font-family: "Fredoka";
+	src: url("fonts/fredoka.woff2") format("woff2");
+	font-weight: 300 700;
+	font-style: normal;
+	font-display: swap;
+}
+@font-face {
+	font-family: "Atkinson Hyperlegible";
+	src: url("fonts/atkinson-400.woff2") format("woff2");
+	font-weight: 400;
+	font-style: normal;
+	font-display: swap;
+}
+@font-face {
+	font-family: "Atkinson Hyperlegible";
+	src: url("fonts/atkinson-700.woff2") format("woff2");
+	font-weight: 700;
+	font-style: normal;
+	font-display: swap;
+}
+
+/* Editor styles: the block editor canvas looks like the site. */
+body {
+	background: #fff8ef;
+	color: #2e2a26;
+	font-family: "Atkinson Hyperlegible", Verdana, system-ui, sans-serif;
+	font-size: 1.0625rem;
+	line-height: 1.7;
+}
+h1, h2, h3, h4, h5, h6 { font-family: "Fredoka", "Arial Rounded MT Bold", system-ui, sans-serif; font-weight: 600; line-height: 1.2; }
+a { color: #0f6866; }
+blockquote, .wp-block-quote { border-left: 4px solid #0f6866; padding-left: 1.25rem; }
+.wp-block-button__link { background: #0f6866; color: #fff; }
+.price-list { list-style: none; padding: 0; }
+.price-list li { display: flex; flex-wrap: wrap; gap: .25rem .75rem; padding: .6rem 0; border-bottom: 1px dashed currentColor; }
+.price-list .price { margin-left: auto; font-weight: 700; color: #0f6866; }
+.price-list .desc { flex-basis: 100%; opacity: .75; font-size: .9rem; }
+img { border-radius: 20px; }

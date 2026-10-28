@@ -1,0 +1,10 @@
+{{template "header" .}}
+<div class="wrap layout layout--single">
+	<main id="main" class="site-main" tabindex="-1">
+		{{template "content-single" .Post}}
+		{{.PostNav}}
+		{{template "comments" .}}
+	</main><!-- #main -->
+	{{template "sidebar" .}}
+</div>
+{{template "footer" .}}

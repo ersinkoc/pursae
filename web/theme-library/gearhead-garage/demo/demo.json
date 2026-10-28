@@ -1,0 +1,397 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Gearhead Garage",
+  "blogdescription": "Repairs, servicing and detailing on Foundry Lane",
+  "posts_per_page": 6
+ },
+ "categories": [
+  {
+   "slug": "maintenance",
+   "name": "Maintenance",
+   "description": "Servicing, oil, brakes and seasonal checks."
+  },
+  {
+   "slug": "diagnostics",
+   "name": "Diagnostics",
+   "description": "Warning lights, noises and faults explained."
+  },
+  {
+   "slug": "detailing",
+   "name": "Detailing",
+   "description": "Paint care, coatings and interiors."
+  },
+  {
+   "slug": "workshop-news",
+   "name": "Workshop news",
+   "description": "New kit, offers and team news."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "winter",
+   "name": "Winter"
+  },
+  {
+   "slug": "tyres",
+   "name": "Tyres"
+  },
+  {
+   "slug": "dashboard",
+   "name": "Dashboard"
+  },
+  {
+   "slug": "paint",
+   "name": "Paint"
+  },
+  {
+   "slug": "ceramic",
+   "name": "Ceramic"
+  },
+  {
+   "slug": "brakes",
+   "name": "Brakes"
+  },
+  {
+   "slug": "oil",
+   "name": "Oil"
+  }
+ ],
+ "media": [
+  {
+   "id": "hero-coupe",
+   "file": "demo/images/hero-coupe.jpg",
+   "alt": "Illustration of a red coupe under a spotlight in a dark workshop",
+   "caption": ""
+  },
+  {
+   "id": "blue-coupe",
+   "file": "demo/images/blue-coupe.jpg",
+   "alt": "Illustration of a blue coupe in a dark studio",
+   "caption": ""
+  },
+  {
+   "id": "yellow-hatch",
+   "file": "demo/images/yellow-hatch.jpg",
+   "alt": "Illustration of a yellow car under a workshop light",
+   "caption": ""
+  },
+  {
+   "id": "tools",
+   "file": "demo/images/tools.jpg",
+   "alt": "Three chrome spanners and a socket set on a dark grid mat",
+   "caption": ""
+  },
+  {
+   "id": "gears",
+   "file": "demo/images/gears.jpg",
+   "alt": "Interlocking steel and red gears on a dark background",
+   "caption": ""
+  },
+  {
+   "id": "gearbox",
+   "file": "demo/images/gearbox.jpg",
+   "alt": "Pale steel gears meshing together",
+   "caption": ""
+  },
+  {
+   "id": "wheel",
+   "file": "demo/images/wheel.jpg",
+   "alt": "A silver alloy wheel with a red centre cap and a black tyre",
+   "caption": ""
+  },
+  {
+   "id": "detailing",
+   "file": "demo/images/detailing.jpg",
+   "alt": "Water beading on freshly waxed red paint",
+   "caption": ""
+  },
+  {
+   "id": "ceramic",
+   "file": "demo/images/ceramic.jpg",
+   "alt": "Water droplets beading on dark blue ceramic-coated paint",
+   "caption": ""
+  },
+  {
+   "id": "oil",
+   "file": "demo/images/oil.jpg",
+   "alt": "A drop of engine oil above a yellow line",
+   "caption": ""
+  },
+  {
+   "id": "workshop",
+   "file": "demo/images/workshop.jpg",
+   "alt": "A blue car parked in front of a roller door with a red sign",
+   "caption": ""
+  },
+  {
+   "id": "tech-dex",
+   "file": "demo/images/tech-dex.jpg",
+   "alt": "Illustrated portrait of a technician wearing a cap",
+   "caption": ""
+  },
+  {
+   "id": "tech-mila",
+   "file": "demo/images/tech-mila.jpg",
+   "alt": "Illustrated portrait of a technician in red overalls with her hair in a bun",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Built right. Fixed fast.",
+   "content": "<!-- wp:group {\"align\":\"wide\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignwide\"><!-- wp:columns {\"align\":\"wide\",\"className\":\"stat-row\"} --><div class=\"wp-block-columns alignwide stat-row\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"stat\"} --><p class=\"stat\">4.9</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"stat-label\"} --><p class=\"stat-label\">average review score</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"stat\"} --><p class=\"stat\">12</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"stat-label\"} --><p class=\"stat-label\">month parts &amp; labour warranty</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"stat\"} --><p class=\"stat\">3</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"stat-label\"} --><p class=\"stat-label\">lifts, no waiting weeks</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"stat\"} --><p class=\"stat\">1998</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"stat-label\"} --><p class=\"stat-label\">fixing cars since</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"section-band\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-band\"><!-- wp:paragraph {\"className\":\"eyebrow\"} --><p class=\"eyebrow\">What we do</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">Honest repairs. Showroom shine.</h2><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">Independent mechanics and detailers under one roof. We explain the fault, show you the old part and quote before we touch a spanner.</p><!-- /wp:paragraph --><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"feature-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group feature-card\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Service &amp; MOT prep</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Manufacturer-schedule servicing that keeps your warranty valid.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"price-from\"} --><p class=\"price-from\">from $149</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"feature-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group feature-card\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Brakes &amp; tyres</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Pads, discs, fluid, alignment and tyres from four brands.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"price-from\"} --><p class=\"price-from\">from $89</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"feature-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group feature-card\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Diagnostics</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Warning light on? A full scan and a plain-English report.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"price-from\"} --><p class=\"price-from\">$59</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"feature-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group feature-card\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Detailing</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Hand wash, paint correction and ceramic coating.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"price-from\"} --><p class=\"price-from\">from $120</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:services}}\">Full price list</a></div><!-- /wp:button --><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:book-a-service}}\">Book a service</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull\"><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column {\"width\":\"50%\"} --><div class=\"wp-block-column\" style=\"flex-basis:50%\"><!-- wp:image {\"id\":{{media_id:detailing}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:detailing}}\" alt=\"Water beading on waxed red paint\" class=\"wp-image-{{media_id:detailing}}\"/></figure><!-- /wp:image --></div><!-- /wp:column --><!-- wp:column {\"width\":\"50%\"} --><div class=\"wp-block-column\" style=\"flex-basis:50%\"><!-- wp:paragraph {\"className\":\"eyebrow\"} --><p class=\"eyebrow\">Detailing bay</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">Paint that looks deeper than it did new</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Our detailing bay has its own lights, a deionised water system and two people who will happily spend a whole day on one bonnet.</p><!-- /wp:paragraph --><!-- wp:list {\"className\":\"price-list\"} --><ul class=\"wp-block-list price-list\"><!-- wp:list-item --><li><strong>Signature wash</strong> <span class=\"price\">$120</span> <span class=\"desc\">Snow foam, two-bucket wash, decontamination, sealant</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Paint correction</strong> <span class=\"price\">from $380</span> <span class=\"desc\">One or two-stage machine polish</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Ceramic coating</strong> <span class=\"price\">from $690</span> <span class=\"desc\">Five-year protection, with a care kit</span></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"section-dark\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-dark\"><!-- wp:heading {\"textAlign\":\"center\",\"className\":\"section-title\"} --><h2 class=\"wp-block-heading has-text-align-center section-title\">Booked in by nine, back by five.</h2><!-- /wp:heading --><!-- wp:paragraph {\"align\":\"center\"} --><p class=\"has-text-align-center\">Most services are same-day. Drop the keys in the box by the gate if you are early.</p><!-- /wp:paragraph --><!-- wp:buttons {\"layout\":{\"type\":\"flex\",\"justifyContent\":\"center\"}} --><div class=\"wp-block-buttons is-content-justification-center is-layout-flex\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:book-a-service}}\">Book a service</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull\"><!-- wp:paragraph {\"className\":\"eyebrow\"} --><p class=\"eyebrow\">Car-care tips</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">From the workshop floor</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":3,\"displayPostDate\":true,\"postLayout\":\"grid\",\"columns\":3,\"align\":\"wide\",\"displayPostContent\":true,\"excerptLength\":18,\"displayFeaturedImage\":true,\"featuredImageSizeSlug\":\"medium_large\"} /--></div><!-- /wp:group -->",
+   "featured_media": "hero-coupe",
+   "front_page": true
+  },
+  {
+   "slug": "tips",
+   "title": "Car-care tips",
+   "content": "",
+   "posts_page": true
+  },
+  {
+   "slug": "services",
+   "title": "Services & prices",
+   "content": "<!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">All prices include parts and labour for a typical family car and are fixed before we start. Performance and electric cars are quoted individually.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Servicing</h2><!-- /wp:heading -->\n\n<!-- wp:table {\"className\":\"service-table\"} --><figure class=\"wp-block-table service-table\"><table><thead><tr><th>Service</th><th>Includes</th><th>Price</th></tr></thead><tbody><tr><td>Interim service</td><td>Oil and filter, 30-point check, fluids</td><td>$149</td></tr><tr><td>Full service</td><td>Interim plus air, cabin and fuel filters</td><td>$249</td></tr><tr><td>Major service</td><td>Full plus spark plugs and brake fluid</td><td>$369</td></tr><tr><td>Hybrid &amp; EV health check</td><td>Battery report, coolant, brakes</td><td>$129</td></tr></tbody></table></figure><!-- /wp:table -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Repairs</h2><!-- /wp:heading -->\n\n<!-- wp:table {\"className\":\"service-table\"} --><figure class=\"wp-block-table service-table\"><table><thead><tr><th>Job</th><th>Typical time</th><th>Price</th></tr></thead><tbody><tr><td>Front brake pads</td><td>1 hour</td><td>$89</td></tr><tr><td>Pads and discs, front</td><td>2 hours</td><td>$239</td></tr><tr><td>Four-wheel alignment</td><td>45 minutes</td><td>$79</td></tr><tr><td>Clutch replacement</td><td>1 day</td><td>from $690</td></tr><tr><td>Timing belt and water pump</td><td>1 day</td><td>from $540</td></tr><tr><td>Diagnostic scan &amp; report</td><td>45 minutes</td><td>$59</td></tr></tbody></table></figure><!-- /wp:table -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Detailing</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"className\":\"price-list\"} --><ul class=\"wp-block-list price-list\"><!-- wp:list-item --><li><strong>Signature wash</strong> <span class=\"price\">$120</span> <span class=\"desc\">Snow foam, hand wash, wheels, glass and spray sealant · 2 h</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Interior deep clean</strong> <span class=\"price\">$160</span> <span class=\"desc\">Steam, extraction, leather clean and condition · 4 h</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Paint correction</strong> <span class=\"price\">from $380</span> <span class=\"desc\">Removes swirls and light scratches · 1–2 days</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Ceramic coating</strong> <span class=\"price\">from $690</span> <span class=\"desc\">Five-year hydrophobic protection · 2 days</span></li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"section-band\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-band\"><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">Meet the crew</h2><!-- /wp:heading --><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"team-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group team-card\"><!-- wp:image {\"id\":{{media_id:tech-dex}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:tech-dex}}\" alt=\"Portrait illustration of Dex\" class=\"wp-image-{{media_id:tech-dex}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Dex</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"role\"} --><p class=\"role\">Master technician</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Twenty years on everything from vintage roadsters to hybrid estates.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"team-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group team-card\"><!-- wp:image {\"id\":{{media_id:tech-mila}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:tech-mila}}\" alt=\"Portrait illustration of Mila\" class=\"wp-image-{{media_id:tech-mila}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Mila</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"role\"} --><p class=\"role\">Head of detailing</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Paint correction specialist and the reason our bay is spotless.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"team-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group team-card\"><!-- wp:image {\"id\":{{media_id:tools}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:tools}}\" alt=\"Spanners and sockets\" class=\"wp-image-{{media_id:tools}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">You?</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"role\"} --><p class=\"role\">We're hiring</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Looking for an apprentice who loves cars and asks good questions.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->",
+   "featured_media": "tools",
+   "template": "page-full",
+   "menu_order": 1
+  },
+  {
+   "slug": "book-a-service",
+   "title": "Book a service",
+   "content": "<!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">Book online by email or phone, or just drive in for tyres and quick checks. We confirm every booking with a fixed quote.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"feature-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group feature-card\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">1. Tell us</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Registration, mileage and what you have noticed: noises, lights, smells.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"feature-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group feature-card\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">2. We quote</h3><!-- /wp:heading --><!-- wp:paragraph --><p>A fixed price by text before any work starts. No surprises.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"feature-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group feature-card\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">3. Drive away</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Pay on collection. We show you the old parts and stamp your book.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Courtesy cars</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Two small courtesy cars are available for full services and bigger repairs. Ask when booking; they go fast on Mondays.</p><!-- /wp:paragraph -->\n\n<!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"tel:+15550194466\">Call +1 (555) 019-4466</a></div><!-- /wp:button --></div><!-- /wp:buttons -->",
+   "menu_order": 2
+  },
+  {
+   "slug": "about",
+   "title": "About the garage",
+   "content": "<!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column {\"width\":\"50%\"} --><div class=\"wp-block-column\" style=\"flex-basis:50%\"><!-- wp:image {\"id\":{{media_id:workshop}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:workshop}}\" alt=\"The workshop's roller door\" class=\"wp-image-{{media_id:workshop}}\"/></figure><!-- /wp:image --></div><!-- /wp:column --><!-- wp:column {\"width\":\"50%\"} --><div class=\"wp-block-column\" style=\"flex-basis:50%\"><!-- wp:heading --><h2 class=\"wp-block-heading\">A family workshop with racing in its blood</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Gearhead started in 1998 in a single rented arch under the railway, fixing club racers on weekends and family cars on weekdays. We moved to Foundry Lane in 2011 and now run three lifts and a dedicated detailing bay.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>We still race, a little. But mostly we fix cars properly, explain what we did and treat your money as if it were ours.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>If we would not do it to our own car, we will not recommend it for yours.</p><!-- /wp:paragraph --><cite>Dex, master technician</cite></blockquote><!-- /wp:quote -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Our promises</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>A fixed quote before any work starts</li><!-- /wp:list-item --><!-- wp:list-item --><li>Old parts returned or shown to you</li><!-- /wp:list-item --><!-- wp:list-item --><li>Twelve months' warranty on parts and labour</li><!-- /wp:list-item --><!-- wp:list-item --><li>Manufacturer-approved parts and fluids</li><!-- /wp:list-item --></ul><!-- /wp:list -->",
+   "menu_order": 3
+  },
+  {
+   "slug": "contact",
+   "title": "Contact",
+   "content": "<!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Workshop</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Unit 4, Foundry Lane, East Works. Turn in by the blue gate; customer parking on the left.</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Hours</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Monday – Friday: 7:30 am – 6 pm</li><!-- /wp:list-item --><!-- wp:list-item --><li>Saturday: 8 am – 1 pm</li><!-- /wp:list-item --><!-- wp:list-item --><li>Sunday: closed</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Talk to us</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Phone <a href=\"tel:+15550194466\">+1 (555) 019-4466</a><br>Email <a href=\"mailto:workshop@gearhead.example\">workshop@gearhead.example</a></p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Out of hours? Leave your keys and a note in the secure drop box by the gate.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->",
+   "menu_order": 4
+  }
+ ],
+ "posts": [
+  {
+   "slug": "five-checks-before-winter",
+   "title": "Five checks before the first frost",
+   "date": "2026-10-22T08:00:00",
+   "excerpt": "Battery, tyres, coolant, wipers and lights: ten minutes on the driveway that save a cold morning on the hard shoulder.",
+   "content": "<!-- wp:paragraph --><p>Cold weather finds every weak spot in a car. Most winter call-outs we attend could have been avoided with a few minutes' checking in October.</p><!-- /wp:paragraph -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li><strong>Battery</strong>: if it cranks slowly, test it now. Batteries over five years old are living on borrowed time.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Tyres</strong>: 3 mm of tread is our minimum for winter, not the legal 1.6 mm.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Coolant</strong>: check the level and the antifreeze strength.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Wipers</strong>: smearing blades are cheap to replace.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Lights</strong>: walk around the car with the lights on.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>A twenty-dollar battery test is cheaper than a tow truck at six in the morning.</p><!-- /wp:paragraph --><cite>Dex</cite></blockquote><!-- /wp:quote -->\n\n<!-- wp:paragraph --><p>Bring the car in during October and we will run all five checks free while you wait.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "maintenance"
+   ],
+   "tags": [
+    "winter",
+    "tyres"
+   ],
+   "featured_media": "wheel",
+   "format": "standard",
+   "sticky": true,
+   "comments": [
+    {
+     "author": "Sam R.",
+     "email": "sam.r.@example.com",
+     "content": "Had the battery tested after reading this. It was at 40 percent. Replaced just in time.",
+     "date": "2026-10-24T18:00:00"
+    }
+   ]
+  },
+  {
+   "slug": "what-that-warning-light-means",
+   "title": "What that warning light on your dashboard means",
+   "date": "2026-10-10T12:00:00",
+   "excerpt": "Red means stop, amber means soon. A plain guide to the lights you are most likely to see.",
+   "content": "<!-- wp:paragraph --><p>Dashboard lights follow a simple traffic-light rule. Red means stop safely as soon as you can. Amber means something needs checking soon. Green and blue are just information.</p><!-- /wp:paragraph -->\n\n<!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Light</th><th>Colour</th><th>What to do</th></tr></thead><tbody><tr><td>Oil pressure</td><td>Red</td><td>Stop and switch off. Check the oil level.</td></tr><tr><td>Battery</td><td>Red</td><td>Drive straight to us; the alternator may be failing.</td></tr><tr><td>Engine</td><td>Amber</td><td>Book a diagnostic scan this week.</td></tr><tr><td>Tyre pressure</td><td>Amber</td><td>Check and inflate all four tyres.</td></tr></tbody></table></figure><!-- /wp:table -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Flashing engine light</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>A flashing engine light usually means a misfire, which can damage the catalytic converter quickly. Reduce speed and get it checked the same day.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>Our diagnostic scan costs $59 and comes with a written report in plain English, deducted from the repair if you go ahead.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "diagnostics"
+   ],
+   "tags": [
+    "dashboard"
+   ],
+   "featured_media": "gears",
+   "format": "standard",
+   "sticky": false
+  },
+  {
+   "slug": "ceramic-coating-worth-it",
+   "title": "Is ceramic coating worth the money?",
+   "date": "2026-09-29T15:00:00",
+   "excerpt": "Mila explains what a coating can and cannot do, and who should save their money.",
+   "content": "<!-- wp:paragraph --><p>Ceramic coatings have become the most asked-about service in our detailing bay. They are excellent, but they are not magic, and they are not for everyone.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">What it does</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Makes washing much quicker</li><!-- /wp:list-item --><!-- wp:list-item --><li>Beads water and resists grime</li><!-- /wp:list-item --><!-- wp:list-item --><li>Adds gloss and protects from bird lime</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">What it does not</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Stop stone chips or deep scratches</li><!-- /wp:list-item --><!-- wp:list-item --><li>Replace regular washing</li><!-- /wp:list-item --><!-- wp:list-item --><li>Fix swirls: those must be polished first</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:paragraph --><p>If you keep your car for years and wash it yourself, a coating pays for itself in time saved. If you lease for two years and use automatic car washes, a good sealant is the smarter buy.</p><!-- /wp:paragraph -->\n\n<!-- wp:image {\"id\":{{media_id:detailing}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:detailing}}\" alt=\"Water beading on red paint\" class=\"wp-image-{{media_id:detailing}}\"/><figcaption class=\"wp-element-caption\">Water behaviour on a freshly coated bonnet.</figcaption></figure><!-- /wp:image -->\n\n<!-- wp:paragraph --><p>Every coating we apply starts with a full decontamination and machine polish, because a coating locks in whatever is underneath it, good or bad.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "detailing"
+   ],
+   "tags": [
+    "paint",
+    "ceramic"
+   ],
+   "featured_media": "ceramic",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Priya K.",
+     "email": "priya.k.@example.com",
+     "content": "Went for the coating after reading this. Washing takes half the time now.",
+     "date": "2026-10-03T10:20:00"
+    }
+   ]
+  },
+  {
+   "slug": "when-to-change-brake-pads",
+   "title": "When should you change your brake pads?",
+   "date": "2026-09-15T09:30:00",
+   "excerpt": "Squealing, grinding, a longer pedal: how to tell when your brakes need attention.",
+   "content": "<!-- wp:paragraph --><p>Brake pads wear gradually, so the change is easy to miss. Most pads last between 25,000 and 60,000 miles depending on how and where you drive.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Listen and feel</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>A high squeal when braking: the wear indicator is touching the disc.</li><!-- /wp:list-item --><!-- wp:list-item --><li>A grinding noise: metal on metal, stop driving.</li><!-- /wp:list-item --><!-- wp:list-item --><li>The car pulls to one side under braking.</li><!-- /wp:list-item --><!-- wp:list-item --><li>The pedal feels softer or travels further.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>Front pads usually wear twice as fast as rear ones. We measure all four at every service and photograph them so you can see for yourself.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>Brake fluid matters too. It absorbs water over time, which lowers its boiling point, so we test it at every service and change it every two years.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "maintenance"
+   ],
+   "tags": [
+    "brakes"
+   ],
+   "featured_media": "hero-coupe",
+   "format": "standard",
+   "sticky": false
+  },
+  {
+   "slug": "oil-change-intervals",
+   "title": "Oil change intervals, without the myths",
+   "date": "2026-08-30T10:00:00",
+   "excerpt": "Every 3,000 miles? Every two years? What actually matters for your engine oil.",
+   "content": "<!-- wp:paragraph --><p>Modern synthetic oils last far longer than the oils of twenty years ago, so the old rule of changing every 3,000 miles is mostly a myth. But the opposite extreme is risky too.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What we recommend</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Follow the manufacturer's interval as a maximum.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Change it sooner if you mostly do short trips or tow.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Never go more than two years, whatever the mileage.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>Short journeys are the real enemy: the engine never warms up, and moisture and fuel collect in the oil. If that sounds like your week, an interim service halfway through the year is money well spent.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>Whatever the interval, check the dipstick once a month on level ground with the engine cold. Topping up between services is normal on many engines.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "maintenance"
+   ],
+   "tags": [
+    "oil"
+   ],
+   "featured_media": "oil",
+   "format": "standard",
+   "sticky": false
+  },
+  {
+   "slug": "new-alignment-rig",
+   "title": "New in the workshop: a laser alignment rig",
+   "date": "2026-08-18T13:00:00",
+   "excerpt": "Our new four-wheel alignment rig measures to a hundredth of a degree. Here is why that matters.",
+   "content": "<!-- wp:paragraph --><p>This month we installed a new laser alignment rig on lift three. It measures all four wheels at once and prints a before-and-after report for every car.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Why alignment matters</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>A car that is slightly out of alignment wears its tyres unevenly, pulls to one side and uses more fuel. Hitting one pothole hard is often enough to knock it out.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>To celebrate, alignment checks are free until the end of September. A full adjustment is $79.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "workshop-news"
+   ],
+   "tags": [
+    "tyres"
+   ],
+   "featured_media": "workshop",
+   "format": "standard",
+   "sticky": false
+  },
+  {
+   "slug": "detailing-at-home-two-bucket",
+   "title": "Wash like a detailer: the two-bucket method",
+   "date": "2026-08-04T17:00:00",
+   "excerpt": "Most swirl marks come from washing, not driving. A simple routine that keeps your paint glossy.",
+   "content": "<!-- wp:paragraph --><p>Swirl marks, the fine circular scratches you see in the sun, are almost always caused by dirt dragged across the paint during washing. The fix is simple and costs almost nothing.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What you need</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Two buckets, one with a grit guard</li><!-- /wp:list-item --><!-- wp:list-item --><li>A pH-neutral car shampoo</li><!-- /wp:list-item --><!-- wp:list-item --><li>A soft wash mitt and a drying towel</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">The method</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Rinse the car first. Dip the mitt in soapy water, wash one panel from top to bottom, then rinse the mitt in the plain-water bucket before going back to the soap. Dry with a clean towel, patting rather than rubbing.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>Wash in the shade, never in direct sun, so the soap does not dry on the paint and leave spots. Start with the roof and finish with the dirtiest lower panels.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "detailing"
+   ],
+   "tags": [
+    "paint"
+   ],
+   "featured_media": "blue-coupe",
+   "format": "standard",
+   "sticky": false
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Home",
+     "page": "home"
+    },
+    {
+     "title": "Services",
+     "page": "services",
+     "children": [
+      {
+       "title": "Prices",
+       "page": "services"
+      },
+      {
+       "page": "book-a-service"
+      }
+     ]
+    },
+    {
+     "title": "Tips",
+     "page": "tips",
+     "children": [
+      {
+       "category": "maintenance"
+      },
+      {
+       "category": "diagnostics"
+      },
+      {
+       "category": "detailing"
+      }
+     ]
+    },
+    {
+     "title": "About",
+     "page": "about"
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    }
+   ]
+  },
+  {
+   "name": "Social",
+   "location": "social",
+   "items": [
+    {
+     "title": "Instagram",
+     "url": "https://instagram.com/"
+    },
+    {
+     "title": "YouTube",
+     "url": "https://youtube.com/"
+    },
+    {
+     "title": "Facebook",
+     "url": "https://facebook.com/"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "sidebar-1": [
+   "<!-- wp:search {\"label\":\"Search tips\",\"buttonText\":\"Search\"} /-->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Topics</h2><!-- /wp:heading --><!-- wp:categories /--></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Free winter check</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Battery, tyres, coolant, wipers and lights, checked while you wait during October.</p><!-- /wp:paragraph --></div><!-- /wp:group -->"
+  ],
+  "footer-1": [
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Services</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><a href=\"{{page:services}}\">Servicing &amp; repairs</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{page:services}}\">Detailing</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{page:book-a-service}}\">Book online</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{page:contact}}\">Find the workshop</a></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "hero_image": "hero-coupe",
+  "hero_heading": "Built right. Fixed fast.",
+  "hero_text": "Independent servicing, repairs and detailing for every make. Fixed quotes, same-day work and a twelve-month warranty.",
+  "booking_url": "{{page:book-a-service}}",
+  "color_mode": "dark",
+  "edge_style": "angled"
+ }
+}

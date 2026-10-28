@@ -1,0 +1,380 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Driftwood Inn",
+  "blogdescription": "A small inn on the harbour steps",
+  "posts_per_page": 7
+ },
+ "categories": [
+  {
+   "slug": "walks",
+   "name": "Walks",
+   "description": "Coast paths, dunes and cliff tops."
+  },
+  {
+   "slug": "beaches",
+   "name": "Beaches",
+   "description": "Swimming, rock pools and quiet coves."
+  },
+  {
+   "slug": "food-drink",
+   "name": "Food & drink",
+   "description": "Where to eat and drink nearby."
+  },
+  {
+   "slug": "inn-news",
+   "name": "Inn news",
+   "description": "New rooms, seasons and offers."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "autumn",
+   "name": "Autumn"
+  },
+  {
+   "slug": "coast",
+   "name": "Coast"
+  },
+  {
+   "slug": "families",
+   "name": "Families"
+  },
+  {
+   "slug": "nature",
+   "name": "Nature"
+  },
+  {
+   "slug": "local",
+   "name": "Local"
+  },
+  {
+   "slug": "swimming",
+   "name": "Swimming"
+  }
+ ],
+ "media": [
+  {
+   "id": "hero-bay",
+   "file": "demo/images/hero-bay.jpg",
+   "alt": "Illustration of beach huts on a sandy bay with a low sun over the sea",
+   "caption": ""
+  },
+  {
+   "id": "evening-tide",
+   "file": "demo/images/evening-tide.jpg",
+   "alt": "The sea at dusk under a peach and blue sky",
+   "caption": ""
+  },
+  {
+   "id": "cliff-path",
+   "file": "demo/images/cliff-path.jpg",
+   "alt": "A pale morning sea meeting a quiet beach",
+   "caption": ""
+  },
+  {
+   "id": "room-harbour",
+   "file": "demo/images/room-harbour.jpg",
+   "alt": "A bedroom with an ocean-blue throw and a window over the sea",
+   "caption": ""
+  },
+  {
+   "id": "room-dune",
+   "file": "demo/images/room-dune.jpg",
+   "alt": "A bedroom with a warm sandstone throw and a sea view",
+   "caption": ""
+  },
+  {
+   "id": "room-lighthouse",
+   "file": "demo/images/room-lighthouse.jpg",
+   "alt": "A bedroom with a red throw and a sea-view window",
+   "caption": ""
+  },
+  {
+   "id": "suite-tide",
+   "file": "demo/images/suite-tide.jpg",
+   "alt": "A bright suite with a deep blue throw and a big window over the water",
+   "caption": ""
+  },
+  {
+   "id": "breakfast",
+   "file": "demo/images/breakfast.jpg",
+   "alt": "Coffee cups, a plate with an egg and toast, and cherries on a wooden table",
+   "caption": ""
+  },
+  {
+   "id": "lighthouse",
+   "file": "demo/images/lighthouse.jpg",
+   "alt": "A red and white lighthouse at the end of a stone pier",
+   "caption": ""
+  },
+  {
+   "id": "harbour-boats",
+   "file": "demo/images/harbour-boats.jpg",
+   "alt": "Three small sailing boats in red, white and yellow in the harbour",
+   "caption": ""
+  },
+  {
+   "id": "dunes",
+   "file": "demo/images/dunes.jpg",
+   "alt": "Soft sand dunes with tufts of marram grass",
+   "caption": ""
+  },
+  {
+   "id": "shells",
+   "file": "demo/images/shells.jpg",
+   "alt": "Scallop shells in cream, peach and pale blue scattered on sand",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Sleep by the sea, wake to the tide",
+   "content": "<!-- wp:group {\"align\":\"wide\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignwide\"><!-- wp:paragraph {\"align\":\"center\",\"className\":\"eyebrow\"} --><p class=\"has-text-align-center eyebrow\">Welcome</p><!-- /wp:paragraph --><!-- wp:heading {\"textAlign\":\"center\",\"className\":\"section-title\"} --><h2 class=\"wp-block-heading has-text-align-center section-title\">Nine rooms, one long beach and nowhere you have to be</h2><!-- /wp:heading --><!-- wp:paragraph {\"align\":\"center\",\"className\":\"lead\"} --><p class=\"has-text-align-center lead\">Driftwood is a small inn on the harbour steps, rebuilt from a fisherman's net loft. Every room looks at the water, breakfast is served until eleven, and the tide decides the rest of your day.</p><!-- /wp:paragraph --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"section-band\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-band\"><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"room-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group room-card\"><!-- wp:image {\"id\":{{media_id:room-harbour}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:room-harbour}}\" alt=\"The Harbour Room\" class=\"wp-image-{{media_id:room-harbour}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Harbour Room</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"rate\"} --><p class=\"rate\">From $180 a night</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>A king bed, a window seat and a view straight down the harbour.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:book}}\">Book this room</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"room-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group room-card\"><!-- wp:image {\"id\":{{media_id:room-dune}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:room-dune}}\" alt=\"The Dune Room\" class=\"wp-image-{{media_id:room-dune}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Dune Room</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"rate\"} --><p class=\"rate\">From $165 a night</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Warm sandstone tones, a walk-in shower and a balcony over the dunes.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:book}}\">Book this room</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"room-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group room-card\"><!-- wp:image {\"id\":{{media_id:suite-tide}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:suite-tide}}\" alt=\"The Tide Suite\" class=\"wp-image-{{media_id:suite-tide}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Tide Suite</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"rate\"} --><p class=\"rate\">From $260 a night</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Our largest room, with a separate sitting area and a deep bath by the window.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:book}}\">Book this room</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:buttons {\"layout\":{\"type\":\"flex\",\"justifyContent\":\"center\"}} --><div class=\"wp-block-buttons is-content-justification-center is-layout-flex\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:rooms}}\">See all rooms</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull\"><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:breakfast}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:breakfast}}\" alt=\"Breakfast on a wooden table\" class=\"wp-image-{{media_id:breakfast}}\"/></figure><!-- /wp:image --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"eyebrow\"} --><p class=\"eyebrow\">Every stay includes</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">Slow mornings, warm evenings</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"amenities\"} --><ul class=\"wp-block-list amenities\"><!-- wp:list-item --><li>Breakfast with local eggs, smoked fish and bread from the harbour bakery</li><!-- /wp:list-item --><!-- wp:list-item --><li>Bikes, beach towels and windbreaks to borrow</li><!-- /wp:list-item --><!-- wp:list-item --><li>An honesty bar by the fire in the snug</li><!-- /wp:list-item --><!-- wp:list-item --><li>Late check-out on Sundays, if the room is free</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"section-dark\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-dark\"><!-- wp:heading {\"textAlign\":\"center\",\"className\":\"section-title\"} --><h2 class=\"wp-block-heading has-text-align-center section-title\">“The kind of quiet you forget exists.”</h2><!-- /wp:heading --><!-- wp:paragraph {\"align\":\"center\"} --><p class=\"has-text-align-center\">Guest book, room four, last September</p><!-- /wp:paragraph --><!-- wp:buttons {\"layout\":{\"type\":\"flex\",\"justifyContent\":\"center\"}} --><div class=\"wp-block-buttons is-content-justification-center is-layout-flex\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:book}}\">Book a stay</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull\"><!-- wp:paragraph {\"align\":\"center\",\"className\":\"eyebrow\"} --><p class=\"has-text-align-center eyebrow\">Local guide</p><!-- /wp:paragraph --><!-- wp:heading {\"textAlign\":\"center\",\"className\":\"section-title\"} --><h2 class=\"wp-block-heading has-text-align-center section-title\">Where to walk, swim and eat</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":3,\"displayPostDate\":true,\"postLayout\":\"grid\",\"columns\":3,\"align\":\"wide\",\"displayPostContent\":true,\"excerptLength\":18,\"displayFeaturedImage\":true,\"featuredImageSizeSlug\":\"medium_large\"} /--></div><!-- /wp:group -->",
+   "featured_media": "hero-bay",
+   "front_page": true
+  },
+  {
+   "slug": "local-guide",
+   "title": "Local guide",
+   "content": "",
+   "posts_page": true
+  },
+  {
+   "slug": "rooms",
+   "title": "Rooms & suites",
+   "content": "<!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">All rooms face the sea and have handmade beds, linen from a mill up the coast, a rain shower and a tray with good coffee. Prices include breakfast for two.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"room-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group room-card\"><!-- wp:image {\"id\":{{media_id:room-harbour}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:room-harbour}}\" alt=\"The Harbour Room\" class=\"wp-image-{{media_id:room-harbour}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Harbour Room</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"rate\"} --><p class=\"rate\">From $180 a night · sleeps 2</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>A king bed, window seat and harbour view. First floor.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:book}}\">Book this room</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"room-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group room-card\"><!-- wp:image {\"id\":{{media_id:room-dune}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:room-dune}}\" alt=\"The Dune Room\" class=\"wp-image-{{media_id:room-dune}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Dune Room</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"rate\"} --><p class=\"rate\">From $165 a night · sleeps 2</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Balcony over the dunes, walk-in shower. Ground floor, step-free.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:book}}\">Book this room</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"room-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group room-card\"><!-- wp:image {\"id\":{{media_id:room-lighthouse}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:room-lighthouse}}\" alt=\"The Lighthouse Room\" class=\"wp-image-{{media_id:room-lighthouse}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Lighthouse Room</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"rate\"} --><p class=\"rate\">From $195 a night · sleeps 2</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Corner room with two windows and a view of the light at night.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:book}}\">Book this room</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"room-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group room-card\"><!-- wp:image {\"id\":{{media_id:suite-tide}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:suite-tide}}\" alt=\"The Tide Suite\" class=\"wp-image-{{media_id:suite-tide}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Tide Suite</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"rate\"} --><p class=\"rate\">From $260 a night · sleeps 3</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Separate sitting room, deep bath and a sofa bed for a child.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:book}}\">Book this room</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"section-band\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-band\"><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">In every room</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"amenities\"} --><ul class=\"wp-block-list amenities\"><!-- wp:list-item --><li>King or twin beds with feather-free bedding on request</li><!-- /wp:list-item --><!-- wp:list-item --><li>Rain shower and organic bath products</li><!-- /wp:list-item --><!-- wp:list-item --><li>Fast Wi-Fi and a desk with a view</li><!-- /wp:list-item --><!-- wp:list-item --><li>Blackout blinds and a sea breeze</li><!-- /wp:list-item --><!-- wp:list-item --><li>Fresh milk and biscuits from the bakery</li><!-- /wp:list-item --><!-- wp:list-item --><li>Dogs welcome in the Dune Room</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group -->",
+   "featured_media": "room-harbour",
+   "template": "page-full",
+   "menu_order": 1
+  },
+  {
+   "slug": "amenities",
+   "title": "Amenities",
+   "content": "<!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">A small inn means small luxuries done well.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"feature-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group feature-card\"><!-- wp:paragraph {\"className\":\"icon\"} --><p class=\"icon\">~</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">The snug</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Wood fire, board games, an honesty bar and a shelf of well-thumbed sea novels.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"feature-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group feature-card\"><!-- wp:paragraph {\"className\":\"icon\"} --><p class=\"icon\">~</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Breakfast room</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Served from eight to eleven at long tables in the old net loft.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"feature-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group feature-card\"><!-- wp:paragraph {\"className\":\"icon\"} --><p class=\"icon\">~</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Bikes &amp; boards</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Four bikes, two paddleboards and wetsuits in most sizes.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:image {\"id\":{{media_id:shells}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-image size-large alignwide\"><img src=\"{{media:shells}}\" alt=\"Shells on sand\" class=\"wp-image-{{media_id:shells}}\"/></figure><!-- /wp:image -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Breakfast menu</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"className\":\"price-list\"} --><ul class=\"wp-block-list price-list\"><!-- wp:list-item --><li><strong>Harbour breakfast</strong> <span class=\"price\">included</span> <span class=\"desc\">Eggs any way, smoked haddock or bacon, bakery toast</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Porridge</strong> <span class=\"price\">included</span> <span class=\"desc\">With honey from the cliff-top hives</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Picnic box</strong> <span class=\"price\">$18</span> <span class=\"desc\">Sandwiches, fruit and cake for the beach; order the night before</span></li><!-- /wp:list-item --></ul><!-- /wp:list -->",
+   "parent": "rooms",
+   "menu_order": 2
+  },
+  {
+   "slug": "book",
+   "title": "Book a stay",
+   "content": "<!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">Book directly with us for the best rate, a free bottle of local cider and flexible changes up to seven days before arrival.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading --><h2 class=\"wp-block-heading\">By phone or email</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Call <a href=\"tel:+15550160011\">+1 (555) 016-0011</a> between 9 am and 8 pm, or email <a href=\"mailto:stay@driftwood.example\">stay@driftwood.example</a> with your dates and room.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Good to know</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Check-in from 3 pm, check-out by 11 am</li><!-- /wp:list-item --><!-- wp:list-item --><li>Two-night minimum at weekends from May to September</li><!-- /wp:list-item --><!-- wp:list-item --><li>Children of all ages welcome</li><!-- /wp:list-item --><!-- wp:list-item --><li>One dog-friendly room</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Gift stays</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>A night by the sea makes a wonderful present. Vouchers are valid for eighteen months and can be used for any room.</p><!-- /wp:paragraph -->",
+   "featured_media": "evening-tide",
+   "template": "page-full",
+   "menu_order": 3
+  },
+  {
+   "slug": "about",
+   "title": "Our story",
+   "content": "<!-- wp:media-text {\"mediaId\":{{media_id:harbour-boats}},\"mediaType\":\"image\"} --><div class=\"wp-block-media-text is-stacked-on-mobile\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:harbour-boats}}\" alt=\"Boats in the harbour\" class=\"wp-image-{{media_id:harbour-boats}} size-full\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:heading --><h2 class=\"wp-block-heading\">From net loft to inn</h2><!-- /wp:heading --><!-- wp:paragraph --><p>For a hundred years this building stored nets, floats and lobster pots. In 2019 we rebuilt it with reclaimed timber, lime plaster and as much glass as the planners would allow, so every room faces the water.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>We are a family of four and a team of nine, most of whom grew up within a mile of the harbour.</p><!-- /wp:paragraph --></div></div><!-- /wp:media-text -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>We wanted the kind of place we would want to come home to after a long walk in the wind.</p><!-- /wp:paragraph --><cite>The owners</cite></blockquote><!-- /wp:quote -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Looking after the coast</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>We heat the inn with an air-source heat pump, buy from boats and farms within twenty miles and give every guest a bag for a two-minute beach clean.</p><!-- /wp:paragraph -->",
+   "menu_order": 4
+  },
+  {
+   "slug": "contact",
+   "title": "Contact",
+   "content": "<!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Find us</h2><!-- /wp:heading --><!-- wp:paragraph --><p>1 Harbour Steps, Gull Point. The inn is at the far end of the harbour wall, past the lifeboat station. Parking for guests behind the building.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Phone <a href=\"tel:+15550160011\">+1 (555) 016-0011</a><br>Email <a href=\"mailto:stay@driftwood.example\">stay@driftwood.example</a></p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:lighthouse}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:lighthouse}}\" alt=\"The lighthouse at the end of the pier\" class=\"wp-image-{{media_id:lighthouse}}\"/></figure><!-- /wp:image --></div><!-- /wp:column --></div><!-- /wp:columns -->",
+   "menu_order": 5
+  }
+ ],
+ "posts": [
+  {
+   "slug": "a-slow-day-at-gull-point",
+   "title": "A slow day at Gull Point",
+   "date": "2026-10-20T08:30:00",
+   "excerpt": "Sunrise on the sand, coffee on the harbour wall and a long walk to the lighthouse: our favourite unhurried day.",
+   "content": "<!-- wp:paragraph --><p>Guests often ask us how to spend a single day here. Our answer is always the same: slowly. This is the day we would plan for ourselves.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Morning</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Walk down to the water before breakfast, when the sand is still smooth and the gulls have the beach to themselves. Low tide uncovers the rock pools at the north end.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Afternoon</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Take the cliff path to the lighthouse (an hour each way).</li><!-- /wp:list-item --><!-- wp:list-item --><li>Stop at the tea hut halfway for a slice of lemon cake.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Come back along the beach if the tide is out.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:image {\"id\":{{media_id:lighthouse}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:lighthouse}}\" alt=\"The lighthouse at the end of the pier\" class=\"wp-image-{{media_id:lighthouse}}\"/><figcaption class=\"wp-element-caption\">The light still turns every night.</figcaption></figure><!-- /wp:image -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Evening</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Watch the boats come in from the harbour wall, then settle in the snug with a glass of something local while the fire does its work.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "walks"
+   ],
+   "tags": [
+    "autumn",
+    "coast"
+   ],
+   "featured_media": "cliff-path",
+   "format": "standard",
+   "sticky": true,
+   "comments": [
+    {
+     "author": "Marta",
+     "email": "marta@example.com",
+     "content": "We did exactly this last month and it was the best day of our holiday.",
+     "date": "2026-10-22T20:15:00"
+    }
+   ]
+  },
+  {
+   "slug": "best-rock-pools",
+   "title": "The best rock pools, and how to visit them kindly",
+   "date": "2026-10-08T09:00:00",
+   "excerpt": "Crabs, anemones and the occasional starfish. Where to look, when to go and what to leave behind.",
+   "content": "<!-- wp:paragraph --><p>The rocks at the north end of the bay hold some of the best pools on this stretch of coast. Go an hour either side of low tide and you will have plenty of time.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What you might find</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Beadlet anemones, like red jelly sweets</li><!-- /wp:list-item --><!-- wp:list-item --><li>Shore crabs hiding under weed</li><!-- /wp:list-item --><!-- wp:list-item --><li>Blennies darting between stones</li><!-- /wp:list-item --><!-- wp:list-item --><li>Periwinkles and limpets on every rock</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Look with your eyes first. Most of the best finds are sitting perfectly still.</p><!-- /wp:paragraph --><cite>Our youngest guide, aged nine</cite></blockquote><!-- /wp:quote -->\n\n<!-- wp:paragraph --><p>Please put every stone back the way you found it, and keep anything you catch in a bucket of seawater for a few minutes only. Buckets and nets are in the porch.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "beaches"
+   ],
+   "tags": [
+    "families",
+    "nature"
+   ],
+   "featured_media": "shells",
+   "format": "standard",
+   "sticky": false
+  },
+  {
+   "slug": "where-to-eat-in-the-harbour",
+   "title": "Where to eat in the harbour",
+   "date": "2026-09-27T18:00:00",
+   "excerpt": "Fish and chips on the wall, a proper oyster bar and the best breakfast that is not ours.",
+   "content": "<!-- wp:paragraph --><p>We serve breakfast, but for lunch and dinner we happily send guests to our neighbours. These are the places we eat on our nights off.</p><!-- /wp:paragraph -->\n\n<!-- wp:list {\"className\":\"price-list\"} --><ul class=\"wp-block-list price-list\"><!-- wp:list-item --><li><strong>The Net Shed</strong> <span class=\"price\">$$</span> <span class=\"desc\">Crab sandwiches and chowder at the end of the quay</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Harbour Fish Bar</strong> <span class=\"price\">$</span> <span class=\"desc\">Chips on the wall, with gulls for company</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>The Oyster Room</strong> <span class=\"price\">$$$</span> <span class=\"desc\">Local oysters and a short wine list; book ahead</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Saltwater Bakery</strong> <span class=\"price\">$</span> <span class=\"desc\">Cardamom buns from seven in the morning</span></li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>Most places close early in winter, so ring ahead from November. We are always happy to book a table for you.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>On a fine evening, nothing beats a paper parcel of fish and chips eaten on the harbour wall while the light goes pink over the water.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "food-drink"
+   ],
+   "tags": [
+    "local"
+   ],
+   "featured_media": "harbour-boats",
+   "format": "standard",
+   "sticky": false
+  },
+  {
+   "slug": "swimming-in-autumn",
+   "title": "Swimming in autumn: a beginner's guide",
+   "date": "2026-09-15T07:30:00",
+   "excerpt": "The sea is warmest in September. A gentle guide to your first autumn dip.",
+   "content": "<!-- wp:paragraph --><p>Here is a secret that locals know: the sea is warmer in September than in June. If you have ever wanted to try cold-water swimming, autumn is the gentlest place to start.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Before you go in</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Swim between the flags when the lifeguards are on</li><!-- /wp:list-item --><!-- wp:list-item --><li>Never swim alone; we can introduce you to the morning swim group</li><!-- /wp:list-item --><!-- wp:list-item --><li>Wear a bright hat and take a warm drink for afterwards</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>Walk in slowly, breathe out long and steady, and stay in for just a few minutes the first time. Getting warm afterwards matters more than how long you swam.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>Towels, a hot-water bottle and a flask of hot chocolate are waiting by the back door for any guest who asks.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "beaches"
+   ],
+   "tags": [
+    "autumn",
+    "swimming"
+   ],
+   "featured_media": "evening-tide",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Ben",
+     "email": "ben@example.com",
+     "content": "Joined the morning swimmers on Saturday. Freezing, wonderful, will be back.",
+     "date": "2026-09-21T11:40:00"
+    }
+   ]
+  },
+  {
+   "slug": "dunes-walk",
+   "title": "A circular walk through the dunes",
+   "date": "2026-09-01T10:00:00",
+   "excerpt": "Five miles of soft paths, skylarks and sea views, finishing at a pub with a garden.",
+   "content": "<!-- wp:paragraph --><p>This is our favourite walk for a bright, breezy day. It is mostly flat, but soft sand makes it feel longer than five miles, so allow three hours.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">The route</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Start at the inn and follow the beach north for a mile.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Turn inland at the lifeguard hut onto the boardwalk.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Follow the marker posts through the dunes to the old church.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Return by the river path and stop at the pub garden.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>Keep dogs on a lead from March to July, when skylarks nest in the grass. We lend out maps and binoculars from the hall.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>There is a bench at the highest dune with a view along the whole bay; it is the perfect place for the picnic box we can pack for you the night before.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "walks"
+   ],
+   "tags": [
+    "nature"
+   ],
+   "featured_media": "dunes",
+   "format": "standard",
+   "sticky": false
+  },
+  {
+   "slug": "new-suite-opens",
+   "title": "The Tide Suite is open",
+   "date": "2026-08-20T12:00:00",
+   "excerpt": "Our largest room yet, with a deep bath by the window and a view all the way to the lighthouse.",
+   "content": "<!-- wp:paragraph --><p>After a winter of careful building, the old sail loft at the top of the inn has become our ninth room: the Tide Suite.</p><!-- /wp:paragraph -->\n\n<!-- wp:image {\"id\":{{media_id:suite-tide}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:suite-tide}}\" alt=\"The Tide Suite with a big window over the water\" class=\"wp-image-{{media_id:suite-tide}}\"/></figure><!-- /wp:image -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What is inside</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>A king bed facing the window</li><!-- /wp:list-item --><!-- wp:list-item --><li>A deep bath you can see the sea from</li><!-- /wp:list-item --><!-- wp:list-item --><li>A sitting room with a sofa bed</li><!-- /wp:list-item --><!-- wp:list-item --><li>A record player and a small library</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>Book before the end of October and we will add a bottle of cider and a picnic box to your first day.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>The suite sleeps three, with a sofa bed in the sitting room, and is reached by its own staircase, so it feels like a small cottage at the top of the house.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "inn-news"
+   ],
+   "tags": [
+    "local"
+   ],
+   "featured_media": "suite-tide",
+   "format": "standard",
+   "sticky": false
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Home",
+     "page": "home"
+    },
+    {
+     "title": "Rooms",
+     "page": "rooms",
+     "children": [
+      {
+       "title": "Rooms & suites",
+       "page": "rooms"
+      },
+      {
+       "page": "amenities"
+      }
+     ]
+    },
+    {
+     "title": "Local guide",
+     "page": "local-guide",
+     "children": [
+      {
+       "category": "walks"
+      },
+      {
+       "category": "beaches"
+      },
+      {
+       "category": "food-drink"
+      }
+     ]
+    },
+    {
+     "title": "Our story",
+     "page": "about"
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    }
+   ]
+  },
+  {
+   "name": "Social",
+   "location": "social",
+   "items": [
+    {
+     "title": "Instagram",
+     "url": "https://instagram.com/"
+    },
+    {
+     "title": "Pinterest",
+     "url": "https://pinterest.com/"
+    },
+    {
+     "title": "Newsletter",
+     "url": "#colophon"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "sidebar-1": [
+   "<!-- wp:search {\"label\":\"Search the guide\",\"buttonText\":\"Search\"} /-->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Explore</h2><!-- /wp:heading --><!-- wp:categories /--></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Stay with us</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Rooms from $180 a night with breakfast.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:book}}\">Book a stay</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->"
+  ],
+  "footer-1": [
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">The inn</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><a href=\"{{page:rooms}}\">Rooms &amp; suites</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{page:amenities}}\">Amenities</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{page:local-guide}}\">Local guide</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{page:book}}\">Gift stays</a></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "hero_image": "hero-bay",
+  "hero_heading": "Sleep by the sea, wake to the tide",
+  "hero_text": "Nine sea-view rooms in a rebuilt net loft at the end of the harbour.",
+  "booking_url": "{{page:book}}",
+  "blog_layout": "magazine"
+ }
+}

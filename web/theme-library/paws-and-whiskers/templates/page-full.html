@@ -1,0 +1,19 @@
+{{template "header" .}}
+<main id="main" class="site-main site-main--page site-main--full" tabindex="-1">
+{{with .Post}}
+	<article id="post-{{.ID}}" class="{{.Class}} entry entry--page entry--full">
+		<header class="page-banner{{if .ThumbnailURL}} page-banner--image{{end}}">
+			{{with .ThumbnailURL}}<img class="page-banner__bg" src="{{.}}" alt="" />{{end}}
+			<div class="wrap page-banner__inner">
+				<p class="page-header__eyebrow">Paws &amp; Whiskers</p>
+				<h1 class="page-title entry-title">{{.Title}}</h1>
+				{{with .EditLink}}<div class="entry-meta"><span class="edit-link">{{.}}</span></div>{{end}}
+			</div>
+		</header>
+		<div class="entry-content entry-content--page">
+			{{.Content}}
+		</div><!-- .entry-content -->
+	</article>
+{{end}}
+</main><!-- #main -->
+{{template "footer" .}}

@@ -1,0 +1,29 @@
+	<footer id="colophon" class="site-footer">
+		<svg class="wave wave--footer" viewBox="0 0 1440 80" preserveAspectRatio="none" aria-hidden="true"><path d="M0 40c160-30 320-30 480 0s320 30 480 0 320-30 480 0v40H0z"/></svg>
+		<div class="site-footer__body">
+			<div class="wrap site-footer__grid">
+				<section class="footer-col footer-col--brand" aria-label="{{.SiteName}}">
+					<p class="footer-brand">{{.SiteName}}</p>
+					{{with .Description}}<p class="footer-tagline">{{.}}</p>{{end}}
+					{{with theme_mod . "hours_text"}}<p class="footer-hours">{{.}}</p>{{end}}
+				</section>
+				<section class="footer-col footer-col--widgets" aria-label="More">
+					{{if is_active_sidebar . "footer-1"}}{{dynamic_sidebar . "footer-1"}}{{else}}<h2 class="widget-title">New patients</h2><p>Dogs, cats, rabbits and small pets are all welcome.</p>{{end}}
+				</section>
+				<section class="footer-col footer-col--emergency" aria-labelledby="footer-emergency">
+					<h2 id="footer-emergency" class="widget-title">Emergency?</h2>
+					<p>{{theme_mod . "emergency_text"}}</p>
+					{{with theme_mod . "phone"}}<a class="button button--light" href="tel:{{.}}">Call {{.}}</a>{{end}}
+				</section>
+			</div>
+			<div class="wrap site-info">
+				{{if has_nav_menu . "social"}}<nav class="social-navigation" aria-label="Social links">{{nav_menu . "social"}}</nav>{{end}}
+				<p>{{.PrivacyLink}}<span>{{with theme_mod . "footer_text"}}{{.}}{{else}}&copy; {{$.SiteName}}{{end}}</span><span>Powered by <a href="https://github.com/boracomet/wordpress-go">WordPress Go</a></span></p>
+			</div>
+		</div>
+	</footer><!-- #colophon -->
+</div><!-- #page -->
+
+{{.Footer}}{{.AdminBar}}
+</body>
+</html>

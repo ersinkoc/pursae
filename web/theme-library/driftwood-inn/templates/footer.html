@@ -1,0 +1,29 @@
+	<footer id="colophon" class="site-footer">
+		<div class="wrap site-footer__top">
+			<p class="footer-brand">{{.SiteName}}</p>
+			{{with theme_mod . "booking_label"}}<a class="button button--light" href="{{theme_mod $ "booking_url"}}">{{.}}</a>{{end}}
+		</div>
+		<div class="wrap site-footer__grid">
+			<section class="footer-col footer-col--brand" aria-labelledby="footer-find">
+				<h2 id="footer-find" class="widget-title">Find us</h2>
+				{{with theme_mod . "address"}}<p class="footer-address">{{.}}</p>{{end}}
+				<p class="footer-checkin">{{theme_mod . "checkin_text"}}</p>
+			</section>
+			<section class="footer-col footer-col--widgets" aria-label="More">
+				{{if is_active_sidebar . "footer-1"}}{{dynamic_sidebar . "footer-1"}}{{else}}<h2 class="widget-title">Stay in touch</h2><p>Quiet news from the coast, a few times a year.</p>{{end}}
+			</section>
+			<section class="footer-col footer-col--social" aria-labelledby="footer-follow">
+				<h2 id="footer-follow" class="widget-title">Follow the tide</h2>
+				{{if has_nav_menu . "social"}}<nav class="social-navigation" aria-label="Social links">{{nav_menu . "social"}}</nav>{{end}}
+				{{with .Description}}<p class="footer-tagline">{{.}}</p>{{end}}
+			</section>
+		</div>
+		<div class="wrap site-info">
+			<p>{{.PrivacyLink}}<span>{{with theme_mod . "footer_text"}}{{.}}{{else}}&copy; {{$.SiteName}}{{end}}</span><span>Powered by <a href="https://github.com/boracomet/wordpress-go">WordPress Go</a></span></p>
+		</div>
+	</footer><!-- #colophon -->
+</div><!-- #page -->
+
+{{.Footer}}{{.AdminBar}}
+</body>
+</html>

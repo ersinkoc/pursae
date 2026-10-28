@@ -1,0 +1,427 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Velvet Salon",
+  "blogdescription": "Hair, colour and beauty in Linden Arcade",
+  "posts_per_page": 6
+ },
+ "categories": [
+  {
+   "slug": "hair-care",
+   "name": "Hair care",
+   "description": "Routines and tips for healthy hair at home."
+  },
+  {
+   "slug": "colour",
+   "name": "Colour",
+   "description": "Balayage, glossing, grey blending and the season's shades."
+  },
+  {
+   "slug": "beauty",
+   "name": "Beauty",
+   "description": "Brows, lashes, skin and nails."
+  },
+  {
+   "slug": "salon-news",
+   "name": "Salon news",
+   "description": "Team news, offers and events."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "styling",
+   "name": "Styling"
+  },
+  {
+   "slug": "at-home",
+   "name": "At home"
+  },
+  {
+   "slug": "balayage",
+   "name": "Balayage"
+  },
+  {
+   "slug": "consultation",
+   "name": "Consultation"
+  },
+  {
+   "slug": "trends",
+   "name": "Trends"
+  },
+  {
+   "slug": "scalp",
+   "name": "Scalp"
+  },
+  {
+   "slug": "lashes",
+   "name": "Lashes"
+  },
+  {
+   "slug": "team",
+   "name": "Team"
+  },
+  {
+   "slug": "bridal",
+   "name": "Bridal"
+  }
+ ],
+ "media": [
+  {
+   "id": "salon-interior",
+   "file": "demo/images/salon-interior.jpg",
+   "alt": "Three arched mirrors above rose velvet salon chairs in a warm champagne room",
+   "caption": ""
+  },
+  {
+   "id": "tools",
+   "file": "demo/images/tools.jpg",
+   "alt": "Scissors, a fine comb and three bottles of hair care laid out on dusty rose",
+   "caption": ""
+  },
+  {
+   "id": "products",
+   "file": "demo/images/products.jpg",
+   "alt": "Salon shampoo and conditioner bottles beside cutting scissors on a blush background",
+   "caption": ""
+  },
+  {
+   "id": "waves-rose",
+   "file": "demo/images/waves-rose.jpg",
+   "alt": "Soft rose and cream waves like brushed-out hair",
+   "caption": ""
+  },
+  {
+   "id": "waves-gold",
+   "file": "demo/images/waves-gold.jpg",
+   "alt": "Flowing bands of honey, caramel and gold like balayage hair",
+   "caption": ""
+  },
+  {
+   "id": "waves-plum",
+   "file": "demo/images/waves-plum.jpg",
+   "alt": "Deep plum and lilac waves like glossy dark hair",
+   "caption": ""
+  },
+  {
+   "id": "waves-blush",
+   "file": "demo/images/waves-blush.jpg",
+   "alt": "Pale blush waves in pink and cream",
+   "caption": ""
+  },
+  {
+   "id": "color-swatches",
+   "file": "demo/images/color-swatches.jpg",
+   "alt": "A row of hair colour swatches from espresso brown to copper, rose and violet",
+   "caption": ""
+  },
+  {
+   "id": "stylist-ines",
+   "file": "demo/images/stylist-ines.jpg",
+   "alt": "Illustrated portrait of a stylist with long brown hair",
+   "caption": ""
+  },
+  {
+   "id": "stylist-maren",
+   "file": "demo/images/stylist-maren.jpg",
+   "alt": "Illustrated portrait of a stylist with a blonde top knot",
+   "caption": ""
+  },
+  {
+   "id": "stylist-teo",
+   "file": "demo/images/stylist-teo.jpg",
+   "alt": "Illustrated portrait of a stylist with short dark hair",
+   "caption": ""
+  },
+  {
+   "id": "bloom",
+   "file": "demo/images/bloom.jpg",
+   "alt": "A cream flower with a gold centre on deep rose",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Hair that feels like you, only better",
+   "content": "<!-- wp:group {\"align\":\"full\",\"className\":\"section-intro\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-intro\"><!-- wp:paragraph {\"align\":\"center\",\"className\":\"eyebrow\"} --><p class=\"has-text-align-center eyebrow\">Welcome to the salon</p><!-- /wp:paragraph --><!-- wp:heading {\"textAlign\":\"center\",\"className\":\"section-title\"} --><h2 class=\"wp-block-heading has-text-align-center section-title\">Unhurried appointments, honest advice and hair that still looks good in week six</h2><!-- /wp:heading --><!-- wp:paragraph {\"align\":\"center\",\"className\":\"lead\"} --><p class=\"has-text-align-center lead\">We are a small team of six stylists and two beauty therapists in a light-filled room above the arcade. Every visit starts with a proper consultation and a cup of something warm, and ends with a style you can recreate at home.</p><!-- /wp:paragraph --><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"feature-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group feature-card\"><!-- wp:paragraph {\"className\":\"icon\"} --><p class=\"icon\">✂</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Cut &amp; style</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Precision cuts, restyles and blow-dries shaped to your hair's natural movement.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"price-from\"} --><p class=\"price-from\">from $58</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"feature-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group feature-card\"><!-- wp:paragraph {\"className\":\"icon\"} --><p class=\"icon\">✦</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Colour</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Soft balayage, glossing, grey blending and bold fashion shades with bond care included.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"price-from\"} --><p class=\"price-from\">from $85</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"feature-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group feature-card\"><!-- wp:paragraph {\"className\":\"icon\"} --><p class=\"icon\">❀</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Beauty</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Brow shaping, lash lifts, facials and a manicure while your colour develops.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"price-from\"} --><p class=\"price-from\">from $30</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:buttons {\"layout\":{\"type\":\"flex\",\"justifyContent\":\"center\"}} --><div class=\"wp-block-buttons is-content-justification-center is-layout-flex\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:services}}\">See the full price list</a></div><!-- /wp:button --><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:about}}\">Meet the stylists</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"section-dark\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-dark\"><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column {\"width\":\"45%\"} --><div class=\"wp-block-column\" style=\"flex-basis:45%\"><!-- wp:image {\"id\":{{media_id:salon-interior}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"className\":\"arch-img\"} --><figure class=\"wp-block-image size-large arch-img\"><img src=\"{{media:salon-interior}}\" alt=\"Arched mirrors and rose velvet chairs in the salon\" class=\"wp-image-{{media_id:salon-interior}}\"/></figure><!-- /wp:image --></div><!-- /wp:column --><!-- wp:column {\"width\":\"55%\"} --><div class=\"wp-block-column\" style=\"flex-basis:55%\"><!-- wp:paragraph {\"className\":\"eyebrow\"} --><p class=\"eyebrow\">The chair, the hour, the result</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">Most loved this season</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"price-list\"} --><ul class=\"wp-block-list price-list\"><!-- wp:list-item --><li><strong>Signature cut &amp; blow-dry</strong> <span class=\"price\">$72</span> <span class=\"desc\">Consultation, wash, head massage, cut and finish · 75 min</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Soft balayage</strong> <span class=\"price\">$190</span> <span class=\"desc\">Hand-painted lightening with toner and gloss · 3 h</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Gloss &amp; go</strong> <span class=\"price\">$65</span> <span class=\"desc\">A shine-boosting tone refresh between colours · 45 min</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Lash lift &amp; tint</strong> <span class=\"price\">$60</span> <span class=\"desc\">Six to eight weeks of curl, no extensions · 50 min</span></li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:book}}\">Book an appointment</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"wide\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignwide\"><!-- wp:paragraph {\"align\":\"center\",\"className\":\"eyebrow\"} --><p class=\"has-text-align-center eyebrow\">Recent work</p><!-- /wp:paragraph --><!-- wp:heading {\"textAlign\":\"center\",\"className\":\"section-title\"} --><h2 class=\"wp-block-heading has-text-align-center section-title\">From the salon chair</h2><!-- /wp:heading --><!-- wp:gallery {\"columns\":4,\"linkTo\":\"none\"} --><figure class=\"wp-block-gallery has-nested-images columns-4 is-cropped\"><!-- wp:image {\"id\":{{media_id:waves-gold}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:waves-gold}}\" alt=\"Honey balayage waves\" class=\"wp-image-{{media_id:waves-gold}}\"/></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:waves-plum}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:waves-plum}}\" alt=\"Glossy plum brunette\" class=\"wp-image-{{media_id:waves-plum}}\"/></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:waves-rose}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:waves-rose}}\" alt=\"Rose gold pastel\" class=\"wp-image-{{media_id:waves-rose}}\"/></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:color-swatches}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:color-swatches}}\" alt=\"Colour swatches on the bar\" class=\"wp-image-{{media_id:color-swatches}}\"/></figure><!-- /wp:image --></figure><!-- /wp:gallery --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"section-band\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-band\"><!-- wp:paragraph {\"align\":\"center\",\"className\":\"eyebrow\"} --><p class=\"has-text-align-center eyebrow\">The beauty journal</p><!-- /wp:paragraph --><!-- wp:heading {\"textAlign\":\"center\",\"className\":\"section-title\"} --><h2 class=\"wp-block-heading has-text-align-center section-title\">Tips from behind the chair</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":3,\"displayPostDate\":true,\"postLayout\":\"grid\",\"columns\":3,\"align\":\"wide\",\"displayPostContent\":true,\"excerptLength\":18,\"displayFeaturedImage\":true,\"featuredImageSizeSlug\":\"medium_large\"} /--><!-- wp:buttons {\"layout\":{\"type\":\"flex\",\"justifyContent\":\"center\"}} --><div class=\"wp-block-buttons is-content-justification-center is-layout-flex\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:journal}}\">Read the journal</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "featured_media": "salon-interior",
+   "front_page": true
+  },
+  {
+   "slug": "journal",
+   "title": "Beauty journal",
+   "content": "",
+   "posts_page": true
+  },
+  {
+   "slug": "services",
+   "title": "Services & prices",
+   "content": "<!-- wp:group {\"align\":\"wide\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignwide\"><!-- wp:paragraph {\"align\":\"center\",\"className\":\"lead\"} --><p class=\"has-text-align-center lead\">Prices include consultation, wash and finish. Longer or thicker hair may take a little more time; we will always tell you before we start.</p><!-- /wp:paragraph --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull\"><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Cut &amp; style</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"price-list\"} --><ul class=\"wp-block-list price-list\"><!-- wp:list-item --><li><strong>Signature cut &amp; blow-dry</strong> <span class=\"price\">$72</span> <span class=\"desc\">Wash, scalp massage, cut and finish · 75 min</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Restyle</strong> <span class=\"price\">$88</span> <span class=\"desc\">For a big change; includes a longer consultation · 90 min</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Fringe trim</strong> <span class=\"price\">$15</span> <span class=\"desc\">Between appointments · 15 min</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Blow-dry</strong> <span class=\"price\">$45</span> <span class=\"desc\">Smooth, bouncy or undone waves · 40 min</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Occasion hair</strong> <span class=\"price\">$80</span> <span class=\"desc\">Up-dos and braids for weddings and events · 60 min</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Short cut &amp; clipper work</strong> <span class=\"price\">$48</span> <span class=\"desc\">Including neck tidy and beard line · 40 min</span></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Colour</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"price-list\"} --><ul class=\"wp-block-list price-list\"><!-- wp:list-item --><li><strong>Root colour</strong> <span class=\"price\">$78</span> <span class=\"desc\">Regrowth up to two centimetres · 90 min</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Full head colour</strong> <span class=\"price\">$105</span> <span class=\"desc\">One shade from roots to ends · 2 h</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Soft balayage</strong> <span class=\"price\">$190</span> <span class=\"desc\">Hand-painted, toned and glossed · 3 h</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Half head foils</strong> <span class=\"price\">$120</span> <span class=\"desc\">Brightness around the face and parting · 2 h</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Gloss &amp; go</strong> <span class=\"price\">$65</span> <span class=\"desc\">Tone refresh and shine · 45 min</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Bond repair add-on</strong> <span class=\"price\">$25</span> <span class=\"desc\">Protects hair during lightening</span></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"section-band\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-band\"><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:tools}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"className\":\"arch-img\"} --><figure class=\"wp-block-image size-large arch-img\"><img src=\"{{media:tools}}\" alt=\"Scissors, comb and hair care bottles on dusty rose\" class=\"wp-image-{{media_id:tools}}\"/></figure><!-- /wp:image --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Beauty room</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"price-list\"} --><ul class=\"wp-block-list price-list\"><!-- wp:list-item --><li><strong>Brow shape &amp; tint</strong> <span class=\"price\">$32</span> <span class=\"desc\">Thread or wax, with a soft tint · 30 min</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Lash lift &amp; tint</strong> <span class=\"price\">$60</span> <span class=\"desc\">Lasts six to eight weeks · 50 min</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Glow facial</strong> <span class=\"price\">$85</span> <span class=\"desc\">Cleanse, exfoliate, mask and massage · 60 min</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Classic manicure</strong> <span class=\"price\">$30</span> <span class=\"desc\">Shape, cuticles and polish · 35 min</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Gel manicure</strong> <span class=\"price\">$42</span> <span class=\"desc\">Two to three weeks of shine · 45 min</span></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading {\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center\">Good to know</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>A skin allergy test is needed 48 hours before your first colour with us; it takes five minutes and is free.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Please give us 24 hours' notice to move or cancel, so we can offer the slot to someone on the waiting list.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Gift cards are available in any amount at reception or by phone.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:book}}\">Book an appointment</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "featured_media": "waves-blush",
+   "template": "page-full",
+   "menu_order": 1
+  },
+  {
+   "slug": "consultations",
+   "title": "Consultations",
+   "content": "<!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">Not sure which service you need? Book a free fifteen-minute consultation and we will look at your hair together, talk through options and give you a written quote.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Colour consultations</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Bring a few photos of looks you like, and one or two you don't. We will talk about upkeep honestly: a soft balayage can grow out gracefully for four months, while a bright copper wants a gloss every five weeks.</p><!-- /wp:paragraph -->\n\n<!-- wp:image {\"id\":{{media_id:color-swatches}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:color-swatches}}\" alt=\"Hair colour swatches from dark brown to copper and violet\" class=\"wp-image-{{media_id:color-swatches}}\"/></figure><!-- /wp:image -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Bridal trials</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Trials take ninety minutes and include a written plan for the day, so whoever does your hair on the morning knows exactly which pins go where.</p><!-- /wp:paragraph -->\n\n<!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:book}}\">Request a consultation</a></div><!-- /wp:button --></div><!-- /wp:buttons -->",
+   "parent": "services",
+   "menu_order": 2
+  },
+  {
+   "slug": "about",
+   "title": "About the salon",
+   "content": "<!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column {\"width\":\"40%\"} --><div class=\"wp-block-column\" style=\"flex-basis:40%\"><!-- wp:image {\"id\":{{media_id:bloom}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"className\":\"arch-img\"} --><figure class=\"wp-block-image size-large arch-img\"><img src=\"{{media:bloom}}\" alt=\"A cream flower on deep rose\" class=\"wp-image-{{media_id:bloom}}\"/></figure><!-- /wp:image --></div><!-- /wp:column --><!-- wp:column {\"width\":\"60%\"} --><div class=\"wp-block-column\" style=\"flex-basis:60%\"><!-- wp:heading --><h2 class=\"wp-block-heading\">A salon that takes its time</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Velvet opened in a former milliner's workshop in 2014 with two chairs and a borrowed hood dryer. Today there are eight of us, but the idea has stayed the same: book fewer clients, spend longer with each one, and send everybody home with hair they understand.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>We work with low-ammonia colour, refill our shampoos from bulk containers and send our hair clippings to a scheme that turns them into oil-spill booms. Small things, done every day.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"section-band\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-band\"><!-- wp:paragraph {\"align\":\"center\",\"className\":\"eyebrow\"} --><p class=\"has-text-align-center eyebrow\">The team</p><!-- /wp:paragraph --><!-- wp:heading {\"textAlign\":\"center\",\"className\":\"section-title\"} --><h2 class=\"wp-block-heading has-text-align-center section-title\">Meet the stylists</h2><!-- /wp:heading --><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"team-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group team-card\"><!-- wp:image {\"id\":{{media_id:stylist-ines}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:stylist-ines}}\" alt=\"Portrait illustration of Ines\" class=\"wp-image-{{media_id:stylist-ines}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Ines</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"role\"} --><p class=\"role\">Founder · Colour director</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Fifteen years of balayage and a soft spot for copper. Ines trains every new colourist herself.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"team-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group team-card\"><!-- wp:image {\"id\":{{media_id:stylist-maren}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:stylist-maren}}\" alt=\"Portrait illustration of Maren\" class=\"wp-image-{{media_id:stylist-maren}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Maren</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"role\"} --><p class=\"role\">Senior stylist · Bridal</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Maren has pinned more than four hundred wedding up-dos and has never lost a veil.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"team-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group team-card\"><!-- wp:image {\"id\":{{media_id:stylist-teo}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:stylist-teo}}\" alt=\"Portrait illustration of Teo\" class=\"wp-image-{{media_id:stylist-teo}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Teo</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"role\"} --><p class=\"role\">Stylist · Short cuts</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Clipper work, textured crops and the sharpest fringe in the arcade. Ask about curl cuts.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>I wanted a salon where nobody is rushed, including the stylist. That is still the whole plan.</p><!-- /wp:paragraph --><cite>Ines, founder</cite></blockquote><!-- /wp:quote -->",
+   "menu_order": 3
+  },
+  {
+   "slug": "book",
+   "title": "Book an appointment",
+   "content": "<!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">We take bookings by phone and in the salon, and we keep a few same-week slots for colour corrections and last-minute events.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"feature-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group feature-card\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">New clients</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Tell us what you are hoping for and how much time you have. First colours need a quick skin test 48 hours ahead.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"feature-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group feature-card\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Returning clients</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Ask for your usual stylist; we keep notes on your formula and finish so you never have to explain twice.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"feature-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group feature-card\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Groups &amp; weddings</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Up to six people at once on Saturdays. We will plan the timings so the bride is finished last and freshest.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:paragraph --><p>Call <a href=\"tel:+15550142290\">+1 (555) 014-2290</a> between 9 am and 7 pm, Tuesday to Saturday, or drop in and we will find a time together.</p><!-- /wp:paragraph -->",
+   "featured_media": "tools",
+   "menu_order": 4
+  },
+  {
+   "slug": "contact",
+   "title": "Contact",
+   "content": "<!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Find us</h2><!-- /wp:heading --><!-- wp:paragraph --><p>27 Linden Arcade, first floor, above the flower stall. The lift is beside the bakery; step-free access all the way to the chairs.</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Opening hours</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Tuesday to Friday: 9 am – 7 pm</li><!-- /wp:list-item --><!-- wp:list-item --><li>Saturday: 9 am – 5 pm</li><!-- /wp:list-item --><!-- wp:list-item --><li>Sunday and Monday: closed</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Call or write</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Phone <a href=\"tel:+15550142290\">+1 (555) 014-2290</a><br>Email <a href=\"mailto:hello@velvet.example\">hello@velvet.example</a></p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:salon-interior}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"className\":\"arch-img\"} --><figure class=\"wp-block-image size-large arch-img\"><img src=\"{{media:salon-interior}}\" alt=\"The salon interior with arched mirrors\" class=\"wp-image-{{media_id:salon-interior}}\"/></figure><!-- /wp:image --></div><!-- /wp:column --></div><!-- /wp:columns -->",
+   "menu_order": 5
+  }
+ ],
+ "posts": [
+  {
+   "slug": "how-to-make-a-blow-dry-last",
+   "title": "How to make a blow-dry last until Friday",
+   "date": "2026-10-21T09:30:00",
+   "excerpt": "Five small habits that keep a Monday blow-dry bouncy all week, from the pillowcase to the dry shampoo trick.",
+   "content": "<!-- wp:paragraph --><p>A good blow-dry should not be a one-day treat. With a few habits, the volume and smoothness you leave the salon with on Monday can still be there on Friday, give or take a little touch-up.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Start on the first night</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Before bed, loosely twist your hair into a high, soft bun on the crown and secure it with a fabric scrunchie. It keeps the roots lifted and stops the ends from being crushed into the pillow.</p><!-- /wp:paragraph -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Swap to a silk or satin pillowcase; cotton grabs at the cuticle.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Skip heavy night creams along the hairline.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Keep a shower cap by the bath and use it every time.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Dry shampoo before you need it</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>The trick most people miss is timing. Spray dry shampoo at the roots on the second evening, before your hair feels greasy, and brush it through in the morning. It absorbs oil overnight instead of fighting it.</p><!-- /wp:paragraph -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Treat day two as maintenance, not rescue. It is much easier to keep volume than to bring it back.</p><!-- /wp:paragraph --><cite>Maren, senior stylist</cite></blockquote><!-- /wp:quote -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">A two-minute refresh</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>By day four, rough-dry just the front sections with a round brush and a cool shot. Everything behind the ears can stay as it is; nobody looks there as closely as you do.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "hair-care"
+   ],
+   "tags": [
+    "styling",
+    "at-home"
+   ],
+   "featured_media": "waves-rose",
+   "format": "standard",
+   "sticky": true,
+   "comments": [
+    {
+     "author": "Lotte",
+     "email": "lotte@example.com",
+     "content": "The bun-before-bed trick has changed my life. Day five and still bouncy!",
+     "date": "2026-10-22T19:12:00"
+    },
+    {
+     "author": "Maren",
+     "email": "maren@example.com",
+     "content": "So glad it worked! Try the cool shot on the fringe too next time.",
+     "date": "2026-10-23T09:05:00"
+    }
+   ]
+  },
+  {
+   "slug": "balayage-or-highlights",
+   "title": "Balayage or highlights? How to choose",
+   "date": "2026-10-14T10:00:00",
+   "excerpt": "Both brighten your hair, but they grow out very differently. Here is how we help clients decide.",
+   "content": "<!-- wp:paragraph --><p>It is the question we hear most at the colour bar, usually with a phone full of photos. Both techniques add brightness, but they behave very differently once you leave the salon.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Balayage</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Painted by hand, softer at the roots</li><!-- /wp:list-item --><!-- wp:list-item --><li>Grows out gently over three to four months</li><!-- /wp:list-item --><!-- wp:list-item --><li>Best for natural, sun-touched brightness</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Foil highlights</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Precise, even lightness from the root</li><!-- /wp:list-item --><!-- wp:list-item --><li>Needs a refresh every eight to ten weeks</li><!-- /wp:list-item --><!-- wp:list-item --><li>Best for brighter blondes and grey blending</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:paragraph --><p>If you like low upkeep and do not mind a darker root, balayage is usually the answer. If you want to look noticeably blonder, or you are covering grey, foils give a cleaner result.</p><!-- /wp:paragraph -->\n\n<!-- wp:image {\"id\":{{media_id:color-swatches}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:color-swatches}}\" alt=\"Hair colour swatches from dark brown to copper\" class=\"wp-image-{{media_id:color-swatches}}\"/><figcaption class=\"wp-element-caption\">Swatches help us agree on a tone before anything is mixed.</figcaption></figure><!-- /wp:image -->\n\n<!-- wp:paragraph --><p>Many of our clients end up with a mix of the two: a few fine foils around the parting and face, with balayage through the lengths. Ask for a free consultation and we will plan it together.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "colour"
+   ],
+   "tags": [
+    "balayage",
+    "consultation"
+   ],
+   "featured_media": "waves-gold",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Priya",
+     "email": "priya@example.com",
+     "content": "I went for the mix after my consultation with Ines and I love how soft the regrowth is.",
+     "date": "2026-10-16T14:40:00"
+    }
+   ]
+  },
+  {
+   "slug": "autumn-colour-trends",
+   "title": "Five colours we are mixing this autumn",
+   "date": "2026-10-02T11:15:00",
+   "excerpt": "Cinnamon, smoky plum and soft mushroom blonde: the shades our colourists are mixing most as the evenings draw in.",
+   "content": "<!-- wp:paragraph --><p>Every September the colour bar changes. Lighter summer blondes come in asking for depth, and the copper bowls come out of the cupboard. These are the five shades we have mixed most so far.</p><!-- /wp:paragraph -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li><strong>Cinnamon copper</strong>: warm, soft and kind to freckles.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Smoky plum</strong>: a violet-brown that only shows in the light.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Mushroom blonde</strong>: an ashy beige that tones down brassiness.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Espresso gloss</strong>: rich, reflective brunette with no bands.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Rose gold melt</strong>: a pastel pink fading into blonde ends.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>Darker, glossier shades are also kinder to hair after a summer of sun and salt. A gloss seals the cuticle, so your hair reflects more light and feels softer.</p><!-- /wp:paragraph -->\n\n<!-- wp:pullquote --><figure class=\"wp-block-pullquote\"><blockquote><p>Autumn is when hair finally gets a rest from lightener. We lean into depth and shine.</p><cite>Ines, colour director</cite></blockquote></figure><!-- /wp:pullquote -->\n\n<!-- wp:paragraph --><p>Not sure which shade suits you? Hold a swatch against your jaw in daylight by the window at reception; your skin will tell you more than any photo can.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "colour",
+    "salon-news"
+   ],
+   "tags": [
+    "trends",
+    "balayage"
+   ],
+   "featured_media": "waves-plum",
+   "format": "standard",
+   "sticky": false
+  },
+  {
+   "slug": "healthy-scalp-routine",
+   "title": "A gentle routine for a healthy scalp",
+   "date": "2026-09-23T08:45:00",
+   "excerpt": "Good hair starts at the root. A weekly routine that calms itchiness, flakes and oily roots without harsh products.",
+   "content": "<!-- wp:paragraph --><p>A healthy scalp is the foundation of every good haircut, yet it is the part of our hair routine we think about least. Itchiness, flaking and oily roots are often signs that the scalp needs a reset, not stronger products.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Once a week</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Brush dry hair from the roots with a boar or wide paddle brush to lift product build-up.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Massage a few drops of a light oil into the scalp for five minutes.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Wash twice: the first wash removes oil, the second actually cleans.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Every wash</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Use lukewarm water, not hot, and work shampoo into the scalp with your fingertips rather than your nails. Conditioner belongs on the lengths and ends only; keeping it off the scalp stops roots from going flat.</p><!-- /wp:paragraph -->\n\n<!-- wp:image {\"id\":{{media_id:products}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:products}}\" alt=\"Shampoo and conditioner bottles with scissors\" class=\"wp-image-{{media_id:products}}\"/><figcaption class=\"wp-element-caption\">We refill our backwash bottles from bulk containers to cut plastic.</figcaption></figure><!-- /wp:image -->\n\n<!-- wp:paragraph --><p>If flaking continues for more than a few weeks, mention it at your next visit; we will suggest a treatment or let you know when it is worth seeing a doctor.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "hair-care"
+   ],
+   "tags": [
+    "at-home",
+    "scalp"
+   ],
+   "featured_media": "products",
+   "format": "standard",
+   "sticky": false
+  },
+  {
+   "slug": "first-lash-lift",
+   "title": "Your first lash lift: what to expect",
+   "date": "2026-09-10T13:00:00",
+   "excerpt": "Fifty minutes with your eyes closed and six weeks of curl. Everything you need to know before booking a lash lift.",
+   "content": "<!-- wp:paragraph --><p>A lash lift curls your natural lashes from the root, so they look longer and more open without extensions or mascara. It is one of the most relaxing treatments we offer: you lie back with your eyes closed for most of it.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">How it works</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>We clean the lashes and fit a soft silicone shield to the lid.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Each lash is combed up over the shield and set with a gentle lotion.</li><!-- /wp:list-item --><!-- wp:list-item --><li>A tint adds depth, then everything is cleaned away.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>Afterwards, keep your lashes dry for 24 hours and skip the sauna. From then on you can wash, swim and sleep as normal, and the curl will last six to eight weeks.</p><!-- /wp:paragraph -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Most clients fall asleep. That is how we know we got the pillow right.</p><!-- /wp:paragraph --><cite>Our beauty therapist</cite></blockquote><!-- /wp:quote -->\n\n<!-- wp:paragraph --><p>Lash lifts are not suitable during an eye infection or within a few weeks of eye surgery. If in doubt, book a free patch test and ask us anything.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "beauty"
+   ],
+   "tags": [
+    "lashes",
+    "consultation"
+   ],
+   "featured_media": "bloom",
+   "format": "standard",
+   "sticky": false
+  },
+  {
+   "slug": "new-stylist-joins",
+   "title": "Welcome Teo, our new short-hair specialist",
+   "date": "2026-08-28T09:00:00",
+   "excerpt": "Clipper fades, textured crops and curl cuts: meet the newest stylist at Velvet.",
+   "content": "<!-- wp:paragraph --><p>We are delighted to welcome Teo to the salon. Teo joins us from a busy barbershop across the river and brings sharp clipper skills, a calm manner and a playlist that is already a favourite at the back basins.</p><!-- /wp:paragraph -->\n\n<!-- wp:image {\"id\":{{media_id:stylist-teo}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:stylist-teo}}\" alt=\"Portrait illustration of Teo\" class=\"wp-image-{{media_id:stylist-teo}}\"/></figure><!-- /wp:image -->\n\n<!-- wp:paragraph --><p>Teo specialises in short cuts of every kind, from soft pixies to skin fades, and is training with Ines in curl cutting, where hair is cut dry, curl by curl, to respect its natural shape.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Introductory offer</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Throughout September, book a short cut with Teo and the fringe trims in between are on us. Mention this post when you call.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "salon-news"
+   ],
+   "tags": [
+    "team"
+   ],
+   "featured_media": "stylist-teo",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Jonah",
+     "email": "jonah@example.com",
+     "content": "Had my first cut with Teo last week. Best fade I have had in years.",
+     "date": "2026-09-05T18:22:00"
+    }
+   ]
+  },
+  {
+   "slug": "wedding-hair-timeline",
+   "title": "A calm wedding-morning hair timeline",
+   "date": "2026-08-14T15:30:00",
+   "excerpt": "How we plan hair for a bride and five guests without anyone watching the clock.",
+   "content": "<!-- wp:paragraph --><p>A wedding morning should feel like a slow breakfast with friends, not a race. After hundreds of bridal parties, Maren has a timeline that keeps everyone calm and the bride's hair at its freshest for the photographs.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">A sample morning for six</h2><!-- /wp:heading -->\n\n<!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Time</th><th>Who</th><th>What</th></tr></thead><tbody><tr><td>8:00</td><td>Mothers</td><td>Blow-dry and soft waves</td></tr><tr><td>9:00</td><td>Bridesmaids</td><td>Braids and half-up styles</td></tr><tr><td>10:30</td><td>Bride</td><td>Up-do and veil fitting</td></tr><tr><td>11:30</td><td>Everyone</td><td>Touch-ups and photos</td></tr></tbody></table></figure><!-- /wp:table -->\n\n<!-- wp:paragraph --><p>We always finish the bride last, and we leave thirty minutes free before the car arrives. That half hour is the secret: it absorbs late arrivals, spilled coffee and the inevitable second thoughts about the fringe.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Before the day</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Book a trial six to eight weeks before the day. Bring your veil or hair accessories, and wear a top with a similar neckline to your dress.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "salon-news",
+    "beauty"
+   ],
+   "tags": [
+    "bridal",
+    "styling"
+   ],
+   "featured_media": "salon-interior",
+   "format": "standard",
+   "sticky": false
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Home",
+     "page": "home"
+    },
+    {
+     "title": "Services",
+     "page": "services",
+     "children": [
+      {
+       "title": "Prices",
+       "page": "services"
+      },
+      {
+       "page": "consultations"
+      }
+     ]
+    },
+    {
+     "title": "Journal",
+     "page": "journal",
+     "children": [
+      {
+       "category": "hair-care"
+      },
+      {
+       "category": "colour"
+      },
+      {
+       "category": "beauty"
+      }
+     ]
+    },
+    {
+     "title": "About",
+     "page": "about"
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    }
+   ]
+  },
+  {
+   "name": "Social",
+   "location": "social",
+   "items": [
+    {
+     "title": "Instagram",
+     "url": "https://instagram.com/"
+    },
+    {
+     "title": "Pinterest",
+     "url": "https://pinterest.com/"
+    },
+    {
+     "title": "Facebook",
+     "url": "https://facebook.com/"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "sidebar-1": [
+   "<!-- wp:search {\"label\":\"Search the journal\",\"buttonText\":\"Search\"} /-->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Topics</h2><!-- /wp:heading --><!-- wp:categories /--></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Gift cards</h2><!-- /wp:heading --><!-- wp:paragraph --><p>A cut, a colour or a facial in any amount, wrapped in rose tissue at reception.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Ask about gift cards</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->"
+  ],
+  "footer-1": [
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Explore</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><a href=\"{{page:services}}\">Services &amp; prices</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{page:about}}\">Meet the stylists</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{page:journal}}\">Beauty journal</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{page:book}}\">Book</a></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "hero_image": "salon-interior",
+  "hero_heading": "Hair that feels like you, only better",
+  "hero_text": "Cuts, colour and beauty treatments in a calm, light-filled salon. Every appointment starts with a proper conversation.",
+  "booking_url": "{{page:book}}",
+  "image_shape": "arch",
+  "blog_layout": "grid"
+ }
+}
