@@ -189,7 +189,9 @@ Hub:
 
 - `category` (optional, one of): `blog`, `magazine`, `portfolio`, `photography`, `business`, `agency`,
   `restaurant`, `food`, `travel`, `fashion`, `technology`, `education`, `health`, `fitness`,
-  `nonprofit`, `music`, `wedding`, `real-estate`, `personal`, `minimal`.
+  `nonprofit`, `music`, `wedding`, `real-estate`, `personal`, `minimal`, `home`, `shop`, `legal`,
+  `construction`, `finance`, `architecture`, `gaming`, `entertainment`, `podcast`, `beauty`, `kids`,
+  `pets`, `automotive`, `hotel`, `startup`, `science`, `religion`, `environment`, `books`, `sports`.
 - `style`: a short phrase shown on the library card (at most 80 characters, one line, no markup).
 - `demo`: path of the demo content file inside the package, a `.json` file under `demo/` (below).
 

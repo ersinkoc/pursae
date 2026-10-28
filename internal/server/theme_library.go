@@ -21,13 +21,19 @@ import (
 // themeCategories are the library categories, in the order of the filter links.
 var themeCategories = []string{"blog", "magazine", "portfolio", "photography", "business", "agency", "restaurant", "food",
 	"travel", "fashion", "technology", "education", "health", "fitness", "nonprofit", "music", "wedding", "real-estate",
-	"personal", "minimal"}
+	"personal", "minimal", "home", "shop", "legal", "construction", "finance", "architecture", "gaming", "entertainment",
+	"podcast", "beauty", "kids", "pets", "automotive", "hotel", "startup", "science", "religion", "environment", "books",
+	"sports"}
 
 var themeCategoryLabels = map[string]string{"blog": "Blog", "magazine": "Magazine", "portfolio": "Portfolio",
 	"photography": "Photography", "business": "Business", "agency": "Agency", "restaurant": "Restaurant", "food": "Food",
 	"travel": "Travel", "fashion": "Fashion", "technology": "Technology", "education": "Education", "health": "Health",
 	"fitness": "Fitness", "nonprofit": "Nonprofit", "music": "Music", "wedding": "Wedding", "real-estate": "Real Estate",
-	"personal": "Personal", "minimal": "Minimal"}
+	"personal": "Personal", "minimal": "Minimal", "home": "Home & Interior", "shop": "Shop", "legal": "Legal",
+	"construction": "Construction", "finance": "Finance", "architecture": "Architecture", "gaming": "Gaming",
+	"entertainment": "Film & TV", "podcast": "Podcast", "beauty": "Beauty", "kids": "Kids", "pets": "Pets",
+	"automotive": "Automotive", "hotel": "Hotel", "startup": "Startup", "science": "Science", "religion": "Faith",
+	"environment": "Environment", "books": "Books", "sports": "Sports & Outdoors"}
 
 // themeCategoryLabel is the display name of a category ("" for an unknown one).
 func themeCategoryLabel(slug string) string { return themeCategoryLabels[slug] }
