@@ -1,0 +1,20 @@
+{{template "header" .}}
+{{with .Post}}<article id="post-{{.ID}}" class="{{.Class}} fz-single">
+	<header class="fz-wrap fz-single__header">
+		<p class="fz-card__tags">{{range .Categories}}<a class="fz-chip" href="{{.URL}}">{{.Name}}</a>{{end}}</p>
+		<h1 class="entry-title">{{.Title}}</h1>
+		{{with .Excerpt}}<div class="fz-single__lede">{{.}}</div>{{end}}
+		{{template "entry-meta" .}}
+	</header>
+	{{with .Thumbnail}}<figure class="fz-wrap fz-single__media">{{.}}</figure>{{end}}
+	<div class="fz-wrap fz-narrow entry-content">
+		{{.Content}}
+	</div>
+	{{if or .Tags .EditLink}}<footer class="fz-wrap fz-narrow entry-footer">
+		{{if .Tags}}<span class="tags-links"><span class="screen-reader-text">Tags: </span>{{range .Tags}}<a class="fz-chip" href="{{.URL}}" rel="tag">#{{.Name}}</a>{{end}}</span>{{end}}
+		{{with .EditLink}}<span class="edit-link">{{.}}</span>{{end}}
+	</footer>{{end}}
+	<div class="fz-wrap fz-narrow">{{.Biography}}</div>
+</article>{{end}}
+<div class="fz-wrap fz-narrow">{{.PostNav}}{{template "comments" .}}</div>
+{{template "footer" .}}

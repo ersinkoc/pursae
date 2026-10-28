@@ -1,0 +1,17 @@
+{{template "header" .}}
+{{with .Post}}{{$hero := theme_mod $ "hero_image"}}{{if not $hero}}{{$hero = .ThumbnailURL}}{{end}}<article id="post-{{.ID}}" class="{{.Class}} ec-front">
+	<section class="ec-hero" aria-label="Introduction">
+		{{if $hero}}<img class="ec-hero__bg" src="{{$hero}}" alt="" />{{end}}
+		<div class="ec-wrap ec-hero__inner">
+			{{with theme_mod $ "hero_subheading"}}<p class="ec-kicker ec-hero__kicker">{{.}}</p>{{end}}
+			<h1 class="ec-hero__title">{{with theme_mod $ "hero_heading"}}{{.}}{{else}}{{$.SiteName}}{{end}}</h1>
+			{{with theme_mod $ "cta_label"}}<p class="ec-hero__actions"><a class="ec-btn ec-btn--big" href="{{theme_mod $ "cta_url"}}">{{.}}</a></p>{{end}}
+		</div>
+		<div class="ec-hero__ticker" aria-hidden="true"><span>{{$.Description}} &#9679; {{$.SiteName}} &#9679; {{$.Description}} &#9679; {{$.SiteName}} &#9679; {{$.Description}} &#9679; {{$.SiteName}} &#9679; </span><span>{{$.Description}} &#9679; {{$.SiteName}} &#9679; {{$.Description}} &#9679; {{$.SiteName}} &#9679; {{$.Description}} &#9679; {{$.SiteName}} &#9679; </span></div>
+	</section>
+	<div class="entry-content ec-front__content">
+		{{.Content}}
+	</div>
+	{{with .EditLink}}<footer class="ec-wrap entry-footer"><span class="edit-link">{{.}}</span></footer>{{end}}
+</article>{{end}}
+{{template "footer" .}}

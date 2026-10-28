@@ -1,0 +1,414 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Fizzwick",
+  "blogdescription": "Brand & digital studio",
+  "posts_per_page": 9
+ },
+ "categories": [
+  {
+   "slug": "branding",
+   "name": "Branding",
+   "description": "Names, logos and identities."
+  },
+  {
+   "slug": "digital",
+   "name": "Digital",
+   "description": "Apps and websites."
+  },
+  {
+   "slug": "campaigns",
+   "name": "Campaigns",
+   "description": "Advertising and launches."
+  },
+  {
+   "slug": "packaging",
+   "name": "Packaging",
+   "description": "Boxes, bags and labels."
+  },
+  {
+   "slug": "studio-notes",
+   "name": "Studio notes",
+   "description": "How we work and what we are up to."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "identity",
+   "name": "Identity"
+  },
+  {
+   "slug": "fintech",
+   "name": "Fintech"
+  },
+  {
+   "slug": "product",
+   "name": "Product"
+  },
+  {
+   "slug": "launch",
+   "name": "Launch"
+  },
+  {
+   "slug": "food",
+   "name": "Food"
+  },
+  {
+   "slug": "illustration",
+   "name": "Illustration"
+  },
+  {
+   "slug": "public",
+   "name": "Public sector"
+  },
+  {
+   "slug": "outdoor",
+   "name": "Outdoor"
+  },
+  {
+   "slug": "events",
+   "name": "Events"
+  },
+  {
+   "slug": "process",
+   "name": "Process"
+  },
+  {
+   "slug": "studio",
+   "name": "Studio"
+  }
+ ],
+ "media": [
+  {
+   "id": "hero-fizz",
+   "file": "demo/images/hero-fizz.jpg",
+   "alt": "A smiling yellow blob on a pink and violet gradient with confetti",
+   "caption": ""
+  },
+  {
+   "id": "pebble-rebrand",
+   "file": "demo/images/pebble-rebrand.jpg",
+   "alt": "The word Pebble in a pink blob shape on cream",
+   "caption": "The new Pebble wordmark"
+  },
+  {
+   "id": "app-launch",
+   "file": "demo/images/app-launch.jpg",
+   "alt": "A phone showing colourful app cards on a mint background",
+   "caption": "Sprout's home screen"
+  },
+  {
+   "id": "snack-packaging",
+   "file": "demo/images/snack-packaging.jpg",
+   "alt": "Three colourful snack boxes in violet, pink and mint",
+   "caption": "The Crunchlings range"
+  },
+  {
+   "id": "city-campaign",
+   "file": "demo/images/city-campaign.jpg",
+   "alt": "A billboard saying Say hi on a violet background",
+   "caption": "One of forty billboards"
+  },
+  {
+   "id": "festival-identity",
+   "file": "demo/images/festival-identity.jpg",
+   "alt": "A rainbow arc under the words Fizzfest 26 with confetti",
+   "caption": "Main stage backdrop"
+  },
+  {
+   "id": "workshop-sprint",
+   "file": "demo/images/workshop-sprint.jpg",
+   "alt": "Six colourful sticky notes arranged on a lilac wall",
+   "caption": "Day two: the wall of ideas"
+  },
+  {
+   "id": "studio-office",
+   "file": "demo/images/studio-office.jpg",
+   "alt": "A desk with a violet screen and a plant in a sunny studio",
+   "caption": "The new studio"
+  },
+  {
+   "id": "team-ines",
+   "file": "demo/images/team-ines.jpg",
+   "alt": "Illustrated portrait of Ines on a pink background",
+   "caption": ""
+  },
+  {
+   "id": "team-tomas",
+   "file": "demo/images/team-tomas.jpg",
+   "alt": "Illustrated portrait of Tomás on a mint background",
+   "caption": ""
+  },
+  {
+   "id": "team-noor",
+   "file": "demo/images/team-noor.jpg",
+   "alt": "Illustrated portrait of Noor on a yellow background",
+   "caption": ""
+  },
+  {
+   "id": "team-arlo",
+   "file": "demo/images/team-arlo.jpg",
+   "alt": "Illustrated portrait of Arlo on a sky blue background",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Home",
+   "content": "<!-- wp:group {\"className\":\"fz-section fz-services\"} --><div class=\"wp-block-group fz-section fz-services\"><!-- wp:paragraph {\"className\":\"fz-kicker\"} --><p class=\"fz-kicker\">What we do</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Four ways we make things pop</h2><!-- /wp:heading --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"fz-emoji\"} --><p class=\"fz-emoji\">✦</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Brand identity</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Names, logos, colour and voice that people remember.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"fz-emoji\"} --><p class=\"fz-emoji\">✸</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Digital products</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Apps and websites that feel friendly from the first tap.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"fz-emoji\"} --><p class=\"fz-emoji\">✺</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Campaigns</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Billboards, films and social posts with a big idea.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"fz-emoji\"} --><p class=\"fz-emoji\">✿</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Packaging</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Boxes and bags that jump off a crowded shelf.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group --><!-- wp:group {\"align\":\"full\",\"className\":\"fz-marquee\"} --><div class=\"wp-block-group alignfull fz-marquee\"><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Pebble</li><!-- /wp:list-item --><!-- wp:list-item --><li>Sprout</li><!-- /wp:list-item --><!-- wp:list-item --><li>Crunchlings</li><!-- /wp:list-item --><!-- wp:list-item --><li>City Library</li><!-- /wp:list-item --><!-- wp:list-item --><li>Fizzfest</li><!-- /wp:list-item --><!-- wp:list-item --><li>Pebble</li><!-- /wp:list-item --><!-- wp:list-item --><li>Sprout</li><!-- /wp:list-item --><!-- wp:list-item --><li>Crunchlings</li><!-- /wp:list-item --><!-- wp:list-item --><li>City Library</li><!-- /wp:list-item --><!-- wp:list-item --><li>Fizzfest</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group --><!-- wp:group {\"className\":\"fz-section\"} --><div class=\"wp-block-group fz-section\"><!-- wp:paragraph {\"className\":\"fz-kicker\"} --><p class=\"fz-kicker\">In numbers</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Small team, big colours</h2><!-- /wp:heading --><!-- wp:group {\"className\":\"fz-stats\"} --><div class=\"wp-block-group fz-stats\"><!-- wp:paragraph --><p><strong>9</strong> years of making things</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><strong>120+</strong> projects shipped</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><strong>14</strong> people in the studio</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><strong>3</strong> studio dogs</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:group --><!-- wp:group {\"className\":\"fz-section fz-team\"} --><div class=\"wp-block-group fz-section fz-team\"><!-- wp:paragraph {\"className\":\"fz-kicker\"} --><p class=\"fz-kicker\">The crew</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Meet the people behind the fizz</h2><!-- /wp:heading --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:team-ines}}\" alt=\"Illustrated portrait of Ines on a pink background\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Ines</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Creative Director</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:team-tomas}}\" alt=\"Illustrated portrait of Tomás on a mint background\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Tomás</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Design Lead</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:team-noor}}\" alt=\"Illustrated portrait of Noor on a yellow background\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Noor</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Strategy</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:team-arlo}}\" alt=\"Illustrated portrait of Arlo on a sky blue background\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Arlo</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Developer</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group --><!-- wp:group {\"className\":\"fz-section fz-quotes\"} --><div class=\"wp-block-group fz-section fz-quotes\"><!-- wp:paragraph {\"className\":\"fz-kicker\"} --><p class=\"fz-kicker\">Kind words</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Clients say nice things</h2><!-- /wp:heading --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>They made our savings app feel like a hug. Our customers noticed on day one.</p><!-- /wp:paragraph --><cite>Product lead, Pebble</cite></blockquote><!-- /wp:quote --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Six weeks, one launch, zero drama. I would hire them again tomorrow.</p><!-- /wp:paragraph --><cite>Co-founder, Sprout</cite></blockquote><!-- /wp:quote --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Kids now ask for the beetroot ones. That is a sentence I never expected to say.</p><!-- /wp:paragraph --><cite>Marketing, Crunchlings</cite></blockquote><!-- /wp:quote --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group --><!-- wp:group {\"align\":\"full\",\"className\":\"fz-band\"} --><div class=\"wp-block-group alignfull fz-band\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Got a project that needs a little fizz?</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Tell us what you are making. We reply within a day, usually with too many ideas.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Start a project</a></div><!-- /wp:button --><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:work}}\">See our work</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "featured_media": "hero-fizz",
+   "front_page": true
+  },
+  {
+   "slug": "work",
+   "title": "Case studies",
+   "content": "",
+   "posts_page": true
+  },
+  {
+   "slug": "about",
+   "title": "About us",
+   "content": "<!-- wp:paragraph --><p>Fizzwick is an independent brand and digital studio. We started in 2017 with two desks above a bike shop and a belief that design should make people smile before it makes them think.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Today we are fourteen people (and three dogs) working with start-ups, cultural institutions and food brands who are brave enough to be colourful.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">What we believe</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Joy is a serious business tool.</li><!-- /wp:list-item --><!-- wp:list-item --><li>The best ideas survive a five-minute sketch.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Clients are collaborators, not audiences.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Every project deserves a launch party.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:columns {\"className\":\"fz-team\"} --><div class=\"wp-block-columns fz-team\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:team-ines}}\" alt=\"Illustrated portrait of Ines on a pink background\"/><figcaption class=\"wp-element-caption\">Ines</figcaption></figure><!-- /wp:image --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:team-tomas}}\" alt=\"Illustrated portrait of Tomás on a mint background\"/><figcaption class=\"wp-element-caption\">Tomás</figcaption></figure><!-- /wp:image --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:team-noor}}\" alt=\"Illustrated portrait of Noor on a yellow background\"/><figcaption class=\"wp-element-caption\">Noor</figcaption></figure><!-- /wp:image --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:team-arlo}}\" alt=\"Illustrated portrait of Arlo on a sky blue background\"/><figcaption class=\"wp-element-caption\">Arlo</figcaption></figure><!-- /wp:image --></div><!-- /wp:column --></div><!-- /wp:columns -->",
+   "featured_media": "studio-office"
+  },
+  {
+   "slug": "services",
+   "title": "Services",
+   "content": "<!-- wp:paragraph --><p>Every project is different, but most of them start with one of these. Prices are fixed per phase and agreed before we start.</p><!-- /wp:paragraph --><!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Service</th><th>Typical length</th><th>From</th></tr></thead><tbody><tr><td>Brand sprint</td><td>1 week</td><td>€6,000</td></tr><tr><td>Brand identity</td><td>6–10 weeks</td><td>€24,000</td></tr><tr><td>Product design</td><td>8–16 weeks</td><td>€32,000</td></tr><tr><td>Campaign</td><td>4–8 weeks</td><td>€18,000</td></tr></tbody></table></figure><!-- /wp:table --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Ask for a proposal</a></div><!-- /wp:button --></div><!-- /wp:buttons -->",
+   "parent": "about"
+  },
+  {
+   "slug": "contact",
+   "title": "Say hello",
+   "content": "<!-- wp:paragraph --><p>We love a good brief, and an unfinished one even more. Tell us about your project and we will get back to you within one working day.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">New projects</h3><!-- /wp:heading --><!-- wp:paragraph --><p><a href=\"mailto:hello@example.com\">hello@example.com</a></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Jobs</h3><!-- /wp:heading --><!-- wp:paragraph --><p><a href=\"mailto:jobs@example.com\">jobs@example.com</a></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Visit</h3><!-- /wp:heading --><!-- wp:paragraph --><p>The yellow door, 12 Canal Street. Coffee is on us.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns -->"
+  }
+ ],
+ "posts": [
+  {
+   "slug": "pebble-rebrand",
+   "title": "Pebble: a bank that smiles back",
+   "date": "2026-10-06T10:00:00",
+   "excerpt": "How we helped a savings app swap grey corporate blue for a wordmark you want to squeeze.",
+   "content": "<!-- wp:paragraph --><p>Pebble helps people put away small amounts of money every day. Their old brand looked like every other bank: navy, serious and a little bit scary. Their customers were mostly people saving for the first time.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">The brief, in one line</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Make saving feel like a game you are winning, without ever feeling childish about money.</p><!-- /wp:paragraph --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:pebble-rebrand}}\" alt=\"The word Pebble in a pink blob shape on cream\"/><figcaption class=\"wp-element-caption\">The new Pebble wordmark</figcaption></figure><!-- /wp:image --><!-- wp:paragraph --><p>We drew a soft, rounded wordmark that sits inside a pebble shape which slowly changes as your savings grow. The palette went from one blue to five friendly colours, each tied to a savings goal.</p><!-- /wp:paragraph --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>A wordmark and a living logo shape</li><!-- /wp:list-item --><!-- wp:list-item --><li>Five goal colours and an illustration kit</li><!-- /wp:list-item --><!-- wp:list-item --><li>App onboarding copy written with their support team</li><!-- /wp:list-item --><!-- wp:list-item --><li>Launch film and social templates</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Our app store rating went from 3.9 to 4.7 in two months. People screenshot their pebble.</p><!-- /wp:paragraph --><cite>Head of Product, Pebble</cite></blockquote><!-- /wp:quote -->",
+   "categories": [
+    "branding"
+   ],
+   "tags": [
+    "identity",
+    "fintech"
+   ],
+   "featured_media": "pebble-rebrand",
+   "format": "standard",
+   "sticky": true,
+   "comments": [
+    {
+     "author": "Maya",
+     "email": "maya@example.com",
+     "content": "The growing pebble is such a lovely idea. I want one for my own savings!",
+     "date": "2026-10-06T16:00:00"
+    },
+    {
+     "author": "Fizzwick",
+     "email": "hello@example.com",
+     "content": "Thank you Maya! It grows a little bit every week.",
+     "date": "2026-10-06T19:00:00"
+    }
+   ]
+  },
+  {
+   "slug": "sprout-app-launch",
+   "title": "Launching Sprout in six weeks",
+   "date": "2026-09-12T14:30:00",
+   "excerpt": "A plant-care app, a tiny team and a launch date that could not move.",
+   "content": "<!-- wp:paragraph --><p>Sprout reminds you to water your plants and tells you why they look sad. The founders came to us with a working prototype, a launch date six weeks away and no visual identity at all.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>We worked in one-week loops: design on Monday, test with real plant owners on Thursday, ship on Friday. Every week the app got friendlier and the reviews from testers got longer.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Week 1–2</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Name check, colour system, the first five screens.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Week 3–4</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Illustrations for forty plant moods, onboarding, notifications.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Week 5–6</h3><!-- /wp:heading --><!-- wp:paragraph --><p>App store pages, launch site, a very small party.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:paragraph --><p>Sprout launched on time and reached the top ten in its category in the first week. The plants are doing well too.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "digital"
+   ],
+   "tags": [
+    "product",
+    "launch"
+   ],
+   "featured_media": "app-launch",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "crunchlings-packaging",
+   "title": "Crunchlings: snacks with a face",
+   "date": "2026-08-21T09:45:00",
+   "excerpt": "Packaging that stands out on a crowded shelf, and makes kids ask for the vegetables.",
+   "content": "<!-- wp:paragraph --><p>Crunchlings are baked vegetable snacks. The product was great; the old bag was beige and invisible. Parents liked the ingredients, but children walked straight past.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>We gave every flavour a character and a colour, built the boxes so the faces line up when they stand side by side, and moved the ingredient list to the front where parents look first.</p><!-- /wp:paragraph --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:snack-packaging}}\" alt=\"Three colourful snack boxes in violet, pink and mint\"/><figcaption class=\"wp-element-caption\">The Crunchlings range</figcaption></figure><!-- /wp:image --><!-- wp:pullquote --><figure class=\"wp-block-pullquote\"><blockquote><p>Sales in the first quarter doubled, and the beetroot flavour is now the favourite.</p></blockquote></figure><!-- /wp:pullquote --><!-- wp:paragraph --><p>Next up: a recyclable pouch that keeps the same faces.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "packaging",
+    "branding"
+   ],
+   "tags": [
+    "food",
+    "illustration"
+   ],
+   "featured_media": "snack-packaging",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "say-hi-library-campaign",
+   "title": "Say hi: a campaign for the city library",
+   "date": "2026-07-08T11:00:00",
+   "excerpt": "Forty billboards, two words and a city that suddenly remembered it has a library.",
+   "content": "<!-- wp:paragraph --><p>The city library had a problem: people thought it was only for books. In reality it has a recording studio, sewing machines, a games room and free coffee. Nobody knew.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Our campaign used the friendliest greeting we could think of. Every billboard said hi from a different corner of the library, with one short line about what you can do there.</p><!-- /wp:paragraph --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Say hi to a 3D printer.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Say hi to a quiet room with a view.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Say hi to your next favourite board game.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph --><p>Membership sign-ups rose by a third during the campaign, and the sewing machines now need a booking system.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "campaigns"
+   ],
+   "tags": [
+    "public",
+    "outdoor"
+   ],
+   "featured_media": "city-campaign",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "fizzfest-identity",
+   "title": "Fizzfest '26",
+   "date": "2026-05-30T18:20:00",
+   "excerpt": "An identity for a three-day music and arts festival that had to work on wristbands and on a forty-metre stage.",
+   "content": "<!-- wp:paragraph --><p>Fizzfest is a small festival with big ambitions. They wanted an identity that felt like the first evening of summer: warm, loud and slightly chaotic, but still easy to find your way around.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>We built everything from a rainbow arc and a confetti pattern. The arc frames the stage, the gates and the app; the confetti changes colour for each day of the festival.</p><!-- /wp:paragraph --><!-- wp:gallery {\"columns\":2,\"linkTo\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-gallery has-nested-images columns-2 is-cropped alignwide\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:festival-identity}}\" alt=\"A rainbow arc under the words Fizzfest 26 with confetti\"/><figcaption class=\"wp-element-caption\">Main stage</figcaption></figure><!-- /wp:image --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:hero-fizz}}\" alt=\"A smiling yellow blob on a pink and violet gradient with confetti\"/><figcaption class=\"wp-element-caption\">Social posts</figcaption></figure><!-- /wp:image --></figure><!-- /wp:gallery --><!-- wp:paragraph --><p>The wayfinding signs were painted by hand by a local sign painter, which is still the best decision we made.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "branding",
+    "campaigns"
+   ],
+   "tags": [
+    "events",
+    "identity"
+   ],
+   "featured_media": "festival-identity",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "how-we-run-a-design-sprint",
+   "title": "How we run a five-day design sprint",
+   "date": "2026-04-15T09:00:00",
+   "excerpt": "Our slightly unusual sprint recipe, including the snacks.",
+   "content": "<!-- wp:paragraph --><p>We run a sprint at the start of almost every project. It is the fastest way to get everyone in one room, agree on the problem and leave with something real to test.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">The recipe</h2><!-- /wp:heading --><!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Monday: map the problem, pick one target.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Tuesday: everyone sketches, alone and together.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Wednesday: decide, with stickers and no long speeches.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Thursday: build a realistic prototype.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Friday: test with five real people.</li><!-- /wp:list-item --></ol><!-- /wp:list --><!-- wp:paragraph --><p>The most important rule: no laptops on Monday and Tuesday. The second most important rule: good snacks. Hungry people defend bad ideas.</p><!-- /wp:paragraph --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>By Friday we had changed our minds three times, and every change was the right one.</p><!-- /wp:paragraph --><cite>A client, after their first sprint</cite></blockquote><!-- /wp:quote -->",
+   "categories": [
+    "studio-notes"
+   ],
+   "tags": [
+    "process"
+   ],
+   "featured_media": "workshop-sprint",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Sam",
+     "email": "sam@example.com",
+     "content": "Completely agree on the snacks rule. Stealing this for our next workshop.",
+     "date": "2026-04-16T15:00:00"
+    }
+   ]
+  },
+  {
+   "slug": "our-new-studio",
+   "title": "We moved into a yellow studio",
+   "date": "2026-02-20T16:00:00",
+   "excerpt": "Bigger windows, a proper kitchen and a wall we are allowed to paint.",
+   "content": "<!-- wp:paragraph --><p>After four years above a bike shop we finally have a studio with enough desks for everyone and a meeting room that is not also the kitchen.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>We painted one wall bright yellow on the first day. The landlord was surprisingly happy about it. There are plants on every surface, mostly kept alive with the help of an app we designed.</p><!-- /wp:paragraph --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:studio-office}}\" alt=\"A desk with a violet screen and a plant in a sunny studio\"/><figcaption class=\"wp-element-caption\">The new studio</figcaption></figure><!-- /wp:image --><!-- wp:paragraph --><p>Come and visit. We have good coffee and very strong opinions about biscuits.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "studio-notes"
+   ],
+   "tags": [
+    "studio"
+   ],
+   "featured_media": "studio-office",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Work",
+     "page": "work",
+     "children": [
+      {
+       "title": "Branding",
+       "category": "branding"
+      },
+      {
+       "title": "Digital",
+       "category": "digital"
+      },
+      {
+       "title": "Campaigns",
+       "category": "campaigns"
+      }
+     ]
+    },
+    {
+     "title": "About",
+     "page": "about",
+     "children": [
+      {
+       "title": "Services",
+       "page": "services"
+      }
+     ]
+    },
+    {
+     "title": "Studio notes",
+     "category": "studio-notes"
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    }
+   ]
+  },
+  {
+   "name": "Social",
+   "location": "social",
+   "items": [
+    {
+     "title": "Instagram",
+     "url": "https://instagram.com/"
+    },
+    {
+     "title": "Dribbble",
+     "url": "https://dribbble.com/"
+    },
+    {
+     "title": "LinkedIn",
+     "url": "https://linkedin.com/"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "footer-1": [
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Fizzwick</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Independent brand and digital studio. The yellow door, 12 Canal Street.</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Latest case studies</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":3,\"displayPostDate\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Newsletter</h2><!-- /wp:heading --><!-- wp:paragraph --><p>One email a month with new work, studio news and the occasional recipe. No spam, ever.</p><!-- /wp:paragraph --></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "accent": "#ff4fa3",
+  "corners": "round",
+  "shadows": true,
+  "shapes": true,
+  "card_layout": "grid",
+  "hero_heading": "We make brands people actually remember.",
+  "cta_label": "Start a project",
+  "cta_url": "/contact/"
+ }
+}

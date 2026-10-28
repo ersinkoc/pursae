@@ -1,0 +1,24 @@
+		</main><!-- #main -->
+	</div><!-- #content -->
+
+	<footer id="colophon" class="site-footer">
+		<p class="ec-footer-word" aria-hidden="true">{{.SiteName}}</p>
+		<div class="ec-wrap">
+			{{if is_active_sidebar . "footer-1"}}<aside class="footer-widgets" aria-label="Footer">
+				{{dynamic_sidebar . "footer-1"}}
+			</aside>{{end}}
+			<div class="site-footer__bar">
+				{{if has_nav_menu . "social"}}<nav class="social-navigation" aria-label="Social links">{{nav_menu . "social"}}</nav>{{end}}
+				<div class="site-info">
+					{{.PrivacyLink}}
+					<span class="site-info__text">{{with theme_mod . "footer_text"}}{{.}}{{else}}&copy; {{$.SiteName}}. Play it loud.{{end}}</span>
+					<span class="site-info__credit">Powered by <a href="https://github.com/boracomet/wordpress-go">WordPress Go</a></span>
+				</div>
+			</div>
+		</div>
+	</footer><!-- #colophon -->
+</div><!-- #page -->
+
+{{.Footer}}{{.AdminBar}}
+</body>
+</html>

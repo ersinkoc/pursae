@@ -1,0 +1,12 @@
+<div class="vr-wrap vr-stories{{if eq .Q.Paged 0 1}} vr-stories--first{{end}}">
+	{{range $i, $p := .Posts}}<article id="post-{{$p.ID}}" class="{{$p.Class}} vr-story">
+		{{with $p.Thumbnail}}<a class="vr-story__media" href="{{$p.Permalink}}" aria-hidden="true" tabindex="-1">{{.}}</a>{{end}}
+		<div class="vr-story__text">
+			<p class="vr-kicker">{{if $p.ShowFeatured}}Cover story{{else}}{{with $p.Categories}}{{(index . 0).Name}}{{else}}Journal{{end}}{{end}}</p>
+			<h2 class="vr-story__title"><a href="{{$p.Permalink}}" rel="bookmark">{{$p.Title}}</a></h2>
+			{{if $p.ShowExcerpt}}<div class="vr-story__dek">{{$p.Excerpt}}</div>{{end}}
+			<p class="vr-story__meta">{{with $p.AuthorName}}<span class="byline">By {{.}}</span>{{end}}<time datetime="{{$p.DateISO}}">{{$p.DateText}}</time></p>
+		</div>
+	</article>
+	{{end}}
+</div>

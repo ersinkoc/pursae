@@ -1,0 +1,9 @@
+{{template "header" .}}
+<header class="ec-wrap page-header">
+	<p class="ec-kicker">{{plural .TotalPosts "%s result" "%s results"}}</p>
+	<h1 class="page-title">{{.SearchQuery}}</h1>
+	{{template "searchform" .}}
+</header>
+{{if .Posts}}{{template "news" .}}
+<div class="ec-wrap">{{.Pagination}}</div>{{else}}<div class="ec-wrap">{{template "content-none" .}}</div>{{end}}
+{{template "footer" .}}

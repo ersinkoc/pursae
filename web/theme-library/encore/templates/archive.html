@@ -1,0 +1,9 @@
+{{template "header" .}}
+<header class="ec-wrap page-header">
+	<p class="ec-kicker">Archive</p>
+	<h1 class="page-title">{{.ArchiveTitle}}</h1>
+	{{with .ArchiveDesc}}<div class="archive-description">{{.}}</div>{{end}}
+</header>
+{{if .Posts}}{{template "news" .}}
+<div class="ec-wrap">{{.Pagination}}</div>{{else}}<div class="ec-wrap">{{template "content-none" .}}</div>{{end}}
+{{template "footer" .}}

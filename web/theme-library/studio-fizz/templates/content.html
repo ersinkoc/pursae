@@ -1,0 +1,9 @@
+<article id="post-{{.ID}}" class="{{.Class}} fz-card">
+	{{with .Thumbnail}}<a class="fz-card__media" href="{{$.Permalink}}" aria-hidden="true" tabindex="-1">{{.}}</a>{{end}}
+	<div class="fz-card__body">
+		<p class="fz-card__tags">{{if .ShowFeatured}}<span class="fz-chip fz-chip--hot">Featured</span>{{end}}{{range .Categories}}<a class="fz-chip" href="{{.URL}}">{{.Name}}</a>{{end}}</p>
+		<h2 class="fz-card__title"><a href="{{.Permalink}}" rel="bookmark">{{.Title}}</a></h2>
+		{{if .ShowExcerpt}}<div class="fz-card__excerpt">{{.Excerpt}}</div>{{end}}
+		<p class="fz-card__meta"><time datetime="{{.DateISO}}">{{.DateText}}</time>{{with .AuthorName}}<span class="byline"> &middot; {{.}}</span>{{end}}</p>
+	</div>
+</article>

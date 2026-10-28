@@ -1,0 +1,16 @@
+{{template "header" .}}
+{{with .Post}}<article id="post-{{.ID}}" class="{{.Class}} an-page">
+	<header class="an-wrap an-page__header">
+		<p class="an-label">Page</p>
+		<h1 class="entry-title">{{.Title}}</h1>
+	</header>
+	{{with .Thumbnail}}<figure class="an-wrap an-case__media">{{.}}</figure>{{end}}
+	<div class="an-wrap an-page__body">
+		<div class="entry-content">
+			{{.Content}}
+		</div>
+	</div>
+	{{with .EditLink}}<footer class="an-wrap entry-footer"><span class="edit-link">{{.}}</span></footer>{{end}}
+</article>{{end}}
+<div class="an-wrap">{{template "comments" .}}</div>
+{{template "footer" .}}

@@ -1,0 +1,13 @@
+{{template "header" .}}
+{{with .Post}}<article id="post-{{.ID}}" class="{{.Class}} fz-page">
+	<header class="fz-wrap fz-page__header">
+		<h1 class="entry-title"><span>{{.Title}}</span></h1>
+	</header>
+	{{with .Thumbnail}}<figure class="fz-wrap fz-single__media">{{.}}</figure>{{end}}
+	<div class="fz-wrap fz-narrow entry-content">
+		{{.Content}}
+	</div>
+	{{with .EditLink}}<footer class="fz-wrap fz-narrow entry-footer"><span class="edit-link">{{.}}</span></footer>{{end}}
+</article>{{end}}
+<div class="fz-wrap fz-narrow">{{template "comments" .}}</div>
+{{template "footer" .}}

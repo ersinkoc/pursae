@@ -1,0 +1,17 @@
+{{template "header" .}}
+{{with .Post}}<article id="post-{{.ID}}" class="{{.Class}} vr-article">
+	<header class="vr-wrap vr-article__header">
+		<p class="vr-kicker">{{range $i, $c := .Categories}}{{if $i}} &middot; {{end}}<a href="{{$c.URL}}">{{$c.Name}}</a>{{end}}</p>
+		<h1 class="entry-title">{{.Title}}</h1>
+		{{with .Excerpt}}<div class="vr-article__dek">{{.}}</div>{{end}}
+		<p class="vr-article__meta">{{with .AuthorName}}<span class="byline">Words by <a href="{{$.Post.AuthorURL}}" rel="author">{{.}}</a></span>{{end}}<time datetime="{{.DateISO}}">{{.DateText}}</time>{{if or .CommentsOpen .CommentCount}}<a href="{{.CommentsURL}}">{{plural .CommentCount "%s comment" "%s comments"}}</a>{{end}}{{with .EditLink}}<span class="edit-link">{{.}}</span>{{end}}</p>
+	</header>
+	{{with .Thumbnail}}<figure class="vr-article__media">{{.}}</figure>{{end}}
+	<div class="vr-wrap vr-measure entry-content">
+		{{.Content}}
+	</div>
+	{{if .Tags}}<footer class="vr-wrap vr-measure entry-footer"><span class="tags-links"><span class="vr-kicker">Filed under</span> {{range .Tags}}<a href="{{.URL}}" rel="tag">{{.Name}}</a>{{end}}</span></footer>{{end}}
+	<div class="vr-wrap vr-measure">{{.Biography}}</div>
+</article>{{end}}
+<div class="vr-wrap vr-measure">{{.PostNav}}{{template "comments" .}}</div>
+{{template "footer" .}}

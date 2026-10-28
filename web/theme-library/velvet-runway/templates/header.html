@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>{{.DocumentTitle}}</title>
+{{.Head}}</head>
+
+<body class="{{.BodyClass}}">
+{{.BodyOpen}}<div id="page" class="site">
+	<a class="skip-link screen-reader-text" href="#main">Skip to content</a>
+
+	<header id="masthead" class="site-header">
+		<div class="vr-wrap vr-topline">
+			<span class="vr-topline__issue">{{with theme_mod . "issue_label"}}{{.}}{{end}}</span>
+			{{with .Description}}<span class="vr-topline__tagline">{{.}}</span>{{end}}
+			<span class="vr-topline__search"><a href="{{.HomeURL}}?s=">Search</a></span>
+		</div>
+		<div class="vr-wrap site-branding">
+			{{with .CustomLogo}}<div class="site-logo">{{.}}</div>{{end}}
+			{{if .TitleIsH1}}<h1 class="site-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></h1>{{else}}<p class="site-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></p>{{end}}
+		</div><!-- .site-branding -->
+		{{if has_nav_menu . "primary"}}<nav id="site-navigation" class="vr-wrap main-navigation" aria-label="Primary menu">
+			<button type="button" class="menu-toggle" aria-controls="site-navigation" aria-expanded="false">Sections</button>
+			{{nav_menu . "primary"}}
+		</nav><!-- #site-navigation -->{{end}}
+	</header><!-- #masthead -->
+
+	<div id="content" class="site-content">
+		<main id="main" class="site-main" tabindex="-1">

@@ -1,0 +1,9 @@
+{{template "header" .}}
+<header class="vr-wrap page-header">
+	<p class="vr-kicker">{{plural .TotalPosts "%s story" "%s stories"}}</p>
+	<h1 class="page-title">{{if .SearchQuery}}&ldquo;{{.SearchQuery}}&rdquo;{{else}}Search{{end}}</h1>
+	{{template "searchform" .}}
+</header>
+{{if .Posts}}{{template "editorial" .}}
+<div class="vr-wrap">{{.Pagination}}</div>{{else}}<div class="vr-wrap">{{template "content-none" .}}</div>{{end}}
+{{template "footer" .}}

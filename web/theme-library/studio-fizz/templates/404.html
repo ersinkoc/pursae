@@ -1,0 +1,8 @@
+{{template "header" .}}
+<section class="fz-wrap error-404 not-found fz-404">
+	<p class="fz-404__code" aria-hidden="true"><span>4</span><span>0</span><span>4</span></p>
+	<h1 class="page-title">Oops, this page fizzled out.</h1>
+	<p>We could not find what you were looking for. Try a search or head back to the <a href="{{.HomeURL}}">home page</a>.</p>
+	{{template "searchform" .}}
+</section>
+{{template "footer" .}}

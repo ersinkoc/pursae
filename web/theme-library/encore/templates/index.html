@@ -1,0 +1,8 @@
+{{template "header" .}}
+<header class="ec-wrap page-header">
+	<p class="ec-kicker">{{if .IsHomeHeader}}Latest{{else}}{{.Description}}{{end}}</p>
+	<h1 class="page-title">{{if .IsHomeHeader}}{{.PostsPageTitle}}{{else}}News{{end}}</h1>
+</header>
+{{if .Posts}}{{template "news" .}}
+<div class="ec-wrap">{{.Pagination}}</div>{{else}}<div class="ec-wrap">{{template "content-none" .}}</div>{{end}}
+{{template "footer" .}}

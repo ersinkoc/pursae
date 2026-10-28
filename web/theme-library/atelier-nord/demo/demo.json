@@ -1,0 +1,412 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Form & Fjord",
+  "blogdescription": "Design studio for identity, print and space",
+  "posts_per_page": 12
+ },
+ "categories": [
+  {
+   "slug": "identity",
+   "name": "Identity",
+   "description": "Visual identities for cultural and public clients."
+  },
+  {
+   "slug": "wayfinding",
+   "name": "Wayfinding",
+   "description": "Signage and information for public spaces."
+  },
+  {
+   "slug": "typography",
+   "name": "Typography",
+   "description": "Typefaces and lettering."
+  },
+  {
+   "slug": "editorial",
+   "name": "Editorial",
+   "description": "Books, reports and posters."
+  },
+  {
+   "slug": "objects",
+   "name": "Objects",
+   "description": "Furniture and small objects."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "culture",
+   "name": "Culture"
+  },
+  {
+   "slug": "posters",
+   "name": "Posters"
+  },
+  {
+   "slug": "type",
+   "name": "Type"
+  },
+  {
+   "slug": "signage",
+   "name": "Signage"
+  },
+  {
+   "slug": "public-space",
+   "name": "Public space"
+  },
+  {
+   "slug": "information",
+   "name": "Information design"
+  },
+  {
+   "slug": "furniture",
+   "name": "Furniture"
+  },
+  {
+   "slug": "books",
+   "name": "Books"
+  }
+ ],
+ "media": [
+  {
+   "id": "hero-form",
+   "file": "demo/images/hero-form.jpg",
+   "alt": "A black panel and a red circle on an off-white grid",
+   "caption": ""
+  },
+  {
+   "id": "wayfinding",
+   "file": "demo/images/wayfinding.jpg",
+   "alt": "A yellow platform sign with a black arrow and lettered gate markers",
+   "caption": "Platform signage, full-size prototype"
+  },
+  {
+   "id": "museum-identity",
+   "file": "demo/images/museum-identity.jpg",
+   "alt": "Three posters in black, red and blue with simple geometric shapes",
+   "caption": "The Light, Mass and Rhythm posters"
+  },
+  {
+   "id": "typeface-specimen",
+   "file": "demo/images/typeface-specimen.jpg",
+   "alt": "A typeface specimen with large letters and a row of weights",
+   "caption": "Six weights, one rhythm"
+  },
+  {
+   "id": "transit-map",
+   "file": "demo/images/transit-map.jpg",
+   "alt": "A diagrammatic transit map with red, blue, yellow and black lines",
+   "caption": "The network diagram at 1:1"
+  },
+  {
+   "id": "poster-series",
+   "file": "demo/images/poster-series.jpg",
+   "alt": "Four numbered posters with stripes and circles on a black wall",
+   "caption": ""
+  },
+  {
+   "id": "chair-object",
+   "file": "demo/images/chair-object.jpg",
+   "alt": "A minimal black chair with a red backrest in an empty room",
+   "caption": "Stol N°3 in ash and powder-coated steel"
+  },
+  {
+   "id": "book-design",
+   "file": "demo/images/book-design.jpg",
+   "alt": "An open book showing an index page and a red full-page plate",
+   "caption": "Spread from the index section"
+  },
+  {
+   "id": "housing-facade",
+   "file": "demo/images/housing-facade.jpg",
+   "alt": "A housing block facade with a regular grid of windows, some red",
+   "caption": "The red windows mark the shared rooms"
+  },
+  {
+   "id": "annual-report",
+   "file": "demo/images/annual-report.jpg",
+   "alt": "A bar chart rising to a red final bar with a large percentage",
+   "caption": "Opening spread of the annual review"
+  },
+  {
+   "id": "studio-space",
+   "file": "demo/images/studio-space.jpg",
+   "alt": "A studio interior with a pinboard, a desk and a red ball",
+   "caption": "The studio, Tuesday morning"
+  },
+  {
+   "id": "studio-about",
+   "file": "demo/images/studio-about.jpg",
+   "alt": "Black and white bars of varying heights above the words Studio, Oslo",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Home",
+   "content": "<!-- wp:group {\"className\":\"an-section\"} --><div class=\"wp-block-group an-section\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Studio</h2><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"an-statement\"} --><p class=\"an-statement\">Form &amp; Fjord is a design studio of six people. We work on identities, signage, books and objects, mostly for cultural and public clients who care about the long term.</p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:group {\"className\":\"an-section\"} --><div class=\"wp-block-group an-section\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Selected work</h2><!-- /wp:heading --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><a href=\"{{post:kunsthalle-vestre-identity}}\"><img src=\"{{media:museum-identity}}\" alt=\"Three posters in black, red and blue with simple geometric shapes\"/></a></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"{{post:kunsthalle-vestre-identity}}\">Kunsthalle Vestre</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p>Identity, posters, signage</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><a href=\"{{post:harbour-line-wayfinding}}\"><img src=\"{{media:wayfinding}}\" alt=\"A yellow platform sign with a black arrow and lettered gate markers\"/></a></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"{{post:harbour-line-wayfinding}}\">Harbour Line</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p>Wayfinding for a ferry terminal</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><a href=\"{{post:index-a-book-on-modernism}}\"><img src=\"{{media:book-design}}\" alt=\"An open book showing an index page and a red full-page plate\"/></a></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"{{post:index-a-book-on-modernism}}\">Index</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p>A book on Nordic modernism</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:work}}\">All projects</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --><!-- wp:group {\"className\":\"an-section\"} --><div class=\"wp-block-group an-section\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Services</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"an-services\"} --><ul class=\"wp-block-list an-services\"><!-- wp:list-item --><li>Visual identity</li><!-- /wp:list-item --><!-- wp:list-item --><li>Wayfinding and signage</li><!-- /wp:list-item --><!-- wp:list-item --><li>Editorial and book design</li><!-- /wp:list-item --><!-- wp:list-item --><li>Typeface design</li><!-- /wp:list-item --><!-- wp:list-item --><li>Exhibition graphics</li><!-- /wp:list-item --><!-- wp:list-item --><li>Furniture and objects</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group --><!-- wp:group {\"className\":\"an-section\"} --><div class=\"wp-block-group an-section\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Clients</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"an-clients\"} --><ul class=\"wp-block-list an-clients\"><!-- wp:list-item --><li>Kunsthalle Vestre</li><!-- /wp:list-item --><!-- wp:list-item --><li>Harbour Line</li><!-- /wp:list-item --><!-- wp:list-item --><li>Fjord Housing Trust</li><!-- /wp:list-item --><!-- wp:list-item --><li>City Library</li><!-- /wp:list-item --><!-- wp:list-item --><li>Nordlys Concert Hall</li><!-- /wp:list-item --><!-- wp:list-item --><li>Regional Transit</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group --><!-- wp:group {\"className\":\"an-section\"} --><div class=\"wp-block-group an-section\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Contact</h2><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"an-statement\"} --><p class=\"an-statement\">New projects, collaborations and lectures: <a href=\"mailto:studio@example.com\">studio@example.com</a></p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Visit the studio</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "featured_media": "hero-form",
+   "front_page": true
+  },
+  {
+   "slug": "work",
+   "title": "Work",
+   "content": "",
+   "posts_page": true
+  },
+  {
+   "slug": "about",
+   "title": "Studio",
+   "content": "<!-- wp:paragraph --><p>Form &amp; Fjord was founded in 2014 by two graphic designers and an architect who shared a desk and an opinion: that good design is mostly careful listening, followed by doing less.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Today we are six people in a former print workshop by the water. We take on a small number of projects each year and stay with them for a long time, often for a decade or more.</p><!-- /wp:paragraph --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:studio-space}}\" alt=\"A studio interior with a pinboard, a desk and a red ball\"/><figcaption class=\"wp-element-caption\">The studio, Tuesday morning</figcaption></figure><!-- /wp:image --><!-- wp:heading --><h2 class=\"wp-block-heading\">How we work</h2><!-- /wp:heading --><!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>We start every project on site, never from a brief alone.</li><!-- /wp:list-item --><!-- wp:list-item --><li>We test with real people at full size.</li><!-- /wp:list-item --><!-- wp:list-item --><li>We write the manual ourselves and keep it short.</li><!-- /wp:list-item --><!-- wp:list-item --><li>We stay available after launch.</li><!-- /wp:list-item --></ol><!-- /wp:list --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Clarity is a form of kindness.</p><!-- /wp:paragraph --><cite>Studio principle N°1</cite></blockquote><!-- /wp:quote -->",
+   "featured_media": "studio-about"
+  },
+  {
+   "slug": "approach",
+   "title": "Approach",
+   "content": "<!-- wp:paragraph --><p>Our process has four steps, and we show our clients every one of them. There are no big reveals: the work grows in the open.</p><!-- /wp:paragraph --><!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Phase</th><th>What happens</th><th>Duration</th></tr></thead><tbody><tr><td>Listen</td><td>Site visits, interviews, existing material</td><td>2–4 weeks</td></tr><tr><td>Reduce</td><td>Principles, a grid, the first rough tests</td><td>3–6 weeks</td></tr><tr><td>Build</td><td>The full system, prototypes at real size</td><td>6–12 weeks</td></tr><tr><td>Stay</td><td>Manuals, training, yearly check-ins</td><td>Ongoing</td></tr></tbody></table></figure><!-- /wp:table --><!-- wp:paragraph --><p>Fees are fixed per phase, agreed before we start each one.</p><!-- /wp:paragraph -->",
+   "parent": "about"
+  },
+  {
+   "slug": "contact",
+   "title": "Contact",
+   "content": "<!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Write</h3><!-- /wp:heading --><!-- wp:paragraph --><p><a href=\"mailto:studio@example.com\">studio@example.com</a><br>We reply within two working days.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Visit</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Pier 4, Second floor<br>Open Tuesday to Thursday, by appointment.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Join</h3><!-- /wp:heading --><!-- wp:paragraph --><p>We look for one intern each autumn. Send a short letter and ten pages of work.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns -->"
+  }
+ ],
+ "posts": [
+  {
+   "slug": "kunsthalle-vestre-identity",
+   "title": "Kunsthalle Vestre",
+   "date": "2026-09-24T10:00:00",
+   "excerpt": "A flexible identity for a small art hall: three shapes, three colours and a typographic system that bends to every exhibition.",
+   "content": "<!-- wp:paragraph --><p>Kunsthalle Vestre shows six exhibitions a year with a team of five. The old identity needed a designer for every poster. The new one had to be something the team could run themselves, without losing its character.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Three shapes, one grid</h2><!-- /wp:heading --><!-- wp:paragraph --><p>We reduced the identity to a circle, a triangle and a stack of bars, each tied to one of the hall's programme strands: light, mass and rhythm. Every poster places one shape on the same twelve-column grid, and the exhibition title always sits at the bottom left.</p><!-- /wp:paragraph --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:museum-identity}}\" alt=\"Three posters in black, red and blue with simple geometric shapes\"/><figcaption class=\"wp-element-caption\">The Light, Mass and Rhythm posters</figcaption></figure><!-- /wp:image --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>A poster template for print and screens</li><!-- /wp:list-item --><!-- wp:list-item --><li>A typographic system with two weights</li><!-- /wp:list-item --><!-- wp:list-item --><li>Signage for the entrance and the courtyard</li><!-- /wp:list-item --><!-- wp:list-item --><li>A short manual the staff actually read</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph --><p>Two years on, the hall has produced over forty posters in-house. None of them look the same, and all of them look like Vestre.</p><!-- /wp:paragraph --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>For the first time, the posters feel like part of the building.</p><!-- /wp:paragraph --><cite>Director, Kunsthalle Vestre</cite></blockquote><!-- /wp:quote -->",
+   "categories": [
+    "identity"
+   ],
+   "tags": [
+    "culture",
+    "posters",
+    "type"
+   ],
+   "featured_media": "museum-identity",
+   "format": "standard",
+   "sticky": true,
+   "comments": [
+    {
+     "author": "Liv",
+     "email": "liv@example.com",
+     "content": "The poster system is a lesson in restraint. Lovely to see it working two years later.",
+     "date": "2026-09-25T06:00:00"
+    },
+    {
+     "author": "Jonas",
+     "email": "jonas@example.com",
+     "content": "Is the manual available to read anywhere?",
+     "date": "2026-09-26T12:00:00"
+    }
+   ]
+  },
+  {
+   "slug": "harbour-line-wayfinding",
+   "title": "Harbour Line Wayfinding",
+   "date": "2026-08-30T09:30:00",
+   "excerpt": "Signage for a ferry terminal used by twelve thousand people a day, most of them in a hurry.",
+   "content": "<!-- wp:paragraph --><p>The Harbour Line terminal connects trains, trams and three ferry routes under one long roof. Travellers have about ninety seconds to make a decision. Our job was to make that decision obvious.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>We started with a walk-through at rush hour, timing how long people stood still at each junction. The worst spots were not where signs were missing but where too many signs competed.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Fewer, larger, closer</h2><!-- /wp:heading --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph --><p>We removed half of the existing signs and made the rest larger, placing them exactly where the decision happens rather than where a wall happened to be free.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph --><p>Gates got single letters in coloured circles. Platforms got numbers you can read from forty metres. Everything else became secondary information in a smaller size.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:wayfinding}}\" alt=\"A yellow platform sign with a black arrow and lettered gate markers\"/><figcaption class=\"wp-element-caption\">Full-size prototype, tested on site for two weeks</figcaption></figure><!-- /wp:image --><!-- wp:paragraph --><p>Average standing time at the main junction dropped from eleven seconds to four.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "wayfinding"
+   ],
+   "tags": [
+    "signage",
+    "public-space"
+   ],
+   "featured_media": "wayfinding",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Mette",
+     "email": "mette@example.com",
+     "content": "Four seconds instead of eleven. That is the best design metric I have read this year.",
+     "date": "2026-08-31T15:30:00"
+    }
+   ]
+  },
+  {
+   "slug": "nord-grotesk-typeface",
+   "title": "Nord Grotesk",
+   "date": "2026-07-15T14:00:00",
+   "excerpt": "A workhorse grotesk in six weights, drawn for signage first and books second.",
+   "content": "<!-- wp:paragraph --><p>Nord Grotesk began as lettering for the Harbour Line signs and grew into a full family. Its proportions come from the sign panels: slightly narrow, generous counters, and an uppercase that holds up at a distance.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>We drew six weights, from light to extra bold, and kept the spacing loose enough for small sizes. The figures are tabular by default because so much of public information is numbers: platforms, times, gates.</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Design notes</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>A single-storey g for clarity at small sizes</li><!-- /wp:list-item --><!-- wp:list-item --><li>Short descenders so tight line spacing works on signs</li><!-- /wp:list-item --><!-- wp:list-item --><li>An arrow set drawn to match every weight</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:typeface-specimen}}\" alt=\"A typeface specimen with large letters and a row of weights\"/><figcaption class=\"wp-element-caption\">Specimen sheet, first edition</figcaption></figure><!-- /wp:image --><!-- wp:paragraph --><p>The family is now used across all of our wayfinding projects and is available to clients under a studio licence.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "typography"
+   ],
+   "tags": [
+    "type"
+   ],
+   "featured_media": "typeface-specimen",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "regional-transit-diagram",
+   "title": "Regional Transit Diagram",
+   "date": "2026-06-02T11:15:00",
+   "excerpt": "Four lines, forty stations and one rule: every angle is forty-five degrees.",
+   "content": "<!-- wp:paragraph --><p>The regional transport authority asked for a map that would fit on a bus shelter panel and still make sense to a first-time visitor. Geography had to give way to clarity.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>We simplified the network into straight runs and forty-five degree turns, kept the four line colours from the existing fleet and gave every interchange the same white circle with a heavy outline.</p><!-- /wp:paragraph --><!-- wp:pullquote --><figure class=\"wp-block-pullquote\"><blockquote><p>A diagram is a promise that the city is simpler than it looks.</p></blockquote></figure><!-- /wp:pullquote --><!-- wp:paragraph --><p>The diagram was tested with groups of commuters and tourists before printing. Two stations moved, one name became shorter and the yellow got slightly darker so it would print reliably outdoors.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "wayfinding"
+   ],
+   "tags": [
+    "public-space",
+    "information"
+   ],
+   "featured_media": "transit-map",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "four-seasons-poster-series",
+   "title": "Four Seasons of Sound",
+   "date": "2026-04-19T16:40:00",
+   "excerpt": "A season of concerts announced with four posters that share nothing but a grid and a number.",
+   "content": "<!-- wp:paragraph --><p>A concert hall wanted a season campaign that would read from across a tram platform. We proposed four posters, one per quarter, each built from stripes or a single circle.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The posters carry almost no text: the season number, the dates and a short address line. Everything else lives online. The restraint made the street posters feel like objects rather than adverts.</p><!-- /wp:paragraph --><!-- wp:gallery {\"columns\":2,\"linkTo\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-gallery has-nested-images columns-2 is-cropped alignwide\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:poster-series}}\" alt=\"Four numbered posters with stripes and circles on a black wall\"/></figure><!-- /wp:image --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:museum-identity}}\" alt=\"Three posters in black, red and blue with simple geometric shapes\"/></figure><!-- /wp:image --></figure><!-- /wp:gallery --><!-- wp:paragraph --><p>Printed in two spot colours on uncoated paper, the series was later collected into a small folded edition for subscribers.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "editorial"
+   ],
+   "tags": [
+    "posters",
+    "culture"
+   ],
+   "featured_media": "poster-series",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "stol-no-3",
+   "title": "Stol N°3",
+   "date": "2026-03-03T10:20:00",
+   "excerpt": "A stacking chair for a library reading room, in ash and powder-coated steel.",
+   "content": "<!-- wp:paragraph --><p>The library needed eighty chairs that could be stacked by one person, survive school groups and look calm in a room full of books. We designed one chair and changed it eleven times.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The final version uses a steel frame with an ash seat and a single coloured backrest. The red backrest became the library's own signal colour, repeated in the shelf labels.</p><!-- /wp:paragraph --><!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Material</th><th>Finish</th><th>Stacks</th></tr></thead><tbody><tr><td>Ash, steel</td><td>Oiled, powder coat</td><td>Up to 8</td></tr></tbody></table></figure><!-- /wp:table --><!-- wp:paragraph --><p>A small workshop outside the city builds the chairs to order. Every one carries a stamped number under the seat.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "objects"
+   ],
+   "tags": [
+    "furniture"
+   ],
+   "featured_media": "chair-object",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "index-a-book-on-modernism",
+   "title": "Index: A Book on Nordic Modernism",
+   "date": "2026-01-28T13:00:00",
+   "excerpt": "A 320-page survey designed around its index, which turned out to be the best part of the book.",
+   "content": "<!-- wp:paragraph --><p>The editors had collected two hundred buildings, chairs, posters and teaspoons. The challenge was to let a reader move through them in any order without getting lost.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>We built the book around the index. Every object has a number, the number appears in the margin on every page that mentions it, and full-page colour plates break the text at regular intervals.</p><!-- /wp:paragraph --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:book-design}}\" alt=\"An open book showing an index page and a red full-page plate\"/><figcaption class=\"wp-element-caption\">Spread from the index section</figcaption></figure><!-- /wp:image --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>320 pages, sewn binding, open flat</li><!-- /wp:list-item --><!-- wp:list-item --><li>Two paper stocks: uncoated text, coated plates</li><!-- /wp:list-item --><!-- wp:list-item --><li>Set in Nord Grotesk and a mono for references</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph --><p>The first printing sold out in four months. The second added a fold-out timeline at the back, requested by almost every reader who wrote to us.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "editorial"
+   ],
+   "tags": [
+    "books",
+    "type"
+   ],
+   "featured_media": "book-design",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "fjord-housing-annual-review",
+   "title": "Fjord Housing Annual Review",
+   "date": "2025-11-12T09:00:00",
+   "excerpt": "A housing trust's year told in numbers, with one colour reserved for good news.",
+   "content": "<!-- wp:paragraph --><p>Annual reports are usually written for the board. Fjord Housing wanted one their tenants would read. We kept it short, put the numbers first and used red only where something had improved.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Charts are drawn on the same grid as the text so a bar chart and a paragraph can share a spread without fighting. Photographs of the buildings were replaced by simple drawings of their facades.</p><!-- /wp:paragraph --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:housing-facade}}\" alt=\"A housing block facade with a regular grid of windows, some red\"/><figcaption class=\"wp-element-caption\">The red windows mark the shared rooms</figcaption></figure><!-- /wp:image --><!-- wp:paragraph --><p>The review was printed as a newspaper and delivered to every flat. Response forms came back at three times the usual rate.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "editorial",
+    "identity"
+   ],
+   "tags": [
+    "information"
+   ],
+   "featured_media": "annual-report",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Work",
+     "page": "work",
+     "children": [
+      {
+       "title": "Identity",
+       "category": "identity"
+      },
+      {
+       "title": "Wayfinding",
+       "category": "wayfinding"
+      },
+      {
+       "title": "Editorial",
+       "category": "editorial"
+      }
+     ]
+    },
+    {
+     "title": "Studio",
+     "page": "about",
+     "children": [
+      {
+       "title": "Approach",
+       "page": "approach"
+      }
+     ]
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    }
+   ]
+  },
+  {
+   "name": "Footer",
+   "location": "footer",
+   "items": [
+    {
+     "title": "Instagram",
+     "url": "https://instagram.com/"
+    },
+    {
+     "title": "Are.na",
+     "url": "https://are.na/"
+    },
+    {
+     "title": "Newsletter",
+     "page": "contact"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "footer-1": [
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Studio</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Form &amp; Fjord, Pier 4, Second floor. Tuesday to Thursday, by appointment.</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Recent projects</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":4,\"displayPostDate\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Disciplines</h2><!-- /wp:heading --><!-- wp:categories {\"showPostCounts\":true} /--></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "work_layout": "index",
+  "show_grid": true,
+  "type_scale": "display",
+  "font_pairing": "inter-plex",
+  "hero_heading": "We design identities, books and places that are clear, useful and built to last."
+ }
+}

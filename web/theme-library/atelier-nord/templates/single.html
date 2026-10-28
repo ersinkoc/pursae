@@ -1,0 +1,28 @@
+{{template "header" .}}
+{{with .Post}}<article id="post-{{.ID}}" class="{{.Class}} an-case">
+	<header class="an-wrap an-case__header">
+		<p class="an-label">{{with .Categories}}{{(index . 0).Name}}{{else}}Journal{{end}} / {{date .Date "Y"}}</p>
+		<h1 class="entry-title">{{.Title}}</h1>
+		{{with .Excerpt}}<div class="an-case__lede">{{.}}</div>{{end}}
+	</header>
+	{{with .Thumbnail}}<figure class="an-wrap an-case__media">{{.}}</figure>{{end}}
+	<div class="an-wrap an-case__body">
+		<aside class="an-case__facts" aria-label="Project facts">
+			<dl>
+				{{if .Categories}}<dt>Discipline</dt><dd>{{range $i, $c := .Categories}}{{if $i}}, {{end}}<a href="{{$c.URL}}">{{$c.Name}}</a>{{end}}</dd>{{end}}
+				<dt>Date</dt><dd><time datetime="{{.DateISO}}">{{.DateText}}</time></dd>
+				{{with .AuthorName}}<dt class="an-author">Author</dt><dd class="an-author"><a href="{{$.Post.AuthorURL}}">{{.}}</a></dd>{{end}}
+				{{if .Tags}}<dt>Keywords</dt><dd class="tags-links">{{range .Tags}}<a href="{{.URL}}" rel="tag">{{.Name}}</a> {{end}}</dd>{{end}}
+				{{if or .CommentsOpen .CommentCount}}<dt>Response</dt><dd><a href="{{.CommentsURL}}">{{plural .CommentCount "%s comment" "%s comments"}}</a></dd>{{end}}
+			</dl>
+			{{with .EditLink}}<p class="edit-link">{{.}}</p>{{end}}
+		</aside>
+		<div class="entry-content">
+			{{.Content}}
+		</div>
+	</div>
+	<div class="an-wrap">{{.Biography}}</div>
+</article>{{end}}
+<div class="an-wrap">{{.PostNav}}</div>
+<div class="an-wrap">{{template "comments" .}}</div>
+{{template "footer" .}}

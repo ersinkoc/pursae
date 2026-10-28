@@ -1,0 +1,15 @@
+{{template "header" .}}
+{{with .Post}}<article id="post-{{.ID}}" class="{{.Class}} ec-single ec-page">
+	<header class="ec-single__header{{if .Thumbnail}} ec-single__header--image{{end}}">
+		{{with .ThumbnailURL}}<img class="ec-single__bg" src="{{.}}" alt="" />{{end}}
+		<div class="ec-wrap ec-single__inner">
+			<h1 class="entry-title">{{.Title}}</h1>
+		</div>
+	</header>
+	<div class="ec-wrap ec-narrow entry-content">
+		{{.Content}}
+	</div>
+	{{with .EditLink}}<footer class="ec-wrap ec-narrow entry-footer"><span class="edit-link">{{.}}</span></footer>{{end}}
+</article>{{end}}
+<div class="ec-wrap ec-narrow">{{template "comments" .}}</div>
+{{template "footer" .}}

@@ -1,0 +1,8 @@
+{{template "header" .}}
+<section class="an-wrap error-404 not-found an-404">
+	<p class="an-label">Error</p>
+	<h1 class="an-404__code">404</h1>
+	<p class="an-404__text">This page is not part of the index. Try searching, or start again from the <a href="{{.HomeURL}}">front page</a>.</p>
+	{{template "searchform" .}}
+</section>
+{{template "footer" .}}

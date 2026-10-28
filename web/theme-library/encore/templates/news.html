@@ -1,0 +1,14 @@
+<div class="ec-wrap ec-news">
+	{{range .Posts}}<article id="post-{{.ID}}" class="{{.Class}} ec-card">
+		<a class="ec-card__media" href="{{.Permalink}}" aria-hidden="true" tabindex="-1">{{with .Thumbnail}}{{.}}{{else}}<span class="ec-card__noimg"></span>{{end}}
+			<time class="ec-card__date" datetime="{{.DateISO}}"><span>{{date .Date "d"}}</span>{{date .Date "M"}}</time>
+		</a>
+		<div class="ec-card__body">
+			<p class="ec-kicker">{{if .ShowFeatured}}Pinned{{else}}{{with .Categories}}{{(index . 0).Name}}{{else}}News{{end}}{{end}}</p>
+			<h2 class="ec-card__title"><a href="{{.Permalink}}" rel="bookmark">{{.Title}}</a></h2>
+			{{if .ShowExcerpt}}<div class="ec-card__excerpt">{{.Excerpt}}</div>{{end}}
+			<p class="ec-card__more"><a href="{{.Permalink}}">Read more<span class="screen-reader-text"> about {{.Title}}</span></a></p>
+		</div>
+	</article>
+	{{end}}
+</div>

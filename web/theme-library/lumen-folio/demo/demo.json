@@ -1,0 +1,441 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Halden Light",
+  "blogdescription": "Landscape photographs, made slowly",
+  "posts_per_page": 12
+ },
+ "categories": [
+  {
+   "slug": "landscapes",
+   "name": "Landscapes",
+   "description": "Mountains, valleys and wide open places."
+  },
+  {
+   "slug": "night",
+   "name": "Night",
+   "description": "Moonlight, aurora and the blue hour."
+  },
+  {
+   "slug": "coast",
+   "name": "Coast",
+   "description": "Headlands, harbors and weather from the sea."
+  },
+  {
+   "slug": "travel-notes",
+   "name": "Travel Notes",
+   "description": "Field notes from the road."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "fog",
+   "name": "Fog"
+  },
+  {
+   "slug": "mountains",
+   "name": "Mountains"
+  },
+  {
+   "slug": "long-exposure",
+   "name": "Long exposure"
+  },
+  {
+   "slug": "winter",
+   "name": "Winter"
+  },
+  {
+   "slug": "desert",
+   "name": "Desert"
+  },
+  {
+   "slug": "blue-hour",
+   "name": "Blue hour"
+  },
+  {
+   "slug": "film",
+   "name": "Film"
+  }
+ ],
+ "media": [
+  {
+   "id": "hero-ridge",
+   "file": "demo/images/hero-ridge.jpg",
+   "alt": "Layered mountain ridges at dusk under an orange sky",
+   "caption": "Last light over the eastern ridges"
+  },
+  {
+   "id": "fog-valley",
+   "file": "demo/images/fog-valley.jpg",
+   "alt": "Grey hills disappearing into a fog-filled valley",
+   "caption": ""
+  },
+  {
+   "id": "northern-lights",
+   "file": "demo/images/northern-lights.jpg",
+   "alt": "Green and violet aurora over a dark treeline",
+   "caption": ""
+  },
+  {
+   "id": "moon-lake",
+   "file": "demo/images/moon-lake.jpg",
+   "alt": "A full moon reflected in a still mountain lake",
+   "caption": ""
+  },
+  {
+   "id": "alpine-lake",
+   "file": "demo/images/alpine-lake.jpg",
+   "alt": "Blue mountains mirrored in a calm alpine lake",
+   "caption": "Morning, before the wind"
+  },
+  {
+   "id": "sunrise-fields",
+   "file": "demo/images/sunrise-fields.jpg",
+   "alt": "Low sun rising over misty fields",
+   "caption": ""
+  },
+  {
+   "id": "canyon-light",
+   "file": "demo/images/canyon-light.jpg",
+   "alt": "Sunlight glowing between the walls of a red canyon",
+   "caption": ""
+  },
+  {
+   "id": "desert-dunes",
+   "file": "demo/images/desert-dunes.jpg",
+   "alt": "Rolling sand dunes in warm afternoon light",
+   "caption": ""
+  },
+  {
+   "id": "forest-mist",
+   "file": "demo/images/forest-mist.jpg",
+   "alt": "Tall tree trunks fading into a misty forest",
+   "caption": "Pines, eight in the morning"
+  },
+  {
+   "id": "salt-flats",
+   "file": "demo/images/salt-flats.jpg",
+   "alt": "A lone figure standing on a vast pale salt flat",
+   "caption": ""
+  },
+  {
+   "id": "coastline-storm",
+   "file": "demo/images/coastline-storm.jpg",
+   "alt": "Storm clouds over a dark sea beside a cliff",
+   "caption": ""
+  },
+  {
+   "id": "night-harbor",
+   "file": "demo/images/night-harbor.jpg",
+   "alt": "Out-of-focus harbor lights glowing in the dark",
+   "caption": ""
+  },
+  {
+   "id": "city-rain",
+   "file": "demo/images/city-rain.jpg",
+   "alt": "Blurred neon city lights seen through rain",
+   "caption": ""
+  },
+  {
+   "id": "about-portrait",
+   "file": "demo/images/about-portrait.jpg",
+   "alt": "A soft, pale sun behind hills in grey weather",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "about",
+   "title": "About",
+   "content": "<!-- wp:paragraph --><p>I am a landscape photographer working mostly in the northern mountains and along the coast, usually early, often cold, and nearly always waiting for weather.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>I started photographing on a borrowed film camera and still think like a film photographer: few frames, a lot of standing still, and a strong preference for one good picture over a hundred fine ones.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Recent work</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Fog Week, a series from the valley</li><!-- /wp:list-item --><!-- wp:list-item --><li>Night pieces from the lake district</li><!-- /wp:list-item --><!-- wp:list-item --><li>Salt and sky, a desert portfolio</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Available for</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Editorial assignments</li><!-- /wp:list-item --><!-- wp:list-item --><li>Print commissions</li><!-- /wp:list-item --><!-- wp:list-item --><li>Small-group workshops</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Most of photography is being there, and then being patient while you are there.</p><!-- /wp:paragraph --></blockquote><!-- /wp:quote -->",
+   "featured_media": "about-portrait",
+   "parent": ""
+  },
+  {
+   "slug": "prints",
+   "title": "Prints",
+   "content": "<!-- wp:paragraph --><p>Every photograph on this site is available as an archival pigment print, signed and numbered, in a small edition. Prints are made by a local lab on cotton rag paper and shipped flat.</p><!-- /wp:paragraph --><!-- wp:gallery {\"columns\":3,\"linkTo\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-gallery has-nested-images columns-3 is-cropped alignwide\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:alpine-lake}}\" alt=\"Blue mountains mirrored in a calm alpine lake\"/><figcaption class=\"wp-element-caption\">Alpine Lake</figcaption></figure><!-- /wp:image --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:forest-mist}}\" alt=\"Tall tree trunks fading into a misty forest\"/><figcaption class=\"wp-element-caption\">Pines</figcaption></figure><!-- /wp:image --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:salt-flats}}\" alt=\"A lone figure standing on a vast pale salt flat\"/><figcaption class=\"wp-element-caption\">Salt Flat</figcaption></figure><!-- /wp:image --></figure><!-- /wp:gallery --><!-- wp:heading --><h2 class=\"wp-block-heading\">Sizes and editions</h2><!-- /wp:heading --><!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Size</th><th>Edition</th><th>Price</th></tr></thead><tbody><tr><td>30 × 40 cm</td><td>25</td><td>€180</td></tr><tr><td>50 × 70 cm</td><td>15</td><td>€420</td></tr><tr><td>80 × 120 cm</td><td>5</td><td>€980</td></tr></tbody></table></figure><!-- /wp:table --><!-- wp:paragraph --><p>Write to me with the title of the photograph and the size you would like, and I will confirm availability within two days.</p><!-- /wp:paragraph -->",
+   "featured_media": "hero-ridge",
+   "parent": ""
+  },
+  {
+   "slug": "workshops",
+   "title": "Workshops",
+   "content": "<!-- wp:paragraph --><p>Twice a year I take four people into the mountains for three days of early mornings, long walks and slow photography. We talk about light and patience more than about settings.</p><!-- /wp:paragraph --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Spring: lakes and waterfalls, three days, four places.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Autumn: fog and ridges, three days, four places.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph --><p>Accommodation is in a simple mountain hut. All levels are welcome; a tripod and good boots are the only requirements.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Ask about dates</a></div><!-- /wp:button --></div><!-- /wp:buttons -->",
+   "featured_media": "sunrise-fields",
+   "parent": "about"
+  },
+  {
+   "slug": "contact",
+   "title": "Contact",
+   "content": "<!-- wp:paragraph --><p>For prints, assignments and workshops, write to <a href=\"mailto:studio@example.com\">studio@example.com</a>. I reply within two working days, unless I am somewhere without signal, which happens.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Based in the north, working anywhere with interesting weather.</p><!-- /wp:paragraph -->",
+   "featured_media": "",
+   "parent": ""
+  }
+ ],
+ "posts": [
+  {
+   "slug": "fog-week-in-the-valley",
+   "title": "Fog Week in the Valley",
+   "date": "2026-10-02T07:40:00",
+   "excerpt": "Five mornings of cloud inversion, one roll of patience, and the quietest pictures I have made this year.",
+   "content": "<!-- wp:paragraph --><p>Every October there is a week when the valley fills with cloud and the ridges float on top of it like islands. Nobody can tell you which week it will be. You watch the forecast for dew points and still air, set an alarm for four, and most mornings you drive home with nothing.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>This year the fog arrived on a Tuesday and stayed until Sunday. I went up the same track five times and photographed almost the same view five times, which sounds dull until you put the frames side by side and see how differently the light behaved each day.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">What changed from day to day</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Tuesday: thick and flat, no shadows at all, the hills reduced to paper cut-outs.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Thursday: a thin layer that kept breaking open over the river.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Saturday: sun on the top layer for eleven minutes, then gone.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:sunrise-fields}}\" alt=\"Low sun rising over misty fields\"/><figcaption class=\"wp-element-caption\">Saturday, the eleven minutes</figcaption></figure><!-- /wp:image --><!-- wp:paragraph --><p>I shot most of it on a long lens from the same rock. Standing still is underrated. When you stop chasing compositions the weather starts composing for you.</p><!-- /wp:paragraph --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>The best fog pictures are about what is missing.</p><!-- /wp:paragraph --><cite>Field notebook, day three</cite></blockquote><!-- /wp:quote -->",
+   "categories": [
+    "landscapes"
+   ],
+   "tags": [
+    "fog",
+    "mountains"
+   ],
+   "featured_media": "fog-valley",
+   "format": "standard",
+   "sticky": true,
+   "comments": [
+    {
+     "author": "Tove",
+     "email": "reader0@example.com",
+     "content": "The Saturday frame is extraordinary. Worth every four o'clock alarm.",
+     "date": "2026-10-03T09:40:00"
+    },
+    {
+     "author": "Halden Light",
+     "email": "studio@example.com",
+     "content": "Thank you! It was a lot of coffee.",
+     "date": "2026-10-03T13:40:00"
+    }
+   ]
+  },
+  {
+   "slug": "waiting-for-the-aurora",
+   "title": "Waiting for the Aurora",
+   "date": "2026-09-18T23:10:00",
+   "excerpt": "Four nights on a frozen lake shore, two cups of cold coffee and twenty minutes of sky on fire.",
+   "content": "<!-- wp:paragraph --><p>The forecast said strong activity after midnight. The forecast had said that for three nights already. On the fourth night I almost stayed in the cabin, and that is of course the night it happened.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>It started as a faint grey arc that the camera saw before I did. Within ten minutes it had turned green, then pulled into curtains that moved faster than I expected, folding and unfolding above the treeline.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:moon-lake}}\" alt=\"A full moon reflected in a still mountain lake\"/><figcaption class=\"wp-element-caption\">The night before, only the moon</figcaption></figure><!-- /wp:image --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:northern-lights}}\" alt=\"Green and violet aurora over a dark treeline\"/><figcaption class=\"wp-element-caption\">Fourth night, 00:42</figcaption></figure><!-- /wp:image --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Settings, for the curious</h3><!-- /wp:heading --><!-- wp:paragraph --><p>A wide lens wide open, ISO 1600 and exposures between four and eight seconds. Anything longer and the curtains blur into a green haze. I focused on a distant star at full magnification and taped the ring so it could not move.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>When it faded I sat on the cooler for another hour, just in case. Nothing came back, and I did not mind at all.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "night"
+   ],
+   "tags": [
+    "long-exposure",
+    "winter"
+   ],
+   "featured_media": "northern-lights",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Ren",
+     "email": "reader1@example.com",
+     "content": "I have waited for the aurora for years without luck. This gives me hope for next winter.",
+     "date": "2026-09-20T01:10:00"
+    }
+   ]
+  },
+  {
+   "slug": "the-dunes-at-four-in-the-afternoon",
+   "title": "The Dunes at Four in the Afternoon",
+   "date": "2026-08-27T16:05:00",
+   "excerpt": "Sand only looks like sand at noon. Later in the day it becomes a study in curves and shadow.",
+   "content": "<!-- wp:paragraph --><p>At midday the dunes are a white glare and every photograph looks flat. I spent the hottest hours under a tarp reading, and walked out again when the sun dropped low enough to draw shadows along every ridge.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The trick is to walk along the crest, not across the slopes. Footprints ruin a dune for the rest of the day, and you only get one clean side to photograph before the wind fixes it overnight.</p><!-- /wp:paragraph --><!-- wp:pullquote --><figure class=\"wp-block-pullquote\"><blockquote><p>Light at a low angle turns a desert into a drawing.</p></blockquote></figure><!-- /wp:pullquote --><!-- wp:paragraph --><p>I kept the frames simple: one ridge, one shadow, the sky as a band of colour on top. The warm tones are straight out of the camera; the sand really does glow like that for about forty minutes.</p><!-- /wp:paragraph --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Bring twice the water you think you need.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Keep lenses changed inside a bag.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Walk back before the light goes, not after.</li><!-- /wp:list-item --></ul><!-- /wp:list -->",
+   "categories": [
+    "landscapes",
+    "travel-notes"
+   ],
+   "tags": [
+    "desert"
+   ],
+   "featured_media": "desert-dunes",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "moon-over-a-still-lake",
+   "title": "Moon Over a Still Lake",
+   "date": "2026-08-09T22:30:00",
+   "excerpt": "A windless night, a full moon and a lake that behaved like a mirror for exactly one hour.",
+   "content": "<!-- wp:paragraph --><p>Still water is rarer than people think. Even on calm evenings the surface trembles with insects, currents and small gusts you cannot feel on your face. A mirror reflection is a small piece of luck.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>I set up just after blue hour and waited for the moon to clear the ridge. The first frames were too bright; the moon is a sunlit object and needs far less exposure than the landscape around it.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Two exposures, one picture</h2><!-- /wp:heading --><!-- wp:paragraph --><p>In the end I made one exposure for the moon and one for the hills and the water, a few seconds apart, and kept them as a pair rather than blending them. Sometimes the honest answer is a diptych.</p><!-- /wp:paragraph --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:alpine-lake}}\" alt=\"Blue mountains mirrored in a calm alpine lake\"/><figcaption class=\"wp-element-caption\">The same lake the next morning</figcaption></figure><!-- /wp:image -->",
+   "categories": [
+    "night"
+   ],
+   "tags": [
+    "blue-hour",
+    "mountains",
+    "long-exposure"
+   ],
+   "featured_media": "moon-lake",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Tove",
+     "email": "reader3@example.com",
+     "content": "The Saturday frame is extraordinary. Worth every four o'clock alarm.",
+     "date": "2026-08-11T00:30:00"
+    }
+   ]
+  },
+  {
+   "slug": "salt-sky-and-one-small-figure",
+   "title": "Salt, Sky and One Small Figure",
+   "date": "2026-07-21T18:45:00",
+   "excerpt": "On a salt flat the horizon disappears, and a single person becomes the whole composition.",
+   "content": "<!-- wp:paragraph --><p>The salt flat after rain is the strangest place I have worked. A thin skin of water turns the ground into sky, and the horizon simply stops existing. You lose all sense of distance.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>My friend walked out about four hundred metres and stood still while I made frames from a low tripod. Without that small dark figure the pictures were just gradients. With it, they became places.</p><!-- /wp:paragraph --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Scale is a story you tell with one small thing.</p><!-- /wp:paragraph --><cite>Workshop notes</cite></blockquote><!-- /wp:quote --><!-- wp:paragraph --><p>I converted a few to black and white later, but the colour versions keep the faint pink of evening that makes the place feel like a dream rather than a diagram.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "landscapes",
+    "travel-notes"
+   ],
+   "tags": [
+    "desert"
+   ],
+   "featured_media": "salt-flats",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "a-storm-comes-in-off-the-headland",
+   "title": "A Storm Comes In Off the Headland",
+   "date": "2026-06-30T14:20:00",
+   "excerpt": "Grey on grey on grey: photographing weather you can feel in your teeth.",
+   "content": "<!-- wp:paragraph --><p>Storm light is generous. The cloud base drops, the sea turns the colour of slate and every texture on the water becomes visible. It is also the light that makes you question your choices, standing on a cliff with a tripod in a gale.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>I worked from behind a stone wall for shelter and used a heavy neutral density filter to stretch exposures to thirty seconds. The waves smoothed into mist; the cliff stayed sharp and black.</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Keeping the gear alive</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>A shower cap over the camera is better than any expensive rain cover.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Wipe the filter before every exposure.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Weight the tripod with your bag, not your hand.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph --><p>By the time the rain arrived properly I had six frames I liked and one I loved. The drive home with the heater on full was the best part of the day.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "coast"
+   ],
+   "tags": [
+    "winter",
+    "long-exposure"
+   ],
+   "featured_media": "coastline-storm",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "harbor-lights-out-of-focus",
+   "title": "Harbor Lights, Out of Focus",
+   "date": "2026-05-14T21:55:00",
+   "excerpt": "Turning the focus ring the wrong way on purpose, and finding a harbor made of coloured circles.",
+   "content": "<!-- wp:paragraph --><p>This series began as a mistake. I was focusing on a mooring post, the post moved, and the whole harbor dissolved into soft discs of colour. I liked the mistake better than the picture I had planned.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>So I spent the evening defocusing deliberately. Sodium lamps became amber coins, the ferry terminal turned into a scatter of blue and the brake lights of the last bus left a red smudge across the frame.</p><!-- /wp:paragraph --><!-- wp:gallery {\"columns\":3,\"linkTo\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-gallery has-nested-images columns-3 is-cropped alignwide\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:night-harbor}}\" alt=\"Out-of-focus harbor lights glowing in the dark\"/></figure><!-- /wp:image --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:city-rain}}\" alt=\"Blurred neon city lights seen through rain\"/></figure><!-- /wp:image --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:moon-lake}}\" alt=\"A full moon reflected in a still mountain lake\"/></figure><!-- /wp:image --></figure><!-- /wp:gallery --><!-- wp:paragraph --><p>A fast lens helps, and so does patience: the shapes change every time a boat passes and the reflections on the water break apart.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "night",
+    "coast"
+   ],
+   "tags": [
+    "blue-hour"
+   ],
+   "featured_media": "night-harbor",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "canyon-light",
+   "title": "Canyon Light",
+   "date": "2026-04-22T11:30:00",
+   "excerpt": "For twenty minutes around noon, reflected light turns the inside of the canyon into a lantern.",
+   "content": "<!-- wp:paragraph --><p>Slot canyons are the only places I know where noon is the best time to photograph. The sun climbs high enough to reach the floor, and the light bounces from wall to wall until the rock seems to glow from inside.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The colours shift with every metre: deep red in the shadows, orange where light bounces once, almost yellow where the sun strikes directly. Exposing for the brightest patch and letting the rest fall into darkness keeps the mood.</p><!-- /wp:paragraph --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:hero-ridge}}\" alt=\"Layered mountain ridges at dusk under an orange sky\"/><figcaption class=\"wp-element-caption\">Leaving the canyon country at dusk</figcaption></figure><!-- /wp:image --><!-- wp:paragraph --><p>I went with a local guide who checked the weather upstream twice an hour. Flash floods arrive from storms you cannot see, and no picture is worth that risk.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "landscapes",
+    "travel-notes"
+   ],
+   "tags": [
+    "desert",
+    "mountains"
+   ],
+   "featured_media": "canyon-light",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "notes-from-a-rainy-city",
+   "title": "Notes From a Rainy City",
+   "date": "2026-03-08T20:15:00",
+   "excerpt": "A weekend of rain, neon and shop windows, photographed through a fogged-up café window.",
+   "content": "<!-- wp:paragraph --><p>I rarely photograph cities, which is exactly why I should do it more. Rain helps: it slows people down, fills the streets with reflections and gives you a reason to sit by a window with a warm drink and a camera.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Most of these frames were taken through glass. Condensation softens the signs and turns crossing pedestrians into shapes. I wiped a small clear patch for some and left the rest to the weather.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">A short list of good windows</h2><!-- /wp:heading --><!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>A noodle bar with a corner seat facing two crossings.</li><!-- /wp:list-item --><!-- wp:list-item --><li>A night bus, top deck, front row.</li><!-- /wp:list-item --><!-- wp:list-item --><li>The covered market after closing, when only the signs stay on.</li><!-- /wp:list-item --></ol><!-- /wp:list --><!-- wp:paragraph --><p>None of it looks much like my landscapes, and I think that is fine. It is good to be a beginner somewhere.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "night",
+    "travel-notes"
+   ],
+   "tags": [
+    "blue-hour",
+    "film"
+   ],
+   "featured_media": "city-rain",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Landscapes",
+     "category": "landscapes"
+    },
+    {
+     "title": "Night",
+     "category": "night"
+    },
+    {
+     "title": "Coast",
+     "category": "coast"
+    },
+    {
+     "title": "About",
+     "page": "about",
+     "children": [
+      {
+       "title": "Workshops",
+       "page": "workshops"
+      },
+      {
+       "title": "Prints",
+       "page": "prints"
+      }
+     ]
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    }
+   ]
+  },
+  {
+   "name": "Social",
+   "location": "social",
+   "items": [
+    {
+     "title": "Instagram",
+     "url": "https://instagram.com/"
+    },
+    {
+     "title": "Vimeo",
+     "url": "https://vimeo.com/"
+    },
+    {
+     "title": "Flickr",
+     "url": "https://flickr.com/"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "footer-1": [
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">The studio</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Halden Light is the photographic journal of a landscape photographer working in the northern mountains and along the coast. Prints are available in small editions.</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Recent stories</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":4,\"displayPostDate\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Search the archive</h2><!-- /wp:heading --><!-- wp:search {\"label\":\"Search\",\"placeholder\":\"Places, seasons, light…\",\"buttonText\":\"Search\"} /--></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "gallery_layout": "masonry",
+  "gallery_columns": "3",
+  "gallery_gap": "normal",
+  "captions": "hover",
+  "intro_text": "Light, weather and quiet places, photographed slowly.",
+  "accent": "#d9a35b"
+ }
+}

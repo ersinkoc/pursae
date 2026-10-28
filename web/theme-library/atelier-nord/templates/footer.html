@@ -1,0 +1,24 @@
+		</main><!-- #main -->
+	</div><!-- #content -->
+
+	<footer id="colophon" class="site-footer">
+		<div class="an-wrap">
+			{{if is_active_sidebar . "footer-1"}}<aside class="footer-widgets" aria-label="Footer">
+				{{dynamic_sidebar . "footer-1"}}
+			</aside>{{end}}
+			<div class="site-footer__bar">
+				<p class="an-footer-title">{{.SiteName}}</p>
+				{{if has_nav_menu . "footer"}}<nav class="footer-navigation" aria-label="Footer menu">{{nav_menu . "footer"}}</nav>{{end}}
+				<div class="site-info">
+					{{.PrivacyLink}}
+					<span class="site-info__text">{{with theme_mod . "footer_text"}}{{.}}{{else}}&copy; {{$.SiteName}}{{end}}</span>
+					<span class="site-info__credit">Set in WordPress Go</span>
+				</div><!-- .site-info -->
+			</div>
+		</div>
+	</footer><!-- #colophon -->
+</div><!-- #page -->
+
+{{.Footer}}{{.AdminBar}}
+</body>
+</html>
