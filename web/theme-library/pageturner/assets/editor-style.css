@@ -1,0 +1,13 @@
+/* Pageturner: block editor styles. */
+@font-face { font-family: "Libre Caslon Display"; src: url("fonts/libre-caslon-display.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Spectral"; src: url("fonts/spectral.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Spectral"; src: url("fonts/spectral-italic.woff2") format("woff2"); font-weight: 400; font-style: italic; font-display: swap; }
+body { background: #fdfbf7; color: #1f1a17; font-family: "Spectral", Georgia, serif; font-size: 1.2rem; line-height: 1.7; }
+h1, h2, h3, h4, .editor-post-title__input { font-family: "Libre Caslon Display", Georgia, serif; font-weight: 400; line-height: 1.15; }
+a { color: #7a1f2b; }
+.wp-block-quote { border-left: 2px solid #7a1f2b; padding-left: 1.4rem; font-style: italic; }
+.wp-block-pullquote p { font-family: "Libre Caslon Display", Georgia, serif; }
+.wp-block-button__link { background: #7a1f2b; color: #fdfbf7; border-radius: 0; font-variant: small-caps; letter-spacing: .08em; }
+.pt-kicker { font-variant: small-caps; letter-spacing: .2em; color: #3e5c5a; }
+.pt-section--vellum { background: #f1ebdf; }
+.pt-section--ink { background: #1f1a17; color: #fdfbf7; }

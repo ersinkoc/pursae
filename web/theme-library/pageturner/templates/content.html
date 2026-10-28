@@ -1,0 +1,12 @@
+<article id="post-{{.ID}}" class="{{.Class}} entry pt-entry">
+	{{if .ShowFeatured}}<span class="pt-ribbon" title="Bookmarked"><span class="screen-reader-text">Featured</span></span>{{end}}
+	{{with .Thumbnail}}<a class="post-thumbnail pt-entry__media" href="{{$.Permalink}}" aria-hidden="true" tabindex="-1">{{.}}</a>{{end}}
+	<div class="pt-entry__body">
+		<p class="pt-entry__meta"><time datetime="{{.DateISO}}">{{.DateText}}</time>{{range .Categories}}<span class="pt-sep" aria-hidden="true">/</span><a href="{{.URL}}">{{.Name}}</a>{{end}}</p>
+		<h2 class="entry-title"><a href="{{.Permalink}}" rel="bookmark">{{.Title}}</a></h2>
+		<div class="entry-summary{{if not .ShowExcerpt}} is-full{{end}}">
+			{{if .ShowExcerpt}}{{.Excerpt}}{{else}}{{.Content}}{{end}}
+		</div>
+		<p class="pt-entry__foot">{{with .AuthorName}}<span class="byline">by {{.}}</span>{{end}}<a class="more-link" href="{{.Permalink}}">Continue reading<span class="screen-reader-text"> {{.Title}}</span></a></p>
+	</div>
+</article><!-- #post-{{.ID}} -->

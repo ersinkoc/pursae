@@ -1,0 +1,17 @@
+/* Atlas Academy: block editor styles. */
+@font-face { font-family: "Sora"; src: url("fonts/sora.woff2") format("woff2"); font-weight: 400 800; font-display: swap; }
+@font-face { font-family: "Plus Jakarta Sans"; src: url("fonts/jakarta.woff2") format("woff2"); font-weight: 400 700; font-display: swap; }
+body { background: #fbfaff; color: #14142b; font-family: "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif; font-size: 1.1rem; line-height: 1.7; }
+h1, h2, h3, h4, h5, h6, .editor-post-title__input { font-family: "Sora", "Segoe UI", system-ui, sans-serif; font-weight: 800; letter-spacing: -.02em; line-height: 1.15; color: #14142b; }
+a { color: #5536d8; }
+.wp-block-quote { background: #ece8ff; border-left: 0; border-radius: 16px; padding: 1.2rem 1.6rem; font-weight: 600; }
+.wp-block-pullquote { background: #ffd25a; border: 2px solid #14142b; border-radius: 20px; font-family: "Sora", sans-serif; font-weight: 800; }
+.wp-block-button__link { background: #6c4cf5; color: #fff; border: 2px solid #14142b; border-radius: 12px; box-shadow: 4px 4px 0 #14142b; font-family: "Sora", sans-serif; font-weight: 700; }
+pre { background: #14142b; color: #f1efff; border-radius: 16px; padding: 1.2rem; }
+code { background: #ece8ff; border-radius: 6px; padding: .1em .35em; }
+.aa-eyebrow, .aa-level { font-family: "Sora", sans-serif; font-weight: 800; text-transform: uppercase; font-size: .8rem; letter-spacing: .1em; }
+.aa-section--lilac { background: #ece8ff; }
+.aa-section--mint { background: #c9f2e3; }
+.aa-section--ink { background: #14142b; color: #fff; }
+.aa-cta { background: #6c4cf5; color: #fff; border: 2px solid #14142b; border-radius: 28px; }
+.aa-courses > .wp-block-column, .aa-stories > .wp-block-column, .aa-pricing > .wp-block-column { border: 2px solid #14142b; border-radius: 16px; padding: 1.2rem; box-shadow: 6px 6px 0 #14142b; background: #fff; }

@@ -1,0 +1,492 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Atlas Academy",
+  "blogdescription": "Practical courses in data, design and writing",
+  "posts_per_page": 9
+ },
+ "categories": [
+  {
+   "slug": "free-lessons",
+   "name": "Free Lessons",
+   "description": "Short lessons from the courses, free to read and keep."
+  },
+  {
+   "slug": "data",
+   "name": "Data",
+   "description": "Spreadsheets, charts and numbers for people who do not love maths."
+  },
+  {
+   "slug": "design",
+   "name": "Design",
+   "description": "Colour, layout and type for non-designers."
+  },
+  {
+   "slug": "writing",
+   "name": "Writing",
+   "description": "Clear essays, reports and emails, one draft at a time."
+  },
+  {
+   "slug": "news",
+   "name": "Academy News",
+   "description": "New courses, cohorts and updates from the academy."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "spreadsheets",
+   "name": "Spreadsheets"
+  },
+  {
+   "slug": "charts",
+   "name": "Charts"
+  },
+  {
+   "slug": "colour",
+   "name": "Colour"
+  },
+  {
+   "slug": "essays",
+   "name": "Essays"
+  },
+  {
+   "slug": "study-skills",
+   "name": "Study skills"
+  },
+  {
+   "slug": "templates",
+   "name": "Templates"
+  },
+  {
+   "slug": "student-stories",
+   "name": "Student stories"
+  },
+  {
+   "slug": "beginners",
+   "name": "Beginners"
+  }
+ ],
+ "media": [
+  {
+   "id": "hero",
+   "file": "demo/images/hero.jpg",
+   "alt": "A flat illustration of a globe with an orbit ring, an open book and a pencil",
+   "caption": ""
+  },
+  {
+   "id": "data-basics",
+   "file": "demo/images/data-basics.jpg",
+   "alt": "A bar chart with a rising line drawn over it, in violet, coral and yellow",
+   "caption": ""
+  },
+  {
+   "id": "spreadsheet",
+   "file": "demo/images/spreadsheet.jpg",
+   "alt": "A spreadsheet window with a highlighted column of cells",
+   "caption": ""
+  },
+  {
+   "id": "colour-wheel",
+   "file": "demo/images/colour-wheel.jpg",
+   "alt": "A twelve-part colour wheel beside four colour swatches",
+   "caption": ""
+  },
+  {
+   "id": "essay",
+   "file": "demo/images/essay.jpg",
+   "alt": "A spiral notebook with lines of writing and a yellow pencil",
+   "caption": ""
+  },
+  {
+   "id": "learning-plan",
+   "file": "demo/images/learning-plan.jpg",
+   "alt": "A monthly calendar with most days ticked off",
+   "caption": ""
+  },
+  {
+   "id": "student-desk",
+   "file": "demo/images/student-desk.jpg",
+   "alt": "A laptop playing a video lesson on a desk with a mug and a plant",
+   "caption": ""
+  },
+  {
+   "id": "habits",
+   "file": "demo/images/habits.jpg",
+   "alt": "A habit tracker grid of coloured squares with a progress bar",
+   "caption": ""
+  },
+  {
+   "id": "honest-charts",
+   "file": "demo/images/honest-charts.jpg",
+   "alt": "A line chart beside a pie chart on a grid background",
+   "caption": ""
+  },
+  {
+   "id": "new-course",
+   "file": "demo/images/new-course.jpg",
+   "alt": "A coral starburst badge on a sunny yellow background",
+   "caption": ""
+  },
+  {
+   "id": "instructor",
+   "file": "demo/images/instructor.jpg",
+   "alt": "A friendly flat illustration of the instructor wearing glasses",
+   "caption": ""
+  },
+  {
+   "id": "design-basics",
+   "file": "demo/images/design-basics.jpg",
+   "alt": "Simple geometric shapes: a square, a circle, a triangle and a pill",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Home",
+   "content": "<!-- wp:group {\"align\":\"full\",\"className\":\"aa-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull aa-section\"><!-- wp:paragraph {\"className\":\"aa-eyebrow\"} --><p class=\"aa-eyebrow\">Courses</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Pick a skill. Finish it this month.</h2><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"aa-lead\"} --><p class=\"aa-lead\">Every course is a set of short videos, real projects and friendly feedback. Start any time, learn on your phone, keep access for life.</p><!-- /wp:paragraph --><!-- wp:columns {\"align\":\"wide\",\"className\":\"aa-courses\"} --><div class=\"wp-block-columns alignwide aa-courses\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:data-basics}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:data-basics}}\" alt=\"A bar chart with a rising line drawn over it\" class=\"wp-image-{{media_id:data-basics}}\"/></figure><!-- /wp:image --><!-- wp:paragraph {\"className\":\"aa-level\"} --><p class=\"aa-level\">Beginner</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Data Basics</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Spreadsheets, formulas and charts for people who do not love maths.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"aa-meta\"} --><p class=\"aa-meta\">18 lessons · 5 h</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"aa-price\"} --><p class=\"aa-price\">$149</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:design-basics}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:design-basics}}\" alt=\"Simple geometric shapes\" class=\"wp-image-{{media_id:design-basics}}\"/></figure><!-- /wp:image --><!-- wp:paragraph {\"className\":\"aa-new\"} --><p class=\"aa-new\">New</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"aa-level\"} --><p class=\"aa-level\">Beginner</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Design Basics for Everyone</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Layout, colour and type for slides, posters and newsletters.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"aa-meta\"} --><p class=\"aa-meta\">24 lessons · 6 h</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"aa-price\"} --><p class=\"aa-price\">$149</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:essay}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:essay}}\" alt=\"A spiral notebook with lines of writing\" class=\"wp-image-{{media_id:essay}}\"/></figure><!-- /wp:image --><!-- wp:paragraph {\"className\":\"aa-level\"} --><p class=\"aa-level\">All levels</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Clear Writing</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Essays, reports and emails that say one thing well.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"aa-meta\"} --><p class=\"aa-meta\">16 lessons · 4 h</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"aa-price\"} --><p class=\"aa-price\">$119</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:courses}}\">Browse all courses</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --><!-- wp:group {\"align\":\"full\",\"className\":\"aa-section aa-section--lilac\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull aa-section aa-section--lilac\"><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"aa-eyebrow\"} --><p class=\"aa-eyebrow\">How it works</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Modules you can finish on a lunch break</h2><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"aa-lead\"} --><p class=\"aa-lead\">Each course is split into small modules with one clear outcome. Watch, try, check yourself, move on.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:design-basics-curriculum}}\">See a full curriculum</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:list {\"ordered\":true,\"className\":\"aa-curriculum\"} --><ol class=\"wp-block-list aa-curriculum\"><!-- wp:list-item --><li><strong>Start with a real problem</strong><em>2 lessons · 15 min</em></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Learn the core moves</strong><em>6 lessons · 1 h 10 min</em></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Build your project</strong><em>5 lessons · 1 h 30 min</em></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Get feedback and polish</strong><em>3 lessons · 40 min</em></li><!-- /wp:list-item --></ol><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group --><!-- wp:group {\"align\":\"full\",\"className\":\"aa-section aa-center\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull aa-section aa-center\"><!-- wp:paragraph {\"className\":\"aa-eyebrow\"} --><p class=\"aa-eyebrow\">Student stories</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">People who learned it, used it</h2><!-- /wp:heading --><!-- wp:columns {\"align\":\"wide\",\"className\":\"aa-stories\"} --><div class=\"wp-block-columns alignwide aa-stories\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"aa-stars\"} --><p class=\"aa-stars\">★★★★★</p><!-- /wp:paragraph --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>I built the budget sheet my whole team now uses. In week three.</p><!-- /wp:paragraph --><cite>Jo, operations analyst</cite></blockquote><!-- /wp:quote --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"aa-stars\"} --><p class=\"aa-stars\">★★★★★</p><!-- /wp:paragraph --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Short lessons meant I actually finished. First online course I have ever completed.</p><!-- /wp:paragraph --><cite>Sam, nurse</cite></blockquote><!-- /wp:quote --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"aa-stars\"} --><p class=\"aa-stars\">★★★★★</p><!-- /wp:paragraph --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>The feedback on my newsletter design was kind, specific and changed everything.</p><!-- /wp:paragraph --><cite>Ade, charity volunteer</cite></blockquote><!-- /wp:quote --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group --><!-- wp:group {\"align\":\"full\",\"className\":\"aa-section aa-section--ink\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull aa-section aa-section--ink\"><!-- wp:columns {\"align\":\"wide\",\"className\":\"aa-stats\"} --><div class=\"wp-block-columns alignwide aa-stats\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"aa-big\"} --><p class=\"aa-big\">12,400</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>students in 68 countries</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"aa-big\"} --><p class=\"aa-big\">4.9</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>average course rating</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"aa-big\"} --><p class=\"aa-big\">58</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>short lessons and growing</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"aa-big\"} --><p class=\"aa-big\">30 days</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>no-questions refund</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group --><!-- wp:group {\"align\":\"full\",\"className\":\"aa-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull aa-section\"><!-- wp:paragraph {\"className\":\"aa-eyebrow\"} --><p class=\"aa-eyebrow\">Free lessons</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Learn something in ten minutes</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":3,\"displayPostContent\":true,\"excerptLength\":20,\"displayPostDate\":true,\"postLayout\":\"grid\",\"columns\":3} /--><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:blog}}\">All free lessons</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --><!-- wp:group {\"align\":\"full\",\"className\":\"aa-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull aa-section\"><!-- wp:group {\"align\":\"wide\",\"className\":\"aa-cta\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignwide aa-cta\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Ready when you are</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Join a course today and finish your first module before the weekend. If it is not for you, get a full refund within 30 days.</p><!-- /wp:paragraph --><!-- wp:buttons {\"layout\":{\"type\":\"flex\",\"justifyContent\":\"center\"}} --><div class=\"wp-block-buttons is-content-justification-center\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:pricing}}\">See pricing</a></div><!-- /wp:button --><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{post:five-spreadsheet-formulas-that-save-hours}}\">Try a free lesson</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --></div><!-- /wp:group -->",
+   "front_page": true,
+   "featured_media": "hero"
+  },
+  {
+   "slug": "blog",
+   "title": "Free Lessons",
+   "content": "",
+   "posts_page": true
+  },
+  {
+   "slug": "courses",
+   "title": "Courses",
+   "content": "<!-- wp:paragraph {\"className\":\"aa-lead\"} --><p class=\"aa-lead\">Three practical courses, each built around a project you finish with. Start any time, learn at your pace and keep access for life.</p><!-- /wp:paragraph --><!-- wp:columns {\"align\":\"wide\",\"className\":\"aa-courses\"} --><div class=\"wp-block-columns alignwide aa-courses\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:data-basics}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:data-basics}}\" alt=\"A bar chart with a rising line drawn over it\" class=\"wp-image-{{media_id:data-basics}}\"/></figure><!-- /wp:image --><!-- wp:paragraph {\"className\":\"aa-level\"} --><p class=\"aa-level\">Beginner</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Data Basics</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Spreadsheets, formulas and charts for people who do not love maths.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"aa-meta\"} --><p class=\"aa-meta\">18 lessons · 5 h</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"aa-price\"} --><p class=\"aa-price\">$149</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:design-basics}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:design-basics}}\" alt=\"Simple geometric shapes\" class=\"wp-image-{{media_id:design-basics}}\"/></figure><!-- /wp:image --><!-- wp:paragraph {\"className\":\"aa-new\"} --><p class=\"aa-new\">New</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"aa-level\"} --><p class=\"aa-level\">Beginner</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Design Basics for Everyone</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Layout, colour and type for slides, posters and newsletters.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"aa-meta\"} --><p class=\"aa-meta\">24 lessons · 6 h</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"aa-price\"} --><p class=\"aa-price\">$149</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:essay}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:essay}}\" alt=\"A spiral notebook with lines of writing\" class=\"wp-image-{{media_id:essay}}\"/></figure><!-- /wp:image --><!-- wp:paragraph {\"className\":\"aa-level\"} --><p class=\"aa-level\">All levels</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Clear Writing</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Essays, reports and emails that say one thing well.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"aa-meta\"} --><p class=\"aa-meta\">16 lessons · 4 h</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"aa-price\"} --><p class=\"aa-price\">$119</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:heading --><h2 class=\"wp-block-heading\">Every course includes</h2><!-- /wp:heading --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Short videos with captions and transcripts</li><!-- /wp:list-item --><!-- wp:list-item --><li>Downloadable templates and worksheets</li><!-- /wp:list-item --><!-- wp:list-item --><li>A project built on your own work</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Two rounds of written feedback</li><!-- /wp:list-item --><!-- wp:list-item --><li>Access to the student community</li><!-- /wp:list-item --><!-- wp:list-item --><li>A certificate of completion</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:heading --><h2 class=\"wp-block-heading\">Questions</h2><!-- /wp:heading --><!-- wp:details --><details class=\"wp-block-details\"><summary>Do I need any software?</summary><!-- wp:paragraph --><p>A free spreadsheet app and a free design tool are enough. Each course lists the options in its first lesson.</p><!-- /wp:paragraph --></details><!-- /wp:details --><!-- wp:details --><details class=\"wp-block-details\"><summary>How long do I have access?</summary><!-- wp:paragraph --><p>For life, including future updates to the course.</p><!-- /wp:paragraph --></details><!-- /wp:details --><!-- wp:details --><details class=\"wp-block-details\"><summary>Can my employer pay?</summary><!-- wp:paragraph --><p>Yes. We send invoices and can set up team accounts for five or more people.</p><!-- /wp:paragraph --></details><!-- /wp:details --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:pricing}}\">See pricing</a></div><!-- /wp:button --></div><!-- /wp:buttons -->",
+   "template": "page-wide",
+   "featured_media": "student-desk"
+  },
+  {
+   "slug": "design-basics-curriculum",
+   "title": "Design Basics: Curriculum",
+   "content": "<!-- wp:paragraph {\"className\":\"aa-lead\"} --><p class=\"aa-lead\">Design Basics for Everyone is 24 short lessons in six modules. Most students finish in four to six weeks with two or three sessions a week.</p><!-- /wp:paragraph --><!-- wp:list {\"ordered\":true,\"className\":\"aa-curriculum\"} --><ol class=\"wp-block-list aa-curriculum\"><!-- wp:list-item --><li><strong>Seeing like a designer</strong><em>3 lessons · 25 min</em></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Alignment and spacing</strong><em>5 lessons · 1 h 05 min</em></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>A colour system you can reuse</strong><em>4 lessons · 55 min</em></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Choosing and pairing fonts</strong><em>4 lessons · 50 min</em></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Designing for phones first</strong><em>4 lessons · 1 h</em></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Final project and feedback</strong><em>4 lessons · 1 h 30 min</em></li><!-- /wp:list-item --></ol><!-- /wp:list --><!-- wp:heading --><h2 class=\"wp-block-heading\">Your project</h2><!-- /wp:heading --><!-- wp:media-text {\"mediaId\":{{media_id:design-basics}},\"mediaType\":\"image\"} --><div class=\"wp-block-media-text is-stacked-on-mobile\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:design-basics}}\" alt=\"Simple geometric shapes\" class=\"wp-image-{{media_id:design-basics}} size-full\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:paragraph --><p>You redesign something you already use: a slide deck, a poster, a menu or a newsletter. You submit a before and after, and receive written feedback twice.</p><!-- /wp:paragraph --></div></div><!-- /wp:media-text --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:pricing}}\">Enroll in Design Basics</a></div><!-- /wp:button --></div><!-- /wp:buttons -->",
+   "parent": "courses",
+   "featured_media": "design-basics"
+  },
+  {
+   "slug": "about",
+   "title": "About Robin",
+   "content": "<!-- wp:media-text {\"mediaId\":{{media_id:instructor}},\"mediaType\":\"image\"} --><div class=\"wp-block-media-text is-stacked-on-mobile\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:instructor}}\" alt=\"A friendly flat illustration of the instructor\" class=\"wp-image-{{media_id:instructor}} size-full\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Hello, I am Robin</h2><!-- /wp:heading --><!-- wp:paragraph --><p>I spent twelve years as an analyst and designer in small organisations where nobody had time for a three-day training course. Atlas Academy is the course I wish I had been given: short, practical and kind.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Every lesson is recorded in my spare room studio, tested on real students and rewritten until it is as short as it can be.</p><!-- /wp:paragraph --></div></div><!-- /wp:media-text --><!-- wp:heading --><h2 class=\"wp-block-heading\">What I believe about learning</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Adults learn best from problems they actually have.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Ten focused minutes beat an hour of half-watching.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Feedback should be specific, kind and quick.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Robin explains things like a colleague who wants you to succeed, not a lecturer.</p><!-- /wp:paragraph --><cite>A Clear Writing student</cite></blockquote><!-- /wp:quote --><!-- wp:heading --><h2 class=\"wp-block-heading\">The small print</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Atlas Academy is independent: no investors, no adverts, no selling your data. Courses are paid for by students, and a share of every enrolment funds free places for people on low incomes.</p><!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "pricing",
+   "title": "Pricing",
+   "content": "<!-- wp:paragraph {\"className\":\"aa-lead\"} --><p class=\"aa-lead\">Simple prices, lifetime access and a 30-day refund if a course is not for you.</p><!-- /wp:paragraph --><!-- wp:columns {\"align\":\"wide\",\"className\":\"aa-pricing\"} --><div class=\"wp-block-columns alignwide aa-pricing\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Single course</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"aa-price\"} --><p class=\"aa-price\">$149</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"aa-meta\"} --><p class=\"aa-meta\">One course of your choice</p><!-- /wp:paragraph --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>All lessons and templates</li><!-- /wp:list-item --><!-- wp:list-item --><li>Two feedback reviews</li><!-- /wp:list-item --><!-- wp:list-item --><li>Certificate</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:courses}}\">Choose a course</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"aa-new\"} --><p class=\"aa-new\">Best value</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">All-access</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"aa-price\"} --><p class=\"aa-price\">$299</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"aa-meta\"} --><p class=\"aa-meta\">Every course, now and future</p><!-- /wp:paragraph --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>All three courses</li><!-- /wp:list-item --><!-- wp:list-item --><li>Unlimited feedback reviews</li><!-- /wp:list-item --><!-- wp:list-item --><li>Live cohort sessions</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Get all-access</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Teams</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"aa-price\"} --><p class=\"aa-price\">From $99</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"aa-meta\"} --><p class=\"aa-meta\">Per person, five or more</p><!-- /wp:paragraph --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Team progress dashboard</li><!-- /wp:list-item --><!-- wp:list-item --><li>Invoices and purchase orders</li><!-- /wp:list-item --><!-- wp:list-item --><li>A private onboarding call</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Talk to us</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:heading --><h2 class=\"wp-block-heading\">Free places</h2><!-- /wp:heading --><!-- wp:paragraph --><p>If cost is the only thing stopping you, write to us. We keep a number of free places each month for students on low incomes, no paperwork required.</p><!-- /wp:paragraph -->",
+   "template": "page-wide"
+  },
+  {
+   "slug": "contact",
+   "title": "Contact",
+   "content": "<!-- wp:paragraph {\"className\":\"aa-lead\"} --><p class=\"aa-lead\">Questions about a course, team accounts or a free place? Write any time; you will hear back from Robin within two working days.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Email</h3><!-- /wp:heading --><!-- wp:paragraph --><p>hello@atlasacademy.example</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Support hours</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Monday to Friday<br>09:00 to 17:00 (UTC)</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Community</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Students get a private forum for questions between lessons.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:heading --><h2 class=\"wp-block-heading\">Before you write</h2><!-- /wp:heading --><!-- wp:details --><details class=\"wp-block-details\"><summary>I cannot log in</summary><!-- wp:paragraph --><p>Use the reset link on the sign-in page. If the email does not arrive within ten minutes, check your spam folder.</p><!-- /wp:paragraph --></details><!-- /wp:details --><!-- wp:details --><details class=\"wp-block-details\"><summary>Can I switch courses?</summary><!-- wp:paragraph --><p>Yes, within 30 days of enrolling, as long as you have finished fewer than half the lessons.</p><!-- /wp:paragraph --></details><!-- /wp:details -->"
+  }
+ ],
+ "posts": [
+  {
+   "slug": "five-spreadsheet-formulas-that-save-hours",
+   "title": "Five Spreadsheet Formulas That Save Hours Every Week",
+   "date": "2026-10-24T09:00:00",
+   "excerpt": "You do not need to be a numbers person. These five formulas cover most of the copying, counting and tidying people do by hand.",
+   "categories": [
+    "free-lessons",
+    "data"
+   ],
+   "tags": [
+    "spreadsheets",
+    "beginners"
+   ],
+   "featured_media": "spreadsheet",
+   "format": "standard",
+   "sticky": true,
+   "content": "<!-- wp:paragraph --><p>Most of the time we lose in spreadsheets is not spent on hard maths. It is spent copying, counting, tidying and looking things up by hand. Five formulas cover nearly all of it, and you can learn them before your coffee goes cold.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">The five</h2><!-- /wp:heading --><!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Formula</th><th>What it does</th><th>Use it when</th></tr></thead><tbody><tr><td><code>SUMIF</code></td><td>Adds up values that match a rule</td><td>Totalling spend by category</td></tr><tr><td><code>COUNTIF</code></td><td>Counts rows that match a rule</td><td>How many orders are still open?</td></tr><tr><td><code>XLOOKUP</code></td><td>Finds a value in another table</td><td>Matching names to email addresses</td></tr><tr><td><code>TRIM</code></td><td>Removes stray spaces</td><td>Cleaning data pasted from a website</td></tr><tr><td><code>TEXTJOIN</code></td><td>Joins cells with a separator</td><td>Building a list of tags or names</td></tr></tbody></table></figure><!-- /wp:table --><!-- wp:heading --><h2 class=\"wp-block-heading\">A worked example</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Imagine a sheet of expenses with a category in column B and an amount in column C. To total everything in the Travel category, type this into any empty cell:</p><!-- /wp:paragraph --><!-- wp:code --><pre class=\"wp-block-code\"><code>=SUMIF(B2:B200, \"Travel\", C2:C200)</code></pre><!-- /wp:code --><!-- wp:paragraph --><p>Change the word in quotes to total another category, or point it at a cell that holds the category name so you can build a whole summary table in a minute.</p><!-- /wp:paragraph --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Learn the formula once, then let the spreadsheet do the boring part forever.</p><!-- /wp:paragraph --><cite>Lesson 3, Data Basics</cite></blockquote><!-- /wp:quote --><!-- wp:paragraph --><p>Try each formula on a copy of a real sheet from your own work. That is the fastest way to make it stick, and it is exactly how the Data Basics course is built.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Lena",
+     "email": "lena@example.com",
+     "content": "XLOOKUP just replaced about forty minutes of my Monday. Thank you!",
+     "date": "2026-10-25T10:12:00"
+    },
+    {
+     "author": "Kofi",
+     "email": "kofi@example.com",
+     "content": "Is there a version of SUMIF that takes two conditions?",
+     "date": "2026-10-25T14:30:00"
+    }
+   ]
+  },
+  {
+   "slug": "beginners-guide-to-colour",
+   "title": "A Beginner's Guide to Colour for Non-Designers",
+   "date": "2026-10-19T10:00:00",
+   "excerpt": "One main colour, one accent and plenty of neutrals. A simple system for slides, posters and websites that look calm and confident.",
+   "categories": [
+    "free-lessons",
+    "design"
+   ],
+   "tags": [
+    "colour",
+    "beginners"
+   ],
+   "featured_media": "colour-wheel",
+   "format": "standard",
+   "sticky": false,
+   "content": "<!-- wp:paragraph --><p>Colour feels like the most mysterious part of design, but most good layouts follow a simple recipe: one main colour, one accent and plenty of neutral space in between.</p><!-- /wp:paragraph --><!-- wp:image {\"id\":{{media_id:colour-wheel}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:colour-wheel}}\" alt=\"A twelve-part colour wheel beside four colour swatches\" class=\"wp-image-{{media_id:colour-wheel}}\"/><figcaption class=\"wp-element-caption\">Pick one main colour, then look across the wheel for an accent.</figcaption></figure><!-- /wp:image --><!-- wp:heading --><h2 class=\"wp-block-heading\">The 60-30-10 rule</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><strong>60%</strong> neutral: backgrounds, white space, body text.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>30%</strong> main colour: headings, panels, navigation.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>10%</strong> accent: buttons, highlights, the one thing you want clicked.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph --><p>The accent works because it is rare. The moment everything is highlighted, nothing is.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Check your contrast</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Pale grey text on white looks elegant on a big monitor and disappears on a phone in sunlight. Aim for dark text on light backgrounds, and test anything important with a contrast checker before you publish.</p><!-- /wp:paragraph --><!-- wp:pullquote --><figure class=\"wp-block-pullquote\"><blockquote><p>If everything shouts, nobody hears the button.</p></blockquote></figure><!-- /wp:pullquote -->",
+   "comments": [
+    {
+     "author": "Mira",
+     "email": "mira@example.com",
+     "content": "The 60-30-10 rule fixed my team's slide deck in an afternoon.",
+     "date": "2026-10-20T09:40:00"
+    }
+   ]
+  },
+  {
+   "slug": "how-to-outline-a-long-essay",
+   "title": "How to Outline a Long Essay Without Losing the Thread",
+   "date": "2026-10-14T08:30:00",
+   "excerpt": "A blank page is terrifying; a good outline is not. A four-step method for turning scattered notes into a clear argument.",
+   "categories": [
+    "free-lessons",
+    "writing"
+   ],
+   "tags": [
+    "essays",
+    "study-skills"
+   ],
+   "featured_media": "essay",
+   "format": "standard",
+   "sticky": false,
+   "content": "<!-- wp:paragraph --><p>Long essays rarely go wrong in the sentences. They go wrong in the structure: a brilliant paragraph in the wrong place, or an argument that drifts until the conclusion has nothing to conclude.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Four steps</h2><!-- /wp:heading --><!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li><strong>Write the answer first.</strong> One sentence that states what you think and why.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>List the reasons.</strong> Three to five claims that support that sentence.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Attach the evidence.</strong> Under each claim, note the quotes, data or examples you will use.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Order for the reader.</strong> Start with the claim they will accept most easily.</li><!-- /wp:list-item --></ol><!-- /wp:list --><!-- wp:paragraph --><p>Your outline is not a contract. If you discover a better argument while writing, change the answer sentence and reshuffle. That is the outline doing its job.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Before</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Twenty pages of notes, a vague topic and a deadline on Friday.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">After</h3><!-- /wp:heading --><!-- wp:paragraph --><p>One answer sentence, four claims, twelve pieces of evidence and a plan for each section.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:paragraph --><p>The Clear Writing course includes a printable outline template and walks through three real essays from first note to final draft.</p><!-- /wp:paragraph -->",
+   "comments": []
+  },
+  {
+   "slug": "a-learning-plan-template-that-works",
+   "title": "A Learning Plan Template You Will Actually Use",
+   "date": "2026-10-08T12:00:00",
+   "excerpt": "Most learning plans are too ambitious by Wednesday. This one fits on a single page and survives a busy month.",
+   "categories": [
+    "free-lessons"
+   ],
+   "tags": [
+    "templates",
+    "study-skills"
+   ],
+   "featured_media": "learning-plan",
+   "format": "standard",
+   "sticky": false,
+   "content": "<!-- wp:paragraph --><p>Ambitious learning plans have a short life. They start on a Monday with two hours a day and quietly die on Thursday. The plan below is deliberately modest, which is exactly why it lasts.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">The one-page plan</h2><!-- /wp:heading --><!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Section</th><th>What to write</th></tr></thead><tbody><tr><td>Goal</td><td>One skill, phrased as something you can do: \"build a monthly budget sheet\"</td></tr><tr><td>Why</td><td>The real reason, in one line</td></tr><tr><td>Time</td><td>Three sessions a week of 25 minutes</td></tr><tr><td>Proof</td><td>The small project that shows you have learned it</td></tr><tr><td>Review</td><td>A date four weeks from today</td></tr></tbody></table></figure><!-- /wp:table --><!-- wp:paragraph --><p>Put the plan somewhere you will see it daily. Tick off sessions on a calendar: a chain of ticks is surprisingly motivating, and a gap is an honest reminder rather than a failure.</p><!-- /wp:paragraph --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Twenty-five minutes three times a week beats a heroic weekend you never repeat.</p><!-- /wp:paragraph --></blockquote><!-- /wp:quote --><!-- wp:paragraph --><p>Every Atlas course ends each module with a suggested plan for the next four weeks, so you never have to start from a blank page.</p><!-- /wp:paragraph -->",
+   "comments": []
+  },
+  {
+   "slug": "from-night-shifts-to-data-analyst",
+   "title": "Student Story: From Night Shifts to Data Analyst",
+   "date": "2026-09-30T09:00:00",
+   "excerpt": "A warehouse supervisor took Data Basics in twenty-minute breaks. Eighteen months later, she builds the dashboards her old team uses.",
+   "categories": [
+    "news"
+   ],
+   "tags": [
+    "student-stories",
+    "spreadsheets"
+   ],
+   "featured_media": "student-desk",
+   "format": "standard",
+   "sticky": false,
+   "content": "<!-- wp:paragraph --><p>When Jo enrolled in Data Basics she was supervising night shifts at a distribution warehouse, studying in twenty-minute breaks on her phone and a borrowed laptop.</p><!-- /wp:paragraph --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>I did not think of myself as a numbers person. I just knew the spreadsheets we used were wasting everyone's time.</p><!-- /wp:paragraph --><cite>Jo, Data Basics graduate</cite></blockquote><!-- /wp:quote --><!-- wp:heading --><h2 class=\"wp-block-heading\">What changed</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Her course project was a simple sheet that tracked late deliveries by route. Her manager used it in a meeting the following week, and within a month she was asked to build a version for the whole site.</p><!-- /wp:paragraph --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Course finished in eleven weeks</li><!-- /wp:list-item --><!-- wp:list-item --><li>Three projects built on real work data</li><!-- /wp:list-item --><!-- wp:list-item --><li>Promoted to operations analyst eighteen months later</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph --><p>Jo now mentors new students in the community forum. Her advice for beginners: pick a problem from your own job and solve it badly first, then better.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Anton",
+     "email": "anton@example.com",
+     "content": "This is so encouraging. Starting the course on night shifts too!",
+     "date": "2026-10-01T03:15:00"
+    }
+   ]
+  },
+  {
+   "slug": "study-habits-that-stick",
+   "title": "Study Habits That Stick (and Three That Do Not)",
+   "date": "2026-09-22T07:30:00",
+   "excerpt": "Re-reading and highlighting feel productive but barely work. Here is what the evidence says helps adults learn and remember.",
+   "categories": [
+    "free-lessons"
+   ],
+   "tags": [
+    "study-skills"
+   ],
+   "featured_media": "habits",
+   "format": "standard",
+   "sticky": false,
+   "content": "<!-- wp:paragraph --><p>Adult learners are busy, tired and often learning something that matters for their job. That makes it worth spending study time on the methods that work, not just the ones that feel productive.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Do more of</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Testing yourself without notes</li><!-- /wp:list-item --><!-- wp:list-item --><li>Spacing sessions across days</li><!-- /wp:list-item --><!-- wp:list-item --><li>Mixing different kinds of problems</li><!-- /wp:list-item --><!-- wp:list-item --><li>Explaining an idea out loud</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Do less of</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Re-reading the same chapter</li><!-- /wp:list-item --><!-- wp:list-item --><li>Highlighting whole pages</li><!-- /wp:list-item --><!-- wp:list-item --><li>Cramming the night before</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:paragraph --><p>Testing yourself is uncomfortable because you notice what you have forgotten. That discomfort is the learning happening.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Try it this week</h2><!-- /wp:heading --><!-- wp:paragraph --><p>At the end of each lesson, close the video and write down the three most important points from memory. Check them the next day. That single habit will do more than an extra hour of watching.</p><!-- /wp:paragraph -->",
+   "comments": []
+  },
+  {
+   "slug": "charts-that-tell-the-truth",
+   "title": "Charts That Tell the Truth",
+   "date": "2026-09-15T11:00:00",
+   "excerpt": "Cropped axes, crowded pies and rainbow colours can mislead even when every number is right. Five checks before you share a chart.",
+   "categories": [
+    "free-lessons",
+    "data"
+   ],
+   "tags": [
+    "charts"
+   ],
+   "featured_media": "honest-charts",
+   "format": "standard",
+   "sticky": false,
+   "content": "<!-- wp:paragraph --><p>A chart can be built from perfectly accurate numbers and still leave the reader with the wrong idea. Usually it is not deliberate: it is the default settings doing the thinking.</p><!-- /wp:paragraph --><!-- wp:image {\"id\":{{media_id:honest-charts}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:honest-charts}}\" alt=\"A line chart beside a pie chart on a grid background\" class=\"wp-image-{{media_id:honest-charts}}\"/><figcaption class=\"wp-element-caption\">One clear message per chart.</figcaption></figure><!-- /wp:image --><!-- wp:heading --><h2 class=\"wp-block-heading\">Five checks</h2><!-- /wp:heading --><!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Does a bar chart start its axis at zero?</li><!-- /wp:list-item --><!-- wp:list-item --><li>Could the pie be a sorted bar chart instead?</li><!-- /wp:list-item --><!-- wp:list-item --><li>Is colour used to highlight one thing, not to decorate?</li><!-- /wp:list-item --><!-- wp:list-item --><li>Does the title say what the reader should notice?</li><!-- /wp:list-item --><!-- wp:list-item --><li>Would the chart still make sense printed in grey?</li><!-- /wp:list-item --></ol><!-- /wp:list --><!-- wp:paragraph --><p>Most charting tools will happily produce a 3D exploding pie with twelve slices. Just because a setting exists does not mean the reader benefits from it.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Good charts are a kindness to the reader. They answer the question \"so what?\" before anyone has to ask it.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Priyanka",
+     "email": "priyanka@example.com",
+     "content": "Check number five is brilliant. Half our reports fail it.",
+     "date": "2026-09-16T16:45:00"
+    }
+   ]
+  },
+  {
+   "slug": "new-course-design-basics-for-everyone",
+   "title": "New Course: Design Basics for Everyone",
+   "date": "2026-09-05T10:00:00",
+   "excerpt": "Layout, colour and type for people who make slides, posters and newsletters but never trained as designers. Enrolment opens today.",
+   "categories": [
+    "news",
+    "design"
+   ],
+   "tags": [
+    "colour",
+    "beginners"
+   ],
+   "featured_media": "new-course",
+   "format": "standard",
+   "sticky": false,
+   "content": "<!-- wp:paragraph --><p>Design Basics for Everyone is the course students have asked for most. It is for anyone who makes slides, posters, social posts or newsletters and wants them to look calm and professional without hiring a designer.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">What you will learn</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Alignment and spacing that make pages feel organised</li><!-- /wp:list-item --><!-- wp:list-item --><li>A simple colour system you can reuse</li><!-- /wp:list-item --><!-- wp:list-item --><li>Choosing and pairing two fonts</li><!-- /wp:list-item --><!-- wp:list-item --><li>Designing for phones first</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th></th><th>Design Basics</th></tr></thead><tbody><tr><td>Lessons</td><td>24 short videos</td></tr><tr><td>Projects</td><td>4, built on your own material</td></tr><tr><td>Time</td><td>About 6 hours in total</td></tr><tr><td>Feedback</td><td>Two reviews of your work</td></tr></tbody></table></figure><!-- /wp:table --><!-- wp:paragraph --><p>Every lesson is short, under fifteen minutes, and each module ends with a small exercise you apply to something you are already making.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The first cohort starts on the 1st of next month, with live feedback sessions every other Thursday. Self-paced access is available any time.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:design-basics-curriculum}}\">See the curriculum</a></div><!-- /wp:button --><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:pricing}}\">Pricing</a></div><!-- /wp:button --></div><!-- /wp:buttons -->",
+   "comments": []
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Courses",
+     "page": "courses",
+     "children": [
+      {
+       "title": "Design Basics curriculum",
+       "page": "design-basics-curriculum"
+      },
+      {
+       "title": "Data lessons",
+       "category": "data"
+      },
+      {
+       "title": "Design lessons",
+       "category": "design"
+      },
+      {
+       "title": "Writing lessons",
+       "category": "writing"
+      }
+     ]
+    },
+    {
+     "title": "Free Lessons",
+     "page": "blog"
+    },
+    {
+     "title": "Pricing",
+     "page": "pricing"
+    },
+    {
+     "title": "About",
+     "page": "about",
+     "children": [
+      {
+       "title": "Academy news",
+       "category": "news"
+      },
+      {
+       "title": "Contact",
+       "page": "contact"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Footer",
+   "location": "footer",
+   "items": [
+    {
+     "title": "Courses",
+     "page": "courses"
+    },
+    {
+     "title": "Pricing",
+     "page": "pricing"
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    }
+   ]
+  },
+  {
+   "name": "Social",
+   "location": "social",
+   "items": [
+    {
+     "title": "YouTube",
+     "url": "https://youtube.com/"
+    },
+    {
+     "title": "Newsletter",
+     "url": "#newsletter"
+    },
+    {
+     "title": "LinkedIn",
+     "url": "https://linkedin.com/"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "sidebar-1": [
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Start here</h2><!-- /wp:heading --><!-- wp:paragraph --><p>New to Atlas? Try the most popular free lesson, then take a look at the courses.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:courses}}\">Browse courses</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "<!-- wp:search {\"label\":\"Search\",\"buttonText\":\"Search\"} /-->",
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Topics</h2><!-- /wp:heading --><!-- wp:categories {\"showPostCounts\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Latest lessons</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":4,\"displayPostDate\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Tags</h2><!-- /wp:heading --><!-- wp:tag-cloud /--></div><!-- /wp:group -->"
+  ],
+  "footer-1": [
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Courses</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Data Basics<br>Design Basics for Everyone<br>Clear Writing</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Latest lessons</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":3,\"displayPostDate\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Topics</h2><!-- /wp:heading --><!-- wp:categories {\"showPostCounts\":true} /--></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "hero_image": "hero",
+  "primary": "#6c4cf5",
+  "accent": "#ff6b57",
+  "post_layout": "cards",
+  "sidebar": "right",
+  "container": "normal",
+  "font_pairing": "sora",
+  "shadow_style": "offset",
+  "sticky_header": true,
+  "show_announcement": true,
+  "announcement": "Design Basics for Everyone is open: the first cohort starts on the 1st.",
+  "enroll_label": "Enroll now",
+  "enroll_link": "{{page:pricing}}",
+  "hero_second_link": "{{page:blog}}",
+  "stat_one": "★ 4.9 average rating",
+  "stat_two": "12,400 students",
+  "footer_text": "© Atlas Academy · Independent online courses"
+ }
+}

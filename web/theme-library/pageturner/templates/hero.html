@@ -1,0 +1,16 @@
+{{with .Data.Settings}}<section class="pt-hero" aria-label="The new book">
+	<div class="pt-hero__inner">
+		<div class="pt-hero__book">
+			<div class="pt-book">
+				<img class="pt-book__cover" src="{{with .hero_image}}{{.}}{{else}}{{$.ThemeURI}}/images/hero.jpg{{end}}" alt="" />
+				<span class="pt-book__pages" aria-hidden="true"></span>
+			</div>
+		</div>
+		<div class="pt-hero__text">
+			{{with .hero_kicker}}<p class="pt-hero__kicker">{{.}}</p>{{end}}
+			<p class="pt-hero__title">{{with .hero_title}}{{.}}{{else}}{{$.SiteName}}{{end}}</p>
+			{{with .hero_text}}<p class="pt-hero__lead">{{.}}</p>{{end}}
+			<p class="pt-hero__actions">{{with .hero_button_label}}<a class="button" href="{{$.Data.Settings.hero_button_link}}">{{.}}</a>{{end}}{{with .hero_second_label}}<a class="button button--ghost" href="{{$.Data.Settings.hero_second_link}}">{{.}}</a>{{end}}</p>
+		</div>
+	</div>
+</section>{{end}}

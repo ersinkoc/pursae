@@ -1,0 +1,95 @@
+{
+  "slug": "summit-trails",
+  "name": "Summit Trails",
+  "version": "1.0.0",
+  "description": "A rugged, map-inspired theme for hiking clubs and outdoor adventure groups: topographic contour patterns, a slate header with a mountain-peak mark and a Join button, a full-bleed mountain hero with an elevation stats strip, trip calendars with date blocks, trail guides with difficulty badges and route stats, gear reviews and a membership call to action.",
+  "author": "WordPress Go",
+  "author_url": "https://github.com/boracomet/wordpress-go",
+  "theme_url": "https://github.com/boracomet/wordpress-go/tree/main/web/theme-library/summit-trails",
+  "tags": ["Sports", "Outdoors", "Blog", "Grid Layout", "Right Sidebar", "Left Sidebar", "Custom Colors", "Custom Logo", "Custom Menu", "Featured Images", "Sticky Post", "Threaded Comments", "Wide Blocks", "Editor Style", "Accessibility Ready"],
+  "requires_core": "0.1.0",
+  "screenshot": "assets/screenshot.png",
+  "category": "sports",
+  "style": "Hiking club with topographic contours, slate and alpine orange",
+  "demo": "demo/demo.json",
+  "widget_areas": [
+    {"id": "sidebar-1", "name": "Sidebar", "description": "Beside the trail log and archives."},
+    {"id": "footer-1", "name": "Footer", "description": "Columns in the slate footer."}
+  ],
+  "menu_locations": [
+    {"id": "primary", "name": "Primary Menu"},
+    {"id": "footer", "name": "Footer Menu"},
+    {"id": "social", "name": "Social Links"}
+  ],
+  "styles": [
+    {"handle": "summit-trails-style", "src": "assets/style.css", "deps": ["wp-block-library"], "media": "all"}
+  ],
+  "scripts": [
+    {"handle": "summit-trails-navigation", "src": "assets/js/navigation.js", "deps": [], "in_footer": true}
+  ],
+  "editor_styles": ["assets/editor-style.css"],
+  "preload_fonts": ["assets/fonts/zilla-slab-700.woff2", "assets/fonts/work-sans.woff2"],
+  "palette": [
+    {"name": "Granite", "slug": "granite", "color": "#f1f0ec"},
+    {"name": "Night slate", "slug": "slate", "color": "#1c2a3a"},
+    {"name": "Alpine orange", "slug": "alpine", "color": "#e8692c"},
+    {"name": "Glacier", "slug": "glacier", "color": "#a9c6de"},
+    {"name": "Pine", "slug": "pine", "color": "#2f5d50"},
+    {"name": "Lichen", "slug": "lichen", "color": "#c9c3b2"},
+    {"name": "Snow", "slug": "snow", "color": "#ffffff"}
+  ],
+  "supports": {
+    "post-thumbnails": true,
+    "custom-logo": {"width": 200, "height": 64, "flex-width": true, "flex-height": true, "header-text": ["site-title", "site-description"]},
+    "title-tag": true,
+    "html5": ["search-form", "comment-form", "comment-list", "gallery", "caption", "script", "style"],
+    "responsive-embeds": true,
+    "align-wide": true,
+    "wp-block-styles": true
+  },
+  "customizer": {
+    "sections": [
+      {
+        "id": "st_colors", "title": "Trail Colors", "priority": 30,
+        "settings": [
+          {"id": "accent", "label": "Alpine accent", "description": "Buttons, badges, links and highlights.", "type": "color", "default": "#e8692c", "transport": "postMessage", "css_var": "--st-accent"},
+          {"id": "slate", "label": "Header and footer slate", "type": "color", "default": "#1c2a3a", "transport": "postMessage", "css_var": "--st-slate"},
+          {"id": "paper", "label": "Page background", "type": "color", "default": "#f1f0ec", "transport": "postMessage", "css_var": "--st-paper"},
+          {"id": "sky", "label": "Glacier tint", "description": "Section backgrounds and the moderate badge.", "type": "color", "default": "#a9c6de", "transport": "postMessage", "css_var": "--st-sky"}
+        ]
+      },
+      {
+        "id": "st_layout", "title": "Layout & Terrain", "priority": 31,
+        "settings": [
+          {"id": "post_layout", "label": "Trail log layout", "type": "select", "default": "cards", "transport": "postMessage", "body_class": "st-layout-{value}",
+           "choices": [{"value": "cards", "label": "Cards in a grid"}, {"value": "list", "label": "List with photos beside"}, {"value": "logbook", "label": "Compact logbook rows"}]},
+          {"id": "sidebar", "label": "Sidebar", "type": "select", "default": "right", "transport": "postMessage", "body_class": "sidebar-{value}",
+           "choices": [{"value": "right", "label": "Right"}, {"value": "left", "label": "Left"}, {"value": "none", "label": "No sidebar"}]},
+          {"id": "container", "label": "Container width", "type": "select", "default": "standard", "transport": "postMessage", "body_class": "st-width-{value}",
+           "choices": [{"value": "standard", "label": "Standard (1180px)"}, {"value": "wide", "label": "Wide (1380px)"}]},
+          {"id": "font_pairing", "label": "Typography", "type": "select", "default": "slab", "transport": "postMessage", "body_class": "st-fonts-{value}",
+           "choices": [{"value": "slab", "label": "Slab headings, sans text"}, {"value": "sans", "label": "Sans throughout"}, {"value": "system", "label": "System fonts"}]},
+          {"id": "contours", "label": "Topographic contour patterns", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "st-contours"},
+          {"id": "sticky_header", "label": "Sticky header", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "sticky-header"},
+          {"id": "show_thumbs", "label": "Show featured images", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "show-thumbs"},
+          {"id": "show_author", "label": "Show the author", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "show-author"}
+        ]
+      },
+      {
+        "id": "st_basecamp", "title": "Hero & Membership", "priority": 32,
+        "settings": [
+          {"id": "hero_image", "label": "Hero image", "type": "image"},
+          {"id": "hero_kicker", "label": "Small line above the title", "type": "text", "default": "Hiking & mountain club"},
+          {"id": "hero_title", "label": "Hero title", "type": "text", "default": "Further, higher, together"},
+          {"id": "hero_text", "label": "Hero text", "type": "textarea", "default": "Weekend hikes, alpine trips and skills days for walkers of every pace. Bring your boots; we bring the maps."},
+          {"id": "hero_stats", "label": "Stats strip", "description": "One line under the hero, separated by dots.", "type": "text", "default": "120 trails logged · 48 trips a year · 600 members"},
+          {"id": "hero_second_label", "label": "Second button label", "type": "text", "default": "See upcoming trips"},
+          {"id": "hero_second_link", "label": "Second button link", "type": "text", "default": "#trips"},
+          {"id": "join_label", "label": "Join button label", "type": "text", "default": "Join the club"},
+          {"id": "join_link", "label": "Join button link", "type": "text", "default": "#join"},
+          {"id": "footer_text", "label": "Footer text", "type": "text", "default": ""}
+        ]
+      }
+    ]
+  }
+}

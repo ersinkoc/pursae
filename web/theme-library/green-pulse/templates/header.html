@@ -1,0 +1,26 @@
+{{template "head" .}}
+<body class="{{.BodyClass}}">
+{{.BodyOpen}}<div id="page" class="site">
+	<a class="skip-link screen-reader-text" href="#main">Skip to content</a>
+	{{with .Data.Settings.ticker_text}}<div class="gp-ticker" role="note" aria-label="Climate pulse">
+		<div class="gp-ticker__inner">
+			<span class="gp-ticker__label"><span class="gp-ticker__dot" aria-hidden="true"></span>Live pulse</span>
+			<p class="gp-ticker__text">{{.}}</p>
+			{{with $.Data.Settings.hero_button_label}}<a class="gp-ticker__link" href="{{$.Data.Settings.hero_button_link}}">{{.}} <span aria-hidden="true">&rarr;</span></a>{{end}}
+		</div>
+	</div>{{end}}
+	<header id="masthead" class="site-header">
+		<div class="site-header__inner">
+			{{template "branding" .}}
+			{{if has_nav_menu . "primary"}}<nav id="site-navigation" class="main-navigation" aria-label="Primary menu">
+				{{template "menu-toggle" .}}
+				<div id="primary-menu-wrap" class="menu-wrap">{{nav_menu . "primary"}}</div>
+			</nav><!-- #site-navigation -->{{end}}
+			<details class="gp-search">
+				<summary class="gp-search__toggle"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M15.5 15.5 21 21" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg><span class="screen-reader-text">Search</span></summary>
+				<form role="search" method="get" class="gp-search__form" action="{{.HomeURL}}"><label><span class="screen-reader-text">Search for:</span><input type="search" name="s" placeholder="Search stories, data and guides…" value="{{.SearchQuery}}" /></label><button type="submit">Search</button></form>
+			</details>
+		</div>
+	</header><!-- #masthead -->
+	{{if .IsFront}}{{template "hero" .}}{{end}}
+	{{template "wrap-open" .}}

@@ -1,0 +1,19 @@
+/* Summit Trails: block editor styles. */
+@font-face { font-family: "Zilla Slab"; src: url("fonts/zilla-slab-700.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+@font-face { font-family: "Work Sans"; src: url("fonts/work-sans.woff2") format("woff2"); font-weight: 400 700; font-display: swap; }
+body { background: #f1f0ec; color: #17222f; font-family: "Work Sans", "Helvetica Neue", Arial, sans-serif; font-size: 1.08rem; line-height: 1.7; }
+h1, h2, h3, h4, h5, h6, .editor-post-title__input { font-family: "Zilla Slab", Rockwell, Georgia, serif; font-weight: 700; line-height: 1.12; color: #1c2a3a; }
+h1, .editor-post-title__input, h2 { text-transform: uppercase; }
+a { color: #ae4f20; }
+.wp-block-quote { border-left: 5px solid #1c2a3a; padding-left: 1.4rem; font-family: "Zilla Slab", Georgia, serif; font-weight: 700; font-size: 1.35rem; }
+.wp-block-pullquote { background: #1c2a3a; color: #fff; border-bottom: 5px solid #e8692c; }
+.wp-block-button__link { background: #e8692c; color: #1a1007; border-radius: 4px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+.wp-block-table thead th { background: #1c2a3a; color: #fff; }
+.st-badge { display: inline-block; padding: .2em .7em; border-radius: 999px; font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; }
+.st-badge--easy { background: #dfe9e5; color: #2f5d50; }
+.st-badge--moderate { background: #dbe8f2; color: #1d4466; }
+.st-badge--hard { background: #1c2a3a; color: #fff; }
+.st-note { background: #e2e7ea; border-left: 5px solid #e8692c; padding: 1rem 1.2rem; }
+.st-stats { background: #fff; border-top: 4px solid #1c2a3a; }
+.st-section--slate, .st-cta { background: #1c2a3a; color: #fff; }
+.st-section--sky { background: #dbe3e7; }

@@ -1,0 +1,26 @@
+	{{template "wrap-close" .}}
+	<footer id="colophon" class="site-footer">
+		<div class="fc-invite">
+			<div class="fc-invite__inner">
+				<p class="fc-invite__title">{{with .Data.Settings.invite_title}}{{.}}{{else}}There is a seat saved for you{{end}}</p>
+				{{with .Data.Settings.service_times}}<p class="fc-invite__text">{{.}}</p>{{end}}
+				{{with .Data.Settings.visit_label}}<a class="button" href="{{$.Data.Settings.visit_link}}">{{.}}</a>{{end}}
+			</div>
+		</div>
+		<div class="site-footer__inner">
+			<div class="fc-footer__grid">
+				<div class="fc-footer__brand">
+					<p class="fc-footer__name"><span class="fc-emblem fc-emblem--small" aria-hidden="true"><span class="fc-emblem__sun"></span></span>{{.SiteName}}</p>
+					{{with .Description}}<p class="fc-footer__desc">{{.}}</p>{{end}}
+					{{if has_nav_menu . "social"}}<nav class="social-navigation" aria-label="Social links">{{nav_menu . "social"}}</nav>{{end}}
+				</div>
+				{{if is_active_sidebar . "footer-1"}}<div class="footer-widgets">{{dynamic_sidebar . "footer-1"}}</div>{{end}}
+			</div>
+			<div class="fc-footer__bottom">
+				{{if has_nav_menu . "footer"}}<nav class="footer-navigation" aria-label="Footer menu">{{nav_menu . "footer"}}</nav>{{end}}
+				{{template "site-info" .}}
+			</div>
+		</div>
+	</footer><!-- #colophon -->
+</div><!-- #page -->
+{{template "foot" .}}

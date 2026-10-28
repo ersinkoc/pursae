@@ -1,0 +1,501 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Summit Trails",
+  "blogdescription": "Hiking & mountain club since 1987",
+  "posts_per_page": 6
+ },
+ "categories": [
+  {
+   "slug": "trail-guides",
+   "name": "Trail Guides",
+   "description": "Route descriptions with distance, ascent, time and difficulty."
+  },
+  {
+   "slug": "trip-reports",
+   "name": "Trip Reports",
+   "description": "What happened out there: club trips, told by the people who went."
+  },
+  {
+   "slug": "gear",
+   "name": "Gear",
+   "description": "Honest reviews and packing lists from members who use the kit."
+  },
+  {
+   "slug": "skills",
+   "name": "Skills",
+   "description": "Navigation, winter skills, first aid and leave-no-trace know-how."
+  },
+  {
+   "slug": "club-news",
+   "name": "Club News",
+   "description": "Meets, membership, trail work days and everything else."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "beginner",
+   "name": "Beginner"
+  },
+  {
+   "slug": "ridge-walk",
+   "name": "Ridge walk"
+  },
+  {
+   "slug": "winter",
+   "name": "Winter"
+  },
+  {
+   "slug": "navigation",
+   "name": "Navigation"
+  },
+  {
+   "slug": "waterproofs",
+   "name": "Waterproofs"
+  },
+  {
+   "slug": "leave-no-trace",
+   "name": "Leave no trace"
+  },
+  {
+   "slug": "sunrise",
+   "name": "Sunrise"
+  },
+  {
+   "slug": "volunteering",
+   "name": "Volunteering"
+  }
+ ],
+ "media": [
+  {
+   "id": "hero",
+   "file": "demo/images/hero.jpg",
+   "alt": "A snow-capped peak above layered blue ridges at sunrise",
+   "caption": ""
+  },
+  {
+   "id": "dusk",
+   "file": "demo/images/ridgeline-dusk.jpg",
+   "alt": "Jagged ridgelines fading into a red and violet dusk",
+   "caption": ""
+  },
+  {
+   "id": "lake",
+   "file": "demo/images/alpine-lake.jpg",
+   "alt": "Snowy mountains reflected in a still alpine lake",
+   "caption": ""
+  },
+  {
+   "id": "pines",
+   "file": "demo/images/pine-forest.jpg",
+   "alt": "Rows of pine trees disappearing into morning fog",
+   "caption": ""
+  },
+  {
+   "id": "winter",
+   "file": "demo/images/winter-skills.jpg",
+   "alt": "A snowy mountainside under falling snow",
+   "caption": ""
+  },
+  {
+   "id": "switchbacks",
+   "file": "demo/images/switchbacks.jpg",
+   "alt": "A trail zigzagging up a green hillside to an orange flag",
+   "caption": ""
+  },
+  {
+   "id": "camp",
+   "file": "demo/images/camp-stars.jpg",
+   "alt": "Two glowing tents under a sky full of stars",
+   "caption": ""
+  },
+  {
+   "id": "gear",
+   "file": "demo/images/gear-flatlay.jpg",
+   "alt": "Boots, a map, a water bottle, a compass and a folded rain jacket laid out flat",
+   "caption": ""
+  },
+  {
+   "id": "topo",
+   "file": "demo/images/topo-map.jpg",
+   "alt": "A topographic map with an orange route line between waypoints",
+   "caption": ""
+  },
+  {
+   "id": "sunrise",
+   "file": "demo/images/summit-sunrise.jpg",
+   "alt": "The sun rising over a sea of clouds behind a dark summit",
+   "caption": ""
+  },
+  {
+   "id": "trailwork",
+   "file": "demo/images/trail-work.jpg",
+   "alt": "A forest path with new timber steps and crossed trail tools",
+   "caption": ""
+  },
+  {
+   "id": "rain",
+   "file": "demo/images/rain-ridge.jpg",
+   "alt": "A hiker in a blue rain jacket walking along a ridge in heavy rain",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Home",
+   "content": "<!-- wp:group {\"align\":\"full\",\"className\":\"st-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull st-section\"><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"st-eyebrow\"} --><p class=\"st-eyebrow\">Upcoming trips</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">On the calendar</h2><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"st-lead\"} --><p class=\"st-lead\">Club walks run every Saturday and most Sundays, with a badge for every level. Members sign up online; guests are welcome on two walks before joining.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:trips}}\">Full trip calendar</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:list {\"className\":\"st-trips\"} --><ul class=\"wp-block-list st-trips\"><!-- wp:list-item --><li><strong><span>Nov</span>01</strong><em><b>Greyhorn Ridge Traverse</b><br>16 km · 1,180 m · leader: Ines</em><span class=\"st-badge st-badge--hard\">Hard</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong><span>Nov</span>08</strong><em><b>Mirror Lake Circuit</b><br>8 km · 140 m · leader: Callum</em><span class=\"st-badge st-badge--easy\">Easy</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong><span>Nov</span>15</strong><em><b>Pinewood Gorge and the Falls</b><br>12 km · 420 m · leader: Femi</em><span class=\"st-badge st-badge--moderate\">Moderate</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong><span>Nov</span>22</strong><em><b>Navigation Day: Lost on Purpose</b><br>Skills day · Moor Gate · leader: Hana</em><span class=\"st-badge st-badge--moderate\">Moderate</span></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group --><!-- wp:group {\"align\":\"full\",\"className\":\"st-section st-section--sky\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull st-section st-section--sky\"><!-- wp:paragraph {\"className\":\"st-eyebrow\"} --><p class=\"st-eyebrow\">Trail guides</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Routes our leaders love</h2><!-- /wp:heading --><!-- wp:columns {\"align\":\"wide\",\"className\":\"st-guides\"} --><div class=\"wp-block-columns alignwide st-guides\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:lake}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:lake}}\" alt=\"Snowy mountains reflected in a still alpine lake\" class=\"wp-image-{{media_id:lake}}\"/></figure><!-- /wp:image --><!-- wp:paragraph --><p><span class=\"st-badge st-badge--easy\">Easy</span></p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"{{post:mirror-lake-circuit}}\">Mirror Lake Circuit</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p>A flat lakeshore loop with mountains in the water.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"st-mini\"} --><p class=\"st-mini\">7.8 km · 140 m · 2–3 hrs</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:switchbacks}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:switchbacks}}\" alt=\"A trail zigzagging up a green hillside to an orange flag\" class=\"wp-image-{{media_id:switchbacks}}\"/></figure><!-- /wp:image --><!-- wp:paragraph --><p><span class=\"st-badge st-badge--moderate\">Moderate</span></p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"{{post:sunrise-on-cairn-beacon}}\">Cairn Beacon by the Zigzags</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p>A steady climb to the best sunrise spot in the valley.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"st-mini\"} --><p class=\"st-mini\">11 km · 610 m · 4–5 hrs</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:hero}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:hero}}\" alt=\"A snow-capped peak above layered blue ridges at sunrise\" class=\"wp-image-{{media_id:hero}}\"/></figure><!-- /wp:image --><!-- wp:paragraph --><p><span class=\"st-badge st-badge--hard\">Hard</span></p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"{{post:greyhorn-ridge-traverse}}\">Greyhorn Ridge Traverse</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p>Six summits and one exposed scramble.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"st-mini\"} --><p class=\"st-mini\">16.4 km · 1,180 m · 7–8 hrs</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{category:trail-guides}}\">All trail guides</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --><!-- wp:group {\"align\":\"full\",\"className\":\"st-section st-section--slate\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull st-section st-section--slate\"><!-- wp:columns {\"align\":\"wide\",\"className\":\"st-numbers\"} --><div class=\"wp-block-columns alignwide st-numbers\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"st-big\"} --><p class=\"st-big\">600</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>members of every pace</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"st-big\"} --><p class=\"st-big\">48</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>organised trips a year</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"st-big\"} --><p class=\"st-big\">120</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>trails in our log</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"st-big\"} --><p class=\"st-big\">1987</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>the year we first set out</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group --><!-- wp:group {\"align\":\"full\",\"className\":\"st-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull st-section\"><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:media-text {\"mediaId\":{{media_id:gear}},\"mediaType\":\"image\"} --><div class=\"wp-block-media-text is-stacked-on-mobile\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:gear}}\" alt=\"Boots, a map, a water bottle, a compass and a folded rain jacket laid out flat\" class=\"wp-image-{{media_id:gear}} size-full\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:paragraph {\"className\":\"st-eyebrow\"} --><p class=\"st-eyebrow\">Gear reviews</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Tested in the rain, so you don't have to</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Five waterproof shells, two months of wet club walks and one clear winner for most walkers.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"st-rating\"} --><p class=\"st-rating\">★★★★☆ <span>Lightweight three-layer shell</span></p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{post:rain-shells-tested}}\">Read the review</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div></div><!-- /wp:media-text --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group --><!-- wp:group {\"align\":\"full\",\"className\":\"st-section st-section--sky\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull st-section st-section--sky\"><!-- wp:paragraph {\"className\":\"st-eyebrow\"} --><p class=\"st-eyebrow\">From the trail log</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Latest reports</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":3,\"displayPostContent\":true,\"excerptLength\":20,\"displayPostDate\":true,\"postLayout\":\"grid\",\"columns\":3} /--></div><!-- /wp:group --><!-- wp:group {\"align\":\"full\",\"className\":\"st-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull st-section\"><!-- wp:group {\"align\":\"wide\",\"className\":\"st-cta\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignwide st-cta\"><!-- wp:paragraph {\"className\":\"st-eyebrow\"} --><p class=\"st-eyebrow\">Membership</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Your boots. Our maps. Every weekend.</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Membership is £30 a year (£15 for students) and includes every club walk, the winter skills weekend at a discount, hut nights and a lot of good company.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:membership}}\">Join the club</a></div><!-- /wp:button --><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:faq}}\">Read the FAQ</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --></div><!-- /wp:group -->",
+   "front_page": true,
+   "featured_media": "hero"
+  },
+  {
+   "slug": "trail-log",
+   "title": "Trail Log",
+   "content": "",
+   "posts_page": true
+  },
+  {
+   "slug": "trips",
+   "title": "Trip Calendar",
+   "content": "<!-- wp:paragraph {\"className\":\"st-lead\"} --><p class=\"st-lead\">Every trip is led by a trained club leader. Book through the members' area, or contact us if you would like to come as a guest.</p><!-- /wp:paragraph --><!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Date</th><th>Trip</th><th>Distance / ascent</th><th>Level</th><th>Leader</th></tr></thead><tbody><tr><td>Sat 1 Nov</td><td>Greyhorn Ridge Traverse</td><td>16 km / 1,180 m</td><td><span class=\"st-badge st-badge--hard\">Hard</span></td><td>Ines</td></tr><tr><td>Sat 8 Nov</td><td>Mirror Lake Circuit</td><td>8 km / 140 m</td><td><span class=\"st-badge st-badge--easy\">Easy</span></td><td>Callum</td></tr><tr><td>Sat 15 Nov</td><td>Pinewood Gorge and the Falls</td><td>12 km / 420 m</td><td><span class=\"st-badge st-badge--moderate\">Moderate</span></td><td>Femi</td></tr><tr><td>Sun 22 Nov</td><td>Navigation Day: Lost on Purpose</td><td>Skills day</td><td><span class=\"st-badge st-badge--moderate\">Moderate</span></td><td>Hana</td></tr><tr><td>Sat 29 Nov</td><td>Old Quarry Woods and the Mill</td><td>9 km / 210 m</td><td><span class=\"st-badge st-badge--easy\">Easy</span></td><td>Owen</td></tr><tr><td>Sat 6 Dec</td><td>Winter Skills Weekend at the hut</td><td>Two days</td><td><span class=\"st-badge st-badge--hard\">Hard</span></td><td>Priya</td></tr><tr><td>Sat 13 Dec</td><td>Lantern Walk to Cairn Beacon</td><td>6 km / 300 m</td><td><span class=\"st-badge st-badge--easy\">Easy</span></td><td>Callum</td></tr></tbody></table></figure><!-- /wp:table --><!-- wp:heading --><h2 class=\"wp-block-heading\">Difficulty levels</h2><!-- /wp:heading --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph --><p><span class=\"st-badge st-badge--easy\">Easy</span></p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Under 12 km and 400 m of ascent on clear paths. Ideal for first walks.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph --><p><span class=\"st-badge st-badge--moderate\">Moderate</span></p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Up to 18 km and 900 m, some rough ground and steep sections.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph --><p><span class=\"st-badge st-badge--hard\">Hard</span></p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Long days, big ascent, exposure or scrambling. Previous experience needed.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:group {\"className\":\"st-note\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group st-note\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Weather and cancellations</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Leaders check the mountain forecast the evening before. If a trip changes or is cancelled, everyone who booked gets a message by 8 pm.</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "template": "page-wide",
+   "featured_media": "camp"
+  },
+  {
+   "slug": "membership",
+   "title": "Membership",
+   "content": "<!-- wp:paragraph {\"className\":\"st-lead\"} --><p class=\"st-lead\">Membership supports the club, its leaders and its trail work, and gets you out in the hills every weekend.</p><!-- /wp:paragraph --><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Adult</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"st-big\"} --><p class=\"st-big\">£30</p><!-- /wp:paragraph --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>All club walks and skills days</li><!-- /wp:list-item --><!-- wp:list-item --><li>Discount on the winter weekend</li><!-- /wp:list-item --><!-- wp:list-item --><li>Hut nights at members' rates</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Student</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"st-big\"} --><p class=\"st-big\">£15</p><!-- /wp:paragraph --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Everything in the adult membership</li><!-- /wp:list-item --><!-- wp:list-item --><li>Free loan of an ice axe and crampons</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Family</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"st-big\"} --><p class=\"st-big\">£50</p><!-- /wp:paragraph --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Two adults and children under 18</li><!-- /wp:list-item --><!-- wp:list-item --><li>Monthly family-friendly walks</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:heading --><h2 class=\"wp-block-heading\">How to join</h2><!-- /wp:heading --><!-- wp:list {\"ordered\":true,\"className\":\"st-route\"} --><ol class=\"wp-block-list st-route\"><!-- wp:list-item --><li>Come on up to two walks as a guest.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Fill in the membership form and pay online.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Book your next trip through the members' area.</li><!-- /wp:list-item --></ol><!-- /wp:list --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Get in touch</a></div><!-- /wp:button --><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:faq}}\">Frequently asked questions</a></div><!-- /wp:button --></div><!-- /wp:buttons -->"
+  },
+  {
+   "slug": "faq",
+   "title": "Membership FAQ",
+   "content": "<!-- wp:paragraph {\"className\":\"st-lead\"} --><p class=\"st-lead\">The questions new members ask most often. If yours is not here, just ask.</p><!-- /wp:paragraph --><!-- wp:details --><details class=\"wp-block-details\"><summary>How fit do I need to be?</summary><!-- wp:paragraph --><p>If you can walk for three hours with short breaks, you will enjoy our easy walks. Build up from there.</p><!-- /wp:paragraph --></details><!-- /wp:details --><!-- wp:details --><details class=\"wp-block-details\"><summary>Do I need special boots?</summary><!-- wp:paragraph --><p>For easy walks, trail shoes with good grip are fine. For moderate and hard walks, waterproof boots with ankle support are best.</p><!-- /wp:paragraph --></details><!-- /wp:details --><!-- wp:details --><details class=\"wp-block-details\"><summary>Can I bring my dog?</summary><!-- wp:paragraph --><p>On walks marked dog-friendly, yes, on a short lead around livestock.</p><!-- /wp:paragraph --></details><!-- /wp:details --><!-- wp:details --><details class=\"wp-block-details\"><summary>What happens if the weather is bad?</summary><!-- wp:paragraph --><p>Leaders may change the route or cancel. Safety always comes first, and you will hear by 8 pm the evening before.</p><!-- /wp:paragraph --></details><!-- /wp:details --><!-- wp:details --><details class=\"wp-block-details\"><summary>Is there transport to the start?</summary><!-- wp:paragraph --><p>Members share lifts, arranged in the trip chat. Some walks start from the train station.</p><!-- /wp:paragraph --></details><!-- /wp:details -->",
+   "parent": "membership"
+  },
+  {
+   "slug": "about",
+   "title": "About the Club",
+   "content": "<!-- wp:paragraph {\"className\":\"st-lead\"} --><p class=\"st-lead\">Summit Trails began in 1987 when six friends put a notice in the village shop: walkers wanted, any pace. Nearly forty years later we are around six hundred members, from teenagers to a founding member who still leads the lantern walk every December.</p><!-- /wp:paragraph --><!-- wp:image {\"id\":{{media_id:dusk}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:dusk}}\" alt=\"Jagged ridgelines fading into a red and violet dusk\" class=\"wp-image-{{media_id:dusk}}\"/><figcaption class=\"wp-element-caption\">The view from the club hut on a winter evening.</figcaption></figure><!-- /wp:image --><!-- wp:heading --><h2 class=\"wp-block-heading\">What we believe</h2><!-- /wp:heading --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Everyone goes home</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Safety and good judgement come before summits. Turning back is always a good decision.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Nobody walks alone</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Leaders set the pace for the slowest walker, and there is always a back marker.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Leave it better</h3><!-- /wp:heading --><!-- wp:paragraph --><p>We give back through trail work days and by following leave-no-trace principles.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:heading --><h2 class=\"wp-block-heading\">Our leaders</h2><!-- /wp:heading --><!-- wp:paragraph --><p>All thirty-two club leaders are volunteers with outdoor first aid training and navigation assessment. Many hold mountain leader qualifications, and the club pays for new leaders to train.</p><!-- /wp:paragraph --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>The best part of a walk is still the bit where someone says: shall we stop for a brew?</p><!-- /wp:paragraph --><cite>A founding member</cite></blockquote><!-- /wp:quote -->",
+   "featured_media": "pines"
+  },
+  {
+   "slug": "contact",
+   "title": "Contact",
+   "content": "<!-- wp:paragraph {\"className\":\"st-lead\"} --><p class=\"st-lead\">Questions about trips, membership or trail work days? Get in touch and a committee member will reply within two days.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Email</h3><!-- /wp:heading --><!-- wp:paragraph --><p>hello@summittrails.example</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Club hut</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Low Mill Barn<br>Larch Gate, Kestrel Valley</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Meet us</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Thursday social, 19:30<br>The Packhorse, Market Street</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:image {\"id\":{{media_id:topo}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:topo}}\" alt=\"A topographic map with an orange route line between waypoints\" class=\"wp-image-{{media_id:topo}}\"/><figcaption class=\"wp-element-caption\">Our most-walked routes, all starting within ten miles of the hut.</figcaption></figure><!-- /wp:image --><!-- wp:paragraph --><p>For anything urgent on the day of a walk, call the trip leader on the number in your booking confirmation.</p><!-- /wp:paragraph -->"
+  }
+ ],
+ "posts": [
+  {
+   "slug": "greyhorn-ridge-traverse",
+   "title": "Trail Guide: The Greyhorn Ridge Traverse",
+   "date": "2026-10-24T08:00:00",
+   "excerpt": "A long, airy ridge with big views and one exposed scramble. Our full route guide, with timings and the safest descent.",
+   "categories": [
+    "trail-guides"
+   ],
+   "tags": [
+    "ridge-walk",
+    "navigation"
+   ],
+   "featured_media": "hero",
+   "format": "standard",
+   "sticky": true,
+   "content": "<!-- wp:paragraph --><p>The Greyhorn Ridge is the walk club members talk about all winter. Six summits, a narrow crest with drops on both sides, and on a clear day a view that reaches the coast. It is also a serious day out that rewards planning.</p><!-- /wp:paragraph --><!-- wp:columns {\"className\":\"st-stats\"} --><div class=\"wp-block-columns st-stats\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"st-stat-label\"} --><p class=\"st-stat-label\">Distance</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"st-stat-value\"} --><p class=\"st-stat-value\">16.4 km</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"st-stat-label\"} --><p class=\"st-stat-label\">Elevation gain</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"st-stat-value\"} --><p class=\"st-stat-value\">1,180 m</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"st-stat-label\"} --><p class=\"st-stat-label\">Time</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"st-stat-value\"} --><p class=\"st-stat-value\">7–8 hrs</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"st-stat-label\"} --><p class=\"st-stat-label\">Difficulty</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"st-stat-value\"} --><p class=\"st-stat-value\"><span class=\"st-badge st-badge--hard\">Hard</span></p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:heading --><h2 class=\"wp-block-heading\">The route</h2><!-- /wp:heading --><!-- wp:list {\"ordered\":true,\"className\":\"st-route\"} --><ol class=\"wp-block-list st-route\"><!-- wp:list-item --><li><strong>Larch Gate car park to Cold Tarn</strong> (3.2 km). Follow the stony track beside the beck to the tarn outflow.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Cold Tarn to Greyhorn Pike</strong> (2.1 km). A steep pitched path climbs the shoulder. Take it steady; this is the biggest climb of the day.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>The Fang</strong> (0.6 km). A short exposed scramble on good rock. A bypass path drops left onto the north side for anyone who prefers it.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>The crest to Shepherd's Knott</strong> (4.8 km). Easy, glorious ridge walking over four smaller tops.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Descent by Knott Gill</strong> (5.7 km). A clear path back to the valley and along the river to the start.</li><!-- /wp:list-item --></ol><!-- /wp:list --><!-- wp:group {\"className\":\"st-note\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group st-note\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Safety note</h3><!-- /wp:heading --><!-- wp:paragraph --><p>The Fang is polished and slippery when wet, and the ridge has no easy escape between Greyhorn Pike and Shepherd's Knott. In poor visibility or strong wind, turn back at Greyhorn Pike.</p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:heading --><h2 class=\"wp-block-heading\">What to carry</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"st-gear\"} --><ul class=\"wp-block-list st-gear\"><!-- wp:list-item --><li>Waterproof jacket and trousers</li><!-- /wp:list-item --><!-- wp:list-item --><li>Warm layer and hat, even in summer</li><!-- /wp:list-item --><!-- wp:list-item --><li>Map, compass and a charged phone</li><!-- /wp:list-item --><!-- wp:list-item --><li>Two litres of water</li><!-- /wp:list-item --><!-- wp:list-item --><li>Lunch and snacks for eight hours</li><!-- /wp:list-item --><!-- wp:list-item --><li>Head torch</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph --><p>The club walks the Greyhorn Ridge three times a year with experienced leaders. Check the trips calendar for the next date.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Ruairi",
+     "email": "ruairi@example.com",
+     "content": "Did this last month in perfect weather. The bypass round the Fang is easy to miss; look for the cairn just before the rock steps.",
+     "date": "2026-10-25T19:22:00"
+    },
+    {
+     "author": "Mei",
+     "email": "mei@example.com",
+     "content": "Great guide. Knott Gill was boggy after rain so allow extra time on the descent.",
+     "date": "2026-10-26T08:41:00"
+    }
+   ]
+  },
+  {
+   "slug": "sunrise-on-cairn-beacon",
+   "title": "Sunrise on Cairn Beacon: A Trip Report",
+   "date": "2026-10-17T18:00:00",
+   "excerpt": "Fourteen of us left the car park at 4:30 in the dark. Two hours later we were standing above a sea of cloud.",
+   "categories": [
+    "trip-reports"
+   ],
+   "tags": [
+    "sunrise",
+    "beginner"
+   ],
+   "featured_media": "sunrise",
+   "format": "standard",
+   "sticky": false,
+   "content": "<!-- wp:paragraph --><p>The forecast promised a temperature inversion, so the group chat went quiet at nine and the alarms went off at half past three. By 4:30 fourteen head torches were bobbing up the track from the car park, nobody saying much.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The path to Cairn Beacon is gentle and well made, which is exactly what you want in the dark. We stopped twice to look back at the line of lights behind us, and once to share coffee from a very large flask.</p><!-- /wp:paragraph --><!-- wp:image {\"id\":{{media_id:sunrise}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:sunrise}}\" alt=\"The sun rising over a sea of clouds behind a dark summit\" class=\"wp-image-{{media_id:sunrise}}\"/><figcaption class=\"wp-element-caption\">Six o'clock on the summit, above the clouds.</figcaption></figure><!-- /wp:image --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>I have lived in this valley for twenty years and never seen it from above the clouds. I nearly cried.</p><!-- /wp:paragraph --><cite>A first-time member</cite></blockquote><!-- /wp:quote --><!-- wp:heading --><h2 class=\"wp-block-heading\">Numbers from the morning</h2><!-- /wp:heading --><!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>Start</td><td>04:30 at Low Mill car park</td></tr><tr><td>Summit</td><td>06:05, sunrise at 06:21</td></tr><tr><td>Coldest moment</td><td>−2 °C just before dawn</td></tr><tr><td>Back at the cars</td><td>08:40, bacon rolls at 09:00</td></tr></tbody></table></figure><!-- /wp:table --><!-- wp:paragraph --><p>We will run another dawn walk in spring. If you have never done one, it is worth the early alarm, we promise.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Josie",
+     "email": "josie@example.com",
+     "content": "Best morning of my year. Thank you to the leaders for the extra flask!",
+     "date": "2026-10-18T10:05:00"
+    }
+   ]
+  },
+  {
+   "slug": "winter-skills-weekend-recap",
+   "title": "Winter Skills Weekend: What We Learned in the Snow",
+   "date": "2026-10-10T17:30:00",
+   "excerpt": "Ice axes, crampons and a lot of sliding down slopes on purpose. Notes from the club's annual winter skills course.",
+   "categories": [
+    "skills",
+    "trip-reports"
+   ],
+   "tags": [
+    "winter",
+    "navigation"
+   ],
+   "featured_media": "winter",
+   "format": "standard",
+   "sticky": false,
+   "content": "<!-- wp:paragraph --><p>Every autumn the club runs a winter skills weekend at the hut, and every year somebody arrives sure they will never need to know how to stop a slide. By Sunday afternoon they are always the keenest.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Day one: moving on snow</h2><!-- /wp:heading --><!-- wp:paragraph --><p>We started on gentle slopes, kicking steps and learning how to hold an axe so that it is a help and not a hazard. After lunch came the part everyone remembers: deliberately sliding down a safe slope, head first, feet first and on our backs, and stopping with the axe.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Day two: navigation in white-out</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Snow hides paths and flattens the view, so day two was all about the map and compass. Pairs took turns leading short legs on a bearing, counting paces and checking the contours to know when they had arrived.</p><!-- /wp:paragraph --><!-- wp:group {\"className\":\"st-note\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group st-note\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Before your first winter walk</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Winter conditions need winter skills and equipment. Join a course or walk with experienced leaders before heading out on snow on your own.</p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Kit we used</h3><!-- /wp:heading --><!-- wp:list {\"className\":\"st-gear\"} --><ul class=\"wp-block-list st-gear\"><!-- wp:list-item --><li>Walking axe</li><!-- /wp:list-item --><!-- wp:list-item --><li>C2 crampons on stiff boots</li><!-- /wp:list-item --><!-- wp:list-item --><li>Goggles</li><!-- /wp:list-item --><!-- wp:list-item --><li>Spare gloves, two pairs</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Skills covered</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Step kicking and cutting</li><!-- /wp:list-item --><!-- wp:list-item --><li>Self-arrest</li><!-- /wp:list-item --><!-- wp:list-item --><li>Walking in crampons</li><!-- /wp:list-item --><!-- wp:list-item --><li>Navigation by timing and pacing</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns -->",
+   "comments": []
+  },
+  {
+   "slug": "rain-shells-tested",
+   "title": "Five Rain Shells, One Very Wet Autumn",
+   "date": "2026-10-03T12:00:00",
+   "excerpt": "We wore five waterproof jackets on club walks for two months. Here is what kept us dry, and what to look for.",
+   "categories": [
+    "gear"
+   ],
+   "tags": [
+    "waterproofs"
+   ],
+   "featured_media": "rain",
+   "format": "standard",
+   "sticky": false,
+   "content": "<!-- wp:paragraph --><p>Waterproof jackets are the most-asked-about kit in the club. So this autumn five members each took a different shell on every walk for two months, from drizzle to the kind of sideways rain that finds every gap.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>We are not naming brands: models change every year. Instead, here is what made the difference between a good shell and a damp one.</p><!-- /wp:paragraph --><!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Type</th><th>Weight</th><th>Dry after 4 hrs rain?</th><th>Our rating</th></tr></thead><tbody><tr><td>Three-layer, heavyweight</td><td>520 g</td><td>Yes</td><td>★★★★★</td></tr><tr><td>Three-layer, lightweight</td><td>340 g</td><td>Mostly</td><td>★★★★☆</td></tr><tr><td>Two-and-a-half-layer</td><td>290 g</td><td>Damp at the cuffs</td><td>★★★☆☆</td></tr><tr><td>Two-layer with lining</td><td>610 g</td><td>Yes, but sweaty</td><td>★★★☆☆</td></tr><tr><td>Budget poncho</td><td>230 g</td><td>No, in wind</td><td>★★☆☆☆</td></tr></tbody></table></figure><!-- /wp:table --><!-- wp:heading --><h2 class=\"wp-block-heading\">What actually mattered</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><strong>A hood that turns with your head</strong>, with a stiff peak.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Pit zips</strong> for climbing, because breathable fabric has limits.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Long enough to sit on</strong>, especially for lunch stops.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Cuffs that close tight</strong> over gloves.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph --><p>The heavyweight three-layer jacket won on dryness, but most testers would choose the lightweight one for everyday walking. Whatever you buy, re-proof it each season: a tired outer face lets water soak in and makes any jacket feel wet.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"st-rating\"} --><p class=\"st-rating\">★★★★☆ <span>Lightweight three-layer: our pick for most walkers</span></p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Tomasz",
+     "email": "tomasz@example.com",
+     "content": "Agree about the hood. A jacket with a floppy hood is miserable however good the fabric.",
+     "date": "2026-10-04T21:10:00"
+    }
+   ]
+  },
+  {
+   "slug": "your-first-hike-with-the-club",
+   "title": "Your First Hike with the Club: A Beginner's Guide",
+   "date": "2026-09-26T09:00:00",
+   "excerpt": "What to wear, what to bring and what a club walk is actually like. Everything new members ask before their first day out.",
+   "categories": [
+    "skills",
+    "club-news"
+   ],
+   "tags": [
+    "beginner"
+   ],
+   "featured_media": "switchbacks",
+   "format": "standard",
+   "sticky": false,
+   "content": "<!-- wp:paragraph --><p>Joining a walking club can feel daunting if you have never done it. Will everyone be faster than you? What if you bring the wrong thing? Relax: every member had a first walk, and most of them were nervous too.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Pick the right walk</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Every trip on our calendar has a difficulty badge. For your first walk, choose one marked <span class=\"st-badge st-badge--easy\">Easy</span> or <span class=\"st-badge st-badge--moderate\">Moderate</span>. These are under 15 km with well-made paths and regular stops.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">What to wear and bring</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"st-gear\"} --><ul class=\"wp-block-list st-gear\"><!-- wp:list-item --><li>Boots or trail shoes with a good grip</li><!-- /wp:list-item --><!-- wp:list-item --><li>Layers rather than one thick coat</li><!-- /wp:list-item --><!-- wp:list-item --><li>A waterproof jacket, whatever the forecast</li><!-- /wp:list-item --><!-- wp:list-item --><li>Water, lunch and a snack</li><!-- /wp:list-item --><!-- wp:list-item --><li>A small rucksack to carry it all</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:heading --><h2 class=\"wp-block-heading\">On the day</h2><!-- /wp:heading --><!-- wp:list {\"ordered\":true,\"className\":\"st-route\"} --><ol class=\"wp-block-list st-route\"><!-- wp:list-item --><li>Arrive ten minutes early and introduce yourself to the leader.</li><!-- /wp:list-item --><!-- wp:list-item --><li>The leader sets the pace for the slowest walker. Nobody gets left behind.</li><!-- /wp:list-item --><!-- wp:list-item --><li>There is always a back marker at the rear of the group.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Most walks finish with a drink and a chat for anyone who wants one.</li><!-- /wp:list-item --></ol><!-- /wp:list --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>I was terrified I would hold everyone up. Nobody noticed I was new by lunchtime.</p><!-- /wp:paragraph --><cite>A member since last spring</cite></blockquote><!-- /wp:quote --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:trips}}\">See upcoming trips</a></div><!-- /wp:button --><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:membership}}\">Membership</a></div><!-- /wp:button --></div><!-- /wp:buttons -->",
+   "comments": [
+    {
+     "author": "Ana",
+     "email": "ana@example.com",
+     "content": "This is exactly what I needed. Signed up for Saturday's lake walk!",
+     "date": "2026-09-27T12:30:00"
+    }
+   ]
+  },
+  {
+   "slug": "mirror-lake-circuit",
+   "title": "Trail Guide: Mirror Lake Circuit",
+   "date": "2026-09-19T08:30:00",
+   "excerpt": "An easy, beautiful loop around a high lake, ideal for a first walk or a lazy Sunday. Flat paths, big views, a good café.",
+   "categories": [
+    "trail-guides"
+   ],
+   "tags": [
+    "beginner"
+   ],
+   "featured_media": "lake",
+   "format": "standard",
+   "sticky": false,
+   "content": "<!-- wp:paragraph --><p>If you only have a morning, or you are bringing friends who are new to hills, the Mirror Lake Circuit is the walk. The path stays close to the shore the whole way round, and on still days the mountains appear twice.</p><!-- /wp:paragraph --><!-- wp:columns {\"className\":\"st-stats\"} --><div class=\"wp-block-columns st-stats\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"st-stat-label\"} --><p class=\"st-stat-label\">Distance</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"st-stat-value\"} --><p class=\"st-stat-value\">7.8 km</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"st-stat-label\"} --><p class=\"st-stat-label\">Elevation gain</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"st-stat-value\"} --><p class=\"st-stat-value\">140 m</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"st-stat-label\"} --><p class=\"st-stat-label\">Time</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"st-stat-value\"} --><p class=\"st-stat-value\">2–3 hrs</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"st-stat-label\"} --><p class=\"st-stat-label\">Difficulty</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"st-stat-value\"} --><p class=\"st-stat-value\"><span class=\"st-badge st-badge--easy\">Easy</span></p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:heading --><h2 class=\"wp-block-heading\">The route</h2><!-- /wp:heading --><!-- wp:list {\"ordered\":true,\"className\":\"st-route\"} --><ol class=\"wp-block-list st-route\"><!-- wp:list-item --><li>From the boathouse, follow the lakeshore path anticlockwise through the birch woods.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Cross the footbridge at the head of the lake and stop at the shingle beach.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Continue on the old cart track along the far shore.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Return over the dam to the boathouse café.</li><!-- /wp:list-item --></ol><!-- /wp:list --><!-- wp:media-text {\"mediaId\":{{media_id:lake}},\"mediaType\":\"image\",\"mediaPosition\":\"right\"} --><div class=\"wp-block-media-text is-stacked-on-mobile has-media-on-the-right\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:lake}}\" alt=\"Snowy mountains reflected in a still alpine lake\" class=\"wp-image-{{media_id:lake}} size-full\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Best time to go</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Early morning, before the breeze picks up. Autumn colours peak in late October.</p><!-- /wp:paragraph --></div></div><!-- /wp:media-text --><!-- wp:paragraph --><p>Dogs are welcome on leads, and the whole route is suitable for all-terrain pushchairs apart from the steps at the footbridge.</p><!-- /wp:paragraph -->",
+   "comments": []
+  },
+  {
+   "slug": "leave-no-trace-seven-habits",
+   "title": "Leave No Trace: Seven Habits for Every Walk",
+   "date": "2026-09-12T10:00:00",
+   "excerpt": "The hills stay wild because people look after them. Seven simple habits the club asks every member to follow.",
+   "categories": [
+    "skills"
+   ],
+   "tags": [
+    "leave-no-trace"
+   ],
+   "featured_media": "pines",
+   "format": "standard",
+   "sticky": false,
+   "content": "<!-- wp:paragraph --><p>More people are walking in the hills than ever, which is wonderful and also hard on the places we love. Paths widen, litter appears, and wildlife moves away. The good news is that small habits make a real difference.</p><!-- /wp:paragraph --><!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li><strong>Plan ahead</strong> so you are not forced into shortcuts.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Stay on the path</strong>, even when it is muddy. Walking around puddles widens erosion.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Pack it in, pack it out</strong>, including fruit peel.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Leave what you find</strong>: stones, flowers and old walls.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Keep fires out of the hills</strong>; use a stove.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Give wildlife space</strong>, especially in nesting season.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Be considerate</strong> of farmers, gates and other walkers.</li><!-- /wp:list-item --></ol><!-- /wp:list --><!-- wp:pullquote --><figure class=\"wp-block-pullquote\"><blockquote><p>Take only photographs, leave only footprints, and keep those on the path.</p><cite>Club motto</cite></blockquote></figure><!-- /wp:pullquote --><!-- wp:paragraph --><p>Club leaders carry a spare bag on every walk for any litter we find. If you would like to do more, join one of our trail maintenance days.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>None of this is about rules for their own sake. It is about making sure the next person up the path, and the curlew nesting beside it, find the hills just as we did.</p><!-- /wp:paragraph -->",
+   "comments": []
+  },
+  {
+   "slug": "trail-work-day-on-the-fellside-path",
+   "title": "Trail Work Day: 40 New Steps on the Fellside Path",
+   "date": "2026-09-05T16:00:00",
+   "excerpt": "Twenty-two volunteers, one very heavy pile of timber and a path that no longer turns into a stream every time it rains.",
+   "categories": [
+    "club-news"
+   ],
+   "tags": [
+    "volunteering",
+    "leave-no-trace"
+   ],
+   "featured_media": "trailwork",
+   "format": "standard",
+   "sticky": false,
+   "content": "<!-- wp:paragraph --><p>The Fellside path is the main way up from the village, and it has been washing away for years. Last Saturday twenty-two club volunteers, working with the park rangers, set about fixing it.</p><!-- /wp:paragraph --><!-- wp:columns {\"className\":\"st-numbers\"} --><div class=\"wp-block-columns st-numbers\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"st-big\"} --><p class=\"st-big\">40</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>timber steps</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"st-big\"} --><p class=\"st-big\">12</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>water bars</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"st-big\"} --><p class=\"st-big\">22</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>volunteers</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"st-big\"} --><p class=\"st-big\">6</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>hours of work</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:paragraph --><p>Water bars are angled boards that turn rainwater off the path before it can gather speed. Steps hold the soil on the steepest section. Both are back-breaking to dig in, and both will last for decades.</p><!-- /wp:paragraph --><!-- wp:image {\"id\":{{media_id:trailwork}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:trailwork}}\" alt=\"A forest path with new timber steps and crossed trail tools\" class=\"wp-image-{{media_id:trailwork}}\"/><figcaption class=\"wp-element-caption\">The finished section, ready for the winter rain.</figcaption></figure><!-- /wp:image --><!-- wp:paragraph --><p>Thank you to everyone who came, and to the rangers for the tools, the training and the cake. Our next work day is in March; no experience is needed.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Bryn",
+     "email": "bryn@example.com",
+     "content": "My shoulders still ache but walking up those steps on Sunday felt great.",
+     "date": "2026-09-07T09:15:00"
+    }
+   ]
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Home",
+     "page": "home"
+    },
+    {
+     "title": "Trips",
+     "page": "trips"
+    },
+    {
+     "title": "Trail Log",
+     "page": "trail-log",
+     "children": [
+      {
+       "title": "Trail Guides",
+       "category": "trail-guides"
+      },
+      {
+       "title": "Trip Reports",
+       "category": "trip-reports"
+      },
+      {
+       "title": "Gear",
+       "category": "gear"
+      },
+      {
+       "title": "Skills",
+       "category": "skills"
+      }
+     ]
+    },
+    {
+     "title": "Membership",
+     "page": "membership",
+     "children": [
+      {
+       "title": "FAQ",
+       "page": "faq"
+      }
+     ]
+    },
+    {
+     "title": "About",
+     "page": "about",
+     "children": [
+      {
+       "title": "Contact",
+       "page": "contact"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Footer",
+   "location": "footer",
+   "items": [
+    {
+     "title": "Trips",
+     "page": "trips"
+    },
+    {
+     "title": "Membership",
+     "page": "membership"
+    },
+    {
+     "title": "Club News",
+     "category": "club-news"
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    }
+   ]
+  },
+  {
+   "name": "Social",
+   "location": "social",
+   "items": [
+    {
+     "title": "Instagram",
+     "url": "https://instagram.com/"
+    },
+    {
+     "title": "Strava",
+     "url": "https://www.strava.com/"
+    },
+    {
+     "title": "Newsletter",
+     "url": "#newsletter"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "sidebar-1": [
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Next trip</h2><!-- /wp:heading --><!-- wp:paragraph --><p><strong>Sat 1 Nov</strong> Greyhorn Ridge Traverse<br>16 km · 1,180 m · Hard</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:trips}}\">Trip calendar</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "<!-- wp:search {\"label\":\"Search\",\"buttonText\":\"Search\"} /-->",
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Sections</h2><!-- /wp:heading --><!-- wp:categories {\"showPostCounts\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Latest reports</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":4,\"displayPostDate\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Tags</h2><!-- /wp:heading --><!-- wp:tag-cloud /--></div><!-- /wp:group -->"
+  ],
+  "footer-1": [
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Club hut</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Low Mill Barn, Larch Gate<br>Kestrel Valley<br>Thursday social 19:30</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Trail log</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":3,\"displayPostDate\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Sections</h2><!-- /wp:heading --><!-- wp:categories {\"showPostCounts\":true} /--></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "hero_image": "hero",
+  "accent": "#e8692c",
+  "slate": "#1c2a3a",
+  "paper": "#f1f0ec",
+  "post_layout": "cards",
+  "sidebar": "right",
+  "container": "standard",
+  "font_pairing": "slab",
+  "contours": true,
+  "sticky_header": true,
+  "hero_kicker": "Hiking & mountain club since 1987",
+  "hero_stats": "120 trails logged · 48 trips a year · 600 members",
+  "join_link": "{{page:membership}}",
+  "hero_second_link": "{{page:trips}}",
+  "footer_text": "© Summit Trails Hiking Club · Low Mill Barn, Kestrel Valley"
+ }
+}

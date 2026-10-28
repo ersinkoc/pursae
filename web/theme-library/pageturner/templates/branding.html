@@ -1,0 +1,5 @@
+<div class="site-branding">
+	{{with .CustomLogo}}<div class="site-logo">{{.}}</div>{{end}}
+	{{if .TitleIsH1}}<h1 class="site-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></h1>{{else}}<p class="site-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></p>{{end}}
+	{{with .Description}}<p class="site-description">{{.}}</p>{{end}}
+</div><!-- .site-branding -->

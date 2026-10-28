@@ -1,0 +1,11 @@
+<article id="post-{{.ID}}" class="{{.Class}} entry fc-card">
+	{{with .Thumbnail}}<a class="post-thumbnail fc-card__media" href="{{$.Permalink}}" aria-hidden="true" tabindex="-1">{{.}}</a>{{end}}
+	<div class="fc-card__body">
+		<p class="fc-card__meta">{{if .ShowFeatured}}<span class="sticky-badge">Featured</span>{{end}}{{range $i, $c := .Categories}}{{if $i}}<span class="fc-dot" aria-hidden="true">&middot;</span>{{end}}<a href="{{$c.URL}}">{{$c.Name}}</a>{{end}}</p>
+		<h2 class="entry-title"><a href="{{.Permalink}}" rel="bookmark">{{.Title}}</a></h2>
+		<div class="entry-summary{{if not .ShowExcerpt}} is-full{{end}}">
+			{{if .ShowExcerpt}}{{.Excerpt}}{{else}}{{.Content}}{{end}}
+		</div>
+		<p class="fc-card__foot"><time datetime="{{.DateISO}}">{{.DateText}}</time>{{with .AuthorName}}<span class="byline">by {{.}}</span>{{end}}<a class="more-link" href="{{.Permalink}}">Read<span class="screen-reader-text"> {{.Title}}</span></a></p>
+	</div>
+</article><!-- #post-{{.ID}} -->

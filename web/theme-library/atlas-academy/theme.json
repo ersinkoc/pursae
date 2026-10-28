@@ -1,0 +1,101 @@
+{
+  "slug": "atlas-academy",
+  "name": "Atlas Academy",
+  "version": "1.0.0",
+  "description": "A bold, modern theme for independent online course creators: an announcement bar, an Enroll button in the header, a split hero with a highlighted headline and floating stat stickers, course catalogue cards with level pills and prices, numbered curriculum modules, student story cards, a free-lessons blog and an enroll call to action. Thick ink borders, chunky offset shadows and violet, coral and mint colours.",
+  "author": "WordPress Go",
+  "author_url": "https://github.com/boracomet/wordpress-go",
+  "theme_url": "https://github.com/boracomet/wordpress-go/tree/main/web/theme-library/atlas-academy",
+  "tags": ["Education", "Blog", "Grid Layout", "Right Sidebar", "Left Sidebar", "Custom Colors", "Custom Logo", "Custom Menu", "Featured Images", "Sticky Post", "Threaded Comments", "Wide Blocks", "Editor Style", "Accessibility Ready"],
+  "requires_core": "0.1.0",
+  "screenshot": "assets/screenshot.png",
+  "category": "education",
+  "style": "Bold neo-brutalist course site in violet, coral and mint with chunky shadows",
+  "demo": "demo/demo.json",
+  "widget_areas": [
+    {"id": "sidebar-1", "name": "Sidebar", "description": "Beside lessons, archives and search results."},
+    {"id": "footer-1", "name": "Footer", "description": "Columns in the dark footer."}
+  ],
+  "menu_locations": [
+    {"id": "primary", "name": "Primary Menu"},
+    {"id": "footer", "name": "Footer Menu"},
+    {"id": "social", "name": "Social Links"}
+  ],
+  "styles": [
+    {"handle": "atlas-academy-style", "src": "assets/style.css", "deps": ["wp-block-library"], "media": "all"}
+  ],
+  "scripts": [
+    {"handle": "atlas-academy-navigation", "src": "assets/js/navigation.js", "deps": [], "in_footer": true}
+  ],
+  "editor_styles": ["assets/editor-style.css"],
+  "preload_fonts": ["assets/fonts/sora.woff2", "assets/fonts/jakarta.woff2"],
+  "palette": [
+    {"name": "Ink", "slug": "ink", "color": "#14142b"},
+    {"name": "Violet", "slug": "violet", "color": "#6c4cf5"},
+    {"name": "Coral", "slug": "coral", "color": "#ff6b57"},
+    {"name": "Mint", "slug": "mint", "color": "#c9f2e3"},
+    {"name": "Lilac", "slug": "lilac", "color": "#ece8ff"},
+    {"name": "Sun", "slug": "sun", "color": "#ffd25a"},
+    {"name": "White", "slug": "white", "color": "#ffffff"}
+  ],
+  "supports": {
+    "post-thumbnails": true,
+    "custom-logo": {"width": 200, "height": 64, "flex-width": true, "flex-height": true, "header-text": ["site-title", "site-description"]},
+    "title-tag": true,
+    "html5": ["search-form", "comment-form", "comment-list", "gallery", "caption", "script", "style"],
+    "responsive-embeds": true,
+    "align-wide": true,
+    "wp-block-styles": true
+  },
+  "customizer": {
+    "sections": [
+      {
+        "id": "aa_colors", "title": "Academy Colors", "priority": 30,
+        "settings": [
+          {"id": "primary", "label": "Primary (violet)", "description": "Buttons, links, highlights and the hero swash.", "type": "color", "default": "#6c4cf5", "transport": "postMessage", "css_var": "--aa-primary"},
+          {"id": "accent", "label": "Accent (coral)", "description": "Stickers, badges and the announcement bar.", "type": "color", "default": "#ff6b57", "transport": "postMessage", "css_var": "--aa-accent"},
+          {"id": "background", "label": "Page background", "type": "color", "default": "#fbfaff", "transport": "postMessage", "css_var": "--aa-bg"},
+          {"id": "ink", "label": "Ink (text, borders, shadows)", "type": "color", "default": "#14142b", "transport": "postMessage", "css_var": "--aa-ink"}
+        ]
+      },
+      {
+        "id": "aa_layout", "title": "Layout & Style", "priority": 31,
+        "settings": [
+          {"id": "post_layout", "label": "Lessons layout", "type": "select", "default": "cards", "transport": "postMessage", "body_class": "aa-layout-{value}",
+           "choices": [{"value": "cards", "label": "Card grid"}, {"value": "list", "label": "List with images beside"}, {"value": "minimal", "label": "Minimal (titles and excerpts)"}]},
+          {"id": "sidebar", "label": "Sidebar", "type": "select", "default": "right", "transport": "postMessage", "body_class": "sidebar-{value}",
+           "choices": [{"value": "right", "label": "Right"}, {"value": "left", "label": "Left"}, {"value": "none", "label": "No sidebar"}]},
+          {"id": "container", "label": "Container width", "type": "select", "default": "normal", "transport": "postMessage", "body_class": "aa-width-{value}",
+           "choices": [{"value": "narrow", "label": "Narrow (1040px)"}, {"value": "normal", "label": "Normal (1200px)"}, {"value": "wide", "label": "Wide (1400px)"}]},
+          {"id": "font_pairing", "label": "Typography", "type": "select", "default": "sora", "transport": "postMessage", "body_class": "aa-fonts-{value}",
+           "choices": [{"value": "sora", "label": "Sora headings, Jakarta text"}, {"value": "jakarta", "label": "Jakarta throughout"}, {"value": "system", "label": "System fonts"}]},
+          {"id": "shadow_style", "label": "Card style", "type": "select", "default": "offset", "transport": "postMessage", "body_class": "aa-shadow-{value}",
+           "choices": [{"value": "offset", "label": "Bold borders and offset shadows"}, {"value": "soft", "label": "Soft shadows, no borders"}, {"value": "flat", "label": "Flat outlines"}]},
+          {"id": "sticky_header", "label": "Sticky header", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "sticky-header"},
+          {"id": "show_thumbs", "label": "Show featured images", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "show-thumbs"},
+          {"id": "show_author", "label": "Show the author", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "show-author"}
+        ]
+      },
+      {
+        "id": "aa_hero", "title": "Hero, Enroll & Announcements", "priority": 32,
+        "settings": [
+          {"id": "show_announcement", "label": "Show the announcement bar", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "aa-announce-on"},
+          {"id": "announcement", "label": "Announcement", "type": "text", "default": "The new cohort of Data Basics starts on the 1st of next month."},
+          {"id": "enroll_label", "label": "Enroll button label", "type": "text", "default": "Enroll now"},
+          {"id": "enroll_link", "label": "Enroll button link", "type": "text", "default": "#enroll"},
+          {"id": "hero_image", "label": "Hero image", "type": "image"},
+          {"id": "hero_kicker", "label": "Small line above the title", "type": "text", "default": "Online courses for busy people"},
+          {"id": "hero_title", "label": "Hero title", "type": "text", "default": "Learn the skills that make work"},
+          {"id": "hero_highlight", "label": "Highlighted last word", "type": "text", "default": "easier"},
+          {"id": "hero_text", "label": "Hero text", "type": "textarea", "default": "Short, practical video courses with real projects, friendly feedback and lessons you can finish on a lunch break."},
+          {"id": "hero_second_label", "label": "Second button label", "type": "text", "default": "Try a free lesson"},
+          {"id": "hero_second_link", "label": "Second button link", "type": "text", "default": "#lessons"},
+          {"id": "stat_one", "label": "First hero sticker", "type": "text", "default": "★ 4.9 average rating"},
+          {"id": "stat_two", "label": "Second hero sticker", "type": "text", "default": "12,000+ students"},
+          {"id": "cta_title", "label": "Footer call to action", "type": "text", "default": "Start learning today"},
+          {"id": "footer_text", "label": "Footer text", "type": "text", "default": ""}
+        ]
+      }
+    ]
+  }
+}

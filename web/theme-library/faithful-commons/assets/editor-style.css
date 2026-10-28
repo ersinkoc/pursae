@@ -1,0 +1,13 @@
+/* Faithful Commons: block editor styles. */
+@font-face { font-family: "Marcellus"; src: url("fonts/marcellus.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Alegreya Sans"; src: url("fonts/alegreya-sans.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Alegreya Sans"; src: url("fonts/alegreya-sans-bold.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+body { background: #f4efe6; color: #2b2823; font-family: "Alegreya Sans", "Gill Sans", system-ui, sans-serif; font-size: 1.2rem; line-height: 1.65; }
+h1, h2, h3, h4, h5, h6, .editor-post-title__input { font-family: "Marcellus", Georgia, serif; font-weight: 400; line-height: 1.2; color: #2b2823; }
+a { color: #7d5f22; }
+blockquote, .wp-block-quote { border-left: 0; font-style: italic; font-size: 1.3rem; }
+.wp-block-pullquote { border-top: 1px solid #b08a3e; border-bottom: 1px solid #b08a3e; font-family: "Marcellus", Georgia, serif; }
+.wp-block-button__link { background: #b08a3e; color: #1f1c17; border-radius: 999px; font-weight: 700; }
+.fc-eyebrow { font-family: "Marcellus", Georgia, serif; color: #7d5f22; text-transform: uppercase; letter-spacing: .2em; font-size: .85rem; }
+.fc-section--deep, .fc-cta { background: #38352f; color: #f4efe6; }
+.fc-section--stone { background: #e6dccb; }
