@@ -34,6 +34,9 @@ type Mailer struct {
 	Host, Port, User, Pass string
 	From                   string // "Site Name <wordpress@example.com>"
 	Dir                    string // fallback directory for .eml files
+	// Transport, when set, takes over delivery (the WPGO Mail SMTP plugin); Send hands it the
+	// message unchanged so it can pick the From, the mailer and the connection itself.
+	Transport Transport
 }
 
 // Configured reports whether real delivery (SMTP) is set up.
@@ -92,6 +95,9 @@ func (m *Mailer) Build(msg Message) ([]byte, error) {
 
 // Send delivers a message by SMTP, or writes it to Dir when SMTP is not configured.
 func (m *Mailer) Send(ctx context.Context, msg Message) error {
+	if m.Transport != nil {
+		return m.Transport.Deliver(ctx, m, msg)
+	}
 	raw, err := m.Build(msg)
 	if err != nil {
 		return err

@@ -287,6 +287,7 @@ var screenStyles = map[string][]string{
 	"admin/import":               {},
 	"admin/plugin-install":       {"wpgo/plugin-install.css"},
 	"admin/wpgo-cache":           {},
+	"admin/mailsmtp":             {},
 	// Golementor Theme Builder
 	"admin/gowebeditor-theme-builder":    {},
 	"admin/gowebeditor-theme-conditions": {},
@@ -354,6 +355,8 @@ func (s *Server) adminPage(c *gin.Context, screen, title, bodyClass, tmpl string
 	v.CacheBar = s.cacheAdminBar(c, u) + s.maintAdminBar(c, u)
 	s.pluginMenuEntries(v.Menu, screen) // plugin settings pages under Settings (plugins_host.go)
 	v.Menu = s.maintMenu(v.Menu, u, screen)
+	v.Menu = s.mailSMTPMenu(c, v.Menu, screen)
+	v.Notices = append(v.Notices, s.mailSMTPNotices(c)...)
 	a := s.pageAssets(c)
 	a.Script("common", "admin-bar", "utils", "svg-painter")
 	v.ExtraStyles = s.styleTags(a) + s.pluginStyleTags("admin")
