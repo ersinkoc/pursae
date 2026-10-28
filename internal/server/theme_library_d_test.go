@@ -22,62 +22,62 @@ import (
 
 var themeLibraryD = []string{"wanderline", "evergreen-care", "open-hands", "campus-commons", "ever-after"}
 
-const themeLibraryDir = "../../web/theme-library"
+const libDDir = "../../web/theme-library"
 
 // demoFile mirrors docs/theme-package.md, "Demo content".
 type demoFile struct {
 	Version    int                 `json:"version"`
 	Options    map[string]any      `json:"options"`
-	Categories []demoTerm          `json:"categories"`
-	Tags       []demoTerm          `json:"tags"`
-	Media      []demoMedia         `json:"media"`
-	Pages      []demoPost          `json:"pages"`
-	Posts      []demoPost          `json:"posts"`
-	Menus      []demoMenu          `json:"menus"`
+	Categories []libDDemoTerm      `json:"categories"`
+	Tags       []libDDemoTerm      `json:"tags"`
+	Media      []libDDemoMedia     `json:"media"`
+	Pages      []libDDemoPost      `json:"pages"`
+	Posts      []libDDemoPost      `json:"posts"`
+	Menus      []libDDemoMenu      `json:"menus"`
 	Widgets    map[string][]string `json:"widgets"`
 	Customizer map[string]any      `json:"customizer"`
 }
 
-type demoTerm struct {
+type libDDemoTerm struct {
 	Slug, Name, Description string
 }
 
-type demoMedia struct {
+type libDDemoMedia struct {
 	ID, File, Alt, Caption string
 }
 
-type demoPost struct {
-	Slug          string        `json:"slug"`
-	Title         string        `json:"title"`
-	Content       string        `json:"content"`
-	Excerpt       string        `json:"excerpt"`
-	Date          string        `json:"date"`
-	FeaturedMedia string        `json:"featured_media"`
-	Categories    []string      `json:"categories"`
-	Tags          []string      `json:"tags"`
-	Parent        string        `json:"parent"`
-	FrontPage     bool          `json:"front_page"`
-	PostsPage     bool          `json:"posts_page"`
-	Comments      []demoComment `json:"comments"`
+type libDDemoPost struct {
+	Slug          string            `json:"slug"`
+	Title         string            `json:"title"`
+	Content       string            `json:"content"`
+	Excerpt       string            `json:"excerpt"`
+	Date          string            `json:"date"`
+	FeaturedMedia string            `json:"featured_media"`
+	Categories    []string          `json:"categories"`
+	Tags          []string          `json:"tags"`
+	Parent        string            `json:"parent"`
+	FrontPage     bool              `json:"front_page"`
+	PostsPage     bool              `json:"posts_page"`
+	Comments      []libDDemoComment `json:"comments"`
 }
 
-type demoComment struct {
+type libDDemoComment struct {
 	Author, Email, Content, Date string
 }
 
-type demoMenu struct {
-	Name     string         `json:"name"`
-	Location string         `json:"location"`
-	Items    []demoMenuItem `json:"items"`
+type libDDemoMenu struct {
+	Name     string             `json:"name"`
+	Location string             `json:"location"`
+	Items    []libDDemoMenuItem `json:"items"`
 }
 
-type demoMenuItem struct {
-	Title    string         `json:"title"`
-	Page     string         `json:"page"`
-	Post     string         `json:"post"`
-	Category string         `json:"category"`
-	URL      string         `json:"url"`
-	Children []demoMenuItem `json:"children"`
+type libDDemoMenuItem struct {
+	Title    string             `json:"title"`
+	Page     string             `json:"page"`
+	Post     string             `json:"post"`
+	Category string             `json:"category"`
+	URL      string             `json:"url"`
+	Children []libDDemoMenuItem `json:"children"`
 }
 
 var demoRefRe = regexp.MustCompile(`\{\{(media|page|post|category):([^}]*)\}\}`)
@@ -85,7 +85,7 @@ var demoRefRe = regexp.MustCompile(`\{\{(media|page|post|category):([^}]*)\}\}`)
 // checkThemeLibraryDemo validates a package's demo/demo.json against the files and the manifest.
 func checkThemeLibraryDemo(t *testing.T, slug string) {
 	t.Helper()
-	dir := filepath.Join(themeLibraryDir, slug)
+	dir := filepath.Join(libDDir, slug)
 	mb, err := os.ReadFile(filepath.Join(dir, "theme.json"))
 	if err != nil {
 		t.Fatal(err)
@@ -143,7 +143,7 @@ func checkThemeLibraryDemo(t *testing.T, slug string) {
 		t.Errorf("%d files in demo/images but %d media entries", len(files), len(d.Media))
 	}
 
-	terms := func(list []demoTerm, what string) map[string]bool {
+	terms := func(list []libDDemoTerm, what string) map[string]bool {
 		out := map[string]bool{}
 		for _, x := range list {
 			if x.Slug == "" || x.Name == "" || out[x.Slug] {
@@ -230,8 +230,8 @@ func checkThemeLibraryDemo(t *testing.T, slug string) {
 	for _, l := range m.MenuLocations {
 		locations[l.ID] = true
 	}
-	var walk func(menu string, items []demoMenuItem)
-	walk = func(menu string, items []demoMenuItem) {
+	var walk func(menu string, items []libDDemoMenuItem)
+	walk = func(menu string, items []libDDemoMenuItem) {
 		for _, it := range items {
 			switch {
 			case it.Page != "" && !pages[it.Page]:
@@ -382,7 +382,7 @@ func TestThemeLibraryD(t *testing.T) {
 
 	for _, slug := range themeLibraryD {
 		t.Run(slug, func(t *testing.T) {
-			pkg := zipDir(t, filepath.Join(themeLibraryDir, slug))
+			pkg := zipDir(t, filepath.Join(libDDir, slug))
 			code, body, loc := postZip(t, c, base+"/wp-admin/theme-install", nonce, "themezip", slug+".zip", pkg)
 			if code != http.StatusFound || loc != "/wp-admin/themes?installed="+slug {
 				t.Fatalf("upload: %d %q %s", code, loc, body)

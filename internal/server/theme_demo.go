@@ -592,6 +592,7 @@ type demoRecord struct {
 	Widgets    []int64          `json:"widgets"`     // widgets it created
 	Moved      map[string]int64 `json:"moved"`       // widget id -> area id it was moved out of (into the inactive widgets)
 	ImportedAt string           `json:"imported_at"` // RFC 3339
+	Trashed    []int64          `json:"trashed"`     // untouched install samples it moved to the trash
 }
 
 func demoRecordKey(slug string) string { return "wpgo_demo_" + slug }
@@ -668,6 +669,34 @@ func (s *Server) importThemeDemo(ctx context.Context, uid int64, t *Theme) (*dem
 	save := func() error { return s.saveDemoRecord(ctx, slug, rec) }
 	mark := func(ref string) map[string]any { return map[string]any{demoMetaKey: slug, demoMetaRef: ref} }
 	loc := s.loc()
+
+	// The samples of a fresh install ("Hello world!", "Sample Page") would sit among the demo's
+	// posts and pages; while nobody has edited them they go to the trash, and Remove Demo
+	// Content brings them back.
+	if !rec.Done["samples"] {
+		rows, err := s.store.Pool.Query(ctx, `SELECT id FROM posts WHERE status = 'publish'
+			AND ((type = 'post' AND slug = 'hello-world') OR (type = 'page' AND slug = 'sample-page'))
+			AND updated_at - created_at < interval '5 seconds' AND coalesce(meta->>$1, '') = ''`, demoMetaKey)
+		if err == nil {
+			var ids []int64
+			for rows.Next() {
+				var id int64
+				if rows.Scan(&id) == nil {
+					ids = append(ids, id)
+				}
+			}
+			rows.Close()
+			for _, id := range ids {
+				if s.store.TrashPost(ctx, id) == nil {
+					rec.Trashed = append(rec.Trashed, id)
+				}
+			}
+		}
+		rec.Done["samples"] = true
+		if err := save(); err != nil {
+			return rep, err
+		}
+	}
 
 	// Media, through the upload pipeline (image sizes are generated).
 	mediaIDs, mediaURL := map[string]int64{}, map[string]string{}
@@ -1167,6 +1196,10 @@ func (s *Server) removeThemeDemo(ctx context.Context, slug string) error {
 			out = append(out, id)
 		}
 		return out, rows.Err()
+	}
+	for _, id := range rec.Trashed { // the install samples it put in the trash, back as they were
+		_, _ = s.store.Pool.Exec(ctx, `UPDATE posts SET status = coalesce(trashed_status, 'publish'), trashed_status = NULL, deleted_at = NULL
+			WHERE id = $1 AND status = 'trash'`, id)
 	}
 	// Menus and widgets first (menu items point at the pages and terms).
 	for _, id := range rec.Menus {

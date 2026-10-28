@@ -282,6 +282,10 @@ func TestThemeLibraryAndDemoContent(t *testing.T) {
 		}
 		return n
 	}
+	// The untouched install samples went to the trash so they do not mix with the demo.
+	if count(`SELECT count(*) FROM posts WHERE slug IN ('hello-world','sample-page') AND status = 'trash'`) != 2 {
+		t.Error("the install samples were not moved to the trash")
+	}
 	demoCounts := func() [4]int {
 		return [4]int{
 			count(`SELECT count(*) FROM posts WHERE type = 'page' AND meta->>'_wpgo_demo' = 'wpgo-fixture'`),
@@ -429,6 +433,9 @@ func TestThemeLibraryAndDemoContent(t *testing.T) {
 	}
 	if got := demoCounts(); got != [4]int{} {
 		t.Fatalf("left after removal %v", got)
+	}
+	if count(`SELECT count(*) FROM posts WHERE slug IN ('hello-world','sample-page') AND status = 'publish'`) != 2 {
+		t.Error("Remove Demo Content did not bring the install samples back")
 	}
 	if _, err := os.Stat(filepath.Join(srv.cfg.UploadsDir, filepath.FromSlash(hero.FilePath))); !os.IsNotExist(err) {
 		t.Fatal("image file not deleted")
