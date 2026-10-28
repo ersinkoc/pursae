@@ -280,6 +280,7 @@ var screenStyles = map[string][]string{
 	"admin/options-privacy":      {},
 	"admin/privacy-policy-guide": {},
 	"admin/theme-install":        {"wpgo/theme-install.css"},
+	"admin/theme-preview":        {},
 	"admin/site-health":          {"/wp-admin/css/site-health.min.css"},
 	"admin/export":               {"wpgo/tools.css"},
 	"admin/file-editor":          {},

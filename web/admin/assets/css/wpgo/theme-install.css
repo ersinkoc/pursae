@@ -50,3 +50,11 @@
 	right: 0;
 	margin: 0;
 }
+
+/* Library tab: the theme previews kept for Live Preview (theme_preview.go). */
+.wpgo-clear-previews {
+	margin: -12px 0 20px;
+}
+.wpgo-clear-previews .button-link {
+	color: #b32d2e;
+}

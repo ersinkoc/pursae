@@ -221,7 +221,9 @@ func (s *Server) seogoAnalysisInputFor(ctx context.Context, sc *seogoCtx) seogoA
 // --- REST --------------------------------------------------------------------------------------
 
 func (s *Server) registerSEOGoREST() {
-	s.seogoRegisterBlocks()
+	if s.sandbox == nil { // the block registry is process-wide; a sandbox leaves it to the site
+		s.seogoRegisterBlocks()
+	}
 	api := s.rest
 	const ns = "seogo/v1"
 	guard := func(cp string, h restHandler) restHandler {

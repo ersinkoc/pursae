@@ -214,7 +214,7 @@ func inlineStyle(handle string, parts ...string) string {
 
 // customBackground returns the background color (no #) when it differs from the theme's default.
 func customBackground(v *siteView) string {
-	spec := czSpecs[v.Theme.Slug]
+	spec := czSpecFor(v.Theme)
 	if spec == nil || spec.BackgroundDefault == nil {
 		return ""
 	}

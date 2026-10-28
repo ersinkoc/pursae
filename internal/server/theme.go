@@ -116,6 +116,73 @@ func themeBySlug(slug string) *Theme {
 	return themes[slug]
 }
 
+// themeFor is themeBySlug as this server sees it. The registry is shared by every Server in the
+// process, except on a theme-preview sandbox (theme_preview.go): its package themes live in its own
+// registry, so previewing a theme never installs it on the site, and it sees no package the site has
+// installed; the bundled themes are shared.
+func (s *Server) themeFor(slug string) *Theme {
+	sb := s.sandbox
+	if sb == nil {
+		return themeBySlug(slug)
+	}
+	sb.mu.RLock()
+	t := sb.themes[slug]
+	sb.mu.RUnlock()
+	if t != nil {
+		return t
+	}
+	if t := themeBySlug(slug); t != nil && t.Package == nil {
+		return t
+	}
+	return nil
+}
+
+// themeList is allThemes as this server sees it (see themeFor).
+func (s *Server) themeList() []*Theme {
+	sb := s.sandbox
+	if sb == nil {
+		return allThemes()
+	}
+	var out []*Theme
+	for _, t := range allThemes() {
+		if t.Package == nil {
+			out = append(out, t)
+		}
+	}
+	sb.mu.RLock()
+	for _, t := range sb.themes {
+		out = append(out, t)
+	}
+	sb.mu.RUnlock()
+	sort.Slice(out, func(i, j int) bool { return out[i].Name < out[j].Name })
+	return out
+}
+
+// registerPackage puts a loaded package theme in this server's registry (registerThemePackage, or
+// the sandbox's own).
+func (s *Server) registerPackage(t *Theme) {
+	sb := s.sandbox
+	if sb == nil {
+		registerThemePackage(t)
+		return
+	}
+	sb.mu.Lock()
+	sb.themes[t.Slug] = t
+	sb.mu.Unlock()
+}
+
+// czSpecFor is the Customizer spec of a theme: a package carries its own (the registry's czSpecs
+// entry is the same pointer on the site; a sandbox never writes czSpecs).
+func czSpecFor(t *Theme) *czThemeSpec {
+	if t == nil {
+		return nil
+	}
+	if t.Package != nil {
+		return t.Package.spec
+	}
+	return czSpecs[t.Slug]
+}
+
 // defaultTheme is WP_DEFAULT_THEME.
 const defaultTheme = "twentysixteen"
 
@@ -313,6 +380,8 @@ type wpThemeJS struct {
 	// Demo content of the active package theme (theme_demo.go): the Import or the Remove URL.
 	DemoImport string `json:"wpgoDemoImport,omitempty"`
 	DemoRemove string `json:"wpgoDemoRemove,omitempty"`
+	// An installed package with demo content: its preview with the demo (theme_preview.go).
+	DemoPreview string `json:"wpgoDemoPreview,omitempty"`
 }
 
 // themesScreen is themes.php.
@@ -448,6 +517,9 @@ func (s *Server) themesScreen(c *gin.Context) {
 			} else {
 				j.DemoImport = demoURL("import-demo", t.Slug)
 			}
+		}
+		if t.Package != nil && t.Package.Manifest.Demo != "" && canPreview(u, false) {
+			j.DemoPreview = previewURL(t.Slug, true)
 		}
 		if !t.Active && u.Can("delete_themes", nil) { // every inactive theme can be deleted (theme_delete.go)
 			j.Actions["delete"] = "/wp-admin/themes?action=delete&stylesheet=" + t.Slug + "&_wpnonce=" + s.nonce(c, "delete-theme_"+t.Slug)
