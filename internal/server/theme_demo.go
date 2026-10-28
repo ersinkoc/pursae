@@ -971,6 +971,10 @@ func (s *Server) importThemeDemo(ctx context.Context, uid int64, t *Theme) (*dem
 				values["page_for_posts"] = id
 			}
 		}
+		if _, static := values["show_on_front"]; !static && s.settings.String("show_on_front") == "page" {
+			// A blog-style demo: the front page shows the latest posts, not a page left from another demo.
+			values["show_on_front"] = "posts"
+		}
 		if len(values) > 0 {
 			remember("show_on_front", "page_on_front", "page_for_posts")
 			if err := s.settings.Set(ctx, values); err != nil {

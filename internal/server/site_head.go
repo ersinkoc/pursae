@@ -153,5 +153,8 @@ func (s *Server) frontAdminBar(c *gin.Context, q *siteQuery, lb *links.Builder, 
 	fmt.Fprintf(&sb, `<li role='group' id='wp-admin-bar-my-account' class="menupop with-avatar"><a class='ab-item' role="menuitem" aria-expanded="false" href='/wp-admin/profile'>Howdy, <span class="display-name">%s</span><img alt='' src='%s' srcset='%s 2x' class='avatar avatar-26 photo' height='26' width='26' decoding='async'/></a><div class="ab-sub-wrapper"><ul role='menu' id='wp-admin-bar-user-actions' class="ab-submenu"><li role='group' id='wp-admin-bar-user-info'><a class='ab-item' tabindex="-1" role="menuitem" href='/wp-admin/profile'><img alt='' src='%s' srcset='%s 2x' class='avatar avatar-64 photo' height='64' width='64' decoding='async'/><span class='display-name'>%s</span><span class='display-name edit-profile'>Edit Profile</span></a></li><li role='group' id='wp-admin-bar-logout'><a class='ab-item' role="menuitem" href='/wp-login?action=logout&amp;_wpnonce=%s'>Log Out</a></li></ul></div></li>`,
 		esc(u.DisplayName), esc(s.avatarURL(c, u.Email, 26)), esc(s.avatarURL(c, u.Email, 52)), esc(s.avatarURL(c, u.Email, 64)), esc(s.avatarURL(c, u.Email, 128)), esc(u.DisplayName), s.nonce(c, "log-out"))
 	sb.WriteString(`</ul></div></div>`)
+	// wp_customize_support_script(): swaps no-customize-support for customize-support on the body, which
+	// shows the toolbar's Customize link (the admin-bar CSS hides .hide-if-no-customize without it).
+	sb.WriteString(`<script>(function(){var b=document.body,c=b.className.replace(/(^|\s)no-customize-support(\s|$)/,'$1$2');b.className=c+' customize-support';})();</script>`)
 	return template.HTML(sb.String())
 }
