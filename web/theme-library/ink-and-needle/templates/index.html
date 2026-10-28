@@ -1,0 +1,13 @@
+{{template "header" .}}
+<header class="in-wrap page-header">
+	<p class="in-kicker"><span class="in-star" aria-hidden="true">&#10022;</span> {{if .IsHomeHeader}}From the studio{{else}}Latest{{end}} <span class="in-star" aria-hidden="true">&#10022;</span></p>
+	<h1 class="page-title">{{if .IsHomeHeader}}{{.PostsPageTitle}}{{else}}The Journal{{end}}</h1>
+</header>
+<div class="in-wrap in-layout">
+	<div class="in-primary">
+		{{if .Posts}}{{template "loop" .}}
+		{{.Pagination}}{{else}}{{template "content-none" .}}{{end}}
+	</div>
+	{{template "sidebar" .}}
+</div>
+{{template "footer" .}}

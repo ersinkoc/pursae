@@ -1,0 +1,14 @@
+{{template "header" .}}
+<header class="pa-wrap page-header page-header--archive">
+	<p class="pa-kicker">Level select</p>
+	<h1 class="page-title">{{.ArchiveTitle}}</h1>
+	{{with .ArchiveDesc}}<div class="archive-description">{{.}}</div>{{end}}
+</header>
+<div class="pa-wrap pa-layout">
+	<div class="pa-primary">
+		{{if .Posts}}{{template "loop" .}}
+		{{.Pagination}}{{else}}{{template "content-none" .}}{{end}}
+	</div>
+	{{template "sidebar" .}}
+</div>
+{{template "footer" .}}

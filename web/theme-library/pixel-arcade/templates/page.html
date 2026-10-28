@@ -1,0 +1,14 @@
+{{template "header" .}}
+{{with .Post}}<article id="post-{{.ID}}" class="{{.Class}} entry entry--page">
+	<header class="pa-wrap pa-narrow entry-header">
+		<p class="pa-kicker">{{$.SiteName}}</p>
+		<h1 class="entry-title">{{.Title}}</h1>
+	</header>
+	{{with .Thumbnail}}<figure class="pa-wrap pa-feature-image">{{.}}</figure>{{end}}
+	<div class="pa-wrap pa-narrow entry-content">
+		{{.Content}}
+	</div>
+	{{with .EditLink}}<footer class="pa-wrap pa-narrow entry-footer"><span class="edit-link">{{.}}</span></footer>{{end}}
+</article>{{end}}
+<div class="pa-wrap pa-narrow">{{template "comments" .}}</div>
+{{template "footer" .}}

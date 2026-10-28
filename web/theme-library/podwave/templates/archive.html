@@ -1,0 +1,14 @@
+{{template "header" .}}
+<header class="pw-wrap page-header page-header--archive">
+	<p class="pw-kicker">Browse</p>
+	<h1 class="page-title">{{.ArchiveTitle}}</h1>
+	{{with .ArchiveDesc}}<div class="archive-description">{{.}}</div>{{end}}
+</header>
+<div class="pw-wrap pw-layout">
+	<div class="pw-primary">
+		{{if .Posts}}{{template "loop" .}}
+		{{.Pagination}}{{else}}{{template "content-none" .}}{{end}}
+	</div>
+	{{template "sidebar" .}}
+</div>
+{{template "footer" .}}

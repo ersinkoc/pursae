@@ -1,0 +1,14 @@
+{{template "header" .}}
+<header class="pw-wrap page-header page-header--search">
+	<p class="pw-kicker">{{plural .TotalPosts "%s episode" "%s episodes"}}</p>
+	<h1 class="page-title">Results for &ldquo;{{.SearchQuery}}&rdquo;</h1>
+	{{template "searchform" .}}
+</header>
+<div class="pw-wrap pw-layout">
+	<div class="pw-primary">
+		{{if .Posts}}{{template "loop" .}}
+		{{.Pagination}}{{else}}{{template "content-none" .}}{{end}}
+	</div>
+	{{template "sidebar" .}}
+</div>
+{{template "footer" .}}

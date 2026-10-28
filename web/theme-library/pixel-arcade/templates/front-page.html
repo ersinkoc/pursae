@@ -1,0 +1,19 @@
+{{template "header" .}}
+{{with .Post}}{{$hero := theme_mod $ "hero_image"}}{{if not $hero}}{{$hero = .ThumbnailURL}}{{end}}<article id="post-{{.ID}}" class="{{.Class}} entry entry--front">
+	<section class="pa-hero" aria-label="Featured">
+		<div class="pa-wrap pa-hero__inner">
+			<div class="pa-hero__text">
+				{{with theme_mod $ "hero_kicker"}}<p class="pa-kicker pa-hero__kicker"><span class="pa-blink" aria-hidden="true">&#9654;</span> {{.}}</p>{{end}}
+				<h1 class="pa-hero__title">{{with theme_mod $ "hero_heading"}}{{.}}{{else}}{{$.SiteName}}{{end}}</h1>
+				{{with $.Description}}<p class="pa-hero__lead">{{.}}</p>{{end}}
+				{{with theme_mod $ "cta_label"}}<p class="pa-hero__actions"><a class="pa-btn" href="{{theme_mod $ "cta_url"}}">{{.}}</a></p>{{end}}
+			</div>
+			{{if $hero}}<figure class="pa-hero__screen"><img src="{{$hero}}" alt="" /><span class="pa-hero__hp" aria-hidden="true"><b></b></span></figure>{{end}}
+		</div>
+	</section>
+	<div class="entry-content pa-front-content">
+		{{.Content}}
+	</div>
+	{{with .EditLink}}<footer class="pa-wrap entry-footer"><span class="edit-link">{{.}}</span></footer>{{end}}
+</article>{{end}}
+{{template "footer" .}}

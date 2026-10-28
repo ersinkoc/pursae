@@ -1,0 +1,19 @@
+{{template "header" .}}
+{{with .Post}}<article id="post-{{.ID}}" class="{{.Class}} entry entry--single">
+	<header class="pa-wrap pa-narrow entry-header">
+		<p class="pa-card__chips">{{range .Categories}}<a class="pa-chip" href="{{.URL}}">{{.Name}}</a>{{end}}</p>
+		<h1 class="entry-title">{{.Title}}</h1>
+		{{template "entry-meta" .}}
+	</header>
+	{{with .Thumbnail}}<figure class="pa-wrap pa-feature-image">{{.}}</figure>{{end}}
+	<div class="pa-wrap pa-narrow entry-content">
+		{{.Content}}
+	</div>
+	<footer class="pa-wrap pa-narrow entry-footer">
+		{{if .Tags}}<p class="tags-links"><span class="pa-label">Platforms &amp; tags</span>{{range .Tags}}<a class="pa-chip" href="{{.URL}}" rel="tag">{{.Name}}</a>{{end}}</p>{{end}}
+		{{with .EditLink}}<span class="edit-link">{{.}}</span>{{end}}
+		{{.Biography}}
+	</footer>
+</article>{{end}}
+<div class="pa-wrap pa-narrow">{{.PostNav}}{{template "comments" .}}</div>
+{{template "footer" .}}

@@ -1,0 +1,23 @@
+		</main><!-- #main -->
+	</div><!-- #content -->
+
+	<footer id="colophon" class="site-footer">
+		<div class="ls-footer-wave" aria-hidden="true"></div>
+		<div class="ls-footer-body">
+			<div class="ls-wrap">
+				{{if is_active_sidebar . "footer-1"}}<aside class="footer-widgets" aria-label="Footer">
+					{{dynamic_sidebar . "footer-1"}}
+				</aside>{{end}}
+				<div class="site-footer__bar">
+					<p class="ls-footer-brand"><span class="ls-sprout" aria-hidden="true"><i></i><i></i></span> {{.SiteName}}</p>
+					{{if has_nav_menu . "footer"}}<nav class="footer-navigation" aria-label="Footer menu">{{nav_menu . "footer"}}</nav>{{end}}
+					<p class="site-info">{{.PrivacyLink}} <span>{{with theme_mod . "footer_text"}}{{.}}{{else}}&copy; {{$.SiteName}}. Growing together.{{end}}</span> <span>Powered by <a href="https://github.com/boracomet/wordpress-go">WordPress Go</a></span></p>
+				</div>
+			</div>
+		</div>
+	</footer><!-- #colophon -->
+</div><!-- #page -->
+
+{{.Footer}}{{.AdminBar}}
+</body>
+</html>

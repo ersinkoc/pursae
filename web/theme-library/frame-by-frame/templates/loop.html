@@ -1,0 +1,12 @@
+<div class="post-list fx-reel">
+	{{range .Posts}}<article id="post-{{.ID}}" class="{{.Class}} fx-card">
+		{{if .Thumbnail}}<a class="fx-card__frame" href="{{.Permalink}}" aria-hidden="true" tabindex="-1">{{.Thumbnail}}</a>{{end}}
+		<div class="fx-card__body">
+			<p class="fx-card__label">{{if .ShowFeatured}}<span class="fx-stub">Featured</span>{{end}}{{range $i, $c := .Categories}}{{if lt $i 1}}<a class="fx-stub" href="{{$c.URL}}">{{$c.Name}}</a>{{end}}{{end}}</p>
+			<h2 class="fx-card__title"><a href="{{.Permalink}}" rel="bookmark">{{.Title}}</a></h2>
+			{{if .ShowExcerpt}}<div class="fx-card__dek">{{.Excerpt}}</div>{{end}}
+			<p class="fx-card__meta"><time datetime="{{.DateISO}}">{{.DateText}}</time>{{with .AuthorName}}<span class="byline"> &middot; by {{.}}</span>{{end}}</p>
+		</div>
+	</article>
+	{{end}}
+</div>

@@ -1,0 +1,19 @@
+{{template "header" .}}
+{{with .Post}}<article id="post-{{.ID}}" class="{{.Class}} entry entry--single">
+	<header class="ls-wrap ls-narrow entry-header">
+		<p class="ls-card__tags">{{range .Categories}}<a class="ls-tag" href="{{.URL}}">{{.Name}}</a>{{end}}</p>
+		<h1 class="entry-title">{{.Title}}</h1>
+		{{template "entry-meta" .}}
+	</header>
+	{{with .Thumbnail}}<figure class="ls-wrap ls-narrow ls-feature">{{.}}</figure>{{end}}
+	<div class="ls-wrap ls-narrow entry-content">
+		{{.Content}}
+	</div>
+	<footer class="ls-wrap ls-narrow entry-footer">
+		{{if .Tags}}<p class="tags-links"><span class="screen-reader-text">Tags: </span>{{range .Tags}}<a class="ls-tag ls-tag--soft" href="{{.URL}}" rel="tag">{{.Name}}</a>{{end}}</p>{{end}}
+		{{with .EditLink}}<span class="edit-link">{{.}}</span>{{end}}
+		{{.Biography}}
+	</footer>
+</article>{{end}}
+<div class="ls-wrap ls-narrow">{{.PostNav}}{{template "comments" .}}</div>
+{{template "footer" .}}

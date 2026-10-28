@@ -1,0 +1,12 @@
+<section class="no-results not-found">
+	<h2 class="page-title">Nothing found</h2>
+	{{if eq .Template "search"}}
+		<p>Nothing found. Try a different word, like &ldquo;snack&rdquo; or &ldquo;garden&rdquo;.</p>
+		{{template "searchform" .}}
+	{{else if and (eq .Template "index") .CanPublish}}
+		<p>No news yet. Ready to share the first story? <a href="/wp-admin/post-new">Get started here</a>.</p>
+	{{else}}
+		<p>Nothing here yet. Maybe a search will help.</p>
+		{{template "searchform" .}}
+	{{end}}
+</section><!-- .no-results -->

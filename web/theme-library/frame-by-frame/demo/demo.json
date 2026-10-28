@@ -1,0 +1,497 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Frame by Frame",
+  "blogdescription": "Films, series and festivals, reviewed with love",
+  "posts_per_page": 8
+ },
+ "categories": [
+  {
+   "slug": "reviews",
+   "name": "Reviews",
+   "description": "New films, reviewed by our critics."
+  },
+  {
+   "slug": "tv",
+   "name": "Television",
+   "description": "Series reviewed season by season."
+  },
+  {
+   "slug": "festivals",
+   "name": "Festivals",
+   "description": "Dispatches from the front row."
+  },
+  {
+   "slug": "watchlists",
+   "name": "Watchlists",
+   "description": "What to watch, for every kind of evening."
+  },
+  {
+   "slug": "essays",
+   "name": "Essays",
+   "description": "Longer thoughts on cinema and why it matters."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "drama",
+   "name": "Drama"
+  },
+  {
+   "slug": "comedy",
+   "name": "Comedy"
+  },
+  {
+   "slug": "thriller",
+   "name": "Thriller"
+  },
+  {
+   "slug": "animation",
+   "name": "Animation"
+  },
+  {
+   "slug": "documentary",
+   "name": "Documentary"
+  },
+  {
+   "slug": "family",
+   "name": "Family"
+  },
+  {
+   "slug": "series",
+   "name": "Series"
+  },
+  {
+   "slug": "festival",
+   "name": "Festival"
+  },
+  {
+   "slug": "road-movie",
+   "name": "Road movie"
+  },
+  {
+   "slug": "watchlist",
+   "name": "Watchlist"
+  },
+  {
+   "slug": "comfort-viewing",
+   "name": "Comfort viewing"
+  },
+  {
+   "slug": "cinema-culture",
+   "name": "Cinema culture"
+  }
+ ],
+ "media": [
+  {
+   "id": "hero-lighthouse",
+   "file": "demo/images/hero-lighthouse.jpg",
+   "alt": "A lighthouse beam cutting through blue dusk over a dark sea",
+   "caption": ""
+  },
+  {
+   "id": "salt-road",
+   "file": "demo/images/salt-road.jpg",
+   "alt": "An empty desert road at golden hour with a lone car",
+   "caption": "The Salt Road"
+  },
+  {
+   "id": "rain-city",
+   "file": "demo/images/rain-city.jpg",
+   "alt": "A neon-lit street at night, reflected in rain puddles",
+   "caption": "Low Neon"
+  },
+  {
+   "id": "winter-cabin",
+   "file": "demo/images/winter-cabin.jpg",
+   "alt": "A small cabin with one lit window in a snowy pine forest",
+   "caption": "The Long Winter"
+  },
+  {
+   "id": "pier-silhouettes",
+   "file": "demo/images/pier-silhouettes.jpg",
+   "alt": "Two figures standing at the end of a pier at sunset",
+   "caption": "Tidewater"
+  },
+  {
+   "id": "projector-beam",
+   "file": "demo/images/projector-beam.jpg",
+   "alt": "A projector beam cutting through dust in a dark cinema",
+   "caption": ""
+  },
+  {
+   "id": "cinema-seats",
+   "file": "demo/images/cinema-seats.jpg",
+   "alt": "Rows of red velvet cinema seats under a soft spotlight",
+   "caption": ""
+  },
+  {
+   "id": "festival-lights",
+   "file": "demo/images/festival-lights.jpg",
+   "alt": "Festival lights strung above a crowd at an outdoor screening",
+   "caption": ""
+  },
+  {
+   "id": "tv-glow",
+   "file": "demo/images/tv-glow.jpg",
+   "alt": "A dark living room lit by the blue glow of a television",
+   "caption": ""
+  },
+  {
+   "id": "film-strip",
+   "file": "demo/images/film-strip.jpg",
+   "alt": "A strip of film frames against warm light",
+   "caption": ""
+  },
+  {
+   "id": "mountain-dawn",
+   "file": "demo/images/mountain-dawn.jpg",
+   "alt": "Layered mountains at dawn in pink and violet haze",
+   "caption": "Paper Mountains"
+  },
+  {
+   "id": "rooftop-night",
+   "file": "demo/images/rooftop-night.jpg",
+   "alt": "A rooftop at night above a city of lit windows",
+   "caption": ""
+  },
+  {
+   "id": "orchard-summer",
+   "file": "demo/images/orchard-summer.jpg",
+   "alt": "Sunlight through an orchard of fruit trees in late summer",
+   "caption": "The Orchard Keepers"
+  },
+  {
+   "id": "marquee-sign",
+   "file": "demo/images/marquee-sign.jpg",
+   "alt": "A cinema marquee with rows of glowing bulbs",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Home",
+   "content": "<!-- wp:group {\"className\":\"fx-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group fx-section\"><!-- wp:group {\"className\":\"fx-section-head\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group fx-section-head\"><!-- wp:heading --><h2 class=\"wp-block-heading\">This week&rsquo;s reviews</h2><!-- /wp:heading --><!-- wp:paragraph --><p><a href=\"{{category:reviews}}\">All reviews &rarr;</a></p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:columns {\"className\":\"fx-review-cols\"} --><div class=\"wp-block-columns fx-review-cols\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:salt-road}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"{{post:the-salt-road-review}}\"><img src=\"{{media:salt-road}}\" alt=\"An empty desert road at golden hour with a lone car\" class=\"wp-image-{{media_id:salt-road}}\"/></a></figure><!-- /wp:image --><!-- wp:paragraph {\"className\":\"fx-eyebrow\"} --><p class=\"fx-eyebrow\">Drama</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"{{post:the-salt-road-review}}\">The Salt Road</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p><span class=\"fx-stars\" aria-label=\"4.5 out of 5 stars\">★★★★½</span></p><!-- /wp:paragraph --><!-- wp:paragraph --><p>A father, a daughter and a dried-up lake. Quietly devastating.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:rain-city}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"{{post:low-neon-season-one}}\"><img src=\"{{media:rain-city}}\" alt=\"A neon-lit street at night, reflected in rain puddles\" class=\"wp-image-{{media_id:rain-city}}\"/></a></figure><!-- /wp:image --><!-- wp:paragraph {\"className\":\"fx-eyebrow\"} --><p class=\"fx-eyebrow\">Television</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"{{post:low-neon-season-one}}\">Low Neon</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p><span class=\"fx-stars\" aria-label=\"4 out of 5 stars\">★★★★☆</span></p><!-- /wp:paragraph --><!-- wp:paragraph --><p>A detective series that takes its time, then your weekend.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:orchard-summer}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"{{post:the-orchard-keepers-review}}\"><img src=\"{{media:orchard-summer}}\" alt=\"Sunlight through an orchard of fruit trees in late summer\" class=\"wp-image-{{media_id:orchard-summer}}\"/></a></figure><!-- /wp:image --><!-- wp:paragraph {\"className\":\"fx-eyebrow\"} --><p class=\"fx-eyebrow\">Festival</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"{{post:the-orchard-keepers-review}}\">The Orchard Keepers</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p><span class=\"fx-stars\" aria-label=\"4 out of 5 stars\">★★★★☆</span></p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Three generations and one failing orchard.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group --><!-- wp:group {\"align\":\"full\",\"className\":\"fx-section fx-festival\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull fx-section fx-festival\"><!-- wp:paragraph {\"className\":\"fx-eyebrow\"} --><p class=\"fx-eyebrow\">Fresh from the projector</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Latest from the screening room</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":3,\"displayPostDate\":true,\"displayFeaturedImage\":true,\"featuredImageSizeSlug\":\"large\",\"displayPostContent\":true,\"excerptLength\":20,\"postLayout\":\"grid\",\"columns\":3} /--></div><!-- /wp:group --><!-- wp:group {\"className\":\"fx-section fx-quote-band\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group fx-section fx-quote-band\"><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>A film is a room full of strangers agreeing to look at the same thing.</p><!-- /wp:paragraph --><cite>From &ldquo;Why we still go to the cinema&rdquo;</cite></blockquote><!-- /wp:quote --></div><!-- /wp:group --><!-- wp:group {\"className\":\"fx-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group fx-section\"><!-- wp:group {\"className\":\"fx-section-head\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group fx-section-head\"><!-- wp:heading --><h2 class=\"wp-block-heading\">The watchlist</h2><!-- /wp:heading --><!-- wp:paragraph --><p><a href=\"{{post:ten-films-for-a-rainy-weekend}}\">Ten for a rainy weekend &rarr;</a></p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:list {\"ordered\":true,\"className\":\"fx-watchlist\"} --><ol class=\"wp-block-list fx-watchlist\"><!-- wp:list-item --><li><strong>The Salt Road</strong> &mdash; in cinemas</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Low Neon</strong> &mdash; streaming</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Paper Mountains</strong> &mdash; family pick</li><!-- /wp:list-item --></ol><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:list {\"ordered\":true,\"className\":\"fx-watchlist\"} --><ol class=\"wp-block-list fx-watchlist\"><!-- wp:list-item --><li><strong>The Long Winter</strong> &mdash; in cinemas</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Tidewater</strong> &mdash; festival</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Night Loaves</strong> &mdash; documentary</li><!-- /wp:list-item --></ol><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group --><!-- wp:group {\"className\":\"fx-section fx-newsletter\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group fx-section fx-newsletter\"><!-- wp:paragraph {\"className\":\"fx-eyebrow\"} --><p class=\"fx-eyebrow\">Every Sunday</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">The Sunday double bill</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Two films, one review, one thing to watch tonight. A short letter from our critics, every Sunday morning.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Subscribe</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "featured_media": "hero-lighthouse",
+   "front_page": true
+  },
+  {
+   "slug": "reviews-archive",
+   "title": "The Programme",
+   "content": "",
+   "posts_page": true
+  },
+  {
+   "slug": "festival-guide",
+   "title": "Festival Guide",
+   "content": "<!-- wp:paragraph {\"className\":\"fx-dek\"} --><p class=\"fx-dek\">The festivals we cover every year, with dates, how to get tickets, and what each one does best.</p><!-- /wp:paragraph --><!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Festival</th><th>When</th><th>Best for</th><th>Tickets</th></tr></thead><tbody><tr><td>Harbour Film Festival</td><td>October</td><td>Outdoor screenings on the harbour wall</td><td>Passes on sale in August</td></tr><tr><td>Winter Lights</td><td>December</td><td>Animation and family films</td><td>Free with booking</td></tr><tr><td>Northern Docs</td><td>March</td><td>Documentaries and Q&amp;As</td><td>Day tickets only</td></tr><tr><td>Midnight Reel</td><td>June</td><td>Genre films after dark</td><td>Sells out in hours</td></tr></tbody></table></figure><!-- /wp:table --><!-- wp:gallery {\"columns\":3,\"linkTo\":\"none\"} --><figure class=\"wp-block-gallery has-nested-images columns-3 is-cropped\"><!-- wp:image {\"id\":{{media_id:festival-lights}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:festival-lights}}\" alt=\"Festival lights strung above a crowd at an outdoor screening\" class=\"wp-image-{{media_id:festival-lights}}\"/></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:marquee-sign}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:marquee-sign}}\" alt=\"A cinema marquee with rows of glowing bulbs\" class=\"wp-image-{{media_id:marquee-sign}}\"/></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:film-strip}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:film-strip}}\" alt=\"A strip of film frames against warm light\" class=\"wp-image-{{media_id:film-strip}}\"/></figure><!-- /wp:image --></figure><!-- /wp:gallery --><!-- wp:paragraph --><p>Going for the first time? Book the opening night, pick one film you know nothing about, and leave time to talk about it afterwards.</p><!-- /wp:paragraph -->",
+   "template": "page-wide"
+  },
+  {
+   "slug": "about",
+   "title": "About",
+   "content": "<!-- wp:paragraph --><p>Frame by Frame is an independent magazine about films and television, written by critics who still get excited when the lights go down.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>We review new releases every week, cover festivals from the front row, and keep watchlists for every kind of evening.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">How we rate</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><span class=\"fx-stars\" aria-label=\"5 out of 5 stars\">★★★★★</span> A film we will be talking about for years.</li><!-- /wp:list-item --><!-- wp:list-item --><li><span class=\"fx-stars\" aria-label=\"4 out of 5 stars\">★★★★☆</span> Excellent, go and see it.</li><!-- /wp:list-item --><!-- wp:list-item --><li><span class=\"fx-stars\" aria-label=\"3 out of 5 stars\">★★★☆☆</span> Good, with reservations.</li><!-- /wp:list-item --><!-- wp:list-item --><li><span class=\"fx-stars\" aria-label=\"2 out of 5 stars\">★★☆☆☆</span> For fans only.</li><!-- /wp:list-item --><!-- wp:list-item --><li><span class=\"fx-stars\" aria-label=\"1 out of 5 stars\">★☆☆☆☆</span> Stay home.</li><!-- /wp:list-item --></ul><!-- /wp:list -->",
+   "featured_media": "marquee-sign"
+  },
+  {
+   "slug": "our-critics",
+   "title": "Our Critics",
+   "content": "<!-- wp:paragraph --><p>Our critics have different tastes on purpose. One loves slow cinema, one loves musicals, one will watch anything with a heist in it.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">The editor</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Watches everything twice. Writes about drama, festivals and the business of cinema.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">The TV desk</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Reviews series at the end of the season, never after one episode.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">The family critic</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Brings a panel of young viewers to every animated film.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->",
+   "parent": "about"
+  },
+  {
+   "slug": "contact",
+   "title": "Contact",
+   "content": "<!-- wp:paragraph --><p>Screening invitations, festival press passes, corrections and letters are all welcome.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Letters</h3><!-- /wp:heading --><!-- wp:paragraph --><p>letters@framebyframe.example</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Press &amp; screenings</h3><!-- /wp:heading --><!-- wp:paragraph --><p>press@framebyframe.example</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:paragraph --><p>We read everything, and we publish the best letters in the Sunday double bill.</p><!-- /wp:paragraph -->"
+  }
+ ],
+ "posts": [
+  {
+   "slug": "the-salt-road-review",
+   "title": "The Salt Road",
+   "date": "2026-10-23T09:00:00",
+   "excerpt": "A father and daughter drive across a dried-up lake in the year's most quietly devastating road movie.",
+   "content": "<!-- wp:paragraph {\"className\":\"fx-rating\"} --><p class=\"fx-rating\"><span class=\"fx-stars\" aria-label=\"4.5 out of 5 stars\">★★★★½</span> <span>Drama · 118 min · In cinemas Friday</span></p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The Salt Road begins with a car that will not start and ends with one that will not stop, and in between it finds more feeling in silence than most films find in speeches. A retired surveyor drives his estranged daughter across a dried-up lake bed to scatter her mother's ashes, and the flat white horizon becomes the third character.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Director Ines Varo shoots almost everything from inside the car. We see the road the way they do: through a cracked windscreen, a mirror, the gap between two people who have forgotten how to talk. When the camera finally steps outside, at a petrol station at dusk, the open air feels like a held breath let go.</p><!-- /wp:paragraph --><!-- wp:image {\"id\":{{media_id:mountain-dawn}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:mountain-dawn}}\" alt=\"Layered mountains at dawn in pink and violet haze\" class=\"wp-image-{{media_id:mountain-dawn}}\"/><figcaption class=\"wp-element-caption\">The third act's dawn, shot in a single unbroken take.</figcaption></figure><!-- /wp:image --><!-- wp:heading --><h2 class=\"wp-block-heading\">Two performances, one silence</h2><!-- /wp:heading --><!-- wp:paragraph --><p>The leads barely raise their voices. Their arguments happen in what they leave unsaid, in who reaches for the radio, in who pretends to sleep. By the time the daughter finally laughs at one of his terrible jokes, the cinema around me was holding its breath.</p><!-- /wp:paragraph --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Grief, it turns out, is mostly logistics, and this film understands that better than any I can remember.</p><!-- /wp:paragraph --><cite>From our screening notes</cite></blockquote><!-- /wp:quote --><!-- wp:group {\"className\":\"fx-credits-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group fx-credits-block\"><!-- wp:heading {\"level\":4} --><h4 class=\"wp-block-heading\">Credits</h4><!-- /wp:heading --><!-- wp:paragraph --><p>Directed by <strong>Ines Varo</strong></p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Written by <strong>Ines Varo &amp; Tomas Rell</strong></p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Cinematography <strong>Yuki Aram</strong></p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Music <strong>Delphine Oster</strong></p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:group {\"className\":\"fx-verdict\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group fx-verdict\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">The verdict</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Patient, funny and wrecking. Bring someone you have been meaning to call.</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "categories": [
+    "reviews"
+   ],
+   "tags": [
+    "drama",
+    "road-movie"
+   ],
+   "featured_media": "salt-road",
+   "format": "standard",
+   "sticky": true,
+   "comments": [
+    {
+     "author": "Noor Hadley",
+     "content": "Saw it at the festival preview. That petrol station scene.",
+     "date": "2026-10-23T19:40:00",
+     "email": "noor@example.com"
+    },
+    {
+     "author": "Felix Brandt",
+     "content": "The radio arguments felt so real it was uncomfortable. In a good way.",
+     "date": "2026-10-24T08:15:00",
+     "email": "felix@example.com"
+    }
+   ]
+  },
+  {
+   "slug": "low-neon-season-one",
+   "title": "Low Neon, season one",
+   "date": "2026-10-19T10:30:00",
+   "excerpt": "A rain-soaked detective series that takes its time, then takes your weekend.",
+   "content": "<!-- wp:paragraph {\"className\":\"fx-rating\"} --><p class=\"fx-rating\"><span class=\"fx-stars\" aria-label=\"4 out of 5 stars\">★★★★☆</span> <span>Series · 8 episodes · Streaming now</span></p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Low Neon is a detective show in the way that a jazz record is background music: technically true, and missing the point. Over eight episodes it follows a night-shift investigator through a city where it never stops raining, and the case is almost an excuse to sit in the dark with her.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The first two episodes are slow, deliberately so. Stick with them. By the third, the show's rhythm becomes hypnotic: long dialogue scenes in diners, a car parked in the same spot every night, a radio host who seems to know more than he should.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Episodes to watch twice</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><strong>Episode 3, \"Closing Time\"</strong>: one diner, one night, one confession.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Episode 5, \"Static\"</strong>: told almost entirely over a radio call-in show.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Episode 8, \"First Light\"</strong>: the rain finally stops, and everything changes.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:image {\"id\":{{media_id:rooftop-night}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:rooftop-night}}\" alt=\"A rooftop at night above a city of lit windows\" class=\"wp-image-{{media_id:rooftop-night}}\"/><figcaption class=\"wp-element-caption\">The rooftop finale is the season's only daylight scene, sort of.</figcaption></figure><!-- /wp:image --><!-- wp:paragraph --><p>The ending will divide people. I think it is perfect, and I have been thinking about it for a week.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "tv"
+   ],
+   "tags": [
+    "thriller",
+    "series"
+   ],
+   "featured_media": "rain-city",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Marta Quell",
+     "content": "Episode 5 is the best hour of television this year.",
+     "date": "2026-10-20T21:05:00",
+     "email": "marta@example.com"
+    }
+   ]
+  },
+  {
+   "slug": "harbour-film-festival-dispatch",
+   "title": "Dispatch from the Harbour Film Festival: day three",
+   "date": "2026-10-15T22:00:00",
+   "excerpt": "Outdoor screenings, a standing ovation for a documentary about bakers, and the film everyone is arguing about.",
+   "content": "<!-- wp:paragraph --><p>Day three of the Harbour Film Festival began with rain and ended with four hundred people under blankets watching a documentary about a night bakery. Nobody left early. Several people cried into their festival-issue cinnamon buns.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">What we saw</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><strong>Night Loaves</strong>: a documentary about the last 24-hour bakery in the old port. Standing ovation.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Tidewater</strong>: a romance told across fifty years of the same pier. Divisive, gorgeous.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Signal Lost</strong>: a sci-fi thriller set on a weather station. Fun, forgettable.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>The Orchard Keepers</strong>: our favourite so far. Full review soon.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:image {\"id\":{{media_id:pier-silhouettes}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:pier-silhouettes}}\" alt=\"Two figures standing at the end of a pier at sunset\" class=\"wp-image-{{media_id:pier-silhouettes}}\"/><figcaption class=\"wp-element-caption\">Tidewater had the festival talking all evening.</figcaption></figure><!-- /wp:image --><!-- wp:paragraph --><p>The outdoor screen on the harbour wall is the best thing about this festival. Ferries pass behind it, the wind moves the canvas, and somehow it all becomes part of the film.</p><!-- /wp:paragraph --><!-- wp:pullquote --><figure class=\"wp-block-pullquote\"><blockquote><p>Four hundred people, one screen, and the smell of bread at midnight.</p></blockquote></figure><!-- /wp:pullquote --><!-- wp:paragraph --><p>Tomorrow: the shorts programme, and a midnight screening that the programmers will only describe as loud.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "festivals"
+   ],
+   "tags": [
+    "festival",
+    "documentary"
+   ],
+   "featured_media": "festival-lights",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Ollie Reyes",
+     "content": "Night Loaves needs a proper release. Please.",
+     "date": "2026-10-16T09:30:00",
+     "email": "ollie@example.com"
+    }
+   ]
+  },
+  {
+   "slug": "the-orchard-keepers-review",
+   "title": "The Orchard Keepers",
+   "date": "2026-10-12T11:00:00",
+   "excerpt": "Three generations, one failing orchard and a summer that will not end: the festival's warmest discovery.",
+   "content": "<!-- wp:paragraph {\"className\":\"fx-rating\"} --><p class=\"fx-rating\"><span class=\"fx-stars\" aria-label=\"4 out of 5 stars\">★★★★☆</span> <span>Drama · 104 min · Festival selection</span></p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The Orchard Keepers takes place over one hot summer, as a family decides whether to sell the orchard that has been in their name for a century. It sounds like a premise for a gentle drama, and it is, but it is also funny, sharp about money, and full of small surprises.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The grandmother refuses to discuss the sale and instead teaches everyone to graft trees. The grandson wants to film it all for his followers. The mother just wants one night of sleep. By the end, all three are right.</p><!-- /wp:paragraph --><!-- wp:image {\"id\":{{media_id:film-strip}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:film-strip}}\" alt=\"A strip of film frames against warm light\" class=\"wp-image-{{media_id:film-strip}}\"/><figcaption class=\"wp-element-caption\">Shot on 16mm, and you can tell.</figcaption></figure><!-- /wp:image --><!-- wp:heading --><h2 class=\"wp-block-heading\">Why it works</h2><!-- /wp:heading --><!-- wp:paragraph --><p>The film trusts its audience. No one explains how they feel; the orchard does it for them. A dying tree in the first act gets a single line of dialogue and a payoff in the last that I will not spoil.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "reviews",
+    "festivals"
+   ],
+   "tags": [
+    "drama",
+    "festival"
+   ],
+   "featured_media": "orchard-summer",
+   "format": "standard",
+   "sticky": false
+  },
+  {
+   "slug": "ten-films-for-a-rainy-weekend",
+   "title": "Ten films for a rainy weekend",
+   "date": "2026-10-08T08:00:00",
+   "excerpt": "Blanket, tea, phone in another room: our critics pick the films that are better when it is pouring outside.",
+   "content": "<!-- wp:paragraph --><p>Some films are made for big screens and some are made for sofas. These are the ones we reach for when the weather has cancelled every plan, the kettle is on, and the evening is ours.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>We have kept the list to films that are easy to find and impossible to regret. Start anywhere.</p><!-- /wp:paragraph --><!-- wp:list {\"ordered\":true,\"className\":\"fx-watchlist\"} --><ol class=\"wp-block-list fx-watchlist\"><!-- wp:list-item --><li><strong>The Long Winter</strong>: a cabin, a storm and two neighbours who hate each other. A comedy, eventually.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Low Neon</strong> (the pilot): one episode, you will want more.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Paper Mountains</strong>: an animated journey across a folded landscape.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Night Loaves</strong>: the bakery documentary, when it arrives.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>The Orchard Keepers</strong>: summer, bottled.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Signal Lost</strong>: a weather station, a storm, a mystery.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Tidewater</strong>: for the romantics.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>The Salt Road</strong>: bring tissues.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Velvet Hour</strong>: a musical set in one cinema over one night.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Marquee</strong>: a documentary about the last single-screen cinema in town.</li><!-- /wp:list-item --></ol><!-- /wp:list --><!-- wp:paragraph --><p>Disagree? Good. Tell us your rainy-day film in the comments.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "watchlists"
+   ],
+   "tags": [
+    "watchlist",
+    "comfort-viewing"
+   ],
+   "featured_media": "tv-glow",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Priya Sand",
+     "content": "Velvet Hour forever. Watched it three times last winter.",
+     "date": "2026-10-08T15:00:00",
+     "email": "priya@example.com"
+    },
+    {
+     "author": "Noor Hadley",
+     "content": "Adding Paper Mountains for the kids this weekend.",
+     "date": "2026-10-09T10:20:00",
+     "email": "noor@example.com"
+    }
+   ]
+  },
+  {
+   "slug": "the-long-winter-review",
+   "title": "The Long Winter",
+   "date": "2026-10-02T09:30:00",
+   "excerpt": "Two feuding neighbours, one snowed-in cabin and the warmest comedy of the season.",
+   "content": "<!-- wp:paragraph {\"className\":\"fx-rating\"} --><p class=\"fx-rating\"><span class=\"fx-stars\" aria-label=\"3.5 out of 5 stars\">★★★½☆</span> <span>Comedy · 96 min · In cinemas</span></p><!-- /wp:paragraph --><!-- wp:paragraph --><p>When a blizzard traps two feuding neighbours in the only cabin with a working stove, The Long Winter becomes a two-hander that is equal parts bickering and kindness. It is slight, and it knows it, but it is very good company.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The best scenes are the smallest: an argument about how to cut firewood, a shared tin of peaches, a game of cards that goes on for three days of screen time.</p><!-- /wp:paragraph --><!-- wp:image {\"id\":{{media_id:marquee-sign}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:marquee-sign}}\" alt=\"A cinema marquee with rows of glowing bulbs\" class=\"wp-image-{{media_id:marquee-sign}}\"/><figcaption class=\"wp-element-caption\">Now playing at independent cinemas.</figcaption></figure><!-- /wp:image --><!-- wp:paragraph --><p>The film was shot in eleven days in a real cabin during a real storm, and the cold on screen is not acting. Both leads have said they have never been happier to see a wrap party.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>It loses a star for an ending that ties everything up too neatly, but you will leave smiling.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "reviews"
+   ],
+   "tags": [
+    "comedy",
+    "drama"
+   ],
+   "featured_media": "winter-cabin",
+   "format": "standard",
+   "sticky": false
+  },
+  {
+   "slug": "paper-mountains-review",
+   "title": "Paper Mountains",
+   "date": "2026-09-26T10:00:00",
+   "excerpt": "An animated journey through a folded landscape, made almost entirely from cut paper.",
+   "content": "<!-- wp:paragraph {\"className\":\"fx-rating\"} --><p class=\"fx-rating\"><span class=\"fx-stars\" aria-label=\"5 out of 5 stars\">★★★★★</span> <span>Animation · 88 min · Family</span></p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Every frame of Paper Mountains was cut, folded and photographed by hand, and you can feel it. The mountains have creases, the rivers ripple like tissue, and the sun is a circle of orange paper that someone clearly cut very carefully.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The story is simple: a young cartographer sets out to map a range that refolds itself every night. Children will love the creatures; adults will love the quiet way it talks about change.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">For the grown-ups</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Stay for the credits, which show the studio's paper workshop in time-lapse. It is the best ninety seconds of the year.</p><!-- /wp:paragraph --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>It looks like a pop-up book having a beautiful dream.</p><!-- /wp:paragraph --><cite>A seven-year-old at our screening</cite></blockquote><!-- /wp:quote -->",
+   "categories": [
+    "reviews"
+   ],
+   "tags": [
+    "animation",
+    "family"
+   ],
+   "featured_media": "mountain-dawn",
+   "format": "standard",
+   "sticky": false
+  },
+  {
+   "slug": "why-we-still-go-to-the-cinema",
+   "title": "Why we still go to the cinema",
+   "date": "2026-09-18T18:00:00",
+   "excerpt": "Streaming made watching easy. The cinema keeps making it matter. An essay on dark rooms and strangers.",
+   "content": "<!-- wp:paragraph --><p>There is a moment, just after the lights go down and before the first image appears, when a room full of strangers agrees to pay attention together. It lasts about two seconds. I think it is the best thing about cinema.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Streaming is wonderful. It gave us more films than we will ever watch, and it let us watch them in pyjamas. But at home a film competes with everything: the phone, the washing, the urge to check how long is left.</p><!-- /wp:paragraph --><!-- wp:image {\"id\":{{media_id:projector-beam}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:projector-beam}}\" alt=\"A projector beam cutting through dust in a dark cinema\" class=\"wp-image-{{media_id:projector-beam}}\"/><figcaption class=\"wp-element-caption\">The projector beam: still the best special effect.</figcaption></figure><!-- /wp:image --><!-- wp:heading --><h2 class=\"wp-block-heading\">The shared gasp</h2><!-- /wp:heading --><!-- wp:paragraph --><p>In a cinema you hear the audience. The laugh that starts in the back row. The gasp at the twist. The silence that is not empty but full. Those reactions change the film, and you cannot get them on a sofa.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>So go. Take a friend, take a stranger's recommendation, take the late show. Sit in the middle, put the phone away, and let the lights go down.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "essays"
+   ],
+   "tags": [
+    "cinema-culture"
+   ],
+   "featured_media": "cinema-seats",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Felix Brandt",
+     "content": "The two seconds before the first image. Exactly this.",
+     "date": "2026-09-19T12:45:00",
+     "email": "felix@example.com"
+    }
+   ]
+  }
+ ],
+ "menus": [
+  {
+   "name": "Section bar",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Home",
+     "page": "home"
+    },
+    {
+     "title": "Reviews",
+     "category": "reviews",
+     "children": [
+      {
+       "category": "tv"
+      },
+      {
+       "title": "The programme",
+       "page": "reviews-archive"
+      }
+     ]
+    },
+    {
+     "title": "Festivals",
+     "category": "festivals",
+     "children": [
+      {
+       "page": "festival-guide"
+      }
+     ]
+    },
+    {
+     "title": "Watchlists",
+     "category": "watchlists"
+    },
+    {
+     "title": "Essays",
+     "category": "essays"
+    },
+    {
+     "title": "About",
+     "page": "about",
+     "children": [
+      {
+       "page": "our-critics"
+      },
+      {
+       "page": "contact"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Footer",
+   "location": "footer",
+   "items": [
+    {
+     "page": "about"
+    },
+    {
+     "page": "our-critics"
+    },
+    {
+     "page": "festival-guide"
+    },
+    {
+     "page": "contact"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "sidebar-1": [
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Now showing</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":4,\"displayPostDate\":true,\"displayFeaturedImage\":false,\"featuredImageSizeSlug\":\"large\"} /--></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Genres</h2><!-- /wp:heading --><!-- wp:tag-cloud /--></div><!-- /wp:group -->",
+   "<!-- wp:search {\"label\":\"Search the archive\",\"buttonText\":\"Search\"} /-->"
+  ],
+  "footer-1": [
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Frame by Frame</h2><!-- /wp:heading --><!-- wp:paragraph --><p>An independent magazine about films and series, written by critics who still get excited when the lights go down.</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Sections</h2><!-- /wp:heading --><!-- wp:categories /--></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "gold": "#c8932b",
+  "velvet": "#7a1d2b",
+  "grid": "letterbox",
+  "letterbox": true,
+  "dark_mode": false,
+  "hero_image": "hero-lighthouse",
+  "hero_kicker": "Now showing · Review",
+  "hero_heading": "The Salt Road",
+  "hero_dek": "A father, a daughter and a dried-up lake: the year's most quietly devastating road movie.",
+  "cta_label": "Read the review",
+  "cta_url": "{{post:the-salt-road-review}}",
+  "issue_line": "Issue 42 · Autumn season",
+  "footer_text": "Frame by Frame. Independent film criticism since the lights first went down."
+ }
+}

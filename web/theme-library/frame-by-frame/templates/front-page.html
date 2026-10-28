@@ -1,0 +1,17 @@
+{{template "header" .}}
+{{with .Post}}{{$hero := theme_mod $ "hero_image"}}{{if not $hero}}{{$hero = .ThumbnailURL}}{{end}}<article id="post-{{.ID}}" class="{{.Class}} entry entry--front">
+	<section class="fx-hero{{if not $hero}} fx-hero--plain{{end}}" aria-label="Featured">
+		{{if $hero}}<img class="fx-hero__img" src="{{$hero}}" alt="" />{{end}}
+		<div class="fx-wrap fx-hero__inner">
+			{{with theme_mod $ "hero_kicker"}}<p class="fx-eyebrow fx-hero__kicker">{{.}}</p>{{end}}
+			<h1 class="fx-hero__title">{{with theme_mod $ "hero_heading"}}{{.}}{{else}}{{$.SiteName}}{{end}}</h1>
+			{{with theme_mod $ "hero_dek"}}<p class="fx-hero__dek">{{.}}</p>{{end}}
+			{{with theme_mod $ "cta_label"}}<p><a class="fx-btn" href="{{theme_mod $ "cta_url"}}">{{.}}</a></p>{{end}}
+		</div>
+	</section>
+	<div class="entry-content fx-front-content">
+		{{.Content}}
+	</div>
+	{{with .EditLink}}<footer class="fx-wrap entry-footer"><span class="edit-link">{{.}}</span></footer>{{end}}
+</article>{{end}}
+{{template "footer" .}}

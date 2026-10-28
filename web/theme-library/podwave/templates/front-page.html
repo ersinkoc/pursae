@@ -1,0 +1,20 @@
+{{template "header" .}}
+{{with .Post}}{{$hero := theme_mod $ "hero_image"}}{{if not $hero}}{{$hero = .ThumbnailURL}}{{end}}<article id="post-{{.ID}}" class="{{.Class}} entry entry--front">
+	<section class="pw-hero" aria-label="Introduction">
+		<div class="pw-wrap pw-hero__inner">
+			<div class="pw-hero__text">
+				{{with theme_mod $ "hero_kicker"}}<p class="pw-kicker pw-hero__kicker"><span class="pw-dot" aria-hidden="true"></span>{{.}}</p>{{end}}
+				<h1 class="pw-hero__title">{{with theme_mod $ "hero_heading"}}{{.}}{{else}}{{$.SiteName}}{{end}}</h1>
+				{{with $.Description}}<p class="pw-hero__lead">{{.}}</p>{{end}}
+				<p class="pw-hero__actions">{{with theme_mod $ "subscribe_label"}}<a class="pw-btn" href="{{theme_mod $ "subscribe_url"}}">{{.}}</a>{{end}}{{with theme_mod $ "cta_label"}}<a class="pw-btn pw-btn--ghost" href="{{theme_mod $ "cta_url"}}"><span class="pw-play pw-play--inline" aria-hidden="true"></span>{{.}}</a>{{end}}</p>
+			</div>
+			{{if $hero}}<figure class="pw-hero__art"><img src="{{$hero}}" alt="" /><span class="pw-hero__badge" aria-hidden="true">ON AIR</span></figure>{{end}}
+		</div>
+		<div class="pw-hero__wave" aria-hidden="true"></div>
+	</section>
+	<div class="entry-content pw-front-content">
+		{{.Content}}
+	</div>
+	{{with .EditLink}}<footer class="pw-wrap entry-footer"><span class="edit-link">{{.}}</span></footer>{{end}}
+</article>{{end}}
+{{template "footer" .}}

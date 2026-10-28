@@ -1,0 +1,15 @@
+/* Pixel Arcade: editor content area. */
+@font-face { font-family: "Press Start 2P"; src: url("fonts/press-start-2p.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Chakra Petch"; src: url("fonts/chakra-petch-400.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Chakra Petch"; src: url("fonts/chakra-petch-700.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+body, .editor-styles-wrapper { background: #100c26; color: #ece9ff; font-family: "Chakra Petch", system-ui, sans-serif; font-size: 17px; line-height: 1.7; }
+.editor-styles-wrapper h1, .editor-styles-wrapper h2, .editor-styles-wrapper h3, .editor-styles-wrapper .editor-post-title__input { font-family: "Press Start 2P", monospace; font-weight: 400; line-height: 1.4; }
+.editor-styles-wrapper h2 { font-size: 1.3rem; } .editor-styles-wrapper h3 { font-size: 1rem; }
+.editor-styles-wrapper a { color: #00e0ff; }
+.editor-styles-wrapper blockquote { border-left: 6px solid #ff3d7f; padding: 1em 1.4em; background: #1a1636; }
+.editor-styles-wrapper .wp-block-button__link { background: #ffcc00; color: #0b0818; border-radius: 0; font-family: "Press Start 2P", monospace; font-size: 0.65rem; box-shadow: 4px 4px 0 #ff3d7f; }
+.editor-styles-wrapper .pa-verdict { padding: 20px; border: 2px solid #ffcc00; }
+.editor-styles-wrapper .pa-score { font-family: "Press Start 2P", monospace; font-size: 1.6rem; color: #ffcc00; }
+.editor-styles-wrapper .wp-block { max-width: 760px; }
+.editor-styles-wrapper .wp-block[data-align="wide"] { max-width: 1200px; }
+.editor-styles-wrapper .wp-block[data-align="full"] { max-width: none; }

@@ -1,0 +1,8 @@
+{{template "header" .}}
+<section class="fx-wrap error-404 not-found fx-404">
+	<div class="fx-404__leader" aria-hidden="true"><span>4</span><span>0</span><span>4</span></div>
+	<h1 class="page-title">This reel is missing.</h1>
+	<p>The page you wanted was cut in the edit. Try a search, or go back to the <a href="{{.HomeURL}}">opening titles</a>.</p>
+	{{template "searchform" .}}
+</section>
+{{template "footer" .}}

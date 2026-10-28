@@ -1,0 +1,13 @@
+/* Little Sprouts: editor content area. */
+@font-face { font-family: "Fredoka"; src: url("fonts/fredoka.woff2") format("woff2"); font-weight: 400 700; font-display: swap; }
+@font-face { font-family: "Atkinson Hyperlegible"; src: url("fonts/atkinson-400.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Atkinson Hyperlegible"; src: url("fonts/atkinson-700.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+body, .editor-styles-wrapper { background: #fffaf0; color: #23305a; font-family: "Atkinson Hyperlegible", Verdana, sans-serif; font-size: 18px; line-height: 1.7; }
+.editor-styles-wrapper h1, .editor-styles-wrapper h2, .editor-styles-wrapper h3, .editor-styles-wrapper .editor-post-title__input { font-family: "Fredoka", sans-serif; font-weight: 600; line-height: 1.15; }
+.editor-styles-wrapper a { color: #3a86ff; }
+.editor-styles-wrapper blockquote { padding: 22px 26px; border-radius: 28px; background: #fff1c7; font-family: "Fredoka", sans-serif; }
+.editor-styles-wrapper .wp-block-button__link { background: #e63946; color: #fff; border-radius: 999px; font-family: "Fredoka", sans-serif; font-weight: 600; }
+.editor-styles-wrapper .ls-program { padding: 20px; border-radius: 28px; color: #fff; background: #3a86ff; }
+.editor-styles-wrapper .wp-block { max-width: 740px; }
+.editor-styles-wrapper .wp-block[data-align="wide"] { max-width: 1100px; }
+.editor-styles-wrapper .wp-block[data-align="full"] { max-width: none; }

@@ -1,0 +1,12 @@
+<section class="no-results not-found">
+	<h2 class="page-title">Nothing found</h2>
+	{{if eq .Template "search"}}
+		<p>No save file matches that search. Try another title or platform.</p>
+		{{template "searchform" .}}
+	{{else if and (eq .Template "index") .CanPublish}}
+		<p>Ready to post your first review? <a href="/wp-admin/post-new">Get started here</a>.</p>
+	{{else}}
+		<p>Nothing here but empty cartridges. Try a search.</p>
+		{{template "searchform" .}}
+	{{end}}
+</section><!-- .no-results -->

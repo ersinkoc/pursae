@@ -1,0 +1,9 @@
+{{template "header" .}}
+<section class="in-wrap error-404 not-found in-404">
+	<p class="in-404__code" aria-hidden="true">404</p>
+	<p class="in-banner in-banner--big">No regrets</p>
+	<h1 class="page-title">This page was never inked.</h1>
+	<p>Whatever was here has faded. Search the studio journal, or head back to the <a href="{{.HomeURL}}">front door</a>.</p>
+	{{template "searchform" .}}
+</section>
+{{template "footer" .}}

@@ -1,0 +1,24 @@
+		</main><!-- #main -->
+	</div><!-- #content -->
+
+	<footer id="colophon" class="site-footer">
+		<div class="in-wrap">
+			<div class="in-footer-book">
+				<p class="in-footer-book__title">Ready for new ink?</p>
+				{{with theme_mod . "booking_label"}}<a class="in-btn" href="{{theme_mod $ "booking_url"}}">{{.}}</a>{{end}}
+			</div>
+			{{if is_active_sidebar . "footer-1"}}<aside class="footer-widgets" aria-label="Footer">
+				{{dynamic_sidebar . "footer-1"}}
+			</aside>{{end}}
+			<div class="site-footer__bar">
+				<p class="in-footer-brand">{{.SiteName}}</p>
+				{{if has_nav_menu . "footer"}}<nav class="footer-navigation" aria-label="Footer menu">{{nav_menu . "footer"}}</nav>{{end}}
+				<p class="site-info">{{.PrivacyLink}} <span>{{with theme_mod . "footer_text"}}{{.}}{{else}}&copy; {{$.SiteName}}. Walk-ins welcome, appointments preferred.{{end}}</span> <span>Powered by <a href="https://github.com/boracomet/wordpress-go">WordPress Go</a></span></p>
+			</div>
+		</div>
+	</footer><!-- #colophon -->
+</div><!-- #page -->
+
+{{.Footer}}{{.AdminBar}}
+</body>
+</html>

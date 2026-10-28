@@ -1,0 +1,14 @@
+{{template "header" .}}
+{{with .Post}}<article id="post-{{.ID}}" class="{{.Class}} entry entry--page entry--wide">
+	<header class="ls-page-hero">
+		<div class="ls-wrap ls-page-hero__inner">
+			<h1 class="entry-title">{{.Title}}</h1>
+			{{with .Thumbnail}}<figure class="ls-blob">{{.}}</figure>{{end}}
+		</div>
+	</header>
+	<div class="ls-wrap entry-content ls-wide-content">
+		{{.Content}}
+	</div>
+	{{with .EditLink}}<footer class="ls-wrap entry-footer"><span class="edit-link">{{.}}</span></footer>{{end}}
+</article>{{end}}
+{{template "footer" .}}

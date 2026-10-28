@@ -1,0 +1,13 @@
+/* Podwave: editor content area. */
+@font-face { font-family: "Sora"; src: url("fonts/sora.woff2") format("woff2"); font-weight: 400 800; font-display: swap; }
+@font-face { font-family: "Work Sans"; src: url("fonts/work-sans.woff2") format("woff2"); font-weight: 400 700; font-display: swap; }
+body, .editor-styles-wrapper { background: #f7f5ff; color: #1b1340; font-family: "Work Sans", system-ui, sans-serif; font-size: 18px; line-height: 1.7; }
+.editor-styles-wrapper h1, .editor-styles-wrapper h2, .editor-styles-wrapper h3, .editor-styles-wrapper .editor-post-title__input { font-family: "Sora", system-ui, sans-serif; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; }
+.editor-styles-wrapper a { color: #6c3cff; }
+.editor-styles-wrapper blockquote { padding: 22px 26px; border-radius: 28px; background: #fff; font-family: "Sora", sans-serif; font-weight: 600; }
+.editor-styles-wrapper .wp-block-button__link { background: #6c3cff; color: #fff; border-radius: 999px; font-family: "Sora", sans-serif; font-weight: 700; }
+.editor-styles-wrapper .pw-timestamps { padding: 10px 20px; border-radius: 20px; background: #fff; list-style: none; }
+.editor-styles-wrapper .pw-timestamps code { color: #6c3cff; font-weight: 700; background: none; }
+.editor-styles-wrapper .wp-block { max-width: 740px; }
+.editor-styles-wrapper .wp-block[data-align="wide"] { max-width: 1100px; }
+.editor-styles-wrapper .wp-block[data-align="full"] { max-width: none; }

@@ -1,0 +1,14 @@
+{{template "header" .}}
+<header class="fx-wrap page-header page-header--search">
+	<p class="fx-eyebrow">{{plural .TotalPosts "%s title found" "%s titles found"}}</p>
+	<h1 class="page-title">&ldquo;{{.SearchQuery}}&rdquo;</h1>
+	{{template "searchform" .}}
+</header>
+<div class="fx-wrap fx-layout">
+	<div class="fx-primary">
+		{{if .Posts}}{{template "loop" .}}
+		{{.Pagination}}{{else}}{{template "content-none" .}}{{end}}
+	</div>
+	{{template "sidebar" .}}
+</div>
+{{template "footer" .}}

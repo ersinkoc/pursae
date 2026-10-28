@@ -1,0 +1,12 @@
+<div class="post-list pw-episodes">
+	{{range .Posts}}<article id="post-{{.ID}}" class="{{.Class}} pw-episode">
+		<a class="pw-episode__art" href="{{.Permalink}}" tabindex="-1" aria-hidden="true">{{if .Thumbnail}}{{.Thumbnail}}{{else}}<span class="pw-episode__noart"></span>{{end}}<span class="pw-play"></span></a>
+		<div class="pw-episode__body">
+			<p class="pw-episode__meta">{{if .ShowFeatured}}<span class="pw-pill pw-pill--hot">New</span>{{end}}{{range $i, $c := .Categories}}{{if lt $i 1}}<a class="pw-pill" href="{{$c.URL}}">{{$c.Name}}</a>{{end}}{{end}}<time datetime="{{.DateISO}}">{{.DateText}}</time></p>
+			<h2 class="pw-episode__title"><a href="{{.Permalink}}" rel="bookmark">{{.Title}}</a></h2>
+			{{if .ShowExcerpt}}<div class="pw-episode__notes">{{.Excerpt}}</div>{{end}}
+			<p class="pw-episode__foot"><span class="pw-mini-wave" aria-hidden="true"></span>{{with .AuthorName}}<span class="byline">Hosted by {{.}}</span>{{end}}<a class="pw-episode__more" href="{{.Permalink}}">Show notes<span class="screen-reader-text"> for {{.Title}}</span></a></p>
+		</div>
+	</article>
+	{{end}}
+</div>
