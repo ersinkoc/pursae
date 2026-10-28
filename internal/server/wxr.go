@@ -9,9 +9,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"os"
 	"path"
-	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -1033,39 +1031,12 @@ func (s *Server) sideloadURL(ctx context.Context, rawURL string, uploaderID, pos
 	if name == "" || name == "/" || name == "." {
 		return nil, errors.New("Invalid file name.")
 	}
-	st, err := media.Save(s.cfg.UploadsDir, s.settings.Bool("uploads_use_yearmonth_folders"), time.Now(), name, io.LimitReader(resp.Body, maxUploadBytes+1))
-	if err != nil {
-		return nil, err
-	}
-	if st.Size > maxUploadBytes {
-		_ = os.Remove(filepath.Join(s.cfg.UploadsDir, filepath.FromSlash(st.RelPath)))
+	a, err := s.insertAttachmentFile(ctx, name, resp.Body, uploaderID, postID)
+	switch {
+	case errors.Is(err, errUploadTooLarge):
 		return nil, errors.New("Remote file is too large, limit is " + media.HumanSize(maxUploadBytes) + ".")
-	}
-	if st.Size == 0 {
-		_ = os.Remove(filepath.Join(s.cfg.UploadsDir, filepath.FromSlash(st.RelPath)))
+	case errors.Is(err, errUploadEmpty):
 		return nil, errors.New("Zero size file downloaded.")
 	}
-	title := strings.TrimSuffix(filepath.Base(st.Original), filepath.Ext(st.Original))
-	a := &store.Attachment{UploaderID: uploaderID, PostID: postID, FilePath: st.RelPath, Mime: st.Mime, FileSize: st.Size,
-		Title: title, Slug: wp.SanitizeTitle(title), Meta: map[string]any{"filesize": st.Size}}
-	if strings.HasPrefix(st.Mime, "image/") {
-		if info, err := media.ProcessImage(s.cfg.UploadsDir, st.RelPath, s.imageSizes()); err == nil {
-			a.Width, a.Height = info.Width, info.Height
-			a.FilePath = info.RelPath
-			a.FileSize = info.FileSize
-			a.Meta["filesize"] = info.FileSize
-			if info.OriginalFile != "" {
-				a.Meta["original_image"] = info.OriginalFile
-			}
-			dir := path.Dir(info.RelPath)
-			for _, v := range info.Variants {
-				a.Variants = append(a.Variants, store.AttachmentVariant{Name: v.Name, FilePath: path.Join(dir, v.File),
-					Width: v.Width, Height: v.Height, Mime: v.Mime, FileSize: v.Size})
-			}
-		}
-	}
-	if err := s.store.InsertAttachment(ctx, a); err != nil {
-		return nil, err
-	}
-	return a, nil
+	return a, err
 }

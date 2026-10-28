@@ -130,13 +130,15 @@ main query the first existing one of these is rendered:
 | front page   | `front-page`, `page`, `singular`, `index`               |
 | blog         | `home`, `index`                                         |
 | post         | `single-<format>`, `single`, `singular`, `index`        |
-| page         | `page`, `singular`, `index`                             |
+| page         | its template (below), `page`, `singular`, `index`       |
 | category     | `category-<slug>`, `category`, `archive`, `index`       |
 | tag          | `tag-<slug>`, `tag`, `archive`, `index`                 |
 | author, date | `author` / `date`, `archive`, `index`                   |
 | search       | `search`, `index`                                       |
 | 404          | `404`, `index`                                          |
 
+A page whose `_wp_page_template` is set (by demo content, see below) tries that template first,
+also on the front page (`page-wide` or `page-wide.html` renders `templates/page-wide.html`).
 Only `index.html` is required. Parts are ordinary templates included with
 `{{template "header" .}}`, `{{template "content" .}}` and so on (`header`, `footer`,
 `sidebar`, `comments`, `searchform`, `content*`, … by convention).
@@ -185,20 +187,32 @@ Hub:
 "demo": "demo/demo.json"
 ```
 
-- `category` (one of): `blog`, `magazine`, `portfolio`, `photography`, `business`, `agency`,
+- `category` (optional, one of): `blog`, `magazine`, `portfolio`, `photography`, `business`, `agency`,
   `restaurant`, `food`, `travel`, `fashion`, `technology`, `education`, `health`, `fitness`,
   `nonprofit`, `music`, `wedding`, `real-estate`, `personal`, `minimal`.
-- `style`: a short phrase shown on the library card.
-- `demo`: path of the demo content file inside the package (below).
+- `style`: a short phrase shown on the library card (at most 80 characters, one line, no markup).
+- `demo`: path of the demo content file inside the package, a `.json` file under `demo/` (below).
+
+The REST themes endpoint (`wp/v2/themes`) reports them as `category`, `style` and `has_demo`.
 
 ## Demo content
 
 A theme may ship one-click demo content: `demo/demo.json` plus images under `demo/images/`
-(`.jpg`, `.png` or `.webp`, each ≤ 1 MiB, ≤ 24 images). Appearance › Themes shows **Import
-Demo Content** for the active theme when it has a demo (and Add Themes offers "Install,
-activate and import demo"). Importing is idempotent: every created item carries the post
-meta / term meta `_wpgo_demo = "<theme slug>"`, so a second import skips existing items and
-**Remove Demo Content** deletes exactly them (and restores the reading settings it changed).
+(`.jpg`, `.jpeg`, `.png` or `.webp`, each ≤ 1 MiB, ≤ 24 images). The demo file is validated
+when the package is installed: a package whose demo does not validate is rejected, with every
+problem listed (`demo/demo.json: pages[1]: {{post:missing}} does not refer to an item of the
+demo; …`). Appearance › Themes shows **Import Demo Content** on the active theme's card and in
+its details when it has a demo, and right after activating such a theme a notice asks "This
+theme comes with demo content. Import it?"; Add Themes › Library offers **Install & Import
+Demo** (install, activate, import in one step). Importing needs the `import` capability.
+
+Importing is idempotent: every created post, page, attachment and term carries the meta
+`_wpgo_demo = "<theme slug>"` (and `_wpgo_demo_ref` = its id/slug in demo.json), so a second
+import skips existing items, and **Remove Demo Content** deletes exactly them, the menus and
+widgets the import created, and restores what it changed: the options and reading settings,
+the menu previously assigned to each location, the theme mods it set, and the widgets that
+were in the demo's widget areas (an import moves them to the inactive widgets). A category or
+tag whose slug already exists on the site is used as it is and never removed.
 
 ```json
 {
@@ -236,18 +250,53 @@ meta / term meta `_wpgo_demo = "<theme slug>"`, so a second import skips existin
 }
 ```
 
-Rules: content is block markup (Gotenberg/WordPress block comments) or plain HTML; inside
-content, `{{media:hero}}` is replaced by the imported image's URL and `{{page:about}}` /
-`{{post:a-week-in-lisbon}}` / `{{category:travel}}` by permalinks. `front_page` / `posts_page`
-set Settings › Reading (`show_on_front=page`). `customizer` keys are the theme's own setting
-ids. `options` may only set `blogname`, `blogdescription`, `posts_per_page`, `date_format`.
+Rules:
+
+- `version` is `1`. Unknown fields are ignored.
+- Content (and excerpts, widgets and text Customizer values) is block markup
+  (Gotenberg/WordPress block comments) or plain HTML. Tokens: `{{media:hero}}` is the imported
+  image's URL, `{{media_id:hero}}` its attachment id (for `<!-- wp:image {"id":{{media_id:hero}}} -->`
+  and `wp-image-{{media_id:hero}}`), `{{page:about}}`, `{{post:a-week-in-lisbon}}`,
+  `{{category:travel}}` and `{{tag:coffee}}` permalinks. Every token must name an item of the demo.
+- Slugs (categories, tags, pages, posts) match `^[a-z0-9]+(-[a-z0-9]+)*$` and are unique per
+  kind; media ids are handles. A category may name a `parent` category of the demo.
+- Pages: `title` required; optional `content`, `excerpt`, `featured_media` (a media id),
+  `parent` (another page's slug, in any order), `menu_order`, `template` (the name of a file in
+  the theme's `templates/`, e.g. `page-wide`; see Templates), `front_page`, `posts_page` (at
+  most one each; they set Settings › Reading, `show_on_front=page`).
+- Posts: `title` required; `date` like `2026-09-12T09:30:00` (also `2026-09-12 09:30:00` or a
+  bare day, in the site's timezone) and not in the future — undated posts get one day apart
+  before now; `categories` / `tags` are slugs of the demo's own lists (a post without
+  categories goes to the default category); `format` is a post format; `sticky`; `comments`
+  (≤ 20 per post, `author` and `content` required, optional `email`, `url`, `date`) are
+  imported approved.
+- Menus (≤ 10): `name` required; `location` one of the theme's `menu_locations` (one menu per
+  location); each item has exactly one of `page`, `post`, `category` (slugs of the demo) or
+  `url` (http(s), a site path or `#anchor`); `title` is required for `url` items and defaults
+  to the page/post title or category name otherwise; `children` nest up to 3 levels.
+- `widgets` keys are the theme's `widget_areas`; each value is a list of block markup strings,
+  added as block widgets.
+- `customizer` keys are the theme's own setting ids (or `custom_logo`); values match the
+  setting type (a hex color, `true`/`false`, an integer within min/max, one of the choices, a
+  string; an `image` setting or `custom_logo` takes a media id, `"hero"` or `"{{media:hero}}"`).
+  They are stored as theme mods of that theme.
+- `options` may only set `blogname`, `blogdescription` (strings), `posts_per_page` (1–100),
+  `date_format`.
+- Limits: 24 images, 50 pages, 100 posts, 10 menus. An import runs in the request, with a
+  two-minute limit, and reports its counts in an admin notice.
+
 Demo text is original (no lorem ipsum, no copyrighted text) and images are original
 (generated) artwork.
 
 ## Theme library
 
 WordPress Go ships a library of ready themes in `web/theme-library/<slug>/` (each a complete
-theme package directory, embedded in the binary). Appearance › Add Themes › Library lists
-them with category filters and search; **Install** copies the package into `<data>/themes`
-exactly like an upload, and the installed theme can be updated, customized and deleted like
-any package.
+theme package directory whose name is its slug, embedded in the binary; a directory that does
+not validate is logged and left out). Appearance › Add Themes opens on the **Library** tab: the
+themes with screenshot, name, category and style, filter links for the categories that have
+themes, and search. **Install** zips the directory in memory and hands it to the same
+installer as Upload Theme, so the package lands in `<data>/themes` with the same validation
+(including the demo file); an installed theme shows Activate / Live Preview, and when the
+library carries a higher `version` than the installed one the card offers **Update** (theme
+mods and widgets are kept). The installed theme can be customized and deleted like any
+package. The All, Bundled and Uploaded tabs list the installed themes as before.

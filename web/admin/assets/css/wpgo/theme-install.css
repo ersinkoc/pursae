@@ -27,3 +27,26 @@
 	margin: 0;
 	color: #646970;
 }
+
+/* Library tab: category filters and the category/style line under the theme name. */
+.wpgo-theme-categories {
+	float: none;
+	margin: 0 0 12px;
+}
+.theme-install-php .theme-browser .theme .theme-name .wpgo-theme-meta {
+	display: block;
+	margin-top: 2px;
+	font-size: 13px;
+	font-weight: 400;
+	color: #646970;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.theme-install-php .theme-browser .theme .update-message {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	margin: 0;
+}

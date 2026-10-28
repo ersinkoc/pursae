@@ -41,6 +41,11 @@ type themeManifest struct {
 	RequiresCore string   `json:"requires_core"`
 	Screenshot   string   `json:"screenshot"`
 
+	// Library metadata (docs/theme-package.md, "Library metadata").
+	Category string `json:"category"`
+	Style    string `json:"style"`
+	Demo     string `json:"demo"` // the demo content file, demo/demo.json (theme_demo.go)
+
 	WidgetAreas   []themeManifestArea     `json:"widget_areas"`
 	MenuLocations []themeManifestLocation `json:"menu_locations"`
 
@@ -196,6 +201,15 @@ func parseThemeManifest(b []byte) (*themeManifest, error) {
 	}
 	if !themeAssetPathOK(m.Screenshot) {
 		bad("screenshot %q must be a path under assets/", m.Screenshot)
+	}
+	if m.Category != "" && themeCategoryLabel(m.Category) == "" {
+		bad("category %q is not one of %s", m.Category, strings.Join(themeCategories, ", "))
+	}
+	if len([]rune(m.Style)) > 80 || strings.ContainsAny(m.Style, "<>\r\n") {
+		bad("style must be a short phrase (at most 80 characters, one line, no markup)")
+	}
+	if m.Demo != "" && (!strings.HasPrefix(m.Demo, "demo/") || !strings.HasSuffix(m.Demo, ".json") || !fs.ValidPath(m.Demo)) {
+		bad("demo %q must be a .json file under demo/", m.Demo)
 	}
 
 	ids := map[string]bool{}
@@ -758,8 +772,18 @@ func themeTruthy(v any) bool {
 // themeTemplateCandidates is the template hierarchy of a package theme for the main query.
 func themeTemplateCandidates(q *siteQuery) []string {
 	switch q.Kind {
-	case "front-page":
-		return []string{"front-page", "page", "singular", "index"}
+	case "front-page", "page":
+		var out []string
+		if q.Kind == "front-page" {
+			out = append(out, "front-page")
+		}
+		if q.Post != nil {
+			// The page's own template (_wp_page_template, "page-full-width" or "page-full-width.html").
+			if tpl, _ := q.Post.Meta["_wp_page_template"].(string); tpl != "" && tpl != "default" {
+				out = append(out, strings.TrimSuffix(strings.TrimPrefix(tpl, "templates/"), ".html"))
+			}
+		}
+		return append(out, "page", "singular", "index")
 	case "home":
 		return []string{"home", "index"}
 	case "single":
@@ -767,8 +791,6 @@ func themeTemplateCandidates(q *siteQuery) []string {
 			return []string{"single-" + q.Post.Format, "single", "singular", "index"}
 		}
 		return []string{"single", "singular", "index"}
-	case "page":
-		return []string{"page", "singular", "index"}
 	case "category":
 		if q.Term != nil {
 			return []string{"category-" + q.Term.Slug, "category", "archive", "index"}
@@ -923,6 +945,11 @@ func loadThemePackage(dir, slug string) (*Theme, error) {
 	}
 	if len(missing) > 0 {
 		return nil, fmt.Errorf("files referenced by theme.json are missing: %s", strings.Join(missing, ", "))
+	}
+	if m.Demo != "" {
+		if _, err := parseThemeDemo(os.DirFS(dir), m); err != nil {
+			return nil, err
+		}
 	}
 	return newPackageTheme(m, dir), nil
 }

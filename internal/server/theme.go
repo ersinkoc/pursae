@@ -7,6 +7,7 @@ import (
 	"html"
 	"html/template"
 	"net/http"
+	"net/url"
 	"sort"
 	"strings"
 	"sync"
@@ -272,6 +273,8 @@ type themeCard struct {
 	ScreenshotURL string
 	ActivateURL   string
 	PreviewURL    string
+	// The active package theme's demo content (theme_demo.go): Import or Remove.
+	DemoImportURL, DemoRemoveURL string
 }
 
 type themesData struct {
@@ -307,6 +310,9 @@ type wpThemeJS struct {
 	Actions       map[string]any  `json:"actions"`
 	BlockTheme    bool            `json:"blockTheme"`
 	Builder       string          `json:"wpgoBuilder,omitempty"` // Golementor theme: Theme Builder URL
+	// Demo content of the active package theme (theme_demo.go): the Import or the Remove URL.
+	DemoImport string `json:"wpgoDemoImport,omitempty"`
+	DemoRemove string `json:"wpgoDemoRemove,omitempty"`
 }
 
 // themesScreen is themes.php.
@@ -346,7 +352,47 @@ func (s *Server) themesScreen(c *gin.Context) {
 		c.Redirect(http.StatusFound, "/wp-admin/themes?deleted=true")
 		return
 	}
+	if a := c.Query("action"); a == "import-demo" || a == "remove-demo" { // theme_demo.go
+		slug := c.Query("stylesheet")
+		if !u.Can("import", nil) {
+			c.String(http.StatusForbidden, "Sorry, you are not allowed to import content into this site.")
+			return
+		}
+		if !s.checkNonce(c, a+"_"+slug) {
+			s.denyNonce(c)
+			return
+		}
+		t := s.installedTheme(slug)
+		if t == nil || t.Package == nil || t.Package.Manifest.Demo == "" {
+			c.String(http.StatusBadRequest, "This theme has no demo content.")
+			return
+		}
+		if a == "remove-demo" {
+			if err := s.removeThemeDemo(c.Request.Context(), slug); err != nil {
+				c.Redirect(http.StatusFound, "/wp-admin/themes?error="+url.QueryEscape("The demo content could not be removed: "+err.Error()))
+				return
+			}
+			c.Redirect(http.StatusFound, "/wp-admin/themes?demo=removed")
+			return
+		}
+		if s.activeTheme().Slug != slug {
+			c.String(http.StatusBadRequest, "Activate the theme before importing its demo content.")
+			return
+		}
+		rep, err := s.importThemeDemo(c.Request.Context(), u.ID, t)
+		if err != nil {
+			c.Redirect(http.StatusFound, "/wp-admin/themes?error="+url.QueryEscape("The demo content could not be imported: "+err.Error()))
+			return
+		}
+		c.Redirect(http.StatusFound, "/wp-admin/themes?"+rep.query())
+		return
+	}
 	active := s.activeTheme()
+	demoURL := func(action, slug string) string {
+		return "/wp-admin/themes?action=" + action + "&stylesheet=" + slug + "&_wpnonce=" + s.nonce(c, action+"_"+slug)
+	}
+	hasDemo := active.Package != nil && active.Package.Manifest.Demo != "" && u.Can("import", nil)
+	demoImported := hasDemo && s.demoImported(active.Slug)
 	var d themesData
 	for _, t := range s.installedThemes() {
 		if t.Custom { // Golementor: saved themes are listed in their own section
@@ -357,6 +403,13 @@ func (s *Server) themesScreen(c *gin.Context) {
 			PreviewURL:  "/?theme=" + t.Slug}
 		if !t.Custom {
 			card.ScreenshotURL += "?ver=" + t.Version
+		}
+		if card.Active && hasDemo {
+			if demoImported {
+				card.DemoRemoveURL = demoURL("remove-demo", t.Slug)
+			} else {
+				card.DemoImportURL = demoURL("import-demo", t.Slug)
+			}
 		}
 		if card.Active {
 			d.Active = card
@@ -389,6 +442,13 @@ func (s *Server) themesScreen(c *gin.Context) {
 		if t.Slug == helloThemeSlug { // Golementor: the hello theme is built in the Theme Builder
 			j.Builder = "/wp-admin/gowebeditor-theme-builder"
 		}
+		if t.Active && hasDemo {
+			if demoImported {
+				j.DemoRemove = demoURL("remove-demo", t.Slug)
+			} else {
+				j.DemoImport = demoURL("import-demo", t.Slug)
+			}
+		}
 		if !t.Active && u.Can("delete_themes", nil) { // every inactive theme can be deleted (theme_delete.go)
 			j.Actions["delete"] = "/wp-admin/themes?action=delete&stylesheet=" + t.Slug + "&_wpnonce=" + s.nonce(c, "delete-theme_"+t.Slug)
 		}
@@ -397,7 +457,7 @@ func (s *Server) themesScreen(c *gin.Context) {
 	settings, _ := json.Marshal(map[string]any{
 		"themes": js,
 		"settings": map[string]any{"canInstall": u.Can("install_themes", nil), "installURI": "/wp-admin/theme-install",
-			"confirmDelete": "Are you sure you want to delete this theme?\n\nClick 'Cancel' to go back, 'OK' to confirm the delete.", "adminUrl": "/wp-admin/"},
+			"confirmDelete": "Are you sure you want to delete this theme?\n\nClick 'Cancel' to go back, 'OK' to confirm the delete.", "confirmRemoveDemo": "Remove the demo content? The pages, posts, images, categories, tags, menus and widgets it added are deleted permanently, and the settings it changed get their previous values back.", "adminUrl": "/wp-admin/"},
 		"l10n": map[string]string{"addNew": "Add Theme", "search": "Search installed themes", "themesFound": "Number of Themes found: %d",
 			"noThemesFound": "No themes found. Try a different search.", "themeViewed": "Theme details: %s"},
 	})
@@ -407,8 +467,26 @@ func (s *Server) themesScreen(c *gin.Context) {
 	// theme.js routes on themes.php; WordPress Go URLs have no .php.
 	a.AddInline("theme", `wp.themes.Router = wp.themes.Router.extend({routes:{"themes?theme=:slug":"theme","themes?search=:query":"search","themes?s=:query":"search","themes":"themes","":"themes"},baseUrl:function(e){return "themes"+e;}});`)
 	var notices []notice
+	if msg := c.Query("error"); msg != "" {
+		notices = append(notices, notice{Type: "error", Message: template.HTML(template.HTMLEscapeString(msg)), Dismissible: true})
+	}
 	if c.Query("activated") == "true" {
 		notices = append(notices, notice{Type: "success", Message: template.HTML(`New theme activated. <a href="/">Visit site</a>`), Dismissible: true})
+		if hasDemo && !demoImported && c.Query("demo") == "" && c.Query("error") == "" {
+			notices = append(notices, notice{Type: "info", Message: template.HTML(`This theme comes with demo content. Import it? <a href="` +
+				template.HTMLEscapeString(demoURL("import-demo", active.Slug)) + `" class="button button-primary wpgo-import-demo">Import Demo Content</a>`)})
+		}
+	}
+	switch c.Query("demo") {
+	case "imported":
+		notices = append(notices, notice{Type: "success", Message: template.HTML(template.HTMLEscapeString(demoReportFromQuery(c.Query("counts")).summary()) +
+			` <a href="/">Visit site</a>`), Dismissible: true})
+	case "removed":
+		notices = append(notices, notice{Type: "success", Message: "Demo content removed.", Dismissible: true})
+	}
+	if t := themeBySlug(c.Query("updated")); t != nil && t.Package != nil {
+		notices = append(notices, notice{Type: "success", Message: template.HTML(template.HTMLEscapeString(t.Name) + " has been updated to version " +
+			template.HTMLEscapeString(t.Version) + "."), Dismissible: true})
 	}
 	if c.Query("gwe") == "theme-deleted" { // Golementor: saved theme deleted from this screen
 		notices = append(notices, notice{Type: "success", Message: "Saved theme deleted.", Dismissible: true})

@@ -1,4 +1,4 @@
-// Package web embeds the admin UI, the bundled theme and the core static assets.
+// Package web embeds the admin UI, the bundled themes, the theme library and the core static assets.
 package web
 
 import (
@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-//go:embed admin themes wp-includes wp-admin gowebeditor
+//go:embed admin themes wp-includes wp-admin gowebeditor theme-library
 var embedded embed.FS
 
 // FS returns the web assets. With dir set (development) files are read from disk

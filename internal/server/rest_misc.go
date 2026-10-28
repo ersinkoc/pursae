@@ -288,7 +288,12 @@ func (api *restAPI) themes(c *gin.Context, r *restRequest) {
 		for k, v := range th.Supports {
 			supports[k] = v
 		}
+		category, style, hasDemo := "", "", false // WordPress Go: library metadata of theme packages
+		if th.Package != nil {
+			category, style, hasDemo = th.Package.Manifest.Category, th.Package.Manifest.Style, th.Package.Manifest.Demo != ""
+		}
 		return map[string]any{
+			"category": category, "style": style, "has_demo": hasDemo,
 			"stylesheet": th.Slug, "template": th.Slug,
 			"author":         map[string]string{"raw": th.Author, "rendered": `<a href="` + th.AuthorURI + `">` + th.Author + `</a>`},
 			"author_uri":     map[string]string{"raw": th.AuthorURI, "rendered": th.AuthorURI},

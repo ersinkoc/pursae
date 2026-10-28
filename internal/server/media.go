@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"html"
 	"html/template"
+	"io"
 	"net/http"
 	"os"
 	"path"
@@ -93,6 +94,52 @@ func (s *Server) saveUpload(c *gin.Context, field string, postID int64) (*store.
 		}
 	}
 	if err := s.store.InsertAttachment(c, a); err != nil {
+		return nil, err
+	}
+	return a, nil
+}
+
+var (
+	errUploadTooLarge = errors.New("the file exceeds the maximum upload size for this site")
+	errUploadEmpty    = errors.New("the file is empty")
+)
+
+// insertAttachmentFile is the common part of media_handle_sideload(): the file is stored in the
+// uploads directory, the image sizes are generated and the attachment is inserted. The importers
+// (WXR, theme demo content) use it.
+func (s *Server) insertAttachmentFile(ctx context.Context, name string, r io.Reader, uploaderID, postID int64) (*store.Attachment, error) {
+	st, err := media.Save(s.cfg.UploadsDir, s.settings.Bool("uploads_use_yearmonth_folders"), time.Now(), name, io.LimitReader(r, maxUploadBytes+1))
+	if err != nil {
+		return nil, err
+	}
+	if st.Size > maxUploadBytes {
+		_ = os.Remove(filepath.Join(s.cfg.UploadsDir, filepath.FromSlash(st.RelPath)))
+		return nil, errUploadTooLarge
+	}
+	if st.Size == 0 {
+		_ = os.Remove(filepath.Join(s.cfg.UploadsDir, filepath.FromSlash(st.RelPath)))
+		return nil, errUploadEmpty
+	}
+	title := strings.TrimSuffix(filepath.Base(st.Original), filepath.Ext(st.Original))
+	a := &store.Attachment{UploaderID: uploaderID, PostID: postID, FilePath: st.RelPath, Mime: st.Mime, FileSize: st.Size,
+		Title: title, Slug: wp.SanitizeTitle(title), Meta: map[string]any{"filesize": st.Size}}
+	if strings.HasPrefix(st.Mime, "image/") {
+		if info, err := media.ProcessImage(s.cfg.UploadsDir, st.RelPath, s.imageSizes()); err == nil {
+			a.Width, a.Height = info.Width, info.Height
+			a.FilePath = info.RelPath
+			a.FileSize = info.FileSize
+			a.Meta["filesize"] = info.FileSize
+			if info.OriginalFile != "" {
+				a.Meta["original_image"] = info.OriginalFile
+			}
+			dir := path.Dir(info.RelPath)
+			for _, v := range info.Variants {
+				a.Variants = append(a.Variants, store.AttachmentVariant{Name: v.Name, FilePath: path.Join(dir, v.File),
+					Width: v.Width, Height: v.Height, Mime: v.Mime, FileSize: v.Size})
+			}
+		}
+	}
+	if err := s.store.InsertAttachment(ctx, a); err != nil {
 		return nil, err
 	}
 	return a, nil

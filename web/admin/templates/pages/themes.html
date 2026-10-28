@@ -19,6 +19,8 @@
 		{{if .Active}}<h2 class="theme-name" id="{{.Slug}}-name"><span>Active:</span> {{.Name}}</h2>{{else}}<h2 class="theme-name" id="{{.Slug}}-name">{{.Name}}</h2>{{end}}
 		<div class="theme-actions">
 			{{if .Active}}{{if or .Custom (eq .Slug "hello-gowebeditor")}}<a class="button button-compact button-primary" aria-label="Open the Theme Builder for {{.Name}}" href="/wp-admin/gowebeditor-theme-builder">Theme Builder</a>{{else}}<a class="button button-compact button-primary customize load-customize hide-if-no-customize" href="/wp-admin/customize" aria-label="Customize {{.Name}}">Customize</a>{{end}}
+			{{if .DemoImportURL}}<a class="button button-compact wpgo-import-demo" href="{{.DemoImportURL}}" aria-label="Import demo content of {{.Name}}">Import Demo Content</a>{{end}}
+			{{if .DemoRemoveURL}}<a class="button button-compact wpgo-remove-demo" href="{{.DemoRemoveURL}}" onclick="return window.confirm( _wpThemeSettings.settings.confirmRemoveDemo );" aria-label="Remove demo content of {{.Name}}">Remove Demo Content</a>{{end}}
 			{{else}}<a class="button button-compact activate" href="{{.ActivateURL}}" aria-label="Activate {{.Name}}">Activate</a>
 			<a class="button button-compact button-primary load-customize hide-if-no-customize" href="{{.PreviewURL}}" aria-label="Live Preview {{.Name}}">Live Preview</a>{{end}}
 		</div>
@@ -95,6 +97,11 @@
 			<# } else if ( data.actions.customize ) { #>
 				<a class="button button-compact button-primary customize load-customize hide-if-no-customize" href="{{{ data.actions.customize }}}" aria-label="Customize {{ data.name }}">Customize</a>
 			<# } #>
+			<# if ( data.wpgoDemoImport ) { #>
+				<a class="button button-compact wpgo-import-demo" href="{{{ data.wpgoDemoImport }}}" aria-label="Import demo content of {{ data.name }}">Import Demo Content</a>
+			<# } else if ( data.wpgoDemoRemove ) { #>
+				<a class="button button-compact wpgo-remove-demo" href="{{{ data.wpgoDemoRemove }}}" onclick="return window.confirm( _wpThemeSettings.settings.confirmRemoveDemo );" aria-label="Remove demo content of {{ data.name }}">Remove Demo Content</a>
+			<# } #>
 		<# } else { #>
 			<a class="button button-compact activate" href="{{{ data.actions.activate }}}" aria-label="Activate {{ data.name }}">Activate</a>
 			<a class="button button-compact button-primary load-customize hide-if-no-customize" href="{{{ data.actions.customize }}}" aria-label="Live Preview {{ data.name }}">Live Preview</a>
@@ -142,6 +149,11 @@
 					<a class="button button-compact button-primary customize load-customize hide-if-no-customize" href="{{{ data.actions.customize }}}">Customize</a>
 				<# } #>
 				<a class="button button-compact" href="/wp-admin/widgets">Widgets</a> <a class="button button-compact" href="/wp-admin/nav-menus">Menus</a>
+				<# if ( data.wpgoDemoImport ) { #>
+					<a class="button button-compact wpgo-import-demo" href="{{{ data.wpgoDemoImport }}}">Import Demo Content</a>
+				<# } else if ( data.wpgoDemoRemove ) { #>
+					<a class="button button-compact wpgo-remove-demo" href="{{{ data.wpgoDemoRemove }}}" onclick="return window.confirm( _wpThemeSettings.settings.confirmRemoveDemo );">Remove Demo Content</a>
+				<# } #>
 			</div>
 			<div class="inactive-theme">
 				<a class="button button-compact button-primary load-customize hide-if-no-customize" href="{{{ data.actions.customize }}}" aria-label="Live Preview {{ data.name }}">Live Preview</a>
