@@ -182,6 +182,7 @@ func (s *Server) routes() *gin.Engine {
 	r.HEAD("/wp-content/uploads/*filepath", serveUpload)
 	r.GET(pluginAssetsPath+"/:slug/assets/*filepath", s.pluginAsset) // plugin package assets (plugins_host.go)
 	r.HEAD(pluginAssetsPath+"/:slug/assets/*filepath", s.pluginAsset)
+	s.registerGontact(r) // Gontact Form front-end assets
 
 	r.GET("/wp-admin/install", s.installForm)
 	r.POST("/wp-admin/install", s.installSubmit)
@@ -268,6 +269,7 @@ func (s *Server) routes() *gin.Engine {
 
 	s.rest = s.restRoutes()
 	s.registerGoWebEditorREST()
+	s.registerGontactREST()
 	restHandler := func(c *gin.Context) { s.rest.serve(c, c.Param("route")) }
 	for _, m := range []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete, http.MethodOptions, http.MethodHead} {
 		r.Handle(m, "/wp-json/*route", restHandler)

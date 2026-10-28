@@ -68,7 +68,7 @@ func (s *Server) site(c *gin.Context) {
 		s.rest.serve(c, route)
 		return
 	}
-	if c.Request.Method != http.MethodGet && c.Request.Method != http.MethodHead {
+	if c.Request.Method != http.MethodGet && c.Request.Method != http.MethodHead && !s.gontactFallbackPost(c) { // Gontact Form without JS
 		c.Status(http.StatusNotFound)
 		return
 	}

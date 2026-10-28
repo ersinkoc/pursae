@@ -1,0 +1,70 @@
+{{define "admin/gontact-list"}}{{template "admin-header" .}}{{with .Data}}
+<link rel="stylesheet" id="contact-form-7-admin-css" href="/wp-content/gontact-form/admin.css?ver=6.2.3" media="all" />
+<div class="wrap" id="wpcf7-contact-form-list-table">
+<h1 class="wp-heading-inline">Contact Forms</h1>
+{{if .CanCreate}}<a href="/wp-admin/admin?page=wpcf7-new" class="page-title-action">Add Contact Form</a>{{end}}
+{{if .Search}}<span class="subtitle">Search results for: <strong>{{.Search}}</strong></span>{{end}}
+<hr class="wp-header-end">
+{{template "notices" $}}
+<form method="get" action="/wp-admin/admin">
+	<input type="hidden" name="page" value="wpcf7" />
+	<p class="search-box">
+		<label class="screen-reader-text" for="wpcf7-contact-search-input">Search Contact Forms:</label>
+		<input type="search" id="wpcf7-contact-search-input" name="s" value="{{.Search}}" />
+		<input type="submit" id="search-submit" class="button" value="Search Contact Forms" />
+	</p>
+</form>
+<form method="post" action="/wp-admin/admin?page=wpcf7">
+	<input type="hidden" name="_wpnonce" value="{{.BulkNonce}}" />
+	<div class="tablenav top">
+		<div class="alignleft actions bulkactions">
+			<label for="bulk-action-selector-top" class="screen-reader-text">Select bulk action</label>
+			<select name="action" id="bulk-action-selector-top">
+				<option value="-1">Bulk actions</option>
+				<option value="delete">Delete</option>
+			</select>
+			<input type="submit" id="doaction" class="button action" value="Apply" />
+		</div>
+		{{template "tablenav-pages" .Pagination}}
+		<br class="clear" />
+	</div>
+	<h2 class="screen-reader-text">Contact forms list</h2>
+	<table class="wp-list-table widefat fixed striped table-view-list posts">
+		<thead>{{template "gontact-list-head" .}}</thead>
+		<tbody id="the-list">
+		{{range .Rows}}<tr>
+			<th scope="row" class="check-column"><input type="checkbox" name="post[]" value="{{.ID}}" id="cb-select-{{.ID}}" /><label for="cb-select-{{.ID}}"><span class="screen-reader-text">Select {{.Title}}</span></label></th>
+			<td class="title column-title has-row-actions column-primary" data-colname="Title"><strong>{{if .CanEdit}}<a class="row-title" href="{{.EditURL}}" aria-label="Edit &#8220;{{.Title}}&#8221;">{{.Title}}</a>{{else}}{{.Title}}{{end}}</strong>
+				<div class="row-actions">{{if .CanEdit}}<span class="edit"><a href="{{.EditURL}}">Edit</a> | </span><span class="copy"><a href="{{.CopyURL}}">Duplicate</a></span>{{end}}</div>
+				<button type="button" class="toggle-row"><span class="screen-reader-text">Show more details</span></button></td>
+			<td class="shortcode column-shortcode" data-colname="Shortcode"><span class="shortcode"><input type="text" onfocus="this.select();" readonly="readonly" value="{{.Shortcode}}" class="large-text code selectable" /></span></td>
+			<td class="author column-author" data-colname="Author">{{.Author}}</td>
+			<td class="date column-date" data-colname="Date"><time datetime="{{.ISODate}}">{{.Date}}</time></td>
+		</tr>
+		{{else}}<tr class="no-items"><td class="colspanchange" colspan="{{.ColCount}}">No contact forms found.</td></tr>
+		{{end}}</tbody>
+		<tfoot>{{template "gontact-list-head" .}}</tfoot>
+	</table>
+	<div class="tablenav bottom">
+		<div class="alignleft actions bulkactions">
+			<label for="bulk-action-selector-bottom" class="screen-reader-text">Select bulk action</label>
+			<select name="action2" id="bulk-action-selector-bottom">
+				<option value="-1">Bulk actions</option>
+				<option value="delete">Delete</option>
+			</select>
+			<input type="submit" id="doaction2" class="button action" value="Apply" />
+		</div>
+		{{template "tablenav-pages" .Pagination}}
+		<br class="clear" />
+	</div>
+</form>
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}
+
+{{define "gontact-list-head"}}<tr>
+	<td class="manage-column column-cb check-column"><input id="cb-select-all-1" type="checkbox" /><label for="cb-select-all-1"><span class="screen-reader-text">Select All</span></label></td>
+	<th scope="col" class="manage-column column-title column-primary {{.TitleSort.Class}}"{{if .TitleSort.AriaSort}} aria-sort="{{.TitleSort.AriaSort}}"{{end}}><a href="{{.TitleSort.URL}}"><span>Title</span><span class="sorting-indicators"><span class="sorting-indicator asc" aria-hidden="true"></span><span class="sorting-indicator desc" aria-hidden="true"></span></span></a></th>
+	<th scope="col" class="manage-column column-shortcode">Shortcode</th>
+	<th scope="col" class="manage-column column-author">Author</th>
+	<th scope="col" class="manage-column column-date {{.DateSort.Class}}"{{if .DateSort.AriaSort}} aria-sort="{{.DateSort.AriaSort}}"{{end}}><a href="{{.DateSort.URL}}"><span>Date</span><span class="sorting-indicators"><span class="sorting-indicator asc" aria-hidden="true"></span><span class="sorting-indicator desc" aria-hidden="true"></span></span></a></th>
+</tr>{{end}}

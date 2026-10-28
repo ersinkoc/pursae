@@ -353,6 +353,7 @@ func (s *Server) adminPage(c *gin.Context, screen, title, bodyClass, tmpl string
 		v.BodyClass += " folded"
 	}
 	v.CacheBar = s.cacheAdminBar(c, u) + s.maintAdminBar(c, u)
+	v.Menu = s.gontactMenu(v.Menu, u, screen)
 	s.pluginMenuEntries(v.Menu, screen) // plugin settings pages under Settings (plugins_host.go)
 	v.Menu = s.maintMenu(v.Menu, u, screen)
 	v.Menu = s.mailSMTPMenu(c, v.Menu, screen)

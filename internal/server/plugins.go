@@ -303,9 +303,21 @@ func (s *Server) installedPlugins(c *gin.Context) []pluginRow {
 		{Slug: msSlug, Name: "WPGO Mail SMTP", Version: Version, Native: true, Active: s.mailSMTPOn(),
 			Description: "Make email delivery easy for WordPress Go. Connect with SMTP, SendLayer, Brevo, Mailgun, SendGrid, Amazon SES, Gmail, Outlook and more, with an email log, reports, failure alerts, backup connection and smart routing. A native clone of WP Mail SMTP.",
 			Author:      "WordPress Go"},
+		{Slug: gontactSlug, Name: "Gontact Form", Version: gontactVersion, Native: true, Active: s.gontactOn(),
+			Description: "Just another contact form plugin. Simple but flexible: manage multiple contact forms, customize the form and the mail contents with simple markup, Ajax-powered submitting, quiz, reCAPTCHA and Turnstile spam protection, file uploads.",
+			Author:      "WordPress Go", SettingsURL: "/wp-admin/admin?page=wpcf7"},
 	}
-	if rows[3].Active {
-		rows[3].SettingsURL = "/wp-admin/admin?page=" + msSlug
+	for i := range rows { // Settings links only while active, as WordPress shows them
+		switch rows[i].Slug {
+		case msSlug:
+			if rows[i].Active {
+				rows[i].SettingsURL = "/wp-admin/admin?page=" + msSlug
+			}
+		case gontactSlug:
+			if !rows[i].Active {
+				rows[i].SettingsURL = ""
+			}
+		}
 	}
 	if !rows[1].Active {
 		rows[1].SettingsURL = "" // WordPress shows a plugin's Settings link only while it is active
@@ -494,6 +506,19 @@ func (s *Server) pluginAction(c *gin.Context, action, slug string) {
 		}
 		c.Redirect(http.StatusFound, "/wp-admin/plugins?"+q)
 		return
+	case gontactSlug:
+		var err error
+		if action == "activate" {
+			err = s.gontactActivate(c, currentUser(c).ID)
+		} else {
+			err = s.gontactDeactivate(c)
+		}
+		if err != nil {
+			fail(err)
+			return
+		}
+		c.Redirect(http.StatusFound, "/wp-admin/plugins?"+action+"=true")
+		return
 	}
 	ctx := c.Request.Context()
 	switch action {
@@ -550,7 +575,7 @@ func (s *Server) installPackage(ctx context.Context, data []byte) (*plugins.Mani
 		return nil, err
 	}
 	slug := pkg.Manifest.Slug
-	if slug == "classic-editor" || slug == "wpgo-cache" || slug == maintSlug || slug == msSlug {
+	if slug == "classic-editor" || slug == "wpgo-cache" || slug == maintSlug || slug == msSlug || slug == gontactSlug {
 		return nil, errors.New("that slug belongs to a built-in plugin")
 	}
 	if err := os.WriteFile(filepath.Join(s.plugins.dir, slug+".zip"), data, 0o644); err != nil {
@@ -653,7 +678,7 @@ func (s *Server) pluginInstall(c *gin.Context) {
 	d := pluginInstallData{Tab: c.DefaultQuery("tab", "featured"), Search: strings.TrimSpace(c.Query("s")), UploadNonce: s.nonce(c, "plugin-upload")}
 	installed := map[string]bool{}
 	var native []marketItem
-	icons := map[string][2]string{"classic-editor": {"dashicons-edit-page", "blue"}, "wpgo-cache": {"dashicons-performance", "green"}, golementorSlug: {"dashicons-layout", "purple"}, maintSlug: {"dashicons-hammer", "teal"}, msSlug: {"dashicons-email-alt", "blue"}}
+	icons := map[string][2]string{"classic-editor": {"dashicons-edit-page", "blue"}, "wpgo-cache": {"dashicons-performance", "green"}, golementorSlug: {"dashicons-layout", "purple"}, maintSlug: {"dashicons-hammer", "teal"}, msSlug: {"dashicons-email-alt", "blue"}, gontactSlug: {"dashicons-email", "teal"}}
 	for _, r := range s.installedPlugins(c) {
 		installed[r.Slug] = true
 		if r.Native {
