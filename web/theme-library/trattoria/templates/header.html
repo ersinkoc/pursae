@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>{{.DocumentTitle}}</title>
+{{.Head}}</head>
+
+<body class="{{.BodyClass}}">
+{{.BodyOpen}}<div id="page" class="site">
+	<a class="skip-link screen-reader-text" href="#main">Skip to content</a>
+	<header id="masthead" class="site-header">
+		<div class="wrap site-header__top">
+			<div class="site-header__aside site-header__aside--left">
+				{{with theme_mod . "phone"}}<a class="header-phone" href="tel:{{.}}"><span class="header-phone__label">Call us</span> {{.}}</a>{{end}}
+			</div>
+			<div class="site-branding">
+				{{with .CustomLogo}}<div class="site-logo">{{.}}</div>{{end}}
+				{{if .TitleIsH1}}<h1 class="site-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></h1>{{else}}<p class="site-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></p>{{end}}
+				{{with .Description}}<p class="site-description">{{.}}</p>{{end}}
+			</div><!-- .site-branding -->
+			<div class="site-header__aside site-header__aside--right">
+				{{with theme_mod . "reservation_label"}}<a class="button header-reserve" href="{{theme_mod $ "reservation_url"}}">{{.}}</a>{{end}}
+				{{if has_nav_menu . "primary"}}<button type="button" class="menu-toggle" aria-controls="site-navigation" aria-expanded="false"><span class="menu-toggle__bars" aria-hidden="true"><span></span></span><span class="menu-toggle__label">Menu</span></button>{{end}}
+			</div>
+		</div>
+		{{if has_nav_menu . "primary"}}<nav id="site-navigation" class="main-navigation" aria-label="Primary menu">
+			<div class="wrap">{{nav_menu . "primary"}}</div>
+		</nav><!-- #site-navigation -->{{end}}
+	</header><!-- #masthead -->

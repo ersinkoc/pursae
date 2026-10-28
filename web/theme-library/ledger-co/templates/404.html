@@ -1,0 +1,10 @@
+{{template "header" .}}
+<main id="main" class="site-main site-main--404" tabindex="-1">
+	<section class="error-404 not-found wrap wrap--content">
+		<p class="error-404__code" aria-hidden="true">404</p>
+		<h1 class="page-title">This page is not on the books.</h1>
+		<p>The address may have changed or the page was retired. Search our site or return to the <a href="{{.HomeURL}}">home page</a>.</p>
+		{{template "searchform" .}}
+	</section><!-- .error-404 -->
+</main>
+{{template "footer" .}}

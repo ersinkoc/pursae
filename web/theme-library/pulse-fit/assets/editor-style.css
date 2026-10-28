@@ -1,0 +1,13 @@
+/* Pulse Fit — block editor styles (the light version, for readable editing) */
+@font-face { font-family: "Bebas Neue"; src: url("fonts/bebas-neue-400.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Barlow"; src: url("fonts/barlow-400.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Barlow"; src: url("fonts/barlow-600.woff2") format("woff2"); font-weight: 600; font-display: swap; }
+body { font-family: "Barlow", -apple-system, sans-serif; font-size: 18px; line-height: 1.65; color: #2c2e33; }
+h1, h2, h3, h4 { font-family: "Bebas Neue", Impact, sans-serif; font-weight: 400; text-transform: uppercase; line-height: .98; color: #0b0b0c; }
+a { color: #0b0b0c; text-decoration-color: #c6f432; text-decoration-thickness: 3px; }
+blockquote { border-left: 6px solid #c6f432; background: #f2f3f0; padding: 16px 22px; font-weight: 600; }
+.wp-block-button__link { background: #c6f432; color: #0b0b0c; border-radius: 0; font-weight: 600; text-transform: uppercase; letter-spacing: .12em; }
+.workout { list-style: none; padding: 0; } .workout li { padding: 12px 16px; margin-bottom: 8px; background: #f2f3f0; border-left: 4px solid #c6f432; }
+.schedule th { background: #0b0b0c; color: #fff; } .schedule td { border: 1px solid #dcdfd8; }
+.has-lime-background-color { background-color: #c6f432; } .has-hot-background-color { background-color: #ff4d2e; }
+.has-black-background-color { background-color: #0b0b0c; } .has-graphite-background-color { background-color: #1c1d21; }

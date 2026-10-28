@@ -1,0 +1,30 @@
+{{template "header" .}}
+<main id="main" class="site-main site-main--front" tabindex="-1">
+{{with .Post}}{{$img := theme_mod $ "hero_image"}}{{if not $img}}{{$img = .ThumbnailURL}}{{end}}
+	<section class="hero{{if $img}} hero--has-media{{end}}" aria-label="Welcome">
+		<div class="wrap hero__inner">
+			<div class="hero__text">
+				<p class="pill">{{with $.Description}}{{.}}{{else}}Home baking &amp; everyday cooking{{end}}</p>
+				<h1 class="hero__title">{{with theme_mod $ "hero_heading"}}{{.}}{{else}}{{$.Post.Title}}{{end}}</h1>
+				{{with theme_mod $ "hero_text"}}<p class="hero__lead">{{.}}</p>{{end}}
+				<div class="hero__actions">
+					{{with theme_mod $ "hero_button_label"}}<a class="button" href="{{theme_mod $ "hero_button_url"}}">{{.}}</a>{{end}}
+					<form role="search" method="get" class="hero-search" action="{{$.HomeURL}}">
+						<label for="hero-search-field" class="screen-reader-text">Search recipes</label>
+						<input type="search" id="hero-search-field" name="s" placeholder="Try &ldquo;lemon&rdquo; or &ldquo;bread&rdquo;" />
+						<button type="submit" class="button button--dark">Search</button>
+					</form>
+				</div>
+			</div>
+			{{if $img}}<div class="hero__media"><img src="{{$img}}" alt="" /><span class="hero__sticker" aria-hidden="true">fresh<br>today</span></div>{{end}}
+		</div>
+	</section>
+	<article id="post-{{.ID}}" class="{{.Class}} front-entry">
+		<div class="entry-content front-content">
+			{{.Content}}
+		</div>
+		{{with .EditLink}}<footer class="wrap entry-footer"><span class="edit-link">{{.}}</span></footer>{{end}}
+	</article>
+{{end}}
+</main><!-- #main -->
+{{template "footer" .}}

@@ -1,0 +1,24 @@
+{{template "header" .}}
+<main id="main" class="site-main site-main--front" tabindex="-1">
+{{with .Post}}{{$img := theme_mod $ "hero_image"}}{{if not $img}}{{$img = .ThumbnailURL}}{{end}}
+	<section class="hero{{if $img}} hero--has-media{{end}}" aria-label="Welcome">
+		{{if $img}}<img class="hero__bg" src="{{$img}}" alt="" />{{end}}
+		<div class="hero__inner wrap">
+			<p class="hero__ornament" aria-hidden="true">&#10086;</p>
+			<h1 class="hero__title">{{with theme_mod $ "hero_heading"}}{{.}}{{else}}{{$.Post.Title}}{{end}}</h1>
+			{{with theme_mod $ "hero_text"}}<p class="hero__lead">{{.}}</p>{{end}}
+			<div class="hero__actions">
+				{{with theme_mod $ "reservation_label"}}<a class="button" href="{{theme_mod $ "reservation_url"}}">{{.}}</a>{{end}}
+				{{with theme_mod $ "menu_button_label"}}<a class="button button--ghost" href="{{theme_mod $ "menu_button_url"}}">{{.}}</a>{{end}}
+			</div>
+		</div>
+	</section>
+	<article id="post-{{.ID}}" class="{{.Class}} front-entry">
+		<div class="entry-content front-content">
+			{{.Content}}
+		</div>
+		{{with .EditLink}}<footer class="wrap entry-footer"><span class="edit-link">{{.}}</span></footer>{{end}}
+	</article>
+{{end}}
+</main><!-- #main -->
+{{template "footer" .}}

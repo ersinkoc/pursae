@@ -1,0 +1,19 @@
+{{template "header" .}}
+<div class="page-intro">
+	<div class="wrap">
+		<p class="pill">Browse</p>
+		<h1 class="page-title">{{.ArchiveTitle}}</h1>
+		{{with .ArchiveDesc}}<div class="archive-description">{{.}}</div>{{end}}
+	</div>
+</div>
+<div class="wrap layout">
+	<main id="main" class="site-main" tabindex="-1">
+		{{if .Posts}}<div class="post-list">
+			{{range .Posts}}{{template "content" .}}
+			{{end}}
+		</div>
+		{{.Pagination}}{{else}}{{template "content-none" .}}{{end}}
+	</main><!-- #main -->
+	{{template "sidebar" .}}
+</div>
+{{template "footer" .}}

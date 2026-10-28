@@ -1,0 +1,24 @@
+	<footer id="colophon" class="site-footer">
+		<div class="footer-cta">
+			<div class="wrap footer-cta__inner">
+				<p class="footer-cta__title">{{with theme_mod . "footer_slogan"}}{{.}}{{else}}No excuses. Just results.{{end}}</p>
+				{{with theme_mod . "cta_label"}}<a class="button" href="{{theme_mod $ "cta_url"}}">{{.}}</a>{{end}}
+			</div>
+		</div>
+		<div class="wrap site-footer__grid">
+			<div class="footer-brand">
+				<p class="footer-brand__name">{{.SiteName}}</p>
+				{{with .Description}}<p>{{.}}</p>{{end}}
+				{{if has_nav_menu . "social"}}<nav class="social-navigation" aria-label="Social links">{{nav_menu . "social"}}</nav>{{end}}
+			</div>
+			{{if is_active_sidebar . "footer-1"}}<div class="footer-widgets">{{dynamic_sidebar . "footer-1"}}</div>{{end}}
+		</div>
+		<div class="wrap site-info">
+			<p class="site-info__text">{{.PrivacyLink}}<span>{{with theme_mod . "footer_text"}}{{.}}{{else}}&copy; {{$.SiteName}}. Train hard, rest well.{{end}}</span><span class="site-info__credit">Powered by <a href="https://github.com/boracomet/wordpress-go">WordPress Go</a></span></p>
+		</div>
+	</footer><!-- #colophon -->
+</div><!-- #page -->
+
+{{.Footer}}{{.AdminBar}}
+</body>
+</html>

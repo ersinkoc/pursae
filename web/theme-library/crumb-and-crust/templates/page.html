@@ -1,0 +1,6 @@
+{{template "header" .}}
+<main id="main" class="site-main site-main--page" tabindex="-1">
+	{{template "content-page" .Post}}
+	{{if .Post.CommentCount}}<div class="wrap wrap--content">{{template "comments" .}}</div>{{end}}
+</main><!-- #main -->
+{{template "footer" .}}

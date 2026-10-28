@@ -1,0 +1,14 @@
+/* Keystone Estates — block editor styles */
+@font-face { font-family: "Manrope"; src: url("fonts/manrope-400-700.woff2") format("woff2"); font-weight: 400 700; font-display: swap; }
+body { font-family: "Manrope", -apple-system, sans-serif; font-size: 17px; line-height: 1.7; color: #3d4542; }
+h1, h2, h3, h4 { font-family: "Manrope", -apple-system, sans-serif; font-weight: 700; letter-spacing: -.025em; color: #1d2321; line-height: 1.15; }
+a { color: #1f4d3a; }
+blockquote { border-left: 3px solid #b9975b; padding-left: 22px; }
+.wp-block-button__link { background: #1f4d3a; color: #fff; border-radius: 10px; font-weight: 700; }
+.listing-price { font-size: 2rem; font-weight: 700; color: #1f4d3a; }
+.property-facts { list-style: none; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; padding: 0; background: #e3ded3; border: 1px solid #e3ded3; border-radius: 12px; overflow: hidden; }
+.property-facts li { background: #fff; padding: 12px 14px; font-weight: 700; }
+.property-facts li strong { display: block; font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; color: #66706b; }
+.has-forest-background-color { background-color: #1f4d3a; } .has-stone-background-color { background-color: #f2efe8; }
+.has-sage-background-color { background-color: #8fa98f; } .has-sand-background-color { background-color: #b9975b; }
+.has-charcoal-background-color { background-color: #1d2321; }

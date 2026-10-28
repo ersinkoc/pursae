@@ -1,0 +1,437 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Crumb & Crust",
+  "blogdescription": "Home baking & everyday cooking",
+  "posts_per_page": 9
+ },
+ "categories": [
+  {
+   "slug": "breakfast",
+   "name": "Breakfast",
+   "description": "Slow weekend mornings and quick weekday starts."
+  },
+  {
+   "slug": "baking",
+   "name": "Baking",
+   "description": "Bread, cakes and everything that makes the kitchen smell wonderful."
+  },
+  {
+   "slug": "mains",
+   "name": "Mains",
+   "description": "Suppers for every night of the week."
+  },
+  {
+   "slug": "desserts",
+   "name": "Desserts",
+   "description": "Pies, cookies and the occasional showstopper."
+  },
+  {
+   "slug": "quick-easy",
+   "name": "Quick & Easy",
+   "description": "On the table in thirty minutes or less."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "vegetarian",
+   "name": "Vegetarian"
+  },
+  {
+   "slug": "make-ahead",
+   "name": "Make ahead"
+  },
+  {
+   "slug": "one-bowl",
+   "name": "One bowl"
+  },
+  {
+   "slug": "summer",
+   "name": "Summer"
+  },
+  {
+   "slug": "chocolate",
+   "name": "Chocolate"
+  },
+  {
+   "slug": "bread",
+   "name": "Bread"
+  },
+  {
+   "slug": "citrus",
+   "name": "Citrus"
+  }
+ ],
+ "media": [
+  {
+   "id": "hero",
+   "file": "demo/images/hero.jpg",
+   "alt": "A bright table seen from above with bowls of salad, granola, lemons and a jar of honey",
+   "caption": ""
+  },
+  {
+   "id": "breakfast",
+   "file": "demo/images/breakfast.jpg",
+   "alt": "A tall stack of pancakes with berries and syrup",
+   "caption": ""
+  },
+  {
+   "id": "baking",
+   "file": "demo/images/baking.jpg",
+   "alt": "A scored loaf of bread on a wooden board",
+   "caption": ""
+  },
+  {
+   "id": "mains",
+   "file": "demo/images/mains.jpg",
+   "alt": "A bowl of roasted vegetables and grains",
+   "caption": ""
+  },
+  {
+   "id": "desserts",
+   "file": "demo/images/desserts.jpg",
+   "alt": "A cherry pie with a golden lattice crust",
+   "caption": ""
+  },
+  {
+   "id": "quick",
+   "file": "demo/images/quick.jpg",
+   "alt": "Two slices of toast, one with smashed avocado and one with a fried egg",
+   "caption": ""
+  },
+  {
+   "id": "salad",
+   "file": "demo/images/salad.jpg",
+   "alt": "A bowl of colourful chopped salad",
+   "caption": ""
+  },
+  {
+   "id": "soup",
+   "file": "demo/images/soup.jpg",
+   "alt": "A bowl of orange tomato soup with croutons",
+   "caption": ""
+  },
+  {
+   "id": "cookies",
+   "file": "demo/images/cookies.jpg",
+   "alt": "Chocolate chip cookies scattered on a peach background",
+   "caption": ""
+  },
+  {
+   "id": "lemon-cake",
+   "file": "demo/images/lemon-cake.jpg",
+   "alt": "A round lemon drizzle cake topped with a lemon slice",
+   "caption": ""
+  },
+  {
+   "id": "focaccia",
+   "file": "demo/images/focaccia.jpg",
+   "alt": "A tray of focaccia with tomatoes and rosemary",
+   "caption": ""
+  },
+  {
+   "id": "granola",
+   "file": "demo/images/granola.jpg",
+   "alt": "A bowl of granola with berries",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Recipes worth making twice",
+   "content": "<!-- wp:group {\"align\":\"full\",\"className\":\"section-tiles\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-tiles\"><!-- wp:heading {\"className\":\"section-title\",\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center section-title\">What are you in the mood for?</h2><!-- /wp:heading --><!-- wp:columns {\"className\":\"cat-tiles\",\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide cat-tiles\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"cat-tile\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group cat-tile\"><!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:breakfast}}\" alt=\"Pancakes\"/></figure><!-- /wp:image --><!-- wp:paragraph --><p><a href=\"{{category:breakfast}}\">Breakfast</a><span class=\"count\">Slow mornings</span></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"cat-tile\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group cat-tile\"><!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:baking}}\" alt=\"Bread loaf\"/></figure><!-- /wp:image --><!-- wp:paragraph --><p><a href=\"{{category:baking}}\">Baking</a><span class=\"count\">Bread &amp; cakes</span></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"cat-tile\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group cat-tile\"><!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:mains}}\" alt=\"Vegetable bowl\"/></figure><!-- /wp:image --><!-- wp:paragraph --><p><a href=\"{{category:mains}}\">Mains</a><span class=\"count\">Weeknight suppers</span></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"cat-tile\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group cat-tile\"><!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:desserts}}\" alt=\"Cherry pie\"/></figure><!-- /wp:image --><!-- wp:paragraph --><p><a href=\"{{category:desserts}}\">Desserts</a><span class=\"count\">Pies &amp; cookies</span></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"cat-tile\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group cat-tile\"><!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:quick}}\" alt=\"Toast with avocado and egg\"/></figure><!-- /wp:image --><!-- wp:paragraph --><p><a href=\"{{category:quick-easy}}\">Quick &amp; Easy</a><span class=\"count\">Under 30 minutes</span></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"section-latest\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-latest\"><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">Fresh from the oven</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":6,\"displayPostContent\":true,\"excerptLength\":16,\"displayPostDate\":true,\"postLayout\":\"grid\",\"columns\":3,\"align\":\"wide\"} /--><!-- wp:buttons {\"layout\":{\"type\":\"flex\",\"justifyContent\":\"center\"}} --><div class=\"wp-block-buttons is-content-justification-center\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:recipes}}\">See every recipe</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"section-about\",\"backgroundColor\":\"mint\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-about has-mint-background-color has-background\"><!-- wp:media-text {\"align\":\"wide\",\"mediaType\":\"image\"} --><div class=\"wp-block-media-text alignwide is-stacked-on-mobile\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:quick}}\" alt=\"Two slices of toast with toppings\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:paragraph {\"className\":\"pill\"} --><p class=\"pill\">Hello!</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">I cook the food my family actually eats</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Crumb &amp; Crust started as a notebook of recipes I made again and again. Every recipe here is tested at least three times in a small home kitchen, with ordinary pans and an oven that runs a little hot.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:about}}\">More about me</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div></div><!-- /wp:media-text --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"wide\",\"className\":\"newsletter\",\"backgroundColor\":\"butter\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignwide newsletter has-butter-background-color has-background\"><!-- wp:heading {\"className\":\"section-title\",\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center section-title\">A recipe in your inbox every Friday</h2><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"has-text-align-center\",\"align\":\"center\"} --><p class=\"has-text-align-center has-text-align-center\">One new recipe, one kitchen tip, nothing else. Unsubscribe whenever you like.</p><!-- /wp:paragraph --><!-- wp:buttons {\"layout\":{\"type\":\"flex\",\"justifyContent\":\"center\"}} --><div class=\"wp-block-buttons is-content-justification-center\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Sign up for the letter</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->\n\n<!-- wp:spacer {\"height\":\"72px\"} --><div style=\"height:72px\" aria-hidden=\"true\" class=\"wp-block-spacer\"></div><!-- /wp:spacer -->",
+   "featured_media": "hero",
+   "front_page": true
+  },
+  {
+   "slug": "recipes",
+   "title": "Recipes",
+   "posts_page": true
+  },
+  {
+   "slug": "about",
+   "title": "About me",
+   "content": "<!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">Hello, and welcome to my kitchen. I am a home cook, not a chef, and that is the whole point: these recipes are written for real weeknights, small budgets and people who are learning as they go.</p><!-- /wp:paragraph -->\n\n<!-- wp:media-text {\"align\":\"wide\",\"mediaType\":\"image\"} --><div class=\"wp-block-media-text alignwide is-stacked-on-mobile\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:hero}}\" alt=\"A bright table set with bowls of food\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:heading --><h2 class=\"wp-block-heading\">How I test recipes</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Every recipe is cooked at least three times.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Weights and cups are both given and checked.</li><!-- /wp:list-item --><!-- wp:list-item --><li>If a step can be skipped, I say so.</li><!-- /wp:list-item --><!-- wp:list-item --><li>If it went wrong for me once, I tell you how to avoid it.</li><!-- /wp:list-item --></ul><!-- /wp:list --></div></div><!-- /wp:media-text -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">A few favourites to start with</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><a href=\"{{post:no-knead-overnight-bread}}\">No-knead overnight bread</a>, for the bread-nervous.</li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{post:sunday-lemon-drizzle-cake}}\">Sunday lemon drizzle cake</a>, for any day that needs it.</li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{post:maple-pecan-granola}}\">Maple pecan granola</a>, for calmer mornings.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Cooking is not about being perfect. It is about feeding people you love, including yourself.</p><!-- /wp:paragraph --></blockquote><!-- /wp:quote -->"
+  },
+  {
+   "slug": "kitchen-notes",
+   "title": "Kitchen notes",
+   "content": "<!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">Handy numbers I come back to again and again. Print it and stick it inside a cupboard door.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Oven temperatures</h2><!-- /wp:heading -->\n\n<!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Description</th><th>°C</th><th>Fan °C</th><th>°F</th></tr></thead><tbody><tr><td>Low</td><td>150</td><td>130</td><td>300</td></tr><tr><td>Moderate</td><td>180</td><td>160</td><td>350</td></tr><tr><td>Hot</td><td>200</td><td>180</td><td>400</td></tr><tr><td>Very hot</td><td>220</td><td>200</td><td>425</td></tr></tbody></table></figure><!-- /wp:table -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Cups to grams</h2><!-- /wp:heading -->\n\n<!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Ingredient</th><th>1 cup</th></tr></thead><tbody><tr><td>Plain flour</td><td>125 g</td></tr><tr><td>Caster sugar</td><td>200 g</td></tr><tr><td>Brown sugar, packed</td><td>220 g</td></tr><tr><td>Butter</td><td>225 g</td></tr><tr><td>Rolled oats</td><td>90 g</td></tr></tbody></table></figure><!-- /wp:table -->\n\n<!-- wp:paragraph {\"className\":\"recipe-tip\"} --><p class=\"recipe-tip\">Weighing is always more accurate than cups, especially for flour.</p><!-- /wp:paragraph -->",
+   "parent": "about"
+  },
+  {
+   "slug": "contact",
+   "title": "Say hello",
+   "content": "<!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">Questions about a recipe, ideas for a new one, or just want to show me your bake? I read every message.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Email</h3><!-- /wp:heading --><!-- wp:paragraph --><p><a href=\"mailto:hello@crumb.example\">hello@crumb.example</a></p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">The Friday letter</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Reply to any letter to say hello, or ask to be added.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:paragraph --><p>I cannot give medical or allergy advice, but I am always happy to suggest swaps that have worked for readers.</p><!-- /wp:paragraph -->\n\n<!-- wp:image {\"sizeSlug\":\"large\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:cookies}}\" alt=\"Chocolate chip cookies\"/></figure><!-- /wp:image -->"
+  }
+ ],
+ "posts": [
+  {
+   "slug": "sunday-lemon-drizzle-cake",
+   "title": "Sunday lemon drizzle cake",
+   "date": "2026-10-19T10:00:00",
+   "categories": [
+    "desserts",
+    "baking"
+   ],
+   "tags": [
+    "citrus",
+    "one-bowl"
+   ],
+   "featured_media": "lemon-cake",
+   "sticky": true,
+   "excerpt": "Soft, sharp and sticky: a one-bowl loaf cake soaked in lemon syrup while it is still warm.",
+   "content": "<!-- wp:paragraph --><p>Some cakes are for celebrations. This one is for an ordinary Sunday that needs a little sunshine. It comes together in one bowl, bakes in under an hour, and the crackly sugar crust on top is the best bit.</p><!-- /wp:paragraph -->\n\n<!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"#recipe\">Jump to recipe ↓</a></div><!-- /wp:button --></div><!-- /wp:buttons -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Why it works</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Melted butter keeps the crumb tender and means no creaming.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Yogurt adds moisture and a gentle tang.</li><!-- /wp:list-item --><!-- wp:list-item --><li>The syrup goes on while the cake is hot, so it soaks right in.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Poke more holes than you think you need. Then poke a few more.</p><!-- /wp:paragraph --><cite>Kitchen note</cite></blockquote><!-- /wp:quote -->\n\n<!-- wp:group {\"anchor\":\"recipe\",\"className\":\"recipe-card\",\"layout\":{\"type\":\"constrained\"}} --><div id=\"recipe\" class=\"wp-block-group recipe-card\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Lemon drizzle cake</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"recipe-facts\"} --><ul class=\"wp-block-list recipe-facts\"><!-- wp:list-item --><li><strong>Prep</strong>15 min</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Bake</strong>45 min</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Serves</strong>10 slices</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Keeps</strong>4 days</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column {\"width\":\"40%\"} --><div class=\"wp-block-column\" style=\"flex-basis:40%\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Ingredients</h3><!-- /wp:heading --><!-- wp:list {\"className\":\"ingredients\"} --><ul class=\"wp-block-list ingredients\"><!-- wp:list-item --><li>175 g butter, melted</li><!-- /wp:list-item --><!-- wp:list-item --><li>175 g caster sugar</li><!-- /wp:list-item --><!-- wp:list-item --><li>3 eggs</li><!-- /wp:list-item --><!-- wp:list-item --><li>150 g plain yogurt</li><!-- /wp:list-item --><!-- wp:list-item --><li>Zest of 2 lemons</li><!-- /wp:list-item --><!-- wp:list-item --><li>225 g self-raising flour</li><!-- /wp:list-item --><!-- wp:list-item --><li>Pinch of salt</li><!-- /wp:list-item --><!-- wp:list-item --><li><em>For the drizzle:</em> juice of 2 lemons and 100 g granulated sugar</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column {\"width\":\"60%\"} --><div class=\"wp-block-column\" style=\"flex-basis:60%\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Method</h3><!-- /wp:heading --><!-- wp:list {\"ordered\":true,\"className\":\"steps\"} --><ol class=\"wp-block-list steps\"><!-- wp:list-item --><li>Heat the oven to 180°C and line a loaf tin.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Whisk butter, sugar, eggs, yogurt and zest in one bowl.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Fold in the flour and salt until just combined.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Bake for 45 minutes, until a skewer comes out clean.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Poke holes all over, stir the drizzle and spoon it over the hot cake.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Cool completely in the tin before slicing.</li><!-- /wp:list-item --></ol><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:paragraph {\"className\":\"recipe-tip\"} --><p class=\"recipe-tip\">Use granulated sugar for the drizzle, not caster; the bigger crystals give the crunchy top.</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "comments": [
+    {
+     "author": "Rosa T.",
+     "email": "rosa@example.com",
+     "content": "Made this twice this week. The second one didn't survive the evening!",
+     "date": "2026-10-20T19:22:00"
+    },
+    {
+     "author": "Sam W.",
+     "email": "sam@example.com",
+     "content": "Could I use oranges instead? My kids aren't keen on lemon.",
+     "date": "2026-10-21T08:04:00"
+    }
+   ],
+   "format": "standard"
+  },
+  {
+   "slug": "fluffy-buttermilk-pancakes",
+   "title": "Fluffy buttermilk pancakes",
+   "date": "2026-10-11T08:30:00",
+   "categories": [
+    "breakfast"
+   ],
+   "tags": [
+    "vegetarian"
+   ],
+   "featured_media": "breakfast",
+   "excerpt": "Tall, tender pancakes that taste like a diner breakfast, with a trick for keeping a whole batch warm.",
+   "content": "<!-- wp:paragraph --><p>The secret to tall pancakes is not a special flour or a fancy pan. It is a thick batter, a moderate heat and a little patience before you flip.</p><!-- /wp:paragraph -->\n\n<!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"#recipe\">Jump to recipe ↓</a></div><!-- /wp:button --></div><!-- /wp:buttons -->\n\n<!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:granola}}\" alt=\"A bowl of granola with berries\"/><figcaption class=\"wp-element-caption\">Serve with berries, yogurt or a handful of granola for crunch.</figcaption></figure><!-- /wp:image -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Three things to remember</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Do not overmix; a few lumps keep the pancakes light.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Let the batter rest for five minutes while the pan heats.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Flip when bubbles pop and stay open, not before.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:group {\"anchor\":\"recipe\",\"className\":\"recipe-card\",\"layout\":{\"type\":\"constrained\"}} --><div id=\"recipe\" class=\"wp-block-group recipe-card\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Buttermilk pancakes</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"recipe-facts\"} --><ul class=\"wp-block-list recipe-facts\"><!-- wp:list-item --><li><strong>Prep</strong>10 min</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Cook</strong>20 min</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Makes</strong>12 pancakes</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column {\"width\":\"40%\"} --><div class=\"wp-block-column\" style=\"flex-basis:40%\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Ingredients</h3><!-- /wp:heading --><!-- wp:list {\"className\":\"ingredients\"} --><ul class=\"wp-block-list ingredients\"><!-- wp:list-item --><li>250 g plain flour</li><!-- /wp:list-item --><!-- wp:list-item --><li>2 tbsp sugar</li><!-- /wp:list-item --><!-- wp:list-item --><li>1 tsp baking powder</li><!-- /wp:list-item --><!-- wp:list-item --><li>½ tsp bicarbonate of soda</li><!-- /wp:list-item --><!-- wp:list-item --><li>½ tsp salt</li><!-- /wp:list-item --><!-- wp:list-item --><li>400 ml buttermilk</li><!-- /wp:list-item --><!-- wp:list-item --><li>2 eggs</li><!-- /wp:list-item --><!-- wp:list-item --><li>40 g butter, melted</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column {\"width\":\"60%\"} --><div class=\"wp-block-column\" style=\"flex-basis:60%\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Method</h3><!-- /wp:heading --><!-- wp:list {\"ordered\":true,\"className\":\"steps\"} --><ol class=\"wp-block-list steps\"><!-- wp:list-item --><li>Whisk the dry ingredients in a large bowl.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Whisk buttermilk, eggs and butter in a jug.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Pour the wet into the dry and stir briefly.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Cook ladlefuls in a buttered pan over medium heat, about 2 minutes a side.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Keep warm in a low oven while you cook the rest.</li><!-- /wp:list-item --></ol><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:paragraph {\"className\":\"recipe-tip\"} --><p class=\"recipe-tip\">No buttermilk? Stir a tablespoon of lemon juice into milk and wait five minutes.</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "comments": [
+    {
+     "author": "Jo P.",
+     "email": "jo@example.com",
+     "content": "The oven trick saved our Saturday breakfast. Everyone ate together for once.",
+     "date": "2026-10-12T10:10:00"
+    }
+   ],
+   "format": "standard"
+  },
+  {
+   "slug": "no-knead-overnight-bread",
+   "title": "No-knead overnight bread",
+   "date": "2026-10-02T17:00:00",
+   "categories": [
+    "baking"
+   ],
+   "tags": [
+    "bread",
+    "make-ahead"
+   ],
+   "featured_media": "baking",
+   "excerpt": "Four ingredients, five minutes of work and a long, lazy rise. The crust crackles as it cools.",
+   "content": "<!-- wp:paragraph --><p>If you have ever been nervous about bread, start here. Time does the kneading for you: the dough rises slowly overnight and bakes in a hot covered pot, which traps steam and gives a bakery-style crust.</p><!-- /wp:paragraph -->\n\n<!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"#recipe\">Jump to recipe ↓</a></div><!-- /wp:button --></div><!-- /wp:buttons -->\n\n<!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":4} --><h4 class=\"wp-block-heading\">You need</h4><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>A large bowl</li><!-- /wp:list-item --><!-- wp:list-item --><li>A lidded casserole pot</li><!-- /wp:list-item --><!-- wp:list-item --><li>Baking paper</li><!-- /wp:list-item --><!-- wp:list-item --><li>A sharp knife for scoring</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":4} --><h4 class=\"wp-block-heading\">Timeline</h4><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Evening: mix (5 minutes)</li><!-- /wp:list-item --><!-- wp:list-item --><li>Next morning: shape (5 minutes)</li><!-- /wp:list-item --><!-- wp:list-item --><li>Bake: 45 minutes</li><!-- /wp:list-item --><!-- wp:list-item --><li>Cool: 1 hour, honestly</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:group {\"anchor\":\"recipe\",\"className\":\"recipe-card\",\"layout\":{\"type\":\"constrained\"}} --><div id=\"recipe\" class=\"wp-block-group recipe-card\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Overnight crusty loaf</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"recipe-facts\"} --><ul class=\"wp-block-list recipe-facts\"><!-- wp:list-item --><li><strong>Prep</strong>10 min</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Rise</strong>12–18 h</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Bake</strong>45 min</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Makes</strong>1 loaf</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column {\"width\":\"40%\"} --><div class=\"wp-block-column\" style=\"flex-basis:40%\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Ingredients</h3><!-- /wp:heading --><!-- wp:list {\"className\":\"ingredients\"} --><ul class=\"wp-block-list ingredients\"><!-- wp:list-item --><li>500 g strong white flour</li><!-- /wp:list-item --><!-- wp:list-item --><li>10 g salt</li><!-- /wp:list-item --><!-- wp:list-item --><li>2 g instant yeast (½ tsp)</li><!-- /wp:list-item --><!-- wp:list-item --><li>380 ml lukewarm water</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column {\"width\":\"60%\"} --><div class=\"wp-block-column\" style=\"flex-basis:60%\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Method</h3><!-- /wp:heading --><!-- wp:list {\"ordered\":true,\"className\":\"steps\"} --><ol class=\"wp-block-list steps\"><!-- wp:list-item --><li>Mix everything into a shaggy dough, cover and leave overnight at room temperature.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Tip onto a floured surface and fold into a round.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Rest on baking paper for 1 hour while the pot heats in a 240°C oven.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Score the top, lower it into the pot, cover and bake for 30 minutes.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Uncover and bake 15 minutes more until deep golden.</li><!-- /wp:list-item --></ol><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:paragraph {\"className\":\"recipe-tip\"} --><p class=\"recipe-tip\">Knock on the bottom of the loaf: a hollow sound means it is done.</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "format": "standard"
+  },
+  {
+   "slug": "rainbow-chopped-salad-tahini",
+   "title": "Rainbow chopped salad with lemon tahini",
+   "date": "2026-09-24T12:30:00",
+   "categories": [
+    "mains",
+    "quick-easy"
+   ],
+   "tags": [
+    "vegetarian",
+    "summer"
+   ],
+   "featured_media": "salad",
+   "excerpt": "Everything chopped small, so each forkful has a bit of everything, with a creamy dressing that keeps for a week.",
+   "content": "<!-- wp:paragraph --><p>A chopped salad is the answer to a fridge full of odds and ends. Cut everything to the size of a chickpea, add something crunchy and something salty, then toss it with a dressing you will want to put on everything.</p><!-- /wp:paragraph -->\n\n<!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"#recipe\">Jump to recipe ↓</a></div><!-- /wp:button --></div><!-- /wp:buttons -->\n\n<!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Swap this</th><th>For this</th></tr></thead><tbody><tr><td>Chickpeas</td><td>White beans or lentils</td></tr><tr><td>Feta</td><td>Toasted halloumi</td></tr><tr><td>Tahini</td><td>Peanut butter thinned with lime</td></tr><tr><td>Cucumber</td><td>Fennel or celery</td></tr></tbody></table></figure><!-- /wp:table -->\n\n<!-- wp:group {\"anchor\":\"recipe\",\"className\":\"recipe-card\",\"layout\":{\"type\":\"constrained\"}} --><div id=\"recipe\" class=\"wp-block-group recipe-card\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Rainbow chopped salad</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"recipe-facts\"} --><ul class=\"wp-block-list recipe-facts\"><!-- wp:list-item --><li><strong>Prep</strong>20 min</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Cook</strong>None</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Serves</strong>4</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column {\"width\":\"40%\"} --><div class=\"wp-block-column\" style=\"flex-basis:40%\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Ingredients</h3><!-- /wp:heading --><!-- wp:list {\"className\":\"ingredients\"} --><ul class=\"wp-block-list ingredients\"><!-- wp:list-item --><li>1 tin chickpeas, drained</li><!-- /wp:list-item --><!-- wp:list-item --><li>1 red pepper</li><!-- /wp:list-item --><!-- wp:list-item --><li>½ cucumber</li><!-- /wp:list-item --><!-- wp:list-item --><li>200 g cherry tomatoes</li><!-- /wp:list-item --><!-- wp:list-item --><li>2 carrots</li><!-- /wp:list-item --><!-- wp:list-item --><li>A handful of parsley</li><!-- /wp:list-item --><!-- wp:list-item --><li>100 g feta</li><!-- /wp:list-item --><!-- wp:list-item --><li><em>Dressing:</em> 3 tbsp tahini, 1 lemon, 1 small garlic clove, water</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column {\"width\":\"60%\"} --><div class=\"wp-block-column\" style=\"flex-basis:60%\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Method</h3><!-- /wp:heading --><!-- wp:list {\"ordered\":true,\"className\":\"steps\"} --><ol class=\"wp-block-list steps\"><!-- wp:list-item --><li>Chop all the vegetables small and tip into a big bowl.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Add the chickpeas, parsley and crumbled feta.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Whisk tahini, lemon juice and grated garlic, adding water until pourable.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Toss everything together just before serving.</li><!-- /wp:list-item --></ol><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:paragraph {\"className\":\"recipe-tip\"} --><p class=\"recipe-tip\">The dressing keeps for a week in the fridge; loosen it with a splash of water.</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "format": "standard"
+  },
+  {
+   "slug": "roasted-tomato-red-pepper-soup",
+   "title": "Roasted tomato and red pepper soup",
+   "date": "2026-09-15T18:00:00",
+   "categories": [
+    "mains"
+   ],
+   "tags": [
+    "vegetarian",
+    "make-ahead"
+   ],
+   "featured_media": "soup",
+   "excerpt": "Roasting first gives this soup a deep, sweet flavour. Freeze a batch for cold evenings.",
+   "content": "<!-- wp:paragraph --><p>Late summer tomatoes and peppers go into the oven with garlic and onions until they collapse and char at the edges. Blitzed with stock, they make a soup that tastes like it took all day.</p><!-- /wp:paragraph -->\n\n<!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"#recipe\">Jump to recipe ↓</a></div><!-- /wp:button --></div><!-- /wp:buttons -->\n\n<!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:focaccia}}\" alt=\"A tray of focaccia with tomatoes and rosemary\"/><figcaption class=\"wp-element-caption\">Serve with focaccia for dunking.</figcaption></figure><!-- /wp:image -->\n\n<!-- wp:group {\"anchor\":\"recipe\",\"className\":\"recipe-card\",\"layout\":{\"type\":\"constrained\"}} --><div id=\"recipe\" class=\"wp-block-group recipe-card\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Roasted tomato soup</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"recipe-facts\"} --><ul class=\"wp-block-list recipe-facts\"><!-- wp:list-item --><li><strong>Prep</strong>15 min</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Roast</strong>40 min</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Serves</strong>4–6</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Freezes</strong>3 months</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column {\"width\":\"40%\"} --><div class=\"wp-block-column\" style=\"flex-basis:40%\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Ingredients</h3><!-- /wp:heading --><!-- wp:list {\"className\":\"ingredients\"} --><ul class=\"wp-block-list ingredients\"><!-- wp:list-item --><li>1 kg ripe tomatoes, halved</li><!-- /wp:list-item --><!-- wp:list-item --><li>2 red peppers, chunked</li><!-- /wp:list-item --><!-- wp:list-item --><li>1 red onion, quartered</li><!-- /wp:list-item --><!-- wp:list-item --><li>4 garlic cloves</li><!-- /wp:list-item --><!-- wp:list-item --><li>3 tbsp olive oil</li><!-- /wp:list-item --><!-- wp:list-item --><li>700 ml vegetable stock</li><!-- /wp:list-item --><!-- wp:list-item --><li>Salt, pepper and a pinch of sugar</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column {\"width\":\"60%\"} --><div class=\"wp-block-column\" style=\"flex-basis:60%\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Method</h3><!-- /wp:heading --><!-- wp:list {\"ordered\":true,\"className\":\"steps\"} --><ol class=\"wp-block-list steps\"><!-- wp:list-item --><li>Toss the vegetables with oil and salt on a large tray.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Roast at 200°C for 40 minutes, until soft and charred in places.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Squeeze the garlic from its skins and tip everything into a pan with the stock.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Blend until smooth, season, and simmer for 5 minutes.</li><!-- /wp:list-item --></ol><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:paragraph {\"className\":\"recipe-tip\"} --><p class=\"recipe-tip\">A spoonful of yogurt and some toasted seeds make it feel special.</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "format": "standard"
+  },
+  {
+   "slug": "brown-butter-chocolate-chip-cookies",
+   "title": "Brown butter chocolate chip cookies",
+   "date": "2026-09-03T15:45:00",
+   "categories": [
+    "desserts",
+    "baking"
+   ],
+   "tags": [
+    "chocolate"
+   ],
+   "featured_media": "cookies",
+   "excerpt": "Nutty brown butter, two kinds of sugar and a rest in the fridge give chewy middles and crisp edges.",
+   "content": "<!-- wp:paragraph --><p>Browning butter takes five minutes and transforms a good cookie into a great one. The milk solids toast and smell of hazelnuts and toffee, and that flavour carries right through the dough.</p><!-- /wp:paragraph -->\n\n<!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"#recipe\">Jump to recipe ↓</a></div><!-- /wp:button --></div><!-- /wp:buttons -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">How to brown butter</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Melt the butter in a light-coloured pan so you can see it change.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Keep it bubbling over medium heat, swirling often.</li><!-- /wp:list-item --><!-- wp:list-item --><li>When it smells nutty and the specks turn amber, pour it into a bowl to stop the cooking.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:pullquote --><figure class=\"wp-block-pullquote\"><blockquote><p>Chill the dough. It is hard to wait, but the cookies will thank you.</p></blockquote></figure><!-- /wp:pullquote -->\n\n<!-- wp:group {\"anchor\":\"recipe\",\"className\":\"recipe-card\",\"layout\":{\"type\":\"constrained\"}} --><div id=\"recipe\" class=\"wp-block-group recipe-card\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Brown butter cookies</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"recipe-facts\"} --><ul class=\"wp-block-list recipe-facts\"><!-- wp:list-item --><li><strong>Prep</strong>20 min</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Chill</strong>1 h</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Bake</strong>11 min</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Makes</strong>16</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column {\"width\":\"40%\"} --><div class=\"wp-block-column\" style=\"flex-basis:40%\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Ingredients</h3><!-- /wp:heading --><!-- wp:list {\"className\":\"ingredients\"} --><ul class=\"wp-block-list ingredients\"><!-- wp:list-item --><li>170 g butter</li><!-- /wp:list-item --><!-- wp:list-item --><li>150 g light brown sugar</li><!-- /wp:list-item --><!-- wp:list-item --><li>50 g caster sugar</li><!-- /wp:list-item --><!-- wp:list-item --><li>1 egg plus 1 yolk</li><!-- /wp:list-item --><!-- wp:list-item --><li>1 tsp vanilla</li><!-- /wp:list-item --><!-- wp:list-item --><li>220 g plain flour</li><!-- /wp:list-item --><!-- wp:list-item --><li>½ tsp bicarbonate of soda</li><!-- /wp:list-item --><!-- wp:list-item --><li>½ tsp salt</li><!-- /wp:list-item --><!-- wp:list-item --><li>170 g dark chocolate, chopped</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column {\"width\":\"60%\"} --><div class=\"wp-block-column\" style=\"flex-basis:60%\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Method</h3><!-- /wp:heading --><!-- wp:list {\"ordered\":true,\"className\":\"steps\"} --><ol class=\"wp-block-list steps\"><!-- wp:list-item --><li>Brown the butter and let it cool for 10 minutes.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Whisk in both sugars, then the egg, yolk and vanilla.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Fold in the flour, soda, salt and chocolate.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Chill for at least an hour.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Bake balls of dough at 180°C for 10–12 minutes; they firm up as they cool.</li><!-- /wp:list-item --></ol><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->",
+   "comments": [
+    {
+     "author": "Mina R.",
+     "email": "mina@example.com",
+     "content": "The flaky salt on top is non-negotiable in our house.",
+     "date": "2026-09-05T21:30:00"
+    }
+   ],
+   "format": "standard"
+  },
+  {
+   "slug": "cherry-lattice-pie",
+   "title": "Cherry lattice pie",
+   "date": "2026-08-21T11:00:00",
+   "categories": [
+    "desserts"
+   ],
+   "tags": [
+    "summer"
+   ],
+   "featured_media": "desserts",
+   "excerpt": "An all-butter crust, a jammy cherry filling and a lattice that looks harder than it is.",
+   "content": "<!-- wp:paragraph --><p>A lattice top is mostly about confidence. Lay the strips, fold back every other one, add a cross strip, repeat. If it goes wrong, nobody minds: it is still pie.</p><!-- /wp:paragraph -->\n\n<!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"#recipe\">Jump to recipe ↓</a></div><!-- /wp:button --></div><!-- /wp:buttons -->\n\n<!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:cookies}}\" alt=\"Chocolate chip cookies on a peach background\"/><figcaption class=\"wp-element-caption\">Leftover pastry? Cut shapes, sprinkle with sugar and bake alongside.</figcaption></figure><!-- /wp:image -->\n\n<!-- wp:group {\"anchor\":\"recipe\",\"className\":\"recipe-card\",\"layout\":{\"type\":\"constrained\"}} --><div id=\"recipe\" class=\"wp-block-group recipe-card\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Cherry lattice pie</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"recipe-facts\"} --><ul class=\"wp-block-list recipe-facts\"><!-- wp:list-item --><li><strong>Prep</strong>45 min</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Chill</strong>1 h</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Bake</strong>55 min</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Serves</strong>8</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column {\"width\":\"40%\"} --><div class=\"wp-block-column\" style=\"flex-basis:40%\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Ingredients</h3><!-- /wp:heading --><!-- wp:list {\"className\":\"ingredients\"} --><ul class=\"wp-block-list ingredients\"><!-- wp:list-item --><li><em>Pastry:</em> 350 g plain flour, 225 g cold butter, pinch of salt, 6–8 tbsp iced water</li><!-- /wp:list-item --><!-- wp:list-item --><li>800 g pitted cherries (fresh or frozen)</li><!-- /wp:list-item --><!-- wp:list-item --><li>120 g sugar</li><!-- /wp:list-item --><!-- wp:list-item --><li>3 tbsp cornflour</li><!-- /wp:list-item --><!-- wp:list-item --><li>Juice of ½ lemon</li><!-- /wp:list-item --><!-- wp:list-item --><li>1 egg, beaten, for glazing</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column {\"width\":\"60%\"} --><div class=\"wp-block-column\" style=\"flex-basis:60%\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Method</h3><!-- /wp:heading --><!-- wp:list {\"ordered\":true,\"className\":\"steps\"} --><ol class=\"wp-block-list steps\"><!-- wp:list-item --><li>Rub the butter into the flour and salt, then add water until the dough holds together. Chill.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Toss the cherries with sugar, cornflour and lemon.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Line a pie dish with half the pastry and fill it.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Cut the rest into strips and weave a lattice over the top.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Glaze and bake at 200°C for 20 minutes, then 180°C for 35 minutes, until bubbling.</li><!-- /wp:list-item --></ol><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:paragraph {\"className\":\"recipe-tip\"} --><p class=\"recipe-tip\">Let the pie cool for three hours so the filling sets and slices cleanly.</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "format": "standard"
+  },
+  {
+   "slug": "rosemary-tomato-focaccia",
+   "title": "Rosemary and tomato focaccia",
+   "date": "2026-08-09T09:15:00",
+   "categories": [
+    "baking"
+   ],
+   "tags": [
+    "bread",
+    "vegetarian"
+   ],
+   "featured_media": "focaccia",
+   "excerpt": "A pillowy tray bread with deep dimples, plenty of olive oil and bursting cherry tomatoes.",
+   "content": "<!-- wp:paragraph --><p>Focaccia is the friendliest bread there is. The dough is wet and sticky, there is no shaping, and pressing your fingers into it to make dimples is genuinely fun.</p><!-- /wp:paragraph -->\n\n<!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"#recipe\">Jump to recipe ↓</a></div><!-- /wp:button --></div><!-- /wp:buttons -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Toppings we love</h2><!-- /wp:heading -->\n\n<!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Cherry tomatoes and rosemary</li><!-- /wp:list-item --><!-- wp:list-item --><li>Thinly sliced potato and thyme</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Red onion and olives</li><!-- /wp:list-item --><!-- wp:list-item --><li>Grapes and flaky salt</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:group {\"anchor\":\"recipe\",\"className\":\"recipe-card\",\"layout\":{\"type\":\"constrained\"}} --><div id=\"recipe\" class=\"wp-block-group recipe-card\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Tomato focaccia</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"recipe-facts\"} --><ul class=\"wp-block-list recipe-facts\"><!-- wp:list-item --><li><strong>Prep</strong>15 min</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Rise</strong>2 h</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Bake</strong>25 min</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Serves</strong>8</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column {\"width\":\"40%\"} --><div class=\"wp-block-column\" style=\"flex-basis:40%\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Ingredients</h3><!-- /wp:heading --><!-- wp:list {\"className\":\"ingredients\"} --><ul class=\"wp-block-list ingredients\"><!-- wp:list-item --><li>500 g strong white flour</li><!-- /wp:list-item --><!-- wp:list-item --><li>10 g salt</li><!-- /wp:list-item --><!-- wp:list-item --><li>7 g instant yeast</li><!-- /wp:list-item --><!-- wp:list-item --><li>400 ml warm water</li><!-- /wp:list-item --><!-- wp:list-item --><li>6 tbsp olive oil</li><!-- /wp:list-item --><!-- wp:list-item --><li>250 g cherry tomatoes</li><!-- /wp:list-item --><!-- wp:list-item --><li>2 sprigs rosemary</li><!-- /wp:list-item --><!-- wp:list-item --><li>Flaky salt</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column {\"width\":\"60%\"} --><div class=\"wp-block-column\" style=\"flex-basis:60%\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Method</h3><!-- /wp:heading --><!-- wp:list {\"ordered\":true,\"className\":\"steps\"} --><ol class=\"wp-block-list steps\"><!-- wp:list-item --><li>Mix flour, salt, yeast and water into a sticky dough; rest 30 minutes.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Fold the dough over itself a few times, then rest 1 hour.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Pour half the oil into a tray, add the dough and stretch it to the corners.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Rise 30 minutes, dimple deeply, add tomatoes, rosemary and the rest of the oil.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Bake at 220°C for 25 minutes.</li><!-- /wp:list-item --></ol><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->",
+   "format": "standard"
+  },
+  {
+   "slug": "maple-pecan-granola",
+   "title": "Maple pecan granola",
+   "date": "2026-07-28T07:45:00",
+   "categories": [
+    "breakfast",
+    "quick-easy"
+   ],
+   "tags": [
+    "make-ahead",
+    "one-bowl"
+   ],
+   "featured_media": "granola",
+   "excerpt": "Big clusters, toasted pecans and just enough maple. Make a jar on Sunday and breakfast is sorted.",
+   "content": "<!-- wp:paragraph --><p>Shop-bought granola is often too sweet and never clustery enough. Homemade takes five minutes to mix, and the secret to clusters is simple: press it flat and do not stir it while it bakes.</p><!-- /wp:paragraph -->\n\n<!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"#recipe\">Jump to recipe ↓</a></div><!-- /wp:button --></div><!-- /wp:buttons -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Stores for two weeks in an airtight jar.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Swap pecans for any nut or seed.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Add dried fruit after baking, never before.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:group {\"anchor\":\"recipe\",\"className\":\"recipe-card\",\"layout\":{\"type\":\"constrained\"}} --><div id=\"recipe\" class=\"wp-block-group recipe-card\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Maple pecan granola</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"recipe-facts\"} --><ul class=\"wp-block-list recipe-facts\"><!-- wp:list-item --><li><strong>Prep</strong>5 min</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Bake</strong>30 min</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Makes</strong>1 big jar</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column {\"width\":\"40%\"} --><div class=\"wp-block-column\" style=\"flex-basis:40%\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Ingredients</h3><!-- /wp:heading --><!-- wp:list {\"className\":\"ingredients\"} --><ul class=\"wp-block-list ingredients\"><!-- wp:list-item --><li>300 g rolled oats</li><!-- /wp:list-item --><!-- wp:list-item --><li>120 g pecans, roughly chopped</li><!-- /wp:list-item --><!-- wp:list-item --><li>50 g pumpkin seeds</li><!-- /wp:list-item --><!-- wp:list-item --><li>½ tsp cinnamon</li><!-- /wp:list-item --><!-- wp:list-item --><li>Pinch of salt</li><!-- /wp:list-item --><!-- wp:list-item --><li>90 ml maple syrup</li><!-- /wp:list-item --><!-- wp:list-item --><li>60 ml olive or coconut oil</li><!-- /wp:list-item --><!-- wp:list-item --><li>1 egg white (optional, for clusters)</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:column {\"width\":\"60%\"} --><div class=\"wp-block-column\" style=\"flex-basis:60%\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Method</h3><!-- /wp:heading --><!-- wp:list {\"ordered\":true,\"className\":\"steps\"} --><ol class=\"wp-block-list steps\"><!-- wp:list-item --><li>Heat the oven to 160°C and line a tray.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Mix everything in one bowl until evenly coated.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Press firmly into a flat layer.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Bake for 30 minutes, turning the tray once but not stirring.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Cool completely, then break into clusters.</li><!-- /wp:list-item --></ol><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:paragraph {\"className\":\"recipe-tip\"} --><p class=\"recipe-tip\">The egg white is the cluster secret. Whisk it until frothy before adding.</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "format": "standard"
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Home",
+     "page": "home"
+    },
+    {
+     "title": "Recipes",
+     "page": "recipes",
+     "children": [
+      {
+       "title": "Breakfast",
+       "category": "breakfast"
+      },
+      {
+       "title": "Baking",
+       "category": "baking"
+      },
+      {
+       "title": "Mains",
+       "category": "mains"
+      },
+      {
+       "title": "Desserts",
+       "category": "desserts"
+      },
+      {
+       "title": "Quick & Easy",
+       "category": "quick-easy"
+      }
+     ]
+    },
+    {
+     "title": "About",
+     "page": "about",
+     "children": [
+      {
+       "title": "Kitchen notes",
+       "page": "kitchen-notes"
+      }
+     ]
+    },
+    {
+     "title": "Say hello",
+     "page": "contact"
+    }
+   ]
+  },
+  {
+   "name": "Social",
+   "location": "social",
+   "items": [
+    {
+     "title": "Instagram",
+     "url": "https://instagram.com/"
+    },
+    {
+     "title": "Pinterest",
+     "url": "https://pinterest.com/"
+    },
+    {
+     "title": "YouTube",
+     "url": "https://youtube.com/"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "sidebar-1": [
+   "<!-- wp:group {\"className\":\"about-me\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group about-me\"><!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:quick}}\" alt=\"Toast with avocado\"/></figure><!-- /wp:image --><!-- wp:heading --><h2 class=\"wp-block-heading\">Hi, I'm the cook here</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Tested recipes for real kitchens. <a href=\"{{page:about}}\">Read my story</a>.</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:search {\"label\":\"Find a recipe\",\"buttonText\":\"Search\",\"placeholder\":\"lemon, bread…\"} /-->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Categories</h2><!-- /wp:heading --><!-- wp:categories {\"showPostCounts\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">New recipes</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":4} /--></div><!-- /wp:group -->"
+  ],
+  "footer-1": [
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Recipes</h2><!-- /wp:heading --><!-- wp:categories /--></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">The Friday letter</h2><!-- /wp:heading --><!-- wp:paragraph --><p>One recipe and one tip, every Friday. <a href=\"{{page:contact}}\">Join in</a>.</p><!-- /wp:paragraph --></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "hero_image": "hero",
+  "hero_heading": "Recipes worth making twice",
+  "hero_text": "Cosy bakes, bright salads and weeknight suppers, each one tested in a small home kitchen until it works every time.",
+  "hero_button_url": "{{page:recipes}}",
+  "blog_columns": "3",
+  "card_style": "soft"
+ }
+}

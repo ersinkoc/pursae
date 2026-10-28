@@ -1,0 +1,21 @@
+	<footer id="colophon" class="site-footer">
+		<div class="site-footer__wave" aria-hidden="true"></div>
+		<div class="site-footer__body">
+			<div class="wrap site-footer__grid">
+				<div class="footer-about">
+					<p class="footer-title">{{.SiteName}}</p>
+					{{with .Description}}<p>{{.}}</p>{{end}}
+					{{if has_nav_menu . "social"}}<nav class="social-navigation" aria-label="Social links">{{nav_menu . "social"}}</nav>{{end}}
+				</div>
+				{{if is_active_sidebar . "footer-1"}}<div class="footer-widgets">{{dynamic_sidebar . "footer-1"}}</div>{{end}}
+			</div>
+			<div class="wrap site-info">
+				<p class="site-info__text">{{.PrivacyLink}}<span>{{with theme_mod . "footer_text"}}{{.}}{{else}}&copy; {{$.SiteName}} &middot; Made with butter and patience{{end}}</span><span class="site-info__credit">Powered by <a href="https://github.com/boracomet/wordpress-go">WordPress Go</a></span></p>
+			</div>
+		</div>
+	</footer><!-- #colophon -->
+</div><!-- #page -->
+
+{{.Footer}}{{.AdminBar}}
+</body>
+</html>

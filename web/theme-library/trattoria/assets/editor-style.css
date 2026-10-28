@@ -1,0 +1,19 @@
+/* Trattoria — block editor styles */
+@font-face { font-family: "Playfair Display"; src: url("fonts/playfair-display-700.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+@font-face { font-family: "Playfair Display"; src: url("fonts/playfair-display-400-italic.woff2") format("woff2"); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: "Lora"; src: url("fonts/lora-400.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Lora"; src: url("fonts/lora-400-italic.woff2") format("woff2"); font-weight: 400; font-style: italic; font-display: swap; }
+body { background: #f7f0e3; color: #45362c; font-family: "Lora", Georgia, serif; font-size: 18px; line-height: 1.75; }
+h1, h2, h3, h4 { font-family: "Playfair Display", Georgia, serif; color: #2b1d16; line-height: 1.15; }
+h2 em, h1 em { font-weight: 400; color: #b5482a; }
+a { color: #8f381f; }
+blockquote { border-left: 2px solid #b5482a; padding-left: 1.3em; font-style: italic; }
+.wp-block-button__link { background: #b5482a; color: #fff8ee; border-radius: 999px; font-family: "Playfair Display", Georgia, serif; font-style: italic; }
+.menu-list { list-style: none; padding: 0; }
+.menu-list li { display: grid; grid-template-columns: auto 1fr auto; column-gap: .5em; margin-bottom: 1em; }
+.menu-list .dish { font-family: "Playfair Display", Georgia, serif; font-weight: 700; }
+.menu-list .price { grid-column: 3; color: #8f381f; font-style: italic; }
+.menu-list .desc { grid-column: 1 / -1; font-size: .9em; font-style: italic; color: #77665a; }
+.has-terracotta-background-color { background-color: #b5482a; } .has-olive-background-color { background-color: #4d5a2c; }
+.has-espresso-background-color { background-color: #2b1d16; } .has-parchment-background-color { background-color: #efe2cc; }
+.has-cream-background-color { background-color: #f7f0e3; } .has-wine-background-color { background-color: #6e1f2a; }
