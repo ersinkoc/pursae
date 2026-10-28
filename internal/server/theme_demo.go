@@ -711,7 +711,13 @@ func (s *Server) importThemeDemo(ctx context.Context, uid int64, t *Theme) (*dem
 		if err != nil {
 			return rep, fmt.Errorf("%s: %v", md.File, err)
 		}
-		a, err := s.insertAttachmentFile(ctx, path.Base(md.File), bytes.NewReader(b), uid, 0)
+		// Prefixed with the theme: uploads are cached as immutable, so two demos must never reuse a
+		// file name (one demo's hero.jpg removed, the next one's served from the browser cache).
+		name := path.Base(md.File)
+		if !strings.HasPrefix(name, slug+"-") {
+			name = slug + "-" + name
+		}
+		a, err := s.insertAttachmentFile(ctx, name, bytes.NewReader(b), uid, 0)
 		if err != nil {
 			return rep, fmt.Errorf("%s: %v", md.File, err)
 		}

@@ -147,6 +147,7 @@ func (s *Server) frontAdminBar(c *gin.Context, q *siteQuery, lb *links.Builder, 
 		label := map[string]string{"category": "Edit Category", "post_tag": "Edit Tag"}[q.Term.Taxonomy]
 		fmt.Fprintf(&sb, `<li role='group' id='wp-admin-bar-edit'><a class='ab-item' role="menuitem" href='/wp-admin/term?taxonomy=%s&amp;tag_ID=%d'>%s</a></li>`, q.Term.Taxonomy, q.Term.ID, label)
 	}
+	sb.WriteString(s.gweFrontAdminBar(q, u))      // Golementor: Edit with Golementor
 	sb.WriteString(string(s.maintAdminBar(c, u))) // Maintenance-Go
 	sb.WriteString(`</ul><ul role='menu' id='wp-admin-bar-top-secondary' class="ab-top-secondary ab-top-menu">`)
 	sb.WriteString(`<li role='group' id='wp-admin-bar-search' class="admin-bar-search"><div class="ab-item ab-empty-item" tabindex="-1" role="menuitem"><form action="` + esc(lb.HomeURL("/")) + `" method="get" id="adminbarsearch"><input class="adminbar-input" name="s" id="adminbar-search" type="text" value="` + esc(q.Search) + `" maxlength="150" /><label for="adminbar-search" class="screen-reader-text">Search</label><input type="submit" class="adminbar-button" value="Search" /></form></div></li>`)

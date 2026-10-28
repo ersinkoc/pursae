@@ -2,10 +2,14 @@ package server
 
 import (
 	"context"
+	"html"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
+
+	"wpgo/internal/store"
 )
 
 // Golementor is a native plugin like Classic Editor and WPGo Cache: it is off on a fresh install and
@@ -124,4 +128,40 @@ func (s *Server) golementorDeactivate(ctx context.Context) (switched bool, err e
 	s.gweUnloadCustomThemes()
 	s.purgeAll(ctx)
 	return switched, nil
+}
+
+// gweFrontAdminBar is Golementor's toolbar node on the site, like upstream's "Edit with …": on a post
+// or page it opens that page in the builder; everywhere it links to the Theme Builder (headers,
+// footers and archive templates are where non-singular pages are designed). Only while the plugin
+// is active and for users who may build.
+func (s *Server) gweFrontAdminBar(q *siteQuery, u *store.User) string {
+	if !s.golementorOn() || u == nil {
+		return ""
+	}
+	esc := html.EscapeString
+	canPost := q.Post != nil && gweEditable(q.Post) && u.Can("edit_post", q.Post)
+	canTheme := u.Can("edit_theme_options", nil)
+	if !canPost && !canTheme {
+		return ""
+	}
+	icon := `<span class="ab-icon" aria-hidden="true" style="background:url(` + gweAssetsPath + `images/gowebeditor-icon.svg) center/18px no-repeat;width:20px;height:20px;margin-top:6px"></span>`
+	label, href := "Golementor", "/wp-admin/gowebeditor-theme-builder"
+	if canPost {
+		label, href = "Edit with Golementor", gweEditURL(q.Post.ID)
+	}
+	var sb strings.Builder
+	sb.WriteString(`<li role='group' id='wp-admin-bar-golementor_edit_page' class="menupop"><a class='ab-item' role="menuitem" aria-expanded="false" href='` + esc(href) + `'>` + icon + `<span class="ab-label">` + label + `</span></a>`)
+	sb.WriteString(`<div class="ab-sub-wrapper"><ul role='menu' id='wp-admin-bar-golementor_edit_page-default' class="ab-submenu">`)
+	if canPost {
+		title := q.Post.Title
+		if title == "" {
+			title = "(no title)"
+		}
+		sb.WriteString(`<li role='group' id='wp-admin-bar-golementor_edit_doc'><a class='ab-item' role="menuitem" href='` + esc(gweEditURL(q.Post.ID)) + `'>` + esc(title) + `</a></li>`)
+	}
+	if canTheme {
+		sb.WriteString(`<li role='group' id='wp-admin-bar-golementor_theme_builder'><a class='ab-item' role="menuitem" href='/wp-admin/gowebeditor-theme-builder'>Theme Builder</a></li>`)
+	}
+	sb.WriteString(`</ul></div></li>`)
+	return sb.String()
 }

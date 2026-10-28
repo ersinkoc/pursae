@@ -433,3 +433,6 @@ header.MuiAppBar-root .MuiToolbar-root .MuiStack-root:first-child > button:first
 .elementor-template-library-template-remote .elementor-template-library-template-preview,
 .elementor-template-library-template-remote .elementor-template-library-favorite { display: none; }
 .elementor-template-library-template-remote .elementor-template-library-template-screenshot { background-size: cover; background-position: top center; }
+
+/* Golementor mascot in the nerd boxes (empty navigator, notices). */
+.elementor-nerd-box-icon[src*="gopher-ok"] { width: 120px; height: auto; }
