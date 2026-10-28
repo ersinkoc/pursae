@@ -1,0 +1,14 @@
+	{{template "wrap-close" .}}
+	<footer id="colophon" class="site-footer">
+		<div class="site-footer__inner">
+			<p class="ea-footer__love">With love,</p>
+			<p class="ea-footer__names">{{with .Data.Settings.couple_names}}{{.}}{{else}}{{.SiteName}}{{end}}</p>
+			{{with .Data.Settings.wedding_date}}<p class="ea-footer__date">{{.}}{{with $.Data.Settings.venue}} &middot; {{.}}{{end}}</p>{{end}}
+			{{with .Data.Settings.rsvp_label}}<p><a class="button ea-footer__rsvp" href="{{$.Data.Settings.rsvp_link}}">{{.}}</a></p>{{end}}
+			{{if is_active_sidebar . "footer-1"}}<div class="footer-widgets">{{dynamic_sidebar . "footer-1"}}</div>{{end}}
+			{{if has_nav_menu . "footer"}}<nav class="footer-navigation" aria-label="Footer menu">{{nav_menu . "footer"}}</nav>{{end}}
+			{{template "site-info" .}}
+		</div>
+	</footer><!-- #colophon -->
+</div><!-- #page -->
+{{template "foot" .}}

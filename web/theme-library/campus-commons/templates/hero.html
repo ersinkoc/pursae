@@ -1,0 +1,17 @@
+{{with .Data.Settings}}<section class="cc-hero" aria-label="Welcome">
+	<div class="cc-hero__inner">
+		<div class="cc-hero__text">
+			{{with .hero_kicker}}<p class="cc-hero__kicker">{{.}}</p>{{end}}
+			<p class="cc-hero__title">{{with .hero_title}}{{.}}{{else}}{{$.SiteName}}{{end}}</p>
+			{{with .hero_text}}<p class="cc-hero__lead">{{.}}</p>{{end}}
+			<form role="search" method="get" class="cc-hero__search" action="{{$.HomeURL}}">
+				<label for="cc-course-search" class="cc-hero__search-label">Find a course, event or teacher</label>
+				<span class="cc-hero__search-row"><input type="search" id="cc-course-search" name="s" placeholder="e.g. watercolour, biology, Spanish" /><button type="submit">Search</button></span>
+			</form>
+			{{with .apply_label}}<p class="cc-hero__actions"><a class="button" href="{{$.Data.Settings.apply_link}}">{{.}}</a></p>{{end}}
+		</div>
+		<figure class="cc-hero__pin">
+			<img src="{{with .hero_image}}{{.}}{{else}}{{$.ThemeURI}}/images/hero.jpg{{end}}" alt="" />
+		</figure>
+	</div>
+</section>{{end}}

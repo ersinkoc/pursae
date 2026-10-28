@@ -1,0 +1,13 @@
+{{with .Data.Settings}}<section class="ea-hero" aria-label="Our wedding">
+	<div class="ea-hero__inner">
+		<div class="ea-hero__text">
+			{{with .hero_kicker}}<p class="ea-hero__kicker">{{.}}</p>{{end}}
+			<p class="ea-hero__names">{{with .couple_names}}{{.}}{{else}}{{$.SiteName}}{{end}}</p>
+			<span class="ea-sprig" aria-hidden="true"></span>
+			{{with .wedding_date}}<p class="ea-hero__date">{{.}}</p>{{end}}
+			{{with .venue}}<p class="ea-hero__venue">{{.}}</p>{{end}}
+			{{with .rsvp_label}}<p class="ea-hero__actions"><a class="button" href="{{$.Data.Settings.rsvp_link}}">{{.}}</a></p>{{end}}
+		</div>
+		<figure class="ea-hero__arch"><img src="{{with .hero_image}}{{.}}{{else}}{{$.ThemeURI}}/images/hero.jpg{{end}}" alt="" /></figure>
+	</div>
+</section>{{end}}

@@ -1,0 +1,12 @@
+<article id="post-{{.ID}}" class="{{.Class}} entry cc-note">
+	<time class="cc-datebadge" datetime="{{.DateISO}}"><span class="cc-datebadge__day">{{date .Date "j"}}</span><span class="cc-datebadge__month">{{date .Date "M"}}</span><span class="cc-datebadge__year">{{date .Date "Y"}}</span></time>
+	{{with .Thumbnail}}<a class="post-thumbnail cc-note__media" href="{{$.Permalink}}" aria-hidden="true" tabindex="-1">{{.}}</a>{{end}}
+	<div class="cc-note__body">
+		<p class="cc-note__labels">{{if .ShowFeatured}}<span class="sticky-badge">Pinned</span>{{end}}{{range .Categories}}<a class="cc-tag" href="{{.URL}}">{{.Name}}</a>{{end}}</p>
+		<h2 class="entry-title"><a href="{{.Permalink}}" rel="bookmark">{{.Title}}</a></h2>
+		<div class="entry-summary{{if not .ShowExcerpt}} is-full{{end}}">
+			{{if .ShowExcerpt}}{{.Excerpt}}{{else}}{{.Content}}{{end}}
+		</div>
+		<p class="cc-note__foot">{{with .AuthorName}}<span class="byline">{{.}}</span>{{end}}<span class="cc-note__date">{{.DateText}}</span><a class="more-link" href="{{.Permalink}}">Read more<span class="screen-reader-text">: {{.Title}}</span></a></p>
+	</div>
+</article><!-- #post-{{.ID}} -->

@@ -1,0 +1,26 @@
+	{{template "wrap-close" .}}
+	<section class="oh-give" aria-label="Give monthly">
+		<div class="oh-give__inner">
+			<p class="oh-give__title">Small gifts, every month, change everything.</p>
+			<p class="oh-give__text">A monthly gift lets us plan ahead: hot meals every week, reading clubs all year, help that is there when it is needed.</p>
+			{{with .Data.Settings.donate_label}}<a class="button oh-give__button" href="{{$.Data.Settings.donate_link}}"><svg class="oh-heart" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.7 4.5c2.1 0 3.6 1.2 4.3 2.4h2c.7-1.2 2.2-2.4 4.3-2.4 3.7 0 5.8 3.9 4.3 7.3C19.5 16.4 12 21 12 21z"/></svg><span>Give monthly</span></a>{{end}}
+		</div>
+	</section>
+	<footer id="colophon" class="site-footer">
+		<div class="site-footer__inner">
+			<div class="oh-footer__grid">
+				<div class="oh-footer__brand">
+					<p class="oh-footer__name">{{.SiteName}}</p>
+					{{with .Description}}<p>{{.}}</p>{{end}}
+				</div>
+				{{if is_active_sidebar . "footer-1"}}<div class="footer-widgets">{{dynamic_sidebar . "footer-1"}}</div>{{end}}
+			</div>
+			<div class="oh-footer__bottom">
+				{{if has_nav_menu . "footer"}}<nav class="footer-navigation" aria-label="Footer menu">{{nav_menu . "footer"}}</nav>{{end}}
+				{{template "site-info" .}}
+			</div>
+		</div>
+	</footer><!-- #colophon -->
+	{{with .Data.Settings.donate_label}}<a class="button oh-pinned-donate" href="{{$.Data.Settings.donate_link}}"><svg class="oh-heart" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.7 4.5c2.1 0 3.6 1.2 4.3 2.4h2c.7-1.2 2.2-2.4 4.3-2.4 3.7 0 5.8 3.9 4.3 7.3C19.5 16.4 12 21 12 21z"/></svg><span>{{.}}</span></a>{{end}}
+</div><!-- #page -->
+{{template "foot" .}}

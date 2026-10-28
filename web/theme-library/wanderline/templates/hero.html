@@ -1,0 +1,12 @@
+{{with .Data.Settings}}<section class="wl-hero" aria-label="Introduction">
+	<img class="wl-hero__img" src="{{with .hero_image}}{{.}}{{else}}{{$.ThemeURI}}/images/hero.jpg{{end}}" alt="" />
+	<div class="wl-hero__shade" aria-hidden="true"></div>
+	<svg class="wl-hero__route" viewBox="0 0 1200 300" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d="M-20 260 C 180 200, 260 290, 420 210 S 700 90, 860 150 S 1100 60, 1230 20" /></svg>
+	<div class="wl-hero__inner">
+		{{with .hero_kicker}}<p class="wl-hero__kicker">{{.}}</p>{{end}}
+		<p class="wl-hero__title">{{with .hero_title}}{{.}}{{else}}{{$.SiteName}}{{end}}</p>
+		{{with .hero_text}}<p class="wl-hero__text">{{.}}</p>{{end}}
+		{{with .hero_button}}<p class="wl-hero__actions"><a class="button wl-hero__button" href="{{$.Data.Settings.hero_link}}">{{.}} <span aria-hidden="true">&rarr;</span></a></p>{{end}}
+	</div>
+	{{with .hero_coords}}<p class="wl-hero__coords"><span class="wl-compass" aria-hidden="true"></span>{{.}}</p>{{end}}
+</section>{{end}}

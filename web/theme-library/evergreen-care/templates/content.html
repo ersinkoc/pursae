@@ -1,0 +1,11 @@
+<article id="post-{{.ID}}" class="{{.Class}} entry ec-card">
+	{{with .Thumbnail}}<a class="post-thumbnail ec-card__media" href="{{$.Permalink}}" aria-hidden="true" tabindex="-1">{{.}}</a>{{end}}
+	<div class="ec-card__body">
+		<p class="ec-card__meta">{{if .ShowFeatured}}<span class="sticky-badge">Featured</span>{{end}}{{with .Categories}}{{with index . 0}}<a class="ec-pill" href="{{.URL}}">{{.Name}}</a>{{end}}{{end}}<time datetime="{{.DateISO}}">{{.DateText}}</time></p>
+		<h2 class="entry-title"><a href="{{.Permalink}}" rel="bookmark">{{.Title}}</a></h2>
+		<div class="entry-summary{{if not .ShowExcerpt}} is-full{{end}}">
+			{{if .ShowExcerpt}}{{.Excerpt}}{{else}}{{.Content}}{{end}}
+		</div>
+		<p class="ec-card__foot">{{with .AuthorName}}<span class="byline">{{.}}</span>{{end}}<a class="more-link" href="{{.Permalink}}">Read article<span class="screen-reader-text">: {{.Title}}</span></a></p>
+	</div>
+</article><!-- #post-{{.ID}} -->

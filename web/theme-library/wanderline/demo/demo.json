@@ -1,0 +1,520 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Wanderline",
+  "blogdescription": "Slow journeys and the long way round",
+  "posts_per_page": 9
+ },
+ "categories": [
+  {
+   "slug": "mountains",
+   "name": "Mountains",
+   "description": "High trails, mountain huts and passes worth the climb."
+  },
+  {
+   "slug": "coastlines",
+   "name": "Coastlines",
+   "description": "Cliffs, harbours, islands and every sunset we could find."
+  },
+  {
+   "slug": "city-breaks",
+   "name": "City Breaks",
+   "description": "Slow weekends in old towns, mostly spent eating."
+  },
+  {
+   "slug": "deserts",
+   "name": "Deserts",
+   "description": "Sand, silence and the darkest skies on earth."
+  },
+  {
+   "slug": "forests-lakes",
+   "name": "Forests & Lakes",
+   "description": "Canoe loops, portages and quiet northern water."
+  },
+  {
+   "slug": "field-notes",
+   "name": "Field Notes",
+   "description": "Gear, packing lists and how we plan (or don't)."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "hiking",
+   "name": "Hiking"
+  },
+  {
+   "slug": "slow-travel",
+   "name": "Slow travel"
+  },
+  {
+   "slug": "camping",
+   "name": "Camping"
+  },
+  {
+   "slug": "road-trip",
+   "name": "Road trip"
+  },
+  {
+   "slug": "sunsets",
+   "name": "Sunsets"
+  },
+  {
+   "slug": "photography",
+   "name": "Photography"
+  },
+  {
+   "slug": "food",
+   "name": "Food"
+  },
+  {
+   "slug": "architecture",
+   "name": "Architecture"
+  },
+  {
+   "slug": "stargazing",
+   "name": "Stargazing"
+  },
+  {
+   "slug": "canoeing",
+   "name": "Canoeing"
+  },
+  {
+   "slug": "gear",
+   "name": "Gear"
+  },
+  {
+   "slug": "packing",
+   "name": "Packing"
+  },
+  {
+   "slug": "islands",
+   "name": "Islands"
+  },
+  {
+   "slug": "ferries",
+   "name": "Ferries"
+  },
+  {
+   "slug": "markets",
+   "name": "Markets"
+  }
+ ],
+ "media": [
+  {
+   "id": "hero",
+   "file": "demo/images/hero.jpg",
+   "alt": "Layered mountain ridges glowing under a sunset sky",
+   "caption": ""
+  },
+  {
+   "id": "mountains",
+   "file": "demo/images/mountains.jpg",
+   "alt": "Snow-capped peaks at dawn above a pine valley",
+   "caption": ""
+  },
+  {
+   "id": "ridge",
+   "file": "demo/images/ridge.jpg",
+   "alt": "A narrow ridge path running towards jagged peaks",
+   "caption": ""
+  },
+  {
+   "id": "coast",
+   "file": "demo/images/coast.jpg",
+   "alt": "The sun setting over a calm sea",
+   "caption": ""
+  },
+  {
+   "id": "coast-cliffs",
+   "file": "demo/images/coast-cliffs.jpg",
+   "alt": "Golden cliffs above the sea at sunset",
+   "caption": ""
+  },
+  {
+   "id": "city",
+   "file": "demo/images/city.jpg",
+   "alt": "A city skyline at dusk",
+   "caption": ""
+  },
+  {
+   "id": "city-night",
+   "file": "demo/images/city-night.jpg",
+   "alt": "City lights reflected in a river",
+   "caption": ""
+  },
+  {
+   "id": "dunes",
+   "file": "demo/images/dunes.jpg",
+   "alt": "Red dunes under the stars",
+   "caption": ""
+  },
+  {
+   "id": "lakes",
+   "file": "demo/images/lakes.jpg",
+   "alt": "A forest lake with pine-covered shores",
+   "caption": ""
+  },
+  {
+   "id": "lakes-mist",
+   "file": "demo/images/lakes-mist.jpg",
+   "alt": "Mist over a lake at dawn",
+   "caption": ""
+  },
+  {
+   "id": "islands",
+   "file": "demo/images/islands.jpg",
+   "alt": "Green islands in a turquoise sea",
+   "caption": ""
+  },
+  {
+   "id": "market",
+   "file": "demo/images/market.jpg",
+   "alt": "Striped market awnings",
+   "caption": ""
+  },
+  {
+   "id": "pack",
+   "file": "demo/images/pack.jpg",
+   "alt": "A neatly packed travel kit laid out from above",
+   "caption": ""
+  },
+  {
+   "id": "road",
+   "file": "demo/images/road.jpg",
+   "alt": "An empty road winding toward mountains",
+   "caption": ""
+  },
+  {
+   "id": "map",
+   "file": "demo/images/map.jpg",
+   "alt": "A stylised contour map with a dashed route",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Home",
+   "content": "<!-- wp:group {\"align\":\"full\",\"className\":\"wl-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull wl-section\"><!-- wp:paragraph {\"className\":\"wl-eyebrow\"} --><p class=\"wl-eyebrow\">Where to next?</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Pick a direction</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Every story on Wanderline is filed by the kind of place it happened in. Choose a landscape and start reading.</p><!-- /wp:paragraph --><!-- wp:columns {\"align\":\"wide\",\"className\":\"wl-tiles\"} --><div class=\"wp-block-columns alignwide wl-tiles\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:cover {\"url\":\"{{media:mountains}}\",\"dimRatio\":50,\"minHeight\":340,\"minHeightUnit\":\"px\",\"align\":\"none\"} --><div class=\"wp-block-cover alignnone\" style=\"min-height:340px\"><span aria-hidden=\"true\" class=\"wp-block-cover__background has-background-dim-50 has-background-dim\"></span><img class=\"wp-block-cover__image-background\" alt=\"\" src=\"{{media:mountains}}\" data-object-fit=\"cover\"/><div class=\"wp-block-cover__inner-container\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"{{category:mountains}}\">Mountains</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p>12 trails</p><!-- /wp:paragraph --></div></div><!-- /wp:cover --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:cover {\"url\":\"{{media:coast}}\",\"dimRatio\":50,\"minHeight\":340,\"minHeightUnit\":\"px\",\"align\":\"none\"} --><div class=\"wp-block-cover alignnone\" style=\"min-height:340px\"><span aria-hidden=\"true\" class=\"wp-block-cover__background has-background-dim-50 has-background-dim\"></span><img class=\"wp-block-cover__image-background\" alt=\"\" src=\"{{media:coast}}\" data-object-fit=\"cover\"/><div class=\"wp-block-cover__inner-container\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"{{category:coastlines}}\">Coastlines</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p>9 stories</p><!-- /wp:paragraph --></div></div><!-- /wp:cover --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:cover {\"url\":\"{{media:city}}\",\"dimRatio\":50,\"minHeight\":340,\"minHeightUnit\":\"px\",\"align\":\"none\"} --><div class=\"wp-block-cover alignnone\" style=\"min-height:340px\"><span aria-hidden=\"true\" class=\"wp-block-cover__background has-background-dim-50 has-background-dim\"></span><img class=\"wp-block-cover__image-background\" alt=\"\" src=\"{{media:city}}\" data-object-fit=\"cover\"/><div class=\"wp-block-cover__inner-container\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"{{category:city-breaks}}\">City Breaks</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p>14 weekends</p><!-- /wp:paragraph --></div></div><!-- /wp:cover --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:columns {\"align\":\"wide\",\"className\":\"wl-tiles\"} --><div class=\"wp-block-columns alignwide wl-tiles\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:cover {\"url\":\"{{media:dunes}}\",\"dimRatio\":50,\"minHeight\":340,\"minHeightUnit\":\"px\",\"align\":\"none\"} --><div class=\"wp-block-cover alignnone\" style=\"min-height:340px\"><span aria-hidden=\"true\" class=\"wp-block-cover__background has-background-dim-50 has-background-dim\"></span><img class=\"wp-block-cover__image-background\" alt=\"\" src=\"{{media:dunes}}\" data-object-fit=\"cover\"/><div class=\"wp-block-cover__inner-container\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"{{category:deserts}}\">Deserts</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p>5 nights out</p><!-- /wp:paragraph --></div></div><!-- /wp:cover --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:cover {\"url\":\"{{media:lakes}}\",\"dimRatio\":50,\"minHeight\":340,\"minHeightUnit\":\"px\",\"align\":\"none\"} --><div class=\"wp-block-cover alignnone\" style=\"min-height:340px\"><span aria-hidden=\"true\" class=\"wp-block-cover__background has-background-dim-50 has-background-dim\"></span><img class=\"wp-block-cover__image-background\" alt=\"\" src=\"{{media:lakes}}\" data-object-fit=\"cover\"/><div class=\"wp-block-cover__inner-container\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"{{category:forests-lakes}}\">Forests &amp; Lakes</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p>7 loops</p><!-- /wp:paragraph --></div></div><!-- /wp:cover --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:cover {\"url\":\"{{media:pack}}\",\"dimRatio\":50,\"minHeight\":340,\"minHeightUnit\":\"px\",\"align\":\"none\"} --><div class=\"wp-block-cover alignnone\" style=\"min-height:340px\"><span aria-hidden=\"true\" class=\"wp-block-cover__background has-background-dim-50 has-background-dim\"></span><img class=\"wp-block-cover__image-background\" alt=\"\" src=\"{{media:pack}}\" data-object-fit=\"cover\"/><div class=\"wp-block-cover__inner-container\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"{{category:field-notes}}\">Field Notes</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p>Gear and how-to</p><!-- /wp:paragraph --></div></div><!-- /wp:cover --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group --><!-- wp:group {\"align\":\"full\",\"className\":\"wl-section wl-section--sand\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull wl-section wl-section--sand\"><!-- wp:paragraph {\"className\":\"wl-eyebrow\"} --><p class=\"wl-eyebrow\">Fresh from the road</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Latest stories</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":3,\"displayPostContent\":true,\"excerptLength\":20,\"displayPostDate\":true,\"postLayout\":\"grid\",\"columns\":3} /--><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:journal}}\">Read the journal</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --><!-- wp:group {\"align\":\"full\",\"className\":\"wl-section wl-section--dusk\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull wl-section wl-section--dusk\"><!-- wp:columns {\"align\":\"wide\",\"className\":\"wl-stats\"} --><div class=\"wp-block-columns alignwide wl-stats\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"wl-stat\"} --><p class=\"wl-stat\">34</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>countries, slowly</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"wl-stat\"} --><p class=\"wl-stat\">2,140</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>kilometres on foot</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"wl-stat\"} --><p class=\"wl-stat\">61</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>night trains</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"wl-stat\"} --><p class=\"wl-stat\">1</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>small backpack</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group --><!-- wp:group {\"align\":\"full\",\"className\":\"wl-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull wl-section\"><!-- wp:media-text {\"mediaType\":\"image\",\"className\":\"alignwide\"} --><div class=\"wp-block-media-text is-stacked-on-mobile alignwide\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:road}}\" alt=\"An empty road winding toward distant mountains\" class=\"size-full\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:paragraph {\"className\":\"wl-eyebrow\"} --><p class=\"wl-eyebrow\">Hello from the passenger seat</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Two backpacks, no fixed address</h2><!-- /wp:heading --><!-- wp:paragraph --><p>We are a pair of slow travellers writing about long walks, night trains and the small places most itineraries skip. No sponsored posts, no top-ten lists, just the road as we found it.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:about}}\">Our story</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div></div><!-- /wp:media-text --></div><!-- /wp:group -->",
+   "template": "",
+   "front_page": true
+  },
+  {
+   "slug": "journal",
+   "title": "Journal",
+   "content": "",
+   "template": "",
+   "posts_page": true
+  },
+  {
+   "slug": "destinations",
+   "title": "Destinations",
+   "content": "<!-- wp:paragraph --><p>Every story is filed under the kind of landscape it happened in. Here is where we have been so far, and where we are heading next.</p><!-- /wp:paragraph --><!-- wp:columns {\"align\":\"wide\",\"className\":\"wl-tiles\"} --><div class=\"wp-block-columns alignwide wl-tiles\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:cover {\"url\":\"{{media:mountains}}\",\"dimRatio\":50,\"minHeight\":340,\"minHeightUnit\":\"px\",\"align\":\"none\"} --><div class=\"wp-block-cover alignnone\" style=\"min-height:340px\"><span aria-hidden=\"true\" class=\"wp-block-cover__background has-background-dim-50 has-background-dim\"></span><img class=\"wp-block-cover__image-background\" alt=\"\" src=\"{{media:mountains}}\" data-object-fit=\"cover\"/><div class=\"wp-block-cover__inner-container\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"{{category:mountains}}\">Mountains</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p>Ridges, passes and huts</p><!-- /wp:paragraph --></div></div><!-- /wp:cover --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:cover {\"url\":\"{{media:coast}}\",\"dimRatio\":50,\"minHeight\":340,\"minHeightUnit\":\"px\",\"align\":\"none\"} --><div class=\"wp-block-cover alignnone\" style=\"min-height:340px\"><span aria-hidden=\"true\" class=\"wp-block-cover__background has-background-dim-50 has-background-dim\"></span><img class=\"wp-block-cover__image-background\" alt=\"\" src=\"{{media:coast}}\" data-object-fit=\"cover\"/><div class=\"wp-block-cover__inner-container\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"{{category:coastlines}}\">Coastlines</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p>Cliffs, harbours and islands</p><!-- /wp:paragraph --></div></div><!-- /wp:cover --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:columns {\"align\":\"wide\",\"className\":\"wl-tiles\"} --><div class=\"wp-block-columns alignwide wl-tiles\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:cover {\"url\":\"{{media:city}}\",\"dimRatio\":50,\"minHeight\":340,\"minHeightUnit\":\"px\",\"align\":\"none\"} --><div class=\"wp-block-cover alignnone\" style=\"min-height:340px\"><span aria-hidden=\"true\" class=\"wp-block-cover__background has-background-dim-50 has-background-dim\"></span><img class=\"wp-block-cover__image-background\" alt=\"\" src=\"{{media:city}}\" data-object-fit=\"cover\"/><div class=\"wp-block-cover__inner-container\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"{{category:city-breaks}}\">City Breaks</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p>Slow weekends in old towns</p><!-- /wp:paragraph --></div></div><!-- /wp:cover --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:cover {\"url\":\"{{media:dunes}}\",\"dimRatio\":50,\"minHeight\":340,\"minHeightUnit\":\"px\",\"align\":\"none\"} --><div class=\"wp-block-cover alignnone\" style=\"min-height:340px\"><span aria-hidden=\"true\" class=\"wp-block-cover__background has-background-dim-50 has-background-dim\"></span><img class=\"wp-block-cover__image-background\" alt=\"\" src=\"{{media:dunes}}\" data-object-fit=\"cover\"/><div class=\"wp-block-cover__inner-container\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"{{category:deserts}}\">Deserts</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p>Sand, silence and stars</p><!-- /wp:paragraph --></div></div><!-- /wp:cover --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:cover {\"url\":\"{{media:lakes}}\",\"dimRatio\":50,\"minHeight\":340,\"minHeightUnit\":\"px\",\"align\":\"none\"} --><div class=\"wp-block-cover alignnone\" style=\"min-height:340px\"><span aria-hidden=\"true\" class=\"wp-block-cover__background has-background-dim-50 has-background-dim\"></span><img class=\"wp-block-cover__image-background\" alt=\"\" src=\"{{media:lakes}}\" data-object-fit=\"cover\"/><div class=\"wp-block-cover__inner-container\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"{{category:forests-lakes}}\">Forests &amp; Lakes</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p>Paddles and portages</p><!-- /wp:paragraph --></div></div><!-- /wp:cover --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:heading --><h2 class=\"wp-block-heading\">On the list for next year</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>A winter crossing of the northern fjords by coastal ferry</li><!-- /wp:list-item --><!-- wp:list-item --><li>The long desert railway, end to end</li><!-- /wp:list-item --><!-- wp:list-item --><li>A month on foot along the old salt road</li><!-- /wp:list-item --></ul><!-- /wp:list -->",
+   "template": "",
+   "featured_media": "map"
+  },
+  {
+   "slug": "about",
+   "title": "About",
+   "content": "<!-- wp:paragraph --><p>Wanderline is written by two people and one very patched backpack. We started it on a night train, somewhere between a border and a breakfast, as a way to remember the small things: the bakery at the start of a trail, the café that opens when the owner wakes up.</p><!-- /wp:paragraph --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-image size-large alignwide\"><img src=\"{{media:road}}\" alt=\"An empty road winding toward distant mountains\"/></figure><!-- /wp:image --><!-- wp:heading --><h2 class=\"wp-block-heading\">How we travel</h2><!-- /wp:heading --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Slowly</h3><!-- /wp:heading --><!-- wp:paragraph --><p>We would rather spend a week in one valley than a day in seven cities.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Lightly</h3><!-- /wp:heading --><!-- wp:paragraph --><p>One bag each, public transport where we can, and our own two feet where we cannot.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Honestly</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Nobody pays for our opinions. When a place disappoints us, we say so, kindly.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>The best journeys answer questions that at the beginning you did not even think to ask.</p><!-- /wp:paragraph --></blockquote><!-- /wp:quote --><!-- wp:paragraph --><p>If a story here sends you somewhere, we would love to hear about it.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Say hello</a></div><!-- /wp:button --></div><!-- /wp:buttons -->",
+   "template": "",
+   "featured_media": "road"
+  },
+  {
+   "slug": "contact",
+   "title": "Contact",
+   "content": "<!-- wp:paragraph --><p>We read every message, usually from a train, and answer within a week or two, depending on the signal.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Write to us</h3><!-- /wp:heading --><!-- wp:paragraph --><p>hello@wanderline.example<br>We love route questions, corrections and photos of your own trips.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Work together</h3><!-- /wp:heading --><!-- wp:paragraph --><p>We occasionally write for travel magazines and tourism boards that share our slow-travel values.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Before you ask</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>We do not accept free trips in exchange for reviews.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Yes, you may use our route notes for your own walks.</li><!-- /wp:list-item --><!-- wp:list-item --><li>The backpack is twelve years old and not for sale.</li><!-- /wp:list-item --></ul><!-- /wp:list -->",
+   "template": "",
+   "featured_media": "map"
+  }
+ ],
+ "posts": [
+  {
+   "slug": "twelve-days-on-the-high-ridge-trail",
+   "title": "Twelve Days on the High Ridge Trail",
+   "date": "2026-09-18T08:30:00",
+   "excerpt": "Eleven passes, four huts, one storm and the best breakfast I have ever eaten, cooked on a stove the size of a teacup.",
+   "content": "<!-- wp:paragraph --><p>The trail begins behind a bakery. That is the first thing nobody tells you: the High Ridge, which climbs over eleven passes and never drops below the tree line once it gets going, starts with the smell of warm bread and a hand-painted arrow pointing between two houses.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>I had planned this walk for three winters. I had read every hut report, weighed every sock, and still, on the first morning, I stood at the arrow for a full minute before stepping onto the path, as though the mountains might notice me and say no.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">The first four days: learning to go slowly</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Nobody walks fast on the High Ridge, and the ones who try are passed on day three by the ones who did not. The rhythm that works is boring and beautiful: up at first light, walking by seven, lunch on a warm rock, at the hut by three, asleep by nine.</p><!-- /wp:paragraph --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:ridge}}\" alt=\"A narrow ridge path running towards a range of jagged peaks\"/><figcaption class=\"wp-element-caption\">Day four, between the Kelder and Ost passes.</figcaption></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Route at a glance</h3><!-- /wp:heading --><!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li><strong>Day 1–2:</strong> village to the Kelder hut through larch forest.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Day 3–5:</strong> the long balcony path above the Siven valley.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Day 6:</strong> storm day, spent playing cards in the Ost hut.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Day 7–10:</strong> the high section, four passes above 2,600 metres.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Day 11–12:</strong> down through meadows to the lake and the train.</li><!-- /wp:list-item --></ol><!-- /wp:list --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>You do not conquer a ridge. You are allowed across it, one patient step at a time.</p><!-- /wp:paragraph --><cite>Note in the Ost hut logbook</cite></blockquote><!-- /wp:quote --><!-- wp:paragraph --><p>The storm on day six was the turning point. Twenty of us crammed into a stone hut built for twelve, wet boots steaming by the stove, while thunder rolled across the valley like furniture being moved upstairs. By morning the sky was scrubbed clean, and the whole range stood up in the first light as if it had been freshly painted.</p><!-- /wp:paragraph --><!-- wp:table {\"className\":\"wl-facts\"} --><figure class=\"wp-block-table wl-facts\"><table><thead><tr><th>Practical</th><th>What worked</th></tr></thead><tbody><tr><td>Season</td><td>Late August to mid September</td></tr><tr><td>Huts</td><td>Book four weeks ahead; cash only above the tree line</td></tr><tr><td>Water</td><td>Springs every 2–3 hours; carry a filter anyway</td></tr><tr><td>Pack weight</td><td>Under 9 kg without food</td></tr></tbody></table></figure><!-- /wp:table --><!-- wp:paragraph --><p>I came down on day twelve with burnt ears, a lighter pack and a notebook full of people I will probably never see again. The bakery was still there at the bottom. I bought the same bread, and it tasted completely different.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "mountains"
+   ],
+   "tags": [
+    "hiking",
+    "slow-travel",
+    "camping"
+   ],
+   "featured_media": "mountains",
+   "format": "standard",
+   "sticky": true,
+   "comments": [
+    {
+     "author": "Mara T.",
+     "email": "mara@example.com",
+     "content": "The storm day in the hut sounds like the best day of the whole trip. Saving this route for next summer!",
+     "date": "2026-09-19T10:12:00"
+    },
+    {
+     "author": "Jonas",
+     "email": "jonas@example.com",
+     "content": "Did you need crampons on the high section in September?",
+     "date": "2026-09-20T18:40:00"
+    }
+   ]
+  },
+  {
+   "slug": "chasing-the-last-light-along-the-salt-coast",
+   "title": "Chasing the Last Light Along the Salt Coast",
+   "date": "2026-09-04T19:10:00",
+   "excerpt": "Six hundred kilometres of cliffs, fishing towns and sea-salt pans, driven backwards so that every evening ended facing the sunset.",
+   "content": "<!-- wp:paragraph --><p>Most people drive the Salt Coast north to south. We drove it the other way for one reason: every evening, the road turned west, and the sun went down directly in front of the windscreen like a reward for the day.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Towns worth the detour</h2><!-- /wp:heading --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Porta Lume</h3><!-- /wp:heading --><!-- wp:paragraph --><p>A harbour of blue boats and a single café that opens when the owner wakes up. Worth waiting for.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Saline</h3><!-- /wp:heading --><!-- wp:paragraph --><p>White salt pans that turn pink at dusk. Walk the raised paths between them barefoot.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Capo Verro</h3><!-- /wp:heading --><!-- wp:paragraph --><p>The lighthouse at the end of the world, or at least at the end of the road.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:coast-cliffs}}\" alt=\"Golden cliffs dropping into a calm sea at sunset\"/><figcaption class=\"wp-element-caption\">The cliffs below Capo Verro, twenty minutes before sunset.</figcaption></figure><!-- /wp:image --><!-- wp:paragraph --><p>The trick to the coast is not to plan your days but to plan your evenings. Find the west-facing beach, the headland, the harbour wall. Arrive an hour early with bread, cheese and a cheap bottle of something local. Then just watch.</p><!-- /wp:paragraph --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>We stopped counting sunsets on the fourth night. We just started naming them.</p><!-- /wp:paragraph --></blockquote><!-- /wp:quote --><!-- wp:paragraph --><p>By the end of the week we had named eleven sunsets, including one that was mostly fog and one that we watched from a petrol station. Both counted.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "coastlines"
+   ],
+   "tags": [
+    "road-trip",
+    "sunsets",
+    "photography"
+   ],
+   "featured_media": "coast",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Ilse",
+     "email": "ilse@example.com",
+     "content": "Driving it backwards for the sunsets is genius. Stealing this idea.",
+     "date": "2026-09-06T08:02:00"
+    }
+   ]
+  },
+  {
+   "slug": "a-slow-weekend-in-a-city-of-bridges",
+   "title": "A Slow Weekend in a City of Bridges",
+   "date": "2026-08-22T11:00:00",
+   "excerpt": "Forty-one bridges, three river cafés and an argument about which one is the most beautiful. A weekend with no itinerary at all.",
+   "content": "<!-- wp:paragraph --><p>There is a rule in our family for city weekends: no museums before lunch and no plans after dinner. The City of Bridges, built across a slow green river and its seven canals, is perfect for this kind of travel.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Saturday: crossing everything</h2><!-- /wp:heading --><!-- wp:paragraph --><p>We set ourselves one silly goal: cross as many bridges as possible before noon. We managed twenty-three, including a rope bridge in a children's park and one that turned out to be somebody's private garden path. We apologised in two languages.</p><!-- /wp:paragraph --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:city-night}}\" alt=\"A city skyline at dusk reflected in a calm river\"/><figcaption class=\"wp-element-caption\">The old quarter from the Iron Bridge at blue hour.</figcaption></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Where we ate</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><strong>The Lock Keeper's Kitchen</strong>: soup in bread bowls, eaten on the canal steps.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Café Seven</strong>: the best cardamom buns on the river, sold out by ten.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>The night market</strong> under the railway arches, every Saturday from six.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph --><p>On Sunday we did nothing at all, which in a city this beautiful is a full-time activity.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "city-breaks"
+   ],
+   "tags": [
+    "food",
+    "slow-travel",
+    "architecture"
+   ],
+   "featured_media": "city",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Pieter",
+     "email": "pieter@example.com",
+     "content": "The rope bridge counts. I will hear no arguments.",
+     "date": "2026-08-23T09:15:00"
+    }
+   ]
+  },
+  {
+   "slug": "night-sky-over-the-red-dunes",
+   "title": "Night Sky Over the Red Dunes",
+   "date": "2026-08-08T21:45:00",
+   "excerpt": "Three nights camping in the Ambra dunes, where the sand is warm until midnight and the Milky Way is bright enough to cast a shadow.",
+   "content": "<!-- wp:paragraph --><p>The desert is loud during the day. Wind on the dunes sounds like distant traffic, and the heat has its own hum. But at night, everything stops, and the sky starts.</p><!-- /wp:paragraph --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:dunes}}\" alt=\"Red sand dunes under a starry night sky\"/><figcaption class=\"wp-element-caption\">Camp two, about 40 km from the nearest road.</figcaption></figure><!-- /wp:image --><!-- wp:heading --><h2 class=\"wp-block-heading\">How to sleep under the stars (and actually sleep)</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Dig a shallow scoop for your hips before you lay out your mat.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Bring a warm layer: it can drop to 8°C before dawn.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Keep your boots inside your sleeping bag liner, and shake them out in the morning.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Turn off every light for twenty minutes and let your eyes adjust.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Out here, the dark is not empty. It is full of things you have never been able to see.</p><!-- /wp:paragraph --><cite>Our guide, on the first night</cite></blockquote><!-- /wp:quote --><!-- wp:paragraph --><p>On the last night a shooting star crossed the whole sky, slowly enough that all six of us saw it and had time to point. Nobody said anything for a long while afterwards.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "deserts"
+   ],
+   "tags": [
+    "camping",
+    "stargazing",
+    "photography"
+   ],
+   "featured_media": "dunes",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "paddling-the-seven-lakes-loop",
+   "title": "Paddling the Seven Lakes Loop",
+   "date": "2026-07-25T07:30:00",
+   "excerpt": "Five days, seven lakes, six portages and a canoe that we carried more than we paddled. A loop through the quiet north.",
+   "content": "<!-- wp:paragraph --><p>The Seven Lakes Loop is less a route than a necklace: seven long, dark lakes threaded together by short forest trails where you carry your canoe on your shoulders and your food in a barrel on your back.</p><!-- /wp:paragraph --><!-- wp:media-text {\"mediaType\":\"image\"} --><div class=\"wp-block-media-text is-stacked-on-mobile\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:lakes-mist}}\" alt=\"Morning mist lifting off a forest lake\" class=\"size-full\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Day one</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Calm water, a loon calling somewhere in the mist, and the first portage, which we took three trips to cross because we packed like amateurs.</p><!-- /wp:paragraph --></div></div><!-- /wp:media-text --><!-- wp:heading --><h2 class=\"wp-block-heading\">What the portages taught us</h2><!-- /wp:heading --><!-- wp:paragraph --><p>By day three we had learned to pack in a single trip: one canoe, two barrels, two people. Everything else went into the fire or the pack-out bag. Packing lighter is not a skill, it is a decision you make again every morning.</p><!-- /wp:paragraph --><!-- wp:gallery {\"columns\":3,\"linkTo\":\"none\"} --><figure class=\"wp-block-gallery has-nested-images columns-3 is-cropped\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:lakes}}\" alt=\"A canoe pulled up on a rocky shore\"/></figure><!-- /wp:image --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:lakes-mist}}\" alt=\"Mist over the lake at dawn\"/></figure><!-- /wp:image --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:ridge}}\" alt=\"A ridge above the forest\"/></figure><!-- /wp:image --></figure><!-- /wp:gallery --><!-- wp:paragraph --><p>We saw a total of nine other people in five days, and one moose, who was not impressed with us at all.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "forests-lakes"
+   ],
+   "tags": [
+    "canoeing",
+    "camping",
+    "slow-travel"
+   ],
+   "featured_media": "lakes",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "what-i-pack-for-a-month-on-the-road",
+   "title": "What I Pack for a Month on the Road",
+   "date": "2026-07-10T09:00:00",
+   "excerpt": "One 32-litre bag, every trip, for four years. Here is what goes in it, what I have stopped bringing, and the one thing I never leave behind.",
+   "content": "<!-- wp:paragraph --><p>I have travelled with the same small bag for four years. It fits under an aeroplane seat, in the overhead rack of a night train, and on my lap in the back of a minibus with a goat. That last one is not hypothetical.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">The list</h2><!-- /wp:heading --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Clothes</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>3 merino t-shirts</li><!-- /wp:list-item --><!-- wp:list-item --><li>1 long-sleeve shirt</li><!-- /wp:list-item --><!-- wp:list-item --><li>2 pairs of trousers (one that becomes shorts)</li><!-- /wp:list-item --><!-- wp:list-item --><li>1 warm fleece</li><!-- /wp:list-item --><!-- wp:list-item --><li>1 light rain shell</li><!-- /wp:list-item --><!-- wp:list-item --><li>4 pairs of socks</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Everything else</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>A small first-aid kit</li><!-- /wp:list-item --><!-- wp:list-item --><li>A head torch</li><!-- /wp:list-item --><!-- wp:list-item --><li>A paper notebook and two pens</li><!-- /wp:list-item --><!-- wp:list-item --><li>A universal plug and one cable</li><!-- /wp:list-item --><!-- wp:list-item --><li>A scarf that is also a towel, blanket and pillow</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:heading --><h2 class=\"wp-block-heading\">What I stopped bringing</h2><!-- /wp:heading --><!-- wp:paragraph --><p>A second pair of shoes, a laptop, a guidebook for every country, and the idea that I needed to be ready for everything. You can buy almost anything almost anywhere. What you cannot buy is a lighter shoulder.</p><!-- /wp:paragraph --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Pack for the trip you are taking, not the one you are afraid of.</p><!-- /wp:paragraph --></blockquote><!-- /wp:quote -->",
+   "categories": [
+    "field-notes"
+   ],
+   "tags": [
+    "gear",
+    "packing"
+   ],
+   "featured_media": "pack",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Noor",
+     "email": "noor@example.com",
+     "content": "The scarf-towel-blanket is the real hero of this list.",
+     "date": "2026-07-11T12:30:00"
+    }
+   ]
+  },
+  {
+   "slug": "island-hopping-without-a-plan",
+   "title": "Island Hopping Without a Plan",
+   "date": "2026-06-27T10:20:00",
+   "excerpt": "Ten days, five islands and not a single ferry booked in advance. What happens when you let the timetable decide.",
+   "content": "<!-- wp:paragraph --><p>The rule was simple: every morning, walk to the harbour and take whichever boat left first. No bookings, no plans, no idea where we would sleep.</p><!-- /wp:paragraph --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:islands}}\" alt=\"Small green islands scattered across a turquoise sea\"/></figure><!-- /wp:image --><!-- wp:heading --><h2 class=\"wp-block-heading\">The islands, in the order the ferries chose</h2><!-- /wp:heading --><!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li><strong>Vela</strong>: a fishing island with one road and four hundred cats.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Ostra</strong>: whitewashed and windy, with a monastery on every hill.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Little Mira</strong>: no cars, no shops, one tavern, perfect.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Kaldi</strong>: the busy one, where we ate too much and slept too little.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Vela again</strong>, because the cats missed us.</li><!-- /wp:list-item --></ol><!-- /wp:list --><!-- wp:paragraph --><p>Not planning is its own kind of planning. You trade certainty for surprise, and on islands, surprise is almost always the better deal.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>We slept in a fisherman's spare room, a monastery guest house and, for one memorable night, on the deck of a cargo ferry under a blanket of stars.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "coastlines"
+   ],
+   "tags": [
+    "islands",
+    "slow-travel",
+    "ferries"
+   ],
+   "featured_media": "islands",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "eating-through-the-old-market-quarter",
+   "title": "Eating My Way Through the Old Market Quarter",
+   "date": "2026-06-12T13:00:00",
+   "excerpt": "Eleven stalls, three grandmothers, one very large pastry and a list of everything I ate in a single afternoon.",
+   "content": "<!-- wp:paragraph --><p>The Old Market Quarter is less a market than a maze: covered lanes, striped awnings, stalls stacked three high, and somewhere in the middle, a fountain where everyone sits to eat what they just bought.</p><!-- /wp:paragraph --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:market}}\" alt=\"Colourful striped awnings over a busy market lane\"/><figcaption class=\"wp-element-caption\">The spice lane, around noon.</figcaption></figure><!-- /wp:image --><!-- wp:heading --><h2 class=\"wp-block-heading\">The afternoon menu</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Flatbread straight from a clay oven, with herbs and oil</li><!-- /wp:list-item --><!-- wp:list-item --><li>A paper cone of roasted chickpeas</li><!-- /wp:list-item --><!-- wp:list-item --><li>Grilled corn with chilli and lime</li><!-- /wp:list-item --><!-- wp:list-item --><li>A honey pastry the size of my hand, recommended by a grandmother who would not take no for an answer</li><!-- /wp:list-item --><!-- wp:list-item --><li>Mint tea, three times, because it kept being offered</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph --><p>The best advice I got all day came from a spice seller: walk the market twice, once to look and once to buy. I did not follow it, and I regret nothing.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>By sunset I had spent less than the price of a restaurant dinner, learned four new words for bread and been invited to a wedding. I could not go, which I still regret.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "city-breaks"
+   ],
+   "tags": [
+    "food",
+    "markets"
+   ],
+   "featured_media": "market",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Home",
+     "page": "home"
+    },
+    {
+     "title": "Destinations",
+     "page": "destinations",
+     "children": [
+      {
+       "title": "Mountains",
+       "category": "mountains"
+      },
+      {
+       "title": "Coastlines",
+       "category": "coastlines"
+      },
+      {
+       "title": "City Breaks",
+       "category": "city-breaks"
+      },
+      {
+       "title": "Deserts",
+       "category": "deserts"
+      },
+      {
+       "title": "Forests & Lakes",
+       "category": "forests-lakes"
+      }
+     ]
+    },
+    {
+     "title": "Journal",
+     "page": "journal"
+    },
+    {
+     "title": "Field Notes",
+     "category": "field-notes"
+    },
+    {
+     "title": "About",
+     "page": "about",
+     "children": [
+      {
+       "title": "Contact",
+       "page": "contact"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Social",
+   "location": "social",
+   "items": [
+    {
+     "title": "Instagram",
+     "url": "https://instagram.com/"
+    },
+    {
+     "title": "YouTube",
+     "url": "https://youtube.com/"
+    },
+    {
+     "title": "Newsletter",
+     "url": "https://example.com/newsletter"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "sidebar-1": [
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Hello, traveller</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Two slow travellers writing about long walks, night trains and the places in between.</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:search {\"label\":\"Search\",\"buttonText\":\"Search\"} /-->",
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Destinations</h2><!-- /wp:heading --><!-- wp:categories {\"showPostCounts\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Recent stories</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":4,\"displayPostDate\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Topics</h2><!-- /wp:heading --><!-- wp:tag-cloud /--></div><!-- /wp:group -->"
+  ],
+  "footer-1": [
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">About Wanderline</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Slow journeys told one story at a time. No sponsored posts, no top-ten lists.</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Latest</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":3,\"displayPostDate\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group {\"className\":\"widget-block\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group widget-block\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Destinations</h2><!-- /wp:heading --><!-- wp:categories {\"showPostCounts\":true} /--></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "hero_image": "hero",
+  "accent": "#e4572e",
+  "dusk": "#1f2041",
+  "post_layout": "tiles",
+  "sidebar": "right",
+  "header_style": "overlay",
+  "font_pairing": "poster",
+  "sticky_header": true,
+  "show_thumbs": true,
+  "show_author": false,
+  "hero_kicker": "Field notes from the long way round",
+  "hero_title": "Go further than the map",
+  "footer_text": "© Wanderline. Written on trains, trails and ferries."
+ }
+}

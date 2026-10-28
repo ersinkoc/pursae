@@ -1,0 +1,11 @@
+<article id="post-{{.ID}}" class="{{.Class}} entry oh-story">
+	{{with .Thumbnail}}<a class="post-thumbnail oh-story__media" href="{{$.Permalink}}" aria-hidden="true" tabindex="-1">{{.}}</a>{{end}}
+	<div class="oh-story__body">
+		<p class="oh-story__meta">{{if .ShowFeatured}}<span class="sticky-badge">Featured</span>{{end}}{{with .Categories}}{{with index . 0}}<a href="{{.URL}}">{{.Name}}</a>{{end}}{{end}}</p>
+		<h2 class="entry-title"><a href="{{.Permalink}}" rel="bookmark">{{.Title}}</a></h2>
+		<div class="entry-summary{{if not .ShowExcerpt}} is-full{{end}}">
+			{{if .ShowExcerpt}}{{.Excerpt}}{{else}}{{.Content}}{{end}}
+		</div>
+		<p class="oh-story__foot"><span class="byline">{{with .AuthorName}}{{.}} &middot; {{end}}</span><time datetime="{{.DateISO}}">{{.DateText}}</time><a class="more-link" href="{{.Permalink}}">Read the story<span class="screen-reader-text">: {{.Title}}</span></a></p>
+	</div>
+</article><!-- #post-{{.ID}} -->

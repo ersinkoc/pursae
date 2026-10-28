@@ -1,0 +1,7 @@
+@font-face { font-family: "Cormorant Garamond"; src: url("fonts/cormorant.woff2") format("woff2"); font-weight: 400 700; font-display: swap; }
+@font-face { font-family: "Cormorant Garamond"; src: url("fonts/cormorant-italic.woff2") format("woff2"); font-weight: 400 600; font-style: italic; font-display: swap; }
+body { font-family: "Cormorant Garamond", Garamond, serif; font-size: 1.22rem; line-height: 1.7; color: #4a4140; background: #fbf7f2; }
+h1, h2, h3, h4, .editor-post-title__input { font-family: "Cormorant Garamond", Garamond, serif; font-weight: 500; color: #3b3433; }
+a { color: #8d5258; }
+blockquote { text-align: center; font-style: italic; border: 0; }
+.wp-block-button__link { background: #9d5c63; color: #fff; border-radius: 0; letter-spacing: .22em; text-transform: uppercase; font-size: .8rem; }

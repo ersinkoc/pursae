@@ -1,0 +1,15 @@
+{{with .Data.Settings}}<section class="ec-hero" aria-label="Introduction">
+	<div class="ec-hero__inner">
+		<div class="ec-hero__text">
+			{{with .hero_kicker}}<p class="ec-hero__kicker">{{.}}</p>{{end}}
+			<p class="ec-hero__title">{{with .hero_title}}{{.}}{{else}}{{$.SiteName}}{{end}}</p>
+			{{with .hero_text}}<p class="ec-hero__lead">{{.}}</p>{{end}}
+			<p class="ec-hero__actions">{{with .cta_label}}<a class="button" href="{{$.Data.Settings.cta_link}}">{{.}}</a>{{end}}{{with .phone}}<a class="button button--ghost" href="tel:{{.}}">Call {{.}}</a>{{end}}</p>
+			{{with .hero_badges}}<ul class="ec-badges">{{range split . ","}}<li>{{.}}</li>{{end}}</ul>{{end}}
+		</div>
+		<div class="ec-hero__media">
+			<img src="{{with .hero_image}}{{.}}{{else}}{{$.ThemeURI}}/images/hero.jpg{{end}}" alt="" />
+			{{with .hours}}<p class="ec-hero__card"><span class="ec-hero__card-label">Opening hours</span>{{.}}</p>{{end}}
+		</div>
+	</div>
+</section>{{end}}

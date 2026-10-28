@@ -1,0 +1,7 @@
+@font-face { font-family: "Fraunces"; src: url("fonts/fraunces.woff2") format("woff2"); font-weight: 400 700; font-display: swap; }
+@font-face { font-family: "Nunito"; src: url("fonts/nunito.woff2") format("woff2"); font-weight: 400 800; font-display: swap; }
+body { font-family: "Nunito", system-ui, sans-serif; font-size: 1.1rem; line-height: 1.7; color: #3a2a22; background: #fff8ef; }
+h1, h2, h3, h4, .editor-post-title__input { font-family: "Fraunces", Georgia, serif; color: #2b1d16; letter-spacing: -.015em; }
+a { color: #ad4209; }
+blockquote { border-left: 6px solid #fcc419; padding-left: 1.2em; font-family: "Fraunces", Georgia, serif; }
+.wp-block-button__link { background: #e8590c; color: #fff; border-radius: 999px; font-weight: 800; }

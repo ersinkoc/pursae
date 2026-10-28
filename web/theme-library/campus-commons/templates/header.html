@@ -1,0 +1,30 @@
+{{template "head" .}}
+<body class="{{.BodyClass}}">
+{{.BodyOpen}}<div id="page" class="site">
+	<a class="skip-link screen-reader-text" href="#main">Skip to content</a>
+	<div class="cc-topbar">
+		<div class="cc-topbar__inner">
+			{{with .Data.Settings.notice_text}}<p class="cc-topbar__notice"><span class="cc-topbar__tag">Notice</span> {{.}}</p>{{end}}
+			{{if has_nav_menu . "utility"}}<nav class="cc-utility" aria-label="Quick links">{{nav_menu . "utility"}}</nav>{{end}}
+		</div>
+	</div>
+	<header id="masthead" class="site-header">
+		<div class="cc-brandrow">
+			<div class="cc-brandrow__inner">
+				{{template "branding" .}}
+				{{with .Data.Settings.apply_label}}<a class="button cc-apply" href="{{$.Data.Settings.apply_link}}">{{.}}</a>{{end}}
+			</div>
+		</div>
+		<div class="cc-navbar">
+			<div class="site-header__inner">
+				<p class="cc-navbar__name" aria-hidden="true"><a href="{{.HomeURL}}" tabindex="-1">{{.SiteName}}</a></p>
+				{{if has_nav_menu . "primary"}}<nav id="site-navigation" class="main-navigation" aria-label="Primary menu">
+					{{template "menu-toggle" .}}
+					<div id="primary-menu-wrap" class="menu-wrap">{{nav_menu . "primary"}}</div>
+				</nav><!-- #site-navigation -->{{end}}
+				<form role="search" method="get" class="cc-navsearch" action="{{.HomeURL}}"><label><span class="screen-reader-text">Search</span><input type="search" name="s" placeholder="Search…" value="{{.SearchQuery}}" /></label></form>
+			</div>
+		</div>
+	</header><!-- #masthead -->
+	{{if .IsFront}}{{template "hero" .}}{{end}}
+	{{template "wrap-open" .}}

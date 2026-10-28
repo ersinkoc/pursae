@@ -1,0 +1,11 @@
+<section class="no-results not-found">
+	<h2 class="no-results__title">No stories here yet</h2>
+	{{if eq .Template "search"}}
+		<p>Nothing matched your search. Try different words, or browse the latest posts from the menu.</p>
+	{{else if and (eq .Template "index") .CanPublish}}
+		<p>Ready to publish your first post? <a href="/wp-admin/post-new">Get started here</a>.</p>
+	{{else}}
+		<p>We have not written about this place yet. Search for another destination.</p>
+		{{template "searchform" .}}
+	{{end}}
+</section><!-- .no-results -->

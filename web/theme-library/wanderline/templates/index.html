@@ -1,0 +1,13 @@
+{{template "header" .}}
+{{if .IsHomeHeader}}<header class="page-header">
+	<p class="page-kicker">The journal</p>
+	<h1 class="page-title">{{.PostsPageTitle}}</h1>
+</header>{{else if .IsFront}}<header class="page-header page-header--front">
+	<h2 class="section-title">Latest stories</h2>
+</header>{{end}}
+{{if .Posts}}<div class="post-list">
+	{{range .Posts}}{{template "content" .}}
+	{{end}}
+</div>
+{{.Pagination}}{{else}}{{template "content-none" .}}{{end}}
+{{template "footer" .}}

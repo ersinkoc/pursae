@@ -1,0 +1,9 @@
+{{template "header" .}}
+<section class="error-404 not-found">
+	<p class="error-404__code" aria-hidden="true">404</p>
+	<h1 class="page-title">This page has wandered off</h1>
+	<p class="error-404__text">We could not find what you were looking for, but there is plenty of good news elsewhere. Try a search or head home.</p>
+	{{template "searchform" .}}
+	<p class="error-404__home"><a class="button" href="{{.HomeURL}}">Back to the front page</a></p>
+</section><!-- .error-404 -->
+{{template "footer" .}}
