@@ -1,0 +1,30 @@
+	<footer id="colophon" class="site-footer">
+		<div class="checker" aria-hidden="true"></div>
+		<div class="wrap site-footer__grid">
+			<section class="footer-col footer-col--brand" aria-label="{{.SiteName}}">
+				<p class="footer-brand">{{.SiteName}}</p>
+				{{with .Description}}<p class="footer-tagline">{{.}}</p>{{end}}
+				{{with theme_mod . "address"}}<p class="footer-address">{{.}}</p>{{end}}
+				{{with theme_mod . "phone"}}<p class="footer-phone"><a href="tel:{{.}}">{{.}}</a></p>{{end}}
+			</section>
+			<section class="footer-col footer-col--widgets" aria-label="More">
+				{{if is_active_sidebar . "footer-1"}}{{dynamic_sidebar . "footer-1"}}{{else}}<h2 class="widget-title">Drop-off</h2><p>Keys in the box by the gate after hours.</p>{{end}}
+			</section>
+			<section class="footer-col footer-col--hours" aria-labelledby="footer-hours">
+				<h2 id="footer-hours" class="widget-title">Workshop hours</h2>
+				{{with theme_mod . "hours_text"}}<p class="footer-hours">{{.}}</p>{{end}}
+				{{with theme_mod . "booking_label"}}<a class="button" href="{{theme_mod $ "booking_url"}}">{{.}}</a>{{end}}
+			</section>
+		</div>
+		<div class="site-info-band">
+			<div class="wrap site-info">
+				{{if has_nav_menu . "social"}}<nav class="social-navigation" aria-label="Social links">{{nav_menu . "social"}}</nav>{{end}}
+				<p>{{.PrivacyLink}}<span>{{with theme_mod . "footer_text"}}{{.}}{{else}}&copy; {{$.SiteName}}{{end}}</span><span>Powered by <a href="https://github.com/boracomet/wordpress-go">WordPress Go</a></span></p>
+			</div>
+		</div>
+	</footer><!-- #colophon -->
+</div><!-- #page -->
+
+{{.Footer}}{{.AdminBar}}
+</body>
+</html>

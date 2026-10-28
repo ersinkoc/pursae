@@ -1,0 +1,10 @@
+<article id="post-{{.ID}}" class="{{.Class}} card">
+	{{with .Thumbnail}}<a class="card__media post-thumbnail" href="{{$.Permalink}}" aria-hidden="true" tabindex="-1">{{.}}</a>{{end}}
+	<div class="card__body">
+		<p class="card__meta">{{with .Categories}}{{with index . 0}}<a class="card__cat" href="{{.URL}}">{{.Name}}</a>{{end}}{{end}}{{if eq .Type "post"}}<time class="card__date" datetime="{{.DateISO}}">{{.DateText}}</time>{{end}}</p>
+		{{if .ShowFeatured}}<span class="sticky-badge">Featured</span>{{end}}
+		<h2 class="card__title entry-title"><a href="{{.Permalink}}" rel="bookmark">{{.Title}}</a></h2>
+		<div class="card__excerpt entry-summary">{{if .ShowExcerpt}}{{.Excerpt}}{{else}}{{.Content}}{{end}}</div>
+		{{if .ShowExcerpt}}<a class="card__more" href="{{.Permalink}}">Read more<span class="screen-reader-text"> &ldquo;{{.Title}}&rdquo;</span></a>{{end}}
+	</div>
+</article><!-- #post-{{.ID}} -->

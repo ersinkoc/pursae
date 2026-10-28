@@ -1,0 +1,10 @@
+{{template "header" .}}
+<main id="main" class="site-main site-main--404" tabindex="-1">
+	<section class="error-404 not-found wrap wrap--content">
+		<p class="error-404__code" aria-hidden="true">404</p>
+		<h1 class="page-title">Wrong turn. This road is closed.</h1>
+		<p>The page you were after is not in the garage. Try a search to find the right lane. <a href="{{.HomeURL}}">Back to the home page</a>.</p>
+		{{template "searchform" .}}
+	</section><!-- .error-404 -->
+</main>
+{{template "footer" .}}

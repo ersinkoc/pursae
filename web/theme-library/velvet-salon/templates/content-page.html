@@ -1,0 +1,13 @@
+<article id="post-{{.ID}}" class="{{.Class}} entry entry--page">
+	<header class="page-header page-header--page">
+		<div class="wrap">
+			<p class="page-header__eyebrow">Velvet Salon</p>
+			<h1 class="page-title entry-title">{{.Title}}</h1>
+			{{with .EditLink}}<div class="entry-meta"><span class="edit-link">{{.}}</span></div>{{end}}
+		</div>
+	</header>
+	{{with .Thumbnail}}<figure class="post-thumbnail page-thumbnail wrap">{{.}}</figure>{{end}}
+	<div class="entry-content entry-content--page">
+		{{.Content}}
+	</div><!-- .entry-content -->
+</article><!-- #post-{{.ID}} -->

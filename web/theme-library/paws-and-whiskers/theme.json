@@ -1,0 +1,342 @@
+{
+  "slug": "paws-and-whiskers",
+  "name": "Paws & Whiskers",
+  "version": "1.0.0",
+  "description": "A cheerful veterinary clinic and pet care theme: warm orange and teal on cream, rounded Fredoka headings with highly legible Atkinson text, an emergency line bar, blob-shaped hero image, service cards, vet profiles, an adoption corner and a pet-care advice blog.",
+  "author": "WordPress Go",
+  "author_url": "https://github.com/boracomet/wordpress-go",
+  "theme_url": "https://github.com/boracomet/wordpress-go/tree/main/web/theme-library/paws-and-whiskers",
+  "tags": [
+    "Pets",
+    "Veterinary",
+    "Health",
+    "Business",
+    "Grid Layout",
+    "Right Sidebar",
+    "Custom Colors",
+    "Custom Logo",
+    "Custom Menu",
+    "Editor Style",
+    "Featured Images",
+    "Footer Widgets",
+    "Threaded Comments",
+    "Wide Blocks"
+  ],
+  "requires_core": "0.1.0",
+  "screenshot": "assets/screenshot.png",
+  "category": "pets",
+  "style": "Friendly vet clinic in orange and teal, rounded and playful",
+  "demo": "demo/demo.json",
+  "widget_areas": [
+    {
+      "id": "sidebar-1",
+      "name": "Sidebar",
+      "description": "Beside advice posts while Customize › Blog & Footer shows the sidebar."
+    },
+    {
+      "id": "footer-1",
+      "name": "Footer",
+      "description": "The middle footer column, between the clinic details and the emergency box."
+    }
+  ],
+  "menu_locations": [
+    {
+      "id": "primary",
+      "name": "Primary Menu"
+    },
+    {
+      "id": "social",
+      "name": "Social Links"
+    }
+  ],
+  "styles": [
+    {
+      "handle": "paws-and-whiskers-style",
+      "src": "assets/style.css",
+      "deps": [
+        "wp-block-library"
+      ],
+      "media": "all"
+    }
+  ],
+  "scripts": [
+    {
+      "handle": "paws-and-whiskers-navigation",
+      "src": "assets/js/navigation.js",
+      "deps": [],
+      "in_footer": true
+    }
+  ],
+  "editor_styles": [
+    "assets/editor-style.css"
+  ],
+  "preload_fonts": [
+    "assets/fonts/fredoka.woff2",
+    "assets/fonts/atkinson-400.woff2"
+  ],
+  "palette": [
+    {
+      "name": "Orange",
+      "slug": "orange",
+      "color": "#e5741a"
+    },
+    {
+      "name": "Teal",
+      "slug": "teal",
+      "color": "#127c7a"
+    },
+    {
+      "name": "Deep teal",
+      "slug": "deep-teal",
+      "color": "#0b4f4e"
+    },
+    {
+      "name": "Cream",
+      "slug": "cream",
+      "color": "#fff8ef"
+    },
+    {
+      "name": "Sunny",
+      "slug": "sunny",
+      "color": "#ffd56b"
+    },
+    {
+      "name": "Bark",
+      "slug": "bark",
+      "color": "#2e2a26"
+    }
+  ],
+  "supports": {
+    "post-thumbnails": true,
+    "custom-logo": {
+      "width": 240,
+      "height": 80,
+      "flex-width": true,
+      "flex-height": true,
+      "header-text": [
+        "site-title",
+        "site-description"
+      ]
+    },
+    "title-tag": true,
+    "html5": [
+      "search-form",
+      "comment-form",
+      "comment-list",
+      "gallery",
+      "caption",
+      "script",
+      "style"
+    ],
+    "responsive-embeds": true,
+    "align-wide": true,
+    "wp-block-styles": true
+  },
+  "customizer": {
+    "sections": [
+      {
+        "id": "paws_colors",
+        "title": "Colors & Type",
+        "priority": 40,
+        "settings": [
+          {
+            "id": "orange_color",
+            "label": "Orange accent",
+            "type": "color",
+            "default": "#e5741a",
+            "transport": "postMessage",
+            "css_var": "--pw-orange",
+            "description": "Buttons, badges and highlights."
+          },
+          {
+            "id": "teal_color",
+            "label": "Teal",
+            "type": "color",
+            "default": "#127c7a",
+            "transport": "postMessage",
+            "css_var": "--pw-teal",
+            "description": "Links, the emergency bar and the footer."
+          },
+          {
+            "id": "cream_color",
+            "label": "Background",
+            "type": "color",
+            "default": "#fff8ef",
+            "transport": "postMessage",
+            "css_var": "--pw-cream"
+          },
+          {
+            "id": "font_pairing",
+            "label": "Typefaces",
+            "type": "select",
+            "default": "fredoka",
+            "transport": "postMessage",
+            "body_class": "pw-font-{value}",
+            "choices": [
+              {
+                "value": "fredoka",
+                "label": "Rounded Fredoka with Atkinson"
+              },
+              {
+                "value": "atkinson",
+                "label": "Atkinson Hyperlegible only"
+              },
+              {
+                "value": "system",
+                "label": "System fonts"
+              }
+            ]
+          },
+          {
+            "id": "wavy_edges",
+            "label": "Wavy section edges",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "pw-waves",
+            "description": "Waves under the hero and above the footer."
+          }
+        ]
+      },
+      {
+        "id": "paws_header",
+        "title": "Header & Emergency Line",
+        "priority": 41,
+        "settings": [
+          {
+            "id": "show_emergency",
+            "label": "Show the emergency bar above the header",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "pw-emergency"
+          },
+          {
+            "id": "emergency_text",
+            "label": "Emergency message",
+            "type": "text",
+            "default": "Out-of-hours emergencies: we answer day and night",
+            "transport": "refresh",
+            "description": "Shown in the emergency bar and the footer."
+          },
+          {
+            "id": "phone",
+            "label": "Phone number",
+            "type": "text",
+            "default": "+1 (555) 017-7297",
+            "transport": "refresh"
+          },
+          {
+            "id": "booking_label",
+            "label": "Booking button label",
+            "type": "text",
+            "default": "Book a visit",
+            "transport": "refresh",
+            "description": "Empty hides the button."
+          },
+          {
+            "id": "booking_url",
+            "label": "Booking link",
+            "type": "text",
+            "default": "/appointments/",
+            "transport": "refresh"
+          }
+        ]
+      },
+      {
+        "id": "paws_front",
+        "title": "Front Page Hero",
+        "priority": 42,
+        "settings": [
+          {
+            "id": "hero_image",
+            "label": "Hero image",
+            "type": "image",
+            "description": "Without an image the front page's featured image is used."
+          },
+          {
+            "id": "hero_heading",
+            "label": "Heading",
+            "type": "text",
+            "default": "",
+            "transport": "refresh",
+            "description": "Empty uses the page title."
+          },
+          {
+            "id": "hero_text",
+            "label": "Text",
+            "type": "textarea",
+            "default": "",
+            "transport": "refresh"
+          }
+        ]
+      },
+      {
+        "id": "paws_blog",
+        "title": "Blog & Footer",
+        "priority": 43,
+        "settings": [
+          {
+            "id": "card_style",
+            "label": "Card style",
+            "type": "select",
+            "default": "bubbly",
+            "transport": "postMessage",
+            "body_class": "pw-cards-{value}",
+            "choices": [
+              {
+                "value": "bubbly",
+                "label": "Bubbly, with soft shadows"
+              },
+              {
+                "value": "outlined",
+                "label": "Outlined and flat"
+              }
+            ]
+          },
+          {
+            "id": "blog_layout",
+            "label": "Blog layout",
+            "type": "select",
+            "default": "grid",
+            "transport": "postMessage",
+            "body_class": "blog-{value}",
+            "choices": [
+              {
+                "value": "grid",
+                "label": "Grid of cards"
+              },
+              {
+                "value": "list",
+                "label": "List with images beside"
+              }
+            ]
+          },
+          {
+            "id": "show_sidebar",
+            "label": "Show the sidebar beside posts",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "has-sidebar"
+          },
+          {
+            "id": "hours_text",
+            "label": "Opening hours",
+            "type": "textarea",
+            "default": "Mon – Fri  8:00 – 19:00\nSaturday  9:00 – 14:00\nSunday  emergencies only",
+            "transport": "refresh"
+          },
+          {
+            "id": "footer_text",
+            "label": "Footer text",
+            "type": "text",
+            "default": "",
+            "transport": "refresh",
+            "description": "Replaces the copyright line."
+          }
+        ]
+      }
+    ]
+  }
+}

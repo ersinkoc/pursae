@@ -1,0 +1,418 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Paws & Whiskers",
+  "blogdescription": "Friendly vets for dogs, cats and small pets",
+  "posts_per_page": 6
+ },
+ "categories": [
+  {
+   "slug": "dogs",
+   "name": "Dogs",
+   "description": "Advice for dog owners."
+  },
+  {
+   "slug": "cats",
+   "name": "Cats",
+   "description": "Cat health and behaviour."
+  },
+  {
+   "slug": "small-pets",
+   "name": "Small pets",
+   "description": "Rabbits, guinea pigs and other small companions."
+  },
+  {
+   "slug": "adoption",
+   "name": "Adoption",
+   "description": "Animals looking for homes, and their stories."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "anxiety",
+   "name": "Anxiety"
+  },
+  {
+   "slug": "seasonal",
+   "name": "Seasonal"
+  },
+  {
+   "slug": "check-ups",
+   "name": "Check-ups"
+  },
+  {
+   "slug": "senior-pets",
+   "name": "Senior pets"
+  },
+  {
+   "slug": "nutrition",
+   "name": "Nutrition"
+  },
+  {
+   "slug": "puppies",
+   "name": "Puppies"
+  },
+  {
+   "slug": "dental",
+   "name": "Dental"
+  },
+  {
+   "slug": "rescue",
+   "name": "Rescue"
+  }
+ ],
+ "media": [
+  {
+   "id": "hero-friends",
+   "file": "demo/images/hero-friends.jpg",
+   "alt": "Illustration of a happy brown dog and a ginger cat sitting side by side",
+   "caption": ""
+  },
+  {
+   "id": "dog-golden",
+   "file": "demo/images/dog-golden.jpg",
+   "alt": "Illustration of a golden dog with a teal collar",
+   "caption": ""
+  },
+  {
+   "id": "cat-grey",
+   "file": "demo/images/cat-grey.jpg",
+   "alt": "Illustration of a grey cat with green eyes and an orange collar",
+   "caption": ""
+  },
+  {
+   "id": "rabbit",
+   "file": "demo/images/rabbit.jpg",
+   "alt": "Illustration of a cream rabbit with tall pink ears",
+   "caption": ""
+  },
+  {
+   "id": "puppy",
+   "file": "demo/images/puppy.jpg",
+   "alt": "Illustration of a cream puppy with an orange collar on lilac",
+   "caption": ""
+  },
+  {
+   "id": "adopt-biscuit",
+   "file": "demo/images/adopt-biscuit.jpg",
+   "alt": "Illustration of Biscuit, a sandy dog waiting for a home",
+   "caption": ""
+  },
+  {
+   "id": "adopt-pepper",
+   "file": "demo/images/adopt-pepper.jpg",
+   "alt": "Illustration of Pepper, a black cat with a teal collar",
+   "caption": ""
+  },
+  {
+   "id": "adopt-clover",
+   "file": "demo/images/adopt-clover.jpg",
+   "alt": "Illustration of Clover, a brown rabbit",
+   "caption": ""
+  },
+  {
+   "id": "food-bowl",
+   "file": "demo/images/food-bowl.jpg",
+   "alt": "A teal bowl full of pet food beside a bone-shaped treat",
+   "caption": ""
+  },
+  {
+   "id": "clinic",
+   "file": "demo/images/clinic.jpg",
+   "alt": "A stethoscope next to a white first-aid box with an orange cross",
+   "caption": ""
+  },
+  {
+   "id": "vet-ana",
+   "file": "demo/images/vet-ana.jpg",
+   "alt": "Illustrated portrait of a vet with dark hair in a bun and teal scrubs",
+   "caption": ""
+  },
+  {
+   "id": "vet-joss",
+   "file": "demo/images/vet-joss.jpg",
+   "alt": "Illustrated portrait of a vet with short ginger hair and blue scrubs",
+   "caption": ""
+  },
+  {
+   "id": "vet-ruth",
+   "file": "demo/images/vet-ruth.jpg",
+   "alt": "Illustrated portrait of a vet with curly black hair and orange scrubs",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Kind, unhurried care for the animals you love",
+   "content": "<!-- wp:group {\"align\":\"full\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull\"><!-- wp:paragraph {\"align\":\"center\",\"className\":\"eyebrow\"} --><p class=\"has-text-align-center eyebrow\">Why families choose us</p><!-- /wp:paragraph --><!-- wp:heading {\"textAlign\":\"center\",\"className\":\"section-title\"} --><h2 class=\"wp-block-heading has-text-align-center section-title\">Gentle care for every paw, claw and whisker</h2><!-- /wp:heading --><!-- wp:paragraph {\"align\":\"center\",\"className\":\"lead\"} --><p class=\"has-text-align-center lead\">We are an independent clinic with four vets, six nurses and a waiting room split in two, so nervous cats never have to sit next to excitable spaniels.</p><!-- /wp:paragraph --><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"feature-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group feature-card\"><!-- wp:paragraph {\"className\":\"icon\"} --><p class=\"icon\">✚</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Check-ups &amp; vaccines</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Unhurried twenty-minute appointments, with time for your questions.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"feature-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group feature-card\"><!-- wp:paragraph {\"className\":\"icon\"} --><p class=\"icon\">✦</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Dental care</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Scale and polish under gentle anaesthesia, plus home brushing tips.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"feature-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group feature-card\"><!-- wp:paragraph {\"className\":\"icon\"} --><p class=\"icon\">♥</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Surgery</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Neutering, lump removal and soft-tissue surgery in our own theatre.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:buttons {\"layout\":{\"type\":\"flex\",\"justifyContent\":\"center\"}} --><div class=\"wp-block-buttons is-content-justification-center is-layout-flex\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:services}}\">All our services</a></div><!-- /wp:button --><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:appointments}}\">Register your pet</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"section-dark\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-dark\"><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column {\"width\":\"45%\"} --><div class=\"wp-block-column\" style=\"flex-basis:45%\"><!-- wp:image {\"id\":{{media_id:clinic}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:clinic}}\" alt=\"A stethoscope beside a first-aid box\" class=\"wp-image-{{media_id:clinic}}\"/></figure><!-- /wp:image --></div><!-- /wp:column --><!-- wp:column {\"width\":\"55%\"} --><div class=\"wp-block-column\" style=\"flex-basis:55%\"><!-- wp:paragraph {\"className\":\"eyebrow\"} --><p class=\"eyebrow\">Out of hours</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">Worried at midnight? Call us.</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Our on-call vet answers the emergency line every night and weekend. For bleeding, breathing trouble, seizures or a suspected poisoning, ring before you set off so we can be ready.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"tel:+15550177297\">Call +1 (555) 017-7297</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"section-band\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-band\"><!-- wp:paragraph {\"align\":\"center\",\"className\":\"eyebrow\"} --><p class=\"has-text-align-center eyebrow\">Adoption corner</p><!-- /wp:paragraph --><!-- wp:heading {\"textAlign\":\"center\",\"className\":\"section-title\"} --><h2 class=\"wp-block-heading has-text-align-center section-title\">Looking for a forever sofa</h2><!-- /wp:heading --><!-- wp:paragraph {\"align\":\"center\"} --><p class=\"has-text-align-center\">We work with the town rescue to find homes for animals that have been treated here. All are vaccinated, microchipped and neutered.</p><!-- /wp:paragraph --><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"pet-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group pet-card\"><!-- wp:image {\"id\":{{media_id:adopt-biscuit}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:adopt-biscuit}}\" alt=\"Biscuit the dog\" class=\"wp-image-{{media_id:adopt-biscuit}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Biscuit</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"role\"} --><p class=\"role\">4 years · loves long walks</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"tags\"} --><p class=\"tags\"><mark>Good with kids</mark> <mark>House-trained</mark></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"pet-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group pet-card\"><!-- wp:image {\"id\":{{media_id:adopt-pepper}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:adopt-pepper}}\" alt=\"Pepper the cat\" class=\"wp-image-{{media_id:adopt-pepper}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Pepper</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"role\"} --><p class=\"role\">2 years · lap cat in training</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"tags\"} --><p class=\"tags\"><mark>Indoor</mark> <mark>Calm</mark></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"pet-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group pet-card\"><!-- wp:image {\"id\":{{media_id:adopt-clover}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:adopt-clover}}\" alt=\"Clover the rabbit\" class=\"wp-image-{{media_id:adopt-clover}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Clover</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"role\"} --><p class=\"role\">1 year · needs a friend</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"tags\"} --><p class=\"tags\"><mark>Pairs well</mark> <mark>Curious</mark></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:buttons {\"layout\":{\"type\":\"flex\",\"justifyContent\":\"center\"}} --><div class=\"wp-block-buttons is-content-justification-center is-layout-flex\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:adoption}}\">Meet them all</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull\"><!-- wp:paragraph {\"align\":\"center\",\"className\":\"eyebrow\"} --><p class=\"has-text-align-center eyebrow\">Pet-care advice</p><!-- /wp:paragraph --><!-- wp:heading {\"textAlign\":\"center\",\"className\":\"section-title\"} --><h2 class=\"wp-block-heading has-text-align-center section-title\">Fresh from our vets</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":3,\"displayPostDate\":true,\"postLayout\":\"grid\",\"columns\":3,\"align\":\"wide\",\"displayPostContent\":true,\"excerptLength\":18,\"displayFeaturedImage\":true,\"featuredImageSizeSlug\":\"medium_large\"} /--></div><!-- /wp:group -->",
+   "featured_media": "hero-friends",
+   "front_page": true
+  },
+  {
+   "slug": "advice",
+   "title": "Pet-care advice",
+   "content": "",
+   "posts_page": true
+  },
+  {
+   "slug": "services",
+   "title": "Services & vets",
+   "content": "<!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">Every appointment includes a nose-to-tail check. Prices are for a medium-sized dog or a cat; we will always give you an estimate before any treatment.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Everyday care</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"price-list\"} --><ul class=\"wp-block-list price-list\"><!-- wp:list-item --><li><strong>Consultation</strong> <span class=\"price\">$55</span> <span class=\"desc\">Twenty minutes with a vet</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Annual vaccination</strong> <span class=\"price\">$72</span> <span class=\"desc\">Includes a full health check</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Microchipping</strong> <span class=\"price\">$30</span> <span class=\"desc\">Registered on the spot</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Nail trim</strong> <span class=\"price\">$12</span> <span class=\"desc\">With a nurse, no appointment needed</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Puppy &amp; kitten plan</strong> <span class=\"price\">$19 / month</span> <span class=\"desc\">Vaccines, worming, flea care and two free checks</span></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Treatment &amp; surgery</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"price-list\"} --><ul class=\"wp-block-list price-list\"><!-- wp:list-item --><li><strong>Dental scale &amp; polish</strong> <span class=\"price\">from $280</span> <span class=\"desc\">General anaesthetic, X-rays if needed</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Cat neutering</strong> <span class=\"price\">$145</span> <span class=\"desc\">Day patient, home by tea time</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Dog neutering</strong> <span class=\"price\">from $260</span> <span class=\"desc\">Priced by weight</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Lump removal</strong> <span class=\"price\">from $310</span> <span class=\"desc\">Including lab analysis</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Overnight stay</strong> <span class=\"price\">$95</span> <span class=\"desc\">With a nurse on the ward all night</span></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"section-band\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-band\"><!-- wp:heading {\"textAlign\":\"center\",\"className\":\"section-title\"} --><h2 class=\"wp-block-heading has-text-align-center section-title\">Meet the vets</h2><!-- /wp:heading --><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"team-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group team-card\"><!-- wp:image {\"id\":{{media_id:vet-ana}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:vet-ana}}\" alt=\"Portrait illustration of Dr Ana\" class=\"wp-image-{{media_id:vet-ana}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Dr Ana</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"role\"} --><p class=\"role\">Clinical director · Surgery</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Twelve years in practice, with a special interest in orthopaedics and three-legged dogs.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"team-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group team-card\"><!-- wp:image {\"id\":{{media_id:vet-joss}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:vet-joss}}\" alt=\"Portrait illustration of Dr Joss\" class=\"wp-image-{{media_id:vet-joss}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Dr Joss</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"role\"} --><p class=\"role\">Vet · Cats &amp; dentistry</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>A certified cat-friendly vet who will sit on the floor for as long as it takes.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"team-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group team-card\"><!-- wp:image {\"id\":{{media_id:vet-ruth}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:vet-ruth}}\" alt=\"Portrait illustration of Dr Ruth\" class=\"wp-image-{{media_id:vet-ruth}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Dr Ruth</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"role\"} --><p class=\"role\">Vet · Rabbits &amp; small pets</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Rabbits, guinea pigs, rats and the occasional tortoise. Ruth knows them all.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Insurance</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>We can claim directly from most pet insurers, so you only pay the excess. Bring your policy number to the first appointment.</p><!-- /wp:paragraph -->",
+   "featured_media": "clinic",
+   "template": "page-full",
+   "menu_order": 1
+  },
+  {
+   "slug": "adoption",
+   "title": "Adoption corner",
+   "content": "<!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">Every animal here has been looked after by our team and is ready for a home. Visits are by appointment so they are not overwhelmed.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"pet-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group pet-card\"><!-- wp:image {\"id\":{{media_id:adopt-biscuit}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:adopt-biscuit}}\" alt=\"Biscuit the dog\" class=\"wp-image-{{media_id:adopt-biscuit}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Biscuit</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"role\"} --><p class=\"role\">Male · 4 years</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>A gentle, sandy-coloured crossbreed who walks beautifully on the lead and sleeps through the night.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"pet-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group pet-card\"><!-- wp:image {\"id\":{{media_id:adopt-pepper}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:adopt-pepper}}\" alt=\"Pepper the cat\" class=\"wp-image-{{media_id:adopt-pepper}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Pepper</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"role\"} --><p class=\"role\">Female · 2 years</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Shy for the first day, then glued to your lap. Would suit a quiet home without other cats.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"pet-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group pet-card\"><!-- wp:image {\"id\":{{media_id:adopt-clover}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:adopt-clover}}\" alt=\"Clover the rabbit\" class=\"wp-image-{{media_id:adopt-clover}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Clover</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"role\"} --><p class=\"role\">Female · 1 year</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Neutered and vaccinated. Rabbits need company, so we will help you find her a friend.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">How adoption works</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Fill in a short form at reception or by email.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Meet the animal, ideally twice.</li><!-- /wp:list-item --><!-- wp:list-item --><li>We do a friendly home visit.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Take them home with a starter pack and a free check-up after two weeks.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Ask about adopting</a></div><!-- /wp:button --></div><!-- /wp:buttons -->",
+   "featured_media": "adopt-biscuit",
+   "menu_order": 2
+  },
+  {
+   "slug": "appointments",
+   "title": "Appointments",
+   "content": "<!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">Book online, by phone or at reception. Same-day appointments are kept free every morning for poorly pets.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"feature-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group feature-card\"><!-- wp:paragraph {\"className\":\"icon\"} --><p class=\"icon\">☀</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Routine visits</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Check-ups, vaccines and nurse clinics, usually within the week.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"feature-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group feature-card\"><!-- wp:paragraph {\"className\":\"icon\"} --><p class=\"icon\">◷</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Same day</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Call at 8 am for a same-day slot if your pet is unwell.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"feature-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group feature-card\"><!-- wp:paragraph {\"className\":\"icon\"} --><p class=\"icon\">☎</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Emergencies</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Day and night on +1 (555) 017-7297. Please call before you come.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Registering a new pet</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Bring any previous vaccination records and your pet's insurance details. Registration is free and takes five minutes.</p><!-- /wp:paragraph -->",
+   "menu_order": 3
+  },
+  {
+   "slug": "about",
+   "title": "About the clinic",
+   "content": "<!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column {\"width\":\"45%\"} --><div class=\"wp-block-column\" style=\"flex-basis:45%\"><!-- wp:image {\"id\":{{media_id:hero-friends}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:hero-friends}}\" alt=\"A dog and a cat sitting together\" class=\"wp-image-{{media_id:hero-friends}}\"/></figure><!-- /wp:image --></div><!-- /wp:column --><!-- wp:column {\"width\":\"55%\"} --><div class=\"wp-block-column\" style=\"flex-basis:55%\"><!-- wp:heading --><h2 class=\"wp-block-heading\">A neighbourhood clinic since 2009</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Paws &amp; Whiskers started in a converted bakery on Elm Street, and you can still see the old oven door in the nurses' room. We have grown to four vets and six nurses, but we still know most of our patients by name, and many by their favourite treat.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>We are proud to be accredited as a cat-friendly clinic, and our rabbit ward has its own quiet room away from the dogs.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Every animal deserves to be seen by someone who is genuinely pleased to meet them.</p><!-- /wp:paragraph --><cite>Dr Ana, clinical director</cite></blockquote><!-- /wp:quote -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What we believe</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Prevention is kinder and cheaper than cure.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Owners should understand every treatment and its cost.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Fear-free handling is part of good medicine, not an extra.</li><!-- /wp:list-item --></ul><!-- /wp:list -->",
+   "menu_order": 4
+  },
+  {
+   "slug": "contact",
+   "title": "Contact",
+   "content": "<!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Visit</h2><!-- /wp:heading --><!-- wp:paragraph --><p>48 Elm Street, next to the park gates. Free parking for four cars behind the clinic; a ramp leads to the front door.</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Opening hours</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Monday – Friday: 8 am – 7 pm</li><!-- /wp:list-item --><!-- wp:list-item --><li>Saturday: 9 am – 2 pm</li><!-- /wp:list-item --><!-- wp:list-item --><li>Sunday: emergencies only</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Call or write</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Appointments <a href=\"tel:+15550177297\">+1 (555) 017-7297</a><br>Email <a href=\"mailto:hello@paws.example\">hello@paws.example</a></p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Prescriptions can be ordered by email and are ready to collect after 24 hours.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->",
+   "parent": "about",
+   "menu_order": 5
+  }
+ ],
+ "posts": [
+  {
+   "slug": "keeping-pets-calm-on-fireworks-night",
+   "title": "Keeping pets calm on fireworks night",
+   "date": "2026-10-24T10:00:00",
+   "excerpt": "A den, a distraction and a calm owner: our nurses' plan for the noisiest nights of the year.",
+   "content": "<!-- wp:paragraph --><p>For many dogs and cats, fireworks season is the most frightening time of the year. The good news is that a little preparation in the week before makes a real difference.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Build a den now</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Choose a quiet corner, away from windows, and make it cosy with blankets and an old jumper that smells of you. Feed treats there for a week so it becomes a happy place, not a hiding place.</p><!-- /wp:paragraph -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Walk dogs in daylight, before the first bangs.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Keep cats indoors from dusk and block the cat flap.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Close curtains and play music or the television.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Do not tell a frightened pet off, and do not ignore them either. Calm company is the best medicine.</p><!-- /wp:paragraph --><cite>Our head nurse</cite></blockquote><!-- /wp:quote -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">When to talk to us</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>If your pet trembles, hides for hours or hurts itself trying to escape, book a consultation. There are safe calming products and, for severe fear, medication that can help.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "dogs",
+    "cats"
+   ],
+   "tags": [
+    "anxiety",
+    "seasonal"
+   ],
+   "featured_media": "dog-golden",
+   "format": "standard",
+   "sticky": true,
+   "comments": [
+    {
+     "author": "Hannah",
+     "email": "hannah@example.com",
+     "content": "The den idea worked so well for our collie last year. Thank you!",
+     "date": "2026-10-25T09:10:00"
+    },
+    {
+     "author": "Paws & Whiskers",
+     "email": "paws.&.whiskers@example.com",
+     "content": "So pleased to hear it, Hannah. Give her a scratch from us.",
+     "date": "2026-10-25T12:30:00"
+    }
+   ]
+  },
+  {
+   "slug": "how-often-should-my-cat-see-the-vet",
+   "title": "How often should my cat see the vet?",
+   "date": "2026-10-15T09:00:00",
+   "excerpt": "Cats are masters at hiding illness. Here is how often we like to see them, at every age.",
+   "content": "<!-- wp:paragraph --><p>Cats are experts at hiding pain, which is why regular check-ups matter more for them than for almost any other pet. By the time a cat looks ill, it has often been unwell for a while.</p><!-- /wp:paragraph -->\n\n<!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Age</th><th>How often</th><th>What we check</th></tr></thead><tbody><tr><td>Kitten</td><td>Every 3–4 weeks until 16 weeks</td><td>Vaccines, worming, growth</td></tr><tr><td>Adult</td><td>Once a year</td><td>Teeth, weight, heart</td></tr><tr><td>Senior (11+)</td><td>Every six months</td><td>Blood pressure, kidneys, thyroid</td></tr></tbody></table></figure><!-- /wp:table -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Signs not to wait on</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Drinking much more than usual</li><!-- /wp:list-item --><!-- wp:list-item --><li>Weight loss you can feel along the spine</li><!-- /wp:list-item --><!-- wp:list-item --><li>Straining in the litter tray</li><!-- /wp:list-item --><!-- wp:list-item --><li>Hiding or sleeping in unusual places</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>Our cat-only waiting room and slow, gentle handling mean most cats leave less stressed than they arrived. Bring a towel from home to cover the carrier.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>Indoor cats need check-ups just as much as outdoor ones. They may avoid fights and traffic, but they are more prone to weight gain, dental disease and bladder problems.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "cats"
+   ],
+   "tags": [
+    "check-ups",
+    "senior-pets"
+   ],
+   "featured_media": "cat-grey",
+   "format": "standard",
+   "sticky": false
+  },
+  {
+   "slug": "rabbit-diet-basics",
+   "title": "Hay, greens and a few pellets: rabbit diet basics",
+   "date": "2026-10-06T14:00:00",
+   "excerpt": "Most rabbit health problems start with the wrong food. The simple diet our rabbit vet recommends.",
+   "content": "<!-- wp:paragraph --><p>Rabbits are designed to graze for hours. Their teeth grow all their lives and their gut needs a constant supply of fibre. Getting the diet right prevents most of the problems we see.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">The daily plate</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><strong>Hay</strong>: a pile as big as your rabbit, every day.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Greens</strong>: a handful of leafy herbs and vegetables morning and evening.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Pellets</strong>: an egg-cup full, no more.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Water</strong>: fresh, in a bowl rather than a bottle.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:image {\"id\":{{media_id:food-bowl}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:food-bowl}}\" alt=\"A bowl of food and a treat\" class=\"wp-image-{{media_id:food-bowl}}\"/></figure><!-- /wp:image -->\n\n<!-- wp:paragraph --><p>Avoid muesli-style mixes; rabbits pick out the sugary bits and leave the fibre. Fruit and carrots are treats, not meals.</p><!-- /wp:paragraph -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>If a rabbit stops eating or producing droppings for more than a few hours, call us straight away.</p><!-- /wp:paragraph --><cite>Dr Ruth</cite></blockquote><!-- /wp:quote -->",
+   "categories": [
+    "small-pets"
+   ],
+   "tags": [
+    "nutrition"
+   ],
+   "featured_media": "rabbit",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Omar",
+     "email": "omar@example.com",
+     "content": "Switched from muesli to hay and pellets and Clover's teeth are so much better.",
+     "date": "2026-10-08T17:45:00"
+    }
+   ]
+  },
+  {
+   "slug": "first-week-with-a-new-puppy",
+   "title": "Your first week with a new puppy",
+   "date": "2026-09-25T11:30:00",
+   "excerpt": "Sleep, toilet training, the first vet visit and what to buy. A gentle plan for the first seven days.",
+   "content": "<!-- wp:paragraph --><p>Bringing a puppy home is a joy and, let us be honest, a little chaotic. A simple routine helps your puppy feel safe and helps you get some sleep.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Days one to three</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Keep things quiet. Let your puppy explore one or two rooms, offer the garden every hour and after every meal and nap, and praise the smallest success.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Days four to seven</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Book the first vet check and vaccination.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Start short handling sessions: paws, ears, mouth.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Introduce the crate with the door open and a chew inside.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>Our puppy plan covers the first vaccines, worming, flea care and two extra nurse checks, spread into small monthly payments.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "dogs"
+   ],
+   "tags": [
+    "puppies",
+    "check-ups"
+   ],
+   "featured_media": "puppy",
+   "format": "standard",
+   "sticky": false
+  },
+  {
+   "slug": "dental-health-month",
+   "title": "Why dental health matters more than you think",
+   "date": "2026-09-12T09:15:00",
+   "excerpt": "Four in five adult pets have dental disease. How to spot it and what we do about it.",
+   "content": "<!-- wp:paragraph --><p>Bad breath is not just a dog thing. It is often the first sign of gum disease, which can be painful and can affect the heart and kidneys over time.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Look for</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Red gums</li><!-- /wp:list-item --><!-- wp:list-item --><li>Brown tartar on back teeth</li><!-- /wp:list-item --><!-- wp:list-item --><li>Chewing on one side</li><!-- /wp:list-item --><!-- wp:list-item --><li>Dropping food</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">At home</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Brush daily with pet toothpaste</li><!-- /wp:list-item --><!-- wp:list-item --><li>Dental chews, not bones</li><!-- /wp:list-item --><!-- wp:list-item --><li>Check teeth weekly</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:paragraph --><p>During September, nurse dental checks are free. We will look at your pet's teeth, show you how to brush, and tell you honestly if a scale and polish is needed.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>If your pet does need a scale and polish, we take dental X-rays at the same time, because most of each tooth sits below the gum where problems hide.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "dogs",
+    "cats"
+   ],
+   "tags": [
+    "dental"
+   ],
+   "featured_media": "clinic",
+   "format": "standard",
+   "sticky": false
+  },
+  {
+   "slug": "meet-pepper-adoption",
+   "title": "Adoption story: how Pepper learned to trust",
+   "date": "2026-08-30T16:00:00",
+   "excerpt": "Pepper arrived hiding under a radiator. Six weeks later she is the nurses' favourite lap cat.",
+   "content": "<!-- wp:paragraph --><p>When Pepper came to us from the rescue, she spent three days under the radiator in the cat ward, eating only when the lights were off. Today she climbs onto the nearest lap the moment you sit down.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Small steps</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Nurse visits at the same times every day</li><!-- /wp:list-item --><!-- wp:list-item --><li>A covered bed she could hide in</li><!-- /wp:list-item --><!-- wp:list-item --><li>Treats from a spoon, then from a hand</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>Pepper is now ready for a quiet home of her own. She would love a sunny windowsill, a person who works from home, and no other cats.</p><!-- /wp:paragraph -->\n\n<!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:adoption}}\">Ask about Pepper</a></div><!-- /wp:button --></div><!-- /wp:buttons -->\n\n<!-- wp:paragraph --><p>Every animal in our adoption corner has had a full health check, vaccines, a microchip and neutering, and goes home with four weeks of insurance and a bag of their usual food.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "adoption"
+   ],
+   "tags": [
+    "rescue"
+   ],
+   "featured_media": "adopt-pepper",
+   "format": "standard",
+   "sticky": false
+  },
+  {
+   "slug": "summer-heat-safety",
+   "title": "Hot days: keeping dogs safe in the heat",
+   "date": "2026-08-12T08:30:00",
+   "excerpt": "Heatstroke can kill in minutes. Simple rules for walks, cars and gardens on warm days.",
+   "content": "<!-- wp:paragraph --><p>Dogs cool down mostly by panting, which works poorly in hot, humid weather. Short-nosed breeds, older dogs and heavy dogs are most at risk.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Simple rules</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Walk early in the morning or late in the evening.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Test the pavement with the back of your hand for seven seconds.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Never leave a dog in a car, even with the windows open.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Offer shade and water in the garden all day.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>Signs of heatstroke include heavy panting, drooling, wobbling and vomiting. Move your dog somewhere cool, wet them with cool (not ice-cold) water and call us on the way.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>Cats feel the heat too. Leave a bowl of water in a shady spot and close the blinds on south-facing windows during the hottest part of the day.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "dogs"
+   ],
+   "tags": [
+    "seasonal"
+   ],
+   "featured_media": "hero-friends",
+   "format": "standard",
+   "sticky": false
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Home",
+     "page": "home"
+    },
+    {
+     "title": "Services",
+     "page": "services",
+     "children": [
+      {
+       "page": "appointments"
+      },
+      {
+       "page": "adoption"
+      }
+     ]
+    },
+    {
+     "title": "Advice",
+     "page": "advice",
+     "children": [
+      {
+       "category": "dogs"
+      },
+      {
+       "category": "cats"
+      },
+      {
+       "category": "small-pets"
+      }
+     ]
+    },
+    {
+     "title": "About",
+     "page": "about",
+     "children": [
+      {
+       "page": "contact"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Social",
+   "location": "social",
+   "items": [
+    {
+     "title": "Instagram",
+     "url": "https://instagram.com/"
+    },
+    {
+     "title": "Facebook",
+     "url": "https://facebook.com/"
+    },
+    {
+     "title": "YouTube",
+     "url": "https://youtube.com/"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "sidebar-1": [
+   "<!-- wp:search {\"label\":\"Search advice\",\"buttonText\":\"Search\"} /-->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Topics</h2><!-- /wp:heading --><!-- wp:categories /--></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Puppy &amp; kitten plan</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Vaccines, worming, flea care and two free checks for $19 a month.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:services}}\">Find out more</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->"
+  ],
+  "footer-1": [
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Quick links</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><a href=\"{{page:appointments}}\">Book a visit</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{page:services}}\">Prices</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{page:adoption}}\">Adoption corner</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{page:contact}}\">Find us</a></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "hero_image": "hero-friends",
+  "hero_heading": "Kind, unhurried care for the animals you love",
+  "hero_text": "Check-ups, surgery and round-the-clock emergency care from a team that treats every pet like their own.",
+  "booking_url": "{{page:appointments}}",
+  "card_style": "bubbly",
+  "show_sidebar": true
+ }
+}

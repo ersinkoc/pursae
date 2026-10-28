@@ -1,0 +1,396 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Greenleaf Market",
+  "blogdescription": "Organic grocery and farm shop in Millbrook",
+  "posts_per_page": 9
+ },
+ "categories": [
+  {
+   "slug": "recipes",
+   "name": "Recipes",
+   "description": "Simple cooking with what is in season."
+  },
+  {
+   "slug": "seasonal",
+   "name": "Seasonal",
+   "description": "What is growing, picking and arriving."
+  },
+  {
+   "slug": "producers",
+   "name": "Producers",
+   "description": "The growers, bakers and makers we buy from."
+  },
+  {
+   "slug": "shop-news",
+   "name": "Shop news",
+   "description": "Events, refills and changes in the shop."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "autumn",
+   "name": "Autumn"
+  },
+  {
+   "slug": "vegetarian",
+   "name": "Vegetarian"
+  },
+  {
+   "slug": "box-recipes",
+   "name": "Box recipes"
+  },
+  {
+   "slug": "zero-waste",
+   "name": "Zero waste"
+  },
+  {
+   "slug": "bread",
+   "name": "Bread"
+  },
+  {
+   "slug": "preserving",
+   "name": "Preserving"
+  },
+  {
+   "slug": "events",
+   "name": "Events"
+  }
+ ],
+ "media": [
+  {
+   "id": "hero-crate",
+   "file": "demo/images/hero-crate.jpg",
+   "alt": "A wooden crate of tomatoes, carrots, green apples, plums and leafy greens",
+   "caption": ""
+  },
+  {
+   "id": "weekly-box",
+   "file": "demo/images/weekly-box.jpg",
+   "alt": "This week's produce box with tomatoes, carrots, greens and plums, and a paper label",
+   "caption": ""
+  },
+  {
+   "id": "bread",
+   "file": "demo/images/bread.jpg",
+   "alt": "Two sourdough loaves on a floury board",
+   "caption": ""
+  },
+  {
+   "id": "eggs",
+   "file": "demo/images/eggs.jpg",
+   "alt": "A tray of brown and cream free-range eggs",
+   "caption": ""
+  },
+  {
+   "id": "pantry-jars",
+   "file": "demo/images/pantry-jars.jpg",
+   "alt": "Five refill jars of grains, lentils, pasta and oats with paper labels",
+   "caption": ""
+  },
+  {
+   "id": "salad",
+   "file": "demo/images/salad.jpg",
+   "alt": "A bowl of leafy salad with cherry tomatoes and white beans",
+   "caption": ""
+  },
+  {
+   "id": "strawberries",
+   "file": "demo/images/strawberries.jpg",
+   "alt": "A tray of ripe strawberries",
+   "caption": ""
+  },
+  {
+   "id": "orchard",
+   "file": "demo/images/orchard.jpg",
+   "alt": "Apple trees heavy with red fruit on rolling green hills",
+   "caption": ""
+  },
+  {
+   "id": "fields",
+   "file": "demo/images/fields.jpg",
+   "alt": "Rows of green crops and brown soil under a warm sky",
+   "caption": ""
+  },
+  {
+   "id": "grower-hal",
+   "file": "demo/images/grower-hal.jpg",
+   "alt": "Illustrated portrait of a grower wearing a cap and a brown jacket",
+   "caption": ""
+  },
+  {
+   "id": "grower-noor",
+   "file": "demo/images/grower-noor.jpg",
+   "alt": "Illustrated portrait of a grower with long black hair in a green jumper",
+   "caption": ""
+  },
+  {
+   "id": "baker-ilse",
+   "file": "demo/images/baker-ilse.jpg",
+   "alt": "Illustrated portrait of a baker with a blonde bun and a red top",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Fresh from fields you can cycle to",
+   "content": "<!-- wp:group {\"align\":\"wide\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignwide\"><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"feature-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group feature-card\"><!-- wp:paragraph {\"className\":\"icon\"} --><p class=\"icon\">✿</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Grown within 30 miles</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Nine farms, a dairy, a bakery and a beekeeper. We know them all by name.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"feature-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group feature-card\"><!-- wp:paragraph {\"className\":\"icon\"} --><p class=\"icon\">♻</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Plastic-free shelves</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Bring your own jars for oils, grains, soap and coffee.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"feature-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group feature-card\"><!-- wp:paragraph {\"className\":\"icon\"} --><p class=\"icon\">✦</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Fair to growers</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Farmers set their own prices and are paid within a week.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"section-band\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-band\"><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column {\"width\":\"58%\"} --><div class=\"wp-block-column\" style=\"flex-basis:58%\"><!-- wp:group {\"className\":\"chalkboard\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group chalkboard\"><!-- wp:paragraph {\"className\":\"eyebrow\"} --><p class=\"eyebrow\">This week's box</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Week 44 · Small box</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"price-list\"} --><ul class=\"wp-block-list price-list\"><!-- wp:list-item --><li><strong>Vine tomatoes</strong> <span class=\"price\">500 g</span> <span class=\"desc\">Hal's polytunnel, the last of the season</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Rainbow carrots</strong> <span class=\"price\">1 kg</span> <span class=\"desc\">Muddy on purpose; they keep longer</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Cavolo nero</strong> <span class=\"price\">1 bunch</span> <span class=\"desc\">Strip the leaves, keep the stems for soup</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Cox apples</strong> <span class=\"price\">6</span> <span class=\"desc\">From the orchard at Millbrook End</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Victoria plums</strong> <span class=\"price\">500 g</span> <span class=\"desc\">Ripe now: eat within three days</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Red onions</strong> <span class=\"price\">4</span> <span class=\"desc\">Dry-stored, lasts for weeks</span></li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:weekly-box}}\">Order by Wednesday noon</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column {\"width\":\"42%\"} --><div class=\"wp-block-column\" style=\"flex-basis:42%\"><!-- wp:paragraph {\"className\":\"eyebrow\"} --><p class=\"eyebrow\">How the box works</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">Pick a size, we fill it with whatever is best</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Small box $24 · for one or two</li><!-- /wp:list-item --><!-- wp:list-item --><li>Family box $38 · for three to five</li><!-- /wp:list-item --><!-- wp:list-item --><li>Fruit only $18 · for snacking households</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph --><p>Collect on Friday from the shop or get free delivery within five miles. Skip or pause any week.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"wide\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignwide\"><!-- wp:paragraph {\"align\":\"center\",\"className\":\"eyebrow\"} --><p class=\"has-text-align-center eyebrow\">On the shelves</p><!-- /wp:paragraph --><!-- wp:heading {\"textAlign\":\"center\",\"className\":\"section-title\"} --><h2 class=\"wp-block-heading has-text-align-center section-title\">Fresh this week</h2><!-- /wp:heading --><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"price-tag\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group price-tag\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Sourdough</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Ilse's long-ferment loaf</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"price-from\"} --><p class=\"price-from\">$6.50</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"price-tag\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group price-tag\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Free-range eggs</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Half dozen, mixed sizes</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"price-from\"} --><p class=\"price-from\">$4.20</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"price-tag\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group price-tag\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Raw honey</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Wildflower, 340 g jar</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"price-from\"} --><p class=\"price-from\">$9.00</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"price-tag\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group price-tag\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Oat milk</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Refill, per litre</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"price-from\"} --><p class=\"price-from\">$2.80</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull\"><!-- wp:paragraph {\"align\":\"center\",\"className\":\"eyebrow\"} --><p class=\"has-text-align-center eyebrow\">Meet the growers</p><!-- /wp:paragraph --><!-- wp:heading {\"textAlign\":\"center\",\"className\":\"section-title\"} --><h2 class=\"wp-block-heading has-text-align-center section-title\">The people behind the produce</h2><!-- /wp:heading --><!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"team-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group team-card\"><!-- wp:image {\"id\":{{media_id:grower-hal}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:grower-hal}}\" alt=\"Portrait illustration of Hal\" class=\"wp-image-{{media_id:grower-hal}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Hal</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"role\"} --><p class=\"role\">Tomatoes &amp; salad</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Three polytunnels and a field of squash on the river meadow.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"team-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group team-card\"><!-- wp:image {\"id\":{{media_id:grower-noor}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:grower-noor}}\" alt=\"Portrait illustration of Noor\" class=\"wp-image-{{media_id:grower-noor}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Noor</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"role\"} --><p class=\"role\">Orchard fruit</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Forty-two apple varieties, some older than the village church.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"team-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group team-card\"><!-- wp:image {\"id\":{{media_id:baker-ilse}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:baker-ilse}}\" alt=\"Portrait illustration of Ilse\" class=\"wp-image-{{media_id:baker-ilse}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Ilse</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"role\"} --><p class=\"role\">Sourdough &amp; buns</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Bakes through the night so our shelves are full by eight.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:buttons {\"layout\":{\"type\":\"flex\",\"justifyContent\":\"center\"}} --><div class=\"wp-block-buttons is-content-justification-center is-layout-flex\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:producers}}\">All our producers</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"section-band\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull section-band\"><!-- wp:paragraph {\"align\":\"center\",\"className\":\"eyebrow\"} --><p class=\"has-text-align-center eyebrow\">Recipes &amp; news</p><!-- /wp:paragraph --><!-- wp:heading {\"textAlign\":\"center\",\"className\":\"section-title\"} --><h2 class=\"wp-block-heading has-text-align-center section-title\">From the market table</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":3,\"displayPostDate\":true,\"postLayout\":\"grid\",\"columns\":3,\"align\":\"wide\",\"displayPostContent\":true,\"excerptLength\":18,\"displayFeaturedImage\":true,\"featuredImageSizeSlug\":\"medium_large\"} /--></div><!-- /wp:group -->",
+   "featured_media": "hero-crate",
+   "front_page": true
+  },
+  {
+   "slug": "journal",
+   "title": "Recipes & news",
+   "content": "",
+   "posts_page": true
+  },
+  {
+   "slug": "weekly-box",
+   "title": "The weekly box",
+   "content": "<!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">A box of the best seasonal fruit and vegetables from our growers, packed on Friday morning and ready for lunch.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"price-tag\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group price-tag\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Small</h3><!-- /wp:heading --><!-- wp:paragraph --><p>For one or two people</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"price-from\"} --><p class=\"price-from\">$24</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"price-tag\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group price-tag\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Family</h3><!-- /wp:heading --><!-- wp:paragraph --><p>For three to five people</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"price-from\"} --><p class=\"price-from\">$38</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"price-tag\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group price-tag\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Fruit only</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Apples, pears, berries, plums</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"price-from\"} --><p class=\"price-from\">$18</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:group {\"className\":\"chalkboard\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group chalkboard\"><!-- wp:paragraph {\"className\":\"eyebrow\"} --><p class=\"eyebrow\">This week's box</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Week 44 · Small box</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"price-list\"} --><ul class=\"wp-block-list price-list\"><!-- wp:list-item --><li><strong>Vine tomatoes</strong> <span class=\"price\">500 g</span> <span class=\"desc\">Hal's polytunnel, the last of the season</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Rainbow carrots</strong> <span class=\"price\">1 kg</span> <span class=\"desc\">Muddy on purpose; they keep longer</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Cavolo nero</strong> <span class=\"price\">1 bunch</span> <span class=\"desc\">Strip the leaves, keep the stems for soup</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Cox apples</strong> <span class=\"price\">6</span> <span class=\"desc\">From the orchard at Millbrook End</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Victoria plums</strong> <span class=\"price\">500 g</span> <span class=\"desc\">Ripe now: eat within three days</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Red onions</strong> <span class=\"price\">4</span> <span class=\"desc\">Dry-stored, lasts for weeks</span></li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:weekly-box}}\">Order by Wednesday noon</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">How it works</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Order or change your box by Wednesday at noon.</li><!-- /wp:list-item --><!-- wp:list-item --><li>We pack on Friday morning with whatever was picked that week.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Collect from the shop, or get free delivery within five miles.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Return the box and we will reuse it, again and again.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>Allergies or strong dislikes? Tell us once and we will swap that item every week.</p><!-- /wp:paragraph -->",
+   "featured_media": "weekly-box",
+   "template": "page-full",
+   "menu_order": 1
+  },
+  {
+   "slug": "producers",
+   "title": "Our producers",
+   "content": "<!-- wp:paragraph {\"className\":\"lead\"} --><p class=\"lead\">Everything on our fresh shelves comes from within thirty miles. These are some of the people who grow, bake and make it.</p><!-- /wp:paragraph -->\n\n<!-- wp:media-text {\"mediaId\":{{media_id:fields}},\"mediaType\":\"image\"} --><div class=\"wp-block-media-text is-stacked-on-mobile\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:fields}}\" alt=\"Rows of crops\" class=\"wp-image-{{media_id:fields}} size-full\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Riverside Growers</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Hal and his sister run eight acres on the river meadow: salad leaves, tomatoes, squash and the best leeks in the county. No-dig, no sprays, plenty of worms.</p><!-- /wp:paragraph --></div></div><!-- /wp:media-text -->\n\n<!-- wp:media-text {\"mediaId\":{{media_id:orchard}},\"mediaType\":\"image\",\"mediaPosition\":\"right\"} --><div class=\"wp-block-media-text is-stacked-on-mobile has-media-on-the-right\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:orchard}}\" alt=\"Apple trees\" class=\"wp-image-{{media_id:orchard}} size-full\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Millbrook End Orchard</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Noor looks after forty-two varieties of apples, pears and plums, some planted more than a century ago. Ask her about the russets.</p><!-- /wp:paragraph --></div></div><!-- /wp:media-text -->\n\n<!-- wp:media-text {\"mediaId\":{{media_id:bread}},\"mediaType\":\"image\"} --><div class=\"wp-block-media-text is-stacked-on-mobile\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:bread}}\" alt=\"Sourdough loaves\" class=\"wp-image-{{media_id:bread}} size-full\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Night Owl Bakery</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Ilse's loaves ferment for thirty hours. She uses flour stone-ground at the mill two villages over.</p><!-- /wp:paragraph --></div></div><!-- /wp:media-text -->\n\n<!-- wp:media-text {\"mediaId\":{{media_id:eggs}},\"mediaType\":\"image\",\"mediaPosition\":\"right\"} --><div class=\"wp-block-media-text is-stacked-on-mobile has-media-on-the-right\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:eggs}}\" alt=\"A tray of eggs\" class=\"wp-image-{{media_id:eggs}} size-full\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Hilltop Hens</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Four hundred hens on rotating pasture, moved to fresh grass every week.</p><!-- /wp:paragraph --></div></div><!-- /wp:media-text -->",
+   "menu_order": 2
+  },
+  {
+   "slug": "about",
+   "title": "About the shop",
+   "content": "<!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column {\"width\":\"50%\"} --><div class=\"wp-block-column\" style=\"flex-basis:50%\"><!-- wp:image {\"id\":{{media_id:hero-crate}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:hero-crate}}\" alt=\"A crate of fresh vegetables\" class=\"wp-image-{{media_id:hero-crate}}\"/></figure><!-- /wp:image --></div><!-- /wp:column --><!-- wp:column {\"width\":\"50%\"} --><div class=\"wp-block-column\" style=\"flex-basis:50%\"><!-- wp:heading --><h2 class=\"wp-block-heading\">A shop the village asked for</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Greenleaf began in 2017 as a trestle table at the Saturday market. When the old hardware shop on Orchard Row closed, two hundred neighbours lent us the money to open a proper grocery, and paid themselves back in vegetables.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Today we are a co-operative of growers, staff and customers. Profits go back into fair prices for farmers and the community fridge by the door.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Good food should travel by bicycle, not by plane.</p><!-- /wp:paragraph --><cite>Written on our first chalkboard</cite></blockquote><!-- /wp:quote -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Our promises</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Local first, organic always, imported only when nothing local exists</li><!-- /wp:list-item --><!-- wp:list-item --><li>No plastic packaging on fresh produce</li><!-- /wp:list-item --><!-- wp:list-item --><li>Farmers paid within seven days</li><!-- /wp:list-item --></ul><!-- /wp:list -->",
+   "menu_order": 3
+  },
+  {
+   "slug": "contact",
+   "title": "Visit us",
+   "content": "<!-- wp:columns {\"align\":\"wide\"} --><div class=\"wp-block-columns alignwide\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading --><h2 class=\"wp-block-heading\">The shop</h2><!-- /wp:heading --><!-- wp:paragraph --><p>12 Orchard Row, Millbrook. Bike racks outside, two parking spaces behind the bakery.</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Opening hours</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Monday – Saturday: 8 am – 7 pm</li><!-- /wp:list-item --><!-- wp:list-item --><li>Sunday: 9 am – 2 pm</li><!-- /wp:list-item --><!-- wp:list-item --><li>Farmers' market every Saturday on the green</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Get in touch</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Phone <a href=\"tel:+15550135533\">+1 (555) 013-5533</a><br>Email <a href=\"mailto:hello@greenleaf.example\">hello@greenleaf.example</a></p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Wholesale enquiries from cafés and schools are very welcome.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->",
+   "parent": "about",
+   "menu_order": 4
+  }
+ ],
+ "posts": [
+  {
+   "slug": "roast-squash-and-apple-soup",
+   "title": "Roast squash and apple soup",
+   "date": "2026-10-23T12:00:00",
+   "excerpt": "Sweet squash, a sharp apple and a little chilli. Our favourite way to use this week's box.",
+   "content": "<!-- wp:paragraph --><p>When the squash arrives in the boxes, this soup goes on the stove at the shop for staff lunch. The apple adds just enough sharpness to stop it feeling heavy.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">You will need</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>1 medium squash, in chunks</li><!-- /wp:list-item --><!-- wp:list-item --><li>2 tart apples, quartered</li><!-- /wp:list-item --><!-- wp:list-item --><li>1 red onion</li><!-- /wp:list-item --><!-- wp:list-item --><li>1 litre of vegetable stock</li><!-- /wp:list-item --><!-- wp:list-item --><li>A pinch of chilli flakes</li><!-- /wp:list-item --><!-- wp:list-item --><li>Olive oil, salt and pepper</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Method</h3><!-- /wp:heading --><!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Roast squash, apples and onion at 200°C for 40 minutes.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Scrape everything into a pan with the stock.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Simmer for 10 minutes, then blend until smooth.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Season and finish with chilli and oil.</li><!-- /wp:list-item --></ol><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Keep the squash seeds, toss them in oil and salt, and roast them for ten minutes. Best topping there is.</p><!-- /wp:paragraph --><cite>Hal, Riverside Growers</cite></blockquote><!-- /wp:quote -->\n\n<!-- wp:paragraph --><p>Serves four, freezes beautifully, and tastes even better the next day with a thick slice of sourdough.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "recipes"
+   ],
+   "tags": [
+    "autumn",
+    "vegetarian",
+    "box-recipes"
+   ],
+   "featured_media": "orchard",
+   "format": "standard",
+   "sticky": true,
+   "comments": [
+    {
+     "author": "Fern",
+     "email": "fern@example.com",
+     "content": "Made this last night with the family box. Kids asked for seconds!",
+     "date": "2026-10-25T08:40:00"
+    },
+    {
+     "author": "Greenleaf Market",
+     "email": "greenleaf.market@example.com",
+     "content": "Lovely to hear, Fern. Try it with a pear instead of apple next week.",
+     "date": "2026-10-25T10:15:00"
+    }
+   ]
+  },
+  {
+   "slug": "whats-in-season-november",
+   "title": "What's in season in November",
+   "date": "2026-10-17T09:00:00",
+   "excerpt": "Leeks, parsnips, the last apples and the first sprouts. A guide to the late-autumn shelves.",
+   "content": "<!-- wp:paragraph --><p>November is when the fields go quiet, but the store rooms are full. These are the fruit and vegetables you will see on our shelves and in the boxes this month.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Vegetables</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Leeks and parsnips</li><!-- /wp:list-item --><!-- wp:list-item --><li>Celeriac and swede</li><!-- /wp:list-item --><!-- wp:list-item --><li>Kale and cavolo nero</li><!-- /wp:list-item --><!-- wp:list-item --><li>The first Brussels sprouts</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Fruit</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Late apples: russet and Bramley</li><!-- /wp:list-item --><!-- wp:list-item --><li>Conference pears</li><!-- /wp:list-item --><!-- wp:list-item --><li>Quince, for jelly</li><!-- /wp:list-item --><!-- wp:list-item --><li>Stored plums, while they last</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:paragraph --><p>Root vegetables keep for weeks in a cool, dark place. Leave the mud on; it protects them.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>Squash keeps all winter on a shelf at room temperature, so buy an extra one now while the price is low and the flavour is at its best.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "seasonal"
+   ],
+   "tags": [
+    "autumn"
+   ],
+   "featured_media": "fields",
+   "format": "standard",
+   "sticky": false
+  },
+  {
+   "slug": "refill-shop-guide",
+   "title": "A beginner's guide to our refill shelves",
+   "date": "2026-10-05T10:30:00",
+   "excerpt": "Bring a jar, weigh it, fill it, pay. Refilling is easier than it looks.",
+   "content": "<!-- wp:paragraph --><p>Our refill wall holds forty products, from oats and lentils to olive oil and washing-up liquid. If you have never used a refill shop, here is how it works.</p><!-- /wp:paragraph -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Bring any clean container, or borrow one of ours.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Weigh it empty at the counter and we write the weight on the lid.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Fill it with as much or as little as you like.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Pay only for what is inside.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:image {\"id\":{{media_id:pantry-jars}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:pantry-jars}}\" alt=\"Refill jars with paper labels\" class=\"wp-image-{{media_id:pantry-jars}}\"/></figure><!-- /wp:image -->\n\n<!-- wp:paragraph --><p>Buying exactly the amount you need cuts food waste as well as packaging. A spoonful of a new spice costs a few cents, so experimenting is easy.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>Not sure where to start? Our staff are always happy to help with your first fill, and the shelf labels list the price per hundred grams.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "shop-news"
+   ],
+   "tags": [
+    "zero-waste"
+   ],
+   "featured_media": "pantry-jars",
+   "format": "standard",
+   "sticky": false
+  },
+  {
+   "slug": "meet-ilse-the-baker",
+   "title": "Meet Ilse, our night-owl baker",
+   "date": "2026-09-24T07:00:00",
+   "excerpt": "Thirty-hour sourdough, stone-ground flour and a bakery that works while the village sleeps.",
+   "content": "<!-- wp:paragraph --><p>If you have bought a loaf from us before nine in the morning, it was probably still warm. Ilse starts work at midnight in a small bakery behind the mill.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Why so slow?</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Her dough ferments for thirty hours. The long rise develops flavour, gives the bread its open crumb and makes it easier to digest. It also means it keeps for days.</p><!-- /wp:paragraph -->\n\n<!-- wp:image {\"id\":{{media_id:bread}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:bread}}\" alt=\"Two sourdough loaves\" class=\"wp-image-{{media_id:bread}}\"/><figcaption class=\"wp-element-caption\">Country sourdough and the seeded rye.</figcaption></figure><!-- /wp:image -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Flour, water, salt and time. Mostly time.</p><!-- /wp:paragraph --><cite>Ilse</cite></blockquote><!-- /wp:quote -->\n\n<!-- wp:paragraph --><p>Look out for her cardamom buns on Saturdays. They sell out by ten.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "producers"
+   ],
+   "tags": [
+    "bread"
+   ],
+   "featured_media": "baker-ilse",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Tom",
+     "email": "tom@example.com",
+     "content": "Those cardamom buns are worth getting up early for.",
+     "date": "2026-09-26T09:55:00"
+    }
+   ]
+  },
+  {
+   "slug": "strawberry-jam-small-batch",
+   "title": "Small-batch strawberry jam",
+   "date": "2026-09-08T15:00:00",
+   "excerpt": "Three jars, one pan and no special kit. Late-season berries make the best jam.",
+   "content": "<!-- wp:paragraph --><p>The last strawberries of the season are often too soft for the shelves but perfect for jam. A small batch takes under an hour and fills three jars.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Ingredients</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>1 kg strawberries, hulled</li><!-- /wp:list-item --><!-- wp:list-item --><li>750 g sugar</li><!-- /wp:list-item --><!-- wp:list-item --><li>Juice of one lemon</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Method</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Crush the berries lightly with the sugar and leave them for an hour. Add the lemon juice, bring to a rolling boil and cook for about eight minutes, until a drop wrinkles on a cold plate.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>Pour into warm, clean jars and seal at once. Bring the empty jars back to the shop and we will refill them next year.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "recipes"
+   ],
+   "tags": [
+    "preserving",
+    "box-recipes"
+   ],
+   "featured_media": "strawberries",
+   "format": "standard",
+   "sticky": false
+  },
+  {
+   "slug": "saturday-market-returns",
+   "title": "The Saturday market is back on the green",
+   "date": "2026-08-26T08:00:00",
+   "excerpt": "Twelve stalls, a coffee cart and a children's seed-planting table every Saturday from September.",
+   "content": "<!-- wp:paragraph --><p>After the summer break, the farmers' market returns to the village green every Saturday from 8 am to 1 pm.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Who is coming</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Riverside Growers with salad and squash</li><!-- /wp:list-item --><!-- wp:list-item --><li>Millbrook End Orchard with apples and juice</li><!-- /wp:list-item --><!-- wp:list-item --><li>Hilltop Hens with eggs and chickens</li><!-- /wp:list-item --><!-- wp:list-item --><li>A cheese maker, a mushroom farm and a flower grower</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>Bring a bag, bring the children, and stay for coffee. The shop stays open as usual for everything else.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>Every week one stall offers a cooking demonstration using whatever is in season, with free tastings until the pan is empty.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "shop-news"
+   ],
+   "tags": [
+    "events"
+   ],
+   "featured_media": "hero-crate",
+   "format": "standard",
+   "sticky": false
+  },
+  {
+   "slug": "five-salads-from-one-box",
+   "title": "Five salads from one small box",
+   "date": "2026-08-11T12:30:00",
+   "excerpt": "Lunch for a week from a $24 box, with no sad leaves at the bottom of the fridge.",
+   "content": "<!-- wp:paragraph --><p>Salad leaves wilt fast, so plan the week the day the box arrives. These five ideas use everything up by Thursday.</p><!-- /wp:paragraph -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li><strong>Monday</strong>: tomato, white bean and basil</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Tuesday</strong>: grated carrot and apple with toasted seeds</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Wednesday</strong>: kale massaged with lemon and parmesan</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Thursday</strong>: roast beetroot with goat's cheese</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Friday</strong>: whatever is left, on toast</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>Wash leaves as soon as you get home, wrap them in a damp tea towel and keep them in the fridge drawer. They will stay crisp for four or five days.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>A simple dressing in a jar makes all the difference: three parts oil, one part vinegar, a spoon of mustard and a pinch of salt. It keeps for a week.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "recipes"
+   ],
+   "tags": [
+    "vegetarian",
+    "box-recipes"
+   ],
+   "featured_media": "salad",
+   "format": "standard",
+   "sticky": false
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Home",
+     "page": "home"
+    },
+    {
+     "title": "Weekly box",
+     "page": "weekly-box"
+    },
+    {
+     "title": "Producers",
+     "page": "producers"
+    },
+    {
+     "title": "Recipes & news",
+     "page": "journal",
+     "children": [
+      {
+       "category": "recipes"
+      },
+      {
+       "category": "seasonal"
+      },
+      {
+       "category": "shop-news"
+      }
+     ]
+    },
+    {
+     "title": "About",
+     "page": "about",
+     "children": [
+      {
+       "page": "contact"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Social",
+   "location": "social",
+   "items": [
+    {
+     "title": "Instagram",
+     "url": "https://instagram.com/"
+    },
+    {
+     "title": "Facebook",
+     "url": "https://facebook.com/"
+    },
+    {
+     "title": "Newsletter",
+     "url": "#colophon"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "sidebar-1": [
+   "<!-- wp:search {\"label\":\"Search recipes\",\"buttonText\":\"Search\"} /-->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Browse</h2><!-- /wp:heading --><!-- wp:categories /--></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">This week's box</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Order by Wednesday noon for Friday collection or delivery.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:weekly-box}}\">Order a box</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->"
+  ],
+  "footer-1": [
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Shop</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><a href=\"{{page:weekly-box}}\">Weekly box</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{page:producers}}\">Our producers</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{page:journal}}\">Recipes</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{page:contact}}\">Visit us</a></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "hero_image": "hero-crate",
+  "hero_script": "Fresh this week!",
+  "hero_heading": "Fresh from fields you can cycle to",
+  "hero_text": "Organic fruit, vegetables, bread and refills from growers within thirty miles, plus a weekly box for your door.",
+  "box_url": "{{page:weekly-box}}",
+  "blog_layout": "masonry"
+ }
+}

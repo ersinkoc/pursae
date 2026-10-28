@@ -1,0 +1,32 @@
+	<footer id="colophon" class="site-footer">
+		{{with theme_mod . "booking_label"}}<section class="footer-cta" aria-label="Book">
+			<div class="wrap footer-cta__inner">
+				<p class="footer-cta__title">Ready for something new?</p>
+				<a class="button button--light" href="{{theme_mod $ "booking_url"}}">{{.}}</a>
+			</div>
+		</section>{{end}}
+		<div class="wrap site-footer__grid">
+			<section class="footer-col footer-col--brand" aria-label="{{.SiteName}}">
+				<p class="footer-brand">{{.SiteName}}</p>
+				{{with .Description}}<p class="footer-tagline">{{.}}</p>{{end}}
+				{{with theme_mod . "address"}}<p class="footer-address">{{.}}</p>{{end}}
+				{{with theme_mod . "phone"}}<p><a href="tel:{{.}}">{{.}}</a></p>{{end}}
+			</section>
+			<section class="footer-col footer-col--widgets" aria-label="More">
+				{{if is_active_sidebar . "footer-1"}}{{dynamic_sidebar . "footer-1"}}{{else}}<h2 class="widget-title">Visit us</h2><p>Walk-ins welcome when a chair is free.</p>{{end}}
+			</section>
+			<section class="footer-col footer-col--hours" aria-labelledby="footer-hours">
+				<h2 id="footer-hours" class="widget-title">Opening hours</h2>
+				{{with theme_mod . "hours_text"}}<p class="footer-hours">{{.}}</p>{{end}}
+			</section>
+		</div>
+		<div class="wrap site-info">
+			{{if has_nav_menu . "social"}}<nav class="social-navigation" aria-label="Social links">{{nav_menu . "social"}}</nav>{{end}}
+			<p>{{.PrivacyLink}}<span>{{with theme_mod . "footer_text"}}{{.}}{{else}}&copy; {{$.SiteName}}{{end}}</span><span>Powered by <a href="https://github.com/boracomet/wordpress-go">WordPress Go</a></span></p>
+		</div>
+	</footer><!-- #colophon -->
+</div><!-- #page -->
+
+{{.Footer}}{{.AdminBar}}
+</body>
+</html>

@@ -1,0 +1,335 @@
+{
+  "slug": "greenleaf-market",
+  "name": "Greenleaf Market",
+  "version": "1.0.0",
+  "description": "A friendly organic grocery and farm shop theme: fresh greens and tomato red on kraft paper, Bitter slab headings with Caveat hand-lettered labels, an announcement bar, a split hero with a stamp, a weekly produce box on a chalkboard, producer cards, price tags and a recipes and news blog.",
+  "author": "WordPress Go",
+  "author_url": "https://github.com/boracomet/wordpress-go",
+  "theme_url": "https://github.com/boracomet/wordpress-go/tree/main/web/theme-library/greenleaf-market",
+  "tags": [
+    "Shop",
+    "Food",
+    "Organic",
+    "Business",
+    "Grid Layout",
+    "Right Sidebar",
+    "Custom Colors",
+    "Custom Logo",
+    "Custom Menu",
+    "Editor Style",
+    "Featured Images",
+    "Footer Widgets",
+    "Threaded Comments",
+    "Wide Blocks"
+  ],
+  "requires_core": "0.1.0",
+  "screenshot": "assets/screenshot.png",
+  "category": "shop",
+  "style": "Organic farm shop on kraft paper, fresh greens and hand-lettered labels",
+  "demo": "demo/demo.json",
+  "widget_areas": [
+    {
+      "id": "sidebar-1",
+      "name": "Sidebar",
+      "description": "Beside recipes and news while Customize › Blog & Footer shows the sidebar."
+    },
+    {
+      "id": "footer-1",
+      "name": "Footer",
+      "description": "The middle footer column, between the shop details and the opening hours."
+    }
+  ],
+  "menu_locations": [
+    {
+      "id": "primary",
+      "name": "Primary Menu"
+    },
+    {
+      "id": "social",
+      "name": "Social Links"
+    }
+  ],
+  "styles": [
+    {
+      "handle": "greenleaf-market-style",
+      "src": "assets/style.css",
+      "deps": [
+        "wp-block-library"
+      ],
+      "media": "all"
+    }
+  ],
+  "scripts": [
+    {
+      "handle": "greenleaf-market-navigation",
+      "src": "assets/js/navigation.js",
+      "deps": [],
+      "in_footer": true
+    }
+  ],
+  "editor_styles": [
+    "assets/editor-style.css"
+  ],
+  "preload_fonts": [
+    "assets/fonts/bitter.woff2",
+    "assets/fonts/caveat.woff2"
+  ],
+  "palette": [
+    {
+      "name": "Leaf",
+      "slug": "leaf",
+      "color": "#2f6b3a"
+    },
+    {
+      "name": "Deep leaf",
+      "slug": "deep-leaf",
+      "color": "#1f4a28"
+    },
+    {
+      "name": "Kraft",
+      "slug": "kraft",
+      "color": "#ebdfc7"
+    },
+    {
+      "name": "Paper",
+      "slug": "paper",
+      "color": "#f8f3e8"
+    },
+    {
+      "name": "Tomato",
+      "slug": "tomato",
+      "color": "#d4452a"
+    },
+    {
+      "name": "Soil",
+      "slug": "soil",
+      "color": "#2c241b"
+    }
+  ],
+  "supports": {
+    "post-thumbnails": true,
+    "custom-logo": {
+      "width": 240,
+      "height": 80,
+      "flex-width": true,
+      "flex-height": true,
+      "header-text": [
+        "site-title",
+        "site-description"
+      ]
+    },
+    "title-tag": true,
+    "html5": [
+      "search-form",
+      "comment-form",
+      "comment-list",
+      "gallery",
+      "caption",
+      "script",
+      "style"
+    ],
+    "responsive-embeds": true,
+    "align-wide": true,
+    "wp-block-styles": true
+  },
+  "customizer": {
+    "sections": [
+      {
+        "id": "green_colors",
+        "title": "Colors & Type",
+        "priority": 40,
+        "settings": [
+          {
+            "id": "leaf_color",
+            "label": "Leaf green",
+            "type": "color",
+            "default": "#2f6b3a",
+            "transport": "postMessage",
+            "css_var": "--gl-leaf",
+            "description": "Header, buttons, links and the chalkboard."
+          },
+          {
+            "id": "tomato_color",
+            "label": "Tomato accent",
+            "type": "color",
+            "default": "#d4452a",
+            "transport": "postMessage",
+            "css_var": "--gl-tomato",
+            "description": "Price tags, stamps and highlights."
+          },
+          {
+            "id": "kraft_color",
+            "label": "Kraft paper",
+            "type": "color",
+            "default": "#ebdfc7",
+            "transport": "postMessage",
+            "css_var": "--gl-kraft",
+            "description": "The page background."
+          },
+          {
+            "id": "font_pairing",
+            "label": "Typefaces",
+            "type": "select",
+            "default": "bitter",
+            "transport": "postMessage",
+            "body_class": "gl-font-{value}",
+            "choices": [
+              {
+                "value": "bitter",
+                "label": "Bitter slab with Caveat labels"
+              },
+              {
+                "value": "plain",
+                "label": "Bitter slab, no handwriting"
+              },
+              {
+                "value": "system",
+                "label": "System fonts"
+              }
+            ]
+          },
+          {
+            "id": "paper_texture",
+            "label": "Paper fibre texture",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "gl-texture"
+          }
+        ]
+      },
+      {
+        "id": "green_header",
+        "title": "Header & Announcement",
+        "priority": 41,
+        "settings": [
+          {
+            "id": "show_announcement",
+            "label": "Show the announcement bar",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "gl-announce"
+          },
+          {
+            "id": "announcement_text",
+            "label": "Announcement",
+            "type": "text",
+            "default": "Free delivery on produce boxes within five miles · Order by Wednesday noon",
+            "transport": "refresh"
+          },
+          {
+            "id": "box_label",
+            "label": "Box button label",
+            "type": "text",
+            "default": "Order this week's box",
+            "transport": "refresh",
+            "description": "Shown in the header and the hero. Empty hides it."
+          },
+          {
+            "id": "box_url",
+            "label": "Box button link",
+            "type": "text",
+            "default": "/weekly-box/",
+            "transport": "refresh"
+          }
+        ]
+      },
+      {
+        "id": "green_front",
+        "title": "Front Page Hero",
+        "priority": 42,
+        "settings": [
+          {
+            "id": "hero_image",
+            "label": "Hero image",
+            "type": "image",
+            "description": "Without an image the front page's featured image is used."
+          },
+          {
+            "id": "hero_script",
+            "label": "Handwritten line",
+            "type": "text",
+            "default": "",
+            "transport": "refresh",
+            "description": "Above the heading. Empty uses the site title."
+          },
+          {
+            "id": "hero_heading",
+            "label": "Heading",
+            "type": "text",
+            "default": "",
+            "transport": "refresh",
+            "description": "Empty uses the page title."
+          },
+          {
+            "id": "hero_text",
+            "label": "Text",
+            "type": "textarea",
+            "default": "",
+            "transport": "refresh"
+          }
+        ]
+      },
+      {
+        "id": "green_blog",
+        "title": "Blog & Footer",
+        "priority": 43,
+        "settings": [
+          {
+            "id": "blog_layout",
+            "label": "Blog layout",
+            "type": "select",
+            "default": "masonry",
+            "transport": "postMessage",
+            "body_class": "blog-{value}",
+            "choices": [
+              {
+                "value": "masonry",
+                "label": "Masonry"
+              },
+              {
+                "value": "grid",
+                "label": "Even grid"
+              },
+              {
+                "value": "list",
+                "label": "List with images beside"
+              }
+            ]
+          },
+          {
+            "id": "show_sidebar",
+            "label": "Show the sidebar beside posts",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "has-sidebar"
+          },
+          {
+            "id": "hours_text",
+            "label": "Shop hours",
+            "type": "textarea",
+            "default": "Mon – Sat  8:00 – 19:00\nSunday  9:00 – 14:00\nFarmers' market Saturdays",
+            "transport": "refresh"
+          },
+          {
+            "id": "address",
+            "label": "Address",
+            "type": "textarea",
+            "default": "12 Orchard Row\nMillbrook",
+            "transport": "refresh"
+          },
+          {
+            "id": "footer_text",
+            "label": "Footer text",
+            "type": "text",
+            "default": "",
+            "transport": "refresh",
+            "description": "Replaces the copyright line."
+          }
+        ]
+      }
+    ]
+  }
+}

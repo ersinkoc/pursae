@@ -1,0 +1,19 @@
+{{template "header" .}}
+<header class="page-header page-header--archive">
+	<div class="wrap">
+		<p class="page-header__eyebrow">Filed under</p>
+		<h1 class="page-title">{{.ArchiveTitle}}</h1>
+		{{with .ArchiveDesc}}<div class="archive-description">{{.}}</div>{{end}}
+	</div>
+</header>
+<div class="wrap layout">
+	<main id="main" class="site-main" tabindex="-1">
+		{{if .Posts}}<div class="post-list">
+			{{range .Posts}}{{template "content" .}}
+			{{end}}
+		</div>
+		{{.Pagination}}{{else}}{{template "content-none" .}}{{end}}
+	</main><!-- #main -->
+	{{template "sidebar" .}}
+</div>
+{{template "footer" .}}
