@@ -1,0 +1,18 @@
+{{template "header" .}}
+<header class="page-header page-header--blog">
+	<div class="wrap">
+		<p class="page-header__kicker">{{if .IsHomeHeader}}Blog &amp; release notes{{else}}Latest{{end}}</p>
+		{{if .IsHomeHeader}}<h1 class="page-title">{{.PostsPageTitle}}</h1>{{else}}<h1 class="page-title">What&rsquo;s new</h1>{{end}}
+	</div>
+</header>
+<div class="wrap layout">
+	<main id="main" class="site-main" tabindex="-1">
+		{{if .Posts}}<div class="post-list">
+			{{range .Posts}}{{template "content" .}}
+			{{end}}
+		</div>
+		{{.Pagination}}{{else}}{{template "content-none" .}}{{end}}
+	</main><!-- #main -->
+	{{template "sidebar" .}}
+</div>
+{{template "footer" .}}

@@ -1,0 +1,30 @@
+{{template "header" .}}
+<main id="main" class="site-main site-main--front" tabindex="-1">
+{{with .Post}}{{$img := theme_mod $ "hero_image"}}{{if not $img}}{{$img = .ThumbnailURL}}{{end}}
+	<section class="hero" aria-label="Introduction">
+		<div class="wrap hero__inner">
+			<div class="hero__text">
+				{{with theme_mod $ "hero_kicker"}}<p class="hero__kicker">{{.}}</p>{{end}}
+				<h1 class="hero__title">{{with theme_mod $ "hero_heading"}}{{.}}{{else}}{{$.Post.Title}}{{end}}</h1>
+				{{with theme_mod $ "hero_text"}}<p class="hero__lead">{{.}}</p>{{end}}
+				{{if theme_mod $ "store_show"}}<div class="store-buttons">
+					{{with theme_mod $ "store_ios_url"}}<a class="store-button" href="{{.}}"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Zm0 3v13h10V5H7Zm5 14.2a1 1 0 1 0 0 2 1 1 0 0 0 0-2Z" fill="currentColor"/></svg><span><small>Download on the</small>App Store</span></a>{{end}}
+					{{with theme_mod $ "store_android_url"}}<a class="store-button" href="{{.}}"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 3.5v17a1 1 0 0 0 1.5.86l14-8.5a1 1 0 0 0 0-1.72l-14-8.5A1 1 0 0 0 5 3.5Z" fill="currentColor"/></svg><span><small>Get it on</small>Google Play</span></a>{{end}}
+				</div>{{end}}
+				{{with theme_mod $ "rating_text"}}<p class="hero__rating"><span class="stars" aria-hidden="true">&#9733;&#9733;&#9733;&#9733;&#9733;</span> {{.}}</p>{{end}}
+			</div>
+			<div class="hero__device" aria-hidden="true">
+				<div class="phone"><div class="phone__screen">{{if $img}}<img src="{{$img}}" alt="" />{{end}}</div></div>
+				<span class="hero__blob hero__blob--1"></span><span class="hero__blob hero__blob--2"></span>
+			</div>
+		</div>
+	</section>
+	<article id="post-{{.ID}}" class="{{.Class}} entry entry--front">
+		<div class="entry-content front-content">
+			{{.Content}}
+		</div>
+		{{with .EditLink}}<footer class="wrap entry-footer"><span class="edit-link">{{.}}</span></footer>{{end}}
+	</article>
+{{end}}
+</main><!-- #main -->
+{{template "footer" .}}

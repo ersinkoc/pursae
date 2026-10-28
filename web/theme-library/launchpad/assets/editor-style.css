@@ -1,0 +1,13 @@
+/* Launchpad — block editor styles */
+@font-face { font-family: "Plus Jakarta Sans"; src: url("fonts/plus-jakarta.woff2") format("woff2"); font-weight: 400 800; font-display: swap; }
+body { font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 17px; line-height: 1.7; color: #3d4058; }
+h1, h2, h3, h4 { color: #0f1020; font-weight: 800; letter-spacing: -.035em; line-height: 1.12; }
+a { color: #5a35f0; text-underline-offset: 3px; }
+blockquote { padding: 1.2em 1.4em; border-radius: 20px; background: #f5f3fd; color: #0f1020; }
+.wp-block-button__link { background: #6d4aff; color: #fff; border-radius: 999px; font-weight: 700; }
+.kicker, .section-kicker { font-size: .8rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: #5a35f0; }
+.has-violet-color { color: #6d4aff; } .has-violet-background-color { background-color: #6d4aff; }
+.has-pink-color { color: #ff4f9a; } .has-pink-background-color { background-color: #ff4f9a; }
+.has-amber-color { color: #ffb547; } .has-amber-background-color { background-color: #ffb547; }
+.has-ink-color { color: #0f1020; } .has-ink-background-color { background-color: #0f1020; }
+.has-slate-color { color: #5a5f7a; } .has-cloud-background-color { background-color: #f5f4ff; }

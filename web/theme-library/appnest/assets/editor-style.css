@@ -1,0 +1,12 @@
+/* AppNest — block editor styles */
+@font-face { font-family: "Outfit"; src: url("fonts/outfit.woff2") format("woff2"); font-weight: 300 800; font-display: swap; }
+body { font-family: "Outfit", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 18px; line-height: 1.7; color: #444761; }
+h1, h2, h3, h4 { color: #14152b; font-weight: 700; letter-spacing: -.03em; line-height: 1.12; }
+a { color: #4a3bc8; text-underline-offset: 3px; }
+blockquote { padding: 1.2em 1.4em; border-radius: 28px; background: #eef8f6; font-weight: 500; }
+.wp-block-button__link { background: #14152b; color: #fff; border-radius: 999px; font-weight: 600; }
+.kicker { font-size: .9rem; font-weight: 600; color: #08756a; }
+.has-lagoon-color { color: #0fb5a4; } .has-lagoon-background-color { background-color: #0fb5a4; }
+.has-grape-color { color: #5b4bdb; } .has-grape-background-color { background-color: #5b4bdb; }
+.has-coral-color { color: #ff7a59; } .has-night-color { color: #14152b; } .has-night-background-color { background-color: #14152b; }
+.has-mist-background-color { background-color: #eef8f6; } .has-lilac-background-color { background-color: #efedff; }

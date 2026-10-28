@@ -1,0 +1,19 @@
+{{template "header" .}}
+<header class="page-header page-header--search">
+	<div class="wrap">
+		<p class="page-header__kicker">{{plural .TotalPosts "%s result" "%s results"}}</p>
+		<h1 class="page-title">Query: <span class="search-term">{{.SearchQuery}}</span></h1>
+		<div class="page-header__search">{{template "searchform" .}}</div>
+	</div>
+</header>
+<div class="wrap layout">
+	<main id="main" class="site-main" tabindex="-1">
+		{{if .Posts}}<div class="post-list">
+			{{range .Posts}}{{template "content" .}}
+			{{end}}
+		</div>
+		{{.Pagination}}{{else}}{{template "content-none" .}}{{end}}
+	</main><!-- #main -->
+	{{template "sidebar" .}}
+</div>
+{{template "footer" .}}

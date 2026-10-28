@@ -1,0 +1,366 @@
+{
+  "slug": "northstar-ventures",
+  "name": "Northstar Ventures",
+  "version": "1.0.0",
+  "description": "A quiet, confident theme for venture capital firms and investors: dark navy and silver, a starfield hero, editorial serif headlines, a portfolio grid, a team grid and long-form thesis essays. Instrument Serif and Hanken Grotesk are self-hosted; an ivory scheme is one click away.",
+  "author": "WordPress Go",
+  "author_url": "https://github.com/boracomet/wordpress-go",
+  "theme_url": "https://github.com/boracomet/wordpress-go/tree/main/web/theme-library/northstar-ventures",
+  "tags": [
+    "Finance",
+    "Business",
+    "Dark",
+    "Portfolio",
+    "Custom Colors",
+    "Custom Logo",
+    "Custom Menu",
+    "Editor Style",
+    "Featured Images",
+    "Full Width Template",
+    "Sticky Post",
+    "Threaded Comments",
+    "Wide Blocks"
+  ],
+  "requires_core": "0.1.0",
+  "screenshot": "assets/screenshot.png",
+  "category": "finance",
+  "style": "Venture firm in dark navy and silver with serif essays",
+  "demo": "demo/demo.json",
+  "widget_areas": [
+    {
+      "id": "sidebar-1",
+      "name": "Sidebar",
+      "description": "Beside essays and archives when Customize › Northstar Layout › Sidebar is on."
+    },
+    {
+      "id": "footer-1",
+      "name": "Footer",
+      "description": "Columns of widgets in the footer."
+    }
+  ],
+  "menu_locations": [
+    {
+      "id": "primary",
+      "name": "Primary Menu"
+    },
+    {
+      "id": "footer",
+      "name": "Footer Links"
+    }
+  ],
+  "styles": [
+    {
+      "handle": "northstar-ventures-style",
+      "src": "assets/style.css",
+      "deps": [
+        "wp-block-library"
+      ],
+      "media": "all"
+    }
+  ],
+  "scripts": [
+    {
+      "handle": "northstar-ventures-navigation",
+      "src": "assets/js/navigation.js",
+      "deps": [],
+      "in_footer": true
+    }
+  ],
+  "editor_styles": [
+    "assets/editor-style.css"
+  ],
+  "preload_fonts": [
+    "assets/fonts/instrument-serif.woff2",
+    "assets/fonts/hanken-grotesk.woff2"
+  ],
+  "palette": [
+    {
+      "name": "Night Navy",
+      "slug": "night-navy",
+      "color": "#0a1428"
+    },
+    {
+      "name": "Deep Navy",
+      "slug": "deep-navy",
+      "color": "#111d36"
+    },
+    {
+      "name": "Silver",
+      "slug": "silver",
+      "color": "#c3cad6"
+    },
+    {
+      "name": "Pale Silver",
+      "slug": "pale-silver",
+      "color": "#e8ecf2"
+    },
+    {
+      "name": "Starlight",
+      "slug": "starlight",
+      "color": "#f4f1e8"
+    },
+    {
+      "name": "Polaris Gold",
+      "slug": "polaris",
+      "color": "#d9c48f"
+    },
+    {
+      "name": "Ink",
+      "slug": "ink",
+      "color": "#0b1220"
+    }
+  ],
+  "supports": {
+    "post-thumbnails": true,
+    "custom-logo": {
+      "width": 200,
+      "height": 48,
+      "flex-width": true,
+      "flex-height": true,
+      "header-text": [
+        "site-title",
+        "site-description"
+      ]
+    },
+    "title-tag": true,
+    "html5": [
+      "search-form",
+      "comment-form",
+      "comment-list",
+      "gallery",
+      "caption",
+      "script",
+      "style"
+    ],
+    "responsive-embeds": true,
+    "align-wide": true,
+    "wp-block-styles": true
+  },
+  "customizer": {
+    "sections": [
+      {
+        "id": "northstar_colors",
+        "title": "Northstar Colors",
+        "priority": 40,
+        "settings": [
+          {
+            "id": "scheme",
+            "label": "Color scheme",
+            "type": "select",
+            "default": "night",
+            "transport": "postMessage",
+            "body_class": "nv-scheme-{value}",
+            "choices": [
+              {
+                "value": "night",
+                "label": "Night navy"
+              },
+              {
+                "value": "ivory",
+                "label": "Ivory paper"
+              }
+            ],
+            "description": "Night is dark navy with silver text; ivory is a light reading scheme."
+          },
+          {
+            "id": "accent",
+            "label": "Accent",
+            "type": "color",
+            "default": "#c3cad6",
+            "transport": "postMessage",
+            "css_var": "--nv-accent",
+            "description": "Rules, links, the star and small labels."
+          },
+          {
+            "id": "night",
+            "label": "Navy",
+            "type": "color",
+            "default": "#0a1428",
+            "transport": "postMessage",
+            "css_var": "--nv-night",
+            "description": "The night scheme's background and the ivory scheme's text."
+          },
+          {
+            "id": "highlight",
+            "label": "Highlight",
+            "type": "color",
+            "default": "#d9c48f",
+            "transport": "postMessage",
+            "css_var": "--nv-highlight",
+            "description": "Numbers, hover states and the active menu item."
+          }
+        ]
+      },
+      {
+        "id": "northstar_layout",
+        "title": "Northstar Layout",
+        "priority": 41,
+        "settings": [
+          {
+            "id": "font_pairing",
+            "label": "Font pairing",
+            "type": "select",
+            "default": "instrument",
+            "transport": "postMessage",
+            "body_class": "nv-font-{value}",
+            "choices": [
+              {
+                "value": "instrument",
+                "label": "Instrument Serif + Hanken Grotesk"
+              },
+              {
+                "value": "grotesk",
+                "label": "Hanken Grotesk throughout"
+              },
+              {
+                "value": "system",
+                "label": "System serif + sans"
+              }
+            ]
+          },
+          {
+            "id": "header_style",
+            "label": "Header style",
+            "type": "select",
+            "default": "split",
+            "transport": "postMessage",
+            "body_class": "nv-header-{value}",
+            "choices": [
+              {
+                "value": "split",
+                "label": "Logo left, menu right"
+              },
+              {
+                "value": "centered",
+                "label": "Centered"
+              }
+            ]
+          },
+          {
+            "id": "essay_layout",
+            "label": "Essay list layout",
+            "type": "select",
+            "default": "index",
+            "transport": "postMessage",
+            "body_class": "nv-essays-{value}",
+            "choices": [
+              {
+                "value": "index",
+                "label": "Numbered index"
+              },
+              {
+                "value": "grid",
+                "label": "Grid"
+              }
+            ]
+          },
+          {
+            "id": "sidebar",
+            "label": "Sidebar",
+            "type": "select",
+            "default": "none",
+            "transport": "refresh",
+            "body_class": "nv-sidebar-{value}",
+            "choices": [
+              {
+                "value": "right",
+                "label": "Right"
+              },
+              {
+                "value": "left",
+                "label": "Left"
+              },
+              {
+                "value": "none",
+                "label": "No sidebar"
+              }
+            ]
+          },
+          {
+            "id": "starfield",
+            "label": "Starfield behind the hero",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "nv-stars"
+          },
+          {
+            "id": "show_thumbnails",
+            "label": "Show featured images",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "nv-thumbs"
+          },
+          {
+            "id": "show_author",
+            "label": "Show author names",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "nv-show-author"
+          }
+        ]
+      },
+      {
+        "id": "northstar_hero",
+        "title": "Northstar Hero & Footer",
+        "priority": 42,
+        "settings": [
+          {
+            "id": "hero_kicker",
+            "label": "Hero kicker",
+            "type": "text",
+            "default": "Seed and Series A",
+            "transport": "refresh"
+          },
+          {
+            "id": "hero_heading",
+            "label": "Hero heading",
+            "type": "text",
+            "default": "",
+            "transport": "refresh",
+            "description": "Empty uses the front page's title."
+          },
+          {
+            "id": "hero_text",
+            "label": "Hero text",
+            "type": "textarea",
+            "default": "We back technical founders early and stay for the long climb.",
+            "transport": "refresh"
+          },
+          {
+            "id": "cta_label",
+            "label": "Link label",
+            "type": "text",
+            "default": "Pitch us",
+            "transport": "refresh",
+            "description": "Shown in the hero and the header."
+          },
+          {
+            "id": "cta_url",
+            "label": "Link URL",
+            "type": "text",
+            "default": "/",
+            "transport": "refresh"
+          },
+          {
+            "id": "hero_image",
+            "label": "Hero background",
+            "type": "image",
+            "transport": "refresh",
+            "description": "A dark, wide image blended behind the hero; empty uses the front page's featured image."
+          },
+          {
+            "id": "footer_text",
+            "label": "Footer text",
+            "type": "text",
+            "default": "",
+            "transport": "refresh",
+            "description": "Replaces the copyright line."
+          }
+        ]
+      }
+    ]
+  }
+}

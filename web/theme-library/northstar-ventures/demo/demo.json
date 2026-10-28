@@ -1,0 +1,401 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Halden North",
+  "blogdescription": "Early-stage capital for foundational companies",
+  "posts_per_page": 8
+ },
+ "categories": [
+  {
+   "slug": "thesis",
+   "name": "Thesis",
+   "description": "Where we think value will be created."
+  },
+  {
+   "slug": "markets",
+   "name": "Markets",
+   "description": "Notes on the sectors we invest in."
+  },
+  {
+   "slug": "founders",
+   "name": "For founders",
+   "description": "How we work, written for founders."
+  },
+  {
+   "slug": "notes",
+   "name": "Letters",
+   "description": "Letters to our founders and partners."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "infrastructure",
+   "name": "Infrastructure"
+  },
+  {
+   "slug": "energy",
+   "name": "Energy"
+  },
+  {
+   "slug": "climate",
+   "name": "Climate"
+  },
+  {
+   "slug": "robotics",
+   "name": "Robotics"
+  },
+  {
+   "slug": "fundraising",
+   "name": "Fundraising"
+  }
+ ],
+ "media": [
+  {
+   "id": "hero-night-sky",
+   "file": "demo/images/hero-night-sky.jpg",
+   "alt": "A night sky over dark hills with a bright star in the upper right",
+   "caption": ""
+  },
+  {
+   "id": "essay-aurora",
+   "file": "demo/images/essay-aurora.jpg",
+   "alt": "A starry sky with a faint green aurora and a constellation",
+   "caption": ""
+  },
+  {
+   "id": "essay-terrain",
+   "file": "demo/images/essay-terrain.jpg",
+   "alt": "Silver contour lines of a mountain on navy",
+   "caption": ""
+  },
+  {
+   "id": "essay-constellation",
+   "file": "demo/images/essay-constellation.jpg",
+   "alt": "A constellation traced in thin silver lines across a starry sky",
+   "caption": ""
+  },
+  {
+   "id": "essay-gold-contours",
+   "file": "demo/images/essay-gold-contours.jpg",
+   "alt": "Gold contour lines on a dark navy background",
+   "caption": ""
+  },
+  {
+   "id": "essay-horizon",
+   "file": "demo/images/essay-horizon.jpg",
+   "alt": "Stars over a dark horizon with a soft blue glow",
+   "caption": ""
+  },
+  {
+   "id": "logo-halcyon",
+   "file": "demo/images/logo-halcyon.jpg",
+   "alt": "Halcyon Grid logo: a checkerboard of squares",
+   "caption": ""
+  },
+  {
+   "id": "logo-orbitwell",
+   "file": "demo/images/logo-orbitwell.jpg",
+   "alt": "Orbitwell logo: a ring with a small moon",
+   "caption": ""
+  },
+  {
+   "id": "logo-tidewater",
+   "file": "demo/images/logo-tidewater.jpg",
+   "alt": "Tidewater Bio logo: a single wave",
+   "caption": ""
+  },
+  {
+   "id": "logo-fernline",
+   "file": "demo/images/logo-fernline.jpg",
+   "alt": "Fernline logo: two halves of a split circle",
+   "caption": ""
+  },
+  {
+   "id": "logo-stackhouse",
+   "file": "demo/images/logo-stackhouse.jpg",
+   "alt": "Stackhouse logo: three stacked diamonds",
+   "caption": ""
+  },
+  {
+   "id": "logo-hexa",
+   "file": "demo/images/logo-hexa.jpg",
+   "alt": "Hexa Robotics logo: a hexagon inside a hexagon",
+   "caption": ""
+  },
+  {
+   "id": "team-one",
+   "file": "demo/images/team-one.jpg",
+   "alt": "Abstract silhouette portrait with a blue glow",
+   "caption": ""
+  },
+  {
+   "id": "team-two",
+   "file": "demo/images/team-two.jpg",
+   "alt": "Abstract silhouette portrait with a gold glow",
+   "caption": ""
+  },
+  {
+   "id": "team-three",
+   "file": "demo/images/team-three.jpg",
+   "alt": "Abstract silhouette portrait with a green glow",
+   "caption": ""
+  },
+  {
+   "id": "team-four",
+   "file": "demo/images/team-four.jpg",
+   "alt": "Abstract silhouette portrait with a violet glow",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Capital for the companies that keep the world running",
+   "content": "<!-- wp:group {\"align\":\"full\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull\"><!-- wp:paragraph {\"className\":\"kicker\"} --><p class=\"kicker\">Our thesis</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"statement\"} --><p class=\"statement\">We invest at seed and Series A in companies that make <em>the physical world run better</em>: the grids, warehouses, hospitals and supply chains that everything else depends on.</p><!-- /wp:paragraph --><!-- wp:columns {\"align\":\"wide\",\"className\":\"numbers\"} --><div class=\"wp-block-columns alignwide numbers\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"figure\"} --><p class=\"figure\">$240<span>M</span></p><!-- /wp:paragraph --><!-- wp:paragraph --><p>under management across two funds</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"figure\"} --><p class=\"figure\">31</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>companies backed since 2017</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"figure\"} --><p class=\"figure\">74<span>%</span></p><!-- /wp:paragraph --><!-- wp:paragraph --><p>of seed companies raised a Series A</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"figure\"} --><p class=\"figure\">2</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>partners on every board seat, never one</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"hairline-top\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull hairline-top\"><!-- wp:paragraph {\"className\":\"kicker\"} --><p class=\"kicker\">Portfolio</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">Companies we are proud to back</h2><!-- /wp:heading --><!-- wp:columns {\"align\":\"wide\",\"className\":\"portfolio\"} --><div class=\"wp-block-columns alignwide portfolio\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:logo-halcyon}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:logo-halcyon}}\" alt=\"Halcyon Grid logo\" class=\"wp-image-{{media_id:logo-halcyon}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Halcyon Grid</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Software for balancing local power grids.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"stage\"} --><p class=\"stage\">Seed · 2023</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:logo-orbitwell}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:logo-orbitwell}}\" alt=\"Orbitwell logo\" class=\"wp-image-{{media_id:logo-orbitwell}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Orbitwell</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Ground-station networks for small satellites.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"stage\"} --><p class=\"stage\">Series A · 2024</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:logo-tidewater}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:logo-tidewater}}\" alt=\"Tidewater Bio logo\" class=\"wp-image-{{media_id:logo-tidewater}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Tidewater Bio</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Enzymes that make textile dyeing cleaner.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"stage\"} --><p class=\"stage\">Seed · 2024</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:columns {\"align\":\"wide\",\"className\":\"portfolio\"} --><div class=\"wp-block-columns alignwide portfolio\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:logo-fernline}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:logo-fernline}}\" alt=\"Fernline logo\" class=\"wp-image-{{media_id:logo-fernline}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Fernline</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Procurement software for regional hospitals.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"stage\"} --><p class=\"stage\">Series A · 2022</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:logo-stackhouse}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:logo-stackhouse}}\" alt=\"Stackhouse logo\" class=\"wp-image-{{media_id:logo-stackhouse}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Stackhouse</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Developer tools for data migrations.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"stage\"} --><p class=\"stage\">Seed · 2025</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:logo-hexa}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:logo-hexa}}\" alt=\"Hexa Robotics logo\" class=\"wp-image-{{media_id:logo-hexa}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Hexa Robotics</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Picking robots for mid-sized warehouses.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"stage\"} --><p class=\"stage\">Series A · 2025</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:paragraph --><p><a href=\"{{page:portfolio}}\">See the full portfolio →</a></p><!-- /wp:paragraph --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"hairline-top\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull hairline-top\"><!-- wp:paragraph {\"className\":\"kicker\"} --><p class=\"kicker\">How we work</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">Three principles</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"principles\"} --><ul class=\"wp-block-list principles\"><!-- wp:list-item --><li><strong>Early and concentrated.</strong>We lead or co-lead rounds and make fewer, larger commitments.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Two partners per company.</strong>Founders get two perspectives and no single point of failure.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Patient by design.</strong>Our funds run twelve years because real infrastructure takes time.</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"hairline-top\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull hairline-top\"><!-- wp:paragraph {\"className\":\"kicker\"} --><p class=\"kicker\">Team</p><!-- /wp:paragraph --><!-- wp:heading {\"className\":\"section-title\"} --><h2 class=\"wp-block-heading section-title\">The people you will work with</h2><!-- /wp:heading --><!-- wp:columns {\"align\":\"wide\",\"className\":\"team\"} --><div class=\"wp-block-columns alignwide team\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:team-one}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:team-one}}\" alt=\"Abstract portrait of Elin Varga\" class=\"wp-image-{{media_id:team-one}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Elin Varga</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Managing Partner · Infrastructure software</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:team-two}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:team-two}}\" alt=\"Abstract portrait of Tobias Arenholt\" class=\"wp-image-{{media_id:team-two}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Tobias Arenholt</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Partner · Climate and industrial</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:team-three}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:team-three}}\" alt=\"Abstract portrait of Noor Castellan\" class=\"wp-image-{{media_id:team-three}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Noor Castellan</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Partner · Health systems</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:team-four}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:team-four}}\" alt=\"Abstract portrait of Ravi Okonkwo-Lind\" class=\"wp-image-{{media_id:team-four}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Ravi Okonkwo-Lind</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Principal · Robotics and developer tools</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"hairline-top\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull hairline-top\"><!-- wp:paragraph {\"className\":\"kicker\"} --><p class=\"kicker\">Recent essays</p><!-- /wp:paragraph --><!-- wp:latest-posts {\"postsToShow\":3,\"displayPostDate\":true,\"displayPostContent\":true,\"excerptLength\":22,\"postLayout\":\"grid\",\"columns\":3} /--></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"pitch-band\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull pitch-band\"><!-- wp:heading {\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center\">Building something foundational?</h2><!-- /wp:heading --><!-- wp:paragraph {\"align\":\"center\"} --><p class=\"has-text-align-center\">We read every pitch. Send a short note and a deck; a partner replies within a week.</p><!-- /wp:paragraph --><!-- wp:buttons {\"layout\":{\"type\":\"flex\",\"justifyContent\":\"center\"}} --><div class=\"wp-block-buttons is-content-justification-center\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Pitch us</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "featured_media": "hero-night-sky",
+   "front_page": true
+  },
+  {
+   "slug": "portfolio",
+   "title": "Portfolio",
+   "content": "<!-- wp:paragraph {\"className\":\"statement\"} --><p class=\"statement\">We back technical founders building the systems the rest of the economy runs on. These are some of the companies we have invested in since 2017.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns {\"align\":\"wide\",\"className\":\"portfolio\"} --><div class=\"wp-block-columns alignwide portfolio\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:logo-halcyon}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:logo-halcyon}}\" alt=\"Halcyon Grid logo\" class=\"wp-image-{{media_id:logo-halcyon}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Halcyon Grid</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Software for balancing local power grids.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"stage\"} --><p class=\"stage\">Seed · 2023</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:logo-orbitwell}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:logo-orbitwell}}\" alt=\"Orbitwell logo\" class=\"wp-image-{{media_id:logo-orbitwell}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Orbitwell</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Ground-station networks for small satellites.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"stage\"} --><p class=\"stage\">Series A · 2024</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:logo-tidewater}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:logo-tidewater}}\" alt=\"Tidewater Bio logo\" class=\"wp-image-{{media_id:logo-tidewater}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Tidewater Bio</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Enzymes that make textile dyeing cleaner.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"stage\"} --><p class=\"stage\">Seed · 2024</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:columns {\"align\":\"wide\",\"className\":\"portfolio\"} --><div class=\"wp-block-columns alignwide portfolio\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:logo-fernline}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:logo-fernline}}\" alt=\"Fernline logo\" class=\"wp-image-{{media_id:logo-fernline}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Fernline</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Procurement software for regional hospitals.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"stage\"} --><p class=\"stage\">Series A · 2022</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:logo-stackhouse}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:logo-stackhouse}}\" alt=\"Stackhouse logo\" class=\"wp-image-{{media_id:logo-stackhouse}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Stackhouse</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Developer tools for data migrations.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"stage\"} --><p class=\"stage\">Seed · 2025</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:logo-hexa}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:logo-hexa}}\" alt=\"Hexa Robotics logo\" class=\"wp-image-{{media_id:logo-hexa}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Hexa Robotics</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Picking robots for mid-sized warehouses.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"stage\"} --><p class=\"stage\">Series A · 2025</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">By sector</h2><!-- /wp:heading -->\n\n<!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Sector</th><th>Companies</th><th>Share of capital</th></tr></thead><tbody><tr><td>Infrastructure software</td><td>11</td><td>34%</td></tr><tr><td>Climate and industrial</td><td>9</td><td>31%</td></tr><tr><td>Health systems</td><td>6</td><td>19%</td></tr><tr><td>Robotics</td><td>5</td><td>16%</td></tr></tbody></table><figcaption class=\"wp-element-caption\">Fund I and Fund II combined, as of September 2026.</figcaption></figure><!-- /wp:table -->",
+   "menu_order": 1
+  },
+  {
+   "slug": "team",
+   "title": "Team",
+   "content": "<!-- wp:paragraph {\"className\":\"statement\"} --><p class=\"statement\">A small team by design. Every company works with two of us from the first meeting to the exit.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns {\"align\":\"wide\",\"className\":\"team\"} --><div class=\"wp-block-columns alignwide team\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:team-one}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:team-one}}\" alt=\"Abstract portrait of Elin Varga\" class=\"wp-image-{{media_id:team-one}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Elin Varga</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Managing Partner · Infrastructure software</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:team-two}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:team-two}}\" alt=\"Abstract portrait of Tobias Arenholt\" class=\"wp-image-{{media_id:team-two}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Tobias Arenholt</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Partner · Climate and industrial</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:team-three}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:team-three}}\" alt=\"Abstract portrait of Noor Castellan\" class=\"wp-image-{{media_id:team-three}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Noor Castellan</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Partner · Health systems</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:team-four}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:team-four}}\" alt=\"Abstract portrait of Ravi Okonkwo-Lind\" class=\"wp-image-{{media_id:team-four}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Ravi Okonkwo-Lind</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Principal · Robotics and developer tools</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Advisors</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>We work with a bench of eight operating advisors, former leaders in grid operations, hospital administration, logistics and robotics, who spend a few days each quarter with our companies.</p><!-- /wp:paragraph -->",
+   "menu_order": 2
+  },
+  {
+   "slug": "approach",
+   "title": "Approach",
+   "content": "<!-- wp:paragraph {\"className\":\"statement\"} --><p class=\"statement\">Halden North was founded in 2017 by two operators who had spent a decade building infrastructure companies and wanted a firm they would have liked to raise from.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What we invest in</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Software and hardware that make physical systems more efficient, safer or cleaner.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Founders with deep experience of the problem they are solving.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Seed and Series A rounds from $1M to $8M, often as lead.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What founders can expect</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>A decision within three weeks of a first meeting.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Two partners on every company, available on short notice.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Introductions to customers, not just other investors.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Honest feedback when we pass, in writing.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>We would rather be useful in a crisis than visible on a panel.</p><!-- /wp:paragraph --><cite>Our founding memo</cite></blockquote><!-- /wp:quote -->",
+   "menu_order": 3
+  },
+  {
+   "slug": "essays",
+   "title": "Essays",
+   "content": "",
+   "posts_page": true,
+   "menu_order": 4
+  },
+  {
+   "slug": "contact",
+   "title": "Contact",
+   "content": "<!-- wp:paragraph --><p>The best introduction is a short email with a deck: what you are building, why now, and why you. We read every one and a partner replies within a week.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Pitches</h3><!-- /wp:heading --><!-- wp:paragraph --><p><a href=\"mailto:pitch@haldennorth.example\">pitch@haldennorth.example</a></p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Founders in our portfolio</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Your partners’ direct lines are in the portfolio handbook.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Office</h3><!-- /wp:heading --><!-- wp:paragraph --><p>12 Lantern Quay, Fourth Floor<br>Harbourside</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->",
+   "menu_order": 5
+  }
+ ],
+ "posts": [
+  {
+   "slug": "the-decade-of-quiet-infrastructure",
+   "title": "The decade of quiet infrastructure",
+   "date": "2026-10-19T08:00:00",
+   "categories": [
+    "thesis"
+   ],
+   "tags": [
+    "infrastructure",
+    "energy"
+   ],
+   "featured_media": "essay-constellation",
+   "sticky": true,
+   "excerpt": "The most valuable companies of the next ten years will be the ones nobody notices: software and machines that keep physical systems running.",
+   "content": "<!-- wp:paragraph --><p>Every few years, a technology arrives that makes a large category of physical work cheaper to measure, model or control. Each time, the first wave of value goes to the companies that apply it to unglamorous systems: power, freight, water, hospitals.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Why now</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Three things changed at once. Sensors became cheap enough to put everywhere. Models became good enough to act on what they report. And the people running these systems retired in large numbers, taking decades of tacit knowledge with them.</p><!-- /wp:paragraph -->\n\n<!-- wp:pullquote --><figure class=\"wp-block-pullquote\"><blockquote><p>The next great companies will be invisible to consumers and indispensable to everyone else.</p></blockquote></figure><!-- /wp:pullquote -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What we look for</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>A system with measurable waste: idle capacity, failed deliveries, unplanned outages.</li><!-- /wp:list-item --><!-- wp:list-item --><li>A buyer who owns that waste and has budget to fix it.</li><!-- /wp:list-item --><!-- wp:list-item --><li>A product that pays back within one budget cycle.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>None of this is new as an idea. What is new is that small teams can now build it, and that the customers are finally ready to buy.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Mara D.",
+     "email": "mara@example.com",
+     "content": "The point about retiring operators is underrated. Half our sales calls are with people trying to capture what their senior engineer knows.",
+     "date": "2026-10-20T10:30:00"
+    },
+    {
+     "author": "Jonas F.",
+     "email": "jonas@example.com",
+     "content": "Would love a follow-up on how you think about hardware margins in this category.",
+     "date": "2026-10-21T16:05:00"
+    }
+   ]
+  },
+  {
+   "slug": "climate-software-is-an-operations-business",
+   "title": "Climate software is an operations business",
+   "date": "2026-10-02T08:00:00",
+   "categories": [
+    "thesis"
+   ],
+   "tags": [
+    "energy",
+    "climate"
+   ],
+   "featured_media": "essay-aurora",
+   "excerpt": "The climate companies that scale are the ones that save their customers money on Tuesday, not the ones that report emissions once a year.",
+   "content": "<!-- wp:paragraph --><p>Much of the first wave of climate software measured things: emissions, footprints, disclosures. Useful, but measurement alone rarely changes a budget. The second wave changes how things operate.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Follow the operating budget</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Reporting tools sell to sustainability teams with small budgets. Operations tools sell to the people who run plants, fleets and buildings, with budgets a hundred times larger, and the emissions savings come with the cost savings.</p><!-- /wp:paragraph -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Grid balancing that defers a substation upgrade.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Routing that cuts empty truck miles.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Building controls that lower peak demand charges.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>Our climate investments all share this shape. The carbon story is real, but the sale is about cost, uptime and safety.</p><!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "what-we-look-for-in-a-first-meeting",
+   "title": "What we look for in a first meeting",
+   "date": "2026-09-17T08:00:00",
+   "categories": [
+    "founders"
+   ],
+   "tags": [
+    "fundraising"
+   ],
+   "featured_media": "essay-horizon",
+   "excerpt": "Forty-five minutes, no slides required. The four questions we are really trying to answer when we meet a founder for the first time.",
+   "content": "<!-- wp:paragraph --><p>Founders often ask how to prepare for a first meeting with us. The honest answer is: less than you think. We are trying to answer four questions, and a deck only helps with one of them.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">The four questions</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Do you understand this problem better than almost anyone?</li><!-- /wp:list-item --><!-- wp:list-item --><li>Is there a buyer with budget who feels it today?</li><!-- /wp:list-item --><!-- wp:list-item --><li>Why can this be built now, and not five years ago?</li><!-- /wp:list-item --><!-- wp:list-item --><li>Would we enjoy working through a hard year together?</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>The last question matters more than founders expect. A fund like ours spends a decade with each company. We look for people who tell us bad news early.</p><!-- /wp:paragraph -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>The best first meetings feel like the start of a working session, not a performance.</p><!-- /wp:paragraph --><cite>One of our partners</cite></blockquote><!-- /wp:quote -->"
+  },
+  {
+   "slug": "robotics-after-the-demo",
+   "title": "Robotics after the demo: the unit economics of real deployments",
+   "date": "2026-08-29T08:00:00",
+   "categories": [
+    "markets"
+   ],
+   "tags": [
+    "robotics"
+   ],
+   "featured_media": "essay-terrain",
+   "excerpt": "A robot that works in a video is a prototype. A robot that pays for itself in a warehouse is a business. The gap is mostly spreadsheets.",
+   "content": "<!-- wp:paragraph --><p>Robotics demos have never been better. Deployment economics are where most companies still struggle, and where the good ones separate themselves early.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What we model</h2><!-- /wp:heading -->\n\n<!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Line item</th><th>Early deployment</th><th>At scale</th></tr></thead><tbody><tr><td>Hardware per unit</td><td>$68k</td><td>$41k</td></tr><tr><td>Install and integration</td><td>$22k</td><td>$6k</td></tr><tr><td>Support per year</td><td>$14k</td><td>$5k</td></tr><tr><td>Payback period</td><td>31 months</td><td>11 months</td></tr></tbody></table><figcaption class=\"wp-element-caption\">A representative picking-robot deployment, illustrative.</figcaption></figure><!-- /wp:table -->\n\n<!-- wp:paragraph --><p>The biggest lever is rarely the hardware bill of materials. It is integration: how many days of engineering each new site needs before the robot does useful work.</p><!-- /wp:paragraph -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Standard site surveys done by the customer.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Software that adapts to the shelving rather than the reverse.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Remote support that fixes most issues without a visit.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>The companies we back measure integration days per site from their first deployment and treat that number as seriously as revenue.</p><!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "pricing-power-in-vertical-software",
+   "title": "Pricing power in vertical software",
+   "date": "2026-08-14T08:00:00",
+   "categories": [
+    "markets"
+   ],
+   "tags": [
+    "infrastructure"
+   ],
+   "featured_media": "essay-gold-contours",
+   "excerpt": "Vertical software companies are often told their markets are small. The best ones grow by owning a workflow and pricing on outcomes.",
+   "content": "<!-- wp:paragraph --><p>A company that sells software to hospital procurement teams will never have millions of customers. It can still become very large, if it prices on the value it creates rather than on seats.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Three paths to pricing power</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li><strong>Own the workflow.</strong> Become where the work happens, not a report about it.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Embed payments.</strong> Take a small share of the money that already flows.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Price on outcomes.</strong> Share the savings you can measure.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>Each path needs trust that is earned slowly. That is why vertical companies often look slow for three years and then compound for ten.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>When we meet vertical software founders, we ask which of these paths they are on. The answer tells us more about the company’s ceiling than any market-size slide.</p><!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "reserve-ratios-explained-for-founders",
+   "title": "Reserve ratios, explained for founders",
+   "date": "2026-07-31T08:00:00",
+   "categories": [
+    "founders"
+   ],
+   "tags": [
+    "fundraising"
+   ],
+   "featured_media": "hero-night-sky",
+   "excerpt": "How much a fund sets aside for follow-on rounds shapes how it behaves on your board. Here is how ours works, in plain numbers.",
+   "content": "<!-- wp:paragraph --><p>Every venture fund decides how much of its capital to keep for later rounds in companies it already backs. That number, the reserve ratio, quietly determines whether your investor can support you when things get hard.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Our numbers</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>For every $1 we invest at seed, we reserve about $1.50 for later rounds.</li><!-- /wp:list-item --><!-- wp:list-item --><li>For Series A investments, we reserve about $1 for every $1.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Reserves are allocated per company, not in a shared pool.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>Ask every investor about their reserves. A fund with little set aside will be polite in a difficult round but unable to help.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>We publish these numbers because founders deserve to know them before they sign, not after the first hard board meeting.</p><!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "annual-letter-fund-two-one-year-in",
+   "title": "Annual letter: our second fund, one year in",
+   "date": "2026-07-10T08:00:00",
+   "categories": [
+    "notes"
+   ],
+   "tags": [
+    "fundraising"
+   ],
+   "featured_media": "essay-constellation",
+   "excerpt": "Nine new companies, two hard lessons and one change to how we work. A short letter to our founders and partners.",
+   "content": "<!-- wp:paragraph --><p>A year ago we closed our second fund. Since then we have backed nine companies, said no to a little over eleven hundred and learned more than we expected.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What went well</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Every new company has two partners on it, as promised.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Six of nine companies have paying customers already.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Our first two portfolio-wide customer days led to fourteen pilots.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What we will change</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>We were too slow on two decisions this year and lost both deals. From now on, a first meeting will always lead to a written yes, no or next step within ten working days.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>Thank you to our founders for their trust, and to our limited partners for their patience. The work is long and we would not want it any other way.</p><!-- /wp:paragraph -->"
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Portfolio",
+     "page": "portfolio"
+    },
+    {
+     "title": "Firm",
+     "page": "approach",
+     "children": [
+      {
+       "title": "Approach",
+       "page": "approach"
+      },
+      {
+       "title": "Team",
+       "page": "team"
+      }
+     ]
+    },
+    {
+     "title": "Essays",
+     "page": "essays",
+     "children": [
+      {
+       "category": "thesis"
+      },
+      {
+       "category": "markets"
+      },
+      {
+       "category": "founders"
+      },
+      {
+       "category": "notes"
+      }
+     ]
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    }
+   ]
+  },
+  {
+   "name": "Footer menu",
+   "location": "footer",
+   "items": [
+    {
+     "title": "Portfolio",
+     "page": "portfolio"
+    },
+    {
+     "title": "Team",
+     "page": "team"
+    },
+    {
+     "title": "Essays",
+     "page": "essays"
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "sidebar-1": [
+   "<!-- wp:search {\"label\":\"Search essays\",\"buttonText\":\"Search\"} /-->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Topics</h2><!-- /wp:heading --><!-- wp:categories {\"showPostCounts\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Recent</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":4,\"displayPostDate\":true} /--></div><!-- /wp:group -->"
+  ],
+  "footer-1": [
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Office</h2><!-- /wp:heading --><!-- wp:paragraph --><p>12 Lantern Quay, Fourth Floor<br>Harbourside</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Founders</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><a href=\"{{page:contact}}\">Pitch us</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{category:founders}}\">For founders</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{page:portfolio}}\">Portfolio</a></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Latest essay</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":1,\"displayPostDate\":true} /--></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "hero_image": "hero-night-sky",
+  "hero_kicker": "Seed and Series A · since 2017",
+  "hero_heading": "Capital for the companies that keep the world running",
+  "hero_text": "We back technical founders building the grids, warehouses, hospitals and supply chains of the next decade, early and for the long climb.",
+  "cta_label": "Pitch us",
+  "cta_url": "{{page:contact}}",
+  "scheme": "night",
+  "essay_layout": "index",
+  "header_style": "split",
+  "footer_text": "© 2026 Halden North Ventures. Nothing on this site is an offer to sell securities."
+ }
+}

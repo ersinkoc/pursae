@@ -1,0 +1,26 @@
+	<footer id="colophon" class="site-footer">
+		<div id="download" class="wrap footer-cta">
+			<div class="footer-cta__text">
+				<p class="footer-cta__title">Get {{.SiteName}} on your phone</p>
+				{{with .Description}}<p>{{.}}</p>{{end}}
+			</div>
+			{{if theme_mod . "store_show"}}<div class="store-buttons">
+				{{with theme_mod . "store_ios_url"}}<a class="store-button" href="{{.}}"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Zm0 3v13h10V5H7Zm5 14.2a1 1 0 1 0 0 2 1 1 0 0 0 0-2Z" fill="currentColor"/></svg><span><small>Download on the</small>App Store</span></a>{{end}}
+				{{with theme_mod . "store_android_url"}}<a class="store-button" href="{{.}}"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 3.5v17a1 1 0 0 0 1.5.86l14-8.5a1 1 0 0 0 0-1.72l-14-8.5A1 1 0 0 0 5 3.5Z" fill="currentColor"/></svg><span><small>Get it on</small>Google Play</span></a>{{end}}
+			</div>{{end}}
+		</div>
+		<div class="wrap site-footer__grid">
+			{{if is_active_sidebar . "footer-1"}}<div class="footer-widgets">
+				{{dynamic_sidebar . "footer-1"}}
+			</div>{{end}}
+		</div>
+		<div class="wrap site-info">
+			<p class="site-info__text"><span class="site-mark site-mark--small" aria-hidden="true"><svg viewBox="0 0 32 32" width="16" height="16"><path d="M16 5c-4.5 0-8 3.6-8 8.2 0 5.6 6.4 11.6 7.3 12.4a1 1 0 0 0 1.4 0c.9-.8 7.3-6.8 7.3-12.4C24 8.6 20.5 5 16 5Zm0 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6Z" fill="currentColor"/></svg></span>{{with theme_mod . "footer_text"}}{{.}}{{else}}&copy; {{$.SiteName}}{{end}}{{.PrivacyLink}}</p>
+			{{if has_nav_menu . "footer"}}<nav class="footer-navigation" aria-label="Footer menu">{{nav_menu . "footer"}}</nav>{{end}}
+		</div>
+	</footer><!-- #colophon -->
+</div><!-- #page -->
+
+{{.Footer}}{{.AdminBar}}
+</body>
+</html>

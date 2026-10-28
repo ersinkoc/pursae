@@ -1,0 +1,13 @@
+/* Cloudline — block editor styles */
+@font-face { font-family: "Red Hat Display"; src: url("fonts/red-hat-display.woff2") format("woff2"); font-weight: 500 800; font-display: swap; }
+@font-face { font-family: "Red Hat Text"; src: url("fonts/red-hat-text.woff2") format("woff2"); font-weight: 400 600; font-display: swap; }
+body { font-family: "Red Hat Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 17px; line-height: 1.7; color: #364258; }
+h1, h2, h3, h4 { font-family: "Red Hat Display", -apple-system, BlinkMacSystemFont, sans-serif; color: #0a1f44; font-weight: 700; letter-spacing: -.022em; line-height: 1.15; }
+a { color: #1256d6; text-underline-offset: 3px; }
+blockquote { border-left: 4px solid #1662f3; background: #eef3fc; padding: 1em 1.3em; font-family: "Red Hat Display", sans-serif; }
+.wp-block-button__link { background: #1662f3; color: #fff; border-radius: 8px; font-weight: 700; }
+.kicker { font-size: .8rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #1256d6; }
+.has-signal-color { color: #1662f3; } .has-signal-background-color { background-color: #1662f3; }
+.has-navy-color { color: #0a1f44; } .has-navy-background-color { background-color: #0a1f44; }
+.has-sky-background-color { background-color: #e8f0ff; } .has-mint-color { color: #12b981; }
+.has-alert-color { color: #e5484d; } .has-steel-color { color: #51607a; }
