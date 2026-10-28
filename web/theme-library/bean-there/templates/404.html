@@ -1,0 +1,11 @@
+{{template "header" .}}
+<main id="main" class="site-main site-main--404" tabindex="-1">
+	<section class="error-404 not-found wrap wrap--content">
+		<p class="error-404__ticket" aria-hidden="true">Order #404</p>
+		<p class="error-404__code" aria-hidden="true">404</p>
+		<h1 class="page-title">We spilled this one.</h1>
+		<p>That page is not on the menu. Try a search, or head back to the <a href="{{.HomeURL}}">front counter</a>.</p>
+		{{template "searchform" .}}
+	</section><!-- .error-404 -->
+</main>
+{{template "footer" .}}

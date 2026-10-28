@@ -1,0 +1,465 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Petal & Stem",
+  "blogdescription": "Flower studio & seasonal bouquets",
+  "posts_per_page": 9
+ },
+ "categories": [
+  {
+   "slug": "care-guides",
+   "name": "Care Guides",
+   "description": "How to keep your flowers fresh for longer."
+  },
+  {
+   "slug": "seasonal-flowers",
+   "name": "Seasonal Flowers",
+   "description": "What is blooming right now, and why we love it."
+  },
+  {
+   "slug": "weddings-events",
+   "name": "Weddings & Events",
+   "description": "Celebrations we have filled with flowers."
+  },
+  {
+   "slug": "studio-diary",
+   "name": "Studio Diary",
+   "description": "Behind the scenes at the shop."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "vase-life",
+   "name": "Vase life"
+  },
+  {
+   "slug": "bouquets",
+   "name": "Bouquets"
+  },
+  {
+   "slug": "peonies",
+   "name": "Peonies"
+  },
+  {
+   "slug": "dried-flowers",
+   "name": "Dried flowers"
+  },
+  {
+   "slug": "autumn",
+   "name": "Autumn"
+  },
+  {
+   "slug": "tulips",
+   "name": "Tulips"
+  },
+  {
+   "slug": "spring",
+   "name": "Spring"
+  },
+  {
+   "slug": "weddings",
+   "name": "Weddings"
+  },
+  {
+   "slug": "summer",
+   "name": "Summer"
+  },
+  {
+   "slug": "events",
+   "name": "Events"
+  },
+  {
+   "slug": "styling",
+   "name": "Styling"
+  },
+  {
+   "slug": "studio",
+   "name": "Studio"
+  }
+ ],
+ "media": [
+  {
+   "id": "hero",
+   "file": "demo/images/ps-hero.jpg",
+   "alt": "A generous bouquet of peonies, roses and eucalyptus wrapped in paper",
+   "caption": ""
+  },
+  {
+   "id": "bouquet-blush",
+   "file": "demo/images/ps-bouquet-blush.jpg",
+   "alt": "A bouquet of blush garden roses and sweet peas",
+   "caption": ""
+  },
+  {
+   "id": "bouquet-meadow",
+   "file": "demo/images/ps-bouquet-meadow.jpg",
+   "alt": "A loose meadow bouquet of daisies and grasses",
+   "caption": ""
+  },
+  {
+   "id": "bouquet-autumn",
+   "file": "demo/images/ps-bouquet-autumn.jpg",
+   "alt": "An autumn bouquet of rust dahlias and grasses",
+   "caption": ""
+  },
+  {
+   "id": "bouquet-white",
+   "file": "demo/images/ps-bouquet-white.jpg",
+   "alt": "A white bouquet of roses and eucalyptus",
+   "caption": ""
+  },
+  {
+   "id": "bouquet-tulips",
+   "file": "demo/images/ps-bouquet-tulips.jpg",
+   "alt": "A bunch of pink and coral tulips wrapped in paper",
+   "caption": ""
+  },
+  {
+   "id": "bouquet-dried",
+   "file": "demo/images/ps-bouquet-dried.jpg",
+   "alt": "A bouquet of dried lavender, wheat and bunny tails",
+   "caption": ""
+  },
+  {
+   "id": "peonies",
+   "file": "demo/images/ps-peonies.jpg",
+   "alt": "Pink peonies in different stages of opening",
+   "caption": ""
+  },
+  {
+   "id": "vase-care",
+   "file": "demo/images/ps-vase-care.jpg",
+   "alt": "A glass vase of flowers with scissors and twine",
+   "caption": ""
+  },
+  {
+   "id": "autumn",
+   "file": "demo/images/ps-autumn.jpg",
+   "alt": "An autumn arrangement with dahlias and turning leaves",
+   "caption": ""
+  },
+  {
+   "id": "wedding",
+   "file": "demo/images/ps-wedding.jpg",
+   "alt": "A wedding arch of meadow flowers in an orchard",
+   "caption": ""
+  },
+  {
+   "id": "table",
+   "file": "demo/images/ps-table.jpg",
+   "alt": "A long table dressed with low flowers and candles",
+   "caption": ""
+  },
+  {
+   "id": "market",
+   "file": "demo/images/ps-market.jpg",
+   "alt": "Buckets of fresh flowers at a market stall",
+   "caption": ""
+  },
+  {
+   "id": "studio",
+   "file": "demo/images/ps-studio.jpg",
+   "alt": "A florist's workbench with flowers, scissors and twine",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Flowers that feel just picked",
+   "front_page": true,
+   "featured_media": "hero",
+   "excerpt": "Seasonal bouquets, wedding flowers and weekly subscriptions from our little studio, arranged by hand every morning.",
+   "content": "<!-- wp:paragraph {\"className\":\"eyebrow\",\"align\":\"center\"} --><p class=\"has-text-align-center eyebrow\">The bouquet catalogue</p><!-- /wp:paragraph -->\n\n<!-- wp:heading {\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center\">Made this morning, <em>delivered today</em></h2><!-- /wp:heading -->\n\n<!-- wp:columns {\"align\":\"wide\",\"className\":\"bouquet-grid\"} --><div class=\"wp-block-columns alignwide bouquet-grid\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"bouquet\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group bouquet\"><!-- wp:image {\"id\":{{media_id:bouquet-blush}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:bouquet-blush}}\" alt=\"Blush bouquet\" class=\"wp-image-{{media_id:bouquet-blush}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">The Blush</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Garden roses, sweet peas and spray roses in soft pinks.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"price\"} --><p class=\"price\">&euro;48</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Order</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"bouquet\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group bouquet\"><!-- wp:image {\"id\":{{media_id:bouquet-meadow}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:bouquet-meadow}}\" alt=\"Meadow bouquet\" class=\"wp-image-{{media_id:bouquet-meadow}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">The Meadow</h3><!-- /wp:heading --><!-- wp:paragraph --><p>A loose, wild mix of whatever the fields are offering.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"price\"} --><p class=\"price\">&euro;42</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Order</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"bouquet\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group bouquet\"><!-- wp:image {\"id\":{{media_id:bouquet-autumn}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:bouquet-autumn}}\" alt=\"Harvest bouquet\" class=\"wp-image-{{media_id:bouquet-autumn}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">The Harvest</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Dahlias, rust chrysanthemums and grasses.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"price\"} --><p class=\"price\">&euro;52</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Order</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:buttons {\"layout\":{\"type\":\"flex\",\"justifyContent\":\"center\"}} --><div class=\"wp-block-buttons is-content-justification-center\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:bouquets}}\">See every bouquet</a></div><!-- /wp:button --></div><!-- /wp:buttons -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"band-moss\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull band-moss\"><!-- wp:columns {\"className\":\"split-band\"} --><div class=\"wp-block-columns split-band\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:wedding}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:wedding}}\" alt=\"A wedding arch of meadow flowers\" class=\"wp-image-{{media_id:wedding}}\"/></figure><!-- /wp:image --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"eyebrow\"} --><p class=\"eyebrow\">Weddings &amp; events</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Flowers for your <em>big day</em></h2><!-- /wp:heading --><!-- wp:paragraph --><p>From a single bouquet to an orchard full of blooms, we design wedding and event flowers that feel personal, seasonal and alive.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:weddings-events}}\">Plan your flowers</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:paragraph {\"className\":\"eyebrow\",\"align\":\"center\"} --><p class=\"has-text-align-center eyebrow\">From the journal</p><!-- /wp:paragraph -->\n\n<!-- wp:heading {\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center\">Care guides &amp; <em>seasonal notes</em></h2><!-- /wp:heading -->\n\n<!-- wp:group {\"align\":\"wide\",\"className\":\"journal-strip\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignwide journal-strip\"><!-- wp:latest-posts {\"postsToShow\":3,\"displayPostDate\":true,\"displayPostContent\":true,\"excerptLength\":18,\"postLayout\":\"grid\",\"columns\":3} /--></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"band-blush\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull band-blush\"><!-- wp:columns {\"className\":\"testimonials\"} --><div class=\"wp-block-columns testimonials\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>The most beautiful flowers I have ever received. They lasted nearly two weeks.</p><!-- /wp:paragraph --><cite>Hanne, a regular</cite></blockquote><!-- /wp:quote --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>They understood exactly what we wanted for the wedding, even before we did.</p><!-- /wp:paragraph --><cite>Theo &amp; Mai</cite></blockquote><!-- /wp:quote --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>My Friday flower subscription is the best thing I do for myself.</p><!-- /wp:paragraph --><cite>Ruth</cite></blockquote><!-- /wp:quote --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->"
+  },
+  {
+   "slug": "journal",
+   "title": "Journal",
+   "posts_page": true,
+   "content": ""
+  },
+  {
+   "slug": "bouquets",
+   "title": "Bouquet Catalogue",
+   "template": "page-catalogue",
+   "content": "<!-- wp:paragraph {\"align\":\"center\"} --><p class=\"has-text-align-center\">Every bouquet is made by hand on the day it is delivered, with the best flowers from the market. Exact stems vary with the season; the feeling never does.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns {\"align\":\"wide\",\"className\":\"bouquet-grid\"} --><div class=\"wp-block-columns alignwide bouquet-grid\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"bouquet\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group bouquet\"><!-- wp:image {\"id\":{{media_id:bouquet-blush}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:bouquet-blush}}\" alt=\"Blush bouquet\" class=\"wp-image-{{media_id:bouquet-blush}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">The Blush</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Garden roses, sweet peas and spray roses in soft pinks.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"price\"} --><p class=\"price\">&euro;48</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Order</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"bouquet\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group bouquet\"><!-- wp:image {\"id\":{{media_id:bouquet-meadow}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:bouquet-meadow}}\" alt=\"Meadow bouquet\" class=\"wp-image-{{media_id:bouquet-meadow}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">The Meadow</h3><!-- /wp:heading --><!-- wp:paragraph --><p>A loose, wild mix of whatever the fields are offering.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"price\"} --><p class=\"price\">&euro;42</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Order</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"bouquet\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group bouquet\"><!-- wp:image {\"id\":{{media_id:bouquet-autumn}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:bouquet-autumn}}\" alt=\"Harvest bouquet\" class=\"wp-image-{{media_id:bouquet-autumn}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">The Harvest</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Dahlias, rust chrysanthemums and grasses.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"price\"} --><p class=\"price\">&euro;52</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Order</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"bouquet\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group bouquet\"><!-- wp:image {\"id\":{{media_id:bouquet-white}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:bouquet-white}}\" alt=\"Classic bouquet\" class=\"wp-image-{{media_id:bouquet-white}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">The Classic</h3><!-- /wp:heading --><!-- wp:paragraph --><p>White roses, lisianthus and silver eucalyptus.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"price\"} --><p class=\"price\">&euro;55</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Order</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"bouquet\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group bouquet\"><!-- wp:image {\"id\":{{media_id:bouquet-tulips}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:bouquet-tulips}}\" alt=\"Tulip Bunch bouquet\" class=\"wp-image-{{media_id:bouquet-tulips}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">The Tulip Bunch</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Twenty seasonal tulips, wrapped simply.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"price\"} --><p class=\"price\">&euro;36</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Order</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"bouquet\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group bouquet\"><!-- wp:image {\"id\":{{media_id:bouquet-dried}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:bouquet-dried}}\" alt=\"Everlasting bouquet\" class=\"wp-image-{{media_id:bouquet-dried}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">The Everlasting</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Dried lavender, bunny tails and wheat that last for months.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"price\"} --><p class=\"price\">&euro;45</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Order</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Sizes</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"className\":\"price-list\"} --><ul class=\"wp-block-list price-list\"><!-- wp:list-item --><li><span>Petite</span><strong>from &euro;36</strong></li><!-- /wp:list-item --><!-- wp:list-item --><li><span>Classic</span><strong>from &euro;48</strong></li><!-- /wp:list-item --><!-- wp:list-item --><li><span>Generous</span><strong>from &euro;72</strong></li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>Same-day delivery in the city when you order before noon. <a href=\"{{page:delivery}}\">Delivery &amp; care</a>.</p><!-- /wp:paragraph -->",
+   "excerpt": "Hand-tied every morning with the best of the season."
+  },
+  {
+   "slug": "delivery",
+   "title": "Delivery & Care",
+   "parent": "bouquets",
+   "content": "<!-- wp:paragraph --><p>We deliver by bike and electric van across the city, Monday to Saturday.</p><!-- /wp:paragraph -->\n\n<!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Order by</th><th>Delivered</th><th>Cost</th></tr></thead><tbody><tr><td>Noon</td><td>Same day, 14:00&ndash;18:00</td><td>&euro;8</td></tr><tr><td>18:00</td><td>Next day, 9:00&ndash;13:00</td><td>&euro;8</td></tr><tr><td>Any time</td><td>Studio collection</td><td>Free</td></tr></tbody></table></figure><!-- /wp:table -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">When your flowers arrive</h2><!-- /wp:heading -->\n\n<!-- wp:group {\"className\":\"care-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group care-card\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">First steps</h3><!-- /wp:heading --><!-- wp:list {\"className\":\"care-steps\"} --><ul class=\"wp-block-list care-steps\"><!-- wp:list-item --><li>Unwrap and trim each stem.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Use the flower food in the bag.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Choose a cool spot away from fruit.</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group -->"
+  },
+  {
+   "slug": "weddings-events",
+   "title": "Weddings & Events",
+   "content": "<!-- wp:paragraph --><p>We design flowers for weddings, dinners and celebrations of every size. Our style is seasonal, loose and full of movement, using as many local flowers as we can.</p><!-- /wp:paragraph -->\n\n<!-- wp:gallery {\"columns\":3,\"linkTo\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-gallery has-nested-images columns-3 is-cropped alignwide\"><!-- wp:image {\"id\":{{media_id:wedding}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:wedding}}\" alt=\"Meadow wedding arch\" class=\"wp-image-{{media_id:wedding}}\"/></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:table}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:table}}\" alt=\"Long table with low flowers\" class=\"wp-image-{{media_id:table}}\"/></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:bouquet-white}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:bouquet-white}}\" alt=\"White bridal bouquet\" class=\"wp-image-{{media_id:bouquet-white}}\"/></figure><!-- /wp:image --></figure><!-- /wp:gallery -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">How it works</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>A free consultation, in the studio or by video.</li><!-- /wp:list-item --><!-- wp:list-item --><li>A proposal with a moodboard and a clear quote.</li><!-- /wp:list-item --><!-- wp:list-item --><li>A final check two weeks before, when we know what is blooming.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Delivery, set-up and clearing away on the day.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Packages</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"className\":\"price-list\"} --><ul class=\"wp-block-list price-list\"><!-- wp:list-item --><li><span>Elopement: bouquet and buttonhole</span><strong>from &euro;180</strong></li><!-- /wp:list-item --><!-- wp:list-item --><li><span>Intimate: up to 30 guests</span><strong>from &euro;950</strong></li><!-- /wp:list-item --><!-- wp:list-item --><li><span>Celebration: arch, tables and bouquets</span><strong>from &euro;2,400</strong></li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Book a consultation</a></div><!-- /wp:button --></div><!-- /wp:buttons -->",
+   "featured_media": "wedding"
+  },
+  {
+   "slug": "about",
+   "title": "About the Studio",
+   "content": "<!-- wp:media-text {\"mediaId\":{{media_id:studio}},\"mediaType\":\"image\"} --><div class=\"wp-block-media-text is-stacked-on-mobile\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:studio}}\" alt=\"A florist&#x27;s workbench with flowers, scissors and twine\" class=\"wp-image-{{media_id:studio}} size-full\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:paragraph {\"className\":\"eyebrow\"} --><p class=\"eyebrow\">Our story</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">A tiny shop with <em>big buckets</em></h2><!-- /wp:heading --><!-- wp:paragraph --><p>Petal &amp; Stem began in a former bakery with one bucket of tulips and a borrowed van. Today we are a team of five florists who still believe that flowers should feel like they were just picked.</p><!-- /wp:paragraph --></div></div><!-- /wp:media-text -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What we care about</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Local and seasonal flowers whenever we can</li><!-- /wp:list-item --><!-- wp:list-item --><li>No floral foam, ever</li><!-- /wp:list-item --><!-- wp:list-item --><li>Compostable wrapping and reused buckets</li><!-- /wp:list-item --><!-- wp:list-item --><li>Flowers for every budget</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Flowers are the easiest way to say something you cannot find the words for.</p><!-- /wp:paragraph --><cite>Our founder</cite></blockquote><!-- /wp:quote -->"
+  },
+  {
+   "slug": "contact",
+   "title": "Contact",
+   "parent": "about",
+   "content": "<!-- wp:paragraph --><p>To order a bouquet, ask about a wedding or just say hello, write to us or visit the shop. We answer every message within one working day.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Studio &amp; shop</h3><!-- /wp:heading --><!-- wp:paragraph --><p>7 Bakery Lane<br>Tue&ndash;Sat 9:00&ndash;18:00</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Email</h3><!-- /wp:heading --><!-- wp:paragraph --><p><a href=\"mailto:studio@example.com\">studio@example.com</a></p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Phone</h3><!-- /wp:heading --><!-- wp:paragraph --><p>+00 123 456 789</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->"
+  }
+ ],
+ "posts": [
+  {
+   "slug": "how-to-make-cut-flowers-last",
+   "title": "How to Make Cut Flowers Last Longer",
+   "date": "2026-10-14T09:00:00",
+   "sticky": true,
+   "excerpt": "Fresh water, a sharp cut and a cool spot. The five-minute routine that can add a whole week to your bouquet.",
+   "categories": [
+    "care-guides"
+   ],
+   "tags": [
+    "vase-life",
+    "bouquets"
+   ],
+   "featured_media": "vase-care",
+   "content": "<!-- wp:paragraph --><p>Every bouquet that leaves the studio comes with a little care card, and the most common question we get is still: how do I make them last? The good news is that it takes five minutes every couple of days.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>Cut flowers are still drinking. Most wilting happens because stems can no longer take up water, either because they have sealed over or because bacteria has clouded the vase.</p><!-- /wp:paragraph -->\n\n<!-- wp:group {\"className\":\"care-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group care-card\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">The five-minute routine</h3><!-- /wp:heading --><!-- wp:list {\"className\":\"care-steps\"} --><ul class=\"wp-block-list care-steps\"><!-- wp:list-item --><li>Fill a clean vase with cool water and the flower food sachet.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Cut 2 cm from each stem at an angle with sharp scissors.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Strip any leaves that would sit below the waterline.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Place away from sunlight, radiators and the fruit bowl.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Every two days, change the water and trim the stems again.</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group -->\n\n<!-- wp:image {\"id\":{{media_id:vase-care}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:vase-care}}\" alt=\"A glass vase of fresh flowers beside scissors and twine\" class=\"wp-image-{{media_id:vase-care}}\"/></figure><!-- /wp:image -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Why the fruit bowl matters</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Ripening fruit releases ethylene, a gas that tells flowers to age faster. Keep bouquets and bananas in different rooms if you can.</p><!-- /wp:paragraph -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Clean vase, fresh water, sharp scissors. That is ninety percent of flower care.</p><!-- /wp:paragraph --><cite>Our head florist</cite></blockquote><!-- /wp:quote -->",
+   "comments": [
+    {
+     "author": "Elif",
+     "content": "I had no idea about the fruit bowl! My last bouquet lasted almost two weeks.",
+     "date": "2026-10-16T18:00:00",
+     "email": "elif@example.com"
+    },
+    {
+     "author": "Jonah",
+     "content": "Do you recommend aspirin in the water?",
+     "date": "2026-10-17T10:20:00",
+     "email": "jonah@example.com"
+    },
+    {
+     "author": "Petal & Stem",
+     "content": "Skip the aspirin. Clean water and the flower food sachet do a better job.",
+     "date": "2026-10-17T12:00:00",
+     "email": "studio@example.com"
+    }
+   ]
+  },
+  {
+   "slug": "caring-for-peonies",
+   "title": "Caring for Peonies, From Bud to Bloom",
+   "date": "2026-05-20T10:00:00",
+   "excerpt": "Peonies arrive as tight little balls and open into the most generous flowers. Here is how to coax them along.",
+   "categories": [
+    "care-guides",
+    "seasonal-flowers"
+   ],
+   "tags": [
+    "peonies",
+    "vase-life"
+   ],
+   "featured_media": "peonies",
+   "content": "<!-- wp:paragraph --><p>Peony season is short and glorious, just a few weeks in late spring. We buy them as closed buds because they travel well and you get to watch them open.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>A peony bud should feel like a marshmallow when you squeeze it gently. Rock-hard buds may never open; soft ones will burst within a day.</p><!-- /wp:paragraph -->\n\n<!-- wp:group {\"className\":\"care-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group care-card\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Helping peonies open</h3><!-- /wp:heading --><!-- wp:list {\"className\":\"care-steps\"} --><ul class=\"wp-block-list care-steps\"><!-- wp:list-item --><li>Trim the stems and place in lukewarm water.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Keep them somewhere warm and bright, but not in direct sun.</li><!-- /wp:list-item --><!-- wp:list-item --><li>If a bud is sticky, wipe it gently with a damp cloth.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Once open, move to a cooler room to slow them down.</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group -->\n\n<!-- wp:image {\"id\":{{media_id:peonies}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:peonies}}\" alt=\"Pink peonies in various stages of opening\" class=\"wp-image-{{media_id:peonies}}\"/></figure><!-- /wp:image -->\n\n<!-- wp:pullquote --><figure class=\"wp-block-pullquote\"><blockquote><p>Watch them closely. A peony can go from bud to dinner plate in an afternoon.</p></blockquote></figure><!-- /wp:pullquote -->\n\n<!-- wp:paragraph --><p>When the petals start to drop, float the last heads in a shallow bowl of water. They will give you a few more days of colour and scent.</p><!-- /wp:paragraph -->",
+   "comments": []
+  },
+  {
+   "slug": "a-guide-to-dried-flowers",
+   "title": "A Gentle Guide to Dried Flowers",
+   "date": "2026-09-08T11:30:00",
+   "excerpt": "Lavender, bunny tails, strawflowers and wheat. How to choose, style and care for flowers that last all winter.",
+   "categories": [
+    "care-guides"
+   ],
+   "tags": [
+    "dried-flowers",
+    "bouquets"
+   ],
+   "featured_media": "bouquet-dried",
+   "content": "<!-- wp:paragraph --><p>Dried flowers had a reputation for being dusty and brown. Today they come in soft creams, blush and even bright saffron, and they last for months.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Our favourite dried stems</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Lavender, for colour and scent</li><!-- /wp:list-item --><!-- wp:list-item --><li>Bunny tail grass, for softness</li><!-- /wp:list-item --><!-- wp:list-item --><li>Strawflowers, for papery brights</li><!-- /wp:list-item --><!-- wp:list-item --><li>Wheat and oats, for texture</li><!-- /wp:list-item --><!-- wp:list-item --><li>Bleached ruscus, for airy height</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:image {\"id\":{{media_id:bouquet-dried}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:bouquet-dried}}\" alt=\"A bouquet of dried lavender, wheat and grasses\" class=\"wp-image-{{media_id:bouquet-dried}}\"/></figure><!-- /wp:image -->\n\n<!-- wp:group {\"className\":\"care-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group care-card\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Keeping dried flowers lovely</h3><!-- /wp:heading --><!-- wp:list {\"className\":\"care-steps\"} --><ul class=\"wp-block-list care-steps\"><!-- wp:list-item --><li>Display away from direct sunlight to slow fading.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Keep them dry: no bathrooms or kitchens.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Dust with a hairdryer on its coolest setting.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Refresh with a few new stems each season.</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group -->\n\n<!-- wp:paragraph --><p>You can also dry your own. Hang small bunches upside down in a dark, airy cupboard for two to three weeks.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>Dried bouquets make thoughtful gifts too: they travel well, need nothing from the recipient and will still look lovely long after a fresh bunch would have gone.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Maren",
+     "content": "The cool hairdryer tip is genius.",
+     "date": "2026-09-10T15:00:00",
+     "email": "maren@example.com"
+    }
+   ]
+  },
+  {
+   "slug": "what-is-in-season-autumn",
+   "title": "What’s in Season: Autumn",
+   "date": "2026-10-01T08:00:00",
+   "excerpt": "Dahlias at their peak, rusty chrysanthemums, rosehips and the first branches of turning leaves.",
+   "categories": [
+    "seasonal-flowers"
+   ],
+   "tags": [
+    "autumn",
+    "bouquets"
+   ],
+   "featured_media": "autumn",
+   "content": "<!-- wp:paragraph --><p>Autumn might be our favourite season in the studio. The colours deepen, the textures get richer and the hedgerows give us rosehips and berries.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">In the studio this month</h2><!-- /wp:heading -->\n\n<!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Flowers</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Dahlias</li><!-- /wp:list-item --><!-- wp:list-item --><li>Chrysanthemums</li><!-- /wp:list-item --><!-- wp:list-item --><li>Late roses</li><!-- /wp:list-item --><!-- wp:list-item --><li>Asters</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Foliage</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Copper beech</li><!-- /wp:list-item --><!-- wp:list-item --><li>Smoke bush</li><!-- /wp:list-item --><!-- wp:list-item --><li>Oak leaves</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Texture</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Rosehips</li><!-- /wp:list-item --><!-- wp:list-item --><li>Grasses</li><!-- /wp:list-item --><!-- wp:list-item --><li>Seed heads</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:image {\"id\":{{media_id:autumn}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:autumn}}\" alt=\"An autumn arrangement with dahlias and turning leaves\" class=\"wp-image-{{media_id:autumn}}\"/></figure><!-- /wp:image -->\n\n<!-- wp:paragraph --><p>Dahlias are thirsty and short-lived, so enjoy them fast. Give them fresh water daily and they will reward you with a week of colour.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>Our autumn bouquets change every week as the season turns. Ask in the studio and we will tell you what came in from the growers that morning.</p><!-- /wp:paragraph -->",
+   "comments": []
+  },
+  {
+   "slug": "tulips-the-spring-edit",
+   "title": "Tulips: The Spring Edit",
+   "date": "2026-03-22T09:30:00",
+   "excerpt": "Parrot, fringed, double and plain: our favourite tulip varieties, and why they keep growing in the vase.",
+   "categories": [
+    "seasonal-flowers"
+   ],
+   "tags": [
+    "tulips",
+    "spring"
+   ],
+   "featured_media": "bouquet-tulips",
+   "content": "<!-- wp:paragraph --><p>Tulips are the flowers that tell us spring is here. They come in more shapes than most people realise, from frilly parrot tulips to neat little singles.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>They also keep growing after they are cut, sometimes by several centimetres, and they bend towards the light. Embrace the curves; they are part of the charm.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Our favourites</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Parrot tulips, with ruffled, flame-streaked petals</li><!-- /wp:list-item --><!-- wp:list-item --><li>Double tulips, which look almost like peonies</li><!-- /wp:list-item --><!-- wp:list-item --><li>Fringed tulips, with crystal-edged petals</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:image {\"id\":{{media_id:bouquet-tulips}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:bouquet-tulips}}\" alt=\"A bunch of pink and coral tulips wrapped in paper\" class=\"wp-image-{{media_id:bouquet-tulips}}\"/></figure><!-- /wp:image -->\n\n<!-- wp:group {\"className\":\"care-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group care-card\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Tulip tips</h3><!-- /wp:heading --><!-- wp:list {\"className\":\"care-steps\"} --><ul class=\"wp-block-list care-steps\"><!-- wp:list-item --><li>Use cold water, and not too much of it.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Wrap them in paper for an hour to straighten the stems.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Keep them away from daffodils for the first day.</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group -->\n\n<!-- wp:paragraph --><p>Tulips are at their best from February to April, and they are some of the most affordable flowers of the year. Buy them in armfuls.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Saoirse",
+     "content": "So that is why my tulips droop next to daffodils!",
+     "date": "2026-03-24T09:00:00",
+     "email": "saoirse@example.com"
+    }
+   ]
+  },
+  {
+   "slug": "a-meadow-wedding-in-the-orchard",
+   "title": "A Meadow Wedding in the Orchard",
+   "date": "2026-07-02T16:00:00",
+   "excerpt": "An arch of wildflowers, jam-jar posies on long tables and a bouquet that looked freshly picked. A summer wedding from our studio.",
+   "categories": [
+    "weddings-events"
+   ],
+   "tags": [
+    "weddings",
+    "summer"
+   ],
+   "featured_media": "wedding",
+   "content": "<!-- wp:paragraph --><p>The couple asked for flowers that looked like they had wandered in from the field next door. We spent a week foraging, growing and sourcing locally to make it happen.</p><!-- /wp:paragraph -->\n\n<!-- wp:image {\"id\":{{media_id:wedding}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:wedding}}\" alt=\"A wedding arch covered in meadow flowers in an orchard\" class=\"wp-image-{{media_id:wedding}}\"/></figure><!-- /wp:image -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">The flowers</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>An arch of ox-eye daisies, scabious, grasses and sweet peas</li><!-- /wp:list-item --><!-- wp:list-item --><li>Bridal bouquet of garden roses and chamomile</li><!-- /wp:list-item --><!-- wp:list-item --><li>Forty jam-jar posies for the tables</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>We wanted it to feel like the orchard was celebrating with us. It did.</p><!-- /wp:paragraph --><cite>The couple</cite></blockquote><!-- /wp:quote -->\n\n<!-- wp:paragraph --><p>After the wedding, the posies went home with the guests. Nothing was wasted, and many of them were still blooming a week later.</p><!-- /wp:paragraph -->",
+   "comments": []
+  },
+  {
+   "slug": "styling-a-long-table-with-flowers",
+   "title": "Styling a Long Table with Flowers",
+   "date": "2026-08-12T13:00:00",
+   "excerpt": "Low and loose, never in the way of conversation. Our method for dressing long tables for dinners and celebrations.",
+   "categories": [
+    "weddings-events"
+   ],
+   "tags": [
+    "events",
+    "styling"
+   ],
+   "featured_media": "table",
+   "content": "<!-- wp:paragraph --><p>A long table full of flowers is one of the most joyful sights at a celebration. The secret is to keep everything low enough that guests can see each other.</p><!-- /wp:paragraph -->\n\n<!-- wp:group {\"className\":\"care-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group care-card\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Our long-table method</h3><!-- /wp:heading --><!-- wp:list {\"className\":\"care-steps\"} --><ul class=\"wp-block-list care-steps\"><!-- wp:list-item --><li>Lay a runner of foliage down the centre first.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Add bud vases in groups of three, spaced a hand apart.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Tuck in candles between the groups, never under the foliage.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Finish with a few single stems laid on the table.</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group -->\n\n<!-- wp:image {\"id\":{{media_id:table}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:table}}\" alt=\"A long table dressed with low flowers and candles\" class=\"wp-image-{{media_id:table}}\"/></figure><!-- /wp:image -->\n\n<!-- wp:paragraph --><p>For a table of twenty, we usually use around sixty bud vases and four bunches of trailing foliage.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>Afterwards, the bud vases make perfect little gifts for guests to take home. It is our favourite way to make sure no flower goes to waste.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Ana",
+     "content": "We used this for our anniversary dinner. Everyone took photos.",
+     "date": "2026-08-15T21:00:00",
+     "email": "ana@example.com"
+    }
+   ]
+  },
+  {
+   "slug": "market-morning-behind-the-scenes",
+   "title": "Market Morning: Behind the Scenes",
+   "date": "2026-06-10T06:30:00",
+   "excerpt": "Four a.m. alarms, buckets of peonies and a lot of coffee. A morning at the flower market with our team.",
+   "categories": [
+    "studio-diary"
+   ],
+   "tags": [
+    "studio"
+   ],
+   "featured_media": "market",
+   "content": "<!-- wp:paragraph --><p>Twice a week our day starts in the dark. By five, we are walking the aisles of the flower market with a list, a trolley and a thermos.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>We buy from a small number of growers we trust, and always save a little space in the van for something unexpected.</p><!-- /wp:paragraph -->\n\n<!-- wp:image {\"id\":{{media_id:market}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:market}}\" alt=\"Buckets of fresh flowers at a market stall\" class=\"wp-image-{{media_id:market}}\"/></figure><!-- /wp:image -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Back at the studio</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Every stem is unwrapped and cut.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Flowers rest in deep, cool water for at least four hours.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Only then do they go into bouquets.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:paragraph --><p>By the time the shop opens at nine, the buckets are full and the first deliveries are wrapped.</p><!-- /wp:paragraph -->",
+   "comments": []
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Bouquets",
+     "page": "bouquets",
+     "children": [
+      {
+       "page": "delivery"
+      }
+     ]
+    },
+    {
+     "title": "Weddings",
+     "page": "weddings-events"
+    },
+    {
+     "title": "Journal",
+     "page": "journal",
+     "children": [
+      {
+       "category": "care-guides"
+      },
+      {
+       "category": "seasonal-flowers"
+      },
+      {
+       "category": "weddings-events"
+      },
+      {
+       "category": "studio-diary"
+      }
+     ]
+    },
+    {
+     "title": "Studio",
+     "page": "about",
+     "children": [
+      {
+       "page": "contact"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Social",
+   "location": "social",
+   "items": [
+    {
+     "title": "Instagram",
+     "url": "https://instagram.com/"
+    },
+    {
+     "title": "Pinterest",
+     "url": "https://pinterest.com/"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "sidebar-1": [
+   "<!-- wp:search {\"label\":\"Search\",\"placeholder\":\"Peonies, care&hellip;\",\"buttonText\":\"Search\"} /-->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Topics</h2><!-- /wp:heading --><!-- wp:categories {\"showPostCounts\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Recent notes</h2><!-- /wp:heading --><!-- wp:latest-comments {\"commentsToShow\":3,\"displayAvatar\":false,\"displayExcerpt\":false} /--></div><!-- /wp:group -->"
+  ],
+  "footer-1": [
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Visit</h2><!-- /wp:heading --><!-- wp:paragraph --><p>7 Bakery Lane<br>Tuesday to Saturday, 9:00&ndash;18:00</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Shop</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><a href=\"{{page:bouquets}}\">Bouquet catalogue</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{page:delivery}}\">Delivery &amp; care</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{page:weddings-events}}\">Weddings &amp; events</a></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Care guides</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":3} /--></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "hero_image": "hero",
+  "announcement": "Same-day delivery across the city when you order before noon",
+  "cta_label": "Order flowers",
+  "cta_url": "{{page:bouquets}}",
+  "catalogue_columns": "3",
+  "show_ornaments": true
+ }
+}

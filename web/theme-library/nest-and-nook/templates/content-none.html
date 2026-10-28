@@ -1,0 +1,11 @@
+<section class="no-results not-found">
+	<h2 class="no-results__title">An empty room</h2>
+	{{if eq .Template "search"}}
+		<p>Nothing matched. Try a room, like &ldquo;kitchen&rdquo;, or a material, like &ldquo;linen&rdquo;.</p>
+	{{else if and (eq .Template "index") .CanPublish}}
+		<p>Ready to publish your first post? <a href="/wp-admin/post-new">Get started here</a>.</p>
+	{{else}}
+		<p>It seems we can&rsquo;t find what you&rsquo;re looking for. Perhaps searching can help.</p>
+		{{template "searchform" .}}
+	{{end}}
+</section><!-- .no-results -->

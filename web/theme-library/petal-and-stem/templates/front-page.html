@@ -1,0 +1,23 @@
+{{template "header" .}}
+<main id="main" class="site-main site-main--front" tabindex="-1">
+{{with .Post}}{{$img := theme_mod $ "hero_image"}}{{if not $img}}{{$img = .ThumbnailURL}}{{end}}
+	<article id="post-{{.ID}}" class="{{.Class}} entry entry--front">
+		<section class="flower-hero{{if $img}} flower-hero--has-media{{end}}" aria-labelledby="front-title">
+			<div class="wrap flower-hero__inner">
+				<div class="flower-hero__text">
+					<p class="flower-hero__kicker">{{with $.Description}}{{.}}{{else}}Flower studio{{end}}</p>
+					<h1 id="front-title" class="flower-hero__title">{{.Title}}</h1>
+					{{with .Excerpt}}<div class="flower-hero__lead">{{.}}</div>{{end}}
+					{{with theme_mod $ "cta_label"}}<p class="flower-hero__actions"><a class="button" href="{{theme_mod $ "cta_url"}}">{{.}}</a></p>{{end}}
+				</div>
+				{{if $img}}<figure class="flower-hero__media"><img src="{{$img}}" alt="" /></figure>{{end}}
+			</div>
+		</section>
+		<div class="entry-content front-content">
+			{{.Content}}
+		</div>
+		{{with .EditLink}}<footer class="wrap entry-footer"><span class="edit-link">{{.}}</span></footer>{{end}}
+	</article>
+{{end}}
+</main><!-- #main -->
+{{template "footer" .}}

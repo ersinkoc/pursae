@@ -1,0 +1,22 @@
+{{template "header" .}}
+<main id="main" class="site-main site-main--front" tabindex="-1">
+{{with .Post}}{{$img := theme_mod $ "hero_image"}}{{if not $img}}{{$img = .ThumbnailURL}}{{end}}
+	<article id="post-{{.ID}}" class="{{.Class}} entry entry--front">
+		<section class="room-hero{{if $img}} room-hero--has-media{{end}}" aria-labelledby="front-title">
+			{{if $img}}<img class="room-hero__img" src="{{$img}}" alt="" />{{end}}
+			<div class="wrap room-hero__inner">
+				<div class="room-hero__card">
+					<p class="room-hero__kicker">{{with theme_mod $ "hero_caption"}}{{.}}{{else}}Interior design studio{{end}}</p>
+					<h1 id="front-title" class="room-hero__title">{{.Title}}</h1>
+					{{with .Excerpt}}<div class="room-hero__lead">{{.}}</div>{{end}}
+				</div>
+			</div>
+		</section>
+		<div class="entry-content front-content">
+			{{.Content}}
+		</div>
+		{{with .EditLink}}<footer class="wrap entry-footer"><span class="edit-link">{{.}}</span></footer>{{end}}
+	</article>
+{{end}}
+</main><!-- #main -->
+{{template "footer" .}}

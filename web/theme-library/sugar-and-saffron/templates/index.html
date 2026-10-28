@@ -1,0 +1,19 @@
+{{template "header" .}}
+<header class="page-header page-header--blog">
+	<div class="wrap">
+		{{if .IsHomeHeader}}<p class="page-header__kicker">From the recipe box</p>
+		<h1 class="page-title">{{.PostsPageTitle}}</h1>{{else}}<p class="page-header__kicker">Fresh from the oven</p>
+		<p class="page-title">Latest bakes</p>{{end}}
+	</div>
+</header>
+<div class="wrap layout">
+	<main id="main" class="site-main" tabindex="-1">
+		{{if .Posts}}<div class="post-list">
+			{{range .Posts}}{{template "content" .}}
+			{{end}}
+		</div>
+		{{.Pagination}}{{else}}{{template "content-none" .}}{{end}}
+	</main><!-- #main -->
+	{{template "sidebar" .}}
+</div>
+{{template "footer" .}}

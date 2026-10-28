@@ -1,0 +1,439 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Bean There",
+  "blogdescription": "Specialty coffee, roasted behind the counter",
+  "posts_per_page": 9
+ },
+ "categories": [
+  {
+   "slug": "brewing-guides",
+   "name": "Brewing Guides",
+   "description": "Step-by-step recipes for brewing great coffee at home."
+  },
+  {
+   "slug": "origins",
+   "name": "Origins",
+   "description": "The farms and stories behind the coffees we roast."
+  },
+  {
+   "slug": "drinks-at-home",
+   "name": "Drinks at Home",
+   "description": "Café favourites you can make in your kitchen."
+  },
+  {
+   "slug": "cafe-news",
+   "name": "Café News",
+   "description": "What is new at our shops."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "pour-over",
+   "name": "Pour-over"
+  },
+  {
+   "slug": "filter",
+   "name": "Filter"
+  },
+  {
+   "slug": "immersion",
+   "name": "Immersion"
+  },
+  {
+   "slug": "at-home",
+   "name": "At home"
+  },
+  {
+   "slug": "cold-brew",
+   "name": "Cold brew"
+  },
+  {
+   "slug": "espresso",
+   "name": "Espresso"
+  },
+  {
+   "slug": "single-origin",
+   "name": "Single origin"
+  },
+  {
+   "slug": "seasonal",
+   "name": "Seasonal"
+  },
+  {
+   "slug": "roasting",
+   "name": "Roasting"
+  }
+ ],
+ "media": [
+  {
+   "id": "hero",
+   "file": "demo/images/bt-hero.jpg",
+   "alt": "A latte with leaf art seen from above, surrounded by coffee beans",
+   "caption": ""
+  },
+  {
+   "id": "beans",
+   "file": "demo/images/bt-beans.jpg",
+   "alt": "A heap of freshly roasted coffee beans",
+   "caption": ""
+  },
+  {
+   "id": "pastries",
+   "file": "demo/images/bt-pastries.jpg",
+   "alt": "Croissants and cardamom buns on a counter",
+   "caption": ""
+  },
+  {
+   "id": "pourover",
+   "file": "demo/images/bt-pourover.jpg",
+   "alt": "A cone dripper over a glass carafe",
+   "caption": ""
+  },
+  {
+   "id": "frenchpress",
+   "file": "demo/images/bt-frenchpress.jpg",
+   "alt": "A French press beside a cup of coffee",
+   "caption": ""
+  },
+  {
+   "id": "aeropress",
+   "file": "demo/images/bt-aeropress.jpg",
+   "alt": "An AeroPress with a mug and coffee beans",
+   "caption": ""
+  },
+  {
+   "id": "origin",
+   "file": "demo/images/bt-origin.jpg",
+   "alt": "Coffee cherries and green coffee beans",
+   "caption": ""
+  },
+  {
+   "id": "coldbrew",
+   "file": "demo/images/bt-coldbrew.jpg",
+   "alt": "A jar of cold brew with ice and a glass",
+   "caption": ""
+  },
+  {
+   "id": "mocha",
+   "file": "demo/images/bt-mocha.jpg",
+   "alt": "A tall iced mocha with mint leaves",
+   "caption": ""
+  },
+  {
+   "id": "roastery",
+   "file": "demo/images/bt-roastery.jpg",
+   "alt": "A small drum roaster next to sacks of beans",
+   "caption": ""
+  },
+  {
+   "id": "latteart",
+   "file": "demo/images/bt-latteart.jpg",
+   "alt": "A latte with a heart in the foam",
+   "caption": ""
+  },
+  {
+   "id": "storefront",
+   "file": "demo/images/bt-storefront.jpg",
+   "alt": "A café storefront with a striped awning",
+   "caption": ""
+  },
+  {
+   "id": "interior",
+   "file": "demo/images/bt-interior.jpg",
+   "alt": "A café counter with pendant lamps and shelves",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Slow coffee for busy mornings",
+   "front_page": true,
+   "featured_media": "hero",
+   "excerpt": "A neighbourhood café and micro-roastery. Small-batch beans, careful baristas and buns fresh from the oven, every day of the week.",
+   "content": "<!-- wp:group {\"align\":\"full\",\"className\":\"band-crema\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull band-crema\"><!-- wp:paragraph {\"className\":\"eyebrow\",\"align\":\"center\"} --><p class=\"has-text-align-center eyebrow\">Why Bean There</p><!-- /wp:paragraph --><!-- wp:heading {\"textAlign\":\"center\"} --><h2 class=\"wp-block-heading has-text-align-center\">Coffee roasted behind the counter</h2><!-- /wp:heading --><!-- wp:columns {\"className\":\"feature-cards\"} --><div class=\"wp-block-columns feature-cards\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"feature-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group feature-card\"><!-- wp:image {\"id\":{{media_id:beans}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:beans}}\" alt=\"A heap of freshly roasted coffee beans\" class=\"wp-image-{{media_id:beans}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Roasted here</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Small batches on our own roaster, never more than a week old on the shelf.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"feature-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group feature-card\"><!-- wp:image {\"id\":{{media_id:latteart}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:latteart}}\" alt=\"A latte with a heart in the foam\" class=\"wp-image-{{media_id:latteart}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Made with care</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Baristas trained in-house, milk steamed for every single cup.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"feature-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group feature-card\"><!-- wp:image {\"id\":{{media_id:pastries}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:pastries}}\" alt=\"Croissants and buns on a counter\" class=\"wp-image-{{media_id:pastries}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Baked this morning</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Buns and pastries from the bakery two doors down, delivered warm at seven.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"wide\",\"className\":\"menu-board\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignwide menu-board\"><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"eyebrow\"} --><p class=\"eyebrow\">On the board today</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Flat whites, filter and a cardamom bun</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Our menu is short on purpose: a few drinks done properly, a weekly filter coffee and something sweet from the oven.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:menu}}\">See the full menu</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:list {\"className\":\"menu-list\"} --><ul class=\"wp-block-list menu-list\"><!-- wp:list-item --><li><span>Flat white</span><span class=\"price\">3.40</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><span>Pour-over of the week</span><span class=\"price\">4.20</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><span>Iced mint mocha</span><span class=\"price\">4.40</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><span>Cardamom bun</span><span class=\"price\">3.20</span></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"band-roast\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull band-roast\"><!-- wp:paragraph {\"className\":\"eyebrow\"} --><p class=\"eyebrow\">From the journal</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Brew better at home</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":3,\"displayPostDate\":true,\"displayPostContent\":true,\"excerptLength\":18,\"postLayout\":\"grid\",\"columns\":3} /--><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{category:brewing-guides}}\">All brewing guides</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"wide\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignwide\"><!-- wp:columns {\"className\":\"cta-row\"} --><div class=\"wp-block-columns cta-row\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Two shops, one roaster</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Find us on Market Street in the Old Town and by the river on Quay Lane. Same coffee, same smiles, different views.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:locations}}\">Locations &amp; hours</a></div><!-- /wp:button --><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Say hello</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->"
+  },
+  {
+   "slug": "journal",
+   "title": "Journal",
+   "posts_page": true,
+   "content": ""
+  },
+  {
+   "slug": "menu",
+   "title": "Menu",
+   "template": "page-menu",
+   "content": "<!-- wp:group {\"align\":\"wide\",\"className\":\"menu-board\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignwide menu-board\"><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Espresso bar</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"menu-list\"} --><ul class=\"wp-block-list menu-list\"><!-- wp:list-item --><li><span>Espresso<em>Double shot, house blend</em></span><span class=\"price\">2.60</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><span>Macchiato</span><span class=\"price\">2.90</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><span>Flat white<em>Our most-ordered drink</em></span><span class=\"price\">3.40</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><span>Cappuccino</span><span class=\"price\">3.50</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><span>Latte<em>Oat, almond or whole milk</em></span><span class=\"price\">3.60</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><span>Mocha<em>Dark chocolate</em></span><span class=\"price\">3.90</span></li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:heading --><h2 class=\"wp-block-heading\">Filter</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"menu-list\"} --><ul class=\"wp-block-list menu-list\"><!-- wp:list-item --><li><span>Batch brew<em>Changes daily</em></span><span class=\"price\">2.80</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><span>Pour-over<em>Ask about this week's origins</em></span><span class=\"price\">4.20</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><span>Cold brew<em>Over ice</em></span><span class=\"price\">3.80</span></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Not coffee</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"menu-list\"} --><ul class=\"wp-block-list menu-list\"><!-- wp:list-item --><li><span>Loose leaf tea<em>Six kinds</em></span><span class=\"price\">3.00</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><span>Hot chocolate</span><span class=\"price\">3.40</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><span>Iced mint mocha<em>Summer special</em></span><span class=\"price\">4.40</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><span>Fresh lemonade</span><span class=\"price\">3.20</span></li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:heading --><h2 class=\"wp-block-heading\">From the oven</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"menu-list\"} --><ul class=\"wp-block-list menu-list\"><!-- wp:list-item --><li><span>Butter croissant</span><span class=\"price\">2.80</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><span>Cardamom bun<em>Baked every morning</em></span><span class=\"price\">3.20</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><span>Banana bread<em>With salted butter</em></span><span class=\"price\">3.00</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><span>Toasted sourdough<em>Jam or avocado</em></span><span class=\"price\">4.50</span></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:paragraph {\"className\":\"menu-note\"} --><p class=\"menu-note\">Oat milk at no extra cost &middot; Decaf available all day &middot; Ask us about allergens</p><!-- /wp:paragraph --></div><!-- /wp:group -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Beans to take home</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Every coffee on the bar is also sold in 250 g bags, roasted on site. Ask us to grind it for your brewer.</p><!-- /wp:paragraph -->\n\n<!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Coffee</th><th>Notes</th><th>250 g</th></tr></thead><tbody><tr><td>House blend</td><td>Chocolate, hazelnut, caramel</td><td>9.50</td></tr><tr><td>Washed Ethiopian</td><td>Jasmine, peach, bergamot</td><td>13.00</td></tr><tr><td>Colombia decaf</td><td>Cocoa, red apple</td><td>10.50</td></tr></tbody></table></figure><!-- /wp:table -->",
+   "excerpt": "Everything on the bar today. Prices include a smile."
+  },
+  {
+   "slug": "locations",
+   "title": "Locations & Hours",
+   "content": "<!-- wp:paragraph --><p>Two shops, one roaster and the same friendly faces. Laptops welcome on weekdays; weekends are for conversation.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"location-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group location-card\"><!-- wp:image {\"id\":{{media_id:storefront}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:storefront}}\" alt=\"A small café storefront with a striped awning\" class=\"wp-image-{{media_id:storefront}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Market Street</h3><!-- /wp:heading --><!-- wp:paragraph --><p>14 Market Street, Old Town<br>Our original shop and roastery corner.</p><!-- /wp:paragraph --><!-- wp:table {\"className\":\"hours\"} --><figure class=\"wp-block-table hours\"><table><thead><tr><th>Day</th><th>Hours</th></tr></thead><tbody><tr><td>Mon&ndash;Fri</td><td>7:00&ndash;18:00</td></tr><tr><td>Saturday</td><td>8:00&ndash;18:00</td></tr><tr><td>Sunday</td><td>9:00&ndash;16:00</td></tr></tbody></table></figure><!-- /wp:table --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"location-card\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group location-card\"><!-- wp:image {\"id\":{{media_id:interior}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:interior}}\" alt=\"A café counter with pendant lights\" class=\"wp-image-{{media_id:interior}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Riverside</h3><!-- /wp:heading --><!-- wp:paragraph --><p>3 Quay Lane, by the footbridge<br>Big windows, bigger tables.</p><!-- /wp:paragraph --><!-- wp:table {\"className\":\"hours\"} --><figure class=\"wp-block-table hours\"><table><thead><tr><th>Day</th><th>Hours</th></tr></thead><tbody><tr><td>Mon&ndash;Fri</td><td>7:30&ndash;17:00</td></tr><tr><td>Saturday</td><td>8:00&ndash;17:00</td></tr><tr><td>Sunday</td><td>Closed</td></tr></tbody></table></figure><!-- /wp:table --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Getting here</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Bike racks outside both shops</li><!-- /wp:list-item --><!-- wp:list-item --><li>Five minutes from the central station on foot</li><!-- /wp:list-item --><!-- wp:list-item --><li>Step-free entrance and accessible toilet at Riverside</li><!-- /wp:list-item --></ul><!-- /wp:list -->"
+  },
+  {
+   "slug": "about",
+   "title": "About Us",
+   "content": "<!-- wp:paragraph --><p>Bean There started as a coffee cart at the Saturday market. Six years, two shops and one roaster later, we still pull every shot by hand and still know most of our regulars by name.</p><!-- /wp:paragraph -->\n\n<!-- wp:media-text {\"mediaId\":{{media_id:interior}},\"mediaType\":\"image\"} --><div class=\"wp-block-media-text is-stacked-on-mobile\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:interior}}\" alt=\"A café counter with pendant lights\" class=\"wp-image-{{media_id:interior}} size-full\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">What we care about</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Coffees bought directly from farms we know</li><!-- /wp:list-item --><!-- wp:list-item --><li>Fair wages for our team, always</li><!-- /wp:list-item --><!-- wp:list-item --><li>Compostable cups and a discount for your own mug</li><!-- /wp:list-item --></ul><!-- /wp:list --></div></div><!-- /wp:media-text -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">The team</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>We are a crew of nine baristas, one roaster and a part-time dog called Crema who supervises from the window seat.</p><!-- /wp:paragraph -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Good coffee is a small, daily kindness.</p><!-- /wp:paragraph --><cite>Our founder</cite></blockquote><!-- /wp:quote -->"
+  },
+  {
+   "slug": "contact",
+   "title": "Contact",
+   "parent": "about",
+   "content": "<!-- wp:paragraph --><p>Questions about beans, wholesale or hosting an event in one of our shops? Drop us a line.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Email</h3><!-- /wp:heading --><!-- wp:paragraph --><p><a href=\"mailto:hello@example.com\">hello@example.com</a></p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Wholesale</h3><!-- /wp:heading --><!-- wp:paragraph --><p>We roast for a handful of local cafés and offices. Ask for our wholesale list.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->"
+  }
+ ],
+ "posts": [
+  {
+   "slug": "how-we-brew-a-pour-over",
+   "title": "How We Brew a Pour-Over",
+   "date": "2026-10-20T08:00:00",
+   "sticky": true,
+   "excerpt": "Our bar recipe for a clean, sweet cup from a cone dripper, scaled for your kitchen. Fifteen grams, four minutes, no fuss.",
+   "categories": [
+    "brewing-guides"
+   ],
+   "tags": [
+    "pour-over",
+    "filter",
+    "at-home"
+   ],
+   "featured_media": "pourover",
+   "content": "<!-- wp:paragraph --><p>Pour-over is how we taste every new coffee that arrives at the shop. It is slow enough to be calming and precise enough to show off what makes a coffee special.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>You need a cone dripper, a paper filter, a kettle and ideally a scale. The scale matters more than a fancy kettle: weighing coffee and water is the fastest way to a consistent cup.</p><!-- /wp:paragraph -->\n\n<!-- wp:group {\"className\":\"brew-specs\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group brew-specs\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Our bar recipe</h3><!-- /wp:heading --><!-- wp:list {\"className\":\"recipe-facts\"} --><ul class=\"wp-block-list recipe-facts\"><!-- wp:list-item --><li><strong>Coffee</strong>15 g</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Water</strong>250 g</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Grind</strong>Medium-fine</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Temp</strong>94&deg;C</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Time</strong>3:30&ndash;4:00</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:list {\"ordered\":true,\"className\":\"steps\"} --><ol class=\"wp-block-list steps\"><!-- wp:list-item --><li>Rinse the paper with hot water and discard it.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Add coffee, level the bed and start a timer.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Pour 40 g of water and let it bloom for 40 seconds.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Pour in slow circles to 150 g by 1:15.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Pour to 250 g by 2:00, then let it drain.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Swirl gently and serve.</li><!-- /wp:list-item --></ol><!-- /wp:list --></div><!-- /wp:group -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Adjusting the taste</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Sour or thin? Grind finer.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Bitter or dry? Grind coarser.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Too strong? Add 20 g more water next time.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:image {\"id\":{{media_id:pourover}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:pourover}}\" alt=\"A cone dripper over a glass carafe\" class=\"wp-image-{{media_id:pourover}}\"/></figure><!-- /wp:image -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Taste, change one thing, taste again. That is the whole secret.</p><!-- /wp:paragraph --><cite>Our head barista</cite></blockquote><!-- /wp:quote -->",
+   "comments": [
+    {
+     "author": "Jun",
+     "content": "The bloom step changed my morning coffee completely.",
+     "date": "2026-10-21T07:30:00",
+     "email": "jun@example.com"
+    },
+    {
+     "author": "Marta",
+     "content": "What grinder do you recommend for home?",
+     "date": "2026-10-22T09:12:00",
+     "email": "marta@example.com"
+    },
+    {
+     "author": "Bean There",
+     "content": "Any burr grinder with consistent settings. Come by and try ours at the bar!",
+     "date": "2026-10-22T11:00:00",
+     "email": "hello@example.com"
+    }
+   ]
+  },
+  {
+   "slug": "french-press-without-the-sludge",
+   "title": "French Press Without the Sludge",
+   "date": "2026-10-02T09:30:00",
+   "excerpt": "A rich, full-bodied cup with none of the grit at the bottom. The trick is patience, not plunging.",
+   "categories": [
+    "brewing-guides"
+   ],
+   "tags": [
+    "immersion",
+    "at-home"
+   ],
+   "featured_media": "frenchpress",
+   "content": "<!-- wp:paragraph --><p>The French press is the most forgiving brewer there is, and the most misunderstood. Most muddy cups come from plunging too hard and too soon.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>Our method lets gravity do the filtering. It takes a few extra minutes but gives you a clean cup with all of the body you love.</p><!-- /wp:paragraph -->\n\n<!-- wp:group {\"className\":\"brew-specs\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group brew-specs\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Clean press method</h3><!-- /wp:heading --><!-- wp:list {\"className\":\"recipe-facts\"} --><ul class=\"wp-block-list recipe-facts\"><!-- wp:list-item --><li><strong>Coffee</strong>30 g</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Water</strong>500 g</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Grind</strong>Medium</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Temp</strong>95&deg;C</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Time</strong>9 min</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:list {\"ordered\":true,\"className\":\"steps\"} --><ol class=\"wp-block-list steps\"><!-- wp:list-item --><li>Add coffee and all the water; do not stir yet.</li><!-- /wp:list-item --><!-- wp:list-item --><li>After 4 minutes, stir the crust and scoop off the foam.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Wait another 5 minutes while the grounds sink.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Press the plunger just to the surface; do not push down.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Pour slowly, leaving the last bit in the pot.</li><!-- /wp:list-item --></ol><!-- /wp:list --></div><!-- /wp:group -->\n\n<!-- wp:image {\"id\":{{media_id:frenchpress}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:frenchpress}}\" alt=\"A French press next to a cup of coffee\" class=\"wp-image-{{media_id:frenchpress}}\"/></figure><!-- /wp:image -->\n\n<!-- wp:paragraph --><p>Try it with one of our chocolatey blends. The longer steep brings out a lovely sweetness.</p><!-- /wp:paragraph -->",
+   "comments": []
+  },
+  {
+   "slug": "the-aeropress-three-ways",
+   "title": "The AeroPress, Three Ways",
+   "date": "2026-09-15T10:00:00",
+   "excerpt": "Strong and short, bright and clean, or iced over a glass: three recipes from our team for the little brewer that does everything.",
+   "categories": [
+    "brewing-guides"
+   ],
+   "tags": [
+    "immersion",
+    "at-home"
+   ],
+   "featured_media": "aeropress",
+   "content": "<!-- wp:paragraph --><p>Every barista on our team has a favourite AeroPress recipe, and they will argue about it for hours. Here are three that settled the debate, at least for a week.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>All three use the inverted method, where the brewer starts upside down so nothing drips through early.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Short &amp; strong</h3><!-- /wp:heading --><!-- wp:paragraph --><p>18 g coffee, fine grind, 90 g water at 90&deg;C. Stir, steep 1:30, press. Top up with milk for a quick flat white.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Bright &amp; clean</h3><!-- /wp:heading --><!-- wp:paragraph --><p>12 g coffee, medium grind, 200 g water at 96&deg;C. Steep 2:00, two papers, press slowly.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Iced</h3><!-- /wp:heading --><!-- wp:paragraph --><p>16 g coffee, fine grind, 100 g hot water. Steep 1:00, press directly over 100 g of ice.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:image {\"id\":{{media_id:aeropress}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:aeropress}}\" alt=\"An AeroPress brewer with a mug and coffee beans\" class=\"wp-image-{{media_id:aeropress}}\"/></figure><!-- /wp:image -->\n\n<!-- wp:pullquote --><figure class=\"wp-block-pullquote\"><blockquote><p>Small brewer, big opinions.</p></blockquote></figure><!-- /wp:pullquote -->",
+   "comments": [
+    {
+     "author": "Felix",
+     "content": "The iced one is my summer go-to now.",
+     "date": "2026-09-17T14:20:00",
+     "email": "felix@example.com"
+    }
+   ]
+  },
+  {
+   "slug": "meet-our-washed-ethiopian",
+   "title": "Meet Our New Washed Ethiopian",
+   "date": "2026-10-12T08:45:00",
+   "excerpt": "Jasmine, bergamot and ripe peach. The story of the new coffee on our filter bar, from the hills to your cup.",
+   "categories": [
+    "origins"
+   ],
+   "tags": [
+    "filter",
+    "single-origin"
+   ],
+   "featured_media": "origin",
+   "content": "<!-- wp:paragraph --><p>This season&rsquo;s washed Ethiopian arrived last week, and the whole team has been brewing it non-stop. It is floral, juicy and incredibly clean.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>The coffee comes from a cooperative of small farms at high altitude, where cherries ripen slowly in cool air. Slower ripening means more sugar in the bean and a sweeter cup.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Tasting notes</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Jasmine and bergamot on the nose</li><!-- /wp:list-item --><!-- wp:list-item --><li>Ripe peach and honey in the cup</li><!-- /wp:list-item --><!-- wp:list-item --><li>A long, tea-like finish</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:image {\"id\":{{media_id:origin}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:origin}}\" alt=\"Coffee cherries and green beans on a table\" class=\"wp-image-{{media_id:origin}}\"/></figure><!-- /wp:image -->\n\n<!-- wp:paragraph --><p>We roast it light to keep those delicate flavours. It shines as a pour-over and is surprisingly lovely as a cold brew.</p><!-- /wp:paragraph -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>A coffee you can smell from across the room.</p><!-- /wp:paragraph --><cite>Our roaster</cite></blockquote><!-- /wp:quote -->",
+   "comments": []
+  },
+  {
+   "slug": "cold-brew-concentrate-at-home",
+   "title": "Cold Brew Concentrate at Home",
+   "date": "2026-07-08T11:00:00",
+   "excerpt": "Make a jar on Sunday and have smooth iced coffee all week. One ratio, one jar and a night in the fridge.",
+   "categories": [
+    "drinks-at-home"
+   ],
+   "tags": [
+    "cold-brew",
+    "at-home"
+   ],
+   "featured_media": "coldbrew",
+   "content": "<!-- wp:paragraph --><p>Cold brew is the easiest coffee you will ever make: grounds, cold water and time. Because it is never heated, it is low in bitterness and naturally sweet.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>We make it as a concentrate, then dilute it with water or milk. That way a single jar lasts the whole week.</p><!-- /wp:paragraph -->\n\n<!-- wp:group {\"className\":\"brew-specs\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group brew-specs\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Cold brew concentrate</h3><!-- /wp:heading --><!-- wp:list {\"className\":\"recipe-facts\"} --><ul class=\"wp-block-list recipe-facts\"><!-- wp:list-item --><li><strong>Coffee</strong>100 g</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Water</strong>500 g</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Grind</strong>Coarse</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Steep</strong>16 hr</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Keeps</strong>7 days</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:list {\"ordered\":true,\"className\":\"steps\"} --><ol class=\"wp-block-list steps\"><!-- wp:list-item --><li>Stir coarse coffee into cold water in a large jar.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Cover and steep in the fridge for 14&ndash;18 hours.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Strain through a sieve lined with a paper filter.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Dilute one part concentrate to two parts water or milk.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Serve over plenty of ice.</li><!-- /wp:list-item --></ol><!-- /wp:list --></div><!-- /wp:group -->\n\n<!-- wp:image {\"id\":{{media_id:coldbrew}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:coldbrew}}\" alt=\"A jar of cold brew with ice and a glass\" class=\"wp-image-{{media_id:coldbrew}}\"/></figure><!-- /wp:image -->\n\n<!-- wp:paragraph --><p>Fancy something sweeter? Stir a spoonful of maple syrup into the concentrate before diluting.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Nadia",
+     "content": "Made this with your house blend and it is dangerously good.",
+     "date": "2026-07-10T16:00:00",
+     "email": "nadia@example.com"
+    }
+   ]
+  },
+  {
+   "slug": "iced-mint-mocha",
+   "title": "Our Iced Mint Mocha",
+   "date": "2026-08-02T15:00:00",
+   "excerpt": "The summer special everyone asks about: dark chocolate, fresh mint syrup and a double shot over ice.",
+   "categories": [
+    "drinks-at-home"
+   ],
+   "tags": [
+    "cold-brew",
+    "seasonal"
+   ],
+   "featured_media": "mocha",
+   "content": "<!-- wp:paragraph --><p>Every summer we put one drink on the board just for fun. This year it was the iced mint mocha, and it outsold everything except the flat white.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>The secret is real mint: we steep fresh leaves in sugar syrup overnight instead of using flavouring.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Fresh mint syrup</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Heat 200 g sugar with 200 ml water until dissolved.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Take off the heat and add a big handful of mint.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Steep overnight, then strain and refrigerate.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:image {\"id\":{{media_id:mocha}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:mocha}}\" alt=\"A tall iced mocha with mint leaves\" class=\"wp-image-{{media_id:mocha}}\"/></figure><!-- /wp:image -->\n\n<!-- wp:paragraph --><p>To build the drink: a spoon of chocolate sauce, a spoon of mint syrup, a double espresso, ice and cold milk. Stir and garnish with a mint sprig.</p><!-- /wp:paragraph -->",
+   "comments": []
+  },
+  {
+   "slug": "our-new-roastery-corner",
+   "title": "Our New Roastery Corner",
+   "date": "2026-09-01T09:00:00",
+   "excerpt": "We now roast in small batches right behind the counter. Come and watch on Tuesday and Thursday mornings.",
+   "categories": [
+    "cafe-news"
+   ],
+   "tags": [
+    "roasting"
+   ],
+   "featured_media": "roastery",
+   "content": "<!-- wp:paragraph --><p>After two years of planning, a small drum roaster has moved into the corner of our Market Street shop. Every bag on our shelves is now roasted a few metres from where you order.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>Roasting in small batches lets us try new coffees quickly and keep everything fresh. Most beans go from roaster to shelf within three days.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Roasting mornings</h2><!-- /wp:heading -->\n\n<!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Day</th><th>Time</th><th>What we roast</th></tr></thead><tbody><tr><td>Tuesday</td><td>8:00&ndash;11:00</td><td>Espresso blends</td></tr><tr><td>Thursday</td><td>8:00&ndash;11:00</td><td>Single origins</td></tr></tbody></table></figure><!-- /wp:table -->\n\n<!-- wp:image {\"id\":{{media_id:roastery}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:roastery}}\" alt=\"A small coffee roaster with sacks of green beans\" class=\"wp-image-{{media_id:roastery}}\"/></figure><!-- /wp:image -->\n\n<!-- wp:paragraph --><p>Pull up a stool and ask questions. Our roaster loves to talk about first crack.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Ollie",
+     "content": "Watched the roast on Tuesday, the smell is unreal.",
+     "date": "2026-09-03T12:30:00",
+     "email": "ollie@example.com"
+    }
+   ]
+  },
+  {
+   "slug": "latte-art-basics",
+   "title": "Latte Art Basics: Your First Heart",
+   "date": "2026-08-20T10:30:00",
+   "excerpt": "Silky milk and a steady pour. Our training notes for drawing a heart at home with any steam wand.",
+   "categories": [
+    "brewing-guides"
+   ],
+   "tags": [
+    "espresso",
+    "at-home"
+   ],
+   "featured_media": "latteart",
+   "content": "<!-- wp:paragraph --><p>Every new barista on our team spends their first week pouring hearts. It is the foundation of every other pattern, and it is all about milk texture.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>You want milk like wet paint: glossy, smooth and without visible bubbles. Stretch it briefly at the start, then let it spin.</p><!-- /wp:paragraph -->\n\n<!-- wp:group {\"className\":\"brew-specs\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group brew-specs\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Pouring a heart</h3><!-- /wp:heading --><!-- wp:list {\"className\":\"recipe-facts\"} --><ul class=\"wp-block-list recipe-facts\"><!-- wp:list-item --><li><strong>Milk</strong>150 ml</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Temp</strong>60&deg;C</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Stretch</strong>3 sec</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Cup</strong>200 ml</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:list {\"ordered\":true,\"className\":\"steps\"} --><ol class=\"wp-block-list steps\"><!-- wp:list-item --><li>Pour from high into the centre to mix the crema.</li><!-- /wp:list-item --><!-- wp:list-item --><li>When the cup is half full, bring the jug close.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Pour faster so a white circle appears.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Lift slightly and cut through the circle to finish.</li><!-- /wp:list-item --></ol><!-- /wp:list --></div><!-- /wp:group -->\n\n<!-- wp:image {\"id\":{{media_id:latteart}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:latteart}}\" alt=\"A latte with a heart pattern in the foam\" class=\"wp-image-{{media_id:latteart}}\"/></figure><!-- /wp:image -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Wobbly hearts still taste great. Keep pouring.</p><!-- /wp:paragraph --><cite>Training notes</cite></blockquote><!-- /wp:quote -->",
+   "comments": []
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Menu",
+     "page": "menu"
+    },
+    {
+     "title": "Journal",
+     "page": "journal",
+     "children": [
+      {
+       "category": "brewing-guides"
+      },
+      {
+       "category": "origins"
+      },
+      {
+       "category": "drinks-at-home"
+      },
+      {
+       "category": "cafe-news"
+      }
+     ]
+    },
+    {
+     "title": "Locations",
+     "page": "locations"
+    },
+    {
+     "title": "About",
+     "page": "about",
+     "children": [
+      {
+       "page": "contact"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Social",
+   "location": "social",
+   "items": [
+    {
+     "title": "Instagram",
+     "url": "https://instagram.com/"
+    },
+    {
+     "title": "TikTok",
+     "url": "https://tiktok.com/"
+    },
+    {
+     "title": "Maps",
+     "url": "https://www.openstreetmap.org/"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "sidebar-1": [
+   "<!-- wp:search {\"label\":\"Search the journal\",\"placeholder\":\"Pour-over, cold brew&hellip;\",\"buttonText\":\"Search\"} /-->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Topics</h2><!-- /wp:heading --><!-- wp:categories {\"showPostCounts\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Recent</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":4,\"displayPostDate\":true} /--></div><!-- /wp:group -->"
+  ],
+  "footer-1": [
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Market Street</h2><!-- /wp:heading --><!-- wp:paragraph --><p>14 Market Street, Old Town</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Mon&ndash;Fri 7&ndash;18<br>Sat 8&ndash;18 &middot; Sun 9&ndash;16</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Riverside</h2><!-- /wp:heading --><!-- wp:paragraph --><p>3 Quay Lane, by the footbridge</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Mon&ndash;Fri 7:30&ndash;17<br>Sat 8&ndash;17 &middot; Sun closed</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Explore</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><a href=\"{{page:menu}}\">Menu</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{category:brewing-guides}}\">Brewing guides</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{page:about}}\">About us</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{page:contact}}\">Wholesale</a></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "hero_image": "hero",
+  "hours_text": "Open today 7:00–18:00",
+  "hero_button_label": "See the menu",
+  "hero_button_url": "{{page:menu}}",
+  "card_style": "ticket",
+  "show_hours": true
+ }
+}

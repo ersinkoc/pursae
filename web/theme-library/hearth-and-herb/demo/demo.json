@@ -1,0 +1,437 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Hearth & Herb",
+  "blogdescription": "Honest home cooking for busy families",
+  "posts_per_page": 7
+ },
+ "categories": [
+  {
+   "slug": "weeknight-dinners",
+   "name": "Weeknight Dinners",
+   "description": "Family dinners on the table in under an hour, most in one pan."
+  },
+  {
+   "slug": "soups-stews",
+   "name": "Soups & Stews",
+   "description": "Big pots that feed a crowd and freeze beautifully."
+  },
+  {
+   "slug": "sunday-suppers",
+   "name": "Sunday Suppers",
+   "description": "Slow roasts and braises for long weekend afternoons."
+  },
+  {
+   "slug": "breads-bakes",
+   "name": "Breads & Bakes",
+   "description": "Easy loaves, crumbles and sweet things."
+  },
+  {
+   "slug": "from-the-garden",
+   "name": "From the Garden",
+   "description": "Recipes for whatever is growing in the beds."
+  },
+  {
+   "slug": "pantry-basics",
+   "name": "Pantry Basics",
+   "description": "The staples behind easy cooking."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "one-pan",
+   "name": "One pan"
+  },
+  {
+   "slug": "vegetarian",
+   "name": "Vegetarian"
+  },
+  {
+   "slug": "quick",
+   "name": "Quick"
+  },
+  {
+   "slug": "family-favourite",
+   "name": "Family favourite"
+  },
+  {
+   "slug": "freezer-friendly",
+   "name": "Freezer friendly"
+  },
+  {
+   "slug": "gluten-free",
+   "name": "Gluten free"
+  },
+  {
+   "slug": "weekend",
+   "name": "Weekend"
+  }
+ ],
+ "media": [
+  {
+   "id": "herbs",
+   "file": "demo/images/hh-herbs.jpg",
+   "alt": "Bunches of rosemary, thyme and parsley on a dark wooden table",
+   "caption": ""
+  },
+  {
+   "id": "chicken",
+   "file": "demo/images/hh-chicken.jpg",
+   "alt": "Golden chicken thighs with lemon and thyme in a cast-iron pan",
+   "caption": ""
+  },
+  {
+   "id": "soup",
+   "file": "demo/images/hh-soup.jpg",
+   "alt": "A bowl of white bean and kale soup next to crusty bread",
+   "caption": ""
+  },
+  {
+   "id": "loaf",
+   "file": "demo/images/hh-loaf.jpg",
+   "alt": "A round scored loaf with rosemary on a wooden board",
+   "caption": ""
+  },
+  {
+   "id": "roast",
+   "file": "demo/images/hh-roast.jpg",
+   "alt": "A pot roast with carrots and onions in a dutch oven",
+   "caption": ""
+  },
+  {
+   "id": "pasta",
+   "file": "demo/images/hh-pasta.jpg",
+   "alt": "A bowl of pasta with green pesto and beans",
+   "caption": ""
+  },
+  {
+   "id": "shakshuka",
+   "file": "demo/images/hh-shakshuka.jpg",
+   "alt": "Eggs cooked in a pepper and tomato sauce in a skillet",
+   "caption": ""
+  },
+  {
+   "id": "crumble",
+   "file": "demo/images/hh-crumble.jpg",
+   "alt": "A baking dish of apple and blackberry crumble",
+   "caption": ""
+  },
+  {
+   "id": "pantry",
+   "file": "demo/images/hh-pantry.jpg",
+   "alt": "Glass jars of beans, pasta and grains on a wooden shelf",
+   "caption": ""
+  },
+  {
+   "id": "table",
+   "file": "demo/images/hh-table.jpg",
+   "alt": "A family dinner table seen from above with shared dishes",
+   "caption": ""
+  },
+  {
+   "id": "garden",
+   "file": "demo/images/hh-garden.jpg",
+   "alt": "A basket of tomatoes, courgettes and greens from the garden",
+   "caption": ""
+  },
+  {
+   "id": "bread-board",
+   "file": "demo/images/hh-bread-board.jpg",
+   "alt": "Sliced bread, butter and a jar of jam on a board",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "recipe-index",
+   "title": "Recipe Index",
+   "content": "<!-- wp:paragraph --><p>Every recipe we have shared, sorted the way we actually cook: by how much time there is before everyone gets hungry.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns {\"align\":\"wide\",\"className\":\"cat-tiles\"} --><div class=\"wp-block-columns alignwide cat-tiles\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"cat-tile\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group cat-tile\"><!-- wp:image {\"id\":{{media_id:chicken}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><a href=\"{{category:weeknight-dinners}}\"><img src=\"{{media:chicken}}\" alt=\"Weeknight Dinners photo\" class=\"wp-image-{{media_id:chicken}}\"/></a></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"{{category:weeknight-dinners}}\">Weeknight Dinners</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p>On the table in under an hour.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"cat-tile\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group cat-tile\"><!-- wp:image {\"id\":{{media_id:soup}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><a href=\"{{category:soups-stews}}\"><img src=\"{{media:soup}}\" alt=\"Soups and Stews photo\" class=\"wp-image-{{media_id:soup}}\"/></a></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"{{category:soups-stews}}\">Soups &amp; Stews</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p>Big pots for cold nights.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"cat-tile\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group cat-tile\"><!-- wp:image {\"id\":{{media_id:roast}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><a href=\"{{category:sunday-suppers}}\"><img src=\"{{media:roast}}\" alt=\"Sunday Suppers photo\" class=\"wp-image-{{media_id:roast}}\"/></a></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"{{category:sunday-suppers}}\">Sunday Suppers</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p>Slow cooking for long afternoons.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"cat-tile\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group cat-tile\"><!-- wp:image {\"id\":{{media_id:loaf}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><a href=\"{{category:breads-bakes}}\"><img src=\"{{media:loaf}}\" alt=\"Breads and Bakes photo\" class=\"wp-image-{{media_id:loaf}}\"/></a></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"{{category:breads-bakes}}\">Breads &amp; Bakes</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p>Loaves, crumbles and sweet things.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Browse by what you have</h2><!-- /wp:heading -->\n\n<!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Got beans?</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><a href=\"{{post:smoky-white-bean-kale-soup}}\">Smoky white bean &amp; kale soup</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{post:stocking-a-cozy-pantry}}\">Our pantry list</a></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Got eggs?</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><a href=\"{{post:skillet-eggs-peppers-tomatoes}}\">Skillet eggs with peppers</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{post:apple-blackberry-crumble}}\">Crumble (for pudding)</a></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Got herbs?</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><a href=\"{{post:twenty-minute-garden-pesto-pasta}}\">Garden pesto pasta</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{post:one-pan-lemon-herb-chicken}}\">Lemon &amp; herb chicken</a></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"band-green\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull band-green\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Cook along with us</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Every Sunday we share a five-night meal plan with a shopping list. It is the easiest way to get dinner sorted for the week.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:meal-plan}}\">See this week&rsquo;s plan</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "excerpt": "Every recipe, sorted by how much time you have."
+  },
+  {
+   "slug": "meal-plan",
+   "title": "This Week’s Meal Plan",
+   "parent": "recipe-index",
+   "content": "<!-- wp:paragraph --><p>Five dinners, one shopping trip. Recipes are built to share ingredients so nothing goes to waste.</p><!-- /wp:paragraph -->\n\n<!-- wp:table {\"className\":\"meal-plan\"} --><figure class=\"wp-block-table meal-plan\"><table><thead><tr><th>Night</th><th>Dinner</th><th>Time</th></tr></thead><tbody><tr><td>Monday</td><td><a href=\"{{post:smoky-white-bean-kale-soup}}\">Smoky white bean &amp; kale soup</a></td><td>35 min</td></tr><tr><td>Tuesday</td><td><a href=\"{{post:one-pan-lemon-herb-chicken}}\">One-pan lemon &amp; herb chicken</a></td><td>55 min</td></tr><tr><td>Wednesday</td><td><a href=\"{{post:twenty-minute-garden-pesto-pasta}}\">Garden pesto pasta</a></td><td>20 min</td></tr><tr><td>Thursday</td><td><a href=\"{{post:skillet-eggs-peppers-tomatoes}}\">Skillet eggs with peppers</a></td><td>35 min</td></tr><tr><td>Friday</td><td>Leftovers and a loaf of no-knead bread</td><td>&mdash;</td></tr></tbody></table></figure><!-- /wp:table -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Shopping list</h2><!-- /wp:heading -->\n\n<!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Chicken thighs</li><!-- /wp:list-item --><!-- wp:list-item --><li>Potatoes</li><!-- /wp:list-item --><!-- wp:list-item --><li>Lemons</li><!-- /wp:list-item --><!-- wp:list-item --><li>Kale</li><!-- /wp:list-item --><!-- wp:list-item --><li>Green beans</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Onions and garlic</li><!-- /wp:list-item --><!-- wp:list-item --><li>Peppers</li><!-- /wp:list-item --><!-- wp:list-item --><li>Eggs</li><!-- /wp:list-item --><!-- wp:list-item --><li>Herbs</li><!-- /wp:list-item --><!-- wp:list-item --><li>Feta</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:group {\"className\":\"tip-box\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group tip-box\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Prep on Sunday</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Chop onions for three meals at once and keep them in a tub in the fridge. It saves ten minutes every night.</p><!-- /wp:paragraph --></div><!-- /wp:group -->"
+  },
+  {
+   "slug": "about",
+   "title": "About Our Kitchen",
+   "content": "<!-- wp:paragraph --><p>Hearth &amp; Herb is our family kitchen table, opened up to anyone who wants to pull up a chair. We are two parents, three children and a very hopeful dog, cooking real food on real weeknights.</p><!-- /wp:paragraph -->\n\n<!-- wp:image {\"id\":{{media_id:table}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:table}}\" alt=\"A family dinner table seen from above with shared dishes\" class=\"wp-image-{{media_id:table}}\"/><figcaption class=\"wp-element-caption\">Most of our recipes are tested on this table.</figcaption></figure><!-- /wp:image -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What we believe</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Dinner does not need to be fancy to be special.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Good ingredients and a hot pan beat complicated techniques.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Everyone helps, even if it is just setting the table.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">How we test</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Every recipe is cooked at least three times in our ordinary kitchen with ordinary pans. If a step can go wrong, we tell you how to fix it.</p><!-- /wp:paragraph -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>The best meals are the ones where nobody checks their phone.</p><!-- /wp:paragraph --><cite>House rule</cite></blockquote><!-- /wp:quote -->",
+   "featured_media": "herbs"
+  },
+  {
+   "slug": "contact",
+   "title": "Contact",
+   "parent": "about",
+   "content": "<!-- wp:paragraph --><p>Questions about a recipe, a story about your own family dinners, or an idea for us to try? We read every message.</p><!-- /wp:paragraph -->\n\n<!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Email</h3><!-- /wp:heading --><!-- wp:paragraph --><p><a href=\"mailto:kitchen@example.com\">kitchen@example.com</a></p><!-- /wp:paragraph --><!-- wp:paragraph --><p>We reply within a week, usually on Sunday evenings.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Recipe help</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Leave a comment under the recipe. Other readers often answer before we do, and everyone learns from it.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->"
+  }
+ ],
+ "posts": [
+  {
+   "slug": "one-pan-lemon-herb-chicken",
+   "title": "One-Pan Lemon & Herb Chicken Thighs",
+   "date": "2026-10-21T18:30:00",
+   "sticky": true,
+   "excerpt": "Crispy-skinned chicken, soft potatoes and charred lemon, all roasted in one pan. Our most-cooked Tuesday dinner.",
+   "categories": [
+    "weeknight-dinners"
+   ],
+   "tags": [
+    "one-pan",
+    "family-favourite",
+    "gluten-free"
+   ],
+   "featured_media": "chicken",
+   "content": "<!-- wp:paragraph --><p>If our family has a signature dish, this is it. Everything goes into one heavy pan, the oven does the work, and twenty minutes later the kitchen smells of lemon, garlic and thyme.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>Bone-in thighs are forgiving: they stay juicy even if dinner runs late, and the skin crisps beautifully. The potatoes cook underneath and soak up all the pan juices.</p><!-- /wp:paragraph -->\n\n<!-- wp:group {\"className\":\"tip-box\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group tip-box\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Start skin-side down</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Brown the thighs on the hob before they go in the oven. It takes six extra minutes and gives you shatteringly crisp skin.</p><!-- /wp:paragraph --></div><!-- /wp:group -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Swaps that work</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Use sweet potatoes or squash instead of potatoes.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Swap thyme for rosemary or oregano.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Add a tin of drained chickpeas for the last fifteen minutes.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:image {\"id\":{{media_id:chicken}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:chicken}}\" alt=\"Golden chicken thighs with lemon and herbs in a cast-iron pan\" class=\"wp-image-{{media_id:chicken}}\"/></figure><!-- /wp:image -->\n\n<!-- wp:group {\"anchor\":\"recipe\",\"className\":\"recipe-card\",\"layout\":{\"type\":\"constrained\"}} --><div id=\"recipe\" class=\"wp-block-group recipe-card\"><!-- wp:heading --><h2 class=\"wp-block-heading\">One-pan lemon &amp; herb chicken</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"recipe-facts\"} --><ul class=\"wp-block-list recipe-facts\"><!-- wp:list-item --><li><strong>Prep</strong>15 min</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Cook</strong>40 min</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Serves</strong>4</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Cost</strong>Budget</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column {\"width\":\"38%\"} --><div class=\"wp-block-column\" style=\"flex-basis:38%\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Ingredients</h3><!-- /wp:heading --><!-- wp:list {\"className\":\"ingredients\"} --><ul class=\"wp-block-list ingredients\"><!-- wp:list-item --><li>8 bone-in chicken thighs</li><!-- /wp:list-item --><!-- wp:list-item --><li>750 g small potatoes, halved</li><!-- /wp:list-item --><!-- wp:list-item --><li>2 lemons, one sliced, one juiced</li><!-- /wp:list-item --><!-- wp:list-item --><li>6 garlic cloves, unpeeled</li><!-- /wp:list-item --><!-- wp:list-item --><li>A small bunch of thyme</li><!-- /wp:list-item --><!-- wp:list-item --><li>3 tbsp olive oil</li><!-- /wp:list-item --><!-- wp:list-item --><li>Salt and pepper</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column {\"width\":\"62%\"} --><div class=\"wp-block-column\" style=\"flex-basis:62%\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Method</h3><!-- /wp:heading --><!-- wp:list {\"ordered\":true,\"className\":\"steps\"} --><ol class=\"wp-block-list steps\"><!-- wp:list-item --><li>Heat the oven to 210&deg;C.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Season the chicken and brown it skin-side down in an ovenproof pan.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Lift out the chicken, add potatoes, garlic and lemon slices and toss in the fat.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Return the chicken, skin up, and scatter over the thyme.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Roast for 35&ndash;40 minutes until golden and cooked through.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Squeeze over the lemon juice and serve from the pan.</li><!-- /wp:list-item --></ol><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:paragraph {\"className\":\"recipe-note\"} --><p class=\"recipe-note\">Leftovers make brilliant sandwiches the next day with a spoon of mayonnaise.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"#print\">Print recipe</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "comments": [
+    {
+     "author": "Bridget",
+     "content": "This is on repeat in our house. The kids fight over the crispy potatoes.",
+     "date": "2026-10-22T19:40:00",
+     "email": "bridget@example.com"
+    },
+    {
+     "author": "Owen",
+     "content": "Made it with drumsticks and it worked just as well.",
+     "date": "2026-10-23T20:05:00",
+     "email": "owen@example.com"
+    }
+   ]
+  },
+  {
+   "slug": "smoky-white-bean-kale-soup",
+   "title": "Smoky White Bean & Kale Soup",
+   "date": "2026-10-09T12:15:00",
+   "excerpt": "A thick, smoky pot of beans, greens and tomatoes that tastes like it simmered all day. It takes thirty-five minutes.",
+   "categories": [
+    "soups-stews",
+    "weeknight-dinners"
+   ],
+   "tags": [
+    "vegetarian",
+    "freezer-friendly",
+    "one-pan"
+   ],
+   "featured_media": "soup",
+   "content": "<!-- wp:paragraph --><p>When the evenings draw in, this soup is on our stove at least once a week. Smoked paprika gives it depth without any meat, and mashing a few of the beans makes it creamy.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>It is a pantry rescue too: tinned beans, tinned tomatoes, an onion and whatever greens are wilting in the drawer.</p><!-- /wp:paragraph -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Soup is just a pot of patience. This one needs very little.</p><!-- /wp:paragraph --><cite>Grandma Ruth</cite></blockquote><!-- /wp:quote -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Make it ahead</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>The soup thickens overnight, so add a splash of water or stock when you reheat it. It freezes well for up to three months.</p><!-- /wp:paragraph -->\n\n<!-- wp:image {\"id\":{{media_id:soup}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:soup}}\" alt=\"A bowl of white bean and kale soup with crusty bread\" class=\"wp-image-{{media_id:soup}}\"/></figure><!-- /wp:image -->\n\n<!-- wp:group {\"anchor\":\"recipe\",\"className\":\"recipe-card\",\"layout\":{\"type\":\"constrained\"}} --><div id=\"recipe\" class=\"wp-block-group recipe-card\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Smoky white bean &amp; kale soup</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"recipe-facts\"} --><ul class=\"wp-block-list recipe-facts\"><!-- wp:list-item --><li><strong>Prep</strong>10 min</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Cook</strong>25 min</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Serves</strong>6</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Freezes</strong>3 months</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column {\"width\":\"38%\"} --><div class=\"wp-block-column\" style=\"flex-basis:38%\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Ingredients</h3><!-- /wp:heading --><!-- wp:list {\"className\":\"ingredients\"} --><ul class=\"wp-block-list ingredients\"><!-- wp:list-item --><li>2 tbsp olive oil</li><!-- /wp:list-item --><!-- wp:list-item --><li>1 onion, 2 carrots, 2 celery sticks, chopped</li><!-- /wp:list-item --><!-- wp:list-item --><li>3 garlic cloves</li><!-- /wp:list-item --><!-- wp:list-item --><li>2 tsp smoked paprika</li><!-- /wp:list-item --><!-- wp:list-item --><li>2 tins cannellini beans</li><!-- /wp:list-item --><!-- wp:list-item --><li>1 tin chopped tomatoes</li><!-- /wp:list-item --><!-- wp:list-item --><li>1 litre vegetable stock</li><!-- /wp:list-item --><!-- wp:list-item --><li>150 g kale, shredded</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column {\"width\":\"62%\"} --><div class=\"wp-block-column\" style=\"flex-basis:62%\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Method</h3><!-- /wp:heading --><!-- wp:list {\"ordered\":true,\"className\":\"steps\"} --><ol class=\"wp-block-list steps\"><!-- wp:list-item --><li>Soften the onion, carrot and celery in the oil for 8 minutes.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Stir in the garlic and paprika for 1 minute.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Add beans, tomatoes and stock and simmer for 15 minutes.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Mash a quarter of the beans against the side of the pot.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Stir in the kale and cook for 3 minutes more.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Season well and serve with bread.</li><!-- /wp:list-item --></ol><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"#print\">Print recipe</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "comments": [
+    {
+     "author": "Priya",
+     "content": "Added a parmesan rind while it simmered. So good.",
+     "date": "2026-10-11T13:00:00",
+     "email": "priya@example.com"
+    }
+   ]
+  },
+  {
+   "slug": "no-knead-rosemary-loaf",
+   "title": "No-Knead Rosemary Loaf",
+   "date": "2026-09-20T09:00:00",
+   "excerpt": "Four ingredients, five minutes of work and a long, lazy rise. The crackly loaf we bake every Saturday.",
+   "categories": [
+    "breads-bakes"
+   ],
+   "tags": [
+    "vegetarian",
+    "weekend"
+   ],
+   "featured_media": "loaf",
+   "content": "<!-- wp:paragraph --><p>You do not need a stand mixer, a starter or strong arms to bake good bread. This dough is stirred together the night before and left alone while you sleep.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>Baking it in a lidded pot traps the steam, which is the secret to a blistered, crackly crust at home.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">What you need</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>A large bowl and a spoon</li><!-- /wp:list-item --><!-- wp:list-item --><li>A heavy pot with a lid that can go in a hot oven</li><!-- /wp:list-item --><!-- wp:list-item --><li>Baking paper</li><!-- /wp:list-item --><!-- wp:list-item --><li>Time, mostly</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:image {\"id\":{{media_id:loaf}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:loaf}}\" alt=\"A round scored loaf with rosemary on a wooden board\" class=\"wp-image-{{media_id:loaf}}\"/></figure><!-- /wp:image -->\n\n<!-- wp:pullquote --><figure class=\"wp-block-pullquote\"><blockquote><p>Bread is the cheapest way to make a house feel like home.</p></blockquote></figure><!-- /wp:pullquote -->\n\n<!-- wp:group {\"anchor\":\"recipe\",\"className\":\"recipe-card\",\"layout\":{\"type\":\"constrained\"}} --><div id=\"recipe\" class=\"wp-block-group recipe-card\"><!-- wp:heading --><h2 class=\"wp-block-heading\">No-knead rosemary loaf</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"recipe-facts\"} --><ul class=\"wp-block-list recipe-facts\"><!-- wp:list-item --><li><strong>Prep</strong>5 min</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Rise</strong>12&ndash;18 hr</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Bake</strong>45 min</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Makes</strong>1 loaf</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column {\"width\":\"38%\"} --><div class=\"wp-block-column\" style=\"flex-basis:38%\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Ingredients</h3><!-- /wp:heading --><!-- wp:list {\"className\":\"ingredients\"} --><ul class=\"wp-block-list ingredients\"><!-- wp:list-item --><li>450 g bread flour</li><!-- /wp:list-item --><!-- wp:list-item --><li>1/4 tsp instant yeast</li><!-- /wp:list-item --><!-- wp:list-item --><li>10 g salt</li><!-- /wp:list-item --><!-- wp:list-item --><li>350 ml lukewarm water</li><!-- /wp:list-item --><!-- wp:list-item --><li>2 sprigs rosemary, chopped</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column {\"width\":\"62%\"} --><div class=\"wp-block-column\" style=\"flex-basis:62%\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Method</h3><!-- /wp:heading --><!-- wp:list {\"ordered\":true,\"className\":\"steps\"} --><ol class=\"wp-block-list steps\"><!-- wp:list-item --><li>Stir everything together into a shaggy dough.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Cover and leave at room temperature overnight.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Tip onto a floured surface and fold into a ball.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Rest on baking paper while the pot heats in a 240&deg;C oven.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Bake covered for 30 minutes, then uncovered for 15.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Cool for an hour before slicing, if you can.</li><!-- /wp:list-item --></ol><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"#print\">Print recipe</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->\n\n<!-- wp:paragraph --><p>Once you have the rhythm, play with it: swap a third of the flour for wholemeal, fold in olives or a handful of seeds, or leave out the rosemary for a plain sandwich loaf.</p><!-- /wp:paragraph -->",
+   "comments": []
+  },
+  {
+   "slug": "sunday-pot-roast",
+   "title": "Sunday Pot Roast with Root Vegetables",
+   "date": "2026-09-06T14:00:00",
+   "excerpt": "Beef braised low and slow with carrots, onions and a glass of red until it falls apart at the touch of a fork.",
+   "categories": [
+    "sunday-suppers"
+   ],
+   "tags": [
+    "family-favourite",
+    "one-pan"
+   ],
+   "featured_media": "roast",
+   "content": "<!-- wp:paragraph --><p>Sunday afternoons in our house have a smell, and it is this. The pot goes in after lunch and by the time everyone wanders back from the park, dinner is ready.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>Cheaper cuts like chuck or brisket are perfect here. Long, gentle cooking turns them meltingly tender.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Leftover ideas</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Shred into tacos with pickled onions.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Stir into a pie filling with the leftover gravy.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Pile into toasted rolls with horseradish.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:roast}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:roast}}\" alt=\"A pot roast with carrots and onions in a dutch oven\" class=\"wp-image-{{media_id:roast}}\"/></figure><!-- /wp:image --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph --><p>Use a pot that just fits the meat, so the liquid comes halfway up the sides.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>If the sauce is thin at the end, simmer it uncovered for ten minutes.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:group {\"anchor\":\"recipe\",\"className\":\"recipe-card\",\"layout\":{\"type\":\"constrained\"}} --><div id=\"recipe\" class=\"wp-block-group recipe-card\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Sunday pot roast</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"recipe-facts\"} --><ul class=\"wp-block-list recipe-facts\"><!-- wp:list-item --><li><strong>Prep</strong>20 min</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Cook</strong>3 hr 30</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Serves</strong>6</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Level</strong>Easy</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column {\"width\":\"38%\"} --><div class=\"wp-block-column\" style=\"flex-basis:38%\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Ingredients</h3><!-- /wp:heading --><!-- wp:list {\"className\":\"ingredients\"} --><ul class=\"wp-block-list ingredients\"><!-- wp:list-item --><li>1.5 kg beef chuck</li><!-- /wp:list-item --><!-- wp:list-item --><li>2 onions, quartered</li><!-- /wp:list-item --><!-- wp:list-item --><li>6 carrots, in chunks</li><!-- /wp:list-item --><!-- wp:list-item --><li>4 garlic cloves</li><!-- /wp:list-item --><!-- wp:list-item --><li>2 tbsp tomato paste</li><!-- /wp:list-item --><!-- wp:list-item --><li>250 ml red wine</li><!-- /wp:list-item --><!-- wp:list-item --><li>500 ml beef stock</li><!-- /wp:list-item --><!-- wp:list-item --><li>Bay leaves and thyme</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column {\"width\":\"62%\"} --><div class=\"wp-block-column\" style=\"flex-basis:62%\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Method</h3><!-- /wp:heading --><!-- wp:list {\"ordered\":true,\"className\":\"steps\"} --><ol class=\"wp-block-list steps\"><!-- wp:list-item --><li>Heat the oven to 150&deg;C.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Brown the beef well on all sides; set aside.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Soften onions and garlic, stir in tomato paste.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Pour in wine and stock, add herbs and return the beef.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Cover and braise for 3 hours, adding carrots after 2.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Rest for 15 minutes before pulling apart.</li><!-- /wp:list-item --></ol><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"#print\">Print recipe</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "comments": [
+    {
+     "author": "Malcolm",
+     "content": "Smelled amazing all afternoon. Served it with mash.",
+     "date": "2026-09-08T21:00:00",
+     "email": "malcolm@example.com"
+    }
+   ]
+  },
+  {
+   "slug": "twenty-minute-garden-pesto-pasta",
+   "title": "Twenty-Minute Garden Pesto Pasta",
+   "date": "2026-08-14T19:00:00",
+   "excerpt": "A blender pesto made with whatever herbs are growing, tossed with pasta, green beans and potatoes the Ligurian way.",
+   "categories": [
+    "weeknight-dinners",
+    "from-the-garden"
+   ],
+   "tags": [
+    "vegetarian",
+    "quick"
+   ],
+   "featured_media": "pasta",
+   "content": "<!-- wp:paragraph --><p>Our herb pots overflow by August, and this is how we keep up. Basil is classic, but a mix of basil, parsley and a little mint is just as good.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>Cooking potatoes and green beans in the same pot as the pasta is a trick from the Italian coast. It makes the dish heartier and saves washing up.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Pesto, our way</h2><!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Toast the nuts until fragrant; walnuts and sunflower seeds both work.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Blitz herbs, garlic and nuts first, then add cheese.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Stream in the oil last and stop while it still has texture.</li><!-- /wp:list-item --></ol><!-- /wp:list -->\n\n<!-- wp:image {\"id\":{{media_id:pasta}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:pasta}}\" alt=\"A bowl of pasta tossed with green pesto and beans\" class=\"wp-image-{{media_id:pasta}}\"/></figure><!-- /wp:image -->\n\n<!-- wp:group {\"anchor\":\"recipe\",\"className\":\"recipe-card\",\"layout\":{\"type\":\"constrained\"}} --><div id=\"recipe\" class=\"wp-block-group recipe-card\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Garden pesto pasta</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"recipe-facts\"} --><ul class=\"wp-block-list recipe-facts\"><!-- wp:list-item --><li><strong>Prep</strong>10 min</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Cook</strong>12 min</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Serves</strong>4</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Level</strong>Easy</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column {\"width\":\"38%\"} --><div class=\"wp-block-column\" style=\"flex-basis:38%\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Ingredients</h3><!-- /wp:heading --><!-- wp:list {\"className\":\"ingredients\"} --><ul class=\"wp-block-list ingredients\"><!-- wp:list-item --><li>400 g pasta</li><!-- /wp:list-item --><!-- wp:list-item --><li>2 small potatoes, diced</li><!-- /wp:list-item --><!-- wp:list-item --><li>150 g green beans</li><!-- /wp:list-item --><!-- wp:list-item --><li>60 g basil and parsley</li><!-- /wp:list-item --><!-- wp:list-item --><li>1 garlic clove</li><!-- /wp:list-item --><!-- wp:list-item --><li>40 g toasted nuts</li><!-- /wp:list-item --><!-- wp:list-item --><li>50 g grated hard cheese</li><!-- /wp:list-item --><!-- wp:list-item --><li>100 ml olive oil</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column {\"width\":\"62%\"} --><div class=\"wp-block-column\" style=\"flex-basis:62%\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Method</h3><!-- /wp:heading --><!-- wp:list {\"ordered\":true,\"className\":\"steps\"} --><ol class=\"wp-block-list steps\"><!-- wp:list-item --><li>Boil the potatoes for 4 minutes, then add the pasta.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Add the beans for the final 4 minutes.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Blitz the herbs, garlic, nuts, cheese and oil.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Drain, keeping a cup of the water.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Toss everything together, loosening with the water.</li><!-- /wp:list-item --></ol><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"#print\">Print recipe</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->\n\n<!-- wp:paragraph --><p>Any leftover pesto keeps for a week in a jar with a layer of oil on top. We stir it into soups, spread it on toast and spoon it over roast vegetables.</p><!-- /wp:paragraph -->",
+   "comments": []
+  },
+  {
+   "slug": "skillet-eggs-peppers-tomatoes",
+   "title": "Skillet Eggs with Peppers & Tomatoes",
+   "date": "2026-07-25T10:30:00",
+   "excerpt": "Eggs gently poached in a spiced pepper and tomato sauce. Breakfast, lunch or a Thursday night dinner.",
+   "categories": [
+    "weeknight-dinners"
+   ],
+   "tags": [
+    "vegetarian",
+    "quick",
+    "one-pan",
+    "gluten-free"
+   ],
+   "featured_media": "shakshuka",
+   "content": "<!-- wp:paragraph --><p>When the fridge is nearly empty, there are usually still eggs, an onion and a tin of tomatoes. That is all you need for this skillet.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>The sauce can be as mild or as fiery as you like. We keep it gentle for the kids and pass round chilli flakes at the table.</p><!-- /wp:paragraph -->\n\n<!-- wp:group {\"className\":\"tip-box\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group tip-box\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Cover the pan</h3><!-- /wp:heading --><!-- wp:paragraph --><p>A lid traps the heat so the whites set before the yolks overcook. Check after five minutes.</p><!-- /wp:paragraph --></div><!-- /wp:group -->\n\n<!-- wp:image {\"id\":{{media_id:shakshuka}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:shakshuka}}\" alt=\"Eggs cooked in tomato sauce in a skillet\" class=\"wp-image-{{media_id:shakshuka}}\"/></figure><!-- /wp:image -->\n\n<!-- wp:group {\"anchor\":\"recipe\",\"className\":\"recipe-card\",\"layout\":{\"type\":\"constrained\"}} --><div id=\"recipe\" class=\"wp-block-group recipe-card\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Skillet eggs with peppers</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"recipe-facts\"} --><ul class=\"wp-block-list recipe-facts\"><!-- wp:list-item --><li><strong>Prep</strong>10 min</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Cook</strong>25 min</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Serves</strong>4</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Cost</strong>Budget</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column {\"width\":\"38%\"} --><div class=\"wp-block-column\" style=\"flex-basis:38%\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Ingredients</h3><!-- /wp:heading --><!-- wp:list {\"className\":\"ingredients\"} --><ul class=\"wp-block-list ingredients\"><!-- wp:list-item --><li>1 onion, 2 peppers, sliced</li><!-- /wp:list-item --><!-- wp:list-item --><li>2 garlic cloves</li><!-- /wp:list-item --><!-- wp:list-item --><li>1 tsp cumin, 1 tsp paprika</li><!-- /wp:list-item --><!-- wp:list-item --><li>2 tins chopped tomatoes</li><!-- /wp:list-item --><!-- wp:list-item --><li>6 eggs</li><!-- /wp:list-item --><!-- wp:list-item --><li>Parsley, feta and bread to serve</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column {\"width\":\"62%\"} --><div class=\"wp-block-column\" style=\"flex-basis:62%\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Method</h3><!-- /wp:heading --><!-- wp:list {\"ordered\":true,\"className\":\"steps\"} --><ol class=\"wp-block-list steps\"><!-- wp:list-item --><li>Soften the onion and peppers for 10 minutes.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Add garlic and spices, then the tomatoes.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Simmer for 10 minutes until thick.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Make wells and crack in the eggs.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Cover and cook for 5&ndash;7 minutes.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Scatter with herbs and feta.</li><!-- /wp:list-item --></ol><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"#print\">Print recipe</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "comments": [
+    {
+     "author": "Lena",
+     "content": "We had this for dinner and breakfast the same weekend.",
+     "date": "2026-07-27T09:15:00",
+     "email": "lena@example.com"
+    }
+   ]
+  },
+  {
+   "slug": "apple-blackberry-crumble",
+   "title": "Apple & Blackberry Oat Crumble",
+   "date": "2026-09-28T16:00:00",
+   "excerpt": "Tart apples and hedgerow blackberries under a buttery oat crumble. Serve with custard, cream or a scoop of ice cream.",
+   "categories": [
+    "breads-bakes",
+    "from-the-garden"
+   ],
+   "tags": [
+    "vegetarian",
+    "weekend",
+    "family-favourite"
+   ],
+   "featured_media": "crumble",
+   "content": "<!-- wp:paragraph --><p>Blackberry picking is a family outing every September, and this crumble is the reward. Purple fingers, scratched arms and a bubbling dish on the table.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>Oats and a little demerara sugar give the topping crunch. I always make double and keep half in the freezer for next time.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Crumble rules</h2><!-- /wp:heading -->\n\n<!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Do not press the topping down; scatter it loosely.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Leave a few gaps so the fruit can bubble through.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Rest for ten minutes so the juices thicken.</li><!-- /wp:list-item --></ul><!-- /wp:list -->\n\n<!-- wp:image {\"id\":{{media_id:crumble}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:crumble}}\" alt=\"A baking dish of crumble with blackberries\" class=\"wp-image-{{media_id:crumble}}\"/></figure><!-- /wp:image -->\n\n<!-- wp:group {\"anchor\":\"recipe\",\"className\":\"recipe-card\",\"layout\":{\"type\":\"constrained\"}} --><div id=\"recipe\" class=\"wp-block-group recipe-card\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Apple &amp; blackberry crumble</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"recipe-facts\"} --><ul class=\"wp-block-list recipe-facts\"><!-- wp:list-item --><li><strong>Prep</strong>20 min</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Bake</strong>40 min</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Serves</strong>6</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Freezes</strong>Yes</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column {\"width\":\"38%\"} --><div class=\"wp-block-column\" style=\"flex-basis:38%\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Ingredients</h3><!-- /wp:heading --><!-- wp:list {\"className\":\"ingredients\"} --><ul class=\"wp-block-list ingredients\"><!-- wp:list-item --><li>4 cooking apples, chopped</li><!-- /wp:list-item --><!-- wp:list-item --><li>250 g blackberries</li><!-- /wp:list-item --><!-- wp:list-item --><li>2 tbsp sugar</li><!-- /wp:list-item --><!-- wp:list-item --><li>150 g plain flour</li><!-- /wp:list-item --><!-- wp:list-item --><li>75 g oats</li><!-- /wp:list-item --><!-- wp:list-item --><li>100 g cold butter</li><!-- /wp:list-item --><!-- wp:list-item --><li>75 g demerara sugar</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column {\"width\":\"62%\"} --><div class=\"wp-block-column\" style=\"flex-basis:62%\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Method</h3><!-- /wp:heading --><!-- wp:list {\"ordered\":true,\"className\":\"steps\"} --><ol class=\"wp-block-list steps\"><!-- wp:list-item --><li>Heat the oven to 190&deg;C.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Toss the fruit with the sugar in a baking dish.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Rub the butter into the flour, then stir in oats and demerara.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Scatter over the fruit.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Bake for 35&ndash;40 minutes until golden and bubbling.</li><!-- /wp:list-item --></ol><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"#print\">Print recipe</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->\n\n<!-- wp:paragraph --><p>Leftovers, if there are any, are wonderful cold for breakfast with a spoonful of thick yogurt. Nobody in our house has ever complained.</p><!-- /wp:paragraph -->",
+   "comments": []
+  },
+  {
+   "slug": "stocking-a-cozy-pantry",
+   "title": "Stocking a Pantry for Easy Weeknights",
+   "date": "2026-08-30T08:00:00",
+   "excerpt": "The jars, tins and bottles we never run out of, and how they turn into dinner on the busiest nights.",
+   "categories": [
+    "pantry-basics"
+   ],
+   "tags": [
+    "quick"
+   ],
+   "featured_media": "pantry",
+   "content": "<!-- wp:paragraph --><p>Most weeknight dinners in our kitchen start in the cupboard, not the fridge. A well-stocked pantry is the difference between cooking and ordering in.</p><!-- /wp:paragraph -->\n\n<!-- wp:paragraph --><p>This is not a list of fancy ingredients. It is the short, hardworking list we restock every fortnight.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Our pantry list</h2><!-- /wp:heading -->\n\n<!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Tins &amp; jars</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Chopped tomatoes</li><!-- /wp:list-item --><!-- wp:list-item --><li>Beans and chickpeas</li><!-- /wp:list-item --><!-- wp:list-item --><li>Coconut milk</li><!-- /wp:list-item --><!-- wp:list-item --><li>Anchovies or capers</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Dry goods</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Pasta in two shapes</li><!-- /wp:list-item --><!-- wp:list-item --><li>Rice and lentils</li><!-- /wp:list-item --><!-- wp:list-item --><li>Oats</li><!-- /wp:list-item --><!-- wp:list-item --><li>Bread flour</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Flavour</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Smoked paprika and cumin</li><!-- /wp:list-item --><!-- wp:list-item --><li>Stock cubes</li><!-- /wp:list-item --><!-- wp:list-item --><li>Soy sauce</li><!-- /wp:list-item --><!-- wp:list-item --><li>Good olive oil</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns -->\n\n<!-- wp:image {\"id\":{{media_id:pantry}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:pantry}}\" alt=\"Glass jars of beans, pasta and grains on a wooden shelf\" class=\"wp-image-{{media_id:pantry}}\"/></figure><!-- /wp:image -->\n\n<!-- wp:paragraph --><p>Once a month we cook a &ldquo;pantry week&rdquo;, using up what is open before buying more. It keeps the shelves fresh and saves real money.</p><!-- /wp:paragraph -->\n\n<!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>A full pantry is a promise to your future, tired self.</p><!-- /wp:paragraph --><cite>Kitchen wisdom</cite></blockquote><!-- /wp:quote -->",
+   "comments": [
+    {
+     "author": "Ade",
+     "content": "Pantry week is a brilliant idea. Stealing it.",
+     "date": "2026-09-01T18:30:00",
+     "email": "ade@example.com"
+    }
+   ]
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Home",
+     "url": "/"
+    },
+    {
+     "title": "Recipes",
+     "page": "recipe-index",
+     "children": [
+      {
+       "category": "weeknight-dinners"
+      },
+      {
+       "category": "soups-stews"
+      },
+      {
+       "category": "sunday-suppers"
+      },
+      {
+       "category": "breads-bakes"
+      },
+      {
+       "category": "from-the-garden"
+      }
+     ]
+    },
+    {
+     "title": "Meal Plan",
+     "page": "meal-plan"
+    },
+    {
+     "title": "Pantry",
+     "category": "pantry-basics"
+    },
+    {
+     "title": "About",
+     "page": "about",
+     "children": [
+      {
+       "page": "contact"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Social",
+   "location": "social",
+   "items": [
+    {
+     "title": "Instagram",
+     "url": "https://instagram.com/"
+    },
+    {
+     "title": "Pinterest",
+     "url": "https://pinterest.com/"
+    },
+    {
+     "title": "Newsletter",
+     "url": "#newsletter"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "sidebar-1": [
+   "<!-- wp:group {\"className\":\"about-cooks\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group about-cooks\"><!-- wp:image {\"id\":{{media_id:table}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:table}}\" alt=\"A family dinner table\" class=\"wp-image-{{media_id:table}}\"/></figure><!-- /wp:image --><!-- wp:paragraph --><p>We are a family of five cooking honest food on busy weeknights. Pull up a chair!</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{page:about}}\">Meet the family &rarr;</a></p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Dinner tonight?</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><a href=\"{{category:weeknight-dinners}}\">Weeknight dinners</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{category:soups-stews}}\">Soups &amp; stews</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{page:meal-plan}}\">This week&rsquo;s meal plan</a></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Categories</h2><!-- /wp:heading --><!-- wp:categories {\"showPostCounts\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Tags</h2><!-- /wp:heading --><!-- wp:tag-cloud /--></div><!-- /wp:group -->"
+  ],
+  "footer-1": [
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Cook</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><a href=\"{{page:recipe-index}}\">Recipe index</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{page:meal-plan}}\">Meal plan</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"{{category:pantry-basics}}\">Pantry basics</a></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Latest</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":3} /--></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Hello</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Hearth &amp; Herb is a family food blog about cooking real dinners on real weeknights.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{page:contact}}\">Get in touch</a></p><!-- /wp:paragraph --></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "header_banner": "herbs",
+  "tagline_bar": "New recipes every Tuesday and Friday",
+  "home_layout": "feature",
+  "sidebar": "right",
+  "sticky_header": true
+ }
+}

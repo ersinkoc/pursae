@@ -1,0 +1,328 @@
+{
+  "slug": "hearth-and-herb",
+  "name": "Hearth & Herb",
+  "version": "1.0.0",
+  "description": "A rustic family home-cooking blog: herb green and warm wood on linen, Bitter slab headings, a green utility bar with recipe search, a big lead recipe over a photo-first grid, weeknight-dinner categories and printable recipe cards with tick-box ingredients and a print button.",
+  "author": "WordPress Go",
+  "author_url": "https://github.com/boracomet/wordpress-go",
+  "theme_url": "https://github.com/boracomet/wordpress-go/tree/main/web/theme-library/hearth-and-herb",
+  "tags": [
+    "Food",
+    "Blog",
+    "Recipes",
+    "Grid Layout",
+    "Right Sidebar",
+    "Left Sidebar",
+    "Custom Colors",
+    "Custom Logo",
+    "Custom Menu",
+    "Editor Style",
+    "Featured Images",
+    "Footer Widgets",
+    "Sticky Post",
+    "Threaded Comments"
+  ],
+  "requires_core": "0.1.0",
+  "screenshot": "assets/screenshot.png",
+  "category": "food",
+  "style": "Rustic home cooking, herb green and wood, printable recipes",
+  "demo": "demo/demo.json",
+  "widget_areas": [
+    {
+      "id": "sidebar-1",
+      "name": "Sidebar",
+      "description": "Beside recipes and recipe lists."
+    },
+    {
+      "id": "footer-1",
+      "name": "Footer",
+      "description": "Columns in the green footer."
+    }
+  ],
+  "menu_locations": [
+    {
+      "id": "primary",
+      "name": "Primary Menu"
+    },
+    {
+      "id": "social",
+      "name": "Social Links"
+    }
+  ],
+  "styles": [
+    {
+      "handle": "hearth-and-herb-style",
+      "src": "assets/style.css",
+      "deps": [
+        "wp-block-library"
+      ],
+      "media": "all"
+    }
+  ],
+  "scripts": [
+    {
+      "handle": "hearth-and-herb-navigation",
+      "src": "assets/js/navigation.js",
+      "deps": [],
+      "in_footer": true
+    }
+  ],
+  "editor_styles": [
+    "assets/editor-style.css"
+  ],
+  "preload_fonts": [
+    "assets/fonts/work-sans.woff2",
+    "assets/fonts/bitter.woff2"
+  ],
+  "palette": [
+    {
+      "name": "Herb",
+      "slug": "herb",
+      "color": "#3f6b3a"
+    },
+    {
+      "name": "Forest",
+      "slug": "forest",
+      "color": "#22341f"
+    },
+    {
+      "name": "Wood",
+      "slug": "wood",
+      "color": "#8a5a3b"
+    },
+    {
+      "name": "Tomato",
+      "slug": "tomato",
+      "color": "#c4522f"
+    },
+    {
+      "name": "Linen",
+      "slug": "linen",
+      "color": "#f4efe6"
+    },
+    {
+      "name": "Paper",
+      "slug": "paper",
+      "color": "#fbf8f2"
+    }
+  ],
+  "supports": {
+    "post-thumbnails": true,
+    "custom-logo": {
+      "width": 240,
+      "height": 80,
+      "flex-width": true,
+      "flex-height": true,
+      "header-text": [
+        "site-title",
+        "site-description"
+      ]
+    },
+    "title-tag": true,
+    "html5": [
+      "search-form",
+      "comment-form",
+      "comment-list",
+      "gallery",
+      "caption",
+      "script",
+      "style"
+    ],
+    "responsive-embeds": true,
+    "align-wide": true,
+    "wp-block-styles": true
+  },
+  "customizer": {
+    "sections": [
+      {
+        "id": "hh_colors",
+        "title": "Colors & Type",
+        "priority": 40,
+        "settings": [
+          {
+            "id": "accent_color",
+            "label": "Herb green",
+            "type": "color",
+            "default": "#3f6b3a",
+            "transport": "postMessage",
+            "css_var": "--accent",
+            "description": "Links, buttons, category tags and checkboxes."
+          },
+          {
+            "id": "wood_color",
+            "label": "Wood",
+            "type": "color",
+            "default": "#8a5a3b",
+            "transport": "postMessage",
+            "css_var": "--wood",
+            "description": "The plank stripes, step numbers and print button."
+          },
+          {
+            "id": "background_color",
+            "label": "Linen background",
+            "type": "color",
+            "default": "#f4efe6",
+            "transport": "postMessage",
+            "css_var": "--bg"
+          },
+          {
+            "id": "text_color",
+            "label": "Text",
+            "type": "color",
+            "default": "#2b2420",
+            "transport": "postMessage",
+            "css_var": "--text"
+          },
+          {
+            "id": "font_pairing",
+            "label": "Typefaces",
+            "type": "select",
+            "default": "slab",
+            "transport": "postMessage",
+            "body_class": "hh-font-{value}",
+            "choices": [
+              {
+                "value": "slab",
+                "label": "Bitter slab headings, Work Sans text"
+              },
+              {
+                "value": "serif",
+                "label": "Georgia headings, Work Sans text"
+              },
+              {
+                "value": "system",
+                "label": "System fonts"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "hh_layout",
+        "title": "Layout",
+        "priority": 41,
+        "settings": [
+          {
+            "id": "home_layout",
+            "label": "Recipe list",
+            "type": "select",
+            "default": "feature",
+            "transport": "postMessage",
+            "body_class": "hh-layout-{value}",
+            "choices": [
+              {
+                "value": "feature",
+                "label": "Big lead recipe, then a grid"
+              },
+              {
+                "value": "grid",
+                "label": "Even grid"
+              },
+              {
+                "value": "list",
+                "label": "List with photos beside"
+              }
+            ]
+          },
+          {
+            "id": "sidebar",
+            "label": "Sidebar",
+            "type": "select",
+            "default": "right",
+            "transport": "postMessage",
+            "body_class": "hh-sidebar-{value}",
+            "choices": [
+              {
+                "value": "right",
+                "label": "Right"
+              },
+              {
+                "value": "left",
+                "label": "Left"
+              },
+              {
+                "value": "none",
+                "label": "No sidebar"
+              }
+            ]
+          },
+          {
+            "id": "image_ratio",
+            "label": "Photo shape in lists",
+            "type": "select",
+            "default": "landscape",
+            "transport": "postMessage",
+            "body_class": "hh-ratio-{value}",
+            "choices": [
+              {
+                "value": "landscape",
+                "label": "Landscape 3:2"
+              },
+              {
+                "value": "square",
+                "label": "Square"
+              },
+              {
+                "value": "tall",
+                "label": "Tall 4:5"
+              }
+            ]
+          },
+          {
+            "id": "show_featured",
+            "label": "Show featured images",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "hh-thumbs"
+          },
+          {
+            "id": "show_author",
+            "label": "Show the cook's name",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "hh-author"
+          },
+          {
+            "id": "sticky_header",
+            "label": "Sticky header",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "hh-sticky"
+          }
+        ]
+      },
+      {
+        "id": "hh_header",
+        "title": "Header & Footer",
+        "priority": 42,
+        "settings": [
+          {
+            "id": "tagline_bar",
+            "label": "Top bar text",
+            "type": "text",
+            "default": "",
+            "transport": "refresh",
+            "description": "Shown in the green bar above the header. Empty uses the tagline."
+          },
+          {
+            "id": "header_banner",
+            "label": "Archive banner photo",
+            "type": "image",
+            "description": "A photo behind the title of the recipe list, categories and search results."
+          },
+          {
+            "id": "footer_text",
+            "label": "Footer text",
+            "type": "text",
+            "default": "",
+            "transport": "refresh",
+            "description": "Replaces the copyright line."
+          }
+        ]
+      }
+    ]
+  }
+}

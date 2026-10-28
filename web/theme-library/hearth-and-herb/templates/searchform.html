@@ -1,0 +1,5 @@
+<form role="search" method="get" class="search-form" action="{{.HomeURL}}">
+	<label for="search-field-{{.Template}}" class="screen-reader-text">Search for:</label>
+	<input type="search" id="search-field-{{.Template}}" class="search-field" placeholder="Chicken, beans, soup&hellip;" value="{{.SearchQuery}}" name="s" />
+	<button type="submit" class="search-submit">Search</button>
+</form>

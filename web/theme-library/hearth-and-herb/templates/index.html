@@ -1,0 +1,19 @@
+{{$banner := theme_mod . "header_banner"}}{{template "header" .}}
+<header{{if $banner}} style="--banner: url('{{$banner}}')"{{end}} class="{{if $banner}}has-banner {{end}}page-header page-header--blog">
+	<div class="wrap">
+		{{if .IsHomeHeader}}<p class="page-header__kicker">Straight from our kitchen</p>
+		<h1 class="page-title">{{.PostsPageTitle}}</h1>{{else}}<p class="page-header__kicker">Straight from our kitchen</p>
+		<p class="page-title">What&rsquo;s cooking</p>{{end}}
+	</div>
+</header>
+<div class="wrap layout">
+	<main id="main" class="site-main" tabindex="-1">
+		{{if .Posts}}<div class="post-list">
+			{{range .Posts}}{{template "content" .}}
+			{{end}}
+		</div>
+		{{.Pagination}}{{else}}{{template "content-none" .}}{{end}}
+	</main><!-- #main -->
+	{{template "sidebar" .}}
+</div>
+{{template "footer" .}}

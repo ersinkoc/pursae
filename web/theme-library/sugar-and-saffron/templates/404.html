@@ -1,0 +1,11 @@
+{{template "header" .}}
+<main id="main" class="site-main site-main--404" tabindex="-1">
+	<section class="error-404 not-found wrap wrap--content">
+		<p class="error-404__script" aria-hidden="true">Oh, crumbs!</p>
+		<p class="error-404__code" aria-hidden="true">404</p>
+		<h1 class="page-title">This page didn&rsquo;t rise.</h1>
+		<p>The recipe you were after is not here. Search the recipe box or head back to the <a href="{{.HomeURL}}">kitchen</a>.</p>
+		{{template "searchform" .}}
+	</section><!-- .error-404 -->
+</main>
+{{template "footer" .}}
