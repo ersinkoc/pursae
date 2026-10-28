@@ -1,0 +1,7 @@
+{{if eq .Q.Paged 0 1}}{{$hero := theme_mod . "hero_image"}}<section class="lf-intro{{if $hero}} lf-intro--image{{end}}" aria-label="Introduction">
+	{{if $hero}}<img class="lf-intro__image" src="{{$hero}}" alt="" />{{end}}
+	<div class="lf-intro__text">
+		{{with theme_mod . "intro_text"}}<p class="lf-intro__lede">{{.}}</p>{{end}}
+		<p class="lf-intro__count">{{plural .TotalPosts "%s story" "%s stories"}} &middot; {{.SiteName}}</p>
+	</div>
+</section>{{end}}

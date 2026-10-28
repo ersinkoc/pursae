@@ -1,0 +1,24 @@
+/* Lumen Folio: the editor content area looks like the dark front end. */
+@font-face { font-family: "Jost"; src: url("fonts/jost.woff2") format("woff2"); font-weight: 300 700; font-display: swap; }
+@font-face { font-family: "Cormorant Garamond"; src: url("fonts/cormorant.woff2") format("woff2"); font-weight: 400 600; font-display: swap; }
+@font-face { font-family: "Cormorant Garamond"; src: url("fonts/cormorant-italic.woff2") format("woff2"); font-weight: 400 600; font-style: italic; font-display: swap; }
+body, .editor-styles-wrapper {
+	background: #0c0c0d;
+	color: #ebe7e0;
+	font-family: "Jost", "Avenir Next", Arial, sans-serif;
+	font-size: 17px;
+	font-weight: 300;
+	line-height: 1.7;
+}
+.editor-styles-wrapper h1, .editor-styles-wrapper h2, .editor-styles-wrapper h3, .editor-styles-wrapper .editor-post-title__input {
+	font-family: "Cormorant Garamond", Georgia, serif;
+	font-style: italic;
+	font-weight: 400;
+	line-height: 1.15;
+}
+.editor-styles-wrapper a { color: #ebe7e0; text-decoration-color: #d9a35b; }
+.editor-styles-wrapper blockquote { border-left: 1px solid #d9a35b; padding-left: 1.4em; font-family: "Cormorant Garamond", Georgia, serif; font-size: 1.5rem; font-style: italic; }
+.editor-styles-wrapper figcaption { color: #8e8b86; font-family: "Cormorant Garamond", Georgia, serif; font-style: italic; text-align: center; }
+.editor-styles-wrapper .wp-block { max-width: 680px; }
+.editor-styles-wrapper .wp-block[data-align="wide"] { max-width: 1200px; }
+.editor-styles-wrapper .wp-block[data-align="full"] { max-width: none; }

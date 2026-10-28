@@ -1,0 +1,9 @@
+{{template "header" .}}
+<header class="fz-wrap page-header">
+	<p class="fz-kicker">Browsing</p>
+	<h1 class="page-title">{{.ArchiveTitle}}</h1>
+	{{with .ArchiveDesc}}<div class="archive-description">{{.}}</div>{{end}}
+</header>
+{{if .Posts}}{{template "cards" .}}
+<div class="fz-wrap">{{.Pagination}}</div>{{else}}<div class="fz-wrap">{{template "content-none" .}}</div>{{end}}
+{{template "footer" .}}

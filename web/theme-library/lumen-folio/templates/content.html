@@ -1,0 +1,11 @@
+<article id="post-{{.ID}}" class="{{.Class}} lf-card{{if not .Thumbnail}} lf-card--text{{end}}">
+	<a class="lf-card__link" href="{{.Permalink}}" rel="bookmark">
+		{{with .Thumbnail}}<span class="lf-card__media">{{.}}</span>{{end}}
+		<span class="lf-card__caption">
+			{{if .ShowFeatured}}<span class="lf-card__badge">Featured</span>{{end}}
+			<span class="lf-card__title">{{.Title}}</span>
+			{{if eq .Type "post"}}<span class="lf-card__meta"><time datetime="{{.DateISO}}">{{date .Date "F Y"}}</time>{{with .Categories}} &middot; {{(index . 0).Name}}{{end}}</span>{{end}}
+		</span>
+	</a>
+	{{if not .Thumbnail}}<div class="lf-card__excerpt">{{.Excerpt}}</div>{{end}}
+</article>

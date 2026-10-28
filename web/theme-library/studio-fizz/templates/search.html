@@ -1,0 +1,9 @@
+{{template "header" .}}
+<header class="fz-wrap page-header">
+	<p class="fz-kicker">{{plural .TotalPosts "%s result" "%s results"}}</p>
+	<h1 class="page-title">You searched for &ldquo;{{.SearchQuery}}&rdquo;</h1>
+	{{template "searchform" .}}
+</header>
+{{if .Posts}}{{template "cards" .}}
+<div class="fz-wrap">{{.Pagination}}</div>{{else}}<div class="fz-wrap">{{template "content-none" .}}</div>{{end}}
+{{template "footer" .}}

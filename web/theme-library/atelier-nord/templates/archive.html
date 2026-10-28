@@ -1,0 +1,9 @@
+{{template "header" .}}
+<header class="an-wrap page-header">
+	<p class="an-label">Archive / {{printf "%02d" .TotalPosts}}</p>
+	<h1 class="page-title">{{.ArchiveTitle}}</h1>
+	{{with .ArchiveDesc}}<div class="archive-description">{{.}}</div>{{end}}
+</header>
+{{if .Posts}}{{template "work-list" .}}
+<div class="an-wrap">{{.Pagination}}</div>{{else}}<div class="an-wrap">{{template "content-none" .}}</div>{{end}}
+{{template "footer" .}}

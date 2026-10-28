@@ -1,0 +1,21 @@
+{{template "header" .}}
+{{with .Post}}<article id="post-{{.ID}}" class="{{.Class}} ec-single">
+	<header class="ec-single__header{{if .Thumbnail}} ec-single__header--image{{end}}">
+		{{with .ThumbnailURL}}<img class="ec-single__bg" src="{{.}}" alt="" />{{end}}
+		<div class="ec-wrap ec-single__inner">
+			<p class="ec-kicker">{{range $i, $c := .Categories}}{{if $i}} / {{end}}<a href="{{$c.URL}}">{{$c.Name}}</a>{{end}}</p>
+			<h1 class="entry-title">{{.Title}}</h1>
+			{{template "entry-meta" .}}
+		</div>
+	</header>
+	<div class="ec-wrap ec-narrow entry-content">
+		{{.Content}}
+	</div>
+	{{if or .Tags .EditLink}}<footer class="ec-wrap ec-narrow entry-footer">
+		{{if .Tags}}<span class="tags-links"><span class="screen-reader-text">Tags: </span>{{range .Tags}}<a href="{{.URL}}" rel="tag">#{{.Name}}</a>{{end}}</span>{{end}}
+		{{with .EditLink}}<span class="edit-link">{{.}}</span>{{end}}
+	</footer>{{end}}
+	<div class="ec-wrap ec-narrow">{{.Biography}}</div>
+</article>{{end}}
+<div class="ec-wrap ec-narrow">{{.PostNav}}{{template "comments" .}}</div>
+{{template "footer" .}}

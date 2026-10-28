@@ -1,0 +1,13 @@
+{{template "header" .}}
+{{with .Post}}<article id="post-{{.ID}}" class="{{.Class}} lf-page">
+	<header class="entry-header">
+		<h1 class="entry-title">{{.Title}}</h1>
+	</header>
+	{{with .Thumbnail}}<figure class="post-thumbnail lf-page__media">{{.}}</figure>{{end}}
+	<div class="entry-content">
+		{{.Content}}
+	</div><!-- .entry-content -->
+	{{with .EditLink}}<footer class="entry-footer"><span class="edit-link">{{.}}</span></footer>{{end}}
+</article><!-- #post-{{.ID}} -->{{end}}
+{{template "comments" .}}
+{{template "footer" .}}

@@ -1,0 +1,8 @@
+{{template "header" .}}
+<header class="fz-wrap page-header">
+	<p class="fz-kicker">{{if .IsHomeHeader}}Our work{{else}}Latest{{end}}</p>
+	<h1 class="page-title">{{if .IsHomeHeader}}{{.PostsPageTitle}}{{else}}Fresh from the studio{{end}}</h1>
+</header>
+{{if .Posts}}{{template "cards" .}}
+<div class="fz-wrap">{{.Pagination}}</div>{{else}}<div class="fz-wrap">{{template "content-none" .}}</div>{{end}}
+{{template "footer" .}}

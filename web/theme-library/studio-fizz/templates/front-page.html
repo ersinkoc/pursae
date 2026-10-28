@@ -1,0 +1,20 @@
+{{template "header" .}}
+{{with .Post}}{{$hero := theme_mod $ "hero_image"}}{{if not $hero}}{{$hero = .ThumbnailURL}}{{end}}<article id="post-{{.ID}}" class="{{.Class}} fz-front">
+	<section class="fz-hero" aria-label="Introduction">
+		<div class="fz-wrap fz-hero__inner">
+			<div class="fz-hero__text">
+				<p class="fz-kicker">{{$.Description}}</p>
+				<h1 class="fz-hero__title">{{with theme_mod $ "hero_heading"}}{{.}}{{else}}{{.Title}}{{end}}</h1>
+				{{with theme_mod $ "hero_text"}}<p class="fz-hero__lede">{{.}}</p>{{end}}
+				{{with theme_mod $ "cta_label"}}<p class="fz-hero__actions"><a class="fz-btn fz-btn--big" href="{{theme_mod $ "cta_url"}}">{{.}}</a></p>{{end}}
+			</div>
+			{{if $hero}}<figure class="fz-hero__media"><img src="{{$hero}}" alt="" /></figure>{{end}}
+		</div>
+		<span class="fz-shape fz-shape--a" aria-hidden="true"></span><span class="fz-shape fz-shape--b" aria-hidden="true"></span><span class="fz-shape fz-shape--c" aria-hidden="true"></span>
+	</section>
+	<div class="entry-content fz-front__content">
+		{{.Content}}
+	</div>
+	{{with .EditLink}}<footer class="fz-wrap entry-footer"><span class="edit-link">{{.}}</span></footer>{{end}}
+</article>{{end}}
+{{template "footer" .}}

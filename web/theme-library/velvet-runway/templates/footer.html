@@ -1,0 +1,24 @@
+		</main><!-- #main -->
+	</div><!-- #content -->
+
+	<footer id="colophon" class="site-footer">
+		<div class="vr-wrap">
+			<p class="vr-footer-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></p>
+			{{if is_active_sidebar . "footer-1"}}<aside class="footer-widgets" aria-label="Footer">
+				{{dynamic_sidebar . "footer-1"}}
+			</aside>{{end}}
+			<div class="site-footer__bar">
+				{{if has_nav_menu . "footer"}}<nav class="footer-navigation" aria-label="Footer menu">{{nav_menu . "footer"}}</nav>{{end}}
+				<div class="site-info">
+					{{.PrivacyLink}}
+					<span class="site-info__text">{{with theme_mod . "footer_text"}}{{.}}{{else}}&copy; {{$.SiteName}}. All rights reserved.{{end}}</span>
+					<span class="site-info__credit">Published with <a href="https://github.com/boracomet/wordpress-go">WordPress Go</a></span>
+				</div>
+			</div>
+		</div>
+	</footer><!-- #colophon -->
+</div><!-- #page -->
+
+{{.Footer}}{{.AdminBar}}
+</body>
+</html>

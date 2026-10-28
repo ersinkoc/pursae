@@ -1,0 +1,14 @@
+/* Atelier Nord: editor content area. */
+@font-face { font-family: "Inter Tight"; src: url("fonts/inter-tight.woff2") format("woff2"); font-weight: 300 800; font-display: swap; }
+@font-face { font-family: "IBM Plex Mono"; src: url("fonts/plex-mono.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+body, .editor-styles-wrapper { background: #f2f0eb; color: #111; font-family: "Inter Tight", "Helvetica Neue", Arial, sans-serif; font-size: 17px; line-height: 1.5; }
+.editor-styles-wrapper h1, .editor-styles-wrapper h2, .editor-styles-wrapper h3, .editor-styles-wrapper .editor-post-title__input { font-weight: 700; letter-spacing: -0.035em; line-height: 1.02; }
+.editor-styles-wrapper a { color: inherit; }
+.editor-styles-wrapper a:hover { color: #e2231a; }
+.editor-styles-wrapper blockquote { border: 0; padding: 0; font-size: 1.9rem; font-weight: 500; line-height: 1.15; }
+.editor-styles-wrapper blockquote::before { content: ""; display: block; width: 48px; height: 6px; margin-bottom: 18px; background: #e2231a; }
+.editor-styles-wrapper figcaption, .editor-styles-wrapper code { font-family: "IBM Plex Mono", Menlo, monospace; font-size: 0.75rem; }
+.editor-styles-wrapper hr { border: 0; border-top: 2px solid #111; }
+.editor-styles-wrapper .wp-block { max-width: 760px; }
+.editor-styles-wrapper .wp-block[data-align="wide"] { max-width: 1280px; }
+.editor-styles-wrapper .wp-block[data-align="full"] { max-width: none; }

@@ -1,0 +1,22 @@
+{{template "header" .}}
+{{with .Post}}<article id="post-{{.ID}}" class="{{.Class}} lf-single">
+	<div class="lf-stage{{if not .Thumbnail}} lf-stage--empty{{end}}">
+		<a class="lf-stage__close" href="{{$.HomeURL}}"><span aria-hidden="true">&times;</span><span class="screen-reader-text">Back to the gallery</span></a>
+		{{with .Thumbnail}}<figure class="lf-stage__figure">{{.}}</figure>{{end}}
+		{{$.PostNav}}
+	</div>
+	<header class="entry-header lf-single__header">
+		<h1 class="entry-title">{{.Title}}</h1>
+		{{template "entry-meta" .}}
+	</header>
+	<div class="entry-content">
+		{{.Content}}
+	</div><!-- .entry-content -->
+	{{if or .Tags .EditLink}}<footer class="entry-footer">
+		{{if .Tags}}<span class="tags-links"><span class="screen-reader-text">Tags: </span>{{range .Tags}}<a href="{{.URL}}" rel="tag">#{{.Name}}</a>{{end}}</span>{{end}}
+		{{with .EditLink}}<span class="edit-link">{{.}}</span>{{end}}
+	</footer>{{end}}
+	{{.Biography}}
+</article><!-- #post-{{.ID}} -->{{end}}
+{{template "comments" .}}
+{{template "footer" .}}

@@ -1,0 +1,9 @@
+{{template "header" .}}
+<header class="vr-wrap page-header">
+	<p class="vr-kicker">The archive</p>
+	<h1 class="page-title">{{.ArchiveTitle}}</h1>
+	{{with .ArchiveDesc}}<div class="archive-description">{{.}}</div>{{end}}
+</header>
+{{if .Posts}}{{template "editorial" .}}
+<div class="vr-wrap">{{.Pagination}}</div>{{else}}<div class="vr-wrap">{{template "content-none" .}}</div>{{end}}
+{{template "footer" .}}

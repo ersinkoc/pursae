@@ -1,0 +1,8 @@
+{{template "header" .}}
+<header class="an-wrap page-header">
+	<p class="an-label">{{if .IsHomeHeader}}Index{{else}}Journal{{end}} / {{printf "%02d" .TotalPosts}}</p>
+	<h1 class="page-title">{{if .IsHomeHeader}}{{.PostsPageTitle}}{{else}}{{.SiteName}}{{end}}</h1>
+</header>
+{{if .Posts}}{{template "work-list" .}}
+<div class="an-wrap">{{.Pagination}}</div>{{else}}<div class="an-wrap">{{template "content-none" .}}</div>{{end}}
+{{template "footer" .}}

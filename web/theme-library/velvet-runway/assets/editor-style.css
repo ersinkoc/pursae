@@ -1,0 +1,13 @@
+/* Velvet Runway: editor content area. */
+@font-face { font-family: "Bodoni Moda"; src: url("fonts/bodoni-moda.woff2") format("woff2"); font-weight: 400 800; font-display: swap; }
+@font-face { font-family: "Bodoni Moda"; src: url("fonts/bodoni-moda-italic.woff2") format("woff2"); font-weight: 400 800; font-style: italic; font-display: swap; }
+@font-face { font-family: "Karla"; src: url("fonts/karla.woff2") format("woff2"); font-weight: 300 700; font-display: swap; }
+body, .editor-styles-wrapper { background: #f6f1ea; color: #1f1a17; font-family: "Karla", Arial, sans-serif; font-size: 17px; line-height: 1.7; }
+.editor-styles-wrapper h1, .editor-styles-wrapper h2, .editor-styles-wrapper h3, .editor-styles-wrapper .editor-post-title__input { font-family: "Bodoni Moda", Didot, Georgia, serif; font-weight: 500; line-height: 1.08; }
+.editor-styles-wrapper .editor-post-title__input, .editor-styles-wrapper h2, .editor-styles-wrapper h3 { font-style: italic; }
+.editor-styles-wrapper a { color: inherit; text-decoration-color: #6b1f2e; }
+.editor-styles-wrapper blockquote { padding-left: 28px; border-left: 1px solid #6b1f2e; font-family: "Bodoni Moda", Georgia, serif; font-size: 1.5rem; font-style: italic; }
+.editor-styles-wrapper .wp-block-pullquote { border-block: 1px solid #1f1a17; text-align: center; }
+.editor-styles-wrapper .wp-block { max-width: 700px; }
+.editor-styles-wrapper .wp-block[data-align="wide"] { max-width: 1100px; }
+.editor-styles-wrapper .wp-block[data-align="full"] { max-width: none; }

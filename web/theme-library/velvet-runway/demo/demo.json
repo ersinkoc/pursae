@@ -1,0 +1,417 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "The Velvet Edit",
+  "blogdescription": "Fashion, craft and slow style",
+  "posts_per_page": 9
+ },
+ "categories": [
+  {
+   "slug": "runway",
+   "name": "Runway",
+   "description": "Notes from the collections."
+  },
+  {
+   "slug": "style",
+   "name": "Style",
+   "description": "How to wear it, and why."
+  },
+  {
+   "slug": "beauty",
+   "name": "Beauty",
+   "description": "Fragrance, skin and rituals."
+  },
+  {
+   "slug": "culture",
+   "name": "Culture",
+   "description": "Makers, ateliers and the people behind the clothes."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "outerwear",
+   "name": "Outerwear"
+  },
+  {
+   "slug": "autumn",
+   "name": "Autumn"
+  },
+  {
+   "slug": "colour",
+   "name": "Colour"
+  },
+  {
+   "slug": "eveningwear",
+   "name": "Eveningwear"
+  },
+  {
+   "slug": "tailoring",
+   "name": "Tailoring"
+  },
+  {
+   "slug": "fragrance",
+   "name": "Fragrance"
+  },
+  {
+   "slug": "makers",
+   "name": "Makers"
+  },
+  {
+   "slug": "jewellery",
+   "name": "Jewellery"
+  },
+  {
+   "slug": "fabric",
+   "name": "Fabric"
+  },
+  {
+   "slug": "summer",
+   "name": "Summer"
+  }
+ ],
+ "media": [
+  {
+   "id": "hero-drape",
+   "file": "demo/images/hero-drape.jpg",
+   "alt": "Deep red silk falling in soft diagonal folds",
+   "caption": ""
+  },
+  {
+   "id": "camel-coat",
+   "file": "demo/images/camel-coat.jpg",
+   "alt": "Illustration of a figure in a long camel coat and a wide-brimmed hat",
+   "caption": "The long camel coat, worn with a brimmed hat"
+  },
+  {
+   "id": "column-dress",
+   "file": "demo/images/column-dress.jpg",
+   "alt": "Illustration of a figure in a long oxblood column dress",
+   "caption": ""
+  },
+  {
+   "id": "evening-noir",
+   "file": "demo/images/evening-noir.jpg",
+   "alt": "Illustration of a figure in black evening tailoring in low light",
+   "caption": ""
+  },
+  {
+   "id": "terracotta-arches",
+   "file": "demo/images/terracotta-arches.jpg",
+   "alt": "Four terracotta arches casting long shadows on a pale floor",
+   "caption": "The atelier courtyard in the afternoon"
+  },
+  {
+   "id": "autumn-palette",
+   "file": "demo/images/autumn-palette.jpg",
+   "alt": "Six fabric swatches from oxblood to espresso",
+   "caption": "This season's palette"
+  },
+  {
+   "id": "gold-rings",
+   "file": "demo/images/gold-rings.jpg",
+   "alt": "Three thin gold rings on dark velvet",
+   "caption": ""
+  },
+  {
+   "id": "perfume-n7",
+   "file": "demo/images/perfume-n7.jpg",
+   "alt": "A blush glass perfume bottle labelled N°7 with a gold neck",
+   "caption": ""
+  },
+  {
+   "id": "runway-lights",
+   "file": "demo/images/runway-lights.jpg",
+   "alt": "An empty runway lined with warm lights in a dark hall",
+   "caption": "Before the show"
+  },
+  {
+   "id": "linen-light",
+   "file": "demo/images/linen-light.jpg",
+   "alt": "Close-up of natural linen texture in warm light",
+   "caption": ""
+  },
+  {
+   "id": "garden-blush",
+   "file": "demo/images/garden-blush.jpg",
+   "alt": "Sage and blush leaves scattered on a cream background",
+   "caption": ""
+  },
+  {
+   "id": "silk-sage",
+   "file": "demo/images/silk-sage.jpg",
+   "alt": "Sage green silk folds in soft light",
+   "caption": ""
+  },
+  {
+   "id": "about-atelier",
+   "file": "demo/images/about-atelier.jpg",
+   "alt": "Dark brown silk folds with taupe highlights",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "about",
+   "title": "About the Magazine",
+   "content": "<!-- wp:paragraph --><p>The Velvet Edit is an independent magazine about fashion, craft and the slower side of style. We publish a few carefully made stories each week, and a printed edition twice a year.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>We write about clothes as objects that are made by people, worn for years and passed on. We do not chase trends, although we notice them, and we never publish paid content dressed up as editorial.</p><!-- /wp:paragraph --><!-- wp:pullquote --><figure class=\"wp-block-pullquote\"><blockquote><p>Buy less, choose well, make it last.</p><cite>Our editorial line, borrowed from a tailor</cite></blockquote></figure><!-- /wp:pullquote --><!-- wp:paragraph --><p>The magazine is funded by its readers and by a small number of advertisers we would happily recommend.</p><!-- /wp:paragraph -->",
+   "featured_media": "about-atelier"
+  },
+  {
+   "slug": "masthead",
+   "title": "Masthead",
+   "content": "<!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Role</th><th>Name</th></tr></thead><tbody><tr><td>Editor</td><td>Celeste Arnaud</td></tr><tr><td>Fashion Director</td><td>Ines Morel</td></tr><tr><td>Features</td><td>Odile Brandt</td></tr><tr><td>Photography</td><td>Saskia Lund</td></tr><tr><td>Art Direction</td><td>Yara Ostrova</td></tr></tbody></table></figure><!-- /wp:table --><!-- wp:paragraph --><p>Contributors change with every issue. If you would like to write for us, send a short pitch to the editors.</p><!-- /wp:paragraph -->",
+   "parent": "about"
+  },
+  {
+   "slug": "advertise",
+   "title": "Advertise",
+   "content": "<!-- wp:paragraph --><p>We work with a small number of brands each season whose products we would recommend anyway. Every partnership is clearly labelled.</p><!-- /wp:paragraph --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Print: two editions a year, 180 pages</li><!-- /wp:list-item --><!-- wp:list-item --><li>Online: one partner per section per month</li><!-- /wp:list-item --><!-- wp:list-item --><li>Newsletter: a single sponsored note per issue</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Request the media kit</a></div><!-- /wp:button --></div><!-- /wp:buttons -->",
+   "featured_media": "hero-drape"
+  },
+  {
+   "slug": "contact",
+   "title": "Contact",
+   "content": "<!-- wp:paragraph --><p>Editorial: <a href=\"mailto:editors@example.com\">editors@example.com</a><br>Partnerships: <a href=\"mailto:partners@example.com\">partners@example.com</a></p><!-- /wp:paragraph --><!-- wp:paragraph --><p>We read every message, and reply to most of them within a week.</p><!-- /wp:paragraph -->",
+   "featured_media": "garden-blush"
+  }
+ ],
+ "posts": [
+  {
+   "slug": "the-return-of-the-camel-coat",
+   "title": "The Return of the Camel Coat",
+   "date": "2026-10-14T08:00:00",
+   "excerpt": "Every few years the most sensible coat in the wardrobe becomes the most desirable one. This is one of those years.",
+   "content": "<!-- wp:paragraph --><p>It arrives every autumn like an old friend: the long camel coat, slightly too large, belted or not, with a collar you can turn up against the wind. This season it is everywhere, and it has never looked less like a uniform.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The new versions are softer and longer, cut to the ankle and worn open over knitwear in the same warm family of colours. The effect is tonal, quiet and very expensive-looking, even when it is not.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">How to wear it now</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Over a fine-gauge knit in cream or chocolate</li><!-- /wp:list-item --><!-- wp:list-item --><li>With wide trousers that break on the shoe</li><!-- /wp:list-item --><!-- wp:list-item --><li>Belted loosely, never tightly</li><!-- /wp:list-item --><!-- wp:list-item --><li>With a hat, if you are brave</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:pullquote --><figure class=\"wp-block-pullquote\"><blockquote><p>A good coat is the only piece of clothing most people see you in for five months of the year.</p></blockquote></figure><!-- /wp:pullquote --><!-- wp:paragraph --><p>Look for a wool and cashmere blend with a little weight to it, and shoulders that sit just past your own. Then wear it for the next ten winters.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "style"
+   ],
+   "tags": [
+    "outerwear",
+    "autumn"
+   ],
+   "featured_media": "camel-coat",
+   "format": "standard",
+   "sticky": true,
+   "comments": [
+    {
+     "author": "Margaux",
+     "email": "margaux@example.com",
+     "content": "Mine is eleven years old and still my favourite thing I own. Long live the camel coat.",
+     "date": "2026-10-14T13:00:00"
+    },
+    {
+     "author": "Theo",
+     "email": "theo@example.com",
+     "content": "Belted loosely, never tightly. Noted.",
+     "date": "2026-10-15T12:00:00"
+    }
+   ]
+  },
+  {
+   "slug": "oxblood-is-the-colour-of-the-season",
+   "title": "Oxblood Is the Colour of the Season",
+   "date": "2026-10-03T09:30:00",
+   "excerpt": "Between burgundy and brown, the shade that turned up on almost every runway this autumn.",
+   "content": "<!-- wp:paragraph --><p>It is not quite red, not quite brown and impossible to photograph accurately. Oxblood has been the quiet star of the autumn collections, appearing in leather, velvet, wool and, memorably, an entire look of patent shoes.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>What makes it work is its seriousness. Unlike bright red, it does not shout; it suggests. Paired with camel, cream or charcoal it looks considered, and worn head to toe it looks like a statement made in a low voice.</p><!-- /wp:paragraph --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:autumn-palette}}\" alt=\"Six fabric swatches from oxblood to espresso\"/><figcaption class=\"wp-element-caption\">The season, in six swatches</figcaption></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Three easy ways in</h3><!-- /wp:heading --><!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>A leather bag or belt</li><!-- /wp:list-item --><!-- wp:list-item --><li>A knit in a slightly lighter rosewood</li><!-- /wp:list-item --><!-- wp:list-item --><li>Lipstick, which is the oldest trick and still the best</li><!-- /wp:list-item --></ol><!-- /wp:list --><!-- wp:paragraph --><p>The colour flatters almost every skin tone, which may explain why designers keep returning to it.</p><!-- /wp:paragraph --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:runway-lights}}\" alt=\"An empty runway lined with warm lights in a dark hall\"/><figcaption class=\"wp-element-caption\">Minutes before the show</figcaption></figure><!-- /wp:image -->",
+   "categories": [
+    "runway"
+   ],
+   "tags": [
+    "colour",
+    "autumn"
+   ],
+   "featured_media": "autumn-palette",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "column-dresses-and-standing-still",
+   "title": "Column Dresses and the Art of Standing Still",
+   "date": "2026-09-22T19:00:00",
+   "excerpt": "The simplest silhouette in fashion asks only one thing of you: good posture.",
+   "content": "<!-- wp:paragraph --><p>A column dress has nowhere to hide. No volume, no ruffles, no clever draping, just a straight line from shoulder to floor. It is the most demanding shape in the wardrobe, and the most rewarding.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>This season's columns came in heavy crepe and matte satin, often with a single detail: a low back, a high neck, or a slit that only shows when you walk.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:column-dress}}\" alt=\"Illustration of a figure in a long oxblood column dress\"/><figcaption class=\"wp-element-caption\">Oxblood crepe</figcaption></figure><!-- /wp:image --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:evening-noir}}\" alt=\"Illustration of a figure in black evening tailoring in low light\"/><figcaption class=\"wp-element-caption\">Black, for after dark</figcaption></figure><!-- /wp:image --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Stand still and let the dress do the talking.</p><!-- /wp:paragraph --><cite>A tailor's advice</cite></blockquote><!-- /wp:quote --><!-- wp:paragraph --><p>Tailoring makes or breaks it. Spend the money on alterations rather than labels, and get the length right to the centimetre.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "runway"
+   ],
+   "tags": [
+    "eveningwear"
+   ],
+   "featured_media": "column-dress",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "after-dark-evening-tailoring",
+   "title": "After Dark: Notes on Evening Tailoring",
+   "date": "2026-09-05T21:15:00",
+   "excerpt": "A dinner suit is no longer a uniform. It is a canvas.",
+   "content": "<!-- wp:paragraph --><p>Evening tailoring has quietly become the most interesting part of the menswear and womenswear collections alike. The black suit is still there, but it is softer, wider and worn with far fewer rules.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Jackets are cut longer and looser; trousers are high-waisted and fluid. Instead of a bow tie, a fine black knit or nothing at all. Instead of patent shoes, velvet slippers or polished boots.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">The pieces worth owning</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>A single-breasted jacket with a peak lapel</li><!-- /wp:list-item --><!-- wp:list-item --><li>Wide trousers in wool or velvet</li><!-- /wp:list-item --><!-- wp:list-item --><li>A silk shirt in ivory or black</li><!-- /wp:list-item --><!-- wp:list-item --><li>One piece of very good jewellery</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph --><p>Above all, fit. Evening light is forgiving, but a badly fitting shoulder is visible across any room.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "style"
+   ],
+   "tags": [
+    "eveningwear",
+    "tailoring"
+   ],
+   "featured_media": "evening-noir",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "a-perfume-made-in-a-garden-shed",
+   "title": "A Perfume Made in a Garden Shed",
+   "date": "2026-08-18T10:40:00",
+   "excerpt": "We visited a perfumer who works with a few hundred bottles, a window onto a rose garden and no marketing department.",
+   "content": "<!-- wp:paragraph --><p>The studio is a converted shed at the end of a long garden. Inside: a wall of small brown bottles, a scale accurate to a hundredth of a gram, and a perfumer who has spent four years on a single scent.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Her seventh formula, simply called N°7, smells of rose petals after rain, a little pepper and something warm underneath that she refuses to name. Only three hundred bottles are made each year.</p><!-- /wp:paragraph --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:perfume-n7}}\" alt=\"A blush glass perfume bottle labelled N°7 with a gold neck\"/><figcaption class=\"wp-element-caption\">N°7, bottled by hand</figcaption></figure><!-- /wp:image --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>A perfume should smell like a memory you did not know you had.</p><!-- /wp:paragraph --><cite>The perfumer</cite></blockquote><!-- /wp:quote --><!-- wp:paragraph --><p>Bottles are sold from the garden gate on the first Saturday of every month, and the queue starts early.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "beauty"
+   ],
+   "tags": [
+    "fragrance",
+    "makers"
+   ],
+   "featured_media": "perfume-n7",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Rosalind",
+     "email": "rosalind@example.com",
+     "content": "I queued at the garden gate last spring. Worth every minute.",
+     "date": "2026-08-20T02:40:00"
+    }
+   ]
+  },
+  {
+   "slug": "gold-worn-quietly",
+   "title": "Gold, Worn Quietly",
+   "date": "2026-07-29T12:00:00",
+   "excerpt": "The new rule for jewellery: thin, warm, and worn every day.",
+   "content": "<!-- wp:paragraph --><p>Statement jewellery had a long and loud decade. What has replaced it is almost the opposite: very thin rings, fine chains and small hoops, worn in layers and never taken off.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The appeal is partly practical, as these pieces survive daily life, and partly emotional. A ring worn every day for ten years becomes part of your hand and part of your story.</p><!-- /wp:paragraph --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:gold-rings}}\" alt=\"Three thin gold rings on dark velvet\"/><figcaption class=\"wp-element-caption\">Three rings, worn together</figcaption></figure><!-- /wp:image --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Choose recycled gold where you can</li><!-- /wp:list-item --><!-- wp:list-item --><li>Mix widths, not colours</li><!-- /wp:list-item --><!-- wp:list-item --><li>Buy one good piece instead of five quick ones</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph --><p>Our favourite makers work in small studios and will resize a ring for free for the rest of its life.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "style"
+   ],
+   "tags": [
+    "jewellery",
+    "makers"
+   ],
+   "featured_media": "gold-rings",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "inside-the-terracotta-atelier",
+   "title": "Inside the Terracotta Atelier",
+   "date": "2026-06-26T15:30:00",
+   "excerpt": "A tailoring workshop behind four arches, where a jacket still takes sixty hours.",
+   "content": "<!-- wp:paragraph --><p>You reach the atelier through a courtyard of terracotta arches, warm even in winter. Inside, eight tailors work at long tables under north-facing windows, cutting cloth by hand from paper patterns.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>A single jacket takes about sixty hours and three fittings. The master cutter has been here for thirty-one years and still checks every collar himself before it leaves the building.</p><!-- /wp:paragraph --><!-- wp:gallery {\"columns\":3,\"linkTo\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-gallery has-nested-images columns-3 is-cropped alignwide\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:terracotta-arches}}\" alt=\"Four terracotta arches casting long shadows on a pale floor\"/><figcaption class=\"wp-element-caption\">The courtyard</figcaption></figure><!-- /wp:image --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:linen-light}}\" alt=\"Close-up of natural linen texture in warm light\"/><figcaption class=\"wp-element-caption\">Linen for summer orders</figcaption></figure><!-- /wp:image --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:silk-sage}}\" alt=\"Sage green silk folds in soft light\"/><figcaption class=\"wp-element-caption\">Silk linings</figcaption></figure><!-- /wp:image --></figure><!-- /wp:gallery --><!-- wp:paragraph --><p>The waiting list is currently eight months. Nobody seems to mind.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "culture"
+   ],
+   "tags": [
+    "makers",
+    "tailoring"
+   ],
+   "featured_media": "terracotta-arches",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "linen-all-year-round",
+   "title": "Linen All Year Round",
+   "date": "2026-05-12T09:10:00",
+   "excerpt": "The case for wearing summer's favourite fabric in every season.",
+   "content": "<!-- wp:paragraph --><p>Linen is usually packed away in September. It should not be. Heavier linens and linen blends work beautifully under coats and over knitwear, and they age better than almost anything else in the wardrobe.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The secret is in the weight. Look for linen above 200 grams per square metre, in deeper colours like tobacco, navy or olive, and let it crease. The creases are the point.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Care, simply</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Wash cool, dry flat, iron only if you must</li><!-- /wp:list-item --><!-- wp:list-item --><li>Store folded, never on thin hangers</li><!-- /wp:list-item --><!-- wp:list-item --><li>Expect it to soften for years</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph --><p>A good linen shirt bought today will be your favourite in five summers' time, and possibly your favourite in five winters' time too.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "style"
+   ],
+   "tags": [
+    "fabric",
+    "summer"
+   ],
+   "featured_media": "linen-light",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  }
+ ],
+ "menus": [
+  {
+   "name": "Sections",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Runway",
+     "category": "runway"
+    },
+    {
+     "title": "Style",
+     "category": "style"
+    },
+    {
+     "title": "Beauty",
+     "category": "beauty"
+    },
+    {
+     "title": "Culture",
+     "category": "culture"
+    },
+    {
+     "title": "About",
+     "page": "about",
+     "children": [
+      {
+       "title": "Masthead",
+       "page": "masthead"
+      },
+      {
+       "title": "Advertise",
+       "page": "advertise"
+      },
+      {
+       "title": "Contact",
+       "page": "contact"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Footer",
+   "location": "footer",
+   "items": [
+    {
+     "title": "Instagram",
+     "url": "https://instagram.com/"
+    },
+    {
+     "title": "Pinterest",
+     "url": "https://pinterest.com/"
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "footer-1": [
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">The magazine</h2><!-- /wp:heading --><!-- wp:paragraph --><p>An independent magazine about fashion, craft and the slower side of style. Printed twice a year.</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Most recent</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":4,\"displayPostDate\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Sections</h2><!-- /wp:heading --><!-- wp:categories {\"showPostCounts\":true} /--></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "accent": "#6b1f2e",
+  "masthead": "grand",
+  "home_layout": "editorial",
+  "drop_cap": true,
+  "issue_label": "Autumn / Winter Edition"
+ }
+}

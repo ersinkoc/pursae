@@ -1,0 +1,11 @@
+/* Studio Fizz: editor content area. */
+@font-face { font-family: "Bricolage Grotesque"; src: url("fonts/bricolage.woff2") format("woff2"); font-weight: 300 800; font-display: swap; }
+@font-face { font-family: "DM Sans"; src: url("fonts/dm-sans.woff2") format("woff2"); font-weight: 400 700; font-display: swap; }
+body, .editor-styles-wrapper { background: #fff6e9; color: #1b1035; font-family: "DM Sans", system-ui, sans-serif; font-size: 18px; line-height: 1.6; }
+.editor-styles-wrapper h1, .editor-styles-wrapper h2, .editor-styles-wrapper h3, .editor-styles-wrapper .editor-post-title__input { font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; letter-spacing: -0.02em; line-height: 1.05; }
+.editor-styles-wrapper a { color: #1b1035; text-decoration-color: #ff4fa3; text-decoration-thickness: 3px; }
+.editor-styles-wrapper blockquote { padding: 28px 32px; background: #fff; border: 3px solid #1b1035; border-radius: 28px; box-shadow: 7px 7px 0 #1b1035; font-family: "Bricolage Grotesque", sans-serif; font-size: 1.5rem; font-weight: 600; }
+.editor-styles-wrapper .wp-block-button__link { border: 3px solid #1b1035; border-radius: 999px; background: #ff4fa3; color: #1b1035; font-weight: 700; }
+.editor-styles-wrapper .wp-block { max-width: 760px; }
+.editor-styles-wrapper .wp-block[data-align="wide"] { max-width: 1240px; }
+.editor-styles-wrapper .wp-block[data-align="full"] { max-width: none; }

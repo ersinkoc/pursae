@@ -1,0 +1,404 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Neon Harbour",
+  "blogdescription": "Synth-rock from the north coast",
+  "posts_per_page": 9
+ },
+ "categories": [
+  {
+   "slug": "news",
+   "name": "News",
+   "description": "Releases, videos and announcements."
+  },
+  {
+   "slug": "tour",
+   "name": "Tour",
+   "description": "Life on the road."
+  },
+  {
+   "slug": "studio",
+   "name": "Studio",
+   "description": "How the records are made."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "midnight-signal",
+   "name": "Midnight Signal"
+  },
+  {
+   "slug": "release",
+   "name": "Release"
+  },
+  {
+   "slug": "tour-diary",
+   "name": "Tour diary"
+  },
+  {
+   "slug": "gear",
+   "name": "Gear"
+  },
+  {
+   "slug": "live",
+   "name": "Live"
+  },
+  {
+   "slug": "vinyl",
+   "name": "Vinyl"
+  },
+  {
+   "slug": "video",
+   "name": "Video"
+  }
+ ],
+ "media": [
+  {
+   "id": "hero-stage",
+   "file": "demo/images/hero-stage.jpg",
+   "alt": "A singer silhouetted on stage under pink, cyan and green light beams",
+   "caption": ""
+  },
+  {
+   "id": "cover-midnight-signal",
+   "file": "demo/images/cover-midnight-signal.jpg",
+   "alt": "Album cover for Midnight Signal with neon concentric rings",
+   "caption": "Midnight Signal (LP, 2026)"
+  },
+  {
+   "id": "cover-glass-hours",
+   "file": "demo/images/cover-glass-hours.jpg",
+   "alt": "Album cover for Glass Hours with cyan and violet glass shards",
+   "caption": "Glass Hours (LP, 2024)"
+  },
+  {
+   "id": "cover-low-tide",
+   "file": "demo/images/cover-low-tide.jpg",
+   "alt": "EP cover for Low Tide with neon wave lines",
+   "caption": "Low Tide (EP, 2025)"
+  },
+  {
+   "id": "b-sides-vinyl",
+   "file": "demo/images/b-sides-vinyl.jpg",
+   "alt": "A violet record sleeve marked B-Sides beside a black vinyl record",
+   "caption": ""
+  },
+  {
+   "id": "waveform",
+   "file": "demo/images/waveform.jpg",
+   "alt": "A glowing audio waveform fading from cyan to pink",
+   "caption": ""
+  },
+  {
+   "id": "neon-grid",
+   "file": "demo/images/neon-grid.jpg",
+   "alt": "A pink striped sun over a glowing green grid horizon",
+   "caption": "Still from the video"
+  },
+  {
+   "id": "tour-van",
+   "file": "demo/images/tour-van.jpg",
+   "alt": "A van on an empty road at night under the stars",
+   "caption": ""
+  },
+  {
+   "id": "festival-field",
+   "file": "demo/images/festival-field.jpg",
+   "alt": "A festival crowd with raised arms under white searchlights at sunset",
+   "caption": ""
+  },
+  {
+   "id": "studio-console",
+   "file": "demo/images/studio-console.jpg",
+   "alt": "A mixing console with faders and glowing level meters",
+   "caption": ""
+  },
+  {
+   "id": "mic-spotlight",
+   "file": "demo/images/mic-spotlight.jpg",
+   "alt": "A vintage microphone alone in a spotlight",
+   "caption": ""
+  },
+  {
+   "id": "band-silhouette",
+   "file": "demo/images/band-silhouette.jpg",
+   "alt": "Four band members in silhouette against a magenta glow",
+   "caption": ""
+  },
+  {
+   "id": "crowd-lights",
+   "file": "demo/images/crowd-lights.jpg",
+   "alt": "A crowd facing a stage lit with coloured beams",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Home",
+   "content": "<!-- wp:group {\"className\":\"ec-section\"} --><div class=\"wp-block-group ec-section\"><!-- wp:paragraph {\"className\":\"ec-kicker\"} --><p class=\"ec-kicker\">On the road</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Tour dates</h2><!-- /wp:heading --><!-- wp:group {\"className\":\"ec-tour\"} --><div class=\"wp-block-group ec-tour\"><!-- wp:group {\"className\":\"ec-show\"} --><div class=\"wp-block-group ec-show\"><!-- wp:paragraph {\"className\":\"ec-show__date\"} --><p class=\"ec-show__date\">Nov 14</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"ec-show__city\"} --><p class=\"ec-show__city\">Hamburg</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"ec-show__venue\"} --><p class=\"ec-show__venue\">Uebel Hall</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:tour}}\">Tickets</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --><!-- wp:group {\"className\":\"ec-show is-sold-out\"} --><div class=\"wp-block-group ec-show is-sold-out\"><!-- wp:paragraph {\"className\":\"ec-show__date\"} --><p class=\"ec-show__date\">Nov 16</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"ec-show__city\"} --><p class=\"ec-show__city\">Copenhagen</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"ec-show__venue\"} --><p class=\"ec-show__venue\">Vega Small Room</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:tour}}\">Sold out</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --><!-- wp:group {\"className\":\"ec-show\"} --><div class=\"wp-block-group ec-show\"><!-- wp:paragraph {\"className\":\"ec-show__date\"} --><p class=\"ec-show__date\">Nov 19</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"ec-show__city\"} --><p class=\"ec-show__city\">Amsterdam</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"ec-show__venue\"} --><p class=\"ec-show__venue\">The Paradiso Annex</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:tour}}\">Tickets</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --><!-- wp:group {\"className\":\"ec-show\"} --><div class=\"wp-block-group ec-show\"><!-- wp:paragraph {\"className\":\"ec-show__date\"} --><p class=\"ec-show__date\">Nov 22</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"ec-show__city\"} --><p class=\"ec-show__city\">Brussels</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"ec-show__venue\"} --><p class=\"ec-show__venue\">Ancienne Belgique Club</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:tour}}\">Tickets</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --><!-- wp:group {\"className\":\"ec-show\"} --><div class=\"wp-block-group ec-show\"><!-- wp:paragraph {\"className\":\"ec-show__date\"} --><p class=\"ec-show__date\">Nov 27</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"ec-show__city\"} --><p class=\"ec-show__city\">London</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"ec-show__venue\"} --><p class=\"ec-show__venue\">Electric Ballroom</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:tour}}\">Tickets</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --><!-- wp:group {\"className\":\"ec-show\"} --><div class=\"wp-block-group ec-show\"><!-- wp:paragraph {\"className\":\"ec-show__date\"} --><p class=\"ec-show__date\">Dec 03</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"ec-show__city\"} --><p class=\"ec-show__city\">Manchester</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"ec-show__venue\"} --><p class=\"ec-show__venue\">Albert Works</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:tour}}\">Tickets</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --></div><!-- /wp:group --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:tour}}\">All dates</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --><!-- wp:group {\"className\":\"ec-section ec-releases\"} --><div class=\"wp-block-group ec-section ec-releases\"><!-- wp:paragraph {\"className\":\"ec-kicker\"} --><p class=\"ec-kicker\">Discography</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Releases</h2><!-- /wp:heading --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:cover-midnight-signal}}\" alt=\"Album cover for Midnight Signal with neon concentric rings\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Midnight Signal</h3><!-- /wp:heading --><!-- wp:paragraph --><p>LP &middot; 2026 &middot; 11 tracks</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{post:midnight-signal-is-out-now}}\">Listen</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:cover-low-tide}}\" alt=\"EP cover for Low Tide with neon wave lines\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Low Tide</h3><!-- /wp:heading --><!-- wp:paragraph --><p>EP &middot; 2025 &middot; 4 tracks</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:cover-glass-hours}}\" alt=\"Album cover for Glass Hours with cyan and violet glass shards\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Glass Hours</h3><!-- /wp:heading --><!-- wp:paragraph --><p>LP &middot; 2024 &middot; 10 tracks</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group --><!-- wp:group {\"className\":\"ec-section\"} --><div class=\"wp-block-group ec-section\"><!-- wp:paragraph {\"className\":\"ec-kicker\"} --><p class=\"ec-kicker\">Latest</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">News</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":3,\"displayPostDate\":true,\"displayPostContent\":true,\"excerptLength\":20,\"className\":\"ec-latest\"} /--></div><!-- /wp:group --><!-- wp:group {\"className\":\"ec-section ec-gallery\"} --><div class=\"wp-block-group ec-section ec-gallery\"><!-- wp:paragraph {\"className\":\"ec-kicker\"} --><p class=\"ec-kicker\">Photos</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Gallery</h2><!-- /wp:heading --><!-- wp:gallery {\"columns\":3,\"linkTo\":\"none\"} --><figure class=\"wp-block-gallery has-nested-images columns-3 is-cropped\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:crowd-lights}}\" alt=\"A crowd facing a stage lit with coloured beams\"/></figure><!-- /wp:image --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:mic-spotlight}}\" alt=\"A vintage microphone alone in a spotlight\"/></figure><!-- /wp:image --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:festival-field}}\" alt=\"A festival crowd with raised arms under white searchlights at sunset\"/></figure><!-- /wp:image --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:band-silhouette}}\" alt=\"Four band members in silhouette against a magenta glow\"/></figure><!-- /wp:image --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:studio-console}}\" alt=\"A mixing console with faders and glowing level meters\"/></figure><!-- /wp:image --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:tour-van}}\" alt=\"A van on an empty road at night under the stars\"/></figure><!-- /wp:image --></figure><!-- /wp:gallery --></div><!-- /wp:group --><!-- wp:group {\"align\":\"full\",\"className\":\"ec-signup\"} --><div class=\"wp-block-group alignfull ec-signup\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Join the night shift</h2><!-- /wp:heading --><!-- wp:paragraph --><p>One email before every tour and release. Early tickets, studio notes and nothing else.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Sign up</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "featured_media": "hero-stage",
+   "front_page": true
+  },
+  {
+   "slug": "news",
+   "title": "News",
+   "content": "",
+   "posts_page": true
+  },
+  {
+   "slug": "tour",
+   "title": "Tour",
+   "content": "<!-- wp:paragraph --><p>The Midnight Signal tour, autumn and winter. Doors open at 19:30 unless the venue says otherwise; every show is all ages.</p><!-- /wp:paragraph --><!-- wp:group {\"className\":\"ec-tour\"} --><div class=\"wp-block-group ec-tour\"><!-- wp:group {\"className\":\"ec-show\"} --><div class=\"wp-block-group ec-show\"><!-- wp:paragraph {\"className\":\"ec-show__date\"} --><p class=\"ec-show__date\">Nov 14</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"ec-show__city\"} --><p class=\"ec-show__city\">Hamburg</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"ec-show__venue\"} --><p class=\"ec-show__venue\">Uebel Hall</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:tour}}\">Tickets</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --><!-- wp:group {\"className\":\"ec-show is-sold-out\"} --><div class=\"wp-block-group ec-show is-sold-out\"><!-- wp:paragraph {\"className\":\"ec-show__date\"} --><p class=\"ec-show__date\">Nov 16</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"ec-show__city\"} --><p class=\"ec-show__city\">Copenhagen</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"ec-show__venue\"} --><p class=\"ec-show__venue\">Vega Small Room</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:tour}}\">Sold out</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --><!-- wp:group {\"className\":\"ec-show\"} --><div class=\"wp-block-group ec-show\"><!-- wp:paragraph {\"className\":\"ec-show__date\"} --><p class=\"ec-show__date\">Nov 19</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"ec-show__city\"} --><p class=\"ec-show__city\">Amsterdam</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"ec-show__venue\"} --><p class=\"ec-show__venue\">The Paradiso Annex</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:tour}}\">Tickets</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --><!-- wp:group {\"className\":\"ec-show\"} --><div class=\"wp-block-group ec-show\"><!-- wp:paragraph {\"className\":\"ec-show__date\"} --><p class=\"ec-show__date\">Nov 22</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"ec-show__city\"} --><p class=\"ec-show__city\">Brussels</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"ec-show__venue\"} --><p class=\"ec-show__venue\">Ancienne Belgique Club</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:tour}}\">Tickets</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --><!-- wp:group {\"className\":\"ec-show\"} --><div class=\"wp-block-group ec-show\"><!-- wp:paragraph {\"className\":\"ec-show__date\"} --><p class=\"ec-show__date\">Nov 27</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"ec-show__city\"} --><p class=\"ec-show__city\">London</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"ec-show__venue\"} --><p class=\"ec-show__venue\">Electric Ballroom</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:tour}}\">Tickets</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --><!-- wp:group {\"className\":\"ec-show\"} --><div class=\"wp-block-group ec-show\"><!-- wp:paragraph {\"className\":\"ec-show__date\"} --><p class=\"ec-show__date\">Dec 03</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"ec-show__city\"} --><p class=\"ec-show__city\">Manchester</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"ec-show__venue\"} --><p class=\"ec-show__venue\">Albert Works</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:tour}}\">Tickets</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --><!-- wp:group {\"className\":\"ec-show\"} --><div class=\"wp-block-group ec-show\"><!-- wp:paragraph {\"className\":\"ec-show__date\"} --><p class=\"ec-show__date\">Dec 06</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"ec-show__city\"} --><p class=\"ec-show__city\">Glasgow</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"ec-show__venue\"} --><p class=\"ec-show__venue\">The Old Fruitmarket</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:tour}}\">Tickets</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --><!-- wp:group {\"className\":\"ec-show\"} --><div class=\"wp-block-group ec-show\"><!-- wp:paragraph {\"className\":\"ec-show__date\"} --><p class=\"ec-show__date\">Dec 09</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"ec-show__city\"} --><p class=\"ec-show__city\">Dublin</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"ec-show__venue\"} --><p class=\"ec-show__venue\">Button Factory</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:tour}}\">Tickets</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --><!-- wp:group {\"className\":\"ec-show is-sold-out\"} --><div class=\"wp-block-group ec-show is-sold-out\"><!-- wp:paragraph {\"className\":\"ec-show__date\"} --><p class=\"ec-show__date\">Dec 12</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"ec-show__city\"} --><p class=\"ec-show__city\">Oslo</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"ec-show__venue\"} --><p class=\"ec-show__venue\">Blå</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:tour}}\">Sold out</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --></div><!-- /wp:group --><!-- wp:paragraph --><p>Tickets are sold through the venues. If a show is sold out, check back on the day: we always ask for a few returns to be released at the door.</p><!-- /wp:paragraph -->",
+   "featured_media": "crowd-lights"
+  },
+  {
+   "slug": "music",
+   "title": "Music",
+   "content": "<!-- wp:paragraph --><p>Two albums, one EP and a box of B-sides. Everything is on the usual streaming services, and the records are available on vinyl at shows.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:cover-midnight-signal}}\" alt=\"Album cover for Midnight Signal with neon concentric rings\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Midnight Signal</h3><!-- /wp:heading --><!-- wp:paragraph --><p>LP &middot; 2026 &middot; 11 tracks</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{post:midnight-signal-is-out-now}}\">Listen</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:cover-low-tide}}\" alt=\"EP cover for Low Tide with neon wave lines\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Low Tide</h3><!-- /wp:heading --><!-- wp:paragraph --><p>EP &middot; 2025 &middot; 4 tracks</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:cover-glass-hours}}\" alt=\"Album cover for Glass Hours with cyan and violet glass shards\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Glass Hours</h3><!-- /wp:heading --><!-- wp:paragraph --><p>LP &middot; 2024 &middot; 10 tracks</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Release</th><th>Year</th><th>Format</th></tr></thead><tbody><tr><td>Midnight Signal</td><td>2026</td><td>LP, digital</td></tr><tr><td>Low Tide</td><td>2025</td><td>EP, digital</td></tr><tr><td>Glass Hours</td><td>2024</td><td>LP, digital</td></tr></tbody></table></figure><!-- /wp:table -->",
+   "featured_media": "waveform"
+  },
+  {
+   "slug": "about",
+   "title": "The Band",
+   "content": "<!-- wp:paragraph --><p>Neon Harbour are four friends from a small port town on the north coast, making loud synth-rock about long nights and short summers. We met in a school orchestra, which none of us admits to in interviews.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Since 2019 we have released two albums and an EP, played around three hundred shows and worn out one van's worth of tyres.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Ada</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Vocals, synths</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Mikko</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Guitar, more synths</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">June</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Bass, backing vocals</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Rafe</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Drums, drum machines</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Loud, bright and oddly tender.</p><!-- /wp:paragraph --><cite>A review of Glass Hours</cite></blockquote><!-- /wp:quote -->",
+   "featured_media": "band-silhouette"
+  },
+  {
+   "slug": "gallery",
+   "title": "Gallery",
+   "content": "<!-- wp:paragraph --><p>Photos from the road, the studio and the occasional muddy field.</p><!-- /wp:paragraph --><!-- wp:gallery {\"columns\":3,\"linkTo\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-gallery has-nested-images columns-3 is-cropped alignwide\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:hero-stage}}\" alt=\"A singer silhouetted on stage under pink, cyan and green light beams\"/></figure><!-- /wp:image --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:crowd-lights}}\" alt=\"A crowd facing a stage lit with coloured beams\"/></figure><!-- /wp:image --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:festival-field}}\" alt=\"A festival crowd with raised arms under white searchlights at sunset\"/></figure><!-- /wp:image --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:tour-van}}\" alt=\"A van on an empty road at night under the stars\"/></figure><!-- /wp:image --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:studio-console}}\" alt=\"A mixing console with faders and glowing level meters\"/></figure><!-- /wp:image --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:mic-spotlight}}\" alt=\"A vintage microphone alone in a spotlight\"/></figure><!-- /wp:image --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:neon-grid}}\" alt=\"A pink striped sun over a glowing green grid horizon\"/></figure><!-- /wp:image --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:band-silhouette}}\" alt=\"Four band members in silhouette against a magenta glow\"/></figure><!-- /wp:image --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:b-sides-vinyl}}\" alt=\"A violet record sleeve marked B-Sides beside a black vinyl record\"/></figure><!-- /wp:image --></figure><!-- /wp:gallery -->",
+   "parent": "about"
+  },
+  {
+   "slug": "contact",
+   "title": "Contact",
+   "content": "<!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Booking</h3><!-- /wp:heading --><!-- wp:paragraph --><p><a href=\"mailto:booking@example.com\">booking@example.com</a></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Press</h3><!-- /wp:heading --><!-- wp:paragraph --><p><a href=\"mailto:press@example.com\">press@example.com</a></p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Newsletter</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Write to us with the word &ldquo;signal&rdquo; and we will add you to the list.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:paragraph --><p>We read everything, including the long letters about synth settings.</p><!-- /wp:paragraph -->"
+  }
+ ],
+ "posts": [
+  {
+   "slug": "midnight-signal-is-out-now",
+   "title": "Midnight Signal Is Out Now",
+   "date": "2026-10-17T00:01:00",
+   "excerpt": "Our second album is here: eleven songs written on night buses, recorded in a basement and mixed far too loud.",
+   "content": "<!-- wp:paragraph --><p>It is finally out. Midnight Signal is eleven songs about staying up too late, missing the last train and finding the people who are also still awake. We wrote most of it over two winters and recorded it in a basement studio with no windows, which explains a lot.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Thank you to everyone who came to the listening nights, sent us voice notes of you singing the choruses back, and waited patiently while we changed the running order nine times.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">The tracklist</h2><!-- /wp:heading --><!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Night Bus</li><!-- /wp:list-item --><!-- wp:list-item --><li>Midnight Signal</li><!-- /wp:list-item --><!-- wp:list-item --><li>Static Hearts</li><!-- /wp:list-item --><!-- wp:list-item --><li>Glasshouse</li><!-- /wp:list-item --><!-- wp:list-item --><li>Low Tide (Reprise)</li><!-- /wp:list-item --><!-- wp:list-item --><li>Afterglow</li><!-- /wp:list-item --><!-- wp:list-item --><li>Northern Line</li><!-- /wp:list-item --><!-- wp:list-item --><li>Copper Wire</li><!-- /wp:list-item --><!-- wp:list-item --><li>Slow Strobe</li><!-- /wp:list-item --><!-- wp:list-item --><li>Echoes in the Yard</li><!-- /wp:list-item --><!-- wp:list-item --><li>Last Call</li><!-- /wp:list-item --></ol><!-- /wp:list --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:cover-midnight-signal}}\" alt=\"Album cover for Midnight Signal with neon concentric rings\"/><figcaption class=\"wp-element-caption\">Midnight Signal, cover art</figcaption></figure><!-- /wp:image --><!-- wp:paragraph --><p>The album is on all the usual streaming services, and the vinyl (neon green, of course) ships from next week. See you on tour.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "news"
+   ],
+   "tags": [
+    "midnight-signal",
+    "release"
+   ],
+   "featured_media": "cover-midnight-signal",
+   "format": "standard",
+   "sticky": true,
+   "comments": [
+    {
+     "author": "Kit",
+     "email": "kit@example.com",
+     "content": "Static Hearts has been on repeat since midnight. Already bought the green vinyl.",
+     "date": "2026-10-17T03:01:00"
+    },
+    {
+     "author": "Neon Harbour",
+     "email": "band@example.com",
+     "content": "Thank you Kit! See you in Hamburg?",
+     "date": "2026-10-17T10:01:00"
+    },
+    {
+     "author": "Lou",
+     "email": "lou@example.com",
+     "content": "Northern Line made me miss my stop. Twice.",
+     "date": "2026-10-18T06:01:00"
+    }
+   ]
+  },
+  {
+   "slug": "autumn-tour-twelve-cities",
+   "title": "Autumn Tour: Twelve Cities, One Van",
+   "date": "2026-09-29T12:00:00",
+   "excerpt": "The full route, what we are bringing, and why the van has a name.",
+   "content": "<!-- wp:paragraph --><p>We are taking Midnight Signal on the road this autumn: twelve cities in five weeks, in the same van that took us around the clubs three years ago. She is called Marlene, she has a cassette player, and she has never let us down.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The new show has a lighting rig we built ourselves, a longer set and, for the first time, a few songs from the first record played the way we always wanted to play them.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Good to know</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Doors open at 19:30, support at 20:15, we play at 21:15.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Every show is all ages unless the venue says otherwise.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Merch takes cards; we bring our own small stock of vinyl.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>The van smells of coffee, cables and optimism.</p><!-- /wp:paragraph --><cite>Tour diary, day one</cite></blockquote><!-- /wp:quote --><!-- wp:paragraph --><p>Tickets are on the tour page. A few dates are close to selling out, so do not wait too long.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "tour"
+   ],
+   "tags": [
+    "tour-diary"
+   ],
+   "featured_media": "tour-van",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Pia",
+     "email": "pia@example.com",
+     "content": "Long live Marlene the van.",
+     "date": "2026-09-30T03:00:00"
+    }
+   ]
+  },
+  {
+   "slug": "inside-the-studio-midnight-signal",
+   "title": "Inside the Studio: Building Midnight Signal",
+   "date": "2026-08-14T18:30:00",
+   "excerpt": "Two old synthesizers, one borrowed drum kit and a mixing desk with a mind of its own.",
+   "content": "<!-- wp:paragraph --><p>People keep asking how we got the sound of this record, so here is the honest answer: mostly by accident, and partly by refusing to throw anything away.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The core of the album is two old analogue synthesizers we have owned since we were teenagers. One of them only stays in tune when it is cold, which is why so many songs were recorded in winter with the heating off.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:studio-console}}\" alt=\"A mixing console with faders and glowing level meters\"/><figcaption class=\"wp-element-caption\">The desk</figcaption></figure><!-- /wp:image --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:mic-spotlight}}\" alt=\"A vintage microphone alone in a spotlight\"/><figcaption class=\"wp-element-caption\">One mic for every vocal</figcaption></figure><!-- /wp:image --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">What we learned</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Record the rehearsal. The rehearsal is usually better.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Two good microphones beat ten average ones.</li><!-- /wp:list-item --><!-- wp:list-item --><li>If a song needs a fourth chorus, it needs a better second verse.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph --><p>We mixed the record ourselves over six long weeks. The meters spent a lot of time in the red, and we would not change a thing.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "studio"
+   ],
+   "tags": [
+    "midnight-signal",
+    "gear"
+   ],
+   "featured_media": "studio-console",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "festival-season-recap",
+   "title": "Festival Season, in Twelve Pictures",
+   "date": "2026-07-30T10:15:00",
+   "excerpt": "Seven festivals, three countries, one very muddy Sunday.",
+   "content": "<!-- wp:paragraph --><p>What a summer. We played seven festivals, from a tiny tent in a forest to the second stage of a field big enough to have its own weather system. Thank you to everyone who stood in the rain to watch us.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The highlight was the Sunday evening slot at the coastal festival, when the sun came out exactly as we started Afterglow. You cannot plan that. We tried.</p><!-- /wp:paragraph --><!-- wp:gallery {\"columns\":3,\"linkTo\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-gallery has-nested-images columns-3 is-cropped alignwide\"><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:festival-field}}\" alt=\"A festival crowd with raised arms under white searchlights at sunset\"/></figure><!-- /wp:image --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:crowd-lights}}\" alt=\"A crowd facing a stage lit with coloured beams\"/></figure><!-- /wp:image --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:band-silhouette}}\" alt=\"Four band members in silhouette against a magenta glow\"/></figure><!-- /wp:image --></figure><!-- /wp:gallery --><!-- wp:paragraph --><p>Next year we would like to play somewhere with less mud. We say that every year.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "tour"
+   ],
+   "tags": [
+    "tour-diary",
+    "live"
+   ],
+   "featured_media": "festival-field",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "b-sides-on-vinyl",
+   "title": "The B-Sides Are Coming to Vinyl",
+   "date": "2026-06-18T15:00:00",
+   "excerpt": "Eight songs that never fit anywhere, pressed on violet vinyl in an edition of five hundred.",
+   "content": "<!-- wp:paragraph --><p>Every band has a folder of songs that did not fit. Ours finally gets a home: eight B-sides and demos from the last five years, collected on a single record.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Some of them are rough, one of them was recorded on a phone in a hotel corridor, and two of them are among our favourite things we have ever made.</p><!-- /wp:paragraph --><!-- wp:image {\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:b-sides-vinyl}}\" alt=\"A violet record sleeve marked B-Sides beside a black vinyl record\"/><figcaption class=\"wp-element-caption\">Five hundred copies, violet vinyl</figcaption></figure><!-- /wp:image --><!-- wp:paragraph --><p>Pre-orders open on the first of next month, and every copy comes with a hand-numbered insert.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "news"
+   ],
+   "tags": [
+    "release",
+    "vinyl"
+   ],
+   "featured_media": "b-sides-vinyl",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "new-video-filmed-in-one-take",
+   "title": "A New Video, Filmed in One Take",
+   "date": "2026-05-22T19:45:00",
+   "excerpt": "Three minutes and forty seconds, one camera, no cuts and a lot of rehearsal.",
+   "content": "<!-- wp:paragraph --><p>The video for Static Hearts was filmed in a single continuous shot, in an empty car park, at four in the morning. It took eleven attempts. The seventh was nearly perfect until a fox walked through.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Our friend who directed it built the neon grid on the ground from LED strips and tape. We danced, badly but bravely, and the camera never stopped moving.</p><!-- /wp:paragraph --><!-- wp:pullquote --><figure class=\"wp-block-pullquote\"><blockquote><p>We did eleven takes. The fox was in the best one, so we kept it.</p></blockquote></figure><!-- /wp:pullquote --><!-- wp:paragraph --><p>Watch it loud, and look out for the fox at 2:41.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "news"
+   ],
+   "tags": [
+    "video",
+    "midnight-signal"
+   ],
+   "featured_media": "neon-grid",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "how-we-mix-the-live-show",
+   "title": "How We Mix the Live Show",
+   "date": "2026-04-09T11:30:00",
+   "excerpt": "Our front-of-house engineer explains why the show sounds bigger than four people should.",
+   "content": "<!-- wp:paragraph --><p>We asked our sound engineer to explain the live mix. Her first answer was that she turns the bass up until the venue manager comes over. Her second answer was more useful.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Every show starts from the same saved desk file, adjusted for the room during soundcheck. The synths go through their own small sub-mix so they can be pushed together without drowning the vocals.</p><!-- /wp:paragraph --><!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Vocals first: if the words are lost, nothing else matters.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Leave space between the kick drum and the bass synth.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Use the room: small clubs need less, not more.</li><!-- /wp:list-item --></ol><!-- /wp:list --><!-- wp:paragraph --><p>And yes, earplugs. Please wear earplugs. We want to see you at the next tour too.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "studio"
+   ],
+   "tags": [
+    "gear",
+    "live"
+   ],
+   "featured_media": "waveform",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Tour",
+     "page": "tour"
+    },
+    {
+     "title": "Music",
+     "page": "music"
+    },
+    {
+     "title": "News",
+     "page": "news"
+    },
+    {
+     "title": "Band",
+     "page": "about",
+     "children": [
+      {
+       "title": "Gallery",
+       "page": "gallery"
+      },
+      {
+       "title": "Studio diary",
+       "category": "studio"
+      }
+     ]
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    }
+   ]
+  },
+  {
+   "name": "Social",
+   "location": "social",
+   "items": [
+    {
+     "title": "Bandcamp",
+     "url": "https://bandcamp.com/"
+    },
+    {
+     "title": "Instagram",
+     "url": "https://instagram.com/"
+    },
+    {
+     "title": "YouTube",
+     "url": "https://youtube.com/"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "footer-1": [
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Neon Harbour</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Synth-rock from the north coast. Booking and press: see the contact page.</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Latest news</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":4,\"displayPostDate\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading {\"className\":\"widget-title\"} --><h2 class=\"wp-block-heading widget-title\">Search</h2><!-- /wp:heading --><!-- wp:search {\"label\":\"Search\",\"placeholder\":\"Shows, songs, news…\",\"buttonText\":\"Search\"} /--></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "accent": "#c6ff00",
+  "secondary": "#ff2e88",
+  "glow": true,
+  "grain": true,
+  "hero_subheading": "New album Midnight Signal out now",
+  "cta_label": "Tickets",
+  "cta_url": "/tour/"
+ }
+}

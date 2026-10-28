@@ -1,0 +1,13 @@
+{{template "header" .}}
+{{with .Post}}{{$hero := theme_mod $ "hero_image"}}{{if not $hero}}{{$hero = .ThumbnailURL}}{{end}}<article id="post-{{.ID}}" class="{{.Class}} an-front">
+	<section class="an-wrap an-hero" aria-label="Introduction">
+		<p class="an-label an-hero__label">{{$.SiteName}} &mdash; {{with $.Description}}{{.}}{{end}}</p>
+		<h1 class="an-hero__title">{{with theme_mod $ "hero_heading"}}{{.}}{{else}}{{.Title}}{{end}}</h1>
+		{{if $hero}}<figure class="an-hero__media"><img src="{{$hero}}" alt="" /></figure>{{end}}
+	</section>
+	<div class="an-wrap entry-content an-front__content">
+		{{.Content}}
+	</div>
+	{{with .EditLink}}<footer class="an-wrap entry-footer"><span class="edit-link">{{.}}</span></footer>{{end}}
+</article>{{end}}
+{{template "footer" .}}

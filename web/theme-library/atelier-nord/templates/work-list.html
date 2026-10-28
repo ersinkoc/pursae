@@ -1,0 +1,13 @@
+<div class="an-wrap an-work" role="list">
+	{{range $i, $p := .Posts}}<article id="post-{{$p.ID}}" class="{{$p.Class}} an-item" role="listitem">
+		<a class="an-item__link" href="{{$p.Permalink}}" rel="bookmark">
+			<span class="an-item__num">{{printf "%02d" (add $i 1)}}</span>
+			<span class="an-item__title">{{$p.Title}}</span>
+			<span class="an-item__cat">{{with $p.Categories}}{{(index . 0).Name}}{{else}}Note{{end}}</span>
+			<span class="an-item__year"><time datetime="{{$p.DateISO}}">{{date $p.Date "Y"}}</time></span>
+			{{with $p.Thumbnail}}<span class="an-item__media">{{.}}</span>{{end}}
+		</a>
+		{{if $p.ShowExcerpt}}<div class="an-item__excerpt">{{$p.Excerpt}}</div>{{end}}
+	</article>
+	{{end}}
+</div>

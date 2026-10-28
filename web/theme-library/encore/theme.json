@@ -1,0 +1,86 @@
+{
+  "slug": "encore",
+  "name": "Encore",
+  "version": "1.0.0",
+  "description": "A loud, dark theme for bands and musicians. A full-screen hero with a ticker, tour dates and releases designed as page content, news cards with big date stamps and a gallery, all in condensed display type with a neon accent. Glow, grain, colours and the ticket button are set in the Customizer.",
+  "author": "WordPress Go",
+  "author_url": "https://github.com/boracomet/wordpress-go",
+  "theme_url": "https://github.com/boracomet/wordpress-go/tree/main/web/theme-library/encore",
+  "tags": ["Music", "Entertainment", "Dark", "Grid Layout", "Custom Colors", "Custom Logo", "Custom Menu", "Editor Style", "Featured Images", "Footer Widgets", "Threaded Comments", "Wide Blocks"],
+  "requires_core": "0.1.0",
+  "screenshot": "assets/screenshot.png",
+  "category": "music",
+  "style": "Dark stage with neon accent",
+  "demo": "demo/demo.json",
+
+  "widget_areas": [
+    {"id": "footer-1", "name": "Footer", "description": "Widgets above the footer bar."}
+  ],
+  "menu_locations": [
+    {"id": "primary", "name": "Primary Menu"},
+    {"id": "social", "name": "Social Links"}
+  ],
+
+  "styles": [
+    {"handle": "encore-style", "src": "assets/style.css", "deps": ["wp-block-library"], "media": "all"}
+  ],
+  "scripts": [
+    {"handle": "encore-navigation", "src": "assets/js/navigation.js", "deps": [], "in_footer": true}
+  ],
+  "editor_styles": ["assets/editor-style.css"],
+  "preload_fonts": ["assets/fonts/anton.woff2"],
+
+  "palette": [
+    {"name": "Neon", "slug": "neon", "color": "#c6ff00"},
+    {"name": "Magenta", "slug": "magenta", "color": "#ff2e88"},
+    {"name": "Cyan", "slug": "cyan", "color": "#00e5ff"},
+    {"name": "Stage", "slug": "stage", "color": "#0a0a0f"},
+    {"name": "Smoke", "slug": "smoke", "color": "#f2f2f2"}
+  ],
+  "supports": {
+    "post-thumbnails": true,
+    "custom-logo": {"width": 220, "height": 60, "flex-width": true, "flex-height": true, "header-text": ["site-title", "site-description"]},
+    "title-tag": true,
+    "html5": ["search-form", "comment-form", "comment-list", "gallery", "caption", "script", "style"],
+    "responsive-embeds": true,
+    "align-wide": true,
+    "wp-block-styles": true
+  },
+
+  "customizer": {
+    "sections": [
+      {
+        "id": "encore_colors", "title": "Colours & Effects", "priority": 40,
+        "settings": [
+          {"id": "accent", "label": "Neon accent", "description": "Buttons, highlights and the hover glow.", "type": "color", "default": "#c6ff00", "transport": "postMessage", "css_var": "--ec-accent"},
+          {"id": "secondary", "label": "Second accent", "description": "Kickers, dates and gradients.", "type": "color", "default": "#ff2e88", "transport": "postMessage", "css_var": "--ec-second"},
+          {"id": "background", "label": "Stage colour", "type": "color", "default": "#0a0a0f", "transport": "postMessage", "css_var": "--ec-bg"},
+          {"id": "glow", "label": "Neon glow", "description": "Glowing text and buttons.", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "ec-glow"},
+          {"id": "grain", "label": "Film grain", "description": "A subtle noise texture over the page.", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "ec-grain"},
+          {"id": "font_pairing", "label": "Font pairing", "type": "select", "default": "anton-space", "transport": "postMessage", "body_class": "ec-fonts-{value}",
+            "choices": [{"value": "anton-space", "label": "Anton & Space Grotesk"}, {"value": "archivo", "label": "Archivo Condensed"}, {"value": "system", "label": "System fonts"}]}
+        ]
+      },
+      {
+        "id": "encore_layout", "title": "Layout", "priority": 41,
+        "settings": [
+          {"id": "news_layout", "label": "News layout", "type": "select", "default": "grid", "transport": "postMessage", "body_class": "ec-news-{value}",
+            "choices": [{"value": "grid", "label": "Grid of cards"}, {"value": "list", "label": "Wide list"}]},
+          {"id": "sticky_header", "label": "Sticky header", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "ec-sticky"},
+          {"id": "show_ticker", "label": "Scrolling ticker under the hero", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "ec-ticker"}
+        ]
+      },
+      {
+        "id": "encore_hero", "title": "Hero & Tickets", "priority": 42,
+        "settings": [
+          {"id": "hero_heading", "label": "Hero heading", "description": "On a static front page. Defaults to the site title.", "type": "text", "default": "", "transport": "refresh"},
+          {"id": "hero_subheading", "label": "Hero line", "description": "A short line above the heading, such as the new record.", "type": "text", "default": "New album out now", "transport": "refresh"},
+          {"id": "hero_image", "label": "Hero image", "description": "Falls back to the front page's featured image.", "type": "image", "transport": "refresh"},
+          {"id": "cta_label", "label": "Ticket button label", "description": "Shown in the header and hero. Leave empty to hide.", "type": "text", "default": "Tickets", "transport": "refresh"},
+          {"id": "cta_url", "label": "Ticket button link", "type": "text", "default": "/tour/", "transport": "refresh"},
+          {"id": "footer_text", "label": "Footer text", "type": "text", "default": "", "transport": "refresh"}
+        ]
+      }
+    ]
+  }
+}
