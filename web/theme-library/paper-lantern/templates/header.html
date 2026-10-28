@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>{{.DocumentTitle}}</title>
+{{.Head}}</head>
+
+<body class="{{.BodyClass}}">
+{{.BodyOpen}}<div id="page" class="site">
+	<a class="skip-link screen-reader-text" href="#main">Skip to content</a>
+
+	<header id="masthead" class="site-header">
+		<div class="lantern-string" aria-hidden="true">
+			<svg viewBox="0 0 600 92" preserveAspectRatio="xMidYMin meet" focusable="false">
+				<path class="lantern-string__line" d="M0 8 Q150 46 300 30 T600 10" />
+				<g transform="translate(70 22)"><g class="lantern lantern--a"><line x1="0" y1="0" x2="0" y2="10"/><rect x="-7" y="9" width="14" height="4" rx="1.5"/><ellipse cx="0" cy="27" rx="15" ry="16"/><path d="M-7 27a7 16 0 0 0 14 0a7 16 0 0 0-14 0"/><rect x="-6" y="41" width="12" height="4" rx="1.5"/><line x1="0" y1="45" x2="0" y2="53"/></g></g>
+				<g transform="translate(185 34)"><g class="lantern lantern--b"><line x1="0" y1="0" x2="0" y2="8"/><rect x="-6" y="7" width="12" height="4" rx="1.5"/><ellipse cx="0" cy="23" rx="12" ry="13"/><path d="M-5 23a5 13 0 0 0 10 0a5 13 0 0 0-10 0"/><rect x="-5" y="35" width="10" height="4" rx="1.5"/><line x1="0" y1="39" x2="0" y2="46"/></g></g>
+				<g transform="translate(300 30)"><g class="lantern lantern--c"><line x1="0" y1="0" x2="0" y2="12"/><rect x="-8" y="11" width="16" height="4" rx="1.5"/><ellipse cx="0" cy="32" rx="18" ry="19"/><path d="M-8 32a8 19 0 0 0 16 0a8 19 0 0 0-16 0"/><rect x="-7" y="50" width="14" height="4" rx="1.5"/><line x1="0" y1="54" x2="0" y2="63"/></g></g>
+				<g transform="translate(415 22)"><g class="lantern lantern--d"><line x1="0" y1="0" x2="0" y2="8"/><rect x="-6" y="7" width="12" height="4" rx="1.5"/><ellipse cx="0" cy="23" rx="12" ry="13"/><path d="M-5 23a5 13 0 0 0 10 0a5 13 0 0 0-10 0"/><rect x="-5" y="35" width="10" height="4" rx="1.5"/><line x1="0" y1="39" x2="0" y2="46"/></g></g>
+				<g transform="translate(530 13)"><g class="lantern lantern--e"><line x1="0" y1="0" x2="0" y2="10"/><rect x="-7" y="9" width="14" height="4" rx="1.5"/><ellipse cx="0" cy="27" rx="15" ry="16"/><path d="M-7 27a7 16 0 0 0 14 0a7 16 0 0 0-14 0"/><rect x="-6" y="41" width="12" height="4" rx="1.5"/><line x1="0" y1="45" x2="0" y2="53"/></g></g>
+			</svg>
+		</div>
+		<div class="site-header__inner">
+			<div class="site-branding">
+				{{with .CustomLogo}}<div class="site-logo">{{.}}</div>{{end}}
+				{{if .TitleIsH1}}<h1 class="site-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></h1>{{else}}<p class="site-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></p>{{end}}
+				{{with .Description}}<p class="site-description">{{.}}</p>{{end}}
+			</div><!-- .site-branding -->
+			{{if has_nav_menu . "primary"}}<nav id="site-navigation" class="main-navigation" aria-label="Primary menu">
+				<button type="button" class="menu-toggle" aria-controls="site-navigation" aria-expanded="false"><span class="menu-toggle__icon" aria-hidden="true"></span><span class="menu-toggle__label">Menu</span></button>
+				{{nav_menu . "primary"}}
+			</nav><!-- #site-navigation -->{{end}}
+		</div>
+	</header><!-- #masthead -->
+
+	<div id="content" class="site-content">
+		<main id="main" class="site-main" tabindex="-1">

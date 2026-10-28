@@ -1,0 +1,12 @@
+{{template "header" .}}
+<section class="error-404 not-found entry">
+	<header class="page-header">
+		<p class="error-404__numeral" aria-hidden="true">404</p>
+		<h1 class="page-title">This page has been misplaced</h1>
+	</header>
+	<div class="page-content">
+		<p>Like a letter slipped between the wrong pages, what you were looking for is not here. Try a search, or return to the <a href="{{.HomeURL}}">front page</a>.</p>
+		{{template "searchform" .}}
+	</div>
+</section><!-- .error-404 -->
+{{template "footer" .}}

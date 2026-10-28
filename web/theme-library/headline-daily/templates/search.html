@@ -1,0 +1,15 @@
+{{template "header" .}}
+{{template "layout-open" .}}
+	<header class="hd-page-head">
+		<p class="hd-page-head__label">Search</p>
+		<h1 class="hd-page-head__title">&ldquo;{{.SearchQuery}}&rdquo;</h1>
+		<p class="hd-page-head__desc">{{plural .TotalPosts "%s story found" "%s stories found"}}</p>
+		<div class="hd-page-head__search">{{template "searchform" (dict "HomeURL" .HomeURL "SearchQuery" .SearchQuery "ID" "results")}}</div>
+	</header>
+	{{if .Posts}}<div class="hd-river">
+		{{range .Posts}}{{template "content" .}}
+		{{end}}
+	</div>
+	{{.Pagination}}{{else}}{{template "content-none" .}}{{end}}
+{{template "layout-close" .}}
+{{template "footer" .}}

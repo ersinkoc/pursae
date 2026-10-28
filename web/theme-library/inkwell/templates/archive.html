@@ -1,0 +1,8 @@
+{{template "header" .}}
+<header class="page-header">
+	<p class="page-kicker">From the archive</p>
+	<h1 class="page-title">{{.ArchiveTitle}}</h1>
+	{{with .ArchiveDesc}}<div class="archive-description">{{.}}</div>{{end}}
+</header><!-- .page-header -->
+{{template "post-list" .}}
+{{template "footer" .}}

@@ -1,0 +1,13 @@
+<section class="hero"{{with .Data.Settings.hero_image}} style="background-image: linear-gradient(120deg, rgba(11,13,28,.92), rgba(11,13,28,.55)), url('{{.}}');"{{end}}>
+	<div class="hero__inner">
+		{{with theme_mod . "hero_kicker"}}<p class="hero__kicker"><span>{{.}}</span><span class="hero__caret" aria-hidden="true"></span></p>{{end}}
+		<h2 class="hero__title">{{theme_mod . "hero_title"}}</h2>
+		{{with theme_mod . "hero_text"}}<p class="hero__text">{{.}}</p>{{end}}
+		<form role="search" method="get" class="hero__search search-form" action="{{.HomeURL}}">
+			<label for="hero-search" class="screen-reader-text">Search for:</label>
+			<span class="hero__prompt" aria-hidden="true">/</span>
+			<input type="search" id="hero-search" class="search-field" placeholder="Search notes&hellip;" name="s" />
+			<button type="submit" class="search-submit">Search</button>
+		</form>
+	</div>
+</section>

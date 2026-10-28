@@ -1,0 +1,490 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "The Marginalia",
+  "blogdescription": "Essays on reading, writing and the slow work of attention",
+  "posts_per_page": 6,
+  "date_format": "F j, Y"
+ },
+ "categories": [
+  {
+   "slug": "essays",
+   "name": "Essays",
+   "description": "Longer pieces on books, language and the habits of reading."
+  },
+  {
+   "slug": "reading",
+   "name": "Reading",
+   "description": "Notes on what we read and how."
+  },
+  {
+   "slug": "craft",
+   "name": "Craft",
+   "description": "Drafting, revision and the tools of the trade."
+  },
+  {
+   "slug": "notebook",
+   "name": "Notebook",
+   "description": "Shorter, looser entries, often written outdoors."
+  },
+  {
+   "slug": "letters",
+   "name": "Letters",
+   "description": "Letters to particular people, shared with their permission."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "handwriting",
+   "name": "Handwriting"
+  },
+  {
+   "slug": "libraries",
+   "name": "Libraries"
+  },
+  {
+   "slug": "bookshops",
+   "name": "Bookshops"
+  },
+  {
+   "slug": "seasons",
+   "name": "Seasons"
+  },
+  {
+   "slug": "revision",
+   "name": "Revision"
+  },
+  {
+   "slug": "walking",
+   "name": "Walking"
+  },
+  {
+   "slug": "translation",
+   "name": "Translation"
+  },
+  {
+   "slug": "poetry",
+   "name": "Poetry"
+  }
+ ],
+ "media": [
+  {
+   "id": "hero-evening-hills",
+   "file": "demo/images/hero-evening-hills.jpg",
+   "alt": "Layered hills in warm evening light under a pale sun",
+   "caption": "Evening over the hills, in six layers of dusk."
+  },
+  {
+   "id": "autumn-ridges",
+   "file": "demo/images/autumn-ridges.jpg",
+   "alt": "Rust-coloured ridges fading into a sand-coloured sky",
+   "caption": ""
+  },
+  {
+   "id": "blue-hour-valley",
+   "file": "demo/images/blue-hour-valley.jpg",
+   "alt": "A valley of blue-grey ridges under a full moon",
+   "caption": "The valley at blue hour."
+  },
+  {
+   "id": "harbour-light",
+   "file": "demo/images/harbour-light.jpg",
+   "alt": "A calm harbour with a single sail and a low sun",
+   "caption": ""
+  },
+  {
+   "id": "grey-morning-sea",
+   "file": "demo/images/grey-morning-sea.jpg",
+   "alt": "A grey sea with a small sail on the horizon",
+   "caption": ""
+  },
+  {
+   "id": "desk-still-life",
+   "file": "demo/images/desk-still-life.jpg",
+   "alt": "A stack of books beside an inkwell and a quill",
+   "caption": ""
+  },
+  {
+   "id": "reading-stack",
+   "file": "demo/images/reading-stack.jpg",
+   "alt": "A stack of old cloth-bound books and an inkwell on a grey table",
+   "caption": ""
+  },
+  {
+   "id": "cloister-arches",
+   "file": "demo/images/cloister-arches.jpg",
+   "alt": "A row of tall arches in rose and brown",
+   "caption": ""
+  },
+  {
+   "id": "pressed-ferns",
+   "file": "demo/images/pressed-ferns.jpg",
+   "alt": "Pressed fern stems with small golden seed heads",
+   "caption": ""
+  },
+  {
+   "id": "winter-stems",
+   "file": "demo/images/winter-stems.jpg",
+   "alt": "Dark winter stems with red berries on pale paper",
+   "caption": ""
+  },
+  {
+   "id": "open-book",
+   "file": "demo/images/open-book.jpg",
+   "alt": "An open book seen from above with a red ribbon marker",
+   "caption": ""
+  },
+  {
+   "id": "moon-over-the-marsh",
+   "file": "demo/images/moon-over-the-marsh.jpg",
+   "alt": "A moon reflected across dark water between reeds",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "about",
+   "title": "About",
+   "featured_media": "pressed-ferns",
+   "excerpt": "A small journal of essays, letters and notes about reading and writing slowly.",
+   "content": "<!-- wp:paragraph --><p>The Marginalia is a small journal about reading, writing and the slow work of attention. It began as a set of letters to friends and grew, over several years, into the essays, notebooks and occasional dispatches collected here.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>New pieces appear when they are ready, which is usually twice a month. There is no schedule, no advertising and no newsletter funnel: only writing, set in a typeface that is easy on the eyes, with room in the margins for you to answer back.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">What you will find here</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><strong>Essays</strong> on books, language and the habits of reading.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Craft</strong> notes on drafting, revision and the tools of the trade.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Letters</strong> written to particular people, shared with their permission.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Notebook</strong> entries: shorter, looser, often written outdoors.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Write as if to one reader, and let the others listen in.</p><!-- /wp:paragraph --><cite>The only rule of the house</cite></blockquote><!-- /wp:quote --><!-- wp:paragraph --><p>If you would like to write back, the <a href=\"{{page:contact}}\">contact page</a> explains how. Letters are read slowly and answered eventually.</p><!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "colophon",
+   "title": "Colophon",
+   "parent": "about",
+   "template": "page-wide",
+   "excerpt": "How this journal is made.",
+   "content": "<!-- wp:paragraph --><p>This journal is set in Playfair Display for headings and Crimson Pro for text, both released under the SIL Open Font License. The text size is generous and the line length is kept to around sixty-five characters, which is roughly what the eye can take in comfortably before it wants to rest.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Type</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Headlines use a high-contrast display face with a long tradition in print. Body text uses an old-style serif drawn for long reading on screens.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Ornament</h3><!-- /wp:heading --><!-- wp:paragraph --><p>The fleurons, the asterism between sections and the small capitals in the meta lines are typographic habits borrowed from book printing.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Paper</h3><!-- /wp:heading --><!-- wp:paragraph --><p>The background is a warm ivory rather than pure white, which softens the contrast without making the text harder to read.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:paragraph --><p>All illustrations are original and were drawn for this journal. The site runs on WordPress Go, with the Inkwell theme.</p><!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "reading-list",
+   "title": "Reading List",
+   "parent": "about",
+   "excerpt": "Books currently on the desk, and a few that never leave it.",
+   "content": "<!-- wp:paragraph --><p>People ask what I am reading, so here is an honest list, kept up to date whenever I remember. It is deliberately mixed: old and new, finished and abandoned, serious and not.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">On the desk</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>A book of letters between two gardeners, sent across forty years.</li><!-- /wp:list-item --><!-- wp:list-item --><li>A short history of punctuation, which is more exciting than it sounds.</li><!-- /wp:list-item --><!-- wp:list-item --><li>A novel set entirely in a lighthouse during one long storm.</li><!-- /wp:list-item --><!-- wp:list-item --><li>A field guide to clouds, read one page each morning.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:heading --><h2 class=\"wp-block-heading\">Never far away</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>A pocket dictionary with pressed ferns between the pages.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Volume one of my commonplace book.</li><!-- /wp:list-item --><!-- wp:list-item --><li>A collection of short poems about ordinary weather.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph --><p>Suggestions are always welcome through the <a href=\"{{page:contact}}\">contact page</a>. I keep a separate list of books that readers have recommended, and I work through it slowly.</p><!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "contact",
+   "title": "Contact",
+   "excerpt": "Letters are read slowly and answered eventually.",
+   "content": "<!-- wp:paragraph --><p>The best way to reach me is by email at <a href=\"mailto:letters@example.com\">letters@example.com</a>. I read every message, though it may take a week or two to reply, especially in the summer when I am mostly outdoors.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">For readers</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Questions, corrections, book recommendations and margin notes of every kind are welcome. If you write about a particular essay, please mention its title.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">For editors</h3><!-- /wp:heading --><!-- wp:paragraph --><p>I occasionally write for other publications. Please include a short description of the piece, a deadline and the fee, so I can answer quickly.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:paragraph --><p>If you prefer paper, I am happy to exchange letters by post. Ask by email for an address, and allow plenty of time for the reply.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"mailto:letters@example.com\">Write a letter</a></div><!-- /wp:button --></div><!-- /wp:buttons -->"
+  }
+ ],
+ "posts": [
+  {
+   "slug": "in-praise-of-the-margin",
+   "title": "In Praise of the Margin",
+   "date": "2026-10-16T08:30:00",
+   "excerpt": "The white space around a page is not empty. It is where a reader first learns to answer back.",
+   "categories": [
+    "essays"
+   ],
+   "tags": [
+    "handwriting",
+    "libraries"
+   ],
+   "featured_media": "hero-evening-hills",
+   "sticky": true,
+   "content": "<!-- wp:paragraph --><p>Every book I have loved has come back to me with its edges written on. Not the text itself, which I would never touch, but the pale strip around it: the quarter inch of nothing that a printer leaves so the page will not feel crowded. It is the most generous part of any book, and almost nobody talks about it.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>A margin is an invitation. It says that the conversation is not finished when the author stops speaking. In the margin a reader can agree, object, underline, ask a question that will never be answered, or simply mark the place where a sentence landed with unusual weight. Over years, those marks become a second book, quieter than the first and entirely private.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">A short history of talking back</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Readers have always written in their books. Medieval scribes left complaints about the cold and the poor quality of their ink. Students filled their grammars with corrections and doodles. Somewhere in a box in my attic there is a school copy of a long poem in which a fifteen-year-old version of me has written, beside a famous stanza, the single word <em>why</em>. I still do not have an answer, but I am grateful for the question.</p><!-- /wp:paragraph --><!-- wp:pullquote --><figure class=\"wp-block-pullquote\"><blockquote><p>The margin is where a reader first learns that a book can be argued with, and that arguing is a form of love.</p><cite>From a notebook, autumn</cite></blockquote></figure><!-- /wp:pullquote --><!-- wp:paragraph --><p>What changes when we read on screens is not that we stop thinking, but that our thinking leaves no trace. A highlight on a device is tidy, searchable and strangely weightless. A pencil line in a paperback is crooked and permanent, and it ties a particular afternoon to a particular sentence. Years later you find it and remember the train, the window, the light.</p><!-- /wp:paragraph --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Use a soft pencil, never a pen: the book will outlive your opinions.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Date your marks when a passage really matters.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Write questions more often than verdicts.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Leave some books clean, so that you can meet them again as a stranger.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph --><p>I do not want to make a rule of it. Some books deserve to stay pristine, and some readers prefer to keep their thoughts in a separate notebook. But if you have never written in a margin, try it once, gently, with a book you intend to keep. You may find that you read differently when you know you are allowed to reply.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Maren Holt",
+     "email": "maren@example.com",
+     "content": "I inherited my grandmother's cookbooks and the margins are the best part. Her notes on what went wrong are more useful than the recipes.",
+     "date": "2026-10-17T10:12:00"
+    },
+    {
+     "author": "Teodor Vance",
+     "email": "teodor@example.com",
+     "content": "The single word \"why\" made me laugh. I found a \"really?\" in one of mine last week, aged sixteen.",
+     "date": "2026-10-18T19:40:00"
+    }
+   ],
+   "format": "standard"
+  },
+  {
+   "slug": "the-year-i-read-only-old-books",
+   "title": "The Year I Read Only Old Books",
+   "date": "2026-09-28T09:00:00",
+   "excerpt": "Twelve months, no new releases, and a slow discovery that the past is mostly made of people complaining about the weather.",
+   "categories": [
+    "reading"
+   ],
+   "tags": [
+    "bookshops",
+    "seasons"
+   ],
+   "featured_media": "reading-stack",
+   "content": "<!-- wp:paragraph --><p>Last January I made a small, stubborn resolution: for one year I would read nothing published in the last fifty years. No new novels, no recent essays, no books that arrived with a sticker announcing they were the talk of the season. I wanted to know what my reading would feel like without the pressure to keep up.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The first month was difficult in an unexpected way. I had assumed that old books would be slow, and some were. What I had not expected was how much I missed the sense of being part of a conversation. Nobody at dinner wanted to discuss a travel diary from a century ago. I was reading alone, and I could feel it.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">What I found instead</h2><!-- /wp:heading --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph --><p><strong>Patience.</strong> Older books often take their time getting started. By March I had stopped minding, and by June I had started to prefer it. A book that spends forty pages describing a house earns the right to break your heart inside it.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph --><p><strong>Company.</strong> The loneliness faded once I realised the conversation was still happening, only across decades instead of weeks. Old books quote and answer each other constantly, and following those threads became its own pleasure.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Every era believes it is the first to be distracted. The letters of every century are full of people apologising for writing so briefly.</p><!-- /wp:paragraph --><cite>Note to self, May</cite></blockquote><!-- /wp:quote --><!-- wp:paragraph --><p>By the end of the year I had read forty-one books, most of them bought for very little from the back shelves of second-hand shops. I had also learned that the past is mostly made of people complaining about the weather, their relatives and the price of paper, which I found enormously comforting.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>I am reading new books again now, and enjoying them. But I read them differently. I am less worried about being early, and more interested in whether a book will still be worth reading when nobody is talking about it any more.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Ilse Brandt",
+     "email": "ilse@example.com",
+     "content": "Forty-one books is wonderful. Which one would you hand to someone who wanted to try this for a month?",
+     "date": "2026-09-30T08:05:00"
+    }
+   ],
+   "format": "standard",
+   "sticky": false
+  },
+  {
+   "slug": "revision-is-a-kind-of-walking",
+   "title": "Revision Is a Kind of Walking",
+   "date": "2026-09-12T07:45:00",
+   "excerpt": "A draft is a map you made in the dark. Revising it means walking the ground in daylight.",
+   "categories": [
+    "craft"
+   ],
+   "tags": [
+    "revision",
+    "walking"
+   ],
+   "featured_media": "autumn-ridges",
+   "content": "<!-- wp:paragraph --><p>I have never written a good first draft, and I have stopped expecting to. What I have learned instead is to treat the first draft as a map drawn in the dark: roughly right about where things are, badly wrong about distances, and full of places marked <em>here be something</em>.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Revision is the walk that follows. You go back over the same ground in daylight and discover that the river you drew is a ditch, that the hill is a cliff, and that the path you thought led home actually ends at a fence. None of this is failure. It is simply what maps made in the dark are like.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Three walks through every draft</h2><!-- /wp:heading --><!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li><strong>The long walk.</strong> Read the whole piece in one sitting, aloud if you can, without fixing anything. Only notice where you get bored and where you get lost.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>The surveyor's walk.</strong> Go paragraph by paragraph and ask what each one does. If you cannot say it in a sentence, the paragraph does not know either.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>The evening walk.</strong> Read slowly for sound. This is where sentences are shortened, rhythms are mended and the last weak words are taken out.</li><!-- /wp:list-item --></ol><!-- /wp:list --><!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:blue-hour-valley}}\" alt=\"A valley of blue-grey ridges under a full moon\"/><figcaption class=\"wp-element-caption\">The same valley, walked again at a different hour, is a different valley.</figcaption></figure><!-- /wp:image --><!-- wp:paragraph --><p>The comparison is not only a metaphor. Many of my best revisions have happened on actual walks, with the draft folded in a coat pocket and a pencil that kept breaking. Movement loosens something. A sentence that refused to behave at the desk will often rearrange itself somewhere near the third gate on the hill path.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>If you are stuck on a piece of writing, I recommend both kinds of walking. Print it out, put on your shoes, and go and look at the ground you mapped in the dark.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Ruth Calloway",
+     "email": "ruth@example.com",
+     "content": "The \"surveyor's walk\" is going on a card above my desk. Thank you.",
+     "date": "2026-09-13T12:30:00"
+    },
+    {
+     "author": "Ansel Moor",
+     "email": "ansel@example.com",
+     "content": "I do the evening walk with a ruler under each line. Slower, but it stops me skimming my own sentences.",
+     "date": "2026-09-15T21:02:00"
+    }
+   ],
+   "format": "standard",
+   "sticky": false
+  },
+  {
+   "slug": "letter-to-a-young-translator",
+   "title": "Letter to a Young Translator",
+   "date": "2026-08-30T10:00:00",
+   "excerpt": "On faithfulness, betrayal, and why the best translations sound as though they were never translated at all.",
+   "categories": [
+    "letters"
+   ],
+   "tags": [
+    "translation",
+    "poetry"
+   ],
+   "featured_media": "open-book",
+   "content": "<!-- wp:paragraph --><p>Dear friend, you asked me last week whether a translator should be faithful to the words or to the music, and you looked so worried when you asked it that I have been thinking about the question ever since. Here, at more length than our coffee allowed, is my answer.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Faithfulness to the words alone is a kind of cowardice. It protects you from the accusation of having changed anything, but it leaves the reader with something that no living person would ever have written. Faithfulness to the music alone is a kind of vanity. It lets you write beautifully, but the poem you produce may belong more to you than to its author.</p><!-- /wp:paragraph --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>A translation is a second original, written by someone who promised to keep a secret and then told it as gently as they could.</p><!-- /wp:paragraph --><cite>From a lecture I never gave</cite></blockquote><!-- /wp:quote --><!-- wp:heading --><h2 class=\"wp-block-heading\">What I would tell my younger self</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Read the poem until you can hear it without looking. Then put it away and write what you heard, in your own language, as though you had written it first. Only then take out the original again and check, line by line, what you have lost and what you have invented. Keep the inventions that serve the poem. Apologise quietly for the rest.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>You will never finish a translation. You will only abandon it at a moment when it is less wrong than it was yesterday. That is not a failure of the craft. It is the craft. Write to me when the first one is done, and tell me which line kept you awake.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><em>With warm regards, and a pencil sharpened on your behalf.</em></p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Noor Halvorsen",
+     "email": "noor@example.com",
+     "content": "I needed this today. Three weeks on a single line and I had begun to think I was simply bad at it.",
+     "date": "2026-09-01T07:50:00"
+    }
+   ],
+   "format": "standard",
+   "sticky": false
+  },
+  {
+   "slug": "notes-from-a-harbour-library",
+   "title": "Notes from a Harbour Library",
+   "date": "2026-08-14T16:20:00",
+   "excerpt": "A small library by the sea, a reading room with one radiator, and the quiet ritual of the tide tables.",
+   "categories": [
+    "notebook"
+   ],
+   "tags": [
+    "libraries",
+    "seasons"
+   ],
+   "featured_media": "harbour-light",
+   "content": "<!-- wp:paragraph --><p>The library stands at the end of the harbour road, in a building that used to store sails. It has one reading room, one radiator and one librarian, who keeps the tide tables pinned beside the returns desk so that visitors know how long they can stay before the causeway floods.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>I spent a fortnight there in August, working through a box of letters that nobody had asked to see in decades. Each afternoon the light moved across the long table in the same slow arc, and each afternoon at four the librarian brought tea and a report on the state of the water.</p><!-- /wp:paragraph --><!-- wp:image {\"sizeSlug\":\"large\",\"align\":\"wide\"} --><figure class=\"wp-block-image size-large alignwide\"><img src=\"{{media:grey-morning-sea}}\" alt=\"A grey sea with a small sail on the horizon\"/><figcaption class=\"wp-element-caption\">The view from the reading room on the one grey morning of the fortnight.</figcaption></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Things I wrote in the margins of my notebook</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>The sea is louder on the days the room is empty.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Old letters smell of the drawers they were kept in, not of their writers.</li><!-- /wp:list-item --><!-- wp:list-item --><li>A library with a tide table teaches you to read with an ending in mind.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph --><p>Small libraries like this one survive on very little: a few volunteers, a few grants, and the stubborn affection of the people who use them. If you live near one, go in this week. Borrow something, even if you do not finish it. Libraries measure their worth in visits, and every visit counts.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Esme Arden",
+     "email": "esme@example.com",
+     "content": "The tide table beside the returns desk is the most perfect detail. I want to visit.",
+     "date": "2026-08-16T14:10:00"
+    }
+   ],
+   "format": "standard",
+   "sticky": false
+  },
+  {
+   "slug": "on-keeping-a-commonplace-book",
+   "title": "On Keeping a Commonplace Book",
+   "date": "2026-07-27T08:15:00",
+   "excerpt": "A notebook of borrowed sentences is a portrait of its keeper, drawn entirely in other people's words.",
+   "categories": [
+    "craft"
+   ],
+   "tags": [
+    "handwriting",
+    "revision"
+   ],
+   "featured_media": "desk-still-life",
+   "content": "<!-- wp:paragraph --><p>For eleven years I have kept a commonplace book: a plain notebook into which I copy, by hand, the sentences I do not want to lose. It is not a diary and it is not a journal. Almost nothing in it is mine, and yet it is the most personal object I own.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The practice is old and simple. You read, and when something stops you, you write it down, along with where you found it. Over time the notebook becomes a record of what you were paying attention to, and of what kind of person you were becoming while you paid it.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">How I keep mine</h2><!-- /wp:heading --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>One notebook at a time, numbered on the spine.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Copy by hand, never paste.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Always note the source and the date.</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Leave the left-hand page blank for later thoughts.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Index the back pages by theme.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Reread the old volumes every winter.</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:pullquote --><figure class=\"wp-block-pullquote\"><blockquote><p>Copying a sentence by hand is the slowest way to read it, and the surest way to remember it.</p><cite>Inside the cover of volume four</cite></blockquote></figure><!-- /wp:pullquote --><!-- wp:paragraph --><p>The copying matters more than it seems. When you write a sentence out, you feel its length and its pauses in your hand. You notice where the commas fall and which words carry the weight. It is the closest a reader can come to writing the sentence themselves.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>If you want to begin, buy a notebook you are not afraid to spoil, and copy one sentence today. That is the entire method. The rest is patience, and the strange pleasure of discovering, years later, who you were by what you chose to keep.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Maren Holt",
+     "email": "maren@example.com",
+     "content": "Leaving the left-hand page blank for later thoughts is such a good idea. My notebooks are crammed edge to edge.",
+     "date": "2026-07-28T09:30:00"
+    },
+    {
+     "author": "Felix Ambrose",
+     "email": "felix@example.com",
+     "content": "Volume four! I am only on my second. Do you ever reread them in order?",
+     "date": "2026-07-30T18:45:00"
+    }
+   ],
+   "format": "standard",
+   "sticky": false
+  },
+  {
+   "slug": "the-quiet-arithmetic-of-poems",
+   "title": "The Quiet Arithmetic of Poems",
+   "date": "2026-07-09T11:00:00",
+   "excerpt": "Counting syllables sounds like the least poetic thing a poet can do. It turns out to be where the feeling hides.",
+   "categories": [
+    "essays"
+   ],
+   "tags": [
+    "poetry"
+   ],
+   "featured_media": "cloister-arches",
+   "content": "<!-- wp:paragraph --><p>There is a moment in every poetry workshop when someone starts counting on their fingers, and someone else rolls their eyes. Counting feels mechanical, almost like cheating, as though a poem should arrive whole and unmeasured from somewhere beyond arithmetic.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>But poems are made of time, and time can be counted. A line of ten syllables takes a certain amount of breath to say. A line of four takes less, and when it follows a longer one it lands like a door closing. Much of what we call the feeling of a poem is the way it spends our breath.</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">An experiment you can try</h3><!-- /wp:heading --><!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Take a short poem you love and count the syllables in every line.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Write the numbers in a column beside it.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Look for the line where the pattern breaks.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Read that line aloud and notice what it does to you.</li><!-- /wp:list-item --></ol><!-- /wp:list --><!-- wp:paragraph --><p>Almost always, the broken pattern is where the poem turns. The arithmetic is not the poem, any more than the arches are the cloister. But the arches are what make the quiet inside possible, and the counting is what lets the feeling stand up.</p><!-- /wp:paragraph --><!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:moon-over-the-marsh}}\" alt=\"A moon reflected across dark water between reeds\"/><figcaption class=\"wp-element-caption\">A line of light, broken by every small wave: a fair picture of a well-made stanza.</figcaption></figure><!-- /wp:image --><!-- wp:paragraph --><p>So the next time someone in the room starts counting on their fingers, do not roll your eyes. Count along with them. You may find the place where the poem was hiding.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Teodor Vance",
+     "email": "teodor@example.com",
+     "content": "Tried the experiment with a short poem about a wheelbarrow I have read a hundred times. The broken line was exactly where I always catch my breath.",
+     "date": "2026-07-11T20:15:00"
+    }
+   ],
+   "format": "standard",
+   "sticky": false
+  },
+  {
+   "slug": "what-the-winter-garden-taught-me",
+   "title": "What the Winter Garden Taught Me About Endings",
+   "date": "2026-06-21T09:40:00",
+   "excerpt": "A garden in winter looks finished. It is only resting, and it has a few things to say about how to end an essay.",
+   "categories": [
+    "notebook"
+   ],
+   "tags": [
+    "seasons",
+    "walking"
+   ],
+   "featured_media": "winter-stems",
+   "content": "<!-- wp:paragraph --><p>I did not cut back the garden last autumn. Partly this was laziness, and partly it was curiosity: I wanted to see what the stems would look like after the frost. They turned out to be the most beautiful thing in the yard for three whole months, dark lines with the last red berries clinging on, drawn against a pale and empty bed.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Watching them through the kitchen window, I started thinking about endings, and in particular about how badly I end most of the things I write. I tend to tidy up too much. I summarise, I explain, I cut everything back to the ground so nothing is left standing.</p><!-- /wp:paragraph --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Leave a few stems standing. The reader will see the shape of the summer in them without being told.</p><!-- /wp:paragraph --><cite>Pinned above the desk since February</cite></blockquote><!-- /wp:quote --><!-- wp:heading --><h2 class=\"wp-block-heading\">Endings that rest instead of close</h2><!-- /wp:heading --><!-- wp:paragraph --><p>The best endings I know do not conclude so much as pause. They leave an image, a question, or a single plain sentence that keeps its shape after the rest of the piece has gone quiet. They trust the reader to carry something home.</p><!-- /wp:paragraph --><!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:pressed-ferns}}\" alt=\"Pressed fern stems with small golden seed heads\"/><figcaption class=\"wp-element-caption\">Pressed ferns from the same bed, kept between the pages of a dictionary.</figcaption></figure><!-- /wp:image --><!-- wp:paragraph --><p>The garden is green again now, and the stems have been cleared away to make room. But I have kept a few pressed between the pages of a dictionary, and I look at them whenever I am trying to end something and cannot stop explaining.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Ruth Calloway",
+     "email": "ruth@example.com",
+     "content": "This is such a gentle piece. I am leaving my seed heads up this year, for the birds and for the lesson.",
+     "date": "2026-06-23T07:20:00"
+    }
+   ],
+   "format": "standard",
+   "sticky": false
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Essays",
+     "category": "essays"
+    },
+    {
+     "title": "Reading",
+     "category": "reading"
+    },
+    {
+     "title": "Craft",
+     "category": "craft"
+    },
+    {
+     "title": "Notebook",
+     "category": "notebook",
+     "children": [
+      {
+       "title": "Letters",
+       "category": "letters"
+      }
+     ]
+    },
+    {
+     "title": "About",
+     "page": "about",
+     "children": [
+      {
+       "title": "Colophon",
+       "page": "colophon"
+      },
+      {
+       "title": "Reading List",
+       "page": "reading-list"
+      }
+     ]
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    }
+   ]
+  },
+  {
+   "name": "Footer menu",
+   "location": "footer",
+   "items": [
+    {
+     "title": "About",
+     "page": "about"
+    },
+    {
+     "title": "Colophon",
+     "page": "colophon"
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    },
+    {
+     "title": "In Praise of the Margin",
+     "post": "in-praise-of-the-margin"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "sidebar-1": [
+   "<!-- wp:group {\"className\":\"inkwell-note\"} --><div class=\"wp-block-group inkwell-note\"><!-- wp:heading --><h2 class=\"wp-block-heading\">About the journal</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Essays and letters about reading, writing and paying attention, published when they are ready.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{page:about}}\">Read more about The Marginalia</a></p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:search {\"label\":\"Search\",\"buttonText\":\"Search\"} /-->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Recent essays</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":5,\"displayPostDate\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Sections</h2><!-- /wp:heading --><!-- wp:categories {\"showPostCounts\":true} /--></div><!-- /wp:group -->"
+  ],
+  "footer-1": [
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">The Marginalia</h2><!-- /wp:heading --><!-- wp:paragraph --><p>A small journal set in Inkwell. New pieces appear about twice a month, when they are ready and not before.</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Archives</h2><!-- /wp:heading --><!-- wp:archives /--></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Letters from readers</h2><!-- /wp:heading --><!-- wp:latest-comments {\"commentsToShow\":3,\"displayAvatar\":false,\"displayDate\":false} /--></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "masthead_style": "ornate",
+  "show_kicker": true,
+  "masthead_kicker": "A journal of letters · Est. 2019",
+  "sidebar_position": "right",
+  "list_style": "classic",
+  "font_pairing": "classic",
+  "text_size": "medium",
+  "drop_caps": true,
+  "show_featured": true,
+  "show_author": true,
+  "sticky_header": false,
+  "footer_text": "© The Marginalia. Written slowly, by hand first."
+ }
+}

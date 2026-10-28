@@ -1,0 +1,6 @@
+{{if eq .Type "post"}}<p class="entry-meta">
+	<span class="posted-on"><time class="entry-date published" datetime="{{.DateISO}}">{{.DateText}}</time></span>
+	{{if .Categories}}<span class="cat-links">{{range $i, $c := .Categories}}{{if $i}}, {{end}}<a href="{{$c.URL}}" rel="category tag">{{$c.Name}}</a>{{end}}</span>{{end}}
+	{{with .AuthorName}}<span class="byline">by <a class="author" href="{{$.AuthorURL}}" rel="author">{{.}}</a></span>{{end}}
+	{{if or .CommentsOpen .CommentCount}}<span class="comments-link"><a href="{{.CommentsURL}}">{{plural .CommentCount "%s reply" "%s replies"}}</a></span>{{end}}
+</p>{{end}}

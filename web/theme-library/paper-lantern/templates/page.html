@@ -1,0 +1,4 @@
+{{template "header" .}}
+{{template "content-page" .Post}}
+{{with .Comments}}{{if .Count}}{{template "comments" $}}{{end}}{{end}}
+{{template "footer" .}}

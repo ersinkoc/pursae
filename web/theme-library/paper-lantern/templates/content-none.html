@@ -1,0 +1,13 @@
+<section class="no-results not-found entry entry--note">
+	<header class="entry-header"><h2 class="entry-title">Nothing tucked in here yet</h2></header>
+	<div class="entry-content">
+	{{if eq .Template "search"}}
+		<p>No entries matched those words. Try a different one &mdash; maybe a season, a recipe or a place.</p>
+	{{else if and (eq .Template "index") .CanPublish}}
+		<p>The notebook is open and the ink is ready. <a href="/wp-admin/post-new">Write your first entry</a>.</p>
+	{{else}}
+		<p>We couldn&rsquo;t find what you were looking for. Perhaps a search will turn it up.</p>
+		{{template "searchform" .}}
+	{{end}}
+	</div>
+</section><!-- .no-results -->

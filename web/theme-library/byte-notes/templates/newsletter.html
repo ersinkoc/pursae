@@ -1,0 +1,12 @@
+<section class="newsletter" aria-labelledby="newsletter-title">
+	<div class="newsletter__inner bn-container">
+		<div class="newsletter__box">
+			<div class="newsletter__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="28" height="28" focusable="false"><rect x="3" y="5" width="18" height="14" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="m4 7 8 6 8-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></div>
+			<div class="newsletter__copy">
+				<h2 id="newsletter-title" class="newsletter__title">{{theme_mod . "newsletter_heading"}}</h2>
+				{{with theme_mod . "newsletter_text"}}<p class="newsletter__text">{{.}}</p>{{end}}
+			</div>
+			<a class="bn-button newsletter__button" href="{{theme_mod . "newsletter_url"}}">{{theme_mod . "newsletter_button"}} <span aria-hidden="true">&rarr;</span></a>
+		</div>
+	</div>
+</section>

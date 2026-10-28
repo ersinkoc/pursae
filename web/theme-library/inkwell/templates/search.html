@@ -1,0 +1,8 @@
+{{template "header" .}}
+<header class="page-header">
+	<p class="page-kicker">{{plural .TotalPosts "%s result" "%s results"}}</p>
+	<h1 class="page-title">Searching for &ldquo;<span class="search-term">{{.SearchQuery}}</span>&rdquo;</h1>
+	{{template "searchform" .}}
+</header><!-- .page-header -->
+{{template "post-list" .}}
+{{template "footer" .}}

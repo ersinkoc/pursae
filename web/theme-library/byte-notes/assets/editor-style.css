@@ -1,0 +1,65 @@
+/* Byte Notes: block editor styles (the dark default scheme, the same code blocks and type). */
+@font-face { font-family: "Inter"; src: url("fonts/inter.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+@font-face { font-family: "Space Grotesk"; src: url("fonts/space-grotesk.woff2") format("woff2"); font-weight: 300 700; font-display: swap; }
+@font-face { font-family: "JetBrains Mono"; src: url("fonts/jetbrains-mono.woff2") format("woff2"); font-weight: 100 800; font-display: swap; }
+
+body {
+	background: #0b0d1c;
+	color: #dfe2f2;
+	font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+	font-size: 17px;
+	line-height: 1.7;
+}
+
+h1, h2, h3, h4, h5, h6, .editor-post-title__input {
+	color: #ffffff;
+	font-family: "Space Grotesk", "Inter", sans-serif;
+	letter-spacing: -0.02em;
+	line-height: 1.2;
+}
+
+a { color: #b3a3ff; }
+strong { color: #ffffff; }
+
+code, kbd, pre { font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; }
+
+:not(pre) > code {
+	background: rgba(124, 92, 255, 0.16);
+	border-radius: 6px;
+	color: #f0c6ff;
+	font-size: 0.86em;
+	padding: 0.12em 0.4em;
+}
+
+.wp-block-code {
+	background: #0e1124;
+	border: 1px solid rgba(160, 170, 255, 0.28);
+	border-radius: 14px;
+	color: #e3e6f7;
+	font-size: 14px;
+	line-height: 1.7;
+	padding: 20px 22px;
+}
+
+.wp-block-quote {
+	border-left: 3px solid #7c5cff;
+	color: #ffffff;
+	font-family: "Space Grotesk", sans-serif;
+	font-size: 1.3em;
+	padding-left: 24px;
+}
+
+.bn-callout {
+	background: rgba(34, 211, 238, 0.08);
+	border: 1px solid rgba(34, 211, 238, 0.35);
+	border-radius: 14px;
+	padding: 16px 20px;
+}
+
+.wp-block-button__link {
+	background: linear-gradient(135deg, #7c5cff, #4f8cf6);
+	border-radius: 999px;
+	color: #ffffff;
+}
+
+ul li::marker { color: #22d3ee; }

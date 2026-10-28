@@ -1,0 +1,18 @@
+<article id="post-{{.ID}}" class="{{.Class}} entry entry--single">
+	<header class="entry-header">
+		{{template "entry-kicker" .}}
+		<h1 class="entry-title">{{.Title}}</h1>
+		{{with .Post}}{{with .Excerpt}}<p class="entry-dek">{{.}}</p>{{end}}{{end}}
+		{{template "entry-meta" .}}
+	</header><!-- .entry-header -->
+	{{with .Thumbnail}}<figure class="post-thumbnail">{{.}}</figure>{{end}}
+	<div class="entry-content">
+		{{.Content}}
+	</div><!-- .entry-content -->
+	<footer class="entry-footer">
+		<div class="end-mark" aria-hidden="true">&#10086;</div>
+		{{if .Tags}}<p class="tags-links"><span class="tags-links__label">Filed under</span> {{range .Tags}}<a href="{{.URL}}" rel="tag">{{.Name}}</a>{{end}}</p>{{end}}
+		{{with .EditLink}}<span class="edit-link">{{.}}</span>{{end}}
+	</footer>
+	{{.Biography}}
+</article><!-- #post-{{.ID}} -->

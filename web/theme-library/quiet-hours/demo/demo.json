@@ -1,0 +1,421 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "A Quiet Notebook",
+  "blogdescription": "Writing about attention, slow mornings and long walks.",
+  "posts_per_page": 20,
+  "date_format": "F j, Y"
+ },
+ "categories": [
+  {
+   "slug": "essays",
+   "name": "Essays",
+   "description": "Longer pieces, written slowly."
+  },
+  {
+   "slug": "notes",
+   "name": "Notes",
+   "description": "Short entries and small observations."
+  },
+  {
+   "slug": "reading",
+   "name": "Reading",
+   "description": "Books, and the time spent with them."
+  },
+  {
+   "slug": "walks",
+   "name": "Walks",
+   "description": "Routes, weather and things seen on foot."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "attention",
+   "name": "attention"
+  },
+  {
+   "slug": "routines",
+   "name": "routines"
+  },
+  {
+   "slug": "cities",
+   "name": "cities"
+  },
+  {
+   "slug": "seasons",
+   "name": "seasons"
+  },
+  {
+   "slug": "tools",
+   "name": "tools"
+  },
+  {
+   "slug": "books",
+   "name": "books"
+  }
+ ],
+ "media": [
+  {
+   "id": "dawn-horizon",
+   "file": "demo/images/dawn-horizon.jpg",
+   "alt": "A pale sun resting on a flat grey horizon, its reflection drawn in short strokes",
+   "caption": "First light, nothing yet decided."
+  },
+  {
+   "id": "window-light",
+   "file": "demo/images/window-light.jpg",
+   "alt": "Four soft panes of morning light falling across a warm wall",
+   "caption": ""
+  },
+  {
+   "id": "single-stone",
+   "file": "demo/images/single-stone.jpg",
+   "alt": "A dark round stone on pale sand casting a long evening shadow",
+   "caption": ""
+  },
+  {
+   "id": "tide-lines",
+   "file": "demo/images/tide-lines.jpg",
+   "alt": "Many thin wavy lines in slate blue with a few rust-coloured lines",
+   "caption": ""
+  },
+  {
+   "id": "paper-fold",
+   "file": "demo/images/paper-fold.jpg",
+   "alt": "A sheet of cream paper folded diagonally, with a thin rust bookmark line",
+   "caption": ""
+  },
+  {
+   "id": "dot-grid",
+   "file": "demo/images/dot-grid.jpg",
+   "alt": "A dark grid of small grey dots with a single orange dot",
+   "caption": ""
+  },
+  {
+   "id": "night-window",
+   "file": "demo/images/night-window.jpg",
+   "alt": "A dark apartment block at night with a handful of lit windows",
+   "caption": ""
+  },
+  {
+   "id": "fog-hills",
+   "file": "demo/images/fog-hills.jpg",
+   "alt": "Layers of grey hills fading into morning fog",
+   "caption": ""
+  },
+  {
+   "id": "cup-above",
+   "file": "demo/images/cup-above.jpg",
+   "alt": "A cup of black coffee seen from directly above on a tan table",
+   "caption": ""
+  },
+  {
+   "id": "bookshelf",
+   "file": "demo/images/bookshelf.jpg",
+   "alt": "Two shelves of books in muted greys, creams and one rust colour",
+   "caption": ""
+  },
+  {
+   "id": "moon-phases",
+   "file": "demo/images/moon-phases.jpg",
+   "alt": "Seven phases of the moon in a row on a near-black sky",
+   "caption": ""
+  },
+  {
+   "id": "rain",
+   "file": "demo/images/rain.jpg",
+   "alt": "Fine diagonal rain over a grey street with ripples in puddles",
+   "caption": ""
+  },
+  {
+   "id": "walking-path",
+   "file": "demo/images/walking-path.jpg",
+   "alt": "A dotted path curving up across a pale field to a small circle",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "about",
+   "title": "About",
+   "featured_media": "dawn-horizon",
+   "content": "<!-- wp:paragraph -->\n<p>Hello. This is a small notebook kept in public, mostly about attention, slow mornings, long walks and the books that go with them.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>It is written by one person, in the early hours, before the rest of the day arrives. Entries appear when they are ready, which is not on any schedule.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:heading -->\n<h2 class=\"wp-block-heading\">Elsewhere on the site</h2>\n<!-- /wp:heading -->\n\n<!-- wp:list -->\n<ul class=\"wp-block-list\"><!-- wp:list-item -->\n<li><a href=\"{{page:now}}\">Now</a>: what I am doing these days.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li><a href=\"{{page:colophon}}\">Colophon</a>: how this site is made.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li><a href=\"{{page:contact}}\">Contact</a>: write, slowly.</li>\n<!-- /wp:list-item --></ul>\n<!-- /wp:list -->\n\n<!-- wp:paragraph -->\n<p>If something here was useful or kind to you, that is all it was ever meant to be.</p>\n<!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "now",
+   "title": "Now",
+   "parent": "about",
+   "featured_media": "single-stone",
+   "content": "<!-- wp:paragraph -->\n<p>A <em>now</em> page: a short note on what currently fills my days. Updated every season or so.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:list -->\n<ul class=\"wp-block-list\"><!-- wp:list-item -->\n<li>Reading one chapter a night of a long novel told in letters.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>Walking the canal path on Thursday mornings.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>Learning to bake a decent rye loaf (slowly, with mixed results).</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>Saying no to most new things, kindly.</li>\n<!-- /wp:list-item --></ul>\n<!-- /wp:list -->\n\n<!-- wp:paragraph -->\n<p><em>Last updated in autumn.</em></p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>If you keep a now page of your own, I would like to read it.</p>\n<!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "colophon",
+   "title": "Colophon",
+   "parent": "about",
+   "content": "<!-- wp:paragraph -->\n<p>This site runs on WordPress Go with the Quiet Hours theme. It is set in IBM Plex Mono, with system fonts for anything else.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>There is no tracking and no advertising. The light and dark switch remembers your choice in your own browser, and nowhere else.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:heading -->\n<h2 class=\"wp-block-heading\">Made with</h2>\n<!-- /wp:heading -->\n\n<!-- wp:list -->\n<ul class=\"wp-block-list\"><!-- wp:list-item -->\n<li>A plain text editor.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>A pocket notebook for drafts.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>Generous amounts of tea.</li>\n<!-- /wp:list-item --></ul>\n<!-- /wp:list -->\n\n<!-- wp:paragraph -->\n<p>All images on the site are simple abstract drawings made for it.</p>\n<!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "contact",
+   "title": "Contact",
+   "content": "<!-- wp:paragraph -->\n<p>The best way to reach me is a plain email. I read mail in the afternoons, a few times a week, and reply to almost everything, eventually.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p><strong>hello@example.com</strong></p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>Letters about books, walks, small websites and quiet tools are especially welcome. I do not take guest posts or sponsorships.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:quote -->\n<blockquote class=\"wp-block-quote\"><!-- wp:paragraph -->\n<p>Write as if to a friend who is in no hurry.</p>\n<!-- /wp:paragraph --></blockquote>\n<!-- /wp:quote -->"
+  }
+ ],
+ "posts": [
+  {
+   "slug": "the-hour-before-email",
+   "title": "The hour before email",
+   "date": "2026-09-14T07:10:00",
+   "excerpt": "Protecting one unclaimed hour at the start of the day, and what slowly moved into it.",
+   "content": "<!-- wp:paragraph -->\n<p>For most of last year my mornings began with other people. The inbox, the group chat, the news, in that order, before the kettle had even clicked off. Nothing urgent ever arrived before eight, yet I read everything as though it might.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>In January I tried a small rule: no messages until the first hour was over. Not a digital detox, not a retreat. Just one hour that belonged to no one in particular.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:heading -->\n<h2 class=\"wp-block-heading\">What moved in</h2>\n<!-- /wp:heading -->\n\n<!-- wp:paragraph -->\n<p>At first the hour was mostly restlessness. I tidied things that were already tidy. By the third week, though, the space started filling with quieter habits: reading a chapter, writing three loose lines in a notebook, watching the light crawl across the wall by the window.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:image {\"sizeSlug\":\"large\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"{{media:window-light}}\" alt=\"Four soft panes of morning light falling across a warm wall\"/><figcaption class=\"wp-element-caption\">The window does its slow work around seven.</figcaption></figure>\n<!-- /wp:image -->\n\n<!-- wp:list -->\n<ul class=\"wp-block-list\"><!-- wp:list-item -->\n<li>Coffee, made slowly, drunk sitting down.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>Ten minutes of reading something printed.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>One sentence about the day before.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>A short walk to the corner and back, weather permitting.</li>\n<!-- /wp:list-item --></ul>\n<!-- /wp:list -->\n\n<!-- wp:paragraph -->\n<p>None of it is impressive. That is rather the point. The hour is not meant to be productive; it is meant to be mine, and the rest of the day seems to go better for having started somewhere calm.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:quote -->\n<blockquote class=\"wp-block-quote\"><!-- wp:paragraph -->\n<p>The morning is not a race to the inbox. It is the one part of the day that has not been promised to anybody yet.</p>\n<!-- /wp:paragraph --></blockquote>\n<!-- /wp:quote -->",
+   "categories": [
+    "essays"
+   ],
+   "tags": [
+    "attention",
+    "routines"
+   ],
+   "featured_media": "window-light",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Mira K.",
+     "email": "mira@example.com",
+     "content": "I started doing this after reading your note in spring. The hardest part is not checking the phone while the coffee brews.",
+     "date": "2026-09-15T08:02:00"
+    },
+    {
+     "author": "Tomas",
+     "email": "tomas@example.com",
+     "content": "Ten minutes of printed reading is such a good, small rule.",
+     "date": "2026-09-16T19:40:00"
+    }
+   ]
+  },
+  {
+   "slug": "a-week-without-a-phone",
+   "title": "Notes from a week without a phone",
+   "date": "2026-07-02T21:30:00",
+   "excerpt": "Seven days with the phone in a drawer: a few honest notes on what I missed and what I did not.",
+   "content": "<!-- wp:paragraph -->\n<p>The phone went into the kitchen drawer on a Sunday evening and came out the following Sunday. I kept a short list each night, mostly in the margins of a paperback.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:heading -->\n<h2 class=\"wp-block-heading\">Day one to three</h2>\n<!-- /wp:heading -->\n\n<!-- wp:paragraph -->\n<p>I reached for my pocket roughly every twenty minutes. I got lost twice and asked strangers for directions, which turned out to be pleasant both times. Without a clock in my hand, I noticed the bells from the church on the hill for the first time in years.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:heading -->\n<h2 class=\"wp-block-heading\">Day four onward</h2>\n<!-- /wp:heading -->\n\n<!-- wp:paragraph -->\n<p>The reaching stopped. Evenings stretched out. I wrote two long letters and finished a jigsaw that had been sitting half-done since winter. At night I watched the apartment block across the street, a few windows lit, everyone keeping their own hours.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:image {\"sizeSlug\":\"large\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"{{media:cup-above}}\" alt=\"A cup of black coffee seen from directly above on a tan table\"/></figure>\n<!-- /wp:image -->\n\n<!-- wp:paragraph -->\n<p>What did I miss? A birthday message, sent a day late. A train delay I would have known about. Nothing else, really. I am not giving the phone up, but it now lives on the shelf by the door rather than in my hand.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:separator {\"className\":\"is-style-dots\"} -->\n<hr class=\"wp-block-separator has-alpha-channel-opacity is-style-dots\"/>\n<!-- /wp:separator -->\n\n<!-- wp:paragraph -->\n<p><em>Small practical note:</em> a cheap wristwatch did more for this experiment than any app ever has.</p>\n<!-- /wp:paragraph -->",
+   "categories": [
+    "notes"
+   ],
+   "tags": [
+    "attention",
+    "cities"
+   ],
+   "featured_media": "night-window",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "quiet-tools",
+   "title": "A short list of good, quiet tools",
+   "date": "2026-03-21T10:00:00",
+   "excerpt": "The objects and programs that ask for little attention and give a lot back.",
+   "content": "<!-- wp:paragraph -->\n<p>A quiet tool is one you forget while using it. It does one thing, does it the same way every time, and never sends a notification to remind you it exists.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>Here is my current list, in no particular order. None of these are recommendations so much as examples of a kind of thing worth looking for.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:list -->\n<ul class=\"wp-block-list\"><!-- wp:list-item -->\n<li><strong>A pocket notebook</strong> with squared paper. Lists, sketches, the odd phone number.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li><strong>A plain text editor</strong> with no sidebar, no sync badge and a dark theme for late hours.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li><strong>A kitchen timer</strong>, the twisting kind. Twenty-five minutes, then a ring you cannot snooze.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li><strong>A library card.</strong> Free, patient and surprisingly well connected.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li><strong>A fountain pen</strong> that is slightly too slow to rush with.</li>\n<!-- /wp:list-item --></ul>\n<!-- /wp:list -->\n\n<!-- wp:heading -->\n<h2 class=\"wp-block-heading\">What they share</h2>\n<!-- /wp:heading -->\n\n<!-- wp:paragraph -->\n<p>Every one of them has an obvious end state. The notebook fills up, the timer rings, the book is due back. They finish, and in finishing they let you finish too.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:pullquote -->\n<figure class=\"wp-block-pullquote\"><blockquote><p>A good tool has an edge you can feel. You know when you are done with it.</p></blockquote></figure>\n<!-- /wp:pullquote -->",
+   "categories": [
+    "notes"
+   ],
+   "tags": [
+    "tools"
+   ],
+   "featured_media": "paper-fold",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "walking-the-long-way",
+   "title": "Walking the long way to the bakery",
+   "date": "2025-11-08T09:15:00",
+   "excerpt": "The direct route takes six minutes. The long way takes twenty-five, and it is the better morning.",
+   "content": "<!-- wp:paragraph -->\n<p>There are two ways to the bakery. One follows the main road, past the bus depot and a row of shuttered shops. The other loops up through the allotments, along the canal and back down by the old school.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>I used to take the direct route because it was direct. These days I take the long one whenever there is time, and lately I have been making time.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:image {\"sizeSlug\":\"large\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"{{media:fog-hills}}\" alt=\"Layers of grey hills fading into morning fog\"/><figcaption class=\"wp-element-caption\">November, from the top of the allotment path.</figcaption></figure>\n<!-- /wp:image -->\n\n<!-- wp:heading -->\n<h2 class=\"wp-block-heading\">Things noticed on the long way</h2>\n<!-- /wp:heading -->\n\n<!-- wp:list -->\n<ul class=\"wp-block-list\"><!-- wp:list-item -->\n<li>The allotment with the blue shed has started growing artichokes.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>Someone repaints the canal bench every spring, always green.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>A heron that stands in exactly the same spot each Thursday.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>The school bell, faint, at eight forty-five.</li>\n<!-- /wp:list-item --></ul>\n<!-- /wp:list -->\n\n<!-- wp:paragraph -->\n<p>By the time I reach the bakery the bread is no fresher than it would have been. But I arrive having already been somewhere, and the day feels as if it began properly.</p>\n<!-- /wp:paragraph -->",
+   "categories": [
+    "walks"
+   ],
+   "tags": [
+    "cities",
+    "seasons"
+   ],
+   "featured_media": "walking-path",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Elif",
+     "email": "elif@example.com",
+     "content": "A Thursday heron is the best kind of neighbour.",
+     "date": "2025-11-09T12:20:00"
+    },
+    {
+     "author": "Rowan P.",
+     "email": "rowan@example.com",
+     "content": "I have a long way to the station that I take on Fridays. Exactly this feeling.",
+     "date": "2025-11-10T07:55:00"
+    }
+   ]
+  },
+  {
+   "slug": "what-the-rain-is-for",
+   "title": "What the rain is for",
+   "date": "2025-08-19T16:45:00",
+   "excerpt": "A rainy afternoon is permission to stay put. On learning to take it.",
+   "content": "<!-- wp:paragraph -->\n<p>Summer rain arrives in this city like a held breath let go. The streets empty, the cafes fill, and for an hour or two nobody expects much of anybody.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>I used to treat these afternoons as interruptions, plans spoiled. Lately I have begun to think of them as a kind of permission, the weather's way of cancelling things on your behalf.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:quote -->\n<blockquote class=\"wp-block-quote\"><!-- wp:paragraph -->\n<p>Rain does not ask you to do anything. That is its great kindness.</p>\n<!-- /wp:paragraph --><cite>from a notebook, August</cite></blockquote>\n<!-- /wp:quote -->\n\n<!-- wp:heading -->\n<h2 class=\"wp-block-heading\">A rain list</h2>\n<!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} -->\n<ol class=\"wp-block-list\"><!-- wp:list-item -->\n<li>Open the window a little, enough to hear it.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>Make soup, or at least something that simmers.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>Read the long article you saved in March.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>Write to someone who would like a letter.</li>\n<!-- /wp:list-item --></ol>\n<!-- /wp:list -->\n\n<!-- wp:paragraph -->\n<p>When it stops, the street smells of warm stone and the light goes gold for a few minutes. Go out then. It is the best walk of the week.</p>\n<!-- /wp:paragraph -->",
+   "categories": [
+    "essays"
+   ],
+   "tags": [
+    "seasons",
+    "attention"
+   ],
+   "featured_media": "rain",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "books-read-slowly",
+   "title": "Books I read slowly this year",
+   "date": "2025-12-28T20:00:00",
+   "excerpt": "Five books that refused to be hurried, and were better for it.",
+   "content": "<!-- wp:paragraph -->\n<p>This year I stopped counting books. No reading challenge, no tally in the corner of a screen. Instead I tried to finish fewer books more slowly, a chapter or two a night, sometimes going back a page to read it again.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>These are the five that stayed with me. I have left out the authors' names on purpose; the titles here are my own shorthand for each one, the way I talk about them with friends.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:list {\"ordered\":true} -->\n<ol class=\"wp-block-list\"><!-- wp:list-item -->\n<li><strong>The lighthouse logbook.</strong> A keeper's year, one weather report at a time.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li><strong>The orchard book.</strong> On pruning, patience and forty seasons of the same trees.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li><strong>The long letter.</strong> A novel written as a single, unhurried letter to a sister.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li><strong>The map of small rooms.</strong> Essays on houses and the habits they hold.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li><strong>The tide tables.</strong> Short poems, one for each day of a coastal winter.</li>\n<!-- /wp:list-item --></ol>\n<!-- /wp:list -->\n\n<!-- wp:heading -->\n<h2 class=\"wp-block-heading\">On rereading</h2>\n<!-- /wp:heading -->\n\n<!-- wp:paragraph -->\n<p>Two of these I read twice. The second time was better both times, which is perhaps the best argument for slowness I know: you cannot reread a scroll.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:columns -->\n<div class=\"wp-block-columns\"><!-- wp:column -->\n<div class=\"wp-block-column\"><!-- wp:paragraph -->\n<p><strong>Read</strong><br>14 books, give or take.</p>\n<!-- /wp:paragraph --></div>\n<!-- /wp:column --><!-- wp:column -->\n<div class=\"wp-block-column\"><!-- wp:paragraph -->\n<p><strong>Abandoned</strong><br>3, without guilt.</p>\n<!-- /wp:paragraph --></div>\n<!-- /wp:column --><!-- wp:column -->\n<div class=\"wp-block-column\"><!-- wp:paragraph -->\n<p><strong>Reread</strong><br>2, gladly.</p>\n<!-- /wp:paragraph --></div>\n<!-- /wp:column --></div>\n<!-- /wp:columns -->",
+   "categories": [
+    "reading"
+   ],
+   "tags": [
+    "books"
+   ],
+   "featured_media": "bookshelf",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "keeping-a-slow-website",
+   "title": "On keeping a slow website",
+   "date": "2024-10-03T11:00:00",
+   "excerpt": "Why this notebook has no analytics, no feed algorithm and no pop-ups, and why it is updated only when there is something to say.",
+   "content": "<!-- wp:paragraph -->\n<p>This site is deliberately small. A list of entries, a few pages, a light and a dark mode. No tracking, no newsletter pop-up, no counter telling you how many people read this before you.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>It is updated when there is something to say, which is not very often. Some months there is nothing at all. That used to worry me; now it feels honest.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:heading -->\n<h2 class=\"wp-block-heading\">A few rules I keep</h2>\n<!-- /wp:heading -->\n\n<!-- wp:list -->\n<ul class=\"wp-block-list\"><!-- wp:list-item -->\n<li>Every page should read well with the styles switched off.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>Nothing moves unless you move it.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>Dates are shown plainly so you know how old a thought is.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>Comments are welcome and read slowly, like letters.</li>\n<!-- /wp:list-item --></ul>\n<!-- /wp:list -->\n\n<!-- wp:columns -->\n<div class=\"wp-block-columns\"><!-- wp:column -->\n<div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} -->\n<h3 class=\"wp-block-heading\">What it is</h3>\n<!-- /wp:heading -->\n<!-- wp:paragraph -->\n<p>A notebook kept in public. Mostly short entries on attention, walks and books, written for whoever wanders by.</p>\n<!-- /wp:paragraph --></div>\n<!-- /wp:column --><!-- wp:column -->\n<div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} -->\n<h3 class=\"wp-block-heading\">What it is not</h3>\n<!-- /wp:heading -->\n<!-- wp:paragraph -->\n<p>A brand, a funnel or a feed. It will not remind you it exists. If you would like to come back, the RSS link is in the footer.</p>\n<!-- /wp:paragraph --></div>\n<!-- /wp:column --></div>\n<!-- /wp:columns -->\n\n<!-- wp:paragraph -->\n<p>If you keep a small site of your own, I would love to hear about it. The <a href=\"{{page:contact}}\">contact page</a> has an address that reaches a real inbox, read in the afternoons.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:separator -->\n<hr class=\"wp-block-separator has-alpha-channel-opacity\"/>\n<!-- /wp:separator -->",
+   "categories": [
+    "essays"
+   ],
+   "tags": [
+    "tools",
+    "attention"
+   ],
+   "featured_media": "dot-grid",
+   "format": "standard",
+   "sticky": true,
+   "comments": [
+    {
+     "author": "Juno",
+     "email": "juno@example.com",
+     "content": "Nothing moves unless you move it. Putting that on a sticky note above my desk.",
+     "date": "2024-10-04T09:30:00"
+    },
+    {
+     "author": "Halden",
+     "email": "halden@example.com",
+     "content": "Thank you for keeping the RSS feed. Found this via someone else's blogroll.",
+     "date": "2024-10-06T22:10:00"
+    }
+   ]
+  },
+  {
+   "slug": "moon-calendar",
+   "title": "A moon calendar, kept by hand",
+   "date": "2024-05-12T22:40:00",
+   "excerpt": "One small drawing each night for a year: what a hand-kept moon calendar taught me about paying attention.",
+   "content": "<!-- wp:paragraph -->\n<p>Last May I started drawing the moon each night in a small grid notebook. A circle, shaded to match what I saw from the back step, and a word or two about the sky.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>Some nights there was nothing to draw: cloud, rain, or simply forgetting. I left those squares blank on purpose. The gaps are part of the record.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:image {\"sizeSlug\":\"large\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"{{media:tide-lines}}\" alt=\"Many thin wavy lines in slate blue with a few rust-coloured lines\"/><figcaption class=\"wp-element-caption\">The tide follows along, whether or not anyone is drawing.</figcaption></figure>\n<!-- /wp:image -->\n\n<!-- wp:heading -->\n<h2 class=\"wp-block-heading\">What a year of circles shows</h2>\n<!-- /wp:heading -->\n\n<!-- wp:paragraph -->\n<p>Mostly, that I had never really looked. I knew the moon had phases the way one knows facts from school. Drawing it every night made the rhythm physical: the slow fattening, the bright week, the long thinning back to nothing.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:quote -->\n<blockquote class=\"wp-block-quote\"><!-- wp:paragraph -->\n<p>Attention is a muscle, but it is also a habit, and habits like small, regular shapes.</p>\n<!-- /wp:paragraph --></blockquote>\n<!-- /wp:quote -->\n\n<!-- wp:paragraph -->\n<p>The notebook is full now. I have started a second one, this time with the tide times written underneath each circle.</p>\n<!-- /wp:paragraph -->",
+   "categories": [
+    "notes"
+   ],
+   "tags": [
+    "seasons",
+    "routines"
+   ],
+   "featured_media": "moon-phases",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main",
+   "location": "primary",
+   "items": [
+    {
+     "title": "essays",
+     "category": "essays"
+    },
+    {
+     "title": "notes",
+     "category": "notes"
+    },
+    {
+     "title": "reading",
+     "category": "reading"
+    },
+    {
+     "title": "about",
+     "page": "about",
+     "children": [
+      {
+       "title": "now",
+       "page": "now"
+      },
+      {
+       "title": "colophon",
+       "page": "colophon"
+      }
+     ]
+    },
+    {
+     "title": "contact",
+     "page": "contact"
+    }
+   ]
+  },
+  {
+   "name": "Footer links",
+   "location": "footer",
+   "items": [
+    {
+     "title": "rss",
+     "url": "/feed/"
+    },
+    {
+     "title": "colophon",
+     "page": "colophon"
+    },
+    {
+     "title": "contact",
+     "page": "contact"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "footer-1": [
+   "<!-- wp:group -->\n<div class=\"wp-block-group\"><!-- wp:heading -->\n<h2 class=\"wp-block-heading\">about</h2>\n<!-- /wp:heading -->\n\n<!-- wp:paragraph -->\n<p>A small notebook on attention, slow mornings and long walks. New entries when they are ready.</p>\n<!-- /wp:paragraph --></div>\n<!-- /wp:group -->",
+   "<!-- wp:group -->\n<div class=\"wp-block-group\"><!-- wp:heading -->\n<h2 class=\"wp-block-heading\">topics</h2>\n<!-- /wp:heading -->\n\n<!-- wp:categories /--></div>\n<!-- /wp:group -->",
+   "<!-- wp:group -->\n<div class=\"wp-block-group\"><!-- wp:heading -->\n<h2 class=\"wp-block-heading\">by year</h2>\n<!-- /wp:heading -->\n\n<!-- wp:archives {\"type\":\"yearly\"} /--></div>\n<!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "accent": "#b4532a",
+  "color_scheme": "auto",
+  "show_toggle": true,
+  "font_pairing": "mono",
+  "content_width": "normal",
+  "index_style": "years",
+  "show_dates": true,
+  "show_featured": false,
+  "intro_text": "Hello. This is a small notebook about attention, slow mornings and the things that make ordinary days feel roomy.\nNew entries arrive when they are ready.",
+  "footer_text": "Written slowly, in the early hours."
+ }
+}

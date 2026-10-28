@@ -1,0 +1,454 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "The Lantern Notebook",
+  "blogdescription": "Small notes from a slow, warm life — kitchen, garden and the long way home.",
+  "posts_per_page": 6
+ },
+ "categories": [
+  {
+   "slug": "kitchen",
+   "name": "Kitchen",
+   "description": "Bread, soup and the occasional cake that works."
+  },
+  {
+   "slug": "garden",
+   "name": "Garden",
+   "description": "The vegetable patch and its accounts."
+  },
+  {
+   "slug": "walks",
+   "name": "Walks",
+   "description": "Footpaths, weather and opinionated geese."
+  },
+  {
+   "slug": "handmade",
+   "name": "Handmade",
+   "description": "Mending, pressing, knitting and fixing."
+  },
+  {
+   "slug": "letters",
+   "name": "Letters",
+   "description": "Notes, lists and things easier said on paper."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "autumn",
+   "name": "Autumn"
+  },
+  {
+   "slug": "slow-living",
+   "name": "Slow living"
+  },
+  {
+   "slug": "recipes",
+   "name": "Recipes"
+  },
+  {
+   "slug": "seasons",
+   "name": "Seasons"
+  },
+  {
+   "slug": "rainy-days",
+   "name": "Rainy days"
+  },
+  {
+   "slug": "notebook",
+   "name": "Notebook"
+  }
+ ],
+ "media": [
+  {
+   "id": "hero-lanterns",
+   "file": "demo/images/hero-lanterns.jpg",
+   "alt": "A string of glowing paper lanterns over dusky purple hills",
+   "caption": "Lanterns over the hills, the night of the harvest walk."
+  },
+  {
+   "id": "sunday-kitchen",
+   "file": "demo/images/sunday-kitchen.jpg",
+   "alt": "A golden scored loaf of bread resting on a wooden board",
+   "caption": ""
+  },
+  {
+   "id": "tomato-garden",
+   "file": "demo/images/tomato-garden.jpg",
+   "alt": "Rows of tomato vines heavy with red and orange fruit",
+   "caption": ""
+  },
+  {
+   "id": "old-mill-walk",
+   "file": "demo/images/old-mill-walk.jpg",
+   "alt": "A small white mill with a water wheel on green rolling hills",
+   "caption": ""
+  },
+  {
+   "id": "rainy-window",
+   "file": "demo/images/rainy-window.jpg",
+   "alt": "Raindrops on a four-paned window looking out over green hills",
+   "caption": "The view from the kitchen table, most of October."
+  },
+  {
+   "id": "mended-sweater",
+   "file": "demo/images/mended-sweater.jpg",
+   "alt": "A zigzag-striped knitted sweater with a ball of yarn and two needles",
+   "caption": ""
+  },
+  {
+   "id": "pressed-flowers",
+   "file": "demo/images/pressed-flowers.jpg",
+   "alt": "Five pressed flowers in pink, gold and plum on lined paper",
+   "caption": ""
+  },
+  {
+   "id": "old-letters",
+   "file": "demo/images/old-letters.jpg",
+   "alt": "A pile of cream envelopes with coloured stamps",
+   "caption": ""
+  },
+  {
+   "id": "teacup-steam",
+   "file": "demo/images/teacup-steam.jpg",
+   "alt": "A sage green teacup on a saucer with steam curling up",
+   "caption": ""
+  },
+  {
+   "id": "autumn-leaves",
+   "file": "demo/images/autumn-leaves.jpg",
+   "alt": "Red, orange and gold leaves scattered on cream paper",
+   "caption": "A pocketful of leaves from the lane."
+  },
+  {
+   "id": "night-market",
+   "file": "demo/images/night-market.jpg",
+   "alt": "Rows of glowing lanterns strung above striped market stalls at night",
+   "caption": ""
+  },
+  {
+   "id": "meadow-morning",
+   "file": "demo/images/meadow-morning.jpg",
+   "alt": "A sunny meadow full of tiny wildflowers with a path leading over the hill",
+   "caption": "The long way home, through the meadow."
+  }
+ ],
+ "pages": [
+  {
+   "slug": "about",
+   "title": "About",
+   "content": "<!-- wp:paragraph --><p>Hello, and welcome in. I&rsquo;m Wren, and this is my notebook: a quiet corner of the internet where I write down the small things that make a life feel warm.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:meadow-morning}}\" alt=\"A sunny meadow full of tiny wildflowers with a path leading over the hill\"/></figure><!-- /wp:image --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph --><p>I live in a stone cottage at the end of a lane, with a vegetable patch, a temperamental stove and more teacups than one person needs. I bake on Sundays, walk most afternoons and mend things that probably should have been thrown away years ago.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:heading --><h2 class=\"wp-block-heading\">What you&rsquo;ll find here</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><strong>Kitchen</strong> — bread, soup and the occasional cake that works.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Garden</strong> — the vegetable patch and its accounts.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Walks</strong> — footpaths, weather and opinionated geese.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Handmade</strong> — mending, pressing, knitting, fixing.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Letters</strong> — notes, lists and things easier said on paper.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Write down the small things. They turn out to be the big ones.</p><!-- /wp:paragraph --></blockquote><!-- /wp:quote --><!-- wp:paragraph --><p>There are no adverts here and never will be. If something I write makes your day a little cosier, that is more than enough. Pull up a chair &mdash; the kettle&rsquo;s on.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Write me a note</a></div><!-- /wp:button --></div><!-- /wp:buttons -->",
+   "featured_media": "hero-lanterns"
+  },
+  {
+   "slug": "now",
+   "title": "Now",
+   "content": "<!-- wp:paragraph --><p>A little page about what I&rsquo;m up to at the moment, updated whenever the season changes.</p><!-- /wp:paragraph --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><strong>Reading</strong> — a fat old novel about a lighthouse keeper, one chapter a night.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Baking</strong> — a rye loaf that refuses to rise. We are negotiating.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Making</strong> — a patchwork blanket from the scraps drawer.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Growing</strong> — garlic, planted in October, to be forgotten until spring.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Looking forward to</strong> — the first frost, and the first fire of the year.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph --><p>This page was last updated at the end of October, with the rain tapping on the window.</p><!-- /wp:paragraph -->",
+   "parent": "about"
+  },
+  {
+   "slug": "recipe-box",
+   "title": "Recipe box",
+   "content": "<!-- wp:paragraph --><p>A small box of recipes that turn up again and again in this kitchen. Nothing fancy, everything well-loved, every card a little splattered.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Sunday soup</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>One onion, two carrots, a stick of celery, softened slowly in butter.</li><!-- /wp:list-item --><!-- wp:list-item --><li>A handful of red lentils and a pinch of smoked paprika.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Water or stock to cover, simmered until everything gives up.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Blitz, salt, a squeeze of lemon. Bread on the side.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:heading --><h2 class=\"wp-block-heading\">Spiced apple for cold evenings</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Warm apple juice with a stick of cinnamon, two cloves and a strip of orange peel. Leave it on the lowest heat while you read and the whole house will smell like the night market.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>More cards will be added as the box fills up.</p><!-- /wp:paragraph -->",
+   "featured_media": "sunday-kitchen"
+  },
+  {
+   "slug": "contact",
+   "title": "Contact",
+   "content": "<!-- wp:paragraph --><p>I love getting letters, and emails count too. If something here made you smile, or you have a recipe, a walk or a list of small comforts to share, I&rsquo;d be so glad to hear from you.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">By email</h3><!-- /wp:heading --><!-- wp:paragraph --><p><a href=\"mailto:hello@example.com\">hello@example.com</a><br>I answer slowly but I always answer, usually on a Sunday with a cup of tea.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">By post</h3><!-- /wp:heading --><!-- wp:paragraph --><p>The Lantern Notebook<br>c/o The Post Office<br>Little Hollow, Somewhere Green</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>The best letters are the ones that arrive on an ordinary Tuesday.</p><!-- /wp:paragraph --></blockquote><!-- /wp:quote --><!-- wp:paragraph --><p>Please don&rsquo;t send anything that needs a reply by a certain date. Things move at the speed of the seasons around here.</p><!-- /wp:paragraph -->",
+   "featured_media": "old-letters"
+  }
+ ],
+ "posts": [
+  {
+   "slug": "sourdough-on-a-rainy-sunday",
+   "title": "Sourdough on a rainy Sunday",
+   "date": "2026-10-19T09:40:00",
+   "excerpt": "The starter woke up before I did. A slow bake, a fogged-up window and the small, stubborn joy of bread that takes all day.",
+   "categories": [
+    "kitchen"
+   ],
+   "tags": [
+    "rainy-days",
+    "recipes",
+    "slow-living"
+   ],
+   "featured_media": "sunday-kitchen",
+   "content": "<!-- wp:paragraph --><p>The starter woke up before I did. When I came down in my socks, it had climbed halfway up the jar and was sighing little bubbles against the glass, which is the closest thing to a good-morning I get from anything in this house before eight.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Rain had been falling since midnight, the soft kind that does not so much fall as hang about. It is the perfect weather for bread, because bread asks you to stay home and check on it, and on a day like this there is nowhere else I would rather be.</p><!-- /wp:paragraph --><!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:rainy-window}}\" alt=\"Raindrops on a four-paned window looking out over green hills\"/><figcaption class=\"wp-element-caption\">The view from the kitchen table, most of October.</figcaption></figure><!-- /wp:image --><!-- wp:heading --><h2 class=\"wp-block-heading\">The slow schedule</h2><!-- /wp:heading --><!-- wp:paragraph --><p>I have stopped pretending sourdough fits around my life. Now I let my Sunday fit around it. This is roughly how the day went, written on the back of an envelope that is now lightly floured:</p><!-- /wp:paragraph --><!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li><strong>8:00</strong> — feed the starter, put the kettle on, admire the bubbles.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>12:00</strong> — mix flour, water and starter; leave it to rest while I read.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>12:30 to 3:00</strong> — four sets of stretch-and-folds, one every half hour.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>3:00 to 7:00</strong> — the long rise, under a tea towel, by the warm stove.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Overnight</strong> — shaped, floured and tucked into the fridge to dream.</li><!-- /wp:list-item --></ol><!-- /wp:list --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Bread is mostly waiting. The trick is to make the waiting a pleasure, not a chore.</p><!-- /wp:paragraph --><cite>scribbled on the flour tin</cite></blockquote><!-- /wp:quote --><!-- wp:paragraph --><p>On Monday morning the loaf came out of the oven crackling, which is a sound I will never get tired of. The crust sang for a good ten minutes on the cooling rack while I hovered with the butter dish like a hopeful cat.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>If you are new to this, start with a friend&rsquo;s starter rather than making your own. Ask anyone who bakes; they will be thrilled to give you a spoonful and a long list of instructions you can mostly ignore.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Hettie",
+     "email": "hettie@example.com",
+     "content": "The envelope schedule made me laugh — mine is written on a receipt. Your crumb looks lovely!",
+     "date": "2026-10-19T14:12:00"
+    },
+    {
+     "author": "Orin",
+     "email": "orin@example.com",
+     "content": "Saving this for next weekend. Do you bake in a cast-iron pot or on a stone?",
+     "date": "2026-10-20T08:03:00"
+    }
+   ]
+  },
+  {
+   "slug": "the-tomato-ledger",
+   "title": "The tomato ledger: what grew and what didn’t",
+   "date": "2026-09-28T17:15:00",
+   "excerpt": "Every September I open the little green notebook and settle the accounts with the garden. This year the cherry tomatoes won by a landslide.",
+   "categories": [
+    "garden"
+   ],
+   "tags": [
+    "seasons",
+    "notebook"
+   ],
+   "featured_media": "tomato-garden",
+   "content": "<!-- wp:paragraph --><p>Every September I open the little green notebook where I keep the garden&rsquo;s accounts. Not money, of course: what I planted, where, and how it behaved. It reads a bit like a school report written by a fond but honest teacher.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>This year I grew seven kinds of tomato in the raised beds by the fence. Some of them were a triumph. One of them, and I will not name it here out of respect, produced exactly four fruits all summer and sulked about it.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">The winners</h2><!-- /wp:heading --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph --><p><strong>Little yellow pears.</strong> Tiny, sweet and endlessly generous. I ate most of them standing in the garden in my dressing gown, which is the correct way.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph --><p><strong>The striped ones.</strong> Green and gold stripes, slow to ripen, worth every day of the wait. Wonderful sliced thick on toast with salt.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">What I will change next year</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Plant later. The cold May nights set everything back by weeks.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Give each plant more room than seems sensible. Then a little more.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Mulch with straw early, before the July heat, not after.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Write in the ledger every week, not just when something goes wrong.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>A garden is a conversation that lasts all year. Mostly you listen.</p><!-- /wp:paragraph --></blockquote><!-- /wp:quote --><!-- wp:paragraph --><p>The last green fruits are now lined up along the windowsill in the kitchen, ripening slowly in the autumn light. Whatever refuses to turn red will become chutney, which is the garden&rsquo;s way of making sure nothing is wasted.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Juniper",
+     "email": "juniper@example.com",
+     "content": "A tomato ledger! I love this idea. Mine all got blight in August, so I am a little envious.",
+     "date": "2026-09-29T10:44:00"
+    }
+   ]
+  },
+  {
+   "slug": "a-walk-to-the-old-mill",
+   "title": "A walk to the old mill",
+   "date": "2026-10-05T16:20:00",
+   "excerpt": "Four miles, two stiles, one very opinionated goose and a mill wheel that has not turned in fifty years. A perfect autumn afternoon.",
+   "categories": [
+    "walks"
+   ],
+   "tags": [
+    "autumn",
+    "seasons"
+   ],
+   "featured_media": "old-mill-walk",
+   "content": "<!-- wp:paragraph --><p>There is a footpath behind the church that most people ignore, because it starts with a muddy stile and a sign that has faded to nothing. If you climb over anyway, it takes you along the stream for two miles to the old mill.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>I walked it on Sunday with a flask of tea and an apple in each pocket. The hedges were heavy with rosehips and the light came in low and gold through the alders, the way it only does for a few weeks each year.</p><!-- /wp:paragraph --><!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:autumn-leaves}}\" alt=\"Red, orange and gold leaves scattered on cream paper\"/><figcaption class=\"wp-element-caption\">A pocketful of leaves from the lane.</figcaption></figure><!-- /wp:image --><!-- wp:heading --><h2 class=\"wp-block-heading\">Things I saw along the way</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>A heron, standing so still I thought it was a post until it wasn&rsquo;t.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Three kinds of mushroom I could not name and did not touch.</li><!-- /wp:list-item --><!-- wp:list-item --><li>A goose at the farm gate who clearly owned the path and wanted a toll.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Blackberries, mostly past their best, a few still perfect.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph --><p>The mill itself is a small white building with a red roof and a wheel that has not turned in fifty years. Moss has made itself very comfortable on the paddles. I sat on the wall beside it, drank my tea and listened to the water doing all the work the wheel used to do.</p><!-- /wp:paragraph --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Some walks are for getting somewhere. The best ones are for getting nowhere slowly.</p><!-- /wp:paragraph --></blockquote><!-- /wp:quote --><!-- wp:paragraph --><p>I came home the long way, across the meadow, with muddy boots and very cold hands, and made soup. Not a remarkable day, perhaps, but a very good one.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Orin",
+     "email": "orin@example.com",
+     "content": "That goose sounds like a character. Every good walk needs one.",
+     "date": "2026-10-06T09:30:00"
+    },
+    {
+     "author": "Hettie",
+     "email": "hettie@example.com",
+     "content": "This made me want to put my boots on right now.",
+     "date": "2026-10-06T19:02:00"
+    }
+   ]
+  },
+  {
+   "slug": "mending-a-favourite-sweater",
+   "title": "Mending a favourite sweater",
+   "date": "2026-10-12T20:05:00",
+   "excerpt": "The elbows had worn through, the cuffs were fraying, and I loved it too much to let it go. An evening of darning, with tea.",
+   "categories": [
+    "handmade"
+   ],
+   "tags": [
+    "slow-living",
+    "autumn"
+   ],
+   "featured_media": "mended-sweater",
+   "content": "<!-- wp:paragraph --><p>My striped sweater is eleven years old. It has been to the seaside, up three hills, through two house moves and a great many evenings on the sofa. Last week I noticed that one elbow was more hole than sweater.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>I could have bought a new one. Instead I found the darning mushroom in the sewing tin, a few odds and ends of wool, and a long evening with nothing in particular planned.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Visible mending, gently</h2><!-- /wp:heading --><!-- wp:paragraph --><p>I have come to love mending that shows. Rather than trying to hide the repair, I picked a mustard yellow that sits happily between the stripes, and wove a small square patch over the worn patch, row by row, like a tiny loom.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>A darning mushroom (or a smooth apple)</li><!-- /wp:list-item --><!-- wp:list-item --><li>A blunt tapestry needle</li><!-- /wp:list-item --><!-- wp:list-item --><li>Wool a little thinner than the knit</li><!-- /wp:list-item --><!-- wp:list-item --><li>Good light and a cup of tea</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph --><p>Work slowly, a few stitches past the edge of the hole, so the patch is anchored in sound fabric. Don&rsquo;t pull too tight. Your mend should lie flat and soft, not pucker.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Things we mend become ours in a way that things we buy never quite do.</p><!-- /wp:paragraph --></blockquote><!-- /wp:quote --><!-- wp:paragraph --><p>By the time the tea had gone cold, the elbow was finished and I had started on the cuffs. The sweater is now officially on its third life, and somehow it feels warmer than before.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Juniper",
+     "email": "juniper@example.com",
+     "content": "Mustard yellow is the perfect choice. I have a pile of socks waiting for this treatment.",
+     "date": "2026-10-13T12:20:00"
+    }
+   ]
+  },
+  {
+   "slug": "letters-i-never-posted",
+   "title": "Letters I never posted",
+   "date": "2026-09-14T21:30:00",
+   "excerpt": "A shoebox at the back of the wardrobe, full of letters I wrote and never sent. Reading them again was gentler than I expected.",
+   "categories": [
+    "letters"
+   ],
+   "tags": [
+    "notebook"
+   ],
+   "featured_media": "old-letters",
+   "content": "<!-- wp:paragraph --><p>At the back of the wardrobe there is a shoebox with a ribbon round it. Inside are letters I wrote over the years and never posted: to friends I had lost touch with, to a grandmother who was already gone, to myself at twenty.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>I opened it on a quiet Sunday evening, half expecting to wince. Instead I found that I was rather fond of the person who had written them. She worried about all the wrong things, but she noticed the light and the weather and the smell of rain, and she wrote it all down.</p><!-- /wp:paragraph --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Dear you, I hope the kettle is on and the window is open. I hope you still stop to look at the sky.</p><!-- /wp:paragraph --><cite>from a letter dated one long-ago spring</cite></blockquote><!-- /wp:quote --><!-- wp:heading --><h2 class=\"wp-block-heading\">Why write a letter you won&rsquo;t send?</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Because some things are easier to say to paper first.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Because the writing is the point, not the posting.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Because one day you might want to know who you were.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph --><p>I have started writing them again, one a month, on the good paper. Some of them I will post. Most of them will go in the shoebox with the others, waiting for some future Sunday evening.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>If you have never tried it, pick someone tonight &mdash; anyone at all &mdash; and write them a page. You don&rsquo;t need a stamp.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Hettie",
+     "email": "hettie@example.com",
+     "content": "This one made me a bit teary. I think I will start a shoebox of my own.",
+     "date": "2026-09-15T07:58:00"
+    }
+   ]
+  },
+  {
+   "slug": "ten-small-comforts-for-november",
+   "title": "Ten small comforts for November",
+   "date": "2026-10-26T08:10:00",
+   "excerpt": "The evenings are drawing in. Here is my list of very small, very ordinary things that make the darker month feel cosy instead of long.",
+   "categories": [
+    "letters"
+   ],
+   "tags": [
+    "slow-living",
+    "seasons",
+    "rainy-days"
+   ],
+   "featured_media": "teacup-steam",
+   "sticky": true,
+   "content": "<!-- wp:paragraph --><p>The clocks have gone back and the evenings arrive in the middle of the afternoon. Every year I find November a little harder than it needs to be, so this year I have made a list, and pinned it to the fridge with the lighthouse magnet.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>None of these are grand. That is rather the point.</p><!-- /wp:paragraph --><!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>A pot of tea at four o&rsquo;clock, whether or not anyone else wants one.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Lighting a candle at dinner, even on a Tuesday.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Soup on Mondays. Any soup. The same soup, if you like.</li><!-- /wp:list-item --><!-- wp:list-item --><li>A hot water bottle at the foot of the bed, put there an hour early.</li><!-- /wp:list-item --><!-- wp:list-item --><li>One chapter of a book before the phone gets looked at.</li><!-- /wp:list-item --><!-- wp:list-item --><li>A walk at lunchtime, to catch the daylight while it lasts.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Writing a postcard to someone who is not expecting one.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Clean, warm socks straight from the radiator.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Bread in the oven on a Sunday morning.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Saying yes to an early night without feeling guilty.</li><!-- /wp:list-item --></ol><!-- /wp:list --><!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:teacup-steam}}\" alt=\"A sage green teacup on a saucer with steam curling up\"/></figure><!-- /wp:image --><!-- wp:paragraph --><p>I would love to hear yours. Leave a note below, and I will add the best ones to the fridge.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Orin",
+     "email": "orin@example.com",
+     "content": "Number four is non-negotiable in our house. I would add: clementines in a bowl on the table.",
+     "date": "2026-10-26T10:15:00"
+    },
+    {
+     "author": "Juniper",
+     "email": "juniper@example.com",
+     "content": "Rereading a favourite childhood book. Works every single time.",
+     "date": "2026-10-26T18:40:00"
+    }
+   ]
+  },
+  {
+   "slug": "lanterns-at-the-night-market",
+   "title": "Lanterns at the night market",
+   "date": "2026-09-21T22:45:00",
+   "excerpt": "Once a year the square fills with paper lanterns, steaming stalls and far too many people. I bought a lantern, and the name of this journal.",
+   "categories": [
+    "walks"
+   ],
+   "tags": [
+    "autumn"
+   ],
+   "featured_media": "night-market",
+   "content": "<!-- wp:paragraph --><p>Once a year, on the first cold Saturday of autumn, the town square fills with stalls and the stalls fill with lanterns. Hundreds of them, strung between the lamp posts and the clock tower, in every colour a lantern can be.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>I went with my neighbour, who is eighty-one and walks faster than I do. We shared a paper cone of roasted chestnuts and a cup of spiced apple and argued happily about which lanterns were the prettiest.</p><!-- /wp:paragraph --><!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:hero-lanterns}}\" alt=\"A string of glowing paper lanterns over dusky purple hills\"/><figcaption class=\"wp-element-caption\">Lanterns over the hills, the night of the harvest walk.</figcaption></figure><!-- /wp:image --><!-- wp:heading --><h2 class=\"wp-block-heading\">The lantern stall</h2><!-- /wp:heading --><!-- wp:paragraph --><p>At the far corner there is always one stall that sells only paper lanterns, made by a family from the next valley. Each one is folded by hand and painted with tiny flowers, and each one is just slightly different from the others.</p><!-- /wp:paragraph --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Carry a little light home with you, the lantern-maker said, and keep it lit when the evenings get long.</p><!-- /wp:paragraph --></blockquote><!-- /wp:quote --><!-- wp:paragraph --><p>I bought a small gold one. It hangs above my desk now, where I write these entries, and it is the reason this little notebook has the name it has.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>We walked home under the strings of light, our breath clouding, my neighbour humming something I didn&rsquo;t know. I think it might be my favourite night of the year.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Hettie",
+     "email": "hettie@example.com",
+     "content": "So that is where the name comes from! What a lovely story.",
+     "date": "2026-09-22T09:00:00"
+    }
+   ]
+  },
+  {
+   "slug": "pressing-flowers-in-the-dictionary",
+   "title": "Pressing flowers in the dictionary",
+   "date": "2026-09-07T15:00:00",
+   "excerpt": "The last of the summer flowers, laid between the pages of a very heavy dictionary. A small way of keeping a season.",
+   "categories": [
+    "handmade"
+   ],
+   "tags": [
+    "seasons",
+    "notebook"
+   ],
+   "featured_media": "pressed-flowers",
+   "content": "<!-- wp:paragraph --><p>There is a dictionary on the bottom shelf that nobody has opened for words in years. It is, however, the best flower press in the house: heavy, patient and full of thin, absorbent pages.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>On the first cool morning of September I went round the garden with scissors and a basket and gathered the last of the summer flowers before the weather turned. Cosmos, a few violas, some marigolds and one very late sweet pea.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">How I press them</h2><!-- /wp:heading --><!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Pick on a dry morning, after the dew has gone.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Choose flat flowers, or slice thick ones in half.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Lay them between two sheets of plain paper, not touching.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Close the book, add more books on top, and forget about it for three weeks.</li><!-- /wp:list-item --></ol><!-- /wp:list --><!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:meadow-morning}}\" alt=\"A sunny meadow full of tiny wildflowers with a path leading over the hill\"/><figcaption class=\"wp-element-caption\">The long way home, through the meadow.</figcaption></figure><!-- /wp:image --><!-- wp:paragraph --><p>The best part is finding them again. I always forget which pages I used, so for months afterwards, looking up a word means the chance of finding a flat yellow marigold between <em>marmalade</em> and <em>marrow</em>.</p><!-- /wp:paragraph --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>A pressed flower is a summer afternoon you can keep in an envelope.</p><!-- /wp:paragraph --></blockquote><!-- /wp:quote --><!-- wp:paragraph --><p>This year I will glue a few of them into the front of my new notebook, one for each month of the summer, so the year begins with a little colour.</p><!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Juniper",
+     "email": "juniper@example.com",
+     "content": "Between marmalade and marrow — I love that so much.",
+     "date": "2026-09-08T11:11:00"
+    }
+   ]
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Journal",
+     "url": "/"
+    },
+    {
+     "title": "Kitchen",
+     "category": "kitchen",
+     "children": [
+      {
+       "title": "Recipe box",
+       "page": "recipe-box"
+      },
+      {
+       "title": "Garden",
+       "category": "garden"
+      }
+     ]
+    },
+    {
+     "title": "Walks",
+     "category": "walks"
+    },
+    {
+     "title": "Handmade",
+     "category": "handmade"
+    },
+    {
+     "title": "Letters",
+     "category": "letters"
+    },
+    {
+     "title": "About",
+     "page": "about",
+     "children": [
+      {
+       "title": "Now",
+       "page": "now"
+      },
+      {
+       "title": "Contact",
+       "page": "contact"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Footer links",
+   "location": "social",
+   "items": [
+    {
+     "title": "Write to me",
+     "page": "contact"
+    },
+    {
+     "title": "Feed",
+     "url": "/feed/"
+    },
+    {
+     "title": "Instagram",
+     "url": "https://instagram.com/"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "footer-1": [
+   "<!-- wp:heading {\"level\":2} --><h2 class=\"wp-block-heading\">Hello there</h2><!-- /wp:heading --><!-- wp:paragraph --><p>I&rsquo;m Wren. I write about bread, gardens, long walks and mending things, from a stone cottage at the end of a lane.</p><!-- /wp:paragraph -->",
+   "<!-- wp:heading {\"level\":2} --><h2 class=\"wp-block-heading\">Leaf through</h2><!-- /wp:heading --><!-- wp:categories /-->",
+   "<!-- wp:heading {\"level\":2} --><h2 class=\"wp-block-heading\">Notes left</h2><!-- /wp:heading --><!-- wp:latest-comments {\"commentsToShow\":3,\"displayAvatar\":false,\"displayExcerpt\":false} /-->"
+  ]
+ },
+ "customizer": {
+  "accent": "#a54a25",
+  "font_pairing": "cozy",
+  "entry_style": "cards",
+  "photo_style": "polaroid",
+  "paper_texture": true,
+  "show_lanterns": true,
+  "show_welcome": true,
+  "greeting": "Pull up a chair, the kettle’s on.",
+  "footer_text": "© The Lantern Notebook · written slowly, by lantern-light"
+ }
+}

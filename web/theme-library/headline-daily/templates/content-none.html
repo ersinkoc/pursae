@@ -1,0 +1,12 @@
+<section class="no-results not-found hd-empty">
+	<h2 class="hd-empty__title">Nothing found</h2>
+	{{if eq .Template "search"}}
+		<p>No stories matched your search. Try different or fewer words.</p>
+		{{template "searchform" (dict "HomeURL" .HomeURL "SearchQuery" .SearchQuery "ID" "empty")}}
+	{{else if and (eq .Template "index") .CanPublish}}
+		<p>The front page is waiting for its first story. <a href="/wp-admin/post-new">File one now</a>.</p>
+	{{else}}
+		<p>There are no stories here yet. Try searching the archive.</p>
+		{{template "searchform" (dict "HomeURL" .HomeURL "SearchQuery" .SearchQuery "ID" "empty")}}
+	{{end}}
+</section><!-- .no-results -->

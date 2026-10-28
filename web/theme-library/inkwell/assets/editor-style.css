@@ -1,0 +1,33 @@
+/* Inkwell: block editor styles, matching the front end's reading column. */
+@font-face { font-family: "Crimson Pro"; src: url(fonts/crimson-pro.woff2) format("woff2"); font-weight: 300 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Crimson Pro"; src: url(fonts/crimson-pro-italic.woff2) format("woff2"); font-weight: 300 700; font-style: italic; font-display: swap; }
+@font-face { font-family: "Playfair Display"; src: url(fonts/playfair-display.woff2) format("woff2"); font-weight: 400 900; font-style: normal; font-display: swap; }
+@font-face { font-family: "Playfair Display"; src: url(fonts/playfair-display-italic.woff2) format("woff2"); font-weight: 400 900; font-style: italic; font-display: swap; }
+
+body {
+	background: #f8f4ec;
+	color: #1e1b18;
+	font-family: "Crimson Pro", Georgia, "Times New Roman", serif;
+	font-size: 1.3rem;
+	line-height: 1.65;
+}
+h1, h2, h3, h4, h5, h6, .editor-post-title__input {
+	font-family: "Playfair Display", Georgia, serif;
+	font-weight: 600;
+	line-height: 1.15;
+	letter-spacing: -0.01em;
+}
+.wp-block { max-width: 40rem; }
+.wp-block[data-align="wide"] { max-width: 56rem; }
+.wp-block[data-align="full"] { max-width: none; }
+a { color: #7a222e; text-decoration-thickness: 1px; text-underline-offset: 0.18em; }
+blockquote, .wp-block-quote {
+	border-left: 2px solid #7a222e;
+	margin-left: 0;
+	padding-left: 1.4rem;
+	font-style: italic;
+}
+.wp-block-pullquote { border-top: 1px solid #1e1b18; border-bottom: 1px solid #1e1b18; font-family: "Playfair Display", Georgia, serif; font-style: italic; }
+figcaption, .wp-element-caption { font-size: 0.85em; color: #5a534c; font-style: italic; }
+hr, .wp-block-separator { border: 0; border-top: 1px solid #c9bfae; }
+code, pre { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.85em; }

@@ -1,0 +1,15 @@
+{{template "header" .}}
+{{if and .IsFront .Posts}}{{template "front" .}}{{else}}
+{{template "layout-open" .}}
+	<header class="hd-page-head">
+		<p class="hd-page-head__label">{{if .IsHomeHeader}}Latest{{else}}All stories{{end}}</p>
+		<h1 class="hd-page-head__title">{{if .IsHomeHeader}}{{.PostsPageTitle}}{{else}}Latest news{{end}}</h1>
+	</header>
+	{{if .Posts}}<div class="hd-river">
+		{{range .Posts}}{{template "content" .}}
+		{{end}}
+	</div>
+	{{.Pagination}}{{else}}{{template "content-none" .}}{{end}}
+{{template "layout-close" .}}
+{{end}}
+{{template "footer" .}}

@@ -1,0 +1,546 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Headline Daily",
+  "blogdescription": "Fast, fair news from Port Calder and the bay",
+  "posts_per_page": 10,
+  "date_format": "j M Y"
+ },
+ "categories": [
+  {
+   "slug": "city",
+   "name": "City",
+   "description": "Council, transport, housing and the streets of Port Calder."
+  },
+  {
+   "slug": "business",
+   "name": "Business",
+   "description": "The harbour, the high street and the money in between."
+  },
+  {
+   "slug": "science",
+   "name": "Science",
+   "description": "Research, discovery and the natural world around the bay."
+  },
+  {
+   "slug": "culture",
+   "name": "Culture",
+   "description": "Music, film, books and the venues that keep the city loud."
+  },
+  {
+   "slug": "sport",
+   "name": "Sport",
+   "description": "Results, rumours and the long view from the terraces."
+  },
+  {
+   "slug": "opinion",
+   "name": "Opinion",
+   "description": "Columns and arguments from our writers and readers."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "transport",
+   "name": "Transport"
+  },
+  {
+   "slug": "harbour",
+   "name": "Harbour"
+  },
+  {
+   "slug": "environment",
+   "name": "Environment"
+  },
+  {
+   "slug": "local-economy",
+   "name": "Local economy"
+  },
+  {
+   "slug": "nightlife",
+   "name": "Nightlife"
+  },
+  {
+   "slug": "libraries",
+   "name": "Libraries"
+  },
+  {
+   "slug": "football",
+   "name": "Football"
+  },
+  {
+   "slug": "festivals",
+   "name": "Festivals"
+  },
+  {
+   "slug": "housing",
+   "name": "Housing"
+  }
+ ],
+ "media": [
+  {
+   "id": "night-tram",
+   "file": "demo/images/night-tram.jpg",
+   "alt": "A red tram with lit windows passes a city skyline at dusk",
+   "caption": "The first overnight trams are due on the Quay Line in March."
+  },
+  {
+   "id": "harbour-cranes",
+   "file": "demo/images/harbour-cranes.jpg",
+   "alt": "Red container cranes above a ship stacked with colourful containers",
+   "caption": ""
+  },
+  {
+   "id": "kelp-forest",
+   "file": "demo/images/kelp-forest.jpg",
+   "alt": "Tall kelp fronds sway in green water lit by shafts of sunlight",
+   "caption": ""
+  },
+  {
+   "id": "concert-hall",
+   "file": "demo/images/concert-hall.jpg",
+   "alt": "Brick arches frame a stage and rows of red seats in a warm concert hall",
+   "caption": ""
+  },
+  {
+   "id": "stadium-header",
+   "file": "demo/images/stadium-header.jpg",
+   "alt": "A football arcs into the goal under floodlights in front of a packed stand",
+   "caption": ""
+  },
+  {
+   "id": "bakery-loaves",
+   "file": "demo/images/bakery-loaves.jpg",
+   "alt": "Rows of scored sourdough loaves on a floured wooden bench",
+   "caption": ""
+  },
+  {
+   "id": "night-sky",
+   "file": "demo/images/night-sky.jpg",
+   "alt": "A telescope silhouetted on a hill under a starry sky",
+   "caption": ""
+  },
+  {
+   "id": "street-grid",
+   "file": "demo/images/street-grid.jpg",
+   "alt": "Aerial view of a city grid with red bus lanes, green cycle lanes and small parks",
+   "caption": ""
+  },
+  {
+   "id": "library-shelves",
+   "file": "demo/images/library-shelves.jpg",
+   "alt": "Warmly lit library shelves full of colourful book spines",
+   "caption": ""
+  },
+  {
+   "id": "shopfront-films",
+   "file": "demo/images/shopfront-films.jpg",
+   "alt": "Four empty shopfronts at night, each window glowing with a projected film",
+   "caption": ""
+  },
+  {
+   "id": "tram-route-map",
+   "file": "demo/images/tram-route-map.jpg",
+   "alt": "A simplified map of three tram lines crossing the city",
+   "caption": "The three lines that will run all night."
+  },
+  {
+   "id": "council-chamber",
+   "file": "demo/images/council-chamber.jpg",
+   "alt": "A council chamber seen from above with curved rows of seats",
+   "caption": ""
+  },
+  {
+   "id": "harbour-dawn",
+   "file": "demo/images/harbour-dawn.jpg",
+   "alt": "A sailing boat on the harbour at dawn with the city skyline behind",
+   "caption": "Port Calder from the outer breakwater."
+  }
+ ],
+ "pages": [
+  {
+   "slug": "about",
+   "title": "About Headline Daily",
+   "content": "<!-- wp:paragraph --><p>Headline Daily is an independent newsroom covering Port Calder and the towns around the bay. We publish every morning, update through the day, and answer to our readers rather than to an owner.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">What we cover</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>City hall, transport and housing</li><!-- /wp:list-item --><!-- wp:list-item --><li>The harbour and the local economy</li><!-- /wp:list-item --><!-- wp:list-item --><li>Science and the natural world around the bay</li><!-- /wp:list-item --><!-- wp:list-item --><li>Culture, sport and the life of the streets</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:heading --><h2 class=\"wp-block-heading\">How we work</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Our reporters live in the neighbourhoods they cover. We name our sources wherever we can, explain when we cannot, and correct our mistakes in public. Our full standards are set out on the <a href=\"{{page:standards}}\">standards and corrections</a> page.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Founded</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Started by six reporters in a room above the fish market.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Funded</h3><!-- /wp:heading --><!-- wp:paragraph --><p>By readers’ memberships, local advertising and nothing else.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Free</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Every story stays free to read, for everyone.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Contact the newsroom</a></div><!-- /wp:button --></div><!-- /wp:buttons -->",
+   "template": "",
+   "featured_media": "harbour-dawn",
+   "parent": ""
+  },
+  {
+   "slug": "standards",
+   "title": "Standards and corrections",
+   "content": "<!-- wp:paragraph --><p>We aim to be accurate, fair and clear. When we fall short, we say so promptly and plainly.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Corrections</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Every correction is added to the foot of the original story with the date it was made. Significant corrections are also listed in the evening newsletter.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Our commitments</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>We give people a fair chance to respond before we publish claims about them</li><!-- /wp:list-item --><!-- wp:list-item --><li>We separate news reporting from opinion, and label opinion clearly</li><!-- /wp:list-item --><!-- wp:list-item --><li>We do not accept gifts or free travel from people we report on</li><!-- /wp:list-item --><!-- wp:list-item --><li>We tell readers when a story has been updated</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph --><p>To report an error, write to the standards editor through the <a href=\"{{page:contact}}\">contact page</a>. We read every message.</p><!-- /wp:paragraph -->",
+   "template": "",
+   "featured_media": "",
+   "parent": "about"
+  },
+  {
+   "slug": "contact",
+   "title": "Contact the newsroom",
+   "content": "<!-- wp:paragraph --><p>Have a story we should be covering, a correction, or a question about something we published? We would like to hear from you.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">News desk</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Tips, stories and press releases.<br>news@headline-daily.example<br>Open 6am to midnight, every day.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Letters</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Letters for publication, up to 300 words.<br>letters@headline-daily.example<br>Include your name and neighbourhood.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:heading --><h2 class=\"wp-block-heading\">Visit us</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Our newsroom is on the first floor of the old fish market, Harbour Steps, Port Calder. The front desk is open on weekdays from nine until five.</p><!-- /wp:paragraph --><!-- wp:group {\"backgroundColor\":\"newsprint\"} --><div class=\"wp-block-group has-newsprint-background-color has-background\"><!-- wp:paragraph --><p><strong>Sensitive information?</strong> Ask the news desk for our secure contact options before you send anything confidential.</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "template": "",
+   "featured_media": "",
+   "parent": ""
+  },
+  {
+   "slug": "advertise",
+   "title": "Advertise with us",
+   "content": "<!-- wp:paragraph --><p>Headline Daily reaches more than 80,000 readers in and around Port Calder every week. Our advertising is local, clearly labelled and never mixed with our journalism.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Options</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Front page and section sponsorships</li><!-- /wp:list-item --><!-- wp:list-item --><li>Newsletter placements in the morning and evening editions</li><!-- /wp:list-item --><!-- wp:list-item --><li>Classified listings for local businesses and events</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph --><p>We do not accept advertising for gambling, payday lending or political campaigns. To ask for a rate card, <a href=\"{{page:contact}}\">contact the newsroom</a>.</p><!-- /wp:paragraph -->",
+   "template": "",
+   "featured_media": "",
+   "parent": ""
+  }
+ ],
+ "posts": [
+  {
+   "slug": "council-approves-overnight-trams",
+   "title": "Council approves overnight tram service after eleven-hour session",
+   "date": "2026-10-27T07:10:00",
+   "excerpt": "Three lines will run all night from March, ending a forty-year gap in the city’s late transport.",
+   "content": "<!-- wp:paragraph --><p>Port Calder will run trams through the night for the first time in four decades after councillors voted 31 to 19 in favour of a twelve-month trial, at the end of a session that began before lunch and finished shortly after one in the morning.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>From the first weekend of March, the Quay, Hillside and Riverside lines will run every twenty minutes between midnight and five, seven nights a week. The trial will cost an estimated 4.2 million a year, roughly a third of which is expected to come back in fares.</p><!-- /wp:paragraph --><!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:tram-route-map}}\" alt=\"A simplified map of three tram lines crossing the city\"/><figcaption class=\"wp-element-caption\">The three lines that will run all night. Smaller stops will be request-only after midnight.</figcaption></figure><!-- /wp:image --><!-- wp:heading --><h2 class=\"wp-block-heading\">Who asked for it</h2><!-- /wp:heading --><!-- wp:paragraph --><p>The proposal grew out of a survey of 6,000 night-shift workers, nurses, cleaners, bakers and hospitality staff, which found that nearly half spent more on taxis each month than on groceries. Several of them sat in the public gallery throughout the debate.</p><!-- /wp:paragraph --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>I have been walking home along the ring road at three in the morning for nine years. Tonight I could cry.</p><!-- /wp:paragraph --><cite>A hospital porter, speaking after the vote</cite></blockquote><!-- /wp:quote --><!-- wp:heading --><h2 class=\"wp-block-heading\">What happens next</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Timetables will be published in January and printed at every stop.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Two late-night staff will ride each tram, alongside existing CCTV.</li><!-- /wp:list-item --><!-- wp:list-item --><li>The council will publish ridership figures every quarter.</li><!-- /wp:list-item --><!-- wp:list-item --><li>A full review in month ten will decide whether the service becomes permanent.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph --><p>Opponents argued the money would be better spent on daytime frequency in the outer suburbs, and won an amendment requiring the transport office to report on both services side by side. The first trams, freshly repainted, are already sitting in the Hillside depot.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "city"
+   ],
+   "tags": [
+    "transport",
+    "nightlife"
+   ],
+   "featured_media": "night-tram",
+   "format": "standard",
+   "sticky": true,
+   "comments": [
+    {
+     "author": "Ines R.",
+     "email": "ines@example.com",
+     "content": "Finally. My sister works nights at the bakery on Dock Row and this will change her week completely.",
+     "date": "2026-10-27T08:02:00"
+    },
+    {
+     "author": "Gareth P.",
+     "email": "gareth@example.com",
+     "content": "Twenty minutes is fine, but please make the request-only stops clear on the maps.",
+     "date": "2026-10-27T09:40:00"
+    }
+   ]
+  },
+  {
+   "slug": "harbour-freight-climbs-third-quarter",
+   "title": "Harbour freight volumes climb for a third straight quarter",
+   "date": "2026-10-26T15:30:00",
+   "excerpt": "Container traffic is up nine per cent on last year, and the port is hiring crane drivers again.",
+   "content": "<!-- wp:paragraph --><p>Container traffic through Port Calder rose nine per cent in the third quarter compared with the same period last year, the harbour authority said on Monday, the third consecutive quarter of growth after two difficult years.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The authority credited a new weekly service from the southern coast and faster turnaround at the east quay, where a second gantry crane came into use in July. Average time alongside for a mid-sized ship fell from thirty-one hours to twenty-two.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">By the numbers</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>412,000 containers handled in the quarter</li><!-- /wp:list-item --><!-- wp:list-item --><li>22 hours average berth time, down from 31</li><!-- /wp:list-item --><!-- wp:list-item --><li>140 new jobs advertised since June</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">What drove it</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Most of the growth came from refrigerated cargo, fruit, fish and flowers, which now accounts for almost a quarter of all boxes landed.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:paragraph --><p>The port is now recruiting crane drivers and lashers for the first time since 2023 and has reopened its apprenticeship scheme, with thirty places for school leavers in the spring.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Not everyone is celebrating. Residents of the Lower Wharf streets say night-time lorry traffic has doubled, and the authority has agreed to fund noise barriers along Ferry Road before the end of the year.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "business"
+   ],
+   "tags": [
+    "harbour",
+    "local-economy"
+   ],
+   "featured_media": "harbour-cranes",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Dev M.",
+     "email": "dev@example.com",
+     "content": "Good news for the apprentices. Ferry Road at 4am is another story, though.",
+     "date": "2026-10-26T18:15:00"
+    }
+   ]
+  },
+  {
+   "slug": "divers-map-giant-kelp-forest",
+   "title": "Volunteer divers map a kelp forest twice the size anyone expected",
+   "date": "2026-10-25T10:00:00",
+   "excerpt": "A summer of weekend dives off the northern headland has produced the most detailed underwater map the bay has ever had.",
+   "content": "<!-- wp:paragraph --><p>A group of forty volunteer divers has spent the summer mapping the kelp forest off Gull Point, and found it covers almost eighteen hectares, more than twice the area recorded in the last official survey eleven years ago.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The divers worked in pairs along numbered ropes laid across the seabed, photographing every square metre and logging fish, crabs and urchins as they went. University researchers then stitched more than 90,000 photographs into a single map.</p><!-- /wp:paragraph --><!-- wp:pullquote --><figure class=\"wp-block-pullquote\"><blockquote><p>We kept swimming off the edge of the old map and finding more forest.</p><cite>Survey coordinator</cite></blockquote></figure><!-- /wp:pullquote --><!-- wp:heading --><h2 class=\"wp-block-heading\">Why it matters</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Kelp forests shelter young fish, soften waves before they reach the shore and lock away carbon. Many along this coast have thinned in recent decades as urchin numbers rose and summers warmed, which makes a growing one unusual.</p><!-- /wp:paragraph --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Thirty-seven fish species recorded, four of them new for the bay</li><!-- /wp:list-item --><!-- wp:list-item --><li>Urchin densities well below levels that strip kelp</li><!-- /wp:list-item --><!-- wp:list-item --><li>The forest edge now reaches the old pier pilings</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph --><p>The team plans to repeat the survey every two years and is looking for volunteers with at least fifty logged dives. The full map will be published online, free to use, in December.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "science"
+   ],
+   "tags": [
+    "environment"
+   ],
+   "featured_media": "kelp-forest",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Saoirse",
+     "email": "saoirse@example.com",
+     "content": "I dived the north transect in August. The light down there on a calm day is unreal.",
+     "date": "2026-10-25T14:22:00"
+    }
+   ]
+  },
+  {
+   "slug": "ropeworks-reopens-as-concert-hall",
+   "title": "The old ropeworks reopens as a 600-seat concert hall",
+   "date": "2026-10-24T19:00:00",
+   "excerpt": "After six years and a long argument about the roof, the city has a new room for music.",
+   "content": "<!-- wp:paragraph --><p>The long brick shed on Tanner Street where the city once twisted its ships’ ropes reopened on Friday as a 600-seat concert hall, six years after the building was rescued from demolition by a residents’ trust.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The hall keeps the original iron roof trusses and the 200-metre floor, now divided into a main auditorium, a smaller studio and a café that runs the length of the street front.</p><!-- /wp:paragraph --><!-- wp:image {\"sizeSlug\":\"large\",\"align\":\"wide\"} --><figure class=\"wp-block-image alignwide size-large\"><img src=\"{{media:concert-hall}}\" alt=\"Brick arches frame a stage and rows of red seats\"/><figcaption class=\"wp-element-caption\">The main room seats 600 and can be cleared for standing gigs of 900.</figcaption></figure><!-- /wp:image --><!-- wp:heading --><h2 class=\"wp-block-heading\">A room built for listening</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Acousticians spent a year tuning the space, hanging timber panels between the trusses and laying a sprung floor over the old stone. At the opening night, a string quartet played unamplified to the back row without a whisper lost.</p><!-- /wp:paragraph --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>We wanted a room where a single cello could fill the place, and a brass band would not take the roof off.</p><!-- /wp:paragraph --><cite>The hall’s artistic director</cite></blockquote><!-- /wp:quote --><!-- wp:paragraph --><p>The first season mixes chamber music, folk nights, comedy and a Sunday afternoon series for families. A quarter of all tickets are held back at a flat price of eight for residents of the surrounding streets.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "culture"
+   ],
+   "tags": [
+    "nightlife",
+    "festivals"
+   ],
+   "featured_media": "concert-hall",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "rovers-clinch-promotion",
+   "title": "Calder Rovers clinch promotion with a stoppage-time header",
+   "date": "2026-10-23T22:15:00",
+   "excerpt": "A ninety-fourth-minute goal from a teenage defender sent the club up with two games to spare.",
+   "content": "<!-- wp:paragraph --><p>Calder Rovers are promoted. A header in the fourth minute of stoppage time from their seventeen-year-old centre-back sealed a 2–1 win over Millbrook on Thursday night and put the club out of reach at the top of the table with two matches still to play.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>It looked for most of the second half as though the celebrations would have to wait. Millbrook equalised just after the hour and defended deep, and the home side had two efforts cleared off the line before the decisive corner.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">How it happened</h2><!-- /wp:heading --><!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>12 min: Rovers lead through a low drive from the edge of the area</li><!-- /wp:list-item --><!-- wp:list-item --><li>63 min: Millbrook level from the penalty spot</li><!-- /wp:list-item --><!-- wp:list-item --><li>90+4 min: a near-post header from a looping corner wins it</li><!-- /wp:list-item --></ol><!-- /wp:list --><!-- wp:paragraph --><p>The young defender, who joined the academy at nine, was carried off the pitch by his teammates and was still in his kit an hour later, signing programmes outside the main stand.</p><!-- /wp:paragraph --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>I just shut my eyes and jumped. When I opened them, everyone was on top of me.</p><!-- /wp:paragraph --><cite>Rovers’ match-winner</cite></blockquote><!-- /wp:quote --><!-- wp:paragraph --><p>The club will hold an open-top bus parade along the seafront on Sunday afternoon, finishing at the harbour steps.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "sport"
+   ],
+   "tags": [
+    "football"
+   ],
+   "featured_media": "stadium-header",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Old Stand Pete",
+     "email": "pete@example.com",
+     "content": "Thirty-one years a season-ticket holder. Never heard the ground that loud.",
+     "date": "2026-10-23T23:01:00"
+    },
+    {
+     "author": "Lou",
+     "email": "lou@example.com",
+     "content": "That kid is going to be playing at a much higher level very soon.",
+     "date": "2026-10-24T07:45:00"
+    }
+   ]
+  },
+  {
+   "slug": "bakeries-buy-flour-together",
+   "title": "Small bakeries band together to buy flour directly from growers",
+   "date": "2026-10-22T08:20:00",
+   "excerpt": "Fourteen independent bakers have formed a buying co-operative, cutting their flour bill by a fifth.",
+   "content": "<!-- wp:paragraph --><p>Fourteen of the city’s independent bakeries have formed a co-operative to buy flour directly from three farms in the valley, cutting out two layers of wholesalers and, they say, about a fifth of their costs.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The idea came from a conversation at five in the morning between two bakers whose shops sit at opposite ends of Market Lane. Within a month, a dozen others had signed up, and the group now buys around forty tonnes a month.</p><!-- /wp:paragraph --><!-- wp:group {\"backgroundColor\":\"newsprint\"} --><div class=\"wp-block-group has-newsprint-background-color has-background\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">How the co-op works</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Members pay a small monthly fee and order by the sack</li><!-- /wp:list-item --><!-- wp:list-item --><li>Deliveries arrive twice a week at a shared store on Dock Row</li><!-- /wp:list-item --><!-- wp:list-item --><li>Profits at year end are split by volume bought</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group --><!-- wp:paragraph --><p>The farms benefit too. Growers say a fixed price agreed in spring makes it easier to plan which grains to plant, and one has gone back to an older wheat variety that the bakers prefer for sourdough.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Customers may notice the difference only in the price board. Most members have promised to hold the cost of a standard loaf for the coming year.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "business"
+   ],
+   "tags": [
+    "local-economy"
+   ],
+   "featured_media": "bakery-loaves",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Hanna",
+     "email": "hanna@example.com",
+     "content": "The rye at the corner shop on Market Lane has been incredible lately. Now I know why.",
+     "date": "2026-10-22T12:10:00"
+    }
+   ]
+  },
+  {
+   "slug": "light-pollution-falls-by-a-fifth",
+   "title": "Night-sky survey finds the city’s light pollution fell by a fifth",
+   "date": "2026-10-20T21:00:00",
+   "excerpt": "Amateur astronomers credit new street lamps for a darker, starrier sky above the old town.",
+   "content": "<!-- wp:paragraph --><p>The sky above Port Calder is measurably darker than it was three years ago, according to a citizen survey that has asked residents to count the stars in a single constellation on clear nights every winter.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Over 2,300 people took part last winter. Their counts, combined with readings from twelve light meters on rooftops around the city, suggest the night-time glow has fallen by around twenty per cent since the council began replacing old street lamps.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Shielded, warmer, dimmer</h2><!-- /wp:heading --><!-- wp:paragraph --><p>The new lamps point their light downward rather than sideways, use a warmer colour that scatters less in the atmosphere, and dim by half after midnight on quiet residential streets.</p><!-- /wp:paragraph --><!-- wp:pullquote --><figure class=\"wp-block-pullquote\"><blockquote><p>From the old town you can now see the Milky Way on a good night. Ten years ago that was unthinkable.</p><cite>Local astronomy society</cite></blockquote></figure><!-- /wp:pullquote --><!-- wp:paragraph --><p>The survey runs again this winter, from the first clear night in December. Anyone can join: the society will post a simple star chart through every letterbox in the city before the first count.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "science"
+   ],
+   "tags": [
+    "environment"
+   ],
+   "featured_media": "night-sky",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "redraw-our-streets",
+   "title": "Our streets were built for the cars of 1970. It is time to redraw them",
+   "date": "2026-10-18T09:00:00",
+   "excerpt": "The grid that shapes our daily lives was drawn for a city that no longer exists.",
+   "content": "<!-- wp:paragraph --><p>Walk down almost any street in the inner city and you are walking through a plan drawn up half a century ago, for a city of commuters who drove in at eight and out at six. That city no longer exists. Its streets do.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Today, fewer than a third of trips within the ring road are made by car. Yet two-thirds of the space between our front doors is given over to moving and storing them. Pavements are narrow, crossings are far apart, and the cycle lanes that do exist stop and start like a sentence missing its verbs.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">What a redrawn street looks like</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Wider pavements on every street with a school or a shop</li><!-- /wp:list-item --><!-- wp:list-item --><li>Continuous, protected cycle lanes on the six main radial roads</li><!-- /wp:list-item --><!-- wp:list-item --><li>Bus lanes that run the full length of a route, not a few hundred metres of it</li><!-- /wp:list-item --><!-- wp:list-item --><li>A tree for every twenty metres of kerb</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph --><p>None of this is radical. Cities on this coast have done it street by street, often starting with temporary paint and planters, and kept what worked. What it needs is a plan that treats the whole grid as one thing to be redesigned, rather than a hundred separate arguments.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The council is consulting on its new transport strategy until the end of next month. Respond to it. The streets will outlast all of us, and they should fit the city we actually live in.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "opinion"
+   ],
+   "tags": [
+    "transport",
+    "housing"
+   ],
+   "featured_media": "street-grid",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Ravi",
+     "email": "ravi@example.com",
+     "content": "Agree on the pavements. Disagree that it is not radical, it will be a huge fight on Station Road.",
+     "date": "2026-10-18T11:30:00"
+    },
+    {
+     "author": "Moira K.",
+     "email": "moira@example.com",
+     "content": "A tree every twenty metres would transform Albert Street. Count me in.",
+     "date": "2026-10-18T16:05:00"
+    }
+   ]
+  },
+  {
+   "slug": "library-cards-pass-100000",
+   "title": "Library card holders pass 100,000 for the first time",
+   "date": "2026-10-16T12:00:00",
+   "excerpt": "Longer opening hours and a tool library have pulled in a new generation of members.",
+   "content": "<!-- wp:paragraph --><p>More than 100,000 people now hold a Port Calder library card, the most in the service’s 130-year history, after a year in which every branch extended its opening hours and the central library began lending tools, instruments and sewing machines.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The library of things, as staff call it, has been the surprise hit. Its 400 items, from drills to ukuleles, have been borrowed more than 9,000 times since January, and the waiting list for the carpet cleaner runs into weeks.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Most borrowed books</h3><!-- /wp:heading --><!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>A local history of the harbour</li><!-- /wp:list-item --><!-- wp:list-item --><li>A beginner’s guide to sourdough</li><!-- /wp:list-item --><!-- wp:list-item --><li>A thriller set on the night ferry</li><!-- /wp:list-item --></ol><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Most borrowed things</h3><!-- /wp:heading --><!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Cordless drill</li><!-- /wp:list-item --><!-- wp:list-item --><li>Carpet cleaner</li><!-- /wp:list-item --><!-- wp:list-item --><li>Telescope</li><!-- /wp:list-item --></ol><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:paragraph --><p>Librarians say the longer evening hours have changed who comes in. After six, the reading rooms fill with students, shift workers and parents with children in pyjamas for the Thursday bedtime story.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Joining is free for anyone who lives, works or studies in the city, and cards can now be issued in five minutes at any branch.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "city"
+   ],
+   "tags": [
+    "libraries"
+   ],
+   "featured_media": "library-shelves",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Tom",
+     "email": "tom@example.com",
+     "content": "Borrowed the telescope last month, then bought my own. Dangerous service.",
+     "date": "2026-10-16T19:20:00"
+    }
+   ]
+  },
+  {
+   "slug": "small-films-quay-street",
+   "title": "A festival of small films takes over the empty shopfronts on Quay Street",
+   "date": "2026-10-14T18:30:00",
+   "excerpt": "For ten nights, short films play in shop windows that have stood empty since the spring.",
+   "content": "<!-- wp:paragraph --><p>For ten nights this month, the empty shops along Quay Street have become tiny cinemas. Short films, none longer than twelve minutes, play on loop in the windows from dusk until midnight, with sound on wireless headphones handed out at the corner kiosk.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The festival was organised by a group of film students and the street’s remaining traders, who persuaded the landlords to lend the units for free. Forty films were chosen from more than 600 entries, most of them made on phones.</p><!-- /wp:paragraph --><!-- wp:image {\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:harbour-dawn}}\" alt=\"A sailing boat on the harbour at dawn with the city skyline behind\"/><figcaption class=\"wp-element-caption\">A still from one of the festival films, shot from the outer breakwater.</figcaption></figure><!-- /wp:image --><!-- wp:heading --><h2 class=\"wp-block-heading\">Small screens, big crowds</h2><!-- /wp:heading --><!-- wp:paragraph --><p>On the opening night, the pavement was three deep by nine o’clock. Traders say footfall on the street is the highest they can remember, and two of the empty units have since had enquiries from new tenants.</p><!-- /wp:paragraph --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>People came for the films and stayed for the street. That was always the idea.</p><!-- /wp:paragraph --><cite>One of the festival organisers</cite></blockquote><!-- /wp:quote --><!-- wp:paragraph --><p>The festival closes on Sunday with an awards night in the former bank at the top of the street. Entry is free.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "culture"
+   ],
+   "tags": [
+    "festivals",
+    "nightlife"
+   ],
+   "featured_media": "shopfront-films",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Juno",
+     "email": "juno@example.com",
+     "content": "The animated one about the lighthouse keeper in window four was my favourite.",
+     "date": "2026-10-15T21:00:00"
+    }
+   ]
+  }
+ ],
+ "menus": [
+  {
+   "name": "Sections",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Front page",
+     "url": "/"
+    },
+    {
+     "title": "City",
+     "category": "city"
+    },
+    {
+     "title": "Business",
+     "category": "business"
+    },
+    {
+     "title": "Science",
+     "category": "science"
+    },
+    {
+     "title": "Culture",
+     "category": "culture"
+    },
+    {
+     "title": "Sport",
+     "category": "sport"
+    },
+    {
+     "title": "Opinion",
+     "category": "opinion"
+    },
+    {
+     "title": "About",
+     "page": "about",
+     "children": [
+      {
+       "title": "Standards and corrections",
+       "page": "standards"
+      },
+      {
+       "title": "Contact the newsroom",
+       "page": "contact"
+      },
+      {
+       "title": "Advertise with us",
+       "page": "advertise"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Footer",
+   "location": "footer",
+   "items": [
+    {
+     "title": "About",
+     "page": "about"
+    },
+    {
+     "title": "Standards",
+     "page": "standards"
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    },
+    {
+     "title": "Advertise",
+     "page": "advertise"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "sidebar-1": [
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Most read</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":5,\"displayPostDate\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group {\"backgroundColor\":\"press-black\"} --><div class=\"wp-block-group has-press-black-background-color has-background\"><!-- wp:heading --><h2 class=\"wp-block-heading\">The Morning Edition</h2><!-- /wp:heading --><!-- wp:paragraph --><p>The day’s five most important stories, in your inbox before the first tram. Free, every weekday.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Ask about the newsletter</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Sections</h2><!-- /wp:heading --><!-- wp:categories {\"showPostCounts\":true} /--></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Readers say</h2><!-- /wp:heading --><!-- wp:latest-comments {\"commentsToShow\":3,\"displayAvatar\":false,\"displayExcerpt\":false} /--></div><!-- /wp:group -->"
+  ],
+  "footer-1": [
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">About us</h2><!-- /wp:heading --><!-- wp:paragraph --><p>An independent newsroom for Port Calder and the bay, funded by its readers. <a href=\"{{page:about}}\">How we work</a>.</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Sections</h2><!-- /wp:heading --><!-- wp:categories /--></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Archives</h2><!-- /wp:heading --><!-- wp:archives /--></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "accent_color": "#d0021b",
+  "header_style": "centered",
+  "show_ticker": true,
+  "ticker_label": "Latest",
+  "font_pairing": "newsroom",
+  "grid_columns": "4",
+  "front_sections": "business,science,culture",
+  "sidebar_position": "right",
+  "show_author": false,
+  "show_excerpts": true,
+  "footer_tagline": "Independent news from Port Calder and the bay, funded by readers and free for everyone."
+ }
+}

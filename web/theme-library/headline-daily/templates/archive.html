@@ -1,0 +1,14 @@
+{{template "header" .}}
+{{template "layout-open" .}}
+	<header class="hd-page-head">
+		<p class="hd-page-head__label">{{if eq .Q.Kind "category"}}Section{{else if eq .Q.Kind "tag"}}Topic{{else if eq .Q.Kind "author"}}Reporter{{else}}Archive{{end}}</p>
+		<h1 class="hd-page-head__title">{{if .Q.Term}}{{.Q.Term.Name}}{{else}}{{.ArchiveTitle}}{{end}}</h1>
+		{{with .ArchiveDesc}}<div class="hd-page-head__desc">{{.}}</div>{{end}}
+	</header>
+	{{if .Posts}}<div class="hd-river">
+		{{range .Posts}}{{template "content" .}}
+		{{end}}
+	</div>
+	{{.Pagination}}{{else}}{{template "content-none" .}}{{end}}
+{{template "layout-close" .}}
+{{template "footer" .}}

@@ -1,0 +1,95 @@
+{
+  "slug": "headline-daily",
+  "name": "Headline Daily",
+  "version": "1.0.0",
+  "description": "A bold news magazine theme: a scrolling headline ticker, a dense front page with a lead story, side stories, a numbered Top Stories rail, a story grid and category rows, condensed headlines over a readable serif, and strong red-on-black accents. Header style, grid density, section rows, sidebar position and colors are all set in the Customizer.",
+  "author": "WordPress Go",
+  "author_url": "https://github.com/boracomet/wordpress-go",
+  "theme_url": "https://github.com/boracomet/wordpress-go/tree/main/web/theme-library/headline-daily",
+  "tags": ["News", "Magazine", "Grid Layout", "Right Sidebar", "Left Sidebar", "Custom Colors", "Custom Logo", "Custom Menu", "Editor Style", "Featured Images", "Footer Widgets", "Sticky Post", "Threaded Comments", "Wide Blocks"],
+  "requires_core": "0.1.0",
+  "screenshot": "assets/screenshot.png",
+  "category": "magazine",
+  "style": "Dense news front page, red and black",
+  "demo": "demo/demo.json",
+
+  "widget_areas": [
+    {"id": "sidebar-1", "name": "Sidebar", "description": "Beside the story grid, archives and articles (Customize › Layout › Sidebar position)."},
+    {"id": "footer-1", "name": "Footer", "description": "Widgets laid out in columns at the top of the black footer."}
+  ],
+  "menu_locations": [
+    {"id": "primary", "name": "Sections Menu"},
+    {"id": "footer", "name": "Footer Menu"}
+  ],
+
+  "styles": [
+    {"handle": "headline-daily-style", "src": "assets/style.css", "deps": ["wp-block-library"], "media": "all"}
+  ],
+  "scripts": [
+    {"handle": "headline-daily-navigation", "src": "assets/js/navigation.js", "deps": [], "in_footer": true}
+  ],
+  "editor_styles": ["assets/editor-style.css"],
+  "preload_fonts": ["assets/fonts/oswald.woff2", "assets/fonts/source-serif-4.woff2"],
+
+  "palette": [
+    {"name": "Headline Red", "slug": "headline-red", "color": "#d0021b"},
+    {"name": "Press Black", "slug": "press-black", "color": "#111111"},
+    {"name": "Graphite", "slug": "graphite", "color": "#4a4a4a"},
+    {"name": "Rule Grey", "slug": "rule-grey", "color": "#e3e3e3"},
+    {"name": "Newsprint", "slug": "newsprint", "color": "#f6f4ef"},
+    {"name": "White", "slug": "white", "color": "#ffffff"}
+  ],
+  "supports": {
+    "post-thumbnails": true,
+    "custom-logo": {"width": 360, "height": 90, "flex-width": true, "flex-height": true, "header-text": ["site-title", "site-description"]},
+    "title-tag": true,
+    "html5": ["search-form", "comment-form", "comment-list", "gallery", "caption", "script", "style"],
+    "responsive-embeds": true,
+    "align-wide": true,
+    "wp-block-styles": true
+  },
+
+  "customizer": {
+    "sections": [
+      {
+        "id": "hd_colors", "title": "Colors", "description": "The red, black and paper of Headline Daily.", "priority": 40,
+        "settings": [
+          {"id": "accent_color", "label": "Accent color", "description": "Kickers, the ticker label, rules and links.", "type": "color", "default": "#d0021b", "transport": "postMessage", "css_var": "--hd-accent"},
+          {"id": "ink_color", "label": "Ink color", "description": "Headlines, the navigation bar, the footer.", "type": "color", "default": "#111111", "transport": "postMessage", "css_var": "--hd-ink"},
+          {"id": "paper_color", "label": "Page background", "type": "color", "default": "#ffffff", "transport": "postMessage", "css_var": "--hd-paper"}
+        ]
+      },
+      {
+        "id": "hd_header", "title": "Header & Ticker", "description": "Masthead style and the scrolling headline bar.", "priority": 41,
+        "settings": [
+          {"id": "header_style", "label": "Masthead style", "type": "select", "default": "centered", "transport": "postMessage", "body_class": "hd-header-{value}",
+            "choices": [{"value": "centered", "label": "Centered nameplate"}, {"value": "left", "label": "Left-aligned with tagline"}, {"value": "inverted", "label": "Inverted (black masthead)"}]},
+          {"id": "show_ticker", "label": "Show the headline ticker", "description": "The black bar with the latest headlines above the masthead.", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "hd-has-ticker"},
+          {"id": "ticker_label", "label": "Ticker label", "description": "The red tag at the start of the ticker.", "type": "text", "default": "Latest", "transport": "refresh"},
+          {"id": "sticky_nav", "label": "Keep the sections bar on screen", "description": "The navigation bar sticks to the top while scrolling.", "type": "checkbox", "default": false, "transport": "postMessage", "body_class": "hd-sticky-nav"}
+        ]
+      },
+      {
+        "id": "hd_layout", "title": "Front Page & Layout", "description": "Typography, the story grid and the section rows.", "priority": 42,
+        "settings": [
+          {"id": "font_pairing", "label": "Font pairing", "type": "select", "default": "newsroom", "transport": "postMessage", "body_class": "hd-fonts-{value}",
+            "choices": [{"value": "newsroom", "label": "Newsroom — condensed headlines, serif text"}, {"value": "tabloid", "label": "Tabloid — condensed headlines, sans text"}, {"value": "broadsheet", "label": "Broadsheet — serif throughout"}]},
+          {"id": "grid_columns", "label": "Story grid density", "type": "select", "default": "4", "transport": "postMessage", "body_class": "hd-cols-{value}",
+            "choices": [{"value": "3", "label": "Three columns"}, {"value": "4", "label": "Four columns"}]},
+          {"id": "front_sections", "label": "Front page section rows", "description": "Category slugs separated by commas (e.g. business,science). Each becomes a row of its latest stories on the front page.", "type": "text", "default": "", "transport": "refresh"},
+          {"id": "sidebar_position", "label": "Sidebar position", "type": "select", "default": "right", "transport": "postMessage", "body_class": "hd-sidebar-{value}",
+            "choices": [{"value": "right", "label": "Right"}, {"value": "left", "label": "Left"}, {"value": "none", "label": "No sidebar"}]},
+          {"id": "show_author", "label": "Show author bylines", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "hd-show-author"},
+          {"id": "show_excerpts", "label": "Show summaries on story cards", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "hd-show-excerpts"}
+        ]
+      },
+      {
+        "id": "hd_footer", "title": "Footer", "priority": 43,
+        "settings": [
+          {"id": "footer_tagline", "label": "Footer tagline", "description": "Shown under the nameplate in the footer.", "type": "textarea", "default": "Independent news, reported every day.", "transport": "refresh"},
+          {"id": "footer_text", "label": "Copyright line", "description": "Replaces the copyright line at the very bottom.", "type": "text", "default": "", "transport": "refresh"}
+        ]
+      }
+    ]
+  }
+}

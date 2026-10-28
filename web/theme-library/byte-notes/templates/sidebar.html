@@ -1,0 +1,3 @@
+{{if and (theme_mod . "show_sidebar") (is_active_sidebar . "sidebar-1") (or (eq .Template "single") (eq .Template "archive") (eq .Template "index") (eq .Template "search"))}}<aside id="secondary" class="widget-area" aria-label="Sidebar">
+	{{dynamic_sidebar . "sidebar-1"}}
+</aside><!-- #secondary -->{{end}}

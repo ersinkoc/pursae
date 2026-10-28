@@ -1,0 +1,12 @@
+{{template "header" .}}
+{{if .IsFront}}{{template "hero" .}}{{end}}
+{{if .IsHomeHeader}}<header class="page-header">
+	<p class="page-kicker">Blog</p>
+	<h1 class="page-title">{{.PostsPageTitle}}</h1>
+</header>{{else if .IsFront}}<h2 class="section-label"><span>Latest notes</span></h2>{{end}}
+{{if .Posts}}<div class="post-list{{if .IsFront}} post-list--front{{end}}">
+	{{range .Posts}}{{template "content" .}}
+	{{end}}
+</div>
+{{.Pagination}}{{else}}{{template "content-none" .}}{{end}}
+{{template "footer" .}}

@@ -1,0 +1,494 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Byte Notes",
+  "blogdescription": "Practical notes on code, data and tooling",
+  "posts_per_page": 7
+ },
+ "categories": [
+  {
+   "slug": "backend",
+   "name": "Backend",
+   "description": "Servers, APIs and the code that runs behind them."
+  },
+  {
+   "slug": "frontend",
+   "name": "Frontend",
+   "description": "CSS, HTML and the web platform."
+  },
+  {
+   "slug": "databases",
+   "name": "Databases",
+   "description": "Queries, schemas and keeping data fast."
+  },
+  {
+   "slug": "devops",
+   "name": "DevOps",
+   "description": "Builds, deploys and observability."
+  },
+  {
+   "slug": "tooling",
+   "name": "Tooling",
+   "description": "Editors, shells and habits."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "go",
+   "name": "go"
+  },
+  {
+   "slug": "http",
+   "name": "http"
+  },
+  {
+   "slug": "reliability",
+   "name": "reliability"
+  },
+  {
+   "slug": "postgresql",
+   "name": "postgresql"
+  },
+  {
+   "slug": "performance",
+   "name": "performance"
+  },
+  {
+   "slug": "sql",
+   "name": "sql"
+  },
+  {
+   "slug": "containers",
+   "name": "containers"
+  },
+  {
+   "slug": "css",
+   "name": "css"
+  },
+  {
+   "slug": "design-systems",
+   "name": "design-systems"
+  },
+  {
+   "slug": "testing",
+   "name": "testing"
+  },
+  {
+   "slug": "observability",
+   "name": "observability"
+  },
+  {
+   "slug": "security",
+   "name": "security"
+  },
+  {
+   "slug": "productivity",
+   "name": "productivity"
+  },
+  {
+   "slug": "shell",
+   "name": "shell"
+  }
+ ],
+ "media": [
+  {
+   "id": "hero",
+   "file": "demo/images/hero-circuit.jpg",
+   "alt": "Glowing violet and cyan circuit traces on a dark grid",
+   "caption": ""
+  },
+  {
+   "id": "terminal-violet",
+   "file": "demo/images/terminal-violet.jpg",
+   "alt": "A dark terminal window with colorful lines of code on a violet gradient",
+   "caption": ""
+  },
+  {
+   "id": "terminal-sunset",
+   "file": "demo/images/terminal-sunset.jpg",
+   "alt": "A code editor window floating over a magenta gradient",
+   "caption": ""
+  },
+  {
+   "id": "layers",
+   "file": "demo/images/layers-iso.jpg",
+   "alt": "Isometric stacks of blocks with a few highlighted in cyan",
+   "caption": ""
+  },
+  {
+   "id": "containers",
+   "file": "demo/images/containers-iso.jpg",
+   "alt": "Isometric city of blocks with amber highlighted towers",
+   "caption": ""
+  },
+  {
+   "id": "waves",
+   "file": "demo/images/signal-waves.jpg",
+   "alt": "Three glowing signal waves crossing a dark background",
+   "caption": ""
+  },
+  {
+   "id": "graph",
+   "file": "demo/images/query-graph.jpg",
+   "alt": "A constellation of colored nodes joined by thin lines",
+   "caption": ""
+  },
+  {
+   "id": "bars",
+   "file": "demo/images/rate-bars.jpg",
+   "alt": "Glowing vertical bars rising and falling like a traffic chart",
+   "caption": ""
+  },
+  {
+   "id": "rings",
+   "file": "demo/images/container-rings.jpg",
+   "alt": "Concentric broken rings in violet, cyan and pink",
+   "caption": ""
+  },
+  {
+   "id": "lock",
+   "file": "demo/images/lock-grid.jpg",
+   "alt": "A neon green padlock between rows of thin lines",
+   "caption": ""
+  },
+  {
+   "id": "about",
+   "file": "demo/images/about-constellation.jpg",
+   "alt": "Scattered glowing dots linked into small constellations",
+   "caption": ""
+  },
+  {
+   "id": "logs",
+   "file": "demo/images/logs-stream.jpg",
+   "alt": "Lime, cyan and amber waves streaming across a dark panel",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "about",
+   "title": "About",
+   "content": "<!-- wp:paragraph -->\n<p>Byte Notes is a small engineering notebook about backends, databases, tooling and the web platform. Every article starts as a problem met at work and ends as the write-up I wish I had found at the time.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:heading -->\n<h2 class=\"wp-block-heading\">What you will find here</h2>\n<!-- /wp:heading -->\n\n<!-- wp:columns -->\n<div class=\"wp-block-columns\"><!-- wp:column -->\n<div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} -->\n<h3 class=\"wp-block-heading\">Deep dives</h3>\n<!-- /wp:heading -->\n\n<!-- wp:paragraph -->\n<p>Long, practical articles with code you can paste and adapt.</p>\n<!-- /wp:paragraph --></div>\n<!-- /wp:column --><!-- wp:column -->\n<div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} -->\n<h3 class=\"wp-block-heading\">Field notes</h3>\n<!-- /wp:heading -->\n\n<!-- wp:paragraph -->\n<p>Short lessons from incidents, migrations and code reviews.</p>\n<!-- /wp:paragraph --></div>\n<!-- /wp:column --><!-- wp:column -->\n<div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} -->\n<h3 class=\"wp-block-heading\">Tools</h3>\n<!-- /wp:heading -->\n\n<!-- wp:paragraph -->\n<p>The editor setups, scripts and habits that make the work smoother.</p>\n<!-- /wp:paragraph --></div>\n<!-- /wp:column --></div>\n<!-- /wp:columns -->\n\n<!-- wp:paragraph -->\n<p>Have a topic you would like covered? <a href=\"{{page:contact}}\">Get in touch</a>.</p>\n<!-- /wp:paragraph -->",
+   "template": "",
+   "featured_media": "about",
+   "parent": ""
+  },
+  {
+   "slug": "uses",
+   "title": "Uses",
+   "content": "<!-- wp:paragraph -->\n<p>The hardware, software and conventions behind these notes. Nothing here is sponsored; it is simply what works for me today.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:heading -->\n<h2 class=\"wp-block-heading\">Editor and terminal</h2>\n<!-- /wp:heading -->\n\n<!-- wp:list -->\n<ul class=\"wp-block-list\"><!-- wp:list-item -->\n<li>A modal editor with a language server for every project</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>A tiling terminal with one tab per service</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>A monospaced font with clear zeros and ligatures turned off</li>\n<!-- /wp:list-item --></ul>\n<!-- /wp:list -->\n\n<!-- wp:heading -->\n<h2 class=\"wp-block-heading\">Defaults for new projects</h2>\n<!-- /wp:heading -->\n\n<!-- wp:code -->\n<pre class=\"wp-block-code lang-bash\"><code>make dev      # start the app with live reload\nmake test     # unit tests, race detector on\nmake lint     # format, vet, static checks</code></pre>\n<!-- /wp:code -->\n\n<!-- wp:paragraph -->\n<p>Every repository gets the same three commands, so switching projects never means relearning the workflow.</p>\n<!-- /wp:paragraph -->",
+   "template": "",
+   "featured_media": "terminal-violet",
+   "parent": ""
+  },
+  {
+   "slug": "contact",
+   "title": "Contact",
+   "content": "<!-- wp:paragraph -->\n<p>The best way to reach me is by email. I read everything, and I reply to most messages within a week.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:list -->\n<ul class=\"wp-block-list\"><!-- wp:list-item -->\n<li>Email: <a href=\"mailto:hello@example.com\">hello@example.com</a></li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>Corrections and suggestions are always welcome</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>Speaking and workshop requests: please include dates and audience</li>\n<!-- /wp:list-item --></ul>\n<!-- /wp:list -->\n\n<!-- wp:paragraph -->\n<p>Found a bug in a code sample? Tell me which article and which line, and I will fix it with a note crediting you.</p>\n<!-- /wp:paragraph -->",
+   "template": "",
+   "featured_media": "",
+   "parent": "about"
+  },
+  {
+   "slug": "newsletter",
+   "title": "Newsletter",
+   "content": "<!-- wp:paragraph -->\n<p>One short email when a new note is published, usually twice a month. No tracking pixels, no sponsors, and one-click unsubscribe.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>Prefer a reader? The full-text feed carries every article, including the code samples.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:buttons -->\n<div class=\"wp-block-buttons\"><!-- wp:button -->\n<div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"/feed/\">Open the RSS feed</a></div>\n<!-- /wp:button --></div>\n<!-- /wp:buttons -->",
+   "template": "",
+   "featured_media": "hero",
+   "parent": ""
+  }
+ ],
+ "posts": [
+  {
+   "slug": "graceful-shutdowns-in-go",
+   "title": "Graceful shutdowns in Go HTTP servers, step by step",
+   "date": "2026-10-21T09:10:00",
+   "excerpt": "Deploys should not drop requests. Here is the small amount of code that lets a Go server finish its work before it exits.",
+   "content": "<!-- wp:paragraph -->\n<p>Every deploy sends your server a signal. What happens in the next few seconds decides whether a customer sees an error page or nothing at all. A graceful shutdown means three things: stop accepting new connections, let in-flight requests finish, and give up after a deadline.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:heading -->\n<h2 class=\"wp-block-heading\">The whole pattern</h2>\n<!-- /wp:heading -->\n\n<!-- wp:paragraph -->\n<p>The standard library already does the hard part. <code>http.Server.Shutdown</code> closes the listeners, then waits for active connections to go idle. Your job is to call it at the right moment and to bound how long it may take.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:code -->\n<pre class=\"wp-block-code lang-go\"><code>ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)\ndefer stop()\n\nsrv := &amp;http.Server{Addr: \":8080\", Handler: mux}\ngo func() {\n    if err := srv.ListenAndServe(); err != nil &amp;&amp; !errors.Is(err, http.ErrServerClosed) {\n        log.Fatalf(\"listen: %v\", err)\n    }\n}()\n\n&lt;-ctx.Done() // wait for the signal\nshutdownCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)\ndefer cancel()\nif err := srv.Shutdown(shutdownCtx); err != nil {\n    log.Printf(\"forced shutdown: %v\", err)\n}</code></pre>\n<!-- /wp:code -->\n\n<!-- wp:heading -->\n<h2 class=\"wp-block-heading\">Things that still bite</h2>\n<!-- /wp:heading -->\n\n<!-- wp:list -->\n<ul class=\"wp-block-list\"><!-- wp:list-item -->\n<li><strong>Long-lived connections.</strong> WebSockets and streaming responses are hijacked, so <code>Shutdown</code> does not wait for them. Track them yourself.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li><strong>Background goroutines.</strong> Workers started by handlers need their own context and a <code>sync.WaitGroup</code>.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li><strong>The load balancer.</strong> Fail the readiness check first, wait a couple of seconds, then shut down, so no new traffic is routed to you.</li>\n<!-- /wp:list-item --></ul>\n<!-- /wp:list -->\n\n<!-- wp:group {\"className\":\"bn-callout\"} -->\n<div class=\"wp-block-group bn-callout\"><!-- wp:paragraph -->\n<p>Rule of thumb: the shutdown timeout should be shorter than the grace period your orchestrator gives the process, or it will be killed mid-drain.</p>\n<!-- /wp:paragraph --></div>\n<!-- /wp:group -->\n\n<!-- wp:paragraph -->\n<p>Put this in a small helper once and every service you write gets zero-downtime deploys for free. It is one of the best returns on twenty lines of code you will find.</p>\n<!-- /wp:paragraph -->",
+   "categories": [
+    "backend"
+   ],
+   "tags": [
+    "go",
+    "http",
+    "reliability"
+   ],
+   "featured_media": "terminal-violet",
+   "format": "standard",
+   "sticky": true,
+   "comments": [
+    {
+     "author": "Mira K.",
+     "email": "mira@example.com",
+     "content": "The readiness-check tip saved us. We were dropping a handful of requests on every rollout and never knew why.",
+     "date": "2026-10-21T12:40:00"
+    },
+    {
+     "author": "devon_r",
+     "email": "devon@example.com",
+     "content": "Worth adding: RegisterOnShutdown is handy for closing hijacked connections politely.",
+     "date": "2026-10-22T08:05:00"
+    }
+   ]
+  },
+  {
+   "slug": "reading-a-postgresql-query-plan",
+   "title": "Reading a PostgreSQL query plan without panic",
+   "date": "2026-10-14T08:30:00",
+   "excerpt": "EXPLAIN output looks intimidating until you know which three numbers to read first.",
+   "content": "<!-- wp:paragraph -->\n<p>A slow query is a question, and <code>EXPLAIN ANALYZE</code> is the answer written in a slightly unfriendly dialect. Once you learn to read it from the inside out, it becomes the most useful tool in your database kit.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:code -->\n<pre class=\"wp-block-code lang-sql\"><code>EXPLAIN (ANALYZE, BUFFERS)\nSELECT o.id, o.total\nFROM orders o\nJOIN customers c ON c.id = o.customer_id\nWHERE c.region = 'north'\n  AND o.created_at &gt; now() - interval '30 days';</code></pre>\n<!-- /wp:code -->\n\n<!-- wp:heading -->\n<h2 class=\"wp-block-heading\">Start at the deepest node</h2>\n<!-- /wp:heading -->\n\n<!-- wp:paragraph -->\n<p>Plans are trees. The most indented line runs first and feeds its parent. For each node, compare the <em>estimated</em> rows with the <em>actual</em> rows. A difference of ten times or more usually means stale statistics or a predicate the planner cannot see through.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:heading {\"level\":3} -->\n<h3 class=\"wp-block-heading\">The three numbers that matter</h3>\n<!-- /wp:heading -->\n\n<!-- wp:list {\"ordered\":true} -->\n<ol class=\"wp-block-list\"><!-- wp:list-item -->\n<li><strong>actual time</strong>: the second value is when the node finished, in milliseconds.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li><strong>rows</strong> versus <strong>loops</strong>: multiply them to get the real row count.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li><strong>Buffers</strong>: shared hits are cheap, reads went to disk.</li>\n<!-- /wp:list-item --></ol>\n<!-- /wp:list -->\n\n<!-- wp:image {\"sizeSlug\":\"large\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"{{media:graph}}\" alt=\"A constellation of colored nodes joined by thin lines\"/><figcaption class=\"wp-element-caption\">A plan is a tree: read it from the leaves upward.</figcaption></figure>\n<!-- /wp:image -->\n\n<!-- wp:quote -->\n<blockquote class=\"wp-block-quote\"><!-- wp:paragraph -->\n<p>Most slow queries are not missing an index. They are missing an accurate estimate.</p>\n<!-- /wp:paragraph --></blockquote>\n<!-- /wp:quote -->\n\n<!-- wp:paragraph -->\n<p>When estimates are wrong, run <code>ANALYZE</code> on the tables involved, consider extended statistics for correlated columns, and only then reach for a new index.</p>\n<!-- /wp:paragraph -->",
+   "categories": [
+    "databases"
+   ],
+   "tags": [
+    "postgresql",
+    "performance",
+    "sql"
+   ],
+   "featured_media": "graph",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Priya",
+     "email": "priya@example.com",
+     "content": "Multiplying rows by loops was the missing piece for me. Thank you!",
+     "date": "2026-10-15T10:00:00"
+    }
+   ]
+  },
+  {
+   "slug": "container-layers-explained",
+   "title": "Container image layers, explained with one tiny service",
+   "date": "2026-10-07T10:00:00",
+   "excerpt": "Why your image rebuilds take minutes, and how ordering a few lines makes them take seconds.",
+   "content": "<!-- wp:paragraph -->\n<p>An image is a stack of read-only layers, one per build instruction. When a line changes, that layer and everything after it is rebuilt. That single fact explains almost every slow build.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:heading -->\n<h2 class=\"wp-block-heading\">Order from least to most volatile</h2>\n<!-- /wp:heading -->\n\n<!-- wp:paragraph -->\n<p>Dependencies change rarely, source code changes constantly. Copy the dependency manifest first, download modules, and only then copy the rest of the tree.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:code -->\n<pre class=\"wp-block-code lang-dockerfile\"><code>FROM golang:1.27 AS build\nWORKDIR /src\nCOPY go.mod go.sum ./\nRUN go mod download          # cached until go.mod changes\nCOPY . .\nRUN CGO_ENABLED=0 go build -o /out/app ./cmd/app\n\nFROM gcr.example/distroless/static\nCOPY --from=build /out/app /app\nENTRYPOINT [\"/app\"]</code></pre>\n<!-- /wp:code -->\n\n<!-- wp:columns -->\n<div class=\"wp-block-columns\"><!-- wp:column -->\n<div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} -->\n<h3 class=\"wp-block-heading\">Before</h3>\n<!-- /wp:heading -->\n\n<!-- wp:paragraph -->\n<p>Every commit invalidated the module download layer. Builds took about three minutes on CI.</p>\n<!-- /wp:paragraph --></div>\n<!-- /wp:column --><!-- wp:column -->\n<div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} -->\n<h3 class=\"wp-block-heading\">After</h3>\n<!-- /wp:heading -->\n\n<!-- wp:paragraph -->\n<p>Only the final two layers rebuild on a code change. Builds take about twenty seconds.</p>\n<!-- /wp:paragraph --></div>\n<!-- /wp:column --></div>\n<!-- /wp:columns -->\n\n<!-- wp:paragraph -->\n<p>Multi-stage builds also keep compilers and caches out of the image you ship, which shrinks it and removes a whole class of security findings.</p>\n<!-- /wp:paragraph -->",
+   "categories": [
+    "devops"
+   ],
+   "tags": [
+    "containers",
+    "performance"
+   ],
+   "featured_media": "containers",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "css-container-queries",
+   "title": "CSS container queries: components that know their own size",
+   "date": "2026-09-29T15:20:00",
+   "excerpt": "Media queries ask about the viewport. Container queries ask about the space a component actually has.",
+   "content": "<!-- wp:paragraph -->\n<p>A card in a wide main column and the same card in a narrow sidebar should not look identical. For years we faked this with modifier classes. Container queries make it a property of the component itself.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:code -->\n<pre class=\"wp-block-code lang-css\"><code>.card-list { container-type: inline-size; }\n\n.card { display: grid; gap: 1rem; }\n\n@container (min-width: 36rem) {\n  .card { grid-template-columns: 12rem 1fr; }\n}</code></pre>\n<!-- /wp:code -->\n\n<!-- wp:heading -->\n<h2 class=\"wp-block-heading\">Where they shine</h2>\n<!-- /wp:heading -->\n\n<!-- wp:list -->\n<ul class=\"wp-block-list\"><!-- wp:list-item -->\n<li>Reusable cards, media objects and teasers</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>Dashboards with resizable panels</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>Design-system components that ship without layout assumptions</li>\n<!-- /wp:list-item --></ul>\n<!-- /wp:list -->\n\n<!-- wp:image {\"sizeSlug\":\"large\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"{{media:waves}}\" alt=\"Three glowing signal waves crossing a dark background\"/></figure>\n<!-- /wp:image -->\n\n<!-- wp:paragraph -->\n<p>Pair them with <code>clamp()</code> and container units like <code>cqi</code> for type that scales with its box, not the window. Your components become portable in a way media queries never allowed.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:group {\"className\":\"bn-callout\"} -->\n<div class=\"wp-block-group bn-callout\"><!-- wp:paragraph -->\n<p>Remember that an element cannot query itself: the container is always an ancestor.</p>\n<!-- /wp:paragraph --></div>\n<!-- /wp:group -->",
+   "categories": [
+    "frontend"
+   ],
+   "tags": [
+    "css",
+    "design-systems"
+   ],
+   "featured_media": "layers",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Lena",
+     "email": "lena@example.com",
+     "content": "The reminder about querying an ancestor got me twice last week.",
+     "date": "2026-09-30T09:15:00"
+    }
+   ]
+  },
+  {
+   "slug": "table-driven-tests-that-stay-readable",
+   "title": "Table-driven tests that stay readable",
+   "date": "2026-09-18T11:45:00",
+   "excerpt": "Tables are great until they grow to forty columns. A few habits keep them easy to scan and to extend.",
+   "content": "<!-- wp:paragraph -->\n<p>Table-driven tests are a Go tradition for good reason: adding a case is one line, and the loop body is written once. The trouble starts when the table becomes a spreadsheet nobody wants to read.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:code -->\n<pre class=\"wp-block-code lang-go\"><code>func TestSlugify(t *testing.T) {\n    tests := map[string]struct {\n        in, want string\n    }{\n        \"spaces\":     {\"Hello World\", \"hello-world\"},\n        \"symbols\":    {\"Go &amp; Rust!\", \"go-rust\"},\n        \"duplicates\": {\"a  --  b\", \"a-b\"},\n    }\n    for name, tc := range tests {\n        t.Run(name, func(t *testing.T) {\n            if got := Slugify(tc.in); got != tc.want {\n                t.Errorf(\"Slugify(%q) = %q, want %q\", tc.in, got, tc.want)\n            }\n        })\n    }\n}</code></pre>\n<!-- /wp:code -->\n\n<!-- wp:paragraph -->\n<p>The version above is about as small as a table gets, and that is the point. Each row says what goes in and what should come out, and the subtest name tells you which row failed.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:heading -->\n<h2 class=\"wp-block-heading\">Habits that help</h2>\n<!-- /wp:heading -->\n\n<!-- wp:list -->\n<ul class=\"wp-block-list\"><!-- wp:list-item -->\n<li>Name every case: a map key or a <code>name</code> field shows up in failure output.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>Keep only the fields that vary; build the rest in the loop.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>Split a table when cases need different assertions.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>Print inputs and outputs in the error message, always.</li>\n<!-- /wp:list-item --></ul>\n<!-- /wp:list -->\n\n<!-- wp:paragraph -->\n<p>A test you can read at a glance is a test people will keep up to date. That matters more than squeezing every scenario into a single table.</p>\n<!-- /wp:paragraph -->",
+   "categories": [
+    "backend",
+    "tooling"
+   ],
+   "tags": [
+    "go",
+    "testing"
+   ],
+   "featured_media": "terminal-sunset",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "structured-logs-you-will-search",
+   "title": "Structured logs you will actually search",
+   "date": "2026-09-09T07:55:00",
+   "excerpt": "Logs are only useful if you can find the line you need at three in the morning. Structure is how.",
+   "content": "<!-- wp:paragraph -->\n<p>Free-form log lines are written for the person who wrote them. Structured logs are written for the person who has to find them later, usually under pressure.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:code -->\n<pre class=\"wp-block-code lang-go\"><code>logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))\nlogger.Info(\"payment captured\",\n    \"order_id\", order.ID,\n    \"amount_cents\", order.Total,\n    \"duration_ms\", time.Since(start).Milliseconds(),\n)</code></pre>\n<!-- /wp:code -->\n\n<!-- wp:heading -->\n<h2 class=\"wp-block-heading\">A small field vocabulary</h2>\n<!-- /wp:heading -->\n\n<!-- wp:paragraph -->\n<p>Agree on a handful of keys across services and stick to them. Consistency is what turns logs into something you can query.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:list -->\n<ul class=\"wp-block-list\"><!-- wp:list-item -->\n<li><code>request_id</code> on every line of a request</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li><code>user_id</code> or <code>account_id</code>, never an email address</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li><code>duration_ms</code> as a number, not a string</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li><code>error</code> holding the error text only</li>\n<!-- /wp:list-item --></ul>\n<!-- /wp:list -->\n\n<!-- wp:image {\"sizeSlug\":\"large\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"{{media:logs}}\" alt=\"Lime, cyan and amber waves streaming across a dark panel\"/></figure>\n<!-- /wp:image -->\n\n<!-- wp:quote -->\n<blockquote class=\"wp-block-quote\"><!-- wp:paragraph -->\n<p>If you cannot filter by it, it is decoration.</p>\n<!-- /wp:paragraph --></blockquote>\n<!-- /wp:quote -->\n\n<!-- wp:paragraph -->\n<p>Start with the request ID. It is the single field that turns a pile of lines into a story you can follow.</p>\n<!-- /wp:paragraph -->",
+   "categories": [
+    "devops"
+   ],
+   "tags": [
+    "observability",
+    "go"
+   ],
+   "featured_media": "logs",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Tomás",
+     "email": "tomas@example.com",
+     "content": "We banned string durations after a week of trying to sort them. Numbers or nothing.",
+     "date": "2026-09-10T18:30:00"
+    }
+   ]
+  },
+  {
+   "slug": "a-pragmatic-guide-to-rate-limiting",
+   "title": "A pragmatic guide to rate limiting",
+   "date": "2026-08-27T13:00:00",
+   "excerpt": "Token buckets, sliding windows and what to send back when a client is over the limit.",
+   "content": "<!-- wp:paragraph -->\n<p>Rate limits protect your service from bursts, buggy clients and the occasional bad actor. The algorithm matters less than choosing the right key and returning a response clients can act on.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:heading -->\n<h2 class=\"wp-block-heading\">Pick the key first</h2>\n<!-- /wp:heading -->\n\n<!-- wp:list -->\n<ul class=\"wp-block-list\"><!-- wp:list-item -->\n<li>Per API key for authenticated traffic</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>Per IP address only as a coarse outer layer</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>Per route for expensive endpoints like search or exports</li>\n<!-- /wp:list-item --></ul>\n<!-- /wp:list -->\n\n<!-- wp:heading -->\n<h2 class=\"wp-block-heading\">Token bucket in a few lines</h2>\n<!-- /wp:heading -->\n\n<!-- wp:code -->\n<pre class=\"wp-block-code lang-go\"><code>limiter := rate.NewLimiter(rate.Limit(10), 20) // 10 per second, bursts of 20\n\nfunc handler(w http.ResponseWriter, r *http.Request) {\n    if !limiter.Allow() {\n        w.Header().Set(\"Retry-After\", \"1\")\n        http.Error(w, \"too many requests\", http.StatusTooManyRequests)\n        return\n    }\n    // ...\n}</code></pre>\n<!-- /wp:code -->\n\n<!-- wp:paragraph -->\n<p>Always send <code>429 Too Many Requests</code> with a <code>Retry-After</code> header. Well-behaved clients will back off on their own, and the rest will show up clearly in your metrics.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:image {\"sizeSlug\":\"large\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"{{media:lock}}\" alt=\"A neon green padlock between rows of thin lines\"/><figcaption class=\"wp-element-caption\">Limits are a security control as much as a reliability one.</figcaption></figure>\n<!-- /wp:image -->\n\n<!-- wp:group {\"className\":\"bn-callout\"} -->\n<div class=\"wp-block-group bn-callout\"><!-- wp:paragraph -->\n<p>In a fleet of servers, a per-process limiter allows N times the intended rate. Share state, or divide the limit by the number of instances.</p>\n<!-- /wp:paragraph --></div>\n<!-- /wp:group -->",
+   "categories": [
+    "backend"
+   ],
+   "tags": [
+    "http",
+    "security",
+    "reliability"
+   ],
+   "featured_media": "bars",
+   "format": "standard",
+   "sticky": false,
+   "comments": []
+  },
+  {
+   "slug": "terminal-habits-that-save-an-hour",
+   "title": "Five terminal habits that save me an hour a week",
+   "date": "2026-08-15T18:20:00",
+   "excerpt": "Small shell habits compound. These are the ones that stuck after years of trying new tricks.",
+   "content": "<!-- wp:paragraph -->\n<p>None of these are clever. They are just the habits that survived, because each one removes a little friction many times a day.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:list {\"ordered\":true} -->\n<ol class=\"wp-block-list\"><!-- wp:list-item -->\n<li><strong>Reverse search everything.</strong> <kbd>Ctrl</kbd> + <kbd>R</kbd> beats retyping any command longer than ten characters.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li><strong>Name your aliases after verbs.</strong> <code>serve</code>, <code>migrate</code>, <code>reset-db</code> read like a to-do list.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li><strong>Keep a scratch directory.</strong> One throwaway folder per day for experiments.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li><strong>Make the prompt show the branch.</strong> Fewer commits on the wrong one.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li><strong>Learn one new flag a week.</strong> Most tools you use daily can do more than you think.</li>\n<!-- /wp:list-item --></ol>\n<!-- /wp:list -->\n\n<!-- wp:code -->\n<pre class=\"wp-block-code lang-bash\"><code># ~/.config/shell/aliases\nalias serve='go run ./cmd/app serve'\nalias reset-db='dropdb app_dev &amp;&amp; createdb app_dev &amp;&amp; make migrate'\nmkcd() { mkdir -p \"$1\" &amp;&amp; cd \"$1\"; }</code></pre>\n<!-- /wp:code -->\n\n<!-- wp:paragraph -->\n<p>None of this needs a framework. A plain file of aliases and two small functions, kept in version control, travels with you to every new machine.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>The best productivity tip is to notice when you type the same thing twice, and to automate it the third time.</p>\n<!-- /wp:paragraph -->",
+   "categories": [
+    "tooling"
+   ],
+   "tags": [
+    "productivity",
+    "shell"
+   ],
+   "featured_media": "rings",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Sam",
+     "email": "sam@example.com",
+     "content": "The daily scratch directory is underrated. Mine is named after the date.",
+     "date": "2026-08-16T07:45:00"
+    }
+   ]
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Topics",
+     "category": "backend",
+     "children": [
+      {
+       "title": "Backend",
+       "category": "backend"
+      },
+      {
+       "title": "Frontend",
+       "category": "frontend"
+      },
+      {
+       "title": "Databases",
+       "category": "databases"
+      },
+      {
+       "title": "DevOps",
+       "category": "devops"
+      },
+      {
+       "title": "Tooling",
+       "category": "tooling"
+      }
+     ]
+    },
+    {
+     "title": "Uses",
+     "page": "uses"
+    },
+    {
+     "title": "Newsletter",
+     "page": "newsletter"
+    },
+    {
+     "title": "About",
+     "page": "about",
+     "children": [
+      {
+       "title": "Contact",
+       "page": "contact"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Footer links",
+   "location": "footer",
+   "items": [
+    {
+     "title": "RSS",
+     "url": "/feed/"
+    },
+    {
+     "title": "About",
+     "page": "about"
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    },
+    {
+     "title": "Source",
+     "url": "https://github.com/boracomet/wordpress-go"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "sidebar-1": [
+   "<!-- wp:group {\"className\":\"bn-widget-about\"} --><div class=\"wp-block-group bn-widget-about\"><!-- wp:heading {\"level\":2} --><h2 class=\"wp-block-heading\">About</h2><!-- /wp:heading --><!-- wp:paragraph --><p>An engineering notebook about backends, data and tooling. New notes about twice a month.</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:heading {\"level\":2} --><h2 class=\"wp-block-heading\">Topics</h2><!-- /wp:heading -->",
+   "<!-- wp:categories {\"showPostCounts\":true} /-->",
+   "<!-- wp:heading {\"level\":2} --><h2 class=\"wp-block-heading\">Recent notes</h2><!-- /wp:heading -->",
+   "<!-- wp:latest-posts {\"postsToShow\":4,\"displayPostDate\":true} /-->"
+  ],
+  "footer-1": [
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading {\"level\":2} --><h2 class=\"wp-block-heading\">Byte Notes</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Practical write-ups on backends, databases, tooling and the web platform. Code samples are free to reuse.</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading {\"level\":2} --><h2 class=\"wp-block-heading\">Topics</h2><!-- /wp:heading --><!-- wp:categories /--></div><!-- /wp:group -->",
+   "<!-- wp:group --><div class=\"wp-block-group\"><!-- wp:heading {\"level\":2} --><h2 class=\"wp-block-heading\">Latest comments</h2><!-- /wp:heading --><!-- wp:latest-comments {\"commentsToShow\":3,\"displayAvatar\":false,\"displayExcerpt\":false} /--></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "accent": "#7c5cff",
+  "accent_2": "#22d3ee",
+  "default_scheme": "dark",
+  "post_layout": "cards",
+  "font_pairing": "grotesk",
+  "show_sidebar": false,
+  "show_thumbnails": true,
+  "show_author": true,
+  "sticky_header": true,
+  "hero_show": true,
+  "newsletter_show": true,
+  "show_toggle": true
+ }
+}
