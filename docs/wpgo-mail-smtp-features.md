@@ -20,7 +20,7 @@ Legend: ✅ implemented · ◐ implemented with a WordPress Go specific differen
 |---|---|---|
 | Replaces `wp_mail()`'s PHPMailer instance (`phpmailer_init`) | `Server.mailer()` attaches a `mail.Transport` to the `mail.Mailer` while the plugin is active. Every sender goes through it: the queued `wp_mail` job (core notifications) and direct `Send` calls (Golementor form e-mails). | ✅ |
 | Plugin data in options `wp_mail_smtp`, `wp_mail_smtp_*` | One JSON option `wp_mail_smtp` (same group/key names: `mail.from_email`, `smtp.host`, `mailgun.api_key`, …), activation switch `native_wp_mail_smtp` | ✅ |
-| Email log in `{prefix}wpmailsmtp_emails_log`, debug events in `{prefix}wpmailsmtp_debug_events` | Tables `wpmailsmtp_emails_log`, `wpmailsmtp_debug_events` (migration `0009_wp_mail_smtp.sql`) | ✅ |
+| Email log in `{prefix}wpmailsmtp_emails_log`, debug events in `{prefix}wpmailsmtp_debug_events` | Tables `wpmailsmtp_emails_log`, `wpmailsmtp_debug_events` (migration `0011_wp_mail_smtp.sql`) | ✅ |
 | Secrets stored in plain text in `wp_options` (or a constant) | Secrets (SMTP password, API keys, client secrets, OAuth tokens, Twilio token) are AES-256-GCM encrypted with a key derived from the server secret (`WPGO_SECRET` / `auth_secret`), stored as `enc:v1:…`, never printed back into a form (the field shows a "saved" placeholder and a *Remove* checkbox; leaving it blank keeps the saved value) | ◐ stronger than upstream |
 
 ## 2. Setup Wizard (`admin?page=wp-mail-smtp-setup-wizard`)
@@ -198,6 +198,6 @@ alerts, one-click Gmail/Microsoft setup through WPForms' relay.
 `internal/mail/{smtp,api,oauth}.go` (transports, AWS SigV4, OAuth 2), `internal/mail/smtptest`
 (fake SMTP server for tests), `internal/server/mailsmtp*.go` (options, delivery, log, alerts,
 reports, admin screens), `web/admin/templates/pages/mailsmtp.html`,
-`internal/db/migrations/0009_wp_mail_smtp.sql`. Hooks into shared code: `mail.Mailer.Transport`,
+`internal/db/migrations/0011_wp_mail_smtp.sql`. Hooks into shared code: `mail.Mailer.Transport`,
 `Server.mailer()` (`mailSMTPAttach`), the `wp_mail_smtp_daily` job, the Plugins screen row,
 `pluginAdmin` (`admin?page=wp-mail-smtp*`), `adminPage` (menu + notices) and the dashboard widget.

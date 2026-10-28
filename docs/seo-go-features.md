@@ -22,7 +22,7 @@ Legend: **✓** implemented · **◐** partly (see note) · **✗** left out (se
 | Scores | The traffic light uses Yoast's assessments and scores: SEO = Σscore / (n×9) × 100, and readability uses penalty points, giving 30, 60 or 90. Rank Math's tests that Yoast has no counterpart for are listed as unscored "Additional checks". Rank Math's 100-point score is shown next to the SEO heading. |
 | Analysis engine | One Go implementation (`seogo_analysis.go`) behind `POST /wp-json/seogo/v1/analyze`, used by both editors, the bulk editor and the stored scores. |
 | Editors | One box markup (`seogo/metabox`) and one script (`seogo-editor.js`). In the classic editor it is a meta box at the top of the main column. In Gotenberg it is a `PluginSidebar` with a toolbar icon and a More-menu item, plus a "SEO-Go" document settings panel with both scores. |
-| Redirect storage | The core `redirects` table, extended by migration `0009_seogo.sql` (match type, status, category, origin, last hit). A new `seogo_404` table holds the 404 log. |
+| Redirect storage | The core `redirects` table, extended by migration `0010_seogo.sql` (match type, status, category, origin, last hit). A new `seogo_404` table holds the 404 log. |
 | Sitemaps | Yoast's URL scheme (`/sitemap_index.xml`, `/{type}-sitemap{N}.xml`, `/main-sitemap.xsl`), 1000 URLs per file (configurable), with image entries. `/sitemap.xml` and every `/wp-sitemap*.xml` redirect (301) to the index, as Yoast does. |
 
 ## Feature map
@@ -158,7 +158,7 @@ Legend: **✓** implemented · **◐** partly (see note) · **✗** left out (se
 | `internal/server/seogo_admin.go` | Admin screens, wizard, import, bulk editor, Image SEO |
 | `web/admin/templates/pages/seogo.html` | Admin screens, the editor box, the term box |
 | `web/wp-admin/js/seogo-*.js`, `web/wp-admin/css/seogo.css` | Editor box, Gotenberg blocks, admin helpers, styles |
-| `internal/db/migrations/0009_seogo.sql` | Redirects columns, 404 log |
+| `internal/db/migrations/0010_seogo.sql` | Redirects columns, 404 log |
 
 Hooks into shared files are one or two lines each and are marked "SEO-Go". They are in
 `plugins.go`, `admin.go`, `server.go`, `site.go`, `site_head.go`, `site_view.go`, `feed.go`,
