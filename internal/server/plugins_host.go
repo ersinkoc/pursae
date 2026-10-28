@@ -66,6 +66,7 @@ func (h *pluginHost) postData(ctx context.Context, p *store.Post) *plugins.PostD
 		ID: p.ID, Title: p.Title, Content: p.Content, Excerpt: p.Excerpt, Status: p.Status, Type: p.Type, Slug: p.Slug,
 		Date: p.Date().In(s.loc()).Format(time.RFC3339), Modified: p.ModifiedAt.In(s.loc()).Format(time.RFC3339),
 		Author: p.AuthorID, Terms: map[string][]plugins.TermData{}, Meta: p.Meta,
+		ACF: s.acfgoPluginPostACF(ctx, p), // ACF-Go field values
 	}
 	if p.Status == "publish" {
 		out.Link = s.links(ctx).Permalink(p)

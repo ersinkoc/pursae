@@ -32,7 +32,7 @@ func taxLabelsFor(tax string) (taxLabels, bool) {
 			Description: "The description is not prominent by default; however, some themes may show it.",
 			Screen:      "edit-tags?taxonomy=post_tag", FilterParam: "tag"}, true
 	}
-	return taxLabels{}, false
+	return acfgoTaxLabels(tax) // ACF-Go taxonomies
 }
 
 type termRow struct {

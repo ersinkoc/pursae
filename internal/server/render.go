@@ -140,6 +140,9 @@ func (t *templates) funcs() template.FuncMap {
 	for k, f := range t.coreFuncs(s) {
 		m[k] = f
 	}
+	for k, f := range s.acfgoTemplateFuncs() { // get_field, have_rows, … (acfgo_api.go)
+		m[k] = f
+	}
 	return m
 }
 

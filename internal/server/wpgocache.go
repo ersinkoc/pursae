@@ -228,6 +228,9 @@ var gweUpstreamAdminPages = map[string]string{
 // pluginAdmin serves /wp-admin/admin?page=..., the screens registered by native plugins.
 func (s *Server) pluginAdmin(c *gin.Context) {
 	page := c.Query("page")
+	if s.acfgoAdminPage(c) { // ACF-Go options pages
+		return
+	}
 	if to, ok := gweUpstreamAdminPages[page]; ok && s.golementorOn() {
 		// Golementor's editor links to upstream's admin pages; they live on the native screens.
 		c.Redirect(http.StatusFound, to)

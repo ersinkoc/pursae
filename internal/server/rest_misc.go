@@ -376,6 +376,7 @@ func (s *Server) restTerm(c *gin.Context, t *store.Term, ctxName string) map[str
 	if t.Taxonomy == "category" {
 		out["parent"] = t.ParentID
 	}
+	s.acfgoRESTTerm(c, t, out) // ACF-Go
 	if ctxName == "embed" {
 		return map[string]any{"id": t.ID, "link": out["link"], "name": t.Name, "slug": t.Slug, "taxonomy": t.Taxonomy, "_links": out["_links"]}
 	}
@@ -561,6 +562,7 @@ func (s *Server) restUser(c *gin.Context, u *store.User, ctxName string) map[str
 		}
 		out["extra_capabilities"] = extra
 	}
+	s.acfgoRESTUser(c, u, out) // ACF-Go
 	if ctxName == "embed" {
 		return map[string]any{"id": u.ID, "name": u.DisplayName, "url": u.URL, "description": u.Profile["description"],
 			"link": out["link"], "slug": u.Nicename, "avatar_urls": out["avatar_urls"], "_links": out["_links"]}

@@ -177,6 +177,7 @@ func (s *Server) restPost(c *gin.Context, p *store.Post, ctxName string) map[str
 			}
 		}
 	}
+	s.acfgoRESTPost(c, p, out) // ACF-Go: the "acf" field
 	out["_links"] = restLinks(self, home+"/wp-json/wp/v2/"+base, extra)
 	return out
 }
@@ -498,6 +499,9 @@ func (api *restAPI) savePost(c *gin.Context, r *restRequest, typ string, id int6
 		p.Status = "publish"
 	}
 
+	if !s.acfgoRESTValidate(c, r.Body, p) { // ACF-Go: the "acf" object
+		return
+	}
 	var err error
 	if isNew {
 		err = s.store.InsertPost(c, p)
@@ -508,6 +512,7 @@ func (api *restAPI) savePost(c *gin.Context, r *restRequest, typ string, id int6
 		restErr(c, http.StatusInternalServerError, "db_update_error", "Could not update post in the database.")
 		return
 	}
+	s.acfgoRESTSave(c, r.Body, p) // ACF-Go
 	if typ == "post" {
 		if ids, ok := r.IDs(c, "categories"); ok {
 			if len(ids) == 0 {

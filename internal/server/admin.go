@@ -353,6 +353,8 @@ func (s *Server) adminPage(c *gin.Context, screen, title, bodyClass, tmpl string
 	}
 	v.CacheBar = s.cacheAdminBar(c, u)
 	s.pluginMenuEntries(v.Menu, screen) // plugin settings pages under Settings (plugins_host.go)
+	// ACF-Go: its menu, options pages and post types (acfgo.go)
+	v.Menu = s.acfgoMenu(c, v.Menu, screen)
 	a := s.pageAssets(c)
 	a.Script("common", "admin-bar", "utils", "svg-painter")
 	v.ExtraStyles = s.styleTags(a) + s.pluginStyleTags("admin")
@@ -416,6 +418,9 @@ func (s *Server) adminAjax(c *gin.Context) {
 		return
 	}
 	if s.gweAjax(c, action) { // Golementor: elementor_ajax, heartbeat, elementor_js_log
+		return
+	}
+	if s.acfgoAjax(c, action) { // ACF-Go: acfgo/* actions
 		return
 	}
 	switch action {
