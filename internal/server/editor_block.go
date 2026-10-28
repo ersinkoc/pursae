@@ -262,9 +262,9 @@ func (s *Server) renderBlockEditor(c *gin.Context, p *store.Post, isNew bool) {
 	settingsJSON, _ := json.Marshal(settings)
 	initial := map[string]any{}
 	if isNew {
-		initial["title"] = ""
+		initial["title"] = p.Title // "" unless prefilled (post_title, a Golylang duplicate)
 		initial["content"] = p.Content
-		initial["excerpt"] = ""
+		initial["excerpt"] = p.Excerpt
 	}
 	initialJSON, _ := json.Marshal(initial)
 
@@ -287,6 +287,7 @@ func (s *Server) renderBlockEditor(c *gin.Context, p *store.Post, isNew bool) {
 	return wp.element.createElement( wp.editor.PluginMoreMenuItem, { icon: 'editor-kitchensink', onClick: function() { window.location.href = `+strconvQuote(u)+`; } }, 'Switch to classic editor' );
 } } );`)
 	}
+	s.golylangBlockEditor(c, p) // Golylang: the Languages panel
 	s.enqueueMedia(c, p.ID)
 
 	lab := labelsFor(p.Type)

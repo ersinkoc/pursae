@@ -148,7 +148,7 @@ func stripPHP(p string) (string, bool) {
 func (s *Server) routes() *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
-	r.Use(gin.Recovery(), accessLog(), requestOrigin(), securityHeaders(), s.loadUser(), s.requireInstall())
+	r.Use(gin.Recovery(), accessLog(), requestOrigin(), securityHeaders(), s.loadUser(), s.requireInstall(), s.golylangRequest())
 	r.HandleMethodNotAllowed = false
 
 	s.static(r, "/wp-admin/assets", "admin/assets")
@@ -265,6 +265,7 @@ func (s *Server) routes() *gin.Engine {
 
 	s.rest = s.restRoutes()
 	s.registerGoWebEditorREST()
+	s.registerGolylangREST() // pll/v1 (golylang_rest.go)
 	restHandler := func(c *gin.Context) { s.rest.serve(c, c.Param("route")) }
 	for _, m := range []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete, http.MethodOptions, http.MethodHead} {
 		r.Handle(m, "/wp-json/*route", restHandler)
@@ -494,6 +495,7 @@ func (s *Server) links(ctx context.Context) *links.Builder {
 		}
 		return u.Nicename
 	}
+	b.LinkFilter = s.golylangLinkFilter(ctx, b.Home) // Golylang: URLs carry their language
 	return b
 }
 

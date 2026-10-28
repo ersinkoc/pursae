@@ -151,6 +151,7 @@ func (s *Server) buildSiteView(c *gin.Context, q *siteQuery) (*siteView, error) 
 		}
 	}
 
+	s.golylangView(c, q, v, lb) // Golylang: strings, menus and widgets of the current language
 	primary, social := v.Menus["primary"], v.Menus["social"]
 	if len(primary) > 0 {
 		v.PrimaryMenu = renderMenu(primary, "menu-primary-menu-container", "primary-menu", "", "")

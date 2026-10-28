@@ -92,7 +92,7 @@ func (s *Store) QueryTerms(ctx context.Context, q TermQuery) ([]*Term, int, erro
 		args = append(args, q.IDs)
 		conds = append(conds, "id = ANY($"+strconv.Itoa(len(args))+")")
 	}
-	where := strings.Join(conds, " AND ")
+	where := strings.Join(conds, " AND ") + QueryFilter.cond(ctx, "term", &args)
 	var total int
 	if err := s.Pool.QueryRow(ctx, `SELECT count(*) FROM terms WHERE `+where, args...).Scan(&total); err != nil {
 		return nil, 0, err
@@ -166,8 +166,9 @@ var ErrTermExists = errors.New("A term with the name provided already exists wit
 
 func (s *Store) InsertTerm(ctx context.Context, t *Term) error {
 	var exists bool
+	args := []any{t.Taxonomy, t.Name, t.ParentID}
 	if err := s.Pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM terms WHERE taxonomy=$1 AND lower(name)=lower($2)
-		AND coalesce(parent_id,0)=$3)`, t.Taxonomy, t.Name, t.ParentID).Scan(&exists); err != nil {
+		AND coalesce(parent_id,0)=$3`+QueryFilter.cond(ctx, "term", &args)+`)`, args...).Scan(&exists); err != nil {
 		return err
 	}
 	if exists {

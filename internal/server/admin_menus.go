@@ -77,6 +77,9 @@ type navMenusData struct {
 	MenuCount    int  // number of menus (manage-menus message variant)
 	AddNew       bool // ?menu=0: the "create a new menu" screen
 	Disabled     bool // no menu selected: wp_nav_menu_disabled_check() disables the left column
+
+	// PluginBoxes are "Add menu items" boxes of native plugins (Golylang's Language switcher).
+	PluginBoxes template.HTML
 }
 
 func (s *Server) navMenus(c *gin.Context) {
@@ -156,6 +159,7 @@ func (s *Server) navMenus(c *gin.Context) {
 		}
 		d.Locations = append(d.Locations, row)
 	}
+	s.golylangNavMenus(c, &d, menus) // Golylang: a location per language, the Language switcher box
 	lb := s.links(c)
 	pages, _, _ := s.store.QueryPosts(ctx, store.PostQuery{Types: []string{"page"}, Statuses: []string{"publish"}, PerPage: 50, Page: 1, OrderBy: "date", Order: "DESC"})
 	for i, p := range pages {
@@ -291,6 +295,7 @@ func (s *Server) navMenusSave(c *gin.Context) {
 			locs[loc.Slug] = id
 		}
 		_ = s.store.SetMenuLocations(ctx, locs)
+		s.golylangSaveMenuLocations(c) // Golylang: the locations of the other languages
 		s.purgeAll(c)
 		c.Redirect(http.StatusFound, "/wp-admin/nav-menus?action=locations&locations-updated=1")
 		return

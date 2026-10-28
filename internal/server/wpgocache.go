@@ -233,6 +233,9 @@ func (s *Server) pluginAdmin(c *gin.Context) {
 		c.Redirect(http.StatusFound, to)
 		return
 	}
+	if s.golylangAdmin(c, page) { // Golylang: Languages screens (mlang, mlang_strings, mlang_settings)
+		return
+	}
 	if !strings.HasPrefix(page, "wpgo-cache") {
 		s.notYet(c)
 		return

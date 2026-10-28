@@ -26,7 +26,22 @@ type Builder struct {
 	FirstCategory func(p *store.Post) *store.Term
 	CategoryPath  func(t *store.Term) string // parent/child slug path
 	AuthorSlug    func(id int64) string
+
+	// LinkFilter, when set, rewrites the public URLs below like WordPress' post_link, term_link and
+	// home_url filters (Golylang adds the language). kind is "post", "term" or "home" (archives, feeds,
+	// search); obj is the *store.Post or *store.Term, nil for "home". It must be idempotent.
+	LinkFilter func(kind string, obj any, link string) string
 }
+
+func (b *Builder) filter(kind string, obj any, link string) string {
+	if b.LinkFilter == nil {
+		return link
+	}
+	return b.LinkFilter(kind, obj, link)
+}
+
+// Front is the URL of the front page: home_url('/') as the theme shows it (the language home with Golylang).
+func (b *Builder) Front() string { return b.filter("home", nil, b.HomeURL("/")) }
 
 func (b *Builder) Pretty() bool { return b.Structure != "" }
 
@@ -50,7 +65,9 @@ func (b *Builder) trailing(path string) string {
 }
 
 // Permalink is get_permalink().
-func (b *Builder) Permalink(p *store.Post) string {
+func (b *Builder) Permalink(p *store.Post) string { return b.filter("post", p, b.permalink(p)) }
+
+func (b *Builder) permalink(p *store.Post) string {
 	switch p.Type {
 	case "page":
 		return b.pageLink(p)
@@ -143,7 +160,9 @@ func (b *Builder) authorSlug(id int64) string {
 }
 
 // TermLink is get_term_link().
-func (b *Builder) TermLink(t *store.Term) string {
+func (b *Builder) TermLink(t *store.Term) string { return b.filter("term", t, b.termLink(t)) }
+
+func (b *Builder) termLink(t *store.Term) string {
 	switch t.Taxonomy {
 	case "category":
 		if !b.Pretty() {
@@ -178,27 +197,37 @@ func (b *Builder) TermLink(t *store.Term) string {
 
 // AuthorLink is get_author_posts_url().
 func (b *Builder) AuthorLink(id int64, nicename string) string {
+	return b.filter("home", nil, b.authorLink(id, nicename))
+}
+
+func (b *Builder) authorLink(id int64, nicename string) string {
 	if !b.Pretty() {
 		return b.HomeURL("/?author=" + strconv.FormatInt(id, 10))
 	}
 	return b.HomeURL(b.trailing("/author/" + nicename))
 }
 
-func (b *Builder) YearLink(y int) string {
+func (b *Builder) YearLink(y int) string { return b.filter("home", nil, b.yearLink(y)) }
+
+func (b *Builder) yearLink(y int) string {
 	if !b.Pretty() {
 		return b.HomeURL("/?m=" + strconv.Itoa(y))
 	}
 	return b.HomeURL(b.trailing(fmt.Sprintf("/%d", y)))
 }
 
-func (b *Builder) MonthLink(y, m int) string {
+func (b *Builder) MonthLink(y, m int) string { return b.filter("home", nil, b.monthLink(y, m)) }
+
+func (b *Builder) monthLink(y, m int) string {
 	if !b.Pretty() {
 		return b.HomeURL(fmt.Sprintf("/?m=%d%02d", y, m))
 	}
 	return b.HomeURL(b.trailing(fmt.Sprintf("/%d/%02d", y, m)))
 }
 
-func (b *Builder) DayLink(y, m, d int) string {
+func (b *Builder) DayLink(y, m, d int) string { return b.filter("home", nil, b.dayLink(y, m, d)) }
+
+func (b *Builder) dayLink(y, m, d int) string {
 	if !b.Pretty() {
 		return b.HomeURL(fmt.Sprintf("/?m=%d%02d%02d", y, m, d))
 	}
@@ -206,7 +235,9 @@ func (b *Builder) DayLink(y, m, d int) string {
 }
 
 // FeedLink is get_feed_link(): "" for posts, "comments_" prefix handled by the caller.
-func (b *Builder) FeedLink(feed string) string {
+func (b *Builder) FeedLink(feed string) string { return b.filter("home", nil, b.feedLink(feed)) }
+
+func (b *Builder) feedLink(feed string) string {
 	if !b.Pretty() {
 		if feed == "" || feed == "rss2" {
 			return b.HomeURL("/?feed=rss2")
@@ -246,6 +277,10 @@ func (b *Builder) PostCommentsFeedFormat(p *store.Post, feed string) string {
 
 // CommentsFeedLink is get_feed_link('comments_' . $feed): the site comments feed in a format.
 func (b *Builder) CommentsFeedLink(feed string) string {
+	return b.filter("home", nil, b.commentsFeedLink(feed))
+}
+
+func (b *Builder) commentsFeedLink(feed string) string {
 	if feed == "" || feed == "rss2" {
 		return b.FeedLink("comments_rss2")
 	}
@@ -328,7 +363,9 @@ func (b *Builder) Paged(base string, n int) string {
 }
 
 // SearchLink is get_search_link().
-func (b *Builder) SearchLink(q string) string {
+func (b *Builder) SearchLink(q string) string { return b.filter("home", nil, b.searchLink(q)) }
+
+func (b *Builder) searchLink(q string) string {
 	return b.HomeURL("/?s=" + url.QueryEscape(q))
 }
 

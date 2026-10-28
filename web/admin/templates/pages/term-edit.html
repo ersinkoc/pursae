@@ -32,6 +32,7 @@
 		<td><textarea name="description" id="description" rows="5" cols="50" class="large-text" aria-describedby="description-description">{{.Term.Description}}</textarea>
 		<p class="description" id="description-description">{{.Labels.Description}}</p></td>
 	</tr>
+	{{.PluginFields}}
 </table>
 <div class="edit-tag-actions">
 	<input type="submit" class="button button-primary" value="Update" />

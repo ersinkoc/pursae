@@ -63,6 +63,7 @@ type postRow struct {
 	BuilderURL           string // "Edit with Golementor"
 	Excerpt              string // shown in the Extended view
 	Inline               inlineData
+	PluginCols           []template.HTML // cells of plugin columns (Golylang's languages), before Comments
 }
 
 // inlineData is get_inline_data(): the hidden values inline-edit-post.js copies into the Quick Edit row.
@@ -98,6 +99,8 @@ type postsListData struct {
 	Format       string
 	Sticky       bool // the "Sticky" view
 	ColCount     int  // visible columns, for the inline editor's colspan
+
+	PluginHeads []template.HTML // headers of plugin columns (Golylang's languages), before Comments
 	// Quick Edit / Bulk Edit (inline_edit()).
 	InlineNonce string
 	Authors     []*store.User
@@ -327,6 +330,7 @@ func (s *Server) postsList(c *gin.Context) {
 		}
 	}
 	s.inlineEditData(c, &d)
+	s.golylangPostColumns(c, &d, posts) // Golylang: one column per language
 	cur := *c.Request.URL
 	d.Pagination = newPagination(total, perPage, page, cur)
 	d.SortLinks = map[string]sortLink{}
@@ -1258,6 +1262,7 @@ type editData struct {
 	ToPing         string            // Send Trackbacks (to_ping)
 	ClosedNonce    string            // closedpostboxes
 	OrderNonce     string            // meta-box-order
+	PluginBoxes    template.HTML     // side meta boxes of native plugins (Golylang's Languages)
 }
 
 // metaRow is one Custom Fields entry (_list_meta_row()). WordPress Go keeps post meta as a JSON map,
@@ -1519,6 +1524,7 @@ func (s *Server) postNew(c *gin.Context) {
 	}
 	p.Title = c.Query("post_title")
 	p.Content = c.Query("content")
+	s.golylangNewPost(c, p) // Golylang: language, translation link and copied content (from_post, new_lang)
 	s.renderEdit(c, p, true)
 }
 
@@ -1788,6 +1794,7 @@ func (s *Server) renderClassicEdit(c *gin.Context, p *store.Post, isNew bool) {
 		}
 	}
 	s.enqueueMedia(c, p.ID)
+	d.PluginBoxes = s.golylangPostBox(c, p)
 	s.adminPage(c, screen, title, "post-php post-type-"+p.Type, "admin/post-edit", d, s.editNotices(c, lab, d.ViewURL)...)
 }
 

@@ -114,6 +114,7 @@ func (s *Server) restPost(c *gin.Context, p *store.Post, ctxName string) map[str
 		out["wp_pattern_sync_status"] = metaString(p.Meta, "wp_pattern_sync_status")
 		out["wp_pattern_category"] = []int64{}
 	}
+	s.golylangRESTFields(c, pllPost, p.ID, p.Type, out) // Golylang: lang and translations
 	if ctxName == "edit" {
 		out["guid"].(map[string]any)["raw"] = home + "/?p=" + itoa64(p.ID)
 		out["title"].(map[string]any)["raw"] = title
@@ -535,6 +536,7 @@ func (api *restAPI) savePost(c *gin.Context, r *restRequest, typ string, id int6
 // afterPostSave runs the save_post-time side effects (cache purge, hooks).
 func (s *Server) afterPostSave(ctx context.Context, p *store.Post) {
 	s.autoAddPage(ctx, p)
+	s.golylangSaved(ctx, p) // Golylang: language of new posts, REST lang/translations, synchronization
 	if s.onPostSaved != nil {
 		s.onPostSaved(ctx, p)
 	}

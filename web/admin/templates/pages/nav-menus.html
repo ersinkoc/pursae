@@ -101,6 +101,7 @@
 		<ul class="outer-border">
 		{{template "menu-box" dict "ID" "page" "Title" "Pages" "Recent" .RecentPages "All" .AllPages "Kind" "posttype" "Disabled" .Disabled}}
 		{{template "menu-box" dict "ID" "post" "Title" "Posts" "Recent" .RecentPosts "All" .RecentPosts "Kind" "posttype" "Disabled" .Disabled}}
+		{{.PluginBoxes}}
 		<li class="control-section accordion-section   add-custom-links" id="add-custom-links">
 			<h3 class="accordion-section-title hndle">
 				<button type="button" class="accordion-trigger" aria-expanded="false" aria-controls="add-custom-links-content">

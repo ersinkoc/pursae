@@ -72,7 +72,7 @@ func (s *Server) site(c *gin.Context) {
 		c.Status(http.StatusNotFound)
 		return
 	}
-	path := strings.Trim(c.Request.URL.Path, "/")
+	path := s.golylangSitePath(c, strings.Trim(c.Request.URL.Path, "/")) // Golylang: without the language code
 	switch path {
 	case "robots.txt":
 		s.robots(c)
@@ -122,6 +122,8 @@ func (s *Server) site(c *gin.Context) {
 			return
 		}
 	}
+	// Golylang: the language of the queried post or term.
+	s.golylangResolved(c, q)
 	if target := s.canonicalRedirect(c, q, path); target != "" { // redirect_canonical()
 		c.Redirect(http.StatusMovedPermanently, target)
 		return
@@ -358,7 +360,7 @@ func splitPages(content string) []string {
 
 func (s *Server) home(c *gin.Context, q *siteQuery) (*siteQuery, error) {
 	if s.settings.String("show_on_front") == "page" && q.Feed == "" {
-		if id := int64(s.settings.Int("page_on_front")); id > 0 {
+		if id := s.golylangPage(c, int64(s.settings.Int("page_on_front"))); id > 0 {
 			if p, err := s.store.GetPost(c, id); err == nil && p.Status == "publish" {
 				sq, err := s.singular(c, q, p)
 				if sq != nil {
@@ -396,7 +398,7 @@ func (s *Server) singular(c *gin.Context, q *siteQuery, p *store.Post) (*siteQue
 	q.Kind = "single"
 	if p.Type == "page" {
 		q.Kind = "page"
-		if p.ID == int64(s.settings.Int("page_for_posts")) && s.settings.String("show_on_front") == "page" {
+		if p.ID == s.golylangPage(c, int64(s.settings.Int("page_for_posts"))) && s.settings.String("show_on_front") == "page" {
 			q.Kind, q.PostsPage, q.Post = "home", p, nil
 		}
 	}
