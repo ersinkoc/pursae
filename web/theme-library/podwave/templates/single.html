@@ -1,0 +1,25 @@
+{{template "header" .}}
+{{with .Post}}<article id="post-{{.ID}}" class="{{.Class}} entry entry--single">
+	<header class="pw-episode-hero">
+		<div class="pw-wrap pw-episode-hero__inner">
+			{{with .Thumbnail}}<figure class="pw-cover">{{.}}</figure>{{end}}
+			<div class="pw-episode-hero__text">
+				<p class="pw-episode__meta">{{range .Categories}}<a class="pw-pill" href="{{.URL}}">{{.Name}}</a>{{end}}</p>
+				<h1 class="entry-title">{{.Title}}</h1>
+				{{template "entry-meta" .}}
+				<div class="pw-player" aria-hidden="true"><span class="pw-player__btn"></span><span class="pw-player__wave"></span><span class="pw-player__time">00:00</span></div>
+			</div>
+		</div>
+	</header>
+	<div class="pw-wrap pw-narrow entry-content">
+		<h2 class="pw-notes-title">Show notes</h2>
+		{{.Content}}
+	</div>
+	<footer class="pw-wrap pw-narrow entry-footer">
+		{{if .Tags}}<p class="tags-links"><span class="screen-reader-text">Topics: </span>{{range .Tags}}<a class="pw-pill pw-pill--ghost" href="{{.URL}}" rel="tag">{{.Name}}</a>{{end}}</p>{{end}}
+		{{with .EditLink}}<span class="edit-link">{{.}}</span>{{end}}
+		{{.Biography}}
+	</footer>
+</article>{{end}}
+<div class="pw-wrap pw-narrow">{{.PostNav}}{{template "comments" .}}</div>
+{{template "footer" .}}

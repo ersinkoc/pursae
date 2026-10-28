@@ -1,0 +1,14 @@
+{{template "header" .}}
+<header class="pa-wrap page-header page-header--search">
+	<p class="pa-kicker">{{plural .TotalPosts "%s hit" "%s hits"}}</p>
+	<h1 class="page-title">Search: <span>{{.SearchQuery}}</span></h1>
+	{{template "searchform" .}}
+</header>
+<div class="pa-wrap pa-layout">
+	<div class="pa-primary">
+		{{if .Posts}}{{template "loop" .}}
+		{{.Pagination}}{{else}}{{template "content-none" .}}{{end}}
+	</div>
+	{{template "sidebar" .}}
+</div>
+{{template "footer" .}}

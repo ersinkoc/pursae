@@ -1,0 +1,456 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Little Sprouts",
+  "blogdescription": "Nursery & kindergarten for ages 1 to 5",
+  "posts_per_page": 9
+ },
+ "categories": [
+  {
+   "slug": "events",
+   "name": "Events",
+   "description": "Festivals, celebrations and special days."
+  },
+  {
+   "slug": "learning",
+   "name": "Learning",
+   "description": "What the children are exploring."
+  },
+  {
+   "slug": "health",
+   "name": "Health & Food",
+   "description": "Menus, snacks and wellbeing."
+  },
+  {
+   "slug": "parents",
+   "name": "For Parents",
+   "description": "Practical information for families."
+  },
+  {
+   "slug": "outdoors",
+   "name": "Outdoors",
+   "description": "Garden club, walks and puddles."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "autumn",
+   "name": "Autumn"
+  },
+  {
+   "slug": "families",
+   "name": "Families"
+  },
+  {
+   "slug": "books",
+   "name": "Books"
+  },
+  {
+   "slug": "reading",
+   "name": "Reading"
+  },
+  {
+   "slug": "food",
+   "name": "Food"
+  },
+  {
+   "slug": "settling-in",
+   "name": "Settling in"
+  },
+  {
+   "slug": "garden",
+   "name": "Garden"
+  },
+  {
+   "slug": "nature",
+   "name": "Nature"
+  },
+  {
+   "slug": "play",
+   "name": "Play"
+  }
+ ],
+ "media": [
+  {
+   "id": "hero-playground",
+   "file": "demo/images/hero-playground.jpg",
+   "alt": "A sunny illustrated playground with a slide, a rainbow and round trees",
+   "caption": ""
+  },
+  {
+   "id": "leaf-festival",
+   "file": "demo/images/leaf-festival.jpg",
+   "alt": "Colourful autumn leaves and a paper lantern on a blue sky",
+   "caption": ""
+  },
+  {
+   "id": "book-corner",
+   "file": "demo/images/book-corner.jpg",
+   "alt": "A stack of colourful picture books next to a cushion",
+   "caption": ""
+  },
+  {
+   "id": "snack-plate",
+   "file": "demo/images/snack-plate.jpg",
+   "alt": "A plate of fruit slices arranged like a smiling sun",
+   "caption": ""
+  },
+  {
+   "id": "garden-bulbs",
+   "file": "demo/images/garden-bulbs.jpg",
+   "alt": "Small hands planting bulbs in a raised garden bed",
+   "caption": ""
+  },
+  {
+   "id": "rain-boots",
+   "file": "demo/images/rain-boots.jpg",
+   "alt": "Red and yellow rain boots next to a puddle",
+   "caption": ""
+  },
+  {
+   "id": "paint-splats",
+   "file": "demo/images/paint-splats.jpg",
+   "alt": "Bright paint splats and a paintbrush on paper",
+   "caption": ""
+  },
+  {
+   "id": "pyjama-moon",
+   "file": "demo/images/pyjama-moon.jpg",
+   "alt": "A smiling moon over a pile of pyjamas and books",
+   "caption": ""
+  },
+  {
+   "id": "classroom",
+   "file": "demo/images/classroom.jpg",
+   "alt": "A bright classroom with small tables, chairs and a rug",
+   "caption": ""
+  },
+  {
+   "id": "building-blocks",
+   "file": "demo/images/building-blocks.jpg",
+   "alt": "A tower of red, yellow, blue and green building blocks",
+   "caption": ""
+  },
+  {
+   "id": "our-team",
+   "file": "demo/images/our-team.jpg",
+   "alt": "Illustrated teachers waving in front of the nursery door",
+   "caption": ""
+  },
+  {
+   "id": "kite-sky",
+   "file": "demo/images/kite-sky.jpg",
+   "alt": "A kite with a long ribbon tail in a blue sky with clouds",
+   "caption": ""
+  },
+  {
+   "id": "crayons",
+   "file": "demo/images/crayons.jpg",
+   "alt": "A row of chunky crayons in every colour",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Home",
+   "content": "<!-- wp:group {\"className\":\"ls-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group ls-section\"><!-- wp:group {\"className\":\"ls-section-head\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group ls-section-head\"><!-- wp:paragraph {\"className\":\"ls-kicker\"} --><p class=\"ls-kicker\">Programmes by age</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">A room for every stage</h2><!-- /wp:heading --></div><!-- /wp:group --><!-- wp:columns {\"className\":\"ls-programs\"} --><div class=\"wp-block-columns ls-programs\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"ls-program ls-program--red\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group ls-program ls-program--red\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Seedlings</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"ls-age\"} --><p class=\"ls-age\">1 to 2 years</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Cuddles, songs and first steps in a calm, cosy room.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"ls-program ls-program--yellow\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group ls-program ls-program--yellow\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Sprouts</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"ls-age\"} --><p class=\"ls-age\">2 to 3 years</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Messy play, new words and lots of time outdoors.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"ls-program ls-program--green\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group ls-program ls-program--green\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Saplings</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"ls-age\"} --><p class=\"ls-age\">3 to 4 years</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Stories, building, friendships and big questions.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"ls-program ls-program--blue\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group ls-program ls-program--blue\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Blossoms</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"ls-age\"} --><p class=\"ls-age\">4 to 5 years</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Getting ready for school, one adventure at a time.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group --><!-- wp:group {\"align\":\"full\",\"className\":\"ls-band\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull ls-band\"><!-- wp:group {\"className\":\"ls-day\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group ls-day\"><!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:paragraph {\"className\":\"ls-kicker\"} --><p class=\"ls-kicker\">A day at Little Sprouts</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Play, rest, eat, explore</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Every day has a gentle rhythm, so children know what comes next and feel safe to try new things.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:daily-schedule}}\">See the full schedule</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --><!-- wp:group {\"className\":\"ls-panel\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group ls-panel\"><!-- wp:list {\"className\":\"ls-schedule\"} --><ul class=\"wp-block-list ls-schedule\"><!-- wp:list-item --><li><strong>7:30</strong> <span>Breakfast club and free play</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>9:00</strong> <span>Good morning circle</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>9:30</strong> <span>Outdoor play and garden club</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>11:30</strong> <span>Lunch together</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>12:30</strong> <span>Quiet time and naps</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>14:30</strong> <span>Art, music and stories</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>16:00</strong> <span>Snack and home time</span></li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group --></div><!-- /wp:group --></div><!-- /wp:group --><!-- wp:group {\"className\":\"ls-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group ls-section\"><!-- wp:group {\"className\":\"ls-section-head\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group ls-section-head\"><!-- wp:paragraph {\"className\":\"ls-kicker\"} --><p class=\"ls-kicker\">Parent news</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">What's happening</h2><!-- /wp:heading --></div><!-- /wp:group --><!-- wp:latest-posts {\"postsToShow\":3,\"displayPostDate\":true,\"displayFeaturedImage\":true,\"featuredImageSizeSlug\":\"large\",\"displayPostContent\":true,\"excerptLength\":20,\"postLayout\":\"grid\",\"columns\":3} /--></div><!-- /wp:group --><!-- wp:group {\"className\":\"ls-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group ls-section\"><!-- wp:columns {\"className\":\"ls-quotes\"} --><div class=\"wp-block-columns ls-quotes\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>The staff know our son so well. He talks about his key person all weekend.</p><!-- /wp:paragraph --><cite>Parent of a Sapling</cite></blockquote><!-- /wp:quote --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Muddy, happy and full of stories every single day. We couldn't ask for more.</p><!-- /wp:paragraph --><cite>Parent of a Blossom</cite></blockquote><!-- /wp:quote --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group --><!-- wp:group {\"className\":\"ls-section ls-visit\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group ls-section ls-visit\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Come and visit us</h2><!-- /wp:heading --><!-- wp:paragraph --><p>The best way to get to know us is to come and play. Book a visit and bring your little one.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:enrol}}\">Book a visit</a></div><!-- /wp:button --><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:enrol}}\">Call us</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "featured_media": "hero-playground",
+   "front_page": true
+  },
+  {
+   "slug": "news",
+   "title": "Parent News",
+   "content": "",
+   "posts_page": true
+  },
+  {
+   "slug": "programmes",
+   "title": "Programmes",
+   "content": "<!-- wp:paragraph --><p>Children are grouped by age, with small rooms, a key person for every child and plenty of time to play outside.</p><!-- /wp:paragraph --><!-- wp:columns {\"className\":\"ls-programs\"} --><div class=\"wp-block-columns ls-programs\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"ls-program ls-program--red\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group ls-program ls-program--red\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Seedlings</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"ls-age\"} --><p class=\"ls-age\">1 to 2 years</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>One adult for every three children. Lots of cuddles, songs, sensory play and a cosy nap room.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"ls-program ls-program--yellow\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group ls-program ls-program--yellow\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Sprouts</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"ls-age\"} --><p class=\"ls-age\">2 to 3 years</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>One adult for every four children. Messy play, first friendships and growing independence.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:columns {\"className\":\"ls-programs\"} --><div class=\"wp-block-columns ls-programs\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"ls-program ls-program--green\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group ls-program ls-program--green\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Saplings</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"ls-age\"} --><p class=\"ls-age\">3 to 4 years</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Stories, building, cooking and the garden club. Learning to share, take turns and ask big questions.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"ls-program ls-program--blue\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group ls-program ls-program--blue\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Blossoms</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"ls-age\"} --><p class=\"ls-age\">4 to 5 years</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>School-ready skills through play: early letters and numbers, forest mornings and big projects.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:heading --><h2 class=\"wp-block-heading\">Fees</h2><!-- /wp:heading --><!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Session</th><th>Per day</th></tr></thead><tbody><tr><td>Full day (7:30 to 18:00)</td><td>€62</td></tr><tr><td>Morning (7:30 to 13:00)</td><td>€38</td></tr><tr><td>Afternoon (13:00 to 18:00)</td><td>€36</td></tr></tbody></table></figure><!-- /wp:table --><!-- wp:group {\"className\":\"ls-callout\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group ls-callout\"><!-- wp:paragraph --><p>Meals, snacks, nappies and outings are included. Ask us about funded hours and sibling discounts.</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "template": "page-wide",
+   "featured_media": "building-blocks"
+  },
+  {
+   "slug": "daily-schedule",
+   "title": "Daily Schedule",
+   "content": "<!-- wp:paragraph --><p>Our day follows a gentle rhythm. Times move a little to follow the children, and the weather, but the order stays the same.</p><!-- /wp:paragraph --><!-- wp:list {\"className\":\"ls-schedule\"} --><ul class=\"wp-block-list ls-schedule\"><!-- wp:list-item --><li><strong>7:30</strong> <span>Doors open: breakfast club and free play</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>9:00</strong> <span>Good morning circle: songs, the weather and the plan for the day</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>9:30</strong> <span>Outdoor play, garden club or a walk to the park</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>10:45</strong> <span>Snack time</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>11:00</strong> <span>Room activities: building, painting, stories</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>11:30</strong> <span>Lunch together</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>12:30</strong> <span>Quiet time, naps and calm play</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>14:30</strong> <span>Art, music and movement</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>15:30</strong> <span>Story time</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>16:00</strong> <span>Snack, outdoor play and home time until 18:00</span></li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:group {\"className\":\"ls-callout\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group ls-callout\"><!-- wp:paragraph --><p>Naps follow each child's own routine at home. Just tell us what works for your family.</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "featured_media": "kite-sky",
+   "parent": "programmes"
+  },
+  {
+   "slug": "about",
+   "title": "About Us",
+   "content": "<!-- wp:paragraph --><p>Little Sprouts is a small, family-run nursery with a big garden, opened in 2011 by two early-years teachers who wanted a place where children could play outside every day.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Today we care for sixty children aged one to five, in four bright rooms, with a garden, a mud kitchen and a very popular slide.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">What we believe</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Children learn best through play.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Every child deserves a key person who knows them well.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Fresh air is good for everyone.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Families are partners, not visitors.</li><!-- /wp:list-item --></ul><!-- /wp:list -->",
+   "featured_media": "classroom"
+  },
+  {
+   "slug": "our-team",
+   "title": "Our Team",
+   "content": "<!-- wp:paragraph --><p>Our team of fourteen includes qualified early-years teachers, nursery nurses, a cook and a gardener who is also very good at fixing tricycles.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Every member of staff is trained in paediatric first aid and safeguarding, and we spend time each term learning together.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Managers</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Two founders who still spend most of the day in the rooms.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Key people</h3><!-- /wp:heading --><!-- wp:paragraph --><p>One for every child, your first point of contact.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Kitchen &amp; garden</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Fresh food daily and a garden that grows some of it.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->",
+   "featured_media": "our-team",
+   "parent": "about"
+  },
+  {
+   "slug": "enrol",
+   "title": "Visit and Enrol",
+   "content": "<!-- wp:paragraph --><p>We would love to meet you. Visits take about forty minutes, and children are very welcome.</p><!-- /wp:paragraph --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Book a visit by phone or email.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Come and play, meet the team and see the rooms.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Join the waiting list or choose your start date.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Settling-in visits begin two weeks before your start date.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Call</h3><!-- /wp:heading --><!-- wp:paragraph --><p>+44 20 7946 0123</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Email</h3><!-- /wp:heading --><!-- wp:paragraph --><p>hello@littlesprouts.example</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Visit</h3><!-- /wp:heading --><!-- wp:paragraph --><p>8 Orchard Road, open Monday to Friday 7:30 to 18:00</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:group {\"className\":\"ls-callout\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group ls-callout\"><!-- wp:paragraph --><p>We have places for Sprouts and Saplings starting in January.</p><!-- /wp:paragraph --></div><!-- /wp:group -->"
+  }
+ ],
+ "posts": [
+  {
+   "slug": "autumn-leaf-festival-recap",
+   "title": "Our autumn leaf festival: lanterns, leaf crowns and a lot of soup",
+   "date": "2026-10-22T15:30:00",
+   "excerpt": "Thank you to every family who came along. Here is what we made, sang and ate at this year's leaf festival.",
+   "content": "<!-- wp:paragraph --><p>What an afternoon! More than sixty families joined us in the garden for the autumn leaf festival, and the rain politely waited until the very last song.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The children had spent two weeks preparing: collecting leaves on our walks, pressing them in heavy books and turning them into crowns, garlands and paper lanterns.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">What we did</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Made leaf crowns at the craft table</li><!-- /wp:list-item --><!-- wp:list-item --><li>Walked a lantern parade around the garden</li><!-- /wp:list-item --><!-- wp:list-item --><li>Sang the three songs the Saplings have been practising</li><!-- /wp:list-item --><!-- wp:list-item --><li>Shared pumpkin soup made by the Blossoms (with a little help)</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:gallery {\"columns\":3,\"linkTo\":\"none\"} --><figure class=\"wp-block-gallery has-nested-images columns-3 is-cropped\"><!-- wp:image {\"id\":{{media_id:leaf-festival}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:leaf-festival}}\" alt=\"Colourful autumn leaves and a paper lantern on a blue sky\" class=\"wp-image-{{media_id:leaf-festival}}\"/></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:crayons}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:crayons}}\" alt=\"A row of chunky crayons in every colour\" class=\"wp-image-{{media_id:crayons}}\"/></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:kite-sky}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:kite-sky}}\" alt=\"A kite with a long ribbon tail in a blue sky with clouds\" class=\"wp-image-{{media_id:kite-sky}}\"/></figure><!-- /wp:image --></figure><!-- /wp:gallery --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>My daughter has not taken her leaf crown off since Friday. Thank you for such a lovely day.</p><!-- /wp:paragraph --><cite>A Sprouts parent</cite></blockquote><!-- /wp:quote --><!-- wp:paragraph --><p>Photos from the day are in your family app. If you have lost a lantern, it is waiting for you at reception.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "events"
+   ],
+   "tags": [
+    "autumn",
+    "families"
+   ],
+   "featured_media": "leaf-festival",
+   "format": "standard",
+   "sticky": true,
+   "comments": [
+    {
+     "author": "Priya N.",
+     "content": "Such a magical afternoon. The lantern walk was the highlight!",
+     "date": "2026-10-22T19:10:00",
+     "email": "priya@example.com"
+    },
+    {
+     "author": "Tom & Ellie",
+     "content": "Thank you to all the staff for organising it.",
+     "date": "2026-10-23T08:30:00",
+     "email": "tom@example.com"
+    }
+   ]
+  },
+  {
+   "slug": "what-we-are-reading-in-october",
+   "title": "What we are reading in October",
+   "date": "2026-10-15T09:00:00",
+   "excerpt": "Five picture books our rooms loved this month, and simple ways to keep the story going at home.",
+   "content": "<!-- wp:paragraph --><p>Story time is one of the most important parts of our day. These are the books the children have asked for again and again this month.</p><!-- /wp:paragraph --><!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>A book about a hedgehog who is scared of the dark</li><!-- /wp:list-item --><!-- wp:list-item --><li>A counting book with very hungry ducks</li><!-- /wp:list-item --><!-- wp:list-item --><li>A story about a girl who builds a boat from boxes</li><!-- /wp:list-item --><!-- wp:list-item --><li>A wordless book about a rainy day</li><!-- /wp:list-item --><!-- wp:list-item --><li>A lift-the-flap book about who lives in the garden</li><!-- /wp:list-item --></ol><!-- /wp:list --><!-- wp:heading --><h2 class=\"wp-block-heading\">Keep the story going at home</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Ask what might happen next before you turn the page.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Let your child tell the story from the pictures.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Read the same book again; repetition is how little ones learn.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph --><p>Every room has a cosy book corner, and the children choose the bedtime-style story we read together after lunch.</p><!-- /wp:paragraph --><!-- wp:group {\"className\":\"ls-callout\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group ls-callout\"><!-- wp:paragraph --><p>Our lending library is open at pick-up on Tuesdays and Thursdays. Borrow up to two books a week.</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "categories": [
+    "learning"
+   ],
+   "tags": [
+    "books",
+    "reading"
+   ],
+   "featured_media": "book-corner",
+   "format": "standard",
+   "sticky": false
+  },
+  {
+   "slug": "healthy-snack-ideas-from-our-kitchen",
+   "title": "Healthy snack ideas from our kitchen",
+   "date": "2026-10-08T10:00:00",
+   "excerpt": "Our cook shares the snacks that disappear fastest, and the trick that gets everyone trying something new.",
+   "content": "<!-- wp:paragraph --><p>Our cook, Marisol, makes snacks for sixty children every day, and she has learned a thing or two about what actually gets eaten.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Her biggest tip: let children help. A child who has washed the carrots is far more likely to try one.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Marisol's top five</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Apple \"sunshine\" slices with a little yogurt dip</li><!-- /wp:list-item --><!-- wp:list-item --><li>Cucumber boats with cream cheese</li><!-- /wp:list-item --><!-- wp:list-item --><li>Banana and oat mini muffins</li><!-- /wp:list-item --><!-- wp:list-item --><li>Rainbow fruit skewers (soft fruit only for the little ones)</li><!-- /wp:list-item --><!-- wp:list-item --><li>Warm toast fingers with mashed avocado</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:image {\"id\":{{media_id:snack-plate}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:snack-plate}}\" alt=\"A plate of fruit slices arranged like a smiling sun\" class=\"wp-image-{{media_id:snack-plate}}\"/><figcaption class=\"wp-element-caption\">The fruit sun is always the first plate to empty.</figcaption></figure><!-- /wp:image --><!-- wp:group {\"className\":\"ls-callout\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group ls-callout\"><!-- wp:paragraph --><p>We are a nut-free nursery. Please tell us about any allergies or dietary needs, and we will plan around them.</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "categories": [
+    "health"
+   ],
+   "tags": [
+    "food",
+    "families"
+   ],
+   "featured_media": "snack-plate",
+   "format": "standard",
+   "sticky": false
+  },
+  {
+   "slug": "settling-in-tips-for-new-families",
+   "title": "Settling in: tips for new families",
+   "date": "2026-10-01T09:00:00",
+   "excerpt": "Starting nursery is a big step for the whole family. Here is how our settling-in weeks work, and how you can help.",
+   "content": "<!-- wp:paragraph --><p>Starting nursery is a big change, for children and for grown-ups. Every child settles at their own pace, and our settling-in weeks are designed to go gently.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">How settling-in works</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"ls-schedule\"} --><ul class=\"wp-block-list ls-schedule\"><!-- wp:list-item --><li><strong>Visit 1</strong> <span>One hour together with you in the room</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Visit 2</strong> <span>You stay nearby while your child explores</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Visit 3</strong> <span>A short goodbye and one hour apart</span></li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Week 2</strong> <span>Half days, then full days when ready</span></li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:heading --><h2 class=\"wp-block-heading\">How you can help</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Keep goodbyes short, warm and the same every day.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Bring a comfort toy or a family photo.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Tell us about your child's routines, words and favourite songs.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Talk about nursery positively at home.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph --><p>Some children wave goodbye on the first morning, others need a few weeks. Both are completely normal, and we will keep you updated with photos and messages during the day.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Most of all, ask us anything. Your key person is there for you as much as for your child.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "parents"
+   ],
+   "tags": [
+    "settling-in",
+    "families"
+   ],
+   "featured_media": "classroom",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Hannah W.",
+     "content": "This helped so much. Our son now runs in every morning!",
+     "date": "2026-10-02T17:45:00",
+     "email": "hannah@example.com"
+    }
+   ]
+  },
+  {
+   "slug": "garden-club-planting-bulbs-for-spring",
+   "title": "Garden club: planting bulbs for spring",
+   "date": "2026-09-24T14:00:00",
+   "excerpt": "The Blossoms planted two hundred bulbs this week. Now comes the hardest part: waiting.",
+   "content": "<!-- wp:paragraph --><p>Our oldest group, the Blossoms, spent this week with muddy hands and very serious faces, planting two hundred bulbs in the raised beds by the fence.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>We talked about what a bulb needs (soil, water and patience), measured how deep to plant them with our fingers, and made labels so we remember what is where.</p><!-- /wp:paragraph --><!-- wp:image {\"id\":{{media_id:garden-bulbs}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:garden-bulbs}}\" alt=\"Small hands planting bulbs in a raised garden bed\" class=\"wp-image-{{media_id:garden-bulbs}}\"/></figure><!-- /wp:image --><!-- wp:heading --><h2 class=\"wp-block-heading\">What we planted</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Daffodils for the front bed</li><!-- /wp:list-item --><!-- wp:list-item --><li>Crocuses in the grass by the gate</li><!-- /wp:list-item --><!-- wp:list-item --><li>Tulips in the Blossoms' own bed</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph --><p>We will check on them every week and draw what we see. Come and look in spring!</p><!-- /wp:paragraph -->",
+   "categories": [
+    "learning",
+    "outdoors"
+   ],
+   "tags": [
+    "garden",
+    "nature"
+   ],
+   "featured_media": "garden-bulbs",
+   "format": "standard",
+   "sticky": false
+  },
+  {
+   "slug": "pyjama-day-and-winter-book-drive",
+   "title": "Pyjama day and our winter book drive",
+   "date": "2026-09-17T09:00:00",
+   "excerpt": "Come to nursery in your pyjamas on Friday 14 November and bring a book to give to a family who needs one.",
+   "content": "<!-- wp:paragraph --><p>Our favourite cosy day of the year is coming! On Friday 14 November, children (and staff) can come to nursery in their pyjamas.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>This year we are also collecting new and gently used picture books for the local family centre. Every book helps a child have a story at bedtime.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">How to join in</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Wear pyjamas and bring warm clothes for outdoor play.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Bring a book for the donation box by the door.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Join us for a bedtime story session at 15:30.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:pullquote --><figure class=\"wp-block-pullquote\"><blockquote><p>Every book in the box is a bedtime story for another child.</p></blockquote></figure><!-- /wp:pullquote --><!-- wp:paragraph --><p>Last year families donated more than three hundred books, which filled the family centre shelves all winter. Let's try to beat it!</p><!-- /wp:paragraph -->",
+   "categories": [
+    "events"
+   ],
+   "tags": [
+    "books",
+    "families"
+   ],
+   "featured_media": "pyjama-moon",
+   "format": "standard",
+   "sticky": false
+  },
+  {
+   "slug": "why-we-spend-so-much-time-outdoors",
+   "title": "Why we spend so much time outdoors, in every weather",
+   "date": "2026-09-10T11:00:00",
+   "excerpt": "Mud, puddles and fresh air: why outdoor play is part of every day at Little Sprouts.",
+   "content": "<!-- wp:paragraph --><p>If you have ever collected a very muddy child at pick-up, you already know: we go outside every day, rain or shine.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Outdoor play builds strong bodies, curious minds and brave hearts. Climbing, balancing and splashing help children learn what their bodies can do, and nature gives them endless things to wonder about.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">What to pack</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Waterproof trousers and jacket</li><!-- /wp:list-item --><!-- wp:list-item --><li>Wellies (labelled, please!)</li><!-- /wp:list-item --><!-- wp:list-item --><li>A spare set of clothes, including socks</li><!-- /wp:list-item --><!-- wp:list-item --><li>A sun hat in summer, a warm hat in winter</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:image {\"id\":{{media_id:rain-boots}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:rain-boots}}\" alt=\"Red and yellow rain boots next to a puddle\" class=\"wp-image-{{media_id:rain-boots}}\"/><figcaption class=\"wp-element-caption\">A puddle is just a very small lake waiting to be explored.</figcaption></figure><!-- /wp:image --><!-- wp:group {\"className\":\"ls-callout\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group ls-callout\"><!-- wp:paragraph --><p>We have spare wellies and waterproofs for anyone who forgets. Just ask.</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "categories": [
+    "outdoors",
+    "learning"
+   ],
+   "tags": [
+    "nature",
+    "play"
+   ],
+   "featured_media": "rain-boots",
+   "format": "standard",
+   "sticky": false
+  },
+  {
+   "slug": "parent-evenings-this-term",
+   "title": "Parent evenings this term: dates and what to expect",
+   "date": "2026-09-03T16:00:00",
+   "excerpt": "Fifteen minutes with your child's key person to talk about friends, play and what comes next.",
+   "content": "<!-- wp:paragraph --><p>Parent evenings are a chance to sit down with your child's key person and talk about how things are going: friendships, favourite activities and anything you would like us to know.</p><!-- /wp:paragraph --><!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Room</th><th>Date</th><th>Time</th></tr></thead><tbody><tr><td>Seedlings &amp; Sprouts</td><td>Tuesday 4 November</td><td>16:30 to 19:00</td></tr><tr><td>Saplings</td><td>Wednesday 5 November</td><td>16:30 to 19:00</td></tr><tr><td>Blossoms</td><td>Thursday 6 November</td><td>16:30 to 19:00</td></tr></tbody></table></figure><!-- /wp:table --><!-- wp:paragraph --><p>We will share a short summary of your child's play and learning, a few photos, and the things they have told us they love doing most.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Booking a time</h2><!-- /wp:heading --><!-- wp:paragraph --><p>You can book a time at reception or through the family app. Little ones are welcome to come along; we will have crayons and a quiet corner ready.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>If none of the times work for you, tell us and we will find another moment.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "parents"
+   ],
+   "tags": [
+    "families"
+   ],
+   "featured_media": "crayons",
+   "format": "standard",
+   "sticky": false
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Home",
+     "page": "home"
+    },
+    {
+     "title": "Programmes",
+     "page": "programmes",
+     "children": [
+      {
+       "page": "daily-schedule"
+      }
+     ]
+    },
+    {
+     "title": "Parent News",
+     "page": "news",
+     "children": [
+      {
+       "category": "events"
+      },
+      {
+       "category": "parents"
+      }
+     ]
+    },
+    {
+     "title": "About",
+     "page": "about",
+     "children": [
+      {
+       "page": "our-team"
+      }
+     ]
+    },
+    {
+     "title": "Visit",
+     "page": "enrol"
+    }
+   ]
+  },
+  {
+   "name": "Footer",
+   "location": "footer",
+   "items": [
+    {
+     "page": "programmes"
+    },
+    {
+     "page": "daily-schedule"
+    },
+    {
+     "page": "our-team"
+    },
+    {
+     "page": "enrol",
+     "title": "Visit & enrol"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "sidebar-1": [
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Dates for your diary</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><strong>4 to 6 Nov</strong> Parent evenings</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>14 Nov</strong> Pyjama day</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>19 Dec</strong> Winter sing-along</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Topics</h2><!-- /wp:heading --><!-- wp:categories /--></div><!-- /wp:group -->",
+   "<!-- wp:search {\"label\":\"Search\",\"showLabel\":false,\"buttonText\":\"Search\"} /-->"
+  ],
+  "footer-1": [
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Opening hours</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Monday to Friday<br>7:30 to 18:00<br>Closed on public holidays</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Find us</h2><!-- /wp:heading --><!-- wp:paragraph --><p>8 Orchard Road<br>+44 20 7946 0123<br>hello@littlesprouts.example</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Latest news</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":3,\"displayPostDate\":true,\"displayFeaturedImage\":false,\"featuredImageSizeSlug\":\"large\"} /--></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "red": "#e63946",
+  "yellow": "#ffbe0b",
+  "blue": "#3a86ff",
+  "green": "#2bb673",
+  "waves": true,
+  "roundness": "bubbly",
+  "news_layout": "cards",
+  "hero_image": "hero-playground",
+  "hero_kicker": "Nursery & kindergarten · Ages 1 to 5",
+  "hero_heading": "A happy place to grow",
+  "enroll_label": "Book a visit",
+  "enroll_url": "{{page:enrol}}",
+  "cta_label": "Our programmes",
+  "cta_url": "{{page:programmes}}",
+  "notice_text": "Now enrolling for January: places for Sprouts and Saplings.",
+  "footer_text": "Little Sprouts Nursery. Growing together since 2011."
+ }
+}

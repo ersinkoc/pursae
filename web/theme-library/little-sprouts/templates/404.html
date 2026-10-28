@@ -1,0 +1,8 @@
+{{template "header" .}}
+<section class="ls-wrap error-404 not-found ls-404">
+	<div class="ls-404__blocks" aria-hidden="true"><span>4</span><span>0</span><span>4</span></div>
+	<h1 class="page-title">Oops! This page is playing hide and seek.</h1>
+	<p>We looked under the beanbags and behind the book corner, but it is not here. Try a search, or go back to the <a href="{{.HomeURL}}">home page</a>.</p>
+	{{template "searchform" .}}
+</section>
+{{template "footer" .}}

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>{{.DocumentTitle}}</title>
+{{.Head}}</head>
+
+<body class="{{.BodyClass}}">
+{{.BodyOpen}}<div id="page" class="site">
+	<a class="skip-link screen-reader-text" href="#main">Skip to content</a>
+
+	<header id="masthead" class="site-header">
+		<div class="in-topbar">
+			<div class="in-wrap in-topbar__inner">
+				<span class="in-topbar__info">{{with theme_mod . "studio_info"}}{{.}}{{end}}</span>
+				{{with theme_mod . "booking_label"}}<a class="in-btn in-btn--small" href="{{theme_mod $ "booking_url"}}">{{.}}</a>{{end}}
+			</div>
+		</div>
+		<div class="in-wrap site-header__inner">
+			<div class="site-branding">
+				<span class="in-ornament" aria-hidden="true"></span>
+				{{with .CustomLogo}}<div class="site-logo">{{.}}</div>{{end}}
+				{{if .TitleIsH1}}<h1 class="site-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></h1>{{else}}<p class="site-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></p>{{end}}
+				{{with .Description}}<p class="site-description"><span class="in-star" aria-hidden="true">&#10022;</span> {{.}} <span class="in-star" aria-hidden="true">&#10022;</span></p>{{end}}
+			</div><!-- .site-branding -->
+			{{if has_nav_menu . "primary"}}<nav id="site-navigation" class="main-navigation" aria-label="Primary menu">
+				<button type="button" class="menu-toggle" aria-controls="site-navigation" aria-expanded="false"><span class="in-burger" aria-hidden="true"></span>Menu</button>
+				{{nav_menu . "primary"}}
+			</nav><!-- #site-navigation -->{{end}}
+		</div>
+	</header><!-- #masthead -->
+
+	<div id="content" class="site-content">
+		<main id="main" class="site-main" tabindex="-1">

@@ -1,0 +1,20 @@
+{{template "header" .}}
+{{with .Post}}<article id="post-{{.ID}}" class="{{.Class}} entry entry--single">
+	{{if .ThumbnailURL}}<figure class="fx-still"><img src="{{.ThumbnailURL}}" alt="" /></figure>{{end}}
+	<header class="fx-wrap fx-narrow entry-header">
+		<p class="fx-card__label">{{range .Categories}}<a class="fx-stub" href="{{.URL}}">{{.Name}}</a>{{end}}</p>
+		<h1 class="entry-title">{{.Title}}</h1>
+		{{with .Post.Excerpt}}<p class="fx-dek">{{.}}</p>{{end}}
+		{{template "entry-meta" .}}
+	</header>
+	<div class="fx-wrap fx-narrow entry-content">
+		{{.Content}}
+	</div>
+	<footer class="fx-wrap fx-narrow entry-footer">
+		{{if .Tags}}<p class="tags-links"><span class="fx-eyebrow">Filed under</span> {{range .Tags}}<a href="{{.URL}}" rel="tag">{{.Name}}</a>{{end}}</p>{{end}}
+		{{with .EditLink}}<span class="edit-link">{{.}}</span>{{end}}
+		{{.Biography}}
+	</footer>
+</article>{{end}}
+<div class="fx-wrap fx-narrow">{{.PostNav}}{{template "comments" .}}</div>
+{{template "footer" .}}

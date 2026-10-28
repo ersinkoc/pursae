@@ -1,0 +1,12 @@
+{{template "header" .}}
+{{with .Post}}<article id="post-{{.ID}}" class="{{.Class}} entry entry--page entry--wide">
+	<header class="fx-wrap entry-header fx-wide-header">
+		<p class="fx-eyebrow">{{$.SiteName}} presents</p>
+		<h1 class="entry-title">{{.Title}}</h1>
+	</header>
+	<div class="fx-wrap entry-content fx-wide-content">
+		{{.Content}}
+	</div>
+	{{with .EditLink}}<footer class="fx-wrap entry-footer"><span class="edit-link">{{.}}</span></footer>{{end}}
+</article>{{end}}
+{{template "footer" .}}

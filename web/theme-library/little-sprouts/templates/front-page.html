@@ -1,0 +1,22 @@
+{{template "header" .}}
+{{with .Post}}{{$hero := theme_mod $ "hero_image"}}{{if not $hero}}{{$hero = .ThumbnailURL}}{{end}}<article id="post-{{.ID}}" class="{{.Class}} entry entry--front">
+	<section class="ls-hero" aria-label="Welcome">
+		<span class="ls-hero__shape ls-hero__shape--1" aria-hidden="true"></span>
+		<span class="ls-hero__shape ls-hero__shape--2" aria-hidden="true"></span>
+		<span class="ls-hero__shape ls-hero__shape--3" aria-hidden="true"></span>
+		<div class="ls-wrap ls-hero__inner">
+			<div class="ls-hero__text">
+				{{with theme_mod $ "hero_kicker"}}<p class="ls-kicker">{{.}}</p>{{end}}
+				<h1 class="ls-hero__title">{{with theme_mod $ "hero_heading"}}{{.}}{{else}}{{$.SiteName}}{{end}}</h1>
+				{{with $.Description}}<p class="ls-hero__lead">{{.}}</p>{{end}}
+				<p class="ls-hero__actions">{{with theme_mod $ "enroll_label"}}<a class="ls-btn" href="{{theme_mod $ "enroll_url"}}">{{.}}</a>{{end}}{{with theme_mod $ "cta_label"}}<a class="ls-btn ls-btn--ghost" href="{{theme_mod $ "cta_url"}}">{{.}}</a>{{end}}</p>
+			</div>
+			{{if $hero}}<figure class="ls-blob ls-hero__art"><img src="{{$hero}}" alt="" /></figure>{{end}}
+		</div>
+	</section>
+	<div class="entry-content ls-front-content">
+		{{.Content}}
+	</div>
+	{{with .EditLink}}<footer class="ls-wrap entry-footer"><span class="edit-link">{{.}}</span></footer>{{end}}
+</article>{{end}}
+{{template "footer" .}}

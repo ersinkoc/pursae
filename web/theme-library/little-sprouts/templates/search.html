@@ -1,0 +1,14 @@
+{{template "header" .}}
+<header class="ls-wrap page-header page-header--search">
+	<p class="ls-kicker">{{plural .TotalPosts "%s thing found" "%s things found"}}</p>
+	<h1 class="page-title">Looking for &ldquo;{{.SearchQuery}}&rdquo;</h1>
+	{{template "searchform" .}}
+</header>
+<div class="ls-wrap ls-layout">
+	<div class="ls-primary">
+		{{if .Posts}}{{template "loop" .}}
+		{{.Pagination}}{{else}}{{template "content-none" .}}{{end}}
+	</div>
+	{{template "sidebar" .}}
+</div>
+{{template "footer" .}}

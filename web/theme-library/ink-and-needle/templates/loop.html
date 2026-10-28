@@ -1,0 +1,12 @@
+<div class="post-list in-grid">
+	{{range .Posts}}<article id="post-{{.ID}}" class="{{.Class}} in-card">
+		{{if .Thumbnail}}<a class="in-card__frame" href="{{.Permalink}}" aria-hidden="true" tabindex="-1">{{.Thumbnail}}</a>{{end}}
+		<div class="in-card__body">
+			{{if .ShowFeatured}}<p class="in-banner">Pinned</p>{{else}}{{range $i, $c := .Categories}}{{if lt $i 1}}<p class="in-banner"><a href="{{$c.URL}}">{{$c.Name}}</a></p>{{end}}{{end}}{{end}}
+			<h2 class="in-card__title"><a href="{{.Permalink}}" rel="bookmark">{{.Title}}</a></h2>
+			{{if .ShowExcerpt}}<div class="in-card__excerpt">{{.Excerpt}}</div>{{end}}
+			<p class="in-card__meta"><time datetime="{{.DateISO}}">{{.DateText}}</time>{{with .AuthorName}}<span class="byline"> <span class="in-star" aria-hidden="true">&#10022;</span> {{.}}</span>{{end}}</p>
+		</div>
+	</article>
+	{{end}}
+</div>

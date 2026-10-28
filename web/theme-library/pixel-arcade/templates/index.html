@@ -1,0 +1,13 @@
+{{template "header" .}}
+<header class="pa-wrap page-header">
+	<p class="pa-kicker">{{if .IsHomeHeader}}Stage select{{else}}Player one ready{{end}}</p>
+	<h1 class="page-title">{{if .IsHomeHeader}}{{.PostsPageTitle}}{{else}}Latest drops{{end}}</h1>
+</header>
+<div class="pa-wrap pa-layout">
+	<div class="pa-primary">
+		{{if .Posts}}{{template "loop" .}}
+		{{.Pagination}}{{else}}{{template "content-none" .}}{{end}}
+	</div>
+	{{template "sidebar" .}}
+</div>
+{{template "footer" .}}

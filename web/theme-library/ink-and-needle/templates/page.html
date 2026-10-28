@@ -1,0 +1,14 @@
+{{template "header" .}}
+{{with .Post}}<article id="post-{{.ID}}" class="{{.Class}} entry entry--page">
+	<header class="in-wrap in-narrow entry-header">
+		<p class="in-kicker"><span class="in-star" aria-hidden="true">&#10022;</span> {{$.SiteName}} <span class="in-star" aria-hidden="true">&#10022;</span></p>
+		<h1 class="entry-title">{{.Title}}</h1>
+	</header>
+	{{with .Thumbnail}}<figure class="in-wrap in-narrow in-feature">{{.}}</figure>{{end}}
+	<div class="in-wrap in-narrow entry-content">
+		{{.Content}}
+	</div>
+	{{with .EditLink}}<footer class="in-wrap in-narrow entry-footer"><span class="edit-link">{{.}}</span></footer>{{end}}
+</article>{{end}}
+<div class="in-wrap in-narrow">{{template "comments" .}}</div>
+{{template "footer" .}}

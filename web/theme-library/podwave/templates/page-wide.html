@@ -1,0 +1,12 @@
+{{template "header" .}}
+{{with .Post}}<article id="post-{{.ID}}" class="{{.Class}} entry entry--page entry--wide">
+	<header class="pw-wrap entry-header pw-wide-header">
+		<p class="pw-kicker">{{$.SiteName}}</p>
+		<h1 class="entry-title">{{.Title}}</h1>
+	</header>
+	<div class="pw-wrap entry-content pw-wide-content">
+		{{.Content}}
+	</div>
+	{{with .EditLink}}<footer class="pw-wrap entry-footer"><span class="edit-link">{{.}}</span></footer>{{end}}
+</article>{{end}}
+{{template "footer" .}}

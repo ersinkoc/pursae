@@ -1,0 +1,14 @@
+{{template "header" .}}
+<header class="in-wrap page-header page-header--archive">
+	<p class="in-kicker"><span class="in-star" aria-hidden="true">&#10022;</span> Archive <span class="in-star" aria-hidden="true">&#10022;</span></p>
+	<h1 class="page-title">{{.ArchiveTitle}}</h1>
+	{{with .ArchiveDesc}}<div class="archive-description">{{.}}</div>{{end}}
+</header>
+<div class="in-wrap in-layout">
+	<div class="in-primary">
+		{{if .Posts}}{{template "loop" .}}
+		{{.Pagination}}{{else}}{{template "content-none" .}}{{end}}
+	</div>
+	{{template "sidebar" .}}
+</div>
+{{template "footer" .}}

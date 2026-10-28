@@ -1,0 +1,14 @@
+{{template "header" .}}
+<header class="ls-wrap page-header page-header--archive">
+	<p class="ls-kicker">Topic</p>
+	<h1 class="page-title">{{.ArchiveTitle}}</h1>
+	{{with .ArchiveDesc}}<div class="archive-description">{{.}}</div>{{end}}
+</header>
+<div class="ls-wrap ls-layout">
+	<div class="ls-primary">
+		{{if .Posts}}{{template "loop" .}}
+		{{.Pagination}}{{else}}{{template "content-none" .}}{{end}}
+	</div>
+	{{template "sidebar" .}}
+</div>
+{{template "footer" .}}

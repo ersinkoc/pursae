@@ -1,0 +1,13 @@
+{{template "header" .}}
+<header class="fx-wrap page-header">
+	<p class="fx-eyebrow">{{if .IsHomeHeader}}The programme{{else}}Now showing{{end}}</p>
+	<h1 class="page-title">{{if .IsHomeHeader}}{{.PostsPageTitle}}{{else}}Latest{{end}}</h1>
+</header>
+<div class="fx-wrap fx-layout">
+	<div class="fx-primary">
+		{{if .Posts}}{{template "loop" .}}
+		{{.Pagination}}{{else}}{{template "content-none" .}}{{end}}
+	</div>
+	{{template "sidebar" .}}
+</div>
+{{template "footer" .}}

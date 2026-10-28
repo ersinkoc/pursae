@@ -1,0 +1,16 @@
+<div class="post-list pa-cards">
+	{{range .Posts}}<article id="post-{{.ID}}" class="{{.Class}} pa-card">
+		{{if .Thumbnail}}<a class="pa-card__media" href="{{.Permalink}}" aria-hidden="true" tabindex="-1">{{.Thumbnail}}</a>{{end}}
+		<div class="pa-card__body">
+			<p class="pa-card__chips">{{if .ShowFeatured}}<span class="pa-chip pa-chip--hot">Pinned</span>{{end}}{{range .Categories}}<a class="pa-chip" href="{{.URL}}">{{.Name}}</a>{{end}}</p>
+			<h2 class="pa-card__title"><a href="{{.Permalink}}" rel="bookmark">{{.Title}}</a></h2>
+			{{if .ShowExcerpt}}<div class="pa-card__excerpt">{{.Excerpt}}</div>{{end}}
+			<div class="pa-card__foot">
+				<time datetime="{{.DateISO}}">{{.DateText}}</time>
+				{{with .AuthorName}}<span class="byline">{{.}}</span>{{end}}
+				{{if .Tags}}<span class="pa-card__tags">{{range $i, $t := .Tags}}{{if lt $i 2}}<span>{{$t.Name}}</span>{{end}}{{end}}</span>{{end}}
+			</div>
+		</div>
+	</article>
+	{{end}}
+</div>

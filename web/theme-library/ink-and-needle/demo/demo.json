@@ -1,0 +1,488 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Ink & Needle",
+  "blogdescription": "Tattoo & piercing studio",
+  "posts_per_page": 8
+ },
+ "categories": [
+  {
+   "slug": "studio-news",
+   "name": "Studio News",
+   "description": "Events, flash days and guest artists."
+  },
+  {
+   "slug": "artists",
+   "name": "Artists",
+   "description": "Spotlights on the people behind the needles."
+  },
+  {
+   "slug": "aftercare",
+   "name": "Aftercare",
+   "description": "How to look after new tattoos and piercings."
+  },
+  {
+   "slug": "piercing",
+   "name": "Piercing",
+   "description": "Jewellery, placements and healing."
+  },
+  {
+   "slug": "guides",
+   "name": "Guides",
+   "description": "Everything to know before your appointment."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "flash",
+   "name": "Flash"
+  },
+  {
+   "slug": "events",
+   "name": "Events"
+  },
+  {
+   "slug": "tattoo-care",
+   "name": "Tattoo care"
+  },
+  {
+   "slug": "healing",
+   "name": "Healing"
+  },
+  {
+   "slug": "piercing-care",
+   "name": "Piercing care"
+  },
+  {
+   "slug": "traditional",
+   "name": "Traditional"
+  },
+  {
+   "slug": "fine-line",
+   "name": "Fine line"
+  },
+  {
+   "slug": "artists",
+   "name": "Artists"
+  },
+  {
+   "slug": "first-tattoo",
+   "name": "First tattoo"
+  },
+  {
+   "slug": "guest-artists",
+   "name": "Guest artists"
+  },
+  {
+   "slug": "cover-ups",
+   "name": "Cover-ups"
+  }
+ ],
+ "media": [
+  {
+   "id": "hero-flash-sheet",
+   "file": "demo/images/hero-flash-sheet.jpg",
+   "alt": "A flash sheet of traditional tattoo designs: a dagger, a rose, a swallow and a heart, on bone paper",
+   "caption": ""
+  },
+  {
+   "id": "flash-dagger-rose",
+   "file": "demo/images/flash-dagger-rose.jpg",
+   "alt": "Flash design: a dagger through a red rose",
+   "caption": "Dagger & rose"
+  },
+  {
+   "id": "flash-swallow",
+   "file": "demo/images/flash-swallow.jpg",
+   "alt": "Flash design: a swallow in flight with a banner",
+   "caption": "Swallow"
+  },
+  {
+   "id": "flash-anchor",
+   "file": "demo/images/flash-anchor.jpg",
+   "alt": "Flash design: an anchor wrapped in rope",
+   "caption": "Anchor"
+  },
+  {
+   "id": "flash-heart",
+   "file": "demo/images/flash-heart.jpg",
+   "alt": "Flash design: a red heart with a blank banner",
+   "caption": "Heart & banner"
+  },
+  {
+   "id": "flash-moon",
+   "file": "demo/images/flash-moon.jpg",
+   "alt": "Flash design: a crescent moon with a face and stars",
+   "caption": "Moon"
+  },
+  {
+   "id": "flash-snake",
+   "file": "demo/images/flash-snake.jpg",
+   "alt": "Flash design: a coiled green snake",
+   "caption": "Snake"
+  },
+  {
+   "id": "flash-eye",
+   "file": "demo/images/flash-eye.jpg",
+   "alt": "Flash design: an eye inside a triangle with rays",
+   "caption": "All-seeing eye"
+  },
+  {
+   "id": "studio-chair",
+   "file": "demo/images/studio-chair.jpg",
+   "alt": "The studio at night: a tattoo chair under a single lamp",
+   "caption": ""
+  },
+  {
+   "id": "machine",
+   "file": "demo/images/machine.jpg",
+   "alt": "A tattoo machine drawn in black line work on bone paper",
+   "caption": ""
+  },
+  {
+   "id": "piercing-tray",
+   "file": "demo/images/piercing-tray.jpg",
+   "alt": "Gold and steel piercing jewellery laid out on a dark tray",
+   "caption": ""
+  },
+  {
+   "id": "aftercare",
+   "file": "demo/images/aftercare.jpg",
+   "alt": "A clean wrap, a tub of balm and a towel on a bone background",
+   "caption": ""
+  },
+  {
+   "id": "artist-mara",
+   "file": "demo/images/artist-mara.jpg",
+   "alt": "Portrait illustration of artist Mara Vell in black and red",
+   "caption": ""
+  },
+  {
+   "id": "artist-jonah",
+   "file": "demo/images/artist-jonah.jpg",
+   "alt": "Portrait illustration of artist Jonah Reyes in black and green",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Home",
+   "content": "<!-- wp:group {\"className\":\"in-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group in-section\"><!-- wp:group {\"className\":\"in-section-head\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group in-section-head\"><!-- wp:paragraph {\"className\":\"in-kicker\"} --><p class=\"in-kicker\">&#10022; What we do &#10022;</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Tattoo, piercing &amp; aftercare</h2><!-- /wp:heading --></div><!-- /wp:group --><!-- wp:columns {\"className\":\"in-services\"} --><div class=\"wp-block-columns in-services\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Custom tattoos</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Designed with you, drawn by hand, built to age well. From palm-sized flash to full sleeves.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{page:artists}}\">Meet the artists</a></p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Piercing</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Ear, nose and facial piercings with implant-grade titanium and solid gold jewellery.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{post:piercing-aftercare-basics}}\">Piercing aftercare</a></p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Flash</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Ready-drawn designs on the wall, tattooed on walk-in days at a set price.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><a href=\"{{page:flash}}\">See the flash wall</a></p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group --><!-- wp:group {\"align\":\"full\",\"className\":\"in-section in-bone-band\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull in-section in-bone-band\"><!-- wp:group {\"className\":\"in-section-head\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group in-section-head\"><!-- wp:paragraph {\"className\":\"in-kicker\"} --><p class=\"in-kicker\">&#10022; On the wall this month &#10022;</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Flash sheet</h2><!-- /wp:heading --></div><!-- /wp:group --><!-- wp:gallery {\"columns\":3,\"linkTo\":\"none\",\"className\":\"in-flash\"} --><figure class=\"wp-block-gallery has-nested-images columns-3 is-cropped in-flash\"><!-- wp:image {\"id\":{{media_id:flash-dagger-rose}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:flash-dagger-rose}}\" alt=\"Flash design: a dagger through a red rose\" class=\"wp-image-{{media_id:flash-dagger-rose}}\"/><figcaption class=\"wp-element-caption\">€160</figcaption></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:flash-swallow}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:flash-swallow}}\" alt=\"Flash design: a swallow in flight with a banner\" class=\"wp-image-{{media_id:flash-swallow}}\"/><figcaption class=\"wp-element-caption\">€140</figcaption></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:flash-anchor}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:flash-anchor}}\" alt=\"Flash design: an anchor wrapped in rope\" class=\"wp-image-{{media_id:flash-anchor}}\"/><figcaption class=\"wp-element-caption\">€150</figcaption></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:flash-heart}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:flash-heart}}\" alt=\"Flash design: a red heart with a blank banner\" class=\"wp-image-{{media_id:flash-heart}}\"/><figcaption class=\"wp-element-caption\">€120</figcaption></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:flash-moon}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:flash-moon}}\" alt=\"Flash design: a crescent moon with a face and stars\" class=\"wp-image-{{media_id:flash-moon}}\"/><figcaption class=\"wp-element-caption\">€140</figcaption></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:flash-snake}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:flash-snake}}\" alt=\"Flash design: a coiled green snake\" class=\"wp-image-{{media_id:flash-snake}}\"/><figcaption class=\"wp-element-caption\">€180</figcaption></figure><!-- /wp:image --></figure><!-- /wp:gallery --><!-- wp:buttons {\"layout\":{\"type\":\"flex\",\"justifyContent\":\"center\"}} --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:flash}}\">See the whole wall</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --><!-- wp:group {\"className\":\"in-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group in-section\"><!-- wp:group {\"className\":\"in-section-head\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group in-section-head\"><!-- wp:paragraph {\"className\":\"in-kicker\"} --><p class=\"in-kicker\">&#10022; The artists &#10022;</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Two chairs, two styles</h2><!-- /wp:heading --></div><!-- /wp:group --><!-- wp:columns {\"className\":\"in-artists\"} --><div class=\"wp-block-columns in-artists\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"in-artist\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group in-artist\"><!-- wp:image {\"id\":{{media_id:artist-mara}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:artist-mara}}\" alt=\"Portrait illustration of artist Mara Vell in black and red\" class=\"wp-image-{{media_id:artist-mara}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Mara Vell</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"in-specialty\"} --><p class=\"in-specialty\">Bold traditional</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Roses, daggers and anything with a ship in it.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"in-artist\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group in-artist\"><!-- wp:image {\"id\":{{media_id:artist-jonah}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:artist-jonah}}\" alt=\"Portrait illustration of artist Jonah Reyes in black and green\" class=\"wp-image-{{media_id:artist-jonah}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Jonah Reyes</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"in-specialty\"} --><p class=\"in-specialty\">Botanical fine line</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Ferns, wildflowers and quiet details.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group --><!-- wp:group {\"className\":\"in-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group in-section\"><!-- wp:group {\"className\":\"in-section-head\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group in-section-head\"><!-- wp:paragraph {\"className\":\"in-kicker\"} --><p class=\"in-kicker\">&#10022; From the journal &#10022;</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">News &amp; aftercare</h2><!-- /wp:heading --></div><!-- /wp:group --><!-- wp:latest-posts {\"postsToShow\":3,\"displayPostDate\":true,\"displayFeaturedImage\":true,\"featuredImageSizeSlug\":\"large\",\"displayPostContent\":true,\"excerptLength\":20,\"postLayout\":\"grid\",\"columns\":3} /--></div><!-- /wp:group --><!-- wp:group {\"className\":\"in-section in-booking-cta\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group in-section in-booking-cta\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Book a session</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Consultations are free. Tell us your idea, your placement and your budget, and we will match you with the right artist.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:booking}}\">Book now</a></div><!-- /wp:button --><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{post:tattoo-aftercare-the-first-two-weeks}}\">Aftercare guide</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "featured_media": "hero-flash-sheet",
+   "front_page": true
+  },
+  {
+   "slug": "journal",
+   "title": "Journal",
+   "content": "",
+   "posts_page": true
+  },
+  {
+   "slug": "artists",
+   "title": "Artists",
+   "content": "<!-- wp:paragraph --><p>Every artist here draws their own designs and works by appointment, with regular walk-in days. Click through to their spotlight to see more.</p><!-- /wp:paragraph --><!-- wp:columns {\"className\":\"in-artists\"} --><div class=\"wp-block-columns in-artists\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"in-artist\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group in-artist\"><!-- wp:image {\"id\":{{media_id:artist-mara}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"{{post:artist-spotlight-mara-vell}}\"><img src=\"{{media:artist-mara}}\" alt=\"Portrait illustration of artist Mara Vell in black and red\" class=\"wp-image-{{media_id:artist-mara}}\"/></a></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Mara Vell</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"in-specialty\"} --><p class=\"in-specialty\">Bold traditional</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Twelve years tattooing. Books two months ahead, one walk-in day a month.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"in-artist\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group in-artist\"><!-- wp:image {\"id\":{{media_id:artist-jonah}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"{{post:artist-spotlight-jonah-reyes}}\"><img src=\"{{media:artist-jonah}}\" alt=\"Portrait illustration of artist Jonah Reyes in black and green\" class=\"wp-image-{{media_id:artist-jonah}}\"/></a></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Jonah Reyes</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"in-specialty\"} --><p class=\"in-specialty\">Botanical fine line</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Consultation first, always. Books open on the first Monday of the month.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"in-artist\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group in-artist\"><!-- wp:image {\"id\":{{media_id:piercing-tray}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:piercing-tray}}\" alt=\"Gold and steel piercing jewellery laid out on a dark tray\" class=\"wp-image-{{media_id:piercing-tray}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">The piercing team</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"in-specialty\"} --><p class=\"in-specialty\">Piercing &amp; jewellery</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Walk-ins welcome Tuesday to Saturday. Free check-ups for life.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns -->",
+   "template": "page-wide"
+  },
+  {
+   "slug": "flash",
+   "title": "Flash",
+   "content": "<!-- wp:paragraph --><p>Flash is ready-drawn work at a set price. Each design on this page can be tattooed on a walk-in day; some can be resized or recoloured, just ask.</p><!-- /wp:paragraph --><!-- wp:gallery {\"columns\":4,\"linkTo\":\"none\",\"className\":\"in-flash\"} --><figure class=\"wp-block-gallery has-nested-images columns-4 is-cropped in-flash\"><!-- wp:image {\"id\":{{media_id:flash-dagger-rose}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:flash-dagger-rose}}\" alt=\"Flash design: a dagger through a red rose\" class=\"wp-image-{{media_id:flash-dagger-rose}}\"/><figcaption class=\"wp-element-caption\">€160</figcaption></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:flash-swallow}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:flash-swallow}}\" alt=\"Flash design: a swallow in flight with a banner\" class=\"wp-image-{{media_id:flash-swallow}}\"/><figcaption class=\"wp-element-caption\">€140</figcaption></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:flash-anchor}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:flash-anchor}}\" alt=\"Flash design: an anchor wrapped in rope\" class=\"wp-image-{{media_id:flash-anchor}}\"/><figcaption class=\"wp-element-caption\">€150</figcaption></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:flash-heart}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:flash-heart}}\" alt=\"Flash design: a red heart with a blank banner\" class=\"wp-image-{{media_id:flash-heart}}\"/><figcaption class=\"wp-element-caption\">€120</figcaption></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:flash-moon}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:flash-moon}}\" alt=\"Flash design: a crescent moon with a face and stars\" class=\"wp-image-{{media_id:flash-moon}}\"/><figcaption class=\"wp-element-caption\">€140</figcaption></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:flash-snake}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:flash-snake}}\" alt=\"Flash design: a coiled green snake\" class=\"wp-image-{{media_id:flash-snake}}\"/><figcaption class=\"wp-element-caption\">€180</figcaption></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:flash-eye}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:flash-eye}}\" alt=\"Flash design: an eye inside a triangle with rays\" class=\"wp-image-{{media_id:flash-eye}}\"/><figcaption class=\"wp-element-caption\">€150</figcaption></figure><!-- /wp:image --></figure><!-- /wp:gallery --><!-- wp:group {\"className\":\"in-note\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group in-note\"><!-- wp:paragraph --><p>Prices are for the size shown on the sheet, roughly the size of a palm, and include aftercare balm.</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "template": "page-wide",
+   "parent": "artists"
+  },
+  {
+   "slug": "booking",
+   "title": "Booking",
+   "content": "<!-- wp:paragraph --><p>We tattoo by appointment, with walk-in flash days announced in the journal. Booking takes three steps.</p><!-- /wp:paragraph --><!-- wp:list {\"ordered\":true,\"className\":\"in-steps\"} --><ol class=\"wp-block-list in-steps\"><!-- wp:list-item --><li>Send us your idea, placement, size and budget through the contact details below.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Come in for a free consultation with your artist.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Pay a deposit to secure your session. It comes off the final price.</li><!-- /wp:list-item --></ol><!-- /wp:list --><!-- wp:heading --><h2 class=\"wp-block-heading\">Prices</h2><!-- /wp:heading --><!-- wp:table {\"className\":\"in-prices\"} --><figure class=\"wp-block-table in-prices\"><table><thead><tr><th>Service</th><th>Price</th></tr></thead><tbody><tr><td>Minimum charge</td><td>€90</td></tr><tr><td>Flash (palm-sized)</td><td>from €120</td></tr><tr><td>Custom work</td><td>€140 per hour</td></tr><tr><td>Full day session</td><td>€800</td></tr><tr><td>Piercing (jewellery included)</td><td>from €45</td></tr></tbody></table></figure><!-- /wp:table --><!-- wp:group {\"className\":\"in-note\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group in-note\"><!-- wp:paragraph --><p>You must be 18 or over with photo ID for tattoos. Deposits are kept if you cancel with less than 48 hours' notice.</p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Email the studio</a></div><!-- /wp:button --></div><!-- /wp:buttons -->",
+   "featured_media": "studio-chair"
+  },
+  {
+   "slug": "about",
+   "title": "About",
+   "content": "<!-- wp:paragraph --><p>Ink &amp; Needle opened in 2014 in a former print shop on Harrow Lane. We kept the old type cases on the wall and the habit of doing things carefully.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>We are a small, friendly, private studio: two tattoo chairs, one piercing room and a kettle that is always on. Everyone is welcome, and nobody is ever rushed.</p><!-- /wp:paragraph --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Good tattoos are not fast. They are careful, and they are done by people who like what they do.</p><!-- /wp:paragraph --><cite>Mara Vell, co-founder</cite></blockquote><!-- /wp:quote -->",
+   "featured_media": "machine"
+  },
+  {
+   "slug": "contact",
+   "title": "Contact",
+   "content": "<!-- wp:paragraph --><p>Visit us at 14 Harrow Lane, Tuesday to Saturday, 11:00 to 20:00.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Bookings</h3><!-- /wp:heading --><!-- wp:paragraph --><p>book@inkandneedle.example</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Piercing questions</h3><!-- /wp:heading --><!-- wp:paragraph --><p>pierce@inkandneedle.example</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Phone</h3><!-- /wp:heading --><!-- wp:paragraph --><p>+44 20 7946 0000</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:paragraph --><p>Please include your idea, placement and rough size when you email. Photos help.</p><!-- /wp:paragraph -->",
+   "parent": "about"
+  }
+ ],
+ "posts": [
+  {
+   "slug": "friday-13th-flash-day",
+   "title": "Friday the 13th flash day: thirteen designs, first come first served",
+   "date": "2026-10-21T12:00:00",
+   "excerpt": "Our favourite day of the year is back. Thirteen small designs, walk-ins only, from noon until we run out of ink.",
+   "content": "<!-- wp:paragraph --><p>Every Friday the 13th we pin a fresh flash sheet to the wall, open the doors at noon and tattoo walk-ins until the last appointment slot is gone. It is loud, it is busy, and it is the best day of the studio year.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>This time there are thirteen designs, all palm-sized, all drawn by our artists for the day. Each design is tattooed once, so if you see one you love, come early.</p><!-- /wp:paragraph --><!-- wp:gallery {\"columns\":3,\"linkTo\":\"none\",\"className\":\"in-flash\"} --><figure class=\"wp-block-gallery has-nested-images columns-3 is-cropped in-flash\"><!-- wp:image {\"id\":{{media_id:flash-dagger-rose}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:flash-dagger-rose}}\" alt=\"Flash design: a dagger through a red rose\" class=\"wp-image-{{media_id:flash-dagger-rose}}\"/><figcaption class=\"wp-element-caption\">€130</figcaption></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:flash-swallow}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:flash-swallow}}\" alt=\"Flash design: a swallow in flight with a banner\" class=\"wp-image-{{media_id:flash-swallow}}\"/><figcaption class=\"wp-element-caption\">€113</figcaption></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:flash-heart}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:flash-heart}}\" alt=\"Flash design: a red heart with a blank banner\" class=\"wp-image-{{media_id:flash-heart}}\"/><figcaption class=\"wp-element-caption\">€113</figcaption></figure><!-- /wp:image --></figure><!-- /wp:gallery --><!-- wp:heading --><h2 class=\"wp-block-heading\">How the day works</h2><!-- /wp:heading --><!-- wp:list {\"ordered\":true,\"className\":\"in-steps\"} --><ol class=\"wp-block-list in-steps\"><!-- wp:list-item --><li>Arrive from noon and take a number at the desk.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Pick a design from the wall. Each one is tattooed once.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Wait in the café next door; we will text you.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Get tattooed, take your aftercare card, celebrate.</li><!-- /wp:list-item --></ol><!-- /wp:list --><!-- wp:group {\"className\":\"in-note\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group in-note\"><!-- wp:paragraph --><p>You must be 18 or over and bring photo ID. We do not tattoo anyone who has been drinking.</p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:paragraph --><p>Prices include a donation to the local animal shelter, as always. See you on the 13th.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "studio-news"
+   ],
+   "tags": [
+    "flash",
+    "events"
+   ],
+   "featured_media": "hero-flash-sheet",
+   "format": "standard",
+   "sticky": true,
+   "comments": [
+    {
+     "author": "Kit Moreau",
+     "content": "Got the swallow last time. Coming back for the moon!",
+     "date": "2026-10-21T18:30:00",
+     "email": "kit@example.com"
+    },
+    {
+     "author": "Ines Faro",
+     "content": "What time does the queue usually start?",
+     "date": "2026-10-22T09:12:00",
+     "email": "ines@example.com"
+    }
+   ]
+  },
+  {
+   "slug": "tattoo-aftercare-the-first-two-weeks",
+   "title": "Tattoo aftercare: the first two weeks, day by day",
+   "date": "2026-10-14T10:00:00",
+   "excerpt": "What to expect, what to do and what to leave alone while your new tattoo heals.",
+   "content": "<!-- wp:paragraph --><p>A tattoo is an open wound for the first few days, and how you treat it decides how it looks for the next forty years. Here is the routine we give every client, day by day. Your artist may adjust it for your skin, so always follow their instructions first.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Days one to three</h2><!-- /wp:heading --><!-- wp:list {\"ordered\":true,\"className\":\"in-steps\"} --><ol class=\"wp-block-list in-steps\"><!-- wp:list-item --><li>Leave the wrap on for as long as your artist tells you, usually a few hours.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Wash gently with lukewarm water and unscented soap. Pat dry with clean paper towel.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Apply a very thin layer of the balm we recommend. Thin means you can barely see it.</li><!-- /wp:list-item --></ol><!-- /wp:list --><!-- wp:heading --><h2 class=\"wp-block-heading\">Days four to fourteen</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Expect flaking and itching. Do not scratch or pick.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Keep it out of baths, pools, the sea and the sun.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Wear loose, clean clothes over it.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Keep moisturising lightly, twice a day.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:group {\"className\":\"in-note\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group in-note\"><!-- wp:paragraph --><p>Some redness and swelling is normal at first. If it gets worse after day three, feels hot, or you feel unwell, see a doctor and let us know.</p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:paragraph --><p>After two weeks the surface has usually healed, but the skin underneath takes longer. Sunscreen on your tattoo, forever, is the best thing you can do for it.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "aftercare"
+   ],
+   "tags": [
+    "tattoo-care",
+    "healing"
+   ],
+   "featured_media": "aftercare",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Sam Pell",
+     "content": "Printed this and stuck it on my bathroom mirror. Thank you.",
+     "date": "2026-10-15T08:45:00",
+     "email": "sam@example.com"
+    }
+   ]
+  },
+  {
+   "slug": "piercing-aftercare-basics",
+   "title": "Piercing aftercare basics: saline, patience and hands off",
+   "date": "2026-10-07T10:00:00",
+   "excerpt": "Healing times, cleaning and when to change your jewellery, from our piercing team.",
+   "content": "<!-- wp:paragraph --><p>Most piercing problems come from one of three things: touching it, twisting it, or changing the jewellery too soon. The good news is that all three are easy to avoid.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">The routine</h2><!-- /wp:heading --><!-- wp:list {\"ordered\":true,\"className\":\"in-steps\"} --><ol class=\"wp-block-list in-steps\"><!-- wp:list-item --><li>Spray with sterile saline once or twice a day.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Let it dry, or pat with clean paper towel. No cotton buds, they snag.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Leave the jewellery alone. No twisting, no turning.</li><!-- /wp:list-item --></ol><!-- /wp:list --><!-- wp:heading --><h2 class=\"wp-block-heading\">Typical healing times</h2><!-- /wp:heading --><!-- wp:table {\"className\":\"in-prices\"} --><figure class=\"wp-block-table in-prices\"><table><thead><tr><th>Piercing</th><th>Healing time</th></tr></thead><tbody><tr><td>Earlobe</td><td>6 to 8 weeks</td></tr><tr><td>Helix and other cartilage</td><td>6 to 12 months</td></tr><tr><td>Nostril</td><td>4 to 6 months</td></tr><tr><td>Eyebrow</td><td>2 to 3 months</td></tr></tbody></table></figure><!-- /wp:table --><!-- wp:group {\"className\":\"in-note\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group in-note\"><!-- wp:paragraph --><p>Healing times vary from person to person. Come back for a free check-up and downsize after the first few weeks; swelling goes down and a shorter bar heals better.</p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:paragraph --><p>If anything feels wrong, come and see us. Checks are always free, even years later.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "aftercare",
+    "piercing"
+   ],
+   "tags": [
+    "piercing-care",
+    "healing"
+   ],
+   "featured_media": "piercing-tray",
+   "format": "standard",
+   "sticky": false
+  },
+  {
+   "slug": "artist-spotlight-mara-vell",
+   "title": "Artist spotlight: Mara Vell and the art of bold lines",
+   "date": "2026-09-30T15:00:00",
+   "excerpt": "Twelve years in, Mara still draws every design by hand. We talk roses, rules and why traditional work ages best.",
+   "content": "<!-- wp:paragraph --><p>Mara Vell has been tattooing for twelve years and drawing for as long as she can remember. Her work is traditional: bold black outlines, a small palette of solid colours, designs you can read from across the room.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>She draws every piece by hand on paper before it goes anywhere near skin, and keeps a stack of sketchbooks under the counter that clients are welcome to browse.</p><!-- /wp:paragraph --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Bold will hold. Fine detail is beautiful on day one. Bold lines are beautiful on day ten thousand.</p><!-- /wp:paragraph --><cite>Mara Vell</cite></blockquote><!-- /wp:quote --><!-- wp:heading --><h2 class=\"wp-block-heading\">What she loves to tattoo</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Roses, in every possible arrangement</li><!-- /wp:list-item --><!-- wp:list-item --><li>Daggers and swords with banners</li><!-- /wp:list-item --><!-- wp:list-item --><li>Animals with a little bit of attitude</li><!-- /wp:list-item --><!-- wp:list-item --><li>Anything with a ship in it</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:gallery {\"columns\":3,\"linkTo\":\"none\",\"className\":\"in-flash\"} --><figure class=\"wp-block-gallery has-nested-images columns-3 is-cropped in-flash\"><!-- wp:image {\"id\":{{media_id:flash-dagger-rose}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:flash-dagger-rose}}\" alt=\"Flash design: a dagger through a red rose\" class=\"wp-image-{{media_id:flash-dagger-rose}}\"/><figcaption class=\"wp-element-caption\">Rose</figcaption></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:flash-snake}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:flash-snake}}\" alt=\"Flash design: a coiled green snake\" class=\"wp-image-{{media_id:flash-snake}}\"/><figcaption class=\"wp-element-caption\">Snake</figcaption></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:flash-anchor}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:flash-anchor}}\" alt=\"Flash design: an anchor wrapped in rope\" class=\"wp-image-{{media_id:flash-anchor}}\"/><figcaption class=\"wp-element-caption\">Anchor</figcaption></figure><!-- /wp:image --></figure><!-- /wp:gallery --><!-- wp:paragraph --><p>Mara books two months ahead and keeps one walk-in day a month. Follow the journal for dates.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "artists"
+   ],
+   "tags": [
+    "traditional",
+    "artists"
+   ],
+   "featured_media": "artist-mara",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Kit Moreau",
+     "content": "Mara did my anchor. Six years on, still crisp.",
+     "date": "2026-10-01T11:20:00",
+     "email": "kit@example.com"
+    }
+   ]
+  },
+  {
+   "slug": "artist-spotlight-jonah-reyes",
+   "title": "Artist spotlight: Jonah Reyes, botanical fine line",
+   "date": "2026-09-22T15:00:00",
+   "excerpt": "Ferns, wildflowers and single-needle leaves: Jonah's quiet, detailed work and how he designs for the way skin ages.",
+   "content": "<!-- wp:paragraph --><p>Where Mara goes bold, Jonah goes delicate. His botanical work uses fine lines and soft shading, and he spends a long time on placement so a design moves with the body.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>He is also honest about the limits of fine line. Very small, very detailed tattoos can blur over the years, so he designs a little bigger and a little simpler than clients often ask for.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Before you book with Jonah</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Bring reference photos of the plants you love.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Be open to size changes; he will explain why.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Expect a consultation before the session.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:pullquote --><figure class=\"wp-block-pullquote\"><blockquote><p>I design for the tattoo you will have in twenty years, not just the one you will post tomorrow.</p></blockquote></figure><!-- /wp:pullquote --><!-- wp:paragraph --><p>Jonah's books open on the first Monday of every month.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "artists"
+   ],
+   "tags": [
+    "fine-line",
+    "artists"
+   ],
+   "featured_media": "artist-jonah",
+   "format": "standard",
+   "sticky": false
+  },
+  {
+   "slug": "preparing-for-your-first-tattoo",
+   "title": "Preparing for your first tattoo: a no-nonsense checklist",
+   "date": "2026-09-15T10:00:00",
+   "excerpt": "Sleep, food, clothes and questions to ask: everything to sort out before your first session.",
+   "content": "<!-- wp:paragraph --><p>First tattoos are exciting and a little nerve-wracking, and that is completely normal. Most of the nerves go away once you know what to expect, so here is everything we wish every first-timer knew.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">The day before</h2><!-- /wp:heading --><!-- wp:list {\"ordered\":true,\"className\":\"in-steps\"} --><ol class=\"wp-block-list in-steps\"><!-- wp:list-item --><li>Sleep properly. Tired skin and tired people both bleed more.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Skip alcohol for at least 24 hours.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Moisturise the area, but do not shave it; we will do that.</li><!-- /wp:list-item --></ol><!-- /wp:list --><!-- wp:heading --><h2 class=\"wp-block-heading\">On the day</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Eat a proper meal an hour or two before.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Wear comfortable clothes that give easy access to the area.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Bring water, a snack and something to listen to.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Bring photo ID.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:group {\"className\":\"in-note\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group in-note\"><!-- wp:paragraph --><p>You can ask for a break at any time. Good artists expect it, and nobody will judge you.</p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:paragraph --><p>Most of all, ask questions. About the design, the price, the aftercare, anything. A good studio is happy to answer every one.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "guides"
+   ],
+   "tags": [
+    "first-tattoo",
+    "tattoo-care"
+   ],
+   "featured_media": "studio-chair",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Lena Strom",
+     "content": "The snack tip saved me during a four-hour session.",
+     "date": "2026-09-16T14:00:00",
+     "email": "lena@example.com"
+    }
+   ]
+  },
+  {
+   "slug": "guest-artist-week-november",
+   "title": "Guest artist week: Ottilie Brand joins us in November",
+   "date": "2026-09-05T12:00:00",
+   "excerpt": "Moons, moths and night skies: a guest artist from the north coast takes over the second chair for one week.",
+   "content": "<!-- wp:paragraph --><p>We are very happy to welcome Ottilie Brand for a week in November. Ottilie is known for dreamy night-sky work: moons with faces, moths, stars and quiet little constellations.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>She will be working from our second chair from the 17th to the 22nd, and has drawn a special flash sheet for the week.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Her flash sheet has eighteen designs, from a tiny crescent you could fit on a finger to a full moth with patterned wings for the back of a hand.</p><!-- /wp:paragraph --><!-- wp:image {\"id\":{{media_id:flash-moon}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:flash-moon}}\" alt=\"Flash design: a crescent moon with a face and stars\" class=\"wp-image-{{media_id:flash-moon}}\"/><figcaption class=\"wp-element-caption\">One of the designs from Ottilie's flash sheet.</figcaption></figure><!-- /wp:image --><!-- wp:heading --><h2 class=\"wp-block-heading\">Booking</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Bookings open on the 1st of October through the booking page. Ottilie is taking deposits for custom work and keeping Saturday for walk-in flash.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "studio-news",
+    "artists"
+   ],
+   "tags": [
+    "events",
+    "guest-artists"
+   ],
+   "featured_media": "flash-moon",
+   "format": "standard",
+   "sticky": false
+  },
+  {
+   "slug": "covering-up-old-tattoos",
+   "title": "Covering up old tattoos: what is possible and what is not",
+   "date": "2026-08-28T10:00:00",
+   "excerpt": "Darker, bigger and smarter: how a cover-up works, and how to know if yours is a good candidate.",
+   "content": "<!-- wp:paragraph --><p>Not every tattoo ages the way we hoped, and plenty of people come to us wanting to cover one up. It is often possible, but it helps to understand the basic rule: a cover-up needs to be darker and usually bigger than the original.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Good candidates</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Faded or blurred older work</li><!-- /wp:list-item --><!-- wp:list-item --><li>Small names or script</li><!-- /wp:list-item --><!-- wp:list-item --><li>Lightly coloured designs</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:heading --><h2 class=\"wp-block-heading\">Harder cases</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Very dark, solid black areas</li><!-- /wp:list-item --><!-- wp:list-item --><li>Fresh tattoos that have not settled</li><!-- /wp:list-item --><!-- wp:list-item --><li>Designs on thin skin like wrists and fingers</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph --><p>Sometimes a few sessions of laser lightening first makes a much better cover-up possible. We will always tell you honestly what we think, and we are happy to refer you if another artist would do it better.</p><!-- /wp:paragraph --><!-- wp:group {\"className\":\"in-note\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group in-note\"><!-- wp:paragraph --><p>Bring a clear photo of the old tattoo to your consultation, in daylight if possible.</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "categories": [
+    "guides"
+   ],
+   "tags": [
+    "cover-ups"
+   ],
+   "featured_media": "flash-eye",
+   "format": "standard",
+   "sticky": false
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Home",
+     "page": "home"
+    },
+    {
+     "title": "Artists",
+     "page": "artists",
+     "children": [
+      {
+       "page": "flash"
+      },
+      {
+       "category": "artists",
+       "title": "Spotlights"
+      }
+     ]
+    },
+    {
+     "title": "Aftercare",
+     "category": "aftercare",
+     "children": [
+      {
+       "post": "tattoo-aftercare-the-first-two-weeks",
+       "title": "Tattoo aftercare"
+      },
+      {
+       "post": "piercing-aftercare-basics",
+       "title": "Piercing aftercare"
+      }
+     ]
+    },
+    {
+     "title": "Journal",
+     "page": "journal"
+    },
+    {
+     "title": "Booking",
+     "page": "booking"
+    },
+    {
+     "title": "About",
+     "page": "about",
+     "children": [
+      {
+       "page": "contact"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Footer",
+   "location": "footer",
+   "items": [
+    {
+     "page": "booking"
+    },
+    {
+     "page": "flash"
+    },
+    {
+     "category": "aftercare"
+    },
+    {
+     "page": "contact"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "sidebar-1": [
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Walk-in days</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Flash walk-ins every first Saturday and every Friday the 13th, from noon.</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Topics</h2><!-- /wp:heading --><!-- wp:tag-cloud /--></div><!-- /wp:group -->"
+  ],
+  "footer-1": [
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Find us</h2><!-- /wp:heading --><!-- wp:paragraph --><p>14 Harrow Lane<br>Tuesday to Saturday<br>11:00 to 20:00</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Aftercare</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Lost your aftercare card? Our full guides are in the journal, and check-ups are always free.</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Policy</h2><!-- /wp:heading --><!-- wp:paragraph --><p>18+ with photo ID for tattoos. Deposits secure every booking.</p><!-- /wp:paragraph --></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "red": "#a31d1d",
+  "mode": "ink",
+  "grid": "two",
+  "ornaments": true,
+  "hero_image": "hero-flash-sheet",
+  "hero_kicker": "Est. 2014",
+  "hero_heading": "Ink & Needle",
+  "booking_label": "Book a session",
+  "booking_url": "{{page:booking}}",
+  "studio_info": "Tue to Sat · 11:00 to 20:00 · 14 Harrow Lane",
+  "footer_text": "Ink & Needle. Custom tattoos and piercing since 2014."
+ }
+}

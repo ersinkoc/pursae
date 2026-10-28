@@ -1,0 +1,19 @@
+{{template "header" .}}
+{{with .Post}}{{$hero := theme_mod $ "hero_image"}}{{if not $hero}}{{$hero = .ThumbnailURL}}{{end}}<article id="post-{{.ID}}" class="{{.Class}} entry entry--front">
+	<section class="in-hero" aria-label="Welcome">
+		<div class="in-wrap in-hero__inner">
+			{{if $hero}}<figure class="in-hero__art"><img src="{{$hero}}" alt="" /></figure>{{end}}
+			<div class="in-hero__text">
+				{{with theme_mod $ "hero_kicker"}}<p class="in-banner in-banner--big">{{.}}</p>{{end}}
+				<h1 class="in-hero__title">{{with theme_mod $ "hero_heading"}}{{.}}{{else}}{{$.SiteName}}{{end}}</h1>
+				{{with $.Description}}<p class="in-hero__lead">{{.}}</p>{{end}}
+				{{with theme_mod $ "booking_label"}}<p><a class="in-btn" href="{{theme_mod $ "booking_url"}}">{{.}}</a></p>{{end}}
+			</div>
+		</div>
+	</section>
+	<div class="entry-content in-front-content">
+		{{.Content}}
+	</div>
+	{{with .EditLink}}<footer class="in-wrap entry-footer"><span class="edit-link">{{.}}</span></footer>{{end}}
+</article>{{end}}
+{{template "footer" .}}

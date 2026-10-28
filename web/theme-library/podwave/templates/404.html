@@ -1,0 +1,9 @@
+{{template "header" .}}
+<section class="pw-wrap error-404 not-found pw-404">
+	<div class="pw-404__flat" aria-hidden="true"></div>
+	<p class="pw-kicker">Error 404 &middot; dead air</p>
+	<h1 class="page-title">We lost the signal.</h1>
+	<p>This page went off air. Search the episode archive, or tune back in on the <a href="{{.HomeURL}}">home page</a>.</p>
+	{{template "searchform" .}}
+</section>
+{{template "footer" .}}

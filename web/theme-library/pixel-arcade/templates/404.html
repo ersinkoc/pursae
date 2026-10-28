@@ -1,0 +1,9 @@
+{{template "header" .}}
+<section class="pa-wrap error-404 not-found pa-404">
+	<p class="pa-404__code" aria-hidden="true">404</p>
+	<h1 class="page-title">Game over</h1>
+	<p class="pa-404__blink">Continue? Insert coin</p>
+	<p>This level does not exist. Search the archive, or respawn on the <a href="{{.HomeURL}}">home screen</a>.</p>
+	{{template "searchform" .}}
+</section>
+{{template "footer" .}}

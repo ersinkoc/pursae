@@ -1,0 +1,12 @@
+/* Ink & Needle: editor content area. */
+@font-face { font-family: "Pirata One"; src: url("fonts/pirata-one.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Spectral"; src: url("fonts/spectral-400.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Spectral"; src: url("fonts/spectral-700.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+body, .editor-styles-wrapper { background: #0f0d0c; color: #e9e1d3; font-family: "Spectral", Georgia, serif; font-size: 18px; line-height: 1.7; }
+.editor-styles-wrapper h1, .editor-styles-wrapper h2, .editor-styles-wrapper h3, .editor-styles-wrapper .editor-post-title__input { font-family: "Pirata One", Georgia, serif; font-weight: 400; line-height: 1.02; }
+.editor-styles-wrapper a { color: #e9e1d3; text-decoration-color: #a31d1d; }
+.editor-styles-wrapper blockquote { border: 1px solid #3a3430; padding: 20px; text-align: center; font-style: italic; }
+.editor-styles-wrapper .wp-block-button__link { background: #a31d1d; color: #f6efe3; border-radius: 0; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; font-size: 0.8rem; }
+.editor-styles-wrapper .wp-block { max-width: 720px; }
+.editor-styles-wrapper .wp-block[data-align="wide"] { max-width: 1100px; }
+.editor-styles-wrapper .wp-block[data-align="full"] { max-width: none; }

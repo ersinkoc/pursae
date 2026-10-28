@@ -1,0 +1,14 @@
+{{template "header" .}}
+<header class="fx-wrap page-header page-header--archive">
+	<p class="fx-eyebrow">Programme</p>
+	<h1 class="page-title">{{.ArchiveTitle}}</h1>
+	{{with .ArchiveDesc}}<div class="archive-description">{{.}}</div>{{end}}
+</header>
+<div class="fx-wrap fx-layout">
+	<div class="fx-primary">
+		{{if .Posts}}{{template "loop" .}}
+		{{.Pagination}}{{else}}{{template "content-none" .}}{{end}}
+	</div>
+	{{template "sidebar" .}}
+</div>
+{{template "footer" .}}

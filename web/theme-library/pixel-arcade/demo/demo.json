@@ -1,0 +1,512 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Pixel Arcade",
+  "blogdescription": "Game reviews, news and guides with extra lives",
+  "posts_per_page": 9
+ },
+ "categories": [
+  {
+   "slug": "reviews",
+   "name": "Reviews",
+   "description": "Scored, finished, honest."
+  },
+  {
+   "slug": "previews",
+   "name": "Previews",
+   "description": "Hands-on with games before launch."
+  },
+  {
+   "slug": "news",
+   "name": "News",
+   "description": "Announcements, showcases and events."
+  },
+  {
+   "slug": "guides",
+   "name": "Guides",
+   "description": "Settings, hardware and how-tos."
+  },
+  {
+   "slug": "hardware",
+   "name": "Hardware",
+   "description": "Consoles, handhelds and accessories."
+  },
+  {
+   "slug": "features",
+   "name": "Features",
+   "description": "Longer stories about players and places."
+  },
+  {
+   "slug": "esports",
+   "name": "Esports & Speedruns",
+   "description": "Competitive play and record attempts."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "pc",
+   "name": "PC"
+  },
+  {
+   "slug": "console",
+   "name": "Console"
+  },
+  {
+   "slug": "handheld",
+   "name": "Handheld"
+  },
+  {
+   "slug": "vr",
+   "name": "VR"
+  },
+  {
+   "slug": "retro",
+   "name": "Retro"
+  },
+  {
+   "slug": "indie",
+   "name": "Indie"
+  },
+  {
+   "slug": "community",
+   "name": "Community"
+  }
+ ],
+ "media": [
+  {
+   "id": "hero-neon-city",
+   "file": "demo/images/hero-neon-city.jpg",
+   "alt": "A pixel-art city skyline at dusk with a magenta sun and a glowing grid road",
+   "caption": ""
+  },
+  {
+   "id": "starfall-drift",
+   "file": "demo/images/starfall-drift.jpg",
+   "alt": "Pixel-art spaceship flying over a purple planet ring",
+   "caption": "Starfall Drift"
+  },
+  {
+   "id": "moss-and-iron",
+   "file": "demo/images/moss-and-iron.jpg",
+   "alt": "Pixel-art forest ruins with a lone knight under green moss",
+   "caption": "Moss & Iron"
+  },
+  {
+   "id": "tidal-circuit",
+   "file": "demo/images/tidal-circuit.jpg",
+   "alt": "Neon racing track twisting over a dark ocean in pixel art",
+   "caption": "Tidal Circuit"
+  },
+  {
+   "id": "lantern-keep",
+   "file": "demo/images/lantern-keep.jpg",
+   "alt": "A pixel-art castle with lantern-lit windows on a hill at night",
+   "caption": "Lantern Keep"
+  },
+  {
+   "id": "cartridge-shelf",
+   "file": "demo/images/cartridge-shelf.jpg",
+   "alt": "A shelf of colourful retro game cartridges",
+   "caption": ""
+  },
+  {
+   "id": "arcade-cabinets",
+   "file": "demo/images/arcade-cabinets.jpg",
+   "alt": "A row of glowing arcade cabinets in a dark room",
+   "caption": ""
+  },
+  {
+   "id": "controller-glow",
+   "file": "demo/images/controller-glow.jpg",
+   "alt": "A game controller outlined in neon light",
+   "caption": ""
+  },
+  {
+   "id": "handheld-console",
+   "file": "demo/images/handheld-console.jpg",
+   "alt": "A pixel handheld console with a green screen",
+   "caption": ""
+  },
+  {
+   "id": "vr-grid",
+   "file": "demo/images/vr-grid.jpg",
+   "alt": "A wireframe headset floating above an endless neon grid",
+   "caption": ""
+  },
+  {
+   "id": "speedrun-timer",
+   "file": "demo/images/speedrun-timer.jpg",
+   "alt": "A split timer with glowing digits over a pixel landscape",
+   "caption": ""
+  },
+  {
+   "id": "indie-showcase",
+   "file": "demo/images/indie-showcase.jpg",
+   "alt": "A crowd of pixel figures in front of a big showcase screen",
+   "caption": ""
+  },
+  {
+   "id": "boss-fight",
+   "file": "demo/images/boss-fight.jpg",
+   "alt": "A giant pixel dragon facing a tiny hero on a bridge",
+   "caption": ""
+  },
+  {
+   "id": "synth-sunset",
+   "file": "demo/images/synth-sunset.jpg",
+   "alt": "A striped synthwave sun setting behind pixel mountains",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Home",
+   "content": "<!-- wp:group {\"className\":\"pa-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group pa-section\"><!-- wp:group {\"className\":\"pa-section-head\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group pa-section-head\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Latest reviews</h2><!-- /wp:heading --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{category:reviews}}\">All reviews</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --><!-- wp:columns {\"className\":\"pa-reviews\"} --><div class=\"wp-block-columns pa-reviews\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"pa-review\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group pa-review\"><!-- wp:image {\"id\":{{media_id:starfall-drift}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"{{post:starfall-drift-review}}\"><img src=\"{{media:starfall-drift}}\" alt=\"Pixel-art spaceship flying over a purple planet ring\" class=\"wp-image-{{media_id:starfall-drift}}\"/></a></figure><!-- /wp:image --><!-- wp:paragraph {\"className\":\"pa-badge\"} --><p class=\"pa-badge\">9.1</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"{{post:starfall-drift-review}}\">Starfall Drift</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p>A quiet space opera that earns every jump.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"pa-review\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group pa-review\"><!-- wp:image {\"id\":{{media_id:moss-and-iron}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"{{post:moss-and-iron-review}}\"><img src=\"{{media:moss-and-iron}}\" alt=\"Pixel-art forest ruins with a lone knight under green moss\" class=\"wp-image-{{media_id:moss-and-iron}}\"/></a></figure><!-- /wp:image --><!-- wp:paragraph {\"className\":\"pa-badge\"} --><p class=\"pa-badge\">8.7</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"{{post:moss-and-iron-review}}\">Moss &amp; Iron</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p>A soulful knight in a forest that remembers.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"pa-review\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group pa-review\"><!-- wp:image {\"id\":{{media_id:tidal-circuit}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"{{post:tidal-circuit-review}}\"><img src=\"{{media:tidal-circuit}}\" alt=\"Neon racing track twisting over a dark ocean in pixel art\" class=\"wp-image-{{media_id:tidal-circuit}}\"/></a></figure><!-- /wp:image --><!-- wp:paragraph {\"className\":\"pa-badge\"} --><p class=\"pa-badge\">8.2</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"{{post:tidal-circuit-review}}\">Tidal Circuit</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p>Arcade racing at the speed of the tide.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group --><!-- wp:group {\"className\":\"pa-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group pa-section\"><!-- wp:group {\"className\":\"pa-section-head\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group pa-section-head\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Upcoming releases</h2><!-- /wp:heading --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:release-calendar}}\">Full calendar</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --><!-- wp:table {\"className\":\"pa-release-table\"} --><figure class=\"wp-block-table pa-release-table\"><table><thead><tr><th>Date</th><th>Game</th><th>Platform</th></tr></thead><tbody><tr><td>NOV 04</td><td>Lantern Keep</td><td>PC</td></tr><tr><td>NOV 12</td><td>Galley Below</td><td>PC / Console</td></tr><tr><td>NOV 19</td><td>Beat Brawl</td><td>Console</td></tr><tr><td>DEC 02</td><td>Paper Comet</td><td>Handheld</td></tr><tr><td>DEC 10</td><td>Night Market Tycoon</td><td>PC / Mobile</td></tr></tbody></table></figure><!-- /wp:table --></div><!-- /wp:group --><!-- wp:group {\"className\":\"pa-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group pa-section\"><!-- wp:group {\"className\":\"pa-section-head\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group pa-section-head\"><!-- wp:heading --><h2 class=\"wp-block-heading\">News &amp; guides</h2><!-- /wp:heading --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:news}}\">Everything</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --><!-- wp:latest-posts {\"postsToShow\":6,\"displayPostDate\":true,\"displayFeaturedImage\":true,\"featuredImageSizeSlug\":\"large\",\"postLayout\":\"grid\",\"columns\":3} /--></div><!-- /wp:group --><!-- wp:group {\"className\":\"pa-section pa-platforms\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group pa-section pa-platforms\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Pick your platform</h2><!-- /wp:heading --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{tag:pc}}\">PC</a></div><!-- /wp:button --><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{tag:console}}\">Console</a></div><!-- /wp:button --><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{tag:handheld}}\">Handheld</a></div><!-- /wp:button --><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{tag:vr}}\">VR</a></div><!-- /wp:button --><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{tag:retro}}\">Retro</a></div><!-- /wp:button --><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{tag:indie}}\">Indie</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --><!-- wp:group {\"className\":\"pa-section pa-insert-coin\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group pa-section pa-insert-coin\"><!-- wp:paragraph {\"className\":\"pa-kicker\"} --><p class=\"pa-kicker\">Insert coin</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Get the Friday save file</h2><!-- /wp:heading --><!-- wp:paragraph --><p>One email a week: the best reviews, the biggest news and one hidden gem you have never heard of.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Join the party</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "featured_media": "hero-neon-city",
+   "front_page": true
+  },
+  {
+   "slug": "news",
+   "title": "Latest",
+   "content": "",
+   "posts_page": true
+  },
+  {
+   "slug": "release-calendar",
+   "title": "Release Calendar",
+   "content": "<!-- wp:heading --><h2 class=\"wp-block-heading\">November</h2><!-- /wp:heading --><!-- wp:table {\"className\":\"pa-release-table\"} --><figure class=\"wp-block-table pa-release-table\"><table><thead><tr><th>Date</th><th>Game</th><th>Genre</th><th>Platform</th></tr></thead><tbody><tr><td>NOV 04</td><td>Lantern Keep</td><td>Strategy</td><td>PC</td></tr><tr><td>NOV 12</td><td>Galley Below</td><td>Simulation</td><td>PC / Console</td></tr><tr><td>NOV 19</td><td>Beat Brawl</td><td>Fighting</td><td>Console</td></tr><tr><td>NOV 26</td><td>Moss &amp; Iron: Deeproot</td><td>Expansion</td><td>Console / Handheld</td></tr></tbody></table></figure><!-- /wp:table --><!-- wp:heading --><h2 class=\"wp-block-heading\">December</h2><!-- /wp:heading --><!-- wp:table {\"className\":\"pa-release-table\"} --><figure class=\"wp-block-table pa-release-table\"><table><thead><tr><th>Date</th><th>Game</th><th>Genre</th><th>Platform</th></tr></thead><tbody><tr><td>DEC 02</td><td>Paper Comet</td><td>Shooter</td><td>Handheld</td></tr><tr><td>DEC 10</td><td>Night Market Tycoon</td><td>Management</td><td>PC / Mobile</td></tr><tr><td>DEC 16</td><td>Tidal Circuit: Monsoon Cup</td><td>Racing DLC</td><td>Console / PC</td></tr></tbody></table></figure><!-- /wp:table --><!-- wp:paragraph --><p>Something missing? Studios can send dates through the contact page and we will add them after checking.</p><!-- /wp:paragraph -->",
+   "template": "page-wide",
+   "featured_media": "synth-sunset",
+   "excerpt": "Every date we know, updated every Monday. Dates move, so check back before you pre-order."
+  },
+  {
+   "slug": "about",
+   "title": "About",
+   "content": "<!-- wp:paragraph --><p>We are a small team of players who write about games the way we talk about them with friends: honestly, with plenty of enthusiasm and no hype for hype's sake.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">How we score</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><strong>9 and up</strong>: a must-play, the kind of game you recommend to everyone.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>7 to 8.9</strong>: great, with flaws worth knowing about.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>5 to 6.9</strong>: for fans of the genre.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Below 5</strong>: we would rather you spent the evening on something else.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph --><p>We buy most of the games we review. When a studio sends a copy, the review says so, and it never changes the score.</p><!-- /wp:paragraph --><!-- wp:image {\"id\":{{media_id:controller-glow}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:controller-glow}}\" alt=\"A game controller outlined in neon light\" class=\"wp-image-{{media_id:controller-glow}}\"/></figure><!-- /wp:image -->",
+   "featured_media": "arcade-cabinets"
+  },
+  {
+   "slug": "review-policy",
+   "title": "Review Policy",
+   "content": "<!-- wp:paragraph --><p>Every review is written after finishing the main story or playing at least fifteen hours, whichever comes first.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Scores are decided by the reviewer and checked by one editor. We do not accept payment for coverage, and advertisers never see reviews before they are published.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>If a game changes a lot after launch, we add an update note at the top of the review rather than quietly changing the score.</p><!-- /wp:paragraph -->",
+   "parent": "about"
+  },
+  {
+   "slug": "contact",
+   "title": "Contact",
+   "content": "<!-- wp:paragraph --><p>Got a tip, a correction or a game we should play? We read everything.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Tips &amp; news</h3><!-- /wp:heading --><!-- wp:paragraph --><p>tips@pixelarcade.example</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Studios &amp; review copies</h3><!-- /wp:heading --><!-- wp:paragraph --><p>press@pixelarcade.example</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Newsletter</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Reply to any newsletter to talk to a human.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:paragraph --><p>We answer most messages within two working days.</p><!-- /wp:paragraph -->"
+  }
+ ],
+ "posts": [
+  {
+   "slug": "starfall-drift-review",
+   "title": "Starfall Drift review: a quiet space opera that earns every jump",
+   "date": "2026-10-24T10:00:00",
+   "excerpt": "A small studio's debut turns cargo runs between dying moons into the most moving space game of the year.",
+   "content": "<!-- wp:paragraph --><p>Starfall Drift opens with a cargo manifest and a broken heater, and somehow that is enough. You fly a patched-up hauler between the moons of a planet that is slowly losing its rings, and every delivery is a small story: a crate of seeds for a greenhouse colony, a letter for a lighthouse keeper who has not had a visitor in years.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The flying is weighty without being fussy. Thrusters stutter when you overload the hold, and the ring debris drifts in patterns you learn to read like weather. By the third evening I was planning routes the way you plan a walk home, choosing the scenic lane over the fast one.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Built for long evenings</h2><!-- /wp:heading --><!-- wp:paragraph --><p>There is no combat, and the game never pretends there should be. Tension comes from fuel, from time and from the radio, which picks up fragments of other pilots who are clearly having worse days than you.</p><!-- /wp:paragraph --><!-- wp:image {\"id\":{{media_id:synth-sunset}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:synth-sunset}}\" alt=\"A striped synthwave sun setting behind pixel mountains\" class=\"wp-image-{{media_id:synth-sunset}}\"/><figcaption class=\"wp-element-caption\">Sunset over the outer moons, seen from the cockpit.</figcaption></figure><!-- /wp:image --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>It is the rare game that makes doing your job feel like a kindness.</p><!-- /wp:paragraph --><cite>Our review notes</cite></blockquote><!-- /wp:quote --><!-- wp:paragraph --><p>Its last act stumbles a little, with one too many fetch loops before the finale, but the ending lands softly and stays with you. Bring headphones; the soundtrack does half of the storytelling.</p><!-- /wp:paragraph --><!-- wp:group {\"className\":\"pa-verdict\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group pa-verdict\"><!-- wp:paragraph {\"className\":\"pa-score\"} --><p class=\"pa-score\">9.1</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">The verdict</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"pa-verdict__line\"} --><p class=\"pa-verdict__line\">A gentle, gorgeous haul across a dying sky. One of the year's best.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"pa-pros\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group pa-pros\"><!-- wp:heading {\"level\":4} --><h4 class=\"wp-block-heading\">Power-ups</h4><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Weighty, readable flight model</li><!-- /wp:list-item --><!-- wp:list-item --><li>Radio chatter that builds a world</li><!-- /wp:list-item --><!-- wp:list-item --><li>A soundtrack worth buying</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"pa-cons\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group pa-cons\"><!-- wp:heading {\"level\":4} --><h4 class=\"wp-block-heading\">Glitches</h4><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Late-game fetch loops</li><!-- /wp:list-item --><!-- wp:list-item --><li>Map screen is cramped</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->",
+   "categories": [
+    "reviews"
+   ],
+   "tags": [
+    "pc",
+    "console",
+    "indie"
+   ],
+   "featured_media": "starfall-drift",
+   "format": "standard",
+   "sticky": true,
+   "comments": [
+    {
+     "author": "Rook Calder",
+     "content": "Played it in two sittings. The lighthouse delivery broke me.",
+     "date": "2026-10-24T18:20:00",
+     "email": "rook@example.com"
+    },
+    {
+     "author": "Mina Torres",
+     "content": "Agree about the map screen. Hoping for a patch.",
+     "date": "2026-10-25T09:05:00",
+     "email": "mina@example.com"
+    }
+   ]
+  },
+  {
+   "slug": "moss-and-iron-review",
+   "title": "Moss & Iron review: a soulful knight in a forest that remembers",
+   "date": "2026-10-20T09:00:00",
+   "excerpt": "A hand-drawn action adventure with punishing bosses, generous checkpoints and a forest full of ghosts.",
+   "content": "<!-- wp:paragraph --><p>Moss & Iron wants you to die, and then it wants you to come back a little wiser. You play a knight whose armour is rusting faster than she can fight, and each boss you topple feeds the forest that is slowly swallowing the old kingdom.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Combat is all about stamina. Swing too often and your knight stumbles; parry on the beat and she glides. It clicks around the second boss, a hollow stag that fills the arena with falling leaves.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Checkpoints that respect your time</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Shrines are placed right before every boss door.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Lost gear waits where you fell, marked by a glowing mushroom.</li><!-- /wp:list-item --><!-- wp:list-item --><li>A difficulty assist slows enemies without changing patterns.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:image {\"id\":{{media_id:boss-fight}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:boss-fight}}\" alt=\"A giant pixel dragon facing a tiny hero on a bridge\" class=\"wp-image-{{media_id:boss-fight}}\"/><figcaption class=\"wp-element-caption\">The bridge duel is the highlight of the second act.</figcaption></figure><!-- /wp:image --><!-- wp:paragraph --><p>Its pixel art is extraordinary: moss creeps across the screen as you play, and areas you have cleared look greener when you return. It is a small touch, and it makes the map feel alive.</p><!-- /wp:paragraph --><!-- wp:group {\"className\":\"pa-verdict\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group pa-verdict\"><!-- wp:paragraph {\"className\":\"pa-score\"} --><p class=\"pa-score\">8.7</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">The verdict</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"pa-verdict__line\"} --><p class=\"pa-verdict__line\">Hard, fair and full of heart. A forest you will want to get lost in.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"pa-pros\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group pa-pros\"><!-- wp:heading {\"level\":4} --><h4 class=\"wp-block-heading\">Power-ups</h4><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Tight stamina-based combat</li><!-- /wp:list-item --><!-- wp:list-item --><li>Living, changing pixel art</li><!-- /wp:list-item --><!-- wp:list-item --><li>Smart assist options</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"pa-cons\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group pa-cons\"><!-- wp:heading {\"level\":4} --><h4 class=\"wp-block-heading\">Glitches</h4><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Two bosses reuse attacks</li><!-- /wp:list-item --><!-- wp:list-item --><li>Some backtracking</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->",
+   "categories": [
+    "reviews"
+   ],
+   "tags": [
+    "console",
+    "handheld",
+    "indie"
+   ],
+   "featured_media": "moss-and-iron",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Ash Varga",
+     "content": "The assist option is a great idea for people who just want the story.",
+     "date": "2026-10-21T11:00:00",
+     "email": "ash@example.com"
+    }
+   ]
+  },
+  {
+   "slug": "tidal-circuit-review",
+   "title": "Tidal Circuit review: arcade racing at the speed of the tide",
+   "date": "2026-10-15T14:30:00",
+   "excerpt": "Neon tracks over a rising ocean make for the most frantic arcade racer in years, if you can forgive its menus.",
+   "content": "<!-- wp:paragraph --><p>Every track in Tidal Circuit floods as you race. Lap one is a clean neon ribbon; by lap three the water has risen and half the shortcuts are gone. It sounds like a gimmick, and for the first hour it feels like one, but it quickly becomes the whole game.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Drifting builds charge, charge lets you skim the water, and skimming opens routes no one else can reach. Top players are already posting lines that look impossible.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Modes</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Grand Prix with twelve cups</li><!-- /wp:list-item --><!-- wp:list-item --><li>Rising Tide survival</li><!-- /wp:list-item --><!-- wp:list-item --><li>Split-screen for four</li><!-- /wp:list-item --><!-- wp:list-item --><li>Online ghost duels</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Settings worth changing</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Turn off motion blur for clarity</li><!-- /wp:list-item --><!-- wp:list-item --><li>Raise camera height one step</li><!-- /wp:list-item --><!-- wp:list-item --><li>Map drift to the shoulder button</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:paragraph --><p>The menus are a maze and the unlock pace is slow, but once you are on the track none of that matters.</p><!-- /wp:paragraph --><!-- wp:group {\"className\":\"pa-verdict\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group pa-verdict\"><!-- wp:paragraph {\"className\":\"pa-score\"} --><p class=\"pa-score\">8.2</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">The verdict</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"pa-verdict__line\"} --><p class=\"pa-verdict__line\">Brilliant tracks, clumsy menus. Race first, ask questions later.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"pa-pros\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group pa-pros\"><!-- wp:heading {\"level\":4} --><h4 class=\"wp-block-heading\">Power-ups</h4><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Flooding tracks change every lap</li><!-- /wp:list-item --><!-- wp:list-item --><li>Excellent split-screen</li><!-- /wp:list-item --><!-- wp:list-item --><li>Readable at high speed</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"pa-cons\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group pa-cons\"><!-- wp:heading {\"level\":4} --><h4 class=\"wp-block-heading\">Glitches</h4><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Confusing menus</li><!-- /wp:list-item --><!-- wp:list-item --><li>Slow unlocks</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group -->",
+   "categories": [
+    "reviews"
+   ],
+   "tags": [
+    "console",
+    "pc"
+   ],
+   "featured_media": "tidal-circuit",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Jun Okafor",
+     "content": "Four-player split screen is back! Finally.",
+     "date": "2026-10-16T20:10:00",
+     "email": "jun@example.com"
+    }
+   ]
+  },
+  {
+   "slug": "lantern-keep-preview",
+   "title": "Hands-on: Lantern Keep turns castle defence into a cosy puzzle",
+   "date": "2026-10-11T12:00:00",
+   "excerpt": "We played two hours of the upcoming strategy game where every lantern you light changes how the night attacks.",
+   "content": "<!-- wp:paragraph --><p>In Lantern Keep the night is the enemy, and light is your only wall. You place lanterns around a hilltop castle, and every lantern you light changes which paths the shadows can take.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>We played the first two hours of the campaign. The early nights are gentle, but by the fourth the shadows start splitting around your light, and you find yourself rearranging the whole keep at dusk.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">What we liked</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Every level fits on one screen, no scrolling</li><!-- /wp:list-item --><!-- wp:list-item --><li>Undo is unlimited during the day</li><!-- /wp:list-item --><!-- wp:list-item --><li>A calm soundtrack that grows as the night deepens</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:pullquote --><figure class=\"wp-block-pullquote\"><blockquote><p>It is a tower defence game that feels like tidying a room before guests arrive.</p></blockquote></figure><!-- /wp:pullquote --><!-- wp:paragraph --><p>Lantern Keep is due early next year, and a demo is planned for the winter showcase.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "previews"
+   ],
+   "tags": [
+    "pc",
+    "indie"
+   ],
+   "featured_media": "lantern-keep",
+   "format": "standard",
+   "sticky": false
+  },
+  {
+   "slug": "winter-showcase-roundup",
+   "title": "Winter Indie Showcase: the twelve games we can't stop thinking about",
+   "date": "2026-10-06T18:00:00",
+   "excerpt": "From a cooking game set on a submarine to a rhythm brawler, the showcase was stacked. Here are our picks.",
+   "content": "<!-- wp:paragraph --><p>This year's winter showcase ran for ninety minutes and did not waste one of them. There were no live-service pitches and no shareholder slides, just small teams showing the games they have been quietly building.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Our shortlist</h2><!-- /wp:heading --><!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li><strong>Galley Below</strong>: cook for a submarine crew as the pressure rises.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Beat Brawl</strong>: a fighting game where every punch lands on the beat.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Paper Comet</strong>: fold your ship to change how it flies.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Night Market Tycoon</strong>: run a food stall from dusk to dawn.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Lantern Keep</strong>: our hands-on is already up.</li><!-- /wp:list-item --></ol><!-- /wp:list --><!-- wp:image {\"id\":{{media_id:controller-glow}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:controller-glow}}\" alt=\"A game controller outlined in neon light\" class=\"wp-image-{{media_id:controller-glow}}\"/><figcaption class=\"wp-element-caption\">Most showcase demos support any controller.</figcaption></figure><!-- /wp:image --><!-- wp:paragraph --><p>Most of these have demos available today, and several land before the end of the year. We will be covering the best of them in full.</p><!-- /wp:paragraph --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Small teams, big ideas, zero trailers that were just logos.</p><!-- /wp:paragraph --><cite>Our showcase chat</cite></blockquote><!-- /wp:quote -->",
+   "categories": [
+    "news"
+   ],
+   "tags": [
+    "indie",
+    "pc",
+    "console"
+   ],
+   "featured_media": "indie-showcase",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Tess Morrow",
+     "content": "Galley Below looks wild. Pressure cooker, literally.",
+     "date": "2026-10-07T08:30:00",
+     "email": "tess@example.com"
+    },
+    {
+     "author": "Rook Calder",
+     "content": "Beat Brawl demo is already on my list.",
+     "date": "2026-10-07T10:12:00",
+     "email": "rook@example.com"
+    }
+   ]
+  },
+  {
+   "slug": "retro-handheld-buyers-guide",
+   "title": "The retro handheld buyer's guide: what to look for in 2026",
+   "date": "2026-09-29T09:30:00",
+   "excerpt": "Screens, sticks, battery and build: a no-nonsense checklist before you buy a pocket console for old favourites.",
+   "content": "<!-- wp:paragraph --><p>Pocket consoles built for classic games have never been better or more confusing. Dozens of models, all with similar names and very different screens. Here is what actually matters.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">The checklist</h2><!-- /wp:heading --><!-- wp:table {\"className\":\"pa-release-table\"} --><figure class=\"wp-block-table pa-release-table\"><table><thead><tr><th>Feature</th><th>What to look for</th></tr></thead><tbody><tr><td>Screen</td><td>4:3 for older consoles, 16:9 for later ones</td></tr><tr><td>Brightness</td><td>At least 400 nits for outdoor play</td></tr><tr><td>Controls</td><td>Clicky face buttons, a real d-pad</td></tr><tr><td>Battery</td><td>Five hours of play at medium brightness</td></tr><tr><td>Storage</td><td>A card slot you can reach without a screwdriver</td></tr></tbody></table></figure><!-- /wp:table --><!-- wp:paragraph --><p>Above all, buy for the games you actually want to play. A pocket device that is perfect for 8-bit platformers can struggle with 3D games, and that is fine.</p><!-- /wp:paragraph --><!-- wp:image {\"id\":{{media_id:cartridge-shelf}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:cartridge-shelf}}\" alt=\"A shelf of colourful retro game cartridges\" class=\"wp-image-{{media_id:cartridge-shelf}}\"/><figcaption class=\"wp-element-caption\">Your old cartridges deserve a good screen.</figcaption></figure><!-- /wp:image --><!-- wp:paragraph --><p>Only play games you own, and back up your saves. The most common complaint we hear is a lost save file, not a bad screen.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "guides",
+    "hardware"
+   ],
+   "tags": [
+    "handheld",
+    "retro"
+   ],
+   "featured_media": "handheld-console",
+   "format": "standard",
+   "sticky": false
+  },
+  {
+   "slug": "speedrun-marathon-recap",
+   "title": "Speedrun marathon recap: records, raffles and one very fast frog",
+   "date": "2026-09-22T20:00:00",
+   "excerpt": "A week of runs raised money for a children's hospital and produced three new world records. Here are the highlights.",
+   "content": "<!-- wp:paragraph --><p>The autumn speedrun marathon wrapped on Sunday after seven days of runs, raffles and remarkably calm commentary. The final total went to a children's hospital charity, and the chat stayed kind from the first run to the last.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Three records</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>A frog platformer finished in 11 minutes 42 seconds, with a skip nobody had seen before.</li><!-- /wp:list-item --><!-- wp:list-item --><li>A racing game cup cleared without a single drift.</li><!-- /wp:list-item --><!-- wp:list-item --><li>A puzzle classic solved blindfolded, with the runner reading the music.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:image {\"id\":{{media_id:handheld-console}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:handheld-console}}\" alt=\"A pixel handheld console with a green screen\" class=\"wp-image-{{media_id:handheld-console}}\"/><figcaption class=\"wp-element-caption\">A few runners played on pocket consoles.</figcaption></figure><!-- /wp:image --><!-- wp:paragraph --><p>Between runs, the volunteers raffled off a hand-built arcade stick and a stack of signed posters from the studios whose games were on the schedule. The stick went to a viewer who had donated every single night.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The organisers say next spring's event will add a beginners' block, where newer runners show categories they are still learning.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "news",
+    "esports"
+   ],
+   "tags": [
+    "community",
+    "retro"
+   ],
+   "featured_media": "speedrun-timer",
+   "format": "standard",
+   "sticky": false
+  },
+  {
+   "slug": "vr-comfort-settings",
+   "title": "Every VR comfort setting explained, and which ones to turn on",
+   "date": "2026-09-15T11:15:00",
+   "excerpt": "Vignettes, snap turning and seated modes: a plain-language guide to staying comfortable in virtual reality.",
+   "content": "<!-- wp:paragraph --><p>Feeling queasy in VR is common and nothing to be embarrassed about. The good news is that most games now include settings that help, and they work better than you might expect.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Start with these</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><strong>Snap turning</strong>: turn in steps instead of smoothly.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Vignette</strong>: darkens the edges of your view while you move.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Teleport movement</strong>: jump to a point instead of walking.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Seated mode</strong>: lowers the camera so you can play sitting down.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph --><p>Turn them on first, play in short sessions, and switch them off one at a time as you get comfortable. Fresh air and a fan pointed at you help more than you would think.</p><!-- /wp:paragraph --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Comfort settings are not training wheels. They are just settings.</p><!-- /wp:paragraph --><cite>A developer we spoke to</cite></blockquote><!-- /wp:quote -->",
+   "categories": [
+    "guides"
+   ],
+   "tags": [
+    "vr",
+    "pc"
+   ],
+   "featured_media": "vr-grid",
+   "format": "standard",
+   "sticky": false
+  },
+  {
+   "slug": "arcade-revival",
+   "title": "The arcade is back: inside the bars reviving cabinets downtown",
+   "date": "2026-09-08T16:45:00",
+   "excerpt": "Neon, tokens and a waiting list for the rhythm machines. We spent a Friday night in the new arcade scene.",
+   "content": "<!-- wp:paragraph --><p>On a Friday night the queue outside the arcade on Wharf Street stretches past the bakery next door. Inside, forty cabinets hum in the dark, and the rhythm machines have a paper waiting list.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The owners restore every cabinet themselves. Monitors are rebuilt, buttons replaced, and the cabinets that cannot be saved become parts for the ones that can.</p><!-- /wp:paragraph --><!-- wp:image {\"id\":{{media_id:cartridge-shelf}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:cartridge-shelf}}\" alt=\"A shelf of colourful retro game cartridges\" class=\"wp-image-{{media_id:cartridge-shelf}}\"/><figcaption class=\"wp-element-caption\">The back room keeps spare boards and cartridges.</figcaption></figure><!-- /wp:image --><!-- wp:heading --><h2 class=\"wp-block-heading\">Why now?</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Regulars give the same answer: it is the one place where playing a game is something you do with strangers in the room. High scores are written on a chalkboard, and the best players teach newcomers between rounds.</p><!-- /wp:paragraph --><!-- wp:gallery {\"columns\":3,\"linkTo\":\"none\"} --><figure class=\"wp-block-gallery has-nested-images columns-3 is-cropped\"><!-- wp:image {\"id\":{{media_id:controller-glow}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:controller-glow}}\" alt=\"A game controller outlined in neon light\" class=\"wp-image-{{media_id:controller-glow}}\"/></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:handheld-console}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:handheld-console}}\" alt=\"A pixel handheld console with a green screen\" class=\"wp-image-{{media_id:handheld-console}}\"/></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:synth-sunset}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:synth-sunset}}\" alt=\"A striped synthwave sun setting behind pixel mountains\" class=\"wp-image-{{media_id:synth-sunset}}\"/></figure><!-- /wp:image --></figure><!-- /wp:gallery -->",
+   "categories": [
+    "features"
+   ],
+   "tags": [
+    "retro",
+    "community"
+   ],
+   "featured_media": "arcade-cabinets",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Mina Torres",
+     "content": "The chalkboard high scores are the best part.",
+     "date": "2026-09-09T12:00:00",
+     "email": "mina@example.com"
+    }
+   ]
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Home",
+     "page": "home"
+    },
+    {
+     "title": "Reviews",
+     "category": "reviews",
+     "children": [
+      {
+       "category": "previews"
+      },
+      {
+       "title": "Release calendar",
+       "page": "release-calendar"
+      }
+     ]
+    },
+    {
+     "title": "News",
+     "category": "news"
+    },
+    {
+     "title": "Guides",
+     "category": "guides",
+     "children": [
+      {
+       "category": "hardware"
+      }
+     ]
+    },
+    {
+     "title": "Features",
+     "category": "features"
+    },
+    {
+     "title": "About",
+     "page": "about",
+     "children": [
+      {
+       "page": "review-policy"
+      },
+      {
+       "page": "contact"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Footer menu",
+   "location": "footer",
+   "items": [
+    {
+     "title": "About",
+     "page": "about"
+    },
+    {
+     "title": "Review policy",
+     "page": "review-policy"
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    },
+    {
+     "title": "RSS",
+     "url": "/feed/"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "sidebar-1": [
+   "<!-- wp:search {\"label\":\"Search\",\"showLabel\":false,\"buttonText\":\"Go\"} /-->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">High scores</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":4,\"displayPostDate\":true,\"displayFeaturedImage\":false,\"featuredImageSizeSlug\":\"large\"} /--></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Platforms</h2><!-- /wp:heading --><!-- wp:tag-cloud /--></div><!-- /wp:group -->"
+  ],
+  "footer-1": [
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Pixel Arcade</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Honest reviews, release dates and guides for players of every level. No hype, all heart.</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Sections</h2><!-- /wp:heading --><!-- wp:categories /--></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "accent": "#ffcc00",
+  "secondary": "#00e0ff",
+  "card_layout": "grid",
+  "sidebar": "right",
+  "hero_image": "hero-neon-city",
+  "hero_kicker": "Game of the month",
+  "hero_heading": "Starfall Drift",
+  "cta_label": "Read the review",
+  "cta_url": "{{post:starfall-drift-review}}",
+  "footer_text": "Pixel Arcade. Made by players, for players. Press start."
+ }
+}

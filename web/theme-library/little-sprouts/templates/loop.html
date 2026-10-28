@@ -1,0 +1,12 @@
+<div class="post-list ls-news">
+	{{range .Posts}}<article id="post-{{.ID}}" class="{{.Class}} ls-card">
+		{{if .Thumbnail}}<a class="ls-card__media" href="{{.Permalink}}" aria-hidden="true" tabindex="-1">{{.Thumbnail}}</a>{{end}}
+		<div class="ls-card__body">
+			<p class="ls-card__tags">{{if .ShowFeatured}}<span class="ls-tag ls-tag--star">Important</span>{{end}}{{range $i, $c := .Categories}}{{if lt $i 2}}<a class="ls-tag" href="{{$c.URL}}">{{$c.Name}}</a>{{end}}{{end}}</p>
+			<h2 class="ls-card__title"><a href="{{.Permalink}}" rel="bookmark">{{.Title}}</a></h2>
+			{{if .ShowExcerpt}}<div class="ls-card__excerpt">{{.Excerpt}}</div>{{end}}
+			<p class="ls-card__meta"><time datetime="{{.DateISO}}">{{.DateText}}</time>{{with .AuthorName}}<span class="byline"> &middot; {{.}}</span>{{end}}</p>
+		</div>
+	</article>
+	{{end}}
+</div>

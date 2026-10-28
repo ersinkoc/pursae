@@ -1,0 +1,19 @@
+{{template "header" .}}
+{{with .Post}}<article id="post-{{.ID}}" class="{{.Class}} entry entry--single">
+	<header class="in-wrap in-narrow entry-header">
+		{{range $i, $c := .Categories}}{{if lt $i 1}}<p class="in-banner"><a href="{{$c.URL}}">{{$c.Name}}</a></p>{{end}}{{end}}
+		<h1 class="entry-title">{{.Title}}</h1>
+		{{template "entry-meta" .}}
+	</header>
+	{{with .Thumbnail}}<figure class="in-wrap in-narrow in-feature">{{.}}</figure>{{end}}
+	<div class="in-wrap in-narrow entry-content">
+		{{.Content}}
+	</div>
+	<footer class="in-wrap in-narrow entry-footer">
+		{{if .Tags}}<p class="tags-links"><span class="screen-reader-text">Tags: </span>{{range .Tags}}<a href="{{.URL}}" rel="tag">{{.Name}}</a>{{end}}</p>{{end}}
+		{{with .EditLink}}<span class="edit-link">{{.}}</span>{{end}}
+		{{.Biography}}
+	</footer>
+</article>{{end}}
+<div class="in-wrap in-narrow">{{.PostNav}}{{template "comments" .}}</div>
+{{template "footer" .}}

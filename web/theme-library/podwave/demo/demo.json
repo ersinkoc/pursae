@@ -1,0 +1,473 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Podwave",
+  "blogdescription": "Conversations with the people who make everyday things",
+  "posts_per_page": 10
+ },
+ "categories": [
+  {
+   "slug": "season-2",
+   "name": "Season 2",
+   "description": "Weekly episodes, autumn and winter."
+  },
+  {
+   "slug": "season-1",
+   "name": "Season 1",
+   "description": "Where it all started."
+  },
+  {
+   "slug": "bonus",
+   "name": "Bonus",
+   "description": "Live recordings and listener specials."
+  },
+  {
+   "slug": "behind-the-mic",
+   "name": "Behind the Mic",
+   "description": "How the show is made."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "food",
+   "name": "Food"
+  },
+  {
+   "slug": "science",
+   "name": "Science"
+  },
+  {
+   "slug": "cities",
+   "name": "Cities"
+  },
+  {
+   "slug": "nature",
+   "name": "Nature"
+  },
+  {
+   "slug": "design",
+   "name": "Design"
+  },
+  {
+   "slug": "language",
+   "name": "Language"
+  },
+  {
+   "slug": "music",
+   "name": "Music"
+  },
+  {
+   "slug": "craft",
+   "name": "Craft"
+  },
+  {
+   "slug": "live",
+   "name": "Live"
+  },
+  {
+   "slug": "listeners",
+   "name": "Listeners"
+  },
+  {
+   "slug": "production",
+   "name": "Production"
+  },
+  {
+   "slug": "travel",
+   "name": "Travel"
+  }
+ ],
+ "media": [
+  {
+   "id": "show-art",
+   "file": "demo/images/show-art.jpg",
+   "alt": "Podwave show artwork: a violet microphone inside coral sound rings",
+   "caption": ""
+  },
+  {
+   "id": "ep-bread",
+   "file": "demo/images/ep-bread.jpg",
+   "alt": "Cover art: a round loaf of bread with steam rising in waves",
+   "caption": ""
+  },
+  {
+   "id": "ep-trees",
+   "file": "demo/images/ep-trees.jpg",
+   "alt": "Cover art: a street of rounded trees seen from above",
+   "caption": ""
+  },
+  {
+   "id": "ep-type",
+   "file": "demo/images/ep-type.jpg",
+   "alt": "Cover art: big overlapping letters in violet and coral",
+   "caption": ""
+  },
+  {
+   "id": "ep-colours",
+   "file": "demo/images/ep-colours.jpg",
+   "alt": "Cover art: a fan of paint swatches",
+   "caption": ""
+  },
+  {
+   "id": "ep-piano",
+   "file": "demo/images/ep-piano.jpg",
+   "alt": "Cover art: piano keys curving into a wave",
+   "caption": ""
+  },
+  {
+   "id": "ep-live",
+   "file": "demo/images/ep-live.jpg",
+   "alt": "Cover art: a stage with two microphones and a crowd of dots",
+   "caption": ""
+  },
+  {
+   "id": "ep-edit",
+   "file": "demo/images/ep-edit.jpg",
+   "alt": "Cover art: an audio editor timeline with coloured clips",
+   "caption": ""
+  },
+  {
+   "id": "ep-train",
+   "file": "demo/images/ep-train.jpg",
+   "alt": "Cover art: a night train with lit windows under a crescent moon",
+   "caption": ""
+  },
+  {
+   "id": "host-ada",
+   "file": "demo/images/host-ada.jpg",
+   "alt": "Illustrated portrait of host Ada Lin, in violet tones",
+   "caption": ""
+  },
+  {
+   "id": "host-sam",
+   "file": "demo/images/host-sam.jpg",
+   "alt": "Illustrated portrait of host Sam Okoye, in coral tones",
+   "caption": ""
+  },
+  {
+   "id": "guest-wall",
+   "file": "demo/images/guest-wall.jpg",
+   "alt": "A wall of round illustrated guest portraits",
+   "caption": ""
+  },
+  {
+   "id": "guest-june",
+   "file": "demo/images/guest-june.jpg",
+   "alt": "Illustrated portrait of baker June Marlow with a flour-dusted apron",
+   "caption": ""
+  },
+  {
+   "id": "guest-malik",
+   "file": "demo/images/guest-malik.jpg",
+   "alt": "Illustrated portrait of forester Malik Osei with leaves behind him",
+   "caption": ""
+  },
+  {
+   "id": "studio-desk",
+   "file": "demo/images/studio-desk.jpg",
+   "alt": "A studio desk with two microphones, headphones and a mug",
+   "caption": ""
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Home",
+   "content": "<!-- wp:group {\"className\":\"pw-section pw-latest-ep\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group pw-section pw-latest-ep\"><!-- wp:image {\"id\":{{media_id:ep-bread}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"{{post:ep-24-the-secret-life-of-sourdough}}\"><img src=\"{{media:ep-bread}}\" alt=\"Cover art: a round loaf of bread with steam rising in waves\" class=\"wp-image-{{media_id:ep-bread}}\"/></a></figure><!-- /wp:image --><!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:paragraph {\"className\":\"pw-kicker\"} --><p class=\"pw-kicker\">Latest episode</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"{{post:ep-24-the-secret-life-of-sourdough}}\">Ep. 24: The secret life of sourdough</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p>A baker who has kept the same starter alive for nineteen years explains why bread is mostly patience.</p><!-- /wp:paragraph --><!-- wp:html --><div class=\"pw-wave-line\" aria-hidden=\"true\"></div><!-- /wp:html --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{post:ep-24-the-secret-life-of-sourdough}}\">Show notes</a></div><!-- /wp:button --><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:episodes}}\">All episodes</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --></div><!-- /wp:group --><!-- wp:group {\"className\":\"pw-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group pw-section\"><!-- wp:group {\"className\":\"pw-section-head\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group pw-section-head\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Recent episodes</h2><!-- /wp:heading --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:episodes}}\">Browse all</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --><!-- wp:latest-posts {\"postsToShow\":6,\"displayPostDate\":true,\"displayFeaturedImage\":true,\"featuredImageSizeSlug\":\"large\",\"displayPostContent\":true,\"excerptLength\":20,\"postLayout\":\"grid\",\"columns\":3} /--></div><!-- /wp:group --><!-- wp:group {\"className\":\"pw-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group pw-section\"><!-- wp:group {\"className\":\"pw-section-head\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group pw-section-head\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Meet your hosts</h2><!-- /wp:heading --><!-- wp:paragraph --><p><a href=\"{{page:hosts}}\">More about us &rarr;</a></p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:columns {\"className\":\"pw-hosts\"} --><div class=\"wp-block-columns pw-hosts\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"pw-host\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group pw-host\"><!-- wp:image {\"id\":{{media_id:host-ada}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:host-ada}}\" alt=\"Illustrated portrait of host Ada Lin, in violet tones\" class=\"wp-image-{{media_id:host-ada}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Ada Lin</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"pw-role\"} --><p class=\"pw-role\">Host &amp; producer</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Former radio producer, asks the follow-up question you were thinking.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"pw-host\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group pw-host\"><!-- wp:image {\"id\":{{media_id:host-sam}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:host-sam}}\" alt=\"Illustrated portrait of host Sam Okoye, in coral tones\" class=\"wp-image-{{media_id:host-sam}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Sam Okoye</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"pw-role\"} --><p class=\"pw-role\">Host &amp; editor</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Makes the edits, the jokes and, occasionally, the tea.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:group {\"className\":\"pw-host\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group pw-host\"><!-- wp:image {\"id\":{{media_id:guest-wall}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:guest-wall}}\" alt=\"A wall of round illustrated guest portraits\" class=\"wp-image-{{media_id:guest-wall}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Our guests</h3><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"pw-role\"} --><p class=\"pw-role\">Bakers, foresters, restorers</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Ninety guests and counting. <a href=\"{{page:guests}}\">See them all</a>.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group --><!-- wp:columns {\"className\":\"pw-section pw-stats\"} --><div class=\"wp-block-columns pw-section pw-stats\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"pw-stat\"} --><p class=\"pw-stat\">24</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>episodes</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"pw-stat\"} --><p class=\"pw-stat\">90+</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>guests</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"pw-stat\"} --><p class=\"pw-stat\">41</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>countries listening</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"pw-stat\"} --><p class=\"pw-stat\">4am</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>earliest recording</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:group {\"className\":\"pw-section pw-listen\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group pw-section pw-listen\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Listen wherever you are</h2><!-- /wp:heading --><!-- wp:paragraph --><p>New episodes every Tuesday morning. Free, always, in any podcast app.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:subscribe}}\">Subscribe</a></div><!-- /wp:button --><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"/feed/\">RSS feed</a></div><!-- /wp:button --><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:subscribe}}\">Newsletter</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "featured_media": "show-art",
+   "front_page": true
+  },
+  {
+   "slug": "episodes",
+   "title": "Episodes",
+   "content": "",
+   "posts_page": true
+  },
+  {
+   "slug": "hosts",
+   "title": "Hosts",
+   "content": "<!-- wp:paragraph --><p>Podwave is made by two friends in a spare room with a lot of cushions on the walls. We started the show to ask the questions we always wanted to ask the people who make everyday things.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:host-ada}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:host-ada}}\" alt=\"Illustrated portrait of host Ada Lin, in violet tones\" class=\"wp-image-{{media_id:host-ada}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Ada Lin</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Ada spent ten years producing radio documentaries before starting Podwave. She does the research, books the guests and asks the follow-up questions.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:host-sam}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:host-sam}}\" alt=\"Illustrated portrait of host Sam Okoye, in coral tones\" class=\"wp-image-{{media_id:host-sam}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Sam Okoye</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Sam edits every episode and writes the show notes. He is the one laughing in the background, and the one who forgets to hit record about once a season.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->",
+   "featured_media": "studio-desk"
+  },
+  {
+   "slug": "guests",
+   "title": "Guests",
+   "content": "<!-- wp:paragraph --><p>Every guest we have had on the show, by season. Want to be one? Read the note at the bottom.</p><!-- /wp:paragraph --><!-- wp:columns {\"className\":\"pw-guests-grid\"} --><div class=\"wp-block-columns pw-guests-grid\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:guest-june}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:guest-june}}\" alt=\"Illustrated portrait of baker June Marlow with a flour-dusted apron\" class=\"wp-image-{{media_id:guest-june}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">June Marlow</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Baker. Episode 24.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:guest-malik}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:guest-malik}}\" alt=\"Illustrated portrait of forester Malik Osei with leaves behind him\" class=\"wp-image-{{media_id:guest-malik}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Malik Osei</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Urban forester. Episode 23.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:ep-type}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:ep-type}}\" alt=\"Cover art: big overlapping letters in violet and coral\" class=\"wp-image-{{media_id:ep-type}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Lena Varga</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Type designer. Episode 22.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:ep-piano}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:ep-piano}}\" alt=\"Cover art: piano keys curving into a wave\" class=\"wp-image-{{media_id:ep-piano}}\"/></figure><!-- /wp:image --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Pieter Haan</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Piano restorer. Episode 20.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:heading --><h2 class=\"wp-block-heading\">Be a guest</h2><!-- /wp:heading --><!-- wp:paragraph --><p>We are always looking for people who make, fix or look after the everyday things around us. Send a short note about what you do through the contact page. No experience with microphones needed.</p><!-- /wp:paragraph -->",
+   "template": "page-wide"
+  },
+  {
+   "slug": "subscribe",
+   "title": "Subscribe",
+   "content": "<!-- wp:paragraph --><p>Podwave is free and comes out every Tuesday. Here is how to get it.</p><!-- /wp:paragraph --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><strong>Any podcast app</strong>: search for Podwave and press follow.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>RSS</strong>: copy our feed address into any reader.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Newsletter</strong>: one email a week with the episode and Sam's show notes.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"/feed/\">RSS feed</a></div><!-- /wp:button --><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Contact us</a></div><!-- /wp:button --></div><!-- /wp:buttons -->"
+  },
+  {
+   "slug": "contact",
+   "title": "Contact",
+   "content": "<!-- wp:paragraph --><p>Questions for the listener episode, guest suggestions and corrections are all welcome.</p><!-- /wp:paragraph --><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Listener mail</h3><!-- /wp:heading --><!-- wp:paragraph --><p>hello@podwave.example</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Guests &amp; press</h3><!-- /wp:heading --><!-- wp:paragraph --><p>guests@podwave.example</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --><!-- wp:paragraph --><p>We read every message, and we answer the good questions on air.</p><!-- /wp:paragraph -->",
+   "parent": "subscribe"
+  }
+ ],
+ "posts": [
+  {
+   "slug": "ep-24-the-secret-life-of-sourdough",
+   "title": "Ep. 24: The secret life of sourdough",
+   "date": "2026-10-20T06:00:00",
+   "excerpt": "A baker who has kept the same starter alive for nineteen years explains why bread is mostly patience.",
+   "content": "<!-- wp:paragraph --><p>This week we visit a bakery at four in the morning to meet a starter that is older than some of our listeners. Its keeper, baker June Marlow, feeds it twice a day, takes it on holiday, and once drove it across the country in a cool box on the passenger seat.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>We talk about wild yeast, why every city's bread tastes slightly different, and the one mistake almost every home baker makes in their first month.</p><!-- /wp:paragraph --><!-- wp:group {\"className\":\"pw-guest\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group pw-guest\"><!-- wp:image {\"id\":{{media_id:guest-june}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:guest-june}}\" alt=\"Illustrated portrait of baker June Marlow with a flour-dusted apron\" class=\"wp-image-{{media_id:guest-june}}\"/></figure><!-- /wp:image --><!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:paragraph {\"className\":\"pw-kicker\"} --><p class=\"pw-kicker\">This week's guest</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">June Marlow</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Head baker at a neighbourhood bakery that has opened at 4am every day for eleven years. Owner of a nineteen-year-old starter called Doris.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:group --><!-- wp:heading --><h2 class=\"wp-block-heading\">Chapters</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"pw-timestamps\"} --><ul class=\"wp-block-list pw-timestamps\"><!-- wp:list-item --><li><code>00:00</code> Cold open: the bakery at 4am</li><!-- /wp:list-item --><!-- wp:list-item --><li><code>03:12</code> How a starter is born</li><!-- /wp:list-item --><!-- wp:list-item --><li><code>14:40</code> Why your bread is flat</li><!-- /wp:list-item --><!-- wp:list-item --><li><code>27:05</code> Doris goes on holiday</li><!-- /wp:list-item --><!-- wp:list-item --><li><code>38:30</code> Listener question: can you freeze a starter?</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Bread is mostly waiting. The rest is just remembering to come back.</p><!-- /wp:paragraph --><cite>June Marlow</cite></blockquote><!-- /wp:quote --><!-- wp:group {\"className\":\"pw-links\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group pw-links\"><!-- wp:heading {\"level\":4} --><h4 class=\"wp-block-heading\">Mentioned in this episode</h4><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>The bakery's weekend bread class</li><!-- /wp:list-item --><!-- wp:list-item --><li>Our guide to a first loaf, written with June</li><!-- /wp:list-item --><!-- wp:list-item --><li>Episode 12, on fermentation and pickles</li><!-- /wp:list-item --></ul><!-- /wp:list --></div><!-- /wp:group --><!-- wp:paragraph --><p>If you bake along this week, send us a photo. We will share our favourites in the next listener episode.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "season-2"
+   ],
+   "tags": [
+    "food",
+    "science"
+   ],
+   "featured_media": "ep-bread",
+   "format": "standard",
+   "sticky": true,
+   "comments": [
+    {
+     "author": "Rosa Kim",
+     "content": "Doris on the passenger seat made my day.",
+     "date": "2026-10-20T09:15:00",
+     "email": "rosa@example.com"
+    },
+    {
+     "author": "Tom Ansel",
+     "content": "Finally understand why my loaves were flat. Thank you June!",
+     "date": "2026-10-21T18:02:00",
+     "email": "tom@example.com"
+    }
+   ]
+  },
+  {
+   "slug": "ep-23-who-decides-where-the-trees-go",
+   "title": "Ep. 23: Who decides where the trees go?",
+   "date": "2026-10-13T06:00:00",
+   "excerpt": "A city forester walks us through the maps, the arguments and the very old oak that changed a whole street plan.",
+   "content": "<!-- wp:paragraph --><p>Every street tree has a file. It has a number, a species, a planting date and, often, a small history of complaints about leaves on cars. This week, city forester Malik Osei shows us how those files become a forest.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>We go out on a planting morning, look at the shade maps that decide which neighbourhoods go first, and hear about the century-old oak that a whole road was bent around.</p><!-- /wp:paragraph --><!-- wp:group {\"className\":\"pw-guest\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group pw-guest\"><!-- wp:image {\"id\":{{media_id:guest-malik}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:guest-malik}}\" alt=\"Illustrated portrait of forester Malik Osei with leaves behind him\" class=\"wp-image-{{media_id:guest-malik}}\"/></figure><!-- /wp:image --><!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:paragraph {\"className\":\"pw-kicker\"} --><p class=\"pw-kicker\">This week's guest</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Malik Osei</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Urban forester for a mid-sized city, responsible for forty thousand street trees and at least as many opinions about them.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:group --><!-- wp:heading --><h2 class=\"wp-block-heading\">Chapters</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"pw-timestamps\"} --><ul class=\"wp-block-list pw-timestamps\"><!-- wp:list-item --><li><code>00:00</code> A planting morning</li><!-- /wp:list-item --><!-- wp:list-item --><li><code>06:48</code> Shade maps and fairness</li><!-- /wp:list-item --><!-- wp:list-item --><li><code>19:20</code> The oak that bent a road</li><!-- /wp:list-item --><!-- wp:list-item --><li><code>31:15</code> How to ask for a tree on your street</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph --><p>Want a tree outside your house? Most cities have a request form. Malik's tip: ask your neighbours to sign too.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "season-2"
+   ],
+   "tags": [
+    "cities",
+    "nature"
+   ],
+   "featured_media": "ep-trees",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Hana Fold",
+     "content": "Just submitted a tree request with four neighbours.",
+     "date": "2026-10-14T07:30:00",
+     "email": "hana@example.com"
+    }
+   ]
+  },
+  {
+   "slug": "ep-22-every-typeface-has-a-voice",
+   "title": "Ep. 22: Every typeface has a voice",
+   "date": "2026-10-06T06:00:00",
+   "excerpt": "Why road signs, menus and wedding invitations all speak in different voices, with a type designer who draws letters for a living.",
+   "content": "<!-- wp:paragraph --><p>You hear a typeface before you read it. A wedding invitation whispers, a road sign speaks clearly, a sale poster shouts. Type designer Lena Varga has spent twenty years drawing letters, and she explains how those voices are made.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>We talk about the letters that are hardest to draw (the lowercase g, every time), why airports love certain shapes, and how she tested a new font by printing it on a cake.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Chapters</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"pw-timestamps\"} --><ul class=\"wp-block-list pw-timestamps\"><!-- wp:list-item --><li><code>00:00</code> Reading a menu out loud</li><!-- /wp:list-item --><!-- wp:list-item --><li><code>08:10</code> The hardest letter</li><!-- /wp:list-item --><!-- wp:list-item --><li><code>21:45</code> Signs you can read at 100 km/h</li><!-- /wp:list-item --><!-- wp:list-item --><li><code>33:00</code> The cake test</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:pullquote --><figure class=\"wp-block-pullquote\"><blockquote><p>A good typeface is like a good narrator: you stop noticing it, and the story gets louder.</p></blockquote></figure><!-- /wp:pullquote --><!-- wp:paragraph --><p>Lena's new typeface is free for schools. She asked us to say so, and we were happy to.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "season-2"
+   ],
+   "tags": [
+    "design"
+   ],
+   "featured_media": "ep-type",
+   "format": "standard",
+   "sticky": false
+  },
+  {
+   "slug": "ep-21-the-people-who-name-colours",
+   "title": "Ep. 21: The people who name colours",
+   "date": "2026-09-29T06:00:00",
+   "excerpt": "Somebody has to decide that a grey is called 'Harbour Fog'. We met the team that does it for a paint company.",
+   "content": "<!-- wp:paragraph --><p>Somewhere, someone is being paid to decide whether a pale green is 'Pea Shoot' or 'Garden Gate'. We spent a morning with the small team that names colours for a paint manufacturer, and it turns out to be harder, and stranger, than it sounds.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>They test names on strangers, avoid anything that sounds edible in a bathroom, and keep a list of rejected names that is better than most poetry.</p><!-- /wp:paragraph --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>The name has to work in a shop, a catalogue and a phone call.</li><!-- /wp:list-item --><!-- wp:list-item --><li>It must not sound like another colour.</li><!-- /wp:list-item --><!-- wp:list-item --><li>It should make you imagine a room, not a paint tin.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph --><p>We also hear about the colour that took eighteen months to name, and why the team keeps a jar of sea glass on the meeting table for inspiration.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Chapters</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"pw-timestamps\"} --><ul class=\"wp-block-list pw-timestamps\"><!-- wp:list-item --><li><code>00:00</code> Harbour Fog, explained</li><!-- /wp:list-item --><!-- wp:list-item --><li><code>09:30</code> The rejected list</li><!-- /wp:list-item --><!-- wp:list-item --><li><code>22:15</code> Why there are 400 whites</li><!-- /wp:list-item --><!-- wp:list-item --><li><code>30:40</code> Name our studio's wall</li><!-- /wp:list-item --></ul><!-- /wp:list -->",
+   "categories": [
+    "season-2"
+   ],
+   "tags": [
+    "design",
+    "language"
+   ],
+   "featured_media": "ep-colours",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Ida Brook",
+     "content": "My vote for the studio wall: 'Second Take'.",
+     "date": "2026-09-29T21:40:00",
+     "email": "ida@example.com"
+    }
+   ]
+  },
+  {
+   "slug": "ep-20-inside-a-piano-workshop",
+   "title": "Ep. 20: Inside a piano workshop",
+   "date": "2026-09-22T06:00:00",
+   "excerpt": "Eight thousand parts, one very patient restorer and the sound of a hundred-year-old upright waking up.",
+   "content": "<!-- wp:paragraph --><p>A piano has around eight thousand parts, and restorer Pieter Haan knows most of them by touch. This episode was recorded entirely inside his workshop, so you will hear the hammers, the tuning and, at the end, a very old piano playing for the first time in decades.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>We talk about why pianos go out of tune (it is mostly the weather), the strange smell of old felt, and the time a family found a stack of love letters inside an upright.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Chapters</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"pw-timestamps\"} --><ul class=\"wp-block-list pw-timestamps\"><!-- wp:list-item --><li><code>00:00</code> The workshop at work</li><!-- /wp:list-item --><!-- wp:list-item --><li><code>11:20</code> Eight thousand parts</li><!-- /wp:list-item --><!-- wp:list-item --><li><code>24:30</code> The letters in the upright</li><!-- /wp:list-item --><!-- wp:list-item --><li><code>36:50</code> The first chord</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph --><p>Listen with headphones for this one. The final two minutes are just the piano, and they are worth it.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "season-2"
+   ],
+   "tags": [
+    "music",
+    "craft"
+   ],
+   "featured_media": "ep-piano",
+   "format": "standard",
+   "sticky": false
+  },
+  {
+   "slug": "bonus-listener-questions-live",
+   "title": "Bonus: Listener questions, live from the studio",
+   "date": "2026-09-15T18:00:00",
+   "excerpt": "Recorded in front of forty listeners: your questions about the show, our worst interview and the mystery noise in episode 9.",
+   "content": "<!-- wp:paragraph --><p>We invited forty listeners into the studio, handed them a microphone and let them ask anything. They did. This bonus episode is the result, lightly edited and full of laughter.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Yes, we finally explain the mystery noise in episode 9. No, it was not a ghost. It was much more embarrassing than a ghost.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Questions we answered</h2><!-- /wp:heading --><!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>How do you find guests?</li><!-- /wp:list-item --><!-- wp:list-item --><li>What was your worst interview?</li><!-- /wp:list-item --><!-- wp:list-item --><li>Do you ever disagree on air?</li><!-- /wp:list-item --><!-- wp:list-item --><li>What is the mystery noise in episode 9?</li><!-- /wp:list-item --><!-- wp:list-item --><li>Can we visit the studio again?</li><!-- /wp:list-item --></ol><!-- /wp:list --><!-- wp:image {\"id\":{{media_id:studio-desk}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:studio-desk}}\" alt=\"A studio desk with two microphones, headphones and a mug\" class=\"wp-image-{{media_id:studio-desk}}\"/><figcaption class=\"wp-element-caption\">The studio, tidied for once.</figcaption></figure><!-- /wp:image --><!-- wp:paragraph --><p>The answer to the last question is yes. Watch the newsletter for the next live recording.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "bonus"
+   ],
+   "tags": [
+    "live",
+    "listeners"
+   ],
+   "featured_media": "ep-live",
+   "format": "standard",
+   "sticky": false,
+   "comments": [
+    {
+     "author": "Rosa Kim",
+     "content": "I was there! Still laughing about the episode 9 noise.",
+     "date": "2026-09-16T10:00:00",
+     "email": "rosa@example.com"
+    }
+   ]
+  },
+  {
+   "slug": "behind-the-mic-how-we-edit-an-episode",
+   "title": "Behind the mic: how we edit an episode",
+   "date": "2026-09-08T08:00:00",
+   "excerpt": "From a two-hour recording to a forty-minute episode: our editing process, our gear and the cuts that hurt the most.",
+   "content": "<!-- wp:paragraph --><p>A typical interview runs about two hours. The episode you hear is usually forty minutes. People often ask what happens in between, so here is our process, step by step.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Our editing steps</h2><!-- /wp:heading --><!-- wp:list {\"ordered\":true} --><ol class=\"wp-block-list\"><!-- wp:list-item --><li>Listen once, without touching anything, and take notes.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Mark the three moments we would tell a friend about.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Build the story around those moments.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Cut repetition, keep the pauses that mean something.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Mix, level and listen again on cheap earphones.</li><!-- /wp:list-item --></ol><!-- /wp:list --><!-- wp:paragraph --><p>Editing is also where we fix our own mistakes. If a question came out tangled, we sometimes re-record it afterwards, and we always tell guests when we do.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">What we record with</h2><!-- /wp:heading --><!-- wp:table --><figure class=\"wp-block-table\"><table><thead><tr><th>Gear</th><th>What we use</th></tr></thead><tbody><tr><td>Microphones</td><td>Two dynamic mics on desk arms</td></tr><tr><td>Interface</td><td>A small four-input recorder</td></tr><tr><td>Room</td><td>A spare room, two rugs and a lot of cushions</td></tr><tr><td>Editing</td><td>Any multitrack editor works; we use whatever is open</td></tr></tbody></table></figure><!-- /wp:table --><!-- wp:paragraph --><p>The best advice we ever got: the listener cannot see you nodding. Say 'yes' out loud.</p><!-- /wp:paragraph -->",
+   "categories": [
+    "behind-the-mic"
+   ],
+   "tags": [
+    "production"
+   ],
+   "featured_media": "ep-edit",
+   "format": "standard",
+   "sticky": false
+  },
+  {
+   "slug": "ep-19-night-trains-are-back",
+   "title": "Ep. 19: Night trains are back",
+   "date": "2026-09-01T06:00:00",
+   "excerpt": "Falling asleep in one country and waking up in another: we take an overnight train and record the whole journey.",
+   "content": "<!-- wp:paragraph --><p>We booked two bunks on an overnight train and pressed record. This episode follows the journey from the departure board to breakfast in a different country, with a conductor, a chef and a very chatty family of five along the way.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Night trains nearly disappeared, and now they are coming back. We ask why, and whether a train can ever be as cheap as a flight.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Chapters</h2><!-- /wp:heading --><!-- wp:list {\"className\":\"pw-timestamps\"} --><ul class=\"wp-block-list pw-timestamps\"><!-- wp:list-item --><li><code>00:00</code> Departure board</li><!-- /wp:list-item --><!-- wp:list-item --><li><code>07:40</code> Meet the conductor</li><!-- /wp:list-item --><!-- wp:list-item --><li><code>18:25</code> Dinner in the dining car</li><!-- /wp:list-item --><!-- wp:list-item --><li><code>29:10</code> The 3am border</li><!-- /wp:list-item --><!-- wp:list-item --><li><code>37:00</code> Breakfast somewhere new</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>You don't sleep well on a train. You sleep happily, which is better.</p><!-- /wp:paragraph --><cite>The conductor</cite></blockquote><!-- /wp:quote -->",
+   "categories": [
+    "season-1"
+   ],
+   "tags": [
+    "travel",
+    "cities"
+   ],
+   "featured_media": "ep-train",
+   "format": "standard",
+   "sticky": false
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Home",
+     "page": "home"
+    },
+    {
+     "title": "Episodes",
+     "page": "episodes",
+     "children": [
+      {
+       "category": "season-2"
+      },
+      {
+       "category": "season-1"
+      },
+      {
+       "category": "bonus"
+      }
+     ]
+    },
+    {
+     "title": "Hosts",
+     "page": "hosts",
+     "children": [
+      {
+       "page": "guests"
+      }
+     ]
+    },
+    {
+     "title": "Behind the mic",
+     "category": "behind-the-mic"
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    }
+   ]
+  },
+  {
+   "name": "Footer links",
+   "location": "footer",
+   "items": [
+    {
+     "page": "subscribe"
+    },
+    {
+     "title": "RSS",
+     "url": "/feed/"
+    },
+    {
+     "page": "guests"
+    },
+    {
+     "page": "contact"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "sidebar-1": [
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">About the show</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Every Tuesday, Ada and Sam talk to someone who makes, fixes or looks after an everyday thing.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:subscribe}}\">Subscribe</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Topics</h2><!-- /wp:heading --><!-- wp:tag-cloud /--></div><!-- /wp:group -->",
+   "<!-- wp:search {\"label\":\"Search episodes\",\"showLabel\":false,\"buttonText\":\"Search\"} /-->"
+  ],
+  "footer-1": [
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Podwave</h2><!-- /wp:heading --><!-- wp:paragraph --><p>An independent show recorded in a spare room with a lot of cushions. Free, weekly, forever.</p><!-- /wp:paragraph --></div><!-- /wp:group -->",
+   "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Latest</h2><!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":3,\"displayPostDate\":true,\"displayFeaturedImage\":false,\"featuredImageSizeSlug\":\"large\"} /--></div><!-- /wp:group -->"
+  ]
+ },
+ "customizer": {
+  "accent": "#6c3cff",
+  "second": "#ff6b4a",
+  "episode_layout": "list",
+  "shape": "pill",
+  "waves": true,
+  "hero_image": "show-art",
+  "hero_kicker": "New episodes every Tuesday",
+  "hero_heading": "Stories from the people who make things.",
+  "subscribe_label": "Subscribe",
+  "subscribe_url": "{{page:subscribe}}",
+  "cta_label": "Play the latest",
+  "cta_url": "{{post:ep-24-the-secret-life-of-sourdough}}",
+  "footer_text": "Podwave is recorded in a spare room, edited at the kitchen table and listened to everywhere."
+ }
+}

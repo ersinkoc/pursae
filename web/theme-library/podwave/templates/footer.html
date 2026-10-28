@@ -1,0 +1,28 @@
+		</main><!-- #main -->
+	</div><!-- #content -->
+
+	<footer id="colophon" class="site-footer">
+		<div class="pw-footer-wave" aria-hidden="true"></div>
+		<div class="pw-wrap">
+			<div class="pw-footer-cta">
+				<p class="pw-footer-cta__title">Never miss an episode.</p>
+				{{with theme_mod . "subscribe_label"}}<a class="pw-btn pw-btn--light" href="{{theme_mod $ "subscribe_url"}}">{{.}}</a>{{end}}
+			</div>
+			{{if is_active_sidebar . "footer-1"}}<aside class="footer-widgets" aria-label="Footer">
+				{{dynamic_sidebar . "footer-1"}}
+			</aside>{{end}}
+			<div class="site-footer__bar">
+				{{if has_nav_menu . "footer"}}<nav class="footer-navigation" aria-label="Footer menu">{{nav_menu . "footer"}}</nav>{{end}}
+				<div class="site-info">
+					{{.PrivacyLink}}
+					<span>{{with theme_mod . "footer_text"}}{{.}}{{else}}&copy; {{$.SiteName}}. Thanks for listening.{{end}}</span>
+					<span>Powered by <a href="https://github.com/boracomet/wordpress-go">WordPress Go</a></span>
+				</div>
+			</div>
+		</div>
+	</footer><!-- #colophon -->
+</div><!-- #page -->
+
+{{.Footer}}{{.AdminBar}}
+</body>
+</html>
