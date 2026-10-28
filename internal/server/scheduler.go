@@ -86,6 +86,7 @@ func (s *Server) jobHandlers() map[string]jobHandler {
 			}
 			return s.mailer().Send(ctx, msg)
 		},
+		"wp_mail_smtp_daily": func(ctx context.Context, _ map[string]any) error { return s.mailSMTPDaily(ctx) },
 	}
 }
 
@@ -105,7 +106,9 @@ func (s *Server) mailer() *mail.Mailer {
 	if dir == "" {
 		dir = filepath.Join(filepath.Dir(filepath.Clean(s.cfg.UploadsDir)), "mail")
 	}
-	return &mail.Mailer{Host: s.cfg.SMTPHost, Port: s.cfg.SMTPPort, User: s.cfg.SMTPUser, Pass: s.cfg.SMTPPass, From: from, Dir: dir}
+	m := &mail.Mailer{Host: s.cfg.SMTPHost, Port: s.cfg.SMTPPort, User: s.cfg.SMTPUser, Pass: s.cfg.SMTPPass, From: from, Dir: dir}
+	s.mailSMTPAttach(m) // WPGO Mail SMTP takes over delivery while it is active
+	return m
 }
 
 // queueJob schedules a one-off job (runAt zero means now).

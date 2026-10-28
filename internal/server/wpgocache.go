@@ -233,6 +233,10 @@ func (s *Server) pluginAdmin(c *gin.Context) {
 		c.Redirect(http.StatusFound, to)
 		return
 	}
+	if strings.HasPrefix(page, msSlug) { // WPGO Mail SMTP
+		s.mailSMTPAdmin(c, page)
+		return
+	}
 	if !strings.HasPrefix(page, "wpgo-cache") {
 		s.notYet(c)
 		return

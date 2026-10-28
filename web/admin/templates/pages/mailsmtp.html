@@ -1,0 +1,566 @@
+{{define "admin/mailsmtp"}}{{template "admin-header" .}}{{with .Data}}
+<style>
+.wpms-wrap .wpms-logo{display:inline-flex;align-items:center;gap:8px}
+.wpms-wrap .wpms-logo .dashicons{font-size:30px;width:30px;height:30px;color:#e27730}
+.wpms-mailers{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;max-width:960px}
+.wpms-mailer-tile{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:72px;padding:10px;border:1px solid #c3c4c7;border-radius:4px;background:#fff;cursor:pointer;text-align:center;font-weight:600}
+.wpms-mailer-tile input{position:absolute;opacity:0}
+.wpms-mailer-tile .wpms-swatch{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px}
+.wpms-mailer-tile.is-selected,.wpms-mailer-tile:has(input:checked){border-color:#2271b1;box-shadow:0 0 0 1px #2271b1}
+.wpms-mailer-tile .wpms-badge{position:absolute;top:4px;right:4px;font-size:9px;font-weight:600;text-transform:uppercase;color:#fff;background:#e27730;border-radius:2px;padding:1px 4px}
+.wpms-mailer-tile .wpms-badge.pro{background:#646970}
+.wpms-section{background:#fff;border:1px solid #c3c4c7;padding:4px 20px 12px;margin:16px 0;max-width:960px}
+.wpms-section>h2{font-size:1.2em}
+.wpms-section .form-table{table-layout:fixed}
+.wpms-section .form-table th{width:200px}
+@media screen and (max-width:782px){.wpms-section .form-table{table-layout:auto}.wpms-section .form-table th{width:auto}}
+.wpms-status{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;background:#00a32a}
+.wpms-status.failed{background:#d63638}
+.wpms-debug{max-height:420px;overflow:auto;background:#f6f7f7;border:1px solid #dcdcde;padding:10px;font-size:12px;white-space:pre-wrap}
+.wpms-route{border:1px solid #c3c4c7;background:#fff;padding:12px 16px;margin:12px 0;max-width:960px}
+.wpms-group{border-left:3px solid #2271b1;padding:6px 10px;margin:8px 0;background:#f6f7f7}
+.wpms-rule{display:flex;gap:6px;align-items:center;margin:4px 0;flex-wrap:wrap}
+.wpms-or{font-weight:600;color:#646970;margin:4px 0}
+.wpms-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;max-width:960px;margin:16px 0}
+.wpms-stats .postbox{margin:0;padding:12px 16px}
+.wpms-stats .wpms-num{font-size:28px;line-height:1.2;margin:4px 0}
+.wpms-view{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:20px;margin-top:16px}
+@media (max-width:960px){.wpms-view{grid-template-columns:1fr}}
+.wpms-view iframe{width:100%;min-height:420px;border:1px solid #dcdcde;background:#fff}
+.wpms-dns td:first-child{font-weight:600;width:80px}
+.wpms-wizard{max-width:760px;margin:24px auto;background:#fff;border:1px solid #c3c4c7;padding:24px 32px}
+.wpms-steps{display:flex;gap:6px;margin:0 0 20px;padding:0;list-style:none;color:#646970}
+.wpms-steps li{flex:1;border-top:4px solid #dcdcde;padding-top:6px;font-size:12px}
+.wpms-steps li.done,.wpms-steps li.current{border-color:#e27730;color:#1d2327}
+@media print{#adminmenumain,#wpadminbar,#wpfooter,.wpms-noprint,.notice{display:none!important}#wpcontent{margin:0!important}}
+</style>
+<div class="wrap wpms-wrap">
+{{if eq .Page "wp-mail-smtp-setup-wizard"}}{{template "mailsmtp-wizard" .}}{{else}}
+<h1 class="wp-heading-inline wpms-logo"><span class="dashicons dashicons-email-alt"></span>{{if eq .Page "wp-mail-smtp"}}WP Mail SMTP Settings{{else if eq .Page "wp-mail-smtp-logs"}}Email Log{{else if eq .Page "wp-mail-smtp-reports"}}Email Reports{{else}}Tools{{end}}</h1>
+{{if and (eq .Page "wp-mail-smtp-logs") (not .Entry)}}{{if .Logs}}<a href="#" class="page-title-action wpms-noprint" onclick="document.getElementById('wpms-delete-all').submit();return false">Delete All Logs</a>{{end}}{{end}}
+<hr class="wp-header-end">
+{{template "notices" $}}
+{{if .Tabs}}<nav class="nav-tab-wrapper wp-clearfix wpms-noprint" aria-label="Secondary menu">{{range .Tabs}}<a href="{{.Value}}" class="nav-tab{{if .Checked}} nav-tab-active{{end}}">{{.Label}}</a>{{end}}</nav>{{end}}
+{{if eq .Page "wp-mail-smtp"}}{{template "mailsmtp-settings" .}}{{end}}
+{{if eq .Page "wp-mail-smtp-logs"}}{{template "mailsmtp-logs" .}}{{end}}
+{{if eq .Page "wp-mail-smtp-reports"}}{{template "mailsmtp-reports" .}}{{end}}
+{{if eq .Page "wp-mail-smtp-tools"}}{{template "mailsmtp-tools" .}}{{end}}
+{{end}}
+</div>
+<script>
+(function(){
+	document.querySelectorAll('.wpms-mailers').forEach(function(grid){
+		var form = grid.closest('form');
+		function show(){
+			var cur = (form.querySelector('input[name="mailer"]:checked')||{}).value;
+			form.querySelectorAll('.wpms-mailer-section').forEach(function(s){ s.hidden = s.getAttribute('data-mailer') !== cur; });
+			grid.querySelectorAll('.wpms-mailer-tile').forEach(function(t){ t.classList.toggle('is-selected', t.querySelector('input').checked); });
+		}
+		grid.addEventListener('change', show); show();
+	});
+	var dns = document.getElementById('wpms-do-not-send');
+	if (dns) dns.addEventListener('change', function(){ if (dns.checked && !confirm('Are you sure you want to stop all emails from sending? Emails won\'t be sent or logged until this option is unchecked.')) dns.checked = false; });
+	var all = document.getElementById('wpms-cb-select-all');
+	if (all) all.addEventListener('change', function(){ document.querySelectorAll('input[name="email_id[]"]').forEach(function(c){ c.checked = all.checked; }); });
+})();
+</script>
+{{end}}{{template "admin-footer" .}}{{end}}
+
+{{/* ---------------------------------------------------------------- Settings */}}
+{{define "mailsmtp-settings"}}
+{{if eq .Tab "general"}}
+<form method="post" action="/wp-admin/admin?page=wp-mail-smtp&amp;tab=general" autocomplete="off">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+{{template "mailsmtp-conn-form" .}}
+<div class="wpms-section">
+<h2>Backup Connection</h2>
+<p class="description">Don't worry about losing emails. Pick an additional connection to use as a backup: if the primary connection fails, WP Mail SMTP sends the email through the backup connection.</p>
+<table class="form-table" role="presentation"><tr><th scope="row"><label for="backup_connection">Backup Connection</label></th><td>
+{{if .O.Connections}}<select name="backup_connection" id="backup_connection">{{range .Backups}}<option value="{{.Value}}"{{if .Checked}} selected{{end}}>{{.Label}}</option>{{end}}</select>
+{{else}}<input type="hidden" name="backup_connection" value="" /><p>Once you add an <a href="/wp-admin/admin?page=wp-mail-smtp&amp;tab=connections">additional connection</a>, you can select it here.</p>{{end}}
+</td></tr></table>
+</div>
+<p class="submit"><input type="submit" class="button button-primary" value="Save Settings" /></p>
+</form>
+{{end}}
+
+{{if eq .Tab "logs"}}
+<form method="post" action="/wp-admin/admin?page=wp-mail-smtp&amp;tab=logs">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<h2>Email Log</h2>
+<p>Keep track of every email sent from your site with email logging. Troubleshoot sending issues, recover lost emails, and more.</p>
+<table class="form-table" role="presentation">
+<tr><th scope="row">Enable Log</th><td>{{template "mailsmtp-locked-check" (dict "Name" "logs_enabled" "On" .O.Logs.Enabled "Locked" (index .Locked "logs.enabled"))}}<label for="logs_enabled">Keep a record of basic details for all emails sent from your site.</label></td></tr>
+<tr><th scope="row">Log Email Content</th><td>{{template "mailsmtp-locked-check" (dict "Name" "log_email_content" "On" .O.Logs.LogContent "Locked" (index .Locked "logs.log_email_content"))}}<label for="log_email_content">Store the content for all sent emails.</label>
+<p class="description">Email content may include personal information, such as plain text passwords. Please carefully consider before enabling this option, as it will store all sent email content to your site's database. Resending and exporting the content require it.</p></td></tr>
+<tr><th scope="row"><label for="log_retention_period">Log Retention Period</label></th><td><select name="log_retention_period" id="log_retention_period"{{if index .Locked "logs.log_retention_period"}} disabled{{end}}>{{range .Retention}}<option value="{{.Value}}"{{if .Checked}} selected{{end}}>{{.Label}}</option>{{end}}</select>
+<p class="description">Email logs older than the selected period will be permanently deleted from the database.</p></td></tr>
+</table>
+<p class="submit"><input type="submit" class="button button-primary" value="Save Settings" /></p>
+</form>
+{{end}}
+
+{{if eq .Tab "alerts"}}
+<form method="post" action="/wp-admin/admin?page=wp-mail-smtp&amp;tab=alerts" autocomplete="off">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<h2>Alerts</h2>
+<p>Configure at least one of these integrations to receive notifications when email fails to send from your site. Alert notifications will contain the following important data: email subject, email Send To address, the error message, and helpful links to help you fix the issue.</p>
+<table class="form-table" role="presentation">
+<tr><th scope="row"><label for="failed_threshold">Failed Email Threshold</label></th><td><select name="failed_threshold" id="failed_threshold">{{range .Thresholds}}<option value="{{.Value}}"{{if .Checked}} selected{{end}}>{{.Label}}</option>{{end}}</select>
+<p class="description">Only send an alert when this many emails failed within 30 minutes.</p></td></tr>
+</table>
+{{template "mailsmtp-alert" (dict "Title" "Email" "Desc" "Enter the email addresses (3 max) you'd like to use to receive alerts when email sending fails. Alerts are sent with WordPress Go's built-in transport." "Prefix" "alert_email" "Enabled" .O.Alerts.Email.Enabled "Vals" .AlertEmail "Label" "Send To" "Type" "email" "Locked" (index .Locked "alerts.alert_email"))}}
+{{template "mailsmtp-alert" (dict "Title" "Slack" "Desc" "Paste in the Slack webhook URL you'd like to use to receive alerts when email sending fails." "Prefix" "alert_slack_webhook" "Enabled" .O.Alerts.Slack.Enabled "Vals" .AlertSlack "Label" "Webhook URL" "Type" "url" "Locked" (index .Locked "alerts.alert_slack_webhook"))}}
+{{template "mailsmtp-alert" (dict "Title" "Discord" "Desc" "Paste in the Discord webhook URL you'd like to use to receive alerts when email sending fails." "Prefix" "alert_discord_webhook" "Enabled" .O.Alerts.Discord.Enabled "Vals" .AlertDiscord "Label" "Webhook URL" "Type" "url" "Locked" (index .Locked "alerts.alert_discord_webhook"))}}
+{{template "mailsmtp-alert" (dict "Title" "Microsoft Teams" "Desc" "Paste in the Microsoft Teams webhook URL you'd like to use to receive alerts when email sending fails." "Prefix" "alert_teams_webhook" "Enabled" .O.Alerts.Teams.Enabled "Vals" .AlertTeams "Label" "Webhook URL" "Type" "url" "Locked" (index .Locked "alerts.alert_teams_webhook"))}}
+{{template "mailsmtp-alert" (dict "Title" "Webhook" "Desc" "Paste in the webhook URL you'd like to use to receive alerts when email sending fails. A JSON document with the event, site, subject, recipients, mailer and error is POSTed to it." "Prefix" "alert_custom_webhook" "Enabled" .O.Alerts.Webhook.Enabled "Vals" .AlertWebhook "Label" "Webhook URL" "Type" "url" "Locked" (index .Locked "alerts.alert_custom_webhook"))}}
+<div class="wpms-section"><h2>SMS via Twilio</h2>
+<p class="description">To receive SMS alerts, you'll need a Twilio account.</p>
+<table class="form-table" role="presentation">
+<tr><th scope="row">SMS via Twilio Alerts</th><td><label><input type="checkbox" name="alert_twilio_sms_enabled" value="1"{{if .O.Alerts.Twilio.Enabled}} checked{{end}} /> Enabled</label></td></tr>
+<tr><th scope="row"><label for="twilio_account_sid">Twilio Account ID</label></th><td><input type="text" class="regular-text" name="twilio_account_sid" id="twilio_account_sid" value="{{.O.Alerts.Twilio.SID}}" /></td></tr>
+<tr><th scope="row"><label for="twilio_auth_token">Twilio Auth Token</label></th><td><input type="password" class="regular-text" name="twilio_auth_token" id="twilio_auth_token" autocomplete="new-password" placeholder="{{if .TwilioHasToken}}•••••••• (saved){{end}}" />
+{{if .TwilioHasToken}}<label><input type="checkbox" name="twilio_auth_token__remove" value="1" /> Remove</label>{{end}}</td></tr>
+<tr><th scope="row"><label for="twilio_from">From Phone Number</label></th><td><input type="text" class="regular-text" name="twilio_from" id="twilio_from" value="{{.O.Alerts.Twilio.From}}" placeholder="+15555555555" /></td></tr>
+<tr><th scope="row"><label for="twilio_to">To Phone Number</label></th><td><input type="text" class="regular-text" name="twilio_to" id="twilio_to" value="{{.O.Alerts.Twilio.To}}" placeholder="+15555555555" /></td></tr>
+</table></div>
+<p class="submit"><input type="submit" class="button button-primary" value="Save Settings" /></p>
+</form>
+{{end}}
+
+{{if eq .Tab "connections"}}
+{{if .EditConn}}
+<form method="post" action="/wp-admin/admin?page=wp-mail-smtp&amp;tab=connections" autocomplete="off">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<input type="hidden" name="conn_id" value="{{.Conn.ID}}" />
+<p><a href="/wp-admin/admin?page=wp-mail-smtp&amp;tab=connections">&larr; Back to Additional Connections</a></p>
+<table class="form-table" role="presentation"><tr><th scope="row"><label for="conn_name">Connection Nickname</label></th><td><input type="text" class="regular-text" name="conn_name" id="conn_name" value="{{.Conn.Name}}" required />
+<p class="description">The nickname is shown in the connection lists (backup connection, smart routing, email log).</p></td></tr></table>
+{{template "mailsmtp-conn-form" .}}
+<p class="submit"><input type="submit" class="button button-primary" value="Save Settings" /></p>
+</form>
+{{else}}
+<h2>Additional Connections</h2>
+<p>Create additional connections to set a backup for your Primary Connection or to configure Smart Routing.</p>
+<p><a class="button button-primary" href="/wp-admin/admin?page=wp-mail-smtp&amp;tab=connections&amp;edit=new">Add New</a></p>
+<table class="wp-list-table widefat fixed striped" style="max-width:960px">
+<thead><tr><th scope="col">Connection</th><th scope="col">Mailer</th><th scope="col">From Email</th><th scope="col">Used as</th></tr></thead>
+<tbody>
+{{range .Connections}}<tr><td><strong><a href="/wp-admin/admin?page=wp-mail-smtp&amp;tab=connections&amp;edit={{.ID}}">{{.Name}}</a></strong>
+<div class="row-actions"><span class="edit"><a href="/wp-admin/admin?page=wp-mail-smtp&amp;tab=connections&amp;edit={{.ID}}">Edit</a> | </span><span class="trash"><a class="submitdelete" href="/wp-admin/admin?page=wp-mail-smtp&amp;tab=connections&amp;action=delete_connection&amp;conn={{.ID}}&amp;_wpnonce={{$.ActionNonce}}" onclick="return confirm('Delete this connection?')">Delete</a></span></div></td>
+<td>{{.Title}}</td><td>{{.FromEmail}}</td><td>{{if eq $.O.Backup .ID}}Backup connection{{end}}</td></tr>
+{{else}}<tr class="no-items"><td colspan="4">No additional connections yet.</td></tr>{{end}}
+</tbody></table>
+{{end}}
+{{end}}
+
+{{if eq .Tab "routing"}}
+<form method="post" action="/wp-admin/admin?page=wp-mail-smtp&amp;tab=routing" id="wpms-routing">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<h2>Smart Routing</h2>
+<p>Send emails from different additional connections based on your configured conditions. Emails that do not match any of the conditions below will be sent via your Primary Connection.</p>
+<p><label><input type="checkbox" name="smart_routing_enabled" value="1"{{if .O.SmartRouting.Enabled}} checked{{end}} /> Enable Smart Routing</label></p>
+{{if not .RouteConn}}<div class="notice notice-info inline"><p>Smart Routing needs at least one <a href="/wp-admin/admin?page=wp-mail-smtp&amp;tab=connections">additional connection</a>.</p></div>{{end}}
+<div id="wpms-routes">
+{{range .Routes}}{{$r := .}}<div class="wpms-route" data-route="{{.Index}}">
+<p><strong>Send with</strong> <select name="routes[{{.Index}}][connection]">{{range $.RouteConn}}<option value="{{.Value}}"{{if eq .Value $r.Connection}} selected{{end}}>{{.Label}}</option>{{end}}</select> <strong>if</strong>
+<label style="margin-left:12px"><input type="checkbox" name="routes[{{.Index}}][enabled]" value="1"{{if .Enabled}} checked{{end}} /> Enabled</label>
+<button type="button" class="button-link button-link-delete wpms-del-route" style="float:right">Delete route</button></p>
+{{range $gi, $g := .Groups}}{{if $gi}}<div class="wpms-or">or</div>{{end}}<div class="wpms-group" data-group="{{$gi}}">
+{{range $ri, $rule := $g}}<div class="wpms-rule">
+<select name="routes[{{$r.Index}}][g][{{$gi}}][{{$ri}}][property]">{{range $.RuleProps}}<option value="{{.Value}}"{{if eq .Value $rule.Property}} selected{{end}}>{{.Label}}</option>{{end}}</select>
+<select name="routes[{{$r.Index}}][g][{{$gi}}][{{$ri}}][operator]">{{range $.RuleOps}}<option value="{{.Value}}"{{if eq .Value $rule.Operator}} selected{{end}}>{{.Label}}</option>{{end}}</select>
+<input type="text" class="regular-text" name="routes[{{$r.Index}}][g][{{$gi}}][{{$ri}}][value]" value="{{$rule.Value}}" />
+<button type="button" class="button wpms-and">And</button> <button type="button" class="button-link button-link-delete wpms-del-rule" aria-label="Remove rule">&times;</button></div>{{end}}
+</div>{{end}}
+<p><button type="button" class="button wpms-add-group">Add New Group</button></p>
+</div>{{end}}
+</div>
+<p><button type="button" class="button" id="wpms-add-route"{{if not .RouteConn}} disabled{{end}}>Add New Route</button></p>
+<p class="submit"><input type="submit" class="button button-primary" value="Save Settings" /></p>
+</form>
+<template id="wpms-rule-tpl"><div class="wpms-rule"><select data-k="property">{{range .RuleProps}}<option value="{{.Value}}">{{.Label}}</option>{{end}}</select>
+<select data-k="operator">{{range .RuleOps}}<option value="{{.Value}}">{{.Label}}</option>{{end}}</select>
+<input type="text" class="regular-text" data-k="value" /> <button type="button" class="button wpms-and">And</button> <button type="button" class="button-link button-link-delete wpms-del-rule" aria-label="Remove rule">&times;</button></div></template>
+<template id="wpms-route-tpl"><div class="wpms-route"><p><strong>Send with</strong> <select data-k="connection">{{range .RouteConn}}<option value="{{.Value}}">{{.Label}}</option>{{end}}</select> <strong>if</strong>
+<label style="margin-left:12px"><input type="checkbox" data-k="enabled" value="1" checked /> Enabled</label>
+<button type="button" class="button-link button-link-delete wpms-del-route" style="float:right">Delete route</button></p><p><button type="button" class="button wpms-add-group">Add New Group</button></p></div></template>
+<script>
+(function(){
+	var form = document.getElementById('wpms-routing'), n = Date.now() % 100000;
+	function rule(route, group){
+		var el = document.getElementById('wpms-rule-tpl').content.firstElementChild.cloneNode(true), i = n++;
+		el.querySelectorAll('[data-k]').forEach(function(f){ f.name = 'routes[' + route + '][g][' + group + '][' + i + '][' + f.getAttribute('data-k') + ']'; });
+		return el;
+	}
+	function addGroup(routeEl){
+		var r = routeEl.getAttribute('data-route'), g = n++, div = document.createElement('div');
+		div.className = 'wpms-group'; div.setAttribute('data-group', g); div.appendChild(rule(r, g));
+		var addP = routeEl.querySelector('.wpms-add-group').parentNode;
+		if (routeEl.querySelector('.wpms-group')) { var or = document.createElement('div'); or.className = 'wpms-or'; or.textContent = 'or'; addP.before(or); }
+		addP.before(div);
+	}
+	document.getElementById('wpms-add-route').addEventListener('click', function(){
+		var el = document.getElementById('wpms-route-tpl').content.firstElementChild.cloneNode(true), r = n++;
+		el.setAttribute('data-route', r);
+		el.querySelectorAll('[data-k]').forEach(function(f){ f.name = 'routes[' + r + '][' + f.getAttribute('data-k') + ']'; });
+		document.getElementById('wpms-routes').appendChild(el); addGroup(el);
+	});
+	form.addEventListener('click', function(e){
+		var t = e.target;
+		if (t.classList.contains('wpms-add-group')) addGroup(t.closest('.wpms-route'));
+		else if (t.classList.contains('wpms-and')) { var g = t.closest('.wpms-group'); t.closest('.wpms-rule').after(rule(t.closest('.wpms-route').getAttribute('data-route'), g.getAttribute('data-group'))); }
+		else if (t.classList.contains('wpms-del-rule')) { var grp = t.closest('.wpms-group'); t.closest('.wpms-rule').remove(); if (!grp.querySelector('.wpms-rule')) { var p = grp.previousElementSibling; if (p && p.classList.contains('wpms-or')) p.remove(); grp.remove(); } }
+		else if (t.classList.contains('wpms-del-route')) t.closest('.wpms-route').remove();
+	});
+})();
+</script>
+{{end}}
+
+{{if eq .Tab "control"}}
+<form method="post" action="/wp-admin/admin?page=wp-mail-smtp&amp;tab=control">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<h2>Email Controls</h2>
+<p>Manage which notification emails WordPress Go sends. Unchecked emails are not sent.</p>
+<table class="form-table" role="presentation">
+{{range .Controls}}<tr><th scope="row">{{.Title}}</th><td><fieldset>{{range .Items}}<label><input type="checkbox" name="control_{{.Value}}" value="1"{{if .Checked}} checked{{end}} /> {{.Label}}</label><br />{{end}}</fieldset></td></tr>{{end}}
+</table>
+<p class="submit"><input type="submit" class="button button-primary" value="Save Settings" /></p>
+</form>
+{{end}}
+
+{{if eq .Tab "misc"}}
+<form method="post" action="/wp-admin/admin?page=wp-mail-smtp&amp;tab=misc">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<h2>Miscellaneous</h2>
+<table class="form-table" role="presentation">
+<tr><th scope="row">Do Not Send</th><td>{{if index .Locked "general.do_not_send"}}<input type="checkbox" disabled{{if .O.General.DoNotSend}} checked{{end}} /> <p class="description">The value of this field was set using a constant ({{index .Locked "general.do_not_send"}}).</p>{{else}}<label><input type="checkbox" name="do_not_send" id="wpms-do-not-send" value="1"{{if .O.General.DoNotSend}} checked{{end}} /> Stop sending all emails</label>{{end}}
+<p class="description">Some plugins, like BuddyPress and Events Manager, are using their own email delivery solutions. By default, this option does not block their emails, as those plugins do not use default wp_mail() function to send emails. In WordPress Go every e-mail goes through wp_mail(), so this blocks all of them.</p></td></tr>
+<tr><th scope="row">Hide Announcements</th><td><label><input type="checkbox" name="am_notifications_hidden" value="1"{{if .O.General.HideAnnouncements}} checked{{end}} /> Hide plugin announcements and update details.</label></td></tr>
+<tr><th scope="row">Hide Email Delivery Errors</th><td><label><input type="checkbox" name="email_delivery_errors_hidden" value="1"{{if .O.General.HideErrors}} checked{{end}} /> Hide warnings alerting of email delivery errors.</label>
+<p class="description"><strong>This is not recommended</strong> and should only be done for staging or development sites.</p></td></tr>
+<tr><th scope="row">Hide Dashboard Widget</th><td><label><input type="checkbox" name="dashboard_widget_hidden" value="1"{{if .O.General.HideWidget}} checked{{end}} /> Hide the WP Mail SMTP Dashboard Widget.</label></td></tr>
+<tr><th scope="row">Disable Email Summaries</th><td><label><input type="checkbox" name="summary_report_email_disabled" value="1"{{if .O.General.SummaryDisabled}} checked{{end}}{{if index .Locked "general.summary_report_email_disabled"}} disabled{{end}} /> Disable Email Summaries weekly delivery.</label></td></tr>
+<tr><th scope="row">Rate Limiting</th><td><label><input type="checkbox" name="rate_limit_enabled" value="1"{{if .O.RateLimit.Enabled}} checked{{end}} /> Limit the number of emails sent</label>
+<p class="description">Emails over a limit are queued and sent when the period allows it. Leave a field at 0 for no limit.</p>
+<p><label>Per minute <input type="number" min="0" class="small-text" name="rate_minute" value="{{.O.RateLimit.Minute}}" /></label>
+<label>Per hour <input type="number" min="0" class="small-text" name="rate_hour" value="{{.O.RateLimit.Hour}}" /></label>
+<label>Per day <input type="number" min="0" class="small-text" name="rate_day" value="{{.O.RateLimit.Day}}" /></label>
+<label>Per week <input type="number" min="0" class="small-text" name="rate_week" value="{{.O.RateLimit.Week}}" /></label>
+<label>Per month <input type="number" min="0" class="small-text" name="rate_month" value="{{.O.RateLimit.Month}}" /></label></p></td></tr>
+<tr><th scope="row">Uninstall WP Mail SMTP</th><td><label><input type="checkbox" name="uninstall" value="1"{{if .O.General.Uninstall}} checked{{end}} /> Remove ALL WP Mail SMTP data upon plugin deactivation.</label>
+<p class="description">All settings, connections, email logs and debug events will be removed when the plugin is deactivated.</p></td></tr>
+</table>
+<p class="submit"><input type="submit" class="button button-primary" value="Save Settings" /></p>
+</form>
+{{end}}
+{{end}}
+
+{{define "mailsmtp-locked-check"}}<input type="checkbox" name="{{.Name}}" id="{{.Name}}" value="1"{{if .On}} checked{{end}}{{if .Locked}} disabled{{end}} /> {{if .Locked}}<input type="hidden" name="{{.Name}}" value="{{if .On}}1{{end}}" />{{end}}{{end}}
+
+{{define "mailsmtp-alert"}}<div class="wpms-section"><h2>{{.Title}}</h2><p class="description">{{.Desc}}</p>
+<table class="form-table" role="presentation">
+<tr><th scope="row">{{.Title}} Alerts</th><td><label><input type="checkbox" name="{{.Prefix}}_enabled" value="1"{{if .Enabled}} checked{{end}}{{if .Locked}} disabled{{end}} /> Enabled</label>{{if .Locked}}<p class="description">The value of this field was set using a constant ({{.Locked}}).</p>{{end}}</td></tr>
+<tr><th scope="row">{{.Label}}</th><td>{{$p := .Prefix}}{{$t := .Type}}{{range .Vals}}<input type="{{$t}}" class="regular-text" name="{{$p}}[]" value="{{.}}" /><br />{{end}}</td></tr>
+</table></div>{{end}}
+
+{{/* connection form: From Email/Name, mailer grid and mailer settings */}}
+{{define "mailsmtp-conn-form"}}{{$d := .}}
+<div class="wpms-section">
+<h2>{{if .Conn.Primary}}Primary Connection{{else}}Connection{{end}}</h2>
+<table class="form-table" role="presentation">
+<tr><th scope="row"><label for="from_email">From Email</label></th><td>
+<input type="email" class="regular-text" name="from_email" id="from_email" value="{{.Conn.FromEmail}}" placeholder="wordpress@example.com"{{if and .Conn.Primary (index .Locked "mail.from_email")}} disabled{{end}} />
+{{if and .Conn.Primary (index .Locked "mail.from_email")}}<p class="description">The value of this field was set using a constant ({{index .Locked "mail.from_email"}}).</p>{{end}}
+<p class="description">The email address that emails are sent from. If you're using an email provider (Gmail, Yahoo, Outlook.com, etc) this should be your email address for that account.</p>
+{{if .Conn.Primary}}<p><label><input type="checkbox" name="from_email_force" value="1"{{if .O.Mail.FromEmailForce}} checked{{end}}{{if index .Locked "mail.from_email_force"}} disabled{{end}} /> Force From Email</label></p>
+<p class="description">If checked, the From Email setting above will be used for all emails, ignoring values set by other plugins (forms).</p>{{end}}
+</td></tr>
+<tr><th scope="row"><label for="from_name">From Name</label></th><td>
+<input type="text" class="regular-text" name="from_name" id="from_name" value="{{.Conn.FromName}}"{{if and .Conn.Primary (index .Locked "mail.from_name")}} disabled{{end}} />
+<p class="description">The name that emails are sent from. Leave empty to use the site title.</p>
+{{if .Conn.Primary}}<p><label><input type="checkbox" name="from_name_force" value="1"{{if .O.Mail.FromNameForce}} checked{{end}}{{if index .Locked "mail.from_name_force"}} disabled{{end}} /> Force From Name</label></p>
+<p class="description">If checked, the From Name setting above will be used for all emails, ignoring values set by other plugins.</p>{{end}}
+</td></tr>
+{{if .Conn.Primary}}<tr><th scope="row">Return Path</th><td><label><input type="checkbox" name="return_path" value="1"{{if .O.Mail.ReturnPath}} checked{{end}}{{if index .Locked "mail.return_path"}} disabled{{end}} /> Set the return-path to match the From Email</label>
+<p class="description">Return Path indicates where non-delivery receipts - or bounce messages - are to be sent. If unchecked, bounce messages may be lost.</p></td></tr>{{end}}
+<tr><th scope="row">Mailer</th><td>
+<div class="wpms-mailers" role="radiogroup" aria-label="Mailer">
+{{range .Conn.Mailers}}<label class="wpms-mailer-tile{{if .Selected}} is-selected{{end}}"><input type="radio" name="mailer" value="{{.Slug}}"{{if .Selected}} checked{{end}}{{if and $d.Conn.Primary (index $d.Locked "mail.mailer")}} disabled{{end}} />
+<span class="wpms-swatch" style="background:{{.Color}}">{{slice .Title 0 1}}</span>{{.Title}}{{if .Recommended}}<span class="wpms-badge">Recommended</span>{{end}}</label>{{end}}
+</div>
+{{if and .Conn.Primary (index .Locked "mail.mailer")}}<p class="description">The value of this field was set using a constant ({{index .Locked "mail.mailer"}}).</p>{{end}}
+</td></tr>
+</table>
+</div>
+{{range .Conn.Mailers}}{{template "mailsmtp-mailer-section" .}}{{end}}
+{{end}}
+
+{{define "mailsmtp-mailer-section"}}<div class="wpms-section wpms-mailer-section" data-mailer="{{.Slug}}"{{if not .Selected}} hidden{{end}}>
+<h2>{{.Title}}</h2>
+<p class="description">{{.Desc}}{{if .Docs}} <a href="{{.Docs}}" target="_blank" rel="noopener noreferrer">{{.Title}} website</a>{{end}}</p>
+{{if .Fields}}<table class="form-table" role="presentation">
+{{range .Fields}}<tr><th scope="row"><label for="{{.Name}}">{{.Label}}</label></th><td>
+{{if eq .Type "password"}}<input type="password" class="regular-text" name="{{.Name}}" id="{{.Name}}" autocomplete="new-password" spellcheck="false" placeholder="{{if .HasSecret}}•••••••• (saved){{end}}"{{if .Locked}} disabled{{end}} />
+{{if and .HasSecret (not .Locked)}}<label><input type="checkbox" name="{{.Name}}__remove" value="1" /> Remove</label>{{end}}
+{{else if eq .Type "checkbox"}}<input type="hidden" name="{{.Name}}__present" value="1" /><label><input type="checkbox" name="{{.Name}}" id="{{.Name}}" value="1"{{if .Checked}} checked{{end}}{{if .Locked}} disabled{{end}} /> {{if eq .Key "autotls"}}Enable Auto TLS{{else if eq .Key "auth"}}Enable Authentication{{else}}Enabled{{end}}</label>
+{{else if eq .Type "select"}}<select name="{{.Name}}" id="{{.Name}}"{{if .Locked}} disabled{{end}}>{{range .Choices}}<option value="{{.Value}}"{{if .Checked}} selected{{end}}>{{.Label}}</option>{{end}}</select>
+{{else if eq .Type "radio"}}{{$n := .Name}}{{$l := .Locked}}<fieldset>{{range .Choices}}<label style="display:inline-block;margin-right:1.5em"><input type="radio" name="{{$n}}" value="{{.Value}}"{{if .Checked}} checked{{end}}{{if $l}} disabled{{end}} /> {{.Label}}</label>{{end}}</fieldset>
+{{else}}<input type="{{if eq .Type "number"}}number{{else}}text{{end}}" class="{{if eq .Type "number"}}small-text{{else}}regular-text{{end}}" name="{{.Name}}" id="{{.Name}}" value="{{.Value}}" placeholder="{{.Placeholder}}" spellcheck="false"{{if .Locked}} disabled{{end}} />{{end}}
+{{if .Locked}}<p class="description">The value of this field was set using a constant ({{.Locked}}).</p>{{end}}
+{{if .Desc}}<p class="description">{{.Desc}}</p>{{end}}
+</td></tr>{{end}}
+{{if .OAuth}}<tr><th scope="row">Authorized redirect URI</th><td><input type="text" class="large-text code" readonly value="{{.RedirectURI}}" onfocus="this.select()" />
+<p class="description">Please copy this URL into the "Redirect URI" field of your application.</p></td></tr>
+<tr><th scope="row">Authorization</th><td>
+{{if .Connected}}<p>Connected as <strong>{{if .OAuthUser}}{{.OAuthUser}}{{else}}your account{{end}}</strong>.</p><p><a class="button" href="{{.RemoveURL}}" onclick="return confirm('Remove the OAuth connection?')">Remove OAuth Connection</a></p>
+<p class="description">Removing the OAuth connection gives you the ability to redo the OAuth connection or link to another account.</p>
+{{else if .CanConnect}}<p><a class="button button-secondary" href="{{.ConnectURL}}">Allow plugin to send emails using your {{.Title}} account</a></p><p class="description">Click the button above to confirm authorization.</p>
+{{else}}<p class="description">You need to save settings with Client ID and Client Secret before you can proceed.</p>{{end}}
+</td></tr>{{end}}
+</table>{{end}}
+</div>{{end}}
+
+{{/* ---------------------------------------------------------------- Email Log */}}
+{{define "mailsmtp-logs"}}
+{{with .Entry}}
+<p class="wpms-noprint"><a href="/wp-admin/admin?page=wp-mail-smtp-logs">&larr; Back to Email Log</a></p>
+<div class="wpms-view">
+<div>
+<h2 style="margin-top:0">{{.Subject}}</h2>
+{{if .HasContent}}{{if .HTML}}<iframe sandbox="" title="Email content" srcdoc="{{.HTML}}"></iframe>{{else}}<pre class="wpms-debug" style="max-height:none">{{.Plain}}</pre>{{end}}
+{{else}}<div class="notice notice-info inline"><p>Email content was not logged. Enable "Log Email Content" under <a href="/wp-admin/admin?page=wp-mail-smtp&amp;tab=logs">Settings › Email Log</a> to store it.</p></div>{{end}}
+{{if and .HTML .Plain}}<details><summary>Plain text version</summary><pre class="wpms-debug">{{.Plain}}</pre></details>{{end}}
+<details><summary>Headers</summary><pre class="wpms-debug">{{.Headers}}</pre></details>
+</div>
+<div>
+<div class="postbox"><div class="postbox-header"><h2 class="hndle">Details</h2></div><div class="inside">
+<p><span class="wpms-status{{if eq .Status "failed"}} failed{{end}}"></span><strong>{{if eq .Status "failed"}}Failed{{else}}Sent{{end}}</strong></p>
+<p><strong>Created:</strong> {{.DateStr}}</p>
+<p><strong>From:</strong> {{.From}}</p>
+<p><strong>To:</strong> {{.ToStr}}</p>
+{{if .ReplyTo}}<p><strong>Reply-To:</strong> {{.ReplyTo}}</p>{{end}}
+<p><strong>Mailer:</strong> {{.MailerTitle}}{{if .Conn}} ({{.Conn}}){{end}}</p>
+<p><strong>Source:</strong> {{.Source}}</p>
+{{if gt .Attempts 1}}<p><strong>Attempts:</strong> {{.Attempts}}</p>{{end}}
+{{if .MessageID}}<p><strong>Message ID:</strong> <code>{{.MessageID}}</code></p>{{end}}
+{{if .ParentID}}<p><strong>Resent from:</strong> <a href="/wp-admin/admin?page=wp-mail-smtp-logs&amp;mode=view&amp;email_id={{.ParentID}}">#{{.ParentID}}</a></p>{{end}}
+{{if .Error}}<div class="notice notice-error inline"><p><strong>Error:</strong> {{.Error}}</p></div>{{end}}
+</div></div>
+<div class="postbox wpms-noprint"><div class="postbox-header"><h2 class="hndle">Actions</h2></div><div class="inside">
+<form method="post" action="/wp-admin/admin?page=wp-mail-smtp-logs">
+<input type="hidden" name="_wpnonce" value="{{$.Nonce}}" /><input type="hidden" name="email_id" value="{{.ID}}" /><input type="hidden" name="action" value="resend" />
+<p><label for="recipients">Recipients</label><br /><input type="text" class="widefat" name="recipients" id="recipients" placeholder="{{.ToStr}}" />
+<span class="description">Leave empty to resend to the original recipients, or enter other addresses separated by commas.</span></p>
+<p><input type="submit" class="button button-primary" value="Resend"{{if not .HasContent}} disabled{{end}} /> <button type="button" class="button" onclick="window.print()">Print</button></p>
+</form>
+<form method="post" action="/wp-admin/admin?page=wp-mail-smtp-logs" onsubmit="return confirm('Are you sure that you want to delete this email log entry?')">
+<input type="hidden" name="_wpnonce" value="{{$.Nonce}}" /><input type="hidden" name="email_id" value="{{.ID}}" /><input type="hidden" name="action" value="delete" />
+<p><input type="submit" class="button-link button-link-delete" value="Delete Log" /></p></form>
+</div></div>
+</div>
+</div>
+{{else}}
+<ul class="subsubsub">
+<li class="all"><a href="/wp-admin/admin?page=wp-mail-smtp-logs"{{if eq .Filter.Status ""}} class="current" aria-current="page"{{end}}>All <span class="count">({{.CountAll}})</span></a> |</li>
+<li class="sent"><a href="/wp-admin/admin?page=wp-mail-smtp-logs&amp;status=sent"{{if eq .Filter.Status "sent"}} class="current" aria-current="page"{{end}}>Sent <span class="count">({{.CountSent}})</span></a> |</li>
+<li class="failed"><a href="/wp-admin/admin?page=wp-mail-smtp-logs&amp;status=failed"{{if eq .Filter.Status "failed"}} class="current" aria-current="page"{{end}}>Failed <span class="count">({{.CountFailed}})</span></a></li>
+</ul>
+<form method="get" action="/wp-admin/admin">
+<input type="hidden" name="page" value="wp-mail-smtp-logs" />{{if .Filter.Status}}<input type="hidden" name="status" value="{{.Filter.Status}}" />{{end}}
+<p class="search-box"><label class="screen-reader-text" for="wpms-log-search">Search Emails:</label><input type="search" id="wpms-log-search" name="s" value="{{.Filter.Search}}" /> <input type="submit" class="button" value="Search Emails" /></p>
+<div class="tablenav top" style="clear:none"><div class="alignleft actions"><label>From <input type="date" name="date_from" value="{{.Filter.From}}" /></label> <label>To <input type="date" name="date_to" value="{{.Filter.To}}" /></label> <input type="submit" class="button" value="Filter" /></div></div>
+</form>
+<form method="post" action="/wp-admin/admin?page=wp-mail-smtp-logs" id="wpms-logs-form">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<div class="tablenav top">
+<div class="alignleft actions bulkactions"><label for="bulk-action-selector-top" class="screen-reader-text">Select bulk action</label>
+<select name="action" id="bulk-action-selector-top"><option value="-1">Bulk actions</option><option value="resend">Resend</option><option value="delete">Delete</option></select>
+<input type="submit" class="button action" value="Apply" /></div>
+<div class="tablenav-pages"><span class="displaying-num">{{.Total}} items</span>{{if gt .Pages 1}} <span class="pagination-links">{{if .PrevURL}}<a class="prev-page button" href="{{.PrevURL}}">&lsaquo;</a>{{else}}<span class="tablenav-pages-navspan button disabled">&lsaquo;</span>{{end}}
+<span class="paging-input">{{.Paged}} of <span class="total-pages">{{.Pages}}</span></span>
+{{if .NextURL}}<a class="next-page button" href="{{.NextURL}}">&rsaquo;</a>{{else}}<span class="tablenav-pages-navspan button disabled">&rsaquo;</span>{{end}}</span>{{end}}</div>
+<br class="clear" /></div>
+<table class="wp-list-table widefat fixed striped table-view-list">
+<thead><tr><td class="manage-column column-cb check-column"><input type="checkbox" id="wpms-cb-select-all" /></td><th scope="col" class="column-primary">Subject</th><th scope="col">From</th><th scope="col">To</th><th scope="col">Mailer</th><th scope="col">Source</th><th scope="col">Date Sent</th></tr></thead>
+<tbody>
+{{range .Logs}}<tr><th scope="row" class="check-column"><input type="checkbox" name="email_id[]" value="{{.ID}}" /></th>
+<td class="column-primary"><span class="wpms-status{{if eq .Status "failed"}} failed{{end}}" title="{{if eq .Status "failed"}}Failed{{else}}Sent{{end}}"></span><strong><a href="{{.ViewURL}}">{{if .Subject}}{{.Subject}}{{else}}(no subject){{end}}</a></strong>
+<div class="row-actions"><span class="view"><a href="{{.ViewURL}}">View Log</a> | </span>{{if .HasContent}}<span><a href="/wp-admin/admin?page=wp-mail-smtp-logs&amp;action=resend&amp;email_id={{.ID}}&amp;_wpnonce={{$.Nonce}}">Resend</a> | </span>{{end}}<span class="trash"><a class="submitdelete" href="/wp-admin/admin?page=wp-mail-smtp-logs&amp;action=delete&amp;email_id={{.ID}}&amp;_wpnonce={{$.Nonce}}" onclick="return confirm('Are you sure that you want to delete this email log entry?')">Delete</a></span></div>
+{{if .Error}}<p class="description" style="color:#d63638">{{.Error}}</p>{{end}}</td>
+<td>{{.From}}</td><td>{{.ToStr}}</td><td>{{.MailerTitle}}</td><td>{{.Source}}</td><td>{{.DateStr}}</td></tr>
+{{else}}<tr class="no-items"><td class="colspanchange" colspan="7">No emails found.</td></tr>{{end}}
+</tbody></table>
+</form>
+<form method="post" action="/wp-admin/admin?page=wp-mail-smtp-logs" id="wpms-delete-all" onsubmit="return confirm('Are you sure you want to permanently delete all email logs?')"><input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="action" value="delete_all" /></form>
+<script>document.querySelector('#wpms-delete-all') && document.querySelectorAll('.page-title-action').forEach(function(a){ a.onclick = function(){ if (confirm('Are you sure you want to permanently delete all email logs?')) document.getElementById('wpms-delete-all').submit(); return false; }; });</script>
+{{end}}
+{{end}}
+
+{{/* ---------------------------------------------------------------- Reports */}}
+{{define "mailsmtp-reports"}}
+<ul class="subsubsub">{{range $i, $r := .RangeOpts}}<li>{{if $i}} | {{end}}<a href="{{.Value}}"{{if .Checked}} class="current"{{end}}>{{.Label}}</a></li>{{end}}</ul><br class="clear" />
+<div class="wpms-stats">
+<div class="postbox"><span>Total Emails</span><p class="wpms-num">{{.Stats.Total}}</p></div>
+<div class="postbox"><span><span class="wpms-status"></span>Sent</span><p class="wpms-num">{{.Stats.Sent}}</p></div>
+<div class="postbox"><span><span class="wpms-status failed"></span>Failed</span><p class="wpms-num">{{.Stats.Failed}}</p></div>
+</div>
+<div class="postbox" style="max-width:960px;padding:12px 16px"><h2 style="margin-top:0">Emails Stats by Day</h2>{{.Chart}}</div>
+<h2>Email Stats by Subject</h2>
+<table class="wp-list-table widefat fixed striped" style="max-width:960px">
+<thead><tr><th scope="col" class="column-primary">Subject</th><th scope="col">Total</th><th scope="col">Sent</th><th scope="col">Failed</th><th scope="col">Last sent</th></tr></thead>
+<tbody>{{range .Stats.Subjects}}<tr><td class="column-primary"><a href="/wp-admin/admin?page=wp-mail-smtp-logs&amp;s={{.Subject}}">{{.Subject}}</a></td><td>{{.Total}}</td><td>{{.Sent}}</td><td>{{.Failed}}</td><td>{{.LastStr}} &middot; {{.LastMailer}}</td></tr>
+{{else}}<tr class="no-items"><td colspan="5">{{if .O.Logs.Enabled}}No emails were sent in this period.{{else}}Reports are built from the email log. <a href="/wp-admin/admin?page=wp-mail-smtp&amp;tab=logs">Enable the email log</a> to see them.{{end}}</td></tr>{{end}}</tbody></table>
+<h2>Weekly Email Summary</h2>
+<p>{{if .O.General.SummaryDisabled}}The weekly email summary is disabled.{{else}}A summary of the week's email activity is sent to the site admin email every week.{{end}} <a href="/wp-admin/admin?page=wp-mail-smtp&amp;tab=misc">Change</a></p>
+{{end}}
+
+{{/* ---------------------------------------------------------------- Tools */}}
+{{define "mailsmtp-tools"}}
+{{if eq .Tab "test"}}
+{{if .TestResult}}<div class="notice notice-{{if .TestOK}}success{{else}}error{{end}} inline"><p><strong>{{if .TestOK}}Success!{{else}}There was a problem while sending the test email.{{end}}</strong> {{.TestResult}}</p></div>
+{{if .TestHints}}<div class="wpms-section"><h2>How to fix it</h2><ol>{{range .TestHints}}<li>{{.}}</li>{{end}}</ol></div>{{end}}{{end}}
+{{if .DomainCheck}}<div class="wpms-section"><h2>Domain Check</h2><table class="widefat striped wpms-dns"><tbody>{{range .DomainCheck}}<tr><td>{{.Name}}</td><td><span class="dashicons {{if eq .Status "ok"}}dashicons-yes-alt" style="color:#00a32a{{else if eq .Status "error"}}dashicons-dismiss" style="color:#d63638{{else}}dashicons-warning" style="color:#dba617{{end}}"></span> <code style="white-space:normal">{{.Detail}}</code></td></tr>{{end}}</tbody></table></div>{{end}}
+<form method="post" action="/wp-admin/admin?page=wp-mail-smtp-tools&amp;tab=test">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<h2>Send a Test Email</h2>
+<table class="form-table" role="presentation">
+<tr><th scope="row"><label for="wpms-test-email">Send To</label></th><td><input type="email" class="regular-text" name="wp-mail-smtp[test_email]" id="wpms-test-email" value="{{.TestTo}}" required />
+<p class="description">Enter email address where test email will be sent.</p></td></tr>
+<tr><th scope="row">HTML</th><td><label><input type="checkbox" name="wp-mail-smtp[test_email_html]" value="1"{{if .TestHTML}} checked{{end}} /> Send this email in HTML or in plain text format.</label></td></tr>
+<tr><th scope="row"><label for="wpms-test-conn">Connection</label></th><td><select name="wp-mail-smtp[test_connection]" id="wpms-test-conn">{{range .ConnOpts}}<option value="{{.Value}}"{{if .Checked}} selected{{end}}>{{.Label}}</option>{{end}}</select></td></tr>
+<tr><th scope="row">Domain Check</th><td><label><input type="checkbox" name="domain_check" value="1" /> Also check the SPF, DMARC and MX records of the From domain</label></td></tr>
+</table>
+<p class="submit"><input type="submit" class="button button-primary" value="Send Email" /></p>
+</form>
+{{if .TestDebug}}<h2>Debug output</h2><pre class="wpms-debug">{{.TestDebug}}</pre>{{end}}
+{{end}}
+
+{{if eq .Tab "export"}}
+<form method="post" action="/wp-admin/admin?page=wp-mail-smtp-tools&amp;tab=export">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<h2>Export Email Logs</h2>
+<p>Email logs can be exported as a CSV file or as EML files (in a zip).</p>
+<table class="form-table" role="presentation">
+<tr><th scope="row">Export Type</th><td><fieldset><label><input type="radio" name="format" value="csv" checked /> Export in CSV (.csv)</label><br /><label><input type="radio" name="format" value="eml" /> Export in EML (.eml, zipped)</label></fieldset></td></tr>
+<tr><th scope="row">Common Information</th><td><label><input type="checkbox" name="include_content" value="1" /> Include email content (CSV)</label></td></tr>
+<tr><th scope="row">Status</th><td><select name="status"><option value="">All</option><option value="sent">Sent</option><option value="failed">Failed</option></select></td></tr>
+<tr><th scope="row">Custom Date Range</th><td><label>From <input type="date" name="date_from" /></label> <label>To <input type="date" name="date_to" /></label></td></tr>
+<tr><th scope="row"><label for="wpms-export-s">Search</label></th><td><input type="text" class="regular-text" name="s" id="wpms-export-s" placeholder="Subject, recipient or content" /></td></tr>
+</table>
+<p class="submit"><input type="submit" class="button button-primary" value="Download Export File" /></p>
+</form>
+{{end}}
+
+{{if eq .Tab "debug-events"}}
+<form method="post" action="/wp-admin/admin?page=wp-mail-smtp-tools&amp;tab=debug-events">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<h2>Debug Events</h2>
+<p>On this page, you can view different plugin debugging events and email sending errors.</p>
+<table class="form-table" role="presentation">
+<tr><th scope="row">Event Types</th><td><label><input type="checkbox" name="debug_email_sending" value="1"{{if .O.General.DebugSending}} checked{{end}} /> Debug Email Sending</label>
+<p class="description">Check this if you would like to also log the SMTP conversation or API request of every successfully sent email. Errors are always logged.</p></td></tr>
+<tr><th scope="row"><label for="debug_events_retention_period">Events Retention Period</label></th><td><select name="debug_events_retention_period" id="debug_events_retention_period">{{range .DebugRetention}}<option value="{{.Value}}"{{if .Checked}} selected{{end}}>{{.Label}}</option>{{end}}</select></td></tr>
+</table>
+<p class="submit"><input type="submit" class="button button-primary" value="Save Settings" /></p>
+</form>
+<table class="wp-list-table widefat fixed striped">
+<thead><tr><th scope="col" style="width:80px">Type</th><th scope="col">Content</th><th scope="col" style="width:200px">Source</th><th scope="col" style="width:170px">Date</th></tr></thead>
+<tbody>{{range .Events}}<tr><td>{{if eq .Type "error"}}<span style="color:#d63638">Error</span>{{else}}Debug{{end}}</td><td><pre style="white-space:pre-wrap;margin:0">{{.Content}}</pre></td><td>{{.Initiator}}</td><td>{{.Date}}</td></tr>
+{{else}}<tr class="no-items"><td colspan="4">No events found.</td></tr>{{end}}</tbody></table>
+{{if .Events}}<form method="post" action="/wp-admin/admin?page=wp-mail-smtp-tools&amp;tab=debug-events" onsubmit="return confirm('Delete all debug events?')"><input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="action" value="delete_all" /><p><input type="submit" class="button" value="Delete All Events" /></p></form>{{end}}
+{{end}}
+{{end}}
+
+{{/* ---------------------------------------------------------------- Setup Wizard */}}
+{{define "mailsmtp-wizard"}}
+<div class="wpms-wizard">
+<h1 class="wpms-logo" style="margin-top:0"><span class="dashicons dashicons-email-alt"></span>WP Mail SMTP</h1>
+<ol class="wpms-steps">
+<li class="{{if eq .Step "welcome"}}current{{else}}done{{end}}">Welcome</li>
+<li class="{{if eq .Step "mailer"}}current{{else if or (eq .Step "configure") (eq .Step "features") (eq .Step "check")}}done{{end}}">Choose Mailer</li>
+<li class="{{if eq .Step "configure"}}current{{else if or (eq .Step "features") (eq .Step "check")}}done{{end}}">Configure</li>
+<li class="{{if eq .Step "features"}}current{{else if eq .Step "check"}}done{{end}}">Features</li>
+<li class="{{if eq .Step "check"}}current{{end}}">Check Configuration</li>
+</ol>
+{{if eq .Step "welcome"}}
+<h2>Welcome to the WP Mail SMTP Setup Wizard!</h2>
+<p>We'll guide you through each step needed to get WP Mail SMTP fully set up on your site.</p>
+<p><a class="button button-primary button-hero" href="/wp-admin/admin?page=wp-mail-smtp-setup-wizard&amp;step=mailer">Let's Get Started &rarr;</a></p>
+<p><a href="/wp-admin/">Go back to the Dashboard</a></p>
+{{end}}
+{{if eq .Step "mailer"}}
+<form method="post" action="/wp-admin/admin?page=wp-mail-smtp-setup-wizard&amp;step=mailer">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<h2>Choose Your SMTP Mailer</h2>
+<p>Which mailer would you like to use to send emails? Not sure which one to choose? SendLayer, SMTP.com and Brevo are our recommended mailers.</p>
+<div class="wpms-mailers">{{range .WizardMailers}}<label class="wpms-mailer-tile{{if .Selected}} is-selected{{end}}"><input type="radio" name="mailer" value="{{.Slug}}"{{if .Selected}} checked{{end}} />
+<span class="wpms-swatch" style="background:{{.Color}}">{{slice .Title 0 1}}</span>{{.Title}}{{if .Recommended}}<span class="wpms-badge">Recommended</span>{{end}}</label>{{end}}</div>
+<p class="submit"><input type="submit" class="button button-primary" value="Save and Continue &rarr;" /> <a href="/wp-admin/admin?page=wp-mail-smtp-setup-wizard&amp;step=welcome">&larr; Previous Step</a></p>
+</form>
+{{end}}
+{{if eq .Step "configure"}}
+<form method="post" action="/wp-admin/admin?page=wp-mail-smtp-setup-wizard&amp;step=configure" autocomplete="off">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<h2>Configure Mailer Settings</h2>
+<table class="form-table" role="presentation">
+<tr><th scope="row"><label for="from_email">From Email</label></th><td><input type="email" class="regular-text" name="from_email" id="from_email" value="{{.Conn.FromEmail}}" /><p><label><input type="checkbox" name="from_email_force" value="1"{{if .O.Mail.FromEmailForce}} checked{{end}} /> Force From Email</label></p></td></tr>
+<tr><th scope="row"><label for="from_name">From Name</label></th><td><input type="text" class="regular-text" name="from_name" id="from_name" value="{{.Conn.FromName}}" /><p><label><input type="checkbox" name="from_name_force" value="1"{{if .O.Mail.FromNameForce}} checked{{end}} /> Force From Name</label></p></td></tr>
+</table>
+{{range .Conn.Mailers}}{{template "mailsmtp-mailer-section" .}}{{end}}
+<p class="submit"><input type="submit" class="button button-primary" value="Save and Continue &rarr;" /> <a href="/wp-admin/admin?page=wp-mail-smtp-setup-wizard&amp;step=mailer">&larr; Previous Step</a></p>
+</form>
+{{end}}
+{{if eq .Step "features"}}
+<form method="post" action="/wp-admin/admin?page=wp-mail-smtp-setup-wizard&amp;step=features">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<h2>Which email features do you want to enable?</h2>
+<p>Make sure you get the most out of WP Mail SMTP. Just check all of the features you'd like to use, and we'll go ahead and enable those for you.</p>
+<fieldset>
+<p><label><input type="checkbox" checked disabled /> <strong>Improved Email Deliverability</strong> &mdash; Ensure your emails are sent successfully and reliably.</label></p>
+<p><label><input type="checkbox" checked disabled /> <strong>Email Error Tracking</strong> &mdash; Easily spot errors causing delivery issues.</label></p>
+<p><label><input type="checkbox" name="email_log" value="1"{{if .O.Logs.Enabled}} checked{{end}} /> <strong>Detailed Email Logs</strong> &mdash; Keep records of the details of all emails sent from your site.</label></p>
+<p><label><input type="checkbox" name="email_log_content" value="1"{{if .O.Logs.LogContent}} checked{{end}} /> <strong>Complete Email Reports</strong> &mdash; See the delivery status of emails and resend them (stores the email content).</label></p>
+<p><label><input type="checkbox" name="summary_report_email" value="1"{{if not .O.General.SummaryDisabled}} checked{{end}} /> <strong>Weekly Email Summary</strong> &mdash; Get statistics about emails you've sent.</label></p>
+<p><label><input type="checkbox" name="instant_alert" value="1"{{if .O.Alerts.Email.Enabled}} checked{{end}} /> <strong>Instant Email Alerts</strong> &mdash; Get notifications via email when emails fail to send.</label></p>
+<p><label><input type="checkbox" name="debug_events" value="1"{{if .O.General.DebugSending}} checked{{end}} /> <strong>Detailed Error Reports</strong> &mdash; Keep the SMTP conversation / API response of each send under Tools › Debug Events.</label></p>
+</fieldset>
+<p class="submit"><input type="submit" class="button button-primary" value="Save and Continue &rarr;" /> <a href="/wp-admin/admin?page=wp-mail-smtp-setup-wizard&amp;step=configure">&larr; Previous Step</a></p>
+</form>
+{{end}}
+{{if eq .Step "check"}}
+{{if .TestResult}}
+{{if .TestOK}}<h2>Congrats, you've successfully set up WP Mail SMTP!</h2><p>{{.TestResult}}</p>
+{{if .DomainCheck}}<h3>Domain Check</h3><table class="widefat striped wpms-dns"><tbody>{{range .DomainCheck}}<tr><td>{{.Name}}</td><td>{{if eq .Status "ok"}}&#10003;{{else}}&#9888;{{end}} <code style="white-space:normal">{{.Detail}}</code></td></tr>{{end}}</tbody></table>{{end}}
+<p class="submit"><a class="button button-primary" href="/wp-admin/admin?page=wp-mail-smtp">Finish Setup</a></p>
+{{else}}<h2>Whoops, looks like things aren't configured properly.</h2>
+<div class="notice notice-error inline"><p>{{.TestResult}}</p></div>
+{{if .TestHints}}<ol>{{range .TestHints}}<li>{{.}}</li>{{end}}</ol>{{end}}
+{{if .TestDebug}}<details><summary>Debug output</summary><pre class="wpms-debug">{{.TestDebug}}</pre></details>{{end}}
+<p><a class="button" href="/wp-admin/admin?page=wp-mail-smtp-setup-wizard&amp;step=configure">&larr; Fix the mailer settings</a></p>{{end}}
+{{end}}
+{{if not .TestOK}}<form method="post" action="/wp-admin/admin?page=wp-mail-smtp-setup-wizard&amp;step=check">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<h2>Checking Mailer Configuration</h2>
+<p>We're going to send a test email to make sure everything works.</p>
+<p><label for="test_email">Send the test email to</label><br /><input type="email" class="regular-text" name="test_email" id="test_email" value="{{.TestTo}}" required /></p>
+<p class="submit"><input type="submit" class="button button-primary" value="Send Test Email" /> <a href="/wp-admin/admin?page=wp-mail-smtp-setup-wizard&amp;step=features">&larr; Previous Step</a></p>
+</form>{{end}}
+{{end}}
+</div>
+<p style="text-align:center"><a href="/wp-admin/admin?page=wp-mail-smtp">Close and exit the Setup Wizard</a></p>
+{{end}}
+
+{{/* ---------------------------------------------------------------- Dashboard widget */}}
+{{define "mailsmtp-widget"}}<div id="wp_mail_smtp_reports_widget_lite" class="postbox">
+<div class="postbox-header"><h2 class="hndle ui-sortable-handle">WP Mail SMTP</h2></div>
+<div class="inside">
+<div style="display:flex;gap:16px;margin-bottom:8px">
+<div><span class="dashicons dashicons-email" style="color:#646970"></span> <strong>{{.Stats.Total}}</strong> total</div>
+<div><span class="dashicons dashicons-yes-alt" style="color:#00a32a"></span> <strong>{{.Stats.Sent}}</strong> sent</div>
+<div><span class="dashicons dashicons-dismiss" style="color:#d63638"></span> <strong>{{.Stats.Failed}}</strong> failed</div>
+</div>
+{{.Chart}}
+<p class="description">Last 7 days{{if not .O.Logs.Enabled}} &middot; enable the email log to collect statistics{{end}}.</p>
+<p><a href="/wp-admin/admin?page=wp-mail-smtp-logs">View Email Log</a> &middot; <a href="/wp-admin/admin?page=wp-mail-smtp-reports">Email Reports</a></p>
+</div></div>{{end}}

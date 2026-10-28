@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"html/template"
 	"math"
 	"net/http"
 	"os"
@@ -37,6 +38,7 @@ type dashboardData struct {
 	QuickDraftNonce                   string
 	ThemeName                         string
 	Health                            healthSummary
+	MailSMTP                          template.HTML // WPGO Mail SMTP widget
 }
 
 // healthSummary is what the Site Health Status widget shows: the counts of the Site Health tests
@@ -137,6 +139,7 @@ func (s *Server) dashboard(c *gin.Context) {
 	} else {
 		d.Health = healthSummary{Class: "loading", Label: "No information yet\u2026"}
 	}
+	d.MailSMTP = s.mailSMTPDashboardWidget(c)
 	d.ShowWelcome = true
 	if v, ok := u.Meta["show_welcome_panel"].(bool); ok {
 		d.ShowWelcome = v
