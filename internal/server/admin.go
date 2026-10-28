@@ -353,6 +353,8 @@ func (s *Server) adminPage(c *gin.Context, screen, title, bodyClass, tmpl string
 	}
 	v.CacheBar = s.cacheAdminBar(c, u)
 	s.pluginMenuEntries(v.Menu, screen) // plugin settings pages under Settings (plugins_host.go)
+	// SEO-Go's menu (seogo.go)
+	v.Menu = s.seogoMenu(v.Menu, u, screen)
 	a := s.pageAssets(c)
 	a.Script("common", "admin-bar", "utils", "svg-painter")
 	v.ExtraStyles = s.styleTags(a) + s.pluginStyleTags("admin")

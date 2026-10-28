@@ -1604,6 +1604,7 @@ func (s *Server) postEdit(c *gin.Context) {
 func (s *Server) renderEdit(c *gin.Context, p *store.Post, isNew bool) {
 	block := s.useBlockEditor(c, p)
 	s.gweEditorButton(c, p, block)
+	s.seogoEditor(c, p, block) // SEO-Go box (seogo_editor.go)
 	if block {
 		if _, ok := c.GetQuery("classic-editor__forget"); ok {
 			delete(p.Meta, "classic-editor-remember")
@@ -1878,6 +1879,7 @@ func (s *Server) postSave(c *gin.Context) {
 		}
 	}
 	s.savePostMetaForm(c, p)
+	s.seogoClassicSave(c, p) // SEO-Go box fields
 	if a, _ := strconv.ParseInt(c.PostForm("post_author_override"), 10, 64); a > 0 && u.Can("edit_others_"+p.Type+"s", nil) {
 		p.AuthorID = a
 	}

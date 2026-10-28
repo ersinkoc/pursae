@@ -535,6 +535,7 @@ func (api *restAPI) savePost(c *gin.Context, r *restRequest, typ string, id int6
 // afterPostSave runs the save_post-time side effects (cache purge, hooks).
 func (s *Server) afterPostSave(ctx context.Context, p *store.Post) {
 	s.autoAddPage(ctx, p)
+	s.seogoAfterSave(ctx, p) // SEO-Go: slug-change redirect, IndexNow
 	if s.onPostSaved != nil {
 		s.onPostSaved(ctx, p)
 	}
