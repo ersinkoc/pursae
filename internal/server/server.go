@@ -105,6 +105,9 @@ func New(ctx context.Context, cfg config.Config, pool *pgxpool.Pool) (*Server, e
 func (s *Server) Handler() http.Handler {
 	app := s.appHandler()
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if s.maintenanceServe(w, r) { // Maintenance-Go: before the page cache (maintenance.go)
+			return
+		}
 		if pc := s.cache.Load(); pc != nil {
 			pc.h.ServeHTTP(w, r)
 			return

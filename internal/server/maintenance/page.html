@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="{{.Lang}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{.Title}}</title>
+{{if .S.MetaDescription}}<meta name="description" content="{{.S.MetaDescription}}">
+{{end}}{{if .S.NoIndex}}<meta name="robots" content="noindex, nofollow">
+{{end}}<meta property="og:title" content="{{.Title}}">
+<meta property="og:site_name" content="{{.SiteName}}">
+<meta property="og:url" content="{{.HomeURL}}">
+<meta property="og:type" content="website">
+{{if .S.MetaDescription}}<meta property="og:description" content="{{.S.MetaDescription}}">
+{{end}}{{if .S.SocialImageURL}}<meta property="og:image" content="{{.S.SocialImageURL}}">
+<meta name="twitter:card" content="summary_large_image">
+{{end}}{{if .S.FaviconURL}}<link rel="icon" href="{{.S.FaviconURL}}">
+{{end}}{{if .Social}}<link rel="stylesheet" href="/wp-includes/css/dashicons.min.css">
+{{end}}<style>
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{min-height:100vh;min-height:100dvh;font-family:{{.FontStack}};font-size:var(--mtnc-size);line-height:1.6;color:var(--mtnc-text);background:var(--mtnc-bg);display:flex;flex-direction:column;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:var(--mtnc-link)}
+.mtnc-bg{position:fixed;inset:calc(var(--mtnc-blur) * -2);z-index:0;background-color:var(--mtnc-bg);background-image:var(--mtnc-image);background-size:var(--mtnc-bgsize);background-position:var(--mtnc-bgpos);background-repeat:no-repeat;filter:blur(var(--mtnc-blur))}
+.bg-gradient .mtnc-bg{background-image:radial-gradient(ellipse at 15% 10%,color-mix(in srgb,var(--mtnc-bg2) 70%,transparent),transparent 60%),linear-gradient(135deg,var(--mtnc-bg),var(--mtnc-bg2))}
+.mtnc-overlay{position:fixed;inset:0;z-index:0;background:#000;opacity:var(--mtnc-overlay);pointer-events:none}
+.mtnc-main{position:relative;z-index:1;flex:1;display:flex;padding:clamp(24px,6vw,72px) clamp(16px,5vw,64px)}
+.mtnc-content{width:100%;max-width:var(--mtnc-width);margin:auto}
+.pos-middle .mtnc-content,.pos-top .mtnc-content,.pos-bottom .mtnc-content{text-align:center}
+.pos-top .mtnc-content{margin-top:0}.pos-bottom .mtnc-content{margin-bottom:0}
+.pos-left .mtnc-content{margin-left:0}.pos-right .mtnc-content{margin-right:0;text-align:right}
+.box .mtnc-content{background:color-mix(in srgb,#fff 72%,transparent);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid color-mix(in srgb,#fff 60%,transparent);border-radius:20px;padding:clamp(24px,5vw,56px);box-shadow:0 20px 60px -20px rgba(15,23,42,.35)}
+.mtnc-logo{display:inline-block;max-width:min(var(--mtnc-logo),100%);height:auto;margin:0 0 28px}
+h1{font-size:clamp(2rem,5.2vw,3.4rem);line-height:1.12;font-weight:300;letter-spacing:-.02em;color:var(--mtnc-heading);margin:0 0 .5em}
+.mtnc-text{font-size:1.12em;opacity:.92}
+.mtnc-text p{margin:.35em 0}
+.mtnc-modules>*{margin-top:clamp(24px,4vw,40px)}
+.mtnc-countdown{display:flex;gap:clamp(8px,2vw,18px);flex-wrap:wrap}
+.pos-middle .mtnc-countdown,.pos-top .mtnc-countdown,.pos-bottom .mtnc-countdown{justify-content:center}.pos-right .mtnc-countdown{justify-content:flex-end}
+.mtnc-countdown-label{display:block;width:100%;font-size:.8em;letter-spacing:.14em;text-transform:uppercase;opacity:.75;margin-bottom:2px}
+.mtnc-unit{min-width:clamp(64px,16vw,92px);padding:12px 6px;border-radius:14px;background:color-mix(in srgb,var(--mtnc-text) 9%,transparent);border:1px solid color-mix(in srgb,var(--mtnc-text) 16%,transparent)}
+.mtnc-unit b{display:block;font-size:clamp(1.6rem,4.5vw,2.4rem);font-weight:600;line-height:1.1;color:var(--mtnc-heading);font-variant-numeric:tabular-nums}
+.mtnc-unit span{font-size:.72em;text-transform:uppercase;letter-spacing:.12em;opacity:.7}
+.mtnc-progress-label{display:flex;justify-content:space-between;font-size:.85em;margin-bottom:6px;opacity:.85}
+.mtnc-bar{height:10px;border-radius:99px;background:color-mix(in srgb,var(--mtnc-text) 14%,transparent);overflow:hidden}
+.mtnc-bar i{display:block;height:100%;border-radius:inherit;background:var(--mtnc-accent)}
+.mtnc-subscribe h2{font-size:1.05em;font-weight:600;margin:0 0 10px;color:var(--mtnc-heading)}
+.mtnc-form{display:flex;gap:8px;flex-wrap:wrap;max-width:520px}
+.pos-middle .mtnc-form,.pos-top .mtnc-form,.pos-bottom .mtnc-form{margin:0 auto}.pos-right .mtnc-form{margin-left:auto}
+.mtnc-form input[type=email],.mtnc-panel input[type=text],.mtnc-panel input[type=password]{flex:1 1 220px;min-width:0;font:inherit;font-size:1rem;padding:12px 16px;border-radius:10px;border:1px solid color-mix(in srgb,var(--mtnc-text) 30%,transparent);background:color-mix(in srgb,#fff 92%,transparent);color:#1d2327}
+.mtnc-btn{font:inherit;font-size:1rem;font-weight:600;padding:12px 22px;border:0;border-radius:10px;background:var(--mtnc-accent);color:#fff;cursor:pointer}
+.mtnc-btn:hover{filter:brightness(1.1)}
+.mtnc-btn:focus-visible,.mtnc-form input:focus-visible,.mtnc-side button:focus-visible{outline:3px solid var(--mtnc-link);outline-offset:2px}
+.mtnc-gdpr{display:flex;gap:8px;align-items:flex-start;font-size:.82em;opacity:.85;text-align:left;max-width:520px;margin:10px auto 0}
+.pos-left .mtnc-gdpr{margin-left:0}
+.mtnc-note{font-size:.95em;padding:10px 14px;border-radius:10px;background:color-mix(in srgb,var(--mtnc-text) 10%,transparent);display:inline-block}
+.mtnc-hp{position:absolute!important;left:-9999px!important;width:1px;height:1px;overflow:hidden}
+.mtnc-social{display:flex;gap:10px;flex-wrap:wrap;list-style:none;padding:0}
+.pos-middle .mtnc-social,.pos-top .mtnc-social,.pos-bottom .mtnc-social{justify-content:center}.pos-right .mtnc-social{justify-content:flex-end}
+.mtnc-social a{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;color:var(--mtnc-heading);background:color-mix(in srgb,var(--mtnc-text) 10%,transparent);text-decoration:none;transition:transform .15s,background .15s}
+.mtnc-social a:hover{transform:translateY(-2px);background:var(--mtnc-accent);color:#fff}
+.mtnc-social .dashicons{font-size:22px;width:22px;height:22px}
+.mtnc-footer{position:relative;z-index:1;text-align:center;font-size:.82em;opacity:.7;padding:16px 72px 22px}
+.mtnc-side{position:fixed;right:18px;bottom:18px;z-index:3;display:flex;gap:8px}
+.mtnc-side button{width:46px;height:46px;border-radius:50%;border:0;display:grid;place-items:center;cursor:pointer;background:color-mix(in srgb,var(--mtnc-text) 14%,transparent);color:var(--mtnc-heading);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.mtnc-side button:hover{background:var(--mtnc-accent);color:#fff}
+.mtnc-side svg{width:20px;height:20px;fill:currentColor}
+.mtnc-panel{position:fixed;right:18px;bottom:76px;z-index:4;width:min(340px,calc(100vw - 36px));padding:22px;border-radius:16px;background:#fff;color:#1d2327;box-shadow:0 24px 70px -20px rgba(0,0,0,.5);text-align:left}
+.mtnc-panel[hidden]{display:none}
+.mtnc-panel h2{margin:0 0 14px;font-size:1.1rem}
+.mtnc-panel label{display:block;font-size:.85rem;font-weight:600;margin:10px 0 4px}
+.mtnc-panel input[type=text],.mtnc-panel input[type=password]{width:100%;border-color:#c3c4c7}
+.mtnc-panel .mtnc-btn{width:100%;margin-top:14px}
+.mtnc-panel .mtnc-row{display:flex;justify-content:space-between;align-items:center;font-size:.85rem;margin-top:12px}
+.mtnc-panel a{color:#2271b1}
+.mtnc-panel .mtnc-err{color:#b32d2e;font-size:.9rem;margin:0 0 6px}
+.mtnc-preview{position:fixed;top:0;left:50%;transform:translateX(-50%);z-index:5;background:#1d2327;color:#fff;font:13px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:6px 14px;border-radius:0 0 8px 8px}
+.mtnc-preview a{color:#72aee6}
+/* Themes */
+.theme-minimal h1{font-weight:700;letter-spacing:-.035em}
+.theme-minimal .mtnc-unit{background:#f6f7f7;border-color:#dcdcde}
+.theme-split .mtnc-main{padding:0}
+.theme-split .mtnc-wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);width:100%;min-height:100%}
+.theme-split .mtnc-content{padding:clamp(24px,6vw,80px);max-width:calc(var(--mtnc-width) + 160px)}
+.theme-split .mtnc-panelimg{background-color:var(--mtnc-bg2);background-image:var(--mtnc-image);background-size:var(--mtnc-bgsize);background-position:var(--mtnc-bgpos)}
+.theme-split .mtnc-bg{background-image:none}
+.theme-split h1{font-weight:700}
+.theme-split .mtnc-unit{min-width:0;flex:1 1 56px;max-width:96px}
+.theme-neon h1{font-weight:700;text-shadow:0 0 24px color-mix(in srgb,var(--mtnc-accent) 70%,transparent)}
+.theme-neon .mtnc-unit{border-color:color-mix(in srgb,var(--mtnc-accent) 60%,transparent);box-shadow:0 0 24px -6px var(--mtnc-accent)}
+.theme-neon .mtnc-bar i{background:linear-gradient(90deg,var(--mtnc-link),var(--mtnc-accent))}
+.theme-sunrise h1{font-weight:800;font-size:clamp(2.4rem,7vw,4.6rem)}
+.theme-editorial h1{font-family:"Iowan Old Style","Palatino Linotype","URW Palladio L",P052,Georgia,serif;font-weight:400;font-style:italic}
+.theme-editorial .mtnc-content{border-top:3px double var(--mtnc-heading);border-bottom:3px double var(--mtnc-heading);padding:32px 0}
+@media (max-width:480px){.mtnc-unit{min-width:0;flex:1 1 0}.mtnc-form .mtnc-btn{flex:1 1 100%}}
+@media (max-width:782px){.theme-split .mtnc-wrap{grid-template-columns:1fr}.theme-split .mtnc-panelimg{min-height:32vh;order:-1}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+{{.CSS}}
+</style>
+{{if .S.Analytics}}<script async src="https://www.googletagmanager.com/gtag/js?id={{.S.Analytics}}"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config',{{.S.Analytics}});</script>
+{{end}}</head>
+<body class="mtnc theme-{{.S.Theme}} pos-{{.S.ContentPosition}}{{if eq .S.BgType "gradient"}} bg-gradient{{end}}{{if .S.ContentBox}} box{{end}}">
+{{if .Preview}}<div class="mtnc-preview" role="status">Maintenance page preview{{if not .S.Enabled}} &middot; maintenance mode is off{{end}} &middot; <a href="/wp-admin/admin?page=maintenance">Settings</a></div>
+{{end}}<div class="mtnc-bg" aria-hidden="true"></div><div class="mtnc-overlay" aria-hidden="true"></div>
+<main class="mtnc-main" id="mtnc-main">
+<div class="mtnc-wrap" style="width:100%;display:{{if eq .S.Theme "split"}}grid{{else}}flex{{end}}">
+<div class="mtnc-content">
+	{{if .S.LogoURL}}<img class="mtnc-logo" src="{{.S.LogoURL}}" alt="{{.SiteName}}">
+	{{end}}{{if .Heading}}<h1>{{.Heading}}</h1>
+	{{end}}{{if .Content}}<div class="mtnc-text">{{.Content}}</div>
+	{{end}}{{if .HasModules}}<div class="mtnc-modules">
+	{{if .EndUnix}}<div class="mtnc-countdown" id="mtnc-countdown" data-end="{{.EndUnix}}" data-reload="{{if .S.AutoDisable}}1{{end}}" role="timer" aria-live="off">
+		{{if .S.CountdownLabel}}<span class="mtnc-countdown-label">{{.S.CountdownLabel}}</span>{{end}}
+		<div class="mtnc-unit"><b data-u="d">00</b><span>Days</span></div>
+		<div class="mtnc-unit"><b data-u="h">00</b><span>Hours</span></div>
+		<div class="mtnc-unit"><b data-u="m">00</b><span>Minutes</span></div>
+		<div class="mtnc-unit"><b data-u="s">00</b><span>Seconds</span></div>
+		<time datetime="{{.EndISO}}" class="mtnc-hp">{{.EndISO}}</time>
+	</div>
+	{{end}}{{if .S.Progress}}<div class="mtnc-progress">
+		<div class="mtnc-progress-label"><span>{{.S.ProgressLabel}}</span><span>{{.S.ProgressPercent}}%</span></div>
+		<div class="mtnc-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{.S.ProgressPercent}}" aria-label="{{.S.ProgressLabel}}"><i style="width:{{.S.ProgressPercent}}%"></i></div>
+	</div>
+	{{end}}{{if .S.Subscribe}}<div class="mtnc-subscribe" id="mtnc-subscribe">
+		{{if .Subscribed}}<p class="mtnc-note" role="status">{{.S.SubscribeThanks}}</p>
+		{{else}}{{if .S.SubscribeTitle}}<h2>{{.S.SubscribeTitle}}</h2>{{end}}
+		{{if .SubscribeErr}}<p class="mtnc-note" role="alert">{{.SubscribeErr}}</p>{{end}}
+		<form class="mtnc-form" method="post" action="{{.SubscribeURL}}">
+			<input type="hidden" name="_wpnonce" value="{{.Nonce}}">
+			<input type="hidden" name="_wp_http_referer" value="{{.RedirectTo}}">
+			<label class="mtnc-hp" aria-hidden="true">Leave empty <input type="text" name="mtnc_website" tabindex="-1" autocomplete="off"></label>
+			<label for="mtnc-email" class="mtnc-hp">E-mail address</label>
+			<input type="email" id="mtnc-email" name="email" required placeholder="you@example.com" autocomplete="email">
+			<button class="mtnc-btn" type="submit">{{.S.SubscribeButton}}</button>
+			{{if .S.GDPR}}<label class="mtnc-gdpr"><input type="checkbox" name="gdpr" value="1" required> <span>{{.S.GDPRText}}{{if .PolicyURL}} <a href="{{.PolicyURL}}">Privacy Policy</a>{{end}}</span></label>{{end}}
+		</form>{{end}}
+	</div>
+	{{end}}{{if .Social}}<ul class="mtnc-social">{{range .Social}}<li><a href="{{.URL}}"{{if $.S.SocialNewTab}} target="_blank" rel="noopener noreferrer"{{end}} aria-label="{{.Label}}" title="{{.Label}}"><span class="dashicons {{.Icon}}" aria-hidden="true"></span></a></li>{{end}}</ul>
+	{{end}}</div>
+	{{end}}{{if .CustomHTML}}<div class="mtnc-custom">{{.CustomHTML}}</div>
+	{{end}}
+</div>
+{{if eq .S.Theme "split"}}<div class="mtnc-panelimg" aria-hidden="true"></div>{{end}}
+</div>
+</main>
+{{if .Footer}}<footer class="mtnc-footer">{{.Footer}}</footer>
+{{end}}<div class="mtnc-side">
+	{{if and .S.PasswordButton .S.SitePassword}}<button type="button" data-panel="mtnc-unlock" aria-controls="mtnc-unlock" aria-expanded="false" title="{{.S.PasswordButtonT}}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm5.65-4A6 6 0 1 0 12.65 14H17v4h4v-4h2v-4H12.65z"/></svg><span class="mtnc-hp">{{.S.PasswordButtonT}}</span></button>{{end}}
+	{{if .S.LoginButton}}<button type="button" data-panel="mtnc-login" aria-controls="mtnc-login" aria-expanded="false" title="{{.S.LoginTooltip}}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 9h-1V7a4 4 0 0 0-8 0v2H7a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2zm-7-2a2 2 0 1 1 4 0v2h-4V7zm3 9.73V18h-2v-1.27a2 2 0 1 1 2 0z"/></svg><span class="mtnc-hp">{{.S.LoginTooltip}}</span></button>{{end}}
+</div>
+{{if .S.LoginButton}}<div class="mtnc-panel" id="mtnc-login" hidden>
+	<h2>User Login</h2>
+	<form method="post" action="{{.LoginAction}}">
+		<label for="mtnc-user">Username or Email Address</label><input type="text" id="mtnc-user" name="log" autocomplete="username" required>
+		<label for="mtnc-pass">Password</label><input type="password" id="mtnc-pass" name="pwd" autocomplete="current-password" required>
+		<input type="hidden" name="redirect_to" value="{{.RedirectTo}}">
+		<div class="mtnc-row"><label style="margin:0;font-weight:400"><input type="checkbox" name="rememberme" value="forever"> Remember Me</label><a href="/wp-login?action=lostpassword">Lost Password</a></div>
+		<button class="mtnc-btn" type="submit" name="wp-submit">Log In</button>
+	</form>
+</div>
+{{end}}{{if and .S.PasswordButton .S.SitePassword}}<div class="mtnc-panel" id="mtnc-unlock"{{if ne .Unlocked "wrong"}} hidden{{end}}>
+	<h2>{{.S.PasswordMessage}}</h2>
+	{{if eq .Unlocked "wrong"}}<p class="mtnc-err" role="alert">{{.S.PasswordWrong}}</p>{{end}}
+	<form method="post" action="{{.UnlockURL}}">
+		<input type="hidden" name="_wpnonce" value="{{.Nonce}}">
+		<input type="hidden" name="_wp_http_referer" value="{{.RedirectTo}}">
+		<label for="mtnc-sitepass">Password</label><input type="password" id="mtnc-sitepass" name="password" autocomplete="current-password" required>
+		<button class="mtnc-btn" type="submit">{{.S.PasswordButtonT}}</button>
+	</form>
+</div>
+{{end}}<script>
+(function(){
+	document.querySelectorAll('.mtnc-side button').forEach(function(b){
+		b.addEventListener('click',function(){
+			var p=document.getElementById(b.getAttribute('data-panel')),open=p.hidden;
+			document.querySelectorAll('.mtnc-panel').forEach(function(x){x.hidden=true;});
+			document.querySelectorAll('.mtnc-side button').forEach(function(x){x.setAttribute('aria-expanded','false');});
+			p.hidden=!open;b.setAttribute('aria-expanded',open?'true':'false');
+			if(open){var f=p.querySelector('input:not([type=hidden])');if(f)f.focus();}
+		});
+	});
+	document.addEventListener('keydown',function(e){if(e.key==='Escape'){document.querySelectorAll('.mtnc-panel').forEach(function(x){x.hidden=true;});}});
+	var c=document.getElementById('mtnc-countdown');
+	if(!c)return;
+	var end=parseInt(c.getAttribute('data-end'),10)*1000,u={};
+	c.querySelectorAll('[data-u]').forEach(function(el){u[el.getAttribute('data-u')]=el;});
+	function pad(n){return n<10?'0'+n:''+n;}
+	function tick(){
+		var left=Math.max(0,Math.floor((end-Date.now())/1000));
+		u.d.textContent=pad(Math.floor(left/86400));u.h.textContent=pad(Math.floor(left%86400/3600));
+		u.m.textContent=pad(Math.floor(left%3600/60));u.s.textContent=pad(left%60);
+		if(left===0){clearInterval(t);if(c.getAttribute('data-reload')){setTimeout(function(){location.reload();},1500);}}
+	}
+	var t=setInterval(tick,1000);tick();
+})();
+</script>
+</body>
+</html>

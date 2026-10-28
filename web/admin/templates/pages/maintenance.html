@@ -1,0 +1,250 @@
+{{define "admin/maintenance"}}{{template "admin-header" .}}{{with .Data}}
+<style>
+.mtnc-admin .mtnc-head{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin:12px 0 4px}
+.mtnc-admin .mtnc-state{display:inline-flex;align-items:center;gap:8px;font-weight:600;padding:6px 12px;border-radius:999px;background:#f0f0f1}
+.mtnc-admin .mtnc-state i{width:10px;height:10px;border-radius:50%;background:#00a32a}
+.mtnc-admin .mtnc-state.is-on{background:#fcf0f1;color:#8a2424}.mtnc-admin .mtnc-state.is-on i{background:#d63638}
+.mtnc-admin .mtnc-switch{position:relative;display:inline-block;width:44px;height:24px;vertical-align:middle}
+.mtnc-admin .mtnc-switch input{opacity:0;width:0;height:0}
+.mtnc-admin .mtnc-switch span{position:absolute;inset:0;border-radius:24px;background:#c3c4c7;transition:.15s;cursor:pointer}
+.mtnc-admin .mtnc-switch span:before{content:"";position:absolute;width:18px;height:18px;left:3px;top:3px;border-radius:50%;background:#fff;transition:.15s}
+.mtnc-admin .mtnc-switch input:checked+span{background:#2271b1}
+.mtnc-admin .mtnc-switch input:checked+span:before{transform:translateX(20px)}
+.mtnc-admin .mtnc-switch input:focus-visible+span{box-shadow:0 0 0 2px #fff,0 0 0 4px #2271b1}
+.mtnc-admin .mtnc-media img{display:block;max-width:240px;max-height:120px;margin:0 0 8px;border:1px solid #dcdcde;background:repeating-conic-gradient(#f0f0f1 0 25%,#fff 0 50%) 0 0/16px 16px}
+.mtnc-admin .mtnc-media input{width:25em;max-width:100%}
+.mtnc-admin .mtnc-themes{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:20px;margin-top:16px}
+.mtnc-admin .mtnc-theme{background:#fff;border:1px solid #dcdcde;border-radius:4px;overflow:hidden;display:flex;flex-direction:column}
+.mtnc-admin .mtnc-theme.active{border-color:#2271b1;box-shadow:0 0 0 1px #2271b1}
+.mtnc-admin .mtnc-swatch{height:150px;display:flex;flex-direction:column;justify-content:center;padding:18px;gap:8px}
+.mtnc-admin .mtnc-swatch b{font-size:20px;line-height:1.15}
+.mtnc-admin .mtnc-swatch em{display:block;height:6px;width:60%;border-radius:3px;opacity:.6}
+.mtnc-admin .mtnc-swatch u{display:block;height:22px;width:80px;border-radius:5px;text-decoration:none}
+.mtnc-admin .mtnc-theme .inside{padding:12px 14px;flex:1;display:flex;flex-direction:column;gap:8px}
+.mtnc-admin .mtnc-theme h3{margin:0;font-size:14px}
+.mtnc-admin .mtnc-theme p{margin:0;color:#646970}
+.mtnc-admin .mtnc-theme .actions{display:flex;gap:6px;margin-top:auto}
+.mtnc-admin .mtnc-social-row{display:flex;align-items:center;gap:8px;margin:0 0 6px}
+.mtnc-admin .mtnc-social-row .dashicons{color:#50575e}
+.mtnc-admin .mtnc-social-row label{width:110px}
+.mtnc-admin .mtnc-social-row input{width:24em;max-width:100%}
+.mtnc-admin .mtnc-copy{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.mtnc-admin h2.title{margin-top:28px}
+</style>
+<div class="wrap mtnc-admin">
+<h1 class="wp-heading-inline"><span class="dashicons dashicons-hammer" style="font-size:28px;width:28px;height:28px;margin-right:6px;color:#2271b1"></span>Maintenance</h1>
+<a href="{{.PreviewURL}}" class="page-title-action" target="_blank" rel="noopener">Preview</a>
+<hr class="wp-header-end">
+{{template "notices" $}}
+<div class="mtnc-head">
+	<span class="mtnc-state{{if .Closed}} is-on{{end}}"><i aria-hidden="true"></i>{{if .Closed}}Maintenance mode is ON{{if eq .S.Mode "coming_soon"}} (Coming Soon, 200){{else}} (503 Service Unavailable){{end}}{{else}}Maintenance mode is OFF{{end}}</span>
+	<span class="description">{{if .Closed}}Visitors see the maintenance page. You see the normal site because you are logged in.{{else}}Everyone sees the normal site.{{end}}</span>
+</div>
+<nav class="nav-tab-wrapper wp-clearfix" aria-label="Secondary menu">
+	{{range .Tabs}}<a href="/wp-admin/admin?page=maintenance&amp;tab={{.Key}}" class="nav-tab{{if eq .Key $.Data.Tab}} nav-tab-active{{end}}">{{.Label}}</a>{{end}}
+</nav>
+
+{{if eq .Tab "general"}}
+<form method="post" action="/wp-admin/admin?page=maintenance">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="tab" value="general">
+<table class="form-table" role="presentation">
+<tr><th scope="row">Status</th><td><label class="mtnc-switch"><input type="checkbox" name="status" value="1"{{if .S.Enabled}} checked{{end}}><span></span></label> <span>Maintenance mode is on</span>
+	<p class="description">While it is on, visitors see the maintenance page. wp-admin and the login screen always stay reachable.</p></td></tr>
+<tr><th scope="row">Mode</th><td><fieldset><legend class="screen-reader-text">Mode</legend>
+	<label><input type="radio" name="mode" value="maintenance"{{if eq .S.Mode "maintenance"}} checked{{end}}> <strong>Maintenance</strong> &mdash; HTTP 503 Service Unavailable with <code>Retry-After</code>, so search engines come back later and keep the site's rankings</label><br>
+	<label><input type="radio" name="mode" value="coming_soon"{{if eq .S.Mode "coming_soon"}} checked{{end}}> <strong>Coming Soon</strong> &mdash; HTTP 200, for a site that is not launched yet</label></fieldset></td></tr>
+<tr><th scope="row">Logo</th><td><div class="mtnc-media"><img alt="" src="{{.S.LogoURL}}"><input type="url" name="logo" value="{{.S.LogoURL}}" class="regular-text" placeholder="https://"> {{if .CanUpload}}<button type="button" class="button mtnc-media-select" data-title="Select Logo">Select Image</button>{{end}} <button type="button" class="button-link mtnc-media-remove">Remove</button></div>
+	<p><label>Width <input type="number" name="logo_width" class="small-text" min="16" max="1200" value="{{.S.LogoWidth}}"> px</label></p></td></tr>
+<tr><th scope="row"><label for="header_text">Headline</label></th><td><input type="text" id="header_text" name="header_text" class="large-text" value="{{.S.Heading}}"></td></tr>
+<tr><th scope="row"><label for="content">Text</label></th><td><textarea id="content" name="content" rows="6" class="large-text">{{.S.Content}}</textarea><p class="description">HTML is allowed. <code>%sitetitle%</code>, <code>%sitetagline%</code> and <code>%year%</code> are replaced.</p></td></tr>
+<tr><th scope="row"><label for="footer_text">Footer</label></th><td><input type="text" id="footer_text" name="footer_text" class="large-text" value="{{.S.FooterText}}"><p class="description">HTML is allowed; the same placeholders work here.</p></td></tr>
+</table>
+<p class="submit"><input type="submit" class="button button-primary" value="Save Changes"> <a class="button" href="{{.PreviewURL}}" target="_blank" rel="noopener">Preview</a></p>
+</form>
+{{end}}
+
+{{if eq .Tab "themes"}}
+<p>Pick a premade design. Activating a theme sets the colors, fonts and layout on the Design tab; your texts, logo and modules stay.</p>
+<div class="mtnc-themes">
+{{range .Themes}}<div class="mtnc-theme{{if eq .Key $.Data.S.Theme}} active{{end}}">
+	<div class="mtnc-swatch" style="background:{{if eq .BgType "gradient"}}linear-gradient(135deg,{{.BgColor}},{{.BgColor2}}){{else if eq .Key "split"}}linear-gradient(90deg,{{.BgColor}} 58%,{{.BgColor2}} 58%){{else}}{{.BgColor}}{{end}};text-align:{{if eq .Position "left"}}left{{else}}center{{end}};align-items:{{if eq .Position "left"}}flex-start{{else}}center{{end}}">
+		<b style="color:{{.Heading}}">We'll be back soon</b><em style="background:{{.FontColor}}"></em><u style="background:{{.Accent}}"></u>
+	</div>
+	<div class="inside"><h3>{{.Name}}{{if eq .Key $.Data.S.Theme}} <span class="description">&mdash; Active</span>{{end}}</h3><p>{{.Description}}</p>
+		<div class="actions">
+			<form method="post" action="/wp-admin/admin?page=maintenance"><input type="hidden" name="_wpnonce" value="{{$.Data.Nonce}}"><input type="hidden" name="tab" value="themes"><input type="hidden" name="theme" value="{{.Key}}"><button class="button{{if ne .Key $.Data.S.Theme}} button-primary{{end}}">{{if eq .Key $.Data.S.Theme}}Reapply{{else}}Activate{{end}}</button></form>
+			<a class="button" href="{{$.Data.PreviewURL}}&amp;theme={{.Key}}" target="_blank" rel="noopener">Preview</a>
+		</div></div>
+</div>
+{{end}}</div>
+{{end}}
+
+{{if eq .Tab "design"}}
+<form method="post" action="/wp-admin/admin?page=maintenance">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="tab" value="design">
+<h2 class="title">Background</h2>
+<table class="form-table" role="presentation">
+<tr><th scope="row">Background Type</th><td><fieldset><legend class="screen-reader-text">Background Type</legend>
+	<label><input type="radio" name="background_type" value="image"{{if eq .S.BgType "image"}} checked{{end}}> Image</label> &nbsp;
+	<label><input type="radio" name="background_type" value="gradient"{{if eq .S.BgType "gradient"}} checked{{end}}> Gradient</label> &nbsp;
+	<label><input type="radio" name="background_type" value="color"{{if eq .S.BgType "color"}} checked{{end}}> Color</label></fieldset></td></tr>
+<tr><th scope="row">Background Image</th><td><div class="mtnc-media"><img alt="" src="{{.S.BgImageURL}}"><input type="url" name="background_image" value="{{.S.BgImageURL}}" class="regular-text" placeholder="https://"> {{if .CanUpload}}<button type="button" class="button mtnc-media-select" data-title="Select Background Image">Select Image</button>{{end}} <button type="button" class="button-link mtnc-media-remove">Remove</button></div>
+	<p><label>Size <select name="background_size_opt">{{range $k := list "cover" "contain" "auto"}}<option value="{{$k}}"{{if eq $k $.Data.S.BgSize}} selected{{end}}>{{$k}}</option>{{end}}</select></label>
+	<label>Position <select name="background_position">{{range $v := list "center center" "top center" "bottom center" "center left" "center right"}}<option value="{{$v}}"{{if eq $v $.Data.S.BgPosition}} selected{{end}}>{{$v}}</option>{{end}}</select></label></p>
+	<p class="description">Used when the type is Image (and by the Split theme's panel).</p></td></tr>
+<tr><th scope="row"><label for="background_color">Background Color</label></th><td><input type="color" id="background_color" name="background_color" value="{{.S.BgColor}}"> <label>Second color (gradient, Split panel) <input type="color" name="background_color_2" value="{{.S.BgColor2}}"></label></td></tr>
+<tr><th scope="row"><label for="background_blur">Blur</label></th><td><input type="range" id="background_blur" name="background_blur" min="0" max="40" value="{{.S.BgBlur}}" oninput="this.nextElementSibling.value=this.value+' px'"> <output>{{.S.BgBlur}} px</output></td></tr>
+<tr><th scope="row"><label for="overlay_opacity">Dark Overlay</label></th><td><input type="range" id="overlay_opacity" name="overlay_opacity" min="0" max="90" value="{{.S.Overlay}}" oninput="this.nextElementSibling.value=this.value+' %'"> <output>{{.S.Overlay}} %</output><p class="description">Darkens a photo so the text stays readable.</p></td></tr>
+</table>
+<h2 class="title">Layout &amp; Typography</h2>
+<table class="form-table" role="presentation">
+<tr><th scope="row"><label for="content_position">Content Position</label></th><td><select id="content_position" name="content_position">{{range $k := list "middle" "left" "right" "top" "bottom"}}<option value="{{$k}}"{{if eq $k $.Data.S.ContentPosition}} selected{{end}}>{{$k}}</option>{{end}}</select></td></tr>
+<tr><th scope="row"><label for="content_width">Content Width</label></th><td><input type="number" id="content_width" name="content_width" class="small-text" min="320" max="1600" value="{{.S.ContentWidth}}"> px</td></tr>
+<tr><th scope="row">Content Box</th><td><label><input type="checkbox" name="content_overlay" value="1"{{if .S.ContentBox}} checked{{end}}> Put the content on a frosted card</label></td></tr>
+<tr><th scope="row"><label for="body_font">Font</label></th><td><select id="body_font" name="body_font">{{range .Fonts}}<option value="{{.Key}}"{{if eq .Key $.Data.S.FontFamily}} selected{{end}}>{{.Label}}</option>{{end}}</select>
+	<label>Size <input type="number" name="body_font_size" class="small-text" min="12" max="32" value="{{.S.FontSize}}"> px</label>
+	<p class="description">Fonts installed on the visitor's device: the page loads nothing from other servers.</p></td></tr>
+<tr><th scope="row">Colors</th><td>
+	<label><input type="color" name="heading_color" value="{{.S.HeadingColor}}"> Headline</label> &nbsp;
+	<label><input type="color" name="body_font_color" value="{{.S.FontColor}}"> Text</label> &nbsp;
+	<label><input type="color" name="body_link_color" value="{{.S.LinkColor}}"> Links</label> &nbsp;
+	<label><input type="color" name="controls_color" value="{{.S.AccentColor}}"> Buttons &amp; accents</label></td></tr>
+<tr><th scope="row"><label for="custom_css">Custom CSS</label></th><td><textarea id="custom_css" name="custom_css" rows="8" class="large-text code" placeholder=".mtnc h1 { letter-spacing: 0; }">{{.S.CustomCSS}}</textarea><p class="description">Added after the theme's styles. The page's root element has the classes <code>mtnc theme-{{.S.Theme}} pos-{{.S.ContentPosition}}</code>.</p></td></tr>
+</table>
+<p class="submit"><input type="submit" class="button button-primary" value="Save Changes"> <a class="button" href="{{.PreviewURL}}" target="_blank" rel="noopener">Preview</a></p>
+</form>
+{{end}}
+
+{{if eq .Tab "modules"}}
+<form method="post" action="/wp-admin/admin?page=maintenance">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="tab" value="modules">
+<h2 class="title">Countdown</h2>
+<table class="form-table" role="presentation">
+<tr><th scope="row">Countdown</th><td><label><input type="checkbox" name="countdown" value="1"{{if .S.Countdown}} checked{{end}}> Show a countdown to the date below</label></td></tr>
+<tr><th scope="row"><label for="expiry_date">Ends</label></th><td><input type="datetime-local" id="expiry_date" name="expiry_date" value="{{.S.CountdownEnd}}"> <span class="description">Site time zone: {{.TimeZone}}{{if .EndPassed}} &mdash; <strong>this date has passed</strong>{{end}}</span>
+	<p class="description">While the countdown runs, <code>Retry-After</code> tells search engines exactly when to come back.</p></td></tr>
+<tr><th scope="row"><label for="countdown_label">Label</label></th><td><input type="text" id="countdown_label" name="countdown_label" class="regular-text" value="{{.S.CountdownLabel}}"></td></tr>
+<tr><th scope="row">When It Ends</th><td><label><input type="checkbox" name="auto_disable" value="1"{{if .S.AutoDisable}} checked{{end}}> Disable maintenance mode when the countdown ends</label><p class="description">The site opens by itself at that moment; open maintenance pages reload.</p></td></tr>
+</table>
+<h2 class="title">Progress Bar</h2>
+<table class="form-table" role="presentation">
+<tr><th scope="row">Progress Bar</th><td><label><input type="checkbox" name="progress" value="1"{{if .S.Progress}} checked{{end}}> Show a progress bar</label></td></tr>
+<tr><th scope="row"><label for="progress_percent">Progress</label></th><td><input type="number" id="progress_percent" name="progress_percent" class="small-text" min="0" max="100" value="{{.S.ProgressPercent}}"> % &nbsp; <label>Label <input type="text" name="progress_label" class="regular-text" value="{{.S.ProgressLabel}}"></label></td></tr>
+</table>
+<h2 class="title">Subscribe Form</h2>
+<table class="form-table" role="presentation">
+<tr><th scope="row">Subscribe Form</th><td><label><input type="checkbox" name="subscribe" value="1"{{if .S.Subscribe}} checked{{end}}> Collect e-mail addresses of visitors who want to hear when the site opens</label><p class="description">Subscribers are listed on the <a href="/wp-admin/admin?page=maintenance&amp;tab=subscribers">Subscribers</a> tab and can be exported as CSV.</p></td></tr>
+<tr><th scope="row"><label for="subscribe_title">Title</label></th><td><input type="text" id="subscribe_title" name="subscribe_title" class="regular-text" value="{{.S.SubscribeTitle}}"></td></tr>
+<tr><th scope="row"><label for="subscribe_button">Button Text</label></th><td><input type="text" id="subscribe_button" name="subscribe_button" class="regular-text" value="{{.S.SubscribeButton}}"></td></tr>
+<tr><th scope="row"><label for="subscribe_thanks">Thank You Message</label></th><td><input type="text" id="subscribe_thanks" name="subscribe_thanks" class="large-text" value="{{.S.SubscribeThanks}}"></td></tr>
+<tr><th scope="row">Notification</th><td><label><input type="checkbox" name="subscribe_notify" value="1"{{if .S.SubscribeNotify}} checked{{end}}> E-mail the site admin about each new subscriber</label></td></tr>
+<tr><th scope="row">GDPR</th><td><label><input type="checkbox" name="gdpr" value="1"{{if .S.GDPR}} checked{{end}}> Require a consent checkbox</label>
+	<p><input type="text" name="gdpr_text" class="large-text" value="{{.S.GDPRText}}" aria-label="Consent text"></p>
+	<label><input type="checkbox" name="gdpr_policy_link" value="1"{{if .S.GDPRPolicyLink}} checked{{end}}> Link the <a href="/wp-admin/options-privacy">Privacy Policy page</a> (when it is published)</label>
+	<p class="description">Only the e-mail address, the time and the consent are stored &mdash; no IP address.</p></td></tr>
+</table>
+<h2 class="title">Social Icons</h2>
+<table class="form-table" role="presentation">
+<tr><th scope="row">Profiles</th><td>{{range .Networks}}<div class="mtnc-social-row"><span class="dashicons {{.Icon}}" aria-hidden="true"></span><label for="social_{{.Key}}">{{.Label}}</label><input type="{{if eq .Key "email"}}text{{else}}url{{end}}" id="social_{{.Key}}" name="social_{{.Key}}" value="{{.URL}}" placeholder="{{if eq .Key "email"}}hello@example.com{{else}}https://{{end}}"></div>{{end}}
+	<label><input type="checkbox" name="social_target" value="1"{{if .S.SocialNewTab}} checked{{end}}> Open links in a new tab</label><p class="description">Empty fields are not shown.</p></td></tr>
+</table>
+<h2 class="title">Custom HTML</h2>
+<table class="form-table" role="presentation">
+<tr><th scope="row"><label for="custom_html">HTML</label></th><td><textarea id="custom_html" name="custom_html" rows="5" class="large-text code">{{.S.CustomHTML}}</textarea><p class="description">Shown below the other modules. External scripts and frames are blocked by the page's Content Security Policy.</p></td></tr>
+</table>
+<p class="submit"><input type="submit" class="button button-primary" value="Save Changes"> <a class="button" href="{{.PreviewURL}}" target="_blank" rel="noopener">Preview</a></p>
+</form>
+{{end}}
+
+{{if eq .Tab "seo"}}
+<form method="post" action="/wp-admin/admin?page=maintenance">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="tab" value="seo">
+<table class="form-table" role="presentation">
+<tr><th scope="row"><label for="title">SEO Title</label></th><td><input type="text" id="title" name="title" class="large-text" value="{{.S.Title}}"><p class="description"><code>%sitetitle%</code> and <code>%sitetagline%</code> are replaced.</p></td></tr>
+<tr><th scope="row"><label for="description">Meta Description</label></th><td><textarea id="description" name="description" rows="3" class="large-text">{{.S.MetaDescription}}</textarea></td></tr>
+<tr><th scope="row">Favicon</th><td><div class="mtnc-media"><img alt="" src="{{.S.FaviconURL}}"><input type="url" name="favicon" value="{{.S.FaviconURL}}" class="regular-text" placeholder="https://"> {{if .CanUpload}}<button type="button" class="button mtnc-media-select" data-title="Select Favicon">Select Image</button>{{end}} <button type="button" class="button-link mtnc-media-remove">Remove</button></div></td></tr>
+<tr><th scope="row">Social Preview Image</th><td><div class="mtnc-media"><img alt="" src="{{.S.SocialImageURL}}"><input type="url" name="social_preview" value="{{.S.SocialImageURL}}" class="regular-text" placeholder="https://"> {{if .CanUpload}}<button type="button" class="button mtnc-media-select" data-title="Select Social Preview Image">Select Image</button>{{end}} <button type="button" class="button-link mtnc-media-remove">Remove</button></div><p class="description">Shown when the link is shared (<code>og:image</code>). 1200&times;630 works best.</p></td></tr>
+<tr><th scope="row">Search Engines</th><td><fieldset>
+	<label><input type="checkbox" name="noindex" value="1"{{if .S.NoIndex}} checked{{end}}> Ask search engines not to index the maintenance page (<code>noindex</code>)</label><br>
+	<label><input type="checkbox" name="excludese" value="1"{{if .S.ExcludeSE}} checked{{end}}> Show the normal website to search engine crawlers (Googlebot, Bingbot&hellip;)</label></fieldset></td></tr>
+<tr><th scope="row"><label for="retry_after">Retry-After</label></th><td><input type="number" id="retry_after" name="retry_after" class="small-text" min="1" max="168" value="{{.S.RetryAfter}}"> hours <p class="description">Sent with the 503 status. While a countdown runs, its remaining time is sent instead.</p></td></tr>
+<tr><th scope="row"><label for="analytics">Google Analytics</label></th><td><input type="text" id="analytics" name="analytics" class="regular-text code" value="{{.S.Analytics}}" placeholder="G-XXXXXXXXXX"><p class="description">Measurement ID. The tracking code is added to the maintenance page only.</p></td></tr>
+</table>
+<p class="submit"><input type="submit" class="button button-primary" value="Save Changes"></p>
+</form>
+{{end}}
+
+{{if eq .Tab "access"}}
+<form method="post" action="/wp-admin/admin?page=maintenance">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="tab" value="access">
+<table class="form-table" role="presentation">
+<tr><th scope="row">Logged-in Users</th><td><label><input type="checkbox" name="show_logged_in" value="1"{{if .S.ShowLoggedIn}} checked{{end}}> Show the normal site to logged-in users with these roles:</label>
+	<fieldset style="margin:8px 0 0 24px"><legend class="screen-reader-text">Roles</legend>{{range .Roles}}<label><input type="checkbox" name="roles[]" value="{{.Slug}}"{{if .Checked}} checked{{end}}{{if eq .Slug "administrator"}} disabled checked{{end}}> {{.Name}}</label><br>{{end}}</fieldset>
+	<p class="description">Administrators always see the site.</p></td></tr>
+<tr><th scope="row"><label for="ip_whitelist">IP Whitelisting</label></th><td><textarea id="ip_whitelist" name="ip_whitelist" rows="4" class="large-text code" placeholder="203.0.113.7&#10;192.168.0.0/16">{{.S.IPWhitelist}}</textarea><p class="description">One IP address or CIDR range per line. Your address: <code>{{.MyIP}}</code></p></td></tr>
+<tr><th scope="row"><label for="per_url_settings">URL Based Rules</label></th><td><select id="per_url_settings" name="per_url_settings">
+	<option value=""{{if eq .S.URLRules ""}} selected{{end}}>Disabled</option>
+	<option value="whitelist"{{if eq .S.URLRules "whitelist"}} selected{{end}}>Show the normal site on the URLs below</option>
+	<option value="blacklist"{{if eq .S.URLRules "blacklist"}} selected{{end}}>Show the maintenance page only on the URLs below</option></select>
+	<textarea name="per_url_enable_disable" rows="4" class="large-text code" placeholder="/contact/&#10;/shop/*" aria-label="URL List">{{.S.URLList}}</textarea>
+	<p class="description">Enter one URL per line. Start and end URLs with a forward slash (/); a trailing <code>*</code> matches every URL under it.</p></td></tr>
+<tr><th scope="row"><label for="direct_access_link">Secret Access Link</label></th><td><div class="mtnc-copy"><code>{{.HomeURL}}?</code><input type="text" id="direct_access_link" name="direct_access_link" class="regular-text" value="{{.S.SecretKey}}" placeholder="preview-full-site" pattern="[A-Za-z0-9_\-]*">{{if .SecretURL}} <button type="button" class="button" data-copy="{{.SecretURL}}"><span class="dashicons dashicons-clipboard" style="vertical-align:text-bottom"></span> Copy link</button>{{end}}</div>
+	<p><label>Valid for <input type="number" name="direct_access_hours" class="small-text" min="1" value="{{.S.SecretHours}}"> hours</label> after the link is opened.</p>
+	<p class="description">Anyone who opens the link sees the normal site without logging in. Change the key to lock old links out.</p></td></tr>
+<tr><th scope="row"><label for="site_password">Direct Access Password</label></th><td><input type="password" id="site_password" name="site_password" class="regular-text" value="{{.S.SitePassword}}" autocomplete="new-password">
+	<p><label><input type="checkbox" name="password_button" value="1"{{if .S.PasswordButton}} checked{{end}}> Show a password button on the maintenance page</label></p>
+	<p><label>Popup message <input type="text" name="login_message" class="regular-text" value="{{.S.PasswordMessage}}"></label></p>
+	<p><label>Button text <input type="text" name="login_button_text" class="regular-text" value="{{.S.PasswordButtonT}}"></label></p>
+	<p><label>Wrong password text <input type="text" name="login_wrong_password_text" class="regular-text" value="{{.S.PasswordWrong}}"></label></p>
+	<p class="description">Visitors who enter it see the normal site, for as long as the access link lasts. At least 4 characters; leave empty to turn it off.</p></td></tr>
+<tr><th scope="row">Login Button</th><td><label><input type="checkbox" name="login_button" value="1"{{if .S.LoginButton}} checked{{end}}> Show a login button that opens a login form on the maintenance page</label>
+	<p><label>Tooltip <input type="text" name="wplogin_button_tooltip" class="regular-text" value="{{.S.LoginTooltip}}"></label></p></td></tr>
+</table>
+<p class="submit"><input type="submit" class="button button-primary" value="Save Changes"></p>
+</form>
+<script>document.querySelectorAll('[data-copy]').forEach(function(b){b.addEventListener('click',function(){navigator.clipboard&&navigator.clipboard.writeText(b.getAttribute('data-copy')).then(function(){b.lastChild.textContent=' Copied';});});});</script>
+{{end}}
+
+{{if eq .Tab "advanced"}}
+<form method="post" action="/wp-admin/admin?page=maintenance">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="tab" value="advanced">
+<table class="form-table" role="presentation">
+<tr><th scope="row">Toolbar Menu</th><td><label><input type="checkbox" name="toolbar_menu" value="1"{{if .S.AdminBarMenu}} checked{{end}}> Show the Maintenance menu with its on/off switch in the toolbar</label></td></tr>
+<tr><th scope="row">REST API</th><td><label><input type="checkbox" name="block_rest" value="1"{{if .S.BlockREST}} checked{{end}}> Answer REST API requests of visitors who are not logged in with 503</label><p class="description">Logged-in users keep using the REST API (the editor needs it).</p></td></tr>
+<tr><th scope="row">Feeds &amp; Sitemaps</th><td><label><input type="checkbox" name="block_feeds" value="1"{{if .S.BlockFeeds}} checked{{end}}> Close RSS feeds and the XML sitemap too</label></td></tr>
+<tr><th scope="row">Page Cache</th><td><p class="description">{{if .CacheEnabled}}WPGo Cache is active: it is purged whenever maintenance mode or these settings change, and the maintenance page is never cached.{{else}}The maintenance page is sent with no-cache headers, so proxies and browsers never keep it.{{end}}</p></td></tr>
+</table>
+<p class="submit"><input type="submit" class="button button-primary" value="Save Changes"></p>
+</form>
+<h2 class="title">Export &amp; Import</h2>
+<p>Download all settings (except the site password) as a JSON file, or import a file exported from another WordPress Go site. Importing keeps maintenance mode as it is.</p>
+<p><a class="button" href="/wp-admin/admin?page=maintenance&amp;action=export&amp;_wpnonce={{.Nonce}}">Export Settings</a></p>
+<form method="post" action="/wp-admin/admin?page=maintenance" enctype="multipart/form-data">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="tab" value="advanced"><input type="hidden" name="import" value="1">
+<p><label for="import_file" class="screen-reader-text">Settings file</label><input type="file" id="import_file" name="import_file" accept="application/json,.json" required> <input type="submit" class="button" value="Import Settings"></p>
+</form>
+<h2 class="title">Reset</h2>
+<p>Restore every setting to its default. Maintenance mode stays as it is.</p>
+<p><a class="button button-link-delete" href="/wp-admin/admin?page=maintenance&amp;action=reset&amp;_wpnonce={{.Nonce}}" onclick="return confirm('Reset all Maintenance settings to their defaults?')">Reset Settings</a></p>
+{{end}}
+
+{{if eq .Tab "subscribers"}}
+<form method="post" action="/wp-admin/admin?page=maintenance">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="tab" value="subscribers">
+<div class="tablenav top">
+	<div class="alignleft actions bulkactions"><label for="bulk-action-selector-top" class="screen-reader-text">Select bulk action</label><select name="action" id="bulk-action-selector-top"><option value="-1">Bulk actions</option><option value="delete">Delete</option></select> <input type="submit" class="button action" value="Apply"></div>
+	<div class="alignleft actions"><a class="button" href="/wp-admin/admin?page=maintenance&amp;action=export_subscribers&amp;_wpnonce={{.Nonce}}">Export CSV</a></div>
+	<div class="tablenav-pages one-page"><span class="displaying-num">{{len .Subscribers}} {{if eq (len .Subscribers) 1}}item{{else}}items{{end}}</span></div>
+	<br class="clear">
+</div>
+<table class="wp-list-table widefat fixed striped table-view-list">
+<thead><tr><td id="cb" class="manage-column column-cb check-column"><input id="cb-select-all-1" type="checkbox"><label for="cb-select-all-1"><span class="screen-reader-text">Select All</span></label></td><th scope="col" class="manage-column column-primary">E-mail</th><th scope="col" class="manage-column">Consent</th><th scope="col" class="manage-column">Subscribed</th></tr></thead>
+<tbody id="the-list">
+{{range .Subscribers}}<tr><th scope="row" class="check-column"><input type="checkbox" name="subscriber[]" value="{{.ID}}" id="sub-{{.ID}}"><label for="sub-{{.ID}}"><span class="screen-reader-text">Select {{.Email}}</span></label></th><td class="column-primary"><a href="mailto:{{.Email}}">{{.Email}}</a></td><td>{{if .Consent}}Yes{{else}}&mdash;{{end}}</td><td>{{.Created.Format "2006/01/02 \\a\\t 3:04 pm"}}</td></tr>
+{{else}}<tr class="no-items"><td class="colspanchange" colspan="4">No subscribers yet. {{if not $.Data.S.Subscribe}}Turn on the subscribe form on the <a href="/wp-admin/admin?page=maintenance&amp;tab=modules">Modules</a> tab.{{end}}</td></tr>
+{{end}}</tbody>
+</table>
+</form>
+{{end}}
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}

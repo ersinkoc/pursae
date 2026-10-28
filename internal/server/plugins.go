@@ -307,6 +307,7 @@ func (s *Server) installedPlugins(c *gin.Context) []pluginRow {
 	if rows[2].Active {
 		rows[2].SettingsURL = "/wp-admin/gowebeditor-theme-builder"
 	}
+	rows = append(rows, s.maintPluginRow()) // Maintenance-Go (maintenance_admin.go)
 	for i := range rows {
 		rows[i].ActivateURL, rows[i].DeactivateURL = n("activate", rows[i].Slug), n("deactivate", rows[i].Slug)
 	}
@@ -440,6 +441,13 @@ func (s *Server) pluginAction(c *gin.Context, action, slug string) {
 		s.configureCache()
 		c.Redirect(http.StatusFound, "/wp-admin/plugins?"+action+"=true")
 		return
+	case maintSlug: // Maintenance-Go
+		if err := s.maintPluginAction(c, action); err != nil {
+			fail(err)
+			return
+		}
+		c.Redirect(http.StatusFound, "/wp-admin/plugins?"+action+"=true")
+		return
 	case golementorSlug:
 		q := action + "=true"
 		if action == "activate" {
@@ -519,7 +527,7 @@ func (s *Server) installPackage(ctx context.Context, data []byte) (*plugins.Mani
 		return nil, err
 	}
 	slug := pkg.Manifest.Slug
-	if slug == "classic-editor" || slug == "wpgo-cache" {
+	if slug == "classic-editor" || slug == "wpgo-cache" || slug == maintSlug {
 		return nil, errors.New("that slug belongs to a built-in plugin")
 	}
 	if err := os.WriteFile(filepath.Join(s.plugins.dir, slug+".zip"), data, 0o644); err != nil {
@@ -622,7 +630,7 @@ func (s *Server) pluginInstall(c *gin.Context) {
 	d := pluginInstallData{Tab: c.DefaultQuery("tab", "featured"), Search: strings.TrimSpace(c.Query("s")), UploadNonce: s.nonce(c, "plugin-upload")}
 	installed := map[string]bool{}
 	var native []marketItem
-	icons := map[string][2]string{"classic-editor": {"dashicons-edit-page", "blue"}, "wpgo-cache": {"dashicons-performance", "green"}, golementorSlug: {"dashicons-layout", "purple"}}
+	icons := map[string][2]string{"classic-editor": {"dashicons-edit-page", "blue"}, "wpgo-cache": {"dashicons-performance", "green"}, golementorSlug: {"dashicons-layout", "purple"}, maintSlug: {"dashicons-hammer", "teal"}}
 	for _, r := range s.installedPlugins(c) {
 		installed[r.Slug] = true
 		if r.Native {
