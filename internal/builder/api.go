@@ -114,3 +114,7 @@ var (
 	// KitCSS renders the kit stylesheet (post-<kitID>.css: --e-global-* variables and theme style).
 	KitCSS = func(kit *Document, rc *RenderContext) string { return "" }
 )
+
+// WidgetKnown reports whether the renderer has a widget type (the Studio library validates its
+// JSON with it).
+func WidgetKnown(name string) bool { return name != "" && widgetDefs[name] != nil }

@@ -1,0 +1,21 @@
+{
+  "title": "Hero with image on the right",
+  "category": "hero",
+  "tags": ["image", "two columns", "cta"],
+  "thumbnail": "hero-split.webp",
+  "content": [
+    {"elType": "container", "settings": {"content_width": "boxed", "flex_direction": "row", "flex_direction_mobile": "column",
+      "__globals__": {"background_color": "globals/colors?id=secondary"}, "background_background": "classic"},
+     "elements": [
+      {"elType": "container", "isInner": true, "settings": {"flex_direction": "column"}, "elements": [
+        {"elType": "widget", "widgetType": "heading", "settings": {"title": "FX-HERO-SPLIT headline", "header_size": "h1",
+          "__globals__": {"title_color": "globals/colors?id=primary", "typography_typography": "globals/typography?id=primary"}}},
+        {"elType": "widget", "widgetType": "button", "settings": {"text": "Talk to us", "link": {"url": "{{page:contact}}", "is_external": "", "nofollow": ""},
+          "__globals__": {"background_color": "globals/colors?id=accent"}}}
+      ]},
+      {"elType": "container", "isInner": true, "settings": {}, "elements": [
+        {"elType": "widget", "widgetType": "image", "settings": {"image": {"url": "{{library:images/hero.webp}}", "id": ""}}}
+      ]}
+    ]}
+  ]
+}

@@ -20,7 +20,7 @@ import (
 
 // gweRESTNamespace reports whether a REST namespace belongs to Golementor (its routes are 404 while it is off).
 func gweRESTNamespace(ns string) bool {
-	return ns == "elementor/v1" || ns == "elementor-pro/v1"
+	return ns == "elementor/v1" || ns == "elementor-pro/v1" || ns == "golementor/v1"
 }
 
 // gweSetSVGLoader points builder.SVGLoader at this site's uploads.
@@ -56,6 +56,7 @@ func (s *Server) registerGoWebEditorREST() {
 			h(c, r)
 		}
 	}
+	s.registerGolementorLibraryREST(editor) // Golementor Studio library (golementor_library.go)
 	static := func(v any) restHandler {
 		return editor(func(c *gin.Context, _ *restRequest) { c.JSON(http.StatusOK, v) })
 	}
@@ -185,7 +186,8 @@ func (s *Server) registerGoWebEditorREST() {
 
 	s.registerGoWebEditorV4REST() // Golementor v4 (atomic): gowebeditor_v4_rest.go
 	// The template library's list ($e.data "library/templates"): saved templates (source local) and the
-	// ready-made homepage designs (source remote, the Pages tab).
+	// ready-made homepage designs (source remote, the Pages tab) and the Studio sections (source remote,
+	// type block, the Blocks tab).
 	api.register(ns, "/elementor/v1/template-library/templates", map[string]restHandler{http.MethodGet: editor(func(c *gin.Context, _ *restRequest) {
 		res, err := s.gweLibraryData(c, nil)
 		if err != nil {
@@ -200,7 +202,7 @@ func (s *Server) registerGoWebEditorREST() {
 				out = append(out, t)
 			}
 		}
-		c.JSON(http.StatusOK, map[string]any{"templates": out, "config": map[string]any{}})
+		c.JSON(http.StatusOK, map[string]any{"templates": out, "config": res.(map[string]any)["config"]})
 	})}, nil)
 	api.register(ns, "/elementor/v1/favorites", map[string]restHandler{http.MethodGet: static([]any{})}, nil)
 	api.register(ns, "/elementor/v1/favorites/(?P<id>[\\w]+)", map[string]restHandler{http.MethodPost: static(map[string]any{}), http.MethodDelete: static(map[string]any{})}, nil)

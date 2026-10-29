@@ -115,6 +115,7 @@ func adminMenu(pending int, golementor, cache bool) []menuDef {
 			{slug: "gowebeditor-pro?tab=fonts", title: "Custom Fonts", cap: "manage_options"},
 			{slug: "gowebeditor-icons", title: "Custom Icons", cap: "manage_options"}, // gap-widgets
 			{slug: "gowebeditor-pro?tab=roles", title: "Role Manager", cap: "manage_options"},
+			{slug: "golementor-setup", title: "Site Setup", cap: "edit_theme_options"}, // Golementor Studio wizard
 			{slug: "gowebeditor-pro?tab=settings", title: "Settings", cap: "manage_options"},
 		}},
 		{slug: "themes", title: "Appearance", cap: "switch_themes", id: "menu-appearance", icon: "dashicons-admin-appearance", sub: []subDef{
@@ -292,6 +293,7 @@ var screenStyles = map[string][]string{
 	// Golementor Theme Builder
 	"admin/gowebeditor-theme-builder":    {},
 	"admin/gowebeditor-theme-conditions": {},
+	"admin/golementor-setup":             {}, // Golementor Studio setup wizard
 }
 
 // adminPage renders an admin screen with the shared chrome.

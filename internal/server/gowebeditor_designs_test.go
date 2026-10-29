@@ -57,8 +57,17 @@ func TestGolementorPagesPanelAndDesigns(t *testing.T) {
 	var lib struct {
 		Templates []map[string]any `json:"templates"`
 	}
-	if code != http.StatusOK || json.Unmarshal([]byte(b), &lib) != nil || len(lib.Templates) != len(gweDesigns) {
+	if code != http.StatusOK || json.Unmarshal([]byte(b), &lib) != nil {
 		t.Fatalf("library remote list: %d %.300s", code, b)
+	}
+	pages := lib.Templates[:0] // the Studio sections list there too, as blocks
+	for _, tp := range lib.Templates {
+		if tp["type"] == "page" {
+			pages = append(pages, tp)
+		}
+	}
+	if lib.Templates = pages; len(pages) != len(gweDesigns) {
+		t.Fatalf("library remote pages: %d, want %d", len(pages), len(gweDesigns))
 	}
 	if lib.Templates[0]["type"] != "page" || lib.Templates[0]["accessTier"] != "free" {
 		t.Errorf("design listing: %v", lib.Templates[0])

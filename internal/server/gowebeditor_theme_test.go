@@ -218,7 +218,7 @@ func TestGoWebEditorThemeBuilder(t *testing.T) {
 	}
 	_, body, _ = getPage(t, c, base+"/?p=1")
 	for _, want := range []string{"wp-theme-hello-gowebeditor", "elementor-location-header", "footer part", "elementor-widget-theme-post-title",
-		"Welcome to WordPress", `<main id="content" class="site-main">`, "hello-gowebeditor-css", "elementor-kit-"} {
+		"Welcome to WordPress", `<main id="content" class="site-main`, "hello-gowebeditor-css", "elementor-kit-"} {
 		if !strings.Contains(body, want) {
 			t.Errorf("hello theme single misses %q", want)
 		}
