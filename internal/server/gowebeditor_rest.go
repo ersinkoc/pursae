@@ -20,7 +20,7 @@ import (
 
 // gweRESTNamespace reports whether a REST namespace belongs to Golementor (its routes are 404 while it is off).
 func gweRESTNamespace(ns string) bool {
-	return ns == "elementor/v1" || ns == "elementor-pro/v1"
+	return ns == "elementor/v1" || ns == "elementor-pro/v1" || ns == "golementor/v1"
 }
 
 // gweSetSVGLoader points builder.SVGLoader at this site's uploads.

@@ -634,6 +634,7 @@ func (s *Server) gweEditor(c *gin.Context, p *store.Post) {
 	if js := s.gweEditorThemeScript(c, p); js != "" { // theme parts: Theme Builder / Save as theme
 		page = strings.Replace(page, "</body>", js+"</body>", 1)
 	}
+	page = s.gweStudioInject(c, p, page) // Golementor Studio, the simple panel (gowebeditor_studio.go)
 	c.Header("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0")
 	c.Data(http.StatusOK, "text/html; charset=UTF-8", []byte(page))
 }
