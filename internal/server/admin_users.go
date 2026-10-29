@@ -25,6 +25,7 @@ type userRow struct {
 	ResetURL           string // "Send password reset" row action (users.php?action=resetpassword)
 	PostsURL           string
 	IsSelf             bool
+	Security           template.HTML // AdminSecGo's Two-Step column
 }
 
 type usersListData struct {
@@ -36,6 +37,7 @@ type usersListData struct {
 	BulkNonce  string
 	Roles      []store.Role
 	SortLinks  map[string]sortLink
+	SecColumn  bool // AdminSecGo is active: the Two-Step column
 }
 
 type roleView struct {
@@ -79,7 +81,13 @@ func (s *Server) usersScreen(c *gin.Context) {
 		for _, raw := range c.QueryArray("users[]") {
 			id, _ := strconv.ParseInt(raw, 10, 64)
 			if id != u.ID {
+				before := ""
+				login := raw
+				if x, err := s.store.UserByID(ctx, id); err == nil {
+					before, login = strings.Join(x.Roles, ","), x.Login
+				}
 				_ = s.store.SetUserRoles(ctx, id, r, nil)
+				s.adminsecRoleChanged(c, id, login, before, r)
 			}
 		}
 		c.Redirect(http.StatusFound, "/wp-admin/users?update=promote")
@@ -133,6 +141,7 @@ func (s *Server) usersScreen(c *gin.Context) {
 		}
 		d.Rows = append(d.Rows, row)
 	}
+	d.SecColumn = s.adminsecUsersColumn(c, d.Rows, list) // AdminSecGo: two-step login status
 	d.Pagination = newPagination(total, 20, max(page, 1), *c.Request.URL)
 	var notices []notice
 	switch c.Query("update") {
@@ -238,10 +247,15 @@ func (s *Server) userDelete(c *gin.Context) {
 			c.String(http.StatusForbidden, "Sorry, you are not allowed to delete this user.")
 			return
 		}
+		victim := strconv.FormatInt(id, 10)
+		if x, err := s.store.UserByID(c, id); err == nil {
+			victim = x.Login
+		}
 		if err := s.store.DeleteUser(c, id, reassign); err != nil {
 			c.String(http.StatusInternalServerError, err.Error())
 			return
 		}
+		s.asAudit(c, asEvent{Event: "user_deleted", Severity: "warning", Object: victim, Message: "User " + victim + " deleted."})
 	}
 	s.purgeAll(c)
 	c.Redirect(http.StatusFound, "/wp-admin/users?update=del")
@@ -318,6 +332,8 @@ func (s *Server) userNew(c *gin.Context) {
 		}
 		if pass == "" {
 			errs = append(errs, "<strong>Error:</strong> Please enter a password.")
+		} else if msg := s.adminsecPasswordProblem([]string{role}, login, email, pass); msg != "" { // AdminSecGo password policy
+			errs = append(errs, "<strong>Error:</strong> "+template.HTMLEscapeString(msg))
 		}
 		if lt, et, _ := s.store.LoginOrEmailTaken(c, login, email); lt {
 			errs = append(errs, "<strong>Error:</strong> This username is already registered. Please choose another one.")
@@ -337,6 +353,7 @@ func (s *Server) userNew(c *gin.Context) {
 			if err == nil {
 				if nu, e := s.store.UserByID(c, newID); e == nil {
 					s.notifyNewUser(c, nu, c.PostForm("send_user_notification") == "1")
+					s.asAudit(c, asEvent{Event: "user_created", Severity: "notice", Object: nu.Login, Message: "User " + nu.Login + " created with the role " + role + "."})
 				}
 				c.Redirect(http.StatusFound, "/wp-admin/users?update=add")
 				return

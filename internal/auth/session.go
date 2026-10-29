@@ -35,6 +35,8 @@ type Session struct {
 type Manager struct {
 	pool   *pgxpool.Pool
 	secret []byte
+	// Idle, when set, returns the idle timeout: a session unused for longer ends (0: never).
+	Idle func() time.Duration
 }
 
 func NewManager(pool *pgxpool.Pool, secret string) *Manager {
@@ -77,6 +79,12 @@ func (m *Manager) Lookup(ctx context.Context, token string) (*Session, error) {
 	}
 	if err != nil {
 		return nil, err
+	}
+	if m.Idle != nil {
+		if idle := m.Idle(); idle > 0 && time.Since(lastSeen) > idle {
+			_, _ = m.pool.Exec(ctx, `DELETE FROM sessions WHERE id = $1`, s.ID)
+			return nil, ErrNoSession
+		}
 	}
 	if time.Since(lastSeen) > time.Minute {
 		_, _ = m.pool.Exec(ctx, `UPDATE sessions SET last_seen_at = now() WHERE id = $1`, s.ID)

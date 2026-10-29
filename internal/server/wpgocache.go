@@ -239,6 +239,9 @@ func (s *Server) pluginAdmin(c *gin.Context) {
 		c.Redirect(http.StatusFound, to)
 		return
 	}
+	if s.adminsecAdmin(c, page) { // AdminSecGo: admin?page=adminsecgo… (adminsec_admin.go)
+		return
+	}
 	if page == maintSlug { // Maintenance-Go (maintenance_admin.go)
 		s.maintAdmin(c)
 		return

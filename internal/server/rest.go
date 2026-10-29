@@ -174,12 +174,22 @@ func (api *restAPI) register(namespace, pattern string, methods map[string]restH
 // cookie auth) or HTTP Basic with an Application Password.
 func (s *Server) restAuthUser(c *gin.Context) (*store.User, error) {
 	if user, pass, ok := c.Request.BasicAuth(); ok {
+		if s.adminsecRESTLocked(c, user) { // AdminSecGo: block list and lockouts apply to the API too
+			return nil, errors.New("adminsec_locked")
+		}
 		u, err := s.store.UserByLoginOrEmail(c, user)
 		if err != nil {
+			if s.adminsecOn() {
+				s.adminsecLoginFailed(c, user, nil, "Unknown user (REST API).")
+			}
 			return nil, errors.New("incorrect_password")
 		}
+		// Application Passwords skip the second factor: they are the way REST clients sign in.
 		if s.checkAppPassword(c, u, pass) {
 			return u, nil
+		}
+		if s.adminsecOn() {
+			s.adminsecLoginFailed(c, user, u, "Wrong application password (REST API).")
 		}
 		return nil, errors.New("incorrect_password")
 	}
@@ -259,6 +269,8 @@ func (api *restAPI) serve(c *gin.Context, route string) {
 	if err != nil {
 		if err.Error() == "rest_cookie_invalid_nonce" {
 			restErr(c, http.StatusForbidden, "rest_cookie_invalid_nonce", "Cookie check failed")
+		} else if err.Error() == "adminsec_locked" {
+			restErr(c, http.StatusTooManyRequests, "too_many_retries", "Too many failed login attempts, or access from this IP address is blocked.")
 		} else {
 			restErr(c, http.StatusUnauthorized, "incorrect_password", "The provided password is an invalid application password.")
 		}
@@ -269,6 +281,9 @@ func (api *restAPI) serve(c *gin.Context, route string) {
 		c.Header("X-WP-Nonce", s.nonce(c, "wp_rest"))
 	}
 
+	if s.adminsecRESTBlocked(c, route, u) { // AdminSecGo: user enumeration, REST only for logged-in users
+		return
+	}
 	if route == "" || route == "/" {
 		api.index(c)
 		return

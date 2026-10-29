@@ -48,8 +48,19 @@ func main() {
 		fmt.Printf("applied %d migration(s) %v\n", len(applied), applied)
 	case "version":
 		fmt.Println("WordPress Go", server.Version)
+	case "adminsec": // AdminSecGo recovery: disable-hide-login, reset-user <login>, unlock-all, deactivate
+		pool, err := db.Connect(ctx, cfg.DatabaseURL)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer pool.Close()
+		out, err := server.AdminSecCLI(ctx, pool, os.Args[2:])
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println(out)
 	default:
-		flag.Usage = func() { fmt.Fprintln(os.Stderr, "usage: wpgo [serve|migrate|version]") }
+		flag.Usage = func() { fmt.Fprintln(os.Stderr, "usage: wpgo [serve|migrate|version|adminsec]") }
 		flag.Usage()
 		os.Exit(2)
 	}

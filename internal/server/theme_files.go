@@ -237,6 +237,10 @@ func (s *Server) themeFileAjax(c *gin.Context, action string) bool {
 	if action != "edit-theme-plugin-file" {
 		return false
 	}
+	if s.adminsecOn() && s.asLoad().DisableFileEdit { // AdminSecGo: DISALLOW_FILE_EDIT
+		c.JSON(http.StatusOK, gin.H{"success": false, "data": gin.H{"code": "disallowed_file_edit", "message": "File editing is disabled on this site."}})
+		return true
+	}
 	fail := func(code, msg string) {
 		c.JSON(http.StatusOK, gin.H{"success": false, "data": gin.H{"code": code, "message": msg}})
 	}

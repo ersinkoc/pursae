@@ -72,6 +72,9 @@ func (s *Server) site(c *gin.Context) {
 		c.Status(http.StatusNotFound)
 		return
 	}
+	if s.adminsecAuthorQuery(c) { // AdminSecGo: /?author=N enumeration
+		return
+	}
 	raw := strings.Trim(c.Request.URL.Path, "/")
 	if s.seogoIntercept(c, raw) { // SEO-Go: redirections, robots.txt, sitemaps (seogo_front.go)
 		return

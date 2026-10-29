@@ -875,8 +875,14 @@ func (api *restAPI) saveUser(c *gin.Context, r *restRequest, u *store.User) {
 			restErr(c, http.StatusBadRequest, "rest_user_invalid_password", "Passwords cannot contain the \"\\\" character.")
 			return
 		}
+		if msg := s.adminsecUserPasswordProblem(u, v); msg != "" { // AdminSecGo password policy
+			restErr(c, http.StatusBadRequest, "rest_user_invalid_password", msg)
+			return
+		}
 		if hash, err := auth.HashPassword(v); err == nil {
-			_ = s.store.SetUserPassword(c, u.ID, hash)
+			if s.store.SetUserPassword(c, u.ID, hash) == nil {
+				s.adminsecPasswordChanged(c, u)
+			}
 		}
 	}
 	for field, dst := range map[string]*string{"name": &u.DisplayName, "url": &u.URL, "locale": &u.Locale} {
@@ -899,7 +905,9 @@ func (api *restAPI) saveUser(c *gin.Context, r *restRequest, u *store.User) {
 		if len(roles) > 0 {
 			primary, extra = roles[0], roles[1:]
 		}
+		before := strings.Join(u.Roles, ",")
 		_ = s.store.SetUserRoles(c, u.ID, primary, extra)
+		s.adminsecRoleChanged(c, u.ID, u.Login, before, strings.Join(roles, ","))
 	}
 	if meta, ok := r.Body["meta"].(map[string]any); ok {
 		if prefs, ok := meta["persisted_preferences"]; ok {
@@ -968,6 +976,10 @@ func (api *restAPI) createUser(c *gin.Context, r *restRequest) {
 	}
 	if !hasRoles || len(roles) == 0 {
 		roles = []string{s.settings.String("default_role")}
+	}
+	if msg := s.adminsecPasswordProblem(roles, login, email, pass); msg != "" { // AdminSecGo password policy
+		restErr(c, http.StatusBadRequest, "rest_user_invalid_password", msg)
+		return
 	}
 	hash, err := auth.HashPassword(pass)
 	if err != nil {

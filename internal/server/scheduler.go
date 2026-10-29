@@ -87,6 +87,7 @@ func (s *Server) jobHandlers() map[string]jobHandler {
 			return s.mailer().Send(ctx, msg)
 		},
 		"wp_mail_smtp_daily": func(ctx context.Context, _ map[string]any) error { return s.mailSMTPDaily(ctx) },
+		"adminsecgo_daily":   func(ctx context.Context, _ map[string]any) error { return s.adminsecDaily(ctx) },
 	}
 }
 

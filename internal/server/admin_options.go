@@ -172,6 +172,7 @@ func (s *Server) optionsSave(c *gin.Context) {
 		s.denyNonce(c)
 		return
 	}
+	defer s.asAudit(c, asEvent{Event: "settings_updated", Severity: "notice", Object: page, Message: "Settings › " + strings.ToUpper(page[:1]) + page[1:] + " saved."})
 	values := map[string]any{}
 	for _, k := range keys {
 		raw, present := c.GetPostForm(k)

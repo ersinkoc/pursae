@@ -131,7 +131,7 @@ func (s *Server) renderTemplate(c *gin.Context, status int, set *template.Templa
 		c.String(http.StatusInternalServerError, "Template error")
 		return
 	}
-	c.Data(status, "text/html; charset=UTF-8", s.golylangHTML(c, buf.Bytes()))
+	c.Data(status, "text/html; charset=UTF-8", s.asStripVersion(c, s.golylangHTML(c, buf.Bytes())))
 }
 
 func (t *templates) funcs() template.FuncMap {
@@ -193,6 +193,7 @@ func (t *templates) coreFuncs(s *Server) template.FuncMap {
 			return out
 		},
 		"query":       func(v string) string { return url.QueryEscape(v) },
+		"loginURL":    func() string { return s.loginPath() }, // wp_login_url(): AdminSecGo may move it
 		"setting":     func(key string) any { return s.settings.Get(key) },
 		"settingStr":  func(key string) string { return s.settings.String(key) },
 		"settingBool": func(key string) bool { return s.settings.Bool(key) },
