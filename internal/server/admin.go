@@ -363,6 +363,7 @@ func (s *Server) adminPage(c *gin.Context, screen, title, bodyClass, tmpl string
 	v.Menu = s.acfgoMenu(c, v.Menu, screen)
 	// SEO-Go's menu (seogo.go)
 	v.Menu = s.seogoMenu(v.Menu, u, screen)
+	v.Menu = s.gooikeMenu(v.Menu, u, screen) // Gooike (gooike.go)
 	a := s.pageAssets(c)
 	a.Script("common", "admin-bar", "utils", "svg-painter")
 	v.ExtraStyles = s.styleTags(a) + s.pluginStyleTags("admin")

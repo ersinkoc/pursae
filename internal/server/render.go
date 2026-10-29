@@ -120,10 +120,15 @@ func (s *Server) renderAdminTemplate(c *gin.Context, status int, name string, da
 }
 
 func (s *Server) renderThemeTemplate(c *gin.Context, theme string, status int, name string, data any) {
-	s.renderTemplate(c, status, s.tmpl.getTheme(true, theme), name, data)
+	s.renderTemplateFiltered(c, status, s.tmpl.getTheme(true, theme), name, data, true)
 }
 
 func (s *Server) renderTemplate(c *gin.Context, status int, set *template.Template, name string, data any) {
+	s.renderTemplateFiltered(c, status, set, name, data, false)
+}
+
+// renderTemplateFiltered renders a template; site pages (front) also pass Gooike's embed blocking.
+func (s *Server) renderTemplateFiltered(c *gin.Context, status int, set *template.Template, name string, data any, front bool) {
 	var buf bytes.Buffer
 	if err := set.ExecuteTemplate(&buf, name, data); err != nil {
 		log.Printf("render %s: %v", name, err)
@@ -131,7 +136,11 @@ func (s *Server) renderTemplate(c *gin.Context, status int, set *template.Templa
 		c.String(http.StatusInternalServerError, "Template error")
 		return
 	}
-	c.Data(status, "text/html; charset=UTF-8", s.golylangHTML(c, buf.Bytes()))
+	out := buf.Bytes()
+	if front {
+		out = s.gooikeFilterPage(c, out) // Gooike: YouTube, Vimeo and Maps iframes wait for consent
+	}
+	c.Data(status, "text/html; charset=UTF-8", s.golylangHTML(c, out))
 }
 
 func (t *templates) funcs() template.FuncMap {

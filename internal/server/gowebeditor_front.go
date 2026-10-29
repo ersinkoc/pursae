@@ -498,7 +498,7 @@ func (s *Server) gweRenderTemplate(c *gin.Context, v *siteView, status int) bool
 			return false
 		}
 	}
-	c.Data(status, "text/html; charset=UTF-8", buf.Bytes())
+	c.Data(status, "text/html; charset=UTF-8", s.gooikeFilterPage(c, buf.Bytes())) // Gooike: embeds wait for consent
 	return true
 }
 

@@ -856,7 +856,7 @@ func (s *Server) renderSiteTemplate(c *gin.Context, v *siteView, status int) {
 			}
 		}
 	}
-	s.renderTemplate(c, status, set, name, v)
+	s.renderTemplateFiltered(c, status, set, name, v, true) // site pages pass Gooike's embed blocking
 }
 
 // themeTemplateFuncs are template functions any theme may use; package themes rely on them.
