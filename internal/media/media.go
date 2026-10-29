@@ -26,7 +26,8 @@ import (
 // (get_allowed_mime_types() without unfiltered_upload).
 var MimeTypes = map[string]string{
 	"jpg|jpeg|jpe": "image/jpeg", "gif": "image/gif", "png": "image/png", "bmp": "image/bmp", "tiff|tif": "image/tiff",
-	"webp": "image/webp", "avif": "image/avif", "ico": "image/x-icon", "heic": "image/heic",
+	"webp": "image/webp", "avif": "image/avif", "ico": "image/x-icon", "heic": "image/heic", "heif": "image/heif",
+	"svg":     "image/svg+xml", // sanitized on upload (formats.go)
 	"asf|asx": "video/x-ms-asf", "wmv": "video/x-ms-wmv", "wmx": "video/x-ms-wmx", "wm": "video/x-ms-wm", "avi": "video/avi",
 	"divx": "video/divx", "flv": "video/x-flv", "mov|qt": "video/quicktime", "mpeg|mpg|mpe": "video/mpeg", "mp4|m4v": "video/mp4",
 	"ogv": "video/ogg", "webm": "video/webm", "mkv": "video/x-matroska", "3gp|3gpp": "video/3gpp", "3g2|3gp2": "video/3gpp2",
@@ -121,6 +122,14 @@ func Save(uploadsDir string, dated bool, now time.Time, filename string, r io.Re
 	if cerr := f.Close(); err == nil {
 		err = cerr
 	}
+	if err == nil && mime == "image/svg+xml" && n <= 8<<20 {
+		err = sanitizeSVGFile(dst)
+		if st, serr := os.Stat(dst); err == nil && serr == nil {
+			n = st.Size()
+		}
+	} else if err == nil && mime == "image/svg+xml" {
+		err = ErrSVG
+	}
 	if err != nil {
 		os.Remove(dst)
 		return nil, err
@@ -182,6 +191,24 @@ func ProcessImage(uploadsDir, relPath string, sizes []Size) (*ImageInfo, error) 
 	img, format, err := image.Decode(f)
 	f.Close()
 	if err != nil {
+		// Formats that cannot be decoded here are still measured: SVG from its root element,
+		// AVIF/HEIC from their "ispe" box. They get no sub-sizes.
+		info := &ImageInfo{RelPath: relPath}
+		if st, serr := os.Stat(full); serr == nil {
+			info.FileSize = st.Size()
+		}
+		switch strings.ToLower(filepath.Ext(full)) {
+		case ".svg":
+			if data, rerr := os.ReadFile(full); rerr == nil {
+				info.Width, info.Height = svgDimensions(data)
+			}
+			return info, nil
+		case ".avif", ".heic", ".heif":
+			if w, h, ok := isoDimensions(full); ok {
+				info.Width, info.Height = w, h
+			}
+			return info, nil
+		}
 		return nil, err
 	}
 	b := img.Bounds()
@@ -189,16 +216,20 @@ func ProcessImage(uploadsDir, relPath string, sizes []Size) (*ImageInfo, error) 
 	if st, err := os.Stat(full); err == nil {
 		info.FileSize = st.Size()
 	}
-	canEncode := format == "jpeg" || format == "png" || format == "gif"
-	if !canEncode {
-		return info, nil
-	}
 	dir := filepath.Dir(full)
 	ext := filepath.Ext(full)
 	base := strings.TrimSuffix(filepath.Base(full), ext)
+	// Sub-sizes keep the format WordPress Go can write: WebP/BMP/TIFF become JPEG (PNG with
+	// transparency) and the original stays as uploaded, with no "-scaled" copy.
+	out := outputFormat(format, img)
+	native := out == format
+	outExt := ext
+	if !native {
+		outExt = formatExt(out)
+	}
 
 	src := img
-	if info.Width > BigImageThreshold || info.Height > BigImageThreshold {
+	if native && (info.Width > BigImageThreshold || info.Height > BigImageThreshold) {
 		w, h := fitWithin(info.Width, info.Height, BigImageThreshold, BigImageThreshold)
 		scaled := resize(img, w, h, false)
 		name := base + "-scaled" + ext
@@ -218,13 +249,13 @@ func ProcessImage(uploadsDir, relPath string, sizes []Size) (*ImageInfo, error) 
 		if !ok {
 			continue
 		}
-		out := resize(src, w, h, sz.Crop)
-		name := fmt.Sprintf("%s-%dx%d%s", base, w, h, ext)
+		resized := resize(src, w, h, sz.Crop)
+		name := fmt.Sprintf("%s-%dx%d%s", base, w, h, outExt)
 		path := filepath.Join(dir, name)
-		if err := encode(path, out, format); err != nil {
+		if err := encode(path, resized, out); err != nil {
 			continue
 		}
-		v := Variant{Name: sz.Name, File: name, Width: w, Height: h, Mime: "image/" + format}
+		v := Variant{Name: sz.Name, File: name, Width: w, Height: h, Mime: "image/" + out}
 		if st, err := os.Stat(path); err == nil {
 			v.Size = st.Size()
 		}

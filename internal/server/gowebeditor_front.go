@@ -304,6 +304,10 @@ func (s *Server) gweHead(c *gin.Context) template.HTML {
 				continue
 			}
 			seen[h] = true
+			if h == "e-swiper" && !seen["swiper"] { // e-swiper depends on Swiper's own stylesheet (carousels)
+				seen["swiper"] = true
+				sb.WriteString(gweLink("swiper", assets+"lib/swiper/v8/css/swiper.min.css"+ver))
+			}
 			if rel := s.gweStyleHref(h); rel != "" {
 				sb.WriteString(gweLink(h, assets+rel+ver))
 			}

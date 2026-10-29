@@ -32,7 +32,7 @@ func (s *Server) imageEditorAjax(c *gin.Context, action string) bool {
 	id, _ := strconv.ParseInt(defaultStr(c.PostForm("postid"), c.Query("postid")), 10, 64)
 	a, err := s.store.GetAttachment(c, id)
 	u := currentUser(c)
-	if err != nil || (a.UploaderID != u.ID && !u.Can("edit_others_posts", nil)) || !strings.HasPrefix(a.Mime, "image/") {
+	if err != nil || (a.UploaderID != u.ID && !u.Can("edit_others_posts", nil)) || !editableImage(a.Mime) {
 		c.String(http.StatusOK, "-1")
 		return true
 	}

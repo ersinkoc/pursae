@@ -217,7 +217,10 @@ func (s *Server) attachmentJS(c *gin.Context, a *store.Attachment) map[string]an
 		r["filesizeHumanReadable"] = media.HumanSize(a.FileSize)
 	}
 	if u.Can("upload_files", nil) && (a.UploaderID == u.ID || u.Can("edit_others_posts", nil)) {
-		r["nonces"] = map[string]any{"update": s.nonce(c, "update-post_"+id), "edit": s.nonce(c, "image_editor-"+id), "delete": s.nonce(c, "delete-post_"+id)}
+		r["nonces"] = map[string]any{"update": s.nonce(c, "update-post_"+id), "edit": false, "delete": s.nonce(c, "delete-post_"+id)}
+		if editableImage(a.Mime) { // like wp_image_editor_supports(): no Edit Image for SVG, AVIF, HEIC, WebP…
+			r["nonces"].(map[string]any)["edit"] = s.nonce(c, "image_editor-"+id)
+		}
 		r["editLink"] = "/wp-admin/post?post=" + id + "&action=edit"
 	}
 	if typ == "image" {
@@ -641,4 +644,9 @@ func (s *Server) enqueueMedia(c *gin.Context, postID int64) {
 	plupload = uploadErrorFlag.ReplaceAllString(plupload, "")
 	a.AddBefore("wp-plupload", plupload)
 	addBodyHTML(c, template.HTML(mediaTemplates))
+}
+
+// editableImage reports whether the image editor can open and save a file of this type.
+func editableImage(mime string) bool {
+	return mime == "image/jpeg" || mime == "image/png" || mime == "image/gif"
 }
