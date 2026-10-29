@@ -457,6 +457,10 @@ func (r *gfRender) tagHTML(t *gfTag) string {
 		return r.acceptanceHTML(t)
 	case "quiz":
 		return r.quizHTML(t)
+	case "captchac":
+		return r.captchacHTML(t)
+	case "captchar":
+		return r.captcharHTML(t)
 	case "file":
 		return r.fileHTML(t)
 	case "submit":

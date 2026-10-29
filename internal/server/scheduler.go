@@ -30,9 +30,10 @@ var coreEvents = []struct{ Name, Recurrence string }{
 	{"wp_scheduled_delete", "daily"},            // empty trash older than EMPTY_TRASH_DAYS
 	{"wp_scheduled_auto_draft_delete", "daily"}, // drop auto-drafts older than 7 days
 	{"delete_expired_transients", "daily"},
-	{"wp_session_gc", "hourly"},      // expired login sessions and old login attempts
-	{"wpgo_cache_janitor", "hourly"}, // expired page-cache entries
-	{"wpgo_hub_check", "daily"},      // ping the Hub and refresh the release / marketplace cache
+	{"wp_session_gc", "hourly"},           // expired login sessions and old login attempts
+	{"wpgo_cache_janitor", "hourly"},      // expired page-cache entries
+	{"wpgo_hub_check", "daily"},           // ping the Hub and refresh the release / marketplace cache
+	{"gontact_captcha_cleanup", "hourly"}, // expired Gontact Form CAPTCHA challenges
 }
 
 // recurrenceInterval maps a recurrence name to its interval: the WordPress names above, or
@@ -77,7 +78,8 @@ func (s *Server) jobHandlers() map[string]jobHandler {
 			}
 			return nil
 		},
-		"wpgo_hub_check": func(ctx context.Context, _ map[string]any) error { return s.hubPing(ctx) },
+		"wpgo_hub_check":          func(ctx context.Context, _ map[string]any) error { return s.hubPing(ctx) },
+		"gontact_captcha_cleanup": func(ctx context.Context, _ map[string]any) error { return s.gontactCaptchaCleanup(ctx) },
 		"wp_mail": func(ctx context.Context, p map[string]any) error {
 			var msg mail.Message
 			raw, _ := json.Marshal(p)

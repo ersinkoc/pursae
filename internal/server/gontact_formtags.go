@@ -14,7 +14,7 @@ import (
 var gfTagTypes = []string{
 	"text", "text*", "email", "email*", "url", "url*", "tel", "tel*",
 	"textarea", "textarea*", "number", "number*", "range", "range*", "date", "date*",
-	"select", "select*", "checkbox", "checkbox*", "radio", "acceptance", "quiz",
+	"select", "select*", "checkbox", "checkbox*", "radio", "acceptance", "quiz", "captchac", "captchar",
 	"file", "file*", "submit", "hidden", "count", "response",
 }
 

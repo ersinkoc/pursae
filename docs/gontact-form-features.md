@@ -26,7 +26,7 @@ Legend: ✅ implemented · ◐ implemented differently / partly · ✗ left out 
 | Contact › Add Contact Form (`page=wpcf7-new`) | ✅ prefilled with the default templates |
 | Edit screen (`page=wpcf7&post=ID&action=edit`): title, shortcode box, Status box (Duplicate, Delete, Save), "Do you need help?" box | ✅ |
 | Editor tabs **Form**, **Mail**, **Messages**, **Additional Settings** | ✅ same panels, field names (`wpcf7-form`, `wpcf7-mail[…]`, `wpcf7-mail-2[…]`, `wpcf7-messages[…]`, `wpcf7-additional-settings`) |
-| Form tab tag generator buttons: text, email, URL, tel, number, date, text area, drop-down menu, checkboxes, radio buttons, acceptance, quiz, file, submit | ✅ dialog with Field type (required), Name, Default value / placeholder, options, id/class, "Insert Tag" |
+| Form tab tag generator buttons: text, email, URL, tel, number, date, text area, drop-down menu, checkboxes, radio buttons, acceptance, quiz, CAPTCHA (image), CAPTCHA (answer), file, submit | ✅ dialog with Field type (required), Name, Default value / placeholder, options, id/class, "Insert Tag" |
 | Mail tab: To, From, Subject, Additional headers, Message body, Exclude lines with blank mail-tags, Use HTML content type, File attachments; list of available mail-tags | ✅ (the mail-tag list refreshes on save, not live while typing) |
 | Mail (2) with "Use Mail (2)" switch | ✅ |
 | Messages tab: every message with its description | ✅ all messages of the active modules |
@@ -67,7 +67,8 @@ pipes `"Label|value"`, `default:get` / `default:post_meta` / `default:user_*` / 
 | `hidden` | default | ✅ |
 | `count` (character counter) | `down`, `id` of the target | ✅ |
 | `response` (custom response output position) | | ✅ |
-| `captchac` / `captchar` (Really Simple CAPTCHA) | | ✗ requires a separate plugin |
+| `captchac` (CAPTCHA image, the Really Simple CAPTCHA engine) | `size:s\|m\|l` (60×20, 72×24, 84×28), `fg:#rrggbb`, `bg:#rrggbb`, `id:`, `class:` | ✅ built in, no plugin or external service; see §8 |
+| `captchar` (CAPTCHA answer field, same name as its `captchac`) | `size:`, `maxlength:`, `minlength:`, `placeholder`, `id:`, `class:`, `tabindex:` | ✅ |
 | `stripe` | | ✗ payments are out of scope |
 | `reflection`, `listo` data lists | | ✗ rarely used, would need data files |
 
@@ -85,8 +86,8 @@ wpcf7-validates-as-required …` classes, `wpcf7-not-valid-tip`, `wpcf7-response
 | REST `POST /wp-json/contact-form-7/v1/contact-forms/{id}/feedback` (multipart only, 415 otherwise; 404 `wpcf7_not_found`; 400 `wpcf7_unit_tag_not_found`) | ✅ |
 | Response `{contact_form_id, status, message, invalid_fields:[{field,message,idref,error_id}], posted_data_hash, into, demo_mode?}` | ✅ |
 | Statuses `validation_failed`, `acceptance_missing`, `spam`, `aborted`, `mail_sent`, `mail_failed` | ✅ |
-| `GET …/feedback/schema` (SWV rules), `GET …/refill` | ✅ schema with `required`, `email`, `url`, `tel`, `number`, `date`, `minlength`/`maxlength`, `file`, `minnumber`/`maxnumber`, `mindate`/`maxdate`, `enum`; refill returns quiz refresh |
-| Server-side validation and messages (`invalid_required`, `invalid_too_long/short`, `invalid_email/url/tel/number/date`, `number_too_small/large`, `date_too_early/late`, `quiz_answer_not_correct`, `upload_*`, `accept_terms`) | ✅ |
+| `GET …/feedback/schema` (SWV rules), `GET …/refill` | ✅ schema with `required`, `email`, `url`, `tel`, `number`, `date`, `minlength`/`maxlength`, `file`, `minnumber`/`maxnumber`, `mindate`/`maxdate`, `enum`; refill returns quiz refresh and new CAPTCHA images (`captcha: {name: url}`) |
+| Server-side validation and messages (`invalid_required`, `invalid_too_long/short`, `invalid_email/url/tel/number/date`, `number_too_small/large`, `date_too_early/late`, `quiz_answer_not_correct`, `captcha_not_match`, `upload_*`, `accept_terms`) | ✅ |
 | Non-JS fallback (plain POST back to the page, `#unit-tag` action) with "hangover" values and inline errors | ✅ |
 | `posted_data_hash` | ✅ |
 | Mail-tags `[field]`, `[_raw_field]`, `[_format_field "Y-m-d"]` (date), pipes, special tags `_remote_ip`, `_user_agent`, `_url`, `_date`, `_time`, `_invalid_fields`, `_contact_form_title`, `_serial_number`, `_post_id/_name/_title/_url/_author/_author_email`, `_site_title/_description/_url/_domain/_admin_email`, `_user_login/_email/_url/_first_name/_last_name/_nickname/_display_name` | ✅ (`_serial_number` = submission count kept in meta) |
@@ -114,7 +115,8 @@ wpcf7-validates-as-required …` classes, `wpcf7-not-valid-tip`, `wpcf7-response
 `data-status`, events `wpcf7beforesubmit`, `wpcf7submit`, `wpcf7invalid`, `wpcf7unaccepted`, `wpcf7spam`,
 `wpcf7mailsent`, `wpcf7mailfailed`, `wpcf7aborted`, `wpcf7statuschanged`, `wpcf7reset` (all bubbling, CF7's `detail`
 shape), inline tips + screen-reader list, reset after `mail_sent`, acceptance disabling the submit button, exclusive
-checkboxes, free text, URL auto-prefix, character counters, quiz refresh, spinner, `inert-on-*`, live validation on
+checkboxes, free text, URL auto-prefix, character counters, quiz and CAPTCHA refresh (after every submission, on load of
+a page from the page cache, and from the CAPTCHA refresh button), spinner, `inert-on-*`, live validation on
 change via the schema. ✅
 
 ## 8. Spam protection & integrations
@@ -128,11 +130,39 @@ change via the schema. ✅
 | Cloudflare Turnstile (site key / secret, `_wpcf7_turnstile_response`) | ✅ |
 | Akismet (`akismet:author` …) | ✗ no Akismet in WordPress Go |
 | Constant Contact, Brevo (Sendinblue), Stripe | ✗ third-party marketing/payment accounts, not relevant to a contact form clone here |
-| Really Simple CAPTCHA | ✗ separate plugin |
+| Really Simple CAPTCHA (`[captchac]` / `[captchar]`) | ✅ built in, see below |
+
+### Image CAPTCHA (`[captchac]` / `[captchar]`)
+
+CF7 needs the Really Simple CAPTCHA plugin for these tags; Gontact Form generates the images itself, in pure Go:
+
+- **Challenge**: 4 characters from `ABCDEFGHJKLMNPQRSTUVWXYZ23456789` (no 0/O, 1/I/l), drawn with the Go Bold font
+  (`golang.org/x/image/font/gofont`, BSD licence, compiled in) at 3× the displayed size, each character rotated up to
+  ±17° and shifted a little, over noise dots and lines in tints between `fg` and `bg`.
+- **Storage**: table `gontact_captcha` (migration `0012_gontact_captcha.sql`): random numeric prefix → HMAC-SHA256 of
+  prefix + answer (keyed with `gontact_form_secret`) and the PNG. The answer itself is never stored.
+- **Image URL**: `/wp-content/gontact-captcha/{prefix}.png`, `Cache-Control: no-store` (the page cache never keeps it);
+  404 for unknown, used or expired prefixes, and while the plugin is off.
+- **Markup** (CF7's): `<input type="hidden" name="_wpcf7_captcha_challenge_{name}" value="{prefix}">` +
+  `<img class="wpcf7-form-control wpcf7-captchac wpcf7-captcha-{name}" width height alt src>`; the answer field is
+  `<input class="wpcf7-form-control wpcf7-captchar wpcf7-text" autocomplete="off">` in the usual wrap. The image has a
+  descriptive `alt`, and a refresh control (`.wpcf7-captcha-refresh`, a `span role="button"` so it never steals the
+  `<label>` of the answer field) that the script shows and that fetches a new image.
+- **Validation**: the answer is canonicalized (case and blanks ignored) and checked against the posted prefix; the
+  challenge is deleted on its first check, right or wrong (single use). Wrong, reused, expired or missing →
+  `captcha_not_match` "Your entered code is incorrect." in `invalid_fields` (editable on the Messages tab).
+- **Expiry**: an hour. The hourly core event `gontact_captcha_cleanup` deletes older rows.
+- **Page cache**: a cached page carries one stale challenge; with `wpcf7.cached` the script resets the form on load and
+  the refill endpoint (`GET …/contact-forms/{id}/refill`, never cached) returns
+  `{"captcha": {"your-captcha": "…/{new prefix}.png"}}`, which the script puts into the image and the hidden field. The
+  feedback response carries the same `captcha` key, so every submission shows a new image. CF7's own front-end script
+  works unchanged against this response (it reads the prefix from the URL).
+- **Accessibility**: there is no audio CAPTCHA. The tag generator says so and points to the `[quiz]` tag as the
+  accessible alternative (a text question works with screen readers).
 
 ## 9. Not ported (summary)
 
-Flamingo, Akismet, Constant Contact, Brevo, Stripe, Really Simple CAPTCHA, `data:` option lists, reflection/listo,
+Flamingo, Akismet, Constant Contact, Brevo, Stripe, `data:` option lists, reflection/listo,
 translations (UI is English), CF7's welcome panel and promotional notices, multisite bits.
 
 ## 10. Implementation map
@@ -146,11 +176,12 @@ translations (UI is English), CF7's welcome panel and promotional notices, multi
 | Mail-tags and mail composition (queued through the core `wp_mail` job) | `internal/server/gontact_mail.go` |
 | Admin screens, config validator, Integration, block assets | `internal/server/gontact_admin.go`, `web/admin/templates/pages/gontact-*.html` |
 | Front-end and admin CSS/JS, Gotenberg block | `web/admin/assets/gontact/` (served at `/wp-content/gontact-form/` only while on) |
-| Tests | `internal/server/gontact_test.go` |
+| Image CAPTCHA (`[captchac]`/`[captchar]`): generation, storage, image route, refill, cleanup | `internal/server/gontact_captcha.go`, `internal/db/migrations/0012_gontact_captcha.sql` |
+| Tests | `internal/server/gontact_test.go`, `internal/server/gontact_captcha_test.go` |
 
 Core changes (small hooks): `internal/mail` `Message` gained `From`, `Cc`, `Bcc` and `Attachments` (multipart/mixed);
 the REST cookie check also reads `_wpnonce` from multipart bodies (WordPress reads `$_REQUEST`); the site handler lets
 a non-JS form POST render the page; plus one-line registrations in `plugins.go`, `admin.go`, `wpgocache.go`
-(`pluginAdmin`), `rest.go` (namespace hidden while off), `site_view.go`, `server.go` and `editor_block.go`.
+(`pluginAdmin`), `rest.go` (namespace hidden while off), `site_view.go`, `server.go` and `editor_block.go`; `scheduler.go` has the `gontact_captcha_cleanup` event.
 Options: `native_gontact_form`, `gontact_form_installed`, `gontact_form_secret`, `gontact_recaptcha_sitekey/secret`,
 `gontact_turnstile_sitekey/secret`.
