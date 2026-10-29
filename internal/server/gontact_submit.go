@@ -149,7 +149,7 @@ func (sub *gfSubmission) formValues(name string) []string {
 // setupPostedData is setup_posted_data(): every named field, pipes resolved, free text merged.
 func (sub *gfSubmission) setupPostedData() {
 	for _, t := range sub.tags {
-		if t.Name == "" || t.BaseType == "file" || t.BaseType == "count" {
+		if t.Name == "" || t.BaseType == "file" || t.BaseType == "count" || t.BaseType == "captchac" {
 			continue
 		}
 		vals := sub.formValues(t.Name)
@@ -165,7 +165,7 @@ func (sub *gfSubmission) setupPostedData() {
 				}
 			}
 		}
-		if t.BaseType == "text" || t.BaseType == "email" || t.BaseType == "url" || t.BaseType == "tel" || t.BaseType == "quiz" {
+		if t.BaseType == "text" || t.BaseType == "email" || t.BaseType == "url" || t.BaseType == "tel" || t.BaseType == "quiz" || t.BaseType == "captchar" {
 			for i := range vals {
 				vals[i] = strings.TrimSpace(strings.ReplaceAll(vals[i], "\n", " "))
 			}
@@ -317,6 +317,12 @@ func (sub *gfSubmission) validate() bool {
 			expected := first(sub.c.PostFormArray("_wpcf7_quiz_answer_" + t.Name))
 			if !hmac.Equal([]byte(expected), []byte(sub.s.gontactQuizHash(ans))) {
 				sub.invalidate(t, "quiz_answer_not_correct")
+			}
+		case "captchar":
+			// wpcf7_captcha_validation_filter(): the challenge is used up, right or wrong.
+			prefix := first(sub.c.PostFormArray("_wpcf7_captcha_challenge_" + t.Name))
+			if prefix == "" || !sub.s.gontactCaptchaCheck(sub.ctx, prefix, v) {
+				sub.invalidate(t, "captcha_not_match")
 			}
 		case "acceptance":
 			if acceptAsValidation && !t.has("optional") {
@@ -590,6 +596,9 @@ func (sub *gfSubmission) result() map[string]any {
 	if q := sub.s.gontactQuizRefill(sub.tags); len(q) > 0 {
 		out["quiz"] = q
 	}
+	if cp := sub.s.gontactCaptchaRefill(sub.ctx, sub.tags); len(cp) > 0 {
+		out["captcha"] = cp
+	}
 	return out
 }
 
@@ -755,6 +764,10 @@ func (s *Server) gontactRefillREST(c *gin.Context, r *restRequest) {
 	if q := s.gontactQuizRefill(tags); len(q) > 0 {
 		out["quiz"] = q
 	}
+	if cp := s.gontactCaptchaRefill(c, tags); len(cp) > 0 {
+		out["captcha"] = cp
+	}
+	c.Header("Cache-Control", "no-cache, must-revalidate, max-age=0, no-store, private")
 	restJSON(c, http.StatusOK, out)
 }
 

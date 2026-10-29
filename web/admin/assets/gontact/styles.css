@@ -160,3 +160,44 @@ form.submitting .wpcf7-spinner {
 .wpcf7-subscribers-only {
 	color: #dc3232;
 }
+
+/* Image CAPTCHA ([captchac]): the image and its refresh button (shown by the script). */
+.wpcf7 img.wpcf7-captchac {
+	vertical-align: middle;
+	border: 1px solid #c3c4c7;
+	image-rendering: auto;
+}
+
+.wpcf7 .wpcf7-captcha-refresh {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	box-sizing: border-box;
+	border: 1px solid #c3c4c7;
+	border-radius: 3px;
+	vertical-align: middle;
+	margin-inline-start: 0.4em;
+	padding: 0 0.45em;
+	min-width: 2em;
+	min-height: 2em;
+	font-size: 1.1em;
+	line-height: 1;
+	cursor: pointer;
+}
+
+.wpcf7 .wpcf7-captcha-refresh[hidden] {
+	display: none;
+}
+
+.wpcf7 .wpcf7-captcha-refresh .screen-reader-text {
+	position: absolute;
+	overflow: hidden;
+	clip: rect(1px, 1px, 1px, 1px);
+	clip-path: inset(50%);
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	border: 0;
+	word-wrap: normal !important;
+}

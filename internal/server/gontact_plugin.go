@@ -55,6 +55,7 @@ func (s *Server) gontactRESTHidden(ns string) bool { return ns == gontactNamespa
 // registerGontact wires the front-end assets; registerGontactREST the REST routes.
 func (s *Server) registerGontact(r *gin.Engine) {
 	s.static(r, gontactAssets, "admin/assets/gontact", s.gontactOnly())
+	r.GET(gfCaptchaPath+"/:file", s.gontactOnly(), s.gontactCaptchaImage) // [captchac] images (gontact_captcha.go)
 }
 
 // gontactActivate switches the plugin on: the post type, the secret and, the first time, the
@@ -204,6 +205,7 @@ var gfMessageDefs = []gfMessageDef{
 	{"number_too_small", "Number is smaller than minimum limit", "This field has a too small number."},
 	{"number_too_large", "Number is larger than maximum limit", "This field has a too large number."},
 	{"quiz_answer_not_correct", "Sender does not enter the correct answer to the quiz", "The answer to the quiz is incorrect."},
+	{"captcha_not_match", "The code that sender entered does not match the CAPTCHA", "Your entered code is incorrect."},
 	{"invalid_email", "Email address that the sender entered is invalid", "Please enter an email address."},
 	{"invalid_url", "URL that the sender entered is invalid", "Please enter a URL."},
 	{"invalid_tel", "Telephone number that the sender entered is invalid", "Please enter a telephone number."},

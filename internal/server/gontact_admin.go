@@ -239,7 +239,8 @@ type gfTagGen struct{ Type, Label string }
 
 var gfTagGenerators = []gfTagGen{{"text", "text"}, {"email", "email"}, {"url", "URL"}, {"tel", "tel"}, {"number", "number"},
 	{"date", "date"}, {"textarea", "text area"}, {"select", "drop-down menu"}, {"checkbox", "checkboxes"}, {"radio", "radio buttons"},
-	{"acceptance", "acceptance"}, {"quiz", "quiz"}, {"file", "file"}, {"submit", "submit"}}
+	{"acceptance", "acceptance"}, {"quiz", "quiz"},
+	{"captchac", "CAPTCHA (image)"}, {"captchar", "CAPTCHA (answer)"}, {"file", "file"}, {"submit", "submit"}}
 
 func (s *Server) gontactEditor(c *gin.Context, f *gfForm, isNew bool) {
 	d := gfEditorData{Form: f, New: isNew, ActiveTab: c.Query("active-tab"), TagGenerators: gfTagGenerators}
@@ -257,7 +258,7 @@ func (s *Server) gontactEditor(c *gin.Context, f *gfForm, isNew bool) {
 	}
 	_, tags := gfScan(f.Form, nil)
 	for _, t := range tags {
-		if t.Name != "" && t.BaseType != "count" && !gfContains(d.MailTags, "["+t.Name+"]") {
+		if t.Name != "" && t.BaseType != "count" && t.BaseType != "captchac" && t.BaseType != "captchar" && !gfContains(d.MailTags, "["+t.Name+"]") {
 			d.MailTags = append(d.MailTags, "["+t.Name+"]")
 		}
 	}

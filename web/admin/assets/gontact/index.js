@@ -178,6 +178,34 @@
 		} );
 	}
 
+	// resetCaptcha swaps in the new [captchac] images of a refill: the image URL ends in the new
+	// challenge prefix, which goes into the hidden _wpcf7_captcha_challenge_ field.
+	function resetCaptcha( form, refill ) {
+		Object.keys( refill ).forEach( function ( name ) {
+			var url = refill[ name ];
+			form.querySelectorAll( 'input[name="' + name + '"]' ).forEach( function ( input ) {
+				input.value = '';
+			} );
+			form.querySelectorAll( 'img.wpcf7-captcha-' + name.replace( /:/g, '' ) ).forEach( function ( img ) {
+				img.setAttribute( 'src', url );
+			} );
+			var match = /([0-9]+)\.(png|gif|jpeg)$/.exec( url );
+			if ( match ) {
+				form.querySelectorAll( 'input[name="_wpcf7_captcha_challenge_' + name + '"]' ).forEach( function ( input ) {
+					input.value = match[ 1 ];
+				} );
+			}
+		} );
+	}
+
+	function refreshCaptcha( form ) {
+		apiFetch( 'contact-forms/' + form.wpcf7.id + '/refill', { method: 'GET' } ).then( function ( response ) {
+			if ( response && response.captcha ) {
+				resetCaptcha( form, response.captcha );
+			}
+		} );
+	}
+
 	function submit( form, options ) {
 		options = options || {};
 		if ( 'submitting' === form.wpcf7.status ) {
@@ -476,15 +504,32 @@
 			wpcf7.submit( form, { submitter: e.submitter } );
 			e.preventDefault();
 		} );
-		form.addEventListener( 'wpcf7submit', function ( e ) {
+		var refilled = function ( e ) {
 			if ( e.detail.apiResponse && e.detail.apiResponse.quiz ) {
 				resetQuiz( form, e.detail.apiResponse.quiz );
 			}
-		} );
-		form.addEventListener( 'wpcf7reset', function ( e ) {
-			if ( e.detail.apiResponse && e.detail.apiResponse.quiz ) {
-				resetQuiz( form, e.detail.apiResponse.quiz );
+			if ( e.detail.apiResponse && e.detail.apiResponse.captcha ) {
+				resetCaptcha( form, e.detail.apiResponse.captcha );
 			}
+		};
+		form.addEventListener( 'wpcf7submit', refilled );
+		form.addEventListener( 'wpcf7reset', refilled );
+		form.querySelectorAll( '.wpcf7-captcha-refresh' ).forEach( function ( button ) {
+			var refresh = function ( e ) {
+				e.preventDefault();
+				refreshCaptcha( form );
+				var answer = form.querySelector( 'input[name="' + button.getAttribute( 'data-captcha' ) + '"]' );
+				if ( answer ) {
+					answer.focus();
+				}
+			};
+			button.hidden = false;
+			button.addEventListener( 'click', refresh );
+			button.addEventListener( 'keydown', function ( e ) {
+				if ( 'Enter' === e.key || ' ' === e.key ) {
+					refresh( e );
+				}
+			} );
 		} );
 		form.addEventListener( 'change', function ( e ) {
 			if ( e.target.closest( '.wpcf7-form-control' ) ) {
