@@ -1,0 +1,155 @@
+{
+ "title": "Full-width image with caption",
+ "category": "content",
+ "tags": [
+  "image",
+  "full width",
+  "caption"
+ ],
+ "thumbnail": "content-image-caption.webp",
+ "content": [
+  {
+   "id": "5b1d004",
+   "elType": "container",
+   "isInner": false,
+   "settings": {
+    "content_width": "full",
+    "flex_direction": "column",
+    "flex_gap": {
+     "unit": "px",
+     "size": 0,
+     "column": "0",
+     "row": "0",
+     "isLinked": true
+    },
+    "background_background": "classic",
+    "background_color": "#FFFFFF",
+    "padding": {
+     "unit": "px",
+     "top": "0",
+     "right": "0",
+     "bottom": "0",
+     "left": "0",
+     "isLinked": true
+    }
+   },
+   "elements": [
+    {
+     "id": "5b1d001",
+     "elType": "widget",
+     "widgetType": "image",
+     "settings": {
+      "image": {
+       "url": "{{library:images/nature-mountains.webp}}",
+       "id": "",
+       "size": "",
+       "alt": "Layered mountain ridges at dusk",
+       "source": "library"
+      },
+      "image_size": "full",
+      "width": {
+       "unit": "%",
+       "size": 100,
+       "sizes": []
+      },
+      "height": {
+       "unit": "px",
+       "size": 640,
+       "sizes": []
+      },
+      "height_tablet": {
+       "unit": "px",
+       "size": 480,
+       "sizes": []
+      },
+      "height_mobile": {
+       "unit": "px",
+       "size": 300,
+       "sizes": []
+      },
+      "object-fit": "cover",
+      "object-fit_tablet": "cover",
+      "object-fit_mobile": "cover"
+     },
+     "elements": []
+    },
+    {
+     "id": "5b1d003",
+     "elType": "container",
+     "isInner": true,
+     "settings": {
+      "content_width": "boxed",
+      "boxed_width": {
+       "unit": "px",
+       "size": 800,
+       "sizes": []
+      },
+      "flex_direction": "column",
+      "flex_gap": {
+       "unit": "px",
+       "size": 16,
+       "column": "16",
+       "row": "16",
+       "isLinked": true
+      },
+      "padding": {
+       "unit": "px",
+       "top": "16",
+       "right": "24",
+       "bottom": "16",
+       "left": "24",
+       "isLinked": false
+      },
+      "padding_tablet": {
+       "unit": "px",
+       "top": "16",
+       "right": "24",
+       "bottom": "16",
+       "left": "24",
+       "isLinked": false
+      },
+      "padding_mobile": {
+       "unit": "px",
+       "top": "12",
+       "right": "20",
+       "bottom": "12",
+       "left": "20",
+       "isLinked": false
+      }
+     },
+     "elements": [
+      {
+       "id": "5b1d002",
+       "elType": "widget",
+       "widgetType": "text-editor",
+       "settings": {
+        "editor": "<p><strong>Above the valley.</strong> The ridge trail at dusk, an hour’s walk from the village, best in early autumn.</p>",
+        "align": "center",
+        "typography_typography": "custom",
+        "typography_font_size": {
+         "unit": "px",
+         "size": 15,
+         "sizes": []
+        },
+        "typography_line_height": {
+         "unit": "em",
+         "size": 1.65,
+         "sizes": []
+        },
+        "__globals__": {
+         "text_color": "globals/colors?id=text"
+        },
+        "paragraph_spacing": {
+         "unit": "px",
+         "size": 0,
+         "sizes": []
+        }
+       },
+       "elements": []
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

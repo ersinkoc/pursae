@@ -1,0 +1,386 @@
+{
+ "title": "Logo strip",
+ "category": "logos",
+ "tags": [
+  "logos",
+  "clients",
+  "band"
+ ],
+ "thumbnail": "logos-strip.webp",
+ "content": [
+  {
+   "id": "5b0b009",
+   "elType": "container",
+   "isInner": false,
+   "settings": {
+    "content_width": "boxed",
+    "boxed_width": {
+     "unit": "px",
+     "size": 1200,
+     "sizes": []
+    },
+    "flex_direction": "column",
+    "flex_align_items": "center",
+    "flex_gap": {
+     "unit": "px",
+     "size": 28,
+     "column": "28",
+     "row": "28",
+     "isLinked": true
+    },
+    "flex_gap_tablet": {
+     "unit": "px",
+     "size": 24,
+     "column": "24",
+     "row": "24",
+     "isLinked": true
+    },
+    "flex_gap_mobile": {
+     "unit": "px",
+     "size": 20,
+     "column": "20",
+     "row": "20",
+     "isLinked": true
+    },
+    "background_background": "classic",
+    "background_color": "#F5F6F8",
+    "padding": {
+     "unit": "px",
+     "top": "56",
+     "right": "24",
+     "bottom": "56",
+     "left": "24",
+     "isLinked": false
+    },
+    "padding_tablet": {
+     "unit": "px",
+     "top": "48",
+     "right": "24",
+     "bottom": "48",
+     "left": "24",
+     "isLinked": false
+    },
+    "padding_mobile": {
+     "unit": "px",
+     "top": "40",
+     "right": "20",
+     "bottom": "40",
+     "left": "20",
+     "isLinked": false
+    }
+   },
+   "elements": [
+    {
+     "id": "5b0b001",
+     "elType": "widget",
+     "widgetType": "text-editor",
+     "settings": {
+      "editor": "<p>Trusted by teams at growing companies around the world</p>",
+      "align": "center",
+      "typography_typography": "custom",
+      "typography_font_size": {
+       "unit": "px",
+       "size": 15,
+       "sizes": []
+      },
+      "typography_font_size_tablet": {
+       "unit": "px",
+       "size": 15,
+       "sizes": []
+      },
+      "typography_font_size_mobile": {
+       "unit": "px",
+       "size": 14,
+       "sizes": []
+      },
+      "typography_font_weight": "500",
+      "typography_line_height": {
+       "unit": "em",
+       "size": 1.65,
+       "sizes": []
+      },
+      "__globals__": {
+       "text_color": "globals/colors?id=text"
+      },
+      "paragraph_spacing": {
+       "unit": "px",
+       "size": 12,
+       "sizes": []
+      }
+     },
+     "elements": []
+    },
+    {
+     "id": "5b0b008",
+     "elType": "container",
+     "isInner": true,
+     "settings": {
+      "container_type": "grid",
+      "grid_columns_grid": {
+       "unit": "fr",
+       "size": 6,
+       "sizes": []
+      },
+      "grid_columns_grid_tablet": {
+       "unit": "fr",
+       "size": 3,
+       "sizes": []
+      },
+      "grid_columns_grid_mobile": {
+       "unit": "fr",
+       "size": 2,
+       "sizes": []
+      },
+      "grid_rows_grid": {
+       "unit": "fr",
+       "size": 1,
+       "sizes": []
+      },
+      "grid_outline": "",
+      "grid_gaps": {
+       "unit": "px",
+       "size": 32,
+       "column": "32",
+       "row": "32",
+       "isLinked": true
+      },
+      "grid_gaps_tablet": {
+       "unit": "px",
+       "size": 28,
+       "column": "28",
+       "row": "28",
+       "isLinked": true
+      },
+      "grid_gaps_mobile": {
+       "unit": "px",
+       "size": 20,
+       "column": "20",
+       "row": "20",
+       "isLinked": true
+      },
+      "grid_align_items": "center",
+      "content_width": "full",
+      "width": {
+       "unit": "%",
+       "size": 100,
+       "sizes": []
+      },
+      "width_tablet": {
+       "unit": "%",
+       "size": 100,
+       "sizes": []
+      },
+      "width_mobile": {
+       "unit": "%",
+       "size": 100,
+       "sizes": []
+      },
+      "padding": {
+       "unit": "px",
+       "top": "0",
+       "right": "0",
+       "bottom": "0",
+       "left": "0",
+       "isLinked": true
+      },
+      "grid_justify_items": "center"
+     },
+     "elements": [
+      {
+       "id": "5b0b002",
+       "elType": "widget",
+       "widgetType": "image",
+       "settings": {
+        "image": {
+         "url": "{{library:images/logo-1.webp}}",
+         "id": "",
+         "size": "",
+         "alt": "Northwind logo",
+         "source": "library"
+        },
+        "image_size": "full",
+        "align": "center",
+        "opacity": {
+         "unit": "px",
+         "size": 0.75,
+         "sizes": []
+        },
+        "width": {
+         "unit": "px",
+         "size": 160,
+         "sizes": []
+        },
+        "width_mobile": {
+         "unit": "px",
+         "size": 120,
+         "sizes": []
+        }
+       },
+       "elements": []
+      },
+      {
+       "id": "5b0b003",
+       "elType": "widget",
+       "widgetType": "image",
+       "settings": {
+        "image": {
+         "url": "{{library:images/logo-2.webp}}",
+         "id": "",
+         "size": "",
+         "alt": "Lumen logo",
+         "source": "library"
+        },
+        "image_size": "full",
+        "align": "center",
+        "opacity": {
+         "unit": "px",
+         "size": 0.75,
+         "sizes": []
+        },
+        "width": {
+         "unit": "px",
+         "size": 160,
+         "sizes": []
+        },
+        "width_mobile": {
+         "unit": "px",
+         "size": 120,
+         "sizes": []
+        }
+       },
+       "elements": []
+      },
+      {
+       "id": "5b0b004",
+       "elType": "widget",
+       "widgetType": "image",
+       "settings": {
+        "image": {
+         "url": "{{library:images/logo-3.webp}}",
+         "id": "",
+         "size": "",
+         "alt": "Fieldstone logo",
+         "source": "library"
+        },
+        "image_size": "full",
+        "align": "center",
+        "opacity": {
+         "unit": "px",
+         "size": 0.75,
+         "sizes": []
+        },
+        "width": {
+         "unit": "px",
+         "size": 160,
+         "sizes": []
+        },
+        "width_mobile": {
+         "unit": "px",
+         "size": 120,
+         "sizes": []
+        }
+       },
+       "elements": []
+      },
+      {
+       "id": "5b0b005",
+       "elType": "widget",
+       "widgetType": "image",
+       "settings": {
+        "image": {
+         "url": "{{library:images/logo-4.webp}}",
+         "id": "",
+         "size": "",
+         "alt": "Kitebird logo",
+         "source": "library"
+        },
+        "image_size": "full",
+        "align": "center",
+        "opacity": {
+         "unit": "px",
+         "size": 0.75,
+         "sizes": []
+        },
+        "width": {
+         "unit": "px",
+         "size": 160,
+         "sizes": []
+        },
+        "width_mobile": {
+         "unit": "px",
+         "size": 120,
+         "sizes": []
+        }
+       },
+       "elements": []
+      },
+      {
+       "id": "5b0b006",
+       "elType": "widget",
+       "widgetType": "image",
+       "settings": {
+        "image": {
+         "url": "{{library:images/logo-5.webp}}",
+         "id": "",
+         "size": "",
+         "alt": "Orbit & Co logo",
+         "source": "library"
+        },
+        "image_size": "full",
+        "align": "center",
+        "opacity": {
+         "unit": "px",
+         "size": 0.75,
+         "sizes": []
+        },
+        "width": {
+         "unit": "px",
+         "size": 160,
+         "sizes": []
+        },
+        "width_mobile": {
+         "unit": "px",
+         "size": 120,
+         "sizes": []
+        }
+       },
+       "elements": []
+      },
+      {
+       "id": "5b0b007",
+       "elType": "widget",
+       "widgetType": "image",
+       "settings": {
+        "image": {
+         "url": "{{library:images/logo-6.webp}}",
+         "id": "",
+         "size": "",
+         "alt": "Atlas Labs logo",
+         "source": "library"
+        },
+        "image_size": "full",
+        "align": "center",
+        "opacity": {
+         "unit": "px",
+         "size": 0.75,
+         "sizes": []
+        },
+        "width": {
+         "unit": "px",
+         "size": 160,
+         "sizes": []
+        },
+        "width_mobile": {
+         "unit": "px",
+         "size": 120,
+         "sizes": []
+        }
+       },
+       "elements": []
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}
