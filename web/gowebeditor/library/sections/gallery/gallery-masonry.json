@@ -224,6 +224,8 @@
         "flex_direction": "row",
         "flex_direction_mobile": "row",
         "flex_wrap": "wrap",
+        "flex_justify_content": "flex-end",
+        "flex_justify_content_mobile": "flex-start",
         "flex_align_items": "center",
         "flex_gap": {
          "unit": "px",
@@ -369,6 +371,21 @@
        "isInner": true,
        "settings": {
         "content_width": "full",
+        "width": {
+         "unit": "%",
+         "size": 30,
+         "sizes": []
+        },
+        "width_tablet": {
+         "unit": "%",
+         "size": 30,
+         "sizes": []
+        },
+        "width_mobile": {
+         "unit": "%",
+         "size": 100,
+         "sizes": []
+        },
         "flex_direction": "column",
         "flex_gap": {
          "unit": "px",
@@ -399,12 +416,7 @@
          "left": "0",
          "isLinked": true
         },
-        "_flex_size": "grow",
-        "width_mobile": {
-         "unit": "%",
-         "size": 100,
-         "sizes": []
-        }
+        "_flex_size": "grow"
        },
        "elements": [
         {
@@ -509,6 +521,21 @@
        "isInner": true,
        "settings": {
         "content_width": "full",
+        "width": {
+         "unit": "%",
+         "size": 30,
+         "sizes": []
+        },
+        "width_tablet": {
+         "unit": "%",
+         "size": 30,
+         "sizes": []
+        },
+        "width_mobile": {
+         "unit": "%",
+         "size": 100,
+         "sizes": []
+        },
         "flex_direction": "column",
         "flex_gap": {
          "unit": "px",
@@ -539,12 +566,7 @@
          "left": "0",
          "isLinked": true
         },
-        "_flex_size": "grow",
-        "width_mobile": {
-         "unit": "%",
-         "size": 100,
-         "sizes": []
-        }
+        "_flex_size": "grow"
        },
        "elements": [
         {
@@ -649,6 +671,21 @@
        "isInner": true,
        "settings": {
         "content_width": "full",
+        "width": {
+         "unit": "%",
+         "size": 30,
+         "sizes": []
+        },
+        "width_tablet": {
+         "unit": "%",
+         "size": 30,
+         "sizes": []
+        },
+        "width_mobile": {
+         "unit": "%",
+         "size": 100,
+         "sizes": []
+        },
         "flex_direction": "column",
         "flex_gap": {
          "unit": "px",
@@ -679,12 +716,7 @@
          "left": "0",
          "isLinked": true
         },
-        "_flex_size": "grow",
-        "width_mobile": {
-         "unit": "%",
-         "size": 100,
-         "sizes": []
-        }
+        "_flex_size": "grow"
        },
        "elements": [
         {

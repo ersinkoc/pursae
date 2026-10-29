@@ -224,6 +224,8 @@
         "flex_direction": "row",
         "flex_direction_mobile": "row",
         "flex_wrap": "wrap",
+        "flex_justify_content": "flex-end",
+        "flex_justify_content_mobile": "flex-start",
         "flex_align_items": "center",
         "flex_gap": {
          "unit": "px",

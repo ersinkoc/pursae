@@ -130,6 +130,11 @@
          "sizes": []
         },
         "flex_direction": "row",
+        "flex_direction_tablet": "row",
+        "flex_direction_mobile": "row",
+        "flex_wrap": "nowrap",
+        "flex_wrap_tablet": "nowrap",
+        "flex_wrap_mobile": "nowrap",
         "flex_justify_content": "space-between",
         "flex_align_items": "center",
         "flex_gap": {

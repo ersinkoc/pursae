@@ -278,6 +278,8 @@
         "flex_direction": "row",
         "flex_direction_mobile": "row",
         "flex_wrap": "wrap",
+        "flex_justify_content": "flex-end",
+        "flex_justify_content_mobile": "flex-start",
         "flex_align_items": "center",
         "flex_gap": {
          "unit": "px",
@@ -373,6 +375,11 @@
        "sizes": []
       },
       "flex_direction": "row",
+      "flex_direction_tablet": "row",
+      "flex_direction_mobile": "row",
+      "flex_wrap": "nowrap",
+      "flex_wrap_tablet": "nowrap",
+      "flex_wrap_mobile": "nowrap",
       "flex_align_items": "flex-start",
       "flex_gap": {
        "unit": "px",
