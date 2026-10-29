@@ -1,0 +1,365 @@
+{
+ "title": "Call-out box",
+ "category": "content",
+ "tags": [
+  "callout",
+  "notice",
+  "box"
+ ],
+ "thumbnail": "content-callout.webp",
+ "content": [
+  {
+   "id": "5b1e006",
+   "elType": "container",
+   "isInner": false,
+   "settings": {
+    "content_width": "boxed",
+    "boxed_width": {
+     "unit": "px",
+     "size": 1200,
+     "sizes": []
+    },
+    "flex_direction": "column",
+    "flex_align_items": "center",
+    "flex_gap": {
+     "unit": "px",
+     "size": 48,
+     "column": "48",
+     "row": "48",
+     "isLinked": true
+    },
+    "flex_gap_tablet": {
+     "unit": "px",
+     "size": 40,
+     "column": "40",
+     "row": "40",
+     "isLinked": true
+    },
+    "flex_gap_mobile": {
+     "unit": "px",
+     "size": 32,
+     "column": "32",
+     "row": "32",
+     "isLinked": true
+    },
+    "padding": {
+     "unit": "px",
+     "top": "72",
+     "right": "24",
+     "bottom": "72",
+     "left": "24",
+     "isLinked": false
+    },
+    "padding_tablet": {
+     "unit": "px",
+     "top": "64",
+     "right": "24",
+     "bottom": "64",
+     "left": "24",
+     "isLinked": false
+    },
+    "padding_mobile": {
+     "unit": "px",
+     "top": "48",
+     "right": "20",
+     "bottom": "48",
+     "left": "20",
+     "isLinked": false
+    }
+   },
+   "elements": [
+    {
+     "id": "5b1e005",
+     "elType": "container",
+     "isInner": true,
+     "settings": {
+      "content_width": "full",
+      "width": {
+       "unit": "px",
+       "size": 920,
+       "sizes": []
+      },
+      "width_mobile": {
+       "unit": "%",
+       "size": 100,
+       "sizes": []
+      },
+      "width_tablet": {
+       "unit": "%",
+       "size": 100,
+       "sizes": []
+      },
+      "flex_direction": "column",
+      "flex_gap": {
+       "unit": "px",
+       "size": 8,
+       "column": "8",
+       "row": "8",
+       "isLinked": true
+      },
+      "background_background": "classic",
+      "background_color": "#F5F6F8",
+      "padding": {
+       "unit": "px",
+       "top": "36",
+       "right": "40",
+       "bottom": "36",
+       "left": "40",
+       "isLinked": false
+      },
+      "padding_tablet": {
+       "unit": "px",
+       "top": "32",
+       "right": "32",
+       "bottom": "32",
+       "left": "32",
+       "isLinked": true
+      },
+      "padding_mobile": {
+       "unit": "px",
+       "top": "24",
+       "right": "20",
+       "bottom": "24",
+       "left": "20",
+       "isLinked": false
+      },
+      "border_radius": {
+       "unit": "px",
+       "top": "0",
+       "right": "12",
+       "bottom": "12",
+       "left": "0",
+       "isLinked": false
+      },
+      "border_border": "solid",
+      "border_width": {
+       "unit": "px",
+       "top": "0",
+       "right": "0",
+       "bottom": "0",
+       "left": "4",
+       "isLinked": false
+      },
+      "__globals__": {
+       "border_color": "globals/colors?id=primary"
+      }
+     },
+     "elements": [
+      {
+       "id": "5b1e001",
+       "elType": "widget",
+       "widgetType": "icon-box",
+       "settings": {
+        "selected_icon": {
+         "value": "fas fa-lightbulb",
+         "library": "fa-solid"
+        },
+        "title_text": "Good to know before you book",
+        "description_text": "Most appointments can be moved free of charge up to 24 hours in advance. Bring any previous plans or photos, they help us understand what you have in mind.",
+        "title_size": "h3",
+        "position": "inline-start",
+        "text_align": "start",
+        "icon_size": {
+         "unit": "px",
+         "size": 20,
+         "sizes": []
+        },
+        "icon_space": {
+         "unit": "px",
+         "size": 16,
+         "sizes": []
+        },
+        "position_mobile": "block-start",
+        "content_vertical_alignment": "top",
+        "view": "stacked",
+        "shape": "circle",
+        "icon_padding": {
+         "unit": "px",
+         "size": 16,
+         "sizes": []
+        },
+        "__globals__": {
+         "primary_color": "globals/colors?id=primary",
+         "title_color": "globals/colors?id=secondary",
+         "description_color": "globals/colors?id=text"
+        },
+        "secondary_color": "#FFFFFF",
+        "title_typography_typography": "custom",
+        "title_typography_font_size": {
+         "unit": "px",
+         "size": 22,
+         "sizes": []
+        },
+        "title_typography_font_size_tablet": {
+         "unit": "px",
+         "size": 20,
+         "sizes": []
+        },
+        "title_typography_font_size_mobile": {
+         "unit": "px",
+         "size": 19,
+         "sizes": []
+        },
+        "title_typography_font_weight": "600",
+        "title_typography_line_height": {
+         "unit": "em",
+         "size": 1.35,
+         "sizes": []
+        },
+        "description_typography_typography": "custom",
+        "description_typography_font_size": {
+         "unit": "px",
+         "size": 16,
+         "sizes": []
+        },
+        "description_typography_line_height": {
+         "unit": "em",
+         "size": 1.6,
+         "sizes": []
+        },
+        "title_bottom_space": {
+         "unit": "px",
+         "size": 8,
+         "sizes": []
+        }
+       },
+       "elements": []
+      },
+      {
+       "id": "5b1e004",
+       "elType": "container",
+       "isInner": true,
+       "settings": {
+        "content_width": "full",
+        "flex_direction": "column",
+        "flex_gap": {
+         "unit": "px",
+         "size": 16,
+         "column": "16",
+         "row": "16",
+         "isLinked": true
+        },
+        "padding": {
+         "unit": "px",
+         "top": "0",
+         "right": "0",
+         "bottom": "0",
+         "left": "68",
+         "isLinked": false
+        },
+        "padding_tablet": {
+         "unit": "px",
+         "top": "0",
+         "right": "0",
+         "bottom": "0",
+         "left": "68",
+         "isLinked": false
+        },
+        "padding_mobile": {
+         "unit": "px",
+         "top": "0",
+         "right": "0",
+         "bottom": "0",
+         "left": "0",
+         "isLinked": true
+        }
+       },
+       "elements": [
+        {
+         "id": "5b1e003",
+         "elType": "container",
+         "isInner": true,
+         "settings": {
+          "content_width": "full",
+          "flex_direction": "row",
+          "flex_direction_mobile": "row",
+          "flex_wrap": "wrap",
+          "flex_align_items": "center",
+          "flex_gap": {
+           "unit": "px",
+           "size": 12,
+           "column": "12",
+           "row": "12",
+           "isLinked": true
+          },
+          "padding": {
+           "unit": "px",
+           "top": "0",
+           "right": "0",
+           "bottom": "0",
+           "left": "0",
+           "isLinked": true
+          }
+         },
+         "elements": [
+          {
+           "id": "5b1e002",
+           "elType": "widget",
+           "widgetType": "button",
+           "settings": {
+            "text": "Read the booking guide",
+            "link": {
+             "url": "#",
+             "is_external": "",
+             "nofollow": "",
+             "custom_attributes": ""
+            },
+            "typography_typography": "custom",
+            "typography_font_size": {
+             "unit": "px",
+             "size": 15,
+             "sizes": []
+            },
+            "typography_font_weight": "600",
+            "typography_line_height": {
+             "unit": "em",
+             "size": 1.2,
+             "sizes": []
+            },
+            "border_radius": {
+             "unit": "px",
+             "top": "6",
+             "right": "6",
+             "bottom": "6",
+             "left": "6",
+             "isLinked": true
+            },
+            "text_padding": {
+             "unit": "px",
+             "top": "0",
+             "right": "0",
+             "bottom": "0",
+             "left": "0",
+             "isLinked": true
+            },
+            "background_background": "classic",
+            "button_background_hover_background": "classic",
+            "background_color": "rgba(0,0,0,0)",
+            "button_background_hover_color": "rgba(0,0,0,0)",
+            "__globals__": {
+             "button_text_color": "globals/colors?id=primary",
+             "hover_color": "globals/colors?id=secondary"
+            },
+            "selected_icon": {
+             "value": "fas fa-arrow-right",
+             "library": "fa-solid"
+            },
+            "icon_align": "row-reverse",
+            "icon_indent": {
+             "unit": "px",
+             "size": 8,
+             "sizes": []
+            }
+           },
+           "elements": []
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

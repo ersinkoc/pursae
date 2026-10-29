@@ -1,0 +1,338 @@
+{
+ "title": "Quote block",
+ "category": "content",
+ "tags": [
+  "quote",
+  "testimonial",
+  "centered"
+ ],
+ "thumbnail": "content-quote.webp",
+ "content": [
+  {
+   "id": "5b1b009",
+   "elType": "container",
+   "isInner": false,
+   "settings": {
+    "content_width": "boxed",
+    "boxed_width": {
+     "unit": "px",
+     "size": 1200,
+     "sizes": []
+    },
+    "flex_direction": "column",
+    "flex_align_items": "center",
+    "flex_gap": {
+     "unit": "px",
+     "size": 48,
+     "column": "48",
+     "row": "48",
+     "isLinked": true
+    },
+    "flex_gap_tablet": {
+     "unit": "px",
+     "size": 40,
+     "column": "40",
+     "row": "40",
+     "isLinked": true
+    },
+    "flex_gap_mobile": {
+     "unit": "px",
+     "size": 32,
+     "column": "32",
+     "row": "32",
+     "isLinked": true
+    },
+    "background_background": "classic",
+    "background_color": "#F5F6F8",
+    "padding": {
+     "unit": "px",
+     "top": "96",
+     "right": "24",
+     "bottom": "96",
+     "left": "24",
+     "isLinked": false
+    },
+    "padding_tablet": {
+     "unit": "px",
+     "top": "80",
+     "right": "24",
+     "bottom": "80",
+     "left": "24",
+     "isLinked": false
+    },
+    "padding_mobile": {
+     "unit": "px",
+     "top": "64",
+     "right": "20",
+     "bottom": "64",
+     "left": "20",
+     "isLinked": false
+    }
+   },
+   "elements": [
+    {
+     "id": "5b1b008",
+     "elType": "container",
+     "isInner": true,
+     "settings": {
+      "content_width": "full",
+      "width": {
+       "unit": "px",
+       "size": 860,
+       "sizes": []
+      },
+      "width_mobile": {
+       "unit": "%",
+       "size": 100,
+       "sizes": []
+      },
+      "width_tablet": {
+       "unit": "%",
+       "size": 100,
+       "sizes": []
+      },
+      "flex_direction": "column",
+      "flex_align_items": "center",
+      "flex_gap": {
+       "unit": "px",
+       "size": 24,
+       "column": "24",
+       "row": "24",
+       "isLinked": true
+      },
+      "padding": {
+       "unit": "px",
+       "top": "0",
+       "right": "0",
+       "bottom": "0",
+       "left": "0",
+       "isLinked": true
+      }
+     },
+     "elements": [
+      {
+       "id": "5b1b001",
+       "elType": "widget",
+       "widgetType": "icon",
+       "settings": {
+        "selected_icon": {
+         "value": "fas fa-quote-left",
+         "library": "fa-solid"
+        },
+        "view": "default",
+        "align": "center",
+        "size": {
+         "unit": "px",
+         "size": 40,
+         "sizes": []
+        },
+        "__globals__": {
+         "primary_color": "globals/colors?id=primary"
+        }
+       },
+       "elements": []
+      },
+      {
+       "id": "5b1b002",
+       "elType": "widget",
+       "widgetType": "heading",
+       "settings": {
+        "title": "“They listened first, then built exactly what we needed. A year later it still feels like the best decision we made.”",
+        "header_size": "p",
+        "align": "center",
+        "typography_typography": "custom",
+        "typography_font_size": {
+         "unit": "px",
+         "size": 30,
+         "sizes": []
+        },
+        "typography_font_size_tablet": {
+         "unit": "px",
+         "size": 26,
+         "sizes": []
+        },
+        "typography_font_size_mobile": {
+         "unit": "px",
+         "size": 22,
+         "sizes": []
+        },
+        "typography_font_weight": "500",
+        "typography_line_height": {
+         "unit": "em",
+         "size": 1.45,
+         "sizes": []
+        },
+        "__globals__": {
+         "title_color": "globals/colors?id=secondary"
+        }
+       },
+       "elements": []
+      },
+      {
+       "id": "5b1b007",
+       "elType": "container",
+       "isInner": true,
+       "settings": {
+        "content_width": "full",
+        "width": {
+         "unit": "%",
+         "size": 100,
+         "sizes": []
+        },
+        "width_tablet": {
+         "unit": "%",
+         "size": 100,
+         "sizes": []
+        },
+        "width_mobile": {
+         "unit": "%",
+         "size": 100,
+         "sizes": []
+        },
+        "flex_direction": "row",
+        "flex_justify_content": "center",
+        "flex_align_items": "center",
+        "flex_gap": {
+         "unit": "px",
+         "size": 14,
+         "column": "14",
+         "row": "14",
+         "isLinked": true
+        },
+        "padding": {
+         "unit": "px",
+         "top": "0",
+         "right": "0",
+         "bottom": "0",
+         "left": "0",
+         "isLinked": true
+        }
+       },
+       "elements": [
+        {
+         "id": "5b1b003",
+         "elType": "widget",
+         "widgetType": "image",
+         "settings": {
+          "image": {
+           "url": "{{library:images/team-3.webp}}",
+           "id": "",
+           "size": "",
+           "alt": "Portrait of Lena Okafor",
+           "source": "library"
+          },
+          "image_size": "full",
+          "height": {
+           "unit": "px",
+           "size": 56,
+           "sizes": []
+          },
+          "object-fit": "cover",
+          "image_border_radius": {
+           "unit": "px",
+           "top": "28",
+           "right": "28",
+           "bottom": "28",
+           "left": "28",
+           "isLinked": true
+          },
+          "width": {
+           "unit": "px",
+           "size": 56,
+           "sizes": []
+          }
+         },
+         "elements": []
+        },
+        {
+         "id": "5b1b006",
+         "elType": "container",
+         "isInner": true,
+         "settings": {
+          "content_width": "full",
+          "flex_direction": "column",
+          "flex_gap": {
+           "unit": "px",
+           "size": 2,
+           "column": "2",
+           "row": "2",
+           "isLinked": true
+          },
+          "padding": {
+           "unit": "px",
+           "top": "0",
+           "right": "0",
+           "bottom": "0",
+           "left": "0",
+           "isLinked": true
+          },
+          "width": {
+           "unit": "px",
+           "size": 220,
+           "sizes": []
+          }
+         },
+         "elements": [
+          {
+           "id": "5b1b004",
+           "elType": "widget",
+           "widgetType": "heading",
+           "settings": {
+            "title": "Lena Okafor",
+            "header_size": "p",
+            "typography_typography": "custom",
+            "typography_font_size": {
+             "unit": "px",
+             "size": 16,
+             "sizes": []
+            },
+            "typography_font_weight": "700",
+            "typography_line_height": {
+             "unit": "em",
+             "size": 1.3,
+             "sizes": []
+            },
+            "__globals__": {
+             "title_color": "globals/colors?id=secondary"
+            }
+           },
+           "elements": []
+          },
+          {
+           "id": "5b1b005",
+           "elType": "widget",
+           "widgetType": "text-editor",
+           "settings": {
+            "editor": "<p>Founder, Fieldstone Bakery</p>",
+            "typography_typography": "custom",
+            "typography_font_size": {
+             "unit": "px",
+             "size": 14,
+             "sizes": []
+            },
+            "typography_line_height": {
+             "unit": "em",
+             "size": 1.4,
+             "sizes": []
+            },
+            "__globals__": {
+             "text_color": "globals/colors?id=text"
+            },
+            "paragraph_spacing": {
+             "unit": "px",
+             "size": 0,
+             "sizes": []
+            }
+           },
+           "elements": []
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}
