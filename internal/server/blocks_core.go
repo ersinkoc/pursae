@@ -521,3 +521,11 @@ func stripBlocks(content string) string {
 	}
 	return sb.String()
 }
+
+// loginURL is wp_login_url()'s path (AdminSecGo may move it).
+func (rc *renderCtx) loginURL() string {
+	if rc != nil && rc.s != nil {
+		return rc.s.loginPath()
+	}
+	return "/wp-login"
+}

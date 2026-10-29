@@ -98,6 +98,7 @@ func newServer(ctx context.Context, cfg config.Config, pool *pgxpool.Pool, sb *s
 	if sb != nil {
 		return s.startSandbox(ctx)
 	}
+	s.auth.Idle = s.adminsecIdle // AdminSecGo: idle session timeout
 	s.previews = newPreviewManager(s)
 	if s.golementorOn() {
 		s.gweLoadCustomThemes(ctx) // Golementor custom themes stored in this site's database
@@ -126,6 +127,7 @@ func newServer(ctx context.Context, cfg config.Config, pool *pgxpool.Pool, sb *s
 		s.acfgoStart(ctx) // ACF-Go: content types, post types and taxonomies
 	}
 	s.startPlugins(ctx)
+	s.adminsecStart()
 	return s, nil
 }
 
@@ -136,6 +138,12 @@ func newServer(ctx context.Context, cfg config.Config, pool *pgxpool.Pool, sb *s
 func (s *Server) Handler() http.Handler {
 	app := s.appHandler()
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if s.adminsecOn() { // AdminSecGo: blocked IPs, the custom login URL, security headers (adminsec.go)
+			var done bool
+			if w, r, done = s.adminsecFront(w, r); done {
+				return
+			}
+		}
 		if s.maintenanceServe(w, r) { // Maintenance-Go: before the page cache (maintenance.go)
 			return
 		}
@@ -434,13 +442,17 @@ func (s *Server) requireLogin() gin.HandlerFunc {
 			return
 		}
 		if u == nil {
-			c.Redirect(http.StatusFound, "/wp-login?redirect_to="+urlEscape(c.Request.URL.RequestURI())+"&reauth=1")
+			c.Redirect(http.StatusFound, s.loginPath()+"?redirect_to="+urlEscape(c.Request.URL.RequestURI())+"&reauth=1")
 			c.Abort()
 			return
 		}
 		// Subscribers may only reach their profile, like WordPress' read-only dashboard access.
 		if !u.Can("read", nil) {
 			c.String(http.StatusForbidden, "Sorry, you are not allowed to access this page.")
+			c.Abort()
+			return
+		}
+		if s.adminsecGate(c, u) { // AdminSecGo: forced password change, 2FA required by the role
 			c.Abort()
 			return
 		}

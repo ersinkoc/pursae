@@ -1,0 +1,57 @@
+{{define "admin/login-adminsec"}}{{template "login-head" .}}
+	{{if .Message}}<div class="notice notice-info message"><p>{{.Message}}</p></div>{{end}}
+	<style>
+	#adminsec-form .adminsec-code{font-size:24px;letter-spacing:.3em;text-align:center;font-family:Consolas,Monaco,monospace;width:100%}
+	#adminsec-form .adminsec-lead{margin:0 0 16px;font-size:14px;line-height:1.5}
+	#adminsec-form .adminsec-remember{margin:4px 0 16px}
+	.adminsec-alt{margin:16px 0 0;padding:16px 24px 0;font-size:13px}
+	.adminsec-alt form{margin:0;padding:0;background:none;border:0;box-shadow:none}
+	.adminsec-alt .button-link{color:#2271b1;text-decoration:underline;cursor:pointer;padding:0;font-size:13px}
+	.adminsec-alt li{margin:0 0 8px}
+	</style>
+	<form name="adminsec-form" id="adminsec-form" action="{{.FormAction}}" method="post" autocomplete="off">
+		<input type="hidden" name="adminsec_token" value="{{.Token}}" />
+		<input type="hidden" name="provider" value="{{.Provider}}" />
+		{{if eq .Provider "totp"}}
+		<p class="adminsec-lead">Open your authenticator app and enter the 6-digit code it shows for <strong>{{.SiteName}}</strong>.</p>
+		<p><label for="authcode">Authentication Code</label>
+		<input type="text" inputmode="numeric" name="authcode" id="authcode" class="input adminsec-code" value="" size="20" pattern="[0-9 ]*" maxlength="8" autocomplete="one-time-code" placeholder="123 456" required autofocus /></p>
+		{{else if eq .Provider "email"}}
+		<p class="adminsec-lead">We e-mailed a 6-digit code to <strong>{{.MaskedEmail}}</strong>. It is valid for 10 minutes.</p>
+		<p><label for="authcode">Verification Code</label>
+		<input type="text" inputmode="numeric" name="authcode" id="authcode" class="input adminsec-code" value="" size="20" pattern="[0-9 ]*" maxlength="8" autocomplete="one-time-code" placeholder="123 456" required autofocus /></p>
+		{{else}}
+		<p class="adminsec-lead">Enter one of the backup codes you saved when you set up two-step login. Each code works once.</p>
+		<p><label for="authcode">Backup Code</label>
+		<input type="text" name="authcode" id="authcode" class="input adminsec-code" value="" size="20" maxlength="14" autocomplete="off" placeholder="xxxxx-xxxxx" required autofocus /></p>
+		{{end}}
+		{{if .RememberDays}}<p class="adminsec-remember"><label><input type="checkbox" name="adminsec_remember" value="1" /> Remember this device for {{.RememberDays}} days</label></p>{{end}}
+		<p class="submit"><input type="submit" name="wp-submit" id="wp-submit" class="button button-primary button-large" value="Verify" /></p>
+	</form>
+	<div class="adminsec-alt"><ul>
+		{{if eq .Provider "email"}}<li><form action="{{.FormAction}}" method="post"><input type="hidden" name="adminsec_token" value="{{.Token}}" /><input type="hidden" name="provider" value="email" /><input type="hidden" name="adminsec_do" value="resend" />
+			<button type="submit" class="button-link" id="adminsec-resend"{{if .ResendWait}} data-wait="{{.ResendWait}}"{{end}}>Resend code</button>{{if .ResendWait}} <span class="description" id="adminsec-resend-wait">(available in {{.ResendWait}} s)</span>{{end}}</form></li>{{end}}
+		{{if and .HasTOTP (ne .Provider "totp")}}<li><form action="{{.FormAction}}" method="post"><input type="hidden" name="adminsec_token" value="{{.Token}}" /><input type="hidden" name="provider" value="totp" /><input type="hidden" name="adminsec_do" value="switch" />
+			<button type="submit" class="button-link">Use your authenticator app</button></form></li>{{end}}
+		{{if and .HasEmail (ne .Provider "email")}}<li><form action="{{.FormAction}}" method="post"><input type="hidden" name="adminsec_token" value="{{.Token}}" /><input type="hidden" name="provider" value="email" /><input type="hidden" name="adminsec_do" value="switch" />
+			<button type="submit" class="button-link" id="adminsec-email-me">Can't use your app? Email me a code</button></form></li>{{end}}
+		{{if and .BackupLeft (ne .Provider "backup")}}<li><form action="{{.FormAction}}" method="post"><input type="hidden" name="adminsec_token" value="{{.Token}}" /><input type="hidden" name="provider" value="backup" /><input type="hidden" name="adminsec_do" value="switch" />
+			<button type="submit" class="button-link">Use a backup code</button></form></li>{{end}}
+	</ul></div>
+	<p id="nav"><a href="{{loginURL}}">&larr; Log in with a different account</a></p>
+	<p id="backtoblog"><a href="{{.HomeURL}}">&larr; Go to {{.SiteName}}</a></p>
+</div>
+<script>
+(function () {
+	var b = document.getElementById('adminsec-resend'), w = document.getElementById('adminsec-resend-wait');
+	if (!b || !b.dataset.wait) return;
+	var left = parseInt(b.dataset.wait, 10);
+	b.disabled = true;
+	var t = setInterval(function () {
+		left--;
+		if (left <= 0) { clearInterval(t); b.disabled = false; if (w) w.remove(); return; }
+		if (w) w.textContent = '(available in ' + left + ' s)';
+	}, 1000);
+})();
+</script>
+</body></html>{{end}}

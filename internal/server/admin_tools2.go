@@ -158,6 +158,9 @@ func (s *Server) fileEditorAssets(c *gin.Context, d *fileEditorData) {
 // themeEditor is theme-editor.php. Saving goes through admin-ajax edit-theme-plugin-file
 // (themeFileAjax); edited files are layered over the bundled ones (theme_files.go).
 func (s *Server) themeEditor(c *gin.Context) {
+	if s.adminsecFileEditBlocked(c) { // AdminSecGo: DISALLOW_FILE_EDIT
+		return
+	}
 	if !currentUser(c).Can("edit_themes", nil) {
 		c.String(http.StatusForbidden, "Sorry, you are not allowed to edit templates for this site.")
 		return
@@ -235,6 +238,9 @@ func (s *Server) themeEditor(c *gin.Context) {
 // pluginEditor is plugin-editor.php. Plugins are signed WebAssembly packages, so the editor shows the
 // text files inside the package (plugin.json, readme) read-only.
 func (s *Server) pluginEditor(c *gin.Context) {
+	if s.adminsecFileEditBlocked(c) { // AdminSecGo: DISALLOW_FILE_EDIT
+		return
+	}
 	if !currentUser(c).Can("edit_plugins", nil) {
 		c.String(http.StatusForbidden, "Sorry, you are not allowed to edit plugins for this site.")
 		return
@@ -445,7 +451,7 @@ func (s *Server) sendUserRequest(c *gin.Context, r personalRequest) personalRequ
 	r.KeyHash, r.KeyAt, r.Status = hex.EncodeToString(sum[:]), time.Now().UTC(), "request-pending"
 	s.updatePersonalRequest(c, r)
 	site := s.settings.String("blogname")
-	confirm := s.links(c).HomeURL("/wp-login?action=confirmaction&request_id=" + itoa64(r.ID) + "&confirm_key=" + key)
+	confirm := s.links(c).HomeURL(s.loginPath() + "?action=confirmaction&request_id=" + itoa64(r.ID) + "&confirm_key=" + key)
 	body := "Howdy,\n\nA request has been made to perform the following action on your account:\n\n     ###DESCRIPTION###\n\n" +
 		"To confirm this, please click on the following link:\n###CONFIRM_URL###\n\n" +
 		"You can safely ignore and delete this email if you do not want to\ntake this action.\n\nRegards,\nAll at ###SITENAME###\n###SITEURL###\n"

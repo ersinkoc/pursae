@@ -31,7 +31,7 @@ func (s *Server) lostPassword(c *gin.Context, v loginView) {
 				s.sendResetLink(c, u)
 			}
 			// The same answer whether or not the account exists, so the form can't be used to find accounts.
-			c.Redirect(http.StatusFound, "/wp-login?checkemail=confirm")
+			c.Redirect(http.StatusFound, s.loginPath()+"?checkemail=confirm")
 			return
 		}
 	}
@@ -44,7 +44,7 @@ func (s *Server) resetLink(c *gin.Context, u *store.User) string {
 	key := auth.RandomToken(20)
 	sum := sha256.Sum256([]byte(key))
 	_ = s.setUserMeta(c, u, "password_reset", map[string]any{"hash": hex.EncodeToString(sum[:]), "expires": time.Now().Add(24 * time.Hour).Unix()})
-	return s.links(c).HomeURL("/wp-login?action=rp&key=" + key + "&login=" + url.QueryEscape(u.Login))
+	return s.links(c).HomeURL(s.loginPath() + "?action=rp&key=" + key + "&login=" + url.QueryEscape(u.Login))
 }
 
 // sendResetLink is retrieve_password(): the "[Site] Password Reset" message.
@@ -62,7 +62,7 @@ func (s *Server) sendResetLink(c *gin.Context, u *store.User) {
 // register is wp-login.php?action=register (register_new_user()).
 func (s *Server) register(c *gin.Context, v loginView) {
 	if !v.CanRegister {
-		c.Redirect(http.StatusFound, "/wp-login?registration=disabled")
+		c.Redirect(http.StatusFound, s.loginPath()+"?registration=disabled")
 		return
 	}
 	v.Title, v.Action = "Registration Form", "register"
@@ -87,7 +87,7 @@ func (s *Server) register(c *gin.Context, v loginView) {
 		case !validEmail(email):
 			errs = append(errs, "<strong>Error:</strong> The email address isn&#8217;t correct.")
 		case et:
-			errs = append(errs, "<strong>Error:</strong> This email address is already registered. <a href=\"/wp-login\">Log in</a> with this address or choose another one.")
+			errs = append(errs, "<strong>Error:</strong> This email address is already registered. <a href=\""+s.loginPath()+"\">Log in</a> with this address or choose another one.")
 		}
 		if len(errs) == 0 {
 			// The password is random; the user sets their own from the link in the notification.
@@ -102,7 +102,7 @@ func (s *Server) register(c *gin.Context, v loginView) {
 				if nu, e := s.store.UserByID(c, id); e == nil {
 					s.notifyNewUser(c, nu, true)
 				}
-				target := "/wp-login?checkemail=registered"
+				target := s.loginPath() + "?checkemail=registered"
 				if rt := safeRedirect(v.RedirectTo, ""); rt != "" {
 					target += "&redirect_to=" + url.QueryEscape(rt)
 				}
@@ -146,7 +146,7 @@ func (s *Server) resetPassword(c *gin.Context, v loginView) {
 	login, key := defaultStr(c.PostForm("rp_login"), c.Query("login")), defaultStr(c.PostForm("rp_key"), c.Query("key"))
 	u, ok := s.checkResetKey(c, login, key)
 	if !ok {
-		c.Redirect(http.StatusFound, "/wp-login?action=lostpassword&error=invalidkey")
+		c.Redirect(http.StatusFound, s.loginPath()+"?action=lostpassword&error=invalidkey")
 		return
 	}
 	v.Login, v.ResetKey = u.Login, key
@@ -157,6 +157,8 @@ func (s *Server) resetPassword(c *gin.Context, v loginView) {
 			v.Error = "<strong>Error:</strong> Please enter a new password."
 		case p1 != p2:
 			v.Error = "<strong>Error:</strong> The passwords do not match."
+		case s.adminsecUserPasswordProblem(u, p1) != "": // AdminSecGo password policy
+			v.Error = template.HTML("<strong>Error:</strong> " + template.HTMLEscapeString(s.adminsecUserPasswordProblem(u, p1)))
 		default:
 			hash, err := auth.HashPassword(p1)
 			if err == nil {
@@ -167,11 +169,12 @@ func (s *Server) resetPassword(c *gin.Context, v loginView) {
 				break
 			}
 			_ = s.setUserMeta(c, u, "password_reset", nil)
+			s.adminsecPasswordChanged(c, u)
 			_, _ = s.store.Pool.Exec(c, `DELETE FROM sessions WHERE user_id = $1`, u.ID)
 			site := s.settings.String("blogname")
 			s.sendMail(c, mail.Message{To: []string{s.settings.String("admin_email")}, Subject: "[" + site + "] Password Changed",
 				Body: fmt.Sprintf("Password changed for user: %s\n", u.Login)})
-			c.Redirect(http.StatusFound, "/wp-login?password=changed")
+			c.Redirect(http.StatusFound, s.loginPath()+"?password=changed")
 			return
 		}
 	}
@@ -217,7 +220,7 @@ func (s *Server) notifyNewUser(c *gin.Context, u *store.User, sendUser bool) {
 		Body: fmt.Sprintf("New user registration on your site %s:\n\nUsername: %s\n\nEmail: %s\n", site, u.Login, u.Email)})
 	if sendUser {
 		link := s.resetLink(c, u)
-		body := fmt.Sprintf("Username: %s\n\nTo set your password, visit the following address:\n\n%s\n\n%s\n", u.Login, link, s.links(c).HomeURL("/wp-login"))
+		body := fmt.Sprintf("Username: %s\n\nTo set your password, visit the following address:\n\n%s\n\n%s\n", u.Login, link, s.links(c).HomeURL(s.loginPath()))
 		s.sendMail(c, mail.Message{To: []string{u.Email}, Subject: "[" + site + "] Login Details", Body: body})
 	}
 }

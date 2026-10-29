@@ -43,6 +43,8 @@ type profileData struct {
 	// Application Passwords (profile.php's application-passwords section).
 	AppPasswords   []appPasswordRow
 	NewAppPassword *appPasswordCreated
+	// AdminSec is AdminSecGo's block: two-step login status and the session list.
+	AdminSec template.HTML
 }
 
 type roleChoice struct {
@@ -113,6 +115,7 @@ func (s *Server) profileView(c *gin.Context, target *store.User) profileData {
 		}
 	}
 	d.AppPasswords = s.appPasswordRows(c, target)
+	d.AdminSec = s.adminsecProfileHTML(c, target, d.Self)
 	return d
 }
 
@@ -210,6 +213,9 @@ func (s *Server) saveUser(c *gin.Context, target *store.User) {
 	if !self {
 		back = "/wp-admin/user-edit?user_id=" + itoa64(target.ID) + "&updated=1"
 	}
+	if s.adminsecProfileAction(c, target, back) { // AdminSecGo: session and factor buttons
+		return
+	}
 	if self && c.PostForm("action") == "destroy-sessions" {
 		_ = s.auth.DestroyOthers(c, u.ID, currentSession(c).ID)
 		c.Redirect(http.StatusFound, back)
@@ -235,6 +241,10 @@ func (s *Server) saveUser(c *gin.Context, target *store.User) {
 	pass1, pass2 := c.PostForm("pass1"), c.PostForm("pass2")
 	if pass1 != "" && pass2 != "" && pass1 != pass2 {
 		errs = append(errs, "<strong>Error:</strong> Passwords do not match. Please enter the same password in both password fields.")
+	} else if pass1 != "" {
+		if msg := s.adminsecUserPasswordProblem(target, pass1); msg != "" { // AdminSecGo password policy
+			errs = append(errs, "<strong>Error:</strong> "+template.HTMLEscapeString(msg))
+		}
 	}
 	if len(errs) > 0 {
 		var ns []notice
@@ -280,12 +290,16 @@ func (s *Server) saveUser(c *gin.Context, target *store.User) {
 	s.saveAvatar(c, target)
 	if pass1 != "" {
 		if hash, err := auth.HashPassword(pass1); err == nil {
-			_ = s.store.SetUserPassword(c, target.ID, hash)
+			if s.store.SetUserPassword(c, target.ID, hash) == nil {
+				s.adminsecPasswordChanged(c, target)
+			}
 		}
 	}
 	if !self && u.Can("promote_users", nil) {
 		if primary, ok := c.GetPostForm("role"); ok {
+			before := strings.Join(target.Roles, ",")
 			_ = s.store.SetUserRoles(c, target.ID, primary, c.PostFormArray("extra_roles[]"))
+			s.adminsecRoleChanged(c, target.ID, target.Login, before, strings.Join(append([]string{primary}, c.PostFormArray("extra_roles[]")...), ","))
 		}
 		exc := map[string]string{}
 		caps := c.PostFormArray("cap_name[]")

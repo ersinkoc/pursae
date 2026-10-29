@@ -28,7 +28,7 @@
 				<div class="ab-sub-wrapper">
 					<ul role="menu" id="wp-admin-bar-user-actions" class="ab-submenu">
 						<li role="group" id="wp-admin-bar-user-info"><a class="ab-item" tabindex="-1" role="menuitem" href="/wp-admin/profile"><img alt="" src="{{.Avatar64}}" class="avatar avatar-64 photo" height="64" width="64" decoding="async"><span class="display-name">{{.User.DisplayName}}</span><span class="display-name edit-profile">Edit Profile</span></a></li>
-						<li role="group" id="wp-admin-bar-logout"><a class="ab-item" role="menuitem" href="/wp-login?action=logout&amp;_wpnonce={{.LogoutNonce}}">Log Out</a></li>
+						<li role="group" id="wp-admin-bar-logout"><a class="ab-item" role="menuitem" href="{{loginURL}}?action=logout&amp;_wpnonce={{.LogoutNonce}}">Log Out</a></li>
 					</ul>
 				</div>
 			</li>

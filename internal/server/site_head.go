@@ -57,7 +57,9 @@ func (s *Server) wpHead(c *gin.Context, q *siteQuery, lb *links.Builder, adminBa
 	}
 	sb.WriteString("<link rel=\"https://api.w.org/\" href=\"" + html.EscapeString(lb.HomeURL("/wp-json/")) + "\" />\n")
 	sb.WriteString(oembedDiscoveryLinks(lb, q)) // wp_oembed_add_discovery_links() (rest_oembed.go)
-	sb.WriteString("<meta name=\"generator\" content=\"WordPress Go " + Version + "\" />\n")
+	if !s.asHideVersion() {                     // AdminSecGo can hide the version
+		sb.WriteString("<meta name=\"generator\" content=\"WordPress Go " + Version + "\" />\n")
+	}
 	if (q.Kind == "single" || q.Kind == "page" || q.Kind == "front-page") && q.Post != nil {
 		if seo == "" {
 			fmt.Fprintf(&sb, "<link rel=\"canonical\" href=\"%s\" />\n", html.EscapeString(lb.Permalink(q.Post)))
@@ -153,8 +155,8 @@ func (s *Server) frontAdminBar(c *gin.Context, q *siteQuery, lb *links.Builder, 
 	sb.WriteString(string(s.maintAdminBar(c, u))) // Maintenance-Go
 	sb.WriteString(`</ul><ul role='menu' id='wp-admin-bar-top-secondary' class="ab-top-secondary ab-top-menu">`)
 	sb.WriteString(`<li role='group' id='wp-admin-bar-search' class="admin-bar-search"><div class="ab-item ab-empty-item" tabindex="-1" role="menuitem"><form action="` + esc(lb.HomeURL("/")) + `" method="get" id="adminbarsearch"><input class="adminbar-input" name="s" id="adminbar-search" type="text" value="` + esc(q.Search) + `" maxlength="150" /><label for="adminbar-search" class="screen-reader-text">Search</label><input type="submit" class="adminbar-button" value="Search" /></form></div></li>`)
-	fmt.Fprintf(&sb, `<li role='group' id='wp-admin-bar-my-account' class="menupop with-avatar"><a class='ab-item' role="menuitem" aria-expanded="false" href='/wp-admin/profile'>Howdy, <span class="display-name">%s</span><img alt='' src='%s' srcset='%s 2x' class='avatar avatar-26 photo' height='26' width='26' decoding='async'/></a><div class="ab-sub-wrapper"><ul role='menu' id='wp-admin-bar-user-actions' class="ab-submenu"><li role='group' id='wp-admin-bar-user-info'><a class='ab-item' tabindex="-1" role="menuitem" href='/wp-admin/profile'><img alt='' src='%s' srcset='%s 2x' class='avatar avatar-64 photo' height='64' width='64' decoding='async'/><span class='display-name'>%s</span><span class='display-name edit-profile'>Edit Profile</span></a></li><li role='group' id='wp-admin-bar-logout'><a class='ab-item' role="menuitem" href='/wp-login?action=logout&amp;_wpnonce=%s'>Log Out</a></li></ul></div></li>`,
-		esc(u.DisplayName), esc(s.avatarURL(c, u.Email, 26)), esc(s.avatarURL(c, u.Email, 52)), esc(s.avatarURL(c, u.Email, 64)), esc(s.avatarURL(c, u.Email, 128)), esc(u.DisplayName), s.nonce(c, "log-out"))
+	fmt.Fprintf(&sb, `<li role='group' id='wp-admin-bar-my-account' class="menupop with-avatar"><a class='ab-item' role="menuitem" aria-expanded="false" href='/wp-admin/profile'>Howdy, <span class="display-name">%s</span><img alt='' src='%s' srcset='%s 2x' class='avatar avatar-26 photo' height='26' width='26' decoding='async'/></a><div class="ab-sub-wrapper"><ul role='menu' id='wp-admin-bar-user-actions' class="ab-submenu"><li role='group' id='wp-admin-bar-user-info'><a class='ab-item' tabindex="-1" role="menuitem" href='/wp-admin/profile'><img alt='' src='%s' srcset='%s 2x' class='avatar avatar-64 photo' height='64' width='64' decoding='async'/><span class='display-name'>%s</span><span class='display-name edit-profile'>Edit Profile</span></a></li><li role='group' id='wp-admin-bar-logout'><a class='ab-item' role="menuitem" href='%s?action=logout&amp;_wpnonce=%s'>Log Out</a></li></ul></div></li>`,
+		esc(u.DisplayName), esc(s.avatarURL(c, u.Email, 26)), esc(s.avatarURL(c, u.Email, 52)), esc(s.avatarURL(c, u.Email, 64)), esc(s.avatarURL(c, u.Email, 128)), esc(u.DisplayName), s.loginPath(), s.nonce(c, "log-out"))
 	sb.WriteString(`</ul></div></div>`)
 	// wp_customize_support_script(): swaps no-customize-support for customize-support on the body, which
 	// shows the toolbar's Customize link (the admin-bar CSS hides .hide-if-no-customize without it).

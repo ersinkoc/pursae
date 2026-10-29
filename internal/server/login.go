@@ -26,6 +26,9 @@ type loginView struct {
 
 // login handles wp-login.php: the form, the POST and ?action=logout.
 func (s *Server) login(c *gin.Context) {
+	if s.adminsecLoginGate(c) { // AdminSecGo: /wp-login is hidden behind the custom login URL
+		return
+	}
 	action := c.Query("action")
 	switch action {
 	case "logout":
@@ -59,6 +62,11 @@ func (s *Server) login(c *gin.Context) {
 	case "confirmaction":
 		s.confirmAction(c, v)
 		return
+	case "adminsec_2fa": // AdminSecGo: the second-factor step of a login
+		if s.adminsecOn() {
+			s.adminsecChallengePost(c, v)
+			return
+		}
 	}
 	if c.Query("checkemail") == "confirm" {
 		v.Message = "Check your email for the confirmation link, then visit the login page."
@@ -95,7 +103,13 @@ func (s *Server) login(c *gin.Context) {
 		v.Error = template.HTML(msg)
 		s.renderAdminTemplate(c, http.StatusOK, "admin/login", v)
 	}
-	if throttled, _ := s.auth.Throttled(c, ip); throttled {
+	secOn := s.adminsecOn()
+	if secOn { // AdminSecGo: block list and lockouts replace the core throttle
+		if msg := s.adminsecPreLogin(c, login); msg != "" {
+			fail(string(msg))
+			return
+		}
+	} else if throttled, _ := s.auth.Throttled(c, ip); throttled {
 		fail("<strong>Error:</strong> Too many failed login attempts. Please try again in 15 minutes.")
 		return
 	}
@@ -113,8 +127,14 @@ func (s *Server) login(c *gin.Context) {
 
 	u, err := s.store.UserByLoginOrEmail(c, login)
 	if errors.Is(err, store.ErrNotFound) {
-		s.auth.RecordAttempt(c, ip, login, false)
-		if strings.Contains(login, "@") {
+		if secOn {
+			s.adminsecLoginFailed(c, login, nil, "Unknown username or e-mail address.")
+		} else {
+			s.auth.RecordAttempt(c, ip, login, false)
+		}
+		if msg, ok := s.adminsecGenericError(); ok {
+			fail(string(msg))
+		} else if strings.Contains(login, "@") {
 			fail("<strong>Error:</strong> Unknown email address. Check again or try your username.")
 		} else {
 			fail("<strong>Error:</strong> The username <strong>" + html.EscapeString(login) + "</strong> is not registered on this site. If you are unsure of your username, try your email address instead.")
@@ -127,12 +147,24 @@ func (s *Server) login(c *gin.Context) {
 	}
 	ok, _ := auth.CheckPassword(pass, u.PasswordHash)
 	if !ok {
-		s.auth.RecordAttempt(c, ip, login, false)
+		if secOn {
+			s.adminsecLoginFailed(c, login, u, "Wrong password.")
+		} else {
+			s.auth.RecordAttempt(c, ip, login, false)
+		}
+		if msg, ok := s.adminsecGenericError(); ok {
+			fail(string(msg))
+			return
+		}
 		label := "the username <strong>" + html.EscapeString(login) + "</strong>"
 		if strings.Contains(login, "@") {
 			label = "the email address <strong>" + html.EscapeString(login) + "</strong>"
 		}
-		fail("<strong>Error:</strong> The password you entered for " + label + " is incorrect. <a href=\"/wp-login?action=lostpassword\">Lost your password?</a>")
+		fail("<strong>Error:</strong> The password you entered for " + label + " is incorrect. <a href=\"" + s.loginPath() + "?action=lostpassword\">Lost your password?</a>")
+		return
+	}
+	if secOn { // AdminSecGo: password policy, second factor, alerts and the activity log
+		s.adminsecPasswordOK(c, v, u, pass)
 		return
 	}
 	s.auth.RecordAttempt(c, ip, login, true)
@@ -174,12 +206,13 @@ func (s *Server) logout(c *gin.Context) {
 		c.String(http.StatusForbidden, `<!DOCTYPE html><html><head><meta charset="utf-8"><title>WordPress &rsaquo; Error</title>`+
 			`<link rel="stylesheet" href="/wp-admin/assets/css/wp/install.min.css"></head><body id="error-page">`+
 			`<div class="wp-die-message"><p>You are attempting to log out of `+html.EscapeString(s.settings.String("blogname"))+`</p>`+
-			`<p>Do you really want to <a href="/wp-login?action=logout&amp;_wpnonce=`+s.nonce(c, "log-out")+`">log out</a>?</p></div></body></html>`)
+			`<p>Do you really want to <a href="`+s.loginPath()+`?action=logout&amp;_wpnonce=`+s.nonce(c, "log-out")+`">log out</a>?</p></div></body></html>`)
 		return
 	}
 	if sess := currentSession(c); sess != nil {
+		s.adminsecLogout(c)
 		_ = s.auth.Destroy(c, sess.Token)
 	}
 	http.SetCookie(c.Writer, &http.Cookie{Name: auth.CookieName, Value: "", Path: "/", MaxAge: -1, HttpOnly: true})
-	c.Redirect(http.StatusFound, "/wp-login?loggedout=true")
+	c.Redirect(http.StatusFound, s.loginPath()+"?loggedout=true")
 }

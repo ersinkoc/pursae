@@ -559,7 +559,7 @@ func renderLoginoutBlock(ctx context.Context, b *blocks.Block, _ string) string 
 	classes, contents := "logged-out", ""
 	if rc.user != nil {
 		classes = "logged-in"
-		logout := "/wp-login?action=logout"
+		logout := rc.loginURL() + "?action=logout"
 		if redirect != "" {
 			logout += "&redirect_to=" + url.QueryEscape(redirect)
 		}
@@ -567,14 +567,14 @@ func renderLoginoutBlock(ctx context.Context, b *blocks.Block, _ string) string 
 		contents = `<a href="` + esc(logout) + `">Log out</a>`
 	} else if attrBool(b, "displayLoginAsForm", false) {
 		classes += " has-login-form"
-		contents = `<form name="loginform" id="loginform" action="/wp-login" method="post">` +
+		contents = `<form name="loginform" id="loginform" action="` + esc(rc.loginURL()) + `" method="post">` +
 			`<p class="login-username"><label for="user_login">Username or Email Address</label><input type="text" name="log" id="user_login" autocomplete="username" class="input" value="" size="20" /></p>` +
 			`<p class="login-password"><label for="user_pass">Password</label><input type="password" name="pwd" id="user_pass" autocomplete="current-password" spellcheck="false" class="input" value="" size="20" /></p>` +
 			`<p class="login-remember"><label><input name="rememberme" type="checkbox" id="rememberme" value="forever" /> Remember Me</label></p>` +
 			`<p class="login-submit"><input type="submit" name="wp-submit" id="wp-submit" class="button button-primary" value="Log In" /><input type="hidden" name="redirect_to" value="` + esc(current) + `" /></p>` +
 			`</form>`
 	} else {
-		login := "/wp-login"
+		login := rc.loginURL()
 		if redirect != "" {
 			login += "?redirect_to=" + url.QueryEscape(redirect)
 		}

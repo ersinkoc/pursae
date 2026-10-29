@@ -25,7 +25,7 @@
 	<h1 role="presentation" class="wp-login-logo"><a href="{{.HomeURL}}">Powered by WordPress Go</a></h1>
 	{{if .Error}}<div id="login_error" class="notice notice-error"><p>{{.Error}}</p></div>{{end}}
 	{{if .Message}}<div class="notice notice-info message"><p>{{.Message}}</p></div>{{end}}
-	<form name="loginform" id="loginform" action="/wp-login" method="post">
+	<form name="loginform" id="loginform" action="{{loginURL}}" method="post">
 		<p>
 			<label for="user_login">Username or Email Address</label>
 			<input type="text" name="log" id="user_login"{{if .Error}} aria-describedby="login_error"{{end}} class="input" value="{{.Login}}" size="20" autocapitalize="off" autocomplete="username" required="required" />
@@ -47,7 +47,7 @@
 		</p>
 	</form>
 	<p id="nav">
-		{{if .CanRegister}}<a class="wp-login-register" href="/wp-login?action=register">Register</a> | {{end}}<a class="wp-login-lost-password" href="/wp-login?action=lostpassword">Lost your password?</a>
+		{{if .CanRegister}}<a class="wp-login-register" href="{{loginURL}}?action=register">Register</a> | {{end}}<a class="wp-login-lost-password" href="{{loginURL}}?action=lostpassword">Lost your password?</a>
 	</p>
 	<p id="backtoblog"><a href="{{.HomeURL}}">&larr; Go to {{.SiteName}}</a></p>
 </div>
@@ -101,19 +101,19 @@
 
 {{define "admin/login-lost"}}{{template "login-head" .}}
 	<div class="notice notice-info message"><p>Please enter your username or email address. You will receive an email message with instructions on how to reset your password.</p></div>
-	<form name="lostpasswordform" id="lostpasswordform" action="/wp-login?action=lostpassword" method="post">
+	<form name="lostpasswordform" id="lostpasswordform" action="{{loginURL}}?action=lostpassword" method="post">
 		<p><label for="user_login">Username or Email Address</label>
 		<input type="text" name="user_login" id="user_login" class="input" value="" size="20" autocapitalize="off" autocomplete="username" required="required" /></p>
 		<p class="submit"><input type="submit" name="wp-submit" id="wp-submit" class="button button-primary button-large" value="Get New Password" /></p>
 	</form>
-	<p id="nav"><a class="wp-login-log-in" href="/wp-login">Log in</a>{{if .CanRegister}} | <a class="wp-login-register" href="/wp-login?action=register">Register</a>{{end}}</p>
+	<p id="nav"><a class="wp-login-log-in" href="{{loginURL}}">Log in</a>{{if .CanRegister}} | <a class="wp-login-register" href="{{loginURL}}?action=register">Register</a>{{end}}</p>
 	<p id="backtoblog"><a href="{{.HomeURL}}">&larr; Go to {{.SiteName}}</a></p>
 </div>
 </body></html>{{end}}
 
 {{define "admin/login-register"}}{{template "login-head" .}}
 	{{if .Message}}<div class="notice notice-info message"><p>{{.Message}}</p></div>{{end}}
-	<form name="registerform" id="registerform" action="/wp-login?action=register" method="post" novalidate="novalidate">
+	<form name="registerform" id="registerform" action="{{loginURL}}?action=register" method="post" novalidate="novalidate">
 		<p><label for="user_login">Username</label>
 		<input type="text" name="user_login" id="user_login" class="input" value="{{.Login}}" size="20" autocapitalize="off" autocomplete="username" required="required" /></p>
 		<p><label for="user_email">Email</label>
@@ -123,7 +123,7 @@
 		<input type="hidden" name="redirect_to" value="{{.RedirectTo}}" />
 		<p class="submit"><input type="submit" name="wp-submit" id="wp-submit" class="button button-primary button-large" value="Register" /></p>
 	</form>
-	<p id="nav"><a class="wp-login-log-in" href="/wp-login">Log in</a> | <a class="wp-login-lost-password" href="/wp-login?action=lostpassword">Lost your password?</a></p>
+	<p id="nav"><a class="wp-login-log-in" href="{{loginURL}}">Log in</a> | <a class="wp-login-lost-password" href="{{loginURL}}?action=lostpassword">Lost your password?</a></p>
 	<p id="backtoblog"><a href="{{.HomeURL}}">&larr; Go to {{.SiteName}}</a></p>
 </div>
 </body></html>{{end}}
@@ -136,7 +136,7 @@
 
 {{define "admin/login-reset"}}{{template "login-head" .}}
 	<div class="notice notice-info message reset-pass"><p>Enter your new password below.</p></div>
-	<form name="resetpassform" id="resetpassform" action="/wp-login?action=resetpass" method="post" autocomplete="off">
+	<form name="resetpassform" id="resetpassform" action="{{loginURL}}?action=resetpass" method="post" autocomplete="off">
 		<input type="hidden" id="user_login" value="{{.Login}}" autocomplete="off" />
 		<input type="hidden" name="rp_login" value="{{.Login}}" />
 		<input type="hidden" name="rp_key" value="{{.ResetKey}}" />
@@ -147,7 +147,7 @@
 		<p class="description indicator-hint">Hint: The password should be at least twelve characters long. To make it stronger, use upper and lower case letters, numbers, and symbols like ! " ? $ % ^ &amp; ).</p>
 		<p class="submit reset-pass-submit"><input type="submit" name="wp-submit" id="wp-submit" class="button button-primary button-large" value="Save Password" /></p>
 	</form>
-	<p id="nav"><a class="wp-login-log-in" href="/wp-login">Log in</a></p>
+	<p id="nav"><a class="wp-login-log-in" href="{{loginURL}}">Log in</a></p>
 	<p id="backtoblog"><a href="{{.HomeURL}}">&larr; Go to {{.SiteName}}</a></p>
 </div>
 </body></html>{{end}}

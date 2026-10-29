@@ -1,0 +1,329 @@
+{{define "admin/adminsecgo"}}{{template "admin-header" .}}{{with .Data}}
+<style>
+.adminsecgo-admin .asg-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin:16px 0}
+.adminsecgo-admin .asg-card{background:#fff;border:1px solid #c3c4c7;border-radius:4px;padding:16px 20px;box-shadow:0 1px 1px rgba(0,0,0,.04)}
+.adminsecgo-admin .asg-card h2{margin:0 0 8px;font-size:15px;display:flex;align-items:center;gap:8px}
+.adminsecgo-admin .asg-card p{margin:6px 0}
+.adminsecgo-admin .asg-pill{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:600;background:#f0f0f1;color:#50575e}
+.adminsecgo-admin .asg-pill.on{background:#edfaef;color:#007017}
+.adminsecgo-admin .asg-pill.off{background:#fcf0f1;color:#8a2424}
+.adminsecgo-admin .asg-pill.warn{background:#fcf9e8;color:#7a5d00}
+.adminsecgo-admin .asg-disabled{opacity:.65}
+.adminsecgo-admin .asg-qr{display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;margin:12px 0}
+.adminsecgo-admin .asg-qr svg{border:1px solid #dcdcde;border-radius:4px;display:block;max-width:100%;height:auto}
+.adminsecgo-admin code.asg-key{font-size:15px;letter-spacing:.06em;padding:6px 10px;display:inline-block;user-select:all}
+.adminsecgo-admin .asg-codes{columns:2;max-width:360px;font-family:Consolas,Monaco,monospace;font-size:16px;line-height:2;padding:12px 20px;background:#f6f7f7;border:1px dashed #8c8f94;border-radius:4px;list-style:none;margin:12px 0}
+.adminsecgo-admin .asg-code-input{font-size:20px;letter-spacing:.25em;width:10em;font-family:Consolas,Monaco,monospace}
+.adminsecgo-admin .asg-score{display:flex;align-items:center;gap:24px;flex-wrap:wrap}
+.adminsecgo-admin .asg-ring{--p:0;width:120px;height:120px;border-radius:50%;background:conic-gradient(var(--c,#2271b1) calc(var(--p)*1%),#dcdcde 0);display:grid;place-items:center}
+.adminsecgo-admin .asg-ring span{width:92px;height:92px;border-radius:50%;background:#fff;display:grid;place-items:center;font-size:26px;font-weight:600}
+.adminsecgo-admin .asg-checks{list-style:none;margin:0;padding:0}
+.adminsecgo-admin .asg-checks li{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-top:1px solid #f0f0f1}
+.adminsecgo-admin .asg-checks li:first-child{border-top:0}
+.adminsecgo-admin .asg-checks .dashicons-yes-alt{color:#00a32a}
+.adminsecgo-admin .asg-checks .dashicons-warning{color:#d63638}
+.adminsecgo-admin .asg-checks .asg-fix{margin-left:auto;white-space:nowrap}
+.adminsecgo-admin .asg-stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin:0}
+.adminsecgo-admin .asg-stats div{background:#f6f7f7;border-radius:4px;padding:12px}
+.adminsecgo-admin .asg-stats b{display:block;font-size:22px}
+.adminsecgo-admin .asg-sev-warning td:first-child,.adminsecgo-admin .asg-sev-critical td:first-child{box-shadow:inset 3px 0 0 #d63638}
+.adminsecgo-admin .asg-sev-notice td:first-child{box-shadow:inset 3px 0 0 #dba617}
+.adminsecgo-admin .asg-filters{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:8px 0}
+.adminsecgo-admin .asg-filters input[type=text],.adminsecgo-admin .asg-filters input[type=date]{width:auto}
+.adminsecgo-admin table.asg-roles td,.adminsecgo-admin table.asg-roles th{padding:8px 10px}
+@media screen and (max-width:782px){.adminsecgo-admin .asg-checks li{flex-wrap:wrap}.adminsecgo-admin .asg-checks .asg-fix{margin-left:30px}}
+</style>
+<div class="wrap adminsecgo-admin">
+{{if eq .Page "account"}}
+<h1 class="wp-heading-inline">Security</h1>
+<hr class="wp-header-end">
+{{template "notices" $}}
+<p>Two-step login protects your account even if someone learns your password. <strong>E-mailed codes (MFA)</strong> can be used on their own; the <strong>authenticator app (2FA)</strong> is the stronger option and keeps e-mailed codes as its fallback. Backup codes get you in when neither is at hand.</p>
+
+{{if eq .Step "codes"}}
+<div class="asg-card" style="max-width:640px">
+	<h2><span class="dashicons dashicons-tickets-alt"></span> Your backup codes</h2>
+	<p><strong>Save these codes now: they are shown only once.</strong> Each code logs you in one time when you can't use your app or e-mail. Print them or keep them in a password manager.</p>
+	<ul class="asg-codes" id="adminsec-backup-codes">{{range .NewCodes}}<li>{{.}}</li>{{end}}</ul>
+	<p><button type="button" class="button" onclick="navigator.clipboard&&navigator.clipboard.writeText(Array.from(document.querySelectorAll('#adminsec-backup-codes li')).map(function(l){return l.textContent}).join('\n'))">Copy</button>
+	<button type="button" class="button" onclick="window.print()">Print</button>
+	<a class="button button-primary" href="/wp-admin/admin?page=adminsecgo-account">I saved them</a></p>
+</div>
+{{else if eq .Step "mfa_verify"}}
+<div class="asg-card" style="max-width:640px">
+	<h2><span class="dashicons dashicons-email-alt"></span> Confirm your e-mail address</h2>
+	<p>Enter the 6-digit code we sent to <strong>{{.SetupEmail}}</strong>. It is valid for 10 minutes.</p>
+	<form method="post" action="/wp-admin/admin?page=adminsecgo-account">
+		<input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="adminsec_token" value="{{.Token}}">
+		<p><label for="code" class="screen-reader-text">Code</label><input type="text" inputmode="numeric" autocomplete="one-time-code" name="code" id="code" class="asg-code-input" maxlength="8" required autofocus>
+		<button type="submit" name="adminsec_do" value="mfa_verify" class="button button-primary">Confirm</button></p>
+	</form>
+	<form method="post" action="/wp-admin/admin?page=adminsecgo-account"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="adminsec_token" value="{{.Token}}">
+		<button type="submit" name="adminsec_do" value="mfa_resend" class="button-link">Send a new code</button>{{if .ResendWait}} <span class="description">(a new code can be sent in {{.ResendWait}} seconds)</span>{{end}}
+		&middot; <a href="/wp-admin/admin?page=adminsecgo-account">Cancel</a></form>
+</div>
+{{else if eq .Step "totp_setup"}}
+<div class="asg-card" style="max-width:760px">
+	<h2><span class="dashicons dashicons-smartphone"></span> Set up your authenticator app</h2>
+	<ol>
+		<li>Open an authenticator app (Google Authenticator, Microsoft Authenticator, 1Password, Authy, FreeOTP, Aegis, …).</li>
+		<li>Scan this QR code, or enter the key by hand (time-based, 6 digits, 30 seconds).</li>
+		<li>Enter the code the app shows to finish.</li>
+	</ol>
+	<div class="asg-qr"><div id="adminsec-qr">{{.QR}}</div>
+		<div><p>Key:</p><p><code class="asg-key" id="adminsec-totp-key">{{.ManualKey}}</code></p><p class="description">Account: {{.User.Login}}</p></div></div>
+	<form method="post" action="/wp-admin/admin?page=adminsecgo-account">
+		<input type="hidden" name="_wpnonce" value="{{.Nonce}}">
+		<p><label for="code">Code from the app</label><br><input type="text" inputmode="numeric" autocomplete="one-time-code" name="code" id="code" class="asg-code-input" maxlength="8" required autofocus>
+		<button type="submit" name="adminsec_do" value="totp_verify" class="button button-primary">Turn on 2FA</button>
+		<button type="submit" name="adminsec_do" value="totp_cancel" class="button" formnovalidate>Cancel</button></p>
+	</form>
+</div>
+{{else}}
+<div class="asg-cards">
+	<div class="asg-card{{if not .MailReady}} asg-disabled{{end}}" id="adminsec-mfa-card">
+		<h2><span class="dashicons dashicons-email-alt"></span> E-mailed codes (MFA) {{if .F.EmailEnabled}}<span class="asg-pill on">On</span>{{else}}<span class="asg-pill">Off</span>{{end}}</h2>
+		{{if .F.EmailEnabled}}
+		<p>Codes go to <strong>{{.F.Email}}</strong>.</p>
+		{{if not .F.TOTPEnabled}}<form method="post" action="/wp-admin/admin?page=adminsecgo-account"><input type="hidden" name="_wpnonce" value="{{.Nonce}}">
+			<p><label>Current password <input type="password" name="adminsec_password" autocomplete="current-password" required></label></p>
+			<p><button type="submit" name="adminsec_do" value="mfa_disable" class="button">Turn off</button></p></form>
+		{{else}}<p class="description">E-mailed codes are the fallback of your authenticator app; remove the app first to turn them off.</p>{{end}}
+		{{else if not .MailReady}}
+		<p><strong>Not available:</strong> {{.MailWhy}}</p>
+		<p><a class="button" href="{{.MailFixURL}}">Set up e-mail delivery</a></p>
+		{{else}}
+		<p>Each login asks for a 6-digit code we e-mail you. We'll send a code to confirm the address first.</p>
+		<form method="post" action="/wp-admin/admin?page=adminsecgo-account"><input type="hidden" name="_wpnonce" value="{{.Nonce}}">
+			<p><label for="adminsec-email">E-mail address</label><br><input type="email" name="email" id="adminsec-email" class="regular-text" value="{{.SetupEmail}}" required></p>
+			<p><button type="submit" name="adminsec_do" value="mfa_send" class="button button-primary">Send a confirmation code</button></p></form>
+		{{end}}
+	</div>
+	<div class="asg-card{{if not .F.EmailEnabled}} asg-disabled{{end}}" id="adminsec-totp-card">
+		<h2><span class="dashicons dashicons-smartphone"></span> Authenticator app (2FA) {{if .F.TOTPEnabled}}<span class="asg-pill on">On</span>{{else}}<span class="asg-pill">Off</span>{{end}}</h2>
+		{{if .F.TOTPEnabled}}
+		<p>Logging in asks for the code from your app; “Email me a code” stays available as the fallback.</p>
+		<form method="post" action="/wp-admin/admin?page=adminsecgo-account"><input type="hidden" name="_wpnonce" value="{{.Nonce}}">
+			<p><label>Current password <input type="password" name="adminsec_password" autocomplete="current-password" required></label></p>
+			<p><button type="submit" name="adminsec_do" value="totp_disable" class="button">Remove the app</button></p></form>
+		{{else if not .F.EmailEnabled}}
+		<p><strong>Set up e-mailed codes first.</strong> Two-factor authentication needs them as the fallback for when you can't use your phone.</p>
+		<p><button type="button" class="button" disabled>Set up the app</button></p>
+		{{else}}
+		<p>Use a time-based code from an app on your phone: the strongest option, and it works without e-mail.</p>
+		<form method="post" action="/wp-admin/admin?page=adminsecgo-account"><input type="hidden" name="_wpnonce" value="{{.Nonce}}">
+			<p><button type="submit" name="adminsec_do" value="totp_start" class="button button-primary">Set up the app</button></p></form>
+		{{end}}
+	</div>
+	<div class="asg-card{{if not (or .F.EmailEnabled .F.TOTPEnabled)}} asg-disabled{{end}}" id="adminsec-backup-card">
+		<h2><span class="dashicons dashicons-tickets-alt"></span> Backup codes</h2>
+		{{if or .F.EmailEnabled .F.TOTPEnabled}}
+		<p><strong>{{.BackupLeft}}</strong> of 10 unused codes left{{if .F.BackupAt}} (generated {{date .F.BackupAt.Local ""}}){{end}}.</p>
+		<form method="post" action="/wp-admin/admin?page=adminsecgo-account"><input type="hidden" name="_wpnonce" value="{{.Nonce}}">
+			<p><label>Current password <input type="password" name="adminsec_password" autocomplete="current-password" required></label></p>
+			<p><button type="submit" name="adminsec_do" value="backup_regen" class="button">Generate new codes</button></p></form>
+		{{else}}<p>One-time codes for when you can't use your app or e-mail. They are created when you set up two-step login.</p>{{end}}
+	</div>
+	<div class="asg-card" id="adminsec-devices-card">
+		<h2><span class="dashicons dashicons-laptop"></span> Remembered devices</h2>
+		{{if .Devices}}<table class="widefat striped"><tbody>{{range .Devices}}<tr><td>{{.Device}}<br><span class="description">{{.IP}} &middot; last used {{date .LastUsed ""}}</span></td>
+			<td style="text-align:right"><form method="post" action="/wp-admin/admin?page=adminsecgo-account"><input type="hidden" name="_wpnonce" value="{{$.Data.Nonce}}"><input type="hidden" name="device" value="{{.ID}}"><button type="submit" name="adminsec_do" value="device_forget" class="button-link">Forget</button></form></td></tr>{{end}}</tbody></table>
+		<form method="post" action="/wp-admin/admin?page=adminsecgo-account"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><p><button type="submit" name="adminsec_do" value="devices_forget" class="button">Forget all devices</button></p></form>
+		{{else}}<p>{{if .RememberOn}}No device is remembered. Tick “Remember this device” when you log in to skip the code on that browser.{{else}}Remembering devices is switched off on this site.{{end}}</p>{{end}}
+	</div>
+</div>
+<p class="description">Applications using the REST API sign in with <a href="/wp-admin/profile#application-passwords-section">Application Passwords</a>, which don't ask for a second factor.</p>
+{{end}}
+
+{{else if eq .Page "dashboard"}}
+<h1 class="wp-heading-inline"><span class="dashicons dashicons-shield" style="font-size:28px;width:28px;height:28px;margin-right:6px;color:#2271b1"></span>AdminSecGo</h1>
+<hr class="wp-header-end">
+{{template "notices" $}}
+<div class="asg-cards">
+	<div class="asg-card"><h2>Security score</h2>
+		<div class="asg-score"><div class="asg-ring" style="--p:{{.Score}};--c:{{if ge .Score 80}}#00a32a{{else if ge .Score 50}}#dba617{{else}}#d63638{{end}}"><span id="adminsec-score">{{.Score}}%</span></div>
+		<div><p>{{if ge .Score 80}}Well protected.{{else if ge .Score 50}}Good start: a few things left.{{else}}The site needs attention.{{end}}</p><p class="description">Work through the checklist below to raise it.</p></div></div></div>
+	<div class="asg-card"><h2>At a glance</h2>
+		<div class="asg-stats"><div><b>{{.With2FA}}</b>users with 2FA</div><div><b>{{.WithMFA}}</b>users with e-mailed codes</div><div><b>{{.Failed24}}</b>failed logins (24 h)</div><div><b>{{.ActiveLockouts}}</b>active lockouts</div></div>
+		<p>Login URL: <code>{{.HomeURL}}{{.LoginURL}}</code></p></div>
+</div>
+<div class="asg-card"><h2>Checklist</h2>
+<ul class="asg-checks">{{range .Checks}}<li><span class="dashicons {{if .OK}}dashicons-yes-alt{{else}}dashicons-warning{{end}}" aria-hidden="true"></span>
+	<div><strong>{{.Label}}</strong><br><span class="description">{{.Detail}}</span></div>
+	{{if not .OK}}<a class="button asg-fix" href="{{.FixURL}}">{{.FixLabel}}</a>{{else}}<span class="asg-fix asg-pill on">Done</span>{{end}}</li>{{end}}</ul></div>
+<div class="asg-card"><h2>Recent activity</h2>
+{{if .Recent}}<table class="widefat striped"><tbody>{{range .Recent}}<tr class="asg-sev-{{.Severity}}"><td>{{date .When "Y-m-d H:i"}}</td><td>{{.Label}}</td><td>{{.Username}}</td><td>{{.IP}}</td><td>{{.Message}}</td></tr>{{end}}</tbody></table>
+<p><a href="/wp-admin/admin?page=adminsecgo-log">View the activity log &rarr;</a></p>{{else}}<p>Nothing logged yet.</p>{{end}}</div>
+
+{{else if eq .Page "settings"}}
+<h1 class="wp-heading-inline">AdminSecGo Settings</h1>
+<hr class="wp-header-end">
+{{template "notices" $}}
+<nav class="nav-tab-wrapper wp-clearfix" aria-label="Secondary menu">{{range .Tabs}}<a href="/wp-admin/admin?page=adminsecgo-settings&amp;tab={{index . 0}}" class="nav-tab{{if eq (index . 0) $.Data.Tab}} nav-tab-active{{end}}">{{index . 1}}</a>{{end}}</nav>
+<form method="post" action="/wp-admin/admin?page=adminsecgo-settings&amp;tab={{.Tab}}" id="adminsec-settings">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="tab" value="{{.Tab}}">
+{{if eq .Tab "twofactor"}}
+{{if not .MailReady}}<div class="notice notice-warning inline"><p><strong>E-mail delivery is not set up.</strong> {{.MailWhy}} <a href="{{.MailFixURL}}">Set it up</a>. Until then nobody can enable e-mailed codes, and requirements cannot be switched on.</p></div>{{end}}
+<h2 class="title">Requirement per role</h2>
+<p>Users of a role that requires two-step login are reminded on every screen during the grace period; afterwards they can only reach their Security screen until it is set up. 2FA (authenticator app) always includes e-mailed codes as its fallback.</p>
+<table class="widefat striped asg-roles" style="max-width:640px"><thead><tr><th>Role</th><th>Not required</th><th>E-mailed codes (MFA)</th><th>Authenticator app (2FA)</th></tr></thead><tbody>
+{{range .Roles}}{{$v := index $.Data.S.RequireRoles .Slug}}<tr><td>{{.Name}}</td>
+	<td><input type="radio" name="require_{{.Slug}}" value=""{{if eq $v ""}} checked{{end}} aria-label="{{.Name}}: not required"></td>
+	<td><input type="radio" name="require_{{.Slug}}" value="mfa"{{if eq $v "mfa"}} checked{{end}} aria-label="{{.Name}}: MFA"></td>
+	<td><input type="radio" name="require_{{.Slug}}" value="2fa"{{if eq $v "2fa"}} checked{{end}} aria-label="{{.Name}}: 2FA"></td></tr>{{end}}
+</tbody></table>
+<table class="form-table" role="presentation">
+<tr><th scope="row"><label for="grace_days">Grace period</label></th><td><input type="number" min="0" max="90" class="small-text" name="grace_days" id="grace_days" value="{{.S.GraceDays}}"> days</td></tr>
+<tr><th scope="row"><label for="remember_days">Remember devices for</label></th><td><input type="number" min="0" max="365" class="small-text" name="remember_days" id="remember_days" value="{{.S.RememberDays}}"> days <p class="description">0 switches “Remember this device” off. Users can forget their devices under Users › Security.</p></td></tr>
+</table>
+{{else if eq .Tab "login"}}
+<h2 class="title">Custom login URL</h2>
+<table class="form-table" role="presentation">
+<tr><th scope="row">Hide the login</th><td><label><input type="checkbox" name="hide_login" value="1"{{if .S.HideLogin}} checked{{end}}> Use a custom login URL; <code>/wp-login</code>, <code>/wp-login.php</code> and <code>/wp-admin</code> answer 404 to visitors who are not logged in</label></td></tr>
+<tr><th scope="row"><label for="login_slug">Login URL</label></th><td><code>{{.HomeURL}}/</code><input type="text" name="login_slug" id="login_slug" class="regular-text" value="{{.S.LoginSlug}}" placeholder="my-login" pattern="[a-z0-9][a-z0-9_\-]{2,63}">
+	<p class="description">Bookmark it. If you ever lose it, set <code>WPGO_ADMINSEC_DISABLE_HIDE_LOGIN=1</code> in the server's environment or run <code>wpgo adminsec disable-hide-login</code>: <code>/wp-login</code> works again.</p></td></tr>
+<tr><th scope="row"><label for="hide_redirect">Hidden URLs</label></th><td><input type="text" name="hide_redirect" id="hide_redirect" class="regular-text" value="{{.S.HideRedirect}}" placeholder="404 page"><p class="description">Empty: the theme's 404 page. Or a path (like <code>/</code>) or URL to redirect to.</p></td></tr>
+</table>
+<h2 class="title">Login form</h2>
+<table class="form-table" role="presentation">
+<tr><th scope="row">Error messages</th><td><label><input type="checkbox" name="generic_errors" value="1"{{if .S.GenericErrors}} checked{{end}}> Say only “the username or password is incorrect”, never whether the account exists</label></td></tr>
+<tr><th scope="row">User enumeration</th><td><label><input type="checkbox" name="block_enumeration" value="1"{{if .S.BlockEnumeration}} checked{{end}}> Block <code>/?author=N</code>, the REST users list (<code>/wp-json/wp/v2/users</code>) and the users sitemap for visitors</label></td></tr>
+</table>
+{{else if eq .Tab "lockouts"}}
+<h2 class="title">Limit login attempts</h2>
+<table class="form-table" role="presentation">
+<tr><th scope="row"><label for="ip_max_failures">Per IP address</label></th><td>lock out after <input type="number" min="0" max="100" class="small-text" name="ip_max_failures" id="ip_max_failures" value="{{.S.IPMaxFailures}}"> failed logins <span class="description">(0: off)</span></td></tr>
+<tr><th scope="row"><label for="user_max_failures">Per username</label></th><td>lock out after <input type="number" min="0" max="100" class="small-text" name="user_max_failures" id="user_max_failures" value="{{.S.UserMaxFailures}}"> failed logins <span class="description">(0: off; catches attacks spread over many IPs)</span></td></tr>
+<tr><th scope="row"><label for="fail_window">Within</label></th><td><input type="number" min="1" max="1440" class="small-text" name="fail_window" id="fail_window" value="{{.S.FailWindow}}"> minutes</td></tr>
+<tr><th scope="row"><label for="lockout_minutes">Lockout</label></th><td><input type="number" min="1" class="small-text" name="lockout_minutes" id="lockout_minutes" value="{{.S.LockoutMinutes}}"> minutes</td></tr>
+<tr><th scope="row"><label for="long_lockout_after">Progressive lockout</label></th><td>after <input type="number" min="0" max="100" class="small-text" name="long_lockout_after" id="long_lockout_after" value="{{.S.LongLockoutAfter}}"> lockouts in 24 hours, lock out for <input type="number" min="1" class="small-text" name="long_lockout_hours" value="{{.S.LongLockoutHours}}"> hours</td></tr>
+</table>
+<h2 class="title">IP lists</h2>
+<p>One IP address or CIDR range per line (<code>203.0.113.7</code>, <code>2001:db8::/32</code>); <code>#</code> starts a comment. Your IP address is <code>{{.MyIP}}</code>.</p>
+<table class="form-table" role="presentation">
+<tr><th scope="row"><label for="allow_list">Allow list</label></th><td><textarea name="allow_list" id="allow_list" rows="4" class="large-text code">{{.S.AllowList}}</textarea><p class="description">Never locked out (second factors are still asked for).</p></td></tr>
+<tr><th scope="row"><label for="block_list">Block list</label></th><td><textarea name="block_list" id="block_list" rows="4" class="large-text code">{{.S.BlockList}}</textarea>
+	<p><label><input type="checkbox" name="block_list_site" value="1"{{if .S.BlockListSite}} checked{{end}}> Block the whole site for these addresses, not only the login</label></p></td></tr>
+</table>
+{{else if eq .Tab "passwords"}}
+<h2 class="title">Password policy</h2>
+<p>Applied when a password is set (profile, Add User, password reset, REST API). A user with several roles gets the strictest rule.</p>
+<table class="widefat striped asg-roles" style="max-width:640px"><thead><tr><th>Role</th><th>Minimum length</th><th>Minimum strength</th></tr></thead><tbody>
+{{range .Roles}}{{$slug := .Slug}}<tr><td>{{.Name}}</td><td><input type="number" min="0" max="128" class="small-text" name="pw_len_{{.Slug}}" value="{{index $.Data.S.PwMinLength .Slug}}" aria-label="{{.Name}} minimum length"></td>
+	<td><select name="pw_strength_{{.Slug}}" aria-label="{{.Name}} minimum strength">{{$cur := index $.Data.S.PwMinStrength .Slug}}{{range $i, $l := $.Data.Strengths}}<option value="{{$i}}"{{if eq $i $cur}} selected{{end}}>{{if eq $i 0}}Any{{else}}{{$l}}{{end}}</option>{{end}}</select></td></tr>{{end}}
+</tbody></table>
+<table class="form-table" role="presentation">
+<tr><th scope="row">Common passwords</th><td><label><input type="checkbox" name="pw_block_common" value="1"{{if .S.PwBlockCommon}} checked{{end}}> Refuse the 10,000 most common passwords</label></td></tr>
+<tr><th scope="row">Existing passwords</th><td><label><input type="checkbox" name="pw_check_login" value="1"{{if .S.PwCheckLogin}} checked{{end}}> At login, ask users whose password breaks the policy to choose a new one</label>
+	<p class="description">Administrators can also require a password change for one user from their profile (Users › Edit).</p></td></tr>
+</table>
+{{else if eq .Tab "sessions"}}
+<h2 class="title">Sessions</h2>
+<table class="form-table" role="presentation">
+<tr><th scope="row"><label for="idle_minutes">Idle timeout</label></th><td><input type="number" min="0" max="10080" class="small-text" name="idle_minutes" id="idle_minutes" value="{{.S.IdleMinutes}}"> minutes <p class="description">Log out sessions that were not used for this long (0: keep them until they expire: 2 days, 14 with “Remember Me”). Every user sees their sessions, with device, IP and last activity, on their profile and can log out the others.</p></td></tr>
+</table>
+{{else if eq .Tab "hardening"}}
+<h2 class="title">Security headers</h2>
+<table class="form-table" role="presentation">
+<tr><th scope="row">Headers</th><td><label><input type="checkbox" name="headers" value="1"{{if .S.Headers}} checked{{end}}> Send the headers below on every response</label><p class="description">The Content-Security-Policy stays WordPress Go's own; it is not changed here.</p></td></tr>
+<tr><th scope="row"><label for="frame_options">X-Frame-Options</label></th><td><select name="frame_options" id="frame_options"><option value="SAMEORIGIN"{{if eq .S.FrameOptions "SAMEORIGIN"}} selected{{end}}>SAMEORIGIN</option><option value="DENY"{{if eq .S.FrameOptions "DENY"}} selected{{end}}>DENY (breaks same-site previews and page-builder frames)</option></select></td></tr>
+<tr><th scope="row"><label for="referrer_policy">Referrer-Policy</label></th><td><input type="text" class="regular-text" name="referrer_policy" id="referrer_policy" value="{{.S.ReferrerPolicy}}"></td></tr>
+<tr><th scope="row"><label for="permissions_policy">Permissions-Policy</label></th><td><textarea name="permissions_policy" id="permissions_policy" rows="2" class="large-text code">{{.S.PermissionsPolicy}}</textarea></td></tr>
+<tr><th scope="row"><label for="hsts_max_age">Strict-Transport-Security</label></th><td>max-age <input type="number" min="0" class="regular-text" style="width:10em" name="hsts_max_age" id="hsts_max_age" value="{{.S.HSTSMaxAge}}"> seconds
+	<label><input type="checkbox" name="hsts_subdomains" value="1"{{if .S.HSTSSubdomains}} checked{{end}}> includeSubDomains</label> <label><input type="checkbox" name="hsts_preload" value="1"{{if .S.HSTSPreload}} checked{{end}}> preload</label>
+	<p class="description">Sent on HTTPS requests only.</p></td></tr>
+</table>
+<h2 class="title">Hardening</h2>
+<table class="form-table" role="presentation">
+<tr><th scope="row">File editors</th><td><label><input type="checkbox" name="disable_file_edit" value="1"{{if .S.DisableFileEdit}} checked{{end}}> Disable the Theme File Editor and Plugin File Editor (DISALLOW_FILE_EDIT)</label></td></tr>
+<tr><th scope="row">Version</th><td><label><input type="checkbox" name="hide_version" value="1"{{if .S.HideVersion}} checked{{end}}> Hide the WordPress Go version from front-end markup and feeds (generator tag, <code>?ver=</code>)</label></td></tr>
+<tr><th scope="row">REST API</th><td><label><input type="checkbox" name="rest_restrict" value="1"{{if .S.RESTVisitors}} checked{{end}}> Only logged-in users and Application Passwords may use the REST API</label>
+	<p class="description">Visitors keep oEmbed and the contact form routes, plus the route prefixes below (one per line, like <code>wp/v2/posts</code>). The block editor, headless front ends and apps that read the API without logging in stop working.</p>
+	<textarea name="rest_allow" rows="3" class="large-text code" aria-label="Extra REST routes for visitors">{{.S.RESTAllow}}</textarea></td></tr>
+</table>
+{{else if eq .Tab "alerts"}}
+<h2 class="title">Alerts</h2>
+{{if not .MailReady}}<div class="notice notice-warning inline"><p>{{.MailWhy}} <a href="{{.MailFixURL}}">Set it up</a> so alerts reach you.</p></div>{{end}}
+<table class="form-table" role="presentation">
+<tr><th scope="row">E-mail the administrator</th><td><fieldset><label><input type="checkbox" name="alert_new_ip" value="1"{{if .S.AlertNewIP}} checked{{end}}> when an administrator logs in from a new IP address</label><br>
+	<label><input type="checkbox" name="alert_lockout" value="1"{{if .S.AlertLockout}} checked{{end}}> when an IP address or username is locked out</label></fieldset></td></tr>
+<tr><th scope="row"><label for="alert_email">Send alerts to</label></th><td><input type="email" class="regular-text" name="alert_email" id="alert_email" value="{{.S.AlertEmail}}" placeholder="{{settingStr "admin_email"}}"></td></tr>
+</table>
+<h2 class="title">Activity log</h2>
+<table class="form-table" role="presentation">
+<tr><th scope="row"><label for="log_retention">Keep entries for</label></th><td><input type="number" min="0" max="3650" class="small-text" name="log_retention" id="log_retention" value="{{.S.LogRetention}}"> days <span class="description">(0: forever; older entries are removed daily)</span></td></tr>
+<tr><th scope="row">Failed logins</th><td><label><input type="checkbox" name="log_failed_skip" value="1"{{if .S.LogFailedSkip}} checked{{end}}> Don't log failed logins (they still count toward lockouts)</label></td></tr>
+</table>
+{{end}}
+<p class="submit"><input type="submit" class="button button-primary" value="Save Changes"></p>
+</form>
+
+{{else if eq .Page "lockouts"}}
+<h1 class="wp-heading-inline">Lockouts</h1>
+<hr class="wp-header-end">
+{{template "notices" $}}
+<h2>Active lockouts</h2>
+<form method="post" action="/wp-admin/admin?page=adminsecgo-lockouts"><input type="hidden" name="_wpnonce" value="{{.Nonce}}">
+<table class="wp-list-table widefat fixed striped"><thead><tr><th>Locked out</th><th>Reason</th><th>Since</th><th>Until</th><th></th></tr></thead><tbody>
+{{range .Lockouts}}<tr><td>{{if eq .Kind "ip"}}IP <code>{{.Value}}</code>{{else}}Username <strong>{{.Value}}</strong>{{end}}{{if .Long}} <span class="asg-pill off">long</span>{{end}}</td><td>{{.Reason}}</td><td>{{date .Created "Y-m-d H:i"}}</td><td>{{date .Until "Y-m-d H:i"}}</td>
+	<td><button type="submit" name="lockout" value="{{.ID}}" class="button" onclick="this.form.adminsec_do.value='release'">Release</button></td></tr>
+{{else}}<tr class="no-items"><td colspan="5">No active lockouts.</td></tr>{{end}}
+</tbody></table>
+<input type="hidden" name="adminsec_do" value="release">
+{{if .Lockouts}}<p><button type="submit" class="button" onclick="this.form.adminsec_do.value='release_all'">Release all</button></p>{{end}}
+</form>
+<h2>Lock out an IP address</h2>
+<form method="post" action="/wp-admin/admin?page=adminsecgo-lockouts" class="asg-filters"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="adminsec_do" value="lock_ip">
+	<label>IP address <input type="text" name="ip" required></label> <label>for <input type="number" name="hours" value="24" min="1" class="small-text"> hours</label> <button type="submit" class="button">Lock out</button>
+	<span class="description">For a permanent block use the block list (Settings › Lockouts &amp; IPs).</span></form>
+<h2>Lockout log</h2>
+<table class="wp-list-table widefat fixed striped"><thead><tr><th>Locked out</th><th>Reason</th><th>Since</th><th>Until</th></tr></thead><tbody>
+{{range .History}}<tr><td>{{if eq .Kind "ip"}}IP <code>{{.Value}}</code>{{else}}Username <strong>{{.Value}}</strong>{{end}}{{if .Manual}} <span class="asg-pill">released</span>{{end}}</td><td>{{.Reason}}</td><td>{{date .Created "Y-m-d H:i"}}</td><td>{{date .Until "Y-m-d H:i"}}</td></tr>
+{{else}}<tr class="no-items"><td colspan="4">No past lockouts.</td></tr>{{end}}
+</tbody></table>
+
+{{else if eq .Page "log"}}
+<h1 class="wp-heading-inline">Activity Log</h1>
+<a href="{{.ExportURL}}" class="page-title-action" id="adminsec-export">Export CSV</a>
+<hr class="wp-header-end">
+{{template "notices" $}}
+<form method="get" action="/wp-admin/admin" class="asg-filters"><input type="hidden" name="page" value="adminsecgo-log">
+	<select name="event" aria-label="Event"><option value="">All events</option>{{range .Events}}<option value="{{index . 0}}"{{if eq (index . 0) $.Data.Filter.Event}} selected{{end}}>{{index . 1}}</option>{{end}}</select>
+	<select name="severity" aria-label="Severity"><option value="">All severities</option><option value="notice"{{if eq .Filter.Severity "notice"}} selected{{end}}>notice</option><option value="warning"{{if eq .Filter.Severity "warning"}} selected{{end}}>warning</option><option value="info"{{if eq .Filter.Severity "info"}} selected{{end}}>info</option></select>
+	<input type="text" name="user" placeholder="User" value="{{.Filter.User}}" aria-label="User">
+	<input type="text" name="ip" placeholder="IP address" value="{{.Filter.IP}}" aria-label="IP address">
+	<input type="date" name="from" value="{{.Filter.From}}" aria-label="From"> <input type="date" name="to" value="{{.Filter.To}}" aria-label="To">
+	<button type="submit" class="button">Filter</button> <a href="/wp-admin/admin?page=adminsecgo-log" class="button-link">Reset</a></form>
+<div class="tablenav top">{{template "tablenav-pages" .Pagination}}<br class="clear"></div>
+<table class="wp-list-table widefat fixed striped" id="adminsec-log"><thead><tr><th style="width:130px">Date</th><th style="width:170px">Event</th><th style="width:110px">User</th><th style="width:120px">IP</th><th>Details</th></tr></thead><tbody>
+{{range .Log}}<tr class="asg-sev-{{.Severity}}"><td>{{date .When "Y-m-d H:i:s"}}</td><td>{{.Label}}</td><td>{{if .UserID}}<a href="/wp-admin/user-edit?user_id={{.UserID}}">{{.Username}}</a>{{else}}{{.Username}}{{end}}</td><td><code>{{.IP}}</code></td>
+	<td>{{.Message}}{{if .Object}} <span class="description">({{.Object}})</span>{{end}}{{if .UserAgent}}<br><span class="description" title="{{.UserAgent}}">{{printf "%.80s" .UserAgent}}</span>{{end}}</td></tr>
+{{else}}<tr class="no-items"><td colspan="5">No entries found.</td></tr>{{end}}
+</tbody></table>
+<div class="tablenav bottom">{{template "tablenav-pages" .Pagination}}<br class="clear"></div>
+{{end}}
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}
+
+{{define "adminsecgo-profile"}}
+<h2 id="adminsecgo">Two-Step Login &amp; Sessions</h2>
+<table class="form-table" role="presentation">
+<tr><th>Two-step login</th><td>
+	{{if .F.TOTPEnabled}}<span class="adminsec-badge is-2fa">2FA</span> Authenticator app with e-mailed codes as the fallback{{else if .F.EmailEnabled}}<span class="adminsec-badge is-mfa">MFA</span> E-mailed codes{{if .F.Email}} to {{.F.Email}}{{end}}{{else}}Off{{end}}
+	{{if or .F.TOTPEnabled .F.EmailEnabled}} &middot; {{.BackupLeft}} backup codes left{{end}}{{if .Devices}} &middot; {{.Devices}} remembered device{{if ne .Devices 1}}s{{end}}{{end}}
+	{{if and .Enroll.Required (not .Enroll.Satisfied)}}<p class="description" style="color:#b32d2e">The role requires {{if eq .Enroll.Required "2fa"}}2FA{{else}}MFA{{end}}{{if not .Enroll.Deadline.IsZero}}, deadline {{date .Enroll.Deadline ""}}{{end}}.</p>{{end}}
+	{{if .Self}}<p><a class="button" href="{{.AccountURL}}">Manage two-step login</a></p>{{end}}
+	{{if .CanManage}}<p>{{if or .F.TOTPEnabled .F.EmailEnabled .Devices}}<button type="submit" class="button" name="adminsec_action" value="reset-factors" onclick="return confirm('Remove this user\'s second factors, backup codes and remembered devices?')">Reset two-step login</button> {{end}}
+		{{if .ForcePassword}}<button type="submit" class="button" name="adminsec_action" value="unforce-password">Cancel the required password change</button>{{else}}<button type="submit" class="button" name="adminsec_action" value="force-password">Require a password change at next login</button>{{end}}</p>{{end}}
+</td></tr>
+<tr><th>Active sessions</th><td>
+	<table class="widefat striped" style="max-width:760px" id="adminsec-sessions"><thead><tr><th>Device</th><th>IP address</th><th>Last activity</th><th>Started</th><th></th></tr></thead><tbody>
+	{{range .Sessions}}<tr><td>{{.Device}}{{if .Current}} <span class="adminsec-badge">This session</span>{{end}}</td><td><code>{{.IP}}</code></td><td>{{date .LastSeen "Y-m-d H:i"}}</td><td>{{date .Created "Y-m-d H:i"}}</td>
+		<td>{{if not .Current}}<button type="submit" class="button-link" name="adminsec_action" value="revoke-session:{{.ID}}">Log out</button>{{end}}</td></tr>
+	{{else}}<tr><td colspan="5">No active sessions.</td></tr>{{end}}</tbody></table>
+	{{if .CanManage}}{{if .Sessions}}<p><button type="submit" class="button" name="adminsec_action" value="logout-all">Log out all sessions</button></p>{{end}}{{end}}
+	{{if .IdleMinutes}}<p class="description">Sessions end after {{.IdleMinutes}} minutes without activity.</p>{{end}}
+</td></tr>
+</table>
+<style>.adminsec-badge{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:600;background:#f0f0f1;color:#50575e}.adminsec-badge.is-2fa{background:#edfaef;color:#007017}.adminsec-badge.is-mfa{background:#f0f6fc;color:#0a4b78}</style>
+{{end}}

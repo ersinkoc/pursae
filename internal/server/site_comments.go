@@ -313,7 +313,7 @@ func (s *Server) commentForm(c *gin.Context, p *store.Post, lb *links.Builder, u
 	fmt.Fprintf(&sb, `<h2 id="reply-title" class="comment-reply-title">%s <small><a rel="nofollow" id="cancel-comment-reply-link" href="%s#respond"%s>Cancel reply</a></small></h2>`, title, esc(permalink), cancelStyle)
 
 	if s.settings.Bool("comment_registration") && u == nil {
-		fmt.Fprintf(&sb, `<p class="must-log-in">You must be <a href="/wp-login?redirect_to=%s">logged in</a> to post a comment.</p>`, url.QueryEscape(permalink))
+		fmt.Fprintf(&sb, `<p class="must-log-in">You must be <a href="%s?redirect_to=%s">logged in</a> to post a comment.</p>`, s.loginPath(), url.QueryEscape(permalink))
 		sb.WriteString("\t</div><!-- #respond -->\n")
 		return template.HTML(sb.String())
 	}
@@ -326,8 +326,8 @@ func (s *Server) commentForm(c *gin.Context, p *store.Post, lb *links.Builder, u
 		return ""
 	}
 	if u != nil {
-		fmt.Fprintf(&sb, `<p class="logged-in-as"><a href="/wp-admin/profile" aria-label="Logged in as %s. Edit your profile.">Logged in as %s</a>. <a href="/wp-login?action=logout&amp;_wpnonce=%s">Log out?</a> <span class="required-field-message">Required fields are marked <span class="required">*</span></span></p>`,
-			esc(u.DisplayName), esc(u.DisplayName), s.nonce(c, "log-out"))
+		fmt.Fprintf(&sb, `<p class="logged-in-as"><a href="/wp-admin/profile" aria-label="Logged in as %s. Edit your profile.">Logged in as %s</a>. <a href="%s?action=logout&amp;_wpnonce=%s">Log out?</a> <span class="required-field-message">Required fields are marked <span class="required">*</span></span></p>`,
+			esc(u.DisplayName), esc(u.DisplayName), s.loginPath(), s.nonce(c, "log-out"))
 	} else {
 		sb.WriteString(`<p class="comment-notes"><span id="email-notes">Your email address will not be published.</span> <span class="required-field-message">Required fields are marked <span class="required">*</span></span></p>`)
 	}

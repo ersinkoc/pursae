@@ -331,9 +331,10 @@ func (s *Server) installedPlugins(c *gin.Context) []pluginRow {
 	if rows[2].Active {
 		rows[2].SettingsURL = "/wp-admin/gowebeditor-theme-builder"
 	}
-	rows = append(rows, s.maintPluginRow())  // Maintenance-Go (maintenance_admin.go)
-	rows = append(rows, s.seogoPluginRow())  // SEO-Go (seogo.go)
-	rows = append(rows, s.gooikePluginRow()) // Gooike (gooike.go)
+	rows = append(rows, s.maintPluginRow())    // Maintenance-Go (maintenance_admin.go)
+	rows = append(rows, s.seogoPluginRow())    // SEO-Go (seogo.go)
+	rows = append(rows, s.gooikePluginRow())   // Gooike (gooike.go)
+	rows = append(rows, s.adminsecPluginRow()) // AdminSecGo (adminsec.go)
 	for i := range rows {
 		rows[i].ActivateURL, rows[i].DeactivateURL = n("activate", rows[i].Slug), n("deactivate", rows[i].Slug)
 	}
@@ -478,7 +479,17 @@ func (s *Server) pluginAction(c *gin.Context, action, slug string) {
 	fail := func(err error) {
 		c.Redirect(http.StatusFound, "/wp-admin/plugins?error="+url.QueryEscape(err.Error()))
 	}
+	if action == "activate" || action == "deactivate" {
+		defer s.asAuditPlugin(c, action, slug)
+	}
 	switch slug {
+	case asSlug: // AdminSecGo
+		if err := s.adminsecPluginAction(c, action); err != nil {
+			fail(err)
+			return
+		}
+		c.Redirect(http.StatusFound, "/wp-admin/plugins?"+action+"=true")
+		return
 	case "classic-editor":
 		_ = s.settings.Set(c, map[string]any{"native_classic_editor": action == "activate"})
 		c.Redirect(http.StatusFound, "/wp-admin/plugins?"+action+"=true")

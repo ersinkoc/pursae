@@ -173,7 +173,7 @@ func (s *Server) maintRender(w http.ResponseWriter, r *http.Request, st maintSet
 		Subscribed:   r.URL.Query().Get("mtnc_subscribed") == "1",
 		SubscribeErr: maintSubscribeErrors[r.URL.Query().Get("mtnc_error")],
 		Unlocked:     r.URL.Query().Get("mtnc_unlock"),
-		LoginAction:  "/wp-login",
+		LoginAction:  s.loginPath(),
 		RedirectTo:   r.URL.RequestURI(),
 	}
 	_, v.Preview = r.URL.Query()[maintPreviewParam]

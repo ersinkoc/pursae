@@ -161,7 +161,7 @@ func (s *Server) rssFeed(ctx context.Context, c *gin.Context, q *siteQuery, lb *
 	fmt.Fprintf(&sb, "\t<atom:link href=\"%s\" rel=\"self\" type=\"application/rss+xml\" />\n", html.EscapeString(lb.HomeURL(c.Request.URL.RequestURI())))
 	fmt.Fprintf(&sb, "\t<link>%s</link>\n\t<description>%s</description>\n\t<lastBuildDate>%s</lastBuildDate>\n\t<language>en-US</language>\n",
 		html.EscapeString(lb.HomeURL("/")), html.EscapeString(s.settings.String("blogdescription")), feedBuildDate(posts).Format(rssTime))
-	sb.WriteString("\t<sy:updatePeriod>\n\thourly\t</sy:updatePeriod>\n\t<sy:updateFrequency>\n\t1\t</sy:updateFrequency>\n\t<generator>https://wordpress.org/?v=wpgo-" + Version + "</generator>\n")
+	sb.WriteString("\t<sy:updatePeriod>\n\thourly\t</sy:updatePeriod>\n\t<sy:updateFrequency>\n\t1\t</sy:updateFrequency>\n\t<generator>https://wordpress.org/?v=wpgo-" + s.publicVersion() + "</generator>\n")
 	for _, p := range posts {
 		name, _ := s.postAuthorName(ctx, p)
 		cats, _ := s.store.TermsForPosts(ctx, []int64{p.ID}, "category")
@@ -215,7 +215,7 @@ func (s *Server) atomFeed(ctx context.Context, c *gin.Context, q *siteQuery, lb 
 
 	<generator uri="https://wordpress.org/" version="wpgo-%s">WordPress</generator>
 `, html.EscapeString(strings.TrimSuffix(home, "/")), s.feedTitle(q), html.EscapeString(s.settings.String("blogdescription")), feedBuildDate(posts).Format(atomTime),
-		html.EscapeString(home), html.EscapeString(lb.FeedLink("atom")), html.EscapeString(lb.HomeURL(c.Request.URL.RequestURI())), Version)
+		html.EscapeString(home), html.EscapeString(lb.FeedLink("atom")), html.EscapeString(lb.HomeURL(c.Request.URL.RequestURI())), s.publicVersion())
 	for _, p := range posts {
 		name, authorURL := s.postAuthorName(ctx, p)
 		link := lb.Permalink(p)
@@ -302,7 +302,7 @@ func (s *Server) rssCommentsFeed(ctx context.Context, c *gin.Context, q *siteQue
 `)
 	fmt.Fprintf(&sb, "\t<title>%s</title>\n\t<atom:link href=\"%s\" rel=\"self\" type=\"application/rss+xml\" />\n\t<link>%s</link>\n\t<description>%s</description>\n\t<lastBuildDate>%s</lastBuildDate>\n",
 		s.commentsFeedTitle(q), html.EscapeString(lb.HomeURL(c.Request.URL.RequestURI())), html.EscapeString(link), html.EscapeString(s.settings.String("blogdescription")), built.Format(rssTime))
-	sb.WriteString("\t<sy:updatePeriod>\n\thourly\t</sy:updatePeriod>\n\t<sy:updateFrequency>\n\t1\t</sy:updateFrequency>\n\t<generator>https://wordpress.org/?v=wpgo-" + Version + "</generator>\n")
+	sb.WriteString("\t<sy:updatePeriod>\n\thourly\t</sy:updatePeriod>\n\t<sy:updateFrequency>\n\t1\t</sy:updateFrequency>\n\t<generator>https://wordpress.org/?v=wpgo-" + s.publicVersion() + "</generator>\n")
 	for _, cm := range comments {
 		p := q.Post
 		if p == nil {
@@ -457,6 +457,9 @@ func (s *Server) sitemapPart(c *gin.Context, part string) {
 			locs = append(locs, lb.TermLink(t))
 		}
 	case "users":
+		if s.asBlockAuthorSitemap() { // AdminSecGo: user enumeration
+			break
+		}
 		rows, err := s.store.Pool.Query(ctx, `SELECT DISTINCT u.id, u.nicename FROM users u JOIN posts p ON p.author_id = u.id
 			WHERE p.type = 'post' AND p.status = 'publish' ORDER BY u.id`)
 		if err == nil {
