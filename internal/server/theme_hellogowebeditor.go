@@ -27,7 +27,7 @@ import (
 
 const helloThemeSlug = "hello-gowebeditor"
 
-const helloThemeVersion = "1.0.0"
+const helloThemeVersion = "1.0.1"
 
 // helloMenuLocations are the theme's menu locations (and those of every saved theme).
 var helloMenuLocations = []MenuLocation{{"primary", "Primary Menu"}, {"footer", "Footer Menu"}}

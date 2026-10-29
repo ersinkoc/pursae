@@ -55,6 +55,11 @@ type Server struct {
 	sandbox *sandboxInfo
 	// previews are the site's theme-preview sandboxes (nil on a sandbox).
 	previews *previewManager
+
+	// Golementor Studio library (golementor_library.go): the loaded sections and kits, and the
+	// tests' fixture directory in place of web/gowebeditor/library.
+	gweLibCache    atomic.Pointer[gweStudioLib]
+	gweLibOverride fs.FS
 }
 
 // New builds the server of the site.
@@ -294,6 +299,9 @@ func (s *Server) routes() *gin.Engine {
 	admin.POST("/admin", s.pluginAdmin)
 	admin.GET("/gowebeditor-theme-builder", s.golementorOnly(), s.gweThemeBuilder) // Golementor Theme Builder
 	admin.POST("/gowebeditor-theme-builder", s.golementorOnly(), s.gweThemeBuilder)
+	admin.GET("/golementor-setup", s.golementorOnly(), s.gweSetupScreen) // Golementor Studio setup wizard
+	admin.POST("/golementor-setup", s.golementorOnly(), s.gweSetupScreen)
+	admin.GET("/golementor-setup/preview", s.golementorOnly(), s.gweSetupPreview)
 	s.registerGoWebEditorProAdmin(admin) // Golementor Pro screens (gowebeditor_pro_admin.go)
 	s.acfgoRegisterRoutes(admin)         // ACF-Go screens (acfgo.go)
 	s.registerSEOGoAdmin(admin)          // SEO-Go screens (seogo_admin.go)

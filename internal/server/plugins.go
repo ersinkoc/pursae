@@ -440,6 +440,9 @@ func (s *Server) pluginsScreen(c *gin.Context) {
 		if c.Query("gwe_theme") == "hello" { // Golementor moved the site to its blank canvas theme
 			notices = append(notices, notice{Type: "info", Message: template.HTML("<strong>Hello Golementor</strong> is now the active theme: a blank canvas for Golementor. Design the header, footer and pages under <a href=\"/wp-admin/gowebeditor-theme-builder\">Appearance &rsaquo; Theme Builder</a>. Deactivating Golementor brings back your previous theme."), Dismissible: true})
 		}
+		if c.Query("gwe_setup") == "1" && s.golementorOn() { // Golementor Studio: offer the setup wizard
+			notices = append(notices, notice{Type: "info", Message: template.HTML("<strong>Golementor is ready.</strong> Start from a complete starter site (header, footer, pages, blog, menus, colors and fonts) and edit everything afterwards.</p><p><a class=\"button button-primary\" href=\"" + gweSetupPath + "\">Run Site Setup</a> <a class=\"button\" href=\"/wp-admin/gowebeditor-theme-builder\">Start from scratch</a>"), Dismissible: true})
+		}
 	case c.Query("deactivate") == "true":
 		notices = append(notices, notice{Type: "success", Message: "Plugin deactivated.", Dismissible: true})
 		if c.Query("gwe_theme") == "reset" { // Golementor: Hello Golementor was the active theme
@@ -539,6 +542,9 @@ func (s *Server) pluginAction(c *gin.Context, action, slug string) {
 			}
 			if s.settings.String("stylesheet") != before {
 				q += "&gwe_theme=hello"
+			}
+			if s.gweStarter() == nil && len(s.gweLib().Kits) > 0 {
+				q += "&gwe_setup=1" // Golementor Studio: the setup wizard (golementor_setup.go)
 			}
 		} else {
 			switched, err := s.golementorDeactivate(c)

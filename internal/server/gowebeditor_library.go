@@ -51,8 +51,9 @@ func (s *Server) gweLibraryData(c *gin.Context, data map[string]any) (any, error
 			templates = append(templates, s.gweTemplateItem(c, p))
 		}
 	}
-	templates = append(templates, s.gweDesignItems(c)...) // ready-made homepage designs (gowebeditor_designs.go)
-	return map[string]any{"templates": templates, "config": map[string]any{}}, nil
+	templates = append(templates, s.gweDesignItems(c)...)   // ready-made homepage designs (gowebeditor_designs.go)
+	templates = append(templates, s.gweLibBlockItems(c)...) // Golementor Studio sections (golementor_library.go)
+	return map[string]any{"templates": templates, "config": s.gweLibBlockConfig()}, nil
 }
 
 func (s *Server) gweSaveTemplate(c *gin.Context, data map[string]any, editorID int64) (any, error) {
@@ -100,6 +101,17 @@ func (s *Server) gweSaveTemplate(c *gin.Context, data map[string]any, editorID i
 func (s *Server) gweTemplateData(c *gin.Context, data map[string]any) (any, error) {
 	if src, _ := data["source"].(string); src == "remote" {
 		id, _ := data["template_id"].(string)
+		if secID, ok := strings.CutPrefix(id, gweLibSectionID); ok { // a Studio section
+			sec := s.gweLib().section(secID)
+			if sec == nil {
+				return nil, gweFail(http.StatusNotFound, "Template not found.")
+			}
+			tree, err := s.gweLibSectionContent(c, sec)
+			if err != nil {
+				return nil, err
+			}
+			return map[string]any{"content": tree, "page_settings": map[string]any{}}, nil
+		}
 		d := gweDesignByID(id)
 		if d == nil {
 			return nil, gweFail(http.StatusNotFound, "Template not found.")

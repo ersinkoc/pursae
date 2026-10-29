@@ -631,6 +631,9 @@ func (s *Server) gweEditor(c *gin.Context, p *store.Post) {
 	page = strings.Replace(page, "</body>", s.gweFontsEditorScript(c)+"</body>", 1)
 	// Homepage designs insert without Connect (gowebeditor_designs.go).
 	page = strings.Replace(page, "</body>", gweDesignsScript+"</body>", 1)
+	if len(s.gweLib().Sections) > 0 { // Studio sections: the library's Blocks tab (golementor_library.go)
+		page = strings.Replace(page, "</body>", gweLibBlocksTabStyle+"</body>", 1)
+	}
 	if js := s.gweEditorThemeScript(c, p); js != "" { // theme parts: Theme Builder / Save as theme
 		page = strings.Replace(page, "</body>", js+"</body>", 1)
 	}
