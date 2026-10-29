@@ -276,7 +276,7 @@ func (api *restAPI) serve(c *gin.Context, route string) {
 	route = "/" + strings.Trim(route, "/")
 	builderOn := s.golementorOn()
 	for _, r := range api.routes {
-		if (!builderOn && gweRESTNamespace(r.Namespace)) || s.gontactRESTHidden(r.Namespace) || (r.Namespace == pllRESTNamespace && !s.golylangOn()) {
+		if (!builderOn && gweRESTNamespace(r.Namespace)) || s.gontactRESTHidden(r.Namespace) || (r.Namespace == pllRESTNamespace && !s.golylangOn()) || s.gooikeRESTHidden(r.Namespace) {
 			continue
 		}
 		m := r.re.FindStringSubmatch(route)

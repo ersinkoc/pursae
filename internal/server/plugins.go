@@ -331,8 +331,9 @@ func (s *Server) installedPlugins(c *gin.Context) []pluginRow {
 	if rows[2].Active {
 		rows[2].SettingsURL = "/wp-admin/gowebeditor-theme-builder"
 	}
-	rows = append(rows, s.maintPluginRow()) // Maintenance-Go (maintenance_admin.go)
-	rows = append(rows, s.seogoPluginRow()) // SEO-Go (seogo.go)
+	rows = append(rows, s.maintPluginRow())  // Maintenance-Go (maintenance_admin.go)
+	rows = append(rows, s.seogoPluginRow())  // SEO-Go (seogo.go)
+	rows = append(rows, s.gooikePluginRow()) // Gooike (gooike.go)
 	for i := range rows {
 		rows[i].ActivateURL, rows[i].DeactivateURL = n("activate", rows[i].Slug), n("deactivate", rows[i].Slug)
 	}
@@ -532,6 +533,9 @@ func (s *Server) pluginAction(c *gin.Context, action, slug string) {
 	case seogoSlug:
 		s.seogoPluginAction(c, action)
 		return
+	case gooikeSlug: // Gooike (gooike.go)
+		s.gooikePluginAction(c, action)
+		return
 	case golementorSlug:
 		q := action + "=true"
 		if action == "activate" {
@@ -627,7 +631,7 @@ func (s *Server) installPackage(ctx context.Context, data []byte) (*plugins.Mani
 		return nil, err
 	}
 	slug := pkg.Manifest.Slug
-	if slug == "classic-editor" || slug == "wpgo-cache" || slug == maintSlug || slug == msSlug || slug == gontactSlug || slug == acfgoSlug || slug == golylangSlug || slug == seogoSlug {
+	if slug == "classic-editor" || slug == "wpgo-cache" || slug == maintSlug || slug == msSlug || slug == gontactSlug || slug == acfgoSlug || slug == golylangSlug || slug == seogoSlug || slug == gooikeSlug {
 		return nil, errors.New("that slug belongs to a built-in plugin")
 	}
 	if err := os.WriteFile(filepath.Join(s.plugins.dir, slug+".zip"), data, 0o644); err != nil {
@@ -730,7 +734,7 @@ func (s *Server) pluginInstall(c *gin.Context) {
 	d := pluginInstallData{Tab: c.DefaultQuery("tab", "featured"), Search: strings.TrimSpace(c.Query("s")), UploadNonce: s.nonce(c, "plugin-upload")}
 	installed := map[string]bool{}
 	var native []marketItem
-	icons := map[string][2]string{"classic-editor": {"dashicons-edit-page", "blue"}, "wpgo-cache": {"dashicons-performance", "green"}, golementorSlug: {"dashicons-layout", "purple"}, maintSlug: {"dashicons-hammer", "teal"}, msSlug: {"dashicons-email-alt", "blue"}, gontactSlug: {"dashicons-email", "teal"}, acfgoSlug: {"dashicons-welcome-widgets-menus", "green"}, golylangSlug: {"dashicons-translation", "teal"}, seogoSlug: {"dashicons-chart-line", "blue"}}
+	icons := map[string][2]string{"classic-editor": {"dashicons-edit-page", "blue"}, "wpgo-cache": {"dashicons-performance", "green"}, golementorSlug: {"dashicons-layout", "purple"}, maintSlug: {"dashicons-hammer", "teal"}, msSlug: {"dashicons-email-alt", "blue"}, gontactSlug: {"dashicons-email", "teal"}, acfgoSlug: {"dashicons-welcome-widgets-menus", "green"}, golylangSlug: {"dashicons-translation", "teal"}, seogoSlug: {"dashicons-chart-line", "blue"}, gooikeSlug: {"dashicons-shield", "orange"}}
 	for _, r := range s.installedPlugins(c) {
 		installed[r.Slug] = true
 		if r.Native {

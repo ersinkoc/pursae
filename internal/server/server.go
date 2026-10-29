@@ -305,6 +305,7 @@ func (s *Server) routes() *gin.Engine {
 	s.registerGoWebEditorProAdmin(admin) // Golementor Pro screens (gowebeditor_pro_admin.go)
 	s.acfgoRegisterRoutes(admin)         // ACF-Go screens (acfgo.go)
 	s.registerSEOGoAdmin(admin)          // SEO-Go screens (seogo_admin.go)
+	s.registerGooike(r, admin)           // Gooike: assets and screens (gooike.go)
 	admin.GET("/customize", s.customizeScreen)
 	admin.POST("/customize", s.customizeSave)
 	admin.GET("/:screen", s.notYet)
@@ -315,6 +316,7 @@ func (s *Server) routes() *gin.Engine {
 	s.registerGolylangREST() // pll/v1 (golylang_rest.go)
 	s.registerSEOGoREST()    // SEO-Go: seogo/v1, yoast/v1/get_head, rankmath/v1/getHead (seogo_editor.go)
 	s.registerStudioREST()   // Golementor Studio: golementor/v1/studio/preferences (gowebeditor_studio.go)
+	s.registerGooikeREST()   // Gooike: gooike/v1 consent log and geo (gooike_consent.go)
 	restHandler := func(c *gin.Context) { s.rest.serve(c, c.Param("route")) }
 	for _, m := range []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete, http.MethodOptions, http.MethodHead} {
 		r.Handle(m, "/wp-json/*route", restHandler)
