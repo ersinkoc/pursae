@@ -277,6 +277,13 @@ func (s *Server) gweHead(c *gin.Context) template.HTML {
 				sb.WriteString(gweLink("elementor-post-"+itoa64(kitID), s.gweCSSURL(c, kitID)))
 			}
 		}
+		// Theme parts around the edited page (header, footer, …) keep their own styles in the
+		// preview; the edited document's CSS is generated live by the editor.
+		for _, r := range results {
+			if r.res != nil && r.res.CSS != "" && r.post.Type == gwePartType {
+				sb.WriteString(gweLink("elementor-post-"+itoa64(r.post.ID), s.gweCSSURL(c, r.post.ID)))
+			}
+		}
 		sb.WriteString(s.gweV4HeadLinks(c)) // Golementor v4: atomic stylesheets (gowebeditor_v4.go)
 		sb.WriteString(gweLink("gowebeditor-preview", assets+"css/gowebeditor-editor.css"+ver))
 		// Golementor Site widgets (theme parts) in the preview
