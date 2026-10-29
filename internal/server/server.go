@@ -312,8 +312,10 @@ func (s *Server) routes() *gin.Engine {
 	s.rest = s.restRoutes()
 	s.registerGoWebEditorREST()
 	s.registerGontactREST()
-	s.registerGolylangREST() // pll/v1 (golylang_rest.go)
-	s.registerSEOGoREST()    // SEO-Go: seogo/v1, yoast/v1/get_head, rankmath/v1/getHead (seogo_editor.go)
+	s.registerGolylangREST()      // pll/v1 (golylang_rest.go)
+	s.registerSEOGoREST()         // SEO-Go: seogo/v1, yoast/v1/get_head, rankmath/v1/getHead (seogo_editor.go)
+	s.registerStudioREST()        // Golementor Studio: golementor/v1/studio/preferences (gowebeditor_studio.go)
+	s.gweStudioFallbackSections() // until the section library lands (gowebeditor_studio_fallback.go)
 	restHandler := func(c *gin.Context) { s.rest.serve(c, c.Param("route")) }
 	for _, m := range []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete, http.MethodOptions, http.MethodHead} {
 		r.Handle(m, "/wp-json/*route", restHandler)
