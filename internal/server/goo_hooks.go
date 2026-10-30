@@ -199,3 +199,62 @@ type gooProductPanel struct {
 }
 
 var gooProductPanels []*gooProductPanel
+
+// E-mails ------------------------------------------------------------------------------------------------
+
+// gooEmailDef is a transactional e-mail (WC_Email): its settings live in the option
+// "email_<id>_settings" ({enabled, recipient, subject, heading, additional_content, email_type}).
+type gooEmailDef struct {
+	ID          string
+	Title       string
+	Description string
+	Customer    bool // sent to the customer; else to Recipient (default: the admin e-mail)
+	Manual      bool // only sent from the order screen (customer invoice)
+	Subject     string
+	Heading     string
+	Additional  string
+	Module      string // the extension that provides it, "" for core
+}
+
+var gooEmailDefs []*gooEmailDef
+
+func gooRegisterEmail(d *gooEmailDef) { gooEmailDefs = append(gooEmailDefs, d) }
+
+// gooEmailDefByID finds a registered e-mail.
+func gooEmailDefByID(id string) *gooEmailDef {
+	for _, d := range gooEmailDefs {
+		if d.ID == id {
+			return d
+		}
+	}
+	return nil
+}
+
+// gooEmailSettings are an e-mail's settings over its defaults (enabled "yes"/"no", email_type html).
+func (s *Server) gooEmailSettings(id string) map[string]string {
+	out := map[string]string{"enabled": "yes", "email_type": "html", "recipient": "", "subject": "", "heading": "", "additional_content": ""}
+	if d := gooEmailDefByID(id); d != nil {
+		out["subject"], out["heading"], out["additional_content"] = d.Subject, d.Heading, d.Additional
+		if !d.Customer {
+			out["recipient"] = s.settings.String("admin_email")
+		}
+	}
+	for k, v := range s.gooOptMap("email_" + id + "_settings") {
+		if str, ok := v.(string); ok {
+			out[k] = str
+		}
+	}
+	return out
+}
+
+// gooEmailSender sends a registered e-mail for an order (set by goo_emails.go).
+var gooEmailSender func(s *Server, ctx context.Context, id string, o *gooOrder, args map[string]any) error
+
+// gooTriggerEmail sends an e-mail now (order actions: "Email invoice / order details to customer",
+// "Resend new order notification").
+func (s *Server) gooTriggerEmail(ctx context.Context, id string, o *gooOrder, args map[string]any) error {
+	if gooEmailSender == nil {
+		return nil
+	}
+	return gooEmailSender(s, ctx, id, o, args)
+}
