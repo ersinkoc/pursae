@@ -278,10 +278,21 @@ func (s *Server) gooImportDemo(ctx context.Context, uid int64, slug string, raw 
 	}
 	if len(d.Settings) > 0 {
 		vals := map[string]any{}
+		prevKey := gooOptPrefix + "demo_prev_" + slug
+		prev, _ := s.settings.Get(prevKey).(map[string]any)
+		if prev == nil {
+			prev = map[string]any{}
+		}
 		for k, v := range d.Settings {
 			if gooDemoSettings[k] {
+				if _, ok := prev[k]; !ok {
+					prev[k] = s.gooOpt(k) // restored by Remove Demo Content
+				}
 				vals[k] = v
 			}
+		}
+		if err := s.settings.Set(ctx, map[string]any{prevKey: prev}); err != nil {
+			return 0, err
 		}
 		if err := s.gooSetOpts(ctx, vals); err != nil {
 			return 0, err
@@ -555,6 +566,11 @@ func (s *Server) gooImportDemo(ctx context.Context, uid int64, slug string, raw 
 
 // gooRemoveDemo deletes what gooImportDemo created besides posts and terms (coupons, shipping methods).
 func (s *Server) gooRemoveDemo(ctx context.Context, slug string) {
+	prevKey := gooOptPrefix + "demo_prev_" + slug
+	if prev, ok := s.settings.Get(prevKey).(map[string]any); ok && len(prev) > 0 {
+		_ = s.gooSetOpts(ctx, prev)
+		_ = s.settings.Set(ctx, map[string]any{prevKey: map[string]any{}})
+	}
 	_, _ = s.store.Pool.Exec(ctx, `DELETE FROM goo_coupons WHERE meta->>$1 = $2`, demoMetaKey, slug)
 	_, _ = s.store.Pool.Exec(ctx, `DELETE FROM goo_shipping_methods WHERE settings->>$1 = $2`, demoMetaKey, slug)
 	_, _ = s.store.Pool.Exec(ctx, `DELETE FROM comments WHERE meta->>$1 = $2`, demoMetaKey, slug)
