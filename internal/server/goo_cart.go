@@ -101,6 +101,14 @@ func gooMD5(v string) string {
 	return hex.EncodeToString(sum[:])
 }
 
+type gooCartCtxKey struct{}
+
+// gooCartFromCtx is the cart an add-to-cart hook runs for.
+func gooCartFromCtx(ctx context.Context) *gooCart {
+	c, _ := ctx.Value(gooCartCtxKey{}).(*gooCart)
+	return c
+}
+
 // gooCartItemKey is WC_Cart::generate_cart_id().
 func gooCartItemKey(productID, variationID int64, variation map[string]string, data map[string]any) string {
 	parts := []string{itoa64(productID)}
@@ -328,8 +336,9 @@ func (cart *gooCart) Add(ctx context.Context, productID int64, qty int, variatio
 	if data == nil {
 		data = map[string]any{}
 	}
+	hctx := context.WithValue(ctx, gooCartCtxKey{}, cart) // hooks find the cart with gooCartFromCtx
 	for _, h := range gooAddToCartHooks {
-		if err := h(s, ctx, buy, qty, form, data); err != nil {
+		if err := h(s, hctx, buy, qty, form, data); err != nil {
 			return "", err
 		}
 	}

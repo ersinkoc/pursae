@@ -45,7 +45,8 @@
     "html5": ["search-form", "comment-form", "comment-list", "gallery", "caption", "script", "style"],
     "responsive-embeds": true,
     "align-wide": true,
-    "wp-block-styles": true
+    "wp-block-styles": true,
+    "woocommerce": true
   },
 
   "customizer": {

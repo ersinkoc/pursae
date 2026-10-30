@@ -1,0 +1,101 @@
+{{define "admin/goo-ext-pricing"}}{{template "admin-header" .}}{{with .Data}}
+<style>
+.goo-dp .goo-dp-tiers td,.goo-dp .goo-dp-tiers th{padding:6px 8px}
+.goo-dp .goo-dp-tiers input[type=number]{width:90px}
+.goo-dp fieldset.goo-dp-box{background:#fff;border:1px solid #c3c4c7;padding:4px 16px 12px;margin:0 0 16px}
+.goo-dp fieldset.goo-dp-box legend{font-weight:600;padding:0 6px}
+.goo-dp .goo-dp-status{display:inline-block;padding:0 8px;border-radius:9px;font-size:12px;background:#dcdcde}
+.goo-dp .goo-dp-status.on{background:#c6e1c6;color:#2c4700}
+.goo-dp .inline-form{display:inline}
+.goo-dp .inline-form .button-link{color:#2271b1;cursor:pointer}
+.goo-dp .inline-form .button-link-delete{color:#b32d2e}
+</style>
+<div class="wrap goocommerce goo-dp">
+{{if .Edit}}
+<h1 class="wp-heading-inline">{{.Title}}</h1>
+<a href="/wp-admin/goocommerce?page=pricing-rules" class="page-title-action">&larr; Pricing rules</a>
+<hr class="wp-header-end">
+{{template "notices" $}}
+<form method="post" action="/wp-admin/goocommerce?page=pricing-rules">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}">
+<input type="hidden" name="id" value="{{.Rule.ID}}">
+<fieldset class="goo-dp-box"><legend>Rule set</legend>
+<table class="form-table"><tbody>
+<tr><th scope="row"><label for="goo-dp-name">Name</label></th><td><input type="text" id="goo-dp-name" name="name" value="{{.Rule.Name}}" class="regular-text" required></td></tr>
+<tr><th scope="row"><label for="goo-dp-type">Type</label></th><td><select id="goo-dp-type" name="type">{{range .Types}}<option value="{{.Value}}"{{if eq .Value $.Data.Rule.Type}} selected{{end}}>{{.Label}}</option>{{end}}</select>
+<p class="description">Bulk pricing uses the quantity tiers; special offers the buy / receive fields; cart total adjustments the tiers as subtotal thresholds; role pricing the role adjustment.</p></td></tr>
+<tr><th scope="row">Status</th><td><label><input type="checkbox" name="active" value="1"{{if .Rule.Active}} checked{{end}}> Active</label></td></tr>
+<tr><th scope="row"><label for="goo-dp-priority">Priority</label></th><td><input type="number" id="goo-dp-priority" name="priority" value="{{.Rule.Priority}}" step="1" style="width:90px"><p class="description">Lower numbers run first.</p></td></tr>
+<tr><th scope="row">Dates</th><td><label>From <input type="date" name="date_from" value="{{.DateFrom}}"></label> <label>To <input type="date" name="date_to" value="{{.DateTo}}"></label></td></tr>
+</tbody></table>
+</fieldset>
+
+<fieldset class="goo-dp-box"><legend>Conditions</legend>
+<table class="form-table"><tbody>
+<tr><th scope="row"><label for="goo-dp-who">Applies to</label></th><td><select id="goo-dp-who" name="who">
+<option value="everyone"{{if eq .Rule.Conditions.Who "everyone"}} selected{{end}}>Everyone</option>
+<option value="logged_in"{{if eq .Rule.Conditions.Who "logged_in"}} selected{{end}}>Logged-in customers</option>
+<option value="roles"{{if eq .Rule.Conditions.Who "roles"}} selected{{end}}>Specific roles</option>
+</select></td></tr>
+<tr><th scope="row"><label for="goo-dp-roles">Roles</label></th><td><select multiple id="goo-dp-roles" name="roles[]" size="5">{{range .Roles}}<option value="{{.Value}}"{{if .Selected}} selected{{end}}>{{.Label}}</option>{{end}}</select></td></tr>
+<tr><th scope="row"><label for="goo-dp-applies">Products</label></th><td><select id="goo-dp-applies" name="applies_to">
+<option value="all"{{if eq .Rule.Conditions.AppliesTo "all"}} selected{{end}}>All products</option>
+<option value="products"{{if eq .Rule.Conditions.AppliesTo "products"}} selected{{end}}>Specific products</option>
+<option value="categories"{{if eq .Rule.Conditions.AppliesTo "categories"}} selected{{end}}>Specific categories</option>
+</select></td></tr>
+<tr><th scope="row"><label for="goo-dp-products">Product IDs</label></th><td><input type="text" id="goo-dp-products" name="products" value="{{.Products}}" class="regular-text" placeholder="12, 34"><p class="description">Comma-separated product or variation IDs.</p></td></tr>
+<tr><th scope="row"><label for="goo-dp-cats">Categories</label></th><td><select multiple id="goo-dp-cats" name="categories[]" size="6">{{range .Categories}}<option value="{{.Value}}"{{if .Selected}} selected{{end}}>{{.Label}}</option>{{end}}</select></td></tr>
+<tr><th scope="row"><label for="goo-dp-collector">Quantities to count</label></th><td><select id="goo-dp-collector" name="collector">
+<option value="product"{{if eq .Rule.Conditions.Collector "product"}} selected{{end}}>Quantity of the same product in the cart</option>
+<option value="category"{{if eq .Rule.Conditions.Collector "category"}} selected{{end}}>Quantity of the category in the cart</option>
+</select>
+<p><select multiple name="collector_categories[]" size="4" aria-label="Categories to count">{{range .Categories}}<option value="{{.Value}}"{{if .Collector}} selected{{end}}>{{.Label}}</option>{{end}}</select></p>
+<p class="description">Categories to count (default: the rule's categories).</p></td></tr>
+</tbody></table>
+</fieldset>
+
+<fieldset class="goo-dp-box"><legend>Quantity / subtotal tiers</legend>
+<table class="widefat striped goo-dp-tiers"><thead><tr><th>Minimum</th><th>Maximum</th><th>Adjustment type</th><th>Amount</th></tr></thead><tbody>
+{{range .Tiers}}<tr><td><input type="number" step="any" min="0" name="tier_min[]" value="{{if .Min}}{{.Min}}{{end}}"></td><td><input type="number" step="any" min="0" name="tier_max[]" value="{{if .Max}}{{.Max}}{{end}}" placeholder="No max"></td>
+<td><select name="tier_type[]">{{$t := .Type}}{{range $.Data.Adjustments}}<option value="{{.Value}}"{{if eq .Value $t}} selected{{end}}>{{.Label}}</option>{{end}}</select></td>
+<td><input type="number" step="any" min="0" name="tier_amount[]" value="{{if .Amount}}{{.Amount}}{{end}}"></td></tr>{{end}}
+</tbody></table>
+<p class="description">For cart total adjustments, the minimum is the cart subtotal; percentage and price discounts become a negative fee.</p>
+</fieldset>
+
+<fieldset class="goo-dp-box"><legend>Special offer</legend>
+<table class="form-table"><tbody>
+<tr><th scope="row">Buy / receive</th><td><label>Buy <input type="number" name="buy" min="0" value="{{.Rule.Rules.Buy}}" style="width:70px"></label> <label>receive <input type="number" name="receive" min="0" value="{{.Rule.Rules.Receive}}" style="width:70px"></label> <label>at <input type="number" step="any" min="0" max="100" name="discount" value="{{.Rule.Rules.Discount}}" style="width:70px">% off</label></td></tr>
+<tr><th scope="row">Repeating</th><td><label><input type="checkbox" name="repeating" value="1"{{if .Rule.Rules.Repeating}} checked{{end}}> Apply the offer for every group of items</label></td></tr>
+</tbody></table>
+</fieldset>
+
+<fieldset class="goo-dp-box"><legend>Role pricing</legend>
+<table class="form-table"><tbody>
+<tr><th scope="row"><label for="goo-dp-rt">Adjustment</label></th><td><select id="goo-dp-rt" name="role_type">{{range .Adjustments}}<option value="{{.Value}}"{{if eq .Value $.Data.Rule.Rules.Type}} selected{{end}}>{{.Label}}</option>{{end}}</select>
+<input type="number" step="any" min="0" name="role_amount" value="{{.Rule.Rules.Amount}}" style="width:90px" aria-label="Amount"></td></tr>
+</tbody></table>
+</fieldset>
+<p class="submit"><button type="submit" class="button-primary">Save rule set</button></p>
+</form>
+{{else}}
+<h1 class="wp-heading-inline">Pricing rules</h1>
+<a href="/wp-admin/goocommerce?page=pricing-rules&amp;action=new" class="page-title-action">Add rule set</a>
+<hr class="wp-header-end">
+{{template "notices" $}}
+{{if not .On}}<div class="notice notice-warning"><p>Dynamic Pricing is not active: these rules do not change prices until you activate it on Goocommerce › Extensions.</p></div>{{end}}
+<table class="wp-list-table widefat fixed striped table-view-list">
+<thead><tr><th scope="col" class="manage-column column-primary">Name</th><th scope="col">Type</th><th scope="col">Adjustments</th><th scope="col">Priority</th><th scope="col">Dates</th><th scope="col">Status</th></tr></thead>
+<tbody>
+{{range .Rows}}<tr>
+<td class="column-primary"><strong><a class="row-title" href="/wp-admin/goocommerce?page=pricing-rules&amp;action=edit&amp;id={{.ID}}">{{.Name}}</a></strong>
+<div class="row-actions"><span class="edit"><a href="/wp-admin/goocommerce?page=pricing-rules&amp;action=edit&amp;id={{.ID}}">Edit</a> | </span>
+<span><form method="post" class="inline-form" action="/wp-admin/goocommerce?page=pricing-rules"><input type="hidden" name="_wpnonce" value="{{$.Data.Nonce}}"><input type="hidden" name="id" value="{{.ID}}"><input type="hidden" name="goo_action" value="toggle"><button type="submit" class="button-link">{{if .Active}}Deactivate{{else}}Activate{{end}}</button></form> | </span>
+<span class="trash"><form method="post" class="inline-form" action="/wp-admin/goocommerce?page=pricing-rules"><input type="hidden" name="_wpnonce" value="{{$.Data.Nonce}}"><input type="hidden" name="id" value="{{.ID}}"><input type="hidden" name="goo_action" value="delete"><button type="submit" class="button-link button-link-delete">Delete</button></form></span></div></td>
+<td>{{.TypeLabel}}</td><td>{{.Summary}}</td><td>{{.Priority}}</td><td>{{.Dates}}</td>
+<td><span class="goo-dp-status{{if .Active}} on{{end}}">{{if .Active}}Active{{else}}Inactive{{end}}</span></td>
+</tr>{{else}}<tr class="no-items"><td colspan="6">No pricing rules yet. <a href="/wp-admin/goocommerce?page=pricing-rules&amp;action=new">Add your first rule set</a>.</td></tr>{{end}}
+</tbody></table>
+{{end}}
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}

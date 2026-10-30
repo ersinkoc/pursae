@@ -1,0 +1,143 @@
+{{define "admin/goo-product-csv"}}{{template "admin-header" .}}{{with .Data}}
+<div class="wrap woocommerce">
+<h1>{{$.Title}}</h1>
+{{template "notices" $}}
+{{with .Export}}
+<div class="woocommerce-exporter-wrapper">
+	<form class="woocommerce-exporter" method="get" action="/wp-admin/edit">
+		<input type="hidden" name="post_type" value="product" />
+		<input type="hidden" name="page" value="product_exporter" />
+		<input type="hidden" name="action" value="download_product_csv" />
+		<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+		<header>
+			<span class="spinner is-active"></span>
+			<h2>Export products to a CSV file</h2>
+			<p>This tool allows you to generate and download a CSV file containing a list of all products.</p>
+		</header>
+		<section>
+			<table class="form-table woocommerce-exporter-options">
+				<tbody>
+					<tr>
+						<th scope="row"><label for="woocommerce-exporter-columns">Which columns should be exported?</label></th>
+						<td><select id="woocommerce-exporter-columns" class="woocommerce-exporter-columns wc-enhanced-select" name="export_columns[]" style="width:100%;" multiple data-placeholder="Export all columns">
+							{{range .Columns}}<option value="{{.Key}}">{{.Header}}</option>{{end}}
+							<option value="downloads">Downloads</option>
+							<option value="attributes">Attributes</option>
+						</select></td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="woocommerce-exporter-types">Which product types should be exported?</label></th>
+						<td><select id="woocommerce-exporter-types" class="woocommerce-exporter-types wc-enhanced-select" name="export_types[]" style="width:100%;" multiple data-placeholder="Export all products">
+							{{range .Types}}<option value="{{.Value}}">{{.Label}}</option>{{end}}
+						</select></td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="woocommerce-exporter-category">Which product category should be exported?</label></th>
+						<td><select id="woocommerce-exporter-category" class="woocommerce-exporter-category wc-enhanced-select" name="export_category[]" style="width:100%;" multiple data-placeholder="Export all categories">
+							{{range .Categories}}<option value="{{.Slug}}">{{repeat "&nbsp;&nbsp;&nbsp;" .Depth | safe}}{{.Name}}</option>{{end}}
+						</select></td>
+					</tr>
+				</tbody>
+			</table>
+		</section>
+		<div class="wc-actions">
+			<button type="submit" class="woocommerce-exporter-button button button-primary" value="Generate CSV">Generate CSV</button>
+		</div>
+	</form>
+</div>
+{{end}}
+{{with .Import}}
+<div class="woocommerce-progress-form-wrapper">
+	<ol class="wc-progress-steps">
+		<li class="{{if eq .Step "upload"}}active{{else}}done{{end}}">Upload CSV file</li>
+		<li class="{{if eq .Step "mapping"}}active{{else if eq .Step "done"}}done{{end}}">Column mapping</li>
+		<li class="{{if eq .Step "done"}}done{{end}}">Import</li>
+		<li class="{{if eq .Step "done"}}active{{end}}">Done!</li>
+	</ol>
+	{{if .Error}}<div class="error inline"><p>{{.Error}}</p></div>{{end}}
+	{{if eq .Step "upload"}}
+	<form class="wc-progress-form-content woocommerce-importer" enctype="multipart/form-data" method="post" action="/wp-admin/goocommerce?page=product_importer">
+		<header>
+			<h2>Import products from a CSV file</h2>
+			<p>This tool allows you to import (or merge) product data to your store from a CSV or TXT file.</p>
+		</header>
+		<section>
+			<table class="form-table woocommerce-importer-options">
+				<tbody>
+					<tr>
+						<th scope="row"><label for="upload">Choose a CSV file from your computer:</label></th>
+						<td><input type="file" id="upload" name="import" size="25" accept=".csv,.txt" /><br /><small>Maximum size: 64 MB</small></td>
+					</tr>
+					<tr>
+						<th><label for="woocommerce-importer-update-existing">Update existing products</label><br /></th>
+						<td><input type="checkbox" id="woocommerce-importer-update-existing" name="update_existing" value="1" />
+						<label for="woocommerce-importer-update-existing">Existing products that match by ID or SKU will be updated. Products that do not exist will be skipped.</label></td>
+					</tr>
+					<tr class="woocommerce-importer-advanced">
+						<th><label for="woocommerce-importer-delimiter">CSV Delimiter</label><br /></th>
+						<td><input type="text" name="delimiter" id="woocommerce-importer-delimiter" placeholder="," size="2" value="{{.Delimiter}}" /></td>
+					</tr>
+				</tbody>
+			</table>
+		</section>
+		<div class="wc-actions">
+			<button type="submit" class="button button-primary button-next" value="Continue" name="save_step">Continue</button>
+			<input type="hidden" name="step" value="mapping" />
+			<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+		</div>
+	</form>
+	{{else if eq .Step "mapping"}}{{$fields := .Fields}}
+	<form class="wc-progress-form-content woocommerce-importer" method="post" action="/wp-admin/goocommerce?page=product_importer">
+		<header>
+			<h2>Map CSV fields to products</h2>
+			<p>Select fields from your CSV file to map against products fields, or to ignore during import.</p>
+		</header>
+		<section class="wc-importer-mapping-table-wrapper">
+			<table class="widefat wc-importer-mapping-table">
+				<thead><tr><th>Column name</th><th>Map to field</th></tr></thead>
+				<tbody>
+				{{range .Map}}{{$sel := .Selected}}<tr>
+					<td class="wc-importer-mapping-table-name">{{.Header}}{{if .Sample}}<span class="description">Sample: <code>{{.Sample}}</code></span>{{end}}</td>
+					<td class="wc-importer-mapping-table-field">
+						<input type="hidden" name="map_from[{{.Index}}]" value="{{.Header}}" />
+						<select name="map_to[{{.Index}}]">
+							{{range $fields}}<option value="{{.Value}}"{{if eq .Value $sel}} selected="selected"{{end}}>{{.Label}}</option>{{end}}
+						</select>
+					</td>
+				</tr>{{end}}
+				</tbody>
+			</table>
+		</section>
+		<div class="wc-actions">
+			<button type="submit" class="button button-primary button-next" value="Run the importer" name="save_step">Run the importer</button>
+			<input type="hidden" name="file" value="{{.File}}" />
+			<input type="hidden" name="delimiter" value="{{.Delimiter}}" />
+			<input type="hidden" name="update_existing" value="{{if .Update}}1{{else}}0{{end}}" />
+			<input type="hidden" name="step" value="import" />
+			<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+		</div>
+	</form>
+	{{else if eq .Step "done"}}{{with .Result}}
+	<div class="wc-progress-form-content woocommerce-importer">
+		<section class="woocommerce-importer-done">
+			<span class="dashicons dashicons-yes-alt"></span>
+			Import complete!
+			{{if .Imported}}<strong class="goo-imported">{{plural .Imported "%s product imported" "%s products imported"}}</strong>{{end}}
+			{{if .Updated}}<strong class="goo-updated">{{plural .Updated "%s product updated" "%s products updated"}}</strong>{{end}}
+			{{if .Skipped}}<strong class="goo-skipped">{{plural .Skipped "%s product was skipped" "%s products were skipped"}}</strong>{{end}}
+			{{if .Failed}}<strong class="goo-failed">{{plural .Failed "Failed to import %s product" "Failed to import %s products"}}</strong>{{end}}
+		</section>
+		{{if .Log}}<section class="wc-importer-error-log">
+			<table class="widefat wc-importer-error-log-table"><thead><tr><th>Product</th></tr></thead><tbody>
+			{{range .Log}}<tr><td>{{.}}</td></tr>{{end}}
+			</tbody></table>
+		</section>{{end}}
+		<div class="wc-actions">
+			<a class="button button-primary" href="/wp-admin/edit?post_type=product">View products</a>
+		</div>
+	</div>
+	{{end}}{{end}}
+</div>
+{{end}}
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}

@@ -1,0 +1,38 @@
+{{define "admin/goo-home"}}{{template "admin-header" .}}{{template "goo-store-assets"}}{{with .Data}}
+<div class="wrap woocommerce goo-home">
+<h1 class="wp-heading-inline">Home</h1>
+<a href="{{.ShopURL}}" class="page-title-action" target="_blank">View store</a>
+<hr class="wp-header-end">
+{{template "notices" $}}
+<div class="goo-home-grid">
+<div class="goo-home-main">
+{{if lt .TasksDone (len .Tasks)}}<div class="postbox woocommerce-task-list"><div class="postbox-header"><h2 class="hndle">Things to do next <span class="goo-progress">{{.TasksDone}} of {{len .Tasks}} completed</span></h2></div>
+<ul class="woocommerce-task-list__list">{{range .Tasks}}<li class="woocommerce-task-list__item{{if .Done}} complete{{end}}"><span class="dashicons {{if .Done}}dashicons-yes-alt{{else}}dashicons-marker{{end}}"></span>
+<div><a href="{{.URL}}"><strong>{{.Title}}</strong></a><p>{{.Desc}}</p></div></li>{{end}}</ul></div>{{end}}
+<div class="postbox woocommerce-stats-overview"><div class="postbox-header"><h2 class="hndle">Stats overview</h2></div><div class="inside">
+<table class="widefat goo-stats"><thead><tr><th></th><th>Total sales</th><th>Orders</th><th>Products sold</th></tr></thead><tbody>
+{{range .Stats}}<tr><th scope="row">{{.Label}}</th><td>{{.Sales}}</td><td>{{.Orders}}</td><td>{{.Items}}</td></tr>{{end}}
+</tbody></table>
+<p><a href="/wp-admin/goocommerce?page=analytics">View detailed stats</a></p></div></div>
+<div class="postbox"><div class="postbox-header"><h2 class="hndle">Recent orders</h2></div><div class="inside">
+<table class="widefat striped"><thead><tr><th>Order</th><th>Date</th><th>Status</th><th>Total</th></tr></thead><tbody>
+{{range .Recent}}<tr><td><a href="{{.EditURL}}">#{{.Number}} {{.Name}}</a></td><td>{{.Date}}</td><td>{{template "goo-store-status-mark" .}}</td><td>{{.Total}}</td></tr>{{else}}<tr><td colspan="4">No orders yet.</td></tr>{{end}}
+</tbody></table>
+<p><a href="/wp-admin/goocommerce?page=orders">View all orders</a></p></div></div>
+</div>
+<div class="goo-home-side">
+<div class="postbox woocommerce-activity-panel"><div class="postbox-header"><h2 class="hndle">Activity</h2></div><div class="inside"><ul class="goo-activity">
+<li><a href="/wp-admin/goocommerce?page=orders&amp;status=wc-processing"><strong>{{.Processing}}</strong> orders processing</a></li>
+<li><a href="/wp-admin/goocommerce?page=orders&amp;status=wc-on-hold"><strong>{{.OnHold}}</strong> orders on hold</a></li>
+<li><a href="/wp-admin/goocommerce?page=orders&amp;status=wc-pending"><strong>{{.Pending}}</strong> orders pending payment</a></li>
+<li><a href="/wp-admin/goocommerce?page=reviews&amp;comment_status=moderated"><strong>{{.ReviewCount}}</strong> reviews pending</a></li>
+<li><a href="/wp-admin/goocommerce?page=reports&amp;tab=stock&amp;report=out_of_stock"><strong>{{.OutOfStock}}</strong> products out of stock</a></li>
+</ul></div></div>
+<div class="postbox"><div class="postbox-header"><h2 class="hndle">Low in stock</h2></div><div class="inside">
+{{if .LowStock}}<ul class="goo-activity">{{range .LowStock}}<li><a href="{{.EditURL}}">{{.Name}}</a> &mdash; {{safe .Qty}} in stock</li>{{end}}</ul>
+<p><a href="/wp-admin/goocommerce?page=reports&amp;tab=stock&amp;report=low_in_stock">View all low stock products</a></p>{{else}}<p>No products are low in stock.</p>{{end}}
+</div></div>
+</div>
+</div>
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}
