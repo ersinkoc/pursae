@@ -632,10 +632,6 @@
          "size": 8,
          "sizes": []
         },
-        "submenu_icon": {
-         "value": "",
-         "library": ""
-        },
         "__globals__": {
          "color_menu_item": "globals/colors?id=primary",
          "color_menu_item_hover": "globals/colors?id=accent",

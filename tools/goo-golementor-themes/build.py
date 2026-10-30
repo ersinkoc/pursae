@@ -216,7 +216,6 @@ def header_part(T, th):
                            "dropdown": "tablet", "toggle": "burger", "toggle_align": "left", "full_width": "stretch",
                            "align_items": "center" if hd["layout"] == "centered" else "start",
                            "padding_horizontal_menu_item": px(12), "padding_vertical_menu_item": px(8),
-                           "submenu_icon": {"value": "", "library": ""},
                            "__globals__": {"color_menu_item": col(hd["fg"]), "color_menu_item_hover": col(hd["hover"]),
                                            "color_menu_item_active": col(hd["hover"]), "pointer_color_menu_item_hover": col(hd["hover"]),
                                            "pointer_color_menu_item_active": col(hd["hover"]), "menu_typography_typography": typo("accent"),
