@@ -111,6 +111,7 @@ func newServer(ctx context.Context, cfg config.Config, pool *pgxpool.Pool, sb *s
 		s.gweUnloadCustomThemes() // the theme registry is shared by every server in the process
 	}
 	s.loadThemePackages() // theme packages installed under <data>/themes (theme_install.go)
+	s.migrateRemovedThemes(ctx)
 	tmpl, err := newTemplates(s)
 	if err != nil {
 		return nil, err

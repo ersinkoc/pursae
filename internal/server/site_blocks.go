@@ -615,7 +615,7 @@ func socialLinkIcon(service string) string {
 		case "chain", "share":
 			name = "link"
 		}
-		for _, ic := range twentyTwentySocialIcons {
+		for _, ic := range socialIcons {
 			if ic.Name == name {
 				if m := svgInnerRe.FindStringSubmatch(ic.SVG); m != nil {
 					inner, ok = m[1], true

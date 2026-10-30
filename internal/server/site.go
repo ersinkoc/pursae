@@ -569,7 +569,7 @@ func refererPath(c *gin.Context) string {
 	return r.RequestURI()
 }
 
-// documentTitle is wp_get_document_title() with Twenty Sixteen's title-tag support.
+// documentTitle is wp_get_document_title() with title-tag support.
 func (s *Server) documentTitle(q *siteQuery, archiveTitle string) string {
 	site := s.settings.String("blogname")
 	sep := " &#8211; "

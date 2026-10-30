@@ -138,18 +138,13 @@ func (s *Server) install(ctx context.Context, v installView) error {
 			userID, strings.ReplaceAll(privacyPolicyContent, "SITE_URL", site)).Scan(&privacyID); err != nil {
 			return err
 		}
-		if _, err := tx.Exec(ctx, `INSERT INTO themes(slug, version, status) VALUES ('twentysixteen', '3.9', 'active') ON CONFLICT DO NOTHING`); err != nil {
+		if _, err := tx.Exec(ctx, `INSERT INTO themes(slug, version, status) VALUES ($1, $2, 'active') ON CONFLICT DO NOTHING`, defaultTheme, tt5Version); err != nil {
 			return err
 		}
 		_ = pageID
 		return nil
 	})
 	if err != nil {
-		return err
-	}
-
-	// Default widgets of a fresh install: block widgets in sidebar-1.
-	if err := s.seedWidgets(ctx); err != nil {
 		return err
 	}
 
@@ -165,30 +160,4 @@ func (s *Server) install(ctx context.Context, v installView) error {
 	values["wp_page_for_privacy_policy"] = privacyID
 	values["fresh_site"] = true
 	return s.settings.Set(ctx, values)
-}
-
-func (s *Server) seedWidgets(ctx context.Context) error {
-	area, err := s.store.EnsureWidgetArea(ctx, "twentysixteen", "sidebar-1", "Sidebar")
-	if err != nil {
-		return err
-	}
-	if _, err := s.store.EnsureWidgetArea(ctx, "twentysixteen", "sidebar-2", "Content Bottom 1"); err != nil {
-		return err
-	}
-	if _, err := s.store.EnsureWidgetArea(ctx, "twentysixteen", "sidebar-3", "Content Bottom 2"); err != nil {
-		return err
-	}
-	defaults := []string{
-		`<!-- wp:search /-->`,
-		`<!-- wp:group --><div class="wp-block-group"><!-- wp:heading --><h2>Recent Posts</h2><!-- /wp:heading --><!-- wp:latest-posts /--></div><!-- /wp:group -->`,
-		`<!-- wp:group --><div class="wp-block-group"><!-- wp:heading --><h2>Recent Comments</h2><!-- /wp:heading --><!-- wp:latest-comments {"displayAvatar":false,"displayDate":false,"displayExcerpt":false} /--></div><!-- /wp:group -->`,
-		`<!-- wp:group --><div class="wp-block-group"><!-- wp:heading --><h2>Archives</h2><!-- /wp:heading --><!-- wp:archives /--></div><!-- /wp:group -->`,
-		`<!-- wp:group --><div class="wp-block-group"><!-- wp:heading --><h2>Categories</h2><!-- /wp:heading --><!-- wp:categories /--></div><!-- /wp:group -->`,
-	}
-	for i, content := range defaults {
-		if err := s.store.AddWidget(ctx, area, "block", i, map[string]any{"content": content}); err != nil {
-			return err
-		}
-	}
-	return nil
 }

@@ -83,8 +83,7 @@ func (s *Server) cacheConfig() cache.Config {
 
 // cacheSafeDefer are the core and default-theme scripts nothing inline depends on, deferred when
 // "Defer JavaScript" is on and the list is left empty.
-var cacheSafeDefer = []string{"comment-reply", "wp-embed", "twentysixteen-script", "twentysixteen-skip-link-focus-fix",
-	"twentysixteen-keyboard-image-navigation", "skip-link-focus-fix", "keyboard-image-navigation"}
+var cacheSafeDefer = []string{"comment-reply", "wp-embed", "twentytwentyfive-navigation", "skip-link-focus-fix", "keyboard-image-navigation"}
 
 func deferList(v []string) []string {
 	if len(v) == 0 {

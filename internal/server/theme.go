@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"html"
 	"html/template"
+	"log"
 	"net/http"
 	"net/url"
 	"sort"
@@ -44,10 +45,21 @@ type Theme struct {
 	PreloadFonts []string
 	// Supports lists add_theme_support() features reported to the block editor (REST themes endpoint).
 	Supports map[string]any
+	// BlockStyles switches core's block styles to per-block loading (like a block theme with
+	// should_load_separate_core_block_assets): wp_head no longer prints the whole block library, the
+	// classic theme styles and the classic global styles; the core styles of the blocks a page uses
+	// are inlined instead (blockStylesFor), except these blocks, which the theme's own stylesheet
+	// carries. nil keeps the classic behaviour.
+	BlockStyles []string
+	// Settings are theme.json's settings (a theme with theme.json): the block editor gets its presets
+	// and layout sizes, and EditorGlobalStyles (a stylesheet under assets/) as its global styles,
+	// instead of a classic theme's 840px column and core's classic global styles.
+	Settings           map[string]any
+	EditorGlobalStyles string
 	// Templates are the theme's page templates (file => "Template Name" header), get_page_templates().
 	Templates map[string]string
 
-	// HeadTop is printed first in wp_head (hooks at priority 0, e.g. Twenty Sixteen's no-js swap).
+	// HeadTop is printed first in wp_head (hooks at priority 0, e.g. a no-js class swap).
 	HeadTop string
 	// Head prints the theme's enqueued styles and scripts in wp_head, after core's block styles.
 	Head func(s *Server, c *gin.Context, v *siteView) string
@@ -184,7 +196,7 @@ func czSpecFor(t *Theme) *czThemeSpec {
 }
 
 // defaultTheme is WP_DEFAULT_THEME.
-const defaultTheme = "twentysixteen"
+const defaultTheme = "twentytwentyfive"
 
 // activeTheme is the theme in the stylesheet option, falling back to the default theme (also for
 // Hello Golementor and saved themes while Golementor is off).
@@ -193,6 +205,31 @@ func (s *Server) activeTheme() *Theme {
 		return t
 	}
 	return themeBySlug(defaultTheme)
+}
+
+// removedThemes are the bundled themes earlier versions shipped (Twenty Sixteen was the default).
+var removedThemes = map[string]bool{"twentysixteen": true, "twentyseventeen": true, "twentytwenty": true, "twentytwentyone": true, "classic": true}
+
+// migrateRemovedThemes moves a site whose active theme was one of the removed bundled themes to the
+// default theme (activeTheme already falls back to it; this keeps the options and Themes screen
+// consistent). Theme mods and widgets of the old theme are left in place.
+func (s *Server) migrateRemovedThemes(ctx context.Context) {
+	if !removedThemes[s.settings.String("stylesheet")] || s.installedTheme(s.settings.String("stylesheet")) != nil {
+		return
+	}
+	t := themeBySlug(defaultTheme)
+	if _, err := s.store.Pool.Exec(ctx, `UPDATE themes SET status = 'inactive' WHERE status = 'active'`); err != nil {
+		log.Printf("themes: leaving a removed theme: %v", err)
+		return
+	}
+	if _, err := s.store.Pool.Exec(ctx, `INSERT INTO themes (slug, version, status) VALUES ($1, $2, 'active')
+		ON CONFLICT (slug) DO UPDATE SET status = 'active', version = EXCLUDED.version`, t.Slug, t.Version); err != nil {
+		log.Printf("themes: activating %s: %v", t.Slug, err)
+		return
+	}
+	if err := s.settings.Set(ctx, map[string]any{"template": t.Slug, "stylesheet": t.Slug, "current_theme": t.Name}); err != nil {
+		log.Printf("themes: activating %s: %v", t.Slug, err)
+	}
 }
 
 // themeURI is get_stylesheet_directory_uri().

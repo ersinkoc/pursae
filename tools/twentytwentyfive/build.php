@@ -148,7 +148,7 @@ $global = wp_get_global_stylesheet();
 // The blocks of the theme's header, footer, query loops and post meta: on every page.
 $always = array( 'site-title', 'site-tagline', 'navigation', 'navigation-link', 'page-list', 'group', 'columns', 'spacer', 'paragraph', 'heading',
 	'post-title', 'post-date', 'post-content', 'post-template', 'post-featured-image', 'query-pagination', 'query-title', 'term-description',
-	'post-author-name', 'post-terms', 'post-navigation-link', 'search', 'list', 'comments', 'comment-template', 'post-comments-form', 'comments-title' );
+	'post-author-name', 'post-terms', 'post-navigation-link', 'search', 'list', 'comments', 'comment-template', 'post-comments-form' );
 $blocks = '';
 foreach ( $always as $name ) {
 	$blocks .= $block( $name );
@@ -157,6 +157,26 @@ foreach ( $always as $name ) {
 // The layout container rules of the templates (wp-container-core-*-is-layout-*), as WordPress prints
 // them for the theme's header, footer, single, 404 and query loops.
 $containers = file_get_contents( __DIR__ . '/containers.css' );
+
+// Block style variations (styles/blocks/*.json, styles/sections/*.json): WordPress prints them per
+// block instance (is-style-section-1--3); the port prints them once, for the plain class name.
+$variation_css = '';
+foreach ( array_merge( glob( $theme_dir . '/styles/blocks/*.json' ), glob( $theme_dir . '/styles/sections/*.json' ) ) as $file ) {
+	$json = json_decode( file_get_contents( $file ), true );
+	foreach ( (array) $json['blockTypes'] as $type ) {
+		wp_render_block_style_variation_support_styles( array( 'blockName' => $type, 'attrs' => array( 'className' => 'is-style-' . $json['slug'] ), 'innerBlocks' => array(), 'innerHTML' => '', 'innerContent' => array() ) );
+	}
+}
+$seen = array();
+foreach ( (array) wp_styles()->get_data( 'block-style-variation-styles', 'after' ) as $chunk ) {
+	foreach ( rules( minify( preg_replace( '/(is-style-[a-z0-9-]+?)--\d+/', '$1', $chunk ) ) ) as $r ) {
+		$rule = $r[0] . '{' . $r[1] . '}';
+		if ( ! isset( $seen[ $rule ] ) ) {
+			$seen[ $rule ]  = true;
+			$variation_css .= $rule;
+		}
+	}
+}
 
 $tt5   = file_get_contents( $theme_dir . '/style.min.css' );
 $tt5   = preg_replace( '#/\*.*?\*/#s', '', $tt5 );
@@ -167,7 +187,7 @@ $bundle = $header . minify( $faces_rel ) . minify( $global ) . "\n"
 	. file_get_contents( $wp_dir . 'wp-includes/css/dist/block-library/common.min.css' ) . "\n"
 	. file_get_contents( $wp_dir . 'wp-includes/css/wp-block-template-skip-link.min.css' ) . "\n"
 	. 'img:is([sizes=auto i],[sizes^="auto," i]){contain-intrinsic-size:3000px 1500px}' . "\n"
-	. $blocks . "\n" . minify( $containers ) . "\n" . minify( $tt5 ) . $check . "\n"
+	. $blocks . "\n" . minify( $containers ) . "\n" . $variation_css . "\n" . minify( $tt5 ) . $check . "\n"
 	. minify( file_get_contents( __DIR__ . '/wpgo.css' ) ) . "\n";
 $bundle = preg_replace( '#/\*\! This file is auto-generated \*/#', '', $bundle );
 file_put_contents( $out_dir . '/style.min.css', $bundle );

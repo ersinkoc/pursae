@@ -22,9 +22,11 @@ import (
 //go:embed defaults/core-theme.json
 var coreThemeJSON []byte
 
-// editorFeatures is __experimentalFeatures for a classic theme: core theme.json settings with
-// preset lists keyed by origin, plus Twenty Sixteen's editor-color-palette as the theme palette.
-func editorFeatures(palette []map[string]string) map[string]any {
+// editorFeatures is __experimentalFeatures: core theme.json settings with preset lists keyed by
+// origin, plus the theme's editor-color-palette as the theme palette (a classic theme) or the theme's
+// theme.json settings (Theme.Settings).
+func editorFeatures(t *Theme) map[string]any {
+	palette := t.Palette
 	var tj struct {
 		Settings map[string]any `json:"settings"`
 	}
@@ -55,6 +57,10 @@ func editorFeatures(palette []map[string]string) map[string]any {
 		}
 		pal["theme"] = theme
 	}
+	if t.Settings != nil {
+		mergeThemeSettings(st, t.Settings)
+		return st
+	}
 	// Classic themes without theme.json: no layout support, no appearance tools.
 	st["appearanceTools"] = false
 	if layout, ok := st["layout"].(map[string]any); ok {
@@ -62,6 +68,52 @@ func editorFeatures(palette []map[string]string) map[string]any {
 		delete(layout, "wideSize")
 	}
 	return st
+}
+
+// mergeThemeSettings applies a theme's theme.json settings to the core settings: preset lists go
+// under the "theme" origin, other values replace core's.
+func mergeThemeSettings(st, theme map[string]any) {
+	presets := map[string]bool{"palette": true, "gradients": true, "duotone": true, "fontSizes": true, "fontFamilies": true,
+		"spacingSizes": true, "presets": true, "aspectRatios": true}
+	for section, v := range theme {
+		tm, ok := v.(map[string]any)
+		if !ok {
+			st[section] = v
+			continue
+		}
+		cm, ok := st[section].(map[string]any)
+		if !ok {
+			cm = map[string]any{}
+			st[section] = cm
+		}
+		for k, val := range tm {
+			if presets[k] {
+				if _, isList := val.([]any); isList {
+					byOrigin, ok := cm[k].(map[string]any)
+					if !ok {
+						byOrigin = map[string]any{}
+						cm[k] = byOrigin
+					}
+					byOrigin["theme"] = val
+					continue
+				}
+			}
+			cm[k] = val
+		}
+	}
+}
+
+// editorGlobalStyles is the global stylesheet the block editor gets: the theme's (Theme.Settings)
+// or core's for classic themes.
+func (s *Server) editorGlobalStyles(t *Theme) string {
+	if t.EditorGlobalStyles != "" {
+		css := s.webFile("themes/" + t.Slug + "/assets/" + t.EditorGlobalStyles)
+		if t.Slug == "twentytwentyfive" {
+			css += "\n" + s.tt5SchemeCSS(s.themeMods(t.Slug))
+		}
+		return css
+	}
+	return s.webFile("wp-includes/css/global-styles-classic.css")
 }
 
 // preloadPath is one entry of block_editor_rest_api_preload().
@@ -189,8 +241,9 @@ func (s *Server) renderBlockEditor(c *gin.Context, p *store.Post, isNew bool) {
 		"/wp-includes/css/dist/block-library/style.min.css", "/wp-includes/css/dist/block-library/theme.min.css",
 		"/wp-includes/css/dist/block-library/editor.min.css", "/wp-includes/css/dist/block-library/editor-elements.min.css",
 		"/wp-includes/css/dist/block-editor/content.min.css", "/wp-includes/css/dist/block-library/common.min.css",
-		// Classic (non block) themes: WordPress centers blocks in an 840px column (wp-edit-post's classic.css).
-		"/wp-includes/css/dist/edit-post/classic.min.css",
+	}
+	if theme.Settings == nil { // classic (non block) themes: WordPress centers blocks in an 840px column (wp-edit-post's classic.css)
+		canvas = append(canvas, "/wp-includes/css/dist/edit-post/classic.min.css")
 	}
 	for _, f := range append(append([]string{}, theme.EditorStyles...), theme.EditorBlockStyles...) {
 		if strings.HasPrefix(f, "fonts/") || strings.Contains(f, "genericons") || strings.Contains(f, "editor-blocks") || strings.Contains(f, "block") {
@@ -213,7 +266,7 @@ func (s *Server) renderBlockEditor(c *gin.Context, p *store.Post, isNew bool) {
 		allowedMimes[k] = v
 	}
 	settings := map[string]any{
-		"alignWide": false, "allowedBlockTypes": true, "allowedMimeTypes": allowedMimes,
+		"alignWide": theme.Settings != nil, "allowedBlockTypes": true, "allowedMimeTypes": allowedMimes,
 		"defaultEditorStyles": []map[string]any{{"css": s.webFile("wp-includes/css/dist/block-editor/default-editor-styles.min.css")}},
 		"blockCategories":     categories, "isRTL": i18n.IsRTL(s.userLocale(c)), "imageDefaultSize": "large", "imageEditing": true,
 		"imageDimensions": map[string]any{
@@ -225,12 +278,12 @@ func (s *Server) renderBlockEditor(c *gin.Context, p *store.Post, isNew bool) {
 			{"slug": "large", "name": s.__(c, "Large")}, {"slug": "full", "name": s.__(c, "Full Size")}},
 		"maxUploadFileSize":                maxUploadBytes,
 		"__unstableGalleryWithImageBlocks": true,
-		"__experimentalFeatures":           editorFeatures(theme.Palette),
+		"__experimentalFeatures":           editorFeatures(theme),
 		"colors":                           theme.Palette,
 		"disableCustomColors":              false, "disableCustomFontSizes": false, "disableCustomGradients": false,
 		"disableLayoutStyles": false, "enableCustomLineHeight": true, "enableCustomSpacing": false, "enableCustomUnits": true,
 		"styles": []map[string]any{
-			{"css": s.webFile("wp-includes/css/global-styles-classic.css"), "__unstableType": "presets", "isGlobalStyles": true},
+			{"css": s.editorGlobalStyles(theme), "__unstableType": "presets", "isGlobalStyles": true},
 			{"css": ".is-layout-flow > * + *{margin-block-start:1.2rem}body .is-layout-flex{display:flex}.is-layout-flex{flex-wrap:wrap;align-items:center}.is-layout-flex > :is(*, div){margin:0}", "__unstableType": "base-layout", "isGlobalStyles": true},
 			{"css": editorStyle, "baseURL": themeURI + "css/", "__unstableType": "theme", "isGlobalStyles": false},
 		},
@@ -254,7 +307,7 @@ func (s *Server) renderBlockEditor(c *gin.Context, p *store.Post, isNew bool) {
 		"richEditingEnabled":                             true,
 		"postLock":                                       map[string]any{"isLocked": false, "activePostLock": ""},
 		"postLockUtils":                                  map[string]string{"nonce": s.nonce(c, "lock-post_"+itoa64(p.ID)), "unlockNonce": s.nonce(c, "update-post_"+itoa64(p.ID)), "ajaxUrl": "/wp-admin/admin-ajax"},
-		"supportsLayout":                                 false,
+		"supportsLayout":                                 theme.Settings != nil,
 		"supportsTemplateMode":                           false,
 		"enableCustomFields":                             false,
 		"codeEditingEnabled":                             true,

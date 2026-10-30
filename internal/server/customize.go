@@ -165,7 +165,7 @@ func (s *Server) czSanitize(ctx context.Context, t *Theme, values map[string]str
 				}
 				mods[name] = n % 360
 			case "json":
-				if v := sanitizeTT20Colors(raw); v != nil {
+				if v := sanitizeJSONMod(raw); v != nil {
 					mods[name] = v
 				} else {
 					delete(mods, name)
@@ -395,9 +395,6 @@ func (s *Server) customizeScreen(c *gin.Context) {
 			switch {
 			case ctl.ID == "background_color" && spec.BackgroundDefault != nil:
 				def = "#" + spec.BackgroundDefault(mods)
-			case t.Slug == "twentysixteen" && ctl.Type == "color":
-				scheme := tt16Scheme(mods)
-				def = scheme[map[string]int{"page_background_color": 1, "link_color": 2, "main_text_color": 3, "secondary_text_color": 4}[ctl.ID]]
 			}
 			val := def
 			switch ctl.Type {

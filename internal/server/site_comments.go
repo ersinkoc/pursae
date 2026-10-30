@@ -223,7 +223,7 @@ func (s *Server) pageOfComment(ctx context.Context, cm *store.Comment) int {
 	return (len(tree) + 1 + perPage - 1) / perPage
 }
 
-// listComments is wp_list_comments() with the html5 comment markup Twenty Sixteen uses (avatar size 42).
+// listComments is wp_list_comments() with the html5 comment markup (avatar size 42).
 // cpage is the comment page being shown (0 when comments are not paged).
 func (s *Server) listComments(sb *strings.Builder, list []*store.Comment, p *store.Post, lb *links.Builder, u *store.User, maxDepth int, counter *int, cpage int) {
 	loc := s.loc()
@@ -291,7 +291,7 @@ func (s *Server) listComments(sb *strings.Builder, list []*store.Comment, p *sto
 	}
 }
 
-// commentForm is comment_form() with html5 markup and Twenty Sixteen's h2 reply title.
+// commentForm is comment_form() with html5 markup and an h2 reply title.
 func (s *Server) commentForm(c *gin.Context, p *store.Post, lb *links.Builder, u *store.User) template.HTML {
 	esc := html.EscapeString
 	permalink := lb.Permalink(p)

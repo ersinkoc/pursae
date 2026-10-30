@@ -137,6 +137,9 @@ func (s *Server) renderTemplateFiltered(c *gin.Context, status int, set *templat
 		return
 	}
 	out := buf.Bytes()
+	if bytes.Contains(out, []byte(blockStylesMarker)) { // a theme with per-block core styles (Theme.BlockStyles)
+		out = s.blockStylesFor(data, out)
+	}
 	if front {
 		out = s.gooikeFilterPage(c, out) // Gooike: YouTube, Vimeo and Maps iframes wait for consent
 	} else {
