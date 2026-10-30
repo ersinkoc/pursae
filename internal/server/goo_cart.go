@@ -273,7 +273,7 @@ func (cart *gooCart) Add(ctx context.Context, productID int64, qty int, variatio
 		}
 	}
 	buy := p
-	if p.Type == gooTypeVariable {
+	if gooSubsVariableLike(p.Type) {
 		if variation == nil {
 			variation = map[string]string{}
 		}

@@ -443,12 +443,12 @@ func (s *Server) gooStockHTML(ctx context.Context, p *gooProduct) template.HTML 
 func (s *Server) gooAdminPriceHTML(ctx context.Context, p *gooProduct) template.HTML {
 	na := template.HTML(`<span class="na">&ndash;</span>`)
 	switch p.Type {
-	case gooTypeVariable, gooTypeGrouped:
+	case gooTypeVariable, gooSubsTypeVariable, gooTypeGrouped:
 		if p.MinPrice == nil {
 			return na
 		}
 		if p.MaxPrice == nil || *p.MaxPrice == *p.MinPrice {
-			if p.Type == gooTypeVariable {
+			if gooSubsVariableLike(p.Type) {
 				// One price for every variation: show the sale like a simple product's when they all are on sale.
 				if vars, err := s.gooVariations(ctx, p.ID, false); err == nil && len(vars) > 0 {
 					onSale, reg := true, -1.0
@@ -602,7 +602,7 @@ func (s *Server) gooDuplicateProduct(ctx context.Context, src *gooProduct, edito
 			_ = s.store.SetPostTerms(ctx, dup.ID, tax, ids)
 		}
 	}
-	if src.Type == gooTypeVariable {
+	if gooSubsVariableLike(src.Type) {
 		vars, _ := s.gooVariations(ctx, src.ID, true)
 		for _, v := range vars {
 			nv := *v
@@ -827,7 +827,7 @@ func (s *Server) gooTrashAction(ctx context.Context, p *gooProduct, action strin
 	case "untrash":
 		err = s.store.UntrashPost(ctx, p.ID)
 	case "delete":
-		if p.Type == gooTypeVariable {
+		if gooSubsVariableLike(p.Type) {
 			if vars, verr := s.gooVariations(ctx, p.ID, true); verr == nil {
 				for _, v := range vars {
 					_ = s.store.DeletePost(ctx, v.ID)
@@ -920,7 +920,7 @@ func (s *Server) gooBulkEditProduct(c *gin.Context, p *gooProduct) error {
 			p.StockQuantity = &n
 		}
 	}
-	if set("_stock_status") && (!p.ManageStock || p.Type == gooTypeVariable) && p.Type != gooTypeExternal {
+	if set("_stock_status") && (!p.ManageStock || gooSubsVariableLike(p.Type)) && p.Type != gooTypeExternal {
 		p.StockStatus = val("_stock_status")
 	}
 	return s.gooSaveProduct(ctx, p, currentUser(c).ID)

@@ -55,7 +55,7 @@ func (s *Server) gooPriceHTML(c *gin.Context, p *gooProduct) template.HTML {
 	ctx := c.Request.Context()
 	var h string
 	switch p.Type {
-	case gooTypeVariable:
+	case gooTypeVariable, gooSubsTypeVariable:
 		h = s.gooVariablePriceHTML(c, p)
 	case gooTypeGrouped:
 		kids, _ := s.gooGetProducts(ctx, p.Children)
@@ -171,7 +171,7 @@ func (s *Server) gooVariationsCached(c *gin.Context, p *gooProduct) []*gooProduc
 // variable products are on sale when a variation is.
 func (s *Server) gooOnSale(c *gin.Context, p *gooProduct) bool {
 	switch p.Type {
-	case gooTypeVariable:
+	case gooTypeVariable, gooSubsTypeVariable:
 		for _, v := range s.gooVariationsCached(c, p) {
 			if v.IsOnSale() {
 				return true
@@ -227,7 +227,7 @@ func gooFmtRating(r float64) string { return strconv.FormatFloat(math.Round(r*10
 // gooAvailability is get_availability(): the stock text and class.
 func (s *Server) gooAvailability(c *gin.Context, p *gooProduct) (string, string) {
 	ctx := c.Request.Context()
-	if p.Type == gooTypeVariable || p.Type == gooTypeGrouped || p.Type == gooTypeExternal {
+	if gooSubsVariableLike(p.Type) || p.Type == gooTypeGrouped || p.Type == gooTypeExternal {
 		if !s.gooIsInStock(ctx, p) && p.Type != gooTypeExternal {
 			return "Out of stock", "out-of-stock"
 		}
@@ -325,7 +325,7 @@ func (s *Server) gooProductClasses(c *gin.Context, p *gooProduct, extra ...strin
 	if p.TaxStatus != "" {
 		cl = append(cl, "shipping-"+p.TaxStatus)
 	}
-	if s.gooIsPurchasable(ctx, p) || p.Type == gooTypeVariable {
+	if s.gooIsPurchasable(ctx, p) || gooSubsVariableLike(p.Type) {
 		cl = append(cl, "purchasable")
 	}
 	cl = append(cl, "product-type-"+p.Type)
@@ -376,7 +376,7 @@ func (s *Server) gooAddToCartText(c *gin.Context, p *gooProduct, single bool) st
 			return "Add to cart"
 		}
 		return "View products"
-	case gooTypeVariable:
+	case gooTypeVariable, gooSubsTypeVariable:
 		if single {
 			return "Add to cart"
 		}
@@ -398,7 +398,7 @@ func (s *Server) gooAddToCartText(c *gin.Context, p *gooProduct, single bool) st
 func (s *Server) gooLoopAddToCart(c *gin.Context, p *gooProduct, extraClass string) string {
 	ctx := c.Request.Context()
 	link := s.gooPermalink(ctx, p)
-	simple := p.Type != gooTypeVariable && p.Type != gooTypeGrouped && p.Type != gooTypeExternal
+	simple := !gooSubsVariableLike(p.Type) && p.Type != gooTypeGrouped && p.Type != gooTypeExternal
 	buyable := simple && s.gooIsPurchasable(ctx, p) && s.gooIsInStock(ctx, p)
 	if buyable {
 		link = s.gooAddToCartURL(c, p)
@@ -430,7 +430,7 @@ func (s *Server) gooLoopAddToCart(c *gin.Context, p *gooProduct, extraClass stri
 	}
 	b.WriteString(`>` + gooEsc(text) + `</a>`)
 	b.WriteString(`<span id="` + desc + `" class="screen-reader-text">`)
-	if p.Type == gooTypeVariable && buyable == false && s.gooIsInStock(ctx, p) {
+	if gooSubsVariableLike(p.Type) && buyable == false && s.gooIsInStock(ctx, p) {
 		b.WriteString(`This product has multiple variants. The options may be chosen on the product page`)
 	}
 	b.WriteString(`</span>`)

@@ -70,6 +70,7 @@ type gooVariationRow struct {
 	ShipClass                       int64
 	TaxClass                        string
 	MenuOrder                       int
+	Extra                           template.HTML // module fields (gxsVariationFieldHooks)
 }
 
 type gooPanelView struct {
@@ -310,7 +311,7 @@ func (s *Server) gooRenderEditor(c *gin.Context, p *gooProduct, isNew bool) {
 	d.CustomAttr = gooAttrRow{Index: "__i__", Visible: true}
 
 	// Variations.
-	if p.Type == gooTypeVariable {
+	if gooSubsVariableLike(p.Type) {
 		vars, _ := s.gooVariations(ctx, p.ID, true)
 		for i, v := range vars {
 			d.Variations = append(d.Variations, s.gooVariationRowFor(ctx, d.VariationAttrs, v, i))
@@ -491,6 +492,9 @@ func (s *Server) gooVariationRowFor(ctx context.Context, attrs []gooAttrRow, v *
 	}
 	for _, a := range attrs {
 		r.Attrs = append(r.Attrs, gooVarAttr{Key: a.Key, Label: a.Label, Options: a.Options, Selected: v.VariationAttrs[a.Key]})
+	}
+	for _, h := range gxsVariationFieldHooks {
+		r.Extra += h(s, ctx, v, i)
 	}
 	return r
 }
@@ -798,7 +802,7 @@ func (s *Server) gooProductSave(c *gin.Context, id int64) {
 	p.CrossSellIDs = gooWithout(f.ids("crosssell_ids[]"), p.ID)
 	if typ == gooTypeGrouped {
 		p.Children = gooWithout(f.ids("grouped_products[]"), p.ID)
-	} else if p.Type != gooTypeVariable {
+	} else if !gooSubsVariableLike(p.Type) {
 		p.Children = nil
 	}
 
@@ -879,7 +883,7 @@ func (s *Server) gooProductSave(c *gin.Context, id int64) {
 	if !regexp.MustCompile(`^[a-z0-9_-]{1,40}$`).MatchString(tab) {
 		tab = ""
 	}
-	if p.Type == gooTypeVariable {
+	if gooSubsVariableLike(p.Type) {
 		errs = append(errs, s.gooSaveVariationsForm(c, f, p)...)
 		switch {
 		case f.str("goo_generate_variations") != "":
@@ -1144,6 +1148,9 @@ func (s *Server) gooSaveVariationsForm(c *gin.Context, f gooForm, parent *gooPro
 		v.DownloadExpiry = gooLimitFrom(f.str(k("variable_download_expiry")))
 		if f.has(k("variable_menu_order")) {
 			v.Post.MenuOrder, _ = strconv.Atoi(f.str(k("variable_menu_order")))
+		}
+		for _, h := range gxsVariationSaveHooks {
+			h(s, c, parent, v, i)
 		}
 		v.Name = s.gooVariationTitle(ctx, parent, v)
 		v.ParentID = parent.ID

@@ -77,20 +77,21 @@ type gooSubscription struct {
 	PaymentMethod      string
 	PaymentMethodTitle string
 	Meta               map[string]any
+	SyncDay            int // synchronised renewal day (gooSubsSyncDay), 0 = not synced
 	DateCreated        time.Time
 	DateModified       time.Time
 }
 
 const gsubCols = `id, parent_order_id, customer_id, status, billing_period, billing_interval, items, currency, recurring_total::float8,
 	recurring_tax::float8, start_date, trial_end, next_payment, end_date, last_order_id, billing, shipping, payment_method,
-	payment_method_title, meta, date_created, date_modified`
+	payment_method_title, meta, date_created, date_modified, sync_day`
 
 func gsubScan(row pgx.Row) (*gooSubscription, error) {
 	sub := &gooSubscription{}
 	var items, billing, shipping, meta []byte
 	err := row.Scan(&sub.ID, &sub.ParentOrderID, &sub.CustomerID, &sub.Status, &sub.Period, &sub.Interval, &items, &sub.Currency,
 		&sub.RecurringTotal, &sub.RecurringTax, &sub.Start, &sub.TrialEnd, &sub.NextPayment, &sub.End, &sub.LastOrderID, &billing,
-		&shipping, &sub.PaymentMethod, &sub.PaymentMethodTitle, &meta, &sub.DateCreated, &sub.DateModified)
+		&shipping, &sub.PaymentMethod, &sub.PaymentMethodTitle, &meta, &sub.DateCreated, &sub.DateModified, &sub.SyncDay)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, store.ErrNotFound
 	}
@@ -202,17 +203,17 @@ func (s *Server) gsubSave(ctx context.Context, sub *gooSubscription) error {
 		}
 		return s.store.Pool.QueryRow(ctx, `INSERT INTO goo_subscriptions (parent_order_id, customer_id, status, billing_period, billing_interval,
 			items, currency, recurring_total, recurring_tax, start_date, trial_end, next_payment, end_date, last_order_id, billing, shipping,
-			payment_method, payment_method_title, meta) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
+			payment_method, payment_method_title, meta, sync_day) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
 			RETURNING id, date_created, date_modified`,
 			sub.ParentOrderID, sub.CustomerID, sub.Status, sub.Period, sub.Interval, items, sub.Currency, sub.RecurringTotal, sub.RecurringTax,
 			sub.Start, sub.TrialEnd, sub.NextPayment, sub.End, sub.LastOrderID, billing, shipping, sub.PaymentMethod, sub.PaymentMethodTitle,
-			meta).Scan(&sub.ID, &sub.DateCreated, &sub.DateModified)
+			meta, sub.SyncDay).Scan(&sub.ID, &sub.DateCreated, &sub.DateModified)
 	}
 	_, err := s.store.Pool.Exec(ctx, `UPDATE goo_subscriptions SET customer_id=$2, status=$3, billing_period=$4, billing_interval=$5, items=$6,
 		currency=$7, recurring_total=$8, recurring_tax=$9, start_date=$10, trial_end=$11, next_payment=$12, end_date=$13, last_order_id=$14,
-		billing=$15, shipping=$16, payment_method=$17, payment_method_title=$18, meta=$19, date_modified=now() WHERE id=$1`,
+		billing=$15, shipping=$16, payment_method=$17, payment_method_title=$18, meta=$19, sync_day=$20, date_modified=now() WHERE id=$1`,
 		sub.ID, sub.CustomerID, sub.Status, sub.Period, sub.Interval, items, sub.Currency, sub.RecurringTotal, sub.RecurringTax, sub.Start,
-		sub.TrialEnd, sub.NextPayment, sub.End, sub.LastOrderID, billing, shipping, sub.PaymentMethod, sub.PaymentMethodTitle, meta)
+		sub.TrialEnd, sub.NextPayment, sub.End, sub.LastOrderID, billing, shipping, sub.PaymentMethod, sub.PaymentMethodTitle, meta, sub.SyncDay)
 	return err
 }
 
@@ -309,6 +310,7 @@ type gsubSchedule struct {
 	TrialLength int
 	TrialPeriod string
 	Limit       string // no, active, any
+	SyncDay     int    // _subscription_payment_sync_date (week 1-7, month 1-28, year MMDD), 0 = not synced
 }
 
 func gsubScheduleOf(p *gooProduct) gsubSchedule {
@@ -319,7 +321,8 @@ func gsubScheduleOf(p *gooProduct) gsubSchedule {
 	sc := gsubSchedule{Price: p.PriceValue(), Interval: max(gxaInt(m, "_subscription_period_interval"), 1),
 		Period: defaultStr(gxaStr(m, "_subscription_period"), "month"), Length: gxaInt(m, "_subscription_length"),
 		SignUpFee: gxaFloat(m, "_subscription_sign_up_fee"), TrialLength: gxaInt(m, "_subscription_trial_length"),
-		TrialPeriod: defaultStr(gxaStr(m, "_subscription_trial_period"), "day"), Limit: defaultStr(gxaStr(m, "_subscription_limit"), "no")}
+		TrialPeriod: defaultStr(gxaStr(m, "_subscription_trial_period"), "day"), Limit: defaultStr(gxaStr(m, "_subscription_limit"), "no"),
+		SyncDay: gooSubsSyncDayOf(m)}
 	if !p.HasPrice() {
 		sc.Price = gxaFloat(m, "_subscription_price")
 	}
@@ -350,6 +353,9 @@ func (s *Server) gsubPriceString(sc gsubSchedule) string {
 		b.WriteString(" / " + sc.Period)
 	} else {
 		b.WriteString(" every " + gxaPeriodLabel(sc.Period, sc.Interval))
+	}
+	if sc.SyncDay > 0 && s.gooExtBool(gsubKey, "sync_payments") {
+		b.WriteString(gooSubsSyncLabel(sc.Period, sc.SyncDay))
 	}
 	if sc.Length > 0 {
 		b.WriteString(" for " + gxaPeriodLabel(sc.Period, sc.Length))
@@ -391,7 +397,7 @@ func init() {
 				return false
 			}
 			sc := gsubScheduleOf(p)
-			if u := gxaUser(ctx); u != nil && sc.Limit != "no" {
+			if u := gxaUser(ctx); u != nil && sc.Limit != "no" && !gooSubsSwitching(ctx) {
 				statuses := gsubLiveStatuses
 				if sc.Limit == "any" {
 					statuses = append([]string{"cancelled", "expired"}, gsubLiveStatuses...)
@@ -408,13 +414,19 @@ func init() {
 	})
 
 	gooProductPanels = append(gooProductPanels, &gooProductPanel{ID: "subscription_pricing", Label: "Subscription", Module: gsubKey,
-		ShowFor: []string{"subscription"}, Render: gsubPanelRender, Save: gsubPanelSave})
+		ShowFor: []string{"subscription", gooSubsTypeVariable}, Render: gsubPanelRender, Save: gsubPanelSave})
 
 	gooPriceHTMLHooks = append(gooPriceHTMLHooks, func(s *Server, ctx context.Context, p *gooProduct, h template.HTML) template.HTML {
-		if !s.gooExtOn(gsubKey) || p == nil || p.Type != "subscription" {
+		if !s.gooExtOn(gsubKey) || p == nil {
 			return h
 		}
-		return h + template.HTML(`<span class="subscription-details">`+s.gsubPriceString(gsubScheduleOf(p))+`</span>`)
+		switch {
+		case p.Type == "subscription", p.Type == gooTypeVariation && s.gsubIsSubscription(ctx, p):
+			return h + template.HTML(`<span class="subscription-details">`+s.gsubPriceString(gsubScheduleOf(p))+`</span>`)
+		case p.Type == gooSubsTypeVariable:
+			return s.gooSubsVariablePriceHTML(ctx, p, h)
+		}
+		return h
 	})
 
 	// Mixed checkout: subscriptions and other products may not share a cart when switched off.
@@ -443,12 +455,16 @@ func init() {
 		if !s.gooExtOn(gsubKey) || !s.gsubIsSubscription(ctx, it.Product()) {
 			return
 		}
-		sc := gsubScheduleOf(it.Product())
-		first := it.Price
-		if sc.TrialLength > 0 {
-			first = 0
+		if gooSubsSwitchData(it) != nil {
+			// A switch: the prorated difference (and sign-up fee) of gooSubsSwitchQuote is due now.
+			if q, err := s.gooSubsSwitchQuote(ctx, it, it.Price); err == nil {
+				it.Price = q.Charge
+			}
+			return
 		}
-		it.Price = first + sc.SignUpFee
+		sc := gsubScheduleOf(it.Product())
+		frac, _ := s.gooSubsFirstPayment(it.Product(), sc, time.Now())
+		it.Price = gooRound(it.Price*frac, s.gooDecimals()) + sc.SignUpFee
 	})
 
 	gooCartItemDataHooks = append(gooCartItemDataHooks, func(s *Server, ctx context.Context, it *gooCartItem) []gooKV {
@@ -525,6 +541,9 @@ func init() {
 			m["_subscription_trial_length"] = float64(sc.TrialLength)
 			m["_subscription_trial_period"] = sc.TrialPeriod
 			m["_subscription_sign_up_fee"] = sc.SignUpFee
+			if sc.SyncDay > 0 && s.gooExtBool(gsubKey, "sync_payments") && sc.Period != "day" {
+				m["_subscription_sync_day"] = float64(sc.SyncDay)
+			}
 		}
 		return nil
 	})
@@ -538,6 +557,7 @@ func init() {
 	})
 	gooOn("payment_complete", 20, func(s *Server, ctx context.Context, arg any) {
 		if o, ok := arg.(*gooOrder); ok && s.gooExtOn(gsubKey) && containsStr(gooPaidStatuses, o.Status) {
+			s.gooSubsApplySwitch(ctx, o)
 			s.gsubCreateFromOrder(ctx, o)
 		}
 	})
@@ -591,9 +611,19 @@ func gsubFields() []gooField {
 		{ID: "renewals_end", Type: "sectionend"},
 		{ID: "switching_title", Title: "Switching", Type: "title", Desc: "Allow subscribers to switch (upgrade or downgrade) between different subscriptions."},
 		{ID: "allow_switching", Title: "Allow Switching", Type: "select", Default: "no", Options: []gooOpt{{"no", "Never"}, {"variable", "Between Subscription Variations"}, {"grouped", "Between Grouped Subscriptions"}, {"variable_grouped", "Between Both Variations & Grouped Subscriptions"}}},
+		{ID: "apportion_recurring_price", Title: "Prorate Recurring Payment", Type: "select", Default: "no", Desc: "When switching to a subscription with a different recurring payment or billing period, should the price paid for the existing billing period be prorated when switching to the new subscription?",
+			Options: []gooOpt{{"no", "Never"}, {"virtual-upgrade", "For Upgrades of Virtual Subscription Products Only"}, {"yes-upgrade", "For Upgrades of All Subscription Products"}, {"virtual", "For Upgrades & Downgrades of Virtual Subscription Products Only"}, {"yes", "For Upgrades & Downgrades of All Subscription Products"}}},
+		{ID: "apportion_sign_up_fee", Title: "Prorate Sign up Fee", Type: "select", Default: "no", Desc: "When switching to a subscription with a sign up fee, you can require the customer pay only the gap between the existing subscription's sign up fee and the new subscription's sign up fee (if any).",
+			Options: []gooOpt{{"no", "Never (do not charge a sign up fee)"}, {"full", "Never (charge the full sign up fee)"}, {"yes", "Always"}}},
+		{ID: "apportion_length", Title: "Prorate Subscription Length", Type: "select", Default: "no", Desc: "When switching to a subscription with a length, you can take into account the payments already completed by the customer when determining how many payments the subscriber needs to make for the new subscription.",
+			Options: []gooOpt{{"no", "Never"}, {"virtual", "For Virtual Subscription Products Only"}, {"yes", "For All Subscription Products"}}},
+		{ID: "switch_button_text", Title: "Switch Button Text", Type: "text", Default: "Upgrade or Downgrade", Desc: "Customise the text displayed on the button next to the subscription on the subscriber's account page."},
 		{ID: "switching_end", Type: "sectionend"},
 		{ID: "sync_title", Title: "Synchronisation", Type: "title", Desc: "Align subscription renewal to a specific day of the week, month or year."},
 		{ID: "sync_payments", Title: "Synchronise renewals", Type: "checkbox", Default: false, Desc: "Align Subscription Renewal Day"},
+		{ID: "prorate_synced_payments", Title: "Prorate First Renewal", Type: "select", Default: "no", Desc: "If a subscription is synchronised to a specific day of the week, month or year, charge a prorated amount for the subscription at the time of sign up.",
+			Options: []gooOpt{{"no", "Never (do not charge any recurring amount)"}, {"recurring", "Never (charge the full recurring amount at sign-up)"}, {"virtual", "For Virtual Subscription Products Only"}, {"yes", "For All Subscription Products"}}},
+		{ID: "days_no_fee", Title: "Days with no fee", Type: "number", Default: 0.0, Min: "0", Desc: "Days before the synchronised renewal day during which a new subscriber is not charged a prorated amount up front; the first renewal is still the synchronised day."},
 		{ID: "sync_end", Type: "sectionend"},
 		{ID: "misc_title", Title: "Miscellaneous", Type: "title"},
 		{ID: "max_customer_suspensions", Title: "Customer Suspensions", Type: "number", Default: 0.0, Min: "0", Desc: "Set a maximum number of times a customer can suspend their account for each billing period. Use 0 to turn off customer suspensions."},
@@ -662,11 +692,12 @@ func gsubPanelRender(s *Server, c *gin.Context, p *gooProduct) template.HTML {
 	b.WriteString(`<p class="form-field _subscription_sign_up_fee_field"><label for="_subscription_sign_up_fee">Sign-up fee (` + cur + `)</label>` +
 		`<input type="text" class="wc_input_price wc_input_subscription_intial_price short" name="_subscription_sign_up_fee" id="_subscription_sign_up_fee" value="` + gooEsc(fee) + `" placeholder="e.g. 9.90">` +
 		`<span class="description">Optionally include an amount to be charged at the outset of the subscription. The sign-up fee will be charged immediately, even if the product has a free trial or the payment dates are synced.</span></p>`)
+	b.WriteString(s.gooSubsSyncField(sc, "_subscription_payment_sync_date", "", "form-field"))
 	b.WriteString(`<p class="form-field _subscription_trial_length_field"><label for="_subscription_trial_length">Free trial</label><span class="wrap">` +
 		`<input type="text" id="_subscription_trial_length" name="_subscription_trial_length" class="wc_input_subscription_trial_length" value="` + strconv.Itoa(sc.TrialLength) + `">` +
 		gxaSelect("_subscription_trial_period", "_subscription_trial_period", []gooOpt{{"day", "days"}, {"week", "weeks"}, {"month", "months"}, {"year", "years"}}, sc.TrialPeriod, ` class="wc_input_subscription_trial_period last"`) +
 		`</span><span class="description">An optional period of time to wait before charging the first recurring payment. Any sign up fee will still be charged at the outset of the subscription.</span></p>`)
-	b.WriteString(`</div><div class="options_group limit_subscription show_if_subscription">`)
+	b.WriteString(`</div><div class="options_group limit_subscription show_if_subscription show_if_variable-subscription">`)
 	b.WriteString(`<p class="form-field _subscription_limit_field"><label for="_subscription_limit">Limit subscription</label>` +
 		gxaSelect("_subscription_limit", "_subscription_limit", []gooOpt{{"no", "Do not limit"}, {"active", "Limit to one active subscription"}, {"any", "Limit to one of any status"}}, sc.Limit, ` class="select short"`) +
 		`<span class="description">Only allow a customer to have one subscription to this product.</span></p></div>`)
@@ -676,6 +707,15 @@ func gsubPanelRender(s *Server, c *gin.Context, p *gooProduct) template.HTML {
 func gsubPanelSave(s *Server, c *gin.Context, p *gooProduct) {
 	if p.Meta == nil {
 		p.Meta = map[string]any{}
+	}
+	if p.Type == gooSubsTypeVariable {
+		// A variable subscription's schedules are its variations'; the parent keeps the limit.
+		limit := c.PostForm("_subscription_limit")
+		if !containsStr([]string{"no", "active", "any"}, limit) {
+			limit = "no"
+		}
+		p.Meta["_subscription_limit"] = limit
+		return
 	}
 	if v := s.gooParseAmount(c.PostForm("_subscription_price")); v != nil {
 		p.RegularPrice = v
@@ -694,6 +734,7 @@ func gsubPanelSave(s *Server, c *gin.Context, p *gooProduct) {
 		period = "month"
 	}
 	p.Meta["_subscription_period"] = period
+	gooSubsSaveSyncDay(p.Meta, period, c.PostForm("_subscription_payment_sync_date"), c.PostForm("_subscription_payment_sync_date_day"), c.PostForm("_subscription_payment_sync_date_month"))
 	p.Meta["_subscription_length"] = num("_subscription_length", 0, 1000)
 	fee := 0.0
 	if v := s.gooParseAmount(c.PostForm("_subscription_sign_up_fee")); v != nil && *v > 0 {
@@ -739,11 +780,11 @@ func (s *Server) gsubRecurringTotals(c *gin.Context, cart *gooCart) template.HTM
 		if !s.gooPricesIncludeTax() {
 			total += tax
 		}
-		start := time.Now()
-		if sc.TrialLength > 0 {
-			start = gxaAddPeriod(start, sc.TrialPeriod, sc.TrialLength)
-		} else {
-			start = gxaAddPeriod(start, sc.Period, sc.Interval)
+		_, start := s.gooSubsFirstPayment(it.Product(), sc, time.Now())
+		if gooSubsSwitchData(it) != nil {
+			if q, err := s.gooSubsSwitchQuote(ctx, it, unit); err == nil && q.Next != nil {
+				start = *q.Next
+			}
 		}
 		sched := sc
 		sched.SignUpFee, sched.TrialLength = 0, 0
@@ -800,6 +841,7 @@ func (s *Server) gsubOrderStatusChanged(ctx context.Context, o *gooOrder, from, 
 		return
 	}
 	if containsStr(gooPaidStatuses, to) {
+		s.gooSubsApplySwitch(ctx, o)
 		s.gsubCreateFromOrder(ctx, o)
 	}
 	if to == "cancelled" || to == "refunded" {
@@ -828,30 +870,38 @@ func (s *Server) gsubCreateFromOrder(ctx context.Context, o *gooOrder) []*gooSub
 	var order []string
 	now := time.Now()
 	for _, it := range o.ItemsOf("line_item") {
-		if it.Meta["_subscription_period"] == nil {
-			continue
+		if it.Meta["_subscription_period"] == nil || it.Meta["_subscription_switch"] != nil {
+			continue // switch lines change their subscription (gooSubsApplySwitch)
 		}
 		period := gxaStr(it.Meta, "_subscription_period")
 		interval := max(gxaInt(it.Meta, "_subscription_interval"), 1)
 		length := gxaInt(it.Meta, "_subscription_length")
 		trialLen := gxaInt(it.Meta, "_subscription_trial_length")
 		trialPer := gxaStr(it.Meta, "_subscription_trial_period")
-		key := fmt.Sprintf("%s|%d|%d|%d|%s", period, interval, length, trialLen, trialPer)
+		syncDay := gxaInt(it.Meta, "_subscription_sync_day")
+		key := fmt.Sprintf("%s|%d|%d|%d|%s|%d", period, interval, length, trialLen, trialPer, syncDay)
 		sub := groups[key]
 		if sub == nil {
 			sub = &gooSubscription{ParentOrderID: o.ID, CustomerID: o.CustomerID, Status: "active", Period: period, Interval: interval,
 				Currency: o.Currency, Start: now, Billing: o.Billing, Shipping: o.Shipping, PaymentMethod: o.PaymentMethod,
 				PaymentMethodTitle: o.PaymentMethodTitle, LastOrderID: o.ID, Meta: map[string]any{}}
-			first := gxaAddPeriod(now, period, interval)
 			if trialLen > 0 {
 				te := gxaAddPeriod(now, trialPer, trialLen)
-				sub.TrialEnd, first = &te, te
+				sub.TrialEnd = &te
+			}
+			first, synced := gooSubsFirstRenewal(now, period, interval, sub.TrialEnd, syncDay, s.loc())
+			if syncDay > 0 {
+				sub.SyncDay = syncDay
 			}
 			sub.NextPayment = &first
 			if length > 0 {
 				end := gxaAddPeriod(now, period, length)
 				if sub.TrialEnd != nil {
 					end = gxaAddPeriod(*sub.TrialEnd, period, length)
+				}
+				if synced {
+					// The time before a synchronised first renewal is in addition to the length.
+					end = gxaAddPeriod(first, period, length)
 				}
 				sub.End = &end
 				if !sub.NextPayment.Before(end) {
@@ -1199,8 +1249,8 @@ func gsubAccountView(s *Server, c *gin.Context, arg string) template.HTML {
 	// Totals.
 	b.WriteString(`<header><h2>Subscription totals</h2></header><table class="shop_table order_details"><thead><tr><th class="product-name">Product</th><th class="product-total">Total</th></tr></thead><tbody>`)
 	sched := gsubSchedule{Interval: sub.Interval, Period: sub.Period}
-	for _, it := range sub.Items {
-		b.WriteString(`<tr class="order_item"><td class="product-name">` + gooEsc(it.Name) + ` <strong class="product-quantity">&times;&nbsp;` + strconv.Itoa(it.Qty) + `</strong></td>` +
+	for idx, it := range sub.Items {
+		b.WriteString(`<tr class="order_item"><td class="product-name">` + gooEsc(it.Name) + ` <strong class="product-quantity">&times;&nbsp;` + strconv.Itoa(it.Qty) + `</strong>` + s.gooSubsSwitchLink(c, sub, idx) + `</td>` +
 			`<td class="product-total">` + string(s.gooPriceIn(it.Total, sub.Currency)) + `<span class="subscription-details">` + s.gsubPriceString(sched) + `</span></td></tr>`)
 	}
 	b.WriteString(`</tbody><tfoot>`)
@@ -1225,7 +1275,8 @@ func gsubAccountView(s *Server, c *gin.Context, arg string) template.HTML {
 
 // gsubRelatedOrders are the parent and renewal orders of a subscription.
 func (s *Server) gsubRelatedOrders(ctx context.Context, sub *gooSubscription) []*gooOrder {
-	rows, err := s.store.Pool.Query(ctx, `SELECT id FROM goo_orders WHERE type = 'shop_order' AND (id = $1 OR (meta->>'_subscription_renewal')::numeric = $2) ORDER BY id DESC`, sub.ParentOrderID, sub.ID)
+	rows, err := s.store.Pool.Query(ctx, `SELECT id FROM goo_orders WHERE type = 'shop_order' AND (id = $1 OR (meta->>'_subscription_renewal')::numeric = $2
+		OR (meta->>'_subscription_switch')::numeric = $2) ORDER BY id DESC`, sub.ParentOrderID, sub.ID)
 	if err != nil {
 		return nil
 	}
@@ -1255,6 +1306,8 @@ func (s *Server) gsubRelatedOrdersTable(ctx context.Context, sub *gooSubscriptio
 		rel := "Renewal Order"
 		if o.ID == sub.ParentOrderID {
 			rel = "Parent Order"
+		} else if o.Meta["_subscription_switch"] != nil {
+			rel = "Switch Order"
 		}
 		b.WriteString(`<tr class="order"><td class="order-number"><a href="` + gooEsc(link(o)) + `">#` + o.Number() + `</a></td>` +
 			`<td class="order-date">` + s.gxaDate(&o.DateCreated) + `</td><td class="order-status">` + gooEsc(gooStatusLabel(o.Status)) + `</td>` +

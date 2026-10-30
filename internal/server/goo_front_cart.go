@@ -467,7 +467,7 @@ func (s *Server) gooAddToCartFromForm(c *gin.Context, form url.Values) ([]gooAdd
 			s.gooAddNotice(c, "error", errs[0])
 		}
 		return added, nil
-	case gooTypeVariable, gooTypeVariation:
+	case gooTypeVariable, gooSubsTypeVariable, gooTypeVariation:
 		vid := gooAtoi64(form.Get("variation_id"))
 		attrs := map[string]string{}
 		for k, v := range form {
@@ -884,7 +884,7 @@ func (s *Server) gooAjax(c *gin.Context, action string) {
 		s.gooCheckoutAjax(c)
 	case "get_variation":
 		p, err := s.gooGetProduct(ctx, gooAtoi64(c.PostForm("product_id")))
-		if err != nil || p.Type != gooTypeVariable {
+		if err != nil || !gooSubsVariableLike(p.Type) {
 			c.JSON(http.StatusOK, false)
 			return
 		}
