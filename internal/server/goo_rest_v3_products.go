@@ -348,7 +348,6 @@ func (s *Server) gooV3ProductJSON(ctx context.Context, p *gooProduct) map[string
 	}
 }
 
-
 // gooProductStatuses are the post statuses a product can have through the API.
 var gooProductStatuses = []string{"draft", "pending", "private", "publish", "future"}
 

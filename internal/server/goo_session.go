@@ -98,7 +98,7 @@ func (s *Server) gooSessionFor(c *gin.Context) *gooSession {
 		if guestKey != "" {
 			// Logging in merges the visitor cart into the customer's (wc_load_persistent_cart).
 			guest := &gooSession{Key: guestKey}
-			if s.gooLoadSession(ctx, guest) && len(guest.Data.Cart) > 0 {
+			if s.gooLoadSession(ctx, guest) && (len(guest.Data.Cart) > 0 || len(guest.Data.Extra) > 0) {
 				have := map[string]bool{}
 				for _, it := range sess.Data.Cart {
 					have[it.Key] = true
@@ -111,6 +111,14 @@ func (s *Server) gooSessionFor(c *gin.Context) *gooSession {
 				for _, code := range guest.Data.AppliedCoupons {
 					if !containsStr(sess.Data.AppliedCoupons, code) {
 						sess.Data.AppliedCoupons = append(sess.Data.AppliedCoupons, code)
+					}
+				}
+				for k, v := range guest.Data.Extra { // module data (compare list, …)
+					if sess.Data.Extra == nil {
+						sess.Data.Extra = map[string]any{}
+					}
+					if _, ok := sess.Data.Extra[k]; !ok {
+						sess.Data.Extra[k] = v
 					}
 				}
 				sess.dirty = true

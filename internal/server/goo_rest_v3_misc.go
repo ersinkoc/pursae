@@ -102,8 +102,8 @@ func (s *Server) gooV3Reports(c *gin.Context, req *restRequest) {
 	restJSON(c, http.StatusOK, out)
 }
 
-// gooReportRange is the period of a report: period=week|month|last_month|year or date_min / date_max.
-func (s *Server) gooReportRange(c *gin.Context) (from, to time.Time) {
+// gooRESTReportRange is the period of a report: period=week|month|last_month|year or date_min / date_max.
+func (s *Server) gooRESTReportRange(c *gin.Context) (from, to time.Time) {
 	loc := s.loc()
 	now := time.Now().In(loc)
 	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, loc)
@@ -134,7 +134,7 @@ var gooReportStatuses = []string{"completed", "processing", "on-hold", "refunded
 
 func (s *Server) gooV3ReportSales(c *gin.Context, req *restRequest) {
 	ctx := c.Request.Context()
-	from, to := s.gooReportRange(c)
+	from, to := s.gooRESTReportRange(c)
 	orders, _, err := s.gooQueryOrders(ctx, gooOrderQuery{Status: gooReportStatuses, After: &from, Before: &to})
 	if err != nil {
 		restErr(c, http.StatusInternalServerError, "woocommerce_rest_cannot_view", err.Error())
@@ -202,7 +202,7 @@ func (s *Server) gooV3ReportSales(c *gin.Context, req *restRequest) {
 
 func (s *Server) gooV3ReportTopSellers(c *gin.Context, req *restRequest) {
 	ctx := c.Request.Context()
-	from, to := s.gooReportRange(c)
+	from, to := s.gooRESTReportRange(c)
 	rows, err := s.store.Pool.Query(ctx, `SELECT i.product_id, max(i.name), sum(i.quantity)::bigint AS qty FROM goo_order_items i JOIN goo_orders o ON o.id = i.order_id
 		WHERE o.type = 'shop_order' AND o.status = ANY($1) AND i.type = 'line_item' AND o.date_created >= $2 AND o.date_created < $3
 		GROUP BY i.product_id ORDER BY qty DESC, i.product_id LIMIT 12`, gooReportStatuses, from, to)
@@ -343,7 +343,7 @@ func (s *Server) gooV3TaxJSON(ctx context.Context, r *gooTaxRate) map[string]any
 		"_links": s.gooLinks(ctx, "taxes", r.ID)}
 }
 
-func gooSplitList(v any) []string {
+func gooRESTSplitList(v any) []string {
 	var out []string
 	switch t := v.(type) {
 	case []any:
@@ -371,12 +371,12 @@ func (s *Server) gooV3ApplyTax(r *gooTaxRate, b map[string]any) *gooAPIErr {
 	}
 	for _, k := range []string{"postcode", "postcodes"} {
 		if v, ok := b[k]; ok {
-			r.Postcodes = gooSplitList(v)
+			r.Postcodes = gooRESTSplitList(v)
 		}
 	}
 	for _, k := range []string{"city", "cities"} {
 		if v, ok := b[k]; ok {
-			r.Cities = gooSplitList(v)
+			r.Cities = gooRESTSplitList(v)
 		}
 	}
 	if v, ok := b["rate"]; ok {
@@ -608,13 +608,13 @@ func (s *Server) gooSettingGroups() []*gooSettingGroup {
 		if d.Module != "" && !s.gooExtOn(d.Module) {
 			continue
 		}
-		out = append(out, &gooSettingGroup{ID: "email_" + d.ID, Label: d.Title, Desc: d.Description, Parent: "email", Email: d.ID, Fields: gooEmailFields(d)})
+		out = append(out, &gooSettingGroup{ID: "email_" + d.ID, Label: d.Title, Desc: d.Description, Parent: "email", Email: d.ID, Fields: gooRESTEmailFields(d)})
 	}
 	return out
 }
 
-// gooEmailFields are the settings fields of an e-mail (WC_Email::init_form_fields()).
-func gooEmailFields(d *gooEmailDef) []gooField {
+// gooRESTEmailFields are the settings fields of an e-mail (WC_Email::init_form_fields()).
+func gooRESTEmailFields(d *gooEmailDef) []gooField {
 	var f []gooField
 	if !d.Manual {
 		f = append(f, gooField{ID: "enabled", Title: "Enable/Disable", Type: "checkbox", Default: "yes", Desc: "Enable this email notification"})

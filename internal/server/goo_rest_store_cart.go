@@ -22,7 +22,7 @@ import (
 // X-WC-Store-API-Nonce) or a Cart-Token: a signed token naming the session, for headless clients
 // without cookies. Every response returns fresh Nonce, Nonce-Timestamp, Cart-Token and User-ID headers.
 
-const gooStoreNonce = "wc_store_api"
+const gooStoreAPINonce = "wc_store_api"
 
 func (s *Server) registerGooStoreCartREST() {
 	r := func(pattern string, m map[string]restHandler) {
@@ -63,7 +63,7 @@ func (s *Server) gooStore(h restHandler, mutating bool) restHandler {
 				restErr(c, http.StatusUnauthorized, "woocommerce_rest_missing_nonce", "Missing the Nonce header. This endpoint requires a valid nonce.")
 				return
 			}
-			if !s.checkNonceValue(c, nonce, gooStoreNonce) {
+			if !s.checkNonceValue(c, nonce, gooStoreAPINonce) {
 				s.gooStoreHeaders(c)
 				restErr(c, http.StatusForbidden, "woocommerce_rest_invalid_nonce", "Nonce is invalid.")
 				return
@@ -123,7 +123,7 @@ func (s *Server) gooUseCartToken(c *gin.Context) bool {
 
 // gooStoreHeaders sets the Nonce, Cart-Token and User-ID headers of a Store API response.
 func (s *Server) gooStoreHeaders(c *gin.Context) {
-	c.Header("Nonce", s.nonce(c, gooStoreNonce))
+	c.Header("Nonce", s.nonce(c, gooStoreAPINonce))
 	c.Header("Nonce-Timestamp", strconv.FormatInt(time.Now().Unix(), 10))
 	c.Header("Cart-Token", s.gooCartToken(c))
 	var uid int64

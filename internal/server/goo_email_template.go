@@ -500,8 +500,8 @@ func (s *Server) gooEmailPurchaseNote(ctx context.Context, it *gooOrderItem, o *
 	return p.PurchaseNote
 }
 
-// gooFormatAddress is WC_Countries::get_formatted_address() as lines.
-func gooFormatAddress(a map[string]string) []string {
+// gooEmailFormatAddress is WC_Countries::get_formatted_address() as lines.
+func gooEmailFormatAddress(a map[string]string) []string {
 	var lines []string
 	add := func(v string) {
 		if v = strings.TrimSpace(v); v != "" {
@@ -531,7 +531,7 @@ func (s *Server) gooEmailAddresses(o *gooOrder) (string, string) {
 	c := s.gooEmailPalette()
 	box := `padding:12px;color:` + c.TextLighter20 + `;border:1px solid #e5e5e5;`
 	h2 := `<h2 style="color:` + c.Base + `;display:block;font-family:` + gooEmailFont + `;font-size:18px;font-weight:bold;line-height:130%;margin:0 0 18px;text-align:left;">`
-	billing := gooFormatAddress(o.Billing)
+	billing := gooEmailFormatAddress(o.Billing)
 	var b strings.Builder
 	var p strings.Builder
 	b.WriteString(`<table id="addresses" cellspacing="0" cellpadding="0" border="0" style="width:100%;vertical-align:top;margin-bottom:40px;padding:0;"><tr>`)
@@ -552,7 +552,7 @@ func (s *Server) gooEmailAddresses(o *gooOrder) (string, string) {
 		p.WriteString(em + "\n")
 	}
 	b.WriteString(`</address></td>`)
-	if shipping := gooFormatAddress(o.Shipping); len(shipping) > 0 && len(o.ItemsOf("shipping")) > 0 {
+	if shipping := gooEmailFormatAddress(o.Shipping); len(shipping) > 0 && len(o.ItemsOf("shipping")) > 0 {
 		esc := make([]string, len(shipping))
 		for i, l := range shipping {
 			esc[i] = gooEsc(l)

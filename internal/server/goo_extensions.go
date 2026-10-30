@@ -227,7 +227,7 @@ func (s *Server) gooAdminExtSettings(c *gin.Context) {
 		return
 	}
 	s.adminPage(c, "goocommerce?page=extensions", e.Name+" settings", "goocommerce_page_goo-extensions", "admin/goo-ext-settings",
-		map[string]any{"Ext": e, "On": s.gooExtOn(key), "Form": s.gooFieldsHTML(c.Request.Context(), e.Fields, s.gooExtSettings(key)),
+		map[string]any{"Ext": e, "On": s.gooExtOn(key), "Form": s.gooExtFieldsHTML(c.Request.Context(), e.Fields, s.gooExtSettings(key)),
 			"Nonce": s.nonce(c, "goo-ext-"+key)}, gooFlash(c)...)
 }
 
@@ -274,8 +274,8 @@ func gooReadFields(c *gin.Context, fields []gooField, current map[string]any) ma
 	return out
 }
 
-// gooFieldsHTML renders fields as a WordPress form-table (the WC settings API look).
-func (s *Server) gooFieldsHTML(ctx context.Context, fields []gooField, vals map[string]any) template.HTML {
+// gooExtFieldsHTML renders fields as a WordPress form-table (the WC settings API look).
+func (s *Server) gooExtFieldsHTML(ctx context.Context, fields []gooField, vals map[string]any) template.HTML {
 	var b strings.Builder
 	str := func(id string) string {
 		switch v := vals[id].(type) {
