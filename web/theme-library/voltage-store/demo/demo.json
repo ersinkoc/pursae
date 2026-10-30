@@ -111,6 +111,16 @@
    "id": "p-4k-action-camera",
    "file": "demo/images/voltage-store-p-4k-action-camera.jpg",
    "alt": "A small rugged action camera with a front screen"
+  },
+  {
+   "id": "p-nova-x-smartphone-alt",
+   "file": "demo/images/voltage-store-p-nova-x-smartphone-alt.jpg",
+   "alt": "The Nova X smartphone in silver"
+  },
+  {
+   "id": "p-pulse-smartwatch-alt",
+   "file": "demo/images/voltage-store-p-pulse-smartwatch-alt.jpg",
+   "alt": "The Pulse smartwatch with a steel link band"
   }
  ],
  "pages": [
@@ -377,7 +387,8 @@
       },
       "regular_price": "799",
       "stock": 10,
-      "sku": "VT-PH-01-128G-SILV"
+      "sku": "VT-PH-01-128G-SILV",
+      "image": "p-nova-x-smartphone-alt"
      },
      {
       "attributes": {
@@ -395,7 +406,8 @@
       },
       "regular_price": "899",
       "stock": 10,
-      "sku": "VT-PH-01-256G-SILV"
+      "sku": "VT-PH-01-256G-SILV",
+      "image": "p-nova-x-smartphone-alt"
      }
     ],
     "reviews": [
@@ -415,6 +427,9 @@
     "upsells": [
      "fast-charger-65w",
      "magnetic-power-bank"
+    ],
+    "gallery": [
+     "p-nova-x-smartphone-alt"
     ]
    },
    {
@@ -540,7 +555,8 @@
       },
       "regular_price": "319",
       "stock": 9,
-      "sku": "VT-WR-01-STEE"
+      "sku": "VT-WR-01-STEE",
+      "image": "p-pulse-smartwatch-alt"
      }
     ],
     "reviews": [
@@ -550,6 +566,9 @@
       "rating": 5,
       "content": "GPS locks in seconds and the battery really does last a week. The woven band is very comfortable."
      }
+    ],
+    "gallery": [
+     "p-pulse-smartwatch-alt"
     ]
    },
    {

@@ -1,0 +1,15 @@
+{{template "header" .}}
+{{with .Post}}<article id="post-{{.ID}}" class="{{.Class}} de-article">
+	<header class="de-wrap de-article__header">
+		<p class="de-kicker">{{range $i, $c := .Categories}}{{if $i}} &middot; {{end}}<a href="{{$c.URL}}">{{$c.Name}}</a>{{end}}</p>
+		<h1 class="entry-title">{{.Title}}</h1>
+		<p class="de-article__meta"><time datetime="{{.DateISO}}">{{.DateText}}</time>{{with .AuthorName}} &middot; <span class="byline">{{.}}</span>{{end}}{{with .EditLink}} &middot; <span class="edit-link">{{.}}</span>{{end}}</p>
+	</header>
+	{{with .Thumbnail}}<figure class="de-wrap de-article__media">{{.}}</figure>{{end}}
+	<div class="de-wrap de-measure entry-content">
+		{{.Content}}
+	</div>
+	{{if .Tags}}<footer class="de-wrap de-measure entry-footer"><span class="tags-links">{{range .Tags}}<a href="{{.URL}}" rel="tag">#{{.Name}}</a> {{end}}</span></footer>{{end}}
+</article>{{end}}
+<div class="de-wrap de-measure">{{.PostNav}}{{template "comments" .}}</div>
+{{template "footer" .}}

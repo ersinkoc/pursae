@@ -1,0 +1,637 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Roast & Ritual",
+  "blogdescription": "Small-batch coffee, roasted every Tuesday"
+ },
+ "categories": [
+  {
+   "slug": "brewing",
+   "name": "Brewing",
+   "description": "Recipes and techniques."
+  },
+  {
+   "slug": "origins",
+   "name": "Origins",
+   "description": "The farms behind our coffees."
+  },
+  {
+   "slug": "roastery",
+   "name": "Roastery",
+   "description": "Notes from the roaster."
+  }
+ ],
+ "media": [
+  {
+   "id": "hero",
+   "file": "demo/images/roast-and-ritual-hero.jpg",
+   "alt": "Morning light over a pour-over brewing on a wooden counter, with coffee bags behind"
+  },
+  {
+   "id": "about",
+   "file": "demo/images/roast-and-ritual-about.jpg",
+   "alt": "The small drum roaster in the roastery with sacks of green coffee"
+  },
+  {
+   "id": "cat-coffee",
+   "file": "demo/images/roast-and-ritual-cat-coffee.jpg",
+   "alt": "Three coffee bags with paper labels and a scoop of roasted beans"
+  },
+  {
+   "id": "cat-brewing",
+   "file": "demo/images/roast-and-ritual-cat-brewing.jpg",
+   "alt": "A pour-over dripper, a gooseneck kettle and a hand grinder"
+  },
+  {
+   "id": "cat-cups",
+   "file": "demo/images/roast-and-ritual-cat-cups.jpg",
+   "alt": "Speckled stoneware mugs and small espresso cups stacked together"
+  },
+  {
+   "id": "cat-gifts",
+   "file": "demo/images/roast-and-ritual-cat-gifts.jpg",
+   "alt": "A kraft gift box tied with string beside a coffee bag"
+  },
+  {
+   "id": "p-ethiopia-yirgacheffe",
+   "file": "demo/images/roast-and-ritual-p-ethiopia-yirgacheffe.jpg",
+   "alt": "A coffee bag labelled with a hand-drawn jasmine flower"
+  },
+  {
+   "id": "p-colombia-huila",
+   "file": "demo/images/roast-and-ritual-p-colombia-huila.jpg",
+   "alt": "A coffee bag with a label showing green hills"
+  },
+  {
+   "id": "p-house-espresso-blend",
+   "file": "demo/images/roast-and-ritual-p-house-espresso-blend.jpg",
+   "alt": "A dark coffee bag labelled House Espresso"
+  },
+  {
+   "id": "p-decaf-swiss-water",
+   "file": "demo/images/roast-and-ritual-p-decaf-swiss-water.jpg",
+   "alt": "A coffee bag with a moon on the label"
+  },
+  {
+   "id": "p-pour-over-dripper",
+   "file": "demo/images/roast-and-ritual-p-pour-over-dripper.jpg",
+   "alt": "A cream ceramic pour-over cone on a glass carafe"
+  },
+  {
+   "id": "p-gooseneck-kettle",
+   "file": "demo/images/roast-and-ritual-p-gooseneck-kettle.jpg",
+   "alt": "A matte black gooseneck kettle with a wooden handle"
+  },
+  {
+   "id": "p-burr-grinder",
+   "file": "demo/images/roast-and-ritual-p-burr-grinder.jpg",
+   "alt": "A compact electric burr grinder with a glass catch cup"
+  },
+  {
+   "id": "p-french-press",
+   "file": "demo/images/roast-and-ritual-p-french-press.jpg",
+   "alt": "A glass French press filled with dark coffee"
+  },
+  {
+   "id": "p-stoneware-mug",
+   "file": "demo/images/roast-and-ritual-p-stoneware-mug.jpg",
+   "alt": "A speckled oat-coloured stoneware mug with steam rising"
+  },
+  {
+   "id": "p-espresso-cups-set",
+   "file": "demo/images/roast-and-ritual-p-espresso-cups-set.jpg",
+   "alt": "Two small teal espresso cups on saucers"
+  },
+  {
+   "id": "p-coffee-subscription-gift",
+   "file": "demo/images/roast-and-ritual-p-coffee-subscription-gift.jpg",
+   "alt": "A gift card tucked into a coffee bag"
+  },
+  {
+   "id": "p-barista-gift-box",
+   "file": "demo/images/roast-and-ritual-p-barista-gift-box.jpg",
+   "alt": "A kraft gift box holding a coffee bag, a dripper and a mug"
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Home",
+   "content": "<!-- wp:cover {\"url\":\"{{media:hero}}\",\"id\":{{media_id:hero}},\"dimRatio\":50,\"minHeight\":680,\"align\":\"full\"} --><div class=\"wp-block-cover alignfull\" style=\"min-height:680px\"><span aria-hidden=\"true\" class=\"wp-block-cover__background has-background-dim-50 has-background-dim\"></span><img class=\"wp-block-cover__image-background wp-image-{{media_id:hero}}\" alt=\"\" src=\"{{media:hero}}\" data-object-fit=\"cover\"/><div class=\"wp-block-cover__inner-container\"><!-- wp:paragraph {\"className\":\"rr-kicker\"} --><p class=\"rr-kicker\">Roasted every Tuesday &middot; shipped Wednesday</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":1} --><h1 class=\"wp-block-heading\">Slow mornings,<br><em>serious</em> coffee.</h1><!-- /wp:heading --><!-- wp:paragraph --><p>Small-batch single origins and the tools to brew them well, from a tiny roastery with a big kettle.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"/product-category/coffee/\">Shop coffee</a></div><!-- /wp:button --><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"/product-category/brewing/\">Brewing gear</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div></div><!-- /wp:cover --><!-- wp:heading {\"textAlign\":\"center\",\"className\":\"rr-section-title\"} --><h2 class=\"wp-block-heading has-text-align-center rr-section-title\">Pick your ritual</h2><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"rr-section-lede\"} --><p class=\"rr-section-lede\">Beans, gear, cups or a gift: four doors into the roastery.</p><!-- /wp:paragraph --><!-- wp:group {\"className\":\"rr-labels\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group rr-labels\"><!-- wp:image {\"id\":{{media_id:cat-coffee}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"/product-category/coffee/\"><img src=\"{{media:cat-coffee}}\" alt=\"Three coffee bags with paper labels and a scoop of roasted beans\" class=\"wp-image-{{media_id:cat-coffee}}\"/></a><figcaption class=\"wp-element-caption\">Coffee</figcaption></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:cat-brewing}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"/product-category/brewing/\"><img src=\"{{media:cat-brewing}}\" alt=\"A pour-over dripper, a gooseneck kettle and a hand grinder\" class=\"wp-image-{{media_id:cat-brewing}}\"/></a><figcaption class=\"wp-element-caption\">Brewing</figcaption></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:cat-cups}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"/product-category/cups/\"><img src=\"{{media:cat-cups}}\" alt=\"Speckled stoneware mugs and small espresso cups stacked together\" class=\"wp-image-{{media_id:cat-cups}}\"/></a><figcaption class=\"wp-element-caption\">Cups</figcaption></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:cat-gifts}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"/product-category/gifts/\"><img src=\"{{media:cat-gifts}}\" alt=\"A kraft gift box tied with string beside a coffee bag\" class=\"wp-image-{{media_id:cat-gifts}}\"/></a><figcaption class=\"wp-element-caption\">Gifts</figcaption></figure><!-- /wp:image --></div><!-- /wp:group --><!-- wp:heading {\"textAlign\":\"center\",\"className\":\"rr-section-title\"} --><h2 class=\"wp-block-heading has-text-align-center rr-section-title\">This week&rsquo;s roasts &amp; favourites</h2><!-- /wp:heading --><!-- wp:shortcode -->[products limit=\"8\" columns=\"4\" visibility=\"featured\"]<!-- /wp:shortcode --><!-- wp:group {\"className\":\"rr-steps\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group rr-steps\"><!-- wp:group {\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Roasted Tuesday</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Small batches on our ten-kilo drum roaster, profiled for each lot.</p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:group {\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Shipped Wednesday</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Packed by hand in compostable bags with a one-way valve.</p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:group {\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Brewed by Friday</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Rested just enough. Grind it yourself, or we grind it for you.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:group --><!-- wp:group {\"className\":\"rr-promo\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group rr-promo\"><!-- wp:group {\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group\"><!-- wp:paragraph {\"className\":\"rr-kicker\"} --><p class=\"rr-kicker\">Gift a ritual</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Three months of great coffee.</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Our gift subscription sends a fresh bag each month. New here? Take 10% off your first order with <code>WELCOME10</code>.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"/product-category/gifts/\">Give a subscription</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --><!-- wp:image {\"id\":{{media_id:p-coffee-subscription-gift}},\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:p-coffee-subscription-gift}}\" alt=\"Coffee subscription gift card\" class=\"wp-image-{{media_id:p-coffee-subscription-gift}}\"/></figure><!-- /wp:image --></div><!-- /wp:group --><!-- wp:heading {\"textAlign\":\"center\",\"className\":\"rr-section-title\"} --><h2 class=\"wp-block-heading has-text-align-center rr-section-title\">Back-room bargains</h2><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"rr-section-lede\"} --><p class=\"rr-section-lede\">End-of-lot coffees and gear, while they last.</p><!-- /wp:paragraph --><!-- wp:shortcode -->[products limit=\"4\" columns=\"4\" on_sale=\"true\"]<!-- /wp:shortcode --><!-- wp:heading {\"textAlign\":\"center\",\"className\":\"rr-section-title\"} --><h2 class=\"wp-block-heading has-text-align-center rr-section-title\">Fresh off the roaster</h2><!-- /wp:heading --><!-- wp:shortcode -->[products limit=\"8\" columns=\"4\" orderby=\"date\" order=\"DESC\"]<!-- /wp:shortcode -->",
+   "template": "page-home",
+   "front_page": true
+  },
+  {
+   "slug": "about",
+   "title": "Our roastery",
+   "content": "<!-- wp:image {\"id\":{{media_id:about}},\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:about}}\" alt=\"The drum roaster with sacks of green coffee\" class=\"wp-image-{{media_id:about}}\"/></figure><!-- /wp:image --><!-- wp:paragraph --><p>Roast &amp; Ritual is two people, one ten-kilo drum roaster and a counter with six stools. We started roasting in a borrowed garage because we could not find coffee that tasted the way we remembered it on our travels: sweet, clear and full of the place it came from.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>We buy from a handful of farms and washing stations we know well, pay well above the commodity price and publish what we pay. We roast every Tuesday, light enough to taste the origin and long enough to be sweet, and we ship the next morning.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Our small rules</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Every bag shows the roast date, the farm and the price we paid.</li><!-- /wp:list-item --><!-- wp:list-item --><li>We never sell coffee more than four weeks off roast.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Our bags are compostable, our boxes are recycled.</li><!-- /wp:list-item --><!-- wp:list-item --><li>If you do not love a coffee, tell us and we will send another.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Coffee is a daily ritual. It deserves the same care as any other.</p><!-- /wp:paragraph --><cite>Mara &amp; Theo, founders</cite></blockquote><!-- /wp:quote -->",
+   "featured_media": "about"
+  },
+  {
+   "slug": "contact",
+   "title": "Contact",
+   "content": "<!-- wp:paragraph --><p>Questions about grind size, a subscription or wholesale? Write to us and one of us will answer, usually the same day.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><strong>Email:</strong> hello@roastandritual.example<br><strong>Roastery &amp; coffee bar:</strong> 12 Mill Yard, Thursday to Sunday, 8–15<br><strong>Phone:</strong> +1 555 0142</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Wholesale</h3><!-- /wp:heading --><!-- wp:paragraph --><p>We supply a small number of cafés and offices with fresh coffee and training. Tell us a little about your space and how much you brew each week.</p><!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "journal",
+   "title": "Journal",
+   "content": "",
+   "posts_page": true
+  }
+ ],
+ "posts": [
+  {
+   "slug": "dialling-in-a-pour-over",
+   "title": "Dialling in a pour-over",
+   "date": "2026-09-20T08:00:00",
+   "categories": [
+    "brewing"
+   ],
+   "featured_media": "p-pour-over-dripper",
+   "excerpt": "Fifteen grams, two hundred and fifty of water and one thing to change at a time.",
+   "content": "<!-- wp:paragraph --><p>Start with a recipe and change one thing at a time. Ours is fifteen grams of coffee to two hundred and fifty grams of water just off the boil, around 94 °C. Grind it like coarse sand.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Pour about forty grams of water to wet all the grounds and wait thirty seconds while the coffee blooms and releases gas. Then pour slowly in circles, in two or three stages, aiming to finish by around two minutes. The water should drain by three.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Taste. If the cup is sour and thin, grind a little finer. If it is bitter and dry, grind a little coarser. Most of the time, grind size is all you need to adjust.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Write down what you did. It feels fussy for a week, and then you never think about it again, because every cup tastes the way you like it.</p><!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "a-visit-to-huila",
+   "title": "A visit to Huila",
+   "date": "2026-10-04T09:30:00",
+   "categories": [
+    "origins"
+   ],
+   "featured_media": "cat-coffee",
+   "excerpt": "Steep hills, ripe cherry and a family that has grown coffee for four generations.",
+   "content": "<!-- wp:paragraph --><p>The road to the Ortiz farm climbs through the hills above Pitalito for an hour, past banana plants that shade the young coffee trees. At the top, the family has dried cherry on the same raised beds for four generations.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Harvest in Huila is long and gentle. Pickers pass each tree several times over the season, choosing only the ripest red cherries. It is slower and costs more, and you can taste the difference in the sweetness of the cup.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>We spent three days cupping with the family and their neighbours, and came home with a lot that tasted of milk chocolate and red apple. It is the coffee you will find in our gift box this autumn.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>We pay the Ortiz family more than twice the commodity price, and we publish that number on every bag. Good coffee should be good business for the people who grow it.</p><!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "why-we-rest-our-coffee",
+   "title": "Why we rest our coffee",
+   "date": "2026-10-22T07:45:00",
+   "categories": [
+    "roastery"
+   ],
+   "featured_media": "p-house-espresso-blend",
+   "excerpt": "Freshly roasted is not always freshest-tasting. A few days of rest make a sweeter cup.",
+   "content": "<!-- wp:paragraph --><p>Coffee straight from the roaster is full of carbon dioxide. Brew it on day one and the gas gets in the way: the bloom bubbles wildly, extraction is uneven and the cup can taste sharp.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>After a few days the gas settles and the flavours open. For filter coffee we like five to ten days off roast; espresso, which is more sensitive, is often best after a week or two.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>That is why we roast on Tuesday and ship on Wednesday. By the time your bag arrives and you open it at the weekend, it is right in its sweet spot.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Keep the bag sealed, away from light and heat, and use it within a month or so. The one-way valve on the bag lets gas out without letting air in.</p><!-- /wp:paragraph -->"
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Shop",
+     "url": "/shop/",
+     "children": [
+      {
+       "title": "Coffee",
+       "url": "/product-category/coffee/"
+      },
+      {
+       "title": "Brewing",
+       "url": "/product-category/brewing/"
+      },
+      {
+       "title": "Cups",
+       "url": "/product-category/cups/"
+      },
+      {
+       "title": "Gifts",
+       "url": "/product-category/gifts/"
+      }
+     ]
+    },
+    {
+     "title": "Coffee",
+     "url": "/product-category/coffee/"
+    },
+    {
+     "title": "Brewing",
+     "url": "/product-category/brewing/"
+    },
+    {
+     "title": "Journal",
+     "page": "journal"
+    },
+    {
+     "title": "Roastery",
+     "page": "about"
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    }
+   ]
+  },
+  {
+   "name": "Footer menu",
+   "location": "footer",
+   "items": [
+    {
+     "title": "Shop",
+     "url": "/shop/"
+    },
+    {
+     "title": "My account",
+     "url": "/my-account/"
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    },
+    {
+     "title": "Roastery",
+     "page": "about"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "footer-1": [
+   "<!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Coffee bar</h3><!-- /wp:heading --><!-- wp:paragraph --><p>12 Mill Yard<br>Thursday to Sunday, 8–15</p><!-- /wp:paragraph -->",
+   "<!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Shipping</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Roasted Tuesday, shipped Wednesday.<br>Free shipping over $40.<br>Local pickup at the bar.</p><!-- /wp:paragraph -->",
+   "<!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">The roast list</h3><!-- /wp:heading --><!-- wp:paragraph --><p>One short email a week with what is on the roaster, and nothing else.</p><!-- /wp:paragraph -->"
+  ]
+ },
+ "customizer": {
+  "accent": "#2f6f6a",
+  "crema": "#c8a27a",
+  "header_style": "dark",
+  "card_shadow": true,
+  "announcement": "Roasted every Tuesday · Free shipping over $40 · Grind it your way"
+ },
+ "goocommerce": {
+  "settings": {
+   "currency": "USD",
+   "currency_pos": "left",
+   "catalog_columns": 4,
+   "catalog_rows": 3,
+   "weight_unit": "kg"
+  },
+  "categories": [
+   {
+    "slug": "coffee",
+    "name": "Coffee",
+    "description": "Single origins and blends, roasted every Tuesday and shipped the next day.",
+    "image": "cat-coffee"
+   },
+   {
+    "slug": "brewing",
+    "name": "Brewing",
+    "description": "Drippers, kettles, grinders and presses for better coffee at home.",
+    "image": "cat-brewing"
+   },
+   {
+    "slug": "cups",
+    "name": "Cups",
+    "description": "Stoneware mugs and espresso cups thrown by a local potter.",
+    "image": "cat-cups"
+   },
+   {
+    "slug": "gifts",
+    "name": "Gifts",
+    "description": "Subscriptions and gift boxes for the coffee people in your life.",
+    "image": "cat-gifts"
+   }
+  ],
+  "attributes": [
+   {
+    "slug": "weight",
+    "name": "Weight",
+    "terms": [
+     "250 g",
+     "1 kg"
+    ]
+   },
+   {
+    "slug": "grind",
+    "name": "Grind",
+    "terms": [
+     "Whole bean",
+     "Filter",
+     "Espresso"
+    ]
+   }
+  ],
+  "products": [
+   {
+    "slug": "ethiopia-yirgacheffe",
+    "name": "Ethiopia Yirgacheffe",
+    "type": "variable",
+    "categories": [
+     "coffee"
+    ],
+    "image": "p-ethiopia-yirgacheffe",
+    "description": "<p>This lot comes from about four hundred smallholders who deliver ripe cherry to the Konga washing station in Gedeo. Washed and dried slowly on raised beds, it is everything we love about Yirgacheffe: floral, bright and clean.</p><p><strong>Tasting notes:</strong> jasmine, bergamot, ripe peach.<br><strong>Altitude:</strong> 1,900–2,100 m. <strong>Roast:</strong> light, for filter.</p><p>Choose whole bean if you grind at home, or let us grind it for your brewer on the morning it ships.</p>",
+    "short_description": "<p>Washed heirloom varieties from Gedeo. Jasmine, bergamot and ripe peach, with a tea-like body.</p>",
+    "sku": "RR-CF-01",
+    "regular_price": "18",
+    "featured": true,
+    "attributes": [
+     {
+      "name": "Weight",
+      "values": [
+       "250 g",
+       "1 kg"
+      ],
+      "variation": true
+     },
+     {
+      "name": "Grind",
+      "values": [
+       "Whole bean",
+       "Filter",
+       "Espresso"
+      ],
+      "variation": true
+     }
+    ],
+    "weight": "0.25",
+    "variations": [
+     {
+      "attributes": {
+       "Weight": "250 g",
+       "Grind": "Whole bean"
+      },
+      "regular_price": "18",
+      "stock": 20,
+      "sku": "RR-CF-01-250G-WHOL"
+     },
+     {
+      "attributes": {
+       "Weight": "250 g",
+       "Grind": "Filter"
+      },
+      "regular_price": "18",
+      "stock": 20,
+      "sku": "RR-CF-01-250G-FILT"
+     },
+     {
+      "attributes": {
+       "Weight": "250 g",
+       "Grind": "Espresso"
+      },
+      "regular_price": "18",
+      "stock": 20,
+      "sku": "RR-CF-01-250G-ESPR"
+     },
+     {
+      "attributes": {
+       "Weight": "1 kg",
+       "Grind": "Whole bean"
+      },
+      "regular_price": "62",
+      "stock": 20,
+      "sku": "RR-CF-01-1KG-WHOL"
+     },
+     {
+      "attributes": {
+       "Weight": "1 kg",
+       "Grind": "Filter"
+      },
+      "regular_price": "62",
+      "stock": 20,
+      "sku": "RR-CF-01-1KG-FILT"
+     },
+     {
+      "attributes": {
+       "Weight": "1 kg",
+       "Grind": "Espresso"
+      },
+      "regular_price": "62",
+      "stock": 20,
+      "sku": "RR-CF-01-1KG-ESPR"
+     }
+    ],
+    "reviews": [
+     {
+      "author": "Selam",
+      "email": "selam@example.com",
+      "rating": 5,
+      "content": "Tastes like a cup of jasmine tea that became coffee. Perfect on the V60."
+     },
+     {
+      "author": "Marcus",
+      "email": "marcus@example.com",
+      "rating": 5,
+      "content": "Ordered the kilo, ground for filter. Fresh, sweet and gone far too quickly."
+     }
+    ],
+    "upsells": [
+     "pour-over-dripper"
+    ]
+   },
+   {
+    "slug": "colombia-huila",
+    "name": "Colombia Huila",
+    "type": "simple",
+    "categories": [
+     "coffee"
+    ],
+    "image": "p-colombia-huila",
+    "description": "<p>Grown by the Ortiz family on their seven-hectare farm near Pitalito, this washed Caturra is sweet, round and easy to love. It shines as a filter and makes a balanced, chocolatey espresso.</p><p><strong>Tasting notes:</strong> milk chocolate, red apple, brown sugar. 250 g, whole bean.</p>",
+    "short_description": "<p>A crowd-pleaser from the hills of Huila: milk chocolate, red apple and brown sugar.</p>",
+    "sku": "RR-CF-02",
+    "regular_price": "16",
+    "featured": true,
+    "stock": 40,
+    "weight": "0.25",
+    "reviews": [
+     {
+      "author": "Ines",
+      "email": "ines@example.com",
+      "rating": 4,
+      "content": "My everyday bag now. Sweet and forgiving, even when I rush the brew."
+     }
+    ]
+   },
+   {
+    "slug": "house-espresso-blend",
+    "name": "House Espresso Blend",
+    "type": "simple",
+    "categories": [
+     "coffee"
+    ],
+    "image": "p-house-espresso-blend",
+    "description": "<p>The coffee we pour every day behind the bar. A natural Brazil brings body and hazelnut, a washed Guatemala adds cocoa and a little orange. It is forgiving on home machines and loves milk.</p><p><strong>Tasting notes:</strong> hazelnut, dark cocoa, orange zest. 250 g, whole bean.</p>",
+    "short_description": "<p>Our café blend of Brazil and Guatemala, roasted for syrupy espresso and silky milk drinks.</p>",
+    "sku": "RR-CF-03",
+    "regular_price": "15",
+    "sale_price": "12.50",
+    "featured": true,
+    "stock": 60,
+    "weight": "0.25"
+   },
+   {
+    "slug": "decaf-swiss-water",
+    "name": "Decaf Swiss Water",
+    "type": "simple",
+    "categories": [
+     "coffee"
+    ],
+    "image": "p-decaf-swiss-water",
+    "description": "<p>Decaffeinated with nothing but water, temperature and time, this organic Peru keeps its sweetness: caramel, toasted almond and a soft finish. Good enough that we drink it after dinner on purpose.</p>",
+    "short_description": "<p>A Peruvian decaf, chemical-free, with caramel and toasted almond. All of the ritual, none of the buzz.</p>",
+    "sku": "RR-CF-04",
+    "regular_price": "17",
+    "stock": 24,
+    "weight": "0.25"
+   },
+   {
+    "slug": "pour-over-dripper",
+    "name": "Ceramic Pour-Over Dripper",
+    "type": "simple",
+    "categories": [
+     "brewing"
+    ],
+    "image": "p-pour-over-dripper",
+    "description": "<p>Ceramic holds heat beautifully, so your brew stays stable from bloom to last drop. The spiral ribs let air escape and the single large hole makes the flow rate your choice. Fits size 02 paper filters.</p>",
+    "short_description": "<p>A hand-glazed ceramic cone with spiral ribs for an even, forgiving extraction.</p>",
+    "sku": "RR-BR-01",
+    "regular_price": "32",
+    "stock": 18
+   },
+   {
+    "slug": "gooseneck-kettle",
+    "name": "Gooseneck Kettle",
+    "type": "simple",
+    "categories": [
+     "brewing"
+    ],
+    "image": "p-gooseneck-kettle",
+    "description": "<p>The narrow spout gives you a steady, gentle stream for pour-over, and the lid thermometer means you can stop guessing at 94 °C. Brushed stainless steel with a walnut handle; works on gas, electric and induction.</p>",
+    "short_description": "<p>A 1 litre stovetop kettle with a precise gooseneck spout and a built-in thermometer.</p>",
+    "sku": "RR-BR-02",
+    "regular_price": "69",
+    "featured": true,
+    "stock": 10,
+    "reviews": [
+     {
+      "author": "Oskar",
+      "email": "oskar@example.com",
+      "rating": 5,
+      "content": "Lovely pour control and the thermometer is surprisingly accurate. Looks great on the stove too."
+     }
+    ]
+   },
+   {
+    "slug": "burr-grinder",
+    "name": "Conical Burr Grinder",
+    "type": "simple",
+    "categories": [
+     "brewing"
+    ],
+    "image": "p-burr-grinder",
+    "description": "<p>Fresh grinding is the single biggest upgrade for home coffee. This grinder's conical steel burrs give an even grind at low speed, so your beans never heat up, and the forty steps cover everything from espresso to French press.</p><p>Low retention, easy to clean and quiet enough for early mornings.</p>",
+    "short_description": "<p>An electric grinder with steel conical burrs and forty settings, from espresso to cold brew.</p>",
+    "sku": "RR-BR-03",
+    "regular_price": "149",
+    "stock": 6
+   },
+   {
+    "slug": "french-press",
+    "name": "Glass French Press",
+    "type": "simple",
+    "categories": [
+     "brewing"
+    ],
+    "image": "p-french-press",
+    "description": "<p>The simplest way to a great cup: coarse coffee, hot water, four minutes. Our press has a borosilicate glass carafe and a double mesh filter that keeps the cup cleaner than most.</p>",
+    "short_description": "<p>A classic 800 ml press with a double steel mesh filter for a clean, full-bodied cup.</p>",
+    "sku": "RR-BR-04",
+    "regular_price": "39",
+    "stock": 22
+   },
+   {
+    "slug": "stoneware-mug",
+    "name": "Speckled Stoneware Mug",
+    "type": "simple",
+    "categories": [
+     "cups"
+    ],
+    "image": "p-stoneware-mug",
+    "description": "<p>Each mug is thrown and glazed by hand in a small studio three streets from the roastery, so no two are quite the same. Generous handle, dishwasher safe and the right size for a flat white or a long filter.</p>",
+    "short_description": "<p>A 300 ml mug in speckled oat glaze, thrown by hand by a potter down the street.</p>",
+    "sku": "RR-CP-01",
+    "regular_price": "22",
+    "featured": true,
+    "stock": 30,
+    "reviews": [
+     {
+      "author": "Ruth",
+      "email": "ruth@example.com",
+      "rating": 5,
+      "content": "Heavy in the best way and keeps coffee warm. I bought a second for my partner."
+     }
+    ]
+   },
+   {
+    "slug": "espresso-cups-set",
+    "name": "Espresso Cups, Set of Two",
+    "type": "simple",
+    "categories": [
+     "cups"
+    ],
+    "image": "p-espresso-cups-set",
+    "description": "<p>Thick walls keep your shot hot, the teal glaze shows off the crema and the raw clay foot feels lovely in the hand. Comes as a pair with two saucers.</p>",
+    "short_description": "<p>Two 90 ml stoneware cups with saucers, glazed teal inside and raw clay outside.</p>",
+    "sku": "RR-CP-02",
+    "regular_price": "34",
+    "stock": 16
+   },
+   {
+    "slug": "coffee-subscription-gift",
+    "name": "Coffee Subscription Gift",
+    "type": "simple",
+    "categories": [
+     "gifts"
+    ],
+    "image": "p-coffee-subscription-gift",
+    "description": "<p>The gift that turns up every month. We email a beautiful gift card to you or straight to the lucky person, who chooses their grind and start date. Each month they receive a 250 g bag of our current favourite single origin, with tasting notes and a brew guide.</p><p>This is a digital gift: nothing is shipped to you, and shipping for the coffee is included.</p>",
+    "short_description": "<p>Three months of freshly roasted coffee, one bag a month, delivered by email gift card.</p>",
+    "sku": "RR-GF-01",
+    "regular_price": "45",
+    "featured": true,
+    "virtual": true
+   },
+   {
+    "slug": "barista-gift-box",
+    "name": "The Barista Gift Box",
+    "type": "grouped",
+    "categories": [
+     "gifts"
+    ],
+    "image": "p-barista-gift-box",
+    "description": "<p>Our favourite way to start: a sweet, forgiving coffee, the ceramic dripper we use behind the bar and a hand-thrown mug to drink from. Add all three, or just the pieces you need.</p>",
+    "short_description": "<p>A bag of Colombia Huila, a dripper and a mug: everything to start a pour-over habit.</p>",
+    "sku": "RR-GF-02",
+    "children": [
+     "colombia-huila",
+     "pour-over-dripper",
+     "stoneware-mug"
+    ]
+   }
+  ],
+  "coupons": [
+   {
+    "code": "WELCOME10",
+    "type": "percent",
+    "amount": "10",
+    "description": "10% off your first order"
+   },
+   {
+    "code": "BREWDAY",
+    "type": "fixed_cart",
+    "amount": "5",
+    "minimum_amount": "30",
+    "description": "$5 off orders over $30"
+   }
+  ],
+  "shipping": {
+   "zone": "Everywhere",
+   "flat_rate": "5",
+   "free_over": "40",
+   "local_pickup": true
+  }
+ }
+}

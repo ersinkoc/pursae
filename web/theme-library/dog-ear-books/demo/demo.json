@@ -1,0 +1,680 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Dog-Ear Books",
+  "blogdescription": "An independent bookshop on Wren Street"
+ },
+ "categories": [
+  {
+   "slug": "recommendations",
+   "name": "Recommendations",
+   "description": "What we are reading and recommending."
+  },
+  {
+   "slug": "shop-talk",
+   "name": "Shop talk",
+   "description": "News and stories from the shop floor."
+  }
+ ],
+ "media": [
+  {
+   "id": "hero",
+   "file": "demo/images/dog-ear-books-hero.jpg",
+   "alt": "A cosy bookshop corner with stacked books, a reading lamp and an armchair"
+  },
+  {
+   "id": "about",
+   "file": "demo/images/dog-ear-books-about.jpg",
+   "alt": "The bookshop front window with books on display and a striped awning"
+  },
+  {
+   "id": "cat-fiction",
+   "file": "demo/images/dog-ear-books-cat-fiction.jpg",
+   "alt": "A stack of novels with a pair of reading glasses on top"
+  },
+  {
+   "id": "cat-non-fiction",
+   "file": "demo/images/dog-ear-books-cat-non-fiction.jpg",
+   "alt": "Non-fiction books propped open beside a pressed leaf"
+  },
+  {
+   "id": "cat-children",
+   "file": "demo/images/dog-ear-books-cat-children.jpg",
+   "alt": "Bright picture books standing on a low shelf with a toy tortoise"
+  },
+  {
+   "id": "cat-stationery",
+   "file": "demo/images/dog-ear-books-cat-stationery.jpg",
+   "alt": "A linen notebook, a brass bookmark and a fountain pen"
+  },
+  {
+   "id": "p-the-lighthouse-keepers-daughter",
+   "file": "demo/images/dog-ear-books-p-the-lighthouse-keepers-daughter.jpg",
+   "alt": "A paperback with a lighthouse beam across a dark sea on its cover"
+  },
+  {
+   "id": "p-salt-and-silence",
+   "file": "demo/images/dog-ear-books-p-salt-and-silence.jpg",
+   "alt": "A paperback cover with white salt flats under a grey sky"
+  },
+  {
+   "id": "p-a-map-of-small-hours",
+   "file": "demo/images/dog-ear-books-p-a-map-of-small-hours.jpg",
+   "alt": "A hardback with a hand-drawn street map and a crescent moon"
+  },
+  {
+   "id": "p-the-orchard-letters",
+   "file": "demo/images/dog-ear-books-p-the-orchard-letters.jpg",
+   "alt": "A paperback cover with apple branches and folded letters"
+  },
+  {
+   "id": "p-how-rivers-remember",
+   "file": "demo/images/dog-ear-books-p-how-rivers-remember.jpg",
+   "alt": "A hardback with a winding blue river drawn across the cover"
+  },
+  {
+   "id": "p-the-quiet-economy",
+   "file": "demo/images/dog-ear-books-p-the-quiet-economy.jpg",
+   "alt": "A hardback cover with small houses and tools in a neat grid"
+  },
+  {
+   "id": "p-field-notes-on-birds",
+   "file": "demo/images/dog-ear-books-p-field-notes-on-birds.jpg",
+   "alt": "A clothbound book with a robin sketched on the cover"
+  },
+  {
+   "id": "p-pip-and-the-paper-moon",
+   "file": "demo/images/dog-ear-books-p-pip-and-the-paper-moon.jpg",
+   "alt": "A picture book with a mouse holding up a paper moon"
+  },
+  {
+   "id": "p-the-tortoise-who-ran",
+   "file": "demo/images/dog-ear-books-p-the-tortoise-who-ran.jpg",
+   "alt": "A chapter book with a tortoise speeding along on a skateboard"
+  },
+  {
+   "id": "p-linen-notebook",
+   "file": "demo/images/dog-ear-books-p-linen-notebook.jpg",
+   "alt": "A cloth-bound notebook with a ribbon marker"
+  },
+  {
+   "id": "p-brass-bookmark",
+   "file": "demo/images/dog-ear-books-p-brass-bookmark.jpg",
+   "alt": "A small brass bookmark shaped like a folded page corner"
+  },
+  {
+   "id": "p-ebook-the-glass-orchard",
+   "file": "demo/images/dog-ear-books-p-ebook-the-glass-orchard.jpg",
+   "alt": "An e-reader showing a cover with a glass greenhouse"
+  },
+  {
+   "id": "p-linen-notebook-alt",
+   "file": "demo/images/dog-ear-books-p-linen-notebook-alt.jpg",
+   "alt": "The linen notebook in navy"
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Home",
+   "content": "<!-- wp:cover {\"url\":\"{{media:hero}}\",\"id\":{{media_id:hero}},\"dimRatio\":0,\"minHeight\":600,\"contentPosition\":\"center left\",\"align\":\"full\"} --><div class=\"wp-block-cover alignfull has-custom-content-position is-position-center-left\" style=\"min-height:600px\"><span aria-hidden=\"true\" class=\"wp-block-cover__background has-background-dim-0 has-background-dim\"></span><img class=\"wp-block-cover__image-background wp-image-{{media_id:hero}}\" alt=\"\" src=\"{{media:hero}}\" data-object-fit=\"cover\"/><div class=\"wp-block-cover__inner-container\"><!-- wp:paragraph {\"className\":\"de-kicker\"} --><p class=\"de-kicker\">Book of the month</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":1} --><h1 class=\"wp-block-heading\">Stories worth <em>dog-earing</em>.</h1><!-- /wp:heading --><!-- wp:paragraph --><p>An independent bookshop with strong opinions, gentle prices and a reading chair you are welcome to borrow.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"/shop/\">Browse the shelves</a></div><!-- /wp:button --><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"/product-category/fiction/\">Staff picks</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div></div><!-- /wp:cover --><!-- wp:heading {\"className\":\"de-section-title\"} --><h2 class=\"wp-block-heading de-section-title\">The sections</h2><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"de-section-lede\"} --><p class=\"de-section-lede\">Four rooms, one shop. Wander in.</p><!-- /wp:paragraph --><!-- wp:group {\"className\":\"de-sections\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group de-sections\"><!-- wp:image {\"id\":{{media_id:cat-fiction}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"/product-category/fiction/\"><img src=\"{{media:cat-fiction}}\" alt=\"A stack of novels with a pair of reading glasses on top\" class=\"wp-image-{{media_id:cat-fiction}}\"/></a><figcaption class=\"wp-element-caption\">Fiction</figcaption></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:cat-non-fiction}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"/product-category/non-fiction/\"><img src=\"{{media:cat-non-fiction}}\" alt=\"Non-fiction books propped open beside a pressed leaf\" class=\"wp-image-{{media_id:cat-non-fiction}}\"/></a><figcaption class=\"wp-element-caption\">Non-fiction</figcaption></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:cat-children}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"/product-category/children/\"><img src=\"{{media:cat-children}}\" alt=\"Bright picture books standing on a low shelf with a toy tortoise\" class=\"wp-image-{{media_id:cat-children}}\"/></a><figcaption class=\"wp-element-caption\">Children</figcaption></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:cat-stationery}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"/product-category/stationery/\"><img src=\"{{media:cat-stationery}}\" alt=\"A linen notebook, a brass bookmark and a fountain pen\" class=\"wp-image-{{media_id:cat-stationery}}\"/></a><figcaption class=\"wp-element-caption\">Stationery</figcaption></figure><!-- /wp:image --></div><!-- /wp:group --><!-- wp:heading {\"className\":\"de-section-title\"} --><h2 class=\"wp-block-heading de-section-title\">Staff picks</h2><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"de-section-lede\"} --><p class=\"de-section-lede\">Books we cannot stop recommending.</p><!-- /wp:paragraph --><!-- wp:shortcode -->[products limit=\"8\" columns=\"4\" visibility=\"featured\"]<!-- /wp:shortcode --><!-- wp:group {\"className\":\"de-pick\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group de-pick\"><!-- wp:image {\"id\":{{media_id:p-the-lighthouse-keepers-daughter}},\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:p-the-lighthouse-keepers-daughter}}\" alt=\"The Lighthouse Keeper's Daughter\" class=\"wp-image-{{media_id:p-the-lighthouse-keepers-daughter}}\"/></figure><!-- /wp:image --><!-- wp:group {\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group\"><!-- wp:paragraph {\"className\":\"de-kicker\"} --><p class=\"de-kicker\">Book of the month</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">The Lighthouse Keeper&rsquo;s Daughter</h2><!-- /wp:heading --><!-- wp:paragraph --><p>&ldquo;A novel that keeps its light burning long after the last page.&rdquo; Join our book club on the last Thursday of the month, and take 10% off your first order with <code>WELCOME10</code>.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"/product-category/fiction/\">Read more</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --></div><!-- /wp:group --><!-- wp:heading {\"className\":\"de-section-title\"} --><h2 class=\"wp-block-heading de-section-title\">Marked down</h2><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"de-section-lede\"} --><p class=\"de-section-lede\">A few favourites at kinder prices.</p><!-- /wp:paragraph --><!-- wp:shortcode -->[products limit=\"4\" columns=\"4\" on_sale=\"true\"]<!-- /wp:shortcode --><!-- wp:group {\"className\":\"de-quote\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group de-quote\"><!-- wp:paragraph --><p>A bookshop is a place where the world is folded into small, portable pieces.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Overheard at the till, Tuesday afternoon</p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:heading {\"className\":\"de-section-title\"} --><h2 class=\"wp-block-heading de-section-title\">New on the shelves</h2><!-- /wp:heading --><!-- wp:shortcode -->[products limit=\"8\" columns=\"4\" orderby=\"date\" order=\"DESC\"]<!-- /wp:shortcode -->",
+   "template": "page-home",
+   "front_page": true
+  },
+  {
+   "slug": "about",
+   "title": "About the shop",
+   "content": "<!-- wp:image {\"id\":{{media_id:about}},\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:about}}\" alt=\"The shop front window with an awning\" class=\"wp-image-{{media_id:about}}\"/></figure><!-- /wp:image --><!-- wp:paragraph --><p>Dog-Ear Books opened in a former haberdashery on Wren Street with three thousand books, two armchairs and a cat called Margin. The armchairs and the cat are still here; the books have multiplied.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>We are a small team of readers who choose every title on our shelves. We write our recommendations by hand, run a book club and a children's story hour, and will happily order anything we do not stock, usually within two days.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">What we believe</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Every reader deserves a bookseller who knows their taste.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Children's books are literature, not a side table.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Prices should be fair to readers, authors and the shop.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Dog-earing a page is a sign of love, not damage.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>We would rather sell you the right book than the most books.</p><!-- /wp:paragraph --><cite>Ruth &amp; Callum, booksellers</cite></blockquote><!-- /wp:quote -->",
+   "featured_media": "about"
+  },
+  {
+   "slug": "contact",
+   "title": "Visit & contact",
+   "content": "<!-- wp:paragraph --><p>Looking for a particular book, a recommendation or a gift for a reader you love? Write to us, call, or come in and ask at the counter.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><strong>Email:</strong> hello@dogearbooks.example<br><strong>Shop:</strong> 9 Wren Street, open Monday to Saturday 9–18, Sunday 11–16<br><strong>Phone:</strong> 01632 960 000</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Book club &amp; story hour</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Book club meets on the last Thursday of the month at 19:00. Children's story hour is every Saturday at 10:30. Both are free; just turn up.</p><!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "journal",
+   "title": "Journal",
+   "content": "",
+   "posts_page": true
+  }
+ ],
+ "posts": [
+  {
+   "slug": "our-autumn-reading-list",
+   "title": "Our autumn reading list",
+   "date": "2026-09-22T09:00:00",
+   "categories": [
+    "recommendations"
+   ],
+   "featured_media": "p-a-map-of-small-hours",
+   "excerpt": "Eight books for longer evenings, chosen by the people behind the counter.",
+   "content": "<!-- wp:paragraph --><p>When the evenings draw in, we reach for books with a bit of weight to them: novels you can live inside for a week, and non-fiction that makes you look at the world differently.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>At the top of the pile is A Map of Small Hours, a warm, clever novel set in a Lisbon hotel after midnight. If you prefer your fiction quieter, Salt and Silence is a short, tense story of two brothers on a salt marsh that we have been pressing on customers since August.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>For non-fiction, How Rivers Remember is our pick of the season: a year spent walking a single river from source to sea, written with such care that you can almost hear the water.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>And for small readers, Pip and the Paper Moon has become the bedtime book of half the street. Pop in and we will add a handwritten recommendation card to every book on the list.</p><!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "in-defence-of-the-dog-ear",
+   "title": "In defence of the dog-ear",
+   "date": "2026-10-09T10:30:00",
+   "categories": [
+    "shop-talk"
+   ],
+   "featured_media": "p-brass-bookmark",
+   "excerpt": "Why we named a shop after a folded page corner, and why we sell bookmarks anyway.",
+   "content": "<!-- wp:paragraph --><p>People sometimes ask, a little nervously, whether a bookshop called Dog-Ear Books disapproves of folding page corners. The answer is no. We love a dog-eared book. It means somebody stopped at exactly the right moment and wanted to come back.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Secondhand books with folded corners are small maps of a previous reader's attention. We once found a novel where every page with a description of food had been turned down, and we have thought kindly of that stranger ever since.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>That said, we also sell a very nice brass bookmark, shaped like a folded corner, for the people who cannot bear to crease a page. Both camps are welcome here.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Whatever you use, the point is the same: books are for reading, carrying, lending and loving into softness. A pristine spine is a sad thing.</p><!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "story-hour-turns-five",
+   "title": "Story hour turns five",
+   "date": "2026-10-24T08:45:00",
+   "categories": [
+    "shop-talk"
+   ],
+   "featured_media": "cat-children",
+   "excerpt": "Five years of Saturday mornings, two hundred and fifty stories and one very patient tortoise puppet.",
+   "content": "<!-- wp:paragraph --><p>Five years ago, three children and their grandparents sat on cushions in the back of the shop for our very first story hour. Last Saturday, we counted thirty-one, plus a dog.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>We have read around two hundred and fifty books aloud in that time. The most requested by far is The Tortoise Who Ran, which we now perform with a tortoise puppet and a small skateboard, to considerable applause.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Story hour is free and always will be. It is the part of the week that reminds us why we opened a bookshop in the first place: to watch someone fall in love with a story.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>To celebrate, we are hosting a birthday story hour on the first Saturday of November with cake, paper moons to make and a surprise guest author. Everyone is welcome.</p><!-- /wp:paragraph -->"
+  }
+ ],
+ "menus": [
+  {
+   "name": "Sections",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Shop",
+     "url": "/shop/",
+     "children": [
+      {
+       "title": "Fiction",
+       "url": "/product-category/fiction/"
+      },
+      {
+       "title": "Non-fiction",
+       "url": "/product-category/non-fiction/"
+      },
+      {
+       "title": "Children",
+       "url": "/product-category/children/"
+      },
+      {
+       "title": "Stationery",
+       "url": "/product-category/stationery/"
+      }
+     ]
+    },
+    {
+     "title": "Fiction",
+     "url": "/product-category/fiction/"
+    },
+    {
+     "title": "Non-fiction",
+     "url": "/product-category/non-fiction/"
+    },
+    {
+     "title": "Children",
+     "url": "/product-category/children/"
+    },
+    {
+     "title": "Journal",
+     "page": "journal"
+    },
+    {
+     "title": "About",
+     "page": "about"
+    },
+    {
+     "title": "Visit",
+     "page": "contact"
+    }
+   ]
+  },
+  {
+   "name": "Footer menu",
+   "location": "footer",
+   "items": [
+    {
+     "title": "Shop",
+     "url": "/shop/"
+    },
+    {
+     "title": "My account",
+     "url": "/my-account/"
+    },
+    {
+     "title": "Visit & contact",
+     "page": "contact"
+    },
+    {
+     "title": "About",
+     "page": "about"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "footer-1": [
+   "<!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Find us</h3><!-- /wp:heading --><!-- wp:paragraph --><p>9 Wren Street<br>Monday to Saturday 9–18<br>Sunday 11–16</p><!-- /wp:paragraph -->",
+   "<!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Book club</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Last Thursday of the month at 19:00.<br>Story hour every Saturday at 10:30.</p><!-- /wp:paragraph -->",
+   "<!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Ordering</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Free UK delivery over £25.<br>Anything we do not stock, ordered in two days.</p><!-- /wp:paragraph -->"
+  ]
+ },
+ "customizer": {
+  "accent": "#7a2e2e",
+  "masthead_style": "newspaper",
+  "show_shelves": true,
+  "announcement": "Free UK delivery on orders over £25 · Signed copies while they last"
+ },
+ "goocommerce": {
+  "settings": {
+   "currency": "GBP",
+   "currency_pos": "left",
+   "catalog_columns": 4,
+   "catalog_rows": 3
+  },
+  "categories": [
+   {
+    "slug": "fiction",
+    "name": "Fiction",
+    "description": "Novels and stories chosen and championed by the people behind the counter.",
+    "image": "cat-fiction"
+   },
+   {
+    "slug": "non-fiction",
+    "name": "Non-fiction",
+    "description": "Nature, ideas and history, written to be read rather than skimmed.",
+    "image": "cat-non-fiction"
+   },
+   {
+    "slug": "children",
+    "name": "Children",
+    "description": "Picture books and first chapter books for small and growing readers.",
+    "image": "cat-children"
+   },
+   {
+    "slug": "stationery",
+    "name": "Stationery",
+    "description": "Notebooks, bookmarks and small things for people who love paper.",
+    "image": "cat-stationery"
+   }
+  ],
+  "attributes": [
+   {
+    "slug": "colour",
+    "name": "Colour",
+    "terms": [
+     "Oxblood",
+     "Navy",
+     "Mustard"
+    ]
+   }
+  ],
+  "products": [
+   {
+    "slug": "the-lighthouse-keepers-daughter",
+    "name": "The Lighthouse Keeper's Daughter",
+    "type": "simple",
+    "categories": [
+     "fiction"
+    ],
+    "image": "p-the-lighthouse-keepers-daughter",
+    "description": "<p>On a tidal island off a northern coast, eleven-year-old Ada learns to tend the great lamp from her father, who is slowly losing his sight. When a ship runs aground in the worst storm in fifty years, she has one night to keep the light burning and decide who she can trust.</p><p>Okafor writes the sea like a character and grief like weather: something that passes, returns and changes the shape of the shore. A novel for anyone who has loved a place that is disappearing.</p><p>Paperback, 352 pages.</p>",
+    "short_description": "<p><em>by Marguerite Okafor</em>. A girl, a lamp and a storm that keeps coming back. Our book of the month.</p>",
+    "sku": "DE-FI-01",
+    "regular_price": "14.99",
+    "featured": true,
+    "stock": 18,
+    "attributes": [
+     {
+      "name": "Author",
+      "values": [
+       "Marguerite Okafor"
+      ],
+      "variation": false
+     }
+    ],
+    "reviews": [
+     {
+      "author": "Harriet",
+      "email": "harriet@example.com",
+      "rating": 5,
+      "content": "I read it in a single sitting and then went straight back to the first chapter. The storm scenes are extraordinary."
+     },
+     {
+      "author": "Owen",
+      "email": "owen@example.com",
+      "rating": 4,
+      "content": "Beautifully written and very moving. The middle sags a little, but the ending more than makes up for it."
+     }
+    ]
+   },
+   {
+    "slug": "salt-and-silence",
+    "name": "Salt and Silence",
+    "type": "simple",
+    "categories": [
+     "fiction"
+    ],
+    "image": "p-salt-and-silence",
+    "description": "<p>When their mother dies, Erik and Jonah return to the salt pans where they grew up, to sell the land and leave. But the marsh has its own memory, and neither brother is quite ready to say what happened the summer they stopped speaking.</p><p>A spare, atmospheric novel in short chapters that reads like a held breath. Paperback, 224 pages.</p>",
+    "short_description": "<p><em>by Tomas Rydell</em>. Two estranged brothers return to the family salt marsh. Quiet, tense and unforgettable.</p>",
+    "sku": "DE-FI-02",
+    "regular_price": "12.99",
+    "stock": 14,
+    "attributes": [
+     {
+      "name": "Author",
+      "values": [
+       "Tomas Rydell"
+      ],
+      "variation": false
+     }
+    ]
+   },
+   {
+    "slug": "a-map-of-small-hours",
+    "name": "A Map of Small Hours",
+    "type": "simple",
+    "categories": [
+     "fiction"
+    ],
+    "image": "p-a-map-of-small-hours",
+    "description": "<p>Every night from eleven until seven, Bento keeps the desk of a faded hotel in Lisbon. The guests who cannot sleep come down to talk, and over one winter their stories begin to overlap in ways none of them expected.</p><p>Warm, funny and quietly devastating, this is a novel made of small hours and the people who fill them. Hardback, 400 pages.</p>",
+    "short_description": "<p><em>by Ines Albuquerque</em>. A night porter, a hotel of strangers and the stories they tell after midnight.</p>",
+    "sku": "DE-FI-03",
+    "regular_price": "16.99",
+    "sale_price": "12.99",
+    "featured": true,
+    "stock": 9,
+    "attributes": [
+     {
+      "name": "Author",
+      "values": [
+       "Ines Albuquerque"
+      ],
+      "variation": false
+     }
+    ],
+    "reviews": [
+     {
+      "author": "Priya",
+      "email": "priya@example.com",
+      "rating": 5,
+      "content": "The kind of book you press into friends' hands. Bento is my favourite narrator of the year."
+     }
+    ]
+   },
+   {
+    "slug": "the-orchard-letters",
+    "name": "The Orchard Letters",
+    "type": "simple",
+    "categories": [
+     "fiction"
+    ],
+    "image": "p-the-orchard-letters",
+    "description": "<p>Restoring her late aunt's cider farm, Nell finds a tin of letters hidden in the rafters of the apple store. Written between two people who were never meant to meet, they tell a story her family has kept quiet for eighty years.</p><p>A dual-timeline novel with a big heart and a perfectly judged ending. Paperback, 336 pages.</p>",
+    "short_description": "<p><em>by Clementine Hart</em>. A bundle of letters found in an apple store reveals a wartime love affair.</p>",
+    "sku": "DE-FI-04",
+    "regular_price": "13.50",
+    "stock": 12,
+    "attributes": [
+     {
+      "name": "Author",
+      "values": [
+       "Clementine Hart"
+      ],
+      "variation": false
+     }
+    ]
+   },
+   {
+    "slug": "how-rivers-remember",
+    "name": "How Rivers Remember",
+    "type": "simple",
+    "categories": [
+     "non-fiction"
+    ],
+    "image": "p-how-rivers-remember",
+    "description": "<p>Rivers keep records: in their gravel, their bends and the plants that grow on their banks. Amara Fenwick spent a year walking a single river from a spring on the moor to its estuary, reading those records and meeting the people who live alongside the water.</p><p>Part science, part travel, part plea, this is the most hopeful book about the environment we have read in years. Hardback, 288 pages, with maps.</p>",
+    "short_description": "<p><em>by Dr. Amara Fenwick</em>. A hydrologist follows one river from source to sea, and asks what we owe it.</p>",
+    "sku": "DE-NF-01",
+    "regular_price": "18.99",
+    "featured": true,
+    "stock": 10,
+    "attributes": [
+     {
+      "name": "Author",
+      "values": [
+       "Dr. Amara Fenwick"
+      ],
+      "variation": false
+     }
+    ],
+    "reviews": [
+     {
+      "author": "Gwen",
+      "email": "gwen@example.com",
+      "rating": 5,
+      "content": "Changed the way I look at the stream behind our house. Clear, generous and full of wonder."
+     }
+    ]
+   },
+   {
+    "slug": "the-quiet-economy",
+    "name": "The Quiet Economy",
+    "type": "simple",
+    "categories": [
+     "non-fiction"
+    ],
+    "image": "p-the-quiet-economy",
+    "description": "<p>An economist goes looking for the value that never shows up in the figures: the neighbour who fixes bicycles, the library that lends drills, the market stall that has run for forty years on trust. What he finds is a hidden economy as large as the one we measure.</p><p>Accessible, surprising and full of good ideas to steal for your own street. Hardback, 320 pages.</p>",
+    "short_description": "<p><em>by Samuel Achterberg</em>. Repair cafés, tool libraries and the small institutions that hold a town together.</p>",
+    "sku": "DE-NF-02",
+    "regular_price": "20.00",
+    "stock": 8,
+    "attributes": [
+     {
+      "name": "Author",
+      "values": [
+       "Samuel Achterberg"
+      ],
+      "variation": false
+     }
+    ]
+   },
+   {
+    "slug": "field-notes-on-birds",
+    "name": "Field Notes on Birds",
+    "type": "simple",
+    "categories": [
+     "non-fiction"
+    ],
+    "image": "p-field-notes-on-birds",
+    "description": "<p>Over twelve months, artist Rosalind Mere kept a sketchbook by her kitchen window and another in her coat pocket. This gorgeous book gathers her drawings and notes on sixty common birds, with tips on what to look and listen for in each season.</p><p>Clothbound hardback with a ribbon marker, 192 pages, full colour throughout.</p>",
+    "short_description": "<p><em>by Rosalind Mere</em>. A beautifully illustrated year of garden and hedgerow birds, sketched from life.</p>",
+    "sku": "DE-NF-03",
+    "regular_price": "24.00",
+    "featured": true,
+    "stock": 7,
+    "attributes": [
+     {
+      "name": "Author",
+      "values": [
+       "Rosalind Mere"
+      ],
+      "variation": false
+     }
+    ]
+   },
+   {
+    "slug": "pip-and-the-paper-moon",
+    "name": "Pip and the Paper Moon",
+    "type": "simple",
+    "categories": [
+     "children"
+    ],
+    "image": "p-pip-and-the-paper-moon",
+    "description": "<p>When the real moon hides behind the clouds, Pip the mouse cuts, folds and glues a moon of her own so that her friend Badger can fall asleep. A gentle bedtime story about kindness and making things, with lovely cut-paper illustrations.</p><p>Paperback picture book, 32 pages. Ages 3–6.</p>",
+    "short_description": "<p><em>by Lottie Brennan</em>. A little mouse builds a moon out of paper for her friend who is afraid of the dark.</p>",
+    "sku": "DE-CH-01",
+    "regular_price": "9.99",
+    "featured": true,
+    "stock": 20,
+    "attributes": [
+     {
+      "name": "Author",
+      "values": [
+       "Lottie Brennan"
+      ],
+      "variation": false
+     }
+    ],
+    "reviews": [
+     {
+      "author": "Leo",
+      "email": "leo@example.com",
+      "rating": 5,
+      "content": "Requested every single night for a month. The pictures are wonderful."
+     }
+    ]
+   },
+   {
+    "slug": "the-tortoise-who-ran",
+    "name": "The Tortoise Who Ran",
+    "type": "simple",
+    "categories": [
+     "children"
+    ],
+    "image": "p-the-tortoise-who-ran",
+    "description": "<p>Tilly has had enough of being told she is slow, so she enters the Great Meadow Race with a secret plan, a borrowed skateboard and absolutely no idea how to stop. Short chapters, big laughs and illustrations on every spread.</p><p>Paperback, 96 pages. Ages 6–9.</p>",
+    "short_description": "<p><em>by Barnaby Quill</em>. Tilly the tortoise is tired of being slow. A very funny first chapter book.</p>",
+    "sku": "DE-CH-02",
+    "regular_price": "8.50",
+    "stock": 16,
+    "attributes": [
+     {
+      "name": "Author",
+      "values": [
+       "Barnaby Quill"
+      ],
+      "variation": false
+     }
+    ]
+   },
+   {
+    "slug": "linen-notebook",
+    "name": "Linen Notebook",
+    "type": "variable",
+    "categories": [
+     "stationery"
+    ],
+    "image": "p-linen-notebook",
+    "description": "<p>Bound by hand in a small bindery, this lay-flat notebook has a linen cloth cover, a ribbon marker and 160 pages of 100 gsm cream paper with faint dot grid. It takes ink beautifully without bleeding through.</p><p>Choose oxblood, navy or mustard.</p>",
+    "short_description": "<p>An A5 notebook bound in cloth, with 160 pages of cream, fountain-pen friendly paper.</p>",
+    "sku": "DE-ST-01",
+    "regular_price": "11.00",
+    "featured": true,
+    "attributes": [
+     {
+      "name": "Colour",
+      "values": [
+       "Oxblood",
+       "Navy",
+       "Mustard"
+      ],
+      "variation": true
+     }
+    ],
+    "variations": [
+     {
+      "attributes": {
+       "Colour": "Oxblood"
+      },
+      "regular_price": "11.00",
+      "stock": 12,
+      "sku": "DE-ST-01-OXBL"
+     },
+     {
+      "attributes": {
+       "Colour": "Navy"
+      },
+      "regular_price": "11.00",
+      "stock": 12,
+      "sku": "DE-ST-01-NAVY",
+      "image": "p-linen-notebook-alt"
+     },
+     {
+      "attributes": {
+       "Colour": "Mustard"
+      },
+      "regular_price": "11.00",
+      "stock": 12,
+      "sku": "DE-ST-01-MUST"
+     }
+    ],
+    "gallery": [
+     "p-linen-notebook-alt"
+    ]
+   },
+   {
+    "slug": "brass-bookmark",
+    "name": "Brass Bookmark",
+    "type": "simple",
+    "categories": [
+     "stationery"
+    ],
+    "image": "p-brass-bookmark",
+    "description": "<p>Etched brass that ages to a soft gold, shaped like a folded page corner so it hooks gently over the top of the page. No more dog-ears, unless you want them.</p>",
+    "short_description": "<p>A slim brass bookmark with a cut-out dog-ear corner that clips over the page.</p>",
+    "sku": "DE-ST-02",
+    "regular_price": "6.50",
+    "stock": 30
+   },
+   {
+    "slug": "ebook-the-glass-orchard",
+    "name": "The Glass Orchard (e-book)",
+    "type": "simple",
+    "categories": [
+     "fiction"
+    ],
+    "image": "p-ebook-the-glass-orchard",
+    "description": "<p>Set the winter after the war, this novella follows the letter-writers of <em>The Orchard Letters</em> as they meet at last, in a greenhouse full of frost. A short, luminous read.</p><p>DRM-free EPUB and PDF, available to download from your account straight after purchase. Nothing is posted.</p>",
+    "short_description": "<p><em>by Clementine Hart</em>. The companion novella to The Orchard Letters, as a DRM-free e-book.</p>",
+    "sku": "DE-EB-01",
+    "regular_price": "6.99",
+    "virtual": true,
+    "attributes": [
+     {
+      "name": "Format",
+      "values": [
+       "EPUB",
+       "PDF"
+      ],
+      "variation": false
+     }
+    ],
+    "meta": {
+     "_downloadable": "yes"
+    }
+   }
+  ],
+  "coupons": [
+   {
+    "code": "WELCOME10",
+    "type": "percent",
+    "amount": "10",
+    "description": "10% off your first order"
+   },
+   {
+    "code": "BOOKCLUB",
+    "type": "percent",
+    "amount": "15",
+    "description": "15% off for book club members"
+   }
+  ],
+  "shipping": {
+   "zone": "United Kingdom",
+   "flat_rate": "3.50",
+   "free_over": "25",
+   "local_pickup": true
+  }
+ }
+}

@@ -111,6 +111,11 @@
    "id": "p-travel-minis",
    "file": "demo/images/glow-botanica-p-travel-minis.jpg",
    "alt": "Three miniature skincare bottles in a soft pouch"
+  },
+  {
+   "id": "p-satin-lipstick-alt",
+   "file": "demo/images/glow-botanica-p-satin-lipstick-alt.jpg",
+   "alt": "The satin lipstick in the Berry shade"
   }
  ],
  "pages": [
@@ -470,7 +475,8 @@
       },
       "regular_price": "24",
       "stock": 15,
-      "sku": "GB-MU-01-BERR"
+      "sku": "GB-MU-01-BERR",
+      "image": "p-satin-lipstick-alt"
      }
     ],
     "reviews": [
@@ -480,6 +486,9 @@
       "rating": 5,
       "content": "Rose is the perfect my-lips-but-better shade. It lasts through coffee too."
      }
+    ],
+    "gallery": [
+     "p-satin-lipstick-alt"
     ]
    },
    {

@@ -1,0 +1,9 @@
+@font-face { font-family: "Playfair Display"; src: url("fonts/playfair-display.woff2") format("woff2"); font-weight: 400 900; font-display: swap; }
+@font-face { font-family: "Playfair Display"; src: url("fonts/playfair-display-italic.woff2") format("woff2"); font-weight: 400 900; font-style: italic; font-display: swap; }
+@font-face { font-family: "Crimson Pro"; src: url("fonts/crimson-pro.woff2") format("woff2"); font-weight: 300 700; font-display: swap; }
+@font-face { font-family: "Crimson Pro"; src: url("fonts/crimson-pro-italic.woff2") format("woff2"); font-weight: 300 700; font-style: italic; font-display: swap; }
+body { font: 400 1.18rem/1.65 "Crimson Pro", Georgia, serif; color: #26221d; background: #f7f1e3; }
+h1, h2, h3, h4 { font-family: "Playfair Display", Georgia, serif; font-weight: 700; line-height: 1.1; }
+a { color: #7a2e2e; }
+.wp-block-button__link { background: #7a2e2e; color: #f7f1e3; border-radius: 2px; }
+blockquote { border-left: 3px solid #d9a441; padding-left: 1em; font-style: italic; }

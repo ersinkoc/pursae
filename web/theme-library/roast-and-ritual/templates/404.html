@@ -1,0 +1,8 @@
+{{template "header" .}}
+<section class="rr-wrap rr-measure error-404 not-found rr-404">
+	<p class="rr-404__num" aria-hidden="true">4<span>{{template "icon-cup"}}</span>4</p>
+	<h1 class="page-title">This cup is empty.</h1>
+	<p>The page you were after has been drunk, moved or never brewed. Try a search, or browse the <a href="{{if goo_on}}{{goo_url . "shop"}}{{else}}{{.HomeURL}}{{end}}">roastery shop</a>.</p>
+	{{if goo_on}}{{goo_product_search .}}{{else}}{{template "searchform" .}}{{end}}
+</section>
+{{template "footer" .}}

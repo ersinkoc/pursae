@@ -1,0 +1,12 @@
+<div class="de-posts">
+	{{range $p := .Posts}}<article id="post-{{.ID}}" class="{{.Class}} de-post-card">
+		{{with .Thumbnail}}<a class="de-post-card__media" href="{{$p.Permalink}}" aria-hidden="true" tabindex="-1">{{.}}</a>{{end}}
+		<div class="de-post-card__text">
+			<p class="de-kicker">{{with .Categories}}{{(index . 0).Name}}{{else}}Journal{{end}} &middot; <time datetime="{{.DateISO}}">{{.DateText}}</time></p>
+			<h2 class="de-post-card__title"><a href="{{.Permalink}}" rel="bookmark">{{.Title}}</a></h2>
+			{{if .ShowExcerpt}}<div class="de-post-card__excerpt">{{.Excerpt}}</div>{{end}}
+			<a class="de-more" href="{{.Permalink}}">Read on<span class="screen-reader-text">: {{.Title}}</span></a>
+		</div>
+	</article>
+	{{end}}
+</div>
