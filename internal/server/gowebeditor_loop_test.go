@@ -62,7 +62,7 @@ func TestGweSearchProps(t *testing.T) {
 	}
 	titles := func(body string) string {
 		var out []string
-		for _, m := range regexp.MustCompile(`<h2 class="entry-title"><a [^>]*>([^<]*)</a>`).FindAllStringSubmatch(body, -1) {
+		for _, m := range regexp.MustCompile(`<h2 class="wp-block-post-title[^"]*"><a [^>]*>([^<]*)</a>`).FindAllStringSubmatch(body, -1) {
 			out = append(out, m[1])
 		}
 		return strings.Join(out, "|")

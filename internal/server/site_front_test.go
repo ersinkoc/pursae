@@ -205,13 +205,13 @@ func TestFrontNextpageImagesSmilies(t *testing.T) {
 	if !strings.Contains(body, "Page one text") || strings.Contains(body, "Page two text") {
 		t.Error("page 1 shows the wrong content")
 	}
-	for _, want := range []string{`<div class="page-links"><span class="page-links-title">Pages:</span>`, `<span class="post-page-numbers current" aria-current="page"><span><span class="screen-reader-text">Page </span>1</span></span>`,
-		`<a href="` + base + pagedPath + `2/" class="post-page-numbers"><span><span class="screen-reader-text">Page </span>2</span></a>`} {
+	for _, want := range []string{`<p class="post-nav-links">Pages: <span class="post-page-numbers current" aria-current="page">1</span>`,
+		`<a href="` + base + pagedPath + `2/" class="post-page-numbers">2</a></p>`} {
 		if !strings.Contains(body, want) {
 			t.Errorf("page links miss %q", want)
 		}
 	}
-	if _, body, _ = get(t, anon, base+pagedPath+"2/"); !strings.Contains(body, "Page two text") || strings.Contains(body, "Page one text") || !strings.Contains(body, `aria-current="page"><span><span class="screen-reader-text">Page </span>2</span>`) {
+	if _, body, _ = get(t, anon, base+pagedPath+"2/"); !strings.Contains(body, "Page two text") || strings.Contains(body, "Page one text") || !strings.Contains(body, `<span class="post-page-numbers current" aria-current="page">2</span></p>`) {
 		t.Error("page 2 shows the wrong content")
 	}
 	if code, _, loc := get(t, anon, base+pagedPath+"9/"); code != http.StatusMovedPermanently || loc != base+pagedPath {

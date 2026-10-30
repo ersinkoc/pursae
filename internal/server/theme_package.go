@@ -60,6 +60,9 @@ type themeManifest struct {
 	Customizer struct {
 		Sections []themeCzSection `json:"sections"`
 	} `json:"customizer"`
+
+	// pageTemplates are a bundled theme's page templates (a bundled demo set's pages may use them).
+	pageTemplates map[string]string
 }
 
 type themeManifestArea struct {

@@ -6,41 +6,34 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
+	"os"
 	"regexp"
 	"strings"
 	"testing"
 )
 
-// TestCustomizeColorCSS checks the theme color CSS generators against the themes' defaults.
-func TestCustomizeColorCSS(t *testing.T) {
-	v := &siteView{Theme: themeBySlug("twentytwenty"), ThemeMods: map[string]any{}}
-	if got := tt20ColorCSS(v); got != twentyTwentyCustomCSS {
-		t.Errorf("Twenty Twenty default CSS differs from twentytwenty_get_customizer_css():\n%s", got)
+// TestCustomizeColorScheme checks Twenty Twenty-Five's color schemes: the default palette prints no
+// CSS, a style variation only what differs from it.
+func TestCustomizeColorScheme(t *testing.T) {
+	s := &Server{web: os.DirFS("../../web")}
+	if got := s.tt5SchemeCSS(map[string]any{}); got != "" {
+		t.Errorf("default scheme prints CSS: %.100s", got)
 	}
-	v = &siteView{Theme: themeBySlug("twentysixteen"), ThemeMods: map[string]any{}}
-	if got := tt16ColorCSS(v); got != "" {
-		t.Errorf("Twenty Sixteen default scheme prints CSS: %s", got)
+	if got := s.tt5SchemeCSS(map[string]any{"color_scheme": "no-such-scheme"}); got != "" {
+		t.Errorf("unknown scheme prints CSS: %.100s", got)
 	}
-	v.ThemeMods = map[string]any{"color_scheme": "dark"}
-	css := tt16ColorCSS(v)
-	for _, want := range []string{"<style id='twentysixteen-style-inline-css'>", "/* Color Scheme */", "background-color: #262626;", "border-color: rgba( 229, 229, 229, 0.2);"} {
+	css := s.tt5SchemeCSS(map[string]any{"color_scheme": "evening"})
+	for _, want := range []string{":root{", "--wp--preset--color--base:#1B1B1B", "--wp--preset--color--contrast:#F0F0F0"} {
 		if !strings.Contains(css, want) {
-			t.Errorf("dark scheme CSS misses %q", want)
+			t.Errorf("evening scheme misses %q", want)
 		}
 	}
-	v = &siteView{Theme: themeBySlug("twentyseventeen"), ThemeURI: "/t", ThemeMods: map[string]any{"colorscheme": "custom", "colorscheme_hue": 120.0}}
-	if got := tt17CustomColors(v); !strings.Contains(got, "hsl( 120, 50%, 46% )") || !strings.Contains(got, `<style id="custom-theme-colors" >`) {
-		t.Errorf("Twenty Seventeen custom colors: %.200s", got)
+	if strings.Contains(css, "--wp--preset--font-size--small") {
+		t.Error("evening scheme repeats properties that do not change")
 	}
-	v = &siteView{Theme: themeBySlug("twentytwentyone"), ThemeMods: map[string]any{"background_color": "000000"}}
-	if got := tt1ColorCSS(v); !strings.Contains(got, "--global--color-background: #000000;--global--color-primary: #fff;") {
-		t.Errorf("Twenty Twenty-One colors: %s", got)
-	}
-	if got := strings.Join(tt1ColorClasses(v), " "); got != "is-dark-theme" {
-		t.Errorf("Twenty Twenty-One classes: %s", got)
-	}
-	if customBackground(v) != "000000" {
-		t.Error("custom background not detected")
+	v := &siteView{Theme: themeBySlug("twentytwentyfive"), ThemeMods: map[string]any{"background_color": "000000"}}
+	if customBackground(v) != "" {
+		t.Error("Twenty Twenty-Five has no custom background")
 	}
 }
 
@@ -66,7 +59,7 @@ func TestCustomize(t *testing.T) {
 	if code != http.StatusOK || strings.Contains(body, "Template error") {
 		t.Fatalf("customize: %d %.300s", code, body)
 	}
-	for _, want := range []string{`id="customize-controls"`, "Site Identity", "Site Icon", "Base Color Scheme", `value="dark"`, "Homepage Settings",
+	for _, want := range []string{`id="customize-controls"`, "Site Identity", "Site Icon", "Color scheme", `value="evening"`, "Homepage Settings",
 		"Additional CSS", `href="/wp-admin/nav-menus"`, `href="/wp-admin/widgets"`, "customize-controls.min.css", "color-picker.min.js", `id="tmpl-media-frame"`} {
 		if !strings.Contains(body, want) {
 			t.Errorf("customize screen misses %q", want)
@@ -89,7 +82,7 @@ func TestCustomize(t *testing.T) {
 	}
 
 	// Preview: unsaved values render in the preview only.
-	if code, body := send("preview", map[string]any{"blogname": "Preview Title", "mod:color_scheme": "dark", "custom_css": "body { outline: 1px solid; }"}); code != http.StatusOK {
+	if code, body := send("preview", map[string]any{"blogname": "Preview Title", "mod:color_scheme": "evening", "custom_css": "body { outline: 1px solid; }"}); code != http.StatusOK {
 		t.Fatalf("preview: %d %s", code, body)
 	}
 	resp, err := c.Get(base + "/?" + czParam + "=" + uuid[1])
@@ -101,7 +94,7 @@ func TestCustomize(t *testing.T) {
 		t.Errorf("preview is cacheable: %q", cc)
 	}
 	_, body, _ = get(t, c, base+"/?"+czParam+"="+uuid[1])
-	for _, want := range []string{"Preview Title", "/* Color Scheme */", `<style id="wp-custom-css">`, "body { outline: 1px solid; }", `id="wpgo-customize-preview"`} {
+	for _, want := range []string{"Preview Title", "twentytwentyfive-color-scheme-inline-css", `<style id="wp-custom-css">`, "body { outline: 1px solid; }", `id="wpgo-customize-preview"`} {
 		if !strings.Contains(body, want) {
 			t.Errorf("preview misses %q", want)
 		}
@@ -110,7 +103,7 @@ func TestCustomize(t *testing.T) {
 		t.Error("preview shows the toolbar")
 	}
 	_, body, _ = get(t, c, base+"/")
-	if strings.Contains(body, "Preview Title") || strings.Contains(body, "/* Color Scheme */") || strings.Contains(body, "wp-custom-css") {
+	if strings.Contains(body, "Preview Title") || strings.Contains(body, "twentytwentyfive-color-scheme-inline-css") || strings.Contains(body, "wp-custom-css") {
 		t.Error("preview values leaked to the live site")
 	}
 	jar, _ := cookiejar.New(nil)
@@ -129,13 +122,13 @@ func TestCustomize(t *testing.T) {
 	}
 
 	// Publish.
-	if code, body := send("publish", map[string]any{"blogname": "Published Title", "blogdescription": "Just <b>another</b> site", "mod:color_scheme": "dark",
-		"mod:link_color": "#FF0000", "custom_css": "body { color: red; }", "site_icon": iconID}); code != http.StatusOK || !strings.Contains(body, `"success":true`) {
+	if code, body := send("publish", map[string]any{"blogname": "Published Title", "blogdescription": "Just <b>another</b> site", "mod:color_scheme": "evening",
+		"custom_css": "body { color: red; }", "site_icon": iconID}); code != http.StatusOK || !strings.Contains(body, `"success":true`) {
 		t.Fatalf("publish: %d %s", code, body)
 	}
 	_, body, _ = get(t, anon, base+"/")
 	for _, want := range []string{">Published Title</a>", "Just another site", "<title>Published Title &#8211; Just another site</title>",
-		"<style id='twentysixteen-style-inline-css'>", "/* Color Scheme */", "/* Custom Link Color */", "color: #ff0000;",
+		"<style id='twentytwentyfive-color-scheme-inline-css'>", "--wp--preset--color--base:#1B1B1B",
 		"<style id=\"wp-custom-css\">\n\t\t\tbody { color: red; }\t\t</style>",
 		`<link rel="icon" href="` + base + `/wp-content/uploads/2026/10/icon.png" sizes="32x32" />`, `<link rel="apple-touch-icon"`} {
 		if !strings.Contains(body, want) {
@@ -146,7 +139,7 @@ func TestCustomize(t *testing.T) {
 		t.Error("custom CSS is not in the head")
 	}
 	var mods []byte
-	if err := db.QueryRow(ctx, `SELECT value FROM settings WHERE key = 'theme_mods_twentysixteen'`).Scan(&mods); err != nil || !strings.Contains(string(mods), `"color_scheme": "dark"`) {
+	if err := db.QueryRow(ctx, `SELECT value FROM settings WHERE key = 'theme_mods_twentytwentyfive'`).Scan(&mods); err != nil || !strings.Contains(string(mods), `"color_scheme": "evening"`) {
 		t.Errorf("theme mods not stored: %s %v", mods, err)
 	}
 

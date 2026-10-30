@@ -1,0 +1,306 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Botanica",
+  "blogdescription": "Garden studio and flower shop",
+  "posts_per_page": 6
+ },
+ "categories": [
+  {
+   "slug": "seasonal-flowers",
+   "name": "Seasonal Flowers",
+   "description": "What is in the shop and in the beds this month."
+  },
+  {
+   "slug": "plant-care",
+   "name": "Plant Care",
+   "description": "Light, water and patience, plant by plant."
+  },
+  {
+   "slug": "garden-diary",
+   "name": "Garden Diary",
+   "description": "Notes from the cutting garden behind the shop."
+  },
+  {
+   "slug": "workshops",
+   "name": "Workshops",
+   "description": "Hands-on sessions in the studio."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "cut-flowers",
+   "name": "Cut flowers"
+  },
+  {
+   "slug": "houseplants",
+   "name": "Houseplants"
+  },
+  {
+   "slug": "pollinators",
+   "name": "Pollinators"
+  },
+  {
+   "slug": "shade",
+   "name": "Shade"
+  },
+  {
+   "slug": "summer",
+   "name": "Summer"
+  },
+  {
+   "slug": "drought",
+   "name": "Drought"
+  }
+ ],
+ "media": [
+  {
+   "id": "hibiscus-wide",
+   "file": "demo/images/hibiscus-wide.webp",
+   "title": "Red hibiscus flowers against dark green leaves",
+   "alt": "Red hibiscus flowers against dark green leaves"
+  },
+  {
+   "id": "botany",
+   "file": "demo/images/botany.webp",
+   "title": "A bunch of garden flowers in soft colors",
+   "alt": "A bunch of garden flowers in soft colors"
+  },
+  {
+   "id": "botany-close",
+   "file": "demo/images/botany-close.webp",
+   "title": "Close view of garden flowers",
+   "alt": "Close view of garden flowers"
+  },
+  {
+   "id": "hibiscus",
+   "file": "demo/images/hibiscus.webp",
+   "title": "A single red hibiscus flower, close up",
+   "alt": "A single red hibiscus flower, close up"
+  },
+  {
+   "id": "delphinium",
+   "file": "demo/images/delphinium.webp",
+   "title": "Botanical illustration of blue delphinium flowers",
+   "alt": "Botanical illustration of blue delphinium flowers"
+  },
+  {
+   "id": "campanula",
+   "file": "demo/images/campanula.webp",
+   "title": "Botanical illustration of Cornish bellflower",
+   "alt": "Botanical illustration of Cornish bellflower"
+  },
+  {
+   "id": "thistle",
+   "file": "demo/images/thistle.webp",
+   "title": "Botanical illustration of a star thistle",
+   "alt": "Botanical illustration of a star thistle"
+  },
+  {
+   "id": "anthurium",
+   "file": "demo/images/anthurium.webp",
+   "title": "Anthuriums growing under a sun screen in a greenhouse",
+   "alt": "Anthuriums growing under a sun screen in a greenhouse"
+  },
+  {
+   "id": "sunflower",
+   "file": "demo/images/sunflower.webp",
+   "title": "A tall sunflower in bloom",
+   "alt": "A tall sunflower in bloom"
+  },
+  {
+   "id": "cactus",
+   "file": "demo/images/cactus.webp",
+   "title": "Saguaro cactus arms against the sky",
+   "alt": "Saguaro cactus arms against the sky"
+  },
+  {
+   "id": "phacelia",
+   "file": "demo/images/phacelia.webp",
+   "title": "Lacy phacelia, enlarged, from a 1928 plant photograph",
+   "alt": "Lacy phacelia, enlarged, from a 1928 plant photograph"
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Home",
+   "front_page": true,
+   "template": "page-no-title",
+   "content": "<!-- wp:cover {\"url\":\"{{media:hibiscus-wide}}\",\"id\":{{media_id:hibiscus-wide}},\"dimRatio\":40,\"minHeight\":600,\"minHeightUnit\":\"px\",\"align\":\"full\",\"layout\":{\"type\":\"constrained\"}} -->\n<div class=\"wp-block-cover alignfull\" style=\"min-height:600px\"><img class=\"wp-block-cover__image-background wp-image-{{media_id:hibiscus-wide}}\" alt=\"\" src=\"{{media:hibiscus-wide}}\" data-object-fit=\"cover\"/><span aria-hidden=\"true\" class=\"wp-block-cover__background has-background-dim-40 has-background-dim\"></span><div class=\"wp-block-cover__inner-container\"><!-- wp:paragraph {\"fontSize\":\"medium\"} -->\n<p class=\"has-medium-font-size\">Garden studio &amp; flower shop</p>\n<!-- /wp:paragraph --><!-- wp:heading {\"level\":1,\"fontSize\":\"xx-large\"} -->\n<h1 class=\"wp-block-heading has-xx-large-font-size\">Flowers grown, cut and arranged by hand</h1>\n<!-- /wp:heading --><!-- wp:paragraph {\"fontSize\":\"large\"} -->\n<p class=\"has-large-font-size\">Seasonal bouquets from our own cutting garden, plants that will outlive their pot, and Saturday workshops at the long table.</p>\n<!-- /wp:paragraph --><!-- wp:buttons -->\n<div class=\"wp-block-buttons\"><!-- wp:button -->\n<div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:visit}}\">Visit the shop</a></div>\n<!-- /wp:button --><!-- wp:button {\"className\":\"is-style-outline\"} -->\n<div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:workshops}}\">See the workshops</a></div>\n<!-- /wp:button --></div>\n<!-- /wp:buttons --></div></div>\n<!-- /wp:cover -->\n\n<!-- wp:group {\"style\":{\"spacing\":{\"padding\":{\"top\":\"var:preset|spacing|60\",\"bottom\":\"var:preset|spacing|60\"}}},\"layout\":{\"type\":\"constrained\"}} -->\n<div class=\"wp-block-group\" style=\"padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--60)\"><!-- wp:heading {\"textAlign\":\"center\"} -->\n<h2 class=\"wp-block-heading has-text-align-center\">In season now</h2>\n<!-- /wp:heading --><!-- wp:paragraph {\"align\":\"center\",\"fontSize\":\"medium\"} -->\n<p class=\"has-text-align-center has-medium-font-size\">Everything in the shop comes from within a short drive, most of it from the beds you can see from the counter. When a flower is over, it is over until next year, and we think that is part of its charm.</p>\n<!-- /wp:paragraph --></div>\n<!-- /wp:group -->\n\n<!-- wp:columns {\"align\":\"wide\"} -->\n<div class=\"wp-block-columns alignwide\"><!-- wp:column -->\n<div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:delphinium}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"{{media:delphinium}}\" alt=\"Delphinium illustration\" class=\"wp-image-{{media_id:delphinium}}\"/></figure>\n<!-- /wp:image --><!-- wp:heading {\"level\":3,\"fontSize\":\"large\"} -->\n<h3 class=\"wp-block-heading has-large-font-size\"><a href=\"{{post:delphiniums-the-blue-everyone-asks-about}}\">Delphiniums</a></h3>\n<!-- /wp:heading --><!-- wp:paragraph -->\n<p>The tall blues that stop people in the street, and how to keep them standing.</p>\n<!-- /wp:paragraph --><!-- wp:paragraph {\"fontSize\":\"small\"} -->\n<p class=\"has-small-font-size\"><a href=\"{{post:delphiniums-the-blue-everyone-asks-about}}\">Growing notes &rarr;</a></p>\n<!-- /wp:paragraph --></div>\n<!-- /wp:column --><!-- wp:column -->\n<div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:campanula}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"{{media:campanula}}\" alt=\"Bellflower illustration\" class=\"wp-image-{{media_id:campanula}}\"/></figure>\n<!-- /wp:image --><!-- wp:heading {\"level\":3,\"fontSize\":\"large\"} -->\n<h3 class=\"wp-block-heading has-large-font-size\"><a href=\"{{post:bellflowers-for-shady-corners}}\">Bellflowers</a></h3>\n<!-- /wp:heading --><!-- wp:paragraph -->\n<p>Our favourite answer to a shady corner that nothing else will grow in.</p>\n<!-- /wp:paragraph --><!-- wp:paragraph {\"fontSize\":\"small\"} -->\n<p class=\"has-small-font-size\"><a href=\"{{post:bellflowers-for-shady-corners}}\">Growing notes &rarr;</a></p>\n<!-- /wp:paragraph --></div>\n<!-- /wp:column --><!-- wp:column -->\n<div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:thistle}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"{{media:thistle}}\" alt=\"Star thistle illustration\" class=\"wp-image-{{media_id:thistle}}\"/></figure>\n<!-- /wp:image --><!-- wp:heading {\"level\":3,\"fontSize\":\"large\"} -->\n<h3 class=\"wp-block-heading has-large-font-size\"><a href=\"{{post:why-we-leave-the-thistles}}\">Thistles</a></h3>\n<!-- /wp:heading --><!-- wp:paragraph -->\n<p>Why a few thistles stay in the garden, prickles and all.</p>\n<!-- /wp:paragraph --><!-- wp:paragraph {\"fontSize\":\"small\"} -->\n<p class=\"has-small-font-size\"><a href=\"{{post:why-we-leave-the-thistles}}\">Read why &rarr;</a></p>\n<!-- /wp:paragraph --></div>\n<!-- /wp:column --></div>\n<!-- /wp:columns -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"is-style-section-1\",\"style\":{\"spacing\":{\"padding\":{\"top\":\"var:preset|spacing|60\",\"bottom\":\"var:preset|spacing|60\",\"left\":\"var:preset|spacing|50\",\"right\":\"var:preset|spacing|50\"}}},\"layout\":{\"type\":\"constrained\"}} -->\n<div class=\"wp-block-group alignfull is-style-section-1\" style=\"padding-top:var(--wp--preset--spacing--60);padding-right:var(--wp--preset--spacing--50);padding-bottom:var(--wp--preset--spacing--60);padding-left:var(--wp--preset--spacing--50)\"><!-- wp:columns {\"align\":\"wide\"} -->\n<div class=\"wp-block-columns alignwide\"><!-- wp:column -->\n<div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:botany}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"{{media:botany}}\" alt=\"A bunch of garden flowers\" class=\"wp-image-{{media_id:botany}}\"/></figure>\n<!-- /wp:image --></div>\n<!-- /wp:column --><!-- wp:column -->\n<div class=\"wp-block-column\"><!-- wp:heading -->\n<h2 class=\"wp-block-heading\">Saturday workshops</h2>\n<!-- /wp:heading --><!-- wp:paragraph -->\n<p>Two hours, a table full of flowers, and a bouquet to take home. Small groups, all materials included, tea and cake at half time.</p>\n<!-- /wp:paragraph --><!-- wp:buttons -->\n<div class=\"wp-block-buttons\"><!-- wp:button -->\n<div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:workshops}}\">Book a place</a></div>\n<!-- /wp:button --></div>\n<!-- /wp:buttons --></div>\n<!-- /wp:column --></div>\n<!-- /wp:columns --></div>\n<!-- /wp:group -->\n\n<!-- wp:group {\"style\":{\"spacing\":{\"padding\":{\"top\":\"var:preset|spacing|60\",\"bottom\":\"var:preset|spacing|60\"}}},\"layout\":{\"type\":\"constrained\"}} -->\n<div class=\"wp-block-group\" style=\"padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--60)\"><!-- wp:heading -->\n<h2 class=\"wp-block-heading\">From the garden diary</h2>\n<!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":3,\"displayPostDate\":true,\"align\":\"wide\"} /--></div>\n<!-- /wp:group -->"
+  },
+  {
+   "slug": "journal",
+   "title": "Garden Diary",
+   "posts_page": true,
+   "content": ""
+  },
+  {
+   "slug": "about",
+   "title": "Our Studio",
+   "featured_media": "botany-close",
+   "content": "<!-- wp:paragraph {\"fontSize\":\"large\"} -->\n<p class=\"has-large-font-size\">Botanica is a small studio at the end of a long garden. We grow most of what we sell in raised beds and two old greenhouses, and arrange it at a scrubbed oak table that has seen more flowers than we can count.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>We started with a market stall and a van. The stall became a shop, the shop grew a garden, and the garden slowly took over the car park. Customers tell us they come for the flowers and stay for the conversation, which suits us fine.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:heading -->\n<h2 class=\"wp-block-heading\">What we believe</h2>\n<!-- /wp:heading -->\n\n<!-- wp:list -->\n<ul class=\"wp-block-list\"><!-- wp:list-item -->\n<li>Flowers should be in season, local and free of plastic wrap.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>A garden for cutting can still be a garden for bees.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>Anyone can learn to arrange flowers; it just takes a few good ones and permission to experiment.</li>\n<!-- /wp:list-item --></ul>\n<!-- /wp:list -->"
+  },
+  {
+   "slug": "workshops",
+   "title": "Workshops",
+   "featured_media": "phacelia",
+   "content": "<!-- wp:paragraph {\"fontSize\":\"large\"} -->\n<p class=\"has-large-font-size\">Our workshops run on Saturday mornings from spring to late autumn. Each one is two hours long, limited to eight people, and includes every flower, tool and slice of cake.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:heading -->\n<h2 class=\"wp-block-heading\">This season</h2>\n<!-- /wp:heading -->\n\n<!-- wp:list -->\n<ul class=\"wp-block-list\"><!-- wp:list-item -->\n<li><strong>Hand-tied bouquets</strong>: the spiral technique, step by step.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li><strong>Table arrangements</strong>: low, loose and long-lasting, without floral foam.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li><strong>Dried flower wreaths</strong>: for autumn and well into winter.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li><strong>Houseplant clinic</strong>: bring a sad plant, take home a plan.</li>\n<!-- /wp:list-item --></ul>\n<!-- /wp:list -->\n\n<!-- wp:paragraph -->\n<p>To book, call in at the shop or write to <a href=\"mailto:studio@example.com\">studio@example.com</a>. Gift vouchers are available for every workshop.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:buttons -->\n<div class=\"wp-block-buttons\"><!-- wp:button -->\n<div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:visit}}\">Plan your visit</a></div>\n<!-- /wp:button --></div>\n<!-- /wp:buttons -->"
+  },
+  {
+   "slug": "visit",
+   "title": "Visit",
+   "content": "<!-- wp:paragraph {\"fontSize\":\"large\"} -->\n<p class=\"has-large-font-size\">The shop and garden are open to everyone. Wander round the beds, ask us anything, and leave with something that smells wonderful.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:columns -->\n<div class=\"wp-block-columns\"><!-- wp:column -->\n<div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} -->\n<h3 class=\"wp-block-heading\">Opening hours</h3>\n<!-- /wp:heading --><!-- wp:paragraph -->\n<p>Tuesday to Friday, 9 am to 5 pm<br>Saturday, 9 am to 4 pm<br>Closed Sunday and Monday</p>\n<!-- /wp:paragraph --></div>\n<!-- /wp:column --><!-- wp:column -->\n<div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} -->\n<h3 class=\"wp-block-heading\">Find us</h3>\n<!-- /wp:heading --><!-- wp:paragraph -->\n<p>12 Orchard Lane<br>At the end of the gravel drive, past the greenhouses</p>\n<!-- /wp:paragraph --><!-- wp:paragraph -->\n<p><a href=\"mailto:studio@example.com\">studio@example.com</a></p>\n<!-- /wp:paragraph --></div>\n<!-- /wp:column --></div>\n<!-- /wp:columns -->\n\n<!-- wp:paragraph -->\n<p>Weddings and events: we are happy to talk about seasonal flowers for your day. Please get in touch at least three months ahead.</p>\n<!-- /wp:paragraph -->"
+  }
+ ],
+ "posts": [
+  {
+   "slug": "delphiniums-the-blue-everyone-asks-about",
+   "title": "Delphiniums: the blue everyone asks about",
+   "date": "2026-06-06T10:00:00",
+   "categories": [
+    "seasonal-flowers",
+    "plant-care"
+   ],
+   "tags": [
+    "cut-flowers",
+    "summer"
+   ],
+   "featured_media": "delphinium",
+   "content": "<!-- wp:paragraph -->\n<p>Every June someone stops at the gate and asks what the tall blue flowers are. They are delphiniums, and they are worth the small amount of fuss they need.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:image {\"id\":{{media_id:delphinium}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"{{media:delphinium}}\" alt=\"Blue delphinium flowers, botanical illustration\" class=\"wp-image-{{media_id:delphinium}}\"/><figcaption class=\"wp-element-caption\">Delphinium, as drawn for an old botanical plate.</figcaption></figure>\n<!-- /wp:image -->\n\n<!-- wp:heading -->\n<h2 class=\"wp-block-heading\">Growing them</h2>\n<!-- /wp:heading -->\n\n<!-- wp:list -->\n<ul class=\"wp-block-list\"><!-- wp:list-item -->\n<li>Full sun and rich, well-drained soil.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>Stake them early, before the first summer storm, not after.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>Slugs love young shoots; protect them in spring.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>Cut the first spikes as they fade and you will often get a second, shorter flush in late summer.</li>\n<!-- /wp:list-item --></ul>\n<!-- /wp:list -->\n\n<!-- wp:heading -->\n<h2 class=\"wp-block-heading\">In the vase</h2>\n<!-- /wp:heading -->\n\n<!-- wp:paragraph -->\n<p>Cut when about a third of the flowers on the spike are open, and put them straight into deep, cool water. They drop their petals when they are done, all at once, which is either sad or rather beautiful depending on your mood.</p>\n<!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Margaret",
+     "content": "Mine flopped over in the first rain last year. Staking this year, early, as instructed!",
+     "date": "2026-06-07T09:20:00"
+    }
+   ]
+  },
+  {
+   "slug": "bellflowers-for-shady-corners",
+   "title": "Bellflowers for shady corners",
+   "date": "2026-05-16T10:00:00",
+   "categories": [
+    "plant-care",
+    "garden-diary"
+   ],
+   "tags": [
+    "shade",
+    "pollinators"
+   ],
+   "featured_media": "campanula",
+   "content": "<!-- wp:paragraph -->\n<p>Every garden has one: the strip along the north fence where nothing seems to grow. Ours used to be bare earth and a hose reel. Now it is full of bellflowers.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>Campanulas cope with part shade better than most flowering perennials, and the Cornish bellflower in particular will spread into a loose, white-flowered carpet that bees adore.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:quote -->\n<blockquote class=\"wp-block-quote\"><!-- wp:paragraph -->\n<p>Plant for the place you have, not the place you wish you had.</p>\n<!-- /wp:paragraph --></blockquote>\n<!-- /wp:quote -->\n\n<!-- wp:paragraph -->\n<p>Give them a mulch of leaf mould in autumn, cut them back after the first flowering, and they will ask very little else.</p>\n<!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "why-we-leave-the-thistles",
+   "title": "Why we leave the thistles",
+   "date": "2026-07-11T10:00:00",
+   "categories": [
+    "garden-diary"
+   ],
+   "tags": [
+    "pollinators"
+   ],
+   "featured_media": "thistle",
+   "content": "<!-- wp:paragraph -->\n<p>Visitors are sometimes surprised to find thistles in a flower garden. We leave a few on purpose.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>On a warm afternoon a single thistle head can have three or four kinds of bee on it at once. Later the seed heads feed goldfinches, and the down lines more than one nest.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>We keep them to one corner, cut most heads before they seed, and wear gloves. That is all it takes to share the garden with the insects that pollinate everything else in it.</p>\n<!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "anthuriums-indoors-light-water-patience",
+   "title": "Anthuriums indoors: light, water, patience",
+   "date": "2026-02-21T10:00:00",
+   "categories": [
+    "plant-care"
+   ],
+   "tags": [
+    "houseplants"
+   ],
+   "featured_media": "anthurium",
+   "content": "<!-- wp:paragraph -->\n<p>Anthuriums are the glossy, heart-shaped flowers that last for weeks. In the wild they grow in the warm, damp shade of the forest, and indoors they want something similar.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:list {\"ordered\":true} -->\n<ol class=\"wp-block-list\"><!-- wp:list-item -->\n<li><strong>Light</strong>: bright but indirect. A metre from a sunny window is ideal.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li><strong>Water</strong>: when the top few centimetres of compost are dry, not before.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li><strong>Humidity</strong>: a bathroom with a window is anthurium heaven.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li><strong>Patience</strong>: a new plant often sulks for a month while it settles in.</li>\n<!-- /wp:list-item --></ol>\n<!-- /wp:list -->\n\n<!-- wp:paragraph -->\n<p>If the leaves yellow, it is usually too much water. If the flowers stop, it is usually too little light.</p>\n<!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "the-sunflower-wall-week-by-week",
+   "title": "The sunflower wall, week by week",
+   "date": "2026-08-15T10:00:00",
+   "categories": [
+    "garden-diary",
+    "seasonal-flowers"
+   ],
+   "tags": [
+    "summer",
+    "cut-flowers"
+   ],
+   "featured_media": "sunflower",
+   "content": "<!-- wp:paragraph -->\n<p>In April we sowed a single row of sunflowers along the back wall. By August they were taller than the wall.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:list -->\n<ul class=\"wp-block-list\"><!-- wp:list-item -->\n<li><strong>Week 1</strong>: seed in, netting over to keep the birds off.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li><strong>Week 4</strong>: thinned to one plant every 30 centimetres.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li><strong>Week 10</strong>: first buds, and the first visitors asking about them.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li><strong>Week 16</strong>: in full flower, facing east every morning.</li>\n<!-- /wp:list-item --></ul>\n<!-- /wp:list -->\n\n<!-- wp:paragraph -->\n<p>For cutting, choose the branching varieties: one plant gives a dozen smaller flowers over the summer instead of a single giant head.</p>\n<!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "desert-lessons-from-a-single-saguaro",
+   "title": "Desert lessons from a single saguaro",
+   "date": "2026-03-14T10:00:00",
+   "categories": [
+    "plant-care"
+   ],
+   "tags": [
+    "drought",
+    "houseplants"
+   ],
+   "featured_media": "cactus",
+   "content": "<!-- wp:paragraph -->\n<p>A saguaro may take ten years to grow its first few centimetres and seventy before it grows an arm. It is a good plant to think about when you are tempted to water a cactus on the windowsill every week.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>Desert plants store water and grow slowly. Indoors that means a gritty compost, a pot with a drainage hole, the sunniest spot you have, and water only when the compost is completely dry, which in winter can mean once a month.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:quote -->\n<blockquote class=\"wp-block-quote\"><!-- wp:paragraph -->\n<p>Most cacti that die indoors are loved to death.</p>\n<!-- /wp:paragraph --></blockquote>\n<!-- /wp:quote -->"
+  },
+  {
+   "slug": "hibiscus-that-last-more-than-a-day",
+   "title": "Hibiscus that last more than a day",
+   "date": "2026-07-25T10:00:00",
+   "categories": [
+    "seasonal-flowers"
+   ],
+   "tags": [
+    "summer",
+    "houseplants"
+   ],
+   "featured_media": "hibiscus",
+   "content": "<!-- wp:paragraph -->\n<p>Each hibiscus flower opens for a day or two and then it is done. The trick to a plant that is always in flower is not a longer-lasting bloom, it is more buds.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:image {\"id\":{{media_id:hibiscus}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"{{media:hibiscus}}\" alt=\"A red hibiscus flower\" class=\"wp-image-{{media_id:hibiscus}}\"/></figure>\n<!-- /wp:image -->\n\n<!-- wp:paragraph -->\n<p>Feed every two weeks in summer with a high-potash feed, keep the plant in the brightest spot you have, and do not move it once it has buds: hibiscus drops them at the slightest change.</p>\n<!-- /wp:paragraph -->"
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Home",
+     "page": "home"
+    },
+    {
+     "page": "about"
+    },
+    {
+     "page": "workshops"
+    },
+    {
+     "page": "journal"
+    },
+    {
+     "page": "visit"
+    }
+   ]
+  },
+  {
+   "name": "Footer menu",
+   "location": "footer",
+   "items": [
+    {
+     "category": "seasonal-flowers"
+    },
+    {
+     "category": "plant-care"
+    },
+    {
+     "page": "visit"
+    }
+   ]
+  }
+ ],
+ "customizer": {
+  "color_scheme": "afternoon"
+ }
+}

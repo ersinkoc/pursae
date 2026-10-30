@@ -47,10 +47,14 @@ func (s *Server) wpHead(c *gin.Context, q *siteQuery, lb *links.Builder, adminBa
 		sb.WriteString("<link rel='stylesheet' id='wpgo-brand-css' href='/wp-includes/css/wpgo-brand.css?ver=" + Version + "' media='all' />\n")
 		sb.WriteString("<style id='admin-bar-inline-css'>\n@media screen { html { margin-top: 32px !important; } }\n@media screen and ( max-width: 782px ) { html { margin-top: 46px !important; } }\n</style>\n")
 	}
-	sb.WriteString("<link rel='stylesheet' id='wp-block-library-css' href='/wp-includes/css/dist/block-library/style.min.css' media='all' />\n")
-	sb.WriteString("<style id='wp-block-library-theme-inline-css'>\n" + s.webFile("wp-includes/css/dist/block-library/theme.min.css") + "\n</style>\n")
-	sb.WriteString("<style id='classic-theme-styles-inline-css'>\n" + s.webFile("wp-includes/css/classic-themes.min.css") + "\n</style>\n")
-	sb.WriteString("<style id='global-styles-inline-css'>\n" + s.webFile("wp-includes/css/global-styles-classic.css") + "\n</style>\n")
+	if v.GWE == nil && v.Theme.BlockStyles != nil {
+		sb.WriteString(blockStylesMarker) // the styles of the blocks the page uses (blockStylesFor)
+	} else {
+		sb.WriteString("<link rel='stylesheet' id='wp-block-library-css' href='/wp-includes/css/dist/block-library/style.min.css' media='all' />\n")
+		sb.WriteString("<style id='wp-block-library-theme-inline-css'>\n" + s.webFile("wp-includes/css/dist/block-library/theme.min.css") + "\n</style>\n")
+		sb.WriteString("<style id='classic-theme-styles-inline-css'>\n" + s.webFile("wp-includes/css/classic-themes.min.css") + "\n</style>\n")
+		sb.WriteString("<style id='global-styles-inline-css'>\n" + s.webFile("wp-includes/css/global-styles-classic.css") + "\n</style>\n")
+	}
 	if v.GWE != nil { // Golementor theme parts: Hello Golementor's stylesheet instead of the theme's own assets
 		sb.WriteString(s.helloHead(c, v))
 	} else if v.Theme.Head != nil {

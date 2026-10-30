@@ -1,0 +1,296 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Slow Seasons",
+  "blogdescription": "A magazine for unhurried days",
+  "posts_per_page": 6
+ },
+ "categories": [
+  {
+   "slug": "home-and-garden",
+   "name": "Home & Garden",
+   "description": "Small changes that make a home feel like one."
+  },
+  {
+   "slug": "kitchen",
+   "name": "Kitchen",
+   "description": "Cooking with the season, without fuss."
+  },
+  {
+   "slug": "outdoors",
+   "name": "Outdoors",
+   "description": "Time outside, close to home."
+  },
+  {
+   "slug": "essays",
+   "name": "Essays",
+   "description": "Short pieces on living at a gentler pace."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "herbs",
+   "name": "Herbs"
+  },
+  {
+   "slug": "rituals",
+   "name": "Rituals"
+  },
+  {
+   "slug": "walking",
+   "name": "Walking"
+  },
+  {
+   "slug": "autumn",
+   "name": "Autumn"
+  },
+  {
+   "slug": "summer",
+   "name": "Summer"
+  },
+  {
+   "slug": "letters",
+   "name": "Letters"
+  }
+ ],
+ "media": [
+  {
+   "id": "botany-close",
+   "file": "demo/images/botany-close.webp",
+   "title": "Garden flowers gathered in soft light",
+   "alt": "Garden flowers gathered in soft light"
+  },
+  {
+   "id": "meadow-square",
+   "file": "demo/images/meadow-square.webp",
+   "title": "Wildflowers in a summer meadow",
+   "alt": "Wildflowers in a summer meadow"
+  },
+  {
+   "id": "hibiscus",
+   "file": "demo/images/hibiscus.webp",
+   "title": "A red hibiscus flower",
+   "alt": "A red hibiscus flower"
+  },
+  {
+   "id": "phacelia",
+   "file": "demo/images/phacelia.webp",
+   "title": "Lacy phacelia flower photographed close up",
+   "alt": "Lacy phacelia flower photographed close up"
+  },
+  {
+   "id": "sunflower",
+   "file": "demo/images/sunflower.webp",
+   "title": "A sunflower in late summer",
+   "alt": "A sunflower in late summer"
+  },
+  {
+   "id": "creek",
+   "file": "demo/images/creek.webp",
+   "title": "A creek through grassland",
+   "alt": "A creek through grassland"
+  },
+  {
+   "id": "plant",
+   "file": "demo/images/plant.webp",
+   "title": "Coastal plants in sunlight",
+   "alt": "Coastal plants in sunlight"
+  },
+  {
+   "id": "campanula",
+   "file": "demo/images/campanula.webp",
+   "title": "A bellflower drawn in an old botanical plate",
+   "alt": "A bellflower drawn in an old botanical plate"
+  },
+  {
+   "id": "meadow-wide",
+   "file": "demo/images/meadow-wide.webp",
+   "title": "A meadow seen from the grass",
+   "alt": "A meadow seen from the grass"
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Home",
+   "front_page": true,
+   "template": "page-no-title",
+   "content": "<!-- wp:group {\"align\":\"wide\",\"style\":{\"spacing\":{\"padding\":{\"top\":\"var:preset|spacing|50\",\"bottom\":\"var:preset|spacing|50\"}}},\"layout\":{\"type\":\"constrained\"}} -->\n<div class=\"wp-block-group alignwide\" style=\"padding-top:var(--wp--preset--spacing--50);padding-bottom:var(--wp--preset--spacing--50)\"><!-- wp:columns {\"align\":\"wide\"} -->\n<div class=\"wp-block-columns alignwide\"><!-- wp:column -->\n<div class=\"wp-block-column\"><!-- wp:paragraph {\"fontSize\":\"small\"} -->\n<p class=\"has-small-font-size\">Issue twelve &middot; Late summer</p>\n<!-- /wp:paragraph --><!-- wp:heading {\"level\":1,\"fontSize\":\"xx-large\"} -->\n<h1 class=\"wp-block-heading has-xx-large-font-size\">Unhurried days, well spent</h1>\n<!-- /wp:heading --><!-- wp:paragraph {\"fontSize\":\"large\"} -->\n<p class=\"has-large-font-size\">Slow Seasons is a magazine about the small, good things: herbs on the windowsill, a walk before breakfast, a meal made from whatever the garden gave you today.</p>\n<!-- /wp:paragraph --><!-- wp:buttons -->\n<div class=\"wp-block-buttons\"><!-- wp:button -->\n<div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:stories}}\">Read the latest</a></div>\n<!-- /wp:button --><!-- wp:button {\"className\":\"is-style-outline\"} -->\n<div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:newsletter}}\">Get the newsletter</a></div>\n<!-- /wp:button --></div>\n<!-- /wp:buttons --></div>\n<!-- /wp:column --><!-- wp:column -->\n<div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:botany-close}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"{{media:botany-close}}\" alt=\"Garden flowers gathered in soft light\" class=\"wp-image-{{media_id:botany-close}}\"/></figure>\n<!-- /wp:image --></div>\n<!-- /wp:column --></div>\n<!-- /wp:columns --></div>\n<!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"wide\",\"style\":{\"spacing\":{\"padding\":{\"top\":\"var:preset|spacing|60\",\"bottom\":\"var:preset|spacing|60\"}}},\"layout\":{\"type\":\"constrained\"}} -->\n<div class=\"wp-block-group alignwide\" style=\"padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--60)\"><!-- wp:heading {\"textAlign\":\"center\"} -->\n<h2 class=\"wp-block-heading has-text-align-center\">This season</h2>\n<!-- /wp:heading --><!-- wp:columns {\"align\":\"wide\"} -->\n<div class=\"wp-block-columns alignwide\"><!-- wp:column -->\n<div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:phacelia}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"{{media:phacelia}}\" alt=\"Phacelia flower\" class=\"wp-image-{{media_id:phacelia}}\"/></figure>\n<!-- /wp:image --><!-- wp:heading {\"level\":3,\"fontSize\":\"large\"} -->\n<h3 class=\"wp-block-heading has-large-font-size\"><a href=\"{{post:a-windowsill-herb-garden-in-four-pots}}\">A windowsill herb garden</a></h3>\n<!-- /wp:heading --><!-- wp:paragraph -->\n<p>Four pots, one sunny ledge and fresh herbs all year.</p>\n<!-- /wp:paragraph --><!-- wp:paragraph {\"fontSize\":\"small\"} -->\n<p class=\"has-small-font-size\"><a href=\"{{post:a-windowsill-herb-garden-in-four-pots}}\">Read &rarr;</a></p>\n<!-- /wp:paragraph --></div>\n<!-- /wp:column --><!-- wp:column -->\n<div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:sunflower}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"{{media:sunflower}}\" alt=\"Sunflower\" class=\"wp-image-{{media_id:sunflower}}\"/></figure>\n<!-- /wp:image --><!-- wp:heading {\"level\":3,\"fontSize\":\"large\"} -->\n<h3 class=\"wp-block-heading has-large-font-size\"><a href=\"{{post:cooking-with-what-the-garden-gives-you-in-august}}\">Cooking with August</a></h3>\n<!-- /wp:heading --><!-- wp:paragraph -->\n<p>What to make when the garden gives you everything at once.</p>\n<!-- /wp:paragraph --><!-- wp:paragraph {\"fontSize\":\"small\"} -->\n<p class=\"has-small-font-size\"><a href=\"{{post:cooking-with-what-the-garden-gives-you-in-august}}\">Read &rarr;</a></p>\n<!-- /wp:paragraph --></div>\n<!-- /wp:column --><!-- wp:column -->\n<div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:creek}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"{{media:creek}}\" alt=\"A creek\" class=\"wp-image-{{media_id:creek}}\"/></figure>\n<!-- /wp:image --><!-- wp:heading {\"level\":3,\"fontSize\":\"large\"} -->\n<h3 class=\"wp-block-heading has-large-font-size\"><a href=\"{{post:walk-the-same-path-every-day-for-a-month}}\">The same path, every day</a></h3>\n<!-- /wp:heading --><!-- wp:paragraph -->\n<p>A month-long walking experiment, and what it taught us.</p>\n<!-- /wp:paragraph --><!-- wp:paragraph {\"fontSize\":\"small\"} -->\n<p class=\"has-small-font-size\"><a href=\"{{post:walk-the-same-path-every-day-for-a-month}}\">Read &rarr;</a></p>\n<!-- /wp:paragraph --></div>\n<!-- /wp:column --></div>\n<!-- /wp:columns --></div>\n<!-- /wp:group -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"is-style-section-1\",\"style\":{\"spacing\":{\"padding\":{\"top\":\"var:preset|spacing|60\",\"bottom\":\"var:preset|spacing|60\",\"left\":\"var:preset|spacing|50\",\"right\":\"var:preset|spacing|50\"}}},\"layout\":{\"type\":\"constrained\"}} -->\n<div class=\"wp-block-group alignfull is-style-section-1\" style=\"padding-top:var(--wp--preset--spacing--60);padding-right:var(--wp--preset--spacing--50);padding-bottom:var(--wp--preset--spacing--60);padding-left:var(--wp--preset--spacing--50)\"><!-- wp:quote -->\n<blockquote class=\"wp-block-quote\"><!-- wp:paragraph -->\n<p>Nature does not hurry, yet everything is accomplished.</p>\n<!-- /wp:paragraph --><cite>Lao Tzu</cite></blockquote>\n<!-- /wp:quote --></div>\n<!-- /wp:group -->\n\n<!-- wp:group {\"style\":{\"spacing\":{\"padding\":{\"top\":\"var:preset|spacing|60\",\"bottom\":\"var:preset|spacing|60\"}}},\"layout\":{\"type\":\"constrained\"}} -->\n<div class=\"wp-block-group\" style=\"padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--60)\"><!-- wp:heading -->\n<h2 class=\"wp-block-heading\">Recent stories</h2>\n<!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":4,\"displayPostDate\":true,\"align\":\"wide\"} /--></div>\n<!-- /wp:group -->"
+  },
+  {
+   "slug": "stories",
+   "title": "Stories",
+   "posts_page": true,
+   "content": ""
+  },
+  {
+   "slug": "about",
+   "title": "About",
+   "featured_media": "meadow-wide",
+   "content": "<!-- wp:paragraph {\"fontSize\":\"large\"} -->\n<p class=\"has-large-font-size\">Slow Seasons is written by a small group of friends who share a belief that a good life is mostly made of ordinary days, and that ordinary days deserve a little care.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>We write about homes, gardens, kitchens and the outdoors, always close to where we live, and always in season. There are no affiliate links here and nothing to buy. Just ideas to borrow.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:heading -->\n<h2 class=\"wp-block-heading\">Write for us</h2>\n<!-- /wp:heading -->\n\n<!-- wp:paragraph -->\n<p>We publish occasional essays from readers. If you have a short piece about slowing down, we would love to read it: send it to <a href=\"mailto:editors@example.com\">editors@example.com</a>.</p>\n<!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "newsletter",
+   "title": "Newsletter",
+   "content": "<!-- wp:paragraph {\"fontSize\":\"large\"} -->\n<p class=\"has-large-font-size\">Once a month, on the first Sunday, we send a short letter: one essay, one recipe, one thing to notice outside this month. No adverts, ever.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>To subscribe, send an empty message to <a href=\"mailto:letters@example.com\">letters@example.com</a> with &ldquo;subscribe&rdquo; in the subject. You can leave just as easily, whenever you like.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:image {\"id\":{{media_id:campanula}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"{{media:campanula}}\" alt=\"A bellflower drawn in an old botanical plate\" class=\"wp-image-{{media_id:campanula}}\"/><figcaption class=\"wp-element-caption\">Every letter comes with a plate from an old botanical book.</figcaption></figure>\n<!-- /wp:image -->"
+  }
+ ],
+ "posts": [
+  {
+   "slug": "a-windowsill-herb-garden-in-four-pots",
+   "title": "A windowsill herb garden in four pots",
+   "date": "2026-04-05T09:00:00",
+   "categories": [
+    "home-and-garden",
+    "kitchen"
+   ],
+   "tags": [
+    "herbs"
+   ],
+   "featured_media": "phacelia",
+   "content": "<!-- wp:paragraph -->\n<p>You do not need a garden to grow herbs, just a bright windowsill and four pots. These four give the most flavour for the least trouble.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:list {\"ordered\":true} -->\n<ol class=\"wp-block-list\"><!-- wp:list-item -->\n<li><strong>Chives</strong>: snip often and they keep coming. Their purple flowers are edible too.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li><strong>Thyme</strong>: likes it dry. Water sparingly and give it the sunniest spot.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li><strong>Mint</strong>: always in its own pot, or it takes over. Keep it moist.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li><strong>Parsley</strong>: slow to start, generous once it gets going.</li>\n<!-- /wp:list-item --></ol>\n<!-- /wp:list -->\n\n<!-- wp:paragraph -->\n<p>Turn the pots every week so they grow evenly, and pick from the top to keep them bushy. A few leaves a day changes how a kitchen smells.</p>\n<!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Elif",
+     "content": "Started with chives and mint after reading this. Two months in, I cannot imagine cooking without them.",
+     "date": "2026-06-02T19:10:00"
+    }
+   ]
+  },
+  {
+   "slug": "the-case-for-an-unscheduled-sunday",
+   "title": "The case for an unscheduled Sunday",
+   "date": "2026-03-22T08:00:00",
+   "categories": [
+    "essays"
+   ],
+   "tags": [
+    "rituals"
+   ],
+   "featured_media": "meadow-square",
+   "content": "<!-- wp:paragraph -->\n<p>For a year we kept one day a week free of plans. Not free of activity: we still cooked, walked, read and met friends. Free of plans.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>The difference was in the deciding. On a planned day, you move from one thing to the next. On an unplanned day, you notice that the light is good and go out in it, or that the soup needs another hour and give it one.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:quote -->\n<blockquote class=\"wp-block-quote\"><!-- wp:paragraph -->\n<p>A day with nothing in it fills itself with exactly the right things.</p>\n<!-- /wp:paragraph --></blockquote>\n<!-- /wp:quote -->\n\n<!-- wp:paragraph -->\n<p>It does not have to be Sunday, or a whole day. Try one afternoon a week with nothing written down, and see what grows in the space.</p>\n<!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "cooking-with-what-the-garden-gives-you-in-august",
+   "title": "Cooking with what the garden gives you in August",
+   "date": "2026-08-23T12:00:00",
+   "categories": [
+    "kitchen"
+   ],
+   "tags": [
+    "summer"
+   ],
+   "featured_media": "sunflower",
+   "content": "<!-- wp:paragraph -->\n<p>August in the garden is generous to the point of rudeness. Courgettes appear overnight. The beans need picking twice a day. Everyone has tomatoes.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:heading -->\n<h2 class=\"wp-block-heading\">Three things we make all month</h2>\n<!-- /wp:heading -->\n\n<!-- wp:list -->\n<ul class=\"wp-block-list\"><!-- wp:list-item -->\n<li><strong>A tray of roasted everything</strong>: tomatoes, courgettes, onions and garlic, olive oil, a hot oven, an hour. Eat it warm, cold, on toast or blended into soup.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li><strong>Quick pickles</strong>: thin slices of cucumber or courgette in vinegar, sugar and salt, ready in an hour.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li><strong>Green sauce</strong>: every soft herb in the garden, chopped with capers, lemon and oil.</li>\n<!-- /wp:list-item --></ul>\n<!-- /wp:list -->\n\n<!-- wp:paragraph -->\n<p>None of these need a recipe, only a willingness to use what is there.</p>\n<!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "learning-the-names-of-ten-plants-on-your-street",
+   "title": "Learning the names of ten plants on your street",
+   "date": "2026-05-10T10:00:00",
+   "categories": [
+    "outdoors",
+    "essays"
+   ],
+   "tags": [
+    "walking"
+   ],
+   "featured_media": "plant",
+   "content": "<!-- wp:paragraph -->\n<p>Most of us walk past hundreds of plants a day without knowing a single name. Learning just ten changes the walk completely.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>Start with what is common: the tree outside your door, the weed between the paving stones, the shrub in the neighbour&rsquo;s hedge. Take a photograph, look it up, say the name out loud the next time you pass.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>After ten, you start noticing the eleventh without trying. The street becomes a place of acquaintances, which is a small, real kind of happiness.</p>\n<!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "walk-the-same-path-every-day-for-a-month",
+   "title": "Walk the same path every day for a month",
+   "date": "2026-06-20T07:00:00",
+   "categories": [
+    "outdoors"
+   ],
+   "tags": [
+    "walking",
+    "rituals"
+   ],
+   "featured_media": "creek",
+   "content": "<!-- wp:paragraph -->\n<p>In June, one of us walked the same twenty-minute path along a creek every morning. Same route, same time, no headphones.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>The first week was boring. The second week, things began to stand out: a heron that was always on the same stone, a patch of flowers opening a little more each day. By the fourth week the walk felt less like exercise and more like reading a story in daily instalments.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:quote -->\n<blockquote class=\"wp-block-quote\"><!-- wp:paragraph -->\n<p>You cannot step into the same river twice, but you can walk beside it every day and watch it change.</p>\n<!-- /wp:paragraph --></blockquote>\n<!-- /wp:quote -->"
+  },
+  {
+   "slug": "drying-flowers-for-winter",
+   "title": "Drying flowers for winter",
+   "date": "2026-09-27T10:00:00",
+   "categories": [
+    "home-and-garden"
+   ],
+   "tags": [
+    "autumn"
+   ],
+   "featured_media": "botany-close",
+   "content": "<!-- wp:paragraph -->\n<p>Late summer is the time to cut flowers for drying, while they are at their best and before the autumn damp arrives.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:list {\"ordered\":true} -->\n<ol class=\"wp-block-list\"><!-- wp:list-item -->\n<li>Cut on a dry day, after the morning dew has gone.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>Strip the lower leaves and tie the stems in small bunches.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>Hang them upside down somewhere dark, dry and airy.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>Leave them for two to three weeks, until the stems snap cleanly.</li>\n<!-- /wp:list-item --></ol>\n<!-- /wp:list -->\n\n<!-- wp:paragraph -->\n<p>Statice, strawflowers, lavender, grasses and seed heads all dry well. A jar of them on the table in January is a small promise that summer will come back.</p>\n<!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "letters-not-notifications",
+   "title": "Letters, not notifications",
+   "date": "2026-10-11T09:00:00",
+   "categories": [
+    "essays"
+   ],
+   "tags": [
+    "letters",
+    "rituals"
+   ],
+   "featured_media": "hibiscus",
+   "content": "<!-- wp:paragraph -->\n<p>A notification asks for your attention now. A letter waits until you are ready.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>This autumn we started writing to friends again, on paper, once a month. The letters are short and nothing much happens in them: what is flowering, what we cooked, a book we liked. The replies arrive weeks later, and they are the best post we get.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>If you try it, do not aim for eloquence. Aim for regular. A postcard every month is worth more than a beautiful letter you never send.</p>\n<!-- /wp:paragraph -->"
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Home",
+     "page": "home"
+    },
+    {
+     "page": "stories"
+    },
+    {
+     "title": "Sections",
+     "url": "#",
+     "children": [
+      {
+       "category": "home-and-garden"
+      },
+      {
+       "category": "kitchen"
+      },
+      {
+       "category": "outdoors"
+      },
+      {
+       "category": "essays"
+      }
+     ]
+    },
+    {
+     "page": "about"
+    },
+    {
+     "page": "newsletter"
+    }
+   ]
+  },
+  {
+   "name": "Footer menu",
+   "location": "footer",
+   "items": [
+    {
+     "page": "about"
+    },
+    {
+     "page": "newsletter"
+    }
+   ]
+  }
+ ],
+ "customizer": {
+  "color_scheme": "morning"
+ }
+}

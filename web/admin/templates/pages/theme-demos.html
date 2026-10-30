@@ -1,0 +1,37 @@
+{{define "admin/theme-demos"}}{{template "admin-header" .}}{{with .Data}}
+<style>
+.wpgo-demo-sets{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:24px;margin-top:20px;max-width:1400px}
+.wpgo-demo-set{background:#fff;border:1px solid #dcdcde;box-shadow:0 1px 1px rgba(0,0,0,.04);display:flex;flex-direction:column}
+.wpgo-demo-set.is-imported{border-color:#2271b1;box-shadow:0 0 0 1px #2271b1}
+.wpgo-demo-set img{display:block;width:100%;height:auto;aspect-ratio:3/2;object-fit:cover;background:#f6f7f7;border-bottom:1px solid #dcdcde}
+.wpgo-demo-set .inner{padding:14px 16px 16px;display:flex;flex-direction:column;gap:8px;flex:1}
+.wpgo-demo-set h2{margin:0;font-size:15px}
+.wpgo-demo-set p{margin:0;color:#50575e}
+.wpgo-demo-set .actions{margin-top:auto;padding-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.wpgo-demo-set .current{color:#2271b1;font-weight:600}
+.wpgo-demo-intro{max-width:760px}
+</style>
+<div class="wrap">
+	<h1 class="wp-heading-inline">Import Demo Content</h1>
+	<a href="{{.ThemesURL}}" class="page-title-action">Back to Themes</a>
+	<hr class="wp-header-end">
+{{template "notices" $}}
+	<p class="wpgo-demo-intro"><span translate="no">{{.Theme.Name}}</span> comes with ready-made sites. Pick one to fill your site with its homepage, pages, posts, images, categories, tags and menu, and its color scheme. Importing another one later replaces it, and Remove takes it away and restores your previous settings. Your own posts and pages are never touched.</p>
+	{{if .Imported}}<p>On your site now: <strong translate="no">{{.Imported}}</strong>.</p>{{end}}
+	<div class="wpgo-demo-sets">
+	{{range .Sets}}<div class="wpgo-demo-set{{if .Imported}} is-imported{{end}}" data-demo="{{.Slug}}">
+		<img src="{{.ImageURL}}" alt="" width="600" height="400" loading="lazy" decoding="async" />
+		<div class="inner">
+			<h2 translate="no">{{.Name}}</h2>
+			<p>{{.Description}}</p>
+			<div class="actions">
+			{{if .Imported}}<span class="current">Imported</span>
+				<a class="button button-compact wpgo-import-demo" href="{{.ImportURL}}">Import again</a>
+				<a class="button button-compact wpgo-remove-demo" href="{{.RemoveURL}}" onclick="return window.confirm( 'Remove the demo content? The pages, posts, images, categories, tags and menus it added are deleted permanently, and the settings it changed get their previous values back.' );">Remove</a>
+			{{else if $.Data.Active}}<a class="button button-primary wpgo-import-demo" href="{{.ImportURL}}"{{if $.Data.Imported}} onclick="return window.confirm( 'Replace the demo content on your site with this one?' );"{{end}}>Import</a>{{end}}
+			</div>
+		</div>
+	</div>{{end}}
+	</div>
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}

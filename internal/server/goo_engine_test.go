@@ -469,8 +469,9 @@ func termFor(tax, name string) *store.Term {
 
 // Store shortcodes placed in a block widget (a Shortcode block in the sidebar) render on every page.
 func TestGooBlockWidgetShortcodes(t *testing.T) {
-	base, _, srv := gooSite(t)
+	base, c, srv := gooSite(t)
 	ctx := context.Background()
+	installLibraryTheme(t, c, base, "inkwell", true) // a theme with a sidebar (the default theme has none)
 	theme := srv.activeTheme().Slug
 	area, err := srv.store.EnsureWidgetArea(ctx, theme, "sidebar-1", "Sidebar")
 	if err != nil {

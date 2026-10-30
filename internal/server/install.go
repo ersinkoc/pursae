@@ -138,7 +138,7 @@ func (s *Server) install(ctx context.Context, v installView) error {
 			userID, strings.ReplaceAll(privacyPolicyContent, "SITE_URL", site)).Scan(&privacyID); err != nil {
 			return err
 		}
-		if _, err := tx.Exec(ctx, `INSERT INTO themes(slug, version, status) VALUES ('twentysixteen', '3.9', 'active') ON CONFLICT DO NOTHING`); err != nil {
+		if _, err := tx.Exec(ctx, `INSERT INTO themes(slug, version, status) VALUES ($1, $2, 'active') ON CONFLICT DO NOTHING`, defaultTheme, tt5Version); err != nil {
 			return err
 		}
 		_ = pageID
@@ -148,7 +148,9 @@ func (s *Server) install(ctx context.Context, v installView) error {
 		return err
 	}
 
-	// Default widgets of a fresh install: block widgets in sidebar-1.
+	// Default widgets of a fresh install: block widgets in sidebar-1, as wp_install_defaults() stores
+	// them whatever the theme. The default theme shows no widgets; a theme with a sidebar-1 area
+	// gets them when it is activated (ensureThemeWidgets).
 	if err := s.seedWidgets(ctx); err != nil {
 		return err
 	}
@@ -168,14 +170,8 @@ func (s *Server) install(ctx context.Context, v installView) error {
 }
 
 func (s *Server) seedWidgets(ctx context.Context) error {
-	area, err := s.store.EnsureWidgetArea(ctx, "twentysixteen", "sidebar-1", "Sidebar")
+	area, err := s.store.EnsureWidgetArea(ctx, defaultTheme, "sidebar-1", "Sidebar")
 	if err != nil {
-		return err
-	}
-	if _, err := s.store.EnsureWidgetArea(ctx, "twentysixteen", "sidebar-2", "Content Bottom 1"); err != nil {
-		return err
-	}
-	if _, err := s.store.EnsureWidgetArea(ctx, "twentysixteen", "sidebar-3", "Content Bottom 2"); err != nil {
 		return err
 	}
 	defaults := []string{

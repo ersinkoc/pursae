@@ -29,7 +29,7 @@ func TestThemeFileEditor(t *testing.T) {
 	nonceRe := regexp.MustCompile(`id="nonce" name="nonce" value="([^"]+)"`)
 	editor := func(file string) (nonce, body string) {
 		t.Helper()
-		code, body, _ := get(t, c, base+"/wp-admin/theme-editor?theme=twentysixteen&file="+url.QueryEscape(file))
+		code, body, _ := get(t, c, base+"/wp-admin/theme-editor?theme=twentytwentyfive&file="+url.QueryEscape(file))
 		if code != http.StatusOK || strings.Contains(body, "Template error") {
 			t.Fatalf("editor %s: %d", file, code)
 		}
@@ -42,7 +42,7 @@ func TestThemeFileEditor(t *testing.T) {
 	save := func(file, nonce, content string) (bool, string) {
 		t.Helper()
 		_, body, _ := post(t, c, base+"/wp-admin/admin-ajax", url.Values{
-			"action": {"edit-theme-plugin-file"}, "nonce": {nonce}, "theme": {"twentysixteen"}, "file": {file}, "newcontent": {content},
+			"action": {"edit-theme-plugin-file"}, "nonce": {nonce}, "theme": {"twentytwentyfive"}, "file": {file}, "newcontent": {content},
 		})
 		var out struct {
 			Success bool
@@ -61,7 +61,7 @@ func TestThemeFileEditor(t *testing.T) {
 		}
 		return body
 	}
-	orig, err := os.ReadFile("../../web/themes/twentysixteen/templates/header.html")
+	orig, err := os.ReadFile("../../web/themes/twentytwentyfive/templates/header.html")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -81,7 +81,7 @@ func TestThemeFileEditor(t *testing.T) {
 	if !strings.Contains(front(), "Skip to the edited content") {
 		t.Fatal("edited template not rendered")
 	}
-	if _, err := os.Stat(filepath.Join(dir, "twentysixteen", "templates", "header.html")); err != nil {
+	if _, err := os.Stat(filepath.Join(dir, "twentytwentyfive", "templates", "header.html")); err != nil {
 		t.Fatalf("edited copy not stored: %v", err)
 	}
 
@@ -100,11 +100,11 @@ func TestThemeFileEditor(t *testing.T) {
 
 	// Stylesheets are served from the edited copy.
 	cssNonce, _ := editor("style.css")
-	css, _ := os.ReadFile("../../web/themes/twentysixteen/assets/style.css")
+	css, _ := os.ReadFile("../../web/themes/twentytwentyfive/assets/style.css")
 	if ok, code := save("style.css", cssNonce, string(css)+"\n/* wpgo-edited */\n"); !ok {
 		t.Fatalf("save style.css: %s", code)
 	}
-	if _, body, _ := get(t, c, base+"/wp-content/themes/twentysixteen/style.css"); !strings.HasSuffix(body, "/* wpgo-edited */\n") {
+	if _, body, _ := get(t, c, base+"/wp-content/themes/twentytwentyfive/style.css"); !strings.HasSuffix(body, "/* wpgo-edited */\n") {
 		t.Fatal("edited style.css not served")
 	}
 
@@ -125,7 +125,7 @@ func TestThemeFileEditor(t *testing.T) {
 	if strings.Contains(front(), "Skip to the edited content") {
 		t.Fatal("restored template still edited")
 	}
-	if _, err := os.Stat(filepath.Join(dir, "twentysixteen", "templates", "header.html")); !os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(dir, "twentytwentyfive", "templates", "header.html")); !os.IsNotExist(err) {
 		t.Fatalf("edited copy still stored: %v", err)
 	}
 }

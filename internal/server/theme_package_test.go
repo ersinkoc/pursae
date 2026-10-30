@@ -292,7 +292,7 @@ func TestThemePackageInstallActivateDelete(t *testing.T) {
 	}
 	code, body, _ = get(t, c, base+"/wp-admin/theme-install?browse=uploaded")
 	must("uploaded tab", code, http.StatusOK, body)
-	if !strings.Contains(body, `data-slug="starter"`) || strings.Contains(body, `data-slug="twentysixteen"`) {
+	if !strings.Contains(body, `data-slug="starter"`) || strings.Contains(body, `data-slug="twentytwentyfive"`) {
 		t.Fatal("uploaded tab lists the wrong themes")
 	}
 
@@ -444,7 +444,7 @@ func TestThemePackageInstallActivateDelete(t *testing.T) {
 	if code, _, _ := get(t, c, base+"/wp-admin/themes?action=delete&stylesheet=starter&_wpnonce="+"deadbeef"); code == http.StatusFound {
 		t.Fatal("deleting with a bad nonce succeeded")
 	}
-	activate("twentysixteen")
+	activate("twentytwentyfive")
 	del := deleteURL()
 	if del == "" {
 		t.Fatal("no Delete action for the inactive package")
@@ -474,10 +474,12 @@ func TestThemePackageInstallActivateDelete(t *testing.T) {
 // Every inactive theme can be deleted from Appearance › Themes, as in WordPress. A bundled theme's
 // edited files go and it leaves the list; Add Themes offers it again and Install brings it back.
 func TestDeleteBundledThemeAndReinstall(t *testing.T) {
+	t.Setenv("WPGO_THEMES_DIR", t.TempDir())
 	ts, c, srv := testServerBuilderOff(t)
 	base := ts.URL
 	installAndLogin(t, ts, c)
-	edited := filepath.Join(themeOverrideDir(srv.cfg.UploadsDir), "classic", "assets")
+	installLibraryTheme(t, c, base, "inkwell", true) // the default theme is inactive now
+	edited := filepath.Join(themeOverrideDir(srv.cfg.UploadsDir), "twentytwentyfive", "assets")
 	if err := os.MkdirAll(edited, 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -485,9 +487,9 @@ func TestDeleteBundledThemeAndReinstall(t *testing.T) {
 
 	_, body, _ := get(t, c, base+"/wp-admin/themes")
 	body = strings.ReplaceAll(body, "\\"+"u0026", "&") // the theme data is JSON in a script
-	m := regexp.MustCompile(`/wp-admin/themes\?action=delete&stylesheet=classic&_wpnonce=[0-9a-f]+`).FindString(body)
+	m := regexp.MustCompile(`/wp-admin/themes\?action=delete&stylesheet=twentytwentyfive&_wpnonce=[0-9a-f]+`).FindString(body)
 	if m == "" {
-		t.Fatal("no Delete action for the inactive Classic theme")
+		t.Fatal("no Delete action for the inactive Twenty Twenty-Five")
 	}
 	if regexp.MustCompile(`action=delete&stylesheet=` + srv.activeTheme().Slug + `&`).MatchString(body) {
 		t.Error("the active theme offers Delete")
@@ -495,22 +497,25 @@ func TestDeleteBundledThemeAndReinstall(t *testing.T) {
 	if code, _, loc := get(t, c, base+m); code != http.StatusFound || !strings.Contains(loc, "deleted=true") {
 		t.Fatalf("delete: %d %s", code, loc)
 	}
-	if _, err := os.Stat(filepath.Join(themeOverrideDir(srv.cfg.UploadsDir), "classic")); !os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(themeOverrideDir(srv.cfg.UploadsDir), "twentytwentyfive")); !os.IsNotExist(err) {
 		t.Error("the edited files of the deleted theme are still on disk")
 	}
-	if srv.installedTheme("classic") != nil {
+	if srv.installedTheme("twentytwentyfive") != nil {
 		t.Error("the deleted theme is still installed")
 	}
 	_, body, _ = get(t, c, base+"/wp-admin/themes")
-	if strings.Contains(body, `"id":"classic"`) {
+	if strings.Contains(body, `"id":"twentytwentyfive"`) {
 		t.Error("the Themes screen still lists the deleted theme")
 	}
 	_, body, _ = get(t, c, base+"/wp-admin/theme-install?browse=bundled")
-	im := regexp.MustCompile(`href="(/wp-admin/theme-install\?action=install-theme&amp;theme=classic[^"]*)"`).FindStringSubmatch(body)
+	im := regexp.MustCompile(`href="(/wp-admin/theme-install\?action=install-theme&amp;theme=twentytwentyfive[^"]*)"`).FindStringSubmatch(body)
 	if im == nil {
 		t.Fatal("Add Themes does not offer the deleted theme")
 	}
-	if code, _, _ := get(t, c, base+strings.ReplaceAll(im[1], "&amp;", "&")); code != http.StatusFound || srv.installedTheme("classic") == nil {
+	if code, _, _ := get(t, c, base+strings.ReplaceAll(im[1], "&amp;", "&")); code != http.StatusFound || srv.installedTheme("twentytwentyfive") == nil {
 		t.Error("Install did not bring the theme back")
+	}
+	if code, body, _ := get(t, c, base+"/"); code != http.StatusOK || !strings.Contains(body, "wp-theme-inkwell") {
+		t.Errorf("front page after deleting the default theme: %d", code)
 	}
 }

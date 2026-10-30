@@ -29,9 +29,6 @@ func (s *Server) gweCommentsHTML(c *gin.Context, p *store.Post, lb *links.Builde
 		theme = view.Theme
 	}
 	shell := view != nil && view.GWE != nil
-	if theme != nil && theme.Slug == "twentytwenty" && !shell {
-		return string(s.twentyTwentyComments(c, p, lb, u))
-	}
 	cv := s.commentsView(c, p, lb, u)
 	if cv == nil {
 		return ""

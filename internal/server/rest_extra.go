@@ -28,7 +28,7 @@ func loadPatterns() {
 	patternsOnce.Do(func() { _ = json.Unmarshal(blockPatternsJSON, &patternData) })
 }
 
-// corePatterns are WordPress' bundled block patterns plus Twenty Sixteen's own.
+// corePatterns are WordPress' bundled block patterns.
 func corePatterns() []map[string]any {
 	loadPatterns()
 	return patternData.Patterns

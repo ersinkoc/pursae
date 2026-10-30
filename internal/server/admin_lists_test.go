@@ -300,7 +300,7 @@ func TestCommentsReplyQuickEditAndDashboard(t *testing.T) {
 	// Dashboard: the activity Edit link opens comment.php, the theme name is the active theme and
 	// Site Health Status is scored.
 	_, body, _ = get(t, c, base+"/wp-admin/")
-	if !strings.Contains(body, `href="/wp-admin/comment?action=editcomment&amp;c=`) || !strings.Contains(body, `running <a href="/wp-admin/themes">Twenty Sixteen</a> theme.`) {
+	if !strings.Contains(body, `href="/wp-admin/comment?action=editcomment&amp;c=`) || !strings.Contains(body, `running <a href="/wp-admin/themes">Twenty Twenty-Five</a> theme.`) {
 		t.Errorf("dashboard activity Edit link or theme name wrong")
 	}
 	if !regexp.MustCompile(`site-health-progress-wrapper (green|orange) hide-if-no-js`).MatchString(body) || !strings.Contains(body, `stroke-dashoffset="`) ||
@@ -444,26 +444,23 @@ func TestRevisionsAndEditorMetaboxes(t *testing.T) {
 		t.Errorf("metabox state not applied")
 	}
 
-	// Page Attributes: the Template select lists the active theme's page templates (Twenty Twenty has one).
-	_, themes, _ := get(t, c, base+"/wp-admin/themes")
-	activate := strings.ReplaceAll(attr(t, themes, `href="(/wp-admin/themes\?action=activate&amp;stylesheet=twentytwenty&amp;_wpnonce=[^"]+)"`), "&amp;", "&")
-	get(t, c, base+activate)
-	pageID := editorPost(t, c, base, "page", "Wide", "Wide page.", url.Values{"page_template": {"templates/template-full-width.php"}})
+	// Page Attributes: the Template select lists the active theme's page templates (Twenty Twenty-Five has one).
+	pageID := editorPost(t, c, base, "page", "Wide", "Wide page.", url.Values{"page_template": {"page-no-title"}})
 	var tpl string
 	_ = pool.QueryRow(ctx, `SELECT meta->>'_wp_page_template' FROM posts WHERE id = $1`, pageID).Scan(&tpl)
-	if tpl != "templates/template-full-width.php" {
+	if tpl != "page-no-title" {
 		t.Errorf("page template = %q", tpl)
 	}
 	_, body, _ = get(t, c, base+"/wp-admin/post?post="+pageID+"&action=edit")
-	if !strings.Contains(body, `<select name="page_template" id="page_template">`) || !strings.Contains(body, `<option value="templates/template-full-width.php" selected="selected">Full Width Template</option>`) {
+	if !strings.Contains(body, `<select name="page_template" id="page_template">`) || !strings.Contains(body, `<option value="page-no-title" selected="selected">Page No Title</option>`) {
 		t.Errorf("template select missing")
 	}
 	_, body, _ = get(t, c, base+"/wp-admin/edit?post_type=page")
-	if !strings.Contains(body, `<div class="page_template">templates/template-full-width.php</div>`) || !strings.Contains(body, `<select name="page_template">`) {
+	if !strings.Contains(body, `<div class="page_template">page-no-title</div>`) || !strings.Contains(body, `<select name="page_template">`) {
 		t.Errorf("page list quick edit lacks the template")
 	}
 	_, body, _ = get(t, c, base+"/wp-admin/")
-	if !strings.Contains(body, `running <a href="/wp-admin/themes">Twenty Twenty</a> theme.`) {
+	if !strings.Contains(body, `running <a href="/wp-admin/themes">Twenty Twenty-Five</a> theme.`) {
 		t.Errorf("dashboard does not name the active theme")
 	}
 }

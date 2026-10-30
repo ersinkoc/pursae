@@ -106,7 +106,7 @@ func (s *Server) widgetsEditorSettings(c *gin.Context, categories []map[string]a
 			{"slug": "large", "name": "Large"}, {"slug": "full", "name": "Full Size"}},
 		"maxUploadFileSize":                maxUploadBytes,
 		"__unstableGalleryWithImageBlocks": true,
-		"__experimentalFeatures":           editorFeatures(theme.Palette),
+		"__experimentalFeatures":           editorFeatures(theme),
 		"colors":                           theme.Palette,
 		"disableCustomColors":              false, "disableCustomFontSizes": false, "disableCustomGradients": false,
 		"disableLayoutStyles": false, "enableCustomLineHeight": true, "enableCustomSpacing": false, "enableCustomUnits": true,

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"html"
 	"html/template"
+	"log"
 	"net/http"
 	"net/url"
 	"sort"
@@ -44,10 +45,21 @@ type Theme struct {
 	PreloadFonts []string
 	// Supports lists add_theme_support() features reported to the block editor (REST themes endpoint).
 	Supports map[string]any
+	// BlockStyles switches core's block styles to per-block loading (like a block theme with
+	// should_load_separate_core_block_assets): wp_head no longer prints the whole block library, the
+	// classic theme styles and the classic global styles; the core styles of the blocks a page uses
+	// are inlined instead (blockStylesFor), except these blocks, which the theme's own stylesheet
+	// carries. nil keeps the classic behaviour.
+	BlockStyles []string
+	// Settings are theme.json's settings (a theme with theme.json): the block editor gets its presets
+	// and layout sizes, and EditorGlobalStyles (a stylesheet under assets/) as its global styles,
+	// instead of a classic theme's 840px column and core's classic global styles.
+	Settings           map[string]any
+	EditorGlobalStyles string
 	// Templates are the theme's page templates (file => "Template Name" header), get_page_templates().
 	Templates map[string]string
 
-	// HeadTop is printed first in wp_head (hooks at priority 0, e.g. Twenty Sixteen's no-js swap).
+	// HeadTop is printed first in wp_head (hooks at priority 0, e.g. a no-js class swap).
 	HeadTop string
 	// Head prints the theme's enqueued styles and scripts in wp_head, after core's block styles.
 	Head func(s *Server, c *gin.Context, v *siteView) string
@@ -57,6 +69,9 @@ type Theme struct {
 	Prepare func(s *Server, c *gin.Context, v *siteView)
 	// BodyClasses adds the theme's body_class filter output.
 	BodyClasses func(s *Server, v *siteView) []string
+
+	// Demos are a bundled theme's demo content sets (theme_demo_sets.go).
+	Demos []themeDemoSet
 
 	// Package is set for a theme installed as a package (theme_package.go): its manifest and directory.
 	Package *themePackage
@@ -184,7 +199,7 @@ func czSpecFor(t *Theme) *czThemeSpec {
 }
 
 // defaultTheme is WP_DEFAULT_THEME.
-const defaultTheme = "twentysixteen"
+const defaultTheme = "twentytwentyfive"
 
 // activeTheme is the theme in the stylesheet option, falling back to the default theme (also for
 // Hello Golementor and saved themes while Golementor is off).
@@ -193,6 +208,31 @@ func (s *Server) activeTheme() *Theme {
 		return t
 	}
 	return themeBySlug(defaultTheme)
+}
+
+// removedThemes are the bundled themes earlier versions shipped (Twenty Sixteen was the default).
+var removedThemes = map[string]bool{"twentysixteen": true, "twentyseventeen": true, "twentytwenty": true, "twentytwentyone": true, "classic": true}
+
+// migrateRemovedThemes moves a site whose active theme was one of the removed bundled themes to the
+// default theme (activeTheme already falls back to it; this keeps the options and Themes screen
+// consistent). Theme mods and widgets of the old theme are left in place.
+func (s *Server) migrateRemovedThemes(ctx context.Context) {
+	if !removedThemes[s.settings.String("stylesheet")] || s.installedTheme(s.settings.String("stylesheet")) != nil {
+		return
+	}
+	t := themeBySlug(defaultTheme)
+	if _, err := s.store.Pool.Exec(ctx, `UPDATE themes SET status = 'inactive' WHERE status = 'active'`); err != nil {
+		log.Printf("themes: leaving a removed theme: %v", err)
+		return
+	}
+	if _, err := s.store.Pool.Exec(ctx, `INSERT INTO themes (slug, version, status) VALUES ($1, $2, 'active')
+		ON CONFLICT (slug) DO UPDATE SET status = 'active', version = EXCLUDED.version`, t.Slug, t.Version); err != nil {
+		log.Printf("themes: activating %s: %v", t.Slug, err)
+		return
+	}
+	if err := s.settings.Set(ctx, map[string]any{"template": t.Slug, "stylesheet": t.Slug, "current_theme": t.Name}); err != nil {
+		log.Printf("themes: activating %s: %v", t.Slug, err)
+	}
 }
 
 // themeURI is get_stylesheet_directory_uri().
@@ -263,9 +303,23 @@ func (s *Server) ensureThemeWidgets(ctx context.Context, t, from *Theme) error {
 	if err != nil {
 		return err
 	}
+	declared := map[string]bool{}
 	for i, a := range from.WidgetAreas {
+		declared[a.ID] = true
 		if i >= len(ids) {
 			break
+		}
+		for n, w := range prev[a.ID] {
+			if err := s.store.AddWidget(ctx, ids[i], w.Type, n, w.Settings); err != nil {
+				return err
+			}
+		}
+	}
+	// Areas the previous theme kept without showing them (the install's sidebar-1 under the default
+	// theme, which has no widget areas) go to the area of the same id, like retrieve_widgets().
+	for i, a := range t.WidgetAreas {
+		if declared[a.ID] || len(prev[a.ID]) == 0 {
+			continue
 		}
 		for n, w := range prev[a.ID] {
 			if err := s.store.AddWidget(ctx, ids[i], w.Type, n, w.Settings); err != nil {
@@ -424,6 +478,19 @@ func (s *Server) themesScreen(c *gin.Context) {
 		c.Redirect(http.StatusFound, "/wp-admin/themes?deleted=true")
 		return
 	}
+	if c.Query("action") == "demo-content" { // a bundled theme's demo sets (theme_demo_sets.go)
+		t := s.installedTheme(c.Query("stylesheet"))
+		if !u.Can("import", nil) {
+			c.String(http.StatusForbidden, "Sorry, you are not allowed to import content into this site.")
+			return
+		}
+		if t == nil || len(t.Demos) == 0 {
+			c.String(http.StatusBadRequest, "This theme has no demo content.")
+			return
+		}
+		s.themeDemoChooser(c, t)
+		return
+	}
 	if a := c.Query("action"); a == "import-demo" || a == "remove-demo" { // theme_demo.go
 		slug := c.Query("stylesheet")
 		if !u.Can("import", nil) {
@@ -435,8 +502,12 @@ func (s *Server) themesScreen(c *gin.Context) {
 			return
 		}
 		t := s.installedTheme(slug)
-		if t == nil || t.Package == nil || t.Package.Manifest.Demo == "" {
+		if !themeHasDemo(t) {
 			c.String(http.StatusBadRequest, "This theme has no demo content.")
+			return
+		}
+		if len(t.Demos) > 0 {
+			s.themeDemoAction(c, t, a)
 			return
 		}
 		if a == "remove-demo" {
@@ -461,10 +532,13 @@ func (s *Server) themesScreen(c *gin.Context) {
 	}
 	active := s.activeTheme()
 	demoURL := func(action, slug string) string {
+		if t := themeBySlug(slug); t != nil && len(t.Demos) > 0 { // bundled sets: the chooser imports and removes
+			return demoChooserURL(slug)
+		}
 		return "/wp-admin/themes?action=" + action + "&stylesheet=" + slug + "&_wpnonce=" + s.nonce(c, action+"_"+slug)
 	}
-	hasDemo := active.Package != nil && active.Package.Manifest.Demo != "" && u.Can("import", nil)
-	demoImported := hasDemo && s.demoImported(active.Slug)
+	hasDemo := themeHasDemo(active) && u.Can("import", nil)
+	demoImported := hasDemo && len(active.Demos) == 0 && s.demoImported(active.Slug)
 	var d themesData
 	for _, t := range s.installedThemes() {
 		if t.Custom { // Golementor: saved themes are listed in their own section

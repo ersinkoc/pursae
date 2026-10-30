@@ -111,6 +111,7 @@ func newServer(ctx context.Context, cfg config.Config, pool *pgxpool.Pool, sb *s
 		s.gweUnloadCustomThemes() // the theme registry is shared by every server in the process
 	}
 	s.loadThemePackages() // theme packages installed under <data>/themes (theme_install.go)
+	s.migrateRemovedThemes(ctx)
 	tmpl, err := newTemplates(s)
 	if err != nil {
 		return nil, err
@@ -353,10 +354,15 @@ func (s *Server) static(r *gin.Engine, prefix, dir string, guards ...gin.Handler
 			c.Status(http.StatusNotFound)
 			return
 		}
+		edited := false
 		if o, ok := s.overlay(); ok && o.overridden(dir+c.Param("filepath")) {
+			edited = true
 			c.Header("Cache-Control", "no-cache") // edited in the Theme File Editor: revalidate (Last-Modified)
 		} else if s.cfg.WebDir == "" {
 			c.Header("Cache-Control", "public, max-age=604800")
+		}
+		if !edited && s.serveGzipped(c, sub, dir, strings.TrimPrefix(c.Param("filepath"), "/")) { // static_gzip.go
+			return
 		}
 		h.ServeHTTP(c.Writer, c.Request)
 	}

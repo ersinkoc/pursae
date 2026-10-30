@@ -273,7 +273,7 @@ func parseThemeDemo(fsys fs.FS, m *themeManifest) (*themeDemo, error) {
 			name := strings.TrimSuffix(p.Template, ".html")
 			if !demoTplRe.MatchString(p.Template) {
 				bad("%s.template %q must be the name of a file in templates/", at, p.Template)
-			} else if _, err := fs.Stat(fsys, "templates/"+name+".html"); err != nil {
+			} else if _, err := fs.Stat(fsys, "templates/"+name+".html"); err != nil && m.pageTemplates[name] == "" {
 				bad("%s.template: templates/%s.html is missing", at, name)
 			}
 		}
@@ -594,6 +594,7 @@ type demoRecord struct {
 	Widgets    []int64          `json:"widgets"`     // widgets it created
 	Moved      map[string]int64 `json:"moved"`       // widget id -> area id it was moved out of (into the inactive widgets)
 	ImportedAt string           `json:"imported_at"` // RFC 3339
+	Theme      string           `json:"theme"`       // the theme whose mods it set (the key's theme for older records)
 	Trashed    []int64          `json:"trashed"`     // untouched install samples it moved to the trash
 }
 
@@ -644,6 +645,16 @@ func (s *Server) demoItemID(ctx context.Context, table, typ, slug, ref string) i
 	return id
 }
 
+// demoSource is one demo content set: a package theme's demo/demo.json, or one of the sets a
+// bundled theme ships (Theme.Demos).
+type demoSource struct {
+	// Key marks what the import creates (_wpgo_demo), names its record (wpgo_demo_<key>) and prefixes
+	// the image file names: the theme slug for a package, <theme>-<set> for a bundled set.
+	Key  string
+	FS   fs.FS // the files the demo's media paths are relative to
+	Demo *themeDemo
+}
+
 // importThemeDemo imports the demo content of an installed package theme for user uid.
 func (s *Server) importThemeDemo(ctx context.Context, uid int64, t *Theme) (*demoReport, error) {
 	d, err := themeDemoOf(t)
@@ -653,10 +664,16 @@ func (s *Server) importThemeDemo(ctx context.Context, uid int64, t *Theme) (*dem
 	if d == nil {
 		return nil, errors.New("This theme has no demo content.")
 	}
+	return s.importDemo(ctx, uid, t, &demoSource{Key: t.Slug, FS: os.DirFS(t.Package.Dir), Demo: d})
+}
+
+// importDemo imports a demo content set into theme t (its menus, widget areas and theme mods).
+func (s *Server) importDemo(ctx context.Context, uid int64, t *Theme, src *demoSource) (*demoReport, error) {
+	d := src.Demo
 	ctx, cancel := context.WithTimeout(ctx, demoTimeLimit)
 	defer cancel()
-	fsys := os.DirFS(t.Package.Dir)
-	slug := t.Slug
+	fsys := src.FS
+	slug := src.Key
 	rep := &demoReport{}
 	rec := s.demoRecord(slug)
 	if rec == nil {
@@ -668,6 +685,7 @@ func (s *Server) importThemeDemo(ctx context.Context, uid int64, t *Theme) (*dem
 	if rec.Options == nil {
 		rec.Options = map[string]any{}
 	}
+	rec.Theme = t.Slug
 	save := func() error { return s.saveDemoRecord(ctx, slug, rec) }
 	mark := func(ref string) map[string]any { return map[string]any{demoMetaKey: slug, demoMetaRef: ref} }
 	loc := s.loc()
@@ -1012,7 +1030,7 @@ func (s *Server) importThemeDemo(ctx context.Context, uid int64, t *Theme) (*dem
 	// Customizer values: theme mods of this theme, sanitized like a Customizer publish.
 	if !rec.Done["customizer"] && len(d.Customizer) > 0 {
 		settings := map[string]themeCzSettings{"custom_logo": {ID: "custom_logo", Type: "image"}}
-		for _, st := range t.Package.settings {
+		for _, st := range demoThemeSettings(t) {
 			settings[st.ID] = st
 		}
 		values := map[string]string{}
@@ -1028,7 +1046,7 @@ func (s *Server) importThemeDemo(ctx context.Context, uid int64, t *Theme) (*dem
 			}
 			values["mod:"+k] = raw
 		}
-		current := s.themeMods(slug)
+		current := s.themeMods(t.Slug)
 		if rec.Mods == nil {
 			rec.Mods = map[string]any{}
 		}
@@ -1043,7 +1061,7 @@ func (s *Server) importThemeDemo(ctx context.Context, uid int64, t *Theme) (*dem
 		if err != nil {
 			return rep, fmt.Errorf("customizer: %v", err)
 		}
-		if err := s.settings.Set(ctx, map[string]any{"theme_mods_" + slug: mods}); err != nil {
+		if err := s.settings.Set(ctx, map[string]any{"theme_mods_" + t.Slug: mods}); err != nil {
 			return rep, err
 		}
 		rep.Settings = true
@@ -1136,11 +1154,11 @@ func (s *Server) importThemeDemo(ctx context.Context, uid int64, t *Theme) (*dem
 	// Block widgets: the widgets already in those areas move to the inactive widgets.
 	if !rec.Done["widgets"] && len(d.Widgets) > 0 {
 		var noArea *int64
-		areaIDs, err := s.store.WidgetAreaIDs(ctx, slug)
+		areaIDs, err := s.store.WidgetAreaIDs(ctx, t.Slug)
 		if err != nil {
 			return rep, err
 		}
-		current, err := s.store.ThemeWidgets(ctx, slug)
+		current, err := s.store.ThemeWidgets(ctx, t.Slug)
 		if err != nil {
 			return rep, err
 		}
@@ -1159,12 +1177,12 @@ func (s *Server) importThemeDemo(ctx context.Context, uid int64, t *Theme) (*dem
 				if a := t.widgetArea(areaSlug); a != nil {
 					name = a.Name
 				}
-				if aid, err = s.store.EnsureWidgetArea(ctx, slug, areaSlug, name); err != nil {
+				if aid, err = s.store.EnsureWidgetArea(ctx, t.Slug, areaSlug, name); err != nil {
 					return rep, err
 				}
 			}
 			for _, w := range current {
-				if w.AreaSlug == areaSlug && w.AreaTheme == slug {
+				if w.AreaSlug == areaSlug && w.AreaTheme == t.Slug {
 					if err := s.store.MoveWidget(ctx, w.ID, noArea); err != nil {
 						return rep, err
 					}
@@ -1196,7 +1214,8 @@ func (s *Server) importThemeDemo(ctx context.Context, uid int64, t *Theme) (*dem
 	return rep, nil
 }
 
-// removeThemeDemo is Remove Demo Content: the items marked with the theme's _wpgo_demo meta, the
+// removeThemeDemo is Remove Demo Content: the items marked with the demo's _wpgo_demo meta (slug is
+// the demo's key: the theme slug, or <theme>-<set> for a bundled set), the
 // menus and widgets the import created go; moved widgets, options, reading settings, menu locations
 // and theme mods get their previous values back.
 func (s *Server) removeThemeDemo(ctx context.Context, slug string) error {
@@ -1206,6 +1225,7 @@ func (s *Server) removeThemeDemo(ctx context.Context, slug string) error {
 	if rec == nil {
 		rec = &demoRecord{}
 	}
+	modsTheme := defaultStr(rec.Theme, slug)
 	idsOf := func(q string) ([]int64, error) {
 		rows, err := s.store.Pool.Query(ctx, q, slug)
 		if err != nil {
@@ -1307,7 +1327,7 @@ func (s *Server) removeThemeDemo(ctx context.Context, slug string) error {
 	}
 	if len(rec.Mods) > 0 || len(rec.UnsetMods) > 0 {
 		mods := map[string]any{}
-		if m, ok := s.settings.Get("theme_mods_" + slug).(map[string]any); ok {
+		if m, ok := s.settings.Get("theme_mods_" + modsTheme).(map[string]any); ok {
 			for k, v := range m {
 				mods[k] = v
 			}
@@ -1318,7 +1338,7 @@ func (s *Server) removeThemeDemo(ctx context.Context, slug string) error {
 		for _, k := range rec.UnsetMods {
 			delete(mods, k)
 		}
-		values["theme_mods_"+slug] = mods
+		values["theme_mods_"+modsTheme] = mods
 	}
 	values[demoRecordKey(slug)] = nil
 	if err := s.settings.Set(ctx, values); err != nil {
@@ -1365,4 +1385,19 @@ func demoReportFromQuery(v string) *demoReport {
 		n[i], _ = strconv.Atoi(part)
 	}
 	return &demoReport{Pages: n[0], Posts: n[1], Media: n[2], Terms: n[3], Comments: n[4], Menus: n[5], Widgets: n[6]}
+}
+
+// demoThemeSettings are the Customizer settings a demo's "customizer" may set: a package's own, or
+// the controls of a bundled theme's Customizer spec.
+func demoThemeSettings(t *Theme) []themeCzSettings {
+	if t.Package != nil {
+		return t.Package.settings
+	}
+	var out []themeCzSettings
+	if sp := czSpecFor(t); sp != nil {
+		for _, ctl := range append(append([]czControl{}, sp.Colors...), sp.Controls...) {
+			out = append(out, themeCzSettings{ID: ctl.ID, Label: ctl.Label, Type: ctl.Type, Default: ctl.Default, Choices: ctl.Choices})
+		}
+	}
+	return out
 }

@@ -17,7 +17,7 @@ import (
 	"wpgo/internal/wp"
 )
 
-// siteView is the data the Twenty Sixteen templates receive.
+// siteView is the data the theme templates receive.
 type siteView struct {
 	Template string // index, single, page, archive, search, 404
 	Q        *siteQuery
@@ -327,7 +327,7 @@ func (s *Server) archiveBase(q *siteQuery, lb *links.Builder) string {
 	return lb.HomeURL("/")
 }
 
-// paginateLinks is the_posts_pagination() with Twenty Sixteen's arguments (mid_size 1, end_size 1).
+// paginateLinks is the_posts_pagination() with mid_size 1 and end_size 1 (theme packages print it).
 func paginateLinks(lb *links.Builder, base string, current, total int) template.HTML {
 	if total < 2 {
 		return ""
@@ -467,19 +467,6 @@ func (s *Server) convertSmilies(lb *links.Builder, content string) string {
 // themes that do not override them).
 func (s *Server) linkPages(p *store.Post, page, numpages int, lb *links.Builder) string {
 	before, after, linkBefore, linkAfter, pagelink, separator := `<p class="post-nav-links">Pages:`, `</p>`, "", "", "%", " "
-	switch s.activeTheme().Slug {
-	case "twentysixteen", "twentyseventeen":
-		before, after = `<div class="page-links"><span class="page-links-title">Pages:</span>`, `</div>`
-		linkBefore, linkAfter = "<span>", "</span>"
-		pagelink, separator = `<span class="screen-reader-text">Page </span>%`, `<span class="screen-reader-text">, </span>`
-	case "twentytwenty":
-		before, after = `<nav class="post-nav-links bg-light-background" aria-label="Page"><span class="label">Pages:</span>`, `</nav>`
-	case "twentytwentyone":
-		before, after = `<nav class="page-links" aria-label="Page">`, `</nav>`
-		linkBefore, linkAfter = `<span class="page-links-title">`, `</span>`
-		pagelink = `Page %`
-		separator = `<span class="page-links-separator"></span>`
-	}
 	var sb strings.Builder
 	sb.WriteString(before)
 	for i := 1; i <= numpages; i++ {
@@ -500,7 +487,7 @@ func (s *Server) linkPages(p *store.Post, page, numpages int, lb *links.Builder)
 	return sb.String()
 }
 
-// theExcerpt is the_excerpt() with Twenty Sixteen's "Continue reading" more link.
+// theExcerpt is the_excerpt() with a "Continue reading" more link.
 func (s *Server) theExcerpt(p *store.Post, lb *links.Builder) string {
 	if p.Password != "" {
 		return "<p>There is no excerpt because this is a protected post.</p>\n"
@@ -574,7 +561,7 @@ func (s *Server) avatarImg(ctx context.Context, email string, size int) string {
 		html.EscapeString(s.avatarFor(ctx, email, size)), html.EscapeString(s.avatarFor(ctx, email, size*2)), size, size, size)
 }
 
-// entryMeta is twentysixteen_entry_meta().
+// entryMeta is the classic entry meta (byline, date, format, categories, tags, comments link) theme packages print.
 func (s *Server) entryMeta(ctx context.Context, p *store.Post, author *store.User, cats, tags []*store.Term, singular bool, lb *links.Builder) template.HTML {
 	var sb strings.Builder
 	if p.Type == "post" && author != nil {
@@ -636,14 +623,14 @@ func (s *Server) entryMeta(ctx context.Context, p *store.Post, author *store.Use
 	return template.HTML(sb.String())
 }
 
-// categorizedBlog is twentysixteen_categorized_blog(): category links show only when more than one category is in use.
+// categorizedBlog reports whether more than one category is in use (category links show only then).
 func (s *Server) categorizedBlog(ctx context.Context) bool {
 	var n int
 	_ = s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM (SELECT 1 FROM terms WHERE taxonomy='category' AND post_count > 0 LIMIT 2) t`).Scan(&n)
 	return n > 1
 }
 
-// renderWidgetArea is dynamic_sidebar() with Twenty Sixteen's before/after_widget markup.
+// renderWidgetArea is dynamic_sidebar() with the default before/after_widget markup.
 func (s *Server) renderWidgetArea(ctx context.Context, ws []*store.Widget) template.HTML {
 	if len(ws) == 0 {
 		return ""
