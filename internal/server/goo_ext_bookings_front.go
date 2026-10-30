@@ -59,6 +59,7 @@ func bkBookingForm(s *Server, c *gin.Context, p *gooProduct) template.HTML {
 	fmt.Fprintf(&b, `<fieldset class="wc-bookings-date-picker wc_bookings_field_start_date%s"><legend><span class="label">%s</span>: <small class="wc-bookings-date-picker-choose-date">Choose&hellip;</small></legend>`, visible, label)
 	if conf.Unit != "month" {
 		b.WriteString(`<div class="picker wc-bookings-calendar" aria-hidden="true"></div>`)
+		b.WriteString(`<style>.wc-bookings-calendar td.not-bookable span{opacity:.35;cursor:not-allowed}.wc-bookings-calendar td.fully_booked span{text-decoration:line-through}</style>`)
 	}
 	fmt.Fprintf(&b, `<div class="wc-bookings-date-picker-date-fields"><label><span class="screen-reader-text">%s</span><input type="%s" class="booking_date input-text" name="wc_bookings_field_start_date" min="%s" max="%s" required></label></div></fieldset>`,
 		label, dateType, minV, maxV)
@@ -120,9 +121,13 @@ function pad(n){return(n<10?'0':'')+n}function iso(d){return d.getFullYear()+'-'
 if(input.min){var m=input.min.split('-');view=new Date(+m[0],+m[1]-1,1)}
 function draw(){if(!cal)return;var y=view.getFullYear(),mo=view.getMonth(),first=new Date(y,mo,1),off=(first.getDay()-fd+7)%7,days=new Date(y,mo+1,0).getDate(),
 h='<div class="ui-datepicker-header"><a href="#" class="ui-datepicker-prev">&lsaquo;</a> <span class="ui-datepicker-title">'+names[mo]+' '+y+'</span> <a href="#" class="ui-datepicker-next">&rsaquo;</a></div><table class="ui-datepicker-calendar"><tbody><tr>';
-for(var i=0;i<off;i++)h+='<td></td>';for(var d=1;d<=days;d++){var v=iso(new Date(y,mo,d)),ok=(!input.min||v>=input.min)&&(!input.max||v<=input.max);
-h+='<td class="'+(ok?'bookable':'ui-datepicker-unselectable not-bookable')+(v===input.value?' ui-datepicker-current-day':'')+'">'+(ok?'<a href="#" data-date="'+v+'">'+d+'</a>':'<span>'+d+'</span>')+'</td>';if((off+d)%7===0)h+='</tr><tr>'}
+var key=y+'-'+pad(mo+1),full=busy[key]||{};if(!busy[key])month(key);
+for(var i=0;i<off;i++)h+='<td></td>';for(var d=1;d<=days;d++){var v=iso(new Date(y,mo,d)),ok=(!input.min||v>=input.min)&&(!input.max||v<=input.max)&&!full[v];
+h+='<td class="'+(ok?'bookable':'ui-datepicker-unselectable not-bookable'+(full[v]?' fully_booked':''))+(v===input.value?' ui-datepicker-current-day':'')+'">'+(ok?'<a href="#" data-date="'+v+'">'+d+'</a>':'<span>'+d+'</span>')+'</td>';if((off+d)%7===0)h+='</tr><tr>'}
 cal.innerHTML=h+'</tr></tbody></table>'}
+var busy={};function month(key){busy[key]={};var p=new URLSearchParams();p.set('goo-ajax','booking_month');p.set('product_id',f.dataset.productId);p.set('month',key);
+var r=f.querySelector('select[name=wc_bookings_field_resource]');if(r)p.set(r.name,r.value);
+fetch(f.dataset.ajax+'?'+p.toString(),{credentials:'same-origin'}).then(function(r){return r.json()}).then(function(r){var m={};(r.unavailable||[]).forEach(function(d){m[d]=1});busy[key]=m;draw()})}
 if(cal)cal.addEventListener('click',function(e){var a=e.target.closest('a');if(!a)return;e.preventDefault();if(a.dataset.date){input.value=a.dataset.date;draw();load()}
 else{view=new Date(view.getFullYear(),view.getMonth()+(a.classList.contains('ui-datepicker-next')?1:-1),1);draw()}});
 function q(){var p=new URLSearchParams();p.set('goo-ajax','booking_slots');p.set('product_id',f.dataset.productId);p.set('date',input.value);
@@ -131,7 +136,7 @@ function load(){if(!input.value)return;fetch(f.dataset.ajax+'?'+q().toString(),{
 if(slots){if(!r.slots||!r.slots.length){slots.innerHTML='<li>No blocks available on this date.</li>'}else{slots.innerHTML=r.slots.map(function(s){return '<li class="block"><a href="#" data-value="'+s.time+'"'+(time.value===s.time?' class="selected"':'')+'>'+s.label+(r.remaining?' <small class="booking-spaces-left">('+s.available+' left)</small>':'')+'</a></li>'}).join('')}}
 cost.style.display='block';cost.innerHTML=r.error?'<span class="booking-error">'+r.error+'</span>':(r.cost_html?'Booking cost: <strong>'+r.cost_html+'</strong>':'');if(btn)btn.disabled=!!r.error||(time&&!time.value)})}
 if(slots)slots.addEventListener('click',function(e){var a=e.target.closest('a');if(!a)return;e.preventDefault();time.value=a.dataset.value;load()});
-input.addEventListener('change',function(){if(time)time.value='';draw();load()});f.addEventListener('change',function(e){if(e.target!==input)load()});draw()})();</script>`
+input.addEventListener('change',function(){if(time)time.value='';draw();load()});f.addEventListener('change',function(e){if(e.target.name==='wc_bookings_field_resource'){busy={};draw()}if(e.target!==input)load()});draw()})();</script>`
 
 // bkFrontRoute serves /?goo-ajax=booking_slots and the customer's booking cancellation.
 func bkFrontRoute(s *Server, c *gin.Context, path string) bool {
@@ -141,6 +146,9 @@ func bkFrontRoute(s *Server, c *gin.Context, path string) bool {
 	switch {
 	case c.Query("goo-ajax") == "booking_slots":
 		s.bkSlotsJSON(c)
+		return true
+	case c.Query("goo-ajax") == "booking_month":
+		s.gooBkMonthJSON(c)
 		return true
 	case c.Query("cancel_booking") == "true" && c.Query("booking_id") != "":
 		s.bkCustomerCancel(c)
@@ -205,6 +213,53 @@ func (s *Server) bkSlotsJSON(c *gin.Context) {
 		}
 	}
 	c.JSON(http.StatusOK, out)
+}
+
+// gooBkMonthJSON lists the days of a month that cannot be booked (fully booked, closed by the rules or
+// outside the booking window), so the calendar greys them out like the "fully_booked" days of the
+// original form: {"unavailable": ["2026-11-03", …]}.
+func (s *Server) gooBkMonthJSON(c *gin.Context) {
+	ctx := c.Request.Context()
+	id, _ := strconv.ParseInt(c.Query("product_id"), 10, 64)
+	p, err := s.gooGetProduct(ctx, id)
+	if err != nil || p.Type != bkType || p.Status != "publish" {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Invalid booking product."})
+		return
+	}
+	loc := s.gxLoc()
+	first, err := time.ParseInLocation("2006-01", c.Query("month"), loc)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "month must be YYYY-MM"})
+		return
+	}
+	requested, _ := strconv.ParseInt(c.Query("wc_bookings_field_resource"), 10, 64)
+	c.Header("Cache-Control", "no-store")
+	c.JSON(http.StatusOK, gin.H{"unavailable": s.gooBkUnavailableDays(ctx, p, bkConfOf(p), first, requested)})
+}
+
+// gooBkUnavailableDays are the days of first's month on which nothing can be booked.
+func (s *Server) gooBkUnavailableDays(ctx context.Context, p *gooProduct, conf *bkConf, first time.Time, resource int64) []string {
+	out := []string{}
+	if conf.Unit == "month" {
+		return out
+	}
+	for day := first; day.Month() == first.Month(); day = day.AddDate(0, 0, 1) {
+		date := day.Format("2006-01-02")
+		if conf.timed() {
+			if len(s.gooBkSlotsAll(ctx, p, conf, day, resource)) == 0 {
+				out = append(out, date)
+			}
+			continue
+		}
+		start, blocks, persons, err := s.bkParseRequest(conf, map[string][]string{"wc_bookings_field_start_date": {date}})
+		if err == nil {
+			_, err = s.gooBkPickResource(ctx, p, conf, resource, start, blocks, max(bkSumPersons(persons), 1), 0)
+		}
+		if err != nil {
+			out = append(out, date)
+		}
+	}
+	return out
 }
 
 // bkCanCancel reports whether the customer may still cancel a booking.
