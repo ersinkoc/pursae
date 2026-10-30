@@ -94,6 +94,8 @@ type gooDemoProduct struct {
 	Featured         bool                 `json:"featured"`
 	Stock            *int                 `json:"stock"`
 	Virtual          bool                 `json:"virtual"`
+	Downloadable     bool                 `json:"downloadable"`
+	Downloads        []gooDownload        `json:"downloads"`
 	Weight           string               `json:"weight"`
 	MenuOrder        int                  `json:"menu_order"`
 	Attributes       []gooDemoProductAttr `json:"attributes"`
@@ -378,6 +380,10 @@ func (s *Server) gooImportDemo(ctx context.Context, uid int64, slug string, raw 
 		p.Name, p.Slug, p.SKU, p.Featured = dp.Name, dp.Slug, dp.SKU, dp.Featured
 		p.RegularPrice, p.SalePrice = price(dp.RegularPrice), price(dp.SalePrice)
 		p.Virtual, p.Weight = dp.Virtual, dp.Weight
+		p.Downloadable, p.Downloads = dp.Downloadable, dp.Downloads
+		if v, _ := dp.Meta["_downloadable"].(string); v == "yes" {
+			p.Downloadable = true // older demos flag it in meta
+		}
 		p.ProductURL, p.ButtonText = dp.ExternalURL, dp.ButtonText
 		if dp.Stock != nil {
 			p.ManageStock, p.StockQuantity = true, gooIntPtr(*dp.Stock)
