@@ -42,7 +42,13 @@ section: operations
 7. Back up the database and the data directories ([backups](backups.md)).
 8. Review plugin permissions on activation; grant only what a plugin needs. A plugin that keeps
    failing is disabled automatically after five consecutive failures.
-9. Keep the core up to date ([upgrading](../getting-started/upgrading.md)).
+9. Activate **AdminSecGo** (Plugins › Installed Plugins; see [built-in plugins](../built-in-plugins/adminsecgo.md)).
+   Like WordPress, the core answers `/?author=1` with a redirect to the author page and lists authors at
+   `/wp-json/wp/v2/users`, which hands attackers usernames to guess passwords for. AdminSecGo blocks both
+   (its "block enumeration" setting is on by default), and adds two-step login, a custom login URL and an
+   activity log.
+10. Keep the core up to date ([upgrading](../getting-started/upgrading.md)) and rebuild the images
+    regularly: the Docker build uses the latest `golang:1.27` image, and `govulncheck ./...` should stay clean.
 
 ## Reporting a vulnerability
 

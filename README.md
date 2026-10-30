@@ -336,12 +336,12 @@ first build; make sure Docker has network access. Later builds are cached.
 
 - **Built-in plugins** (listed on Plugins, off on a fresh install; one page each in the
   [developer docs](docs/developer/built-in-plugins/index.md)) — SEO-Go, ACF-Go, HeadlessGo, GoCDN,
-  Gontact Form, Golylang, AdminSecGo, Gooike, Maintenance-Go and WPGO Mail SMTP.
+  Gontact Form, Golylang, AdminSecGo, Gooike, Maintenance-Go, WPGO Mail SMTP and Goocommerce.
 - **Goocommerce** — a native WooCommerce clone (products, cart, checkout, tax, shipping, coupons,
   orders, gateways, e-mails, REST) with the premium extensions as built-in modules (off by default)
   and store themes in the theme library.
 
-Open gaps are tracked in the project notes; the developer documentation has no Goocommerce page yet.
+Open gaps are tracked in the project notes.
 
 ## Project layout
 
