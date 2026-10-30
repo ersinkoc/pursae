@@ -41,11 +41,10 @@ var tt5ThemeJSON []byte
 var tt5Schemes = [][2]string{{"default", "Default"}, {"evening", "Evening"}, {"noon", "Noon"}, {"dusk", "Dusk"},
 	{"afternoon", "Afternoon"}, {"twilight", "Twilight"}, {"morning", "Morning"}, {"sunrise", "Sunrise"}, {"midnight", "Midnight"}}
 
-// tt5BundledBlocks are the blocks whose core styles style.min.css already carries.
+// tt5BundledBlocks are the blocks whose core styles style.min.css already carries (the header, footer
+// and query loops); the pages that use other blocks inline those blocks' styles.
 var tt5BundledBlocks = []string{"site-title", "site-tagline", "navigation", "navigation-link", "page-list", "group", "columns", "spacer",
-	"paragraph", "heading", "post-title", "post-date", "post-content", "post-template", "post-featured-image", "query-pagination",
-	"query-title", "term-description", "post-author-name", "post-terms", "post-navigation-link", "search", "list", "comments",
-	"comment-template", "post-comments-form"}
+	"paragraph", "heading", "post-title", "post-date", "post-content", "post-template", "post-featured-image", "query-pagination"}
 
 func init() {
 	registerTheme(&Theme{

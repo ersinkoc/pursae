@@ -243,7 +243,7 @@ Native Plugins). Until then it leaves no trace: no menu entries, "Edit with Gole
 builder routes, assets, front-end output or Hello Golementor theme.
 
 Deactivating it again hides everything. If Hello Golementor is the active theme the site is
-switched to Twenty Sixteen (the Plugins screen says so). Pages built with Golementor show the
+switched to Twenty Twenty-Five (the Plugins screen says so). Pages built with Golementor show the
 plain-text content saved with them while it is off; saved themes, theme parts and the builder
 data stay in the database and come back on the next activation.
 
@@ -315,10 +315,12 @@ first build; make sure Docker has network access. Later builds are cached.
 - **REST API `wp/v2`** — posts, pages, media, blocks, terms, users, comments, settings, types,
   taxonomies, statuses, themes, search, patterns, sidebars/widgets; `_fields`, `_embed`,
   pagination headers, cookie + nonce and Application Password authentication.
-- **Themes** — Twenty Sixteen, Twenty Seventeen, Twenty Twenty, Twenty Twenty-One and Hello
-  Golementor with their original CSS/JS and markup, plus **Classic**: a white, minimal blog theme
-  written for WordPress Go (system fonts, automatic dark mode, list/grid/minimal layouts, optional
-  sidebar), configured in Appearance › Customize with a live preview.
+- **Themes** — **Twenty Twenty-Five**, the default theme: WordPress' block theme ported to Go
+  templates with the same markup and its theme.json design (Manrope and Fira Code self-hosted,
+  the style variations' palettes as a Customizer color scheme, editor styles for Gotenberg), one
+  small stylesheet plus the core styles of the blocks a page uses, and four demo content sets
+  (Appearance › Themes › Import Demo Content). Hello Golementor comes with Golementor, and the
+  theme library offers more themes to install.
 - **WPGo Cache** (built-in plugin) — in-process full-page cache with tag-based purges, crawler,
   gzip + ETag, CDN purge headers, lazy images, deferred scripts, font preloads.
 - **Plugins** — signed WebAssembly packages, granted permissions, hooks `init`, `the_content`,

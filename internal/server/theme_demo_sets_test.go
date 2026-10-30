@@ -92,6 +92,9 @@ func TestTwentyTwentyFiveDemoSets(t *testing.T) {
 		!strings.Contains(home, "--wp--preset--color--base:#DFDCD7") {
 		t.Error("the homepage is not Slow Seasons' after switching sets")
 	}
+	if _, stories, _ := get(t, anon, base+"/stories/"); !strings.Contains(stories, "Letters, not notifications") || strings.Contains(stories, "Hello world!") {
+		t.Error("the posts page lacks the set's posts or shows the install sample")
+	}
 	if n := strings.Count(home, `<nav class="is-responsive`); n != 1 {
 		t.Errorf("%d header navigations", n)
 	}

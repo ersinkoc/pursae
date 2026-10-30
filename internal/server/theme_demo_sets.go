@@ -86,12 +86,27 @@ func (s *Server) importDemoSet(ctx context.Context, uid int64, t *Theme, ds *the
 	if err != nil {
 		return nil, err
 	}
+	var samples []int64 // the install samples the previous set put in the trash stay there
 	for i := range t.Demos {
 		other := t.Demos[i].demoKey(t)
-		if other != src.Key && s.demoRecord(other) != nil {
-			if err := s.removeThemeDemo(ctx, other); err != nil {
-				return nil, err
+		prev := s.demoRecord(other)
+		if other == src.Key || prev == nil {
+			continue
+		}
+		if err := s.removeThemeDemo(ctx, other); err != nil {
+			return nil, err
+		}
+		samples = append(samples, prev.Trashed...)
+	}
+	if len(samples) > 0 && s.demoRecord(src.Key) == nil {
+		rec := &demoRecord{Done: map[string]bool{"samples": true}}
+		for _, id := range samples {
+			if s.store.TrashPost(ctx, id) == nil {
+				rec.Trashed = append(rec.Trashed, id)
 			}
+		}
+		if err := s.saveDemoRecord(ctx, src.Key, rec); err != nil {
+			return nil, err
 		}
 	}
 	return s.importDemo(ctx, uid, t, src)

@@ -145,10 +145,10 @@ $faces_abs = str_replace( "url('http://example.test/wp-content/themes/twentytwen
 
 $global = wp_get_global_stylesheet();
 
-// The blocks of the theme's header, footer, query loops and post meta: on every page.
+// The blocks of the theme's header, footer and query loops: on (nearly) every page. Keep this list in
+// sync with tt5BundledBlocks; the other blocks' styles are inlined by the pages that use them.
 $always = array( 'site-title', 'site-tagline', 'navigation', 'navigation-link', 'page-list', 'group', 'columns', 'spacer', 'paragraph', 'heading',
-	'post-title', 'post-date', 'post-content', 'post-template', 'post-featured-image', 'query-pagination', 'query-title', 'term-description',
-	'post-author-name', 'post-terms', 'post-navigation-link', 'search', 'list', 'comments', 'comment-template', 'post-comments-form' );
+	'post-title', 'post-date', 'post-content', 'post-template', 'post-featured-image', 'query-pagination' );
 $blocks = '';
 foreach ( $always as $name ) {
 	$blocks .= $block( $name );

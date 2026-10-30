@@ -217,7 +217,7 @@ SETS.append({
                 h('Flowers grown, cut and arranged by hand', 1, size='xx-large'),
                 p('Seasonal bouquets from our own cutting garden, plants that will outlive their pot, and Saturday workshops at the long table.', size='large'),
                 buttons([('Visit the shop', '{{page:visit}}', False), ('See the workshops', '{{page:workshops}}', True)]),
-            ], height=600, dim=35),
+            ], height=600, dim=40),
             group([
                 h('In season now', align='center'),
                 p('Everything in the shop comes from within a short drive, most of it from the beds you can see from the counter. When a flower is over, it is over until next year, and we think that is part of its charm.', align='center', size='medium'),
@@ -343,7 +343,7 @@ SETS.append({
                 h('Patient pictures of quiet places', 1, size='xx-large'),
                 p('Landscape photography by Mara Ellison: meadows, ridges, marshes and the long minutes of waiting for the light.', size='large'),
                 buttons([('View the portfolio', '{{page:portfolio}}', False), ('Prints &amp; commissions', '{{page:prints}}', True)]),
-            ], height=680, dim=45),
+            ], height=680, dim=40),
             group([
                 gallery([('ridge', 'A tree on a ridge'), ('cliff', 'Cliff dwellings'), ('buttercups', 'Buttercups'),
                          ('creek', 'A creek'), ('birds', 'Marsh birds'), ('coral', 'Coral')], 3),

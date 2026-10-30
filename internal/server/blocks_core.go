@@ -123,6 +123,16 @@ func registerCoreBlocks(s *Server) {
 	for _, n := range []string{"group", "columns", "column", "buttons", "social-links", "quote", "details", "gallery"} {
 		blocks.RegisterDynamic("core/"+n, layout(n))
 	}
+	// The cover block's layout applies to its inner container.
+	blocks.RegisterDynamic("core/cover", func(_ context.Context, b *blocks.Block, content string) string {
+		typ := "flow"
+		if l, ok := b.Attrs["layout"].(map[string]any); ok {
+			if t, ok := l["type"].(string); ok && t != "default" {
+				typ = t
+			}
+		}
+		return strings.Replace(content, `class="wp-block-cover__inner-container`, `class="wp-block-cover__inner-container is-layout-`+typ+` wp-block-cover-is-layout-`+typ, 1)
+	})
 
 	blocks.RegisterDynamic("core/search", renderSearchBlock)
 	blocks.RegisterDynamic("core/latest-posts", renderLatestPosts)

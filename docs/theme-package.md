@@ -14,7 +14,7 @@ the same directory the Theme File Editor writes its overrides to), one sub-direc
 slug: `<data>/themes/<slug>/theme.json`. The server loads every such directory at start-up
 and right after Appearance › Themes › Add Theme › Upload Theme installs one; a package that
 does not validate is logged and skipped. A package whose slug matches a bundled theme
-(`twentysixteen`, `classic`, …) is rejected, and the directory name must equal the slug.
+(`twentytwentyfive`, `hello-gowebeditor`, …) is rejected, and the directory name must equal the slug.
 Appearance › Themes › Theme Details › Delete removes the directory and the registration
 (capability `delete_themes`; the active theme cannot be deleted).
 
@@ -289,6 +289,12 @@ Rules:
 
 Demo text is original (no lorem ipsum, no copyrighted text) and images are original
 (generated) artwork.
+
+The default theme, Twenty Twenty-Five, ships several demo sets in the same format, one per
+`web/themes/twentytwentyfive/demos/<set>/demo/` (built by `tools/twentytwentyfive/demos.py` from
+the theme's public-domain photographs). Its Import Demo Content opens a chooser; a set is marked
+`_wpgo_demo = "twentytwentyfive-<set>"`, and importing another set first removes the one imported
+before, so its pages, menus, front page and color scheme never stay behind.
 
 ## Theme library
 
