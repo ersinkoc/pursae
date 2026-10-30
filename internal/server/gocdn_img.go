@@ -34,6 +34,14 @@ import (
 
 var gocdnImgSem = make(chan struct{}, max(2, runtime.NumCPU()))
 
+// gocdnAnimKey adds the frame budget to the cache key of animations (it decides animated or flat).
+func gocdnAnimKey(anim bool, st gocdnSettings) string {
+	if !anim {
+		return ""
+	}
+	return "|f" + strconv.Itoa(st.ImgMaxFrames) + "|p" + strconv.Itoa(st.ImgMaxSource)
+}
+
 // gocdnAnimMemo remembers whether a GIF source version is animated.
 var gocdnAnimMemo sync.Map
 
@@ -228,7 +236,7 @@ func (s *Server) gocdnImage(w http.ResponseWriter, r *http.Request, st gocdnSett
 	if p.Format == "auto" || p.Format == "avif" {
 		h.Add("Vary", "Accept")
 	}
-	sum := sha256.Sum256([]byte(rel + "|" + version + "|" + p.Canonical() + "|q" + strconv.Itoa(p.Q) + "|" + out + "|anim" + strconv.FormatBool(anim)))
+	sum := sha256.Sum256([]byte(rel + "|" + version + "|" + p.Canonical() + "|q" + strconv.Itoa(p.Q) + "|" + out + "|anim" + strconv.FormatBool(anim) + gocdnAnimKey(anim, st)))
 	key := hex.EncodeToString(sum[:16])
 	etag := `"` + key + `"`
 	h.Set("ETag", etag)
