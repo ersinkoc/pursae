@@ -2,6 +2,8 @@ module wpgo
 
 go 1.27.1
 
+toolchain go1.27.3
+
 require (
 	github.com/gen2brain/avif v0.6.0
 	github.com/gen2brain/webp v0.6.4
@@ -11,7 +13,7 @@ require (
 	github.com/tetratelabs/wazero v1.12.0
 	golang.org/x/crypto v0.58.0
 	golang.org/x/image v0.47.0
-	golang.org/x/net v0.60.0
+	golang.org/x/net v0.62.0
 	golang.org/x/text v0.43.0
 )
 
@@ -41,7 +43,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/quic-go/qpack v0.6.0 // indirect
-	github.com/quic-go/quic-go v0.59.0 // indirect
+	github.com/quic-go/quic-go v0.59.1 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.3.1 // indirect
 	go.mongodb.org/mongo-driver/v2 v2.5.0 // indirect
