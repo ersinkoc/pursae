@@ -125,6 +125,15 @@ func TestHeadlessGoInverseRelations(t *testing.T) {
 	if r := hgCall(t, base, "PUT", "/writers/"+bob, full, map[string]any{"data": map[string]any{"books": []any{"nope"}}}); r.Code != 400 {
 		t.Fatalf("unknown inverse target: %d", r.Code)
 	}
+	// null clears the inverse side (as the edit screen sends it).
+	tmp := hgDocOf(t, hgCall(t, base, "POST", "/writers", full, map[string]any{"data": map[string]any{"name": "Tmp", "books": []any{b1}}}))
+	if r := hgCall(t, base, "PUT", "/writers/"+tmp, full, map[string]any{"data": map[string]any{"books": nil}}); r.Code != 200 {
+		t.Fatalf("clear the inverse side: %d %s", r.Code, r.Raw)
+	}
+	if r := hgCall(t, base, "GET", "/books/"+b1+"?populate=writer", full, nil); r.data()["writer"] != nil {
+		t.Fatalf("book one keeps the cleared writer: %s", r.Raw)
+	}
+	hgCall(t, base, "DELETE", "/writers/"+tmp, full, nil)
 	// Many-to-many from the inverse side.
 	tg := hgDocOf(t, hgCall(t, base, "POST", "/tags", full, map[string]any{"data": map[string]any{"label": "classic", "books": []any{b1, b3}}}))
 	if r := hgCall(t, base, "GET", "/books/"+b3+"?populate=tags", full, nil); len(r.data()["tags"].([]any)) != 1 {

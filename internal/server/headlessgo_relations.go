@@ -263,9 +263,11 @@ func (h *hgCoercer) inverse(sc *hgSchema, doc, loc string) []hgInverseChange {
 			rows.Close()
 		}
 		path := []string{f.Name}
-		nv, ok := h.relation(sc, f, v, cur, path)
-		if !ok {
-			continue
+		var nv any
+		if v != nil { // null (or an empty list) clears the inverse side
+			if nv, ok = h.relation(sc, f, v, cur, path); !ok {
+				continue
+			}
 		}
 		want, _ := nv.([]any)
 		ch := hgInverseChange{owner: owner, field: of.Name, single: !of.multi(), locale: oloc}
