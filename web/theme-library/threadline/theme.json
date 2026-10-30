@@ -1,0 +1,81 @@
+{
+  "slug": "threadline",
+  "name": "Threadline",
+  "version": "1.0.0",
+  "description": "A calm, minimal apparel boutique for Goocommerce. A slim announcement bar, a centred logo between the menu and the account / cart icons, an editorial hero, category tiles and generous product grids, quiet product pages and a focused checkout. Instrument Serif and Hanken Grotesk, self-hosted. Ships a complete store demo: products with sizes and colours, reviews, coupons and shipping.",
+  "author": "WordPress Go",
+  "author_url": "https://github.com/boracomet/wordpress-go",
+  "theme_url": "https://github.com/boracomet/wordpress-go/tree/main/web/theme-library/threadline",
+  "tags": ["E-Commerce", "Fashion", "Grid Layout", "Custom Colors", "Custom Logo", "Custom Menu", "Editor Style", "Featured Images", "Footer Widgets", "Wide Blocks"],
+  "requires_core": "0.1.0",
+  "screenshot": "assets/screenshot.png",
+  "category": "shop",
+  "style": "Minimal apparel boutique, serif and sand",
+  "demo": "demo/demo.json",
+
+  "widget_areas": [
+    {"id": "footer-1", "name": "Footer", "description": "Widgets in the footer columns."},
+    {"id": "shop-sidebar", "name": "Shop Sidebar", "description": "Filters beside the product catalog."}
+  ],
+  "menu_locations": [
+    {"id": "primary", "name": "Primary Menu"},
+    {"id": "footer", "name": "Footer Menu"}
+  ],
+
+  "styles": [
+    {"handle": "threadline-style", "src": "assets/style.css", "deps": ["wp-block-library"], "media": "all"}
+  ],
+  "scripts": [
+    {"handle": "threadline-navigation", "src": "assets/js/navigation.js", "deps": [], "in_footer": true}
+  ],
+  "editor_styles": ["assets/editor-style.css"],
+  "preload_fonts": ["assets/fonts/hanken-grotesk.woff2"],
+
+  "palette": [
+    {"name": "Bone", "slug": "bone", "color": "#f4efe8"},
+    {"name": "Ink", "slug": "ink", "color": "#1b1b1b"},
+    {"name": "Clay", "slug": "clay", "color": "#b5643c"},
+    {"name": "Sage", "slug": "sage", "color": "#8a9a83"},
+    {"name": "Stone", "slug": "stone", "color": "#e3dbcf"}
+  ],
+  "supports": {
+    "post-thumbnails": true,
+    "custom-logo": {"width": 280, "height": 80, "flex-width": true, "flex-height": true, "header-text": ["site-title", "site-description"]},
+    "title-tag": true,
+    "html5": ["search-form", "comment-form", "comment-list", "gallery", "caption", "script", "style"],
+    "responsive-embeds": true,
+    "align-wide": true,
+    "wp-block-styles": true,
+    "woocommerce": true
+  },
+
+  "customizer": {
+    "sections": [
+      {
+        "id": "threadline_colors", "title": "Colours & Type", "priority": 40,
+        "settings": [
+          {"id": "accent", "label": "Accent colour", "description": "Buttons, sale badges and links.", "type": "color", "default": "#b5643c", "transport": "postMessage", "css_var": "--tl-accent"},
+          {"id": "background", "label": "Background", "type": "color", "default": "#f4efe8", "transport": "postMessage", "css_var": "--tl-bg"},
+          {"id": "text_color", "label": "Text colour", "type": "color", "default": "#1b1b1b", "transport": "postMessage", "css_var": "--tl-ink"},
+          {"id": "font_pairing", "label": "Font pairing", "type": "select", "default": "serif", "transport": "postMessage", "body_class": "tl-fonts-{value}",
+            "choices": [{"value": "serif", "label": "Instrument Serif & Hanken Grotesk"}, {"value": "sans", "label": "Hanken Grotesk only"}]},
+          {"id": "button_style", "label": "Buttons", "type": "select", "default": "pill", "transport": "postMessage", "body_class": "tl-buttons-{value}",
+            "choices": [{"value": "pill", "label": "Rounded"}, {"value": "square", "label": "Square"}]}
+        ]
+      },
+      {
+        "id": "threadline_header", "title": "Header & Store", "priority": 41,
+        "settings": [
+          {"id": "show_announcement", "label": "Show the announcement bar", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "tl-has-announcement"},
+          {"id": "announcement", "label": "Announcement", "type": "text", "default": "Free shipping on orders over $75 · Easy 30-day returns", "transport": "refresh"},
+          {"id": "header_layout", "label": "Header layout", "type": "select", "default": "centered", "transport": "postMessage", "body_class": "tl-header-{value}",
+            "choices": [{"value": "centered", "label": "Logo centred"}, {"value": "left", "label": "Logo left"}]},
+          {"id": "catalog_columns", "label": "Products per row (large screens)", "type": "select", "default": "4", "transport": "postMessage", "body_class": "tl-cols-{value}",
+            "choices": [{"value": "3", "label": "3"}, {"value": "4", "label": "4"}]},
+          {"id": "sticky_header", "label": "Sticky header", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "tl-sticky"},
+          {"id": "footer_text", "label": "Footer text", "type": "text", "default": "", "transport": "refresh"}
+        ]
+      }
+    ]
+  }
+}

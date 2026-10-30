@@ -482,12 +482,12 @@ body.elementor-editor-active {
 .elementor-panel .elementor-control .elementor-control-content { gap: 0; }
 
 /* Text-like inputs */
-.elementor-panel input[type="text"],
-.elementor-panel input[type="number"],
-.elementor-panel input[type="url"],
-.elementor-panel input[type="email"],
-.elementor-panel input[type="search"],
-.elementor-panel input[type="password"],
+.elementor-panel input[type="text"]:not(.MuiInputBase-input),
+.elementor-panel input[type="number"]:not(.MuiInputBase-input),
+.elementor-panel input[type="url"]:not(.MuiInputBase-input),
+.elementor-panel input[type="email"]:not(.MuiInputBase-input),
+.elementor-panel input[type="search"]:not(.MuiInputBase-input),
+.elementor-panel input[type="password"]:not(.MuiInputBase-input),
 .elementor-panel select,
 .elementor-panel textarea,
 .elementor-panel .elementor-input,
@@ -504,10 +504,10 @@ body.elementor-editor-active {
 	transition: border-color var(--gwe-ease), box-shadow var(--gwe-ease), background-color var(--gwe-ease);
 }
 .elementor-panel textarea { padding-block: 9px; line-height: 1.5; }
-.elementor-panel input:hover:not(:focus):not(:disabled),
+.elementor-panel input:not(.MuiInputBase-input):hover:not(:focus):not(:disabled),
 .elementor-panel select:hover:not(:focus):not(:disabled),
 .elementor-panel textarea:hover:not(:focus):not(:disabled) { border-color: var(--gwe-muted); }
-.elementor-panel input:focus,
+.elementor-panel input:not(.MuiInputBase-input):focus,
 .elementor-panel select:focus,
 .elementor-panel textarea:focus {
 	border-color: var(--gwe-accent);
@@ -876,6 +876,15 @@ body.elementor-editor-active {
 #elementor-panel .MuiDrawer-paper .MuiButton-containedPrimary { background-color: var(--gwe-accent); color: #fff; }
 #elementor-panel .MuiDrawer-paper .MuiButton-containedPrimary:hover { background-color: var(--gwe-accent-hover); }
 #elementor-panel .MuiDrawer-paper .MuiChip-root { border-radius: var(--gwe-radius-sm); }
+/* Classes selector: one flat box, neutral square chips (the generic input rule above skips MUI inputs). */
+#elementor-panel .MuiAutocomplete-inputRoot { border-radius: 0; padding: 4px; gap: 4px; min-height: 36px; }
+#elementor-panel .MuiAutocomplete-inputRoot .MuiOutlinedInput-notchedOutline { border-radius: 0; }
+#elementor-panel .MuiAutocomplete-inputRoot .MuiAutocomplete-input { border: 0; background: transparent; box-shadow: none; padding: 4px 6px; font-size: 13px; }
+#elementor-panel .MuiAutocomplete-tag { margin: 0; gap: 0; }
+#elementor-panel .MuiAutocomplete-tag .MuiChip-root { border-radius: 0; height: 24px; background-color: #50575e; color: #fff; }
+#elementor-panel .MuiAutocomplete-tag .MuiChip-root:hover { background-color: #3c434a; }
+#elementor-panel .MuiAutocomplete-tag .MuiChip-root + .MuiChip-root { border-inline-start: 1px solid rgba(255, 255, 255, 0.18); }
+#elementor-panel .MuiAutocomplete-tag .MuiChip-label { font-size: 12px; font-weight: 600; }
 #elementor-panel .MuiDrawer-paper .MuiListItem-root:hover { background-color: var(--gwe-hover); }
 
 /* Popovers, menus, autocompletes, popper lists (color pickers, variable selectors, selects) */

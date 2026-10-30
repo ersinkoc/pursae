@@ -174,6 +174,13 @@ func (api *restAPI) register(namespace, pattern string, methods map[string]restH
 // cookie auth) or HTTP Basic with an Application Password.
 func (s *Server) restAuthUser(c *gin.Context) (*store.User, error) {
 	if user, pass, ok := c.Request.BasicAuth(); ok {
+		if strings.HasPrefix(user, "ck_") && s.gooOn() { // Goocommerce REST API keys (goo_rest_auth.go)
+			u, aerr := s.gooKeyAuth(c, user, pass, c.Request.Method)
+			if aerr != nil {
+				return nil, errors.New("incorrect_password")
+			}
+			return u, nil
+		}
 		if s.adminsecRESTLocked(c, user) { // AdminSecGo: block list and lockouts apply to the API too
 			return nil, errors.New("adminsec_locked")
 		}

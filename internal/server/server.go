@@ -20,6 +20,7 @@ import (
 
 	"wpgo/internal/auth"
 	"wpgo/internal/config"
+	"wpgo/internal/i18n"
 	"wpgo/internal/links"
 	"wpgo/internal/settings"
 	"wpgo/internal/store"
@@ -60,6 +61,9 @@ type Server struct {
 	// tests' fixture directory in place of web/gowebeditor/library.
 	gweLibCache    atomic.Pointer[gweStudioLib]
 	gweLibOverride fs.FS
+
+	// lang holds the installed language packs (i18n.go).
+	lang *i18n.Manager
 }
 
 // New builds the server of the site.
@@ -95,6 +99,7 @@ func newServer(ctx context.Context, cfg config.Config, pool *pgxpool.Pool, sb *s
 	if lib, err := fs.Sub(web.FS(cfg.WebDir), "theme-library"); err == nil {
 		s.themeLibrary = lib
 	}
+	s.initLanguages()
 	if sb != nil {
 		return s.startSandbox(ctx)
 	}
@@ -313,6 +318,7 @@ func (s *Server) routes() *gin.Engine {
 	s.acfgoRegisterRoutes(admin)         // ACF-Go screens (acfgo.go)
 	s.registerSEOGoAdmin(admin)          // SEO-Go screens (seogo_admin.go)
 	s.registerGooike(r, admin)           // Gooike: assets and screens (gooike.go)
+	s.registerGoocommerce(r, admin)      // Goocommerce: assets and screens (goocommerce.go)
 	admin.GET("/customize", s.customizeScreen)
 	admin.POST("/customize", s.customizeSave)
 	admin.GET("/:screen", s.notYet)
@@ -324,6 +330,7 @@ func (s *Server) routes() *gin.Engine {
 	s.registerSEOGoREST()    // SEO-Go: seogo/v1, yoast/v1/get_head, rankmath/v1/getHead (seogo_editor.go)
 	s.registerStudioREST()   // Golementor Studio: golementor/v1/studio/preferences (gowebeditor_studio.go)
 	s.registerGooikeREST()   // Gooike: gooike/v1 consent log and geo (gooike_consent.go)
+	s.registerGooREST()      // Goocommerce: wc/store/v1 and wc/v3 (goo_rest.go)
 	restHandler := func(c *gin.Context) { s.rest.serve(c, c.Param("route")) }
 	for _, m := range []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete, http.MethodOptions, http.MethodHead} {
 		r.Handle(m, "/wp-json/*route", restHandler)

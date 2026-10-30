@@ -1,0 +1,35 @@
+{{define "admin/goo-customers"}}{{template "admin-header" .}}{{template "goo-store-assets"}}{{with .Data}}
+<div class="wrap woocommerce goo-analytics">
+<h1 class="wp-heading-inline">Customers</h1>
+<a href="{{.CSVURL}}" class="page-title-action">Download</a>
+<hr class="wp-header-end">
+{{template "notices" $}}
+<ul class="woocommerce-summary goo-summary">
+<li class="woocommerce-summary__item-container"><div class="woocommerce-summary__item"><div class="woocommerce-summary__item-label">Customers</div><div class="woocommerce-summary__item-value">{{.Total}}</div></div></li>
+<li class="woocommerce-summary__item-container"><div class="woocommerce-summary__item"><div class="woocommerce-summary__item-label">Guests</div><div class="woocommerce-summary__item-value">{{.Guests}}</div></div></li>
+</ul>
+<form method="get" action="/wp-admin/goocommerce"><input type="hidden" name="page" value="customers">
+<p class="search-box"><label class="screen-reader-text" for="customer-search-input">Search customers:</label>
+<input type="search" id="customer-search-input" name="s" value="{{.Search}}" placeholder="Search by name, username, email…"><input type="submit" class="button" value="Search customers"></p></form>
+<div class="tablenav top">{{.Pager.HTML}}<br class="clear"></div>
+<table class="wp-list-table widefat fixed striped table-view-list woocommerce-table customers">
+<thead><tr>{{range .Cols}}<th scope="col" class="manage-column column-{{.Key}} {{.Class}}"><a href="{{.URL}}"><span>{{.Label}}</span><span class="sorting-indicators"><span class="sorting-indicator asc" aria-hidden="true"></span><span class="sorting-indicator desc" aria-hidden="true"></span></span></a></th>{{end}}</tr></thead>
+<tbody>
+{{range .Rows}}<tr>
+<td class="column-name">{{if .ProfileURL}}<a href="{{.ProfileURL}}">{{if .Name}}{{.Name}}{{else}}{{.Username}}{{end}}</a>{{else}}{{.Name}}{{end}}</td>
+<td class="column-username">{{if .Username}}{{.Username}}{{else}}&mdash;{{end}}</td>
+<td class="column-date_last_active">{{if .LastFmt}}{{.LastFmt}}{{else}}&mdash;{{end}}</td>
+<td class="column-date_registered">{{if .RegFmt}}{{.RegFmt}}{{else}}&mdash;{{end}}</td>
+<td class="column-email"><a href="mailto:{{.Email}}">{{.Email}}</a></td>
+<td class="column-orders_count"><a href="{{.OrdersURL}}">{{.Orders}}</a></td>
+<td class="column-total_spend">{{.SpendFmt}}</td>
+<td class="column-avg_order_value">{{.AOVFmt}}</td>
+<td class="column-country">{{if .Country}}{{.CountryName}}{{else}}&mdash;{{end}}</td>
+<td class="column-city">{{if .City}}{{.City}}{{else}}&mdash;{{end}}</td>
+<td class="column-state">{{if .Region}}{{.Region}}{{else}}&mdash;{{end}}</td>
+<td class="column-postcode">{{if .Postcode}}{{.Postcode}}{{else}}&mdash;{{end}}</td>
+</tr>{{else}}<tr class="no-items"><td colspan="12">No data for the selected date range</td></tr>{{end}}
+</tbody></table>
+<div class="tablenav bottom">{{.Pager.HTML}}<br class="clear"></div>
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}

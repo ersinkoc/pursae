@@ -332,16 +332,16 @@ header.MuiAppBar-root .MuiToolbar-root .MuiStack-root:first-child > button:first
 
 /* GWE-UI-PREVIEW:BEGIN  Golementor UI: preview iframe chrome (empty-canvas area, hover/selected handles). Edited by the UI layer; keep markers. */
 .elementor-editor-active {
-	--gwe-p-accent: #2271b1;
-	--gwe-p-accent-soft: #eaf3fc;
-	--gwe-p-border: #b8c7da;
-	--gwe-p-text: #3b4859;
-	--gwe-p-muted: #5f6d82;
+	--gwe-p-accent: #2c3338;
+	--gwe-p-accent-soft: #f0f0f1;
+	--gwe-p-border: #a7aaad;
+	--gwe-p-text: #2c3338;
+	--gwe-p-muted: #50575e;
 }
 .elementor-editor-active .elementor-add-section:not(.elementor-dragging-on-child) .elementor-add-section-inner {
-	background-color: rgba(247, 250, 255, 0.92);
-	border: 2px dashed var(--gwe-p-border);
-	border-radius: 14px;
+	background-color: #f6f7f7;
+	border: 1px dashed var(--gwe-p-border);
+	border-radius: 0;
 	padding: 44px 0 40px;
 	transition: border-color 0.16s cubic-bezier(0.2, 0, 0, 1), background-color 0.16s cubic-bezier(0.2, 0, 0, 1);
 }
@@ -350,9 +350,9 @@ header.MuiAppBar-root .MuiToolbar-root .MuiStack-root:first-child > button:first
 	background-color: var(--gwe-p-accent-soft);
 }
 .elementor-editor-active .elementor-add-section.elementor-dragging-on-child .elementor-add-section-inner {
-	border: 2px dashed var(--gwe-p-accent);
+	border: 1px dashed var(--gwe-p-accent);
 	background-color: var(--gwe-p-accent-soft);
-	border-radius: 14px;
+	border-radius: 0;
 }
 .elementor-editor-active .elementor-add-new-section { gap: 12px; align-items: center; }
 .elementor-editor-active .elementor-add-section-area-button {
@@ -371,19 +371,18 @@ header.MuiAppBar-root .MuiToolbar-root .MuiStack-root:first-child > button:first
 .elementor-editor-active .elementor-add-section-area-button:focus {
 	background-color: var(--gwe-p-accent-soft);
 	color: var(--gwe-p-accent);
-	box-shadow: 0 0 0 2px var(--gwe-p-accent), 0 4px 12px rgba(34, 113, 177, 0.2);
-	transform: translateY(-1px);
+	box-shadow: 0 0 0 1px var(--gwe-p-accent);
 }
 .elementor-editor-active .elementor-add-section-area-button.e-button-primary {
 	background-color: var(--gwe-p-accent);
 	color: #fff;
-	box-shadow: 0 2px 6px rgba(34, 113, 177, 0.35);
+	box-shadow: none;
 }
 .elementor-editor-active .elementor-add-section-area-button.e-button-primary:hover,
 .elementor-editor-active .elementor-add-section-area-button.e-button-primary:focus {
-	background-color: #135e96;
+	background-color: #1d2327;
 	color: #fff;
-	box-shadow: 0 4px 12px rgba(34, 113, 177, 0.4);
+	box-shadow: none;
 }
 .elementor-editor-active .elementor-add-section-area-button:focus-visible { outline: 2px solid var(--gwe-p-accent); outline-offset: 3px; }
 .elementor-editor-active .elementor-add-section-drag-title {
@@ -396,18 +395,24 @@ header.MuiAppBar-root .MuiToolbar-root .MuiStack-root:first-child > button:first
 }
 .elementor-editor-active .elementor-select-preset-title { color: var(--gwe-p-text); letter-spacing: 0.06em; font-size: 12px; }
 .elementor-editor-active .elementor-select-preset-list .elementor-preset path,
-.elementor-editor-active .elementor-select-preset-list .elementor-preset rect { fill: #d6e2f0; }
+.elementor-editor-active .elementor-select-preset-list .elementor-preset rect { fill: #50575e; }
 .elementor-editor-active .elementor-select-preset-list .elementor-preset:hover path,
-.elementor-editor-active .elementor-select-preset-list .elementor-preset:hover rect { fill: var(--gwe-p-accent); }
+.elementor-editor-active .elementor-select-preset-list .elementor-preset:hover rect { fill: #1d2327; }
 .elementor-editor-active .elementor-add-section-back,
 .elementor-editor-active .elementor-add-section-close {
 	width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
 	color: var(--gwe-p-muted); transition: background-color 0.16s, color 0.16s;
 }
 .elementor-editor-active .elementor-add-section-back:hover,
-.elementor-editor-active .elementor-add-section-close:hover { background-color: #e3edf8; color: var(--gwe-p-accent); }
+.elementor-editor-active .elementor-add-section-close:hover { background-color: #dcdcde; color: var(--gwe-p-accent); }
+/* "Which layout" picker: square, gray, dark presets (the grid preset is drawn with dashed strokes). */
+.elementor-editor-active .elementor-add-section-area-button { border-radius: 0; }
+.elementor-editor-active .elementor-select-preset-title { color: var(--gwe-p-text); font-weight: 600; }
+.elementor-editor-active .elementor-select-preset-list .elementor-preset-title { color: var(--gwe-p-text); }
+.elementor-editor-active .elementor-select-preset-list .elementor-preset svg [stroke] { stroke: #50575e; }
+.elementor-editor-active .elementor-select-preset-list .elementor-preset:hover svg [stroke] { stroke: #1d2327; }
 /* Empty container "+" */
-.elementor-first-add { border: 1.5px dashed var(--gwe-p-border); border-radius: 8px; background-color: rgba(247, 250, 255, 0.6); transition: border-color 0.16s, background-color 0.16s; }
+.elementor-first-add { border: 1px dashed var(--gwe-p-border); border-radius: 0; background-color: #f6f7f7; transition: border-color 0.16s, background-color 0.16s; }
 .elementor-first-add:hover { border-color: var(--gwe-p-accent); background-color: var(--gwe-p-accent-soft); }
 .elementor-first-add .elementor-icon { color: var(--gwe-p-muted); font-size: 20px; }
 .elementor-first-add:hover .elementor-icon { color: var(--gwe-p-accent); }
@@ -436,3 +441,17 @@ header.MuiAppBar-root .MuiToolbar-root .MuiStack-root:first-child > button:first
 
 /* Golementor mascot in the nerd boxes (empty navigator, notices). */
 .elementor-nerd-box-icon[src*="gopher-ok"] { width: 120px; height: auto; }
+/* Container "Which layout" (Flexbox / Grid) and its preset lists: dark gray, square. */
+.elementor-editor-active .e-con-select-type__title,
+.elementor-editor-active .e-con-select-preset__title { color: #2c3338; font-weight: 600; }
+.elementor-editor-active .e-con-select-type__icons__icon__subtitle { color: #2c3338; font-weight: 600; }
+.elementor-editor-active .e-con-select-type__icons__icon svg rect[fill],
+.elementor-editor-active .e-con-select-preset__list .e-con-preset rect { fill: #50575e; }
+.elementor-editor-active .e-con-select-type__icons__icon svg [stroke-dasharray] { stroke: #50575e; }
+.elementor-editor-active .e-con-select-preset-grid .e-con-select-preset__list .e-con-preset rect { fill: transparent; }
+.elementor-editor-active .e-con-select-preset-grid .e-con-select-preset__list .e-con-preset [stroke] { stroke: #50575e; }
+.elementor-editor-active .e-con-select-type__icons__icon:hover svg rect,
+.elementor-editor-active .e-con-select-type__icons__icon:focus svg rect,
+.elementor-editor-active .e-con-select-preset__list .e-con-preset:hover rect,
+.elementor-editor-active .e-con-select-preset__list .e-con-preset:focus rect { fill: #1d2327; }
+.elementor-editor-active .elementor-add-section-close { border-radius: 0; }

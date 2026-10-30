@@ -1,0 +1,8 @@
+{{template "header" .}}
+<section class="vt-wrap vt-measure error-404 not-found vt-404">
+	<p class="vt-404__code" aria-hidden="true">ERR_404</p>
+	<h1 class="page-title">Signal lost.</h1>
+	<p>This page is offline or never existed. Search the catalog, or head back to the <a href="{{if goo_on}}{{goo_url . "shop"}}{{else}}{{.HomeURL}}{{end}}">shop</a>.</p>
+	{{if goo_on}}{{goo_product_search .}}{{else}}{{template "searchform" .}}{{end}}
+</section>
+{{template "footer" .}}

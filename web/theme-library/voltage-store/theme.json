@@ -1,0 +1,90 @@
+{
+  "slug": "voltage-store",
+  "name": "Voltage",
+  "version": "1.0.0",
+  "description": "A sharp, dark electronics store for Goocommerce. A utility bar, a header built around a big product search (press / to focus it) with the cart total, a department bar, a glowing hero, a bento grid of categories, a trust strip, dark product cards whose border lights up and whose add-to-cart button slides in on hover, spec-sheet product pages and a focused checkout. A light mode is one click away. Space Grotesk, Inter and JetBrains Mono, self-hosted. Ships a complete gadget store demo.",
+  "author": "WordPress Go",
+  "author_url": "https://github.com/boracomet/wordpress-go",
+  "theme_url": "https://github.com/boracomet/wordpress-go/tree/main/web/theme-library/voltage-store",
+  "tags": ["E-Commerce", "Technology", "Dark", "Grid Layout", "Custom Colors", "Custom Logo", "Custom Menu", "Editor Style", "Featured Images", "Footer Widgets", "Wide Blocks"],
+  "requires_core": "0.1.0",
+  "screenshot": "assets/screenshot.png",
+  "category": "shop",
+  "style": "Dark gadget store, big search and glowing cards",
+  "demo": "demo/demo.json",
+
+  "widget_areas": [
+    {"id": "footer-1", "name": "Footer", "description": "Widgets in the footer columns."},
+    {"id": "shop-sidebar", "name": "Shop Sidebar", "description": "Filters beside the product catalog."}
+  ],
+  "menu_locations": [
+    {"id": "primary", "name": "Department Bar"},
+    {"id": "footer", "name": "Footer Menu"}
+  ],
+
+  "styles": [
+    {"handle": "voltage-store-style", "src": "assets/style.css", "deps": ["wp-block-library"], "media": "all"}
+  ],
+  "scripts": [
+    {"handle": "voltage-store-navigation", "src": "assets/js/navigation.js", "deps": [], "in_footer": true}
+  ],
+  "editor_styles": ["assets/editor-style.css"],
+  "preload_fonts": ["assets/fonts/inter.woff2", "assets/fonts/space-grotesk.woff2"],
+
+  "palette": [
+    {"name": "Graphite", "slug": "graphite", "color": "#111418"},
+    {"name": "Panel", "slug": "panel", "color": "#1a1f26"},
+    {"name": "Electric blue", "slug": "electric", "color": "#3b82f6"},
+    {"name": "Lime", "slug": "lime", "color": "#a3e635"},
+    {"name": "Steel", "slug": "steel", "color": "#9aa4b2"},
+    {"name": "White", "slug": "white", "color": "#f5f7fa"}
+  ],
+  "supports": {
+    "post-thumbnails": true,
+    "custom-logo": {"width": 220, "height": 60, "flex-width": true, "flex-height": true, "header-text": ["site-title", "site-description"]},
+    "title-tag": true,
+    "html5": ["search-form", "comment-form", "comment-list", "gallery", "caption", "script", "style"],
+    "responsive-embeds": true,
+    "align-wide": true,
+    "wp-block-styles": true,
+    "woocommerce": true
+  },
+
+  "customizer": {
+    "sections": [
+      {
+        "id": "voltage_colors", "title": "Colours & Mode", "priority": 40,
+        "settings": [
+          {"id": "color_mode", "label": "Colour mode", "type": "select", "default": "dark", "transport": "postMessage", "body_class": "vt-mode-{value}",
+            "choices": [{"value": "dark", "label": "Dark"}, {"value": "light", "label": "Light"}]},
+          {"id": "accent", "label": "Accent colour", "description": "Buttons, links, focus rings and the card glow.", "type": "color", "default": "#3b82f6", "transport": "postMessage", "css_var": "--vt-accent"},
+          {"id": "highlight", "label": "Highlight colour", "description": "Sale badges, deal prices and status dots.", "type": "color", "default": "#a3e635", "transport": "postMessage", "css_var": "--vt-lime"},
+          {"id": "background", "label": "Background (dark mode)", "type": "color", "default": "#111418", "transport": "postMessage", "css_var": "--vt-bg"},
+          {"id": "text_color", "label": "Text colour (dark mode)", "type": "color", "default": "#e8ecf1", "transport": "postMessage", "css_var": "--vt-ink"}
+        ]
+      },
+      {
+        "id": "voltage_type", "title": "Type & Shape", "priority": 41,
+        "settings": [
+          {"id": "font_pairing", "label": "Font pairing", "type": "select", "default": "grotesk", "transport": "postMessage", "body_class": "vt-fonts-{value}",
+            "choices": [{"value": "grotesk", "label": "Space Grotesk & Inter"}, {"value": "inter", "label": "Inter only"}, {"value": "mono", "label": "JetBrains Mono headings & Inter"}]},
+          {"id": "corner_style", "label": "Corners", "type": "select", "default": "rounded", "transport": "postMessage", "body_class": "vt-corners-{value}",
+            "choices": [{"value": "rounded", "label": "Rounded"}, {"value": "sharp", "label": "Sharp"}]},
+          {"id": "card_glow", "label": "Glow on product cards", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "vt-glow"}
+        ]
+      },
+      {
+        "id": "voltage_store", "title": "Header & Store", "priority": 42,
+        "settings": [
+          {"id": "show_announcement", "label": "Show the utility bar", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "vt-has-topbar"},
+          {"id": "announcement", "label": "Utility bar text", "type": "text", "default": "Free 2-day shipping over $99 · 2-year warranty on everything", "transport": "refresh"},
+          {"id": "header_layout", "label": "Header layout", "type": "select", "default": "search", "transport": "postMessage", "body_class": "vt-header-{value}",
+            "choices": [{"value": "search", "label": "Big search bar"}, {"value": "minimal", "label": "Minimal (search behind an icon)"}]},
+          {"id": "catalog_columns", "label": "Products per row (large screens)", "type": "select", "default": "4", "transport": "postMessage", "body_class": "vt-cols-{value}",
+            "choices": [{"value": "3", "label": "3"}, {"value": "4", "label": "4"}, {"value": "5", "label": "5"}]},
+          {"id": "footer_text", "label": "Footer text", "type": "text", "default": "", "transport": "refresh"}
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,8 @@
+{{define "admin/goo-ext-points-rewards"}}{{template "admin-header" .}}{{with .Data}}
+<div class="wrap goocommerce goo-ext-points-rewards">
+{{.Head}}
+<hr class="wp-header-end">
+{{template "notices" $}}
+{{.Body}}
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}

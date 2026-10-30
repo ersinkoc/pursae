@@ -1,0 +1,13 @@
+{{template "header" .}}
+{{$store := or (contains .BodyClass "single-product") (contains .BodyClass "woocommerce-shop") (contains .BodyClass "tax-product_") (contains .BodyClass "post-type-archive-product")}}
+{{with .Post}}<article id="post-{{.ID}}" class="{{.Class}} tl-page{{if $store}} tl-store-page{{end}}">
+	<div class="tl-wrap">
+		{{if not $store}}<header class="tl-page__header"><h1 class="entry-title">{{.Title}}</h1></header>{{end}}
+		<div class="entry-content{{if or $store (contains $.BodyClass "woocommerce-page")}} tl-store-content{{else}} tl-measure{{end}}">
+			{{.Content}}
+		</div>
+		{{with .EditLink}}<footer class="entry-footer"><span class="edit-link">{{.}}</span></footer>{{end}}
+	</div>
+</article>{{end}}
+{{if not $store}}<div class="tl-wrap tl-measure">{{template "comments" .}}</div>{{end}}
+{{template "footer" .}}

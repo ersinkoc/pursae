@@ -1,0 +1,6 @@
+<section class="no-results not-found gb-none">
+	<h2 class="page-title">Nothing here yet</h2>
+	{{if eq .Template "search"}}<p>Nothing matched your search. Try a gentler word, like &ldquo;serum&rdquo; or &ldquo;balm&rdquo;.</p>
+	{{else}}<p>It seems we can&rsquo;t find what you&rsquo;re looking for. Perhaps searching can help.</p>{{end}}
+	{{template "searchform" .}}
+</section>

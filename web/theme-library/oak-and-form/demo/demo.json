@@ -1,0 +1,589 @@
+{
+	"version": 1,
+	"options": {
+		"blogname": "Oak & Form",
+		"blogdescription": "Scandinavian furniture, made to last"
+	},
+	"categories": [
+		{
+			"slug": "care",
+			"name": "Care",
+			"description": "Keeping wood, wool and linen beautiful."
+		},
+		{
+			"slug": "rooms",
+			"name": "Rooms",
+			"description": "Ideas for small and not-so-small homes."
+		},
+		{
+			"slug": "makers",
+			"name": "Makers",
+			"description": "The workshops behind our pieces."
+		}
+	],
+	"media": [
+		{
+			"id": "hero",
+			"file": "demo/images/oak-and-form-hero.jpg",
+			"alt": "A light Scandinavian living room with an oak lounge chair and a pendant lamp"
+		},
+		{
+			"id": "about",
+			"file": "demo/images/oak-and-form-about.jpg",
+			"alt": "A woodworker planing an oak board in the workshop"
+		},
+		{
+			"id": "cat-living",
+			"file": "demo/images/oak-and-form-cat-living.jpg",
+			"alt": "Living collection"
+		},
+		{
+			"id": "cat-dining",
+			"file": "demo/images/oak-and-form-cat-dining.jpg",
+			"alt": "Dining collection"
+		},
+		{
+			"id": "cat-lighting",
+			"file": "demo/images/oak-and-form-cat-lighting.jpg",
+			"alt": "Lighting collection"
+		},
+		{
+			"id": "cat-decor",
+			"file": "demo/images/oak-and-form-cat-decor.jpg",
+			"alt": "Decor collection"
+		},
+		{
+			"id": "p-lounge-chair",
+			"file": "demo/images/oak-and-form-p-lounge-chair.jpg",
+			"alt": "An oak lounge chair with a woven back and a linen cushion"
+		},
+		{
+			"id": "p-three-seat-sofa",
+			"file": "demo/images/oak-and-form-p-three-seat-sofa.jpg",
+			"alt": "A three-seat sofa in pale linen on an oak base"
+		},
+		{
+			"id": "p-oak-coffee-table",
+			"file": "demo/images/oak-and-form-p-oak-coffee-table.jpg",
+			"alt": "A round oak coffee table with a lower shelf"
+		},
+		{
+			"id": "p-side-table",
+			"file": "demo/images/oak-and-form-p-side-table.jpg",
+			"alt": "A small round oak side table"
+		},
+		{
+			"id": "p-dining-table",
+			"file": "demo/images/oak-and-form-p-dining-table.jpg",
+			"alt": "A long oak dining table"
+		},
+		{
+			"id": "p-spindle-chair",
+			"file": "demo/images/oak-and-form-p-spindle-chair.jpg",
+			"alt": "A spindle-back dining chair"
+		},
+		{
+			"id": "p-oak-stool",
+			"file": "demo/images/oak-and-form-p-oak-stool.jpg",
+			"alt": "A three-legged oak stool"
+		},
+		{
+			"id": "p-pendant-lamp",
+			"file": "demo/images/oak-and-form-p-pendant-lamp.jpg",
+			"alt": "A pleated paper pendant lamp"
+		},
+		{
+			"id": "p-floor-lamp",
+			"file": "demo/images/oak-and-form-p-floor-lamp.jpg",
+			"alt": "An oak floor lamp with a linen shade"
+		},
+		{
+			"id": "p-wall-shelf",
+			"file": "demo/images/oak-and-form-p-wall-shelf.jpg",
+			"alt": "An oak wall shelf with pegs"
+		},
+		{
+			"id": "p-ceramic-vase",
+			"file": "demo/images/oak-and-form-p-ceramic-vase.jpg",
+			"alt": "A matte ceramic vase"
+		},
+		{
+			"id": "p-wool-throw",
+			"file": "demo/images/oak-and-form-p-wool-throw.jpg",
+			"alt": "A folded herringbone wool throw"
+		},
+		{
+			"id": "p-three-seat-sofa-alt",
+			"file": "demo/images/oak-and-form-p-three-seat-sofa-alt.jpg",
+			"alt": "The three-seat sofa in wool bouclé"
+		}
+	],
+	"pages": [
+		{
+			"slug": "home",
+			"title": "Home",
+			"content": "<!-- wp:cover {\"url\":\"{{media:hero}}\",\"id\":{{media_id:hero}},\"dimRatio\":0,\"minHeight\":720,\"contentPosition\":\"bottom left\",\"align\":\"full\"} --><div class=\"wp-block-cover alignfull has-custom-content-position is-position-bottom-left\" style=\"min-height:720px\"><span aria-hidden=\"true\" class=\"wp-block-cover__background has-background-dim-0 has-background-dim\"></span><img class=\"wp-block-cover__image-background wp-image-{{media_id:hero}}\" alt=\"\" src=\"{{media:hero}}\" data-object-fit=\"cover\"/><div class=\"wp-block-cover__inner-container\"><!-- wp:paragraph {\"className\":\"of-kicker\"} --><p class=\"of-kicker\">New in: the spring room</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":1} --><h1 class=\"wp-block-heading\">Furniture made<br>to be lived with.</h1><!-- /wp:heading --><!-- wp:paragraph --><p>Solid oak, natural fibres and quiet shapes, made in small workshops and built to last a lifetime.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"/shop/\">Shop the collection</a></div><!-- /wp:button --><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"/about/\">Our workshop</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div></div><!-- /wp:cover --><!-- wp:group {\"className\":\"of-intro\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group of-intro\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Fewer, better things for a calmer home.</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Every piece is drawn in our studio and made by people we know by name. We use timber from managed forests and finish it with oil, not lacquer, so it ages the way wood should.</p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:group {\"className\":\"of-cats\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group of-cats\"><!-- wp:image {\"id\":{{media_id:cat-living}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"/product-category/living/\"><img src=\"{{media:cat-living}}\" alt=\"Living collection\" class=\"wp-image-{{media_id:cat-living}}\"/></a><figcaption class=\"wp-element-caption\">Living</figcaption></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:cat-dining}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"/product-category/dining/\"><img src=\"{{media:cat-dining}}\" alt=\"Dining collection\" class=\"wp-image-{{media_id:cat-dining}}\"/></a><figcaption class=\"wp-element-caption\">Dining</figcaption></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:cat-lighting}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"/product-category/lighting/\"><img src=\"{{media:cat-lighting}}\" alt=\"Lighting collection\" class=\"wp-image-{{media_id:cat-lighting}}\"/></a><figcaption class=\"wp-element-caption\">Lighting</figcaption></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:cat-decor}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"/product-category/decor/\"><img src=\"{{media:cat-decor}}\" alt=\"Decor collection\" class=\"wp-image-{{media_id:cat-decor}}\"/></a><figcaption class=\"wp-element-caption\">Decor</figcaption></figure><!-- /wp:image --></div><!-- /wp:group --><!-- wp:group {\"className\":\"of-section-head\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group of-section-head\"><!-- wp:heading {\"className\":\"of-section-title\"} --><h2 class=\"wp-block-heading of-section-title\">Pieces we love</h2><!-- /wp:heading --><!-- wp:paragraph --><p><a class=\"of-more\" href=\"/shop/\">See everything</a></p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:shortcode -->[products limit=\"6\" columns=\"3\" visibility=\"featured\"]<!-- /wp:shortcode --><!-- wp:media-text {\"mediaId\":{{media_id:about}},\"mediaType\":\"image\",\"className\":\"of-promo\"} --><div class=\"wp-block-media-text is-stacked-on-mobile of-promo\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:about}}\" alt=\"A woodworker planing an oak board\" class=\"wp-image-{{media_id:about}} size-full\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:paragraph {\"className\":\"of-kicker\"} --><p class=\"of-kicker\">First order</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">10% off your first piece</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Use the code <strong>WELCOME10</strong> at checkout. Delivery is free on orders over €500, and every solid-oak piece carries a ten-year guarantee.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"/shop/\">Start browsing</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div></div><!-- /wp:media-text --><!-- wp:group {\"className\":\"of-section-head\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group of-section-head\"><!-- wp:heading {\"className\":\"of-section-title\"} --><h2 class=\"wp-block-heading of-section-title\">Gently reduced</h2><!-- /wp:heading --><!-- wp:paragraph --><p><a class=\"of-more\" href=\"/shop/\">All pieces</a></p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:shortcode -->[products limit=\"4\" columns=\"4\" on_sale=\"true\"]<!-- /wp:shortcode --><!-- wp:group {\"className\":\"of-section-head\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group of-section-head\"><!-- wp:heading {\"className\":\"of-section-title\"} --><h2 class=\"wp-block-heading of-section-title\">New in the workshop</h2><!-- /wp:heading --><!-- wp:paragraph --><p><a class=\"of-more\" href=\"/shop/?orderby=date\">See what is new</a></p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:shortcode -->[products limit=\"6\" columns=\"3\" orderby=\"date\" order=\"DESC\"]<!-- /wp:shortcode --><!-- wp:columns {\"className\":\"of-values\"} --><div class=\"wp-block-columns of-values\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph --><p>10</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Year guarantee</h3><!-- /wp:heading --><!-- wp:paragraph --><p>On every solid-oak frame, joint and top.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph --><p>30</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Days to decide</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Live with it for a month. If it does not fit, we collect it.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph --><p>0</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Lacquer</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Hard wax oil only, so scratches buff out at home.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->",
+			"template": "page-home",
+			"front_page": true
+		},
+		{
+			"slug": "about",
+			"title": "Our story",
+			"content": "<!-- wp:image {\"id\":{{media_id:about}},\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:about}}\" alt=\"A woodworker planing an oak board in the workshop\" class=\"wp-image-{{media_id:about}}\"/></figure><!-- /wp:image --><!-- wp:paragraph --><p>Oak &amp; Form began in a rented corner of a joinery outside the city, with one table we could not find anywhere else: solid, simple, and honest about how it was made. Friends asked for one, then their friends did, and the workshop slowly became ours.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Today we work with four small workshops within a day&rsquo;s drive. They build our frames by hand, we design and finish them, and we deliver them ourselves whenever we can. It is a slower way to make furniture, and we think it shows.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">What we believe</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Solid wood, never veneered chipboard.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Oil finishes you can repair at home.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Covers that zip off, parts that can be replaced.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Fair prices for the people who make it.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:paragraph --><p>Come and see us: the showroom is open on Saturdays, and the kettle is usually on.</p><!-- /wp:paragraph -->",
+			"featured_media": "about"
+		},
+		{
+			"slug": "contact",
+			"title": "Contact",
+			"content": "<!-- wp:paragraph --><p>Questions about a piece, a delivery or a repair? Write to us and someone from the studio will answer within one working day.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><strong>Email:</strong> studio@oakandform.example<br><strong>Phone:</strong> +45 20 00 00 00 (weekdays, 9–16)<br><strong>Showroom:</strong> Værkstedsvej 7, open Saturdays 10–16</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Delivery and returns</h3><!-- /wp:heading --><!-- wp:paragraph --><p>We deliver large pieces with our own team, carry them into the room you choose and take the packaging away. If something does not fit your home, you have thirty days to change your mind.</p><!-- /wp:paragraph -->"
+		},
+		{
+			"slug": "journal",
+			"title": "Journal",
+			"content": "",
+			"posts_page": true
+		}
+	],
+	"posts": [
+		{
+			"slug": "caring-for-oiled-oak",
+			"title": "Caring for oiled oak",
+			"date": "2026-09-18T09:00:00",
+			"categories": [
+				"care"
+			],
+			"featured_media": "p-dining-table",
+			"excerpt": "Oil, not lacquer: how to keep a solid-oak table looking good for decades, with a cloth and ten minutes twice a year.",
+			"content": "<!-- wp:paragraph --><p>We finish every piece with hard wax oil rather than lacquer. Lacquer looks perfect on day one and worse every year after; oil soaks into the wood, so wear becomes part of the surface instead of a scratch through it.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Day to day, wipe the table with a damp cloth and a drop of mild soap, then dry it. Avoid anything with alcohol or ammonia, and put a mat under hot pans. A water ring that appears overnight usually disappears again with a little rubbing and a day of rest.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Twice a year, or whenever the top looks dry, sand any rough patch lightly with fine paper, rub in a thin coat of oil with a lint-free cloth, wait twenty minutes and buff off what has not soaked in. That is all. Your table will darken slowly to a warm honey colour, and every mark will tell a story rather than spoil it.</p><!-- /wp:paragraph -->"
+		},
+		{
+			"slug": "one-room-three-ways",
+			"title": "One room, three ways",
+			"date": "2026-10-02T10:00:00",
+			"categories": [
+				"rooms"
+			],
+			"featured_media": "p-lounge-chair",
+			"excerpt": "We styled the same small living room for reading, for guests and for a slow Sunday, with only a handful of pieces.",
+			"content": "<!-- wp:paragraph --><p>Small rooms reward furniture that can move. For this shoot we took a living room of fourteen square metres and gave ourselves one rule: nothing new could come in, we could only rearrange.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>For reading, the lounge chair went by the window with the floor lamp behind the shoulder and the side table within reach. For guests, the oak stools became extra seats around the coffee table and the throw went over the sofa arm. For a slow Sunday, everything moved back to the walls and the rug got the room.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The lesson: light pieces with legs, not boxes, make a room flexible. And a stool is never only a stool.</p><!-- /wp:paragraph -->"
+		},
+		{
+			"slug": "visiting-the-lamp-makers",
+			"title": "Visiting the lamp makers",
+			"date": "2026-10-21T08:30:00",
+			"categories": [
+				"makers"
+			],
+			"featured_media": "p-pendant-lamp",
+			"excerpt": "Paper, glue and a lot of patience: a morning in the workshop where our pendant shades are folded by hand.",
+			"content": "<!-- wp:paragraph --><p>Our pendant shades are folded in a two-person workshop by the harbour. Each one starts as a single sheet of heavy paper, scored by hand along a template and folded, pleat by pleat, into a shade.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>It takes about two hours to fold a large shade, and a full day for the glue on the seam to cure. The oak caps are turned in the same building, on a lathe older than either of the makers.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>We asked why they do not use a machine for the scoring. The answer was simple: a machine makes every pleat identical, and the light looks flat. By hand, every fold is a fraction different, and the light dances.</p><!-- /wp:paragraph -->"
+		}
+	],
+	"menus": [
+		{
+			"name": "Main menu",
+			"location": "primary",
+			"items": [
+				{
+					"title": "Shop",
+					"url": "/shop/",
+					"children": [
+						{
+							"title": "Living",
+							"url": "/product-category/living/"
+						},
+						{
+							"title": "Dining",
+							"url": "/product-category/dining/"
+						},
+						{
+							"title": "Lighting",
+							"url": "/product-category/lighting/"
+						},
+						{
+							"title": "Decor",
+							"url": "/product-category/decor/"
+						}
+					]
+				},
+				{
+					"title": "Living",
+					"url": "/product-category/living/"
+				},
+				{
+					"title": "Lighting",
+					"url": "/product-category/lighting/"
+				},
+				{
+					"title": "Our story",
+					"page": "about"
+				},
+				{
+					"title": "Journal",
+					"page": "journal"
+				},
+				{
+					"title": "Contact",
+					"page": "contact"
+				}
+			]
+		},
+		{
+			"name": "Footer menu",
+			"location": "footer",
+			"items": [
+				{
+					"title": "Shop",
+					"url": "/shop/"
+				},
+				{
+					"title": "My account",
+					"url": "/my-account/"
+				},
+				{
+					"title": "Journal",
+					"page": "journal"
+				},
+				{
+					"title": "Contact",
+					"page": "contact"
+				}
+			]
+		}
+	],
+	"widgets": {
+		"footer-1": [
+			"<!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Showroom</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Værkstedsvej 7<br>Saturdays, 10–16<br>Weekdays by appointment</p><!-- /wp:paragraph -->",
+			"<!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Service</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Free delivery over €500<br>30 days to change your mind<br>10-year guarantee on solid oak</p><!-- /wp:paragraph -->",
+			"<!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">From the journal</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Care guides, room ideas and visits to the workshops where our pieces are made.</p><!-- /wp:paragraph -->"
+		]
+	},
+	"customizer": {
+		"accent": "#6b7f5a",
+		"wood": "#c49a6c",
+		"show_announcement": true,
+		"announcement": "Free delivery over €500 · 10-year guarantee on solid oak",
+		"header_layout": "split",
+		"catalog_columns": "3"
+	},
+	"goocommerce": {
+		"settings": {
+			"currency": "EUR",
+			"currency_pos": "right_space",
+			"price_thousand_sep": ".",
+			"price_decimal_sep": ",",
+			"price_num_decimals": 0,
+			"catalog_columns": 3,
+			"catalog_rows": 4,
+			"demo_store": false
+		},
+		"categories": [
+			{
+				"slug": "living",
+				"name": "Living",
+				"description": "Sofas, lounge chairs and low tables for the room you spend the most time in.",
+				"image": "cat-living"
+			},
+			{
+				"slug": "dining",
+				"name": "Dining",
+				"description": "Solid oak tables, chairs and stools built for long dinners and homework.",
+				"image": "cat-dining"
+			},
+			{
+				"slug": "lighting",
+				"name": "Lighting",
+				"description": "Pendants and floor lamps that make a warm pool of light, not a glare.",
+				"image": "cat-lighting"
+			},
+			{
+				"slug": "decor",
+				"name": "Decor",
+				"description": "Shelves, ceramics and wool: the small things that make a house feel lived in.",
+				"image": "cat-decor"
+			}
+		],
+		"attributes": [
+			{
+				"slug": "fabric",
+				"name": "Fabric",
+				"terms": [
+					"Linen",
+					"Boucle"
+				]
+			}
+		],
+		"products": [
+			{
+				"slug": "lounge-chair",
+				"name": "Lounge Chair",
+				"type": "simple",
+				"regular_price": "690",
+				"categories": [
+					"living"
+				],
+				"description": "<p>A low, deep seat in solid oak with a woven paper-cord back that gives a little as you lean in. The arms are wide enough for a cup of coffee and the cushion is filled with feathers over a firm foam core, so it keeps its shape for years.</p><p>Finished with a hard wax oil you can refresh at home. Seat height 38 cm, width 72 cm, depth 80 cm.</p>",
+				"short_description": "<p>A low oak lounge chair with a woven paper-cord back and a feather-topped cushion.</p>",
+				"sku": "OF-101",
+				"stock": 5,
+				"sale_price": "590",
+				"featured": true,
+				"reviews": [
+					{
+						"author": "Freya",
+						"email": "freya@example.com",
+						"rating": 5,
+						"content": "The most comfortable chair in the house, and the cats agree. The paper cord back is softer than it looks."
+					},
+					{
+						"author": "Tomas",
+						"email": "tomas@example.com",
+						"rating": 4,
+						"content": "Beautiful joinery. It sits quite low, which we love for reading, but taller guests may want a cushion."
+					}
+				],
+				"upsells": [
+					"wool-throw",
+					"side-table"
+				],
+				"image": "p-lounge-chair"
+			},
+			{
+				"slug": "three-seat-sofa",
+				"name": "Three-Seat Sofa",
+				"type": "variable",
+				"regular_price": "1890",
+				"categories": [
+					"living"
+				],
+				"sku": "OF-102",
+				"featured": true,
+				"description": "<p>A generous three-seater on a slim oak base, with loose back cushions you can plump and turn. The frame is kiln-dried beech with steel springs, and every cover zips off for cleaning.</p><p>Choose a washed Belgian linen that softens with every wash, or a chunky wool bouclé that feels like a favourite jumper. Width 220 cm, depth 92 cm, seat height 44 cm.</p>",
+				"short_description": "<p>A deep three-seater on an oak base, in washed linen or wool bouclé.</p>",
+				"attributes": [
+					{
+						"name": "Fabric",
+						"values": [
+							"Linen",
+							"Boucle"
+						],
+						"variation": true
+					}
+				],
+				"variations": [
+					{
+						"attributes": {
+							"Fabric": "Linen"
+						},
+						"regular_price": "1890",
+						"stock": 3,
+						"sku": "OF-102-LI"
+					},
+					{
+						"attributes": {
+							"Fabric": "Boucle"
+						},
+						"regular_price": "2090",
+						"stock": 2,
+						"sku": "OF-102-BO",
+						"image": "p-three-seat-sofa-alt"
+					}
+				],
+				"reviews": [
+					{
+						"author": "Signe",
+						"email": "signe@example.com",
+						"rating": 5,
+						"content": "We chose the bouclé and it is like sitting in a cloud. Delivery team carried it up four floors without a scratch."
+					}
+				],
+				"cross_sells": [
+					"wool-throw"
+				],
+				"image": "p-three-seat-sofa",
+				"gallery": [
+					"p-three-seat-sofa-alt"
+				]
+			},
+			{
+				"slug": "oak-coffee-table",
+				"name": "Oak Coffee Table",
+				"type": "simple",
+				"regular_price": "420",
+				"categories": [
+					"living"
+				],
+				"description": "<p>A round coffee table in solid white oak with a lower shelf for books and the remote. The top is planed from a single glued panel and the legs are joined with hand-cut tenons.</p><p>Diameter 90 cm, height 38 cm. Oiled, not lacquered, so a water ring buffs out with a cloth.</p>",
+				"short_description": "<p>A round solid-oak coffee table with a lower shelf.</p>",
+				"sku": "OF-103",
+				"stock": 7,
+				"featured": true,
+				"image": "p-oak-coffee-table"
+			},
+			{
+				"slug": "side-table",
+				"name": "Side Table",
+				"type": "simple",
+				"regular_price": "180",
+				"categories": [
+					"living"
+				],
+				"description": "<p>A small three-legged table that fits beside a sofa or a bed. The top has a raised lip so a glass never slides off, and the turned legs taper to slim feet.</p><p>Diameter 42 cm, height 52 cm. Solid oak, oiled.</p>",
+				"short_description": "<p>A small three-legged oak table with a raised lip.</p>",
+				"sku": "OF-104",
+				"stock": 12,
+				"image": "p-side-table"
+			},
+			{
+				"slug": "dining-table",
+				"name": "Dining Table",
+				"type": "simple",
+				"regular_price": "1250",
+				"categories": [
+					"dining"
+				],
+				"description": "<p>A long table for six to eight, in solid oak with a gently bevelled edge and splayed legs set back from the corners so nobody bumps a knee. Built to be handed down.</p><p>200 × 95 cm, height 74 cm. Each top is chosen by hand for a calm, straight grain.</p>",
+				"short_description": "<p>A solid-oak table for six to eight with splayed legs.</p>",
+				"sku": "OF-201",
+				"stock": 3,
+				"featured": true,
+				"reviews": [
+					{
+						"author": "Henrik",
+						"email": "henrik@example.com",
+						"rating": 5,
+						"content": "Heavy, solid and quietly beautiful. The grain on ours is so straight it looks drawn with a ruler."
+					}
+				],
+				"cross_sells": [
+					"spindle-chair"
+				],
+				"image": "p-dining-table"
+			},
+			{
+				"slug": "spindle-chair",
+				"name": "Spindle Chair",
+				"type": "simple",
+				"regular_price": "240",
+				"categories": [
+					"dining"
+				],
+				"description": "<p>A light dining chair with a steam-bent back rail and seven turned spindles. Comfortable through a long dinner, light enough to carry with one hand.</p><p>Solid ash and oak, seat height 45 cm. Stackable two high.</p>",
+				"short_description": "<p>A light spindle-back dining chair in ash and oak.</p>",
+				"sku": "OF-202",
+				"stock": 24,
+				"featured": true,
+				"image": "p-spindle-chair"
+			},
+			{
+				"slug": "oak-stool",
+				"name": "Oak Stool",
+				"type": "simple",
+				"regular_price": "150",
+				"categories": [
+					"dining"
+				],
+				"description": "<p>A three-legged stool that is a seat, a bedside table and a plant stand. The seat is carved slightly hollow so it is comfortable for longer than you expect.</p><p>Height 46 cm, seat diameter 32 cm. Solid oak.</p>",
+				"short_description": "<p>A three-legged solid-oak stool with a carved seat.</p>",
+				"sku": "OF-203",
+				"stock": 15,
+				"image": "p-oak-stool"
+			},
+			{
+				"slug": "pendant-lamp",
+				"name": "Pendant Lamp",
+				"type": "simple",
+				"regular_price": "210",
+				"categories": [
+					"lighting"
+				],
+				"description": "<p>A wide shade of pleated paper on a turned oak cap. It scatters a soft, even light across a dining table and casts a gentle pattern on the ceiling.</p><p>Diameter 50 cm, 2 m fabric cord, E27 fitting. Bulb not included.</p>",
+				"short_description": "<p>A pleated paper pendant with a turned oak cap.</p>",
+				"sku": "OF-301",
+				"stock": 9,
+				"featured": true,
+				"image": "p-pendant-lamp"
+			},
+			{
+				"slug": "floor-lamp",
+				"name": "Floor Lamp",
+				"type": "simple",
+				"regular_price": "260",
+				"categories": [
+					"lighting"
+				],
+				"description": "<p>A slender reading lamp with a linen shade and an oak stem on a weighted steel base. The foot switch is on the cord, so you can switch it on with a toe.</p><p>Height 152 cm, shade diameter 38 cm, E27 fitting.</p>",
+				"short_description": "<p>A slender oak floor lamp with a linen shade.</p>",
+				"sku": "OF-302",
+				"stock": 6,
+				"sale_price": "219",
+				"image": "p-floor-lamp"
+			},
+			{
+				"slug": "wall-shelf",
+				"name": "Wall Shelf",
+				"type": "simple",
+				"regular_price": "120",
+				"categories": [
+					"decor"
+				],
+				"description": "<p>A shelf with a narrow lip and a row of pegs underneath, for keys, a scarf or a small plant. Hidden brackets make it look as if it floats.</p><p>80 × 18 cm, solid oak, fixings included.</p>",
+				"short_description": "<p>A floating oak shelf with a row of pegs.</p>",
+				"sku": "OF-401",
+				"stock": 14,
+				"image": "p-wall-shelf"
+			},
+			{
+				"slug": "ceramic-vase",
+				"name": "Ceramic Vase",
+				"type": "simple",
+				"regular_price": "48",
+				"categories": [
+					"decor"
+				],
+				"description": "<p>Thrown by hand in a small workshop and glazed in a soft, matte oat white, each vase is a little different. Holds water for fresh stems or looks fine empty.</p><p>Height 24 cm.</p>",
+				"short_description": "<p>A hand-thrown vase in matte oat glaze.</p>",
+				"sku": "OF-402",
+				"stock": 20,
+				"sale_price": "39",
+				"reviews": [
+					{
+						"author": "Ingrid",
+						"email": "ingrid@example.com",
+						"rating": 5,
+						"content": "The glaze is lovely, slightly speckled. Looks great with a single branch."
+					}
+				],
+				"image": "p-ceramic-vase"
+			},
+			{
+				"slug": "wool-throw",
+				"name": "Wool Throw",
+				"type": "simple",
+				"regular_price": "95",
+				"categories": [
+					"decor"
+				],
+				"description": "<p>Woven from undyed lambswool in a broad herringbone, with a hand-knotted fringe. Warm without weighing you down, and it gets softer with use.</p><p>130 × 180 cm. Dry clean or a cool wool wash.</p>",
+				"short_description": "<p>A herringbone lambswool throw with a knotted fringe.</p>",
+				"sku": "OF-403",
+				"stock": 18,
+				"image": "p-wool-throw"
+			}
+		],
+		"coupons": [
+			{
+				"code": "WELCOME10",
+				"type": "percent",
+				"amount": "10",
+				"description": "10% off your first order"
+			}
+		],
+		"shipping": {
+			"zone": "Everywhere",
+			"flat_rate": "49",
+			"free_over": "500",
+			"local_pickup": true
+		}
+	}
+}

@@ -1,0 +1,103 @@
+{{define "admin/goo-attributes"}}{{template "admin-header" .}}{{with .Data}}{{$d := .}}
+{{if .Edit}}
+<div class="wrap woocommerce">
+<h1>Edit attribute</h1>
+{{template "notices" $}}
+<form action="/wp-admin/goocommerce?page=attributes&amp;edit={{.Edit.ID}}" method="post">
+	<table class="form-table">
+		<tbody>
+			<tr class="form-field form-required">
+				<th scope="row" valign="top"><label for="attribute_label">Name</label></th>
+				<td><input name="attribute_label" id="attribute_label" type="text" value="{{.Edit.Name}}" />
+				<p class="description">Name for the attribute (shown on the front-end).</p></td>
+			</tr>
+			<tr class="form-field form-required">
+				<th scope="row" valign="top"><label for="attribute_name">Slug</label></th>
+				<td><input name="attribute_name" id="attribute_name" type="text" value="{{.Edit.Slug}}" maxlength="28" />
+				<p class="description">Unique slug/reference for the attribute; must be no more than 28 characters.</p></td>
+			</tr>
+			<tr class="form-field form-required">
+				<th scope="row" valign="top"><label for="attribute_public">Enable archives?</label></th>
+				<td><input name="attribute_public" id="attribute_public" type="checkbox" value="1"{{if .Edit.HasArchives}} checked="checked"{{end}} />
+				<p class="description">Enable this if you want this attribute to have product archives in your store.</p></td>
+			</tr>
+			<tr class="form-field form-required">
+				<th scope="row" valign="top"><label for="attribute_orderby">Default sort order</label></th>
+				<td><select name="attribute_orderby" id="attribute_orderby">
+					{{range .OrderBy}}<option value="{{.Value}}"{{if eq .Value $d.Edit.OrderBy}} selected="selected"{{end}}>{{.Label}}</option>{{end}}
+				</select>
+				<p class="description">Determines the sort order of the terms on the frontend shop product pages. If using custom ordering, you can drag and drop the terms in this attribute.</p></td>
+			</tr>
+		</tbody>
+	</table>
+	<p class="submit"><button type="submit" name="save_attribute" id="submit" class="button-primary" value="Update">Update</button></p>
+	<input type="hidden" name="_wpnonce" value="{{.EditNonce}}" />
+</form>
+</div>
+{{else}}
+<div class="wrap woocommerce">
+<h1>Attributes</h1>
+{{template "notices" $}}
+<br class="clear" />
+<div id="col-container">
+	<div id="col-right">
+		<div class="col-wrap">
+			<table class="widefat attributes-table wp-list-table ui-sortable" style="width:100%">
+				<thead><tr>
+					<th scope="col">Name</th>
+					<th scope="col">Slug</th>
+					<th scope="col">Order by</th>
+					<th scope="col">Terms</th>
+				</tr></thead>
+				<tbody>
+				{{range .Rows}}<tr>
+					<td>
+						<strong><a href="{{.TermsURL}}">{{.A.Name}}</a></strong>
+						<div class="row-actions"><span class="edit"><a href="{{.EditURL}}">Edit</a> | </span><span class="delete"><a class="delete" href="{{.DeleteURL}}">Delete</a></span></div>
+					</td>
+					<td>{{.A.Slug}}</td>
+					<td>{{.OrderByLabel}}</td>
+					<td class="attribute-terms">{{if .Terms}}{{.Terms}}{{if .MoreTerms}}, &hellip;{{end}}{{else}}<span class="na">&ndash;</span>{{end}}<br /><a href="{{.TermsURL}}" class="configure-terms">Configure terms</a></td>
+				</tr>
+				{{else}}<tr><td colspan="4">No attributes currently exist.</td></tr>
+				{{end}}</tbody>
+			</table>
+		</div>
+	</div>
+	<div id="col-left">
+		<div class="col-wrap">
+			<div class="form-wrap">
+				<h2>Add new attribute</h2>
+				<p>Attributes let you define extra product data, such as size or color. You can use these attributes in the shop sidebar using the "layered nav" widgets.</p>
+				<form action="/wp-admin/goocommerce?page=attributes" method="post">
+					<div class="form-field">
+						<label for="attribute_label">Name</label>
+						<input name="attribute_label" id="attribute_label" type="text" value="{{.Form.Name}}" />
+						<p class="description">Name for the attribute (shown on the front-end).</p>
+					</div>
+					<div class="form-field">
+						<label for="attribute_name">Slug</label>
+						<input name="attribute_name" id="attribute_name" type="text" value="{{.Form.Slug}}" maxlength="28" />
+						<p class="description">Unique slug/reference for the attribute; must be no more than 28 characters.</p>
+					</div>
+					<div class="form-field">
+						<label for="attribute_public"><input name="attribute_public" id="attribute_public" type="checkbox" value="1"{{if .Form.HasArchives}} checked="checked"{{end}} /> Enable archives?</label>
+						<p class="description">Enable this if you want this attribute to have product archives in your store.</p>
+					</div>
+					<div class="form-field">
+						<label for="attribute_orderby">Default sort order</label>
+						<select name="attribute_orderby" id="attribute_orderby">
+							{{range .OrderBy}}<option value="{{.Value}}"{{if eq .Value $d.Form.OrderBy}} selected="selected"{{end}}>{{.Label}}</option>{{end}}
+						</select>
+						<p class="description">Determines the sort order of the terms on the frontend shop product pages. If using custom ordering, you can drag and drop the terms in this attribute.</p>
+					</div>
+					<p class="submit"><button type="submit" name="add_new_attribute" id="submit" class="button button-primary" value="Add attribute">Add attribute</button></p>
+					<input type="hidden" name="_wpnonce" value="{{.AddNonce}}" />
+				</form>
+			</div>
+		</div>
+	</div>
+</div>
+</div>
+{{end}}
+{{end}}{{template "admin-footer" .}}{{end}}

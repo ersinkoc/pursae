@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"wpgo/internal/i18n"
 	"wpgo/internal/media"
 	"wpgo/internal/store"
 )
@@ -170,6 +171,9 @@ func (s *Server) renderBlockEditor(c *gin.Context, p *store.Post, isNew bool) {
 		{"slug": "theme", "title": "Theme", "icon": nil}, {"slug": "embed", "title": "Embeds", "icon": nil},
 		{"slug": "reusable", "title": "Patterns", "icon": nil},
 	}
+	for _, cat := range categories {
+		cat["title"] = s.__(c, cat["title"].(string))
+	}
 	catJSON, _ := json.Marshal(categories)
 
 	themeURI := lb.HomeURL(theme.URI() + "/")
@@ -211,14 +215,14 @@ func (s *Server) renderBlockEditor(c *gin.Context, p *store.Post, isNew bool) {
 	settings := map[string]any{
 		"alignWide": false, "allowedBlockTypes": true, "allowedMimeTypes": allowedMimes,
 		"defaultEditorStyles": []map[string]any{{"css": s.webFile("wp-includes/css/dist/block-editor/default-editor-styles.min.css")}},
-		"blockCategories":     categories, "isRTL": false, "imageDefaultSize": "large", "imageEditing": true,
+		"blockCategories":     categories, "isRTL": i18n.IsRTL(s.userLocale(c)), "imageDefaultSize": "large", "imageEditing": true,
 		"imageDimensions": map[string]any{
 			"thumbnail": map[string]any{"width": s.settings.Int("thumbnail_size_w"), "height": s.settings.Int("thumbnail_size_h"), "crop": s.settings.Bool("thumbnail_crop")},
 			"medium":    map[string]any{"width": s.settings.Int("medium_size_w"), "height": s.settings.Int("medium_size_h"), "crop": false},
 			"large":     map[string]any{"width": s.settings.Int("large_size_w"), "height": s.settings.Int("large_size_h"), "crop": false},
 		},
-		"imageSizes": []map[string]string{{"slug": "thumbnail", "name": "Thumbnail"}, {"slug": "medium", "name": "Medium"},
-			{"slug": "large", "name": "Large"}, {"slug": "full", "name": "Full Size"}},
+		"imageSizes": []map[string]string{{"slug": "thumbnail", "name": s.__(c, "Thumbnail")}, {"slug": "medium", "name": s.__(c, "Medium")},
+			{"slug": "large", "name": s.__(c, "Large")}, {"slug": "full", "name": s.__(c, "Full Size")}},
 		"maxUploadFileSize":                maxUploadBytes,
 		"__unstableGalleryWithImageBlocks": true,
 		"__experimentalFeatures":           editorFeatures(theme.Palette),
@@ -242,10 +246,10 @@ func (s *Server) renderBlockEditor(c *gin.Context, p *store.Post, isNew bool) {
 		"__experimentalDashboardLink":                    "/wp-admin/",
 		"__experimentalAdditionalBlockPatterns":          patterns,
 		"__experimentalAdditionalBlockPatternCategories": corePatternCategories(),
-		"availableTemplates":                             map[string]string{"": "Default template"},
+		"availableTemplates":                             map[string]string{"": s.__(c, "Default template")},
 		"disablePostFormats":                             false,
-		"titlePlaceholder":                               "Add title",
-		"bodyPlaceholder":                                "Type / to choose a block",
+		"titlePlaceholder":                               s.__(c, "Add title"),
+		"bodyPlaceholder":                                s.__(c, "Type / to choose a block"),
 		"autosaveInterval":                               60,
 		"richEditingEnabled":                             true,
 		"postLock":                                       map[string]any{"isLocked": false, "activePostLock": ""},

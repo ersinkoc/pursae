@@ -14,6 +14,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+
+	"wpgo/internal/i18n"
 )
 
 // wp-registry.json is WordPress 7.1.3's own script and style registry (wp_default_scripts(),
@@ -178,6 +180,7 @@ func (s *Server) scriptTags(c *gin.Context, a *assets, footer bool) template.HTM
 			fmt.Fprintf(&sb, "<script id=\"%s-js-before\">\n%s\n</script>\n", h, s.fillPlaceholders(c, h, strings.Join(before, "\n")))
 		}
 		if src := s.assetSrc(srcString(r.Src)); src != "" {
+			sb.WriteString(s.scriptTranslations(c, h, src))
 			extra := ""
 			if st, ok := r.Strategy.(string); ok && st != "" {
 				extra = fmt.Sprintf(" %s data-wp-strategy=\"%s\"", st, st)
@@ -246,6 +249,14 @@ func (s *Server) afterFor(c *gin.Context, handle string, def []string) []string 
 	case "wp-date":
 		return []string{s.dateSettingsJS()}
 	case "wp-i18n":
+		if loc := s.userLocale(c); loc != "en_US" && !s.catalog(c).Empty() {
+			// The language pack names the editor; keep only the text direction.
+			dir := "ltr"
+			if i18n.IsRTL(loc) {
+				dir = "rtl"
+			}
+			return []string{`wp.i18n.setLocaleData( { "text direction\u0004ltr": [ "` + dir + `" ] } );`}
+		}
 		return []string{gotenbergLocale}
 	}
 	return def

@@ -36,6 +36,9 @@ func Optimize(doc []byte, o OptimizeConfig) []byte {
 	for i, sg := range segs {
 		text := src[sg.start:sg.end]
 		ltext := lc[sg.start:sg.end]
+		if sg.raw == "!--" && o.CollapseWhitespace && removableComment(text) {
+			continue
+		}
 		if sg.raw != "" {
 			if sg.raw == "script" && o.DeferScripts && inBody {
 				text = deferScript(text, lc, o.DeferAllowlist)
@@ -255,14 +258,18 @@ func insertAttrs(tag string, gt int, extra string) string {
 	return tag[:k] + extra + tag[k:]
 }
 
-// lazyImages adds loading="lazy" decoding="async" to <img> tags lacking a loading
-// attribute, leaving the first skip images of the document eager.
+// lazyImages adds loading="lazy" decoding="async" to <img> tags (loading="lazy" to <iframe>
+// tags) lacking a loading attribute. The first skip images of the document stay eager, and the
+// very first one gets fetchpriority="high": it is most likely the LCP image.
 func lazyImages(text string, count *int, skip int) string {
 	lc := asciiLower(text)
 	var b strings.Builder
 	last, from := 0, 0
 	for {
-		at := findTag(lc, "img", from)
+		at, name := findTag(lc, "img", from), "img"
+		if fr := findTag(lc, "iframe", from); fr >= 0 && (at < 0 || fr < at) {
+			at, name = fr, "iframe"
+		}
 		if at < 0 {
 			break
 		}
@@ -271,18 +278,26 @@ func lazyImages(text string, count *int, skip int) string {
 			break
 		}
 		from = gt + 1
-		*count++
-		if *count <= skip {
-			continue
-		}
 		tag := text[at : gt+1]
 		attrs := parseAttrs(tag)
-		if _, ok := attrs["loading"]; ok {
-			continue
+		extra := ""
+		if name == "img" {
+			*count++
+			if *count <= skip {
+				_, lazy := attrs["loading"]
+				if _, ok := attrs["fetchpriority"]; *count == 1 && !ok && !lazy {
+					extra = ` fetchpriority="high"`
+				}
+			}
 		}
-		extra := ` loading="lazy"`
-		if _, ok := attrs["decoding"]; !ok {
-			extra += ` decoding="async"`
+		if _, ok := attrs["loading"]; !ok && extra == "" && (name == "iframe" || *count > skip) {
+			extra = ` loading="lazy"`
+			if _, ok := attrs["decoding"]; !ok && name == "img" {
+				extra += ` decoding="async"`
+			}
+		}
+		if extra == "" {
+			continue
 		}
 		b.WriteString(text[last:at])
 		b.WriteString(insertAttrs(tag, len(tag)-1, extra))
@@ -340,7 +355,7 @@ func matchHandle(id, src string, allow []string) string {
 		if h == "" {
 			continue
 		}
-		if id == h || id == h+"-js" || file == h {
+		if id == h || id == h+"-js" || file == h || strings.ContainsAny(h, "/.") && strings.Contains(src, h) {
 			return h
 		}
 	}
@@ -382,6 +397,18 @@ func collapseWhitespace(text string, prevTag, nextTag bool) string {
 		}
 	}
 	return b.String()
+}
+
+// removableComment reports whether an HTML comment can go when minifying: everything except
+// conditional comments and ones marked to stay (<!--noptimize-->, <!--wpgo-keep ...-->).
+func removableComment(c string) bool {
+	lc := asciiLower(c)
+	for _, keep := range []string{"<!--[if", "<![endif]", "<!--<![endif]", "noptimize", "wpgo-keep", "google_ad"} {
+		if strings.Contains(lc, keep) {
+			return false
+		}
+	}
+	return true
 }
 
 func countSpace(s string, i int) int {

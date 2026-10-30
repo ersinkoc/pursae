@@ -77,6 +77,7 @@ func (s *Server) gweStudioInject(c *gin.Context, p *store.Post, page string) str
 	}
 	head := ""
 	body := "<script id=\"gwe-studio-config\">window.GWEStudioConfig = " + gweJSON(cfg) + ";</script>\n"
+	body += s.gweL10nScript(c) // Studio in the user's language (i18n_golementor.go)
 	if mode == "studio" {
 		// The class is set before the upstream UI paints, so the Studio is what the splash reveals.
 		head = `<link rel="stylesheet" id="gwe-studio-css" href="` + assets + `studio.css?ver=` + ver + `" media="all">` + "\n"

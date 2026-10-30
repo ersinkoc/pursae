@@ -1,0 +1,5 @@
+@font-face { font-family: "Fredoka"; src: url("fonts/fredoka.woff2") format("woff2"); font-weight: 400 700; font-display: swap; }
+@font-face { font-family: "Nunito"; src: url("fonts/nunito.woff2") format("woff2"); font-weight: 400 800; font-display: swap; }
+body { font: 400 1.0625rem/1.65 "Nunito", "Helvetica Neue", Arial, sans-serif; color: #5b4636; background: #fffdf6; }
+h1, h2, h3, h4 { font-family: "Fredoka", "Nunito", sans-serif; font-weight: 600; line-height: 1.12; color: #3f3026; }
+a { color: #4f8a3c; }

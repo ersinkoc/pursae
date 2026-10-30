@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>{{.DocumentTitle}}</title>
+{{.Head}}</head>
+
+<body class="{{.BodyClass}}">
+{{.BodyOpen}}<div id="page" class="site">
+	<a class="skip-link screen-reader-text" href="#main">Skip to content</a>
+
+	<header id="masthead" class="site-header">
+		<div class="de-strip">
+			<div class="de-wrap de-strip__inner">
+				<p class="de-strip__note">{{if theme_mod . "show_announcement"}}{{with theme_mod . "announcement"}}<span class="de-announcement">{{.}}</span>{{end}}{{end}}</p>
+				<div class="de-tools">
+					<button type="button" class="de-tool de-search-toggle" aria-controls="de-search" aria-expanded="false">{{template "icon-search"}}<span class="de-tool__label">Search</span></button>
+					{{if goo_on}}<a class="de-tool de-account" href="{{goo_url . "myaccount"}}">{{template "icon-account"}}<span class="de-tool__label">Account</span></a>
+					<div class="de-cart site-header-cart">
+						<a class="de-tool de-cart-toggle" href="{{goo_url . "cart"}}" aria-controls="de-mini-cart">{{template "icon-basket"}}<span class="de-tool__label">Basket</span> <span class="de-cart-count" data-goo-cart-count>{{goo_cart_count .}}</span></a>
+						<div id="de-mini-cart" class="de-mini-cart widget_shopping_cart" hidden>
+							<p class="de-mini-cart__title">Your basket</p>
+							{{goo_mini_cart .}}
+						</div>
+					</div>{{end}}
+				</div>
+			</div>
+		</div>
+		<div id="de-search" class="de-search-panel" hidden><div class="de-wrap">
+			<p class="de-search-panel__hint">Looking for something to read?</p>
+			{{if goo_on}}{{goo_product_search .}}{{else}}{{template "searchform" .}}{{end}}
+		</div></div>
+		<div class="de-wrap de-masthead">
+			<div class="site-branding">
+				{{with .CustomLogo}}<div class="site-logo">{{.}}</div>{{end}}
+				{{if .TitleIsH1}}<h1 class="site-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></h1>{{else}}<p class="site-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></p>{{end}}
+				{{with .Description}}<p class="site-description">{{.}}</p>{{end}}
+			</div><!-- .site-branding -->
+			{{if has_nav_menu . "primary"}}<nav id="site-navigation" class="main-navigation" aria-label="Primary menu">
+				<button type="button" class="menu-toggle" aria-controls="site-navigation" aria-expanded="false"><span class="de-burger" aria-hidden="true"></span>Sections</button>
+				{{nav_menu . "primary"}}
+			</nav><!-- #site-navigation -->{{end}}
+		</div>
+	</header><!-- #masthead -->
+
+	<div id="content" class="site-content">
+		<main id="main" class="site-main" tabindex="-1">

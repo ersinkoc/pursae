@@ -1,0 +1,15 @@
+{{template "header" .}}
+{{with .Post}}<article id="post-{{.ID}}" class="{{.Class}} tl-article">
+	<header class="tl-wrap tl-measure tl-article__header">
+		<p class="tl-kicker">{{range $i, $c := .Categories}}{{if $i}} &middot; {{end}}<a href="{{$c.URL}}">{{$c.Name}}</a>{{end}}</p>
+		<h1 class="entry-title">{{.Title}}</h1>
+		<p class="tl-article__meta"><time datetime="{{.DateISO}}">{{.DateText}}</time>{{with .AuthorName}} &middot; <span class="byline">{{.}}</span>{{end}}{{with .EditLink}} &middot; <span class="edit-link">{{.}}</span>{{end}}</p>
+	</header>
+	{{with .Thumbnail}}<figure class="tl-wrap tl-article__media">{{.}}</figure>{{end}}
+	<div class="tl-wrap tl-measure entry-content">
+		{{.Content}}
+	</div>
+	{{if .Tags}}<footer class="tl-wrap tl-measure entry-footer"><span class="tags-links">{{range .Tags}}<a href="{{.URL}}" rel="tag">#{{.Name}}</a> {{end}}</span></footer>{{end}}
+</article>{{end}}
+<div class="tl-wrap tl-measure">{{.PostNav}}{{template "comments" .}}</div>
+{{template "footer" .}}

@@ -208,6 +208,11 @@
 {{else if eq .Tab "passwords"}}
 <h2 class="title">Password policy</h2>
 <p>Applied when a password is set (profile, Add User, password reset, REST API). A user with several roles gets the strictest rule.</p>
+{{if .S.PwAllowWeak}}<div class="notice notice-warning inline"><p><strong>Weak passwords are allowed.</strong> The rules below are not applied. Turn this off before the site goes live.</p></div>{{end}}
+<table class="form-table" role="presentation">
+<tr><th scope="row">Weak passwords</th><td><label><input type="checkbox" name="pw_allow_weak" value="1"{{if .S.PwAllowWeak}} checked{{end}}> Allow weak passwords</label>
+	<p class="description">For test and development sites. The length, strength and common-password rules are skipped, and nobody is asked to change a weak password at login. A change an administrator required for a user still applies.</p></td></tr>
+</table>
 <table class="widefat striped asg-roles" style="max-width:640px"><thead><tr><th>Role</th><th>Minimum length</th><th>Minimum strength</th></tr></thead><tbody>
 {{range .Roles}}{{$slug := .Slug}}<tr><td>{{.Name}}</td><td><input type="number" min="0" max="128" class="small-text" name="pw_len_{{.Slug}}" value="{{index $.Data.S.PwMinLength .Slug}}" aria-label="{{.Name}} minimum length"></td>
 	<td><select name="pw_strength_{{.Slug}}" aria-label="{{.Name}} minimum strength">{{$cur := index $.Data.S.PwMinStrength .Slug}}{{range $i, $l := $.Data.Strengths}}<option value="{{$i}}"{{if eq $i $cur}} selected{{end}}>{{if eq $i 0}}Any{{else}}{{$l}}{{end}}</option>{{end}}</select></td></tr>{{end}}
@@ -215,7 +220,7 @@
 <table class="form-table" role="presentation">
 <tr><th scope="row">Common passwords</th><td><label><input type="checkbox" name="pw_block_common" value="1"{{if .S.PwBlockCommon}} checked{{end}}> Refuse the 10,000 most common passwords</label></td></tr>
 <tr><th scope="row">Existing passwords</th><td><label><input type="checkbox" name="pw_check_login" value="1"{{if .S.PwCheckLogin}} checked{{end}}> At login, ask users whose password breaks the policy to choose a new one</label>
-	<p class="description">Administrators can also require a password change for one user from their profile (Users › Edit).</p></td></tr>
+	<p class="description">Administrators can also require a password change for one user from their profile (Users › Edit). Users who sign in with two-factor authentication or MFA are never asked to change their password.</p></td></tr>
 </table>
 {{else if eq .Tab "sessions"}}
 <h2 class="title">Sessions</h2>

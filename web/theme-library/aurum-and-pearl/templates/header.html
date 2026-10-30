@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>{{.DocumentTitle}}</title>
+{{.Head}}</head>
+
+<body class="{{.BodyClass}}">
+{{.BodyOpen}}<div id="page" class="site">
+	<a class="skip-link screen-reader-text" href="#main">Skip to content</a>
+	{{if theme_mod . "show_announcement"}}{{with theme_mod . "announcement"}}<div class="ap-announcement" role="note"><p>{{.}}</p></div>{{end}}{{end}}
+
+	<header id="masthead" class="site-header">
+		<div class="ap-wrap ap-masthead">
+			<div class="ap-masthead__left">
+				{{if has_nav_menu . "primary"}}<button type="button" class="ap-menu-toggle" aria-controls="site-navigation" aria-expanded="false"><span class="ap-menu-toggle__lines" aria-hidden="true"></span><span class="screen-reader-text">Menu</span></button>{{end}}
+				<button type="button" class="ap-link ap-search-toggle" aria-controls="ap-search" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg><span class="ap-link__label">Search</span></button>
+			</div>
+			<div class="site-branding">
+				{{with .CustomLogo}}<div class="site-logo">{{.}}</div>{{end}}
+				{{if .TitleIsH1}}<h1 class="site-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></h1>{{else}}<p class="site-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></p>{{end}}
+				{{with .Description}}<p class="site-description">{{.}}</p>{{end}}
+			</div><!-- .site-branding -->
+			<div class="ap-masthead__right">
+				{{if goo_on}}<a class="ap-link ap-account" href="{{goo_url . "myaccount"}}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c1.2-3.4 3.8-5 7-5s5.8 1.6 7 5"/></svg><span class="ap-link__label">Account</span></a>
+				<div class="ap-cart site-header-cart">
+					<a class="ap-link ap-cart-toggle" href="{{goo_url . "cart"}}" aria-controls="ap-mini-cart"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.5 8.5h13l-1 11h-11z"/><path d="M9 8.5V7a3 3 0 0 1 6 0v1.5"/></svg><span class="ap-link__label">Bag</span><span class="ap-cart-count" data-goo-cart-count>{{goo_cart_count .}}</span></a>
+					<div id="ap-mini-cart" class="ap-mini-cart widget_shopping_cart" hidden>
+						<p class="ap-mini-cart__title">Your bag</p>
+						{{goo_mini_cart .}}
+					</div>
+				</div>{{end}}
+			</div>
+		</div>
+		{{if has_nav_menu . "primary"}}<nav id="site-navigation" class="main-navigation" aria-label="Primary menu">
+			<div class="ap-wrap">{{nav_menu . "primary"}}</div>
+		</nav><!-- #site-navigation -->{{end}}
+		<div id="ap-search" class="ap-search-panel" hidden><div class="ap-wrap">{{if goo_on}}{{goo_product_search .}}{{else}}{{template "searchform" .}}{{end}}</div></div>
+	</header><!-- #masthead -->
+	<div class="ap-scrim" hidden></div>
+
+	<div id="content" class="site-content">
+		<main id="main" class="site-main" tabindex="-1">

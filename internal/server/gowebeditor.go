@@ -22,6 +22,7 @@ import (
 
 	"wpgo/internal/blocks"
 	"wpgo/internal/builder"
+	"wpgo/internal/i18n"
 	"wpgo/internal/store"
 	"wpgo/internal/wp"
 )
@@ -582,7 +583,7 @@ func (s *Server) gweEditor(c *gin.Context, p *store.Post) {
 	s.gweProEditorConfig(c, cfg) // Golementor Pro: dynamic tags, display conditions, Pro controls
 	cfg["user"] = map[string]any{
 		"restrictions": []any{}, "is_administrator": u.Can("manage_options", nil), "introduction": gweUserMap(u, "gwe_introduction"),
-		"dismissed_editor_notices": []any{}, "locale": "en_US", "top_bar": map[string]string{"connect_url": "", "my_elementor_url": ""},
+		"dismissed_editor_notices": []any{}, "locale": s.userLocale(c), "top_bar": map[string]string{"connect_url": "", "my_elementor_url": ""},
 		"can_edit_kit": u.Can("manage_options", nil) || u.Can("edit_theme_options", nil),
 	}
 	var settings map[string]map[string]any
@@ -602,19 +603,19 @@ func (s *Server) gweEditor(c *gin.Context, p *store.Post) {
 	}
 	common["ajax"] = map[string]string{"url": s.links(c).HomeURL("/wp-admin/admin-ajax"), "nonce": s.nonce(c, "elementor_ajax")}
 	common["filesUpload"] = map[string]bool{"unfilteredFiles": false}
-	common["isRTL"] = false
+	common["isRTL"] = i18n.IsRTL(s.userLocale(c))
 	uid := int64(0)
 	if u != nil {
 		uid = u.ID
 	}
 
 	parts := map[string]string{
-		"elementor-editor-js-before":     "var ElementorConfig = " + gweJSON(cfg) + ";",
-		"elementor-common-js-before":     "var elementorCommonConfig = " + gweJSON(common) + ";",
+		"elementor-editor-js-before":     "var ElementorConfig = " + string(s.gweTranslateConfig(c, []byte(gweJSON(cfg)), false)) + ";",
+		"elementor-common-js-before":     "var elementorCommonConfig = " + string(s.gweTranslateConfig(c, []byte(gweJSON(common)), false)) + ";",
 		"elementor-app-loader-js-before": "var elementorAppConfig = " + string(d.appCfg) + ";",
 		"utils-js-extra":                 fmt.Sprintf(`var userSettings = {"url":"/","uid":"%d","time":"%d","secure":""};`, uid, time.Now().Unix()),
 		"wp-date-js-after":               s.dateSettingsJS(),
-		"wp-i18n-js-after":               "wp.i18n.setLocaleData( { 'text direction\\u0004ltr': [ 'ltr' ] } );\nwp.i18n.setLocaleData( " + string(d.i18n) + ", 'elementor' );",
+		"wp-i18n-js-after":               s.gweLocaleScript(c, d.i18n), // the language pack (i18n_golementor.go)
 		"elementor-styleguide-js-extra":  `var elementorStyleguideConfig = {"activeKitId":"` + itoa64(kit.ID) + `"};`,
 	}
 	s.gweProEditorParts(c, p, parts) // Golementor Pro: elementorProEditorConfig and friends
@@ -639,7 +640,7 @@ func (s *Server) gweEditor(c *gin.Context, p *store.Post) {
 	}
 	page = s.gweStudioInject(c, p, page) // Golementor Studio, the simple panel (gowebeditor_studio.go)
 	c.Header("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0")
-	c.Data(http.StatusOK, "text/html; charset=UTF-8", []byte(page))
+	c.Data(http.StatusOK, "text/html; charset=UTF-8", s.translateAdminPage(c, []byte(page)))
 }
 
 // gweUserMap reads a per-user settings map from user meta.

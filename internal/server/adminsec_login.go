@@ -216,7 +216,7 @@ func (s *Server) adminsecGate(c *gin.Context, u *store.User) bool {
 	if p == "/wp-admin/admin-ajax" && c.Query("action") == "heartbeat" {
 		return false
 	}
-	if asForcePassword(u) {
+	if s.asForcePassword(c, u) {
 		if p == "/wp-admin/profile" {
 			return false
 		}
@@ -563,13 +563,13 @@ type asLoginView struct {
 // then either the second-factor challenge or the end of the login.
 func (s *Server) adminsecPasswordOK(c *gin.Context, v loginView, u *store.User, pass string) {
 	st := s.asLoad()
-	if st.PwCheckLogin && !asForcePassword(u) {
+	f := s.asFactors(c, u.ID)
+	if st.PwCheckLogin && !f.any() && !s.asForcePassword(c, u) {
 		if msg := s.adminsecUserPasswordProblem(u, pass); msg != "" {
 			_ = s.setUserMeta(c, u, "adminsec_force_password", true)
 			s.asAudit(c, asEvent{Event: "password_change_forced", Severity: "notice", User: u, Object: u.Login, Message: "The password no longer meets the policy: " + msg})
 		}
 	}
-	f := s.asFactors(c, u.ID)
 	if !f.any() || s.asRememberedDevice(c, u) {
 		method := "password"
 		if f.any() {
@@ -732,7 +732,7 @@ func (s *Server) asFinishLogin(c *gin.Context, u *store.User, remember bool, red
 	if (target == "/wp-admin/" || target == "/wp-admin") && !u.Can("edit_posts", nil) {
 		target = "/wp-admin/profile"
 	}
-	if asForcePassword(u) {
+	if s.asForcePassword(c, u) {
 		target = "/wp-admin/profile?adminsec=password#password"
 	} else if e := s.asEnrollState(c, u); !e.Satisfied && e.Expired {
 		target = "/wp-admin/admin?page=" + asSlug + "-account&required=1"

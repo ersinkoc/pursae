@@ -35,10 +35,10 @@
 {{range .Rows}}
 <tr id="user-{{.ID}}">
 	<th scope="row" class="check-column">{{if not .IsSelf}}<input type="checkbox" name="users[]" id="user_{{.ID}}" value="{{.ID}}" /><label for="user_{{.ID}}"><span class="screen-reader-text">Select {{.Login}}</span></label>{{end}}</th>
-	<td class="username column-username has-row-actions column-primary" data-colname="Username">{{.Avatar}} <strong><a href="{{.EditURL}}">{{.Login}}</a></strong><br />
+	<td class="username column-username has-row-actions column-primary" data-colname="Username">{{.Avatar}} <strong><a href="{{.EditURL}}" translate="no">{{.Login}}</a></strong><br />
 		<div class="row-actions"><span class="edit"><a href="{{.EditURL}}">Edit</a></span>{{if .DeleteURL}} | <span class="delete"><a class="submitdelete" href="{{.DeleteURL}}">Delete</a></span>{{end}}{{if .ResetURL}} | <span class="resetpassword"><a class="resetpassword" href="{{.ResetURL}}">Send password reset</a></span>{{end}}</div>
 		<button type="button" class="toggle-row"><span class="screen-reader-text">Show more details</span></button></td>
-	<td class="name column-name" data-colname="Name">{{if .Name}}{{.Name}}{{else}}<span aria-hidden="true">&#8212;</span><span class="screen-reader-text">Unknown</span>{{end}}</td>
+	<td class="name column-name" data-colname="Name">{{if .Name}}<span translate="no">{{.Name}}</span>{{else}}<span aria-hidden="true">&#8212;</span><span class="screen-reader-text">Unknown</span>{{end}}</td>
 	<td class="email column-email" data-colname="Email"><a href="mailto:{{.Email}}">{{.Email}}</a></td>
 	<td class="role column-role" data-colname="Role">{{if .RoleNames}}{{.RoleNames}}{{else}}None{{end}}</td>
 	{{if $.Data.SecColumn}}<td class="adminsec column-adminsec" data-colname="Two-Step">{{.Security}}</td>{{end}}

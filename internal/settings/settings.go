@@ -39,6 +39,7 @@ var Defaults = map[string]any{
 	"golementor_previous_theme":     "",    // the theme Golementor left for Hello Golementor; restored on deactivation
 	"native_golylang":               false, // the multilingual plugin (Polylang Pro clone) starts switched off
 	"native_gooike":                 false, // Gooike, the cookie consent plugin, starts switched off
+	"native_goocommerce":            false, // Goocommerce, the e-commerce plugin, starts switched off
 	"plugin_trusted_keys":           "",
 	"plugin_allow_unsigned":         false,
 	"wpgo_hub_url":                  "",   // overrides WPGO_HUB_URL when set
@@ -54,12 +55,12 @@ var Defaults = map[string]any{
 	"wpgo_cache_exclude_uri":        "",
 	"wpgo_cache_drop_qs":            "",
 	"wpgo_cache_server":             "auto",
-	"wpgo_cache_disk":               false,
+	"wpgo_cache_disk":               true, // warm pages survive restarts and updates
 	"wpgo_opt_lazy":                 true,
 	"wpgo_opt_lazy_skip":            1,
-	"wpgo_opt_defer":                false,
+	"wpgo_opt_defer":                true, // an empty list defers only scripts nothing depends on
 	"wpgo_opt_defer_list":           "",
-	"wpgo_opt_minify_html":          false,
+	"wpgo_opt_minify_html":          true,
 	"wpgo_opt_preload_fonts":        true,
 	"posts_per_page":                10,
 	"posts_per_rss":                 10,

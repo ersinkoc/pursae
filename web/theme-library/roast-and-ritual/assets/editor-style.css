@@ -1,0 +1,9 @@
+@font-face { font-family: "Fraunces"; src: url("fonts/fraunces.woff2") format("woff2"); font-weight: 400 700; font-display: swap; }
+@font-face { font-family: "Albert Sans"; src: url("fonts/albert-sans.woff2") format("woff2"); font-weight: 300 700; font-display: swap; }
+@font-face { font-family: "IBM Plex Mono"; src: url("fonts/ibm-plex-mono-400.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+body { font: 400 1.02rem/1.7 "Albert Sans", "Helvetica Neue", Arial, sans-serif; color: #2b1d16; background: #efe6da; }
+h1, h2, h3, h4 { font-family: "Fraunces", Georgia, serif; font-weight: 600; line-height: 1.05; letter-spacing: -.015em; }
+a { color: #2f6f6a; }
+code { font-family: "IBM Plex Mono", monospace; }
+.wp-block-button__link { background: #2f6f6a; color: #fff; border-radius: 12px; }
+blockquote { border-left: 4px solid #c8a27a; padding-left: 1em; font-family: "Fraunces", Georgia, serif; font-style: italic; }

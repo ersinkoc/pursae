@@ -1,0 +1,15 @@
+{{define "admin/goo-ext-settings"}}{{template "admin-header" .}}{{with .Data}}
+<div class="wrap goocommerce">
+<h1 class="wp-heading-inline">{{.Ext.Name}}</h1>
+<a href="/wp-admin/goocommerce?page=extensions" class="page-title-action">&larr; Extensions</a>
+<hr class="wp-header-end">
+{{template "notices" $}}
+{{if not .On}}<div class="notice notice-warning"><p>This extension is not active. Its settings are kept, but nothing of it runs until you activate it.</p></div>{{end}}
+<p>{{.Ext.Description}}</p>
+<form method="post" action="/wp-admin/goocommerce?page=ext&amp;ext={{.Ext.Key}}">
+	<input type="hidden" name="_wpnonce" value="{{.Nonce}}">
+	{{.Form}}
+	<p class="submit"><button type="submit" class="button-primary woocommerce-save-button">Save changes</button></p>
+</form>
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}

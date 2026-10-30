@@ -1,0 +1,8 @@
+{{template "header" .}}
+<section class="of-wrap of-404 error-404 not-found">
+	<p class="of-kicker">Error 404</p>
+	<h1 class="page-title">This room is still empty.</h1>
+	<p>The page you were looking for has been moved or never existed. Search the catalogue, or wander back through the <a href="{{if goo_on}}{{goo_url . "shop"}}{{else}}{{.HomeURL}}{{end}}">collection</a>.</p>
+	{{if goo_on}}{{goo_product_search .}}{{else}}{{template "searchform" .}}{{end}}
+</section>
+{{template "footer" .}}

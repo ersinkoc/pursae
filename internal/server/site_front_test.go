@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -413,7 +414,9 @@ func TestFrontCommentPagingFloodAndClosing(t *testing.T) {
 		<h2 class="screen-reader-text">Comments navigation</h2>
 		<div class="nav-links"><div class="nav-previous"><a href="` + base + helloPath + `comment-page-1/#comments" >Older comments</a></div></div>
 	</nav>`
-	if !strings.Contains(body, nav) {
+	// "Minify HTML" collapses the whitespace between tags.
+	collapse := regexp.MustCompile(`>\s+<`)
+	if !strings.Contains(collapse.ReplaceAllString(body, "> <"), collapse.ReplaceAllString(nav, "> <")) {
 		t.Errorf("comments navigation missing: %s", body)
 	}
 	if strings.Count(body, "comments-navigation") != 2 {

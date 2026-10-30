@@ -1,0 +1,13 @@
+{{template "header" .}}
+{{$store := or (contains .BodyClass "single-product") (contains .BodyClass "woocommerce-shop") (contains .BodyClass "tax-product_") (contains .BodyClass "post-type-archive-product")}}
+{{with .Post}}<article id="post-{{.ID}}" class="{{.Class}} de-page{{if $store}} de-store-page{{end}}">
+	<div class="de-wrap">
+		{{if not $store}}<header class="de-page__header"><span class="de-page__orn" aria-hidden="true">&#10086;</span><h1 class="entry-title">{{.Title}}</h1></header>{{end}}
+		<div class="entry-content{{if or $store (contains $.BodyClass "woocommerce-page")}} de-store-content{{else}} de-measure{{end}}">
+			{{.Content}}
+		</div>
+		{{with .EditLink}}<footer class="entry-footer"><span class="edit-link">{{.}}</span></footer>{{end}}
+	</div>
+</article>{{end}}
+{{if not $store}}<div class="de-wrap de-measure">{{template "comments" .}}</div>{{end}}
+{{template "footer" .}}

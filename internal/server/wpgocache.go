@@ -56,6 +56,7 @@ func (s *Server) cacheConfig() cache.Config {
 	cfg.CacheMobileSeparately = st.Bool("wpgo_cache_mobile")
 	cfg.CacheLoggedIn = st.Bool("wpgo_cache_logged_in")
 	cfg.ExcludePaths = append(cfg.ExcludePaths, lines(st.String("wpgo_cache_exclude_uri"))...)
+	cfg.ExcludePaths, cfg.ExcludeCookies = s.gooCacheExcludes(cfg.ExcludePaths, cfg.ExcludeCookies) // Goocommerce: cart, checkout, my account
 	cfg.DropQueryStrings = append(cfg.DropQueryStrings, lines(st.String("wpgo_cache_drop_qs"))...)
 	cfg.ServerHint = cache.ServerHint(st.String("wpgo_cache_server"))
 	if st.Bool("wpgo_cache_disk") {
@@ -65,7 +66,7 @@ func (s *Server) cacheConfig() cache.Config {
 		LazyImages:         st.Bool("wpgo_opt_lazy"),
 		LazySkipFirst:      st.Int("wpgo_opt_lazy_skip"),
 		DeferScripts:       st.Bool("wpgo_opt_defer"),
-		DeferAllowlist:     lines(st.String("wpgo_opt_defer_list")),
+		DeferAllowlist:     deferList(lines(st.String("wpgo_opt_defer_list"))),
 		CollapseWhitespace: st.Bool("wpgo_opt_minify_html"),
 	}
 	if st.Bool("wpgo_opt_preload_fonts") {
@@ -78,6 +79,18 @@ func (s *Server) cacheConfig() cache.Config {
 		}
 	}
 	return cfg
+}
+
+// cacheSafeDefer are the core and default-theme scripts nothing inline depends on, deferred when
+// "Defer JavaScript" is on and the list is left empty.
+var cacheSafeDefer = []string{"comment-reply", "wp-embed", "twentysixteen-script", "twentysixteen-skip-link-focus-fix",
+	"twentysixteen-keyboard-image-navigation", "skip-link-focus-fix", "keyboard-image-navigation"}
+
+func deferList(v []string) []string {
+	if len(v) == 0 {
+		return cacheSafeDefer
+	}
+	return v
 }
 
 func lines(v string) []string {
@@ -95,6 +108,11 @@ func lines(v string) []string {
 func (s *Server) configureCache() {
 	if s.sandbox != nil { // a theme-preview sandbox is served without the page cache
 		return
+	}
+	// A rebuild at run time drops every page, also the copies on disk: the new cache would
+	// otherwise load them back (only the start-up keeps the persisted pages).
+	if old := s.currentCache(); old != nil {
+		old.PurgeAll()
 	}
 	c := cache.New(s.cacheConfig(), cache.Options{LoginCookie: auth.CookieName, Logger: slog.Default()})
 	s.cache.Store(&pageCache{c: c, h: c.Middleware(s.appHandler())})
@@ -159,6 +177,7 @@ func (s *Server) cacheTags(c *gin.Context, q *siteQuery) {
 	if q.Kind == "front-page" || q.Kind == "home" {
 		c.Header(cache.HeaderTTL, strconv.Itoa(s.settings.Int("wpgo_cache_ttl_front")))
 	}
+	tags = append(tags, s.gooCacheTags(c, q)...) // Goocommerce: products and the shop (goo_front.go)
 	c.Header(cache.HeaderTags, strings.Join(tags, ","))
 }
 

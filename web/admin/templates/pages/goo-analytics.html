@@ -1,0 +1,28 @@
+{{define "admin/goo-analytics"}}{{template "admin-header" .}}{{template "goo-store-assets"}}{{with .Data}}{{$d := .}}
+<div class="wrap woocommerce goo-analytics">
+<h1 class="wp-heading-inline">{{.Title}}</h1>
+{{if .Table}}<a href="{{.CSVURL}}" class="page-title-action">Download</a>{{end}}
+<hr class="wp-header-end">
+{{template "notices" $}}
+<form method="get" action="/wp-admin/goocommerce" class="woocommerce-filters goo-filters">
+<input type="hidden" name="page" value="analytics">{{if .Path}}<input type="hidden" name="path" value="{{.Path}}">{{end}}
+<label>Date range: <select name="period">{{template "goo-store-options" (dict "Opts" .Periods "Sel" .Period.Key)}}</select></label>
+<span class="goo-custom-dates"><input type="date" name="after" value="{{.Period.After}}" aria-label="Start date"> &ndash; <input type="date" name="before" value="{{.Period.Before}}" aria-label="End date"></span>
+<label>compared to <select name="compare"><option value="previous_period"{{if eq .Period.Compare "previous_period"}} selected{{end}}>Previous period</option><option value="previous_year"{{if eq .Period.Compare "previous_year"}} selected{{end}}>Previous year</option></select></label>
+<button type="submit" class="button">Update</button>
+<span class="description">{{.Period.Label}} ({{.Period.RangeText}}) vs. {{.Period.PrevText}}</span>
+</form>
+{{if .Cards}}<ul class="woocommerce-summary goo-summary">{{range .Cards}}<li class="woocommerce-summary__item-container">{{if .URL}}<a href="{{.URL}}" class="woocommerce-summary__item">{{template "goo-store-card" .}}</a>{{else}}<div class="woocommerce-summary__item">{{template "goo-store-card" .}}</div>{{end}}</li>{{end}}</ul>{{end}}
+{{if .Chart.Bars}}<div class="postbox woocommerce-chart"><div class="postbox-header"><h2 class="hndle">{{.ChartLabel}}</h2></div><div class="inside chart-container">{{.Chart.SVG}}</div></div>{{end}}
+{{if .Leaders}}<div class="woocommerce-leaderboards goo-leaders">{{range .Leaders}}<div class="postbox woocommerce-leaderboard"><div class="postbox-header"><h2 class="hndle">{{.Title}}</h2></div><div class="inside">
+<table class="widefat striped"><thead><tr>{{range .Headers}}<th>{{.}}</th>{{end}}</tr></thead><tbody>{{range .Rows}}<tr>{{range .}}<td>{{.}}</td>{{end}}</tr>{{else}}<tr><td colspan="{{len .Headers}}">No data recorded for the selected time period.</td></tr>{{end}}</tbody></table></div></div>{{end}}</div>{{end}}
+{{if .Table}}<div class="postbox woocommerce-table"><div class="postbox-header"><h2 class="hndle">{{.Title}}</h2></div><div class="inside">
+<table class="widefat striped woocommerce-table__table"><thead><tr>{{range .Table.Headers}}<th scope="col">{{.}}</th>{{end}}</tr></thead><tbody>
+{{range .Table.Rows}}<tr>{{range .}}<td>{{.}}</td>{{end}}</tr>{{else}}<tr><td colspan="{{len .Table.Headers}}">{{.Table.Empty}}</td></tr>{{end}}
+</tbody></table></div></div>{{end}}
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}
+
+{{define "goo-store-card"}}<div class="woocommerce-summary__item-label">{{.Label}}</div><div class="woocommerce-summary__item-data"><div class="woocommerce-summary__item-value">{{.Value}}</div>
+{{if .Delta}}<div class="woocommerce-summary__item-delta{{if .Up}} is-good-trend{{end}}{{if .Down}} is-bad-trend{{end}}">{{.Delta}}</div>{{end}}</div>
+{{if .Prev}}<div class="woocommerce-summary__item-prev-label">Previous period: <span class="woocommerce-summary__item-prev-value">{{.Prev}}</span></div>{{end}}{{end}}

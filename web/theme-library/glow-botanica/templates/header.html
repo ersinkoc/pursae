@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>{{.DocumentTitle}}</title>
+{{.Head}}</head>
+
+<body class="{{.BodyClass}}">
+{{.BodyOpen}}<div id="page" class="site">
+	<a class="skip-link screen-reader-text" href="#main">Skip to content</a>
+	{{if theme_mod . "show_announcement"}}{{with theme_mod . "announcement"}}<div class="gb-announcement" role="note"><span class="gb-announcement__leaf" aria-hidden="true">&#10045;</span> {{.}} <span class="gb-announcement__leaf" aria-hidden="true">&#10045;</span></div>{{end}}{{end}}
+
+	<header id="masthead" class="site-header">
+		<div class="gb-capsule">
+			<div class="site-branding">
+				{{with .CustomLogo}}<div class="site-logo">{{.}}</div>{{end}}
+				{{if .TitleIsH1}}<h1 class="site-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></h1>{{else}}<p class="site-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></p>{{end}}
+			</div><!-- .site-branding -->
+			{{if has_nav_menu . "primary"}}<nav id="site-navigation" class="main-navigation" aria-label="Primary menu">
+				<button type="button" class="menu-toggle" aria-controls="site-navigation" aria-expanded="false"><span class="gb-burger" aria-hidden="true"></span><span class="screen-reader-text">Menu</span></button>
+				{{nav_menu . "primary"}}
+			</nav><!-- #site-navigation -->{{end}}
+			<div class="gb-tools">
+				<button type="button" class="gb-icon gb-search-toggle" aria-controls="gb-search" aria-expanded="false">{{template "icon-search"}}<span class="screen-reader-text">Search</span></button>
+				{{if goo_on}}<a class="gb-icon gb-account" href="{{goo_url . "myaccount"}}">{{template "icon-account"}}<span class="screen-reader-text">My account</span></a>
+				<div class="gb-cart site-header-cart">
+					<a class="gb-icon gb-cart-toggle" href="{{goo_url . "cart"}}" aria-controls="gb-mini-cart">{{template "icon-bag"}}<span class="gb-cart-count" data-goo-cart-count>{{goo_cart_count .}}</span><span class="screen-reader-text">Cart</span></a>
+					<div id="gb-mini-cart" class="gb-mini-cart widget_shopping_cart" hidden>
+						<p class="gb-mini-cart__title">Your bag</p>
+						{{goo_mini_cart .}}
+					</div>
+				</div>{{end}}
+			</div>
+		</div>
+		<div id="gb-search" class="gb-search-panel" hidden>
+			<p class="gb-search-panel__hint">Search serums, balms, shades&hellip;</p>
+			{{if goo_on}}{{goo_product_search .}}{{else}}{{template "searchform" .}}{{end}}
+		</div>
+	</header><!-- #masthead -->
+
+	<div id="content" class="site-content">
+		<main id="main" class="site-main" tabindex="-1">

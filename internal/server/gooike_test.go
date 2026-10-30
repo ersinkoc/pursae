@@ -243,7 +243,7 @@ func TestGooikeFrontAndScripts(t *testing.T) {
 	srv.purgeAll(context.Background())
 	page = bodyOf(anonGet(t, srv.links(context.Background()).Permalink(p)))
 	for _, want := range []string{`class="gooike-cookie-table"`, `<code>_ga</code>`, `>Manage cookies</a>`, `data-gooike-src="https://www.youtube.com/embed/xyz"`,
-		`data-gooike-accept-cat="marketing"`, `<iframe src="https://example.org/widget">`} {
+		`data-gooike-accept-cat="marketing"`, `<iframe src="https://example.org/widget"`} {
 		if !strings.Contains(page, want) {
 			t.Errorf("cookie page lacks %s", want)
 		}

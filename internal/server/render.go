@@ -139,6 +139,8 @@ func (s *Server) renderTemplateFiltered(c *gin.Context, status int, set *templat
 	out := buf.Bytes()
 	if front {
 		out = s.gooikeFilterPage(c, out) // Gooike: YouTube, Vimeo and Maps iframes wait for consent
+	} else {
+		out = s.translateAdminPage(c, out) // the admin in the user's language (i18n.go)
 	}
 	c.Data(status, "text/html; charset=UTF-8", s.asStripVersion(c, s.golylangHTML(c, out)))
 }
@@ -153,6 +155,9 @@ func (t *templates) funcs() template.FuncMap {
 		m[k] = f
 	}
 	for k, f := range s.golylangTemplateFuncs() { // pll_* template functions
+		m[k] = f
+	}
+	for k, f := range s.gooTemplateFuncs() { // Goocommerce: goo_cart_link, goo_mini_cart, … (goo_theme.go)
 		m[k] = f
 	}
 	return m

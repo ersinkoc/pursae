@@ -1,0 +1,27 @@
+		</main><!-- #main -->
+	</div><!-- #content -->
+
+	<footer id="colophon" class="site-footer">
+		<div class="gb-wrap">
+			<div class="gb-footer-grid">
+				<div class="gb-footer-brand">
+					<p class="gb-footer-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></p>
+					{{with .Description}}<p class="gb-footer-tagline">{{.}}</p>{{end}}
+					<ul class="gb-badges" aria-label="Our promises"><li>Certified organic</li><li>Local farms</li><li>Plastic-free boxes</li></ul>
+				</div>
+				{{if is_active_sidebar . "footer-1"}}<aside class="footer-widgets" aria-label="Footer">
+					{{dynamic_sidebar . "footer-1"}}
+				</aside>{{end}}
+			</div>
+			<div class="site-info">
+				{{if has_nav_menu . "footer"}}<nav class="footer-navigation" aria-label="Footer menu">{{nav_menu . "footer"}}</nav>{{end}}
+				<p>{{with theme_mod . "footer_text"}}{{.}}{{else}}&copy; {{$.SiteName}}. Grown with care, packed with love.{{end}} {{.PrivacyLink}}</p>
+				<p class="site-info__credit">Powered by <a href="https://github.com/boracomet/wordpress-go">WordPress Go</a> &amp; Goocommerce</p>
+			</div>
+		</div>
+	</footer><!-- #colophon -->
+</div><!-- #page -->
+
+{{.Footer}}{{.AdminBar}}
+</body>
+</html>

@@ -1,0 +1,947 @@
+[
+{
+"locale": "af",
+"english": "Afrikaans",
+"native": "Afrikaans",
+"version": "5.8-beta",
+"package": "https://downloads.wordpress.org/translation/core/5.8-beta/af.zip"
+},
+{
+"locale": "am",
+"english": "Amharic",
+"native": "አማርኛ",
+"version": "6.0.18",
+"package": "https://downloads.wordpress.org/translation/core/6.0.18/am.zip"
+},
+{
+"locale": "arg",
+"english": "Aragonese",
+"native": "Aragonés",
+"version": "6.2-beta",
+"package": "https://downloads.wordpress.org/translation/core/6.2-beta/arg.zip"
+},
+{
+"locale": "ar",
+"english": "Arabic",
+"native": "العربية",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/ar.zip"
+},
+{
+"locale": "ary",
+"english": "Moroccan Arabic",
+"native": "العربية المغربية",
+"version": "4.8.34",
+"package": "https://downloads.wordpress.org/translation/core/4.8.34/ary.zip"
+},
+{
+"locale": "as",
+"english": "Assamese",
+"native": "অসমীয়া",
+"version": "7.0.8",
+"package": "https://downloads.wordpress.org/translation/core/7.0.8/as.zip"
+},
+{
+"locale": "azb",
+"english": "South Azerbaijani",
+"native": "گؤنئی آذربایجان",
+"version": "6.4.14",
+"package": "https://downloads.wordpress.org/translation/core/6.4.14/azb.zip"
+},
+{
+"locale": "az",
+"english": "Azerbaijani",
+"native": "Azərbaycan dili",
+"version": "4.7.2",
+"package": "https://downloads.wordpress.org/translation/core/4.7.2/az.zip"
+},
+{
+"locale": "bel",
+"english": "Belarusian",
+"native": "Беларуская мова",
+"version": "4.9.35",
+"package": "https://downloads.wordpress.org/translation/core/4.9.35/bel.zip"
+},
+{
+"locale": "bg_BG",
+"english": "Bulgarian",
+"native": "Български",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/bg_BG.zip"
+},
+{
+"locale": "bn_BD",
+"english": "Bengali (Bangladesh)",
+"native": "বাংলা",
+"version": "7.0.8",
+"package": "https://downloads.wordpress.org/translation/core/7.0.8/bn_BD.zip"
+},
+{
+"locale": "bo",
+"english": "Tibetan",
+"native": "བོད་ཡིག",
+"version": "5.8-beta",
+"package": "https://downloads.wordpress.org/translation/core/5.8-beta/bo.zip"
+},
+{
+"locale": "bs_BA",
+"english": "Bosnian",
+"native": "Bosanski",
+"version": "6.2.15",
+"package": "https://downloads.wordpress.org/translation/core/6.2.15/bs_BA.zip"
+},
+{
+"locale": "ca",
+"english": "Catalan",
+"native": "Català",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/ca.zip"
+},
+{
+"locale": "ca_valencia",
+"english": "Catalan (Valencian)",
+"native": "Català (Valencià)",
+"version": "6.9.11",
+"package": "https://downloads.wordpress.org/translation/core/6.9.11/ca_valencia.zip"
+},
+{
+"locale": "ceb",
+"english": "Cebuano",
+"native": "Cebuano",
+"version": "4.7.2",
+"package": "https://downloads.wordpress.org/translation/core/4.7.2/ceb.zip"
+},
+{
+"locale": "cs_CZ",
+"english": "Czech",
+"native": "Čeština",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/cs_CZ.zip"
+},
+{
+"locale": "cy",
+"english": "Welsh",
+"native": "Cymraeg",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/cy.zip"
+},
+{
+"locale": "da_DK",
+"english": "Danish",
+"native": "Dansk",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/da_DK.zip"
+},
+{
+"locale": "de_AT",
+"english": "German (Austria)",
+"native": "Deutsch (Österreich)",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/de_AT.zip"
+},
+{
+"locale": "de_CH",
+"english": "German (Switzerland)",
+"native": "Deutsch (Schweiz)",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/de_CH.zip"
+},
+{
+"locale": "de_DE",
+"english": "German",
+"native": "Deutsch",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/de_DE.zip"
+},
+{
+"locale": "de_DE_formal",
+"english": "German (Formal)",
+"native": "Deutsch (Sie)",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/de_DE_formal.zip"
+},
+{
+"locale": "de_CH_informal",
+"english": "German (Switzerland, Informal)",
+"native": "Deutsch (Schweiz, Du)",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/de_CH_informal.zip"
+},
+{
+"locale": "dsb",
+"english": "Lower Sorbian",
+"native": "Dolnoserbšćina",
+"version": "6.2.15",
+"package": "https://downloads.wordpress.org/translation/core/6.2.15/dsb.zip"
+},
+{
+"locale": "dzo",
+"english": "Dzongkha",
+"native": "རྫོང་ཁ",
+"version": "4.7.2",
+"package": "https://downloads.wordpress.org/translation/core/4.7.2/dzo.zip"
+},
+{
+"locale": "el",
+"english": "Greek",
+"native": "Ελληνικά",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/el.zip"
+},
+{
+"locale": "en_AU",
+"english": "English (Australia)",
+"native": "English (Australia)",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/en_AU.zip"
+},
+{
+"locale": "en_NZ",
+"english": "English (New Zealand)",
+"native": "English (New Zealand)",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/en_NZ.zip"
+},
+{
+"locale": "en_ZA",
+"english": "English (South Africa)",
+"native": "English (South Africa)",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/en_ZA.zip"
+},
+{
+"locale": "en_CA",
+"english": "English (Canada)",
+"native": "English (Canada)",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/en_CA.zip"
+},
+{
+"locale": "en_GB",
+"english": "English (UK)",
+"native": "English (UK)",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/en_GB.zip"
+},
+{
+"locale": "eo",
+"english": "Esperanto",
+"native": "Esperanto",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/eo.zip"
+},
+{
+"locale": "es_AR",
+"english": "Spanish (Argentina)",
+"native": "Español de Argentina",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/es_AR.zip"
+},
+{
+"locale": "es_CR",
+"english": "Spanish (Costa Rica)",
+"native": "Español de Costa Rica",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/es_CR.zip"
+},
+{
+"locale": "es_MX",
+"english": "Spanish (Mexico)",
+"native": "Español de México",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/es_MX.zip"
+},
+{
+"locale": "es_PE",
+"english": "Spanish (Peru)",
+"native": "Español de Perú",
+"version": "6.9-RC",
+"package": "https://downloads.wordpress.org/translation/core/6.9-RC/es_PE.zip"
+},
+{
+"locale": "es_VE",
+"english": "Spanish (Venezuela)",
+"native": "Español de Venezuela",
+"version": "6.4.14",
+"package": "https://downloads.wordpress.org/translation/core/6.4.14/es_VE.zip"
+},
+{
+"locale": "es_EC",
+"english": "Spanish (Ecuador)",
+"native": "Español de Ecuador",
+"version": "6.2.15",
+"package": "https://downloads.wordpress.org/translation/core/6.2.15/es_EC.zip"
+},
+{
+"locale": "es_DO",
+"english": "Spanish (Dominican Republic)",
+"native": "Español de República Dominicana",
+"version": "5.8.19",
+"package": "https://downloads.wordpress.org/translation/core/5.8.19/es_DO.zip"
+},
+{
+"locale": "es_UY",
+"english": "Spanish (Uruguay)",
+"native": "Español de Uruguay",
+"version": "5.8-beta",
+"package": "https://downloads.wordpress.org/translation/core/5.8-beta/es_UY.zip"
+},
+{
+"locale": "es_PR",
+"english": "Spanish (Puerto Rico)",
+"native": "Español de Puerto Rico",
+"version": "5.4.25",
+"package": "https://downloads.wordpress.org/translation/core/5.4.25/es_PR.zip"
+},
+{
+"locale": "es_GT",
+"english": "Spanish (Guatemala)",
+"native": "Español de Guatemala",
+"version": "5.2.30",
+"package": "https://downloads.wordpress.org/translation/core/5.2.30/es_GT.zip"
+},
+{
+"locale": "es_ES",
+"english": "Spanish (Spain)",
+"native": "Español",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/es_ES.zip"
+},
+{
+"locale": "es_CL",
+"english": "Spanish (Chile)",
+"native": "Español de Chile",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/es_CL.zip"
+},
+{
+"locale": "es_CO",
+"english": "Spanish (Colombia)",
+"native": "Español de Colombia",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/es_CO.zip"
+},
+{
+"locale": "et",
+"english": "Estonian",
+"native": "Eesti",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/et.zip"
+},
+{
+"locale": "eu",
+"english": "Basque",
+"native": "Euskara",
+"version": "6.9-RC",
+"package": "https://downloads.wordpress.org/translation/core/6.9-RC/eu.zip"
+},
+{
+"locale": "fa_IR",
+"english": "Persian",
+"native": "فارسی",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/fa_IR.zip"
+},
+{
+"locale": "fa_AF",
+"english": "Persian (Afghanistan)",
+"native": "(فارسی (افغانستان",
+"version": "6.9-RC",
+"package": "https://downloads.wordpress.org/translation/core/6.9-RC/fa_AF.zip"
+},
+{
+"locale": "fi",
+"english": "Finnish",
+"native": "Suomi",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/fi.zip"
+},
+{
+"locale": "fo",
+"english": "Faroese",
+"native": "Føroyskt",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/fo.zip"
+},
+{
+"locale": "fr_CA",
+"english": "French (Canada)",
+"native": "Français du Canada",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/fr_CA.zip"
+},
+{
+"locale": "fr_FR",
+"english": "French (France)",
+"native": "Français",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/fr_FR.zip"
+},
+{
+"locale": "fr_BE",
+"english": "French (Belgium)",
+"native": "Français de Belgique",
+"version": "6.5.14",
+"package": "https://downloads.wordpress.org/translation/core/6.5.14/fr_BE.zip"
+},
+{
+"locale": "fur",
+"english": "Friulian",
+"native": "Friulian",
+"version": "4.8.34",
+"package": "https://downloads.wordpress.org/translation/core/4.8.34/fur.zip"
+},
+{
+"locale": "fy",
+"english": "Frisian",
+"native": "Frysk",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/fy.zip"
+},
+{
+"locale": "gd",
+"english": "Scottish Gaelic",
+"native": "Gàidhlig",
+"version": "4.7.2",
+"package": "https://downloads.wordpress.org/translation/core/4.7.2/gd.zip"
+},
+{
+"locale": "gl_ES",
+"english": "Galician",
+"native": "Galego",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/gl_ES.zip"
+},
+{
+"locale": "gu",
+"english": "Gujarati",
+"native": "ગુજરાતી",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/gu.zip"
+},
+{
+"locale": "haz",
+"english": "Hazaragi",
+"native": "هزاره گی",
+"version": "4.4.34",
+"package": "https://downloads.wordpress.org/translation/core/4.4.34/haz.zip"
+},
+{
+"locale": "he_IL",
+"english": "Hebrew",
+"native": "עִבְרִית",
+"version": "6.2.15",
+"package": "https://downloads.wordpress.org/translation/core/6.2.15/he_IL.zip"
+},
+{
+"locale": "hi_IN",
+"english": "Hindi",
+"native": "हिन्दी",
+"version": "6.4.14",
+"package": "https://downloads.wordpress.org/translation/core/6.4.14/hi_IN.zip"
+},
+{
+"locale": "hr",
+"english": "Croatian",
+"native": "Hrvatski",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/hr.zip"
+},
+{
+"locale": "hsb",
+"english": "Upper Sorbian",
+"native": "Hornjoserbšćina",
+"version": "6.2.15",
+"package": "https://downloads.wordpress.org/translation/core/6.2.15/hsb.zip"
+},
+{
+"locale": "hu_HU",
+"english": "Hungarian",
+"native": "Magyar",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/hu_HU.zip"
+},
+{
+"locale": "hy",
+"english": "Armenian",
+"native": "Հայերեն",
+"version": "4.7.2",
+"package": "https://downloads.wordpress.org/translation/core/4.7.2/hy.zip"
+},
+{
+"locale": "id_ID",
+"english": "Indonesian",
+"native": "Bahasa Indonesia",
+"version": "7.0.8",
+"package": "https://downloads.wordpress.org/translation/core/7.0.8/id_ID.zip"
+},
+{
+"locale": "is_IS",
+"english": "Icelandic",
+"native": "Íslenska",
+"version": "4.9.35",
+"package": "https://downloads.wordpress.org/translation/core/4.9.35/is_IS.zip"
+},
+{
+"locale": "it_IT",
+"english": "Italian",
+"native": "Italiano",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/it_IT.zip"
+},
+{
+"locale": "ja",
+"english": "Japanese",
+"native": "日本語",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/ja.zip"
+},
+{
+"locale": "jv_ID",
+"english": "Javanese",
+"native": "Basa Jawa",
+"version": "4.9.35",
+"package": "https://downloads.wordpress.org/translation/core/4.9.35/jv_ID.zip"
+},
+{
+"locale": "ka_GE",
+"english": "Georgian",
+"native": "ქართული",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/ka_GE.zip"
+},
+{
+"locale": "kab",
+"english": "Kabyle",
+"native": "Taqbaylit",
+"version": "6.2.15",
+"package": "https://downloads.wordpress.org/translation/core/6.2.15/kab.zip"
+},
+{
+"locale": "kk",
+"english": "Kazakh",
+"native": "Қазақ тілі",
+"version": "6.9-RC",
+"package": "https://downloads.wordpress.org/translation/core/6.9-RC/kk.zip"
+},
+{
+"locale": "km",
+"english": "Khmer",
+"native": "ភាសាខ្មែរ",
+"version": "5.2.30",
+"package": "https://downloads.wordpress.org/translation/core/5.2.30/km.zip"
+},
+{
+"locale": "kn",
+"english": "Kannada",
+"native": "ಕನ್ನಡ",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/kn.zip"
+},
+{
+"locale": "ko_KR",
+"english": "Korean",
+"native": "한국어",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/ko_KR.zip"
+},
+{
+"locale": "ckb",
+"english": "Kurdish (Sorani)",
+"native": "كوردی‎",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/ckb.zip"
+},
+{
+"locale": "kir",
+"english": "Kyrgyz",
+"native": "Кыргызча",
+"version": "7.0.8",
+"package": "https://downloads.wordpress.org/translation/core/7.0.8/kir.zip"
+},
+{
+"locale": "lo",
+"english": "Lao",
+"native": "ພາສາລາວ",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/lo.zip"
+},
+{
+"locale": "lt_LT",
+"english": "Lithuanian",
+"native": "Lietuvių kalba",
+"version": "6.9-RC",
+"package": "https://downloads.wordpress.org/translation/core/6.9-RC/lt_LT.zip"
+},
+{
+"locale": "lv",
+"english": "Latvian",
+"native": "Latviešu valoda",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/lv.zip"
+},
+{
+"locale": "mk_MK",
+"english": "Macedonian",
+"native": "Македонски јазик",
+"version": "6.0.18",
+"package": "https://downloads.wordpress.org/translation/core/6.0.18/mk_MK.zip"
+},
+{
+"locale": "ml_IN",
+"english": "Malayalam",
+"native": "മലയാളം",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/ml_IN.zip"
+},
+{
+"locale": "mn",
+"english": "Mongolian",
+"native": "Монгол",
+"version": "6.5.14",
+"package": "https://downloads.wordpress.org/translation/core/6.5.14/mn.zip"
+},
+{
+"locale": "mr",
+"english": "Marathi",
+"native": "मराठी",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/mr.zip"
+},
+{
+"locale": "ms_MY",
+"english": "Malay",
+"native": "Bahasa Melayu",
+"version": "5.5.24",
+"package": "https://downloads.wordpress.org/translation/core/5.5.24/ms_MY.zip"
+},
+{
+"locale": "my_MM",
+"english": "Myanmar (Burmese)",
+"native": "ဗမာစာ",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/my_MM.zip"
+},
+{
+"locale": "nb_NO",
+"english": "Norwegian (Bokmål)",
+"native": "Norsk bokmål",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/nb_NO.zip"
+},
+{
+"locale": "ne_NP",
+"english": "Nepali",
+"native": "नेपाली",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/ne_NP.zip"
+},
+{
+"locale": "nl_BE",
+"english": "Dutch (Belgium)",
+"native": "Nederlands (België)",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/nl_BE.zip"
+},
+{
+"locale": "nl_NL",
+"english": "Dutch",
+"native": "Nederlands",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/nl_NL.zip"
+},
+{
+"locale": "nl_NL_formal",
+"english": "Dutch (Formal)",
+"native": "Nederlands (Formeel)",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/nl_NL_formal.zip"
+},
+{
+"locale": "nn_NO",
+"english": "Norwegian (Nynorsk)",
+"native": "Norsk nynorsk",
+"version": "5.8-beta",
+"package": "https://downloads.wordpress.org/translation/core/5.8-beta/nn_NO.zip"
+},
+{
+"locale": "oci",
+"english": "Occitan",
+"native": "Occitan",
+"version": "4.8.34",
+"package": "https://downloads.wordpress.org/translation/core/4.8.34/oci.zip"
+},
+{
+"locale": "pa_IN",
+"english": "Panjabi (India)",
+"native": "ਪੰਜਾਬੀ",
+"version": "4.7.2",
+"package": "https://downloads.wordpress.org/translation/core/4.7.2/pa_IN.zip"
+},
+{
+"locale": "pcm",
+"english": "Nigerian Pidgin",
+"native": "Nigerian Pidgin",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/pcm.zip"
+},
+{
+"locale": "pl_PL",
+"english": "Polish",
+"native": "Polski",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/pl_PL.zip"
+},
+{
+"locale": "ps",
+"english": "Pashto",
+"native": "پښتو",
+"version": "4.3.35",
+"package": "https://downloads.wordpress.org/translation/core/4.3.35/ps.zip"
+},
+{
+"locale": "pt_BR",
+"english": "Portuguese (Brazil)",
+"native": "Português do Brasil",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/pt_BR.zip"
+},
+{
+"locale": "pt_PT",
+"english": "Portuguese (Portugal)",
+"native": "Português",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/pt_PT.zip"
+},
+{
+"locale": "pt_PT_ao90",
+"english": "Portuguese (Portugal, AO90)",
+"native": "Português (AO90)",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/pt_PT_ao90.zip"
+},
+{
+"locale": "pt_AO",
+"english": "Portuguese (Angola)",
+"native": "Português de Angola",
+"version": "6.4.14",
+"package": "https://downloads.wordpress.org/translation/core/6.4.14/pt_AO.zip"
+},
+{
+"locale": "rhg",
+"english": "Rohingya",
+"native": "Ruáinga",
+"version": "4.7.2",
+"package": "https://downloads.wordpress.org/translation/core/4.7.2/rhg.zip"
+},
+{
+"locale": "ro_RO",
+"english": "Romanian",
+"native": "Română",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/ro_RO.zip"
+},
+{
+"locale": "ru_RU",
+"english": "Russian",
+"native": "Русский",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/ru_RU.zip"
+},
+{
+"locale": "sah",
+"english": "Sakha",
+"native": "Сахалыы",
+"version": "4.7.2",
+"package": "https://downloads.wordpress.org/translation/core/4.7.2/sah.zip"
+},
+{
+"locale": "snd",
+"english": "Sindhi",
+"native": "سنڌي",
+"version": "5.4.25",
+"package": "https://downloads.wordpress.org/translation/core/5.4.25/snd.zip"
+},
+{
+"locale": "si_LK",
+"english": "Sinhala",
+"native": "සිංහල",
+"version": "4.7.2",
+"package": "https://downloads.wordpress.org/translation/core/4.7.2/si_LK.zip"
+},
+{
+"locale": "sk_SK",
+"english": "Slovak",
+"native": "Slovenčina",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/sk_SK.zip"
+},
+{
+"locale": "skr",
+"english": "Saraiki",
+"native": "سرائیکی",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/skr.zip"
+},
+{
+"locale": "sl_SI",
+"english": "Slovenian",
+"native": "Slovenščina",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/sl_SI.zip"
+},
+{
+"locale": "sq",
+"english": "Albanian",
+"native": "Shqip",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/sq.zip"
+},
+{
+"locale": "sr_RS",
+"english": "Serbian",
+"native": "Српски језик",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/sr_RS.zip"
+},
+{
+"locale": "sv_SE",
+"english": "Swedish",
+"native": "Svenska",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/sv_SE.zip"
+},
+{
+"locale": "sw",
+"english": "Swahili",
+"native": "Kiswahili",
+"version": "6.9.11",
+"package": "https://downloads.wordpress.org/translation/core/6.9.11/sw.zip"
+},
+{
+"locale": "szl",
+"english": "Silesian",
+"native": "Ślōnskŏ gŏdka",
+"version": "4.7.2",
+"package": "https://downloads.wordpress.org/translation/core/4.7.2/szl.zip"
+},
+{
+"locale": "ta_IN",
+"english": "Tamil",
+"native": "தமிழ்",
+"version": "4.7.2",
+"package": "https://downloads.wordpress.org/translation/core/4.7.2/ta_IN.zip"
+},
+{
+"locale": "ta_LK",
+"english": "Tamil (Sri Lanka)",
+"native": "தமிழ்",
+"version": "4.2.39",
+"package": "https://downloads.wordpress.org/translation/core/4.2.39/ta_LK.zip"
+},
+{
+"locale": "te",
+"english": "Telugu",
+"native": "తెలుగు",
+"version": "4.7.2",
+"package": "https://downloads.wordpress.org/translation/core/4.7.2/te.zip"
+},
+{
+"locale": "th",
+"english": "Thai",
+"native": "ไทย",
+"version": "5.8.19",
+"package": "https://downloads.wordpress.org/translation/core/5.8.19/th.zip"
+},
+{
+"locale": "tl",
+"english": "Tagalog",
+"native": "Tagalog",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/tl.zip"
+},
+{
+"locale": "tr_TR",
+"english": "Turkish",
+"native": "Türkçe",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/tr_TR.zip"
+},
+{
+"locale": "tt_RU",
+"english": "Tatar",
+"native": "Татар теле",
+"version": "4.7.2",
+"package": "https://downloads.wordpress.org/translation/core/4.7.2/tt_RU.zip"
+},
+{
+"locale": "tah",
+"english": "Tahitian",
+"native": "Reo Tahiti",
+"version": "4.7.2",
+"package": "https://downloads.wordpress.org/translation/core/4.7.2/tah.zip"
+},
+{
+"locale": "ug_CN",
+"english": "Uighur",
+"native": "ئۇيغۇرچە",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/ug_CN.zip"
+},
+{
+"locale": "uk",
+"english": "Ukrainian",
+"native": "Українська",
+"version": "7.0.8",
+"package": "https://downloads.wordpress.org/translation/core/7.0.8/uk.zip"
+},
+{
+"locale": "ur",
+"english": "Urdu",
+"native": "اردو",
+"version": "5.4.25",
+"package": "https://downloads.wordpress.org/translation/core/5.4.25/ur.zip"
+},
+{
+"locale": "uz_UZ",
+"english": "Uzbek",
+"native": "O‘zbekcha",
+"version": "5.8-beta",
+"package": "https://downloads.wordpress.org/translation/core/5.8-beta/uz_UZ.zip"
+},
+{
+"locale": "vi",
+"english": "Vietnamese",
+"native": "Tiếng Việt",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/vi.zip"
+},
+{
+"locale": "yor",
+"english": "Yoruba",
+"native": "Yorùbá",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/yor.zip"
+},
+{
+"locale": "zh_CN",
+"english": "Chinese (China)",
+"native": "简体中文",
+"version": "7.1.4",
+"package": "https://downloads.wordpress.org/translation/core/7.1.4/zh_CN.zip"
+},
+{
+"locale": "zh_TW",
+"english": "Chinese (Taiwan)",
+"native": "繁體中文",
+"version": "7.0.8",
+"package": "https://downloads.wordpress.org/translation/core/7.0.8/zh_TW.zip"
+},
+{
+"locale": "zh_HK",
+"english": "Chinese (Hong Kong)",
+"native": "香港中文",
+"version": "6.2.15",
+"package": "https://downloads.wordpress.org/translation/core/6.2.15/zh_HK.zip"
+}
+]

@@ -38,7 +38,11 @@ Anyone can register</label></fieldset></td></tr>
 <tr><th scope="row"><label for="default_role">New User Default Role</label></th>
 <td><select name="default_role" id="default_role">{{range .Roles}}<option{{if .Checked}} selected="selected"{{end}} value="{{.Value}}">{{.Label}}</option>{{end}}</select></td></tr>
 <tr><th scope="row"><label for="WPLANG">Site Language <span class="dashicons dashicons-translation" aria-hidden="true"></span></label></th>
-<td><select name="WPLANG" id="WPLANG"><option value="" lang="en" selected="selected" data-installed="1">English (United States)</option></select></td></tr>
+<td><select name="WPLANG" id="WPLANG"><option value="" lang="en" data-installed="1" translate="no">English (United States)</option>
+{{if .LangInstalled}}<optgroup label="Installed">{{range .LangInstalled}}<option value="{{.Locale}}" lang="{{.Locale}}" data-installed="1" translate="no"{{if .Selected}} selected="selected"{{end}}>{{.Name}}</option>{{end}}</optgroup>{{end}}
+{{if .LangAvailable}}<optgroup label="Available">{{range .LangAvailable}}<option value="{{.Locale}}" lang="{{.Locale}}" translate="no"{{if .Selected}} selected="selected"{{end}}>{{.Name}}</option>{{end}}</optgroup>{{end}}
+</select>
+{{if .LangError}}<p class="description" style="color:#d63638">The language pack could not be downloaded. Check that the server can reach translate.wordpress.org and try again.</p>{{end}}</td></tr>
 <tr><th scope="row"><label for="timezone_string">Timezone</label></th>
 <td><select id="timezone_string" name="timezone_string" aria-describedby="timezone-description">
 <optgroup label="UTC"><option value="UTC"{{if eq .TZ "UTC"}} selected="selected"{{end}}>UTC</option></optgroup>
