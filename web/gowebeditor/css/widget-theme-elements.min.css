@@ -6,7 +6,7 @@
 .elementor-nav-menu li{position:relative;list-style:none;margin:0}
 .elementor-nav-menu a{display:flex;align-items:center;gap:6px;padding:13px 20px;line-height:20px;text-decoration:none;color:var(--e-global-color-text,#33373d);transition:color .2s}
 .elementor-nav-menu a:hover,.elementor-nav-menu a:focus,.elementor-nav-menu .elementor-item-active{color:var(--e-global-color-accent,#55595c)}
-.elementor-nav-menu .sub-arrow{display:inline-block;width:6px;height:6px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg) translateY(-2px);margin-left:2px}
+.elementor-nav-menu .sub-arrow:empty{display:inline-block;width:6px;height:6px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg) translateY(-2px);margin-left:2px}
 .elementor-nav-menu .sub-menu{position:absolute;top:100%;left:0;z-index:100;min-width:200px;margin:0;padding:6px 0;list-style:none;background:var(--e-nav-menu-dropdown-background,#fff);box-shadow:0 6px 20px rgba(0,0,0,.12);opacity:0;visibility:hidden;transform:translateY(6px);transition:opacity .15s,transform .15s,visibility .15s}
 .elementor-nav-menu .sub-menu .sub-menu{top:0;left:100%}
 .elementor-nav-menu .sub-menu a{padding:10px 20px;color:var(--e-nav-menu-dropdown-color,#33373d)}
