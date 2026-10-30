@@ -66,7 +66,7 @@ type pllOptions struct {
 	NavMenus     map[string]map[string]map[string]int64 `json:"nav_menus"` // theme > location > lang > menu id
 	// Pro
 	MediaDuplicate bool `json:"media_duplicate"` // create all media translations at upload
-	ShareSlugs     bool `json:"share_slugs"`     // module state (see the inventory: not available)
+	ShareSlugs     bool `json:"share_slugs"`     // translations may share a slug (golylang_slugs.go)
 	TranslateSlugs bool `json:"translate_slugs"` // translated category, tag and author bases
 }
 

@@ -183,6 +183,19 @@ func (s *Server) gooPllLink(ctx context.Context, kind string, obj any, link stri
 	return lb.LinkFilter(kind, obj, link)
 }
 
+// gooPllSlugBases are the store's URL bases Golylang's Translate slugs translates (product, product
+// category and product tag bases).
+func (s *Server) gooPllSlugBases() [][2]string {
+	if !s.gooOn() {
+		return nil
+	}
+	return [][2]string{
+		{"product", s.gooProductBase()},
+		{"product_cat", strings.Trim(defaultStr(s.gooOptString("category_base"), "product-category"), "/")},
+		{"product_tag", strings.Trim(defaultStr(s.gooOptString("tag_base"), "product-tag"), "/")},
+	}
+}
+
 // Store views and the language switcher -------------------------------------------------------------
 
 // gooPllResolvedLang is the language of a store view (the product, the category, the shop page): ok is
@@ -389,13 +402,26 @@ func (s *Server) gooPllProductSaved(ctx context.Context, p *gooProduct) {
 				}
 			}
 		}
-		for lang, id := range s.pllTranslations(ctx, pllPost, p.ID) {
+		tr := s.pllTranslations(ctx, pllPost, p.ID)
+		for lang, id := range tr {
 			if id == p.ID {
 				continue
 			}
 			if t, err := s.gooGetProduct(ctx, id); err == nil && t.Type == gooTypeVariation {
 				s.gooPllApplyShared(ctx, p, t, lang)
 				_ = s.gooSaveProduct(gooPllSyncing(ctx), t, t.Post.AuthorID)
+			}
+		}
+		if len(tr) <= 1 && p.ParentID > 0 { // a new variation: the product's translations get it now
+			if parent, err := s.gooGetProduct(gooPllUnfiltered(ctx), p.ParentID); err == nil && parent.Status != "auto-draft" {
+				for lang, id := range s.pllTranslations(ctx, pllPost, parent.ID) {
+					if id == parent.ID {
+						continue
+					}
+					if t, err := s.gooGetProduct(gooPllUnfiltered(ctx), id); err == nil && t.Type != gooTypeVariation {
+						s.gooPllSyncVariations(gooPllSyncing(ctx), parent, t, lang)
+					}
+				}
 			}
 		}
 		return
@@ -417,6 +443,29 @@ func (s *Server) gooPllProductSaved(ctx context.Context, p *gooProduct) {
 			continue
 		}
 		s.gooPllSyncVariations(gooPllSyncing(ctx), p, t, lang)
+	}
+}
+
+// gooPllDeleteVariation deletes the translations of a variation that is being deleted (variations are
+// shared data: a size removed in one language is gone in all), and syncs their products' prices.
+func (s *Server) gooPllDeleteVariation(ctx context.Context, id int64) {
+	if !s.gooPllOn(ctx) {
+		return
+	}
+	for _, t := range s.pllTranslations(ctx, pllPost, id) {
+		if t == id {
+			continue
+		}
+		v, err := s.gooGetProduct(gooPllUnfiltered(ctx), t)
+		if err != nil || v.Type != gooTypeVariation {
+			continue
+		}
+		_ = s.store.DeletePost(ctx, t)
+		_, _ = s.store.Pool.Exec(ctx, `DELETE FROM goo_products WHERE post_id = $1`, t)
+		if parent, err := s.gooGetProduct(ctx, v.ParentID); err == nil {
+			_ = s.gooSyncVariable(ctx, parent)
+			s.gooPurgeProduct(ctx, parent)
+		}
 	}
 }
 
@@ -539,6 +588,17 @@ func (s *Server) gooPllSyncVariations(ctx context.Context, src, dst *gooProduct,
 		tr := s.pllTranslations(ctx, pllPost, v.ID)
 		tr[srcLang], tr[lang] = v.ID, t.ID
 		_ = s.pllSaveTranslations(ctx, pllPost, tr)
+	}
+	// A variation of dst with no counterpart in src's language was deleted there: it goes too.
+	if own, err := s.gooVariations(gooPllUnfiltered(ctx), dst.ID, true); err == nil {
+		for _, v := range own {
+			var linked bool // only variations already in the translation system: they had a counterpart
+			_ = s.store.Pool.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM pll_post_langs WHERE post_id = $1)`, v.ID).Scan(&linked)
+			if linked && s.pllGet(ctx, pllPost, v.ID, srcLang) == 0 {
+				_ = s.store.DeletePost(ctx, v.ID)
+				_, _ = s.store.Pool.Exec(ctx, `DELETE FROM goo_products WHERE post_id = $1`, v.ID)
+			}
+		}
 	}
 	if latest, err := s.gooGetProduct(ctx, dst.ID); err == nil {
 		_ = s.gooSyncVariable(ctx, latest)

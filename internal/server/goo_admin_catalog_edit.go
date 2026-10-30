@@ -1173,6 +1173,7 @@ func (s *Server) gooSaveVariationsForm(c *gin.Context, f gooForm, parent *gooPro
 	}
 	for _, v := range existing {
 		if !kept[v.ID] || removed[v.ID] {
+			s.gooPllDeleteVariation(ctx, v.ID) // Golylang: and its translations (goo_golylang.go)
 			_ = s.store.DeletePost(ctx, v.ID)
 		}
 	}
@@ -1302,6 +1303,7 @@ func (s *Server) gooVariationBulk(ctx context.Context, p *gooProduct, action, va
 	vars, _ := s.gooVariations(ctx, p.ID, true)
 	if action == "delete_all" {
 		for _, v := range vars {
+			s.gooPllDeleteVariation(ctx, v.ID) // Golylang: and its translations
 			_ = s.store.DeletePost(ctx, v.ID)
 		}
 		return
