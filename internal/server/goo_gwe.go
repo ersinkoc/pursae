@@ -537,7 +537,7 @@ func (s *Server) gooGwePartLangs(c *gin.Context, p *store.Post) template.HTML {
 		case tr[l.Slug] > 0:
 			fmt.Fprintf(&b, `<a class="gwe-tb-lang is-translated" href="%s" title="Edit the translation in %s">%s</a> `, gweEditURL(tr[l.Slug]), html.EscapeString(l.Name), label)
 		default:
-			fmt.Fprintf(&b, `<a class="gwe-tb-lang is-missing" href="%s?action=translate&amp;post=%d&amp;lang=%s&amp;_wpnonce=%s" title="Add a translation in %s">+ %s</a> `,
+			fmt.Fprintf(&b, `<a class="gwe-tb-lang is-missing" href="%s?action=translate&amp;post=%d&amp;new_lang=%s&amp;_wpnonce=%s" title="Add a translation in %s">+ %s</a> `,
 				gweThemeBuilderPath, p.ID, html.EscapeString(l.Slug), nonce, html.EscapeString(l.Name), label)
 		}
 	}
@@ -553,7 +553,7 @@ func (s *Server) gooGweTranslatePart(c *gin.Context) {
 	}
 	u := currentUser(c)
 	p, err := s.store.GetPost(c, gweInt(c.Query("post")))
-	l := s.pllLang(c, c.Query("lang"))
+	l := s.pllLang(c, c.Query("new_lang"))
 	if err != nil || p.Type != gwePartType || l == nil || !s.golylangOn() || !u.Can("edit_post", p) {
 		s.gweTBRedirect(c, "?error="+urlQueryEscape("That theme part cannot be translated."))
 		return
