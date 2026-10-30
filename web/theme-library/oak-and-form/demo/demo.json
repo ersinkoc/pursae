@@ -111,6 +111,11 @@
 			"id": "p-wool-throw",
 			"file": "demo/images/oak-and-form-p-wool-throw.jpg",
 			"alt": "A folded herringbone wool throw"
+		},
+		{
+			"id": "p-three-seat-sofa-alt",
+			"file": "demo/images/oak-and-form-p-three-seat-sofa-alt.jpg",
+			"alt": "The three-seat sofa in wool bouclé"
 		}
 	],
 	"pages": [
@@ -380,7 +385,8 @@
 						},
 						"regular_price": "2090",
 						"stock": 2,
-						"sku": "OF-102-BO"
+						"sku": "OF-102-BO",
+						"image": "p-three-seat-sofa-alt"
 					}
 				],
 				"reviews": [
@@ -394,7 +400,10 @@
 				"cross_sells": [
 					"wool-throw"
 				],
-				"image": "p-three-seat-sofa"
+				"image": "p-three-seat-sofa",
+				"gallery": [
+					"p-three-seat-sofa-alt"
+				]
 			},
 			{
 				"slug": "oak-coffee-table",
