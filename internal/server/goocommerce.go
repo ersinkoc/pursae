@@ -487,7 +487,8 @@ func (s *Server) gooPurgeProduct(ctx context.Context, p *gooProduct) {
 	if p.Type == gooTypeVariation && p.ParentID != 0 {
 		id = p.ParentID
 	}
-	if terms, err := s.store.TermsForPosts(ctx, []int64{id}, ""); err == nil {
+	for _, tax := range []string{"product_cat", "product_tag"} {
+		terms, _ := s.store.TermsForPosts(ctx, []int64{id}, tax)
 		for _, t := range terms[id] {
 			tags = append(tags, "term:"+itoa64(t.ID))
 		}

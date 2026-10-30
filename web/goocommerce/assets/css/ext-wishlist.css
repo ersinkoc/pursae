@@ -1,0 +1,12 @@
+/* Goocommerce Wishlists */
+.goo-wishlist-button-wrap{margin:.5em 0}
+.goo-wishlist-form{display:inline}
+.goo-wishlist-button{cursor:pointer}
+.goo-wishlist-button:not(.button){background:none;border:0;padding:0;color:inherit;text-decoration:underline}
+.goo-wishlist-heart{color:#d63638;font-size:1.15em;line-height:1}
+.goo-wishlist-button.loading{opacity:.6}
+.goo-wishlist-button:focus-visible{outline:2px solid #2271b1;outline-offset:2px}
+.goo-wishlist-price-drop{display:inline-block;margin-left:.4em;padding:0 .5em;border-radius:3px;background:#d63638;color:#fff;font-size:.8em;line-height:1.7}
+.goo-wishlist-table .remove{background:none;border:0;font-size:1.5em;line-height:1;cursor:pointer;color:#b32d2e}
+.goo-wishlist-manage{margin-top:1.5em}
+.goo-wishlist-share input{min-width:280px}

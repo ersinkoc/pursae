@@ -378,3 +378,8 @@ ul.woocommerce-mini-cart li .quantity { color: var(--tl-muted); grid-column: 2; 
 	table.shop_table td.actions > .button { float: none; width: 100%; margin-top: 10px; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+
+/* Notice icons sit inline in the flex row. */
+.woocommerce-message::before, .woocommerce-info::before, .woocommerce-error::before { position: static !important; margin: 0 4px 0 0; }
+.woocommerce-message, .woocommerce-info { justify-content: flex-start; }
+.woocommerce-message .button, .woocommerce-info .button { margin-left: auto; }

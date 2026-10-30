@@ -1,0 +1,33 @@
+{{define "admin/goo-reports"}}{{template "admin-header" .}}{{template "goo-store-assets"}}{{with .Data}}{{$d := .}}
+<div class="wrap woocommerce">
+<nav class="nav-tab-wrapper woo-nav-tab-wrapper">{{range .Tabs}}<a href="/wp-admin/goocommerce?page=reports&amp;tab={{.Value}}" class="nav-tab{{if eq .Value $d.Tab}} nav-tab-active{{end}}">{{.Label}}</a>{{end}}</nav>
+{{template "notices" $}}
+<h1 class="screen-reader-text">{{.Title}}</h1>
+<ul class="subsubsub">{{range $i, $r := .Reports}}<li>{{if $i}} | {{end}}<a href="{{$r.URL}}" class="{{if $r.Current}}current{{end}}">{{$r.Label}}</a></li>{{end}}</ul>
+<br class="clear">
+<div id="poststuff" class="woocommerce-reports-wide"><div class="postbox">
+{{if ne .Tab "stock"}}{{if ne .Report "customer_list"}}<div class="stats_range"><ul>
+{{range .Ranges}}<li{{if .Current}} class="active"{{end}}><a href="{{.URL}}">{{.Label}}</a></li>{{end}}
+<li class="custom{{if eq .Range.Key "custom"}} active{{end}}">Custom: <form method="get" action="/wp-admin/goocommerce"><div>
+<input type="hidden" name="page" value="reports"><input type="hidden" name="tab" value="{{.Tab}}"><input type="hidden" name="report" value="{{.Report}}"><input type="hidden" name="range" value="custom">
+<input type="date" size="11" placeholder="yyyy-mm-dd" value="{{.Range.Start}}" name="start_date" class="range_datepicker from"> <span>&ndash;</span>
+<input type="date" size="11" placeholder="yyyy-mm-dd" value="{{.Range.End}}" name="end_date" class="range_datepicker to">
+<button type="submit" class="button" value="Go">Go</button></div></form></li>
+</ul></div>{{end}}{{end}}
+{{if .Table}}<div class="stats_range goo-export"><a class="export_csv button" href="{{.BaseURL}}&amp;range={{.Range.Key}}{{if .Range.Start}}&amp;start_date={{.Range.Start}}&amp;end_date={{.Range.End}}{{end}}&amp;download=csv">Export CSV</a></div>{{end}}
+<div class="inside chart-with-sidebar">
+{{if .Legend}}<div class="chart-sidebar"><ul class="chart-legend">{{range .Legend}}<li style="border-color:{{.Color}}"><strong>{{.Value}}</strong> {{.Label}}</li>{{end}}</ul>
+{{if eq .Report "sales_by_product"}}<ul class="chart-widgets"><li class="chart-widget"><h4>Product search</h4><div class="section"><form method="get" action="/wp-admin/goocommerce">
+<input type="hidden" name="page" value="reports"><input type="hidden" name="tab" value="orders"><input type="hidden" name="report" value="sales_by_product"><input type="hidden" name="range" value="{{.Range.Key}}">
+<select name="product_ids" class="wc-product-search"><option value="">All products</option>{{template "goo-store-options" (dict "Opts" .Products "Sel" .ProductID)}}</select> <button type="submit" class="submit button">Show</button></form></div></li></ul>{{end}}
+</div>{{end}}
+<div class="main">
+{{if .HasChart}}<div class="chart-container">{{.Chart.SVG}}</div>{{end}}
+{{if .Table}}<table class="widefat striped goo-report-table"><thead><tr>{{range .Table.Headers}}<th>{{.}}</th>{{end}}</tr></thead><tbody>
+{{range .Table.Rows}}<tr>{{range .}}<td>{{.}}</td>{{end}}</tr>{{else}}<tr><td colspan="{{len .Table.Headers}}">{{.Table.Empty}}</td></tr>{{end}}
+</tbody></table>{{end}}
+</div>
+</div>
+</div></div>
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}

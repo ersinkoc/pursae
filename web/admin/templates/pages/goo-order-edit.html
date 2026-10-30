@@ -1,0 +1,259 @@
+{{define "admin/goo-order-edit"}}{{template "admin-header" .}}{{template "goo-store-assets"}}{{with .Data}}{{$d := .}}
+<div class="wrap woocommerce">
+<h1 class="wp-heading-inline">{{if .New}}Add new order{{else}}Edit order{{end}}</h1>
+{{if not .New}}<a href="/wp-admin/goocommerce?page=orders&amp;action=new" class="page-title-action">Add order</a>{{end}}
+<hr class="wp-header-end">
+{{template "notices" $}}
+<form name="order" action="/wp-admin/goocommerce?page=orders&amp;action=edit&amp;id={{.O.ID}}" method="post" id="order" autocomplete="off">
+<button type="submit" name="goo_do" value="save" class="screen-reader-text" tabindex="-1" aria-hidden="true">Save</button>
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}">
+<input type="hidden" id="original_order_status" value="{{.Status}}">
+<div id="poststuff"><div id="post-body" class="metabox-holder columns-2">
+<div id="postbox-container-2" class="postbox-container"><div class="meta-box-sortables">
+
+<div id="woocommerce-order-data" class="postbox"><div class="inside">
+<div class="panel-wrap woocommerce"><div id="order_data" class="panel woocommerce-order-data">
+<h2 class="woocommerce-order-data__heading">{{.Title}}</h2>
+<p class="woocommerce-order-data__meta order_number">{{.PaidLine}}{{if .IP}} Customer IP: <span class="woocommerce-Order-customerIP">{{.IP}}</span>{{end}}</p>
+<div class="order_data_column_container">
+
+<div class="order_data_column">
+<h3>General</h3>
+<p class="form-field form-field-wide"><label for="order_date">Date created:</label>
+<input type="text" class="date-picker" name="order_date" id="order_date" maxlength="10" value="{{.Date}}" pattern="[0-9]{4}-(0[1-9]|1[012])-(0[1-9]|1[0-9]|2[0-9]|3[01])">@&lrm;
+<input type="number" class="hour" placeholder="h" name="order_date_hour" min="0" max="23" step="1" value="{{.Hour}}" pattern="([01]?[0-9]{1}|2[0-3]{1})">:
+<input type="number" class="minute" placeholder="m" name="order_date_minute" min="0" max="59" step="1" value="{{.Minute}}" pattern="[0-5]{1}[0-9]{1}">
+<input type="hidden" name="order_date_second" value="{{.Second}}"></p>
+<p class="form-field form-field-wide wc-order-status"><label for="order_status">Status: {{if .PaymentURL}}<a href="{{.PaymentURL}}">Customer payment page &rarr;</a>{{end}}</label>
+<select id="order_status" name="order_status" class="wc-enhanced-select">{{template "goo-store-options" (dict "Opts" .Statuses "Sel" .Status)}}</select></p>
+<p class="form-field form-field-wide wc-customer-user"><label for="customer_user">Customer:{{if .ProfileURL}} <a href="{{.OrdersURL}}">View other orders &rarr;</a> <a href="{{.ProfileURL}}">Profile &rarr;</a>{{end}}</label>
+<input type="search" class="goo-select-filter" data-target="customer_user" placeholder="Search for a customer…" aria-label="Search for a customer">
+<select class="wc-customer-search" id="customer_user" name="customer_user" data-placeholder="Guest" data-allow_clear="true"><option value="">Guest</option>{{template "goo-store-options" (dict "Opts" .Customers "Sel" .Customer)}}</select></p>
+</div>
+
+<div class="order_data_column" data-address="billing">
+<h3>Billing <a href="#" class="edit_address" aria-label="Edit billing address">Edit</a>
+<span><a href="#" class="load_customer_billing" style="display:none">Load billing address</a></span></h3>
+<div class="address">{{if .BillingHTML}}<p>{{.BillingHTML}}</p>{{else}}<p class="none_set"><strong>Address:</strong> No billing address set.</p>{{end}}
+{{if .O.Billing.email}}<p><strong>Email address:</strong> <a href="mailto:{{.O.Billing.email}}">{{.O.Billing.email}}</a></p>{{end}}
+{{if .O.Billing.phone}}<p><strong>Phone:</strong> <a href="tel:{{.O.Billing.phone}}">{{.O.Billing.phone}}</a></p>{{end}}
+<p><strong>Payment method:</strong> {{if .O.PaymentMethodTitle}}{{.O.PaymentMethodTitle}}{{else}}N/A{{end}}</p></div>
+<div class="edit_address">{{range .BillingF}}{{template "goo-store-addr-field" .}}{{end}}
+<p class="form-field form-field-wide"><label>Payment method:</label>
+<select name="_payment_method" id="_payment_method" class="first">{{template "goo-store-options" (dict "Opts" .Gateways "Sel" .PayMethod)}}</select></p>
+<p class="form-field form-field-wide"><label for="_transaction_id">Transaction ID</label><input type="text" class="short" name="_transaction_id" id="_transaction_id" value="{{.O.TransactionID}}"></p>
+</div>
+</div>
+
+<div class="order_data_column" data-address="shipping">
+<h3>Shipping <a href="#" class="edit_address" aria-label="Edit shipping address">Edit</a>
+<span><a href="#" class="load_customer_shipping" style="display:none">Load shipping address</a> <a href="#" class="billing-same-as-shipping">Copy billing address</a></span></h3>
+<div class="address">{{if .ShipHTML}}<p>{{.ShipHTML}}</p>{{else}}<p class="none_set"><strong>Address:</strong> No shipping address set.</p>{{end}}
+{{if .O.CustomerNote}}<p class="order_note"><strong>Customer provided note:</strong> {{.O.CustomerNote}}</p>{{end}}</div>
+<div class="edit_address">{{range .ShippingF}}{{template "goo-store-addr-field" .}}{{end}}
+<p class="form-field form-field-wide"><label for="customer_note">Customer provided note:</label>
+<textarea rows="1" cols="40" name="customer_note" tabindex="6" id="excerpt" placeholder="Customer notes about the order">{{.O.CustomerNote}}</textarea></p>
+</div>
+</div>
+
+</div><div class="clear"></div>
+</div></div>
+</div></div>
+
+<div id="woocommerce-order-items" class="postbox"><div class="postbox-header"><h2 class="hndle">Items</h2></div><div class="inside">
+<div class="woocommerce_order_items_wrapper wc-order-items-editable">
+<table cellpadding="0" cellspacing="0" class="woocommerce_order_items">
+<thead><tr>
+<th class="item sortable" colspan="2" data-sort="string-ins">Item</th>
+<th class="item_cost sortable" data-sort="float">Cost</th>
+<th class="quantity sortable" data-sort="int">Qty</th>
+<th class="line_cost sortable" data-sort="float">Total</th>
+{{range .TaxCols}}<th class="line_tax tips">{{.Label}}</th>{{end}}
+<th class="wc-order-edit-line-item" width="1%">&nbsp;</th>
+</tr></thead>
+<tbody id="order_line_items">
+{{range .Lines}}<tr class="item" data-order_item_id="{{.ID}}">
+<td class="thumb"><div class="wc-order-item-thumbnail">{{.Thumb}}</div></td>
+<td class="name" data-sort-value="{{.Name}}">{{if .ProductURL}}<a href="{{.ProductURL}}" class="wc-order-item-name">{{.Name}}</a>{{else}}<div class="wc-order-item-name">{{.Name}}</div>{{end}}
+{{if .SKU}}<div class="wc-order-item-sku"><strong>SKU:</strong> {{.SKU}}</div>{{end}}
+{{if .VariationID}}<div class="wc-order-item-variation"><strong>Variation ID:</strong> {{.VariationID}}</div>{{end}}
+<input type="hidden" class="order_item_id" name="order_item_id[]" value="{{.ID}}">
+<div class="view">{{if .Meta}}<table cellspacing="0" class="display_meta">{{range .Meta}}<tr><th>{{.Key}}:</th><td><p>{{.Value}}</p></td></tr>{{end}}</table>{{end}}</div></td>
+<td class="item_cost" width="1%"><div class="view">{{.Cost}}</div></td>
+<td class="quantity" width="1%"><div class="view"><small class="times">&times;</small> {{.Qty}}{{if .RefundedQty}} <small class="refunded">-{{.RefundedQty}}</small>{{end}}</div>
+<div class="edit" style="display:none"><input type="number" step="1" min="0" autocomplete="off" name="order_item_qty[{{.ID}}]" placeholder="0" value="{{.Qty}}" data-qty="{{.Qty}}" size="4" class="quantity"></div>
+<div class="refund" style="display:none"><input type="number" step="1" min="0" max="{{.QtyRaw}}" autocomplete="off" name="refund_order_item_qty[{{.ID}}]" placeholder="0" size="4" class="refund_order_item_qty"></div></td>
+<td class="line_cost" width="1%"><div class="view">{{.TotalFmt}}{{if .Discount}}<span class="wc-order-item-discount">{{.Discount}} discount</span>{{end}}{{if .RefundedAmt}}<small class="refunded">{{.RefundedAmt}}</small>{{end}}</div>
+<div class="edit" style="display:none"><div class="split-input">
+<div class="input"><label>Before discount</label><input type="text" name="line_subtotal[{{.ID}}]" placeholder="0" value="{{.Subtotal}}" class="line_subtotal wc_input_price"></div>
+<div class="input"><label>Total</label><input type="text" name="line_total[{{.ID}}]" placeholder="0" value="{{.Total}}" class="line_total wc_input_price"></div></div></div>
+<div class="refund" style="display:none"><input type="text" name="refund_line_total[{{.ID}}]" placeholder="0" class="refund_line_total wc_input_price"></div></td>
+{{$id := .ID}}{{range .Taxes}}<td class="line_tax" width="1%"><div class="view">{{if .TotalFmt}}{{.TotalFmt}}{{else}}&ndash;{{end}}{{if .RefundedFmt}}<small class="refunded">{{.RefundedFmt}}</small>{{end}}</div>
+<div class="edit" style="display:none"><div class="split-input">
+<div class="input"><label>Before discount</label><input type="text" name="line_subtotal_tax[{{$id}}][{{.RateID}}]" placeholder="0" value="{{.Subtotal}}" class="line_subtotal_tax wc_input_price"></div>
+<div class="input"><label>Total</label><input type="text" name="line_tax[{{$id}}][{{.RateID}}]" placeholder="0" value="{{.Total}}" class="line_tax wc_input_price"></div></div></div>
+<div class="refund" style="display:none"><input type="text" name="refund_line_tax[{{$id}}][{{.RateID}}]" placeholder="0" class="refund_line_tax wc_input_price"></div></td>{{end}}
+<td class="wc-order-edit-line-item" width="1%"><div class="wc-order-edit-line-item-actions">{{if $d.Editable}}<a class="edit-order-item tips" href="#" aria-label="Edit item"></a><button type="submit" class="delete-order-item tips" name="goo_do" value="delete_item:{{.ID}}" aria-label="Delete item"></button>{{end}}</div></td>
+</tr>{{end}}
+</tbody>
+<tbody id="order_fee_line_items">
+{{range .Fees}}<tr class="fee" data-order_item_id="{{.ID}}">
+<td class="thumb"><div></div></td>
+<td class="name"><div class="view">{{.Name}}</div><div class="edit" style="display:none"><input type="text" placeholder="Fee name" name="order_item_name[{{.ID}}]" value="{{.Name}}"><input type="hidden" class="order_item_id" name="order_item_id[]" value="{{.ID}}"></div></td>
+<td class="item_cost" width="1%">&nbsp;</td><td class="quantity" width="1%">&nbsp;</td>
+<td class="line_cost" width="1%"><div class="view">{{.TotalFmt}}{{if .RefundedAmt}}<small class="refunded">{{.RefundedAmt}}</small>{{end}}</div>
+<div class="edit" style="display:none"><input type="text" name="line_total[{{.ID}}]" placeholder="0" value="{{.Total}}" class="line_total wc_input_price"></div>
+<div class="refund" style="display:none"><input type="text" name="refund_line_total[{{.ID}}]" placeholder="0" class="refund_line_total wc_input_price"></div></td>
+{{$id := .ID}}{{range .Taxes}}<td class="line_tax" width="1%"><div class="view">{{if .TotalFmt}}{{.TotalFmt}}{{else}}&ndash;{{end}}</div>
+<div class="edit" style="display:none"><input type="text" name="line_tax[{{$id}}][{{.RateID}}]" placeholder="0" value="{{.Total}}" class="line_tax wc_input_price"></div>
+<div class="refund" style="display:none"><input type="text" name="refund_line_tax[{{$id}}][{{.RateID}}]" placeholder="0" class="refund_line_tax wc_input_price"></div></td>{{end}}
+<td class="wc-order-edit-line-item">{{if $d.Editable}}<div class="wc-order-edit-line-item-actions"><a class="edit-order-item" href="#"></a><button type="submit" class="delete-order-item" name="goo_do" value="delete_item:{{.ID}}" aria-label="Delete item"></button></div>{{end}}</td>
+</tr>{{end}}
+</tbody>
+<tbody id="order_shipping_line_items">
+{{range .Shipping}}<tr class="shipping" data-order_item_id="{{.ID}}">
+<td class="thumb"><div></div></td>
+<td class="name"><div class="view">{{.Name}}</div>
+<div class="edit" style="display:none"><input type="hidden" name="order_item_id[]" value="{{.ID}}"><input type="text" class="shipping_method_name" placeholder="Shipping name" name="shipping_method_title[{{.ID}}]" value="{{.Name}}">
+<select class="shipping_method" name="shipping_method[{{.ID}}]">{{template "goo-store-options" (dict "Opts" .Methods "Sel" .MethodID)}}</select></div>
+<div class="view">{{if .Meta}}<table cellspacing="0" class="display_meta">{{range .Meta}}<tr><th>{{.Key}}:</th><td><p>{{safe .Value}}</p></td></tr>{{end}}</table>{{end}}</div></td>
+<td class="item_cost" width="1%">&nbsp;</td><td class="quantity" width="1%">&nbsp;</td>
+<td class="line_cost" width="1%"><div class="view">{{.TotalFmt}}{{if .RefundedAmt}}<small class="refunded">{{.RefundedAmt}}</small>{{end}}</div>
+<div class="edit" style="display:none"><input type="text" name="shipping_cost[{{.ID}}]" placeholder="0" value="{{.Total}}" class="line_total wc_input_price"></div>
+<div class="refund" style="display:none"><input type="text" name="refund_line_total[{{.ID}}]" placeholder="0" class="refund_line_total wc_input_price"></div></td>
+{{$id := .ID}}{{range .Taxes}}<td class="line_tax" width="1%"><div class="view">{{if .TotalFmt}}{{.TotalFmt}}{{else}}&ndash;{{end}}</div>
+<div class="edit" style="display:none"><input type="text" name="shipping_taxes[{{$id}}][{{.RateID}}]" placeholder="0" value="{{.Total}}" class="line_tax wc_input_price"></div>
+<div class="refund" style="display:none"><input type="text" name="refund_line_tax[{{$id}}][{{.RateID}}]" placeholder="0" class="refund_line_tax wc_input_price"></div></td>{{end}}
+<td class="wc-order-edit-line-item">{{if $d.Editable}}<div class="wc-order-edit-line-item-actions"><a class="edit-order-item" href="#"></a><button type="submit" class="delete-order-item" name="goo_do" value="delete_item:{{.ID}}" aria-label="Delete item"></button></div>{{end}}</td>
+</tr>{{end}}
+</tbody>
+<tbody id="order_refunds">
+{{range .Refunds}}<tr class="refund" data-order_refund_id="{{.ID}}">
+<td class="thumb"><div></div></td>
+<td class="name">{{.Label}}{{if .Reason}}<p class="description">{{.Reason}}</p>{{end}}</td>
+<td class="item_cost" width="1%">&nbsp;</td><td class="quantity" width="1%">&nbsp;</td>
+<td class="line_cost" width="1%"><div class="view">{{.Amount}}</div></td>
+{{range $d.TaxCols}}<td class="line_tax" width="1%"></td>{{end}}
+<td class="wc-order-edit-line-item"><div class="wc-order-edit-line-item-actions"><button type="submit" class="delete_refund" name="goo_do" value="delete_refund:{{.ID}}" aria-label="Delete refund" data-confirm="Are you sure you wish to delete this refund? This action cannot be undone."></button></div></td>
+</tr>{{end}}
+</tbody>
+</table>
+</div>
+
+<div class="wc-order-data-row wc-order-totals-items wc-order-items-editable">
+{{if .Coupons}}<div class="wc-used-coupons"><ul class="wc_coupon_list"><li><strong>Coupon(s)</strong></li>
+{{range .Coupons}}<li class="code editable">{{if .URL}}<a href="{{.URL}}" class="tips"><span>{{.Code}}</span></a>{{else}}<span class="tips"><span>{{.Code}}</span></span>{{end}}
+{{if $d.Editable}}<button type="submit" class="remove-coupon" name="goo_do" value="remove_coupon:{{.Code}}" aria-label="Remove coupon"></button>{{end}}</li>{{end}}</ul></div>{{end}}
+<table class="wc-order-totals">
+{{range .Totals}}<tr><td class="label{{if .Class}} {{.Class}}{{end}}">{{.Label}}</td><td width="1%"></td><td class="total">{{.Value}}</td></tr>{{end}}
+</table>
+<div class="clear"></div>
+{{if .HasRefund}}<table class="wc-order-totals" style="border-top:1px solid #999;margin-top:12px;padding-top:12px">
+<tr><td class="refunded-total">Refunded:</td><td width="1%"></td><td class="total refunded-total">{{.Refunded}}</td></tr>
+<tr><td class="label label-highlight">Net Payment:</td><td width="1%"></td><td class="total">{{.NetPay}}</td></tr>
+</table><div class="clear"></div>{{end}}
+</div>
+
+<div class="wc-order-data-row wc-order-bulk-actions wc-order-data-row-toggle">
+<p class="add-items">
+{{if .Editable}}<button type="button" class="button add-line-item">Add item(s)</button>
+<button type="button" class="button add-coupon" data-modal="goo-modal-coupon">Apply coupon</button>{{else}}<span class="description">This order is no longer editable.</span>{{end}}
+{{if gt .Available 0.0}}<button type="button" class="button refund-items">Refund</button>{{end}}
+</p>
+<div class="clear"></div>
+</div>
+<div class="wc-order-data-row wc-order-add-item wc-order-data-row-toggle" style="display:none;">
+<button type="button" class="button add-order-item" data-modal="goo-modal-add-products">Add product(s)</button>
+<button type="button" class="button add-order-fee" data-modal="goo-modal-fee">Add fee</button>
+<button type="submit" class="button add-order-shipping" name="goo_do" value="add_shipping">Add shipping</button>
+<button type="button" class="button add-order-tax" data-modal="goo-modal-tax">Add tax</button>
+<button type="button" class="button cancel-action">Cancel</button>
+<button type="submit" class="button button-primary save-action" name="goo_do" value="save_items">Save</button>
+<button type="submit" class="button button-primary calculate-action" name="goo_do" value="recalculate" data-confirm="Recalculate totals? This will calculate taxes based on the customers country (or the store base country) and update totals.">Recalculate</button>
+</div>
+<div class="wc-order-data-row wc-order-refund-items wc-order-data-row-toggle" style="display:none;">
+<table class="wc-order-totals">
+<tr><td class="label"><label for="restock_refunded_items">Restock refunded items:</label></td><td class="total"><input type="checkbox" id="restock_refunded_items" name="restock_refunded_items" checked="checked"></td></tr>
+<tr><td class="label">Amount already refunded:</td><td class="total">{{.Refunded}}</td></tr>
+<tr><td class="label">Total available to refund:</td><td class="total">{{.AvailFmt}}</td></tr>
+<tr><td class="label"><label for="refund_amount">Refund amount:</label></td><td class="total"><input type="text" id="refund_amount" name="refund_amount" class="wc_input_price" data-max="{{.Available}}"><div class="clear"></div></td></tr>
+<tr><td class="label"><label for="refund_reason">Reason for refund (optional):</label></td><td class="total"><input type="text" id="refund_reason" name="refund_reason"><div class="clear"></div></td></tr>
+</table>
+<div class="clear"></div>
+<div class="refund-actions">
+{{if .CanAPI}}<button type="submit" class="button button-primary do-api-refund" name="goo_do" value="refund_api">Refund <span class="wc-order-refund-amount">{{.Symbol}}<span class="amount">0.00</span></span> via {{.APILabel}}</button>{{end}}
+<button type="submit" class="button button-primary do-manual-refund" name="goo_do" value="refund">Refund <span class="wc-order-refund-amount">{{.Symbol}}<span class="amount">0.00</span></span> manually</button>
+<button type="button" class="button cancel-action">Cancel</button>
+<div class="clear"></div>
+</div>
+</div>
+
+<div class="goo-inline-modal" id="goo-modal-add-products" hidden><h3>Add products</h3>
+<input type="search" class="goo-select-filter" data-target="add_item_id" placeholder="Search for a product…">
+<p><select name="add_item_id" id="add_item_id" size="8" class="wc-product-search">{{template "goo-store-options" (dict "Opts" .Products "Sel" "")}}</select></p>
+<p><label for="add_item_qty">Quantity</label> <input type="number" step="1" min="1" id="add_item_qty" name="add_item_qty" value="1" class="quantity"></p>
+<p><button type="submit" class="button button-primary" name="goo_do" value="add_item">Add</button> <button type="button" class="button modal-close">Cancel</button></p></div>
+<div class="goo-inline-modal" id="goo-modal-fee" hidden><h3>Add fee</h3>
+<p><label for="add_fee_amount">Enter a fixed amount or percentage to apply as a fee.</label><br><input type="text" id="add_fee_amount" name="add_fee_amount" placeholder="e.g. 10 or 10%"></p>
+<p><button type="submit" class="button button-primary" name="goo_do" value="add_fee">Add</button> <button type="button" class="button modal-close">Cancel</button></p></div>
+<div class="goo-inline-modal" id="goo-modal-tax" hidden><h3>Add tax</h3>
+<p><select name="add_tax_rate" id="add_tax_rate"><option value="">Rate</option>{{template "goo-store-options" (dict "Opts" .TaxRates "Sel" "")}}</select></p>
+<p><button type="submit" class="button button-primary" name="goo_do" value="add_tax">Add</button> <button type="button" class="button modal-close">Cancel</button></p></div>
+<div class="goo-inline-modal" id="goo-modal-coupon" hidden><h3>Apply coupon</h3>
+<p><label for="coupon_code">Enter a coupon code to apply. Discounts are applied to line totals, before taxes.</label><br><input type="text" id="coupon_code" name="coupon_code"></p>
+<p><button type="submit" class="button button-primary" name="goo_do" value="apply_coupon">Apply</button> <button type="button" class="button modal-close">Cancel</button></p></div>
+</div></div>
+
+<div id="woocommerce-order-downloads" class="postbox"><div class="postbox-header"><h2 class="hndle">Downloadable product permissions</h2></div><div class="inside">
+<div class="order_download_permissions wc-metaboxes-wrapper">
+<div class="wc-metaboxes">
+{{range .Downloads}}<div class="wc-metabox closed"><h3 class="fixed"><button type="submit" class="revoke_access button" name="goo_do" value="revoke_access:{{.ID}}" data-confirm="Are you sure you want to revoke access to this download?">Revoke access</button>
+<strong>{{.Product}} &mdash; {{.File}}</strong> <span class="description">Downloaded {{.Count}} times</span></h3>
+<table cellpadding="0" cellspacing="0" class="wc-metabox-content"><tbody><tr>
+<td><label>Downloads remaining</label> {{.Remaining}}</td><td><label>Access expires</label> {{.Expires}}</td></tr></tbody></table></div>{{else}}<p class="description">No downloadable product permissions.</p>{{end}}
+</div>
+<div class="toolbar">
+<p class="buttons"><select id="grant_access_id" class="wc-product-search" name="grant_access_id[]" multiple="multiple" data-placeholder="Search for a downloadable product…">{{template "goo-store-options" (dict "Opts" .DlProducts "Sel" "")}}</select>
+<button type="submit" class="button grant_access" name="goo_do" value="grant_access">Grant access</button></p>
+<div class="clear"></div>
+</div>
+</div>
+</div></div>
+
+</div></div>
+
+<div id="postbox-container-1" class="postbox-container"><div class="meta-box-sortables">
+<div id="woocommerce-order-actions" class="postbox"><div class="postbox-header"><h2 class="hndle">Order actions</h2></div><div class="inside">
+<ul class="order_actions submitbox">
+<li class="wide" id="actions"><select name="wc_order_action"><option value="">Choose an action...</option>{{template "goo-store-options" (dict "Opts" .Actions "Sel" "")}}</select>
+<button class="button wc-reload" type="submit" name="goo_do" value="save"><span>Apply</span></button></li>
+<li class="wide"><div id="delete-action">{{if not .New}}<a class="submitdelete deletion" href="{{.TrashURL}}">Move to Trash</a>{{end}}</div>
+<button type="submit" class="button save_order button-primary" name="goo_do" value="save">{{if .New}}Create{{else}}Update{{end}}</button></li>
+</ul>
+</div></div>
+
+<div id="woocommerce-order-notes" class="postbox"><div class="postbox-header"><h2 class="hndle">Order notes</h2></div><div class="inside">
+<ul class="order_notes">
+{{range .Notes}}<li rel="{{.ID}}" class="{{.Class}}"><div class="note_content"><p>{{.Content}}</p></div>
+<p class="meta"><abbr class="exact-date">{{.Date}}</abbr>{{if .By}} by {{.By}}{{end}}
+<button type="submit" class="delete_note button-link" name="goo_do" value="delete_note:{{.ID}}" role="button">Delete note</button></p></li>
+{{else}}<li class="no-items">There are no notes yet.</li>{{end}}
+</ul>
+<div class="add_note">
+<p><label for="add_order_note">Add note <span class="woocommerce-help-tip" title="Add a note for your reference, or add a customer note (the user will be notified)."></span></label>
+<textarea name="order_note" id="add_order_note" class="input-text" cols="20" rows="5"></textarea></p>
+<p><label for="order_note_type" class="screen-reader-text">Note type</label>
+<select name="order_note_type" id="order_note_type"><option value="">Private note</option><option value="customer">Note to customer</option></select>
+<button type="submit" class="add_note button" name="goo_do" value="add_note">Add</button></p>
+</div>
+</div></div>
+</div></div>
+
+</div></div>
+</form>
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}
+
+{{define "goo-store-addr-field"}}<p class="{{.Class}}"><label for="{{.Name}}">{{.Label}}</label>
+{{if .Options}}<select id="{{.Name}}" name="{{.Name}}" class="js_field-{{.Key}} select short" data-field="{{.Key}}">{{template "goo-store-options" (dict "Opts" .Options "Sel" .Value)}}</select>
+{{else}}<input type="{{if eq .Type "country"}}text{{else if eq .Type "state"}}text{{else}}{{.Type}}{{end}}" class="short js_field-{{.Key}}" name="{{.Name}}" id="{{.Name}}" value="{{.Value}}" data-field="{{.Key}}">{{end}}</p>{{end}}

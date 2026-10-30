@@ -179,7 +179,8 @@ func TestGooThemeInstallAndDemo(t *testing.T) {
 			if _, again, _ := srv.gooQueryProducts(ctx, gooProductQuery{PerPage: 50}); again != total {
 				t.Errorf("re-import duplicated products: %d → %d", total, again)
 			}
-			for _, u := range []string{"/", "/shop/", strings.TrimPrefix(srv.gooPermalink(ctx, products[0]), srv.links(ctx).HomeURL("")), "/cart/", "/my-account/"} {
+			pu, _ := url.Parse(srv.gooPermalink(ctx, products[0]))
+			for _, u := range []string{"/", "/shop/", pu.Path, "/cart/", "/my-account/"} {
 				resp := anonGet(t, base+u)
 				page := bodyOf(resp)
 				if resp.StatusCode != http.StatusOK || strings.Contains(page, "Template error") {

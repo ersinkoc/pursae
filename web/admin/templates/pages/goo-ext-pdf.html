@@ -1,0 +1,31 @@
+{{define "admin/goo-ext-pdf"}}{{template "admin-header" .}}{{with .Data}}
+<div class="wrap goocommerce goo-pdf-admin">
+<h1 class="wp-heading-inline">PDF documents</h1>
+<a href="/wp-admin/goocommerce?page=ext&amp;ext=pdf_invoices" class="page-title-action">Settings</a>
+<hr class="wp-header-end">
+{{template "notices" $}}
+{{if not .On}}<div class="notice notice-warning"><p>PDF Invoices &amp; Packing Slips is not active: documents are not attached to e-mails and customers cannot download them until you activate it on Goocommerce › Extensions.</p></div>{{end}}
+<p>Next invoice number: <strong>{{.Next}}</strong>. Select orders to export their invoices or packing slips as one PDF.</p>
+<form method="get" action="/wp-admin/goocommerce" target="_blank">
+<input type="hidden" name="page" value="pdf-documents">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}">
+<div class="tablenav top"><div class="alignleft actions bulkactions">
+<label for="goo-pdf-bulk" class="screen-reader-text">Select bulk action</label>
+<select name="document" id="goo-pdf-bulk"><option value="invoice">Export invoices (PDF)</option><option value="packing-slip">Export packing slips (PDF)</option></select>
+<button type="submit" class="button action">Apply</button></div>
+<div class="tablenav-pages one-page"><span class="displaying-num">{{.Total}} orders</span></div><br class="clear"></div>
+<table class="wp-list-table widefat fixed striped table-view-list orders">
+<thead><tr><td class="manage-column column-cb check-column"><label class="screen-reader-text" for="cb-select-all-1">Select All</label><input id="cb-select-all-1" type="checkbox" onclick="for(const b of document.querySelectorAll('.goo-pdf-admin tbody input[type=checkbox]'))b.checked=this.checked"></td>
+<th scope="col" class="column-primary">Order</th><th scope="col">Date</th><th scope="col">Status</th><th scope="col">Total</th><th scope="col">Invoice</th><th scope="col">Documents</th></tr></thead>
+<tbody>
+{{range .Rows}}<tr>
+<th scope="row" class="check-column"><input type="checkbox" name="order_ids[]" value="{{.ID}}" id="goo-pdf-{{.ID}}"><label class="screen-reader-text" for="goo-pdf-{{.ID}}">Select order {{.Number}}</label></th>
+<td class="column-primary"><strong>#{{.Number}} {{.Customer}}</strong></td>
+<td>{{.Date}}</td><td>{{.Status}}</td><td>{{.Total}}</td>
+<td>{{if .Invoice}}{{.Invoice}}{{if .Printed}}<br><small>Printed {{.Printed}}</small>{{end}}{{else}}&ndash;{{end}}</td>
+<td>{{if .InvoiceURL}}<a class="button" href="{{.InvoiceURL}}" target="_blank">Invoice</a> {{end}}<a class="button" href="{{.PackingSlipURL}}" target="_blank">Packing slip</a></td>
+</tr>{{else}}<tr class="no-items"><td colspan="7">No orders found.</td></tr>{{end}}
+</tbody></table>
+</form>
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}

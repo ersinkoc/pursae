@@ -80,7 +80,7 @@ func (s *Server) site(c *gin.Context) {
 		return
 	}
 	path := s.golylangSitePath(c, raw) // Golylang: without the language code
-	if s.gooSiteIntercept(c, path) {    // Goocommerce: shop, products, store pages and forms (goo_front.go)
+	if s.gooSiteIntercept(c, path) {   // Goocommerce: shop, products, store pages and forms (goo_front.go)
 		return
 	}
 	switch path {
