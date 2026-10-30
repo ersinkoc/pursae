@@ -1,0 +1,12 @@
+- id: getting-started
+  title: Getting started
+- id: plugins
+  title: Plugin development
+- id: themes
+  title: Theme development
+- id: rest-api
+  title: REST API
+- id: hub
+  title: Hub & marketplace
+- id: operations
+  title: Running in production
