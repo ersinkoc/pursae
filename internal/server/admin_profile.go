@@ -28,14 +28,14 @@ type profileData struct {
 	Avatar96       string
 	ShowToolbar    bool
 	// Language: the user's "locale" meta ("" = Site Default) and the installed languages.
-	Locale    string
-	Languages []langChoice
-	SyntaxOff      bool // "Disable syntax highlighting when editing code"
-	Colors         []adminColor
-	Color          string // admin_color
-	OtherSessions  int
-	AvatarID       int64
-	CanUpload      bool
+	Locale        string
+	Languages     []langChoice
+	SyntaxOff     bool // "Disable syntax highlighting when editing code"
+	Colors        []adminColor
+	Color         string // admin_color
+	OtherSessions int
+	AvatarID      int64
+	CanUpload     bool
 	// Role editing (user-edit.php, for users who can promote_users)
 	CanPromote bool
 	Roles      []roleChoice

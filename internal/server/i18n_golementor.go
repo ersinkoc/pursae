@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"hash/fnv"
+	"io/fs"
+	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -137,4 +140,78 @@ func gweTranslateLabel(cat *i18n.Catalog, s string) string {
 		}
 	}
 	return s
+}
+
+// Golementor Studio and the "Edit with Golementor" button are built in the browser, so their text
+// is translated there: the server sends the translations of the UI strings in the Studio
+// scripts, and an observer swaps them in Golementor's own elements (class "gwe-…") as they appear.
+
+var (
+	gweJSStringsOnce sync.Once
+	gweJSStringsList []string
+	gweJSLiteral     = regexp.MustCompile(`'((?:[^'\\\n]|\\.){2,160})'|"((?:[^"\\\n]|\\.){2,160})"|` + "`([^`$\\n]{2,160})`")
+	gweJSNotText     = regexp.MustCompile(`[{}<>=;]|^\.|^#|gwe-|e-con|elementor|\\u|https?:|^[A-Z][a-z]+[A-Z]|^[A-Z_]+$`)
+	gweJSHasWord     = regexp.MustCompile(`[A-Za-z]{2}`)
+)
+
+// gweJSStrings lists the UI strings of the Studio scripts (literals that start with a capital).
+func (s *Server) gweJSStrings() []string {
+	gweJSStringsOnce.Do(func() {
+		seen := map[string]bool{"Edit with Golementor": true}
+		files, _ := fs.Glob(s.web, "gowebeditor/studio/*.js")
+		for _, f := range files {
+			b, err := fs.ReadFile(s.web, f)
+			if err != nil {
+				continue
+			}
+			for _, m := range gweJSLiteral.FindAllStringSubmatch(string(b), -1) {
+				lit := m[1] + m[2] + m[3]
+				lit = strings.NewReplacer(`\'`, "'", `\"`, `"`).Replace(lit)
+				t := strings.TrimSpace(lit)
+				if t == "" || !gweJSHasWord.MatchString(t) || gweJSNotText.MatchString(t) || !strings.ContainsAny(t[:1], "ABCDEFGHIJKLMNOPQRSTUVWXYZ“\"(") {
+					continue
+				}
+				seen[lit] = true
+			}
+		}
+		for k := range seen {
+			gweJSStringsList = append(gweJSStringsList, k)
+		}
+		sort.Strings(gweJSStringsList)
+	})
+	return gweJSStringsList
+}
+
+const gweL10nObserver = `(function(){var D=window.GWEL10n||{};var A=['title','placeholder','aria-label'];
+function tr(s){if(!s)return s;var v=D[s];if(v)return v;var t=s.trim();if(t!==s&&D[t])return s.replace(t,D[t]);return s;}
+function ours(n){var e=n.nodeType===1?n:n.parentElement;return !!(e&&e.closest&&e.closest('[class*="gwe-"],[id^="gwe"],[id^="gowebeditor"]')&&!e.closest('[translate="no"]'));}
+function walk(n){if(n.nodeType===3){if(ours(n)){var v=tr(n.nodeValue);if(v!==n.nodeValue)n.nodeValue=v;}return;}
+if(n.nodeType!==1||/^(SCRIPT|STYLE|TEXTAREA|IFRAME)$/.test(n.tagName))return;
+if(ours(n)){for(var i=0;i<A.length;i++){var a=n.getAttribute(A[i]);if(a){var t=tr(a);if(t!==a)n.setAttribute(A[i],t);}}}
+for(var c=n.firstChild;c;c=c.nextSibling)walk(c);}
+function start(){walk(document.body);new MutationObserver(function(ms){for(var i=0;i<ms.length;i++){var m=ms[i];
+if(m.type==='characterData'){walk(m.target);}else{for(var j=0;j<m.addedNodes.length;j++)walk(m.addedNodes[j]);}}})
+.observe(document.body,{childList:true,subtree:true,characterData:true});}
+if(document.body)start();else document.addEventListener('DOMContentLoaded',start);})();`
+
+// gweL10nScript is the dictionary and observer for the user's language ("" for English).
+func (s *Server) gweL10nScript(c *gin.Context) string {
+	cat := s.catalog(c)
+	if cat.Empty() {
+		return ""
+	}
+	dict := map[string]string{}
+	for _, lit := range s.gweJSStrings() {
+		if tr, ok := cat.Lookup(lit); ok {
+			dict[lit] = tr
+		} else if t := strings.TrimSpace(lit); t != lit {
+			if tr, ok := cat.Lookup(t); ok {
+				dict[lit] = strings.Replace(lit, t, tr, 1)
+			}
+		}
+	}
+	if len(dict) == 0 {
+		return ""
+	}
+	return "<script id=\"gwe-l10n\">window.GWEL10n = " + gweJSON(dict) + ";\n" + gweL10nObserver + "</script>\n"
 }

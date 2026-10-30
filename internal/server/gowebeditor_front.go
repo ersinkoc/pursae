@@ -542,7 +542,7 @@ func (s *Server) gweEditorButton(c *gin.Context, p *store.Post, block bool) {
 		b.type = 'button';
 		b.className = 'components-button is-primary';
 		b.style.marginLeft = '12px';
-		b.textContent = 'Edit with Golementor';
+		b.textContent = `+strconvQuote(s.__(c, "Edit with Golementor"))+`;
 		b.addEventListener( 'click', go );
 		bar.appendChild( b );
 		return true;
