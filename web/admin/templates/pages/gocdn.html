@@ -23,6 +23,7 @@
 .gocdn-wrap code.gc-wrap{word-break:break-all}
 .gocdn-wrap .gc-locked{color:#996800;font-size:12px;margin-left:6px}
 .gocdn-wrap .gc-secret{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.gocdn-wrap [hidden]{display:none!important}
 </style>
 <div class="wrap gocdn-wrap">
 <h1 class="wp-heading-inline"><span class="dashicons dashicons-cloud-upload gc-h1-icon" aria-hidden="true"></span>{{.Title}}</h1>
@@ -151,7 +152,7 @@ Status: {{if .Configured}}<span class="gc-badge ok">Configured</span>{{else}}<sp
 {{if and (not .Folders) (not .Objects)}}<tr><td colspan="6">{{if .Err}}The bucket cannot be listed.{{else}}This folder is empty.{{end}}</td></tr>{{end}}
 </tbody></table>
 <div class="tablenav bottom"><div class="alignleft actions gc-tools">
-	<label>Import as <select name="mode"><option value="copy">Copy into the Media Library</option><option value="link">Link (stays in the bucket)</option></select></label>
+	<label for="gc-mode" class="screen-reader-text">Import as</label><select id="gc-mode" name="mode"><option value="copy">Import: copy into the Media Library</option><option value="link">Import: link (stays in the bucket)</option></select>
 	<button type="submit" name="do" value="import" class="button button-primary">Import selected</button>
 </div><div class="tablenav-pages">{{if .Token}}<a class="button" href="/wp-admin/gocdn?page=remote&amp;prefix={{.Prefix}}">First page</a> {{end}}{{if .NextToken}}<a class="button" href="/wp-admin/gocdn?page=remote&amp;prefix={{.Prefix}}&amp;token={{.NextToken}}">Next page &rsaquo;</a>{{end}}</div></div>
 </form>
