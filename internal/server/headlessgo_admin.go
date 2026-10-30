@@ -243,6 +243,9 @@ func (s *Server) hgRender(c *gin.Context, page string, failed *hgFailedSave) {
 		}
 	case "entry":
 		d.Type = reg.Get(c.Query("type"))
+		if failed != nil {
+			d.Type = failed.Type
+		}
 		if d.Type == nil || d.Type.IsComponent() {
 			c.Redirect(http.StatusFound, hgAdminPath)
 			return
@@ -419,8 +422,10 @@ func hgCell(v any) string {
 
 // hgFailedSave is a rejected entry form: the input and the errors, shown again.
 type hgFailedSave struct {
-	Data map[string]any
-	Errs hgValidationError
+	Type        *hgSchema
+	Doc, Locale string
+	Data        map[string]any
+	Errs        hgValidationError
 }
 
 // hgAdminEntry prepares the entry form; it reports false when it answered with a redirect.
@@ -428,11 +433,17 @@ func (s *Server) hgAdminEntry(c *gin.Context, d *hgAdminData, failed *hgFailedSa
 	sc := d.Type
 	reg := s.hgReg(c)
 	d.Doc = c.Query("doc")
+	if failed != nil {
+		d.Doc = failed.Doc
+	}
 	if sc.IsSingle() {
 		d.Doc = s.hgSingleDoc(c, sc.UID)
 	}
 	if sc.Localized {
 		d.Locale = c.Query("locale")
+		if failed != nil {
+			d.Locale = failed.Locale
+		}
 		if !s.hgValidLocale(c, d.Locale) {
 			d.Locale = s.hgDefaultLocale(c)
 		}
@@ -710,14 +721,18 @@ func (s *Server) hgAdminPost(c *gin.Context, page string) {
 			hgRedirect(c, url.Values{"page": {"builder"}}, "", errors.New("The schema could not be read."))
 			return
 		}
-		isNew := reg.Get(sc.UID) == nil || sc.UID == ""
-		if c.PostForm("is_new") == "1" && sc.UID != "" && reg.Get(sc.UID) != nil {
-			isNew = true // validation reports the duplicate
-		}
+		isNew := c.PostForm("is_new") == "1"
+		var err error
 		if c.PostForm("is_new") == "1" {
 			sc.UID = ""
+			hgNormalizeSchema(&sc)
+			if sc.UID != "" && reg.Get(sc.UID) != nil {
+				err = fmt.Errorf("A content type or component with the ID %q already exists.", sc.UID)
+			}
 		}
-		err := s.hgSaveSchema(c, &sc)
+		if err == nil {
+			err = s.hgSaveSchema(c, &sc)
+		}
 		if err != nil {
 			q := url.Values{"page": {"builder"}}
 			if !isNew {
@@ -930,14 +945,7 @@ func (s *Server) hgAdminEntryPost(c *gin.Context, sc *hgSchema, do string) {
 		if err != nil {
 			var ve hgValidationError
 			if errors.As(err, &ve) {
-				q := c.Request.URL.Query()
-				q.Set("page", "entry")
-				q.Set("type", sc.UID)
-				q.Set("doc", doc)
-				q.Set("locale", loc)
-				c.Request.URL.RawQuery = q.Encode()
-				c.Request.Method = http.MethodGet
-				s.hgRender(c, "entry", &hgFailedSave{Data: data, Errs: ve})
+				s.hgRender(c, "entry", &hgFailedSave{Type: sc, Doc: doc, Locale: loc, Data: data, Errs: ve})
 				return
 			}
 			hgRedirect(c, entryURL(doc), "", err)

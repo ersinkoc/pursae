@@ -892,10 +892,11 @@ func (q *hgQuery) op(expr, kind, op string, v any) (string, error) {
 			return "", hgBad("Invalid filter value for %s", op)
 		}
 		p := strings.ReplaceAll(pattern, "X", hgLikeEscape(s))
-		c := text + " LIKE " + q.sql.arg(p)
+		kw := " LIKE "
 		if ci {
-			c = text + " ILIKE " + q.sql.arg(p)
+			kw = " ILIKE "
 		}
+		c := text + kw + q.sql.arg(p)
 		if negate {
 			return "(" + expr + " IS NULL OR NOT (" + c + "))", nil
 		}
