@@ -130,7 +130,7 @@ func (s *Server) gooRESTPriceHTML(ctx context.Context, p *gooProduct) string {
 	loc := s.gooBaseLocation()
 	disp := func(v float64) float64 { return s.gooPriceToDisplay(ctx, p, v, loc) }
 	switch p.Type {
-	case gooTypeVariable, gooTypeGrouped:
+	case gooTypeVariable, gooSubsTypeVariable, gooTypeGrouped:
 		if p.MinPrice == nil {
 			return ""
 		}
@@ -184,7 +184,7 @@ func (s *Server) gooStoreProductJSON(ctx context.Context, p *gooProduct, terms m
 	disp := func(v float64) string { return s.gooMinor(s.gooPriceToDisplay(ctx, p, v, loc)) }
 	prices := map[string]any{"price": "", "regular_price": "", "sale_price": "", "price_range": nil}
 	switch p.Type {
-	case gooTypeVariable, gooTypeGrouped:
+	case gooTypeVariable, gooSubsTypeVariable, gooTypeGrouped:
 		if p.MinPrice != nil {
 			prices["price"], prices["regular_price"], prices["sale_price"] = disp(*p.MinPrice), disp(*p.MinPrice), disp(*p.MinPrice)
 			hi := *p.MinPrice
@@ -243,7 +243,7 @@ func (s *Server) gooStoreProductJSON(ctx context.Context, p *gooProduct, terms m
 		attrs = append(attrs, map[string]any{"id": a.ID, "name": s.gooAttrLabel(ctx, a), "taxonomy": nilIfEmpty(a.Taxonomy), "has_variations": a.Variation, "terms": nonNilSlice(list)})
 	}
 	variations := []any{}
-	if p.Type == gooTypeVariable {
+	if gooSubsVariableLike(p.Type) {
 		vars, _ := s.gooVariations(ctx, p.ID, false)
 		for _, v := range vars {
 			var va []any
@@ -271,7 +271,7 @@ func (s *Server) gooStoreProductJSON(ctx context.Context, p *gooProduct, terms m
 	text, desc := "Add to cart", "Add to cart: &ldquo;"+gooEsc(p.Name)+"&rdquo;"
 	addURL := "?add-to-cart=" + itoa64(p.ID)
 	switch {
-	case p.Type == gooTypeVariable:
+	case gooSubsVariableLike(p.Type):
 		text, addURL = "Select options", s.gooPermalink(ctx, p)
 	case p.Type == gooTypeGrouped:
 		text, addURL = "View products", s.gooPermalink(ctx, p)
@@ -308,7 +308,7 @@ func (s *Server) gooStoreProductJSON(ctx context.Context, p *gooProduct, terms m
 		"on_sale": p.IsOnSale(), "prices": prices, "price_html": s.gooRESTPriceHTML(ctx, p),
 		"average_rating": strconv.FormatFloat(p.AverageRating, 'f', 2, 64), "review_count": p.RatingCount, "images": images,
 		"categories": s.gooStoreTermsJSON(ctx, cats), "tags": s.gooStoreTermsJSON(ctx, tags), "brands": []any{}, "attributes": attrs,
-		"variations": variations, "grouped_products": nonNilSlice(p.Children), "has_options": p.Type == gooTypeVariable,
+		"variations": variations, "grouped_products": nonNilSlice(p.Children), "has_options": gooSubsVariableLike(p.Type),
 		"is_purchasable": purchasable, "is_in_stock": inStock, "is_on_backorder": p.StockStatus == "onbackorder",
 		"low_stock_remaining": lowStock, "stock_availability": map[string]any{"text": stockText, "class": stockClass},
 		"sold_individually": p.SoldIndividually,

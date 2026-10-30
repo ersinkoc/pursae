@@ -273,13 +273,13 @@ func (s *Server) gooSaveProduct(ctx context.Context, p *gooProduct, editorID int
 	if err := s.gooWriteProductData(ctx, p); err != nil {
 		return err
 	}
-	if p.Type == gooTypeVariable {
+	if gooSubsVariableLike(p.Type) {
 		if err := s.gooSyncVariable(ctx, p); err != nil {
 			return err
 		}
 	}
 	if p.Type == gooTypeVariation && p.ParentID != 0 {
-		if parent, err := s.gooGetProduct(ctx, p.ParentID); err == nil && parent.Type == gooTypeVariable {
+		if parent, err := s.gooGetProduct(ctx, p.ParentID); err == nil && gooSubsVariableLike(parent.Type) {
 			if err := s.gooSyncVariable(ctx, parent); err != nil {
 				return err
 			}
@@ -315,7 +315,7 @@ func (s *Server) gooNormalizeProduct(p *gooProduct) {
 		p.ManageStock, p.StockQuantity, p.StockStatus, p.Virtual, p.Downloadable = false, nil, "instock", false, false
 	case gooTypeGrouped:
 		p.RegularPrice, p.SalePrice, p.ManageStock, p.StockQuantity = nil, nil, false, nil
-	case gooTypeVariable:
+	case gooTypeVariable, gooSubsTypeVariable:
 		p.RegularPrice, p.SalePrice, p.SaleFrom, p.SaleTo = nil, nil, nil, nil
 	}
 	if !p.Downloadable {
@@ -326,10 +326,10 @@ func (s *Server) gooNormalizeProduct(p *gooProduct) {
 			p.Downloads[i].ID = gooRandomKey(16)
 		}
 	}
-	if p.Type != gooTypeVariable && p.Type != gooTypeGrouped {
+	if !gooSubsVariableLike(p.Type) && p.Type != gooTypeGrouped {
 		p.Price = p.activePrice(time.Now())
 	}
-	if p.ManageStock && p.StockQuantity != nil && p.Type != gooTypeVariable && p.Type != gooTypeGrouped {
+	if p.ManageStock && p.StockQuantity != nil && !gooSubsVariableLike(p.Type) && p.Type != gooTypeGrouped {
 		p.StockStatus = s.gooStockStatusFor(*p.StockQuantity, p.Backorders)
 	} else if p.ManageStock && p.StockQuantity == nil {
 		zero := 0
@@ -594,7 +594,7 @@ func (p *gooProduct) activePrice(now time.Time) *float64 {
 
 // PriceValue is get_price() as a number (0 for no price).
 func (p *gooProduct) PriceValue() float64 {
-	if p.Type == gooTypeVariable || p.Type == gooTypeGrouped {
+	if gooSubsVariableLike(p.Type) || p.Type == gooTypeGrouped {
 		if p.Price != nil {
 			return *p.Price
 		}
@@ -608,7 +608,7 @@ func (p *gooProduct) PriceValue() float64 {
 
 // HasPrice reports whether get_price() is not empty.
 func (p *gooProduct) HasPrice() bool {
-	if p.Type == gooTypeVariable || p.Type == gooTypeGrouped {
+	if gooSubsVariableLike(p.Type) || p.Type == gooTypeGrouped {
 		return p.Price != nil
 	}
 	return p.activePrice(time.Now()) != nil
@@ -626,6 +626,10 @@ func (s *Server) gooIsPurchasable(ctx context.Context, p *gooProduct) bool {
 	if p.Type == gooTypeVariation {
 		parent := s.gooParent(ctx, p)
 		if parent == nil || parent.Status == "trash" || p.Status != "publish" {
+			return false
+		}
+		// A variation of a module's variable type (variable subscriptions) needs the module on.
+		if def := gooProductTypes[parent.Type]; def != nil && def.Module != "" && !s.gooExtOn(def.Module) {
 			return false
 		}
 	}
@@ -855,7 +859,7 @@ func (s *Server) gooUpdateStock(ctx context.Context, p *gooProduct, delta int, s
 	old := owner.StockQuantity
 	owner.StockQuantity = &qty
 	status := s.gooStockStatusFor(qty, owner.Backorders)
-	if owner.Type == gooTypeVariable {
+	if gooSubsVariableLike(owner.Type) {
 		// Parent-managed stock of a variable product: the parent's status is synced from the variations.
 		_ = s.gooSyncVariable(ctx, owner)
 	} else {

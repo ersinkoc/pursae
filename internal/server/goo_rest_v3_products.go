@@ -299,7 +299,7 @@ func (s *Server) gooV3ProductJSON(ctx context.Context, p *gooProduct) map[string
 		}
 	}
 	var variations []int64
-	if p.Type == gooTypeVariable {
+	if gooSubsVariableLike(p.Type) {
 		vars, _ := s.gooVariations(ctx, p.ID, true)
 		for _, v := range vars {
 			variations = append(variations, v.ID)
@@ -343,7 +343,7 @@ func (s *Server) gooV3ProductJSON(ctx context.Context, p *gooProduct) map[string
 		"categories": s.gooTermsOf(ctx, p.ID, "product_cat"), "tags": s.gooTermsOf(ctx, p.ID, "product_tag"), "brands": []any{},
 		"images": s.gooV3Images(ctx, gooProductImageIDs(p)), "attributes": attrs, "default_attributes": defAttrs,
 		"variations": nonNilSlice(variations), "grouped_products": grouped, "menu_order": post.MenuOrder,
-		"post_password": post.Password, "has_options": p.Type == gooTypeVariable, "meta_data": gooMetaJSON(p.Meta),
+		"post_password": post.Password, "has_options": gooSubsVariableLike(p.Type), "meta_data": gooMetaJSON(p.Meta),
 		"_links": s.gooLinks(ctx, "products", p.ID),
 	}
 }
@@ -766,7 +766,7 @@ func (s *Server) gooV3ProductDelete(c *gin.Context, id int64, force bool) (map[s
 		}
 		obj["status"] = "trash"
 	} else {
-		if p.Type == gooTypeVariable {
+		if gooSubsVariableLike(p.Type) {
 			vars, _ := s.gooVariations(ctx, id, true)
 			for _, v := range vars {
 				_ = s.store.DeletePost(ctx, v.ID)

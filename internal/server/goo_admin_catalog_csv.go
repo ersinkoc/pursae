@@ -181,7 +181,7 @@ func (s *Server) gooExportCSV(ctx context.Context, types, cats, columns []string
 	var all []*gooProduct
 	for _, p := range products {
 		all = append(all, p)
-		if p.Type == gooTypeVariable && wantVariations {
+		if gooSubsVariableLike(p.Type) && wantVariations {
 			vars, _ := s.gooVariations(ctx, p.ID, true)
 			all = append(all, vars...)
 		}
@@ -760,7 +760,7 @@ func (s *Server) gooImportRow(ctx context.Context, f map[string]string, update b
 			return false, fmt.Errorf("Variation cannot be imported: Missing parent ID or parent does not exist yet.")
 		}
 		var err error
-		if parent, err = s.gooGetProduct(ctx, pid); err != nil || parent.Type != gooTypeVariable {
+		if parent, err = s.gooGetProduct(ctx, pid); err != nil || !gooSubsVariableLike(parent.Type) {
 			return false, fmt.Errorf("Variation cannot be imported: Parent product cannot be a product variation")
 		}
 		p.ParentID = pid
@@ -971,7 +971,7 @@ func (s *Server) gooImportRow(ctx context.Context, f map[string]string, update b
 				if prev, ok := old[a.Key()]; ok {
 					a.Variation = prev.Variation
 				}
-				if p.Type == gooTypeVariable && !a.Variation && ia.def != "" {
+				if gooSubsVariableLike(p.Type) && !a.Variation && ia.def != "" {
 					a.Variation = true
 				}
 				p.Attributes = append(p.Attributes, a)

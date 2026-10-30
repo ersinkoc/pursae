@@ -4,7 +4,9 @@
 (function ($) {
 	'use strict';
 
-	var coreTypes = ['simple', 'variable', 'grouped', 'external'];
+	var coreTypes = ['simple', 'variable', 'grouped', 'external', 'variable-subscription'];
+	// variable subscriptions use the variable product fields (show_if_variable) as well as their own.
+	var variableLike = ['variable', 'variable-subscription'];
 
 	/* Product data box ---------------------------------------------------------------------------- */
 
@@ -17,6 +19,7 @@
 		var type = productType(),
 			isVirtual = $('#_virtual').is(':checked'),
 			isDownloadable = $('#_downloadable').is(':checked'),
+			isVariable = variableLike.indexOf(type) !== -1,
 			simpleLike = coreTypes.indexOf(type) === -1; // module types behave like simple products
 		var $box = $('#woocommerce-product-data');
 		if (!$box.length) {
@@ -26,7 +29,7 @@
 		$box.find('[class*="show_if_"]').each(function () {
 			var $el = $(this), cls = this.className.split(/\s+/), show = false;
 			cls.forEach(function (c) {
-				if (c === 'show_if_' + type || (simpleLike && c === 'show_if_simple')) {
+				if (c === 'show_if_' + type || (simpleLike && c === 'show_if_simple') || (isVariable && c === 'show_if_variable')) {
 					show = true;
 				}
 				if (c === 'show_if_downloadable' && isDownloadable && (type === 'simple' || simpleLike)) {
@@ -41,7 +44,7 @@
 		$box.find('[class*="hide_if_"]').each(function () {
 			var cls = this.className.split(/\s+/), hide = false;
 			cls.forEach(function (c) {
-				if (c === 'hide_if_' + type || (c === 'hide_if_virtual' && isVirtual) || (c === 'hide_if_downloadable' && isDownloadable)) {
+				if (c === 'hide_if_' + type || (isVariable && c === 'hide_if_variable') || (c === 'hide_if_virtual' && isVirtual) || (c === 'hide_if_downloadable' && isDownloadable)) {
 					hide = true;
 				}
 			});
@@ -50,7 +53,7 @@
 			}
 		});
 		// The type box's Virtual / Downloadable checkboxes are for simple products only.
-		if (type === 'variable' || type === 'grouped' || type === 'external') {
+		if (isVariable || type === 'grouped' || type === 'external') {
 			$box.find('.type_box .has-checkbox').hide();
 		}
 		var $active = $box.find('ul.wc-tabs li.active:visible');
@@ -216,7 +219,7 @@
 		var html = $tpl.html().split('__i__').join(String(attributeIndex()));
 		var $row = $(html).appendTo('.product_attributes');
 		$row.find('.attribute_position').val($('.product_attributes .woocommerce_attribute').length - 1);
-		if (productType() === 'variable') {
+		if (variableLike.indexOf(productType()) !== -1) {
 			$row.find('input[name^="attribute_variation["]').prop('checked', true);
 		}
 		showHidePanels();

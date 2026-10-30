@@ -135,7 +135,7 @@ func (s *Server) gooProductMeta(c *gin.Context, p *gooProduct) string {
 	ctx := c.Request.Context()
 	var b strings.Builder
 	b.WriteString(`<div class="product_meta">`)
-	if p.SKU != "" || p.Type == gooTypeVariable {
+	if p.SKU != "" || gooSubsVariableLike(p.Type) {
 		b.WriteString(`<span class="sku_wrapper">SKU: <span class="sku">` + gooEsc(defaultStr(p.SKU, "N/A")) + `</span></span>`)
 	}
 	terms, _ := s.gooProductTerms(c, p.ID)
@@ -200,7 +200,7 @@ func (s *Server) gooAddToCartForm(c *gin.Context, p *gooProduct) string {
 		b.WriteString(`</form>`)
 	case gooTypeGrouped:
 		return s.gooGroupedForm(c, p, action)
-	case gooTypeVariable:
+	case gooTypeVariable, gooSubsTypeVariable:
 		return s.gooVariableForm(c, p, action)
 	default:
 		b.WriteString(s.gooFrontStockHTML(c, p))
@@ -238,7 +238,7 @@ func (s *Server) gooGroupedForm(c *gin.Context, p *gooProduct, action string) st
 		}
 		b.WriteString(`<tr id="product-` + itoa64(k.ID) + `" class="woocommerce-grouped-product-list-item ` + s.gooProductClasses(c, k, "") + `">`)
 		b.WriteString(`<td class="woocommerce-grouped-product-list-item__quantity">`)
-		buy := k.Type != gooTypeVariable && k.Type != gooTypeGrouped && k.Type != gooTypeExternal && s.gooIsPurchasable(ctx, k) && s.gooIsInStock(ctx, k)
+		buy := !gooSubsVariableLike(k.Type) && k.Type != gooTypeGrouped && k.Type != gooTypeExternal && s.gooIsPurchasable(ctx, k) && s.gooIsInStock(ctx, k)
 		switch {
 		case !buy:
 			b.WriteString(s.gooLoopAddToCart(c, k, ""))
@@ -880,11 +880,11 @@ func (s *Server) gooProductJSONLD(c *gin.Context, p *gooProduct) string {
 	seller := map[string]any{"@type": "Organization", "name": s.settings.String("blogname"), "url": lb.HomeURL("/")}
 	dp := s.gooDecimals()
 	cur := s.gooCurrency()
-	if p.Type == gooTypeVariable || p.Type == gooTypeGrouped {
+	if gooSubsVariableLike(p.Type) || p.Type == gooTypeGrouped {
 		var lo, hi *float64
 		var n int
 		var kids []*gooProduct
-		if p.Type == gooTypeVariable {
+		if gooSubsVariableLike(p.Type) {
 			kids = s.gooVariationsCached(c, p)
 		} else {
 			m, _ := s.gooGetProducts(ctx, p.Children)
