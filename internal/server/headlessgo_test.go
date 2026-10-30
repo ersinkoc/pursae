@@ -339,7 +339,7 @@ func TestHeadlessGoDeliveryAPI(t *testing.T) {
 		"at": "2024-05-01T10:00:00+02:00", "cover": img, "seo": map[string]any{"metaTitle": "Hello SEO"}, "internal": "hidden note",
 		"faq": []any{map[string]any{"text": "Why?", "by": "Ada"}}, "extra": map[string]any{"k": []any{1, 2}},
 		"blocks": []any{map[string]any{"__component": "blocks.quote", "text": "Quoted"}, map[string]any{"__component": "blocks.gallery", "images": []any{img, img2}}},
-		"body": []any{map[string]any{"type": "paragraph", "children": []any{map[string]any{"type": "text", "text": "Body"}}}}})
+		"body":   []any{map[string]any{"type": "paragraph", "children": []any{map[string]any{"type": "text", "text": "Body"}}}}})
 	a2 := mk("Second post", 50, true, map[string]any{"author": bob, "categories": []any{webCat}, "kind": "news"})
 	a3 := mk("Third thing", 30, true, map[string]any{"author": ada})
 	draft := mk("Draft only", 99, false, nil)
@@ -404,7 +404,7 @@ func TestHeadlessGoDeliveryAPI(t *testing.T) {
 		"sort[0]=views:desc&pagination[page]=2&pagination[pageSize]=1":           {"Third thing"},
 		"sort=views&pagination[start]=1&pagination[limit]=5":                     {"Third thing", "Second post"},
 		"filters[documentId][$eq]=" + a2:                                         {"Second post"},
-		"locale=en&filters[title][$ne]=Hello%20Go&sort=title":                      {"Second post", "Third thing"},
+		"locale=en&filters[title][$ne]=Hello%20Go&sort=title":                    {"Second post", "Third thing"},
 	}
 	for qs, want := range cases {
 		r := q(qs)
@@ -829,7 +829,8 @@ func TestHeadlessGoAdminScreens(t *testing.T) {
 		"payload": {`{"name":"","secret":"pa55word!","steps":"keep me"}`}}
 	code, body, _ = post(t, c, base+"/wp-admin/headlessgo", form)
 	if code != http.StatusOK || !strings.Contains(body, "The entry was not saved") || !strings.Contains(body, "keep me") || strings.Contains(body, "pa55word!") {
-		_, _, l := post(t, c, base+"/wp-admin/headlessgo", form); t.Fatalf("rejected save: %d %s", code, l)
+		_, _, l := post(t, c, base+"/wp-admin/headlessgo", form)
+		t.Fatalf("rejected save: %d %s", code, l)
 	}
 	form.Set("payload", `{"name":"Soup","secret":"pa55word!","steps":"1. boil","tags":["a"]}`)
 	code, _, loc = post(t, c, base+"/wp-admin/headlessgo", form)
@@ -1133,5 +1134,69 @@ func TestHeadlessGoGolylangLocales(t *testing.T) {
 	}
 	if r := hgCall(t, base, "GET", "/articles/"+doc, full, nil); r.Code != 200 {
 		t.Fatalf("en after deleting fr: %d", r.Code)
+	}
+}
+
+func TestHeadlessGoGraphQL(t *testing.T) {
+	base, _, srv := hgSite(t)
+	ctx := context.Background()
+	hgModel(t, srv)
+	full := hgNewToken(t, srv, &hgToken{Name: "Full", Kind: "full-access"})
+	img := hgImage(t, srv, "pic")
+	r := hgCall(t, base, "POST", "/authors", full, map[string]any{"data": map[string]any{"name": "Ada"}})
+	ada := r.data()["documentId"].(string)
+	for i, title := range []string{"Alpha one", "Beta two", "Gamma three"} {
+		r := hgCall(t, base, "POST", "/articles?status=published", full, map[string]any{"data": map[string]any{"title": title, "views": (i + 1) * 10, "author": ada,
+			"blocks": []any{map[string]any{"__component": "blocks.quote", "text": "Q" + title}, map[string]any{"__component": "blocks.gallery", "images": []any{img}}}}})
+		if r.Code != 201 {
+			t.Fatalf("create: %s", r.Raw)
+		}
+	}
+	gql := func(token, query string, vars map[string]any) hgResp {
+		return hgCall(t, base, "POST", "/graphql", token, map[string]any{"query": query, "variables": vars})
+	}
+	r = gql(full, `query Q($min: Int) { list: articles(filters: {views: {gte: $min}}, sort: ["views:desc"], pagination: {pageSize: 2}) {
+		documentId title author { name } blocks { __typename ... on ComponentBlocksQuote { text } ... on ComponentBlocksGallery { images { url mime } } } } }`, map[string]any{"min": 20})
+	if r.Code != 200 || r.Body["errors"] != nil {
+		t.Fatalf("query: %d %s", r.Code, r.Raw)
+	}
+	list := r.data()["list"].([]any)
+	if len(list) != 2 {
+		t.Fatalf("list: %s", r.Raw)
+	}
+	first := list[0].(map[string]any)
+	if first["title"] != "Gamma three" || first["author"].(map[string]any)["name"] != "Ada" || first["views"] != nil {
+		t.Errorf("first: %v", first)
+	}
+	bl := first["blocks"].([]any)
+	if bl[0].(map[string]any)["__typename"] != "ComponentBlocksQuote" || bl[0].(map[string]any)["text"] != "QGamma three" {
+		t.Errorf("quote block: %v", bl[0])
+	}
+	if imgs := bl[1].(map[string]any)["images"].([]any); len(imgs) != 1 || imgs[0].(map[string]any)["mime"] != "image/png" {
+		t.Errorf("gallery block: %v", bl[1])
+	}
+	r = gql(full, `{ articles_connection(pagination: {page: 1, pageSize: 1}) { nodes { title } pageInfo { total pageCount } } }`, nil)
+	conn := r.data()["articles_connection"].(map[string]any)
+	if conn["pageInfo"].(map[string]any)["total"] != 3.0 || len(conn["nodes"].([]any)) != 1 {
+		t.Errorf("connection: %s", r.Raw)
+	}
+	doc := first["documentId"].(string)
+	r = gql(full, `{ article(documentId: "`+doc+`") { title } homepage { headline } }`, nil)
+	if r.data()["article"].(map[string]any)["title"] != "Gamma three" || r.data()["homepage"] != nil {
+		t.Errorf("one: %s", r.Raw)
+	}
+	if r := gql("", `{ articles { title } }`, nil); r.Body["errors"] == nil {
+		t.Errorf("public GraphQL without permission: %s", r.Raw)
+	}
+	for _, bad := range []string{`mutation { createArticle { title } }`, `{ articles { title }`, `{ nope { id } }`, `{ __schema { types { name } } }`} {
+		if r := gql(full, bad, nil); r.Body["errors"] == nil {
+			t.Errorf("%s: %s", bad, r.Raw)
+		}
+	}
+	st := srv.hgLoad()
+	st.GraphQL = false
+	_ = srv.hgSaveSettings(ctx, st)
+	if r := gql(full, `{ articles { title } }`, nil); r.Code != 404 {
+		t.Errorf("GraphQL switched off: %d", r.Code)
 	}
 }
