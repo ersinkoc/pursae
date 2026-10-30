@@ -300,9 +300,9 @@ func (s *Server) gooSaveOrder(ctx context.Context, o *gooOrder, withItems bool) 
 		if err != nil || !withItems {
 			return err
 		}
-		if _, err := tx.Exec(ctx, `DELETE FROM goo_order_items WHERE order_id = $1`, o.ID); err != nil {
-			return err
-		}
+		// Items keep their ids across saves (refund lines point at them through _refunded_item_id):
+		// stored items are updated in place, new ones inserted, the ones no longer on the order deleted.
+		keep := []int64{}
 		for i, it := range o.Items {
 			it.OrderID, it.Position = o.ID, i
 			if it.Meta == nil {
@@ -310,14 +310,29 @@ func (s *Server) gooSaveOrder(ctx context.Context, o *gooOrder, withItems bool) 
 			}
 			taxes, _ := json.Marshal(it.Taxes)
 			im, _ := json.Marshal(it.Meta)
+			if it.ID != 0 {
+				tag, err := tx.Exec(ctx, `UPDATE goo_order_items SET type=$3, name=$4, product_id=$5, variation_id=$6, quantity=$7, tax_class=$8,
+					subtotal=$9, subtotal_tax=$10, total=$11, total_tax=$12, taxes=$13, meta=$14, position=$15 WHERE id=$1 AND order_id=$2`,
+					it.ID, o.ID, it.Type, it.Name, it.ProductID, it.VariationID, it.Quantity, it.TaxClass, it.Subtotal, it.SubtotalTax, it.Total,
+					it.TotalTax, taxes, im, it.Position)
+				if err != nil {
+					return err
+				}
+				if tag.RowsAffected() == 1 {
+					keep = append(keep, it.ID)
+					continue
+				}
+			}
 			if err := tx.QueryRow(ctx, `INSERT INTO goo_order_items (order_id, type, name, product_id, variation_id, quantity, tax_class, subtotal,
 				subtotal_tax, total, total_tax, taxes, meta, position) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING id`,
 				o.ID, it.Type, it.Name, it.ProductID, it.VariationID, it.Quantity, it.TaxClass, it.Subtotal, it.SubtotalTax, it.Total, it.TotalTax,
 				taxes, im, it.Position).Scan(&it.ID); err != nil {
 				return err
 			}
+			keep = append(keep, it.ID)
 		}
-		return nil
+		_, err = tx.Exec(ctx, `DELETE FROM goo_order_items WHERE order_id = $1 AND NOT (id = ANY($2))`, o.ID, keep)
+		return err
 	})
 }
 

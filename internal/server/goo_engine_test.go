@@ -277,6 +277,24 @@ func TestGooEngine(t *testing.T) {
 		t.Errorf("shirt stock after the refund: %d", *p.StockQuantity)
 	}
 	gooAlmost(t, "refunded", srv.gooTotalRefunded(ctx, o.ID), 36)
+	// Saving the order's items again keeps their ids, so the refund line still points at the shirt.
+	o, _ = srv.gooGetOrder(ctx, o.ID)
+	if err := srv.gooSaveOrder(ctx, o, true); err != nil {
+		t.Fatal(err)
+	}
+	o, _ = srv.gooGetOrder(ctx, o.ID)
+	if refunds, _ := srv.gooRefunds(ctx, o.ID); len(refunds) != 1 || len(refunds[0].ItemsOf("line_item")) != 1 {
+		t.Fatalf("refunds: %d", len(refunds))
+	} else {
+		ref, _ := refunds[0].ItemsOf("line_item")[0].Meta["_refunded_item_id"].(float64)
+		found := false
+		for _, it := range o.ItemsOf("line_item") {
+			found = found || (it.ID == int64(ref) && it.ProductID == shirt.ID)
+		}
+		if !found {
+			t.Errorf("the refund line lost its order item (%v) after the items were saved again", ref)
+		}
+	}
 	if _, err := srv.gooCreateRefund(ctx, o, o.Total, "", nil, false, false, 1); err == nil {
 		t.Error("a refund above the remaining amount was accepted")
 	}
@@ -447,4 +465,23 @@ func TestGooMoney(t *testing.T) {
 
 func termFor(tax, name string) *store.Term {
 	return &store.Term{Taxonomy: tax, Name: name, Slug: strings.ToLower(name)}
+}
+
+// Store shortcodes placed in a block widget (a Shortcode block in the sidebar) render on every page.
+func TestGooBlockWidgetShortcodes(t *testing.T) {
+	base, _, srv := gooSite(t)
+	ctx := context.Background()
+	theme := srv.activeTheme().Slug
+	area, err := srv.store.EnsureWidgetArea(ctx, theme, "sidebar-1", "Sidebar")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := srv.store.AddWidget(ctx, area, "block", 0, map[string]any{
+		"content": "<!-- wp:shortcode -->\n[goocommerce_widget_product_search]\n<!-- /wp:shortcode -->"}); err != nil {
+		t.Fatal(err)
+	}
+	page := bodyOf(anonGet(t, base+"/"))
+	if strings.Contains(page, "[goocommerce_widget_product_search]") || !strings.Contains(page, "woocommerce-product-search") {
+		t.Errorf("the block widget did not run the store shortcode")
+	}
 }

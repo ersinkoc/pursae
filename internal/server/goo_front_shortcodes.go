@@ -64,7 +64,20 @@ func (s *Server) gooShortcodes(ctx context.Context, content string) string {
 	if !s.gooOn() {
 		return content
 	}
-	content = s.gooFilterContent(ctx, content)
+	return s.gooExpandShortcodes(ctx, s.gooFilterContent(ctx, content))
+}
+
+// gooWidgetShortcodes expands the store's shortcodes in a block widget (a Shortcode, Paragraph or
+// Custom HTML block holding [goocommerce_widget_cart], [goocommerce_widget_price_filter], …) — the
+// widget_block_content filter WooCommerce relies on. The modules' post-content filters do not run.
+func (s *Server) gooWidgetShortcodes(ctx context.Context, content string) string {
+	if !s.gooOn() {
+		return content
+	}
+	return s.gooExpandShortcodes(ctx, content)
+}
+
+func (s *Server) gooExpandShortcodes(ctx context.Context, content string) string {
 	if !strings.Contains(content, "[") {
 		return content
 	}

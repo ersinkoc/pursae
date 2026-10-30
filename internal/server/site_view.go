@@ -658,7 +658,8 @@ func (s *Server) renderWidgetArea(ctx context.Context, ws []*store.Widget) templ
 		if parsed := blocks.Parse(content); len(parsed) > 0 {
 			classes = widgetBlockClass(parsed[0].Name())
 		}
-		fmt.Fprintf(&sb, "<section id=\"block-%d\" class=\"widget %s\">%s</section>", w.ID, classes, blocks.Render(ctx, content))
+		out := s.gooWidgetShortcodes(ctx, blocks.Render(ctx, content)) // Goocommerce: store shortcodes in block widgets (goo_front_shortcodes.go)
+		fmt.Fprintf(&sb, "<section id=\"block-%d\" class=\"widget %s\">%s</section>", w.ID, classes, out)
 	}
 	return template.HTML(sb.String())
 }
