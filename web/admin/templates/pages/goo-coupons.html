@@ -1,0 +1,53 @@
+{{define "admin/goo-coupons"}}{{template "admin-header" .}}{{template "goo-store-assets"}}{{with .Data}}
+<div class="wrap woocommerce">
+<h1 class="wp-heading-inline">Coupons</h1>
+<a href="/wp-admin/goocommerce?page=coupons&amp;action=new" class="page-title-action">Add coupon</a>
+{{if .Search}}<span class="subtitle">Search results for: <strong>{{.Search}}</strong></span>{{end}}
+<hr class="wp-header-end">
+{{template "notices" $}}
+{{if not .Enabled}}<div class="notice notice-warning inline"><p>Coupons are disabled. To enable them, go to <a href="/wp-admin/goocommerce?page=settings">Goocommerce &rsaquo; Settings &rsaquo; General</a> and check "Enable the use of coupon codes".</p></div>{{end}}
+{{template "goo-store-views" .Views}}
+<form id="posts-filter" method="get" action="/wp-admin/goocommerce">
+<input type="hidden" name="page" value="coupons">{{if .Status}}<input type="hidden" name="post_status" value="{{.Status}}">{{end}}
+<p class="search-box"><label class="screen-reader-text" for="post-search-input">Search coupons:</label>
+<input type="search" id="post-search-input" name="s" value="{{.Search}}"><input type="submit" id="search-submit" class="button" value="Search coupons"></p>
+</form>
+<form method="post" action="/wp-admin/goocommerce?page=coupons">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="post_status" value="{{.Status}}">
+<div class="tablenav top">
+<div class="alignleft actions bulkactions"><label for="bulk-action-selector-top" class="screen-reader-text">Select bulk action</label>
+<select name="action" id="bulk-action-selector-top"><option value="-1">Bulk actions</option>{{template "goo-store-options" (dict "Opts" .Bulk "Sel" "")}}</select>
+<input type="submit" id="doaction" class="button action" value="Apply"></div>
+{{.Pager.HTML}}<br class="clear"></div>
+<table class="wp-list-table widefat fixed striped table-view-list posts">
+<thead><tr>
+<td id="cb" class="manage-column column-cb check-column"><input id="cb-select-all-1" type="checkbox"></td>
+<th scope="col" id="coupon_code" class="manage-column column-coupon_code column-primary">Code</th>
+<th scope="col" id="type" class="manage-column column-type">Coupon type</th>
+<th scope="col" id="amount" class="manage-column column-amount">Coupon amount</th>
+<th scope="col" id="description" class="manage-column column-description">Description</th>
+<th scope="col" id="products" class="manage-column column-products">Product IDs</th>
+<th scope="col" id="usage" class="manage-column column-usage">Usage / Limit</th>
+<th scope="col" id="expiry_date" class="manage-column column-expiry_date">Expiry date</th>
+</tr></thead>
+<tbody id="the-list">
+{{range .Rows}}<tr id="post-{{.ID}}" class="type-shop_coupon status-{{.Status}}">
+<th scope="row" class="check-column"><input id="cb-select-{{.ID}}" type="checkbox" name="post[]" value="{{.ID}}"></th>
+<td class="coupon_code column-coupon_code has-row-actions column-primary" data-colname="Code"><strong><a href="{{.EditURL}}" class="row-title"><code>{{.Code}}</code></a>{{if eq .Status "draft"}} — <span class="post-state">Draft</span>{{end}}</strong>
+<div class="row-actions">{{if eq .Status "trash"}}<span class="untrash"><a href="/wp-admin/goocommerce?page=coupons&amp;action=untrash&amp;id={{.ID}}&amp;post_status=trash&amp;_wpnonce={{$.Data.Nonce}}">Restore</a> | </span><span class="delete"><a class="submitdelete" href="/wp-admin/goocommerce?page=coupons&amp;action=delete&amp;id={{.ID}}&amp;post_status=trash&amp;_wpnonce={{$.Data.Nonce}}">Delete Permanently</a></span>{{else}}<span class="edit"><a href="{{.EditURL}}">Edit</a> | </span><span class="trash"><a class="submitdelete" href="/wp-admin/goocommerce?page=coupons&amp;action=trash&amp;id={{.ID}}&amp;_wpnonce={{$.Data.Nonce}}">Trash</a></span>{{end}}</div>
+<button type="button" class="toggle-row"><span class="screen-reader-text">Show more details</span></button></td>
+<td class="type column-type" data-colname="Coupon type">{{.Type}}</td>
+<td class="amount column-amount" data-colname="Coupon amount">{{.Amount}}</td>
+<td class="description column-description" data-colname="Description">{{if .Description}}{{.Description}}{{else}}&ndash;{{end}}</td>
+<td class="products column-products" data-colname="Product IDs">{{safe .ProductIDs}}</td>
+<td class="usage column-usage" data-colname="Usage / Limit">{{safe .Usage}}</td>
+<td class="expiry_date column-expiry_date" data-colname="Expiry date">{{safe .Expiry}}</td>
+</tr>{{else}}<tr class="no-items"><td class="colspanchange" colspan="8">No coupons found</td></tr>{{end}}
+</tbody>
+</table>
+<div class="tablenav bottom"><div class="alignleft actions bulkactions">
+<select name="action2" id="bulk-action-selector-bottom"><option value="-1">Bulk actions</option>{{template "goo-store-options" (dict "Opts" .Bulk "Sel" "")}}</select>
+<input type="submit" id="doaction2" class="button action" value="Apply"></div>{{.Pager.HTML}}<br class="clear"></div>
+</form>
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}

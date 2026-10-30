@@ -1,0 +1,109 @@
+{{define "admin/goo-orders"}}{{template "admin-header" .}}{{template "goo-store-assets"}}{{with .Data}}
+<div class="wrap woocommerce">
+<h1 class="wp-heading-inline">Orders</h1>
+<a href="{{.NewURL}}" class="page-title-action">Add order</a>
+{{if .Search}}<span class="subtitle">Search results for: <strong>{{.Search}}</strong></span>{{end}}
+<hr class="wp-header-end">
+{{template "notices" $}}
+{{template "goo-store-views" .Views}}
+<form id="wc-orders-search" method="get" action="/wp-admin/goocommerce">
+<input type="hidden" name="page" value="orders">
+{{if .Status}}<input type="hidden" name="status" value="{{.Status}}">{{end}}
+<p class="search-box"><label class="screen-reader-text" for="orders-search-input">Search orders:</label>
+<input type="search" id="orders-search-input" name="s" value="{{.Search}}">
+<input type="submit" id="search-submit" class="button" value="Search orders"></p>
+</form>
+<form id="wc-orders-filter" method="post" action="/wp-admin/goocommerce?page=orders">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}">
+<input type="hidden" name="_wp_http_referer" value="{{.BaseURL}}">
+<div class="tablenav top">
+<div class="alignleft actions bulkactions">
+<label for="bulk-action-selector-top" class="screen-reader-text">Select bulk action</label>
+<select name="action" id="bulk-action-selector-top"><option value="-1">Bulk actions</option>{{template "goo-store-options" (dict "Opts" .Bulk "Sel" "")}}</select>
+<input type="submit" id="doaction" class="button action" value="Apply">
+</div>
+<div class="alignleft actions">
+<select name="m" id="filter-by-date" form="wc-orders-search"><option value="">All dates</option>{{template "goo-store-options" (dict "Opts" .Months "Sel" .Month)}}</select>
+<select class="wc-customer-search" name="_customer_user" form="wc-orders-search" data-placeholder="Filter by registered customer"><option value="">Filter by registered customer</option>{{template "goo-store-options" (dict "Opts" .Customers "Sel" .Customer)}}</select>
+<input type="submit" name="filter_action" id="order-query-submit" class="button" value="Filter" form="wc-orders-search">
+</div>
+{{.Pager.HTML}}
+<br class="clear">
+</div>
+<h2 class="screen-reader-text">Orders list</h2>
+<table class="wp-list-table widefat fixed striped table-view-list orders wc-orders-list-table wc-orders-list-table-shop_order">
+<thead><tr>
+<td id="cb" class="manage-column column-cb check-column"><input id="cb-select-all-1" type="checkbox"><label for="cb-select-all-1"><span class="screen-reader-text">Select All</span></label></td>
+<th scope="col" id="order_number" class="manage-column column-order_number column-primary">Order</th>
+<th scope="col" id="order_date" class="manage-column column-order_date">Date</th>
+<th scope="col" id="order_status" class="manage-column column-order_status">Status</th>
+<th scope="col" id="billing_address" class="manage-column column-billing_address">Billing</th>
+<th scope="col" id="shipping_address" class="manage-column column-shipping_address">Ship to</th>
+<th scope="col" id="order_total" class="manage-column column-order_total">Total</th>
+<th scope="col" id="wc_actions" class="manage-column column-wc_actions">Actions</th>
+</tr></thead>
+<tbody id="the-list">
+{{range .Rows}}
+<tr id="order-{{.ID}}" class="order-{{.ID}} type-shop_order status-{{.Status}}">
+<th scope="row" class="check-column"><input id="cb-select-{{.ID}}" type="checkbox" name="id[]" value="{{.ID}}"><label for="cb-select-{{.ID}}"><span class="screen-reader-text">Select order #{{.Number}}</span></label></th>
+<td class="order_number column-order_number has-row-actions column-primary" data-colname="Order">
+<a href="#" class="order-preview" data-order-id="{{.ID}}" title="Preview">Preview</a>
+<a href="{{.EditURL}}" class="order-view"><strong>#{{.Number}} {{.Name}}</strong></a>
+<div class="row-actions">{{if .Trashed}}<span class="untrash"><a href="/wp-admin/goocommerce?page=orders&amp;action=untrash&amp;id={{.ID}}&amp;_wpnonce={{$.Data.Nonce}}">Restore</a> | </span><span class="delete"><a class="submitdelete" href="/wp-admin/goocommerce?page=orders&amp;action=delete&amp;id={{.ID}}&amp;_wpnonce={{$.Data.Nonce}}">Delete permanently</a></span>{{else}}<span class="edit"><a href="{{.EditURL}}">Edit</a> | </span><span class="trash"><a class="submitdelete" href="/wp-admin/goocommerce?page=orders&amp;action=trash&amp;id={{.ID}}&amp;_wpnonce={{$.Data.Nonce}}">Trash</a></span>{{end}}</div>
+<button type="button" class="toggle-row"><span class="screen-reader-text">Show more details</span></button>
+<template id="goo-order-preview-{{.ID}}">{{template "goo-store-order-preview" .}}</template>
+</td>
+<td class="order_date column-order_date" data-colname="Date"><time datetime="{{.DateISO}}" title="{{.DateFull}}">{{.Date}}</time></td>
+<td class="order_status column-order_status" data-colname="Status">{{template "goo-store-status-mark" .}}</td>
+<td class="billing_address column-billing_address" data-colname="Billing">{{if .Billing}}{{.Billing}}{{else}}&ndash;{{end}}{{if .Via}}<span class="description">via {{.Via}}</span>{{end}}</td>
+<td class="shipping_address column-shipping_address" data-colname="Ship to">{{if .ShipTo}}{{.ShipTo}}{{if .ShipVia}}<span class="description">via {{.ShipVia}}</span>{{end}}{{else}}&ndash;{{end}}</td>
+<td class="order_total column-order_total" data-colname="Total"><span class="tips">{{.Total}}</span>{{if .Via}}<span class="description">via {{.Via}}</span>{{end}}</td>
+<td class="wc_actions column-wc_actions" data-colname="Actions"><p>{{$row := .}}{{range .Actions}}<a class="button wc-action-button wc-action-button-{{.URL}} {{.URL}}" href="/wp-admin/goocommerce?page=orders&amp;action=mark_status&amp;status={{.URL}}&amp;id={{$row.ID}}&amp;_wpnonce={{$.Data.Nonce}}" aria-label="{{.Label}}">{{.Label}}</a>{{end}}</p></td>
+</tr>
+{{else}}
+<tr class="no-items"><td class="colspanchange" colspan="8">{{if .Search}}No orders found.{{else}}No orders found.{{end}}</td></tr>
+{{end}}
+</tbody>
+<tfoot><tr>
+<td class="manage-column column-cb check-column"><input id="cb-select-all-2" type="checkbox"><label for="cb-select-all-2"><span class="screen-reader-text">Select All</span></label></td>
+<th scope="col" class="manage-column column-order_number column-primary">Order</th>
+<th scope="col" class="manage-column column-order_date">Date</th>
+<th scope="col" class="manage-column column-order_status">Status</th>
+<th scope="col" class="manage-column column-billing_address">Billing</th>
+<th scope="col" class="manage-column column-shipping_address">Ship to</th>
+<th scope="col" class="manage-column column-order_total">Total</th>
+<th scope="col" class="manage-column column-wc_actions">Actions</th>
+</tr></tfoot>
+</table>
+<div class="tablenav bottom">
+<div class="alignleft actions bulkactions">
+<label for="bulk-action-selector-bottom" class="screen-reader-text">Select bulk action</label>
+<select name="action2" id="bulk-action-selector-bottom"><option value="-1">Bulk actions</option>{{template "goo-store-options" (dict "Opts" .Bulk "Sel" "")}}</select>
+<input type="submit" id="doaction2" class="button action" value="Apply">
+</div>
+{{.Pager.HTML}}
+<br class="clear">
+</div>
+</form>
+</div>
+{{template "goo-store-modal" "goo-order-preview-modal"}}
+{{end}}{{template "admin-footer" .}}{{end}}
+
+{{define "goo-store-modal"}}<div class="wc-backbone-modal goo-modal" id="{{.}}" hidden><div class="wc-backbone-modal-content"><section class="wc-backbone-modal-main" role="main">
+<header class="wc-backbone-modal-header"><h1></h1><button type="button" class="modal-close modal-close-link dashicons dashicons-no-alt"><span class="screen-reader-text">Close modal panel</span></button></header>
+<article></article></section></div><div class="wc-backbone-modal-backdrop modal-close"></div></div>{{end}}
+
+{{define "goo-store-order-preview"}}<h1>Order #{{.Number}}</h1>{{template "goo-store-status-mark" .}}
+<div class="wc-order-preview-addresses">
+<div class="wc-order-preview-address"><h2>Billing details</h2>{{if .Billing}}{{.Billing}}{{else}}N/A{{end}}
+{{if .Email}}<strong>Email</strong><a href="mailto:{{.Email}}">{{.Email}}</a>{{end}}
+{{if .Phone}}<strong>Phone</strong><a href="tel:{{.Phone}}">{{.Phone}}</a>{{end}}
+{{if .Via}}<strong>Payment via</strong>{{.Via}}{{end}}</div>
+{{if .ShipTo}}<div class="wc-order-preview-address"><h2>Shipping details</h2>{{.ShipTo}}{{if .ShipVia}}<strong>Shipping method</strong>{{.ShipVia}}{{end}}</div>{{end}}
+{{if .Note}}<div class="wc-order-preview-note"><strong>Note</strong>{{.Note}}</div>{{end}}
+</div>
+<div class="wc-order-preview-table-wrapper"><table cellspacing="0" class="wc-order-preview-table">
+<thead><tr><th class="wc-order-preview-table__column--product">Product</th><th class="wc-order-preview-table__column--quantity">Quantity</th><th class="wc-order-preview-table__column--tax">Tax</th><th class="wc-order-preview-table__column--total">Total</th></tr></thead>
+<tbody>{{range .Items}}<tr class="wc-order-preview-table__item"><td class="wc-order-preview-table__column--product">{{.Name}}{{if .Meta}}<div class="wc-order-item-meta">{{.Meta}}</div>{{end}}</td><td class="wc-order-preview-table__column--quantity">{{.Qty}}</td><td class="wc-order-preview-table__column--tax">{{.Tax}}</td><td class="wc-order-preview-table__column--total">{{.Total}}</td></tr>{{end}}</tbody>
+</table></div>
+<footer><div class="inner"><a class="button button-primary button-large" aria-label="Edit this order" href="{{.EditURL}}">Edit</a></div></footer>{{end}}
