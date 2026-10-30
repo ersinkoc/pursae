@@ -67,8 +67,9 @@ func (c *Catalog) TranslateHTML(doc []byte) []byte {
 				skipDepth++
 			}
 			out.WriteString(tag)
-		} else if v, ok := attrs.get("translate"); (ok && strings.EqualFold(v, "no")) || name == "option" && !attrs.has("value") {
-			// translate="no" marks user content; an <option> without a value submits its text.
+		} else if v, ok := attrs.get("translate"); (ok && strings.EqualFold(v, "no")) || name == "option" && !attrs.has("value") || quickEditData(attrs) {
+			// translate="no" marks user content; an <option> without a value submits its text;
+			// the list tables' hidden quick-edit data (id="inline_N") holds raw values.
 			out.WriteString(tag)
 			if !selfClosing {
 				skipName, skipDepth = name, 1
@@ -536,6 +537,11 @@ func (a attrList) get(name string) (string, bool) {
 		}
 	}
 	return "", false
+}
+
+func quickEditData(a attrList) bool {
+	id, _ := a.get("id")
+	return strings.HasPrefix(id, "inline_")
 }
 
 func (a attrList) has(name string) bool {
