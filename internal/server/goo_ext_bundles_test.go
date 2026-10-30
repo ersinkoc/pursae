@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"net/url"
 	"strings"
 	"testing"
@@ -284,6 +285,8 @@ func TestGooExtBundlesHiddenItems(t *testing.T) {
 	check("cart", srv.gooCartPageHTML(c))
 	check("mini-cart", string(srv.gooMiniCart(c)))
 	check("checkout review", srv.gooReviewOrderHTML(c, cart))
+	storeCart, _ := json.Marshal(srv.gooStoreCartJSON(c, cart))
+	check("Store API cart", string(storeCart))
 
 	o, errs := gxCheckout(t, srv, c, "goo_test")
 	if len(errs) > 0 || o == nil {
@@ -293,6 +296,8 @@ func TestGooExtBundlesHiddenItems(t *testing.T) {
 		t.Fatalf("order lines: %d", len(o.ItemsOf("line_item")))
 	}
 	check("order details", srv.gooOrderDetailsHTML(gooTestCtx(), o, false))
+	storeOrder, _ := json.Marshal(srv.gooStoreOrderJSON(ctx, o))
+	check("Store API order", string(storeOrder))
 	h, plain := srv.gooEmailOrderDetails(ctx, o, false, nil)
 	check("e-mail", h)
 	check("plain e-mail", plain)

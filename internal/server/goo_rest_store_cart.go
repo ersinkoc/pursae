@@ -224,8 +224,11 @@ func (s *Server) gooStoreCartJSON(c *gin.Context, cart *gooCart) map[string]any 
 	items := []any{}
 	weight := 0.0
 	for _, it := range cart.Items {
-		items = append(items, s.gooStoreItemJSON(ctx, cart, it))
 		weight += s.gooWeightOf(ctx, it.Product()) * float64(it.Quantity)
+		if !s.gooCartItemVisible(ctx, it, "store_api") { // e.g. a bundled item set to hide in the cart
+			continue
+		}
+		items = append(items, s.gooStoreItemJSON(ctx, cart, it))
 	}
 	coupons := []any{}
 	for _, cp := range cart.Coupons() {
@@ -894,6 +897,9 @@ func (s *Server) gooStoreOrderJSON(ctx context.Context, o *gooOrder) map[string]
 	cur := o.Currency
 	items := []any{}
 	for _, it := range o.ItemsOf("line_item") {
+		if !s.gooOrderItemVisible(ctx, it, "store_api") {
+			continue
+		}
 		pid := it.ProductID
 		if it.VariationID != 0 {
 			pid = it.VariationID
