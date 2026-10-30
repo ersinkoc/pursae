@@ -1,0 +1,6 @@
+<section class="no-results not-found de-none">
+	<h2 class="page-title">Nothing on this shelf</h2>
+	{{if eq .Template "search"}}<p>Nothing matched your search. Try a title, a word from it, or a section like &ldquo;children&rdquo;.</p>
+	{{else}}<p>It seems we can&rsquo;t find what you&rsquo;re looking for. Perhaps searching can help.</p>{{end}}
+	{{template "searchform" .}}
+</section>

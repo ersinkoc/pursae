@@ -1,0 +1,8 @@
+{{template "header" .}}
+<section class="gb-wrap gb-404 error-404 not-found">
+	<p class="gb-kicker">Oops, 404</p>
+	<h1 class="page-title">This shelf is empty.</h1>
+	<p>We couldn&rsquo;t find that page. Search the market, or head back to the <a href="{{if goo_on}}{{goo_url . "shop"}}{{else}}{{.HomeURL}}{{end}}">shop aisles</a>.</p>
+	{{if goo_on}}{{goo_product_search .}}{{else}}{{template "searchform" .}}{{end}}
+</section>
+{{template "footer" .}}

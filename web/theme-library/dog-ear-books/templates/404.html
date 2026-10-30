@@ -1,0 +1,8 @@
+{{template "header" .}}
+<section class="de-wrap de-measure error-404 not-found de-404">
+	<p class="de-404__num" aria-hidden="true">Page 404</p>
+	<h1 class="page-title">This page has been misshelved.</h1>
+	<p>We have looked behind the poetry and under the till. Try a search, or browse the <a href="{{if goo_on}}{{goo_url . "shop"}}{{else}}{{.HomeURL}}{{end}}">shelves</a>.</p>
+	{{if goo_on}}{{goo_product_search .}}{{else}}{{template "searchform" .}}{{end}}
+</section>
+{{template "footer" .}}

@@ -1,0 +1,91 @@
+{
+  "slug": "oak-and-form",
+  "name": "Oak & Form",
+  "version": "1.0.0",
+  "description": "An airy Scandinavian furniture store for Goocommerce. A quiet header with the logo, a centred menu and a text cart, a framed hero with a linen caption card, tall category panels, calm product cards whose add-to-cart button slides up on hover, a gallery-led product page and a light, generous footer. Albert Sans with an optional Gilda Display serif, self-hosted. An evening (dark) mode is one click away. Ships a complete store demo: furniture, lighting and decor with a fabric choice, reviews, a coupon and shipping.",
+  "author": "WordPress Go",
+  "author_url": "https://github.com/boracomet/wordpress-go",
+  "theme_url": "https://github.com/boracomet/wordpress-go/tree/main/web/theme-library/oak-and-form",
+  "tags": ["E-Commerce", "Home", "Furniture", "Grid Layout", "Custom Colors", "Custom Logo", "Custom Menu", "Editor Style", "Featured Images", "Footer Widgets", "Wide Blocks"],
+  "requires_core": "0.1.0",
+  "screenshot": "assets/screenshot.png",
+  "category": "shop",
+  "style": "Airy Scandinavian furniture, linen and oak",
+  "demo": "demo/demo.json",
+
+  "widget_areas": [
+    {"id": "footer-1", "name": "Footer", "description": "Widgets in the footer columns."},
+    {"id": "shop-sidebar", "name": "Shop Sidebar", "description": "Filters beside the product catalog."}
+  ],
+  "menu_locations": [
+    {"id": "primary", "name": "Primary Menu"},
+    {"id": "footer", "name": "Footer Menu"}
+  ],
+
+  "styles": [
+    {"handle": "oak-and-form-style", "src": "assets/style.css", "deps": ["wp-block-library"], "media": "all"}
+  ],
+  "scripts": [
+    {"handle": "oak-and-form-navigation", "src": "assets/js/navigation.js", "deps": [], "in_footer": true}
+  ],
+  "editor_styles": ["assets/editor-style.css"],
+  "preload_fonts": ["assets/fonts/albert-sans.woff2"],
+
+  "palette": [
+    {"name": "Linen", "slug": "linen", "color": "#f2efe9"},
+    {"name": "Oak", "slug": "oak", "color": "#c49a6c"},
+    {"name": "Charcoal", "slug": "charcoal", "color": "#2e2e2e"},
+    {"name": "Moss", "slug": "moss", "color": "#6b7f5a"},
+    {"name": "Birch", "slug": "birch", "color": "#e6e0d6"},
+    {"name": "White", "slug": "white", "color": "#ffffff"}
+  ],
+  "supports": {
+    "post-thumbnails": true,
+    "custom-logo": {"width": 260, "height": 80, "flex-width": true, "flex-height": true, "header-text": ["site-title", "site-description"]},
+    "title-tag": true,
+    "html5": ["search-form", "comment-form", "comment-list", "gallery", "caption", "script", "style"],
+    "responsive-embeds": true,
+    "align-wide": true,
+    "wp-block-styles": true,
+    "woocommerce": true
+  },
+
+  "customizer": {
+    "sections": [
+      {
+        "id": "oak_and_form_colors", "title": "Colours & Type", "priority": 40,
+        "settings": [
+          {"id": "accent", "label": "Accent colour", "description": "Buttons, links and sale badges.", "type": "color", "default": "#6b7f5a", "transport": "postMessage", "css_var": "--of-accent"},
+          {"id": "wood", "label": "Wood tone", "description": "Prices, highlights and the hero caption rule.", "type": "color", "default": "#c49a6c", "transport": "postMessage", "css_var": "--of-wood"},
+          {"id": "background", "label": "Background", "type": "color", "default": "#f2efe9", "transport": "postMessage", "css_var": "--of-bg"},
+          {"id": "text_color", "label": "Text colour", "type": "color", "default": "#2e2e2e", "transport": "postMessage", "css_var": "--of-ink"},
+          {"id": "font_pairing", "label": "Font pairing", "type": "select", "default": "sans", "transport": "postMessage", "body_class": "of-fonts-{value}",
+            "choices": [{"value": "sans", "label": "Albert Sans (light headings)"}, {"value": "serif", "label": "Gilda Display & Albert Sans"}]},
+          {"id": "button_style", "label": "Buttons", "type": "select", "default": "soft", "transport": "postMessage", "body_class": "of-buttons-{value}",
+            "choices": [{"value": "soft", "label": "Softly rounded"}, {"value": "sharp", "label": "Square"}, {"value": "pill", "label": "Pill"}]},
+          {"id": "evening_mode", "label": "Evening mode (dark)", "description": "Charcoal background with linen text.", "type": "checkbox", "default": false, "transport": "postMessage", "body_class": "of-evening"}
+        ]
+      },
+      {
+        "id": "oak_and_form_header", "title": "Header & Store", "priority": 41,
+        "settings": [
+          {"id": "show_announcement", "label": "Show the announcement bar", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "of-has-announcement"},
+          {"id": "announcement", "label": "Announcement", "type": "text", "default": "Free delivery over €500 · 10-year guarantee on solid oak", "transport": "refresh"},
+          {"id": "header_layout", "label": "Header layout", "type": "select", "default": "split", "transport": "postMessage", "body_class": "of-header-{value}",
+            "choices": [{"value": "split", "label": "Logo left, menu centred"}, {"value": "stacked", "label": "Logo centred above the menu"}]},
+          {"id": "catalog_columns", "label": "Products per row (large screens)", "type": "select", "default": "3", "transport": "postMessage", "body_class": "of-cols-{value}",
+            "choices": [{"value": "3", "label": "3"}, {"value": "4", "label": "4"}]},
+          {"id": "card_backdrop", "label": "Product image backdrop", "type": "select", "default": "birch", "transport": "postMessage", "body_class": "of-backdrop-{value}",
+            "choices": [{"value": "birch", "label": "Birch panel"}, {"value": "none", "label": "None"}]}
+        ]
+      },
+      {
+        "id": "oak_and_form_footer", "title": "Footer", "priority": 42,
+        "settings": [
+          {"id": "footer_wordmark", "label": "Show the large wordmark", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "of-wordmark"},
+          {"id": "footer_text", "label": "Footer text", "type": "text", "default": "", "transport": "refresh"}
+        ]
+      }
+    ]
+  }
+}

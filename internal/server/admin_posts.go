@@ -192,6 +192,9 @@ func (s *Server) postsList(c *gin.Context) {
 		s.gweNewPost(c)
 		return
 	}
+	if s.gooAdminScreen(c, "edit") { // Goocommerce: the products list
+		return
+	}
 	typ := c.DefaultQuery("post_type", "post")
 	if typ != "post" && typ != "page" && !acfgoIsPostType(typ) {
 		c.String(http.StatusBadRequest, "Invalid post type.")
@@ -1510,6 +1513,9 @@ type monthChoice struct {
 }
 
 func (s *Server) postNew(c *gin.Context) {
+	if s.gooAdminScreen(c, "post-new") { // Goocommerce: the product editor
+		return
+	}
 	u := currentUser(c)
 	typ := c.DefaultQuery("post_type", "post")
 	if typ != "post" && typ != "page" && !acfgoIsPostType(typ) {
@@ -1533,6 +1539,9 @@ func (s *Server) postNew(c *gin.Context) {
 
 // postEdit is post.php: action=edit shows the editor, trash/untrash/delete act on the post.
 func (s *Server) postEdit(c *gin.Context) {
+	if s.gooAdminScreen(c, "post") { // Goocommerce: the product editor
+		return
+	}
 	u := currentUser(c)
 	id, _ := strconv.ParseInt(c.Query("post"), 10, 64)
 	p, err := s.store.GetPost(c, id)
@@ -1826,6 +1835,9 @@ func (s *Server) editNotices(c *gin.Context, lab typeLabels, view string) []noti
 
 // postSave handles the classic edit form (editpost()).
 func (s *Server) postSave(c *gin.Context) {
+	if s.gooAdminScreen(c, "post") { // Goocommerce: the product editor's save
+		return
+	}
 	ctx := c.Request.Context()
 	u := currentUser(c)
 	id, _ := strconv.ParseInt(c.PostForm("post_ID"), 10, 64)

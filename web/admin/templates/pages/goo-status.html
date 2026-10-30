@@ -1,0 +1,34 @@
+{{define "admin/goo-status"}}{{template "admin-header" .}}{{template "goo-store-assets"}}{{with .Data}}{{$d := .}}
+<div class="wrap woocommerce">
+<nav class="nav-tab-wrapper woo-nav-tab-wrapper">{{range .Tabs}}<a href="/wp-admin/goocommerce?page=status&amp;tab={{.Value}}" class="nav-tab{{if eq .Value $d.Tab}} nav-tab-active{{end}}">{{.Label}}</a>{{end}}</nav>
+{{template "notices" $}}
+<h1 class="screen-reader-text">Status</h1>
+{{if eq .Tab "status"}}
+<div class="updated woocommerce-message inline"><p>Please copy and paste this information in your ticket when contacting support:</p>
+<p class="submit"><button type="button" class="button-primary debug-report" data-target="goo-system-report">Get system report</button></p>
+<div id="debug-report" class="goo-debug-report" hidden><textarea id="goo-system-report" readonly="readonly" rows="14" style="width:100%">{{.Report}}</textarea>
+<p class="submit"><button type="button" id="copy-for-support" class="button copy-key" data-target="goo-system-report">Copy for support</button></p></div></div>
+{{range .Sections}}<table class="wc_status_table widefat" cellspacing="0"><thead><tr><th colspan="3"><h2>{{.Title}}</h2></th></tr></thead><tbody>
+{{range .Items}}<tr><td>{{.Label}}:</td><td class="help">{{if .Help}}<span class="woocommerce-help-tip" title="{{.Help}}"></span>{{end}}</td><td>{{.Value}}</td></tr>{{end}}
+</tbody></table>{{end}}
+{{else if eq .Tab "tools"}}
+<table class="wc_status_table wc_status_table--tools widefat" cellspacing="0"><tbody class="tools">
+{{range .Tools}}<tr class="{{.ID}}"><th><strong class="name">{{.Name}}</strong><p class="description">{{safe .Desc}}</p></th>
+<td class="run-tool"><form method="post" action="/wp-admin/goocommerce?page=status&amp;tab=tools"><input type="hidden" name="_wpnonce" value="{{$d.Nonce}}"><input type="hidden" name="action" value="{{.ID}}">
+<input type="submit" class="button button-large {{.ID}}" value="{{.Button}}"></form></td></tr>{{end}}
+</tbody></table>
+{{else if eq .Tab "action-scheduler"}}
+<h2>Scheduled Actions</h2>
+{{template "goo-store-views" .Views}}
+<div class="tablenav top">{{.Pager.HTML}}<br class="clear"></div>
+<table class="wp-list-table widefat fixed striped table-view-list actions"><thead><tr><th class="column-primary">Hook</th><th>Status</th><th>Arguments</th><th>Group</th><th>Recurrence</th><th>Scheduled Date</th><th>Log</th></tr></thead><tbody>
+{{range .Jobs}}<tr><td class="column-primary">{{.Hook}}</td><td>{{.Status}}</td><td><code>{{.Args}}</code></td><td>goocommerce</td><td>{{.Recurrence}}</td><td>{{.Scheduled}}</td><td>{{.Log}}</td></tr>{{else}}<tr class="no-items"><td colspan="7">No actions found.</td></tr>{{end}}
+</tbody></table>
+{{else}}
+<h2>Logs</h2>
+<table class="wp-list-table widefat fixed striped"><thead><tr><th>Source</th><th>Status</th><th>Context</th><th>Date</th><th>Message</th></tr></thead><tbody>
+{{range .Logs}}<tr><td>{{.Hook}}</td><td>{{.Status}}</td><td><code>{{.Args}}</code></td><td>{{.Scheduled}}</td><td>{{.Log}}</td></tr>{{else}}<tr class="no-items"><td colspan="5">There are currently no logs to view.</td></tr>{{end}}
+</tbody></table>
+{{end}}
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}

@@ -1,0 +1,615 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Glow Botanica",
+  "blogdescription": "Gentle skin care, short ingredient lists"
+ },
+ "categories": [
+  {
+   "slug": "rituals",
+   "name": "Rituals",
+   "description": "Routines, step by step."
+  },
+  {
+   "slug": "ingredients",
+   "name": "Ingredients",
+   "description": "The botanicals behind our formulas."
+  },
+  {
+   "slug": "studio",
+   "name": "Studio",
+   "description": "News from the workshop and the refill bar."
+  }
+ ],
+ "media": [
+  {
+   "id": "hero",
+   "file": "demo/images/glow-botanica-hero.jpg",
+   "alt": "Skincare bottles and a jar of cream arranged on blush stone with soft leaves"
+  },
+  {
+   "id": "about",
+   "file": "demo/images/glow-botanica-about.jpg",
+   "alt": "A sunlit studio bench with glass beakers, dried rose petals and labels"
+  },
+  {
+   "id": "cat-skincare",
+   "file": "demo/images/glow-botanica-cat-skincare.jpg",
+   "alt": "A glass serum bottle, a cream jar and a cleanser tube on a blush plinth"
+  },
+  {
+   "id": "cat-makeup",
+   "file": "demo/images/glow-botanica-cat-makeup.jpg",
+   "alt": "A satin lipstick, a blush pot and a brow pencil on soft pink"
+  },
+  {
+   "id": "cat-body",
+   "file": "demo/images/glow-botanica-cat-body.jpg",
+   "alt": "A jar of body butter and a pump bottle of body wash among leaves"
+  },
+  {
+   "id": "cat-sets",
+   "file": "demo/images/glow-botanica-cat-sets.jpg",
+   "alt": "A gift box holding three small skincare bottles"
+  },
+  {
+   "id": "p-vitamin-c-serum",
+   "file": "demo/images/glow-botanica-p-vitamin-c-serum.jpg",
+   "alt": "An amber glass dropper bottle of vitamin C serum"
+  },
+  {
+   "id": "p-hydrating-day-cream",
+   "file": "demo/images/glow-botanica-p-hydrating-day-cream.jpg",
+   "alt": "A frosted glass jar of day cream with its lid resting beside it"
+  },
+  {
+   "id": "p-gentle-gel-cleanser",
+   "file": "demo/images/glow-botanica-p-gentle-gel-cleanser.jpg",
+   "alt": "A clear tube of green-tinted gel cleanser"
+  },
+  {
+   "id": "p-rose-facial-oil",
+   "file": "demo/images/glow-botanica-p-rose-facial-oil.jpg",
+   "alt": "A rose-tinted glass bottle of facial oil with a pipette"
+  },
+  {
+   "id": "p-clay-mask",
+   "file": "demo/images/glow-botanica-p-clay-mask.jpg",
+   "alt": "An open pot of pink clay mask with a small wooden spatula"
+  },
+  {
+   "id": "p-satin-lipstick",
+   "file": "demo/images/glow-botanica-p-satin-lipstick.jpg",
+   "alt": "A satin lipstick in a brushed case, the bullet twisted up"
+  },
+  {
+   "id": "p-cream-blush",
+   "file": "demo/images/glow-botanica-p-cream-blush.jpg",
+   "alt": "A small glass pot of rosy cream blush"
+  },
+  {
+   "id": "p-brow-pencil",
+   "file": "demo/images/glow-botanica-p-brow-pencil.jpg",
+   "alt": "A slim brow pencil with a spoolie end"
+  },
+  {
+   "id": "p-shea-body-butter",
+   "file": "demo/images/glow-botanica-p-shea-body-butter.jpg",
+   "alt": "A tin of whipped body butter with a swirl on top"
+  },
+  {
+   "id": "p-botanical-body-wash",
+   "file": "demo/images/glow-botanica-p-botanical-body-wash.jpg",
+   "alt": "A glass pump bottle of body wash beside a sprig of geranium"
+  },
+  {
+   "id": "p-morning-ritual-set",
+   "file": "demo/images/glow-botanica-p-morning-ritual-set.jpg",
+   "alt": "Three morning skincare products lined up on a tray"
+  },
+  {
+   "id": "p-travel-minis",
+   "file": "demo/images/glow-botanica-p-travel-minis.jpg",
+   "alt": "Three miniature skincare bottles in a soft pouch"
+  },
+  {
+   "id": "p-satin-lipstick-alt",
+   "file": "demo/images/glow-botanica-p-satin-lipstick-alt.jpg",
+   "alt": "The satin lipstick in the Berry shade"
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Home",
+   "content": "<!-- wp:cover {\"url\":\"{{media:hero}}\",\"id\":{{media_id:hero}},\"dimRatio\":0,\"minHeight\":660,\"contentPosition\":\"bottom left\",\"align\":\"full\"} --><div class=\"wp-block-cover alignfull has-custom-content-position is-position-bottom-left\" style=\"min-height:660px\"><span aria-hidden=\"true\" class=\"wp-block-cover__background has-background-dim-0 has-background-dim\"></span><img class=\"wp-block-cover__image-background wp-image-{{media_id:hero}}\" alt=\"\" src=\"{{media:hero}}\" data-object-fit=\"cover\"/><div class=\"wp-block-cover__inner-container\"><!-- wp:paragraph {\"className\":\"gb-kicker\"} --><p class=\"gb-kicker\">New &middot; the vitamin C serum</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":1} --><h1 class=\"wp-block-heading\">Skin care that <em>feels</em> like care.</h1><!-- /wp:heading --><!-- wp:paragraph --><p>Short ingredient lists, refillable glass and textures you will look forward to, morning and night.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"/product-category/skincare/\">Shop skincare</a></div><!-- /wp:button --><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"/shop/\">Build your ritual</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div></div><!-- /wp:cover --><!-- wp:heading {\"textAlign\":\"center\",\"className\":\"gb-section-title\"} --><h2 class=\"wp-block-heading has-text-align-center gb-section-title\">Shop by ritual</h2><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"gb-section-lede\"} --><p class=\"gb-section-lede\">Four gentle places to start, whatever your skin is asking for today.</p><!-- /wp:paragraph --><!-- wp:group {\"className\":\"gb-rituals\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group gb-rituals\"><!-- wp:image {\"id\":{{media_id:cat-skincare}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"/product-category/skincare/\"><img src=\"{{media:cat-skincare}}\" alt=\"A glass serum bottle, a cream jar and a cleanser tube on a blush plinth\" class=\"wp-image-{{media_id:cat-skincare}}\"/></a><figcaption class=\"wp-element-caption\">Skincare</figcaption></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:cat-makeup}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"/product-category/makeup/\"><img src=\"{{media:cat-makeup}}\" alt=\"A satin lipstick, a blush pot and a brow pencil on soft pink\" class=\"wp-image-{{media_id:cat-makeup}}\"/></a><figcaption class=\"wp-element-caption\">Makeup</figcaption></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:cat-body}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"/product-category/body/\"><img src=\"{{media:cat-body}}\" alt=\"A jar of body butter and a pump bottle of body wash among leaves\" class=\"wp-image-{{media_id:cat-body}}\"/></a><figcaption class=\"wp-element-caption\">Body</figcaption></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:cat-sets}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"/product-category/sets/\"><img src=\"{{media:cat-sets}}\" alt=\"A gift box holding three small skincare bottles\" class=\"wp-image-{{media_id:cat-sets}}\"/></a><figcaption class=\"wp-element-caption\">Sets</figcaption></figure><!-- /wp:image --></div><!-- /wp:group --><!-- wp:heading {\"textAlign\":\"center\",\"className\":\"gb-section-title\"} --><h2 class=\"wp-block-heading has-text-align-center gb-section-title\">Most <em>loved</em></h2><!-- /wp:heading --><!-- wp:shortcode -->[products limit=\"8\" columns=\"4\" visibility=\"featured\"]<!-- /wp:shortcode --><!-- wp:group {\"className\":\"gb-promo\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group gb-promo\"><!-- wp:image {\"id\":{{media_id:cat-sets}},\"sizeSlug\":\"large\",\"className\":\"gb-promo__image\"} --><figure class=\"wp-block-image size-large gb-promo__image\"><img src=\"{{media:cat-sets}}\" alt=\"A gift box of minis\" class=\"wp-image-{{media_id:cat-sets}}\"/></figure><!-- /wp:image --><!-- wp:group {\"className\":\"gb-promo__text\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group gb-promo__text\"><!-- wp:paragraph {\"className\":\"gb-kicker\"} --><p class=\"gb-kicker\">Welcome gift</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Your first ritual, ten percent softer.</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Use the code <code>WELCOME10</code> at checkout for 10% off your first order, and enjoy free shipping from 40 €.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"/product-category/sets/\">Shop the sets</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --></div><!-- /wp:group --><!-- wp:heading {\"textAlign\":\"center\",\"className\":\"gb-section-title\"} --><h2 class=\"wp-block-heading has-text-align-center gb-section-title\">A little <em>treat</em></h2><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"gb-section-lede\"} --><p class=\"gb-section-lede\">Limited-time prices on a few favourites.</p><!-- /wp:paragraph --><!-- wp:shortcode -->[products limit=\"4\" columns=\"4\" on_sale=\"true\"]<!-- /wp:shortcode --><!-- wp:group {\"className\":\"gb-values\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group gb-values\"><!-- wp:group {\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Short lists</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Every formula has fewer than twenty ingredients, all named on the box.</p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:group {\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Refillable glass</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Return your empties in store or by post and we refill them.</p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:group {\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Patch-tested</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Tested on sensitive skin by an independent lab, never on animals.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:group --><!-- wp:heading {\"textAlign\":\"center\",\"className\":\"gb-section-title\"} --><h2 class=\"wp-block-heading has-text-align-center gb-section-title\">Just <em>arrived</em></h2><!-- /wp:heading --><!-- wp:shortcode -->[products limit=\"8\" columns=\"4\" orderby=\"date\" order=\"DESC\"]<!-- /wp:shortcode -->",
+   "template": "page-home",
+   "front_page": true
+  },
+  {
+   "slug": "about",
+   "title": "Our story",
+   "content": "<!-- wp:image {\"id\":{{media_id:about}},\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:about}}\" alt=\"The studio bench with beakers and dried rose petals\" class=\"wp-image-{{media_id:about}}\"/></figure><!-- /wp:image --><!-- wp:paragraph --><p>Glow Botanica began in a small kitchen, with a saucepan, a notebook of recipes and a frustration with bathroom shelves full of half-used bottles. We wanted a handful of products that simply worked, made from ingredients we could pronounce and packed in glass we could use again.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Today we are a team of nine, still mixing in small batches in our studio, still testing every formula on our own skin first. We buy our botanicals from growers we have visited, and we would rather sell out than overproduce.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">What we promise</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Fewer than twenty ingredients in every formula, listed in plain words.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Refillable glass and aluminium, and a free refill service.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Never tested on animals, and patch-tested on sensitive skin.</li><!-- /wp:list-item --><!-- wp:list-item --><li>A sample with every order, so you can try before you commit.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>Good skin care should feel like a moment you give yourself, not a chore.</p><!-- /wp:paragraph --><cite>Elodie, founder</cite></blockquote><!-- /wp:quote -->",
+   "featured_media": "about"
+  },
+  {
+   "slug": "contact",
+   "title": "Contact",
+   "content": "<!-- wp:paragraph --><p>Not sure where to start, or wondering whether something suits your skin? Write to us. A real person from the studio replies within one working day, and we are happy to send a sample first.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><strong>Email:</strong> hello@glowbotanica.example<br><strong>Studio &amp; refill bar:</strong> 3 Rue des Tilleuls, open Wednesday to Saturday, 11–19<br><strong>Phone:</strong> +33 1 00 00 00 00</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Refills by post</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Rinse your empty glass, pop it in the box your order came in and send it back with the free label from your account. We refill and return it within a week.</p><!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "journal",
+   "title": "Journal",
+   "content": "",
+   "posts_page": true
+  }
+ ],
+ "posts": [
+  {
+   "slug": "a-gentle-morning-routine",
+   "title": "A gentle morning routine in three steps",
+   "date": "2026-09-24T08:30:00",
+   "categories": [
+    "rituals"
+   ],
+   "featured_media": "p-morning-ritual-set",
+   "excerpt": "Cleanse, brighten, hydrate. Why a short routine is usually the best one.",
+   "content": "<!-- wp:paragraph --><p>A good morning routine should take less time than your kettle needs to boil. For most skin, three steps are plenty: something to cleanse, something to treat and something to protect.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Start with a gentle gel cleanser on damp skin and keep it brief, thirty seconds is enough. Pat dry and, while the skin is still slightly damp, press in three or four drops of vitamin C serum. It brightens over time and works as a quiet shield against the day.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Finish with a moisturiser that suits the season, then sunscreen if you are heading out. That is it. Consistency matters far more than the number of bottles, and a routine you actually enjoy is one you will keep.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>If your skin feels tight or reactive, drop the serum for a few days and let the cream do the work. Skin care is not a test you can fail.</p><!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "why-we-love-rosehip",
+   "title": "Why we love rosehip oil",
+   "date": "2026-10-06T10:00:00",
+   "categories": [
+    "ingredients"
+   ],
+   "featured_media": "p-rose-facial-oil",
+   "excerpt": "The small red fruit behind our night oil, and why it suits almost everyone.",
+   "content": "<!-- wp:paragraph --><p>Rosehips are the bright little fruits a wild rose leaves behind once its petals fall. Pressed cold, their seeds give a golden oil rich in essential fatty acids, the same building blocks your skin uses to keep its barrier soft and supple.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Unlike many heavier oils, rosehip absorbs quickly and rarely feels greasy, which is why it suits combination skin as well as dry. We pair it with jojoba, which is closer to the skin's own sebum than almost any other plant oil, so the blend feels balanced rather than rich.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Use it as the last step of your evening routine, pressed in rather than rubbed. In winter, a single drop mixed into your day cream makes a lovely extra layer.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>A tip from the studio: keep the bottle away from the sunny windowsill. Natural oils prefer a cool, dark shelf, and they reward you by smelling fresh until the last drop.</p><!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "the-refill-bar-one-year-on",
+   "title": "The refill bar, one year on",
+   "date": "2026-10-21T09:15:00",
+   "categories": [
+    "studio"
+   ],
+   "featured_media": "cat-body",
+   "excerpt": "Four thousand refills later: what we learned from asking you to bring your bottles back.",
+   "content": "<!-- wp:paragraph --><p>A year ago we put a long oak counter in the front of the studio and asked a simple question: would you bring your empty bottles back? We hoped for a few hundred refills. You brought us more than four thousand.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The most refilled product, by far, is the body wash, followed closely by the gel cleanser. Many of you now visit with a little tote of empties every month, and the conversations at that counter have shaped two new products we are working on.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Refilling is not perfect. Glass is heavy to ship, and cleaning takes time and water. But each refill saves a new bottle, a new label and a new box, and the numbers add up faster than we expected.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>This winter we are extending refills by post to every country we ship to. Thank you for making the slower, more careful way the easy way.</p><!-- /wp:paragraph -->"
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Shop",
+     "url": "/shop/",
+     "children": [
+      {
+       "title": "Skincare",
+       "url": "/product-category/skincare/"
+      },
+      {
+       "title": "Makeup",
+       "url": "/product-category/makeup/"
+      },
+      {
+       "title": "Body",
+       "url": "/product-category/body/"
+      },
+      {
+       "title": "Sets",
+       "url": "/product-category/sets/"
+      }
+     ]
+    },
+    {
+     "title": "Skincare",
+     "url": "/product-category/skincare/"
+    },
+    {
+     "title": "Makeup",
+     "url": "/product-category/makeup/"
+    },
+    {
+     "title": "Journal",
+     "page": "journal"
+    },
+    {
+     "title": "Our story",
+     "page": "about"
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    }
+   ]
+  },
+  {
+   "name": "Footer menu",
+   "location": "footer",
+   "items": [
+    {
+     "title": "Shop",
+     "url": "/shop/"
+    },
+    {
+     "title": "My account",
+     "url": "/my-account/"
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    },
+    {
+     "title": "Our story",
+     "page": "about"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "footer-1": [
+   "<!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">The refill bar</h3><!-- /wp:heading --><!-- wp:paragraph --><p>3 Rue des Tilleuls<br>Wednesday to Saturday, 11–19</p><!-- /wp:paragraph -->",
+   "<!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Care</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Free shipping from 40 €.<br>A sample with every order.<br>Free returns within 30 days.</p><!-- /wp:paragraph -->",
+   "<!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Letters</h3><!-- /wp:heading --><!-- wp:paragraph --><p>A short monthly note on new formulas, refills and seasonal routines. No spam, ever.</p><!-- /wp:paragraph -->"
+  ]
+ },
+ "customizer": {
+  "accent": "#c97b84",
+  "announcement": "Free shipping from 40 € · A sample with every order",
+  "header_style": "capsule",
+  "card_style": "tinted"
+ },
+ "goocommerce": {
+  "settings": {
+   "currency": "EUR",
+   "currency_pos": "right_space",
+   "price_decimal_sep": ",",
+   "price_thousand_sep": ".",
+   "price_num_decimals": 2,
+   "catalog_columns": 4,
+   "catalog_rows": 3
+  },
+  "categories": [
+   {
+    "slug": "skincare",
+    "name": "Skincare",
+    "description": "Serums, creams and cleansers built around a few honest botanicals.",
+    "image": "cat-skincare"
+   },
+   {
+    "slug": "makeup",
+    "name": "Makeup",
+    "description": "Sheer colour for lips, cheeks and brows that still lets your skin show.",
+    "image": "cat-makeup"
+   },
+   {
+    "slug": "body",
+    "name": "Body",
+    "description": "Rich butters and gentle washes for the skin below the chin.",
+    "image": "cat-body"
+   },
+   {
+    "slug": "sets",
+    "name": "Sets",
+    "description": "Routines in a box: considered pairings and travel-sized favourites.",
+    "image": "cat-sets"
+   }
+  ],
+  "attributes": [
+   {
+    "slug": "shade",
+    "name": "Shade",
+    "terms": [
+     "Nude",
+     "Rose",
+     "Berry"
+    ]
+   }
+  ],
+  "products": [
+   {
+    "slug": "vitamin-c-serum",
+    "name": "Brightening Vitamin C Serum",
+    "type": "simple",
+    "categories": [
+     "skincare"
+    ],
+    "image": "p-vitamin-c-serum",
+    "description": "<p>Our most-loved morning step. Ten percent stabilised vitamin C works alongside sea buckthorn oil and a gentle dose of ferulic acid to fade dullness and protect skin through the day. The texture is a silky water-gel that sinks in in seconds and sits happily under sunscreen and makeup.</p><p><strong>How to use:</strong> three to four drops on clean skin each morning, before moisturiser. Store away from direct light. 30 ml in amber glass.</p>",
+    "short_description": "<p>A lightweight morning serum with stabilised vitamin C and sea buckthorn for a brighter, more even tone.</p>",
+    "sku": "GB-SK-01",
+    "regular_price": "38",
+    "featured": true,
+    "stock": 24,
+    "reviews": [
+     {
+      "author": "Leonie",
+      "email": "leonie@example.com",
+      "rating": 5,
+      "content": "Two weeks in and my skin looks properly awake. No tingling, no smell, and it plays nicely with sunscreen."
+     },
+     {
+      "author": "Amaru",
+      "email": "amaru@example.com",
+      "rating": 4,
+      "content": "Lovely texture. I wish the bottle were a little bigger for the price, but a little goes a long way."
+     }
+    ],
+    "upsells": [
+     "hydrating-day-cream"
+    ]
+   },
+   {
+    "slug": "hydrating-day-cream",
+    "name": "Hydrating Day Cream",
+    "type": "simple",
+    "categories": [
+     "skincare"
+    ],
+    "image": "p-hydrating-day-cream",
+    "description": "<p>Made for skin that feels tight by lunchtime. Colloidal oat and plant squalane restore the moisture barrier, while a touch of hyaluronic acid draws water in. It dries to a soft, natural finish, never greasy, and leaves a clean base for makeup.</p><p>Fragrance free and suitable for sensitive skin. 50 ml in a refillable glass jar.</p>",
+    "short_description": "<p>A cushiony daily moisturiser with oat lipids and squalane that keeps skin comfortable from morning to night.</p>",
+    "sku": "GB-SK-02",
+    "regular_price": "34",
+    "featured": true,
+    "stock": 30,
+    "reviews": [
+     {
+      "author": "Priya",
+      "email": "priya@example.com",
+      "rating": 5,
+      "content": "Finally a moisturiser that does not pill under foundation. My dry patches are gone."
+     }
+    ],
+    "cross_sells": [
+     "vitamin-c-serum"
+    ]
+   },
+   {
+    "slug": "gentle-gel-cleanser",
+    "name": "Gentle Gel Cleanser",
+    "type": "simple",
+    "categories": [
+     "skincare"
+    ],
+    "image": "p-gentle-gel-cleanser",
+    "description": "<p>A soft, clear gel that turns into a light lather with water. Cucumber and aloe calm, while mild coconut-derived cleansers lift away sunscreen and city grime. Skin feels clean, never squeaky.</p><p>Use morning and evening; massage over damp skin for thirty seconds and rinse. 150 ml.</p>",
+    "short_description": "<p>A low-foam cucumber and aloe gel that removes the day without stripping your skin.</p>",
+    "sku": "GB-SK-03",
+    "regular_price": "22",
+    "stock": 40
+   },
+   {
+    "slug": "rose-facial-oil",
+    "name": "Rosehip Facial Oil",
+    "type": "simple",
+    "categories": [
+     "skincare"
+    ],
+    "image": "p-rose-facial-oil",
+    "description": "<p>A golden night oil that softens and nourishes while you sleep. Rosehip seed oil is naturally rich in fatty acids; jojoba balances, and a single drop of rose absolute makes the ritual feel like an occasion.</p><p>Warm two or three drops between your palms and press into the skin as the last step of your evening. 30 ml.</p>",
+    "short_description": "<p>Cold-pressed rosehip, jojoba and a whisper of rose absolute for an evening glow.</p>",
+    "sku": "GB-SK-04",
+    "regular_price": "46",
+    "sale_price": "36",
+    "featured": true,
+    "stock": 12,
+    "reviews": [
+     {
+      "author": "Camille",
+      "email": "camille@example.com",
+      "rating": 5,
+      "content": "It smells like a garden after rain. My skin is plumper in the morning, truly."
+     },
+     {
+      "author": "Noor",
+      "email": "noor@example.com",
+      "rating": 4,
+      "content": "Beautiful oil, absorbs better than I expected. Bought a second one on sale."
+     }
+    ]
+   },
+   {
+    "slug": "clay-mask",
+    "name": "Pink Clay Purifying Mask",
+    "type": "simple",
+    "categories": [
+     "skincare"
+    ],
+    "image": "p-clay-mask",
+    "description": "<p>Pink clay is the gentlest of the clays: it draws out excess oil while leaving the skin soft. We blend it with fine rice powder and a little glycerin so it never cracks or tightens uncomfortably.</p><p>Apply a thin layer, relax for ten minutes, then rinse with warm water and a soft cloth. 75 ml.</p>",
+    "short_description": "<p>A weekly mask of French pink clay and rice powder that refines without drying.</p>",
+    "sku": "GB-SK-05",
+    "regular_price": "28",
+    "stock": 18
+   },
+   {
+    "slug": "satin-lipstick",
+    "name": "Satin Lipstick",
+    "type": "variable",
+    "categories": [
+     "makeup"
+    ],
+    "image": "p-satin-lipstick",
+    "description": "<p>Creamy colour that glides on in one stroke and wears down evenly, never patchy. Shea butter and raspberry seed oil keep lips soft for hours. Choose Nude for every day, Rose for a fresh flush or Berry for evenings.</p><p>Refillable aluminium case; refills sold separately in store.</p>",
+    "short_description": "<p>A comfortable satin lipstick with shea and raspberry seed oil, in three easy shades.</p>",
+    "sku": "GB-MU-01",
+    "regular_price": "24",
+    "featured": true,
+    "attributes": [
+     {
+      "name": "Shade",
+      "values": [
+       "Nude",
+       "Rose",
+       "Berry"
+      ],
+      "variation": true
+     }
+    ],
+    "variations": [
+     {
+      "attributes": {
+       "Shade": "Nude"
+      },
+      "regular_price": "24",
+      "stock": 15,
+      "sku": "GB-MU-01-NUDE"
+     },
+     {
+      "attributes": {
+       "Shade": "Rose"
+      },
+      "regular_price": "24",
+      "stock": 15,
+      "sku": "GB-MU-01-ROSE"
+     },
+     {
+      "attributes": {
+       "Shade": "Berry"
+      },
+      "regular_price": "24",
+      "stock": 15,
+      "sku": "GB-MU-01-BERR",
+      "image": "p-satin-lipstick-alt"
+     }
+    ],
+    "reviews": [
+     {
+      "author": "Ines",
+      "email": "ines@example.com",
+      "rating": 5,
+      "content": "Rose is the perfect my-lips-but-better shade. It lasts through coffee too."
+     }
+    ],
+    "gallery": [
+     "p-satin-lipstick-alt"
+    ]
+   },
+   {
+    "slug": "cream-blush",
+    "name": "Cream Blush Balm",
+    "type": "simple",
+    "categories": [
+     "makeup"
+    ],
+    "image": "p-cream-blush",
+    "description": "<p>One shade, many moods: tap a little for a barely-there glow or build it up for a fresher look. The balm is made with jojoba and candelilla wax, so it blends like a dream and never settles into texture.</p><p>Also lovely on lips. 6 g in a glass pot.</p>",
+    "short_description": "<p>A sheer, buildable cheek balm that melts in with fingertips for a healthy flush.</p>",
+    "sku": "GB-MU-02",
+    "regular_price": "26",
+    "stock": 20
+   },
+   {
+    "slug": "brow-pencil",
+    "name": "Precision Brow Pencil",
+    "type": "simple",
+    "categories": [
+     "makeup"
+    ],
+    "image": "p-brow-pencil",
+    "description": "<p>A slim, waxy tip that draws convincing hairs exactly where you need them, then stays put all day. The built-in spoolie softens every line. Soft taupe suits most brow colours.</p>",
+    "short_description": "<p>An ultra-fine pencil with a spoolie for natural, hair-like strokes.</p>",
+    "sku": "GB-MU-03",
+    "regular_price": "18",
+    "stock": 26
+   },
+   {
+    "slug": "shea-body-butter",
+    "name": "Whipped Shea Body Butter",
+    "type": "simple",
+    "categories": [
+     "body"
+    ],
+    "image": "p-shea-body-butter",
+    "description": "<p>Whipped by hand in small batches, this butter feels rich in the jar and weightless on the skin. Fair-trade shea and cocoa butter soothe the driest elbows and shins, with a soft vanilla and orange-blossom scent that fades gently.</p><p>200 ml in a refillable aluminium tin.</p>",
+    "short_description": "<p>A cloud-light whipped butter of fair-trade shea and cocoa for dry skin.</p>",
+    "sku": "GB-BD-01",
+    "regular_price": "32",
+    "featured": true,
+    "stock": 16,
+    "reviews": [
+     {
+      "author": "Mathilde",
+      "email": "mathilde@example.com",
+      "rating": 5,
+      "content": "It feels like a mousse. The scent is subtle, which I love at night."
+     }
+    ]
+   },
+   {
+    "slug": "botanical-body-wash",
+    "name": "Botanical Body Wash",
+    "type": "simple",
+    "categories": [
+     "body"
+    ],
+    "image": "p-botanical-body-wash",
+    "description": "<p>A morning shower in a bottle: bright geranium and lemon verbena with soothing oat milk. The gel turns into a creamy lather and rinses clean, without that tight feeling.</p><p>300 ml in recycled glass with a pump.</p>",
+    "short_description": "<p>A creamy wash of geranium, lemon verbena and oat milk that leaves skin soft.</p>",
+    "sku": "GB-BD-02",
+    "regular_price": "19",
+    "stock": 34
+   },
+   {
+    "slug": "morning-ritual-set",
+    "name": "The Morning Ritual Set",
+    "type": "grouped",
+    "categories": [
+     "sets"
+    ],
+    "image": "p-morning-ritual-set",
+    "description": "<p>The three steps we would recommend to anyone starting out: the Gentle Gel Cleanser, the Brightening Vitamin C Serum and the Hydrating Day Cream. Add the ones you need and skip the ones you already have.</p>",
+    "short_description": "<p>Cleanse, brighten, hydrate: our three morning essentials, together.</p>",
+    "sku": "GB-ST-01",
+    "featured": true,
+    "children": [
+     "gentle-gel-cleanser",
+     "vitamin-c-serum",
+     "hydrating-day-cream"
+    ]
+   },
+   {
+    "slug": "travel-minis",
+    "name": "Travel Minis Trio",
+    "type": "simple",
+    "categories": [
+     "sets"
+    ],
+    "image": "p-travel-minis",
+    "description": "<p>Our three best-sellers in small, refillable bottles that fit any washbag and every airline rule. A kind way to try the line before committing to full sizes, and a thoughtful gift.</p>",
+    "short_description": "<p>Cleanser, day cream and facial oil in cabin-friendly sizes.</p>",
+    "sku": "GB-ST-02",
+    "regular_price": "29",
+    "sale_price": "24",
+    "stock": 14
+   }
+  ],
+  "coupons": [
+   {
+    "code": "WELCOME10",
+    "type": "percent",
+    "amount": "10",
+    "description": "10% off your first order"
+   },
+   {
+    "code": "GLOWSHIP",
+    "type": "fixed_cart",
+    "amount": "0",
+    "free_shipping": true,
+    "description": "Free shipping on any order"
+   }
+  ],
+  "shipping": {
+   "zone": "Europe",
+   "flat_rate": "4.90",
+   "free_over": "40",
+   "local_pickup": true
+  }
+ }
+}

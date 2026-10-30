@@ -1,0 +1,16 @@
+{{template "header" .}}
+{{with .Post}}<article id="post-{{.ID}}" class="{{.Class}} kl-article">
+	<header class="kl-wrap kl-article__header">
+		<p class="kl-kicker">{{range $i, $c := .Categories}}{{if $i}} &middot; {{end}}<a href="{{$c.URL}}">{{$c.Name}}</a>{{end}}</p>
+		<h1 class="entry-title">{{.Title}}</h1>
+		{{with .Excerpt}}<div class="kl-article__dek">{{.}}</div>{{end}}
+		<p class="kl-article__meta"><time datetime="{{.DateISO}}">{{.DateText}}</time>{{with .AuthorName}} &middot; <span class="byline">words by {{.}}</span>{{end}}{{with .EditLink}} &middot; <span class="edit-link">{{.}}</span>{{end}}</p>
+	</header>
+	{{with .Thumbnail}}<figure class="kl-wrap kl-article__media">{{.}}</figure>{{end}}
+	<div class="kl-wrap kl-measure entry-content kl-dropcap">
+		{{.Content}}
+	</div>
+	{{if .Tags}}<footer class="kl-wrap kl-measure entry-footer"><span class="tags-links">{{range .Tags}}<a href="{{.URL}}" rel="tag">{{.Name}}</a> {{end}}</span></footer>{{end}}
+</article>{{end}}
+<div class="kl-wrap kl-measure">{{.PostNav}}{{template "comments" .}}</div>
+{{template "footer" .}}

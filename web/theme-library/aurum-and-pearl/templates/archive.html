@@ -1,0 +1,9 @@
+{{template "header" .}}
+<div class="ap-wrap ap-archive">
+	<header class="page-header ap-page-header">
+		<h1 class="page-title">{{.ArchiveTitle}}</h1>
+		{{with .ArchiveDesc}}<div class="archive-description">{{.}}</div>{{end}}
+	</header>
+	{{if .Posts}}{{template "loop" .}}{{.Pagination}}{{else}}{{template "content-none" .}}{{end}}
+</div>
+{{template "footer" .}}

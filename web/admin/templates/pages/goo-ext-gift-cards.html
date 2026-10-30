@@ -1,0 +1,7 @@
+{{define "admin/goo-ext-gift-cards"}}{{template "admin-header" .}}{{with .Data}}
+<div class="wrap goocommerce goo-ext-gift-cards">
+{{.Head}}
+{{template "notices" $}}
+{{.Body}}
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}

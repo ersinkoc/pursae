@@ -1,0 +1,81 @@
+{
+  "slug": "green-basket",
+  "name": "Green Basket",
+  "version": "1.0.0",
+  "description": "A friendly organic grocery and farm shop for Goocommerce. A delivery-note strip, a rounded header with a big product search and a cart pill that shows the basket total, a leaf-green aisle bar, a rounded hero with a butter card and badges, round category bubbles, cheerful product cards with sticker sale badges and an always-ready add button, and a soil-brown footer with a scalloped edge. Fredoka and Nunito, with an optional Young Serif farmhouse pairing, self-hosted. Ships a complete store demo: fruit and veg, dairy and eggs, bakery and pantry, with a weekly veg box, reviews, coupons and local delivery.",
+  "author": "WordPress Go",
+  "author_url": "https://github.com/boracomet/wordpress-go",
+  "theme_url": "https://github.com/boracomet/wordpress-go/tree/main/web/theme-library/green-basket",
+  "tags": ["E-Commerce", "Food", "Grid Layout", "Custom Colors", "Custom Logo", "Custom Menu", "Editor Style", "Featured Images", "Footer Widgets", "Wide Blocks"],
+  "requires_core": "0.1.0",
+  "screenshot": "assets/screenshot.png",
+  "category": "shop",
+  "style": "Friendly organic grocery, leaf and butter",
+  "demo": "demo/demo.json",
+
+  "widget_areas": [
+    {"id": "footer-1", "name": "Footer", "description": "Widgets in the footer columns."},
+    {"id": "shop-sidebar", "name": "Shop Sidebar", "description": "Filters beside the product catalog."}
+  ],
+  "menu_locations": [
+    {"id": "primary", "name": "Aisle Menu"},
+    {"id": "footer", "name": "Footer Menu"}
+  ],
+
+  "styles": [
+    {"handle": "green-basket-style", "src": "assets/style.css", "deps": ["wp-block-library"], "media": "all"}
+  ],
+  "scripts": [
+    {"handle": "green-basket-navigation", "src": "assets/js/navigation.js", "deps": [], "in_footer": true}
+  ],
+  "editor_styles": ["assets/editor-style.css"],
+  "preload_fonts": ["assets/fonts/fredoka.woff2", "assets/fonts/nunito.woff2"],
+
+  "palette": [
+    {"name": "Leaf", "slug": "leaf", "color": "#4f8a3c"},
+    {"name": "Butter", "slug": "butter", "color": "#fff6d8"},
+    {"name": "Tomato", "slug": "tomato", "color": "#e2553f"},
+    {"name": "Soil", "slug": "soil", "color": "#5b4636"},
+    {"name": "Cream", "slug": "cream", "color": "#fffdf6"}
+  ],
+  "supports": {
+    "post-thumbnails": true,
+    "custom-logo": {"width": 240, "height": 80, "flex-width": true, "flex-height": true, "header-text": ["site-title", "site-description"]},
+    "title-tag": true,
+    "html5": ["search-form", "comment-form", "comment-list", "gallery", "caption", "script", "style"],
+    "responsive-embeds": true,
+    "align-wide": true,
+    "wp-block-styles": true,
+    "woocommerce": true
+  },
+
+  "customizer": {
+    "sections": [
+      {
+        "id": "green_basket_colors", "title": "Colours & Type", "priority": 40,
+        "settings": [
+          {"id": "accent", "label": "Leaf (accent)", "description": "Buttons, the aisle bar and prices.", "type": "color", "default": "#4f8a3c", "transport": "postMessage", "css_var": "--gb-leaf"},
+          {"id": "sale_color", "label": "Tomato (sale)", "description": "Sale stickers and offers.", "type": "color", "default": "#e2553f", "transport": "postMessage", "css_var": "--gb-tomato"},
+          {"id": "butter", "label": "Butter (panels)", "type": "color", "default": "#fff6d8", "transport": "postMessage", "css_var": "--gb-butter"},
+          {"id": "background", "label": "Background", "type": "color", "default": "#fffdf6", "transport": "postMessage", "css_var": "--gb-bg"},
+          {"id": "text_color", "label": "Text (soil)", "type": "color", "default": "#5b4636", "transport": "postMessage", "css_var": "--gb-ink"},
+          {"id": "font_pairing", "label": "Font pairing", "type": "select", "default": "rounded", "transport": "postMessage", "body_class": "gb-fonts-{value}",
+            "choices": [{"value": "rounded", "label": "Fredoka & Nunito (friendly)"}, {"value": "farmhouse", "label": "Young Serif & Nunito (farmhouse)"}]},
+          {"id": "corner_style", "label": "Corners", "type": "select", "default": "round", "transport": "postMessage", "body_class": "gb-corners-{value}",
+            "choices": [{"value": "round", "label": "Round and bubbly"}, {"value": "soft", "label": "Softly rounded"}]}
+        ]
+      },
+      {
+        "id": "green_basket_header", "title": "Header & Store", "priority": 41,
+        "settings": [
+          {"id": "show_delivery_note", "label": "Show the delivery note", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "gb-has-note"},
+          {"id": "delivery_note", "label": "Delivery note", "type": "text", "default": "Order by 8 pm for next-day delivery · Free delivery over $50", "transport": "refresh"},
+          {"id": "header_search", "label": "Big search field in the header", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "gb-header-search"},
+          {"id": "catalog_columns", "label": "Products per row (large screens)", "type": "select", "default": "4", "transport": "postMessage", "body_class": "gb-cols-{value}",
+            "choices": [{"value": "3", "label": "3"}, {"value": "4", "label": "4"}, {"value": "5", "label": "5"}]},
+          {"id": "footer_text", "label": "Footer text", "type": "text", "default": "", "transport": "refresh"}
+        ]
+      }
+    ]
+  }
+}

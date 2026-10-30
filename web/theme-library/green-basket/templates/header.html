@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>{{.DocumentTitle}}</title>
+{{.Head}}</head>
+
+<body class="{{.BodyClass}}">
+{{.BodyOpen}}<div id="page" class="site">
+	<a class="skip-link screen-reader-text" href="#main">Skip to content</a>
+	{{if theme_mod . "show_delivery_note"}}{{with theme_mod . "delivery_note"}}<div class="gb-note" role="note"><p class="gb-wrap"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 6h11v9H2zM13 9h4l3 3v3h-7z"/><circle cx="6" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>{{.}}</p></div>{{end}}{{end}}
+
+	<header id="masthead" class="site-header">
+		<div class="gb-wrap gb-header">
+			{{if has_nav_menu . "primary"}}<button type="button" class="gb-menu-toggle" aria-controls="site-navigation" aria-expanded="false"><span class="gb-menu-toggle__icon" aria-hidden="true"></span><span class="gb-menu-toggle__label">Aisles</span></button>{{end}}
+			<div class="site-branding">
+				{{with .CustomLogo}}<div class="site-logo">{{.}}</div>{{end}}
+				{{if .TitleIsH1}}<h1 class="site-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></h1>{{else}}<p class="site-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></p>{{end}}
+			</div><!-- .site-branding -->
+			<div class="gb-header-search-form">{{if goo_on}}{{goo_product_search .}}{{else}}{{template "searchform" .}}{{end}}</div>
+			<div class="gb-tools">
+				<button type="button" class="gb-icon gb-search-toggle" aria-controls="gb-search" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><span class="screen-reader-text">Search</span></button>
+				{{if goo_on}}<a class="gb-icon gb-account" href="{{goo_url . "myaccount"}}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c1.2-3.6 4-5.4 7.5-5.4s6.3 1.8 7.5 5.4"/></svg><span class="screen-reader-text">My account</span></a>
+				<div class="gb-cart site-header-cart">
+					<div class="gb-cart-pill">
+						<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9h18l-2 10a1.5 1.5 0 0 1-1.5 1.2h-11A1.5 1.5 0 0 1 5 19z"/><path d="M8 9l3-5M16 9l-3-5"/></svg>
+						{{goo_cart_link .}}
+						<button type="button" class="gb-cart-toggle" aria-controls="gb-mini-cart" aria-expanded="false"><span class="gb-cart-count" data-goo-cart-count>{{goo_cart_count .}}</span><span class="screen-reader-text">Show the basket</span></button>
+					</div>
+					<div id="gb-mini-cart" class="gb-mini-cart widget_shopping_cart" hidden>
+						<p class="gb-mini-cart__title">Your basket</p>
+						{{goo_mini_cart .}}
+					</div>
+				</div>{{end}}
+			</div>
+		</div>
+		<div id="gb-search" class="gb-search-panel" hidden><div class="gb-wrap">{{if goo_on}}{{goo_product_search .}}{{else}}{{template "searchform" .}}{{end}}</div></div>
+		{{if has_nav_menu . "primary"}}<nav id="site-navigation" class="main-navigation" aria-label="Aisles">
+			<div class="gb-wrap">{{nav_menu . "primary"}}</div>
+		</nav><!-- #site-navigation -->{{end}}
+	</header><!-- #masthead -->
+	<div class="gb-scrim" hidden></div>
+
+	<div id="content" class="site-content">
+		<main id="main" class="site-main" tabindex="-1">

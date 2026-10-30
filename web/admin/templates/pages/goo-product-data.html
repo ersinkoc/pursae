@@ -1,0 +1,311 @@
+{{/* The Product data meta box (WC_Meta_Box_Product_Data::output()) and its rows. */}}
+{{define "goo-product-data"}}{{$d := .}}{{$p := .P}}
+<div id="woocommerce-product-data" class="postbox">
+<div class="postbox-header"><h2 class="hndle ui-sortable-handle">Product data <span class="type_box"> &mdash;
+	<label for="product-type"><select id="product-type" name="product-type"><optgroup label="Product Type">
+		{{range .Types}}<option value="{{.Value}}"{{if eq .Value $p.Type}} selected="selected"{{end}}>{{.Label}}</option>{{end}}
+	</optgroup></select></label>
+	<label for="_virtual" class="show_if_simple tips has-checkbox" data-tip="Virtual products are intangible and are not shipped.">Virtual: <input type="checkbox" name="_virtual" id="_virtual"{{if $p.Virtual}} checked="checked"{{end}} /></label>
+	<label for="_downloadable" class="show_if_simple tips has-checkbox" data-tip="Downloadable products give access to a file upon purchase.">Downloadable: <input type="checkbox" name="_downloadable" id="_downloadable"{{if $p.Downloadable}} checked="checked"{{end}} /></label>
+</span></h2>
+<div class="handle-actions hide-if-no-js"><button type="button" class="handlediv" aria-expanded="true"><span class="screen-reader-text">Toggle panel: Product data</span><span class="toggle-indicator" aria-hidden="true"></span></button></div></div>
+<div class="inside">
+<div class="panel-wrap product_data">
+	<ul class="product_data_tabs wc-tabs">
+		<li class="general_options general_tab hide_if_grouped{{if or (not $d.Tab) (eq $d.Tab "general")}} active{{end}}"><a href="#general_product_data"><span>General</span></a></li>
+		<li class="inventory_options inventory_tab show_if_simple show_if_variable show_if_grouped show_if_external{{if eq $d.Tab "inventory"}} active{{end}}"><a href="#inventory_product_data"><span>Inventory</span></a></li>
+		<li class="shipping_options shipping_tab hide_if_virtual hide_if_grouped hide_if_external{{if eq $d.Tab "shipping"}} active{{end}}"><a href="#shipping_product_data"><span>Shipping</span></a></li>
+		<li class="linked_product_options linked_product_tab{{if eq $d.Tab "linked"}} active{{end}}"><a href="#linked_product_data"><span>Linked Products</span></a></li>
+		<li class="attribute_options attribute_tab{{if eq $d.Tab "attributes"}} active{{end}}"><a href="#product_attributes"><span>Attributes</span></a></li>
+		<li class="variations_options variations_tab show_if_variable{{if eq $d.Tab "variations"}} active{{end}}"><a href="#variable_product_options"><span>Variations</span></a></li>
+		<li class="advanced_options advanced_tab{{if eq $d.Tab "advanced"}} active{{end}}"><a href="#advanced_product_data"><span>Advanced</span></a></li>
+		{{range .Panels}}<li class="{{.ID}}_options {{.ID}}_tab{{.Class}}{{if eq $d.Tab .ID}} active{{end}}"><a href="#{{.ID}}_product_data"><span>{{.Label}}</span></a></li>
+		{{end}}
+	</ul>
+
+	<div id="general_product_data" class="panel woocommerce_options_panel">
+		<div class="options_group show_if_external">
+			<p class="form-field _product_url_field"><label for="_product_url">Product URL</label><input type="text" class="short" name="_product_url" id="_product_url" value="{{$p.ProductURL}}" placeholder="https://" /> <span class="description">Enter the external URL to the product.</span></p>
+			<p class="form-field _button_text_field"><label for="_button_text">Button text</label><input type="text" class="short" name="_button_text" id="_button_text" value="{{$p.ButtonText}}" placeholder="Buy product" /> <span class="description">This text will be shown on the button linking to the external product.</span></p>
+		</div>
+		<div class="options_group pricing show_if_simple show_if_external">
+			<p class="form-field _regular_price_field"><label for="_regular_price">Regular price ({{$d.Symbol}})</label><input type="text" class="short wc_input_price" name="_regular_price" id="_regular_price" value="{{$d.Regular}}" placeholder="" /></p>
+			<p class="form-field _sale_price_field"><label for="_sale_price">Sale price ({{$d.Symbol}})</label><input type="text" class="short wc_input_price" name="_sale_price" id="_sale_price" value="{{$d.Sale}}" placeholder="" /> <span class="description"><a href="#" class="sale_schedule{{if or $d.SaleFrom $d.SaleTo}} hidden{{end}}">Schedule</a></span></p>
+			<p class="form-field sale_price_dates_fields{{if not (or $d.SaleFrom $d.SaleTo)}} hidden{{end}}">
+				<label for="_sale_price_dates_from">Sale price dates</label>
+				<input type="text" class="short goo-datepicker" name="_sale_price_dates_from" id="_sale_price_dates_from" value="{{$d.SaleFrom}}" placeholder="From&hellip; YYYY-MM-DD" maxlength="10" pattern="[0-9]{4}-(0[1-9]|1[012])-(0[1-9]|1[0-9]|2[0-9]|3[01])" />
+				<input type="text" class="short goo-datepicker" name="_sale_price_dates_to" id="_sale_price_dates_to" value="{{$d.SaleTo}}" placeholder="To&hellip;  YYYY-MM-DD" maxlength="10" pattern="[0-9]{4}-(0[1-9]|1[012])-(0[1-9]|1[0-9]|2[0-9]|3[01])" />
+				<a href="#" class="description cancel_sale_schedule">Cancel</a>
+			</p>
+		</div>
+		<div class="options_group show_if_downloadable">
+			<div class="form-field downloadable_files">
+				<label>Downloadable files</label>
+				<table class="widefat">
+					<thead><tr><th class="sort">&nbsp;</th><th>Name</th><th colspan="2">File URL</th><th>&nbsp;</th></tr></thead>
+					<tbody>{{range $p.Downloads}}{{template "goo-product-download-row" dict "Prefix" "_wc_file" "D" .}}{{end}}</tbody>
+					<tfoot><tr><th colspan="5"><a href="#" class="button insert">Add File</a></th></tr></tfoot>
+				</table>
+			</div>
+			<p class="form-field _download_limit_field"><label for="_download_limit">Download limit</label><input type="number" class="short" name="_download_limit" id="_download_limit" value="{{$d.DownloadLimit}}" placeholder="Unlimited" step="1" min="0" /> <span class="description">Leave blank for unlimited re-downloads.</span></p>
+			<p class="form-field _download_expiry_field"><label for="_download_expiry">Download expiry</label><input type="number" class="short" name="_download_expiry" id="_download_expiry" value="{{$d.DownloadExpiry}}" placeholder="Never" step="1" min="0" /> <span class="description">Enter the number of days before a download link expires, or leave blank.</span></p>
+		</div>
+		<div class="options_group show_if_simple show_if_external show_if_variable">
+			<p class="form-field _tax_status_field"><label for="_tax_status">Tax status</label><select id="_tax_status" name="_tax_status" class="select short">
+				{{range list "taxable" "shipping" "none"}}<option value="{{.}}"{{if eq . $p.TaxStatus}} selected="selected"{{end}}>{{if eq . "taxable"}}Taxable{{else if eq . "shipping"}}Shipping only{{else}}None{{end}}</option>{{end}}
+			</select> <span class="description">Define whether or not the entire product is taxable, or just the cost of shipping it.</span></p>
+			<p class="form-field _tax_class_field"><label for="_tax_class">Tax class</label><select id="_tax_class" name="_tax_class" class="select short">
+				{{range $d.TaxClasses}}<option value="{{.Value}}"{{if eq .Value $p.TaxClass}} selected="selected"{{end}}>{{.Label}}</option>{{end}}
+			</select> <span class="description">Choose a tax class for this product. Tax classes are used to apply different tax rates specific to certain types of product.</span></p>
+		</div>
+	</div>
+
+	<div id="inventory_product_data" class="panel woocommerce_options_panel hidden">
+		<div class="options_group">
+			<p class="form-field _sku_field"><label for="_sku"><abbr title="Stock Keeping Unit">SKU</abbr></label><input type="text" class="short" name="_sku" id="_sku" value="{{$p.SKU}}" /> <span class="description">SKU refers to a Stock-keeping unit, a unique identifier for each distinct product and service that can be purchased.</span></p>
+			{{if $d.ManageStock}}<p class="form-field _manage_stock_field show_if_simple show_if_variable"><label for="_manage_stock">Stock management</label><input type="checkbox" class="checkbox" name="_manage_stock" id="_manage_stock" value="yes"{{if $p.ManageStock}} checked="checked"{{end}} /> <span class="description">Track stock quantity for this product</span></p>
+			<div class="stock_fields show_if_simple show_if_variable">
+				<p class="form-field _stock_field"><label for="_stock">Quantity</label><input type="number" class="short wc_input_stock" name="_stock" id="_stock" value="{{$d.Stock}}" step="any" /></p>
+				<input type="hidden" name="_original_stock" value="{{$d.Stock}}" />
+				<p class="form-field _backorders_field"><label for="_backorders">Allow backorders?</label><select id="_backorders" name="_backorders" class="select short">
+					{{range list "no" "notify" "yes"}}<option value="{{.}}"{{if eq . $p.Backorders}} selected="selected"{{end}}>{{if eq . "no"}}Do not allow{{else if eq . "notify"}}Allow, but notify customer{{else}}Allow{{end}}</option>{{end}}
+				</select></p>
+				<p class="form-field _low_stock_amount_field"><label for="_low_stock_amount">Low stock threshold</label><input type="number" class="short" name="_low_stock_amount" id="_low_stock_amount" value="{{$d.LowStock}}" placeholder="Store-wide threshold" step="any" /></p>
+			</div>{{end}}
+			<fieldset class="form-field _stock_status_field stock_status_field hide_if_variable hide_if_external hide_if_grouped"><legend>Stock status</legend><ul class="wc-radios">
+				{{range list "instock" "outofstock" "onbackorder"}}<li><label><input name="_stock_status" value="{{.}}" type="radio" class="select short"{{if eq . (or $p.StockStatus "instock")}} checked="checked"{{end}} /> {{if eq . "instock"}}In stock{{else if eq . "outofstock"}}Out of stock{{else}}On backorder{{end}}</label></li>{{end}}
+			</ul></fieldset>
+		</div>
+		<div class="options_group show_if_simple show_if_variable">
+			<p class="form-field _sold_individually_field"><label for="_sold_individually">Sold individually</label><input type="checkbox" class="checkbox" name="_sold_individually" id="_sold_individually" value="yes"{{if $p.SoldIndividually}} checked="checked"{{end}} /> <span class="description">Limit purchases to 1 item per order</span></p>
+		</div>
+	</div>
+
+	<div id="shipping_product_data" class="panel woocommerce_options_panel hidden">
+		<div class="options_group">
+			<p class="form-field _weight_field"><label for="_weight">Weight ({{$d.WeightUnit}})</label><input type="text" class="short wc_input_decimal" name="_weight" id="_weight" value="{{$p.Weight}}" placeholder="0" /></p>
+			<p class="form-field dimensions_field"><label for="product_length">Dimensions ({{$d.DimUnit}})</label><span class="wrap">
+				<input id="product_length" placeholder="Length" class="input-text wc_input_decimal" size="6" type="text" name="_length" value="{{$p.Length}}" />
+				<input id="product_width" placeholder="Width" class="input-text wc_input_decimal" size="6" type="text" name="_width" value="{{$p.Width}}" />
+				<input id="product_height" placeholder="Height" class="input-text wc_input_decimal last" size="6" type="text" name="_height" value="{{$p.Height}}" />
+			</span> <span class="description">LxWxH in decimal form</span></p>
+		</div>
+		<div class="options_group">
+			<p class="form-field shipping_class_field"><label for="product_shipping_class">Shipping class</label><select name="product_shipping_class" id="product_shipping_class" class="select short">
+				<option value="-1">No shipping class</option>
+				{{range $d.ShipClasses}}<option value="{{.ID}}"{{if eq .ID $p.ShippingClassID}} selected="selected"{{end}}>{{.Name}}</option>{{end}}
+			</select> <span class="description">Shipping classes are used by certain shipping methods to group similar products.</span></p>
+		</div>
+	</div>
+
+	<div id="linked_product_data" class="panel woocommerce_options_panel hidden">
+		<div class="options_group show_if_grouped">
+			<p class="form-field"><label for="grouped_products">Grouped products</label>
+			<select class="wc-product-search" multiple="multiple" style="width: 50%;" id="grouped_products" name="grouped_products[]" data-placeholder="Search for a product&hellip;" data-exclude="{{$p.ID}}" data-url="{{$d.SearchURL}}">
+				{{range $d.Grouped}}<option value="{{.Value}}" selected="selected">{{.Label}}</option>{{end}}
+			</select> <span class="description">This lets you choose which products are part of this group.</span></p>
+		</div>
+		<div class="options_group">
+			<p class="form-field"><label for="upsell_ids">Upsells</label>
+			<select class="wc-product-search" multiple="multiple" style="width: 50%;" id="upsell_ids" name="upsell_ids[]" data-placeholder="Search for a product&hellip;" data-include-variations="1" data-exclude="{{$p.ID}}" data-url="{{$d.SearchURL}}">
+				{{range $d.Upsells}}<option value="{{.Value}}" selected="selected">{{.Label}}</option>{{end}}
+			</select> <span class="description">Upsells are products which you recommend instead of the currently viewed product, for example, products that are more profitable or better quality or more expensive.</span></p>
+			<p class="form-field hide_if_grouped hide_if_external"><label for="crosssell_ids">Cross-sells</label>
+			<select class="wc-product-search" multiple="multiple" style="width: 50%;" id="crosssell_ids" name="crosssell_ids[]" data-placeholder="Search for a product&hellip;" data-include-variations="1" data-exclude="{{$p.ID}}" data-url="{{$d.SearchURL}}">
+				{{range $d.CrossSells}}<option value="{{.Value}}" selected="selected">{{.Label}}</option>{{end}}
+			</select> <span class="description">Cross-sells are products which you promote in the cart, based on the current product.</span></p>
+		</div>
+	</div>
+
+	<div id="product_attributes" class="panel wc-metaboxes-wrapper hidden">
+		<input type="hidden" name="goo_attributes_loaded" value="1" />
+		<div class="toolbar toolbar-top">
+			<span class="expand-close"><a href="#" class="expand_all">Expand</a> / <a href="#" class="close_all">Close</a></span>
+			<button type="button" class="button add_custom_attribute">Add new</button>
+			<select name="attribute_taxonomy" class="attribute_taxonomy">
+				<option value="">Add existing</option>
+				{{range $d.GlobalAttrs}}<option value="{{.Taxonomy}}">{{.Label}}</option>{{end}}
+			</select>
+			<button type="button" class="button add_attribute">Add</button>
+		</div>
+		<div class="product_attributes wc-metaboxes">
+			{{range $d.Attributes}}{{template "goo-product-attr" .}}{{end}}
+		</div>
+		<div class="toolbar">
+			<span class="expand-close"><a href="#" class="expand_all">Expand</a> / <a href="#" class="close_all">Close</a></span>
+			<button type="submit" name="goo_save_attributes" value="1" class="button save_attributes button-primary">Save attributes</button>
+		</div>
+	</div>
+
+	<div id="variable_product_options" class="panel wc-metaboxes-wrapper hidden"><div id="variable_product_options_inner">
+		{{if not $d.VariationAttrs}}<div id="message" class="inline notice woocommerce-message"><p>Before you can add a variation you need to add some variation attributes on the <strong>Attributes</strong> tab.</p></div>
+		{{else}}
+		<div class="toolbar toolbar-variations-defaults"><div class="variations-defaults"><strong>Default Form Values</strong>:
+			{{range $d.VariationAttrs}}{{$a := .}}<select name="default_attribute_{{.Key}}" data-current="{{.Default}}"><option value="">No default {{.Label}}&hellip;</option>
+				{{range .Options}}<option value="{{.Value}}"{{if eq .Value $a.Default}} selected="selected"{{end}}>{{.Label}}</option>{{end}}
+			</select>{{end}}
+		</div><div class="clear"></div></div>
+		<div class="toolbar toolbar-top">
+			<button type="submit" name="goo_generate_variations" value="1" class="button generate_variations">Generate variations</button>
+			<button type="submit" name="goo_add_variation" value="1" class="button add_variation_manually">Add manually</button>
+			<select id="field_to_edit" class="variation_actions" name="variable_bulk_action">
+				<option value="">Bulk actions</option>
+				<option value="delete_all">Delete all variations</option>
+				<optgroup label="Status"><option value="toggle_enabled">Toggle &quot;Enabled&quot;</option><option value="toggle_downloadable">Toggle &quot;Downloadable&quot;</option><option value="toggle_virtual">Toggle &quot;Virtual&quot;</option></optgroup>
+				<optgroup label="Pricing"><option value="variable_regular_price">Set regular prices</option><option value="variable_regular_price_increase">Increase regular prices (fixed amount or percentage)</option><option value="variable_regular_price_decrease">Decrease regular prices (fixed amount or percentage)</option><option value="variable_sale_price">Set sale prices</option><option value="variable_sale_price_increase">Increase sale prices (fixed amount or percentage)</option><option value="variable_sale_price_decrease">Decrease sale prices (fixed amount or percentage)</option></optgroup>
+				<optgroup label="Inventory"><option value="toggle_manage_stock">Toggle &quot;Manage stock&quot;</option><option value="variable_stock">Stock</option><option value="variable_stock_status_instock">Set Status - In stock</option><option value="variable_stock_status_outofstock">Set Status - Out of stock</option><option value="variable_stock_status_onbackorder">Set Status - On backorder</option><option value="variable_low_stock_amount">Low stock threshold</option></optgroup>
+				<optgroup label="Shipping"><option value="variable_length">Length</option><option value="variable_width">Width</option><option value="variable_height">Height</option><option value="variable_weight">Weight</option></optgroup>
+				<optgroup label="Downloadable products"><option value="variable_download_limit">Download limit</option><option value="variable_download_expiry">Download expiry</option></optgroup>
+			</select>
+			<input type="hidden" name="variable_bulk_value" id="variable_bulk_value" value="" />
+			<button type="submit" name="goo_variation_bulk" value="1" class="button bulk_edit do_variation_action">Go</button>
+			<div class="variations-pagenav"><span class="displaying-num">{{len $d.Variations}} {{if eq (len $d.Variations) 1}}variation{{else}}variations{{end}}</span></div>
+			<div class="clear"></div>
+		</div>
+		<input type="hidden" name="goo_variations_loaded" value="1" />
+		<div class="woocommerce_variations wc-metaboxes">
+			{{range $d.Variations}}{{template "goo-product-variation" dict "V" . "D" $d}}{{end}}
+		</div>
+		<div class="toolbar"><button type="submit" name="goo_save_variations" value="1" class="button-primary save-variation-changes">Save changes</button></div>
+		{{end}}
+	</div></div>
+
+	<div id="advanced_product_data" class="panel woocommerce_options_panel hidden">
+		<div class="options_group hide_if_external hide_if_grouped">
+			<p class="form-field _purchase_note_field"><label for="_purchase_note">Purchase note</label><textarea class="short" name="_purchase_note" id="_purchase_note" rows="2" cols="20">{{$p.PurchaseNote}}</textarea> <span class="description">Enter an optional note to send the customer after purchase.</span></p>
+		</div>
+		<div class="options_group">
+			<p class="form-field menu_order_field"><label for="menu_order">Menu order</label><input type="number" class="short" name="menu_order" id="menu_order" value="{{$d.Post.MenuOrder}}" step="1" /> <span class="description">Custom ordering position.</span></p>
+		</div>
+		<div class="options_group reviews">
+			<p class="form-field comment_status_field"><label for="comment_status">Enable reviews</label><input type="checkbox" class="checkbox" name="comment_status" id="comment_status" value="open"{{if eq $d.Post.CommentStatus "open"}} checked="checked"{{end}} /></p>
+		</div>
+	</div>
+
+	{{range .Panels}}<div id="{{.ID}}_product_data" class="panel woocommerce_options_panel hidden">{{.HTML}}</div>
+	{{end}}
+	<div class="clear"></div>
+</div>
+</div>
+</div>
+{{end}}
+
+{{define "goo-product-attr"}}<div data-taxonomy="{{.Taxonomy}}" class="woocommerce_attribute wc-metabox postbox{{if .Taxonomy}} taxonomy {{.Taxonomy}}{{end}}" rel="{{.Position}}">
+	<h3>
+		<a href="#" class="remove_row delete">Remove</a>
+		<div class="handlediv" aria-label="Click to toggle"></div>
+		<div class="tips sort" data-tip="Drag and drop to set admin attribute order"></div>
+		<strong class="attribute_name">{{if .Label}}{{.Label}}{{else}}New attribute{{end}}</strong>
+	</h3>
+	<div class="woocommerce_attribute_data wc-metabox-content">
+		<table cellpadding="0" cellspacing="0"><tbody>
+			<tr>
+				<td class="attribute_name">
+					<label>Name:</label>
+					{{if .Taxonomy}}<strong>{{.Label}}</strong><input type="hidden" name="attribute_names[{{.Index}}]" value="{{.Taxonomy}}" />
+					{{else}}<input type="text" class="attribute_name" name="attribute_names[{{.Index}}]" value="{{.Name}}" placeholder="e.g. length or weight" />{{end}}
+					<input type="hidden" name="attribute_position[{{.Index}}]" class="attribute_position" value="{{.Position}}" />
+				</td>
+				<td rowspan="3">
+					<label>Value(s):</label>
+					{{if .Taxonomy}}<select multiple="multiple" data-placeholder="Select values" class="multiselect attribute_values wc-taxonomy-term-search" name="attribute_values[{{.Index}}][]">
+						{{range .Terms}}<option value="{{.ID}}"{{if .Selected}} selected="selected"{{end}}>{{.Name}}</option>{{end}}
+					</select>
+					<button type="button" class="button plus select_all_attributes">Select all</button>
+					<button type="button" class="button minus select_no_attributes">Select none</button>
+					<input type="text" class="goo-new-values" name="attribute_new_values[{{.Index}}]" value="" placeholder="Create values (separate with |)" />
+					{{else}}<textarea name="attribute_values[{{.Index}}]" cols="5" rows="5" placeholder="Enter some descriptive text. Use &#8220;|&#8221; to separate different values.">{{.Values}}</textarea>{{end}}
+				</td>
+			</tr>
+			<tr><td><label><input type="checkbox" class="checkbox" name="attribute_visibility[{{.Index}}]" value="1"{{if .Visible}} checked="checked"{{end}} /> Visible on the product page</label></td></tr>
+			<tr><td><div class="enable_variation show_if_variable"><label><input type="checkbox" class="checkbox" name="attribute_variation[{{.Index}}]" value="1"{{if .Variation}} checked="checked"{{end}} /> Used for variations</label></div></td></tr>
+		</tbody></table>
+	</div>
+</div>{{end}}
+
+{{define "goo-product-download-row"}}<tr>
+	<td class="sort"></td>
+	<td class="file_name"><input type="text" class="input_text" placeholder="File name" name="{{.Prefix}}_names{{.Suffix}}[]" value="{{if .D}}{{.D.Name}}{{end}}" /><input type="hidden" name="{{.Prefix}}_hashes{{.Suffix}}[]" value="{{if .D}}{{.D.ID}}{{end}}" /></td>
+	<td class="file_url"><input type="text" class="input_text" placeholder="http://" name="{{.Prefix}}_urls{{.Suffix}}[]" value="{{if .D}}{{.D.File}}{{end}}" /></td>
+	<td class="file_url_choose" width="1%"><a href="#" class="button upload_file_button" data-choose="Choose file" data-update="Insert file URL">Choose&nbsp;file</a></td>
+	<td width="1%"><a href="#" class="delete">Delete</a></td>
+</tr>{{end}}
+
+{{define "goo-product-variation"}}{{$d := .D}}{{with .V}}{{$i := .Index}}{{$v := .V}}<div class="woocommerce_variation wc-metabox open" data-id="{{.ID}}">
+	<h3>
+		<a href="#" class="remove_variation delete" rel="{{.ID}}">Remove</a>
+		<div class="handlediv" aria-label="Click to toggle"></div>
+		<div class="tips sort" data-tip="Drag and drop, or click to set admin variation order"></div>
+		<strong>#{{.ID}} </strong>
+		{{range .Attrs}}{{$a := .}}<select name="attribute_{{.Key}}[{{$i}}]"><option value="">Any {{.Label}}&hellip;</option>
+			{{range .Options}}<option value="{{.Value}}"{{if eq .Value $a.Selected}} selected="selected"{{end}}>{{.Label}}</option>{{end}}
+		</select>{{end}}
+		<input type="hidden" class="variable_post_id" name="variable_post_id[{{$i}}]" value="{{.ID}}" />
+		<input type="hidden" class="variation_menu_order" name="variable_menu_order[{{$i}}]" value="{{.MenuOrder}}" />
+	</h3>
+	<div class="woocommerce_variable_attributes wc-metabox-content">
+		<div class="data">
+			<p class="form-row form-row-first upload_image">
+				<a href="#" class="upload_image_button tips{{if .Thumb}} remove{{end}}" data-tip="{{if .Thumb}}Remove this image{{else}}Upload an image{{end}}" rel="{{.ID}}">
+					{{if .Thumb}}<img src="{{.Thumb}}" alt="" />{{else}}<span class="goo-no-image dashicons dashicons-format-image"></span>{{end}}
+					<input type="hidden" name="upload_image_id[{{$i}}]" class="upload_image_id" value="{{$v.ImageID}}" />
+				</a>
+			</p>
+			<p class="form-row form-row-last sku"><label for="variable_sku{{$i}}"><abbr title="Stock Keeping Unit">SKU</abbr></label><input type="text" id="variable_sku{{$i}}" name="variable_sku[{{$i}}]" value="{{$v.SKU}}" placeholder="{{$d.P.SKU}}" /></p>
+			<p class="form-row form-row-full options">
+				<label><input type="checkbox" class="checkbox" name="variable_enabled[{{$i}}]"{{if .Enabled}} checked="checked"{{end}} /> Enabled</label>
+				<label><input type="checkbox" class="checkbox variable_is_downloadable" name="variable_is_downloadable[{{$i}}]"{{if $v.Downloadable}} checked="checked"{{end}} /> Downloadable</label>
+				<label><input type="checkbox" class="checkbox variable_is_virtual" name="variable_is_virtual[{{$i}}]"{{if $v.Virtual}} checked="checked"{{end}} /> Virtual</label>
+				{{if $d.ManageStock}}<label><input type="checkbox" class="checkbox variable_manage_stock" name="variable_manage_stock[{{$i}}]"{{if $v.ManageStock}} checked="checked"{{end}} /> Manage stock?</label>{{end}}
+			</p>
+			<div class="variable_pricing">
+				<p class="form-row form-row-first"><label for="variable_regular_price_{{$i}}">Regular price ({{$d.Symbol}})</label><input type="text" class="wc_input_price" id="variable_regular_price_{{$i}}" name="variable_regular_price[{{$i}}]" value="{{.Regular}}" placeholder="Variation price (required)" /></p>
+				<p class="form-row form-row-last"><label for="variable_sale_price{{$i}}">Sale price ({{$d.Symbol}})</label> <a href="#" class="sale_schedule{{if or .SaleFrom .SaleTo}} hidden{{end}}">Schedule</a><input type="text" class="wc_input_price" id="variable_sale_price{{$i}}" name="variable_sale_price[{{$i}}]" value="{{.Sale}}" /></p>
+				<div class="form-field sale_price_dates_fields{{if not (or .SaleFrom .SaleTo)}} hidden{{end}}">
+					<p class="form-row form-row-first"><label>Sale start date</label><input type="text" class="sale_price_dates_from goo-datepicker" name="variable_sale_price_dates_from[{{$i}}]" value="{{.SaleFrom}}" placeholder="From&hellip; YYYY-MM-DD" maxlength="10" /></p>
+					<p class="form-row form-row-last"><label>Sale end date</label><input type="text" class="sale_price_dates_to goo-datepicker" name="variable_sale_price_dates_to[{{$i}}]" value="{{.SaleTo}}" placeholder="To&hellip; YYYY-MM-DD" maxlength="10" /> <a href="#" class="cancel_sale_schedule">Cancel schedule</a></p>
+				</div>
+			</div>
+			{{.Extra}}
+			<div class="show_if_variation_manage_stock">
+				<p class="form-row form-row-first"><label for="variable_stock{{$i}}">Stock quantity</label><input type="number" id="variable_stock{{$i}}" name="variable_stock[{{$i}}]" value="{{.Stock}}" step="any" /></p>
+				<p class="form-row form-row-last"><label for="variable_backorders{{$i}}">Allow backorders?</label><select id="variable_backorders{{$i}}" name="variable_backorders[{{$i}}]">
+					{{range list "no" "notify" "yes"}}<option value="{{.}}"{{if eq . $v.Backorders}} selected="selected"{{end}}>{{if eq . "no"}}Do not allow{{else if eq . "notify"}}Allow, but notify customer{{else}}Allow{{end}}</option>{{end}}
+				</select></p>
+				<p class="form-row form-row-full"><label for="variable_low_stock_amount{{$i}}">Low stock threshold</label><input type="number" id="variable_low_stock_amount{{$i}}" name="variable_low_stock_amount[{{$i}}]" value="{{.LowStock}}" placeholder="Parent product's threshold" step="1" /></p>
+			</div>
+			<p class="form-row form-row-full variable_stock_status hide_if_variation_manage_stock"><label for="variable_stock_status{{$i}}">Stock status</label><select id="variable_stock_status{{$i}}" name="variable_stock_status[{{$i}}]">
+				{{range list "instock" "outofstock" "onbackorder"}}<option value="{{.}}"{{if eq . (or $v.StockStatus "instock")}} selected="selected"{{end}}>{{if eq . "instock"}}In stock{{else if eq . "outofstock"}}Out of stock{{else}}On backorder{{end}}</option>{{end}}
+			</select></p>
+			<div class="hide_if_variation_virtual">
+				<p class="form-row form-row-first"><label for="variable_weight{{$i}}">Weight ({{$d.WeightUnit}})</label><input type="text" class="wc_input_decimal" id="variable_weight{{$i}}" name="variable_weight[{{$i}}]" value="{{$v.Weight}}" placeholder="{{$d.P.Weight}}" /></p>
+				<p class="form-row form-row-last dimensions_field"><label>Dimensions (L&times;W&times;H) ({{$d.DimUnit}})</label><span class="wrap">
+					<input type="text" class="input-text wc_input_decimal" size="6" name="variable_length[{{$i}}]" value="{{$v.Length}}" placeholder="{{or $d.P.Length "Length"}}" />
+					<input type="text" class="input-text wc_input_decimal" size="6" name="variable_width[{{$i}}]" value="{{$v.Width}}" placeholder="{{or $d.P.Width "Width"}}" />
+					<input type="text" class="input-text wc_input_decimal last" size="6" name="variable_height[{{$i}}]" value="{{$v.Height}}" placeholder="{{or $d.P.Height "Height"}}" />
+				</span></p>
+				<p class="form-row hide_if_variation_virtual form-row-full"><label>Shipping class</label><select name="variable_shipping_class[{{$i}}]">
+					<option value="-1">Same as parent</option>
+					{{range $d.ShipClasses}}<option value="{{.ID}}"{{if eq .ID $v.ShippingClassID}} selected="selected"{{end}}>{{.Name}}</option>{{end}}
+				</select></p>
+			</div>
+			<p class="form-row form-row-full"><label>Tax class</label><select name="variable_tax_class[{{$i}}]">
+				<option value="parent"{{if eq .TaxClass "parent"}} selected="selected"{{end}}>Same as parent</option>
+				{{range $d.TaxClasses}}<option value="{{.Value}}"{{if and (eq .Value $v.TaxClass) (ne $v.TaxClass "parent")}} selected="selected"{{end}}>{{.Label}}</option>{{end}}
+			</select></p>
+			<p class="form-row form-row-full"><label for="variable_description{{$i}}">Description</label><textarea id="variable_description{{$i}}" name="variable_description[{{$i}}]" rows="3" style="width:100%;">{{$v.Description}}</textarea></p>
+			<div class="show_if_variation_downloadable">
+				<div class="form-row form-row-full downloadable_files">
+					<label>Downloadable files</label>
+					<table class="widefat">
+						<thead><tr><th class="sort">&nbsp;</th><th>Name</th><th colspan="2">File URL</th><th>&nbsp;</th></tr></thead>
+						<tbody>{{range .Downloads}}{{template "goo-product-download-row" dict "Prefix" "_wc_variation_file" "Suffix" (printf "[%d]" $v.ID) "D" .}}{{end}}</tbody>
+						<tfoot><tr><th colspan="5"><a href="#" class="button insert" data-prefix="_wc_variation_file" data-suffix="[{{$v.ID}}]">Add file</a></th></tr></tfoot>
+					</table>
+				</div>
+				<p class="form-row form-row-first"><label>Download limit</label><input type="number" name="variable_download_limit[{{$i}}]" value="{{.DownloadLimit}}" placeholder="Unlimited" step="1" min="0" /></p>
+				<p class="form-row form-row-last"><label>Download expiry</label><input type="number" name="variable_download_expiry[{{$i}}]" value="{{.DownloadExpiry}}" placeholder="Never" step="1" min="0" /></p>
+			</div>
+		</div>
+	</div>
+</div>{{end}}{{end}}

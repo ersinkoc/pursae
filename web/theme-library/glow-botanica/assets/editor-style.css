@@ -1,0 +1,8 @@
+@font-face { font-family: "Cormorant Garamond"; src: url("fonts/cormorant.woff2") format("woff2"); font-weight: 400 600; font-display: swap; }
+@font-face { font-family: "Cormorant Garamond"; src: url("fonts/cormorant-italic.woff2") format("woff2"); font-weight: 400 600; font-style: italic; font-display: swap; }
+@font-face { font-family: "Jost"; src: url("fonts/jost.woff2") format("woff2"); font-weight: 300 700; font-display: swap; }
+body { font: 400 1rem/1.7 "Jost", "Avenir Next", "Helvetica Neue", Arial, sans-serif; color: #4a2c3a; background: #fffaf5; }
+h1, h2, h3, h4 { font-family: "Cormorant Garamond", Garamond, Georgia, serif; font-weight: 500; line-height: 1.1; }
+a { color: #a85d67; }
+.wp-block-button__link { background: #4a2c3a; color: #fffaf5; border-radius: 999px; }
+blockquote { border-left: 2px solid #c97b84; padding-left: 1em; font-family: "Cormorant Garamond", Georgia, serif; font-style: italic; font-size: 1.3em; }

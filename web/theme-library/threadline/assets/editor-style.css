@@ -1,0 +1,5 @@
+@font-face { font-family: "Instrument Serif"; src: url("fonts/instrument-serif.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Hanken Grotesk"; src: url("fonts/hanken-grotesk.woff2") format("woff2"); font-weight: 300 700; font-display: swap; }
+body { font: 400 1rem/1.65 "Hanken Grotesk", "Helvetica Neue", Arial, sans-serif; color: #1b1b1b; background: #f4efe8; }
+h1, h2, h3, h4 { font-family: "Instrument Serif", Georgia, serif; font-weight: 400; line-height: 1.12; }
+a { color: #b5643c; }

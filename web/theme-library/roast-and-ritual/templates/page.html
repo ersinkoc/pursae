@@ -1,0 +1,13 @@
+{{template "header" .}}
+{{$store := or (contains .BodyClass "single-product") (contains .BodyClass "woocommerce-shop") (contains .BodyClass "tax-product_") (contains .BodyClass "post-type-archive-product")}}
+{{with .Post}}<article id="post-{{.ID}}" class="{{.Class}} rr-page{{if $store}} rr-store-page{{end}}">
+	<div class="rr-wrap">
+		{{if not $store}}<header class="rr-page__header"><span class="rr-page__bean" aria-hidden="true">{{template "icon-bean"}}</span><h1 class="entry-title">{{.Title}}</h1></header>{{end}}
+		<div class="entry-content{{if or $store (contains $.BodyClass "woocommerce-page")}} rr-store-content{{else}} rr-measure{{end}}">
+			{{.Content}}
+		</div>
+		{{with .EditLink}}<footer class="entry-footer"><span class="edit-link">{{.}}</span></footer>{{end}}
+	</div>
+</article>{{end}}
+{{if not $store}}<div class="rr-wrap rr-measure">{{template "comments" .}}</div>{{end}}
+{{template "footer" .}}

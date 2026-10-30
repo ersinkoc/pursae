@@ -1,0 +1,22 @@
+{{define "admin/goo-marketing"}}{{template "admin-header" .}}{{template "goo-store-assets"}}{{with .Data}}
+<div class="wrap woocommerce goo-marketing">
+<h1 class="wp-heading-inline">Marketing</h1>
+<hr class="wp-header-end">
+{{template "notices" $}}
+{{if not .CouponsEnabled}}<div class="notice notice-warning inline"><p>Coupons are disabled. Enable them under <a href="/wp-admin/goocommerce?page=settings">Settings &rsaquo; General</a>.</p></div>{{end}}
+<div class="postbox woocommerce-marketing-coupons"><div class="postbox-header"><h2 class="hndle">Coupons</h2></div><div class="inside">
+<ul class="woocommerce-summary goo-summary">
+<li class="woocommerce-summary__item-container"><div class="woocommerce-summary__item"><div class="woocommerce-summary__item-label">Active coupons</div><div class="woocommerce-summary__item-value">{{.Active}}</div></div></li>
+<li class="woocommerce-summary__item-container"><div class="woocommerce-summary__item"><div class="woocommerce-summary__item-label">Expired coupons</div><div class="woocommerce-summary__item-value">{{.Expired}}</div></div></li>
+<li class="woocommerce-summary__item-container"><div class="woocommerce-summary__item"><div class="woocommerce-summary__item-label">Times used</div><div class="woocommerce-summary__item-value">{{.Used}}</div></div></li>
+<li class="woocommerce-summary__item-container"><div class="woocommerce-summary__item"><div class="woocommerce-summary__item-label">Discounted orders</div><div class="woocommerce-summary__item-value">{{.Orders}}</div></div></li>
+<li class="woocommerce-summary__item-container"><div class="woocommerce-summary__item"><div class="woocommerce-summary__item-label">Amount discounted</div><div class="woocommerce-summary__item-value">{{.Discounted}}</div></div></li>
+</ul>
+<h3>Most used coupons</h3>
+<table class="widefat striped"><thead><tr><th>Coupon</th><th>Uses</th><th>Amount discounted</th></tr></thead><tbody>
+{{range .Top}}<tr><td><a href="{{.URL}}"><code>{{.Code}}</code></a></td><td>{{.Uses}}</td><td>{{.Amount}}</td></tr>{{else}}<tr><td colspan="3">No coupons yet.</td></tr>{{end}}
+</tbody></table>
+<p><a class="button button-primary" href="/wp-admin/goocommerce?page=coupons&amp;action=new">Create a coupon</a> <a class="button" href="/wp-admin/goocommerce?page=coupons">View coupons</a> <a class="button" href="/wp-admin/goocommerce?page=analytics&amp;path=coupons">Coupon analytics</a></p>
+</div></div>
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}

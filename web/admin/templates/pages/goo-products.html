@@ -1,0 +1,185 @@
+{{define "admin/goo-products"}}{{template "admin-header" .}}{{with .Data}}{{$d := .}}
+<div class="wrap">
+<h1 class="wp-heading-inline">Products</h1>
+<a href="/wp-admin/post-new?post_type=product" class="page-title-action">Add new product</a>
+<a href="{{.ImportURL}}" class="page-title-action">Import</a>
+<a href="{{.ExportURL}}" class="page-title-action">Export</a>
+{{if .Search}}<span class="subtitle">Search results for: <strong>{{.Search}}</strong></span>{{end}}
+<hr class="wp-header-end">
+{{template "notices" $}}
+<h2 class="screen-reader-text">Filter products list</h2>
+<ul class="subsubsub">
+{{range $i, $s := .Statuses}}	<li class="{{$s.Key}}">{{if $i}} |{{end}}<a href="{{$s.URL}}"{{if $s.Current}} class="current" aria-current="page"{{end}}>{{$s.Label}}{{if ge $s.Count 0}} <span class="count">({{num $s.Count}})</span>{{end}}</a></li>
+{{end}}</ul>
+<form id="posts-filter" method="get" action="/wp-admin/edit">
+<p class="search-box">
+	<label class="screen-reader-text" for="post-search-input">Search products:</label>
+	<input type="search" id="post-search-input" name="s" value="{{.Search}}" />
+	<input type="submit" id="search-submit" class="button" value="Search products" />
+</p>
+<input type="hidden" name="post_status" class="post_status_page" value="{{.Status}}" />
+<input type="hidden" name="post_type" class="post_type_page" value="product" />
+{{if .Sorting}}<input type="hidden" name="orderby" value="menu_order title" /><input type="hidden" name="order" value="ASC" />{{end}}
+<input type="hidden" name="_wpnonce" value="{{.BulkNonce}}" />
+
+{{if .BulkEdit}}{{template "goo-product-bulk-edit" .}}{{end}}
+
+<div class="tablenav top">
+	{{template "goo-products-bulk" dict "Pos" "top" "Trash" .IsTrash}}
+	<div class="alignleft actions">
+		<label class="screen-reader-text" for="product_cat">Filter by category</label>
+		<select name="product_cat" id="product_cat" class="dropdown_product_cat">
+			<option value="">Select a category</option>
+			{{range .Categories}}<option class="level-{{.Depth}}" value="{{.Slug}}"{{if eq .Slug $d.Cat}} selected="selected"{{end}}>{{repeat "&nbsp;&nbsp;&nbsp;" .Depth | safe}}{{.Name}} ({{.Count}})</option>{{end}}
+		</select>
+		<label class="screen-reader-text" for="dropdown_product_type">Filter by product type</label>
+		<select name="product_type" id="dropdown_product_type">
+			<option value="">Filter by product type</option>
+			{{range .Types}}<option value="{{.Value}}"{{if eq .Value $d.ProductType}} selected="selected"{{end}}>{{.Label}}</option>
+			{{if eq .Value "simple"}}<option value="downloadable"{{if eq "downloadable" $d.ProductType}} selected="selected"{{end}}>&rarr; Downloadable</option>
+			<option value="virtual"{{if eq "virtual" $d.ProductType}} selected="selected"{{end}}>&rarr; Virtual</option>{{end}}{{end}}
+		</select>
+		<label class="screen-reader-text" for="stock_status">Filter by stock status</label>
+		<select name="stock_status" id="stock_status">
+			<option value="">Filter by stock status</option>
+			<option value="instock"{{if eq .StockStatus "instock"}} selected="selected"{{end}}>In stock</option>
+			<option value="outofstock"{{if eq .StockStatus "outofstock"}} selected="selected"{{end}}>Out of stock</option>
+			<option value="onbackorder"{{if eq .StockStatus "onbackorder"}} selected="selected"{{end}}>On backorder</option>
+		</select>
+		<input type="submit" name="filter_action" id="post-query-submit" class="button" value="Filter" />
+	</div>
+	{{template "tablenav-pages" .Pagination}}
+	<br class="clear" />
+</div>
+<h2 class="screen-reader-text">Products list</h2>
+<table class="wp-list-table widefat fixed striped table-view-list posts{{if .Sorting}} goo-sorting{{end}}" data-ordering-nonce="{{.OrderNonce}}">
+	<thead>{{template "goo-products-head" dict "Top" true "D" .}}</thead>
+	<tbody id="the-list">
+	{{range .Rows}}{{template "goo-products-row" dict "R" . "D" $d}}
+	{{else}}<tr class="no-items"><td class="colspanchange" colspan="{{.ColCount}}">{{if .IsTrash}}No products found in Trash.{{else}}No products found.{{end}}</td></tr>
+	{{end}}
+	</tbody>
+	<tfoot>{{template "goo-products-head" dict "Top" false "D" .}}</tfoot>
+</table>
+<div class="tablenav bottom">
+	{{template "goo-products-bulk" dict "Pos" "bottom" "Trash" .IsTrash}}
+	<div class="alignleft actions"></div>
+	{{template "tablenav-pages" .Pagination}}
+	<br class="clear" />
+</div>
+</form>
+{{if and (not .Rows) (eq .Status "all") (not .Search) (not .Cat) (not .ProductType) (not .StockStatus)}}
+<div class="woocommerce-BlankState">
+	<h2 class="woocommerce-BlankState-message">Ready to start selling something awesome?</h2>
+	<div class="woocommerce-BlankState-buttons">
+		<a class="woocommerce-BlankState-cta button-primary button" href="/wp-admin/post-new?post_type=product">Create Product</a>
+		<a class="woocommerce-BlankState-cta button" href="{{.ImportURL}}">Start Import</a>
+	</div>
+</div>{{end}}
+<div id="ajax-response"></div>
+<div class="clear"></div>
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}
+
+{{define "goo-products-head"}}{{$h := .D.Hidden}}<tr>
+		<td{{if .Top}} id="cb"{{end}} class="manage-column column-cb check-column"><input id="cb-select-all-{{if .Top}}1{{else}}2{{end}}" type="checkbox" /><label for="cb-select-all-{{if .Top}}1{{else}}2{{end}}"><span class="screen-reader-text">Select All</span></label></td>
+		<th scope="col"{{if .Top}} id="thumb"{{end}} class="manage-column column-thumb{{if index $h "thumb"}} hidden{{end}}"><span class="wc-image tips" data-tip="Image">Image</span></th>
+		{{template "sort-th" dict "ID" (or (and .Top "name") "") "Col" "name" "Primary" true "Label" "Name" "Link" (index .D.SortLinks "name")}}
+		<th scope="col"{{if .Top}} id="sku"{{end}} class="manage-column column-sku{{if index $h "sku"}} hidden{{end}}">SKU</th>
+		<th scope="col"{{if .Top}} id="is_in_stock"{{end}} class="manage-column column-is_in_stock{{if index $h "is_in_stock"}} hidden{{end}}">Stock</th>
+		{{template "sort-th" dict "ID" (or (and .Top "price") "") "Col" "price" "Label" "Price" "Link" (index .D.SortLinks "price") "Hidden" (index $h "price")}}
+		<th scope="col"{{if .Top}} id="product_cat"{{end}} class="manage-column column-product_cat{{if index $h "product_cat"}} hidden{{end}}">Categories</th>
+		<th scope="col"{{if .Top}} id="product_tag"{{end}} class="manage-column column-product_tag{{if index $h "product_tag"}} hidden{{end}}">Tags</th>
+		<th scope="col"{{if .Top}} id="featured"{{end}} class="manage-column column-featured{{if index $h "featured"}} hidden{{end}}"><span class="wc-featured parent-tips" data-tip="Featured">Featured</span></th>
+		{{template "sort-th" dict "ID" (or (and .Top "date") "") "Col" "date" "Label" "Date" "Link" (index .D.SortLinks "date") "Hidden" (index $h "date")}}
+	</tr>{{end}}
+
+{{define "goo-products-row"}}{{$d := .D}}{{$h := .D.Hidden}}{{with .R}}<tr id="post-{{.ID}}" class="{{.Classes}}">
+		<th scope="row" class="check-column">{{if .CanEdit}}<input id="cb-select-{{.ID}}" type="checkbox" name="post[]" value="{{.ID}}" /><label for="cb-select-{{.ID}}"><span class="screen-reader-text">Select {{.Name}}</span></label>{{end}}</th>
+		<td class="thumb column-thumb{{if index $h "thumb"}} hidden{{end}}" data-colname="Image"><a href="{{.EditURL}}">{{if .Thumb}}<img width="150" height="150" src="{{.Thumb}}" class="attachment-thumbnail size-thumbnail" alt="" decoding="async" loading="lazy" />{{else}}<span class="goo-placeholder dashicons dashicons-format-image" aria-hidden="true"></span>{{end}}</a></td>
+		<td class="name column-name has-row-actions column-primary" data-colname="Name">
+			<strong>{{if and .CanEdit (not .IsTrash)}}<a class="row-title" href="{{.EditURL}}">{{.Name}}</a>{{else}}<span>{{.Name}}</span>{{end}}{{range $i, $st := .States}}{{if eq $i 0}} &mdash; {{else}}, {{end}}<span class="post-state">{{$st}}</span>{{end}}</strong>
+			<div class="hidden" id="woocommerce_inline_{{.ID}}"><div class="sku">{{.SKU}}</div><div class="featured">{{if .Featured}}yes{{else}}no{{end}}</div><div class="product_type">{{.Type}}</div></div>
+			<div class="row-actions"><span class="id">ID: {{.ID}} | </span>{{if .IsTrash}}<span class="untrash"><a href="{{.RestoreURL}}" aria-label="Restore &#8220;{{.Name}}&#8221; from the Trash">Restore</a> | </span><span class="delete"><a href="{{.DeleteURL}}" class="submitdelete" aria-label="Delete &#8220;{{.Name}}&#8221; permanently">Delete Permanently</a></span>{{else}}{{if .CanEdit}}<span class="edit"><a href="{{.EditURL}}" aria-label="Edit &#8220;{{.Name}}&#8221;">Edit</a> | </span>{{end}}{{if .CanDelete}}<span class="trash"><a href="{{.TrashURL}}" class="submitdelete" aria-label="Move &#8220;{{.Name}}&#8221; to the Trash">Trash</a> | </span>{{end}}{{if .ViewURL}}<span class="view"><a href="{{.ViewURL}}" rel="bookmark" aria-label="{{.ViewLabel}} &#8220;{{.Name}}&#8221;">{{.ViewLabel}}</a> | </span>{{end}}<span class="duplicate"><a href="{{.DuplicateURL}}" aria-label="Make a duplicate from this product" rel="permalink">Duplicate</a></span>{{end}}</div>
+			<button type="button" class="toggle-row"><span class="screen-reader-text">Show more details</span></button>
+		</td>
+		<td class="sku column-sku{{if index $h "sku"}} hidden{{end}}" data-colname="SKU">{{if .SKU}}{{.SKU}}{{else}}<span class="na">&ndash;</span>{{end}}</td>
+		<td class="is_in_stock column-is_in_stock{{if index $h "is_in_stock"}} hidden{{end}}" data-colname="Stock">{{.Stock}}</td>
+		<td class="price column-price{{if index $h "price"}} hidden{{end}}" data-colname="Price">{{.Price}}</td>
+		<td class="product_cat column-product_cat{{if index $h "product_cat"}} hidden{{end}}" data-colname="Categories">{{if .Cats}}{{.Cats}}{{else}}<span class="na">&ndash;</span>{{end}}</td>
+		<td class="product_tag column-product_tag{{if index $h "product_tag"}} hidden{{end}}" data-colname="Tags">{{if .Tags}}{{.Tags}}{{else}}<span class="na">&ndash;</span>{{end}}</td>
+		<td class="featured column-featured{{if index $h "featured"}} hidden{{end}}" data-colname="Featured">{{if not .IsTrash}}<a href="{{.FeaturedURL}}" class="goo-featured-toggle" aria-label="Toggle featured">{{if .Featured}}<span class="wc-featured tips" data-tip="Yes">Yes</span>{{else}}<span class="wc-featured not-featured tips" data-tip="No">No</span>{{end}}</a>{{end}}</td>
+		<td class="date column-date{{if index $h "date"}} hidden{{end}}" data-colname="Date">{{.DateLabel}}<br />{{.DateValue}}</td>
+	</tr>{{end}}{{end}}
+
+{{define "goo-products-bulk"}}<div class="alignleft actions bulkactions">
+	<label for="bulk-action-selector-{{.Pos}}" class="screen-reader-text">Select bulk action</label>
+	<select name="{{if eq .Pos "top"}}action{{else}}action2{{end}}" id="bulk-action-selector-{{.Pos}}">
+		<option value="-1">Bulk actions</option>
+		{{if .Trash}}<option value="untrash">Restore</option>
+		<option value="delete">Delete permanently</option>{{else}}<option value="edit">Edit</option>
+		<option value="trash">Move to Trash</option>{{end}}
+	</select>
+	<input type="submit" name="bulk_action" id="doaction{{if eq .Pos "bottom"}}2{{end}}" class="button action" value="Apply" />
+</div>{{end}}
+
+{{/* WooCommerce's Bulk Edit fields (bulk_edit_save()), shown after choosing Edit + Apply. */}}
+{{define "goo-product-bulk-edit"}}<div id="bulk-edit" class="inline-edit-row bulk-edit-row bulk-edit-row-post bulk-edit-product goo-bulk-edit">
+<fieldset class="inline-edit-col-left"><legend class="inline-edit-legend">Bulk Edit</legend>
+	<div class="inline-edit-col"><div id="bulk-title-div"><ul id="bulk-titles-list">
+		{{range .BulkEdit}}<li class="ntdelitem"><input type="hidden" name="post[]" value="{{.ID}}" />{{.Name}}</li>{{end}}
+	</ul></div></div>
+</fieldset>
+<fieldset class="inline-edit-col-right"><div class="inline-edit-col">
+	<label class="inline-edit-status alignleft"><span class="title">Status</span><select name="_status">
+		<option value="-1">&mdash; No change &mdash;</option><option value="publish">Published</option><option value="private">Private</option><option value="pending">Pending Review</option><option value="draft">Draft</option>
+	</select></label>
+</div></fieldset>
+<div id="woocommerce-fields-bulk" class="inline-edit-col">
+	<h4>Product data</h4>
+	<div class="inline-edit-group"><label class="alignleft"><span class="title">Price</span><span class="input-text-wrap"><select class="change_regular_price change_to" name="change_regular_price">
+		<option value="">&mdash; No change &mdash;</option><option value="1">Change to:</option><option value="2">Increase existing price by (fixed amount or %):</option><option value="3">Decrease existing price by (fixed amount or %):</option>
+	</select></span></label><label class="change-input"><input type="text" name="_regular_price" class="text regular_price" placeholder="Enter price" value="" /></label></div>
+	<div class="inline-edit-group"><label class="alignleft"><span class="title">Sale</span><span class="input-text-wrap"><select class="change_sale_price change_to" name="change_sale_price">
+		<option value="">&mdash; No change &mdash;</option><option value="1">Change to:</option><option value="2">Increase existing sale price by (fixed amount or %):</option><option value="3">Decrease existing sale price by (fixed amount or %):</option><option value="4">Set to regular price decreased by (fixed amount or %):</option>
+	</select></span></label><label class="change-input"><input type="text" name="_sale_price" class="text sale_price" placeholder="Enter sale price" value="" /></label></div>
+	<label class="alignleft"><span class="title">Tax status</span><span class="input-text-wrap"><select class="tax_status" name="_tax_status">
+		<option value="">&mdash; No change &mdash;</option><option value="taxable">Taxable</option><option value="shipping">Shipping only</option><option value="none">None</option>
+	</select></span></label>
+	<label class="alignleft"><span class="title">Tax class</span><span class="input-text-wrap"><select class="tax_class" name="_tax_class">
+		<option value="_no_change">&mdash; No change &mdash;</option>{{range .BulkTaxClass}}<option value="{{if .Value}}{{.Value}}{{else}}standard{{end}}">{{.Label}}</option>{{end}}
+	</select></span></label>
+	<div class="inline-edit-group dimensions"><label class="alignleft"><span class="title">Weight</span><span class="input-text-wrap"><select class="change_weight change_to" name="change_weight">
+		<option value="">&mdash; No change &mdash;</option><option value="1">Change to:</option>
+	</select></span></label><label class="change-input"><input type="text" name="_weight" class="text weight" placeholder="0" value="" /></label></div>
+	<label class="alignleft"><span class="title">Shipping class</span><span class="input-text-wrap"><select class="shipping_class" name="_shipping_class">
+		<option value="">&mdash; No change &mdash;</option><option value="_no_shipping_class">No shipping class</option>{{range .ShipClasses}}<option value="{{.ID}}">{{.Name}}</option>{{end}}
+	</select></span></label>
+	<label class="alignleft"><span class="title">Visibility</span><span class="input-text-wrap"><select class="visibility" name="_visibility">
+		<option value="">&mdash; No change &mdash;</option><option value="visible">Catalog &amp; search</option><option value="catalog">Catalog</option><option value="search">Search</option><option value="hidden">Hidden</option>
+	</select></span></label>
+	<label class="alignleft featured"><span class="title">Featured</span><span class="input-text-wrap"><select class="featured" name="_featured">
+		<option value="">&mdash; No change &mdash;</option><option value="yes">Yes</option><option value="no">No</option>
+	</select></span></label>
+	<label class="alignleft"><span class="title">In stock?</span><span class="input-text-wrap"><select class="stock_status" name="_stock_status">
+		<option value="">&mdash; No change &mdash;</option><option value="instock">In stock</option><option value="outofstock">Out of stock</option><option value="onbackorder">On backorder</option>
+	</select></span></label>
+	<label class="alignleft"><span class="title">Manage stock?</span><span class="input-text-wrap"><select class="manage_stock" name="_manage_stock">
+		<option value="">&mdash; No change &mdash;</option><option value="yes">Yes</option><option value="no">No</option>
+	</select></span></label>
+	<div class="inline-edit-group"><label class="alignleft stock_qty_field"><span class="title">Stock qty</span><span class="input-text-wrap"><select class="change_stock change_to" name="change_stock">
+		<option value="">&mdash; No change &mdash;</option><option value="1">Change to:</option><option value="2">Increase existing stock by:</option><option value="3">Decrease existing stock by:</option>
+	</select></span></label><label class="change-input"><input type="text" name="_stock" class="text stock" placeholder="Stock qty" step="any" value="" /></label></div>
+	<label class="alignleft"><span class="title">Backorders?</span><span class="input-text-wrap"><select class="backorders" name="_backorders">
+		<option value="">&mdash; No change &mdash;</option><option value="no">Do not allow</option><option value="notify">Allow, but notify customer</option><option value="yes">Allow</option>
+	</select></span></label>
+	<label class="alignleft"><span class="title">Sold individually?</span><span class="input-text-wrap"><select class="sold_individually" name="_sold_individually">
+		<option value="">&mdash; No change &mdash;</option><option value="yes">Yes</option><option value="no">No</option>
+	</select></span></label>
+</div>
+<div class="submit inline-edit-save">
+	<input type="hidden" name="action" value="edit" />
+	<a href="/wp-admin/edit?post_type=product" class="button cancel">Cancel</a>
+	<input type="submit" name="bulk_edit" id="bulk_edit" class="button button-primary" value="Update" />
+</div>
+</div>{{end}}

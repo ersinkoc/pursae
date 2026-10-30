@@ -1,0 +1,83 @@
+{
+  "slug": "glow-botanica",
+  "name": "Glow Botanica",
+  "version": "1.0.0",
+  "description": "A soft, clean skincare and cosmetics store for Goocommerce. A floating capsule header over an inset, rounded hero with a frosted cream card, round 'shop by ritual' category bubbles, blush product tiles whose add-to-cart button rises on hover, arch-framed product photos and a calm, airy checkout. Cormorant Garamond and Jost, self-hosted. Ships a complete beauty store demo: serums, creams, lipstick shades, a grouped ritual set, reviews, a coupon and shipping.",
+  "author": "WordPress Go",
+  "author_url": "https://github.com/boracomet/wordpress-go",
+  "theme_url": "https://github.com/boracomet/wordpress-go/tree/main/web/theme-library/glow-botanica",
+  "tags": ["E-Commerce", "Beauty", "Grid Layout", "Custom Colors", "Custom Logo", "Custom Menu", "Editor Style", "Featured Images", "Footer Widgets", "Wide Blocks"],
+  "requires_core": "0.1.0",
+  "screenshot": "assets/screenshot.png",
+  "category": "shop",
+  "style": "Soft skincare boutique, blush tiles and arches",
+  "demo": "demo/demo.json",
+
+  "widget_areas": [
+    {"id": "footer-1", "name": "Footer", "description": "Widgets in the footer columns."},
+    {"id": "shop-sidebar", "name": "Shop Sidebar", "description": "Filters beside the product catalog."}
+  ],
+  "menu_locations": [
+    {"id": "primary", "name": "Primary Menu"},
+    {"id": "footer", "name": "Footer Menu"}
+  ],
+
+  "styles": [
+    {"handle": "glow-botanica-style", "src": "assets/style.css", "deps": ["wp-block-library"], "media": "all"}
+  ],
+  "scripts": [
+    {"handle": "glow-botanica-navigation", "src": "assets/js/navigation.js", "deps": [], "in_footer": true}
+  ],
+  "editor_styles": ["assets/editor-style.css"],
+  "preload_fonts": ["assets/fonts/jost.woff2", "assets/fonts/cormorant.woff2"],
+
+  "palette": [
+    {"name": "Cream", "slug": "cream", "color": "#fffaf5"},
+    {"name": "Blush", "slug": "blush", "color": "#f6e3df"},
+    {"name": "Rose", "slug": "rose", "color": "#c97b84"},
+    {"name": "Deep plum", "slug": "plum", "color": "#4a2c3a"},
+    {"name": "Petal", "slug": "petal", "color": "#fbefec"}
+  ],
+  "supports": {
+    "post-thumbnails": true,
+    "custom-logo": {"width": 260, "height": 80, "flex-width": true, "flex-height": true, "header-text": ["site-title", "site-description"]},
+    "title-tag": true,
+    "html5": ["search-form", "comment-form", "comment-list", "gallery", "caption", "script", "style"],
+    "responsive-embeds": true,
+    "align-wide": true,
+    "wp-block-styles": true,
+    "woocommerce": true
+  },
+
+  "customizer": {
+    "sections": [
+      {
+        "id": "glow_colors", "title": "Colours & Type", "priority": 40,
+        "settings": [
+          {"id": "accent", "label": "Accent colour", "description": "Buttons, links, sale badges and stars.", "type": "color", "default": "#c97b84", "transport": "postMessage", "css_var": "--gb-accent"},
+          {"id": "blush", "label": "Tile colour", "description": "Product tiles, bubbles and soft panels.", "type": "color", "default": "#f6e3df", "transport": "postMessage", "css_var": "--gb-blush"},
+          {"id": "background", "label": "Background", "type": "color", "default": "#fffaf5", "transport": "postMessage", "css_var": "--gb-bg"},
+          {"id": "text_color", "label": "Text colour", "type": "color", "default": "#4a2c3a", "transport": "postMessage", "css_var": "--gb-ink"},
+          {"id": "font_pairing", "label": "Font pairing", "type": "select", "default": "cormorant", "transport": "postMessage", "body_class": "gb-fonts-{value}",
+            "choices": [{"value": "cormorant", "label": "Cormorant Garamond & Jost"}, {"value": "marcellus", "label": "Marcellus & Jost"}, {"value": "jost", "label": "Jost only"}]},
+          {"id": "button_style", "label": "Buttons", "type": "select", "default": "pill", "transport": "postMessage", "body_class": "gb-buttons-{value}",
+            "choices": [{"value": "pill", "label": "Pill"}, {"value": "soft", "label": "Soft corners"}, {"value": "square", "label": "Square"}]}
+        ]
+      },
+      {
+        "id": "glow_store", "title": "Header & Store", "priority": 41,
+        "settings": [
+          {"id": "show_announcement", "label": "Show the announcement bar", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "gb-has-announcement"},
+          {"id": "announcement", "label": "Announcement", "type": "text", "default": "Free shipping from 40 € · A sample with every order", "transport": "refresh"},
+          {"id": "header_style", "label": "Header style", "type": "select", "default": "capsule", "transport": "postMessage", "body_class": "gb-header-{value}",
+            "choices": [{"value": "capsule", "label": "Floating capsule"}, {"value": "bar", "label": "Full-width bar"}]},
+          {"id": "card_style", "label": "Product tiles", "type": "select", "default": "tinted", "transport": "postMessage", "body_class": "gb-cards-{value}",
+            "choices": [{"value": "tinted", "label": "Tinted tiles"}, {"value": "outline", "label": "Outlined"}]},
+          {"id": "catalog_columns", "label": "Products per row (large screens)", "type": "select", "default": "4", "transport": "postMessage", "body_class": "gb-cols-{value}",
+            "choices": [{"value": "3", "label": "3"}, {"value": "4", "label": "4"}]},
+          {"id": "footer_text", "label": "Footer text", "type": "text", "default": "", "transport": "refresh"}
+        ]
+      }
+    ]
+  }
+}

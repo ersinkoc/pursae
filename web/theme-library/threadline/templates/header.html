@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>{{.DocumentTitle}}</title>
+{{.Head}}</head>
+
+<body class="{{.BodyClass}}">
+{{.BodyOpen}}<div id="page" class="site">
+	<a class="skip-link screen-reader-text" href="#main">Skip to content</a>
+	{{if theme_mod . "show_announcement"}}{{with theme_mod . "announcement"}}<div class="tl-announcement" role="note"><div class="tl-wrap">{{.}}</div></div>{{end}}{{end}}
+
+	<header id="masthead" class="site-header">
+		<div class="tl-wrap tl-header">
+			{{if has_nav_menu . "primary"}}<nav id="site-navigation" class="main-navigation" aria-label="Primary menu">
+				<button type="button" class="menu-toggle" aria-controls="site-navigation" aria-expanded="false"><span class="tl-burger" aria-hidden="true"></span><span class="screen-reader-text">Menu</span></button>
+				{{nav_menu . "primary"}}
+			</nav><!-- #site-navigation -->{{end}}
+			<div class="site-branding">
+				{{with .CustomLogo}}<div class="site-logo">{{.}}</div>{{end}}
+				{{if .TitleIsH1}}<h1 class="site-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></h1>{{else}}<p class="site-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></p>{{end}}
+			</div><!-- .site-branding -->
+			<div class="tl-tools">
+				<button type="button" class="tl-icon tl-search-toggle" aria-controls="tl-search" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><span class="screen-reader-text">Search</span></button>
+				{{if goo_on}}<a class="tl-icon tl-account" href="{{goo_url . "myaccount"}}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c1.2-3.6 4-5.4 7.5-5.4s6.3 1.8 7.5 5.4"/></svg><span class="screen-reader-text">My account</span></a>
+				<div class="tl-cart site-header-cart">
+					<a class="tl-icon tl-cart-toggle" href="{{goo_url . "cart"}}" aria-controls="tl-mini-cart"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1.2 11.2a1 1 0 0 1-1 .8H7.2a1 1 0 0 1-1-.8z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/></svg><span class="tl-cart-count" data-goo-cart-count>{{goo_cart_count .}}</span><span class="screen-reader-text">Cart</span></a>
+					<div id="tl-mini-cart" class="tl-mini-cart widget_shopping_cart" hidden>{{goo_mini_cart .}}</div>
+				</div>{{end}}
+			</div>
+		</div>
+		<div id="tl-search" class="tl-search-panel" hidden><div class="tl-wrap">{{if goo_on}}{{goo_product_search .}}{{else}}{{template "searchform" .}}{{end}}</div></div>
+	</header><!-- #masthead -->
+
+	<div id="content" class="site-content">
+		<main id="main" class="site-main" tabindex="-1">

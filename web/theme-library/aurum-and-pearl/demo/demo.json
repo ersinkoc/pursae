@@ -1,0 +1,584 @@
+{
+	"version": 1,
+	"options": {
+		"blogname": "Aurum & Pearl",
+		"blogdescription": "Fine jewellery, quietly made"
+	},
+	"categories": [
+		{
+			"slug": "care",
+			"name": "Care",
+			"description": "Keeping gold, pearls and stones beautiful."
+		},
+		{
+			"slug": "guides",
+			"name": "Guides",
+			"description": "Choosing the right piece."
+		},
+		{
+			"slug": "atelier",
+			"name": "Atelier",
+			"description": "Life at the bench."
+		}
+	],
+	"media": [
+		{
+			"id": "hero",
+			"file": "demo/images/aurum-and-pearl-hero.jpg",
+			"alt": "Gold rings and a pearl pendant arranged on ivory silk"
+		},
+		{
+			"id": "about",
+			"file": "demo/images/aurum-and-pearl-about.jpg",
+			"alt": "A jeweller setting a stone at the bench"
+		},
+		{
+			"id": "cat-rings",
+			"file": "demo/images/aurum-and-pearl-cat-rings.jpg",
+			"alt": "Rings collection"
+		},
+		{
+			"id": "cat-necklaces",
+			"file": "demo/images/aurum-and-pearl-cat-necklaces.jpg",
+			"alt": "Necklaces collection"
+		},
+		{
+			"id": "cat-earrings",
+			"file": "demo/images/aurum-and-pearl-cat-earrings.jpg",
+			"alt": "Earrings collection"
+		},
+		{
+			"id": "cat-bracelets",
+			"file": "demo/images/aurum-and-pearl-cat-bracelets.jpg",
+			"alt": "Bracelets collection"
+		},
+		{
+			"id": "p-solitaire-ring",
+			"file": "demo/images/aurum-and-pearl-p-solitaire-ring.jpg",
+			"alt": "A solitaire diamond ring in yellow gold"
+		},
+		{
+			"id": "p-stacking-ring-set",
+			"file": "demo/images/aurum-and-pearl-p-stacking-ring-set.jpg",
+			"alt": "Three thin gold stacking rings"
+		},
+		{
+			"id": "p-signet-ring",
+			"file": "demo/images/aurum-and-pearl-p-signet-ring.jpg",
+			"alt": "An oval gold signet ring"
+		},
+		{
+			"id": "p-pearl-pendant",
+			"file": "demo/images/aurum-and-pearl-p-pearl-pendant.jpg",
+			"alt": "A pearl pendant on a fine gold chain"
+		},
+		{
+			"id": "p-herringbone-chain",
+			"file": "demo/images/aurum-and-pearl-p-herringbone-chain.jpg",
+			"alt": "A flat gold herringbone chain"
+		},
+		{
+			"id": "p-locket-necklace",
+			"file": "demo/images/aurum-and-pearl-p-locket-necklace.jpg",
+			"alt": "An engraved oval gold locket"
+		},
+		{
+			"id": "p-pearl-studs",
+			"file": "demo/images/aurum-and-pearl-p-pearl-studs.jpg",
+			"alt": "A pair of pearl stud earrings"
+		},
+		{
+			"id": "p-gold-hoops",
+			"file": "demo/images/aurum-and-pearl-p-gold-hoops.jpg",
+			"alt": "A pair of gold hoop earrings"
+		},
+		{
+			"id": "p-drop-earrings",
+			"file": "demo/images/aurum-and-pearl-p-drop-earrings.jpg",
+			"alt": "A pair of gold drop earrings with pale stones"
+		},
+		{
+			"id": "p-tennis-bracelet",
+			"file": "demo/images/aurum-and-pearl-p-tennis-bracelet.jpg",
+			"alt": "A diamond tennis bracelet"
+		},
+		{
+			"id": "p-cuff-bracelet",
+			"file": "demo/images/aurum-and-pearl-p-cuff-bracelet.jpg",
+			"alt": "A wide brushed gold cuff"
+		},
+		{
+			"id": "p-charm-bracelet",
+			"file": "demo/images/aurum-and-pearl-p-charm-bracelet.jpg",
+			"alt": "A gold charm bracelet"
+		}
+	],
+	"pages": [
+		{
+			"slug": "home",
+			"title": "Home",
+			"content": "<!-- wp:cover {\"url\":\"{{media:hero}}\",\"id\":{{media_id:hero}},\"dimRatio\":30,\"minHeight\":780,\"contentPosition\":\"center left\",\"align\":\"full\"} --><div class=\"wp-block-cover alignfull has-custom-content-position is-position-center-left\" style=\"min-height:780px\"><span aria-hidden=\"true\" class=\"wp-block-cover__background has-background-dim-30 has-background-dim\"></span><img class=\"wp-block-cover__image-background wp-image-{{media_id:hero}}\" alt=\"\" src=\"{{media:hero}}\" data-object-fit=\"cover\"/><div class=\"wp-block-cover__inner-container\"><!-- wp:paragraph {\"className\":\"ap-kicker\"} --><p class=\"ap-kicker\">The Pearl Collection</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":1} --><h1 class=\"wp-block-heading\">Quiet light,<br><em>kept forever.</em></h1><!-- /wp:heading --><!-- wp:paragraph --><p>Fine jewellery in recycled gold, lab-grown diamonds and hand-selected pearls, finished at the bench by one jeweller.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"/shop/\">Discover the collection</a></div><!-- /wp:button --><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"/about/\">Our atelier</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div></div><!-- /wp:cover --><!-- wp:heading {\"className\":\"ap-section-title\"} --><h2 class=\"wp-block-heading ap-section-title\">The collections</h2><!-- /wp:heading --><!-- wp:group {\"className\":\"ap-cats\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group ap-cats\"><!-- wp:image {\"id\":{{media_id:cat-rings}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"/product-category/rings/\"><img src=\"{{media:cat-rings}}\" alt=\"Rings collection\" class=\"wp-image-{{media_id:cat-rings}}\"/></a><figcaption class=\"wp-element-caption\">Rings</figcaption></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:cat-necklaces}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"/product-category/necklaces/\"><img src=\"{{media:cat-necklaces}}\" alt=\"Necklaces collection\" class=\"wp-image-{{media_id:cat-necklaces}}\"/></a><figcaption class=\"wp-element-caption\">Necklaces</figcaption></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:cat-earrings}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"/product-category/earrings/\"><img src=\"{{media:cat-earrings}}\" alt=\"Earrings collection\" class=\"wp-image-{{media_id:cat-earrings}}\"/></a><figcaption class=\"wp-element-caption\">Earrings</figcaption></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:cat-bracelets}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"/product-category/bracelets/\"><img src=\"{{media:cat-bracelets}}\" alt=\"Bracelets collection\" class=\"wp-image-{{media_id:cat-bracelets}}\"/></a><figcaption class=\"wp-element-caption\">Bracelets</figcaption></figure><!-- /wp:image --></div><!-- /wp:group --><!-- wp:heading {\"className\":\"ap-section-title\"} --><h2 class=\"wp-block-heading ap-section-title\">Signature pieces</h2><!-- /wp:heading --><!-- wp:shortcode -->[products limit=\"8\" columns=\"4\" visibility=\"featured\"]<!-- /wp:shortcode --><!-- wp:media-text {\"mediaId\":{{media_id:about}},\"mediaType\":\"image\",\"className\":\"ap-banner\"} --><div class=\"wp-block-media-text is-stacked-on-mobile ap-banner\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:about}}\" alt=\"A jeweller setting a stone at the bench\" class=\"wp-image-{{media_id:about}} size-full\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:paragraph {\"className\":\"ap-kicker\"} --><p class=\"ap-kicker\">A first gift</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Ten percent, <em>with our compliments.</em></h2><!-- /wp:heading --><!-- wp:paragraph --><p>Use the code <strong>WELCOME10</strong> on your first order. Every piece arrives insured, gift-wrapped and with a handwritten card.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"/shop/\">Choose a piece</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div></div><!-- /wp:media-text --><!-- wp:heading {\"className\":\"ap-section-title\"} --><h2 class=\"wp-block-heading ap-section-title\">A gentle reduction</h2><!-- /wp:heading --><!-- wp:shortcode -->[products limit=\"4\" columns=\"4\" on_sale=\"true\"]<!-- /wp:shortcode --><!-- wp:heading {\"className\":\"ap-section-title\"} --><h2 class=\"wp-block-heading ap-section-title\">New at the atelier</h2><!-- /wp:heading --><!-- wp:shortcode -->[products limit=\"8\" columns=\"4\" orderby=\"date\" order=\"DESC\"]<!-- /wp:shortcode --><!-- wp:columns {\"className\":\"ap-promise\"} --><div class=\"wp-block-columns ap-promise\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Recycled gold</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Every gram is refined from reclaimed metal.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Insured delivery</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Complimentary, signed for and beautifully wrapped.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Lifetime care</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Free cleaning and claw checks, for as long as you wear it.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->",
+			"template": "page-home",
+			"front_page": true
+		},
+		{
+			"slug": "about",
+			"title": "The atelier",
+			"content": "<!-- wp:image {\"id\":{{media_id:about}},\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:about}}\" alt=\"A jeweller setting a stone at the bench\" class=\"wp-image-{{media_id:about}}\"/></figure><!-- /wp:image --><!-- wp:paragraph --><p>Aurum &amp; Pearl is a small atelier with one long bench, two windows and a jeweller who still files every claw by hand. We began by remaking family pieces for friends, and found that what people wanted most was not more sparkle, but jewellery that felt personal and lasted.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Our gold is recycled and refined in Europe, our diamonds are lab-grown and certified, and our pearls are chosen one at a time from a family farm we have worked with for years. Every piece is finished, polished and checked at our own bench before it is wrapped.</p><!-- /wp:paragraph --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>We make things to be worn every day, and handed down one day.</p><!-- /wp:paragraph --><cite>The atelier</cite></blockquote><!-- /wp:quote --><!-- wp:paragraph --><p>Appointments in the atelier are available on Thursdays and Saturdays, for engagement rings, engraving and remodelling old pieces.</p><!-- /wp:paragraph -->",
+			"featured_media": "about"
+		},
+		{
+			"slug": "contact",
+			"title": "Contact",
+			"content": "<!-- wp:paragraph --><p>We would be glad to help you choose a ring size, plan an engraving or book a private appointment.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><strong>Email:</strong> atelier@aurumandpearl.example<br><strong>Telephone:</strong> +1 555 0144 (Tuesday to Saturday)<br><strong>Atelier:</strong> 9 Goldsmith Row, by appointment</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Sizing and returns</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Not sure of a size? We send a complimentary ring sizer. Unworn pieces may be returned within thirty days, and every ring includes one free resizing in its first year.</p><!-- /wp:paragraph -->"
+		},
+		{
+			"slug": "journal",
+			"title": "Journal",
+			"content": "",
+			"posts_page": true
+		}
+	],
+	"posts": [
+		{
+			"slug": "caring-for-pearls",
+			"title": "Caring for pearls",
+			"date": "2026-09-10T10:00:00",
+			"categories": [
+				"care"
+			],
+			"featured_media": "p-pearl-studs",
+			"excerpt": "Last on, first off: the simple habits that keep a pearl glowing for a lifetime.",
+			"content": "<!-- wp:paragraph --><p>Pearls are organic gems, made in layers by a living creature, and they are softer than any stone. That is what gives them their glow, and it is also why they need a little more care than gold or diamonds.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Put your pearls on last, after perfume, hairspray and creams, and take them off first. After wearing, wipe them with a soft, slightly damp cloth and let them dry flat before putting them away, never in an airtight bag, because pearls like a little moisture in the air.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Store them apart from other jewellery so harder pieces cannot scratch them, and wear them often: the natural oils of your skin are the best polish there is. Once a year, bring them to the atelier and we will check the clasp and settings for free.</p><!-- /wp:paragraph -->"
+		},
+		{
+			"slug": "choosing-a-solitaire",
+			"title": "Choosing a solitaire",
+			"date": "2026-10-04T11:00:00",
+			"categories": [
+				"guides"
+			],
+			"featured_media": "p-solitaire-ring",
+			"excerpt": "Cut first, then colour, then carat: how we help people choose a ring they will love for decades.",
+			"content": "<!-- wp:paragraph --><p>When people come to the atelier for an engagement ring, they usually start by asking about size. We gently suggest starting with the cut instead: a well-cut stone of half a carat will look brighter and livelier than a larger stone cut poorly.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Next comes colour. In yellow gold, a stone with the faintest warmth disappears into the setting beautifully, so there is no need to pay for the very whitest grades. In platinum or white gold, a whiter stone makes more sense.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Finally, think about how the ring will be worn. A higher setting catches more light; a lower one is kinder to gloves and jumpers. We always make a wax model first, so you can try the shape on your hand before a single gram of gold is cast.</p><!-- /wp:paragraph -->"
+		},
+		{
+			"slug": "a-day-at-the-bench",
+			"title": "A day at the bench",
+			"date": "2026-10-24T09:00:00",
+			"categories": [
+				"atelier"
+			],
+			"featured_media": "p-tennis-bracelet",
+			"excerpt": "Forty-two settings, a loupe and a lot of tea: how a tennis bracelet is made.",
+			"content": "<!-- wp:paragraph --><p>A tennis bracelet looks simple: a line of stones that moves like water. Making one takes about four days at the bench, most of them spent on the tiny claws that hold each diamond.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>First the links are cast and joined, so the bracelet can bend without gaps. Then each of the forty-two settings is cut by hand under a loupe, a stone is placed, and four claws are pushed over and rounded so they will never catch on a sleeve.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The last day is for polishing, testing the clasp a few hundred times and a final check of every claw. Then it is cleaned, photographed for our records and wrapped, ready to be worn for the next fifty years.</p><!-- /wp:paragraph -->"
+		}
+	],
+	"menus": [
+		{
+			"name": "Main menu",
+			"location": "primary",
+			"items": [
+				{
+					"title": "Collections",
+					"url": "/shop/",
+					"children": [
+						{
+							"title": "Rings",
+							"url": "/product-category/rings/"
+						},
+						{
+							"title": "Necklaces",
+							"url": "/product-category/necklaces/"
+						},
+						{
+							"title": "Earrings",
+							"url": "/product-category/earrings/"
+						},
+						{
+							"title": "Bracelets",
+							"url": "/product-category/bracelets/"
+						}
+					]
+				},
+				{
+					"title": "Rings",
+					"url": "/product-category/rings/"
+				},
+				{
+					"title": "Necklaces",
+					"url": "/product-category/necklaces/"
+				},
+				{
+					"title": "The atelier",
+					"page": "about"
+				},
+				{
+					"title": "Journal",
+					"page": "journal"
+				},
+				{
+					"title": "Contact",
+					"page": "contact"
+				}
+			]
+		},
+		{
+			"name": "Footer menu",
+			"location": "footer",
+			"items": [
+				{
+					"title": "Shop",
+					"url": "/shop/"
+				},
+				{
+					"title": "My account",
+					"url": "/my-account/"
+				},
+				{
+					"title": "Journal",
+					"page": "journal"
+				},
+				{
+					"title": "Contact",
+					"page": "contact"
+				}
+			]
+		}
+	],
+	"widgets": {
+		"footer-1": [
+			"<!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">The atelier</h3><!-- /wp:heading --><!-- wp:paragraph --><p>9 Goldsmith Row<br>Thursdays and Saturdays<br>By appointment</p><!-- /wp:paragraph -->",
+			"<!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Client care</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Complimentary insured delivery<br>Thirty days to return<br>Lifetime cleaning</p><!-- /wp:paragraph -->",
+			"<!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Bespoke</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Engagement rings, engraving and the remodelling of family pieces, designed with you at the bench.</p><!-- /wp:paragraph -->"
+		]
+	},
+	"customizer": {
+		"accent": "#b8954a",
+		"champagne": "#e9dcc4",
+		"show_announcement": true,
+		"announcement": "Complimentary insured delivery · Engraving on request",
+		"header_layout": "centered",
+		"tile_shape": "arch"
+	},
+	"goocommerce": {
+		"settings": {
+			"currency": "USD",
+			"currency_pos": "left",
+			"price_thousand_sep": ",",
+			"price_decimal_sep": ".",
+			"price_num_decimals": 0,
+			"catalog_columns": 4,
+			"catalog_rows": 3,
+			"demo_store": false
+		},
+		"categories": [
+			{
+				"slug": "rings",
+				"name": "Rings",
+				"description": "Solitaires, stacking bands and signets in recycled gold.",
+				"image": "cat-rings"
+			},
+			{
+				"slug": "necklaces",
+				"name": "Necklaces",
+				"description": "Pendants, chains and lockets to wear every day.",
+				"image": "cat-necklaces"
+			},
+			{
+				"slug": "earrings",
+				"name": "Earrings",
+				"description": "Pearls, hoops and drops, from quiet to occasion.",
+				"image": "cat-earrings"
+			},
+			{
+				"slug": "bracelets",
+				"name": "Bracelets",
+				"description": "Tennis lines, cuffs and charm bracelets made to layer.",
+				"image": "cat-bracelets"
+			}
+		],
+		"attributes": [
+			{
+				"slug": "ring-size",
+				"name": "Ring size",
+				"terms": [
+					"5",
+					"6",
+					"7",
+					"8"
+				]
+			}
+		],
+		"products": [
+			{
+				"slug": "solitaire-ring",
+				"name": "Solitaire Ring",
+				"type": "variable",
+				"regular_price": "1290",
+				"categories": [
+					"rings"
+				],
+				"sku": "AP-101",
+				"featured": true,
+				"description": "<p>A single round brilliant lab-grown diamond of 0.5 carat, held high in a slender six-claw setting on a band of 18 ct recycled yellow gold. The gallery is pierced with a tiny arch so light reaches the stone from below.</p><p>Each ring is made to order in our workshop in about three weeks and arrives with a grading certificate. Complimentary resizing within the first year.</p>",
+				"short_description": "<p>A half-carat lab-grown diamond in a six-claw setting of 18 ct recycled gold.</p>",
+				"attributes": [
+					{
+						"name": "Ring size",
+						"values": [
+							"5",
+							"6",
+							"7",
+							"8"
+						],
+						"variation": true
+					}
+				],
+				"variations": [
+					{
+						"attributes": {
+							"Ring size": "5"
+						},
+						"regular_price": "1290",
+						"stock": 2,
+						"sku": "AP-101-5"
+					},
+					{
+						"attributes": {
+							"Ring size": "6"
+						},
+						"regular_price": "1290",
+						"stock": 2,
+						"sku": "AP-101-6"
+					},
+					{
+						"attributes": {
+							"Ring size": "7"
+						},
+						"regular_price": "1290",
+						"stock": 2,
+						"sku": "AP-101-7"
+					},
+					{
+						"attributes": {
+							"Ring size": "8"
+						},
+						"regular_price": "1290",
+						"stock": 2,
+						"sku": "AP-101-8"
+					}
+				],
+				"reviews": [
+					{
+						"author": "Eleanor",
+						"email": "eleanor@example.com",
+						"rating": 5,
+						"content": "He proposed with it on a cold beach and I have not stopped looking at it since. The setting is so delicate."
+					},
+					{
+						"author": "Priya",
+						"email": "priya@example.com",
+						"rating": 5,
+						"content": "Exquisite, and the team helped us choose the right size over the phone. It arrived in a beautiful box."
+					}
+				],
+				"upsells": [
+					"stacking-ring-set"
+				],
+				"image": "p-solitaire-ring"
+			},
+			{
+				"slug": "stacking-ring-set",
+				"name": "Stacking Ring Set",
+				"type": "simple",
+				"regular_price": "240",
+				"categories": [
+					"rings"
+				],
+				"description": "<p>Three fine bands to wear together or apart: one polished, one hammered and one set with a line of tiny white sapphires. 14 ct recycled gold, 1.4 mm wide.</p>",
+				"short_description": "<p>Three fine 14 ct gold bands: polished, hammered and sapphire-set.</p>",
+				"sku": "AP-102",
+				"stock": 10,
+				"featured": true,
+				"image": "p-stacking-ring-set"
+			},
+			{
+				"slug": "signet-ring",
+				"name": "Signet Ring",
+				"type": "simple",
+				"regular_price": "390",
+				"categories": [
+					"rings"
+				],
+				"description": "<p>An oval signet with a softly domed face, cast in solid 14 ct gold and polished by hand. Leave it plain or add up to three initials engraved in our serif script.</p>",
+				"short_description": "<p>A solid gold oval signet, ready for engraving.</p>",
+				"sku": "AP-103",
+				"stock": 6,
+				"image": "p-signet-ring"
+			},
+			{
+				"slug": "pearl-pendant",
+				"name": "Pearl Pendant",
+				"type": "simple",
+				"regular_price": "320",
+				"categories": [
+					"necklaces"
+				],
+				"description": "<p>A single lustrous freshwater pearl of 9 mm hangs from a fine gold bail on a 45 cm trace chain. Each pearl is chosen by hand for its round shape and soft, warm glow.</p>",
+				"short_description": "<p>A hand-selected 9 mm freshwater pearl on a fine gold chain.</p>",
+				"sku": "AP-201",
+				"stock": 12,
+				"sale_price": "280",
+				"featured": true,
+				"reviews": [
+					{
+						"author": "Clara",
+						"email": "clara@example.com",
+						"rating": 5,
+						"content": "The pearl has the most beautiful glow. I wear it every day, even with a jumper."
+					}
+				],
+				"image": "p-pearl-pendant"
+			},
+			{
+				"slug": "herringbone-chain",
+				"name": "Herringbone Chain",
+				"type": "simple",
+				"regular_price": "450",
+				"categories": [
+					"necklaces"
+				],
+				"description": "<p>A supple, liquid-looking herringbone chain 4 mm wide that lies perfectly flat at the collarbone. Solid 14 ct gold with a hidden lobster clasp.</p><p>Length 42 cm.</p>",
+				"short_description": "<p>A flat, fluid 4 mm herringbone chain in solid gold.</p>",
+				"sku": "AP-202",
+				"stock": 5,
+				"featured": true,
+				"image": "p-herringbone-chain"
+			},
+			{
+				"slug": "locket-necklace",
+				"name": "Locket Necklace",
+				"type": "simple",
+				"regular_price": "360",
+				"categories": [
+					"necklaces"
+				],
+				"description": "<p>An oval locket that opens on a tiny hinge to hold two photographs, with an engraved border of small leaves. Gold vermeil over recycled silver, on a 50 cm chain.</p>",
+				"short_description": "<p>An engraved oval locket for two photographs.</p>",
+				"sku": "AP-203",
+				"stock": 8,
+				"image": "p-locket-necklace"
+			},
+			{
+				"slug": "pearl-studs",
+				"name": "Pearl Studs",
+				"type": "simple",
+				"regular_price": "180",
+				"categories": [
+					"earrings"
+				],
+				"description": "<p>Perfectly matched 7 mm freshwater pearls on 14 ct gold posts with secure butterfly backs. The earrings everyone should own.</p>",
+				"short_description": "<p>Matched 7 mm freshwater pearls on gold posts.</p>",
+				"sku": "AP-301",
+				"stock": 20,
+				"featured": true,
+				"reviews": [
+					{
+						"author": "Hannah",
+						"email": "hannah@example.com",
+						"rating": 4,
+						"content": "Lovely lustre and well matched. The backs are a little small for my fingers, but very secure."
+					}
+				],
+				"image": "p-pearl-studs"
+			},
+			{
+				"slug": "gold-hoops",
+				"name": "Gold Hoops",
+				"type": "simple",
+				"regular_price": "260",
+				"categories": [
+					"earrings"
+				],
+				"description": "<p>Mid-size hoops of 22 mm, tubular and lightweight enough to forget you are wearing them. A click hinge keeps them closed. Solid 14 ct gold.</p>",
+				"short_description": "<p>Light, tubular 22 mm hoops in solid gold.</p>",
+				"sku": "AP-302",
+				"stock": 14,
+				"image": "p-gold-hoops"
+			},
+			{
+				"slug": "drop-earrings",
+				"name": "Drop Earrings",
+				"type": "simple",
+				"regular_price": "410",
+				"categories": [
+					"earrings"
+				],
+				"description": "<p>A small pavé disc with a teardrop of champagne quartz swinging beneath. Made for evenings, but quiet enough for a Tuesday. 18 ct gold vermeil.</p>",
+				"short_description": "<p>Pavé discs with swinging champagne-quartz drops.</p>",
+				"sku": "AP-303",
+				"stock": 7,
+				"sale_price": "349",
+				"image": "p-drop-earrings"
+			},
+			{
+				"slug": "tennis-bracelet",
+				"name": "Tennis Bracelet",
+				"type": "simple",
+				"regular_price": "1490",
+				"categories": [
+					"bracelets"
+				],
+				"description": "<p>A continuous line of forty-two lab-grown diamonds, each in its own four-claw setting, on a flexible 18 ct gold bracelet with a double safety clasp.</p><p>Total weight 2 carats, length 17.5 cm.</p>",
+				"short_description": "<p>Forty-two lab-grown diamonds on a flexible 18 ct gold line.</p>",
+				"sku": "AP-401",
+				"stock": 3,
+				"featured": true,
+				"image": "p-tennis-bracelet"
+			},
+			{
+				"slug": "cuff-bracelet",
+				"name": "Cuff Bracelet",
+				"type": "simple",
+				"regular_price": "330",
+				"categories": [
+					"bracelets"
+				],
+				"description": "<p>A sculptural open cuff, wider at the front and tapering at the back, with a brushed finish that catches the light softly. Gold vermeil, gently adjustable.</p>",
+				"short_description": "<p>A sculptural brushed-gold open cuff.</p>",
+				"sku": "AP-402",
+				"stock": 9,
+				"image": "p-cuff-bracelet"
+			},
+			{
+				"slug": "charm-bracelet",
+				"name": "Charm Bracelet",
+				"type": "simple",
+				"regular_price": "290",
+				"categories": [
+					"bracelets"
+				],
+				"description": "<p>A fine curb chain with three charms to begin with: a crescent moon, a tiny pearl and an initial disc we engrave for you. Add more charms over the years.</p>",
+				"short_description": "<p>A fine gold curb chain with three charms.</p>",
+				"sku": "AP-403",
+				"stock": 11,
+				"image": "p-charm-bracelet"
+			}
+		],
+		"coupons": [
+			{
+				"code": "WELCOME10",
+				"type": "percent",
+				"amount": "10",
+				"description": "10% off your first order"
+			}
+		],
+		"shipping": {
+			"zone": "Everywhere",
+			"flat_rate": "15",
+			"free_over": "150",
+			"local_pickup": true
+		}
+	}
+}

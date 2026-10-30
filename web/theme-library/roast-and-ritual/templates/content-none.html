@@ -1,0 +1,6 @@
+<section class="no-results not-found rr-none">
+	<h2 class="page-title">Nothing brewing here</h2>
+	{{if eq .Template "search"}}<p>Nothing matched your search. Try an origin, like &ldquo;Ethiopia&rdquo;, or a tool, like &ldquo;kettle&rdquo;.</p>
+	{{else}}<p>It seems we can&rsquo;t find what you&rsquo;re looking for. Perhaps searching can help.</p>{{end}}
+	{{template "searchform" .}}
+</section>

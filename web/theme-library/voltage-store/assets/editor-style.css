@@ -1,0 +1,9 @@
+@font-face { font-family: "Space Grotesk"; src: url("fonts/space-grotesk.woff2") format("woff2"); font-weight: 300 700; font-display: swap; }
+@font-face { font-family: "Inter"; src: url("fonts/inter.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+@font-face { font-family: "JetBrains Mono"; src: url("fonts/jetbrains-mono.woff2") format("woff2"); font-weight: 100 800; font-display: swap; }
+body { font: 400 1rem/1.65 "Inter", system-ui, sans-serif; color: #e8ecf1; background: #111418; }
+h1, h2, h3, h4 { font-family: "Space Grotesk", "Inter", sans-serif; font-weight: 600; letter-spacing: -.025em; line-height: 1.05; }
+a { color: #3b82f6; }
+code, pre { font-family: "JetBrains Mono", monospace; }
+.wp-block-button__link { background: #3b82f6; color: #fff; border-radius: 10px; }
+blockquote { border-left: 3px solid #a3e635; padding-left: 1em; }

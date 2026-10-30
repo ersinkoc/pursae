@@ -1,0 +1,16 @@
+{{template "header" .}}
+{{with .Post}}<article id="post-{{.ID}}" class="{{.Class}} ap-article">
+	<header class="ap-wrap ap-measure ap-article__header">
+		<p class="ap-kicker">{{range $i, $c := .Categories}}{{if $i}} &middot; {{end}}<a href="{{$c.URL}}">{{$c.Name}}</a>{{end}}</p>
+		<h1 class="entry-title">{{.Title}}</h1>
+		<span class="ap-ornament" aria-hidden="true"></span>
+		<p class="ap-article__meta"><time datetime="{{.DateISO}}">{{.DateText}}</time>{{with .AuthorName}} &middot; <span class="byline">{{.}}</span>{{end}}{{with .EditLink}} &middot; <span class="edit-link">{{.}}</span>{{end}}</p>
+	</header>
+	{{with .Thumbnail}}<figure class="ap-wrap ap-article__media">{{.}}</figure>{{end}}
+	<div class="ap-wrap ap-measure entry-content">
+		{{.Content}}
+	</div>
+	{{if .Tags}}<footer class="ap-wrap ap-measure entry-footer"><span class="tags-links">{{range .Tags}}<a href="{{.URL}}" rel="tag">{{.Name}}</a> {{end}}</span></footer>{{end}}
+</article>{{end}}
+<div class="ap-wrap ap-measure">{{.PostNav}}{{template "comments" .}}</div>
+{{template "footer" .}}

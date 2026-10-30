@@ -1,0 +1,15 @@
+{{template "header" .}}
+{{with .Post}}<article id="post-{{.ID}}" class="{{.Class}} vt-article">
+	<header class="vt-wrap vt-measure vt-article__header">
+		<p class="vt-kicker">{{range $i, $c := .Categories}}{{if $i}} / {{end}}<a href="{{$c.URL}}">{{$c.Name}}</a>{{end}}</p>
+		<h1 class="entry-title">{{.Title}}</h1>
+		<p class="vt-article__meta"><time datetime="{{.DateISO}}">{{.DateText}}</time>{{with .AuthorName}} &middot; <span class="byline">{{.}}</span>{{end}}{{with .EditLink}} &middot; <span class="edit-link">{{.}}</span>{{end}}</p>
+	</header>
+	{{with .Thumbnail}}<figure class="vt-wrap vt-article__media">{{.}}</figure>{{end}}
+	<div class="vt-wrap vt-measure entry-content">
+		{{.Content}}
+	</div>
+	{{if .Tags}}<footer class="vt-wrap vt-measure entry-footer"><span class="tags-links">{{range .Tags}}<a href="{{.URL}}" rel="tag">#{{.Name}}</a> {{end}}</span></footer>{{end}}
+</article>{{end}}
+<div class="vt-wrap vt-measure">{{.PostNav}}{{template "comments" .}}</div>
+{{template "footer" .}}

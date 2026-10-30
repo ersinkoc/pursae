@@ -1,0 +1,8 @@
+{{template "header" .}}
+<section class="tl-wrap tl-measure error-404 not-found tl-404">
+	<p class="tl-kicker">Error 404</p>
+	<h1 class="page-title">This piece is out of stock.</h1>
+	<p>The page you were looking for has moved or never existed. Try a search, or keep browsing the <a href="{{if goo_on}}{{goo_url . "shop"}}{{else}}{{.HomeURL}}{{end}}">collection</a>.</p>
+	{{if goo_on}}{{goo_product_search .}}{{else}}{{template "searchform" .}}{{end}}
+</section>
+{{template "footer" .}}

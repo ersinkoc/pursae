@@ -52,6 +52,7 @@ type themeDemo struct {
 	Menus      []demoMenu          `json:"menus"`
 	Widgets    map[string][]string `json:"widgets"`
 	Customizer map[string]any      `json:"customizer"`
+	Store      json.RawMessage     `json:"goocommerce"` // Goocommerce: products, categories, coupons (goo_demo.go)
 }
 
 type demoTerm struct {
@@ -489,6 +490,7 @@ func parseThemeDemo(fsys fs.FS, m *themeManifest) (*themeDemo, error) {
 			tokens(at, s)
 		}
 	}
+	problems = append(problems, gooValidateDemo(d.Store, d.Media)...) // Goocommerce section (goo_demo.go)
 	if len(problems) > 0 {
 		return nil, &demoError{file: m.Demo, problems: problems}
 	}
@@ -733,6 +735,19 @@ func (s *Server) importThemeDemo(ctx context.Context, uid int64, t *Theme) (*dem
 		}
 		mediaIDs[md.ID], mediaURL[md.ID] = a.ID, s.uploadURL(ctx, a.FilePath)
 		rep.Media++
+	}
+
+	// Goocommerce: the store, its products, categories and coupons (goo_demo.go).
+	if !rec.Done["goocommerce"] && len(d.Store) > 0 {
+		n, err := s.gooImportDemo(ctx, uid, slug, d.Store, mediaIDs)
+		if err != nil {
+			return rep, err
+		}
+		rep.Posts += n
+		rec.Done["goocommerce"] = true
+		if err := save(); err != nil {
+			return rep, err
+		}
 	}
 
 	// Categories and tags: an existing term with the slug is used as it is (and never removed).
@@ -1248,6 +1263,7 @@ func (s *Server) removeThemeDemo(ctx context.Context, slug string) error {
 			}
 		}
 	}
+	s.gooRemoveDemo(ctx, slug) // Goocommerce: demo coupons, shipping methods, reviews (goo_demo.go)
 	posts, err := idsOf(`SELECT id FROM posts WHERE meta->>'` + demoMetaKey + `' = $1 ORDER BY id DESC`)
 	if err != nil {
 		return err

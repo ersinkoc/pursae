@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>{{.DocumentTitle}}</title>
+{{.Head}}</head>
+
+<body class="{{.BodyClass}}">
+{{.BodyOpen}}<div id="page" class="site">
+	<a class="skip-link screen-reader-text" href="#main">Skip to content</a>
+	{{if theme_mod . "show_announcement"}}{{with theme_mod . "announcement"}}<div class="of-announcement" role="note"><p class="of-wrap">{{.}}</p></div>{{end}}{{end}}
+
+	<header id="masthead" class="site-header">
+		<div class="of-wrap of-header">
+			<div class="site-branding">
+				{{with .CustomLogo}}<div class="site-logo">{{.}}</div>{{end}}
+				{{if .TitleIsH1}}<h1 class="site-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></h1>{{else}}<p class="site-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></p>{{end}}
+			</div><!-- .site-branding -->
+
+			{{if has_nav_menu . "primary"}}<button type="button" class="of-menu-toggle" aria-controls="site-navigation" aria-expanded="false"><span class="of-menu-toggle__lines" aria-hidden="true"></span><span class="of-menu-toggle__label">Menu</span></button>
+			<nav id="site-navigation" class="main-navigation" aria-label="Primary menu">
+				<div class="of-drawer__head"><span class="of-drawer__title">{{.SiteName}}</span><button type="button" class="of-drawer__close" aria-label="Close menu">&times;</button></div>
+				{{nav_menu . "primary"}}
+			</nav><!-- #site-navigation -->{{end}}
+
+			<div class="of-tools">
+				<button type="button" class="of-textlink of-search-toggle" aria-controls="of-search" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m15.5 15.5 4 4"/></svg><span class="of-tools__label">Search</span></button>
+				{{if goo_on}}<a class="of-textlink of-account" href="{{goo_url . "myaccount"}}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.6"/><path d="M5 20c1.1-3.4 3.7-5.1 7-5.1s5.9 1.7 7 5.1"/></svg><span class="of-tools__label">Account</span></a>
+				<div class="of-cart site-header-cart">
+					<a class="of-textlink of-cart-toggle" href="{{goo_url . "cart"}}" aria-controls="of-mini-cart"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h16l-1.4 10.2a1 1 0 0 1-1 .8H6.4a1 1 0 0 1-1-.8z"/><path d="M8.5 9 12 4l3.5 5"/></svg><span class="of-tools__label">Cart</span> <span class="of-cart-count" data-goo-cart-count>{{goo_cart_count .}}</span></a>
+					<div id="of-mini-cart" class="of-mini-cart widget_shopping_cart" hidden>
+						<p class="of-mini-cart__title">Your cart</p>
+						{{goo_mini_cart .}}
+					</div>
+				</div>{{end}}
+			</div>
+		</div>
+		<div id="of-search" class="of-search-panel" hidden><div class="of-wrap">{{if goo_on}}{{goo_product_search .}}{{else}}{{template "searchform" .}}{{end}}</div></div>
+	</header><!-- #masthead -->
+	<div class="of-scrim" hidden></div>
+
+	<div id="content" class="site-content">
+		<main id="main" class="site-main" tabindex="-1">

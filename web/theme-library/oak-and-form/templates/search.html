@@ -1,0 +1,9 @@
+{{template "header" .}}
+<div class="of-wrap of-archive">
+	<header class="page-header of-page-header">
+		<p class="of-kicker">Search</p>
+		<h1 class="page-title">Results for &ldquo;{{.SearchQuery}}&rdquo;</h1>
+	</header>
+	{{if .Posts}}{{template "loop" .}}{{.Pagination}}{{else}}{{template "content-none" .}}{{end}}
+</div>
+{{template "footer" .}}

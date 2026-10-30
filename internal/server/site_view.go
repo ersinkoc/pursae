@@ -270,6 +270,7 @@ func (s *Server) buildSiteView(c *gin.Context, q *siteQuery) (*siteView, error) 
 	}
 	bodyClasses = append(bodyClasses, customizeBodyClasses(v)...)
 	bodyClasses = append(bodyClasses, s.gweBodyClasses(c, q)...)
+	bodyClasses = append(bodyClasses, s.gooBodyClasses(c, q)...) // Goocommerce: woocommerce, woocommerce-page, single-product, …
 	bodyClasses = append(bodyClasses, "wp-embed-responsive", "wp-theme-"+v.Theme.Slug)
 	s.gweThemePrepare(c, v, &bodyClasses) // Golementor theme parts / custom theme (sets v.GWE)
 	if v.Theme.Prepare != nil && v.GWE == nil {
@@ -444,6 +445,7 @@ func (s *Server) theContent(ctx context.Context, c *gin.Context, p *store.Post, 
 	content = s.gontactShortcodes(ctx, content) // Gontact Form's [contact-form-7]
 	content = s.seogoContent(ctx, content)      // SEO-Go breadcrumb shortcodes and Image SEO
 	content = s.gooikeShortcodes(ctx, content)  // Gooike: [gooike_preferences], [gooike_cookie_table], …
+	content = s.gooShortcodes(ctx, content)     // Goocommerce: [goocommerce_cart], [products], … (goo_front.go)
 	content = s.filterContentTags(ctx, content) // wp_filter_content_tags (priority 12)
 	content = s.convertSmilies(lb, content)     // convert_smilies (priority 20)
 	out, _ := s.applyFilters(ctx, "the_content", content, map[string]any{"id": p.ID, "type": p.Type, "is_single": singular}).(string)
@@ -656,7 +658,8 @@ func (s *Server) renderWidgetArea(ctx context.Context, ws []*store.Widget) templ
 		if parsed := blocks.Parse(content); len(parsed) > 0 {
 			classes = widgetBlockClass(parsed[0].Name())
 		}
-		fmt.Fprintf(&sb, "<section id=\"block-%d\" class=\"widget %s\">%s</section>", w.ID, classes, blocks.Render(ctx, content))
+		out := s.gooWidgetShortcodes(ctx, blocks.Render(ctx, content)) // Goocommerce: store shortcodes in block widgets (goo_front_shortcodes.go)
+		fmt.Fprintf(&sb, "<section id=\"block-%d\" class=\"widget %s\">%s</section>", w.ID, classes, out)
 	}
 	return template.HTML(sb.String())
 }

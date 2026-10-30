@@ -1,0 +1,43 @@
+{{define "admin/goo-ext-wishlist"}}{{template "admin-header" .}}{{with .Data}}
+<style>
+.goo-wl-admin .goo-wl-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin:16px 0}
+.goo-wl-admin .goo-wl-card{background:#fff;border:1px solid #c3c4c7;border-radius:4px;padding:14px 16px}
+.goo-wl-admin .goo-wl-card .num{display:block;font-size:28px;font-weight:600;line-height:1.2}
+.goo-wl-admin .goo-wl-card .lbl{color:#50575e}
+.goo-wl-admin .goo-wl-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:1100px){.goo-wl-admin .goo-wl-grid{grid-template-columns:1fr}}
+</style>
+<div class="wrap goocommerce goo-wl-admin">
+<h1 class="wp-heading-inline">Wishlists</h1>
+<a href="/wp-admin/goocommerce?page=ext&amp;ext=wishlist" class="page-title-action">Settings</a>
+<hr class="wp-header-end">
+{{template "notices" $}}
+{{if not .On}}<div class="notice notice-warning"><p>Wishlists is not active: customers cannot use their lists until you activate it on Goocommerce › Extensions.</p></div>{{end}}
+<div class="goo-wl-cards">
+<div class="goo-wl-card"><span class="lbl">Wishlists</span><span class="num">{{.Stats.Lists}}</span></div>
+<div class="goo-wl-card"><span class="lbl">Customers' lists</span><span class="num">{{.Stats.Customers}}</span></div>
+<div class="goo-wl-card"><span class="lbl">Guests' lists</span><span class="num">{{.Stats.Guests}}</span></div>
+<div class="goo-wl-card"><span class="lbl">Items saved</span><span class="num">{{.Stats.Items}}</span></div>
+<div class="goo-wl-card"><span class="lbl">Shared lists</span><span class="num">{{.Stats.Shared}}</span></div>
+</div>
+<p>Customers see their lists on the <a href="{{.PageURL}}">Wishlist page</a> and in My Account › Wishlist.</p>
+<div class="goo-wl-grid">
+<div>
+<h2>Popular products</h2>
+<table class="wp-list-table widefat fixed striped">
+<thead><tr><th scope="col" class="column-primary">Product</th><th scope="col">Price</th><th scope="col">In wishlists</th><th scope="col">Quantity</th></tr></thead>
+<tbody>{{range .Popular}}<tr><td class="column-primary"><a href="{{.Edit}}">{{.Name}}</a></td><td>{{.Price}}</td><td>{{.Lists}}</td><td>{{.Total}}</td></tr>
+{{else}}<tr class="no-items"><td colspan="4">No products have been added to wishlists yet.</td></tr>{{end}}</tbody>
+</table>
+</div>
+<div>
+<h2>Recent wishlists</h2>
+<table class="wp-list-table widefat fixed striped">
+<thead><tr><th scope="col" class="column-primary">Wishlist</th><th scope="col">Owner</th><th scope="col">Privacy</th><th scope="col">Items</th><th scope="col">Created</th></tr></thead>
+<tbody>{{range .Recent}}<tr><td class="column-primary">{{if .Share}}<a href="{{.Share}}" target="_blank" rel="noopener">{{.Title}}</a>{{else}}{{.Title}}{{end}}</td><td>{{.Owner}}</td><td>{{.Privacy}}</td><td>{{.Count}}</td><td>{{.Created.Format "2006-01-02"}}</td></tr>
+{{else}}<tr class="no-items"><td colspan="5">No wishlists yet.</td></tr>{{end}}</tbody>
+</table>
+</div>
+</div>
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}

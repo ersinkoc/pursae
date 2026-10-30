@@ -157,6 +157,9 @@ func (t *templates) funcs() template.FuncMap {
 	for k, f := range s.golylangTemplateFuncs() { // pll_* template functions
 		m[k] = f
 	}
+	for k, f := range s.gooTemplateFuncs() { // Goocommerce: goo_cart_link, goo_mini_cart, … (goo_theme.go)
+		m[k] = f
+	}
 	return m
 }
 

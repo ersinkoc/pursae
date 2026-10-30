@@ -1,0 +1,7 @@
+{{template "header" .}}
+<div class="rr-wrap">
+{{if .IsHomeHeader}}<header class="page-header"><p class="rr-kicker">From the roastery</p><h1 class="page-title">{{.PostsPageTitle}}</h1></header>{{end}}
+{{if .Posts}}{{template "loop" .}}
+{{.Pagination}}{{else}}{{template "content-none" .}}{{end}}
+</div>
+{{template "footer" .}}
