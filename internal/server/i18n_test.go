@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"io/fs"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -13,6 +14,7 @@ import (
 	"testing"
 
 	"wpgo/internal/store"
+	"wpgo/web"
 )
 
 // i18nMO builds a .mo file (little endian) from msgid -> msgstr.
@@ -197,6 +199,17 @@ func TestAdminRTLAndScriptTranslations(t *testing.T) {
 			if code, _, _ := get(t, c, base+p+m[3]); code != http.StatusOK {
 				t.Errorf("%s%s: %d", p, m[3], code)
 			}
+		}
+	}
+}
+
+// TestEmbeddedOwnStrings guards the embed list of web/web.go: the Docker image has no WPGO_WEB_DIR,
+// so WordPress Go's own translations must be compiled in.
+func TestEmbeddedOwnStrings(t *testing.T) {
+	fsys := web.FS("")
+	for _, name := range []string{"languages/wpgo-tr_TR.json", "languages/wpgo-de_DE.json", "languages/wpgo-ar.json"} {
+		if b, err := fs.ReadFile(fsys, name); err != nil || len(b) < 1000 {
+			t.Errorf("%s is not embedded: %v", name, err)
 		}
 	}
 }
