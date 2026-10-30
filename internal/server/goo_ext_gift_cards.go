@@ -62,6 +62,7 @@ func init() {
 	gooPriceHTMLHooks = append(gooPriceHTMLHooks, gcPriceHTML)
 	gooOn("order_created", 20, func(s *Server, ctx context.Context, arg any) { s.gcOrderCreated(ctx, arg.(*gooOrder)) })
 	gooOn("order_status_changed", 20, func(s *Server, ctx context.Context, arg any) { s.gcOrderStatus(ctx, arg.(*gooStatusChange)) })
+	gooOn("order_partially_refunded", 20, func(s *Server, ctx context.Context, arg any) { s.gcRefundCreditProp(ctx, arg.(*gooRefundEvent)) })
 	gooOn("cart_emptied", 20, func(s *Server, ctx context.Context, arg any) {
 		if cart, ok := arg.(*gooCart); ok && cart.sess.Data.Extra != nil {
 			if _, had := cart.sess.Data.Extra[gcKey]; had {
@@ -547,7 +548,7 @@ func (s *Server) gcOrderCreated(ctx context.Context, o *gooOrder) {
 }
 
 // gcOrderStatus issues the cards of a paid order and credits back the cards that paid for an order
-// that was cancelled, failed or refunded.
+// that was cancelled, failed or refunded (what partial refunds have not credited back already).
 func (s *Server) gcOrderStatus(ctx context.Context, ch *gooStatusChange) {
 	if !s.gooExtOn(gcKey) {
 		return
@@ -557,23 +558,15 @@ func (s *Server) gcOrderStatus(ctx context.Context, ch *gooStatusChange) {
 	case "processing", "completed":
 		s.gcIssue(ctx, o)
 	case "cancelled", "refunded", "failed":
-		rows, err := s.store.Pool.Query(ctx, `SELECT a.card_id, sum(CASE WHEN a.type = 'used' THEN a.amount ELSE -a.amount END)::float8
-			FROM goo_gift_card_activity a WHERE a.order_id = $1 AND a.type IN ('used', 'refunded') GROUP BY a.card_id`, o.ID)
-		if err != nil {
-			return
-		}
+		outstanding, ids := s.gcOutstandingRefx(ctx, o.ID)
 		type due struct {
 			id  int64
 			amt float64
 		}
 		var list []due
-		for rows.Next() {
-			var d due
-			if rows.Scan(&d.id, &d.amt) == nil && d.amt > 0.0001 {
-				list = append(list, d)
-			}
+		for _, id := range ids {
+			list = append(list, due{id, outstanding[id]})
 		}
-		rows.Close()
 		for _, d := range list {
 			if g, err := s.gcGet(ctx, d.id); err == nil {
 				_ = s.gcAdjust(ctx, g, d.amt, "refunded", o.ID, o.CustomerID, "Order "+gooStatusLabel(ch.To))
@@ -652,5 +645,59 @@ func (s *Server) gcDaily(ctx context.Context) {
 	now := time.Now().In(s.gxLoc())
 	for _, g := range s.gcQuery(ctx, `NOT delivered AND status <> 'disabled' AND deliver_date IS NOT NULL AND deliver_date <= $1`, now.Format("2006-01-02")) {
 		s.gcDeliver(ctx, g)
+	}
+}
+
+// gcOutstandingRefx is what each card paid for the order and has not been credited back yet: card id → amount.
+func (s *Server) gcOutstandingRefx(ctx context.Context, orderID int64) (map[int64]float64, []int64) {
+	rows, err := s.store.Pool.Query(ctx, `SELECT card_id, sum(CASE WHEN type = 'used' THEN amount ELSE -amount END)::float8
+		FROM goo_gift_card_activity WHERE order_id = $1 AND type IN ('used', 'refunded') GROUP BY card_id ORDER BY card_id`, orderID)
+	if err != nil {
+		return nil, nil
+	}
+	defer rows.Close()
+	out := map[int64]float64{}
+	var ids []int64
+	for rows.Next() {
+		var id int64
+		var amt float64
+		if rows.Scan(&id, &amt) == nil && amt > 0.0001 {
+			out[id] = amt
+			ids = append(ids, id)
+		}
+	}
+	return out, ids
+}
+
+// gcRefundCreditProp credits the gift cards of a partially refunded order in proportion to the refund:
+// refunding a share of what the order charged restores the same share of what each card paid, up to
+// what the card has not been credited back yet. A full refund credits the rest (gcOrderStatus).
+func (s *Server) gcRefundCreditProp(ctx context.Context, ev *gooRefundEvent) {
+	if !s.gooExtOn(gcKey) || ev == nil || ev.Order == nil || ev.Refund == nil {
+		return
+	}
+	o := ev.Order
+	refund := -ev.Refund.Total
+	if refund <= 0 || o.Total <= 0 {
+		return
+	}
+	paid := gcOrderFees(o)
+	if len(paid) == 0 {
+		return
+	}
+	share := min(refund/o.Total, 1)
+	outstanding, ids := s.gcOutstandingRefx(ctx, o.ID)
+	dp := s.gooDecimals()
+	for _, id := range ids {
+		g, err := s.gcGet(ctx, id)
+		if err != nil {
+			continue
+		}
+		amt := gooRound(min(paid[g.Code]*share, outstanding[id]), dp)
+		if amt <= 0 {
+			continue
+		}
+		_ = s.gcAdjust(ctx, g, amt, "refunded", o.ID, ev.Refund.RefundedBy, fmt.Sprintf("Partial refund #%d", ev.Refund.ID))
+		_ = s.gooAddOrderNote(ctx, o, fmt.Sprintf("Gift card %s credited: %s.", g.Code, s.gooPricePlain(amt, o.Currency)), false, "")
 	}
 }
