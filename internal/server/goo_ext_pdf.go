@@ -284,7 +284,7 @@ func (s *Server) gooPDFLogo(ctx context.Context) []byte {
 	if !strings.HasPrefix(full, root+string(filepath.Separator)) {
 		return nil
 	}
-	data, err := os.ReadFile(full)
+	data, err := os.ReadFile(s.gocdnFetchBack(ctx, full))
 	if err != nil || len(data) > 8<<20 {
 		return nil
 	}

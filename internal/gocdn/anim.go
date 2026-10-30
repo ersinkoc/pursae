@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"image"
 	"image/color"
-	"image/gif"
 	stddraw "image/draw"
+	"image/gif"
 
 	"golang.org/x/image/draw"
 )

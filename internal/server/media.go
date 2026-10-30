@@ -642,6 +642,7 @@ func (s *Server) enqueueMedia(c *gin.Context, postID int64) {
 		} );
 	};
 } )( wp.media.view.Attachment.Details );`)
+	s.gocdnEnqueueMedia(c, a) // GoCDN: "Remote storage" tab in the media modal (gocdn_modal.go)
 	plupload := strings.ReplaceAll(l10n.Plupload, `"url":"/wp-admin/async-upload.php"`, `"url":"/wp-admin/async-upload"`)
 	// Go stores WebP/AVIF/HEIC files as they are, so the "editor can't process this type" guards are dropped.
 	plupload = uploadErrorFlag.ReplaceAllString(plupload, "")

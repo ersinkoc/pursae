@@ -792,7 +792,7 @@ func (s *Server) gooLocalFile(ctx context.Context, file string) string {
 		return ""
 	}
 	p := filepath.Join(s.cfg.UploadsDir, filepath.FromSlash(rel))
-	if st, err := os.Stat(p); err != nil || st.IsDir() {
+	if st, err := os.Stat(s.gocdnFetchBack(ctx, p)); err != nil || st.IsDir() {
 		return ""
 	}
 	return p

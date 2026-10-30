@@ -101,9 +101,9 @@ func (s *Server) gocdnImport(c *gin.Context, st gocdnSettings, keys []string, mo
 		}
 		var err error
 		if mode == "link" {
-			err = s.gocdnImportLink(ctx, st, cl, key, u.ID)
+			_, err = s.gocdnImportLink(ctx, st, cl, key, u.ID)
 		} else {
-			err = s.gocdnImportCopy(ctx, cl, key, u.ID)
+			_, err = s.gocdnImportCopy(ctx, cl, key, u.ID)
 		}
 		if err != nil {
 			skipped = append(skipped, name+" ("+err.Error()+")")
@@ -117,36 +117,39 @@ func (s *Server) gocdnImport(c *gin.Context, st gocdnSettings, keys []string, mo
 	return n, skipped, nil
 }
 
-func (s *Server) gocdnImportCopy(ctx context.Context, cl *gocdn.Client, key string, uid int64) error {
+func (s *Server) gocdnImportCopy(ctx context.Context, cl *gocdn.Client, key string, uid int64) (int64, error) {
 	rc, _, err := cl.Get(ctx, key)
 	if err != nil {
-		return errors.New(gocdnExplain(err))
+		return 0, errors.New(gocdnExplain(err))
 	}
 	defer rc.Close()
-	_, err = s.insertAttachmentFile(ctx, path.Base(key), rc, uid, 0)
-	return err
+	a, err := s.insertAttachmentFile(ctx, path.Base(key), rc, uid, 0)
+	if err != nil {
+		return 0, err
+	}
+	return a.ID, nil
 }
 
 // gocdnImportLink registers an object as a remote-only attachment. Its uploads path is the key
 // without the object prefix (or gocdn-remote/<key> for keys outside it).
-func (s *Server) gocdnImportLink(ctx context.Context, st gocdnSettings, cl *gocdn.Client, key string, uid int64) error {
+func (s *Server) gocdnImportLink(ctx context.Context, st gocdnSettings, cl *gocdn.Client, key string, uid int64) (int64, error) {
 	rel, ok := strings.CutPrefix(key, st.Prefix)
 	if !ok || st.Prefix == "" && strings.HasPrefix(key, "gocdn-cache/") {
 		rel = "gocdn-remote/" + key
 	}
 	local := s.gocdnLocalPath(rel)
 	if local == "" {
-		return errors.New("invalid key")
+		return 0, errors.New("invalid key")
 	}
 	if it := s.gocdnItemByPath(ctx, rel); it != nil && it.MediaID != 0 {
-		return errors.New("already in the library")
+		return it.MediaID, errAlreadyInLibrary
 	}
 	if _, err := os.Stat(local); err == nil {
-		return errors.New("a local file has the same path; use Copy")
+		return 0, errors.New("a local file has the same path; use Copy")
 	}
 	obj, err := cl.Head(ctx, key)
 	if err != nil {
-		return errors.New(gocdnExplain(err))
+		return 0, errors.New(gocdnExplain(err))
 	}
 	name := path.Base(key)
 	mime := media.MimeFor(name)
@@ -161,8 +164,10 @@ func (s *Server) gocdnImportLink(ctx context.Context, st gocdnSettings, cl *gocd
 		}
 	}
 	if err := s.store.InsertAttachment(ctx, a); err != nil {
-		return err
+		return 0, err
 	}
-	return s.gocdnSaveItem(ctx, &gocdnItem{MediaID: a.ID, Path: rel, Provider: st.Provider, Region: gocdnRegion(st), Bucket: st.Bucket,
-		Key: key, Size: obj.Size, Mime: mime, LocalRemoved: true})
+	return a.ID, s.gocdnSaveItem(ctx, &gocdnItem{MediaID: a.ID, Path: rel, Provider: st.Provider, Region: gocdnRegion(st), Bucket: st.Bucket,
+		Key: key, Size: obj.Size, Mime: mime, LocalRemoved: true, Endpoint: gocdnEndpoint(st)})
 }
+
+var errAlreadyInLibrary = errors.New("already in the library")

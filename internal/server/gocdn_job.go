@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -33,22 +34,36 @@ type gocdnJobState struct {
 	Finished bool      `json:"finished"`
 	Stopped  bool      `json:"stopped"`
 	Errors   []string  `json:"errors"`
+	// Options: "move" deletes the old objects; "download" deactivates the plugin when it finished
+	// without failures (the deactivation screen's "download back first").
+	DeleteOld      bool `json:"delete_old,omitempty"`
+	ThenDeactivate bool `json:"then_deactivate,omitempty"`
 
 	cancel bool
 	live   bool // a goroutine of this process runs it
 }
 
-var gocdnJobKinds = map[string]string{"offload": "Offload existing media", "download": "Download back to the server", "remove": "Remove from the bucket"}
+var gocdnJobKinds = map[string]string{"offload": "Offload existing media", "download": "Download back to the server", "remove": "Remove from the bucket",
+	"move": "Move to the current bucket"}
 
-// gocdnJobFilter selects the attachments a job still has to process.
-func gocdnJobFilter(kind string) string {
+// gocdnJobOpts are a job's options.
+type gocdnJobOpts struct {
+	DeleteOld, ThenDeactivate bool
+}
+
+// gocdnJobFilter selects the attachments a job still has to process; its parameters start at $2
+// ($1 is the last attachment done).
+func gocdnJobFilter(kind string, st gocdnSettings) (string, []any) {
 	switch kind {
 	case "download":
-		return `EXISTS (SELECT 1 FROM gocdn_items g WHERE g.media_id = m.id AND g.local_removed)`
+		return `EXISTS (SELECT 1 FROM gocdn_items g WHERE g.media_id = m.id AND g.local_removed)`, nil
 	case "remove":
-		return `EXISTS (SELECT 1 FROM gocdn_items g WHERE g.media_id = m.id)`
+		return `EXISTS (SELECT 1 FROM gocdn_items g WHERE g.media_id = m.id)`, nil
+	case "move":
+		cond, args := gocdnMoveFilter(st, 2)
+		return `EXISTS (SELECT 1 FROM gocdn_items g WHERE g.media_id = m.id AND ` + cond + `)`, args
 	}
-	return `NOT EXISTS (SELECT 1 FROM gocdn_items g WHERE g.media_id = m.id AND g.path = m.file_path)`
+	return `NOT EXISTS (SELECT 1 FROM gocdn_items g WHERE g.media_id = m.id AND g.path = m.file_path)`, nil
 }
 
 // gocdnJob returns a copy of the current (or last) job's state.
@@ -66,6 +81,10 @@ func (s *Server) gocdnJob() gocdnJobState {
 
 // gocdnStartJob starts a job (or resumes the interrupted one of the same kind).
 func (s *Server) gocdnStartJob(ctx context.Context, kind string, resume bool) error {
+	return s.gocdnStartJobWith(ctx, kind, resume, gocdnJobOpts{})
+}
+
+func (s *Server) gocdnStartJobWith(ctx context.Context, kind string, resume bool, opts gocdnJobOpts) error {
 	if _, ok := gocdnJobKinds[kind]; !ok {
 		return fmt.Errorf("unknown job %q", kind)
 	}
@@ -80,12 +99,15 @@ func (s *Server) gocdnStartJob(ctx context.Context, kind string, resume bool) er
 		return fmt.Errorf("a job is already running")
 	}
 	prev := s.gocdnJobStored()
-	j := &gocdnJobState{Kind: kind, Running: true, Started: time.Now(), Updated: time.Now(), live: true}
+	j := &gocdnJobState{Kind: kind, Running: true, Started: time.Now(), Updated: time.Now(), live: true, DeleteOld: opts.DeleteOld,
+		ThenDeactivate: opts.ThenDeactivate}
 	if resume && prev.Kind == kind && prev.Running && !prev.Finished {
 		j.LastID, j.Done, j.Failed, j.Files, j.Started = prev.LastID, prev.Done, prev.Failed, prev.Files, prev.Started
+		j.DeleteOld, j.ThenDeactivate = prev.DeleteOld || opts.DeleteOld, prev.ThenDeactivate || opts.ThenDeactivate
 	}
 	var remaining int
-	_ = s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM media m WHERE m.id > $1 AND `+gocdnJobFilter(kind), j.LastID).Scan(&remaining)
+	cond, args := gocdnJobFilter(kind, st)
+	_ = s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM media m WHERE m.id > $1 AND `+cond, append([]any{j.LastID}, args...)...).Scan(&remaining)
 	j.Total = j.Done + j.Failed + remaining
 	rt.job = j
 	rt.mu.Unlock()
@@ -151,7 +173,8 @@ func (s *Server) gocdnRunJob(j *gocdnJobState) {
 			break
 		}
 		var ids []int64
-		rows, qerr := s.store.Pool.Query(ctx, `SELECT m.id FROM media m WHERE m.id > $1 AND `+gocdnJobFilter(j.Kind)+` ORDER BY m.id LIMIT 1`, last)
+		cond, args := gocdnJobFilter(j.Kind, st)
+		rows, qerr := s.store.Pool.Query(ctx, `SELECT m.id FROM media m WHERE m.id > $1 AND `+cond+` ORDER BY m.id LIMIT 1`, append([]any{last}, args...)...)
 		if qerr != nil {
 			fail(qerr.Error())
 			break
@@ -170,7 +193,7 @@ func (s *Server) gocdnRunJob(j *gocdnJobState) {
 			break
 		}
 		id := ids[0]
-		n, perr := s.gocdnJobOne(ctx, j.Kind, st, cl, id)
+		n, perr := s.gocdnJobOne(ctx, j, st, cl, id)
 		rt.mu.Lock()
 		j.LastID = id
 		j.Files += n
@@ -192,18 +215,47 @@ func (s *Server) gocdnRunJob(j *gocdnJobState) {
 	rt.mu.Lock()
 	j.Running, j.live = false, false
 	j.Updated = time.Now()
+	finished, failed := j.Finished, j.Failed
 	rt.mu.Unlock()
 	s.gocdnPersistJob()
+	switch {
+	case j.Kind == "move" && finished:
+		s.gocdnPrunePrevious(ctx)
+	case j.Kind == "download" && finished && s.gocdnRemovedCount(ctx) == 0:
+		_ = s.settings.Set(ctx, map[string]any{gocdnFallbackOption: false})
+		if j.ThenDeactivate && failed == 0 {
+			_ = s.settings.Set(ctx, map[string]any{gocdnSetting: false})
+		}
+	}
 	s.gocdnPurge(ctx, true) // URLs on the site changed
 }
 
 // gocdnJobOne processes one attachment; it returns the number of files moved.
-func (s *Server) gocdnJobOne(ctx context.Context, kind string, st gocdnSettings, cl *gocdn.Client, id int64) (int, error) {
+func (s *Server) gocdnJobOne(ctx context.Context, j *gocdnJobState, st gocdnSettings, cl *gocdn.Client, id int64) (int, error) {
+	kind := j.Kind
 	a, err := s.store.GetAttachment(ctx, id)
 	if err != nil {
 		return 0, err
 	}
 	switch kind {
+	case "move":
+		items, err := s.gocdnItemsForMedia(ctx, id)
+		if err != nil {
+			return 0, err
+		}
+		n := 0
+		var errs []error
+		for _, it := range items {
+			if gocdnItemOnCurrent(st, it) && it.Key == gocdnObjectKey(st, it.Path) {
+				continue
+			}
+			if err := s.gocdnMoveItem(ctx, st, cl, it, j.DeleteOld); err != nil {
+				errs = append(errs, fmt.Errorf("%s: %w", it.Path, err))
+				continue
+			}
+			n++
+		}
+		return n, errors.Join(errs...)
 	case "offload":
 		return s.gocdnOffloadAttachment(ctx, st, cl, a)
 	case "download":
