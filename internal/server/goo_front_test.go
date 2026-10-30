@@ -138,6 +138,12 @@ func TestGooFrontShopAndProduct(t *testing.T) {
 		t.Error("the shop does not render inside the theme")
 	}
 
+	for _, a := range []string{"/css/goocommerce.css", "/css/goocommerce-layout.css", "/css/goocommerce-smallscreen.css", "/js/frontend/checkout.js", "/images/placeholder.svg"} {
+		if code, _, _ := get(t, v, base+gooAssets+a); code != http.StatusOK {
+			t.Errorf("asset %s: %d", a, code)
+		}
+	}
+
 	// Sorting.
 	order := func(u string) []string {
 		_, b, _ := get(t, v, u)

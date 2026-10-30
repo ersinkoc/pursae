@@ -274,12 +274,8 @@ func (s *Server) gooFooter(c *gin.Context, q *siteQuery) string {
 	if s.gooIsStorePage(c, q) {
 		js("woocommerce")
 		js("add-to-cart")
-		if fv != nil && fv.Kind == "product" && fv.Product != nil {
-			js("single-product")
-			if fv.Product.Type == gooTypeVariable {
-				js("add-to-cart-variation")
-			}
-		}
+		js("single-product")        // gallery, tabs, rating stars (also [product_page])
+		js("add-to-cart-variation") // variation forms (also [product_page])
 		if s.gooNeedsCountrySelect(c, q) {
 			b.WriteString(`<script id="goo-country-select-params">var goo_country_select_params = ` + s.gooStatesJSON() + `;</script>` + "\n")
 			js("country-select")
