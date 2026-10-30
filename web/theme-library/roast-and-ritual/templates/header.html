@@ -26,6 +26,7 @@
 			</nav><!-- #site-navigation -->{{end}}
 			<div class="rr-tools">
 				<button type="button" class="rr-icon rr-search-toggle" aria-controls="rr-search" aria-expanded="false">{{template "icon-search"}}<span class="screen-reader-text">Search</span></button>
+				{{goo_language_switcher .}}
 				{{if goo_on}}<a class="rr-icon rr-account" href="{{goo_url . "myaccount"}}">{{template "icon-account"}}<span class="screen-reader-text">My account</span></a>
 				<div class="rr-cart site-header-cart">
 					<a class="rr-cart-toggle" href="{{goo_url . "cart"}}" aria-controls="rr-mini-cart">Cart <span class="rr-cart-count" data-goo-cart-count>{{goo_cart_count .}}</span></a>

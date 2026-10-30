@@ -84,6 +84,7 @@ type gooImage struct {
 }
 
 type gooEditData struct {
+	LangBox      template.HTML // Golylang: the Languages box (goo_golylang.go)
 	Post         *store.Post
 	P            *gooProduct
 	IsNew        bool
@@ -159,7 +160,18 @@ func (s *Server) gooProductEditor(c *gin.Context, id int64) {
 			c.String(http.StatusInternalServerError, err.Error())
 			return
 		}
-		p.Post.Title = c.Query("post_title")
+		if c.Query("from_post") != "" || c.Query("new_lang") != "" { // Golylang: a new translation (goo_golylang.go)
+			s.gooPllNewTranslation(c, p)
+			if np, err := s.gooGetProduct(ctx, post.ID); err == nil {
+				np.Post.CommentStatus = "open"
+				p = np
+			}
+		} else {
+			s.golylangNewPost(c, p.Post)
+		}
+		if t := c.Query("post_title"); t != "" || p.Post.Title == "Auto Draft" {
+			p.Post.Title = t
+		}
 		s.gooRenderEditor(c, p, true)
 		return
 	}
@@ -242,6 +254,7 @@ func (s *Server) gooRenderEditor(c *gin.Context, p *gooProduct, isNew bool) {
 		Regular: gooAmount(p.RegularPrice), Sale: gooAmount(p.SalePrice), SaleFrom: s.gooDateInput(p.SaleFrom), SaleTo: s.gooDateInput(p.SaleTo),
 		Stock: gooIntStr(p.StockQuantity), LowStock: gooIntStr(p.LowStockAmount),
 		DownloadLimit: gooLimitStr(p.DownloadLimit), DownloadExpiry: gooLimitStr(p.DownloadExpiry)}
+	d.LangBox = s.golylangPostBox(c, post) // Golylang: language and translations
 	d.CatalogVis = []gooOpt{{"visible", "Shop and search results"}, {"catalog", "Shop only"}, {"search", "Search results only"}, {"hidden", "Hidden"}}
 	for _, o := range d.CatalogVis {
 		if o.Value == defaultStr(p.CatalogVisibility, "visible") {

@@ -28,6 +28,7 @@
 			</div>
 			<div class="vt-tools">
 				<button type="button" class="vt-icon vt-search-toggle" aria-controls="vt-search" aria-expanded="false">{{template "icon-search"}}<span class="screen-reader-text">Search</span></button>
+				{{goo_language_switcher .}}
 				{{if goo_on}}<a class="vt-icon vt-account" href="{{goo_url . "myaccount"}}">{{template "icon-account"}}<span class="vt-icon__label">Account</span></a>
 				<div class="vt-cart site-header-cart">
 					<div class="vt-cart-link">{{goo_cart_link .}}</div>

@@ -223,7 +223,7 @@ func (s *Server) gooFooter(c *gin.Context, q *siteQuery) string {
 	ctx := c.Request.Context()
 	var b strings.Builder
 	if s.gooOptBool("demo_store") {
-		notice := s.gooOptString("demo_store_notice")
+		notice := s.gooT(ctx, s.gooOptString("demo_store_notice")) // Golylang: Languages › Translations
 		if strings.TrimSpace(notice) == "" {
 			notice = "This is a demo store for testing purposes &mdash; no orders shall be fulfilled."
 		}
@@ -360,7 +360,7 @@ func (s *Server) gooCacheTags(c *gin.Context, q *siteQuery) []string {
 
 // gooPagePath is the path of a store page ("shop", "my-account"), "" when it has none.
 func (s *Server) gooPagePath(ctx context.Context, key string) string {
-	id := s.gooPageID(key)
+	id := s.gooPageIDIn(ctx, key)
 	if id <= 0 {
 		return ""
 	}
@@ -368,7 +368,7 @@ func (s *Server) gooPagePath(ctx context.Context, key string) string {
 	if err != nil || p.Status != "publish" {
 		return ""
 	}
-	u, err := url.Parse(s.links(ctx).Permalink(p))
+	u, err := url.Parse(s.gooPllSitePath(ctx, s.links(ctx).Permalink(p))) // Golylang: without the language part
 	if err != nil || u.RawQuery != "" {
 		return ""
 	}
@@ -436,7 +436,7 @@ func (s *Server) gooFrontRoute(c *gin.Context, path string) bool {
 			return false
 		}
 		if v.Get("s") == "" && s.settings.String("show_on_front") == "page" && int64(s.settings.Int("page_on_front")) == s.gooPageID("shop") && s.gooPageID("shop") > 0 {
-			s.gooServeArchive(c, &gooFrontView{Kind: "shop", Paged: paged, PageID: s.gooPageID("shop")})
+			s.gooServeArchive(c, &gooFrontView{Kind: "shop", Paged: paged, PageID: s.gooPageIDIn(ctx, "shop")})
 			return true
 		}
 		return false
@@ -469,7 +469,7 @@ func (s *Server) gooFrontRoute(c *gin.Context, path string) bool {
 		return s.gooServeTerm(c, t, paged)
 	}
 	if sp := s.gooPagePath(ctx, "shop"); sp != "" && p == sp {
-		s.gooServeArchive(c, &gooFrontView{Kind: "shop", Paged: paged, PageID: s.gooPageID("shop")})
+		s.gooServeArchive(c, &gooFrontView{Kind: "shop", Paged: paged, PageID: s.gooPageIDIn(ctx, "shop")})
 		return true
 	}
 	for _, key := range []string{"cart", "checkout", "myaccount"} {
@@ -583,12 +583,12 @@ func (s *Server) gooServeStoreByID(c *gin.Context, id int64, paged int) bool {
 		return false
 	}
 	v := c.Request.URL.Query()
-	if id == s.gooPageID("shop") {
+	if s.gooPageIs(c, id, "shop") { // Golylang: or a translation of it
 		s.gooServeArchive(c, &gooFrontView{Kind: "shop", Paged: paged, PageID: id})
 		return true
 	}
 	for _, key := range []string{"cart", "checkout", "myaccount"} {
-		if s.gooPageID(key) != id {
+		if !s.gooPageIs(c, id, key) {
 			continue
 		}
 		for _, cand := range []string{"order-received", "order-pay", "orders", "view-order", "downloads", "edit-address", "edit-account", "customer-logout", "lost-password"} {
@@ -611,7 +611,7 @@ func gooNoStore(c *gin.Context) {
 // gooServeStorePage renders the Cart, Checkout or My account page (their shortcodes read the view).
 func (s *Server) gooServeStorePage(c *gin.Context, key, endpoint, value string) bool {
 	ctx := c.Request.Context()
-	page, err := s.store.GetPost(ctx, s.gooPageID(key))
+	page, err := s.store.GetPost(ctx, s.gooPageIDIn(ctx, key))
 	if err != nil || page.Status != "publish" {
 		return false
 	}
@@ -744,7 +744,10 @@ func (s *Server) gooServeArchive(c *gin.Context, fv *gooFrontView) {
 		fv.Paged = 1
 	}
 	c.Set(gooCtxView, fv)
-	title, slug, id := "Shop", "shop", s.gooPageID("shop")
+	title, slug, id := "Shop", "shop", s.gooPageIDIn(ctx, "shop")
+	if fv.PageID > 0 && s.gooPageIs(ctx, fv.PageID, "shop") {
+		id = fv.PageID
+	}
 	var src *store.Post
 	if id > 0 {
 		if pg, err := s.store.GetPost(ctx, id); err == nil {
@@ -802,6 +805,10 @@ func (s *Server) gooRenderSynthetic(c *gin.Context, post *store.Post, body strin
 
 // gooTermLink is get_term_link() of the product taxonomies.
 func (s *Server) gooTermLink(ctx context.Context, t *store.Term) string {
+	return s.gooPllLink(ctx, "term", t, s.gooTermLinkIn(ctx, t)) // Golylang: the term's language
+}
+
+func (s *Server) gooTermLinkIn(ctx context.Context, t *store.Term) string {
 	lb := s.links(ctx)
 	switch {
 	case t.Taxonomy == "product_cat":

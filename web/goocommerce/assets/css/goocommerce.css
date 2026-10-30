@@ -1712,3 +1712,13 @@ a.cart-contents .count {
 	font-size: 2em;
 	cursor: pointer;
 }
+
+/* Golylang: the language switcher of the store themes ({{goo_language_switcher .}}) */
+.goo-lang-switcher{display:inline-flex;align-items:center}
+.goo-lang-switcher ul{display:flex;gap:2px;margin:0;padding:0;list-style:none}
+.goo-lang-switcher li{margin:0;padding:0}
+.goo-lang-switcher a{display:inline-flex;align-items:center;gap:4px;padding:4px 7px;border-radius:999px;font-size:12px;font-weight:600;letter-spacing:.04em;line-height:1;color:inherit;text-decoration:none;opacity:.62;transition:opacity .15s,background-color .15s}
+.goo-lang-switcher a:hover,.goo-lang-switcher a:focus-visible{opacity:1}
+.goo-lang-switcher .current-lang a{opacity:1;background:color-mix(in srgb,currentColor 12%,transparent)}
+.goo-lang-switcher .goo-lang-flag{font-size:14px}
+@media (max-width:600px){.goo-lang-switcher .goo-lang-flag{display:none}}

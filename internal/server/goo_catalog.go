@@ -50,6 +50,9 @@ func (s *Server) gooQueryProducts(ctx context.Context, q gooProductQuery) ([]*go
 		}
 	}
 	conds = append(conds, "po.type = ANY("+add(postTypes)+")")
+	if lc := s.gooPllProductCond(ctx, "po", add); lc != "" { // Golylang: the request language (goo_golylang.go)
+		conds = append(conds, lc)
+	}
 	if len(q.Status) > 0 {
 		conds = append(conds, "po.status = ANY("+add(q.Status)+")")
 	} else {

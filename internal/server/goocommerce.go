@@ -74,7 +74,7 @@ func (s *Server) gooPageID(key string) int64 { return int64(s.gooOptInt(key + "_
 
 // gooPageURL is wc_get_page_permalink().
 func (s *Server) gooPageURL(ctx context.Context, key string) string {
-	if id := s.gooPageID(key); id > 0 {
+	if id := s.gooPageIDIn(ctx, key); id > 0 { // Golylang: the page in the current language (goo_golylang.go)
 		if p, err := s.store.GetPost(ctx, id); err == nil && p.Status == "publish" {
 			return s.links(ctx).Permalink(p)
 		}
@@ -473,9 +473,11 @@ func (s *Server) gooCacheExcludes(paths, cookies []string) ([]string, []string) 
 	ctx := context.Background()
 	for _, key := range []string{"cart", "checkout", "myaccount"} {
 		if id := s.gooPageID(key); id > 0 {
-			if p, err := s.store.GetPost(ctx, id); err == nil {
-				if u, err := url.Parse(s.links(ctx).Permalink(p)); err == nil && u.Path != "" && u.Path != "/" {
-					paths = append(paths, strings.TrimRight(u.Path, "/")+"*")
+			for _, tid := range s.gooPllPagePaths(ctx, id) { // Golylang: every translation of the page
+				if p, err := s.store.GetPost(ctx, tid); err == nil {
+					if u, err := url.Parse(s.links(ctx).Permalink(p)); err == nil && u.Path != "" && u.Path != "/" {
+						paths = append(paths, strings.TrimRight(u.Path, "/")+"*")
+					}
 				}
 			}
 		}

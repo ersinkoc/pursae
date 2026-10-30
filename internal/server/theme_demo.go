@@ -1204,6 +1204,7 @@ func (s *Server) importDemo(ctx context.Context, uid int64, t *Theme, src *demoS
 		}
 	}
 
+	s.gooPllDemoImported(ctx) // Golylang: the imported items get the default language (goo_golylang.go)
 	if !rec.Complete {
 		rec.Complete, rec.ImportedAt = true, time.Now().UTC().Format(time.RFC3339)
 		if err := save(); err != nil {

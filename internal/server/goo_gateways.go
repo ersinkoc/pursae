@@ -163,7 +163,7 @@ func (g *gooOfflineGateway) FormFields() []gooField {
 }
 func (g *gooOfflineGateway) Supports(f string) bool { return f == "products" }
 func (g *gooOfflineGateway) PaymentFields(s *Server, c *gin.Context) string {
-	return s.gooGatewaySetting(g.id, "description")
+	return s.gooT(c, s.gooGatewaySetting(g.id, "description")) // Golylang: Languages › Translations
 }
 func (g *gooOfflineGateway) Validate(s *Server, c *gin.Context) error { return nil }
 func (g *gooOfflineGateway) ProcessRefund(s *Server, ctx context.Context, o *gooOrder, amount float64, reason string) error {
@@ -171,7 +171,7 @@ func (g *gooOfflineGateway) ProcessRefund(s *Server, ctx context.Context, o *goo
 }
 func (g *gooOfflineGateway) ThankYou(s *Server, ctx context.Context, o *gooOrder) string {
 	out := ""
-	if ins := s.gooGatewaySetting(g.id, "instructions"); ins != "" {
+	if ins := s.gooT(ctx, s.gooGatewaySetting(g.id, "instructions")); ins != "" {
 		out += "<p>" + strings.ReplaceAll(gooEsc(ins), "\n", "<br>") + "</p>"
 	}
 	if g.id == "bacs" {
@@ -261,7 +261,7 @@ func (gooTestGateway) FormFields() []gooField {
 }
 func (gooTestGateway) Supports(f string) bool { return f == "products" || f == "refunds" }
 func (gooTestGateway) PaymentFields(s *Server, c *gin.Context) string {
-	return gooEsc(s.gooGatewaySetting("goo_test", "description")) +
+	return gooEsc(s.gooT(c, s.gooGatewaySetting("goo_test", "description"))) +
 		`<fieldset id="goo_test-cc-form" class="wc-credit-card-form wc-payment-form"><p class="form-row form-row-wide"><label for="goo_test-card-holder">Card holder</label>` +
 		`<input id="goo_test-card-holder" class="input-text" type="text" name="goo_test_card_holder" autocomplete="cc-name" placeholder="Any name"></p></fieldset>`
 }

@@ -294,6 +294,9 @@ func gooFormatDest(l gooLocation) string {
 // gooRateLabel is wc_cart_totals_shipping_method_label().
 func (s *Server) gooRateLabel(cart *gooCart, r *gooShippingRate) string {
 	label := gooEsc(r.Label)
+	if cart.c != nil {
+		label = gooEsc(s.gooT(cart.c, r.Label)) // Golylang: Languages › Translations
+	}
 	if r.Cost > 0 {
 		label += `: ` + string(s.gooPrice(cart.RateDisplay(r)))
 		if s.gooTaxEnabled() && gooSumTaxes(r.Taxes) > 0 {

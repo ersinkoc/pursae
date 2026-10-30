@@ -685,7 +685,7 @@ func (s *Server) gooArchiveHTML(c *gin.Context, fv *gooFrontView) string {
 	if fv.Term != nil && strings.TrimSpace(fv.Term.Description) != "" && fv.Paged <= 1 {
 		b.WriteString(`<div class="term-description">` + wp.Autop(wp.KsesPost(fv.Term.Description)) + `</div>`)
 	} else if fv.Kind == "shop" && fv.Paged <= 1 && fv.Search == "" {
-		if pg, err := s.store.GetPost(ctx, s.gooPageID("shop")); err == nil && strings.TrimSpace(pg.Content) != "" && !strings.Contains(pg.Content, gooRenderTag) {
+		if pg, err := s.store.GetPost(ctx, s.gooPageIDIn(ctx, "shop")); err == nil && strings.TrimSpace(pg.Content) != "" && !strings.Contains(pg.Content, gooRenderTag) {
 			b.WriteString(`<div class="page-description">` + s.gooRenderContent(ctx, c, pg.Content) + `</div>`)
 		}
 	}
@@ -923,7 +923,7 @@ func (s *Server) gooBreadcrumb(c *gin.Context, fv *gooFrontView) string {
 	type crumb struct{ name, url string }
 	crumbs := []crumb{{"Home", lb.HomeURL("/")}}
 	shop := func() {
-		if id := s.gooPageID("shop"); id > 0 && int64(s.settings.Int("page_on_front")) != id {
+		if id := s.gooPageIDIn(ctx, "shop"); id > 0 && int64(s.settings.Int("page_on_front")) != s.gooPageID("shop") {
 			if pg, err := s.store.GetPost(ctx, id); err == nil {
 				crumbs = append(crumbs, crumb{pg.Title, s.gooShopURL(ctx)})
 			}
@@ -948,7 +948,7 @@ func (s *Server) gooBreadcrumb(c *gin.Context, fv *gooFrontView) string {
 		if fv.Search != "" {
 			shop()
 			crumbs = append(crumbs, crumb{"Search results for &ldquo;" + gooEsc(fv.Search) + "&rdquo;", ""})
-		} else if id := s.gooPageID("shop"); id > 0 {
+		} else if id := s.gooPageIDIn(ctx, "shop"); id > 0 {
 			if pg, err := s.store.GetPost(ctx, id); err == nil {
 				crumbs = append(crumbs, crumb{pg.Title, ""})
 			}

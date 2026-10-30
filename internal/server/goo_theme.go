@@ -20,6 +20,7 @@ import (
 //	{{goo_url . "shop"}}           shop, cart, checkout, myaccount page URLs
 //	{{goo_product_search .}}       a product search form (post_type=product)
 //	{{range goo_categories . 6}}   top-level product categories: .Name .URL .Count .Image
+//	{{goo_language_switcher .}}    Golylang's languages of the current page (nav.goo-lang-switcher), empty without it
 //
 // Every function is inert while Goocommerce is off (empty output, zero counts), so a store theme
 // still works as a plain theme.
@@ -87,6 +88,13 @@ func (s *Server) gooTemplateFuncs() template.FuncMap {
 				`<label class="screen-reader-text" for="woocommerce-product-search-field">Search for:</label>` +
 				`<input type="search" id="woocommerce-product-search-field" class="search-field" placeholder="Search products&hellip;" value="" name="s">` +
 				`<button type="submit" value="Search">Search</button><input type="hidden" name="post_type" value="product"></form>`)
+		},
+		"goo_language_switcher": func(v *siteView) template.HTML { // Golylang: the languages of the current page (goo_golylang.go)
+			_, c := gooViewCtx(v)
+			if c == nil || v == nil {
+				return ""
+			}
+			return s.gooPllSwitcher(c, v.Q)
 		},
 		"goo_categories": func(v *siteView, n int) []gooThemeCategory {
 			ctx, _ := gooViewCtx(v)
