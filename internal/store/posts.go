@@ -648,6 +648,11 @@ func (s *Store) MonthlyArchives(ctx context.Context, loc *time.Location) ([]Arch
 
 // Adjacent returns the previous or next published post by date (get_adjacent_post()).
 func (s *Store) Adjacent(ctx context.Context, p *Post, previous bool) (*Post, error) {
+	return s.AdjacentExcept(ctx, p, previous, nil)
+}
+
+// AdjacentExcept is Adjacent skipping the given ids (posts hidden from the visitor).
+func (s *Store) AdjacentExcept(ctx context.Context, p *Post, previous bool, exclude []int64) (*Post, error) {
 	if p.PublishedAt == nil {
 		return nil, ErrNotFound
 	}
@@ -655,7 +660,11 @@ func (s *Store) Adjacent(ctx context.Context, p *Post, previous bool) (*Post, er
 	if previous {
 		cmp, dir = "<", "DESC"
 	}
+	if exclude == nil {
+		exclude = []int64{}
+	}
 	return scanPost(s.Pool.QueryRow(ctx, `SELECT `+postCols+` FROM posts WHERE type = $1 AND status = 'publish'
-		AND (published_at `+cmp+` $2 OR (published_at = $2 AND id `+cmp+` $3)) ORDER BY published_at `+dir+`, id `+dir+` LIMIT 1`,
-		p.Type, *p.PublishedAt, p.ID))
+		AND (published_at `+cmp+` $2 OR (published_at = $2 AND id `+cmp+` $3)) AND NOT (id = ANY($4))
+		ORDER BY published_at `+dir+`, id `+dir+` LIMIT 1`,
+		p.Type, *p.PublishedAt, p.ID, exclude))
 }

@@ -502,8 +502,8 @@ func (s *Server) twentyTwentyPostMeta(pv *postView, location string, locked bool
 
 // twentyTwentyPostNavigation is template-parts/navigation.php.
 func (s *Server) twentyTwentyPostNavigation(ctx context.Context, p *store.Post, lb *links.Builder) template.HTML {
-	prev, _ := s.store.Adjacent(ctx, p, true)
-	next, _ := s.store.Adjacent(ctx, p, false)
+	prev, _ := s.gooAdjacent(ctx, p, true) // Goocommerce Memberships: hidden posts are skipped
+	next, _ := s.gooAdjacent(ctx, p, false)
 	if prev == nil && next == nil {
 		return ""
 	}

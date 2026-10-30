@@ -160,6 +160,27 @@ func TestGooExtBookings(t *testing.T) {
 		t.Fatalf("slots: %+v", slots)
 	}
 
+	// The month route lists the days the calendar greys out: past days, not the open Monday.
+	month := monday.Format("2006-01")
+	mc, mw := gxGetCtx("/?goo-ajax=booking_month&product_id=" + itoa64(p.ID) + "&month=" + month)
+	if !bkFrontRoute(srv, mc, "") {
+		t.Fatal("the month route did not answer")
+	}
+	var mres struct {
+		Unavailable []string `json:"unavailable"`
+	}
+	_ = json.Unmarshal(mw.Body.Bytes(), &mres)
+	if containsStr(mres.Unavailable, monday.Format("2006-01-02")) {
+		t.Errorf("an open Monday is greyed out: %s", mw.Body.String())
+	}
+	yesterday := time.Now().In(srv.gxLoc()).AddDate(0, 0, -1)
+	if yesterday.Format("2006-01") == month && !containsStr(mres.Unavailable, yesterday.Format("2006-01-02")) {
+		t.Errorf("a past day is bookable: %s", mw.Body.String())
+	}
+	if past := srv.gooBkUnavailableDays(ctx, p, conf, time.Date(2020, 1, 1, 0, 0, 0, 0, srv.gxLoc()), 0); len(past) != 31 {
+		t.Errorf("a past month has %d unavailable days, want 31", len(past))
+	}
+
 	// The AJAX route: slots and the cost of 2 adults at 10:00 = 10 + 20 + 2 × 5.
 	rc, w := gxGetCtx("/?goo-ajax=booking_slots&product_id=" + itoa64(p.ID) + "&date=" + monday.Format("2006-01-02") + "&time=10:00&wc_bookings_field_persons_adult=2")
 	if !bkFrontRoute(srv, rc, "") {

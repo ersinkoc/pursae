@@ -339,6 +339,7 @@ func (s *Server) gweProQuery(ctx context.Context, q *builder.PostQuery, v *siteV
 		out.Total, out.Pages, out.CurrentPage = v.TotalPosts, v.TotalPages, max(1, v.Q.Paged)
 		return out
 	}
+	q = s.gooLoopQuery(ctx, q) // Goocommerce Memberships: posts hidden from the visitor
 	var args []any
 	add := func(x any) string {
 		args = append(args, x)
@@ -474,14 +475,18 @@ func (s *Server) gweProAdjacent(ctx context.Context, postID int64, sameTerm, tax
 	if !prev {
 		op, order = ">", "ASC"
 	}
-	args := []any{p.Type, *p.PublishedAt, p.ID}
-	where := `type = $1 AND status = 'publish' AND (published_at ` + op + ` $2 OR (published_at = $2 AND id ` + op + ` $3))`
+	hidden := s.gooListingKinds(ctx, []string{p.Type}) // Goocommerce Memberships
+	if hidden == nil {
+		hidden = []int64{}
+	}
+	args := []any{p.Type, *p.PublishedAt, p.ID, hidden}
+	where := `type = $1 AND status = 'publish' AND (published_at ` + op + ` $2 OR (published_at = $2 AND id ` + op + ` $3)) AND NOT (id = ANY($4))`
 	if sameTerm == "yes" {
 		if taxonomy == "" {
 			taxonomy = "category"
 		}
 		args = append(args, taxonomy)
-		where += ` AND EXISTS (SELECT 1 FROM post_terms pt JOIN terms t ON t.id = pt.term_id WHERE pt.post_id = posts.id AND t.taxonomy = $4
+		where += ` AND EXISTS (SELECT 1 FROM post_terms pt JOIN terms t ON t.id = pt.term_id WHERE pt.post_id = posts.id AND t.taxonomy = $5
 			AND pt.term_id IN (SELECT term_id FROM post_terms WHERE post_id = $3))`
 	}
 	var id int64

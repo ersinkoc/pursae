@@ -311,8 +311,8 @@ var tt17SocialIcons = [][2]string{
 
 // tt17PostNav is the_post_navigation() with single.php's arguments.
 func (s *Server) tt17PostNav(ctx context.Context, p *store.Post, lb *links.Builder) template.HTML {
-	prev, _ := s.store.Adjacent(ctx, p, true)
-	next, _ := s.store.Adjacent(ctx, p, false)
+	prev, _ := s.gooAdjacent(ctx, p, true) // Goocommerce Memberships: hidden posts are skipped
+	next, _ := s.gooAdjacent(ctx, p, false)
 	if prev == nil && next == nil {
 		return ""
 	}
