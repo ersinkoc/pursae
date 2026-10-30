@@ -472,7 +472,7 @@ func (s *Server) gweExportTheme(c *gin.Context, slug string) ([]byte, error) {
 		if err != nil {
 			continue
 		}
-		f, err := os.Open(filepath.Join(s.cfg.UploadsDir, filepath.FromSlash(a.FilePath)))
+		f, err := os.Open(s.gocdnFetchBack(c, filepath.Join(s.cfg.UploadsDir, filepath.FromSlash(a.FilePath))))
 		if err != nil {
 			continue
 		}
@@ -489,7 +489,7 @@ func (s *Server) gweExportTheme(c *gin.Context, slug string) ([]byte, error) {
 	}
 	if row.ScreenshotID > 0 {
 		if a, err := s.store.GetAttachment(c, row.ScreenshotID); err == nil {
-			if b, err := os.ReadFile(filepath.Join(s.cfg.UploadsDir, filepath.FromSlash(a.FilePath))); err == nil {
+			if b, err := os.ReadFile(s.gocdnFetchBack(c, filepath.Join(s.cfg.UploadsDir, filepath.FromSlash(a.FilePath)))); err == nil {
 				screenshot = "screenshot" + path.Ext(a.FilePath)
 				if w, err := zw.Create(screenshot); err == nil {
 					_, _ = w.Write(b)

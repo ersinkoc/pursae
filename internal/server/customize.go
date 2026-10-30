@@ -536,6 +536,7 @@ func (s *Server) siteIconSizes(ctx context.Context, id int64) {
 	if len(sizes) == 0 {
 		return
 	}
+	s.gocdnFetchBack(ctx, s.gocdnLocalPath(a.FilePath)) // GoCDN: the file may live only in the bucket
 	info, err := media.ProcessImage(s.cfg.UploadsDir, a.FilePath, sizes)
 	if err != nil {
 		return
@@ -548,6 +549,7 @@ func (s *Server) siteIconSizes(ctx context.Context, id int64) {
 		_, _ = s.store.Pool.Exec(ctx, `INSERT INTO media_variants(media_id, name, file_path, width, height, mime_type, file_size)
 			VALUES ($1,$2,$3,$4,$5,$6,$7)`, id, v.Name, dir+v.File, v.Width, v.Height, v.Mime, v.Size)
 	}
+	s.gocdnAfterUploadID(ctx, id) // GoCDN: offload the new sizes
 }
 
 // siteIconLinks is wp_site_icon().

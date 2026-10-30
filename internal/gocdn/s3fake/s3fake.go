@@ -1,5 +1,7 @@
 // Package s3fake is an in-process S3 server for tests: the subset GoCDN uses (PUT, GET, HEAD,
-// DELETE object, ListObjectsV2 and presigned GETs), path-style and virtual-host style, with every
+// DELETE object, ListObjectsV2, presigned GETs, multipart uploads and CopyObject, with the
+// server-side encryption and storage class headers checked and kept), path-style and
+// virtual-host style, with every
 // request's Signature Version 4 checked: the Authorization header's shape, x-amz-date,
 // x-amz-content-sha256 against the body, and the signature itself recomputed from the request
 // as it arrived.
@@ -29,7 +31,16 @@ type Object struct {
 	ContentType  string
 	CacheControl string
 	ACL          string
+	SSE          string // x-amz-server-side-encryption
+	StorageClass string // x-amz-storage-class
+	Parts        int    // >0 when it was assembled by CompleteMultipartUpload
 	Modified     time.Time
+}
+
+type upload struct {
+	bucket, key string
+	obj         Object
+	parts       map[int][]byte
 }
 
 // Request is a logged request.
@@ -50,11 +61,17 @@ type Server struct {
 	FailNext int
 	// Errors are the signature/shape problems seen (each also answered with 403).
 	Errors []string
+	// MinPartSize is the smallest part but the last one CompleteMultipartUpload accepts (S3: 5 MB).
+	MinPartSize int
+
+	uploads map[string]*upload
+	nextID  int
 }
 
 // New starts a fake with one bucket and the given credentials.
 func New(accessKey, secretKey, region string, buckets ...string) *Server {
-	f := &Server{AccessKey: accessKey, SecretKey: secretKey, Region: region, buckets: map[string]map[string]*Object{}}
+	f := &Server{AccessKey: accessKey, SecretKey: secretKey, Region: region, buckets: map[string]map[string]*Object{},
+		MinPartSize: 5 << 20, uploads: map[string]*upload{}}
 	for _, b := range buckets {
 		f.buckets[b] = map[string]*Object{}
 	}
@@ -87,6 +104,22 @@ func (f *Server) PutObject(bucket, key string, body []byte, contentType string) 
 		f.buckets[bucket] = map[string]*Object{}
 	}
 	f.buckets[bucket][key] = &Object{Body: body, ContentType: contentType, Modified: time.Now().UTC()}
+}
+
+// AddBucket creates an (empty) bucket.
+func (f *Server) AddBucket(name string) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.buckets[name] == nil {
+		f.buckets[name] = map[string]*Object{}
+	}
+}
+
+// OpenUploads is the number of multipart uploads neither completed nor aborted.
+func (f *Server) OpenUploads() int {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return len(f.uploads)
 }
 
 // Keys lists a bucket's keys, sorted.
@@ -175,10 +208,33 @@ func (f *Server) serve(w http.ResponseWriter, r *http.Request) {
 		f.list(w, r, objects)
 	case key == "":
 		f.fail(w, http.StatusNotImplemented, "NotImplemented", "bucket operation not supported by the fake")
-	case r.Method == http.MethodPut:
+	case r.Method == http.MethodPost && r.URL.Query().Has("uploads"):
+		f.createUpload(w, r, bucket, key)
+	case r.Method == http.MethodPut && r.URL.Query().Has("uploadId"):
+		f.uploadPart(w, r, bucket, key, body)
+	case r.Method == http.MethodPost && r.URL.Query().Has("uploadId"):
+		f.completeUpload(w, r, bucket, key, body, objects)
+	case r.Method == http.MethodDelete && r.URL.Query().Has("uploadId"):
 		f.mu.Lock()
-		objects[key] = &Object{Body: body, ContentType: r.Header.Get("Content-Type"), CacheControl: r.Header.Get("Cache-Control"),
-			ACL: r.Header.Get("X-Amz-Acl"), Modified: time.Now().UTC()}
+		u := f.uploads[r.URL.Query().Get("uploadId")]
+		delete(f.uploads, r.URL.Query().Get("uploadId"))
+		f.mu.Unlock()
+		if u == nil {
+			f.fail(w, http.StatusNotFound, "NoSuchUpload", "The specified upload does not exist.")
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	case r.Method == http.MethodPut && r.Header.Get("X-Amz-Copy-Source") != "":
+		f.copyObject(w, r, key, objects)
+	case r.Method == http.MethodPut:
+		o, msg := objectFromRequest(r)
+		if msg != "" {
+			f.fail(w, http.StatusBadRequest, msg, msg)
+			return
+		}
+		o.Body = body
+		f.mu.Lock()
+		objects[key] = o
 		f.mu.Unlock()
 		w.Header().Set("ETag", `"`+etag(body)+`"`)
 		w.WriteHeader(http.StatusOK)
@@ -208,6 +264,12 @@ func (f *Server) serve(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		w.Header().Set("Content-Type", o.ContentType)
+		if o.SSE != "" {
+			w.Header().Set("X-Amz-Server-Side-Encryption", o.SSE)
+		}
+		if o.StorageClass != "" && o.StorageClass != "STANDARD" {
+			w.Header().Set("X-Amz-Storage-Class", o.StorageClass)
+		}
 		if o.CacheControl != "" {
 			w.Header().Set("Cache-Control", o.CacheControl)
 		}
@@ -226,6 +288,146 @@ func (f *Server) serve(w http.ResponseWriter, r *http.Request) {
 	default:
 		f.fail(w, http.StatusMethodNotAllowed, "MethodNotAllowed", "method not allowed")
 	}
+}
+
+var storageClasses = map[string]bool{"STANDARD": true, "REDUCED_REDUNDANCY": true, "STANDARD_IA": true, "ONEZONE_IA": true,
+	"INTELLIGENT_TIERING": true, "GLACIER": true, "DEEP_ARCHIVE": true, "GLACIER_IR": true, "EXPRESS_ONEZONE": true}
+
+// objectFromRequest reads the metadata headers of a PUT / CreateMultipartUpload / CopyObject; the
+// second result is an S3 error code for invalid values.
+func objectFromRequest(r *http.Request) (*Object, string) {
+	o := &Object{ContentType: r.Header.Get("Content-Type"), CacheControl: r.Header.Get("Cache-Control"), ACL: r.Header.Get("X-Amz-Acl"),
+		SSE: r.Header.Get("X-Amz-Server-Side-Encryption"), StorageClass: r.Header.Get("X-Amz-Storage-Class"), Modified: time.Now().UTC()}
+	if o.SSE != "" && o.SSE != "AES256" && o.SSE != "aws:kms" {
+		return nil, "InvalidArgument"
+	}
+	if o.StorageClass != "" && !storageClasses[o.StorageClass] {
+		return nil, "InvalidStorageClass"
+	}
+	return o, ""
+}
+
+func (f *Server) createUpload(w http.ResponseWriter, r *http.Request, bucket, key string) {
+	o, msg := objectFromRequest(r)
+	if msg != "" {
+		f.fail(w, http.StatusBadRequest, msg, msg)
+		return
+	}
+	f.mu.Lock()
+	f.nextID++
+	id := fmt.Sprintf("fake-upload-%d", f.nextID)
+	f.uploads[id] = &upload{bucket: bucket, key: key, obj: *o, parts: map[int][]byte{}}
+	f.mu.Unlock()
+	w.Header().Set("Content-Type", "application/xml")
+	fmt.Fprintf(w, `<?xml version="1.0" encoding="UTF-8"?><InitiateMultipartUploadResult><Bucket>%s</Bucket><Key>%s</Key><UploadId>%s</UploadId></InitiateMultipartUploadResult>`,
+		xmlEscape(bucket), xmlEscape(key), id)
+}
+
+func (f *Server) uploadPart(w http.ResponseWriter, r *http.Request, bucket, key string, body []byte) {
+	q := r.URL.Query()
+	n, err := strconv.Atoi(q.Get("partNumber"))
+	if err != nil || n < 1 || n > 10000 {
+		f.fail(w, http.StatusBadRequest, "InvalidArgument", "Part number must be an integer between 1 and 10000, inclusive")
+		return
+	}
+	f.mu.Lock()
+	u := f.uploads[q.Get("uploadId")]
+	if u != nil && u.bucket == bucket && u.key == key {
+		u.parts[n] = body
+	}
+	f.mu.Unlock()
+	if u == nil || u.bucket != bucket || u.key != key {
+		f.fail(w, http.StatusNotFound, "NoSuchUpload", "The specified upload does not exist.")
+		return
+	}
+	w.Header().Set("ETag", `"`+etag(body)+`"`)
+	w.WriteHeader(http.StatusOK)
+}
+
+func (f *Server) completeUpload(w http.ResponseWriter, r *http.Request, bucket, key string, body []byte, objects map[string]*Object) {
+	var x struct {
+		Parts []struct {
+			PartNumber int    `xml:"PartNumber"`
+			ETag       string `xml:"ETag"`
+		} `xml:"Part"`
+	}
+	id := r.URL.Query().Get("uploadId")
+	f.mu.Lock()
+	u := f.uploads[id]
+	f.mu.Unlock()
+	if u == nil || u.bucket != bucket || u.key != key {
+		f.fail(w, http.StatusNotFound, "NoSuchUpload", "The specified upload does not exist.")
+		return
+	}
+	if err := xml.Unmarshal(body, &x); err != nil || len(x.Parts) == 0 {
+		f.fail(w, http.StatusBadRequest, "MalformedXML", "The XML you provided was not well-formed")
+		return
+	}
+	// Real S3 answers 200 and puts the error in the body for problems found while assembling.
+	soft := func(code, msg string) {
+		w.Header().Set("Content-Type", "application/xml")
+		fmt.Fprintf(w, `<?xml version="1.0" encoding="UTF-8"?><Error><Code>%s</Code><Message>%s</Message></Error>`, code, xmlEscape(msg))
+	}
+	var all []byte
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	for i, p := range x.Parts {
+		data, ok := u.parts[p.PartNumber]
+		if !ok || strings.Trim(p.ETag, `"`) != etag(data) {
+			soft("InvalidPart", fmt.Sprintf("part %d is missing or its ETag does not match", p.PartNumber))
+			return
+		}
+		if i > 0 && p.PartNumber <= x.Parts[i-1].PartNumber {
+			soft("InvalidPartOrder", "The list of parts was not in ascending order.")
+			return
+		}
+		if i < len(x.Parts)-1 && len(data) < f.MinPartSize {
+			soft("EntityTooSmall", "Your proposed upload is smaller than the minimum allowed object size.")
+			return
+		}
+		all = append(all, data...)
+	}
+	o := u.obj
+	o.Body, o.Parts, o.Modified = all, len(x.Parts), time.Now().UTC()
+	objects[key] = &o
+	delete(f.uploads, id)
+	w.Header().Set("Content-Type", "application/xml")
+	fmt.Fprintf(w, `<?xml version="1.0" encoding="UTF-8"?><CompleteMultipartUploadResult><Bucket>%s</Bucket><Key>%s</Key><ETag>"%s-%d"</ETag></CompleteMultipartUploadResult>`,
+		xmlEscape(bucket), xmlEscape(key), etag(all), len(x.Parts))
+}
+
+func (f *Server) copyObject(w http.ResponseWriter, r *http.Request, key string, objects map[string]*Object) {
+	src, err := url.PathUnescape(r.Header.Get("X-Amz-Copy-Source"))
+	if err != nil {
+		f.fail(w, http.StatusBadRequest, "InvalidArgument", "bad copy source")
+		return
+	}
+	sb, sk, _ := strings.Cut(strings.TrimPrefix(src, "/"), "/")
+	f.mu.Lock()
+	var so *Object
+	if b := f.buckets[sb]; b != nil {
+		so = b[sk]
+	}
+	f.mu.Unlock()
+	if so == nil {
+		f.fail(w, http.StatusNotFound, "NoSuchKey", "The specified key does not exist.")
+		return
+	}
+	o, msg := objectFromRequest(r)
+	if msg != "" {
+		f.fail(w, http.StatusBadRequest, msg, msg)
+		return
+	}
+	if r.Header.Get("X-Amz-Metadata-Directive") != "REPLACE" {
+		o.ContentType, o.CacheControl = so.ContentType, so.CacheControl
+	}
+	o.Body = append([]byte(nil), so.Body...)
+	f.mu.Lock()
+	objects[key] = o
+	f.mu.Unlock()
+	w.Header().Set("Content-Type", "application/xml")
+	fmt.Fprintf(w, `<?xml version="1.0" encoding="UTF-8"?><CopyObjectResult><LastModified>%s</LastModified><ETag>"%s"</ETag></CopyObjectResult>`,
+		o.Modified.Format(time.RFC3339), etag(o.Body))
 }
 
 func etag(b []byte) string {

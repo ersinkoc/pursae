@@ -30,7 +30,7 @@ func (s *Server) gweSetSVGLoader() {
 		if err != nil || a.Mime != "image/svg+xml" || a.FileSize > 1<<20 {
 			return ""
 		}
-		b, err := os.ReadFile(filepath.Join(s.cfg.UploadsDir, filepath.Clean("/"+a.FilePath)))
+		b, err := os.ReadFile(s.gocdnFetchBack(context.Background(), filepath.Join(s.cfg.UploadsDir, filepath.Clean("/"+a.FilePath))))
 		if err != nil {
 			return ""
 		}

@@ -45,11 +45,33 @@ type ListResult struct {
 	Truncated bool
 }
 
-// PutOptions are the optional headers of a PUT.
+// PutOptions are the optional headers of a PUT (and of CreateMultipartUpload / CopyObject).
 type PutOptions struct {
 	ContentType  string
 	CacheControl string
 	ACL          string // "public-read" or "" (bucket default)
+	SSE          string // x-amz-server-side-encryption: "AES256" (SSE-S3) or "" (bucket default)
+	StorageClass string // x-amz-storage-class: STANDARD, STANDARD_IA, INTELLIGENT_TIERING… or ""
+}
+
+func (o PutOptions) headers() http.Header {
+	h := http.Header{}
+	if o.ContentType != "" {
+		h.Set("Content-Type", o.ContentType)
+	}
+	if o.CacheControl != "" {
+		h.Set("Cache-Control", o.CacheControl)
+	}
+	if o.ACL != "" {
+		h.Set("X-Amz-Acl", o.ACL)
+	}
+	if o.SSE != "" {
+		h.Set("X-Amz-Server-Side-Encryption", o.SSE)
+	}
+	if o.StorageClass != "" {
+		h.Set("X-Amz-Storage-Class", o.StorageClass)
+	}
+	return h
 }
 
 // Error is an S3 error response.
@@ -199,20 +221,10 @@ func parseError(resp *http.Response) error {
 
 // Put uploads an object.
 func (c *Client) Put(ctx context.Context, key string, body []byte, o PutOptions) error {
-	h := http.Header{}
-	if o.ContentType != "" {
-		h.Set("Content-Type", o.ContentType)
-	}
-	if o.CacheControl != "" {
-		h.Set("Cache-Control", o.CacheControl)
-	}
-	if o.ACL != "" {
-		h.Set("X-Amz-Acl", o.ACL)
-	}
 	if body == nil {
 		body = []byte{}
 	}
-	resp, err := c.do(ctx, http.MethodPut, key, nil, body, h)
+	resp, err := c.do(ctx, http.MethodPut, key, nil, body, o.headers())
 	if err != nil {
 		return err
 	}

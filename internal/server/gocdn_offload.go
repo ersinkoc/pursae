@@ -40,16 +40,17 @@ type gocdnItem struct {
 	Size         int64
 	Mime         string
 	LocalRemoved bool
+	Endpoint     string // the S3 endpoint it was written to ("" for rows older than 0023_gocdn_more)
 }
 
-const gocdnItemCols = `id, coalesce(media_id, 0), path, provider, region, bucket, object_key, size, mime_type, local_removed`
+const gocdnItemCols = `id, coalesce(media_id, 0), path, provider, region, bucket, object_key, size, mime_type, local_removed, endpoint`
 
 func scanGocdnItems(rows pgx.Rows) ([]*gocdnItem, error) {
 	defer rows.Close()
 	var out []*gocdnItem
 	for rows.Next() {
 		it := &gocdnItem{}
-		if err := rows.Scan(&it.ID, &it.MediaID, &it.Path, &it.Provider, &it.Region, &it.Bucket, &it.Key, &it.Size, &it.Mime, &it.LocalRemoved); err != nil {
+		if err := rows.Scan(&it.ID, &it.MediaID, &it.Path, &it.Provider, &it.Region, &it.Bucket, &it.Key, &it.Size, &it.Mime, &it.LocalRemoved, &it.Endpoint); err != nil {
 			return nil, err
 		}
 		out = append(out, it)
@@ -91,22 +92,21 @@ func (s *Server) gocdnItemsForMedia(ctx context.Context, id int64) ([]*gocdnItem
 }
 
 func (s *Server) gocdnSaveItem(ctx context.Context, it *gocdnItem) error {
-	_, err := s.store.Pool.Exec(ctx, `INSERT INTO gocdn_items (media_id, path, provider, region, bucket, object_key, size, mime_type, local_removed)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+	_, err := s.store.Pool.Exec(ctx, `INSERT INTO gocdn_items (media_id, path, provider, region, bucket, object_key, size, mime_type, local_removed, endpoint)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
 		ON CONFLICT (path) DO UPDATE SET media_id = EXCLUDED.media_id, provider = EXCLUDED.provider, region = EXCLUDED.region,
 			bucket = EXCLUDED.bucket, object_key = EXCLUDED.object_key, size = EXCLUDED.size, mime_type = EXCLUDED.mime_type,
-			local_removed = EXCLUDED.local_removed`,
-		nullable64(it.MediaID), it.Path, it.Provider, it.Region, it.Bucket, it.Key, it.Size, it.Mime, it.LocalRemoved)
+			local_removed = EXCLUDED.local_removed, endpoint = EXCLUDED.endpoint`,
+		nullable64(it.MediaID), it.Path, it.Provider, it.Region, it.Bucket, it.Key, it.Size, it.Mime, it.LocalRemoved, it.Endpoint)
 	return err
 }
 
 // gocdnItemURL is the delivery URL of an offloaded file. Items of another bucket than the
-// configured one (the bucket was changed) use that bucket's default public URL.
+// configured one (the storage settings were changed and the move job has not run) use the
+// connection they were written with (gocdnConnFor): its delivery domain, or its public bucket URL.
 func gocdnItemURL(st gocdnSettings, it *gocdnItem) string {
-	if it.Bucket != st.Bucket || it.Provider != st.Provider {
-		old := st
-		old.Bucket, old.Provider, old.Region, old.CDNDomain = it.Bucket, it.Provider, it.Region, ""
-		return gocdnObjectURL(old, it.Key)
+	if !gocdnItemOnCurrent(st, it) {
+		return gocdnObjectURL(gocdnConnFor(st, it), it.Key)
 	}
 	return gocdnObjectURL(st, it.Key)
 }
@@ -167,20 +167,22 @@ func (s *Server) gocdnUploadFile(ctx context.Context, st gocdnSettings, cl *gocd
 	if local == "" {
 		return fmt.Errorf("%s: invalid path", rel)
 	}
-	data, err := os.ReadFile(local)
+	f, err := os.Open(local)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	fi, err := f.Stat()
 	if err != nil {
 		return err
 	}
 	key := gocdnObjectKey(st, rel)
-	opts := gocdn.PutOptions{ContentType: gocdnMime(rel), CacheControl: "public, max-age=31536000, immutable"}
-	if st.PublicRead {
-		opts.ACL = "public-read"
-	}
-	if err := cl.Put(ctx, key, data, opts); err != nil {
+	opts := gocdnUploadOptions(st, rel)
+	if _, err := cl.Upload(ctx, key, f, fi.Size(), opts); err != nil {
 		return fmt.Errorf("%s: %w", rel, err)
 	}
 	return s.gocdnSaveItem(ctx, &gocdnItem{MediaID: mediaID, Path: rel, Provider: st.Provider, Region: gocdnRegion(st), Bucket: st.Bucket,
-		Key: key, Size: int64(len(data)), Mime: opts.ContentType})
+		Key: key, Size: fi.Size(), Mime: opts.ContentType, Endpoint: gocdnEndpoint(st)})
 }
 
 // gocdnOffloadAttachment copies the files of an attachment that are not in the bucket yet and,
@@ -194,7 +196,7 @@ func (s *Server) gocdnOffloadAttachment(ctx context.Context, st gocdnSettings, c
 	n := 0
 	var errs []error
 	for _, rel := range files {
-		if it := have[rel]; it != nil && it.Bucket == st.Bucket && it.Provider == st.Provider {
+		if it := have[rel]; it != nil && gocdnItemOnCurrent(st, it) {
 			if it.MediaID == 0 { // a remote import that became an attachment
 				_, _ = s.store.Pool.Exec(ctx, `UPDATE gocdn_items SET media_id = $2 WHERE id = $1`, it.ID, a.ID)
 			}
@@ -257,8 +259,18 @@ func (s *Server) gocdnAfterUpload(ctx context.Context, a *store.Attachment) {
 	}
 }
 
+// gocdnAfterUploadID is gocdnAfterUpload for an attachment ID (after new sizes were added).
+func (s *Server) gocdnAfterUploadID(ctx context.Context, id int64) {
+	if !s.gocdnOn() {
+		return
+	}
+	if a, err := s.store.GetAttachment(ctx, id); err == nil {
+		s.gocdnAfterUpload(ctx, a)
+	}
+}
+
 // gocdnBeforeDelete is called by deleteAttachmentFiles: the attachment's objects leave the bucket
-// (the rows go with the media row). Cloudflare is told to forget their URLs.
+// (the rows go with the media row). The CDN is told to forget their URLs (automatic purge).
 func (s *Server) gocdnBeforeDelete(a *store.Attachment) {
 	if a == nil || !s.gocdnOn() {
 		return
@@ -283,43 +295,22 @@ func (s *Server) gocdnBeforeDelete(a *store.Attachment) {
 		urls = append(urls, gocdnItemURL(st, it))
 		_, _ = s.store.Pool.Exec(ctx, `DELETE FROM gocdn_items WHERE id = $1`, it.ID)
 	}
-	if st.CF && st.CFAuto && len(urls) > 0 {
-		go func() { _ = s.gocdnCloudflarePurge(context.Background(), st, urls) }()
+	if st.PurgeProvider != "" && st.CFAuto && len(urls) > 0 {
+		go func() {
+			if err := s.gocdnCDNPurge(context.Background(), st, urls); err != nil {
+				slog.Warn("gocdn: CDN purge of deleted files", "err", err)
+			}
+		}()
 	}
 }
 
-// gocdnItemClient is the client for the bucket an item lives in (the configured one, or the same
-// credentials with the item's bucket after a bucket change).
+// gocdnItemClient is the client for the bucket an item lives in: the configured one, or the
+// connection it was written with after the storage settings changed (gocdnConnFor).
 func (s *Server) gocdnItemClient(st gocdnSettings, it *gocdnItem) (*gocdn.Client, error) {
-	cl, err := s.gocdnClient(st)
-	if err != nil {
-		return nil, err
+	if gocdnItemOnCurrent(st, it) {
+		return s.gocdnClient(st)
 	}
-	if it.Bucket != "" && it.Bucket != cl.Bucket {
-		cl.Bucket = it.Bucket
-		if it.Region != "" {
-			cl.Region = it.Region
-		}
-	}
-	return cl, nil
-}
-
-// gocdnEnsureLocal fetches a file back from the bucket when the server needs it (the image
-// editor) and its local copy was removed. The row keeps local_removed: the next offload of the
-// attachment deletes the copy again.
-func (s *Server) gocdnEnsureLocal(ctx context.Context, rel string) error {
-	local := s.gocdnLocalPath(rel)
-	if local == "" {
-		return errors.New("invalid path")
-	}
-	if _, err := os.Stat(local); err == nil {
-		return nil
-	}
-	it := s.gocdnItemByPath(ctx, rel)
-	if it == nil {
-		return os.ErrNotExist
-	}
-	return s.gocdnDownload(ctx, s.gocdnLoad(), it)
+	return s.gocdnClient(gocdnConnFor(st, it))
 }
 
 // gocdnDownload writes an item's object to its local path.
@@ -358,7 +349,7 @@ func (s *Server) gocdnDownload(ctx context.Context, st gocdnSettings, it *gocdnI
 
 // gocdnEnsureAttachmentLocal brings every removed file of an attachment back.
 func (s *Server) gocdnEnsureAttachmentLocal(ctx context.Context, a *store.Attachment) {
-	if a == nil || !s.gocdnOn() {
+	if a == nil || !s.gocdnTracking() {
 		return
 	}
 	for _, rel := range gocdnAttachmentFiles(a) {

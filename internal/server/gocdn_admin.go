@@ -34,6 +34,14 @@ type gocdnAdminData struct {
 	Provider    *gocdnProvider
 	SecretSaved bool
 	TokenSaved  bool
+	PurgeSaved  bool // the secret of a non-Cloudflare purge provider
+	Purgers     []gocdnPurger
+	Purger      *gocdnPurger
+	PurgeReady  bool
+	AVIF        bool
+	MoveFiles   int      // files in another bucket / under another path
+	MoveFrom    []string // where they are
+	Removed     int      // files only in the bucket
 	Configured  bool
 	Endpoint    string
 	PublicBase  string
@@ -71,6 +79,14 @@ func (s *Server) gocdnAdmin(c *gin.Context) {
 	case "preview":
 		s.gocdnRemotePreview(c)
 		return
+	case "remote-list":
+		s.gocdnRemoteJSON(c)
+		return
+	case "remote-import":
+		if c.Request.Method == http.MethodPost {
+			s.gocdnRemoteImportJSON(c)
+			return
+		}
 	}
 	if c.Request.Method == http.MethodPost {
 		if !s.checkNonce(c, gocdnNonce) {
@@ -86,7 +102,8 @@ func (s *Server) gocdnAdmin(c *gin.Context) {
 func (s *Server) gocdnRender(c *gin.Context, page, msg, errMsg string, details []string) {
 	st := s.gocdnLoad()
 	d := &gocdnAdminData{Page: page, Nonce: s.nonce(c, gocdnNonce), Locked: gocdnLocked(), EnvName: gocdnEnv, Providers: gocdnProviders,
-		Provider: gocdnProviderByKey(st.Provider), SecretSaved: st.SecretKey != "", TokenSaved: st.CFToken != "",
+		Provider: gocdnProviderByKey(st.Provider), SecretSaved: st.SecretKey != "", TokenSaved: st.CFToken != "", PurgeSaved: st.PurgeSecret != "",
+		Purgers: gocdnPurgers, PurgeReady: s.gocdnPurgeReady(st), AVIF: gocdn.AVIFAvailable(),
 		Configured: s.gocdnConfigured(st), Endpoint: gocdnEndpoint(st), PublicBase: gocdnPublicBase(st),
 		Msg: msg, Err: errMsg, Details: details, CacheOn: s.settings.Bool("wpgo_cache_enabled"), Home: s.links(c).HomeURL("/"),
 		JobKinds: gocdnJobKinds, WebP: gocdn.WebPAvailable()}
@@ -98,7 +115,10 @@ func (s *Server) gocdnRender(c *gin.Context, page, msg, errMsg string, details [
 	}
 	// Never print secrets.
 	d.S = st
-	d.S.SecretKey, d.S.CFToken, d.S.ImgKey = "", "", ""
+	d.S.SecretKey, d.S.CFToken, d.S.ImgKey, d.S.PurgeSecret, d.S.Previous = "", "", "", "", nil
+	if st.PurgeProvider != "" {
+		d.Purger = gocdnPurgerByKey(st.PurgeProvider)
+	}
 	title := "GoCDN"
 	switch page {
 	case "offload":
@@ -106,6 +126,12 @@ func (s *Server) gocdnRender(c *gin.Context, page, msg, errMsg string, details [
 		d.Stats = s.gocdnStats(c)
 		d.Job = s.gocdnJob()
 		d.JobLabel = gocdnJobKinds[d.Job.Kind]
+		d.MoveFiles, d.MoveFrom = s.gocdnMoveCount(c, st)
+		d.Removed = d.Stats.Removed
+	case "deactivate":
+		title = "Deactivate GoCDN"
+		d.Removed = s.gocdnRemovedCount(c)
+		d.Job = s.gocdnJob()
 	case "images":
 		title = "Image Service"
 		d.SamplePath, d.SampleQuery = c.Query("sample_path"), c.Query("sample_query")
@@ -128,6 +154,7 @@ func (s *Server) gocdnRender(c *gin.Context, page, msg, errMsg string, details [
 		}
 	default:
 		page, d.Page, title = "", "", "GoCDN Storage"
+		d.MoveFiles, d.MoveFrom = s.gocdnMoveCount(c, st)
 	}
 	d.Title = title
 	screen := "gocdn"
@@ -183,7 +210,11 @@ func (s *Server) gocdnAdminPost(c *gin.Context, page string) {
 	}
 
 	switch c.PostForm("do") {
+	case "deactivate-download", "deactivate-keep":
+		s.gocdnDeactivatePost(c, c.PostForm("do"))
+		return
 	case "save", "save-test":
+		prev := st
 		switch page {
 		case "":
 			setStr("provider", &st.Provider)
@@ -197,6 +228,13 @@ func (s *Server) gocdnAdminPost(c *gin.Context, page string) {
 			setBool("public-read", &st.PublicRead)
 			setStr("delivery-domain", &st.CDNDomain)
 			setStr("local-delivery", &st.LocalDelivery)
+			setBool("server-side-encryption", &st.SSE)
+			setStr("storage-class", &st.StorageClass)
+			setInt("multipart-threshold-mb", &st.MultipartMB)
+			if v := strings.ToUpper(st.StorageClass); v != "" && !gocdnStorageClassRe.MatchString(v) {
+				fail("The storage class is a name such as STANDARD_IA or INTELLIGENT_TIERING.")
+				return
+			}
 			if st.Endpoint != "" {
 				if u, err := url.Parse(st.Endpoint); err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" {
 					fail("The endpoint must be a URL such as https://s3.eu-central-1.amazonaws.com.")
@@ -222,6 +260,8 @@ func (s *Server) gocdnAdminPost(c *gin.Context, page string) {
 			setBool("img-rewrite", &st.ImgRewrite)
 			setInt("img-rewrite-quality", &st.ImgRewriteQ)
 			setInt("img-max-source-mp", &st.ImgMaxSource)
+			setBool("img-avif", &st.ImgAVIF)
+			setInt("img-max-frames", &st.ImgMaxFrames)
 		case "assets":
 			setBool("assets-enabled", &st.Assets)
 			setStr("assets-url", &st.AssetsURL)
@@ -243,14 +283,40 @@ func (s *Server) gocdnAdminPost(c *gin.Context, page string) {
 				return
 			}
 		case "purge":
-			setBool("cloudflare", &st.CF)
+			if !locked["purge-provider"] {
+				st.PurgeProvider = str("purge-provider")
+				if _, has := c.Request.PostForm["purge-provider"]; !has && c.PostForm("cloudflare") != "" { // the first version's form
+					st.PurgeProvider = "cloudflare"
+				}
+				st.CF = st.PurgeProvider == "cloudflare"
+			}
+			if gocdnPurgerByKey(st.PurgeProvider) == nil {
+				fail("Unknown CDN provider.")
+				return
+			}
 			setStr("cloudflare-zone", &st.CFZone)
 			setSecret("cloudflare-token", &st.CFToken)
 			setBool("cloudflare-auto", &st.CFAuto)
+			if st.PurgeProvider != "" && st.PurgeProvider != "cloudflare" {
+				prevProvider := prev.PurgeProvider
+				setStr("purge-zone", &st.PurgeZone)
+				setStr("purge-access-key-id", &st.PurgeKeyID)
+				if prevProvider != st.PurgeProvider && str("purge-secret") == "" && !locked["purge-secret"] {
+					st.PurgeSecret = "" // another provider's key is no use
+				}
+				setSecret("purge-secret", &st.PurgeSecret)
+				if p := gocdnPurgerByKey(st.PurgeProvider); st.PurgeZone != "" && !p.Zone.MatchString(st.PurgeZone) {
+					fail("The " + p.Name + " " + strings.ToLower(p.ZoneLabel) + " is not valid.")
+					return
+				}
+			}
 			if st.CFZone != "" && !gocdnZoneID.MatchString(st.CFZone) {
 				fail("The Cloudflare zone ID is the 32-character ID on the zone's Overview page.")
 				return
 			}
+		}
+		if page == "" {
+			st = s.gocdnRememberConn(c, prev, st)
 		}
 		if err := s.gocdnSave(c, st); err != nil {
 			fail(err.Error())
@@ -275,7 +341,7 @@ func (s *Server) gocdnAdminPost(c *gin.Context, page string) {
 		}
 	case "job":
 		kind := c.PostForm("kind")
-		if err := s.gocdnStartJob(c, kind, c.PostForm("resume") != ""); err != nil {
+		if err := s.gocdnStartJobWith(c, kind, c.PostForm("resume") != "", gocdnJobOpts{DeleteOld: c.PostForm("delete-old") != ""}); err != nil {
 			fail(err.Error())
 			return
 		}
@@ -286,12 +352,16 @@ func (s *Server) gocdnAdminPost(c *gin.Context, page string) {
 	case "purge-cache":
 		s.purgeAll(c)
 		done("WPGo Cache purged.")
-	case "purge-cloudflare":
-		if err := s.gocdnCloudflarePurge(c, st, nil); err != nil {
+	case "purge-cloudflare", "purge-cdn":
+		if err := s.gocdnCDNPurge(c, st, nil); err != nil {
 			fail(err.Error())
 			return
 		}
-		done("Cloudflare cache purged.")
+		name := "CDN"
+		if p := gocdnPurgerByKey(st.PurgeProvider); p != nil && p.Name != "" {
+			name = p.Name
+		}
+		done(name + " cache purged.")
 	case "purge-images":
 		if err := s.gocdnPurgeImageCache(); err != nil {
 			fail(err.Error())

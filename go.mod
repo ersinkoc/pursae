@@ -3,6 +3,7 @@ module wpgo
 go 1.27.1
 
 require (
+	github.com/gen2brain/avif v0.6.0
 	github.com/gen2brain/webp v0.6.4
 	github.com/gin-gonic/gin v1.12.0
 	github.com/jackc/pgx/v5 v5.11.0

@@ -35,6 +35,7 @@
 {{if .Locked}}<div class="notice notice-info"><p>Some settings are defined in the <code>{{.EnvName}}</code> environment variable and cannot be changed here.</p></div>{{end}}
 
 {{if eq .Page ""}}
+{{if .MoveFiles}}<div class="notice notice-warning inline"><p><span translate="no">{{.MoveFiles}}</span> offloaded file(s) are still in another bucket or under another path (<span translate="no">{{range $i, $b := .MoveFrom}}{{if $i}}, {{end}}{{$b}}{{end}}</span>). They keep working from there; <a href="/wp-admin/gocdn?page=offload#gc-move">move them to the current bucket</a> on the Media Offload screen.</p></div>{{end}}
 <p class="gc-sub">Connect an S3-compatible bucket. New uploads and their sizes are copied there; the Media Offload screen copies the rest of the library and decides where URLs point.
 Status: {{if .Configured}}<span class="gc-badge ok">Configured</span>{{else}}<span class="gc-badge warn">Not configured</span>{{end}}</p>
 <form method="post" action="/wp-admin/gocdn" autocomplete="off">
@@ -67,6 +68,13 @@ Status: {{if .Configured}}<span class="gc-badge ok">Configured</span>{{else}}<sp
 	<label><input type="radio" name="local-delivery" value="redirect"{{if eq .S.LocalDelivery "redirect"}} checked{{end}}{{if .Lock "local-delivery"}} disabled{{end}}> Redirect <code>/wp-content/uploads/…</code> to the delivery URL</label><br>
 	<label><input type="radio" name="local-delivery" value="signed"{{if eq .S.LocalDelivery "signed"}} checked{{end}}{{if .Lock "local-delivery"}} disabled{{end}}> Redirect to a presigned URL valid for one hour (private buckets)</label><br>
 	<label><input type="radio" name="local-delivery" value="proxy"{{if eq .S.LocalDelivery "proxy"}} checked{{end}}{{if .Lock "local-delivery"}} disabled{{end}}> Proxy the file through the site</label></fieldset></td></tr>
+<tr><th scope="row">Encryption</th><td><label><input type="checkbox" name="server-side-encryption" value="1"{{if .S.SSE}} checked{{end}}{{if .Lock "server-side-encryption"}} disabled{{end}}> Ask the storage to encrypt objects at rest (<code>x-amz-server-side-encryption: AES256</code>, SSE-S3)</label>
+	<p class="description">Leave off when the bucket already encrypts by default or the provider rejects the header.</p></td></tr>
+<tr><th scope="row"><label for="gc-class">Storage class</label></th><td><input type="text" id="gc-class" name="storage-class" class="regular-text code" value="{{.S.StorageClass}}" list="gc-classes" placeholder="bucket default" translate="no"{{if .Lock "storage-class"}} disabled{{end}}>
+	<datalist id="gc-classes"><option value="STANDARD"><option value="STANDARD_IA"><option value="INTELLIGENT_TIERING"><option value="ONEZONE_IA"><option value="GLACIER_IR"><option value="REDUCED_REDUNDANCY"></datalist>
+	<p class="description">For new objects (<code>x-amz-storage-class</code>). Empty uses the bucket's default; not every provider supports every class.</p></td></tr>
+<tr><th scope="row"><label for="gc-multi">Multipart upload</label></th><td><input type="number" id="gc-multi" name="multipart-threshold-mb" class="small-text" min="5" max="5120" value="{{.S.MultipartMB}}"{{if .Lock "multipart-threshold-mb"}} disabled{{end}}> MB
+	<p class="description">Files this size or larger are uploaded in parts (each part retried on its own; an upload that fails is aborted).</p></td></tr>
 </table>
 <p class="submit"><button type="submit" name="do" value="save" class="button button-primary">Save Changes</button> <button type="submit" name="do" value="save-test" class="button">Save and Test Connection</button></p>
 </form>
@@ -87,7 +95,7 @@ Status: {{if .Configured}}<span class="gc-badge ok">Configured</span>{{else}}<sp
 <table class="form-table" role="presentation">
 <tr><th scope="row">New uploads</th><td><label><input type="checkbox" name="copy-to-s3" value="1"{{if .S.CopyToBucket}} checked{{end}}{{if .Lock "copy-to-s3"}} disabled{{end}}> Copy files to the bucket as they are uploaded (with every generated size)</label></td></tr>
 <tr><th scope="row">Server copies</th><td><label><input type="checkbox" name="remove-local-file" value="1"{{if .S.RemoveLocal}} checked{{end}}{{if .Lock "remove-local-file"}} disabled{{end}}> Remove files from the server once they are in the bucket</label>
-	<p class="description">The image editor fetches a file back when it needs it; <code>/wp-content/uploads</code> URLs keep working (see Storage › Files removed from the server).</p></td></tr>
+	<p class="description">The server fetches a file back whenever it needs to read one (image editor, site icon, page builder, downloads, mail attachments); <code>/wp-content/uploads</code> URLs keep working (see Storage › Files removed from the server), even after GoCDN is deactivated.</p></td></tr>
 <tr><th scope="row">Delivery</th><td><label><input type="checkbox" name="serve-from-s3" value="1"{{if .S.ServeFromCDN}} checked{{end}}{{if .Lock "serve-from-s3"}} disabled{{end}}> Rewrite media URLs to the bucket / delivery domain</label>
 	<p class="description">On the site, in feeds and in the REST API: attachment URLs, <code>srcset</code>, post content. Only offloaded files are rewritten; wp-admin and the editors keep local URLs.</p></td></tr>
 </table>
@@ -108,6 +116,12 @@ Status: {{if .Configured}}<span class="gc-badge ok">Configured</span>{{else}}<sp
 		<button type="submit" name="kind" value="remove" class="button" onclick="return confirm('Delete the library’s files from the bucket? Files removed from the server are downloaded first.')"{{if not .Configured}} disabled{{end}}>Remove from the bucket</button>
 		{{if and .Job.Running .Job.Kind}}<label><input type="checkbox" name="resume" value="1" checked> Resume from attachment #{{.Job.LastID}}</label>{{end}}
 	</form>
+	{{if .MoveFiles}}<form method="post" action="/wp-admin/gocdn?page=offload" class="gc-tools" id="gc-move">
+		<input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="do" value="job">
+		<p><span translate="no">{{.MoveFiles}}</span> file(s) are in another bucket or under another path (<span translate="no">{{range $i, $b := .MoveFrom}}{{if $i}}, {{end}}{{$b}}{{end}}</span>). Until they are moved they are served from there with their old URLs.</p>
+		<button type="submit" name="kind" value="move" class="button button-primary"{{if not .Configured}} disabled{{end}}>Move to the current bucket</button>
+		<label><input type="checkbox" name="delete-old" value="1"> Delete the old objects after copying</label>
+	</form>{{end}}
 	<form method="post" action="/wp-admin/gocdn?page=offload" class="gc-tools" id="gc-job-stop"{{if not .Job.Running}} hidden{{end}}>
 		<input type="hidden" name="_wpnonce" value="{{.Nonce}}"><button type="submit" name="do" value="job-stop" class="button">Stop</button>
 	</form>
@@ -160,7 +174,7 @@ Status: {{if .Configured}}<span class="gc-badge ok">Configured</span>{{else}}<sp
 {{end}}
 
 {{if eq .Page "images"}}
-<p class="gc-sub">Resize, crop and convert uploads on the fly: <code>{{.Home}}cdn-img/2026/10/photo.jpg?w=800&amp;h=600&amp;fit=cover&amp;q=75&amp;fm=auto&amp;s=…</code>. The same parameters work on <code>/wp-content/uploads/…</code> URLs. <code>fm=auto</code> sends WebP to browsers that accept it{{if not .WebP}} (WebP is not available on this server){{end}}; AVIF requests fall back to WebP (no AVIF encoder without cgo).</p>
+<p class="gc-sub">Resize, crop and convert uploads on the fly: <code>{{.Home}}cdn-img/2026/10/photo.jpg?w=800&amp;h=600&amp;fit=cover&amp;q=75&amp;fm=auto&amp;s=…</code>. The same parameters work on <code>/wp-content/uploads/…</code> URLs. <code>fm=auto</code> sends AVIF (when turned on below) or WebP to browsers that accept them{{if not .WebP}} (WebP is not available on this server){{end}}.</p>
 <form method="post" action="/wp-admin/gocdn?page=images">
 <input type="hidden" name="_wpnonce" value="{{.Nonce}}">
 <table class="form-table" role="presentation">
@@ -170,7 +184,11 @@ Status: {{if .Configured}}<span class="gc-badge ok">Configured</span>{{else}}<sp
 <tr><th scope="row">Largest output</th><td><input type="number" name="img-max-width" class="small-text" min="16" max="8192" value="{{.S.ImgMaxW}}"{{if .Lock "img-max-width"}} disabled{{end}}> × <input type="number" name="img-max-height" class="small-text" min="16" max="8192" value="{{.S.ImgMaxH}}"{{if .Lock "img-max-height"}} disabled{{end}}> px
 	<p class="description">Images are never upscaled. Sources above <input type="number" name="img-max-source-mp" class="small-text" min="1" max="400" value="{{.S.ImgMaxSource}}"{{if .Lock "img-max-source-mp"}} disabled{{end}}> megapixels are refused.</p></td></tr>
 <tr><th scope="row"><label for="gc-q">Default quality</label></th><td><input type="number" id="gc-q" name="img-quality" class="small-text" min="1" max="100" value="{{.S.ImgQuality}}"{{if .Lock "img-quality"}} disabled{{end}}> (JPEG and WebP)</td></tr>
-<tr><th scope="row">Formats</th><td><label><input type="checkbox" name="img-webp" value="1"{{if .S.ImgWebP}} checked{{end}}{{if .Lock "img-webp"}} disabled{{end}}> Send WebP to browsers that accept it (<code>Vary: Accept</code>)</label></td></tr>
+<tr><th scope="row">Formats</th><td><label><input type="checkbox" name="img-webp" value="1"{{if .S.ImgWebP}} checked{{end}}{{if .Lock "img-webp"}} disabled{{end}}> Send WebP to browsers that accept it (<code>Vary: Accept</code>)</label><br>
+	<label><input type="checkbox" name="img-avif" value="1"{{if .S.ImgAVIF}} checked{{end}}{{if .Lock "img-avif"}} disabled{{end}}{{if not .AVIF}} disabled{{end}}> Send AVIF to browsers that accept it (preferred over WebP)</label>
+	<p class="description">AVIF files are smaller than WebP but take a few times longer to make (each variant is made once and cached). Without this, <code>fm=avif</code> answers WebP.</p></td></tr>
+<tr><th scope="row"><label for="gc-frames">Animated GIFs</label></th><td>Resize every frame of animations with up to <input type="number" id="gc-frames" name="img-max-frames" class="small-text" min="1" max="1000" value="{{.S.ImgMaxFrames}}"{{if .Lock "img-max-frames"}} disabled{{end}}> frames
+	<p class="description">Animations stay animated GIFs. Larger ones (or over three times the source pixel limit in total) get their first frame only.</p></td></tr>
 <tr><th scope="row">Variant cache</th><td><label><input type="checkbox" name="img-cache-bucket" value="1"{{if .S.ImgBucket}} checked{{end}}{{if .Lock "img-cache-bucket"}} disabled{{end}}> Also keep processed images in the bucket (<code>gocdn-cache/</code>), shared by every server</label>
 	<p class="description">Processed images are always cached on disk.</p></td></tr>
 <tr><th scope="row">Content images</th><td><label><input type="checkbox" name="img-rewrite" value="1"{{if .S.ImgRewrite}} checked{{end}}{{if .Lock "img-rewrite"}} disabled{{end}}> Serve the site's JPEG/PNG/GIF/WebP images through the service</label> at quality <input type="number" name="img-rewrite-quality" class="small-text" min="1" max="100" value="{{.S.ImgRewriteQ}}"{{if .Lock "img-rewrite-quality"}} disabled{{end}}>
@@ -215,24 +233,51 @@ Status: {{if .Configured}}<span class="gc-badge ok">Configured</span>{{else}}<sp
 <form method="post" action="/wp-admin/gocdn?page=purge" class="gc-tools">
 <input type="hidden" name="_wpnonce" value="{{.Nonce}}">
 <button type="submit" name="do" value="purge-cache" class="button button-primary">Purge WPGo Cache</button>
-<button type="submit" name="do" value="purge-cloudflare" class="button"{{if not (and .S.CF .S.CFZone .TokenSaved)}} disabled{{end}}>Purge Cloudflare (everything)</button>
+<button type="submit" name="do" value="purge-cdn" class="button"{{if not .PurgeReady}} disabled{{end}}>Purge {{with .Purger}}{{.Name}}{{else}}the CDN{{end}} (everything)</button>
 <button type="submit" name="do" value="purge-images" class="button">Empty the processed image cache</button>
 </form>
-<h2>Cloudflare</h2>
+<h2>CDN</h2>
 <form method="post" action="/wp-admin/gocdn?page=purge" autocomplete="off">
 <input type="hidden" name="_wpnonce" value="{{.Nonce}}">
 <table class="form-table" role="presentation">
-<tr><th scope="row">Cloudflare purge</th><td><label><input type="checkbox" name="cloudflare" value="1"{{if .S.CF}} checked{{end}}{{if .Lock "cloudflare"}} disabled{{end}}> Purge the site's Cloudflare zone from here</label></td></tr>
+<tr><th scope="row"><label for="gc-pp">Provider</label></th><td><select id="gc-pp" name="purge-provider"{{if .Lock "purge-provider"}} disabled{{end}}>
+	<option value="">None</option>{{range .Purgers}}<option value="{{.Key}}"{{if eq .Key $.Data.S.PurgeProvider}} selected{{end}}>{{.Name}}</option>{{end}}</select>
+	{{with .Purger}}<p class="description">{{.Help}}</p>{{end}}
+	<p class="description">Choose the provider and save to see its fields.</p></td></tr>
+{{if eq .S.PurgeProvider "cloudflare"}}
 <tr><th scope="row"><label for="gc-zone">Zone ID</label></th><td><input type="text" id="gc-zone" name="cloudflare-zone" class="regular-text code" value="{{.S.CFZone}}" translate="no"{{if .Lock "cloudflare-zone"}} disabled{{end}}></td></tr>
 <tr><th scope="row"><label for="gc-token">API token</label></th><td><div class="gc-secret">
 	{{if .Lock "cloudflare-token"}}<span class="gc-badge ok">set in {{.EnvName}}</span>{{else}}
 	<input type="password" id="gc-token" name="cloudflare-token" class="regular-text code" value="" autocomplete="new-password" placeholder="{{if .TokenSaved}}•••••••• saved — type to replace{{end}}">
 	{{if .TokenSaved}}<span class="gc-badge ok">Saved</span> <label><input type="checkbox" name="cloudflare-token-clear" value="1"> Clear</label>{{end}}{{end}}</div>
 	<p class="description">A token with the <em>Zone › Cache Purge</em> permission. Stored encrypted, never shown again.</p></td></tr>
-<tr><th scope="row">Automatic purge</th><td><label><input type="checkbox" name="cloudflare-auto" value="1"{{if .S.CFAuto}} checked{{end}}{{if .Lock "cloudflare-auto"}} disabled{{end}}> Purge Cloudflare with every automatic purge of GoCDN, and purge the URLs of deleted offloaded files</label></td></tr>
+{{else if .Purger}}{{with .Purger}}
+<tr><th scope="row"><label for="gc-pzone">{{.ZoneLabel}}</label></th><td><input type="text" id="gc-pzone" name="purge-zone" class="regular-text code" value="{{$.Data.S.PurgeZone}}" translate="no"{{if $.Data.Lock "purge-zone"}} disabled{{end}}></td></tr>
+{{if .KeyIDLabel}}<tr><th scope="row"><label for="gc-pkey">{{.KeyIDLabel}}</label></th><td><input type="text" id="gc-pkey" name="purge-access-key-id" class="regular-text code" value="{{$.Data.S.PurgeKeyID}}" translate="no" autocomplete="off"{{if $.Data.Lock "purge-access-key-id"}} disabled{{end}}></td></tr>{{end}}
+<tr><th scope="row"><label for="gc-psecret">{{.SecretName}}</label></th><td><div class="gc-secret">
+	{{if $.Data.Lock "purge-secret"}}<span class="gc-badge ok">set in {{$.Data.EnvName}}</span>{{else}}
+	<input type="password" id="gc-psecret" name="purge-secret" class="regular-text code" value="" autocomplete="new-password" placeholder="{{if $.Data.PurgeSaved}}•••••••• saved — type to replace{{end}}">
+	{{if $.Data.PurgeSaved}}<span class="gc-badge ok">Saved</span> <label><input type="checkbox" name="purge-secret-clear" value="1"> Clear</label>{{end}}{{end}}</div>
+	<p class="description">Stored encrypted with the server secret and never shown again.</p></td></tr>
+{{end}}{{end}}
+<tr><th scope="row">Automatic purge</th><td><label><input type="checkbox" name="cloudflare-auto" value="1"{{if .S.CFAuto}} checked{{end}}{{if .Lock "cloudflare-auto"}} disabled{{end}}> Purge the CDN with every automatic purge of GoCDN, and purge the URLs of deleted offloaded files</label></td></tr>
 </table>
 <p class="submit"><button type="submit" name="do" value="save" class="button button-primary">Save Changes</button></p>
 </form>
+{{end}}
+
+{{if eq .Page "deactivate"}}
+<div class="gc-job">
+<p><strong><span translate="no">{{.Removed}}</span> file(s) of the Media Library exist only in the bucket</strong> (they were removed from the server).</p>
+<p>Without GoCDN their <code>/wp-content/uploads</code> URLs would point at files that are not on the server. Choose how to deactivate:</p>
+<form method="post" action="/wp-admin/gocdn?page=deactivate" class="gc-tools">
+	<input type="hidden" name="_wpnonce" value="{{.Nonce}}">
+	<button type="submit" name="do" value="deactivate-download" class="button button-primary"{{if .Job.Running}} disabled{{end}}>Download them back to the server, then deactivate</button>
+	<button type="submit" name="do" value="deactivate-keep" class="button">Deactivate now and keep serving them from the bucket</button>
+	<a class="button-link" href="/wp-admin/plugins">Cancel</a>
+</form>
+<p class="description">The first choice runs "Download back to the server" (progress on the Media Offload screen) and deactivates GoCDN when it finished without failures. With the second, GoCDN stops rewriting URLs, the image service and its screens, but <code>/wp-content/uploads</code> keeps answering the removed files from the bucket (as set under Storage › Files removed from the server) and the server still fetches them back when it needs them, until you activate GoCDN again and download them.</p>
+</div>
 {{end}}
 </div>
 {{end}}{{template "admin-footer" .}}{{end}}

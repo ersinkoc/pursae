@@ -256,7 +256,7 @@ func (sub *gfSubmission) attachments(field string) []wpmail.Attachment {
 		if rel, ok := strings.CutPrefix(strings.TrimPrefix(rest, "/"), "uploads/"); ok && rest != "" {
 			base := filepath.Clean(sub.s.cfg.UploadsDir)
 			p := filepath.Join(base, filepath.Clean("/"+rel))
-			if st, err := os.Stat(p); err == nil && !st.IsDir() && st.Size() < 20<<20 && strings.HasPrefix(p, base+string(filepath.Separator)) {
+			if st, err := os.Stat(sub.s.gocdnFetchBack(sub.ctx, p)); err == nil && !st.IsDir() && st.Size() < 20<<20 && strings.HasPrefix(p, base+string(filepath.Separator)) {
 				if data, err := os.ReadFile(p); err == nil {
 					ct := mime.TypeByExtension(filepath.Ext(p))
 					out = append(out, wpmail.Attachment{Name: filepath.Base(p), ContentType: ct, Data: data})

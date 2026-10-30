@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -72,6 +73,10 @@ type gocdnSettings struct {
 	Prefix     string `json:"object-prefix"` // key prefix, e.g. "wp-content/uploads/"
 	PublicRead bool   `json:"public-read"`   // upload with x-amz-acl: public-read
 	CDNDomain  string `json:"delivery-domain"`
+	// Uploads: multipart from this size on (MB), SSE-S3 and the storage class of new objects.
+	MultipartMB  int    `json:"multipart-threshold-mb"`
+	SSE          bool   `json:"server-side-encryption"` // x-amz-server-side-encryption: AES256
+	StorageClass string `json:"storage-class"`          // "" = the bucket's default
 
 	// Offload
 	CopyToBucket  bool   `json:"copy-to-s3"`
@@ -91,6 +96,8 @@ type gocdnSettings struct {
 	ImgRewrite   bool   `json:"img-rewrite"`      // serve content images through the service (WebP)
 	ImgRewriteQ  int    `json:"img-rewrite-quality"`
 	ImgMaxSource int    `json:"img-max-source-mp"` // megapixels
+	ImgAVIF      bool   `json:"img-avif"`          // send AVIF to browsers that accept it (slower to encode)
+	ImgMaxFrames int    `json:"img-max-frames"`    // animated GIFs with more frames are flattened
 
 	// Assets CDN
 	Assets        bool   `json:"assets-enabled"`
@@ -99,11 +106,19 @@ type gocdnSettings struct {
 	AssetsExt     string `json:"assets-extensions"` // comma separated
 	AssetsExclude string `json:"assets-exclude"`    // one substring per line
 
-	// Purge
-	CF      bool   `json:"cloudflare"`
-	CFZone  string `json:"cloudflare-zone"`
-	CFToken string `json:"cloudflare-token"` // sealed
-	CFAuto  bool   `json:"cloudflare-auto"`  // purge Cloudflare with every automatic page-cache purge of GoCDN
+	// Purge: one CDN provider (gocdn_purge.go). Cloudflare keeps its own fields (the first
+	// version had only Cloudflare); the others share zone / key ID / secret.
+	PurgeProvider string `json:"purge-provider"` // "", cloudflare, cloudfront, bunny, keycdn, fastly
+	CF            bool   `json:"cloudflare"`     // = PurgeProvider == "cloudflare"
+	CFZone        string `json:"cloudflare-zone"`
+	CFToken       string `json:"cloudflare-token"`    // sealed
+	CFAuto        bool   `json:"cloudflare-auto"`     // purge the CDN with every automatic purge of GoCDN (any provider)
+	PurgeZone     string `json:"purge-zone"`          // CloudFront distribution ID, Bunny pull zone ID, KeyCDN zone ID, Fastly service ID
+	PurgeKeyID    string `json:"purge-access-key-id"` // CloudFront: the IAM access key ID
+	PurgeSecret   string `json:"purge-secret"`        // sealed: CloudFront secret key, Bunny / KeyCDN API key, Fastly API token
+
+	// Connections replaced on the Storage screen while items still live there (gocdn_move.go).
+	Previous []gocdnConn `json:"previous-connections,omitempty"`
 }
 
 // gocdnProvider describes a storage provider's defaults.
@@ -150,6 +165,8 @@ func gocdnDefaults() gocdnSettings {
 		ImgSign:       true,
 		ImgRewriteQ:   80,
 		ImgMaxSource:  60,
+		ImgMaxFrames:  200,
+		MultipartMB:   16,
 		AssetsDirs:    "/wp-content/themes/\n/wp-includes/\n/wp-content/plugins/\n/wp-admin/assets/",
 		AssetsExt:     "css,js,mjs,png,jpg,jpeg,gif,svg,webp,avif,ico,woff,woff2,ttf,otf,eot",
 	}
@@ -214,7 +231,42 @@ func gocdnSanitize(st gocdnSettings) gocdnSettings {
 	clamp(&st.ImgQuality, 1, 100, 82)
 	clamp(&st.ImgRewriteQ, 1, 100, 80)
 	clamp(&st.ImgMaxSource, 1, 400, 60)
+	clamp(&st.ImgMaxFrames, 1, 1000, 200)
+	clamp(&st.MultipartMB, 5, 5120, 16)
+	st.StorageClass = strings.ToUpper(strings.TrimSpace(st.StorageClass))
+	if !gocdnStorageClassRe.MatchString(st.StorageClass) {
+		st.StorageClass = ""
+	}
+	if st.PurgeProvider == "" && st.CF {
+		st.PurgeProvider = "cloudflare"
+	}
+	if gocdnPurgerByKey(st.PurgeProvider) == nil {
+		st.PurgeProvider = ""
+	}
+	st.CF = st.PurgeProvider == "cloudflare"
+	st.PurgeZone = strings.TrimSpace(st.PurgeZone)
+	st.PurgeKeyID = strings.TrimSpace(st.PurgeKeyID)
 	return st
+}
+
+var gocdnStorageClassRe = regexp.MustCompile(`^[A-Z_]{0,40}$`)
+
+// gocdnPutOptions are the headers of every object GoCDN writes for an uploads path.
+func gocdnPutOptions(st gocdnSettings, rel string) gocdn.PutOptions {
+	o := gocdn.PutOptions{ContentType: gocdnMime(rel), CacheControl: "public, max-age=31536000, immutable", StorageClass: st.StorageClass}
+	if st.PublicRead {
+		o.ACL = "public-read"
+	}
+	if st.SSE {
+		o.SSE = "AES256"
+	}
+	return o
+}
+
+// gocdnUploadOptions add the multipart threshold: parts are the threshold's size, 5–64 MB.
+func gocdnUploadOptions(st gocdnSettings, rel string) gocdn.UploadOptions {
+	th := int64(st.MultipartMB) << 20
+	return gocdn.UploadOptions{PutOptions: gocdnPutOptions(st, rel), Threshold: th, PartSize: min(max(th, gocdn.MinPartSize), 64<<20)}
 }
 
 // gocdnLocked is the set of JSON keys defined by WPGO_CDN_SETTINGS (shown read-only).
@@ -236,6 +288,11 @@ func (s *Server) gocdnSave(ctx context.Context, st gocdnSettings) error {
 	}
 	st.SecretKey = s.gocdnSeal(st.SecretKey)
 	st.CFToken = s.gocdnSeal(st.CFToken)
+	st.PurgeSecret = s.gocdnSeal(st.PurgeSecret)
+	st.Previous = append([]gocdnConn(nil), st.Previous...)
+	for i := range st.Previous {
+		st.Previous[i].SecretKey = s.gocdnSeal(st.Previous[i].SecretKey)
+	}
 	st.ImgKey = s.gocdnSeal(st.ImgKey)
 	// Keys defined by WPGO_CDN_SETTINGS are never written to the database: what was stored before
 	// for them stays as it was.
@@ -404,8 +461,9 @@ func gocdnObjectKey(st gocdnSettings, rel string) string {
 // gocdnRuntime is per-server state that has no place in the Server struct (a shared file): the
 // background job.
 type gocdnRuntime struct {
-	mu  sync.Mutex
-	job *gocdnJobState
+	mu       sync.Mutex
+	job      *gocdnJobState
+	reRemove map[string]bool // fetched-back copies waiting to be deleted again
 }
 
 var gocdnRuntimes sync.Map // *Server → *gocdnRuntime
@@ -424,23 +482,35 @@ func (s *Server) gocdnPluginRow() pluginRow {
 		Author:      "WordPress Go"}
 	if r.Active {
 		r.SettingsURL = "/wp-admin/gocdn"
+	} else if s.settings.Bool(gocdnFallbackOption) {
+		r.Description += " Files that were removed from the server are still served from the bucket while it is off; activate it and run \"Download back to the server\" to bring them back."
 	}
 	return r
 }
 
 // gocdnPluginAction is the Plugins screen's Activate / Deactivate. Offloaded files keep being
-// tracked while it is off, but URLs point back at /wp-content/uploads (so files removed from the
-// server need "Download back to the server" before deactivating).
+// tracked while it is off and URLs point back at /wp-content/uploads. When files exist only in the
+// bucket, the Deactivate link leads to a confirmation screen first, and any deactivation keeps
+// answering those files from the bucket (the uploads fallback, gocdn_fetch.go).
 func (s *Server) gocdnPluginAction(c *gin.Context, action string) {
-	if err := s.settings.Set(c, map[string]any{gocdnSetting: action == "activate"}); err != nil {
+	if action != "activate" {
+		if c.Request.Method == http.MethodGet && c.Query("gocdn-confirm") == "" && s.gocdnRemovedCount(c) > 0 {
+			c.Redirect(http.StatusFound, "/wp-admin/gocdn?page=deactivate")
+			return
+		}
+		if err := s.gocdnDeactivate(c); err != nil {
+			c.Redirect(http.StatusFound, "/wp-admin/plugins?error="+url.QueryEscape(err.Error()))
+			return
+		}
+		c.Redirect(http.StatusFound, "/wp-admin/plugins?deactivate=true")
+		return
+	}
+	if err := s.settings.Set(c, map[string]any{gocdnSetting: true, gocdnFallbackOption: false}); err != nil {
 		c.Redirect(http.StatusFound, "/wp-admin/plugins?error="+url.QueryEscape(err.Error()))
 		return
 	}
-	if action != "activate" {
-		s.gocdnStopJob()
-	}
 	s.purgeAll(c)
-	c.Redirect(http.StatusFound, "/wp-admin/plugins?"+action+"=true")
+	c.Redirect(http.StatusFound, "/wp-admin/plugins?activate=true")
 }
 
 func (s *Server) gocdnOnly() gin.HandlerFunc {
@@ -505,10 +575,17 @@ func (s *Server) gocdnMenu(menu []*menuTop, u *store.User, screen string) []*men
 // /wp-content/uploads/…?w=…) and /wp-content/uploads for files that live only in the bucket. It
 // reports whether it answered.
 func (s *Server) gocdnServe(w http.ResponseWriter, r *http.Request) bool {
-	if !s.gocdnOn() || !s.settings.Installed() || (r.Method != http.MethodGet && r.Method != http.MethodHead) {
+	if (r.Method != http.MethodGet && r.Method != http.MethodHead) || !s.settings.Installed() {
 		return false
 	}
 	p := r.URL.Path
+	if !s.gocdnOn() {
+		// Deactivated with files left only in the bucket: keep their URLs working.
+		if s.settings.Bool(gocdnFallbackOption) && strings.HasPrefix(p, "/wp-content/uploads/") {
+			return s.gocdnServeUpload(w, r, s.gocdnLoad(), strings.TrimPrefix(p, "/wp-content/uploads/"))
+		}
+		return false
+	}
 	switch {
 	case strings.HasPrefix(p, gocdnImgPath):
 		st := s.gocdnLoad()

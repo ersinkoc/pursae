@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"image"
+	"image/gif"
 	"io"
 	"net/http"
 	"os"
@@ -17,6 +18,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 
 	"wpgo/internal/gocdn"
 )
@@ -31,6 +33,70 @@ import (
 // an immutable Cache-Control.
 
 var gocdnImgSem = make(chan struct{}, max(2, runtime.NumCPU()))
+
+// gocdnAnimKey adds the frame budget to the cache key of animations (it decides animated or flat).
+func gocdnAnimKey(anim bool, st gocdnSettings) string {
+	if !anim {
+		return ""
+	}
+	return "|f" + strconv.Itoa(st.ImgMaxFrames) + "|p" + strconv.Itoa(st.ImgMaxSource)
+}
+
+// gocdnAnimMemo remembers whether a GIF source version is animated.
+var gocdnAnimMemo sync.Map
+
+// gocdnGIFAnimated reports whether GIF data has more than one image, walking the block structure
+// without decoding pixels.
+func gocdnGIFAnimated(b []byte) bool {
+	if len(b) < 13 || string(b[:3]) != "GIF" {
+		return false
+	}
+	i := 13
+	if b[10]&0x80 != 0 { // global colour table
+		i += 3 << (int(b[10]&7) + 1)
+	}
+	skipSub := func() bool {
+		for i < len(b) {
+			n := int(b[i])
+			i++
+			if n == 0 {
+				return true
+			}
+			i += n
+		}
+		return false
+	}
+	frames := 0
+	for i < len(b) {
+		switch b[i] {
+		case 0x21: // extension
+			i += 2
+			if !skipSub() {
+				return frames > 1
+			}
+		case 0x2C: // image descriptor
+			frames++
+			if frames > 1 {
+				return true
+			}
+			if i+10 > len(b) {
+				return false
+			}
+			flags := b[i+9]
+			i += 10
+			if flags&0x80 != 0 {
+				i += 3 << (int(flags&7) + 1)
+			}
+			i++ // LZW minimum code size
+			if !skipSub() {
+				return false
+			}
+		default: // 0x3B trailer or garbage
+			return frames > 1
+		}
+	}
+	return frames > 1
+}
 
 const gocdnImgMaxSourceBytes = 64 << 20
 
@@ -113,7 +179,6 @@ func (s *Server) gocdnImage(w http.ResponseWriter, r *http.Request, st gocdnSett
 	}
 
 	// The source and its version (for the cache key).
-	var src []byte
 	var version string
 	local := s.gocdnLocalPath(rel)
 	if fi, err := os.Stat(local); err == nil && fi.Mode().IsRegular() {
@@ -125,7 +190,6 @@ func (s *Server) gocdnImage(w http.ResponseWriter, r *http.Request, st gocdnSett
 	} else if it := s.gocdnItemByPath(r.Context(), rel); it != nil {
 		version = "r" + strconv.FormatInt(it.ID, 10) + "-" + strconv.FormatInt(it.Size, 10) + "-" + it.Key
 		local = ""
-		_ = it
 	} else {
 		gocdnImgError(w, http.StatusNotFound, "not found")
 		return
@@ -136,15 +200,43 @@ func (s *Server) gocdnImage(w http.ResponseWriter, r *http.Request, st gocdnSett
 	case "jpg", "jpe":
 		srcFormat = "jpeg"
 	}
+	var src []byte
+	readSrc := func(ctx context.Context) ([]byte, error) {
+		if src != nil {
+			return src, nil
+		}
+		var err error
+		if local != "" {
+			src, err = os.ReadFile(local)
+		} else {
+			src, err = s.gocdnFetchSource(ctx, st, rel)
+		}
+		return src, err
+	}
 	// The output format depends on Accept only with fm=auto; PNG/GIF sources may have alpha, which
 	// only matters when no explicit format is asked and WebP is not used.
 	alpha := srcFormat == "png" || srcFormat == "gif" || srcFormat == "webp"
-	out := gocdn.Negotiate(p.Format, r.Header.Get("Accept"), srcFormat, st.ImgWebP, alpha)
+	out := gocdn.Negotiate(p.Format, r.Header.Get("Accept"), srcFormat, st.ImgWebP, st.ImgAVIF, alpha)
+	// Animated GIFs stay animated GIFs (unless a still JPEG/PNG is asked for explicitly). Whether a
+	// GIF is animated is remembered per source version, so only the first request reads it here.
+	anim := false
+	if srcFormat == "gif" && p.Format != "jpeg" && p.Format != "png" {
+		akey := rel + "|" + version
+		if v, ok := gocdnAnimMemo.Load(akey); ok {
+			anim = v.(bool)
+		} else if data, err := readSrc(r.Context()); err == nil {
+			anim = gocdnGIFAnimated(data)
+			gocdnAnimMemo.Store(akey, anim)
+		}
+		if anim {
+			out = "gif"
+		}
+	}
 	h := w.Header()
 	if p.Format == "auto" || p.Format == "avif" {
 		h.Add("Vary", "Accept")
 	}
-	sum := sha256.Sum256([]byte(rel + "|" + version + "|" + p.Canonical() + "|q" + strconv.Itoa(p.Q) + "|" + out))
+	sum := sha256.Sum256([]byte(rel + "|" + version + "|" + p.Canonical() + "|q" + strconv.Itoa(p.Q) + "|" + out + "|anim" + strconv.FormatBool(anim) + gocdnAnimKey(anim, st)))
 	key := hex.EncodeToString(sum[:16])
 	etag := `"` + key + `"`
 	h.Set("ETag", etag)
@@ -183,12 +275,7 @@ func (s *Server) gocdnImage(w http.ResponseWriter, r *http.Request, st gocdnSett
 	case <-r.Context().Done():
 		return
 	}
-	if local != "" {
-		src, err = os.ReadFile(local)
-	} else {
-		src, err = s.gocdnFetchSource(r.Context(), st, rel)
-	}
-	if err != nil {
+	if _, err := readSrc(r.Context()); err != nil {
 		gocdnImgError(w, http.StatusBadGateway, "the source image cannot be read")
 		return
 	}
@@ -201,22 +288,38 @@ func (s *Server) gocdnImage(w http.ResponseWriter, r *http.Request, st gocdnSett
 		gocdnImgError(w, http.StatusRequestEntityTooLarge, err.Error())
 		return
 	}
-	img, _, err := image.Decode(bytes.NewReader(src))
-	if err != nil {
-		gocdnImgError(w, http.StatusUnsupportedMediaType, "the source is not a readable image")
-		return
-	}
-	img = gocdn.Transform(img, p)
 	var buf bytes.Buffer
-	if err := gocdn.Encode(&buf, img, out, p.Q); err != nil {
-		gocdnImgError(w, http.StatusInternalServerError, "encoding failed")
-		return
+	animDone := false
+	if anim {
+		if g, err := gif.DecodeAll(bytes.NewReader(src)); err == nil {
+			if ag, err := gocdn.TransformGIF(g, p, gocdn.AnimLimits{MaxFrames: st.ImgMaxFrames, MaxPixels: 3 * limits.MaxSourcePix}); err == nil {
+				animDone = gif.EncodeAll(&buf, ag) == nil
+			}
+		}
+		if !animDone { // over the frame/pixel budget: the first frame, still a GIF
+			buf.Reset()
+			h.Set("X-GoCDN-Animation", "flattened")
+		}
+	}
+	if !animDone {
+		img, _, err := image.Decode(bytes.NewReader(src))
+		if err != nil {
+			gocdnImgError(w, http.StatusUnsupportedMediaType, "the source is not a readable image")
+			return
+		}
+		img = gocdn.Transform(img, p)
+		if err := gocdn.Encode(&buf, img, out, p.Q); err != nil {
+			gocdnImgError(w, http.StatusInternalServerError, "encoding failed")
+			return
+		}
 	}
 	data := buf.Bytes()
 	gocdnImgStore(cacheFile, data)
 	if cl != nil {
 		go func(data []byte) {
-			_ = cl.Put(context.Background(), bucketKey, data, gocdn.PutOptions{ContentType: gocdn.ContentType(out), CacheControl: "public, max-age=31536000, immutable"})
+			o := gocdnPutOptions(st, "variant"+gocdn.Ext(out))
+			o.ContentType = gocdn.ContentType(out)
+			_ = cl.Put(context.Background(), bucketKey, data, o)
 		}(append([]byte(nil), data...))
 	}
 	gocdnImgWrite(w, r, out, data, "miss")

@@ -164,7 +164,7 @@ func (s *Server) gweLocalSVG(ctx context.Context, url string) string {
 		if !strings.HasSuffix(rel, ".svg") {
 			return ""
 		}
-		if st, err := os.Stat(filepath.Join(s.cfg.UploadsDir, rel)); err != nil || st.Size() > 1<<20 {
+		if st, err := os.Stat(s.gocdnFetchBack(context.Background(), filepath.Join(s.cfg.UploadsDir, rel))); err != nil || st.Size() > 1<<20 {
 			return ""
 		}
 		b, _ := os.ReadFile(filepath.Join(s.cfg.UploadsDir, rel))
