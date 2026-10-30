@@ -1,0 +1,767 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Threadline",
+  "blogdescription": "Clothes made to be lived in"
+ },
+ "categories": [
+  {
+   "slug": "notes",
+   "name": "Notes",
+   "description": "Care guides and how we wear things."
+  },
+  {
+   "slug": "makers",
+   "name": "Makers",
+   "description": "The people behind the pieces."
+  }
+ ],
+ "media": [
+  {
+   "id": "hero",
+   "file": "demo/images/threadline-hero.jpg",
+   "alt": "Linen pieces and a leather tote arranged on a sand-coloured set"
+  },
+  {
+   "id": "about",
+   "file": "demo/images/threadline-about.jpg",
+   "alt": "The studio table with fabric swatches and a sewing pattern"
+  },
+  {
+   "id": "cat-women",
+   "file": "demo/images/threadline-cat-women.jpg",
+   "alt": "Women collection"
+  },
+  {
+   "id": "cat-men",
+   "file": "demo/images/threadline-cat-men.jpg",
+   "alt": "Men collection"
+  },
+  {
+   "id": "cat-accessories",
+   "file": "demo/images/threadline-cat-accessories.jpg",
+   "alt": "Accessories collection"
+  },
+  {
+   "id": "cat-shoes",
+   "file": "demo/images/threadline-cat-shoes.jpg",
+   "alt": "Shoes collection"
+  },
+  {
+   "id": "p-linen-wrap-dress",
+   "file": "demo/images/threadline-p-linen-wrap-dress.jpg",
+   "alt": "Linen Wrap Dress"
+  },
+  {
+   "id": "p-oversized-wool-coat",
+   "file": "demo/images/threadline-p-oversized-wool-coat.jpg",
+   "alt": "Oversized Wool Coat"
+  },
+  {
+   "id": "p-ribbed-knit-sweater",
+   "file": "demo/images/threadline-p-ribbed-knit-sweater.jpg",
+   "alt": "Ribbed Knit Sweater"
+  },
+  {
+   "id": "p-pleated-midi-skirt",
+   "file": "demo/images/threadline-p-pleated-midi-skirt.jpg",
+   "alt": "Pleated Midi Skirt"
+  },
+  {
+   "id": "p-oxford-shirt",
+   "file": "demo/images/threadline-p-oxford-shirt.jpg",
+   "alt": "Organic Oxford Shirt"
+  },
+  {
+   "id": "p-relaxed-chinos",
+   "file": "demo/images/threadline-p-relaxed-chinos.jpg",
+   "alt": "Relaxed Chinos"
+  },
+  {
+   "id": "p-field-jacket",
+   "file": "demo/images/threadline-p-field-jacket.jpg",
+   "alt": "Waxed Field Jacket"
+  },
+  {
+   "id": "p-leather-tote",
+   "file": "demo/images/threadline-p-leather-tote.jpg",
+   "alt": "Leather Tote Bag"
+  },
+  {
+   "id": "p-wool-beanie",
+   "file": "demo/images/threadline-p-wool-beanie.jpg",
+   "alt": "Merino Beanie"
+  },
+  {
+   "id": "p-silk-scarf",
+   "file": "demo/images/threadline-p-silk-scarf.jpg",
+   "alt": "Silk Twill Scarf"
+  },
+  {
+   "id": "p-canvas-sneaker",
+   "file": "demo/images/threadline-p-canvas-sneaker.jpg",
+   "alt": "Canvas Low Sneaker"
+  },
+  {
+   "id": "p-chelsea-boot",
+   "file": "demo/images/threadline-p-chelsea-boot.jpg",
+   "alt": "Suede Chelsea Boot"
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Home",
+   "content": "<!-- wp:cover {\"url\":\"{{media:hero}}\",\"id\":{{media_id:hero}},\"dimRatio\":20,\"minHeight\":640,\"contentPosition\":\"center left\",\"align\":\"full\"} --><div class=\"wp-block-cover alignfull has-custom-content-position is-position-center-left\" style=\"min-height:640px\"><span aria-hidden=\"true\" class=\"wp-block-cover__background has-background-dim-20 has-background-dim\"></span><img class=\"wp-block-cover__image-background wp-image-{{media_id:hero}}\" alt=\"\" src=\"{{media:hero}}\" data-object-fit=\"cover\"/><div class=\"wp-block-cover__inner-container\"><!-- wp:paragraph {\"className\":\"tl-kicker\"} --><p class=\"tl-kicker\">The autumn edit</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":1} --><h1 class=\"wp-block-heading\">Clothes made<br>to be lived in.</h1><!-- /wp:heading --><!-- wp:paragraph --><p>Natural fibres, honest prices and pieces you will reach for every week.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"/shop/\">Shop the collection</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div></div><!-- /wp:cover --><!-- wp:heading {\"textAlign\":\"center\",\"className\":\"tl-section-title\"} --><h2 class=\"wp-block-heading has-text-align-center tl-section-title\">Shop by category</h2><!-- /wp:heading --><!-- wp:group {\"className\":\"tl-cats\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group tl-cats\"><!-- wp:image {\"id\":{{media_id:cat-women}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"/product-category/women/\"><img src=\"{{media:cat-women}}\" alt=\"Women collection\" class=\"wp-image-{{media_id:cat-women}}\"/></a><figcaption class=\"wp-element-caption\">Women</figcaption></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:cat-men}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"/product-category/men/\"><img src=\"{{media:cat-men}}\" alt=\"Men collection\" class=\"wp-image-{{media_id:cat-men}}\"/></a><figcaption class=\"wp-element-caption\">Men</figcaption></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:cat-accessories}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"/product-category/accessories/\"><img src=\"{{media:cat-accessories}}\" alt=\"Accessories collection\" class=\"wp-image-{{media_id:cat-accessories}}\"/></a><figcaption class=\"wp-element-caption\">Accessories</figcaption></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:cat-shoes}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"/product-category/shoes/\"><img src=\"{{media:cat-shoes}}\" alt=\"Shoes collection\" class=\"wp-image-{{media_id:cat-shoes}}\"/></a><figcaption class=\"wp-element-caption\">Shoes</figcaption></figure><!-- /wp:image --></div><!-- /wp:group --><!-- wp:heading {\"textAlign\":\"center\",\"className\":\"tl-section-title\"} --><h2 class=\"wp-block-heading has-text-align-center tl-section-title\">Featured pieces</h2><!-- /wp:heading --><!-- wp:shortcode -->[products limit=\"8\" columns=\"4\" visibility=\"featured\"]<!-- /wp:shortcode --><!-- wp:group {\"className\":\"tl-banner\"} --><div class=\"wp-block-group tl-banner\"><!-- wp:heading --><h2 class=\"wp-block-heading\">10% off your first order</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Use the code <strong>WELCOME10</strong> at checkout. Free shipping on orders over $75.</p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:heading {\"textAlign\":\"center\",\"className\":\"tl-section-title\"} --><h2 class=\"wp-block-heading has-text-align-center tl-section-title\">On sale now</h2><!-- /wp:heading --><!-- wp:shortcode -->[products limit=\"4\" columns=\"4\" on_sale=\"true\"]<!-- /wp:shortcode --><!-- wp:heading {\"textAlign\":\"center\",\"className\":\"tl-section-title\"} --><h2 class=\"wp-block-heading has-text-align-center tl-section-title\">New arrivals</h2><!-- /wp:heading --><!-- wp:shortcode -->[products limit=\"8\" columns=\"4\" orderby=\"date\" order=\"DESC\"]<!-- /wp:shortcode -->",
+   "template": "page-home",
+   "front_page": true
+  },
+  {
+   "slug": "about",
+   "title": "Our story",
+   "content": "<!-- wp:image {\"id\":{{media_id:about}},\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:about}}\" alt=\"The studio table with fabric swatches\" class=\"wp-image-{{media_id:about}}\"/></figure><!-- /wp:image --><!-- wp:paragraph --><p>Threadline started at a kitchen table with a roll of linen and a simple idea: make fewer, better clothes, and make them in the open. We work with a handful of family-run mills and workshops we know by name, and we price our pieces fairly, without seasonal mark-ups and mark-downs.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">What we promise</h2><!-- /wp:heading --><!-- wp:list --><ul><li>Natural and recycled fibres only.</li><li>Free repairs for the first year.</li><li>Free returns within 30 days.</li></ul><!-- /wp:list -->"
+  },
+  {
+   "slug": "contact",
+   "title": "Contact",
+   "content": "<!-- wp:paragraph --><p>Questions about sizing, an order or a repair? Write to us and a real person answers within one working day.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><strong>Email:</strong> hello@threadline.example<br><strong>Studio:</strong> 14 Weaver Lane, open Thursday to Saturday, 10–18.</p><!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "journal",
+   "title": "Journal",
+   "content": "",
+   "posts_page": true
+  }
+ ],
+ "posts": [
+  {
+   "slug": "how-to-care-for-linen",
+   "title": "How to care for linen",
+   "date": "2026-09-30T09:00:00",
+   "categories": [
+    "notes"
+   ],
+   "featured_media": "p-linen-wrap-dress",
+   "excerpt": "Linen gets better with age, if you let it. Five habits that keep it soft for years.",
+   "content": "<!-- wp:paragraph --><p>Wash cool, skip the dryer, and stop ironing: linen is meant to look lived in. Hang it while damp and the weight of the fabric does most of the work.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Store it folded, not on wire hangers, and give stains a little gentle soap rather than bleach.</p><!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "a-week-in-the-wool-coat",
+   "title": "A week in the wool coat",
+   "date": "2026-10-08T10:00:00",
+   "categories": [
+    "notes"
+   ],
+   "featured_media": "p-oversized-wool-coat",
+   "excerpt": "Seven days, seven outfits, one coat that goes with all of them.",
+   "content": "<!-- wp:paragraph --><p>We asked three people from the studio to wear the oversized coat for a week, over everything from a summer dress to a hoodie. The verdict: it goes with everything, and pockets matter.</p><!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "meet-the-shoemakers",
+   "title": "Meet the shoemakers",
+   "date": "2026-10-20T08:30:00",
+   "categories": [
+    "makers"
+   ],
+   "featured_media": "p-chelsea-boot",
+   "excerpt": "Three generations, one workshop and a lot of patience: the people behind our boots.",
+   "content": "<!-- wp:paragraph --><p>Our Chelsea boots are made in a small workshop run by the same family since the sixties. Every pair is lasted by hand and can be resoled when the time comes.</p><!-- /wp:paragraph -->"
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Shop",
+     "url": "/shop/",
+     "children": [
+      {
+       "title": "Women",
+       "url": "/product-category/women/"
+      },
+      {
+       "title": "Men",
+       "url": "/product-category/men/"
+      },
+      {
+       "title": "Accessories",
+       "url": "/product-category/accessories/"
+      },
+      {
+       "title": "Shoes",
+       "url": "/product-category/shoes/"
+      }
+     ]
+    },
+    {
+     "title": "Women",
+     "url": "/product-category/women/"
+    },
+    {
+     "title": "Men",
+     "url": "/product-category/men/"
+    },
+    {
+     "title": "Journal",
+     "page": "journal"
+    },
+    {
+     "title": "Our story",
+     "page": "about"
+    }
+   ]
+  },
+  {
+   "name": "Footer menu",
+   "location": "footer",
+   "items": [
+    {
+     "title": "Shop",
+     "url": "/shop/"
+    },
+    {
+     "title": "My account",
+     "url": "/my-account/"
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    },
+    {
+     "title": "Our story",
+     "page": "about"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "footer-1": [
+   "<!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Visit the studio</h3><!-- /wp:heading --><!-- wp:paragraph --><p>14 Weaver Lane<br>Thursday to Saturday, 10–18</p><!-- /wp:paragraph -->",
+   "<!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Help</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Free returns within 30 days.<br>Free repairs for a year.</p><!-- /wp:paragraph -->",
+   "<!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Newsletter</h3><!-- /wp:heading --><!-- wp:paragraph --><p>One letter a month about new pieces and how they are made.</p><!-- /wp:paragraph -->"
+  ]
+ },
+ "customizer": {
+  "accent": "#b5643c",
+  "announcement": "Free shipping on orders over $75 · Easy 30-day returns"
+ },
+ "goocommerce": {
+  "settings": {
+   "currency": "USD",
+   "currency_pos": "left",
+   "catalog_columns": 4,
+   "catalog_rows": 3,
+   "demo_store": false
+  },
+  "categories": [
+   {
+    "slug": "women",
+    "name": "Women",
+    "description": "Dresses, knitwear and coats cut from natural fibres.",
+    "image": "cat-women"
+   },
+   {
+    "slug": "men",
+    "name": "Men",
+    "description": "Shirts, chinos and outerwear made to be worn for years.",
+    "image": "cat-men"
+   },
+   {
+    "slug": "accessories",
+    "name": "Accessories",
+    "description": "Leather bags, merino and silk to finish the outfit.",
+    "image": "cat-accessories"
+   },
+   {
+    "slug": "shoes",
+    "name": "Shoes",
+    "description": "Canvas and suede, made by a family workshop.",
+    "image": "cat-shoes"
+   }
+  ],
+  "attributes": [
+   {
+    "slug": "size",
+    "name": "Size",
+    "terms": [
+     "S",
+     "M",
+     "L",
+     "38",
+     "39",
+     "40",
+     "41",
+     "42",
+     "43",
+     "44"
+    ]
+   },
+   {
+    "slug": "color",
+    "name": "Color",
+    "terms": [
+     "Sand",
+     "Clay"
+    ]
+   }
+  ],
+  "products": [
+   {
+    "slug": "linen-wrap-dress",
+    "name": "Linen Wrap Dress",
+    "type": "variable",
+    "regular_price": "128",
+    "categories": [
+     "women"
+    ],
+    "image": "p-linen-wrap-dress",
+    "description": "<p>Cut on the bias for an easy drape, our wrap dress is made from heavyweight European linen that softens with every wash. Adjustable tie waist, deep side pockets and a midi length that works with sandals or boots.</p>",
+    "short_description": "<p>A breezy wrap dress in washed European linen with a tie waist and deep pockets.</p>",
+    "sku": "TL-001",
+    "featured": true,
+    "attributes": [
+     {
+      "name": "Size",
+      "values": [
+       "S",
+       "M",
+       "L"
+      ],
+      "variation": true
+     },
+     {
+      "name": "Color",
+      "values": [
+       "Sand",
+       "Clay"
+      ],
+      "variation": true
+     }
+    ],
+    "variations": [
+     {
+      "attributes": {
+       "Size": "S",
+       "Color": "Sand"
+      },
+      "regular_price": "128",
+      "stock": 4,
+      "sku": "TL-LWD-S-SA"
+     },
+     {
+      "attributes": {
+       "Size": "S",
+       "Color": "Clay"
+      },
+      "regular_price": "128",
+      "stock": 4,
+      "sku": "TL-LWD-S-CL"
+     },
+     {
+      "attributes": {
+       "Size": "M",
+       "Color": "Sand"
+      },
+      "regular_price": "128",
+      "stock": 4,
+      "sku": "TL-LWD-M-SA"
+     },
+     {
+      "attributes": {
+       "Size": "M",
+       "Color": "Clay"
+      },
+      "regular_price": "128",
+      "stock": 4,
+      "sku": "TL-LWD-M-CL"
+     },
+     {
+      "attributes": {
+       "Size": "L",
+       "Color": "Sand"
+      },
+      "regular_price": "128",
+      "stock": 4,
+      "sku": "TL-LWD-L-SA"
+     },
+     {
+      "attributes": {
+       "Size": "L",
+       "Color": "Clay"
+      },
+      "regular_price": "128",
+      "stock": 4,
+      "sku": "TL-LWD-L-CL"
+     }
+    ],
+    "reviews": [
+     {
+      "author": "Mara",
+      "email": "mara@example.com",
+      "rating": 5,
+      "content": "The linen is lovely and heavy, and the tie waist means it fits on good and bad days. Already wore it to two weddings."
+     },
+     {
+      "author": "Juniper",
+      "email": "juni@example.com",
+      "rating": 4,
+      "content": "Beautiful colour. I sized down as it runs a little generous."
+     }
+    ],
+    "upsells": [
+     "silk-scarf",
+     "leather-tote"
+    ]
+   },
+   {
+    "slug": "oversized-wool-coat",
+    "name": "Oversized Wool Coat",
+    "type": "simple",
+    "regular_price": "249",
+    "categories": [
+     "women"
+    ],
+    "image": "p-oversized-wool-coat",
+    "description": "<p>Generously cut with dropped shoulders and a single hidden button, this coat layers over knits without bulk. Recycled wool blend, satin lining, two welt pockets.</p>",
+    "short_description": "<p>A dropped-shoulder coat in recycled wool, fully lined.</p>",
+    "sku": "TL-002",
+    "sale_price": "199",
+    "featured": true,
+    "stock": 6,
+    "reviews": [
+     {
+      "author": "Ines",
+      "email": "ines@example.com",
+      "rating": 5,
+      "content": "Warm without being heavy. The lining makes it slide over knits."
+     }
+    ]
+   },
+   {
+    "slug": "ribbed-knit-sweater",
+    "name": "Ribbed Knit Sweater",
+    "type": "variable",
+    "regular_price": "89",
+    "categories": [
+     "women"
+    ],
+    "image": "p-ribbed-knit-sweater",
+    "description": "<p>Knitted from extra-fine merino in a close rib that holds its shape. Wear it tucked into a skirt or loose over trousers.</p>",
+    "short_description": "<p>A fine-ribbed crew neck in soft merino.</p>",
+    "sku": "TL-003",
+    "attributes": [
+     {
+      "name": "Size",
+      "values": [
+       "S",
+       "M",
+       "L"
+      ],
+      "variation": true
+     }
+    ],
+    "variations": [
+     {
+      "attributes": {
+       "Size": "S"
+      },
+      "regular_price": "89",
+      "stock": 5
+     },
+     {
+      "attributes": {
+       "Size": "M"
+      },
+      "regular_price": "89",
+      "stock": 5
+     },
+     {
+      "attributes": {
+       "Size": "L"
+      },
+      "regular_price": "89",
+      "stock": 5
+     }
+    ]
+   },
+   {
+    "slug": "pleated-midi-skirt",
+    "name": "Pleated Midi Skirt",
+    "type": "simple",
+    "regular_price": "74",
+    "categories": [
+     "women"
+    ],
+    "image": "p-pleated-midi-skirt",
+    "description": "<p>A fluid midi skirt with an elasticated back waist and permanent knife pleats in a recycled crepe.</p>",
+    "short_description": "<p>Knife pleats that move when you do.</p>",
+    "sku": "TL-004",
+    "stock": 9
+   },
+   {
+    "slug": "oxford-shirt",
+    "name": "Organic Oxford Shirt",
+    "type": "variable",
+    "regular_price": "69",
+    "categories": [
+     "men"
+    ],
+    "image": "p-oxford-shirt",
+    "description": "<p>A relaxed button-down collar, a back box pleat and mother-of-pearl buttons. Organic cotton oxford that gets better with age.</p>",
+    "short_description": "<p>The everyday button-down in organic cotton oxford cloth.</p>",
+    "sku": "TL-005",
+    "featured": true,
+    "attributes": [
+     {
+      "name": "Size",
+      "values": [
+       "S",
+       "M",
+       "L"
+      ],
+      "variation": true
+     }
+    ],
+    "variations": [
+     {
+      "attributes": {
+       "Size": "S"
+      },
+      "regular_price": "69",
+      "stock": 7
+     },
+     {
+      "attributes": {
+       "Size": "M"
+      },
+      "regular_price": "69",
+      "stock": 7
+     },
+     {
+      "attributes": {
+       "Size": "L"
+      },
+      "regular_price": "69",
+      "stock": 7
+     }
+    ],
+    "reviews": [
+     {
+      "author": "Sam",
+      "email": "sam@example.com",
+      "rating": 5,
+      "content": "My new favourite shirt. Soft after the first wash."
+     }
+    ]
+   },
+   {
+    "slug": "relaxed-chinos",
+    "name": "Relaxed Chinos",
+    "type": "simple",
+    "regular_price": "79",
+    "categories": [
+     "men"
+    ],
+    "image": "p-relaxed-chinos",
+    "description": "<p>Mid rise, relaxed through the thigh with a gentle taper. Garment-dyed brushed twill with a little stretch.</p>",
+    "short_description": "<p>A relaxed taper in brushed cotton twill.</p>",
+    "sku": "TL-006",
+    "sale_price": "59",
+    "stock": 12
+   },
+   {
+    "slug": "field-jacket",
+    "name": "Waxed Field Jacket",
+    "type": "simple",
+    "regular_price": "189",
+    "categories": [
+     "men"
+    ],
+    "image": "p-field-jacket",
+    "description": "<p>A modern take on the classic field jacket with a corduroy collar, four bellows pockets and a waxed cotton shell you can re-proof at home.</p>",
+    "short_description": "<p>Four pockets and a waxed cotton shell that shrugs off showers.</p>",
+    "sku": "TL-007",
+    "featured": true,
+    "stock": 4
+   },
+   {
+    "slug": "leather-tote",
+    "name": "Leather Tote Bag",
+    "type": "simple",
+    "regular_price": "149",
+    "categories": [
+     "accessories"
+    ],
+    "image": "p-leather-tote",
+    "description": "<p>Big enough for a laptop and the day's errands, with an inner zip pocket and riveted handles. Vegetable-tanned leather from a family tannery.</p>",
+    "short_description": "<p>Vegetable-tanned leather that ages beautifully.</p>",
+    "sku": "TL-008",
+    "featured": true,
+    "stock": 8,
+    "reviews": [
+     {
+      "author": "Tom",
+      "email": "tom@example.com",
+      "rating": 5,
+      "content": "Fits my 14 inch laptop and still looks smart. The leather is already softening."
+     },
+     {
+      "author": "Ada",
+      "email": "ada@example.com",
+      "rating": 5,
+      "content": "Gorgeous bag, beautifully stitched."
+     }
+    ],
+    "cross_sells": [
+     "wool-beanie",
+     "silk-scarf"
+    ]
+   },
+   {
+    "slug": "wool-beanie",
+    "name": "Merino Beanie",
+    "type": "simple",
+    "regular_price": "29",
+    "categories": [
+     "accessories"
+    ],
+    "image": "p-wool-beanie",
+    "description": "<p>A simple turn-up beanie knitted in fine merino. Warm, breathable and never itchy.</p>",
+    "short_description": "<p>A soft rib beanie in merino wool.</p>",
+    "sku": "TL-009",
+    "stock": 20
+   },
+   {
+    "slug": "silk-scarf",
+    "name": "Silk Twill Scarf",
+    "type": "simple",
+    "regular_price": "55",
+    "categories": [
+     "accessories"
+    ],
+    "image": "p-silk-scarf",
+    "description": "<p>Printed with our seasonal pattern on silk twill and finished with hand-rolled edges. Tie it at the neck, on a bag or in your hair.</p>",
+    "short_description": "<p>A hand-rolled silk square with an original print.</p>",
+    "sku": "TL-010",
+    "stock": 10
+   },
+   {
+    "slug": "canvas-sneaker",
+    "name": "Canvas Low Sneaker",
+    "type": "variable",
+    "regular_price": "95",
+    "categories": [
+     "shoes"
+    ],
+    "image": "p-canvas-sneaker",
+    "description": "<p>A clean low-top with organic canvas uppers, a cushioned cork footbed and a vulcanised natural rubber sole.</p>",
+    "short_description": "<p>Organic canvas uppers on a natural rubber sole.</p>",
+    "sku": "TL-011",
+    "featured": true,
+    "attributes": [
+     {
+      "name": "Size",
+      "values": [
+       "38",
+       "39",
+       "40",
+       "41",
+       "42",
+       "43",
+       "44"
+      ],
+      "variation": true
+     }
+    ],
+    "variations": [
+     {
+      "attributes": {
+       "Size": "38"
+      },
+      "regular_price": "95",
+      "stock": 3
+     },
+     {
+      "attributes": {
+       "Size": "39"
+      },
+      "regular_price": "95",
+      "stock": 3
+     },
+     {
+      "attributes": {
+       "Size": "40"
+      },
+      "regular_price": "95",
+      "stock": 3
+     },
+     {
+      "attributes": {
+       "Size": "41"
+      },
+      "regular_price": "95",
+      "stock": 3
+     },
+     {
+      "attributes": {
+       "Size": "42"
+      },
+      "regular_price": "95",
+      "stock": 3
+     },
+     {
+      "attributes": {
+       "Size": "43"
+      },
+      "regular_price": "95",
+      "stock": 3
+     },
+     {
+      "attributes": {
+       "Size": "44"
+      },
+      "regular_price": "95",
+      "stock": 3
+     }
+    ],
+    "reviews": [
+     {
+      "author": "Leo",
+      "email": "leo@example.com",
+      "rating": 4,
+      "content": "Comfortable from day one. Order your usual size."
+     }
+    ]
+   },
+   {
+    "slug": "chelsea-boot",
+    "name": "Suede Chelsea Boot",
+    "type": "simple",
+    "regular_price": "210",
+    "categories": [
+     "shoes"
+    ],
+    "image": "p-chelsea-boot",
+    "description": "<p>Made by hand in Portugal from water-repellent suede with a leather lining and a resoleable rubber sole.</p>",
+    "short_description": "<p>Soft suede, elastic gussets, a stacked heel.</p>",
+    "sku": "TL-012",
+    "stock": 5
+   }
+  ],
+  "coupons": [
+   {
+    "code": "WELCOME10",
+    "type": "percent",
+    "amount": "10",
+    "description": "10% off your first order"
+   }
+  ],
+  "shipping": {
+   "flat_rate": "6",
+   "free_over": "75",
+   "local_pickup": true
+  }
+ }
+}

@@ -1,0 +1,5 @@
+<section class="no-results not-found">
+	<h2 class="page-title">Nothing found</h2>
+	{{if eq .Template "search"}}<p>Nothing matched your search. Try other words.</p>{{template "searchform" .}}
+	{{else}}<p>It seems we can&rsquo;t find what you&rsquo;re looking for. Perhaps searching can help.</p>{{template "searchform" .}}{{end}}
+</section>

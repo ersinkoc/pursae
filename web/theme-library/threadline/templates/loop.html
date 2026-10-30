@@ -1,0 +1,11 @@
+<div class="tl-posts">
+	{{range $p := .Posts}}<article id="post-{{.ID}}" class="{{.Class}} tl-post-card">
+		{{with .Thumbnail}}<a class="tl-post-card__media" href="{{$p.Permalink}}" aria-hidden="true" tabindex="-1">{{.}}</a>{{end}}
+		<div class="tl-post-card__text">
+			<p class="tl-kicker">{{with .Categories}}{{(index . 0).Name}}{{else}}Journal{{end}} &middot; <time datetime="{{.DateISO}}">{{.DateText}}</time></p>
+			<h2 class="tl-post-card__title"><a href="{{.Permalink}}" rel="bookmark">{{.Title}}</a></h2>
+			{{if .ShowExcerpt}}<div class="tl-post-card__excerpt">{{.Excerpt}}</div>{{end}}
+		</div>
+	</article>
+	{{end}}
+</div>

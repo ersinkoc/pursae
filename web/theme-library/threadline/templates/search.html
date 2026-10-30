@@ -1,0 +1,8 @@
+{{template "header" .}}
+<div class="tl-wrap">
+	<header class="page-header">
+		<h1 class="page-title">Search results for &ldquo;{{.SearchQuery}}&rdquo;</h1>
+	</header>
+	{{if .Posts}}{{template "loop" .}}{{.Pagination}}{{else}}{{template "content-none" .}}{{end}}
+</div>
+{{template "footer" .}}
