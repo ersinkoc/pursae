@@ -78,6 +78,7 @@ type asSettings struct {
 	PwMinStrength map[string]int `json:"pw_min_strength"` // per role, 0-4
 	PwBlockCommon bool           `json:"pw_block_common"`
 	PwCheckLogin  bool           `json:"pw_check_login"` // weak current password: change it at login
+	PwAllowWeak   bool           `json:"pw_allow_weak"`  // test sites: no policy, no forced change for a weak password
 
 	// Sessions
 	IdleMinutes int `json:"idle_minutes"`

@@ -995,6 +995,15 @@ func TestAdminSecPolicyAuditHardening(t *testing.T) {
 		t.Errorf("weak password not caught at login: %s", loc)
 	}
 
+	// Weak passwords allowed (test sites): no policy, no forced change at login.
+	asConfigure(t, srv, func(st *asSettings) { st.PwAllowWeak = true })
+	if _, _, loc := asLogin(t, asNewClient(), base, "/wp-login", "weakling", "monkey"); strings.Contains(loc, "adminsec=password") {
+		t.Errorf("weak password still forced with weak passwords allowed: %s", loc)
+	}
+	if msg := srv.adminsecPasswordProblem([]string{"administrator"}, "x", "x@example.test", "123"); msg != "" {
+		t.Errorf("policy applied with weak passwords allowed: %s", msg)
+	}
+	asConfigure(t, srv, func(st *asSettings) { st.PwAllowWeak = false })
 	// Audit: plugin switches, settings, roles; filters and CSV.
 	asCreateUser(t, srv, "promo", "subscriber", asStrongPass)
 	_, body, _ = get(t, c, base+"/wp-admin/users")
@@ -1050,5 +1059,22 @@ func TestAdminSecPolicyAuditHardening(t *testing.T) {
 	}
 	if asCount(t, `SELECT count(*) FROM adminsec_log WHERE event = 'adminsec_settings'`) == 0 {
 		t.Error("settings change not logged")
+	}
+	// A user with a second factor is never asked to change the password, even on request.
+	ctx := context.Background()
+	tfID := asCreateUser(t, srv, "twofactor", "editor", "monkey")
+	tfUser, _ := srv.store.UserByID(ctx, tfID)
+	if tfUser.Meta == nil {
+		tfUser.Meta = map[string]any{}
+	}
+	tfUser.Meta["adminsec_force_password"] = "admin"
+	if !srv.asForcePassword(ctx, tfUser) {
+		t.Error("administrator's request ignored without a second factor")
+	}
+	if _, err := srv.store.Pool.Exec(ctx, `INSERT INTO adminsec_factors (user_id, email_enabled, email_address) VALUES ($1, true, 'twofactor@example.test')`, tfID); err != nil {
+		t.Fatal(err)
+	}
+	if srv.asForcePassword(ctx, tfUser) {
+		t.Error("forced password change for a user with 2FA/MFA")
 	}
 }

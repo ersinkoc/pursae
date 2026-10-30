@@ -200,8 +200,8 @@ func (s *Server) asDashboard(c *gin.Context, d *asAdminData) {
 		{Label: "Login errors don't reveal usernames", Detail: "One generic message for a wrong username or password.", OK: st.GenericErrors, Points: 4, FixURL: set("login"), FixLabel: "Turn on"},
 		{Label: "User enumeration is blocked", Detail: "/?author=N and the REST users list for visitors.", OK: st.BlockEnumeration, Points: 4, FixURL: set("login"), FixLabel: "Turn on"},
 		{Label: "No account is called “admin”", Detail: "The first username attackers try.", OK: !adminLogin, Points: 4, FixURL: "/wp-admin/users?s=admin", FixLabel: "Review users"},
-		{Label: "Strong passwords for administrators", Detail: "At least 12 characters and “Strong”.", OK: adminLen >= 12 && adminStrength >= 3, Points: 6, FixURL: set("passwords"), FixLabel: "Set the policy"},
-		{Label: "Common passwords are refused", Detail: "The 10,000 most used passwords.", OK: st.PwBlockCommon, Points: 4, FixURL: set("passwords"), FixLabel: "Turn on"},
+		{Label: "Strong passwords for administrators", Detail: "At least 12 characters and “Strong”.", OK: adminLen >= 12 && adminStrength >= 3 && !st.PwAllowWeak, Points: 6, FixURL: set("passwords"), FixLabel: "Set the policy"},
+		{Label: "Common passwords are refused", Detail: "The 10,000 most used passwords.", OK: st.PwBlockCommon && !st.PwAllowWeak, Points: 4, FixURL: set("passwords"), FixLabel: "Turn on"},
 		{Label: "The file editors are disabled", Detail: "Theme and Plugin File Editor (DISALLOW_FILE_EDIT).", OK: st.DisableFileEdit, Points: 6, FixURL: set("hardening"), FixLabel: "Disable"},
 		{Label: "Security headers are sent", Detail: "X-Frame-Options, Referrer-Policy, Permissions-Policy, HSTS on HTTPS.", OK: st.Headers, Points: 4, FixURL: set("hardening"), FixLabel: "Turn on"},
 		{Label: "The site uses HTTPS", Detail: "Settings › General › Site Address.", OK: https, Points: 6, FixURL: "/wp-admin/options-general", FixLabel: "Check the address"},
@@ -355,7 +355,7 @@ func (s *Server) asParseSettings(c *gin.Context, st asSettings, tab string) (asS
 			st.PwMinLength[r.Slug] = asFormInt(c, "pw_len_"+r.Slug, 0, 0, 128)
 			st.PwMinStrength[r.Slug] = asFormInt(c, "pw_strength_"+r.Slug, 0, 0, 4)
 		}
-		st.PwBlockCommon, st.PwCheckLogin = on("pw_block_common"), on("pw_check_login")
+		st.PwBlockCommon, st.PwCheckLogin, st.PwAllowWeak = on("pw_block_common"), on("pw_check_login"), on("pw_allow_weak")
 	case "sessions":
 		st.IdleMinutes = asFormInt(c, "idle_minutes", st.IdleMinutes, 0, 10080)
 		if st.IdleMinutes > 0 && st.IdleMinutes < 5 {

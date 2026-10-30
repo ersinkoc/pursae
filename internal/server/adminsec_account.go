@@ -405,7 +405,7 @@ func (s *Server) adminsecProfileHTML(c *gin.Context, target *store.User, self bo
 	}
 	f := s.asFactors(c, target.ID)
 	d := asProfileData{Self: self, CanManage: !self && u.Can("edit_users", nil), TargetID: target.ID, F: f, BackupLeft: f.backupLeft(),
-		Sessions: s.asSessions(c, target.ID, cur), Devices: len(s.asDevices(c, target.ID)), ForcePassword: asForcePassword(target),
+		Sessions: s.asSessions(c, target.ID, cur), Devices: len(s.asDevices(c, target.ID)), ForcePassword: s.asForcePassword(c, target),
 		AccountURL: "/wp-admin/admin?page=" + asSlug + "-account", IdleMinutes: s.asLoad().IdleMinutes}
 	d.Enroll = s.asEnrollState(c, target)
 	var buf bytes.Buffer
@@ -451,7 +451,7 @@ func (s *Server) adminsecProfileAction(c *gin.Context, target *store.User, back 
 		_ = s.setUserMeta(c, target, "adminsec_grace_start", nil)
 		s.asAudit(c, asEvent{Event: "factors_reset", Severity: "warning", Object: target.Login, Message: "Two-step login factors, backup codes and remembered devices of " + target.Login + " removed."})
 	case act == "force-password" && manage:
-		_ = s.setUserMeta(c, target, "adminsec_force_password", true)
+		_ = s.setUserMeta(c, target, "adminsec_force_password", "admin")
 		s.asAudit(c, asEvent{Event: "password_change_forced", Severity: "notice", Object: target.Login, Message: "Password change required at the next login."})
 	case act == "unforce-password" && manage:
 		_ = s.setUserMeta(c, target, "adminsec_force_password", nil)
@@ -469,7 +469,7 @@ func (s *Server) adminsecProfileNotices(c *gin.Context, u *store.User) []notice 
 		return nil
 	}
 	var out []notice
-	if asForcePassword(u) {
+	if s.asForcePassword(c, u) {
 		out = append(out, notice{Type: "error", Message: "<strong>Please choose a new password.</strong> Your password has to be changed before you can continue (it is too weak for the site's password policy, or an administrator asked for a new one)."})
 	}
 	if c.Query("adminsec") == "done" {

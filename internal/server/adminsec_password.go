@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	_ "embed"
 	"fmt"
 	"math"
@@ -124,6 +125,9 @@ func (s *Server) adminsecPasswordProblem(roles []string, login, email, pw string
 		return ""
 	}
 	st := s.asLoad()
+	if st.PwAllowWeak {
+		return ""
+	}
 	minLen, minStrength := st.policyFor(roles)
 	if n := len([]rune(pw)); minLen > 0 && n < minLen {
 		return fmt.Sprintf("The password must be at least %d characters long.", minLen)
@@ -153,15 +157,26 @@ func (s *Server) adminsecPasswordChanged(c *gin.Context, u *store.User) {
 	if !s.adminsecOn() {
 		return
 	}
-	if v, _ := u.Meta["adminsec_force_password"].(bool); v {
+	if u.Meta["adminsec_force_password"] != nil {
 		_ = s.setUserMeta(c, u, "adminsec_force_password", nil)
 	}
 	s.asAudit(c, asEvent{Event: "password_changed", Severity: "notice", Object: u.Login, Message: "Password changed for " + u.Login + "."})
 }
 
-func asForcePassword(u *store.User) bool {
-	v, _ := u.Meta["adminsec_force_password"].(bool)
-	return v
+// asForcePassword reports a pending forced change: true when the policy asked for it, "admin"
+// when an administrator did. With weak passwords allowed only the administrator's request stays,
+// and a user who signs in with a second factor (2FA or MFA) is never asked.
+func (s *Server) asForcePassword(ctx context.Context, u *store.User) bool {
+	if u.Meta["adminsec_force_password"] == nil || s.asFactors(ctx, u.ID).any() {
+		return false
+	}
+	switch v := u.Meta["adminsec_force_password"].(type) {
+	case bool:
+		return v && !s.asLoad().PwAllowWeak
+	case string:
+		return v == "admin"
+	}
+	return false
 }
 
 var asKeyboardRows = []string{"qwertyuiop", "asdfghjkl", "zxcvbnm", "1234567890", "qwertzuiop", "azertyuiop", "!@#$%^&*()"}
