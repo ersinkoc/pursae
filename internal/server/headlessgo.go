@@ -20,7 +20,8 @@ import (
 // types, components and dynamic zones), a Content Manager with draft & publish and i18n through
 // Golylang, a delivery REST API under /wp-json/headlessgo/v1 with filters, sorting, pagination,
 // populate and field selection, API tokens, a public-role permission matrix, CORS, webhooks,
-// preview URLs and a small read-only GraphQL endpoint.
+// preview URLs, a GraphQL endpoint (queries, mutations, introspection), content history, scheduled
+// publishing, bulk actions, media upload and bidirectional relations.
 //
 // While it is active the site's front end does not render (headless mode): visitors get a JSON
 // 404, a plain 404 or a redirect to the front-end app, as configured. wp-admin, wp-login, the REST
@@ -58,12 +59,13 @@ type hgSettings struct {
 	DefaultPageSize  int                 `json:"default_page_size"`
 	MaxPageSize      int                 `json:"max_page_size"`
 	GraphQL          bool                `json:"graphql"`
-	SchemaWebhooks   bool                `json:"schema_webhooks"` // send schema.update events
+	SchemaWebhooks   bool                `json:"schema_webhooks"`  // send schema.update events
+	WebhookAttempts  int                 `json:"webhook_attempts"` // attempts per delivery, the first included
 }
 
 func hgDefaults() hgSettings {
 	return hgSettings{FrontMode: "json", AllowEditors: true, Public: map[string][]string{}, PreviewTTL: 60, DefaultLocale: "en",
-		DefaultPageSize: 25, MaxPageSize: 100, GraphQL: true}
+		DefaultPageSize: 25, MaxPageSize: 100, GraphQL: true, WebhookAttempts: 5}
 }
 
 // hgOn reports whether HeadlessGo is active: one cached option read.
@@ -131,6 +133,9 @@ func hgSanitize(st hgSettings) hgSettings {
 	}
 	if st.MaxPageSize <= 0 || st.MaxPageSize > 1000 {
 		st.MaxPageSize = 100
+	}
+	if st.WebhookAttempts <= 0 || st.WebhookAttempts > 10 {
+		st.WebhookAttempts = 5
 	}
 	if st.DefaultPageSize <= 0 || st.DefaultPageSize > st.MaxPageSize {
 		st.DefaultPageSize = min(25, st.MaxPageSize)
@@ -227,6 +232,11 @@ func (s *Server) hgPluginAction(c *gin.Context, action string) {
 		c.Redirect(http.StatusFound, "/wp-admin/plugins?error="+url.QueryEscape(err.Error()))
 		return
 	}
+	if on {
+		s.hgEnsureTick(c)
+	} else {
+		s.hgDropTick(c)
+	}
 	s.hgRegFlush()
 	s.purgeAll(c) // the front end appears or disappears
 	c.Redirect(http.StatusFound, "/wp-admin/plugins?"+action+"=true")
@@ -234,7 +244,7 @@ func (s *Server) hgPluginAction(c *gin.Context, action string) {
 
 // hgMenuPages are the screens of the HeadlessGo menu.
 var hgMenuPages = []struct{ Page, Title string }{
-	{"", "Content Manager"}, {"builder", "Content-Type Builder"}, {"tokens", "API Tokens"}, {"webhooks", "Webhooks"}, {"settings", "Settings"},
+	{"", "Content Manager"}, {"builder", "Content-Type Builder"}, {"tokens", "API Tokens"}, {"webhooks", "Webhooks"}, {"graphql", "GraphQL"}, {"settings", "Settings"},
 }
 
 // hgMenu adds the HeadlessGo top-level menu after Settings while the plugin is active.
@@ -245,7 +255,7 @@ func (s *Server) hgMenu(menu []*menuTop, u *store.User, screen string) []*menuTo
 	admin := u.Can("manage_options", nil)
 	top := &menuTop{Slug: hgSlug, Title: "HeadlessGo", ID: "toplevel_page_headlessgo", Icon: "dashicons-rest-api"}
 	cur := screen
-	if p, ok := strings.CutPrefix(screen, hgSlug+"?page="); ok && (p == "entries" || p == "entry") {
+	if p, ok := strings.CutPrefix(screen, hgSlug+"?page="); ok && (p == "entries" || p == "entry" || p == "history") {
 		cur = hgSlug
 	}
 	for i, p := range hgMenuPages {
@@ -279,6 +289,7 @@ func (s *Server) registerHeadlessGo(admin *gin.RouterGroup) {
 	admin.GET("/headlessgo", s.hgOnly(), s.hgAdmin)
 	admin.POST("/headlessgo", s.hgOnly(), s.hgAdmin)
 	admin.GET("/headlessgo/search", s.hgOnly(), s.hgAdminSearch)
+	admin.POST("/headlessgo/graphql", s.hgOnly(), s.hgAdminGraphQL)
 }
 
 // The gate --------------------------------------------------------------------------------------------

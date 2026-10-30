@@ -8,6 +8,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -20,9 +21,11 @@ import (
 )
 
 // HeadlessGo webhooks: on entry create, update, publish, unpublish and delete (and, optionally,
-// schema changes) every enabled webhook subscribed to the event receives a JSON POST, sent in the
-// background and retried when it fails (a network error or a non-2xx answer). Each attempt is
-// logged with its status code, duration and the start of the response. With a secret, the body is
+// schema changes) every enabled webhook subscribed to the event receives a JSON POST. Deliveries
+// go through a durable queue (hg_webhook_queue): the first attempt starts at once in the
+// background; a failure (a network error or a non-2xx answer) is retried with an exponential
+// backoff until the webhook's maximum of attempts, in-process and by the scheduler's tick after a
+// restart. Each attempt is logged with its status code, duration and the start of the response. With a secret, the body is
 // signed: X-HeadlessGo-Signature: sha256=<hex HMAC-SHA256 of the body>.
 
 type hgWebhook struct {
@@ -42,12 +45,25 @@ var hgWebhookEvents = []struct{ Key, Label string }{
 	{"entry.publish", "Entry published"}, {"entry.unpublish", "Entry unpublished"}, {"schema.update", "Content type changed"},
 }
 
-// hgWebhookDelays are the waits before each attempt: three attempts in all.
-var hgWebhookDelays = []time.Duration{0, 5 * time.Second, 30 * time.Second}
+// hgWebhookBase is the wait before the first retry; each further retry waits four times longer
+// (10 s, 40 s, 160 s, 640 s…, at most six hours). Tests shorten it.
+var hgWebhookBase = 10 * time.Second
+
+// hgWebhookBackoff is the wait before attempt n+1 after n failed attempts.
+func hgWebhookBackoff(n int) time.Duration {
+	d := hgWebhookBase
+	for i := 1; i < n; i++ {
+		d *= 4
+		if d > 6*time.Hour {
+			return 6 * time.Hour
+		}
+	}
+	return d
+}
 
 var hgWebhookClient = &http.Client{Timeout: 10 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
 
-// hgWebhookWG tracks deliveries in flight (tests wait on it).
+// hgWebhookWG tracks in-process deliveries and pending in-process retries (tests wait on it).
 var hgWebhookWG sync.WaitGroup
 
 // hgReservedHeaders cannot be set as custom headers.
@@ -182,8 +198,13 @@ func (s *Server) hgEmitSchema(ctx context.Context, action string, sc *hgSchema) 
 	s.hgEmitPayload(ctx, "schema.update", map[string]any{"action": action, "uid": sc.UID, "schema": sc})
 }
 
+// hgEmitPayload queues the event for every enabled webhook subscribed to it and starts the first
+// attempt in the background. The queue row is the delivery's durable state: retries survive a
+// restart (hgProcessQueue).
 func (s *Server) hgEmitPayload(ctx context.Context, event string, extra map[string]any) {
 	hooks := s.hgWebhooks(ctx)
+	max := s.hgLoad().WebhookAttempts
+	queued := false
 	for _, w := range hooks {
 		if !w.Enabled || !containsStr(w.Events, event) {
 			continue
@@ -196,12 +217,36 @@ func (s *Server) hgEmitPayload(ctx context.Context, event string, extra map[stri
 		if err != nil {
 			continue
 		}
-		hgWebhookWG.Add(1)
-		go func(w *hgWebhook) {
-			defer hgWebhookWG.Done()
-			s.hgDeliver(context.Background(), w, event, body)
-		}(w)
+		var id int64
+		if err := s.store.Pool.QueryRow(context.WithoutCancel(ctx), `INSERT INTO hg_webhook_queue(webhook_id, delivery_id, event, body, max_attempts)
+			VALUES ($1, $2, $3, $4, $5) RETURNING id`, w.ID, auth.RandomToken(12), event, body, max).Scan(&id); err != nil {
+			log.Printf("headlessgo: webhook queue: %v", err)
+			continue
+		}
+		queued = true
+		s.hgKickDelivery(id, 0)
 	}
+	if queued {
+		s.hgEnsureTick(context.WithoutCancel(ctx))
+	}
+}
+
+// hgInProcessRetry is the longest backoff retried by an in-process timer; longer ones (and every
+// retry after a restart) are made by the scheduler's tick.
+const hgInProcessRetry = 2 * time.Minute
+
+// hgKickDelivery runs one queued delivery in the background after wait.
+func (s *Server) hgKickDelivery(id int64, wait time.Duration) {
+	hgWebhookWG.Add(1)
+	run := func() {
+		defer hgWebhookWG.Done()
+		s.hgDeliverQueued(context.Background(), id)
+	}
+	if wait <= 0 {
+		go run()
+		return
+	}
+	time.AfterFunc(wait, run)
 }
 
 // hgDelivery is one logged attempt.
@@ -219,18 +264,134 @@ type hgDelivery struct {
 	CreatedAt  time.Time
 }
 
-// hgDeliver sends one event with retries.
-func (s *Server) hgDeliver(ctx context.Context, w *hgWebhook, event string, body []byte) {
-	id := auth.RandomToken(12)
-	for i, d := range hgWebhookDelays {
-		if d > 0 {
-			time.Sleep(d)
-		}
-		res := s.hgAttempt(ctx, w, event, id, body, i+1)
-		if res.Success {
-			return
+// hgQueued is a claimed row of the delivery queue.
+type hgQueued struct {
+	ID, WebhookID      int64
+	DeliveryID, Event  string
+	Body               []byte
+	Attempts, MaxTries int
+}
+
+const hgQueueCols = `id, webhook_id, delivery_id, event, body, attempts, max_attempts`
+
+func hgScanQueued(row interface{ Scan(...any) error }) (*hgQueued, error) {
+	q := &hgQueued{}
+	return q, row.Scan(&q.ID, &q.WebhookID, &q.DeliveryID, &q.Event, &q.Body, &q.Attempts, &q.MaxTries)
+}
+
+// hgDeliverQueued claims one queue row if it is due and makes an attempt.
+func (s *Server) hgDeliverQueued(ctx context.Context, id int64) {
+	q, err := hgScanQueued(s.store.Pool.QueryRow(ctx, `UPDATE hg_webhook_queue SET status = 'running', locked_at = now()
+		WHERE id = $1 AND status = 'pending' AND next_at <= now() RETURNING `+hgQueueCols, id))
+	if err != nil {
+		return // not due, or taken by the worker
+	}
+	s.hgAttemptQueued(ctx, q, true)
+}
+
+// hgProcessQueue makes an attempt for every due queue row (the scheduler's tick): retries whose
+// in-process timer was lost to a restart, and rows of a crashed instance.
+func (s *Server) hgProcessQueue(ctx context.Context) int {
+	_, _ = s.store.Pool.Exec(ctx, `UPDATE hg_webhook_queue SET status = 'pending', locked_at = NULL WHERE status = 'running' AND locked_at < now() - interval '5 minutes'`)
+	rows, err := s.store.Pool.Query(ctx, `UPDATE hg_webhook_queue SET status = 'running', locked_at = now()
+		WHERE id IN (SELECT id FROM hg_webhook_queue WHERE status = 'pending' AND next_at <= now() ORDER BY next_at, id LIMIT 50 FOR UPDATE SKIP LOCKED)
+		RETURNING `+hgQueueCols)
+	if err != nil {
+		return 0
+	}
+	var due []*hgQueued
+	for rows.Next() {
+		if q, err := hgScanQueued(rows); err == nil {
+			due = append(due, q)
 		}
 	}
+	rows.Close()
+	for _, q := range due {
+		s.hgAttemptQueued(ctx, q, false)
+	}
+	_, _ = s.store.Pool.Exec(ctx, `DELETE FROM hg_webhook_queue WHERE status IN ('done', 'failed') AND updated_at < now() - interval '1 day'`)
+	return len(due)
+}
+
+// hgAttemptQueued posts a claimed delivery and records the outcome: done, another try after the
+// backoff, or failed once max_attempts is reached.
+func (s *Server) hgAttemptQueued(ctx context.Context, q *hgQueued, inProcess bool) {
+	w := s.hgWebhookByID(ctx, q.WebhookID)
+	if w == nil || !w.Enabled {
+		_, _ = s.store.Pool.Exec(ctx, `UPDATE hg_webhook_queue SET status = 'failed', last_error = 'webhook disabled or deleted', locked_at = NULL, updated_at = now() WHERE id = $1`, q.ID)
+		return
+	}
+	n := q.Attempts + 1
+	res := s.hgAttempt(ctx, w, q.Event, q.DeliveryID, q.Body, n)
+	switch {
+	case res.Success:
+		_, _ = s.store.Pool.Exec(ctx, `UPDATE hg_webhook_queue SET status = 'done', attempts = $2, last_error = '', locked_at = NULL, updated_at = now() WHERE id = $1`, q.ID, n)
+	case n >= q.MaxTries:
+		_, _ = s.store.Pool.Exec(ctx, `UPDATE hg_webhook_queue SET status = 'failed', attempts = $2, last_error = $3, locked_at = NULL, updated_at = now() WHERE id = $1`, q.ID, n, hgAttemptError(res))
+	default:
+		wait := hgWebhookBackoff(n)
+		_, _ = s.store.Pool.Exec(ctx, `UPDATE hg_webhook_queue SET status = 'pending', attempts = $2, last_error = $3, next_at = now() + $4::interval, locked_at = NULL, updated_at = now() WHERE id = $1`,
+			q.ID, n, hgAttemptError(res), fmt.Sprintf("%d milliseconds", wait.Milliseconds()))
+		if inProcess && wait <= hgInProcessRetry {
+			s.hgKickDelivery(q.ID, wait+5*time.Millisecond)
+		}
+	}
+}
+
+func hgAttemptError(d hgDelivery) string {
+	if d.Error != "" {
+		return d.Error
+	}
+	return fmt.Sprintf("HTTP %d", d.StatusCode)
+}
+
+// hgQueueItem is a row of the queue for the admin screen.
+type hgQueueItem struct {
+	ID        int64
+	WebhookID int64
+	Event     string
+	Status    string
+	Attempts  int
+	MaxTries  int
+	NextAt    time.Time
+	LastError string
+}
+
+func (s *Server) hgQueueItems(ctx context.Context, webhookID int64, limit int) []hgQueueItem {
+	q := `SELECT id, webhook_id, event, status, attempts, max_attempts, next_at, last_error FROM hg_webhook_queue WHERE status IN ('pending', 'running', 'failed')`
+	args := []any{}
+	if webhookID > 0 {
+		q += ` AND webhook_id = $1`
+		args = append(args, webhookID)
+	}
+	q += ` ORDER BY id DESC LIMIT ` + itoa64(int64(limit))
+	rows, err := s.store.Pool.Query(ctx, q, args...)
+	if err != nil {
+		return nil
+	}
+	defer rows.Close()
+	var out []hgQueueItem
+	for rows.Next() {
+		var it hgQueueItem
+		if rows.Scan(&it.ID, &it.WebhookID, &it.Event, &it.Status, &it.Attempts, &it.MaxTries, &it.NextAt, &it.LastError) == nil {
+			out = append(out, it)
+		}
+	}
+	return out
+}
+
+// hgRetryDelivery puts a failed (or waiting) delivery back for an immediate attempt.
+func (s *Server) hgRetryDelivery(ctx context.Context, id int64) error {
+	tag, err := s.store.Pool.Exec(ctx, `UPDATE hg_webhook_queue SET status = 'pending', next_at = now(), max_attempts = greatest(max_attempts, attempts + 1), updated_at = now()
+		WHERE id = $1 AND status IN ('pending', 'failed')`, id)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return errHGNotFound
+	}
+	s.hgKickDelivery(id, 0)
+	return nil
 }
 
 // hgAttempt posts the body once and logs the result.

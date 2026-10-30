@@ -133,7 +133,7 @@
 		function typeLabel( f ) {
 			switch ( f.type ) {
 				case 'relation':
-					return 'Relation · ' + f.relation + ' · ' + targetName( f.target );
+					return 'Relation · ' + f.relation + ' · ' + targetName( f.target ) + ( f.mappedBy ? ' · inverse of ' + targetName( f.target ) + '.' + f.mappedBy : '' );
 				case 'component':
 					return 'Component' + ( f.repeatable ? ' (repeatable)' : '' );
 				case 'dynamiczone':
@@ -680,6 +680,103 @@
 
 	/* ===================================== Builder ===================================== */
 
+	var stringTypes = [ 'text', 'email', 'uid', 'enumeration', 'date', 'datetime', 'time' ];
+	var complexTypes = [ 'media', 'relation', 'component', 'dynamiczone' ];
+
+	function convKind( f ) {
+		if ( f.type === 'richtext' ) {
+			return f.format === 'markdown' ? 'string' : 'blocks';
+		}
+		if ( stringTypes.indexOf( f.type ) >= 0 ) {
+			return 'string';
+		}
+		if ( complexTypes.indexOf( f.type ) >= 0 ) {
+			return 'complex';
+		}
+		return f.type; // number, boolean, json, password
+	}
+
+	function isMulti( f ) {
+		return f.relation === 'oneToMany' || f.relation === 'manyToMany';
+	}
+
+	/* What a change of a field does to the values stored in the entries ('' when nothing is lost);
+	 * the server converts them (headlessgo_convert.go). */
+	function lossy( from, to ) {
+		if ( ! from || from.mappedBy || to.mappedBy ) {
+			return '';
+		}
+		if ( from.type === to.type ) {
+			switch ( to.type ) {
+				case 'number':
+					if ( ( to.format === 'integer' || to.format === 'biginteger' ) && ( from.format === 'decimal' || from.format === 'float' ) ) {
+						return 'Decimals are rounded to whole numbers.';
+					}
+					return '';
+				case 'richtext':
+					return from.format === 'blocks' && to.format === 'markdown' ? 'The formatting of the blocks is lost; their text is kept.' : '';
+				case 'media':
+					return from.multiple && ! to.multiple ? 'Only the first file of each entry is kept.' : '';
+				case 'relation':
+					if ( from.target !== to.target ) {
+						return 'Every link is removed: the relation points to another type.';
+					}
+					return isMulti( from ) && ! isMulti( to ) ? 'Only the first related entry of each entry is kept.' : '';
+				case 'enumeration':
+					var renamed = to.enumRenames || {};
+					var gone = ( from.enum || [] ).filter( function ( v ) {
+						return ( to.enum || [] ).indexOf( v ) < 0 && ! renamed[ v ];
+					} );
+					return gone.length ? 'Entries with the removed values (' + gone.join( ', ' ) + ') lose them.' : '';
+				case 'component':
+					if ( from.component !== to.component ) {
+						return 'Every value is removed: it is another component.';
+					}
+					return from.repeatable && ! to.repeatable ? 'Only the first item of each entry is kept.' : '';
+				case 'dynamiczone':
+					var dropped = ( from.components || [] ).filter( function ( c ) {
+						return ( to.components || [] ).indexOf( c ) < 0;
+					} );
+					return dropped.length ? 'Items of the removed components (' + dropped.join( ', ' ) + ') are removed.' : '';
+			}
+			return '';
+		}
+		var fk = convKind( from );
+		var tk = convKind( to );
+		if ( fk === 'complex' || tk === 'complex' || fk === 'password' || tk === 'password' ) {
+			return 'Every stored value is removed: it cannot be converted.';
+		}
+		if ( tk === 'json' ) {
+			return '';
+		}
+		if ( fk === 'blocks' ) {
+			return 'The formatting of the blocks is lost; their text is kept' + ( tk === 'string' && to.type !== 'text' && to.type !== 'richtext' ? ', and values that do not fit are removed.' : '.' );
+		}
+		switch ( to.type ) {
+			case 'number':
+				return to.format === 'integer' || to.format === 'biginteger' ? 'Values that are not numbers are removed; decimals are rounded.' : 'Values that are not numbers are removed.';
+			case 'boolean':
+				return fk === 'number' ? 'Numbers become true, 0 becomes false.' : 'Values other than true/false, yes/no, on/off and 1/0 are removed.';
+			case 'enumeration':
+				return 'Values that are not one of the enumeration\'s values are removed.';
+			case 'date':
+				return from.type === 'datetime' ? 'The time of each value is dropped.' : 'Values that are not dates are removed.';
+			case 'datetime':
+				return from.type === 'date' ? '' : 'Values that are not dates are removed.';
+			case 'time':
+				return 'Values that are not times of day are removed.';
+			case 'email':
+				return 'Values that are not e-mail addresses are removed.';
+			case 'uid':
+				return 'Values are turned into slugs (lowercase, dashes).';
+			case 'richtext':
+				return '';
+			case 'text':
+				return fk === 'json' ? 'JSON values are stored as their text.' : '';
+		}
+		return '';
+	}
+
 	function initBuilder( model ) {
 		var root = document.getElementById( 'hg-builder' );
 		var form = document.getElementById( 'hg-builder-form' );
@@ -694,6 +791,10 @@
 		} );
 		var isNew = model.isNew;
 		var editing = null; // {index, field} while the field panel is open
+		var originals = {}; // saved fields by name, to tell what a change does to the stored values
+		( ( model.schema && model.schema.attributes ) || [] ).forEach( function ( f ) {
+			originals[ f.name ] = f;
+		} );
 		var kindLabel = { collectionType: 'Collection type', singleType: 'Single type', component: 'Component' }[ sc.kind ];
 		var components = model.all.filter( function ( t ) {
 			return t.kind === 'component' && t.uid !== sc.uid;
@@ -788,11 +889,18 @@
 					}
 					break;
 				case 'relation':
-					s.push( f.relation + ' → ' + ( ( targets.filter( function ( t ) {
+					var tname = ( ( targets.filter( function ( t ) {
 						return t.uid === f.target;
 					} )[ 0 ] || {} ).displayName || ( model.wpTargets.filter( function ( t ) {
 						return t.Key === f.target;
-					} )[ 0 ] || {} ).Label || f.target ) );
+					} )[ 0 ] || {} ).Label || ( f.target === sc.uid ? sc.displayName : f.target ) );
+					s.push( f.relation + ' → ' + tname );
+					if ( f.inversedBy ) {
+						s.push( 'inverse: ' + tname + '.' + f.inversedBy );
+					}
+					if ( f.mappedBy ) {
+						s.push( 'inverse of ' + tname + '.' + f.mappedBy );
+					}
 					break;
 				case 'uid':
 					if ( f.targetField ) {
@@ -834,7 +942,7 @@
 					el( 'td', { class: 'hg-sum', translate: 'no', text: summary( f ) } ),
 					el( 'td', { class: 'hg-tools' }, [
 						btn( 'Edit', 'button-small', function () {
-							editing = { index: i, field: clone( f ) };
+							editing = { index: i, field: clone( f ), enumBefore: ( f.enum || [] ).slice() };
 							render();
 						} ),
 						btn( '↑', 'button-small', function () {
@@ -911,7 +1019,44 @@
 			}
 			var f = editing.field;
 			var t = el( 'table', { class: 'form-table', role: 'presentation' } );
-			t.appendChild( el( 'tr', {}, [ el( 'th', { scope: 'row', text: 'Type' } ), el( 'td', { text: typeLabel( f.type ) } ) ] ) );
+			var orig = f._orig ? originals[ f._orig ] : null;
+			if ( orig && ! f.mappedBy ) {
+				var typeSel = el( 'select', { id: 'hg-b-type', onchange: function ( e ) {
+					var nt = e.target.value;
+					var keep = { name: f.name, _orig: f._orig, type: nt, required: f.required, private: f.private };
+					Object.keys( f ).forEach( function ( k ) {
+						delete f[ k ];
+					} );
+					Object.assign( f, keep );
+					if ( nt === orig.type ) {
+						Object.assign( f, clone( orig ), { name: keep.name, _orig: keep._orig } );
+					} else if ( nt === 'richtext' ) {
+						f.format = 'blocks';
+					} else if ( nt === 'number' ) {
+						f.format = 'integer';
+					} else if ( nt === 'relation' ) {
+						f.relation = 'manyToOne';
+						f.target = targets.length ? targets[ 0 ].uid : 'wp:post';
+					} else if ( nt === 'enumeration' ) {
+						f.enum = [];
+					} else if ( nt === 'dynamiczone' ) {
+						f.components = [];
+					} else if ( nt === 'component' && components.length ) {
+						f.component = components[ 0 ].uid;
+					}
+					render();
+				} } );
+				model.fieldTypes.forEach( function ( x ) {
+					if ( sc.kind === 'component' && x.Key === 'dynamiczone' ) {
+						return;
+					}
+					typeSel.appendChild( el( 'option', { value: x.Key, selected: x.Key === f.type, text: x.Label } ) );
+				} );
+				t.appendChild( el( 'tr', {}, [ el( 'th', { scope: 'row' }, [ el( 'label', { for: 'hg-b-type', text: 'Type' } ) ] ), el( 'td', {}, [ typeSel,
+					el( 'p', { class: 'description', text: 'Changing the type converts the values stored in the entries where it can.' } ) ] ) ] ) );
+			} else {
+				t.appendChild( el( 'tr', {}, [ el( 'th', { scope: 'row', text: 'Type' } ), el( 'td', { text: typeLabel( f.type ) } ) ] ) );
+			}
 			t.appendChild( input( 'Name', f.name, function ( v ) {
 				f.name = v;
 			}, { class: 'regular-text code', required: true, help: 'Letters, digits and underscores, e.g. title or coverImage. No spaces.' } ) );
@@ -947,7 +1092,8 @@
 							return x.trim();
 						} ).filter( Boolean );
 					} }, [ ( f.enum || [] ).join( '\n' ) ] );
-					t.appendChild( el( 'tr', {}, [ el( 'th', { scope: 'row', text: 'Values' } ), el( 'td', {}, [ ta, el( 'p', { class: 'description', text: 'One value per line.' } ) ] ) ] ) );
+					t.appendChild( el( 'tr', {}, [ el( 'th', { scope: 'row', text: 'Values' } ), el( 'td', {}, [ ta, el( 'p', { class: 'description', text: 'One value per line.' } ),
+						orig && orig.type === 'enumeration' ? el( 'p', { class: 'description', text: 'Changing a value on its line renames it in every entry; entries lose a removed value.' } ) : null ] ) ] ) );
 					break;
 				case 'media':
 					t.appendChild( selectRow( 'Files', [ [ '', 'Single media' ], [ '1', 'Multiple media' ] ], f.multiple ? '1' : '', function ( v ) {
@@ -980,6 +1126,13 @@
 					model.wpTargets.forEach( function ( x ) {
 						opts.push( [ x.Key, x.Label ] );
 					} );
+					if ( f.mappedBy ) {
+						t.appendChild( el( 'tr', {}, [ el( 'th', { scope: 'row', text: 'Relation' } ), el( 'td', {}, [ el( 'span', { text: f.relation + ' → ' } ), el( 'span', { translate: 'no', text: ( opts.filter( function ( o ) {
+							return o[ 0 ] === f.target;
+						} )[ 0 ] || [ '', f.target ] )[ 1 ] + '.' + f.mappedBy } ),
+						el( 'p', { class: 'description', text: 'The inverse side of a relation: the links are stored on the other type and edited from either side. Deleting it removes only this side.' } ) ] ) ] ) );
+						break;
+					}
 					t.appendChild( selectRow( 'Relation', model.relations.map( function ( r ) {
 						return [ r.Key, r.Label ];
 					} ), f.relation, function ( v ) {
@@ -987,7 +1140,19 @@
 					} ) );
 					t.appendChild( selectRow( 'Target', opts, f.target, function ( v ) {
 						f.target = v;
+						if ( v.indexOf( 'wp:' ) === 0 ) {
+							delete f.inversedBy;
+						}
+						render();
 					} ) );
+					if ( sc.kind !== 'component' && f.target && f.target.indexOf( 'wp:' ) !== 0 ) {
+						t.appendChild( input( 'Inverse field (optional)', f.inversedBy, function ( v ) {
+							f.inversedBy = v.trim();
+						}, { class: 'regular-text code', translate: 'no', placeholder: 'e.g. ' + ( isMulti( f ) ? 'owner' : ( sc.pluralName || 'items' ).replace( /-([a-z])/g, function ( m, c ) {
+							return c.toUpperCase();
+						} ) ),
+							help: 'Adds this field name to the target type: it lists the entries that point to it, and links can be edited from both sides.' } ) );
+					}
 					break;
 				case 'uid':
 					var tf = [ [ '', '— None —' ] ];
@@ -1073,6 +1238,10 @@
 				}, { type: { number: 'text', date: 'date', datetime: 'datetime-local', time: 'time' }[ f.type ] || 'text', class: 'regular-text', translate: 'no' } ) );
 			}
 			inside.appendChild( t );
+			var warn = lossy( orig, f );
+			if ( warn ) {
+				inside.appendChild( el( 'div', { class: 'notice notice-warning inline' }, [ el( 'p', {}, [ el( 'strong', { text: 'Stored values change: ' } ), warn ] ) ] ) );
+			}
 			inside.appendChild( el( 'p', { class: 'hg-b-actions' }, [
 				btn( 'Finish', 'button-primary', function () {
 					if ( ! /^[A-Za-z][A-Za-z0-9_]*$/.test( f.name || '' ) ) {
@@ -1085,6 +1254,20 @@
 					if ( dup ) {
 						window.alert( 'Another field is already called ' + f.name + '.' );
 						return;
+					}
+					if ( f.type === 'enumeration' && editing.enumBefore ) {
+						var before = editing.enumBefore;
+						var after = f.enum || [];
+						var ren = {};
+						for ( var k = 0; k < Math.min( before.length, after.length ); k++ ) {
+							if ( before[ k ] !== after[ k ] && after.indexOf( before[ k ] ) < 0 && before.indexOf( after[ k ] ) < 0 ) {
+								ren[ before[ k ] ] = after[ k ];
+							}
+						}
+						f.enumRenames = Object.assign( {}, f.enumRenames || {}, ren );
+						if ( ! Object.keys( f.enumRenames ).length ) {
+							delete f.enumRenames;
+						}
 					}
 					if ( editing.index >= 0 ) {
 						sc.attributes[ editing.index ] = f;
@@ -1121,6 +1304,17 @@
 				window.alert( 'Finish or cancel the field you are editing first.' );
 				return;
 			}
+			var losses = [];
+			sc.attributes.forEach( function ( f ) {
+				var w = f._orig ? lossy( originals[ f._orig ], f ) : '';
+				if ( w ) {
+					losses.push( f.name + ': ' + w );
+				}
+			} );
+			if ( losses.length && ! window.confirm( 'Saving changes the values stored in the entries:\n\n' + losses.join( '\n' ) + '\n\nSave anyway?' ) ) {
+				e.preventDefault();
+				return;
+			}
 			var out = clone( sc );
 			out.attributes.forEach( function ( f ) {
 				if ( f._orig && f._orig !== f.name ) {
@@ -1138,7 +1332,70 @@
 		render();
 	}
 
+	/* ===================================== GraphQL playground ===================================== */
+
+	function initPlayground( form ) {
+		var q = document.getElementById( 'hg-gql-query' );
+		var vars = document.getElementById( 'hg-gql-vars' );
+		var tok = document.getElementById( 'hg-gql-token' );
+		var out = document.getElementById( 'hg-gql-result' );
+		try {
+			var saved = window.localStorage.getItem( 'hg-gql-query' );
+			if ( saved ) {
+				q.value = saved;
+			}
+		} catch ( err ) {}
+		function run() {
+			var body = { query: q.value };
+			if ( vars.value.trim() ) {
+				try {
+					body.variables = JSON.parse( vars.value );
+				} catch ( err ) {
+					out.textContent = 'The variables are not valid JSON.';
+					return;
+				}
+			}
+			try {
+				window.localStorage.setItem( 'hg-gql-query', q.value );
+			} catch ( err ) {}
+			var headers = { 'Content-Type': 'application/json' };
+			var url = '/wp-admin/headlessgo/graphql';
+			if ( tok.value.trim() ) {
+				url = form.getAttribute( 'data-endpoint' );
+				headers.Authorization = 'Bearer ' + tok.value.trim();
+			} else {
+				headers[ 'X-HG-Nonce' ] = form.getAttribute( 'data-nonce' );
+			}
+			out.textContent = '…';
+			fetch( url, { method: 'POST', credentials: tok.value.trim() ? 'omit' : 'same-origin', headers: headers, body: JSON.stringify( body ) } ).then( function ( r ) {
+				return r.text();
+			} ).then( function ( t ) {
+				try {
+					out.textContent = JSON.stringify( JSON.parse( t ), null, 2 );
+				} catch ( err ) {
+					out.textContent = t;
+				}
+			} ).catch( function ( err ) {
+				out.textContent = String( err );
+			} );
+		}
+		form.addEventListener( 'submit', function ( e ) {
+			e.preventDefault();
+			run();
+		} );
+		q.addEventListener( 'keydown', function ( e ) {
+			if ( e.key === 'Enter' && ( e.ctrlKey || e.metaKey ) ) {
+				e.preventDefault();
+				run();
+			}
+		} );
+	}
+
 	function boot() {
+		var g = document.getElementById( 'hg-gql-form' );
+		if ( g ) {
+			initPlayground( g );
+		}
 		var m = document.getElementById( 'hg-editor-model' );
 		if ( m ) {
 			initEditor( JSON.parse( m.textContent ) );

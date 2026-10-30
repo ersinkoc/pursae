@@ -25,8 +25,13 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
   entries, numeric ids of posts, pages, users and attachments); components and dynamic zones as
   nested objects (dynamic zone items carry `__component`, component values an `id`).
 - Settings: the option `headlessgo_settings` (headless mode, CORS, public permissions, preview
-  secret, page sizes, GraphQL switch). API tokens: `hg_api_tokens` (SHA-256 only). Webhooks:
-  `hg_webhooks`, deliveries `hg_webhook_deliveries` (last 200 per webhook).
+  secret, page sizes, GraphQL switch, webhook attempts). API tokens: `hg_api_tokens` (SHA-256 only,
+  `can_upload`). Webhooks: `hg_webhooks`, the delivery queue `hg_webhook_queue`, the attempt log
+  `hg_webhook_deliveries` (last 200 per webhook).
+- Migration `0022_headlessgo_more.sql` adds the schedule columns of `hg_entries` (`publish_at`,
+  `unpublish_at`, `schedule_error`), the content history `hg_entry_versions`, `hg_api_tokens.can_upload`
+  and `hg_webhook_queue`.
+- Inverse relation fields (`mappedBy`) store nothing: their value is computed from the owning side.
 
 ## 2. Headless mode
 
@@ -44,7 +49,10 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 |---|---|
 | Collection types (many entries), single types (one entry), components (category.name), dynamic zones | ✓ |
 | Field types: text (short/long), rich text (blocks or Markdown), number (integer, big integer, decimal, float), boolean, date, date-time, time, email, password, enumeration, media (single/multiple, allowed types), relation, JSON, UID (derived from a text field), component (single/repeatable), dynamic zone | ✓ |
-| Relations: one-to-one, one-to-many, many-to-one, many-to-many, to content types (self included) and to WordPress posts, pages and users | ✓ (one-way; ≈ no inverse "mappedBy" side: the relation lives on the owning type and is filtered/populated from there) |
+| Relations: one-to-one, one-to-many, many-to-one, many-to-many, to content types (self included) and to WordPress posts, pages and users | ✓ |
+| Bidirectional relations: an owning field with `inversedBy` gets an inverse field (`mappedBy`) on the target type with the mirrored kind (one-to-one ↔ one-to-one, one-to-many ↔ many-to-one, many-to-many ↔ many-to-many); self relations too. The builder offers "Inverse field (optional)" on relations between content types. Both sides stay in step on every save: renaming either side renames the link, removing the inverse field clears `inversedBy`, removing (or retargeting) the owning field removes the inverse field, changing the kind changes the mirror. Export / import keeps them | ✓ |
+| The inverse side stores nothing: its value is the owning entries pointing at the document (in the matching locale and status), so it can never disagree. It is populated, filterable and sortable like any relation, shown and editable in the Content Manager, and writable through the API (id, list, `{connect, disconnect, set}`, `null` clears); a write changes the owning entries' draft and published version (a link belongs to both documents). Cardinality is enforced (a single-valued inverse side takes one entry) | ✓ |
+| Deleting a document (its last locale) removes it from every relation pointing at it: owning fields of every type, also inside components and dynamic zones, drafts and published versions | ✓ |
 | One-to-one / one-to-many exclusivity (a target belongs to one entry) | ✓ |
 | Options: required, unique, min/max (length, value or item count), default, private (never in the API), regex (text, UID, email) | ✓ |
 | Type options: draft & publish, internationalization, preview URL template, description | ✓ |
@@ -53,7 +61,8 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 | Schema changes migrate data: renamed fields (the builder sends `renamedFrom`) move their values; removed fields are dropped — in the type's entries, or inside every component value when a component changes (also nested and in dynamic zones); i18n on/off converts locales; draft & publish off publishes every draft | ✓ |
 | Delete: a type (with its entries) or a component; refused while another schema uses or relates to it | ✓ |
 | Export all schemas as JSON; import (file or paste): components first in dependency order, then types in two passes so they may relate to each other | ✓ |
-| Changing a field's type converts stored values | ✗ values stay; they are re-validated on the next save |
+| Changing a field (type, number format, rich-text format, single ↔ multiple media or relation, relation target, enumeration values, component, repeatable, dynamic zone components) converts the stored values of drafts and published versions, also inside components: text ↔ number ↔ boolean (`yes/no`, `on/off`, `1/0`), dates ↔ date-times, text → UID (slugified), text → e-mail / enumeration (when valid, case-insensitive), blocks ↔ Markdown/text (plain text), anything → JSON, decimals → integers (rounded), multiple → single (first kept), repeatable → single component (first item). Values that cannot be converted are removed | ✓ |
+| The builder lets an existing field change type, renames enumeration values changed on their line (`enumRenames`), shows a warning under the field when the change loses data and asks for confirmation on Save with the list of lossy changes | ✓ |
 
 ## 4. Content Manager
 
@@ -66,7 +75,10 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 | Draft & publish: Save draft, Publish (validates required fields), Unpublish, Discard changes (back to the published version), status badges | ✓ |
 | i18n: with Golylang active its languages are the locales; each document has one version per locale, linked by `documentId`; the edit screen lists the locales, opens a translation empty or filled from the current locale. With Golylang off there is one default locale (setting) | ✓ |
 | Delete one locale or every locale | ✓ |
-| Bulk actions, history / versions, editing lock | ✗ not in this version |
+| Bulk actions in the list: publish, unpublish, delete the selected documents in the listed locale, or "in every locale"; failures (a required field empty) are reported per document | ✓ |
+| Content history: every save, publish, unpublish, discard, restore and scheduled (un)publication records the draft (last 50 per document version); the edit screen lists the latest, the History screen shows a version next to the current draft with changed fields marked, and restores it as the draft. Inverse relation fields are not part of a version | ✓ |
+| Scheduled publishing: "Publish on" / "Unpublish on" per document version (site time zone) in the edit screen, `POST …/{documentId}/schedule` in the API. The `headlessgo_tick` job of the site's job runner (every minute, rows claimed with `FOR UPDATE SKIP LOCKED`, safe across restarts and instances) publishes the draft as it is then, or unpublishes; a publication that fails validation is cleared and its reason shown on the edit screen; the list shows pending schedules | ✓ |
+| Editing lock, review workflows | ✗ not in this version |
 
 ## 5. Delivery REST API — `/wp-json/headlessgo/v1`
 
@@ -74,10 +86,14 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 |---|---|
 | `GET/POST /{pluralApiId}`, `GET/PUT/PATCH/DELETE /{pluralApiId}/{documentId}`, single types `GET/PUT/DELETE /{singularApiId}` | ✓ |
 | `POST …/{documentId}/publish` and `/unpublish` (needs `update`) | ✓ (extension) |
+| `POST …/{documentId}/schedule` with `{"data": {"publishAt", "unpublishAt"}}` (RFC 3339, `null` clears; needs `update`) | ✓ (extension) |
+| Media upload: `POST /upload` (multipart `files`, one or several; optional `fileInfo` JSON `{name, alternativeText, caption}` or a list) through the core media upload code (same file checks, image sizes, GoCDN); answer: the files in the API's media format. With `ref` (type uid or API id), `refId` (document id), `field` and optional `locale` the files are attached to the entry's draft (appended to a multiple field, replacing a single one; allowed types checked before anything is kept). `GET /upload/files/{id}` | ✓ |
 | Response `{data, meta}`; entries carry `id`, `documentId`, attributes, `createdAt`, `updatedAt`, `publishedAt`, `locale`; errors `{data:null, error:{status, name, message, details}}` with `ValidationError` details `{errors:[{path, message}]}` | ✓ |
 | `filters[field][$eq|$eqi|$ne|$nei|$lt|$lte|$gt|$gte|$in|$notIn|$contains|$notContains|$containsi|$notContainsi|$startsWith(i)|$endsWith(i)|$null|$notNull|$between]`, `$and`, `$or`, `$not`, implicit `$eq` | ✓ |
 | Filtering through relations (`filters[author][name][$eq]`, nested), components (single and repeatable), media (`id`, `name`, `mime`), WordPress pages/posts (`id`, `slug`, `title`, `status`) and users (`id`, `username`, `slug`, `name`); `$null` on relations, media, components | ✓ |
-| `sort=a:asc,b:desc`, `sort[0]=…`, `sort[a]=desc` on scalar attributes and system fields | ✓ (sorting through relations ✗) |
+| `sort=a:asc,b:desc`, `sort[0]=…`, `sort[a]=desc` on scalar attributes and system fields | ✓ |
+| Sorting through relations and single components: `sort=author.name:asc`, `author.company.name`, `seo.metaTitle`, `page.title` (WordPress posts/pages: `id`, `slug`, `title`; users: `id`, `username`, `slug`, `name`), also through single-valued inverse relations. To-many relations and repeatable components are refused (400). Entries without the related value sort last | ✓ |
+| Filtering through inverse relations (`filters[books][title][$eq]`, `filters[books][$null]=true`) | ✓ |
 | `pagination[page]&pagination[pageSize]` or `pagination[start]&pagination[limit]` (mixing is a 400), `pagination[withCount]=false`; default/max page size are settings (25/100) | ✓ |
 | `populate=*` (one level), `populate=a,b`, `populate=a.b`, `populate[a][populate]…`, `[fields]`, `[filters]`, `[sort]`, dynamic zones `populate[zone][on][comp.uid]…`, `populate=localizations` | ✓ |
 | `fields[0]=title` / `fields=title,slug` | ✓ |
@@ -96,6 +112,7 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 | Public role (no token): a matrix of type × find / findOne / create / update / delete under Settings. **Default: nothing is public.** Public callers never see drafts | ✓ |
 | API tokens: read-only (find/findOne on every type), full access (everything, drafts included), custom (the same matrix per token, plus "may read drafts") | ✓ |
 | Duration 7 / 30 / 90 days or unlimited; expired tokens get 401; last-used time (recorded at most once a minute); regenerate; delete | ✓ |
+| Upload permission: full-access tokens always, custom tokens with "May upload media", read-only tokens and the public role never | ✓ |
 | Only a SHA-256 of the token is stored; it is shown once (on the response page, never in a URL) with its last four characters in the list | ✓ |
 | `Authorization: Bearer <token>`; a bad token is 401 `UnauthorizedError`, a missing permission 403 `ForbiddenError` | ✓ |
 | Populated relations to a type the caller may not read are left out (not an error) | ✓ |
@@ -117,10 +134,10 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 | Per webhook: name, URL, events, custom headers (reserved ones refused), signing secret, enabled | ✓ |
 | Payload `{event, createdAt, model, uid, entry}` (public scalar attributes; private fields never sent) | ✓ |
 | `X-HeadlessGo-Signature: sha256=<hex HMAC-SHA256 of the body>`, `X-HeadlessGo-Event`, `X-HeadlessGo-Delivery` | ✓ |
-| Sent in the background; three attempts (now, +5 s, +30 s) on a network error or a non-2xx answer | ✓ |
+| Durable delivery queue (`hg_webhook_queue`): the first attempt starts at once in the background; a network error or a non-2xx answer is retried with an exponential backoff (10 s, 40 s, 160 s, 640 s…, at most 6 h) up to the "Attempts per delivery" setting (5 by default, 1–10), then the delivery is failed. Short backoffs are retried in-process; the `headlessgo_tick` job delivers whatever is due, so retries survive restarts (rows claimed with `FOR UPDATE SKIP LOCKED`; rows left running by a crashed instance return after 5 minutes). Finished rows are removed after a day | ✓ |
+| The webhook screen lists waiting and failed deliveries (attempts, next attempt, last error) with "Retry now" | ✓ |
 | Delivery log per webhook: date, event, attempt, status code, duration, the first 1 KB of the response or the error | ✓ |
 | "Send test" (`trigger-test`, synchronous, result shown as a notice) | ✓ |
-| Durable queue surviving a restart | ✗ retries live in memory |
 
 ## 9. Preview
 
@@ -134,21 +151,47 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
   as `Authorization: Bearer`, `X-Preview-Token` or `?previewToken=`. Rotating the secret revokes every
   preview token. ✓
 
-## 10. GraphQL (read-only)
+## 10. GraphQL
 
-- `POST|GET /wp-json/headlessgo/v1/graphql` with `{query, variables}`. Root fields: `articles`
-  (camelCase plural id), `article(documentId:)`, single types (`homepage`), `articles_connection { nodes
-  pageInfo { total page pageSize pageCount } }`. Arguments `filters` (operators without `$`), `sort`,
-  `pagination`, `locale`, `status`. Selections drive populate; aliases, variables, `__typename` and
-  inline fragments on dynamic zones (`... on ComponentBlocksQuote`) work. Same permissions as REST. ✓
-- Mutations, named fragments, directives and introspection ✗ (a minimal endpoint; switch it off under
-  Settings).
+- `POST|GET /wp-json/headlessgo/v1/graphql` with `{query, variables, operationName}`. Root query fields:
+  `articles` (camelCase plural id), `article(documentId:)`, single types (`homepage`), `articles_connection {
+  nodes pageInfo { total page pageSize pageCount } }`. Arguments `filters` (operators without `$`), `sort`,
+  `pagination`, `locale`, `status`. Selections drive populate; aliases and `__typename` work. ✓
+- Mutations (POST only), with the REST permissions: `createArticle(data:, locale:, status:)`,
+  `updateArticle(documentId:, data:, locale:, status:)`, `deleteArticle(documentId:, locale:)` →
+  `{ documentId }`, `publishArticle` / `unpublishArticle(documentId:, locale:)`; single types
+  `updateHomepage`, `deleteHomepage`, `publishHomepage`, `unpublishHomepage` (no documentId). Relations
+  and media take ids, components and dynamic zones JSON. Validation errors come back as GraphQL errors. ✓
+- Named fragments (`fragment Card on Article {…}`, nested, cycles refused), inline fragments with or
+  without a type condition (`... on ComponentBlocksQuote`), `@include(if:)` / `@skip(if:)`, variables
+  with default values, several operations selected by `operationName`. ✓
+- Introspection: `__schema` (types, query and mutation types, the two directives) and `__type(name:)`
+  over a schema generated from the content model (object types per type and component, a union per
+  dynamic zone, `<Type>FiltersInput`, `<Type>Input`, scalar filter inputs, `PaginationArg`,
+  `PublicationStatus`, `UploadFile`, `WpPost`, `WpUser`, scalars `JSON`, `Long`, `Date`, `DateTime`,
+  `Time`), enough for GraphiQL-type clients. ✓
+- Admin playground (HeadlessGo › GraphQL): a query and variables editor that runs as the logged-in
+  administrator (`POST /wp-admin/headlessgo/graphql`, nonce-checked) or, with a pasted API token, against
+  the public endpoint with that token's permissions; plus a reference of the root fields. ✓
+- Not supported: subscriptions, custom directives, the full validation of a query against the schema
+  (unknown fields inside a selection come back as `null` instead of an error). The endpoint can be
+  switched off under Settings.
 
-## 11. Not built / limits
+## 11. Translations
 
-- Media upload through the delivery API (use the core `/wp-json/wp/v2/media` with an Application
-  Password) ✗.
-- Inverse relation fields, sorting by related fields, relation ordering beyond the stored order ✗.
-- Content history, scheduled publishing, review workflows, bulk actions in the list ✗.
-- Admin strings in the JavaScript editor/builder are English only (the server-rendered admin goes
-  through the i18n layer).
+- The server-rendered screens go through the admin's i18n layer (`internal/i18n`, after rendering); the
+  builder's field-type, relation and target labels are translated before they are sent as JSON; the
+  strings the editor and builder scripts build in the browser are translated by `wpgo-l10n.js`
+  (`admin/assets/headlessgo/*.js` is one of its sources). User content is marked `translate="no"`.
+- Turkish (`web/languages/wpgo-tr_TR.json`) covers HeadlessGo's admin screens. Other languages: the
+  strings shared with WordPress core come from its language packs; HeadlessGo's own strings stay English.
+
+## 12. Not built / limits
+
+- Editing lock, review workflows, relation ordering beyond the stored order (the owning side's order;
+  the inverse side lists owners by creation).
+- History does not record link changes made from the other side of a relation or by a schema
+  conversion; a restored version that no longer validates (the schema changed) is reported when it is
+  published or saved again.
+- GraphQL: subscriptions, custom directives, strict query validation; component inputs are JSON.
+- Translations of HeadlessGo's own admin strings exist only in Turkish.

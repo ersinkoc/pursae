@@ -93,6 +93,7 @@ func (s *Server) jobHandlers() map[string]jobHandler {
 		"adminsecgo_daily":   func(ctx context.Context, _ map[string]any) error { return s.adminsecDaily(ctx) },
 		gooDailyJob:          func(ctx context.Context, _ map[string]any) error { return s.gooDaily(ctx) },  // Goocommerce
 		gooHourlyJob:         func(ctx context.Context, _ map[string]any) error { return s.gooHourly(ctx) }, // Goocommerce: held stock
+		hgTickJob:            func(ctx context.Context, _ map[string]any) error { return s.hgTick(ctx) },    // HeadlessGo: schedules, webhook queue
 	}
 }
 

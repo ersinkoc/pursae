@@ -71,6 +71,14 @@ type hgAdminData struct {
 	PreviewURL  string
 	EntryStatus string
 	Errors      hgValidationError
+	PublishAt   string // schedule, as datetime-local values in the site's time zone
+	UnpublishAt string
+	TimeZone    string
+
+	// History
+	History []*hgEntryVersion
+	Version *hgEntryVersion
+	Diff    []hgDiffRow
 
 	// Builder
 	BuilderJSON template.JS
@@ -89,15 +97,21 @@ type hgAdminData struct {
 	Webhook    *hgWebhook
 	Events     any
 	Deliveries []hgDelivery
+	Queue      []hgQueueItem
 	HeaderText string
+
+	// GraphQL playground
+	GQLQueries   []string
+	GQLMutations []string
 }
 
 type hgAdminRow struct {
-	E      *hgEntry
-	Title  string
-	Cells  []string
-	Status string
-	Edit   string
+	E        *hgEntry
+	Title    string
+	Cells    []string
+	Status   string
+	Edit     string
+	Schedule string // "Publishes …" / "Unpublishes …"
 }
 
 func (d *hgAdminData) Allowed(uid, action string) bool {
@@ -151,7 +165,7 @@ func (s *Server) hgAdmin(c *gin.Context) {
 	if c.Request.Method == http.MethodPost {
 		page = c.PostForm("page")
 	}
-	needAdmin := page != "" && page != "entries" && page != "entry"
+	needAdmin := page != "" && page != "entries" && page != "entry" && page != "history"
 	if !u.Can("edit_posts", nil) || (needAdmin && !u.Can("manage_options", nil)) {
 		c.String(http.StatusForbidden, "Sorry, you are not allowed to access this page.")
 		return
@@ -241,6 +255,19 @@ func (s *Server) hgRender(c *gin.Context, page string, failed *hgFailedSave) {
 			}
 			title = d.Type.DisplayName
 		}
+	case "history":
+		d.Type = reg.Get(c.Query("type"))
+		if d.Type == nil || d.Type.IsComponent() || !s.hgAdminHistory(c, d) {
+			c.Redirect(http.StatusFound, hgAdminPath)
+			return
+		}
+		title = "History"
+	case "graphql":
+		title = "GraphQL"
+		ex := &hgGQLExec{s: s, c: c}
+		d.GQLQueries = ex.schema().RootFields("Query")
+		d.GQLMutations = ex.schema().RootFields("Mutation")
+		s.pageAssets(c).Script("headlessgo")
 	case "entry":
 		d.Type = reg.Get(c.Query("type"))
 		if failed != nil {
@@ -289,6 +316,8 @@ func (s *Server) hgRender(c *gin.Context, page string, failed *hgFailedSave) {
 		} else {
 			d.Deliveries = s.hgDeliveries(c, 0, 20)
 		}
+		id, _ := strconv.ParseInt(c.Query("id"), 10, 64)
+		d.Queue = s.hgQueueItems(c, id, 50)
 	case "settings":
 		title = "Settings"
 	default:
@@ -365,6 +394,11 @@ func (s *Server) hgAdminList(c *gin.Context, d *hgAdminData) error {
 	tf := sc.TitleField()
 	for _, e := range list {
 		row := hgAdminRow{E: e, Status: e.Status(), Edit: hgAdminPath + "?page=entry&type=" + url.QueryEscape(sc.UID) + "&doc=" + e.DocumentID}
+		if e.PublishAt != nil {
+			row.Schedule = "Publishes " + e.PublishAt.In(s.loc()).Format("2006-01-02 15:04")
+		} else if e.UnpublishAt != nil {
+			row.Schedule = "Unpublishes " + e.UnpublishAt.In(s.loc()).Format("2006-01-02 15:04")
+		}
 		if sc.Localized {
 			row.Edit += "&locale=" + url.QueryEscape(e.Locale)
 		}
@@ -457,9 +491,26 @@ func (s *Server) hgAdminEntry(c *gin.Context, d *hgAdminData, failed *hgFailedSa
 		}
 		if e := d.Versions[d.Locale]; e != nil {
 			d.Entry = e
-			data = e.Data
+			data = map[string]any{}
+			for k, v := range e.Data {
+				data[k] = v
+			}
+			for i := range sc.Fields {
+				if f := &sc.Fields[i]; f.MappedBy != "" { // inverse relation: the owning entries that point here
+					if ids := s.hgInverseIDs(c, f, e.DocumentID, e.Locale, "draft"); len(ids) > 0 {
+						data[f.Name] = hgAnyStrings(ids)
+					}
+				}
+			}
 			d.EntryStatus = e.Status()
 			d.PreviewURL = s.hgPreviewURL(c, sc, e)
+			d.History = s.hgVersions(c, e.ID, 8)
+			if e.PublishAt != nil {
+				d.PublishAt = e.PublishAt.In(s.loc()).Format("2006-01-02T15:04")
+			}
+			if e.UnpublishAt != nil {
+				d.UnpublishAt = e.UnpublishAt.In(s.loc()).Format("2006-01-02T15:04")
+			}
 		} else if from := c.Query("copy"); from != "" && d.Versions[from] != nil {
 			data = d.Versions[from].Data // a new translation filled from another locale
 		}
@@ -484,6 +535,7 @@ func (s *Server) hgAdminEntry(c *gin.Context, d *hgAdminData, failed *hgFailedSa
 	if errs == nil {
 		errs = []hgFieldError{}
 	}
+	d.TimeZone = s.loc().String()
 	model := map[string]any{"schema": sc, "components": comps, "types": types, "data": data, "media": media, "relations": rels,
 		"errors": errs, "searchURL": hgAdminPath + "/search", "locale": d.Locale, "isNew": d.Entry == nil}
 	raw, _ := json.Marshal(model)
@@ -687,8 +739,23 @@ func (s *Server) hgAdminBuilder(c *gin.Context, d *hgAdminData) {
 	} else if d.NewKind != "" {
 		cur = &hgSchema{Kind: d.NewKind, DraftAndPublish: d.NewKind != hgKindComponent, Fields: []hgField{}}
 	}
-	model := map[string]any{"schema": cur, "isNew": d.Type == nil, "all": types, "fieldTypes": hgFieldTypes, "relations": hgRelations,
-		"wpTargets": hgWPTargets, "golylang": s.golylangOn()}
+	// The labels the builder shows, in the user's language (the page is translated after it is
+	// rendered, but these travel as JSON).
+	fieldTypes := make([]struct{ Key, Label, Help, Icon string }, len(hgFieldTypes))
+	for i, ft := range hgFieldTypes {
+		fieldTypes[i] = ft
+		fieldTypes[i].Label, fieldTypes[i].Help = s.__(c, ft.Label), s.__(c, ft.Help)
+	}
+	relations := make([]struct{ Key, Label string }, len(hgRelations))
+	for i, r := range hgRelations {
+		relations[i] = struct{ Key, Label string }{r.Key, s.__(c, r.Label)}
+	}
+	wpTargets := make([]struct{ Key, Label string }, len(hgWPTargets))
+	for i, r := range hgWPTargets {
+		wpTargets[i] = struct{ Key, Label string }{r.Key, s.__(c, r.Label)}
+	}
+	model := map[string]any{"schema": cur, "isNew": d.Type == nil, "all": types, "fieldTypes": fieldTypes, "relations": relations,
+		"wpTargets": wpTargets, "golylang": s.golylangOn()}
 	raw, _ := json.Marshal(model)
 	d.BuilderJSON = template.JS(raw)
 }
@@ -701,7 +768,7 @@ func (s *Server) hgAdminPost(c *gin.Context, page string) {
 	do := c.PostForm("do")
 	back := url.Values{"page": {page}}
 	switch do {
-	case "save_entry", "delete_entry", "publish_entry", "unpublish_entry", "discard_entry":
+	case "save_entry", "delete_entry", "publish_entry", "unpublish_entry", "discard_entry", "schedule_entry", "restore_version", "bulk_entries":
 		sc := reg.Get(c.PostForm("type"))
 		if sc == nil || sc.IsComponent() {
 			hgRedirect(c, url.Values{}, "", errors.New("Unknown content type."))
@@ -783,6 +850,7 @@ func (s *Server) hgAdminPost(c *gin.Context, page string) {
 		st.MaxPageSize, _ = strconv.Atoi(c.PostForm("max_page_size"))
 		st.GraphQL = c.PostForm("graphql") == "1"
 		st.SchemaWebhooks = c.PostForm("schema_webhooks") == "1"
+		st.WebhookAttempts, _ = strconv.Atoi(c.PostForm("webhook_attempts"))
 		if st.FrontMode == "redirect" && !hgHTTPURL(st.RedirectURL) {
 			hgRedirect(c, back, "", errors.New("The redirect URL must be a full http:// or https:// address."))
 			return
@@ -811,7 +879,7 @@ func (s *Server) hgAdminPost(c *gin.Context, page string) {
 	case "save_token":
 		id, _ := strconv.ParseInt(c.PostForm("id"), 10, 64)
 		t := &hgToken{ID: id, Name: c.PostForm("name"), Description: c.PostForm("description"), Kind: c.PostForm("kind"),
-			Drafts: c.PostForm("drafts") == "1", Permissions: map[string][]string{}}
+			Drafts: c.PostForm("drafts") == "1", Upload: c.PostForm("upload") == "1", Permissions: map[string][]string{}}
 		for _, ty := range reg.Types() {
 			for _, a := range hgActions {
 				if c.PostForm("perm["+ty.UID+"]["+a+"]") == "1" {
@@ -869,6 +937,17 @@ func (s *Server) hgAdminPost(c *gin.Context, page string) {
 			return
 		}
 		hgRedirect(c, url.Values{"page": {"webhooks"}, "id": {itoa64(w.ID)}}, "Webhook saved.", nil)
+	case "retry_delivery":
+		id, _ := strconv.ParseInt(c.PostForm("id"), 10, 64)
+		q := url.Values{"page": {"webhooks"}}
+		if w, _ := strconv.ParseInt(c.PostForm("webhook"), 10, 64); w > 0 {
+			q.Set("id", itoa64(w))
+		}
+		if err := s.hgRetryDelivery(c, id); err != nil {
+			hgRedirect(c, q, "", errors.New("This delivery cannot be retried."))
+			return
+		}
+		hgRedirect(c, q, "Delivery queued again.", nil)
 	case "delete_webhook":
 		id, _ := strconv.ParseInt(c.PostForm("id"), 10, 64)
 		_ = s.hgDeleteWebhook(c, id)
@@ -981,6 +1060,72 @@ func (s *Server) hgAdminEntryPost(c *gin.Context, sc *hgSchema, do string) {
 			return
 		}
 		hgRedirect(c, entryURL(doc), "Changes discarded.", nil)
+	case "schedule_entry":
+		var at [2]*time.Time
+		if c.PostForm("clear") != "1" {
+			for i, k := range []string{"publish_at", "unpublish_at"} {
+				v := strings.TrimSpace(c.PostForm(k))
+				if v == "" {
+					continue
+				}
+				t, err := time.ParseInLocation("2006-01-02T15:04", v, s.loc())
+				if err != nil {
+					hgRedirect(c, entryURL(doc), "", errors.New("Enter the dates as a date and a time."))
+					return
+				}
+				at[i] = &t
+			}
+		}
+		if _, err := s.hgSetSchedule(c, sc, doc, loc, at[0], at[1]); err != nil {
+			if errors.Is(err, errHGNotFound) {
+				err = errors.New("Save the entry first.")
+			}
+			hgRedirect(c, entryURL(doc), "", err)
+			return
+		}
+		msg := "Schedule saved."
+		if at[0] == nil && at[1] == nil {
+			msg = "Schedule cleared."
+		}
+		hgRedirect(c, entryURL(doc), msg, nil)
+	case "restore_version":
+		vid, _ := strconv.ParseInt(c.PostForm("version"), 10, 64)
+		v, err := s.hgVersionByID(c, vid)
+		if err != nil || v.TypeUID != sc.UID || v.DocumentID != doc || v.Locale != loc {
+			hgRedirect(c, entryURL(doc), "", errors.New("This version no longer exists."))
+			return
+		}
+		e, err := s.hgRestoreVersion(c, sc, vid, u.ID)
+		if err != nil {
+			hgRedirect(c, entryURL(doc), "", err)
+			return
+		}
+		s.hgEmit(c, "entry.update", sc, e)
+		hgRedirect(c, entryURL(doc), "The version was restored as the draft.", nil)
+	case "bulk_entries":
+		back := url.Values{"page": {"entries"}, "type": {sc.UID}}
+		if loc != "" {
+			back.Set("locale", loc)
+		}
+		if st := c.PostForm("status"); st != "" {
+			back.Set("status", st)
+		}
+		action := c.PostForm("bulk_action")
+		docs := c.PostFormArray("docs[]")
+		if len(docs) == 0 {
+			hgRedirect(c, back, "", errors.New("Select entries first."))
+			return
+		}
+		res, err := s.hgBulk(c, sc, action, docs, loc, c.PostForm("all_locales") == "1", u.ID)
+		if err != nil {
+			hgRedirect(c, back, "", err)
+			return
+		}
+		if res.Done == 0 && len(res.Failed) > 0 {
+			hgRedirect(c, back, "", errors.New(res.Message(action)))
+			return
+		}
+		hgRedirect(c, back, res.Message(action), nil)
 	case "delete_entry":
 		target := loc
 		if c.PostForm("all_locales") == "1" || !sc.Localized {
@@ -1049,4 +1194,57 @@ func hgMaskPasswords(reg *hgRegistry, sc *hgSchema, data map[string]any, depth i
 		}
 	}
 	return out
+}
+
+// hgAdminHistory prepares the history screen of a document version: every kept version, the
+// chosen one (?v=, else the newest) compared with the current draft. It reports false when the
+// entry does not exist.
+func (s *Server) hgAdminHistory(c *gin.Context, d *hgAdminData) bool {
+	sc := d.Type
+	d.Doc = c.Query("doc")
+	if sc.IsSingle() {
+		d.Doc = s.hgSingleDoc(c, sc.UID)
+	}
+	loc, err := s.hgEntryLocale(c, sc, c.Query("locale"))
+	if err != nil {
+		return false
+	}
+	d.Locale = loc
+	e, err := s.hgGetEntry(c, sc.UID, d.Doc, loc)
+	if err != nil {
+		return false
+	}
+	d.Entry = e
+	d.EntryStatus = e.Status()
+	d.History = s.hgVersions(c, e.ID, hgHistoryKeep)
+	vid, _ := strconv.ParseInt(c.Query("v"), 10, 64)
+	for _, v := range d.History {
+		if v.ID == vid || (vid == 0 && d.Version == nil) {
+			d.Version = v
+		}
+	}
+	if d.Version != nil {
+		d.Diff = hgDiff(s.hgReg(c), sc, d.Version.Data, e.Data)
+	}
+	return true
+}
+
+// hgAdminGraphQL runs a query of the playground as the logged-in administrator (full access):
+// POST /wp-admin/headlessgo/graphql with the nonce in X-HG-Nonce.
+func (s *Server) hgAdminGraphQL(c *gin.Context) {
+	u := currentUser(c)
+	if !u.Can("manage_options", nil) || !s.checkNonceValue(c, c.GetHeader("X-HG-Nonce"), hgNonce) {
+		c.JSON(http.StatusForbidden, map[string]any{"data": nil, "errors": []any{map[string]any{"message": "Sorry, you are not allowed to do that."}}})
+		return
+	}
+	var req hgGQLRequest
+	raw, _ := io.ReadAll(io.LimitReader(c.Request.Body, 1<<20))
+	if err := json.Unmarshal(raw, &req); err != nil {
+		c.JSON(http.StatusBadRequest, map[string]any{"data": nil, "errors": []any{map[string]any{"message": "The body must be JSON: {\"query\": \"...\"}"}}})
+		return
+	}
+	a := &hgAuth{Kind: "token", Token: &hgToken{Kind: "full-access", Permissions: map[string][]string{}}}
+	status, out := s.hgGQLExecute(c, a, s.hgLoad(), req)
+	c.Header("Cache-Control", "no-store")
+	c.JSON(status, out)
 }

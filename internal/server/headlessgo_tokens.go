@@ -41,6 +41,7 @@ type hgToken struct {
 	Kind        string
 	Permissions map[string][]string
 	Drafts      bool
+	Upload      bool // may upload media (POST /upload); full-access tokens always may
 	Hint        string
 	ExpiresAt   *time.Time
 	LastUsedAt  *time.Time
@@ -66,12 +67,12 @@ func hgTokenHash(tok string) string {
 	return hex.EncodeToString(sum[:])
 }
 
-const hgTokenCols = `id, name, description, kind, permissions, drafts, token_hint, expires_at, last_used_at, created_at`
+const hgTokenCols = `id, name, description, kind, permissions, drafts, token_hint, expires_at, last_used_at, created_at, can_upload`
 
 func hgScanToken(row interface{ Scan(...any) error }) (*hgToken, error) {
 	t := &hgToken{}
 	var perms []byte
-	if err := row.Scan(&t.ID, &t.Name, &t.Description, &t.Kind, &perms, &t.Drafts, &t.Hint, &t.ExpiresAt, &t.LastUsedAt, &t.CreatedAt); err != nil {
+	if err := row.Scan(&t.ID, &t.Name, &t.Description, &t.Kind, &perms, &t.Drafts, &t.Hint, &t.ExpiresAt, &t.LastUsedAt, &t.CreatedAt, &t.Upload); err != nil {
 		return nil, err
 	}
 	_ = json.Unmarshal(perms, &t.Permissions)
@@ -145,7 +146,10 @@ func hgSanitizeToken(t *hgToken, reg *hgRegistry) error {
 	}
 	t.Permissions = perms
 	if t.Kind == "full-access" {
-		t.Drafts = true
+		t.Drafts, t.Upload = true, true
+	}
+	if t.Kind == "read-only" {
+		t.Upload = false
 	}
 	return nil
 }
@@ -162,8 +166,8 @@ func (s *Server) hgCreateToken(ctx context.Context, t *hgToken) (string, error) 
 	}
 	tok := hgTokenPrefix + auth.RandomToken(36)
 	perms, _ := json.Marshal(t.Permissions)
-	err := s.store.Pool.QueryRow(ctx, `INSERT INTO hg_api_tokens(name, description, kind, permissions, drafts, token_hash, token_hint, expires_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`, t.Name, t.Description, t.Kind, perms, t.Drafts, hgTokenHash(tok), tok[len(tok)-4:], t.ExpiresAt).Scan(&t.ID)
+	err := s.store.Pool.QueryRow(ctx, `INSERT INTO hg_api_tokens(name, description, kind, permissions, drafts, token_hash, token_hint, expires_at, can_upload)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`, t.Name, t.Description, t.Kind, perms, t.Drafts, hgTokenHash(tok), tok[len(tok)-4:], t.ExpiresAt, t.Upload).Scan(&t.ID)
 	if err != nil {
 		return "", err
 	}
@@ -181,8 +185,8 @@ func (s *Server) hgUpdateToken(ctx context.Context, t *hgToken) error {
 		return errors.New("A token with this name already exists.")
 	}
 	perms, _ := json.Marshal(t.Permissions)
-	_, err := s.store.Pool.Exec(ctx, `UPDATE hg_api_tokens SET name = $2, description = $3, kind = $4, permissions = $5, drafts = $6 WHERE id = $1`,
-		t.ID, t.Name, t.Description, t.Kind, perms, t.Drafts)
+	_, err := s.store.Pool.Exec(ctx, `UPDATE hg_api_tokens SET name = $2, description = $3, kind = $4, permissions = $5, drafts = $6, can_upload = $7 WHERE id = $1`,
+		t.ID, t.Name, t.Description, t.Kind, perms, t.Drafts, t.Upload)
 	return err
 }
 
