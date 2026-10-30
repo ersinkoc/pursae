@@ -257,6 +257,7 @@ func (s *Server) gooRenderEmail(ctx context.Context, d *gooEmailDef, st map[stri
 		args = map[string]any{}
 	}
 	e := &gooEmail{ID: d.ID}
+	ctx = s.gooPllOrderCtx(ctx, o) // Golylang: the language the order was placed in (goo_golylang.go)
 	ph := s.gooEmailPlaceholders(ctx, o)
 	switch {
 	case gooStockEmails[d.ID]:
@@ -311,9 +312,9 @@ func (s *Server) gooRenderEmail(ctx context.Context, d *gooEmailDef, st map[stri
 	if heading == "" {
 		heading = d.Heading
 	}
-	e.Subject = gooReplacePlaceholders(subject, ph)
-	e.Heading = gooReplacePlaceholders(heading, ph)
-	additional := gooReplacePlaceholders(st["additional_content"], ph)
+	e.Subject = gooReplacePlaceholders(s.gooT(ctx, subject), ph)
+	e.Heading = gooReplacePlaceholders(s.gooT(ctx, heading), ph)
+	additional := gooReplacePlaceholders(s.gooT(ctx, st["additional_content"]), ph)
 	content, plain := s.gooEmailContent(ctx, d, o, args)
 	e.HTML = s.gooEmailWrap(ctx, e.Heading, content+gooAutoP(additional))
 	e.Plain = "= " + e.Heading + " =\n\n" + plain

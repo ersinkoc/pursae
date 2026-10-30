@@ -1,0 +1,133 @@
+{{define "admin/goo-themes"}}{{template "admin-header" .}}{{with .Data}}
+<style>
+.goo-themes-wrap .goo-themes-sub{color:#646970;margin:4px 0 18px;max-width:760px}
+.goo-themes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px}
+.goo-theme-card{background:#fff;border:1px solid #dcdcde;border-radius:8px;overflow:hidden;display:flex;flex-direction:column;position:relative}
+.goo-theme-card.is-active{border-color:#7f54b3;box-shadow:0 0 0 1px #7f54b3}
+.goo-theme-shot{display:block;aspect-ratio:4/3;background:#f0f0f1 center/cover no-repeat;border-bottom:1px solid #f0f0f1;position:relative}
+.goo-theme-shot img{width:100%;height:100%;object-fit:cover;object-position:top;display:block}
+.goo-theme-badges{position:absolute;top:10px;left:10px;display:flex;gap:6px;flex-wrap:wrap}
+.goo-theme-badge{font-size:11px;font-weight:600;padding:2px 9px;border-radius:999px;background:rgba(255,255,255,.92);color:#1d2327;box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.goo-theme-badge.active{background:#00a32a;color:#fff}
+.goo-theme-badge.gwe{background:#92003b;color:#fff}
+.goo-theme-body{padding:14px 16px 16px;display:flex;flex-direction:column;gap:6px;flex:1}
+.goo-theme-body h2{margin:0;font-size:16px}
+.goo-theme-meta{color:#646970;font-size:12px}
+.goo-theme-desc{margin:0;color:#50575e;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.goo-theme-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:auto;padding-top:10px}
+.goo-theme-progress{display:none;margin:8px 0 0;padding:10px 12px;background:#f6f7f7;border-radius:6px}
+.goo-theme-card.is-running .goo-theme-progress,.goo-theme-card.is-finished .goo-theme-progress,.goo-theme-card.is-failed .goo-theme-progress{display:block}
+.goo-theme-progress ol{margin:0;padding:0;list-style:none}
+.goo-theme-progress li{display:flex;gap:8px;align-items:center;margin:3px 0;color:#646970}
+.goo-theme-progress li:before{content:"";width:14px;height:14px;border-radius:50%;border:2px solid #c3c4c7;flex:none;box-sizing:border-box}
+.goo-theme-progress li.is-current{color:#1d2327;font-weight:600}
+.goo-theme-progress li.is-current:before{border-color:#7f54b3;border-top-color:transparent;animation:goo-spin .8s linear infinite}
+.goo-theme-progress li.is-done{color:#1d2327}
+.goo-theme-progress li.is-done:before{background:#00a32a;border-color:#00a32a}
+.goo-theme-progress li.is-failed:before{background:#d63638;border-color:#d63638}
+.goo-theme-progress .goo-theme-result{margin:8px 0 0}
+.goo-theme-progress .goo-theme-result.is-error{color:#d63638}
+@keyframes goo-spin{to{transform:rotate(360deg)}}
+</style>
+<div class="wrap woocommerce goo-themes-wrap">
+<h1 class="wp-heading-inline">Store Themes</h1>
+<a href="/wp-admin/theme-install" class="page-title-action">All themes</a>
+<hr class="wp-header-end">
+{{template "notices" $}}
+<p class="goo-themes-sub">Each theme comes with a complete demo store: products with images, categories, the shop, cart, checkout and account pages, menus and shipping. Pick one and it is installed, activated and filled with its demo in one step; installed themes are also listed in Appearance &rsaquo; Themes. Themes marked Golementor are built from Theme Builder parts and store widgets, so every part of the store can be edited visually.{{if .Golylang}} Golylang is active: the demo content gets the default language, ready to be translated.{{end}}</p>
+<div class="goo-themes-grid">
+{{range .Themes}}
+<div class="goo-theme-card{{if .Active}} is-active{{end}}" id="goo-theme-{{.Slug}}" data-theme="{{.Slug}}">
+	<a class="goo-theme-shot" {{if .PreviewURL}}href="{{.PreviewURL}}" target="_blank"{{end}} aria-label="Preview {{.Name}}">
+		<img src="{{.Screenshot}}" alt="" loading="lazy">
+		<span class="goo-theme-badges">
+			{{if .Active}}<span class="goo-theme-badge active">Active</span>{{else if .Installed}}<span class="goo-theme-badge">Installed</span>{{end}}
+			{{if .Golementor}}<span class="goo-theme-badge gwe">Golementor</span>{{end}}
+		</span>
+	</a>
+	<div class="goo-theme-body">
+		<h2 translate="no">{{.Name}}</h2>
+		<div class="goo-theme-meta">{{if .CategoryLabel}}{{.CategoryLabel}} &middot; {{end}}{{.Style}}</div>
+		<p class="goo-theme-desc">{{.Description}}</p>
+		<div class="goo-theme-progress" aria-live="polite">
+			<ol>
+				<li data-step="install">Installing the theme</li>
+				<li data-step="activate">Activating it{{if .Golementor}} (and Golementor){{end}}</li>
+				<li data-step="demo">Importing the demo store</li>
+			</ol>
+			<p class="goo-theme-result"></p>
+		</div>
+		<div class="goo-theme-actions">
+		{{if and .Active .Imported (not .Update)}}
+			<a class="button button-primary" href="{{$.Data.ShopURL}}" target="_blank">Visit store</a>
+			{{if .BuilderURL}}<a class="button" href="{{.BuilderURL}}">Edit in Theme Builder</a>{{else}}<a class="button" href="{{.CustomizeURL}}">Customize</a>{{end}}
+		{{else if $.Data.CanInstall}}
+			<form method="post" action="/wp-admin/goocommerce?page=themes" class="goo-theme-setup">
+				<input type="hidden" name="_wpnonce" value="{{$.Data.Nonce}}">
+				<input type="hidden" name="action" value="setup">
+				<input type="hidden" name="theme" value="{{.Slug}}">
+				<button type="submit" class="button button-primary">{{if .Update}}Update &amp; set up store{{else if .Active}}Import the demo store{{else if .Installed}}Activate &amp; set up store{{else}}Install &amp; set up store{{end}}</button>
+			</form>
+		{{end}}
+		{{if .PreviewURL}}<a class="button-link" href="{{.PreviewURL}}" target="_blank">Live preview</a>{{end}}
+		</div>
+	</div>
+</div>
+{{else}}
+<p>The theme library has no store themes.</p>
+{{end}}
+</div>
+</div>
+<script>
+(function () {
+	var steps = ['install', 'activate', 'demo'];
+	document.querySelectorAll('form.goo-theme-setup').forEach(function (form) {
+		form.addEventListener('submit', function (e) {
+			if (!window.fetch || !window.FormData) { return; }
+			e.preventDefault();
+			var card = form.closest('.goo-theme-card'), button = form.querySelector('button');
+			var result = card.querySelector('.goo-theme-result');
+			if (card.classList.contains('is-running')) { return; }
+			document.querySelectorAll('.goo-theme-setup button').forEach(function (b) { b.disabled = true; });
+			card.classList.remove('is-finished', 'is-failed');
+			card.classList.add('is-running');
+			card.querySelectorAll('.goo-theme-progress li').forEach(function (li) { li.className = ''; });
+			result.textContent = ''; result.className = 'goo-theme-result';
+			var run = function (i) {
+				var step = steps[i];
+				var li = card.querySelector('.goo-theme-progress li[data-step="' + step + '"]');
+				li.className = 'is-current';
+				var body = new FormData(form);
+				body.set('action', 'step'); body.set('step', step);
+				fetch(form.action, { method: 'POST', body: body, credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+					.then(function (r) { return r.json().catch(function () { return { ok: false, message: 'The server answered ' + r.status + '.' }; }); })
+					.then(function (res) {
+						if (!res.ok) { throw new Error(res.message || 'Something went wrong.'); }
+						li.className = 'is-done';
+						if (i + 1 < steps.length) { run(i + 1); return; }
+						card.classList.remove('is-running'); card.classList.add('is-finished');
+						result.textContent = res.message + ' ';
+						var a = document.createElement('a');
+						a.href = res.shop_url || res.home_url; a.target = '_blank'; a.className = 'button button-primary';
+						a.textContent = 'Visit your store';
+						result.appendChild(a);
+						var r = document.createElement('a');
+						r.href = location.pathname + '?page=themes'; r.className = 'button'; r.style.marginLeft = '6px';
+						r.textContent = 'Done';
+						result.appendChild(r);
+					})
+					.catch(function (err) {
+						li.className = 'is-failed';
+						card.classList.remove('is-running'); card.classList.add('is-failed');
+						result.className = 'goo-theme-result is-error';
+						result.textContent = err.message;
+						document.querySelectorAll('.goo-theme-setup button').forEach(function (b) { b.disabled = false; });
+						button.textContent = 'Try again';
+					});
+			};
+			run(0);
+		});
+	});
+})();
+</script>
+{{end}}{{template "admin-footer" .}}{{end}}

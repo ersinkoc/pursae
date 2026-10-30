@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>{{.DocumentTitle}}</title>
+{{.Head}}</head>
+<body class="{{.BodyClass}}">
+{{.BodyOpen}}<div id="page" class="site gs-fallback">
+	<a class="skip-link screen-reader-text" href="#main">Skip to content</a>
+	<header class="site-header">
+		<p class="site-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></p>
+		{{if has_nav_menu . "primary"}}<nav class="main-navigation" aria-label="Primary menu">{{nav_menu . "primary"}}</nav>{{end}}
+		{{goo_language_switcher .}}
+		{{if goo_on}}<a class="gs-cart" href="{{goo_url . "cart"}}">Cart (<span data-goo-cart-count>{{goo_cart_count .}}</span>)</a>{{end}}
+	</header>
+	<main id="main" class="site-main" tabindex="-1">

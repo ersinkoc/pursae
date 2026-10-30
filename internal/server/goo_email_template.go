@@ -100,6 +100,7 @@ func (s *Server) gooEmailFooter(ctx context.Context) string {
 	if f == "" {
 		f = "{site_title} &mdash; Built with WordPress Go"
 	}
+	f = s.gooT(ctx, f) // Golylang: Languages › Translations
 	home := s.links(ctx).Home
 	return strings.NewReplacer("{site_title}", gooEsc(s.settings.String("blogname")), "{site_url}", home, "{site_address}", home,
 		"{store_email}", gooEsc(s.gooEmailFromAddress())).Replace(f)

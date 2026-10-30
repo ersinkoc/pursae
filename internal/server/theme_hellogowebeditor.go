@@ -27,7 +27,7 @@ import (
 
 const helloThemeSlug = "hello-gowebeditor"
 
-const helloThemeVersion = "1.0.1"
+const helloThemeVersion = "1.0.2"
 
 // helloMenuLocations are the theme's menu locations (and those of every saved theme).
 var helloMenuLocations = []MenuLocation{{"primary", "Primary Menu"}, {"footer", "Footer Menu"}}
@@ -85,6 +85,12 @@ func (s *Server) gweLoadSavedTheme(ctx context.Context, slug string) error {
 	if snap == nil {
 		return errors.New("That saved theme has no data.")
 	}
+	return s.gweLoadSnapshot(ctx, snap, slug)
+}
+
+// gweLoadSnapshot loads a design into the working copy; key is remembered as the loaded design (a saved
+// theme's slug, or a Golementor design package's: goo_gwe.go).
+func (s *Server) gweLoadSnapshot(ctx context.Context, snap *gweSnapshot, slug string) error {
 	var authorID int64
 	if u, ok := ctx.Value(ctxUser).(*store.User); ok && u != nil {
 		authorID = u.ID
@@ -225,7 +231,13 @@ func (s *Server) gweWorkingCopyDirty(ctx context.Context) bool {
 		parts = append(parts, gwePartFromPost(p))
 	}
 	css := s.gweWorkingCSS()
-	snap := gweSnapshotFor(s.settings.String("gwe_loaded_theme"))
+	loaded := s.settings.String("gwe_loaded_theme")
+	snap := gweSnapshotFor(loaded)
+	if snap == nil { // a Golementor design package (goo_gwe.go)
+		if t := themeBySlug(loaded); gweDesignTheme(t) {
+			snap, _ = gweDesignSnapshot(t)
+		}
+	}
 	if snap == nil {
 		return len(parts) > 0 || strings.TrimSpace(css) != ""
 	}

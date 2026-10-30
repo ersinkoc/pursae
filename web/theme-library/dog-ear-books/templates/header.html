@@ -16,6 +16,7 @@
 				<p class="de-strip__note">{{if theme_mod . "show_announcement"}}{{with theme_mod . "announcement"}}<span class="de-announcement">{{.}}</span>{{end}}{{end}}</p>
 				<div class="de-tools">
 					<button type="button" class="de-tool de-search-toggle" aria-controls="de-search" aria-expanded="false">{{template "icon-search"}}<span class="de-tool__label">Search</span></button>
+					{{goo_language_switcher .}}
 					{{if goo_on}}<a class="de-tool de-account" href="{{goo_url . "myaccount"}}">{{template "icon-account"}}<span class="de-tool__label">Account</span></a>
 					<div class="de-cart site-header-cart">
 						<a class="de-tool de-cart-toggle" href="{{goo_url . "cart"}}" aria-controls="de-mini-cart">{{template "icon-basket"}}<span class="de-tool__label">Basket</span> <span class="de-cart-count" data-goo-cart-count>{{goo_cart_count .}}</span></a>

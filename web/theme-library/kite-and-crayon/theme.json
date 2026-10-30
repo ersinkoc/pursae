@@ -1,0 +1,129 @@
+{
+  "slug": "kite-and-crayon",
+  "name": "Kite & Crayon",
+  "version": "1.0.0",
+  "description": "A bright toy shop built with Golementor: a centred header with search, the language switcher and a hover mini-cart, a playful hero, chunky category tiles, favourites and new toys, a product page with colour variations, tabs and related toys, and a simple checkout. Every part is a Theme Builder template you can edit visually. Outfit, Figtree and Caveat, self-hosted. Ships a complete store demo: wooden toys, games, art supplies, room decor and a birthday bundle, priced in euros.",
+  "author": "WordPress Go",
+  "author_url": "https://github.com/boracomet/wordpress-go",
+  "theme_url": "https://github.com/boracomet/wordpress-go/tree/main/web/theme-library/kite-and-crayon",
+  "tags": [
+    "E-Commerce",
+    "Golementor",
+    "Theme Builder",
+    "Kids",
+    "Custom Colors",
+    "Custom Menu",
+    "Translation Ready",
+    "Full Width Template"
+  ],
+  "requires_core": "0.1.0",
+  "screenshot": "assets/screenshot.png",
+  "category": "kids",
+  "style": "Bright kids' toy shop, cream with tomato and mint",
+  "demo": "demo/demo.json",
+  "golementor": "golementor/design.json",
+  "menu_locations": [
+    {
+      "id": "primary",
+      "name": "Primary Menu"
+    },
+    {
+      "id": "footer",
+      "name": "Footer Menu"
+    }
+  ],
+  "styles": [
+    {
+      "handle": "kite-and-crayon-style",
+      "src": "assets/style.css",
+      "deps": [],
+      "media": "all"
+    }
+  ],
+  "preload_fonts": [
+    "assets/fonts/outfit.woff2"
+  ],
+  "palette": [
+    {
+      "name": "Ink",
+      "slug": "primary",
+      "color": "#26283B"
+    },
+    {
+      "name": "Mint",
+      "slug": "secondary",
+      "color": "#3FA58C"
+    },
+    {
+      "name": "Slate",
+      "slug": "text",
+      "color": "#4A4D63"
+    },
+    {
+      "name": "Tomato",
+      "slug": "accent",
+      "color": "#EE5A3C"
+    },
+    {
+      "name": "Paper",
+      "slug": "paper",
+      "color": "#FFFFFF"
+    },
+    {
+      "name": "Cream",
+      "slug": "cream",
+      "color": "#FFF8EE"
+    },
+    {
+      "name": "Peach",
+      "slug": "sand",
+      "color": "#FFE7D6"
+    },
+    {
+      "name": "Line",
+      "slug": "line",
+      "color": "#EFE3D3"
+    },
+    {
+      "name": "Muted",
+      "slug": "muted",
+      "color": "#8A8C9E"
+    },
+    {
+      "name": "Sunflower",
+      "slug": "sun",
+      "color": "#FFCB47"
+    },
+    {
+      "name": "Mint light",
+      "slug": "minty",
+      "color": "#DDF3EB"
+    },
+    {
+      "name": "Night",
+      "slug": "deep",
+      "color": "#1E2033"
+    },
+    {
+      "name": "Pale on dark",
+      "slug": "pale",
+      "color": "#BFC2D6"
+    }
+  ],
+  "supports": {
+    "post-thumbnails": true,
+    "title-tag": true,
+    "align-wide": true,
+    "responsive-embeds": true,
+    "woocommerce": true,
+    "html5": [
+      "search-form",
+      "comment-form",
+      "comment-list",
+      "gallery",
+      "caption",
+      "script",
+      "style"
+    ]
+  }
+}

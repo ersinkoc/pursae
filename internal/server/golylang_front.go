@@ -202,6 +202,9 @@ func (s *Server) pllTranslationURL(c *gin.Context, q *siteQuery, l *pllLanguage)
 	if q == nil {
 		return "", false
 	}
+	if u, has, ok := s.gooPllTranslationURL(c, q, l); ok { // Goocommerce store views (goo_golylang.go)
+		return u, has
+	}
 	switch {
 	case q.Kind == "front-page" || (q.Kind == "home" && q.PostsPage == nil):
 		return s.pllHomeURL(ctx, l), true
@@ -418,6 +421,7 @@ func (s *Server) pllStrings(ctx context.Context) []pllRegistered {
 		{"Site Title", s.settings.String("blogname"), "WordPress", false},
 		{"Tagline", s.settings.String("blogdescription"), "WordPress", false},
 	}
+	out = append(out, s.gooPllStrings()...) // Goocommerce: store notice, e-mails, payment and shipping titles (goo_golylang.go)
 	if s.pllOpts().TranslateSlugs {
 		for _, b := range s.pllSlugBases() {
 			out = append(out, pllRegistered{b[0], b[1], "URL slugs", false})

@@ -56,6 +56,7 @@ type gooProductRow struct {
 	Classes                         string
 	IsTrash, CanEdit, CanDelete     bool
 	Type                            string
+	PluginCols                      []template.HTML // Golylang: the language columns
 }
 
 type gooProductsData struct {
@@ -81,6 +82,7 @@ type gooProductsData struct {
 	ShipClasses  []*store.Term
 	ExportURL    string
 	ImportURL    string
+	PluginHeads  []template.HTML // Golylang: the language columns
 }
 
 // gooProductListColumns are the Screen Options toggles of the products list.
@@ -229,6 +231,7 @@ func (s *Server) gooRenderProducts(c *gin.Context) {
 	}
 
 	d.Rows = s.gooProductRows(c, products)
+	s.gooPllProductColumns(c, &d, products) // Golylang: one column per language (goo_golylang.go)
 	if ids := c.QueryArray("post[]"); gooBulkAction(c) == "edit" && len(ids) > 0 {
 		var sel []int64
 		for _, raw := range ids {
@@ -253,6 +256,7 @@ func (s *Server) gooRenderProducts(c *gin.Context) {
 			d.ColCount++
 		}
 	}
+	d.ColCount += len(d.PluginHeads)
 	s.setScreenOptions(c, screenOptions{Screen: "edit-product", Columns: gooProductListColumns, Hidden: d.Hidden,
 		PerPageOption: "edit_product_per_page", PerPage: perPage})
 	if sorting {
@@ -657,8 +661,8 @@ func (s *Server) gooSKUTaken(ctx context.Context, sku string, excludeID int64) b
 	}
 	var taken bool
 	_ = s.store.Pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM goo_products p JOIN posts po ON po.id = p.post_id
-		WHERE p.sku = $1 AND p.post_id <> $2 AND po.status NOT IN ('trash','auto-draft')
-		AND NOT (po.type = 'product_variation' AND po.parent_id IN (SELECT id FROM posts WHERE status = 'trash')))`, sku, excludeID).Scan(&taken)
+		WHERE p.sku = $1 AND NOT p.post_id = ANY($2) AND po.status NOT IN ('trash','auto-draft')
+		AND NOT (po.type = 'product_variation' AND po.parent_id IN (SELECT id FROM posts WHERE status = 'trash')))`, sku, s.gooPllSiblings(ctx, excludeID)).Scan(&taken) // translations share a SKU
 	return taken
 }
 

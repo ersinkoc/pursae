@@ -259,6 +259,7 @@ type gooHomeData struct {
 
 func (s *Server) gooAdminHome(c *gin.Context) {
 	ctx := c.Request.Context()
+	u := currentUser(c)
 	d := &gooHomeData{ShopURL: s.gooShopURL(ctx)}
 	now := time.Now().In(s.loc())
 	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, s.loc())
@@ -294,6 +295,7 @@ func (s *Server) gooAdminHome(c *gin.Context) {
 	_ = s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM goo_tax_rates`).Scan(&rates)
 	_ = s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM goo_shipping_methods`).Scan(&zones)
 	d.Tasks = []gooHomeTask{
+		s.gooThemeTask(), // goo_admin_themes.go
 		{"Store details", "Your store's address, currency and selling locations.", gooAdminURL("settings"), s.gooOptString("store_address") != ""},
 		{"Add products", "Start by adding the first product to your store.", "/wp-admin/post-new?post_type=product", products > 0},
 		{"Set up payments", "Choose payment providers and enable payment methods at checkout.", gooAdminURL("settings", "tab", "checkout"), payments},
@@ -306,7 +308,11 @@ func (s *Server) gooAdminHome(c *gin.Context) {
 			d.TasksDone++
 		}
 	}
-	s.gooStoreRender(c, "goocommerce", "wc-admin", "Home", "admin/goo-home", d)
+	var notices []notice
+	if hint := s.gooThemeHint(); hint != "" && u.Can("install_themes", nil) {
+		notices = append(notices, notice{Type: "info", Message: template.HTML(hint)})
+	}
+	s.gooStoreRender(c, "goocommerce", "wc-admin", "Home", "admin/goo-home", d, notices...)
 }
 
 func (s *Server) gooCouponCount(ctx context.Context) int {

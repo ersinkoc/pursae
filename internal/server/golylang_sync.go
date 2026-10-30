@@ -37,6 +37,13 @@ func (s *Server) pllCopyForTranslation(ctx context.Context, src, dst *store.Post
 	if tpl, ok := src.Meta["_wp_page_template"]; ok {
 		meta["_wp_page_template"] = tpl
 	}
+	if duplicate && gweBuilt(src) { // a Golementor page: the translation starts from its design
+		for _, k := range []string{"_elementor_data", "_elementor_edit_mode", "_elementor_template_type", "_elementor_page_settings", "_elementor_version"} {
+			if v, ok := src.Meta[k]; ok {
+				meta[k] = v
+			}
+		}
+	}
 	rawMeta, _ := json.Marshal(meta)
 	parent := s.pllTranslatedID(ctx, pllPost, src.ParentID, l.Slug)
 	featured := s.pllTranslatedMedia(ctx, src.FeaturedMediaID, l.Slug)

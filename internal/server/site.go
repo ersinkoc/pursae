@@ -38,6 +38,11 @@ type siteQuery struct {
 	PostsPage *store.Post // page_for_posts when the blog lives on a page
 
 	SearchProps string // gap-loops2: the Search widget's e_search_props (gowebeditor_loop.go)
+
+	// Store and StoreTerm describe a Goocommerce view for the Theme Builder's conditions (goo_gwe.go):
+	// product, shop, product_cat, product_tag, product_attr, cart, checkout, myaccount; the term id.
+	Store     string
+	StoreTerm int64
 }
 
 var (

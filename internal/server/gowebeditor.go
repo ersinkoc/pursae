@@ -333,6 +333,9 @@ func (s *Server) gweDocConfig(c *gin.Context, p *store.Post) map[string]any {
 	d := gweData()
 	typ := gweDocType(p)
 	base, ok := d.docs[typ]
+	if !ok { // Goocommerce parts edit like their WordPress counterparts (goo_gwe.go)
+		base, ok = d.docs[map[string]string{"single-product": "single-post", "product-archive": "archive"}[typ]]
+	}
 	if !ok {
 		switch {
 		case p.Type == "post":

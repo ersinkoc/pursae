@@ -248,12 +248,12 @@ func (s *Server) pllDefault(ctx context.Context) *pllLanguage {
 
 // pllPostTypes are the translated post types: posts and pages, plus the custom types ticked in Settings.
 func (s *Server) pllPostTypes() []string {
-	return append([]string{"post", "page"}, s.pllOpts().PostTypes...)
+	return append(append([]string{"post", "page"}, s.gooPllPostTypes()...), s.pllOpts().PostTypes...) // Goocommerce: products (goo_golylang.go)
 }
 
 // pllTaxonomies are the translated taxonomies: categories and tags, plus the custom ones ticked in Settings.
 func (s *Server) pllTaxonomies() []string {
-	return append([]string{"category", "post_tag"}, s.pllOpts().Taxonomies...)
+	return append(append([]string{"category", "post_tag"}, s.gooPllTaxonomies()...), s.pllOpts().Taxonomies...) // Goocommerce: product terms
 }
 
 func (s *Server) pllTranslatedType(typ string) bool     { return containsStr(s.pllPostTypes(), typ) }
@@ -742,8 +742,9 @@ func (s *Server) golylangResolved(c *gin.Context, q *siteQuery) {
 	if r == nil || !r.Front || q == nil {
 		return
 	}
-	var slug string
+	slug, storeView := s.gooPllResolvedLang(c, q) // Goocommerce: a product, product term or shop view (goo_golylang.go)
 	switch {
+	case storeView:
 	case q.Post != nil && s.pllTranslatedType(q.Post.Type):
 		slug = s.pllObjLang(c, pllPost, q.Post.ID)
 	case q.PostsPage != nil:

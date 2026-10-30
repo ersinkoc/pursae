@@ -26,6 +26,7 @@
 
 			<div class="of-tools">
 				<button type="button" class="of-textlink of-search-toggle" aria-controls="of-search" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m15.5 15.5 4 4"/></svg><span class="of-tools__label">Search</span></button>
+				{{goo_language_switcher .}}
 				{{if goo_on}}<a class="of-textlink of-account" href="{{goo_url . "myaccount"}}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.6"/><path d="M5 20c1.1-3.4 3.7-5.1 7-5.1s5.9 1.7 7 5.1"/></svg><span class="of-tools__label">Account</span></a>
 				<div class="of-cart site-header-cart">
 					<a class="of-textlink of-cart-toggle" href="{{goo_url . "cart"}}" aria-controls="of-mini-cart"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h16l-1.4 10.2a1 1 0 0 1-1 .8H6.4a1 1 0 0 1-1-.8z"/><path d="M8.5 9 12 4l3.5 5"/></svg><span class="of-tools__label">Cart</span> <span class="of-cart-count" data-goo-cart-count>{{goo_cart_count .}}</span></a>

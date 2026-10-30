@@ -256,6 +256,11 @@ func (s *Server) switchTheme(ctx context.Context, slug string) error {
 		return fmt.Errorf("theme %q is not installed", slug)
 	}
 	old := s.activeTheme()
+	if gweDesignTheme(t) && (old == nil || old.Slug != t.Slug) { // a Golementor design package: its parts and kit become the working copy (goo_gwe.go)
+		if err := s.gweLoadDesignTheme(ctx, t); err != nil {
+			return err
+		}
+	}
 	if t.Custom { // Golementor saved theme: load its design into the working copy, then activate Hello Golementor
 		if err := s.gweLoadSavedTheme(ctx, t.Slug); err != nil {
 			return err

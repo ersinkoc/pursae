@@ -1,0 +1,8 @@
+{{template "header" .}}
+<div class="gs-wrap">
+{{if .IsHomeHeader}}<h1 class="page-title">{{.PostsPageTitle}}</h1>{{end}}
+{{range .Posts}}<article id="post-{{.ID}}" class="{{.Class}}"><h2 class="entry-title"><a href="{{.Permalink}}">{{.Title}}</a></h2>{{if .ShowExcerpt}}<div class="entry-summary">{{.Excerpt}}</div>{{end}}</article>
+{{else}}{{template "content-none" .}}{{end}}
+{{.Pagination}}
+</div>
+{{template "footer" .}}

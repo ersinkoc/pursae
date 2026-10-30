@@ -23,6 +23,7 @@
 			</nav><!-- #site-navigation -->{{end}}
 			<div class="gb-tools">
 				<button type="button" class="gb-icon gb-search-toggle" aria-controls="gb-search" aria-expanded="false">{{template "icon-search"}}<span class="screen-reader-text">Search</span></button>
+				{{goo_language_switcher .}}
 				{{if goo_on}}<a class="gb-icon gb-account" href="{{goo_url . "myaccount"}}">{{template "icon-account"}}<span class="screen-reader-text">My account</span></a>
 				<div class="gb-cart site-header-cart">
 					<a class="gb-icon gb-cart-toggle" href="{{goo_url . "cart"}}" aria-controls="gb-mini-cart">{{template "icon-bag"}}<span class="gb-cart-count" data-goo-cart-count>{{goo_cart_count .}}</span><span class="screen-reader-text">Cart</span></a>

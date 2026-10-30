@@ -1,7 +1,7 @@
 {
   "slug": "voltage-store",
   "name": "Voltage",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A sharp, dark electronics store for Goocommerce. A utility bar, a header built around a big product search (press / to focus it) with the cart total, a department bar, a glowing hero, a bento grid of categories, a trust strip, dark product cards whose border lights up and whose add-to-cart button slides in on hover, spec-sheet product pages and a focused checkout. A light mode is one click away. Space Grotesk, Inter and JetBrains Mono, self-hosted. Ships a complete gadget store demo.",
   "author": "WordPress Go",
   "author_url": "https://github.com/boracomet/wordpress-go",

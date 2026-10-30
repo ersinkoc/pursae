@@ -45,6 +45,9 @@ type themeManifest struct {
 	Category string `json:"category"`
 	Style    string `json:"style"`
 	Demo     string `json:"demo"` // the demo content file, demo/demo.json (theme_demo.go)
+	// Golementor is a Golementor design file (golementor/design.json, gwe_package_theme.go): the
+	// theme renders through Hello Golementor with the design's Theme Builder parts and kit.
+	Golementor string `json:"golementor"`
 
 	WidgetAreas   []themeManifestArea     `json:"widget_areas"`
 	MenuLocations []themeManifestLocation `json:"menu_locations"`

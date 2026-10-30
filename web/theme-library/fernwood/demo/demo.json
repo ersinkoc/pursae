@@ -1,0 +1,2649 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Fernwood",
+  "blogdescription": "Plants, planters and good advice"
+ },
+ "media": [
+  {
+   "id": "hero",
+   "file": "demo/images/fernwood-hero.jpg",
+   "alt": "Houseplants in terracotta pots on a sunny shelf"
+  },
+  {
+   "id": "about",
+   "file": "demo/images/fernwood-about.jpg",
+   "alt": "The greenhouse with benches of young plants"
+  },
+  {
+   "id": "cat-houseplants",
+   "file": "demo/images/fernwood-cat-houseplants.jpg",
+   "alt": "Houseplants"
+  },
+  {
+   "id": "cat-planters",
+   "file": "demo/images/fernwood-cat-planters.jpg",
+   "alt": "Planters"
+  },
+  {
+   "id": "cat-care",
+   "file": "demo/images/fernwood-cat-care.jpg",
+   "alt": "Care & Tools"
+  },
+  {
+   "id": "cat-gifts",
+   "file": "demo/images/fernwood-cat-gifts.jpg",
+   "alt": "Gifts"
+  },
+  {
+   "id": "p-monstera-deliciosa",
+   "file": "demo/images/fernwood-p-monstera-deliciosa.jpg",
+   "alt": "Monstera Deliciosa"
+  },
+  {
+   "id": "p-fiddle-leaf-fig",
+   "file": "demo/images/fernwood-p-fiddle-leaf-fig.jpg",
+   "alt": "Fiddle Leaf Fig"
+  },
+  {
+   "id": "p-snake-plant",
+   "file": "demo/images/fernwood-p-snake-plant.jpg",
+   "alt": "Snake Plant"
+  },
+  {
+   "id": "p-golden-pothos",
+   "file": "demo/images/fernwood-p-golden-pothos.jpg",
+   "alt": "Golden Pothos"
+  },
+  {
+   "id": "p-calathea-orbifolia",
+   "file": "demo/images/fernwood-p-calathea-orbifolia.jpg",
+   "alt": "Calathea Orbifolia"
+  },
+  {
+   "id": "p-terracotta-pot",
+   "file": "demo/images/fernwood-p-terracotta-pot.jpg",
+   "alt": "Terracotta Pot"
+  },
+  {
+   "id": "p-ceramic-planter",
+   "file": "demo/images/fernwood-p-ceramic-planter.jpg",
+   "alt": "Speckled Ceramic Planter"
+  },
+  {
+   "id": "p-hanging-planter",
+   "file": "demo/images/fernwood-p-hanging-planter.jpg",
+   "alt": "Macramé Hanging Planter"
+  },
+  {
+   "id": "p-watering-can",
+   "file": "demo/images/fernwood-p-watering-can.jpg",
+   "alt": "Brass Watering Can"
+  },
+  {
+   "id": "p-plant-food",
+   "file": "demo/images/fernwood-p-plant-food.jpg",
+   "alt": "Organic Plant Food"
+  },
+  {
+   "id": "p-pruning-shears",
+   "file": "demo/images/fernwood-p-pruning-shears.jpg",
+   "alt": "Pruning Shears"
+  },
+  {
+   "id": "p-plant-gift-box",
+   "file": "demo/images/fernwood-p-plant-gift-box.jpg",
+   "alt": "Starter Gift Box"
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Home",
+   "front_page": true,
+   "content": "",
+   "golementor": [
+    {
+     "id": "ba21c95",
+     "elType": "container",
+     "isInner": false,
+     "settings": {
+      "content_width": "boxed",
+      "boxed_width": {
+       "unit": "px",
+       "size": 1240,
+       "sizes": []
+      },
+      "flex_direction": "column",
+      "padding": {
+       "unit": "px",
+       "top": "96",
+       "right": "24",
+       "bottom": "96",
+       "left": "24",
+       "isLinked": false
+      },
+      "padding_mobile": {
+       "unit": "px",
+       "top": "48",
+       "right": "18",
+       "bottom": "48",
+       "left": "18",
+       "isLinked": false
+      },
+      "min_height": {
+       "unit": "px",
+       "size": 640,
+       "sizes": []
+      },
+      "min_height_mobile": {
+       "unit": "px",
+       "size": 520,
+       "sizes": []
+      },
+      "flex_justify_content": "center",
+      "background_background": "classic",
+      "background_image": {
+       "url": "{{media:hero}}",
+       "id": "{{media_id:hero}}",
+       "size": "",
+       "alt": "",
+       "source": "library"
+      },
+      "background_position": "center right",
+      "background_size": "cover",
+      "background_repeat": "no-repeat",
+      "background_overlay_background": "gradient",
+      "background_overlay_color": "#132A1D",
+      "background_overlay_color_b": "rgba(19,42,29,0)",
+      "background_overlay_gradient_angle": {
+       "unit": "deg",
+       "size": 90,
+       "sizes": []
+      },
+      "background_overlay_color_stop": {
+       "unit": "%",
+       "size": 12,
+       "sizes": []
+      },
+      "background_overlay_color_b_stop": {
+       "unit": "%",
+       "size": 72,
+       "sizes": []
+      },
+      "background_overlay_opacity": {
+       "unit": "px",
+       "size": 0.92,
+       "sizes": []
+      }
+     },
+     "elements": [
+      {
+       "id": "3877c2f",
+       "elType": "container",
+       "isInner": true,
+       "settings": {
+        "content_width": "full",
+        "flex_direction": "column",
+        "flex_gap": {
+         "unit": "px",
+         "size": 20,
+         "column": "20",
+         "row": "20",
+         "isLinked": true
+        },
+        "width": {
+         "unit": "px",
+         "size": 560,
+         "sizes": []
+        },
+        "width_mobile": {
+         "unit": "%",
+         "size": 100,
+         "sizes": []
+        },
+        "flex_align_items": "flex-start"
+       },
+       "elements": [
+        {
+         "id": "b0a0c4a",
+         "elType": "widget",
+         "widgetType": "heading",
+         "settings": {
+          "title": "New this season",
+          "header_size": "p",
+          "__globals__": {
+           "title_color": "globals/colors?id=mint",
+           "typography_typography": "globals/typography?id=secondary"
+          }
+         },
+         "elements": []
+        },
+        {
+         "id": "eb16e20",
+         "elType": "widget",
+         "widgetType": "heading",
+         "settings": {
+          "title": "Bring the outside in.",
+          "header_size": "h1",
+          "__globals__": {
+           "title_color": "globals/colors?id=paper",
+           "typography_typography": "globals/typography?id=display"
+          }
+         },
+         "elements": []
+        },
+        {
+         "id": "63774a6",
+         "elType": "widget",
+         "widgetType": "text-editor",
+         "settings": {
+          "editor": "<p>Easy-going houseplants, handmade planters and the tools to keep them thriving, delivered from our greenhouse to your door.</p>",
+          "__globals__": {
+           "text_color": "globals/colors?id=paper",
+           "typography_typography": "globals/typography?id=lead"
+          }
+         },
+         "elements": []
+        },
+        {
+         "id": "c8e0402",
+         "elType": "container",
+         "isInner": true,
+         "settings": {
+          "content_width": "full",
+          "flex_direction": "row",
+          "flex_gap": {
+           "unit": "px",
+           "size": 12,
+           "column": "12",
+           "row": "12",
+           "isLinked": true
+          },
+          "flex_align_items": "center",
+          "flex_direction_mobile": "row",
+          "flex_wrap": "wrap"
+         },
+         "elements": [
+          {
+           "id": "c071a4b",
+           "elType": "widget",
+           "widgetType": "button",
+           "settings": {
+            "text": "Shop plants",
+            "link": {
+             "url": "/shop/",
+             "is_external": "",
+             "nofollow": "",
+             "custom_attributes": ""
+            },
+            "size": "md",
+            "__globals__": {
+             "typography_typography": "globals/typography?id=accent",
+             "background_color": "globals/colors?id=accent",
+             "button_text_color": "globals/colors?id=paper",
+             "button_background_hover_color": "globals/colors?id=primary",
+             "hover_color": "globals/colors?id=paper"
+            }
+           },
+           "elements": []
+          },
+          {
+           "id": "6da1e06",
+           "elType": "widget",
+           "widgetType": "button",
+           "settings": {
+            "text": "How we grow",
+            "link": {
+             "url": "{{page:about}}",
+             "is_external": "",
+             "nofollow": "",
+             "custom_attributes": ""
+            },
+            "size": "md",
+            "__globals__": {
+             "typography_typography": "globals/typography?id=accent",
+             "background_color": "globals/colors?id=primary",
+             "button_text_color": "globals/colors?id=paper",
+             "border_color": "globals/colors?id=paper",
+             "button_background_hover_color": "globals/colors?id=paper",
+             "hover_color": "globals/colors?id=primary"
+            },
+            "border_border": "solid",
+            "border_width": {
+             "unit": "px",
+             "top": "1",
+             "right": "1",
+             "bottom": "1",
+             "left": "1",
+             "isLinked": true
+            }
+           },
+           "elements": []
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "id": "b7b77fd",
+     "elType": "container",
+     "isInner": false,
+     "settings": {
+      "content_width": "boxed",
+      "boxed_width": {
+       "unit": "px",
+       "size": 1240,
+       "sizes": []
+      },
+      "flex_direction": "column",
+      "padding": {
+       "unit": "px",
+       "top": "26",
+       "right": "24",
+       "bottom": "26",
+       "left": "24",
+       "isLinked": false
+      },
+      "padding_mobile": {
+       "unit": "px",
+       "top": "48",
+       "right": "18",
+       "bottom": "48",
+       "left": "18",
+       "isLinked": false
+      },
+      "background_background": "classic",
+      "__globals__": {
+       "background_color": "globals/colors?id=cream"
+      }
+     },
+     "elements": [
+      {
+       "id": "ac8b19b",
+       "elType": "container",
+       "isInner": true,
+       "settings": {
+        "container_type": "grid",
+        "content_width": "full",
+        "grid_gaps": {
+         "column": "24",
+         "row": "24",
+         "isLinked": true,
+         "unit": "px"
+        },
+        "grid_columns_grid": {
+         "unit": "fr",
+         "size": 4,
+         "sizes": []
+        },
+        "grid_columns_grid_tablet": {
+         "unit": "fr",
+         "size": 2,
+         "sizes": []
+        },
+        "grid_columns_grid_mobile": {
+         "unit": "fr",
+         "size": 1,
+         "sizes": []
+        },
+        "grid_rows_grid": {
+         "unit": "fr",
+         "size": 1,
+         "sizes": []
+        },
+        "grid_auto_flow": "row"
+       },
+       "elements": [
+        {
+         "id": "2988582",
+         "elType": "widget",
+         "widgetType": "icon-box",
+         "settings": {
+          "selected_icon": {
+           "value": "fas fa-truck",
+           "library": "fa-solid"
+          },
+          "title_text": "Free delivery",
+          "description_text": "On every order over $60",
+          "position": "left",
+          "title_size": "h3",
+          "icon_size": {
+           "unit": "px",
+           "size": 24,
+           "sizes": []
+          },
+          "icon_space": {
+           "unit": "px",
+           "size": 14,
+           "sizes": []
+          },
+          "__globals__": {
+           "primary_color": "globals/colors?id=secondary",
+           "title_color": "globals/colors?id=primary",
+           "title_typography_typography": "globals/typography?id=h4",
+           "description_color": "globals/colors?id=text",
+           "description_typography_typography": "globals/typography?id=small"
+          }
+         },
+         "elements": []
+        },
+        {
+         "id": "d2e9b78",
+         "elType": "widget",
+         "widgetType": "icon-box",
+         "settings": {
+          "selected_icon": {
+           "value": "fas fa-seedling",
+           "library": "fa-solid"
+          },
+          "title_text": "Happy-plant promise",
+          "description_text": "30 days to settle in",
+          "position": "left",
+          "title_size": "h3",
+          "icon_size": {
+           "unit": "px",
+           "size": 24,
+           "sizes": []
+          },
+          "icon_space": {
+           "unit": "px",
+           "size": 14,
+           "sizes": []
+          },
+          "__globals__": {
+           "primary_color": "globals/colors?id=secondary",
+           "title_color": "globals/colors?id=primary",
+           "title_typography_typography": "globals/typography?id=h4",
+           "description_color": "globals/colors?id=text",
+           "description_typography_typography": "globals/typography?id=small"
+          }
+         },
+         "elements": []
+        },
+        {
+         "id": "b3db3cc",
+         "elType": "widget",
+         "widgetType": "icon-box",
+         "settings": {
+          "selected_icon": {
+           "value": "fas fa-leaf",
+           "library": "fa-solid"
+          },
+          "title_text": "Peat-free",
+          "description_text": "Potted in better soil",
+          "position": "left",
+          "title_size": "h3",
+          "icon_size": {
+           "unit": "px",
+           "size": 24,
+           "sizes": []
+          },
+          "icon_space": {
+           "unit": "px",
+           "size": 14,
+           "sizes": []
+          },
+          "__globals__": {
+           "primary_color": "globals/colors?id=secondary",
+           "title_color": "globals/colors?id=primary",
+           "title_typography_typography": "globals/typography?id=h4",
+           "description_color": "globals/colors?id=text",
+           "description_typography_typography": "globals/typography?id=small"
+          }
+         },
+         "elements": []
+        },
+        {
+         "id": "33a3abb",
+         "elType": "widget",
+         "widgetType": "icon-box",
+         "settings": {
+          "selected_icon": {
+           "value": "fas fa-comments",
+           "library": "fa-solid"
+          },
+          "title_text": "Plant doctor",
+          "description_text": "Free advice by e-mail",
+          "position": "left",
+          "title_size": "h3",
+          "icon_size": {
+           "unit": "px",
+           "size": 24,
+           "sizes": []
+          },
+          "icon_space": {
+           "unit": "px",
+           "size": 14,
+           "sizes": []
+          },
+          "__globals__": {
+           "primary_color": "globals/colors?id=secondary",
+           "title_color": "globals/colors?id=primary",
+           "title_typography_typography": "globals/typography?id=h4",
+           "description_color": "globals/colors?id=text",
+           "description_typography_typography": "globals/typography?id=small"
+          }
+         },
+         "elements": []
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "id": "1dbd38a",
+     "elType": "container",
+     "isInner": false,
+     "settings": {
+      "content_width": "boxed",
+      "boxed_width": {
+       "unit": "px",
+       "size": 1240,
+       "sizes": []
+      },
+      "flex_direction": "column",
+      "padding": {
+       "unit": "px",
+       "top": "80",
+       "right": "24",
+       "bottom": "40",
+       "left": "24",
+       "isLinked": false
+      },
+      "padding_mobile": {
+       "unit": "px",
+       "top": "48",
+       "right": "18",
+       "bottom": "48",
+       "left": "18",
+       "isLinked": false
+      },
+      "flex_gap": {
+       "unit": "px",
+       "size": 28,
+       "column": "28",
+       "row": "28",
+       "isLinked": true
+      }
+     },
+     "elements": [
+      {
+       "id": "cab5af0",
+       "elType": "container",
+       "isInner": true,
+       "settings": {
+        "content_width": "full",
+        "flex_direction": "row",
+        "flex_gap": {
+         "unit": "px",
+         "size": 24,
+         "column": "24",
+         "row": "24",
+         "isLinked": true
+        },
+        "flex_align_items": "flex-end",
+        "flex_direction_mobile": "column",
+        "flex_justify_content": "space-between"
+       },
+       "elements": [
+        {
+         "id": "4811906",
+         "elType": "container",
+         "isInner": true,
+         "settings": {
+          "content_width": "full",
+          "flex_direction": "column",
+          "flex_gap": {
+           "unit": "px",
+           "size": 8,
+           "column": "8",
+           "row": "8",
+           "isLinked": true
+          }
+         },
+         "elements": [
+          {
+           "id": "955c769",
+           "elType": "widget",
+           "widgetType": "heading",
+           "settings": {
+            "title": "Shop by category",
+            "header_size": "p",
+            "__globals__": {
+             "title_color": "globals/colors?id=accent",
+             "typography_typography": "globals/typography?id=secondary"
+            }
+           },
+           "elements": []
+          },
+          {
+           "id": "3bbdc16",
+           "elType": "widget",
+           "widgetType": "heading",
+           "settings": {
+            "title": "Something green for every corner",
+            "header_size": "h2",
+            "__globals__": {
+             "title_color": "globals/colors?id=primary",
+             "typography_typography": "globals/typography?id=primary"
+            }
+           },
+           "elements": []
+          }
+         ]
+        },
+        {
+         "id": "a1d834e",
+         "elType": "widget",
+         "widgetType": "button",
+         "settings": {
+          "text": "Browse the shop",
+          "link": {
+           "url": "/shop/",
+           "is_external": "",
+           "nofollow": "",
+           "custom_attributes": ""
+          },
+          "size": "md",
+          "__globals__": {
+           "typography_typography": "globals/typography?id=accent",
+           "background_color": "globals/colors?id=paper",
+           "button_text_color": "globals/colors?id=primary",
+           "button_background_hover_color": "globals/colors?id=sand",
+           "hover_color": "globals/colors?id=primary"
+          },
+          "border_border": "solid",
+          "border_width": {
+           "unit": "px",
+           "top": "1",
+           "right": "1",
+           "bottom": "1",
+           "left": "1",
+           "isLinked": true
+          },
+          "hide_mobile": "hidden-mobile"
+         },
+         "elements": []
+        }
+       ]
+      },
+      {
+       "id": "1971354",
+       "elType": "widget",
+       "widgetType": "wc-categories",
+       "settings": {
+        "columns": "4",
+        "number": 4,
+        "hide_empty": "yes",
+        "image_radius": {
+         "unit": "px",
+         "size": 20,
+         "sizes": []
+        },
+        "__globals__": {
+         "title_color": "globals/colors?id=primary",
+         "title_typography_typography": "globals/typography?id=h4"
+        }
+       },
+       "elements": []
+      }
+     ]
+    },
+    {
+     "id": "711ee63",
+     "elType": "container",
+     "isInner": false,
+     "settings": {
+      "content_width": "boxed",
+      "boxed_width": {
+       "unit": "px",
+       "size": 1240,
+       "sizes": []
+      },
+      "flex_direction": "column",
+      "padding": {
+       "unit": "px",
+       "top": "40",
+       "right": "24",
+       "bottom": "72",
+       "left": "24",
+       "isLinked": false
+      },
+      "padding_mobile": {
+       "unit": "px",
+       "top": "48",
+       "right": "18",
+       "bottom": "48",
+       "left": "18",
+       "isLinked": false
+      },
+      "flex_gap": {
+       "unit": "px",
+       "size": 28,
+       "column": "28",
+       "row": "28",
+       "isLinked": true
+      }
+     },
+     "elements": [
+      {
+       "id": "0506035",
+       "elType": "container",
+       "isInner": true,
+       "settings": {
+        "content_width": "full",
+        "flex_direction": "column",
+        "flex_gap": {
+         "unit": "px",
+         "size": 8,
+         "column": "8",
+         "row": "8",
+         "isLinked": true
+        },
+        "flex_align_items": "center"
+       },
+       "elements": [
+        {
+         "id": "c16bb8b",
+         "elType": "widget",
+         "widgetType": "heading",
+         "settings": {
+          "title": "Staff favourites",
+          "header_size": "p",
+          "__globals__": {
+           "title_color": "globals/colors?id=accent",
+           "typography_typography": "globals/typography?id=secondary"
+          },
+          "align": "center"
+         },
+         "elements": []
+        },
+        {
+         "id": "ce1dc23",
+         "elType": "widget",
+         "widgetType": "heading",
+         "settings": {
+          "title": "Plants we can't stop recommending",
+          "header_size": "h2",
+          "__globals__": {
+           "title_color": "globals/colors?id=primary",
+           "typography_typography": "globals/typography?id=primary"
+          },
+          "align": "center"
+         },
+         "elements": []
+        }
+       ]
+      },
+      {
+       "id": "fb5c0ec",
+       "elType": "widget",
+       "widgetType": "woocommerce-products",
+       "settings": {
+        "columns": "4",
+        "rows": 1,
+        "query_post_type": "featured",
+        "orderby": "menu_order",
+        "order": "asc",
+        "image_radius": {
+         "unit": "px",
+         "size": 20,
+         "sizes": []
+        },
+        "__globals__": {
+         "title_color": "globals/colors?id=primary",
+         "title_typography_typography": "globals/typography?id=h4",
+         "button_bg_color": "globals/colors?id=primary",
+         "button_text_color": "globals/colors?id=paper",
+         "onsale_bg_color": "globals/colors?id=accent"
+        }
+       },
+       "elements": []
+      }
+     ]
+    },
+    {
+     "id": "42b66d1",
+     "elType": "container",
+     "isInner": false,
+     "settings": {
+      "content_width": "boxed",
+      "boxed_width": {
+       "unit": "px",
+       "size": 1240,
+       "sizes": []
+      },
+      "flex_direction": "column",
+      "padding": {
+       "unit": "px",
+       "top": "88",
+       "right": "24",
+       "bottom": "88",
+       "left": "24",
+       "isLinked": false
+      },
+      "padding_mobile": {
+       "unit": "px",
+       "top": "48",
+       "right": "18",
+       "bottom": "48",
+       "left": "18",
+       "isLinked": false
+      },
+      "background_background": "classic",
+      "__globals__": {
+       "background_color": "globals/colors?id=primary"
+      }
+     },
+     "elements": [
+      {
+       "id": "dc3df4d",
+       "elType": "container",
+       "isInner": true,
+       "settings": {
+        "content_width": "full",
+        "flex_direction": "row",
+        "flex_gap": {
+         "unit": "px",
+         "size": 64,
+         "column": "64",
+         "row": "64",
+         "isLinked": true
+        },
+        "flex_align_items": "center",
+        "flex_direction_mobile": "column"
+       },
+       "elements": [
+        {
+         "id": "cac457b",
+         "elType": "container",
+         "isInner": true,
+         "settings": {
+          "content_width": "full",
+          "flex_direction": "column",
+          "flex_gap": {
+           "unit": "px",
+           "size": 16,
+           "column": "16",
+           "row": "16",
+           "isLinked": true
+          },
+          "width": {
+           "unit": "%",
+           "size": 50,
+           "sizes": []
+          },
+          "width_mobile": {
+           "unit": "%",
+           "size": 100,
+           "sizes": []
+          }
+         },
+         "elements": [
+          {
+           "id": "21bc78d",
+           "elType": "widget",
+           "widgetType": "image",
+           "settings": {
+            "image": {
+             "url": "{{media:about}}",
+             "id": "{{media_id:about}}",
+             "size": "",
+             "alt": "The greenhouse with benches of young plants",
+             "source": "library"
+            },
+            "image_size": "large",
+            "image_border_radius": {
+             "unit": "px",
+             "top": "20",
+             "right": "20",
+             "bottom": "20",
+             "left": "20",
+             "isLinked": true
+            }
+           },
+           "elements": []
+          }
+         ]
+        },
+        {
+         "id": "666e0d9",
+         "elType": "container",
+         "isInner": true,
+         "settings": {
+          "content_width": "full",
+          "flex_direction": "column",
+          "flex_gap": {
+           "unit": "px",
+           "size": 18,
+           "column": "18",
+           "row": "18",
+           "isLinked": true
+          },
+          "width": {
+           "unit": "%",
+           "size": 50,
+           "sizes": []
+          },
+          "width_mobile": {
+           "unit": "%",
+           "size": 100,
+           "sizes": []
+          },
+          "flex_align_items": "flex-start"
+         },
+         "elements": [
+          {
+           "id": "40ff4ae",
+           "elType": "widget",
+           "widgetType": "heading",
+           "settings": {
+            "title": "Our greenhouse",
+            "header_size": "p",
+            "__globals__": {
+             "title_color": "globals/colors?id=mint",
+             "typography_typography": "globals/typography?id=secondary"
+            }
+           },
+           "elements": []
+          },
+          {
+           "id": "45bbbe3",
+           "elType": "widget",
+           "widgetType": "heading",
+           "settings": {
+            "title": "Grown slowly, sent with care",
+            "header_size": "h2",
+            "__globals__": {
+             "title_color": "globals/colors?id=paper",
+             "typography_typography": "globals/typography?id=primary"
+            }
+           },
+           "elements": []
+          },
+          {
+           "id": "25e5017",
+           "elType": "widget",
+           "widgetType": "text-editor",
+           "settings": {
+            "editor": "<p>Every plant spends at least eight weeks on our benches before it ships, so it arrives acclimatised, rooted and ready. We pot in peat-free compost, wrap in paper and include a care card written for that exact plant.</p>",
+            "__globals__": {
+             "text_color": "globals/colors?id=pale",
+             "typography_typography": "globals/typography?id=text"
+            }
+           },
+           "elements": []
+          },
+          {
+           "id": "10276fe",
+           "elType": "widget",
+           "widgetType": "button",
+           "settings": {
+            "text": "Our story",
+            "link": {
+             "url": "{{page:about}}",
+             "is_external": "",
+             "nofollow": "",
+             "custom_attributes": ""
+            },
+            "size": "md",
+            "__globals__": {
+             "typography_typography": "globals/typography?id=accent",
+             "background_color": "globals/colors?id=accent",
+             "button_text_color": "globals/colors?id=paper",
+             "button_background_hover_color": "globals/colors?id=accent",
+             "hover_color": "globals/colors?id=paper"
+            }
+           },
+           "elements": []
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "id": "34bab86",
+     "elType": "container",
+     "isInner": false,
+     "settings": {
+      "content_width": "boxed",
+      "boxed_width": {
+       "unit": "px",
+       "size": 1240,
+       "sizes": []
+      },
+      "flex_direction": "column",
+      "padding": {
+       "unit": "px",
+       "top": "80",
+       "right": "24",
+       "bottom": "40",
+       "left": "24",
+       "isLinked": false
+      },
+      "padding_mobile": {
+       "unit": "px",
+       "top": "48",
+       "right": "18",
+       "bottom": "48",
+       "left": "18",
+       "isLinked": false
+      },
+      "flex_gap": {
+       "unit": "px",
+       "size": 28,
+       "column": "28",
+       "row": "28",
+       "isLinked": true
+      }
+     },
+     "elements": [
+      {
+       "id": "484c1db",
+       "elType": "container",
+       "isInner": true,
+       "settings": {
+        "content_width": "full",
+        "flex_direction": "column",
+        "flex_gap": {
+         "unit": "px",
+         "size": 8,
+         "column": "8",
+         "row": "8",
+         "isLinked": true
+        },
+        "flex_align_items": "center"
+       },
+       "elements": [
+        {
+         "id": "11fe517",
+         "elType": "widget",
+         "widgetType": "heading",
+         "settings": {
+          "title": "Good to go",
+          "header_size": "p",
+          "__globals__": {
+           "title_color": "globals/colors?id=accent",
+           "typography_typography": "globals/typography?id=secondary"
+          },
+          "align": "center"
+         },
+         "elements": []
+        },
+        {
+         "id": "8653c69",
+         "elType": "widget",
+         "widgetType": "heading",
+         "settings": {
+          "title": "Fresh from the greenhouse",
+          "header_size": "h2",
+          "__globals__": {
+           "title_color": "globals/colors?id=primary",
+           "typography_typography": "globals/typography?id=primary"
+          },
+          "align": "center"
+         },
+         "elements": []
+        }
+       ]
+      },
+      {
+       "id": "ff9173f",
+       "elType": "widget",
+       "widgetType": "woocommerce-products",
+       "settings": {
+        "columns": "4",
+        "rows": 2,
+        "query_post_type": "recent",
+        "orderby": "date",
+        "order": "desc",
+        "image_radius": {
+         "unit": "px",
+         "size": 20,
+         "sizes": []
+        },
+        "__globals__": {
+         "title_color": "globals/colors?id=primary",
+         "title_typography_typography": "globals/typography?id=h4",
+         "button_bg_color": "globals/colors?id=primary",
+         "button_text_color": "globals/colors?id=paper",
+         "onsale_bg_color": "globals/colors?id=accent"
+        }
+       },
+       "elements": []
+      },
+      {
+       "id": "ba12428",
+       "elType": "widget",
+       "widgetType": "button",
+       "settings": {
+        "text": "See everything",
+        "link": {
+         "url": "/shop/",
+         "is_external": "",
+         "nofollow": "",
+         "custom_attributes": ""
+        },
+        "size": "md",
+        "__globals__": {
+         "typography_typography": "globals/typography?id=accent",
+         "background_color": "globals/colors?id=accent",
+         "button_text_color": "globals/colors?id=paper",
+         "button_background_hover_color": "globals/colors?id=primary",
+         "hover_color": "globals/colors?id=paper"
+        },
+        "align": "center"
+       },
+       "elements": []
+      }
+     ]
+    },
+    {
+     "id": "bc47f0c",
+     "elType": "container",
+     "isInner": false,
+     "settings": {
+      "content_width": "boxed",
+      "boxed_width": {
+       "unit": "px",
+       "size": 1240,
+       "sizes": []
+      },
+      "flex_direction": "column",
+      "padding": {
+       "unit": "px",
+       "top": "72",
+       "right": "24",
+       "bottom": "88",
+       "left": "24",
+       "isLinked": false
+      },
+      "padding_mobile": {
+       "unit": "px",
+       "top": "48",
+       "right": "18",
+       "bottom": "48",
+       "left": "18",
+       "isLinked": false
+      },
+      "flex_align_items": "center",
+      "flex_gap": {
+       "unit": "px",
+       "size": 18,
+       "column": "18",
+       "row": "18",
+       "isLinked": true
+      }
+     },
+     "elements": [
+      {
+       "id": "58ddc5e",
+       "elType": "widget",
+       "widgetType": "heading",
+       "settings": {
+        "title": "&ldquo;The calathea arrived looking better than in the photos, and the care card actually answered my questions.&rdquo;",
+        "header_size": "p",
+        "__globals__": {
+         "title_color": "globals/colors?id=primary",
+         "typography_typography": "globals/typography?id=primary"
+        },
+        "align": "center",
+        "_element_width": "initial",
+        "_element_custom_width": {
+         "unit": "px",
+         "size": 820,
+         "sizes": []
+        }
+       },
+       "elements": []
+      },
+      {
+       "id": "3ff8a57",
+       "elType": "widget",
+       "widgetType": "text-editor",
+       "settings": {
+        "editor": "<p>Imogen, verified buyer</p>",
+        "__globals__": {
+         "text_color": "globals/colors?id=muted",
+         "typography_typography": "globals/typography?id=secondary"
+        },
+        "align": "center"
+       },
+       "elements": []
+      }
+     ]
+    },
+    {
+     "id": "b060a37",
+     "elType": "container",
+     "isInner": false,
+     "settings": {
+      "content_width": "boxed",
+      "boxed_width": {
+       "unit": "px",
+       "size": 1240,
+       "sizes": []
+      },
+      "flex_direction": "column",
+      "padding": {
+       "unit": "px",
+       "top": "64",
+       "right": "24",
+       "bottom": "64",
+       "left": "24",
+       "isLinked": false
+      },
+      "padding_mobile": {
+       "unit": "px",
+       "top": "48",
+       "right": "18",
+       "bottom": "48",
+       "left": "18",
+       "isLinked": false
+      },
+      "background_background": "classic",
+      "__globals__": {
+       "background_color": "globals/colors?id=sand"
+      }
+     },
+     "elements": [
+      {
+       "id": "1fac2e6",
+       "elType": "container",
+       "isInner": true,
+       "settings": {
+        "content_width": "full",
+        "flex_direction": "row",
+        "flex_gap": {
+         "unit": "px",
+         "size": 24,
+         "column": "24",
+         "row": "24",
+         "isLinked": true
+        },
+        "flex_align_items": "center",
+        "flex_direction_mobile": "column",
+        "flex_justify_content": "space-between"
+       },
+       "elements": [
+        {
+         "id": "3facd89",
+         "elType": "container",
+         "isInner": true,
+         "settings": {
+          "content_width": "full",
+          "flex_direction": "column",
+          "flex_gap": {
+           "unit": "px",
+           "size": 8,
+           "column": "8",
+           "row": "8",
+           "isLinked": true
+          },
+          "width": {
+           "unit": "%",
+           "size": 60,
+           "sizes": []
+          },
+          "width_mobile": {
+           "unit": "%",
+           "size": 100,
+           "sizes": []
+          }
+         },
+         "elements": [
+          {
+           "id": "9f27686",
+           "elType": "widget",
+           "widgetType": "heading",
+           "settings": {
+            "title": "First plant? 10% off.",
+            "header_size": "h2",
+            "__globals__": {
+             "title_color": "globals/colors?id=primary",
+             "typography_typography": "globals/typography?id=primary"
+            }
+           },
+           "elements": []
+          },
+          {
+           "id": "14e4741",
+           "elType": "widget",
+           "widgetType": "text-editor",
+           "settings": {
+            "editor": "<p>Use the code WELCOME10 at checkout. It works on everything, from tiny pothos to the big fig.</p>",
+            "__globals__": {
+             "text_color": "globals/colors?id=primary",
+             "typography_typography": "globals/typography?id=text"
+            }
+           },
+           "elements": []
+          }
+         ]
+        },
+        {
+         "id": "21691c3",
+         "elType": "widget",
+         "widgetType": "button",
+         "settings": {
+          "text": "Get 10% off: WELCOME10",
+          "link": {
+           "url": "/shop/",
+           "is_external": "",
+           "nofollow": "",
+           "custom_attributes": ""
+          },
+          "size": "md",
+          "__globals__": {
+           "typography_typography": "globals/typography?id=accent",
+           "background_color": "globals/colors?id=primary",
+           "button_text_color": "globals/colors?id=paper",
+           "button_background_hover_color": "globals/colors?id=paper",
+           "hover_color": "globals/colors?id=paper"
+          }
+         },
+         "elements": []
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "golementor_settings": {
+    "hide_title": "yes"
+   }
+  },
+  {
+   "slug": "about",
+   "title": "Our greenhouse",
+   "content": "",
+   "golementor": [
+    {
+     "id": "8765460",
+     "elType": "container",
+     "isInner": false,
+     "settings": {
+      "content_width": "boxed",
+      "boxed_width": {
+       "unit": "px",
+       "size": 1240,
+       "sizes": []
+      },
+      "flex_direction": "column",
+      "padding": {
+       "unit": "px",
+       "top": "88",
+       "right": "24",
+       "bottom": "48",
+       "left": "24",
+       "isLinked": false
+      },
+      "padding_mobile": {
+       "unit": "px",
+       "top": "48",
+       "right": "18",
+       "bottom": "48",
+       "left": "18",
+       "isLinked": false
+      },
+      "flex_align_items": "center",
+      "flex_gap": {
+       "unit": "px",
+       "size": 16,
+       "column": "16",
+       "row": "16",
+       "isLinked": true
+      }
+     },
+     "elements": [
+      {
+       "id": "56bd461",
+       "elType": "widget",
+       "widgetType": "heading",
+       "settings": {
+        "title": "About Fernwood",
+        "header_size": "p",
+        "__globals__": {
+         "title_color": "globals/colors?id=accent",
+         "typography_typography": "globals/typography?id=secondary"
+        },
+        "align": "center"
+       },
+       "elements": []
+      },
+      {
+       "id": "4553251",
+       "elType": "widget",
+       "widgetType": "heading",
+       "settings": {
+        "title": "A small greenhouse with a big soft spot for plants",
+        "header_size": "h1",
+        "__globals__": {
+         "title_color": "globals/colors?id=primary",
+         "typography_typography": "globals/typography?id=display"
+        },
+        "align": "center",
+        "_element_width": "initial",
+        "_element_custom_width": {
+         "unit": "px",
+         "size": 860,
+         "sizes": []
+        }
+       },
+       "elements": []
+      },
+      {
+       "id": "5723eaa",
+       "elType": "widget",
+       "widgetType": "text-editor",
+       "settings": {
+        "editor": "<p>We started Fernwood in a borrowed polytunnel with forty pothos cuttings. Today we grow over two hundred varieties, still by hand.</p>",
+        "__globals__": {
+         "text_color": "globals/colors?id=text",
+         "typography_typography": "globals/typography?id=lead"
+        },
+        "align": "center",
+        "_element_width": "initial",
+        "_element_custom_width": {
+         "unit": "px",
+         "size": 720,
+         "sizes": []
+        }
+       },
+       "elements": []
+      }
+     ]
+    },
+    {
+     "id": "1d5e853",
+     "elType": "container",
+     "isInner": false,
+     "settings": {
+      "content_width": "boxed",
+      "boxed_width": {
+       "unit": "px",
+       "size": 1240,
+       "sizes": []
+      },
+      "flex_direction": "column",
+      "padding": {
+       "unit": "px",
+       "top": "32",
+       "right": "24",
+       "bottom": "80",
+       "left": "24",
+       "isLinked": false
+      },
+      "padding_mobile": {
+       "unit": "px",
+       "top": "48",
+       "right": "18",
+       "bottom": "48",
+       "left": "18",
+       "isLinked": false
+      }
+     },
+     "elements": [
+      {
+       "id": "c0ecd17",
+       "elType": "container",
+       "isInner": true,
+       "settings": {
+        "content_width": "full",
+        "flex_direction": "row",
+        "flex_gap": {
+         "unit": "px",
+         "size": 64,
+         "column": "64",
+         "row": "64",
+         "isLinked": true
+        },
+        "flex_align_items": "flex-start",
+        "flex_direction_mobile": "column"
+       },
+       "elements": [
+        {
+         "id": "8bf2890",
+         "elType": "container",
+         "isInner": true,
+         "settings": {
+          "content_width": "full",
+          "flex_direction": "column",
+          "flex_gap": {
+           "unit": "px",
+           "size": 16,
+           "column": "16",
+           "row": "16",
+           "isLinked": true
+          },
+          "width": {
+           "unit": "%",
+           "size": 55,
+           "sizes": []
+          },
+          "width_mobile": {
+           "unit": "%",
+           "size": 100,
+           "sizes": []
+          }
+         },
+         "elements": [
+          {
+           "id": "fa2c8f7",
+           "elType": "widget",
+           "widgetType": "image",
+           "settings": {
+            "image": {
+             "url": "{{media:about}}",
+             "id": "{{media_id:about}}",
+             "size": "",
+             "alt": "The greenhouse with benches of young plants",
+             "source": "library"
+            },
+            "image_size": "large",
+            "image_border_radius": {
+             "unit": "px",
+             "top": "20",
+             "right": "20",
+             "bottom": "20",
+             "left": "20",
+             "isLinked": true
+            }
+           },
+           "elements": []
+          }
+         ]
+        },
+        {
+         "id": "8ff1614",
+         "elType": "container",
+         "isInner": true,
+         "settings": {
+          "content_width": "full",
+          "flex_direction": "column",
+          "flex_gap": {
+           "unit": "px",
+           "size": 16,
+           "column": "16",
+           "row": "16",
+           "isLinked": true
+          },
+          "width": {
+           "unit": "%",
+           "size": 45,
+           "sizes": []
+          },
+          "width_mobile": {
+           "unit": "%",
+           "size": 100,
+           "sizes": []
+          }
+         },
+         "elements": [
+          {
+           "id": "079440f",
+           "elType": "widget",
+           "widgetType": "heading",
+           "settings": {
+            "title": "What we believe",
+            "header_size": "h2",
+            "__globals__": {
+             "title_color": "globals/colors?id=primary",
+             "typography_typography": "globals/typography?id=primary"
+            }
+           },
+           "elements": []
+          },
+          {
+           "id": "7500b21",
+           "elType": "widget",
+           "widgetType": "text-editor",
+           "settings": {
+            "editor": "<p>A plant should arrive healthy, potted in good soil and with honest advice about where it will be happy. That's it. We would rather sell you a snake plant that thrives in your hallway than a fern that sulks.</p><p>Everything we ship is grown or finished in our greenhouse, packed in paper and card, and covered by a 30-day promise.</p>",
+            "__globals__": {
+             "text_color": "globals/colors?id=text",
+             "typography_typography": "globals/typography?id=text"
+            }
+           },
+           "elements": []
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "id": "b01a4aa",
+     "elType": "container",
+     "isInner": false,
+     "settings": {
+      "content_width": "boxed",
+      "boxed_width": {
+       "unit": "px",
+       "size": 1240,
+       "sizes": []
+      },
+      "flex_direction": "column",
+      "padding": {
+       "unit": "px",
+       "top": "72",
+       "right": "24",
+       "bottom": "72",
+       "left": "24",
+       "isLinked": false
+      },
+      "padding_mobile": {
+       "unit": "px",
+       "top": "48",
+       "right": "18",
+       "bottom": "48",
+       "left": "18",
+       "isLinked": false
+      },
+      "background_background": "classic",
+      "__globals__": {
+       "background_color": "globals/colors?id=sand"
+      }
+     },
+     "elements": [
+      {
+       "id": "e3dc652",
+       "elType": "container",
+       "isInner": true,
+       "settings": {
+        "container_type": "grid",
+        "content_width": "full",
+        "grid_gaps": {
+         "column": "40",
+         "row": "32",
+         "isLinked": false,
+         "unit": "px"
+        },
+        "grid_columns_grid": {
+         "unit": "fr",
+         "size": 3,
+         "sizes": []
+        },
+        "grid_columns_grid_tablet": {
+         "unit": "fr",
+         "size": 2,
+         "sizes": []
+        },
+        "grid_columns_grid_mobile": {
+         "unit": "fr",
+         "size": 1,
+         "sizes": []
+        },
+        "grid_rows_grid": {
+         "unit": "fr",
+         "size": 1,
+         "sizes": []
+        },
+        "grid_auto_flow": "row"
+       },
+       "elements": [
+        {
+         "id": "19bfc49",
+         "elType": "widget",
+         "widgetType": "icon-box",
+         "settings": {
+          "selected_icon": {
+           "value": "fas fa-seedling",
+           "library": "fa-solid"
+          },
+          "title_text": "Grown slowly",
+          "description_text": "Eight weeks on our benches before any plant ships.",
+          "position": "top",
+          "title_size": "h3",
+          "icon_size": {
+           "unit": "px",
+           "size": 24,
+           "sizes": []
+          },
+          "icon_space": {
+           "unit": "px",
+           "size": 14,
+           "sizes": []
+          },
+          "__globals__": {
+           "primary_color": "globals/colors?id=accent",
+           "title_color": "globals/colors?id=primary",
+           "title_typography_typography": "globals/typography?id=h4",
+           "description_color": "globals/colors?id=text",
+           "description_typography_typography": "globals/typography?id=small"
+          }
+         },
+         "elements": []
+        },
+        {
+         "id": "932e20b",
+         "elType": "widget",
+         "widgetType": "icon-box",
+         "settings": {
+          "selected_icon": {
+           "value": "fas fa-recycle",
+           "library": "fa-solid"
+          },
+          "title_text": "Plastic-free",
+          "description_text": "Paper wraps, card boxes and compostable fillers.",
+          "position": "top",
+          "title_size": "h3",
+          "icon_size": {
+           "unit": "px",
+           "size": 24,
+           "sizes": []
+          },
+          "icon_space": {
+           "unit": "px",
+           "size": 14,
+           "sizes": []
+          },
+          "__globals__": {
+           "primary_color": "globals/colors?id=accent",
+           "title_color": "globals/colors?id=primary",
+           "title_typography_typography": "globals/typography?id=h4",
+           "description_color": "globals/colors?id=text",
+           "description_typography_typography": "globals/typography?id=small"
+          }
+         },
+         "elements": []
+        },
+        {
+         "id": "cc26de8",
+         "elType": "widget",
+         "widgetType": "icon-box",
+         "settings": {
+          "selected_icon": {
+           "value": "fas fa-hands-helping",
+           "library": "fa-solid"
+          },
+          "title_text": "Here to help",
+          "description_text": "Send a photo of a sad leaf and we'll reply within a day.",
+          "position": "top",
+          "title_size": "h3",
+          "icon_size": {
+           "unit": "px",
+           "size": 24,
+           "sizes": []
+          },
+          "icon_space": {
+           "unit": "px",
+           "size": 14,
+           "sizes": []
+          },
+          "__globals__": {
+           "primary_color": "globals/colors?id=accent",
+           "title_color": "globals/colors?id=primary",
+           "title_typography_typography": "globals/typography?id=h4",
+           "description_color": "globals/colors?id=text",
+           "description_typography_typography": "globals/typography?id=small"
+          }
+         },
+         "elements": []
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "id": "c7d67e1",
+     "elType": "container",
+     "isInner": false,
+     "settings": {
+      "content_width": "boxed",
+      "boxed_width": {
+       "unit": "px",
+       "size": 1240,
+       "sizes": []
+      },
+      "flex_direction": "column",
+      "padding": {
+       "unit": "px",
+       "top": "80",
+       "right": "24",
+       "bottom": "80",
+       "left": "24",
+       "isLinked": false
+      },
+      "padding_mobile": {
+       "unit": "px",
+       "top": "48",
+       "right": "18",
+       "bottom": "48",
+       "left": "18",
+       "isLinked": false
+      },
+      "flex_align_items": "center",
+      "flex_gap": {
+       "unit": "px",
+       "size": 18,
+       "column": "18",
+       "row": "18",
+       "isLinked": true
+      }
+     },
+     "elements": [
+      {
+       "id": "f075216",
+       "elType": "widget",
+       "widgetType": "heading",
+       "settings": {
+        "title": "Ready to go green?",
+        "header_size": "h2",
+        "__globals__": {
+         "title_color": "globals/colors?id=primary",
+         "typography_typography": "globals/typography?id=primary"
+        },
+        "align": "center"
+       },
+       "elements": []
+      },
+      {
+       "id": "ea8b7fd",
+       "elType": "widget",
+       "widgetType": "button",
+       "settings": {
+        "text": "Visit the shop",
+        "link": {
+         "url": "/shop/",
+         "is_external": "",
+         "nofollow": "",
+         "custom_attributes": ""
+        },
+        "size": "md",
+        "__globals__": {
+         "typography_typography": "globals/typography?id=accent",
+         "background_color": "globals/colors?id=accent",
+         "button_text_color": "globals/colors?id=paper",
+         "button_background_hover_color": "globals/colors?id=primary",
+         "hover_color": "globals/colors?id=paper"
+        },
+        "align": "center"
+       },
+       "elements": []
+      }
+     ]
+    }
+   ],
+   "golementor_settings": {
+    "hide_title": "yes"
+   }
+  },
+  {
+   "slug": "contact",
+   "title": "Contact",
+   "content": "",
+   "golementor": [
+    {
+     "id": "920f7be",
+     "elType": "container",
+     "isInner": false,
+     "settings": {
+      "content_width": "boxed",
+      "boxed_width": {
+       "unit": "px",
+       "size": 1240,
+       "sizes": []
+      },
+      "flex_direction": "column",
+      "padding": {
+       "unit": "px",
+       "top": "88",
+       "right": "24",
+       "bottom": "88",
+       "left": "24",
+       "isLinked": false
+      },
+      "padding_mobile": {
+       "unit": "px",
+       "top": "48",
+       "right": "18",
+       "bottom": "48",
+       "left": "18",
+       "isLinked": false
+      },
+      "flex_gap": {
+       "unit": "px",
+       "size": 18,
+       "column": "18",
+       "row": "18",
+       "isLinked": true
+      }
+     },
+     "elements": [
+      {
+       "id": "53f6789",
+       "elType": "container",
+       "isInner": true,
+       "settings": {
+        "content_width": "full",
+        "flex_direction": "row",
+        "flex_gap": {
+         "unit": "px",
+         "size": 64,
+         "column": "64",
+         "row": "64",
+         "isLinked": true
+        },
+        "flex_align_items": "flex-start",
+        "flex_direction_mobile": "column"
+       },
+       "elements": [
+        {
+         "id": "44ad425",
+         "elType": "container",
+         "isInner": true,
+         "settings": {
+          "content_width": "full",
+          "flex_direction": "column",
+          "flex_gap": {
+           "unit": "px",
+           "size": 18,
+           "column": "18",
+           "row": "18",
+           "isLinked": true
+          },
+          "width": {
+           "unit": "%",
+           "size": 50,
+           "sizes": []
+          },
+          "width_mobile": {
+           "unit": "%",
+           "size": 100,
+           "sizes": []
+          }
+         },
+         "elements": [
+          {
+           "id": "a64bffd",
+           "elType": "widget",
+           "widgetType": "heading",
+           "settings": {
+            "title": "Say hello",
+            "header_size": "p",
+            "__globals__": {
+             "title_color": "globals/colors?id=accent",
+             "typography_typography": "globals/typography?id=secondary"
+            }
+           },
+           "elements": []
+          },
+          {
+           "id": "d02b536",
+           "elType": "widget",
+           "widgetType": "heading",
+           "settings": {
+            "title": "Questions about a plant? Ask us.",
+            "header_size": "h1",
+            "__globals__": {
+             "title_color": "globals/colors?id=primary",
+             "typography_typography": "globals/typography?id=primary"
+            }
+           },
+           "elements": []
+          },
+          {
+           "id": "b315c6f",
+           "elType": "widget",
+           "widgetType": "text-editor",
+           "settings": {
+            "editor": "<p>We answer within a working day, usually much faster. Photos of struggling leaves welcome.</p>",
+            "__globals__": {
+             "text_color": "globals/colors?id=text",
+             "typography_typography": "globals/typography?id=lead"
+            }
+           },
+           "elements": []
+          },
+          {
+           "id": "e2673b2",
+           "elType": "widget",
+           "widgetType": "icon-list",
+           "settings": {
+            "icon_list": [
+             {
+              "text": "14 Greenhouse Row, Riverside",
+              "selected_icon": {
+               "value": "fas fa-map-marker-alt",
+               "library": "fa-solid"
+              },
+              "_id": "aee4a2b"
+             },
+             {
+              "text": "hello@fernwood.example",
+              "selected_icon": {
+               "value": "fas fa-envelope",
+               "library": "fa-solid"
+              },
+              "_id": "8479cf5"
+             },
+             {
+              "text": "+1 555 0142",
+              "selected_icon": {
+               "value": "fas fa-phone",
+               "library": "fa-solid"
+              },
+              "_id": "b7cd9c5"
+             }
+            ],
+            "space_between": {
+             "unit": "px",
+             "size": 14,
+             "sizes": []
+            },
+            "icon_size": {
+             "unit": "px",
+             "size": 16,
+             "sizes": []
+            },
+            "text_indent": {
+             "unit": "px",
+             "size": 12,
+             "sizes": []
+            },
+            "__globals__": {
+             "icon_color": "globals/colors?id=accent",
+             "text_color": "globals/colors?id=primary",
+             "icon_typography_typography": "globals/typography?id=text"
+            }
+           },
+           "elements": []
+          }
+         ]
+        },
+        {
+         "id": "c2c5397",
+         "elType": "container",
+         "isInner": true,
+         "settings": {
+          "content_width": "full",
+          "flex_direction": "column",
+          "flex_gap": {
+           "unit": "px",
+           "size": 12,
+           "column": "12",
+           "row": "12",
+           "isLinked": true
+          },
+          "width": {
+           "unit": "%",
+           "size": 50,
+           "sizes": []
+          },
+          "width_mobile": {
+           "unit": "%",
+           "size": 100,
+           "sizes": []
+          },
+          "padding": {
+           "unit": "px",
+           "top": "32",
+           "right": "32",
+           "bottom": "32",
+           "left": "32",
+           "isLinked": true
+          },
+          "border_radius": {
+           "unit": "px",
+           "top": "20",
+           "right": "20",
+           "bottom": "20",
+           "left": "20",
+           "isLinked": true
+          },
+          "background_background": "classic",
+          "__globals__": {
+           "background_color": "globals/colors?id=sand"
+          }
+         },
+         "elements": [
+          {
+           "id": "507a5c0",
+           "elType": "widget",
+           "widgetType": "heading",
+           "settings": {
+            "title": "Opening hours",
+            "header_size": "h3",
+            "__globals__": {
+             "title_color": "globals/colors?id=primary",
+             "typography_typography": "globals/typography?id=h4"
+            }
+           },
+           "elements": []
+          },
+          {
+           "id": "8ef0a92",
+           "elType": "widget",
+           "widgetType": "text-editor",
+           "settings": {
+            "editor": "<p>Tuesday to Saturday, 10:00&ndash;18:00<br>Sunday, 11:00&ndash;16:00</p>",
+            "__globals__": {
+             "text_color": "globals/colors?id=text",
+             "typography_typography": "globals/typography?id=text"
+            }
+           },
+           "elements": []
+          },
+          {
+           "id": "7115932",
+           "elType": "widget",
+           "widgetType": "heading",
+           "settings": {
+            "title": "Delivery",
+            "header_size": "h3",
+            "__globals__": {
+             "title_color": "globals/colors?id=primary",
+             "typography_typography": "globals/typography?id=h4"
+            }
+           },
+           "elements": []
+          },
+          {
+           "id": "a77f5da",
+           "elType": "widget",
+           "widgetType": "text-editor",
+           "settings": {
+            "editor": "<p>Orders placed before 1 pm ship the same day, Tuesday to Thursday, so plants never sit in a depot over the weekend.</p>",
+            "__globals__": {
+             "text_color": "globals/colors?id=text",
+             "typography_typography": "globals/typography?id=text"
+            }
+           },
+           "elements": []
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "golementor_settings": {
+    "hide_title": "yes"
+   }
+  }
+ ],
+ "menus": [
+  {
+   "name": "Fernwood menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Shop",
+     "url": "/shop/",
+     "children": [
+      {
+       "title": "Houseplants",
+       "url": "/product-category/houseplants/"
+      },
+      {
+       "title": "Planters",
+       "url": "/product-category/planters/"
+      },
+      {
+       "title": "Care & Tools",
+       "url": "/product-category/care/"
+      },
+      {
+       "title": "Gifts",
+       "url": "/product-category/gifts/"
+      }
+     ]
+    },
+    {
+     "title": "Houseplants",
+     "url": "/product-category/houseplants/"
+    },
+    {
+     "title": "Planters",
+     "url": "/product-category/planters/"
+    },
+    {
+     "title": "Care & Tools",
+     "url": "/product-category/care/"
+    },
+    {
+     "title": "Our greenhouse",
+     "page": "about"
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    }
+   ]
+  },
+  {
+   "name": "Footer menu",
+   "location": "footer",
+   "items": [
+    {
+     "title": "Shop",
+     "url": "/shop/"
+    },
+    {
+     "title": "Our greenhouse",
+     "page": "about"
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    },
+    {
+     "title": "My account",
+     "url": "/my-account/"
+    }
+   ]
+  }
+ ],
+ "goocommerce": {
+  "settings": {
+   "currency": "USD",
+   "currency_pos": "left",
+   "catalog_columns": 4,
+   "catalog_rows": 3
+  },
+  "categories": [
+   {
+    "slug": "houseplants",
+    "name": "Houseplants",
+    "description": "Leafy friends for every light level, from bright windows to shady halls.",
+    "image": "cat-houseplants"
+   },
+   {
+    "slug": "planters",
+    "name": "Planters",
+    "description": "Terracotta, ceramic and macramé, made to fit our plants.",
+    "image": "cat-planters"
+   },
+   {
+    "slug": "care",
+    "name": "Care & Tools",
+    "description": "Everything to keep them thriving.",
+    "image": "cat-care"
+   },
+   {
+    "slug": "gifts",
+    "name": "Gifts",
+    "description": "Plant gifts that arrive ready to give.",
+    "image": "cat-gifts"
+   }
+  ],
+  "attributes": [
+   {
+    "slug": "plant-size",
+    "name": "Plant size",
+    "terms": [
+     "Small",
+     "Medium",
+     "Large"
+    ]
+   },
+   {
+    "slug": "pot-size",
+    "name": "Pot size",
+    "terms": [
+     "12 cm",
+     "18 cm",
+     "24 cm"
+    ]
+   },
+   {
+    "slug": "glaze",
+    "name": "Glaze",
+    "terms": [
+     "Chalk",
+     "Sage"
+    ]
+   }
+  ],
+  "products": [
+   {
+    "slug": "monstera-deliciosa",
+    "name": "Monstera Deliciosa",
+    "type": "variable",
+    "regular_price": "38",
+    "categories": [
+     "houseplants"
+    ],
+    "description": "<p>The swiss cheese plant earns its holes slowly: give it bright, indirect light and it will add a new split leaf every few weeks through summer.</p><p>Ours are grown from cuttings, staked with a moss pole and potted in peat-free compost. Small is about 40 cm tall, medium 70 cm, large 110 cm.</p>",
+    "short_description": "<p>Big split leaves, easy-going habits.</p>",
+    "featured": true,
+    "menu_order": 1,
+    "reviews": [
+     {
+      "author": "Imogen Hart",
+      "email": "imogen@example.com",
+      "rating": 5,
+      "content": "Huge and healthy, and the moss pole was already in place. Two new leaves in the first month."
+     },
+     {
+      "author": "Dev Patel",
+      "email": "dev@example.com",
+      "rating": 4,
+      "content": "Lovely plant, the medium is bigger than I expected."
+     }
+    ],
+    "sku": "FW-101",
+    "attributes": [
+     {
+      "name": "Plant size",
+      "values": [
+       "Small",
+       "Medium",
+       "Large"
+      ],
+      "variation": true
+     }
+    ],
+    "variations": [
+     {
+      "attributes": {
+       "Plant size": "Small"
+      },
+      "regular_price": "38",
+      "stock": 12,
+      "sku": "FW-101-1"
+     },
+     {
+      "attributes": {
+       "Plant size": "Medium"
+      },
+      "regular_price": "58",
+      "stock": 12,
+      "sku": "FW-101-2"
+     },
+     {
+      "attributes": {
+       "Plant size": "Large"
+      },
+      "regular_price": "89",
+      "stock": 12,
+      "sku": "FW-101-3"
+     }
+    ],
+    "image": "p-monstera-deliciosa"
+   },
+   {
+    "slug": "fiddle-leaf-fig",
+    "name": "Fiddle Leaf Fig",
+    "type": "simple",
+    "regular_price": "64",
+    "categories": [
+     "houseplants"
+    ],
+    "description": "<p>The fiddle leaf fig wants a spot by a bright window and to be left alone there. Turn it a quarter every month and it grows straight and full.</p><p>Supplied at around 90 cm in an 18 cm nursery pot, ready to drop into a planter.</p>",
+    "short_description": "<p>A sculptural statement for a bright room.</p>",
+    "sku": "FW-102",
+    "featured": true,
+    "stock": 8,
+    "menu_order": 2,
+    "reviews": [
+     {
+      "author": "Rosa Lin",
+      "email": "rosa@example.com",
+      "rating": 5,
+      "content": "Not a single dropped leaf after the move. Packed brilliantly."
+     }
+    ],
+    "image": "p-fiddle-leaf-fig"
+   },
+   {
+    "slug": "snake-plant",
+    "name": "Snake Plant",
+    "type": "simple",
+    "regular_price": "29",
+    "categories": [
+     "houseplants"
+    ],
+    "description": "<p>Possibly the most forgiving plant there is: low light, forgotten waterings and dry air are all fine.</p><p>Upright striped leaves around 50 cm tall, in a 14 cm nursery pot.</p>",
+    "short_description": "<p>Thrives on neglect, cleans the air.</p>",
+    "sku": "FW-103",
+    "sale_price": "24",
+    "stock": 20,
+    "menu_order": 3,
+    "image": "p-snake-plant"
+   },
+   {
+    "slug": "golden-pothos",
+    "name": "Golden Pothos",
+    "type": "simple",
+    "regular_price": "19",
+    "categories": [
+     "houseplants"
+    ],
+    "description": "<p>Trailing heart-shaped leaves splashed with gold. Let it tumble from a shelf or train it up a pole.</p><p>A full 15 cm pot with vines around 40 cm long.</p>",
+    "short_description": "<p>The trailing plant everyone can keep alive.</p>",
+    "sku": "FW-104",
+    "stock": 25,
+    "menu_order": 4,
+    "image": "p-golden-pothos"
+   },
+   {
+    "slug": "calathea-orbifolia",
+    "name": "Calathea Orbifolia",
+    "type": "simple",
+    "regular_price": "42",
+    "categories": [
+     "houseplants"
+    ],
+    "description": "<p>Round, silver-striped leaves that fold up at night. Calatheas like humidity, filtered water and no direct sun.</p><p>About 45 cm tall in a 17 cm pot.</p>",
+    "short_description": "<p>Silver stripes and a little drama.</p>",
+    "sku": "FW-105",
+    "stock": 10,
+    "menu_order": 5,
+    "reviews": [
+     {
+      "author": "Tom Becker",
+      "email": "tom@example.com",
+      "rating": 4,
+      "content": "Gorgeous. Followed the care card to the letter and it's happy so far."
+     }
+    ],
+    "image": "p-calathea-orbifolia"
+   },
+   {
+    "slug": "terracotta-pot",
+    "name": "Terracotta Pot",
+    "type": "variable",
+    "regular_price": "14",
+    "categories": [
+     "planters"
+    ],
+    "description": "<p>Hand-thrown terracotta with a drainage hole and a matching saucer. The clay breathes, so roots stay healthy and soil dries evenly.</p><p>Made by a family pottery that has worked the same clay for three generations.</p>",
+    "short_description": "<p>Breathable clay, made by hand.</p>",
+    "featured": true,
+    "menu_order": 6,
+    "sku": "FW-201",
+    "attributes": [
+     {
+      "name": "Pot size",
+      "values": [
+       "12 cm",
+       "18 cm",
+       "24 cm"
+      ],
+      "variation": true
+     }
+    ],
+    "variations": [
+     {
+      "attributes": {
+       "Pot size": "12 cm"
+      },
+      "regular_price": "14",
+      "stock": 30,
+      "sku": "FW-201-1"
+     },
+     {
+      "attributes": {
+       "Pot size": "18 cm"
+      },
+      "regular_price": "22",
+      "stock": 30,
+      "sku": "FW-201-2"
+     },
+     {
+      "attributes": {
+       "Pot size": "24 cm"
+      },
+      "regular_price": "34",
+      "stock": 30,
+      "sku": "FW-201-3"
+     }
+    ],
+    "image": "p-terracotta-pot"
+   },
+   {
+    "slug": "ceramic-planter",
+    "name": "Speckled Ceramic Planter",
+    "type": "variable",
+    "regular_price": "36",
+    "categories": [
+     "planters"
+    ],
+    "description": "<p>A wide stoneware planter with a speckled satin glaze and a cork plug in the drainage hole, so you choose whether it drains.</p><p>Fits an 18 cm nursery pot. 21 cm wide, 19 cm tall.</p>",
+    "short_description": "<p>Stoneware with a soft satin glaze.</p>",
+    "menu_order": 7,
+    "sku": "FW-202",
+    "attributes": [
+     {
+      "name": "Glaze",
+      "values": [
+       "Chalk",
+       "Sage"
+      ],
+      "variation": true
+     }
+    ],
+    "variations": [
+     {
+      "attributes": {
+       "Glaze": "Chalk"
+      },
+      "regular_price": "36",
+      "stock": 14,
+      "sku": "FW-202-1"
+     },
+     {
+      "attributes": {
+       "Glaze": "Sage"
+      },
+      "regular_price": "36",
+      "stock": 14,
+      "sku": "FW-202-2"
+     }
+    ],
+    "image": "p-ceramic-planter"
+   },
+   {
+    "slug": "hanging-planter",
+    "name": "Macramé Hanging Planter",
+    "type": "simple",
+    "regular_price": "24",
+    "categories": [
+     "planters"
+    ],
+    "description": "<p>Knotted by hand from undyed recycled cotton, with a wooden ring for hanging. Holds pots up to 18 cm.</p><p>About 95 cm long. Ceiling hook included.</p>",
+    "short_description": "<p>Hand-knotted cotton, made for trailing plants.</p>",
+    "sku": "FW-203",
+    "sale_price": "19",
+    "stock": 16,
+    "menu_order": 8,
+    "image": "p-hanging-planter"
+   },
+   {
+    "slug": "watering-can",
+    "name": "Brass Watering Can",
+    "type": "simple",
+    "regular_price": "48",
+    "categories": [
+     "care"
+    ],
+    "description": "<p>A long, narrow spout reaches under leaves straight to the soil. Solid brass that darkens to a soft patina over time.</p><p>1 litre. Rinse and dry after use.</p>",
+    "short_description": "<p>A long spout for precise watering.</p>",
+    "sku": "FW-301",
+    "featured": true,
+    "stock": 12,
+    "menu_order": 9,
+    "reviews": [
+     {
+      "author": "Mara Quinn",
+      "email": "mara@example.com",
+      "rating": 5,
+      "content": "Beautiful and actually practical. The spout is perfect for the fern on the top shelf."
+     }
+    ],
+    "image": "p-watering-can"
+   },
+   {
+    "slug": "plant-food",
+    "name": "Organic Plant Food",
+    "type": "simple",
+    "regular_price": "12",
+    "categories": [
+     "care"
+    ],
+    "description": "<p>A gentle liquid feed made from seaweed and plant extracts. Add a capful to your watering can once a fortnight from spring to autumn.</p><p>500 ml, enough for about 50 feeds.</p>",
+    "short_description": "<p>Seaweed feed for steady growth.</p>",
+    "sku": "FW-302",
+    "stock": 40,
+    "menu_order": 10,
+    "image": "p-plant-food"
+   },
+   {
+    "slug": "pruning-shears",
+    "name": "Pruning Shears",
+    "type": "simple",
+    "regular_price": "26",
+    "categories": [
+     "care"
+    ],
+    "description": "<p>Sharp carbon-steel blades for clean cuts on stems and leaves, with a locking catch and oiled-walnut handles.</p><p>Small enough for indoor plants, strong enough for the balcony.</p>",
+    "short_description": "<p>Clean cuts, comfortable grip.</p>",
+    "sku": "FW-303",
+    "stock": 18,
+    "menu_order": 11,
+    "image": "p-pruning-shears"
+   },
+   {
+    "slug": "plant-gift-box",
+    "name": "Starter Gift Box",
+    "type": "grouped",
+    "categories": [
+     "gifts"
+    ],
+    "featured": true,
+    "menu_order": 12,
+    "description": "<p>A snake plant, a hand-thrown terracotta pot and a bottle of plant food, packed in a gift box with a handwritten card.</p>",
+    "short_description": "<p>The easiest plant, the right pot, the food to keep it going.</p>",
+    "children": [
+     "snake-plant",
+     "plant-food",
+     "golden-pothos"
+    ],
+    "image": "p-plant-gift-box"
+   }
+  ],
+  "coupons": [
+   {
+    "code": "WELCOME10",
+    "type": "percent",
+    "amount": "10",
+    "description": "10% off your first order"
+   }
+  ],
+  "shipping": {
+   "zone": "Everywhere",
+   "flat_rate": "6",
+   "free_over": "60",
+   "local_pickup": true
+  }
+ }
+}
