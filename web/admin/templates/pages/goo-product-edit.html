@@ -1,0 +1,214 @@
+{{define "admin/goo-product-edit"}}{{template "admin-header" .}}{{with .Data}}{{$p := .Post}}{{$d := .}}
+<div class="wrap">
+<h1 class="wp-heading-inline">{{$.Title}}</h1>
+{{if not .IsNew}}<a href="/wp-admin/post-new?post_type=product" class="page-title-action">Add new product</a>{{end}}
+<hr class="wp-header-end">
+{{template "notices" $}}
+<form name="post" action="/wp-admin/post" method="post" id="post" class="goo-product-form">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<input type="hidden" id="user-id" name="user_ID" value="{{$.User.ID}}" />
+<input type="hidden" id="hiddenaction" name="action" value="editpost" />
+<input type="hidden" id="originalaction" name="originalaction" value="editpost" />
+<input type="hidden" id="post_author" name="post_author" value="{{$p.AuthorID}}" />
+<input type="hidden" id="original_post_status" name="original_post_status" value="{{$p.Status}}" />
+{{if eq $p.Status "auto-draft"}}<input type="hidden" id="auto_draft" name="auto_draft" value="1" />{{end}}
+<input type="hidden" id="post_type" name="post_type" value="product" />
+<input type="hidden" id="post_ID" name="post_ID" value="{{$p.ID}}" />
+<input type="hidden" id="goo-current-tab" name="goo_tab" value="{{.Tab}}" />
+<div id="poststuff">
+<div id="post-body" class="metabox-holder columns-2">
+<div id="post-body-content" style="position: relative;">
+	<div id="titlediv">
+		<div id="titlewrap">
+			<label class="screen-reader-text" id="title-prompt-text" for="title">Product name</label>
+			<input type="text" name="post_title" size="30" value="{{if ne $p.Status "auto-draft"}}{{$p.Title}}{{end}}" id="title" spellcheck="true" autocomplete="off" placeholder="Product name" />
+		</div>
+		<div class="inside">
+			<div id="edit-slug-box" class="hide-if-no-js" data-goo-base="{{.ProductBase}}">{{.SampleLink}}</div>
+			<input type="hidden" id="samplepermalinknonce" name="samplepermalinknonce" value="{{.SampleNonce}}" />
+		</div>
+	</div>
+	<div id="postdivrich" class="postarea wp-editor-expand">
+		{{.Editor}}
+		<table id="post-status-info"><tbody><tr>
+			<td id="wp-word-count" class="hide-if-no-js">Word count: <span class="word-count">0</span></td>
+			<td class="autosave-info"><span class="autosave-message">&nbsp;</span>{{if .LastEdit}}<span id="last-edit">{{.LastEdit}}</span>{{end}}</td>
+			<td id="content-resize-handle" class="hide-if-no-js"><br /></td>
+		</tr></tbody></table>
+	</div>
+</div><!-- /post-body-content -->
+
+<div id="postbox-container-1" class="postbox-container">
+<div id="side-sortables" class="meta-box-sortables">
+	{{template "edit-postbox-start" dict "ID" "submitdiv" "Title" "Publish" "Class" ""}}
+	<div class="submitbox" id="submitpost">
+		<div id="minor-publishing">
+			<div id="minor-publishing-actions">
+				{{if and (ne $p.Status "publish") (ne $p.Status "future") (ne $p.Status "private")}}<div id="save-action"><input type="submit" name="save" id="save-post" value="{{if eq $p.Status "pending"}}Save as Pending{{else}}Save Draft{{end}}" class="button" /></div>{{end}}
+				{{if .ViewURL}}<div id="preview-action"><a class="preview button" href="{{.ViewURL}}" target="wp-preview-{{$p.ID}}" id="post-preview">{{if eq $p.Status "publish"}}Preview Changes{{else}}Preview{{end}}<span class="screen-reader-text"> (opens in a new tab)</span></a></div>{{end}}
+				<div class="clear"></div>
+			</div>
+			<div id="misc-publishing-actions">
+				<div class="misc-pub-section misc-pub-post-status">
+					Status: <span id="post-status-display">{{.StatusLabel}}</span>
+					<a href="#post_status" class="edit-post-status hide-if-no-js" role="button"><span aria-hidden="true">Edit</span> <span class="screen-reader-text">Edit status</span></a>
+					<div id="post-status-select" class="hide-if-js">
+						<input type="hidden" name="hidden_post_status" id="hidden_post_status" value="{{if eq $p.Status "auto-draft"}}draft{{else}}{{$p.Status}}{{end}}" />
+						<label for="post_status" class="screen-reader-text">Set status</label>
+						<select name="post_status" id="post_status">
+							{{if eq $p.Status "publish"}}<option selected="selected" value="publish">Published</option>{{else if eq $p.Status "private"}}<option selected="selected" value="publish">Privately Published</option>{{else if eq $p.Status "future"}}<option selected="selected" value="future">Scheduled</option>{{end}}
+							<option{{if eq $p.Status "pending"}} selected="selected"{{end}} value="pending">Pending Review</option>
+							<option{{if or (eq $p.Status "draft") (eq $p.Status "auto-draft")}} selected="selected"{{end}} value="draft">Draft</option>
+						</select>
+						<a href="#post_status" class="save-post-status hide-if-no-js button">OK</a>
+						<a href="#post_status" class="cancel-post-status hide-if-no-js button-cancel">Cancel</a>
+					</div>
+				</div>
+				<div class="misc-pub-section misc-pub-visibility" id="visibility">
+					Visibility: <span id="post-visibility-display">{{if eq .Visibility "private"}}Private{{else if eq .Visibility "password"}}Password protected{{else}}Public{{end}}</span>
+					<a href="#visibility" class="edit-visibility hide-if-no-js" role="button"><span aria-hidden="true">Edit</span> <span class="screen-reader-text">Edit visibility</span></a>
+					<div id="post-visibility-select" class="hide-if-js">
+						<input type="hidden" name="hidden_post_password" id="hidden-post-password" value="{{$p.Password}}" />
+						<input type="hidden" name="hidden_post_visibility" id="hidden-post-visibility" value="{{.Visibility}}" />
+						<input type="radio" name="visibility" id="visibility-radio-public" value="public"{{if eq .Visibility "public"}} checked="checked"{{end}} /> <label for="visibility-radio-public" class="selectit">Public</label><br />
+						<input type="radio" name="visibility" id="visibility-radio-password" value="password"{{if eq .Visibility "password"}} checked="checked"{{end}} /> <label for="visibility-radio-password" class="selectit">Password protected</label><br />
+						<span id="password-span"><label for="post_password">Password:</label> <input type="text" name="post_password" id="post_password" value="{{$p.Password}}" maxlength="255" /><br /></span>
+						<input type="radio" name="visibility" id="visibility-radio-private" value="private"{{if eq .Visibility "private"}} checked="checked"{{end}} /> <label for="visibility-radio-private" class="selectit">Private</label><br />
+						<p>
+							<a href="#visibility" class="save-post-visibility hide-if-no-js button">OK</a>
+							<a href="#visibility" class="cancel-post-visibility hide-if-no-js button-cancel">Cancel</a>
+						</p>
+					</div>
+				</div>
+				<div class="misc-pub-section curtime misc-pub-curtime">
+					<span id="timestamp">{{safe .DateLabel}}</span>
+					<a href="#edit_timestamp" class="edit-timestamp hide-if-no-js" role="button"><span aria-hidden="true">Edit</span> <span class="screen-reader-text">Edit date and time</span></a>
+					<fieldset id="timestampdiv" class="hide-if-js">
+						<legend class="screen-reader-text">Date and time</legend>
+						<div class="timestamp-wrap"><label><span class="screen-reader-text">Month</span><select class="form-required" id="mm" name="mm">
+						{{range .TS.Months}}<option value="{{.Value}}" data-text="{{slice .Label 3}}"{{if .Selected}} selected="selected"{{end}}>{{.Label}}</option>
+						{{end}}</select></label> <label><span class="screen-reader-text">Day</span><input type="text" id="jj" name="jj" value="{{.TS.JJ}}" size="2" maxlength="2" autocomplete="off" class="form-required" /></label>, <label><span class="screen-reader-text">Year</span><input type="text" id="aa" name="aa" value="{{.TS.AA}}" size="4" maxlength="4" autocomplete="off" class="form-required" /></label> at <label><span class="screen-reader-text">Hour</span><input type="text" id="hh" name="hh" value="{{.TS.HH}}" size="2" maxlength="2" autocomplete="off" class="form-required" /></label>:<label><span class="screen-reader-text">Minute</span><input type="text" id="mn" name="mn" value="{{.TS.MN}}" size="2" maxlength="2" autocomplete="off" class="form-required" /></label></div><input type="hidden" id="ss" name="ss" value="{{.TS.SS}}" />
+						<input type="hidden" id="hidden_mm" name="hidden_mm" value="{{.TS.MM}}" /><input type="hidden" id="cur_mm" name="cur_mm" value="{{.TS.MM}}" />
+						<input type="hidden" id="hidden_jj" name="hidden_jj" value="{{.TS.JJ}}" /><input type="hidden" id="cur_jj" name="cur_jj" value="{{.TS.JJ}}" />
+						<input type="hidden" id="hidden_aa" name="hidden_aa" value="{{.TS.AA}}" /><input type="hidden" id="cur_aa" name="cur_aa" value="{{.TS.AA}}" />
+						<input type="hidden" id="hidden_hh" name="hidden_hh" value="{{.TS.HH}}" /><input type="hidden" id="cur_hh" name="cur_hh" value="{{.TS.HH}}" />
+						<input type="hidden" id="hidden_mn" name="hidden_mn" value="{{.TS.MN}}" /><input type="hidden" id="cur_mn" name="cur_mn" value="{{.TS.MN}}" />
+						<p>
+							<a href="#edit_timestamp" class="save-timestamp hide-if-no-js button">OK</a>
+							<a href="#edit_timestamp" class="cancel-timestamp hide-if-no-js button-cancel">Cancel</a>
+						</p>
+					</fieldset>
+				</div>
+				<div class="misc-pub-section" id="catalog-visibility">
+					Catalog visibility: <strong id="catalog-visibility-display">{{.CatalogLbl}}{{if .P.Featured}}, Featured{{end}}</strong>
+					<a href="#catalog-visibility" class="edit-catalog-visibility hide-if-no-js"><span aria-hidden="true">Edit</span> <span class="screen-reader-text">Edit catalog visibility</span></a>
+					<div id="catalog-visibility-select" class="hide-if-js">
+						<input type="hidden" name="current_visibility" id="current_visibility" value="{{.P.CatalogVisibility}}" />
+						<input type="hidden" name="current_featured" id="current_featured" value="{{if .P.Featured}}yes{{else}}no{{end}}" />
+						<p>This setting determines which shop pages products will be listed on.</p>
+						{{range .CatalogVis}}<input type="radio" name="_visibility" id="_visibility_{{.Value}}" value="{{.Value}}"{{if eq .Value (or $d.P.CatalogVisibility "visible")}} checked="checked"{{end}} data-label="{{.Label}}" /> <label for="_visibility_{{.Value}}" class="selectit">{{.Label}}</label><br />
+						{{end}}<br /><input type="checkbox" name="_featured" id="_featured"{{if .P.Featured}} checked="checked"{{end}} /> <label for="_featured">This is a featured product</label><br />
+						<p>
+							<a href="#catalog-visibility" class="save-post-visibility hide-if-no-js button">OK</a>
+							<a href="#catalog-visibility" class="cancel-post-visibility hide-if-no-js">Cancel</a>
+						</p>
+					</div>
+				</div>
+			</div>
+			<div class="clear"></div>
+		</div>
+		<div id="major-publishing-actions">
+			{{if not .IsNew}}<div id="delete-action"><a class="submitdelete deletion" href="{{.TrashURL}}">Move to Trash</a></div>{{end}}
+			<div id="publishing-action">
+				<span class="spinner"></span>
+				<input name="original_publish" type="hidden" id="original_publish" value="{{.PublishLabel}}" />
+				<input type="submit" name="{{if or (eq $p.Status "publish") (eq $p.Status "private") (eq $p.Status "future")}}save{{else}}publish{{end}}" id="publish" class="button button-primary button-large" value="{{.PublishLabel}}" />
+			</div>
+			<div class="clear"></div>
+		</div>
+	</div>
+	{{template "edit-postbox-end"}}
+
+	{{template "edit-postbox-start" dict "ID" "product_catdiv" "Title" "Product categories" "Class" ""}}
+		<div id="taxonomy-product_cat" class="categorydiv">
+			<ul id="product_cat-tabs" class="category-tabs"><li class="tabs"><a href="#product_cat-all">All categories</a></li></ul>
+			<div id="product_cat-all" class="tabs-panel">
+				<input type="hidden" name="tax_input[product_cat][]" value="0" />
+				<ul id="product_catchecklist" data-wp-lists="list:product_cat" class="categorychecklist form-no-clear">
+				{{range .Categories}}<li id="product_cat-{{.ID}}"><label class="selectit">{{repeat "&nbsp;&nbsp;&nbsp;" .Depth | safe}}<input value="{{.ID}}" type="checkbox" name="tax_input[product_cat][]" id="in-product_cat-{{.ID}}"{{if index $d.Checked .ID}} checked="checked"{{end}} /> {{.Name}}</label></li>
+				{{end}}</ul>
+			</div>
+			<div id="product_cat-adder" class="wp-hidden-children">
+				<a id="product_cat-add-toggle" href="#product_cat-add" class="hide-if-no-js taxonomy-add-new">+ Add new category</a>
+				<p id="product_cat-add" class="category-add wp-hidden-child">
+					<label class="screen-reader-text" for="newproduct_cat">Add new category</label>
+					<input type="text" name="newproduct_cat" id="newproduct_cat" class="form-required form-input-tip" value="" placeholder="New category name" aria-required="true" />
+					<label class="screen-reader-text" for="newproduct_cat_parent">Parent category:</label>
+					<select name="newproduct_cat_parent" id="newproduct_cat_parent" class="postform">
+						<option value="-1">&mdash; Parent category &mdash;</option>
+						{{range .Categories}}<option class="level-{{.Depth}}" value="{{.ID}}">{{repeat "&nbsp;&nbsp;&nbsp;" .Depth | safe}}{{.Name}}</option>{{end}}
+					</select>
+					<input type="button" id="product_cat-add-submit" class="button category-add-submit" value="Add new category" />
+				</p>
+			</div>
+		</div>
+	{{template "edit-postbox-end"}}
+
+	{{template "edit-postbox-start" dict "ID" "tagsdiv-product_tag" "Title" "Product tags" "Class" ""}}
+		<div class="tagsdiv" id="product_tag">
+			<div class="jaxtag">
+				<div class="ajaxtag hide-if-no-js">
+					<label class="screen-reader-text" for="new-tag-product_tag">Add new tag</label>
+					<input type="text" id="new-tag-product_tag" name="tax_input[product_tag]" class="newtag form-input-tip" size="16" autocomplete="off" value="{{.TagNames}}" style="width: 100%;" />
+				</div>
+				<p class="howto" id="new-tag-product_tag-desc">Separate tags with commas</p>
+			</div>
+			{{if .PopularTags}}<p class="hide-if-no-js"><button type="button" class="button-link tagcloud-link" id="link-product_tag" aria-expanded="false">Choose from the most used tags</button></p>
+			<div id="tagcloud-product_tag" class="the-tagcloud" style="display:none">{{range .PopularTags}}<a href="#" class="goo-tag-pick" role="button">{{.Name}}</a> {{end}}</div>{{end}}
+		</div>
+	{{template "edit-postbox-end"}}
+
+	{{template "edit-postbox-start" dict "ID" "postimagediv" "Title" "Product image" "Class" ""}}
+		{{.Thumbnail}}
+	{{template "edit-postbox-end"}}
+
+	{{template "edit-postbox-start" dict "ID" "woocommerce-product-images" "Title" "Product gallery" "Class" ""}}
+		<div id="product_images_container">
+			<ul class="product_images">
+			{{range .Gallery}}<li class="image" data-attachment_id="{{.ID}}"><img width="150" height="150" src="{{.URL}}" alt="" /><ul class="actions"><li><a href="#" class="delete tips" data-tip="Delete image">Delete</a></li></ul></li>
+			{{end}}</ul>
+			<input type="hidden" id="product_image_gallery" name="product_image_gallery" value="{{.GalleryIDs}}" />
+		</div>
+		<p class="add_product_images hide-if-no-js"><a href="#" data-choose="Add images to product gallery" data-update="Add to gallery" data-delete="Delete image" data-text="Delete">Add product gallery images</a></p>
+	{{template "edit-postbox-end"}}
+</div>
+</div>
+
+<div id="postbox-container-2" class="postbox-container">
+<div id="normal-sortables" class="meta-box-sortables">
+	{{template "goo-product-data" .}}
+
+	{{template "edit-postbox-start" dict "ID" "postexcerpt" "Title" "Product short description" "Class" ""}}
+		<div id="wp-excerpt-wrap" class="wp-core-ui wp-editor-wrap html-active">
+			<div id="wp-excerpt-editor-container" class="wp-editor-container">
+				<textarea class="wp-editor-area" rows="8" autocomplete="off" cols="40" name="excerpt" id="excerpt">{{$p.Excerpt}}</textarea>
+			</div>
+		</div>
+	{{template "edit-postbox-end"}}
+
+	{{template "edit-postbox-start" dict "ID" "slugdiv" "Title" "Slug" "Class" " hide-if-js"}}
+		<label class="screen-reader-text" for="post_name">Slug</label><input name="post_name" type="text" size="13" id="post_name" value="{{$p.Slug}}" />
+	{{template "edit-postbox-end"}}
+</div>
+</div>
+</div><!-- /post-body -->
+<br class="clear" />
+</div><!-- /poststuff -->
+</form>
+<div id="goo-attribute-templates" hidden>
+	{{range .GlobalAttrs}}<template class="goo-attr-template" data-taxonomy="{{.Taxonomy}}">{{template "goo-product-attr" .}}</template>
+	{{end}}<template class="goo-attr-template" data-taxonomy="">{{template "goo-product-attr" .CustomAttr}}</template>
+</div>
+<template id="goo-download-row-template">{{template "goo-product-download-row" dict "Prefix" "_wc_file" "D" nil}}</template>
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}
