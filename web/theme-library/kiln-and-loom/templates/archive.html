@@ -1,0 +1,9 @@
+{{template "header" .}}
+<div class="kl-wrap kl-archive">
+	<header class="page-header kl-page-header">
+		<h1 class="page-title">{{.ArchiveTitle}}</h1>
+		{{with .ArchiveDesc}}<div class="archive-description">{{.}}</div>{{end}}
+	</header>
+	{{if .Posts}}{{template "loop" .}}{{.Pagination}}{{else}}{{template "content-none" .}}{{end}}
+</div>
+{{template "footer" .}}

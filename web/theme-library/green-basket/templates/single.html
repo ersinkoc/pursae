@@ -1,0 +1,17 @@
+{{template "header" .}}
+{{with .Post}}<article id="post-{{.ID}}" class="{{.Class}} gb-article">
+	<div class="gb-wrap gb-article__top">
+		{{with .Thumbnail}}<figure class="gb-article__media">{{.}}</figure>{{end}}
+		<header class="gb-article__header">
+			<p class="gb-kicker">{{range $i, $c := .Categories}}<a class="gb-chip" href="{{$c.URL}}">{{$c.Name}}</a> {{end}}</p>
+			<h1 class="entry-title">{{.Title}}</h1>
+			<p class="gb-article__meta"><time datetime="{{.DateISO}}">{{.DateText}}</time>{{with .AuthorName}} &middot; <span class="byline">{{.}}</span>{{end}}{{with .EditLink}} &middot; <span class="edit-link">{{.}}</span>{{end}}</p>
+		</header>
+	</div>
+	<div class="gb-wrap gb-measure entry-content">
+		{{.Content}}
+	</div>
+	{{if .Tags}}<footer class="gb-wrap gb-measure entry-footer"><span class="tags-links">{{range .Tags}}<a href="{{.URL}}" rel="tag">#{{.Name}}</a> {{end}}</span></footer>{{end}}
+</article>{{end}}
+<div class="gb-wrap gb-measure">{{.PostNav}}{{template "comments" .}}</div>
+{{template "footer" .}}

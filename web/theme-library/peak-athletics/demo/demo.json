@@ -110,7 +110,7 @@
 		{
 			"id": "p-trail-runner-shoe-alt",
 			"file": "demo/images/peak-athletics-p-trail-runner-shoe-alt.jpg",
-			"alt": "The trail runner shoe in carbon"
+			"alt": "The trail runner shoe mid-stride on the track"
 		}
 	],
 	"pages": [
@@ -434,8 +434,7 @@
 						},
 						"regular_price": "139",
 						"stock": 4,
-						"sku": "PK-101-40-C",
-						"image": "p-trail-runner-shoe-alt"
+						"sku": "PK-101-40-C"
 					},
 					{
 						"attributes": {
@@ -453,8 +452,7 @@
 						},
 						"regular_price": "139",
 						"stock": 4,
-						"sku": "PK-101-41-C",
-						"image": "p-trail-runner-shoe-alt"
+						"sku": "PK-101-41-C"
 					},
 					{
 						"attributes": {
@@ -472,8 +470,7 @@
 						},
 						"regular_price": "139",
 						"stock": 4,
-						"sku": "PK-101-42-C",
-						"image": "p-trail-runner-shoe-alt"
+						"sku": "PK-101-42-C"
 					},
 					{
 						"attributes": {
@@ -491,8 +488,7 @@
 						},
 						"regular_price": "139",
 						"stock": 4,
-						"sku": "PK-101-43-C",
-						"image": "p-trail-runner-shoe-alt"
+						"sku": "PK-101-43-C"
 					},
 					{
 						"attributes": {
@@ -510,8 +506,7 @@
 						},
 						"regular_price": "139",
 						"stock": 4,
-						"sku": "PK-101-44-C",
-						"image": "p-trail-runner-shoe-alt"
+						"sku": "PK-101-44-C"
 					},
 					{
 						"attributes": {
@@ -529,8 +524,7 @@
 						},
 						"regular_price": "139",
 						"stock": 4,
-						"sku": "PK-101-45-C",
-						"image": "p-trail-runner-shoe-alt"
+						"sku": "PK-101-45-C"
 					},
 					{
 						"attributes": {
@@ -548,8 +542,7 @@
 						},
 						"regular_price": "139",
 						"stock": 4,
-						"sku": "PK-101-46-C",
-						"image": "p-trail-runner-shoe-alt"
+						"sku": "PK-101-46-C"
 					}
 				],
 				"reviews": [

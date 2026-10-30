@@ -1,0 +1,591 @@
+{
+	"version": 1,
+	"options": {
+		"blogname": "Kiln & Loom",
+		"blogdescription": "A market of handmade things"
+	},
+	"categories": [
+		{
+			"slug": "makers",
+			"name": "Makers",
+			"description": "Visits to the people behind the work."
+		},
+		{
+			"slug": "care",
+			"name": "Care",
+			"description": "Looking after handmade things."
+		}
+	],
+	"media": [
+		{
+			"id": "hero",
+			"file": "demo/images/kiln-and-loom-hero.jpg",
+			"alt": "Handmade mugs, a woven basket and candles on a market table"
+		},
+		{
+			"id": "about",
+			"file": "demo/images/kiln-and-loom-about.jpg",
+			"alt": "A potter shaping clay at the wheel in a sunny studio"
+		},
+		{
+			"id": "cat-ceramics",
+			"file": "demo/images/kiln-and-loom-cat-ceramics.jpg",
+			"alt": "Ceramics collection"
+		},
+		{
+			"id": "cat-textiles",
+			"file": "demo/images/kiln-and-loom-cat-textiles.jpg",
+			"alt": "Textiles collection"
+		},
+		{
+			"id": "cat-candles",
+			"file": "demo/images/kiln-and-loom-cat-candles.jpg",
+			"alt": "Candles collection"
+		},
+		{
+			"id": "cat-woodwork",
+			"file": "demo/images/kiln-and-loom-cat-woodwork.jpg",
+			"alt": "Woodwork collection"
+		},
+		{
+			"id": "p-speckled-mug",
+			"file": "demo/images/kiln-and-loom-p-speckled-mug.jpg",
+			"alt": "A speckled cream stoneware mug"
+		},
+		{
+			"id": "p-stoneware-bowl-set",
+			"file": "demo/images/kiln-and-loom-p-stoneware-bowl-set.jpg",
+			"alt": "A stack of four stoneware bowls"
+		},
+		{
+			"id": "p-bud-vase",
+			"file": "demo/images/kiln-and-loom-p-bud-vase.jpg",
+			"alt": "A small terracotta bud vase with a stem"
+		},
+		{
+			"id": "p-woven-basket",
+			"file": "demo/images/kiln-and-loom-p-woven-basket.jpg",
+			"alt": "A round woven basket with handles"
+		},
+		{
+			"id": "p-macrame-wall-hanging",
+			"file": "demo/images/kiln-and-loom-p-macrame-wall-hanging.jpg",
+			"alt": "A macrame wall hanging on a branch"
+		},
+		{
+			"id": "p-hand-knit-throw",
+			"file": "demo/images/kiln-and-loom-p-hand-knit-throw.jpg",
+			"alt": "A folded chunky hand-knit throw"
+		},
+		{
+			"id": "p-linen-tea-towels",
+			"file": "demo/images/kiln-and-loom-p-linen-tea-towels.jpg",
+			"alt": "Two striped linen tea towels"
+		},
+		{
+			"id": "p-soy-candle",
+			"file": "demo/images/kiln-and-loom-p-soy-candle.jpg",
+			"alt": "A soy candle in a ceramic tumbler"
+		},
+		{
+			"id": "p-beeswax-tapers",
+			"file": "demo/images/kiln-and-loom-p-beeswax-tapers.jpg",
+			"alt": "Two beeswax taper candles"
+		},
+		{
+			"id": "p-handmade-soap-trio",
+			"file": "demo/images/kiln-and-loom-p-handmade-soap-trio.jpg",
+			"alt": "Three bars of handmade soap"
+		},
+		{
+			"id": "p-olive-wood-spoon",
+			"file": "demo/images/kiln-and-loom-p-olive-wood-spoon.jpg",
+			"alt": "A carved olive wood spoon"
+		},
+		{
+			"id": "p-walnut-serving-board",
+			"file": "demo/images/kiln-and-loom-p-walnut-serving-board.jpg",
+			"alt": "A walnut serving board"
+		},
+		{
+			"id": "p-soy-candle-alt",
+			"file": "demo/images/kiln-and-loom-p-soy-candle-alt.jpg",
+			"alt": "The soy candle in fig, lit"
+		}
+	],
+	"pages": [
+		{
+			"slug": "home",
+			"title": "Home",
+			"content": "<!-- wp:cover {\"url\":\"{{media:hero}}\",\"id\":{{media_id:hero}},\"dimRatio\":0,\"minHeight\":640,\"contentPosition\":\"center left\",\"align\":\"full\"} --><div class=\"wp-block-cover alignfull has-custom-content-position is-position-center-left\" style=\"min-height:640px\"><span aria-hidden=\"true\" class=\"wp-block-cover__background has-background-dim-0 has-background-dim\"></span><img class=\"wp-block-cover__image-background wp-image-{{media_id:hero}}\" alt=\"\" src=\"{{media:hero}}\" data-object-fit=\"cover\"/><div class=\"wp-block-cover__inner-container\"><!-- wp:paragraph {\"className\":\"kl-kicker\"} --><p class=\"kl-kicker\">The makers&rsquo; market, issue no. 14</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":1} --><h1 class=\"wp-block-heading\">Things made slowly, <em>by hand.</em></h1><!-- /wp:heading --><!-- wp:paragraph --><p>Ceramics, textiles, candles and woodwork from forty independent makers. Every piece signed, every maker paid fairly.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"/shop/\">Browse the market</a></div><!-- /wp:button --><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"/about/\">Meet the makers</a></div><!-- /wp:button --></div><!-- /wp:buttons --><!-- wp:paragraph {\"className\":\"kl-stamp\"} --><p class=\"kl-stamp\">Handmade by forty makers</p><!-- /wp:paragraph --></div></div><!-- /wp:cover --><!-- wp:group {\"className\":\"kl-section-head\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group kl-section-head\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Wander the stalls</h2><!-- /wp:heading --><!-- wp:paragraph --><p><a href=\"/shop/\">Everything in the market</a></p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:group {\"className\":\"kl-cats\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group kl-cats\"><!-- wp:image {\"id\":{{media_id:cat-ceramics}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"/product-category/ceramics/\"><img src=\"{{media:cat-ceramics}}\" alt=\"Ceramics collection\" class=\"wp-image-{{media_id:cat-ceramics}}\"/></a><figcaption class=\"wp-element-caption\">Ceramics</figcaption></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:cat-textiles}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"/product-category/textiles/\"><img src=\"{{media:cat-textiles}}\" alt=\"Textiles collection\" class=\"wp-image-{{media_id:cat-textiles}}\"/></a><figcaption class=\"wp-element-caption\">Textiles</figcaption></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:cat-candles}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"/product-category/candles/\"><img src=\"{{media:cat-candles}}\" alt=\"Candles collection\" class=\"wp-image-{{media_id:cat-candles}}\"/></a><figcaption class=\"wp-element-caption\">Candles</figcaption></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:cat-woodwork}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"/product-category/woodwork/\"><img src=\"{{media:cat-woodwork}}\" alt=\"Woodwork collection\" class=\"wp-image-{{media_id:cat-woodwork}}\"/></a><figcaption class=\"wp-element-caption\">Woodwork</figcaption></figure><!-- /wp:image --></div><!-- /wp:group --><!-- wp:group {\"className\":\"kl-section-head\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group kl-section-head\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Makers&rsquo; <em>favourites</em></h2><!-- /wp:heading --><!-- wp:paragraph --><p><a href=\"/shop/\">See all</a></p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:shortcode -->[products limit=\"8\" columns=\"4\" visibility=\"featured\"]<!-- /wp:shortcode --><!-- wp:media-text {\"mediaId\":{{media_id:about}},\"mediaType\":\"image\",\"mediaPosition\":\"right\",\"className\":\"kl-makers\"} --><div class=\"wp-block-media-text has-media-on-the-right is-stacked-on-mobile kl-makers\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:about}}\" alt=\"A potter shaping clay at the wheel\" class=\"wp-image-{{media_id:about}} size-full\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:paragraph {\"className\":\"kl-kicker\"} --><p class=\"kl-kicker\">A welcome from the makers</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">10% off your <em>first find.</em></h2><!-- /wp:heading --><!-- wp:paragraph --><p>Use <code>WELCOME10</code> at checkout. Shipping is free over €60, and every parcel is wrapped in paper and string.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"/shop/\">Start browsing</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div></div><!-- /wp:media-text --><!-- wp:group {\"className\":\"kl-section-head\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group kl-section-head\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Seconds &amp; <em>small savings</em></h2><!-- /wp:heading --><!-- wp:paragraph --><p><a href=\"/shop/\">All pieces</a></p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:shortcode -->[products limit=\"4\" columns=\"4\" on_sale=\"true\"]<!-- /wp:shortcode --><!-- wp:group {\"className\":\"kl-quote\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group kl-quote\"><!-- wp:paragraph --><p>&ldquo;Every mug has a thumbprint somewhere if you look. That is the point.&rdquo;</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"kl-quote__by\"} --><p class=\"kl-quote__by\">Ines, potter</p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:group {\"className\":\"kl-section-head\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group kl-section-head\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Fresh from the <em>workshop</em></h2><!-- /wp:heading --><!-- wp:paragraph --><p><a href=\"/shop/?orderby=date\">New arrivals</a></p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:shortcode -->[products limit=\"8\" columns=\"4\" orderby=\"date\" order=\"DESC\"]<!-- /wp:shortcode -->",
+			"template": "page-home",
+			"front_page": true
+		},
+		{
+			"slug": "about",
+			"title": "Our makers",
+			"content": "<!-- wp:image {\"id\":{{media_id:about}},\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:about}}\" alt=\"A potter shaping clay at the wheel in a sunny studio\" class=\"wp-image-{{media_id:about}}\"/></figure><!-- /wp:image --><!-- wp:paragraph --><p>Kiln &amp; Loom began as a Saturday market stall shared by a potter, a weaver and a candle maker who were tired of selling only to the people who happened to walk past. We built a shop together, then invited friends, and now forty makers sell here.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Every maker sets their own price and keeps most of it. We take a small share to run the shop, photograph the work and pack the parcels, and we tell you exactly who made what. Nothing here is mass-produced, and nothing is quite the same as the photograph: that is the charm of handmade.</p><!-- /wp:paragraph --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>We would rather sell one thing made well than a hundred made quickly.</p><!-- /wp:paragraph --><cite>The Kiln &amp; Loom collective</cite></blockquote><!-- /wp:quote --><!-- wp:heading --><h2 class=\"wp-block-heading\">Become a maker</h2><!-- /wp:heading --><!-- wp:paragraph --><p>We add a few new makers each season. If you make something by hand in small batches, write to us with photographs and a few words about your workshop.</p><!-- /wp:paragraph -->",
+			"featured_media": "about"
+		},
+		{
+			"slug": "contact",
+			"title": "Contact",
+			"content": "<!-- wp:paragraph --><p>Questions about a piece, a commission or an order? Write to us and the maker will often answer you directly.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><strong>Email:</strong> market@kilnandloom.example<br><strong>Phone:</strong> +34 600 000 000 (Tuesday to Friday)<br><strong>Market stall:</strong> Plaza del Mercado, every Saturday morning</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Shipping and returns</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Everything is wrapped in paper and sent within three working days. Unused pieces can be returned within thirty days; for breakages in transit we send a replacement at once.</p><!-- /wp:paragraph -->"
+		},
+		{
+			"slug": "journal",
+			"title": "Journal",
+			"content": "",
+			"posts_page": true
+		}
+	],
+	"posts": [
+		{
+			"slug": "a-morning-at-the-wheel",
+			"title": "A morning at the wheel",
+			"date": "2026-09-16T09:00:00",
+			"categories": [
+				"makers"
+			],
+			"featured_media": "p-speckled-mug",
+			"excerpt": "Clay, coffee and fifty mugs before lunch: a visit to the studio where our speckled mugs are made.",
+			"content": "<!-- wp:paragraph --><p>Ines starts every day by wedging clay: kneading it on a canvas table until every air bubble is gone. It is the least glamorous part of pottery and the most important, because a bubble left in the clay can crack a mug in the kiln.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Then she throws. On a good morning that means fifty mug bodies, each centred, opened and pulled up in three long movements. The handles are pulled separately, from lumps of the same clay, and joined when both are leather-hard.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>After a slow first firing, every mug is dipped in glaze by hand and fired again, hotter, for twelve hours. The speckles are tiny bits of iron in the clay that bloom through the glaze. No two mugs come out the same, and that is exactly why we love them.</p><!-- /wp:paragraph -->"
+		},
+		{
+			"slug": "how-to-care-for-wooden-spoons",
+			"title": "How to care for wooden spoons and boards",
+			"date": "2026-10-03T10:00:00",
+			"categories": [
+				"care"
+			],
+			"featured_media": "p-walnut-serving-board",
+			"excerpt": "Warm water, a little soap, and oil once a month: wood is easier to look after than you think.",
+			"content": "<!-- wp:paragraph --><p>Wooden spoons and boards will outlast most kitchen tools if you treat them kindly. The two rules are simple: never leave them soaking, and never put them in the dishwasher.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>After use, wash with warm water and a little soap, rinse, and stand them up to dry so the air reaches every side. If a board starts to look pale or feels rough, it is thirsty.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Once a month, rub in a thin coat of food-safe oil or a mix of oil and beeswax, leave it overnight and buff off the rest in the morning. Your spoons will darken slowly and get smoother with every year.</p><!-- /wp:paragraph -->"
+		},
+		{
+			"slug": "the-scent-of-a-season",
+			"title": "The scent of a season",
+			"date": "2026-10-25T08:00:00",
+			"categories": [
+				"makers"
+			],
+			"featured_media": "p-soy-candle",
+			"excerpt": "Fig, cedar and amber: how our candle maker blends a scent, and why it takes a whole summer.",
+			"content": "<!-- wp:paragraph --><p>Our candle maker works in a converted garage with a big pan of soy wax, a shelf of tiny brown bottles and a notebook full of crossed-out recipes. A new scent takes months to get right.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Fig started with a walk past a fig tree in August: green leaves, warm fruit, a little sharpness. It took eleven test batches to get the balance of leaf and fruit right, and three more to make sure it smelled the same when burning as it did cold.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Each candle is poured by hand into a tumbler thrown by our potters, left to cure for two weeks so the scent settles into the wax, and finally labelled with the batch number in pencil.</p><!-- /wp:paragraph -->"
+		}
+	],
+	"menus": [
+		{
+			"name": "Main menu",
+			"location": "primary",
+			"items": [
+				{
+					"title": "The market",
+					"url": "/shop/",
+					"children": [
+						{
+							"title": "Ceramics",
+							"url": "/product-category/ceramics/"
+						},
+						{
+							"title": "Textiles",
+							"url": "/product-category/textiles/"
+						},
+						{
+							"title": "Candles",
+							"url": "/product-category/candles/"
+						},
+						{
+							"title": "Woodwork",
+							"url": "/product-category/woodwork/"
+						}
+					]
+				},
+				{
+					"title": "Ceramics",
+					"url": "/product-category/ceramics/"
+				},
+				{
+					"title": "Textiles",
+					"url": "/product-category/textiles/"
+				},
+				{
+					"title": "Candles",
+					"url": "/product-category/candles/"
+				},
+				{
+					"title": "Woodwork",
+					"url": "/product-category/woodwork/"
+				},
+				{
+					"title": "Our makers",
+					"page": "about"
+				},
+				{
+					"title": "Journal",
+					"page": "journal"
+				},
+				{
+					"title": "Contact",
+					"page": "contact"
+				}
+			]
+		},
+		{
+			"name": "Footer menu",
+			"location": "footer",
+			"items": [
+				{
+					"title": "Shop",
+					"url": "/shop/"
+				},
+				{
+					"title": "My account",
+					"url": "/my-account/"
+				},
+				{
+					"title": "Journal",
+					"page": "journal"
+				},
+				{
+					"title": "Contact",
+					"page": "contact"
+				}
+			]
+		}
+	],
+	"widgets": {
+		"footer-1": [
+			"<!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">The market stall</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Plaza del Mercado<br>Every Saturday, 9–14<br>Look for the indigo awning</p><!-- /wp:paragraph -->",
+			"<!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Parcels</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Wrapped in paper and string<br>Free shipping over €60<br>Thirty days to return</p><!-- /wp:paragraph -->",
+			"<!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">For makers</h3><!-- /wp:heading --><!-- wp:paragraph --><p>We welcome new makers each season. Write to us with photographs of your work and a few words about your workshop.</p><!-- /wp:paragraph -->"
+		]
+	},
+	"customizer": {
+		"accent": "#c2683f",
+		"indigo": "#2f3e66",
+		"show_announcement": true,
+		"announcement": "Handmade by forty independent makers · Free shipping over €60",
+		"header_layout": "masthead",
+		"footer_line": "Made slowly, by hand."
+	},
+	"goocommerce": {
+		"settings": {
+			"currency": "EUR",
+			"currency_pos": "right_space",
+			"price_thousand_sep": ".",
+			"price_decimal_sep": ",",
+			"catalog_columns": 4,
+			"catalog_rows": 3,
+			"demo_store": false
+		},
+		"categories": [
+			{
+				"slug": "ceramics",
+				"name": "Ceramics",
+				"description": "Thrown, glazed and fired by hand in small studio kilns.",
+				"image": "cat-ceramics"
+			},
+			{
+				"slug": "textiles",
+				"name": "Textiles",
+				"description": "Woven, knotted and knitted from natural fibres.",
+				"image": "cat-textiles"
+			},
+			{
+				"slug": "candles",
+				"name": "Candles",
+				"description": "Soy, beeswax and soap, poured and cut in small batches.",
+				"image": "cat-candles"
+			},
+			{
+				"slug": "woodwork",
+				"name": "Woodwork",
+				"description": "Carved and turned from fallen and reclaimed timber.",
+				"image": "cat-woodwork"
+			}
+		],
+		"attributes": [
+			{
+				"slug": "scent",
+				"name": "Scent",
+				"terms": [
+					"Fig",
+					"Cedar",
+					"Amber"
+				]
+			}
+		],
+		"products": [
+			{
+				"slug": "speckled-mug",
+				"name": "Speckled Mug",
+				"type": "simple",
+				"regular_price": "28",
+				"categories": [
+					"ceramics"
+				],
+				"description": "<p>Thrown on the wheel from a speckled stoneware clay and dipped in a creamy glaze that breaks to toast-brown at the rim. A generous handle for two fingers and a 350 ml belly for a proper cup of tea.</p><p>Dishwasher and microwave safe. Every mug is a little different, and signed on the base by its maker, Ines.</p>",
+				"short_description": "<p>A wheel-thrown 350 ml stoneware mug in a speckled cream glaze.</p>",
+				"sku": "KL-101",
+				"stock": 24,
+				"featured": true,
+				"reviews": [
+					{
+						"author": "Mira",
+						"email": "mira@example.com",
+						"rating": 5,
+						"content": "My new favourite mug. It is heavy in the best way and keeps tea warm for ages."
+					},
+					{
+						"author": "Jonas",
+						"email": "jonas@example.com",
+						"rating": 5,
+						"content": "Bought two as a gift and kept one. You can see the throwing rings inside."
+					}
+				],
+				"image": "p-speckled-mug"
+			},
+			{
+				"slug": "stoneware-bowl-set",
+				"name": "Stoneware Bowl Set",
+				"type": "simple",
+				"regular_price": "64",
+				"categories": [
+					"ceramics"
+				],
+				"description": "<p>Four shallow bowls for pasta, salad or soup, in a reactive glaze that pools blue-green where it runs thick. Made in a two-person pottery by the coast.</p><p>Diameter 19 cm. Sold as a set of four.</p>",
+				"short_description": "<p>Four hand-thrown bowls in a reactive blue-green glaze.</p>",
+				"sku": "KL-102",
+				"stock": 8,
+				"featured": true,
+				"image": "p-stoneware-bowl-set"
+			},
+			{
+				"slug": "bud-vase",
+				"name": "Bud Vase",
+				"type": "simple",
+				"regular_price": "36",
+				"categories": [
+					"ceramics"
+				],
+				"description": "<p>A narrow-necked vase for a single stem, in unglazed terracotta outside and a glossy glaze inside so it holds water. Small enough for a windowsill, pretty enough for a dinner table.</p><p>Height 14 cm.</p>",
+				"short_description": "<p>A terracotta bud vase for a single stem.</p>",
+				"sku": "KL-103",
+				"stock": 15,
+				"sale_price": "30",
+				"image": "p-bud-vase"
+			},
+			{
+				"slug": "woven-basket",
+				"name": "Woven Basket",
+				"type": "simple",
+				"regular_price": "48",
+				"categories": [
+					"textiles"
+				],
+				"description": "<p>Coiled and stitched by hand from seagrass and cotton thread, with two sturdy handles. For blankets, toys, logs or a plant in its pot.</p><p>Diameter 36 cm, height 30 cm.</p>",
+				"short_description": "<p>A coiled seagrass basket stitched by hand.</p>",
+				"sku": "KL-201",
+				"stock": 10,
+				"image": "p-woven-basket"
+			},
+			{
+				"slug": "macrame-wall-hanging",
+				"name": "Macramé Wall Hanging",
+				"type": "simple",
+				"regular_price": "75",
+				"categories": [
+					"textiles"
+				],
+				"description": "<p>Knotted from undyed recycled cotton cord on a driftwood branch picked up on the maker&rsquo;s morning walk. Soft fringes and a diamond pattern that throws gentle shadows.</p><p>About 50 × 90 cm.</p>",
+				"short_description": "<p>A recycled-cotton macramé on a driftwood branch.</p>",
+				"sku": "KL-202",
+				"stock": 5,
+				"featured": true,
+				"image": "p-macrame-wall-hanging"
+			},
+			{
+				"slug": "hand-knit-throw",
+				"name": "Hand-Knit Throw",
+				"type": "simple",
+				"regular_price": "140",
+				"categories": [
+					"textiles"
+				],
+				"description": "<p>Knitted by hand in chunky British wool, in a cable pattern that takes a full week to finish. Heavy, warm and made to be draped over a chair for decades.</p><p>110 × 150 cm. Gentle hand wash.</p>",
+				"short_description": "<p>A chunky cable throw knitted by hand in British wool.</p>",
+				"sku": "KL-203",
+				"stock": 4,
+				"featured": true,
+				"reviews": [
+					{
+						"author": "Ffion",
+						"email": "ffion@example.com",
+						"rating": 5,
+						"content": "You can feel the hours that went into this. It is the warmest thing in our house."
+					}
+				],
+				"image": "p-hand-knit-throw"
+			},
+			{
+				"slug": "linen-tea-towels",
+				"name": "Linen Tea Towels",
+				"type": "simple",
+				"regular_price": "24",
+				"categories": [
+					"textiles"
+				],
+				"description": "<p>A pair of tea towels woven from pure linen on an old shuttle loom, with a narrow indigo stripe. They dry glasses without lint and get softer with every wash.</p>",
+				"short_description": "<p>Two loom-woven linen tea towels with an indigo stripe.</p>",
+				"sku": "KL-204",
+				"stock": 30,
+				"image": "p-linen-tea-towels"
+			},
+			{
+				"slug": "soy-candle",
+				"name": "Soy Candle",
+				"type": "variable",
+				"regular_price": "22",
+				"categories": [
+					"candles"
+				],
+				"sku": "KL-301",
+				"featured": true,
+				"description": "<p>Hand-poured soy wax in a reusable ceramic tumbler thrown by our potters, with a cotton wick and around forty hours of slow, clean burn.</p><p>Choose your scent: <strong>Fig</strong> (green fig leaf and blackcurrant), <strong>Cedar</strong> (cedarwood, vetiver and smoke) or <strong>Amber</strong> (warm amber, vanilla and a little clove).</p>",
+				"short_description": "<p>Hand-poured soy wax in a ceramic tumbler, in three scents.</p>",
+				"attributes": [
+					{
+						"name": "Scent",
+						"values": [
+							"Fig",
+							"Cedar",
+							"Amber"
+						],
+						"variation": true
+					}
+				],
+				"variations": [
+					{
+						"attributes": {
+							"Scent": "Fig"
+						},
+						"regular_price": "22",
+						"stock": 12,
+						"sku": "KL-301-FI",
+						"image": "p-soy-candle-alt"
+					},
+					{
+						"attributes": {
+							"Scent": "Cedar"
+						},
+						"regular_price": "22",
+						"stock": 12,
+						"sku": "KL-301-CE"
+					},
+					{
+						"attributes": {
+							"Scent": "Amber"
+						},
+						"regular_price": "22",
+						"stock": 12,
+						"sku": "KL-301-AM"
+					}
+				],
+				"reviews": [
+					{
+						"author": "Tess",
+						"email": "tess@example.com",
+						"rating": 4,
+						"content": "Fig smells exactly like standing under a fig tree. Burns evenly. I wish it were a little stronger."
+					},
+					{
+						"author": "Rafael",
+						"email": "rafael@example.com",
+						"rating": 5,
+						"content": "Cedar is perfect for winter evenings, and the pot is lovely enough to keep for pens afterwards."
+					}
+				],
+				"cross_sells": [
+					"beeswax-tapers"
+				],
+				"image": "p-soy-candle",
+				"gallery": [
+					"p-soy-candle-alt"
+				]
+			},
+			{
+				"slug": "beeswax-tapers",
+				"name": "Beeswax Tapers",
+				"type": "simple",
+				"regular_price": "16",
+				"categories": [
+					"candles"
+				],
+				"description": "<p>A pair of hand-dipped tapers made from the wax of our neighbour&rsquo;s hives. They burn slowly and smell faintly of honey.</p><p>Height 25 cm, standard fit.</p>",
+				"short_description": "<p>A pair of hand-dipped beeswax tapers.</p>",
+				"sku": "KL-302",
+				"stock": 40,
+				"image": "p-beeswax-tapers"
+			},
+			{
+				"slug": "handmade-soap-trio",
+				"name": "Handmade Soap Trio",
+				"type": "simple",
+				"regular_price": "19",
+				"categories": [
+					"candles"
+				],
+				"description": "<p>Three cold-process soaps cut from the block and cured for six weeks: oat and honey, rosemary and clay, and a plain one for sensitive skin. Wrapped in paper, no plastic.</p>",
+				"short_description": "<p>Three cold-process soaps cured for six weeks.</p>",
+				"sku": "KL-303",
+				"stock": 25,
+				"image": "p-handmade-soap-trio"
+			},
+			{
+				"slug": "olive-wood-spoon",
+				"name": "Olive Wood Spoon",
+				"type": "simple",
+				"regular_price": "18",
+				"categories": [
+					"woodwork"
+				],
+				"description": "<p>Carved from the pruned branches of an olive grove, so no tree is felled. Dense, smooth and naturally resistant to stains. Rub with oil now and then.</p><p>Length 30 cm.</p>",
+				"short_description": "<p>A hand-carved cooking spoon from pruned olive branches.</p>",
+				"sku": "KL-401",
+				"stock": 20,
+				"image": "p-olive-wood-spoon"
+			},
+			{
+				"slug": "walnut-serving-board",
+				"name": "Walnut Serving Board",
+				"type": "simple",
+				"regular_price": "58",
+				"categories": [
+					"woodwork"
+				],
+				"description": "<p>A long board with a carved handle, cut from a single piece of reclaimed walnut and finished with food-safe oil and beeswax. For bread, cheese or a stack of plates.</p><p>50 × 20 cm.</p>",
+				"short_description": "<p>A long reclaimed-walnut board with a carved handle.</p>",
+				"sku": "KL-402",
+				"stock": 7,
+				"sale_price": "49",
+				"featured": true,
+				"image": "p-walnut-serving-board"
+			}
+		],
+		"coupons": [
+			{
+				"code": "WELCOME10",
+				"type": "percent",
+				"amount": "10",
+				"description": "10% off your first order"
+			}
+		],
+		"shipping": {
+			"zone": "Everywhere",
+			"flat_rate": "6",
+			"free_over": "60",
+			"local_pickup": true
+		}
+	}
+}

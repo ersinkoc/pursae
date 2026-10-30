@@ -1,0 +1,7 @@
+{{template "header" .}}
+{{with .Post}}<article id="post-{{.ID}}" class="{{.Class}} kl-home">
+	<div class="entry-content kl-home__content">
+		{{.Content}}
+	</div>
+</article>{{end}}
+{{template "footer" .}}
