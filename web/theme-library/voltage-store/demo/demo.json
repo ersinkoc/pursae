@@ -282,6 +282,9 @@
   "settings": {
    "currency": "USD",
    "currency_pos": "left",
+   "price_decimal_sep": ".",
+   "price_thousand_sep": ",",
+   "price_num_decimals": 2,
    "catalog_columns": 4,
    "catalog_rows": 3
   },
