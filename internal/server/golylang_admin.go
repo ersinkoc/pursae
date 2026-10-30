@@ -486,6 +486,8 @@ func (s *Server) pllSettingsScreen(c *gin.Context) {
 			}
 		case "translate-slugs":
 			o.TranslateSlugs = on
+		case "share-slugs":
+			o.ShareSlugs = on
 		}
 		_ = s.pllSaveOpts(ctx, o)
 		c.Redirect(http.StatusFound, "/wp-admin/admin?page=mlang_settings&settings-updated=true")
@@ -504,9 +506,8 @@ func (s *Server) pllSettingsScreen(c *gin.Context) {
 		{Key: "sync", Title: "Synchronization", Description: "The synchronization options allow to maintain exact same values (or translations in the case of taxonomies and page parent) of meta content between the translations of a post or page."},
 		{Key: "translate-slugs", Title: "Translate slugs", Pro: true, Toggle: true, Active: o.TranslateSlugs,
 			Description: "Allows to translate the category, tag, author and search bases in URLs. The bases are translated in Languages > Translations, group URL slugs."},
-		{Key: "share-slugs", Title: "Share slugs", Pro: true,
-			Description: "Allows to share the same URL slug across languages for posts and terms.",
-			Unavailable: "Not available in WordPress Go: slugs are unique per post type and parent in the database, so translations keep their -2 or -fr suffix."},
+		{Key: "share-slugs", Title: "Share slugs", Pro: true, Toggle: true, Active: o.ShareSlugs,
+			Description: "Allows to share the same URL slug across languages for posts and terms. The language must be set from the URL (directory, subdomain or domain) in URL modifications."},
 		{Key: "machine-translation", Title: "Machine Translation", Pro: true, Description: "Allows linkage to DeepL Translate.",
 			Unavailable: "Not available in WordPress Go: it needs a DeepL account and sends content to a third-party service."},
 	}

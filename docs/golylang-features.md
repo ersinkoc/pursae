@@ -59,7 +59,7 @@ Code: `internal/server/golylang*.go`, `web/admin/templates/pages/golylang.html`,
 | **Custom post types and Taxonomies**: checkbox lists of non-builtin public types and taxonomies | ✅ |
 | **Synchronization**: Taxonomies, Custom fields, Comment status, Ping status, Sticky posts, Published date, Post format, Page parent, Page template, Page order, Featured image | ✅ terms, parent and featured image are mapped to their translations |
 | Pro **Translate slugs**: translated category, tag, author and search bases per language (strings group "URL slugs") | ✅ |
-| Pro **Share slugs** | ✗ WordPress Go keeps a database unique index on (type, parent, slug), so two posts can't share a slug; the module is listed with that reason |
+| Pro **Share slugs** | ✓ Settings › Share slugs: translations may use the same slug; uniqueness is checked per language and URLs resolve to the request language first (needs the language from the URL; migration 0020 moves slug uniqueness from the database to the store, like WordPress) |
 | Pro **Machine Translation (DeepL)** | ✗ it needs a paid third-party account and sends site content out; the module is listed with that reason |
 
 ## Languages > Translations (strings)

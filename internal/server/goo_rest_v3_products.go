@@ -1111,6 +1111,7 @@ func (s *Server) gooV3VariationDelete(c *gin.Context, parentID, id int64, force 
 		return nil, gooErr(http.StatusNotImplemented, "woocommerce_rest_trash_not_supported", "Resource does not support trashing.")
 	}
 	obj := s.gooV3VariationJSON(ctx, v)
+	s.gooPllDeleteVariation(ctx, id) // Golylang: and its translations (goo_golylang.go)
 	if err := s.store.DeletePost(ctx, id); err != nil {
 		return nil, gooErr(500, "woocommerce_rest_cannot_delete", err.Error())
 	}

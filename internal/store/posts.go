@@ -92,9 +92,11 @@ func (s *Store) GetPost(ctx context.Context, id int64) (*Post, error) {
 
 // PostBySlug finds a post of the given type by slug. With parentPath empty the parent is ignored.
 func (s *Store) PostBySlug(ctx context.Context, typ, slug string) (*Post, error) {
+	args := []any{typ, slug}
+	prefer := slugPrefer(ctx, "post", &args)
 	return scanPost(s.Pool.QueryRow(ctx, `SELECT `+postCols+` FROM posts
 		WHERE type = $1 AND slug = $2 AND status NOT IN ('auto-draft','trash')
-		ORDER BY (status = 'publish') DESC, id LIMIT 1`, typ, slug))
+		ORDER BY `+prefer+`(status = 'publish') DESC, id LIMIT 1`, args...))
 }
 
 // PageByPath resolves a hierarchical path such as "parent/child" (get_page_by_path()).
@@ -104,9 +106,11 @@ func (s *Store) PageByPath(ctx context.Context, path string) (*Post, error) {
 	var p *Post
 	for _, slug := range parts {
 		var err error
+		args := []any{slug, parent}
+		prefer := slugPrefer(ctx, "post", &args)
 		p, err = scanPost(s.Pool.QueryRow(ctx, `SELECT `+postCols+` FROM posts
 			WHERE type = 'page' AND slug = $1 AND coalesce(parent_id,0) = $2 AND status NOT IN ('auto-draft','trash')
-			LIMIT 1`, slug, parent))
+			ORDER BY `+prefer+`id LIMIT 1`, args...))
 		if err != nil {
 			return nil, err
 		}
@@ -131,6 +135,42 @@ func (s *Store) Ancestors(ctx context.Context, p *Post) ([]*Post, error) {
 		cur = parent
 	}
 	return chain, nil
+}
+
+// SlugScope, when set, narrows the slug uniqueness checks (UniqueSlug and the term slugs) to the
+// objects a slug may not be shared with: kind is "post" or "term", id the object (0 for a new one),
+// add binds an argument. Golylang's Share slugs: the object's own language.
+var SlugScope func(ctx context.Context, kind string, id int64, add func(v any) string) string
+
+// SlugPrefer, when set, is an ORDER BY expression (with its trailing direction) that picks among
+// objects sharing a slug: Golylang prefers the request language.
+var SlugPrefer func(ctx context.Context, kind string, add func(v any) string) string
+
+func bindArg(args *[]any) func(v any) string {
+	return func(v any) string {
+		*args = append(*args, v)
+		return "$" + strconv.Itoa(len(*args))
+	}
+}
+
+// slugScope is SlugScope as an " AND …" clause ("" when unset).
+func slugScope(ctx context.Context, kind string, id int64, args *[]any) string {
+	if SlugScope != nil {
+		if c := SlugScope(ctx, kind, id, bindArg(args)); c != "" {
+			return " AND " + c
+		}
+	}
+	return ""
+}
+
+// slugPrefer is SlugPrefer as a leading ORDER BY term ("" when unset).
+func slugPrefer(ctx context.Context, kind string, args *[]any) string {
+	if SlugPrefer != nil {
+		if o := SlugPrefer(ctx, kind, bindArg(args)); o != "" {
+			return o + ", "
+		}
+	}
+	return ""
 }
 
 // QueryFilter, when set, narrows QueryPosts and QueryTerms by request context (Golylang's language
@@ -314,8 +354,10 @@ func (s *Store) UniqueSlug(ctx context.Context, typ string, parentID int64, slug
 	cand := slug
 	for i := 2; ; i++ {
 		var taken bool
+		args := []any{typ, parentID, cand, excludeID}
+		scope := slugScope(ctx, "post", excludeID, &args)
 		err := s.Pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM posts WHERE type=$1 AND coalesce(parent_id,0)=$2
-			AND slug=$3 AND id<>$4 AND status NOT IN ('auto-draft','trash'))`, typ, parentID, cand, excludeID).Scan(&taken)
+			AND slug=$3 AND id<>$4 AND status NOT IN ('auto-draft','trash')`+scope+`)`, args...).Scan(&taken)
 		if err != nil {
 			return "", err
 		}

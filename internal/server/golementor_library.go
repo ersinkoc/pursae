@@ -408,8 +408,13 @@ func gweLibCheckTree(fsys fs.FS, raw json.RawMessage, where string, colors, font
 				bad("top-level elements must be containers (found widget %q)", el.WidgetType)
 			}
 			if g, ok := el.Settings["__globals__"].(map[string]any); ok {
-				for k, v := range g {
-					ref, _ := v.(string)
+				keys := make([]string, 0, len(g))
+				for k := range g {
+					keys = append(keys, k)
+				}
+				sort.Strings(keys) // errors in a stable order
+				for _, k := range keys {
+					ref, _ := g[k].(string)
 					if ref == "" {
 						continue
 					}

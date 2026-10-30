@@ -341,3 +341,101 @@ func TestGooGolylangStoreThemeDemo(t *testing.T) {
 		t.Errorf("German product: %d", code)
 	}
 }
+
+// Translate slugs covers the store bases, Share slugs lets a translation keep the product's slug, and
+// variations added or deleted in one language follow in the others.
+func TestGooGolylangSlugsAndVariations(t *testing.T) {
+	base, c, srv, f := gooPllSite(t)
+	ctx := context.Background()
+	_, set, _ := get(t, c, base+"/wp-admin/admin?page=mlang_settings")
+	if !strings.Contains(set, "module=share-slugs") || strings.Contains(set, "slugs are unique per post type and parent in the database") {
+		t.Error("Share slugs cannot be switched on in Languages › Settings")
+	}
+	o := srv.pllOpts()
+	o.TranslateSlugs, o.ShareSlugs = true, true
+	if err := srv.pllSaveOpts(ctx, o); err != nil {
+		t.Fatal(err)
+	}
+	for orig, tr := range map[string]string{"product": "produkt", "product-category": "produkt-kategorie"} {
+		if err := srv.pllSetString(ctx, "de", orig, tr); err != nil {
+			t.Fatal(err)
+		}
+	}
+	srv.pllFlushStrings()
+	found := false
+	for _, r := range srv.pllStrings(ctx) {
+		if r.Group == "URL slugs" && r.String == "product" {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("the product base is not among the URL slugs")
+	}
+
+	// The German hoodie keeps the slug "hoodie" (a request context of the admin carries Golylang).
+	pulli := gooPllTranslate(t, c, base, srv, f.hoodie, "de", "Kapuzenpulli")
+	adminCtx := context.WithValue(ctx, pllCtxKey{}, &pllReq{srv: srv})
+	pulli.Slug = "hoodie"
+	if err := srv.gooSaveProduct(adminCtx, pulli, 1); err != nil {
+		t.Fatal(err)
+	}
+	if pulli.Slug != "hoodie" {
+		t.Fatalf("German slug %q, want hoodie (shared)", pulli.Slug)
+	}
+	// Within one language a slug stays unique.
+	dup := gooNewProduct(gooTypeSimple)
+	dup.Name, dup.Slug = "Another Hoodie", "hoodie"
+	if err := srv.gooSaveProduct(adminCtx, dup, 1); err != nil || dup.Slug == "hoodie" {
+		t.Errorf("a second English product took the slug: %q %v", dup.Slug, err)
+	}
+	if link := srv.gooPermalink(ctx, pulli); !strings.Contains(link, "/de/produkt/hoodie/") {
+		t.Errorf("German product URL %s", link)
+	}
+	if p, err := srv.store.PostBySlug(context.WithValue(ctx, pllCtxKey{}, &pllReq{srv: srv, Lang: srv.pllLang(ctx, "de"), Front: true}), "product", "hoodie"); err != nil || p.ID != pulli.ID {
+		t.Errorf("PostBySlug in German: %v %v", p, err)
+	}
+	v := gooFrontClient()
+	if code, body, _ := get(t, v, base+"/de/produkt/hoodie/"); code != http.StatusOK || !strings.Contains(body, "Kapuzenpulli") {
+		t.Errorf("German product by the shared slug: %d", code)
+	}
+	if code, body, _ := get(t, v, base+"/product/hoodie/"); code != http.StatusOK || !strings.Contains(body, ">Hoodie<") || strings.Contains(body, "Kapuzenpulli") {
+		t.Errorf("English product by the shared slug: %d", code)
+	}
+	kleidung := &store.Term{Taxonomy: "product_cat", Name: "Kleidung", Slug: "kleidung", Meta: map[string]any{}}
+	_ = srv.store.InsertTerm(ctx, kleidung)
+	_ = srv.pllSetLang(ctx, pllTerm, kleidung.ID, "de")
+	if link := srv.gooTermLink(ctx, kleidung); !strings.Contains(link, "/de/produkt-kategorie/kleidung/") {
+		t.Errorf("German category URL %s", link)
+	}
+	if code, _, _ := get(t, v, base+"/de/produkt-kategorie/kleidung/"); code != http.StatusOK {
+		t.Errorf("German category by its translated base: %d", code)
+	}
+
+	// Variations: a deleted one leaves every language, a new one reaches them all.
+	deRed := srv.pllGet(ctx, pllPost, f.red.ID, "de")
+	if deRed == 0 {
+		t.Fatal("the red variation has no German counterpart")
+	}
+	srv.gooPllDeleteVariation(ctx, f.red.ID)
+	_ = srv.store.DeletePost(ctx, f.red.ID)
+	if _, err := srv.gooGetProduct(ctx, deRed); err == nil {
+		t.Error("the German red variation survived the deletion")
+	}
+	green := gooNewProduct(gooTypeVariation)
+	green.ParentID, green.Name, green.RegularPrice = f.hoodie.ID, "Hoodie - green", gooFloatPtr(66)
+	green.VariationAttrs = map[string]string{"pa_color": "blue"}
+	if err := srv.gooSaveProduct(ctx, green, 1); err != nil {
+		t.Fatal(err)
+	}
+	deGreen := srv.pllGet(ctx, pllPost, green.ID, "de")
+	if deGreen == 0 {
+		t.Fatal("the new variation did not reach the German product")
+	}
+	if gv, err := srv.gooGetProduct(ctx, deGreen); err != nil || gv.ParentID != pulli.ID || gv.RegularPrice == nil || *gv.RegularPrice != 66 {
+		t.Errorf("German counterpart of the new variation: %+v %v", gv, err)
+	}
+	vars, _ := srv.gooVariations(ctx, pulli.ID, true)
+	if len(vars) != 2 {
+		t.Errorf("German product has %d variations, want 2 (blue and the new one)", len(vars))
+	}
+}

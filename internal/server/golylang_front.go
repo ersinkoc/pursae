@@ -516,12 +516,12 @@ func (s *Server) pllFlushStrings() {
 
 // pllSlugBases are the URL bases Translate slugs translates: name and base.
 func (s *Server) pllSlugBases() [][2]string {
-	return [][2]string{
+	return append([][2]string{
 		{"category", strings.Trim(defaultStr(s.settings.String("category_base"), "category"), "/")},
 		{"post_tag", strings.Trim(defaultStr(s.settings.String("tag_base"), "tag"), "/")},
 		{"author", "author"},
 		{"search", "search"},
-	}
+	}, s.gooPllSlugBases()...) // Goocommerce: product, product category and tag bases (goo_golylang.go)
 }
 
 // pllTranslateBase swaps the first path segment of rel between a base and its translation in lang.
