@@ -237,6 +237,7 @@ var gooAdminPages = map[string]struct{ Title, Cap string }{
 	"attributes": {"Attributes", "manage_product_terms"},
 	"reviews":    {"Reviews", "moderate_comments"},
 	"analytics":  {"Analytics", "view_woocommerce_reports"},
+	"themes":     {"Store Themes", "manage_woocommerce"}, // goo_admin_themes.go
 }
 
 // gooMenu adds WooCommerce's menus after Comments: Goocommerce, Products, Analytics, Marketing.
@@ -272,6 +273,7 @@ func (s *Server) gooMenu(menu []*menuTop, u *store.User, screen string) []*menuT
 		sub(top, "goocommerce?page=settings", "Settings", "manage_woocommerce")
 		sub(top, "goocommerce?page=status", "Status", "manage_woocommerce")
 		sub(top, "goocommerce?page=extensions", "Extensions", "manage_woocommerce")
+		sub(top, "goocommerce?page=themes", "Store Themes", "manage_woocommerce")
 		for _, m := range gooExtMenuItems {
 			if s.gooExtOn(m.Module) {
 				sub(top, "goocommerce?page="+m.Page, m.Title, "manage_woocommerce")
@@ -399,6 +401,8 @@ func (s *Server) gooAdmin(c *gin.Context) {
 		s.gooAdminReviews(c)
 	case "analytics":
 		s.gooAdminAnalytics(c)
+	case "themes":
+		s.gooAdminThemes(c)
 	}
 }
 
