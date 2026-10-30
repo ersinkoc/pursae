@@ -60,7 +60,9 @@ func (s *Store) GetTerm(ctx context.Context, id int64) (*Term, error) {
 }
 
 func (s *Store) TermBySlug(ctx context.Context, taxonomy, slug string) (*Term, error) {
-	return scanTerm(s.Pool.QueryRow(ctx, `SELECT `+termCols+` FROM terms WHERE taxonomy = $1 AND slug = $2`, taxonomy, slug))
+	args := []any{taxonomy, slug}
+	prefer := slugPrefer(ctx, "term", &args)
+	return scanTerm(s.Pool.QueryRow(ctx, `SELECT `+termCols+` FROM terms WHERE taxonomy = $1 AND slug = $2 ORDER BY `+prefer+`id LIMIT 1`, args...))
 }
 
 func (s *Store) TermByName(ctx context.Context, taxonomy, name string) (*Term, error) {
@@ -251,8 +253,10 @@ func (s *Store) uniqueTermSlug(ctx context.Context, taxonomy, slug, name string,
 	cand := slug
 	for i := 2; ; i++ {
 		var taken bool
-		if err := s.Pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM terms WHERE taxonomy=$1 AND slug=$2 AND id<>$3)`,
-			taxonomy, cand, excludeID).Scan(&taken); err != nil {
+		args := []any{taxonomy, cand, excludeID}
+		scope := slugScope(ctx, "term", excludeID, &args)
+		if err := s.Pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM terms WHERE taxonomy=$1 AND slug=$2 AND id<>$3`+scope+`)`,
+			args...).Scan(&taken); err != nil {
 			return "", err
 		}
 		if !taken {
