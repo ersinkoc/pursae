@@ -944,7 +944,9 @@ func TestHeadlessGoFieldTypeChanges(t *testing.T) {
 	set("count", func(f *hgField) { f.Type, f.Format = "number", "integer" })
 	set("flag", func(f *hgField) { f.Type = "boolean" })
 	set("price", func(f *hgField) { f.Format = "integer" })
-	set("size", func(f *hgField) { f.Enum, f.EnumRenames = []string{"small", "medium", "large"}, map[string]string{"m": "medium", "l": "large"} })
+	set("size", func(f *hgField) {
+		f.Enum, f.EnumRenames = []string{"small", "medium", "large"}, map[string]string{"m": "medium", "l": "large"}
+	})
 	set("when", func(f *hgField) { f.Type = "datetime" })
 	set("pics", func(f *hgField) { f.Multiple = false })
 	set("body", func(f *hgField) { f.Format = "markdown" })
