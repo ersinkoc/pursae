@@ -144,7 +144,8 @@ func (s *Server) gweFrontAdminBar(q *siteQuery, u *store.User) string {
 	if !canPost && !canTheme {
 		return ""
 	}
-	icon := `<span class="ab-icon" aria-hidden="true" style="background:url(` + gweAssetsPath + `images/gowebeditor-icon.svg) center/18px no-repeat;width:20px;height:20px;margin-top:6px"></span>`
+	// The same Dashicon as the Golementor admin menu entry (dashicons-layout).
+	icon := `<span class="ab-icon dashicons-layout" aria-hidden="true"></span>`
 	label, href := "Golementor", "/wp-admin/gowebeditor-theme-builder"
 	if canPost {
 		label, href = "Edit with Golementor", gweEditURL(q.Post.ID)

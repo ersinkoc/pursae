@@ -28,7 +28,7 @@ func TestFrontToolbarGolementor(t *testing.T) {
 		t.Error("a page's toolbar lacks Edit with Golementor")
 	}
 	_, body, _ = get(t, c, ts.URL+"/?s=hello")
-	if strings.Contains(body, "Edit with Golementor") || !strings.Contains(body, "wp-admin-bar-golementor_edit_page") {
+	if strings.Contains(body, "Edit with Golementor") || !strings.Contains(body, "wp-admin-bar-golementor_edit_page") || !strings.Contains(body, "ab-icon dashicons-layout") {
 		t.Error("a search page should offer only the Theme Builder")
 	}
 	off, c2, _ := testServerBuilderOff(t)
