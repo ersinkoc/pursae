@@ -109,6 +109,11 @@ func (s *Server) configureCache() {
 	if s.sandbox != nil { // a theme-preview sandbox is served without the page cache
 		return
 	}
+	// A rebuild at run time drops every page, also the copies on disk: the new cache would
+	// otherwise load them back (only the start-up keeps the persisted pages).
+	if old := s.currentCache(); old != nil {
+		old.PurgeAll()
+	}
 	c := cache.New(s.cacheConfig(), cache.Options{LoginCookie: auth.CookieName, Logger: slog.Default()})
 	s.cache.Store(&pageCache{c: c, h: c.Middleware(s.appHandler())})
 }
