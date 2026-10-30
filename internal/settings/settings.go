@@ -54,12 +54,12 @@ var Defaults = map[string]any{
 	"wpgo_cache_exclude_uri":        "",
 	"wpgo_cache_drop_qs":            "",
 	"wpgo_cache_server":             "auto",
-	"wpgo_cache_disk":               false,
+	"wpgo_cache_disk":               true, // warm pages survive restarts and updates
 	"wpgo_opt_lazy":                 true,
 	"wpgo_opt_lazy_skip":            1,
-	"wpgo_opt_defer":                false,
+	"wpgo_opt_defer":                true, // an empty list defers only scripts nothing depends on
 	"wpgo_opt_defer_list":           "",
-	"wpgo_opt_minify_html":          false,
+	"wpgo_opt_minify_html":          true,
 	"wpgo_opt_preload_fonts":        true,
 	"posts_per_page":                10,
 	"posts_per_rss":                 10,

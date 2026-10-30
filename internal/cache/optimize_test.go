@@ -12,7 +12,7 @@ func TestLazyImages(t *testing.T) {
 		`<img src="d.jpg" decoding="sync" /><pre><img src="pre.jpg"></pre><!-- <img src="comment.jpg"> -->` +
 		`<script>var s = '<img src="js.jpg">';</script></body>`
 	got := opt(doc, OptimizeConfig{LazyImages: true, LazySkipFirst: 1})
-	want := `<body><IMG src="hero.jpg" alt="a > b"><img src="b.jpg" loading="eager"><img src='c.jpg' alt=x/ loading="lazy" decoding="async">` +
+	want := `<body><IMG src="hero.jpg" alt="a > b" fetchpriority="high"><img src="b.jpg" loading="eager"><img src='c.jpg' alt=x/ loading="lazy" decoding="async">` +
 		`<img src="d.jpg" decoding="sync" loading="lazy" /><pre><img src="pre.jpg"></pre><!-- <img src="comment.jpg"> -->` +
 		`<script>var s = '<img src="js.jpg">';</script></body>`
 	if got != want {
@@ -21,6 +21,14 @@ func TestLazyImages(t *testing.T) {
 	// LazySkipFirst 0 makes every image lazy.
 	if got := opt(`<img src="a">`, OptimizeConfig{LazyImages: true}); got != `<img src="a" loading="lazy" decoding="async">` {
 		t.Fatalf("skip 0: %s", got)
+	}
+}
+
+func TestLazyIframesAndFetchPriority(t *testing.T) {
+	got := opt(`<iframe src="v"></iframe><img src="a" loading="lazy"><iframe src="w" loading="eager"></iframe>`, OptimizeConfig{LazyImages: true, LazySkipFirst: 1})
+	want := `<iframe src="v" loading="lazy"></iframe><img src="a" loading="lazy"><iframe src="w" loading="eager"></iframe>`
+	if got != want { // a first image already marked lazy gets no fetchpriority
+		t.Fatalf("got %s", got)
 	}
 }
 
@@ -59,6 +67,22 @@ func TestCollapseWhitespace(t *testing.T) {
 		"<pre>\n  keep   this\n</pre> <textarea>  a\n\n b </textarea> <script>\n  if (a  <  b) {}\n</script> </body> </html>"
 	if got != want {
 		t.Fatalf("got\n%q\nwant\n%q", got, want)
+	}
+}
+
+func TestMinifyRemovesComments(t *testing.T) {
+	doc := "<body>\n<!-- note -->\n<p>a</p><!--[if lt IE 9]><script src=\"h.js\"></script><![endif]--><!--noptimize-->x<!--/noptimize--></body>"
+	got := opt(doc, OptimizeConfig{CollapseWhitespace: true})
+	if strings.Contains(got, "note") || !strings.Contains(got, "<!--[if lt IE 9]>") || !strings.Contains(got, "<!--noptimize-->") {
+		t.Fatalf("got %q", got)
+	}
+}
+
+func TestDeferURLFragment(t *testing.T) {
+	got := opt(`<body><script src="/wp-content/plugins/x/slider.bundle.js?v=2" id="x-js"></script></body>`,
+		OptimizeConfig{DeferScripts: true, DeferAllowlist: []string{"plugins/x/"}})
+	if !strings.Contains(got, `id="x-js" defer>`) {
+		t.Fatalf("got %s", got)
 	}
 }
 

@@ -70,7 +70,8 @@ func TestGontactCaptcha(t *testing.T) {
 	_, page, _ := get(t, anon, link)
 	prefix := challengeOf(t, page)
 	for _, want := range []string{
-		`<input type="hidden" name="_wpcf7_captcha_challenge_your-captcha" value="` + prefix + `" /><img decoding="async" class="wpcf7-form-control wpcf7-captchac wpcf7-captcha-your-captcha" width="84" height="28" alt="CAPTCHA: type the characters shown in this image" src="` + base + gfCaptchaPath + `/` + prefix + `.png" />`,
+		// The page optimizer may add fetchpriority to the first image, so the tag is matched in two parts.
+		`<input type="hidden" name="_wpcf7_captcha_challenge_your-captcha" value="` + prefix + `" /><img decoding="async" class="wpcf7-form-control wpcf7-captchac wpcf7-captcha-your-captcha" width="84" height="28" alt="CAPTCHA: type the characters shown in this image" src="` + base + gfCaptchaPath + `/` + prefix + `.png"`,
 		`<span role="button" tabindex="0" class="wpcf7-captcha-refresh" data-captcha="your-captcha" title="Show a new image" hidden>`,
 		`<span class="wpcf7-form-control-wrap" data-name="your-captcha"><input size="8" maxlength="6" class="wpcf7-form-control wpcf7-captchar wpcf7-text" autocomplete="off" aria-invalid="false" placeholder="Code" value="" type="text" name="your-captcha" /></span>`,
 	} {

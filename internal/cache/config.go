@@ -157,8 +157,9 @@ type Config struct {
 // OptimizeConfig toggles the conservative HTML optimizations of [Optimize]. Every
 // optimization is off unless its flag is set.
 type OptimizeConfig struct {
-	// LazyImages adds loading="lazy" and decoding="async" to <img> tags that have no
-	// loading attribute, except the first LazySkipFirst images.
+	// LazyImages adds loading="lazy" and decoding="async" to <img> tags (loading="lazy"
+	// to <iframe> tags) that have no loading attribute, except the first LazySkipFirst
+	// images; the first image gets fetchpriority="high".
 	LazyImages bool
 	// LazySkipFirst is the number of leading images left eager (the likely LCP
 	// image). DefaultConfig sets 1.
@@ -168,10 +169,11 @@ type OptimizeConfig struct {
 	DeferScripts bool
 	// DeferAllowlist holds script handles. A script matches when its id is the handle
 	// or "<handle>-js" (WordPress's convention), or its file name without ".min.js" /
-	// ".js" equals the handle.
+	// ".js" equals the handle; an entry with "/" or "." also matches as a URL fragment.
 	DeferAllowlist []string
 	// CollapseWhitespace collapses runs of whitespace between tags into one space,
-	// outside <pre>, <textarea>, <script>, <style> and comments.
+	// outside <pre>, <textarea>, <script>, <style> and comments, and drops HTML
+	// comments except conditional and <!--noptimize--> ones.
 	CollapseWhitespace bool
 	// Preload lists critical assets injected as <link rel="preload"> right after <head>.
 	Preload []PreloadAsset

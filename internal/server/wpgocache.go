@@ -65,7 +65,7 @@ func (s *Server) cacheConfig() cache.Config {
 		LazyImages:         st.Bool("wpgo_opt_lazy"),
 		LazySkipFirst:      st.Int("wpgo_opt_lazy_skip"),
 		DeferScripts:       st.Bool("wpgo_opt_defer"),
-		DeferAllowlist:     lines(st.String("wpgo_opt_defer_list")),
+		DeferAllowlist:     deferList(lines(st.String("wpgo_opt_defer_list"))),
 		CollapseWhitespace: st.Bool("wpgo_opt_minify_html"),
 	}
 	if st.Bool("wpgo_opt_preload_fonts") {
@@ -78,6 +78,18 @@ func (s *Server) cacheConfig() cache.Config {
 		}
 	}
 	return cfg
+}
+
+// cacheSafeDefer are the core and default-theme scripts nothing inline depends on, deferred when
+// "Defer JavaScript" is on and the list is left empty.
+var cacheSafeDefer = []string{"comment-reply", "wp-embed", "twentysixteen-script", "twentysixteen-skip-link-focus-fix",
+	"twentysixteen-keyboard-image-navigation", "skip-link-focus-fix", "keyboard-image-navigation"}
+
+func deferList(v []string) []string {
+	if len(v) == 0 {
+		return cacheSafeDefer
+	}
+	return v
 }
 
 func lines(v string) []string {
