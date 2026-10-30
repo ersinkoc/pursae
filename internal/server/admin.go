@@ -368,6 +368,7 @@ func (s *Server) adminPage(c *gin.Context, screen, title, bodyClass, tmpl string
 	v.Menu = s.gooikeMenu(v.Menu, u, screen) // Gooike (gooike.go)
 	v.Menu = s.gooMenu(v.Menu, u, screen)    // Goocommerce: its menus after Comments (goocommerce.go)
 	v.Menu = s.gocdnMenu(v.Menu, u, screen)  // GoCDN: its menu and Media › Remote Storage (gocdn.go)
+	v.Menu = s.hgMenu(v.Menu, u, screen)     // HeadlessGo (headlessgo.go)
 	// AdminSecGo: its menu, Users › Security, the file editors and its notices (adminsec.go)
 	v.Menu = s.adminsecMenu(c, v.Menu, screen)
 	v.Notices = append(v.Notices, s.adminsecNotices(c)...)

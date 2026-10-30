@@ -1,0 +1,307 @@
+{{define "admin/headlessgo"}}{{template "admin-header" .}}{{with .Data}}
+<div class="wrap hg-wrap">
+<h1 class="wp-heading-inline"><span class="dashicons dashicons-rest-api hg-h1-icon" aria-hidden="true"></span>HeadlessGo &rsaquo; {{if .Type}}<span translate="no">{{.Type.DisplayName}}</span>{{else}}{{.Title}}{{end}}</h1>
+{{if and (eq .Page "entries") .Type}}<a href="/wp-admin/headlessgo?page=entry&amp;type={{.Type.UID}}{{if .Locale}}&amp;locale={{.Locale}}{{end}}" class="page-title-action">Create new entry</a>{{end}}
+{{if eq .Page "tokens"}}<a href="/wp-admin/headlessgo?page=tokens&amp;new=1" class="page-title-action">Create new API token</a>{{end}}
+{{if eq .Page "webhooks"}}<a href="/wp-admin/headlessgo?page=webhooks&amp;new=1" class="page-title-action">Create new webhook</a>{{end}}
+<hr class="wp-header-end">
+{{template "notices" $}}
+
+{{/* ============================== Content Manager ============================== */}}
+{{if or (eq .Page "") (eq .Page "entries") (eq .Page "entry")}}
+<div class="hg-cm">
+<nav class="hg-side" aria-label="Content types">
+	<h2>Collection types</h2>
+	<ul>{{range .Types}}{{if .IsCollection}}<li><a href="/wp-admin/headlessgo?page=entries&amp;type={{.UID}}"{{if and $.Data.Type (eq $.Data.Type.UID .UID)}} class="current" aria-current="page"{{end}} translate="no">{{.DisplayName}}</a></li>{{end}}{{end}}</ul>
+	<h2>Single types</h2>
+	<ul>{{range .Types}}{{if .IsSingle}}<li><a href="/wp-admin/headlessgo?page=entry&amp;type={{.UID}}"{{if and $.Data.Type (eq $.Data.Type.UID .UID)}} class="current" aria-current="page"{{end}} translate="no">{{.DisplayName}}</a></li>{{end}}{{end}}</ul>
+	{{if .CanAdmin}}<p><a href="/wp-admin/headlessgo?page=builder" class="button button-small">Content-Type Builder</a></p>{{end}}
+</nav>
+<div class="hg-main">
+
+{{if eq .Page ""}}
+{{if not .Types}}
+<div class="hg-empty">
+	<span class="dashicons dashicons-database-add" aria-hidden="true"></span>
+	<h2>No content types yet</h2>
+	<p>Create your first collection type (articles, products…) or single type (homepage, global settings) in the Content-Type Builder. Their entries are served by the REST API at <code>{{.APIBase}}</code>.</p>
+	{{if .CanAdmin}}<p><a class="button button-primary" href="/wp-admin/headlessgo?page=builder&amp;new=collectionType">Create a collection type</a> <a class="button" href="/wp-admin/headlessgo?page=builder&amp;new=singleType">Create a single type</a></p>{{end}}
+</div>
+{{else}}
+<div class="hg-cards">
+{{range .Types}}<a class="hg-card" href="/wp-admin/headlessgo?page={{if .IsSingle}}entry{{else}}entries{{end}}&amp;type={{.UID}}">
+	<span class="hg-kind">{{if .IsSingle}}Single type{{else}}Collection type{{end}}{{if .Localized}} &middot; i18n{{end}}</span>
+	<strong translate="no">{{.DisplayName}}</strong>
+	<span class="hg-count">{{index $.Data.Counts .UID}} {{if .IsSingle}}entry{{else}}entries{{end}}</span>
+	<code translate="no">{{$.Data.Route .}}</code>
+</a>{{end}}
+</div>
+{{end}}
+{{end}}
+
+{{if eq .Page "entries"}}
+<form method="get" action="/wp-admin/headlessgo" class="hg-filters">
+	<input type="hidden" name="page" value="entries"><input type="hidden" name="type" value="{{.Type.UID}}">
+	<ul class="subsubsub">
+		<li><a href="/wp-admin/headlessgo?page=entries&amp;type={{.Type.UID}}{{if .Locale}}&amp;locale={{.Locale}}{{end}}"{{if eq .Status ""}} class="current"{{end}}>All</a>{{if .Type.DraftAndPublish}} |{{end}}</li>
+		{{if .Type.DraftAndPublish}}
+		<li><a href="/wp-admin/headlessgo?page=entries&amp;type={{.Type.UID}}&amp;status=draft{{if .Locale}}&amp;locale={{.Locale}}{{end}}"{{if eq .Status "draft"}} class="current"{{end}}>Draft</a> |</li>
+		<li><a href="/wp-admin/headlessgo?page=entries&amp;type={{.Type.UID}}&amp;status=published{{if .Locale}}&amp;locale={{.Locale}}{{end}}"{{if eq .Status "published"}} class="current"{{end}}>Published</a> |</li>
+		<li><a href="/wp-admin/headlessgo?page=entries&amp;type={{.Type.UID}}&amp;status=modified{{if .Locale}}&amp;locale={{.Locale}}{{end}}"{{if eq .Status "modified"}} class="current"{{end}}>Modified</a></li>
+		{{end}}
+	</ul>
+	<p class="search-box">
+		{{if .Type.Localized}}<label class="screen-reader-text" for="hg-locale">Locale</label><select id="hg-locale" name="locale" onchange="this.form.submit()">{{range .Locales}}<option value="{{.Code}}"{{if eq .Code $.Data.Locale}} selected{{end}}>{{.Name}} ({{.Code}})</option>{{end}}</select>{{end}}
+		{{if .Status}}<input type="hidden" name="status" value="{{.Status}}">{{end}}
+		<label class="screen-reader-text" for="hg-search">Search entries</label>
+		<input type="search" id="hg-search" name="s" value="{{.Search}}">
+		<input type="submit" class="button" value="Search entries">
+	</p>
+</form>
+<table class="wp-list-table widefat fixed striped table-view-list hg-table">
+<thead><tr>
+	<th scope="col" class="manage-column column-primary sortable"><a href="{{.SortLink .Type.TitleField}}">{{if .Type.TitleField}}<span translate="no">{{.Type.TitleField}}</span>{{else}}Entry{{end}}</a></th>
+	{{range .Columns}}<th scope="col" class="manage-column"><a href="{{$.Data.SortLink .Name}}" translate="no">{{.Name}}</a></th>{{end}}
+	{{if .Type.DraftAndPublish}}<th scope="col" class="manage-column hg-col-status">Status</th>{{end}}
+	<th scope="col" class="manage-column hg-col-date"><a href="{{.SortLink "updatedAt"}}">Updated</a></th>
+</tr></thead>
+<tbody>
+{{range .Rows}}<tr>
+	<td class="column-primary has-row-actions"><strong><a class="row-title" href="{{.Edit}}" translate="no">{{.Title}}</a></strong>
+		<div class="row-actions"><span class="edit"><a href="{{.Edit}}">Edit</a></span> | <span class="hg-docid">ID <code translate="no">{{.E.DocumentID}}</code></span></div></td>
+	{{range .Cells}}<td translate="no">{{.}}</td>{{end}}
+	{{if $.Data.Type.DraftAndPublish}}<td><span class="hg-status hg-status-{{.Status}}">{{if eq .Status "draft"}}Draft{{else if eq .Status "modified"}}Modified{{else}}Published{{end}}</span></td>{{end}}
+	<td>{{.E.UpdatedAt.Format "2006-01-02 15:04"}}</td>
+</tr>{{else}}<tr class="no-items"><td colspan="6">No entries found.</td></tr>{{end}}
+</tbody>
+</table>
+<div class="tablenav bottom"><div class="tablenav-pages"><span class="displaying-num">{{.Total}} items</span>
+{{if gt .NumPages 1}}<span class="pagination-links">
+	{{if gt .PageNum 1}}<a class="prev-page button" href="{{.PageLink (sub .PageNum 1)}}">&lsaquo;</a>{{end}}
+	<span class="paging-input">{{.PageNum}} of {{.NumPages}}</span>
+	{{if lt .PageNum .NumPages}}<a class="next-page button" href="{{.PageLink (add .PageNum 1)}}">&rsaquo;</a>{{end}}
+</span>{{end}}
+</div></div>
+{{end}}
+
+{{if eq .Page "entry"}}
+{{if .Type.IsCollection}}<p><a href="/wp-admin/headlessgo?page=entries&amp;type={{.Type.UID}}{{if .Locale}}&amp;locale={{.Locale}}{{end}}">&larr; Back to <span translate="no">{{.Type.DisplayName}}</span></a></p>{{end}}
+{{if .Errors}}<div class="notice notice-error"><p><strong>The entry was not saved:</strong></p><ul class="hg-errlist">{{range .Errors}}<li><code translate="no">{{range $i, $p := .Path}}{{if $i}}.{{end}}{{$p}}{{end}}</code> {{.Message}}</li>{{end}}</ul></div>{{end}}
+<form method="post" action="/wp-admin/headlessgo" id="hg-entry-form" class="hg-entry">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="entry"><input type="hidden" name="do" value="save_entry">
+<input type="hidden" name="type" value="{{.Type.UID}}"><input type="hidden" name="doc" value="{{.Doc}}"><input type="hidden" name="locale" value="{{.Locale}}">
+<input type="hidden" name="payload" id="hg-payload" value=""><input type="hidden" name="publish" id="hg-publish" value="">
+<div class="hg-entry-grid">
+	<div class="hg-fields" id="hg-editor"><p class="description">Loading the form…</p><noscript><p>The entry form needs JavaScript.</p></noscript></div>
+	<aside class="hg-entry-side">
+		<div class="postbox"><h2 class="hndle">Entry</h2><div class="inside">
+			{{if .Type.DraftAndPublish}}<p>Status: {{if .Entry}}<span class="hg-status hg-status-{{.EntryStatus}}">{{if eq .EntryStatus "draft"}}Draft{{else if eq .EntryStatus "modified"}}Modified{{else}}Published{{end}}</span>{{else}}<span class="hg-status hg-status-draft">New</span>{{end}}</p>{{end}}
+			<p class="hg-actions">
+				{{if .Type.DraftAndPublish}}<button type="submit" class="button" data-hg-publish="0">Save draft</button>
+				<button type="submit" class="button button-primary" data-hg-publish="1">Publish</button>
+				{{else}}<button type="submit" class="button button-primary" data-hg-publish="1">Save</button>{{end}}
+			</p>
+			{{if .PreviewURL}}<p><a class="button" href="{{.PreviewURL}}" target="_blank" rel="noopener" id="hg-preview">Open preview</a></p>{{end}}
+			{{if .Entry}}
+			<p class="hg-meta">Document ID <code translate="no">{{.Entry.DocumentID}}</code><br>Created {{.Entry.CreatedAt.Format "2006-01-02 15:04"}}<br>Updated {{.Entry.UpdatedAt.Format "2006-01-02 15:04"}}{{if .Entry.PublishedAt}}<br>Published {{.Entry.PublishedAt.Format "2006-01-02 15:04"}}{{end}}</p>
+			{{end}}
+		</div></div>
+		{{if .Type.Localized}}<div class="postbox"><h2 class="hndle">Locales</h2><div class="inside"><ul class="hg-locales">
+			{{range .Locales}}<li>{{if eq .Code $.Data.Locale}}<strong>{{.Name}} ({{.Code}})</strong> &middot; editing{{else if index $.Data.Versions .Code}}<a href="/wp-admin/headlessgo?page=entry&amp;type={{$.Data.Type.UID}}&amp;doc={{$.Data.Doc}}&amp;locale={{.Code}}">{{.Name}} ({{.Code}})</a>{{else if $.Data.Doc}}{{.Name}} ({{.Code}}) &middot; <a href="/wp-admin/headlessgo?page=entry&amp;type={{$.Data.Type.UID}}&amp;doc={{$.Data.Doc}}&amp;locale={{.Code}}&amp;copy={{$.Data.Locale}}">create from {{$.Data.Locale}}</a> &middot; <a href="/wp-admin/headlessgo?page=entry&amp;type={{$.Data.Type.UID}}&amp;doc={{$.Data.Doc}}&amp;locale={{.Code}}">empty</a>{{else}}{{.Name}} ({{.Code}}){{end}}</li>{{end}}
+		</ul>{{if not .GolylangOn}}<p class="description">Activate Golylang to translate entries into more languages.</p>{{end}}</div></div>{{end}}
+	</aside>
+</div>
+</form>
+{{if .Entry}}<div class="hg-entry-more">
+	{{if and .Type.DraftAndPublish (ne .EntryStatus "draft")}}<form method="post" action="/wp-admin/headlessgo" class="hg-inline"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="entry"><input type="hidden" name="type" value="{{.Type.UID}}"><input type="hidden" name="doc" value="{{.Doc}}"><input type="hidden" name="locale" value="{{.Locale}}"><input type="hidden" name="do" value="unpublish_entry"><button class="button">Unpublish</button></form>{{end}}
+	{{if eq .EntryStatus "modified"}}<form method="post" action="/wp-admin/headlessgo" class="hg-inline" onsubmit="return confirm('Discard the changes made since the last publication?')"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="entry"><input type="hidden" name="type" value="{{.Type.UID}}"><input type="hidden" name="doc" value="{{.Doc}}"><input type="hidden" name="locale" value="{{.Locale}}"><input type="hidden" name="do" value="discard_entry"><button class="button">Discard changes</button></form>{{end}}
+	<form method="post" action="/wp-admin/headlessgo" class="hg-inline" onsubmit="return confirm('Delete this entry? This cannot be undone.')"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="entry"><input type="hidden" name="type" value="{{.Type.UID}}"><input type="hidden" name="doc" value="{{.Doc}}"><input type="hidden" name="locale" value="{{.Locale}}"><input type="hidden" name="do" value="delete_entry">{{if .Type.Localized}}<label><input type="checkbox" name="all_locales" value="1"> all locales</label> {{end}}<button class="button button-link-delete">Delete</button></form>
+</div>{{end}}
+<script type="application/json" id="hg-editor-model">{{.EditorJSON}}</script>
+{{end}}
+
+</div>
+</div>
+{{end}}
+
+{{/* ============================== Builder ============================== */}}
+{{if eq .Page "builder"}}
+<div class="hg-cm">
+<nav class="hg-side" aria-label="Schemas">
+	<h2>Collection types</h2>
+	<ul>{{range .Types}}{{if .IsCollection}}<li><a href="/wp-admin/headlessgo?page=builder&amp;type={{.UID}}"{{if and $.Data.Type (eq $.Data.Type.UID .UID)}} class="current"{{end}} translate="no">{{.DisplayName}}</a></li>{{end}}{{end}}</ul>
+	<p><a href="/wp-admin/headlessgo?page=builder&amp;new=collectionType" class="button button-small">+ Create new collection type</a></p>
+	<h2>Single types</h2>
+	<ul>{{range .Types}}{{if .IsSingle}}<li><a href="/wp-admin/headlessgo?page=builder&amp;type={{.UID}}"{{if and $.Data.Type (eq $.Data.Type.UID .UID)}} class="current"{{end}} translate="no">{{.DisplayName}}</a></li>{{end}}{{end}}</ul>
+	<p><a href="/wp-admin/headlessgo?page=builder&amp;new=singleType" class="button button-small">+ Create new single type</a></p>
+	<h2>Components</h2>
+	<ul>{{range .Components}}<li><a href="/wp-admin/headlessgo?page=builder&amp;type={{.UID}}"{{if and $.Data.Type (eq $.Data.Type.UID .UID)}} class="current"{{end}}><span translate="no">{{.DisplayName}}</span> <code translate="no">{{.Category}}</code></a></li>{{end}}</ul>
+	<p><a href="/wp-admin/headlessgo?page=builder&amp;new=component" class="button button-small">+ Create new component</a></p>
+	<p class="hg-side-tools"><a href="/wp-admin/headlessgo?action=export&amp;_wpnonce={{.Nonce}}">Export schemas (JSON)</a> &middot; <a href="/wp-admin/headlessgo?page=settings#hg-import">Import</a></p>
+</nav>
+<div class="hg-main">
+{{if or .Type .NewKind}}
+<form method="post" action="/wp-admin/headlessgo" id="hg-builder-form">
+	<input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="builder"><input type="hidden" name="do" value="save_schema">
+	<input type="hidden" name="is_new" value="{{if .Type}}0{{else}}1{{end}}"><input type="hidden" name="schema" id="hg-schema" value="">
+	<div id="hg-builder"><p class="description">Loading the builder…</p><noscript><p>The Content-Type Builder needs JavaScript.</p></noscript></div>
+</form>
+{{if .Type}}<form method="post" action="/wp-admin/headlessgo" class="hg-danger" onsubmit="return confirm('Delete this {{if .Type.IsComponent}}component{{else}}content type and all its entries{{end}}? This cannot be undone.')">
+	<input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="builder"><input type="hidden" name="do" value="delete_schema"><input type="hidden" name="uid" value="{{.Type.UID}}">
+	<button type="submit" class="button button-link-delete">Delete this {{if .Type.IsComponent}}component{{else}}content type{{end}}</button>
+	{{if not .Type.IsComponent}}<span class="description">API: <code translate="no">{{.Route .Type}}</code></span>{{end}}
+</form>{{end}}
+<script type="application/json" id="hg-builder-model">{{.BuilderJSON}}</script>
+{{else}}
+<div class="hg-empty"><span class="dashicons dashicons-database-add" aria-hidden="true"></span><h2>Build your content model</h2>
+<p>Collection types hold many entries (articles, products), single types one (a homepage, global settings), and components are groups of fields reused in types and dynamic zones.</p>
+<p><a class="button button-primary" href="/wp-admin/headlessgo?page=builder&amp;new=collectionType">Create a collection type</a> <a class="button" href="/wp-admin/headlessgo?page=builder&amp;new=singleType">Create a single type</a> <a class="button" href="/wp-admin/headlessgo?page=builder&amp;new=component">Create a component</a></p></div>
+{{end}}
+</div>
+</div>
+{{end}}
+
+{{/* ============================== API tokens ============================== */}}
+{{if eq .Page "tokens"}}
+{{if .NewToken}}<div class="hg-newtoken"><label for="hg-token-value"><strong>Your new API token</strong></label>
+	<input type="text" readonly id="hg-token-value" class="large-text code" value="{{.NewToken}}" onclick="this.select()">
+	<p class="description">Send it as <code>Authorization: Bearer &lt;token&gt;</code>. Only a hash is stored: copy it now, it will not be shown again.</p></div>{{end}}
+{{if .Token}}
+<form method="post" action="/wp-admin/headlessgo" class="hg-panel">
+	<input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="tokens"><input type="hidden" name="do" value="save_token"><input type="hidden" name="id" value="{{.Token.ID}}">
+	<h2>{{if .Token.ID}}Edit token{{else}}Create a new API token{{end}}</h2>
+	<table class="form-table" role="presentation">
+	<tr><th scope="row"><label for="hg-t-name">Name</label></th><td><input type="text" id="hg-t-name" name="name" class="regular-text" required value="{{.Token.Name}}" translate="no"></td></tr>
+	<tr><th scope="row"><label for="hg-t-desc">Description</label></th><td><textarea id="hg-t-desc" name="description" class="large-text" rows="2" translate="no">{{.Token.Description}}</textarea></td></tr>
+	{{if not .Token.ID}}<tr><th scope="row"><label for="hg-t-dur">Token duration</label></th><td><select id="hg-t-dur" name="duration">{{range .Durations}}<option value="{{.Key}}"{{if eq .Key "30"}} selected{{end}}>{{.Label}}</option>{{end}}</select></td></tr>{{end}}
+	<tr><th scope="row"><label for="hg-t-kind">Token type</label></th><td><select id="hg-t-kind" name="kind" data-hg-toggle="hg-t-custom">
+		<option value="read-only"{{if eq .Token.Kind "read-only"}} selected{{end}}>Read-only</option>
+		<option value="full-access"{{if eq .Token.Kind "full-access"}} selected{{end}}>Full access</option>
+		<option value="custom"{{if eq .Token.Kind "custom"}} selected{{end}}>Custom</option></select>
+		<p class="description">Read-only: find and findOne on every type. Full access: every action, drafts included. Custom: choose below.</p></td></tr>
+	<tr><th scope="row">Drafts</th><td><label><input type="checkbox" name="drafts" value="1"{{if .Token.Drafts}} checked{{end}}> May read drafts (<code>status=draft</code>)</label></td></tr>
+	</table>
+	<div id="hg-t-custom" class="hg-matrix-wrap"{{if ne .Token.Kind "custom"}} hidden{{end}}>
+	<h3>Permissions</h3>
+	<table class="widefat striped hg-matrix"><thead><tr><th>Content type</th>{{range $.Data.Actions}}<th>{{.}}</th>{{end}}</tr></thead><tbody>
+	{{range .Types}}{{$t := .}}<tr><td translate="no">{{.DisplayName}}</td>{{range $.Data.Actions}}<td><input type="checkbox" aria-label="{{.}}" name="perm[{{$t.UID}}][{{.}}]" value="1"{{if $.Data.TokenCan $t.UID .}} checked{{end}}></td>{{end}}</tr>{{else}}<tr><td colspan="6">No content types yet.</td></tr>{{end}}
+	</tbody></table></div>
+	<p class="submit"><button type="submit" class="button button-primary">{{if .Token.ID}}Save{{else}}Create token{{end}}</button> <a class="button" href="/wp-admin/headlessgo?page=tokens">Cancel</a></p>
+</form>
+{{if .Token.ID}}<div class="hg-entry-more">
+	<form method="post" action="/wp-admin/headlessgo" class="hg-inline" onsubmit="return confirm('Regenerate the token? Clients using the current one will lose access.')"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="tokens"><input type="hidden" name="do" value="regenerate_token"><input type="hidden" name="id" value="{{.Token.ID}}"><button class="button">Regenerate</button></form>
+	<form method="post" action="/wp-admin/headlessgo" class="hg-inline" onsubmit="return confirm('Delete this token?')"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="tokens"><input type="hidden" name="do" value="delete_token"><input type="hidden" name="id" value="{{.Token.ID}}"><button class="button button-link-delete">Delete</button></form>
+</div>{{end}}
+{{end}}
+<table class="wp-list-table widefat fixed striped hg-table">
+<thead><tr><th class="column-primary">Name</th><th>Type</th><th>Token</th><th>Created</th><th>Last used</th><th>Expires</th></tr></thead>
+<tbody>{{range .Tokens}}<tr>
+	<td class="column-primary"><strong><a href="/wp-admin/headlessgo?page=tokens&amp;id={{.ID}}" translate="no">{{.Name}}</a></strong>{{if .Description}}<br><span class="description" translate="no">{{.Description}}</span>{{end}}</td>
+	<td>{{.KindLabel}}{{if and .Drafts (ne .Kind "full-access")}} + drafts{{end}}</td>
+	<td><code>hg_…{{.Hint}}</code></td>
+	<td>{{.CreatedAt.Format "2006-01-02"}}</td>
+	<td>{{if .LastUsedAt}}{{.LastUsedAt.Format "2006-01-02 15:04"}}{{else}}Never{{end}}</td>
+	<td>{{if .ExpiresAt}}{{if .Expired}}<span class="hg-status hg-status-draft">Expired</span>{{else}}{{.ExpiresAt.Format "2006-01-02"}}{{end}}{{else}}Unlimited{{end}}</td>
+</tr>{{else}}<tr class="no-items"><td colspan="6">No API tokens yet. Create one to give an app access to the API.</td></tr>{{end}}</tbody>
+</table>
+{{end}}
+
+{{/* ============================== Webhooks ============================== */}}
+{{if eq .Page "webhooks"}}
+{{if .Webhook}}
+<form method="post" action="/wp-admin/headlessgo" class="hg-panel">
+	<input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="webhooks"><input type="hidden" name="do" value="save_webhook"><input type="hidden" name="id" value="{{.Webhook.ID}}">
+	<h2>{{if .Webhook.ID}}Edit webhook{{else}}Create a webhook{{end}}</h2>
+	<table class="form-table" role="presentation">
+	<tr><th scope="row"><label for="hg-w-name">Name</label></th><td><input type="text" id="hg-w-name" name="name" class="regular-text" required value="{{.Webhook.Name}}" translate="no"></td></tr>
+	<tr><th scope="row"><label for="hg-w-url">URL</label></th><td><input type="url" id="hg-w-url" name="url" class="large-text code" required value="{{.Webhook.URL}}" placeholder="https://app.example.com/api/revalidate"></td></tr>
+	<tr><th scope="row">Events</th><td><fieldset>{{range .Events}}<label class="hg-check"><input type="checkbox" name="events[]" value="{{.Key}}"{{if $.Data.HasEvent .Key}} checked{{end}}> {{.Label}} <code>{{.Key}}</code></label>{{end}}</fieldset></td></tr>
+	<tr><th scope="row"><label for="hg-w-headers">Headers</label></th><td><textarea id="hg-w-headers" name="headers" class="large-text code" rows="3" placeholder="Authorization: Bearer …">{{.HeaderText}}</textarea><p class="description">One <code>Name: value</code> per line.</p></td></tr>
+	<tr><th scope="row"><label for="hg-w-secret">Signing secret</label></th><td><input type="text" id="hg-w-secret" name="secret" class="regular-text code" value="{{.Webhook.Secret}}" autocomplete="off"><p class="description">When set, every request carries <code>X-HeadlessGo-Signature: sha256=&lt;HMAC-SHA256 of the body&gt;</code>.</p></td></tr>
+	<tr><th scope="row">Status</th><td><label><input type="checkbox" name="enabled" value="1"{{if .Webhook.Enabled}} checked{{end}}> Enabled</label></td></tr>
+	</table>
+	<p class="submit"><button type="submit" class="button button-primary">Save</button> <a class="button" href="/wp-admin/headlessgo?page=webhooks">Cancel</a></p>
+</form>
+{{if .Webhook.ID}}<div class="hg-entry-more">
+	<form method="post" action="/wp-admin/headlessgo" class="hg-inline"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="webhooks"><input type="hidden" name="do" value="test_webhook"><input type="hidden" name="id" value="{{.Webhook.ID}}"><button class="button">Send test</button></form>
+	<form method="post" action="/wp-admin/headlessgo" class="hg-inline" onsubmit="return confirm('Delete this webhook?')"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="webhooks"><input type="hidden" name="do" value="delete_webhook"><input type="hidden" name="id" value="{{.Webhook.ID}}"><button class="button button-link-delete">Delete</button></form>
+</div>{{end}}
+{{else}}
+<table class="wp-list-table widefat fixed striped hg-table">
+<thead><tr><th class="column-primary">Name</th><th>URL</th><th>Events</th><th>Status</th></tr></thead>
+<tbody>{{range .Webhooks}}<tr>
+	<td class="column-primary"><strong><a href="/wp-admin/headlessgo?page=webhooks&amp;id={{.ID}}" translate="no">{{.Name}}</a></strong></td>
+	<td><code translate="no">{{.URL}}</code></td><td>{{range .Events}}<code>{{.}}</code> {{end}}</td>
+	<td>{{if .Enabled}}<span class="hg-status hg-status-published">Enabled</span>{{else}}<span class="hg-status hg-status-draft">Disabled</span>{{end}}</td>
+</tr>{{else}}<tr class="no-items"><td colspan="4">No webhooks yet. Webhooks tell other apps (a front-end rebuild, a search index…) when content changes.</td></tr>{{end}}</tbody>
+</table>
+{{end}}
+<h2>{{if .Webhook}}Deliveries{{else}}Recent deliveries{{end}}</h2>
+<table class="wp-list-table widefat fixed striped hg-table hg-deliveries">
+<thead><tr><th>Date</th><th>Event</th><th>Attempt</th><th>Status</th><th>Duration</th><th>Response</th></tr></thead>
+<tbody>{{range .Deliveries}}<tr>
+	<td>{{.CreatedAt.Format "2006-01-02 15:04:05"}}</td><td><code>{{.Event}}</code></td><td>{{.Attempt}}</td>
+	<td>{{if .Success}}<span class="hg-status hg-status-published">{{.StatusCode}}</span>{{else}}<span class="hg-status hg-status-draft">{{if .StatusCode}}{{.StatusCode}}{{else}}Failed{{end}}</span>{{end}}</td>
+	<td>{{.DurationMS}} ms</td><td><code class="hg-snippet" translate="no">{{if .Error}}{{.Error}}{{else}}{{.Response}}{{end}}</code></td>
+</tr>{{else}}<tr class="no-items"><td colspan="6">No deliveries yet.</td></tr>{{end}}</tbody>
+</table>
+{{end}}
+
+{{/* ============================== Settings ============================== */}}
+{{if eq .Page "settings"}}
+<form method="post" action="/wp-admin/headlessgo" class="hg-panel">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="settings"><input type="hidden" name="do" value="save_settings">
+<h2>Headless mode</h2>
+<table class="form-table" role="presentation">
+<tr><th scope="row">Front end</th><td><fieldset>
+	<label class="hg-check"><input type="radio" name="front_mode" value="json"{{if eq .Settings.FrontMode "json"}} checked{{end}}> Answer visitors with a JSON 404</label>
+	<label class="hg-check"><input type="radio" name="front_mode" value="plain"{{if eq .Settings.FrontMode "plain"}} checked{{end}}> Answer visitors with a plain 404</label>
+	<label class="hg-check"><input type="radio" name="front_mode" value="redirect"{{if eq .Settings.FrontMode "redirect"}} checked{{end}}> Redirect visitors to the front-end app</label>
+	<label class="hg-check"><input type="radio" name="front_mode" value="off"{{if eq .Settings.FrontMode "off"}} checked{{end}}> Keep the site's own front end</label>
+	<p class="description">wp-admin, the login screen, the REST API (<code>/wp-json</code>), uploads and assets always keep working.</p></fieldset></td></tr>
+<tr><th scope="row"><label for="hg-redirect">Redirect URL</label></th><td><input type="url" id="hg-redirect" name="redirect_url" class="regular-text code" value="{{.Settings.RedirectURL}}" placeholder="https://app.example.com">
+	<p><label><input type="checkbox" name="redirect_keep_path" value="1"{{if .Settings.RedirectKeepPath}} checked{{end}}> Keep the requested path and query</label></p></td></tr>
+<tr><th scope="row">Editors</th><td><label><input type="checkbox" name="allow_editors" value="1"{{if .Settings.AllowEditors}} checked{{end}}> Logged-in users who can edit posts still see the site's front end</label></td></tr>
+</table>
+<h2>API</h2>
+<table class="form-table" role="presentation">
+<tr><th scope="row">Endpoint</th><td><code>{{.APIBase}}</code></td></tr>
+<tr><th scope="row"><label for="hg-cors">CORS allowed origins</label></th><td><textarea id="hg-cors" name="cors_origins" class="large-text code" rows="3" placeholder="https://app.example.com">{{.Origins}}</textarea>
+	<p class="description">One origin per line (<code>https://app.example.com</code>), or <code>*</code> for any. Browsers on other origins cannot call the API.</p></td></tr>
+<tr><th scope="row">Page size</th><td><label>Default <input type="number" name="default_page_size" min="1" max="1000" value="{{.Settings.DefaultPageSize}}" class="small-text"></label> <label>Maximum <input type="number" name="max_page_size" min="1" max="1000" value="{{.Settings.MaxPageSize}}" class="small-text"></label></td></tr>
+<tr><th scope="row">GraphQL</th><td><label><input type="checkbox" name="graphql" value="1"{{if .Settings.GraphQL}} checked{{end}}> Read-only GraphQL endpoint at <code>{{.APIBase}}/graphql</code></label></td></tr>
+<tr><th scope="row">Webhooks</th><td><label><input type="checkbox" name="schema_webhooks" value="1"{{if .Settings.SchemaWebhooks}} checked{{end}}> Send <code>schema.update</code> when a content type or component changes</label></td></tr>
+{{if not .GolylangOn}}<tr><th scope="row"><label for="hg-loc">Default locale</label></th><td><input type="text" id="hg-loc" name="default_locale" value="{{.Settings.DefaultLocale}}" class="small-text"><p class="description">The locale of entries of translatable types while Golylang is off. With Golylang active, its languages are the locales.</p></td></tr>{{else}}<input type="hidden" name="default_locale" value="{{.Settings.DefaultLocale}}">{{end}}
+</table>
+<h2>Public access</h2>
+<p class="description">What anyone may do without a token. By default nothing is public: tick <em>find</em> and <em>findOne</em> to publish a type's published entries.</p>
+<table class="widefat striped hg-matrix"><thead><tr><th>Content type</th>{{range .Actions}}<th>{{.}}</th>{{end}}</tr></thead><tbody>
+{{range .Types}}{{$t := .}}<tr><td translate="no">{{.DisplayName}}</td>{{range $.Data.Actions}}<td><input type="checkbox" aria-label="{{.}}" name="public[{{$t.UID}}][{{.}}]" value="1"{{if $.Data.Allowed $t.UID .}} checked{{end}}></td>{{end}}</tr>{{else}}<tr><td colspan="6">No content types yet.</td></tr>{{end}}
+</tbody></table>
+<h2>Preview</h2>
+<table class="form-table" role="presentation">
+<tr><th scope="row">Preview secret</th><td><code class="hg-secret" translate="no">{{.Settings.PreviewSecret}}</code> <label><input type="checkbox" name="regenerate_secret" value="1"> Regenerate</label>
+	<p class="description">Used as <code>{secret}</code> in preview URL templates (set per content type in the builder), and to sign preview tokens (<code>{previewToken}</code>) that read one draft.</p></td></tr>
+<tr><th scope="row"><label for="hg-ttl">Preview token lifetime</label></th><td><input type="number" id="hg-ttl" name="preview_ttl" min="1" max="10080" value="{{.Settings.PreviewTTL}}" class="small-text"> minutes</td></tr>
+</table>
+<p class="submit"><button type="submit" class="button button-primary">Save Changes</button></p>
+</form>
+<div class="hg-panel" id="hg-import">
+<h2>Export and import schemas</h2>
+<p><a class="button" href="/wp-admin/headlessgo?action=export&amp;_wpnonce={{.Nonce}}">Download the schemas (JSON)</a></p>
+<form method="post" action="/wp-admin/headlessgo" enctype="multipart/form-data">
+	<input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="settings"><input type="hidden" name="do" value="import_schemas">
+	<p><label for="hg-import-file">Import a schema export:</label> <input type="file" id="hg-import-file" name="file" accept="application/json,.json"></p>
+	<p><label for="hg-import-json">or paste it:</label><br><textarea id="hg-import-json" name="json" class="large-text code" rows="4"></textarea></p>
+	<p class="description">New components and types are created; existing ones are updated (fields missing from the import are removed with their data).</p>
+	<p><button type="submit" class="button">Import</button></p>
+</form>
+</div>
+{{end}}
+</div>
+<script>
+document.querySelectorAll('[data-hg-toggle]').forEach(function (sel) {
+	sel.addEventListener('change', function () { var el = document.getElementById(sel.dataset.hgToggle); if (el) { el.hidden = sel.value !== 'custom'; } });
+});
+</script>
+{{end}}{{template "admin-footer" .}}{{end}}
