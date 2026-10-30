@@ -256,3 +256,11 @@ func TestUpstreamNames(t *testing.T) {
 		t.Errorf("normalized: %q %v", tr, ok)
 	}
 }
+
+func TestOptionWithoutValueKept(t *testing.T) {
+	c := testManager(t).Catalog("pl_PL")
+	got := string(c.TranslateHTML([]byte(`<select><option>Posts</option><option value="p">Posts</option></select>`)))
+	if got != `<select><option>Posts</option><option value="p">Wpisy</option></select>` {
+		t.Errorf("got %s", got)
+	}
+}

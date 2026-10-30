@@ -67,7 +67,8 @@ func (c *Catalog) TranslateHTML(doc []byte) []byte {
 				skipDepth++
 			}
 			out.WriteString(tag)
-		} else if v, ok := attrs.get("translate"); ok && strings.EqualFold(v, "no") {
+		} else if v, ok := attrs.get("translate"); (ok && strings.EqualFold(v, "no")) || name == "option" && !attrs.has("value") {
+			// translate="no" marks user content; an <option> without a value submits its text.
 			out.WriteString(tag)
 			if !selfClosing {
 				skipName, skipDepth = name, 1
@@ -535,6 +536,11 @@ func (a attrList) get(name string) (string, bool) {
 		}
 	}
 	return "", false
+}
+
+func (a attrList) has(name string) bool {
+	_, ok := a.get(name)
+	return ok
 }
 
 func tagName(tag string) (string, bool) {
