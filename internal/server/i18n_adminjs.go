@@ -31,6 +31,7 @@ var (
 	adminJSStringsList []string
 	inlineScriptRe     = regexp.MustCompile(`(?s)<script\b[^>]*>(.*?)</script>|\bon[a-z]+="([^"]*)"`)
 	adminL10nCache     sync.Map // *i18n.Catalog -> *adminL10n
+	jsPlaceholder      = regexp.MustCompile(`\{[a-z_]+\}`)
 )
 
 // jsUIStrings returns the literals of a script that read as UI text (gweJSStrings' rules).
@@ -39,7 +40,9 @@ func jsUIStrings(src string, seen map[string]bool) {
 		lit := m[1] + m[2] + m[3]
 		lit = strings.NewReplacer(`\'`, "'", `\"`, `"`, `\n`, "\n").Replace(lit)
 		t := strings.TrimSpace(lit)
-		if t == "" || !gweJSHasWord.MatchString(t) || gweJSNotText.MatchString(t) || !strings.ContainsAny(t[:1], "ABCDEFGHIJKLMNOPQRSTUVWXYZ“\"(") {
+		// "Maximum rows reached ({max} rows)": a message whose {placeholders} the script fills in
+		bare := jsPlaceholder.ReplaceAllString(t, "")
+		if t == "" || !gweJSHasWord.MatchString(t) || gweJSNotText.MatchString(bare) || !strings.ContainsAny(t[:1], "ABCDEFGHIJKLMNOPQRSTUVWXYZ“\"(") {
 			continue
 		}
 		seen[t] = true
@@ -122,6 +125,7 @@ func (s *Server) adminL10nScript(c *gin.Context) {
 
 const adminL10nRuntime = `(function(){var D=window.WPGOL10n||{};var A=['title','placeholder','aria-label','alt','data-title'];
 function tr(s){if(!s)return s;var t=s.trim();if(!t)return s;var v=D[t];return v?s.replace(t,v):s;}
+window.wpgo__=tr;
 function skip(e){return !e||/^(SCRIPT|STYLE|TEXTAREA|CODE|PRE|IFRAME|OPTION)$/.test(e.tagName)&&!(e.tagName==='OPTION'&&e.hasAttribute('value'))||e.isContentEditable||(e.closest&&e.closest('[translate="no"],.editor-styles-wrapper,.wp-block-post-content'));}
 function walk(n){if(n.nodeType===3){if(!skip(n.parentElement)){var v=tr(n.nodeValue);if(v!==n.nodeValue)n.nodeValue=v;}return;}
 if(n.nodeType!==1||skip(n))return;

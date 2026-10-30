@@ -9,6 +9,12 @@
 
 	var ajaxurl = window.ajaxurl || '/wp-admin/admin-ajax';
 	var uid = 0;
+	// __ translates a message (wpgo-l10n.js), then the {placeholders} are filled in.
+	function __( msg, vars ) {
+		var out = window.wpgo__ ? window.wpgo__( msg ) : msg;
+		Object.keys( vars || {} ).forEach( function ( k ) { out = out.split( '{' + k + '}' ).join( vars[ k ] ); } );
+		return out;
+	}
 	function newRowID() {
 		uid++;
 		return 'r' + Date.now().toString( 36 ) + uid;
@@ -325,7 +331,7 @@
 	function addRepeaterRow( $rep, $after ) {
 		var max = parseInt( $rep.data( 'max' ), 10 ) || 0;
 		if ( max > 0 && repeaterRows( $rep ).length >= max ) {
-			window.alert( 'Maximum rows reached (' + max + ' rows)' );
+			window.alert( __( 'Maximum rows reached ({max} rows)', { max: max } ) );
 			return;
 		}
 		var tpl = $rep.children( 'template.acf-clone-tpl' )[ 0 ];
@@ -363,7 +369,7 @@
 		e.preventDefault();
 		var $rep = $( this ).closest( '.acf-repeater' ), min = parseInt( $rep.data( 'min' ), 10 ) || 0;
 		if ( min > 0 && repeaterRows( $rep ).length <= min ) {
-			window.alert( 'Minimum rows not reached (' + min + ' rows)' );
+			window.alert( __( 'Minimum rows not reached ({min} rows)', { min: min } ) );
 			return;
 		}
 		$( this ).closest( '.acf-row' ).remove();
@@ -421,7 +427,7 @@
 		var $values = $fc.children( '.values' );
 		$popup.hide();
 		if ( max > 0 && $values.children( '.layout' ).length >= max ) {
-			window.alert( 'This field has a limit of ' + max + ' layouts' );
+			window.alert( __( 'This field has a limit of {max} {label} {identifier}', { max: max, label: __( 'layouts' ), identifier: '' } ).trim() );
 			return;
 		}
 		var lmax = parseInt( $( this ).data( 'max' ), 10 ) || 0;
@@ -576,7 +582,7 @@
 			return;
 		}
 		if ( max > 0 && $values.children().length >= max ) {
-			window.alert( 'Maximum values reached ( ' + max + ' values )' );
+			window.alert( __( 'Maximum values reached ( {max} values )', { max: max } ) );
 			return;
 		}
 		var $li = $( '<li><input type="hidden" /><span class="acf-rel-item"></span></li>' );
