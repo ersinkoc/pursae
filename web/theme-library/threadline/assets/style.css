@@ -383,3 +383,16 @@ ul.woocommerce-mini-cart li .quantity { color: var(--tl-muted); grid-column: 2; 
 .woocommerce-message::before, .woocommerce-info::before, .woocommerce-error::before { position: static !important; margin: 0 4px 0 0; }
 .woocommerce-message, .woocommerce-info { justify-content: flex-start; }
 .woocommerce-message .button, .woocommerce-info .button { margin-left: auto; }
+
+/* Store rules scoped to #page so they outrank the storefront's default stylesheet (.woocommerce …). */
+#page span.onsale { background: var(--tl-accent); color: #fff; border-radius: var(--tl-radius); min-height: 0; min-width: 0; line-height: 1; padding: 6px 12px; font-size: .7rem; top: 12px; left: 12px; right: auto; }
+#page .star-rating, #page p.stars a { color: var(--tl-accent); }
+#page ul.products li.product .woocommerce-loop-product__title { font: 500 1rem/1.35 var(--tl-sans); padding: 0; }
+#page ul.products li.product .price, #page div.product p.price, #page div.product span.price { color: var(--tl-ink); }
+#page .price ins { color: var(--tl-accent); }
+#page ul.products li.product .button { background: transparent; color: var(--tl-ink); border: 1px solid var(--tl-ink); border-radius: var(--tl-radius); }
+#page ul.products li.product .button:hover { background: var(--tl-ink); color: var(--tl-bg); }
+#page .single_add_to_cart_button, #page .checkout-button, #page #place_order { background: var(--tl-accent); border-color: var(--tl-accent); color: #fff; border-radius: var(--tl-radius); }
+#page .woocommerce-tabs ul.tabs li { border: 0; background: none; }
+#page .woocommerce-tabs ul.tabs li.active a { color: var(--tl-ink); }
+#page .woocommerce-message, #page .woocommerce-info { border-top: 0; background: var(--tl-card); }
