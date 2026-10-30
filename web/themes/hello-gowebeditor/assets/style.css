@@ -87,4 +87,4 @@ button:hover,input[type=submit]:hover,[type=button]:hover{color:#fff;background-
 .site-footer a{color:inherit}
 /* Theme-builder parts and full-width pages span the viewport. */
 .elementor-location-header,.elementor-location-footer{width:100%}
-.elementor-template-full-width .site-main,.page-template-elementor_header_footer .site-main{max-width:none;padding:0}
+.elementor-template-full-width .site-main,.page-template-elementor_header_footer .site-main,.site-main.gwe-main-part{max-width:none;padding:0}

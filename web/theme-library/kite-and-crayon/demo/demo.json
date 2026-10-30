@@ -163,12 +163,12 @@
       },
       "background_overlay_color_stop": {
        "unit": "%",
-       "size": 30,
+       "size": 12,
        "sizes": []
       },
       "background_overlay_color_b_stop": {
        "unit": "%",
-       "size": 75,
+       "size": 72,
        "sizes": []
       },
       "background_overlay_opacity": {

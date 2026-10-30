@@ -135,11 +135,11 @@ class Tree:
         s.update(kw)
         return self.w("image", s)
 
-    def icon_box(self, icon, title, desc, c="accent", **kw):
+    def icon_box(self, icon, title, desc, c="accent", fg="primary", muted="text", **kw):
         s = {"selected_icon": {"value": icon, "library": "fa-solid"}, "title_text": title, "description_text": desc,
              "position": "left", "title_size": "h3", "icon_size": px(24), "icon_space": px(14),
-             "__globals__": {"primary_color": col(c), "title_color": col("primary"), "title_typography_typography": typo("h4"),
-                             "description_color": col("text"), "description_typography_typography": typo("small")}}
+             "__globals__": {"primary_color": col(c), "title_color": col(fg), "title_typography_typography": typo("h4"),
+                             "description_color": col(muted), "description_typography_typography": typo("small")}}
         s.update(kw)
         return self.w("icon-box", s)
 
@@ -216,6 +216,7 @@ def header_part(T, th):
                            "dropdown": "tablet", "toggle": "burger", "toggle_align": "left", "full_width": "stretch",
                            "align_items": "center" if hd["layout"] == "centered" else "start",
                            "padding_horizontal_menu_item": px(12), "padding_vertical_menu_item": px(8),
+                           "submenu_icon": {"value": "", "library": ""},
                            "__globals__": {"color_menu_item": col(hd["fg"]), "color_menu_item_hover": col(hd["hover"]),
                                            "color_menu_item_active": col(hd["hover"]), "pointer_color_menu_item_hover": col(hd["hover"]),
                                            "pointer_color_menu_item_active": col(hd["hover"]), "menu_typography_typography": typo("accent"),
@@ -310,6 +311,7 @@ def single_product_part(T, th):
     related = T.section({"padding": box(64, 24)},
                         T.w("woocommerce-product-related", {"columns": "4", "posts_per_page": 4, "image_radius": px(th.get("image_radius", 18)),
                                                             "__globals__": {"heading_color": col("primary"), "heading_typography_typography": typo("primary"),
+                                                                            "title_color": col("primary"), "title_typography_typography": typo("h4"),
                                                                             "button_bg_color": col("primary"), "button_text_color": col("paper")}}))
     return [top, tabs, related]
 
@@ -388,11 +390,12 @@ def home_page(th):
                       "background_position": h.get("hero_position", "center right"), "background_size": "cover", "background_repeat": "no-repeat",
                       "background_overlay_background": "gradient", "background_overlay_color": h["overlay"][0],
                       "background_overlay_color_b": h["overlay"][1], "background_overlay_gradient_angle": px(90, "deg"),
-                      "background_overlay_color_stop": px(30, "%"), "background_overlay_color_b_stop": px(75, "%"),
+                      "background_overlay_color_stop": px(h.get("overlay_from", 12), "%"), "background_overlay_color_b_stop": px(72, "%"),
                       "background_overlay_opacity": px(0.92)}, hero_text)
     usps = T.section({"padding": box(26, 24), "background_background": "classic", "__globals__": {"background_color": col(h["usp_bg"])}},
                      T.grid(4, {"grid_columns_grid_tablet": {"unit": "fr", "size": 2, "sizes": []}},
-                            *[T.icon_box(i, t, d, c=h["usp_icon"]) for i, t, d in th["usps"]]))
+                            *[T.icon_box(i, t, d, c=h["usp_icon"], fg=h.get("usp_fg", "primary"), muted=h.get("usp_muted", "text"))
+                              for i, t, d in th["usps"]]))
     cats = T.section({"padding": box(80, 24, 40, 24), "flex_gap": gap(28)},
                      T.row({"flex_justify_content": "space-between", "flex_align_items": "flex-end"},
                            T.stack({"flex_gap": gap(8)}, T.heading(h["cats_eyebrow"], tag="p", t="secondary", c="accent"),
@@ -654,6 +657,11 @@ body {{ -webkit-font-smoothing: antialiased; }}
 /* Cart, checkout, notices */
 .woocommerce table.shop_table {{ border-radius: {min(r, 14)}px; border-color: var(--e-global-color-line); }}
 .woocommerce-cart .cart-collaterals .cart_totals, .woocommerce-checkout #order_review {{ background: var(--e-global-color-sand); padding: 24px; border-radius: {min(r, 18)}px; }}
+.woocommerce-checkout #payment {{ background: var(--e-global-color-paper); border-radius: {min(r, 14)}px; }}
+.woocommerce-checkout #payment div.payment_box {{ background: var(--e-global-color-cream); }}
+.woocommerce-checkout #payment div.payment_box::before {{ border-bottom-color: var(--e-global-color-cream); }}
+.woocommerce .coupon #coupon_code {{ width: 170px; }}
+.woocommerce table.cart img {{ width: 64px; border-radius: {max(r // 3, 4)}px; }}
 .woocommerce-message, .woocommerce-info {{ border-top-color: var(--e-global-color-accent); }}
 .woocommerce-message::before, .woocommerce-info::before {{ color: var(--e-global-color-accent); }}
 .woocommerce form .form-row input.input-text, .woocommerce form .form-row textarea, .woocommerce form .form-row select {{

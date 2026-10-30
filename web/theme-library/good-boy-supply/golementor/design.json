@@ -560,6 +560,10 @@
            "size": 8,
            "sizes": []
           },
+          "submenu_icon": {
+           "value": "",
+           "library": ""
+          },
           "__globals__": {
            "color_menu_item": "globals/colors?id=paper",
            "color_menu_item_hover": "globals/colors?id=sun",
@@ -1460,6 +1464,8 @@
         "__globals__": {
          "heading_color": "globals/colors?id=primary",
          "heading_typography_typography": "globals/typography?id=primary",
+         "title_color": "globals/colors?id=primary",
+         "title_typography_typography": "globals/typography?id=h4",
          "button_bg_color": "globals/colors?id=primary",
          "button_text_color": "globals/colors?id=paper"
         }

@@ -163,12 +163,12 @@
       },
       "background_overlay_color_stop": {
        "unit": "%",
-       "size": 30,
+       "size": 12,
        "sizes": []
       },
       "background_overlay_color_b_stop": {
        "unit": "%",
-       "size": 75,
+       "size": 72,
        "sizes": []
       },
       "background_overlay_opacity": {
@@ -422,9 +422,9 @@
           },
           "__globals__": {
            "primary_color": "globals/colors?id=sun",
-           "title_color": "globals/colors?id=primary",
+           "title_color": "globals/colors?id=paper",
            "title_typography_typography": "globals/typography?id=h4",
-           "description_color": "globals/colors?id=text",
+           "description_color": "globals/colors?id=pale",
            "description_typography_typography": "globals/typography?id=small"
           }
          },
@@ -455,9 +455,9 @@
           },
           "__globals__": {
            "primary_color": "globals/colors?id=sun",
-           "title_color": "globals/colors?id=primary",
+           "title_color": "globals/colors?id=paper",
            "title_typography_typography": "globals/typography?id=h4",
-           "description_color": "globals/colors?id=text",
+           "description_color": "globals/colors?id=pale",
            "description_typography_typography": "globals/typography?id=small"
           }
          },
@@ -488,9 +488,9 @@
           },
           "__globals__": {
            "primary_color": "globals/colors?id=sun",
-           "title_color": "globals/colors?id=primary",
+           "title_color": "globals/colors?id=paper",
            "title_typography_typography": "globals/typography?id=h4",
-           "description_color": "globals/colors?id=text",
+           "description_color": "globals/colors?id=pale",
            "description_typography_typography": "globals/typography?id=small"
           }
          },
@@ -521,9 +521,9 @@
           },
           "__globals__": {
            "primary_color": "globals/colors?id=sun",
-           "title_color": "globals/colors?id=primary",
+           "title_color": "globals/colors?id=paper",
            "title_typography_typography": "globals/typography?id=h4",
-           "description_color": "globals/colors?id=text",
+           "description_color": "globals/colors?id=pale",
            "description_typography_typography": "globals/typography?id=small"
           }
          },

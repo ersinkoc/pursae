@@ -511,12 +511,9 @@ def draw_product(th, key, cv, S):
         cv.arc(cx - 20, F - 340, cx + 140, F - 180, 200, 520, C["accent"], 10)
         cv.line([(cx + 160, F - 300), (cx + 280, F - 200)], hexc("#4F86C6"), 10)
     elif key == "star-night-light":
-        glow = Image.new("L", (cv.W, cv.H), 0)
-        ImageDraw.Draw(glow).ellipse([(cx - 420) * SS, (F - 820) * SS, (cx + 420) * SS, (F + 20) * SS], fill=140)
-        glow = glow.filter(ImageFilter.GaussianBlur(120))
-        layer = Image.new("RGBA", (cv.W, cv.H), shade(C["sun"], 1.35))
-        layer.putalpha(glow)
-        cv.img.alpha_composite(layer)
+        for r, a in [(420, 34), (330, 46), (250, 60)]:  # a soft halo of light
+            glow = shade(C["sun"], 1.45)
+            cv.ellipse(cx - r, F - 330 - r, cx + r, F - 330 + r, (glow[0], glow[1], glow[2], a))
         cv.shadow(cx, F, 420, 36)
         star(cv, cx, F - 330, 300, shade(C["sun"], 1.1), C["sun"], inner=0.5)
         for x, y in [(-360, -700), (320, -760), (380, -420), (-400, -380)]:
@@ -584,7 +581,7 @@ def scene(th, keys, w, h, top, bottom, seed, layout):
         draw_product(th, key, sub, 1)
         im = sub.img.convert("RGBa").resize((int(sub.W * sc), int(sub.H * sc)), Image.LANCZOS).convert("RGBA")
         layer = Image.new("RGBA", (cv.W, cv.H), (0, 0, 0, 0))
-        layer.paste(im, (int(x * cv.W - im.width / 2), int(cv.floor - sub.floor * sc)), im)
+        layer.paste(im, (int(x * cv.W - im.width / 2), int(cv.floor - sub.floor * sc)))
         cv.img.alpha_composite(layer)
     return cv
 
@@ -601,7 +598,7 @@ def portrait(th, key, top, bottom, seed, size):
     im = sub.img.convert("RGBa").resize((int(sub.W * z), int(sub.H * z)), Image.LANCZOS).convert("RGBA")
     cv = Canvas(1200, 1200, top, bottom, seed=seed)
     layer = Image.new("RGBA", (cv.W, cv.H), (0, 0, 0, 0))
-    layer.paste(im, (int(fx - fx * z), int(fy - fy * z)), im)
+    layer.paste(im, (int(fx - fx * z), int(fy - fy * z)))
     cv.img.alpha_composite(layer)
     if size != 1200:
         cv.img, cv.w, cv.h = cv.img.resize((size * SS, size * SS), Image.LANCZOS), size, size

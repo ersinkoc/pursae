@@ -204,7 +204,7 @@ GOOD_BOY = {
         "lead": "Comfy beds, tough toys and honest treats. Everything tested by our office dogs, Biscuit and Juno, before it reaches you.",
         "cta": "Shop the collection", "cta_bg": "primary", "cta_fg": "paper", "cta2": "Meet the testers", "cta2_bg": "sand", "cta2_fg": "primary",
         "overlay": ["#FFE9B3", "rgba(255,233,179,0)"], "hero_position": "center right", "hero_height": 620,
-        "usp_bg": "primary", "usp_icon": "sun",
+        "usp_bg": "primary", "usp_icon": "sun", "usp_fg": "paper", "usp_muted": "pale",
         "cats_eyebrow": "Shop by pet", "cats_title": "Everything for dogs, cats and their people",
         "feat_eyebrow": "Bestsellers", "feat_title": "Tail-wag approved",
         "story_bg": "skyl", "story_eyebrow": "Our testers", "story_eyebrow_c": "accent", "story_fg": "primary", "story_text_c": "text",

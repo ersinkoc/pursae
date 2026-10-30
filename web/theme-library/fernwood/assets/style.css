@@ -42,6 +42,11 @@ body { -webkit-font-smoothing: antialiased; }
 /* Cart, checkout, notices */
 .woocommerce table.shop_table { border-radius: 14px; border-color: var(--e-global-color-line); }
 .woocommerce-cart .cart-collaterals .cart_totals, .woocommerce-checkout #order_review { background: var(--e-global-color-sand); padding: 24px; border-radius: 18px; }
+.woocommerce-checkout #payment { background: var(--e-global-color-paper); border-radius: 14px; }
+.woocommerce-checkout #payment div.payment_box { background: var(--e-global-color-cream); }
+.woocommerce-checkout #payment div.payment_box::before { border-bottom-color: var(--e-global-color-cream); }
+.woocommerce .coupon #coupon_code { width: 170px; }
+.woocommerce table.cart img { width: 64px; border-radius: 6px; }
 .woocommerce-message, .woocommerce-info { border-top-color: var(--e-global-color-accent); }
 .woocommerce-message::before, .woocommerce-info::before { color: var(--e-global-color-accent); }
 .woocommerce form .form-row input.input-text, .woocommerce form .form-row textarea, .woocommerce form .form-row select {

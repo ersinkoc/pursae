@@ -134,6 +134,14 @@ func (s *Server) gooGweStore(ctx context.Context) func(name string, st map[strin
 			}
 			return def
 		}
+		// sw reads a switcher: an empty saved value is off; a missing one takes the control's default.
+		sw := func(k, on, def string) bool {
+			v, ok := st[k]
+			if !ok || v == nil {
+				return def == on
+			}
+			return fmt.Sprint(v) == on
+		}
 		product := func() *gooProduct {
 			if fv != nil && fv.Product != nil {
 				return fv.Product
@@ -148,7 +156,7 @@ func (s *Server) gooGweStore(ctx context.Context) func(name string, st map[strin
 			cols := gooAtoi(str("columns", "4"))
 			a := map[string]string{"columns": strconv.Itoa(cols), "limit": strconv.Itoa(cols * max(gooAtoi(str("rows", "2")), 1)),
 				"orderby": str("orderby", "date"), "order": strings.ToUpper(str("order", "desc"))}
-			if str("paginate", "") == "yes" {
+			if sw("paginate", "yes", "") {
 				a["paginate"] = "true"
 			}
 			switch str("query_post_type", "recent") {
@@ -166,10 +174,10 @@ func (s *Server) gooGweStore(ctx context.Context) func(name string, st map[strin
 			return s.gooProductsShortcode(c, "products", a)
 		case "wc-archive-products":
 			cls := "goo-archive-products"
-			if str("show_result_count", "yes") != "yes" {
+			if !sw("show_result_count", "yes", "yes") {
 				cls += " goo-hide-result-count"
 			}
-			if str("allow_order", "yes") != "yes" {
+			if !sw("allow_order", "yes", "yes") {
 				cls += " goo-hide-ordering"
 			}
 			if fv != nil && gooArchiveKind(fv.Kind) {
@@ -181,7 +189,7 @@ func (s *Server) gooGweStore(ctx context.Context) func(name string, st map[strin
 			return ""
 		case "wc-categories":
 			hide := "0"
-			if str("hide_empty", "yes") == "yes" {
+			if sw("hide_empty", "yes", "yes") {
 				hide = "1"
 			}
 			return s.gooCategoriesShortcode(c, map[string]string{"number": str("number", "4"), "columns": str("columns", "4"), "hide_empty": hide, "parent": "0"})
@@ -196,7 +204,7 @@ func (s *Server) gooGweStore(ctx context.Context) func(name string, st map[strin
 			}
 			return s.gooBreadcrumb(c, fv)
 		case "woocommerce-menu-cart":
-			return s.gooGweMenuCart(c, str("icon", "bag"), str("show_subtotal", "yes") == "yes", str("hide_empty_indicator", "") == "hide")
+			return s.gooGweMenuCart(c, str("icon", "bag"), sw("show_subtotal", "yes", "yes"), sw("hide_empty_indicator", "hide", ""))
 		case "woocommerce-cart":
 			return s.gooCartPageHTML(c)
 		case "woocommerce-checkout-page":
@@ -209,7 +217,7 @@ func (s *Server) gooGweStore(ctx context.Context) func(name string, st map[strin
 		case "woocommerce-notices":
 			return `<div class="woocommerce">` + s.gooNoticesHTML(c) + `</div>`
 		case "golylang-language-switcher":
-			return s.gooGweLanguageSwitcher(c, str("layout", "horizontal"), str("show_flags", "") == "yes", str("display", "code"), str("hide_current", "") == "yes")
+			return s.gooGweLanguageSwitcher(c, str("layout", "horizontal"), sw("show_flags", "yes", "yes"), str("display", "code"), sw("hide_current", "yes", ""))
 		}
 		p := product()
 		if p == nil {

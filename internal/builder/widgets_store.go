@@ -121,7 +121,7 @@ func storeWidgetDefs() {
 	l.add("show_subtotal", "switcher", "Subtotal", "label_on", "Show", "label_off", "Hide", "return_value", "yes", "default", "yes")
 	l.add("hide_empty_indicator", "switcher", "Hide Empty", "label_on", "Yes", "label_off", "No", "return_value", "hide", "default", "")
 	l.start("section_toggle_style", "Menu Icon", "style")
-	l.color("toggle_icon_color", "Icon Color", "{{WRAPPER}} .goo-menu-cart__toggle", "color", "text")
+	l.color("toggle_icon_color", "Icon Color", "{{WRAPPER}} .goo-menu-cart__toggle, {{WRAPPER}} .goo-menu-cart__subtotal a.cart-contents", "color", "text")
 	l.color("items_indicator_text_color", "Count Text Color", "{{WRAPPER}} .goo-menu-cart__count", "color", "")
 	l.color("items_indicator_background_color", "Count Background", "{{WRAPPER}} .goo-menu-cart__count", "background-color", "accent")
 	l.typography("toggle_typography", "{{WRAPPER}} .goo-menu-cart__subtotal", "")
