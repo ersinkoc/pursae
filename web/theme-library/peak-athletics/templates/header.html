@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>{{.DocumentTitle}}</title>
+{{.Head}}</head>
+
+<body class="{{.BodyClass}}">
+{{.BodyOpen}}<div id="page" class="site">
+	<a class="skip-link screen-reader-text" href="#main">Skip to content</a>
+	{{if theme_mod . "show_announcement"}}<div class="pk-topbar" role="note">
+		<div class="pk-wrap pk-topbar__inner">
+			{{with theme_mod . "announcement"}}<p class="pk-topbar__text">{{.}}</p>{{end}}
+			{{if goo_on}}<p class="pk-topbar__links"><a href="{{goo_url . "myaccount"}}">Track an order</a><a href="{{goo_url . "shop"}}">New season</a></p>{{end}}
+		</div>
+	</div>{{end}}
+
+	<header id="masthead" class="site-header">
+		<div class="pk-wrap pk-header">
+			{{if has_nav_menu . "primary"}}<button type="button" class="pk-menu-toggle" aria-controls="site-navigation" aria-expanded="false"><span class="pk-burger" aria-hidden="true"></span><span class="screen-reader-text">Menu</span></button>{{end}}
+			<div class="site-branding">
+				{{with .CustomLogo}}<div class="site-logo">{{.}}</div>{{end}}
+				{{if .TitleIsH1}}<h1 class="site-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></h1>{{else}}<p class="site-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></p>{{end}}
+			</div><!-- .site-branding -->
+
+			{{if has_nav_menu . "primary"}}<nav id="site-navigation" class="main-navigation pk-mega" aria-label="Primary menu">
+				{{nav_menu . "primary"}}
+			</nav><!-- #site-navigation -->{{end}}
+
+			<div class="pk-tools">
+				{{if goo_on}}<div class="pk-inline-search-form">{{goo_product_search .}}</div>{{end}}
+				<button type="button" class="pk-icon pk-search-toggle" aria-controls="pk-search" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg><span class="screen-reader-text">Search</span></button>
+				{{if goo_on}}<a class="pk-icon pk-account" href="{{goo_url . "myaccount"}}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4.2 4.1-6.3 8-6.3s7 2.1 8 6.3"/></svg><span class="screen-reader-text">My account</span></a>
+				<div class="pk-cart site-header-cart">
+					<a class="pk-cart-toggle" href="{{goo_url . "cart"}}" aria-controls="pk-mini-cart"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2.5l2.2 11.2a1 1 0 0 0 1 .8h9.1a1 1 0 0 0 1-.8L20.5 8H6.4"/><circle cx="9.5" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/></svg><span class="pk-cart-count" data-goo-cart-count>{{goo_cart_count .}}</span><span class="screen-reader-text">items in the cart</span></a>
+					<div id="pk-mini-cart" class="pk-mini-cart widget_shopping_cart" hidden>
+						<p class="pk-mini-cart__title">Your bag</p>
+						{{goo_mini_cart .}}
+					</div>
+				</div>{{end}}
+			</div>
+		</div>
+		<div id="pk-search" class="pk-search-panel" hidden><div class="pk-wrap">{{if goo_on}}{{goo_product_search .}}{{else}}{{template "searchform" .}}{{end}}</div></div>
+	</header><!-- #masthead -->
+	<div class="pk-scrim" hidden></div>
+
+	<div id="content" class="site-content">
+		<main id="main" class="site-main" tabindex="-1">

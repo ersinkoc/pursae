@@ -1,0 +1,778 @@
+{
+	"version": 1,
+	"options": {
+		"blogname": "Peak Athletics",
+		"blogdescription": "Gear for people who keep going"
+	},
+	"categories": [
+		{
+			"slug": "training-plans",
+			"name": "Training plans",
+			"description": "Plans and sessions from our coaches."
+		},
+		{
+			"slug": "gear",
+			"name": "Gear",
+			"description": "How we test, pack and care for kit."
+		}
+	],
+	"media": [
+		{
+			"id": "hero",
+			"file": "demo/images/peak-athletics-hero.jpg",
+			"alt": "A trail runner cresting a ridge at sunrise"
+		},
+		{
+			"id": "about",
+			"file": "demo/images/peak-athletics-about.jpg",
+			"alt": "Gear laid out on the workshop floor before a test run"
+		},
+		{
+			"id": "cat-running",
+			"file": "demo/images/peak-athletics-cat-running.jpg",
+			"alt": "Running collection"
+		},
+		{
+			"id": "cat-training",
+			"file": "demo/images/peak-athletics-cat-training.jpg",
+			"alt": "Training collection"
+		},
+		{
+			"id": "cat-outdoor",
+			"file": "demo/images/peak-athletics-cat-outdoor.jpg",
+			"alt": "Outdoor collection"
+		},
+		{
+			"id": "cat-team-sports",
+			"file": "demo/images/peak-athletics-cat-team-sports.jpg",
+			"alt": "Team sports collection"
+		},
+		{
+			"id": "p-trail-runner-shoe",
+			"file": "demo/images/peak-athletics-p-trail-runner-shoe.jpg",
+			"alt": "A trail running shoe in volt green and carbon"
+		},
+		{
+			"id": "p-running-jacket",
+			"file": "demo/images/peak-athletics-p-running-jacket.jpg",
+			"alt": "A lightweight orange running jacket"
+		},
+		{
+			"id": "p-compression-tights",
+			"file": "demo/images/peak-athletics-p-compression-tights.jpg",
+			"alt": "Black compression running tights"
+		},
+		{
+			"id": "p-adjustable-dumbbells",
+			"file": "demo/images/peak-athletics-p-adjustable-dumbbells.jpg",
+			"alt": "A pair of adjustable dumbbells in their tray"
+		},
+		{
+			"id": "p-kettlebell-16kg",
+			"file": "demo/images/peak-athletics-p-kettlebell-16kg.jpg",
+			"alt": "A black 16 kg kettlebell"
+		},
+		{
+			"id": "p-yoga-mat",
+			"file": "demo/images/peak-athletics-p-yoga-mat.jpg",
+			"alt": "A rolled yoga mat with a carry strap"
+		},
+		{
+			"id": "p-insulated-bottle",
+			"file": "demo/images/peak-athletics-p-insulated-bottle.jpg",
+			"alt": "A matt black insulated bottle"
+		},
+		{
+			"id": "p-hiking-backpack-30l",
+			"file": "demo/images/peak-athletics-p-hiking-backpack-30l.jpg",
+			"alt": "A 30-litre hiking backpack"
+		},
+		{
+			"id": "p-trekking-poles",
+			"file": "demo/images/peak-athletics-p-trekking-poles.jpg",
+			"alt": "A pair of trekking poles"
+		},
+		{
+			"id": "p-match-football",
+			"file": "demo/images/peak-athletics-p-match-football.jpg",
+			"alt": "A white and volt match football"
+		},
+		{
+			"id": "p-basketball",
+			"file": "demo/images/peak-athletics-p-basketball.jpg",
+			"alt": "An orange basketball"
+		},
+		{
+			"id": "p-tennis-racket",
+			"file": "demo/images/peak-athletics-p-tennis-racket.jpg",
+			"alt": "A tennis racket with a carbon frame"
+		}
+	],
+	"pages": [
+		{
+			"slug": "home",
+			"title": "Home",
+			"content": "<!-- wp:cover {\"url\":\"{{media:hero}}\",\"id\":{{media_id:hero}},\"dimRatio\":40,\"minHeight\":760,\"contentPosition\":\"center left\",\"align\":\"full\"} --><div class=\"wp-block-cover alignfull has-custom-content-position is-position-center-left\" style=\"min-height:760px\"><span aria-hidden=\"true\" class=\"wp-block-cover__background has-background-dim-40 has-background-dim\"></span><img class=\"wp-block-cover__image-background wp-image-{{media_id:hero}}\" alt=\"\" src=\"{{media:hero}}\" data-object-fit=\"cover\"/><div class=\"wp-block-cover__inner-container\"><!-- wp:paragraph {\"className\":\"pk-kicker\"} --><p class=\"pk-kicker\">Autumn trail collection</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":1} --><h1 class=\"wp-block-heading\">Built for the <em>long run.</em></h1><!-- /wp:heading --><!-- wp:paragraph --><p>Tested on real mountains by real runners. Gear that keeps going when you do.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"/product-category/running/\">Shop running</a></div><!-- /wp:button --><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"/shop/\">All gear</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div></div><!-- /wp:cover --><!-- wp:group {\"className\":\"pk-stats\",\"layout\":{\"type\":\"default\"},\"align\":\"full\"} --><div class=\"wp-block-group alignfull pk-stats\"><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph --><p><strong>60 days</strong> test-run returns</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph --><p><strong>$100+</strong> ships free</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph --><p><strong>4.8/5</strong> from 2,000+ athletes</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group --><!-- wp:group {\"className\":\"pk-section-head\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group pk-section-head\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Shop by sport</h2><!-- /wp:heading --><!-- wp:paragraph --><p><a href=\"/shop/\">All sports</a></p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:group {\"className\":\"pk-cats\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group pk-cats\"><!-- wp:image {\"id\":{{media_id:cat-running}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"/product-category/running/\"><img src=\"{{media:cat-running}}\" alt=\"Running collection\" class=\"wp-image-{{media_id:cat-running}}\"/></a><figcaption class=\"wp-element-caption\">Running</figcaption></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:cat-training}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"/product-category/training/\"><img src=\"{{media:cat-training}}\" alt=\"Training collection\" class=\"wp-image-{{media_id:cat-training}}\"/></a><figcaption class=\"wp-element-caption\">Training</figcaption></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:cat-outdoor}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"/product-category/outdoor/\"><img src=\"{{media:cat-outdoor}}\" alt=\"Outdoor collection\" class=\"wp-image-{{media_id:cat-outdoor}}\"/></a><figcaption class=\"wp-element-caption\">Outdoor</figcaption></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:cat-team-sports}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"/product-category/team-sports/\"><img src=\"{{media:cat-team-sports}}\" alt=\"Team sports collection\" class=\"wp-image-{{media_id:cat-team-sports}}\"/></a><figcaption class=\"wp-element-caption\">Team sports</figcaption></figure><!-- /wp:image --></div><!-- /wp:group --><!-- wp:group {\"className\":\"pk-section-head\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group pk-section-head\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Team picks</h2><!-- /wp:heading --><!-- wp:paragraph --><p><a href=\"/shop/\">Shop all</a></p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:shortcode -->[products limit=\"8\" columns=\"4\" visibility=\"featured\"]<!-- /wp:shortcode --><!-- wp:cover {\"url\":\"{{media:about}}\",\"id\":{{media_id:about}},\"dimRatio\":70,\"minHeight\":420,\"contentPosition\":\"center left\",\"align\":\"full\",\"className\":\"pk-banner\"} --><div class=\"wp-block-cover alignfull has-custom-content-position is-position-center-left pk-banner\" style=\"min-height:420px\"><span aria-hidden=\"true\" class=\"wp-block-cover__background has-background-dim-70 has-background-dim\"></span><img class=\"wp-block-cover__image-background wp-image-{{media_id:about}}\" alt=\"\" src=\"{{media:about}}\" data-object-fit=\"cover\"/><div class=\"wp-block-cover__inner-container\"><!-- wp:paragraph {\"className\":\"pk-kicker\"} --><p class=\"pk-kicker\">Members get more</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">10% off your <em>first gear.</em></h2><!-- /wp:heading --><!-- wp:paragraph --><p>Use <code>WELCOME10</code> at checkout. Orders over $100 ship free, and you get 60 days to test everything properly.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"/shop/\">Start training</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div></div><!-- /wp:cover --><!-- wp:group {\"className\":\"pk-section-head\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group pk-section-head\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Price drop</h2><!-- /wp:heading --><!-- wp:paragraph --><p><a href=\"/shop/\">See all deals</a></p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:shortcode -->[products limit=\"4\" columns=\"4\" on_sale=\"true\"]<!-- /wp:shortcode --><!-- wp:group {\"className\":\"pk-section-head\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group pk-section-head\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Just landed</h2><!-- /wp:heading --><!-- wp:paragraph --><p><a href=\"/shop/?orderby=date\">New gear</a></p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:shortcode -->[products limit=\"8\" columns=\"4\" orderby=\"date\" order=\"DESC\"]<!-- /wp:shortcode -->",
+			"template": "page-home",
+			"front_page": true
+		},
+		{
+			"slug": "about",
+			"title": "About us",
+			"content": "<!-- wp:image {\"id\":{{media_id:about}},\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:about}}\" alt=\"Gear laid out on the workshop floor before a test run\" class=\"wp-image-{{media_id:about}}\"/></figure><!-- /wp:image --><!-- wp:paragraph --><p>Peak Athletics started with three club runners, a van and a stubborn belief: gear should be judged on the hill, not in a catalogue. Every product we sell has been run, lifted, carried or kicked by our test team for at least a month before it reaches the shop.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>We keep the range small on purpose. If two shoes do the same job, we only stock the better one, and we tell you exactly why. That makes choosing faster, and it means we know every product inside out when you call with a question.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Our promise</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>60 days to test anything you buy, worn or not.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Real advice from people who train, every weekday.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Repairs and spare parts for packs and poles.</li><!-- /wp:list-item --><!-- wp:list-item --><li>A share of every sale goes to junior club sport.</li><!-- /wp:list-item --></ul><!-- /wp:list -->",
+			"featured_media": "about"
+		},
+		{
+			"slug": "contact",
+			"title": "Contact",
+			"content": "<!-- wp:paragraph --><p>Need help with sizing, an order or a training question? Our team answers within a few hours on weekdays.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><strong>Email:</strong> crew@peakathletics.example<br><strong>Phone:</strong> +1 555 0100 (Mon–Fri, 8–18)<br><strong>Flagship store:</strong> 210 Summit Avenue, open daily 9–20</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Test-run returns</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Ran in it and it is not right? Send it back within 60 days for a refund or an exchange. We donate returned gear to local clubs.</p><!-- /wp:paragraph -->"
+		},
+		{
+			"slug": "journal",
+			"title": "Journal",
+			"content": "",
+			"posts_page": true
+		}
+	],
+	"posts": [
+		{
+			"slug": "your-first-trail-ultra",
+			"title": "Your first trail ultra: a 12-week plan",
+			"date": "2026-09-14T07:00:00",
+			"categories": [
+				"training-plans"
+			],
+			"featured_media": "p-trail-runner-shoe",
+			"excerpt": "From marathon to 50K in twelve weeks, with time on feet, hill repeats and a lot of snacks.",
+			"content": "<!-- wp:paragraph --><p>Moving from road marathons to your first trail ultra is less about distance than about time on your feet. A 50K in the hills can take two hours longer than a flat marathon, so the plan builds patience before speed.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Weeks one to four are about volume: three easy runs, one long run that grows by twenty minutes each week, and one session of hill repeats. Weeks five to eight add back-to-back long runs on the weekend so your legs learn to start tired. Weeks nine to twelve sharpen, then taper.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Practise everything you will do on race day: eat every forty minutes, walk the steep climbs on purpose, and test your shoes, pack and poles on long runs. The trail rewards the runner who planned the boring details.</p><!-- /wp:paragraph -->"
+		},
+		{
+			"slug": "home-gym-in-two-square-metres",
+			"title": "A home gym in two square metres",
+			"date": "2026-10-01T18:00:00",
+			"categories": [
+				"gear"
+			],
+			"featured_media": "p-adjustable-dumbbells",
+			"excerpt": "Three pieces of kit, one corner of the room and a full-body routine that takes 30 minutes.",
+			"content": "<!-- wp:paragraph --><p>You do not need a garage to train properly. Our coach built a full routine around a pair of adjustable dumbbells, a 16 kg kettlebell and a yoga mat, all of which fit in the corner behind a door.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The session is a circuit of five moves: goblet squats, single-arm rows, kettlebell swings, push-ups and a slow plank. Do each for forty seconds, rest for twenty, and repeat the circuit four times.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Progress by adding weight on the dial rather than more rounds. When the last round feels easy, it is time to turn the dial one click.</p><!-- /wp:paragraph -->"
+		},
+		{
+			"slug": "packing-a-30-litre-day-pack",
+			"title": "How to pack a 30-litre day pack",
+			"date": "2026-10-22T09:30:00",
+			"categories": [
+				"gear"
+			],
+			"featured_media": "p-hiking-backpack-30l",
+			"excerpt": "Heavy things close to your back, snacks within reach, and the jacket always on top.",
+			"content": "<!-- wp:paragraph --><p>A well-packed day bag carries lighter than a badly packed one with less in it. The rule is simple: heavy and dense items go close to your back and between your shoulder blades, light and bulky ones go at the bottom and the outside.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Put the water bladder in its sleeve first, then food and the first-aid kit, then a warm layer. Your shell jacket goes on top where you can grab it in thirty seconds, and snacks, map and phone go in the hip-belt and lid pockets.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Tighten the compression straps before you set off so nothing shifts on a descent, and adjust the hip belt so it carries most of the weight. Your shoulders will thank you at the end of the day.</p><!-- /wp:paragraph -->"
+		}
+	],
+	"menus": [
+		{
+			"name": "Main menu",
+			"location": "primary",
+			"items": [
+				{
+					"title": "Shop",
+					"url": "/shop/",
+					"children": [
+						{
+							"title": "Running",
+							"url": "/product-category/running/"
+						},
+						{
+							"title": "Training",
+							"url": "/product-category/training/"
+						},
+						{
+							"title": "Outdoor",
+							"url": "/product-category/outdoor/"
+						},
+						{
+							"title": "Team sports",
+							"url": "/product-category/team-sports/"
+						},
+						{
+							"title": "All gear",
+							"url": "/shop/"
+						}
+					]
+				},
+				{
+					"title": "Running",
+					"url": "/product-category/running/",
+					"children": [
+						{
+							"title": "Trail Runner Shoe",
+							"url": "/product/trail-runner-shoe/"
+						},
+						{
+							"title": "Running Jacket",
+							"url": "/product/running-jacket/"
+						},
+						{
+							"title": "Compression Tights",
+							"url": "/product/compression-tights/"
+						},
+						{
+							"title": "All running",
+							"url": "/product-category/running/"
+						}
+					]
+				},
+				{
+					"title": "Training",
+					"url": "/product-category/training/",
+					"children": [
+						{
+							"title": "Adjustable Dumbbells",
+							"url": "/product/adjustable-dumbbells/"
+						},
+						{
+							"title": "Kettlebell 16 kg",
+							"url": "/product/kettlebell-16kg/"
+						},
+						{
+							"title": "Yoga Mat",
+							"url": "/product/yoga-mat/"
+						},
+						{
+							"title": "All training",
+							"url": "/product-category/training/"
+						}
+					]
+				},
+				{
+					"title": "Outdoor",
+					"url": "/product-category/outdoor/",
+					"children": [
+						{
+							"title": "Insulated Bottle",
+							"url": "/product/insulated-bottle/"
+						},
+						{
+							"title": "Hiking Backpack 30L",
+							"url": "/product/hiking-backpack-30l/"
+						},
+						{
+							"title": "Trekking Poles",
+							"url": "/product/trekking-poles/"
+						},
+						{
+							"title": "All outdoor",
+							"url": "/product-category/outdoor/"
+						}
+					]
+				},
+				{
+					"title": "About",
+					"page": "about"
+				},
+				{
+					"title": "Journal",
+					"page": "journal"
+				},
+				{
+					"title": "Contact",
+					"page": "contact"
+				}
+			]
+		},
+		{
+			"name": "Footer menu",
+			"location": "footer",
+			"items": [
+				{
+					"title": "Shop",
+					"url": "/shop/"
+				},
+				{
+					"title": "My account",
+					"url": "/my-account/"
+				},
+				{
+					"title": "Cart",
+					"url": "/cart/"
+				},
+				{
+					"title": "Contact",
+					"page": "contact"
+				}
+			]
+		}
+	],
+	"widgets": {
+		"footer-1": [
+			"<!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Flagship store</h3><!-- /wp:heading --><!-- wp:paragraph --><p>210 Summit Avenue<br>Open daily, 9–20<br>Free gait analysis on Saturdays</p><!-- /wp:paragraph -->",
+			"<!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Help</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Free shipping over $100<br>60-day test-run returns<br>Spare parts and repairs</p><!-- /wp:paragraph -->",
+			"<!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Club deals</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Running club, school team or five-a-side squad? Ask about our team pricing for ten players or more.</p><!-- /wp:paragraph -->"
+		]
+	},
+	"customizer": {
+		"accent": "#d7ff3a",
+		"signal": "#ff5a1f",
+		"header_variant": "carbon",
+		"show_announcement": true,
+		"announcement": "Free shipping over $100 · 60-day test-run returns",
+		"header_search": true,
+		"footer_tagline": "Go further."
+	},
+	"goocommerce": {
+		"settings": {
+			"currency": "USD",
+			"currency_pos": "left",
+			"catalog_columns": 4,
+			"catalog_rows": 3,
+			"demo_store": false
+		},
+		"categories": [
+			{
+				"slug": "running",
+				"name": "Running",
+				"description": "Shoes, shells and tights for road, track and trail.",
+				"image": "cat-running"
+			},
+			{
+				"slug": "training",
+				"name": "Training",
+				"description": "Weights, mats and everything for the home gym.",
+				"image": "cat-training"
+			},
+			{
+				"slug": "outdoor",
+				"name": "Outdoor",
+				"description": "Packs, poles and bottles for long days on the hill.",
+				"image": "cat-outdoor"
+			},
+			{
+				"slug": "team-sports",
+				"name": "Team sports",
+				"description": "Match balls and rackets for the court and the pitch.",
+				"image": "cat-team-sports"
+			}
+		],
+		"attributes": [
+			{
+				"slug": "size",
+				"name": "Size",
+				"terms": [
+					"40",
+					"41",
+					"42",
+					"43",
+					"44",
+					"45",
+					"46"
+				]
+			},
+			{
+				"slug": "color",
+				"name": "Color",
+				"terms": [
+					"Volt",
+					"Carbon"
+				]
+			}
+		],
+		"products": [
+			{
+				"slug": "trail-runner-shoe",
+				"name": "Trail Runner Shoe",
+				"type": "variable",
+				"regular_price": "139",
+				"categories": [
+					"running"
+				],
+				"sku": "PK-101",
+				"featured": true,
+				"description": "<p>A grippy, stable trail shoe with 5 mm lugs, a rock plate under the forefoot and a cushioned midsole that stays lively for the last ten kilometres. The upper is a tough ripstop mesh with a gusseted tongue to keep grit out.</p><p>Drop 6 mm, weight 290 g (size 42). Made for mud, scree and everything in between.</p>",
+				"short_description": "<p>Lugged, cushioned and stable: a trail shoe for long days off-road.</p>",
+				"attributes": [
+					{
+						"name": "Size",
+						"values": [
+							"40",
+							"41",
+							"42",
+							"43",
+							"44",
+							"45",
+							"46"
+						],
+						"variation": true
+					},
+					{
+						"name": "Color",
+						"values": [
+							"Volt",
+							"Carbon"
+						],
+						"variation": true
+					}
+				],
+				"variations": [
+					{
+						"attributes": {
+							"Size": "40",
+							"Color": "Volt"
+						},
+						"regular_price": "139",
+						"stock": 4,
+						"sku": "PK-101-40-V"
+					},
+					{
+						"attributes": {
+							"Size": "40",
+							"Color": "Carbon"
+						},
+						"regular_price": "139",
+						"stock": 4,
+						"sku": "PK-101-40-C"
+					},
+					{
+						"attributes": {
+							"Size": "41",
+							"Color": "Volt"
+						},
+						"regular_price": "139",
+						"stock": 4,
+						"sku": "PK-101-41-V"
+					},
+					{
+						"attributes": {
+							"Size": "41",
+							"Color": "Carbon"
+						},
+						"regular_price": "139",
+						"stock": 4,
+						"sku": "PK-101-41-C"
+					},
+					{
+						"attributes": {
+							"Size": "42",
+							"Color": "Volt"
+						},
+						"regular_price": "139",
+						"stock": 4,
+						"sku": "PK-101-42-V"
+					},
+					{
+						"attributes": {
+							"Size": "42",
+							"Color": "Carbon"
+						},
+						"regular_price": "139",
+						"stock": 4,
+						"sku": "PK-101-42-C"
+					},
+					{
+						"attributes": {
+							"Size": "43",
+							"Color": "Volt"
+						},
+						"regular_price": "139",
+						"stock": 4,
+						"sku": "PK-101-43-V"
+					},
+					{
+						"attributes": {
+							"Size": "43",
+							"Color": "Carbon"
+						},
+						"regular_price": "139",
+						"stock": 4,
+						"sku": "PK-101-43-C"
+					},
+					{
+						"attributes": {
+							"Size": "44",
+							"Color": "Volt"
+						},
+						"regular_price": "139",
+						"stock": 4,
+						"sku": "PK-101-44-V"
+					},
+					{
+						"attributes": {
+							"Size": "44",
+							"Color": "Carbon"
+						},
+						"regular_price": "139",
+						"stock": 4,
+						"sku": "PK-101-44-C"
+					},
+					{
+						"attributes": {
+							"Size": "45",
+							"Color": "Volt"
+						},
+						"regular_price": "139",
+						"stock": 4,
+						"sku": "PK-101-45-V"
+					},
+					{
+						"attributes": {
+							"Size": "45",
+							"Color": "Carbon"
+						},
+						"regular_price": "139",
+						"stock": 4,
+						"sku": "PK-101-45-C"
+					},
+					{
+						"attributes": {
+							"Size": "46",
+							"Color": "Volt"
+						},
+						"regular_price": "139",
+						"stock": 4,
+						"sku": "PK-101-46-V"
+					},
+					{
+						"attributes": {
+							"Size": "46",
+							"Color": "Carbon"
+						},
+						"regular_price": "139",
+						"stock": 4,
+						"sku": "PK-101-46-C"
+					}
+				],
+				"reviews": [
+					{
+						"author": "Kai",
+						"email": "kai@example.com",
+						"rating": 5,
+						"content": "Ran a muddy 30K in these on the weekend and never slipped once. The rock plate is a game changer on scree."
+					},
+					{
+						"author": "Rosa",
+						"email": "rosa@example.com",
+						"rating": 4,
+						"content": "Great grip and comfortable from the first run. Size up half if you like room for swollen feet on long runs."
+					}
+				],
+				"cross_sells": [
+					"compression-tights",
+					"insulated-bottle"
+				],
+				"image": "p-trail-runner-shoe"
+			},
+			{
+				"slug": "running-jacket",
+				"name": "Running Jacket",
+				"type": "simple",
+				"regular_price": "99",
+				"categories": [
+					"running"
+				],
+				"description": "<p>A featherweight shell that packs into its own chest pocket. Windproof on the front, breathable on the back, with reflective details front and rear for dark mornings.</p><p>Weight 120 g. Water-repellent finish without PFCs.</p>",
+				"short_description": "<p>A packable windproof shell with reflective details.</p>",
+				"sku": "PK-102",
+				"stock": 14,
+				"sale_price": "79",
+				"featured": true,
+				"reviews": [
+					{
+						"author": "Dev",
+						"email": "dev@example.com",
+						"rating": 5,
+						"content": "Folds to the size of a fist and actually blocks the wind. Wear it every winter morning."
+					}
+				],
+				"image": "p-running-jacket"
+			},
+			{
+				"slug": "compression-tights",
+				"name": "Compression Tights",
+				"type": "simple",
+				"regular_price": "59",
+				"categories": [
+					"running"
+				],
+				"description": "<p>Supportive tights with graduated compression through the calf and a wide, flat waistband that does not dig in. Zipped back pocket fits a phone and a gel.</p>",
+				"short_description": "<p>Graduated-compression running tights with a zipped back pocket.</p>",
+				"sku": "PK-103",
+				"stock": 22,
+				"image": "p-compression-tights"
+			},
+			{
+				"slug": "adjustable-dumbbells",
+				"name": "Adjustable Dumbbells",
+				"type": "simple",
+				"regular_price": "249",
+				"categories": [
+					"training"
+				],
+				"description": "<p>A pair of dumbbells that adjust from 2.5 to 24 kg each with a turn of the dial. Fifteen weights in the space of one pair, with a tray that keeps the plates in order.</p>",
+				"short_description": "<p>Dial-adjustable dumbbells, 2.5–24 kg each.</p>",
+				"sku": "PK-201",
+				"stock": 6,
+				"featured": true,
+				"weight": "48",
+				"reviews": [
+					{
+						"author": "Marcus",
+						"email": "marcus@example.com",
+						"rating": 5,
+						"content": "Replaced a whole rack in the garage. The dial is smooth and the plates lock in solidly."
+					},
+					{
+						"author": "Jo",
+						"email": "jo@example.com",
+						"rating": 4,
+						"content": "Brilliant for a flat. The handles are a bit long for curls, but you get used to it."
+					}
+				],
+				"image": "p-adjustable-dumbbells"
+			},
+			{
+				"slug": "kettlebell-16kg",
+				"name": "Kettlebell 16 kg",
+				"type": "simple",
+				"regular_price": "69",
+				"categories": [
+					"training"
+				],
+				"description": "<p>Cast in one piece with a wide, smooth handle that is comfortable for swings, cleans and Turkish get-ups. A flat base keeps it steady on the floor.</p>",
+				"short_description": "<p>A one-piece cast-iron kettlebell, 16 kg.</p>",
+				"sku": "PK-202",
+				"stock": 18,
+				"weight": "16",
+				"image": "p-kettlebell-16kg"
+			},
+			{
+				"slug": "yoga-mat",
+				"name": "Yoga Mat",
+				"type": "simple",
+				"regular_price": "45",
+				"categories": [
+					"training"
+				],
+				"description": "<p>A 5 mm mat with a grippy top and a cushioned natural-rubber base. Alignment lines help with stance, and the carry strap is included.</p>",
+				"short_description": "<p>A grippy 5 mm natural-rubber mat with alignment lines.</p>",
+				"sku": "PK-203",
+				"stock": 30,
+				"sale_price": "36",
+				"image": "p-yoga-mat"
+			},
+			{
+				"slug": "insulated-bottle",
+				"name": "Insulated Bottle",
+				"type": "simple",
+				"regular_price": "29",
+				"categories": [
+					"outdoor"
+				],
+				"description": "<p>Double-walled stainless steel keeps water cold for 24 hours or tea hot for 12. The sport cap opens with one hand and the powder coat will not slip out of a cold glove.</p><p>750 ml.</p>",
+				"short_description": "<p>A 750 ml double-walled bottle with a one-hand sport cap.</p>",
+				"sku": "PK-301",
+				"stock": 40,
+				"image": "p-insulated-bottle"
+			},
+			{
+				"slug": "hiking-backpack-30l",
+				"name": "Hiking Backpack 30L",
+				"type": "simple",
+				"regular_price": "129",
+				"categories": [
+					"outdoor"
+				],
+				"description": "<p>A day pack with a ventilated back panel, a hip belt with pockets and a separate compartment for a hydration bladder. Side pockets swallow a bottle each and the lid has room for a map and snacks.</p>",
+				"short_description": "<p>A ventilated 30-litre day pack with hip-belt pockets.</p>",
+				"sku": "PK-302",
+				"stock": 11,
+				"featured": true,
+				"reviews": [
+					{
+						"author": "Aino",
+						"email": "aino@example.com",
+						"rating": 5,
+						"content": "Carried it across three days of hut-to-hut hiking. The back panel really keeps you cool."
+					}
+				],
+				"image": "p-hiking-backpack-30l"
+			},
+			{
+				"slug": "trekking-poles",
+				"name": "Trekking Poles",
+				"type": "simple",
+				"regular_price": "79",
+				"categories": [
+					"outdoor"
+				],
+				"description": "<p>A pair of three-section aluminium poles with cork grips and quick-lock clamps. Adjust from 105 to 135 cm and pack down to 62 cm for travel.</p>",
+				"short_description": "<p>Cork-grip aluminium trekking poles, a pair.</p>",
+				"sku": "PK-303",
+				"stock": 16,
+				"image": "p-trekking-poles"
+			},
+			{
+				"slug": "match-football",
+				"name": "Match Football",
+				"type": "simple",
+				"regular_price": "35",
+				"categories": [
+					"team-sports"
+				],
+				"description": "<p>A thermally bonded size-5 ball with a textured skin for a clean strike and true flight. Holds its shape and pressure through a whole season.</p>",
+				"short_description": "<p>A thermally bonded size-5 match ball.</p>",
+				"sku": "PK-401",
+				"stock": 35,
+				"featured": true,
+				"image": "p-match-football"
+			},
+			{
+				"slug": "basketball",
+				"name": "Basketball",
+				"type": "simple",
+				"regular_price": "39",
+				"categories": [
+					"team-sports"
+				],
+				"description": "<p>An indoor-outdoor composite ball with deep channels and a pebbled grip that does not get slippery when you sweat. Official size 7.</p>",
+				"short_description": "<p>A grippy indoor-outdoor size-7 basketball.</p>",
+				"sku": "PK-402",
+				"stock": 20,
+				"image": "p-basketball"
+			},
+			{
+				"slug": "tennis-racket",
+				"name": "Tennis Racket",
+				"type": "simple",
+				"regular_price": "159",
+				"categories": [
+					"team-sports"
+				],
+				"description": "<p>A 100 square inch head with an open string pattern for easy spin and a forgiving sweet spot. Strung and ready to play, with a protective cover.</p><p>Weight 285 g unstrung, grip size 2.</p>",
+				"short_description": "<p>A forgiving 100 sq in racket, strung, with a cover.</p>",
+				"sku": "PK-403",
+				"stock": 9,
+				"image": "p-tennis-racket"
+			}
+		],
+		"coupons": [
+			{
+				"code": "WELCOME10",
+				"type": "percent",
+				"amount": "10",
+				"description": "10% off your first order"
+			},
+			{
+				"code": "TEAM15",
+				"type": "percent",
+				"amount": "15",
+				"description": "15% off team orders over $300",
+				"minimum_amount": "300"
+			}
+		],
+		"shipping": {
+			"zone": "Everywhere",
+			"flat_rate": "7",
+			"free_over": "100",
+			"local_pickup": true
+		}
+	}
+}

@@ -1,0 +1,17 @@
+{{template "header" .}}
+{{with .Post}}<article id="post-{{.ID}}" class="{{.Class}} of-article">
+	<div class="of-wrap of-article__top">
+		<header class="of-article__header">
+			<p class="of-kicker">{{range $i, $c := .Categories}}{{if $i}} / {{end}}<a href="{{$c.URL}}">{{$c.Name}}</a>{{end}}</p>
+			<h1 class="entry-title">{{.Title}}</h1>
+			<p class="of-article__meta"><time datetime="{{.DateISO}}">{{.DateText}}</time>{{with .AuthorName}} &middot; <span class="byline">{{.}}</span>{{end}}{{with .EditLink}} &middot; <span class="edit-link">{{.}}</span>{{end}}</p>
+		</header>
+		{{with .Thumbnail}}<figure class="of-article__media">{{.}}</figure>{{end}}
+	</div>
+	<div class="of-wrap of-measure entry-content">
+		{{.Content}}
+	</div>
+	{{if .Tags}}<footer class="of-wrap of-measure entry-footer"><span class="tags-links">{{range .Tags}}<a href="{{.URL}}" rel="tag">{{.Name}}</a> {{end}}</span></footer>{{end}}
+</article>{{end}}
+<div class="of-wrap of-measure">{{.PostNav}}{{template "comments" .}}</div>
+{{template "footer" .}}

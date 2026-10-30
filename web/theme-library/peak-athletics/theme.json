@@ -1,0 +1,88 @@
+{
+  "slug": "peak-athletics",
+  "name": "Peak Athletics",
+  "version": "1.0.0",
+  "description": "An energetic sports and outdoor store for Goocommerce. A bold carbon header with a three-level mega menu, an inline product search and a volt cart button, a full-bleed hero with a volt slash, slanted category tiles, product cards that lift on hover and reveal a full-width add-to-cart bar, a chunky product page and a carbon footer. Big Shoulders Display and Barlow, self-hosted. Light or dark storefront. Ships a complete store demo: running, training, outdoor and team-sports gear with sizes and colours, reviews, coupons and shipping.",
+  "author": "WordPress Go",
+  "author_url": "https://github.com/boracomet/wordpress-go",
+  "theme_url": "https://github.com/boracomet/wordpress-go/tree/main/web/theme-library/peak-athletics",
+  "tags": ["E-Commerce", "Sports", "Grid Layout", "Custom Colors", "Custom Logo", "Custom Menu", "Editor Style", "Featured Images", "Footer Widgets", "Wide Blocks"],
+  "requires_core": "0.1.0",
+  "screenshot": "assets/screenshot.png",
+  "category": "shop",
+  "style": "Energetic sports gear, carbon and volt",
+  "demo": "demo/demo.json",
+
+  "widget_areas": [
+    {"id": "footer-1", "name": "Footer", "description": "Widgets in the footer columns."},
+    {"id": "shop-sidebar", "name": "Shop Sidebar", "description": "Filters beside the product catalog."}
+  ],
+  "menu_locations": [
+    {"id": "primary", "name": "Primary Menu (mega menu)"},
+    {"id": "footer", "name": "Footer Menu"}
+  ],
+
+  "styles": [
+    {"handle": "peak-athletics-style", "src": "assets/style.css", "deps": ["wp-block-library"], "media": "all"}
+  ],
+  "scripts": [
+    {"handle": "peak-athletics-navigation", "src": "assets/js/navigation.js", "deps": [], "in_footer": true}
+  ],
+  "editor_styles": ["assets/editor-style.css"],
+  "preload_fonts": ["assets/fonts/big-shoulders-display.woff2", "assets/fonts/barlow-400.woff2"],
+
+  "palette": [
+    {"name": "White", "slug": "white", "color": "#ffffff"},
+    {"name": "Volt", "slug": "volt", "color": "#d7ff3a"},
+    {"name": "Carbon", "slug": "carbon", "color": "#151515"},
+    {"name": "Signal Orange", "slug": "signal", "color": "#ff5a1f"},
+    {"name": "Concrete", "slug": "concrete", "color": "#f1f1ee"}
+  ],
+  "supports": {
+    "post-thumbnails": true,
+    "custom-logo": {"width": 240, "height": 70, "flex-width": true, "flex-height": true, "header-text": ["site-title", "site-description"]},
+    "title-tag": true,
+    "html5": ["search-form", "comment-form", "comment-list", "gallery", "caption", "script", "style"],
+    "responsive-embeds": true,
+    "align-wide": true,
+    "wp-block-styles": true
+  },
+
+  "customizer": {
+    "sections": [
+      {
+        "id": "peak_athletics_colors", "title": "Colours & Type", "priority": 40,
+        "settings": [
+          {"id": "accent", "label": "Accent (volt)", "description": "The cart button, highlights and the add-to-cart button.", "type": "color", "default": "#d7ff3a", "transport": "postMessage", "css_var": "--pk-volt"},
+          {"id": "signal", "label": "Signal colour", "description": "Sale badges, sale prices and alerts.", "type": "color", "default": "#ff5a1f", "transport": "postMessage", "css_var": "--pk-signal"},
+          {"id": "background", "label": "Background", "type": "color", "default": "#ffffff", "transport": "postMessage", "css_var": "--pk-bg"},
+          {"id": "text_color", "label": "Text colour", "type": "color", "default": "#151515", "transport": "postMessage", "css_var": "--pk-ink"},
+          {"id": "font_pairing", "label": "Headline style", "type": "select", "default": "condensed", "transport": "postMessage", "body_class": "pk-fonts-{value}",
+            "choices": [{"value": "condensed", "label": "Big Shoulders Display (condensed)"}, {"value": "italic", "label": "Barlow Extra Bold Italic"}]},
+          {"id": "button_style", "label": "Buttons", "type": "select", "default": "sharp", "transport": "postMessage", "body_class": "pk-buttons-{value}",
+            "choices": [{"value": "sharp", "label": "Square"}, {"value": "slant", "label": "Slanted"}, {"value": "round", "label": "Rounded"}]},
+          {"id": "dark_mode", "label": "Dark storefront", "description": "Carbon background with white text.", "type": "checkbox", "default": false, "transport": "postMessage", "body_class": "pk-dark"}
+        ]
+      },
+      {
+        "id": "peak_athletics_header", "title": "Header & Store", "priority": 41,
+        "settings": [
+          {"id": "header_variant", "label": "Header colour", "type": "select", "default": "carbon", "transport": "postMessage", "body_class": "pk-header-{value}",
+            "choices": [{"value": "carbon", "label": "Carbon"}, {"value": "light", "label": "Light"}, {"value": "volt", "label": "Volt"}]},
+          {"id": "show_announcement", "label": "Show the top bar", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "pk-has-announcement"},
+          {"id": "announcement", "label": "Top bar text", "type": "text", "default": "Free shipping over $100 · 60-day test-run returns", "transport": "refresh"},
+          {"id": "header_search", "label": "Search field in the header (large screens)", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "pk-inline-search"},
+          {"id": "catalog_columns", "label": "Products per row (large screens)", "type": "select", "default": "4", "transport": "postMessage", "body_class": "pk-cols-{value}",
+            "choices": [{"value": "3", "label": "3"}, {"value": "4", "label": "4"}]}
+        ]
+      },
+      {
+        "id": "peak_athletics_footer", "title": "Footer", "priority": 42,
+        "settings": [
+          {"id": "footer_tagline", "label": "Footer headline", "type": "text", "default": "Go further.", "transport": "refresh"},
+          {"id": "footer_text", "label": "Footer text", "type": "text", "default": "", "transport": "refresh"}
+        ]
+      }
+    ]
+  }
+}

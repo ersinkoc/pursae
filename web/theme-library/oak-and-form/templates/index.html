@@ -1,0 +1,7 @@
+{{template "header" .}}
+<div class="of-wrap of-archive">
+{{if .IsHomeHeader}}<header class="page-header of-page-header"><h1 class="page-title">{{.PostsPageTitle}}</h1></header>{{end}}
+{{if .Posts}}{{template "loop" .}}
+{{.Pagination}}{{else}}{{template "content-none" .}}{{end}}
+</div>
+{{template "footer" .}}
