@@ -20,7 +20,8 @@ import (
 // types, components and dynamic zones), a Content Manager with draft & publish and i18n through
 // Golylang, a delivery REST API under /wp-json/headlessgo/v1 with filters, sorting, pagination,
 // populate and field selection, API tokens, a public-role permission matrix, CORS, webhooks,
-// preview URLs and a small read-only GraphQL endpoint.
+// preview URLs, a GraphQL endpoint (queries, mutations, introspection), content history, scheduled
+// publishing, bulk actions, media upload and bidirectional relations.
 //
 // While it is active the site's front end does not render (headless mode): visitors get a JSON
 // 404, a plain 404 or a redirect to the front-end app, as configured. wp-admin, wp-login, the REST
