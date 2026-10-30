@@ -1,0 +1,90 @@
+/*! This file is auto-generated */
+/**
+ * /panel/ mobile bridges — WP-admin-like responsive behavior for the static clone.
+ *
+ * HARD RULE: No layout rules outside @media (max-width: …). Desktop stays 1:1 with
+ * vendored wp-admin CSS (common, admin-menu, admin-bar, forms, list-tables, edit).
+ *
+ * Most mobile layout already ships in those files at 960 / 782 / 600 / 480.
+ * This file only fills clone gaps (responsive overlay + small usability aids).
+ *
+ * See admin/MOBILE.md.
+ */
+
+/* —— ≤782px: phone / tablet — WP primary responsive breakpoint —— */
+@media screen and (max-width: 782px) {
+  body.wp-admin {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /*
+   * Admin-bar site name: WP hides the label behind a 52px home icon
+   * (text-indent + overflow). Longer "WordPress Go" still inflates
+   * scrollWidth ≫ clientWidth — collapse text metrics so the icon slot
+   * cannot contribute horizontal overflow. :before keeps its own font.
+   */
+  #wpadminbar #wp-admin-bar-site-name {
+    max-width: 52px;
+    overflow: hidden;
+  }
+  /* Beat WP's `#…site-name a.ab-item { text-overflow: clip }` specificity */
+  #wpadminbar #wp-admin-bar-site-name > a.ab-item {
+    max-width: 52px;
+    box-sizing: border-box;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    /* Collapse label metrics; drop text-indent so scrollWidth ≈ 52px icon slot */
+    font-size: 0;
+    text-indent: 0;
+  }
+
+  /*
+   * Wide tables: scroll the wrap content area if a row is still wider than the
+   * viewport. Do NOT set display:block on .wp-list-table (breaks WP mobile cols).
+   */
+  #wpbody-content .wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Metabox columns: full-width if page still ships columns-2 markup */
+  #post-body.columns-2 #postbox-container-1,
+  #post-body.columns-2 #postbox-container-2 {
+    width: 100%;
+    min-width: 0;
+    float: none;
+    margin: 0;
+  }
+
+  /* Touch-friendly screen-meta toggles (desktop unchanged) */
+  #screen-meta-links .show-settings {
+    min-height: 44px;
+    box-sizing: border-box;
+  }
+}
+
+/* —— ≤600px: smartphone — menu overlay (WP common.js pattern) —— */
+@media screen and (max-width: 600px) {
+  #wp-responsive-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 99;
+    background: transparent;
+  }
+
+  #wpwrap.wp-responsive-open #wp-responsive-overlay {
+    display: block;
+  }
+}
+
+/* —— ≤480px —— */
+@media screen and (max-width: 480px) {
+  .wrap .page-title-action,
+  .wrap .page-title-action:active {
+    margin-top: 4px;
+  }
+}

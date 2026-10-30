@@ -248,8 +248,7 @@ func (s *Server) authorizeApplication(c *gin.Context) {
 		errs = append(errs, "The application ID must be a UUID.")
 	}
 	if len(errs) > 0 {
-		c.Header("Content-Type", "text/html; charset=utf-8")
-		c.String(http.StatusBadRequest, `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Invalid request</title>`+
+		s.adminHTML(c, http.StatusBadRequest, `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Invalid request</title>`+
 			`<link rel="stylesheet" href="/wp-admin/assets/css/wp/install.min.css"></head><body id="error-page"><div class="wp-die-message"><p>`+template.HTMLEscapeString(strings.Join(errs, " "))+`</p></div></body></html>`)
 		return
 	}

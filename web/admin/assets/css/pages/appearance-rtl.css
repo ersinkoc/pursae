@@ -1,0 +1,126 @@
+/*! This file is auto-generated */
+/**
+ * Appearance screens: Widgets, Nav Menus, Theme File Editor.
+ * Vendor CSS linked from page HTML (widgets/nav-menus/code-editor.min.css)
+ * already includes WP mobile breakpoints. common.css owns theme-editor desktop.
+ * This file: overflow safety + mobile touch-ups only (do not fight desktop).
+ */
+
+/* Prevent horizontal scroll on narrow viewports without changing desktop floats */
+.nav-menus-php #wpcontent,
+.widgets-php #wpcontent,
+.theme-editor-php #wpcontent {
+	overflow-x: clip;
+}
+
+.nav-menus-php .wrap,
+.widgets-php .wrap,
+.theme-editor-php .wrap {
+	max-width: 100%;
+	box-sizing: border-box;
+}
+
+.theme-editor-php #template textarea,
+.theme-editor-php #template .CodeMirror {
+	max-width: 100%;
+	box-sizing: border-box;
+}
+
+.theme-editor-php .file-editor-warning.hidden {
+	display: none;
+}
+
+/* —— Mobile only —— */
+
+@media screen and (max-width: 782px) {
+	.theme-editor-php #templateside {
+		float: none;
+		width: auto;
+		margin-top: 10px;
+	}
+
+	.theme-editor-php #template {
+		float: none;
+		width: auto;
+		margin-left: 0;
+	}
+
+	.theme-editor-php #template > div {
+		margin-left: 0;
+		width: auto;
+		float: none;
+	}
+
+	.theme-editor-php #template textarea,
+	.theme-editor-php #template .CodeMirror {
+		width: 100%;
+		min-height: 40vh;
+	}
+
+	.theme-editor-php #templateside > ul {
+		max-height: 40vh;
+	}
+
+	.theme-editor-php #templateside li:not(.howto) a,
+	.theme-editor-php #templateside .folder-label {
+		padding: 8px 10px;
+	}
+
+	.theme-editor-php .fileedit-sub .alignleft,
+	.theme-editor-php .fileedit-sub .alignright {
+		float: none;
+		display: block;
+		width: 100%;
+		text-align: right;
+	}
+
+	.theme-editor-php .fileedit-sub .alignright {
+		margin-top: 12px;
+	}
+
+	.theme-editor-php .fileedit-sub .alignright label {
+		display: block;
+		margin-bottom: 6px;
+	}
+
+	.theme-editor-php .fileedit-sub #theme {
+		margin-right: 0;
+		max-width: 70%;
+	}
+
+	.widgets-php .widget-access-link {
+		float: none;
+		margin: 10px 0 0;
+		display: block;
+	}
+
+	.widgets-php .page-title-action,
+	.nav-menus-php .page-title-action {
+		display: inline-block;
+		margin: 8px 0 0;
+	}
+
+	.nav-menus-php .manage-menus {
+		overflow-wrap: anywhere;
+	}
+
+	.nav-menus-php .menu-item-bar .menu-item-handle {
+		max-width: 100%;
+		box-sizing: border-box;
+	}
+}
+
+@media screen and (max-width: 480px) {
+	.theme-editor-php .fileedit-sub #theme {
+		max-width: 100%;
+		width: 100%;
+		margin-bottom: 8px;
+	}
+
+	.theme-editor-php .notice,
+	.widgets-php .notice,
+	.nav-menus-php .notice {
+		margin-right: 0;
+		margin-left: 0;
+	}
+}

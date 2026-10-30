@@ -1033,7 +1033,7 @@ func (s *Server) golylangAjax(c *gin.Context, action string) bool {
 		return true
 	}
 	s.purgeAll(c)
-	c.Data(http.StatusOK, "text/html; charset=UTF-8", []byte(s.pllBoxInner(c, p)))
+	s.adminHTML(c, http.StatusOK, string(s.pllBoxInner(c, p)))
 	return true
 }
 

@@ -1,0 +1,267 @@
+/*! This file is auto-generated */
+/* Goocommerce store admin: WooCommerce's admin.css essentials for the orders, coupons, settings,
+   reports, analytics and status screens. */
+
+/* Order status marks */
+mark.order-status{display:inline-flex;line-height:2.5em;color:#777;background:#e5e5e5;border-radius:4px;border-bottom:1px solid rgba(0,0,0,.05);margin:-.25em 0;cursor:inherit!important;white-space:nowrap;max-width:100%}
+mark.order-status>span{margin:0 1em;overflow:hidden;text-overflow:ellipsis}
+mark.order-status.status-processing{background:#c6e1c6;color:#5b841b}
+mark.order-status.status-on-hold{background:#f8dda7;color:#94660c}
+mark.order-status.status-completed{background:#c8d7e1;color:#2e4453}
+mark.order-status.status-failed{background:#eba3a3;color:#761919}
+mark.order-status.status-cancelled,mark.order-status.status-refunded,mark.order-status.status-trash{background:#e5e5e5;color:#777}
+mark.order-status.status-pending{background:#e5e5e5;color:#454545}
+
+/* Orders list */
+.wc-orders-list-table .column-order_number{width:22ch}
+.wc-orders-list-table .column-order_status{width:14ch}
+.wc-orders-list-table .column-order_date,.wc-orders-list-table .column-order_total{width:11ch}
+.wc-orders-list-table .column-wc_actions{width:13ch}
+.wc-orders-list-table td .description{display:block;color:#999}
+.wc-orders-list-table .order-preview{float:left;width:16px;height:16px;margin-right:4px;overflow:hidden;text-indent:-9999px;position:relative;border:2px solid transparent;border-radius:4px}
+.wc-orders-list-table .order-preview:before{content:"\f177";font-family:dashicons;text-indent:0;position:absolute;top:0;right:0;width:100%;height:100%;line-height:16px;text-align:center;color:#999}
+.wc-orders-list-table .order-preview:hover{border-color:#999}
+.wc-action-button{margin:2px 0 2px 4px!important}
+.wc-order-preview-addresses{display:flex;gap:2em;flex-wrap:wrap;margin-bottom:1em}
+.wc-order-preview-address{flex:1;min-width:200px}
+.wc-order-preview-address strong{display:block;margin-top:.8em}
+.wc-order-preview-table{width:100%;border-collapse:collapse}
+.wc-order-preview-table th,.wc-order-preview-table td{padding:8px;border-bottom:1px solid #eee;text-align:right}
+.wc-order-item-meta{color:#888;font-size:.92em}
+
+/* Modals */
+.goo-modal[hidden]{display:none}
+.goo-modal{position:fixed;inset:0;z-index:100000}
+.goo-modal .wc-backbone-modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.7)}
+.goo-modal .wc-backbone-modal-content{position:fixed;z-index:100001;background:#fff;right:50%;top:50%;transform:translate(50%,-50%);width:min(800px,94vw);max-height:90vh;overflow:auto;border-radius:4px}
+.goo-modal header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #ddd;padding:0 16px}
+.goo-modal header h1{font-size:18px;margin:12px 0}
+.goo-modal header .modal-close-link{border:0;background:none;cursor:pointer;font-size:20px;color:#666}
+.goo-modal article{padding:16px}
+.goo-modal article>h1:first-child{display:none}
+.goo-modal footer{border-top:1px solid #ddd;padding:12px 0 0;text-align:left}
+.goo-inline-modal{background:#fff;border:1px solid #c3c4c7;box-shadow:0 3px 20px rgba(0,0,0,.25);padding:4px 16px 8px;margin:10px 12px;border-radius:4px}
+.goo-inline-modal[hidden]{display:none}
+.goo-inline-modal select[size]{width:100%;min-height:150px}
+
+/* Order editor */
+#woocommerce-order-data .inside{margin:0;padding:0}
+#order_data{padding:23px 24px 12px}
+#order_data h2{margin:0;font-size:21px;font-weight:400;line-height:1.2;padding:0}
+#order_data p.order_number{margin:0 0 12px;color:#777}
+.order_data_column_container{display:flex;gap:2%;flex-wrap:wrap}
+.order_data_column{flex:1 1 30%;min-width:220px}
+.order_data_column h3{font-size:14px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.order_data_column h3 span{margin-right:auto;font-weight:400;font-size:12px}
+.order_data_column .form-field{margin:9px 0 0;padding:0}
+.order_data_column .form-field label{display:block;padding:0 0 3px;color:#777}
+.order_data_column .form-field input,.order_data_column .form-field select,.order_data_column .form-field textarea{width:100%;max-width:100%}
+.order_data_column .form-field-wide input.hour,.order_data_column .form-field-wide input.minute{width:3.5em}
+.order_data_column .form-field-wide input.date-picker{width:9em}
+.order_data_column div.edit_address{display:none;overflow:hidden}
+.order_data_column.editing div.edit_address{display:flex;flex-wrap:wrap;gap:0 4%}
+.order_data_column.editing div.edit_address .form-field{width:48%}
+.order_data_column.editing div.edit_address .form-field-wide,.order_data_column.editing div.edit_address ._billing_email_field{width:100%}
+.order_data_column.editing div.address{display:none}
+.order_data_column a.edit_address{width:14px;height:0;padding:14px 0 0;overflow:hidden;position:relative;opacity:.5}
+.order_data_column a.edit_address:after{content:"\f464";font-family:dashicons;position:absolute;top:0;right:0;font-size:14px;line-height:14px}
+.order_data_column p.none_set{color:#999}
+.woocommerce_order_items_wrapper{margin:0;overflow-x:auto}
+table.woocommerce_order_items{width:100%;background:#fff;border-collapse:collapse}
+table.woocommerce_order_items thead th{text-align:right;padding:1em;font-weight:400;color:#999;background:#f8f8f8;border-bottom:1px solid #dfdfdf;white-space:nowrap}
+table.woocommerce_order_items td{padding:1.5em 1em 1em;text-align:right;line-height:1.5em;vertical-align:top;border-bottom:1px solid #f8f8f8}
+table.woocommerce_order_items td.thumb{width:38px;padding-left:0}
+table.woocommerce_order_items .wc-order-item-thumbnail{width:38px;height:38px;border:2px solid #e8e8e8;background:#f8f8f8;color:#ccc;position:relative}
+table.woocommerce_order_items .wc-order-item-thumbnail img{width:100%;height:100%;object-fit:cover;display:block}
+table.woocommerce_order_items td.name .wc-order-item-sku,table.woocommerce_order_items td.name .wc-order-item-variation{font-size:.92em;color:#888}
+table.woocommerce_order_items .item_cost,table.woocommerce_order_items .quantity,table.woocommerce_order_items .line_cost,table.woocommerce_order_items .line_tax{text-align:left;white-space:nowrap}
+table.woocommerce_order_items td input[type=text],table.woocommerce_order_items td input[type=number]{width:6em;text-align:left}
+table.woocommerce_order_items .split-input{display:inline-block;background:#fff;border:1px solid #ddd;border-radius:2px;min-width:80px}
+table.woocommerce_order_items .split-input .input{display:block}
+table.woocommerce_order_items .split-input label{font-size:.75em;display:block;padding:4px 6px 0;color:#555}
+table.woocommerce_order_items .split-input input{border:0;box-shadow:none;width:100%}
+table.woocommerce_order_items small.refunded{display:block;color:#a00;white-space:nowrap;margin-top:.5em}
+table.woocommerce_order_items small.refunded:before{content:"\f171";font-family:dashicons;font-size:1.2em;vertical-align:middle;margin-left:2px}
+table.woocommerce_order_items .wc-order-item-discount{display:block;color:#999;margin-top:.5em}
+table.woocommerce_order_items table.display_meta{margin:.5em 0 0;font-size:.92em;color:#888}
+table.woocommerce_order_items table.display_meta th{font-weight:400;padding:0 0 0 4px;text-align:right}
+table.woocommerce_order_items table.display_meta td{padding:0;border:0}
+table.woocommerce_order_items table.display_meta p{margin:0}
+table.woocommerce_order_items tr.refund td{background:#fcfcfc;color:#a00}
+.wc-order-edit-line-item-actions{white-space:nowrap}
+.wc-order-edit-line-item-actions a,.wc-order-edit-line-item-actions button{color:#ccc;display:inline-block;width:1.2em;height:1.2em;overflow:hidden;position:relative;border:0;background:none;padding:0;cursor:pointer;vertical-align:middle;text-indent:-9999px}
+.wc-order-edit-line-item-actions a:before,.wc-order-edit-line-item-actions button:before{font-family:dashicons;text-indent:0;position:absolute;right:0;top:0;width:100%;text-align:center;line-height:1.2em}
+.wc-order-edit-line-item-actions .edit-order-item:before{content:"\f464"}
+.wc-order-edit-line-item-actions .delete-order-item:before,.wc-order-edit-line-item-actions .delete_refund:before{content:"\f158"}
+.wc-order-edit-line-item-actions a:hover,.wc-order-edit-line-item-actions button:hover{color:#a00}
+.wc-order-data-row{border-bottom:1px solid #dfdfdf;padding:1.5em 2em;background:#f8f8f8;line-height:2em;text-align:left}
+.wc-order-data-row:after{content:"";display:table;clear:both}
+.wc-order-data-row p{margin:0;line-height:2em}
+.wc-order-data-row .wc-used-coupons{float:right;text-align:right;width:50%}
+.wc-order-totals{float:left;width:50%;margin:0;padding:0;text-align:left}
+.wc-order-totals .label{vertical-align:top}
+.wc-order-totals .total{font-size:1em!important;width:10em;margin:0 .5em 0 0;box-sizing:border-box}
+.wc-order-totals .refunded-total{color:#a00}
+.wc-order-totals .label-highlight{font-weight:700}
+.wc-order-refund-items .wc-order-totals input[type=text]{width:9em;text-align:left}
+.refund-actions{margin-top:5px;padding-top:12px;border-top:1px solid #dfdfdf;clear:both}
+.refund-actions .button{float:left;margin-right:4px}
+.refund-actions .cancel-action{float:right;margin-right:0}
+.wc-order-add-item .cancel-action{float:right;margin-left:4px}
+.wc-order-add-item .button{margin-right:4px}
+ul.wc_coupon_list{margin:0;padding:0;display:flex;flex-wrap:wrap;gap:4px;align-items:center;list-style:none}
+ul.wc_coupon_list li{margin:0}
+ul.wc_coupon_list li.code{background:#fff;border:1px solid #ddd;border-radius:4px;padding:0 .5em;display:inline-flex;align-items:center;gap:2px}
+ul.wc_coupon_list li.code .remove-coupon{border:0;background:none;cursor:pointer;color:#999;font-family:dashicons;padding:0}
+ul.wc_coupon_list li.code .remove-coupon:before{content:"\f153"}
+ul.order_notes{padding:2px 0 0;margin:0}
+ul.order_notes li{margin:0 0 12px}
+ul.order_notes li .note_content{padding:10px;background:#efefef;position:relative}
+ul.order_notes li .note_content p{margin:0;padding:0;word-wrap:break-word}
+ul.order_notes li .note_content:after{content:"";display:block;position:absolute;bottom:-10px;right:20px;width:0;height:0;border-width:10px 0 0 10px;border-style:solid;border-color:#efefef transparent}
+ul.order_notes li p.meta{padding:10px;color:#999;margin:0;font-size:11px}
+ul.order_notes li p.meta .exact-date{border-bottom:1px dotted #999}
+ul.order_notes li.customer-note .note_content{background:#a7cedc}
+ul.order_notes li.customer-note .note_content:after{border-color:#a7cedc transparent}
+ul.order_notes li.system-note .note_content{background:#d7cad2}
+ul.order_notes li.system-note .note_content:after{border-color:#d7cad2 transparent}
+ul.order_notes .delete_note{color:#a00;margin-right:6px;font-size:11px}
+.add_note textarea{width:100%}
+.add_note #order_note_type{max-width:60%}
+ul.order_actions li{margin:6px 0;display:flex;gap:6px;align-items:center}
+ul.order_actions li select{flex:1}
+ul.order_actions li #delete-action{flex:1}
+ul.order_actions .submitdelete{color:#a00}
+.order_download_permissions .wc-metabox{border:1px solid #eee;margin:0 0 8px;padding:8px}
+.order_download_permissions .wc-metabox h3{margin:0;font-size:13px;display:flex;gap:8px;align-items:center}
+.order_download_permissions .revoke_access{order:2;margin-right:auto}
+.order_download_permissions .toolbar select{min-width:50%;min-height:60px}
+.goo-select-filter{width:100%;margin-bottom:4px}
+
+/* Coupon editor */
+#woocommerce-coupon-description textarea{width:100%;margin:8px 0}
+#generate-coupon-code{margin-top:6px}
+#coupon_options{display:flex;min-height:200px}
+#coupon_options ul.wc-tabs{margin:0;width:20%;min-width:140px;float:none;background:#fafafa;border-left:1px solid #eee;padding:0;list-style:none}
+#coupon_options ul.wc-tabs li{margin:0;border-bottom:1px solid #eee}
+#coupon_options ul.wc-tabs li a{display:block;padding:10px;text-decoration:none}
+#coupon_options ul.wc-tabs li.active a{background:#eee;color:#555}
+#coupon_options .panel{flex:1;padding:0 12px}
+#coupon_options .panel[hidden]{display:none}
+.woocommerce_options_panel .form-field{padding:5px 162px 5px 20px;margin:9px 0;position:relative}
+.woocommerce_options_panel .form-field label{float:right;width:150px;margin:0 -150px 0 0}
+.woocommerce_options_panel .form-field .description{display:block;color:#777;margin-top:3px}
+.woocommerce_options_panel .form-field input.short,.woocommerce_options_panel .form-field select.short{width:50%}
+.woocommerce_options_panel .options_group{border-top:1px solid #eee}
+.woocommerce_options_panel .options_group:first-child{border-top:0}
+
+/* Settings */
+.woocommerce .goo-settings-crumb{font-size:1.3em}
+.woocommerce .goo-settings-crumb a{text-decoration:none}
+.woocommerce .form-table .colorpickpreview{display:inline-block;width:24px;height:24px;vertical-align:middle;margin-left:6px;border:1px solid #ddd;border-radius:3px}
+.woocommerce .form-table .colorpick{width:7em}
+.woocommerce-help-tip{display:inline-block;color:#666;cursor:help;margin:0 4px 0 0;width:16px;height:16px;vertical-align:middle}
+.woocommerce-help-tip:after{font-family:dashicons;content:"\f223";font-size:16px}
+.woocommerce-input-toggle{display:inline-block;width:2.2em;height:1.2em;border-radius:1em;background:#ccc;position:relative;text-indent:-9999px;overflow:hidden;vertical-align:middle;cursor:pointer}
+.woocommerce-input-toggle:before{content:"";position:absolute;top:.2em;right:.2em;width:.8em;height:.8em;border-radius:50%;background:#fff;transition:right .2s}
+.woocommerce-input-toggle--enabled{background:#2271b1}
+.woocommerce-input-toggle--enabled:before{right:1.2em}
+.goo-toggle input{position:absolute;opacity:0;width:1px;height:1px}
+.goo-toggle input:focus+span{box-shadow:0 0 0 2px #2271b1}
+table.wc_gateways td,table.wc_emails td,table.wc-shipping-zones td,table.wc-shipping-classes td,table.wc-shipping-zone-methods td{vertical-align:middle;padding:1em}
+table.wc_gateways .sort,table.wc-shipping-zones .wc-shipping-zone-sort,table.wc-shipping-zone-methods .wc-shipping-zone-method-sort{cursor:move;width:2em;color:#999}
+table.wc_gateways .wc-item-reorder-nav button{border:0;background:none;color:#999;cursor:pointer;padding:0 2px;font-size:10px}
+table.wc_gateways .wc-payment-gateway-method-name{color:#999}
+table.wc_emails .status-enabled:before{content:"\f147";font-family:dashicons;color:#7ad03a}
+table.wc_emails .status-disabled:before{content:"\f335";font-family:dashicons;color:#ccc}
+table.wc_emails .status-manual:before{content:"\f465";font-family:dashicons;color:#999}
+table.wc_emails .wc-email-settings-table-status span{text-indent:-9999px;display:inline-block;width:20px;overflow:hidden;position:relative}
+table.wc_emails .wc-email-settings-table-status span:before{position:absolute;right:0;text-indent:0}
+table.wc-shipping-zones ul{margin:0}
+table.wc-shipping-zones li.wc-shipping-zone-method{display:inline-block;margin:0 0 4px 4px;background:#f0f0f1;border-radius:3px;padding:2px 8px}
+table.wc-shipping-zones li.wc-shipping-zone-method.disabled{text-decoration:line-through;color:#999}
+table.wc-shipping-zones .wc-shipping-zone-delete,table.wc-shipping-zone-methods .wc-shipping-zone-method-delete,table.wc-shipping-classes .wc-shipping-class-delete{color:#a00}
+.wc-shipping-zone-region-select{width:100%;max-width:520px}
+.wc-shipping-zone-postcodes[hidden]{display:none}
+.wc-shipping-zone-postcodes textarea{max-width:520px}
+table.wc-shipping-classes input{width:100%}
+table.wc_tax_rates td{padding:0!important;border-left:1px solid #dfdfdf;border-bottom:1px solid #dfdfdf}
+table.wc_tax_rates td input[type=text],table.wc_tax_rates td input[type=number]{width:100%;border:0;box-shadow:none;padding:8px 10px;border-radius:0;background:transparent}
+table.wc_tax_rates td.compound,table.wc_tax_rates td.apply_to_shipping,table.wc_tax_rates td.goo-col-remove{text-align:center;padding:8px!important}
+table.wc_tax_rates tbody tr:nth-child(odd) td{background:#fbfbfb}
+table.wc_tax_rates tfoot th{padding:10px;display:table-cell}
+table.wc_tax_rates tfoot .goo-import{margin-right:16px}
+#key-fields input[readonly]{font-family:monospace}
+
+/* Reports */
+.woocommerce-reports-wide .postbox{overflow:hidden}
+.stats_range{border-bottom:1px solid #dfdfdf;background:#f9f9f9}
+.stats_range ul{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap}
+.stats_range li{margin:0;padding:0;border-left:1px solid #dfdfdf}
+.stats_range li a{display:block;padding:10px;text-decoration:none;color:#464646}
+.stats_range li.active{background:#fff;box-shadow:inset 0 -2px 0 #2271b1}
+.stats_range li.custom{padding:6px 10px;display:flex;gap:6px;align-items:center}
+.stats_range li.custom form,.stats_range li.custom form div{display:inline-flex;gap:4px;align-items:center}
+.stats_range.goo-export{padding:8px 10px;text-align:left}
+.chart-with-sidebar{display:flex;gap:0;padding:0!important;margin:0!important}
+.chart-sidebar{width:225px;flex:none;border-left:1px solid #dfdfdf}
+.chart-legend{margin:0;padding:0;list-style:none}
+.chart-legend li{border-left:5px solid #aaa;color:#aaa;padding:1em;display:block;margin:0;border-bottom:1px solid #dfdfdf}
+.chart-legend li strong{font-size:1.618em;line-height:1.2em;color:#464646;font-weight:400;display:block}
+.chart-widgets{margin:0;padding:1em;list-style:none}
+.chart-with-sidebar .main{flex:1;padding:12px;min-width:0}
+.chart-container{padding:12px 0}
+svg.goo-chart{width:100%;height:280px;display:block}
+svg.goo-chart .goo-bar{fill:#3498db}
+svg.goo-chart .goo-bar:hover{fill:#2271b1}
+svg.goo-chart .goo-grid{stroke:#eee;stroke-width:1}
+svg.goo-chart .goo-line{fill:none;stroke:#dbe1e3;stroke-width:3}
+svg.goo-chart .goo-axis{font-size:11px;fill:#888;text-anchor:middle}
+.goo-report-table{margin-top:12px}
+mark.instock{background:transparent;color:#7ad03a;font-weight:700}
+mark.outofstock{background:transparent;color:#a44;font-weight:700}
+mark.onbackorder{background:transparent;color:#eaa600;font-weight:700}
+
+/* Analytics / Home / Marketing */
+.goo-filters{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:12px 0 16px}
+.goo-summary{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));border:1px solid #e0e0e0;background:#fff;margin:0 0 20px;padding:0;list-style:none}
+.goo-summary li{margin:0;border-left:1px solid #e0e0e0;border-bottom:1px solid #e0e0e0}
+.goo-summary .woocommerce-summary__item{display:block;padding:20px 24px;color:#1e1e1e;text-decoration:none;height:100%;box-sizing:border-box}
+.goo-summary a.woocommerce-summary__item:hover{background:#f6f7f7}
+.woocommerce-summary__item-label{font-size:13px;color:#757575;margin-bottom:12px}
+.woocommerce-summary__item-data{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.woocommerce-summary__item-value{font-size:20px}
+.woocommerce-summary__item-delta{font-size:12px;border-radius:2px;padding:1px 6px;background:#f0f0f0}
+.woocommerce-summary__item-delta.is-good-trend{background:#e6f2e8;color:#00a32a}
+.woocommerce-summary__item-delta.is-bad-trend{background:#fcf0f1;color:#d63638}
+.woocommerce-summary__item-prev-label{font-size:12px;color:#757575;margin-top:8px}
+.goo-leaders{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:16px}
+.goo-analytics .postbox .postbox-header h2,.goo-home .postbox .postbox-header h2,.goo-marketing .postbox .postbox-header h2{padding:8px 12px;font-size:14px}
+.goo-home-grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(260px,1fr);gap:20px;margin-top:16px}
+.goo-home .goo-progress{font-weight:400;color:#757575;margin-right:8px}
+.woocommerce-task-list__list{margin:0}
+.woocommerce-task-list__item{display:flex;gap:12px;padding:12px 16px;border-top:1px solid #f0f0f1;margin:0}
+.woocommerce-task-list__item p{margin:2px 0 0;color:#757575}
+.woocommerce-task-list__item.complete strong{text-decoration:line-through;color:#757575}
+.woocommerce-task-list__item .dashicons-yes-alt{color:#00a32a}
+.goo-stats th,.goo-stats td{padding:10px}
+.goo-activity{margin:0}
+.goo-activity li{padding:8px 0;border-bottom:1px solid #f0f0f1;margin:0}
+.goo-activity li:last-child{border:0}
+
+/* Status */
+table.wc_status_table{margin-bottom:1em}
+table.wc_status_table h2{font-size:14px;margin:0}
+table.wc_status_table td:first-child{width:33%}
+table.wc_status_table td.help{width:1em}
+table.wc_status_table mark{background:transparent}
+table.wc_status_table mark.yes{color:#7ad03a}
+table.wc_status_table mark.no{color:#999}
+table.wc_status_table mark.error{color:#a00}
+table.wc_status_table--tools td,table.wc_status_table--tools th{padding:2em;vertical-align:middle}
+table.wc_status_table--tools td.run-tool{text-align:left}
+table.wc_status_table--tools th p{font-weight:400;margin:.5em 0 0}
+table.wc_status_table--tools .red{color:#a00}
+.goo-debug-report[hidden]{display:none}
+
+@media (max-width:960px){.goo-home-grid{grid-template-columns:1fr}.chart-with-sidebar{flex-direction:column}.chart-sidebar{width:auto;border-left:0}.wc-order-totals{width:100%}.wc-order-data-row .wc-used-coupons{width:100%;float:none}}

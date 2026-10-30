@@ -136,9 +136,7 @@ func (c *Catalog) text(t string, skip bool) string {
 	}
 	tr, ok := c.translateText(core)
 	if !ok {
-		if MissHook != nil {
-			MissHook(html.UnescapeString(spaceRun.ReplaceAllString(core, " ")))
-		}
+		c.miss(core)
 		return t
 	}
 	lead := t[:strings.Index(t, core)]
@@ -146,6 +144,18 @@ func (c *Catalog) text(t string, skip bool) string {
 }
 
 var spaceRun = regexp.MustCompile(`\s+`)
+
+// miss reports escaped text without a translation to MissHook, unless the language writes the
+// message as it is ("Peru" in Turkish).
+func (c *Catalog) miss(core string) {
+	if MissHook == nil {
+		return
+	}
+	plain := html.UnescapeString(spaceRun.ReplaceAllString(core, " "))
+	if !c.has(plain) && !c.has(core) {
+		MissHook(plain)
+	}
+}
 
 // translateText translates escaped HTML text; the result is escaped HTML too.
 func (c *Catalog) translateText(core string) (string, bool) {
@@ -166,6 +176,152 @@ func (c *Catalog) translateText(core string) (string, bool) {
 	}
 	if tr, ok := c.matchPattern(plain); ok {
 		return escapeText(tr), true
+	}
+	if tr, ok := c.translateDate(plain); ok {
+		return escapeText(tr), true
+	}
+	if tr, ok := c.translateParts(plain, 0); ok {
+		return escapeText(tr), true
+	}
+	return "", false
+}
+
+var (
+	monthNames = []string{"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"}
+	dateRe     = regexp.MustCompile(`^(January|February|March|April|May|June|July|August|September|October|November|December) (\d{1,2}), (\d{4})$`)
+)
+
+// translateDate rewrites a date in WordPress' default format ("October 5, 2026", date_i18n()
+// with "F j, Y") in the language's own format and month names.
+func (c *Catalog) translateDate(plain string) (string, bool) {
+	m := dateRe.FindStringSubmatch(plain)
+	if m == nil {
+		return "", false
+	}
+	month, ok := c.lookup(m[1])
+	if !ok {
+		return "", false
+	}
+	format := c.T("F j, Y")
+	var b strings.Builder
+	for i := 0; i < len(format); i++ {
+		switch ch := format[i]; ch {
+		case 'F':
+			b.WriteString(month)
+		case 'j':
+			b.WriteString(m[2])
+		case 'd':
+			if len(m[2]) == 1 {
+				b.WriteByte('0')
+			}
+			b.WriteString(m[2])
+		case 'Y':
+			b.WriteString(m[3])
+		case 'n', 'm':
+			for k, name := range monthNames {
+				if name == m[1] {
+					if ch == 'm' && k < 9 {
+						b.WriteByte('0')
+					}
+					b.WriteString(strconv.Itoa(k + 1))
+				}
+			}
+		case '\\':
+			if i+1 < len(format) {
+				i++
+				b.WriteByte(format[i])
+			}
+		default:
+			b.WriteByte(ch)
+		}
+	}
+	return b.String(), true
+}
+
+// partSeps join messages that are translated one by one: "Turkey — Adana" (a country and a
+// state), "Shop · Minimal apparel boutique" (a category and a description), "Alaska, United
+// States (US)". A comma only joins when every part is a message of its own.
+var partSeps = []string{" — ", " · ", " | ", " – ", " › ", ", "}
+
+// codePart is a part that stays as it is: a currency or country code, a number, a symbol.
+var codePart = regexp.MustCompile(`^(?:[A-Z]{2,4}|[^\p{L}]*|\([^()]*\))$`)
+
+// has reports whether msgid is a message of the catalog, even one translated as itself.
+func (c *Catalog) has(msgid string) bool {
+	e, _ := c.find(msgid)
+	return e != nil
+}
+
+// nameLike reports whether a part reads as a proper name ("Adana", "Rio Grande do Sul",
+// "Crumb & Crust"): a few words, the first capitalized, no sentence punctuation.
+func nameLike(p string) bool {
+	w := strings.Fields(p)
+	if len(w) == 0 || len(w) > 4 || strings.ContainsAny(p, ".!?:;") {
+		return false
+	}
+	r := []rune(w[0])
+	return unicode.IsUpper(r[0])
+}
+
+var (
+	trailingParen = regexp.MustCompile(`^(.*\p{L}.*?)(\s*\([^()]*\))$`)
+	edgePunct     = regexp.MustCompile(`^([^\p{L}\p{N}"'“‘(\[{]*)(.*?\p{L}.*?)([^\p{L}\p{N}"'”’)\]}%]*)$`)
+)
+
+// translateParts translates text made of messages that the page put together: separated
+// parts, a trailing parenthesis ("Shop (ID: 5)", "Algerian dinar (د.ج)") or punctuation around a
+// message ("> Add shipping zone").
+func (c *Catalog) translateParts(plain string, depth int) (string, bool) {
+	if depth > 2 {
+		return "", false
+	}
+	one := func(p string) (string, bool) {
+		if tr, ok := c.lookup(p); ok {
+			return tr, true
+		}
+		return c.translateParts(p, depth+1)
+	}
+	for _, sep := range partSeps {
+		if !strings.Contains(plain, sep) {
+			continue
+		}
+		parts := strings.Split(plain, sep)
+		if sep == ", " && (len(parts) != 2 || len(strings.Fields(plain)) > 6) {
+			continue
+		}
+		translated := 0
+		for i, p := range parts {
+			p = strings.TrimSpace(p)
+			if codePart.MatchString(p) {
+				continue
+			}
+			tr, ok := one(p)
+			if !ok && c.has(p) { // a message the language writes the same ("Türkiye" in Turkish)
+				tr, ok = p, true
+			}
+			if !ok {
+				if nameLike(p) { // "Adana" in "Turkey — Adana" is a place name, not a message
+					continue
+				}
+				translated = -1
+				break
+			}
+			parts[i] = tr
+			translated++
+		}
+		if translated > 0 {
+			return strings.Join(parts, sep), true
+		}
+	}
+	if m := trailingParen.FindStringSubmatch(plain); m != nil {
+		if tr, ok := one(strings.TrimSpace(m[1])); ok {
+			return tr + m[2], true
+		}
+	}
+	if m := edgePunct.FindStringSubmatch(plain); m != nil && (m[1] != "" || m[3] != "") && m[2] != plain {
+		if tr, ok := c.lookup(m[2]); ok {
+			return m[1] + tr + m[3], true
+		}
 	}
 	return "", false
 }
@@ -297,9 +453,7 @@ func (c *Catalog) attrs(tag, name string, a attrList) string {
 		}
 		tr, ok := c.translateText(core)
 		if !ok {
-			if MissHook != nil {
-				MissHook(html.UnescapeString(spaceRun.ReplaceAllString(core, " ")))
-			}
+			c.miss(core)
 			continue
 		}
 		if at.quote != 0 {
@@ -474,6 +628,9 @@ func matchIn(index map[string][]*pattern, text string, raw bool) (string, bool) 
 			if m == nil {
 				continue
 			}
+			if !raw && sentenceArg(m[1:]) {
+				continue
+			}
 			vals := map[int]string{}
 			count := int64(-1)
 			for i, n := range p.args {
@@ -494,6 +651,20 @@ func matchIn(index map[string][]*pattern, text string, raw bool) (string, bool) 
 		}
 	}
 	return "", false
+}
+
+var sentenceEnd = regexp.MustCompile(`[.!?]\s+\p{Lu}|[.!?]$`)
+
+// sentenceArg reports whether a captured argument is prose rather than a name or number:
+// "Customize %s" must not take "Customize WordPress with powerful, professional and intuitive
+// fields: … PRO." apart, leaving a translated fragment around English text.
+func sentenceArg(args []string) bool {
+	for _, a := range args {
+		if len(strings.Fields(a)) >= 6 && sentenceEnd.MatchString(strings.TrimSpace(a)) {
+			return true
+		}
+	}
+	return false
 }
 
 // fillPlaceholders writes the captured arguments into a translation's placeholders.

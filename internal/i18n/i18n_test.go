@@ -264,3 +264,53 @@ func TestOptionWithoutValueKept(t *testing.T) {
 		t.Errorf("got %s", got)
 	}
 }
+
+func partsCatalog(t *testing.T) *Catalog {
+	dir := t.TempDir()
+	core := writeMO(map[string]string{
+		"":               "Content-Type: text/plain; charset=UTF-8\n",
+		"Customize %s":   "Dostosuj %s",
+		"Shop":           "Sklep",
+		"Brazil":         "Brazylia",
+		"Spain":          "Hiszpania",
+		"Polska":         "Polska",
+		"Algerian dinar": "Dinar algierski",
+		"Add zone":       "Dodaj strefę",
+		"October":        "październik",
+		"F j, Y":         "j F Y",
+		"Built-in":       "Wbudowane",
+	})
+	if err := os.WriteFile(filepath.Join(dir, "admin-pl_PL.mo"), core, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	return NewManager(dir, nil).Catalog("pl_PL")
+}
+
+// Text the page puts together from messages is translated part by part; prose never becomes the
+// argument of a short pattern.
+func TestTranslateParts(t *testing.T) {
+	c := partsCatalog(t)
+	for in, want := range map[string]string{
+		"Brazil — Amazonas":          "Brazylia — Amazonas",
+		"Alaska, Spain":              "Alaska, Hiszpania",
+		"Polska — Mazowieckie":       "Polska — Mazowieckie", // a message translated as itself
+		"Algerian dinar (د.ج) — DZD": "Dinar algierski (د.ج) — DZD",
+		"Shop (ID: 5)":               "Sklep (ID: 5)",
+		"&gt; Add zone":              "&gt; Dodaj strefę",
+		"October 5, 2026":            "5 październik 2026",
+		"Customize Hello Golementor": "Dostosuj Hello Golementor",
+	} {
+		if got, ok := c.translateText(in); !ok || got != want {
+			t.Errorf("%q: got %q (%v), want %q", in, got, ok, want)
+		}
+	}
+	for _, in := range []string{
+		"Customize WordPress with powerful, professional and intuitive fields: field groups and blocks. A native clone of ACF.",
+		"Shop — a sentence that is not a message at all.",
+		"Brazil, really, and more",
+	} {
+		if got, ok := c.translateText(in); ok {
+			t.Errorf("%q must stay English, got %q", in, got)
+		}
+	}
+}

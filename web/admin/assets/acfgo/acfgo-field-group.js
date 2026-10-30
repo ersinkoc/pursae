@@ -9,6 +9,13 @@
 
 	var schema, types = {}, group;
 
+	// __ translates a message (wpgo-l10n.js), then the {placeholders} are filled in.
+	function __( msg, vars ) {
+		var out = window.wpgo__ ? window.wpgo__( msg ) : msg;
+		Object.keys( vars || {} ).forEach( function ( k ) { out = out.split( '{' + k + '}' ).join( vars[ k ] ); } );
+		return out;
+	}
+
 	function esc( s ) {
 		return $( '<div>' ).text( s == null ? '' : String( s ) ).html();
 	}
@@ -596,10 +603,10 @@
 			fields.forEach( function ( f ) {
 				if ( [ 'tab', 'accordion', 'message' ].indexOf( f.type ) === -1 ) {
 					if ( ! f.label && ! f.name ) {
-						errors.push( 'Every field needs a label (' + path + ').' );
+						errors.push( __( 'Every field needs a label ({path}).', { path: path } ) );
 					}
 					if ( f.name && names[ f.name ] ) {
-						errors.push( 'The field name "' + f.name + '" is used twice (' + path + ').' );
+						errors.push( __( 'The field name "{name}" is used twice ({path}).', { name: f.name, path: path } ) );
 					}
 					names[ f.name ] = true;
 				}

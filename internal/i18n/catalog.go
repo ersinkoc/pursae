@@ -116,7 +116,7 @@ func (c *Catalog) lookup(msgid string) (string, bool) {
 var upstreamNames = []struct{ ours, theirs string }{
 	{"WordPress Go", "WordPress"}, {"Golementor Pro", "Elementor Pro"}, {"Golementor", "Elementor"}, {"Gontact Form", "Contact Form 7"},
 	{"SEO-Go", "Yoast SEO"}, {"SEO-Go", "Rank Math"}, {"Golylang", "Polylang"}, {"WPGo Cache", "LiteSpeed Cache"},
-	{"WPGo Mail SMTP", "WP Mail SMTP"}, {"ACF-Go", "ACF"}, {"ACF-Go", "Advanced Custom Fields"}, {"Gotenberg", "Gutenberg"},
+	{"WPGo Mail SMTP", "WP Mail SMTP"}, {"ACF-Go", "ACF"}, {"ACF-Go", "Advanced Custom Fields"}, {"Goocommerce", "WooCommerce"}, {"Gotenberg", "Gutenberg"},
 }
 
 func (c *Catalog) lookupUpstream(msgid string) (string, bool) {
@@ -282,7 +282,7 @@ var brands = []struct{ from, to string }{
 	{"Contact Form 7", "Gontact Form"}, {"Yoast SEO Premium", "SEO-Go"}, {"Yoast SEO", "SEO-Go"}, {"Yoast", "SEO-Go"},
 	{"Rank Math SEO", "SEO-Go"}, {"Rank Math", "SEO-Go"}, {"Polylang Pro", "Golylang"}, {"Polylang", "Golylang"},
 	{"LiteSpeed Cache", "WPGo Cache"}, {"WP Mail SMTP", "WPGo Mail SMTP"}, {"Advanced Custom Fields PRO", "ACF-Go"},
-	{"Advanced Custom Fields", "ACF-Go"}, {"CookieYes", "Gooike"}, {"Cookie Notice", "Gooike"}, {"WPS Hide Login", "AdminSecGo"},
+	{"Advanced Custom Fields", "ACF-Go"}, {"WooCommerce", "Goocommerce"}, {"CookieYes", "Gooike"}, {"Cookie Notice", "Gooike"}, {"WPS Hide Login", "AdminSecGo"},
 }
 
 func rebrand(f *moFile) {

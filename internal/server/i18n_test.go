@@ -132,3 +132,71 @@ func TestAdminLanguage(t *testing.T) {
 		t.Errorf("unknown locale saved: %s", srv.siteLocale())
 	}
 }
+
+// A right-to-left language loads the -rtl stylesheets, and the strings the admin scripts build
+// in the browser come from wpgo-l10n.js.
+func TestAdminRTLAndScriptTranslations(t *testing.T) {
+	ts, c, srv := testServerBuilderOff(t)
+	base := ts.URL
+	installUsersSite(t, c, base)
+
+	lits := srv.adminJSStrings()
+	if len(lits) < 50 {
+		t.Fatalf("only %d script strings found", len(lits))
+	}
+	lit := ""
+	for _, l := range lits {
+		if l == "Delete this field?" {
+			lit = l
+		}
+	}
+	if lit == "" {
+		t.Fatal(`"Delete this field?" (ACF-Go's field group editor) not among the script strings`)
+	}
+	var pack bytes.Buffer
+	zw := zip.NewWriter(&pack)
+	f, _ := zw.Create("admin-he_IL.mo")
+	f.Write(i18nMO(map[string]string{"": "Plural-Forms: nplurals=2; plural=n != 1;\n", "Plugins": "תוספים", lit: "למחוק את השדה?",
+		"Built-in": "מובנה"}))
+	zw.Close()
+	var api *httptest.Server
+	api = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/core/1.0/":
+			fmt.Fprintf(w, `{"translations":[{"language":"he_IL","package":"%s/he.zip"}]}`, api.URL)
+		case "/he.zip":
+			w.Write(pack.Bytes())
+		default:
+			fmt.Fprint(w, `{"translations":[]}`)
+		}
+	}))
+	defer api.Close()
+	srv.cfg.TranslationsAPI = api.URL
+	_, body, _ := get(t, c, base+"/wp-admin/options-general")
+	form := url.Values{"option_page": {"general"}, "_wpnonce": {formNonce(t, body)}, "blogname": {"RTL"}, "blogdescription": {""},
+		"admin_email": {"admin@example.test"}, "timezone_string": {"UTC"}, "date_format": {"F j, Y"}, "time_format": {"g:i a"},
+		"start_of_week": {"1"}, "WPLANG": {"he_IL"}}
+	post(t, c, base+"/wp-admin/options", form)
+
+	_, body, _ = get(t, c, base+"/wp-admin/plugins")
+	for _, want := range []string{`lang="he-IL" dir="rtl"`, `<body class="rtl `, "-rtl.min.css", "/wp-admin/wpgo-l10n.js?ver=he_IL-", ">מובנה<"} {
+		if !strings.Contains(body, want) {
+			t.Errorf("plugins screen lacks %s", want)
+		}
+	}
+	if strings.Contains(body, "common.min.css") && !strings.Contains(body, "common-rtl.min.css") {
+		t.Error("left-to-right common.min.css still loaded")
+	}
+	code, js, _ := get(t, c, base+"/wp-admin/wpgo-l10n.js")
+	if code != http.StatusOK || !strings.Contains(js, "window.WPGOL10n") || !strings.Contains(js, `"למחוק את השדה?"`) {
+		t.Errorf("wpgo-l10n.js: %d %.200s", code, js)
+	}
+	// An -rtl stylesheet exists for every admin stylesheet it rewrites to.
+	for _, m := range stylesheetHref.FindAllStringSubmatch(body, -1) {
+		if p := m[2]; strings.HasSuffix(p, "-rtl") {
+			if code, _, _ := get(t, c, base+p+m[3]); code != http.StatusOK {
+				t.Errorf("%s%s: %d", p, m[3], code)
+			}
+		}
+	}
+}

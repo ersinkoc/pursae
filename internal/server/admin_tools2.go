@@ -466,8 +466,7 @@ func (s *Server) sendUserRequest(c *gin.Context, r personalRequest) personalRequ
 func (s *Server) confirmAction(c *gin.Context, v loginView) {
 	v.Title, v.Action = "User action confirmed.", "confirmaction"
 	die := func(msg string) {
-		c.Header("Content-Type", "text/html; charset=utf-8")
-		c.String(http.StatusForbidden, `<!DOCTYPE html><html><head><meta charset="utf-8"><title>WordPress &rsaquo; Error</title>`+
+		s.adminHTML(c, http.StatusForbidden, `<!DOCTYPE html><html><head><meta charset="utf-8"><title>WordPress &rsaquo; Error</title>`+
 			`<link rel="stylesheet" href="/wp-admin/assets/css/wp/install.min.css"></head><body id="error-page"><div class="wp-die-message"><p>`+template.HTMLEscapeString(msg)+`</p></div></body></html>`)
 	}
 	idRaw, key := c.Query("request_id"), c.Query("confirm_key")

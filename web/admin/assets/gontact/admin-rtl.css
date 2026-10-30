@@ -1,0 +1,222 @@
+/*! This file is auto-generated */
+/* Gontact Form admin screens (the look of Contact Form 7's admin/includes/css/styles.css). */
+
+#wpcf7-contact-form-list-table .column-title { width: 38%; }
+#wpcf7-contact-form-list-table .column-shortcode { width: 32%; }
+#wpcf7-contact-form-list-table .column-author { width: 12%; }
+#wpcf7-contact-form-list-table .column-date { width: 14%; }
+
+span.shortcode {
+	display: block;
+	margin: 2px 0;
+}
+
+span.shortcode.old {
+	background: #777;
+	color: #fff;
+}
+
+span.shortcode input {
+	font-size: 12px;
+	border: none;
+	box-shadow: none;
+	padding: 4px 8px;
+	margin: 0;
+}
+
+#wpcf7-contact-form-editor #titlediv .inside p.description {
+	margin: 10px 2px 0;
+}
+
+#wpcf7-contact-form-editor .contact-form-editor-panel {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-top: none;
+	padding: 16px 20px 20px;
+	overflow-x: auto;
+}
+
+#wpcf7-contact-form-editor .contact-form-editor-panel h2 {
+	font-size: 18px;
+	font-weight: 400;
+	margin: 8px 0 12px;
+	padding: 0;
+}
+
+#wpcf7-contact-form-editor .contact-form-editor-panel fieldset legend {
+	line-height: 1.5;
+	margin: 0.6em 0 0.4em;
+}
+
+#wpcf7-contact-form-editor .nav-tab-wrapper {
+	padding: 0;
+	border-bottom: 1px solid #c3c4c7;
+}
+
+#wpcf7-contact-form-editor .nav-tab-wrapper .nav-tab {
+	margin-bottom: -1px;
+}
+
+#wpcf7-contact-form-editor .nav-tab-wrapper .nav-tab-active {
+	background: #fff;
+	border-bottom-color: #fff;
+}
+
+#tag-generator-list {
+	display: block;
+	margin: 0 0 8px;
+}
+
+#tag-generator-list .button {
+	margin: 0 0 4px;
+	font-size: 12px;
+	min-height: 26px;
+	line-height: 2.18;
+	padding: 0 8px;
+}
+
+#wpcf7-contact-form-editor textarea#wpcf7-form,
+#wpcf7-contact-form-editor .contact-form-editor-box-mail textarea {
+	font-family: Consolas, Monaco, monospace;
+	font-size: 13px;
+}
+
+.contact-form-editor-box-mail .form-table th {
+	width: 9em;
+}
+
+.contact-form-editor-box-mail span.mailtag {
+	display: inline-block;
+	margin: 0 4px 0 0;
+	padding: 1px 2px;
+	cursor: pointer;
+	color: #2271b1;
+}
+
+.contact-form-editor-box-mail span.mailtag.used {
+	color: #50575e;
+}
+
+.icon-in-circle {
+	display: inline-block;
+	vertical-align: baseline;
+	margin: 0 2px;
+	padding: 0 5px;
+	min-width: 7px;
+	height: 17px;
+	border-radius: 11px;
+	background-color: #d63638;
+	color: #fff;
+	font-size: 11px;
+	line-height: 17px;
+	text-align: center;
+	z-index: 26;
+}
+
+.config-error {
+	color: #d63638;
+	margin: 0.4em 0;
+}
+
+.additional-settings-count {
+	color: #646970;
+	font-weight: 400;
+}
+
+/* Tag generator dialog */
+dialog.tag-generator-dialog {
+	padding: 0;
+	border: none;
+	border-radius: 4px;
+	box-shadow: 0 3px 30px rgba(0, 0, 0, 0.3);
+	width: min(720px, 92vw);
+	max-height: 86vh;
+}
+
+dialog.tag-generator-dialog::backdrop {
+	background: rgba(0, 0, 0, 0.5);
+}
+
+.tag-generator-panel {
+	padding: 16px 24px 0;
+	position: relative;
+}
+
+.tag-generator-panel h3 {
+	margin: 0 0 6px;
+	font-size: 1.3em;
+}
+
+.tag-generator-panel .close-button {
+	position: absolute;
+	top: 8px;
+	left: 8px;
+	border: none;
+	background: none;
+	cursor: pointer;
+	color: #646970;
+}
+
+.tag-generator-panel .form-table th {
+	width: 140px;
+	padding: 10px 0 10px 10px;
+}
+
+.tag-generator-panel .form-table td {
+	padding: 8px 10px;
+}
+
+.tag-generator-panel input.oneline {
+	width: 100%;
+}
+
+.tag-generator-panel input.numeric {
+	width: 7em;
+}
+
+.tag-generator-panel textarea.values {
+	width: 100%;
+	font-family: Consolas, Monaco, monospace;
+}
+
+.tag-generator-panel .insert-box {
+	position: sticky;
+	bottom: 0;
+	margin: 0 -24px;
+	padding: 16px 24px;
+	background: #f6f7f7;
+	border-top: 1px solid #dcdcde;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
+}
+
+.tag-generator-panel .insert-box input.code {
+	flex: 1 1 300px;
+	font-family: Consolas, Monaco, monospace;
+	background: #fff;
+}
+
+.tag-generator-panel .mail-tag-tip {
+	flex-basis: 100%;
+	margin: 0;
+	color: #50575e;
+}
+
+/* Integration */
+#wpcf7-integration .card {
+	max-width: 780px;
+}
+
+#wpcf7-integration .card.active {
+	border-color: #00a32a;
+}
+
+#wpcf7-integration .card .infobox {
+	color: #50575e;
+}
+
+#wpcf7-integration .dashicons-yes::before {
+	color: #00a32a;
+}

@@ -448,7 +448,7 @@ func (s *Server) menuAjax(c *gin.Context, action string) bool {
 			}
 			sb.WriteString(string(s.renderMenuEditItem(c, row)))
 		}
-		c.Data(http.StatusOK, "text/html; charset=UTF-8", []byte(sb.String()))
+		s.adminHTML(c, http.StatusOK, sb.String())
 	case "menu-quick-search":
 		q := strings.TrimSpace(c.Query("q"))
 		typ := c.Query("type") // quick-search-posttype-page etc.
@@ -467,7 +467,7 @@ func (s *Server) menuAjax(c *gin.Context, action string) bool {
 				sb.WriteString(`<li><p>No results found.</p></li>`)
 			}
 		}
-		c.Data(http.StatusOK, "text/html; charset=UTF-8", []byte(sb.String()))
+		s.adminHTML(c, http.StatusOK, sb.String())
 	case "menu-locations-save":
 		locs := map[string]int64{}
 		for _, loc := range s.activeTheme().MenuLocations {

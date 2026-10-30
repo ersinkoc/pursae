@@ -1,0 +1,24 @@
+/*! This file is auto-generated */
+/* Goocommerce Quick View */
+.goo-quick-view-button{margin-top:.5em}
+@media (max-width:768px){.goo-quick-view-hide-mobile{display:none!important}}
+html.goo-quick-view-open{overflow:hidden}
+.goo-quick-view-modal[hidden]{display:none}
+.goo-quick-view-modal{position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;padding:16px}
+.goo-quick-view-overlay{position:absolute;inset:0;background:rgba(0,0,0,.6)}
+.goo-quick-view-dialog{position:relative;background:#fff;color:#1d2327;max-width:960px;width:100%;max-height:calc(100vh - 32px);overflow:auto;border-radius:6px;box-shadow:0 10px 40px rgba(0,0,0,.3);padding:32px}
+.goo-quick-view-modal.is-loading .goo-quick-view-dialog{opacity:.6}
+.goo-quick-view-close{position:absolute;top:8px;left:8px;width:40px;height:40px;border:0;background:transparent;font-size:28px;line-height:1;cursor:pointer;color:inherit}
+.goo-quick-view-close:focus-visible,.goo-quick-view-thumb:focus-visible{outline:2px solid #2271b1;outline-offset:2px}
+.goo-quick-view-product{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:32px}
+.goo-quick-view-gallery img{max-width:100%;height:auto;display:block}
+.goo-quick-view-gallery .flex-control-thumbs{display:flex;flex-wrap:wrap;gap:8px;list-style:none;margin:8px 0 0;padding:0}
+.goo-quick-view-thumb{border:1px solid #dcdcde;background:#fff;padding:0;width:64px;cursor:pointer}
+.goo-quick-view-thumb[aria-current="true"]{border-color:#2271b1}
+.goo-quick-view-product .product_title{margin-top:0}
+.goo-quick-view-product .variations select{max-width:100%}
+.goo-quick-view-product .single_add_to_cart_button.disabled{opacity:.5;cursor:not-allowed}
+.goo-quick-view-lightbox{position:absolute;inset:0;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;z-index:2}
+.goo-quick-view-lightbox img{max-width:95%;max-height:95%}
+.goo-quick-view-lightbox .goo-quick-view-close{color:#fff}
+@media (max-width:768px){.goo-quick-view-product{grid-template-columns:1fr}.goo-quick-view-dialog{padding:24px 16px}}

@@ -49,7 +49,10 @@
 	function loadAddress(type, el) {
 		var user = $('#customer_user');
 		if (!user || !user.value) { window.alert('No customer selected'); return; }
-		if (!window.confirm('Load the customer\'s ' + type + ' information? This will remove any currently entered ' + type + ' information.')) { return; }
+		var question = type === 'shipping'
+			? 'Load the customer\'s shipping information? This will remove any currently entered shipping information.'
+			: 'Load the customer\'s billing information? This will remove any currently entered billing information.';
+		if (!window.confirm(question)) { return; }
 		fetch('/wp-admin/goocommerce?page=orders&action=customer_details&user_id=' + encodeURIComponent(user.value), { credentials: 'same-origin' })
 			.then(function (r) { return r.json(); })
 			.then(function (data) {

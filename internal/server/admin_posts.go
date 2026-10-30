@@ -966,7 +966,7 @@ func (s *Server) inlineSave(c *gin.Context) {
 		parent = pp.ParentID
 	}
 	p.Meta["_depth"] = depth
-	c.Data(http.StatusOK, "text/html; charset=UTF-8", []byte(s.postRowHTML(c, p, c.PostForm("post_view"))))
+	s.adminHTML(c, http.StatusOK, s.postRowHTML(c, p, c.PostForm("post_view")))
 }
 
 // postRowHTML renders one list row (WP_Posts_List_Table::display_rows() for a single post).
