@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
+	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -708,6 +709,8 @@ func init() {
 	gooExtAdminPages["membership-plans"] = func(s *Server, c *gin.Context) { s.gmemAdminPlans(c) }
 
 	gooContentFilters = append(gooContentFilters, gmemFilterContent)
+	gooListingExcludeHooks = append(gooListingExcludeHooks, gmemListingExcludeRmode)
+	gooSingleAccessHooks = append(gooSingleAccessHooks, gmemSingleAccessRmode)
 
 	gooAddToCartHooks = append(gooAddToCartHooks, func(s *Server, ctx context.Context, p *gooProduct, qty int, form map[string][]string, data map[string]any) error {
 		if !s.gooExtOn(gmemKey) {
@@ -1388,4 +1391,134 @@ func (s *Server) gmemGrantPastPurchases(ctx context.Context, p *gooMembershipPla
 		}
 	}
 	return n
+}
+
+// Restriction modes ---------------------------------------------------------------------------------------
+
+// gmemModeRmode is the content restriction mode: "hide", "hide_content" or "redirect" (redirect without
+// a page falls back to "hide_content").
+func (s *Server) gmemModeRmode() string {
+	mode := defaultStr(s.gooExtString(gmemKey, "restriction_mode"), "hide_content")
+	if mode == "redirect" && s.gooExtInt(gmemKey, "redirect_page_id") <= 0 {
+		return "hide_content"
+	}
+	return mode
+}
+
+// gmemPlanItemsRmode are the ids a plan restricts: its content (posts and the posts of its terms) for
+// kind "post", its member-only products for kind "product" (view-restricted only unless all is set).
+func (s *Server) gmemPlanItemsRmode(ctx context.Context, p *gooMembershipPlan, kind string, all bool) []int64 {
+	var ids, terms []int64
+	switch kind {
+	case "post":
+		ids, terms = append(ids, p.Rules.ContentPostIDs...), p.Rules.ContentTermIDs
+	case "product":
+		if !all && defaultStr(p.Rules.ProductRestrict, "purchase") != "view" {
+			return nil
+		}
+		ids, terms = append(ids, p.Rules.ProductIDs...), p.Rules.ProductTermIDs
+	}
+	if len(terms) > 0 {
+		rows, err := s.store.Pool.Query(ctx, `SELECT DISTINCT post_id FROM post_terms WHERE term_id = ANY($1)`, terms)
+		if err == nil {
+			for rows.Next() {
+				var id int64
+				if rows.Scan(&id) == nil {
+					ids = append(ids, id)
+				}
+			}
+			rows.Close()
+		}
+	}
+	return ids
+}
+
+// gmemListingExcludeRmode hides restricted content and view-restricted products from the listings of
+// non-members in the "hide completely" mode (and member-only products when "Restricted products" hides
+// them). Items a plan of the visitor's also covers stay listed.
+func gmemListingExcludeRmode(s *Server, ctx context.Context, kind string) []int64 {
+	if !s.gooExtOn(gmemKey) {
+		return nil
+	}
+	hideAllProducts := kind == "product" && s.gooExtBool(gmemKey, "hide_restricted_products")
+	if s.gmemModeRmode() != "hide" && !hideAllProducts {
+		return nil
+	}
+	u := gxaUser(ctx)
+	if gmemIsManager(u) {
+		return nil
+	}
+	var have map[int64]bool
+	if u != nil {
+		have = s.gmemAccessPlans(ctx, u.ID)
+	}
+	hidden, allowed := map[int64]bool{}, map[int64]bool{}
+	for _, p := range s.gmemPlans(ctx) {
+		for _, id := range s.gmemPlanItemsRmode(ctx, p, kind, hideAllProducts) {
+			if have[p.ID] {
+				allowed[id] = true
+			} else {
+				hidden[id] = true
+			}
+		}
+	}
+	var out []int64
+	for id := range hidden {
+		if !allowed[id] {
+			out = append(out, id)
+		}
+	}
+	return out
+}
+
+// gmemSingleAccessRmode answers a non-member's request for restricted content or a view-restricted
+// product: 404 in the "hide completely" mode, the redirect page (with the requested URL in
+// redirect_to) in the "redirect to page" mode.
+func gmemSingleAccessRmode(s *Server, c *gin.Context, postID int64, postType string) string {
+	if !s.gooExtOn(gmemKey) {
+		return ""
+	}
+	ctx := c.Request.Context()
+	u := currentUser(c)
+	mode := s.gmemModeRmode()
+	var plans []*gooMembershipPlan
+	if postType == "product" {
+		p, err := s.gooGetProduct(ctx, postID)
+		if err != nil {
+			return ""
+		}
+		if s.gooExtBool(gmemKey, "hide_restricted_products") {
+			if !s.gmemCanView(ctx, u, p) {
+				return "404" // hidden from the shop: the page is gone too
+			}
+		}
+		plans = s.gmemProductPlans(ctx, p, "view")
+		plans = append(plans, s.gmemPostPlans(ctx, postID)...)
+	} else {
+		plans = s.gmemPostPlans(ctx, postID)
+	}
+	if len(plans) == 0 || s.gmemCanAccess(ctx, u, plans) {
+		return ""
+	}
+	switch mode {
+	case "hide":
+		return "404"
+	case "redirect":
+		id := int64(s.gooExtInt(gmemKey, "redirect_page_id"))
+		if id == postID {
+			return ""
+		}
+		page, err := s.store.GetPost(ctx, id)
+		if err != nil || page.Status != "publish" {
+			return ""
+		}
+		target := s.links(ctx).Permalink(page)
+		orig := s.links(ctx).HomeURL(c.Request.URL.RequestURI())
+		sep := "?"
+		if strings.Contains(target, "?") {
+			sep = "&"
+		}
+		return target + sep + "redirect_to=" + url.QueryEscape(orig)
+	}
+	return ""
 }

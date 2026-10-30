@@ -712,6 +712,9 @@ func (s *Server) gooServeProduct(c *gin.Context, id int64) bool {
 		c.Redirect(http.StatusMovedPermanently, s.gooPermalink(ctx, p))
 		return true
 	}
+	if denied, handled := s.gooGuardProduct(c, p.ID); denied { // Memberships: hidden / redirected products
+		return handled
+	}
 	fv := &gooFrontView{Kind: "product", Product: p}
 	c.Set(gooCtxView, fv)
 	body := s.gooSingleProductHTML(c, p)

@@ -61,6 +61,9 @@ func (s *Server) gooQueryProducts(ctx context.Context, q gooProductQuery) ([]*go
 	if len(q.IDs) > 0 {
 		conds = append(conds, "po.id = ANY("+add(q.IDs)+")")
 	}
+	if q.Visibility != "" { // catalog listings: products hidden from this visitor (Memberships)
+		q.Exclude = append(q.Exclude, s.gooListingExclude(ctx, "product")...)
+	}
 	if len(q.Exclude) > 0 {
 		conds = append(conds, "NOT po.id = ANY("+add(q.Exclude)+")")
 	}
