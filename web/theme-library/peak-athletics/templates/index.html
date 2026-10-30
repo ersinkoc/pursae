@@ -1,0 +1,7 @@
+{{template "header" .}}
+<div class="pk-wrap pk-archive">
+{{if .IsHomeHeader}}<header class="page-header pk-page-header"><h1 class="page-title">{{.PostsPageTitle}}</h1></header>{{end}}
+{{if .Posts}}{{template "loop" .}}
+{{.Pagination}}{{else}}{{template "content-none" .}}{{end}}
+</div>
+{{template "footer" .}}

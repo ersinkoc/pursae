@@ -1,0 +1,7 @@
+{{template "header" .}}
+<div class="gb-wrap gb-archive">
+{{if .IsHomeHeader}}<header class="page-header gb-page-header"><h1 class="page-title">{{.PostsPageTitle}}</h1></header>{{end}}
+{{if .Posts}}{{template "loop" .}}
+{{.Pagination}}{{else}}{{template "content-none" .}}{{end}}
+</div>
+{{template "footer" .}}

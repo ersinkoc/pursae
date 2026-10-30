@@ -1,0 +1,14 @@
+{{template "header" .}}
+{{$store := or (contains .BodyClass "single-product") (contains .BodyClass "woocommerce-shop") (contains .BodyClass "tax-product_") (contains .BodyClass "post-type-archive-product")}}
+{{$wc := contains .BodyClass "woocommerce-page"}}
+{{with .Post}}<article id="post-{{.ID}}" class="{{.Class}} gb-page{{if $store}} gb-store-page{{end}}">
+	<div class="gb-wrap">
+		{{if not $store}}<header class="gb-page__header{{if $wc}} gb-page__header--store{{end}}"><h1 class="entry-title">{{.Title}}</h1></header>{{end}}
+		<div class="entry-content{{if or $store $wc}} gb-store-content{{else}} gb-measure{{end}}">
+			{{.Content}}
+		</div>
+		{{with .EditLink}}<footer class="entry-footer"><span class="edit-link">{{.}}</span></footer>{{end}}
+	</div>
+</article>{{end}}
+{{if not $store}}<div class="gb-wrap gb-measure">{{template "comments" .}}</div>{{end}}
+{{template "footer" .}}

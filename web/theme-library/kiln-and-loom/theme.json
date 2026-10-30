@@ -1,0 +1,85 @@
+{
+  "slug": "kiln-and-loom",
+  "name": "Kiln & Loom",
+  "version": "1.0.0",
+  "description": "A warm, editorial handmade-crafts market for Goocommerce. A masthead with a serif wordmark, an italic tagline and stitched rules, a split hero (words on sand, picture beside) with a maker's stamp, category tiles with swing tags, product cards that stitch a dashed outline and lift the add-to-basket button on hover, a story-led product page and an indigo footer. Fraunces and Figtree, with an optional Lora pairing, self-hosted, and an optional paper grain. Ships a complete store demo: ceramics, textiles, candles and woodwork, with a candle in three scents, reviews, a coupon and shipping.",
+  "author": "WordPress Go",
+  "author_url": "https://github.com/boracomet/wordpress-go",
+  "theme_url": "https://github.com/boracomet/wordpress-go/tree/main/web/theme-library/kiln-and-loom",
+  "tags": ["E-Commerce", "Home", "Crafts", "Grid Layout", "Custom Colors", "Custom Logo", "Custom Menu", "Editor Style", "Featured Images", "Footer Widgets", "Wide Blocks"],
+  "requires_core": "0.1.0",
+  "screenshot": "assets/screenshot.png",
+  "category": "shop",
+  "style": "Warm editorial crafts market, terracotta and indigo",
+  "demo": "demo/demo.json",
+
+  "widget_areas": [
+    {"id": "footer-1", "name": "Footer", "description": "Widgets in the footer columns."},
+    {"id": "shop-sidebar", "name": "Shop Sidebar", "description": "Filters beside the product catalog."}
+  ],
+  "menu_locations": [
+    {"id": "primary", "name": "Primary Menu"},
+    {"id": "footer", "name": "Footer Menu"}
+  ],
+
+  "styles": [
+    {"handle": "kiln-and-loom-style", "src": "assets/style.css", "deps": ["wp-block-library"], "media": "all"}
+  ],
+  "scripts": [
+    {"handle": "kiln-and-loom-navigation", "src": "assets/js/navigation.js", "deps": [], "in_footer": true}
+  ],
+  "editor_styles": ["assets/editor-style.css"],
+  "preload_fonts": ["assets/fonts/fraunces.woff2", "assets/fonts/figtree.woff2"],
+
+  "palette": [
+    {"name": "Terracotta", "slug": "terracotta", "color": "#c2683f"},
+    {"name": "Sand", "slug": "sand", "color": "#f1e6d6"},
+    {"name": "Indigo", "slug": "indigo", "color": "#2f3e66"},
+    {"name": "Olive", "slug": "olive", "color": "#7d7a3c"},
+    {"name": "Paper", "slug": "paper", "color": "#faf5ee"},
+    {"name": "Clay Ink", "slug": "clay-ink", "color": "#2b211c"}
+  ],
+  "supports": {
+    "post-thumbnails": true,
+    "custom-logo": {"width": 260, "height": 90, "flex-width": true, "flex-height": true, "header-text": ["site-title", "site-description"]},
+    "title-tag": true,
+    "html5": ["search-form", "comment-form", "comment-list", "gallery", "caption", "script", "style"],
+    "responsive-embeds": true,
+    "align-wide": true,
+    "wp-block-styles": true,
+    "woocommerce": true
+  },
+
+  "customizer": {
+    "sections": [
+      {
+        "id": "kiln_and_loom_colors", "title": "Colours & Type", "priority": 40,
+        "settings": [
+          {"id": "accent", "label": "Terracotta (accent)", "description": "Buttons, stitches, prices and stamps.", "type": "color", "default": "#c2683f", "transport": "postMessage", "css_var": "--kl-clay"},
+          {"id": "indigo", "label": "Indigo", "description": "Swing tags, the footer and the add-to-basket button.", "type": "color", "default": "#2f3e66", "transport": "postMessage", "css_var": "--kl-indigo"},
+          {"id": "olive", "label": "Olive", "description": "Small labels and in-stock notes.", "type": "color", "default": "#7d7a3c", "transport": "postMessage", "css_var": "--kl-olive"},
+          {"id": "background", "label": "Background", "type": "color", "default": "#faf5ee", "transport": "postMessage", "css_var": "--kl-bg"},
+          {"id": "text_color", "label": "Text colour", "type": "color", "default": "#2b211c", "transport": "postMessage", "css_var": "--kl-ink"},
+          {"id": "font_pairing", "label": "Font pairing", "type": "select", "default": "fraunces", "transport": "postMessage", "body_class": "kl-fonts-{value}",
+            "choices": [{"value": "fraunces", "label": "Fraunces & Figtree"}, {"value": "lora", "label": "Lora & Figtree"}]},
+          {"id": "button_style", "label": "Buttons", "type": "select", "default": "soft", "transport": "postMessage", "body_class": "kl-buttons-{value}",
+            "choices": [{"value": "soft", "label": "Softly rounded"}, {"value": "pill", "label": "Pill"}, {"value": "square", "label": "Square"}]},
+          {"id": "paper_grain", "label": "Paper grain", "description": "A faint printed-paper texture on the background.", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "kl-grain"}
+        ]
+      },
+      {
+        "id": "kiln_and_loom_header", "title": "Masthead & Market", "priority": 41,
+        "settings": [
+          {"id": "show_announcement", "label": "Show the market line", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "kl-has-announcement"},
+          {"id": "announcement", "label": "Market line", "type": "text", "default": "Handmade by forty independent makers · Free shipping over €60", "transport": "refresh"},
+          {"id": "header_layout", "label": "Masthead", "type": "select", "default": "masthead", "transport": "postMessage", "body_class": "kl-header-{value}",
+            "choices": [{"value": "masthead", "label": "Editorial masthead (menu below)"}, {"value": "inline", "label": "Compact (menu beside the name)"}]},
+          {"id": "catalog_columns", "label": "Products per row (large screens)", "type": "select", "default": "4", "transport": "postMessage", "body_class": "kl-cols-{value}",
+            "choices": [{"value": "3", "label": "3"}, {"value": "4", "label": "4"}]},
+          {"id": "footer_line", "label": "Footer headline", "type": "text", "default": "Made slowly, by hand.", "transport": "refresh"},
+          {"id": "footer_text", "label": "Footer text", "type": "text", "default": "", "transport": "refresh"}
+        ]
+      }
+    ]
+  }
+}

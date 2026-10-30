@@ -1,0 +1,7 @@
+{{template "header" .}}
+<div class="ap-wrap ap-archive">
+{{if .IsHomeHeader}}<header class="page-header ap-page-header"><h1 class="page-title">{{.PostsPageTitle}}</h1></header>{{end}}
+{{if .Posts}}{{template "loop" .}}
+{{.Pagination}}{{else}}{{template "content-none" .}}{{end}}
+</div>
+{{template "footer" .}}

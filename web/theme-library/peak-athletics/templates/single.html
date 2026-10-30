@@ -1,0 +1,17 @@
+{{template "header" .}}
+{{with .Post}}<article id="post-{{.ID}}" class="{{.Class}} pk-article">
+	<header class="pk-article__hero">
+		{{with .Thumbnail}}<figure class="pk-article__media">{{.}}</figure>{{end}}
+		<div class="pk-wrap pk-article__header">
+			<p class="pk-kicker">{{range $i, $c := .Categories}}<a class="pk-tag" href="{{$c.URL}}">{{$c.Name}}</a> {{end}}</p>
+			<h1 class="entry-title">{{.Title}}</h1>
+			<p class="pk-article__meta"><time datetime="{{.DateISO}}">{{.DateText}}</time>{{with .AuthorName}} &middot; <span class="byline">{{.}}</span>{{end}}{{with .EditLink}} &middot; <span class="edit-link">{{.}}</span>{{end}}</p>
+		</div>
+	</header>
+	<div class="pk-wrap pk-measure entry-content">
+		{{.Content}}
+	</div>
+	{{if .Tags}}<footer class="pk-wrap pk-measure entry-footer"><span class="tags-links">{{range .Tags}}<a href="{{.URL}}" rel="tag">#{{.Name}}</a> {{end}}</span></footer>{{end}}
+</article>{{end}}
+<div class="pk-wrap pk-measure">{{.PostNav}}{{template "comments" .}}</div>
+{{template "footer" .}}

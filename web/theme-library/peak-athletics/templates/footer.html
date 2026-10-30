@@ -1,0 +1,30 @@
+		</main><!-- #main -->
+	</div><!-- #content -->
+
+	<footer id="colophon" class="site-footer">
+		<div class="pk-wrap">
+			<div class="pk-footer-head">
+				<p class="pk-footer-tagline">{{with theme_mod . "footer_tagline"}}{{.}}{{else}}Go further.{{end}}</p>
+				{{if goo_on}}<a class="button pk-footer-cta" href="{{goo_url . "shop"}}">Shop all gear</a>{{end}}
+			</div>
+			<div class="pk-footer-grid">
+				<div class="pk-footer-brand">
+					<p class="pk-footer-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></p>
+					{{with .Description}}<p class="pk-footer-desc">{{.}}</p>{{end}}
+				</div>
+				{{if is_active_sidebar . "footer-1"}}<aside class="footer-widgets" aria-label="Footer">
+					{{dynamic_sidebar . "footer-1"}}
+				</aside>{{end}}
+			</div>
+			<div class="site-info">
+				{{if has_nav_menu . "footer"}}<nav class="footer-navigation" aria-label="Footer menu">{{nav_menu . "footer"}}</nav>{{end}}
+				<p class="site-info__text">{{with theme_mod . "footer_text"}}{{.}}{{else}}&copy; {{$.SiteName}}. Built for the long run.{{end}} {{.PrivacyLink}}</p>
+				<p class="site-info__credit">Powered by <a href="https://github.com/boracomet/wordpress-go">WordPress Go</a> &amp; Goocommerce</p>
+			</div>
+		</div>
+	</footer><!-- #colophon -->
+</div><!-- #page -->
+
+{{.Footer}}{{.AdminBar}}
+</body>
+</html>

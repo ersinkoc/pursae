@@ -1,0 +1,6 @@
+@font-face { font-family: "Fraunces"; src: url("fonts/fraunces.woff2") format("woff2"); font-weight: 400 700; font-display: swap; }
+@font-face { font-family: "Figtree"; src: url("fonts/figtree.woff2") format("woff2"); font-weight: 400 700; font-display: swap; }
+body { font: 400 1.0625rem/1.7 "Figtree", "Helvetica Neue", Arial, sans-serif; color: #2b211c; background: #faf5ee; }
+h1, h2, h3, h4 { font-family: "Fraunces", Georgia, serif; font-weight: 500; line-height: 1.1; }
+a { color: #a2532f; }
+blockquote { border-left: 3px dashed #c2683f; padding-left: 20px; font-family: "Fraunces", Georgia, serif; }

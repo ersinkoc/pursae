@@ -1,0 +1,9 @@
+{{template "header" .}}
+<div class="gb-wrap gb-archive">
+	<header class="page-header gb-page-header">
+		<p class="gb-kicker">Search</p>
+		<h1 class="page-title">Results for &ldquo;{{.SearchQuery}}&rdquo;</h1>
+	</header>
+	{{if .Posts}}{{template "loop" .}}{{.Pagination}}{{else}}{{template "content-none" .}}{{end}}
+</div>
+{{template "footer" .}}

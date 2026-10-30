@@ -1,0 +1,8 @@
+{{template "header" .}}
+<section class="ap-wrap ap-404 error-404 not-found">
+	<p class="ap-kicker">Page not found</p>
+	<h1 class="page-title">This piece has been set aside.</h1>
+	<p>The page you were looking for is no longer here. Search the collection, or return to the <a href="{{if goo_on}}{{goo_url . "shop"}}{{else}}{{.HomeURL}}{{end}}">boutique</a>.</p>
+	{{if goo_on}}{{goo_product_search .}}{{else}}{{template "searchform" .}}{{end}}
+</section>
+{{template "footer" .}}

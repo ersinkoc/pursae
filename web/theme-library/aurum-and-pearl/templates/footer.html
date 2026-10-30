@@ -1,0 +1,26 @@
+		</main><!-- #main -->
+	</div><!-- #content -->
+
+	<footer id="colophon" class="site-footer">
+		<div class="ap-wrap">
+			<div class="ap-footer-brand">
+				<p class="ap-footer-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></p>
+				<span class="ap-ornament" aria-hidden="true"></span>
+				{{with .Description}}<p class="ap-footer-tagline">{{.}}</p>{{end}}
+			</div>
+			{{if is_active_sidebar . "footer-1"}}<aside class="footer-widgets" aria-label="Footer">
+				{{dynamic_sidebar . "footer-1"}}
+			</aside>{{end}}
+			{{if has_nav_menu . "footer"}}<nav class="footer-navigation" aria-label="Footer menu">{{nav_menu . "footer"}}</nav>{{end}}
+			<div class="site-info">
+				<span class="site-info__text">{{with theme_mod . "footer_text"}}{{.}}{{else}}&copy; {{$.SiteName}}. Made by hand, made to be kept.{{end}}</span>
+				{{.PrivacyLink}}
+				<span class="site-info__credit">Powered by <a href="https://github.com/boracomet/wordpress-go">WordPress Go</a> &amp; Goocommerce</span>
+			</div>
+		</div>
+	</footer><!-- #colophon -->
+</div><!-- #page -->
+
+{{.Footer}}{{.AdminBar}}
+</body>
+</html>

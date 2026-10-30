@@ -1,0 +1,588 @@
+{
+	"version": 1,
+	"options": {
+		"blogname": "Green Basket",
+		"blogdescription": "Organic groceries from local farms"
+	},
+	"categories": [
+		{
+			"slug": "seasons",
+			"name": "Seasons",
+			"description": "What is growing right now."
+		},
+		{
+			"slug": "farms",
+			"name": "Farms",
+			"description": "The people who grow our food."
+		}
+	],
+	"media": [
+		{
+			"id": "hero",
+			"file": "demo/images/green-basket-hero.jpg",
+			"alt": "A basket of fresh vegetables, eggs and bread on a sunny table"
+		},
+		{
+			"id": "about",
+			"file": "demo/images/green-basket-about.jpg",
+			"alt": "A grower holding a crate of freshly picked vegetables in a field"
+		},
+		{
+			"id": "cat-fruit-veg",
+			"file": "demo/images/green-basket-cat-fruit-veg.jpg",
+			"alt": "Fruit & veg collection"
+		},
+		{
+			"id": "cat-dairy-eggs",
+			"file": "demo/images/green-basket-cat-dairy-eggs.jpg",
+			"alt": "Dairy & eggs collection"
+		},
+		{
+			"id": "cat-bakery",
+			"file": "demo/images/green-basket-cat-bakery.jpg",
+			"alt": "Bakery collection"
+		},
+		{
+			"id": "cat-pantry",
+			"file": "demo/images/green-basket-cat-pantry.jpg",
+			"alt": "Pantry collection"
+		},
+		{
+			"id": "p-heirloom-tomatoes",
+			"file": "demo/images/green-basket-p-heirloom-tomatoes.jpg",
+			"alt": "A bowl of colourful heirloom tomatoes"
+		},
+		{
+			"id": "p-crisp-apples",
+			"file": "demo/images/green-basket-p-crisp-apples.jpg",
+			"alt": "A paper bag of red and green apples"
+		},
+		{
+			"id": "p-rainbow-carrots",
+			"file": "demo/images/green-basket-p-rainbow-carrots.jpg",
+			"alt": "A bunch of rainbow carrots"
+		},
+		{
+			"id": "p-baby-spinach",
+			"file": "demo/images/green-basket-p-baby-spinach.jpg",
+			"alt": "A bowl of baby spinach leaves"
+		},
+		{
+			"id": "p-free-range-eggs",
+			"file": "demo/images/green-basket-p-free-range-eggs.jpg",
+			"alt": "A box of brown free-range eggs"
+		},
+		{
+			"id": "p-whole-milk",
+			"file": "demo/images/green-basket-p-whole-milk.jpg",
+			"alt": "A glass bottle of whole milk"
+		},
+		{
+			"id": "p-aged-cheddar",
+			"file": "demo/images/green-basket-p-aged-cheddar.jpg",
+			"alt": "A wedge of aged cheddar"
+		},
+		{
+			"id": "p-sourdough-loaf",
+			"file": "demo/images/green-basket-p-sourdough-loaf.jpg",
+			"alt": "A round sourdough loaf"
+		},
+		{
+			"id": "p-oat-cookies",
+			"file": "demo/images/green-basket-p-oat-cookies.jpg",
+			"alt": "A stack of oat cookies"
+		},
+		{
+			"id": "p-wildflower-honey",
+			"file": "demo/images/green-basket-p-wildflower-honey.jpg",
+			"alt": "A jar of golden wildflower honey"
+		},
+		{
+			"id": "p-extra-virgin-olive-oil",
+			"file": "demo/images/green-basket-p-extra-virgin-olive-oil.jpg",
+			"alt": "A bottle of olive oil"
+		},
+		{
+			"id": "p-weekly-veg-box",
+			"file": "demo/images/green-basket-p-weekly-veg-box.jpg",
+			"alt": "A wooden crate filled with seasonal vegetables"
+		}
+	],
+	"pages": [
+		{
+			"slug": "home",
+			"title": "Home",
+			"content": "<!-- wp:cover {\"url\":\"{{media:hero}}\",\"id\":{{media_id:hero}},\"dimRatio\":0,\"minHeight\":620,\"contentPosition\":\"bottom left\",\"align\":\"full\"} --><div class=\"wp-block-cover alignfull has-custom-content-position is-position-bottom-left\" style=\"min-height:620px\"><span aria-hidden=\"true\" class=\"wp-block-cover__background has-background-dim-0 has-background-dim\"></span><img class=\"wp-block-cover__image-background wp-image-{{media_id:hero}}\" alt=\"\" src=\"{{media:hero}}\" data-object-fit=\"cover\"/><div class=\"wp-block-cover__inner-container\"><!-- wp:paragraph {\"className\":\"gb-kicker\"} --><p class=\"gb-kicker\"><span class=\"gb-chip\">This week on the farm</span></p><!-- /wp:paragraph --><!-- wp:heading {\"level\":1} --><h1 class=\"wp-block-heading\">Fresh from the farm,<br><em>at your door.</em></h1><!-- /wp:heading --><!-- wp:paragraph --><p>Organic fruit, veg, dairy and bread from small farms near you, picked this week and delivered tomorrow.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"/shop/\">Fill your basket</a></div><!-- /wp:button --><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"/product/weekly-veg-box/\">Get the veg box</a></div><!-- /wp:button --></div><!-- /wp:buttons --><!-- wp:list {\"className\":\"gb-badges\"} --><ul class=\"wp-block-list gb-badges\"><!-- wp:list-item --><li>Certified organic</li><!-- /wp:list-item --><!-- wp:list-item --><li>Local farms</li><!-- /wp:list-item --><!-- wp:list-item --><li>Plastic-free</li><!-- /wp:list-item --></ul><!-- /wp:list --></div></div><!-- /wp:cover --><!-- wp:group {\"className\":\"gb-section-head\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group gb-section-head\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Shop the aisles</h2><!-- /wp:heading --><!-- wp:paragraph --><p><a href=\"/shop/\">See everything</a></p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:group {\"className\":\"gb-cats\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group gb-cats\"><!-- wp:image {\"id\":{{media_id:cat-fruit-veg}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"/product-category/fruit-veg/\"><img src=\"{{media:cat-fruit-veg}}\" alt=\"Fruit & veg collection\" class=\"wp-image-{{media_id:cat-fruit-veg}}\"/></a><figcaption class=\"wp-element-caption\">Fruit & veg</figcaption></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:cat-dairy-eggs}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"/product-category/dairy-eggs/\"><img src=\"{{media:cat-dairy-eggs}}\" alt=\"Dairy & eggs collection\" class=\"wp-image-{{media_id:cat-dairy-eggs}}\"/></a><figcaption class=\"wp-element-caption\">Dairy & eggs</figcaption></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:cat-bakery}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"/product-category/bakery/\"><img src=\"{{media:cat-bakery}}\" alt=\"Bakery collection\" class=\"wp-image-{{media_id:cat-bakery}}\"/></a><figcaption class=\"wp-element-caption\">Bakery</figcaption></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:cat-pantry}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"/product-category/pantry/\"><img src=\"{{media:cat-pantry}}\" alt=\"Pantry collection\" class=\"wp-image-{{media_id:cat-pantry}}\"/></a><figcaption class=\"wp-element-caption\">Pantry</figcaption></figure><!-- /wp:image --></div><!-- /wp:group --><!-- wp:group {\"className\":\"gb-section-head\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group gb-section-head\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Farm favourites</h2><!-- /wp:heading --><!-- wp:paragraph --><p><a href=\"/shop/\">All products</a></p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:shortcode -->[products limit=\"8\" columns=\"4\" visibility=\"featured\"]<!-- /wp:shortcode --><!-- wp:group {\"className\":\"gb-offer\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group gb-offer\"><!-- wp:heading --><h2 class=\"wp-block-heading\">10% off your first basket</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Use <code>WELCOME10</code> at checkout. Free delivery on orders over $50.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"/shop/\">Start shopping</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --><!-- wp:group {\"className\":\"gb-section-head\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group gb-section-head\"><!-- wp:heading --><h2 class=\"wp-block-heading\">This week&rsquo;s deals</h2><!-- /wp:heading --><!-- wp:paragraph --><p><a href=\"/shop/\">More deals</a></p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:shortcode -->[products limit=\"4\" columns=\"4\" on_sale=\"true\"]<!-- /wp:shortcode --><!-- wp:media-text {\"mediaId\":{{media_id:about}},\"mediaType\":\"image\",\"className\":\"gb-box\"} --><div class=\"wp-block-media-text is-stacked-on-mobile gb-box\"><figure class=\"wp-block-media-text__media\"><img src=\"{{media:about}}\" alt=\"A grower holding a crate of freshly picked vegetables\" class=\"wp-image-{{media_id:about}} size-full\"/></figure><div class=\"wp-block-media-text__content\"><!-- wp:paragraph {\"className\":\"gb-kicker\"} --><p class=\"gb-kicker\"><span class=\"gb-chip\">Weekly veg box</span></p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Let the growers choose.</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Eight to ten of the best things from the fields each week, with a recipe card so nothing goes to waste. Skip or pause whenever you like.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"/product/weekly-veg-box/\">See this week&rsquo;s box</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div></div><!-- /wp:media-text --><!-- wp:group {\"className\":\"gb-section-head\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group gb-section-head\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Just picked</h2><!-- /wp:heading --><!-- wp:paragraph --><p><a href=\"/shop/?orderby=date\">New in</a></p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:shortcode -->[products limit=\"8\" columns=\"4\" orderby=\"date\" order=\"DESC\"]<!-- /wp:shortcode --><!-- wp:columns {\"className\":\"gb-steps\"} --><div class=\"wp-block-columns gb-steps\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Fill your basket</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Order by 8 pm from the aisles or the weekly box.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">We pick and pack</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Farms harvest overnight, we pack in paper and crates.</p><!-- /wp:paragraph --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Delivered tomorrow</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Electric vans, a one-hour slot and crates collected next time.</p><!-- /wp:paragraph --></div><!-- /wp:column --></div><!-- /wp:columns -->",
+			"template": "page-home",
+			"front_page": true
+		},
+		{
+			"slug": "about",
+			"title": "Our farms",
+			"content": "<!-- wp:image {\"id\":{{media_id:about}},\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:about}}\" alt=\"A grower holding a crate of freshly picked vegetables in a field\" class=\"wp-image-{{media_id:about}}\"/></figure><!-- /wp:image --><!-- wp:paragraph --><p>Green Basket started as a market stall run by two neighbours with too many courgettes. Customers kept asking whether we could deliver, so one summer we borrowed a van, and we have not stopped since.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Today we work with twenty-two organic farms, a dairy, a bakery and a beekeeper, all within a hundred miles. We pay growers a fair, fixed price agreed before they plant, so they can farm without guessing, and we pick only what has been ordered, so almost nothing is wasted.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">How we do things</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Certified organic, or in conversion with a named farm.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Paper bags and returnable crates, no plastic punnets.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Electric vans and one-hour delivery slots.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Leftovers go to the community kitchen down the road.</li><!-- /wp:list-item --></ul><!-- /wp:list -->",
+			"featured_media": "about"
+		},
+		{
+			"slug": "contact",
+			"title": "Contact",
+			"content": "<!-- wp:paragraph --><p>Questions about an order, a substitution or our farms? We are here to help.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><strong>Email:</strong> hello@greenbasket.example<br><strong>Phone:</strong> +1 555 0177 (Mon–Sat, 8–18)<br><strong>Farm shop:</strong> 3 Orchard Lane, open Fridays and Saturdays</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Delivery areas</h3><!-- /wp:heading --><!-- wp:paragraph --><p>We deliver within thirty miles of the farm shop, six days a week. Enter your postcode at checkout to see your delivery days and slots.</p><!-- /wp:paragraph -->"
+		},
+		{
+			"slug": "journal",
+			"title": "Journal",
+			"content": "",
+			"posts_page": true
+		}
+	],
+	"posts": [
+		{
+			"slug": "whats-in-season-this-autumn",
+			"title": "What’s in season this autumn",
+			"date": "2026-09-22T08:00:00",
+			"categories": [
+				"seasons"
+			],
+			"featured_media": "p-crisp-apples",
+			"excerpt": "Apples, squash, the last tomatoes and the first kale: what our growers are picking right now.",
+			"content": "<!-- wp:paragraph --><p>Autumn is the busiest harvest of the year on our farms. The tomato tunnels are giving their last heavy pickings, the orchards are full, and the first frosts are sweetening the kale and the parsnips.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Right now the boxes are full of apples, squash, beetroot, leeks, rainbow carrots and the last of the courgettes. Later in the month the brassicas arrive: kale, sprouts on the stalk and crinkly savoy cabbage.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Cooking tip from our growers: roast everything. A tray of squash, carrots and red onion with oil, salt and a spoon of honey is the easiest dinner of the season.</p><!-- /wp:paragraph -->"
+		},
+		{
+			"slug": "meet-the-orchard-family",
+			"title": "Meet the orchard family",
+			"date": "2026-10-06T09:00:00",
+			"categories": [
+				"farms"
+			],
+			"featured_media": "cat-fruit-veg",
+			"excerpt": "Three generations, eleven varieties of apple and a lot of patience.",
+			"content": "<!-- wp:paragraph --><p>Our apples come from an orchard that has been farmed by the same family for three generations, and organically for thirty years. The trees are old and wide, and sheep graze the grass underneath them all winter.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>They grow eleven varieties, so the apples in your bag change through the season: early, sharp reds in late summer, then sweeter crunchy ones, and finally the russets that keep until spring.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Everything is picked by hand. It is slower, but it means the fruit is not bruised, and it lasts for weeks in a cool place at home.</p><!-- /wp:paragraph -->"
+		},
+		{
+			"slug": "a-loaf-that-takes-thirty-hours",
+			"title": "A loaf that takes thirty hours",
+			"date": "2026-10-23T07:30:00",
+			"categories": [
+				"farms"
+			],
+			"featured_media": "p-sourdough-loaf",
+			"excerpt": "Why our bakers let the dough rest overnight, and why it tastes better for it.",
+			"content": "<!-- wp:paragraph --><p>Our sourdough starts the day before you eat it. In the morning the bakers mix flour, water and a starter that is older than the bakery itself, then fold the dough by hand every hour through the afternoon.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>In the evening the loaves are shaped and left in a cool room overnight. That long, slow rest is where the flavour comes from, and it makes the bread easier to digest too.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>At four in the morning the ovens are hot, the loaves go in, and by seven they are cooling on racks, ready for the vans. Wrap it in a tea towel, keep it cut side down, and it will be good for days.</p><!-- /wp:paragraph -->"
+		}
+	],
+	"menus": [
+		{
+			"name": "Aisle menu",
+			"location": "primary",
+			"items": [
+				{
+					"title": "Shop all",
+					"url": "/shop/",
+					"children": [
+						{
+							"title": "Fruit & veg",
+							"url": "/product-category/fruit-veg/"
+						},
+						{
+							"title": "Dairy & eggs",
+							"url": "/product-category/dairy-eggs/"
+						},
+						{
+							"title": "Bakery",
+							"url": "/product-category/bakery/"
+						},
+						{
+							"title": "Pantry",
+							"url": "/product-category/pantry/"
+						}
+					]
+				},
+				{
+					"title": "Fruit & veg",
+					"url": "/product-category/fruit-veg/"
+				},
+				{
+					"title": "Dairy & eggs",
+					"url": "/product-category/dairy-eggs/"
+				},
+				{
+					"title": "Bakery",
+					"url": "/product-category/bakery/"
+				},
+				{
+					"title": "Pantry",
+					"url": "/product-category/pantry/"
+				},
+				{
+					"title": "Veg box",
+					"url": "/product/weekly-veg-box/"
+				},
+				{
+					"title": "Our farms",
+					"page": "about"
+				},
+				{
+					"title": "Journal",
+					"page": "journal"
+				},
+				{
+					"title": "Contact",
+					"page": "contact"
+				}
+			]
+		},
+		{
+			"name": "Footer menu",
+			"location": "footer",
+			"items": [
+				{
+					"title": "Shop",
+					"url": "/shop/"
+				},
+				{
+					"title": "My account",
+					"url": "/my-account/"
+				},
+				{
+					"title": "Our farms",
+					"page": "about"
+				},
+				{
+					"title": "Contact",
+					"page": "contact"
+				}
+			]
+		}
+	],
+	"widgets": {
+		"footer-1": [
+			"<!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Farm shop</h3><!-- /wp:heading --><!-- wp:paragraph --><p>3 Orchard Lane<br>Fridays and Saturdays, 9–17<br>Free parking by the barn</p><!-- /wp:paragraph -->",
+			"<!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Delivery</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Order by 8 pm for tomorrow<br>Free over $50<br>Crates collected next time</p><!-- /wp:paragraph -->",
+			"<!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">The weekly letter</h3><!-- /wp:heading --><!-- wp:paragraph --><p>What is in season, what is in the box and a recipe to use it all, every Thursday.</p><!-- /wp:paragraph -->"
+		]
+	},
+	"customizer": {
+		"accent": "#4f8a3c",
+		"sale_color": "#e2553f",
+		"show_delivery_note": true,
+		"delivery_note": "Order by 8 pm for next-day delivery · Free delivery over $50",
+		"header_search": true,
+		"catalog_columns": "4"
+	},
+	"goocommerce": {
+		"settings": {
+			"currency": "USD",
+			"currency_pos": "left",
+			"price_thousand_sep": ",",
+			"price_decimal_sep": ".",
+			"price_num_decimals": 2,
+			"catalog_columns": 4,
+			"catalog_rows": 3,
+			"demo_store": false
+		},
+		"categories": [
+			{
+				"slug": "fruit-veg",
+				"name": "Fruit & veg",
+				"description": "Picked this week on organic farms less than a hundred miles away.",
+				"image": "cat-fruit-veg"
+			},
+			{
+				"slug": "dairy-eggs",
+				"name": "Dairy & eggs",
+				"description": "Milk, cheese and eggs from small herds and happy hens.",
+				"image": "cat-dairy-eggs"
+			},
+			{
+				"slug": "bakery",
+				"name": "Bakery",
+				"description": "Slow-proved loaves and biscuits, baked every morning.",
+				"image": "cat-bakery"
+			},
+			{
+				"slug": "pantry",
+				"name": "Pantry",
+				"description": "Honey, oil and the staples worth keeping in the cupboard.",
+				"image": "cat-pantry"
+			}
+		],
+		"attributes": [
+			{
+				"slug": "weight",
+				"name": "Weight",
+				"terms": [
+					"1 kg",
+					"2 kg"
+				]
+			}
+		],
+		"products": [
+			{
+				"slug": "heirloom-tomatoes",
+				"name": "Heirloom Tomatoes",
+				"type": "simple",
+				"regular_price": "4.99",
+				"categories": [
+					"fruit-veg"
+				],
+				"description": "<p>A mix of old varieties in red, yellow, green-striped and deep purple, grown in unheated polytunnels and picked ripe. Sweet, juicy and wildly different from supermarket tomatoes.</p><p>About 500 g. Keep them out of the fridge for the best flavour.</p>",
+				"short_description": "<p>A colourful 500 g mix of old tomato varieties, picked ripe.</p>",
+				"sku": "GB-101",
+				"stock": 40,
+				"featured": true,
+				"reviews": [
+					{
+						"author": "Nadia",
+						"email": "nadia@example.com",
+						"rating": 5,
+						"content": "These taste like summer. The striped green ones are my favourite in a salad with good oil."
+					}
+				],
+				"image": "p-heirloom-tomatoes"
+			},
+			{
+				"slug": "crisp-apples",
+				"name": "Crisp Apples",
+				"type": "variable",
+				"regular_price": "5.49",
+				"categories": [
+					"fruit-veg"
+				],
+				"sku": "GB-102",
+				"featured": true,
+				"description": "<p>Crunchy, sweet-sharp apples from a family orchard that has farmed organically for thirty years. The variety changes through the season, from early reds to late russets.</p><p>Choose a 1 kg bag for the week or 2 kg for the lunchbox crowd.</p>",
+				"short_description": "<p>Seasonal orchard apples, sold by the kilo.</p>",
+				"attributes": [
+					{
+						"name": "Weight",
+						"values": [
+							"1 kg",
+							"2 kg"
+						],
+						"variation": true
+					}
+				],
+				"variations": [
+					{
+						"attributes": {
+							"Weight": "1 kg"
+						},
+						"regular_price": "5.49",
+						"stock": 30,
+						"sku": "GB-102-1"
+					},
+					{
+						"attributes": {
+							"Weight": "2 kg"
+						},
+						"regular_price": "9.99",
+						"stock": 20,
+						"sku": "GB-102-2"
+					}
+				],
+				"reviews": [
+					{
+						"author": "Owen",
+						"email": "owen@example.com",
+						"rating": 5,
+						"content": "Proper crunch and not waxy at all. The kids eat them faster than I can restock."
+					}
+				],
+				"image": "p-crisp-apples"
+			},
+			{
+				"slug": "rainbow-carrots",
+				"name": "Rainbow Carrots",
+				"type": "simple",
+				"regular_price": "3.49",
+				"categories": [
+					"fruit-veg"
+				],
+				"description": "<p>Purple, yellow, white and orange carrots with their tops still on, pulled the day before they reach you. Roast them whole with a little honey.</p><p>A bunch of about 600 g.</p>",
+				"short_description": "<p>A bunch of purple, yellow and orange carrots, tops on.</p>",
+				"sku": "GB-103",
+				"stock": 36,
+				"image": "p-rainbow-carrots"
+			},
+			{
+				"slug": "baby-spinach",
+				"name": "Baby Spinach",
+				"type": "simple",
+				"regular_price": "2.99",
+				"categories": [
+					"fruit-veg"
+				],
+				"description": "<p>Tender young leaves, washed and ready for salads, smoothies or a quick wilt into pasta. Grown without pesticides and packed in a compostable bag.</p><p>200 g.</p>",
+				"short_description": "<p>Tender washed baby spinach in a compostable bag.</p>",
+				"sku": "GB-104",
+				"stock": 25,
+				"sale_price": "2.49",
+				"image": "p-baby-spinach"
+			},
+			{
+				"slug": "free-range-eggs",
+				"name": "Free-Range Eggs",
+				"type": "simple",
+				"regular_price": "6.50",
+				"categories": [
+					"dairy-eggs"
+				],
+				"description": "<p>A dozen mixed-size eggs from hens that roam an old orchard all day. Deep orange yolks, strong shells and a farm you can visit.</p>",
+				"short_description": "<p>A dozen orchard-roaming free-range eggs.</p>",
+				"sku": "GB-201",
+				"stock": 50,
+				"featured": true,
+				"reviews": [
+					{
+						"author": "Bea",
+						"email": "bea@example.com",
+						"rating": 5,
+						"content": "The yolks are so orange! Makes the best Sunday pancakes."
+					},
+					{
+						"author": "Sam",
+						"email": "sam@example.com",
+						"rating": 4,
+						"content": "Lovely eggs, one was cracked in the box but the rest were perfect."
+					}
+				],
+				"image": "p-free-range-eggs"
+			},
+			{
+				"slug": "whole-milk",
+				"name": "Whole Milk",
+				"type": "simple",
+				"regular_price": "2.80",
+				"categories": [
+					"dairy-eggs"
+				],
+				"description": "<p>Gently pasteurised, non-homogenised milk from a small herd of grass-fed cows, with the cream rising to the top. Delivered in a returnable glass bottle.</p><p>1 litre.</p>",
+				"short_description": "<p>Non-homogenised grass-fed milk in a returnable glass bottle.</p>",
+				"sku": "GB-202",
+				"stock": 30,
+				"image": "p-whole-milk"
+			},
+			{
+				"slug": "aged-cheddar",
+				"name": "Aged Cheddar",
+				"type": "simple",
+				"regular_price": "8.90",
+				"categories": [
+					"dairy-eggs"
+				],
+				"description": "<p>A cloth-bound cheddar matured for eighteen months, crumbly and nutty with little crunchy crystals. Made by hand from the milk of a single herd.</p><p>250 g wedge.</p>",
+				"short_description": "<p>Cloth-bound cheddar, matured eighteen months.</p>",
+				"sku": "GB-203",
+				"stock": 18,
+				"featured": true,
+				"image": "p-aged-cheddar"
+			},
+			{
+				"slug": "sourdough-loaf",
+				"name": "Sourdough Loaf",
+				"type": "simple",
+				"regular_price": "6.00",
+				"categories": [
+					"bakery"
+				],
+				"description": "<p>A country loaf of organic wheat and a little rye, proved for thirty hours and baked dark for a crackling crust and an open, chewy crumb. Baked the morning it is delivered.</p><p>About 800 g.</p>",
+				"short_description": "<p>A slow-proved country sourdough, baked the morning of delivery.</p>",
+				"sku": "GB-301",
+				"stock": 20,
+				"featured": true,
+				"image": "p-sourdough-loaf"
+			},
+			{
+				"slug": "oat-cookies",
+				"name": "Oat Cookies",
+				"type": "simple",
+				"regular_price": "4.50",
+				"categories": [
+					"bakery"
+				],
+				"description": "<p>Chewy oat cookies with brown butter, raisins and a pinch of sea salt. Baked in small batches and packed in a paper bag of eight.</p>",
+				"short_description": "<p>Chewy brown-butter oat cookies, a bag of eight.</p>",
+				"sku": "GB-302",
+				"stock": 24,
+				"sale_price": "3.60",
+				"image": "p-oat-cookies"
+			},
+			{
+				"slug": "wildflower-honey",
+				"name": "Wildflower Honey",
+				"type": "simple",
+				"regular_price": "9.50",
+				"categories": [
+					"pantry"
+				],
+				"description": "<p>Raw, unfiltered honey from hives kept in meadows and hedgerows. Its flavour changes with the season: light and floral in spring, deeper and darker by late summer.</p><p>340 g jar.</p>",
+				"short_description": "<p>Raw wildflower honey from meadow hives, 340 g.</p>",
+				"sku": "GB-401",
+				"stock": 22,
+				"image": "p-wildflower-honey"
+			},
+			{
+				"slug": "extra-virgin-olive-oil",
+				"name": "Extra Virgin Olive Oil",
+				"type": "simple",
+				"regular_price": "14.00",
+				"categories": [
+					"pantry"
+				],
+				"description": "<p>A grassy, peppery oil cold-pressed within hours of the harvest from one family grove. Use it for dressing, dipping and finishing rather than frying.</p><p>500 ml tin.</p>",
+				"short_description": "<p>Peppery single-grove cold-pressed oil, 500 ml.</p>",
+				"sku": "GB-402",
+				"stock": 15,
+				"image": "p-extra-virgin-olive-oil"
+			},
+			{
+				"slug": "weekly-veg-box",
+				"name": "Weekly Veg Box",
+				"type": "simple",
+				"regular_price": "29.00",
+				"categories": [
+					"fruit-veg"
+				],
+				"description": "<p>Eight to ten of the best things from our farms this week, chosen by the growers, with a recipe card to use everything up. Enough for two to three people.</p><p>Skip or pause any week from your account.</p>",
+				"short_description": "<p>Eight to ten seasonal vegetables picked by our growers, plus a recipe card.</p>",
+				"sku": "GB-001",
+				"stock": 60,
+				"featured": true,
+				"reviews": [
+					{
+						"author": "Lena",
+						"email": "lena@example.com",
+						"rating": 5,
+						"content": "We have cooked more vegetables in a month than in the last year. The recipe cards are genius."
+					}
+				],
+				"cross_sells": [
+					"sourdough-loaf",
+					"free-range-eggs"
+				],
+				"image": "p-weekly-veg-box"
+			}
+		],
+		"coupons": [
+			{
+				"code": "WELCOME10",
+				"type": "percent",
+				"amount": "10",
+				"description": "10% off your first basket"
+			},
+			{
+				"code": "FREEDELIVERY",
+				"type": "fixed_cart",
+				"amount": "0",
+				"description": "Free delivery on orders over $30",
+				"free_shipping": true,
+				"minimum_amount": "30"
+			}
+		],
+		"shipping": {
+			"zone": "Local delivery area",
+			"flat_rate": "4.95",
+			"free_over": "50",
+			"local_pickup": true
+		}
+	}
+}

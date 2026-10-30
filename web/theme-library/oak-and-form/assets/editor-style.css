@@ -1,0 +1,6 @@
+@font-face { font-family: "Albert Sans"; src: url("fonts/albert-sans.woff2") format("woff2"); font-weight: 300 700; font-display: swap; }
+@font-face { font-family: "Gilda Display"; src: url("fonts/gilda-display.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+body { font: 400 1rem/1.7 "Albert Sans", "Helvetica Neue", Arial, sans-serif; color: #2e2e2e; background: #f2efe9; }
+h1, h2, h3, h4 { font-family: "Albert Sans", "Helvetica Neue", Arial, sans-serif; font-weight: 300; letter-spacing: -.025em; line-height: 1.1; }
+a { color: #6b7f5a; }
+blockquote { border-left: 2px solid #c49a6c; padding-left: 24px; }

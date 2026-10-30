@@ -1,0 +1,11 @@
+<div class="kl-posts">
+	{{range $i, $p := .Posts}}<article id="post-{{.ID}}" class="{{.Class}} kl-post-card{{if eq $i 0}} kl-post-card--lead{{end}}">
+		{{with .Thumbnail}}<a class="kl-post-card__media" href="{{$p.Permalink}}" aria-hidden="true" tabindex="-1">{{.}}</a>{{end}}
+		<div class="kl-post-card__text">
+			<p class="kl-kicker">{{with .Categories}}{{(index . 0).Name}}{{else}}Notebook{{end}} &middot; <time datetime="{{.DateISO}}">{{.DateText}}</time></p>
+			<h2 class="kl-post-card__title"><a href="{{.Permalink}}" rel="bookmark">{{.Title}}</a></h2>
+			{{if .ShowExcerpt}}<div class="kl-post-card__excerpt">{{.Excerpt}}</div>{{end}}
+		</div>
+	</article>
+	{{end}}
+</div>
