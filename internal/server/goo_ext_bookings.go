@@ -17,7 +17,7 @@ import (
 // for hour / minute blocks), a duration and persons; availability rules, a capacity per block, buffers
 // and cost rules decide what can be booked and for how much. A booking is held "in-cart" for an hour,
 // becomes unpaid / pending-confirmation with the order, paid with the payment and complete after it
-// ended. Resources are not implemented (one resource: the product itself).
+// ended. Resources (goo_ext_bookings_resources.go) add shared capacity, rules and costs.
 
 const (
 	bkKey  = "bookings"
@@ -155,6 +155,10 @@ type bkConf struct {
 	PersonQtyMult    bool
 	HasPersonTypes   bool
 	PersonTypes      []bkPersonType
+	HasResources     bool
+	ResourceLabel    string
+	ResourceAssign   string // customer, automatic
+	Resources        []gxbProdRes
 }
 
 func bkMeta(p *gooProduct, k string) any { return p.Meta["_wc_booking_"+k] }
@@ -199,6 +203,7 @@ func bkConfOf(p *gooProduct) *bkConf {
 		// One implicit person type, "Persons", without a cost of its own.
 		c.PersonTypes = []bkPersonType{{ID: "persons", Name: "Persons"}}
 	}
+	gxbConfResources(p, c)
 	return c
 }
 
@@ -322,44 +327,8 @@ func bkTimeMatch(r bkRule, s, e time.Time) bool {
 // bookable reports whether the block [s, e) is bookable by the rules: the most important matching
 // rule decides (lowest priority number; within a priority, the rule lower in the table).
 func (c *bkConf) bookable(s, e time.Time) bool {
-	type ix struct {
-		r bkRule
-		i int
-	}
-	rules := make([]ix, len(c.Rules))
-	for i, r := range c.Rules {
-		if r.Priority == 0 {
-			r.Priority = 10
-		}
-		rules[i] = ix{r, i}
-	}
-	sort.SliceStable(rules, func(a, b int) bool {
-		if rules[a].r.Priority != rules[b].r.Priority {
-			return rules[a].r.Priority < rules[b].r.Priority
-		}
-		return rules[a].i > rules[b].i
-	})
-	for _, x := range rules {
-		r := x.r
-		if m, isDate := bkDateMatch(r.Type, r.From, r.To, s); isDate {
-			if m {
-				return r.Bookable
-			}
-			continue
-		}
-		if !c.timed() {
-			continue // time rules do not apply to day / month blocks
-		}
-		if strings.HasPrefix(r.Type, "time") {
-			if bkTimeMatch(r, s, e) {
-				return r.Bookable
-			}
-			if r.Bookable {
-				// A block partly outside a bookable time range is not made bookable by it, nor
-				// blocked: the next rule decides.
-				continue
-			}
-		}
+	if v, ok := gxbRulesDecide(c.Rules, c.timed(), s, e); ok {
+		return v
 	}
 	return c.DefaultAvailable
 }
@@ -414,7 +383,13 @@ func bkCostRuleMatch(r bkCostRule, s, e time.Time, persons, blocks int, timed bo
 // for every block, person type costs added (or every cost multiplied by the persons), the cost
 // rules applied to each block they match.
 func bkCost(c *bkConf, start time.Time, blocks int, persons map[string]int) float64 {
-	base, block := c.BaseCost, c.BlockCost
+	return gooBkCostWith(c, start, blocks, persons, 0)
+}
+
+// gooBkCostWith is bkCost with a resource: its base and block costs are added to the product's.
+func gooBkCostWith(c *bkConf, start time.Time, blocks int, persons map[string]int, resource int64) float64 {
+	rb, rk := c.resourceCosts(resource)
+	base, block := c.BaseCost+rb, c.BlockCost+rk
 	total := 0
 	for _, pt := range c.PersonTypes {
 		n := persons[pt.ID]
@@ -483,6 +458,19 @@ func bkFromCost(c *bkConf) float64 {
 		block += pt.BlockCost * float64(persons[pt.ID])
 		n += persons[pt.ID]
 	}
+	if len(c.Resources) > 0 { // the cheapest resource
+		best := -1.0
+		for _, r := range c.Resources {
+			if v := r.BaseCost + r.BlockCost*float64(blocks); best < 0 || v < best {
+				best = v
+				base, block = c.BaseCost+r.BaseCost, c.BlockCost+r.BlockCost
+				for _, pt := range c.PersonTypes {
+					base += pt.BaseCost * float64(persons[pt.ID])
+					block += pt.BlockCost * float64(persons[pt.ID])
+				}
+			}
+		}
+	}
 	if c.HasPersons && c.PersonCostMult && n > 0 {
 		base, block = base*float64(n), block*float64(n)
 	}
@@ -498,10 +486,20 @@ type bkHeld struct {
 
 // bkExisting lists the bookings that hold places between from and to (buffers included).
 func (s *Server) bkExisting(ctx context.Context, productID int64, from, to time.Time, exclude int64) []bkHeld {
+	return s.gooBkExisting(ctx, productID, 0, from, to, exclude)
+}
+
+// gooBkExisting is bkExisting for a resource: the bookings of every product holding that resource
+// (resource 0: the product's bookings).
+func (s *Server) gooBkExisting(ctx context.Context, productID, resource int64, from, to time.Time, exclude int64) []bkHeld {
 	mins := max(s.gooExtInt(bkKey, "in_cart_minutes"), 1)
-	rows, err := s.store.Pool.Query(ctx, `SELECT start_at, end_at, persons FROM goo_bookings WHERE product_id = $1 AND status = ANY($2)
+	col, key := "product_id", productID
+	if resource != 0 {
+		col, key = "resource_id", resource
+	}
+	rows, err := s.store.Pool.Query(ctx, `SELECT start_at, end_at, persons FROM goo_bookings WHERE `+col+` = $1 AND status = ANY($2)
 		AND (status <> 'in-cart' OR date_created > now() - make_interval(mins => $3)) AND end_at > $4 AND start_at < $5 AND id <> $6`,
-		productID, bkHolding, mins, from, to, exclude)
+		key, bkHolding, mins, from, to, exclude)
 	if err != nil {
 		return nil
 	}
@@ -565,6 +563,16 @@ func (s *Server) bkWindow(c *bkConf) (time.Time, time.Time) {
 // bkCheck is WC_Product_Booking::is_bookable(): the booking of blocks starting at start, for n
 // persons, fits the window, the rules and the remaining places.
 func (s *Server) bkCheck(ctx context.Context, p *gooProduct, c *bkConf, start time.Time, blocks, persons int, exclude int64) error {
+	return s.gxbCheck(ctx, p, c, nil, start, blocks, persons, exclude)
+}
+
+// gxbCheck is bkCheck against a resource (nil: the product alone): its rules, quantity and bookings.
+func (s *Server) gxbCheck(ctx context.Context, p *gooProduct, c *bkConf, res *gooBkResource, start time.Time, blocks, persons int, exclude int64) error {
+	var resID int64
+	if res != nil {
+		resID = res.ID
+	}
+	capacity := gxbCapacity(c, res)
 	from, to := s.bkWindow(c)
 	if start.Before(from) {
 		return gooCartErr("The earliest booking possible is currently %s.", html.EscapeString(s.gxDate(from)+map[bool]string{true: " " + s.gxTime(from), false: ""}[c.timed()]))
@@ -577,7 +585,7 @@ func (s *Server) bkCheck(ctx context.Context, p *gooProduct, c *bkConf, start ti
 		end = c.blockEnd(end)
 	}
 	d, days := c.bufferDur()
-	held := s.bkExisting(ctx, p.ID, start.Add(-d).AddDate(0, 0, -days), end.Add(d).AddDate(0, 0, days), exclude)
+	held := s.gooBkExisting(ctx, p.ID, resID, start.Add(-d).AddDate(0, 0, -days), end.Add(d).AddDate(0, 0, days), exclude)
 	need := 1
 	if c.PersonQtyMult && persons > 0 {
 		need = persons
@@ -589,18 +597,18 @@ func (s *Server) bkCheck(ctx context.Context, p *gooProduct, c *bkConf, start ti
 		if !c.timed() {
 			for day := t; day.Before(e); day = day.AddDate(0, 0, 1) {
 				de := day.AddDate(0, 0, 1)
-				if !c.bookable(day, de) {
+				if !gxbBookable(c, res, day, de) {
 					return gooCartErr("Sorry, the selected block is not available.")
 				}
-				if left := c.MaxPerBlock - c.used(held, day, de); left < need {
+				if left := capacity - c.used(held, day, de); left < need {
 					return bkPlacesErr(s, left, day, false)
 				}
 			}
 		} else {
-			if !c.bookable(t, e) || t.Day() != e.Add(-time.Nanosecond).Day() {
+			if !gxbBookable(c, res, t, e) || t.Day() != e.Add(-time.Nanosecond).Day() {
 				return gooCartErr("Sorry, the selected block is not available.")
 			}
-			if left := c.MaxPerBlock - c.used(held, t, e); left < need {
+			if left := capacity - c.used(held, t, e); left < need {
 				return bkPlacesErr(s, left, t, true)
 			}
 		}
@@ -630,6 +638,15 @@ type bkSlot struct {
 
 // bkSlots lists the day's blocks: bookable ones with their remaining places.
 func (s *Server) bkSlots(ctx context.Context, p *gooProduct, c *bkConf, day time.Time) []bkSlot {
+	return s.gooBkSlotsAll(ctx, p, c, day, 0)
+}
+
+// gxbSlots lists the day's blocks of a resource (nil: the product alone).
+func (s *Server) gxbSlots(ctx context.Context, p *gooProduct, c *bkConf, res *gooBkResource, day time.Time) []bkSlot {
+	var resID int64
+	if res != nil {
+		resID = res.ID
+	}
 	if !c.timed() {
 		return nil
 	}
@@ -639,7 +656,7 @@ func (s *Server) bkSlots(ctx context.Context, p *gooProduct, c *bkConf, day time
 	dayEnd := dayStart.AddDate(0, 0, 1)
 	first := max(bkMinutesOf(c.FirstBlockTime), 0)
 	from, to := s.bkWindow(c)
-	held := s.bkExisting(ctx, p.ID, dayStart.Add(-48*time.Hour), dayEnd.Add(48*time.Hour), 0)
+	held := s.gooBkExisting(ctx, p.ID, resID, dayStart.Add(-48*time.Hour), dayEnd.Add(48*time.Hour), 0)
 	step := time.Duration(c.blockMinutes()) * time.Minute
 	if step <= 0 {
 		return nil
@@ -647,10 +664,10 @@ func (s *Server) bkSlots(ctx context.Context, p *gooProduct, c *bkConf, day time
 	var out []bkSlot
 	for t := dayStart.Add(time.Duration(first) * time.Minute); !t.Add(step).After(dayEnd); t = t.Add(step) {
 		e := t.Add(step)
-		if t.Before(from) || t.After(to) || !c.bookable(t, e) {
+		if t.Before(from) || t.After(to) || !gxbBookable(c, res, t, e) {
 			continue
 		}
-		left := c.MaxPerBlock - c.used(held, t, e)
+		left := gxbCapacity(c, res) - c.used(held, t, e)
 		if left <= 0 {
 			continue
 		}
@@ -672,15 +689,16 @@ type bkBooking struct {
 	AllDay      bool
 	Persons     map[string]any
 	Cost        float64
+	ResourceID  int64
 	Reminded    bool
 	Created     time.Time
 }
 
-const bkCols = `id, product_id, order_id, order_item_id, customer_id, status, start_at, end_at, all_day, persons, cost::float8, reminder_sent, date_created`
+const bkCols = `id, product_id, order_id, order_item_id, customer_id, status, start_at, end_at, all_day, persons, cost::float8, reminder_sent, date_created, resource_id`
 
 func bkScan(row pgx.Row) (*bkBooking, error) {
 	b := &bkBooking{}
-	err := row.Scan(&b.ID, &b.ProductID, &b.OrderID, &b.OrderItemID, &b.CustomerID, &b.Status, &b.Start, &b.End, &b.AllDay, &b.Persons, &b.Cost, &b.Reminded, &b.Created)
+	err := row.Scan(&b.ID, &b.ProductID, &b.OrderID, &b.OrderItemID, &b.CustomerID, &b.Status, &b.Start, &b.End, &b.AllDay, &b.Persons, &b.Cost, &b.Reminded, &b.Created, &b.ResourceID)
 	if b.Persons == nil {
 		b.Persons = map[string]any{}
 	}
@@ -710,15 +728,15 @@ func (s *Server) bkInsert(ctx context.Context, b *bkBooking) error {
 	if b.Persons == nil {
 		b.Persons = map[string]any{}
 	}
-	return s.store.Pool.QueryRow(ctx, `INSERT INTO goo_bookings (product_id, order_id, order_item_id, customer_id, status, start_at, end_at, all_day, persons, cost)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id, date_created`, b.ProductID, b.OrderID, b.OrderItemID, b.CustomerID, b.Status, b.Start, b.End,
-		b.AllDay, b.Persons, b.Cost).Scan(&b.ID, &b.Created)
+	return s.store.Pool.QueryRow(ctx, `INSERT INTO goo_bookings (product_id, order_id, order_item_id, customer_id, status, start_at, end_at, all_day, persons, cost, resource_id)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id, date_created`, b.ProductID, b.OrderID, b.OrderItemID, b.CustomerID, b.Status, b.Start, b.End,
+		b.AllDay, b.Persons, b.Cost, b.ResourceID).Scan(&b.ID, &b.Created)
 }
 
 func (s *Server) bkUpdate(ctx context.Context, b *bkBooking) error {
 	_, err := s.store.Pool.Exec(ctx, `UPDATE goo_bookings SET product_id=$2, order_id=$3, order_item_id=$4, customer_id=$5, status=$6, start_at=$7, end_at=$8,
-		all_day=$9, persons=$10, cost=$11, reminder_sent=$12, date_modified=now() WHERE id=$1`, b.ID, b.ProductID, b.OrderID, b.OrderItemID, b.CustomerID,
-		b.Status, b.Start, b.End, b.AllDay, b.Persons, b.Cost, b.Reminded)
+		all_day=$9, persons=$10, cost=$11, reminder_sent=$12, resource_id=$13, date_modified=now() WHERE id=$1`, b.ID, b.ProductID, b.OrderID, b.OrderItemID, b.CustomerID,
+		b.Status, b.Start, b.End, b.AllDay, b.Persons, b.Cost, b.Reminded, b.ResourceID)
 	return err
 }
 
@@ -859,26 +877,27 @@ func bkAddToCart(s *Server, ctx context.Context, p *gooProduct, qty int, form ma
 	if err != nil {
 		return err
 	}
-	if err := s.bkCheck(ctx, p, c, start, blocks, bkSumPersons(persons), 0); err != nil {
+	resID, err := s.gooBkPickResource(ctx, p, c, gxbRequestedResource(form), start, blocks, bkSumPersons(persons), 0)
+	if err != nil {
 		return err
 	}
 	end := start
 	for i := 0; i < blocks; i++ {
 		end = c.blockEnd(end)
 	}
-	cost := gooRound(bkCost(c, start, blocks, persons), s.gooDecimals())
+	cost := gooRound(gooBkCostWith(c, start, blocks, persons, resID), s.gooDecimals())
 	pm := map[string]any{}
 	for k, v := range persons {
 		pm[k] = float64(v)
 	}
-	b := &bkBooking{ProductID: p.ID, Status: "in-cart", Start: start, End: end, AllDay: !c.timed(), Persons: pm, Cost: cost}
+	b := &bkBooking{ProductID: p.ID, Status: "in-cart", Start: start, End: end, AllDay: !c.timed(), Persons: pm, Cost: cost, ResourceID: resID}
 	if err := s.bkInsert(ctx, b); err != nil {
 		return err
 	}
 	data["booking"] = map[string]any{
 		"_booking_id": float64(b.ID), "_start_date": float64(start.Unix()), "_end_date": float64(end.Unix()), "_all_day": !c.timed(),
 		"_date": start.Format("2006-01-02"), "_time": map[bool]string{true: start.Format("15:04"), false: ""}[c.timed()],
-		"_duration": float64(blocks * c.Duration), "_duration_unit": c.Unit, "_persons": pm, "_cost": cost,
+		"_duration": float64(blocks * c.Duration), "_duration_unit": c.Unit, "_persons": pm, "_cost": cost, "_resource_id": float64(resID),
 	}
 	return nil
 }
@@ -932,6 +951,13 @@ func bkItemData(s *Server, ctx context.Context, it *gooCartItem) []gooKV {
 		out = append(out, gooKV{"Booking Time", s.gxTime(start)})
 	}
 	out = append(out, gooKV{"Duration", bkUnitLabel(int(gxNum(bd["_duration"])), gxStr(bd["_duration_unit"]))})
+	if rid := int64(gxNum(bd["_resource_id"])); rid != 0 {
+		label := "Resource"
+		if it.product != nil {
+			label = bkConfOf(it.product).resourceLabel()
+		}
+		out = append(out, gooKV{label, s.gooBkResourceName(ctx, rid)})
+	}
 	if pm, ok := bd["_persons"].(map[string]any); ok && len(pm) > 0 {
 		names := map[string]string{}
 		if it.product != nil {
@@ -1099,6 +1125,9 @@ func (s *Server) bkMail(ctx context.Context, id string, b *bkBooking) {
 	row("Booking ID", itoa64(b.ID))
 	row("Booking Start Date", s.bkWhen(b, b.Start))
 	row("Booking End Date", s.bkWhen(b, b.End))
+	if b.ResourceID != 0 {
+		row(bkConfOf(p).resourceLabel(), s.gooBkResourceName(ctx, b.ResourceID))
+	}
 	if n := bkPersonsTotal(b.Persons); n > 0 {
 		row("Persons", fmt.Sprint(n))
 	}
