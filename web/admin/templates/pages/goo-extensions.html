@@ -1,0 +1,42 @@
+{{define "admin/goo-extensions"}}{{template "admin-header" .}}{{with .Data}}
+<style>
+.goo-ext-wrap .goo-ext-sub{color:#646970;margin:4px 0 18px}
+.goo-ext-wrap h2.goo-ext-group{font-size:15px;margin:26px 0 10px}
+.goo-ext-wrap .goo-ext-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.goo-ext-wrap .goo-ext-card{background:#fff;border:1px solid #dcdcde;border-radius:6px;padding:16px 18px;display:flex;flex-direction:column;gap:8px}
+.goo-ext-wrap .goo-ext-card.is-on{border-color:#7f54b3;box-shadow:0 0 0 1px #7f54b3}
+.goo-ext-wrap .goo-ext-card h3{margin:0;font-size:15px;display:flex;align-items:center;gap:8px}
+.goo-ext-wrap .goo-ext-card h3 .dashicons{color:#7f54b3;font-size:22px;width:22px;height:22px}
+.goo-ext-wrap .goo-ext-card p{margin:0;color:#50575e}
+.goo-ext-wrap .goo-ext-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:auto;padding-top:6px}
+.goo-ext-wrap .goo-ext-badge{display:inline-block;font-size:11px;font-weight:600;padding:1px 8px;border-radius:999px;background:#dcdcde;color:#1d2327}
+.goo-ext-wrap .goo-ext-badge.on{background:#00a32a;color:#fff}
+</style>
+<div class="wrap goo-ext-wrap">
+<h1 class="wp-heading-inline">Goocommerce &rsaquo; Extensions</h1>
+<hr class="wp-header-end">
+{{template "notices" $}}
+<p class="goo-ext-sub">Premium store features, built in. Every extension starts switched off; switching one on adds its settings, screens and storefront features. {{.Active}} of {{.Total}} active.</p>
+{{range .Groups}}
+<h2 class="goo-ext-group">{{.Title}}</h2>
+<div class="goo-ext-grid">
+{{range .Cards}}
+<div class="goo-ext-card{{if .On}} is-on{{end}}" id="ext-{{.Key}}">
+	<h3><span class="dashicons {{.Icon}}" aria-hidden="true"></span>{{.Name}} {{if .On}}<span class="goo-ext-badge on">Active</span>{{else}}<span class="goo-ext-badge">Inactive</span>{{end}}</h3>
+	<p>{{.Description}}</p>
+	<div class="goo-ext-actions">
+		<form method="post" action="/wp-admin/goocommerce?page=extensions">
+			<input type="hidden" name="_wpnonce" value="{{$.Data.Nonce}}">
+			<input type="hidden" name="extension" value="{{.Key}}">
+			{{if .On}}<input type="hidden" name="state" value="off"><button type="submit" class="button">Deactivate</button>
+			{{else}}<input type="hidden" name="state" value="on"><button type="submit" class="button button-primary">Activate</button>{{end}}
+		</form>
+		{{if and .On .SettingsURL}}<a class="button-link" href="{{.SettingsURL}}">Settings</a>{{end}}
+		{{if .On}}{{range .PageLinks}}<a class="button-link" href="/wp-admin/goocommerce?page={{.Page}}">{{.Title}}</a>{{end}}{{end}}
+	</div>
+</div>
+{{end}}
+</div>
+{{end}}
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}

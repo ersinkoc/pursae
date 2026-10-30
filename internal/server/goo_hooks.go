@@ -258,3 +258,48 @@ func (s *Server) gooTriggerEmail(ctx context.Context, id string, o *gooOrder, ar
 	}
 	return gooEmailSender(s, ctx, id, o, args)
 }
+
+// Content and price filters ----------------------------------------------------------------------------
+
+// gooContentFilter changes post content on the front end (Memberships' restricted content, shortcodes).
+type gooContentFilter func(s *Server, ctx context.Context, content string) string
+
+var gooContentFilters []gooContentFilter
+
+// gooFilterContent runs the content filters (called by the storefront's gooShortcodes).
+func (s *Server) gooFilterContent(ctx context.Context, content string) string {
+	for _, f := range gooContentFilters {
+		content = f(s, ctx, content)
+	}
+	return content
+}
+
+// gooPriceHTMLHook changes a product's price HTML (woocommerce_get_price_html): "/ month" of a
+// subscription, a bundle's "From:", member prices.
+type gooPriceHTMLHook func(s *Server, ctx context.Context, p *gooProduct, h template.HTML) template.HTML
+
+var gooPriceHTMLHooks []gooPriceHTMLHook
+
+// gooFilterPriceHTML runs the price HTML hooks (called wherever the storefront prints get_price_html()).
+func (s *Server) gooFilterPriceHTML(ctx context.Context, p *gooProduct, h template.HTML) template.HTML {
+	for _, f := range gooPriceHTMLHooks {
+		h = f(s, ctx, p, h)
+	}
+	return h
+}
+
+// gooProductPriceHook changes a product's catalog price (woocommerce_product_get_price): member and
+// role prices of Memberships / Dynamic Pricing shown in the shop. It runs where the cart price hooks do
+// not (catalog display); cart prices use gooCartItemPriceHooks.
+type gooProductPriceHook func(s *Server, ctx context.Context, p *gooProduct, price float64) float64
+
+var gooProductPriceHooks []gooProductPriceHook
+
+// gooDisplayPrice is the product's active price after the catalog price hooks.
+func (s *Server) gooDisplayPrice(ctx context.Context, p *gooProduct) float64 {
+	v := p.PriceValue()
+	for _, f := range gooProductPriceHooks {
+		v = f(s, ctx, p, v)
+	}
+	return v
+}
