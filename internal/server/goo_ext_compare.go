@@ -29,7 +29,7 @@ var gooCmpFieldOpts = []gooOpt{
 }
 
 func init() {
-	all := make([]string, 0, len(gooCmpFieldOpts))
+	all := make([]any, 0, len(gooCmpFieldOpts)) // []any: what the settings screen's multiselect reads
 	for _, o := range gooCmpFieldOpts {
 		all = append(all, o.Value)
 	}

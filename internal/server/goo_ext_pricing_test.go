@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"html"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -172,4 +173,31 @@ func TestGooExtPricing(t *testing.T) {
 		t.Fatalf("saved rule: %+v", saved)
 	}
 	gooAdminPageOK(t, client, base+"/wp-admin/goocommerce?page=pricing-rules&action=edit&id="+itoa64(saved.ID), "Admin rule")
+}
+
+func TestGooExtCAdminScreens(t *testing.T) {
+	base, client, srv := gooSite(t)
+	keys := []string{gooDPKey, gooWLKey, gooCmpKey, gooQVKey, gooPDFKey, gooTRKey}
+	body := gooAdminPageOK(t, client, base+"/wp-admin/goocommerce?page=extensions", "")
+	for _, k := range keys {
+		if !strings.Contains(body, html.EscapeString(gooExtensions[k].Name)) {
+			t.Errorf("extensions screen lacks %s", gooExtensions[k].Name)
+		}
+		gooExtSwitch(t, srv, k, true)
+	}
+	for _, k := range keys {
+		if len(gooExtensions[k].Fields) > 0 {
+			gooAdminPageOK(t, client, base+"/wp-admin/goocommerce?page=ext&ext="+k, html.EscapeString(gooExtensions[k].Name))
+		}
+	}
+	gooAdminPageOK(t, client, base+"/wp-admin/goocommerce?page=ext&ext="+gooCmpKey, `<option value="sku" selected>`)
+	gooAdminPageOK(t, client, base+"/wp-admin/goocommerce?page=ext&ext="+gooPDFKey, `<option value="customer_invoice" selected>`)
+	menu := gooAdminPageOK(t, client, base+"/wp-admin/goocommerce?page=wishlists", "Popular products")
+	for _, want := range []string{"goocommerce?page=pricing-rules", "goocommerce?page=wishlists", "goocommerce?page=pdf-documents"} {
+		if !strings.Contains(menu, want) {
+			t.Errorf("menu lacks %s", want)
+		}
+	}
+	gooAdminPageOK(t, client, base+"/wp-admin/goocommerce?page=pdf-documents", "No orders found.")
+	gooAdminPageOK(t, client, base+"/wp-admin/goocommerce?page=pricing-rules", "No pricing rules yet")
 }
