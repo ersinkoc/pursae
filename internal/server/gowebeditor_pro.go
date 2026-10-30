@@ -150,6 +150,9 @@ func (s *Server) gweProEditorParts(c *gin.Context, p *store.Post, parts map[stri
 	cfg["eSearch"] = map[string]any{"nonce": s.nonce(c, "wp_rest")}
 	parts["elementor-pro-js-before"] = "var elementorProEditorConfig = " + gweJSON(cfg) + ";\n" +
 		"wp.i18n.setLocaleData( " + string(gwePro.i18n) + ", 'elementor-pro' );"
+	if tr := s.gweScriptTranslations(c); len(tr) > 0 { // Pro has no pack of its own; most strings are shared
+		parts["elementor-pro-js-before"] += "\nwp.i18n.setLocaleData( " + string(tr) + ", 'elementor-pro' );"
+	}
 	parts["elementor-pro-app-js-before"] = "var elementorAppProConfig = " + string(gwePro.appProConfig) + ";"
 	parts["e-display-conditions-js-before"] = "window.ElementorProDisplayConditions = " + string(gwePro.displayCondsLine) + ";"
 }

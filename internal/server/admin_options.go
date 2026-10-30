@@ -5,6 +5,7 @@ import (
 	"crypto/subtle"
 	_ "embed"
 	"encoding/hex"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -26,7 +27,7 @@ var timezoneList string
 // optionPages whitelists the settings each screen may write (register_setting()).
 var optionPages = map[string][]string{
 	"general": {"blogname", "blogdescription", "siteurl", "home", "new_admin_email", "users_can_register", "default_role",
-		"timezone_string", "gmt_offset", "date_format", "time_format", "start_of_week"},
+		"timezone_string", "gmt_offset", "date_format", "time_format", "start_of_week", "WPLANG"},
 	"writing": {"default_category", "default_post_format", "classic-editor-replace", "classic-editor-allow-users"},
 	"reading": {"show_on_front", "page_on_front", "page_for_posts", "posts_per_page", "posts_per_rss", "rss_use_excerpt", "blog_public"},
 	"discussion": {"default_pingback_flag", "default_ping_status", "default_comment_status", "require_name_email", "comment_registration",
@@ -69,6 +70,9 @@ type optionsData struct {
 	// PendingAdminEmail is the new_admin_email option: a change of the admin address awaiting confirmation.
 	PendingAdminEmail string
 	DismissURL        string
+	// Site Language: installed and downloadable languages, and a failed download.
+	LangInstalled, LangAvailable []langChoice
+	LangError                    bool
 }
 
 func (s *Server) optionsScreen(page string) gin.HandlerFunc {
@@ -111,6 +115,8 @@ func (s *Server) optionsScreen(page string) gin.HandlerFunc {
 					d.TimeCustom = false
 				}
 			}
+			d.LangInstalled, d.LangAvailable = s.languageChoices(s.settings.String("WPLANG"), false)
+			d.LangError = c.Query("lang-error") != ""
 			d.Weekdays = []string{"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"}
 			for _, r := range [][2]string{{"subscriber", "Subscriber"}, {"contributor", "Contributor"}, {"author", "Author"}, {"editor", "Editor"}, {"administrator", "Administrator"}} {
 				d.Roles = append(d.Roles, choice{Value: r[0], Label: r[1], Checked: r[0] == s.settings.String("default_role")})
@@ -206,6 +212,7 @@ func (s *Server) optionsSave(c *gin.Context) {
 		}
 	}
 
+	langFailed := false
 	switch page {
 	case "general":
 		// "Custom" radio buttons carry their value in a separate text field.
@@ -238,6 +245,20 @@ func (s *Server) optionsSave(c *gin.Context) {
 			delete(values, "new_admin_email")
 			if validEmail(v) && v != s.settings.String("admin_email") {
 				s.sendNewAdminEmail(c, v)
+			}
+		}
+		// Site Language: an unknown locale is ignored, a new one downloads its language pack first.
+		if v, ok := values["WPLANG"].(string); ok {
+			if v == "en_US" {
+				v = ""
+			}
+			values["WPLANG"] = v
+			if !validLanguage(v) {
+				delete(values, "WPLANG")
+			} else if err := s.installLanguage(c.Request.Context(), v); err != nil {
+				slog.Warn("site language", "locale", v, "err", err)
+				delete(values, "WPLANG")
+				langFailed = true
 			}
 		}
 		if v, ok := values["default_role"].(string); ok && v == "administrator" {
@@ -281,6 +302,9 @@ func (s *Server) optionsSave(c *gin.Context) {
 	}
 	s.purgeAll(c)
 	target := "/wp-admin/options-" + page + "?settings-updated=true"
+	if langFailed {
+		target += "&lang-error=1"
+	}
 	c.Redirect(http.StatusFound, target)
 }
 

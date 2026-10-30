@@ -76,7 +76,7 @@
 	</tr></thead>
 	<tbody id="the-list">
 	{{range .Rows}}<tr id="lang-{{.ID}}"{{if not .Active}}{{if not .IsDefault}} class="inactive"{{end}}{{end}}>
-		<td class="name column-name has-row-actions column-primary" data-colname="Full name"><strong><a class="row-title" href="{{.EditURL}}" title="Edit this language">{{.Name}}</a></strong>{{if not .Active}}{{if not .IsDefault}} &mdash; <span class="post-state">Deactivated</span>{{end}}{{end}}
+		<td class="name column-name has-row-actions column-primary" data-colname="Full name"><strong><a translate="no" class="row-title" href="{{.EditURL}}" title="Edit this language">{{.Name}}</a></strong>{{if not .Active}}{{if not .IsDefault}} &mdash; <span class="post-state">Deactivated</span>{{end}}{{end}}
 			<div class="row-actions"><span class="edit"><a href="{{.EditURL}}" title="Edit this language">Edit</a> | </span>{{if .ToggleURL}}<span class="{{if .Active}}deactivate{{else}}activate{{end}}"><a href="{{.ToggleURL}}">{{.ToggleLbl}}</a> | </span>{{end}}<span class="delete"><a href="{{.DeleteURL}}" class="delete" title="Delete this language and all its associated data" onclick="return confirm('You are about to permanently delete this language. Are you sure?');">Delete</a></span></div>
 			<button type="button" class="toggle-row"><span class="screen-reader-text">Show more details</span></button></td>
 		<td class="locale column-locale" data-colname="Locale">{{.Locale}}</td>

@@ -42,7 +42,7 @@
 <tbody id="the-list">
 {{range .Rows}}<tr id="post-{{.ID}}" class="{{if not .Active}}acf-inactive {{end}}status-{{.Status}}">
 	<th scope="row" class="check-column">{{if .InDB}}<input type="checkbox" name="post[]" value="{{.ID}}" />{{else if .SyncAvailable}}<input type="checkbox" name="sync[]" value="{{.Key}}" />{{end}}</th>
-	<td class="title column-title has-row-actions column-primary page-title"><strong>{{if .EditURL}}<a class="row-title" href="{{.EditURL}}">{{.Title}}</a>{{else}}{{.Title}}{{end}}{{if not .Active}} <span class="post-state">— Inactive</span>{{end}}</strong>
+	<td class="title column-title has-row-actions column-primary page-title"><strong>{{if .EditURL}}<a translate="no" class="row-title" href="{{.EditURL}}">{{.Title}}</a>{{else}}{{.Title}}{{end}}{{if not .Active}} <span class="post-state">— Inactive</span>{{end}}</strong>
 		{{with .Description}}<p class="acf-description">{{.}}</p>{{end}}
 		<div class="row-actions">{{if eq .Status "trash"}}<span class="untrash"><a href="{{.RestoreURL}}">Restore</a> | </span><span class="delete"><a class="submitdelete" href="{{.DeleteURL}}">Delete Permanently</a></span>
 		{{else if .InDB}}<span class="edit"><a href="{{.EditURL}}">Edit</a> | </span><span class="duplicate"><a href="{{.DuplicateURL}}">Duplicate</a> | </span><span class="toggle"><a href="{{.ToggleURL}}">{{if .Active}}Deactivate{{else}}Activate{{end}}</a> | </span><span class="trash"><a class="submitdelete" href="{{.TrashURL}}">Trash</a></span>{{if .SyncURL}}<span class="sync"> | <a href="{{.SyncURL}}">Sync changes</a></span>{{end}}
@@ -111,7 +111,7 @@
 {{if eq .Kind "acf-post-type"}}<th scope="col">Taxonomies</th><th scope="col">Count</th>{{else if eq .Kind "acf-taxonomy"}}<th scope="col">Post Types</th><th scope="col">Terms</th>{{else}}<th scope="col">Parent Page</th><th scope="col">Screen</th>{{end}}</tr></thead>
 <tbody id="the-list">
 {{range .Rows}}<tr class="status-{{.Status}}">
-	<td class="title column-title has-row-actions column-primary"><strong><a class="row-title" href="{{.EditURL}}">{{.Title}}</a>{{if not .Active}} <span class="post-state">— {{if eq .Status "trash"}}Trash{{else}}Inactive{{end}}</span>{{end}}</strong>
+	<td class="title column-title has-row-actions column-primary"><strong><a translate="no" class="row-title" href="{{.EditURL}}">{{.Title}}</a>{{if not .Active}} <span class="post-state">— {{if eq .Status "trash"}}Trash{{else}}Inactive{{end}}</span>{{end}}</strong>
 	<div class="row-actions">{{if eq .Status "trash"}}<span class="untrash"><a href="{{.RestoreURL}}">Restore</a> | </span><span class="delete"><a class="submitdelete" href="{{.DeleteURL}}">Delete Permanently</a></span>{{else}}<span class="edit"><a href="{{.EditURL}}">Edit</a> | </span><span class="duplicate"><a href="{{.DuplicateURL}}">Duplicate</a> | </span><span class="toggle"><a href="{{.ToggleURL}}">{{.ToggleLabel}}</a> | </span><span class="trash"><a class="submitdelete" href="{{.TrashURL}}">Trash</a></span>{{end}}</div></td>
 	<td><code>{{.Slug}}</code></td><td>{{with .Extra}}{{.}}{{else}}—{{end}}</td>
 	<td>{{if eq $.Data.Kind "acf-ui-options-page"}}{{if .Active}}<a href="/wp-admin/{{.Count}}">Open</a>{{else}}—{{end}}{{else}}{{.Count}}{{end}}</td>

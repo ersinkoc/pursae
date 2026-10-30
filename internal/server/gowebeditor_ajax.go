@@ -155,7 +155,7 @@ func (s *Server) gweAction(c *gin.Context, action string, raw json.RawMessage, e
 	}
 	switch action {
 	case "get_widgets_config", "refresh_widgets_config":
-		return json.RawMessage(s.gweWidgetsConfig(c)), nil
+		return json.RawMessage(s.gweTranslateConfig(c, s.gweWidgetsConfig(c), true)), nil
 	case "get_widgets_default_value_translations":
 		return map[string]any{}, nil
 	case "enqueue_google_fonts":

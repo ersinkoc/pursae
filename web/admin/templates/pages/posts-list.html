@@ -73,7 +73,7 @@
 {{define "posts-row"}}{{$d := .D}}{{with .R}}<tr id="post-{{.ID}}" class="{{.Classes}}">
 		<th scope="row" class="check-column">{{if .CanEdit}}<input id="cb-select-{{.ID}}" type="checkbox" name="post[]" value="{{.ID}}" /><label for="cb-select-{{.ID}}"><span class="screen-reader-text">Select {{.Title}}</span></label>{{end}}<div class="locked-indicator"><span class="locked-indicator-icon" aria-hidden="true"></span><span class="screen-reader-text">&#8220;{{.Title}}&#8221; is locked</span></div></th>
 		<td class="title column-title has-row-actions column-primary page-title" data-colname="Title"><div class="locked-info"><span class="locked-avatar"></span> <span class="locked-text"></span></div>
-			<strong>{{safe .Depth}}{{if and .CanEdit (not .IsTrash)}}<a class="row-title" href="{{.EditURL}}" aria-label="&#8220;{{.Title}}&#8221; (Edit)">{{.Title}}</a>{{else}}<span>{{.Title}}</span>{{end}}{{range $i, $st := .States}}{{if eq $i 0}} &mdash; {{else}}, {{end}}<span class="post-state">{{$st}}</span>{{end}}</strong>
+			<strong>{{safe .Depth}}{{if and .CanEdit (not .IsTrash)}}<a translate="no" class="row-title" href="{{.EditURL}}" aria-label="&#8220;{{.Title}}&#8221; (Edit)">{{.Title}}</a>{{else}}<span translate="no">{{.Title}}</span>{{end}}{{range $i, $st := .States}}{{if eq $i 0}} &mdash; {{else}}, {{end}}<span class="post-state">{{$st}}</span>{{end}}</strong>
 			{{if .Excerpt}}{{safe .Excerpt}}{{end}}
 			<div class="hidden" id="inline_{{.ID}}">
 	<div class="post_title">{{.Title}}</div>

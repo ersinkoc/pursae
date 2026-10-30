@@ -27,6 +27,9 @@ type profileData struct {
 	DisplayOptions []string
 	Avatar96       string
 	ShowToolbar    bool
+	// Language: the user's "locale" meta ("" = Site Default) and the installed languages.
+	Locale    string
+	Languages []langChoice
 	SyntaxOff      bool // "Disable syntax highlighting when editing code"
 	Colors         []adminColor
 	Color          string // admin_color
@@ -66,6 +69,8 @@ func (s *Server) profileView(c *gin.Context, target *store.User) profileData {
 	if v, ok := target.Meta["show_admin_bar_front"].(bool); ok {
 		d.ShowToolbar = v
 	}
+	d.Locale, _ = target.Meta["locale"].(string)
+	d.Languages, _ = s.languageChoices(d.Locale, true)
 	d.SyntaxOff, d.Colors, d.Color = !syntaxHighlighting(target), adminColors, adminColorFor(target).Slug
 	seen := map[string]bool{}
 	add := func(v string) {
@@ -277,6 +282,14 @@ func (s *Server) saveUser(c *gin.Context, target *store.User) {
 		return
 	}
 	_ = s.setUserMeta(c, target, "show_admin_bar_front", c.PostForm("admin_bar_front") == "1")
+	if loc, ok := c.GetPostForm("locale"); ok {
+		if loc == "site-default" {
+			loc = ""
+		}
+		if loc == "" || loc == "en_US" || validLanguage(loc) && s.lang.IsInstalled(loc) {
+			_ = s.setUserMeta(c, target, "locale", loc)
+		}
+	}
 	if c.PostForm("syntax_highlighting") == "false" {
 		_ = s.setUserMeta(c, target, "syntax_highlighting", "false")
 	} else {

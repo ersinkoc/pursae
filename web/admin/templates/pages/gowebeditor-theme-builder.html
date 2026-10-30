@@ -74,7 +74,7 @@
 		<thead><tr><th scope="col" class="manage-column column-title column-primary">Title</th><th scope="col" class="manage-column column-conditions">Display Conditions</th><th scope="col" class="manage-column column-status">Status</th><th scope="col" class="manage-column column-date">Last Modified</th></tr></thead>
 		<tbody>
 		{{range .Rows}}<tr id="gwe-part-{{.ID}}">
-			<td class="title column-title has-row-actions column-primary" data-colname="Title"><strong><a class="row-title" href="{{.EditURL}}">{{.Title}}</a></strong>
+			<td class="title column-title has-row-actions column-primary" data-colname="Title"><strong><a translate="no" class="row-title" href="{{.EditURL}}">{{.Title}}</a></strong>
 				<div class="row-actions"><span class="edit_with_gowebeditor"><a href="{{.EditURL}}">Edit with Golementor</a> | </span><span class="conditions"><a href="{{.ConditionsURL}}">Conditions</a> | </span><span class="trash"><form method="post" action="/wp-admin/gowebeditor-theme-builder" style="display:inline" onsubmit="return confirm('Delete this theme part permanently?')"><input type="hidden" name="_wpnonce" value="{{$.Data.Nonce}}" /><input type="hidden" name="action" value="delete" /><input type="hidden" name="post" value="{{.ID}}" /><button type="submit" class="button-link submitdelete">Delete</button></form></span></div>
 				<button type="button" class="toggle-row"><span class="screen-reader-text">Show more details</span></button></td>
 			<td class="column-conditions" data-colname="Display Conditions">{{range .Conditions}}<span class="gwe-tb-cond{{if contains . "Exclude:"}} is-exclude{{end}}">{{.}}</span>{{else}}<span class="description">Not shown anywhere</span>{{end}}</td>

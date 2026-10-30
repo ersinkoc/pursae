@@ -66,7 +66,7 @@
 		{{if .AuthorIP}}<a href="/wp-admin/edit-comments?s={{.AuthorIP}}&amp;mode=detail">{{.AuthorIP}}</a>{{end}}</td>
 	<td class="comment column-comment has-row-actions column-primary" data-colname="Comment">
 		{{if .ParentNote}}<div class="comment-author">{{.ParentNote}}</div>{{end}}
-		{{.Content}}
+		<div class="comment-text" translate="no">{{.Content}}</div>
 		{{if .CanEdit}}<div id="inline-{{.ID}}" class="hidden">
 			<textarea class="comment" rows="1" cols="1">{{.RawContent}}</textarea>
 			<div class="author-email">{{.AuthorEmail}}</div>

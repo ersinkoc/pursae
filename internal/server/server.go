@@ -20,6 +20,7 @@ import (
 
 	"wpgo/internal/auth"
 	"wpgo/internal/config"
+	"wpgo/internal/i18n"
 	"wpgo/internal/links"
 	"wpgo/internal/settings"
 	"wpgo/internal/store"
@@ -60,6 +61,9 @@ type Server struct {
 	// tests' fixture directory in place of web/gowebeditor/library.
 	gweLibCache    atomic.Pointer[gweStudioLib]
 	gweLibOverride fs.FS
+
+	// lang holds the installed language packs (i18n.go).
+	lang *i18n.Manager
 }
 
 // New builds the server of the site.
@@ -95,6 +99,7 @@ func newServer(ctx context.Context, cfg config.Config, pool *pgxpool.Pool, sb *s
 	if lib, err := fs.Sub(web.FS(cfg.WebDir), "theme-library"); err == nil {
 		s.themeLibrary = lib
 	}
+	s.initLanguages()
 	if sb != nil {
 		return s.startSandbox(ctx)
 	}

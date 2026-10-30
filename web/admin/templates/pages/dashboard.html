@@ -201,11 +201,11 @@
 			<div id="activity-widget">
 				{{if .Future}}<div id="future-posts" class="activity-block">
 					<h3>Publishing Soon</h3>
-					<ul>{{range .Future}}<li><span>{{.When}}</span> <a href="{{.EditURL}}" aria-label="Edit &#8220;{{.Title}}&#8221;">{{.Title}}</a></li>{{end}}</ul>
+					<ul>{{range .Future}}<li><span>{{.When}}</span> <a href="{{.EditURL}}" aria-label="Edit &#8220;{{.Title}}&#8221;" translate="no">{{.Title}}</a></li>{{end}}</ul>
 				</div>{{end}}
 				{{if .Published}}<div id="published-posts" class="activity-block">
 					<h3>Recently Published</h3>
-					<ul>{{range .Published}}<li><span>{{.When}}</span> <a href="{{.EditURL}}" aria-label="Edit &#8220;{{.Title}}&#8221;">{{.Title}}</a></li>{{end}}</ul>
+					<ul>{{range .Published}}<li><span>{{.When}}</span> <a href="{{.EditURL}}" aria-label="Edit &#8220;{{.Title}}&#8221;" translate="no">{{.Title}}</a></li>{{end}}</ul>
 				</div>{{end}}
 				{{if .RecentComments}}<div id="latest-comments" class="activity-block table-view-list">
 					<h3>Recent Comments</h3>
@@ -255,7 +255,7 @@
 			{{if .Drafts}}<div class="drafts">
 				<p class="view-all"><a href="/wp-admin/edit?post_status=draft" aria-label="View all drafts">View all drafts</a></p>
 				<h2 class="hide-if-no-js">Your Recent Drafts</h2>
-				<ul>{{range .Drafts}}<li><div class="draft-title"><a href="{{.EditURL}}" aria-label="Edit &#8220;{{.Title}}&#8221;">{{.Title}}</a><time datetime="{{.ISO}}">{{.When}}</time></div>{{if .Excerpt}}<p>{{.Excerpt}}</p>{{end}}</li>{{end}}</ul>
+				<ul>{{range .Drafts}}<li><div class="draft-title"><a href="{{.EditURL}}" aria-label="Edit &#8220;{{.Title}}&#8221;" translate="no">{{.Title}}</a><time datetime="{{.ISO}}">{{.When}}</time></div>{{if .Excerpt}}<p translate="no">{{.Excerpt}}</p>{{end}}</li>{{end}}</ul>
 			</div>{{end}}
 		{{template "dashboard-postbox-end"}}
 

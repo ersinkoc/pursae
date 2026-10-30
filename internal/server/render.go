@@ -139,6 +139,8 @@ func (s *Server) renderTemplateFiltered(c *gin.Context, status int, set *templat
 	out := buf.Bytes()
 	if front {
 		out = s.gooikeFilterPage(c, out) // Gooike: YouTube, Vimeo and Maps iframes wait for consent
+	} else {
+		out = s.translateAdminPage(c, out) // the admin in the user's language (i18n.go)
 	}
 	c.Data(status, "text/html; charset=UTF-8", s.asStripVersion(c, s.golylangHTML(c, out)))
 }

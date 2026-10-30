@@ -137,12 +137,12 @@ func (api *restAPI) types(c *gin.Context, r *restRequest) {
 			restErr(c, http.StatusNotFound, "rest_type_invalid", "Invalid post type.")
 			return
 		}
-		restJSON(c, http.StatusOK, o)
+		restJSON(c, http.StatusOK, api.s.translateLabels(c, o))
 		return
 	}
 	out := map[string]any{}
 	for k, v := range all {
-		out[k] = v
+		out[k] = api.s.translateLabels(c, v)
 	}
 	restJSON(c, http.StatusOK, out)
 }
@@ -179,7 +179,7 @@ func (api *restAPI) taxonomies(c *gin.Context, r *restRequest) {
 			restErr(c, http.StatusNotFound, "rest_taxonomy_invalid", "Invalid taxonomy.")
 			return
 		}
-		restJSON(c, http.StatusOK, o)
+		restJSON(c, http.StatusOK, api.s.translateLabels(c, o))
 		return
 	}
 	if typ := c.Query("type"); typ != "" && typ != "post" {
@@ -188,14 +188,14 @@ func (api *restAPI) taxonomies(c *gin.Context, r *restRequest) {
 	}
 	out := map[string]any{}
 	for k, v := range all {
-		out[k] = v
+		out[k] = api.s.translateLabels(c, v)
 	}
 	restJSON(c, http.StatusOK, out)
 }
 
 func (api *restAPI) statuses(c *gin.Context, r *restRequest) {
 	mk := func(name, slug string, public bool) map[string]any {
-		return map[string]any{"name": name, "slug": slug, "public": public, "queryable": public, "date_floating": slug == "draft" || slug == "pending" || slug == "auto-draft"}
+		return map[string]any{"name": api.s.__(c, name), "slug": slug, "public": public, "queryable": public, "date_floating": slug == "draft" || slug == "pending" || slug == "auto-draft"}
 	}
 	all := map[string]any{"publish": mk("Published", "publish", true), "future": mk("Scheduled", "future", false), "draft": mk("Draft", "draft", false),
 		"pending": mk("Pending", "pending", false), "private": mk("Private", "private", false), "trash": mk("Trash", "trash", false)}
