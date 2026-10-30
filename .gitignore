@@ -3,3 +3,5 @@
 web/editor/node_modules/
 web/editor/build/
 .DS_Store
+__pycache__/
+*.pyc

@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: wpgo
+          POSTGRES_USER: wpgo
+          POSTGRES_PASSWORD: wpgo
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U wpgo -d wpgo"
+          --health-interval 2s --health-timeout 3s --health-retries 30
+    env:
+      CGO_ENABLED: "0"
+      WPGO_TEST_ADMIN_DB: postgres://wpgo:wpgo@localhost:5432/wpgo?sslmode=disable
+      WPGO_TEST_DB: postgres://wpgo:wpgo@localhost:5432/wpgo_test?sslmode=disable
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: gofmt
+        run: test -z "$(gofmt -l $(git ls-files '*.go'))"
+      - name: vet
+        run: go vet ./...
+      - name: test
+        run: go test ./... -p 1 -count=1
+
+  vulncheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: govulncheck
+        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...

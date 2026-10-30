@@ -1,8 +1,10 @@
 # Copies the Pro editor packages Golementor's atomic editor needs from an upstream Pro 4.3.0 copy
 # (SRC) into web/gowebeditor/pro/js and strips promotions / remote assets (see NOTICE).
 import shutil, sys, os
-SRC = '/Users/boradev/Desktop/WordpressGO/wp-assets/elementor-pro/assets/js'
-DST = '/Users/boradev/Desktop/WordpressGO/wpgo-0.1/web/gowebeditor/pro/js'
+ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../..')
+# ELEMENTOR_PRO_SRC overrides the default: wp-assets/elementor-pro next to the repository.
+SRC = os.path.join(os.environ.get('ELEMENTOR_PRO_SRC', os.path.join(ROOT, '..', 'wp-assets', 'elementor-pro')), 'assets/js')
+DST = os.path.join(ROOT, 'web/gowebeditor/pro/js')
 PKGS = ['core-adapter-utils', 'editor-canvas-extended', 'editor-templates-extended', 'editor-controls-extended',
         'editor-editing-panel-extended', 'editor-components-extended']
 for p in PKGS:
