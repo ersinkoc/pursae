@@ -11,6 +11,12 @@
 <link rel="stylesheet" href="/wp-admin/css/themes.min.css">
 <link rel="stylesheet" href="/wp-admin/css/customize-controls.min.css">
 <link rel="stylesheet" href="/wp-admin/assets/css/colors/modern/colors.min.css">
+<style>
+/* The 40px admin buttons are taller than the Customizer's 46px header: keep Publish compact and centred there. */
+#customize-header-actions #customize-save-button-wrapper { margin-top: 8px; }
+#customize-header-actions #customize-save-button-wrapper .button { min-height: 30px; height: 30px; line-height: 28px; padding: 0 12px; }
+#customize-header-actions .spinner { margin-top: 12px; }
+</style>
 {{.Styles}}<style>
 #customize-controls .customize-control-code_editor textarea { width: 100%; min-height: 300px; font-family: Consolas, Monaco, monospace; font-size: 12px; tab-size: 4; }
 #customize-controls .wpgo-control-links { margin: 12px 0 0; }

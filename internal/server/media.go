@@ -96,6 +96,7 @@ func (s *Server) saveUpload(c *gin.Context, field string, postID int64) (*store.
 	if err := s.store.InsertAttachment(c, a); err != nil {
 		return nil, err
 	}
+	s.gocdnAfterUpload(c, a) // GoCDN: copy to the bucket (gocdn_offload.go)
 	return a, nil
 }
 
@@ -142,6 +143,7 @@ func (s *Server) insertAttachmentFile(ctx context.Context, name string, r io.Rea
 	if err := s.store.InsertAttachment(ctx, a); err != nil {
 		return nil, err
 	}
+	s.gocdnAfterUpload(ctx, a) // GoCDN: copy to the bucket (gocdn_offload.go)
 	return a, nil
 }
 
@@ -499,6 +501,7 @@ func (s *Server) checkNonceValue(c *gin.Context, nonce, action string) bool {
 }
 
 func (s *Server) deleteAttachmentFiles(a *store.Attachment) {
+	s.gocdnBeforeDelete(a) // GoCDN: delete the offloaded copies (gocdn_offload.go)
 	base := s.cfg.UploadsDir
 	_ = os.Remove(filepath.Join(base, filepath.FromSlash(a.FilePath)))
 	for _, v := range a.Variants {

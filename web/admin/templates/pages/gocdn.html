@@ -1,0 +1,238 @@
+{{define "admin/gocdn"}}{{template "admin-header" .}}{{with .Data}}
+<style>
+.gocdn-wrap .gc-h1-icon{font-size:28px;width:28px;height:28px;margin-right:6px;color:#2271b1;vertical-align:-4px}
+.gocdn-wrap .gc-sub{color:#646970;margin:4px 0 14px;max-width:880px}
+.gocdn-wrap .gc-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:16px;margin:16px 0}
+.gocdn-wrap .gc-card{background:#fff;border:1px solid #c3c4c7;border-radius:4px;padding:14px 18px}
+.gocdn-wrap .gc-card .num{display:block;font-size:26px;font-weight:600;line-height:1.15;margin-top:4px}
+.gocdn-wrap .gc-card .lbl{color:#50575e;font-weight:600}
+.gocdn-wrap .gc-badge{display:inline-block;font-size:11px;font-weight:600;padding:1px 8px;border-radius:999px;background:#dcdcde;color:#1d2327;vertical-align:middle}
+.gocdn-wrap .gc-badge.ok{background:#00a32a;color:#fff}.gocdn-wrap .gc-badge.warn{background:#dba617}
+.gocdn-wrap .gc-steps{background:#fff;border:1px solid #c3c4c7;border-left:4px solid #2271b1;padding:8px 14px;margin:12px 0;max-width:880px}
+.gocdn-wrap .gc-steps li{margin:4px 0;word-break:break-word}
+.gocdn-wrap .gc-progress{background:#f0f0f1;border-radius:4px;height:18px;overflow:hidden;max-width:560px;margin:8px 0}
+.gocdn-wrap .gc-progress span{display:block;height:100%;background:#2271b1;transition:width .3s}
+.gocdn-wrap .gc-job{background:#fff;border:1px solid #c3c4c7;border-radius:4px;padding:12px 16px;margin:16px 0;max-width:880px}
+.gocdn-wrap .gc-job ul.gc-errors{max-height:160px;overflow:auto;color:#8a2424;font-size:12px}
+.gocdn-wrap .gc-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.gocdn-wrap .gc-browser td.thumb{width:72px}
+.gocdn-wrap .gc-browser td.thumb img{display:block;max-width:64px;max-height:64px;border:1px solid #dcdcde;background:repeating-conic-gradient(#f0f0f1 0 25%,#fff 0 50%) 0 0/12px 12px}
+.gocdn-wrap .gc-browser .dashicons{color:#8c8f94}
+.gocdn-wrap .gc-crumbs{margin:10px 0;font-size:14px}
+.gocdn-wrap .gc-crumbs a{text-decoration:none}
+.gocdn-wrap code.gc-wrap{word-break:break-all}
+.gocdn-wrap .gc-locked{color:#996800;font-size:12px;margin-left:6px}
+.gocdn-wrap .gc-secret{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.gocdn-wrap [hidden]{display:none!important}
+</style>
+<div class="wrap gocdn-wrap">
+<h1 class="wp-heading-inline"><span class="dashicons dashicons-cloud-upload gc-h1-icon" aria-hidden="true"></span>{{.Title}}</h1>
+<hr class="wp-header-end">
+{{template "notices" $}}
+{{if .Msg}}<div class="notice notice-success is-dismissible"><p>{{.Msg}}</p></div>{{end}}
+{{if .Err}}<div class="notice notice-error is-dismissible"><p>{{.Err}}</p></div>{{end}}
+{{if .Details}}<ol class="gc-steps">{{range .Details}}<li translate="no">{{.}}</li>{{end}}</ol>{{end}}
+{{if .Locked}}<div class="notice notice-info"><p>Some settings are defined in the <code>{{.EnvName}}</code> environment variable and cannot be changed here.</p></div>{{end}}
+
+{{if eq .Page ""}}
+<p class="gc-sub">Connect an S3-compatible bucket. New uploads and their sizes are copied there; the Media Offload screen copies the rest of the library and decides where URLs point.
+Status: {{if .Configured}}<span class="gc-badge ok">Configured</span>{{else}}<span class="gc-badge warn">Not configured</span>{{end}}</p>
+<form method="post" action="/wp-admin/gocdn" autocomplete="off">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}">
+<table class="form-table" role="presentation">
+<tr><th scope="row"><label for="gc-provider">Provider</label></th><td>
+	<select id="gc-provider" name="provider"{{if .Lock "provider"}} disabled{{end}}>{{range .Providers}}<option value="{{.Key}}"{{if eq .Key $.Data.S.Provider}} selected{{end}}>{{.Name}}</option>{{end}}</select>{{if .Lock "provider"}}<span class="gc-locked">set in {{.EnvName}}</span>{{end}}
+	{{with .Provider}}<p class="description">{{.Help}}</p>{{end}}</td></tr>
+<tr><th scope="row"><label for="gc-endpoint">Endpoint</label></th><td>
+	<input type="url" id="gc-endpoint" name="endpoint" class="regular-text code" value="{{.S.Endpoint}}" placeholder="{{with .Provider}}{{.Endpoint}}{{end}}" translate="no"{{if .Lock "endpoint"}} disabled{{end}}>
+	<p class="description">Leave empty to use the provider's endpoint for the region{{if .Endpoint}} (now <code translate="no">{{.Endpoint}}</code>){{end}}. Cloudflare R2: <code>https://&lt;ACCOUNT_ID&gt;.r2.cloudflarestorage.com</code>; MinIO: e.g. <code>http://127.0.0.1:9000</code>.</p></td></tr>
+<tr><th scope="row"><label for="gc-region">Region</label></th><td>
+	<input type="text" id="gc-region" name="region" class="regular-text code" value="{{.S.Region}}" placeholder="{{with .Provider}}{{.Region}}{{end}}" translate="no"{{if .Lock "region"}} disabled{{end}}>
+	<p class="description">R2 uses <code>auto</code>.</p></td></tr>
+<tr><th scope="row"><label for="gc-bucket">Bucket</label></th><td><input type="text" id="gc-bucket" name="bucket" class="regular-text code" value="{{.S.Bucket}}" translate="no"{{if .Lock "bucket"}} disabled{{end}}></td></tr>
+<tr><th scope="row"><label for="gc-key">Access key ID</label></th><td><input type="text" id="gc-key" name="access-key-id" class="regular-text code" value="{{.S.AccessKey}}" translate="no" autocomplete="off"{{if .Lock "access-key-id"}} disabled{{end}}></td></tr>
+<tr><th scope="row"><label for="gc-secret">Secret access key</label></th><td><div class="gc-secret">
+	{{if .Lock "secret-access-key"}}<span class="gc-badge ok">set in {{.EnvName}}</span>{{else}}
+	<input type="password" id="gc-secret" name="secret-access-key" class="regular-text code" value="" autocomplete="new-password" placeholder="{{if .SecretSaved}}•••••••• saved — type to replace{{end}}">
+	{{if .SecretSaved}}<span class="gc-badge ok">Saved</span> <label><input type="checkbox" name="secret-access-key-clear" value="1"> Clear</label>{{end}}{{end}}</div>
+	<p class="description">Stored encrypted with the server secret and never shown again.</p></td></tr>
+<tr><th scope="row">Addressing</th><td><label><input type="checkbox" name="use-path-style" value="1"{{if .S.PathStyle}} checked{{end}}{{if .Lock "use-path-style"}} disabled{{end}}> Path-style requests (<code>endpoint/bucket/key</code> instead of <code>bucket.endpoint/key</code>; MinIO and most self-hosted servers)</label></td></tr>
+<tr><th scope="row"><label for="gc-prefix">Path in bucket</label></th><td><input type="text" id="gc-prefix" name="object-prefix" class="regular-text code" value="{{.S.Prefix}}" translate="no"{{if .Lock "object-prefix"}} disabled{{end}}>
+	<p class="description">Prefix of every key; <code>2026/10/photo.jpg</code> is stored as <code translate="no">{{.S.Prefix}}2026/10/photo.jpg</code>.</p></td></tr>
+<tr><th scope="row">Object ACL</th><td><label><input type="checkbox" name="public-read" value="1"{{if .S.PublicRead}} checked{{end}}{{if .Lock "public-read"}} disabled{{end}}> Upload objects as <code>public-read</code></label>
+	<p class="description">Turn off for buckets with ACLs disabled (S3 "Bucket owner enforced", R2, B2): make the bucket public with a policy instead, or deliver through presigned URLs.</p></td></tr>
+<tr><th scope="row"><label for="gc-domain">Delivery domain</label></th><td><input type="text" id="gc-domain" name="delivery-domain" class="regular-text code" value="{{.S.CDNDomain}}" placeholder="https://media.example.com" translate="no"{{if .Lock "delivery-domain"}} disabled{{end}}>
+	<p class="description">Custom domain or CDN (CloudFront, Cloudflare, Bunny, r2.dev…) mapped to the bucket root. Media URLs become <code translate="no">{{if .PublicBase}}{{.PublicBase}}{{else}}https://…{{end}}/{{.S.Prefix}}2026/10/photo.jpg</code>.</p></td></tr>
+<tr><th scope="row">Files removed from the server</th><td><fieldset>
+	<label><input type="radio" name="local-delivery" value="redirect"{{if eq .S.LocalDelivery "redirect"}} checked{{end}}{{if .Lock "local-delivery"}} disabled{{end}}> Redirect <code>/wp-content/uploads/…</code> to the delivery URL</label><br>
+	<label><input type="radio" name="local-delivery" value="signed"{{if eq .S.LocalDelivery "signed"}} checked{{end}}{{if .Lock "local-delivery"}} disabled{{end}}> Redirect to a presigned URL valid for one hour (private buckets)</label><br>
+	<label><input type="radio" name="local-delivery" value="proxy"{{if eq .S.LocalDelivery "proxy"}} checked{{end}}{{if .Lock "local-delivery"}} disabled{{end}}> Proxy the file through the site</label></fieldset></td></tr>
+</table>
+<p class="submit"><button type="submit" name="do" value="save" class="button button-primary">Save Changes</button> <button type="submit" name="do" value="save-test" class="button">Save and Test Connection</button></p>
+</form>
+<p class="description">Settings can also come from the environment: <code>{{.EnvName}}='{"provider":"r2","endpoint":"https://…","bucket":"media","access-key-id":"…","secret-access-key":"…"}'</code>. Keys set there override and lock the fields above.</p>
+{{end}}
+
+{{if eq .Page "offload"}}
+<p class="gc-sub">Copy the Media Library to the bucket and serve it from there.</p>
+<div class="gc-cards">
+	<div class="gc-card"><span class="lbl">Attachments</span><span class="num" id="gc-stat-att">{{.Stats.Attachments}}</span></div>
+	<div class="gc-card"><span class="lbl">Offloaded</span><span class="num" id="gc-stat-off">{{.Stats.Offloaded}}</span></div>
+	<div class="gc-card"><span class="lbl">Files in bucket</span><span class="num" id="gc-stat-files">{{.Stats.Files}}</span></div>
+	<div class="gc-card"><span class="lbl">Removed from server</span><span class="num" id="gc-stat-removed">{{.Stats.Removed}}</span></div>
+</div>
+{{if not .Configured}}<div class="notice notice-warning inline"><p>Configure the storage on the <a href="/wp-admin/gocdn">Storage</a> screen first.</p></div>{{end}}
+<form method="post" action="/wp-admin/gocdn?page=offload">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}">
+<table class="form-table" role="presentation">
+<tr><th scope="row">New uploads</th><td><label><input type="checkbox" name="copy-to-s3" value="1"{{if .S.CopyToBucket}} checked{{end}}{{if .Lock "copy-to-s3"}} disabled{{end}}> Copy files to the bucket as they are uploaded (with every generated size)</label></td></tr>
+<tr><th scope="row">Server copies</th><td><label><input type="checkbox" name="remove-local-file" value="1"{{if .S.RemoveLocal}} checked{{end}}{{if .Lock "remove-local-file"}} disabled{{end}}> Remove files from the server once they are in the bucket</label>
+	<p class="description">The image editor fetches a file back when it needs it; <code>/wp-content/uploads</code> URLs keep working (see Storage › Files removed from the server).</p></td></tr>
+<tr><th scope="row">Delivery</th><td><label><input type="checkbox" name="serve-from-s3" value="1"{{if .S.ServeFromCDN}} checked{{end}}{{if .Lock "serve-from-s3"}} disabled{{end}}> Rewrite media URLs to the bucket / delivery domain</label>
+	<p class="description">On the site, in feeds and in the REST API: attachment URLs, <code>srcset</code>, post content. Only offloaded files are rewritten; wp-admin and the editors keep local URLs.</p></td></tr>
+</table>
+<p class="submit"><button type="submit" name="do" value="save" class="button button-primary">Save Changes</button></p>
+</form>
+
+<h2>Bulk tools</h2>
+<div class="gc-job" id="gc-job" data-progress="/wp-admin/gocdn?page=offload&amp;action=progress">
+	<p><strong id="gc-job-label">{{if .Job.Kind}}{{.JobLabel}}{{else}}No job has run yet.{{end}}</strong> <span id="gc-job-state">{{if and .Job.Running .Job.Kind}}running{{else if .Job.Finished}}finished{{else if .Job.Stopped}}stopped{{end}}</span></p>
+	<div class="gc-progress" aria-hidden="true"><span id="gc-job-bar" style="width:{{if .Job.Total}}{{.Job.Percent}}{{else}}0{{end}}%"></span></div>
+	<p id="gc-job-count">{{if .Job.Kind}}{{.Job.Done}} done, {{.Job.Failed}} failed of {{.Job.Total}} ({{.Job.Files}} files){{end}}</p>
+	<ul class="gc-errors" id="gc-job-errors">{{range .Job.Errors}}<li translate="no">{{.}}</li>{{end}}</ul>
+	<form method="post" action="/wp-admin/gocdn?page=offload" class="gc-tools">
+		<input type="hidden" name="_wpnonce" value="{{.Nonce}}">
+		<input type="hidden" name="do" value="job">
+		<button type="submit" name="kind" value="offload" class="button button-primary"{{if not .Configured}} disabled{{end}}>Offload existing media</button>
+		<button type="submit" name="kind" value="download" class="button"{{if not .Configured}} disabled{{end}}>Download back to the server</button>
+		<button type="submit" name="kind" value="remove" class="button" onclick="return confirm('Delete the library’s files from the bucket? Files removed from the server are downloaded first.')"{{if not .Configured}} disabled{{end}}>Remove from the bucket</button>
+		{{if and .Job.Running .Job.Kind}}<label><input type="checkbox" name="resume" value="1" checked> Resume from attachment #{{.Job.LastID}}</label>{{end}}
+	</form>
+	<form method="post" action="/wp-admin/gocdn?page=offload" class="gc-tools" id="gc-job-stop"{{if not .Job.Running}} hidden{{end}}>
+		<input type="hidden" name="_wpnonce" value="{{.Nonce}}"><button type="submit" name="do" value="job-stop" class="button">Stop</button>
+	</form>
+</div>
+<script>
+(function(){
+	var box=document.getElementById('gc-job');if(!box)return;
+	var url=box.getAttribute('data-progress'),timer;
+	function set(id,v){var e=document.getElementById(id);if(e)e.textContent=v;}
+	function poll(){
+		fetch(url,{credentials:'same-origin'}).then(function(r){return r.json();}).then(function(j){
+			if(j.kind){set('gc-job-label',j.label);set('gc-job-count',j.done+' done, '+j.failed+' failed of '+j.total+' ('+j.files+' files)');}
+			set('gc-job-state',j.running?'running':(j.finished?'finished':(j.stopped?'stopped':(j.resumable?'interrupted — start it again to resume':''))));
+			document.getElementById('gc-job-bar').style.width=j.percent+'%';
+			var ul=document.getElementById('gc-job-errors');ul.innerHTML='';
+			(j.errors||[]).forEach(function(e){var li=document.createElement('li');li.textContent=e;li.setAttribute('translate','no');ul.appendChild(li);});
+			if(j.stats){set('gc-stat-att',j.stats.Attachments);set('gc-stat-off',j.stats.Offloaded);set('gc-stat-files',j.stats.Files);set('gc-stat-removed',j.stats.Removed);}
+			document.getElementById('gc-job-stop').hidden=!j.running;
+			if(j.running){timer=setTimeout(poll,1500);}
+		}).catch(function(){timer=setTimeout(poll,5000);});
+	}
+	poll();
+})();
+</script>
+{{end}}
+
+{{if eq .Page "remote"}}
+<p class="gc-sub">Files in <code translate="no">{{.S.Bucket}}</code>. Import them into the Media Library: <em>Copy</em> downloads the file like an upload (sizes are generated); <em>Link</em> adds it as an attachment that stays in the bucket only.</p>
+{{with .Remote}}
+<div class="gc-crumbs"><a href="/wp-admin/gocdn?page=remote&amp;prefix=">Bucket root</a>{{range .Crumbs}} / <a href="/wp-admin/gocdn?page=remote&amp;prefix={{.Prefix}}" translate="no">{{.Name}}</a>{{end}}</div>
+<form method="post" action="/wp-admin/gocdn?page=remote">
+<input type="hidden" name="_wpnonce" value="{{$.Data.Nonce}}"><input type="hidden" name="prefix" value="{{.Prefix}}">
+<table class="wp-list-table widefat fixed striped gc-browser">
+<thead><tr><td class="manage-column check-column"><input type="checkbox" onclick="document.querySelectorAll('.gc-browser input[name=\'keys[]\']').forEach(function(b){b.checked=this.checked}.bind(this))" aria-label="Select all"></td><th class="thumb">Preview</th><th>Name</th><th>Size</th><th>Modified</th><th>Library</th></tr></thead>
+<tbody>
+{{range .Folders}}<tr><th class="check-column"></th><td class="thumb"><span class="dashicons dashicons-portfolio" aria-hidden="true"></span></td><td colspan="4"><a href="/wp-admin/gocdn?page=remote&amp;prefix={{.Prefix}}"><strong translate="no">{{.Name}}/</strong></a></td></tr>{{end}}
+{{range .Objects}}<tr>
+	<th class="check-column">{{if not .InLibrary}}<input type="checkbox" name="keys[]" value="{{.Key}}" aria-label="Select {{.Name}}">{{end}}</th>
+	<td class="thumb">{{if .Image}}<img src="{{.Preview}}" alt="" loading="lazy" width="64" height="64" style="object-fit:contain">{{else}}<span class="dashicons dashicons-media-default" aria-hidden="true"></span>{{end}}</td>
+	<td><span translate="no">{{.Name}}</span>{{if .URL}}<div class="row-actions"><a href="{{.URL}}" target="_blank" rel="noopener noreferrer">Open</a></div>{{end}}</td>
+	<td>{{.Size}}</td><td>{{.Modified}}</td><td>{{if .InLibrary}}<span class="gc-badge ok">In library</span>{{end}}</td></tr>{{end}}
+{{if and (not .Folders) (not .Objects)}}<tr><td colspan="6">{{if .Err}}The bucket cannot be listed.{{else}}This folder is empty.{{end}}</td></tr>{{end}}
+</tbody></table>
+<div class="tablenav bottom"><div class="alignleft actions gc-tools">
+	<label for="gc-mode" class="screen-reader-text">Import as</label><select id="gc-mode" name="mode"><option value="copy">Import: copy into the Media Library</option><option value="link">Import: link (stays in the bucket)</option></select>
+	<button type="submit" name="do" value="import" class="button button-primary">Import selected</button>
+</div><div class="tablenav-pages">{{if .Token}}<a class="button" href="/wp-admin/gocdn?page=remote&amp;prefix={{.Prefix}}">First page</a> {{end}}{{if .NextToken}}<a class="button" href="/wp-admin/gocdn?page=remote&amp;prefix={{.Prefix}}&amp;token={{.NextToken}}">Next page &rsaquo;</a>{{end}}</div></div>
+</form>
+{{end}}
+{{end}}
+
+{{if eq .Page "images"}}
+<p class="gc-sub">Resize, crop and convert uploads on the fly: <code>{{.Home}}cdn-img/2026/10/photo.jpg?w=800&amp;h=600&amp;fit=cover&amp;q=75&amp;fm=auto&amp;s=…</code>. The same parameters work on <code>/wp-content/uploads/…</code> URLs. <code>fm=auto</code> sends WebP to browsers that accept it{{if not .WebP}} (WebP is not available on this server){{end}}; AVIF requests fall back to WebP (no AVIF encoder without cgo).</p>
+<form method="post" action="/wp-admin/gocdn?page=images">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}">
+<table class="form-table" role="presentation">
+<tr><th scope="row">Image service</th><td><label><input type="checkbox" name="img-enabled" value="1"{{if .S.Img}} checked{{end}}{{if .Lock "img-enabled"}} disabled{{end}}> Serve <code>/cdn-img/</code> and image parameters on uploads</label></td></tr>
+<tr><th scope="row">Signed URLs</th><td><label><input type="checkbox" name="img-sign" value="1"{{if .S.ImgSign}} checked{{end}}{{if .Lock "img-sign"}} disabled{{end}}> Require a signature (<code>s=</code>, HMAC-SHA256 of the path and parameters); unsigned requests get 403</label>
+	<p class="description">Recommended: without it anyone can ask for any size and use the server's CPU.</p></td></tr>
+<tr><th scope="row">Largest output</th><td><input type="number" name="img-max-width" class="small-text" min="16" max="8192" value="{{.S.ImgMaxW}}"{{if .Lock "img-max-width"}} disabled{{end}}> × <input type="number" name="img-max-height" class="small-text" min="16" max="8192" value="{{.S.ImgMaxH}}"{{if .Lock "img-max-height"}} disabled{{end}}> px
+	<p class="description">Images are never upscaled. Sources above <input type="number" name="img-max-source-mp" class="small-text" min="1" max="400" value="{{.S.ImgMaxSource}}"{{if .Lock "img-max-source-mp"}} disabled{{end}}> megapixels are refused.</p></td></tr>
+<tr><th scope="row"><label for="gc-q">Default quality</label></th><td><input type="number" id="gc-q" name="img-quality" class="small-text" min="1" max="100" value="{{.S.ImgQuality}}"{{if .Lock "img-quality"}} disabled{{end}}> (JPEG and WebP)</td></tr>
+<tr><th scope="row">Formats</th><td><label><input type="checkbox" name="img-webp" value="1"{{if .S.ImgWebP}} checked{{end}}{{if .Lock "img-webp"}} disabled{{end}}> Send WebP to browsers that accept it (<code>Vary: Accept</code>)</label></td></tr>
+<tr><th scope="row">Variant cache</th><td><label><input type="checkbox" name="img-cache-bucket" value="1"{{if .S.ImgBucket}} checked{{end}}{{if .Lock "img-cache-bucket"}} disabled{{end}}> Also keep processed images in the bucket (<code>gocdn-cache/</code>), shared by every server</label>
+	<p class="description">Processed images are always cached on disk.</p></td></tr>
+<tr><th scope="row">Content images</th><td><label><input type="checkbox" name="img-rewrite" value="1"{{if .S.ImgRewrite}} checked{{end}}{{if .Lock "img-rewrite"}} disabled{{end}}> Serve the site's JPEG/PNG/GIF/WebP images through the service</label> at quality <input type="number" name="img-rewrite-quality" class="small-text" min="1" max="100" value="{{.S.ImgRewriteQ}}"{{if .Lock "img-rewrite-quality"}} disabled{{end}}>
+	<p class="description">Every <code>/wp-content/uploads</code> image on the site (src and srcset) becomes a signed <code>/cdn-img/</code> URL, so browsers get WebP.</p></td></tr>
+</table>
+<p class="submit"><button type="submit" name="do" value="save" class="button button-primary">Save Changes</button></p>
+</form>
+<h2>URL builder</h2>
+<form method="get" action="/wp-admin/gocdn" class="gc-tools">
+<input type="hidden" name="page" value="images">
+<label>Path in uploads <input type="text" name="sample_path" class="regular-text code" value="{{.SamplePath}}" placeholder="2026/10/photo.jpg" translate="no"></label>
+<label>Parameters <input type="text" name="sample_query" class="regular-text code" value="{{.SampleQuery}}" placeholder="w=800&amp;h=600&amp;fit=cover" translate="no"></label>
+<button type="submit" class="button">Build URL</button>
+</form>
+{{if .Sample}}<p><code class="gc-wrap" translate="no">{{.Sample}}</code> <a href="{{.Sample}}" target="_blank" rel="noopener">Open</a></p>{{end}}
+<h2>Signing key</h2>
+<form method="post" action="/wp-admin/gocdn?page=images" class="gc-tools">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}">
+<button type="submit" name="do" value="rotate-key" class="button" onclick="return confirm('Signed URLs made with the current key stop working. Continue?')">Make a new signing key</button>
+<button type="submit" name="do" value="purge-images" class="button">Empty the processed image cache</button>
+</form>
+{{end}}
+
+{{if eq .Page "assets"}}
+<p class="gc-sub">Serve theme, plugin and core files from a pull CDN (CloudFront, Bunny, KeyCDN, Cloudflare…) whose origin is this site. Only the front end is rewritten, never wp-admin.</p>
+<form method="post" action="/wp-admin/gocdn?page=assets">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}">
+<table class="form-table" role="presentation">
+<tr><th scope="row">Assets CDN</th><td><label><input type="checkbox" name="assets-enabled" value="1"{{if .S.Assets}} checked{{end}}{{if .Lock "assets-enabled"}} disabled{{end}}> Rewrite asset URLs to the CDN</label></td></tr>
+<tr><th scope="row"><label for="gc-cdn">CDN URL</label></th><td><input type="url" id="gc-cdn" name="assets-url" class="regular-text code" value="{{.S.AssetsURL}}" placeholder="https://cdn.example.com" translate="no"{{if .Lock "assets-url"}} disabled{{end}}>
+	<p class="description"><code>{{.Home}}wp-includes/js/x.js</code> becomes <code translate="no">{{if .S.AssetsURL}}{{.S.AssetsURL}}{{else}}https://cdn.example.com{{end}}/wp-includes/js/x.js</code>. The CDN's origin is added to the page's Content-Security-Policy.</p></td></tr>
+<tr><th scope="row"><label for="gc-dirs">Included folders</label></th><td><textarea id="gc-dirs" name="assets-dirs" rows="5" class="large-text code" translate="no"{{if .Lock "assets-dirs"}} disabled{{end}}>{{.S.AssetsDirs}}</textarea><p class="description">One path per line. Uploads are handled by Media Offload.</p></td></tr>
+<tr><th scope="row"><label for="gc-ext">File extensions</label></th><td><input type="text" id="gc-ext" name="assets-extensions" class="large-text code" value="{{.S.AssetsExt}}" translate="no"{{if .Lock "assets-extensions"}} disabled{{end}}></td></tr>
+<tr><th scope="row"><label for="gc-ex">Exclusions</label></th><td><textarea id="gc-ex" name="assets-exclude" rows="4" class="large-text code" placeholder=".php&#10;/wp-includes/js/wp-emoji" translate="no"{{if .Lock "assets-exclude"}} disabled{{end}}>{{.S.AssetsExclude}}</textarea><p class="description">URLs containing any of these strings (one per line) are left alone.</p></td></tr>
+</table>
+<p class="submit"><button type="submit" name="do" value="save" class="button button-primary">Save Changes</button></p>
+</form>
+{{end}}
+
+{{if eq .Page "purge"}}
+<p class="gc-sub">Every GoCDN settings change and finished bulk job purges WPGo Cache{{if not .CacheOn}} (WPGo Cache is not active){{end}}.</p>
+<form method="post" action="/wp-admin/gocdn?page=purge" class="gc-tools">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}">
+<button type="submit" name="do" value="purge-cache" class="button button-primary">Purge WPGo Cache</button>
+<button type="submit" name="do" value="purge-cloudflare" class="button"{{if not (and .S.CF .S.CFZone .TokenSaved)}} disabled{{end}}>Purge Cloudflare (everything)</button>
+<button type="submit" name="do" value="purge-images" class="button">Empty the processed image cache</button>
+</form>
+<h2>Cloudflare</h2>
+<form method="post" action="/wp-admin/gocdn?page=purge" autocomplete="off">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}">
+<table class="form-table" role="presentation">
+<tr><th scope="row">Cloudflare purge</th><td><label><input type="checkbox" name="cloudflare" value="1"{{if .S.CF}} checked{{end}}{{if .Lock "cloudflare"}} disabled{{end}}> Purge the site's Cloudflare zone from here</label></td></tr>
+<tr><th scope="row"><label for="gc-zone">Zone ID</label></th><td><input type="text" id="gc-zone" name="cloudflare-zone" class="regular-text code" value="{{.S.CFZone}}" translate="no"{{if .Lock "cloudflare-zone"}} disabled{{end}}></td></tr>
+<tr><th scope="row"><label for="gc-token">API token</label></th><td><div class="gc-secret">
+	{{if .Lock "cloudflare-token"}}<span class="gc-badge ok">set in {{.EnvName}}</span>{{else}}
+	<input type="password" id="gc-token" name="cloudflare-token" class="regular-text code" value="" autocomplete="new-password" placeholder="{{if .TokenSaved}}•••••••• saved — type to replace{{end}}">
+	{{if .TokenSaved}}<span class="gc-badge ok">Saved</span> <label><input type="checkbox" name="cloudflare-token-clear" value="1"> Clear</label>{{end}}{{end}}</div>
+	<p class="description">A token with the <em>Zone › Cache Purge</em> permission. Stored encrypted, never shown again.</p></td></tr>
+<tr><th scope="row">Automatic purge</th><td><label><input type="checkbox" name="cloudflare-auto" value="1"{{if .S.CFAuto}} checked{{end}}{{if .Lock "cloudflare-auto"}} disabled{{end}}> Purge Cloudflare with every automatic purge of GoCDN, and purge the URLs of deleted offloaded files</label></td></tr>
+</table>
+<p class="submit"><button type="submit" name="do" value="save" class="button button-primary">Save Changes</button></p>
+</form>
+{{end}}
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}

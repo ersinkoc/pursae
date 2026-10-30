@@ -112,6 +112,7 @@ func parseHistory(raw string) []media.Op {
 
 // imgeditPreview is stream_preview_image(): the current image with the history applied, preview-sized.
 func (s *Server) imgeditPreview(c *gin.Context, a *store.Attachment) {
+	_ = s.gocdnEnsureLocal(c, a.FilePath) // GoCDN: the file may live only in the bucket
 	img, format, err := media.Decode(s.cfg.UploadsDir, a.FilePath)
 	if err != nil {
 		c.String(http.StatusOK, "-1")
@@ -137,6 +138,7 @@ func (s *Server) imgeditPreview(c *gin.Context, a *store.Attachment) {
 // imgeditSave is wp_save_image(): applies the history (or scales), writes "<name>-e<time>.<ext>",
 // regenerates the sub-sizes and keeps the original for "Restore image".
 func (s *Server) imgeditSave(c *gin.Context, a *store.Attachment, scale bool) map[string]any {
+	_ = s.gocdnEnsureLocal(c, a.FilePath) // GoCDN: the file may live only in the bucket
 	img, format, err := media.Decode(s.cfg.UploadsDir, a.FilePath)
 	if err != nil {
 		return map[string]any{"error": "Unable to edit this image."}
@@ -225,6 +227,7 @@ func (s *Server) imgeditSave(c *gin.Context, a *store.Attachment, scale bool) ma
 	if err := s.store.ReplaceAttachmentFile(c, a); err != nil {
 		return map[string]any{"error": "Unable to save the image."}
 	}
+	s.gocdnAfterUpload(c, a) // GoCDN: offload the edited files (gocdn_offload.go)
 	s.purgeAll(c)
 	out := map[string]any{"msg": "Image saved", "fw": a.Width, "fh": a.Height}
 	if t := a.Variant("thumbnail"); t != nil {
