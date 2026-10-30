@@ -98,7 +98,7 @@ func gooCtxGin(ctx context.Context) *gin.Context {
 	return c
 }
 
-func gooAttr(a map[string]string, k, def string) string {
+func gooFrontAttr(a map[string]string, k, def string) string {
 	if v, ok := a[k]; ok && strings.TrimSpace(v) != "" {
 		return strings.TrimSpace(v)
 	}
@@ -106,7 +106,7 @@ func gooAttr(a map[string]string, k, def string) string {
 }
 
 func gooAttrBool(a map[string]string, k string) bool {
-	switch strings.ToLower(gooAttr(a, k, "")) {
+	switch strings.ToLower(gooFrontAttr(a, k, "")) {
 	case "1", "true", "yes", "on":
 		return true
 	}
@@ -126,23 +126,23 @@ func (s *Server) gooShortcode(c *gin.Context, tag string, a map[string]string) s
 	case "goocommerce_order_tracking":
 		return s.gooOrderTrackingHTML(c)
 	case "goocommerce_mini_cart", "goocommerce_widget_cart":
-		return gooWidgetWrap("widget_shopping_cart", gooAttr(a, "title", ""), string(s.gooMiniCart(c)))
+		return gooWidgetWrap("widget_shopping_cart", gooFrontAttr(a, "title", ""), string(s.gooMiniCart(c)))
 	case "goocommerce_cart_link":
 		return string(s.gooCartLink(c))
 	case "shop_messages", "goocommerce_messages":
 		return `<div class="woocommerce">` + s.gooNoticesHTML(c) + `</div>`
 	case "goocommerce_widget_price_filter":
-		return s.gooWidgetPriceFilter(c, gooAttr(a, "title", ""))
+		return s.gooWidgetPriceFilter(c, gooFrontAttr(a, "title", ""))
 	case "goocommerce_widget_layered_nav":
-		return s.gooWidgetLayeredNav(c, gooAttr(a, "attribute", ""), gooAttr(a, "title", ""), gooAttr(a, "query_type", "and"))
+		return s.gooWidgetLayeredNav(c, gooFrontAttr(a, "attribute", ""), gooFrontAttr(a, "title", ""), gooFrontAttr(a, "query_type", "and"))
 	case "goocommerce_widget_layered_nav_filters":
-		return s.gooWidgetActiveFilters(c, gooAttr(a, "title", ""))
+		return s.gooWidgetActiveFilters(c, gooFrontAttr(a, "title", ""))
 	case "goocommerce_widget_rating_filter":
-		return s.gooWidgetRatingFilter(c, gooAttr(a, "title", ""))
+		return s.gooWidgetRatingFilter(c, gooFrontAttr(a, "title", ""))
 	case "goocommerce_widget_product_categories":
-		return s.gooWidgetCategories(c, gooAttr(a, "title", ""), gooAttr(a, "count", "1") != "0", gooAttr(a, "hide_empty", "0") == "1")
+		return s.gooWidgetCategories(c, gooFrontAttr(a, "title", ""), gooFrontAttr(a, "count", "1") != "0", gooFrontAttr(a, "hide_empty", "0") == "1")
 	case "goocommerce_widget_product_search", "goocommerce_product_search":
-		return gooWidgetWrap("widget_product_search", gooAttr(a, "title", ""), s.gooProductSearchForm(c))
+		return gooWidgetWrap("widget_product_search", gooFrontAttr(a, "title", ""), s.gooProductSearchForm(c))
 	case "product_page":
 		p := s.gooShortcodeProduct(ctx, a)
 		if p == nil || p.Status != "publish" {
@@ -154,9 +154,9 @@ func (s *Server) gooShortcode(c *gin.Context, tag string, a map[string]string) s
 		if p == nil {
 			return ""
 		}
-		style := gooAttr(a, "style", "border:4px solid #ccc; padding: 12px;")
-		out := `<p class="product woocommerce add_to_cart_inline ` + gooEsc(gooAttr(a, "class", "")) + `" style="` + gooEsc(style) + `">`
-		if gooAttr(a, "show_price", "true") != "false" {
+		style := gooFrontAttr(a, "style", "border:4px solid #ccc; padding: 12px;")
+		out := `<p class="product woocommerce add_to_cart_inline ` + gooEsc(gooFrontAttr(a, "class", "")) + `" style="` + gooEsc(style) + `">`
+		if gooFrontAttr(a, "show_price", "true") != "false" {
 			out += string(s.gooPriceHTML(c, p)) + " "
 		}
 		return out + s.gooLoopAddToCart(c, p, "") + `</p>`
@@ -247,11 +247,11 @@ func (s *Server) gooShortcodeProduct(ctx context.Context, a map[string]string) *
 // gooProductsShortcode is WC_Shortcode_Products.
 func (s *Server) gooProductsShortcode(c *gin.Context, tag string, a map[string]string) string {
 	ctx := c.Request.Context()
-	cols := gooAtoi(gooAttr(a, "columns", "4"))
+	cols := gooAtoi(gooFrontAttr(a, "columns", "4"))
 	if cols < 1 || cols > 6 {
 		cols = 4
 	}
-	limit := gooAtoi(gooAttr(a, "limit", gooAttr(a, "per_page", "-1")))
+	limit := gooAtoi(gooFrontAttr(a, "limit", gooFrontAttr(a, "per_page", "-1")))
 	if rows := gooAtoi(a["rows"]); rows > 0 {
 		limit = rows * cols
 	}
@@ -259,11 +259,11 @@ func (s *Server) gooProductsShortcode(c *gin.Context, tag string, a map[string]s
 		limit = -1
 	}
 	q := gooProductQuery{Visibility: "catalog", PerPage: limit, Page: 1}
-	orderby := strings.ToLower(gooAttr(a, "orderby", "title"))
+	orderby := strings.ToLower(gooFrontAttr(a, "orderby", "title"))
 	if f := strings.Fields(orderby); len(f) > 0 {
 		orderby = f[0]
 	}
-	order := strings.ToUpper(gooAttr(a, "order", "ASC"))
+	order := strings.ToUpper(gooFrontAttr(a, "order", "ASC"))
 	switch orderby {
 	case "menu_order", "popularity", "rating", "date", "price", "title", "id", "rand":
 		q.OrderBy = orderby
@@ -278,7 +278,7 @@ func (s *Server) gooProductsShortcode(c *gin.Context, tag string, a map[string]s
 	if orderby == "price" && order == "DESC" {
 		q.OrderBy, q.Order = "price-desc", ""
 	}
-	switch gooAttr(a, "visibility", "visible") {
+	switch gooFrontAttr(a, "visibility", "visible") {
 	case "featured":
 		q.Featured = true
 	case "search":
@@ -295,7 +295,7 @@ func (s *Server) gooProductsShortcode(c *gin.Context, tag string, a map[string]s
 	if gooAttrBool(a, "top_rated") {
 		q.OrderBy, q.Order = "rating", ""
 	}
-	if ids := gooAttr(a, "ids", ""); ids != "" {
+	if ids := gooFrontAttr(a, "ids", ""); ids != "" {
 		for _, v := range strings.Split(ids, ",") {
 			if id := gooAtoi64(v); id > 0 {
 				q.IDs = append(q.IDs, id)
@@ -304,11 +304,11 @@ func (s *Server) gooProductsShortcode(c *gin.Context, tag string, a map[string]s
 		if len(q.IDs) == 0 {
 			return ""
 		}
-		if gooAttr(a, "orderby", "") == "" {
+		if gooFrontAttr(a, "orderby", "") == "" {
 			q.OrderBy = "include"
 		}
 	}
-	if skus := gooAttr(a, "skus", ""); skus != "" {
+	if skus := gooFrontAttr(a, "skus", ""); skus != "" {
 		list := strings.Split(skus, ",")
 		for i := range list {
 			list[i] = strings.TrimSpace(list[i])
@@ -350,9 +350,9 @@ func (s *Server) gooProductsShortcode(c *gin.Context, tag string, a map[string]s
 		}
 		return out
 	}
-	if cat := gooAttr(a, "category", ""); cat != "" {
+	if cat := gooFrontAttr(a, "category", ""); cat != "" {
 		ids := termIDs("product_cat", cat)
-		if strings.EqualFold(gooAttr(a, "cat_operator", "IN"), "NOT IN") {
+		if strings.EqualFold(gooFrontAttr(a, "cat_operator", "IN"), "NOT IN") {
 			ex, _, _ := s.gooQueryProducts(ctx, gooProductQuery{Category: ids, PerPage: -1})
 			for _, p := range ex {
 				q.Exclude = append(q.Exclude, p.ID)
@@ -361,13 +361,13 @@ func (s *Server) gooProductsShortcode(c *gin.Context, tag string, a map[string]s
 			q.Category = ids
 		}
 	}
-	if tg := gooAttr(a, "tag", ""); tg != "" {
+	if tg := gooFrontAttr(a, "tag", ""); tg != "" {
 		q.Tag = termIDs("product_tag", tg)
 	}
-	if attr := gooAttr(a, "attribute", ""); attr != "" {
+	if attr := gooFrontAttr(a, "attribute", ""); attr != "" {
 		tax := "pa_" + strings.TrimPrefix(attr, "pa_")
-		q.AttrTerms = map[string][]int64{tax: termIDs(tax, gooAttr(a, "terms", ""))}
-		if gooAttr(a, "terms", "") == "" {
+		q.AttrTerms = map[string][]int64{tax: termIDs(tax, gooFrontAttr(a, "terms", ""))}
+		if gooFrontAttr(a, "terms", "") == "" {
 			terms, _ := s.gooAttributeTerms(ctx, tax)
 			ids := []int64{-1}
 			for _, t := range terms {
@@ -395,7 +395,7 @@ func (s *Server) gooProductsShortcode(c *gin.Context, tag string, a map[string]s
 	if err != nil {
 		return ""
 	}
-	class := strings.TrimSpace("woocommerce columns-" + strconv.Itoa(cols) + " " + gooAttr(a, "class", ""))
+	class := strings.TrimSpace("woocommerce columns-" + strconv.Itoa(cols) + " " + gooFrontAttr(a, "class", ""))
 	var b strings.Builder
 	b.WriteString(`<div class="` + gooEsc(class) + `">`)
 	if len(products) == 0 {
@@ -420,20 +420,20 @@ func (s *Server) gooProductsShortcode(c *gin.Context, tag string, a map[string]s
 // gooCategoriesShortcode is [product_categories].
 func (s *Server) gooCategoriesShortcode(c *gin.Context, a map[string]string) string {
 	ctx := c.Request.Context()
-	hide := gooAttr(a, "hide_empty", "1") == "1"
+	hide := gooFrontAttr(a, "hide_empty", "1") == "1"
 	all, _ := s.store.HierarchicalTerms(ctx, "product_cat", hide)
-	cols := gooAtoi(gooAttr(a, "columns", "4"))
+	cols := gooAtoi(gooFrontAttr(a, "columns", "4"))
 	if cols < 1 {
 		cols = 4
 	}
 	var ids []int64
-	for _, v := range strings.Split(gooAttr(a, "ids", ""), ",") {
+	for _, v := range strings.Split(gooFrontAttr(a, "ids", ""), ",") {
 		if id := gooAtoi64(v); id > 0 {
 			ids = append(ids, id)
 		}
 	}
 	parent := int64(-1)
-	if v := gooAttr(a, "parent", ""); v != "" {
+	if v := gooFrontAttr(a, "parent", ""); v != "" {
 		parent = gooAtoi64(v)
 	}
 	var list []*store.Term
@@ -449,7 +449,7 @@ func (s *Server) gooCategoriesShortcode(c *gin.Context, a map[string]string) str
 		}
 		list = append(list, t)
 	}
-	if n := gooAtoi(gooAttr(a, "number", "0")); n > 0 && len(list) > n {
+	if n := gooAtoi(gooFrontAttr(a, "number", "0")); n > 0 && len(list) > n {
 		list = list[:n]
 	}
 	if len(list) == 0 {

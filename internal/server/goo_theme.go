@@ -124,8 +124,8 @@ func (s *Server) gooThemeMiniCart(c *gin.Context) template.HTML {
 
 // gooCartLinkHTML / gooMiniCartHTML let the storefront provide the canonical markup (goo_front.go).
 var (
-	gooCartLinkHTML = func(s *Server, c *gin.Context) (template.HTML, bool) { return "", false }
-	gooMiniCartHTML = func(s *Server, c *gin.Context) (template.HTML, bool) { return "", false }
+	gooCartLinkHTML = func(s *Server, c *gin.Context) (template.HTML, bool) { return s.gooCartLink(c), true }
+	gooMiniCartHTML = func(s *Server, c *gin.Context) (template.HTML, bool) { return s.gooMiniCart(c), true }
 )
 
 // gooThemeCategories are the top-level product categories with products, by name.

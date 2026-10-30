@@ -125,8 +125,8 @@ func gooProductImageIDs(p *gooProduct) []int64 {
 
 // Price HTML ---------------------------------------------------------------------------------------------
 
-// gooPriceHTML is get_price_html(): the sale markup, a variable product's range, the display suffix.
-func (s *Server) gooPriceHTML(ctx context.Context, p *gooProduct) string {
+// gooRESTPriceHTML is get_price_html(): the sale markup, a variable product's range, the display suffix.
+func (s *Server) gooRESTPriceHTML(ctx context.Context, p *gooProduct) string {
 	loc := s.gooBaseLocation()
 	disp := func(v float64) float64 { return s.gooPriceToDisplay(ctx, p, v, loc) }
 	switch p.Type {
@@ -158,13 +158,13 @@ func (s *Server) gooPriceHTML(ctx context.Context, p *gooProduct) string {
 func (s *Server) gooStoreTermsJSON(ctx context.Context, terms []*store.Term) []any {
 	out := []any{}
 	for _, t := range terms {
-		out = append(out, map[string]any{"id": t.ID, "name": t.Name, "slug": t.Slug, "link": s.gooTermLink(ctx, t)})
+		out = append(out, map[string]any{"id": t.ID, "name": t.Name, "slug": t.Slug, "link": s.gooRESTTermLink(ctx, t)})
 	}
 	return out
 }
 
-// gooTermLink is get_term_link() of a product taxonomy term.
-func (s *Server) gooTermLink(ctx context.Context, t *store.Term) string {
+// gooRESTTermLink is get_term_link() of a product taxonomy term.
+func (s *Server) gooRESTTermLink(ctx context.Context, t *store.Term) string {
 	base := map[string]string{"product_cat": s.gooOptString("category_base"), "product_tag": s.gooOptString("tag_base")}[t.Taxonomy]
 	if base == "" {
 		if t.Taxonomy == "product_cat" {
@@ -305,7 +305,7 @@ func (s *Server) gooStoreProductJSON(ctx context.Context, p *gooProduct, terms m
 	return map[string]any{
 		"id": p.ID, "name": p.Name, "slug": p.Slug, "parent": p.ParentID, "type": p.Type, "variation": s.gooVariationSummary(ctx, p),
 		"permalink": s.gooPermalink(ctx, p), "sku": p.SKU, "short_description": short, "description": desc2,
-		"on_sale": p.IsOnSale(), "prices": prices, "price_html": s.gooPriceHTML(ctx, p),
+		"on_sale": p.IsOnSale(), "prices": prices, "price_html": s.gooRESTPriceHTML(ctx, p),
 		"average_rating": strconv.FormatFloat(p.AverageRating, 'f', 2, 64), "review_count": p.RatingCount, "images": images,
 		"categories": s.gooStoreTermsJSON(ctx, cats), "tags": s.gooStoreTermsJSON(ctx, tags), "brands": []any{}, "attributes": attrs,
 		"variations": variations, "grouped_products": nonNilSlice(p.Children), "has_options": p.Type == gooTypeVariable,
@@ -479,7 +479,7 @@ func (s *Server) gooStoreProducts(c *gin.Context, req *restRequest) {
 		return
 	}
 	paginate(c, total, q.PerPage, q.Page)
-	terms := s.gooProductTerms(ctx, list)
+	terms := s.gooRESTProductTerms(ctx, list)
 	out := make([]any, 0, len(list))
 	for _, p := range list {
 		out = append(out, s.gooStoreProductJSON(ctx, p, terms))
@@ -506,8 +506,8 @@ func (s *Server) gooIDsBySKU(ctx context.Context, skus []string) []int64 {
 	return ids
 }
 
-// gooProductTerms loads the terms of products (and of variations' parents).
-func (s *Server) gooProductTerms(ctx context.Context, list []*gooProduct) map[int64][]*store.Term {
+// gooRESTProductTerms loads the terms of products (and of variations' parents).
+func (s *Server) gooRESTProductTerms(ctx context.Context, list []*gooProduct) map[int64][]*store.Term {
 	ids := make([]int64, 0, len(list))
 	for _, p := range list {
 		ids = append(ids, p.ID)
@@ -526,7 +526,7 @@ func (s *Server) gooStoreProduct(c *gin.Context, req *restRequest) {
 		restErr(c, http.StatusNotFound, "woocommerce_rest_product_invalid_id", "Invalid product ID.")
 		return
 	}
-	s.gooStoreRespond(c, http.StatusOK, s.gooStoreProductJSON(ctx, p, s.gooProductTerms(ctx, []*gooProduct{p})))
+	s.gooStoreRespond(c, http.StatusOK, s.gooStoreProductJSON(ctx, p, s.gooRESTProductTerms(ctx, []*gooProduct{p})))
 }
 
 func (s *Server) gooStoreProductBySlug(c *gin.Context, req *restRequest) {
@@ -546,7 +546,7 @@ func (s *Server) gooStoreTermJSON(ctx context.Context, t *store.Term) map[string
 		_ = s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM comments cm JOIN post_terms pt ON pt.post_id = cm.post_id WHERE pt.term_id = $1
 			AND cm.status = 'approved' AND cm.type IN ('review','comment') AND cm.meta ? 'rating'`, t.ID).Scan(&reviews)
 		out["review_count"] = reviews
-		out["permalink"] = s.gooTermLink(ctx, t)
+		out["permalink"] = s.gooRESTTermLink(ctx, t)
 	}
 	return out
 }

@@ -203,7 +203,7 @@ func (s *Server) gooAddToCartForm(c *gin.Context, p *gooProduct) string {
 	case gooTypeVariable:
 		return s.gooVariableForm(c, p, action)
 	default:
-		b.WriteString(s.gooStockHTML(c, p))
+		b.WriteString(s.gooFrontStockHTML(c, p))
 		if !s.gooIsPurchasable(ctx, p) || !s.gooIsInStock(ctx, p) {
 			return b.String()
 		}
@@ -252,7 +252,7 @@ func (s *Server) gooGroupedForm(c *gin.Context, p *gooProduct, action string) st
 			b.WriteString(strings.Replace(gooQuantityInput("quantity["+itoa64(k.ID)+"]", k.Name, -1, 0, hi, "quantity_"+itoa64(k.ID), false), `min="1"`, `min="0"`, 1))
 		}
 		b.WriteString(`</td><td class="woocommerce-grouped-product-list-item__label"><label for="product-` + itoa64(k.ID) + `"><a href="` + gooEsc(s.gooPermalink(ctx, k)) + `">` + gooEsc(k.Name) + `</a></label></td>`)
-		b.WriteString(`<td class="woocommerce-grouped-product-list-item__price">` + string(s.gooPriceHTML(c, k)) + s.gooStockHTML(c, k) + `</td></tr>`)
+		b.WriteString(`<td class="woocommerce-grouped-product-list-item__price">` + string(s.gooPriceHTML(c, k)) + s.gooFrontStockHTML(c, k) + `</td></tr>`)
 	}
 	b.WriteString(`</tbody></table>`)
 	b.WriteString(`<input type="hidden" name="add-to-cart" value="` + itoa64(p.ID) + `" />`)
@@ -410,7 +410,7 @@ func (s *Server) gooVariationData(c *gin.Context, parent, v *gooProduct) map[str
 	if strings.TrimSpace(v.Description) != "" {
 		desc = wp.Autop(wp.KsesPost(v.Description))
 	}
-	availability := s.gooStockHTML(c, v)
+	availability := s.gooFrontStockHTML(c, v)
 	return map[string]any{
 		"attributes":            attrs,
 		"availability_html":     availability,

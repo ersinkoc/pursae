@@ -288,7 +288,7 @@ func (s *Server) gooAccountAddresses(c *gin.Context, u *store.User, typ string) 
 				addr[k] = v
 			}
 		}
-		formatted := gooFormatAddress(addr)
+		formatted := gooFrontFormatAddress(addr)
 		if strings.TrimSpace(addr["address_1"]+addr["city"]+addr["first_name"]) == "" {
 			formatted = "You have not set up this type of address yet."
 		}
@@ -599,7 +599,7 @@ func (s *Server) gooLogout(c *gin.Context) bool {
 
 // Downloads ------------------------------------------------------------------------------------------------------
 
-type gooDownloadRow struct {
+type gooFrontDownloadRow struct {
 	ProductID   int64
 	ProductName string
 	ProductURL  string
@@ -612,7 +612,7 @@ type gooDownloadRow struct {
 }
 
 // gooDownloadRows reads permission rows (with the order paid, not exhausted, not expired).
-func (s *Server) gooDownloadRows(c *gin.Context, where string, args ...any) []gooDownloadRow {
+func (s *Server) gooDownloadRows(c *gin.Context, where string, args ...any) []gooFrontDownloadRow {
 	ctx := c.Request.Context()
 	rows, err := s.store.Pool.Query(ctx, `SELECT dp.product_id, dp.download_id, dp.order_id, dp.order_key, dp.user_email, dp.downloads_remaining, dp.access_expires
 		FROM goo_download_permissions dp JOIN goo_orders o ON o.id = dp.order_id
@@ -638,7 +638,7 @@ func (s *Server) gooDownloadRows(c *gin.Context, where string, args ...any) []go
 		}
 	}
 	rows.Close()
-	var out []gooDownloadRow
+	var out []gooFrontDownloadRow
 	lb := s.links(ctx)
 	for _, r := range list {
 		p, err := s.gooGetProduct(ctx, r.pid)
@@ -655,24 +655,24 @@ func (s *Server) gooDownloadRows(c *gin.Context, where string, args ...any) []go
 			continue
 		}
 		u := lb.HomeURL("/?download_file=" + itoa64(r.pid) + "&order=" + urlEscape(r.key) + "&email=" + urlEscape(r.email) + "&key=" + urlEscape(r.did))
-		out = append(out, gooDownloadRow{ProductID: r.pid, ProductName: s.gooProductTitle(ctx, p), ProductURL: s.gooPermalink(ctx, p), DownloadID: r.did,
+		out = append(out, gooFrontDownloadRow{ProductID: r.pid, ProductName: s.gooProductTitle(ctx, p), ProductURL: s.gooPermalink(ctx, p), DownloadID: r.did,
 			FileName: defaultStr(file.Name, filepath.Base(file.File)), URL: u, Remaining: r.remaining, Expires: r.expires, OrderID: r.oid})
 	}
 	return out
 }
 
 // gooCustomerDownloads is wc_get_customer_available_downloads().
-func (s *Server) gooCustomerDownloads(c *gin.Context, u *store.User) []gooDownloadRow {
+func (s *Server) gooCustomerDownloads(c *gin.Context, u *store.User) []gooFrontDownloadRow {
 	return s.gooDownloadRows(c, "(dp.user_id = $1 OR (dp.user_id = 0 AND lower(dp.user_email) = lower($2)))", u.ID, u.Email)
 }
 
 // gooOrderDownloads are an order's downloads (order received / view order).
-func (s *Server) gooOrderDownloads(c *gin.Context, o *gooOrder) []gooDownloadRow {
+func (s *Server) gooOrderDownloads(c *gin.Context, o *gooOrder) []gooFrontDownloadRow {
 	return s.gooDownloadRows(c, "dp.order_id = $1", o.ID)
 }
 
 // gooDownloadsTable is order-downloads.php.
-func (s *Server) gooDownloadsTable(c *gin.Context, rows []gooDownloadRow) string {
+func (s *Server) gooDownloadsTable(c *gin.Context, rows []gooFrontDownloadRow) string {
 	if len(rows) == 0 {
 		return ""
 	}

@@ -274,8 +274,8 @@ func (s *Server) gooAvailability(c *gin.Context, p *gooProduct) (string, string)
 	return text, "in-stock"
 }
 
-// gooStockHTML is wc_get_stock_html().
-func (s *Server) gooStockHTML(c *gin.Context, p *gooProduct) string {
+// gooFrontStockHTML is wc_get_stock_html().
+func (s *Server) gooFrontStockHTML(c *gin.Context, p *gooProduct) string {
 	text, class := s.gooAvailability(c, p)
 	if text == "" {
 		return ""

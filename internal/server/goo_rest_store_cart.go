@@ -327,7 +327,7 @@ func (s *Server) gooStoreCrossSells(ctx context.Context, cart *gooCart) []any {
 			list = append(list, p)
 		}
 	}
-	terms := s.gooProductTerms(ctx, list)
+	terms := s.gooRESTProductTerms(ctx, list)
 	for _, p := range list {
 		out = append(out, s.gooStoreProductJSON(ctx, p, terms))
 	}

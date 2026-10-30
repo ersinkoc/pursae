@@ -600,7 +600,7 @@ func (s *Server) gooOrderDetailsHTML(c *gin.Context, o *gooOrder, account bool) 
 	if ship {
 		b.WriteString(`<section class="woocommerce-columns woocommerce-columns--2 woocommerce-columns--addresses col2-set addresses"><div class="woocommerce-column woocommerce-column--1 woocommerce-column--billing-address col-1">`)
 	}
-	b.WriteString(`<h2 class="woocommerce-column__title">Billing address</h2><address>` + defaultStr(gooFormatAddress(o.Billing), "N/A"))
+	b.WriteString(`<h2 class="woocommerce-column__title">Billing address</h2><address>` + defaultStr(gooFrontFormatAddress(o.Billing), "N/A"))
 	if o.Billing["phone"] != "" {
 		b.WriteString(`<p class="woocommerce-customer-details--phone">` + gooEsc(o.Billing["phone"]) + `</p>`)
 	}
@@ -609,7 +609,7 @@ func (s *Server) gooOrderDetailsHTML(c *gin.Context, o *gooOrder, account bool) 
 	}
 	b.WriteString(`</address>`)
 	if ship {
-		b.WriteString(`</div><div class="woocommerce-column woocommerce-column--2 woocommerce-column--shipping-address col-2"><h2 class="woocommerce-column__title">Shipping address</h2><address>` + gooFormatAddress(o.Shipping))
+		b.WriteString(`</div><div class="woocommerce-column woocommerce-column--2 woocommerce-column--shipping-address col-2"><h2 class="woocommerce-column__title">Shipping address</h2><address>` + gooFrontFormatAddress(o.Shipping))
 		if o.Shipping["phone"] != "" {
 			b.WriteString(`<p class="woocommerce-customer-details--phone">` + gooEsc(o.Shipping["phone"]) + `</p>`)
 		}

@@ -328,7 +328,7 @@ func (s *Server) gooV3ProductJSON(ctx context.Context, p *gooProduct) map[string
 		"description": post.Content, "short_description": post.Excerpt, "sku": p.SKU, "global_unique_id": "",
 		"price": price, "regular_price": gooDecPtr(p.RegularPrice), "sale_price": gooDecPtr(p.SalePrice),
 		"date_on_sale_from": s.gooDate(p.SaleFrom), "date_on_sale_from_gmt": gooDateGMT(p.SaleFrom), "date_on_sale_to": s.gooDate(p.SaleTo), "date_on_sale_to_gmt": gooDateGMT(p.SaleTo),
-		"price_html": s.gooPriceHTML(ctx, p), "on_sale": p.IsOnSale(), "purchasable": s.gooIsPurchasable(ctx, p), "total_sales": p.TotalSales,
+		"price_html": s.gooRESTPriceHTML(ctx, p), "on_sale": p.IsOnSale(), "purchasable": s.gooIsPurchasable(ctx, p), "total_sales": p.TotalSales,
 		"virtual": p.Virtual, "downloadable": p.Downloadable, "downloads": downloads, "download_limit": p.DownloadLimit, "download_expiry": p.DownloadExpiry,
 		"external_url": p.ProductURL, "button_text": p.ButtonText, "tax_status": p.TaxStatus, "tax_class": p.TaxClass,
 		"manage_stock": p.ManageStock, "stock_quantity": stockQty, "stock_status": p.StockStatus, "backorders": p.Backorders,

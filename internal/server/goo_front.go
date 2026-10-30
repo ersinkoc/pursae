@@ -139,7 +139,7 @@ func (s *Server) gooSiteIntercept(c *gin.Context, path string) bool {
 	} else if s.gooHandleGetAction(c) {
 		return true
 	}
-	return s.gooRoute(c, path)
+	return s.gooFrontRoute(c, path)
 }
 
 // gooBodyClasses is the store's part of body_class().
@@ -379,8 +379,8 @@ func gooAtoi(v string) int { n, _ := strconv.Atoi(strings.TrimSpace(v)); return 
 
 func gooAtoi64(v string) int64 { n, _ := strconv.ParseInt(strings.TrimSpace(v), 10, 64); return n }
 
-// gooRoute maps a GET to a store view.
-func (s *Server) gooRoute(c *gin.Context, path string) bool {
+// gooFrontRoute maps a GET to a store view.
+func (s *Server) gooFrontRoute(c *gin.Context, path string) bool {
 	ctx := c.Request.Context()
 	v := c.Request.URL.Query()
 	paged := 1
@@ -1035,8 +1035,8 @@ func (s *Server) gooImageURL(ctx context.Context, id int64, size string) (string
 	return s.uploadURL(ctx, a.FilePath), a.Width, a.Height
 }
 
-// gooFormatAddress is WC_Countries::get_formatted_address() in the default format.
-func gooFormatAddress(a map[string]string) string {
+// gooFrontFormatAddress is WC_Countries::get_formatted_address() in the default format.
+func gooFrontFormatAddress(a map[string]string) string {
 	if len(a) == 0 {
 		return ""
 	}
@@ -1103,7 +1103,7 @@ var (
 	gooClassRe = regexp.MustCompile(`[^A-Za-z0-9_-]+`)
 )
 
-func gooSortedKeys(m map[string]string) []string {
+func gooFrontSortedKeys(m map[string]string) []string {
 	out := make([]string, 0, len(m))
 	for k := range m {
 		out = append(out, k)
