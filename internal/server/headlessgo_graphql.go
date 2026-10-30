@@ -114,7 +114,7 @@ func hgGQLParse(src string) (*hgGQLDoc, error) {
 			return nil, fmt.Errorf("Syntax error: expected a query")
 		}
 		p.skip()
-		if isNameStart(p.peek()) {
+		if hgIsNameStart(p.peek()) {
 			p.name()
 			p.skip()
 		}
@@ -147,7 +147,7 @@ func hgGQLParse(src string) (*hgGQLDoc, error) {
 	return doc, nil
 }
 
-func isNameStart(b byte) bool { return b == '_' || (b >= 'a' && b <= 'z') || (b >= 'A' && b <= 'Z') }
+func hgIsNameStart(b byte) bool { return b == '_' || (b >= 'a' && b <= 'z') || (b >= 'A' && b <= 'Z') }
 
 func (p *hgGQLParser) peek() byte {
 	if p.pos < len(p.src) {
@@ -178,7 +178,7 @@ func (p *hgGQLParser) name() string {
 	start := p.pos
 	for p.pos < len(p.src) {
 		ch := p.src[p.pos]
-		if isNameStart(ch) || (ch >= '0' && ch <= '9') {
+		if hgIsNameStart(ch) || (ch >= '0' && ch <= '9') {
 			p.pos++
 			continue
 		}
@@ -228,7 +228,7 @@ func (p *hgGQLParser) selection(depth int) ([]*hgGQLField, error) {
 			out = append(out, &hgGQLField{name: "...", on: typ, sel: sel})
 			continue
 		}
-		if !isNameStart(p.peek()) {
+		if !hgIsNameStart(p.peek()) {
 			return nil, fmt.Errorf("Syntax error: unexpected %q at %d", p.peek(), p.pos)
 		}
 		f := &hgGQLField{name: p.name()}
@@ -364,7 +364,7 @@ func (p *hgGQLParser) value(depth int) (any, error) {
 			return nil, fmt.Errorf("Syntax error: bad number")
 		}
 		return n, nil
-	case isNameStart(ch):
+	case hgIsNameStart(ch):
 		switch n := p.name(); n {
 		case "true":
 			return true, nil

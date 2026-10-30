@@ -113,14 +113,19 @@ func (s *Server) hgAuthenticate(c *gin.Context, st hgSettings) (*hgAuth, bool) {
 		}
 		tok = strings.TrimSpace(val)
 	}
+	previewOnly := false // API tokens only travel in the Authorization header, never in a URL
 	if tok == "" {
-		tok = c.GetHeader("X-Preview-Token")
+		tok, previewOnly = c.GetHeader("X-Preview-Token"), true
 	}
 	if tok == "" {
 		tok = c.Query("previewToken")
 	}
 	if tok == "" {
 		return a, true
+	}
+	if previewOnly && !strings.HasPrefix(tok, hgPreviewPrefix) {
+		hgErr(c, http.StatusUnauthorized, "UnauthorizedError", "Missing or invalid credentials", nil)
+		return nil, false
 	}
 	if strings.HasPrefix(tok, hgPreviewPrefix) {
 		uid, doc, ok := s.hgCheckPreviewToken(st, tok)

@@ -122,33 +122,33 @@ func hgNewToken(t *testing.T, srv *Server, tok *hgToken) string {
 	return v
 }
 
-func fptr(f float64) *float64 { return &f }
+func hgFloat(f float64) *float64 { return &f }
 
 // hgModel creates the test content model: components, authors, categories, articles and a
 // homepage single type.
 func hgModel(t *testing.T, srv *Server) {
 	t.Helper()
 	hgMustSchema(t, srv, &hgSchema{Kind: hgKindComponent, DisplayName: "SEO", Category: "shared", Fields: []hgField{
-		{Name: "metaTitle", Type: "text", Required: true}, {Name: "metaDescription", Type: "text", Long: true, Max: fptr(160)}}})
+		{Name: "metaTitle", Type: "text", Required: true}, {Name: "metaDescription", Type: "text", Long: true, Max: hgFloat(160)}}})
 	hgMustSchema(t, srv, &hgSchema{Kind: hgKindComponent, DisplayName: "Quote", Category: "blocks", Fields: []hgField{
 		{Name: "text", Type: "text"}, {Name: "by", Type: "text"}}})
 	hgMustSchema(t, srv, &hgSchema{Kind: hgKindComponent, DisplayName: "Gallery", Category: "blocks", Fields: []hgField{
 		{Name: "images", Type: "media", Multiple: true, Allowed: []string{"images"}}}})
 	hgMustSchema(t, srv, &hgSchema{Kind: hgKindCollection, DisplayName: "Author", SingularName: "author", PluralName: "authors", Fields: []hgField{
 		{Name: "name", Type: "text", Required: true}, {Name: "bio", Type: "richtext", Format: "markdown"}, {Name: "avatar", Type: "media", Allowed: []string{"images"}},
-		{Name: "secret", Type: "password", Min: fptr(6)}, {Name: "email", Type: "email", Unique: true}}})
+		{Name: "secret", Type: "password", Min: hgFloat(6)}, {Name: "email", Type: "email", Unique: true}}})
 	hgMustSchema(t, srv, &hgSchema{Kind: hgKindCollection, DisplayName: "Category", SingularName: "category", PluralName: "categories", DraftAndPublish: true, Fields: []hgField{
 		{Name: "name", Type: "text"}, {Name: "slug", Type: "uid", TargetField: "name"}}})
 	hgMustSchema(t, srv, &hgSchema{Kind: hgKindCollection, DisplayName: "Article", SingularName: "article", PluralName: "articles", DraftAndPublish: true, Localized: true,
 		PreviewURL: "https://app.example.test/preview?slug={slug}&secret={secret}&locale={locale}&token={previewToken}",
 		Fields: []hgField{
-			{Name: "title", Type: "text", Required: true, Min: fptr(3), Regex: `^[^<>]*$`}, {Name: "slug", Type: "uid", TargetField: "title"},
-			{Name: "body", Type: "richtext"}, {Name: "views", Type: "number", Format: "integer", Min: fptr(0)}, {Name: "rating", Type: "number", Format: "decimal"},
+			{Name: "title", Type: "text", Required: true, Min: hgFloat(3), Regex: `^[^<>]*$`}, {Name: "slug", Type: "uid", TargetField: "title"},
+			{Name: "body", Type: "richtext"}, {Name: "views", Type: "number", Format: "integer", Min: hgFloat(0)}, {Name: "rating", Type: "number", Format: "decimal"},
 			{Name: "featured", Type: "boolean", Default: false}, {Name: "day", Type: "date"}, {Name: "at", Type: "datetime"}, {Name: "kind", Type: "enumeration", Enum: []string{"news", "guide"}},
 			{Name: "cover", Type: "media"}, {Name: "author", Type: "relation", Relation: "manyToOne", Target: "author"},
 			{Name: "categories", Type: "relation", Relation: "manyToMany", Target: "category"}, {Name: "page", Type: "relation", Relation: "manyToOne", Target: "wp:page"},
 			{Name: "writer", Type: "relation", Relation: "manyToOne", Target: "wp:user"},
-			{Name: "seo", Type: "component", Component: "shared.seo"}, {Name: "faq", Type: "component", Component: "blocks.quote", Repeatable: true, Max: fptr(3)},
+			{Name: "seo", Type: "component", Component: "shared.seo"}, {Name: "faq", Type: "component", Component: "blocks.quote", Repeatable: true, Max: hgFloat(3)},
 			{Name: "blocks", Type: "dynamiczone", Components: []string{"blocks.quote", "blocks.gallery"}}, {Name: "extra", Type: "json"},
 			{Name: "internal", Type: "text", Private: true},
 		}})
@@ -1077,6 +1077,9 @@ func TestHeadlessGoCORSAndPreview(t *testing.T) {
 	}
 	if r := hgCall(t, base, "GET", "/articles/"+doc+"?status=draft", ptok[:len(ptok)-2]+"xx", nil); r.Code != 401 {
 		t.Errorf("tampered preview token: %d", r.Code)
+	}
+	if r := hgCall(t, base, "GET", "/articles?previewToken="+url.QueryEscape(full), "", nil); r.Code != 401 {
+		t.Errorf("an API token in the URL: %d", r.Code)
 	}
 	expiredTok := srv.hgPreviewToken(srv.hgLoad(), "article", doc, "en", -time.Minute)
 	if r := hgCall(t, base, "GET", "/articles/"+doc+"?status=draft", expiredTok, nil); r.Code != 401 {

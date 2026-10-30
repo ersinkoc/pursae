@@ -279,7 +279,7 @@ func hgParseSort(node any) ([]hgSortKey, error) {
 		return nil
 	}
 	if m, ok := node.(map[string]any); ok {
-		if _, err := strconv.Atoi(firstKey(m)); err != nil { // sort[title]=desc
+		if _, err := strconv.Atoi(hgFirstKey(m)); err != nil { // sort[title]=desc
 			keys := make([]string, 0, len(m))
 			for k := range m {
 				keys = append(keys, k)
@@ -302,7 +302,7 @@ func hgParseSort(node any) ([]hgSortKey, error) {
 	return out, nil
 }
 
-func firstKey(m map[string]any) string {
+func hgFirstKey(m map[string]any) string {
 	for k := range m {
 		return k
 	}
@@ -347,7 +347,7 @@ func hgParsePopulate(node any) (*hgPop, error) {
 	}
 	m, isMap := node.(map[string]any)
 	if isMap {
-		if _, err := strconv.Atoi(firstKey(m)); err == nil && len(m) > 0 {
+		if _, err := strconv.Atoi(hgFirstKey(m)); err == nil && len(m) > 0 {
 			isMap = false // populate[0]=a&populate[1]=b
 		}
 	}
