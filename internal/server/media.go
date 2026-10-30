@@ -279,8 +279,8 @@ func (s *Server) asyncUpload(c *gin.Context) {
 			thumb = s.uploadURL(c, a.FilePath)
 		}
 		fileURL := s.uploadURL(c, a.FilePath)
-		c.Data(http.StatusOK, "text/html; charset=UTF-8", []byte(fmt.Sprintf(`<img class="pinkynail" src="%s" alt="" /><a class="edit-attachment" href="/wp-admin/post?post=%d&amp;action=edit" target="_blank">Edit</a><div class="filename new"><span class="media-list-title"><strong>%s</strong></span> <span class="media-list-subtitle">%s</span><div class="attachment-tools"><span class="media-item-copy-container copy-to-clipboard-container edit-attachment"><button type="button" class="button button-small copy-attachment-url" data-clipboard-text="%s">Copy URL to clipboard</button><span class="success hidden" aria-hidden="true">Copied!</span></span></div></div>`,
-			html.EscapeString(thumb), a.ID, html.EscapeString(a.Title), html.EscapeString(path.Base(a.FilePath)), html.EscapeString(fileURL))))
+		s.adminHTML(c, http.StatusOK, fmt.Sprintf(`<img class="pinkynail" src="%s" alt="" /><a class="edit-attachment" href="/wp-admin/post?post=%d&amp;action=edit" target="_blank">Edit</a><div class="filename new"><span class="media-list-title"><strong>%s</strong></span> <span class="media-list-subtitle">%s</span><div class="attachment-tools"><span class="media-item-copy-container copy-to-clipboard-container edit-attachment"><button type="button" class="button button-small copy-attachment-url" data-clipboard-text="%s">Copy URL to clipboard</button><span class="success hidden" aria-hidden="true">Copied!</span></span></div></div>`,
+			html.EscapeString(thumb), a.ID, html.EscapeString(a.Title), html.EscapeString(path.Base(a.FilePath)), html.EscapeString(fileURL)))
 		return
 	}
 	if !u.Can("upload_files", nil) {

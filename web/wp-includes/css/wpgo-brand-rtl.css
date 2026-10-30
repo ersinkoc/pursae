@@ -1,0 +1,71 @@
+/*! This file is auto-generated */
+/* WordPress Go brand: the Gopher replaces the WordPress logo (toolbar, login, installer, about). */
+#wpadminbar #wp-admin-bar-wp-logo > .ab-item .ab-icon:before {
+	content: "" !important;
+}
+html body #wpadminbar #wp-toolbar #wp-admin-bar-root-default #wp-admin-bar-wp-logo > .ab-item span.ab-icon {
+	background-image: url(../images/wpgo/gopher-64.png) !important;
+	background-position: center !important;
+	background-size: 24px 24px !important;
+	background-repeat: no-repeat !important;
+	width: 24px !important;
+	height: 24px !important;
+	padding: 0 !important;
+	margin-top: 4px !important;
+}
+#wpadminbar #wp-admin-bar-wp-logo > .ab-item:hover .ab-icon,
+#wpadminbar #wp-admin-bar-wp-logo.hover > .ab-item .ab-icon {
+	filter: brightness(1.1);
+}
+@media screen and (max-width: 782px) {
+	html body #wpadminbar #wp-toolbar #wp-admin-bar-root-default #wp-admin-bar-wp-logo > .ab-item span.ab-icon {
+		background-size: 30px 30px !important;
+		width: 52px !important;
+		height: 46px !important;
+		margin-top: 0 !important;
+	}
+}
+.login h1 a,
+.login .wp-login-logo a,
+#logo {
+	background-image: url(../images/wpgo/gopher-256.png) !important;
+	background-size: 84px !important;
+	background-position: center !important;
+	width: 84px !important;
+	height: 84px !important;
+	background-repeat: no-repeat !important;
+}
+.wpgo-about-logo {
+	width: 96px;
+	height: 96px;
+	background: url(../images/wpgo/gopher-256.png) center / contain no-repeat;
+}
+
+/* Dashboard welcome panel: the Gopher on a light WordPress-blue gradient instead of the dark artwork. */
+.welcome-panel-header-wrap {
+	background: linear-gradient(-120deg, #135e96 0%, #2271b1 45%, #4f94d4 100%) !important;
+}
+.welcome-panel-header-image {
+	display: none !important;
+}
+.wpgo-welcome-title {
+	display: flex;
+	align-items: center;
+	gap: 28px;
+}
+.wpgo-welcome-mascot {
+	flex: none;
+	width: 112px;
+	height: 112px;
+	filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.18));
+}
+.welcome-panel .welcome-panel-close:focus::before,
+.welcome-panel .welcome-panel-close:hover::before,
+.welcome-panel .welcome-panel-close:focus,
+.welcome-panel .welcome-panel-close:hover {
+	color: #f0f6fc;
+}
+@media screen and (max-width: 600px) {
+	.wpgo-welcome-title { gap: 16px; }
+	.wpgo-welcome-mascot { width: 72px; height: 72px; }
+}

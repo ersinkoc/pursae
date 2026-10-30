@@ -1,0 +1,61 @@
+/*! This file is auto-generated */
+/**
+ * WordPress Go additions to theme-install.php. Cards, filter bar and grid come from
+ * WordPress's themes.css; this styles the link form of "Details & Preview" and the
+ * Upload Theme form.
+ */
+.theme-install-php .theme-browser .theme .more-details,
+.theme-install-php .theme-browser .theme .more-details:hover,
+.theme-install-php .theme-browser .theme .more-details:focus {
+	color: #fff;
+	text-decoration: none;
+}
+.theme-install-php .theme-browser {
+	clear: both;
+}
+.wpgo-theme-install-help {
+	margin: 0 0 20px;
+}
+
+/* The Upload Theme form (markup and base styles from WordPress's themes.css): shown on ?browse=upload. */
+.show-upload-view .upload-view-toggle .upload {
+	display: none;
+}
+.show-upload-view .upload-view-toggle .browse {
+	display: inline;
+}
+.upload-theme .description {
+	margin: 0;
+	color: #646970;
+}
+
+/* Library tab: category filters and the category/style line under the theme name. */
+.wpgo-theme-categories {
+	float: none;
+	margin: 0 0 12px;
+}
+.theme-install-php .theme-browser .theme .theme-name .wpgo-theme-meta {
+	display: block;
+	margin-top: 2px;
+	font-size: 13px;
+	font-weight: 400;
+	color: #646970;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.theme-install-php .theme-browser .theme .update-message {
+	position: absolute;
+	top: 0;
+	right: 0;
+	left: 0;
+	margin: 0;
+}
+
+/* Library tab: the theme previews kept for Live Preview (theme_preview.go). */
+.wpgo-clear-previews {
+	margin: -12px 0 20px;
+}
+.wpgo-clear-previews .button-link {
+	color: #b32d2e;
+}

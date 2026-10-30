@@ -1,0 +1,181 @@
+/*! This file is auto-generated */
+/**
+ * Static /panel/ media library + upload — layout bridge + grid hover parity.
+ * Vendored media.css / media-views.css assume a JS-sized frame; without this
+ * absolute toolbar + height:100% browser clip the grid on static HTML.
+ * Desktop spacing/colors/control sizes stay WP-default unless noted.
+ */
+
+/* Grid library: let the toolbar flow and the attachment grid grow */
+.upload-php .media-frame.mode-grid .attachments-browser {
+	height: auto;
+	min-height: 0;
+	overflow: visible;
+}
+
+.upload-php .media-frame.mode-grid .attachments-browser .media-toolbar {
+	position: relative;
+	top: auto;
+	right: auto;
+	left: auto;
+	overflow: visible;
+}
+
+.upload-php .media-frame.mode-grid .attachments-browser:not(.has-load-more) .attachments,
+.upload-php .media-frame.mode-grid .attachments-browser.has-load-more .attachments-wrapper {
+	position: static;
+	top: auto;
+	right: auto;
+	left: auto;
+	bottom: auto;
+	overflow: visible;
+}
+
+.upload-php .media-frame.mode-grid .media-toolbar-secondary,
+.upload-php .media-frame.mode-grid .media-toolbar-primary {
+	height: auto;
+}
+
+.upload-php .media-frame.mode-grid .attachments-browser .attachments::after {
+	content: "";
+	display: table;
+	clear: both;
+}
+
+/*
+ * View switcher: lock to WP list-tables sizes (28×28 desktop).
+ * admin-overrides only supplies dashicons ::before content.
+ */
+.upload-php .view-switch a {
+	width: 28px;
+	height: 28px;
+	line-height: 1.84615384;
+	box-sizing: border-box;
+}
+
+/*
+ * Grid hover / focus overlay — match live upload.php attachment chrome:
+ * - Images: no permanent filename footer; show .filename (+ meta) on hover/focus/selected
+ * - Non-images: .filename stays visible (WP tmpl-attachment)
+ * - .check appears on hover/focus as well as .selected (WP shows it when selected;
+ *   hover reveal matches library interaction without layout shift — absolute overlay)
+ */
+/* Images: filename bar hidden until .is-hover / .selected / .details (no layout shift) */
+.upload-php .media-frame.mode-grid .attachment .attachment-preview.type-image .filename {
+	opacity: 0;
+	visibility: hidden;
+	pointer-events: none;
+}
+
+.upload-php .media-frame.mode-grid .attachment.is-hover .attachment-preview.type-image .filename,
+.upload-php .media-frame.mode-grid .attachment.selected .attachment-preview.type-image .filename,
+.upload-php .media-frame.mode-grid .attachment.details .attachment-preview.type-image .filename {
+	opacity: 1;
+	visibility: visible;
+	pointer-events: auto;
+}
+
+/* Size / date line inside filename bar */
+.upload-php .media-frame.mode-grid .attachment .filename .media-hover-meta {
+	display: block;
+	font-weight: 400;
+	font-size: 11px;
+	line-height: 1.4;
+	color: #2c3338;
+	opacity: 0.85;
+	margin-top: 2px;
+}
+
+/* Non-image tiles: filename always visible; meta only while hovering/selected */
+.upload-php .media-frame.mode-grid .attachment-preview:not(.type-image) .filename .media-hover-meta {
+	display: none;
+}
+
+.upload-php .media-frame.mode-grid .attachment.is-hover .attachment-preview:not(.type-image) .filename .media-hover-meta,
+.upload-php .media-frame.mode-grid .attachment.selected .attachment-preview:not(.type-image) .filename .media-hover-meta {
+	display: block;
+}
+
+/* Checkmark: reveal on hover; selected uses vendored media-views rules */
+.upload-php .media-frame.mode-grid .attachment.is-hover .check {
+	display: block;
+}
+
+/*
+ * Mobile / narrow: stack toolbar; column count still comes from data-columns
+ * (set by the small setColumns script — same 170px ideal as wp.media).
+ * Desktop widths keep WP media.css flex row.
+ */
+@media screen and (max-width: 782px) {
+	.upload-php .view-switch a {
+		width: 36px;
+		height: 36px;
+		line-height: 2.53846153;
+	}
+
+	.upload-php .media-frame.mode-grid .media-toolbar.wp-filter {
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 8px;
+		min-height: 0;
+		height: auto;
+	}
+
+	.upload-php .media-frame.mode-grid .media-toolbar-secondary,
+	.upload-php .media-frame.mode-grid .media-toolbar-primary {
+		float: none;
+		max-width: 100%;
+		width: 100%;
+	}
+
+	.upload-php .media-frame.mode-grid .media-toolbar-primary.search-form {
+		display: flex;
+		align-items: center;
+		column-gap: 0.5rem;
+	}
+
+	.upload-php .media-frame.mode-grid .media-toolbar-primary input[type="search"] {
+		flex: 1 1 auto;
+		width: 100%;
+		min-width: 0;
+	}
+
+	/* List mode filter bar: stack search under filters */
+	.upload-php-list #posts-filter .wp-filter {
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 8px;
+	}
+
+	.upload-php-list #posts-filter .wp-filter .search-form {
+		float: none;
+		width: 100%;
+		margin: 0;
+	}
+
+	.upload-php-list #posts-filter .wp-filter .search-box {
+		float: none;
+		margin: 0;
+	}
+
+	.upload-php-list #posts-filter .wp-filter .search-box input[type="search"] {
+		width: 100%;
+		max-width: 100%;
+		box-sizing: border-box;
+	}
+
+	.media-new-php #drag-drop-area {
+		max-width: 100%;
+		box-sizing: border-box;
+	}
+
+	.media-new-php .drag-drop .drag-drop-inside {
+		width: auto;
+		max-width: 250px;
+		margin-right: auto;
+		margin-left: auto;
+		padding: 0 12px;
+	}
+}

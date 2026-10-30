@@ -209,6 +209,9 @@ func (s *Server) gweL10nScript(c *gin.Context) string {
 				dict[lit] = strings.Replace(lit, t, tr, 1)
 			}
 		}
+		if _, ok := dict[lit]; !ok && i18n.MissHook != nil {
+			i18n.MissHook(strings.TrimSpace(lit))
+		}
 	}
 	if len(dict) == 0 {
 		return ""

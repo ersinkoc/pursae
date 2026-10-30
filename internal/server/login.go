@@ -202,8 +202,7 @@ func (s *Server) setLoginCookie(c *gin.Context, token string, persistent bool, m
 
 func (s *Server) logout(c *gin.Context) {
 	if currentUser(c) != nil && !s.checkNonce(c, "log-out") {
-		c.Header("Content-Type", "text/html; charset=utf-8")
-		c.String(http.StatusForbidden, `<!DOCTYPE html><html><head><meta charset="utf-8"><title>WordPress &rsaquo; Error</title>`+
+		s.adminHTML(c, http.StatusForbidden, `<!DOCTYPE html><html><head><meta charset="utf-8"><title>WordPress &rsaquo; Error</title>`+
 			`<link rel="stylesheet" href="/wp-admin/assets/css/wp/install.min.css"></head><body id="error-page">`+
 			`<div class="wp-die-message"><p>You are attempting to log out of `+html.EscapeString(s.settings.String("blogname"))+`</p>`+
 			`<p>Do you really want to <a href="`+s.loginPath()+`?action=logout&amp;_wpnonce=`+s.nonce(c, "log-out")+`">log out</a>?</p></div></body></html>`)

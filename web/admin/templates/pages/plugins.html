@@ -66,8 +66,8 @@
 	</td>
 	<td class="column-description desc">
 		<div class="plugin-description"><p>{{safe .Description}}</p></div>
-		<div class="active second plugin-version-author-uri">Version {{.Version}} | By {{if .AuthorURI}}<a href="{{.AuthorURI}}">{{.Author}}</a>{{else}}{{.Author}}{{end}}{{if .Native}} | <span style="color:#2271b1">Built-in</span>{{else}} | <span style="color:#8c8f94">WebAssembly sandbox</span>{{end}}{{if .PluginURI}} | <a href="{{.PluginURI}}">Visit plugin site</a>{{end}}</div>
-		{{if .Permissions}}<p class="description" style="margin-top:6px">Permissions: {{range $i, $p := .Permissions}}{{if $i}}, {{end}}<code title="{{$p.Description}}">{{$p.Name}}</code>{{end}}</p>{{end}}
+		<div class="active second plugin-version-author-uri"><span>Version {{.Version}}</span> | <span>By {{if .AuthorURI}}<a href="{{.AuthorURI}}">{{.Author}}</a>{{else}}{{.Author}}{{end}}</span>{{if .Native}} | <span style="color:#2271b1">Built-in</span>{{else}} | <span style="color:#8c8f94">WebAssembly sandbox</span>{{end}}{{if .PluginURI}} | <a href="{{.PluginURI}}">Visit plugin site</a>{{end}}</div>
+		{{if .Permissions}}<p class="description" style="margin-top:6px"><span>Permissions:</span> {{range $i, $p := .Permissions}}{{if $i}}, {{end}}<code title="{{$p.Description}}">{{$p.Name}}</code>{{end}}</p>{{end}}
 		{{if .Disabled}}<div class="notice inline notice-error notice-alt"><p>Stopped by the sandbox: {{.DisabledWhy}}</p></div>{{end}}
 		{{if .Logs}}<details style="margin-top:6px"><summary>Recent log</summary><pre style="white-space:pre-wrap;font-size:12px">{{range .Logs}}{{.Time.Format "15:04:05"}} [{{.Level}}] {{.Message}}
 {{end}}</pre></details>{{end}}

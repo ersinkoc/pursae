@@ -1,0 +1,130 @@
+/*! This file is auto-generated */
+/**
+ * Plugins screens only (plugins / plugin-install / plugin-editor).
+ * Desktop: match wp-admin; no width/float/margin changes above 782px.
+ * Mobile: WP-aligned stacking only inside max-width queries.
+ */
+
+/* Upload panel hidden until .show-upload-view / upload tab (from themes.css) */
+.upload-view-toggle .browse,
+.plugin-install-tab-upload .upload-view-toggle .upload {
+	display: none;
+}
+
+.plugin-install-tab-upload .upload-view-toggle .browse {
+	display: inline;
+}
+
+.upload-plugin {
+	box-sizing: border-box;
+	display: none;
+	margin: 0;
+	padding: 50px 0;
+	width: 100%;
+	overflow: hidden;
+	position: relative;
+	top: 10px;
+	text-align: center;
+}
+
+.show-upload-view .upload-plugin,
+.show-upload-view .upload-plugin-wrap,
+.plugin-install-tab-upload .upload-plugin {
+	display: block;
+}
+
+.upload-plugin .wp-upload-form {
+	position: relative;
+	margin: 30px;
+	display: inline-flex;
+	justify-content: space-between;
+	align-items: center;
+	border: 1px solid #c3c4c7;
+	background: #f6f7f7;
+}
+
+.upload-plugin .wp-upload-form input[type="file"] {
+	background: transparent;
+	margin: 0;
+	padding: 30px 30px 30px 0;
+}
+
+.upload-plugin .install-help {
+	color: #50575e;
+	font-size: 18px;
+	font-style: normal;
+	margin: 0;
+	padding: 0;
+	text-align: center;
+}
+
+/*
+ * Installed plugins list (plugins.php) has no row icons in core WP —
+ * only .plugin-title > strong + .row-actions. Icons belong on
+ * plugin-install cards / updates tables. Keep object-fit for cards only.
+ */
+.plugin-card .plugin-icon {
+	object-fit: contain;
+}
+
+/* Pagination underlines when buttons.css is incomplete */
+body.plugins-php .tablenav-pages a,
+body.plugins-php .tablenav-pages .button,
+body.plugins-php .tablenav-pages .tablenav-pages-navspan,
+body.plugin-install-php .tablenav-pages a,
+body.plugin-install-php .tablenav-pages .button,
+body.plugin-install-php .tablenav-pages .tablenav-pages-navspan {
+	text-decoration: none !important;
+}
+
+/* —— Mobile only (do not touch desktop layout) —— */
+@media screen and (max-width: 782px) {
+	body.plugin-install-php .wp-filter {
+		display: block;
+	}
+
+	body.plugin-install-php .wp-filter .filter-links {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0;
+	}
+
+	body.plugin-install-php .wp-filter .search-form {
+		float: none;
+		width: 100%;
+		margin: 8px 0 0;
+	}
+
+	body.plugin-install-php .wp-filter-search {
+		max-width: 100%;
+		width: 100%;
+		box-sizing: border-box;
+	}
+
+	body.plugin-editor-php .fileedit-sub .alignleft,
+	body.plugin-editor-php .fileedit-sub .alignright {
+		float: none;
+		width: 100%;
+	}
+
+	body.plugin-editor-php .fileedit-sub #plugin {
+		max-width: 100%;
+	}
+
+	body.plugin-editor-php #template textarea {
+		max-width: 100%;
+		box-sizing: border-box;
+	}
+
+	.upload-plugin .wp-upload-form {
+		margin: 20px 0;
+		max-width: 100%;
+		flex-wrap: wrap;
+		justify-content: center;
+	}
+
+	.upload-plugin .install-help {
+		font-size: 15px;
+		padding: 20px 0 0;
+	}
+}

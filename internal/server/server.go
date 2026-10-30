@@ -42,6 +42,8 @@ type Server struct {
 	tmpl         *templates
 	engine       *gin.Engine
 	rest         *restAPI
+	// staticRoots are the URL prefixes of the embedded asset directories (rtlStylesheets).
+	staticRoots []staticRoot
 
 	// onPostSaved runs after any post or comment change (cache purge, plugin hooks).
 	onPostSaved func(ctx context.Context, p *store.Post)
@@ -237,6 +239,7 @@ func (s *Server) routes() *gin.Engine {
 
 	admin := r.Group("/wp-admin", s.requireLogin())
 	admin.GET("/", s.dashboard)
+	admin.GET("/wpgo-l10n.js", s.adminL10nScript) // translations of the admin scripts (i18n_adminjs.go)
 	admin.GET("/index", s.dashboard)
 	admin.POST("/index", s.quickDraft)
 	admin.GET("/edit", s.postsList)
@@ -348,6 +351,7 @@ func (s *Server) static(r *gin.Engine, prefix, dir string, guards ...gin.Handler
 	if err != nil {
 		panic(err)
 	}
+	s.staticRoots = append(s.staticRoots, staticRoot{prefix, dir})
 	h := http.StripPrefix(prefix, http.FileServer(http.FS(sub)))
 	handler := func(c *gin.Context) {
 		if strings.HasSuffix(c.Param("filepath"), "/") || strings.HasSuffix(c.Param("filepath"), ".php") {
@@ -518,8 +522,7 @@ func (s *Server) checkNonce(c *gin.Context, action string) bool {
 
 // denyNonce renders the "link you followed has expired" screen (wp_nonce_ays()).
 func (s *Server) denyNonce(c *gin.Context) {
-	c.Header("Content-Type", "text/html; charset=utf-8")
-	c.String(http.StatusForbidden, `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Something went wrong.</title>`+
+	s.adminHTML(c, http.StatusForbidden, `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Something went wrong.</title>`+
 		`<link rel="stylesheet" href="/wp-admin/assets/css/wp/install.min.css"></head><body id="error-page">`+
 		`<div class="wp-die-message">The link you followed has expired.</div><p><a href="javascript:history.back()">Please try again.</a></p></body></html>`)
 	c.Abort()

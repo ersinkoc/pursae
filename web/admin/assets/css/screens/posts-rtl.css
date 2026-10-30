@@ -1,0 +1,212 @@
+/*! This file is auto-generated */
+/**
+ * Page-scoped styles for posts list / classic post-new / categories / tags.
+ * No shared admin CSS edits — screen-local only.
+ */
+
+/* Classic editor stub chrome (no TinyMCE / Gutenberg) */
+body.post-new-php #postdivrich .wp-editor-area {
+	width: 100%;
+	margin: 0;
+	padding: 10px;
+	border: 0;
+	box-shadow: none;
+	resize: vertical;
+	min-height: 280px;
+	font-family: Consolas, Monaco, monospace;
+	font-size: 13px;
+	line-height: 1.6;
+	background: #fff;
+	color: #2c3338;
+	box-sizing: border-box;
+}
+
+body.post-new-php #wp-content-editor-tools {
+	background: #f0f0f1;
+	padding: 0 0 0 10px;
+	border-bottom: 1px solid #dcdcde;
+}
+
+body.post-new-php #wp-content-editor-container {
+	border: 1px solid #dcdcde;
+	border-top: 0;
+	background: #fff;
+}
+
+body.post-new-php .wp-editor-tabs {
+	float: left;
+}
+
+body.post-new-php .wp-switch-editor {
+	float: right;
+	box-sizing: content-box;
+	top: 1px;
+	background: #f0f0f1;
+	color: #646970;
+	cursor: pointer;
+	font-size: 13px;
+	line-height: 1.46153846;
+	height: 20px;
+	margin: 5px 5px 0 0;
+	padding: 3px 8px 4px;
+	border: 1px solid #dcdcde;
+}
+
+body.post-new-php .tmce-active .switch-tmce,
+body.post-new-php .html-active .switch-html {
+	background: #f6f7f7;
+	color: #50575e;
+	border-bottom-color: #f6f7f7;
+}
+
+/*
+ * Publish metabox: Save Draft + Preview on one row (WP float intent).
+ * Block wrappers break child floats; flex restores left/right pairing.
+ */
+body.post-new-php #minor-publishing-actions {
+	display: flex;
+	flex-wrap: nowrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	text-align: right;
+}
+body.post-new-php #minor-publishing-actions > .clear {
+	display: none;
+}
+body.post-new-php #save-action,
+body.post-new-php #preview-action {
+	float: none;
+	width: auto;
+	height: auto;
+}
+body.post-new-php #minor-publishing-actions #save-post,
+body.post-new-php #minor-publishing-actions .preview.button {
+	float: none;
+	display: inline-block;
+	vertical-align: middle;
+	text-decoration: none;
+}
+body.post-new-php #save-action .spinner:not(.is-active) {
+	float: none;
+	width: 0;
+	height: 0;
+	margin: 0;
+	padding: 0;
+	overflow: hidden;
+}
+
+body.post-new-php .classic-editor-stub-note {
+	margin: 8px 0 12px;
+}
+
+body.post-new-php .classic-editor-stub-note p {
+	margin: 0.5em 0;
+	padding: 2px;
+	font-size: 13px;
+	line-height: 1.5;
+}
+
+/* Search box float like WP */
+body.edit-php .search-box,
+body.edit-tags-php .search-box {
+	float: left;
+	margin: 0 0 8px;
+}
+
+body.edit-php .search-box input[name="s"],
+body.edit-tags-php .search-box input[name="s"] {
+	float: right;
+	margin: 0 0 0 4px;
+}
+
+body.edit-php form#posts-filter,
+body.edit-tags-php form#posts-filter {
+	clear: both;
+	margin-top: 0;
+}
+
+/* Desktop: wrapper is transparent — no layout change */
+.posts-table-scroll {
+	display: block;
+	width: 100%;
+	max-width: 100%;
+}
+
+.posts-table-scroll > .wp-list-table {
+	width: 100%;
+}
+
+/*
+ * Small screens: horizontal scroll for wide list tables.
+ * Desktop (≥783px, WP admin breakpoint) unchanged.
+ * Override WP list-table card-stack inside the scroll wrap so columns stay
+ * and the table scrolls instead of collapsing.
+ */
+@media screen and (max-width: 782px) {
+	.posts-table-scroll {
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+		margin: 0 0 8px;
+		width: 100%;
+		max-width: 100%;
+	}
+
+	.posts-table-scroll > .wp-list-table {
+		min-width: 720px;
+		table-layout: auto;
+	}
+
+	.posts-table-scroll .wp-list-table thead th,
+	.posts-table-scroll .wp-list-table tfoot th,
+	.posts-table-scroll .wp-list-table thead td,
+	.posts-table-scroll .wp-list-table tfoot td {
+		display: table-cell !important;
+	}
+
+	.posts-table-scroll .wp-list-table tr:not(.inline-edit-row):not(.no-items) td:not(.check-column),
+	.posts-table-scroll .wp-list-table tr:not(.inline-edit-row):not(.no-items) th.column-primary ~ td:not(.check-column),
+	.posts-table-scroll .wp-list-table th.column-primary ~ th {
+		display: table-cell !important;
+		position: static !important;
+		width: auto !important;
+		padding: 8px 10px !important;
+	}
+
+	.posts-table-scroll .wp-list-table .column-primary .toggle-row {
+		display: none !important;
+	}
+
+	.posts-table-scroll .wp-list-table .row-actions {
+		position: static;
+		right: auto;
+	}
+
+	/* Categories/tags two-column form stacks like WP */
+	body.edit-tags-php #col-left,
+	body.edit-tags-php #col-right {
+		float: none;
+		width: 100%;
+	}
+
+	body.edit-tags-php #col-left .col-wrap,
+	body.edit-tags-php #col-right .col-wrap {
+		padding: 0;
+	}
+
+	body.edit-tags-php .search-box,
+	body.edit-php .search-box {
+		float: none;
+		width: 100%;
+		margin: 0 0 12px;
+	}
+
+	body.post-new-php #post-body.columns-2 #postbox-container-1 {
+		margin-left: 0;
+		width: 100%;
+	}
+
+	body.post-new-php #post-body.columns-2 #post-body-content {
+		margin-left: 0;
+	}
+}

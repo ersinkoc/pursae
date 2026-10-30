@@ -1,12 +1,14 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"io/fs"
 	"log/slog"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -26,7 +28,7 @@ import (
 var langPluginPacks = []string{
 	"classic-editor", "elementor", "contact-form-7", "wp-mail-smtp", "wordpress-seo", "seo-by-rank-math",
 	"advanced-custom-fields", "polylang", "maintenance", "litespeed-cache", "cookie-law-info", "cookie-notice",
-	"two-factor", "wps-hide-login", "limit-login-attempts-reloaded",
+	"two-factor", "wps-hide-login", "limit-login-attempts-reloaded", "woocommerce",
 }
 
 func (s *Server) initLanguages() {
@@ -128,7 +130,43 @@ func (s *Server) translateAdminPage(c *gin.Context, out []byte) []byte {
 		return out
 	}
 	out = cat.TranslateHTML(out)
-	return setDocumentLanguage(out, loc)
+	if tag := s.adminL10nTag(cat); tag != "" {
+		if i := bytes.Index(out, []byte("</head>")); i >= 0 {
+			out = append(out[:i:i], append([]byte(tag), out[i:]...)...)
+		}
+	}
+	return s.rtlStylesheets(setDocumentLanguage(out, loc), loc)
+}
+
+type staticRoot struct{ prefix, dir string }
+
+var stylesheetHref = regexp.MustCompile(`(<link\b[^>]*\bhref=["'])([^"'?#]+?)((?:\.min)?\.css)([?#][^"']*)?(["'])`)
+
+// rtlStylesheets loads the right-to-left version of the admin stylesheets for a right-to-left
+// language, like WordPress' wp_style_add_data( $handle, 'rtl', 'replace' ): "common.min.css" becomes
+// "common-rtl.min.css" when the embedded assets have one (generated with rtlcss).
+func (s *Server) rtlStylesheets(out []byte, loc string) []byte {
+	if !i18n.IsRTL(loc) || s.web == nil {
+		return out
+	}
+	return stylesheetHref.ReplaceAllFunc(out, func(m []byte) []byte {
+		sm := stylesheetHref.FindSubmatch(m)
+		path, ext := string(sm[2]), string(sm[3])
+		if strings.HasSuffix(path, "-rtl") {
+			return m
+		}
+		for _, r := range s.staticRoots {
+			if !strings.HasPrefix(path, r.prefix+"/") {
+				continue
+			}
+			rtl := r.dir + strings.TrimPrefix(path, r.prefix) + "-rtl" + ext
+			if _, err := fs.Stat(s.web, rtl); err == nil {
+				return []byte(string(sm[1]) + path + "-rtl" + ext + string(sm[4]) + string(sm[5]))
+			}
+			break
+		}
+		return m
+	})
 }
 
 // setDocumentLanguage writes the locale into <html lang> and, for right-to-left languages, the
@@ -265,4 +303,16 @@ func validLanguage(locale string) bool {
 	}
 	_, ok := i18n.LanguageByLocale(locale)
 	return ok
+}
+
+// adminHTML writes an admin HTML response that is not a rendered template (an Ajax fragment, a
+// wp_die() screen) in the user's language.
+func (s *Server) adminHTML(c *gin.Context, status int, page string) {
+	out := []byte(page)
+	if loc := s.userLocale(c); loc != "en_US" && s.lang != nil && s.adminRequest(c) {
+		if cat := s.lang.Catalog(loc); !cat.Empty() {
+			out = s.rtlStylesheets(setDocumentLanguage(cat.TranslateHTML(out), loc), loc)
+		}
+	}
+	c.Data(status, "text/html; charset=utf-8", out)
 }

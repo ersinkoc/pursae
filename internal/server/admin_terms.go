@@ -207,7 +207,7 @@ func (s *Server) inlineSaveTax(c *gin.Context) {
 		c.String(http.StatusOK, err.Error())
 		return
 	}
-	c.Data(http.StatusOK, "text/html; charset=UTF-8", buf.Bytes())
+	s.adminHTML(c, http.StatusOK, buf.String())
 }
 
 // tagSearchAjax is wp_ajax_ajax_tag_search(): tags-suggest.js asks for term names matching the typed text.
