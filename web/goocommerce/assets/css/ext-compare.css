@@ -1,0 +1,19 @@
+/* Goocommerce Product Compare */
+.goo-compare-form{display:inline-block;margin:.5em .5em 0 0}
+.goo-compare-button.added::before{content:"\2713\00a0"}
+.goo-compare-bar[hidden]{display:none}
+.goo-compare-bar{position:fixed;left:0;right:0;bottom:0;z-index:9999;background:#fff;border-top:1px solid #dcdcde;box-shadow:0 -4px 16px rgba(0,0,0,.08)}
+.goo-compare-bar-inner{max-width:1200px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.goo-compare-bar-items{display:flex;gap:10px;list-style:none;margin:0;padding:0}
+.goo-compare-bar-item{position:relative}
+.goo-compare-bar-item img{width:56px;height:56px;object-fit:cover;display:block;border:1px solid #dcdcde}
+.goo-compare-bar-item .goo-compare-form{position:absolute;top:-8px;right:-8px;margin:0}
+.goo-compare-remove{border:0;background:#1d2327;color:#fff;border-radius:50%;width:20px;height:20px;line-height:18px;padding:0;cursor:pointer;font-size:14px}
+.goo-compare-table .goo-compare-remove{width:auto;height:auto;border-radius:3px;padding:2px 8px;background:transparent;color:#b32d2e}
+.goo-compare-bar-actions{display:flex;gap:8px;align-items:center}
+.goo-compare-bar-actions .goo-compare-form{margin:0}
+.goo-compare-table-wrap{overflow-x:auto}
+.goo-compare-table{min-width:600px}
+.goo-compare-table th.goo-compare-label{text-align:left;white-space:nowrap}
+.goo-compare-table img{max-width:160px;height:auto}
+.goo-compare-remove:focus-visible,.goo-compare-button:focus-visible{outline:2px solid #2271b1;outline-offset:2px}
