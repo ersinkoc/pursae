@@ -559,7 +559,9 @@ func (s *Server) bkAdminEdit(c *gin.Context) {
 	var out strings.Builder
 	fmt.Fprintf(&out, `<form method="post" action="/wp-admin/goocommerce?page=bookings&amp;action=edit&amp;id=%d"><input type="hidden" name="_wpnonce" value="%s">`, b.ID, s.nonce(c, "goo-booking-edit"))
 	fmt.Fprintf(&out, `<div id="poststuff"><div class="postbox" id="woocommerce-booking-data"><div class="postbox-header"><h2>Booking #%d details</h2></div><div class="inside"><table class="form-table"><tbody>`, b.ID)
-	row := func(label, input string) { out.WriteString(`<tr><th scope="row">` + label + `</th><td>` + input + `</td></tr>`) }
+	row := func(label, input string) {
+		out.WriteString(`<tr><th scope="row">` + label + `</th><td>` + input + `</td></tr>`)
+	}
 	var opts strings.Builder
 	for _, st := range bkStatuses {
 		opts.WriteString(`<option value="` + st.Value + `"` + gxSel(st.Value, b.Status) + `>` + st.Label + `</option>`)

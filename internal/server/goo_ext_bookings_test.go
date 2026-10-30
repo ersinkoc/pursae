@@ -109,7 +109,7 @@ func TestGooExtBookings(t *testing.T) {
 		"_wc_booking_max_date_unit": {"month"}, "_wc_booking_first_block_time": {"09:00"}, "_wc_booking_user_can_cancel": {"yes"},
 		"_wc_booking_cancel_limit": {"1"}, "_wc_booking_cancel_limit_unit": {"day"},
 		"_wc_booking_default_date_availability": {"non-available"},
-		"wc_booking_availability_type": {"time"}, "wc_booking_availability_from": {"09:00"}, "wc_booking_availability_to": {"12:00"},
+		"wc_booking_availability_type":          {"time"}, "wc_booking_availability_from": {"09:00"}, "wc_booking_availability_to": {"12:00"},
 		"wc_booking_availability_bookable": {"yes"}, "wc_booking_availability_priority": {"10"},
 		"_wc_booking_cost": {"10"}, "_wc_booking_block_cost": {"20"},
 		"wc_booking_pricing_type[]": {"days"}, "wc_booking_pricing_from[]": {"6"}, "wc_booking_pricing_to[]": {"7"},
@@ -369,4 +369,3 @@ func TestGooExtBookings(t *testing.T) {
 		t.Errorf("edit booking: %d %+v", code, b)
 	}
 }
-

@@ -154,7 +154,9 @@ func (s *Server) gcAdminNew(c *gin.Context) {
 	}
 	var b strings.Builder
 	b.WriteString(`<form method="post" action="/wp-admin/goocommerce?page=gift-cards&amp;action=new"><input type="hidden" name="_wpnonce" value="` + s.nonce(c, "goo-gift-card-new") + `"><table class="form-table"><tbody>`)
-	row := func(label, input string) { b.WriteString(`<tr><th scope="row">` + label + `</th><td>` + input + `</td></tr>`) }
+	row := func(label, input string) {
+		b.WriteString(`<tr><th scope="row">` + label + `</th><td>` + input + `</td></tr>`)
+	}
 	row(`<label for="amount">Amount</label>`, `<input type="text" name="amount" id="amount" class="wc_input_price" required> `+html.EscapeString(s.gooCurrency()))
 	row(`<label for="recipient">To</label>`, `<input type="email" name="recipient" id="recipient" class="regular-text" required>`)
 	row(`<label for="recipient_name">Recipient name</label>`, `<input type="text" name="recipient_name" id="recipient_name" class="regular-text">`)

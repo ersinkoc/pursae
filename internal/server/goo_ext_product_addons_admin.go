@@ -230,4 +230,6 @@ func (s *Server) paoAdmin(c *gin.Context) {
 }
 
 // paoAddonsCount is the number of add-ons a product shows (for tests and the admin).
-func (s *Server) paoAddonsCount(ctx context.Context, p *gooProduct) int { return len(s.paoAddonsFor(ctx, p)) }
+func (s *Server) paoAddonsCount(ctx context.Context, p *gooProduct) int {
+	return len(s.paoAddonsFor(ctx, p))
+}
