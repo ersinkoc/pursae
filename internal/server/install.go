@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	_ "embed"
+	"log/slog"
 	"net/http"
 	"net/mail"
 	"regexp"
@@ -27,6 +28,11 @@ type installView struct {
 	Email                         string
 	Discourage                    bool
 	Submitted                     bool // re-rendered after a POST: keep the password masked, like WordPress
+	// The language step (wp-admin/install.php?step=0): the languages to choose from, the choice,
+	// and a failed pack download.
+	ChooseLanguage bool
+	Languages      []langChoice
+	Language       string
 }
 
 var validUsername = regexp.MustCompile(`^[A-Za-z0-9 _.\-@]+$`)
@@ -36,7 +42,32 @@ func (s *Server) installForm(c *gin.Context) {
 		c.Redirect(http.StatusFound, "/wp-login")
 		return
 	}
-	s.renderAdminTemplate(c, http.StatusOK, "admin/install", installView{Password: auth.RandomToken(14)})
+	lang := c.Query("language")
+	if lang == "" { // first the language, like WordPress
+		s.renderAdminTemplate(c, http.StatusOK, "admin/install", s.installLanguageStep(""))
+		return
+	}
+	if lang == "en_US" {
+		s.rememberLocale(c, "en_US")
+	} else if !validLanguage(lang) {
+		s.renderAdminTemplate(c, http.StatusOK, "admin/install", s.installLanguageStep(""))
+		return
+	} else if err := s.installLanguage(c.Request.Context(), lang); err != nil {
+		slog.Warn("install language", "locale", lang, "err", err)
+		v := s.installLanguageStep("The language pack could not be downloaded. Check that the server can reach translate.wordpress.org, or continue in English.")
+		s.renderAdminTemplate(c, http.StatusOK, "admin/install", v)
+		return
+	} else {
+		s.rememberLocale(c, lang)
+	}
+	c.Set("wpgo.pickedLocale", lang) // render the form in the chosen language
+	s.renderAdminTemplate(c, http.StatusOK, "admin/install", installView{Password: auth.RandomToken(14), Language: lang})
+}
+
+// installLanguageStep is the first install screen: every WordPress.org language.
+func (s *Server) installLanguageStep(errMsg string) installView {
+	installed, available := s.languageChoices("", false)
+	return installView{ChooseLanguage: true, Error: errMsg, Languages: append(installed, available...)}
 }
 
 func (s *Server) installSubmit(c *gin.Context) {
@@ -51,6 +82,7 @@ func (s *Server) installSubmit(c *gin.Context) {
 		Email:      strings.TrimSpace(c.PostForm("admin_email")),
 		Discourage: c.PostForm("blog_public") == "0",
 		Submitted:  true,
+		Language:   c.PostForm("language"),
 	}
 	switch {
 	case v.UserName == "":
@@ -80,6 +112,9 @@ func (s *Server) installSubmit(c *gin.Context) {
 		v.Error = "Installation failed: " + err.Error()
 		s.renderAdminTemplate(c, http.StatusOK, "admin/install", v)
 		return
+	}
+	if v.Language != "" && v.Language != "en_US" && validLanguage(v.Language) && s.lang.IsInstalled(v.Language) {
+		_ = s.settings.Set(c, map[string]any{"WPLANG": v.Language}) // the site's language
 	}
 	v.Done = true
 	s.renderAdminTemplate(c, http.StatusOK, "admin/install", v)

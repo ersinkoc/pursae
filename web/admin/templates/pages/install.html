@@ -32,6 +32,17 @@
 	</tr>
 </table>
 <p class="step"><a href="/wp-login" class="button button-large">Log In</a></p>
+{{else if .ChooseLanguage}}
+<h1 class="screen-reader-text">Select a default language</h1>
+{{if .Error}}<p class="message">{{.Error}}</p>{{end}}
+<form id="setup" method="get" action="/wp-admin/install">
+	<p><label for="language">Select a default language</label></p>
+	<p><select name="language" id="language" size="1">
+		<option value="en_US" lang="en" translate="no" selected="selected">English (United States)</option>
+		{{range .Languages}}<option value="{{.Locale}}" lang="{{.Locale}}" translate="no">{{.Name}}</option>{{end}}
+	</select></p>
+	<p class="step"><input type="submit" id="submit" class="button button-large" value="Continue" /></p>
+</form>
 {{else}}
 <h1>Welcome</h1>
 <p>Welcome to the famous five-minute WordPress Go installation process! Just fill in the information below and you&#8217;ll be on your way to using the most extendable and powerful personal publishing platform in the world.</p>
@@ -39,6 +50,7 @@
 <p>Please provide the following information. Do not worry, you can always change these settings later.</p>
 {{if .Error}}<p class="message">{{.Error}}</p>{{end}}
 <form id="setup" method="post" action="/wp-admin/install?step=2" novalidate="novalidate">
+	<input type="hidden" name="language" value="{{.Language}}" />
 	<table class="form-table" role="presentation">
 		<tr>
 			<th scope="row"><label for="weblog_title">Site Title</label></th>

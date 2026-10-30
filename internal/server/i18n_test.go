@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"io"
 	"io/fs"
 	"net/http"
 	"net/http/httptest"
@@ -211,5 +212,83 @@ func TestEmbeddedOwnStrings(t *testing.T) {
 		if b, err := fs.ReadFile(fsys, name); err != nil || len(b) < 1000 {
 			t.Errorf("%s is not embedded: %v", name, err)
 		}
+	}
+}
+
+// TestInstallAndLoginLanguage is WordPress' language choice: first on the install screen (the pack
+// is downloaded and becomes the site language), then in the language dropdown of the login screen.
+func TestInstallAndLoginLanguage(t *testing.T) {
+	ts, c, srv := testServerBuilderOff(t)
+	base := ts.URL
+	var pack bytes.Buffer
+	zw := zip.NewWriter(&pack)
+	f, _ := zw.Create("admin-de_DE.mo")
+	f.Write(i18nMO(map[string]string{"": "Plural-Forms: nplurals=2; plural=n != 1;\n", "Site Title": "Titel der Website", "Username": "Benutzername", "Language": "Sprache"}))
+	zw.Close()
+	var api *httptest.Server
+	api = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/core/1.0/":
+			fmt.Fprintf(w, `{"translations":[{"language":"de_DE","package":"%s/de.zip"}]}`, api.URL)
+		case "/de.zip":
+			w.Write(pack.Bytes())
+		default:
+			fmt.Fprint(w, `{"translations":[]}`)
+		}
+	}))
+	defer api.Close()
+	srv.cfg.TranslationsAPI = api.URL
+
+	// Step 0: the language list.
+	_, body, _ := get(t, c, base+"/wp-admin/install")
+	if !strings.Contains(body, "Select a default language") || !strings.Contains(body, `value="de_DE"`) || strings.Contains(body, `name="user_name"`) {
+		t.Fatal("no language step on the install screen")
+	}
+	// Choosing German downloads the pack and renders the form in German.
+	_, body, _ = get(t, c, base+"/wp-admin/install?language=de_DE")
+	for _, want := range []string{`lang="de-DE"`, "Titel der Website", "Benutzername", `name="language" value="de_DE"`} {
+		if !strings.Contains(body, want) {
+			t.Errorf("install form: missing %s", want)
+		}
+	}
+	if !srv.lang.IsInstalled("de_DE") {
+		t.Fatal("pack not downloaded")
+	}
+	// The install saves it as the site language.
+	if code, _, _ := post(t, c, base+"/wp-admin/install?step=2", url.Values{"weblog_title": {"Sprachtest"}, "user_name": {"admin"},
+		"admin_password": {"Violet-Harbor-Lantern-93!"}, "admin_password2": {"Violet-Harbor-Lantern-93!"}, "admin_email": {"admin@example.test"}, "language": {"de_DE"}}); code != http.StatusOK {
+		t.Fatalf("install: %d", code)
+	}
+	if srv.siteLocale() != "de_DE" {
+		t.Fatalf("site language %q", srv.siteLocale())
+	}
+	// The login screen has the dropdown and follows the choice (and remembers it).
+	anon := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+	_, body, _ = get(t, anon, base+"/wp-login")
+	for _, want := range []string{`id="language-switcher-locales"`, `value="de_DE"`, `value="en_US"`, `lang="de-DE"`} {
+		if !strings.Contains(body, want) {
+			t.Errorf("login: missing %s", want)
+		}
+	}
+	resp, err := anon.Get(base + "/wp-login?wp_lang=en_US")
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if !strings.Contains(string(b), `lang="en-US"`) {
+		t.Error("English not applied on the login screen")
+	}
+	remembered := false
+	for _, ck := range resp.Cookies() {
+		remembered = remembered || ck.Name == "wp_lang" && ck.Value == "en_US"
+	}
+	if !remembered {
+		t.Error("the choice is not remembered in the wp_lang cookie")
+	}
+	// An unknown language is ignored.
+	_, body, _ = get(t, anon, base+"/wp-login?wp_lang=xx_XX")
+	if !strings.Contains(body, `lang="de-DE"`) {
+		t.Error("an unknown wp_lang changed the language")
 	}
 }

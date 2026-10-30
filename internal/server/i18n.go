@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"html"
 	"io/fs"
 	"log/slog"
+	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -79,9 +81,115 @@ func (s *Server) userLocale(c *gin.Context) string {
 			if v, _ := u.Meta["locale"].(string); v != "" {
 				return v
 			}
+		} else if l := s.pickedLocale(c); l != "" {
+			return l
 		}
 	}
 	return s.siteLocale()
+}
+
+const langCookie = "wp_lang"
+
+// pickedLocale is the language a visitor chose on the install and login screens (the wp_lang
+// cookie, like WordPress): only there, and only an installed language.
+func (s *Server) pickedLocale(c *gin.Context) string {
+	if c.Request == nil || s.lang == nil {
+		return ""
+	}
+	p := c.Request.URL.Path
+	if !strings.HasPrefix(p, "/wp-login") && !strings.HasPrefix(p, "/wp-admin/install") && !s.isCustomLogin(p) {
+		return ""
+	}
+	if v, ok := c.Get("wpgo.pickedLocale"); ok {
+		l, _ := v.(string)
+		return l
+	}
+	l := ""
+	for _, cand := range []string{c.Query("wp_lang"), c.Query("language")} {
+		if cand != "" {
+			l = cand
+			break
+		}
+	}
+	if l == "" {
+		if ck, err := c.Request.Cookie(langCookie); err == nil {
+			l = ck.Value
+		}
+	}
+	if l == "en_US" || (l != "" && validLanguage(l) && s.lang.IsInstalled(l)) {
+		c.Set("wpgo.pickedLocale", l)
+		return l
+	}
+	c.Set("wpgo.pickedLocale", "")
+	return ""
+}
+
+func (s *Server) isCustomLogin(p string) bool {
+	if !s.adminsecOn() {
+		return false
+	}
+	lp := s.loginPath()
+	return lp != "/wp-login" && strings.TrimSuffix(p, "/") == lp
+}
+
+// rememberLocale stores a language chosen on the login screen for later visits (a year).
+func (s *Server) rememberLocale(c *gin.Context, locale string) {
+	secure := c.Request.TLS != nil || c.GetHeader("X-Forwarded-Proto") == "https"
+	http.SetCookie(c.Writer, &http.Cookie{Name: langCookie, Value: locale, Path: "/", MaxAge: 365 * 24 * 3600,
+		Secure: secure, SameSite: http.SameSiteLaxMode})
+}
+
+// withLoginLanguageSwitcher adds the language dropdown below the login box.
+func (s *Server) withLoginLanguageSwitcher(c *gin.Context, out []byte) []byte {
+	if q := c.Query("wp_lang"); q != "" && s.pickedLocale(c) == q {
+		s.rememberLocale(c, q)
+	}
+	sw := s.loginLanguageSwitcher(c)
+	if sw == "" {
+		return out
+	}
+	i := bytes.LastIndex(out, []byte("</body>"))
+	if i < 0 {
+		return out
+	}
+	res := make([]byte, 0, len(out)+len(sw))
+	res = append(res, out[:i]...)
+	res = append(res, sw...)
+	res = append(res, out[i:]...)
+	return res
+}
+
+// loginLanguageSwitcher is wp-login.php's language dropdown: shown when a language besides
+// English is installed.
+func (s *Server) loginLanguageSwitcher(c *gin.Context) string {
+	if s.lang == nil || len(s.lang.Installed()) == 0 {
+		return ""
+	}
+	cur := s.userLocale(c)
+	sel := func(v bool) string {
+		if v {
+			return ` selected="selected"`
+		}
+		return ""
+	}
+	var b strings.Builder
+	b.WriteString(`<div class="language-switcher"><form id="language-switcher" method="get">` +
+		`<label for="language-switcher-locales"><span class="dashicons dashicons-translation" aria-hidden="true"></span><span class="screen-reader-text">Language</span></label>` +
+		`<select name="wp_lang" id="language-switcher-locales">`)
+	b.WriteString(`<option value="en_US" lang="en" translate="no"` + sel(cur == "en_US") + `>English (United States)</option>`)
+	have, _ := s.languageChoices(cur, true)
+	for _, l := range have {
+		b.WriteString(`<option value="` + html.EscapeString(l.Locale) + `" lang="` + html.EscapeString(strings.ReplaceAll(l.Locale, "_", "-")) +
+			`" translate="no"` + sel(l.Locale == cur) + `>` + html.EscapeString(l.Name) + `</option>`)
+	}
+	b.WriteString(`</select>`)
+	for _, k := range []string{"redirect_to", "action"} { // keep the screen the visitor is on
+		if v := c.Query(k); v != "" {
+			b.WriteString(`<input type="hidden" name="` + k + `" value="` + html.EscapeString(v) + `" />`)
+		}
+	}
+	b.WriteString(`<input type="submit" class="button" value="Change" /></form></div>`)
+	return b.String()
 }
 
 // catalog returns the translations of the current user's language (nil-safe, empty for English).

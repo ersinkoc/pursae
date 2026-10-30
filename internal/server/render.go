@@ -140,6 +140,9 @@ func (s *Server) renderTemplateFiltered(c *gin.Context, status int, set *templat
 	if bytes.Contains(out, []byte(blockStylesMarker)) { // a theme with per-block core styles (Theme.BlockStyles)
 		out = s.blockStylesFor(data, out)
 	}
+	if !front && strings.HasPrefix(name, "admin/login") && !strings.HasPrefix(name, "admin/login-adminsec") {
+		out = s.withLoginLanguageSwitcher(c, out) // wp-login's language dropdown (i18n.go)
+	}
 	if front {
 		out = s.gooikeFilterPage(c, out) // Gooike: YouTube, Vimeo and Maps iframes wait for consent
 	} else {
