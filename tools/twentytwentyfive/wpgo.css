@@ -1,0 +1,145 @@
+/*
+ * WordPress Go additions to Twenty Twenty-Five: the comment list (wp_list_comments() markup laid out
+ * like the theme's comment template: 50px avatar, date, author, text, edit and reply links), the
+ * navigation overlay without the Interactivity API, page links and a few classic outputs.
+ */
+.wp-block-comments .comment-list,
+.wp-block-comments .comment-list .children {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+.wp-block-comments .comment-list .children {
+	padding-left: 2rem;
+}
+.wp-block-comments .comment-list li {
+	clear: both;
+}
+.wp-block-comments .comment-body {
+	margin: 0 0 var(--wp--preset--spacing--50);
+	min-height: 50px;
+	padding-left: calc(50px + var(--wp--style--block-gap, 1.2rem));
+	position: relative;
+}
+.wp-block-comments .comment-meta {
+	display: flex;
+	flex-direction: column;
+}
+.wp-block-comments .comment-author .avatar {
+	border-radius: 50%;
+	display: block;
+	height: 50px;
+	left: 0;
+	position: absolute;
+	top: 0;
+	width: 50px;
+}
+.wp-block-comments .comment-author {
+	font-size: var(--wp--preset--font-size--medium);
+}
+.wp-block-comments .comment-author .fn {
+	font-weight: 600;
+}
+.wp-block-comments .comment-author .says {
+	display: none;
+}
+.wp-block-comments .comment-metadata {
+	color: var(--wp--preset--color--accent-4);
+	font-size: var(--wp--preset--font-size--small);
+	order: -1;
+}
+.wp-block-comments .comment-metadata a {
+	color: inherit;
+	text-decoration: none;
+}
+.wp-block-comments .comment-metadata .edit-link {
+	margin-left: .75em;
+}
+.wp-block-comments .comment-awaiting-moderation {
+	display: block;
+	font-size: var(--wp--preset--font-size--small);
+}
+.wp-block-comments .comment-content {
+	overflow-wrap: break-word;
+}
+.wp-block-comments .comment-content p {
+	margin: .5em 0;
+}
+.wp-block-comments .reply {
+	font-size: var(--wp--preset--font-size--small);
+}
+.wp-block-comments .comments-navigation .nav-links {
+	display: flex;
+	justify-content: space-between;
+	margin-bottom: var(--wp--preset--spacing--50);
+}
+.wp-block-comments .no-comments {
+	font-size: var(--wp--preset--font-size--small);
+}
+.wp-block-post-comments-form .comment-reply-title {
+	font-size: var(--wp--preset--font-size--large);
+}
+.wp-block-post-comments-form .comment-form-comment label {
+	display: block;
+	margin-bottom: .25em;
+}
+.wp-block-post-comments-form .required {
+	color: var(--wp--preset--color--accent-4);
+}
+
+/* Navigation overlay: opened by js/navigation.js (core uses the Interactivity API). */
+.wp-block-navigation__responsive-container.is-menu-open .wp-block-navigation__responsive-container-content .wp-block-navigation__container {
+	gap: var(--wp--style--block-gap, 2em);
+}
+.wp-block-navigation .wp-block-page-list {
+	display: flex;
+	flex-wrap: wrap;
+	gap: inherit;
+}
+
+/* wp_link_pages() and the classic more link. */
+.post-nav-links {
+	font-size: var(--wp--preset--font-size--small);
+	margin-top: var(--wp--preset--spacing--50);
+}
+.post-nav-links .post-page-numbers {
+	padding: 0 .25em;
+}
+.post-nav-links .current {
+	font-weight: 700;
+}
+.screen-reader-text:focus {
+	background-color: var(--wp--preset--color--base);
+	clip-path: none;
+	color: var(--wp--preset--color--contrast);
+	display: block;
+	font-size: 1rem;
+	height: auto;
+	left: 5px;
+	line-height: normal;
+	padding: 15px 23px 14px;
+	text-decoration: none;
+	top: 5px;
+	width: auto;
+	z-index: 100000;
+}
+
+/* Sticky posts on the blog's first page. */
+.wp-block-post.sticky .wp-block-post-title::before {
+	content: "";
+}
+.wpgo-sticky-label {
+	display: inline-block;
+	font-size: var(--wp--preset--font-size--small);
+	font-weight: 600;
+	letter-spacing: 1.4px;
+	text-transform: uppercase;
+	margin-bottom: var(--wp--preset--spacing--20);
+}
+
+/* Featured images keep their aspect box while loading. */
+.wp-block-post-featured-image img {
+	height: 100%;
+	object-fit: cover;
+	width: 100%;
+}
