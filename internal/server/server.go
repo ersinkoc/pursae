@@ -153,6 +153,9 @@ func (s *Server) Handler() http.Handler {
 		if s.maintenanceServe(w, r) { // Maintenance-Go: before the page cache (maintenance.go)
 			return
 		}
+		if s.headlessServe(w, r) { // HeadlessGo: delivery API, CORS and headless mode (headlessgo.go)
+			return
+		}
 		if pc := s.cache.Load(); pc != nil {
 			pc.h.ServeHTTP(w, r)
 			return
@@ -320,6 +323,7 @@ func (s *Server) routes() *gin.Engine {
 	s.registerSEOGoAdmin(admin)          // SEO-Go screens (seogo_admin.go)
 	s.registerGooike(r, admin)           // Gooike: assets and screens (gooike.go)
 	s.registerGoocommerce(r, admin)      // Goocommerce: assets and screens (goocommerce.go)
+	s.registerHeadlessGo(admin)          // HeadlessGo screens (headlessgo.go)
 	admin.GET("/customize", s.customizeScreen)
 	admin.POST("/customize", s.customizeSave)
 	admin.GET("/:screen", s.notYet)
