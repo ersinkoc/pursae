@@ -12,25 +12,35 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// A small, read-only GraphQL endpoint over the same data as the REST API:
+// A GraphQL endpoint over the same data as the REST API:
 //
-//	{ articles(filters: {title: {containsi: "go"}}, sort: "views:desc", pagination: {pageSize: 5}, locale: "en", status: PUBLISHED) {
-//	    documentId title author { name } blocks { __typename ... on ComponentBlocksQuote { text } } } }
+//	query Articles($q: String) { articles(filters: {title: {containsi: $q}}, sort: "views:desc", pagination: {pageSize: 5}, locale: "en", status: PUBLISHED) {
+//	    ...Card author { name } blocks { __typename ... on ComponentBlocksQuote { text } } } }
+//	fragment Card on Article { documentId title }
 //
-// Root fields are a collection type's plural API id in camelCase (a list), its singular one with a
-// documentId argument (one entry), a single type's singular API id, and <plural>_connection with
-// { nodes pageInfo { total page pageSize pageCount } }. Arguments mirror the REST parameters
-// (operators without the $). Variables, aliases and inline fragments are supported; mutations,
-// named fragments, directives and introspection are not. Permissions are the REST API's.
+// Root query fields are a collection type's plural API id in camelCase (a list), its singular one
+// with a documentId argument (one entry), a single type's singular API id, and
+// <plural>_connection with { nodes pageInfo { total page pageSize pageCount } }. Mutations:
+// create<Type>(data, locale, status), update<Type>(documentId, data, locale, status),
+// delete<Type>(documentId, locale), publish<Type> / unpublish<Type>(documentId, locale) (single
+// types without documentId). Arguments mirror the REST parameters (operators without the $).
+// Variables (with defaults), aliases, named and inline fragments, @include / @skip, several
+// operations with operationName, and introspection (__schema, __type, __typename) are supported,
+// so GraphiQL-type clients work. Permissions are the REST API's.
+
+// hgGQLRequest is one GraphQL request.
+type hgGQLRequest struct {
+	Query         string         `json:"query"`
+	Variables     map[string]any `json:"variables"`
+	OperationName string         `json:"operationName"`
+}
 
 func (s *Server) hgGraphQL(c *gin.Context, a *hgAuth, st hgSettings) {
-	var req struct {
-		Query     string         `json:"query"`
-		Variables map[string]any `json:"variables"`
-	}
+	var req hgGQLRequest
 	switch c.Request.Method {
 	case http.MethodGet:
 		req.Query = c.Query("query")
+		req.OperationName = c.Query("operationName")
 		if v := c.Query("variables"); v != "" {
 			_ = json.Unmarshal([]byte(v), &req.Variables)
 		}
@@ -46,26 +56,76 @@ func (s *Server) hgGraphQL(c *gin.Context, a *hgAuth, st hgSettings) {
 		hgGQLError(c, http.StatusMethodNotAllowed, "Use GET or POST")
 		return
 	}
+	status, out := s.hgGQLExecute(c, a, st, req)
+	c.Header("Cache-Control", "no-store")
+	c.JSON(status, out)
+}
+
+// hgGQLExecute runs a request and returns the HTTP status and the response document.
+func (s *Server) hgGQLExecute(c *gin.Context, a *hgAuth, st hgSettings, req hgGQLRequest) (int, map[string]any) {
+	fail := func(status int, msg string) (int, map[string]any) {
+		return status, map[string]any{"data": nil, "errors": []any{map[string]any{"message": msg}}}
+	}
 	doc, err := hgGQLParse(req.Query)
 	if err != nil {
-		hgGQLError(c, http.StatusBadRequest, err.Error())
-		return
+		return fail(http.StatusBadRequest, err.Error())
 	}
-	if doc.op == "mutation" || doc.op == "subscription" {
-		hgGQLError(c, http.StatusBadRequest, "Only queries are supported: the GraphQL endpoint is read-only")
-		return
+	op, err := doc.operation(req.OperationName)
+	if err != nil {
+		return fail(http.StatusBadRequest, err.Error())
 	}
-	ex := &hgGQLExec{s: s, c: c, a: a, st: st, vars: req.Variables}
+	if op.kind == "subscription" {
+		return fail(http.StatusBadRequest, "Subscriptions are not supported")
+	}
+	if op.kind == "mutation" && c.Request.Method == http.MethodGet {
+		return fail(http.StatusMethodNotAllowed, "Mutations need a POST request")
+	}
+	vars := map[string]any{}
+	for k, v := range op.defaults {
+		vars[k] = v
+	}
+	for k, v := range req.Variables {
+		vars[k] = v
+	}
+	ex := &hgGQLExec{s: s, c: c, a: a, st: st, vars: vars}
+	sel, err := doc.expand(op.sel, ex, 0, map[string]bool{})
+	if err != nil {
+		return fail(http.StatusBadRequest, err.Error())
+	}
+	rootType := "Query"
+	if op.kind == "mutation" {
+		rootType = "Mutation"
+	}
 	out := map[string]any{}
-	for _, f := range doc.sel {
-		v, err := ex.root(f)
+	for _, f := range hgGQLRootFlat(sel, rootType) {
+		var v any
+		var err error
+		if op.kind == "mutation" {
+			v, err = ex.mutation(f)
+		} else {
+			v, err = ex.root(f)
+		}
 		if err != nil {
-			c.JSON(http.StatusOK, map[string]any{"data": nil, "errors": []any{map[string]any{"message": err.Error(), "path": []string{f.key()}}}})
-			return
+			return http.StatusOK, map[string]any{"data": nil, "errors": []any{map[string]any{"message": err.Error(), "path": []string{f.key()}}}}
 		}
 		out[f.key()] = v
 	}
-	c.JSON(http.StatusOK, map[string]any{"data": out})
+	return http.StatusOK, map[string]any{"data": out}
+}
+
+// hgGQLRootFlat merges the root's inline fragments (on the root type, or without a condition).
+func hgGQLRootFlat(sel []*hgGQLField, rootType string) []*hgGQLField {
+	var out []*hgGQLField
+	for _, f := range sel {
+		if f.name == "..." {
+			if f.on == "" || f.on == rootType {
+				out = append(out, hgGQLRootFlat(f.sel, rootType)...)
+			}
+			continue
+		}
+		out = append(out, f)
+	}
+	return out
 }
 
 func hgGQLError(c *gin.Context, status int, msg string) {
@@ -79,6 +139,8 @@ type hgGQLField struct {
 	args        map[string]any // values; variables are hgGQLVar
 	sel         []*hgGQLField
 	on          string // inline fragment type condition (name == "...")
+	spread      string // fragment spread: the fragment's name (name == "...")
+	dirs        []hgGQLDir
 }
 
 func (f *hgGQLField) key() string {
@@ -88,12 +150,108 @@ func (f *hgGQLField) key() string {
 	return f.name
 }
 
+type hgGQLDir struct {
+	name string
+	args map[string]any
+}
+
 type hgGQLVar string
 type hgGQLEnum string
 
+type hgGQLOp struct {
+	kind, name string
+	defaults   map[string]any
+	sel        []*hgGQLField
+}
+
+type hgGQLFrag struct {
+	name, on string
+	sel      []*hgGQLField
+}
+
 type hgGQLDoc struct {
-	op  string
-	sel []*hgGQLField
+	ops   []*hgGQLOp
+	frags map[string]*hgGQLFrag
+}
+
+// operation picks the operation to run.
+func (d *hgGQLDoc) operation(name string) (*hgGQLOp, error) {
+	if name == "" {
+		if len(d.ops) != 1 {
+			return nil, fmt.Errorf("Must provide operationName if query contains multiple operations")
+		}
+		return d.ops[0], nil
+	}
+	for _, op := range d.ops {
+		if op.name == name {
+			return op, nil
+		}
+	}
+	return nil, fmt.Errorf("Unknown operation named %q", name)
+}
+
+// expand replaces fragment spreads by inline fragments and drops what @skip / @include leave out.
+func (d *hgGQLDoc) expand(sel []*hgGQLField, ex *hgGQLExec, depth int, visiting map[string]bool) ([]*hgGQLField, error) {
+	if depth > 30 {
+		return nil, fmt.Errorf("The query is nested too deeply")
+	}
+	var out []*hgGQLField
+	for _, f := range sel {
+		inc, err := ex.included(f.dirs)
+		if err != nil {
+			return nil, err
+		}
+		if !inc {
+			continue
+		}
+		if f.spread != "" {
+			fr := d.frags[f.spread]
+			if fr == nil {
+				return nil, fmt.Errorf("Unknown fragment %q", f.spread)
+			}
+			if visiting[fr.name] {
+				return nil, fmt.Errorf("Cannot spread fragment %q within itself", fr.name)
+			}
+			visiting[fr.name] = true
+			sub, err := d.expand(fr.sel, ex, depth+1, visiting)
+			delete(visiting, fr.name)
+			if err != nil {
+				return nil, err
+			}
+			out = append(out, &hgGQLField{name: "...", on: fr.on, sel: sub})
+			continue
+		}
+		cp := *f
+		cp.dirs = nil
+		if len(f.sel) > 0 {
+			sub, err := d.expand(f.sel, ex, depth+1, visiting)
+			if err != nil {
+				return nil, err
+			}
+			cp.sel = sub
+		}
+		out = append(out, &cp)
+	}
+	return out, nil
+}
+
+// included evaluates @skip(if:) and @include(if:).
+func (ex *hgGQLExec) included(dirs []hgGQLDir) (bool, error) {
+	for _, d := range dirs {
+		switch d.name {
+		case "skip", "include":
+			v, ok := ex.resolve(d.args["if"]).(bool)
+			if !ok {
+				return false, fmt.Errorf("Directive @%s needs a Boolean argument \"if\"", d.name)
+			}
+			if (d.name == "skip") == v {
+				return false, nil
+			}
+		default:
+			return false, fmt.Errorf("Unknown directive @%s", d.name)
+		}
+	}
+	return true, nil
 }
 
 type hgGQLParser struct {
@@ -103,48 +261,210 @@ type hgGQLParser struct {
 
 func hgGQLParse(src string) (*hgGQLDoc, error) {
 	p := &hgGQLParser{src: src}
-	doc := &hgGQLDoc{op: "query"}
-	p.skip()
-	if p.peek() != '{' {
-		name := p.name()
-		switch name {
-		case "query", "mutation", "subscription":
-			doc.op = name
-		default:
-			return nil, fmt.Errorf("Syntax error: expected a query")
-		}
+	doc := &hgGQLDoc{frags: map[string]*hgGQLFrag{}}
+	for {
 		p.skip()
-		if hgIsNameStart(p.peek()) {
-			p.name()
-			p.skip()
+		if p.pos >= len(p.src) {
+			break
 		}
-		if p.peek() == '(' { // variable definitions: skipped, values come from "variables"
-			depth := 0
-			for p.pos < len(p.src) {
-				ch := p.src[p.pos]
-				p.pos++
-				if ch == '(' {
-					depth++
-				} else if ch == ')' {
-					depth--
-					if depth == 0 {
-						break
-					}
+		if p.peek() == '{' {
+			sel, err := p.selection(0)
+			if err != nil {
+				return nil, err
+			}
+			doc.ops = append(doc.ops, &hgGQLOp{kind: "query", sel: sel})
+			continue
+		}
+		kw := p.name()
+		switch kw {
+		case "query", "mutation", "subscription":
+			op := &hgGQLOp{kind: kw, defaults: map[string]any{}}
+			p.skip()
+			if hgIsNameStart(p.peek()) {
+				op.name = p.name()
+				p.skip()
+			}
+			if p.peek() == '(' {
+				if err := p.varDefs(op.defaults); err != nil {
+					return nil, err
 				}
 			}
+			if _, err := p.directives(); err != nil {
+				return nil, err
+			}
+			sel, err := p.selection(0)
+			if err != nil {
+				return nil, err
+			}
+			op.sel = sel
+			doc.ops = append(doc.ops, op)
+		case "fragment":
 			p.skip()
+			name := p.name()
+			p.skip()
+			if name == "" || name == "on" || p.name() != "on" {
+				return nil, fmt.Errorf("Syntax error: expected fragment Name on Type")
+			}
+			p.skip()
+			typ := p.name()
+			if typ == "" {
+				return nil, fmt.Errorf("Syntax error: expected a type condition")
+			}
+			if _, err := p.directives(); err != nil {
+				return nil, err
+			}
+			sel, err := p.selection(0)
+			if err != nil {
+				return nil, err
+			}
+			if doc.frags[name] != nil {
+				return nil, fmt.Errorf("There can be only one fragment named %q", name)
+			}
+			doc.frags[name] = &hgGQLFrag{name: name, on: typ, sel: sel}
+		default:
+			if kw == "" {
+				return nil, fmt.Errorf("Syntax error: unexpected %q at %d", p.peek(), p.pos)
+			}
+			return nil, fmt.Errorf("Syntax error: unexpected %q", kw)
 		}
 	}
-	sel, err := p.selection(0)
-	if err != nil {
-		return nil, err
-	}
-	doc.sel = sel
-	p.skip()
-	if p.pos < len(p.src) {
-		return nil, fmt.Errorf("Syntax error: unexpected %q (only one operation is supported)", p.src[p.pos:min(len(p.src), p.pos+10)])
+	if len(doc.ops) == 0 {
+		return nil, fmt.Errorf("Syntax error: expected a query")
 	}
 	return doc, nil
+}
+
+// varDefs reads ($a: Int = 1, $b: [String!]!) and keeps the default values.
+func (p *hgGQLParser) varDefs(defaults map[string]any) error {
+	p.pos++ // (
+	for {
+		p.skip()
+		if p.peek() == ')' {
+			p.pos++
+			return nil
+		}
+		if p.pos >= len(p.src) {
+			return fmt.Errorf("Syntax error: unclosed variable definitions")
+		}
+		if err := p.expect('$'); err != nil {
+			return err
+		}
+		name := p.name()
+		if name == "" {
+			return fmt.Errorf("Syntax error: expected a variable name")
+		}
+		if err := p.expect(':'); err != nil {
+			return err
+		}
+		if err := p.typeRef(0); err != nil {
+			return err
+		}
+		p.skip()
+		if p.peek() == '=' {
+			p.pos++
+			v, err := p.value(0)
+			if err != nil {
+				return err
+			}
+			defaults[name] = hgGQLConst(v)
+		}
+		if _, err := p.directives(); err != nil {
+			return err
+		}
+	}
+}
+
+// hgGQLConst turns a parsed constant into a plain value (enums become strings).
+func hgGQLConst(v any) any {
+	switch t := v.(type) {
+	case hgGQLEnum:
+		return string(t)
+	case []any:
+		out := make([]any, len(t))
+		for i, x := range t {
+			out[i] = hgGQLConst(x)
+		}
+		return out
+	case map[string]any:
+		out := map[string]any{}
+		for k, x := range t {
+			out[k] = hgGQLConst(x)
+		}
+		return out
+	}
+	return v
+}
+
+func (p *hgGQLParser) typeRef(depth int) error {
+	if depth > 10 {
+		return fmt.Errorf("Syntax error: the type is nested too deeply")
+	}
+	p.skip()
+	if p.peek() == '[' {
+		p.pos++
+		if err := p.typeRef(depth + 1); err != nil {
+			return err
+		}
+		if err := p.expect(']'); err != nil {
+			return err
+		}
+	} else if p.name() == "" {
+		return fmt.Errorf("Syntax error: expected a type at %d", p.pos)
+	}
+	p.skip()
+	if p.peek() == '!' {
+		p.pos++
+	}
+	return nil
+}
+
+// directives reads @name(args) ...
+func (p *hgGQLParser) directives() ([]hgGQLDir, error) {
+	var out []hgGQLDir
+	for {
+		p.skip()
+		if p.peek() != '@' {
+			return out, nil
+		}
+		p.pos++
+		d := hgGQLDir{name: p.name()}
+		if d.name == "" {
+			return nil, fmt.Errorf("Syntax error: expected a directive name")
+		}
+		p.skip()
+		if p.peek() == '(' {
+			args, err := p.arguments(d.name)
+			if err != nil {
+				return nil, err
+			}
+			d.args = args
+		}
+		out = append(out, d)
+	}
+}
+
+func (p *hgGQLParser) arguments(of string) (map[string]any, error) {
+	p.pos++ // (
+	args := map[string]any{}
+	for {
+		p.skip()
+		if p.peek() == ')' {
+			p.pos++
+			return args, nil
+		}
+		k := p.name()
+		if k == "" {
+			return nil, fmt.Errorf("Syntax error in the arguments of %s", of)
+		}
+		if err := p.expect(':'); err != nil {
+			return nil, err
+		}
+		v, err := p.value(0)
+		if err != nil {
+			return nil, err
+		}
+		args[k] = v
+	}
 }
 
 func hgIsNameStart(b byte) bool { return b == '_' || (b >= 'a' && b <= 'z') || (b >= 'A' && b <= 'Z') }
@@ -216,16 +536,32 @@ func (p *hgGQLParser) selection(depth int) ([]*hgGQLField, error) {
 		if strings.HasPrefix(p.src[p.pos:], "...") {
 			p.pos += 3
 			p.skip()
-			if p.name() != "on" {
-				return nil, fmt.Errorf("Named fragments are not supported; use inline fragments (... on Type)")
+			f := &hgGQLField{name: "..."}
+			save := p.pos
+			if n := p.name(); n == "on" {
+				p.skip()
+				f.on = p.name()
+				if f.on == "" {
+					return nil, fmt.Errorf("Syntax error: expected a type condition at %d", p.pos)
+				}
+			} else if n != "" {
+				f.spread = n
+			} else {
+				p.pos = save // ... @dir { } or ... { }
 			}
-			p.skip()
-			typ := p.name()
-			sel, err := p.selection(depth + 1)
+			dirs, err := p.directives()
 			if err != nil {
 				return nil, err
 			}
-			out = append(out, &hgGQLField{name: "...", on: typ, sel: sel})
+			f.dirs = dirs
+			if f.spread == "" {
+				sel, err := p.selection(depth + 1)
+				if err != nil {
+					return nil, err
+				}
+				f.sel = sel
+			}
+			out = append(out, f)
 			continue
 		}
 		if !hgIsNameStart(p.peek()) {
@@ -237,35 +573,25 @@ func (p *hgGQLParser) selection(depth int) ([]*hgGQLField, error) {
 			p.pos++
 			p.skip()
 			f.alias, f.name = f.name, p.name()
-			p.skip()
-		}
-		if p.peek() == '(' {
-			p.pos++
-			f.args = map[string]any{}
-			for {
-				p.skip()
-				if p.peek() == ')' {
-					p.pos++
-					break
-				}
-				k := p.name()
-				if k == "" {
-					return nil, fmt.Errorf("Syntax error in the arguments of %s", f.name)
-				}
-				if err := p.expect(':'); err != nil {
-					return nil, err
-				}
-				v, err := p.value(0)
-				if err != nil {
-					return nil, err
-				}
-				f.args[k] = v
+			if f.name == "" {
+				return nil, fmt.Errorf("Syntax error: expected a field name after the alias %s", f.alias)
 			}
 			p.skip()
 		}
-		if p.peek() == '@' {
-			return nil, fmt.Errorf("Directives are not supported")
+		if p.peek() == '(' {
+			args, err := p.arguments(f.name)
+			if err != nil {
+				return nil, err
+			}
+			f.args = args
+			p.skip()
 		}
+		dirs, err := p.directives()
+		if err != nil {
+			return nil, err
+		}
+		f.dirs = dirs
+		p.skip()
 		if p.peek() == '{' {
 			sel, err := p.selection(depth + 1)
 			if err != nil {
@@ -387,6 +713,7 @@ type hgGQLExec struct {
 	a    *hgAuth
 	st   hgSettings
 	vars map[string]any
+	sch  *hgGQLSchema // built on first use
 }
 
 // resolve replaces variables in an argument value.
@@ -449,11 +776,17 @@ func hgPascal(sc *hgSchema) string {
 }
 
 func (ex *hgGQLExec) root(f *hgGQLField) (any, error) {
-	if f.name == "__typename" {
+	switch f.name {
+	case "__typename":
 		return "Query", nil
+	case "__schema":
+		return ex.intro(ex.schema().schemaObj(), f.sel), nil
+	case "__type":
+		name := hgGQLString(ex.resolve(f.args["name"]))
+		return ex.intro(ex.schema().typeObj(name), f.sel), nil
 	}
 	if strings.HasPrefix(f.name, "__") {
-		return nil, fmt.Errorf("Introspection is not supported")
+		return nil, fmt.Errorf("Cannot query field %q on type \"Query\"", f.name)
 	}
 	reg := ex.s.hgReg(ex.c)
 	name, connection := strings.CutSuffix(f.name, "_connection")
@@ -629,7 +962,7 @@ func (ex *hgGQLExec) populate(sc *hgSchema, sel []*hgGQLField) *hgPop {
 				if comp := reg.Get(cu); comp != nil {
 					var fsel []*hgGQLField
 					for _, x := range f.sel {
-						if x.name == "..." && x.on == hgPascal(comp) {
+						if x.name == "..." && (x.on == hgPascal(comp) || x.on == "") {
 							fsel = append(fsel, x.sel...)
 						} else if x.name != "..." {
 							fsel = append(fsel, x)
@@ -745,7 +1078,7 @@ func (ex *hgGQLExec) project(sc *hgSchema, obj map[string]any, sel []*hgGQLField
 	out := map[string]any{}
 	for _, f := range sel {
 		if f.name == "..." {
-			if sc != nil && f.on == hgPascal(sc) {
+			if sc != nil && (f.on == "" || f.on == hgPascal(sc)) {
 				for k, v := range ex.project(sc, obj, f.sel) {
 					out[k] = v
 				}

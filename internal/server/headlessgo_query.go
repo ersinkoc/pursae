@@ -586,6 +586,13 @@ func (q *hgQuery) field(sc *hgSchema, name string, v any, col, alias string) (st
 		}
 		return "", hgBad("Dynamic zones cannot be filtered")
 	case "relation", "media":
+		if f.MappedBy != "" {
+			m, ok := v.(map[string]any)
+			if !ok {
+				m = map[string]any{"documentId": map[string]any{"$eq": v}}
+			}
+			return q.inverseFilter(f, m, alias)
+		}
 		m, ok := v.(map[string]any)
 		if !ok {
 			// filters[author]=<id>: the related id
@@ -998,23 +1005,14 @@ func (q *hgQuery) op(expr, kind, op string, v any) (string, error) {
 	return "", hgBad("Invalid operator %s", op)
 }
 
-// orderBy compiles sort keys (top-level scalar attributes and system fields); the entry id
-// breaks ties.
+// orderBy compiles sort keys (scalar attributes, system fields, and paths through single
+// components and relations: author.name); the entry id breaks ties.
 func (q *hgQuery) orderBy(sc *hgSchema, keys []hgSortKey, alias string) (string, error) {
 	var parts []string
 	for _, k := range keys {
-		var expr string
-		if sys, ok := hgSystemFields[k.Field]; ok {
-			expr = alias + "." + sys.col
-		} else {
-			f := sc.Field(k.Field)
-			if f == nil || f.Private || f.Type == "password" || !f.scalar() || f.Type == "json" {
-				return "", hgBad("Invalid sort key %s", k.Field)
-			}
-			expr, _ = hgFieldExpr(f, q.versionCol(alias))
-			if f.Type == "text" || f.Type == "uid" || f.Type == "email" || f.Type == "enumeration" {
-				expr = "lower(" + expr + ")"
-			}
+		expr, err := q.sortExpr(sc, strings.Split(k.Field, "."), q.versionCol(alias), alias, 0)
+		if err != nil {
+			return "", err
 		}
 		if k.Desc {
 			parts = append(parts, expr+" DESC NULLS LAST")

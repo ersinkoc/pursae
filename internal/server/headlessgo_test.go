@@ -905,9 +905,9 @@ func TestHeadlessGoAdminScreens(t *testing.T) {
 func TestHeadlessGoWebhooks(t *testing.T) {
 	base, c, srv := hgSite(t)
 	ctx := context.Background()
-	saved := hgWebhookDelays
-	hgWebhookDelays = []time.Duration{0, 20 * time.Millisecond, 20 * time.Millisecond}
-	t.Cleanup(func() { hgWebhookDelays = saved })
+	saved := hgWebhookBase
+	hgWebhookBase = 20 * time.Millisecond
+	t.Cleanup(func() { hgWebhookBase = saved })
 	hgModel(t, srv)
 	full := hgNewToken(t, srv, &hgToken{Name: "Full", Kind: "full-access"})
 
@@ -1191,7 +1191,7 @@ func TestHeadlessGoGraphQL(t *testing.T) {
 	if r := gql("", `{ articles { title } }`, nil); r.Body["errors"] == nil {
 		t.Errorf("public GraphQL without permission: %s", r.Raw)
 	}
-	for _, bad := range []string{`mutation { createArticle { title } }`, `{ articles { title }`, `{ nope { id } }`, `{ __schema { types { name } } }`} {
+	for _, bad := range []string{`mutation { createArticle { title } }`, `{ articles { title }`, `{ nope { id } }`, `{ __nope { name } }`} {
 		if r := gql(full, bad, nil); r.Body["errors"] == nil {
 			t.Errorf("%s: %s", bad, r.Raw)
 		}

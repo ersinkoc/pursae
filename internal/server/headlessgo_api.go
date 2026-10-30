@@ -183,6 +183,9 @@ func (s *Server) hgAPI(c *gin.Context) {
 	case "wp":
 		s.hgWP(c, a, segs[1:], method)
 		return
+	case "upload":
+		s.hgUploadAPI(c, a, segs[1:], method)
+		return
 	}
 	sc := s.hgReg(c).ByRoute(segs[0])
 	if sc == nil {
@@ -199,6 +202,8 @@ func (s *Server) hgAPI(c *gin.Context) {
 			s.hgDelete(c, a, sc, "")
 		case len(segs) == 2 && method == http.MethodPost && (segs[1] == "publish" || segs[1] == "unpublish"):
 			s.hgPublishAPI(c, a, sc, "", segs[1])
+		case len(segs) == 2 && method == http.MethodPost && segs[1] == "schedule":
+			s.hgScheduleAPI(c, a, sc, "")
 		default:
 			hgErr(c, http.StatusMethodNotAllowed, "MethodNotAllowedError", "Method Not Allowed", nil)
 		}
@@ -217,6 +222,8 @@ func (s *Server) hgAPI(c *gin.Context) {
 		s.hgDelete(c, a, sc, segs[1])
 	case len(segs) == 3 && method == http.MethodPost && (segs[2] == "publish" || segs[2] == "unpublish"):
 		s.hgPublishAPI(c, a, sc, segs[1], segs[2])
+	case len(segs) == 3 && method == http.MethodPost && segs[2] == "schedule":
+		s.hgScheduleAPI(c, a, sc, segs[1])
 	default:
 		hgErr(c, http.StatusMethodNotAllowed, "MethodNotAllowedError", "Method Not Allowed", nil)
 	}
@@ -626,6 +633,61 @@ func (s *Server) hgPublishAPI(c *gin.Context, a *hgAuth, sc *hgSchema, doc, acti
 	c.JSON(http.StatusOK, map[string]any{"data": obj, "meta": map[string]any{}})
 }
 
+// hgScheduleAPI is POST /{plural}/{documentId}/schedule (needs update) with {"data": {"publishAt":
+// "<RFC 3339>"|null, "unpublishAt": …}}: when the scheduler publishes and unpublishes the
+// ?locale= version. null (or leaving a key out) clears it.
+func (s *Server) hgScheduleAPI(c *gin.Context, a *hgAuth, sc *hgSchema, doc string) {
+	if !a.can(sc.UID, "update") || a.Kind == "preview" {
+		hgForbidden(c, a)
+		return
+	}
+	data, ok := hgBody(c)
+	if !ok {
+		return
+	}
+	if sc.IsSingle() {
+		doc = s.hgSingleDoc(c, sc.UID)
+	}
+	loc, err := s.hgEntryLocale(c, sc, c.Query("locale"))
+	if err != nil {
+		hgErr(c, http.StatusBadRequest, "ValidationError", err.Error(), nil)
+		return
+	}
+	var at [2]*time.Time
+	for i, k := range []string{"publishAt", "unpublishAt"} {
+		v, _ := data[k].(string)
+		if v == "" {
+			continue
+		}
+		t, ok := hgParseTime(v)
+		if !ok {
+			hgErr(c, http.StatusBadRequest, "ValidationError", "Invalid date for "+k, nil)
+			return
+		}
+		at[i] = &t
+	}
+	e, err := s.hgSetSchedule(c, sc, doc, loc, at[0], at[1])
+	if err != nil {
+		if errors.Is(err, errHGNotFound) {
+			hgNotFound(c)
+			return
+		}
+		hgErr(c, http.StatusBadRequest, "ValidationError", err.Error(), nil)
+		return
+	}
+	out := map[string]any{"documentId": e.DocumentID, "publishAt": nil, "unpublishAt": nil}
+	if sc.Localized {
+		out["locale"] = e.Locale
+	}
+	if e.PublishAt != nil {
+		out["publishAt"] = hgTime(*e.PublishAt)
+	}
+	if e.UnpublishAt != nil {
+		out["unpublishAt"] = hgTime(*e.UnpublishAt)
+	}
+	c.JSON(http.StatusOK, map[string]any{"data": out, "meta": map[string]any{}})
+}
+
 // Serialization --------------------------------------------------------------------------------------
 
 type hgSer struct {
@@ -635,6 +697,7 @@ type hgSer struct {
 	a     *hgAuth
 	p     *hgReadParams
 	media map[int64]*store.Attachment
+	cur   *hgEntry // the entry being serialized (inverse relations are looked up from it)
 }
 
 func (s *Server) hgSerializer(c *gin.Context, a *hgAuth, p *hgReadParams) *hgSer {
@@ -647,7 +710,10 @@ func (h *hgSer) entry(sc *hgSchema, e *hgEntry, pop *hgPop, fields []string) (ma
 	if data == nil {
 		data = e.Data
 	}
+	saved := h.cur
+	h.cur = e
 	out, err := h.object(sc, data, pop, fields, 0)
+	h.cur = saved
 	if err != nil {
 		return nil, err
 	}
@@ -739,6 +805,12 @@ func (h *hgSer) object(sc *hgSchema, data map[string]any, pop *hgPop, fields []s
 		}
 		if depth > 8 {
 			return nil, hgBad("Populate is nested too deeply")
+		}
+		if f.MappedBy != "" {
+			if h.cur == nil {
+				continue
+			}
+			v = hgAnyStrings(h.s.hgInverseIDs(h.c, f, h.cur.DocumentID, h.cur.Locale, h.p.Status))
 		}
 		val, keep, err := h.populated(sc, f, v, sub, depth)
 		if err != nil {
@@ -968,7 +1040,10 @@ func (h *hgSer) entryAt(sc *hgSchema, e *hgEntry, pop *hgPop, depth int) (map[st
 	if data == nil {
 		data = e.Data
 	}
+	saved := h.cur
+	h.cur = e
 	out, err := h.object(sc, data, pop, pop.Fields, depth)
+	h.cur = saved
 	if err != nil {
 		return nil, err
 	}

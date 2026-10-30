@@ -35,6 +35,8 @@ type hgField struct {
 	Allowed     []string `json:"allowedTypes,omitempty"` // media: images, videos, audios, files
 	Relation    string   `json:"relation,omitempty"`     // oneToOne, oneToMany, manyToOne, manyToMany
 	Target      string   `json:"target,omitempty"`       // relation: a type uid or wp:post, wp:page, wp:user
+	InversedBy  string   `json:"inversedBy,omitempty"`   // relation (owning side): the inverse field on the target type
+	MappedBy    string   `json:"mappedBy,omitempty"`     // relation (inverse side): the owning field on the target type; nothing is stored
 	TargetField string   `json:"targetField,omitempty"`  // uid: the text field it is derived from
 	Component   string   `json:"component,omitempty"`    // component: its uid
 	Repeatable  bool     `json:"repeatable,omitempty"`   // component: a list
@@ -49,6 +51,9 @@ type hgField struct {
 	// RenamedFrom is only sent by the builder: the previous name of a renamed field, so the
 	// stored entry values move with it. It is never stored.
 	RenamedFrom string `json:"renamedFrom,omitempty"`
+	// EnumRenames is only sent by the builder: renamed enumeration values (old -> new), so the
+	// stored values follow. It is never stored.
+	EnumRenames map[string]string `json:"enumRenames,omitempty"`
 }
 
 // hgSchema is a content type or a component.
@@ -270,7 +275,7 @@ var hgReservedFields = map[string]bool{"id": true, "documentId": true, "document
 	"__component": true, "meta": true, "data": true, "populate": true, "filters": true, "sort": true, "fields": true, "pagination": true}
 
 // hgReservedRoutes are path segments of the delivery API that are not content types.
-var hgReservedRoutes = map[string]bool{"wp": true, "graphql": true, "preview": true, "schemas": true, "content-types": true, "tokens": true, "webhooks": true}
+var hgReservedRoutes = map[string]bool{"wp": true, "graphql": true, "upload": true, "preview": true, "schemas": true, "content-types": true, "tokens": true, "webhooks": true}
 
 // hgSchemaError lists every problem of a schema.
 type hgSchemaError []string
@@ -327,6 +332,17 @@ func hgNormalizeSchema(sc *hgSchema) {
 		}
 		if f.Type != "relation" {
 			f.Relation, f.Target = "", ""
+		}
+		f.InversedBy, f.MappedBy = strings.TrimSpace(f.InversedBy), strings.TrimSpace(f.MappedBy)
+		if f.Type != "relation" || sc.IsComponent() || strings.HasPrefix(f.Target, "wp:") {
+			f.InversedBy, f.MappedBy = "", ""
+		}
+		if f.MappedBy != "" {
+			// The inverse side stores nothing: its values are the owning entries that point here.
+			f.InversedBy, f.Required, f.Unique, f.Default, f.Min, f.Max = "", false, false, nil, nil, nil
+		}
+		if f.Type != "enumeration" {
+			f.EnumRenames = nil
 		}
 		if f.Type != "component" {
 			f.Component, f.Repeatable = "", false
@@ -510,6 +526,12 @@ func hgValidateSchema(reg *hgRegistry, sc, prev *hgSchema) error {
 			} else if t := reg.Get(f.Target); (t == nil || t.IsComponent()) && f.Target != sc.UID {
 				add("Field %s: the relation's target %q is not a content type.", label, f.Target)
 			}
+			if f.InversedBy != "" && (!hgFieldNameRe.MatchString(f.InversedBy) || hgReservedFields[f.InversedBy]) {
+				add("Field %s: the inverse field name %q is not valid: use letters, digits and underscores, starting with a letter.", label, f.InversedBy)
+			}
+			if f.InversedBy != "" && f.Target == sc.UID && f.InversedBy == f.Name {
+				add("Field %s: the inverse field needs another name.", label)
+			}
 		case "uid":
 			if f.TargetField != "" {
 				tf := sc.Field(f.TargetField)
@@ -585,31 +607,50 @@ func hgSchemaUsers(reg *hgRegistry, uid string) []*hgSchema {
 // Saving --------------------------------------------------------------------------------------------
 
 // hgSaveSchema validates and stores a schema, then migrates the stored entries: renamed fields move
-// their values, removed fields are dropped (also inside components wherever the component is used),
-// and the i18n switch converts the entries' locales.
+// their values, removed fields are dropped, fields whose type (or format, cardinality, enumeration
+// values…) changed have their values converted (hgConvertValue) — also inside components wherever
+// the component is used — and the i18n switch converts the entries' locales. The inverse sides of
+// bidirectional relations are kept in step on the other types (hgSyncInverse).
 func (s *Server) hgSaveSchema(ctx context.Context, sc *hgSchema) error {
 	hgNormalizeSchema(sc)
 	reg := s.hgReg(ctx)
 	prev := reg.Get(sc.UID)
-	if err := hgValidateSchema(reg, sc, prev); err != nil {
-		return err
-	}
 	renames := map[string]string{} // old -> new
 	for _, f := range sc.Fields {
 		if f.RenamedFrom != "" && prev != nil && prev.Field(f.RenamedFrom) != nil && sc.Field(f.RenamedFrom) == nil {
 			renames[f.RenamedFrom] = f.Name
 		}
 	}
+	others, err := hgSyncInverse(reg, sc, renames)
+	if err != nil {
+		return err
+	}
+	if err := hgValidateSchema(reg, sc, prev); err != nil {
+		return err
+	}
 	var removed []string
+	convs := map[string]hgConversion{} // new field name -> conversion of its stored values
 	if prev != nil {
 		for _, pf := range prev.Fields {
 			if sc.Field(pf.Name) == nil && renames[pf.Name] == "" {
 				removed = append(removed, pf.Name)
 			}
 		}
+		for i := range sc.Fields {
+			f := &sc.Fields[i]
+			old := prev.Field(f.Name)
+			if f.RenamedFrom != "" && renames[f.RenamedFrom] == f.Name {
+				old = prev.Field(f.RenamedFrom)
+			}
+			if old != nil && hgNeedsConversion(old, f) {
+				from, to := *old, *f
+				convs[f.Name] = hgConversion{from: &from, to: &to}
+			}
+		}
 	}
 	for i := range sc.Fields {
 		sc.Fields[i].RenamedFrom = ""
+		sc.Fields[i].EnumRenames = nil
 	}
 	raw, err := json.Marshal(sc)
 	if err != nil {
@@ -624,7 +665,16 @@ func (s *Server) hgSaveSchema(ctx context.Context, sc *hgSchema) error {
 		ON CONFLICT (uid) DO UPDATE SET schema = EXCLUDED.schema, updated_at = now()`, sc.UID, sc.Kind, raw); err != nil {
 		return err
 	}
-	if prev != nil && (len(renames) > 0 || len(removed) > 0) {
+	for _, o := range others {
+		oraw, err := json.Marshal(o)
+		if err != nil {
+			return err
+		}
+		if _, err := tx.Exec(ctx, `UPDATE hg_schemas SET schema = $2, updated_at = now() WHERE uid = $1`, o.UID, oraw); err != nil {
+			return err
+		}
+	}
+	if prev != nil && (len(renames) > 0 || len(removed) > 0 || len(convs) > 0) {
 		fix := func(obj map[string]any) {
 			for o, n := range renames {
 				if v, ok := obj[o]; ok {
@@ -634,6 +684,17 @@ func (s *Server) hgSaveSchema(ctx context.Context, sc *hgSchema) error {
 			}
 			for _, r := range removed {
 				delete(obj, r)
+			}
+			for name, cv := range convs {
+				v, ok := obj[name]
+				if !ok {
+					continue
+				}
+				if nv, keep := hgConvertValue(cv.from, cv.to, v); keep {
+					obj[name] = nv
+				} else {
+					delete(obj, name)
+				}
 			}
 		}
 		if err := hgMigrateEntries(ctx, tx, reg, sc.UID, fix); err != nil {
@@ -899,11 +960,45 @@ func (s *Server) hgImportSchemas(ctx context.Context, raw []byte) (int, error) {
 			return n, fmt.Errorf("%s: %v", sc.DisplayName, err)
 		}
 	}
+	// Complete, but without the bidirectional links: inverse fields are recreated from their owning
+	// side in the last pass, whatever order the types come in.
+	inverse := map[string]map[string]string{} // type uid -> owning field -> inverse field name
 	for _, sc := range ex.Types {
-		if err := s.hgSaveSchema(ctx, sc); err != nil {
+		full := *sc
+		full.Fields = nil
+		for _, f := range sc.Fields {
+			if f.MappedBy != "" {
+				continue
+			}
+			if f.InversedBy != "" {
+				if inverse[sc.UID] == nil {
+					inverse[sc.UID] = map[string]string{}
+				}
+				inverse[sc.UID][f.Name] = f.InversedBy
+				f.InversedBy = ""
+			}
+			full.Fields = append(full.Fields, f)
+		}
+		if err := s.hgSaveSchema(ctx, &full); err != nil {
 			return n, fmt.Errorf("%s: %v", sc.DisplayName, err)
 		}
 		n++
+	}
+	for _, sc := range ex.Types {
+		links := inverse[sc.UID]
+		cur := s.hgReg(ctx).Get(sc.UID)
+		if len(links) == 0 || cur == nil {
+			continue
+		}
+		upd := hgCopySchema(cur)
+		for i := range upd.Fields {
+			if inv, ok := links[upd.Fields[i].Name]; ok {
+				upd.Fields[i].InversedBy = inv
+			}
+		}
+		if err := s.hgSaveSchema(ctx, upd); err != nil {
+			return n, fmt.Errorf("%s: %v", sc.DisplayName, err)
+		}
 	}
 	return n, nil
 }

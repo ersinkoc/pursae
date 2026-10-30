@@ -38,6 +38,11 @@ type hgEntry struct {
 	UpdatedAt   time.Time
 	CreatedBy   int64
 	UpdatedBy   int64
+	// Scheduled publishing (types with draft & publish): the scheduler publishes the draft at
+	// PublishAt and unpublishes at UnpublishAt; ScheduleError says why a scheduled publication failed.
+	PublishAt     *time.Time
+	UnpublishAt   *time.Time
+	ScheduleError string
 }
 
 // Status is draft (never published), published, or modified (published, with newer draft changes).
@@ -61,12 +66,13 @@ func (e *hgEntry) Version(status string) map[string]any {
 	return e.Published
 }
 
-const hgEntryCols = `id, document_id, type_uid, locale, data, published_data, published_at, created_at, updated_at, created_by, updated_by`
+const hgEntryCols = `id, document_id, type_uid, locale, data, published_data, published_at, created_at, updated_at, created_by, updated_by, publish_at, unpublish_at, schedule_error`
 
 func hgScanEntry(row pgx.Row) (*hgEntry, error) {
 	e := &hgEntry{}
 	var d, p []byte
-	if err := row.Scan(&e.ID, &e.DocumentID, &e.TypeUID, &e.Locale, &d, &p, &e.PublishedAt, &e.CreatedAt, &e.UpdatedAt, &e.CreatedBy, &e.UpdatedBy); err != nil {
+	if err := row.Scan(&e.ID, &e.DocumentID, &e.TypeUID, &e.Locale, &d, &p, &e.PublishedAt, &e.CreatedAt, &e.UpdatedAt, &e.CreatedBy, &e.UpdatedBy,
+		&e.PublishAt, &e.UnpublishAt, &e.ScheduleError); err != nil {
 		return nil, err
 	}
 	_ = json.Unmarshal(d, &e.Data)
@@ -166,6 +172,7 @@ type hgCoercer struct {
 	required bool // check required fields (off for drafts of a draft & publish type)
 	create   bool
 	errs     hgValidationError
+	inv      map[string]any // input of the root object's inverse relation fields (stored on the owners)
 }
 
 func (h *hgCoercer) fail(path []string, format string, a ...any) {
@@ -196,6 +203,16 @@ func (h *hgCoercer) object(sc *hgSchema, in, old map[string]any, path []string, 
 		f := &sc.Fields[i]
 		fp := append(append([]string(nil), path...), f.Name)
 		v, given := in[f.Name]
+		if f.MappedBy != "" { // an inverse relation: nothing is stored here
+			delete(out, f.Name)
+			if given && isRoot {
+				if h.inv == nil {
+					h.inv = map[string]any{}
+				}
+				h.inv[f.Name] = v
+			}
+			continue
+		}
 		if !given {
 			if _, had := out[f.Name]; !had && (h.create || !isRoot) && f.Default != nil {
 				if dv, ok := h.value(sc, f, f.Default, nil, fp); ok && dv != nil {
@@ -939,6 +956,7 @@ func (s *Server) hgSaveEntry(ctx context.Context, sc *hgSchema, doc string, inpu
 		old = existing.Data
 	}
 	data := h.object(sc, input, old, nil, true)
+	invChanges := h.inverse(sc, doc, o.Locale)
 	if len(h.errs) > 0 {
 		return nil, nil, h.errs
 	}
@@ -968,6 +986,17 @@ func (s *Server) hgSaveEntry(ctx context.Context, sc *hgSchema, doc string, inpu
 	if err != nil {
 		return nil, nil, err
 	}
+	if err := s.hgApplyInverse(ctx, doc, invChanges); err != nil {
+		return nil, nil, err
+	}
+	action := "save"
+	if existing == nil {
+		action = "create"
+	}
+	if publish && sc.DraftAndPublish {
+		action = "publish"
+	}
+	s.hgRecordVersion(ctx, e, action, o.UserID)
 	events := []string{"entry.update"}
 	if existing == nil {
 		events = []string{"entry.create"}
@@ -989,8 +1018,12 @@ func (s *Server) hgPublishEntry(ctx context.Context, sc *hgSchema, doc, locale s
 	if len(h.errs) > 0 {
 		return nil, h.errs
 	}
-	return hgScanEntry(s.store.Pool.QueryRow(ctx, `UPDATE hg_entries SET published_data = data, published_at = now(), updated_by = $2
+	pe, err := hgScanEntry(s.store.Pool.QueryRow(ctx, `UPDATE hg_entries SET published_data = data, published_at = now(), updated_by = $2, schedule_error = ''
 		WHERE id = $1 RETURNING `+hgEntryCols, e.ID, userID))
+	if err == nil {
+		s.hgRecordVersion(ctx, pe, "publish", userID)
+	}
+	return pe, err
 }
 
 // hgUnpublishEntry keeps only the draft.
@@ -1003,17 +1036,19 @@ func (s *Server) hgUnpublishEntry(ctx context.Context, sc *hgSchema, doc, locale
 	if err != nil {
 		return nil, errHGNotFound
 	}
+	s.hgRecordVersion(ctx, e, "unpublish", 0)
 	return e, nil
 }
 
 // hgDiscardDraft resets the draft to the published version.
 func (s *Server) hgDiscardDraft(ctx context.Context, sc *hgSchema, doc, locale string) error {
-	tag, err := s.store.Pool.Exec(ctx, `UPDATE hg_entries SET data = published_data, updated_at = now()
-		WHERE type_uid = $1 AND document_id = $2 AND locale = $3 AND published_data IS NOT NULL`, sc.UID, doc, locale)
-	if err == nil && tag.RowsAffected() == 0 {
+	e, err := hgScanEntry(s.store.Pool.QueryRow(ctx, `UPDATE hg_entries SET data = published_data, updated_at = now()
+		WHERE type_uid = $1 AND document_id = $2 AND locale = $3 AND published_data IS NOT NULL RETURNING `+hgEntryCols, sc.UID, doc, locale))
+	if err != nil {
 		return errHGNotFound
 	}
-	return err
+	s.hgRecordVersion(ctx, e, "discard", 0)
+	return nil
 }
 
 // hgDeleteEntries deletes a document's version in one locale, or in every locale when locale is
@@ -1038,6 +1073,10 @@ func (s *Server) hgDeleteEntries(ctx context.Context, sc *hgSchema, doc, locale 
 	}
 	if len(out) == 0 {
 		return nil, errHGNotFound
+	}
+	rows.Close()
+	if err := s.hgUnlinkDocument(ctx, sc.UID, doc); err != nil {
+		return out, err
 	}
 	return out, nil
 }
