@@ -260,3 +260,61 @@ func TestGooExtGiftCards(t *testing.T) {
 		t.Errorf("account gift cards: %s", out)
 	}
 }
+
+// Refunds of an order paid partly by a gift card credit the card back: a partial refund restores the
+// same share of what the card paid, the full refund restores the rest, each with an activity row.
+func TestGooExtGiftCardsPartialRefund(t *testing.T) {
+	_, _, srv := gooSite(t)
+	ctx := context.Background()
+	gxTestGateway(t, srv)
+	if err := srv.gooSetExtension(ctx, gcKey, true); err != nil {
+		t.Fatal(err)
+	}
+	lamp := gooMakeSimple(t, srv, "Lamp", 100, func(p *gooProduct) { p.Virtual = true })
+	card := &gcCard{Initial: 30, Recipient: "r@example.test", Sender: "Shop"}
+	if err := srv.gcCreate(ctx, card, 1, "test"); err != nil {
+		t.Fatal(err)
+	}
+	c := gooTestCtx()
+	cart := srv.gooCartFor(c)
+	cart.sess.Data.Customer.Billing = map[string]string{"country": "US", "state": "CA", "postcode": "90210", "email": "buyer@example.test"}
+	if _, err := cart.Add(ctx, lamp.ID, 1, 0, nil, nil, nil); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := srv.gcApply(c, card.Code); err != nil {
+		t.Fatal(err)
+	}
+	o, errs := gxCheckout(t, srv, c, "goo_test")
+	if len(errs) > 0 || o == nil {
+		t.Fatalf("checkout: %v", errs)
+	}
+	gooAlmost(t, "charged", o.Total, 70)
+	if g, _ := srv.gcGet(ctx, card.ID); g.Balance != 0 || g.Status != "redeemed" {
+		t.Fatalf("card after the order: %v %s", g.Balance, g.Status)
+	}
+	// Half of the charge refunded: half of the 30 comes back.
+	if _, err := srv.gooCreateRefund(ctx, o, 35, "half", nil, false, false, 1); err != nil {
+		t.Fatal(err)
+	}
+	if g, _ := srv.gcGet(ctx, card.ID); g.Balance != 15 || g.Status != "active" {
+		t.Errorf("card after the partial refund: %v %s", g.Balance, g.Status)
+	}
+	// The rest: the order becomes refunded and the card gets the other 15, not 30.
+	o, _ = srv.gooGetOrder(ctx, o.ID)
+	if _, err := srv.gooCreateRefund(ctx, o, 35, "rest", nil, false, false, 1); err != nil {
+		t.Fatal(err)
+	}
+	if g, _ := srv.gcGet(ctx, card.ID); g.Balance != 30 {
+		t.Errorf("card after the full refund: %v", g.Balance)
+	}
+	refunds := 0
+	for _, a := range srv.gcActivities(ctx, card.ID) {
+		if a.Type == "refunded" && a.OrderID == o.ID {
+			refunds++
+			gooAlmost(t, "credited", a.Amount, 15)
+		}
+	}
+	if refunds != 2 {
+		t.Errorf("refund activity rows: %d", refunds)
+	}
+}

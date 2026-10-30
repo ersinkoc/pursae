@@ -9,6 +9,7 @@ import (
 	"html"
 	"html/template"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"net/mail"
 	"os"
@@ -313,8 +314,10 @@ func paoProductFields(s *Server, c *gin.Context, p *gooProduct) template.HTML {
 			}
 			fmt.Fprintf(&b, `<textarea class="input-text wc-pao-addon-field wc-pao-addon-custom-textarea" rows="4" cols="20" name="%s" id="%s"%s%s%s></textarea>`, esc(name), esc(name), data(paoAdjusted(a), a.PriceType), req, attrs)
 		case "file_upload":
-			fmt.Fprintf(&b, `<input type="file" class="wc-pao-addon-file-upload input-text wc-pao-addon-field" data-target="%s" data-upload="%s"%s> <small>(max file size %d MB)</small><input type="hidden" name="%s" value=""%s>`,
-				esc(name), esc(s.links(c).HomeURL("/")+"?goo-ajax=addon_upload"), data(paoAdjusted(a), a.PriceType), max(s.gooExtInt(paoKey, "max_upload_mb"), 1), esc(name), req)
+			// The file input posts with the form (multipart) when scripts are off; the script uploads it
+			// right away instead and keeps only the hidden field's URL.
+			fmt.Fprintf(&b, `<input type="file" name="%s" class="wc-pao-addon-file-upload input-text wc-pao-addon-field" data-target="%s" data-upload="%s"%s%s> <small>(max file size %d MB)</small><input type="hidden" name="%s" value="">`,
+				esc(name), esc(name), esc(s.links(c).HomeURL("/")+"?goo-ajax=addon_upload"), data(paoAdjusted(a), a.PriceType), req, max(s.gooExtInt(paoKey, "max_upload_mb"), 1), esc(name))
 		case "custom_price":
 			attrs := ` min="0"`
 			if a.Restrictions && a.Min > 0 {
@@ -369,7 +372,7 @@ if(type==='percentage_based')opt+=base*price/100*qty;else if(type==='flat_fee')o
 tot.innerHTML=opt?'<div class="product-addon-totals"><ul><li><div class="wc-pao-col1"><strong>Options total</strong></div><div class="wc-pao-col2"><strong>'+money(opt)+'</strong></div></li><li class="wc-pao-subtotal-line"><div class="wc-pao-col1"><strong>Grand total</strong></div><div class="wc-pao-col2"><strong class="price amount">'+money(base*qty+opt)+'</strong></div></li></ul></div>':''}
 box.querySelectorAll('input[type=file].wc-pao-addon-file-upload').forEach(function(f){f.addEventListener('change',function(){if(!f.files.length)return;var d=new FormData();
 d.append('file',f.files[0]);d.append('goo_module','product_addons');fetch(f.dataset.upload,{method:'POST',body:d,credentials:'same-origin'}).then(function(r){return r.json()}).then(function(r){
-var h=form.querySelector('input[type=hidden][name="'+f.dataset.target+'"]');if(r.url){h.value=r.url;h.dataset.price=f.dataset.price;calc()}else{alert(r.error||'Upload failed');f.value=''}})})});
+var h=form.querySelector('input[type=hidden][name="'+f.dataset.target+'"]');if(r.url){h.value=r.url;h.dataset.price=f.dataset.price;f.removeAttribute('name');calc()}else{alert(r.error||'Upload failed');f.value=''}})})});
 form.addEventListener('change',calc);form.addEventListener('input',calc);calc()})();</script>`
 
 // paoValues reads the posted values of a field.
@@ -406,6 +409,10 @@ func paoAddToCart(s *Server, ctx context.Context, p *gooProduct, qty int, form m
 	}
 	if form == nil {
 		form = map[string][]string{}
+	}
+	form, err := s.paoFormUploadsMpf(ctx, p, addons, form)
+	if err != nil {
+		return err
 	}
 	var chosen []any
 	add := func(a paoAddon, value, display string, price float64, priceType string) {
@@ -591,6 +598,49 @@ func (s *Server) paoStoreUpload(c *gin.Context) (string, string, error) {
 	if err != nil {
 		return "", "", fmt.Errorf("No file was uploaded.")
 	}
+	return s.paoSaveUploadMpf(c, fh)
+}
+
+// paoFormUploadsMpf stores the files of file upload add-ons posted with the add-to-cart form itself
+// (multipart, no script) and puts their URLs in the form, as the AJAX upload would have. A field that
+// already holds an uploaded file's URL keeps it.
+func (s *Server) paoFormUploadsMpf(ctx context.Context, p *gooProduct, addons []paoAddon, form map[string][]string) (map[string][]string, error) {
+	cart := gooCartFromCtx(ctx)
+	if cart == nil || cart.c == nil || cart.c.Request == nil || cart.c.Request.MultipartForm == nil {
+		return form, nil
+	}
+	files := cart.c.Request.MultipartForm.File
+	var out map[string][]string
+	for i, a := range addons {
+		if a.Type != "file_upload" {
+			continue
+		}
+		name := paoFieldName(p.ID, a, i)
+		if len(paoValues(form, name, false)) > 0 || len(files[name]) == 0 || files[name][0].Filename == "" {
+			continue
+		}
+		url, _, err := s.paoSaveUploadMpf(cart.c, files[name][0])
+		if err != nil {
+			return form, gooCartErr("&quot;%s&quot;: %s", html.EscapeString(a.Name), html.EscapeString(err.Error()))
+		}
+		if out == nil {
+			out = make(map[string][]string, len(form)+1)
+			for k, v := range form {
+				out[k] = v
+			}
+		}
+		out[name] = []string{url}
+	}
+	if out == nil {
+		return form, nil
+	}
+	return out, nil
+}
+
+// paoSaveUploadMpf validates an uploaded file (size, allowed extension) and saves it under
+// uploads/goocommerce_uploads/<random>/: its URL and clean name.
+func (s *Server) paoSaveUploadMpf(c *gin.Context, fh *multipart.FileHeader) (string, string, error) {
+	limit := int64(max(s.gooExtInt(paoKey, "max_upload_mb"), 1)) << 20
 	if fh.Size > limit {
 		return "", "", fmt.Errorf("The file is too large (maximum %d MB).", limit>>20)
 	}

@@ -322,6 +322,7 @@ func (api *restAPI) listPosts(c *gin.Context, r *restRequest, typ string) {
 	if ids, ok := r.IDs(c, "exclude"); ok {
 		q.ExcludeID = ids
 	}
+	q.ExcludeID = append(q.ExcludeID, s.gooListingExclude(withPluginUser(c.Request.Context(), u), "post")...) // Goocommerce Memberships
 	if ids, ok := r.IDs(c, "author"); ok && len(ids) > 0 {
 		q.AuthorID = ids[0]
 	}

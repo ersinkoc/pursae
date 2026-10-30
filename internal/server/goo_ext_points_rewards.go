@@ -322,7 +322,12 @@ func (s *Server) gptsRedeemable(ctx context.Context, cart *gooCart, userID int64
 		base += cart.CartContentsTax
 	}
 	discount = min(discount, base)
-	if maxD := s.gooExtFloat(gptsKey, "max_discount"); maxD > 0 {
+	// Per-product / per-category maximums: each line contributes at most its own maximum.
+	if itemsCap, limited := s.gptsItemsCapMaxd(ctx, cart); limited {
+		discount = min(discount, itemsCap)
+	}
+	// The cart maximum: a fixed amount or a percentage of the cart ("10%").
+	if maxD, ok := gptsOverride(s.gooExtString(gptsKey, "max_discount"), base); ok && maxD > 0 {
 		discount = min(discount, maxD)
 	}
 	if pct := s.gooExtFloat(gptsKey, "max_points_discount_percent"); pct > 0 {
@@ -493,7 +498,7 @@ func gptsFields() []gooField {
 		{ID: "redeem_points_amount", Title: "Redemption Conversion Rate: value", Type: "price", Default: "1", Desc: "…are worth this much discount (e.g. 100 points = $1)."},
 		{ID: "partial_redemption", Title: "Partial Redemption", Type: "checkbox", Default: false, Desc: "Enable partial redemption (lets users enter how many points they wish to apply to the order)"},
 		{ID: "min_discount", Title: "Minimum Points Discount", Type: "price", Default: "", Desc: "Set the minimum discount amount that can be redeemed on the cart. Leave blank for no minimum."},
-		{ID: "max_discount", Title: "Maximum Points Discount", Type: "price", Default: "", Desc: "Set the maximum discount amount that can be redeemed on the cart. Leave blank for no maximum."},
+		{ID: "max_discount", Title: "Maximum Points Discount", Type: "text", Default: "", Desc: "Set the maximum discount that can be redeemed on the cart: a fixed amount or a percentage of the cart (e.g. 10%). Leave blank for no maximum."},
 		{ID: "max_points_discount_percent", Title: "Maximum Product Points Discount (%)", Type: "number", Default: "", Min: "0", Step: "any", Desc: "The maximum percentage of the order the points discount may cover. Leave blank for no limit."},
 		{ID: "points_label_singular", Title: "Points Label (singular)", Type: "text", Default: "Point"},
 		{ID: "points_label_plural", Title: "Points Label (plural)", Type: "text", Default: "Points"},
@@ -758,8 +763,18 @@ func (s *Server) gptsAdmin(c *gin.Context) {
 					}
 				}
 			}
+			maxd := map[string]any{}
+			for k, v := range c.Request.PostForm {
+				if strings.HasPrefix(k, "cat_max_discount[") && len(v) > 0 {
+					id := strings.TrimSuffix(strings.TrimPrefix(k, "cat_max_discount["), "]")
+					if _, ok := gptsOverride(v[0], 0); ok {
+						maxd[id] = strings.TrimSpace(v[0])
+					}
+				}
+			}
 			vals := s.gooExtSettings(gptsKey)
 			vals["category_points"] = m
+			vals["category_max_discount"] = maxd
 			if err := s.gooSetOpts(ctx, map[string]any{"ext_" + gptsKey + "_settings": vals}); err != nil {
 				gxaAdminRedirect(c, "points-and-rewards", "tab=categories", err.Error(), true)
 				return
@@ -808,11 +823,14 @@ func (s *Server) gptsAdmin(c *gin.Context) {
 	case "categories":
 		cats, _, _ := s.store.QueryTerms(ctx, store.TermQuery{Taxonomy: "product_cat", OrderBy: "name", PerPage: 500})
 		m, _ := s.gooExtSettings(gptsKey)["category_points"].(map[string]any)
+		md, _ := s.gooExtSettings(gptsKey)["category_max_discount"].(map[string]any)
 		b.WriteString(`<form method="post" action="/wp-admin/goocommerce?page=points-and-rewards"><input type="hidden" name="_wpnonce" value="` + nonce + `"><input type="hidden" name="points_action" value="categories">` +
 			`<p>Points earned for products in a category: a fixed number of points or a percentage of the price (e.g. 200%). A product's own setting takes precedence. Leave blank to use the default.</p>` +
-			`<table class="wp-list-table widefat fixed striped"><thead><tr><th>Category</th><th>Points earned</th></tr></thead><tbody>`)
+			`<p>Maximum points discount: the most a product of the category may be discounted with points, a fixed amount or a percentage of its price (e.g. 50%).</p>` +
+			`<table class="wp-list-table widefat fixed striped"><thead><tr><th>Category</th><th>Points earned</th><th>Maximum points discount</th></tr></thead><tbody>`)
 		for _, t := range cats {
-			b.WriteString(`<tr><td>` + gooEsc(t.Name) + `</td><td><input type="text" name="cat_points[` + itoa64(t.ID) + `]" value="` + gooEsc(gxaStr(m, itoa64(t.ID))) + `" placeholder="Default"></td></tr>`)
+			b.WriteString(`<tr><td>` + gooEsc(t.Name) + `</td><td><input type="text" name="cat_points[` + itoa64(t.ID) + `]" value="` + gooEsc(gxaStr(m, itoa64(t.ID))) + `" placeholder="Default"></td>` +
+				`<td><input type="text" name="cat_max_discount[` + itoa64(t.ID) + `]" value="` + gooEsc(gxaStr(md, itoa64(t.ID))) + `" placeholder="Default"></td></tr>`)
 		}
 		b.WriteString(`</tbody></table><p class="submit"><button type="submit" class="button button-primary">Save category points</button></p></form>`)
 	default:
@@ -859,4 +877,65 @@ func (s *Server) gptsAdmin(c *gin.Context) {
 			`<p class="submit"><button type="submit" class="button button-primary">Adjust points</button></p></form>`)
 	}
 	s.gxaAdminRender(c, "points-and-rewards", "Points & Rewards", "goo-ext-points-rewards", `<h1 class="wp-heading-inline">Points &amp; Rewards</h1>`, b.String())
+}
+
+// gptsProductMaxd is a product's maximum points discount setting ("5", "50%"): its own, its parent's,
+// then the most restrictive of its categories'; "" when none is set.
+func (s *Server) gptsProductMaxd(ctx context.Context, p *gooProduct) string {
+	if p == nil {
+		return ""
+	}
+	if v := strings.TrimSpace(gxaStr(p.Meta, "_wc_points_max_discount")); v != "" {
+		return v
+	}
+	id := p.ID
+	if p.Type == gooTypeVariation && p.ParentID != 0 {
+		if parent := s.gooParent(ctx, p); parent != nil {
+			if v := strings.TrimSpace(gxaStr(parent.Meta, "_wc_points_max_discount")); v != "" {
+				return v
+			}
+		}
+		id = p.ParentID
+	}
+	m, _ := s.gooExtSettings(gptsKey)["category_max_discount"].(map[string]any)
+	if len(m) == 0 {
+		return ""
+	}
+	terms, err := s.store.TermsForPosts(ctx, []int64{id}, "product_cat")
+	if err != nil {
+		return ""
+	}
+	best, bestVal := "", math.Inf(1)
+	for _, t := range terms[id] {
+		v := strings.TrimSpace(gxaStr(m, itoa64(t.ID)))
+		// compare on a 100 price: fixed amounts and percentages rank alike for typical prices
+		if n, ok := gptsOverride(v, 100); ok && n < bestVal {
+			best, bestVal = v, n
+		}
+	}
+	return best
+}
+
+// gptsItemsCapMaxd is the most the cart's lines may be discounted with points: each line's maximum
+// (fixed per unit or a percentage of its price, capped at the line) or the whole line when it has
+// none. limited is false when no line has a maximum.
+func (s *Server) gptsItemsCapMaxd(ctx context.Context, cart *gooCart) (float64, bool) {
+	incl := s.gooOptString("tax_display_cart") == "incl"
+	total, limited := 0.0, false
+	for _, it := range cart.Items {
+		line := it.LineTotal
+		if incl {
+			line += it.LineTax
+		}
+		qty := max(it.Quantity, 1)
+		v := s.gptsProductMaxd(ctx, it.Product())
+		capV, ok := gptsOverride(v, line/float64(qty))
+		if !ok {
+			total += line
+			continue
+		}
+		limited = true
+		total += min(max(capV, 0)*float64(qty), line)
+	}
+	return gooRound(total, s.gooDecimals()), limited
 }

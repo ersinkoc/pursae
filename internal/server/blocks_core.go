@@ -218,6 +218,7 @@ func renderLatestPosts(ctx context.Context, b *blocks.Block, _ string) string {
 	if a, ok := b.Attrs["selectedAuthor"].(float64); ok {
 		q.AuthorID = int64(a)
 	}
+	q.ExcludeID = rc.s.gooListingExclude(ctx, "post") // Goocommerce Memberships
 	posts, _, err := rc.s.store.QueryPosts(ctx, q)
 	if err != nil {
 		return ""

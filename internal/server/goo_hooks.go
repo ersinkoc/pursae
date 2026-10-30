@@ -4,6 +4,7 @@ import (
 	"context"
 	"html/template"
 	"log"
+	"net/http"
 	"sort"
 
 	"github.com/gin-gonic/gin"
@@ -309,3 +310,112 @@ func (s *Server) gooDisplayPrice(ctx context.Context, p *gooProduct) float64 {
 type gooCheckoutValidateHook func(s *Server, c *gin.Context, cart *gooCart, d *gooCheckoutData) []string
 
 var gooCheckoutValidateHooks []gooCheckoutValidateHook
+
+// Item visibility ------------------------------------------------------------------------------------------
+
+// gooCartItemVisibleHook hides a cart line from a listing (woocommerce_cart_item_visible,
+// woocommerce_widget_cart_item_visible, woocommerce_checkout_cart_item_visible): where is "cart",
+// "mini_cart" or "checkout". The line still counts in the totals.
+type gooCartItemVisibleHook func(s *Server, ctx context.Context, it *gooCartItem, where string) bool
+
+var gooCartItemVisibleHooks []gooCartItemVisibleHook
+
+// gooCartItemVisible reports whether a cart line is listed at where.
+func (s *Server) gooCartItemVisible(ctx context.Context, it *gooCartItem, where string) bool {
+	for _, f := range gooCartItemVisibleHooks {
+		if !f(s, ctx, it, where) {
+			return false
+		}
+	}
+	return true
+}
+
+// gooOrderItemVisibleHook hides an order line from a listing (woocommerce_order_item_visible): where is
+// "order_details", "order_pay", "email" or "invoice".
+type gooOrderItemVisibleHook func(s *Server, ctx context.Context, it *gooOrderItem, where string) bool
+
+var gooOrderItemVisibleHooks []gooOrderItemVisibleHook
+
+// Listings and single views ----------------------------------------------------------------------------
+
+// gooListingExcludeHook returns ids the visitor (gxaUser(ctx)) must not see listed: kind "product" for
+// catalog listings (shop, archives, search, shortcodes, Store API), "post" for the blog's main query,
+// search, feeds and the posts REST API (Memberships' "hide completely").
+type gooListingExcludeHook func(s *Server, ctx context.Context, kind string) []int64
+
+var gooListingExcludeHooks []gooListingExcludeHook
+
+// gooListingExclude collects the ids hidden from the visitor's listings.
+func (s *Server) gooListingExclude(ctx context.Context, kind string) []int64 {
+	if !s.gooOn() {
+		return nil
+	}
+	var out []int64
+	for _, f := range gooListingExcludeHooks {
+		out = append(out, f(s, ctx, kind)...)
+	}
+	return out
+}
+
+// gooSingleAccessHook decides whether the visitor may open a single post, page or product: "" serves
+// it, "404" answers not found, anything else is a URL to redirect to (Memberships' restriction modes).
+type gooSingleAccessHook func(s *Server, c *gin.Context, postID int64, postType string) string
+
+var gooSingleAccessHooks []gooSingleAccessHook
+
+// gooSingleAccess runs the single access hooks (the first refusal wins).
+func (s *Server) gooSingleAccess(c *gin.Context, postID int64, postType string) string {
+	if !s.gooOn() {
+		return ""
+	}
+	for _, f := range gooSingleAccessHooks {
+		if r := f(s, c, postID, postType); r != "" {
+			return r
+		}
+	}
+	return ""
+}
+
+// gooGuardSiteQuery applies gooSingleAccess to the core's singular views: a refusal turns the query
+// into a 404, a redirect answers the request (true).
+func (s *Server) gooGuardSiteQuery(c *gin.Context, q *siteQuery) bool {
+	if q == nil || q.Post == nil || (q.Kind != "single" && q.Kind != "page") {
+		return false
+	}
+	switch r := s.gooSingleAccess(c, q.Post.ID, q.Post.Type); r {
+	case "":
+		return false
+	case "404":
+		*q = siteQuery{Kind: "404"}
+		return false
+	default:
+		c.Header("Cache-Control", "no-store")
+		c.Redirect(http.StatusFound, r)
+		return true
+	}
+}
+
+// gooGuardProduct applies gooSingleAccess to a single product page: (denied, handled) — a refusal
+// lets the core answer 404 (handled false), a redirect answers the request (handled true).
+func (s *Server) gooGuardProduct(c *gin.Context, productID int64) (bool, bool) {
+	switch r := s.gooSingleAccess(c, productID, "product"); r {
+	case "":
+		return false, false
+	case "404":
+		return true, false
+	default:
+		c.Header("Cache-Control", "no-store")
+		c.Redirect(http.StatusFound, r)
+		return true, true
+	}
+}
+
+// gooOrderItemVisible reports whether an order line is listed at where.
+func (s *Server) gooOrderItemVisible(ctx context.Context, it *gooOrderItem, where string) bool {
+	for _, f := range gooOrderItemVisibleHooks {
+		if !f(s, ctx, it, where) {
+			return false
+		}
+	}
+	return true
+}

@@ -177,3 +177,120 @@ func TestGooExtMemberships(t *testing.T) {
 	}
 	gxaAdminOK(t, cl, base+"/wp-admin/goocommerce?page=memberships&status=cancelled&plan="+itoa64(silver.ID), "Cancelled")
 }
+
+// The "hide completely" mode removes restricted content and view-restricted products from listings
+// (shop, search, blog, feeds, REST) for non-members and 404s their pages; "redirect to page" sends
+// non-members to the configured page with the requested URL.
+func TestGooExtMembershipsRestrictionModes(t *testing.T) {
+	base, _, srv := gooSite(t)
+	ctx := context.Background()
+	anon := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+	path := func(abs string) string {
+		u, err := url.Parse(abs)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return base + u.RequestURI()
+	}
+	gooMakeSimple(t, srv, "Open Teapot", 10, nil)
+	vip := gooMakeSimple(t, srv, "Velvet Teapot", 30, nil)
+	news := &store.Post{Type: "post", Title: "Zebra members digest", Slug: "zebra-digest", Content: "<p>Inside.</p>", Status: "publish", AuthorID: 1, Meta: map[string]any{}}
+	public := &store.Post{Type: "post", Title: "Zebra public notes", Slug: "zebra-public", Content: "<p>Hello.</p>", Status: "publish", AuthorID: 1, Meta: map[string]any{}}
+	join := &store.Post{Type: "page", Title: "Join us", Slug: "join-us", Content: "<p>Become a member.</p>", Status: "publish", AuthorID: 1, Meta: map[string]any{}}
+	for _, p := range []*store.Post{news, public, join} {
+		if err := srv.store.InsertPost(ctx, p); err != nil {
+			t.Fatal(err)
+		}
+	}
+	plan := &gooMembershipPlan{Name: "Velvet", AccessMethod: "manual", AccessLength: "unlimited",
+		Rules: gmemRules{ContentPostIDs: []int64{news.ID}, ProductIDs: []int64{vip.ID}, ProductRestrict: "view"}}
+	if err := srv.gmemSavePlan(ctx, plan); err != nil {
+		t.Fatal(err)
+	}
+	if err := srv.gooSetExtension(ctx, gmemKey, true); err != nil {
+		t.Fatal(err)
+	}
+	setMode := func(mode string, page int64) {
+		t.Helper()
+		if err := srv.gooSetOpts(ctx, map[string]any{"ext_" + gmemKey + "_settings": map[string]any{"restriction_mode": mode, "redirect_page_id": float64(page)}}); err != nil {
+			t.Fatal(err)
+		}
+		srv.purgeAll(ctx)
+	}
+	newsURL, vipURL := path(srv.links(ctx).Permalink(news)), path(srv.gooPermalink(ctx, vip))
+	listings := map[string]string{
+		"shop":        path(srv.gooShopURL(ctx)),
+		"search":      base + "/?s=Teapot&post_type=product",
+		"blog":        base + "/",
+		"blog search": base + "/?s=Zebra",
+		"feed":        base + "/?feed=rss2",
+		"posts REST":  base + "/wp-json/wp/v2/posts?search=Zebra",
+		"Store API":   base + "/wp-json/wc/store/v1/products",
+	}
+	listed := func(name string) string {
+		t.Helper()
+		_, body, _ := get(t, anon, listings[name])
+		return body
+	}
+
+	// Hide content only (default): listed, the page opens.
+	setMode("hide_content", 0)
+	if !strings.Contains(listed("shop"), "Velvet Teapot") || !strings.Contains(listed("blog"), "Zebra members digest") {
+		t.Error("hide_content mode hides listings")
+	}
+	if code, _, _ := get(t, anon, newsURL); code != http.StatusOK {
+		t.Errorf("hide_content: restricted post %d", code)
+	}
+
+	// Hide completely.
+	setMode("hide", 0)
+	for name := range listings {
+		body := listed(name)
+		if strings.Contains(body, "Velvet Teapot") || strings.Contains(body, "Zebra members digest") {
+			t.Errorf("hide: %s lists restricted items", name)
+		}
+	}
+	if !strings.Contains(listed("shop"), "Open Teapot") || !strings.Contains(listed("blog search"), "Zebra public notes") || !strings.Contains(listed("posts REST"), "Zebra public notes") {
+		t.Error("hide: unrestricted items are missing")
+	}
+	for _, u := range []string{newsURL, vipURL} {
+		if code, _, _ := get(t, anon, u); code != http.StatusNotFound {
+			t.Errorf("hide: %s answers %d", u, code)
+		}
+	}
+	// Members and managers still see everything.
+	member := gxaCustomer(t, srv, "velvet@example.test")
+	if _, err := srv.gmemGrant(ctx, member.ID, plan, 0, 0, "test"); err != nil {
+		t.Fatal(err)
+	}
+	if ids := srv.gooListingExclude(withPluginUser(ctx, member), "product"); len(ids) != 0 {
+		t.Errorf("hidden from a member: %v", ids)
+	}
+	if ids := srv.gooListingExclude(ctx, "post"); len(ids) != 1 || ids[0] != news.ID {
+		t.Errorf("hidden posts for visitors: %v", ids)
+	}
+	mc := gxaCtx(member, http.MethodGet, "/", nil)
+	if r := srv.gooSingleAccess(mc, vip.ID, "product"); r != "" {
+		t.Errorf("member refused the product: %q", r)
+	}
+
+	// Redirect to page.
+	setMode("redirect", join.ID)
+	if !strings.Contains(listed("shop"), "Velvet Teapot") {
+		t.Error("redirect mode hides listings")
+	}
+	for _, u := range []string{newsURL, vipURL} {
+		code, _, loc := get(t, anon, u)
+		if code != http.StatusFound || !strings.Contains(loc, "join-us") || !strings.Contains(loc, "redirect_to=") {
+			t.Errorf("redirect: %s → %d %s", u, code, loc)
+			continue
+		}
+		q, _ := url.Parse(loc)
+		if back := q.Query().Get("redirect_to"); !strings.HasSuffix(back, strings.TrimPrefix(u, base)) {
+			t.Errorf("redirect_to %q for %s", back, u)
+		}
+	}
+	if code, _, _ := get(t, anon, path(srv.links(ctx).Permalink(public))); code != http.StatusOK {
+		t.Errorf("redirect: an open post answers %d", code)
+	}
+}

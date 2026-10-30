@@ -203,3 +203,77 @@ func TestGooExtAddons(t *testing.T) {
 		t.Errorf("groups after save: %d", len(gs))
 	}
 }
+
+// A file upload add-on posted with the add-to-cart form itself (multipart, no script) is stored and
+// used like an AJAX upload, with the same size and type checks.
+func TestGooExtAddonsFormUpload(t *testing.T) {
+	_, _, srv := gooSite(t)
+	ctx := context.Background()
+	if err := srv.gooSetExtension(ctx, paoKey, true); err != nil {
+		t.Fatal(err)
+	}
+	if err := srv.gooSetOpts(ctx, map[string]any{"ext_" + paoKey + "_settings": map[string]any{"max_upload_mb": float64(1), "allowed_types": "png,pdf"}}); err != nil {
+		t.Fatal(err)
+	}
+	poster := gooMakeSimple(t, srv, "Poster", 15, func(p *gooProduct) { p.Virtual = true })
+	poster = gxSavePanels(t, srv, poster, paoKey, url.Values{
+		"product_addon_name[]": {"Artwork"}, "product_addon_type[]": {"file_upload"}, "product_addon_required[]": {"yes"},
+		"product_addon_adjust_price[]": {"yes"}, "product_addon_price_type[]": {"flat_fee"}, "product_addon_price[]": {"2"},
+	})
+	addons := srv.paoAddonsFor(ctx, poster)
+	if len(addons) != 1 {
+		t.Fatalf("add-ons: %+v", addons)
+	}
+	field := paoFieldName(poster.ID, addons[0], 0)
+	if out := string(srv.gooHTML(gooTestCtx(), "single_before_add_to_cart", poster)); !strings.Contains(out, `type="file" name="`+field+`"`) {
+		t.Errorf("the file input has no name for the plain form post: %s", out)
+	}
+	post := func(file string, content []byte) (*gin.Context, error) {
+		var body bytes.Buffer
+		mw := multipart.NewWriter(&body)
+		_ = mw.WriteField("add-to-cart", itoa64(poster.ID))
+		_ = mw.WriteField("quantity", "1")
+		_ = mw.WriteField(field, "") // the hidden URL field the script would have filled
+		if file != "" {
+			fw, _ := mw.CreateFormFile(field, file)
+			_, _ = fw.Write(content)
+		}
+		_ = mw.Close()
+		c, _ := gin.CreateTestContext(httptest.NewRecorder())
+		c.Request = httptest.NewRequest(http.MethodPost, "/product/poster/", &body)
+		c.Request.Header.Set("Content-Type", mw.FormDataContentType())
+		if !srv.gooAcceptsPost(c) {
+			t.Fatal("the add-to-cart post is not accepted")
+		}
+		_, err := srv.gooAddToCartFromForm(c, c.Request.PostForm)
+		return c, err
+	}
+	if _, err := post("", nil); err == nil || !strings.Contains(err.Error(), "required") {
+		t.Errorf("no file: %v", err)
+	}
+	if _, err := post("shell.php", []byte("<?php")); err == nil || !strings.Contains(err.Error(), "not allowed") {
+		t.Errorf("a .php file: %v", err)
+	}
+	if _, err := post("huge.png", bytes.Repeat([]byte("x"), 1<<20+10)); err == nil || !strings.Contains(err.Error(), "too large") {
+		t.Errorf("a file over the limit: %v", err)
+	}
+	c, err := post("my art.png", []byte("\x89PNG\r\n\x1a\nfake"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	cart := srv.gooCartFor(c)
+	if len(cart.Items) != 1 {
+		t.Fatalf("cart lines: %d", len(cart.Items))
+	}
+	it := cart.Items[0]
+	gooAlmost(t, "price with the add-on", it.Price, 17)
+	ad := paoItemAddons(it)
+	if len(ad) != 1 || !strings.Contains(gxStr(ad[0]["value"]), "/wp-content/uploads/goocommerce_uploads/") || gxStr(ad[0]["display"]) != "my-art.png" {
+		t.Fatalf("add-on data: %+v", ad)
+	}
+	v := gxStr(ad[0]["value"])
+	rel := v[strings.Index(v, "goocommerce_uploads/"):]
+	if _, err := os.Stat(filepath.Join(srv.cfg.UploadsDir, filepath.FromSlash(rel))); err != nil {
+		t.Errorf("the posted file was not stored: %v", err)
+	}
+}

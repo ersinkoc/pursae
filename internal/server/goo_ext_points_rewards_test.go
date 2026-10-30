@@ -139,3 +139,68 @@ func TestGooExtPoints(t *testing.T) {
 		t.Errorf("balance after expiry: %d", n)
 	}
 }
+
+// The per-product and per-category maximum points discounts cap what each line may take, and the
+// cart maximum (fixed or a percentage) caps the total.
+func TestGooExtPointsMaxDiscount(t *testing.T) {
+	base, cl, srv := gooSite(t)
+	ctx := context.Background()
+	gxaOn(t, srv, gptsKey, true)
+	cat := termFor("product_cat", "Kettles")
+	if err := srv.store.InsertTerm(ctx, cat); err != nil {
+		t.Fatal(err)
+	}
+	a := gooMakeSimple(t, srv, "Capped Tea", 40, func(p *gooProduct) { p.Virtual = true })
+	a = gxaSavePanel(t, srv, "wc_points_rewards", a, url.Values{"_wc_points_max_discount": {"5"}})
+	b := gooMakeSimple(t, srv, "Category Kettle", 20, func(p *gooProduct) { p.Virtual = true })
+	_ = srv.store.SetPostTerms(ctx, b.ID, "product_cat", []int64{cat.ID})
+	free := gooMakeSimple(t, srv, "Free Cup", 30, func(p *gooProduct) { p.Virtual = true })
+
+	// The category maximum is saved from the Category Points tab.
+	body := gxaAdminOK(t, cl, base+"/wp-admin/goocommerce?page=points-and-rewards&tab=categories", "Maximum points discount")
+	if code, _, _ := post(t, cl, base+"/wp-admin/goocommerce?page=points-and-rewards", url.Values{"_wpnonce": {formNonce(t, body)}, "points_action": {"categories"},
+		"cat_max_discount[" + itoa64(cat.ID) + "]": {"50%"}}); code != http.StatusFound {
+		t.Fatalf("save categories: %d", code)
+	}
+	if v := srv.gptsProductMaxd(ctx, b); v != "50%" {
+		t.Fatalf("category maximum: %q", v)
+	}
+
+	u := gxaCustomer(t, srv, "capped@example.test")
+	if err := srv.gptsLog(ctx, u.ID, 100000, "admin-adjustment", 0, "test"); err != nil {
+		t.Fatal(err)
+	}
+	c := gxaCtx(u, http.MethodGet, "/", nil)
+	cart := srv.gooCartFor(c)
+	for id, q := range map[int64]int{a.ID: 2, b.ID: 1, free.ID: 1} {
+		if _, err := cart.Add(c, id, q, 0, nil, nil, nil); err != nil {
+			t.Fatal(err)
+		}
+	}
+	cart.Calculate()
+	gooAlmost(t, "subtotal", cart.Subtotal, 130)
+	// 2 × 5 (product) + 50% of 20 (category) + 30 (no maximum) = 50.
+	d, pts := srv.gptsRedeemable(c, cart, u.ID, 0)
+	gooAlmost(t, "discount with item maximums", d, 50)
+	if pts != srv.gptsPointsFor(50) {
+		t.Errorf("points for the discount: %d", pts)
+	}
+	// The cart maximum as a percentage, then as an amount.
+	gxaSetExt(t, srv, gptsKey, map[string]any{"max_discount": "20%"})
+	d, _ = srv.gptsRedeemable(c, cart, u.ID, 0)
+	gooAlmost(t, "discount with a 20% cart maximum", d, 26)
+	gxaSetExt(t, srv, gptsKey, map[string]any{"max_discount": "15"})
+	d, _ = srv.gptsRedeemable(c, cart, u.ID, 0)
+	gooAlmost(t, "discount with a 15 cart maximum", d, 15)
+	// Without item maximums the whole cart can be paid with points.
+	gxaSetExt(t, srv, gptsKey, map[string]any{"max_discount": ""})
+	cart.Remove(cart.Items[0].Key)
+	for _, it := range append([]*gooCartItem{}, cart.Items...) {
+		if it.ProductID != free.ID {
+			cart.Remove(it.Key)
+		}
+	}
+	cart.Calculate()
+	d, _ = srv.gptsRedeemable(c, cart, u.ID, 0)
+	gooAlmost(t, "discount without maximums", d, 30)
+}

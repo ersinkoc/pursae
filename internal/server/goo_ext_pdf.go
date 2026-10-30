@@ -474,6 +474,9 @@ func (s *Server) gooPDFDocument(ctx context.Context, p *gooPDF, doc string, o *g
 	incl := s.gooOptString("tax_display_cart") == "incl"
 	wu := defaultStr(s.gooOptString("weight_unit"), "kg")
 	for _, it := range o.ItemsOf("line_item") {
+		if !s.gooOrderItemVisible(ctx, it, "invoice") {
+			continue
+		}
 		sku, weight := "", ""
 		pid := it.ProductID
 		if it.VariationID != 0 {

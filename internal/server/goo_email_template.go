@@ -427,6 +427,9 @@ func (s *Server) gooEmailOrderDetails(ctx context.Context, o *gooOrder, admin bo
 	p.WriteString("[Order #" + o.Number() + "] (" + date + ")\n\n")
 	incl := s.gooOptString("tax_display_cart") == "incl"
 	for _, it := range o.ItemsOf("line_item") {
+		if !s.gooOrderItemVisible(ctx, it, "email") {
+			continue
+		}
 		name := gooEsc(it.Name)
 		sku := ""
 		pid := it.ProductID

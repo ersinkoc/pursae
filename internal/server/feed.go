@@ -82,6 +82,7 @@ func (s *Server) feed(c *gin.Context, q *siteQuery) {
 // feedPosts runs the feed's main query: the archive filters apply, posts_per_rss limits it.
 func (s *Server) feedPosts(ctx context.Context, q *siteQuery) []*store.Post {
 	pq := store.PostQuery{Types: []string{"post"}, Statuses: []string{"publish"}, PerPage: s.settings.Int("posts_per_rss"), Loc: s.loc()}
+	pq.ExcludeID = s.gooListingExclude(ctx, "post") // Goocommerce Memberships
 	switch q.Kind {
 	case "category", "tag":
 		pq.TermIDs = []int64{q.Term.ID}
