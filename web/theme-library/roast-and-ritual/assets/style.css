@@ -559,3 +559,10 @@ ul.product_list_widget li a:not(#\#) { text-decoration: none; color: var(--rr-in
 	.rr-ticker span[aria-hidden] { display: none; }
 	.rr-labels .wp-block-image, .rr-labels .wp-block-image:hover { transform: none; }
 }
+
+/* Checkout and account forms lay their rows out on a grid: a half-width row fills its grid cell
+   instead of keeping the store stylesheet's floated 47% width. */
+.woocommerce form .form-row-first:not(#\#), .woocommerce form .form-row-last:not(#\#),
+.woocommerce-page form .form-row-first:not(#\#), .woocommerce-page form .form-row-last:not(#\#) { width: auto; float: none; }
+/* Notice icons sit in the text flow (the store stylesheet places them in a left padding this theme removes). */
+.woocommerce-message:not(#\#)::before, .woocommerce-info:not(#\#)::before, .woocommerce-error:not(#\#)::before { position: static; margin-right: .5em; }

@@ -396,3 +396,8 @@ ul.woocommerce-mini-cart li .quantity { color: var(--tl-muted); grid-column: 2; 
 #page .woocommerce-tabs ul.tabs li { border: 0; background: none; }
 #page .woocommerce-tabs ul.tabs li.active a { color: var(--tl-ink); }
 #page .woocommerce-message, #page .woocommerce-info { border-top: 0; background: var(--tl-card); }
+
+/* Checkout and account forms lay their rows out on a grid: a half-width row fills its grid cell
+   instead of keeping the store stylesheet's floated 47% width. */
+.woocommerce form .form-row-first:not(#\#), .woocommerce form .form-row-last:not(#\#),
+.woocommerce-page form .form-row-first:not(#\#), .woocommerce-page form .form-row-last:not(#\#) { width: auto; float: none; }

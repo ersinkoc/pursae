@@ -624,3 +624,8 @@ body.pk-fonts-italic .pk-footer-tagline { font: italic 800 clamp(3rem, 11vw, 8re
 #page .woocommerce-message .button, #page .woocommerce-info .button { margin-left: auto; }
 #page .cart-empty.woocommerce-info { justify-content: center; }
 #page .woocommerce-message, #page .woocommerce-info, #page .woocommerce-error, #page .woocommerce-noreviews { border-top: 0; }
+
+/* Checkout and account forms lay their rows out on a grid: a half-width row fills its grid cell
+   instead of keeping the store stylesheet's floated 47% width. */
+.woocommerce form .form-row-first:not(#\#), .woocommerce form .form-row-last:not(#\#),
+.woocommerce-page form .form-row-first:not(#\#), .woocommerce-page form .form-row-last:not(#\#) { width: auto; float: none; }

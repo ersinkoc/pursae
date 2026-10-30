@@ -575,3 +575,8 @@ body.of-wordmark .of-wordmark-text { display: block; }
 
 /* The storefront's notice icons sit inline in the flex row. */
 #page .woocommerce-message::after, #page .woocommerce-info::after, #page .woocommerce-error::after { display: none; }
+
+/* Checkout and account forms lay their rows out on a grid: a half-width row fills its grid cell
+   instead of keeping the store stylesheet's floated 47% width. */
+.woocommerce form .form-row-first:not(#\#), .woocommerce form .form-row-last:not(#\#),
+.woocommerce-page form .form-row-first:not(#\#), .woocommerce-page form .form-row-last:not(#\#) { width: auto; float: none; }

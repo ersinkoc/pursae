@@ -571,3 +571,8 @@ button:hover, .button:hover, input[type="submit"]:hover, .wp-block-button__link:
 #page .woocommerce-message, #page .woocommerce-info { justify-content: flex-start; }
 #page .woocommerce-message .button, #page .woocommerce-info .button { margin-left: auto; }
 #page .cart-empty.woocommerce-info { justify-content: center; }
+
+/* Checkout and account forms lay their rows out on a grid: a half-width row fills its grid cell
+   instead of keeping the store stylesheet's floated 47% width. */
+.woocommerce form .form-row-first:not(#\#), .woocommerce form .form-row-last:not(#\#),
+.woocommerce-page form .form-row-first:not(#\#), .woocommerce-page form .form-row-last:not(#\#) { width: auto; float: none; }
