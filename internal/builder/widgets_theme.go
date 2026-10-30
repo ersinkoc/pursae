@@ -32,7 +32,7 @@ type ThemeData struct {
 	PostContent func() string
 	// Archive returns the main query of an archive, blog or search page; nil elsewhere.
 	Archive func() *ArchiveData
-	// Store renders a store widget (widgets_store.go) from its display settings: the storefront's
+	// Store renders a store widget (widgets_theme_store.go) from its display settings: the storefront's
 	// markup for the product, catalog, cart or checkout being shown; "" when there is nothing to show.
 	// nil (no store) makes the store widgets print placeholders in the editor.
 	Store func(widget string, settings map[string]any, editing bool) string

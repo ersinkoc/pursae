@@ -17,7 +17,7 @@ import (
 	"wpgo/internal/store"
 )
 
-// Goocommerce with Golementor: the store widgets of the editor (internal/builder/widgets_store.go)
+// Goocommerce with Golementor: the store widgets of the editor (internal/builder/widgets_theme_store.go)
 // get their markup here, the Theme Builder gets Single Product and Products Archive parts plus store
 // display conditions (all products, product archives, a category, the cart, checkout and my account
 // pages), and a theme package can carry a Golementor design (theme.json "golementor"): a store theme
