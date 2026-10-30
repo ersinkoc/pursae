@@ -1,0 +1,531 @@
+package server
+
+import (
+	"context"
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base64"
+	"encoding/hex"
+	"encoding/json"
+	"errors"
+	"html/template"
+	"log/slog"
+	"net/http"
+	"net/url"
+	"os"
+	"strings"
+	"sync"
+	"time"
+
+	"github.com/gin-gonic/gin"
+
+	"wpgo/internal/gocdn"
+	"wpgo/internal/store"
+)
+
+// GoCDN is a native plugin in the spirit of WP Offload Media + an image CDN + CDN Enabler: it copies
+// the media library to S3-compatible object storage (AWS S3, Cloudflare R2, DigitalOcean Spaces,
+// Backblaze B2, MinIO or any S3 API), rewrites media URLs to the bucket or a custom CDN domain,
+// can remove the local copies, browses and imports bucket contents, serves resized / WebP images
+// from /cdn-img/ with signed URLs, rewrites theme and core asset URLs to a CDN, and purges WPGo
+// Cache (and optionally Cloudflare) when any of it changes.
+//
+// Like every native plugin it is off on a fresh install (native_gocdn) and adds nothing while
+// off: its routes answer 404, uploads are served from disk as before and no response is touched.
+// Settings live in the option gocdn_settings; the secret access key and the Cloudflare token are
+// AES-GCM encrypted with the server secret and never sent back to the browser. The settings can
+// also come from the environment variable WPGO_CDN_SETTINGS (JSON with the same keys, like WP
+// Offload Media's AS3CF_SETTINGS); keys set there are locked on the settings screen.
+// docs/gocdn-features.md is the feature inventory.
+
+const (
+	gocdnSlug    = "gocdn"
+	gocdnSetting = "native_gocdn"   // the plugin is active
+	gocdnOption  = "gocdn_settings" // gocdnSettings as one JSON object
+	gocdnEnv     = "WPGO_CDN_SETTINGS"
+	gocdnVersion = "1.0.0"
+	gocdnImgPath = "/cdn-img/" // the image service: /cdn-img/<path in uploads>?w=&h=&fit=&q=&fm=&s=
+	gocdnNonce   = "gocdn-admin"
+
+	gocdnSealPrefix = "enc:v1:"
+)
+
+// gocdnHTTP is the client used for the object storage and the Cloudflare API.
+var gocdnHTTP = &http.Client{Timeout: 120 * time.Second}
+
+// gocdnCFBase is Cloudflare's API base (tests point it at a fake).
+var gocdnCFBase = "https://api.cloudflare.com/client/v4"
+
+// gocdnSettings are the plugin's options. JSON names follow WP Offload Media's settings keys where
+// it has one (so a WPGO_CDN_SETTINGS made from an AS3CF_SETTINGS needs few changes).
+type gocdnSettings struct {
+	// Storage
+	Provider   string `json:"provider"` // aws, r2, do, b2, minio
+	Endpoint   string `json:"endpoint"`
+	Region     string `json:"region"`
+	Bucket     string `json:"bucket"`
+	AccessKey  string `json:"access-key-id"`
+	SecretKey  string `json:"secret-access-key"` // sealed at rest
+	PathStyle  bool   `json:"use-path-style"`
+	Prefix     string `json:"object-prefix"` // key prefix, e.g. "wp-content/uploads/"
+	PublicRead bool   `json:"public-read"`   // upload with x-amz-acl: public-read
+	CDNDomain  string `json:"delivery-domain"`
+
+	// Offload
+	CopyToBucket  bool   `json:"copy-to-s3"`
+	RemoveLocal   bool   `json:"remove-local-file"`
+	ServeFromCDN  bool   `json:"serve-from-s3"`  // rewrite media URLs on the site and in the REST API
+	LocalDelivery string `json:"local-delivery"` // /wp-content/uploads for removed files: redirect, proxy or signed
+
+	// Image service
+	Img          bool   `json:"img-enabled"`
+	ImgSign      bool   `json:"img-sign"`
+	ImgMaxW      int    `json:"img-max-width"`
+	ImgMaxH      int    `json:"img-max-height"`
+	ImgQuality   int    `json:"img-quality"`
+	ImgWebP      bool   `json:"img-webp"`
+	ImgBucket    bool   `json:"img-cache-bucket"` // keep variants in the bucket too
+	ImgKey       string `json:"img-key"`          // sealed random HMAC key of the signed URLs
+	ImgRewrite   bool   `json:"img-rewrite"`      // serve content images through the service (WebP)
+	ImgRewriteQ  int    `json:"img-rewrite-quality"`
+	ImgMaxSource int    `json:"img-max-source-mp"` // megapixels
+
+	// Assets CDN
+	Assets        bool   `json:"assets-enabled"`
+	AssetsURL     string `json:"assets-url"`
+	AssetsDirs    string `json:"assets-dirs"`       // one path prefix per line
+	AssetsExt     string `json:"assets-extensions"` // comma separated
+	AssetsExclude string `json:"assets-exclude"`    // one substring per line
+
+	// Purge
+	CF      bool   `json:"cloudflare"`
+	CFZone  string `json:"cloudflare-zone"`
+	CFToken string `json:"cloudflare-token"` // sealed
+	CFAuto  bool   `json:"cloudflare-auto"`  // purge Cloudflare with every automatic page-cache purge of GoCDN
+}
+
+// gocdnProvider describes a storage provider's defaults.
+type gocdnProvider struct {
+	Key, Name, Region, Endpoint, Public string // Endpoint and Public: {region} and {bucket} are filled in
+	PathStyle                           bool
+	Help                                string
+}
+
+var gocdnProviders = []gocdnProvider{
+	{Key: "aws", Name: "Amazon S3", Region: "us-east-1", Endpoint: "https://s3.{region}.amazonaws.com", Public: "https://{bucket}.s3.{region}.amazonaws.com",
+		Help: "Create an IAM user with s3:PutObject, s3:GetObject, s3:DeleteObject and s3:ListBucket on the bucket."},
+	{Key: "r2", Name: "Cloudflare R2", Region: "auto", Endpoint: "https://<ACCOUNT_ID>.r2.cloudflarestorage.com", PathStyle: true,
+		Help: "Use an R2 API token (Object Read & Write). R2's S3 endpoint is not public: set the bucket's r2.dev URL or a custom domain as the delivery domain."},
+	{Key: "do", Name: "DigitalOcean Spaces", Region: "nyc3", Endpoint: "https://{region}.digitaloceanspaces.com", Public: "https://{bucket}.{region}.digitaloceanspaces.com",
+		Help: "Create a Spaces access key. The Spaces CDN domain ({bucket}.{region}.cdn.digitaloceanspaces.com) can be the delivery domain."},
+	{Key: "b2", Name: "Backblaze B2", Region: "us-west-004", Endpoint: "https://s3.{region}.backblazeb2.com", Public: "https://{bucket}.s3.{region}.backblazeb2.com",
+		Help: "Create an application key for the bucket; the region is the part of the bucket's S3 endpoint after \"s3.\"."},
+	{Key: "minio", Name: "MinIO / other S3-compatible", Region: "us-east-1", PathStyle: true,
+		Help: "Any S3 API: MinIO, Wasabi, Scaleway, Linode, Ceph RGW, Garage… Enter the endpoint URL."},
+}
+
+func gocdnProviderByKey(k string) *gocdnProvider {
+	for i := range gocdnProviders {
+		if gocdnProviders[i].Key == k {
+			return &gocdnProviders[i]
+		}
+	}
+	return nil
+}
+
+func gocdnDefaults() gocdnSettings {
+	return gocdnSettings{
+		Provider:      "aws",
+		Prefix:        "wp-content/uploads/",
+		PublicRead:    true,
+		CopyToBucket:  true,
+		ServeFromCDN:  true,
+		LocalDelivery: "redirect",
+		ImgMaxW:       2560,
+		ImgMaxH:       2560,
+		ImgQuality:    82,
+		ImgWebP:       true,
+		ImgSign:       true,
+		ImgRewriteQ:   80,
+		ImgMaxSource:  60,
+		AssetsDirs:    "/wp-content/themes/\n/wp-includes/\n/wp-content/plugins/\n/wp-admin/assets/",
+		AssetsExt:     "css,js,mjs,png,jpg,jpeg,gif,svg,webp,avif,ico,woff,woff2,ttf,otf,eot",
+	}
+}
+
+// gocdnOn reports whether the plugin is active.
+func (s *Server) gocdnOn() bool { return s.settings.Bool(gocdnSetting) }
+
+// gocdnEnvSettings parses WPGO_CDN_SETTINGS: the values and the set of keys it defines.
+func gocdnEnvSettings() (map[string]any, error) {
+	raw := strings.TrimSpace(os.Getenv(gocdnEnv))
+	if raw == "" {
+		return nil, nil
+	}
+	var m map[string]any
+	if err := json.Unmarshal([]byte(raw), &m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+// gocdnLoad returns the saved settings over the defaults, with WPGO_CDN_SETTINGS on top. Secrets
+// stay sealed (gocdnReveal opens them).
+func (s *Server) gocdnLoad() gocdnSettings {
+	st := gocdnDefaults()
+	if v := s.settings.Get(gocdnOption); v != nil {
+		if raw, err := json.Marshal(v); err == nil {
+			_ = json.Unmarshal(raw, &st)
+		}
+	}
+	if env, err := gocdnEnvSettings(); err != nil {
+		slog.Warn("gocdn: "+gocdnEnv+" is not valid JSON", "err", err)
+	} else if env != nil {
+		raw, _ := json.Marshal(env)
+		_ = json.Unmarshal(raw, &st)
+	}
+	return gocdnSanitize(st)
+}
+
+func gocdnSanitize(st gocdnSettings) gocdnSettings {
+	if gocdnProviderByKey(st.Provider) == nil {
+		st.Provider = "minio"
+	}
+	switch st.LocalDelivery {
+	case "redirect", "proxy", "signed":
+	default:
+		st.LocalDelivery = "redirect"
+	}
+	st.Prefix = strings.TrimLeft(strings.TrimSpace(st.Prefix), "/")
+	if st.Prefix != "" && !strings.HasSuffix(st.Prefix, "/") {
+		st.Prefix += "/"
+	}
+	st.CDNDomain = strings.TrimRight(strings.TrimSpace(st.CDNDomain), "/")
+	st.AssetsURL = strings.TrimRight(strings.TrimSpace(st.AssetsURL), "/")
+	clamp := func(v *int, lo, hi, def int) {
+		if *v < lo || *v > hi {
+			*v = def
+		}
+	}
+	clamp(&st.ImgMaxW, 16, 8192, 2560)
+	clamp(&st.ImgMaxH, 16, 8192, 2560)
+	clamp(&st.ImgQuality, 1, 100, 82)
+	clamp(&st.ImgRewriteQ, 1, 100, 80)
+	clamp(&st.ImgMaxSource, 1, 400, 60)
+	return st
+}
+
+// gocdnLocked is the set of JSON keys defined by WPGO_CDN_SETTINGS (shown read-only).
+func gocdnLocked() map[string]bool {
+	env, _ := gocdnEnvSettings()
+	out := map[string]bool{}
+	for k := range env {
+		out[k] = true
+	}
+	return out
+}
+
+// gocdnSave stores the settings (the caller keeps sealed secrets sealed) and purges the page cache:
+// media and asset URLs on every page may change.
+func (s *Server) gocdnSave(ctx context.Context, st gocdnSettings) error {
+	st = gocdnSanitize(st)
+	if st.ImgKey == "" {
+		st.ImgKey = gocdnRandomKey()
+	}
+	st.SecretKey = s.gocdnSeal(st.SecretKey)
+	st.CFToken = s.gocdnSeal(st.CFToken)
+	st.ImgKey = s.gocdnSeal(st.ImgKey)
+	// Keys defined by WPGO_CDN_SETTINGS are never written to the database: what was stored before
+	// for them stays as it was.
+	raw, _ := json.Marshal(st)
+	var m map[string]any
+	_ = json.Unmarshal(raw, &m)
+	if locked := gocdnLocked(); len(locked) > 0 {
+		stored, _ := s.settings.Get(gocdnOption).(map[string]any)
+		for k := range locked {
+			if v, ok := stored[k]; ok {
+				m[k] = v
+			} else {
+				delete(m, k)
+			}
+		}
+	}
+	if err := s.settings.Set(ctx, map[string]any{gocdnOption: m}); err != nil {
+		return err
+	}
+	s.gocdnPurge(ctx, true)
+	return nil
+}
+
+// --- secrets ---------------------------------------------------------------------------------
+
+func (s *Server) gocdnKey() []byte {
+	secret := s.cfg.Secret
+	if secret == "" {
+		secret = s.settings.String("auth_secret")
+	}
+	k := sha256.Sum256([]byte("wpgo-gocdn|" + secret))
+	return k[:]
+}
+
+// gocdnSeal encrypts a secret for storage; empty and already sealed values pass through.
+func (s *Server) gocdnSeal(plain string) string {
+	if plain == "" || strings.HasPrefix(plain, gocdnSealPrefix) {
+		return plain
+	}
+	block, _ := aes.NewCipher(s.gocdnKey())
+	gcm, _ := cipher.NewGCM(block)
+	nonce := make([]byte, gcm.NonceSize())
+	_, _ = rand.Read(nonce)
+	return gocdnSealPrefix + base64.RawStdEncoding.EncodeToString(gcm.Seal(nonce, nonce, []byte(plain), nil))
+}
+
+// gocdnReveal decrypts a stored secret; values from WPGO_CDN_SETTINGS are plain and pass through.
+func (s *Server) gocdnReveal(v string) string {
+	raw, ok := strings.CutPrefix(v, gocdnSealPrefix)
+	if !ok {
+		return v
+	}
+	data, err := base64.RawStdEncoding.DecodeString(raw)
+	block, _ := aes.NewCipher(s.gocdnKey())
+	gcm, _ := cipher.NewGCM(block)
+	if err != nil || len(data) < gcm.NonceSize() {
+		return ""
+	}
+	plain, err := gcm.Open(nil, data[:gcm.NonceSize()], data[gcm.NonceSize():], nil)
+	if err != nil {
+		slog.Warn("gocdn: a stored secret cannot be decrypted (was the server secret changed?)")
+		return ""
+	}
+	return string(plain)
+}
+
+// gocdnImgKey is the HMAC key of signed image URLs: a random key stored (sealed) with the
+// settings, so it can be rotated without touching the server secret; derived from the server
+// secret while none is stored (WPGO_CDN_SETTINGS may leave it out).
+func (s *Server) gocdnImgKey(st gocdnSettings) []byte {
+	if k := s.gocdnReveal(st.ImgKey); k != "" {
+		return []byte(k)
+	}
+	k := sha256.Sum256(append([]byte("wpgo-gocdn-img|"), s.gocdnKey()...))
+	return k[:]
+}
+
+func gocdnRandomKey() string {
+	b := make([]byte, 32)
+	_, _ = rand.Read(b)
+	return hex.EncodeToString(b)
+}
+
+// --- the bucket ------------------------------------------------------------------------------
+
+// gocdnEndpoint is the S3 API endpoint: the one entered, or the provider's for the region.
+func gocdnEndpoint(st gocdnSettings) string {
+	if st.Endpoint != "" {
+		return strings.TrimRight(st.Endpoint, "/")
+	}
+	p := gocdnProviderByKey(st.Provider)
+	if p == nil || p.Endpoint == "" || strings.Contains(p.Endpoint, "<") {
+		return ""
+	}
+	return strings.ReplaceAll(p.Endpoint, "{region}", gocdnRegion(st))
+}
+
+func gocdnRegion(st gocdnSettings) string {
+	if st.Region != "" {
+		return st.Region
+	}
+	if p := gocdnProviderByKey(st.Provider); p != nil {
+		return p.Region
+	}
+	return "us-east-1"
+}
+
+// gocdnClient is the S3 client for the settings.
+func (s *Server) gocdnClient(st gocdnSettings) (*gocdn.Client, error) {
+	c := &gocdn.Client{Endpoint: gocdnEndpoint(st), Region: gocdnRegion(st), Bucket: st.Bucket, AccessKey: st.AccessKey,
+		SecretKey: s.gocdnReveal(st.SecretKey), PathStyle: st.PathStyle, HTTP: gocdnHTTP}
+	if c.Endpoint == "" {
+		return nil, errors.New("no endpoint: enter the S3 endpoint URL of your provider")
+	}
+	return c, c.Validate()
+}
+
+// gocdnConfigured reports whether a bucket and credentials are set.
+func (s *Server) gocdnConfigured(st gocdnSettings) bool {
+	_, err := s.gocdnClient(st)
+	return err == nil
+}
+
+// gocdnPublicBase is the URL objects are delivered from: the delivery (CDN) domain, else the
+// bucket's public URL. Keys are appended after a slash.
+func gocdnPublicBase(st gocdnSettings) string {
+	if st.CDNDomain != "" {
+		if !strings.Contains(st.CDNDomain, "://") {
+			return "https://" + st.CDNDomain
+		}
+		return st.CDNDomain
+	}
+	if p := gocdnProviderByKey(st.Provider); p != nil && p.Public != "" && st.Endpoint == "" {
+		return strings.NewReplacer("{bucket}", st.Bucket, "{region}", gocdnRegion(st)).Replace(p.Public)
+	}
+	ep := gocdnEndpoint(st)
+	if ep == "" {
+		return ""
+	}
+	if st.PathStyle {
+		return ep + "/" + st.Bucket
+	}
+	if u, err := url.Parse(ep); err == nil {
+		u.Host = st.Bucket + "." + u.Host
+		return strings.TrimRight(u.String(), "/")
+	}
+	return ""
+}
+
+// gocdnObjectURL is the delivery URL of an object key.
+func gocdnObjectURL(st gocdnSettings, key string) string {
+	base := gocdnPublicBase(st)
+	if base == "" {
+		return ""
+	}
+	return base + gocdn.EscapePath("/"+key)
+}
+
+// gocdnObjectKey is the bucket key of a path in the uploads directory.
+func gocdnObjectKey(st gocdnSettings, rel string) string {
+	return st.Prefix + strings.TrimLeft(rel, "/")
+}
+
+// --- runtime state -----------------------------------------------------------------------------
+
+// gocdnRuntime is per-server state that has no place in the Server struct (a shared file): the
+// background job.
+type gocdnRuntime struct {
+	mu  sync.Mutex
+	job *gocdnJobState
+}
+
+var gocdnRuntimes sync.Map // *Server → *gocdnRuntime
+
+func (s *Server) gocdnRT() *gocdnRuntime {
+	v, _ := gocdnRuntimes.LoadOrStore(s, &gocdnRuntime{})
+	return v.(*gocdnRuntime)
+}
+
+// --- plugin plumbing -------------------------------------------------------------------------
+
+// gocdnPluginRow is GoCDN's row on the Plugins screen.
+func (s *Server) gocdnPluginRow() pluginRow {
+	r := pluginRow{Slug: gocdnSlug, Name: "GoCDN", Version: gocdnVersion, Native: true, Active: s.gocdnOn(),
+		Description: "Offload the media library to Amazon S3, Cloudflare R2, DigitalOcean Spaces, Backblaze B2 or any S3-compatible storage, deliver it from a CDN, resize and convert images to WebP on the fly with signed URLs, serve theme and core assets from a CDN and purge the page cache and Cloudflare. While it is off, nothing of it runs.",
+		Author:      "WordPress Go"}
+	if r.Active {
+		r.SettingsURL = "/wp-admin/gocdn"
+	}
+	return r
+}
+
+// gocdnPluginAction is the Plugins screen's Activate / Deactivate. Offloaded files keep being
+// tracked while it is off, but URLs point back at /wp-content/uploads (so files removed from the
+// server need "Download back to the server" before deactivating).
+func (s *Server) gocdnPluginAction(c *gin.Context, action string) {
+	if err := s.settings.Set(c, map[string]any{gocdnSetting: action == "activate"}); err != nil {
+		c.Redirect(http.StatusFound, "/wp-admin/plugins?error="+url.QueryEscape(err.Error()))
+		return
+	}
+	if action != "activate" {
+		s.gocdnStopJob()
+	}
+	s.purgeAll(c)
+	c.Redirect(http.StatusFound, "/wp-admin/plugins?"+action+"=true")
+}
+
+func (s *Server) gocdnOnly() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if !s.gocdnOn() {
+			c.AbortWithStatus(http.StatusNotFound)
+			return
+		}
+		c.Next()
+	}
+}
+
+// registerGoCDN wires the admin screens; they answer 404 while the plugin is off. The image
+// service and the uploads fallback run in gocdnServe, before the page cache.
+func (s *Server) registerGoCDN(admin *gin.RouterGroup) {
+	admin.GET("/gocdn", s.gocdnOnly(), s.gocdnAdmin)
+	admin.POST("/gocdn", s.gocdnOnly(), s.gocdnAdmin)
+}
+
+// gocdnMenuPages are the screens of the GoCDN menu.
+var gocdnMenuPages = []struct{ Page, Title string }{
+	{"", "Storage"}, {"offload", "Media Offload"}, {"images", "Image Service"}, {"assets", "Assets CDN"}, {"purge", "Purge"},
+}
+
+// gocdnMenu adds the GoCDN top-level menu before Settings and "Remote Storage" under Media.
+func (s *Server) gocdnMenu(menu []*menuTop, u *store.User, screen string) []*menuTop {
+	if !s.gocdnOn() || u == nil || !u.Can("manage_options", nil) {
+		return menu
+	}
+	top := &menuTop{Slug: "gocdn", Title: "GoCDN", ID: "toplevel_page_gocdn", Icon: "dashicons-cloud-upload"}
+	for i, p := range gocdnMenuPages {
+		slug := "gocdn"
+		if p.Page != "" {
+			slug += "?page=" + p.Page
+		}
+		ms := &menuSub{Slug: slug, Title: template.HTML(p.Title), First: i == 0, Current: slug == screen}
+		top.Current = top.Current || ms.Current
+		top.Sub = append(top.Sub, ms)
+	}
+	for _, m := range menu {
+		if m.ID == "menu-media" {
+			ms := &menuSub{Slug: "gocdn?page=remote", Title: "Remote Storage", Current: screen == "gocdn?page=remote"}
+			m.Sub = append(m.Sub, ms)
+			if ms.Current {
+				m.Current = true
+				for _, sub := range m.Sub[:len(m.Sub)-1] {
+					sub.Current = false
+				}
+			}
+		}
+	}
+	for i, m := range menu {
+		if m.ID == "menu-settings" {
+			top.First, m.First = m.First, false
+			return append(menu[:i], append([]*menuTop{top}, menu[i:]...)...)
+		}
+	}
+	return append(menu, top)
+}
+
+// gocdnServe runs in Server.Handler before the page cache: the image service (/cdn-img/… and
+// /wp-content/uploads/…?w=…) and /wp-content/uploads for files that live only in the bucket. It
+// reports whether it answered.
+func (s *Server) gocdnServe(w http.ResponseWriter, r *http.Request) bool {
+	if !s.gocdnOn() || !s.settings.Installed() || (r.Method != http.MethodGet && r.Method != http.MethodHead) {
+		return false
+	}
+	p := r.URL.Path
+	switch {
+	case strings.HasPrefix(p, gocdnImgPath):
+		st := s.gocdnLoad()
+		if !st.Img {
+			http.NotFound(w, r)
+			return true
+		}
+		s.gocdnImage(w, r, st, strings.TrimPrefix(p, gocdnImgPath))
+		return true
+	case strings.HasPrefix(p, "/wp-content/uploads/"):
+		rel := strings.TrimPrefix(p, "/wp-content/uploads/")
+		st := s.gocdnLoad()
+		if st.Img && gocdn.HasImageParams(r.URL.Query()) {
+			s.gocdnImage(w, r, st, rel)
+			return true
+		}
+		return s.gocdnServeUpload(w, r, st, rel)
+	}
+	return false
+}
