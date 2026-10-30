@@ -197,6 +197,22 @@ Hub:
 
 The REST themes endpoint (`wp/v2/themes`) reports them as `category`, `style` and `has_demo`.
 
+### Golementor designs
+
+A theme may be built with Golementor: `"golementor": "golementor/design.json"` names a design in the
+format of a saved Golementor theme (`"format": "gowebeditor-theme"`): `kit` (Site Settings: global
+colors and fonts, theme style), `custom_css`, and `parts`, each with a `type` (`header`, `footer`,
+`single-post`, `single-page`, `archive`, `search-results`, `error-404`, and with Goocommerce
+`single-product` and `product-archive`), a `title`, `elements` (the element tree, a JSON array) and
+`conditions` (`include/general`, `include/product`, `include/product_archive/product_cat`,
+`include/goocommerce/cart`, …). Activating the theme switches Golementor on and loads the design
+into the Theme Builder's working copy (unsaved work there is kept as a saved theme first); pages then
+render through Hello Golementor with the theme's own stylesheet added, so the store's header,
+footer, product page, shop, cart and checkout are edited visually. The theme's `templates/` are the
+fallback while Golementor is off. A store theme declares `"supports": {"woocommerce": true}` and is
+listed under Goocommerce › Store Themes. Fernwood, Good Boy Supply and Kite & Crayon are built this
+way by `tools/goo-golementor-themes/` (`build.py` writes the packages, `art.py` draws the demo art).
+
 ## Demo content
 
 A theme may ship one-click demo content: `demo/demo.json` plus images under `demo/images/`
@@ -284,6 +300,13 @@ Rules:
   They are stored as theme mods of that theme.
 - `options` may only set `blogname`, `blogdescription` (strings), `posts_per_page` (1–100),
   `date_format`.
+- A page may be built with Golementor: `golementor` is its element tree (`_elementor_data`, a JSON
+  array, with the same tokens as the content, e.g. `"url": "{{media:hero}}", "id": "{{media_id:hero}}"`)
+  and `golementor_settings` its page settings (`{"hide_title": "yes"}`). Without a `template` the page
+  uses Golementor's Full Width template.
+- A store theme's `goocommerce` section imports products, categories, attributes, coupons and
+  shipping (`internal/server/goo_demo.go`). With Golylang active every imported item gets the default
+  language.
 - Limits: 24 images, 50 pages, 100 posts, 10 menus. An import runs in the request, with a
   two-minute limit, and reports its counts in an admin notice.
 
