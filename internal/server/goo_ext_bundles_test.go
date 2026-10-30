@@ -231,3 +231,77 @@ func TestGooExtBundles(t *testing.T) {
 		t.Errorf("shirt stock after the order: %v", p.StockQuantity)
 	}
 }
+
+// Bundled items whose cart / order visibility is "hidden" are left out of the cart, mini-cart,
+// checkout review, order details, e-mails and invoices, while still counting in the totals.
+func TestGooExtBundlesHiddenItems(t *testing.T) {
+	_, _, srv := gooSite(t)
+	ctx := context.Background()
+	gxTestGateway(t, srv)
+	virt := func(p *gooProduct) { p.Virtual = true }
+	sock := gooMakeSimple(t, srv, "Hidden Sockpair", 4, virt)
+	mug := gooMakeSimple(t, srv, "Visible Mugcup", 6, virt)
+	b := gooNewProduct(bnType)
+	b.Name, b.RegularPrice = "Gift box", gooFloatPtr(10)
+	b.Virtual = true
+	b = gxSavePanels(t, srv, b, bnKey, url.Values{
+		"bundle_item_id[]":                   {"", ""},
+		"bundle_product_id[]":                {itoa64(sock.ID), itoa64(mug.ID)},
+		"bundle_quantity_default[]":          {"1", "1"},
+		"bundle_quantity_min[]":              {"1", "1"},
+		"bundle_quantity_max[]":              {"1", "1"},
+		"bundle_optional[]":                  {"no", "no"},
+		"bundle_priced_individually[]":       {"yes", "yes"},
+		"bundle_single_product_visibility[]": {"visible", "visible"},
+		"bundle_cart_visibility[]":           {"hidden", "visible"},
+		"bundle_order_visibility[]":          {"hidden", "visible"},
+		"bundle_hide_thumbnail[]":            {"yes", "no"},
+	})
+	if items := bnItemsOf(b); len(items) != 2 || items[0].VisibleCart || items[0].VisibleOrder || !items[0].HideThumbnail {
+		t.Fatalf("saved visibility: %+v", items)
+	}
+	if err := srv.gooSetExtension(ctx, bnKey, true); err != nil {
+		t.Fatal(err)
+	}
+	c := gooTestCtx()
+	cart := srv.gooCartFor(c)
+	if _, err := cart.Add(ctx, b.ID, 1, 0, nil, map[string][]string{}, nil); err != nil {
+		t.Fatal(err)
+	}
+	if len(cart.Items) != 3 {
+		t.Fatalf("cart lines: %d", len(cart.Items))
+	}
+	gooAlmost(t, "subtotal counts the hidden item", cart.Subtotal, 20)
+	check := func(where, out string) {
+		t.Helper()
+		if strings.Contains(out, "Hidden Sockpair") {
+			t.Errorf("%s lists the hidden bundled item", where)
+		}
+		if !strings.Contains(out, "Visible Mugcup") {
+			t.Errorf("%s misses the visible bundled item", where)
+		}
+	}
+	check("cart", srv.gooCartPageHTML(c))
+	check("mini-cart", string(srv.gooMiniCart(c)))
+	check("checkout review", srv.gooReviewOrderHTML(c, cart))
+
+	o, errs := gxCheckout(t, srv, c, "goo_test")
+	if len(errs) > 0 || o == nil {
+		t.Fatalf("checkout: %v", errs)
+	}
+	if len(o.ItemsOf("line_item")) != 3 {
+		t.Fatalf("order lines: %d", len(o.ItemsOf("line_item")))
+	}
+	check("order details", srv.gooOrderDetailsHTML(gooTestCtx(), o, false))
+	h, plain := srv.gooEmailOrderDetails(ctx, o, false, nil)
+	check("e-mail", h)
+	check("plain e-mail", plain)
+
+	// Switched off, nothing is hidden.
+	if err := srv.gooSetExtension(ctx, bnKey, false); err != nil {
+		t.Fatal(err)
+	}
+	if h, _ := srv.gooEmailOrderDetails(ctx, o, false, nil); !strings.Contains(h, "Hidden Sockpair") {
+		t.Error("hidden item still hidden with the module off")
+	}
+}

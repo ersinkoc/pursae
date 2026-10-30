@@ -309,3 +309,38 @@ func (s *Server) gooDisplayPrice(ctx context.Context, p *gooProduct) float64 {
 type gooCheckoutValidateHook func(s *Server, c *gin.Context, cart *gooCart, d *gooCheckoutData) []string
 
 var gooCheckoutValidateHooks []gooCheckoutValidateHook
+
+// Item visibility ------------------------------------------------------------------------------------------
+
+// gooCartItemVisibleHook hides a cart line from a listing (woocommerce_cart_item_visible,
+// woocommerce_widget_cart_item_visible, woocommerce_checkout_cart_item_visible): where is "cart",
+// "mini_cart" or "checkout". The line still counts in the totals.
+type gooCartItemVisibleHook func(s *Server, ctx context.Context, it *gooCartItem, where string) bool
+
+var gooCartItemVisibleHooks []gooCartItemVisibleHook
+
+// gooCartItemVisible reports whether a cart line is listed at where.
+func (s *Server) gooCartItemVisible(ctx context.Context, it *gooCartItem, where string) bool {
+	for _, f := range gooCartItemVisibleHooks {
+		if !f(s, ctx, it, where) {
+			return false
+		}
+	}
+	return true
+}
+
+// gooOrderItemVisibleHook hides an order line from a listing (woocommerce_order_item_visible): where is
+// "order_details", "order_pay", "email" or "invoice".
+type gooOrderItemVisibleHook func(s *Server, ctx context.Context, it *gooOrderItem, where string) bool
+
+var gooOrderItemVisibleHooks []gooOrderItemVisibleHook
+
+// gooOrderItemVisible reports whether an order line is listed at where.
+func (s *Server) gooOrderItemVisible(ctx context.Context, it *gooOrderItem, where string) bool {
+	for _, f := range gooOrderItemVisibleHooks {
+		if !f(s, ctx, it, where) {
+			return false
+		}
+	}
+	return true
+}

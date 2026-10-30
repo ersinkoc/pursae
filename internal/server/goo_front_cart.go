@@ -52,6 +52,9 @@ func (s *Server) gooCartPageHTML(c *gin.Context) string {
 		`<th class="product-remove"><span class="screen-reader-text">Remove item</span></th><th class="product-thumbnail"><span class="screen-reader-text">Thumbnail image</span></th>` +
 		`<th class="product-name">Product</th><th class="product-price">Price</th><th class="product-quantity">Quantity</th><th class="product-subtotal">Subtotal</th></tr></thead><tbody>`)
 	for _, it := range cart.Items {
+		if !s.gooCartItemVisible(ctx, it, "cart") {
+			continue
+		}
 		p := it.product
 		parentName := s.gooProductTitle(ctx, p)
 		link := s.gooPermalink(ctx, p)
@@ -375,6 +378,9 @@ func (s *Server) gooMiniCart(c *gin.Context) template.HTML {
 	}
 	b.WriteString(`<ul class="woocommerce-mini-cart cart_list product_list_widget">`)
 	for _, it := range cart.Items {
+		if !s.gooCartItemVisible(ctx, it, "mini_cart") {
+			continue
+		}
 		p := it.product
 		name := s.gooProductTitle(ctx, p)
 		b.WriteString(`<li class="woocommerce-mini-cart-item mini_cart_item">`)

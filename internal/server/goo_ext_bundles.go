@@ -69,6 +69,8 @@ func init() {
 		return lo
 	})
 	gooOnHTML("single_before_add_to_cart", bnSingleForm)
+	gooCartItemVisibleHooks = append(gooCartItemVisibleHooks, bnCartItemVisibleHidx)
+	gooOrderItemVisibleHooks = append(gooOrderItemVisibleHooks, bnOrderItemVisibleHidx)
 	gooProductPanels = append(gooProductPanels, &gooProductPanel{ID: "bundled_products", Label: "Bundled Products", Module: bnKey, ShowFor: []string{bnType}, Render: bnPanel, Save: bnPanelSave})
 }
 
@@ -83,6 +85,7 @@ type bnItem struct {
 	VisibleProduct    bool
 	VisibleCart       bool
 	VisibleOrder      bool
+	HideThumbnail     bool
 	OverrideTitle     bool
 	Title             string
 }
@@ -98,7 +101,7 @@ func bnItemsOf(p *gooProduct) []bnItem {
 			Min: int(gxNum(m["quantity_min"])), Max: int(gxNum(m["quantity_max"])), Optional: gxBool(m["optional"]),
 			PricedIndividual: gxBool(m["priced_individually"]), Discount: gxNum(m["discount"]),
 			VisibleProduct: vis("single_product_visibility"), VisibleCart: vis("cart_visibility"), VisibleOrder: vis("order_visibility"),
-			OverrideTitle: gxBool(m["override_title"]), Title: gxStr(m["title"])}
+			HideThumbnail: gxBool(m["hide_thumbnail"]), OverrideTitle: gxBool(m["override_title"]), Title: gxStr(m["title"])}
 		if it.ProductID != 0 {
 			out = append(out, it)
 		}
@@ -445,14 +448,21 @@ func bnItemData(s *Server, ctx context.Context, it *gooCartItem) []gooKV {
 		}
 		sort.Slice(ids, func(i, j int) bool { return gxAtoi(ids[i]) < gxAtoi(ids[j]) })
 		titles := map[string]string{}
+		hiddenIDs := map[string]bool{}
 		if it.product != nil {
 			for _, bi := range bnItemsOf(it.product) {
+				if !bi.VisibleCart {
+					hiddenIDs[strconv.Itoa(bi.ID)] = true // hidden in the cart: not listed under the bundle either
+				}
 				if bi.OverrideTitle && bi.Title != "" {
 					titles[strconv.Itoa(bi.ID)] = bi.Title
 				}
 			}
 		}
 		for _, id := range ids {
+			if hiddenIDs[id] {
+				continue
+			}
 			st, _ := stamp[id].(map[string]any)
 			name := titles[id]
 			if name == "" {
@@ -493,6 +503,9 @@ func bnCheckout(s *Server, ctx context.Context, cart *gooCart, o *gooOrder) erro
 		} else if by := bnBundledBy(it); by != "" {
 			li.Meta["_bundle_cart_key"] = it.Key
 			li.Meta["_bundled_by"] = by
+			if gxBool(it.Data["bundled_item_hidden_order"]) {
+				li.Meta["_bundled_item_hidden"] = "yes"
+			}
 			if cont := cart.Item(by); cont != nil && cont.product != nil {
 				li.Meta["_bundled_item_title"] = li.Name
 				for _, bi := range bnItemsOf(cont.product) {
@@ -534,7 +547,7 @@ func bnSingleForm(s *Server, c *gin.Context, p *gooProduct) template.HTML {
 			hidden = ` style="display:none"`
 		}
 		img := ""
-		if imgID := s.gooImageOf(ctx, cp); imgID != 0 {
+		if imgID := s.gooImageOf(ctx, cp); imgID != 0 && !it.HideThumbnail {
 			if a, err := s.store.GetAttachment(ctx, imgID); err == nil {
 				img = string(s.attachmentImage(ctx, a, "thumbnail", "bundled_product_image"))
 			}
@@ -642,6 +655,7 @@ func bnRow(s *Server, ctx context.Context, it bnItem) string {
 		`<td>` + yn("bundle_optional", it.Optional) + `</td><td>` + yn("bundle_priced_individually", it.PricedIndividual) + `</td>` +
 		`<td><input type="text" name="bundle_discount[]" value="` + map[bool]string{true: gxFmt(it.Discount), false: ""}[it.Discount > 0] + `" size="4"></td>` +
 		`<td>` + vis("bundle_single_product_visibility", it.VisibleProduct) + vis("bundle_cart_visibility", it.VisibleCart) + vis("bundle_order_visibility", it.VisibleOrder) + `</td>` +
+		`<td>` + yn("bundle_hide_thumbnail", it.HideThumbnail) + `</td>` +
 		`<td>` + yn("bundle_override_title", it.OverrideTitle) + `<input type="text" name="bundle_title[]" value="` + html.EscapeString(it.Title) + `" placeholder="Title"></td>` +
 		`<td class="remove"><a href="#" class="button" onclick="this.closest('tr').remove();return false">&times;</a></td></tr>`
 }
@@ -658,7 +672,7 @@ func bnPanel(s *Server, c *gin.Context, p *gooProduct) template.HTML {
 		[]gooOpt{{"unassembled", "Unassembled – bundled products are shipped individually"}, {"assembled", "Assembled – bundled products are shipped in the bundle's package"}}), ""))
 	b.WriteString(bkField("Min bundle size", "_wc_pb_min_bundle_size", bkInput("_wc_pb_min_bundle_size", "number", map[bool]string{true: strconv.Itoa(bnMetaInt(p, "_wc_pb_min_bundle_size")), false: ""}[bnMetaInt(p, "_wc_pb_min_bundle_size") > 0], ` min="0"`), "Minimum number of items in the bundle."))
 	b.WriteString(bkField("Max bundle size", "_wc_pb_max_bundle_size", bkInput("_wc_pb_max_bundle_size", "number", map[bool]string{true: strconv.Itoa(bnMetaInt(p, "_wc_pb_max_bundle_size")), false: ""}[bnMetaInt(p, "_wc_pb_max_bundle_size") > 0], ` min="0"`), "Maximum number of items in the bundle."))
-	b.WriteString(`</div><div class="options_group wc-bundled-items"><table class="widefat"><thead><tr><th>Product</th><th>Default Qty</th><th>Min Qty</th><th>Max Qty</th><th>Optional</th><th>Priced Individually</th><th>Discount %</th><th>Visibility (product / cart / order)</th><th>Override Title</th><th></th></tr></thead><tbody>`)
+	b.WriteString(`</div><div class="options_group wc-bundled-items"><table class="widefat"><thead><tr><th>Product</th><th>Default Qty</th><th>Min Qty</th><th>Max Qty</th><th>Optional</th><th>Priced Individually</th><th>Discount %</th><th>Visibility (product / cart / order)</th><th>Hide Thumbnail</th><th>Override Title</th><th></th></tr></thead><tbody>`)
 	for _, it := range bnItemsOf(p) {
 		b.WriteString(bnRow(s, ctx, it))
 	}
@@ -717,11 +731,29 @@ func bnPanelSave(s *Server, c *gin.Context, p *gooProduct) {
 			"quantity_max": float64(mx), "optional": at("bundle_optional") == "yes", "priced_individually": at("bundle_priced_individually") == "yes",
 			"discount": math.Min(math.Max(gxAtof(at("bundle_discount")), 0), 100), "single_product_visibility": defaultStr(at("bundle_single_product_visibility"), "visible"),
 			"cart_visibility": defaultStr(at("bundle_cart_visibility"), "visible"), "order_visibility": defaultStr(at("bundle_order_visibility"), "visible"),
-			"override_title": at("bundle_override_title") == "yes", "title": at("bundle_title")})
+			"hide_thumbnail": at("bundle_hide_thumbnail") == "yes", "override_title": at("bundle_override_title") == "yes", "title": at("bundle_title")})
 	}
 	p.Meta["_bundle_data"] = items
 	if p.RegularPrice == nil {
 		zero := 0.0
 		p.RegularPrice = &zero // a bundle of individually priced items has no price of its own
 	}
+}
+
+// bnCartItemVisibleHidx hides bundled items whose cart visibility is "hidden" from the cart, mini-cart
+// and checkout review (they still count in the totals).
+func bnCartItemVisibleHidx(s *Server, ctx context.Context, it *gooCartItem, where string) bool {
+	if !s.gooExtOn(bnKey) || bnBundledBy(it) == "" {
+		return true
+	}
+	return !gxBool(it.Data["bundled_item_hidden"])
+}
+
+// bnOrderItemVisibleHidx hides bundled items whose order visibility is "hidden" from order details,
+// the pay page, e-mails and invoices.
+func bnOrderItemVisibleHidx(s *Server, ctx context.Context, it *gooOrderItem, where string) bool {
+	if !s.gooExtOn(bnKey) || it.Meta == nil || gxStr(it.Meta["_bundled_by"]) == "" {
+		return true
+	}
+	return gxStr(it.Meta["_bundled_item_hidden"]) != "yes"
 }

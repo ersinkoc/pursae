@@ -251,6 +251,9 @@ func (s *Server) gooReviewOrderHTML(c *gin.Context, cart *gooCart) string {
 	var b strings.Builder
 	b.WriteString(`<table class="shop_table woocommerce-checkout-review-order-table"><thead><tr><th class="product-name">Product</th><th class="product-total">Subtotal</th></tr></thead><tbody>`)
 	for _, it := range cart.Items {
+		if !s.gooCartItemVisible(ctx, it, "checkout") {
+			continue
+		}
 		b.WriteString(`<tr class="cart_item"><td class="product-name">` + gooEsc(s.gooProductTitle(ctx, it.product)) + `&nbsp;<strong class="product-quantity">&times;&nbsp;` + strconv.Itoa(it.Quantity) + `</strong>` +
 			s.gooItemDataHTML(ctx, it) + `</td><td class="product-total">` + string(s.gooPrice(cart.ItemSubtotalDisplay(it))) + s.gooIncTaxNote(cart, it) + `</td></tr>`)
 	}
@@ -556,6 +559,9 @@ func (s *Server) gooOrderDetailsHTML(c *gin.Context, o *gooOrder, account bool) 
 	b.WriteString(`<table class="woocommerce-table woocommerce-table--order-details shop_table order_details"><thead><tr><th class="woocommerce-table__product-name product-name">Product</th><th class="woocommerce-table__product-table product-total">Total</th></tr></thead><tbody>`)
 	incl := s.gooOptString("tax_display_cart") == "incl"
 	for _, it := range o.ItemsOf("line_item") {
+		if !s.gooOrderItemVisible(ctx, it, "order_details") {
+			continue
+		}
 		name := gooEsc(it.Name)
 		pid := it.ProductID
 		if p, err := s.gooGetProduct(ctx, pid); err == nil && p.Status == "publish" {
@@ -654,6 +660,9 @@ func (s *Server) gooOrderPayHTML(c *gin.Context, id int64) string {
 	var b strings.Builder
 	b.WriteString(`<form id="order_review" method="post" action="` + gooEsc(s.gooOrderPayURL(ctx, o)) + `"><table class="shop_table"><thead><tr><th class="product-name">Product</th><th class="product-quantity">Qty</th><th class="product-total">Totals</th></tr></thead><tbody>`)
 	for _, it := range o.ItemsOf("line_item") {
+		if !s.gooOrderItemVisible(ctx, it, "order_pay") {
+			continue
+		}
 		b.WriteString(`<tr class="order_item"><td class="product-name">` + gooEsc(it.Name) + `</td><td class="product-quantity">&times;&nbsp;` + strconv.Itoa(it.Qty()) + `</td><td class="product-subtotal">` + string(s.gooPriceIn(it.Subtotal, o.Currency)) + `</td></tr>`)
 	}
 	b.WriteString(`</tbody><tfoot>`)
