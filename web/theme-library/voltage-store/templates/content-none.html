@@ -1,0 +1,6 @@
+<section class="no-results not-found vt-none">
+	<h2 class="page-title">No results</h2>
+	{{if eq .Template "search"}}<p>Nothing matched that query. Try a model name or a category, like &ldquo;earbuds&rdquo;.</p>
+	{{else}}<p>It seems we can&rsquo;t find what you&rsquo;re looking for. Perhaps searching can help.</p>{{end}}
+	{{template "searchform" .}}
+</section>

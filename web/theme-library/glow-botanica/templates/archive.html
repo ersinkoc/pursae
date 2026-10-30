@@ -1,0 +1,10 @@
+{{template "header" .}}
+<div class="gb-wrap">
+	<header class="page-header">
+		<p class="gb-kicker">Browsing</p>
+		<h1 class="page-title">{{.ArchiveTitle}}</h1>
+		{{with .ArchiveDesc}}<div class="archive-description">{{.}}</div>{{end}}
+	</header>
+	{{if .Posts}}{{template "loop" .}}{{.Pagination}}{{else}}{{template "content-none" .}}{{end}}
+</div>
+{{template "footer" .}}

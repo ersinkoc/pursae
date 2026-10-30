@@ -1,0 +1,672 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Voltage",
+  "blogdescription": "Gadgets we would fix, so we sell them"
+ },
+ "categories": [
+  {
+   "slug": "lab",
+   "name": "Lab",
+   "description": "How we test."
+  },
+  {
+   "slug": "guides",
+   "name": "Guides",
+   "description": "Buying advice without the jargon."
+  },
+  {
+   "slug": "reviews",
+   "name": "Reviews",
+   "description": "Long-term tests from the team."
+  }
+ ],
+ "media": [
+  {
+   "id": "hero",
+   "file": "demo/images/voltage-store-hero.jpg",
+   "alt": "A smartphone, earbuds and a smartwatch glowing on a dark graphite surface"
+  },
+  {
+   "id": "about",
+   "file": "demo/images/voltage-store-about.jpg",
+   "alt": "A workbench with a disassembled phone, tools and test equipment"
+  },
+  {
+   "id": "cat-phones",
+   "file": "demo/images/voltage-store-cat-phones.jpg",
+   "alt": "A smartphone and a small tablet floating over a dark gradient"
+  },
+  {
+   "id": "cat-audio",
+   "file": "demo/images/voltage-store-cat-audio.jpg",
+   "alt": "Over-ear headphones and a pair of earbuds on a dark plinth"
+  },
+  {
+   "id": "cat-wearables",
+   "file": "demo/images/voltage-store-cat-wearables.jpg",
+   "alt": "A smartwatch and a fitness band on a graphite surface"
+  },
+  {
+   "id": "cat-accessories",
+   "file": "demo/images/voltage-store-cat-accessories.jpg",
+   "alt": "A charger, a braided cable and a power bank arranged in a row"
+  },
+  {
+   "id": "p-nova-x-smartphone",
+   "file": "demo/images/voltage-store-p-nova-x-smartphone.jpg",
+   "alt": "The Nova X smartphone shown front and back"
+  },
+  {
+   "id": "p-pocket-tablet",
+   "file": "demo/images/voltage-store-p-pocket-tablet.jpg",
+   "alt": "A compact tablet propped up on a small stand"
+  },
+  {
+   "id": "p-studio-headphones",
+   "file": "demo/images/voltage-store-p-studio-headphones.jpg",
+   "alt": "Matte black over-ear headphones resting on a stand"
+  },
+  {
+   "id": "p-true-wireless-earbuds",
+   "file": "demo/images/voltage-store-p-true-wireless-earbuds.jpg",
+   "alt": "A pair of white earbuds beside their open charging case"
+  },
+  {
+   "id": "p-bookshelf-speaker",
+   "file": "demo/images/voltage-store-p-bookshelf-speaker.jpg",
+   "alt": "A compact fabric-fronted speaker with walnut sides"
+  },
+  {
+   "id": "p-pulse-smartwatch",
+   "file": "demo/images/voltage-store-p-pulse-smartwatch.jpg",
+   "alt": "A round smartwatch with a glowing watch face"
+  },
+  {
+   "id": "p-fitness-band",
+   "file": "demo/images/voltage-store-p-fitness-band.jpg",
+   "alt": "A slim fitness band with a small bright display"
+  },
+  {
+   "id": "p-fast-charger-65w",
+   "file": "demo/images/voltage-store-p-fast-charger-65w.jpg",
+   "alt": "A compact white wall charger with folding pins"
+  },
+  {
+   "id": "p-braided-usb-c-cable",
+   "file": "demo/images/voltage-store-p-braided-usb-c-cable.jpg",
+   "alt": "A coiled braided USB-C cable"
+  },
+  {
+   "id": "p-magnetic-power-bank",
+   "file": "demo/images/voltage-store-p-magnetic-power-bank.jpg",
+   "alt": "A slim power bank with a fold-out kickstand"
+  },
+  {
+   "id": "p-mechanical-keyboard",
+   "file": "demo/images/voltage-store-p-mechanical-keyboard.jpg",
+   "alt": "A compact mechanical keyboard with white backlight"
+  },
+  {
+   "id": "p-4k-action-camera",
+   "file": "demo/images/voltage-store-p-4k-action-camera.jpg",
+   "alt": "A small rugged action camera with a front screen"
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Home",
+   "content": "<!-- wp:cover {\"url\":\"{{media:hero}}\",\"id\":{{media_id:hero}},\"dimRatio\":0,\"minHeight\":640,\"contentPosition\":\"center left\",\"align\":\"full\"} --><div class=\"wp-block-cover alignfull has-custom-content-position is-position-center-left\" style=\"min-height:640px\"><span aria-hidden=\"true\" class=\"wp-block-cover__background has-background-dim-0 has-background-dim\"></span><img class=\"wp-block-cover__image-background wp-image-{{media_id:hero}}\" alt=\"\" src=\"{{media:hero}}\" data-object-fit=\"cover\"/><div class=\"wp-block-cover__inner-container\"><!-- wp:paragraph {\"className\":\"vt-kicker\"} --><p class=\"vt-kicker\">// new &middot; nova x</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":1} --><h1 class=\"wp-block-heading\">Pocket power.<br><em>Zero lag.</em></h1><!-- /wp:heading --><!-- wp:paragraph --><p>The Nova X pairs a 120 Hz OLED with a two-day battery and five years of updates. Fast now, fast later.</p><!-- /wp:paragraph --><!-- wp:paragraph {\"className\":\"vt-chips\"} --><p class=\"vt-chips\"><span>6.4\" OLED &middot; 120 Hz</span><span>2-day battery</span><span>from $799</span></p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"/product-category/phones/\">Shop phones</a></div><!-- /wp:button --><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"/shop/\">Explore all gear</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div></div><!-- /wp:cover --><!-- wp:group {\"className\":\"vt-trust\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group vt-trust\"><!-- wp:group {\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group\"><!-- wp:paragraph {\"className\":\"vt-kicker\"} --><p class=\"vt-kicker\">01 / shipping</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Free 2-day delivery</h3><!-- /wp:heading --><!-- wp:paragraph --><p>On every order over $99.</p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:group {\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group\"><!-- wp:paragraph {\"className\":\"vt-kicker\"} --><p class=\"vt-kicker\">02 / warranty</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">2-year warranty</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Repair or replace, no forms.</p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:group {\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group\"><!-- wp:paragraph {\"className\":\"vt-kicker\"} --><p class=\"vt-kicker\">03 / returns</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">30-day returns</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Changed your mind? Send it back.</p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:group {\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group\"><!-- wp:paragraph {\"className\":\"vt-kicker\"} --><p class=\"vt-kicker\">04 / support</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Real humans</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Chat with techies, 7 days a week.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:group --><!-- wp:group {\"className\":\"vt-section-head\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group vt-section-head\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Shop by category</h2><!-- /wp:heading --><!-- wp:paragraph --><p><a href=\"/shop/\">View all &rarr;</a></p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:group {\"className\":\"vt-bento\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group vt-bento\"><!-- wp:image {\"id\":{{media_id:cat-phones}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"/product-category/phones/\"><img src=\"{{media:cat-phones}}\" alt=\"A smartphone and a small tablet floating over a dark gradient\" class=\"wp-image-{{media_id:cat-phones}}\"/></a><figcaption class=\"wp-element-caption\">Phones & Tablets</figcaption></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:cat-audio}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"/product-category/audio/\"><img src=\"{{media:cat-audio}}\" alt=\"Over-ear headphones and a pair of earbuds on a dark plinth\" class=\"wp-image-{{media_id:cat-audio}}\"/></a><figcaption class=\"wp-element-caption\">Audio</figcaption></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:cat-wearables}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"/product-category/wearables/\"><img src=\"{{media:cat-wearables}}\" alt=\"A smartwatch and a fitness band on a graphite surface\" class=\"wp-image-{{media_id:cat-wearables}}\"/></a><figcaption class=\"wp-element-caption\">Wearables</figcaption></figure><!-- /wp:image --><!-- wp:image {\"id\":{{media_id:cat-accessories}},\"sizeSlug\":\"large\",\"linkDestination\":\"custom\"} --><figure class=\"wp-block-image size-large\"><a href=\"/product-category/accessories/\"><img src=\"{{media:cat-accessories}}\" alt=\"A charger, a braided cable and a power bank arranged in a row\" class=\"wp-image-{{media_id:cat-accessories}}\"/></a><figcaption class=\"wp-element-caption\">Accessories</figcaption></figure><!-- /wp:image --></div><!-- /wp:group --><!-- wp:group {\"className\":\"vt-section-head\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group vt-section-head\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Featured gear</h2><!-- /wp:heading --><!-- wp:paragraph --><p><a href=\"/shop/\">Browse the catalog &rarr;</a></p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:shortcode -->[products limit=\"8\" columns=\"4\" visibility=\"featured\"]<!-- /wp:shortcode --><!-- wp:group {\"className\":\"vt-promo\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group vt-promo\"><!-- wp:group {\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group\"><!-- wp:paragraph {\"className\":\"vt-kicker\"} --><p class=\"vt-kicker\">// limited offer</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Quiet the world for $199.</h2><!-- /wp:heading --><!-- wp:paragraph --><p>The Studio ANC headphones are $50 off this week. New here? Take another 10% with <code>WELCOME10</code>.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"/product-category/audio/\">Shop audio</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --><!-- wp:image {\"id\":{{media_id:p-studio-headphones}},\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:p-studio-headphones}}\" alt=\"Studio ANC Headphones\" class=\"wp-image-{{media_id:p-studio-headphones}}\"/></figure><!-- /wp:image --></div><!-- /wp:group --><!-- wp:group {\"className\":\"vt-section-head\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group vt-section-head\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Deals of the week</h2><!-- /wp:heading --><!-- wp:paragraph --><p><a href=\"/shop/?orderby=price\">All deals &rarr;</a></p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:shortcode -->[products limit=\"4\" columns=\"4\" on_sale=\"true\"]<!-- /wp:shortcode --><!-- wp:group {\"className\":\"vt-section-head\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group vt-section-head\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Just landed</h2><!-- /wp:heading --><!-- wp:paragraph --><p><a href=\"/shop/?orderby=date\">What's new &rarr;</a></p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:shortcode -->[products limit=\"8\" columns=\"4\" orderby=\"date\" order=\"DESC\"]<!-- /wp:shortcode -->",
+   "template": "page-home",
+   "front_page": true
+  },
+  {
+   "slug": "about",
+   "title": "About Voltage",
+   "content": "<!-- wp:image {\"id\":{{media_id:about}},\"sizeSlug\":\"large\"} --><figure class=\"wp-block-image size-large\"><img src=\"{{media:about}}\" alt=\"The repair bench with a disassembled phone and tools\" class=\"wp-image-{{media_id:about}}\"/></figure><!-- /wp:image --><!-- wp:paragraph --><p>Voltage started as a repair counter. For six years we fixed cracked screens, swollen batteries and water-logged earbuds, and we learned which gadgets were built to last and which were built to be replaced.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Today we sell the ones we would recommend to our own families: tested on our bench for a month before they reach the shelf, backed by a two-year warranty we honour ourselves, and supported by the same technicians who used to open them up.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">How we choose</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>We open every product and check how repairable it is.</li><!-- /wp:list-item --><!-- wp:list-item --><li>We run battery, heat and drop tests before listing anything.</li><!-- /wp:list-item --><!-- wp:list-item --><li>We publish what we find, including the bits we did not like.</li><!-- /wp:list-item --><!-- wp:list-item --><li>We keep spare parts for at least five years.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:quote --><blockquote class=\"wp-block-quote\"><!-- wp:paragraph --><p>If we would not fix it, we will not sell it.</p><!-- /wp:paragraph --><cite>the Voltage bench</cite></blockquote><!-- /wp:quote -->",
+   "featured_media": "about"
+  },
+  {
+   "slug": "contact",
+   "title": "Support",
+   "content": "<!-- wp:paragraph --><p>Questions about compatibility, an order or a repair? Our technicians answer chat and email every day from 8:00 to 22:00, usually within the hour.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p><strong>Email:</strong> support@voltage.example<br><strong>Repair counter:</strong> 220 Circuit Avenue, Monday to Saturday, 10–19<br><strong>Phone:</strong> +1 555 0100</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Warranty claims</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Log in to your account, open the order and choose <em>Start a claim</em>. We email a prepaid label and turn most repairs around within five working days.</p><!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "journal",
+   "title": "Journal",
+   "content": "",
+   "posts_page": true
+  }
+ ],
+ "posts": [
+  {
+   "slug": "how-we-test-battery-life",
+   "title": "How we test battery life",
+   "date": "2026-09-18T09:00:00",
+   "categories": [
+    "lab"
+   ],
+   "featured_media": "p-nova-x-smartphone",
+   "excerpt": "Brightness locked, the same playlist, the same scrolling robot: our rundown test, explained.",
+   "content": "<!-- wp:paragraph --><p>Battery claims on the box are measured in perfect conditions. Ours are not. Every phone and tablet we list goes through the same rundown test: screen locked at 200 nits, Wi-Fi on, a looping mix of video, browsing and a small robot finger that scrolls a social feed for ten minutes every hour.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>We run the test three times, on the first charge, after a week and after a month, because batteries and software both settle in. The number we publish is the median, rounded down to the nearest half hour.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Charging speed gets the same treatment. We measure from 5% to 80% with the charger in the box, and with our own 65 W GaN charger, since that is what most of you will actually use.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The short version for the Nova X: two days of mixed use is real, and a twenty-minute top-up gets you through an evening.</p><!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "choosing-noise-cancelling-headphones",
+   "title": "Choosing noise-cancelling headphones",
+   "date": "2026-10-02T11:00:00",
+   "categories": [
+    "guides"
+   ],
+   "featured_media": "p-studio-headphones",
+   "excerpt": "Over-ear or in-ear, adaptive or fixed: what actually matters on a long flight.",
+   "content": "<!-- wp:paragraph --><p>Noise cancelling is best at steady, low sounds: engines, air conditioning, the rumble of a train. It is weaker against sudden, high sounds like voices, which is where a good passive seal does most of the work.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>That is why fit matters more than any spec sheet. Over-ear cushions that seal around your ears block more chatter than earbuds, while earbuds win on size and on hot days. Try both if you can, and pick the one you will actually wear for five hours.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Adaptive cancelling adjusts to your surroundings in real time. It is worth it if you move between quiet offices and loud streets; for long flights, a fixed strong setting is just as good.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Finally, check comfort with glasses, battery with cancelling switched on and whether you can still use them wired when the battery runs out.</p><!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "a-week-with-the-pulse-smartwatch",
+   "title": "A week with the Pulse smartwatch",
+   "date": "2026-10-19T08:00:00",
+   "categories": [
+    "reviews"
+   ],
+   "featured_media": "p-pulse-smartwatch",
+   "excerpt": "Seven days, three runs, one forgotten charger: living with our favourite watch.",
+   "content": "<!-- wp:paragraph --><p>We gave the Pulse to the least gadget-minded person on the team and asked her to wear it for a week, including to bed. She forgot the charger at home on day one. It did not matter: the watch finished the week at 9%.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>GPS locked within a few seconds on all three runs, and the distance matched a dedicated running watch to within a few metres. Heart rate tracked well on steady runs and lagged slightly on sprints, as wrist sensors tend to.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>The sleep data was the surprise. The watch noticed two restless nights before she did, and the gentle wind-down reminder became a habit by Thursday.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Our only wish: a slightly brighter screen in direct summer sun. Otherwise, it is the watch we recommend to people who do not want to think about their watch.</p><!-- /wp:paragraph -->"
+  }
+ ],
+ "menus": [
+  {
+   "name": "Departments",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Shop all",
+     "url": "/shop/",
+     "children": [
+      {
+       "title": "Phones & Tablets",
+       "url": "/product-category/phones/"
+      },
+      {
+       "title": "Audio",
+       "url": "/product-category/audio/"
+      },
+      {
+       "title": "Wearables",
+       "url": "/product-category/wearables/"
+      },
+      {
+       "title": "Accessories",
+       "url": "/product-category/accessories/"
+      }
+     ]
+    },
+    {
+     "title": "Phones & Tablets",
+     "url": "/product-category/phones/"
+    },
+    {
+     "title": "Audio",
+     "url": "/product-category/audio/"
+    },
+    {
+     "title": "Wearables",
+     "url": "/product-category/wearables/"
+    },
+    {
+     "title": "Accessories",
+     "url": "/product-category/accessories/"
+    },
+    {
+     "title": "Journal",
+     "page": "journal"
+    },
+    {
+     "title": "About",
+     "page": "about"
+    },
+    {
+     "title": "Support",
+     "page": "contact"
+    }
+   ]
+  },
+  {
+   "name": "Footer menu",
+   "location": "footer",
+   "items": [
+    {
+     "title": "Shop",
+     "url": "/shop/"
+    },
+    {
+     "title": "My account",
+     "url": "/my-account/"
+    },
+    {
+     "title": "Support",
+     "page": "contact"
+    },
+    {
+     "title": "About",
+     "page": "about"
+    }
+   ]
+  }
+ ],
+ "widgets": {
+  "footer-1": [
+   "<!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Shop</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><a href=\"/product-category/phones/\">Phones & Tablets</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"/product-category/audio/\">Audio</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"/product-category/wearables/\">Wearables</a></li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"/product-category/accessories/\">Accessories</a></li><!-- /wp:list-item --></ul><!-- /wp:list -->",
+   "<!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Help</h3><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Free 2-day shipping over $99</li><!-- /wp:list-item --><!-- wp:list-item --><li>2-year warranty</li><!-- /wp:list-item --><!-- wp:list-item --><li>30-day returns</li><!-- /wp:list-item --><!-- wp:list-item --><li><a href=\"/my-account/\">Track an order</a></li><!-- /wp:list-item --></ul><!-- /wp:list -->",
+   "<!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Repair counter</h3><!-- /wp:heading --><!-- wp:paragraph --><p>220 Circuit Avenue<br>Monday to Saturday, 10–19<br>support@voltage.example</p><!-- /wp:paragraph -->"
+  ]
+ },
+ "customizer": {
+  "color_mode": "dark",
+  "accent": "#3b82f6",
+  "highlight": "#a3e635",
+  "header_layout": "search",
+  "announcement": "Free 2-day shipping over $99 · 2-year warranty on everything"
+ },
+ "goocommerce": {
+  "settings": {
+   "currency": "USD",
+   "currency_pos": "left",
+   "catalog_columns": 4,
+   "catalog_rows": 3
+  },
+  "categories": [
+   {
+    "slug": "phones",
+    "name": "Phones & Tablets",
+    "description": "Fast, light and built to last more than one upgrade cycle.",
+    "image": "cat-phones"
+   },
+   {
+    "slug": "audio",
+    "name": "Audio",
+    "description": "Headphones, earbuds and speakers tuned for detail, not just bass.",
+    "image": "cat-audio"
+   },
+   {
+    "slug": "wearables",
+    "name": "Wearables",
+    "description": "Watches and bands that track what matters and stay out of the way.",
+    "image": "cat-wearables"
+   },
+   {
+    "slug": "accessories",
+    "name": "Accessories",
+    "description": "Chargers, cables, keyboards and cameras that complete the setup.",
+    "image": "cat-accessories"
+   }
+  ],
+  "attributes": [
+   {
+    "slug": "storage",
+    "name": "Storage",
+    "terms": [
+     "128 GB",
+     "256 GB"
+    ]
+   },
+   {
+    "slug": "color",
+    "name": "Color",
+    "terms": [
+     "Graphite",
+     "Silver"
+    ]
+   },
+   {
+    "slug": "band",
+    "name": "Band",
+    "terms": [
+     "Sport",
+     "Woven",
+     "Steel"
+    ]
+   }
+  ],
+  "products": [
+   {
+    "slug": "nova-x-smartphone",
+    "name": "Nova X Smartphone",
+    "type": "variable",
+    "categories": [
+     "phones"
+    ],
+    "image": "p-nova-x-smartphone",
+    "description": "<p>The Nova X is the phone we would give a friend. The 6.4-inch OLED display refreshes at up to 120 Hz and reaches 1,800 nits outdoors, the 5,000 mAh cell comfortably lasts two days, and the 50 MP main camera keeps detail in low light without the over-sharpened look.</p><p>It is built from a recycled aluminium frame and matte glass, charges to 60% in twenty minutes and is promised five years of system and security updates.</p><ul><li>6.4\" OLED, 120 Hz, 1,800 nits peak</li><li>50 MP main + 12 MP ultra-wide</li><li>5,000 mAh, 45 W wired, 15 W wireless</li><li>IP68, dual SIM + eSIM</li></ul>",
+    "short_description": "<p>A 6.4\" 120 Hz OLED phone with a two-day battery, a 50 MP camera and five years of updates.</p>",
+    "sku": "VT-PH-01",
+    "regular_price": "799",
+    "featured": true,
+    "attributes": [
+     {
+      "name": "Storage",
+      "values": [
+       "128 GB",
+       "256 GB"
+      ],
+      "variation": true
+     },
+     {
+      "name": "Color",
+      "values": [
+       "Graphite",
+       "Silver"
+      ],
+      "variation": true
+     }
+    ],
+    "variations": [
+     {
+      "attributes": {
+       "Storage": "128 GB",
+       "Color": "Graphite"
+      },
+      "regular_price": "799",
+      "stock": 10,
+      "sku": "VT-PH-01-128G-GRAP"
+     },
+     {
+      "attributes": {
+       "Storage": "128 GB",
+       "Color": "Silver"
+      },
+      "regular_price": "799",
+      "stock": 10,
+      "sku": "VT-PH-01-128G-SILV"
+     },
+     {
+      "attributes": {
+       "Storage": "256 GB",
+       "Color": "Graphite"
+      },
+      "regular_price": "899",
+      "stock": 10,
+      "sku": "VT-PH-01-256G-GRAP"
+     },
+     {
+      "attributes": {
+       "Storage": "256 GB",
+       "Color": "Silver"
+      },
+      "regular_price": "899",
+      "stock": 10,
+      "sku": "VT-PH-01-256G-SILV"
+     }
+    ],
+    "reviews": [
+     {
+      "author": "Dario",
+      "email": "dario@example.com",
+      "rating": 5,
+      "content": "Battery life is ridiculous. I charge it every other night and the screen is gorgeous outside."
+     },
+     {
+      "author": "Hana",
+      "email": "hana@example.com",
+      "rating": 4,
+      "content": "Fast, clean software and a great camera. Silver picks up fewer fingerprints than I expected."
+     }
+    ],
+    "upsells": [
+     "fast-charger-65w",
+     "magnetic-power-bank"
+    ]
+   },
+   {
+    "slug": "pocket-tablet",
+    "name": "Pocket Tablet 8",
+    "type": "simple",
+    "categories": [
+     "phones"
+    ],
+    "image": "p-pocket-tablet",
+    "description": "<p>Small enough to read on the train with one hand, sharp enough for sketching and spreadsheets. The 8.3-inch laminated LCD has no air gap, so the stylus feels like it writes directly on the glass.</p><p>Quad speakers, USB-C with display output and eleven hours of video playback. Stylus sold separately.</p>",
+    "short_description": "<p>An 8-inch tablet that fits a jacket pocket, with a laminated display and stylus support.</p>",
+    "sku": "VT-PH-02",
+    "regular_price": "449",
+    "featured": true,
+    "stock": 14
+   },
+   {
+    "slug": "studio-headphones",
+    "name": "Studio ANC Headphones",
+    "type": "simple",
+    "categories": [
+     "audio"
+    ],
+    "image": "p-studio-headphones",
+    "description": "<p>Forty-millimetre drivers tuned with a gentle, natural curve: clear vocals, controlled bass and no fatigue after a long flight. Adaptive noise cancelling listens to your surroundings and adjusts twice a second.</p><p>Memory-foam cushions, a fold-flat hinge and forty hours of battery with ANC on. A ten-minute charge gives four hours of playback.</p>",
+    "short_description": "<p>Over-ear headphones with adaptive noise cancelling, 40 hours of playback and a fold-flat design.</p>",
+    "sku": "VT-AU-01",
+    "regular_price": "249",
+    "sale_price": "199",
+    "featured": true,
+    "stock": 20,
+    "reviews": [
+     {
+      "author": "Felix",
+      "email": "felix@example.com",
+      "rating": 5,
+      "content": "Noise cancelling is on par with headphones twice the price, and they are light enough to forget you are wearing them."
+     },
+     {
+      "author": "Ana",
+      "email": "ana@example.com",
+      "rating": 4,
+      "content": "Excellent sound. The case is a little bulky, but the battery life makes up for it."
+     }
+    ],
+    "cross_sells": [
+     "braided-usb-c-cable"
+    ]
+   },
+   {
+    "slug": "true-wireless-earbuds",
+    "name": "True Wireless Earbuds",
+    "type": "simple",
+    "categories": [
+     "audio"
+    ],
+    "image": "p-true-wireless-earbuds",
+    "description": "<p>Three ear-tip sizes and a contoured shape keep these in through runs and commutes. Hybrid noise cancelling takes the edge off traffic, transparency mode lets the world back in with a tap.</p><p>Eight hours per charge, thirty with the case, which charges wirelessly or over USB-C. IPX4 sweat resistance.</p>",
+    "short_description": "<p>Compact earbuds with active noise cancelling, wireless charging and a secure, all-day fit.</p>",
+    "sku": "VT-AU-02",
+    "regular_price": "129",
+    "stock": 40
+   },
+   {
+    "slug": "bookshelf-speaker",
+    "name": "Bookshelf Wi-Fi Speaker",
+    "type": "simple",
+    "categories": [
+     "audio"
+    ],
+    "image": "p-bookshelf-speaker",
+    "description": "<p>Two tweeters and a long-throw woofer in a cabinet the size of a hardback. Pair two for true stereo or group speakers across rooms over Wi-Fi.</p><p>Fabric front, walnut-finish sides and a line-in for your turntable.</p>",
+    "short_description": "<p>A compact stereo speaker with Wi-Fi multiroom, Bluetooth and a warm, room-filling sound.</p>",
+    "sku": "VT-AU-03",
+    "regular_price": "199",
+    "stock": 12
+   },
+   {
+    "slug": "pulse-smartwatch",
+    "name": "Pulse Smartwatch",
+    "type": "variable",
+    "categories": [
+     "wearables"
+    ],
+    "image": "p-pulse-smartwatch",
+    "description": "<p>Pulse does the important things well: accurate GPS for runs and rides, continuous heart rate, sleep stages and a gentle nudge when you have been sitting too long. Notifications arrive quietly, replies are quick.</p><p>Choose a sport band for training, a woven band for every day or a steel link band for the office. Seven days of battery, five with the always-on display.</p>",
+    "short_description": "<p>An always-on AMOLED watch with GPS, heart-rate and sleep tracking and a seven-day battery.</p>",
+    "sku": "VT-WR-01",
+    "regular_price": "279",
+    "featured": true,
+    "attributes": [
+     {
+      "name": "Band",
+      "values": [
+       "Sport",
+       "Woven",
+       "Steel"
+      ],
+      "variation": true
+     }
+    ],
+    "variations": [
+     {
+      "attributes": {
+       "Band": "Sport"
+      },
+      "regular_price": "279",
+      "stock": 9,
+      "sku": "VT-WR-01-SPOR"
+     },
+     {
+      "attributes": {
+       "Band": "Woven"
+      },
+      "regular_price": "279",
+      "stock": 9,
+      "sku": "VT-WR-01-WOVE"
+     },
+     {
+      "attributes": {
+       "Band": "Steel"
+      },
+      "regular_price": "319",
+      "stock": 9,
+      "sku": "VT-WR-01-STEE"
+     }
+    ],
+    "reviews": [
+     {
+      "author": "Tomasz",
+      "email": "tomasz@example.com",
+      "rating": 5,
+      "content": "GPS locks in seconds and the battery really does last a week. The woven band is very comfortable."
+     }
+    ]
+   },
+   {
+    "slug": "fitness-band",
+    "name": "Fitness Band 3",
+    "type": "simple",
+    "categories": [
+     "wearables"
+    ],
+    "image": "p-fitness-band",
+    "description": "<p>Everything you need, nothing you will not use: steps, heart rate, sleep and workouts on a bright little display. Waterproof to 50 metres and light enough to wear to bed.</p>",
+    "short_description": "<p>A slim activity tracker with heart rate, sleep tracking and fourteen days of battery.</p>",
+    "sku": "VT-WR-02",
+    "regular_price": "59",
+    "stock": 50
+   },
+   {
+    "slug": "fast-charger-65w",
+    "name": "65W GaN Fast Charger",
+    "type": "simple",
+    "categories": [
+     "accessories"
+    ],
+    "image": "p-fast-charger-65w",
+    "description": "<p>Gallium nitride lets us pack 65 watts into a charger the size of an egg. One USB-C port charges a laptop at full speed, or split the power between C and A ports for a phone and earbuds.</p><p>Folding pins and smart heat control.</p>",
+    "short_description": "<p>A pocketable two-port charger that tops up a laptop and a phone at the same time.</p>",
+    "sku": "VT-AC-01",
+    "regular_price": "39",
+    "stock": 80
+   },
+   {
+    "slug": "braided-usb-c-cable",
+    "name": "Braided USB-C Cable",
+    "type": "simple",
+    "categories": [
+     "accessories"
+    ],
+    "image": "p-braided-usb-c-cable",
+    "description": "<p>Double-braided nylon, reinforced strain reliefs and aluminium shells, tested to 30,000 bends. Long enough to reach from the floor socket to the sofa.</p>",
+    "short_description": "<p>A 2 m braided USB-C cable rated for 100 W charging and 10 Gbps data.</p>",
+    "sku": "VT-AC-02",
+    "regular_price": "15",
+    "stock": 120
+   },
+   {
+    "slug": "magnetic-power-bank",
+    "name": "Magnetic Power Bank",
+    "type": "simple",
+    "categories": [
+     "accessories"
+    ],
+    "image": "p-magnetic-power-bank",
+    "description": "<p>Snap it on, keep scrolling. The slim battery holds a full phone charge, has a fold-out kickstand and recharges over USB-C, or passes power through while it charges itself.</p>",
+    "short_description": "<p>A 5,000 mAh magnetic battery that snaps to the back of your phone and charges wirelessly.</p>",
+    "sku": "VT-AC-03",
+    "regular_price": "49",
+    "stock": 35
+   },
+   {
+    "slug": "mechanical-keyboard",
+    "name": "Low-Profile Mechanical Keyboard",
+    "type": "simple",
+    "categories": [
+     "accessories"
+    ],
+    "image": "p-mechanical-keyboard",
+    "description": "<p>Low-profile tactile switches give a crisp, quiet bump without the height of a classic board. Connect up to three devices over Bluetooth or use the 2.4 GHz dongle for gaming, and swap switches without soldering.</p><p>Aluminium top plate, PBT keycaps and a battery that lasts weeks with the backlight off.</p>",
+    "short_description": "<p>A compact 75% keyboard with hot-swap tactile switches, wireless and wired modes and white backlight.</p>",
+    "sku": "VT-AC-04",
+    "regular_price": "119",
+    "featured": true,
+    "stock": 18,
+    "reviews": [
+     {
+      "author": "Ruth",
+      "email": "ruth@example.com",
+      "rating": 5,
+      "content": "The typing feel is lovely and switching between my laptop and tablet is instant."
+     }
+    ]
+   },
+   {
+    "slug": "4k-action-camera",
+    "name": "4K Action Camera",
+    "type": "external",
+    "categories": [
+     "accessories"
+    ],
+    "image": "p-4k-action-camera",
+    "description": "<p>Stabilised 4K at sixty frames per second, horizon levelling up to 45 degrees and waterproofing to ten metres without a housing. Front and rear screens make framing easy.</p><p>This camera is sold and shipped by a partner store; the button takes you to their product page.</p>",
+    "short_description": "<p>A waterproof 4K60 action camera with horizon levelling, sold and shipped by our partner.</p>",
+    "sku": "VT-AC-05",
+    "regular_price": "329",
+    "external_url": "https://example.com/partner/4k-action-camera",
+    "button_text": "Buy at partner"
+   }
+  ],
+  "coupons": [
+   {
+    "code": "WELCOME10",
+    "type": "percent",
+    "amount": "10",
+    "description": "10% off your first order"
+   },
+   {
+    "code": "CHARGEUP",
+    "type": "fixed_cart",
+    "amount": "15",
+    "minimum_amount": "100",
+    "description": "$15 off orders over $100"
+   }
+  ],
+  "shipping": {
+   "zone": "United States",
+   "flat_rate": "7.99",
+   "free_over": "99",
+   "local_pickup": true
+  }
+ }
+}

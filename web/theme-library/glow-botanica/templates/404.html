@@ -1,0 +1,8 @@
+{{template "header" .}}
+<section class="gb-wrap gb-measure error-404 not-found gb-404">
+	<p class="gb-404__num" aria-hidden="true">404</p>
+	<h1 class="page-title">This page has gone missing.</h1>
+	<p>Perhaps it was a limited edition. Try a search, or wander back to the <a href="{{if goo_on}}{{goo_url . "shop"}}{{else}}{{.HomeURL}}{{end}}">shop</a>.</p>
+	{{if goo_on}}{{goo_product_search .}}{{else}}{{template "searchform" .}}{{end}}
+</section>
+{{template "footer" .}}
