@@ -365,10 +365,18 @@ func (s *Server) gooOptMap(key string) map[string]any {
 // gooSetOpts saves options by their short names.
 func (s *Server) gooSetOpts(ctx context.Context, values map[string]any) error {
 	m := make(map[string]any, len(values))
+	pages := false
 	for k, v := range values {
 		m[gooOptPrefix+k] = v
+		pages = pages || strings.HasSuffix(k, "_page_id")
 	}
-	return s.settings.Set(ctx, m)
+	if err := s.settings.Set(ctx, m); err != nil {
+		return err
+	}
+	if pages && s.gooOn() {
+		s.configureCache() // the cart, checkout and account pages are never cached
+	}
+	return nil
 }
 
 // gooField finds a declared field by id.

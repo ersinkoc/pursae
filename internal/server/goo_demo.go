@@ -270,6 +270,7 @@ func (s *Server) gooImportDemo(ctx context.Context, uid int64, slug string, raw 
 		if err := s.settings.Set(ctx, vals); err != nil {
 			return 0, err
 		}
+		s.configureCache()
 	} else if err := s.gooCreatePages(ctx, uid); err != nil {
 		return 0, err
 	}

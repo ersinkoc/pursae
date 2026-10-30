@@ -176,7 +176,7 @@ func (s *Server) gooActivate(c *gin.Context) error {
 		_, _ = s.store.Pool.Exec(ctx, `INSERT INTO jobs(name, run_at, recurrence)
 			SELECT $1, now() + interval '5 minutes', $2 WHERE NOT EXISTS (SELECT 1 FROM jobs WHERE name = $1 AND recurrence <> '')`, name, rec)
 	}
-	s.purgeAll(ctx)
+	s.configureCache() // the store pages join the cache exclusions; rebuilding also empties the cache
 	return nil
 }
 
@@ -186,7 +186,7 @@ func (s *Server) gooDeactivate(ctx context.Context) error {
 		return err
 	}
 	_, _ = s.store.Pool.Exec(ctx, `DELETE FROM jobs WHERE name = ANY($1)`, []string{gooDailyJob, gooHourlyJob})
-	s.purgeAll(ctx)
+	s.configureCache()
 	return nil
 }
 
