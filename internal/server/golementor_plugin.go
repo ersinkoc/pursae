@@ -75,7 +75,7 @@ func (s *Server) golementorActivate(ctx context.Context) error {
 	}
 	s.golementorStart(ctx)
 	_ = s.restoreTheme(ctx, helloThemeSlug) // the blank canvas comes with the plugin, even after a delete
-	if t := themeBySlug(s.settings.String("stylesheet")); t == nil || (t.Slug != helloThemeSlug && !t.Custom) {
+	if t := themeBySlug(s.settings.String("stylesheet")); t == nil || (t.Slug != helloThemeSlug && !t.Custom && !gweDesignTheme(t)) {
 		prev := ""
 		if t != nil {
 			prev = t.Slug
@@ -110,7 +110,7 @@ func (s *Server) golementorStart(ctx context.Context) {
 // active theme the site goes back to the default theme first; switched reports that. Saved themes,
 // theme parts, the kit and built pages stay in the database.
 func (s *Server) golementorDeactivate(ctx context.Context) (switched bool, err error) {
-	if t := themeBySlug(s.settings.String("stylesheet")); t != nil && (t.Slug == helloThemeSlug || t.Custom) {
+	if t := themeBySlug(s.settings.String("stylesheet")); t != nil && (t.Slug == helloThemeSlug || t.Custom || gweDesignTheme(t)) {
 		back := defaultTheme // the theme Golementor's activation left, when it still exists
 		if prev := themeBySlug(s.settings.String(golementorPrevTheme)); prev != nil && prev.Slug != helloThemeSlug && !prev.Custom {
 			back = prev.Slug

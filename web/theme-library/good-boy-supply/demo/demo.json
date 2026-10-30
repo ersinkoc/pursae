@@ -1,0 +1,2642 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Good Boy Supply",
+  "blogdescription": "Gear and treats for very good pets"
+ },
+ "media": [
+  {
+   "id": "hero",
+   "file": "demo/images/good-boy-supply-hero.jpg",
+   "alt": "A happy dog with a rope toy on a sunny yellow background"
+  },
+  {
+   "id": "about",
+   "file": "demo/images/good-boy-supply-about.jpg",
+   "alt": "The office dogs on their beds"
+  },
+  {
+   "id": "cat-dogs",
+   "file": "demo/images/good-boy-supply-cat-dogs.jpg",
+   "alt": "Dogs"
+  },
+  {
+   "id": "cat-cats",
+   "file": "demo/images/good-boy-supply-cat-cats.jpg",
+   "alt": "Cats"
+  },
+  {
+   "id": "cat-toys",
+   "file": "demo/images/good-boy-supply-cat-toys.jpg",
+   "alt": "Toys"
+  },
+  {
+   "id": "cat-care",
+   "file": "demo/images/good-boy-supply-cat-care.jpg",
+   "alt": "Treats & Care"
+  },
+  {
+   "id": "p-orthopedic-dog-bed",
+   "file": "demo/images/good-boy-supply-p-orthopedic-dog-bed.jpg",
+   "alt": "Orthopedic Dog Bed"
+  },
+  {
+   "id": "p-leather-leash",
+   "file": "demo/images/good-boy-supply-p-leather-leash.jpg",
+   "alt": "Leather Leash"
+  },
+  {
+   "id": "p-reflective-harness",
+   "file": "demo/images/good-boy-supply-p-reflective-harness.jpg",
+   "alt": "Reflective Harness"
+  },
+  {
+   "id": "p-ceramic-bowl",
+   "file": "demo/images/good-boy-supply-p-ceramic-bowl.jpg",
+   "alt": "Ceramic Food Bowl"
+  },
+  {
+   "id": "p-cat-tree",
+   "file": "demo/images/good-boy-supply-p-cat-tree.jpg",
+   "alt": "Cat Tree Tower"
+  },
+  {
+   "id": "p-cat-scratcher",
+   "file": "demo/images/good-boy-supply-p-cat-scratcher.jpg",
+   "alt": "Cardboard Scratcher"
+  },
+  {
+   "id": "p-feather-wand",
+   "file": "demo/images/good-boy-supply-p-feather-wand.jpg",
+   "alt": "Feather Wand"
+  },
+  {
+   "id": "p-rope-tug",
+   "file": "demo/images/good-boy-supply-p-rope-tug.jpg",
+   "alt": "Cotton Rope Tug"
+  },
+  {
+   "id": "p-squeaky-bone",
+   "file": "demo/images/good-boy-supply-p-squeaky-bone.jpg",
+   "alt": "Squeaky Rubber Bone"
+  },
+  {
+   "id": "p-grooming-brush",
+   "file": "demo/images/good-boy-supply-p-grooming-brush.jpg",
+   "alt": "Grooming Brush"
+  },
+  {
+   "id": "p-salmon-treats",
+   "file": "demo/images/good-boy-supply-p-salmon-treats.jpg",
+   "alt": "Salmon Treats"
+  },
+  {
+   "id": "p-puppy-starter-kit",
+   "file": "demo/images/good-boy-supply-p-puppy-starter-kit.jpg",
+   "alt": "Puppy Starter Kit"
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Home",
+   "front_page": true,
+   "content": "",
+   "golementor": [
+    {
+     "id": "4dbc3c4",
+     "elType": "container",
+     "isInner": false,
+     "settings": {
+      "content_width": "boxed",
+      "boxed_width": {
+       "unit": "px",
+       "size": 1240,
+       "sizes": []
+      },
+      "flex_direction": "column",
+      "padding": {
+       "unit": "px",
+       "top": "96",
+       "right": "24",
+       "bottom": "96",
+       "left": "24",
+       "isLinked": false
+      },
+      "padding_mobile": {
+       "unit": "px",
+       "top": "48",
+       "right": "18",
+       "bottom": "48",
+       "left": "18",
+       "isLinked": false
+      },
+      "min_height": {
+       "unit": "px",
+       "size": 620,
+       "sizes": []
+      },
+      "min_height_mobile": {
+       "unit": "px",
+       "size": 520,
+       "sizes": []
+      },
+      "flex_justify_content": "center",
+      "background_background": "classic",
+      "background_image": {
+       "url": "{{media:hero}}",
+       "id": "{{media_id:hero}}",
+       "size": "",
+       "alt": "",
+       "source": "library"
+      },
+      "background_position": "center right",
+      "background_size": "cover",
+      "background_repeat": "no-repeat",
+      "background_overlay_background": "gradient",
+      "background_overlay_color": "#FFE9B3",
+      "background_overlay_color_b": "rgba(255,233,179,0)",
+      "background_overlay_gradient_angle": {
+       "unit": "deg",
+       "size": 90,
+       "sizes": []
+      },
+      "background_overlay_color_stop": {
+       "unit": "%",
+       "size": 30,
+       "sizes": []
+      },
+      "background_overlay_color_b_stop": {
+       "unit": "%",
+       "size": 75,
+       "sizes": []
+      },
+      "background_overlay_opacity": {
+       "unit": "px",
+       "size": 0.92,
+       "sizes": []
+      }
+     },
+     "elements": [
+      {
+       "id": "8b3132a",
+       "elType": "container",
+       "isInner": true,
+       "settings": {
+        "content_width": "full",
+        "flex_direction": "column",
+        "flex_gap": {
+         "unit": "px",
+         "size": 20,
+         "column": "20",
+         "row": "20",
+         "isLinked": true
+        },
+        "width": {
+         "unit": "px",
+         "size": 560,
+         "sizes": []
+        },
+        "width_mobile": {
+         "unit": "%",
+         "size": 100,
+         "sizes": []
+        },
+        "flex_align_items": "flex-start"
+       },
+       "elements": [
+        {
+         "id": "58bc72c",
+         "elType": "widget",
+         "widgetType": "heading",
+         "settings": {
+          "title": "Spring collection",
+          "header_size": "p",
+          "__globals__": {
+           "title_color": "globals/colors?id=primary",
+           "typography_typography": "globals/typography?id=secondary"
+          }
+         },
+         "elements": []
+        },
+        {
+         "id": "f7f3aa1",
+         "elType": "widget",
+         "widgetType": "heading",
+         "settings": {
+          "title": "Gear for very good pets.",
+          "header_size": "h1",
+          "__globals__": {
+           "title_color": "globals/colors?id=primary",
+           "typography_typography": "globals/typography?id=display"
+          }
+         },
+         "elements": []
+        },
+        {
+         "id": "62e2fde",
+         "elType": "widget",
+         "widgetType": "text-editor",
+         "settings": {
+          "editor": "<p>Comfy beds, tough toys and honest treats. Everything tested by our office dogs, Biscuit and Juno, before it reaches you.</p>",
+          "__globals__": {
+           "text_color": "globals/colors?id=primary",
+           "typography_typography": "globals/typography?id=lead"
+          }
+         },
+         "elements": []
+        },
+        {
+         "id": "fbc46b2",
+         "elType": "container",
+         "isInner": true,
+         "settings": {
+          "content_width": "full",
+          "flex_direction": "row",
+          "flex_gap": {
+           "unit": "px",
+           "size": 12,
+           "column": "12",
+           "row": "12",
+           "isLinked": true
+          },
+          "flex_align_items": "center",
+          "flex_direction_mobile": "row",
+          "flex_wrap": "wrap"
+         },
+         "elements": [
+          {
+           "id": "9c42eca",
+           "elType": "widget",
+           "widgetType": "button",
+           "settings": {
+            "text": "Shop the collection",
+            "link": {
+             "url": "/shop/",
+             "is_external": "",
+             "nofollow": "",
+             "custom_attributes": ""
+            },
+            "size": "md",
+            "__globals__": {
+             "typography_typography": "globals/typography?id=accent",
+             "background_color": "globals/colors?id=primary",
+             "button_text_color": "globals/colors?id=paper",
+             "button_background_hover_color": "globals/colors?id=primary",
+             "hover_color": "globals/colors?id=paper"
+            }
+           },
+           "elements": []
+          },
+          {
+           "id": "47f84be",
+           "elType": "widget",
+           "widgetType": "button",
+           "settings": {
+            "text": "Meet the testers",
+            "link": {
+             "url": "{{page:about}}",
+             "is_external": "",
+             "nofollow": "",
+             "custom_attributes": ""
+            },
+            "size": "md",
+            "__globals__": {
+             "typography_typography": "globals/typography?id=accent",
+             "background_color": "globals/colors?id=sand",
+             "button_text_color": "globals/colors?id=primary",
+             "border_color": "globals/colors?id=primary",
+             "button_background_hover_color": "globals/colors?id=primary",
+             "hover_color": "globals/colors?id=sand"
+            },
+            "border_border": "solid",
+            "border_width": {
+             "unit": "px",
+             "top": "1",
+             "right": "1",
+             "bottom": "1",
+             "left": "1",
+             "isLinked": true
+            }
+           },
+           "elements": []
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "id": "733b66b",
+     "elType": "container",
+     "isInner": false,
+     "settings": {
+      "content_width": "boxed",
+      "boxed_width": {
+       "unit": "px",
+       "size": 1240,
+       "sizes": []
+      },
+      "flex_direction": "column",
+      "padding": {
+       "unit": "px",
+       "top": "26",
+       "right": "24",
+       "bottom": "26",
+       "left": "24",
+       "isLinked": false
+      },
+      "padding_mobile": {
+       "unit": "px",
+       "top": "48",
+       "right": "18",
+       "bottom": "48",
+       "left": "18",
+       "isLinked": false
+      },
+      "background_background": "classic",
+      "__globals__": {
+       "background_color": "globals/colors?id=primary"
+      }
+     },
+     "elements": [
+      {
+       "id": "95dcf57",
+       "elType": "container",
+       "isInner": true,
+       "settings": {
+        "container_type": "grid",
+        "content_width": "full",
+        "grid_gaps": {
+         "column": "24",
+         "row": "24",
+         "isLinked": true,
+         "unit": "px"
+        },
+        "grid_columns_grid": {
+         "unit": "fr",
+         "size": 4,
+         "sizes": []
+        },
+        "grid_columns_grid_tablet": {
+         "unit": "fr",
+         "size": 2,
+         "sizes": []
+        },
+        "grid_columns_grid_mobile": {
+         "unit": "fr",
+         "size": 1,
+         "sizes": []
+        },
+        "grid_rows_grid": {
+         "unit": "fr",
+         "size": 1,
+         "sizes": []
+        },
+        "grid_auto_flow": "row"
+       },
+       "elements": [
+        {
+         "id": "a722f0f",
+         "elType": "widget",
+         "widgetType": "icon-box",
+         "settings": {
+          "selected_icon": {
+           "value": "fas fa-truck",
+           "library": "fa-solid"
+          },
+          "title_text": "Free delivery",
+          "description_text": "On orders over $60",
+          "position": "left",
+          "title_size": "h3",
+          "icon_size": {
+           "unit": "px",
+           "size": 24,
+           "sizes": []
+          },
+          "icon_space": {
+           "unit": "px",
+           "size": 14,
+           "sizes": []
+          },
+          "__globals__": {
+           "primary_color": "globals/colors?id=sun",
+           "title_color": "globals/colors?id=primary",
+           "title_typography_typography": "globals/typography?id=h4",
+           "description_color": "globals/colors?id=text",
+           "description_typography_typography": "globals/typography?id=small"
+          }
+         },
+         "elements": []
+        },
+        {
+         "id": "d47cf6f",
+         "elType": "widget",
+         "widgetType": "icon-box",
+         "settings": {
+          "selected_icon": {
+           "value": "fas fa-exchange-alt",
+           "library": "fa-solid"
+          },
+          "title_text": "Easy exchanges",
+          "description_text": "Wrong size? Swap it free",
+          "position": "left",
+          "title_size": "h3",
+          "icon_size": {
+           "unit": "px",
+           "size": 24,
+           "sizes": []
+          },
+          "icon_space": {
+           "unit": "px",
+           "size": 14,
+           "sizes": []
+          },
+          "__globals__": {
+           "primary_color": "globals/colors?id=sun",
+           "title_color": "globals/colors?id=primary",
+           "title_typography_typography": "globals/typography?id=h4",
+           "description_color": "globals/colors?id=text",
+           "description_typography_typography": "globals/typography?id=small"
+          }
+         },
+         "elements": []
+        },
+        {
+         "id": "30a3f27",
+         "elType": "widget",
+         "widgetType": "icon-box",
+         "settings": {
+          "selected_icon": {
+           "value": "fas fa-paw",
+           "library": "fa-solid"
+          },
+          "title_text": "Pet tested",
+          "description_text": "Approved by real dogs and cats",
+          "position": "left",
+          "title_size": "h3",
+          "icon_size": {
+           "unit": "px",
+           "size": 24,
+           "sizes": []
+          },
+          "icon_space": {
+           "unit": "px",
+           "size": 14,
+           "sizes": []
+          },
+          "__globals__": {
+           "primary_color": "globals/colors?id=sun",
+           "title_color": "globals/colors?id=primary",
+           "title_typography_typography": "globals/typography?id=h4",
+           "description_color": "globals/colors?id=text",
+           "description_typography_typography": "globals/typography?id=small"
+          }
+         },
+         "elements": []
+        },
+        {
+         "id": "3bdf8a4",
+         "elType": "widget",
+         "widgetType": "icon-box",
+         "settings": {
+          "selected_icon": {
+           "value": "fas fa-heart",
+           "library": "fa-solid"
+          },
+          "title_text": "1% for shelters",
+          "description_text": "Of every order, every month",
+          "position": "left",
+          "title_size": "h3",
+          "icon_size": {
+           "unit": "px",
+           "size": 24,
+           "sizes": []
+          },
+          "icon_space": {
+           "unit": "px",
+           "size": 14,
+           "sizes": []
+          },
+          "__globals__": {
+           "primary_color": "globals/colors?id=sun",
+           "title_color": "globals/colors?id=primary",
+           "title_typography_typography": "globals/typography?id=h4",
+           "description_color": "globals/colors?id=text",
+           "description_typography_typography": "globals/typography?id=small"
+          }
+         },
+         "elements": []
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "id": "996b7eb",
+     "elType": "container",
+     "isInner": false,
+     "settings": {
+      "content_width": "boxed",
+      "boxed_width": {
+       "unit": "px",
+       "size": 1240,
+       "sizes": []
+      },
+      "flex_direction": "column",
+      "padding": {
+       "unit": "px",
+       "top": "80",
+       "right": "24",
+       "bottom": "40",
+       "left": "24",
+       "isLinked": false
+      },
+      "padding_mobile": {
+       "unit": "px",
+       "top": "48",
+       "right": "18",
+       "bottom": "48",
+       "left": "18",
+       "isLinked": false
+      },
+      "flex_gap": {
+       "unit": "px",
+       "size": 28,
+       "column": "28",
+       "row": "28",
+       "isLinked": true
+      }
+     },
+     "elements": [
+      {
+       "id": "2873c6c",
+       "elType": "container",
+       "isInner": true,
+       "settings": {
+        "content_width": "full",
+        "flex_direction": "row",
+        "flex_gap": {
+         "unit": "px",
+         "size": 24,
+         "column": "24",
+         "row": "24",
+         "isLinked": true
+        },
+        "flex_align_items": "flex-end",
+        "flex_direction_mobile": "column",
+        "flex_justify_content": "space-between"
+       },
+       "elements": [
+        {
+         "id": "9081dd4",
+         "elType": "container",
+         "isInner": true,
+         "settings": {
+          "content_width": "full",
+          "flex_direction": "column",
+          "flex_gap": {
+           "unit": "px",
+           "size": 8,
+           "column": "8",
+           "row": "8",
+           "isLinked": true
+          }
+         },
+         "elements": [
+          {
+           "id": "31614d0",
+           "elType": "widget",
+           "widgetType": "heading",
+           "settings": {
+            "title": "Shop by pet",
+            "header_size": "p",
+            "__globals__": {
+             "title_color": "globals/colors?id=accent",
+             "typography_typography": "globals/typography?id=secondary"
+            }
+           },
+           "elements": []
+          },
+          {
+           "id": "06c4305",
+           "elType": "widget",
+           "widgetType": "heading",
+           "settings": {
+            "title": "Everything for dogs, cats and their people",
+            "header_size": "h2",
+            "__globals__": {
+             "title_color": "globals/colors?id=primary",
+             "typography_typography": "globals/typography?id=primary"
+            }
+           },
+           "elements": []
+          }
+         ]
+        },
+        {
+         "id": "cdc1dcb",
+         "elType": "widget",
+         "widgetType": "button",
+         "settings": {
+          "text": "Browse the shop",
+          "link": {
+           "url": "/shop/",
+           "is_external": "",
+           "nofollow": "",
+           "custom_attributes": ""
+          },
+          "size": "md",
+          "__globals__": {
+           "typography_typography": "globals/typography?id=accent",
+           "background_color": "globals/colors?id=paper",
+           "button_text_color": "globals/colors?id=primary",
+           "button_background_hover_color": "globals/colors?id=sand",
+           "hover_color": "globals/colors?id=primary"
+          },
+          "border_border": "solid",
+          "border_width": {
+           "unit": "px",
+           "top": "1",
+           "right": "1",
+           "bottom": "1",
+           "left": "1",
+           "isLinked": true
+          },
+          "hide_mobile": "hidden-mobile"
+         },
+         "elements": []
+        }
+       ]
+      },
+      {
+       "id": "a5dc044",
+       "elType": "widget",
+       "widgetType": "wc-categories",
+       "settings": {
+        "columns": "4",
+        "number": 4,
+        "hide_empty": "yes",
+        "image_radius": {
+         "unit": "px",
+         "size": 28,
+         "sizes": []
+        },
+        "__globals__": {
+         "title_color": "globals/colors?id=primary",
+         "title_typography_typography": "globals/typography?id=h4"
+        }
+       },
+       "elements": []
+      }
+     ]
+    },
+    {
+     "id": "1b4230b",
+     "elType": "container",
+     "isInner": false,
+     "settings": {
+      "content_width": "boxed",
+      "boxed_width": {
+       "unit": "px",
+       "size": 1240,
+       "sizes": []
+      },
+      "flex_direction": "column",
+      "padding": {
+       "unit": "px",
+       "top": "40",
+       "right": "24",
+       "bottom": "72",
+       "left": "24",
+       "isLinked": false
+      },
+      "padding_mobile": {
+       "unit": "px",
+       "top": "48",
+       "right": "18",
+       "bottom": "48",
+       "left": "18",
+       "isLinked": false
+      },
+      "flex_gap": {
+       "unit": "px",
+       "size": 28,
+       "column": "28",
+       "row": "28",
+       "isLinked": true
+      }
+     },
+     "elements": [
+      {
+       "id": "a1cc9fb",
+       "elType": "container",
+       "isInner": true,
+       "settings": {
+        "content_width": "full",
+        "flex_direction": "column",
+        "flex_gap": {
+         "unit": "px",
+         "size": 8,
+         "column": "8",
+         "row": "8",
+         "isLinked": true
+        },
+        "flex_align_items": "center"
+       },
+       "elements": [
+        {
+         "id": "060b0ec",
+         "elType": "widget",
+         "widgetType": "heading",
+         "settings": {
+          "title": "Bestsellers",
+          "header_size": "p",
+          "__globals__": {
+           "title_color": "globals/colors?id=accent",
+           "typography_typography": "globals/typography?id=secondary"
+          },
+          "align": "center"
+         },
+         "elements": []
+        },
+        {
+         "id": "fc09ce7",
+         "elType": "widget",
+         "widgetType": "heading",
+         "settings": {
+          "title": "Tail-wag approved",
+          "header_size": "h2",
+          "__globals__": {
+           "title_color": "globals/colors?id=primary",
+           "typography_typography": "globals/typography?id=primary"
+          },
+          "align": "center"
+         },
+         "elements": []
+        }
+       ]
+      },
+      {
+       "id": "9547163",
+       "elType": "widget",
+       "widgetType": "woocommerce-products",
+       "settings": {
+        "columns": "4",
+        "rows": 1,
+        "query_post_type": "featured",
+        "orderby": "menu_order",
+        "order": "asc",
+        "image_radius": {
+         "unit": "px",
+         "size": 28,
+         "sizes": []
+        },
+        "__globals__": {
+         "title_color": "globals/colors?id=primary",
+         "title_typography_typography": "globals/typography?id=h4",
+         "button_bg_color": "globals/colors?id=primary",
+         "button_text_color": "globals/colors?id=paper",
+         "onsale_bg_color": "globals/colors?id=accent"
+        }
+       },
+       "elements": []
+      }
+     ]
+    },
+    {
+     "id": "dc9733f",
+     "elType": "container",
+     "isInner": false,
+     "settings": {
+      "content_width": "boxed",
+      "boxed_width": {
+       "unit": "px",
+       "size": 1240,
+       "sizes": []
+      },
+      "flex_direction": "column",
+      "padding": {
+       "unit": "px",
+       "top": "88",
+       "right": "24",
+       "bottom": "88",
+       "left": "24",
+       "isLinked": false
+      },
+      "padding_mobile": {
+       "unit": "px",
+       "top": "48",
+       "right": "18",
+       "bottom": "48",
+       "left": "18",
+       "isLinked": false
+      },
+      "background_background": "classic",
+      "__globals__": {
+       "background_color": "globals/colors?id=skyl"
+      }
+     },
+     "elements": [
+      {
+       "id": "10f00bb",
+       "elType": "container",
+       "isInner": true,
+       "settings": {
+        "content_width": "full",
+        "flex_direction": "row",
+        "flex_gap": {
+         "unit": "px",
+         "size": 64,
+         "column": "64",
+         "row": "64",
+         "isLinked": true
+        },
+        "flex_align_items": "center",
+        "flex_direction_mobile": "column"
+       },
+       "elements": [
+        {
+         "id": "a65175e",
+         "elType": "container",
+         "isInner": true,
+         "settings": {
+          "content_width": "full",
+          "flex_direction": "column",
+          "flex_gap": {
+           "unit": "px",
+           "size": 16,
+           "column": "16",
+           "row": "16",
+           "isLinked": true
+          },
+          "width": {
+           "unit": "%",
+           "size": 50,
+           "sizes": []
+          },
+          "width_mobile": {
+           "unit": "%",
+           "size": 100,
+           "sizes": []
+          }
+         },
+         "elements": [
+          {
+           "id": "364b8af",
+           "elType": "widget",
+           "widgetType": "image",
+           "settings": {
+            "image": {
+             "url": "{{media:about}}",
+             "id": "{{media_id:about}}",
+             "size": "",
+             "alt": "The office dogs on their beds",
+             "source": "library"
+            },
+            "image_size": "large",
+            "image_border_radius": {
+             "unit": "px",
+             "top": "28",
+             "right": "28",
+             "bottom": "28",
+             "left": "28",
+             "isLinked": true
+            }
+           },
+           "elements": []
+          }
+         ]
+        },
+        {
+         "id": "712c723",
+         "elType": "container",
+         "isInner": true,
+         "settings": {
+          "content_width": "full",
+          "flex_direction": "column",
+          "flex_gap": {
+           "unit": "px",
+           "size": 18,
+           "column": "18",
+           "row": "18",
+           "isLinked": true
+          },
+          "width": {
+           "unit": "%",
+           "size": 50,
+           "sizes": []
+          },
+          "width_mobile": {
+           "unit": "%",
+           "size": 100,
+           "sizes": []
+          },
+          "flex_align_items": "flex-start"
+         },
+         "elements": [
+          {
+           "id": "964831a",
+           "elType": "widget",
+           "widgetType": "heading",
+           "settings": {
+            "title": "Our testers",
+            "header_size": "p",
+            "__globals__": {
+             "title_color": "globals/colors?id=accent",
+             "typography_typography": "globals/typography?id=secondary"
+            }
+           },
+           "elements": []
+          },
+          {
+           "id": "8fba8c9",
+           "elType": "widget",
+           "widgetType": "heading",
+           "settings": {
+            "title": "Nothing ships until Biscuit says yes",
+            "header_size": "h2",
+            "__globals__": {
+             "title_color": "globals/colors?id=primary",
+             "typography_typography": "globals/typography?id=primary"
+            }
+           },
+           "elements": []
+          },
+          {
+           "id": "ddc229c",
+           "elType": "widget",
+           "widgetType": "text-editor",
+           "settings": {
+            "editor": "<p>Every bed is slept on, every toy is chewed and every treat is taste-tested by the dogs and cats of our team. If it doesn't survive a week in the office, it doesn't make the shop.</p>",
+            "__globals__": {
+             "text_color": "globals/colors?id=text",
+             "typography_typography": "globals/typography?id=text"
+            }
+           },
+           "elements": []
+          },
+          {
+           "id": "efc62a3",
+           "elType": "widget",
+           "widgetType": "button",
+           "settings": {
+            "text": "Our story",
+            "link": {
+             "url": "{{page:about}}",
+             "is_external": "",
+             "nofollow": "",
+             "custom_attributes": ""
+            },
+            "size": "md",
+            "__globals__": {
+             "typography_typography": "globals/typography?id=accent",
+             "background_color": "globals/colors?id=primary",
+             "button_text_color": "globals/colors?id=paper",
+             "button_background_hover_color": "globals/colors?id=accent",
+             "hover_color": "globals/colors?id=paper"
+            }
+           },
+           "elements": []
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "id": "f3298db",
+     "elType": "container",
+     "isInner": false,
+     "settings": {
+      "content_width": "boxed",
+      "boxed_width": {
+       "unit": "px",
+       "size": 1240,
+       "sizes": []
+      },
+      "flex_direction": "column",
+      "padding": {
+       "unit": "px",
+       "top": "80",
+       "right": "24",
+       "bottom": "40",
+       "left": "24",
+       "isLinked": false
+      },
+      "padding_mobile": {
+       "unit": "px",
+       "top": "48",
+       "right": "18",
+       "bottom": "48",
+       "left": "18",
+       "isLinked": false
+      },
+      "flex_gap": {
+       "unit": "px",
+       "size": 28,
+       "column": "28",
+       "row": "28",
+       "isLinked": true
+      }
+     },
+     "elements": [
+      {
+       "id": "c05dbaf",
+       "elType": "container",
+       "isInner": true,
+       "settings": {
+        "content_width": "full",
+        "flex_direction": "column",
+        "flex_gap": {
+         "unit": "px",
+         "size": 8,
+         "column": "8",
+         "row": "8",
+         "isLinked": true
+        },
+        "flex_align_items": "center"
+       },
+       "elements": [
+        {
+         "id": "9d175b3",
+         "elType": "widget",
+         "widgetType": "heading",
+         "settings": {
+          "title": "Good to go",
+          "header_size": "p",
+          "__globals__": {
+           "title_color": "globals/colors?id=accent",
+           "typography_typography": "globals/typography?id=secondary"
+          },
+          "align": "center"
+         },
+         "elements": []
+        },
+        {
+         "id": "43941cb",
+         "elType": "widget",
+         "widgetType": "heading",
+         "settings": {
+          "title": "Just arrived",
+          "header_size": "h2",
+          "__globals__": {
+           "title_color": "globals/colors?id=primary",
+           "typography_typography": "globals/typography?id=primary"
+          },
+          "align": "center"
+         },
+         "elements": []
+        }
+       ]
+      },
+      {
+       "id": "13191a6",
+       "elType": "widget",
+       "widgetType": "woocommerce-products",
+       "settings": {
+        "columns": "4",
+        "rows": 2,
+        "query_post_type": "recent",
+        "orderby": "date",
+        "order": "desc",
+        "image_radius": {
+         "unit": "px",
+         "size": 28,
+         "sizes": []
+        },
+        "__globals__": {
+         "title_color": "globals/colors?id=primary",
+         "title_typography_typography": "globals/typography?id=h4",
+         "button_bg_color": "globals/colors?id=primary",
+         "button_text_color": "globals/colors?id=paper",
+         "onsale_bg_color": "globals/colors?id=accent"
+        }
+       },
+       "elements": []
+      },
+      {
+       "id": "33e1c71",
+       "elType": "widget",
+       "widgetType": "button",
+       "settings": {
+        "text": "See everything",
+        "link": {
+         "url": "/shop/",
+         "is_external": "",
+         "nofollow": "",
+         "custom_attributes": ""
+        },
+        "size": "md",
+        "__globals__": {
+         "typography_typography": "globals/typography?id=accent",
+         "background_color": "globals/colors?id=accent",
+         "button_text_color": "globals/colors?id=paper",
+         "button_background_hover_color": "globals/colors?id=primary",
+         "hover_color": "globals/colors?id=paper"
+        },
+        "align": "center"
+       },
+       "elements": []
+      }
+     ]
+    },
+    {
+     "id": "d75f2cf",
+     "elType": "container",
+     "isInner": false,
+     "settings": {
+      "content_width": "boxed",
+      "boxed_width": {
+       "unit": "px",
+       "size": 1240,
+       "sizes": []
+      },
+      "flex_direction": "column",
+      "padding": {
+       "unit": "px",
+       "top": "72",
+       "right": "24",
+       "bottom": "88",
+       "left": "24",
+       "isLinked": false
+      },
+      "padding_mobile": {
+       "unit": "px",
+       "top": "48",
+       "right": "18",
+       "bottom": "48",
+       "left": "18",
+       "isLinked": false
+      },
+      "flex_align_items": "center",
+      "flex_gap": {
+       "unit": "px",
+       "size": 18,
+       "column": "18",
+       "row": "18",
+       "isLinked": true
+      }
+     },
+     "elements": [
+      {
+       "id": "3b6afd1",
+       "elType": "widget",
+       "widgetType": "heading",
+       "settings": {
+        "title": "&ldquo;Juno has destroyed every toy she's owned. The rope tug is on week six and still in one piece.&rdquo;",
+        "header_size": "p",
+        "__globals__": {
+         "title_color": "globals/colors?id=primary",
+         "typography_typography": "globals/typography?id=primary"
+        },
+        "align": "center",
+        "_element_width": "initial",
+        "_element_custom_width": {
+         "unit": "px",
+         "size": 820,
+         "sizes": []
+        }
+       },
+       "elements": []
+      },
+      {
+       "id": "6f2e68e",
+       "elType": "widget",
+       "widgetType": "text-editor",
+       "settings": {
+        "editor": "<p>Sam, verified buyer</p>",
+        "__globals__": {
+         "text_color": "globals/colors?id=muted",
+         "typography_typography": "globals/typography?id=secondary"
+        },
+        "align": "center"
+       },
+       "elements": []
+      }
+     ]
+    },
+    {
+     "id": "2646374",
+     "elType": "container",
+     "isInner": false,
+     "settings": {
+      "content_width": "boxed",
+      "boxed_width": {
+       "unit": "px",
+       "size": 1240,
+       "sizes": []
+      },
+      "flex_direction": "column",
+      "padding": {
+       "unit": "px",
+       "top": "64",
+       "right": "24",
+       "bottom": "64",
+       "left": "24",
+       "isLinked": false
+      },
+      "padding_mobile": {
+       "unit": "px",
+       "top": "48",
+       "right": "18",
+       "bottom": "48",
+       "left": "18",
+       "isLinked": false
+      },
+      "background_background": "classic",
+      "__globals__": {
+       "background_color": "globals/colors?id=accent"
+      }
+     },
+     "elements": [
+      {
+       "id": "cef0912",
+       "elType": "container",
+       "isInner": true,
+       "settings": {
+        "content_width": "full",
+        "flex_direction": "row",
+        "flex_gap": {
+         "unit": "px",
+         "size": 24,
+         "column": "24",
+         "row": "24",
+         "isLinked": true
+        },
+        "flex_align_items": "center",
+        "flex_direction_mobile": "column",
+        "flex_justify_content": "space-between"
+       },
+       "elements": [
+        {
+         "id": "9d716e5",
+         "elType": "container",
+         "isInner": true,
+         "settings": {
+          "content_width": "full",
+          "flex_direction": "column",
+          "flex_gap": {
+           "unit": "px",
+           "size": 8,
+           "column": "8",
+           "row": "8",
+           "isLinked": true
+          },
+          "width": {
+           "unit": "%",
+           "size": 60,
+           "sizes": []
+          },
+          "width_mobile": {
+           "unit": "%",
+           "size": 100,
+           "sizes": []
+          }
+         },
+         "elements": [
+          {
+           "id": "e068730",
+           "elType": "widget",
+           "widgetType": "heading",
+           "settings": {
+            "title": "New here? Treat yourself.",
+            "header_size": "h2",
+            "__globals__": {
+             "title_color": "globals/colors?id=paper",
+             "typography_typography": "globals/typography?id=primary"
+            }
+           },
+           "elements": []
+          },
+          {
+           "id": "b2cad0e",
+           "elType": "widget",
+           "widgetType": "text-editor",
+           "settings": {
+            "editor": "<p>Take 10% off your first order with the code WELCOME10. Your pet will never know.</p>",
+            "__globals__": {
+             "text_color": "globals/colors?id=paper",
+             "typography_typography": "globals/typography?id=text"
+            }
+           },
+           "elements": []
+          }
+         ]
+        },
+        {
+         "id": "8cf62c8",
+         "elType": "widget",
+         "widgetType": "button",
+         "settings": {
+          "text": "Get 10% off: WELCOME10",
+          "link": {
+           "url": "/shop/",
+           "is_external": "",
+           "nofollow": "",
+           "custom_attributes": ""
+          },
+          "size": "md",
+          "__globals__": {
+           "typography_typography": "globals/typography?id=accent",
+           "background_color": "globals/colors?id=primary",
+           "button_text_color": "globals/colors?id=paper",
+           "button_background_hover_color": "globals/colors?id=paper",
+           "hover_color": "globals/colors?id=paper"
+          }
+         },
+         "elements": []
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "golementor_settings": {
+    "hide_title": "yes"
+   }
+  },
+  {
+   "slug": "about",
+   "title": "Our testers",
+   "content": "",
+   "golementor": [
+    {
+     "id": "5fd0738",
+     "elType": "container",
+     "isInner": false,
+     "settings": {
+      "content_width": "boxed",
+      "boxed_width": {
+       "unit": "px",
+       "size": 1240,
+       "sizes": []
+      },
+      "flex_direction": "column",
+      "padding": {
+       "unit": "px",
+       "top": "88",
+       "right": "24",
+       "bottom": "48",
+       "left": "24",
+       "isLinked": false
+      },
+      "padding_mobile": {
+       "unit": "px",
+       "top": "48",
+       "right": "18",
+       "bottom": "48",
+       "left": "18",
+       "isLinked": false
+      },
+      "flex_align_items": "center",
+      "flex_gap": {
+       "unit": "px",
+       "size": 16,
+       "column": "16",
+       "row": "16",
+       "isLinked": true
+      }
+     },
+     "elements": [
+      {
+       "id": "b73215a",
+       "elType": "widget",
+       "widgetType": "heading",
+       "settings": {
+        "title": "About Good Boy Supply",
+        "header_size": "p",
+        "__globals__": {
+         "title_color": "globals/colors?id=accent",
+         "typography_typography": "globals/typography?id=secondary"
+        },
+        "align": "center"
+       },
+       "elements": []
+      },
+      {
+       "id": "61322ca",
+       "elType": "widget",
+       "widgetType": "heading",
+       "settings": {
+        "title": "A pet shop run by pet people (and their pets)",
+        "header_size": "h1",
+        "__globals__": {
+         "title_color": "globals/colors?id=primary",
+         "typography_typography": "globals/typography?id=display"
+        },
+        "align": "center",
+        "_element_width": "initial",
+        "_element_custom_width": {
+         "unit": "px",
+         "size": 860,
+         "sizes": []
+        }
+       },
+       "elements": []
+      },
+      {
+       "id": "17c8de5",
+       "elType": "widget",
+       "widgetType": "text-editor",
+       "settings": {
+        "editor": "<p>We are a small team of dog walkers, cat sitters and one former vet nurse who got tired of gear that didn't last.</p>",
+        "__globals__": {
+         "text_color": "globals/colors?id=text",
+         "typography_typography": "globals/typography?id=lead"
+        },
+        "align": "center",
+        "_element_width": "initial",
+        "_element_custom_width": {
+         "unit": "px",
+         "size": 720,
+         "sizes": []
+        }
+       },
+       "elements": []
+      }
+     ]
+    },
+    {
+     "id": "8af45b3",
+     "elType": "container",
+     "isInner": false,
+     "settings": {
+      "content_width": "boxed",
+      "boxed_width": {
+       "unit": "px",
+       "size": 1240,
+       "sizes": []
+      },
+      "flex_direction": "column",
+      "padding": {
+       "unit": "px",
+       "top": "32",
+       "right": "24",
+       "bottom": "80",
+       "left": "24",
+       "isLinked": false
+      },
+      "padding_mobile": {
+       "unit": "px",
+       "top": "48",
+       "right": "18",
+       "bottom": "48",
+       "left": "18",
+       "isLinked": false
+      }
+     },
+     "elements": [
+      {
+       "id": "8d6500a",
+       "elType": "container",
+       "isInner": true,
+       "settings": {
+        "content_width": "full",
+        "flex_direction": "row",
+        "flex_gap": {
+         "unit": "px",
+         "size": 64,
+         "column": "64",
+         "row": "64",
+         "isLinked": true
+        },
+        "flex_align_items": "flex-start",
+        "flex_direction_mobile": "column"
+       },
+       "elements": [
+        {
+         "id": "f158d9c",
+         "elType": "container",
+         "isInner": true,
+         "settings": {
+          "content_width": "full",
+          "flex_direction": "column",
+          "flex_gap": {
+           "unit": "px",
+           "size": 16,
+           "column": "16",
+           "row": "16",
+           "isLinked": true
+          },
+          "width": {
+           "unit": "%",
+           "size": 55,
+           "sizes": []
+          },
+          "width_mobile": {
+           "unit": "%",
+           "size": 100,
+           "sizes": []
+          }
+         },
+         "elements": [
+          {
+           "id": "5420f3a",
+           "elType": "widget",
+           "widgetType": "image",
+           "settings": {
+            "image": {
+             "url": "{{media:about}}",
+             "id": "{{media_id:about}}",
+             "size": "",
+             "alt": "The office dogs on their beds",
+             "source": "library"
+            },
+            "image_size": "large",
+            "image_border_radius": {
+             "unit": "px",
+             "top": "28",
+             "right": "28",
+             "bottom": "28",
+             "left": "28",
+             "isLinked": true
+            }
+           },
+           "elements": []
+          }
+         ]
+        },
+        {
+         "id": "3552cfc",
+         "elType": "container",
+         "isInner": true,
+         "settings": {
+          "content_width": "full",
+          "flex_direction": "column",
+          "flex_gap": {
+           "unit": "px",
+           "size": 16,
+           "column": "16",
+           "row": "16",
+           "isLinked": true
+          },
+          "width": {
+           "unit": "%",
+           "size": 45,
+           "sizes": []
+          },
+          "width_mobile": {
+           "unit": "%",
+           "size": 100,
+           "sizes": []
+          }
+         },
+         "elements": [
+          {
+           "id": "833d630",
+           "elType": "widget",
+           "widgetType": "heading",
+           "settings": {
+            "title": "Tested in real life",
+            "header_size": "h2",
+            "__globals__": {
+             "title_color": "globals/colors?id=primary",
+             "typography_typography": "globals/typography?id=primary"
+            }
+           },
+           "elements": []
+          },
+          {
+           "id": "436bc27",
+           "elType": "widget",
+           "widgetType": "text-editor",
+           "settings": {
+            "editor": "<p>Biscuit, a ten-year-old beagle, tests beds. Juno, a terrier with a jaw like a vice, tests toys. Pixel the cat tests whatever she likes. Products that fail don't make the shop.</p><p>We choose durable materials, honest ingredients and makers who treat animals well, and we give 1% of every order to local shelters.</p>",
+            "__globals__": {
+             "text_color": "globals/colors?id=text",
+             "typography_typography": "globals/typography?id=text"
+            }
+           },
+           "elements": []
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "id": "f3b4311",
+     "elType": "container",
+     "isInner": false,
+     "settings": {
+      "content_width": "boxed",
+      "boxed_width": {
+       "unit": "px",
+       "size": 1240,
+       "sizes": []
+      },
+      "flex_direction": "column",
+      "padding": {
+       "unit": "px",
+       "top": "72",
+       "right": "24",
+       "bottom": "72",
+       "left": "24",
+       "isLinked": false
+      },
+      "padding_mobile": {
+       "unit": "px",
+       "top": "48",
+       "right": "18",
+       "bottom": "48",
+       "left": "18",
+       "isLinked": false
+      },
+      "background_background": "classic",
+      "__globals__": {
+       "background_color": "globals/colors?id=sand"
+      }
+     },
+     "elements": [
+      {
+       "id": "8024711",
+       "elType": "container",
+       "isInner": true,
+       "settings": {
+        "container_type": "grid",
+        "content_width": "full",
+        "grid_gaps": {
+         "column": "40",
+         "row": "32",
+         "isLinked": false,
+         "unit": "px"
+        },
+        "grid_columns_grid": {
+         "unit": "fr",
+         "size": 3,
+         "sizes": []
+        },
+        "grid_columns_grid_tablet": {
+         "unit": "fr",
+         "size": 2,
+         "sizes": []
+        },
+        "grid_columns_grid_mobile": {
+         "unit": "fr",
+         "size": 1,
+         "sizes": []
+        },
+        "grid_rows_grid": {
+         "unit": "fr",
+         "size": 1,
+         "sizes": []
+        },
+        "grid_auto_flow": "row"
+       },
+       "elements": [
+        {
+         "id": "c523054",
+         "elType": "widget",
+         "widgetType": "icon-box",
+         "settings": {
+          "selected_icon": {
+           "value": "fas fa-paw",
+           "library": "fa-solid"
+          },
+          "title_text": "Pet tested",
+          "description_text": "Every product spends a week with our office pets.",
+          "position": "top",
+          "title_size": "h3",
+          "icon_size": {
+           "unit": "px",
+           "size": 24,
+           "sizes": []
+          },
+          "icon_space": {
+           "unit": "px",
+           "size": 14,
+           "sizes": []
+          },
+          "__globals__": {
+           "primary_color": "globals/colors?id=accent",
+           "title_color": "globals/colors?id=primary",
+           "title_typography_typography": "globals/typography?id=h4",
+           "description_color": "globals/colors?id=text",
+           "description_typography_typography": "globals/typography?id=small"
+          }
+         },
+         "elements": []
+        },
+        {
+         "id": "66101db",
+         "elType": "widget",
+         "widgetType": "icon-box",
+         "settings": {
+          "selected_icon": {
+           "value": "fas fa-leaf",
+           "library": "fa-solid"
+          },
+          "title_text": "Honest treats",
+          "description_text": "Short ingredient lists you can actually read.",
+          "position": "top",
+          "title_size": "h3",
+          "icon_size": {
+           "unit": "px",
+           "size": 24,
+           "sizes": []
+          },
+          "icon_space": {
+           "unit": "px",
+           "size": 14,
+           "sizes": []
+          },
+          "__globals__": {
+           "primary_color": "globals/colors?id=accent",
+           "title_color": "globals/colors?id=primary",
+           "title_typography_typography": "globals/typography?id=h4",
+           "description_color": "globals/colors?id=text",
+           "description_typography_typography": "globals/typography?id=small"
+          }
+         },
+         "elements": []
+        },
+        {
+         "id": "83c496e",
+         "elType": "widget",
+         "widgetType": "icon-box",
+         "settings": {
+          "selected_icon": {
+           "value": "fas fa-heart",
+           "library": "fa-solid"
+          },
+          "title_text": "Giving back",
+          "description_text": "1% of every order goes to local shelters.",
+          "position": "top",
+          "title_size": "h3",
+          "icon_size": {
+           "unit": "px",
+           "size": 24,
+           "sizes": []
+          },
+          "icon_space": {
+           "unit": "px",
+           "size": 14,
+           "sizes": []
+          },
+          "__globals__": {
+           "primary_color": "globals/colors?id=accent",
+           "title_color": "globals/colors?id=primary",
+           "title_typography_typography": "globals/typography?id=h4",
+           "description_color": "globals/colors?id=text",
+           "description_typography_typography": "globals/typography?id=small"
+          }
+         },
+         "elements": []
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "id": "ea5080f",
+     "elType": "container",
+     "isInner": false,
+     "settings": {
+      "content_width": "boxed",
+      "boxed_width": {
+       "unit": "px",
+       "size": 1240,
+       "sizes": []
+      },
+      "flex_direction": "column",
+      "padding": {
+       "unit": "px",
+       "top": "80",
+       "right": "24",
+       "bottom": "80",
+       "left": "24",
+       "isLinked": false
+      },
+      "padding_mobile": {
+       "unit": "px",
+       "top": "48",
+       "right": "18",
+       "bottom": "48",
+       "left": "18",
+       "isLinked": false
+      },
+      "flex_align_items": "center",
+      "flex_gap": {
+       "unit": "px",
+       "size": 18,
+       "column": "18",
+       "row": "18",
+       "isLinked": true
+      }
+     },
+     "elements": [
+      {
+       "id": "109bc63",
+       "elType": "widget",
+       "widgetType": "heading",
+       "settings": {
+        "title": "Find something your pet will love",
+        "header_size": "h2",
+        "__globals__": {
+         "title_color": "globals/colors?id=primary",
+         "typography_typography": "globals/typography?id=primary"
+        },
+        "align": "center"
+       },
+       "elements": []
+      },
+      {
+       "id": "3f55d9b",
+       "elType": "widget",
+       "widgetType": "button",
+       "settings": {
+        "text": "Visit the shop",
+        "link": {
+         "url": "/shop/",
+         "is_external": "",
+         "nofollow": "",
+         "custom_attributes": ""
+        },
+        "size": "md",
+        "__globals__": {
+         "typography_typography": "globals/typography?id=accent",
+         "background_color": "globals/colors?id=accent",
+         "button_text_color": "globals/colors?id=paper",
+         "button_background_hover_color": "globals/colors?id=primary",
+         "hover_color": "globals/colors?id=paper"
+        },
+        "align": "center"
+       },
+       "elements": []
+      }
+     ]
+    }
+   ],
+   "golementor_settings": {
+    "hide_title": "yes"
+   }
+  },
+  {
+   "slug": "contact",
+   "title": "Contact",
+   "content": "",
+   "golementor": [
+    {
+     "id": "1c5f547",
+     "elType": "container",
+     "isInner": false,
+     "settings": {
+      "content_width": "boxed",
+      "boxed_width": {
+       "unit": "px",
+       "size": 1240,
+       "sizes": []
+      },
+      "flex_direction": "column",
+      "padding": {
+       "unit": "px",
+       "top": "88",
+       "right": "24",
+       "bottom": "88",
+       "left": "24",
+       "isLinked": false
+      },
+      "padding_mobile": {
+       "unit": "px",
+       "top": "48",
+       "right": "18",
+       "bottom": "48",
+       "left": "18",
+       "isLinked": false
+      },
+      "flex_gap": {
+       "unit": "px",
+       "size": 18,
+       "column": "18",
+       "row": "18",
+       "isLinked": true
+      }
+     },
+     "elements": [
+      {
+       "id": "075567c",
+       "elType": "container",
+       "isInner": true,
+       "settings": {
+        "content_width": "full",
+        "flex_direction": "row",
+        "flex_gap": {
+         "unit": "px",
+         "size": 64,
+         "column": "64",
+         "row": "64",
+         "isLinked": true
+        },
+        "flex_align_items": "flex-start",
+        "flex_direction_mobile": "column"
+       },
+       "elements": [
+        {
+         "id": "04a3f86",
+         "elType": "container",
+         "isInner": true,
+         "settings": {
+          "content_width": "full",
+          "flex_direction": "column",
+          "flex_gap": {
+           "unit": "px",
+           "size": 18,
+           "column": "18",
+           "row": "18",
+           "isLinked": true
+          },
+          "width": {
+           "unit": "%",
+           "size": 50,
+           "sizes": []
+          },
+          "width_mobile": {
+           "unit": "%",
+           "size": 100,
+           "sizes": []
+          }
+         },
+         "elements": [
+          {
+           "id": "362ed5c",
+           "elType": "widget",
+           "widgetType": "heading",
+           "settings": {
+            "title": "Say hello",
+            "header_size": "p",
+            "__globals__": {
+             "title_color": "globals/colors?id=accent",
+             "typography_typography": "globals/typography?id=secondary"
+            }
+           },
+           "elements": []
+          },
+          {
+           "id": "1acb48d",
+           "elType": "widget",
+           "widgetType": "heading",
+           "settings": {
+            "title": "Questions about sizes? We're here.",
+            "header_size": "h1",
+            "__globals__": {
+             "title_color": "globals/colors?id=primary",
+             "typography_typography": "globals/typography?id=primary"
+            }
+           },
+           "elements": []
+          },
+          {
+           "id": "06ca2eb",
+           "elType": "widget",
+           "widgetType": "text-editor",
+           "settings": {
+            "editor": "<p>Send us your pet's measurements and we'll tell you which size fits. Photos of good boys and girls always welcome.</p>",
+            "__globals__": {
+             "text_color": "globals/colors?id=text",
+             "typography_typography": "globals/typography?id=lead"
+            }
+           },
+           "elements": []
+          },
+          {
+           "id": "e73f476",
+           "elType": "widget",
+           "widgetType": "icon-list",
+           "settings": {
+            "icon_list": [
+             {
+              "text": "8 Barkley Square, Old Town",
+              "selected_icon": {
+               "value": "fas fa-map-marker-alt",
+               "library": "fa-solid"
+              },
+              "_id": "2431799"
+             },
+             {
+              "text": "woof@goodboy.example",
+              "selected_icon": {
+               "value": "fas fa-envelope",
+               "library": "fa-solid"
+              },
+              "_id": "0b68200"
+             },
+             {
+              "text": "+1 555 0177",
+              "selected_icon": {
+               "value": "fas fa-phone",
+               "library": "fa-solid"
+              },
+              "_id": "c01a40b"
+             }
+            ],
+            "space_between": {
+             "unit": "px",
+             "size": 14,
+             "sizes": []
+            },
+            "icon_size": {
+             "unit": "px",
+             "size": 16,
+             "sizes": []
+            },
+            "text_indent": {
+             "unit": "px",
+             "size": 12,
+             "sizes": []
+            },
+            "__globals__": {
+             "icon_color": "globals/colors?id=accent",
+             "text_color": "globals/colors?id=primary",
+             "icon_typography_typography": "globals/typography?id=text"
+            }
+           },
+           "elements": []
+          }
+         ]
+        },
+        {
+         "id": "07eb344",
+         "elType": "container",
+         "isInner": true,
+         "settings": {
+          "content_width": "full",
+          "flex_direction": "column",
+          "flex_gap": {
+           "unit": "px",
+           "size": 12,
+           "column": "12",
+           "row": "12",
+           "isLinked": true
+          },
+          "width": {
+           "unit": "%",
+           "size": 50,
+           "sizes": []
+          },
+          "width_mobile": {
+           "unit": "%",
+           "size": 100,
+           "sizes": []
+          },
+          "padding": {
+           "unit": "px",
+           "top": "32",
+           "right": "32",
+           "bottom": "32",
+           "left": "32",
+           "isLinked": true
+          },
+          "border_radius": {
+           "unit": "px",
+           "top": "28",
+           "right": "28",
+           "bottom": "28",
+           "left": "28",
+           "isLinked": true
+          },
+          "background_background": "classic",
+          "__globals__": {
+           "background_color": "globals/colors?id=sand"
+          }
+         },
+         "elements": [
+          {
+           "id": "56ae7e6",
+           "elType": "widget",
+           "widgetType": "heading",
+           "settings": {
+            "title": "Opening hours",
+            "header_size": "h3",
+            "__globals__": {
+             "title_color": "globals/colors?id=primary",
+             "typography_typography": "globals/typography?id=h4"
+            }
+           },
+           "elements": []
+          },
+          {
+           "id": "2759ea5",
+           "elType": "widget",
+           "widgetType": "text-editor",
+           "settings": {
+            "editor": "<p>Monday to Saturday, 9:00&ndash;19:00<br>Dogs welcome in the shop, always</p>",
+            "__globals__": {
+             "text_color": "globals/colors?id=text",
+             "typography_typography": "globals/typography?id=text"
+            }
+           },
+           "elements": []
+          },
+          {
+           "id": "504f65a",
+           "elType": "widget",
+           "widgetType": "heading",
+           "settings": {
+            "title": "Delivery",
+            "header_size": "h3",
+            "__globals__": {
+             "title_color": "globals/colors?id=primary",
+             "typography_typography": "globals/typography?id=h4"
+            }
+           },
+           "elements": []
+          },
+          {
+           "id": "81fa75d",
+           "elType": "widget",
+           "widgetType": "text-editor",
+           "settings": {
+            "editor": "<p>Orders before 2 pm ship the same day. Wrong size? Exchanges are free within 30 days.</p>",
+            "__globals__": {
+             "text_color": "globals/colors?id=text",
+             "typography_typography": "globals/typography?id=text"
+            }
+           },
+           "elements": []
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "golementor_settings": {
+    "hide_title": "yes"
+   }
+  }
+ ],
+ "menus": [
+  {
+   "name": "Good Boy Supply menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Shop",
+     "url": "/shop/",
+     "children": [
+      {
+       "title": "Dogs",
+       "url": "/product-category/dogs/"
+      },
+      {
+       "title": "Cats",
+       "url": "/product-category/cats/"
+      },
+      {
+       "title": "Toys",
+       "url": "/product-category/toys/"
+      },
+      {
+       "title": "Treats & Care",
+       "url": "/product-category/care/"
+      }
+     ]
+    },
+    {
+     "title": "Dogs",
+     "url": "/product-category/dogs/"
+    },
+    {
+     "title": "Cats",
+     "url": "/product-category/cats/"
+    },
+    {
+     "title": "Toys",
+     "url": "/product-category/toys/"
+    },
+    {
+     "title": "Our testers",
+     "page": "about"
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    }
+   ]
+  },
+  {
+   "name": "Footer menu",
+   "location": "footer",
+   "items": [
+    {
+     "title": "Shop",
+     "url": "/shop/"
+    },
+    {
+     "title": "Our testers",
+     "page": "about"
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    },
+    {
+     "title": "My account",
+     "url": "/my-account/"
+    }
+   ]
+  }
+ ],
+ "goocommerce": {
+  "settings": {
+   "currency": "USD",
+   "currency_pos": "left",
+   "catalog_columns": 4,
+   "catalog_rows": 3
+  },
+  "categories": [
+   {
+    "slug": "dogs",
+    "name": "Dogs",
+    "description": "Beds, leads, harnesses and bowls for dogs of every size.",
+    "image": "cat-dogs"
+   },
+   {
+    "slug": "cats",
+    "name": "Cats",
+    "description": "Climbing, scratching and napping, sorted.",
+    "image": "cat-cats"
+   },
+   {
+    "slug": "toys",
+    "name": "Toys",
+    "description": "Tough toys, tested on our most destructive testers.",
+    "image": "cat-toys"
+   },
+   {
+    "slug": "care",
+    "name": "Treats & Care",
+    "description": "Honest treats and grooming essentials.",
+    "image": "cat-care"
+   }
+  ],
+  "attributes": [
+   {
+    "slug": "pet-size",
+    "name": "Size",
+    "terms": [
+     "S",
+     "M",
+     "L"
+    ]
+   },
+   {
+    "slug": "colour",
+    "name": "Colour",
+    "terms": [
+     "Sky",
+     "Butter"
+    ]
+   }
+  ],
+  "products": [
+   {
+    "slug": "orthopedic-dog-bed",
+    "name": "Orthopedic Dog Bed",
+    "type": "variable",
+    "regular_price": "89",
+    "categories": [
+     "dogs"
+    ],
+    "description": "<p>Ten centimetres of supportive memory foam under a removable, machine-washable cover with a raised bolster for chin-resting.</p><p>S fits dogs up to 10 kg, M up to 25 kg, L up to 45 kg. Non-slip base.</p>",
+    "short_description": "<p>Memory foam for old joints and young nappers.</p>",
+    "featured": true,
+    "menu_order": 1,
+    "reviews": [
+     {
+      "author": "Sam Okafor",
+      "email": "sam@example.com",
+      "rating": 5,
+      "content": "Biscuit-approved indeed. Our old lab sleeps through the night now."
+     },
+     {
+      "author": "Lena Fischer",
+      "email": "lena@example.com",
+      "rating": 5,
+      "content": "Cover washes beautifully. Ordered the L and it's perfect for our shepherd."
+     }
+    ],
+    "sku": "GB-101",
+    "attributes": [
+     {
+      "name": "Size",
+      "values": [
+       "S",
+       "M",
+       "L"
+      ],
+      "variation": true
+     }
+    ],
+    "variations": [
+     {
+      "attributes": {
+       "Size": "S"
+      },
+      "regular_price": "89",
+      "stock": 10,
+      "sku": "GB-101-1"
+     },
+     {
+      "attributes": {
+       "Size": "M"
+      },
+      "regular_price": "109",
+      "stock": 10,
+      "sku": "GB-101-2"
+     },
+     {
+      "attributes": {
+       "Size": "L"
+      },
+      "regular_price": "139",
+      "stock": 10,
+      "sku": "GB-101-3"
+     }
+    ],
+    "image": "p-orthopedic-dog-bed"
+   },
+   {
+    "slug": "leather-leash",
+    "name": "Leather Leash",
+    "type": "simple",
+    "regular_price": "34",
+    "categories": [
+     "dogs"
+    ],
+    "description": "<p>Vegetable-tanned leather that softens with every walk, with solid brass hardware and a padded handle.</p><p>1.5 m long, 15 mm wide.</p>",
+    "short_description": "<p>Soft leather, solid brass.</p>",
+    "sku": "GB-102",
+    "stock": 22,
+    "menu_order": 2,
+    "image": "p-leather-leash"
+   },
+   {
+    "slug": "reflective-harness",
+    "name": "Reflective Harness",
+    "type": "variable",
+    "regular_price": "39",
+    "categories": [
+     "dogs"
+    ],
+    "description": "<p>A no-pull harness with a front clip, padded chest plate and reflective piping for dark evening walks.</p><p>Measure around the widest part of the chest: S 40–55 cm, M 55–70 cm, L 70–90 cm.</p>",
+    "short_description": "<p>No-pull, padded and visible at night.</p>",
+    "menu_order": 3,
+    "sku": "GB-103",
+    "attributes": [
+     {
+      "name": "Size",
+      "values": [
+       "S",
+       "M",
+       "L"
+      ],
+      "variation": true
+     }
+    ],
+    "variations": [
+     {
+      "attributes": {
+       "Size": "S"
+      },
+      "regular_price": "39",
+      "stock": 15,
+      "sku": "GB-103-1",
+      "sale_price": "32"
+     },
+     {
+      "attributes": {
+       "Size": "M"
+      },
+      "regular_price": "39",
+      "stock": 15,
+      "sku": "GB-103-2"
+     },
+     {
+      "attributes": {
+       "Size": "L"
+      },
+      "regular_price": "42",
+      "stock": 15,
+      "sku": "GB-103-3"
+     }
+    ],
+    "image": "p-reflective-harness"
+   },
+   {
+    "slug": "ceramic-bowl",
+    "name": "Ceramic Food Bowl",
+    "type": "variable",
+    "regular_price": "22",
+    "categories": [
+     "dogs",
+     "cats"
+    ],
+    "description": "<p>A heavy stoneware bowl that doesn't slide or tip, glazed inside and out and dishwasher safe.</p><p>18 cm wide, holds 900 ml.</p>",
+    "short_description": "<p>Heavy, stable and dishwasher safe.</p>",
+    "menu_order": 4,
+    "sku": "GB-104",
+    "attributes": [
+     {
+      "name": "Colour",
+      "values": [
+       "Sky",
+       "Butter"
+      ],
+      "variation": true
+     }
+    ],
+    "variations": [
+     {
+      "attributes": {
+       "Colour": "Sky"
+      },
+      "regular_price": "22",
+      "stock": 20,
+      "sku": "GB-104-1"
+     },
+     {
+      "attributes": {
+       "Colour": "Butter"
+      },
+      "regular_price": "22",
+      "stock": 20,
+      "sku": "GB-104-2"
+     }
+    ],
+    "image": "p-ceramic-bowl"
+   },
+   {
+    "slug": "cat-tree",
+    "name": "Cat Tree Tower",
+    "type": "simple",
+    "regular_price": "129",
+    "categories": [
+     "cats"
+    ],
+    "description": "<p>Three levels of sisal posts, a hideaway cube and a plush hammock at the top for surveying the kingdom.</p><p>120 cm tall. Ships flat, assembles in ten minutes.</p>",
+    "short_description": "<p>Climb, scratch, nap, repeat.</p>",
+    "sku": "GB-201",
+    "featured": true,
+    "stock": 6,
+    "menu_order": 5,
+    "reviews": [
+     {
+      "author": "Nora Vance",
+      "email": "nora@example.com",
+      "rating": 5,
+      "content": "Pixel's competitor, our cat Mochi, now lives at the top. Very sturdy."
+     }
+    ],
+    "image": "p-cat-tree"
+   },
+   {
+    "slug": "cat-scratcher",
+    "name": "Cardboard Scratcher",
+    "type": "simple",
+    "regular_price": "18",
+    "categories": [
+     "cats"
+    ],
+    "description": "<p>A wave-shaped scratcher made from recycled corrugated card, with a pouch of organic catnip.</p><p>Reversible for twice the life.</p>",
+    "short_description": "<p>Saves the sofa.</p>",
+    "sku": "GB-202",
+    "stock": 30,
+    "menu_order": 6,
+    "image": "p-cat-scratcher"
+   },
+   {
+    "slug": "feather-wand",
+    "name": "Feather Wand",
+    "type": "simple",
+    "regular_price": "9",
+    "categories": [
+     "toys",
+     "cats"
+    ],
+    "description": "<p>A bamboo wand with a bell and a bundle of naturally shed feathers. Swappable toy ends.</p>",
+    "short_description": "<p>Irresistible to any cat.</p>",
+    "sku": "GB-301",
+    "stock": 40,
+    "menu_order": 7,
+    "image": "p-feather-wand"
+   },
+   {
+    "slug": "rope-tug",
+    "name": "Cotton Rope Tug",
+    "type": "simple",
+    "regular_price": "12",
+    "categories": [
+     "toys"
+    ],
+    "description": "<p>Thick braided cotton rope with two knots, for tug, fetch and a good chew. Cleans teeth as it goes.</p><p>45 cm long. Machine washable.</p>",
+    "short_description": "<p>Tug, fetch, chew, wash, repeat.</p>",
+    "sku": "GB-302",
+    "sale_price": "9",
+    "featured": true,
+    "stock": 35,
+    "menu_order": 8,
+    "reviews": [
+     {
+      "author": "Sam Okafor",
+      "email": "sam@example.com",
+      "rating": 5,
+      "content": "Juno-proof. That says everything."
+     }
+    ],
+    "image": "p-rope-tug"
+   },
+   {
+    "slug": "squeaky-bone",
+    "name": "Squeaky Rubber Bone",
+    "type": "simple",
+    "regular_price": "11",
+    "categories": [
+     "toys"
+    ],
+    "description": "<p>Natural rubber with a muffled squeaker, tough enough for strong chewers and soft enough for teeth.</p><p>Floats, so it's great for the beach.</p>",
+    "short_description": "<p>Squeaks, bounces, floats.</p>",
+    "sku": "GB-303",
+    "stock": 28,
+    "menu_order": 9,
+    "image": "p-squeaky-bone"
+   },
+   {
+    "slug": "grooming-brush",
+    "name": "Grooming Brush",
+    "type": "simple",
+    "regular_price": "16",
+    "categories": [
+     "care"
+    ],
+    "description": "<p>A double-sided brush: pins for detangling and soft bristles for a shine. Beech wood handle.</p>",
+    "short_description": "<p>Detangle and shine in one.</p>",
+    "sku": "GB-401",
+    "stock": 24,
+    "menu_order": 10,
+    "image": "p-grooming-brush"
+   },
+   {
+    "slug": "salmon-treats",
+    "name": "Salmon Treats",
+    "type": "simple",
+    "regular_price": "8",
+    "categories": [
+     "care"
+    ],
+    "description": "<p>Bite-size treats made from just two ingredients: wild salmon and sweet potato. Gently baked, never fried.</p><p>150 g bag, about 90 treats.</p>",
+    "short_description": "<p>Two ingredients. Zero fillers.</p>",
+    "sku": "GB-402",
+    "featured": true,
+    "stock": 50,
+    "menu_order": 11,
+    "reviews": [
+     {
+      "author": "Priya Shah",
+      "email": "priya@example.com",
+      "rating": 5,
+      "content": "My fussy whippet loses her mind for these."
+     }
+    ],
+    "image": "p-salmon-treats"
+   },
+   {
+    "slug": "puppy-starter-kit",
+    "name": "Puppy Starter Kit",
+    "type": "grouped",
+    "categories": [
+     "care",
+     "dogs"
+    ],
+    "menu_order": 12,
+    "description": "<p>A leather leash, a rope tug and a bag of salmon treats: everything a new puppy needs on day one.</p>",
+    "short_description": "<p>Day-one essentials for a new family member.</p>",
+    "children": [
+     "leather-leash",
+     "rope-tug",
+     "salmon-treats"
+    ],
+    "image": "p-puppy-starter-kit"
+   }
+  ],
+  "coupons": [
+   {
+    "code": "WELCOME10",
+    "type": "percent",
+    "amount": "10",
+    "description": "10% off your first order"
+   }
+  ],
+  "shipping": {
+   "zone": "Everywhere",
+   "flat_rate": "5",
+   "free_over": "60",
+   "local_pickup": true
+  }
+ }
+}

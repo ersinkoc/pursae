@@ -1,0 +1,7 @@
+{{template "header" .}}
+<section class="gs-wrap error-404 not-found">
+	<h1 class="page-title">Page not found</h1>
+	<p>The page you were looking for has moved or never existed.</p>
+	{{if goo_on}}{{goo_product_search .}}{{else}}{{template "searchform" .}}{{end}}
+</section>
+{{template "footer" .}}

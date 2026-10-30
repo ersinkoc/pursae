@@ -210,9 +210,9 @@ func (s *Server) gweProDocConfig(c *gin.Context, p *store.Post, out map[string]a
 			}
 			loc := typ
 			switch typ {
-			case "single-post", "single-page", "single", "archive", "search-results", "error-404":
+			case "single-post", "single-page", "single", "archive", "search-results", "error-404", "single-product", "product-archive":
 				loc = "single"
-				if typ == "archive" || typ == "search-results" {
+				if typ == "archive" || typ == "search-results" || typ == "product-archive" {
 					loc = "archive"
 				}
 			}

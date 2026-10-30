@@ -52,6 +52,8 @@ var gwePartTypes = []struct{ Type, Label, Plural string }{
 	{"archive", "Archive", "Archives"},
 	{"search-results", "Search Results", "Search Results"},
 	{"error-404", "404 Page", "404 Pages"},
+	{"single-product", "Single Product", "Single Products"},       // Goocommerce (goo_gwe.go)
+	{"product-archive", "Products Archive", "Products Archives"}, // Goocommerce
 }
 
 func gwePartLabel(typ string) string {
@@ -68,7 +70,8 @@ var gweDefaultConditions = map[string][]string{
 	"header": {"include/general"}, "footer": {"include/general"},
 	"single-post": {"include/singular/post"}, "single-page": {"include/singular/page"},
 	"archive": {"include/archive"}, "search-results": {"include/archive/search"},
-	"error-404": {"include/singular/not_found404"},
+	"error-404":      {"include/singular/not_found404"},
+	"single-product": {"include/product"}, "product-archive": {"include/product_archive"},
 }
 
 // gwePart is a theme part, from a post or from a custom theme's snapshot.
@@ -160,7 +163,7 @@ func (s *Server) gweActiveParts(ctx context.Context, t *Theme) []*gwePart {
 	for _, p := range posts {
 		out = append(out, gwePartFromPost(p))
 	}
-	return out
+	return s.gooGweLangParts(ctx, out) // Golylang: the parts of the current language (goo_gwe.go)
 }
 
 // --- display conditions ------------------------------------------------------------------------
@@ -169,6 +172,9 @@ func (s *Server) gweActiveParts(ctx context.Context, t *Theme) []*gwePart {
 // 0 means no match.
 func gweCondScore(rule string, q *siteQuery) int {
 	parts := strings.Split(rule, "/")
+	if sc, ok := gweStoreCondScore(parts, q); ok { // Goocommerce: products, archives, cart, checkout (goo_gwe.go)
+		return sc
+	}
 	singular := q.Post != nil && (q.Kind == "single" || q.Kind == "page" || q.Kind == "front-page")
 	archive := q.Kind == "home" || q.Kind == "category" || q.Kind == "tag" || q.Kind == "author" || q.Kind == "date" || q.Kind == "search"
 	switch parts[0] {
@@ -252,6 +258,12 @@ func gweLocationTypes(location string, q *siteQuery) []string {
 	case "header", "footer":
 		return []string{location}
 	}
+	switch { // Goocommerce views (goo_gwe.go)
+	case q.Store == "product":
+		return []string{"single-product", "single-post", "single-page"}
+	case gooArchiveKind(q.Store):
+		return []string{"product-archive", "single-page", "single-post"}
+	}
 	switch q.Kind {
 	case "single", "page", "front-page":
 		return []string{"single-post", "single-page"}
@@ -332,7 +344,11 @@ func (s *Server) gweThemePrepare(c *gin.Context, v *siteView, bodyClasses *[]str
 	if c == nil || q == nil || q.Feed != "" || !s.golementorOn() {
 		return
 	}
-	hello := v.Theme.Slug == helloThemeSlug || v.Theme.Custom
+	hello := v.Theme.Slug == helloThemeSlug || v.Theme.Custom || gweDesignTheme(v.Theme) // + Golementor design packages (goo_gwe.go)
+	q.Store = s.gooStoreKind(c, q)
+	if fv := gooViewFrom(c); fv != nil && fv.Term != nil {
+		q.StoreTerm = fv.Term.ID
+	}
 	var parts []*gwePart
 	if q.Post != nil && (q.Post.Type == gwePartType || q.Post.Type == gweLibrary) {
 		if !hello {
@@ -359,7 +375,7 @@ func (s *Server) gweThemePrepare(c *gin.Context, v *siteView, bodyClasses *[]str
 		gv.Header = render(header, "header")
 	}
 	if main != nil {
-		gv.Main = render(main, main.Type)
+		gv.Main = s.gooGweWrapPart(c, main.Type, render(main, main.Type)) // a Single Product part sits in div.product
 	}
 	if footer != nil {
 		gv.Footer = render(footer, "footer")
@@ -560,6 +576,9 @@ func (s *Server) gweThemeData(ctx context.Context) *builder.ThemeData {
 	lb := s.links(ctx)
 	td := &builder.ThemeData{SiteName: s.settings.String("blogname"), Tagline: s.settings.String("blogdescription"),
 		HomeURL: lb.HomeURL("/"), SearchURL: lb.HomeURL("/"), Now: time.Now().In(s.loc())}
+	if s.gooOn() || s.golylangOn() {
+		td.Store = s.gooGweStore(ctx) // the store widgets and the language switcher (goo_gwe.go)
+	}
 	v, _ := ctx.Value(ctxGweView).(*siteView)
 	smp, _ := ctx.Value(ctxGweSample).(*gweSample)
 	if v != nil {
@@ -844,6 +863,14 @@ func (s *Server) gweThemeDocConfig(c *gin.Context, p *store.Post, out map[string
 			cats = cats.insertAfter("layout", "theme-elements", json.RawMessage(`{"title":"Site","icon":"eicon-site-identity","active":`+fmt.Sprint(label != "")+`}`))
 			if strings.HasPrefix(typ, "single-") {
 				cats = cats.insertAfter("theme-elements", "theme-elements-single", json.RawMessage(`{"title":"Single","icon":"eicon-single-post","active":true}`))
+			}
+			if s.gooOn() { // Goocommerce: the store widgets (goo_gwe.go)
+				after := "theme-elements"
+				if typ == "single-product" {
+					cats = cats.insertAfter("theme-elements-single", "woocommerce-elements-single", json.RawMessage(`{"title":"Store Single","icon":"eicon-product-images","active":true}`))
+					after = "woocommerce-elements-single"
+				}
+				cats = cats.insertAfter(after, "woocommerce-elements", json.RawMessage(`{"title":"Store","icon":"eicon-woocommerce","active":`+fmt.Sprint(typ == "single-product" || typ == "product-archive")+`}`))
 			}
 			panel["elements_categories"], _ = json.Marshal(cats)
 		}

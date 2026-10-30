@@ -28,6 +28,7 @@ type gweTBRow struct {
 	EditURL, ConditionsURL, PreviewURL   string
 	Conditions                           []string
 	Author                               string
+	Langs                                template.HTML // Golylang: language and translation links
 }
 
 type gweTBGroup struct {
@@ -79,6 +80,10 @@ var gweRuleLabels = map[string]string{
 	"singular/page": "All Pages", "singular/not_found404": "404 Page", "archive": "All Archives", "archive/post_archive": "Blog (Posts Page)",
 	"archive/category": "All Categories", "archive/post_tag": "All Tags", "archive/author": "Author Archives",
 	"archive/date": "Date Archives", "archive/search": "Search Results",
+	// Goocommerce (goo_gwe.go)
+	"product": "All Products", "product_archive": "All Product Archives", "product_archive/shop": "Shop Page",
+	"product_archive/product_cat": "All Product Categories", "product_archive/product_tag": "All Product Tags",
+	"goocommerce/cart": "Cart Page", "goocommerce/checkout": "Checkout Page", "goocommerce/myaccount": "My Account Page",
 }
 
 // gweConditionLabel turns "include/singular/page/12" into "Page: About".
@@ -96,6 +101,12 @@ func (s *Server) gweConditionLabel(c *gin.Context, cond string) string {
 					name = defaultStr(p.Title, "(no title)")
 				}
 				label = map[string]string{"post": "Post: ", "page": "Page: "}[parts[1]] + name
+			case "product_archive/product_cat", "product_archive/product_tag": // Goocommerce
+				name := "#" + parts[2]
+				if t, err := s.store.GetTerm(c, id); err == nil {
+					name = t.Name
+				}
+				label = map[string]string{"product_cat": "Product Category: ", "product_tag": "Product Tag: "}[parts[1]] + name
 			case "archive/category", "archive/post_tag":
 				name := "#" + parts[2]
 				if t, err := s.store.GetTerm(c, id); err == nil {
@@ -124,6 +135,7 @@ func (s *Server) gweTBRowFor(c *gin.Context, p *store.Post) gweTBRow {
 	for _, cond := range gweConditionsOf(p) {
 		r.Conditions = append(r.Conditions, s.gweConditionLabel(c, cond))
 	}
+	r.Langs = s.gooGwePartLangs(c, p) // Golylang: the part's language and translations (goo_gwe.go)
 	return r
 }
 
@@ -141,6 +153,9 @@ func (s *Server) gweThemeBuilder(c *gin.Context) {
 	switch c.Query("action") {
 	case "conditions":
 		s.gweConditionsScreen(c)
+		return
+	case "translate": // Golylang: a part's translation (goo_gwe.go)
+		s.gooGweTranslatePart(c)
 		return
 	case "export":
 		if !s.checkNonce(c, "gwe-theme-builder") {
@@ -172,6 +187,9 @@ func (s *Server) gweThemeBuilder(c *gin.Context) {
 		byType[gweDocType(p)] = append(byType[gweDocType(p)], s.gweTBRowFor(c, p))
 	}
 	for _, t := range gwePartTypes {
+		if !s.gwePartTypeOn(t.Type) {
+			continue
+		}
 		d.Groups = append(d.Groups, gweTBGroup{Type: t.Type, Label: t.Label, Plural: t.Plural, Rows: byType[t.Type]})
 		d.Total += len(byType[t.Type])
 	}
@@ -361,7 +379,8 @@ func gweValidRule(r string) bool {
 		return false
 	}
 	switch parts[0] + "/" + parts[1] {
-	case "singular/post", "singular/page", "archive/category", "archive/post_tag", "archive/author":
+	case "singular/post", "singular/page", "archive/category", "archive/post_tag", "archive/author",
+		"product_archive/product_cat", "product_archive/product_tag": // Goocommerce
 		return true
 	}
 	return false
@@ -427,5 +446,6 @@ func (s *Server) gweConditionsScreen(c *gin.Context) {
 	if len(other.Opts) > 0 {
 		d.RuleOpts = append(d.RuleOpts, other)
 	}
+	d.RuleOpts = s.gooGweRuleOpts(c, d.RuleOpts) // Goocommerce: the store's pages and archives (goo_gwe.go)
 	s.adminPage(c, "gowebeditor-theme-builder", "Display Conditions", "appearance_page_gowebeditor-theme-builder", "admin/gowebeditor-theme-conditions", d)
 }
