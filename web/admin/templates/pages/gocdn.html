@@ -35,7 +35,7 @@
 {{if .Locked}}<div class="notice notice-info"><p>Some settings are defined in the <code>{{.EnvName}}</code> environment variable and cannot be changed here.</p></div>{{end}}
 
 {{if eq .Page ""}}
-{{if .MoveFiles}}<div class="notice notice-warning inline"><p>{{.MoveFiles}} offloaded file(s) are still in another bucket or under another path (<span translate="no">{{range $i, $b := .MoveFrom}}{{if $i}}, {{end}}{{$b}}{{end}}</span>). They keep working from there; <a href="/wp-admin/gocdn?page=offload#gc-move">move them to the current bucket</a> on the Media Offload screen.</p></div>{{end}}
+{{if .MoveFiles}}<div class="notice notice-warning inline"><p><span translate="no">{{.MoveFiles}}</span> offloaded file(s) are still in another bucket or under another path (<span translate="no">{{range $i, $b := .MoveFrom}}{{if $i}}, {{end}}{{$b}}{{end}}</span>). They keep working from there; <a href="/wp-admin/gocdn?page=offload#gc-move">move them to the current bucket</a> on the Media Offload screen.</p></div>{{end}}
 <p class="gc-sub">Connect an S3-compatible bucket. New uploads and their sizes are copied there; the Media Offload screen copies the rest of the library and decides where URLs point.
 Status: {{if .Configured}}<span class="gc-badge ok">Configured</span>{{else}}<span class="gc-badge warn">Not configured</span>{{end}}</p>
 <form method="post" action="/wp-admin/gocdn" autocomplete="off">
@@ -73,7 +73,8 @@ Status: {{if .Configured}}<span class="gc-badge ok">Configured</span>{{else}}<sp
 <tr><th scope="row"><label for="gc-class">Storage class</label></th><td><input type="text" id="gc-class" name="storage-class" class="regular-text code" value="{{.S.StorageClass}}" list="gc-classes" placeholder="bucket default" translate="no"{{if .Lock "storage-class"}} disabled{{end}}>
 	<datalist id="gc-classes"><option value="STANDARD"><option value="STANDARD_IA"><option value="INTELLIGENT_TIERING"><option value="ONEZONE_IA"><option value="GLACIER_IR"><option value="REDUCED_REDUNDANCY"></datalist>
 	<p class="description">For new objects (<code>x-amz-storage-class</code>). Empty uses the bucket's default; not every provider supports every class.</p></td></tr>
-<tr><th scope="row"><label for="gc-multi">Multipart upload</label></th><td>Files of <input type="number" id="gc-multi" name="multipart-threshold-mb" class="small-text" min="5" max="5120" value="{{.S.MultipartMB}}"{{if .Lock "multipart-threshold-mb"}} disabled{{end}}> MB or more are uploaded in parts (each part retried on its own; an upload that fails is aborted).</td></tr>
+<tr><th scope="row"><label for="gc-multi">Multipart upload</label></th><td><input type="number" id="gc-multi" name="multipart-threshold-mb" class="small-text" min="5" max="5120" value="{{.S.MultipartMB}}"{{if .Lock "multipart-threshold-mb"}} disabled{{end}}> MB
+	<p class="description">Files this size or larger are uploaded in parts (each part retried on its own; an upload that fails is aborted).</p></td></tr>
 </table>
 <p class="submit"><button type="submit" name="do" value="save" class="button button-primary">Save Changes</button> <button type="submit" name="do" value="save-test" class="button">Save and Test Connection</button></p>
 </form>
@@ -117,7 +118,7 @@ Status: {{if .Configured}}<span class="gc-badge ok">Configured</span>{{else}}<sp
 	</form>
 	{{if .MoveFiles}}<form method="post" action="/wp-admin/gocdn?page=offload" class="gc-tools" id="gc-move">
 		<input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="do" value="job">
-		<p>{{.MoveFiles}} file(s) are in another bucket or under another path (<span translate="no">{{range $i, $b := .MoveFrom}}{{if $i}}, {{end}}{{$b}}{{end}}</span>). Until they are moved they are served from there with their old URLs.</p>
+		<p><span translate="no">{{.MoveFiles}}</span> file(s) are in another bucket or under another path (<span translate="no">{{range $i, $b := .MoveFrom}}{{if $i}}, {{end}}{{$b}}{{end}}</span>). Until they are moved they are served from there with their old URLs.</p>
 		<button type="submit" name="kind" value="move" class="button button-primary"{{if not .Configured}} disabled{{end}}>Move to the current bucket</button>
 		<label><input type="checkbox" name="delete-old" value="1"> Delete the old objects after copying</label>
 	</form>{{end}}
@@ -267,7 +268,7 @@ Status: {{if .Configured}}<span class="gc-badge ok">Configured</span>{{else}}<sp
 
 {{if eq .Page "deactivate"}}
 <div class="gc-job">
-<p><strong>{{.Removed}} file(s) of the Media Library exist only in the bucket</strong> (they were removed from the server).</p>
+<p><strong><span translate="no">{{.Removed}}</span> file(s) of the Media Library exist only in the bucket</strong> (they were removed from the server).</p>
 <p>Without GoCDN their <code>/wp-content/uploads</code> URLs would point at files that are not on the server. Choose how to deactivate:</p>
 <form method="post" action="/wp-admin/gocdn?page=deactivate" class="gc-tools">
 	<input type="hidden" name="_wpnonce" value="{{.Nonce}}">
