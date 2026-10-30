@@ -85,6 +85,7 @@
 		<td{{if .Top}} id="cb"{{end}} class="manage-column column-cb check-column"><input id="cb-select-all-{{if .Top}}1{{else}}2{{end}}" type="checkbox" /><label for="cb-select-all-{{if .Top}}1{{else}}2{{end}}"><span class="screen-reader-text">Select All</span></label></td>
 		<th scope="col"{{if .Top}} id="thumb"{{end}} class="manage-column column-thumb{{if index $h "thumb"}} hidden{{end}}"><span class="wc-image tips" data-tip="Image">Image</span></th>
 		{{template "sort-th" dict "ID" (or (and .Top "name") "") "Col" "name" "Primary" true "Label" "Name" "Link" (index .D.SortLinks "name")}}
+		{{range .D.PluginHeads}}{{.}}{{end}}
 		<th scope="col"{{if .Top}} id="sku"{{end}} class="manage-column column-sku{{if index $h "sku"}} hidden{{end}}">SKU</th>
 		<th scope="col"{{if .Top}} id="is_in_stock"{{end}} class="manage-column column-is_in_stock{{if index $h "is_in_stock"}} hidden{{end}}">Stock</th>
 		{{template "sort-th" dict "ID" (or (and .Top "price") "") "Col" "price" "Label" "Price" "Link" (index .D.SortLinks "price") "Hidden" (index $h "price")}}
@@ -103,6 +104,7 @@
 			<div class="row-actions"><span class="id">ID: {{.ID}} | </span>{{if .IsTrash}}<span class="untrash"><a href="{{.RestoreURL}}" aria-label="Restore &#8220;{{.Name}}&#8221; from the Trash">Restore</a> | </span><span class="delete"><a href="{{.DeleteURL}}" class="submitdelete" aria-label="Delete &#8220;{{.Name}}&#8221; permanently">Delete Permanently</a></span>{{else}}{{if .CanEdit}}<span class="edit"><a href="{{.EditURL}}" aria-label="Edit &#8220;{{.Name}}&#8221;">Edit</a> | </span>{{end}}{{if .CanDelete}}<span class="trash"><a href="{{.TrashURL}}" class="submitdelete" aria-label="Move &#8220;{{.Name}}&#8221; to the Trash">Trash</a> | </span>{{end}}{{if .ViewURL}}<span class="view"><a href="{{.ViewURL}}" rel="bookmark" aria-label="{{.ViewLabel}} &#8220;{{.Name}}&#8221;">{{.ViewLabel}}</a> | </span>{{end}}<span class="duplicate"><a href="{{.DuplicateURL}}" aria-label="Make a duplicate from this product" rel="permalink">Duplicate</a></span>{{end}}</div>
 			<button type="button" class="toggle-row"><span class="screen-reader-text">Show more details</span></button>
 		</td>
+		{{range .PluginCols}}{{.}}{{end}}
 		<td class="sku column-sku{{if index $h "sku"}} hidden{{end}}" data-colname="SKU">{{if .SKU}}{{.SKU}}{{else}}<span class="na">&ndash;</span>{{end}}</td>
 		<td class="is_in_stock column-is_in_stock{{if index $h "is_in_stock"}} hidden{{end}}" data-colname="Stock">{{.Stock}}</td>
 		<td class="price column-price{{if index $h "price"}} hidden{{end}}" data-colname="Price">{{.Price}}</td>

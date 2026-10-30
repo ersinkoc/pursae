@@ -74,7 +74,7 @@ func (s *Server) gooPageID(key string) int64 { return int64(s.gooOptInt(key + "_
 
 // gooPageURL is wc_get_page_permalink().
 func (s *Server) gooPageURL(ctx context.Context, key string) string {
-	if id := s.gooPageID(key); id > 0 {
+	if id := s.gooPageIDIn(ctx, key); id > 0 { // Golylang: the page in the current language (goo_golylang.go)
 		if p, err := s.store.GetPost(ctx, id); err == nil && p.Status == "publish" {
 			return s.links(ctx).Permalink(p)
 		}
@@ -237,6 +237,7 @@ var gooAdminPages = map[string]struct{ Title, Cap string }{
 	"attributes": {"Attributes", "manage_product_terms"},
 	"reviews":    {"Reviews", "moderate_comments"},
 	"analytics":  {"Analytics", "view_woocommerce_reports"},
+	"themes":     {"Store Themes", "manage_woocommerce"}, // goo_admin_themes.go
 }
 
 // gooMenu adds WooCommerce's menus after Comments: Goocommerce, Products, Analytics, Marketing.
@@ -272,6 +273,7 @@ func (s *Server) gooMenu(menu []*menuTop, u *store.User, screen string) []*menuT
 		sub(top, "goocommerce?page=settings", "Settings", "manage_woocommerce")
 		sub(top, "goocommerce?page=status", "Status", "manage_woocommerce")
 		sub(top, "goocommerce?page=extensions", "Extensions", "manage_woocommerce")
+		sub(top, "goocommerce?page=themes", "Store Themes", "manage_woocommerce")
 		for _, m := range gooExtMenuItems {
 			if s.gooExtOn(m.Module) {
 				sub(top, "goocommerce?page="+m.Page, m.Title, "manage_woocommerce")
@@ -399,6 +401,8 @@ func (s *Server) gooAdmin(c *gin.Context) {
 		s.gooAdminReviews(c)
 	case "analytics":
 		s.gooAdminAnalytics(c)
+	case "themes":
+		s.gooAdminThemes(c)
 	}
 }
 
@@ -469,9 +473,11 @@ func (s *Server) gooCacheExcludes(paths, cookies []string) ([]string, []string) 
 	ctx := context.Background()
 	for _, key := range []string{"cart", "checkout", "myaccount"} {
 		if id := s.gooPageID(key); id > 0 {
-			if p, err := s.store.GetPost(ctx, id); err == nil {
-				if u, err := url.Parse(s.links(ctx).Permalink(p)); err == nil && u.Path != "" && u.Path != "/" {
-					paths = append(paths, strings.TrimRight(u.Path, "/")+"*")
+			for _, tid := range s.gooPllPagePaths(ctx, id) { // Golylang: every translation of the page
+				if p, err := s.store.GetPost(ctx, tid); err == nil {
+					if u, err := url.Parse(s.links(ctx).Permalink(p)); err == nil && u.Path != "" && u.Path != "/" {
+						paths = append(paths, strings.TrimRight(u.Path, "/")+"*")
+					}
 				}
 			}
 		}

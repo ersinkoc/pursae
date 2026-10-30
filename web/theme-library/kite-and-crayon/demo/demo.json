@@ -1,0 +1,2616 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Kite & Crayon",
+  "blogdescription": "Toys for curious minds"
+ },
+ "media": [
+  {
+   "id": "hero",
+   "file": "demo/images/kite-and-crayon-hero.jpg",
+   "alt": "Wooden toys and crayons on a bright playroom table"
+  },
+  {
+   "id": "about",
+   "file": "demo/images/kite-and-crayon-about.jpg",
+   "alt": "Children playing with wooden blocks"
+  },
+  {
+   "id": "cat-toys",
+   "file": "demo/images/kite-and-crayon-cat-toys.jpg",
+   "alt": "Toys"
+  },
+  {
+   "id": "cat-games",
+   "file": "demo/images/kite-and-crayon-cat-games.jpg",
+   "alt": "Games & Puzzles"
+  },
+  {
+   "id": "cat-art",
+   "file": "demo/images/kite-and-crayon-cat-art.jpg",
+   "alt": "Arts & Crafts"
+  },
+  {
+   "id": "cat-room",
+   "file": "demo/images/kite-and-crayon-cat-room.jpg",
+   "alt": "Kids' Room"
+  },
+  {
+   "id": "p-wooden-rainbow-stacker",
+   "file": "demo/images/kite-and-crayon-p-wooden-rainbow-stacker.jpg",
+   "alt": "Wooden Rainbow Stacker"
+  },
+  {
+   "id": "p-plush-fox",
+   "file": "demo/images/kite-and-crayon-p-plush-fox.jpg",
+   "alt": "Plush Fox"
+  },
+  {
+   "id": "p-building-blocks",
+   "file": "demo/images/kite-and-crayon-p-building-blocks.jpg",
+   "alt": "Building Blocks Set"
+  },
+  {
+   "id": "p-pull-along-duck",
+   "file": "demo/images/kite-and-crayon-p-pull-along-duck.jpg",
+   "alt": "Pull-along Duck"
+  },
+  {
+   "id": "p-world-puzzle",
+   "file": "demo/images/kite-and-crayon-p-world-puzzle.jpg",
+   "alt": "World Map Puzzle"
+  },
+  {
+   "id": "p-memory-game",
+   "file": "demo/images/kite-and-crayon-p-memory-game.jpg",
+   "alt": "Animal Memory Game"
+  },
+  {
+   "id": "p-crayon-set",
+   "file": "demo/images/kite-and-crayon-p-crayon-set.jpg",
+   "alt": "Chunky Crayon Set"
+  },
+  {
+   "id": "p-paint-easel",
+   "file": "demo/images/kite-and-crayon-p-paint-easel.jpg",
+   "alt": "Double Easel"
+  },
+  {
+   "id": "p-sketchbook",
+   "file": "demo/images/kite-and-crayon-p-sketchbook.jpg",
+   "alt": "Big Sketchbook"
+  },
+  {
+   "id": "p-star-night-light",
+   "file": "demo/images/kite-and-crayon-p-star-night-light.jpg",
+   "alt": "Star Night Light"
+  },
+  {
+   "id": "p-kids-backpack",
+   "file": "demo/images/kite-and-crayon-p-kids-backpack.jpg",
+   "alt": "Little Explorer Backpack"
+  },
+  {
+   "id": "p-birthday-bundle",
+   "file": "demo/images/kite-and-crayon-p-birthday-bundle.jpg",
+   "alt": "Birthday Bundle"
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Home",
+   "front_page": true,
+   "content": "",
+   "golementor": [
+    {
+     "id": "3ecd715",
+     "elType": "container",
+     "isInner": false,
+     "settings": {
+      "content_width": "boxed",
+      "boxed_width": {
+       "unit": "px",
+       "size": 1240,
+       "sizes": []
+      },
+      "flex_direction": "column",
+      "padding": {
+       "unit": "px",
+       "top": "96",
+       "right": "24",
+       "bottom": "96",
+       "left": "24",
+       "isLinked": false
+      },
+      "padding_mobile": {
+       "unit": "px",
+       "top": "48",
+       "right": "18",
+       "bottom": "48",
+       "left": "18",
+       "isLinked": false
+      },
+      "min_height": {
+       "unit": "px",
+       "size": 620,
+       "sizes": []
+      },
+      "min_height_mobile": {
+       "unit": "px",
+       "size": 520,
+       "sizes": []
+      },
+      "flex_justify_content": "center",
+      "background_background": "classic",
+      "background_image": {
+       "url": "{{media:hero}}",
+       "id": "{{media_id:hero}}",
+       "size": "",
+       "alt": "",
+       "source": "library"
+      },
+      "background_position": "center right",
+      "background_size": "cover",
+      "background_repeat": "no-repeat",
+      "background_overlay_background": "gradient",
+      "background_overlay_color": "#FFF8EE",
+      "background_overlay_color_b": "rgba(255,248,238,0)",
+      "background_overlay_gradient_angle": {
+       "unit": "deg",
+       "size": 90,
+       "sizes": []
+      },
+      "background_overlay_color_stop": {
+       "unit": "%",
+       "size": 12,
+       "sizes": []
+      },
+      "background_overlay_color_b_stop": {
+       "unit": "%",
+       "size": 72,
+       "sizes": []
+      },
+      "background_overlay_opacity": {
+       "unit": "px",
+       "size": 0.92,
+       "sizes": []
+      }
+     },
+     "elements": [
+      {
+       "id": "9714dc3",
+       "elType": "container",
+       "isInner": true,
+       "settings": {
+        "content_width": "full",
+        "flex_direction": "column",
+        "flex_gap": {
+         "unit": "px",
+         "size": 20,
+         "column": "20",
+         "row": "20",
+         "isLinked": true
+        },
+        "width": {
+         "unit": "px",
+         "size": 520,
+         "sizes": []
+        },
+        "width_mobile": {
+         "unit": "%",
+         "size": 100,
+         "sizes": []
+        },
+        "flex_align_items": "flex-start"
+       },
+       "elements": [
+        {
+         "id": "ac61566",
+         "elType": "widget",
+         "widgetType": "heading",
+         "settings": {
+          "title": "Play, make, imagine",
+          "header_size": "p",
+          "__globals__": {
+           "title_color": "globals/colors?id=accent",
+           "typography_typography": "globals/typography?id=secondary"
+          }
+         },
+         "elements": []
+        },
+        {
+         "id": "da860a7",
+         "elType": "widget",
+         "widgetType": "heading",
+         "settings": {
+          "title": "Toys that grow with them.",
+          "header_size": "h1",
+          "__globals__": {
+           "title_color": "globals/colors?id=primary",
+           "typography_typography": "globals/typography?id=display"
+          }
+         },
+         "elements": []
+        },
+        {
+         "id": "dbd206d",
+         "elType": "widget",
+         "widgetType": "text-editor",
+         "settings": {
+          "editor": "<p>Wooden toys, clever games and real art supplies, chosen by teachers and parents to spark hours of open-ended play.</p>",
+          "__globals__": {
+           "text_color": "globals/colors?id=primary",
+           "typography_typography": "globals/typography?id=lead"
+          }
+         },
+         "elements": []
+        },
+        {
+         "id": "3080493",
+         "elType": "container",
+         "isInner": true,
+         "settings": {
+          "content_width": "full",
+          "flex_direction": "row",
+          "flex_gap": {
+           "unit": "px",
+           "size": 12,
+           "column": "12",
+           "row": "12",
+           "isLinked": true
+          },
+          "flex_align_items": "center",
+          "flex_direction_mobile": "row",
+          "flex_wrap": "wrap"
+         },
+         "elements": [
+          {
+           "id": "a643627",
+           "elType": "widget",
+           "widgetType": "button",
+           "settings": {
+            "text": "Shop toys",
+            "link": {
+             "url": "/shop/",
+             "is_external": "",
+             "nofollow": "",
+             "custom_attributes": ""
+            },
+            "size": "md",
+            "__globals__": {
+             "typography_typography": "globals/typography?id=accent",
+             "background_color": "globals/colors?id=accent",
+             "button_text_color": "globals/colors?id=paper",
+             "button_background_hover_color": "globals/colors?id=primary",
+             "hover_color": "globals/colors?id=paper"
+            }
+           },
+           "elements": []
+          },
+          {
+           "id": "2c00ebd",
+           "elType": "widget",
+           "widgetType": "button",
+           "settings": {
+            "text": "Our promise",
+            "link": {
+             "url": "{{page:about}}",
+             "is_external": "",
+             "nofollow": "",
+             "custom_attributes": ""
+            },
+            "size": "md",
+            "__globals__": {
+             "typography_typography": "globals/typography?id=accent",
+             "background_color": "globals/colors?id=cream",
+             "button_text_color": "globals/colors?id=primary",
+             "border_color": "globals/colors?id=primary",
+             "button_background_hover_color": "globals/colors?id=primary",
+             "hover_color": "globals/colors?id=cream"
+            },
+            "border_border": "solid",
+            "border_width": {
+             "unit": "px",
+             "top": "1",
+             "right": "1",
+             "bottom": "1",
+             "left": "1",
+             "isLinked": true
+            }
+           },
+           "elements": []
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "id": "2b5309a",
+     "elType": "container",
+     "isInner": false,
+     "settings": {
+      "content_width": "boxed",
+      "boxed_width": {
+       "unit": "px",
+       "size": 1240,
+       "sizes": []
+      },
+      "flex_direction": "column",
+      "padding": {
+       "unit": "px",
+       "top": "26",
+       "right": "24",
+       "bottom": "26",
+       "left": "24",
+       "isLinked": false
+      },
+      "padding_mobile": {
+       "unit": "px",
+       "top": "48",
+       "right": "18",
+       "bottom": "48",
+       "left": "18",
+       "isLinked": false
+      },
+      "background_background": "classic",
+      "__globals__": {
+       "background_color": "globals/colors?id=minty"
+      }
+     },
+     "elements": [
+      {
+       "id": "2df2903",
+       "elType": "container",
+       "isInner": true,
+       "settings": {
+        "container_type": "grid",
+        "content_width": "full",
+        "grid_gaps": {
+         "column": "24",
+         "row": "24",
+         "isLinked": true,
+         "unit": "px"
+        },
+        "grid_columns_grid": {
+         "unit": "fr",
+         "size": 4,
+         "sizes": []
+        },
+        "grid_columns_grid_tablet": {
+         "unit": "fr",
+         "size": 2,
+         "sizes": []
+        },
+        "grid_columns_grid_mobile": {
+         "unit": "fr",
+         "size": 1,
+         "sizes": []
+        },
+        "grid_rows_grid": {
+         "unit": "fr",
+         "size": 1,
+         "sizes": []
+        },
+        "grid_auto_flow": "row"
+       },
+       "elements": [
+        {
+         "id": "5c92135",
+         "elType": "widget",
+         "widgetType": "icon-box",
+         "settings": {
+          "selected_icon": {
+           "value": "fas fa-gift",
+           "library": "fa-solid"
+          },
+          "title_text": "Gift wrapping",
+          "description_text": "Free on every order",
+          "position": "left",
+          "title_size": "h3",
+          "icon_size": {
+           "unit": "px",
+           "size": 24,
+           "sizes": []
+          },
+          "icon_space": {
+           "unit": "px",
+           "size": 14,
+           "sizes": []
+          },
+          "__globals__": {
+           "primary_color": "globals/colors?id=secondary",
+           "title_color": "globals/colors?id=primary",
+           "title_typography_typography": "globals/typography?id=h4",
+           "description_color": "globals/colors?id=text",
+           "description_typography_typography": "globals/typography?id=small"
+          }
+         },
+         "elements": []
+        },
+        {
+         "id": "9d3fbe4",
+         "elType": "widget",
+         "widgetType": "icon-box",
+         "settings": {
+          "selected_icon": {
+           "value": "fas fa-shield-alt",
+           "library": "fa-solid"
+          },
+          "title_text": "Safety first",
+          "description_text": "EN 71 tested toys",
+          "position": "left",
+          "title_size": "h3",
+          "icon_size": {
+           "unit": "px",
+           "size": 24,
+           "sizes": []
+          },
+          "icon_space": {
+           "unit": "px",
+           "size": 14,
+           "sizes": []
+          },
+          "__globals__": {
+           "primary_color": "globals/colors?id=secondary",
+           "title_color": "globals/colors?id=primary",
+           "title_typography_typography": "globals/typography?id=h4",
+           "description_color": "globals/colors?id=text",
+           "description_typography_typography": "globals/typography?id=small"
+          }
+         },
+         "elements": []
+        },
+        {
+         "id": "2a330c9",
+         "elType": "widget",
+         "widgetType": "icon-box",
+         "settings": {
+          "selected_icon": {
+           "value": "fas fa-tree",
+           "library": "fa-solid"
+          },
+          "title_text": "Sustainable wood",
+          "description_text": "FSC-certified beech",
+          "position": "left",
+          "title_size": "h3",
+          "icon_size": {
+           "unit": "px",
+           "size": 24,
+           "sizes": []
+          },
+          "icon_space": {
+           "unit": "px",
+           "size": 14,
+           "sizes": []
+          },
+          "__globals__": {
+           "primary_color": "globals/colors?id=secondary",
+           "title_color": "globals/colors?id=primary",
+           "title_typography_typography": "globals/typography?id=h4",
+           "description_color": "globals/colors?id=text",
+           "description_typography_typography": "globals/typography?id=small"
+          }
+         },
+         "elements": []
+        },
+        {
+         "id": "0dd5b94",
+         "elType": "widget",
+         "widgetType": "icon-box",
+         "settings": {
+          "selected_icon": {
+           "value": "fas fa-truck",
+           "library": "fa-solid"
+          },
+          "title_text": "Free delivery",
+          "description_text": "On orders over €50",
+          "position": "left",
+          "title_size": "h3",
+          "icon_size": {
+           "unit": "px",
+           "size": 24,
+           "sizes": []
+          },
+          "icon_space": {
+           "unit": "px",
+           "size": 14,
+           "sizes": []
+          },
+          "__globals__": {
+           "primary_color": "globals/colors?id=secondary",
+           "title_color": "globals/colors?id=primary",
+           "title_typography_typography": "globals/typography?id=h4",
+           "description_color": "globals/colors?id=text",
+           "description_typography_typography": "globals/typography?id=small"
+          }
+         },
+         "elements": []
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "id": "03d04fc",
+     "elType": "container",
+     "isInner": false,
+     "settings": {
+      "content_width": "boxed",
+      "boxed_width": {
+       "unit": "px",
+       "size": 1240,
+       "sizes": []
+      },
+      "flex_direction": "column",
+      "padding": {
+       "unit": "px",
+       "top": "80",
+       "right": "24",
+       "bottom": "40",
+       "left": "24",
+       "isLinked": false
+      },
+      "padding_mobile": {
+       "unit": "px",
+       "top": "48",
+       "right": "18",
+       "bottom": "48",
+       "left": "18",
+       "isLinked": false
+      },
+      "flex_gap": {
+       "unit": "px",
+       "size": 28,
+       "column": "28",
+       "row": "28",
+       "isLinked": true
+      }
+     },
+     "elements": [
+      {
+       "id": "92c36c6",
+       "elType": "container",
+       "isInner": true,
+       "settings": {
+        "content_width": "full",
+        "flex_direction": "row",
+        "flex_gap": {
+         "unit": "px",
+         "size": 24,
+         "column": "24",
+         "row": "24",
+         "isLinked": true
+        },
+        "flex_align_items": "flex-end",
+        "flex_direction_mobile": "column",
+        "flex_justify_content": "space-between"
+       },
+       "elements": [
+        {
+         "id": "69f8af1",
+         "elType": "container",
+         "isInner": true,
+         "settings": {
+          "content_width": "full",
+          "flex_direction": "column",
+          "flex_gap": {
+           "unit": "px",
+           "size": 8,
+           "column": "8",
+           "row": "8",
+           "isLinked": true
+          }
+         },
+         "elements": [
+          {
+           "id": "eed9bff",
+           "elType": "widget",
+           "widgetType": "heading",
+           "settings": {
+            "title": "Shop by kind of play",
+            "header_size": "p",
+            "__globals__": {
+             "title_color": "globals/colors?id=accent",
+             "typography_typography": "globals/typography?id=secondary"
+            }
+           },
+           "elements": []
+          },
+          {
+           "id": "8a9f73d",
+           "elType": "widget",
+           "widgetType": "heading",
+           "settings": {
+            "title": "Build, play, draw and dream",
+            "header_size": "h2",
+            "__globals__": {
+             "title_color": "globals/colors?id=primary",
+             "typography_typography": "globals/typography?id=primary"
+            }
+           },
+           "elements": []
+          }
+         ]
+        },
+        {
+         "id": "9c27f2a",
+         "elType": "widget",
+         "widgetType": "button",
+         "settings": {
+          "text": "Browse the shop",
+          "link": {
+           "url": "/shop/",
+           "is_external": "",
+           "nofollow": "",
+           "custom_attributes": ""
+          },
+          "size": "md",
+          "__globals__": {
+           "typography_typography": "globals/typography?id=accent",
+           "background_color": "globals/colors?id=paper",
+           "button_text_color": "globals/colors?id=primary",
+           "button_background_hover_color": "globals/colors?id=sand",
+           "hover_color": "globals/colors?id=primary"
+          },
+          "border_border": "solid",
+          "border_width": {
+           "unit": "px",
+           "top": "1",
+           "right": "1",
+           "bottom": "1",
+           "left": "1",
+           "isLinked": true
+          },
+          "hide_mobile": "hidden-mobile"
+         },
+         "elements": []
+        }
+       ]
+      },
+      {
+       "id": "f5a2d87",
+       "elType": "widget",
+       "widgetType": "wc-categories",
+       "settings": {
+        "columns": "4",
+        "number": 4,
+        "hide_empty": "yes",
+        "image_radius": {
+         "unit": "px",
+         "size": 24,
+         "sizes": []
+        },
+        "__globals__": {
+         "title_color": "globals/colors?id=primary",
+         "title_typography_typography": "globals/typography?id=h4"
+        }
+       },
+       "elements": []
+      }
+     ]
+    },
+    {
+     "id": "26f6d5d",
+     "elType": "container",
+     "isInner": false,
+     "settings": {
+      "content_width": "boxed",
+      "boxed_width": {
+       "unit": "px",
+       "size": 1240,
+       "sizes": []
+      },
+      "flex_direction": "column",
+      "padding": {
+       "unit": "px",
+       "top": "40",
+       "right": "24",
+       "bottom": "72",
+       "left": "24",
+       "isLinked": false
+      },
+      "padding_mobile": {
+       "unit": "px",
+       "top": "48",
+       "right": "18",
+       "bottom": "48",
+       "left": "18",
+       "isLinked": false
+      },
+      "flex_gap": {
+       "unit": "px",
+       "size": 28,
+       "column": "28",
+       "row": "28",
+       "isLinked": true
+      }
+     },
+     "elements": [
+      {
+       "id": "a8ff26a",
+       "elType": "container",
+       "isInner": true,
+       "settings": {
+        "content_width": "full",
+        "flex_direction": "column",
+        "flex_gap": {
+         "unit": "px",
+         "size": 8,
+         "column": "8",
+         "row": "8",
+         "isLinked": true
+        },
+        "flex_align_items": "center"
+       },
+       "elements": [
+        {
+         "id": "1f7f054",
+         "elType": "widget",
+         "widgetType": "heading",
+         "settings": {
+          "title": "Favourites",
+          "header_size": "p",
+          "__globals__": {
+           "title_color": "globals/colors?id=accent",
+           "typography_typography": "globals/typography?id=secondary"
+          },
+          "align": "center"
+         },
+         "elements": []
+        },
+        {
+         "id": "ea3d8e8",
+         "elType": "widget",
+         "widgetType": "heading",
+         "settings": {
+          "title": "Played with every single day",
+          "header_size": "h2",
+          "__globals__": {
+           "title_color": "globals/colors?id=primary",
+           "typography_typography": "globals/typography?id=primary"
+          },
+          "align": "center"
+         },
+         "elements": []
+        }
+       ]
+      },
+      {
+       "id": "7208e66",
+       "elType": "widget",
+       "widgetType": "woocommerce-products",
+       "settings": {
+        "columns": "4",
+        "rows": 1,
+        "query_post_type": "featured",
+        "orderby": "menu_order",
+        "order": "asc",
+        "image_radius": {
+         "unit": "px",
+         "size": 24,
+         "sizes": []
+        },
+        "__globals__": {
+         "title_color": "globals/colors?id=primary",
+         "title_typography_typography": "globals/typography?id=h4",
+         "button_bg_color": "globals/colors?id=primary",
+         "button_text_color": "globals/colors?id=paper",
+         "onsale_bg_color": "globals/colors?id=accent"
+        }
+       },
+       "elements": []
+      }
+     ]
+    },
+    {
+     "id": "f9fd44a",
+     "elType": "container",
+     "isInner": false,
+     "settings": {
+      "content_width": "boxed",
+      "boxed_width": {
+       "unit": "px",
+       "size": 1240,
+       "sizes": []
+      },
+      "flex_direction": "column",
+      "padding": {
+       "unit": "px",
+       "top": "88",
+       "right": "24",
+       "bottom": "88",
+       "left": "24",
+       "isLinked": false
+      },
+      "padding_mobile": {
+       "unit": "px",
+       "top": "48",
+       "right": "18",
+       "bottom": "48",
+       "left": "18",
+       "isLinked": false
+      },
+      "background_background": "classic",
+      "__globals__": {
+       "background_color": "globals/colors?id=sun"
+      }
+     },
+     "elements": [
+      {
+       "id": "f5ba011",
+       "elType": "container",
+       "isInner": true,
+       "settings": {
+        "content_width": "full",
+        "flex_direction": "row",
+        "flex_gap": {
+         "unit": "px",
+         "size": 64,
+         "column": "64",
+         "row": "64",
+         "isLinked": true
+        },
+        "flex_align_items": "center",
+        "flex_direction_mobile": "column"
+       },
+       "elements": [
+        {
+         "id": "a3c0450",
+         "elType": "container",
+         "isInner": true,
+         "settings": {
+          "content_width": "full",
+          "flex_direction": "column",
+          "flex_gap": {
+           "unit": "px",
+           "size": 16,
+           "column": "16",
+           "row": "16",
+           "isLinked": true
+          },
+          "width": {
+           "unit": "%",
+           "size": 50,
+           "sizes": []
+          },
+          "width_mobile": {
+           "unit": "%",
+           "size": 100,
+           "sizes": []
+          }
+         },
+         "elements": [
+          {
+           "id": "29a3957",
+           "elType": "widget",
+           "widgetType": "image",
+           "settings": {
+            "image": {
+             "url": "{{media:about}}",
+             "id": "{{media_id:about}}",
+             "size": "",
+             "alt": "Children playing with wooden blocks",
+             "source": "library"
+            },
+            "image_size": "large",
+            "image_border_radius": {
+             "unit": "px",
+             "top": "24",
+             "right": "24",
+             "bottom": "24",
+             "left": "24",
+             "isLinked": true
+            }
+           },
+           "elements": []
+          }
+         ]
+        },
+        {
+         "id": "0b01f0c",
+         "elType": "container",
+         "isInner": true,
+         "settings": {
+          "content_width": "full",
+          "flex_direction": "column",
+          "flex_gap": {
+           "unit": "px",
+           "size": 18,
+           "column": "18",
+           "row": "18",
+           "isLinked": true
+          },
+          "width": {
+           "unit": "%",
+           "size": 50,
+           "sizes": []
+          },
+          "width_mobile": {
+           "unit": "%",
+           "size": 100,
+           "sizes": []
+          },
+          "flex_align_items": "flex-start"
+         },
+         "elements": [
+          {
+           "id": "4fd36d3",
+           "elType": "widget",
+           "widgetType": "heading",
+           "settings": {
+            "title": "Our promise",
+            "header_size": "p",
+            "__globals__": {
+             "title_color": "globals/colors?id=primary",
+             "typography_typography": "globals/typography?id=secondary"
+            }
+           },
+           "elements": []
+          },
+          {
+           "id": "6ae1840",
+           "elType": "widget",
+           "widgetType": "heading",
+           "settings": {
+            "title": "Made to be handed down",
+            "header_size": "h2",
+            "__globals__": {
+             "title_color": "globals/colors?id=primary",
+             "typography_typography": "globals/typography?id=primary"
+            }
+           },
+           "elements": []
+          },
+          {
+           "id": "83003a1",
+           "elType": "widget",
+           "widgetType": "text-editor",
+           "settings": {
+            "editor": "<p>We choose toys that last for years and work for many ages: solid beech, water-based paints, sturdy card. If a toy can't survive two siblings, we don't sell it.</p>",
+            "__globals__": {
+             "text_color": "globals/colors?id=primary",
+             "typography_typography": "globals/typography?id=text"
+            }
+           },
+           "elements": []
+          },
+          {
+           "id": "66398be",
+           "elType": "widget",
+           "widgetType": "button",
+           "settings": {
+            "text": "Our story",
+            "link": {
+             "url": "{{page:about}}",
+             "is_external": "",
+             "nofollow": "",
+             "custom_attributes": ""
+            },
+            "size": "md",
+            "__globals__": {
+             "typography_typography": "globals/typography?id=accent",
+             "background_color": "globals/colors?id=primary",
+             "button_text_color": "globals/colors?id=paper",
+             "button_background_hover_color": "globals/colors?id=accent",
+             "hover_color": "globals/colors?id=paper"
+            }
+           },
+           "elements": []
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "id": "bbffe31",
+     "elType": "container",
+     "isInner": false,
+     "settings": {
+      "content_width": "boxed",
+      "boxed_width": {
+       "unit": "px",
+       "size": 1240,
+       "sizes": []
+      },
+      "flex_direction": "column",
+      "padding": {
+       "unit": "px",
+       "top": "80",
+       "right": "24",
+       "bottom": "40",
+       "left": "24",
+       "isLinked": false
+      },
+      "padding_mobile": {
+       "unit": "px",
+       "top": "48",
+       "right": "18",
+       "bottom": "48",
+       "left": "18",
+       "isLinked": false
+      },
+      "flex_gap": {
+       "unit": "px",
+       "size": 28,
+       "column": "28",
+       "row": "28",
+       "isLinked": true
+      }
+     },
+     "elements": [
+      {
+       "id": "c262c57",
+       "elType": "container",
+       "isInner": true,
+       "settings": {
+        "content_width": "full",
+        "flex_direction": "column",
+        "flex_gap": {
+         "unit": "px",
+         "size": 8,
+         "column": "8",
+         "row": "8",
+         "isLinked": true
+        },
+        "flex_align_items": "center"
+       },
+       "elements": [
+        {
+         "id": "fc4b9a3",
+         "elType": "widget",
+         "widgetType": "heading",
+         "settings": {
+          "title": "Good to go",
+          "header_size": "p",
+          "__globals__": {
+           "title_color": "globals/colors?id=accent",
+           "typography_typography": "globals/typography?id=secondary"
+          },
+          "align": "center"
+         },
+         "elements": []
+        },
+        {
+         "id": "bebb732",
+         "elType": "widget",
+         "widgetType": "heading",
+         "settings": {
+          "title": "New in the toy box",
+          "header_size": "h2",
+          "__globals__": {
+           "title_color": "globals/colors?id=primary",
+           "typography_typography": "globals/typography?id=primary"
+          },
+          "align": "center"
+         },
+         "elements": []
+        }
+       ]
+      },
+      {
+       "id": "b15e069",
+       "elType": "widget",
+       "widgetType": "woocommerce-products",
+       "settings": {
+        "columns": "4",
+        "rows": 2,
+        "query_post_type": "recent",
+        "orderby": "date",
+        "order": "desc",
+        "image_radius": {
+         "unit": "px",
+         "size": 24,
+         "sizes": []
+        },
+        "__globals__": {
+         "title_color": "globals/colors?id=primary",
+         "title_typography_typography": "globals/typography?id=h4",
+         "button_bg_color": "globals/colors?id=primary",
+         "button_text_color": "globals/colors?id=paper",
+         "onsale_bg_color": "globals/colors?id=accent"
+        }
+       },
+       "elements": []
+      },
+      {
+       "id": "558d132",
+       "elType": "widget",
+       "widgetType": "button",
+       "settings": {
+        "text": "See everything",
+        "link": {
+         "url": "/shop/",
+         "is_external": "",
+         "nofollow": "",
+         "custom_attributes": ""
+        },
+        "size": "md",
+        "__globals__": {
+         "typography_typography": "globals/typography?id=accent",
+         "background_color": "globals/colors?id=accent",
+         "button_text_color": "globals/colors?id=paper",
+         "button_background_hover_color": "globals/colors?id=primary",
+         "hover_color": "globals/colors?id=paper"
+        },
+        "align": "center"
+       },
+       "elements": []
+      }
+     ]
+    },
+    {
+     "id": "5bc386e",
+     "elType": "container",
+     "isInner": false,
+     "settings": {
+      "content_width": "boxed",
+      "boxed_width": {
+       "unit": "px",
+       "size": 1240,
+       "sizes": []
+      },
+      "flex_direction": "column",
+      "padding": {
+       "unit": "px",
+       "top": "72",
+       "right": "24",
+       "bottom": "88",
+       "left": "24",
+       "isLinked": false
+      },
+      "padding_mobile": {
+       "unit": "px",
+       "top": "48",
+       "right": "18",
+       "bottom": "48",
+       "left": "18",
+       "isLinked": false
+      },
+      "flex_align_items": "center",
+      "flex_gap": {
+       "unit": "px",
+       "size": 18,
+       "column": "18",
+       "row": "18",
+       "isLinked": true
+      }
+     },
+     "elements": [
+      {
+       "id": "60ef812",
+       "elType": "widget",
+       "widgetType": "heading",
+       "settings": {
+        "title": "&ldquo;The rainbow stacker has been a tunnel, a bridge, a cradle and a racetrack. Best toy we own.&rdquo;",
+        "header_size": "p",
+        "__globals__": {
+         "title_color": "globals/colors?id=primary",
+         "typography_typography": "globals/typography?id=primary"
+        },
+        "align": "center",
+        "_element_width": "initial",
+        "_element_custom_width": {
+         "unit": "px",
+         "size": 820,
+         "sizes": []
+        }
+       },
+       "elements": []
+      },
+      {
+       "id": "972a842",
+       "elType": "widget",
+       "widgetType": "text-editor",
+       "settings": {
+        "editor": "<p>Anaïs, mum of two</p>",
+        "__globals__": {
+         "text_color": "globals/colors?id=muted",
+         "typography_typography": "globals/typography?id=secondary"
+        },
+        "align": "center"
+       },
+       "elements": []
+      }
+     ]
+    },
+    {
+     "id": "2ae8058",
+     "elType": "container",
+     "isInner": false,
+     "settings": {
+      "content_width": "boxed",
+      "boxed_width": {
+       "unit": "px",
+       "size": 1240,
+       "sizes": []
+      },
+      "flex_direction": "column",
+      "padding": {
+       "unit": "px",
+       "top": "64",
+       "right": "24",
+       "bottom": "64",
+       "left": "24",
+       "isLinked": false
+      },
+      "padding_mobile": {
+       "unit": "px",
+       "top": "48",
+       "right": "18",
+       "bottom": "48",
+       "left": "18",
+       "isLinked": false
+      },
+      "background_background": "classic",
+      "__globals__": {
+       "background_color": "globals/colors?id=secondary"
+      }
+     },
+     "elements": [
+      {
+       "id": "b57cc6b",
+       "elType": "container",
+       "isInner": true,
+       "settings": {
+        "content_width": "full",
+        "flex_direction": "row",
+        "flex_gap": {
+         "unit": "px",
+         "size": 24,
+         "column": "24",
+         "row": "24",
+         "isLinked": true
+        },
+        "flex_align_items": "center",
+        "flex_direction_mobile": "column",
+        "flex_justify_content": "space-between"
+       },
+       "elements": [
+        {
+         "id": "e78bec6",
+         "elType": "container",
+         "isInner": true,
+         "settings": {
+          "content_width": "full",
+          "flex_direction": "column",
+          "flex_gap": {
+           "unit": "px",
+           "size": 8,
+           "column": "8",
+           "row": "8",
+           "isLinked": true
+          },
+          "width": {
+           "unit": "%",
+           "size": 60,
+           "sizes": []
+          },
+          "width_mobile": {
+           "unit": "%",
+           "size": 100,
+           "sizes": []
+          }
+         },
+         "elements": [
+          {
+           "id": "416948f",
+           "elType": "widget",
+           "widgetType": "heading",
+           "settings": {
+            "title": "Welcome gift: 10% off",
+            "header_size": "h2",
+            "__globals__": {
+             "title_color": "globals/colors?id=paper",
+             "typography_typography": "globals/typography?id=primary"
+            }
+           },
+           "elements": []
+          },
+          {
+           "id": "f24d649",
+           "elType": "widget",
+           "widgetType": "text-editor",
+           "settings": {
+            "editor": "<p>Use WELCOME10 on your first order. Wrapped with a handwritten card, as always.</p>",
+            "__globals__": {
+             "text_color": "globals/colors?id=paper",
+             "typography_typography": "globals/typography?id=text"
+            }
+           },
+           "elements": []
+          }
+         ]
+        },
+        {
+         "id": "2014a74",
+         "elType": "widget",
+         "widgetType": "button",
+         "settings": {
+          "text": "Get 10% off: WELCOME10",
+          "link": {
+           "url": "/shop/",
+           "is_external": "",
+           "nofollow": "",
+           "custom_attributes": ""
+          },
+          "size": "md",
+          "__globals__": {
+           "typography_typography": "globals/typography?id=accent",
+           "background_color": "globals/colors?id=sun",
+           "button_text_color": "globals/colors?id=primary",
+           "button_background_hover_color": "globals/colors?id=paper",
+           "hover_color": "globals/colors?id=primary"
+          }
+         },
+         "elements": []
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "golementor_settings": {
+    "hide_title": "yes"
+   }
+  },
+  {
+   "slug": "about",
+   "title": "Our promise",
+   "content": "",
+   "golementor": [
+    {
+     "id": "7592c61",
+     "elType": "container",
+     "isInner": false,
+     "settings": {
+      "content_width": "boxed",
+      "boxed_width": {
+       "unit": "px",
+       "size": 1240,
+       "sizes": []
+      },
+      "flex_direction": "column",
+      "padding": {
+       "unit": "px",
+       "top": "88",
+       "right": "24",
+       "bottom": "48",
+       "left": "24",
+       "isLinked": false
+      },
+      "padding_mobile": {
+       "unit": "px",
+       "top": "48",
+       "right": "18",
+       "bottom": "48",
+       "left": "18",
+       "isLinked": false
+      },
+      "flex_align_items": "center",
+      "flex_gap": {
+       "unit": "px",
+       "size": 16,
+       "column": "16",
+       "row": "16",
+       "isLinked": true
+      }
+     },
+     "elements": [
+      {
+       "id": "05e06cf",
+       "elType": "widget",
+       "widgetType": "heading",
+       "settings": {
+        "title": "About Kite & Crayon",
+        "header_size": "p",
+        "__globals__": {
+         "title_color": "globals/colors?id=accent",
+         "typography_typography": "globals/typography?id=secondary"
+        },
+        "align": "center"
+       },
+       "elements": []
+      },
+      {
+       "id": "ccd6972",
+       "elType": "widget",
+       "widgetType": "heading",
+       "settings": {
+        "title": "A toy shop with a teacher's eye",
+        "header_size": "h1",
+        "__globals__": {
+         "title_color": "globals/colors?id=primary",
+         "typography_typography": "globals/typography?id=display"
+        },
+        "align": "center",
+        "_element_width": "initial",
+        "_element_custom_width": {
+         "unit": "px",
+         "size": 860,
+         "sizes": []
+        }
+       },
+       "elements": []
+      },
+      {
+       "id": "28edc8b",
+       "elType": "widget",
+       "widgetType": "text-editor",
+       "settings": {
+        "editor": "<p>We are two former primary school teachers who believe the best toys do less, so children do more.</p>",
+        "__globals__": {
+         "text_color": "globals/colors?id=text",
+         "typography_typography": "globals/typography?id=lead"
+        },
+        "align": "center",
+        "_element_width": "initial",
+        "_element_custom_width": {
+         "unit": "px",
+         "size": 720,
+         "sizes": []
+        }
+       },
+       "elements": []
+      }
+     ]
+    },
+    {
+     "id": "9993341",
+     "elType": "container",
+     "isInner": false,
+     "settings": {
+      "content_width": "boxed",
+      "boxed_width": {
+       "unit": "px",
+       "size": 1240,
+       "sizes": []
+      },
+      "flex_direction": "column",
+      "padding": {
+       "unit": "px",
+       "top": "32",
+       "right": "24",
+       "bottom": "80",
+       "left": "24",
+       "isLinked": false
+      },
+      "padding_mobile": {
+       "unit": "px",
+       "top": "48",
+       "right": "18",
+       "bottom": "48",
+       "left": "18",
+       "isLinked": false
+      }
+     },
+     "elements": [
+      {
+       "id": "b8d82fd",
+       "elType": "container",
+       "isInner": true,
+       "settings": {
+        "content_width": "full",
+        "flex_direction": "row",
+        "flex_gap": {
+         "unit": "px",
+         "size": 64,
+         "column": "64",
+         "row": "64",
+         "isLinked": true
+        },
+        "flex_align_items": "flex-start",
+        "flex_direction_mobile": "column"
+       },
+       "elements": [
+        {
+         "id": "38cb99f",
+         "elType": "container",
+         "isInner": true,
+         "settings": {
+          "content_width": "full",
+          "flex_direction": "column",
+          "flex_gap": {
+           "unit": "px",
+           "size": 16,
+           "column": "16",
+           "row": "16",
+           "isLinked": true
+          },
+          "width": {
+           "unit": "%",
+           "size": 55,
+           "sizes": []
+          },
+          "width_mobile": {
+           "unit": "%",
+           "size": 100,
+           "sizes": []
+          }
+         },
+         "elements": [
+          {
+           "id": "3d48e2d",
+           "elType": "widget",
+           "widgetType": "image",
+           "settings": {
+            "image": {
+             "url": "{{media:about}}",
+             "id": "{{media_id:about}}",
+             "size": "",
+             "alt": "Children playing with wooden blocks",
+             "source": "library"
+            },
+            "image_size": "large",
+            "image_border_radius": {
+             "unit": "px",
+             "top": "24",
+             "right": "24",
+             "bottom": "24",
+             "left": "24",
+             "isLinked": true
+            }
+           },
+           "elements": []
+          }
+         ]
+        },
+        {
+         "id": "0f20a13",
+         "elType": "container",
+         "isInner": true,
+         "settings": {
+          "content_width": "full",
+          "flex_direction": "column",
+          "flex_gap": {
+           "unit": "px",
+           "size": 16,
+           "column": "16",
+           "row": "16",
+           "isLinked": true
+          },
+          "width": {
+           "unit": "%",
+           "size": 45,
+           "sizes": []
+          },
+          "width_mobile": {
+           "unit": "%",
+           "size": 100,
+           "sizes": []
+          }
+         },
+         "elements": [
+          {
+           "id": "95e03c9",
+           "elType": "widget",
+           "widgetType": "heading",
+           "settings": {
+            "title": "Open-ended by design",
+            "header_size": "h2",
+            "__globals__": {
+             "title_color": "globals/colors?id=primary",
+             "typography_typography": "globals/typography?id=primary"
+            }
+           },
+           "elements": []
+          },
+          {
+           "id": "c984ac6",
+           "elType": "widget",
+           "widgetType": "text-editor",
+           "settings": {
+            "editor": "<p>A block can be a phone, a car or a cake. We look for toys like that: simple, beautiful and endlessly reusable, made from wood, wool, card and water-based colours.</p><p>Every toy is safety tested to EN 71, every order is gift-wrapped for free, and our packaging is recycled and recyclable.</p>",
+            "__globals__": {
+             "text_color": "globals/colors?id=text",
+             "typography_typography": "globals/typography?id=text"
+            }
+           },
+           "elements": []
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "id": "2f261db",
+     "elType": "container",
+     "isInner": false,
+     "settings": {
+      "content_width": "boxed",
+      "boxed_width": {
+       "unit": "px",
+       "size": 1240,
+       "sizes": []
+      },
+      "flex_direction": "column",
+      "padding": {
+       "unit": "px",
+       "top": "72",
+       "right": "24",
+       "bottom": "72",
+       "left": "24",
+       "isLinked": false
+      },
+      "padding_mobile": {
+       "unit": "px",
+       "top": "48",
+       "right": "18",
+       "bottom": "48",
+       "left": "18",
+       "isLinked": false
+      },
+      "background_background": "classic",
+      "__globals__": {
+       "background_color": "globals/colors?id=sand"
+      }
+     },
+     "elements": [
+      {
+       "id": "a7b16cc",
+       "elType": "container",
+       "isInner": true,
+       "settings": {
+        "container_type": "grid",
+        "content_width": "full",
+        "grid_gaps": {
+         "column": "40",
+         "row": "32",
+         "isLinked": false,
+         "unit": "px"
+        },
+        "grid_columns_grid": {
+         "unit": "fr",
+         "size": 3,
+         "sizes": []
+        },
+        "grid_columns_grid_tablet": {
+         "unit": "fr",
+         "size": 2,
+         "sizes": []
+        },
+        "grid_columns_grid_mobile": {
+         "unit": "fr",
+         "size": 1,
+         "sizes": []
+        },
+        "grid_rows_grid": {
+         "unit": "fr",
+         "size": 1,
+         "sizes": []
+        },
+        "grid_auto_flow": "row"
+       },
+       "elements": [
+        {
+         "id": "bf497f7",
+         "elType": "widget",
+         "widgetType": "icon-box",
+         "settings": {
+          "selected_icon": {
+           "value": "fas fa-shapes",
+           "library": "fa-solid"
+          },
+          "title_text": "Open-ended",
+          "description_text": "Toys that become whatever they imagine.",
+          "position": "top",
+          "title_size": "h3",
+          "icon_size": {
+           "unit": "px",
+           "size": 24,
+           "sizes": []
+          },
+          "icon_space": {
+           "unit": "px",
+           "size": 14,
+           "sizes": []
+          },
+          "__globals__": {
+           "primary_color": "globals/colors?id=accent",
+           "title_color": "globals/colors?id=primary",
+           "title_typography_typography": "globals/typography?id=h4",
+           "description_color": "globals/colors?id=text",
+           "description_typography_typography": "globals/typography?id=small"
+          }
+         },
+         "elements": []
+        },
+        {
+         "id": "85b0af0",
+         "elType": "widget",
+         "widgetType": "icon-box",
+         "settings": {
+          "selected_icon": {
+           "value": "fas fa-tree",
+           "library": "fa-solid"
+          },
+          "title_text": "Natural materials",
+          "description_text": "FSC beech, organic cotton, water-based paint.",
+          "position": "top",
+          "title_size": "h3",
+          "icon_size": {
+           "unit": "px",
+           "size": 24,
+           "sizes": []
+          },
+          "icon_space": {
+           "unit": "px",
+           "size": 14,
+           "sizes": []
+          },
+          "__globals__": {
+           "primary_color": "globals/colors?id=accent",
+           "title_color": "globals/colors?id=primary",
+           "title_typography_typography": "globals/typography?id=h4",
+           "description_color": "globals/colors?id=text",
+           "description_typography_typography": "globals/typography?id=small"
+          }
+         },
+         "elements": []
+        },
+        {
+         "id": "626b4c7",
+         "elType": "widget",
+         "widgetType": "icon-box",
+         "settings": {
+          "selected_icon": {
+           "value": "fas fa-gift",
+           "library": "fa-solid"
+          },
+          "title_text": "Wrapped with love",
+          "description_text": "Free gift wrapping and a handwritten card.",
+          "position": "top",
+          "title_size": "h3",
+          "icon_size": {
+           "unit": "px",
+           "size": 24,
+           "sizes": []
+          },
+          "icon_space": {
+           "unit": "px",
+           "size": 14,
+           "sizes": []
+          },
+          "__globals__": {
+           "primary_color": "globals/colors?id=accent",
+           "title_color": "globals/colors?id=primary",
+           "title_typography_typography": "globals/typography?id=h4",
+           "description_color": "globals/colors?id=text",
+           "description_typography_typography": "globals/typography?id=small"
+          }
+         },
+         "elements": []
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "id": "0a10dae",
+     "elType": "container",
+     "isInner": false,
+     "settings": {
+      "content_width": "boxed",
+      "boxed_width": {
+       "unit": "px",
+       "size": 1240,
+       "sizes": []
+      },
+      "flex_direction": "column",
+      "padding": {
+       "unit": "px",
+       "top": "80",
+       "right": "24",
+       "bottom": "80",
+       "left": "24",
+       "isLinked": false
+      },
+      "padding_mobile": {
+       "unit": "px",
+       "top": "48",
+       "right": "18",
+       "bottom": "48",
+       "left": "18",
+       "isLinked": false
+      },
+      "flex_align_items": "center",
+      "flex_gap": {
+       "unit": "px",
+       "size": 18,
+       "column": "18",
+       "row": "18",
+       "isLinked": true
+      }
+     },
+     "elements": [
+      {
+       "id": "8238c41",
+       "elType": "widget",
+       "widgetType": "heading",
+       "settings": {
+        "title": "Find the next favourite toy",
+        "header_size": "h2",
+        "__globals__": {
+         "title_color": "globals/colors?id=primary",
+         "typography_typography": "globals/typography?id=primary"
+        },
+        "align": "center"
+       },
+       "elements": []
+      },
+      {
+       "id": "52f6371",
+       "elType": "widget",
+       "widgetType": "button",
+       "settings": {
+        "text": "Visit the shop",
+        "link": {
+         "url": "/shop/",
+         "is_external": "",
+         "nofollow": "",
+         "custom_attributes": ""
+        },
+        "size": "md",
+        "__globals__": {
+         "typography_typography": "globals/typography?id=accent",
+         "background_color": "globals/colors?id=accent",
+         "button_text_color": "globals/colors?id=paper",
+         "button_background_hover_color": "globals/colors?id=primary",
+         "hover_color": "globals/colors?id=paper"
+        },
+        "align": "center"
+       },
+       "elements": []
+      }
+     ]
+    }
+   ],
+   "golementor_settings": {
+    "hide_title": "yes"
+   }
+  },
+  {
+   "slug": "contact",
+   "title": "Contact",
+   "content": "",
+   "golementor": [
+    {
+     "id": "77bd737",
+     "elType": "container",
+     "isInner": false,
+     "settings": {
+      "content_width": "boxed",
+      "boxed_width": {
+       "unit": "px",
+       "size": 1240,
+       "sizes": []
+      },
+      "flex_direction": "column",
+      "padding": {
+       "unit": "px",
+       "top": "88",
+       "right": "24",
+       "bottom": "88",
+       "left": "24",
+       "isLinked": false
+      },
+      "padding_mobile": {
+       "unit": "px",
+       "top": "48",
+       "right": "18",
+       "bottom": "48",
+       "left": "18",
+       "isLinked": false
+      },
+      "flex_gap": {
+       "unit": "px",
+       "size": 18,
+       "column": "18",
+       "row": "18",
+       "isLinked": true
+      }
+     },
+     "elements": [
+      {
+       "id": "1011075",
+       "elType": "container",
+       "isInner": true,
+       "settings": {
+        "content_width": "full",
+        "flex_direction": "row",
+        "flex_gap": {
+         "unit": "px",
+         "size": 64,
+         "column": "64",
+         "row": "64",
+         "isLinked": true
+        },
+        "flex_align_items": "flex-start",
+        "flex_direction_mobile": "column"
+       },
+       "elements": [
+        {
+         "id": "2b33af1",
+         "elType": "container",
+         "isInner": true,
+         "settings": {
+          "content_width": "full",
+          "flex_direction": "column",
+          "flex_gap": {
+           "unit": "px",
+           "size": 18,
+           "column": "18",
+           "row": "18",
+           "isLinked": true
+          },
+          "width": {
+           "unit": "%",
+           "size": 50,
+           "sizes": []
+          },
+          "width_mobile": {
+           "unit": "%",
+           "size": 100,
+           "sizes": []
+          }
+         },
+         "elements": [
+          {
+           "id": "d58858e",
+           "elType": "widget",
+           "widgetType": "heading",
+           "settings": {
+            "title": "Say hello",
+            "header_size": "p",
+            "__globals__": {
+             "title_color": "globals/colors?id=accent",
+             "typography_typography": "globals/typography?id=secondary"
+            }
+           },
+           "elements": []
+          },
+          {
+           "id": "164dced",
+           "elType": "widget",
+           "widgetType": "heading",
+           "settings": {
+            "title": "Need a gift idea? Ask a teacher.",
+            "header_size": "h1",
+            "__globals__": {
+             "title_color": "globals/colors?id=primary",
+             "typography_typography": "globals/typography?id=primary"
+            }
+           },
+           "elements": []
+          },
+          {
+           "id": "8f39378",
+           "elType": "widget",
+           "widgetType": "text-editor",
+           "settings": {
+            "editor": "<p>Tell us the age and what they love, and we'll suggest three toys within a day.</p>",
+            "__globals__": {
+             "text_color": "globals/colors?id=text",
+             "typography_typography": "globals/typography?id=lead"
+            }
+           },
+           "elements": []
+          },
+          {
+           "id": "1fb8724",
+           "elType": "widget",
+           "widgetType": "icon-list",
+           "settings": {
+            "icon_list": [
+             {
+              "text": "Rue des Cerfs-Volants 12",
+              "selected_icon": {
+               "value": "fas fa-map-marker-alt",
+               "library": "fa-solid"
+              },
+              "_id": "11e8f87"
+             },
+             {
+              "text": "hello@kiteandcrayon.example",
+              "selected_icon": {
+               "value": "fas fa-envelope",
+               "library": "fa-solid"
+              },
+              "_id": "8bab275"
+             },
+             {
+              "text": "+32 2 555 01 88",
+              "selected_icon": {
+               "value": "fas fa-phone",
+               "library": "fa-solid"
+              },
+              "_id": "b6d68c5"
+             }
+            ],
+            "space_between": {
+             "unit": "px",
+             "size": 14,
+             "sizes": []
+            },
+            "icon_size": {
+             "unit": "px",
+             "size": 16,
+             "sizes": []
+            },
+            "text_indent": {
+             "unit": "px",
+             "size": 12,
+             "sizes": []
+            },
+            "__globals__": {
+             "icon_color": "globals/colors?id=accent",
+             "text_color": "globals/colors?id=primary",
+             "icon_typography_typography": "globals/typography?id=text"
+            }
+           },
+           "elements": []
+          }
+         ]
+        },
+        {
+         "id": "87cc2c1",
+         "elType": "container",
+         "isInner": true,
+         "settings": {
+          "content_width": "full",
+          "flex_direction": "column",
+          "flex_gap": {
+           "unit": "px",
+           "size": 12,
+           "column": "12",
+           "row": "12",
+           "isLinked": true
+          },
+          "width": {
+           "unit": "%",
+           "size": 50,
+           "sizes": []
+          },
+          "width_mobile": {
+           "unit": "%",
+           "size": 100,
+           "sizes": []
+          },
+          "padding": {
+           "unit": "px",
+           "top": "32",
+           "right": "32",
+           "bottom": "32",
+           "left": "32",
+           "isLinked": true
+          },
+          "border_radius": {
+           "unit": "px",
+           "top": "24",
+           "right": "24",
+           "bottom": "24",
+           "left": "24",
+           "isLinked": true
+          },
+          "background_background": "classic",
+          "__globals__": {
+           "background_color": "globals/colors?id=sand"
+          }
+         },
+         "elements": [
+          {
+           "id": "c320aa3",
+           "elType": "widget",
+           "widgetType": "heading",
+           "settings": {
+            "title": "Opening hours",
+            "header_size": "h3",
+            "__globals__": {
+             "title_color": "globals/colors?id=primary",
+             "typography_typography": "globals/typography?id=h4"
+            }
+           },
+           "elements": []
+          },
+          {
+           "id": "a21ff9f",
+           "elType": "widget",
+           "widgetType": "text-editor",
+           "settings": {
+            "editor": "<p>Tuesday to Saturday, 10:00&ndash;18:00<br>Story hour on Saturdays at 11:00</p>",
+            "__globals__": {
+             "text_color": "globals/colors?id=text",
+             "typography_typography": "globals/typography?id=text"
+            }
+           },
+           "elements": []
+          },
+          {
+           "id": "c906ac6",
+           "elType": "widget",
+           "widgetType": "heading",
+           "settings": {
+            "title": "Delivery",
+            "header_size": "h3",
+            "__globals__": {
+             "title_color": "globals/colors?id=primary",
+             "typography_typography": "globals/typography?id=h4"
+            }
+           },
+           "elements": []
+          },
+          {
+           "id": "69a56bc",
+           "elType": "widget",
+           "widgetType": "text-editor",
+           "settings": {
+            "editor": "<p>Orders before noon ship the same day, gift-wrapped. Free delivery over €50.</p>",
+            "__globals__": {
+             "text_color": "globals/colors?id=text",
+             "typography_typography": "globals/typography?id=text"
+            }
+           },
+           "elements": []
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "golementor_settings": {
+    "hide_title": "yes"
+   }
+  }
+ ],
+ "menus": [
+  {
+   "name": "Kite & Crayon menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Shop",
+     "url": "/shop/",
+     "children": [
+      {
+       "title": "Toys",
+       "url": "/product-category/toys/"
+      },
+      {
+       "title": "Games & Puzzles",
+       "url": "/product-category/games/"
+      },
+      {
+       "title": "Arts & Crafts",
+       "url": "/product-category/art/"
+      },
+      {
+       "title": "Kids' Room",
+       "url": "/product-category/room/"
+      }
+     ]
+    },
+    {
+     "title": "Toys",
+     "url": "/product-category/toys/"
+    },
+    {
+     "title": "Games & Puzzles",
+     "url": "/product-category/games/"
+    },
+    {
+     "title": "Arts & Crafts",
+     "url": "/product-category/art/"
+    },
+    {
+     "title": "Our promise",
+     "page": "about"
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    }
+   ]
+  },
+  {
+   "name": "Footer menu",
+   "location": "footer",
+   "items": [
+    {
+     "title": "Shop",
+     "url": "/shop/"
+    },
+    {
+     "title": "Our promise",
+     "page": "about"
+    },
+    {
+     "title": "Contact",
+     "page": "contact"
+    },
+    {
+     "title": "My account",
+     "url": "/my-account/"
+    }
+   ]
+  }
+ ],
+ "goocommerce": {
+  "settings": {
+   "currency": "EUR",
+   "currency_pos": "right_space",
+   "price_thousand_sep": ".",
+   "price_decimal_sep": ",",
+   "catalog_columns": 4,
+   "catalog_rows": 3
+  },
+  "categories": [
+   {
+    "slug": "toys",
+    "name": "Toys",
+    "description": "Wooden and soft toys for open-ended play.",
+    "image": "cat-toys"
+   },
+   {
+    "slug": "games",
+    "name": "Games & Puzzles",
+    "description": "Games for the whole family and puzzles to puzzle over.",
+    "image": "cat-games"
+   },
+   {
+    "slug": "art",
+    "name": "Arts & Crafts",
+    "description": "Real art supplies, sized for small hands.",
+    "image": "cat-art"
+   },
+   {
+    "slug": "room",
+    "name": "Kids' Room",
+    "description": "Night lights, backpacks and little comforts.",
+    "image": "cat-room"
+   }
+  ],
+  "attributes": [
+   {
+    "slug": "pieces",
+    "name": "Pieces",
+    "terms": [
+     "50 pieces",
+     "100 pieces"
+    ]
+   },
+   {
+    "slug": "colour",
+    "name": "Colour",
+    "terms": [
+     "Sunny",
+     "Mint",
+     "Tomato"
+    ]
+   }
+  ],
+  "products": [
+   {
+    "slug": "wooden-rainbow-stacker",
+    "name": "Wooden Rainbow Stacker",
+    "type": "simple",
+    "regular_price": "34",
+    "categories": [
+     "toys"
+    ],
+    "description": "<p>Seven nesting arches in FSC beech with water-based colours. A rainbow, a tunnel, a cradle, a bridge: it's whatever they decide.</p><p>From 12 months. 28 cm wide.</p>",
+    "short_description": "<p>Seven arches, endless ideas.</p>",
+    "sku": "KC-101",
+    "featured": true,
+    "stock": 14,
+    "menu_order": 1,
+    "reviews": [
+     {
+      "author": "Anaïs Dubois",
+      "email": "anaïs@example.com",
+      "rating": 5,
+      "content": "Our most-played toy by far, two years running."
+     },
+     {
+      "author": "Jonas Weber",
+      "email": "jonas@example.com",
+      "rating": 5,
+      "content": "Beautiful colours and solid wood. Worth every cent."
+     }
+    ],
+    "image": "p-wooden-rainbow-stacker"
+   },
+   {
+    "slug": "plush-fox",
+    "name": "Plush Fox",
+    "type": "simple",
+    "regular_price": "24",
+    "categories": [
+     "toys"
+    ],
+    "description": "<p>A soft organic-cotton fox with embroidered eyes, safe from birth and machine washable.</p><p>30 cm tall.</p>",
+    "short_description": "<p>A cuddly friend from day one.</p>",
+    "sku": "KC-102",
+    "stock": 20,
+    "menu_order": 2,
+    "image": "p-plush-fox"
+   },
+   {
+    "slug": "building-blocks",
+    "name": "Building Blocks Set",
+    "type": "variable",
+    "regular_price": "29",
+    "categories": [
+     "toys"
+    ],
+    "description": "<p>Natural and coloured beech blocks in eight shapes, cut on a 3 cm grid so every tower stands.</p><p>In a cotton storage bag. From 18 months.</p>",
+    "short_description": "<p>Classic blocks, precisely cut.</p>",
+    "featured": true,
+    "menu_order": 3,
+    "sku": "KC-103",
+    "attributes": [
+     {
+      "name": "Pieces",
+      "values": [
+       "50 pieces",
+       "100 pieces"
+      ],
+      "variation": true
+     }
+    ],
+    "variations": [
+     {
+      "attributes": {
+       "Pieces": "50 pieces"
+      },
+      "regular_price": "29",
+      "stock": 16,
+      "sku": "KC-103-1"
+     },
+     {
+      "attributes": {
+       "Pieces": "100 pieces"
+      },
+      "regular_price": "49",
+      "stock": 16,
+      "sku": "KC-103-2"
+     }
+    ],
+    "image": "p-building-blocks"
+   },
+   {
+    "slug": "pull-along-duck",
+    "name": "Pull-along Duck",
+    "type": "simple",
+    "regular_price": "22",
+    "categories": [
+     "toys"
+    ],
+    "description": "<p>A wobbly wooden duck on wheels whose feet flap as it walks. Perfect for new walkers.</p><p>With a 70 cm cotton cord. From 12 months.</p>",
+    "short_description": "<p>Flap, flap, waddle.</p>",
+    "sku": "KC-104",
+    "sale_price": "18",
+    "stock": 12,
+    "menu_order": 4,
+    "image": "p-pull-along-duck"
+   },
+   {
+    "slug": "world-puzzle",
+    "name": "World Map Puzzle",
+    "type": "simple",
+    "regular_price": "19",
+    "categories": [
+     "games"
+    ],
+    "description": "<p>A 100-piece floor puzzle of the world with animals, landmarks and oceans. Thick recycled card.</p><p>60 × 45 cm when finished. From 5 years.</p>",
+    "short_description": "<p>Piece together the planet.</p>",
+    "sku": "KC-201",
+    "featured": true,
+    "stock": 18,
+    "menu_order": 5,
+    "reviews": [
+     {
+      "author": "Eva Rossi",
+      "email": "eva@example.com",
+      "rating": 5,
+      "content": "Sturdy pieces and gorgeous illustrations. Lots of questions about penguins now."
+     }
+    ],
+    "image": "p-world-puzzle"
+   },
+   {
+    "slug": "memory-game",
+    "name": "Animal Memory Game",
+    "type": "simple",
+    "regular_price": "14",
+    "categories": [
+     "games"
+    ],
+    "description": "<p>Thirty-two thick cards of illustrated animals in pairs. Simple rules, real concentration.</p><p>From 3 years, 1–4 players.</p>",
+    "short_description": "<p>Find the pairs, train the memory.</p>",
+    "sku": "KC-202",
+    "stock": 24,
+    "menu_order": 6,
+    "image": "p-memory-game"
+   },
+   {
+    "slug": "crayon-set",
+    "name": "Chunky Crayon Set",
+    "type": "simple",
+    "regular_price": "9",
+    "categories": [
+     "art"
+    ],
+    "description": "<p>Twelve chunky beeswax crayons in bright colours. Easy to grip and they don't snap.</p><p>In a recycled card tin.</p>",
+    "short_description": "<p>Bright colours, unbreakable grip.</p>",
+    "sku": "KC-301",
+    "stock": 40,
+    "menu_order": 7,
+    "image": "p-crayon-set"
+   },
+   {
+    "slug": "paint-easel",
+    "name": "Double Easel",
+    "type": "simple",
+    "regular_price": "79",
+    "categories": [
+     "art"
+    ],
+    "description": "<p>A beech easel with a chalkboard on one side and a whiteboard on the other, a paper roll holder and two paint pots.</p><p>Height adjustable from 90 to 120 cm.</p>",
+    "short_description": "<p>Two sides, double the masterpieces.</p>",
+    "sku": "KC-302",
+    "sale_price": "65",
+    "stock": 6,
+    "menu_order": 8,
+    "image": "p-paint-easel"
+   },
+   {
+    "slug": "sketchbook",
+    "name": "Big Sketchbook",
+    "type": "variable",
+    "regular_price": "12",
+    "categories": [
+     "art"
+    ],
+    "description": "<p>Sixty pages of thick 160 g paper that takes crayon, paint and glue, in a cloth cover.</p><p>A4 landscape.</p>",
+    "short_description": "<p>Thick paper for big ideas.</p>",
+    "menu_order": 9,
+    "sku": "KC-303",
+    "attributes": [
+     {
+      "name": "Colour",
+      "values": [
+       "Sunny",
+       "Mint"
+      ],
+      "variation": true
+     }
+    ],
+    "variations": [
+     {
+      "attributes": {
+       "Colour": "Sunny"
+      },
+      "regular_price": "12",
+      "stock": 30,
+      "sku": "KC-303-1"
+     },
+     {
+      "attributes": {
+       "Colour": "Mint"
+      },
+      "regular_price": "12",
+      "stock": 30,
+      "sku": "KC-303-2"
+     }
+    ],
+    "image": "p-sketchbook"
+   },
+   {
+    "slug": "star-night-light",
+    "name": "Star Night Light",
+    "type": "simple",
+    "regular_price": "29",
+    "categories": [
+     "room"
+    ],
+    "description": "<p>A soft, warm glow in a star shape that dims slowly over twenty minutes. Rechargeable, cool to the touch.</p><p>18 cm. USB-C charging.</p>",
+    "short_description": "<p>A gentle glow for sweet dreams.</p>",
+    "sku": "KC-401",
+    "featured": true,
+    "stock": 15,
+    "menu_order": 10,
+    "reviews": [
+     {
+      "author": "Maya Cohen",
+      "email": "maya@example.com",
+      "rating": 4,
+      "content": "Lovely warm light, battery lasts about a week of bedtimes."
+     }
+    ],
+    "image": "p-star-night-light"
+   },
+   {
+    "slug": "kids-backpack",
+    "name": "Little Explorer Backpack",
+    "type": "variable",
+    "regular_price": "32",
+    "categories": [
+     "room"
+    ],
+    "description": "<p>A small backpack in recycled canvas with a chest strap, a name tag and a front pocket for treasures.</p><p>Fits an A4 folder and a lunch box. From 3 years.</p>",
+    "short_description": "<p>Adventures need a bag.</p>",
+    "menu_order": 11,
+    "sku": "KC-402",
+    "attributes": [
+     {
+      "name": "Colour",
+      "values": [
+       "Tomato",
+       "Mint"
+      ],
+      "variation": true
+     }
+    ],
+    "variations": [
+     {
+      "attributes": {
+       "Colour": "Tomato"
+      },
+      "regular_price": "32",
+      "stock": 12,
+      "sku": "KC-402-1"
+     },
+     {
+      "attributes": {
+       "Colour": "Mint"
+      },
+      "regular_price": "32",
+      "stock": 12,
+      "sku": "KC-402-2"
+     }
+    ],
+    "image": "p-kids-backpack"
+   },
+   {
+    "slug": "birthday-bundle",
+    "name": "Birthday Bundle",
+    "type": "grouped",
+    "categories": [
+     "toys"
+    ],
+    "menu_order": 12,
+    "featured": true,
+    "description": "<p>A plush fox, a memory game and a tin of chunky crayons: a ready-made birthday present, wrapped with a card.</p>",
+    "short_description": "<p>A ready-made present for little ones.</p>",
+    "children": [
+     "plush-fox",
+     "memory-game",
+     "crayon-set"
+    ],
+    "image": "p-birthday-bundle"
+   }
+  ],
+  "coupons": [
+   {
+    "code": "WELCOME10",
+    "type": "percent",
+    "amount": "10",
+    "description": "10% off your first order"
+   }
+  ],
+  "shipping": {
+   "zone": "Everywhere",
+   "flat_rate": "4.90",
+   "free_over": "50",
+   "local_pickup": true
+  }
+ }
+}

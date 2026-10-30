@@ -194,7 +194,6 @@ func TestGooExtPointsMaxDiscount(t *testing.T) {
 	gooAlmost(t, "discount with a 15 cart maximum", d, 15)
 	// Without item maximums the whole cart can be paid with points.
 	gxaSetExt(t, srv, gptsKey, map[string]any{"max_discount": ""})
-	cart.Remove(cart.Items[0].Key)
 	for _, it := range append([]*gooCartItem{}, cart.Items...) {
 		if it.ProductID != free.ID {
 			cart.Remove(it.Key)

@@ -199,7 +199,7 @@ func (s *Server) gooGetProducts(ctx context.Context, ids []int64) (map[int64]*go
 	if len(ids) == 0 {
 		return out, nil
 	}
-	posts, _, err := s.store.QueryPosts(ctx, store.PostQuery{Types: []string{"product", "product_variation"}, IDs: ids, Statuses: []string{"publish", "private", "draft", "pending", "future"}, PerPage: len(ids)})
+	posts, _, err := s.store.QueryPosts(gooPllUnfiltered(ctx), store.PostQuery{Types: []string{"product", "product_variation"}, IDs: ids, Statuses: []string{"publish", "private", "draft", "pending", "future"}, PerPage: len(ids)})
 	if err != nil {
 		return nil, err
 	}
@@ -825,7 +825,11 @@ func (s *Server) gooPermalink(ctx context.Context, p *gooProduct) string {
 	if p.Status != "publish" || p.Slug == "" {
 		return lb.HomeURL("/?post_type=product&p=" + itoa64(p.ID))
 	}
-	return lb.HomeURL("/" + s.gooProductBase() + "/" + p.Slug + "/")
+	link := lb.HomeURL("/" + s.gooProductBase() + "/" + p.Slug + "/")
+	if p.Post != nil {
+		link = s.gooPllLink(ctx, "post", p.Post, link) // Golylang: the product's language
+	}
+	return link
 }
 
 // gooProductBase is the product permalink base ("product", or "shop" style bases set in Permalinks).
@@ -874,6 +878,7 @@ func (s *Server) gooUpdateStock(ctx context.Context, p *gooProduct, delta int, s
 		}
 	}
 	s.gooPurgeProduct(ctx, owner)
+	s.gooPllStockSync(ctx, owner) // Golylang: translations share the stock (goo_golylang.go)
 	if !set && delta < 0 {
 		s.gooStockNotifications(ctx, owner, old, qty)
 	}
@@ -942,6 +947,7 @@ func (s *Server) gooAttributeByTaxonomy(ctx context.Context, tax string) *gooAtt
 
 // gooSaveAttribute creates or updates a global attribute and registers its taxonomy.
 func (s *Server) gooSaveAttribute(ctx context.Context, a *gooAttribute) error {
+	defer gooPllFlushAttributes() // Golylang translates the attribute taxonomies
 	a.Slug = strings.TrimPrefix(gooSanitizeKey(defaultStr(a.Slug, a.Name)), "pa_")
 	if a.Slug == "" {
 		return errors.New("Please, provide an attribute name and slug.")
@@ -990,6 +996,7 @@ func (s *Server) gooSaveAttribute(ctx context.Context, a *gooAttribute) error {
 
 // gooDeleteAttribute deletes a global attribute, its taxonomy and terms.
 func (s *Server) gooDeleteAttribute(ctx context.Context, id int64) error {
+	defer gooPllFlushAttributes()
 	var slug string
 	if err := s.store.Pool.QueryRow(ctx, `DELETE FROM goo_attributes WHERE id = $1 RETURNING slug`, id).Scan(&slug); err != nil {
 		return err

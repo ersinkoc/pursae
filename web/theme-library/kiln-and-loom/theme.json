@@ -1,7 +1,7 @@
 {
   "slug": "kiln-and-loom",
   "name": "Kiln & Loom",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A warm, editorial handmade-crafts market for Goocommerce. A masthead with a serif wordmark, an italic tagline and stitched rules, a split hero (words on sand, picture beside) with a maker's stamp, category tiles with swing tags, product cards that stitch a dashed outline and lift the add-to-basket button on hover, a story-led product page and an indigo footer. Fraunces and Figtree, with an optional Lora pairing, self-hosted, and an optional paper grain. Ships a complete store demo: ceramics, textiles, candles and woodwork, with a candle in three scents, reviews, a coupon and shipping.",
   "author": "WordPress Go",
   "author_url": "https://github.com/boracomet/wordpress-go",

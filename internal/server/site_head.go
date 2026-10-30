@@ -57,6 +57,9 @@ func (s *Server) wpHead(c *gin.Context, q *siteQuery, lb *links.Builder, adminBa
 	}
 	if v.GWE != nil { // Golementor theme parts: Hello Golementor's stylesheet instead of the theme's own assets
 		sb.WriteString(s.helloHead(c, v))
+		if gweDesignTheme(v.Theme) && v.Theme.Head != nil { // a Golementor design package keeps its own stylesheet (goo_gwe.go)
+			sb.WriteString(v.Theme.Head(s, c, v))
+		}
 	} else if v.Theme.Head != nil {
 		sb.WriteString(v.Theme.Head(s, c, v))
 	}

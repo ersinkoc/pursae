@@ -1,0 +1,6 @@
+{{template "header" .}}
+{{with .Post}}<article id="post-{{.ID}}" class="{{.Class}} gs-wrap">
+	<h1 class="entry-title">{{.Title}}</h1>
+	<div class="entry-content">{{.Content}}</div>
+</article>{{end}}
+{{template "footer" .}}

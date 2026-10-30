@@ -149,7 +149,7 @@ func (s *Server) gooCartFor(c *gin.Context) *gooCart {
 // load builds the items from the session, dropping products that cannot be bought anymore.
 func (cart *gooCart) load(ctx context.Context) {
 	s := cart.s
-	stored := cart.sess.Data.Cart
+	stored := s.gooPllCartItems(ctx, cart.sess.Data.Cart) // Golylang: the products in the visitor's language
 	ids := make([]int64, 0, len(stored)*2)
 	for _, it := range stored {
 		ids = append(ids, it.ProductID)
