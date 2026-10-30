@@ -348,12 +348,6 @@ func (s *Server) gooV3ProductJSON(ctx context.Context, p *gooProduct) map[string
 	}
 }
 
-func defaultInt(v, def int) int {
-	if v == 0 {
-		return def
-	}
-	return v
-}
 
 // gooProductStatuses are the post statuses a product can have through the API.
 var gooProductStatuses = []string{"draft", "pending", "private", "publish", "future"}
@@ -414,10 +408,10 @@ func (s *Server) gooV3ApplyProduct(ctx context.Context, p *gooProduct, b map[str
 		p.SKU = sku
 	}
 	if v, ok := b["regular_price"]; ok {
-		p.RegularPrice = gooAmount(v)
+		p.RegularPrice = gooRESTAmount(v)
 	}
 	if v, ok := b["sale_price"]; ok {
-		p.SalePrice = gooAmount(v)
+		p.SalePrice = gooRESTAmount(v)
 	}
 	for _, k := range []string{"date_on_sale_from", "date_on_sale_to"} {
 		t, set, err := s.gooBodyDate(b, k)

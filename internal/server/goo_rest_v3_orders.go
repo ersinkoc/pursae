@@ -1181,7 +1181,7 @@ func (s *Server) gooV3ApplyCoupon(cp *gooCoupon, b map[string]any) *gooAPIErr {
 	}
 	for k, dst := range map[string]**float64{"minimum_amount": &cp.MinimumAmount, "maximum_amount": &cp.MaximumAmount} {
 		if v, ok := b[k]; ok {
-			*dst = gooAmount(v)
+			*dst = gooRESTAmount(v)
 			if *dst != nil && **dst == 0 {
 				*dst = nil
 			}

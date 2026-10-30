@@ -275,7 +275,7 @@ func gooBool(v any) bool {
 }
 
 // gooAmount reads a price string ("" → nil).
-func gooAmount(v any) *float64 {
+func gooRESTAmount(v any) *float64 {
 	if v == nil {
 		return nil
 	}
