@@ -4,6 +4,8 @@
   title: Plugin development
 - id: themes
   title: Theme development
+- id: built-in-plugins
+  title: Built-in plugins
 - id: rest-api
   title: REST API
 - id: hub

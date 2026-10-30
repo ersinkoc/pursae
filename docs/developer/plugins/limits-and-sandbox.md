@@ -1,6 +1,6 @@
 ---
 title: Limits and the sandbox
-description: What a plugin can and cannot do at runtime: memory, time, messages, failures, isolation.
+description: "What a plugin can and cannot do at runtime: memory, time, messages, failures, isolation."
 weight: 150
 section: plugins
 ---

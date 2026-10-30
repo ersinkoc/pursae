@@ -1,6 +1,6 @@
 ---
 title: Block editor support
-description: Tell the block editor about your theme: palette, alignments, supports, editor styles.
+description: "Tell the block editor about your theme: palette, alignments, supports, editor styles."
 weight: 70
 section: themes
 ---
