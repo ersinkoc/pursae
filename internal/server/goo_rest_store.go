@@ -522,6 +522,9 @@ func (s *Server) gooRESTProductTerms(ctx context.Context, list []*gooProduct) ma
 func (s *Server) gooStoreProduct(c *gin.Context, req *restRequest) {
 	ctx := c.Request.Context()
 	p, err := s.gooGetProduct(ctx, req.ID())
+	if err == nil && s.gooHiddenProduct(c, p.ID) { // Memberships "hide completely"
+		err = errNotFound
+	}
 	if err != nil || (p.Status != "publish" && !(p.Type == gooTypeVariation && p.Status == "private")) {
 		restErr(c, http.StatusNotFound, "woocommerce_rest_product_invalid_id", "Invalid product ID.")
 		return

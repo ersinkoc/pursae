@@ -198,6 +198,7 @@ func (s *Server) gweLoopRun(ctx context.Context, q *builder.PostQuery, ext *buil
 
 // gweLoopIDs runs a PostQuery: the page's post ids and the list's counts (no posts).
 func (s *Server) gweLoopIDs(ctx context.Context, q *builder.PostQuery, ext *builder.LoopQueryExt) ([]int64, *builder.PostList) {
+	q = s.gooLoopQuery(ctx, q) // Goocommerce Memberships: posts hidden from the visitor
 	out := &builder.PostList{CurrentPage: 1}
 	var args []any
 	add := func(x any) string {

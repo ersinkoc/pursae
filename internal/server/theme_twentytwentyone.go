@@ -441,8 +441,8 @@ func tt1PasswordForm(p *store.Post) string {
 
 // tt1PostNav is the_post_navigation() as single.php calls it, with the arrow icons.
 func (s *Server) tt1PostNav(ctx context.Context, p *store.Post, lb *links.Builder) template.HTML {
-	prev, _ := s.store.Adjacent(ctx, p, true)
-	next, _ := s.store.Adjacent(ctx, p, false)
+	prev, _ := s.gooAdjacent(ctx, p, true) // Goocommerce Memberships: hidden posts are skipped
+	next, _ := s.gooAdjacent(ctx, p, false)
 	if prev == nil && next == nil {
 		return ""
 	}

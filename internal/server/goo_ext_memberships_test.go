@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"wpgo/internal/builder"
 	"wpgo/internal/store"
 )
 
@@ -292,5 +293,81 @@ func TestGooExtMembershipsRestrictionModes(t *testing.T) {
 	}
 	if code, _, _ := get(t, anon, path(srv.links(ctx).Permalink(public))); code != http.StatusOK {
 		t.Errorf("redirect: an open post answers %d", code)
+	}
+}
+
+// "Hide completely" also reaches the layered-nav counts, the Store API's single product, the wc/v3
+// products API, previous/next post links and the page builder's post loops.
+func TestGooExtMembershipsHideEverywhere(t *testing.T) {
+	base, _, srv := gooSite(t)
+	ctx := context.Background()
+	if err := srv.gooSaveAttribute(ctx, &gooAttribute{Name: "Glaze", HasArchives: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := srv.store.InsertTerm(ctx, termFor("pa_glaze", "Celadon")); err != nil {
+		t.Fatal(err)
+	}
+	glaze := func(p *gooProduct) {
+		p.Attributes = []gooProductAttr{{Taxonomy: "pa_glaze", Options: []string{"celadon"}, Visible: true}}
+	}
+	gooMakeSimple(t, srv, "Open Bowl", 10, glaze)
+	vip := gooMakeSimple(t, srv, "Velvet Bowl", 30, glaze)
+	older := &store.Post{Type: "post", Title: "Older open post", Slug: "older-open", Content: "<p>A</p>", Status: "publish", AuthorID: 1, Meta: map[string]any{}}
+	secret := &store.Post{Type: "post", Title: "Members only post", Slug: "members-only", Content: "<p>B</p>", Status: "publish", AuthorID: 1, Meta: map[string]any{}}
+	newer := &store.Post{Type: "post", Title: "Newer open post", Slug: "newer-open", Content: "<p>C</p>", Status: "publish", AuthorID: 1, Meta: map[string]any{}}
+	for _, p := range []*store.Post{older, secret, newer} {
+		if err := srv.store.InsertPost(ctx, p); err != nil {
+			t.Fatal(err)
+		}
+	}
+	plan := &gooMembershipPlan{Name: "Velvet", AccessMethod: "manual", AccessLength: "unlimited",
+		Rules: gmemRules{ContentPostIDs: []int64{secret.ID}, ProductIDs: []int64{vip.ID}, ProductRestrict: "view"}}
+	if err := srv.gmemSavePlan(ctx, plan); err != nil {
+		t.Fatal(err)
+	}
+	if err := srv.gooSetExtension(ctx, gmemKey, true); err != nil {
+		t.Fatal(err)
+	}
+	if err := srv.gooSetOpts(ctx, map[string]any{"ext_" + gmemKey + "_settings": map[string]any{"restriction_mode": "hide"}}); err != nil {
+		t.Fatal(err)
+	}
+	member := gxaCustomer(t, srv, "velvet-bowl@example.test")
+	if _, err := srv.gmemGrant(ctx, member.ID, plan, 0, 0, "test"); err != nil {
+		t.Fatal(err)
+	}
+	anonCtx := gooTestCtx()
+	memberCtx := gxaCtx(member, http.MethodGet, "/", nil)
+
+	// Layered nav counts.
+	if nav := srv.gooWidgetLayeredNav(anonCtx, "glaze", "Glaze", "and"); !strings.Contains(nav, `<span class="count">(1)</span>`) {
+		t.Errorf("visitor layered nav: %s", nav)
+	}
+	if nav := srv.gooWidgetLayeredNav(memberCtx, "glaze", "Glaze", "and"); !strings.Contains(nav, `<span class="count">(2)</span>`) {
+		t.Errorf("member layered nav: %s", nav)
+	}
+
+	// Single product APIs.
+	if code, _, _ := get(t, &http.Client{}, base+"/wp-json/wc/store/v1/products/"+itoa64(vip.ID)); code != http.StatusNotFound {
+		t.Errorf("Store API single hidden product: %d", code)
+	}
+	if !srv.gooHiddenProduct(ctx, vip.ID) || srv.gooHiddenProduct(withPluginUser(ctx, member), vip.ID) {
+		t.Error("gooHiddenProduct: wrong for the visitor or the member")
+	}
+
+	// Previous / next links skip the hidden post for visitors only.
+	newer, _ = srv.store.GetPost(ctx, newer.ID)
+	if prev, err := srv.gooAdjacent(ctx, newer, true); err != nil || prev.ID != older.ID {
+		t.Errorf("visitor previous post: %v %v", prev, err)
+	}
+	if prev, err := srv.gooAdjacent(withPluginUser(ctx, member), newer, true); err != nil || prev.ID != secret.ID {
+		t.Errorf("member previous post: %v %v", prev, err)
+	}
+
+	// Page builder loops.
+	if q := srv.gooLoopQuery(ctx, &builder.PostQuery{PostTypes: []string{"post", "product"}}); !gooInt64In(secret.ID, q.ExcludeIDs) || !gooInt64In(vip.ID, q.ExcludeIDs) {
+		t.Errorf("loop exclusions: %v", q.ExcludeIDs)
+	}
+	if q := srv.gooLoopQuery(withPluginUser(ctx, member), &builder.PostQuery{}); len(q.ExcludeIDs) != 0 {
+		t.Errorf("member loop exclusions: %v", q.ExcludeIDs)
 	}
 }

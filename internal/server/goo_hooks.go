@@ -8,6 +8,9 @@ import (
 	"sort"
 
 	"github.com/gin-gonic/gin"
+
+	"wpgo/internal/builder"
+	"wpgo/internal/store"
 )
 
 // Goocommerce's extension points: the Go counterpart of the WooCommerce actions and filters its
@@ -355,6 +358,57 @@ func (s *Server) gooListingExclude(ctx context.Context, kind string) []int64 {
 		out = append(out, f(s, ctx, kind)...)
 	}
 	return out
+}
+
+// gooListingKinds is the exclusion list for a query over post types (products use the "product" kind).
+func (s *Server) gooListingKinds(ctx context.Context, types []string) []int64 {
+	if !s.gooOn() {
+		return nil
+	}
+	out := s.gooListingExclude(ctx, "post")
+	for _, t := range types {
+		if t == "product" {
+			out = append(out, s.gooListingExclude(ctx, "product")...)
+			break
+		}
+	}
+	return out
+}
+
+// gooHiddenProduct reports whether a product (or a variation's parent) is hidden from the visitor.
+func (s *Server) gooHiddenProduct(ctx context.Context, id int64) bool {
+	ex := s.gooListingExclude(ctx, "product")
+	if len(ex) == 0 {
+		return false
+	}
+	var parent int64
+	_ = s.store.Pool.QueryRow(ctx, `SELECT coalesce(parent_id, 0) FROM posts WHERE id = $1`, id).Scan(&parent)
+	for _, x := range ex {
+		if x == id || (parent != 0 && x == parent) {
+			return true
+		}
+	}
+	return false
+}
+
+// gooAdjacent is get_adjacent_post() without the posts hidden from the visitor (previous/next links).
+func (s *Server) gooAdjacent(ctx context.Context, p *store.Post, previous bool) (*store.Post, error) {
+	return s.store.AdjacentExcept(ctx, p, previous, s.gooListingKinds(ctx, []string{p.Type}))
+}
+
+// gooLoopQuery adds the posts hidden from the visitor to a builder loop query's exclusions.
+func (s *Server) gooLoopQuery(ctx context.Context, q *builder.PostQuery) *builder.PostQuery {
+	types := q.PostTypes
+	if len(types) == 0 {
+		types = []string{"post"}
+	}
+	ex := s.gooListingKinds(ctx, types)
+	if len(ex) == 0 {
+		return q
+	}
+	cp := *q
+	cp.ExcludeIDs = append(append([]int64{}, q.ExcludeIDs...), ex...)
+	return &cp
 }
 
 // gooSingleAccessHook decides whether the visitor may open a single post, page or product: "" serves

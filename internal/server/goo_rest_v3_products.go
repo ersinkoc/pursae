@@ -25,6 +25,9 @@ func (s *Server) registerGooV3Products() {
 	}})
 	s.gooV3("/products/(?P<id>[\\d]+)", prod, map[string]restHandler{
 		http.MethodGet: s.gooV3Get(func(c *gin.Context, id int64) (map[string]any, *gooAPIErr) {
+			if s.gooHiddenProduct(withPluginUser(c.Request.Context(), gooV3Actor(c)), id) {
+				return nil, gooErr(404, "woocommerce_rest_product_invalid_id", "Invalid ID.")
+			}
 			return s.gooV3ProductGet(c.Request.Context(), id, false)
 		}),
 		http.MethodPut:    s.gooV3Update(s.gooV3ProductUpdate),
@@ -946,6 +949,7 @@ func (s *Server) gooV3ProductsList(c *gin.Context, req *restRequest) {
 		// An explicit offset: fetch from the start and slice.
 		q.Page, q.PerPage = 1, offset+per
 	}
+	q.Exclude = append(q.Exclude, s.gooListingExclude(withPluginUser(ctx, gooV3Actor(c)), "product")...) // Memberships "hide completely"
 	list, total, err := s.gooQueryProducts(ctx, q)
 	if err != nil {
 		restErr(c, http.StatusInternalServerError, "woocommerce_rest_cannot_view", err.Error())
