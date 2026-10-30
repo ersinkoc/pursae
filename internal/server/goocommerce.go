@@ -504,6 +504,7 @@ func (s *Server) gooDaily(ctx context.Context) error {
 		return nil
 	}
 	_ = s.gooCleanupSessions(ctx)
+	s.gooCleanupDrafts(ctx)
 	s.gooScheduledSales(ctx)
 	s.gooRetention(ctx)
 	s.gooFire(ctx, "daily", nil)

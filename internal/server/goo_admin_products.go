@@ -841,6 +841,11 @@ func (s *Server) gooTrashAction(ctx context.Context, p *gooProduct, action strin
 	if err == nil {
 		s.afterPostSave(ctx, p.Post)
 		s.gooPurgeProduct(ctx, p)
+		if action == "untrash" {
+			s.gooWebhookProduct(ctx, "product.restored", p.ID)
+		} else {
+			s.gooWebhookFire(ctx, "product.deleted", p.ID, map[string]any{"id": p.ID})
+		}
 	}
 	return err
 }

@@ -412,6 +412,14 @@ func (s *Server) gooCreateOrderFromCart(c *gin.Context, cart *gooCart, d *gooChe
 			return nil, err
 		}
 	}
+	// The Store API's checkout-draft order becomes this order (it keeps its id and creation date).
+	if sess := cart.sess; sess != nil && sess.Data.Extra[gooDraftKey] != nil {
+		if d, err := s.gooGetOrder(ctx, gooInt(sess.Data.Extra[gooDraftKey])); err == nil && d.Status == "checkout-draft" {
+			o.ID, o.OrderKey, o.DateCreated = d.ID, d.OrderKey, d.DateCreated // its items are replaced by the cart's
+		}
+		delete(sess.Data.Extra, gooDraftKey)
+		sess.touch()
+	}
 	if err := s.gooSaveOrder(ctx, o, true); err != nil {
 		return nil, err
 	}

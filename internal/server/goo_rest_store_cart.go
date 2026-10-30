@@ -700,7 +700,70 @@ func (s *Server) gooStoreCheckoutGet(c *gin.Context, req *restRequest) {
 	if id := s.gooSessionFor(c).Data.OrderAwaitingPayment; id != 0 {
 		o, _ = s.gooGetOrder(ctx, id)
 	}
+	if o == nil {
+		o = s.gooStoreDraftOrder(c)
+	}
 	s.gooStoreRespond(c, http.StatusOK, s.gooStoreCheckoutJSON(c, o, nil))
+}
+
+// gooDraftKey is the session key of the Store API's draft order.
+const gooDraftKey = "store_api_draft_order"
+
+// gooStoreDraftOrder creates or refreshes the session's checkout-draft order from the cart, the way the
+// block checkout does on load and on every update (StoreApi\Utilities\OrderController). Drafts are
+// hidden from the order screens, become the real order when the checkout is placed and are deleted
+// after a day by the daily job. An empty cart has no draft.
+func (s *Server) gooStoreDraftOrder(c *gin.Context) *gooOrder {
+	ctx := c.Request.Context()
+	cart := s.gooCartFor(c)
+	if cart.IsEmpty() {
+		return nil
+	}
+	cart.Calculate()
+	sess := s.gooSessionFor(c)
+	var o *gooOrder
+	if id := gooInt(sess.Data.Extra[gooDraftKey]); id != 0 {
+		if prev, err := s.gooGetOrder(ctx, id); err == nil && prev.Status == "checkout-draft" {
+			o = prev
+		}
+	}
+	if o == nil {
+		o = &gooOrder{Status: "checkout-draft", CreatedVia: "store-api", Meta: map[string]any{}}
+	}
+	cu := sess.Data.Customer
+	o.Currency, o.PricesIncludeTax = s.gooCurrency(), s.gooPricesIncludeTax()
+	o.Billing, o.Shipping = map[string]string{}, map[string]string{}
+	for k, v := range cu.Billing {
+		o.Billing[k] = v
+	}
+	for k, v := range cu.Shipping {
+		o.Shipping[k] = v
+	}
+	if u := currentUser(c); u != nil {
+		o.CustomerID = u.ID
+	}
+	o.PaymentMethod = sess.Data.ChosenPayment
+	o.Items, o.CartHash = s.gooOrderItemsFromCart(ctx, cart), gooCartHash(sess.Data.Cart)
+	o.DiscountTotal, o.DiscountTax = cart.DiscountTotal, cart.DiscountTax
+	o.ShippingTotal, o.ShippingTax = cart.ShippingTotal, cart.ShippingTax
+	o.CartTax = gooRound(gooSumTaxes(cart.Taxes), s.gooDecimals())
+	o.TotalTax, o.Total = cart.TotalTax, cart.Total
+	if err := s.gooSaveOrder(ctx, o, true); err != nil {
+		return nil
+	}
+	if gooInt(sess.Data.Extra[gooDraftKey]) != o.ID {
+		if sess.Data.Extra == nil {
+			sess.Data.Extra = map[string]any{}
+		}
+		sess.Data.Extra[gooDraftKey] = o.ID
+		sess.touch()
+	}
+	return o
+}
+
+// gooCleanupDrafts deletes checkout-draft orders untouched for a day.
+func (s *Server) gooCleanupDrafts(ctx context.Context) {
+	_, _ = s.store.Pool.Exec(ctx, `DELETE FROM goo_orders WHERE status = 'checkout-draft' AND date_modified < now() - interval '1 day'`)
 }
 
 func (s *Server) gooStoreCheckoutPut(c *gin.Context, req *restRequest) {
@@ -710,7 +773,7 @@ func (s *Server) gooStoreCheckoutPut(c *gin.Context, req *restRequest) {
 		sess.Data.ChosenPayment = pm
 		sess.touch()
 	}
-	s.gooStoreRespond(c, http.StatusOK, s.gooStoreCheckoutJSON(c, nil, nil))
+	s.gooStoreRespond(c, http.StatusOK, s.gooStoreCheckoutJSON(c, s.gooStoreDraftOrder(c), nil))
 }
 
 // gooStoreCheckoutPost places the order: the request becomes the checkout form and runs through

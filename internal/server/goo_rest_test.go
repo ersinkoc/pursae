@@ -177,6 +177,22 @@ func TestGooAPIStoreCartFlow(t *testing.T) {
 		t.Fatalf("PUT cart/items/{key}: %d %s", r.Code, r.Raw)
 	}
 
+	// GET /checkout makes a checkout-draft order (hidden from the order screens) that the checkout reuses.
+	r = gooReq(t, guest, "GET", api+"/checkout", nil, nil)
+	draftID := int64(0)
+	if f, ok := gooJ(r.Body, "order_id").(float64); ok {
+		draftID = int64(f)
+	}
+	if r.Code != 200 || draftID == 0 || gooJS(r.Body, "status") != "checkout-draft" {
+		t.Fatalf("checkout draft: %d %s", r.Code, r.Raw)
+	}
+	if again := gooReq(t, guest, "PUT", api+"/checkout", map[string]any{"payment_method": "goo_test"}, nonce); gooJ(again.Body, "order_id") != float64(draftID) {
+		t.Errorf("PUT /checkout made a second draft: %s", again.Raw)
+	}
+	if list, _, _ := srv.gooQueryOrders(ctx, gooOrderQuery{}); len(list) != 0 {
+		t.Errorf("the draft shows in the order list")
+	}
+
 	// Checkout with the test gateway.
 	r = gooReq(t, guest, "POST", api+"/checkout", map[string]any{"billing_address": gooTestAddress, "shipping_address": gooTestAddress,
 		"customer_note": "Leave at the door", "payment_method": "goo_test", "payment_data": []any{map[string]any{"key": "goo_test_card_holder", "value": "Ann"}}}, nonce)
@@ -192,6 +208,9 @@ func TestGooAPIStoreCartFlow(t *testing.T) {
 		t.Fatal(err)
 	}
 	gooAlmost(t, "order total", o.Total, 23)
+	if orderID != draftID {
+		t.Errorf("the checkout made order %d instead of using draft %d", orderID, draftID)
+	}
 	if o.PaymentMethod != "goo_test" || o.CustomerNote != "Leave at the door" || o.Billing["email"] != "ann@example.test" {
 		t.Errorf("order: %+v", o)
 	}
@@ -691,5 +710,82 @@ func TestGooAPIWebhooks(t *testing.T) {
 	_ = srv.store.Pool.QueryRow(ctx, `SELECT status, failures FROM goo_webhooks WHERE id = $1`, badID).Scan(&status, &failures)
 	if status != "disabled" || failures != 5 {
 		t.Errorf("failing webhook: %s after %d failures", status, failures)
+	}
+}
+
+func TestGooAPIWebhooksCRUD(t *testing.T) {
+	base, c, _ := gooSite(t)
+	v3 := gooAdminAPI(t, base, c)
+	r := v3("POST", "/webhooks", map[string]any{"name": "Order hook", "topic": "order.created", "delivery_url": "https://hooks.example.test/in", "secret": "abc"})
+	if r.Code != 201 || gooJS(r.Body, "resource") != "order" || gooJS(r.Body, "event") != "created" || gooJ(r.Body, "secret") != nil {
+		t.Fatalf("create: %d %s", r.Code, r.Raw)
+	}
+	id := int64(gooJ(r.Body, "id").(float64))
+	if r := v3("POST", "/webhooks", map[string]any{"topic": "nope.created", "delivery_url": "https://x.test"}); r.Code != 400 {
+		t.Errorf("bad topic accepted: %d", r.Code)
+	}
+	if r := v3("POST", "/webhooks", map[string]any{"topic": "order.created", "delivery_url": "ftp://x.test"}); r.Code != 400 {
+		t.Errorf("bad delivery URL accepted: %d", r.Code)
+	}
+	if r := v3("PUT", fmt.Sprintf("/webhooks/%d", id), map[string]any{"status": "paused"}); r.Code != 200 || gooJS(r.Body, "status") != "paused" {
+		t.Errorf("update: %d %s", r.Code, r.Raw)
+	}
+	if r := v3("GET", "/webhooks?status=paused", nil); len(r.list()) != 1 {
+		t.Errorf("list by status: %s", r.Raw)
+	}
+	if r := v3("GET", "/webhooks?status=active", nil); len(r.list()) != 0 {
+		t.Errorf("list active: %s", r.Raw)
+	}
+	b := v3("POST", "/webhooks/batch", map[string]any{"create": []any{map[string]any{"topic": "product.updated", "delivery_url": "https://hooks.example.test/p"}}})
+	if b.Code != 200 || len(gooJ(b.Body, "create").([]any)) != 1 {
+		t.Errorf("batch: %d %s", b.Code, b.Raw)
+	}
+	if r := v3("DELETE", fmt.Sprintf("/webhooks/%d", id), nil); r.Code != 501 {
+		t.Errorf("delete without force: %d", r.Code)
+	}
+	if r := v3("DELETE", fmt.Sprintf("/webhooks/%d?force=true", id), nil); r.Code != 200 {
+		t.Errorf("delete: %d %s", r.Code, r.Raw)
+	}
+	if r := v3("GET", fmt.Sprintf("/webhooks/%d", id), nil); r.Code != 404 {
+		t.Errorf("get deleted: %d", r.Code)
+	}
+}
+
+// Trashing, restoring and deleting in the admin deliver the same topics as the REST API.
+func TestGooAPIWebhooksFromAdmin(t *testing.T) {
+	_, _, srv := gooSite(t)
+	ctx := context.Background()
+	var mu sync.Mutex
+	var topics []string
+	hook := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		topics = append(topics, r.Header.Get("X-WC-Webhook-Topic"))
+		mu.Unlock()
+	}))
+	defer hook.Close()
+	for _, topic := range []string{"order.deleted", "order.restored", "product.deleted", "product.restored"} {
+		_, _ = srv.store.Pool.Exec(ctx, `INSERT INTO goo_webhooks (name, status, topic, delivery_url, secret) VALUES ($1, 'active', $1, $2, 's')`, topic, hook.URL)
+	}
+	p := gooMakeSimple(t, srv, "Admin hook product", 3, nil)
+	o := &gooOrder{Status: "pending", Billing: map[string]string{"email": "a@example.test"}}
+	if err := srv.gooSaveOrder(ctx, o, false); err != nil {
+		t.Fatal(err)
+	}
+	_ = srv.gooTrashOrder(ctx, o)
+	_ = srv.gooUntrashOrder(ctx, o)
+	_ = srv.gooDeleteOrder(ctx, o.ID)
+	_ = srv.gooTrashAction(ctx, p, "trash")
+	_ = srv.gooTrashAction(ctx, p, "untrash")
+	gooWebhookWG.Wait()
+	mu.Lock()
+	defer mu.Unlock()
+	got := strings.Join(topics, ",")
+	for _, want := range []string{"order.deleted", "order.restored", "product.deleted", "product.restored"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("no %s delivery (got %s)", want, got)
+		}
+	}
+	if strings.Count(got, "order.deleted") != 2 {
+		t.Errorf("order.deleted deliveries: %s", got)
 	}
 }

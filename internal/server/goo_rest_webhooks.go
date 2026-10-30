@@ -113,6 +113,26 @@ func (s *Server) gooWebhookOrder(ctx context.Context, topic string, o *gooOrder)
 	s.gooWebhookFire(ctx, topic, o.ID, s.gooV3OrderJSON(ctx, fresh))
 }
 
+// gooWebhookCoupon delivers a coupon topic with the coupon's wc/v3 resource.
+func (s *Server) gooWebhookCoupon(ctx context.Context, topic string, id int64) {
+	if !s.gooWebhooksFor(ctx, topic) {
+		return
+	}
+	if cp, err := s.gooCouponByID(ctx, id); err == nil {
+		s.gooWebhookFire(ctx, topic, id, s.gooV3CouponJSON(ctx, cp))
+	}
+}
+
+// gooWebhookProduct delivers a product topic with the product's wc/v3 resource.
+func (s *Server) gooWebhookProduct(ctx context.Context, topic string, id int64) {
+	if !s.gooWebhooksFor(ctx, topic) {
+		return
+	}
+	if p, err := s.gooGetProduct(ctx, id); err == nil {
+		s.gooWebhookFire(ctx, topic, id, s.gooV3ProductJSON(ctx, p))
+	}
+}
+
 // gooWebhookFire delivers a topic to every active webhook subscribed to it, in the background.
 func (s *Server) gooWebhookFire(ctx context.Context, topic string, resourceID int64, payload any) {
 	if !s.gooOn() {

@@ -18,6 +18,7 @@ import (
 // methods, payment gateways, system status and data (countries, currencies, continents).
 
 func (s *Server) registerGooV3Misc() {
+	s.registerGooV3Webhooks() // goo_rest_v3_webhooks.go
 	reports := gooCapsAll("view_woocommerce_reports")
 	s.gooV3("/reports", reports, map[string]restHandler{http.MethodGet: s.gooV3Reports})
 	s.gooV3("/reports/sales", reports, map[string]restHandler{http.MethodGet: s.gooV3ReportSales})

@@ -380,7 +380,11 @@ func (s *Server) gooTrashOrder(ctx context.Context, o *gooOrder) error {
 	}
 	o.Meta["_trash_status"] = o.Status
 	o.Status = "trash"
-	return s.gooSaveOrder(ctx, o, false)
+	if err := s.gooSaveOrder(ctx, o, false); err != nil {
+		return err
+	}
+	s.gooWebhookFire(ctx, "order.deleted", o.ID, map[string]any{"id": o.ID})
+	return nil
 }
 
 func (s *Server) gooUntrashOrder(ctx context.Context, o *gooOrder) error {
@@ -389,12 +393,21 @@ func (s *Server) gooUntrashOrder(ctx context.Context, o *gooOrder) error {
 	}
 	o.Status = defaultStr(o.MetaString("_trash_status"), "pending")
 	delete(o.Meta, "_trash_status")
-	return s.gooSaveOrder(ctx, o, false)
+	if err := s.gooSaveOrder(ctx, o, false); err != nil {
+		return err
+	}
+	s.gooWebhookOrder(ctx, "order.restored", o)
+	return nil
 }
 
 // gooDeleteOrder deletes an order with its refunds (items, notes and permissions cascade).
 func (s *Server) gooDeleteOrder(ctx context.Context, id int64) error {
+	var status string
+	_ = s.store.Pool.QueryRow(ctx, `SELECT status FROM goo_orders WHERE id = $1`, id).Scan(&status)
 	_, err := s.store.Pool.Exec(ctx, `DELETE FROM goo_orders WHERE id = $1 OR (parent_id = $1 AND type = 'shop_order_refund')`, id)
+	if err == nil && status != "trash" { // a trashed order already said order.deleted
+		s.gooWebhookFire(ctx, "order.deleted", id, map[string]any{"id": id})
+	}
 	return err
 }
 

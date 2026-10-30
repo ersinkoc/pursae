@@ -161,6 +161,7 @@ func (s *Server) gooCouponBulk(ctx context.Context, action string, ids []int64) 
 			cp.Status = "trash"
 			if s.gooSaveCoupon(ctx, cp) == nil {
 				n++
+				s.gooWebhookFire(ctx, "coupon.deleted", cp.ID, map[string]any{"id": cp.ID})
 			}
 		case "untrash":
 			prev, _ := cp.Meta["_wp_trash_meta_status"].(string)
@@ -168,10 +169,14 @@ func (s *Server) gooCouponBulk(ctx context.Context, action string, ids []int64) 
 			delete(cp.Meta, "_wp_trash_meta_status")
 			if s.gooSaveCoupon(ctx, cp) == nil {
 				n++
+				s.gooWebhookCoupon(ctx, "coupon.restored", cp.ID)
 			}
 		case "delete":
 			if _, err := s.store.Pool.Exec(ctx, `DELETE FROM goo_coupons WHERE id = $1`, id); err == nil {
 				n++
+				if cp.Status != "trash" {
+					s.gooWebhookFire(ctx, "coupon.deleted", id, map[string]any{"id": id})
+				}
 			}
 		}
 	}
@@ -223,6 +228,11 @@ func (s *Server) gooAdminCouponEdit(c *gin.Context) {
 		if err := s.gooSaveCoupon(ctx, cp); err != nil {
 			notices = append(notices, notice{Type: "error", Message: template.HTML(template.HTMLEscapeString(err.Error()))})
 		} else {
+			if wasNew {
+				s.gooWebhookCoupon(ctx, "coupon.created", cp.ID)
+			} else {
+				s.gooWebhookCoupon(ctx, "coupon.updated", cp.ID)
+			}
 			msg := "Coupon updated."
 			if wasNew && cp.Status == "publish" {
 				msg = "Coupon published."
