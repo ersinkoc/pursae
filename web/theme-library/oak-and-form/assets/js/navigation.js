@@ -26,7 +26,7 @@
 			if ( open && opts.focus ) {
 				var f = panel.querySelector( opts.focus );
 				if ( f ) {
-					f.focus();
+					f.focus( { preventScroll: true } );
 				}
 			}
 			if ( opts.onChange ) {
