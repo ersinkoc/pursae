@@ -1,0 +1,247 @@
+{{define "admin/goo-settings"}}{{template "admin-header" .}}{{template "goo-store-assets"}}{{with .Data}}
+<div class="wrap woocommerce">
+<form method="post" id="mainform" action="{{.Action}}" enctype="multipart/form-data">
+<nav class="nav-tab-wrapper woo-nav-tab-wrapper">
+{{range .Tabs}}<a href="/wp-admin/goocommerce?page=settings&amp;tab={{.Value}}" class="nav-tab{{if eq .Value $.Data.Tab}} nav-tab-active{{end}}">{{safe .Label}}</a>{{end}}
+</nav>
+{{template "notices" $}}
+<h1 class="screen-reader-text">{{.Title}}</h1>
+{{if .Sections}}<ul class="subsubsub">{{range $i, $s := .Sections}}<li>{{if $i}} | {{end}}<a href="{{$s.URL}}" class="{{if $s.Current}}current{{end}}">{{$s.Label}}</a></li>{{end}}</ul><br class="clear">{{end}}
+{{if .BackURL}}<h2 class="goo-settings-crumb"><a href="{{.BackURL}}">{{.BackText}}</a> &gt; {{.Title}}</h2>{{end}}
+{{.Intro}}
+{{if eq .Kind "fields"}}{{.Body}}
+{{else if eq .Kind "taxrates"}}{{template "goo-settings-taxrates" .}}
+{{else if eq .Kind "zones"}}{{template "goo-settings-zones" .}}
+{{else if eq .Kind "zone"}}{{template "goo-settings-zone" .}}
+{{else if eq .Kind "classes"}}{{template "goo-settings-classes" .}}
+{{else if eq .Kind "gateways"}}{{template "goo-settings-gateways" .}}
+{{else if eq .Kind "emails"}}{{template "goo-settings-emails" .}}{{.Body}}
+{{else if eq .Kind "keys"}}{{template "goo-settings-keys" .}}
+{{else if eq .Kind "key"}}{{template "goo-settings-key" .}}
+{{else if eq .Kind "webhooks"}}{{template "goo-settings-webhooks" .}}
+{{else if eq .Kind "webhook"}}{{template "goo-settings-webhook" .}}
+{{end}}
+<p class="submit">{{if not .HideSave}}<button name="save" class="button-primary woocommerce-save-button" type="submit" value="{{.SaveText}}">{{.SaveText}}</button>{{end}}
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}"></p>
+</form>
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}
+
+{{define "goo-settings-taxrates"}}{{with .Tax}}
+<h2>Tax rates for the "{{.ClassName}}" class</h2>
+<p>Define tax rates for countries and states below. Use the CSV export / import to edit many rates at once. Postcodes and cities accept several values separated by semicolons; postcodes may use wildcards (<code>902*</code>) and ranges (<code>90210...90299</code>).</p>
+<table class="wc_tax_rates wc_input_table widefat">
+<thead><tr>
+<th width="8%"><a href="https://en.wikipedia.org/wiki/ISO_3166-1#Current_codes" target="_blank">Country&nbsp;code</a></th>
+<th width="8%">State code</th><th>Postcode / ZIP</th><th>City</th>
+<th width="8%">Rate&nbsp;%</th><th width="8%">Tax name</th><th width="8%">Priority</th><th width="8%">Compound</th><th width="8%">Shipping</th>
+<th width="1%" class="goo-col-remove">Remove</th>
+</tr></thead>
+<tbody id="rates">
+{{range .Rows}}<tr class="goo-tax-row" data-id="{{.ID}}">
+<td class="country"><input type="text" value="{{.Country}}" placeholder="*" name="tax_rate_country[{{.ID}}]" class="wc_input_country_iso" maxlength="2"><input type="hidden" class="goo-order" name="tax_rate_order[{{.ID}}]" value="{{.Order}}"></td>
+<td class="state"><input type="text" value="{{.State}}" placeholder="*" name="tax_rate_state[{{.ID}}]"></td>
+<td class="postcode"><input type="text" value="{{.Postcodes}}" placeholder="*" name="tax_rate_postcode[{{.ID}}]"></td>
+<td class="city"><input type="text" value="{{.Cities}}" placeholder="*" name="tax_rate_city[{{.ID}}]"></td>
+<td class="rate"><input type="text" value="{{.Rate}}" placeholder="0" name="tax_rate[{{.ID}}]"></td>
+<td class="name"><input type="text" value="{{.Name}}" name="tax_rate_name[{{.ID}}]"></td>
+<td class="priority"><input type="number" step="1" min="1" value="{{.Priority}}" name="tax_rate_priority[{{.ID}}]"></td>
+<td class="compound"><input type="checkbox" class="checkbox" name="tax_rate_compound[{{.ID}}]" value="1"{{if .Compound}} checked="checked"{{end}}></td>
+<td class="apply_to_shipping"><input type="checkbox" class="checkbox" name="tax_rate_shipping[{{.ID}}]" value="1"{{if .Shipping}} checked="checked"{{end}}></td>
+<td class="goo-col-remove"><input type="checkbox" name="remove_tax_rate[{{.ID}}]" value="1" aria-label="Remove this rate"></td>
+</tr>{{end}}
+<tr class="goo-tax-row goo-new-row" data-id="new-0">
+<td class="country"><input type="text" value="" placeholder="*" name="tax_rate_country[new-0]" class="wc_input_country_iso" maxlength="2"><input type="hidden" class="goo-order" name="tax_rate_order[new-0]" value="9999"></td>
+<td class="state"><input type="text" value="" placeholder="*" name="tax_rate_state[new-0]"></td>
+<td class="postcode"><input type="text" value="" placeholder="*" name="tax_rate_postcode[new-0]"></td>
+<td class="city"><input type="text" value="" placeholder="*" name="tax_rate_city[new-0]"></td>
+<td class="rate"><input type="text" value="" placeholder="0" name="tax_rate[new-0]"></td>
+<td class="name"><input type="text" value="" name="tax_rate_name[new-0]"></td>
+<td class="priority"><input type="number" step="1" min="1" value="1" name="tax_rate_priority[new-0]"></td>
+<td class="compound"><input type="checkbox" class="checkbox" name="tax_rate_compound[new-0]" value="1"></td>
+<td class="apply_to_shipping"><input type="checkbox" class="checkbox" name="tax_rate_shipping[new-0]" value="1" checked="checked"></td>
+<td class="goo-col-remove"></td>
+</tr>
+</tbody>
+<tfoot><tr><th colspan="10">
+<button type="button" class="button plus insert">Insert row</button>
+<button type="submit" class="button minus remove_tax_rates" name="goo_do" value="remove">Remove selected row(s)</button>
+<a href="{{.ExportURL}}" class="button export">Export CSV</a>
+<span class="goo-import"><label class="screen-reader-text" for="import_file">CSV file</label><input type="file" id="import_file" name="import_file" accept=".csv,text/csv">
+<button type="submit" class="button import" name="goo_do" value="import">Import CSV</button></span>
+</th></tr></tfoot>
+</table>
+{{end}}{{end}}
+
+{{define "goo-settings-zones"}}
+<h2 class="wc-shipping-zones-heading">Shipping zones <a href="/wp-admin/goocommerce?page=settings&amp;tab=shipping&amp;zone_id=new" class="page-title-action">Add zone</a></h2>
+<p class="wc-shipping-zone-heading-help-text">A shipping zone consists of the region(s) you'd like to ship to and the shipping method(s) offered. A shopper can only be matched to one zone, and we'll use their shipping address to show them the methods available in their area.</p>
+<table class="wc-shipping-zones widefat">
+<thead><tr><th class="wc-shipping-zone-sort"></th><th class="wc-shipping-zone-name">Zone name</th><th class="wc-shipping-zone-region">Region(s)</th><th class="wc-shipping-zone-methods">Shipping method(s)</th><th class="wc-shipping-zone-actions"></th></tr></thead>
+<tbody class="wc-shipping-zone-rows">
+{{range .Zones}}{{if .ID}}<tr data-id="{{.ID}}">
+<td width="1%" class="wc-shipping-zone-sort"><input type="hidden" class="goo-order" name="zone_order[{{.ID}}]" value="{{.Order}}"></td>
+<td class="wc-shipping-zone-name"><a href="{{.EditURL}}">{{.Name}}</a></td>
+<td class="wc-shipping-zone-region">{{.Regions}}</td>
+<td class="wc-shipping-zone-methods"><ul>{{range .Methods}}<li class="wc-shipping-zone-method{{if not .Enabled}} disabled{{end}}">{{.Title}}</li>{{else}}<li class="wc-shipping-zone-method">No shipping methods offered to this zone.</li>{{end}}</ul></td>
+<td class="wc-shipping-zone-actions"><a href="{{.EditURL}}" class="wc-shipping-zone-action-edit">Edit</a> | <button type="submit" class="button-link wc-shipping-zone-delete" name="goo_do" value="delete_zone:{{.ID}}" data-confirm="Are you sure you want to delete this zone? This action cannot be undone.">Delete</button></td>
+</tr>{{end}}{{end}}
+</tbody>
+<tbody class="wc-shipping-zone-rows-rest">
+{{range .Zones}}{{if not .ID}}<tr data-id="0" class="wc-shipping-zone-worldwide">
+<td width="1%" class="wc-shipping-zone-worldwide"></td>
+<td class="wc-shipping-zone-name"><a href="{{.EditURL}}">Rest of the world</a></td>
+<td class="wc-shipping-zone-region">{{.Regions}}</td>
+<td class="wc-shipping-zone-methods"><ul>{{range .Methods}}<li class="wc-shipping-zone-method{{if not .Enabled}} disabled{{end}}">{{.Title}}</li>{{else}}<li class="wc-shipping-zone-method">No shipping methods offered to this zone.</li>{{end}}</ul></td>
+<td class="wc-shipping-zone-actions"><a href="{{.EditURL}}" class="wc-shipping-zone-action-edit">Edit</a></td>
+</tr>{{end}}{{end}}
+</tbody>
+</table>
+{{end}}
+
+{{define "goo-settings-zone"}}{{with .Zone}}
+<input type="hidden" name="methods_present" value="1">
+<table class="form-table wc-shipping-zone-settings"><tbody>
+{{if not .Rest}}<tr valign="top"><th scope="row" class="titledesc"><label for="zone_name">Zone name</label><p class="wc-shipping-zone-help-text">Give your zone a name! E.g. Local, or Worldwide.</p></th>
+<td class="forminp"><input type="text" data-attribute="zone_name" name="zone_name" id="zone_name" value="{{.Name}}" placeholder="Zone name" required></td></tr>
+<tr valign="top"><th scope="row" class="titledesc"><label for="zone_locations">Zone regions</label><p class="wc-shipping-zone-help-text">List the regions you'd like to include in your shipping zone. Customers will be matched against these regions.</p></th>
+<td class="forminp"><input type="search" class="goo-select-filter" data-target="zone_locations" placeholder="Start typing to filter zones">
+<select multiple="multiple" data-attribute="zone_locations" id="zone_locations" name="zone_locations[]" data-placeholder="Start typing to filter zones" class="wc-shipping-zone-region-select chosen_select" size="10">
+<optgroup label="Continents">{{range .Regions}}{{if eq .Group "Continents"}}<option value="{{.Value}}"{{if .Selected}} selected="selected"{{end}}>{{.Label}}</option>{{end}}{{end}}</optgroup>
+<optgroup label="Countries / States">{{range .Regions}}{{if ne .Group "Continents"}}<option value="{{.Value}}"{{if .Selected}} selected="selected"{{end}}{{if eq .Group "States"}} class="goo-state-option"{{end}}>{{if eq .Group "States"}}&nbsp;&nbsp;{{end}}{{.Label}}</option>{{end}}{{end}}</optgroup>
+</select>
+<p><label><input type="checkbox" class="wc-shipping-zone-postcodes-toggle" name="zone_limit_postcodes" value="1"{{if .Postcodes}} checked="checked"{{end}}> Limit to specific ZIP/postcodes</label></p>
+<div class="wc-shipping-zone-postcodes"{{if not .Postcodes}} hidden{{end}}><textarea name="zone_postcodes" data-attribute="zone_postcodes" id="zone_postcodes" placeholder="List 1 postcode per line" class="input-text large-text" cols="25" rows="5">{{.Postcodes}}</textarea>
+<span class="description">Postcodes containing wildcards (e.g. CB23*) or fully numeric ranges (e.g. <code>90210...99000</code>) are also supported.</span></div>
+</td></tr>{{end}}
+<tr valign="top"><th scope="row" class="titledesc"><label>Shipping methods</label><p class="wc-shipping-zone-help-text">Add the shipping methods you'd like to make available to customers in this zone.</p></th>
+<td class="">
+{{if not .New}}<table class="wc-shipping-zone-methods widefat">
+<thead><tr><th class="wc-shipping-zone-method-sort"></th><th class="wc-shipping-zone-method-title">Title</th><th class="wc-shipping-zone-method-enabled">Enabled</th><th class="wc-shipping-zone-method-description">Description</th><th class="wc-shipping-zone-method-actions"></th></tr></thead>
+<tbody class="wc-shipping-zone-method-rows">
+{{range $i, $m := .Methods}}<tr data-id="{{$m.InstanceID}}">
+<td width="1%" class="wc-shipping-zone-method-sort"><input type="hidden" class="goo-order" name="method_order[{{$m.InstanceID}}]" value="{{$i}}"></td>
+<td class="wc-shipping-zone-method-title"><a class="wc-shipping-zone-method-settings" href="{{$m.EditURL}}">{{$m.Title}}</a></td>
+<td width="1%" class="wc-shipping-zone-method-enabled"><label class="goo-toggle"><input type="checkbox" name="method_enabled[{{$m.InstanceID}}]" value="1"{{if $m.Enabled}} checked="checked"{{end}}><span class="woocommerce-input-toggle{{if $m.Enabled}} woocommerce-input-toggle--enabled{{else}} woocommerce-input-toggle--disabled{{end}}">{{if $m.Enabled}}Yes{{else}}No{{end}}</span></label></td>
+<td class="wc-shipping-zone-method-description"><strong class="wc-shipping-zone-method-type">{{$m.MethodID}}</strong> {{$m.Desc}}</td>
+<td class="wc-shipping-zone-method-actions"><a class="wc-shipping-zone-method-settings" href="{{$m.EditURL}}">Edit</a> | <button type="submit" class="button-link wc-shipping-zone-method-delete" name="goo_do" value="delete_method:{{$m.InstanceID}}">Delete</button></td>
+</tr>{{else}}<tr><td class="wc-shipping-zone-method-blank-state" colspan="5"><p>You can add multiple shipping methods within this zone. Only customers within the zone will see them.</p></td></tr>{{end}}
+</tbody>
+<tfoot><tr><td colspan="5"><select name="add_method_id" id="add_method_id">{{template "goo-store-options" (dict "Opts" .Types "Sel" "")}}</select>
+<button type="submit" class="button wc-shipping-zone-add-method" name="goo_do" value="add_method">Add shipping method</button></td></tr></tfoot>
+</table>{{else}}<p class="description">Save the zone to add shipping methods to it.</p>{{end}}
+</td></tr>
+</tbody></table>
+{{end}}{{end}}
+
+{{define "goo-settings-classes"}}
+<h2>Shipping classes</h2>
+<p>Shipping classes can be used to group products of similar type and can be used by some Shipping Methods (such as "Flat rate shipping") to provide different rates to different classes of product.</p>
+<table class="wc-shipping-classes widefat">
+<thead><tr><th class="wc-shipping-class-name">Shipping class</th><th class="wc-shipping-class-slug">Slug</th><th class="wc-shipping-class-description">Description</th><th class="wc-shipping-class-count">Product count</th><th></th></tr></thead>
+<tbody class="wc-shipping-class-rows">
+{{range .Classes}}<tr data-id="{{.ID}}">
+<td class="wc-shipping-class-name"><input type="text" name="shipping_class_name[{{.ID}}]" value="{{.Name}}" placeholder="Shipping class"></td>
+<td class="wc-shipping-class-slug"><input type="text" name="shipping_class_slug[{{.ID}}]" value="{{.Slug}}" placeholder="Slug"></td>
+<td class="wc-shipping-class-description"><input type="text" name="shipping_class_description[{{.ID}}]" value="{{.Description}}" placeholder="Description for your reference"></td>
+<td class="wc-shipping-class-count"><a href="/wp-admin/edit?post_type=product&amp;product_shipping_class={{.Slug}}">{{.Count}}</a></td>
+<td><button type="submit" class="button-link wc-shipping-class-delete" name="goo_do" value="delete_class:{{.ID}}" data-confirm="Are you sure you want to delete this shipping class?">Remove</button></td>
+</tr>{{else}}<tr><td class="wc-shipping-classes-blank-state" colspan="5"><p>No shipping classes have been created.</p></td></tr>{{end}}
+</tbody>
+<tfoot><tr>
+<td><input type="text" name="new_shipping_class_name" placeholder="New shipping class name"></td>
+<td><input type="text" name="new_shipping_class_slug" placeholder="Slug"></td>
+<td><input type="text" name="new_shipping_class_description" placeholder="Description for your reference"></td>
+<td colspan="2"></td></tr></tfoot>
+</table>
+{{end}}
+
+{{define "goo-settings-gateways"}}
+<input type="hidden" name="gateway_toggles" value="1">
+<table class="wc_gateways widefat" cellspacing="0" aria-describedby="payment_gateways_options-description">
+<thead><tr><th class="sort"></th><th class="name">Method</th><th class="status">Enabled</th><th class="description">Description</th><th class="action"></th></tr></thead>
+<tbody>
+{{range .Gateways}}<tr data-gateway_id="{{.ID}}">
+<td class="sort ui-sortable-handle" width="1%"><div class="wc-item-reorder-nav"><button type="button" class="wc-move-up" aria-label="Move up">&#9650;</button><button type="button" class="wc-move-down" aria-label="Move down">&#9660;</button></div><input type="hidden" name="gateway_order[]" value="{{.ID}}"></td>
+<td class="name" width=""><a href="{{.URL}}" class="wc-payment-gateway-method-title">{{.Title}}</a>{{if ne .Title .MethodTitle}}<span class="wc-payment-gateway-method-name">&nbsp;&ndash; {{.MethodTitle}}</span>{{end}}</td>
+<td class="status" width="1%"><label class="goo-toggle"><input type="checkbox" name="gateway_enabled[{{.ID}}]" value="1"{{if .Enabled}} checked="checked"{{end}}><span class="woocommerce-input-toggle{{if .Enabled}} woocommerce-input-toggle--enabled{{else}} woocommerce-input-toggle--disabled{{end}}">{{if .Enabled}}Yes{{else}}No{{end}}</span></label></td>
+<td class="description" width="">{{.Desc}}</td>
+<td class="action" width="1%"><a class="button alignright" href="{{.URL}}">{{if .Enabled}}Manage{{else}}Finish set up{{end}}</a></td>
+</tr>{{end}}
+</tbody></table>
+{{end}}
+
+{{define "goo-settings-emails"}}
+<table class="wc_emails widefat" cellspacing="0">
+<thead><tr><th class="wc-email-settings-table-status"></th><th class="wc-email-settings-table-name">Email</th><th class="wc-email-settings-table-email_type">Content type</th><th class="wc-email-settings-table-recipient">Recipient(s)</th><th class="wc-email-settings-table-actions"></th></tr></thead>
+<tbody>
+{{range .Emails}}<tr>
+<td class="wc-email-settings-table-status">{{if .Manual}}<span class="status-manual tips">Manually sent</span>{{else if .Enabled}}<span class="status-enabled tips">Enabled</span>{{else}}<span class="status-disabled tips">Disabled</span>{{end}}</td>
+<td class="wc-email-settings-table-name"><a href="{{.URL}}">{{.Title}}</a> <span class="woocommerce-help-tip" title="{{.Desc}}"></span></td>
+<td class="wc-email-settings-table-email_type">{{.Type}}</td>
+<td class="wc-email-settings-table-recipient">{{.Recipient}}</td>
+<td class="wc-email-settings-table-actions"><a class="button alignright" href="{{.URL}}">Manage</a></td>
+</tr>{{else}}<tr><td colspan="5">No e-mails are registered.</td></tr>{{end}}
+</tbody></table>
+{{end}}
+
+{{define "goo-settings-keys"}}
+<h2 class="wc-table-list-header">REST API <a href="/wp-admin/goocommerce?page=settings&amp;tab=advanced&amp;section=keys&amp;create-key=1" class="add-new-h2">Add key</a></h2>
+<table class="wp-list-table widefat fixed striped table-view-list keys">
+<thead><tr><th scope="col" class="manage-column column-title column-primary">Description</th><th scope="col" class="manage-column column-truncated_key">Consumer key ending in</th><th scope="col" class="manage-column column-user">User</th><th scope="col" class="manage-column column-permissions">Permissions</th><th scope="col" class="manage-column column-last_access">Last access</th></tr></thead>
+<tbody id="the-list">
+{{range .Keys}}<tr><td class="title column-title has-row-actions column-primary"><strong><a href="{{.EditURL}}" class="row-title">{{.Description}}</a></strong>
+<div class="row-actions"><span class="id">ID: {{.ID}} | </span><span class="edit"><a href="{{.EditURL}}">View/Edit</a> | </span><span class="trash"><button type="submit" class="button-link submitdelete" name="goo_do" value="revoke:{{.ID}}" data-confirm="Are you sure you want to revoke this API key?">Revoke</button></span></div></td>
+<td class="truncated_key column-truncated_key"><code>&hellip;{{.Truncated}}</code></td><td class="user column-user">{{.User}}</td><td class="permissions column-permissions">{{.Permissions}}</td><td class="last_access column-last_access">{{.LastAccess}}</td></tr>
+{{else}}<tr class="no-items"><td colspan="5"><div class="woocommerce-BlankState"><h2 class="woocommerce-BlankState-message">The Goocommerce REST API allows external apps to view and manage store data. Access is granted only to those with valid API keys.</h2>
+<a class="woocommerce-BlankState-cta button-primary button" href="/wp-admin/goocommerce?page=settings&amp;tab=advanced&amp;section=keys&amp;create-key=1">Create an API key</a></div></td></tr>{{end}}
+</tbody></table>
+{{end}}
+
+{{define "goo-settings-key"}}{{with .Key}}
+<div id="key-fields" class="settings-panel">
+<h2>Key details</h2>
+<input type="hidden" id="key_id" name="key_id" value="{{if .ID}}{{.ID}}{{end}}">
+<table id="api-keys-options" class="form-table"><tbody>
+<tr valign="top"><th scope="row" class="titledesc"><label for="key_description">Description</label></th><td class="forminp"><input maxlength="200" id="key_description" name="key_description" type="text" class="input-text regular-input" value="{{.Description}}" required></td></tr>
+<tr valign="top"><th scope="row" class="titledesc"><label for="key_user">User</label></th><td class="forminp"><select class="wc-customer-search" id="key_user" name="key_user" data-placeholder="Search for a user…">{{template "goo-store-options" (dict "Opts" .Users "Sel" .UserID)}}</select></td></tr>
+<tr valign="top"><th scope="row" class="titledesc"><label for="key_permissions">Permissions</label></th><td class="forminp"><select id="key_permissions" name="key_permissions" class="wc-enhanced-select">{{template "goo-store-options" (dict "Opts" .Perms "Sel" .Permissions)}}</select></td></tr>
+{{if .ID}}<tr valign="top"><th scope="row" class="titledesc">Consumer key ending in</th><td class="forminp"><code>&hellip;{{.Truncated}}</code></td></tr>
+<tr valign="top"><th scope="row" class="titledesc">Last access</th><td class="forminp"><span>{{.LastAccess}}</span></td></tr>{{end}}
+</tbody></table>
+{{if .ConsumerKey}}<table class="form-table" id="api-keys-generated"><tbody>
+<tr valign="top"><th scope="row" class="titledesc"><label for="key_consumer_key">Consumer key</label></th><td class="forminp"><input id="key_consumer_key" type="text" value="{{.ConsumerKey}}" size="55" readonly="readonly"> <button type="button" class="button-secondary copy-key" data-target="key_consumer_key">Copy</button></td></tr>
+<tr valign="top"><th scope="row" class="titledesc"><label for="key_consumer_secret">Consumer secret</label></th><td class="forminp"><input id="key_consumer_secret" type="text" value="{{.ConsumerSecret}}" size="55" readonly="readonly"> <button type="button" class="button-secondary copy-secret" data-target="key_consumer_secret">Copy</button></td></tr>
+</tbody></table>
+{{else}}<p class="submit"><button type="submit" class="button button-primary" id="update_api_key" name="update_api_key">{{if .ID}}Save changes{{else}}Generate API key{{end}}</button>
+{{if .ID}}<button type="submit" class="button-link submitdelete" name="goo_do" value="revoke:{{.ID}}" data-confirm="Are you sure you want to revoke this API key?" style="color:#a00;margin-left:10px">Revoke key</button>{{end}}</p>{{end}}
+</div>
+{{end}}{{end}}
+
+{{define "goo-settings-webhooks"}}
+<h2 class="wc-table-list-header">Webhooks <a href="/wp-admin/goocommerce?page=settings&amp;tab=advanced&amp;section=webhooks&amp;edit-webhook=0" class="add-new-h2">Add webhook</a></h2>
+<table class="wp-list-table widefat fixed striped table-view-list webhooks">
+<thead><tr><th scope="col" class="manage-column column-title column-primary">Name</th><th scope="col" class="manage-column column-status">Status</th><th scope="col" class="manage-column column-topic">Topic</th><th scope="col" class="manage-column column-delivery_url">Delivery URL</th></tr></thead>
+<tbody id="the-list">
+{{range .Hooks}}<tr><td class="title column-title has-row-actions column-primary"><strong><a href="{{.EditURL}}" class="row-title">{{.Name}}</a></strong>
+<div class="row-actions"><span class="id">ID: {{.ID}} | </span><span class="edit"><a href="{{.EditURL}}">Edit</a> | </span><span class="delete"><button type="submit" class="button-link submitdelete" name="goo_do" value="delete:{{.ID}}" data-confirm="Are you sure you want to delete this webhook?">Delete permanently</button></span></div></td>
+<td class="status column-status">{{.Status}}{{if .Failures}} ({{.Failures}} failed deliveries){{end}}</td><td class="topic column-topic">{{.Topic}}</td><td class="delivery_url column-delivery_url">{{.URL}}</td></tr>
+{{else}}<tr class="no-items"><td colspan="4"><div class="woocommerce-BlankState"><h2 class="woocommerce-BlankState-message">Webhooks are event notifications sent to URLs of your choice. They can be used to integrate with third-party services which support them.</h2>
+<a class="woocommerce-BlankState-cta button-primary button" href="/wp-admin/goocommerce?page=settings&amp;tab=advanced&amp;section=webhooks&amp;edit-webhook=0">Create a new webhook</a></div></td></tr>{{end}}
+</tbody></table>
+{{end}}
+
+{{define "goo-settings-webhook"}}{{with .Hook}}
+<input type="hidden" name="webhook_id" value="{{if .ID}}{{.ID}}{{end}}">
+<div id="webhook-options" class="settings-panel"><h2>Webhook data</h2>
+<table class="form-table"><tbody>
+<tr valign="top"><th scope="row" class="titledesc"><label for="webhook_name">Name</label></th><td class="forminp"><input name="webhook_name" id="webhook_name" type="text" class="input-text regular-input" value="{{.Name}}"></td></tr>
+<tr valign="top"><th scope="row" class="titledesc"><label for="webhook_status">Status</label></th><td class="forminp"><select name="webhook_status" id="webhook_status" class="wc-enhanced-select">{{template "goo-store-options" (dict "Opts" .Statuses "Sel" .Status)}}</select></td></tr>
+<tr valign="top"><th scope="row" class="titledesc"><label for="webhook_topic">Topic</label></th><td class="forminp"><select name="webhook_topic" id="webhook_topic" class="wc-enhanced-select">{{template "goo-store-options" (dict "Opts" .Topics "Sel" .Topic)}}</select></td></tr>
+<tr valign="top"><th scope="row" class="titledesc"><label for="webhook_delivery_url">Delivery URL</label></th><td class="forminp"><input name="webhook_delivery_url" id="webhook_delivery_url" type="url" class="input-text regular-input" value="{{.URL}}" required></td></tr>
+<tr valign="top"><th scope="row" class="titledesc"><label for="webhook_secret">Secret</label></th><td class="forminp"><input name="webhook_secret" id="webhook_secret" type="text" class="input-text regular-input" value="{{.Secret}}"></td></tr>
+{{if .Created}}<tr valign="top"><th scope="row" class="titledesc">Created at</th><td class="forminp">{{.Created}}</td></tr>{{end}}
+</tbody></table>
+{{if .ID}}<p><button type="submit" class="button-link submitdelete" name="goo_do" value="delete:{{.ID}}" data-confirm="Are you sure you want to delete this webhook?" style="color:#a00">Delete permanently</button></p>{{end}}
+</div>
+{{end}}{{end}}
