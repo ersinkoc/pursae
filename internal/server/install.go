@@ -148,6 +148,13 @@ func (s *Server) install(ctx context.Context, v installView) error {
 		return err
 	}
 
+	// Default widgets of a fresh install: block widgets in sidebar-1, as wp_install_defaults() stores
+	// them whatever the theme. The default theme shows no widgets; a theme with a sidebar-1 area
+	// gets them when it is activated (ensureThemeWidgets).
+	if err := s.seedWidgets(ctx); err != nil {
+		return err
+	}
+
 	values := map[string]any{}
 	for k, val := range settings.Defaults {
 		values[k] = val
@@ -160,4 +167,24 @@ func (s *Server) install(ctx context.Context, v installView) error {
 	values["wp_page_for_privacy_policy"] = privacyID
 	values["fresh_site"] = true
 	return s.settings.Set(ctx, values)
+}
+
+func (s *Server) seedWidgets(ctx context.Context) error {
+	area, err := s.store.EnsureWidgetArea(ctx, defaultTheme, "sidebar-1", "Sidebar")
+	if err != nil {
+		return err
+	}
+	defaults := []string{
+		`<!-- wp:search /-->`,
+		`<!-- wp:group --><div class="wp-block-group"><!-- wp:heading --><h2>Recent Posts</h2><!-- /wp:heading --><!-- wp:latest-posts /--></div><!-- /wp:group -->`,
+		`<!-- wp:group --><div class="wp-block-group"><!-- wp:heading --><h2>Recent Comments</h2><!-- /wp:heading --><!-- wp:latest-comments {"displayAvatar":false,"displayDate":false,"displayExcerpt":false} /--></div><!-- /wp:group -->`,
+		`<!-- wp:group --><div class="wp-block-group"><!-- wp:heading --><h2>Archives</h2><!-- /wp:heading --><!-- wp:archives /--></div><!-- /wp:group -->`,
+		`<!-- wp:group --><div class="wp-block-group"><!-- wp:heading --><h2>Categories</h2><!-- /wp:heading --><!-- wp:categories /--></div><!-- /wp:group -->`,
+	}
+	for i, content := range defaults {
+		if err := s.store.AddWidget(ctx, area, "block", i, map[string]any{"content": content}); err != nil {
+			return err
+		}
+	}
+	return nil
 }

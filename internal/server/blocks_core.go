@@ -114,13 +114,13 @@ func registerCoreBlocks(s *Server) {
 					typ = "constrained"
 				}
 			}
-			if name == "columns" || name == "buttons" || name == "social-links" {
+			if name == "columns" || name == "buttons" || name == "social-links" || name == "gallery" {
 				typ = "flex"
 			}
 			return blocks.AddClass(content, "is-layout-"+typ+" wp-block-"+name+"-is-layout-"+typ)
 		}
 	}
-	for _, n := range []string{"group", "columns", "column", "buttons", "social-links", "quote", "details"} {
+	for _, n := range []string{"group", "columns", "column", "buttons", "social-links", "quote", "details", "gallery"} {
 		blocks.RegisterDynamic("core/"+n, layout(n))
 	}
 

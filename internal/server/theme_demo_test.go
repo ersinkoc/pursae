@@ -175,7 +175,7 @@ func TestThemeLibraryAndDemoContent(t *testing.T) {
 			t.Fatalf("library tab lacks %q", want)
 		}
 	}
-	if strings.Contains(body, `category=travel"`) || strings.Contains(body, `data-slug="twentysixteen"`) {
+	if strings.Contains(body, `category=travel"`) || strings.Contains(body, `data-slug="twentytwentyfive"`) {
 		t.Fatal("library tab lists an empty category or a bundled theme")
 	}
 	_, body, _ = get(t, c, base+"/wp-admin/theme-install?browse=library&category=portfolio")
@@ -186,7 +186,7 @@ func TestThemeLibraryAndDemoContent(t *testing.T) {
 	if !strings.Contains(body, `data-slug="wpgo-fixture"`) || strings.Contains(body, `data-slug="wpgo-fixture-two"`) {
 		t.Fatal("library search")
 	}
-	if _, body, _ := get(t, c, base+"/wp-admin/theme-install?browse=all"); !strings.Contains(body, `data-slug="twentysixteen"`) {
+	if _, body, _ := get(t, c, base+"/wp-admin/theme-install?browse=all"); !strings.Contains(body, `data-slug="twentytwentyfive"`) {
 		t.Fatal("All tab lost the installed themes")
 	}
 	if code, body, _ := get(t, c, base+"/wp-admin/theme-install?action=library-screenshot&theme=wpgo-fixture&ver=1.1.0"); code != http.StatusOK || !strings.HasPrefix(body, "\x89PNG") {

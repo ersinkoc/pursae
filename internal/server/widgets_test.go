@@ -21,6 +21,8 @@ func TestWidgetsEditorAndREST(t *testing.T) {
 	if code, _, _ := post(t, c, base+"/wp-login", url.Values{"log": {"admin"}, "pwd": {"correct horse"}}); code != http.StatusFound {
 		t.Fatalf("login: %d", code)
 	}
+	// The default theme has no widget areas: a library theme with a sidebar gets the install's widgets.
+	installLibraryTheme(t, c, base, "inkwell", true)
 
 	// The screen boots WordPress' block widgets editor with its REST data preloaded.
 	code, body, _ := get(t, c, base+"/wp-admin/widgets")
@@ -138,12 +140,12 @@ func TestWidgetsEditorAndREST(t *testing.T) {
 		t.Fatal("front page order not updated")
 	}
 
-	// Move to sidebar-2 and back through a batch request, updating the content on the way.
-	if code, out = rest("PUT", "/wp/v2/widgets/"+id, map[string]any{"sidebar": "sidebar-2"}); code != http.StatusOK || out.(map[string]any)["sidebar"] != "sidebar-2" {
+	// Move to footer-1 and back through a batch request, updating the content on the way.
+	if code, out = rest("PUT", "/wp/v2/widgets/"+id, map[string]any{"sidebar": "footer-1"}); code != http.StatusOK || out.(map[string]any)["sidebar"] != "footer-1" {
 		t.Fatalf("move: %d %v", code, out)
 	}
-	if got := sidebar("sidebar-2"); len(got) != 1 || got[0] != id {
-		t.Fatalf("sidebar-2 after move: %v", got)
+	if got := sidebar("footer-1"); len(got) != 1 || got[0] != id {
+		t.Fatalf("footer-1 after move: %v", got)
 	}
 	code, out = rest("POST", "/batch/v1", map[string]any{"validation": "require-all-validate", "requests": []any{
 		map[string]any{"method": "PUT", "path": "/wp/v2/widgets/" + id + "?context=edit", "body": map[string]any{"id": id, "sidebar": "sidebar-1",

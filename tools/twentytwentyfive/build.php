@@ -196,9 +196,14 @@ file_put_contents( $out_dir . '/css/editor-global.min.css', $header . minify( $f
 echo 'style.min.css ', strlen( $bundle ), " bytes\n";
 
 // Color variations: the difference from the default global styles.
-$base = array();
+// A selector can have several rules (:root has a few): compare with all of its declarations.
+$base   = array();
+$bodies = array();
 foreach ( rules( minify( $global ) ) as $r ) {
-	$base[ $r[0] ] = $r[1];
+	$bodies[ $r[0] . '{' . $r[1] . '}' ] = true;
+	if ( false === strpos( $r[1], '{' ) ) {
+		$base[ $r[0] ] = array_merge( isset( $base[ $r[0] ] ) ? $base[ $r[0] ] : array(), decls( $r[1] ) );
+	}
 }
 $index = array();
 foreach ( glob( $theme_dir . '/styles/colors/*.json' ) as $file ) {
@@ -208,11 +213,11 @@ foreach ( glob( $theme_dir . '/styles/colors/*.json' ) as $file ) {
 	$diff = '';
 	foreach ( rules( minify( $css ) ) as $r ) {
 		list( $sel, $body ) = $r;
-		if ( isset( $base[ $sel ] ) && $base[ $sel ] === $body ) {
+		if ( isset( $bodies[ $sel . '{' . $body . '}' ] ) ) {
 			continue;
 		}
 		if ( isset( $base[ $sel ] ) && false === strpos( $body, '{' ) ) {
-			$old  = decls( $base[ $sel ] );
+			$old  = $base[ $sel ];
 			$keep = array();
 			foreach ( decls( $body ) as $k => $v ) {
 				if ( ! isset( $old[ $k ] ) || $old[ $k ] !== $v ) {

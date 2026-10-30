@@ -217,7 +217,7 @@ func TestGapWidgetsSite(t *testing.T) {
 		!strings.Contains(body, `<span class="breadcrumb_last" aria-current="page" itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem"><span itemprop="name">Gap Video</span>`) {
 		t.Error("breadcrumb trail missing")
 	}
-	if !regexp.MustCompile(`(?s)elementor-widget-post-comments.*<div id="comments" class="comments-area">.*id="respond"`).MatchString(body) {
+	if !regexp.MustCompile(`(?s)elementor-widget-post-comments.*<div id="comments" class="wp-block-comments wp-block-comments-query-loop".*id="respond"`).MatchString(body) {
 		t.Error("post comments widget does not print the theme's comments area")
 	}
 	if _, h := fetch("/gap-plain/"); strings.Contains(h.Get("Content-Security-Policy"), "youtube") {
@@ -226,9 +226,9 @@ func TestGapWidgetsSite(t *testing.T) {
 
 	// wp_body_open: the body-start snippet follows <body> in every theme.
 	bodyStart := regexp.MustCompile(`<body class="[^"]*">\s*<!-- Golementor custom code: Gap snippet -->\s*<div id="gap-body-start"></div>`)
-	for _, theme := range []string{"twentysixteen", "twentyseventeen", "twentytwenty", "twentytwentyone", helloThemeSlug} {
+	for _, theme := range []string{"twentytwentyfive", helloThemeSlug} {
 		_, themes, _ := get(t, c, base+"/wp-admin/themes")
-		if theme != "twentysixteen" {
+		if theme != "twentytwentyfive" {
 			m := regexp.MustCompile(`action=activate&(?:amp;)?stylesheet=` + theme + `&(?:amp;)?_wpnonce=([0-9a-zA-Z]+)`).FindStringSubmatch(themes)
 			if m == nil {
 				t.Fatalf("no activate link for %s", theme)

@@ -1,0 +1,314 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Wildflower Journal",
+  "blogdescription": "Field notes from meadows, creeks and quiet trails",
+  "posts_per_page": 6
+ },
+ "categories": [
+  {
+   "slug": "meadows",
+   "name": "Meadows",
+   "description": "Wildflowers, grasses and the insects that live among them."
+  },
+  {
+   "slug": "waterways",
+   "name": "Waterways",
+   "description": "Creeks, marshes and the shallow edges of the sea."
+  },
+  {
+   "slug": "trails",
+   "name": "Trails",
+   "description": "Walks worth getting up early for."
+  },
+  {
+   "slug": "field-guides",
+   "name": "Field Guides",
+   "description": "Practical notes for curious walkers."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "spring",
+   "name": "Spring"
+  },
+  {
+   "slug": "wildflowers",
+   "name": "Wildflowers"
+  },
+  {
+   "slug": "birds",
+   "name": "Birds"
+  },
+  {
+   "slug": "slow-travel",
+   "name": "Slow travel"
+  },
+  {
+   "slug": "photography",
+   "name": "Photography"
+  },
+  {
+   "slug": "conservation",
+   "name": "Conservation"
+  },
+  {
+   "slug": "maps",
+   "name": "Maps"
+  }
+ ],
+ "media": [
+  {
+   "id": "hero",
+   "file": "demo/images/hero.webp",
+   "title": "A field of northern buttercups in full bloom",
+   "alt": "A field of northern buttercups in full bloom"
+  },
+  {
+   "id": "meadow",
+   "file": "demo/images/meadow.webp",
+   "title": "A wildflower meadow in Llano, Texas, under a pale sky",
+   "alt": "A wildflower meadow in Llano, Texas, under a pale sky"
+  },
+  {
+   "id": "creek",
+   "file": "demo/images/creek.webp",
+   "title": "A shallow creek running over stones between grassy banks",
+   "alt": "A shallow creek running over stones between grassy banks"
+  },
+  {
+   "id": "birds",
+   "file": "demo/images/birds.webp",
+   "title": "Marshland birds wading in the shallows of a wildlife refuge",
+   "alt": "Marshland birds wading in the shallows of a wildlife refuge"
+  },
+  {
+   "id": "cliff",
+   "file": "demo/images/cliff.webp",
+   "title": "Cliff Palace, stone dwellings under a sandstone overhang",
+   "alt": "Cliff Palace, stone dwellings under a sandstone overhang"
+  },
+  {
+   "id": "coral",
+   "file": "demo/images/coral.webp",
+   "title": "Coral and small fish in clear, shallow water",
+   "alt": "Coral and small fish in clear, shallow water"
+  },
+  {
+   "id": "meadow-square",
+   "file": "demo/images/meadow-square.webp",
+   "title": "Close view of a meadow with orange and yellow wildflowers",
+   "alt": "Close view of a meadow with orange and yellow wildflowers"
+  },
+  {
+   "id": "ridge",
+   "file": "demo/images/ridge.webp",
+   "title": "A small totara tree alone on a grassy ridge",
+   "alt": "A small totara tree alone on a grassy ridge"
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Home",
+   "front_page": true,
+   "template": "page-no-title",
+   "content": "<!-- wp:cover {\"url\":\"{{media:hero}}\",\"id\":{{media_id:hero}},\"dimRatio\":30,\"minHeight\":640,\"minHeightUnit\":\"px\",\"align\":\"full\",\"layout\":{\"type\":\"constrained\"}} -->\n<div class=\"wp-block-cover alignfull\" style=\"min-height:640px\"><img class=\"wp-block-cover__image-background wp-image-{{media_id:hero}}\" alt=\"\" src=\"{{media:hero}}\" data-object-fit=\"cover\"/><span aria-hidden=\"true\" class=\"wp-block-cover__background has-background-dim-30 has-background-dim\"></span><div class=\"wp-block-cover__inner-container\"><!-- wp:paragraph {\"fontSize\":\"medium\"} -->\n<p class=\"has-medium-font-size\">Field notes, season by season</p>\n<!-- /wp:paragraph --><!-- wp:heading {\"level\":1,\"fontSize\":\"xx-large\"} -->\n<h1 class=\"wp-block-heading has-xx-large-font-size\">Slow walks through wild places</h1>\n<!-- /wp:heading --><!-- wp:paragraph {\"fontSize\":\"large\"} -->\n<p class=\"has-large-font-size\">Meadows in bloom, creeks after rain, birds at first light. A journal for anyone who likes to stop and look a little longer.</p>\n<!-- /wp:paragraph --><!-- wp:buttons -->\n<div class=\"wp-block-buttons\"><!-- wp:button -->\n<div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:journal}}\">Read the journal</a></div>\n<!-- /wp:button --><!-- wp:button {\"className\":\"is-style-outline\"} -->\n<div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:about}}\">About this journal</a></div>\n<!-- /wp:button --></div>\n<!-- /wp:buttons --></div></div>\n<!-- /wp:cover -->\n\n<!-- wp:group {\"style\":{\"spacing\":{\"padding\":{\"top\":\"var:preset|spacing|60\",\"bottom\":\"var:preset|spacing|60\"}}},\"layout\":{\"type\":\"constrained\"}} -->\n<div class=\"wp-block-group\" style=\"padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--60)\"><!-- wp:heading {\"textAlign\":\"center\"} -->\n<h2 class=\"wp-block-heading has-text-align-center\">What you will find here</h2>\n<!-- /wp:heading --><!-- wp:paragraph {\"align\":\"center\",\"fontSize\":\"medium\"} -->\n<p class=\"has-text-align-center has-medium-font-size\">Every post starts outside: a morning on a trail, an afternoon on a creek bank, a few hours with a notebook in the grass. We write down what we see, how to get there, and how to leave it as we found it.</p>\n<!-- /wp:paragraph --></div>\n<!-- /wp:group -->\n\n<!-- wp:columns {\"align\":\"wide\"} -->\n<div class=\"wp-block-columns alignwide\"><!-- wp:column -->\n<div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:meadow-square}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"{{media:meadow-square}}\" alt=\"Wildflowers in a meadow\" class=\"wp-image-{{media_id:meadow-square}}\"/></figure>\n<!-- /wp:image --><!-- wp:heading {\"level\":3,\"fontSize\":\"large\"} -->\n<h3 class=\"wp-block-heading has-large-font-size\"><a href=\"{{category:meadows}}\">Meadows</a></h3>\n<!-- /wp:heading --><!-- wp:paragraph -->\n<p>When the buttercups return, which flowers follow, and why mowing late matters.</p>\n<!-- /wp:paragraph --><!-- wp:paragraph {\"fontSize\":\"small\"} -->\n<p class=\"has-small-font-size\"><a href=\"{{category:meadows}}\">Read about meadows &rarr;</a></p>\n<!-- /wp:paragraph --></div>\n<!-- /wp:column --><!-- wp:column -->\n<div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:creek}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"{{media:creek}}\" alt=\"A shallow creek\" class=\"wp-image-{{media_id:creek}}\"/></figure>\n<!-- /wp:image --><!-- wp:heading {\"level\":3,\"fontSize\":\"large\"} -->\n<h3 class=\"wp-block-heading has-large-font-size\"><a href=\"{{category:waterways}}\">Waterways</a></h3>\n<!-- /wp:heading --><!-- wp:paragraph -->\n<p>Reading a creek, counting birds at the marsh and a morning on the reef.</p>\n<!-- /wp:paragraph --><!-- wp:paragraph {\"fontSize\":\"small\"} -->\n<p class=\"has-small-font-size\"><a href=\"{{category:waterways}}\">Read about waterways &rarr;</a></p>\n<!-- /wp:paragraph --></div>\n<!-- /wp:column --><!-- wp:column -->\n<div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:ridge}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"{{media:ridge}}\" alt=\"A tree on a ridge\" class=\"wp-image-{{media_id:ridge}}\"/></figure>\n<!-- /wp:image --><!-- wp:heading {\"level\":3,\"fontSize\":\"large\"} -->\n<h3 class=\"wp-block-heading has-large-font-size\"><a href=\"{{category:trails}}\">Trails</a></h3>\n<!-- /wp:heading --><!-- wp:paragraph -->\n<p>Walks we return to, with maps, timings and the best light of the day.</p>\n<!-- /wp:paragraph --><!-- wp:paragraph {\"fontSize\":\"small\"} -->\n<p class=\"has-small-font-size\"><a href=\"{{category:trails}}\">Read about trails &rarr;</a></p>\n<!-- /wp:paragraph --></div>\n<!-- /wp:column --></div>\n<!-- /wp:columns -->\n\n<!-- wp:group {\"align\":\"full\",\"className\":\"is-style-section-1\",\"style\":{\"spacing\":{\"padding\":{\"top\":\"var:preset|spacing|60\",\"bottom\":\"var:preset|spacing|60\",\"left\":\"var:preset|spacing|50\",\"right\":\"var:preset|spacing|50\"}}},\"layout\":{\"type\":\"constrained\"}} -->\n<div class=\"wp-block-group alignfull is-style-section-1\" style=\"padding-top:var(--wp--preset--spacing--60);padding-right:var(--wp--preset--spacing--50);padding-bottom:var(--wp--preset--spacing--60);padding-left:var(--wp--preset--spacing--50)\"><!-- wp:quote -->\n<blockquote class=\"wp-block-quote\"><!-- wp:paragraph -->\n<p>In every walk with nature one receives far more than he seeks.</p>\n<!-- /wp:paragraph --><cite>John Muir</cite></blockquote>\n<!-- /wp:quote --></div>\n<!-- /wp:group -->\n\n<!-- wp:group {\"style\":{\"spacing\":{\"padding\":{\"top\":\"var:preset|spacing|60\",\"bottom\":\"var:preset|spacing|60\"}}},\"layout\":{\"type\":\"constrained\"}} -->\n<div class=\"wp-block-group\" style=\"padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--60)\"><!-- wp:heading -->\n<h2 class=\"wp-block-heading\">Latest from the journal</h2>\n<!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":4,\"displayPostDate\":true,\"align\":\"wide\"} /--><!-- wp:buttons -->\n<div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} -->\n<div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:journal}}\">All posts</a></div>\n<!-- /wp:button --></div>\n<!-- /wp:buttons --></div>\n<!-- /wp:group -->"
+  },
+  {
+   "slug": "journal",
+   "title": "Journal",
+   "posts_page": true,
+   "content": ""
+  },
+  {
+   "slug": "about",
+   "title": "About",
+   "featured_media": "meadow",
+   "content": "<!-- wp:paragraph {\"fontSize\":\"large\"} -->\n<p class=\"has-large-font-size\">Wildflower Journal began as a notebook kept in a coat pocket: dates, places, what was flowering, which birds were calling. After a few years the notebook had become a map of the seasons, and it seemed a shame to keep it in a drawer.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>We are two walkers, a pair of boots each and one shared pair of binoculars. We are not botanists or ornithologists, just people who learned the names of things by looking them up, one walk at a time. If we get a name wrong, tell us; we will fix it and thank you.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:heading -->\n<h2 class=\"wp-block-heading\">How we walk</h2>\n<!-- /wp:heading -->\n\n<!-- wp:list -->\n<ul class=\"wp-block-list\"><!-- wp:list-item -->\n<li>We stay on paths, and close every gate behind us.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>We photograph flowers instead of picking them.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>We go back to the same places in every season, because a meadow in March and a meadow in June are two different places.</li>\n<!-- /wp:list-item --></ul>\n<!-- /wp:list -->\n\n<!-- wp:heading -->\n<h2 class=\"wp-block-heading\">Get in touch</h2>\n<!-- /wp:heading -->\n\n<!-- wp:paragraph -->\n<p>Questions, corrections and walk suggestions are always welcome on the <a href=\"{{page:contact}}\">contact page</a>.</p>\n<!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "contact",
+   "title": "Contact",
+   "content": "<!-- wp:paragraph {\"fontSize\":\"large\"} -->\n<p class=\"has-large-font-size\">We read every message, usually on a Sunday evening with the week&rsquo;s notes spread out on the table.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:columns -->\n<div class=\"wp-block-columns\"><!-- wp:column -->\n<div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} -->\n<h3 class=\"wp-block-heading\">Write to us</h3>\n<!-- /wp:heading --><!-- wp:paragraph -->\n<p><a href=\"mailto:hello@example.com\">hello@example.com</a></p>\n<!-- /wp:paragraph --><!-- wp:paragraph -->\n<p>Walk suggestions, corrections and questions about a route are all welcome.</p>\n<!-- /wp:paragraph --></div>\n<!-- /wp:column --><!-- wp:column -->\n<div class=\"wp-block-column\"><!-- wp:heading {\"level\":3} -->\n<h3 class=\"wp-block-heading\">Walk with us</h3>\n<!-- /wp:heading --><!-- wp:paragraph -->\n<p>Once a month we lead a free, slow walk of about two hours. Dates are announced in the journal.</p>\n<!-- /wp:paragraph --><!-- wp:paragraph -->\n<p>Bring water, sturdy shoes and something to write with.</p>\n<!-- /wp:paragraph --></div>\n<!-- /wp:column --></div>\n<!-- /wp:columns -->"
+  }
+ ],
+ "posts": [
+  {
+   "slug": "the-week-the-buttercups-came-back",
+   "title": "The week the buttercups came back",
+   "date": "2026-04-18T08:30:00",
+   "categories": [
+    "meadows"
+   ],
+   "tags": [
+    "spring",
+    "wildflowers"
+   ],
+   "featured_media": "hero",
+   "content": "<!-- wp:paragraph -->\n<p>For most of the winter the lower field is a flat, wet green. Then, sometime in April, it changes in a single week. On Monday there were a few yellow points along the ditch; by Saturday the whole slope was gold.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>Buttercups are easy to overlook because they are everywhere, but it is worth kneeling down for one. The petals have a glassy shine that seems lit from inside: a layer of cells just under the surface reflects light back out, which is why a buttercup held under your chin throws a yellow glow.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:heading -->\n<h2 class=\"wp-block-heading\">What comes next</h2>\n<!-- /wp:heading -->\n\n<!-- wp:paragraph -->\n<p>The buttercups are the start of a sequence. In the same field we usually see, in order:</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:list {\"ordered\":true} -->\n<ol class=\"wp-block-list\"><!-- wp:list-item -->\n<li>buttercups and cuckooflower in the wettest corners,</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>oxeye daisies along the drier top edge,</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>knapweed and bird&rsquo;s-foot trefoil by midsummer,</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>and the seed heads, which the goldfinches strip in August.</li>\n<!-- /wp:list-item --></ol>\n<!-- /wp:list -->\n\n<!-- wp:paragraph -->\n<p>None of it would happen if the field were cut in May. The farmer here mows in late July, after most of the flowers have set seed, and the meadow is richer every year for it.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:quote -->\n<blockquote class=\"wp-block-quote\"><!-- wp:paragraph -->\n<p>A late mow is the cheapest conservation there is.</p>\n<!-- /wp:paragraph --><cite>Our neighbour, leaning on the gate</cite></blockquote>\n<!-- /wp:quote -->",
+   "excerpt": "One week in April, the lower field turns from green to gold. Notes on buttercups, and on the flowers that follow them.",
+   "comments": [
+    {
+     "author": "Hannah",
+     "content": "We have the same field behind our house and I never knew why it shone like that. Thank you!",
+     "date": "2026-04-19T10:12:00"
+    },
+    {
+     "author": "Tomas",
+     "content": "Lovely post. Our council has started cutting the verges later too, and the difference in two years is remarkable.",
+     "date": "2026-04-20T18:40:00"
+    }
+   ],
+   "sticky": true
+  },
+  {
+   "slug": "reading-a-creek-in-five-minutes",
+   "title": "Reading a creek in five minutes",
+   "date": "2026-05-09T09:00:00",
+   "categories": [
+    "waterways",
+    "field-guides"
+   ],
+   "tags": [
+    "conservation"
+   ],
+   "featured_media": "creek",
+   "content": "<!-- wp:paragraph -->\n<p>You do not need a kit or a degree to get a sense of how healthy a small creek is. Five quiet minutes on the bank tell you a lot, if you know where to look.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:heading -->\n<h2 class=\"wp-block-heading\">Look at the stones</h2>\n<!-- /wp:heading -->\n\n<!-- wp:paragraph -->\n<p>Turn one over, gently, and put it back the way it was. Caddisfly cases, small cases built from sand grains or bits of leaf, are a very good sign: their larvae need clean, well-oxygenated water.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:heading -->\n<h2 class=\"wp-block-heading\">Look at the edges</h2>\n<!-- /wp:heading -->\n\n<!-- wp:paragraph -->\n<p>Overhanging plants keep the water cool and drop insects for fish. A bank of bare mud with nothing growing on it usually means the water level swings hard, or that cattle reach the water.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:heading -->\n<h2 class=\"wp-block-heading\">Look at the flow</h2>\n<!-- /wp:heading -->\n\n<!-- wp:paragraph -->\n<p>A healthy creek is rarely uniform. Fast riffles over gravel, slow pools on the outside of a bend, a fallen branch making an eddy: every change in speed makes a different home.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:image {\"id\":{{media_id:creek}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"{{media:creek}}\" alt=\"A shallow creek over stones\" class=\"wp-image-{{media_id:creek}}\"/><figcaption class=\"wp-element-caption\">Riffles over gravel: shallow, fast and full of oxygen.</figcaption></figure>\n<!-- /wp:image -->\n\n<!-- wp:paragraph -->\n<p>None of this replaces proper monitoring, but it turns a walk along the water into something more: a conversation with the place.</p>\n<!-- /wp:paragraph -->",
+   "comments": [
+    {
+     "author": "Priya",
+     "content": "Took my kids to our local stream with this list. We found three caddis cases and one very surprised crayfish.",
+     "date": "2026-05-11T16:05:00"
+    }
+   ]
+  },
+  {
+   "slug": "a-dawn-count-at-the-marsh",
+   "title": "A dawn count at the marsh",
+   "date": "2026-05-24T06:15:00",
+   "categories": [
+    "waterways"
+   ],
+   "tags": [
+    "birds",
+    "conservation"
+   ],
+   "featured_media": "birds",
+   "content": "<!-- wp:paragraph -->\n<p>The volunteers meet in the car park at five, with flasks and fingerless gloves. The count starts when there is just enough light to see the far reeds.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>We work in pairs: one counts, one writes. It is harder than it sounds. A flock of waders lifts, turns and lands again twenty metres away, and you have to decide whether those are the same birds or new ones.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:quote -->\n<blockquote class=\"wp-block-quote\"><!-- wp:paragraph -->\n<p>Count what you see, not what you expect to see.</p>\n<!-- /wp:paragraph --><cite>The first rule of the morning</cite></blockquote>\n<!-- /wp:quote -->\n\n<!-- wp:paragraph -->\n<p>By seven the light is flat and the birds are feeding, heads down, and the count settles. This spring the totals were steady for most species and slightly up for the small waders, which the refuge staff put down to the new shallow scrapes dug last autumn.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>If you live near a reserve, ask whether they run counts. Nobody minds a beginner who is happy to hold the clipboard.</p>\n<!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "walking-the-cliff-dwellings-at-first-light",
+   "title": "Walking the cliff dwellings at first light",
+   "date": "2026-06-14T07:00:00",
+   "categories": [
+    "trails"
+   ],
+   "tags": [
+    "slow-travel",
+    "photography"
+   ],
+   "featured_media": "cliff",
+   "content": "<!-- wp:paragraph -->\n<p>Most visitors arrive at midday, when the sandstone is white with glare. We went at opening time, when the alcove is still in shade and the stone walls glow a soft orange from the light bouncing off the canyon floor.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:image {\"id\":{{media_id:cliff}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"{{media:cliff}}\" alt=\"Stone dwellings under a cliff overhang\" class=\"wp-image-{{media_id:cliff}}\"/><figcaption class=\"wp-element-caption\">Built into the alcove more than seven hundred years ago.</figcaption></figure>\n<!-- /wp:image -->\n\n<!-- wp:heading -->\n<h2 class=\"wp-block-heading\">Practical notes</h2>\n<!-- /wp:heading -->\n\n<!-- wp:list -->\n<ul class=\"wp-block-list\"><!-- wp:list-item -->\n<li>Tours to the dwellings themselves are guided and limited; book ahead.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>The ladder climbs are short but exposed. Go at your own pace.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>Bring more water than you think. The mesa is high and dry.</li>\n<!-- /wp:list-item --></ul>\n<!-- /wp:list -->\n\n<!-- wp:paragraph -->\n<p>The best part was not the photographs. It was standing still in the doorway of a room people lived in for generations, and hearing nothing but swifts.</p>\n<!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "how-to-press-flowers-without-picking-the-last-one",
+   "title": "How to press flowers without picking the last one",
+   "date": "2026-06-28T11:00:00",
+   "categories": [
+    "field-guides",
+    "meadows"
+   ],
+   "tags": [
+    "wildflowers",
+    "conservation"
+   ],
+   "featured_media": "meadow-square",
+   "content": "<!-- wp:paragraph -->\n<p>Pressing flowers is a lovely way to remember a walk. Done carelessly, it is also a way to make a rare plant rarer. A few simple rules keep it on the right side.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:list {\"ordered\":true} -->\n<ol class=\"wp-block-list\"><!-- wp:list-item -->\n<li>Pick from your own garden, or from plants that are truly abundant where you are.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>Never pick the only one, and never more than one in twenty.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>Leave protected species, and anything on a reserve, entirely alone.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>Take a photograph instead when in doubt. It lasts longer anyway.</li>\n<!-- /wp:list-item --></ol>\n<!-- /wp:list -->\n\n<!-- wp:heading -->\n<h2 class=\"wp-block-heading\">Pressing</h2>\n<!-- /wp:heading -->\n\n<!-- wp:paragraph -->\n<p>Lay the flowers between sheets of plain paper inside a heavy book, add more books on top, and leave them for two weeks. Change the paper after two or three days if the flowers are fleshy.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>Thin petals, daisies, violets, buttercups, press beautifully. Thick, round flowers are better dried hanging upside down.</p>\n<!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "one-tree-on-the-ridge",
+   "title": "One tree on the ridge",
+   "date": "2026-08-02T18:30:00",
+   "categories": [
+    "trails"
+   ],
+   "tags": [
+    "photography"
+   ],
+   "featured_media": "ridge",
+   "content": "<!-- wp:paragraph -->\n<p>There is a single small tree on the ridge above the harbour, and we have photographed it in every month of the year. It is not a remarkable tree. That is rather the point.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>A familiar subject teaches you to see light. In winter the tree is a dark mark against a white sky; in late summer, at the end of the day, it stands in long gold grass with its shadow running halfway down the slope.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:quote -->\n<blockquote class=\"wp-block-quote\"><!-- wp:paragraph -->\n<p>Go back to the same place. It will never be the same place twice.</p>\n<!-- /wp:paragraph --></blockquote>\n<!-- /wp:quote -->\n\n<!-- wp:paragraph -->\n<p>If you want to try this, choose something you pass often: a tree, a gate, a bend in a river. Stand in the same spot each time. After a year, lay the pictures side by side.</p>\n<!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "below-the-surface-a-morning-at-the-reef",
+   "title": "Below the surface: a morning at the reef",
+   "date": "2026-09-06T09:45:00",
+   "categories": [
+    "waterways"
+   ],
+   "tags": [
+    "slow-travel"
+   ],
+   "featured_media": "coral",
+   "content": "<!-- wp:paragraph -->\n<p>We spent a morning snorkelling over a shallow reef in a state park, a few miles offshore. The water was so clear that the boat&rsquo;s shadow lay on the sand three metres down.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>Reefs are fragile, and the rules are simple: no touching, no standing, reef-safe sun cream or none at all, and a good buoyancy vest so you can hang still above the coral instead of kicking it.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:image {\"id\":{{media_id:coral}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"{{media:coral}}\" alt=\"Coral in clear water\" class=\"wp-image-{{media_id:coral}}\"/></figure>\n<!-- /wp:image -->\n\n<!-- wp:paragraph -->\n<p>What surprised us most was the noise. Put your head under and the reef crackles: shrimps, fish grazing on the coral, the whole place busy and alive.</p>\n<!-- /wp:paragraph -->"
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Home",
+     "page": "home"
+    },
+    {
+     "title": "Journal",
+     "page": "journal"
+    },
+    {
+     "title": "Topics",
+     "url": "#",
+     "children": [
+      {
+       "category": "meadows"
+      },
+      {
+       "category": "waterways"
+      },
+      {
+       "category": "trails"
+      },
+      {
+       "category": "field-guides"
+      }
+     ]
+    },
+    {
+     "page": "about"
+    },
+    {
+     "page": "contact"
+    }
+   ]
+  },
+  {
+   "name": "Footer menu",
+   "location": "footer",
+   "items": [
+    {
+     "page": "about"
+    },
+    {
+     "page": "journal"
+    },
+    {
+     "page": "contact"
+    }
+   ]
+  }
+ ],
+ "customizer": {
+  "color_scheme": "default"
+ }
+}

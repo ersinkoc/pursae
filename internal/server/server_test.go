@@ -150,15 +150,20 @@ func TestInstallLoginPublishAndView(t *testing.T) {
 		t.Fatalf("install failed: %d %s", code, body)
 	}
 
-	// Fresh install defaults: Hello world!, its comment, Sample Page and the sidebar widgets.
+	// Fresh install defaults: Hello world! and its comment, Sample Page in the navigation fallback,
+	// all in Twenty Twenty-Five.
 	code, body, _ = get(t, c, base+"/")
-	for _, want := range []string{"Hello world!", `class="site-title"`, "widget_search", "Recent Posts", "A WordPress Go Commenter", "Proudly powered by WordPress"} {
+	for _, want := range []string{"Hello world!", `class="wp-block-site-title"`, "wp-theme-twentytwentyfive", `class="wp-block-pages-list__item`, "Sample Page",
+		`Designed with <a href="https://wordpress.org" rel="nofollow">WordPress</a>`} {
 		if !strings.Contains(body, want) {
 			t.Errorf("home page misses %q", want)
 		}
 	}
 	if code != http.StatusOK {
 		t.Fatalf("home %d", code)
+	}
+	if _, single, _ := get(t, c, attr(t, body, `href="([^"]*/hello-world/)"`)); !strings.Contains(single, "A WordPress Go Commenter") || !strings.Contains(single, `class="wp-block-comments`) {
+		t.Error("Hello world! misses its comment")
 	}
 
 	// Wrong password, then the right one.

@@ -1,0 +1,273 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Field & Light",
+  "blogdescription": "Landscape photography",
+  "posts_per_page": 6
+ },
+ "categories": [
+  {
+   "slug": "landscapes",
+   "name": "Landscapes",
+   "description": "Wide views and the light that makes them."
+  },
+  {
+   "slug": "stories",
+   "name": "Stories",
+   "description": "The walks and waits behind the pictures."
+  },
+  {
+   "slug": "technique",
+   "name": "Technique",
+   "description": "Notes on gear, light and composition."
+  }
+ ],
+ "tags": [
+  {
+   "slug": "golden-hour",
+   "name": "Golden hour"
+  },
+  {
+   "slug": "black-and-white",
+   "name": "Black and white"
+  },
+  {
+   "slug": "long-lens",
+   "name": "Long lens"
+  },
+  {
+   "slug": "filters",
+   "name": "Filters"
+  },
+  {
+   "slug": "seasons",
+   "name": "Seasons"
+  }
+ ],
+ "media": [
+  {
+   "id": "meadow",
+   "file": "demo/images/meadow.webp",
+   "title": "Wildflower meadow stretching to the horizon",
+   "alt": "Wildflower meadow stretching to the horizon"
+  },
+  {
+   "id": "buttercups",
+   "file": "demo/images/buttercups.webp",
+   "title": "Northern buttercups in a field",
+   "alt": "Northern buttercups in a field"
+  },
+  {
+   "id": "ridge",
+   "file": "demo/images/ridge.webp",
+   "title": "A small tree on a grassy ridge above a harbour",
+   "alt": "A small tree on a grassy ridge above a harbour"
+  },
+  {
+   "id": "cliff",
+   "file": "demo/images/cliff.webp",
+   "title": "Cliff dwellings beneath a sandstone overhang",
+   "alt": "Cliff dwellings beneath a sandstone overhang"
+  },
+  {
+   "id": "ruins",
+   "file": "demo/images/ruins.webp",
+   "title": "Stone towers of an ancient cliff village",
+   "alt": "Stone towers of an ancient cliff village"
+  },
+  {
+   "id": "creek",
+   "file": "demo/images/creek.webp",
+   "title": "A creek winding through grassland",
+   "alt": "A creek winding through grassland"
+  },
+  {
+   "id": "birds",
+   "file": "demo/images/birds.webp",
+   "title": "Birds in a marsh at the edge of reeds",
+   "alt": "Birds in a marsh at the edge of reeds"
+  },
+  {
+   "id": "coral",
+   "file": "demo/images/coral.webp",
+   "title": "Coral under clear shallow water",
+   "alt": "Coral under clear shallow water"
+  },
+  {
+   "id": "meadow-wide",
+   "file": "demo/images/meadow-wide.webp",
+   "title": "Flowers in a meadow, close to the ground",
+   "alt": "Flowers in a meadow, close to the ground"
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Home",
+   "front_page": true,
+   "template": "page-no-title",
+   "content": "<!-- wp:cover {\"url\":\"{{media:meadow}}\",\"id\":{{media_id:meadow}},\"dimRatio\":45,\"minHeight\":680,\"minHeightUnit\":\"px\",\"align\":\"full\",\"layout\":{\"type\":\"constrained\"}} -->\n<div class=\"wp-block-cover alignfull\" style=\"min-height:680px\"><img class=\"wp-block-cover__image-background wp-image-{{media_id:meadow}}\" alt=\"\" src=\"{{media:meadow}}\" data-object-fit=\"cover\"/><span aria-hidden=\"true\" class=\"wp-block-cover__background has-background-dim-45 has-background-dim\"></span><div class=\"wp-block-cover__inner-container\"><!-- wp:heading {\"level\":1,\"fontSize\":\"xx-large\"} -->\n<h1 class=\"wp-block-heading has-xx-large-font-size\">Patient pictures of quiet places</h1>\n<!-- /wp:heading --><!-- wp:paragraph {\"fontSize\":\"large\"} -->\n<p class=\"has-large-font-size\">Landscape photography by Mara Ellison: meadows, ridges, marshes and the long minutes of waiting for the light.</p>\n<!-- /wp:paragraph --><!-- wp:buttons -->\n<div class=\"wp-block-buttons\"><!-- wp:button -->\n<div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:portfolio}}\">View the portfolio</a></div>\n<!-- /wp:button --><!-- wp:button {\"className\":\"is-style-outline\"} -->\n<div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:prints}}\">Prints &amp; commissions</a></div>\n<!-- /wp:button --></div>\n<!-- /wp:buttons --></div></div>\n<!-- /wp:cover -->\n\n<!-- wp:group {\"align\":\"wide\",\"style\":{\"spacing\":{\"padding\":{\"top\":\"var:preset|spacing|60\",\"bottom\":\"var:preset|spacing|60\"}}},\"layout\":{\"type\":\"constrained\"}} -->\n<div class=\"wp-block-group alignwide\" style=\"padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--60)\"><!-- wp:gallery {\"columns\":3,\"linkTo\":\"none\",\"align\":\"wide\"} -->\n<figure class=\"wp-block-gallery alignwide has-nested-images columns-3 is-cropped\"><!-- wp:image {\"id\":{{media_id:ridge}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"{{media:ridge}}\" alt=\"A tree on a ridge\" class=\"wp-image-{{media_id:ridge}}\"/></figure>\n<!-- /wp:image --><!-- wp:image {\"id\":{{media_id:cliff}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"{{media:cliff}}\" alt=\"Cliff dwellings\" class=\"wp-image-{{media_id:cliff}}\"/></figure>\n<!-- /wp:image --><!-- wp:image {\"id\":{{media_id:buttercups}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"{{media:buttercups}}\" alt=\"Buttercups\" class=\"wp-image-{{media_id:buttercups}}\"/></figure>\n<!-- /wp:image --><!-- wp:image {\"id\":{{media_id:creek}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"{{media:creek}}\" alt=\"A creek\" class=\"wp-image-{{media_id:creek}}\"/></figure>\n<!-- /wp:image --><!-- wp:image {\"id\":{{media_id:birds}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"{{media:birds}}\" alt=\"Marsh birds\" class=\"wp-image-{{media_id:birds}}\"/></figure>\n<!-- /wp:image --><!-- wp:image {\"id\":{{media_id:coral}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"{{media:coral}}\" alt=\"Coral\" class=\"wp-image-{{media_id:coral}}\"/></figure>\n<!-- /wp:image --></figure>\n<!-- /wp:gallery --></div>\n<!-- /wp:group -->\n\n<!-- wp:group {\"style\":{\"spacing\":{\"padding\":{\"top\":\"var:preset|spacing|60\",\"bottom\":\"var:preset|spacing|60\"}}},\"layout\":{\"type\":\"constrained\"}} -->\n<div class=\"wp-block-group\" style=\"padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--60)\"><!-- wp:columns {\"align\":\"wide\"} -->\n<div class=\"wp-block-columns alignwide\"><!-- wp:column -->\n<div class=\"wp-block-column\"><!-- wp:heading -->\n<h2 class=\"wp-block-heading\">About the work</h2>\n<!-- /wp:heading --><!-- wp:paragraph -->\n<p>I photograph a small number of places many times, in every season and every kind of weather. The pictures here are the ones where the place and the light finally agreed.</p>\n<!-- /wp:paragraph --></div>\n<!-- /wp:column --><!-- wp:column -->\n<div class=\"wp-block-column\"><!-- wp:heading -->\n<h2 class=\"wp-block-heading\">Prints</h2>\n<!-- /wp:heading --><!-- wp:paragraph -->\n<p>Every photograph is available as a signed archival print in three sizes, printed on cotton rag paper and shipped flat.</p>\n<!-- /wp:paragraph --><!-- wp:buttons -->\n<div class=\"wp-block-buttons\"><!-- wp:button {\"className\":\"is-style-outline\"} -->\n<div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:prints}}\">Order a print</a></div>\n<!-- /wp:button --></div>\n<!-- /wp:buttons --></div>\n<!-- /wp:column --></div>\n<!-- /wp:columns --></div>\n<!-- /wp:group -->\n\n<!-- wp:group {\"style\":{\"spacing\":{\"padding\":{\"top\":\"var:preset|spacing|60\",\"bottom\":\"var:preset|spacing|60\"}}},\"layout\":{\"type\":\"constrained\"}} -->\n<div class=\"wp-block-group\" style=\"padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--60)\"><!-- wp:heading -->\n<h2 class=\"wp-block-heading\">From the journal</h2>\n<!-- /wp:heading --><!-- wp:latest-posts {\"postsToShow\":3,\"displayPostDate\":true,\"align\":\"wide\"} /--></div>\n<!-- /wp:group -->"
+  },
+  {
+   "slug": "portfolio",
+   "title": "Portfolio",
+   "template": "page-no-title",
+   "content": "<!-- wp:group {\"style\":{\"spacing\":{\"padding\":{\"top\":\"var:preset|spacing|60\",\"bottom\":\"var:preset|spacing|60\"}}},\"layout\":{\"type\":\"constrained\"}} -->\n<div class=\"wp-block-group\" style=\"padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--60)\"><!-- wp:heading {\"level\":1} -->\n<h1 class=\"wp-block-heading\">Portfolio</h1>\n<!-- /wp:heading --><!-- wp:paragraph {\"fontSize\":\"large\"} -->\n<p class=\"has-large-font-size\">Selected photographs, 2022 to 2026. Click through the journal for the stories behind them.</p>\n<!-- /wp:paragraph --></div>\n<!-- /wp:group -->\n\n<!-- wp:gallery {\"columns\":3,\"linkTo\":\"none\",\"align\":\"wide\"} -->\n<figure class=\"wp-block-gallery alignwide has-nested-images columns-3 is-cropped\"><!-- wp:image {\"id\":{{media_id:meadow-wide}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"{{media:meadow-wide}}\" alt=\"Flowers close to the ground\" class=\"wp-image-{{media_id:meadow-wide}}\"/></figure>\n<!-- /wp:image --><!-- wp:image {\"id\":{{media_id:ridge}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"{{media:ridge}}\" alt=\"A tree on a ridge\" class=\"wp-image-{{media_id:ridge}}\"/></figure>\n<!-- /wp:image --><!-- wp:image {\"id\":{{media_id:ruins}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"{{media:ruins}}\" alt=\"Stone towers\" class=\"wp-image-{{media_id:ruins}}\"/></figure>\n<!-- /wp:image --><!-- wp:image {\"id\":{{media_id:cliff}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"{{media:cliff}}\" alt=\"Cliff dwellings\" class=\"wp-image-{{media_id:cliff}}\"/></figure>\n<!-- /wp:image --><!-- wp:image {\"id\":{{media_id:buttercups}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"{{media:buttercups}}\" alt=\"Buttercups\" class=\"wp-image-{{media_id:buttercups}}\"/></figure>\n<!-- /wp:image --><!-- wp:image {\"id\":{{media_id:meadow}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"{{media:meadow}}\" alt=\"A wide meadow\" class=\"wp-image-{{media_id:meadow}}\"/></figure>\n<!-- /wp:image --><!-- wp:image {\"id\":{{media_id:creek}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"{{media:creek}}\" alt=\"A creek\" class=\"wp-image-{{media_id:creek}}\"/></figure>\n<!-- /wp:image --><!-- wp:image {\"id\":{{media_id:birds}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"{{media:birds}}\" alt=\"Marsh birds\" class=\"wp-image-{{media_id:birds}}\"/></figure>\n<!-- /wp:image --><!-- wp:image {\"id\":{{media_id:coral}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"{{media:coral}}\" alt=\"Coral\" class=\"wp-image-{{media_id:coral}}\"/></figure>\n<!-- /wp:image --></figure>\n<!-- /wp:gallery -->\n\n<!-- wp:spacer {\"height\":\"var:preset|spacing|60\"} -->\n<div style=\"height:var(--wp--preset--spacing--60)\" aria-hidden=\"true\" class=\"wp-block-spacer\"></div>\n<!-- /wp:spacer -->"
+  },
+  {
+   "slug": "journal",
+   "title": "Journal",
+   "posts_page": true,
+   "content": ""
+  },
+  {
+   "slug": "about",
+   "title": "About",
+   "featured_media": "ridge",
+   "content": "<!-- wp:paragraph {\"fontSize\":\"large\"} -->\n<p class=\"has-large-font-size\">I am a landscape photographer working mostly within a day&rsquo;s walk of home. I came to photography late, after years of walking the same hills with a notebook, and it changed how I look at everything.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>My approach is slow. I visit a place, often without a camera, and come back when the season, the weather and the time of day line up with the picture I have in mind. Sometimes that takes a week. Sometimes it takes three years.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:heading -->\n<h2 class=\"wp-block-heading\">Exhibitions and publications</h2>\n<!-- /wp:heading -->\n\n<!-- wp:list -->\n<ul class=\"wp-block-list\"><!-- wp:list-item -->\n<li><em>Edges</em>, a group show of coastal photography, Harbour Gallery, 2025</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li><em>Twelve Months on the Ridge</em>, a small book of photographs, 2024</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>Regular contributor to regional walking and nature magazines</li>\n<!-- /wp:list-item --></ul>\n<!-- /wp:list -->"
+  },
+  {
+   "slug": "prints",
+   "title": "Prints & Commissions",
+   "featured_media": "buttercups",
+   "content": "<!-- wp:paragraph {\"fontSize\":\"large\"} -->\n<p class=\"has-large-font-size\">All photographs on this site are available as signed, limited-edition prints.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:list -->\n<ul class=\"wp-block-list\"><!-- wp:list-item -->\n<li><strong>Small</strong>: 30 &times; 40 cm, edition of 50</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li><strong>Medium</strong>: 50 &times; 70 cm, edition of 25</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li><strong>Large</strong>: 70 &times; 100 cm, edition of 10</li>\n<!-- /wp:list-item --></ul>\n<!-- /wp:list -->\n\n<!-- wp:paragraph -->\n<p>Prints are made on 100% cotton rag paper with archival pigment inks and are shipped flat, unframed, with a certificate of authenticity.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:heading -->\n<h2 class=\"wp-block-heading\">Commissions</h2>\n<!-- /wp:heading -->\n\n<!-- wp:paragraph -->\n<p>I take on a small number of commissions each year, mostly for books, landscape architects and conservation charities. Tell me about the place and what you need the pictures to do.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:buttons -->\n<div class=\"wp-block-buttons\"><!-- wp:button -->\n<div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:contact}}\">Get in touch</a></div>\n<!-- /wp:button --></div>\n<!-- /wp:buttons -->"
+  },
+  {
+   "slug": "contact",
+   "title": "Contact",
+   "content": "<!-- wp:paragraph {\"fontSize\":\"large\"} -->\n<p class=\"has-large-font-size\">For prints, commissions, licensing and talks, write to <a href=\"mailto:studio@example.com\">studio@example.com</a>. I reply within a few days, unless I am somewhere without a signal, which is more often than you might think.</p>\n<!-- /wp:paragraph -->"
+  }
+ ],
+ "posts": [
+  {
+   "slug": "waiting-for-the-wind-to-stop",
+   "title": "Waiting for the wind to stop",
+   "date": "2026-05-30T20:00:00",
+   "categories": [
+    "stories"
+   ],
+   "tags": [
+    "golden-hour",
+    "seasons"
+   ],
+   "featured_media": "meadow",
+   "content": "<!-- wp:paragraph -->\n<p>The meadow photograph on the front page took four evenings. The light was right on all four. The wind was not.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>Flowers move. At a shutter speed slow enough for a small aperture and low ISO, every stem becomes a soft streak. Some photographers love that; I wanted every petal still.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>On the fourth evening the breeze dropped about ten minutes before sunset, as it often does inland. I had perhaps ninety seconds of stillness. I made eleven frames. One of them is the picture.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:quote -->\n<blockquote class=\"wp-block-quote\"><!-- wp:paragraph -->\n<p>Landscape photography is mostly waiting, with a little bit of pressing a button at the end.</p>\n<!-- /wp:paragraph --></blockquote>\n<!-- /wp:quote -->",
+   "comments": [
+    {
+     "author": "Jonas",
+     "content": "Ninety seconds after four evenings. That is the most honest description of landscape work I have read.",
+     "date": "2026-06-01T08:30:00"
+    }
+   ]
+  },
+  {
+   "slug": "the-ridge-three-seasons",
+   "title": "The ridge, three seasons",
+   "date": "2026-03-08T17:00:00",
+   "categories": [
+    "landscapes",
+    "stories"
+   ],
+   "tags": [
+    "seasons"
+   ],
+   "featured_media": "ridge",
+   "content": "<!-- wp:paragraph -->\n<p>A single tree on a ridge, photographed from the same spot in winter, spring and late summer.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:image {\"id\":{{media_id:ridge}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"{{media:ridge}}\" alt=\"A tree on a grassy ridge\" class=\"wp-image-{{media_id:ridge}}\"/></figure>\n<!-- /wp:image -->\n\n<!-- wp:paragraph -->\n<p>Revisiting a subject is the best exercise I know. The first visit is about the place; every visit after is about the light, the season and what you have learned since.</p>\n<!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "shooting-into-the-light-at-the-cliff-dwellings",
+   "title": "Shooting into the light at the cliff dwellings",
+   "date": "2026-04-12T07:30:00",
+   "categories": [
+    "technique",
+    "landscapes"
+   ],
+   "tags": [
+    "golden-hour"
+   ],
+   "featured_media": "cliff",
+   "content": "<!-- wp:paragraph -->\n<p>Midday at the cliff dwellings is all contrast: blinding sandstone, black shadow. At opening time, the alcove is in shade and lit by light reflected off the canyon, which is soft, warm and forgiving.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:heading -->\n<h2 class=\"wp-block-heading\">What helped</h2>\n<!-- /wp:heading -->\n\n<!-- wp:list -->\n<ul class=\"wp-block-list\"><!-- wp:list-item -->\n<li>Arriving before the sun reached the alcove.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>Bracketing three exposures for the brightest sky.</li>\n<!-- /wp:list-item --><!-- wp:list-item -->\n<li>A lens hood, and a hand held up to shade the front element.</li>\n<!-- /wp:list-item --></ul>\n<!-- /wp:list -->\n\n<!-- wp:image {\"id\":{{media_id:ruins}},\"sizeSlug\":\"large\",\"linkDestination\":\"none\"} -->\n<figure class=\"wp-block-image size-large\"><img src=\"{{media:ruins}}\" alt=\"Stone towers of the cliff village\" class=\"wp-image-{{media_id:ruins}}\"/></figure>\n<!-- /wp:image -->"
+  },
+  {
+   "slug": "why-i-still-carry-a-polarizer",
+   "title": "Why I still carry a polarizer",
+   "date": "2026-02-14T12:00:00",
+   "categories": [
+    "technique"
+   ],
+   "tags": [
+    "filters"
+   ],
+   "featured_media": "coral",
+   "content": "<!-- wp:paragraph -->\n<p>Most effects can be added later on a computer. A polarizing filter is one of the few that cannot: it removes reflections at the moment of capture, and no software can recover what the reflection hid.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>On water it lets you see the stones in a creek bed. On wet leaves after rain it brings back their color. On a blue sky it deepens the blue, though a wide lens will show it unevenly, so go gently.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:quote -->\n<blockquote class=\"wp-block-quote\"><!-- wp:paragraph -->\n<p>Turn the ring slowly and watch. When the glare disappears, stop.</p>\n<!-- /wp:paragraph --></blockquote>\n<!-- /wp:quote -->"
+  },
+  {
+   "slug": "marsh-birds-and-the-long-lens",
+   "title": "Marsh birds and the long lens",
+   "date": "2026-09-20T06:30:00",
+   "categories": [
+    "technique",
+    "stories"
+   ],
+   "tags": [
+    "long-lens"
+   ],
+   "featured_media": "birds",
+   "content": "<!-- wp:paragraph -->\n<p>I am not a wildlife photographer, but a marsh at dawn is a landscape full of birds, and sometimes you want them in the frame.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>A long lens compresses distance and lets you stay well back, which matters more than any technique. If a bird changes what it is doing because of you, you are too close.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>Sit still, let the birds forget you, and photograph the scene rather than the bird: reeds, water, light, and somewhere in it, a small shape feeding.</p>\n<!-- /wp:paragraph -->"
+  },
+  {
+   "slug": "a-creek-in-black-and-white",
+   "title": "A creek in black and white",
+   "date": "2026-10-04T15:00:00",
+   "categories": [
+    "landscapes"
+   ],
+   "tags": [
+    "black-and-white"
+   ],
+   "featured_media": "creek",
+   "content": "<!-- wp:paragraph -->\n<p>Some days the color is the subject. Other days it gets in the way. On a grey afternoon the creek was all texture: wet stone, moving water, dark grass.</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>Converting to black and white is not just removing color; it is deciding how bright each color becomes. Darkening the greens made the water glow, and the picture finally said what I saw.</p>\n<!-- /wp:paragraph -->"
+  }
+ ],
+ "menus": [
+  {
+   "name": "Main menu",
+   "location": "primary",
+   "items": [
+    {
+     "page": "portfolio"
+    },
+    {
+     "page": "journal"
+    },
+    {
+     "page": "prints"
+    },
+    {
+     "page": "about"
+    },
+    {
+     "page": "contact"
+    }
+   ]
+  },
+  {
+   "name": "Footer menu",
+   "location": "footer",
+   "items": [
+    {
+     "category": "landscapes"
+    },
+    {
+     "category": "stories"
+    },
+    {
+     "category": "technique"
+    }
+   ]
+  }
+ ],
+ "customizer": {
+  "color_scheme": "twilight"
+ }
+}

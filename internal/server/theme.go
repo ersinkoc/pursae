@@ -70,6 +70,9 @@ type Theme struct {
 	// BodyClasses adds the theme's body_class filter output.
 	BodyClasses func(s *Server, v *siteView) []string
 
+	// Demos are a bundled theme's demo content sets (theme_demo_sets.go).
+	Demos []themeDemoSet
+
 	// Package is set for a theme installed as a package (theme_package.go): its manifest and directory.
 	Package *themePackage
 
@@ -300,9 +303,23 @@ func (s *Server) ensureThemeWidgets(ctx context.Context, t, from *Theme) error {
 	if err != nil {
 		return err
 	}
+	declared := map[string]bool{}
 	for i, a := range from.WidgetAreas {
+		declared[a.ID] = true
 		if i >= len(ids) {
 			break
+		}
+		for n, w := range prev[a.ID] {
+			if err := s.store.AddWidget(ctx, ids[i], w.Type, n, w.Settings); err != nil {
+				return err
+			}
+		}
+	}
+	// Areas the previous theme kept without showing them (the install's sidebar-1 under the default
+	// theme, which has no widget areas) go to the area of the same id, like retrieve_widgets().
+	for i, a := range t.WidgetAreas {
+		if declared[a.ID] || len(prev[a.ID]) == 0 {
+			continue
 		}
 		for n, w := range prev[a.ID] {
 			if err := s.store.AddWidget(ctx, ids[i], w.Type, n, w.Settings); err != nil {
@@ -461,6 +478,19 @@ func (s *Server) themesScreen(c *gin.Context) {
 		c.Redirect(http.StatusFound, "/wp-admin/themes?deleted=true")
 		return
 	}
+	if c.Query("action") == "demo-content" { // a bundled theme's demo sets (theme_demo_sets.go)
+		t := s.installedTheme(c.Query("stylesheet"))
+		if !u.Can("import", nil) {
+			c.String(http.StatusForbidden, "Sorry, you are not allowed to import content into this site.")
+			return
+		}
+		if t == nil || len(t.Demos) == 0 {
+			c.String(http.StatusBadRequest, "This theme has no demo content.")
+			return
+		}
+		s.themeDemoChooser(c, t)
+		return
+	}
 	if a := c.Query("action"); a == "import-demo" || a == "remove-demo" { // theme_demo.go
 		slug := c.Query("stylesheet")
 		if !u.Can("import", nil) {
@@ -472,8 +502,12 @@ func (s *Server) themesScreen(c *gin.Context) {
 			return
 		}
 		t := s.installedTheme(slug)
-		if t == nil || t.Package == nil || t.Package.Manifest.Demo == "" {
+		if !themeHasDemo(t) {
 			c.String(http.StatusBadRequest, "This theme has no demo content.")
+			return
+		}
+		if len(t.Demos) > 0 {
+			s.themeDemoAction(c, t, a)
 			return
 		}
 		if a == "remove-demo" {
@@ -498,10 +532,13 @@ func (s *Server) themesScreen(c *gin.Context) {
 	}
 	active := s.activeTheme()
 	demoURL := func(action, slug string) string {
+		if t := themeBySlug(slug); t != nil && len(t.Demos) > 0 { // bundled sets: the chooser imports and removes
+			return demoChooserURL(slug)
+		}
 		return "/wp-admin/themes?action=" + action + "&stylesheet=" + slug + "&_wpnonce=" + s.nonce(c, action+"_"+slug)
 	}
-	hasDemo := active.Package != nil && active.Package.Manifest.Demo != "" && u.Can("import", nil)
-	demoImported := hasDemo && s.demoImported(active.Slug)
+	hasDemo := themeHasDemo(active) && u.Can("import", nil)
+	demoImported := hasDemo && len(active.Demos) == 0 && s.demoImported(active.Slug)
 	var d themesData
 	for _, t := range s.installedThemes() {
 		if t.Custom { // Golementor: saved themes are listed in their own section

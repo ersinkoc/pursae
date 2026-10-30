@@ -56,7 +56,7 @@ func init() {
 			"Block Patterns", "RTL Language Support", "Sticky Post", "Threaded Comments", "Translation Ready", "Wide Blocks", "Block Styles",
 			"Style Variations", "Accessibility Ready", "Blog", "Portfolio", "News"},
 		Screenshot:    "screenshot.png",
-		MenuLocations: []MenuLocation{{"primary", "Header"}, {"footer", "Footer"}},
+		MenuLocations: []MenuLocation{{"primary", "Primary Menu"}, {"footer", "Footer Menu"}},
 		EditorStyles:  []string{"css/editor-style.css"},
 		Palette:       tt5Palette(),
 		PreloadFonts:  []string{"fonts/manrope/Manrope-VariableFont_wght.woff2"},
@@ -65,6 +65,14 @@ func init() {
 			"custom-logo":  map[string]any{"width": 120, "height": 120, "flex-width": true, "flex-height": true, "header-text": "", "unlink-homepage-logo": false},
 			"post-formats": []string{"aside", "audio", "chat", "gallery", "image", "link", "quote", "status", "video"},
 			"html5":        []string{"comment-form", "comment-list", "gallery", "caption", "style", "script", "search-form"},
+		},
+		Templates: map[string]string{"page-no-title": "Page No Title"},
+		// Demo content sets (theme_demo_sets.go), built by tools/twentytwentyfive/demos.py.
+		Demos: []themeDemoSet{
+			{Slug: "wildflower-journal", Name: "Wildflower Journal", Description: "A nature and travel blog: meadows, creeks and quiet trails, with field notes and walking guides.", Image: "demos/wildflower-journal.webp"},
+			{Slug: "botanica", Name: "Botanica", Description: "A garden studio and flower shop: seasonal flowers, plant care notes, workshops and opening hours.", Image: "demos/botanica.webp"},
+			{Slug: "field-and-light", Name: "Field & Light", Description: "A landscape photography portfolio: a gallery homepage, prints and commissions, and a journal of stories behind the pictures.", Image: "demos/field-and-light.webp"},
+			{Slug: "slow-seasons", Name: "Slow Seasons", Description: "A slow-living magazine: home and garden, seasonal cooking, time outdoors and short essays, with a newsletter page.", Image: "demos/slow-seasons.webp"},
 		},
 		BlockStyles:        tt5BundledBlocks,
 		Settings:           tt5ThemeSettings(),
@@ -178,6 +186,13 @@ func (s *Server) tt5Prepare(c *gin.Context, v *siteView) {
 		d["FooterNav"] = template.HTML(`<nav class="is-vertical wp-block-navigation is-layout-flex wp-container-core-navigation-is-layout-831b2db5 wp-block-navigation-is-layout-flex" aria-label="Footer"><ul class="wp-block-navigation__container is-vertical wp-block-navigation">` + fi + `</ul></nav>`)
 	}
 
+	// templates/page-no-title.html: the content alone, no title or featured image.
+	if v.Post != nil && v.Post.Type == "page" {
+		if tpl, _ := v.Post.Post.Meta["_wp_page_template"].(string); tpl == "page-no-title" {
+			d["NoTitle"] = true
+		}
+	}
+
 	// Posts.
 	eager := true // the first featured image is the largest paint: no lazy loading, high priority
 	if v.Post != nil {
@@ -207,7 +222,7 @@ func (s *Server) tt5Prepare(c *gin.Context, v *siteView) {
 
 	// "More posts" (single and search).
 	if v.Template == "single" || v.Template == "search" {
-		d["MorePosts"] = s.tt5MorePosts(ctx, lb)
+		d["MorePosts"] = s.tt5MorePosts(ctx, lb, currentUser(c))
 	}
 
 	// comments.php: the comments block's title, 50px avatars and the post-comments-form wrapper.
@@ -395,8 +410,10 @@ func (s *Server) tt5PostNav(ctx context.Context, p *store.Post, lb *links.Builde
 }
 
 // tt5MorePosts is twentytwentyfive/more-posts: the four latest posts.
-func (s *Server) tt5MorePosts(ctx context.Context, lb *links.Builder) template.HTML {
-	posts, _, err := s.store.QueryPosts(ctx, store.PostQuery{Types: []string{"post"}, Statuses: []string{"publish"}, OrderBy: "date", Order: "DESC", PerPage: 4, Page: 1})
+func (s *Server) tt5MorePosts(ctx context.Context, lb *links.Builder, u *store.User) template.HTML {
+	pq := store.PostQuery{Types: []string{"post"}, Statuses: []string{"publish"}, OrderBy: "date", Order: "DESC", PerPage: 4, Page: 1}
+	pq.ExcludeID = s.gooListingExclude(withPluginUser(ctx, u), "post") // Goocommerce Memberships: hidden restricted posts
+	posts, _, err := s.store.QueryPosts(ctx, pq)
 	if err != nil || len(posts) == 0 {
 		return ""
 	}

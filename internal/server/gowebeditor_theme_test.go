@@ -38,7 +38,7 @@ func TestGoWebEditorThemeBuilder(t *testing.T) {
 		t.Fatalf("theme builder: %d %.300s", code, body)
 	}
 	for _, want := range []string{"<h1 class=\"wp-heading-inline\">Theme Builder</h1>", "Headers", "Single Posts", "404 Pages", "Save as theme",
-		`href="/wp-admin/gowebeditor-theme-builder"`, "Twenty Sixteen"} {
+		`href="/wp-admin/gowebeditor-theme-builder"`, "Twenty Twenty-Five"} {
 		if !strings.Contains(body, want) {
 			t.Errorf("theme builder misses %q", want)
 		}
@@ -149,7 +149,7 @@ func TestGoWebEditorThemeBuilder(t *testing.T) {
 			t.Errorf("single post with parts misses %q", want)
 		}
 	}
-	if strings.Contains(body, "twentysixteen-style-css") {
+	if strings.Contains(body, "twentytwentyfive-style-css") {
 		t.Error("the bundled theme's stylesheet is still printed in theme-part mode")
 	}
 	_, body, _ = getPage(t, c, base+"/?cat=1")
@@ -317,10 +317,10 @@ func TestGoWebEditorThemeBuilder(t *testing.T) {
 	}
 
 	// Switch to a bundled theme: the parts still apply on top of it.
-	activate("twentysixteen")
+	activate("twentytwentyfive")
 	_, body, _ = getPage(t, c, base+"/?p=1")
-	if !strings.Contains(body, "wp-theme-twentysixteen") || !strings.Contains(body, "Working Header v2") || !strings.Contains(body, "footer part") {
-		t.Errorf("parts on Twenty Sixteen after switching")
+	if !strings.Contains(body, "wp-theme-twentytwentyfive") || !strings.Contains(body, "Working Header v2") || !strings.Contains(body, "footer part") {
+		t.Errorf("parts on Twenty Twenty-Five after switching")
 	}
 
 	// Activate the saved theme: its JSON is loaded into the working copy and Hello Golementor

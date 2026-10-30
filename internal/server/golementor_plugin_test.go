@@ -257,12 +257,12 @@ func TestGolementorDeactivateFallsBackToDefaultTheme(t *testing.T) {
 		t.Errorf("stylesheet %q after deactivating, want %s", got, defaultTheme)
 	}
 	_, body, _ := get(t, c, base+loc)
-	if !strings.Contains(body, "Hello Golementor belongs to Golementor") || !strings.Contains(body, "Twenty Sixteen") {
+	if !strings.Contains(body, "Hello Golementor belongs to Golementor") || !strings.Contains(body, "Twenty Twenty-Five") {
 		t.Error("the Plugins screen has no notice about the theme switch")
 	}
 	_, body, _ = get(t, c, base+"/")
-	if !strings.Contains(body, "wp-theme-twentysixteen") || strings.Contains(strings.ToLower(body), "elementor") {
-		t.Error("the site does not render with Twenty Sixteen after deactivating")
+	if !strings.Contains(body, "wp-theme-twentytwentyfive") || strings.Contains(strings.ToLower(body), "elementor") {
+		t.Error("the site does not render with Twenty Twenty-Five after deactivating")
 	}
 	_, body, _ = get(t, c, base+"/wp-admin/themes")
 	if strings.Contains(body, "hello-gowebeditor") {
@@ -276,7 +276,7 @@ func TestGolementorDeactivateFallsBackToDefaultTheme(t *testing.T) {
 	if th := srv.activeTheme(); th.Slug != defaultTheme {
 		t.Errorf("active theme %s while Golementor is off, want %s", th.Slug, defaultTheme)
 	}
-	if _, body, _ = get(t, c, base+"/"); !strings.Contains(body, "wp-theme-twentysixteen") {
+	if _, body, _ = get(t, c, base+"/"); !strings.Contains(body, "wp-theme-twentytwentyfive") {
 		t.Error("a leftover Hello Golementor stylesheet does not fall back to the default theme")
 	}
 }
@@ -356,18 +356,17 @@ func TestInactiveNativePluginLeavesAdmin(t *testing.T) {
 
 // Deactivating goes back to the theme that was active before Golementor, not always the default.
 func TestGolementorRestoresPreviousTheme(t *testing.T) {
+	t.Setenv("WPGO_THEMES_DIR", t.TempDir())
 	ts, c, srv := testServerBuilderOff(t)
 	base := ts.URL
 	installAndLogin(t, ts, c)
-	if err := srv.switchTheme(context.Background(), "classic"); err != nil {
-		t.Fatal(err)
-	}
+	installLibraryTheme(t, c, base, "inkwell", true)
 	togglePlugin(t, c, base, "activate")
 	if got := srv.settings.String("stylesheet"); got != helloThemeSlug {
 		t.Fatalf("stylesheet %q after activating, want Hello Golementor", got)
 	}
 	togglePlugin(t, c, base, "deactivate")
-	if got := srv.settings.String("stylesheet"); got != "classic" {
-		t.Errorf("stylesheet %q after deactivating, want classic back", got)
+	if got := srv.settings.String("stylesheet"); got != "inkwell" {
+		t.Errorf("stylesheet %q after deactivating, want inkwell back", got)
 	}
 }
