@@ -320,7 +320,7 @@ func (s *Server) bkAdmin(c *gin.Context) {
 }
 
 func bkAdminHead(active string) template.HTML {
-	tabs := []gooOpt{{"", "All Bookings"}, {"calendar", "Calendar"}, {"create", "Create Booking"}}
+	tabs := []gooOpt{{"", "All Bookings"}, {"calendar", "Calendar"}, {"create", "Create Booking"}, {"resources", "Resources"}}
 	out := `<h1 class="wp-heading-inline">Bookings</h1> <a href="/wp-admin/goocommerce?page=bookings&amp;action=create" class="page-title-action">Add Booking</a><hr class="wp-header-end"><nav class="nav-tab-wrapper woo-nav-tab-wrapper">`
 	for _, t := range tabs {
 		cls := "nav-tab"
@@ -328,7 +328,9 @@ func bkAdminHead(active string) template.HTML {
 			cls += " nav-tab-active"
 		}
 		href := "/wp-admin/goocommerce?page=bookings"
-		if t.Value != "" {
+		if t.Value == "resources" {
+			href = "/wp-admin/goocommerce?page=booking-resources"
+		} else if t.Value != "" {
 			href += "&amp;action=" + t.Value
 		}
 		out += `<a href="` + href + `" class="` + cls + `">` + t.Label + `</a>`
@@ -429,9 +431,9 @@ func (s *Server) bkAdminList(c *gin.Context) {
 	base := "/wp-admin/goocommerce?page=bookings&post_status=" + url.QueryEscape(status) + "&filter_bookings=" + c.Query("filter_bookings") + "&m=" + url.QueryEscape(month)
 	b.WriteString(gxPagination(base, page, total, per) + `<br class="clear"></div></form>`)
 	b.WriteString(`<table class="wp-list-table widefat fixed striped posts"><thead><tr><th scope="col" class="manage-column column-booking_status">Status</th><th scope="col" class="manage-column column-booking_id column-primary">ID</th>` +
-		`<th scope="col">Booked Product</th><th scope="col"># of Persons</th><th scope="col">Booked By</th><th scope="col">Order</th><th scope="col">Start Date</th><th scope="col">End Date</th><th scope="col">Actions</th></tr></thead><tbody id="the-list">`)
+		`<th scope="col">Booked Product</th><th scope="col">Resource</th><th scope="col"># of Persons</th><th scope="col">Booked By</th><th scope="col">Order</th><th scope="col">Start Date</th><th scope="col">End Date</th><th scope="col">Actions</th></tr></thead><tbody id="the-list">`)
 	if len(list) == 0 {
-		b.WriteString(`<tr class="no-items"><td class="colspanchange" colspan="9">No Bookings found</td></tr>`)
+		b.WriteString(`<tr class="no-items"><td class="colspanchange" colspan="10">No Bookings found</td></tr>`)
 	}
 	nonce := s.nonce(c, "goo-bookings")
 	for _, bk := range list {
@@ -448,8 +450,9 @@ func (s *Server) bkAdminList(c *gin.Context) {
 			actions += ` <a class="button" href="/wp-admin/goocommerce?page=bookings&amp;action=cancel&amp;id=` + itoa64(bk.ID) + `&amp;_wpnonce=` + nonce + `">Cancel</a>`
 		}
 		fmt.Fprintf(&b, `<tr id="booking-%d"><td class="booking_status column-booking_status"><span class="status-%s tips">%s</span></td><td class="column-primary"><a href="%s"><strong>Booking #%d</strong></a></td>`+
-			`<td>%s</td><td>%d</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>`,
-			bk.ID, bk.Status, html.EscapeString(bkStatusLabel(bk.Status)), edit, bk.ID, html.EscapeString(s.bkProductName(ctx, bk.ProductID)), bkPersonsTotal(bk.Persons),
+			`<td>%s</td><td class="booking_resource">%s</td><td>%d</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>`,
+			bk.ID, bk.Status, html.EscapeString(bkStatusLabel(bk.Status)), edit, bk.ID, html.EscapeString(s.bkProductName(ctx, bk.ProductID)),
+			defaultStr(html.EscapeString(s.gooBkResourceName(ctx, bk.ResourceID)), "&ndash;"), bkPersonsTotal(bk.Persons),
 			html.EscapeString(s.bkCustomerName(ctx, bk)), order, html.EscapeString(s.bkWhen(bk, bk.Start)), html.EscapeString(s.bkWhen(bk, bk.End)), actions)
 	}
 	b.WriteString(`</tbody></table>`)
@@ -542,6 +545,9 @@ func (s *Server) bkAdminEdit(c *gin.Context) {
 			}
 		}
 		b.Persons = persons
+		if _, ok := c.GetPostForm("_booking_resource_id"); ok {
+			b.ResourceID, _ = strconv.ParseInt(c.PostForm("_booking_resource_id"), 10, 64)
+		}
 		if v := strings.TrimSpace(c.PostForm("_booking_cost")); v != "" {
 			b.Cost = gxAtof(v)
 		}
@@ -586,6 +592,19 @@ func (s *Server) bkAdminEdit(c *gin.Context) {
 			}
 			row("Persons", pr.String())
 		}
+		if list := s.gooBkProductResources(ctx, conf); len(list) > 0 || b.ResourceID != 0 {
+			var rs strings.Builder
+			rs.WriteString(`<select name="_booking_resource_id"><option value="0">N/A</option>`)
+			found := false
+			for _, r := range list {
+				found = found || r.ID == b.ResourceID
+				rs.WriteString(fmt.Sprintf(`<option value="%d"%s>%s</option>`, r.ID, gxSel(itoa64(r.ID), itoa64(b.ResourceID)), html.EscapeString(r.Name)))
+			}
+			if !found && b.ResourceID != 0 {
+				rs.WriteString(fmt.Sprintf(`<option value="%d" selected>%s</option>`, b.ResourceID, html.EscapeString(s.gooBkResourceName(ctx, b.ResourceID))))
+			}
+			row(html.EscapeString(conf.resourceLabel()), rs.String()+`</select>`)
+		}
 	}
 	row("Cost", `<input type="text" name="_booking_cost" value="`+gxFmt(b.Cost)+`" class="wc_input_price">`)
 	out.WriteString(`</tbody></table></div></div></div><p class="submit"><button type="submit" class="button button-primary">Save Booking</button></p></form>`)
@@ -622,6 +641,13 @@ func (s *Server) bkAdminCreate(c *gin.Context) {
 	out.WriteString(`<tr><th scope="row">Date</th><td><input type="date" name="wc_bookings_field_start_date" required> <input type="time" name="wc_bookings_field_start_date_time"> <span class="description">The time is used for hour and minute blocks.</span></td></tr>`)
 	out.WriteString(`<tr><th scope="row">Duration</th><td><input type="number" name="wc_bookings_field_duration" min="1" value="1"> <span class="description">Blocks, for customer defined durations.</span></td></tr>`)
 	out.WriteString(`<tr><th scope="row">Persons</th><td><input type="number" name="wc_bookings_field_persons" min="0" value="1"></td></tr>`)
+	if all := s.gooBkResources(ctx); len(all) > 0 {
+		out.WriteString(`<tr><th scope="row"><label for="wc_bookings_field_resource">Resource</label></th><td><select name="wc_bookings_field_resource" id="wc_bookings_field_resource"><option value="0">Assign automatically</option>`)
+		for _, r := range all {
+			out.WriteString(fmt.Sprintf(`<option value="%d">%s</option>`, r.ID, html.EscapeString(r.Name)))
+		}
+		out.WriteString(`</select> <span class="description">For products with resources.</span></td></tr>`)
+	}
 	out.WriteString(`</tbody></table><p class="submit"><button type="submit" class="button button-primary">Create Booking</button></p></form>`)
 	s.gxAdminPage(c, "goo-ext-bookings", "bookings", "Create Booking", bkAdminHead("create"), template.HTML(out.String()))
 }
@@ -639,7 +665,8 @@ func (s *Server) bkCreateFromAdmin(ctx context.Context, form map[string][]string
 	if err != nil {
 		return nil, err
 	}
-	if err := s.bkCheck(ctx, p, conf, start, blocks, bkSumPersons(persons), 0); err != nil {
+	resID, err := s.gooBkPickResource(ctx, p, conf, gxbRequestedResource(form), start, blocks, bkSumPersons(persons), 0)
+	if err != nil {
 		return nil, err
 	}
 	end := start
@@ -650,9 +677,9 @@ func (s *Server) bkCreateFromAdmin(ctx context.Context, form map[string][]string
 	for k, v := range persons {
 		pm[k] = float64(v)
 	}
-	cost := gooRound(bkCost(conf, start, blocks, persons), s.gooDecimals())
+	cost := gooRound(gooBkCostWith(conf, start, blocks, persons, resID), s.gooDecimals())
 	customer, _ := strconv.ParseInt(gxForm(form, "customer_id"), 10, 64)
-	b := &bkBooking{ProductID: p.ID, CustomerID: customer, Status: "unpaid", Start: start, End: end, AllDay: !conf.timed(), Persons: pm, Cost: cost}
+	b := &bkBooking{ProductID: p.ID, CustomerID: customer, Status: "unpaid", Start: start, End: end, AllDay: !conf.timed(), Persons: pm, Cost: cost, ResourceID: resID}
 	switch gxForm(form, "booking_order") {
 	case "existing":
 		b.OrderID, _ = strconv.ParseInt(gxForm(form, "booking_order_id"), 10, 64)
@@ -729,6 +756,9 @@ func (s *Server) bkAdminCalendar(c *gin.Context) {
 		fmt.Fprintf(&out, `<td><span class="day-number">%d</span><ul class="bookings">`, d)
 		for _, b := range byDay[d] {
 			label := s.bkProductName(ctx, b.ProductID)
+			if b.ResourceID != 0 {
+				label += " (" + s.gooBkResourceName(ctx, b.ResourceID) + ")"
+			}
 			if !b.AllDay {
 				label = s.gxTime(b.Start) + " " + label
 			}

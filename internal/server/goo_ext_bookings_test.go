@@ -369,3 +369,234 @@ func TestGooExtBookings(t *testing.T) {
 		t.Errorf("edit booking: %d %+v", code, b)
 	}
 }
+
+func TestGooExtBookingsResources(t *testing.T) {
+	base, client, srv := gooSite(t)
+	ctx := context.Background()
+	gxTestGateway(t, srv)
+	if err := srv.gooSetExtension(ctx, bkKey, true); err != nil {
+		t.Fatal(err)
+	}
+
+	// Bookings › Resources: add "Guide A" from the admin; "Guide B" is not bookable on Mondays.
+	code, body, _ := get(t, client, base+"/wp-admin/goocommerce?page=booking-resources&action=edit")
+	if code != http.StatusOK || !strings.Contains(body, "Available Quantity") {
+		t.Fatalf("resource edit screen: %d", code)
+	}
+	code, _, loc := post(t, client, base+"/wp-admin/goocommerce?page=booking-resources&action=edit", url.Values{"_wpnonce": {formNonce(t, body)},
+		"post_title": {"Guide A"}, "_wc_booking_qty": {"1"}, "menu_order": {"0"}})
+	if code != http.StatusFound || !strings.Contains(loc, "goo-msg") {
+		t.Fatalf("save resource: %d %s", code, loc)
+	}
+	all := srv.gooBkResources(ctx)
+	if len(all) != 1 || all[0].Name != "Guide A" || all[0].Qty != 1 {
+		t.Fatalf("resources: %+v", all)
+	}
+	resA := all[0]
+	resB := &gooBkResource{Name: "Guide B", Qty: 1, Order: 1, Rules: []bkRule{{Type: "days", From: "1", To: "1", Bookable: false, Priority: 1}}}
+	if err := srv.gooBkSaveResource(ctx, resB); err != nil {
+		t.Fatal(err)
+	}
+	if r, _ := srv.gooBkResource(ctx, resB.ID); r == nil || len(r.Rules) != 1 || r.Rules[0].Bookable {
+		t.Fatalf("resource B reloaded: %+v", r)
+	}
+	if _, body, _ := get(t, client, base+"/wp-admin/goocommerce?page=booking-resources"); !strings.Contains(body, "Guide A") || !strings.Contains(body, "Guide B") {
+		t.Errorf("resources list: %.300s", body)
+	}
+
+	// A day product with both resources, automatically assigned.
+	day := url.Values{"_wc_booking_duration_type": {"fixed"}, "_wc_booking_duration": {"1"}, "_wc_booking_duration_unit": {"day"},
+		"_wc_booking_qty": {"5"}, "_wc_booking_max_date": {"12"}, "_wc_booking_max_date_unit": {"month"}, "_wc_booking_cost": {"10"}, "_wc_booking_block_cost": {"20"},
+		"_wc_booking_has_resources": {"yes"}, "_wc_booking_resource_label": {"Guide"}, "_wc_booking_resources_assignment": {"automatic"},
+		"resource_id[]": {itoa64(resA.ID), itoa64(resB.ID)}, "resource_base_cost[]": {"5", "0"}, "resource_block_cost[]": {"1", "3"}}
+	p := gooNewProduct(bkType)
+	p.Name = "Hiking day"
+	p = gxSavePanels(t, srv, p, bkKey, day)
+	conf := bkConfOf(p)
+	if !conf.HasResources || conf.ResourceAssign != "automatic" || conf.resourceLabel() != "Guide" || len(conf.Resources) != 2 || conf.Resources[0].BaseCost != 5 {
+		t.Fatalf("resource settings: %+v", conf)
+	}
+	if p.RegularPrice == nil || *p.RegularPrice != 33 { // 10 + 20 + the cheapest resource (B: 3)
+		t.Errorf("from price %v, want 33", *p.RegularPrice)
+	}
+	if out := string(gooBkPanelResources(srv, gooTestCtx(), p)); !strings.Contains(out, "Guide A") || !strings.Contains(out, "Automatically assigned") {
+		t.Errorf("resources panel: %s", out)
+	}
+	if out := string(srv.gooHTML(gooTestCtx(), "single_before_add_to_cart", p)); strings.Contains(out, `name="wc_bookings_field_resource"`) {
+		t.Error("automatic resources show a resource select")
+	}
+
+	dayForm := func(d time.Time, res int64) map[string][]string {
+		f := map[string][]string{"wc_bookings_field_start_date": {d.Format("2006-01-02")}}
+		if res != 0 {
+			f["wc_bookings_field_resource"] = []string{itoa64(res)}
+		}
+		return f
+	}
+	monday := gxNextWeekday(time.Monday)
+	tuesday := monday.AddDate(0, 0, 1)
+	wednesday := monday.AddDate(0, 0, 2)
+
+	c := gooTestCtx()
+	cart := srv.gooCartFor(c)
+	cart.sess.Data.Customer.Billing = map[string]string{"country": "US", "state": "CA", "postcode": "90210", "email": "buyer@example.test"}
+	key, err := cart.Add(ctx, p.ID, 1, 0, nil, dayForm(monday, 0), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	it := cart.Item(key)
+	gooAlmost(t, "resource A price", it.Price, 36) // 10 + 5 + 20 + 1
+	joined := ""
+	for _, kv := range srv.gooItemData(ctx, it) {
+		joined += kv.Key + "=" + kv.Value + ";"
+	}
+	if !strings.Contains(joined, "Guide=Guide A") {
+		t.Errorf("item data: %s", joined)
+	}
+	// Monday: A is taken and B is not available on Mondays.
+	other := srv.gooCartFor(gooTestCtx())
+	if _, err := other.Add(ctx, p.ID, 1, 0, nil, dayForm(monday, 0), nil); err == nil {
+		t.Error("a second Monday booking found a resource")
+	}
+	// Tuesday: A, then B, then nothing — the product's own quantity (5) does not apply.
+	k1, err := other.Add(ctx, p.ID, 1, 0, nil, dayForm(tuesday, 0), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	k2, err := other.Add(ctx, p.ID, 1, 0, nil, dayForm(tuesday, 0), nil)
+	if err != nil {
+		t.Fatalf("second Tuesday booking: %v", err)
+	}
+	if a, b := bkItemBooking(other.Item(k1)), bkItemBooking(other.Item(k2)); int64(gxNum(a["_resource_id"])) != resA.ID || int64(gxNum(b["_resource_id"])) != resB.ID {
+		t.Errorf("assigned resources %v, %v", a["_resource_id"], b["_resource_id"])
+	}
+	gooAlmost(t, "resource B price", other.Item(k2).Price, 33)
+	if _, err := other.Add(ctx, p.ID, 1, 0, nil, dayForm(tuesday, 0), nil); err == nil || !strings.Contains(err.Error(), "no longer available") {
+		t.Errorf("a third Tuesday booking: %v", err)
+	}
+
+	// A second product, customer selected, sharing Guide A: its capacity is shared.
+	q := gooNewProduct(bkType)
+	q.Name = "Climbing day"
+	qf := url.Values{}
+	for k, v := range day {
+		qf[k] = v
+	}
+	qf["_wc_booking_resources_assignment"] = []string{"customer"}
+	qf["resource_id[]"], qf["resource_base_cost[]"], qf["resource_block_cost[]"] = []string{itoa64(resA.ID)}, []string{"0"}, []string{"0"}
+	q = gxSavePanels(t, srv, q, bkKey, qf)
+	if out := string(srv.gooHTML(gooTestCtx(), "single_before_add_to_cart", q)); !strings.Contains(out, `name="wc_bookings_field_resource"`) || !strings.Contains(out, "Guide A") {
+		t.Errorf("customer selected resource form: %s", out)
+	}
+	qc := srv.gooCartFor(gooTestCtx())
+	if _, err := qc.Add(ctx, q.ID, 1, 0, nil, dayForm(tuesday, resA.ID), nil); err == nil {
+		t.Error("Guide A booked twice on Tuesday across products")
+	}
+	if _, err := qc.Add(ctx, q.ID, 1, 0, nil, dayForm(wednesday, resB.ID), nil); err == nil || !strings.Contains(err.Error(), "valid guide") {
+		t.Errorf("a resource the product does not have: %v", err)
+	}
+	if _, err := qc.Add(ctx, q.ID, 1, 0, nil, dayForm(wednesday, resA.ID), nil); err != nil {
+		t.Errorf("Guide A on Wednesday: %v", err)
+	}
+
+	// The AJAX cost with a chosen resource: B on Thursday = 10 + 20 + 3.
+	rc, w := gxGetCtx("/?goo-ajax=booking_slots&product_id=" + itoa64(p.ID) + "&date=" + monday.AddDate(0, 0, 3).Format("2006-01-02") + "&wc_bookings_field_resource=" + itoa64(resB.ID))
+	if !bkFrontRoute(srv, rc, "") {
+		t.Fatal("the slots route did not answer")
+	}
+	var res struct {
+		Cost     float64 `json:"cost"`
+		Resource string  `json:"resource"`
+		Error    string  `json:"error"`
+	}
+	_ = json.Unmarshal(w.Body.Bytes(), &res)
+	if res.Cost != 33 || res.Resource != "Guide B" || res.Error != "" {
+		t.Errorf("slots route with a resource: %s", w.Body.String())
+	}
+
+	// Timed slots: automatic assignment sums the places of the resources.
+	h := gooNewProduct(bkType)
+	h.Name = "Lesson"
+	h = gxSavePanels(t, srv, h, bkKey, url.Values{"_wc_booking_duration_type": {"fixed"}, "_wc_booking_duration": {"1"}, "_wc_booking_duration_unit": {"hour"},
+		"_wc_booking_qty": {"1"}, "_wc_booking_max_date": {"12"}, "_wc_booking_max_date_unit": {"month"}, "_wc_booking_first_block_time": {"09:00"},
+		"_wc_booking_has_resources": {"yes"}, "_wc_booking_resources_assignment": {"automatic"}, "resource_id[]": {itoa64(resA.ID), itoa64(resB.ID)}})
+	friday := monday.AddDate(0, 0, 4)
+	if sl := srv.gooBkSlotsAll(ctx, h, bkConfOf(h), friday, 0); len(sl) == 0 || sl[0].Time != "09:00" || sl[0].Available != 2 {
+		t.Errorf("merged slots: %+v", sl)
+	}
+	if sl := srv.gooBkSlotsAll(ctx, h, bkConfOf(h), friday, resA.ID); len(sl) == 0 || sl[0].Available != 1 {
+		t.Errorf("slots of A: %+v", sl)
+	}
+	if sl := srv.gooBkSlotsAll(ctx, h, bkConfOf(h), monday, 0); len(sl) != 0 {
+		t.Errorf("Monday slots with A held all day and B off: %+v", sl)
+	}
+
+	// Checkout: the booking keeps its resource; admin, e-mails and My Account show it.
+	o, errs := gxCheckout(t, srv, c, "goo_test")
+	if len(errs) > 0 {
+		t.Fatalf("checkout: %v", errs)
+	}
+	bks := srv.bkQuery(ctx, `order_id = $1`, o.ID)
+	if len(bks) != 1 || bks[0].ResourceID != resA.ID || bks[0].Cost != 36 {
+		t.Fatalf("order bookings: %+v", bks)
+	}
+	bk := bks[0]
+	bk.CustomerID = 1
+	_ = srv.bkUpdate(ctx, bk)
+	var mails int
+	_ = srv.store.Pool.QueryRow(ctx, `SELECT count(*) FROM jobs WHERE name = 'wp_mail' AND payload::text LIKE '%Guide A%'`).Scan(&mails)
+	if mails == 0 {
+		t.Error("the booking e-mail does not name the resource")
+	}
+	if _, body, _ := get(t, client, base+"/wp-admin/goocommerce?page=bookings"); !strings.Contains(body, `<td class="booking_resource">Guide A</td>`) {
+		t.Error("bookings list lacks the resource")
+	}
+	_, body, _ = get(t, client, base+"/wp-admin/goocommerce?page=bookings&action=calendar&calendar_month="+monday.Format("2006-01"))
+	if !strings.Contains(body, "Hiking day (Guide A)") {
+		t.Error("calendar lacks the resource")
+	}
+	_, body, _ = get(t, client, base+"/wp-admin/goocommerce?page=bookings&action=edit&id="+itoa64(bk.ID))
+	if !strings.Contains(body, `name="_booking_resource_id"`) {
+		t.Fatal("booking edit lacks the resource select")
+	}
+	start := bk.Start.UTC()
+	code, _, _ = post(t, client, base+"/wp-admin/goocommerce?page=bookings&action=edit&id="+itoa64(bk.ID), url.Values{"_wpnonce": {formNonce(t, body)},
+		"_booking_status": {bk.Status}, "product_id": {itoa64(p.ID)}, "_booking_all_day": {"yes"}, "booking_start_date": {start.Format("2006-01-02")},
+		"booking_end_date": {start.Format("2006-01-02")}, "_booking_customer_id": {"1"}, "_booking_order_id": {itoa64(o.ID)}, "_booking_resource_id": {itoa64(resB.ID)}})
+	if b, _ := srv.bkGet(ctx, bk.ID); code != http.StatusFound || b.ResourceID != resB.ID {
+		t.Errorf("edit resource: %d %+v", code, b)
+	}
+	admin, _ := srv.store.UserByID(ctx, 1)
+	ac := gooTestCtx()
+	ac.Set(ctxUser, admin)
+	if out := string(bkAccountBookings(srv, ac, "")); !strings.Contains(out, "Guide: Guide B") {
+		t.Errorf("account bookings: %s", out)
+	}
+
+	// Admin Create Booking assigns a resource automatically.
+	_, body, _ = get(t, client, base+"/wp-admin/goocommerce?page=bookings&action=create")
+	code, _, loc = post(t, client, base+"/wp-admin/goocommerce?page=bookings&action=create", url.Values{"_wpnonce": {formNonce(t, body)},
+		"bookable_product_id": {itoa64(p.ID)}, "customer_id": {"1"}, "booking_order": {""}, "wc_bookings_field_start_date": {monday.AddDate(0, 0, 5).Format("2006-01-02")},
+		"wc_bookings_field_resource": {"0"}})
+	if code != http.StatusFound || !strings.Contains(loc, "action=edit") {
+		t.Fatalf("create booking: %d %s", code, loc)
+	}
+	if cr := srv.bkQuery(ctx, `product_id = $1 AND order_id = 0 AND status = 'unpaid'`, p.ID); len(cr) != 1 || cr[0].ResourceID != resA.ID {
+		t.Errorf("admin-created booking: %+v", cr)
+	}
+
+	// Deleting a resource unlinks it from the products.
+	_, body, _ = get(t, client, base+"/wp-admin/goocommerce?page=booking-resources")
+	i := strings.Index(body, "action=delete&amp;id="+itoa64(resB.ID)+"&amp;_wpnonce=")
+	if i < 0 {
+		t.Fatal("no Delete action")
+	}
+	del := body[i:]
+	del = strings.ReplaceAll(del[:strings.Index(del, `"`)], "&amp;", "&")
+	if code, _, _ := get(t, client, base+"/wp-admin/goocommerce?page=booking-resources&"+del); code != http.StatusFound {
+		t.Errorf("delete resource: %d", code)
+	}
+	if list := srv.gooBkProductResources(ctx, bkConfOf(p)); len(list) != 1 || list[0].ID != resA.ID {
+		t.Errorf("product resources after delete: %+v", list)
+	}
+}

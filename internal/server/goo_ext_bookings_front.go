@@ -71,6 +71,20 @@ func bkBookingForm(s *Server, c *gin.Context, p *gooProduct) template.HTML {
 			`<input type="number" value="%d" step="1" min="%d" max="%d" name="wc_bookings_field_duration" id="wc_bookings_field_duration"> <span>&times; %s</span></p>`,
 			conf.Unit+"s", conf.MinDuration, conf.MinDuration, conf.MaxDuration, bkUnitLabel(conf.Duration, conf.Unit))
 	}
+	if conf.ResourceAssign == "customer" {
+		if list := s.gooBkProductResources(c.Request.Context(), conf); len(list) > 0 {
+			fmt.Fprintf(&b, `<p class="form-field form-field-wide wc_bookings_field_resource"><label for="wc_bookings_field_resource">%s:</label><select name="wc_bookings_field_resource" id="wc_bookings_field_resource">`,
+				html.EscapeString(conf.resourceLabel()))
+			for _, r := range list {
+				extra := ""
+				if rb, rk := conf.resourceCosts(r.ID); rb != 0 || rk != 0 {
+					extra = " (+" + gxStripTags(string(s.gooPrice(rb+rk))) + ")"
+				}
+				fmt.Fprintf(&b, `<option value="%d">%s%s</option>`, r.ID, html.EscapeString(r.Name), html.EscapeString(extra))
+			}
+			b.WriteString(`</select></p>`)
+		}
+	}
 	if conf.HasPersons {
 		for i, pt := range conf.PersonTypes {
 			val := pt.Min
@@ -112,7 +126,7 @@ cal.innerHTML=h+'</tr></tbody></table>'}
 if(cal)cal.addEventListener('click',function(e){var a=e.target.closest('a');if(!a)return;e.preventDefault();if(a.dataset.date){input.value=a.dataset.date;draw();load()}
 else{view=new Date(view.getFullYear(),view.getMonth()+(a.classList.contains('ui-datepicker-next')?1:-1),1);draw()}});
 function q(){var p=new URLSearchParams();p.set('goo-ajax','booking_slots');p.set('product_id',f.dataset.productId);p.set('date',input.value);
-f.querySelectorAll('input[name^=wc_bookings_field_persons],input[name=wc_bookings_field_duration]').forEach(function(i){p.set(i.name,i.value)});if(time&&time.value)p.set('time',time.value);return p}
+f.querySelectorAll('input[name^=wc_bookings_field_persons],input[name=wc_bookings_field_duration],select[name=wc_bookings_field_resource]').forEach(function(i){p.set(i.name,i.value)});if(time&&time.value)p.set('time',time.value);return p}
 function load(){if(!input.value)return;fetch(f.dataset.ajax+'?'+q().toString(),{credentials:'same-origin'}).then(function(r){return r.json()}).then(function(r){
 if(slots){if(!r.slots||!r.slots.length){slots.innerHTML='<li>No blocks available on this date.</li>'}else{slots.innerHTML=r.slots.map(function(s){return '<li class="block"><a href="#" data-value="'+s.time+'"'+(time.value===s.time?' class="selected"':'')+'>'+s.label+(r.remaining?' <small class="booking-spaces-left">('+s.available+' left)</small>':'')+'</a></li>'}).join('')}}
 cost.style.display='block';cost.innerHTML=r.error?'<span class="booking-error">'+r.error+'</span>':(r.cost_html?'Booking cost: <strong>'+r.cost_html+'</strong>':'');if(btn)btn.disabled=!!r.error||(time&&!time.value)})}
@@ -155,7 +169,9 @@ func (s *Server) bkSlotsJSON(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"slots": []bkSlot{}, "error": "Date is required - please choose one above"})
 		return
 	}
-	out := gin.H{"slots": s.bkSlots(ctx, p, conf, day), "remaining": s.gooExtBool(bkKey, "show_remaining")}
+	requested, _ := strconv.ParseInt(c.Query("wc_bookings_field_resource"), 10, 64)
+	slotList := s.gooBkSlotsAll(ctx, p, conf, day, requested)
+	out := gin.H{"slots": slotList, "remaining": s.gooExtBool(bkKey, "show_remaining")}
 	if out["slots"] == nil {
 		out["slots"] = []bkSlot{}
 	}
@@ -167,18 +183,23 @@ func (s *Server) bkSlotsJSON(c *gin.Context) {
 	}
 	if t := c.Query("time"); t != "" {
 		form["wc_bookings_field_start_date_time"] = []string{t}
-	} else if slots := s.bkSlots(ctx, p, conf, day); len(slots) > 0 {
-		form["wc_bookings_field_start_date_time"] = []string{slots[0].Time}
+	} else if len(slotList) > 0 {
+		form["wc_bookings_field_start_date_time"] = []string{slotList[0].Time}
 	}
 	if !conf.timed() || c.Query("time") != "" || len(out["slots"].([]bkSlot)) > 0 {
 		start, blocks, persons, err := s.bkParseRequest(conf, form)
+		resID := requested
 		if err == nil && (!conf.timed() || c.Query("time") != "") {
-			err = s.bkCheck(ctx, p, conf, start, blocks, bkSumPersons(persons), 0)
+			resID, err = s.gooBkPickResource(ctx, p, conf, requested, start, blocks, bkSumPersons(persons), 0)
 		}
 		if err != nil {
 			out["error"] = err.Error()
 		} else {
-			v := gooRound(bkCost(conf, start, blocks, persons), s.gooDecimals())
+			if resID != 0 {
+				out["resource_id"] = resID
+				out["resource"] = s.gooBkResourceName(ctx, resID)
+			}
+			v := gooRound(gooBkCostWith(conf, start, blocks, persons, resID), s.gooDecimals())
 			out["cost"] = v
 			out["cost_html"] = string(s.gooPrice(v))
 		}
@@ -264,6 +285,9 @@ func bkAccountBookings(s *Server, c *gin.Context, arg string) template.HTML {
 			name := "&ndash;"
 			if p, err := s.gooGetProduct(ctx, b.ProductID); err == nil {
 				name = `<a href="` + html.EscapeString(s.gooPermalink(ctx, p)) + `">` + html.EscapeString(p.Name) + `</a>`
+				if b.ResourceID != 0 {
+					name += `<br><small class="booking-resource">` + html.EscapeString(bkConfOf(p).resourceLabel()+": "+s.gooBkResourceName(ctx, b.ResourceID)) + `</small>`
+				}
 			}
 			order := "&ndash;"
 			if b.OrderID != 0 {
