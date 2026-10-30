@@ -677,7 +677,7 @@ func (s *Server) hgAdminBuilder(c *gin.Context, d *hgAdminData) {
 			d.Type = ts[0]
 		}
 	}
-	var types []map[string]any
+	types := []map[string]any{}
 	for _, t := range reg.order {
 		types = append(types, map[string]any{"uid": t.UID, "kind": t.Kind, "displayName": t.DisplayName})
 	}

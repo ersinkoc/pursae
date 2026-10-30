@@ -326,7 +326,10 @@
 			} );
 			var box = el( 'div', { class: 'hg-blocks' } );
 			function sync() {
-				obj[ f.name ] = items.length ? items.map( buildBlock ) : null;
+				var keep = items.filter( function ( it ) {
+					return it.kind === 'image' ? !! ( it.image && it.image.url ) : ( it.text || '' ).trim() !== '' || ( it.orig && ! it.dirty );
+				} );
+				obj[ f.name ] = keep.length ? keep.map( buildBlock ) : null;
 			}
 			function render() {
 				box.innerHTML = '';
@@ -683,6 +686,7 @@
 		if ( ! root || ! form ) {
 			return;
 		}
+		model.all = model.all || [];
 		var sc = clone( model.schema );
 		sc.attributes = sc.attributes || [];
 		sc.attributes.forEach( function ( f ) {
