@@ -1,0 +1,7 @@
+{{define "admin/goo-ext-bookings"}}{{template "admin-header" .}}{{with .Data}}
+<div class="wrap goocommerce goo-ext-bookings">
+{{.Head}}
+{{template "notices" $}}
+{{.Body}}
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}
