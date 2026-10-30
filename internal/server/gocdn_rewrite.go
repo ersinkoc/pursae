@@ -37,26 +37,37 @@ func (s *Server) gocdnRewrite() gin.HandlerFunc {
 			c.Next()
 			return
 		}
-		orig := c.Writer
-		w := &gocdnWriter{ResponseWriter: orig}
-		c.Writer = w
-		c.Next()
-		c.Writer = orig
-		if !w.capture {
-			return
+		gocdnBuffer(c, func(body []byte, contentType string) []byte {
+			return s.gocdnRewriteBody(c, st, body, media, assets, strings.Contains(contentType, "html"))
+		})
+	}
+}
+
+// gocdnBuffer runs the rest of the chain with HTML/XML/JSON responses buffered, passes their body
+// through rewrite and sends it; other responses stream through untouched.
+func gocdnBuffer(c *gin.Context, rewrite func(body []byte, contentType string) []byte) {
+	orig := c.Writer
+	w := &gocdnWriter{ResponseWriter: orig}
+	c.Writer = w
+	c.Next()
+	c.Writer = orig
+	if !w.capture {
+		if !w.decided && w.code != 0 { // a status without a body (204, 304…)
+			orig.WriteHeader(w.code)
 		}
-		body := w.buf.Bytes()
-		if len(body) > 0 {
-			body = s.gocdnRewriteBody(c, st, body, media, assets, strings.Contains(orig.Header().Get("Content-Type"), "html"))
-		}
-		if orig.Header().Get("Content-Length") != "" {
-			orig.Header().Set("Content-Length", strconv.Itoa(len(body)))
-		}
-		orig.WriteHeader(w.status())
-		orig.WriteHeaderNow()
-		if len(body) > 0 {
-			_, _ = orig.Write(body)
-		}
+		return
+	}
+	body := w.buf.Bytes()
+	if len(body) > 0 {
+		body = rewrite(body, orig.Header().Get("Content-Type"))
+	}
+	if orig.Header().Get("Content-Length") != "" {
+		orig.Header().Set("Content-Length", strconv.Itoa(len(body)))
+	}
+	orig.WriteHeader(w.status())
+	orig.WriteHeaderNow()
+	if len(body) > 0 {
+		_, _ = orig.Write(body)
 	}
 }
 
