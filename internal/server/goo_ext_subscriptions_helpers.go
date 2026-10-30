@@ -25,6 +25,9 @@ func gxaGin(ctx context.Context) *gin.Context {
 	if gc, ok := ctx.(*gin.Context); ok {
 		return gc
 	}
+	if cart := gooCartFromCtx(ctx); cart != nil && cart.c != nil {
+		return cart.c
+	}
 	if rc := renderFrom(ctx); rc != nil && rc.c != nil {
 		return rc.c
 	}
@@ -36,6 +39,9 @@ func gxaGin(ctx context.Context) *gin.Context {
 func gxaUser(ctx context.Context) *store.User {
 	if ctx == nil {
 		return nil
+	}
+	if cart := gooCartFromCtx(ctx); cart != nil && cart.c != nil {
+		ctx = cart.c
 	}
 	if gc, ok := ctx.(*gin.Context); ok {
 		if u := currentUser(gc); u != nil {
@@ -61,6 +67,9 @@ func gxaUser(ctx context.Context) *store.User {
 
 // gxaCart is the request's cart when the hook runs inside one (add-to-cart hooks receive no cart).
 func gxaCart(ctx context.Context) *gooCart {
+	if c := gooCartFromCtx(ctx); c != nil {
+		return c
+	}
 	if gc := gxaGin(ctx); gc != nil {
 		if v, ok := gc.Get("goo.cart"); ok {
 			if cart, ok := v.(*gooCart); ok {

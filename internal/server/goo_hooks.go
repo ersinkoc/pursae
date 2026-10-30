@@ -303,3 +303,9 @@ func (s *Server) gooDisplayPrice(ctx context.Context, p *gooProduct) float64 {
 	}
 	return v
 }
+
+// gooCheckoutValidateHook adds checkout errors before an account or order is created
+// (woocommerce_after_checkout_validation).
+type gooCheckoutValidateHook func(s *Server, c *gin.Context, cart *gooCart, d *gooCheckoutData) []string
+
+var gooCheckoutValidateHooks []gooCheckoutValidateHook

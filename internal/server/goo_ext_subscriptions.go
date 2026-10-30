@@ -469,6 +469,19 @@ func init() {
 		})
 	}
 
+	// A guest buying a subscription must create an account: refused before any account is made.
+	gooCheckoutValidateHooks = append(gooCheckoutValidateHooks, func(s *Server, c *gin.Context, cart *gooCart, d *gooCheckoutData) []string {
+		if !s.gooExtOn(gsubKey) || currentUser(c) != nil || d.CreateAccount {
+			return nil
+		}
+		for _, it := range cart.Items {
+			if s.gsubIsSubscription(c.Request.Context(), it.Product()) {
+				return []string{"You must be logged in or create an account to purchase a subscription."}
+			}
+		}
+		return nil
+	})
+
 	// A cart with a subscription needs an account; the order records each item's schedule.
 	gooCheckoutHooks = append(gooCheckoutHooks, func(s *Server, ctx context.Context, cart *gooCart, o *gooOrder) error {
 		if !s.gooExtOn(gsubKey) {

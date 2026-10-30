@@ -289,6 +289,9 @@ func (s *Server) gooValidateCheckout(c *gin.Context, cart *gooCart, d *gooChecko
 			}
 		}
 	}
+	for _, h := range gooCheckoutValidateHooks {
+		errs = append(errs, h(s, c, cart, d)...)
+	}
 	// Stock may have changed since the items were added (WC_Cart::check_cart_item_stock()).
 	for _, it := range cart.Items {
 		if !s.gooHasEnoughStock(c.Request.Context(), it.product, it.Quantity) {
