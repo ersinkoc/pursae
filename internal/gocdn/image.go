@@ -13,15 +13,17 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/gen2brain/avif"
 	"github.com/gen2brain/webp"
 	"golang.org/x/image/draw"
 )
 
 // The image service's transformations: resize (w, h), fit (inside, cover, fill), quality (q) and
-// output format (fm: auto, webp, jpeg, png, gif). WebP is encoded by libwebp transpiled to pure Go
-// (github.com/gen2brain/webp, no cgo; a system libwebp is used instead when one is installed).
-// AVIF cannot be encoded without cgo at a reasonable cost, so fm=avif and Accept: image/avif
-// fall back to WebP or the source format.
+// output format (fm: auto, avif, webp, jpeg, png, gif). WebP is encoded by libwebp transpiled to
+// pure Go (github.com/gen2brain/webp, no cgo); AVIF by libavif + aom compiled to WebAssembly and
+// run by wazero (github.com/gen2brain/avif, no cgo). Both use a system library instead when one is
+// installed (purego, still no cgo). AVIF encoding is several times slower than WebP, so it is a
+// separate setting; animated GIFs stay animated GIFs (see TransformGIF).
 
 // ImageParams are the parameters of one image service request.
 type ImageParams struct {
@@ -156,10 +158,19 @@ func (l Limits) CheckSource(cfg image.Config) error {
 // WebPAvailable reports whether WebP output can be produced (always, with the transpiled libwebp).
 func WebPAvailable() bool { return true }
 
-// Negotiate picks the output format: an explicit fm wins (avif falls back), auto uses the
-// browser's Accept header when webp is allowed, otherwise the source format (gif sources that are
-// resized become png, other formats jpeg/png).
-func Negotiate(fm, accept, srcFormat string, allowWebP bool, hasAlpha bool) string {
+// AVIFAvailable reports whether AVIF output can be produced (always: the WebAssembly libavif is
+// embedded).
+func AVIFAvailable() bool { return true }
+
+// AVIFSpeed is the aom encoder speed used (0 slowest/smallest … 10 fastest). 8 keeps a 1000 px
+// photo well under a second per CPU while still beating WebP's size.
+var AVIFSpeed = 8
+
+// Negotiate picks the output format: an explicit fm wins (avif falls back to webp, then the
+// source format, when AVIF is not allowed), auto uses the browser's Accept header (AVIF > WebP >
+// source format) for the formats allowed; otherwise the source format (other source formats become
+// jpeg, or png with alpha).
+func Negotiate(fm, accept, srcFormat string, allowWebP, allowAVIF bool, hasAlpha bool) string {
 	src := srcFormat
 	switch src {
 	case "jpeg", "png", "gif":
@@ -176,10 +187,16 @@ func Negotiate(fm, accept, srcFormat string, allowWebP bool, hasAlpha bool) stri
 	case "jpeg", "png", "gif":
 		return fm
 	case "avif":
+		if allowAVIF && AVIFAvailable() {
+			return "avif"
+		}
 		if allowWebP && WebPAvailable() {
 			return "webp"
 		}
 		return src
+	}
+	if allowAVIF && AVIFAvailable() && AcceptsType(accept, "image/avif") {
+		return "avif"
 	}
 	if allowWebP && WebPAvailable() && AcceptsType(accept, "image/webp") {
 		return "webp"
@@ -216,6 +233,8 @@ func ContentType(format string) string {
 		return "image/gif"
 	case "webp":
 		return "image/webp"
+	case "avif":
+		return "image/avif"
 	}
 	return "application/octet-stream"
 }
@@ -292,7 +311,7 @@ func HasAlpha(img image.Image) bool {
 	return true
 }
 
-// Encode writes img in format at quality q (1–100; jpeg and webp).
+// Encode writes img in format at quality q (1–100; jpeg, webp and avif).
 func Encode(w io.Writer, img image.Image, format string, q int) error {
 	if q <= 0 || q > 100 {
 		q = 82
@@ -300,6 +319,10 @@ func Encode(w io.Writer, img image.Image, format string, q int) error {
 	switch format {
 	case "webp":
 		return webp.Encode(w, img, webp.Options{Quality: q, Method: 4})
+	case "avif":
+		// AVIF quality runs lower than JPEG's for the same look: map 82 → ~62.
+		aq := max(1, min(100, q*3/4))
+		return avif.Encode(w, img, avif.Options{Quality: aq, QualityAlpha: aq, Speed: AVIFSpeed, ChromaSubsampling: image.YCbCrSubsampleRatio420})
 	case "jpeg":
 		if HasAlpha(img) { // JPEG has no alpha: flatten on white like the browser would show it
 			b := img.Bounds()

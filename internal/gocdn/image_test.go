@@ -66,22 +66,27 @@ func TestNegotiate(t *testing.T) {
 	chrome := "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
 	old := "image/png,image/*;q=0.8,*/*;q=0.5"
 	for _, c := range []struct {
-		fm, accept, src string
-		webp, alpha     bool
-		want            string
+		fm, accept, src   string
+		webp, avif, alpha bool
+		want              string
 	}{
-		{"auto", chrome, "jpeg", true, false, "webp"},
-		{"auto", old, "jpeg", true, false, "jpeg"},
-		{"auto", chrome, "jpeg", false, false, "jpeg"},
-		{"auto", old, "webp", true, true, "png"},
-		{"auto", old, "webp", true, false, "jpeg"},
-		{"avif", chrome, "png", true, true, "webp"},
-		{"avif", chrome, "png", false, true, "png"},
-		{"png", chrome, "jpeg", true, false, "png"},
-		{"auto", "image/webp;q=0", "jpeg", true, false, "jpeg"},
+		{"auto", chrome, "jpeg", true, false, false, "webp"},
+		{"auto", chrome, "jpeg", true, true, false, "avif"},
+		{"auto", chrome, "jpeg", false, true, false, "avif"},
+		{"auto", "image/webp,*/*", "jpeg", true, true, false, "webp"},
+		{"auto", "image/avif;q=0,image/webp", "jpeg", true, true, false, "webp"},
+		{"auto", old, "jpeg", true, true, false, "jpeg"},
+		{"auto", chrome, "jpeg", false, false, false, "jpeg"},
+		{"auto", old, "webp", true, false, true, "png"},
+		{"auto", old, "webp", true, false, false, "jpeg"},
+		{"avif", chrome, "png", true, false, true, "webp"},
+		{"avif", chrome, "png", false, false, true, "png"},
+		{"avif", old, "png", false, true, true, "avif"},
+		{"png", chrome, "jpeg", true, true, false, "png"},
+		{"auto", "image/webp;q=0", "jpeg", true, false, false, "jpeg"},
 	} {
-		if got := Negotiate(c.fm, c.accept, c.src, c.webp, c.alpha); got != c.want {
-			t.Errorf("Negotiate(%q, %q, %q, %v) = %q, want %q", c.fm, c.accept, c.src, c.webp, got, c.want)
+		if got := Negotiate(c.fm, c.accept, c.src, c.webp, c.avif, c.alpha); got != c.want {
+			t.Errorf("Negotiate(%q, %q, %q, webp=%v avif=%v) = %q, want %q", c.fm, c.accept, c.src, c.webp, c.avif, got, c.want)
 		}
 	}
 }
