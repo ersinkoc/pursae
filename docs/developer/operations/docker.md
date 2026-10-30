@@ -48,9 +48,22 @@ settings or `WPGO_PLUGIN_KEYS`.
 
 ## Production changes
 
-- Change the database password in `compose.yaml` and the `DATABASE_URL`.
-- Remove the `ports:` entry of the `db` service so PostgreSQL is not published.
-- Set `WPGO_TRUST_DEV_KEY=0` and list your own keys in `WPGO_PLUGIN_KEYS`.
+`compose.yaml` is the development setup (demo database password, PostgreSQL published on the host, the
+demo plugin signing key trusted). For production add the override `compose.prod.yaml`, which fixes all of
+that and refuses to start until the secrets are set:
+
+```bash
+WPGO_DB_PASSWORD=<strong password> WPGO_SITE_URL=https://example.com \
+  docker compose -f docker/compose.yaml -f docker/compose.prod.yaml up -d --build
+```
+
+It takes the database password from `WPGO_DB_PASSWORD` (used for `POSTGRES_PASSWORD` and the
+`DATABASE_URL`), does not publish PostgreSQL, sets `WPGO_TRUST_DEV_KEY=0` and passes
+`WPGO_PLUGIN_KEYS` through. `POSTGRES_PASSWORD` only applies when the `pgdata` volume is first created; on
+an existing database change the password first (`ALTER USER wpgo PASSWORD '...'`).
+
+Also:
+
 - Put a TLS-terminating proxy in front and set `WPGO_SITE_URL` to the `https://` address
   ([reverse proxy and TLS](reverse-proxy-and-tls.md)).
 - Set `WPGO_SECRET` explicitly if you run more than one `wpgo` replica.

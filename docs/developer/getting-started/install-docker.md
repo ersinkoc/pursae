@@ -68,6 +68,7 @@ docker compose -f docker/compose.yaml logs -f wpgo
 docker compose -f docker/compose.yaml restart wpgo
 ```
 
-The compose file sets `WPGO_TRUST_DEV_KEY=1` so the bundled example plugins install. Turn that
-off in production — see the [security](../operations/security.md) page and the full
-[configuration reference](../operations/configuration.md).
+The compose file sets `WPGO_TRUST_DEV_KEY=1` so the bundled example plugins install. That is for
+development only: in production add `docker/compose.prod.yaml`, which turns it off — see
+[Docker](../operations/docker.md#production-changes), the [security](../operations/security.md) page and the
+full [configuration reference](../operations/configuration.md).

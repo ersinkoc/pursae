@@ -251,10 +251,15 @@ data stay in the database and come back on the next activation.
 
 - Put WordPress Go behind a TLS-terminating reverse proxy and set `WPGO_SITE_URL` to the
   `https://` address.
-- Change the default database credentials in `docker/compose.yaml` (`wpgo` / `wpgo`) and do
-  **not** publish port 5432 to the internet — remove the `ports:` entry of the `db` service.
-- Set `WPGO_TRUST_DEV_KEY=0`. The example plugins are signed with a public demo key; for real
-  plugins list your own keys in `WPGO_PLUGIN_KEYS`.
+- Start with the production override, which sets the database password from `WPGO_DB_PASSWORD`,
+  does not publish PostgreSQL and does not trust the public demo plugin key (`WPGO_TRUST_DEV_KEY=0`):
+
+  ```sh
+  WPGO_DB_PASSWORD=... WPGO_SITE_URL=https://example.com \
+    docker compose -f docker/compose.yaml -f docker/compose.prod.yaml up -d --build
+  ```
+
+  For real plugins list your own signing keys in `WPGO_PLUGIN_KEYS`.
 - Configure SMTP (`WPGO_SMTP_*`) so password resets and notifications are delivered.
 - Back up the `pgdata` and `uploads` volumes.
 - Pick a strong admin password; WordPress Go never calls Gravatar or other third-party
@@ -329,7 +334,14 @@ first build; make sure Docker has network access. Later builds are cached.
 - **System** — job runner on the `jobs` table (multi-instance safe) with WordPress' scheduled
   events, e-mail, WXR import/export.
 
-Not included yet: WooCommerce and Facebook widgets for Golementor.
+- **Built-in plugins** (listed on Plugins, off on a fresh install; one page each in the
+  [developer docs](docs/developer/built-in-plugins/index.md)) — SEO-Go, ACF-Go, HeadlessGo, GoCDN,
+  Gontact Form, Golylang, AdminSecGo, Gooike, Maintenance-Go and WPGO Mail SMTP.
+- **Goocommerce** — a native WooCommerce clone (products, cart, checkout, tax, shipping, coupons,
+  orders, gateways, e-mails, REST) with the premium extensions as built-in modules (off by default)
+  and store themes in the theme library.
+
+Open gaps are tracked in the project notes; the developer documentation has no Goocommerce page yet.
 
 ## Project layout
 

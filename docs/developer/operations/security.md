@@ -32,9 +32,10 @@ section: operations
 
 1. Terminate TLS in a proxy and set `WPGO_SITE_URL` to the `https://` address
    ([reverse proxy and TLS](reverse-proxy-and-tls.md)).
-2. Change the default database credentials and do not publish port 5432.
-3. Set `WPGO_TRUST_DEV_KEY=0`; list your own plugin signing keys in `WPGO_PLUGIN_KEYS` or the
-   `plugin_trusted_keys` option; leave `plugin_allow_unsigned` off.
+2. Start with `docker/compose.prod.yaml` (see [Docker](docker.md#production-changes)): it takes the
+   database password from `WPGO_DB_PASSWORD`, does not publish port 5432 and sets `WPGO_TRUST_DEV_KEY=0`.
+3. List your own plugin signing keys in `WPGO_PLUGIN_KEYS` or the `plugin_trusted_keys` option; leave
+   `plugin_allow_unsigned` off and never trust the public demo key (`WPGO_TRUST_DEV_KEY` must stay `0`).
 4. Set `WPGO_SECRET` yourself when running several instances, and keep it secret.
 5. Set `WPGO_DISALLOW_FILE_EDIT=1` if nobody should edit theme files from the admin.
 6. Configure SMTP so password resets reach their recipients ([mail](mail.md)).

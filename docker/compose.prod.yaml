@@ -1,0 +1,27 @@
+# Production override for compose.yaml. Start with:
+#
+#   WPGO_DB_PASSWORD=... WPGO_SITE_URL=https://example.com \
+#     docker compose -f docker/compose.yaml -f docker/compose.prod.yaml up -d --build
+#
+# - the database password comes from WPGO_DB_PASSWORD (letters and digits keep the URL simple; URL-encode
+#   anything else). POSTGRES_PASSWORD only applies when the pgdata volume is created: for an existing
+#   database change the password first (ALTER USER wpgo PASSWORD '...').
+# - PostgreSQL is not published on the host.
+# - the demo signing key is not trusted; list your own keys in WPGO_PLUGIN_KEYS.
+# - WPGO_SITE_URL is required: it is the public https:// address behind your TLS proxy.
+name: wpgo
+
+services:
+  db:
+    environment:
+      POSTGRES_PASSWORD: ${WPGO_DB_PASSWORD:?set WPGO_DB_PASSWORD}
+    ports: !reset []
+    restart: unless-stopped
+
+  wpgo:
+    environment:
+      DATABASE_URL: postgres://wpgo:${WPGO_DB_PASSWORD:?set WPGO_DB_PASSWORD}@db:5432/wpgo?sslmode=disable
+      WPGO_SITE_URL: ${WPGO_SITE_URL:?set WPGO_SITE_URL to the public https:// address}
+      WPGO_TRUST_DEV_KEY: "0"
+      WPGO_PLUGIN_KEYS: ${WPGO_PLUGIN_KEYS:-}
+    restart: unless-stopped
