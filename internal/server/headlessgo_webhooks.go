@@ -231,6 +231,10 @@ func (s *Server) hgEmitPayload(ctx context.Context, event string, extra map[stri
 	}
 }
 
+// hgInProcessRetry is the longest backoff retried by an in-process timer; longer ones (and every
+// retry after a restart) are made by the scheduler's tick.
+const hgInProcessRetry = 2 * time.Minute
+
 // hgKickDelivery runs one queued delivery in the background after wait.
 func (s *Server) hgKickDelivery(id int64, wait time.Duration) {
 	hgWebhookWG.Add(1)
@@ -328,7 +332,7 @@ func (s *Server) hgAttemptQueued(ctx context.Context, q *hgQueued, inProcess boo
 		wait := hgWebhookBackoff(n)
 		_, _ = s.store.Pool.Exec(ctx, `UPDATE hg_webhook_queue SET status = 'pending', attempts = $2, last_error = $3, next_at = now() + $4::interval, locked_at = NULL, updated_at = now() WHERE id = $1`,
 			q.ID, n, hgAttemptError(res), fmt.Sprintf("%d milliseconds", wait.Milliseconds()))
-		if inProcess {
+		if inProcess && wait <= hgInProcessRetry {
 			s.hgKickDelivery(q.ID, wait+5*time.Millisecond)
 		}
 	}

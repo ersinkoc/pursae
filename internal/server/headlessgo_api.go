@@ -346,13 +346,14 @@ func (s *Server) hgFind(ctx context.Context, sc *hgSchema, p *hgReadParams, o hg
 		}
 		where += " AND " + f
 	}
-	order, err := q.orderBy(sc, p.Sort, "e")
+	whereArgs := len(q.sql.args)
+	order, err := q.orderBy(sc, p.Sort, "e") // may add arguments (sorting through relations)
 	if err != nil {
 		return nil, 0, err
 	}
 	total := 0
 	if p.Page.WithCount {
-		if err := s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM hg_entries e WHERE `+where, q.sql.args...).Scan(&total); err != nil {
+		if err := s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM hg_entries e WHERE `+where, q.sql.args[:whereArgs]...).Scan(&total); err != nil {
 			return nil, 0, err
 		}
 	}
