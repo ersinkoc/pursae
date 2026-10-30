@@ -21,7 +21,7 @@ const gooThemesNonce = "goo-store-themes"
 // gooStoreTheme is one card of the screen.
 type gooStoreTheme struct {
 	Slug, Name, Version, Description string
-	Style, CategoryLabel, Screenshot  string
+	Style, CategoryLabel, Screenshot string
 	PreviewURL                       string // Live Preview with the demo store (theme_preview.go)
 	Golementor                       bool   // built with Golementor (Theme Builder parts and store widgets)
 	Installed, Active, Imported      bool

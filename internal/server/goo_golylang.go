@@ -347,7 +347,9 @@ func (s *Server) gooPllNewTranslation(c *gin.Context, p *gooProduct) {
 type gooPllSyncKey struct{}
 
 // gooPllSyncing marks ctx as inside a synchronization (the saves it makes do not synchronize again).
-func gooPllSyncing(ctx context.Context) context.Context { return context.WithValue(ctx, gooPllSyncKey{}, true) }
+func gooPllSyncing(ctx context.Context) context.Context {
+	return context.WithValue(ctx, gooPllSyncKey{}, true)
+}
 
 func gooPllInSync(ctx context.Context) bool { v, _ := ctx.Value(gooPllSyncKey{}).(bool); return v }
 

@@ -52,7 +52,7 @@ var gwePartTypes = []struct{ Type, Label, Plural string }{
 	{"archive", "Archive", "Archives"},
 	{"search-results", "Search Results", "Search Results"},
 	{"error-404", "404 Page", "404 Pages"},
-	{"single-product", "Single Product", "Single Products"},       // Goocommerce (goo_gwe.go)
+	{"single-product", "Single Product", "Single Products"},      // Goocommerce (goo_gwe.go)
 	{"product-archive", "Products Archive", "Products Archives"}, // Goocommerce
 }
 

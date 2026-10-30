@@ -132,5 +132,3 @@ func gooProductID(t *testing.T, srv *Server, slug string) string {
 	}
 	return itoa64(id)
 }
-
-
