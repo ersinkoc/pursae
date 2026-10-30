@@ -280,8 +280,8 @@ func TestGoCDNMoveToNewBucket(t *testing.T) {
 	}
 }
 
-// cloudfrontFake checks CreateInvalidation requests' SigV4 signature (service cloudfront).
-func cloudfrontFake(t *testing.T, keyID, secret string, got *[]string, mu *sync.Mutex) *httptest.Server {
+// gocdnCloudFrontFake checks CreateInvalidation requests' SigV4 signature (service cloudfront).
+func gocdnCloudFrontFake(t *testing.T, keyID, secret string, got *[]string, mu *sync.Mutex) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
 		cred, signed, sig, ok := gocdn.ParseAuthorization(r.Header.Get("Authorization"))
@@ -327,7 +327,7 @@ func cloudfrontFake(t *testing.T, keyID, secret string, got *[]string, mu *sync.
 func TestGoCDNPurgeProviders(t *testing.T) {
 	var mu sync.Mutex
 	var cf, bunny, keycdn, fastly []string
-	cfSrv := cloudfrontFake(t, "AKCFKEY", "cf/secret+1", &cf, &mu)
+	cfSrv := gocdnCloudFrontFake(t, "AKCFKEY", "cf/secret+1", &cf, &mu)
 	defer cfSrv.Close()
 	bunnySrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("AccessKey") != "bunny-key" {

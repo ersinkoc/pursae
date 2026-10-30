@@ -3,10 +3,13 @@
 GoCDN is a native (compiled-in) WordPress Go plugin for object storage, CDN delivery and on-the-fly
 images. It covers the ground of **WP Offload Media** (Delicious Brains: offload to S3-compatible storage,
 rewrite URLs, remove local files, bulk tools, `AS3CF_SETTINGS`), an **image CDN** (imgix / Cloudflare
-Images style resize, crop and WebP with signed URLs) and **CDN Enabler** (KeyCDN: rewrite theme, plugin
-and core asset URLs to a pull CDN), with purging of **WPGo Cache** and **Cloudflare**. Like every
+Images style resize, crop, WebP and AVIF with signed URLs) and **CDN Enabler** (KeyCDN: rewrite theme,
+plugin and core asset URLs to a pull CDN), with purging of **WPGo Cache** and one CDN (**Cloudflare**,
+**CloudFront**, **BunnyCDN**, **KeyCDN** or **Fastly**). Like every
 native plugin it is **off on a fresh install** (`native_gocdn`), and while it is off nothing of it runs:
-its screens and routes answer 404, uploads are served from disk and no response is rewritten.
+its screens and routes answer 404, uploads are served from disk and no response is rewritten — with one
+deliberate exception: files GoCDN removed from the server keep being answered from the bucket after
+deactivation (see "Deactivating the plugin" below).
 
 Legend: **✓** implemented · **≈** implemented differently (reason given) · **✗** left out (reason given).
 
@@ -23,7 +26,10 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 | Secret stored safely | ✓ | AES-GCM with a key derived from the server secret (`gocdnSeal`/`gocdnReveal`, the WPGO Mail SMTP approach); never printed into a form: the field shows "•••• saved — type to replace" with a Clear box. Same for the Cloudflare token. |
 | Configuration from the environment | ✓ | `WPGO_CDN_SETTINGS` = JSON with the option's keys (`provider`, `endpoint`, `bucket`, `access-key-id`, `secret-access-key`, …, the names of `AS3CF_SETTINGS` where it has them). Keys set there override the database, are shown locked, and are never written to the database. |
 | Test connection | ✓ | "Save and Test Connection" / Test: PUT a probe object, HEAD it (size check), GET it through the public delivery URL (warning only), DELETE it, ListObjectsV2. Each step is reported; S3 error codes get advice (SignatureDoesNotMatch → wrong secret, NoSuchBucket, AccessDenied/ACL, region mismatch, clock skew, unreachable endpoint). |
-| SigV4 signer | ✓ | Own implementation (no AWS SDK), header signing and presigned URLs, checked against AWS's published S3 test vectors (GET object, PUT object, GET lifecycle, ListObjects, presigned GET). |
+| SigV4 signer | ✓ | Own implementation (no AWS SDK), header signing and presigned URLs, checked against AWS's published S3 test vectors (GET object, PUT object, GET lifecycle, ListObjects, presigned GET). Also signs CloudFront invalidations. |
+| Multipart upload | ✓ | Files from the "Multipart upload" size on (default 16 MB, 5 MB–5 GB) go through CreateMultipartUpload / UploadPart / CompleteMultipartUpload, read from the file in parts of the threshold's size (5–64 MB, raised so no file needs more than 10 000 parts); each part is retried on its own (3 tries) and a failed upload is aborted (AbortMultipartUpload) so no orphaned parts stay in the bucket. A 200 answer with an `<Error>` body is treated as an error. Smaller files: one PUT. Files are no longer read into memory whole. |
+| Server-side encryption | ✓ | Option: `x-amz-server-side-encryption: AES256` (SSE-S3) on every PUT / CreateMultipartUpload / CopyObject. SSE-KMS and SSE-C are not offered (keys to manage; SSE-C would need the key on every GET, which breaks public delivery). |
+| Storage class | ✓ | Option: `x-amz-storage-class` (STANDARD_IA, INTELLIGENT_TIERING, GLACIER_IR, …; empty = bucket default). |
 
 ## 2. Media offload (GoCDN › Media Offload)
 
@@ -33,13 +39,13 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 | Per-file offload state | ✓ | Table `gocdn_items` (migration `0021_gocdn.sql`): media id, uploads path, provider, region, bucket, key, size, MIME, `local_removed`. Rows go with the attachment (`ON DELETE CASCADE`). |
 | Remove files from the server | ✓ | After every file of an attachment is in the bucket. |
 | `/wp-content/uploads/…` for removed files | ✓ | Answered before the page cache: 302 to the delivery URL, a presigned URL (1 h, private buckets) or the file proxied through the site (with the uploads sandbox CSP). Files still on disk are served as before. |
-| Server needs a removed file (image editor) | ✓ | `gocdnEnsureLocal` downloads it back before the editor's preview/save; the edited files are offloaded (and removed) again. |
+| Server needs a removed file | ✓ | One helper, `gocdnFetchBack(ctx, path)` (`gocdn_fetch.go`), wraps every place that reads an upload from disk: the image editor (preview/save), the Customizer's site-icon sizes (which are then offloaded too), Golementor's SVG reads (widgets, REST, atomic CSS) and theme-kit export, Goocommerce downloads and the PDF logo, Gontact mail attachments. It downloads the file back when its row says "removed"; the copy is deleted again after 10 minutes while the row still says so. The image service and `/wp-content/uploads` read the bucket directly (no disk write). |
 | Delete attachment deletes remote objects | ✓ | Through `deleteAttachmentFiles`, used by every delete path. The URLs are sent to Cloudflare when automatic purge is on. |
 | Bulk "Offload existing media" | ✓ | Background goroutine, one attachment at a time, progress in the option `gocdn_job` after each one; the screen polls `/wp-admin/gocdn?page=offload&action=progress` (JSON). Stop button. |
 | Resumable | ✓ | A job interrupted by a restart is shown as interrupted; starting it again with "Resume" continues after the last attachment done. |
 | "Download back to the server" / "Remove from the bucket" | ✓ | Same job runner. Remove downloads removed files first and refuses to delete the only copy. |
-| Bucket changed later | ≈ | Items keep the bucket they were written to and are still served/deleted there; they are not moved. |
-| Deactivating the plugin | ≈ | URLs go back to `/wp-content/uploads`; files removed from the server are then missing, so run "Download back to the server" before deactivating (as with WP Offload Media). |
+| Bucket / provider / path changed later | ✓ | Every row keeps provider, region, bucket, **endpoint** (migration `0023_gocdn_more.sql`) and key. When the Storage screen replaces a connection that still holds items, that connection is kept in the settings (`previous-connections`, secret sealed), so old items keep their old URLs (its delivery domain or public bucket URL) and are still served, fetched back and deleted there. Media Offload then offers **"Move to the current bucket"**: a resumable job with progress that copies each such file to the current bucket under the current path — CopyObject when old and new bucket share endpoint and access key, otherwise download to a temporary file and upload (multipart when large) — updates its row (so its URL switches), optionally deletes the old object, and drops connections no item uses any more. Rows written before 0023 have no endpoint and are taken to be on the configured endpoint; settings changed only through `WPGO_CDN_SETTINGS` are not remembered (old items then use the current credentials with their old bucket, as before). |
+| Deactivating the plugin | ✓ | When files exist only in the bucket, the Plugins screen's Deactivate link opens a confirmation screen: **"Download them back to the server, then deactivate"** (the download job; GoCDN switches itself off when it finished without failures) or **"Deactivate now and keep serving them from the bucket"**. Any deactivation that leaves removed files (also the bulk action, which cannot ask) turns on the **uploads fallback** (option `gocdn_fallback`): while GoCDN is off, `/wp-content/uploads/<file>` for those files only is answered from the bucket (redirect / presigned / proxy as configured) and fetch-back keeps working; nothing else runs (no rewriting, image service or screens), and the Plugins row says so. The flag clears on activation and when no removed file is left. Chosen as the safest UX: URLs never break, and nothing has to be downloaded unless the admin asks. |
 
 ## 3. URL rewriting
 
@@ -61,18 +67,19 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 | Thumbnails | ✓ | Image objects (≤ 20 MB) are fetched and shrunk to 160 px by an admin-only endpoint, so private buckets work too. |
 | Import: Copy | ✓ | Downloaded like an upload (sizes generated; offloaded again under the library's own key when copying is on). |
 | Import: Link (remote-only attachment) | ✓ | Registered with the key's path (`<key minus prefix>`, or `gocdn-remote/<key>`), width/height read from the first 512 KB, no local file, no sub-sizes; served through the uploads fallback. Only allowed upload types; duplicates and paths with a local file are skipped. |
-| Use in the media picker | ≈ | Imported objects are ordinary attachments, so the media modal lists and inserts them; there is no separate "remote" tab inside the modal itself. |
+| Use in the media picker | ✓ | A **"Remote storage" tab** in the `wp.media` modal (every frame built on `MediaFrame.Select`: Add Media, featured image, Customizer, widgets, ACF-Go…), for administrators while GoCDN is active and configured: folders, thumbnails, "Load more", import as copy or link. Clicking an object imports it and selects the new attachment (or the one already imported from that key) in the library, ready for Select / Insert. The tab's own strings are in its script and are not translated. |
 
 ## 5. Image service (GoCDN › Image Service)
 
 | Feature | | Notes |
 |---|---|---|
 | Endpoint | ✓ | `/cdn-img/<path in uploads>?w=&h=&fit=&q=&fm=&s=`, and the same parameters on `/wp-content/uploads/<path>`. Aliases `width`, `height`, `quality`, `format`; fits `inside` (default, `contain`, `scale-down`), `cover` (`crop`), `fill`. Never upscales. |
-| Output formats | ≈ | JPEG, PNG, GIF and **WebP** (libwebp transpiled to pure Go by `github.com/gen2brain/webp`, no cgo; a system libwebp is used instead when installed). **AVIF output is not implemented**: no pure-Go encoder of reasonable speed; `fm=avif` and AVIF-only browsers fall back to WebP or the source format. Animated GIFs are flattened to their first frame. |
-| Format negotiation | ✓ | `fm=auto` sends WebP when the `Accept` header lists `image/webp` (q > 0), with `Vary: Accept`. |
+| Output formats | ✓ | JPEG, PNG, GIF, **WebP** (libwebp transpiled to pure Go by `github.com/gen2brain/webp`) and **AVIF** (libavif + aom compiled to WebAssembly, run by wazero: `github.com/gen2brain/avif`; no cgo, `CGO_ENABLED=0` builds; a system libavif/libwebp is used through purego when installed). AVIF is a setting (off by default): measured on the test machine, a 1000×667 image at speed 8 takes ~150 ms (WebP ~130 ms) after a one-time ~0.9 s module compile; every encode still holds one slot of the per-CPU limit. Without the setting `fm=avif` answers WebP. |
+| Animated GIFs | ✓ | Every frame is composed (offsets, disposal), resized and written as an animated GIF with the original delays and loop count, each frame on its own palette (no dithering). Always GIF: the WebP library has no animation encoder and animated AVIF is far too slow. Budget: at most "Animated GIFs" frames (default 200) and frames × (source + output pixels) ≤ 3 × the source pixel limit; over it the first frame is served (`X-GoCDN-Animation: flattened`). `fm=jpeg/png` gives a still. Whether a GIF is animated is found by walking its blocks once per source version. |
+| Format negotiation | ✓ | `fm=auto` sends AVIF (when on) if `Accept` lists `image/avif`, else WebP if it lists `image/webp` (q > 0), else the source format, with `Vary: Accept`. |
 | Quality | ✓ | Default quality setting, `q=` per request. |
 | Signed URLs | ✓ | HMAC-SHA256 of the path and the canonical parameters with a random site key (stored sealed; "Make a new signing key" rotates it); parameter order and aliases don't matter. Unsigned / tampered requests get 403 when signing is on. |
-| Abuse limits | ✓ | Max output width/height, max source megapixels (checked with `DecodeConfig` before decoding), max source 64 MB, one transformation per CPU at a time, path traversal refused. |
+| Abuse limits | ✓ | Max output width/height, max source megapixels (checked with `DecodeConfig` before decoding), max source 64 MB, the animation budget, one transformation per CPU at a time (AVIF included), path traversal refused. |
 | Cache headers | ✓ | `Cache-Control: public, max-age=31536000, immutable`, strong `ETag`, `304` on `If-None-Match`. |
 | Variant cache | ✓ | On disk (`<data>/gocdn-cache/`), optionally in the bucket (`gocdn-cache/…`, shared by several servers). Keyed by path, source version, parameters, quality and output format. "Empty the processed image cache". |
 | Source offloaded / removed locally | ✓ | Read from the bucket. |
@@ -93,16 +100,30 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 | Feature | | Notes |
 |---|---|---|
 | WPGo Cache purge on settings changes, finished jobs, imports | ✓ | `purgeAll`. |
-| Purge button | ✓ | WPGo Cache, Cloudflare (everything), processed image cache. |
-| Cloudflare | ✓ | Zone ID + API token (Zone › Cache Purge; sealed). `purge_cache` with `purge_everything` or `files` (30 per request). Optional automatic purge with GoCDN's automatic purges and for deleted offloaded files. API errors are shown. |
-| Other CDNs' purge APIs (CloudFront invalidations, Bunny, KeyCDN) | ✗ | Not implemented; immutable URLs make purges rarely necessary. |
+| Purge button | ✓ | WPGo Cache, the configured CDN (everything), processed image cache. |
+| CDN provider selector | ✓ | None, Cloudflare, Amazon CloudFront, BunnyCDN, KeyCDN, Fastly; the screen shows the chosen provider's fields. Secrets sealed (AES-GCM, like the storage secret), never echoed, cleared when switching provider. Optional automatic purge (everything with GoCDN's automatic purges, the URLs of deleted offloaded files). API errors are shown. |
+| Cloudflare | ✓ | Zone ID + API token (Zone › Cache Purge). `purge_cache` with `purge_everything` or `files` (30 per request). |
+| Amazon CloudFront | ✓ | Distribution ID + IAM access key / secret (`cloudfront:CreateInvalidation`). `POST /2020-05-31/distribution/<id>/invalidation`, signed with GoCDN's SigV4 signer (service `cloudfront`, `us-east-1`); everything = `/*`, URLs → their paths (3000 per invalidation). |
+| BunnyCDN | ✓ | Pull zone ID + account API key (`AccessKey` header): `POST /pullzone/<id>/purgeCache`, URLs one by one with `POST /purge?url=`. |
+| KeyCDN | ✓ | Zone ID + API key (HTTP basic): `DELETE /zones/purge/<id>.json`, URLs (without scheme, 200 per request) with `DELETE /zones/purgeurl/<id>.json`. |
+| Fastly | ✓ | Service ID + API token (`Fastly-Key`): `POST /service/<id>/purge_all`, URLs with `POST /purge/<host/path>`. |
+| Several CDNs at once, surrogate-key / tag purges | ✗ | One provider at a time, by URL or everything. |
 
-## 8. Not done / limits
+## 8. Translations
 
-- AVIF encoding (see 5). Multipart uploads: files are sent in one PUT (uploads are capped at 64 MB).
-- Server-side encryption headers, storage classes, object versioning (`object-versioning` of WP Offload
-  Media adds a time stamp to keys), and copying between buckets on a bucket change.
-- Customizer site-icon cropping and Golementor's server-side reads of uploads read the local file; with
-  "Remove files from the server" they fail for removed files (the image editor is covered).
+GoCDN's screens are translated after rendering like the rest of the admin (`internal/i18n`, WordPress Go's
+own strings in `web/languages/wpgo-<locale>.json`). Turkish has every GoCDN admin string (brand names stay
+as they are); in the other languages the strings added in the second round (AVIF, animations, multipart,
+SSE, storage class, move, purge providers, deactivation screen) are still English. Numbers are kept out of
+translatable sentences. The media-modal tab's strings live in its script and are English.
+
+## 9. Not done / limits
+
+- Animated WebP / AVIF output (animations are always GIF); AVIF *sources* are not accepted by the image service.
+- SSE-KMS / SSE-C, object versioning (`object-versioning` of WP Offload Media adds a time stamp to keys).
+- Several CDN purge providers at once, cache tags / surrogate keys.
+- Settings changed only through `WPGO_CDN_SETTINGS` are not remembered as a previous connection (items in the
+  old bucket are reached with the current credentials).
 - Signed delivery of the *rewritten* URLs (presigned URLs in page HTML) is not offered: pages are cached;
   private buckets should use "presigned redirect" or "proxy" delivery for removed files.
+- The media-modal tab is for administrators (`manage_options`), like Media › Remote Storage.
