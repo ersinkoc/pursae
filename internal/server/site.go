@@ -68,7 +68,7 @@ func (s *Server) site(c *gin.Context) {
 		s.rest.serve(c, route)
 		return
 	}
-	if c.Request.Method != http.MethodGet && c.Request.Method != http.MethodHead && !s.gontactFallbackPost(c) { // Gontact Form without JS
+	if c.Request.Method != http.MethodGet && c.Request.Method != http.MethodHead && !s.gontactFallbackPost(c) && !s.gooAcceptsPost(c) { // Gontact Form without JS, Goocommerce forms
 		c.Status(http.StatusNotFound)
 		return
 	}
@@ -80,6 +80,9 @@ func (s *Server) site(c *gin.Context) {
 		return
 	}
 	path := s.golylangSitePath(c, raw) // Golylang: without the language code
+	if s.gooSiteIntercept(c, path) {    // Goocommerce: shop, products, store pages and forms (goo_front.go)
+		return
+	}
 	switch path {
 	case "robots.txt":
 		s.robots(c)

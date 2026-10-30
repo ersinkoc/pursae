@@ -39,6 +39,7 @@ var Defaults = map[string]any{
 	"golementor_previous_theme":     "",    // the theme Golementor left for Hello Golementor; restored on deactivation
 	"native_golylang":               false, // the multilingual plugin (Polylang Pro clone) starts switched off
 	"native_gooike":                 false, // Gooike, the cookie consent plugin, starts switched off
+	"native_goocommerce":            false, // Goocommerce, the e-commerce plugin, starts switched off
 	"plugin_trusted_keys":           "",
 	"plugin_allow_unsigned":         false,
 	"wpgo_hub_url":                  "",   // overrides WPGO_HUB_URL when set

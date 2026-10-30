@@ -56,6 +56,7 @@ func (s *Server) cacheConfig() cache.Config {
 	cfg.CacheMobileSeparately = st.Bool("wpgo_cache_mobile")
 	cfg.CacheLoggedIn = st.Bool("wpgo_cache_logged_in")
 	cfg.ExcludePaths = append(cfg.ExcludePaths, lines(st.String("wpgo_cache_exclude_uri"))...)
+	cfg.ExcludePaths, cfg.ExcludeCookies = s.gooCacheExcludes(cfg.ExcludePaths, cfg.ExcludeCookies) // Goocommerce: cart, checkout, my account
 	cfg.DropQueryStrings = append(cfg.DropQueryStrings, lines(st.String("wpgo_cache_drop_qs"))...)
 	cfg.ServerHint = cache.ServerHint(st.String("wpgo_cache_server"))
 	if st.Bool("wpgo_cache_disk") {
@@ -159,6 +160,7 @@ func (s *Server) cacheTags(c *gin.Context, q *siteQuery) {
 	if q.Kind == "front-page" || q.Kind == "home" {
 		c.Header(cache.HeaderTTL, strconv.Itoa(s.settings.Int("wpgo_cache_ttl_front")))
 	}
+	tags = append(tags, s.gooCacheTags(c, q)...) // Goocommerce: products and the shop (goo_front.go)
 	c.Header(cache.HeaderTags, strings.Join(tags, ","))
 }
 

@@ -32,6 +32,9 @@ func taxLabelsFor(tax string) (taxLabels, bool) {
 			Description: "The description is not prominent by default; however, some themes may show it.",
 			Screen:      "edit-tags?taxonomy=post_tag", FilterParam: "tag"}, true
 	}
+	if l, ok := gooTaxLabels(tax); ok { // Goocommerce product taxonomies
+		return l, true
+	}
 	return acfgoTaxLabels(tax) // ACF-Go taxonomies
 }
 
