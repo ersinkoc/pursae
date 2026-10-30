@@ -57,6 +57,13 @@
 				}
 			});
 		});
+		// Theme headers mark their own count badge with data-goo-cart-count: keep its markup, set the number.
+		var count = fragments['span.goo-cart-count'] && store.html(fragments['span.goo-cart-count']);
+		if (count) {
+			document.querySelectorAll('[data-goo-cart-count]').forEach(function (el) {
+				el.textContent = count.textContent;
+			});
+		}
 		store.trigger('wc_fragments_loaded', { fragments: fragments });
 	};
 

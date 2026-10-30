@@ -208,13 +208,13 @@ func gooQVFooter(s *Server, c *gin.Context) template.HTML {
 	if s.gooExtBool(gooQVKey, "show_on_mobile") {
 		mobile = "1"
 	}
-	return template.HTML(`<link rel="stylesheet" id="goo-ext-quick-view-css" href="` + gooAssets + `/css/ext-quick-view.css?ver=` + gooVersion + `" media="all">` +
+	return template.HTML(`<link rel="stylesheet" id="goo-ext-quick-view-css" href="` + gooAssets + `/css/ext-quick-view.css?ver=` + gooAssetVer() + `" media="all">` +
 		`<div id="goo-quick-view" class="goo-quick-view-modal" role="dialog" aria-modal="true" aria-labelledby="goo-quick-view-title" hidden` +
 		` data-endpoint="` + gooEsc(home+"?goo-ajax=quick_view") + `" data-lightbox="` + lightbox + `" data-mobile="` + mobile + `">` +
 		`<div class="goo-quick-view-overlay" data-goo-qv-close></div>` +
 		`<div class="goo-quick-view-dialog" role="document"><button type="button" class="goo-quick-view-close" data-goo-qv-close aria-label="Close quick view">&times;</button>` +
 		`<div class="goo-quick-view-content" aria-live="polite"></div></div></div>` +
-		`<script src="` + gooAssets + `/js/ext-quick-view.js?ver=` + gooVersion + `" id="goo-ext-quick-view-js" defer></script>`)
+		`<script src="` + gooAssets + `/js/ext-quick-view.js?ver=` + gooAssetVer() + `" id="goo-ext-quick-view-js" defer></script>`)
 }
 
 // gooQVRoute serves /?goo-ajax=quick_view&product_id=: the product summary HTML.

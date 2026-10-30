@@ -2,17 +2,22 @@ package server
 
 import (
 	"context"
+	"crypto/sha1"
+	"encoding/hex"
 	"html"
 	"html/template"
+	"io/fs"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
 
 	"wpgo/internal/store"
+	"wpgo/web"
 )
 
 // Goocommerce is the native e-commerce plugin: a WooCommerce clone (products, cart, checkout, orders,
@@ -593,3 +598,21 @@ func (s *Server) gooRetention(ctx context.Context) {
 
 // gooEsc is esc_html().
 func gooEsc(v string) string { return html.EscapeString(v) }
+
+// gooAssetVer is the ?ver= of the store's CSS and JS: the version plus a hash of the bundled assets,
+// so browsers holding last week's copy (assets are cached for a week) fetch the new files after an
+// upgrade even when the version number stayed the same.
+var gooAssetVer = sync.OnceValue(func() string {
+	h := sha1.New()
+	_ = fs.WalkDir(web.FS(""), "goocommerce/assets", func(p string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return nil
+		}
+		if b, err := fs.ReadFile(web.FS(""), p); err == nil {
+			h.Write([]byte(p))
+			h.Write(b)
+		}
+		return nil
+	})
+	return gooVersion + "." + hex.EncodeToString(h.Sum(nil))[:8]
+})

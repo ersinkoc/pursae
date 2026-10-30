@@ -81,8 +81,8 @@ func init() {
 		if !s.gooExtOn(gooWLKey) {
 			return ""
 		}
-		return template.HTML(`<link rel="stylesheet" id="goo-ext-wishlist-css" href="` + gooAssets + `/css/ext-wishlist.css?ver=` + gooVersion + `" media="all">` +
-			`<script src="` + gooAssets + `/js/ext-wishlist.js?ver=` + gooVersion + `" id="goo-ext-wishlist-js" data-endpoint="` +
+		return template.HTML(`<link rel="stylesheet" id="goo-ext-wishlist-css" href="` + gooAssets + `/css/ext-wishlist.css?ver=` + gooAssetVer() + `" media="all">` +
+			`<script src="` + gooAssets + `/js/ext-wishlist.js?ver=` + gooAssetVer() + `" id="goo-ext-wishlist-js" data-endpoint="` +
 			gooEsc(s.links(c).HomeURL("/?goo-ajax=wishlist_toggle")) + `" defer></script>`)
 	})
 	gooFrontRoutes = append(gooFrontRoutes, gooWLRoute)

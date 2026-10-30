@@ -203,7 +203,7 @@ func (s *Server) gooHead(c *gin.Context, q *siteQuery) string {
 	if !s.gooOn() || !s.gooIsStorePage(c, q) {
 		return ""
 	}
-	v := "?ver=" + gooVersion
+	v := "?ver=" + gooAssetVer()
 	var b strings.Builder
 	b.WriteString(`<link rel="stylesheet" id="woocommerce-layout-css" href="` + gooAssets + `/css/goocommerce-layout.css` + v + `" media="all" />` + "\n")
 	b.WriteString(`<link rel="stylesheet" id="woocommerce-smallscreen-css" href="` + gooAssets + `/css/goocommerce-smallscreen.css` + v + `" media="only screen and (max-width: 768px)" />` + "\n")
@@ -268,7 +268,7 @@ func (s *Server) gooFooter(c *gin.Context, q *siteQuery) string {
 	raw, _ := jsonMarshalNoEscape(params)
 	b.WriteString(`<script id="goocommerce-params">var goocommerce_params = ` + string(raw) + `; var wc_add_to_cart_params = goocommerce_params;</script>` + "\n")
 	js := func(name string) {
-		b.WriteString(`<script src="` + gooAssets + `/js/frontend/` + name + `.js?ver=` + gooVersion + `" id="goo-` + name + `-js" defer></script>` + "\n")
+		b.WriteString(`<script src="` + gooAssets + `/js/frontend/` + name + `.js?ver=` + gooAssetVer() + `" id="goo-` + name + `-js" defer></script>` + "\n")
 	}
 	js("cart-fragments") // header counts on cached pages
 	if s.gooIsStorePage(c, q) {

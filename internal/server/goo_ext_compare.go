@@ -253,9 +253,9 @@ func gooCmpFooter(s *Server, c *gin.Context) template.HTML {
 	if !s.gooExtOn(gooCmpKey) {
 		return ""
 	}
-	return template.HTML(`<link rel="stylesheet" id="goo-ext-compare-css" href="`+gooAssets+`/css/ext-compare.css?ver=`+gooVersion+`" media="all">`) +
+	return template.HTML(`<link rel="stylesheet" id="goo-ext-compare-css" href="`+gooAssets+`/css/ext-compare.css?ver=`+gooAssetVer()+`" media="all">`) +
 		s.gooCmpBar(c) +
-		template.HTML(`<script src="`+gooAssets+`/js/ext-compare.js?ver=`+gooVersion+`" id="goo-ext-compare-js" data-endpoint="`+
+		template.HTML(`<script src="`+gooAssets+`/js/ext-compare.js?ver=`+gooAssetVer()+`" id="goo-ext-compare-js" data-endpoint="`+
 			gooEsc(s.links(c).HomeURL("/?goo-ajax=compare_toggle"))+`" defer></script>`)
 }
 
