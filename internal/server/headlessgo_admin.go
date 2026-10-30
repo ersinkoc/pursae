@@ -739,8 +739,23 @@ func (s *Server) hgAdminBuilder(c *gin.Context, d *hgAdminData) {
 	} else if d.NewKind != "" {
 		cur = &hgSchema{Kind: d.NewKind, DraftAndPublish: d.NewKind != hgKindComponent, Fields: []hgField{}}
 	}
-	model := map[string]any{"schema": cur, "isNew": d.Type == nil, "all": types, "fieldTypes": hgFieldTypes, "relations": hgRelations,
-		"wpTargets": hgWPTargets, "golylang": s.golylangOn()}
+	// The labels the builder shows, in the user's language (the page is translated after it is
+	// rendered, but these travel as JSON).
+	fieldTypes := make([]struct{ Key, Label, Help, Icon string }, len(hgFieldTypes))
+	for i, ft := range hgFieldTypes {
+		fieldTypes[i] = ft
+		fieldTypes[i].Label, fieldTypes[i].Help = s.__(c, ft.Label), s.__(c, ft.Help)
+	}
+	relations := make([]struct{ Key, Label string }, len(hgRelations))
+	for i, r := range hgRelations {
+		relations[i] = struct{ Key, Label string }{r.Key, s.__(c, r.Label)}
+	}
+	wpTargets := make([]struct{ Key, Label string }, len(hgWPTargets))
+	for i, r := range hgWPTargets {
+		wpTargets[i] = struct{ Key, Label string }{r.Key, s.__(c, r.Label)}
+	}
+	model := map[string]any{"schema": cur, "isNew": d.Type == nil, "all": types, "fieldTypes": fieldTypes, "relations": relations,
+		"wpTargets": wpTargets, "golylang": s.golylangOn()}
 	raw, _ := json.Marshal(model)
 	d.BuilderJSON = template.JS(raw)
 }

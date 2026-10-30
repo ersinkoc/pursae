@@ -754,7 +754,7 @@
 		}
 		switch ( to.type ) {
 			case 'number':
-				return 'Values that are not numbers are removed' + ( to.format === 'integer' || to.format === 'biginteger' ? '; decimals are rounded.' : '.' );
+				return to.format === 'integer' || to.format === 'biginteger' ? 'Values that are not numbers are removed; decimals are rounded.' : 'Values that are not numbers are removed.';
 			case 'boolean':
 				return fk === 'number' ? 'Numbers become true, 0 becomes false.' : 'Values other than true/false, yes/no, on/off and 1/0 are removed.';
 			case 'enumeration':
@@ -1130,7 +1130,7 @@
 						t.appendChild( el( 'tr', {}, [ el( 'th', { scope: 'row', text: 'Relation' } ), el( 'td', {}, [ el( 'span', { text: f.relation + ' → ' } ), el( 'span', { translate: 'no', text: ( opts.filter( function ( o ) {
 							return o[ 0 ] === f.target;
 						} )[ 0 ] || [ '', f.target ] )[ 1 ] + '.' + f.mappedBy } ),
-						el( 'p', { class: 'description', text: 'The inverse side of a relation: the links are stored on the other type and edited from either side. Change the relation there; deleting this field removes only the inverse side.' } ) ] ) ] ) );
+						el( 'p', { class: 'description', text: 'The inverse side of a relation: the links are stored on the other type and edited from either side. Deleting it removes only this side.' } ) ] ) ] ) );
 						break;
 					}
 					t.appendChild( selectRow( 'Relation', model.relations.map( function ( r ) {

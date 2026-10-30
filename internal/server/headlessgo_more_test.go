@@ -1161,3 +1161,39 @@ func TestHGSortSQLAndInverseSync(t *testing.T) {
 		t.Error("mirror")
 	}
 }
+
+func TestHeadlessGoTurkishAdmin(t *testing.T) {
+	base, c, srv := hgSite(t)
+	ctx := context.Background()
+	hgModel(t, srv)
+	if err := srv.settings.Set(ctx, map[string]any{"WPLANG": "tr_TR"}); err != nil {
+		t.Fatal(err)
+	}
+	_, body, _ := get(t, c, base+"/wp-admin/headlessgo?page=settings")
+	for _, want := range []string{"İçerik Yöneticisi", "Herkese açık erişim", "Teslimat başına deneme", "<code>schema.update</code> gönder", "GraphQL uç noktası"} {
+		if !strings.Contains(body, want) {
+			t.Errorf("settings screen in Turkish: missing %q", want)
+		}
+	}
+	_, body, _ = get(t, c, base+"/wp-admin/headlessgo?page=tokens&new=1")
+	if !strings.Contains(body, "Taslakları okuyabilir (<code>status=draft</code>)") || !strings.Contains(body, "Ortam yükleyebilir") {
+		t.Error("token screen in Turkish")
+	}
+	_, body, _ = get(t, c, base+"/wp-admin/headlessgo?page=builder&type=article")
+	if !strings.Contains(body, `"Label":"Zengin metin"`) || !strings.Contains(body, "çoktan çoğa") {
+		t.Error("builder labels in Turkish")
+	}
+	if !strings.Contains(body, "wpgo-l10n.js") {
+		t.Fatal("no script dictionary")
+	}
+	_, js, _ := get(t, c, base+"/wp-admin/wpgo-l10n.js")
+	for _, want := range []string{`"Heading 1":"Başlık 1"`, `"Stored values change:":"Saklanan değerler değişir:"`} {
+		if !strings.Contains(js, want) {
+			t.Errorf("script dictionary: missing %s", want)
+		}
+	}
+	// User content stays as written.
+	if !strings.Contains(body, `translate="no"`) {
+		t.Error("no translate=no on user content")
+	}
+}

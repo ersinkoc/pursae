@@ -149,7 +149,7 @@ func gweTranslateLabel(cat *i18n.Catalog, s string) string {
 var (
 	gweJSStringsOnce sync.Once
 	gweJSStringsList []string
-	gweJSLiteral     = regexp.MustCompile(`'((?:[^'\\\n]|\\.){2,160})'|"((?:[^"\\\n]|\\.){2,160})"|` + "`([^`$\\n]{2,160})`")
+	gweJSLiteral     = regexp.MustCompile(`'((?:[^'\\\n]|\\.){0,160})'|"((?:[^"\\\n]|\\.){0,160})"|` + "`([^`$\\n]{0,160})`")
 	gweJSNotText     = regexp.MustCompile(`[{}<>=;]|^\.|^#|gwe-|e-con|elementor|\\u|https?:|^[A-Z][a-z]+[A-Z]|^[A-Z_]+$`)
 	gweJSHasWord     = regexp.MustCompile(`[A-Za-z]{2}`)
 )

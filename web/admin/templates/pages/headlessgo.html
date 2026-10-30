@@ -232,8 +232,8 @@
 		<option value="full-access"{{if eq .Token.Kind "full-access"}} selected{{end}}>Full access</option>
 		<option value="custom"{{if eq .Token.Kind "custom"}} selected{{end}}>Custom</option></select>
 		<p class="description">Read-only: find and findOne on every type. Full access: every action, drafts included. Custom: choose below.</p></td></tr>
-	<tr><th scope="row">Drafts</th><td><label><input type="checkbox" name="drafts" value="1"{{if .Token.Drafts}} checked{{end}}> May read drafts (<code>status=draft</code>)</label></td></tr>
-	<tr><th scope="row">Media</th><td><label><input type="checkbox" name="upload" value="1"{{if .Token.Upload}} checked{{end}}> May upload media (<code>POST /upload</code>)</label><p class="description">Custom tokens only; full-access tokens always may, read-only tokens never.</p></td></tr>
+	<tr><th scope="row">Drafts</th><td><label><input type="checkbox" name="drafts" value="1"{{if .Token.Drafts}} checked{{end}}> <span>May read drafts (<code>status=draft</code>)</span></label></td></tr>
+	<tr><th scope="row">Media</th><td><label><input type="checkbox" name="upload" value="1"{{if .Token.Upload}} checked{{end}}> <span>May upload media (<code>POST /upload</code>)</span></label><p class="description">Custom tokens only; full-access tokens always may, read-only tokens never.</p></td></tr>
 	</table>
 	<div id="hg-t-custom" class="hg-matrix-wrap"{{if ne .Token.Kind "custom"}} hidden{{end}}>
 	<h3>Permissions</h3>
@@ -354,8 +354,8 @@
 <tr><th scope="row"><label for="hg-cors">CORS allowed origins</label></th><td><textarea id="hg-cors" name="cors_origins" class="large-text code" rows="3" placeholder="https://app.example.com">{{.Origins}}</textarea>
 	<p class="description">One origin per line (<code>https://app.example.com</code>), or <code>*</code> for any. Browsers on other origins cannot call the API.</p></td></tr>
 <tr><th scope="row">Page size</th><td><label>Default <input type="number" name="default_page_size" min="1" max="1000" value="{{.Settings.DefaultPageSize}}" class="small-text"></label> <label>Maximum <input type="number" name="max_page_size" min="1" max="1000" value="{{.Settings.MaxPageSize}}" class="small-text"></label></td></tr>
-<tr><th scope="row">GraphQL</th><td><label><input type="checkbox" name="graphql" value="1"{{if .Settings.GraphQL}} checked{{end}}> GraphQL endpoint at <code>{{.APIBase}}/graphql</code> (queries, mutations, introspection)</label> <a href="/wp-admin/headlessgo?page=graphql">Open the playground</a></td></tr>
-<tr><th scope="row">Webhooks</th><td><label><input type="checkbox" name="schema_webhooks" value="1"{{if .Settings.SchemaWebhooks}} checked{{end}}> Send <code>schema.update</code> when a content type or component changes</label>
+<tr><th scope="row">GraphQL</th><td><label><input type="checkbox" name="graphql" value="1"{{if .Settings.GraphQL}} checked{{end}}> <span>GraphQL endpoint: queries, mutations and introspection</span></label> <code>{{.APIBase}}/graphql</code> &middot; <a href="/wp-admin/headlessgo?page=graphql">Open the playground</a></td></tr>
+<tr><th scope="row">Webhooks</th><td><label><input type="checkbox" name="schema_webhooks" value="1"{{if .Settings.SchemaWebhooks}} checked{{end}}> <span>Send <code>schema.update</code> when a content type or component changes</span></label>
 	<p><label for="hg-attempts">Attempts per delivery</label> <input type="number" id="hg-attempts" name="webhook_attempts" min="1" max="10" value="{{.Settings.WebhookAttempts}}" class="small-text"></p></td></tr>
 {{if not .GolylangOn}}<tr><th scope="row"><label for="hg-loc">Default locale</label></th><td><input type="text" id="hg-loc" name="default_locale" value="{{.Settings.DefaultLocale}}" class="small-text"><p class="description">The locale of entries of translatable types while Golylang is off. With Golylang active, its languages are the locales.</p></td></tr>{{else}}<input type="hidden" name="default_locale" value="{{.Settings.DefaultLocale}}">{{end}}
 </table>

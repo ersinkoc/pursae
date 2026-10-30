@@ -24,7 +24,7 @@ import (
 // adminJSSources are the scripts whose string literals are UI text; templates contribute the
 // literals of their inline scripts and event handler attributes.
 var adminJSSources = []string{"admin/assets/js/*.js", "admin/assets/acfgo/*.js", "admin/assets/gontact/*.js",
-	"goocommerce/assets/js/admin/*.js", "wp-admin/js/seogo-*.js", "admin/templates/*.html", "admin/templates/*/*.html"}
+	"goocommerce/assets/js/admin/*.js", "wp-admin/js/seogo-*.js", "admin/templates/*.html", "admin/templates/*/*.html", "admin/assets/headlessgo/*.js"}
 
 var (
 	adminJSStringsOnce sync.Once
