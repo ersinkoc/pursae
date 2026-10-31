@@ -40,6 +40,7 @@ type fakeManager struct {
 	access   string
 	channel  string
 	validKey string
+	themeLib fakeThemes // GET /api/v1/themes… (theme_manager_test.go)
 }
 
 type managerReq struct{ Method, Path, Site, License string }
@@ -118,6 +119,8 @@ func (m *fakeManager) serve(w http.ResponseWriter, r *http.Request) {
 		m.events = append(m.events, body.Events...)
 		w.WriteHeader(http.StatusAccepted)
 		fmt.Fprintf(w, `{"ok":true,"accepted":%d}`, len(body.Events))
+	case r.URL.Path == "/api/v1/themes" || strings.HasPrefix(r.URL.Path, "/api/v1/themes/"):
+		m.serveThemes(w, r)
 	default:
 		w.WriteHeader(http.StatusNotFound)
 	}
