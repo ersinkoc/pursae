@@ -186,3 +186,42 @@ func TestGooCartQuantityCannotOverflow(t *testing.T) {
 		t.Fatalf("negative line kept: %d items, total %v", len(again.Items), again.Total)
 	}
 }
+
+// Private products are purchasable only by users who may edit them (is_purchasable()); visitors guessing
+// IDs with ?add-to-cart= used to buy them.
+func TestGooPrivateProductNotForSale(t *testing.T) {
+	base, _, srv := gooSite(t)
+	ctx := context.Background()
+	secret := gooMakeSimple(t, srv, "Unreleased", 5, func(p *gooProduct) { p.Status = "private" })
+	open := gooMakeSimple(t, srv, "Released", 5, nil)
+
+	guest := srv.gooCartFor(gooTestCtx())
+	if _, err := guest.Add(ctx, secret.ID, 1, 0, nil, nil, nil); err == nil {
+		t.Fatal("a visitor added a private product")
+	}
+	if _, err := guest.Add(ctx, open.ID, 1, 0, nil, nil, nil); err != nil {
+		t.Fatal(err)
+	}
+	g := gooGuest()
+	get(t, g, fmt.Sprintf("%s/?add-to-cart=%d", base, secret.ID))
+	if _, body, _ := get(t, g, base+"/cart/"); strings.Contains(body, "Unreleased") {
+		t.Fatal("private product in a visitor's cart through ?add-to-cart=")
+	}
+
+	admin, err := srv.store.UserByID(ctx, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	c := gooTestCtx()
+	c.Set(ctxUser, admin)
+	staff := srv.gooCartFor(c)
+	if _, err := staff.Add(ctx, secret.ID, 1, 0, nil, nil, nil); err != nil {
+		t.Fatalf("shop staff cannot buy their own private product: %v", err)
+	}
+	// The line disappears when the same session is loaded for a visitor.
+	again := &gooCart{s: srv, c: gooTestCtx(), sess: staff.sess}
+	again.load(ctx)
+	if len(again.Items) != 0 {
+		t.Fatalf("private product kept in a visitor's cart: %d items", len(again.Items))
+	}
+}
