@@ -165,6 +165,10 @@ func (cart *gooCart) load(ctx context.Context) {
 		if st.VariationID != 0 {
 			pid = st.VariationID
 		}
+		if st.Quantity <= 0 || st.Quantity > gooMaxLineQty { // never from Add / SetQuantity: a damaged or forged session
+			cart.sess.touch()
+			continue
+		}
 		p := products[pid]
 		if p == nil || !s.gooIsPurchasable(ctx, p) {
 			name := "A product"
@@ -239,6 +243,11 @@ func (cart *gooCart) Item(key string) *gooCartItem {
 	return nil
 }
 
+// gooMaxLineQty caps the quantity of a cart line. Quantities are machine integers: without a cap,
+// adding MaxInt64 twice to a line wraps it to a negative quantity, a negative line total and a free
+// (or discounted) order, with stock "returned" on payment.
+const gooMaxLineQty = 1_000_000
+
 // gooCartError is an add-to-cart / update failure with WooCommerce's message (HTML-safe).
 type gooCartError struct{ Msg string }
 
@@ -252,6 +261,9 @@ func (cart *gooCart) Add(ctx context.Context, productID int64, qty int, variatio
 	s := cart.s
 	if qty <= 0 {
 		return "", gooCartErr("Please choose a quantity of items to add to your cart.")
+	}
+	if qty > gooMaxLineQty {
+		return "", gooCartErr("You cannot add that amount to the cart.")
 	}
 	p, err := s.gooGetProduct(ctx, productID)
 	if err != nil || (p.Status != "publish" && p.Status != "private") {
@@ -364,6 +376,9 @@ func (cart *gooCart) Add(ctx context.Context, productID int64, qty int, variatio
 		return "", gooCartErr("You cannot add that amount of &quot;%s&quot; to the cart because there is not enough stock (%d remaining).", html.EscapeString(p.Name), stock)
 	}
 	if existing != nil {
+		if existing.Quantity+qty > gooMaxLineQty {
+			return "", gooCartErr("You cannot add that amount to the cart.")
+		}
 		existing.Quantity += qty
 	} else {
 		buy.parent = nil
@@ -392,6 +407,9 @@ func (cart *gooCart) SetQuantity(ctx context.Context, key string, qty int) error
 	if qty <= 0 {
 		cart.Remove(key)
 		return nil
+	}
+	if qty > gooMaxLineQty {
+		return gooCartErr("You cannot add that amount to the cart.")
 	}
 	if it.product.SoldIndividually && qty > 1 {
 		return gooCartErr("You can only have 1 %s in your cart.", html.EscapeString(it.product.Name))

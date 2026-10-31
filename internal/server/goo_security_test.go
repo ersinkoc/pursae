@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"math"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -140,5 +141,48 @@ func TestGooWebhookRefusesPrivateAddresses(t *testing.T) {
 		if publicIP(net.ParseIP(ip)) {
 			t.Errorf("%s treated as public", ip)
 		}
+	}
+}
+
+// Adding MaxInt64 to a cart line twice used to wrap its quantity to -1: a negative line total, a free or
+// discounted order, and stock added back on payment.
+func TestGooCartQuantityCannotOverflow(t *testing.T) {
+	_, _, srv := gooSite(t)
+	ctx := context.Background()
+	z := gooMakeSimple(t, srv, "Z", 90, nil)
+	y := gooMakeSimple(t, srv, "Y", 100, nil)
+	cart := srv.gooCartFor(gooTestCtx())
+	key, err := cart.Add(ctx, z.ID, 1, 0, nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 2; i++ {
+		if _, err := cart.Add(ctx, z.ID, math.MaxInt64, 0, nil, nil, nil); err == nil {
+			t.Fatal("MaxInt64 quantity accepted")
+		}
+	}
+	if _, err := cart.Add(ctx, z.ID, gooMaxLineQty, 0, nil, nil, nil); err == nil {
+		t.Fatal("line pushed over the quantity cap")
+	}
+	if err := cart.SetQuantity(ctx, key, math.MaxInt64); err == nil {
+		t.Fatal("SetQuantity accepted MaxInt64")
+	}
+	if _, err := cart.Add(ctx, y.ID, 1, 0, nil, nil, nil); err != nil {
+		t.Fatal(err)
+	}
+	if it := cart.Item(key); it == nil || it.Quantity != 1 {
+		t.Fatalf("line Z after overflow attempts: %+v", it)
+	}
+	if cart.Total < 190 {
+		t.Fatalf("cart total %v, want 190", cart.Total)
+	}
+
+	// A session that already holds a negative quantity (forged or from before the cap) loses that line.
+	cart.sess.Data.Cart[0].Quantity = -1
+	again := &gooCart{s: srv, c: cart.c, sess: cart.sess}
+	again.load(ctx)
+	again.Calculate()
+	if len(again.Items) != 1 || again.Items[0].ProductID != y.ID || again.Total < 100 {
+		t.Fatalf("negative line kept: %d items, total %v", len(again.Items), again.Total)
 	}
 }
