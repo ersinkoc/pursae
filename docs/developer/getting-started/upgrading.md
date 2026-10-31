@@ -5,8 +5,31 @@ weight: 50
 section: getting-started
 ---
 
-Pursae has no in-place updater: you replace the binary (or rebuild the image) and start it.
-Database migrations run automatically on start, before the server listens.
+A connected site can update itself from Dashboard › Updates (below); otherwise you replace the
+binary (or rebuild the image) and start it. Database migrations run automatically on start, before
+the server listens.
+
+## From Dashboard › Updates
+
+When the Hub publishes a release built for the site's platform (`core.artifacts` in
+`GET /api/v1/index` has the running `GOOS`/`GOARCH`), Dashboard › Updates shows **Update to version
+X**. The site then:
+
+1. downloads the binary from the Hub (at most 256 MB), checking its size and SHA-256;
+2. verifies the Ed25519 signature by the Hub key named in the release (one of the index `keys`)
+   over `pursae-core-v1\n{version}\n{os}-{arch}\n{sha256 hex}`;
+3. writes it next to the running executable (temporary file, fsync, mode 0755) and renames it over
+   the old one;
+4. shows *Updated, restarting…*, records a `core_update` event and re-executes itself; the new
+   version runs its migrations on start.
+
+Nothing is replaced when a check fails. The button is replaced by the reason when the executable
+cannot be replaced: a `go run` build, or a binary (or directory) the server may not write — as in
+the Docker image, where you pull the new image instead. Beta releases are offered only to sites
+whose license includes the beta channel. Back up first, as for any upgrade.
+
+Release builds set the version with
+`go build -ldflags "-X wpgo/internal/server.Version=0.2.0" ./cmd/wpgo`.
 
 ## Docker
 

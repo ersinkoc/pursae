@@ -70,4 +70,4 @@ environment variables:
 | `plugin_trusted_keys` | — | newline- or comma-separated public keys, merged with `WPGO_PLUGIN_KEYS` |
 | `plugin_allow_unsigned` | — | `true` accepts unsigned plugin packages (development only) |
 | `wpgo_cache_*`, `wpgo_opt_*` | WPGo Cache screens | page cache and page optimisation ([caching](caching.md)) |
-| `wpgo_hub_ping` | — | `false` stops the daily ping to the Hub |
+| `pursae_license_key` | Settings › License | the license key sent to the Hub ([licenses](../hub/index.md#licenses)) |

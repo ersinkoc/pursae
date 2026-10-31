@@ -156,7 +156,7 @@ Everything is configured with environment variables.
 | `WPGO_DISALLOW_FILE_EDIT` | off | Set to make the Theme File Editor read-only |
 | `WPGO_PLUGIN_KEYS` | — | Comma-separated Ed25519 public keys trusted to sign plugin packages |
 | `WPGO_MARKET_DIR` | — | Local plugin packages offered on Plugins › Add Plugin (besides the Hub catalog) |
-| `WPGO_HUB_URL` | `https://hub.wordpressgo.dev` | The Pursae Hub: marketplace, release checks and the daily site ping (URL host + version only). `off` disables it |
+| `WPGO_HUB_URL` | `https://hub.wordpressgo.dev` | Pursae Manager: marketplace, licenses, release checks and self-update, and the site statistics (daily ping with version and inventory, usage events; always on). `off` disables it |
 | `WPGO_TRUST_DEV_KEY` | `1` in compose | Trust the demo signing key of the bundled example plugins (**development only**) |
 
 ## Data and volumes

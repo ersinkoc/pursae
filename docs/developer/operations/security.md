@@ -25,8 +25,10 @@ section: operations
   allows, a memory cap, a per-call timeout and permissions you approve
   ([limits and sandbox](../plugins/limits-and-sandbox.md)). Packages are signed; only keys you
   trust can install.
-- **No third-party calls**: no Gravatar, no update pings except the opt-out Hub ping that sends
-  only the site host and version ([Hub](../hub/index.md)).
+- **No third-party calls**: no Gravatar. The only service a site talks to is the Hub
+  (`WPGO_HUB_URL`), which gets the site URL, version, platform, license key, installed plugins and
+  themes and usage events, never users or content ([what a site sends](../hub/index.md#what-a-site-sends-statistics));
+  `WPGO_HUB_URL=off` disconnects it.
 
 ## Checklist
 
