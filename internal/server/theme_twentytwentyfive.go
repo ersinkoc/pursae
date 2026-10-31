@@ -29,7 +29,8 @@ import (
 // container rules and the theme's style.min.css). Core block styles of the blocks a page's content
 // uses are inlined per page (Theme.BlockStyles, blockStylesFor), instead of the whole block library.
 // The style variations' palettes are the Customizer's Color scheme (css/styles/<slug>.min.css,
-// printed inline after the stylesheet). The navigation overlay runs on a small deferred script
+// printed inline after the stylesheet, with the section styles a variation changes, such as the
+// buttons of is-style-section-N). The navigation overlay runs on a small deferred script
 // (js/navigation.js) loaded only when the header has a menu; the front end loads no jQuery.
 
 const tt5Version = "1.5"

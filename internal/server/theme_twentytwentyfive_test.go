@@ -237,15 +237,35 @@ func mustUploadTestImage(t *testing.T, srv *Server, uid int64) int64 {
 }
 
 // TestTwentyTwentyFiveBuiltAssets checks the generated files the theme ships: the color schemes
-// only carry what differs from the default palette, every demo set validates.
+// only carry what differs from the default palette (with the section styles they change, such as
+// the sections' buttons), every demo set validates.
 func TestTwentyTwentyFiveBuiltAssets(t *testing.T) {
 	s := &Server{web: os.DirFS("../../web")}
 	th := themeBySlug("twentytwentyfive")
 	for _, sc := range tt5Schemes[1:] {
 		css := s.tt5SchemeCSS(map[string]any{"color_scheme": sc[0]})
-		if !strings.Contains(css, "--wp--preset--color--base:") || len(css) > 4000 {
+		if !strings.Contains(css, "--wp--preset--color--base:") || len(css) > 12000 {
 			t.Errorf("scheme %s: %d bytes", sc[0], len(css))
 		}
+	}
+	// styles/colors/01-evening.json: section-2's buttons become base on contrast, section-4's text
+	// contrast (WordPress prints them as the sections' block style variation styles).
+	evening := s.tt5SchemeCSS(map[string]any{"color_scheme": "evening"})
+	for _, want := range []string{
+		":root :where(.is-style-section-2 .wp-element-button, .is-style-section-2 .wp-block-button__link){background-color:var(--wp--preset--color--base);color:var(--wp--preset--color--contrast)}",
+		":root :where(.is-style-section-4 .wp-element-button, .is-style-section-4 .wp-block-button__link){background-color:var(--wp--preset--color--accent-2);color:var(--wp--preset--color--contrast)}",
+	} {
+		if !strings.Contains(evening, want) {
+			t.Errorf("evening scheme lacks %s", want)
+		}
+	}
+	// Dusk changes the global button colors: the default section-5 buttons are printed again after
+	// them, so a section keeps its own buttons as in WordPress (section styles come last there).
+	dusk := s.tt5SchemeCSS(map[string]any{"color_scheme": "dusk"})
+	g := strings.Index(dusk, ":root :where(.wp-element-button, .wp-block-button__link){")
+	sec := strings.Index(dusk, ":root :where(.is-style-section-5 .wp-element-button, .is-style-section-5 .wp-block-button__link){")
+	if g < 0 || sec < g {
+		t.Errorf("dusk: global buttons at %d, section-5 buttons at %d", g, sec)
 	}
 	if len(th.Demos) < 3 {
 		t.Fatalf("%d demo sets", len(th.Demos))
