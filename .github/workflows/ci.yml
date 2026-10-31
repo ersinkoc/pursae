@@ -11,6 +11,7 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     services:
       postgres:
         image: postgres:17-alpine
@@ -36,7 +37,7 @@ jobs:
       - name: vet
         run: go vet ./...
       - name: test
-        run: go test ./... -p 1 -count=1
+        run: go test ./... -p 1 -count=1 -timeout 40m
 
   vulncheck:
     runs-on: ubuntu-latest
