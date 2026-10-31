@@ -12,6 +12,8 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+
+	"wpgo/internal/store"
 )
 
 // Regression tests for the Pursae Commerce security review (feature-plugin code the core audit left
@@ -284,5 +286,50 @@ func TestGooCheckoutCreateAccountHonoursSetting(t *testing.T) {
 	}
 	if _, err := srv.store.UserByLoginOrEmail(ctx, "ada@example.test"); err == nil {
 		t.Fatal("checkout created an account for the billing e-mail although sign-up at checkout is off")
+	}
+}
+
+// Memberships restricts a post's content on its page; the REST API (content.rendered, the_content in
+// WordPress) and the excerpt must not hand the same content to non-members.
+func TestGooMembershipsRestrictRESTContent(t *testing.T) {
+	base, _, srv := gooSite(t)
+	ctx := context.Background()
+	news := &store.Post{Type: "post", Title: "Members digest", Slug: "members-digest", Content: "<p>The members-only recipe is here.</p>",
+		Excerpt: "A teaser.", Status: "publish", AuthorID: 1, Meta: map[string]any{}}
+	open := &store.Post{Type: "post", Title: "Open notes", Slug: "open-notes", Content: "<p>Open words [goocommerce_members_only]hidden bonus[/goocommerce_members_only].</p>",
+		Status: "publish", AuthorID: 1, Meta: map[string]any{}}
+	for _, p := range []*store.Post{news, open} {
+		if err := srv.store.InsertPost(ctx, p); err != nil {
+			t.Fatal(err)
+		}
+	}
+	plan := &gooMembershipPlan{Name: "Velvet", AccessMethod: "manual", AccessLength: "unlimited", Rules: gmemRules{ContentPostIDs: []int64{news.ID}}}
+	if err := srv.gmemSavePlan(ctx, plan); err != nil {
+		t.Fatal(err)
+	}
+	if err := srv.gooSetExtension(ctx, gmemKey, true); err != nil {
+		t.Fatal(err)
+	}
+	anon := gooGuest()
+	r := gooReq(t, anon, "GET", fmt.Sprintf("%s/wp-json/wp/v2/posts/%d", base, news.ID), nil, nil)
+	if r.Code != 200 || strings.Contains(r.Raw, "members-only recipe") || !strings.Contains(gooJS(r.Body, "content", "rendered"), "wc-memberships-content-restricted-message") {
+		t.Errorf("restricted post over REST: %d %s", r.Code, r.Raw)
+	}
+	if r := gooReq(t, anon, "GET", base+"/wp-json/wp/v2/posts?per_page=50", nil, nil); strings.Contains(r.Raw, "members-only recipe") || strings.Contains(r.Raw, "hidden bonus") {
+		t.Errorf("restricted content in the REST list: %s", r.Raw)
+	}
+	// Without "show excerpts" the excerpt goes too; the front-end archive excerpt drops the shortcode text.
+	if err := srv.gooSetOpts(ctx, map[string]any{"ext_" + gmemKey + "_settings": map[string]any{"show_excerpts": "no"}}); err != nil {
+		t.Fatal(err)
+	}
+	if r := gooReq(t, anon, "GET", fmt.Sprintf("%s/wp-json/wp/v2/posts/%d", base, news.ID), nil, nil); strings.Contains(r.Raw, "A teaser.") {
+		t.Errorf("excerpt shown without show_excerpts: %s", gooJS(r.Body, "excerpt", "rendered"))
+	}
+	if _, body, _ := get(t, anon, base+"/feed/"); strings.Contains(body, "hidden bonus") {
+		t.Error("members-only shortcode text in the feed")
+	}
+	r = gooReq(t, anon, "GET", fmt.Sprintf("%s/wp-json/wp/v2/posts/%d", base, open.ID), nil, nil)
+	if !strings.Contains(r.Raw, "Open words") || strings.Contains(r.Raw, "hidden bonus") {
+		t.Errorf("members-only shortcode over REST: %s", r.Raw)
 	}
 }

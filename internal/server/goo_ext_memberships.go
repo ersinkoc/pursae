@@ -572,6 +572,34 @@ func gmemFilterContent(s *Server, ctx context.Context, content string) string {
 	return s.gmemRestrictedContent(ctx, postID, plans, u)
 }
 
+// gmemStripShortcodes removes the members shortcodes with what they enclose from text an excerpt or a
+// description is made of (strip_shortcodes() in wp_trim_excerpt()): excerpts are cut from the raw
+// content, so "[goocommerce_members_only]…" would otherwise show its members-only text to everyone.
+func gmemStripShortcodes(text string) string {
+	if !strings.Contains(text, "[goocommerce_") {
+		return text
+	}
+	text = gmemMembersOnlyRe.ReplaceAllString(text, "")
+	text = gmemNonMembersRe.ReplaceAllString(text, "")
+	return gmemDiscountRe.ReplaceAllString(text, "")
+}
+
+// gooRESTRestrict is Memberships for the REST API: content.rendered is the_content in WordPress, so a
+// restricted post shows a non-member the same restriction message as its page, and the excerpt only
+// when the plan shows excerpts. The members-only shortcodes are applied too.
+func (s *Server) gooRESTRestrict(ctx context.Context, u *store.User, p *store.Post, rendered, excerpt string) (string, string) {
+	if !s.gooOn() || !s.gooExtOn(gmemKey) {
+		return rendered, excerpt
+	}
+	rc := &renderCtx{s: s, lb: s.links(ctx), user: u, postID: p.ID}
+	ctx = withRender(withPluginUser(ctx, u), rc)
+	plans := s.gmemPostPlans(ctx, p.ID)
+	if len(plans) > 0 && !s.gmemCanAccess(ctx, u, plans) && !s.gooExtBool(gmemKey, "show_excerpts") {
+		excerpt = ""
+	}
+	return gmemFilterContent(s, ctx, rendered), excerpt
+}
+
 // gmemRestrictedContent is what a non-member sees instead of restricted content: the excerpt (per
 // setting) and the restriction message.
 func (s *Server) gmemRestrictedContent(ctx context.Context, postID int64, plans []*gooMembershipPlan, u *store.User) string {

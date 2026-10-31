@@ -530,7 +530,7 @@ func stripBlocks(content string) string {
 	for _, b := range blocks.Parse(content) {
 		sb.WriteString(blocks.RenderBlock(context.Background(), b))
 	}
-	return sb.String()
+	return gmemStripShortcodes(sb.String())
 }
 
 // loginURL is wp_login_url()'s path (AdminSecGo may move it).
