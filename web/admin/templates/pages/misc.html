@@ -50,7 +50,28 @@
 <p>Your plugins are all up to date.</p>
 {{end}}
 <h2>Themes</h2>
+{{if .ThemeUpdates}}
+<p>The following themes have new versions available. Check the ones you want to update and then click &#8220;Update Themes&#8221;.</p>
+<form method="post" action="/wp-admin/update-core?action=do-theme-upgrade" name="upgrade-themes" class="upgrade">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+{{if .CanUpdateThemes}}<p><input id="upgrade-themes" class="button" type="submit" value="Update Themes" name="upgrade" /></p>{{end}}
+<table class="widefat updates-table" id="update-themes-table">
+	<thead><tr><td class="manage-column check-column"><input type="checkbox" id="themes-select-all" /></td><td class="manage-column"><label for="themes-select-all">Select All</label></td></tr></thead>
+	<tbody class="plugins">
+	{{range .ThemeUpdates}}
+	<tr>
+		<td class="check-column"><input type="checkbox" name="checked[]" id="checkbox_{{.Slug}}" value="{{.Slug}}" /><label for="checkbox_{{.Slug}}"><span class="screen-reader-text">Select {{.Name}}</span></label></td>
+		<td class="plugin-title"><p><img src="{{.Screenshot}}" width="85" height="64" class="updates-table-screenshot" alt="" /><strong>{{.Name}}</strong> You have version {{.Version}} installed. Update to {{.Update.Version}}.{{if eq .Update.Channel "beta"}} <span class="wpgo-badge wpgo-badge-beta">Beta</span>{{end}}</p></td>
+	</tr>
+	{{end}}
+	</tbody>
+	<tfoot><tr><td class="manage-column check-column"><input type="checkbox" id="themes-select-all-2" /></td><td class="manage-column"><label for="themes-select-all-2">Select All</label></td></tr></tfoot>
+</table>
+{{if .CanUpdateThemes}}<p><input id="upgrade-themes-2" class="button" type="submit" value="Update Themes" name="upgrade" /></p>{{end}}
+</form>
+{{else}}
 <p>Your themes are all up to date.</p>
+{{end}}
 <h2>Translations</h2>
 <p>Your translations are all up to date.</p>
 </div>

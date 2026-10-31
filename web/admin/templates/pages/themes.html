@@ -13,6 +13,7 @@
 	<div class="theme-screenshot">
 		<img src="{{.ScreenshotURL}}" alt="" />
 	</div>
+	{{if .UpdateURL}}<div class="update-message notice inline notice-warning notice-alt"><p>New version available. <a class="button-link" href="{{.UpdateURL}}" aria-label="Update {{.Name}} to version {{.NewVersion}}">Update now</a></p></div>{{end}}
 	<button type="button" class="more-details" id="{{.Slug}}-action" aria-label="View Theme Details for {{.Name}}">Theme Details</button>
 	<div class="theme-author">By {{.Author}}</div>
 	<div class="theme-id-container">
@@ -82,6 +83,15 @@
 	<# } else { #>
 		<div class="theme-screenshot blank"></div>
 	<# } #>
+	<# if ( data.hasUpdate ) { #>
+		<div class="update-message notice inline notice-warning notice-alt"><p>
+		<# if ( data.wpgoUpdate ) { #>
+			New version available. <a class="button-link" href="{{{ data.wpgoUpdate }}}" aria-label="Update {{ data.name }} now">Update now</a>
+		<# } else { #>
+			New version available.
+		<# } #>
+		</p></div>
+	<# } #>
 	<button type="button" class="more-details" id="{{ data.id }}-action" aria-label="View Theme Details for {{ data.name }}">Theme Details</button>
 	<div class="theme-author">By {{{ data.author }}}</div>
 	<div class="theme-id-container">
@@ -131,6 +141,12 @@
 				<# } #>
 				<h2 class="theme-name">{{{ data.name }}}<span class="theme-version">Version: {{ data.version }}</span></h2>
 				<p class="theme-author">By {{{ data.authorAndUri }}}</p>
+				<# if ( data.hasUpdate ) { #>
+					<div class="notice notice-warning notice-alt notice-large" data-slug="{{ data.id }}">
+						<h3 class="notice-title">Update Available</h3>
+						{{{ data.update }}}
+					</div>
+				<# } #>
 				<p class="theme-description">{{{ data.description }}}</p>
 				<# if ( data.parent ) { #>
 					<p class="parent-theme">This is a child theme of <strong>{{{ data.parent }}}</strong>.</p>

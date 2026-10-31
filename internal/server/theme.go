@@ -405,6 +405,8 @@ type themeCard struct {
 	PreviewURL    string
 	// The active package theme's demo content (theme_demo.go): Import or Remove.
 	DemoImportURL, DemoRemoveURL string
+	// A newer version on Pursae Manager (hub_updates.go): Update now and the version.
+	UpdateURL, NewVersion string
 }
 
 type themesData struct {
@@ -445,6 +447,9 @@ type wpThemeJS struct {
 	DemoRemove string `json:"wpgoDemoRemove,omitempty"`
 	// An installed package with demo content: its preview with the demo (theme_preview.go).
 	DemoPreview string `json:"wpgoDemoPreview,omitempty"`
+	// A newer version on Pursae Manager: the Update now URL (hub_updates.go). hasPackage stays false so
+	// theme.js leaves the link alone instead of calling wp.updates.
+	UpdateURL string `json:"wpgoUpdate,omitempty"`
 }
 
 // themesScreen is themes.php.
@@ -465,6 +470,10 @@ func (s *Server) themesScreen(c *gin.Context) {
 			return
 		}
 		c.Redirect(http.StatusFound, "/wp-admin/themes?activated=true")
+		return
+	}
+	if c.Query("action") == "upgrade-theme" { // a newer version from Pursae Manager (hub_updates.go)
+		s.themeUpgrade(c)
 		return
 	}
 	if c.Query("action") == "delete" { // delete_theme() (theme_delete.go)
@@ -546,6 +555,10 @@ func (s *Server) themesScreen(c *gin.Context) {
 	hasDemo := themeHasDemo(active) && u.Can("import", nil)
 	demoImported := hasDemo && len(active.Demos) == 0 && s.demoImported(active.Slug)
 	var d themesData
+	var updates map[string]hubItem
+	if u.Can("update_themes", nil) {
+		updates = s.hubThemeUpdates(c)
+	}
 	for _, t := range s.installedThemes() {
 		if t.Custom { // Golementor: saved themes are listed in their own section
 			continue
@@ -555,6 +568,9 @@ func (s *Server) themesScreen(c *gin.Context) {
 			PreviewURL:  "/?theme=" + t.Slug}
 		if !t.Custom {
 			card.ScreenshotURL += "?ver=" + t.Version
+		}
+		if it, ok := updates[t.Slug]; ok {
+			card.UpdateURL, card.NewVersion = s.themeUpdateURL(c, t.Slug), it.Version
 		}
 		if card.Active && hasDemo {
 			if demoImported {
@@ -591,6 +607,12 @@ func (s *Server) themesScreen(c *gin.Context) {
 			UpdateResp: map[string]bool{"compatibleWP": true, "compatiblePHP": true}, Active: t.Active,
 			Autoupdate: map[string]any{"enabled": false, "supported": false, "forced": nil},
 			Actions:    map[string]any{"activate": t.ActivateURL, "customize": customize, "delete": nil, "autoupdate": nil}}
+		if t.UpdateURL != "" {
+			name := template.HTMLEscapeString(t.Name)
+			j.HasUpdate, j.UpdateURL = true, t.UpdateURL
+			j.Update = `<p><strong>There is a new version of ` + name + ` available. <a href="` + template.HTMLEscapeString(t.UpdateURL) +
+				`" class="wpgo-update-theme" aria-label="Update ` + name + ` now">Update now</a> to version ` + template.HTMLEscapeString(t.NewVersion) + `.</strong></p>`
+		}
 		if t.Slug == helloThemeSlug { // Golementor: the hello theme is built in the Theme Builder
 			j.Builder = "/wp-admin/theme-builder"
 		}

@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"math"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -30,6 +31,8 @@ func (s *Server) updateCore(c *gin.Context) {
 		switch c.Query("action") {
 		case "do-plugin-upgrade": // hub_updates.go
 			s.updatePlugins(c)
+		case "do-theme-upgrade": // hub_updates.go
+			s.updateThemes(c)
 		case "do-core-upgrade": // core_update.go
 			s.upgradeCore(c)
 		default:
@@ -50,6 +53,22 @@ func (s *Server) updateCore(c *gin.Context) {
 		}
 	}
 	d["PluginUpdates"] = pluginUpdates
+	d["CanUpdateThemes"] = currentUser(c).Can("update_themes", nil)
+	if ups := s.hubThemeUpdates(c); len(ups) > 0 {
+		type themeUpdateRow struct {
+			*Theme
+			Screenshot string
+			Update     themeUpdate
+		}
+		var rows []themeUpdateRow
+		for _, t := range s.installedThemes() {
+			if it, ok := ups[t.Slug]; ok {
+				rows = append(rows, themeUpdateRow{Theme: t, Screenshot: t.ScreenshotSrc() + "?ver=" + url.QueryEscape(t.Version),
+					Update: themeUpdate{Version: it.Version, Channel: it.Channel}})
+			}
+		}
+		d["ThemeUpdates"] = rows
+	}
 	if up := s.hubUpdate(c); up != nil {
 		d["Update"] = up
 		if art := up.artifactFor(runtime.GOOS, runtime.GOARCH); art != nil {
@@ -62,6 +81,9 @@ func (s *Server) updateCore(c *gin.Context) {
 	var notices []notice
 	if v := c.Query("plugins-updated"); v != "" {
 		notices = append(notices, notice{Type: "success", Message: template.HTML("Plugins updated: <strong>" + template.HTMLEscapeString(v) + "</strong>."), Dismissible: true})
+	}
+	if v := c.Query("themes-updated"); v != "" {
+		notices = append(notices, notice{Type: "success", Message: template.HTML("Themes updated: <strong>" + template.HTMLEscapeString(v) + "</strong>."), Dismissible: true})
 	}
 	if v := c.Query("error"); v != "" {
 		notices = append(notices, notice{Type: "error", Message: template.HTML(template.HTMLEscapeString(v))})
