@@ -6,7 +6,10 @@ import (
 	"image/color"
 	stddraw "image/draw"
 	"image/gif"
+	"io"
 
+	"github.com/gen2brain/avif"
+	"github.com/gen2brain/webp"
 	"golang.org/x/image/draw"
 )
 
@@ -14,10 +17,9 @@ import (
 // animation, so the service decodes every frame, composes it onto the logical screen the way a
 // browser does (frame offsets and disposal methods), resizes each full frame and writes an
 // animated GIF again with the original delays and loop count. Each output frame is mapped to the
-// palette of its source frame (nearest colour, no dithering, so the frames do not shimmer). Neither
-// the WebP nor the AVIF library used here can encode animations at a reasonable cost (webp has no
-// animation encoder; animated AVIF takes seconds per frame), so animations are always answered as
-// GIF. A frame/pixel budget keeps a huge animation from tying up a CPU: over it, callers fall back to
+// palette of its source frame (nearest colour, no dithering, so the frames do not shimmer). WebP and
+// AVIF answers (TransformGIFTo) keep the composed true-colour frames and use the libraries' EncodeAll.
+// A frame/pixel budget keeps a huge animation from tying up a CPU: over it, callers fall back to
 // the first frame.
 
 // AnimLimits is the budget of an animation.
@@ -35,10 +37,16 @@ var ErrAnimBudget = fmt.Errorf("%w: animation over the frame/pixel budget", ErrT
 // IsAnimatedGIF reports whether a GIF has more than one frame.
 func IsAnimatedGIF(g *gif.GIF) bool { return g != nil && len(g.Image) > 1 }
 
-// TransformGIF resizes every frame of an animated GIF for p and returns the new animation.
-func TransformGIF(g *gif.GIF, p ImageParams, l AnimLimits) (*gif.GIF, error) {
+// animFrame is one composed, resized frame of an animation and the source frame it came from.
+type animFrame struct {
+	img *image.RGBA
+	src *image.Paletted
+}
+
+// composeGIF composes every frame of g onto the logical screen and resizes it for p.
+func composeGIF(g *gif.GIF, p ImageParams, l AnimLimits) (frames []animFrame, w, h int, err error) {
 	if g == nil || len(g.Image) == 0 {
-		return nil, fmt.Errorf("%w: empty GIF", ErrBadParam)
+		return nil, 0, 0, fmt.Errorf("%w: empty GIF", ErrBadParam)
 	}
 	if l.MaxFrames <= 0 {
 		l.MaxFrames = DefaultAnimLimits.MaxFrames
@@ -55,17 +63,15 @@ func TransformGIF(g *gif.GIF, p ImageParams, l AnimLimits) (*gif.GIF, error) {
 		sw, sh = u.Max.X, u.Max.Y
 	}
 	if sw <= 0 || sh <= 0 {
-		return nil, fmt.Errorf("%w: GIF without size", ErrBadParam)
+		return nil, 0, 0, fmt.Errorf("%w: GIF without size", ErrBadParam)
 	}
 	w, h, src := OutputSize(sw, sh, p)
 	n := len(g.Image)
 	if n > l.MaxFrames || int64(n)*(int64(sw)*int64(sh)+int64(w)*int64(h)) > l.MaxPixels {
-		return nil, ErrAnimBudget
+		return nil, 0, 0, ErrAnimBudget
 	}
 
 	canvas := image.NewRGBA(image.Rect(0, 0, sw, sh))
-	out := &gif.GIF{LoopCount: g.LoopCount, Config: image.Config{Width: w, Height: h}}
-	transparentOut := false
 	for i, frame := range g.Image {
 		// The disposal of the previous frame was applied at the end of the last iteration.
 		var restore *image.RGBA
@@ -81,15 +87,35 @@ func TransformGIF(g *gif.GIF, p ImageParams, l AnimLimits) (*gif.GIF, error) {
 
 		scaled := image.NewRGBA(image.Rect(0, 0, w, h))
 		draw.CatmullRom.Scale(scaled, scaled.Bounds(), canvas, src, draw.Src, nil)
+		frames = append(frames, animFrame{img: scaled, src: frame})
 
-		pal := framePalette(g, frame)
+		switch disposal {
+		case gif.DisposalBackground:
+			stddraw.Draw(canvas, frame.Bounds(), image.Transparent, image.Point{}, stddraw.Src)
+		case gif.DisposalPrevious:
+			copy(canvas.Pix, restore.Pix)
+		}
+	}
+	return frames, w, h, nil
+}
+
+// TransformGIF resizes every frame of an animated GIF for p and returns the new animation.
+func TransformGIF(g *gif.GIF, p ImageParams, l AnimLimits) (*gif.GIF, error) {
+	frames, w, h, err := composeGIF(g, p, l)
+	if err != nil {
+		return nil, err
+	}
+	out := &gif.GIF{LoopCount: g.LoopCount, Config: image.Config{Width: w, Height: h}}
+	transparentOut := false
+	for i, f := range frames {
+		pal := framePalette(g, f.src)
 		ti := transparentIndex(pal)
-		if ti < 0 && hasTransparentPixels(scaled) && len(pal) < 256 {
+		if ti < 0 && hasTransparentPixels(f.img) && len(pal) < 256 {
 			pal = append(pal, color.RGBA{})
 			ti = len(pal) - 1
 		}
-		pm := image.NewPaletted(scaled.Bounds(), pal)
-		quantize(pm, scaled, ti)
+		pm := image.NewPaletted(f.img.Bounds(), pal)
+		quantize(pm, f.img, ti)
 		if ti >= 0 {
 			transparentOut = true
 		}
@@ -99,13 +125,6 @@ func TransformGIF(g *gif.GIF, p ImageParams, l AnimLimits) (*gif.GIF, error) {
 			delay = g.Delay[i]
 		}
 		out.Delay = append(out.Delay, delay)
-
-		switch disposal {
-		case gif.DisposalBackground:
-			stddraw.Draw(canvas, frame.Bounds(), image.Transparent, image.Point{}, stddraw.Src)
-		case gif.DisposalPrevious:
-			copy(canvas.Pix, restore.Pix)
-		}
 	}
 	// Every output frame is the whole composed picture: with transparency each one must clear the
 	// previous one (restore to background), otherwise they are simply drawn over each other.
@@ -117,6 +136,51 @@ func TransformGIF(g *gif.GIF, p ImageParams, l AnimLimits) (*gif.GIF, error) {
 		out.Disposal = append(out.Disposal, disp)
 	}
 	return out, nil
+}
+
+// TransformGIFTo is TransformGIF for an animated WebP or AVIF answer (format "webp" or "avif"):
+// the frames stay true colour (no palette) and are encoded as one animation at quality q. GIF
+// delays (1/100 s) are kept.
+func TransformGIFTo(w io.Writer, g *gif.GIF, p ImageParams, l AnimLimits, format string, q int) error {
+	frames, _, _, err := composeGIF(g, p, l)
+	if err != nil {
+		return err
+	}
+	imgs := make([]image.Image, len(frames))
+	delays := make([]int, len(frames))
+	for i, f := range frames {
+		imgs[i] = f.img
+		if i < len(g.Delay) {
+			delays[i] = g.Delay[i] * 10
+		}
+	}
+	return EncodeAnimation(w, imgs, delays, g.LoopCount, format, q)
+}
+
+// EncodeAnimation writes frames (equal bounds) with per-frame delays in milliseconds as an animated
+// WebP or AVIF. loop is the GIF convention: 0 = forever, n = n repetitions; GIF's -1 (play once)
+// becomes one repetition.
+func EncodeAnimation(w io.Writer, frames []image.Image, delaysMs []int, loop int, format string, q int) error {
+	if q <= 0 || q > 100 {
+		q = 82
+	}
+	if loop < 0 {
+		loop = 1
+	}
+	switch format {
+	case "webp":
+		a := &webp.WEBP{Image: frames, Delay: delaysMs, LoopCount: loop}
+		return webp.EncodeAll(w, a, webp.Options{Quality: q, Method: 4})
+	case "avif":
+		aq := max(1, min(100, q*3/4))
+		d := make([]float64, len(delaysMs))
+		for i, ms := range delaysMs {
+			d[i] = float64(ms) / 1000
+		}
+		a := &avif.AVIF{Image: frames, Delay: d, LoopCount: loop}
+		return avif.EncodeAll(w, a, avif.Options{Quality: aq, QualityAlpha: aq, Speed: AVIFSpeed, ChromaSubsampling: image.YCbCrSubsampleRatio420})
+	}
+	return fmt.Errorf("%w: no animated %q output", ErrBadParam, format)
 }
 
 func framePalette(g *gif.GIF, f *image.Paletted) color.Palette {

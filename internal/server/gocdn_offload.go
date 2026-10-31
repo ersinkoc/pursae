@@ -295,12 +295,8 @@ func (s *Server) gocdnBeforeDelete(a *store.Attachment) {
 		urls = append(urls, gocdnItemURL(st, it))
 		_, _ = s.store.Pool.Exec(ctx, `DELETE FROM gocdn_items WHERE id = $1`, it.ID)
 	}
-	if st.PurgeProvider != "" && st.CFAuto && len(urls) > 0 {
-		go func() {
-			if err := s.gocdnCDNPurge(context.Background(), st, urls); err != nil {
-				slog.Warn("gocdn: CDN purge of deleted files", "err", err)
-			}
-		}()
+	if len(gocdnPurgeTargets(st)) > 0 && st.CFAuto && len(urls) > 0 {
+		go s.gocdnCDNPurgeLogged(st, urls)
 	}
 }
 
@@ -382,7 +378,7 @@ func (s *Server) gocdnServeUpload(w http.ResponseWriter, r *http.Request, st goc
 			}
 		}
 	case "redirect":
-		if u := gocdnItemURL(st, it); u != "" {
+		if u := gocdnItemURL(st, it); u != "" && !gocdnItemSSEC(st, it) {
 			w.Header().Set("Cache-Control", "public, max-age=3600")
 			http.Redirect(w, r, u, http.StatusFound)
 			return true
@@ -390,6 +386,15 @@ func (s *Server) gocdnServeUpload(w http.ResponseWriter, r *http.Request, st goc
 	}
 	s.gocdnProxy(w, r, st, it)
 	return true
+}
+
+// gocdnItemSSEC reports whether an item's object is encrypted with a customer key (so it has no
+// usable public URL).
+func gocdnItemSSEC(st gocdnSettings, it *gocdnItem) bool {
+	if gocdnItemOnCurrent(st, it) {
+		return st.SSEType == "customer"
+	}
+	return gocdnConnFor(st, it).SSEType == "customer"
 }
 
 // gocdnProxy streams an object through the site with the headers of a local upload.

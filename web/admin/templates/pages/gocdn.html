@@ -68,8 +68,19 @@ Status: {{if .Configured}}<span class="gc-badge ok">Configured</span>{{else}}<sp
 	<label><input type="radio" name="local-delivery" value="redirect"{{if eq .S.LocalDelivery "redirect"}} checked{{end}}{{if .Lock "local-delivery"}} disabled{{end}}> Redirect <code>/wp-content/uploads/…</code> to the delivery URL</label><br>
 	<label><input type="radio" name="local-delivery" value="signed"{{if eq .S.LocalDelivery "signed"}} checked{{end}}{{if .Lock "local-delivery"}} disabled{{end}}> Redirect to a presigned URL valid for one hour (private buckets)</label><br>
 	<label><input type="radio" name="local-delivery" value="proxy"{{if eq .S.LocalDelivery "proxy"}} checked{{end}}{{if .Lock "local-delivery"}} disabled{{end}}> Proxy the file through the site</label></fieldset></td></tr>
-<tr><th scope="row">Encryption</th><td><label><input type="checkbox" name="server-side-encryption" value="1"{{if .S.SSE}} checked{{end}}{{if .Lock "server-side-encryption"}} disabled{{end}}> Ask the storage to encrypt objects at rest (<code>x-amz-server-side-encryption: AES256</code>, SSE-S3)</label>
-	<p class="description">Leave off when the bucket already encrypts by default or the provider rejects the header.</p></td></tr>
+<tr><th scope="row">Encryption</th><td><fieldset{{if or (.Lock "sse-type") (.Lock "server-side-encryption")}} disabled{{end}}>
+	<label><input type="radio" name="sse-type" value=""{{if eq .S.SSEType ""}} checked{{end}}> The bucket's default</label><br>
+	<label><input type="radio" name="sse-type" value="s3"{{if eq .S.SSEType "s3"}} checked{{end}}> SSE-S3: the storage encrypts objects at rest (<code>x-amz-server-side-encryption: AES256</code>)</label><br>
+	<label><input type="radio" name="sse-type" value="kms"{{if eq .S.SSEType "kms"}} checked{{end}}> SSE-KMS: encrypt with an AWS KMS key (<code>aws:kms</code>)</label><br>
+	<label><input type="radio" name="sse-type" value="customer"{{if eq .S.SSEType "customer"}} checked{{end}}> SSE-C: encrypt with a key of your own (the key is sent with every request)</label></fieldset>
+	<p class="description">Leave on the default when the bucket already encrypts or the provider rejects the headers.</p></td></tr>
+<tr><th scope="row"><label for="gc-kms">KMS key</label></th><td><input type="text" id="gc-kms" name="sse-kms-key-id" class="regular-text code" value="{{.S.SSEKMSKey}}" placeholder="alias/my-key, key ID or ARN" translate="no" autocomplete="off"{{if .Lock "sse-kms-key-id"}} disabled{{end}}>
+	<p class="description">For SSE-KMS. Empty uses the account's default <code>aws/s3</code> key. The IAM user also needs <code>kms:GenerateDataKey</code> and <code>kms:Decrypt</code> on the key.</p></td></tr>
+<tr><th scope="row"><label for="gc-ssec">Customer key</label></th><td><div class="gc-secret">
+	{{if .Lock "sse-c-key"}}<span class="gc-badge ok">set in {{.EnvName}}</span>{{else}}
+	<input type="password" id="gc-ssec" name="sse-c-key" class="regular-text code" value="" autocomplete="new-password" placeholder="{{if .SSECSaved}}•••••••• saved — type to replace{{end}}">
+	{{if .SSECSaved}}<span class="gc-badge ok">Saved</span> <label><input type="checkbox" name="sse-c-key-clear" value="1"> Clear</label>{{end}}{{end}}</div>
+	<p class="description">For SSE-C: 32 bytes as 64 hex characters or 44 base64 characters (<code>openssl rand -hex 32</code>). Stored encrypted and never shown again. <strong>Keep a copy: objects cannot be read without it</strong>, and changing it does not re-encrypt objects already uploaded. Files with SSE-C have no public URL, so their media URLs are not rewritten and removed files are always proxied through the site; it needs an https endpoint.</p></td></tr>
 <tr><th scope="row"><label for="gc-class">Storage class</label></th><td><input type="text" id="gc-class" name="storage-class" class="regular-text code" value="{{.S.StorageClass}}" list="gc-classes" placeholder="bucket default" translate="no"{{if .Lock "storage-class"}} disabled{{end}}>
 	<datalist id="gc-classes"><option value="STANDARD"><option value="STANDARD_IA"><option value="INTELLIGENT_TIERING"><option value="ONEZONE_IA"><option value="GLACIER_IR"><option value="REDUCED_REDUNDANCY"></datalist>
 	<p class="description">For new objects (<code>x-amz-storage-class</code>). Empty uses the bucket's default; not every provider supports every class.</p></td></tr>
@@ -233,7 +244,7 @@ Status: {{if .Configured}}<span class="gc-badge ok">Configured</span>{{else}}<sp
 <form method="post" action="/wp-admin/gocdn?page=purge" class="gc-tools">
 <input type="hidden" name="_wpnonce" value="{{.Nonce}}">
 <button type="submit" name="do" value="purge-cache" class="button button-primary">Purge WPGo Cache</button>
-<button type="submit" name="do" value="purge-cdn" class="button"{{if not .PurgeReady}} disabled{{end}}>Purge {{with .Purger}}{{.Name}}{{else}}the CDN{{end}} (everything)</button>
+<button type="submit" name="do" value="purge-cdn" class="button"{{if not .PurgeReady}} disabled{{end}}>{{if gt .PurgeCount 1}}Purge all CDNs ({{.PurgerNames}}){{else}}Purge {{with .Purger}}{{.Name}}{{else}}the CDN{{end}}{{end}} (everything)</button>
 <button type="submit" name="do" value="purge-images" class="button">Empty the processed image cache</button>
 </form>
 <h2>CDN</h2>
@@ -259,6 +270,17 @@ Status: {{if .Configured}}<span class="gc-badge ok">Configured</span>{{else}}<sp
 	<input type="password" id="gc-psecret" name="purge-secret" class="regular-text code" value="" autocomplete="new-password" placeholder="{{if $.Data.PurgeSaved}}•••••••• saved — type to replace{{end}}">
 	{{if $.Data.PurgeSaved}}<span class="gc-badge ok">Saved</span> <label><input type="checkbox" name="purge-secret-clear" value="1"> Clear</label>{{end}}{{end}}</div>
 	<p class="description">Stored encrypted with the server secret and never shown again.</p></td></tr>
+{{end}}{{end}}
+<tr><th scope="row">Additional providers</th><td>
+	<p class="description" style="margin-top:0">Purge more than one CDN at once, for example a Cloudflare zone in front of a CloudFront distribution. A purge goes to every provider ticked here and to the one above; a failure is reported per provider.</p>
+	<input type="hidden" name="purge-extra-form" value="1"></td></tr>
+{{range $v := .Extras}}{{with $v.Purger}}<tr><th scope="row"><label for="gc-x-{{.Key}}">{{.Name}}</label></th><td>
+	<label><input type="checkbox" id="gc-x-{{.Key}}" name="extra-{{.Key}}" value="1"{{if $v.Enabled}} checked{{end}}{{if $v.Locked}} disabled{{end}}> Also purge {{.Name}}</label>
+	<p class="description">{{.Help}}</p>
+	<p><label>{{.ZoneLabel}} <input type="text" name="extra-{{.Key}}-zone" class="regular-text code" value="{{$v.Zone}}" translate="no" autocomplete="off"{{if $v.Locked}} disabled{{end}}></label></p>
+	{{if .KeyIDLabel}}<p><label>{{.KeyIDLabel}} <input type="text" name="extra-{{.Key}}-key-id" class="regular-text code" value="{{$v.KeyID}}" translate="no" autocomplete="off"{{if $v.Locked}} disabled{{end}}></label></p>{{end}}
+	<p><label>{{.SecretName}} <input type="password" name="extra-{{.Key}}-secret" class="regular-text code" value="" autocomplete="new-password" placeholder="{{if $v.SecretSaved}}•••••••• saved — type to replace{{end}}"{{if $v.Locked}} disabled{{end}}></label>
+	{{if $v.SecretSaved}}<span class="gc-badge ok">Saved</span> <label><input type="checkbox" name="extra-{{.Key}}-secret-clear" value="1"> Clear</label>{{end}}</p></td></tr>
 {{end}}{{end}}
 <tr><th scope="row">Automatic purge</th><td><label><input type="checkbox" name="cloudflare-auto" value="1"{{if .S.CFAuto}} checked{{end}}{{if .Lock "cloudflare-auto"}} disabled{{end}}> Purge the CDN with every automatic purge of GoCDN, and purge the URLs of deleted offloaded files</label></td></tr>
 </table>

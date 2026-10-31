@@ -34,7 +34,11 @@ type gocdnAdminData struct {
 	Provider    *gocdnProvider
 	SecretSaved bool
 	TokenSaved  bool
-	PurgeSaved  bool // the secret of a non-Cloudflare purge provider
+	SSECSaved   bool
+	PurgeCount  int
+	Extras      []gocdnExtraView // additional purge providers (one per provider other than the main one)
+	PurgerNames string           // "Cloudflare, BunnyCDN": every configured purge provider
+	PurgeSaved  bool             // the secret of a non-Cloudflare purge provider
 	Purgers     []gocdnPurger
 	Purger      *gocdnPurger
 	PurgeReady  bool
@@ -102,7 +106,7 @@ func (s *Server) gocdnAdmin(c *gin.Context) {
 func (s *Server) gocdnRender(c *gin.Context, page, msg, errMsg string, details []string) {
 	st := s.gocdnLoad()
 	d := &gocdnAdminData{Page: page, Nonce: s.nonce(c, gocdnNonce), Locked: gocdnLocked(), EnvName: gocdnEnv, Providers: gocdnProviders,
-		Provider: gocdnProviderByKey(st.Provider), SecretSaved: st.SecretKey != "", TokenSaved: st.CFToken != "", PurgeSaved: st.PurgeSecret != "",
+		Provider: gocdnProviderByKey(st.Provider), SecretSaved: st.SecretKey != "", TokenSaved: st.CFToken != "", SSECSaved: st.SSECKey != "", PurgeSaved: st.PurgeSecret != "",
 		Purgers: gocdnPurgers, PurgeReady: s.gocdnPurgeReady(st), AVIF: gocdn.AVIFAvailable(),
 		Configured: s.gocdnConfigured(st), Endpoint: gocdnEndpoint(st), PublicBase: gocdnPublicBase(st),
 		Msg: msg, Err: errMsg, Details: details, CacheOn: s.settings.Bool("wpgo_cache_enabled"), Home: s.links(c).HomeURL("/"),
@@ -115,9 +119,18 @@ func (s *Server) gocdnRender(c *gin.Context, page, msg, errMsg string, details [
 	}
 	// Never print secrets.
 	d.S = st
-	d.S.SecretKey, d.S.CFToken, d.S.ImgKey, d.S.PurgeSecret, d.S.Previous = "", "", "", "", nil
+	d.S.SecretKey, d.S.CFToken, d.S.ImgKey, d.S.PurgeSecret, d.S.SSECKey, d.S.Previous, d.S.PurgeExtra = "", "", "", "", "", nil, nil
 	if st.PurgeProvider != "" {
 		d.Purger = gocdnPurgerByKey(st.PurgeProvider)
+	}
+	if page == "purge" {
+		d.Extras = gocdnExtraViews(st)
+		var names []string
+		for _, t := range gocdnPurgeTargets(st) {
+			names = append(names, gocdnPurgerByKey(t.Provider).Name)
+		}
+		d.PurgerNames = strings.Join(names, ", ")
+		d.PurgeCount = len(names)
 	}
 	title := "GoCDN"
 	switch page {
@@ -228,7 +241,30 @@ func (s *Server) gocdnAdminPost(c *gin.Context, page string) {
 			setBool("public-read", &st.PublicRead)
 			setStr("delivery-domain", &st.CDNDomain)
 			setStr("local-delivery", &st.LocalDelivery)
-			setBool("server-side-encryption", &st.SSE)
+			if !locked["sse-type"] && !locked["server-side-encryption"] {
+				if _, has := c.Request.PostForm["sse-type"]; has {
+					st.SSEType = str("sse-type")
+				} else {
+					st.SSEType = "" // the first version's checkbox
+					if c.PostForm("server-side-encryption") != "" {
+						st.SSEType = "s3"
+					}
+				}
+				st.SSE = st.SSEType == "s3"
+			}
+			setStr("sse-kms-key-id", &st.SSEKMSKey)
+			if !locked["sse-c-key"] {
+				if v := str("sse-c-key"); v != "" {
+					k, err := gocdn.ParseSSECKey(v)
+					if err != nil {
+						fail(err.Error())
+						return
+					}
+					st.SSECKey = hex.EncodeToString(k)
+				} else if c.PostForm("sse-c-key-clear") != "" {
+					st.SSECKey = ""
+				}
+			}
 			setStr("storage-class", &st.StorageClass)
 			setInt("multipart-threshold-mb", &st.MultipartMB)
 			if v := strings.ToUpper(st.StorageClass); v != "" && !gocdnStorageClassRe.MatchString(v) {
@@ -244,6 +280,24 @@ func (s *Server) gocdnAdminPost(c *gin.Context, page string) {
 			if st.CDNDomain != "" && strings.ContainsAny(st.CDNDomain, " \"'<>") {
 				fail("The delivery domain is not valid.")
 				return
+			}
+			if st.SSEType != "" && st.SSEType != "s3" && st.SSEType != "kms" && st.SSEType != "customer" {
+				fail("Unknown encryption type.")
+				return
+			}
+			if st.SSEKMSKey != "" && !gocdnKMSKeyRe.MatchString(st.SSEKMSKey) {
+				fail("The KMS key is a key ID, an alias such as alias/my-key or an ARN.")
+				return
+			}
+			if st.SSEType == "customer" {
+				if _, err := gocdn.ParseSSECKey(s.gocdnReveal(st.SSECKey)); err != nil {
+					fail("SSE-C needs a customer key: 64 hex characters or 44 base64 characters (32 bytes).")
+					return
+				}
+				if ep := gocdnEndpoint(st); !strings.HasPrefix(ep, "https://") && !strings.Contains(ep, "//127.0.0.1") && !strings.Contains(ep, "//localhost") {
+					fail("SSE-C sends the key with every request and needs an https endpoint.")
+					return
+				}
 			}
 		case "offload":
 			setBool("copy-to-s3", &st.CopyToBucket)
@@ -314,6 +368,14 @@ func (s *Server) gocdnAdminPost(c *gin.Context, page string) {
 				fail("The Cloudflare zone ID is the 32-character ID on the zone's Overview page.")
 				return
 			}
+			if c.PostForm("purge-extra-form") != "" && !locked["purge-extra"] {
+				extras, msg := s.gocdnReadExtras(c, st)
+				if msg != "" {
+					fail(msg)
+					return
+				}
+				st.PurgeExtra = extras
+			}
 		}
 		if page == "" {
 			st = s.gocdnRememberConn(c, prev, st)
@@ -353,15 +415,26 @@ func (s *Server) gocdnAdminPost(c *gin.Context, page string) {
 		s.purgeAll(c)
 		done("WPGo Cache purged.")
 	case "purge-cloudflare", "purge-cdn":
-		if err := s.gocdnCDNPurge(c, st, nil); err != nil {
-			fail(err.Error())
+		res := s.gocdnCDNPurgeEach(c, st, nil)
+		if len(res) == 0 {
+			fail("no CDN is configured for purging")
 			return
 		}
-		name := "CDN"
-		if p := gocdnPurgerByKey(st.PurgeProvider); p != nil && p.Name != "" {
-			name = p.Name
+		var ok []string
+		for _, r := range res {
+			if r.Err == nil {
+				ok = append(ok, r.Name)
+			}
 		}
-		done(name + " cache purged.")
+		if err := gocdnPurgeError(res); err != nil {
+			msg := "Purge failed at " + err.Error()
+			if len(ok) > 0 {
+				msg += ". Purged: " + strings.Join(ok, ", ") + "."
+			}
+			fail(msg)
+			return
+		}
+		done(strings.Join(ok, ", ") + " cache purged.")
 	case "purge-images":
 		if err := s.gocdnPurgeImageCache(); err != nil {
 			fail(err.Error())
@@ -394,6 +467,59 @@ func (s *Server) gocdnAdminPost(c *gin.Context, page string) {
 	default:
 		fail("Unknown action.")
 	}
+}
+
+// gocdnExtraView is one additional purge provider on the Purge screen: every provider other than
+// the main one, enabled or not, with what is saved for it (never the secret).
+type gocdnExtraView struct {
+	Purger      *gocdnPurger
+	Enabled     bool
+	Zone, KeyID string
+	SecretSaved bool
+	Locked      bool
+}
+
+func gocdnExtraViews(st gocdnSettings) []gocdnExtraView {
+	var out []gocdnExtraView
+	for i := range gocdnPurgers {
+		p := &gocdnPurgers[i]
+		if p.Key == st.PurgeProvider {
+			continue
+		}
+		v := gocdnExtraView{Purger: p, Locked: gocdnLocked()["purge-extra"]}
+		for _, e := range st.PurgeExtra {
+			if e.Provider == p.Key {
+				v.Enabled, v.Zone, v.KeyID, v.SecretSaved = true, e.Zone, e.KeyID, e.Secret != ""
+			}
+		}
+		out = append(out, v)
+	}
+	return out
+}
+
+// gocdnReadExtras reads the "Additional providers" part of the Purge form. A secret left empty
+// keeps the saved one; the second result is an error message for the user.
+func (s *Server) gocdnReadExtras(c *gin.Context, st gocdnSettings) ([]gocdnPurgeConf, string) {
+	var out []gocdnPurgeConf
+	for _, p := range gocdnPurgers {
+		if p.Key == st.PurgeProvider || c.PostForm("extra-"+p.Key) == "" {
+			continue
+		}
+		e := gocdnPurgeConf{Provider: p.Key, Zone: strings.TrimSpace(c.PostForm("extra-" + p.Key + "-zone")),
+			KeyID: strings.TrimSpace(c.PostForm("extra-" + p.Key + "-key-id")), Secret: strings.TrimSpace(c.PostForm("extra-" + p.Key + "-secret"))}
+		if e.Zone != "" && !p.Zone.MatchString(e.Zone) {
+			return nil, "The " + p.Name + " " + strings.ToLower(p.ZoneLabel) + " is not valid."
+		}
+		if e.Secret == "" && c.PostForm("extra-"+p.Key+"-secret-clear") == "" {
+			for _, old := range st.PurgeExtra {
+				if old.Provider == p.Key {
+					e.Secret = old.Secret
+				}
+			}
+		}
+		out = append(out, e)
+	}
+	return out, ""
 }
 
 // gocdnProgress is the JSON the Media Offload screen polls.

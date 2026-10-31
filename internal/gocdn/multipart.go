@@ -104,7 +104,7 @@ func (c *Client) Upload(ctx context.Context, key string, r io.ReaderAt, size int
 
 // CreateMultipartUpload starts a multipart upload; the options apply to the final object.
 func (c *Client) CreateMultipartUpload(ctx context.Context, key string, o PutOptions) (string, error) {
-	resp, err := c.do(ctx, http.MethodPost, key, url.Values{"uploads": {""}}, []byte{}, o.headers())
+	resp, err := c.do(ctx, http.MethodPost, key, url.Values{"uploads": {""}}, []byte{}, c.withSSEC(o.headers()))
 	if err != nil {
 		return "", err
 	}
@@ -121,7 +121,7 @@ func (c *Client) CreateMultipartUpload(ctx context.Context, key string, o PutOpt
 // UploadPart sends part n (1-based) and returns its ETag.
 func (c *Client) UploadPart(ctx context.Context, key, uploadID string, n int, data []byte) (string, error) {
 	q := url.Values{"partNumber": {strconv.Itoa(n)}, "uploadId": {uploadID}}
-	resp, err := c.do(ctx, http.MethodPut, key, q, data, nil)
+	resp, err := c.do(ctx, http.MethodPut, key, q, data, c.withSSEC(nil))
 	if err != nil {
 		return "", err
 	}
@@ -170,7 +170,10 @@ func (c *Client) AbortMultipartUpload(ctx context.Context, key, uploadID string)
 // Copy is CopyObject: srcBucket/srcKey (same endpoint and credentials) to key in this client's
 // bucket, with the options' headers (metadata directive REPLACE). Objects up to 5 GB.
 func (c *Client) Copy(ctx context.Context, srcBucket, srcKey, key string, o PutOptions) error {
-	h := o.headers()
+	h := c.withSSEC(o.headers())
+	if len(o.CopySourceSSECKey) != 0 {
+		sseCHeaders(h, sseCCopyPrefix, o.CopySourceSSECKey)
+	}
 	h.Set("X-Amz-Copy-Source", EscapePath("/"+srcBucket+"/"+srcKey))
 	h.Set("X-Amz-Metadata-Directive", "REPLACE")
 	resp, err := c.do(ctx, http.MethodPut, key, nil, []byte{}, h)

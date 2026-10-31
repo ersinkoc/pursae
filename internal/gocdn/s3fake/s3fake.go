@@ -9,6 +9,7 @@ package s3fake
 
 import (
 	"crypto/md5"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/xml"
 	"fmt"
@@ -32,6 +33,8 @@ type Object struct {
 	CacheControl string
 	ACL          string
 	SSE          string // x-amz-server-side-encryption
+	KMSKeyID     string // x-amz-server-side-encryption-aws-kms-key-id
+	SSECKeyMD5   string // base64 MD5 of the SSE-C key the object was written with ("" = not SSE-C)
 	StorageClass string // x-amz-storage-class
 	Parts        int    // >0 when it was assembled by CompleteMultipartUpload
 	Modified     time.Time
@@ -250,6 +253,9 @@ func (f *Server) serve(w http.ResponseWriter, r *http.Request) {
 			f.fail(w, http.StatusNotFound, "NoSuchKey", "The specified key does not exist.")
 			return
 		}
+		if !f.checkSSEC(w, r.Header, "X-Amz-Server-Side-Encryption-Customer-", o) {
+			return
+		}
 		data := o.Body
 		status := http.StatusOK
 		if rg := r.Header.Get("Range"); rg != "" && r.Method == http.MethodGet {
@@ -266,6 +272,13 @@ func (f *Server) serve(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", o.ContentType)
 		if o.SSE != "" {
 			w.Header().Set("X-Amz-Server-Side-Encryption", o.SSE)
+		}
+		if o.KMSKeyID != "" {
+			w.Header().Set("X-Amz-Server-Side-Encryption-Aws-Kms-Key-Id", o.KMSKeyID)
+		}
+		if o.SSECKeyMD5 != "" {
+			w.Header().Set("X-Amz-Server-Side-Encryption-Customer-Algorithm", "AES256")
+			w.Header().Set("X-Amz-Server-Side-Encryption-Customer-Key-Md5", o.SSECKeyMD5)
 		}
 		if o.StorageClass != "" && o.StorageClass != "STANDARD" {
 			w.Header().Set("X-Amz-Storage-Class", o.StorageClass)
@@ -301,6 +314,15 @@ func objectFromRequest(r *http.Request) (*Object, string) {
 	if o.SSE != "" && o.SSE != "AES256" && o.SSE != "aws:kms" {
 		return nil, "InvalidArgument"
 	}
+	o.KMSKeyID = r.Header.Get("X-Amz-Server-Side-Encryption-Aws-Kms-Key-Id")
+	if o.KMSKeyID != "" && o.SSE != "aws:kms" {
+		return nil, "InvalidArgument"
+	}
+	sum, code := sseCKey(r.Header, "X-Amz-Server-Side-Encryption-Customer-")
+	if code != "" || (sum != "" && o.SSE != "") {
+		return nil, "InvalidArgument"
+	}
+	o.SSECKeyMD5 = sum
 	if o.StorageClass != "" && !storageClasses[o.StorageClass] {
 		return nil, "InvalidStorageClass"
 	}
@@ -338,6 +360,12 @@ func (f *Server) uploadPart(w http.ResponseWriter, r *http.Request, bucket, key 
 	f.mu.Unlock()
 	if u == nil || u.bucket != bucket || u.key != key {
 		f.fail(w, http.StatusNotFound, "NoSuchUpload", "The specified upload does not exist.")
+		return
+	}
+	if !f.checkSSEC(w, r.Header, "X-Amz-Server-Side-Encryption-Customer-", &u.obj) {
+		f.mu.Lock()
+		delete(u.parts, n)
+		f.mu.Unlock()
 		return
 	}
 	w.Header().Set("ETag", `"`+etag(body)+`"`)
@@ -413,6 +441,9 @@ func (f *Server) copyObject(w http.ResponseWriter, r *http.Request, key string, 
 		f.fail(w, http.StatusNotFound, "NoSuchKey", "The specified key does not exist.")
 		return
 	}
+	if !f.checkSSEC(w, r.Header, "X-Amz-Copy-Source-Server-Side-Encryption-Customer-", so) {
+		return
+	}
 	o, msg := objectFromRequest(r)
 	if msg != "" {
 		f.fail(w, http.StatusBadRequest, msg, msg)
@@ -428,6 +459,43 @@ func (f *Server) copyObject(w http.ResponseWriter, r *http.Request, key string, 
 	w.Header().Set("Content-Type", "application/xml")
 	fmt.Fprintf(w, `<?xml version="1.0" encoding="UTF-8"?><CopyObjectResult><LastModified>%s</LastModified><ETag>"%s"</ETag></CopyObjectResult>`,
 		o.Modified.Format(time.RFC3339), etag(o.Body))
+}
+
+// sseCKey validates the three SSE-C headers under prefix: it returns the key's MD5 ("" when none
+// are sent) or an S3 error code when they are incomplete, not AES256 or the MD5 does not match.
+func sseCKey(h http.Header, prefix string) (md5sum, code string) {
+	alg, key, sum := h.Get(prefix+"Algorithm"), h.Get(prefix+"Key"), h.Get(prefix+"Key-Md5")
+	if alg == "" && key == "" && sum == "" {
+		return "", ""
+	}
+	raw, err := base64.StdEncoding.DecodeString(key)
+	if alg != "AES256" || err != nil || len(raw) != 32 {
+		return "", "InvalidArgument"
+	}
+	m := md5.Sum(raw)
+	if sum != base64.StdEncoding.EncodeToString(m[:]) {
+		return "", "InvalidArgument"
+	}
+	return sum, ""
+}
+
+// checkSSEC applies S3's rule for reading an object: an SSE-C object needs its key (400 without,
+// 403 with a wrong one), any other object refuses SSE-C headers. prefix selects the headers.
+func (f *Server) checkSSEC(w http.ResponseWriter, h http.Header, prefix string, o *Object) bool {
+	got, code := sseCKey(h, prefix)
+	switch {
+	case code != "":
+		f.fail(w, http.StatusBadRequest, code, "The provided encryption parameters are not valid")
+	case o.SSECKeyMD5 != "" && got == "":
+		f.fail(w, http.StatusBadRequest, "InvalidRequest", "The object was stored using a form of Server Side Encryption. The correct parameters must be provided to retrieve the object.")
+	case o.SSECKeyMD5 == "" && got != "":
+		f.fail(w, http.StatusBadRequest, "InvalidRequest", "The encryption parameters are not applicable to this object.")
+	case o.SSECKeyMD5 != got:
+		f.fail(w, http.StatusForbidden, "AccessDenied", "The calculated MD5 hash of the key did not match the hash that was provided.")
+	default:
+		return true
+	}
+	return false
 }
 
 func etag(b []byte) string {

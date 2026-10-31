@@ -217,8 +217,8 @@ func (s *Server) gocdnImage(w http.ResponseWriter, r *http.Request, st gocdnSett
 	// only matters when no explicit format is asked and WebP is not used.
 	alpha := srcFormat == "png" || srcFormat == "gif" || srcFormat == "webp"
 	out := gocdn.Negotiate(p.Format, r.Header.Get("Accept"), srcFormat, st.ImgWebP, st.ImgAVIF, alpha)
-	// Animated GIFs stay animated GIFs (unless a still JPEG/PNG is asked for explicitly). Whether a
-	// GIF is animated is remembered per source version, so only the first request reads it here.
+	// Animated GIFs stay animations (animated WebP/AVIF where negotiated, else GIF) unless a still
+	// JPEG/PNG is asked for explicitly. Whether a GIF is animated is remembered per source version, so only the first request reads it here.
 	anim := false
 	if srcFormat == "gif" && p.Format != "jpeg" && p.Format != "png" {
 		akey := rel + "|" + version
@@ -228,7 +228,7 @@ func (s *Server) gocdnImage(w http.ResponseWriter, r *http.Request, st gocdnSett
 			anim = gocdnGIFAnimated(data)
 			gocdnAnimMemo.Store(akey, anim)
 		}
-		if anim {
+		if anim && out != "webp" && out != "avif" {
 			out = "gif"
 		}
 	}
@@ -292,11 +292,16 @@ func (s *Server) gocdnImage(w http.ResponseWriter, r *http.Request, st gocdnSett
 	animDone := false
 	if anim {
 		if g, err := gif.DecodeAll(bytes.NewReader(src)); err == nil {
-			if ag, err := gocdn.TransformGIF(g, p, gocdn.AnimLimits{MaxFrames: st.ImgMaxFrames, MaxPixels: 3 * limits.MaxSourcePix}); err == nil {
-				animDone = gif.EncodeAll(&buf, ag) == nil
+			al := gocdn.AnimLimits{MaxFrames: st.ImgMaxFrames, MaxPixels: 3 * limits.MaxSourcePix}
+			if out == "gif" {
+				if ag, err := gocdn.TransformGIF(g, p, al); err == nil {
+					animDone = gif.EncodeAll(&buf, ag) == nil
+				}
+			} else {
+				animDone = gocdn.TransformGIFTo(&buf, g, p, al, out, p.Q) == nil
 			}
 		}
-		if !animDone { // over the frame/pixel budget: the first frame, still a GIF
+		if !animDone { // over the frame/pixel budget: the first frame, in the negotiated format
 			buf.Reset()
 			h.Set("X-GoCDN-Animation", "flattened")
 		}
