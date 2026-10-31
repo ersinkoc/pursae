@@ -157,6 +157,13 @@ func applyPostInput(p *store.Post, in plugins.PostInput) error {
 		if p.Meta == nil {
 			p.Meta = map[string]any{}
 		}
+		for k := range in.Meta {
+			if strings.HasPrefix(k, "_") {
+				// Keys starting with an underscore are protected: the core and other plugins store trusted data
+				// there (the page builder's element tree is rendered unescaped), and plugins never hold unfiltered_html.
+				return fmt.Errorf("meta key %q is protected (keys starting with an underscore are not available to plugins)", k)
+			}
+		}
 		for k, v := range in.Meta {
 			if v == nil {
 				delete(p.Meta, k)

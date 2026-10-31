@@ -116,6 +116,10 @@ func ParseManifest(data []byte) (*Manifest, error) {
 
 // Validate checks the manifest and returns a *ManifestError describing every
 // problem, or nil.
+// ValidSlug reports whether s has the shape of a plugin slug: 2-64 characters of lowercase letters, digits and
+// single dashes.
+func ValidSlug(s string) bool { return len(s) >= 2 && len(s) <= 64 && slugRe.MatchString(s) }
+
 func (m *Manifest) Validate() error {
 	var p []string
 	add := func(format string, args ...any) { p = append(p, fmt.Sprintf(format, args...)) }

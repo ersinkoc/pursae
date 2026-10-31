@@ -938,10 +938,7 @@ var wxrFetchTransport http.RoundTripper
 const wxrFetchTimeout = 30 * time.Second
 
 // wxrPublicIP refuses loopback, private, link-local, multicast and unspecified addresses.
-func wxrPublicIP(ip net.IP) bool {
-	return ip != nil && !ip.IsLoopback() && !ip.IsPrivate() && !ip.IsLinkLocalUnicast() && !ip.IsLinkLocalMulticast() &&
-		!ip.IsMulticast() && !ip.IsUnspecified() && !ip.IsInterfaceLocalMulticast()
-}
+func wxrPublicIP(ip net.IP) bool { return publicIP(ip) }
 
 // wxrCheckURL allows only http(s) URLs without credentials.
 func wxrCheckURL(raw string) (*url.URL, error) {

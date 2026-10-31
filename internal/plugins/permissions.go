@@ -51,6 +51,9 @@ const (
 	// PermAdminSettings allows registering a settings page under Settings in
 	// the admin (register_settings_page).
 	PermAdminSettings Permission = "admin:settings"
+	// PermForms allows subscribing to the contact form hooks (names starting
+	// with "wpcf7_"): what visitors submitted, and the spam verdict.
+	PermForms Permission = "forms:access"
 )
 
 // permissionDescriptions documents every permission for admin screens.
@@ -67,6 +70,7 @@ var permissionDescriptions = map[Permission]string{
 	PermRestRoutes:    "Add REST API endpoints",
 	PermUsersRead:     "See who the current user is",
 	PermAdminSettings: "Add a settings page to the admin",
+	PermForms:         "See what visitors submit in contact forms and decide what counts as spam",
 }
 
 // AllPermissions returns the permission vocabulary in a stable order.
@@ -157,6 +161,8 @@ func HookPermission(hook string) Permission {
 		return PermContentFilter
 	case strings.HasPrefix(hook, "cron_") || strings.HasPrefix(hook, "wpgo_cron"):
 		return PermCron
+	case strings.HasPrefix(hook, "wpcf7_"):
+		return PermForms // submissions carry visitors' names, e-mail addresses and messages
 	}
 	return ""
 }

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"path"
 	"regexp"
+	"regexp/syntax"
 	"strings"
 	"time"
 
@@ -58,6 +59,17 @@ func hostRegisterShortcode(_ context.Context, p *Plugin, req []byte) (any, error
 	return nil, p.registerShortcode(r.Tag, r.Callback)
 }
 
+// compileRestRoute turns a plugin's route pattern into the expression requests are matched with. The pattern is
+// plugin-supplied text, so it must be a complete expression on its own (no unbalanced parentheses that could
+// close the wrapper) and is wrapped in a group: otherwise "/x|.*" would be a top-level alternation whose second
+// branch is not anchored to the plugin's namespace and could capture other plugins' routes.
+func compileRestRoute(namespace, route string) (*regexp.Regexp, error) {
+	if _, err := syntax.Parse(route, syntax.Perl); err != nil {
+		return nil, err
+	}
+	return regexp.Compile("^/" + regexp.QuoteMeta(namespace) + "(?:" + route + ")$")
+}
+
 func hostRegisterRestRoute(_ context.Context, p *Plugin, req []byte) (any, error) {
 	var r struct {
 		Namespace string   `json:"namespace"`
@@ -75,7 +87,7 @@ func hostRegisterRestRoute(_ context.Context, p *Plugin, req []byte) (any, error
 	if r.Route == "" || len(r.Route) > maxRestRoute || !strings.HasPrefix(r.Route, "/") || strings.HasSuffix(r.Route, "/") {
 		return nil, invalid("route must start with / (and not end with one), at most %d characters", maxRestRoute)
 	}
-	re, err := regexp.Compile("^/" + regexp.QuoteMeta(r.Namespace) + r.Route + "$")
+	re, err := compileRestRoute(r.Namespace, r.Route)
 	if err != nil {
 		return nil, invalid("route %q is not a valid pattern: %v", r.Route, err)
 	}

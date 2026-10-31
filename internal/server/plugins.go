@@ -228,7 +228,7 @@ var pluginHTTP = &http.Client{
 	Transport: &http.Transport{DialContext: (&net.Dialer{Timeout: 5 * time.Second, Control: func(_, address string, _ syscall.RawConn) error {
 		host, _, _ := net.SplitHostPort(address)
 		ip := net.ParseIP(host)
-		if ip == nil || ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast() || ip.IsUnspecified() || ip.IsMulticast() {
+		if !publicIP(ip) { // the same policy as the feed fetcher: also carrier-grade NAT, 0.0.0.0/8 and broadcast
 			return errors.New("destination not allowed for plugins")
 		}
 		return nil
@@ -623,6 +623,17 @@ func (s *Server) pluginAction(c *gin.Context, action, slug string) {
 		c.Redirect(http.StatusFound, "/wp-admin/plugins?"+action+"=true")
 		return
 	}
+	// Installed plugins are addressed by slug: it must look like one and name a plugin that is installed,
+	// otherwise the slug would be joined into a file path ("../x") and load a package that was never installed.
+	if !plugins.ValidSlug(slug) {
+		fail(errors.New("Invalid plugin."))
+		return
+	}
+	var installed bool
+	if err := s.store.Pool.QueryRow(c.Request.Context(), `SELECT EXISTS(SELECT 1 FROM plugins WHERE slug = $1)`, slug).Scan(&installed); err != nil || !installed {
+		fail(errors.New("That plugin is not installed."))
+		return
+	}
 	ctx := c.Request.Context()
 	switch action {
 	case "activate":
@@ -651,6 +662,10 @@ func (s *Server) pluginAction(c *gin.Context, action, slug string) {
 		_, _ = s.store.Pool.Exec(ctx, `UPDATE plugins SET status = 'inactive' WHERE slug = $1`, slug)
 		s.purgeAll(ctx)
 	case "delete":
+		if !currentUser(c).Can("delete_plugins", nil) { // activate_plugins alone does not allow deleting
+			fail(errors.New("Sorry, you are not allowed to delete plugins on this site."))
+			return
+		}
 		if s.plugins.rt != nil {
 			_ = s.plugins.rt.Unload(ctx, slug)
 		}
