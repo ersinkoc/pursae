@@ -132,7 +132,7 @@ func (s *Server) gocdnRender(c *gin.Context, page, msg, errMsg string, details [
 		d.PurgerNames = strings.Join(names, ", ")
 		d.PurgeCount = len(names)
 	}
-	title := "GoCDN"
+	title := "Pursae CDN"
 	switch page {
 	case "offload":
 		title = "Media Offload"
@@ -142,7 +142,7 @@ func (s *Server) gocdnRender(c *gin.Context, page, msg, errMsg string, details [
 		d.MoveFiles, d.MoveFrom = s.gocdnMoveCount(c, st)
 		d.Removed = d.Stats.Removed
 	case "deactivate":
-		title = "Deactivate GoCDN"
+		title = "Deactivate Pursae CDN"
 		d.Removed = s.gocdnRemovedCount(c)
 		d.Job = s.gocdnJob()
 	case "images":
@@ -166,7 +166,7 @@ func (s *Server) gocdnRender(c *gin.Context, page, msg, errMsg string, details [
 			d.Err = d.Remote.Err
 		}
 	default:
-		page, d.Page, title = "", "", "GoCDN Storage"
+		page, d.Page, title = "", "", "Pursae CDN Storage"
 		d.MoveFiles, d.MoveFrom = s.gocdnMoveCount(c, st)
 	}
 	d.Title = title
@@ -551,7 +551,7 @@ func (s *Server) gocdnTest(c *gin.Context, st gocdnSettings) (bool, []string) {
 	b := make([]byte, 6)
 	_, _ = rand.Read(b)
 	key := st.Prefix + "gocdn-probe-" + hex.EncodeToString(b) + ".txt"
-	body := []byte("GoCDN connection test " + time.Now().UTC().Format(time.RFC3339))
+	body := []byte("Pursae CDN connection test " + time.Now().UTC().Format(time.RFC3339))
 	var out []string
 	opts := gocdn.PutOptions{ContentType: "text/plain", CacheControl: "no-store"}
 	if st.PublicRead {

@@ -63,7 +63,7 @@ func (s *Server) msLogResult(ctx context.Context, o *msOptions, msg gomail.Messa
 	if msg.ReplyTo != "" {
 		headers += "Reply-To: " + msg.ReplyTo + "\n"
 	}
-	headers += "Subject: " + msg.Subject + "\nX-Mailer: WPGO Mail SMTP\n"
+	headers += "Subject: " + msg.Subject + "\nX-Mailer: Pursae SMTP\n"
 	if res.Envelope != "" {
 		headers += "Return-Path: <" + res.Envelope + ">\n"
 	}
@@ -116,7 +116,7 @@ func (s *Server) msAlert(ctx context.Context, o *msOptions, msg gomail.Message, 
 	home := strings.TrimRight(s.settings.String("home"), "/")
 	site := s.settings.String("blogname")
 	mailer := msMailerTitle(res.Conn.Mailer)
-	text := fmt.Sprintf("WP Mail SMTP: your site %s failed to send an email.\n\nWebsite: %s\nTo: %s\nSubject: %s\nMailer: %s\nError: %v\n\nEmail log: %s/wp-admin/admin?page=wp-mail-smtp-logs",
+	text := fmt.Sprintf("Pursae SMTP: your site %s failed to send an email.\n\nWebsite: %s\nTo: %s\nSubject: %s\nMailer: %s\nError: %v\n\nEmail log: %s/wp-admin/admin?page=wp-mail-smtp-logs",
 		site, home, strings.Join(msg.To, ", "), msg.Subject, mailer, res.Err, home)
 	post := func(u string, body []byte, ctype string) {
 		req, err := http.NewRequestWithContext(ctx, http.MethodPost, u, bytes.NewReader(body))
@@ -136,7 +136,7 @@ func (s *Server) msAlert(ctx context.Context, o *msOptions, msg gomail.Message, 
 	if a.Email.Enabled && len(a.Email.URLs) > 0 {
 		m := s.mailer()
 		m.Transport = nil // the plugin's mailer just failed: alerts go out with WordPress Go's own transport
-		if err := m.Send(ctx, gomail.Message{To: a.Email.URLs, Subject: "[" + site + "] WP Mail SMTP Alert: An email failed to send", Body: text}); err != nil {
+		if err := m.Send(ctx, gomail.Message{To: a.Email.URLs, Subject: "[" + site + "] Pursae SMTP Alert: An email failed to send", Body: text}); err != nil {
 			slog.Warn("wp-mail-smtp: email alert", "err", err)
 		}
 	}
@@ -153,7 +153,7 @@ func (s *Server) msAlert(ctx context.Context, o *msOptions, msg gomail.Message, 
 	if a.Teams.Enabled {
 		for _, u := range a.Teams.URLs {
 			post(u, j(map[string]any{"@type": "MessageCard", "@context": "https://schema.org/extensions", "themeColor": "D63638",
-				"summary": "An email failed to send", "title": "WP Mail SMTP: an email failed to send", "text": strings.ReplaceAll(text, "\n", "<br>")}), "application/json")
+				"summary": "An email failed to send", "title": "Pursae SMTP: an email failed to send", "text": strings.ReplaceAll(text, "\n", "<br>")}), "application/json")
 		}
 	}
 	if a.Webhook.Enabled {
@@ -167,7 +167,7 @@ func (s *Server) msAlert(ctx context.Context, o *msOptions, msg gomail.Message, 
 		if msTestBase != "" {
 			base = msTestBase
 		}
-		f := url.Values{"To": {t.To}, "From": {t.From}, "Body": {truncateRunes(fmt.Sprintf("WP Mail SMTP: %s failed to send an email (%s): %v", home, msg.Subject, res.Err), 320)}}
+		f := url.Values{"To": {t.To}, "From": {t.From}, "Body": {truncateRunes(fmt.Sprintf("Pursae SMTP: %s failed to send an email (%s): %v", home, msg.Subject, res.Err), 320)}}
 		req, err := http.NewRequestWithContext(ctx, http.MethodPost, base+"/2010-04-01/Accounts/"+url.PathEscape(t.SID)+"/Messages.json", strings.NewReader(f.Encode()))
 		if err == nil {
 			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -442,6 +442,6 @@ func (s *Server) msSendSummary(ctx context.Context) error {
 		}
 		b.WriteString("\n")
 	}
-	fmt.Fprintf(&b, "View the email reports: %s/wp-admin/admin?page=wp-mail-smtp-reports\n\nThis email was auto-generated and sent from WPGO Mail SMTP. You can turn it off under WP Mail SMTP › Settings › Misc.\n", home)
-	return s.mailer().Send(ctx, gomail.Message{To: []string{s.settings.String("admin_email")}, Subject: "[" + site + "] Your Weekly WP Mail SMTP Email Summary", Body: b.String()})
+	fmt.Fprintf(&b, "View the email reports: %s/wp-admin/admin?page=wp-mail-smtp-reports\n\nThis email was auto-generated and sent from Pursae SMTP. You can turn it off under Pursae SMTP › Settings › Misc.\n", home)
+	return s.mailer().Send(ctx, gomail.Message{To: []string{s.settings.String("admin_email")}, Subject: "[" + site + "] Your Weekly Pursae SMTP Email Summary", Body: b.String()})
 }

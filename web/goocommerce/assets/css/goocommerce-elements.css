@@ -1,4 +1,4 @@
-/* Goocommerce store widgets of Golementor (internal/builder/widgets_store.go, goo_gwe.go) */
+/* Pursae Commerce store widgets of Pursae Web Builder (internal/builder/widgets_store.go, goo_gwe.go) */
 
 /* Single product parts: each widget fills its column instead of WooCommerce's two floats. */
 .elementor-widget-woocommerce-product-images div.images,
@@ -121,7 +121,7 @@
 .goo-menu-cart__panel .woocommerce-mini-cart__buttons .button { margin: 0 !important; text-align: center; }
 .goo-menu-cart__panel .woocommerce-mini-cart__empty-message { margin: 0; text-align: center; opacity: .75; }
 
-/* Language switcher widget (Golylang). */
+/* Language switcher widget (Pursae Multi Language). */
 .elementor-widget-golylang-language-switcher .goo-lang-switcher { display: inline-flex; }
 .goo-lang-switcher--dropdown select { padding: 6px 28px 6px 10px; border-radius: 6px; border: 1px solid currentColor; background: transparent; color: inherit; font: inherit; }
 

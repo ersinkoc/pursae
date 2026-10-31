@@ -1,6 +1,6 @@
 # Oak & Form
 
-An airy Scandinavian furniture store for Goocommerce: a quiet header (logo, centred menu, text links for
+An airy Scandinavian furniture store for Pursae Commerce: a quiet header (logo, centred menu, text links for
 search, account and cart with a mini-cart), a framed hero with a linen caption card, tall staggered category
 panels, calm product cards on a birch backdrop whose add-to-cart button slides up on hover, a gallery-led
 product page with a sticky summary, and a light footer with a large wordmark. On small screens the menu

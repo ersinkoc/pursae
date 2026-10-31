@@ -28,7 +28,7 @@ const gweSplash = `<div id="gwe-splash" role="status" aria-live="polite">
 <div class="gwe-splash-box">
 <img class="gwe-splash-logo" src="@@ASSETS@@images/gopher.png" alt="" width="72" height="72">
 <span class="gwe-splash-shadow" aria-hidden="true"></span>
-<div class="gwe-splash-name">Golementor</div>
+<div class="gwe-splash-name">Pursae Web Builder</div>
 <div class="gwe-splash-msg">Waking up the gophers…</div>
 <div class="gwe-splash-bar" aria-hidden="true"><span class="gwe-splash-fill"></span></div>
 </div>

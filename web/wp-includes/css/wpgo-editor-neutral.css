@@ -1,4 +1,4 @@
-/* Editor canvases (Gotenberg and the classic editor's TinyMCE) never take the theme's page
+/* Editor canvases (Pursae Editor and the classic editor's TinyMCE) never take the theme's page
    background: a themed colour such as Twenty Twenty-One's green would tint the writing area. */
 html, body, body.mce-content-body, .editor-styles-wrapper, .editor-styles-wrapper .is-root-container {
 	background-color: #fff !important;

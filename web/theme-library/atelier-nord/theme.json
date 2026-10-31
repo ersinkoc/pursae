@@ -3,7 +3,7 @@
   "name": "Atelier Nord",
   "version": "1.0.0",
   "description": "A Swiss-style portfolio for designers, architects and studios. A strict twelve-column grid, big grotesk type and a numbered project index; case studies are posts with a facts column, and a static front page presents selected work. Change the type scale, font pairing, work layout and the visible grid in the Customizer.",
-  "author": "WordPress Go",
+  "author": "Pursae",
   "author_url": "https://github.com/boracomet/wordpress-go",
   "theme_url": "https://github.com/boracomet/wordpress-go/tree/main/web/theme-library/atelier-nord",
   "tags": ["Portfolio", "Grid Layout", "Two Columns", "Custom Colors", "Custom Logo", "Custom Menu", "Editor Style", "Featured Images", "Footer Widgets", "Threaded Comments", "Wide Blocks"],

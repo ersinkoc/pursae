@@ -29,7 +29,7 @@
 			<input type="hidden" id="samplepermalinknonce" name="samplepermalinknonce" value="{{.SampleNonce}}" />
 			{{if eq $p.Status "auto-draft"}}<script>
 			// WordPress fills the permalink of a new post after the autosave its title blur triggers
-			// (post.js "after-autosave.update-post-slug"); WordPress Go asks for it on blur directly.
+			// (post.js "after-autosave.update-post-slug"); Pursae asks for it on blur directly.
 			jQuery(function($){ $('#title').on('blur', function(){
 				if ($('#edit-slug-box > *').length || !$.trim(this.value)) return;
 				$.post(ajaxurl, {action: 'sample-permalink', post_id: $('#post_ID').val(), new_title: this.value,
@@ -120,7 +120,7 @@
 					</fieldset>
 				</div>
 				{{if .PluginStats}}<div class="misc-pub-section misc-pub-plugin-stats"><span class="dashicons dashicons-chart-bar" style="color:#8c8f94;margin:0 2px 0 -1px"></span> {{.PluginStats}}</div>{{end}}
-				{{if .BlockURL}}<div class="misc-pub-section" id="classic-editor-switch-editor"><span class="dashicons dashicons-edit-page" style="color:#8c8f94;margin:0 2px 0 -1px"></span> Editor: <b>Classic</b> <a href="{{.BlockURL}}">Switch to Gotenberg</a></div>{{end}}
+				{{if .BlockURL}}<div class="misc-pub-section" id="classic-editor-switch-editor"><span class="dashicons dashicons-edit-page" style="color:#8c8f94;margin:0 2px 0 -1px"></span> Editor: <b>Classic</b> <a href="{{.BlockURL}}">Switch to Pursae Editor</a></div>{{end}}
 				{{if .Revisions}}<div class="misc-pub-section misc-pub-revisions">
 					Revisions: <b>{{.Revisions}}</b>
 					<a class="hide-if-no-js" href="/wp-admin/revision?revision={{.LatestRevision}}"><span aria-hidden="true">Browse</span> <span class="screen-reader-text">Browse revisions</span></a>

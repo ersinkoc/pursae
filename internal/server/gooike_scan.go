@@ -115,7 +115,7 @@ func (s *Server) gooikeScan(ctx context.Context, st *gooikeSettings, extra []str
 		if home != nil && home.Host != "" {
 			req.Host = home.Host
 		}
-		req.Header.Set("User-Agent", "Gooike cookie scanner (WordPress Go)")
+		req.Header.Set("User-Agent", "Pursae Cookie cookie scanner (Pursae)")
 		rec := httptest.NewRecorder()
 		app.ServeHTTP(rec, req)
 		resp := rec.Result()

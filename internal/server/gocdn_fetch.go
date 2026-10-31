@@ -159,7 +159,7 @@ func (s *Server) gocdnDeactivatePost(c *gin.Context, do string) {
 			c.Redirect(http.StatusFound, "/wp-admin/gocdn?page=deactivate&gocdn-error="+url.QueryEscape(err.Error()))
 			return
 		}
-		c.Redirect(http.StatusFound, "/wp-admin/gocdn?page=offload&gocdn-msg="+url.QueryEscape("Downloading the files back to the server. GoCDN is deactivated when the job has finished without failures."))
+		c.Redirect(http.StatusFound, "/wp-admin/gocdn?page=offload&gocdn-msg="+url.QueryEscape("Downloading the files back to the server. Pursae CDN is deactivated when the job has finished without failures."))
 	case "deactivate-keep":
 		if err := s.gocdnDeactivate(c); err != nil {
 			c.Redirect(http.StatusFound, "/wp-admin/gocdn?page=deactivate&gocdn-error="+url.QueryEscape(err.Error()))

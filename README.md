@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="web/gowebeditor/images/gopher.png" alt="WordPress Go" width="96">
+  <img src="web/gowebeditor/images/gopher.png" alt="Pursae" width="96">
 </p>
 
-<h1 align="center">WordPress Go</h1>
+<h1 align="center">Pursae</h1>
 
 <p align="center">
   WordPress core rewritten in Go — one binary, PostgreSQL, the familiar WordPress admin,<br>
@@ -27,7 +27,7 @@
 - [Everyday commands](#everyday-commands)
 - [Editing theme files](#editing-theme-files)
 - [Plugins](#plugins)
-- [Golementor (page builder)](#golementor-page-builder)
+- [Pursae Web Builder (page builder)](#golementor-page-builder)
 - [Production checklist](#production-checklist)
 - [Troubleshooting](#troubleshooting)
 - [What works in 0.1](#what-works-in-01)
@@ -36,7 +36,7 @@
 
 ## Quick start (Docker)
 
-The fastest way to try WordPress Go. You only need **Docker** (Docker Desktop on macOS/Windows,
+The fastest way to try Pursae. You only need **Docker** (Docker Desktop on macOS/Windows,
 Docker Engine + Compose v2 on Linux) and **git**.
 
 ```sh
@@ -56,7 +56,7 @@ When it finishes, open **http://localhost:8088** — you will land on the instal
 
 | Service | What it is | Host port |
 |---------|------------|-----------|
-| `wpgo`  | The WordPress Go server | `8088` |
+| `wpgo`  | The Pursae server | `8088` |
 | `db`    | PostgreSQL 17 | `5432` |
 
 ### Use another port or address
@@ -76,7 +76,7 @@ WPGO_SITE_URL=http://192.168.1.50:8088 make docker-up
 
 ## First run: the installer
 
-Open the site and WordPress Go redirects to `/wp-admin/install`. Fill in the same fields as
+Open the site and Pursae redirects to `/wp-admin/install`. Fill in the same fields as
 WordPress' five-minute install:
 
 1. **Site title**
@@ -156,7 +156,7 @@ Everything is configured with environment variables.
 | `WPGO_DISALLOW_FILE_EDIT` | off | Set to make the Theme File Editor read-only |
 | `WPGO_PLUGIN_KEYS` | — | Comma-separated Ed25519 public keys trusted to sign plugin packages |
 | `WPGO_MARKET_DIR` | — | Local plugin packages offered on Plugins › Add Plugin (besides the Hub catalog) |
-| `WPGO_HUB_URL` | `https://hub.wordpressgo.dev` | The WordPress Go Hub: marketplace, release checks and the daily site ping (URL host + version only). `off` disables it |
+| `WPGO_HUB_URL` | `https://hub.wordpressgo.dev` | The Pursae Hub: marketplace, release checks and the daily site ping (URL host + version only). `off` disables it |
 | `WPGO_TRUST_DEV_KEY` | `1` in compose | Trust the demo signing key of the bundled example plugins (**development only**) |
 
 ## Data and volumes
@@ -235,21 +235,21 @@ tools/build-plugins.sh      # builds the example plugins into examples/plugins/d
 
 Rebuild the image afterwards and they appear under Plugins › Add New.
 
-## Golementor (page builder)
+## Pursae Web Builder (page builder)
 
-Golementor is a built-in plugin, like Classic Editor and WPGo Cache, and it is **off on a fresh
-install**. Switch it on under Plugins › Golementor › **Activate** (or Plugins › Add Plugin ›
-Native Plugins). Until then it leaves no trace: no menu entries, "Edit with Golementor" links,
-builder routes, assets, front-end output or Hello Golementor theme.
+Pursae Web Builder is a built-in plugin, like Classic Editor and WPGo Cache, and it is **off on a fresh
+install**. Switch it on under Plugins › Pursae Web Builder › **Activate** (or Plugins › Add Plugin ›
+Native Plugins). Until then it leaves no trace: no menu entries, "Edit with Pursae Web Builder" links,
+builder routes, assets, front-end output or Hello Pursae Web Builder theme.
 
-Deactivating it again hides everything. If Hello Golementor is the active theme the site is
-switched to Twenty Twenty-Five (the Plugins screen says so). Pages built with Golementor show the
+Deactivating it again hides everything. If Hello Pursae Web Builder is the active theme the site is
+switched to Twenty Twenty-Five (the Plugins screen says so). Pages built with Pursae Web Builder show the
 plain-text content saved with them while it is off; saved themes, theme parts and the builder
 data stay in the database and come back on the next activation.
 
 ## Production checklist
 
-- Put WordPress Go behind a TLS-terminating reverse proxy and set `WPGO_SITE_URL` to the
+- Put Pursae behind a TLS-terminating reverse proxy and set `WPGO_SITE_URL` to the
   `https://` address.
 - Start with the production override, which sets the database password from `WPGO_DB_PASSWORD`,
   does not publish PostgreSQL and does not trust the public demo plugin key (`WPGO_TRUST_DEV_KEY=0`):
@@ -262,7 +262,7 @@ data stay in the database and come back on the next activation.
   For real plugins list your own signing keys in `WPGO_PLUGIN_KEYS`.
 - Configure SMTP (`WPGO_SMTP_*`) so password resets and notifications are delivered.
 - Back up the `pgdata` and `uploads` volumes.
-- Pick a strong admin password; WordPress Go never calls Gravatar or other third-party
+- Pick a strong admin password; Pursae never calls Gravatar or other third-party
   services on its own.
 
 ## Troubleshooting
@@ -310,21 +310,21 @@ first build; make sure Docker has network access. Later builds are cached.
   (Themes with Live Preview, Customize, Widgets, Menus, Theme File Editor), Plugins, Users,
   Tools (Import/Export WXR, Site Health, personal data export/erase), Settings (General,
   Writing, Reading, Discussion, Media, Permalinks, Privacy), Updates, About.
-- **Gotenberg** — WordPress' block editor (the 7.1 `@wordpress/*` bundles) on wpgo's REST API:
+- **Pursae Editor** — WordPress' block editor (the 7.1 `@wordpress/*` bundles) on wpgo's REST API:
   preloading, autosaves, revisions, media, patterns, oEmbed proxy.
 - **Classic Editor** (built-in plugin) — TinyMCE + Quicktags, Add Media, featured image;
   default editor and per-user switching under Settings › Writing.
-- **Golementor** — a visual page builder: classic and atomic (V4) elements, theme builder
+- **Pursae Web Builder** — a visual page builder: classic and atomic (V4) elements, theme builder
   (headers, footers, archives, single templates), popups, forms with integrations, loops,
-  dynamic tags, saved themes, built on the Hello Golementor base theme.
+  dynamic tags, saved themes, built on the Hello Pursae Web Builder base theme.
 - **REST API `wp/v2`** — posts, pages, media, blocks, terms, users, comments, settings, types,
   taxonomies, statuses, themes, search, patterns, sidebars/widgets; `_fields`, `_embed`,
   pagination headers, cookie + nonce and Application Password authentication.
 - **Themes** — **Twenty Twenty-Five**, the default theme: WordPress' block theme ported to Go
   templates with the same markup and its theme.json design (Manrope and Fira Code self-hosted,
-  the style variations' palettes as a Customizer color scheme, editor styles for Gotenberg), one
+  the style variations' palettes as a Customizer color scheme, editor styles for Pursae Editor), one
   small stylesheet plus the core styles of the blocks a page uses, and four demo content sets
-  (Appearance › Themes › Import Demo Content). Hello Golementor comes with Golementor, and the
+  (Appearance › Themes › Import Demo Content). Hello Pursae Web Builder comes with Pursae Web Builder, and the
   theme library offers more themes to install.
 - **WPGo Cache** (built-in plugin) — in-process full-page cache with tag-based purges, crawler,
   gzip + ETag, CDN purge headers, lazy images, deferred scripts, font preloads.
@@ -335,9 +335,9 @@ first build; make sure Docker has network access. Later builds are cached.
   events, e-mail, WXR import/export.
 
 - **Built-in plugins** (listed on Plugins, off on a fresh install; one page each in the
-  [developer docs](docs/developer/built-in-plugins/index.md)) — SEO-Go, ACF-Go, HeadlessGo, GoCDN,
-  Gontact Form, Golylang, AdminSecGo, Gooike, Maintenance-Go, WPGO Mail SMTP and Goocommerce.
-- **Goocommerce** — a native WooCommerce clone (products, cart, checkout, tax, shipping, coupons,
+  [developer docs](docs/developer/built-in-plugins/index.md)) — SEO-Go, Pursae Custom Fields, Pursae Headless, Pursae CDN,
+  Pursae Contact Form, Pursae Multi Language, Pursae Security, Pursae Cookie, Pursae Maintenance, Pursae SMTP and Pursae Commerce.
+- **Pursae Commerce** — a native WooCommerce clone (products, cart, checkout, tax, shipping, coupons,
   orders, gateways, e-mails, REST) with the premium extensions as built-in modules (off by default)
   and store themes in the theme library.
 
@@ -353,7 +353,7 @@ internal/store      data access (pgx)
 internal/server     routes, admin screens, REST API, editors, themes, cron, mail glue
 internal/cache      WPGo Cache page-cache engine
 internal/plugins    Wasm plugin runtime, hooks, permissions, signed packages
-internal/builder    Golementor document model, renderer and CSS engine
+internal/builder    Pursae Web Builder document model, renderer and CSS engine
 internal/mail       wp_mail(): SMTP or .eml files
 internal/links      permalinks and URL builders
 internal/caps       capabilities and meta-capability mapping
@@ -367,6 +367,6 @@ web/wp-includes     vendored core CSS/JS (block library, dashicons, admin bar, j
 ## License
 
 GPL-2.0-or-later. The bundled themes and the vendored WordPress CSS/JS are GPL-licensed by the
-WordPress contributors. Golementor's editor UI is GPL-3.0 licensed third-party code, so builds
+WordPress contributors. Pursae Web Builder's editor UI is GPL-3.0 licensed third-party code, so builds
 that include it are distributed under GPL-3.0. "WordPress" is a trademark of its owner;
-WordPress Go is not affiliated with it. Third-party attributions are in [NOTICE](NOTICE).
+Pursae is not affiliated with it. Third-party attributions are in [NOTICE](NOTICE).

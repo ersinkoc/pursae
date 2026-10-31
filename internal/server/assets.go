@@ -319,9 +319,9 @@ const maxUploadBytes = 64 << 20
 // editor strings: in WordPress Go the block editor is called Gotenberg.
 const gotenbergLocale = `wp.i18n.setLocaleData( {
 	"text direction\u0004ltr": [ "ltr" ],
-	"Welcome to the editor": [ "Welcome to Gotenberg" ],
-	"In the WordPress editor, each paragraph, image, or video is presented as a distinct \u201cblock\u201d of content.": [ "In Gotenberg, each paragraph, image, or video is a distinct \u201cblock\u201d of content \u2014 compiled, never interpreted." ],
-	"New to the block editor? Want to learn more about using it? <a>Here's a detailed guide.</a>": [ "New to Gotenberg? It speaks fluent Gutenberg, just with fewer PHP warnings. <a>Here's a detailed guide.</a>" ]
+	"Welcome to the editor": [ "Welcome to Pursae Editor" ],
+	"In the WordPress editor, each paragraph, image, or video is presented as a distinct \u201cblock\u201d of content.": [ "In Pursae Editor, each paragraph, image, or video is a distinct \u201cblock\u201d of content \u2014 compiled, never interpreted." ],
+	"New to the block editor? Want to learn more about using it? <a>Here's a detailed guide.</a>": [ "New to Pursae Editor? It speaks fluent Gutenberg, just with fewer PHP warnings. <a>Here's a detailed guide.</a>" ]
 } );`
 
 // assetSrc maps a registered source to the vendored file: only minified copies are

@@ -29,7 +29,7 @@ func hgSite(t *testing.T) (string, *http.Client, *Server) {
 	installAndLogin(t, ts, c)
 	hgToggle(t, c, ts.URL, "activate")
 	if !srv.hgOn() {
-		t.Fatal("HeadlessGo is not active after activation")
+		t.Fatal("Pursae Headless is not active after activation")
 	}
 	return ts.URL, c, srv
 }
@@ -39,10 +39,10 @@ func hgToggle(t *testing.T, c *http.Client, base, action string) {
 	_, body, _ := get(t, c, base+"/wp-admin/plugins")
 	m := regexp.MustCompile(`href="(/wp-admin/plugins\?action=` + action + `&amp;plugin=headlessgo[^"]*)"`).FindStringSubmatch(body)
 	if m == nil {
-		t.Fatalf("no %s link for HeadlessGo on the Plugins screen", action)
+		t.Fatalf("no %s link for Pursae Headless on the Plugins screen", action)
 	}
 	if code, _, loc := get(t, c, base+html.UnescapeString(m[1])); code != http.StatusFound || !strings.Contains(loc, action+"=true") {
-		t.Fatalf("%s HeadlessGo: %d %s", action, code, loc)
+		t.Fatalf("%s Pursae Headless: %d %s", action, code, loc)
 	}
 }
 
@@ -171,11 +171,11 @@ func TestHeadlessGoOffByDefault(t *testing.T) {
 	installAndLogin(t, ts, c)
 	base := ts.URL
 	if srv.hgOn() {
-		t.Fatal("HeadlessGo is active on a fresh install")
+		t.Fatal("Pursae Headless is active on a fresh install")
 	}
 	_, body, _ := get(t, c, base+"/wp-admin/plugins")
-	if !strings.Contains(body, "HeadlessGo") || !strings.Contains(body, "plugin=headlessgo") {
-		t.Fatal("HeadlessGo is not on the Plugins screen")
+	if !strings.Contains(body, "Pursae Headless") || !strings.Contains(body, "plugin=headlessgo") {
+		t.Fatal("Pursae Headless is not on the Plugins screen")
 	}
 	if code, _, _ := get(t, c, base+"/wp-admin/headlessgo"); code != http.StatusNotFound {
 		t.Fatalf("admin while off: %d", code)

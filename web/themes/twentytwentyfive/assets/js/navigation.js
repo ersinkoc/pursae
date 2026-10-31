@@ -1,5 +1,5 @@
 /**
- * Twenty Twenty-Five for WordPress Go: the navigation block's overlay menu and submenu toggles
+ * Twenty Twenty-Five for Pursae: the navigation block's overlay menu and submenu toggles
  * (core drives them with the Interactivity API; this is the same behaviour in plain JavaScript).
  */
 ( function () {

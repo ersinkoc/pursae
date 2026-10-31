@@ -74,7 +74,7 @@ func TestGooGolementorThemesInstall(t *testing.T) {
 				t.Fatalf("active theme %v", a)
 			}
 			if !srv.golementorOn() {
-				t.Fatal("Golementor was not switched on")
+				t.Fatal("Pursae Web Builder was not switched on")
 			}
 			parts, _ := srv.gwePartPosts(ctx, "", "publish")
 			if len(parts) != 7 {
@@ -121,7 +121,7 @@ func TestGooGolementorThemesInstall(t *testing.T) {
 			// The pages are Golementor documents with their images.
 			_, about, _ := get(t, v, base+"/about/")
 			if !strings.Contains(about, `data-elementor-type="wp-page"`) || !strings.Contains(about, "/wp-content/uploads/") {
-				t.Error("the About page is not a Golementor page with its image")
+				t.Error("the About page is not a Pursae Web Builder page with its image")
 			}
 		})
 	}
@@ -258,7 +258,7 @@ func TestGooGolementorThemeLanguages(t *testing.T) {
 	srv.pllCopyForTranslation(ctx, hp, np, srv.pllLang(ctx, "de"), true)
 	got, _ := srv.store.GetPost(ctx, np.ID)
 	if !gweBuilt(got) || got.Meta["_elementor_data"] != hp.Meta["_elementor_data"] {
-		t.Error("the duplicated page lost its Golementor design")
+		t.Error("the duplicated page lost its Pursae Web Builder design")
 	}
 	np2 := &store.Post{Type: "page", Title: "Leer", Status: "draft", AuthorID: 1, Meta: map[string]any{}}
 	_ = srv.store.InsertPost(ctx, np2)

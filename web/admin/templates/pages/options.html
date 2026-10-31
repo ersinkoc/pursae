@@ -76,11 +76,11 @@ Anyone can register</label></fieldset></td></tr>
 <td><select name="default_post_format" id="default_post_format">{{range .Formats}}<option value="{{.}}"{{if eq . (settingStr "default_post_format")}} selected="selected"{{end}}>{{if eq . "0"}}Standard{{else}}{{.}}{{end}}</option>{{end}}</select></td></tr>
 <tr><th scope="row">Default editor for all users</th>
 <td id="classic-editor-options"><p><input type="radio" name="classic-editor-replace" id="classic-editor-classic" value="classic"{{if eq (settingStr "classic-editor-replace") "classic"}} checked{{end}} /> <label for="classic-editor-classic">Classic editor</label></p>
-<p><input type="radio" name="classic-editor-replace" id="classic-editor-block" value="block"{{if ne (settingStr "classic-editor-replace") "classic"}} checked{{end}} /> <label for="classic-editor-block">Gotenberg (block editor)</label></p></td></tr>
+<p><input type="radio" name="classic-editor-replace" id="classic-editor-block" value="block"{{if ne (settingStr "classic-editor-replace") "classic"}} checked{{end}} /> <label for="classic-editor-block">Pursae Editor (block editor)</label></p></td></tr>
 <tr><th scope="row">Allow users to switch editors</th>
 <td><p><input type="radio" name="classic-editor-allow-users" id="classic-editor-allow" value="allow"{{if eq (settingStr "classic-editor-allow-users") "allow"}} checked{{end}} /> <label for="classic-editor-allow">Yes</label></p>
 <p><input type="radio" name="classic-editor-allow-users" id="classic-editor-disallow" value="disallow"{{if ne (settingStr "classic-editor-allow-users") "allow"}} checked{{end}} /> <label for="classic-editor-disallow">No</label></p>
-<p class="description">The Classic Editor is a built-in WordPress Go plugin. When switching is allowed, each post opens in the editor last used for it.</p></td></tr>
+<p class="description">The Classic Editor is a built-in Pursae plugin. When switching is allowed, each post opens in the editor last used for it.</p></td></tr>
 </table>{{end}}
 
 {{define "options-reading"}}<table class="form-table" role="presentation">

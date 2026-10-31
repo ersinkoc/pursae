@@ -1,4 +1,4 @@
-/* Goocommerce Product Compare: toggles products through /?goo-ajax=compare_toggle and refreshes the bar. */
+/* Pursae Commerce Product Compare: toggles products through /?goo-ajax=compare_toggle and refreshes the bar. */
 (function () {
 	'use strict';
 	var script = document.getElementById('goo-ext-compare-js');

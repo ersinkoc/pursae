@@ -365,7 +365,7 @@ func TestGolementorLibraryKBSchema(t *testing.T) {
 				typos[id] = true
 				fam, _ := ty["typography_font_family"].(string)
 				if gweGoogleFontType(fam) == "" {
-					t.Errorf("typography %s: %q is not a Google font Golementor can load", id, fam)
+					t.Errorf("typography %s: %q is not a Google font Pursae Web Builder can load", id, fam)
 				}
 				fonts[fam] = true
 				for key := range ty {
@@ -690,10 +690,10 @@ func glibKBInstall(t *testing.T, base string, c *http.Client, srv *Server, k *gl
 	_, body, _ := get(t, c, base+"/wp-admin/themes")
 	act := regexp.MustCompile(`href="(/wp-admin/themes\?action=activate&amp;stylesheet=hello-gowebeditor&amp;_wpnonce=[^"]+)"`).FindStringSubmatch(body)
 	if act == nil {
-		t.Fatal("no activate link for Hello Golementor")
+		t.Fatal("no activate link for Hello Pursae Web Builder")
 	}
 	if code, _, _ := get(t, c, base+html.UnescapeString(act[1])); code != http.StatusFound {
-		t.Fatalf("activate Hello Golementor: %d", code)
+		t.Fatalf("activate Hello Pursae Web Builder: %d", code)
 	}
 
 	// A fresh site's "Hello world!" post would lead the kit's blog; the starter replaces it.

@@ -1,8 +1,8 @@
-# Maintenance-Go: feature inventory
+# Pursae Maintenance: feature inventory
 
-Maintenance-Go is a native (compiled-in) WordPress Go plugin that clones **Maintenance** by WebFactory
+Pursae Maintenance is a native (compiled-in) Pursae plugin that clones **Maintenance** by WebFactory
 (wordpress.org/plugins/maintenance, v4.32, 2026-07-13). It also includes the parts of **Maintenance PRO**
-that make sense for a single-site Go install. Like Classic Editor, WPGo Cache and Golementor, it is
+that make sense for a single-site Go install. Like Classic Editor, WPGo Cache and Pursae Web Builder, it is
 **off on a fresh install**, and while it is off nothing of it runs or shows anywhere.
 
 Sources: the plugin's wordpress.org page, readme and changelog, and the v4.32 source (`maintenance.php`
@@ -41,13 +41,13 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
   no-cache headers, toolbar on/off, force SSL, REST toggle, customizing the core update page and
   white-label.
 
-## 2. Inventory: original vs Maintenance-Go
+## 2. Inventory: original vs Pursae Maintenance
 
 ### Switches and status
 
-| Feature | Original | Maintenance-Go |
+| Feature | Original | Pursae Maintenance |
 |---|---|---|
-| Plugin on/off | Plugins screen | ✓ Plugins screen, native row "Maintenance-Go" (also on Add Plugins › Built-in). Off by default. |
+| Plugin on/off | Plugins screen | ✓ Plugins screen, native row "Pursae Maintenance" (also on Add Plugins › Built-in). Off by default. |
 | Maintenance mode on/off | Header switch `status` | ✓ General › Status. The state badge appears on every tab and a red "On" bubble on the menu. |
 | Admin bar indicator | Status dot plus ON/OFF toggle, Preview, Settings (admins only) | ✓ The same, in wp-admin and on the front end. Nonce-checked **and** capability-checked (the original checks only the nonce). |
 | Hide the toolbar menu | PRO `disable_toolbar_menu` | ✓ Advanced › Toolbar Menu |
@@ -55,7 +55,7 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 
 ### Response and search engines
 
-| Feature | Original | Maintenance-Go |
+| Feature | Original | Pursae Maintenance |
 |---|---|---|
 | HTTP 503 + `Retry-After` | Toggle (broken in 4.32), 3600 s | ✓ "Maintenance" mode (default). `Retry-After` is the configured hours (SEO tab, default 1), or the countdown's remaining seconds while one runs. |
 | 200 "Coming Soon" mode | — (SeedProd) | ✓ "Coming Soon" mode |
@@ -70,16 +70,16 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 
 ### Access (who sees the normal site)
 
-| Feature | Original | Maintenance-Go |
+| Feature | Original | Pursae Maintenance |
 |---|---|---|
 | wp-admin and wp-login always reachable | ✓ | ✓ `/wp-admin*`, `/wp-login*` (including `.php`), `/wp-content/`, `/wp-includes/`, `/wp-cron`, `/xmlrpc`, `robots.txt` and `favicon.ico` are never gated |
 | Logged-in users | `show_logged_in`, all roles | ✓ Same default (every role), plus a role filter (PRO's role denial). Administrators always pass. |
-| IP whitelist | PRO, exact match | ✓ IPs **and CIDR ranges**, `#` comments. Uses the connection's address, like the rest of WordPress Go (no `X-Forwarded-For` trust). |
+| IP whitelist | PRO, exact match | ✓ IPs **and CIDR ranges**, `#` comments. Uses the connection's address, like the rest of Pursae (no `X-Forwarded-For` trust). |
 | URL Based Rules | whitelist / blacklist, exact path | ✓ Same matching (lowercased, `slashit()`, full URLs reduced to their path), plus a trailing `*` for prefixes |
 | Secret access link `home/?<key>` | PRO, 24 h cookie | ✓ The lifetime is configurable. The cookie is an HMAC bound to the key, so changing the key revokes old links. |
 | Direct-access password | PRO | ✓ A password button and popup with the original's texts; the cookie is an HMAC |
 | Login form on the page | ✓ Slide-in panel, posts to `wp_signon` | ✓ A padlock button opens a panel that posts to `/wp-login` with `redirect_to` set to the current URL. The tooltip is configurable. |
-| Custom login URL | PRO | ✗ WordPress Go has no login-URL hiding |
+| Custom login URL | PRO | ✗ Pursae has no login-URL hiding |
 | Password-protect the maintenance page itself | PRO | ✗ Rarely useful; the site password covers the need |
 | REST API | Free: never gated; PRO: toggle | ✓ Anonymous REST requests get a JSON 503 (Advanced, default on). Logged-in users keep REST, which the editor needs. |
 | Feeds and sitemaps | never gated | ✓ Gated by default (Advanced › Feeds & Sitemaps) so content doesn't leak while the site is closed |
@@ -87,7 +87,7 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 
 ### Page content and design
 
-| Feature | Original | Maintenance-Go |
+| Feature | Original | Pursae Maintenance |
 |---|---|---|
 | Headline, text (HTML), footer | Header, Content and Footer modules | ✓ The original's default texts; `%sitetitle%`, `%sitetagline%` and `%year%` are replaced |
 | Logo with width | Logo module | ✓ Picked from the Media Library modal (`enqueueMedia`) |
@@ -103,7 +103,7 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 
 ### Modules (PRO in the original)
 
-| Feature | Maintenance-Go |
+| Feature | Pursae Maintenance |
 |---|---|
 | Countdown to a date | ✓ Uses the site time zone. Days, hours, minutes and seconds tick in the browser; the label is configurable. |
 | Auto-disable when the countdown ends | ✓ (SeedProd-style). The first request after the end switches the mode off and purges the cache; open pages reload. Without auto-disable, a warning notice explains that the mode stays on. |
@@ -114,19 +114,19 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 | Mailing-list integrations (Mailchimp, Zapier…) | ✗ Needs third-party accounts and API keys; the CSV export covers the handover |
 | Social icons | ✓ Facebook, X, Instagram, LinkedIn, YouTube, Pinterest, WhatsApp, Reddit, Twitch, Spotify and e-mail. They use dashicons served from `/wp-includes`; `javascript:` and other non-http(s) URLs are dropped. |
 | Custom HTML | ✓ |
-| Map, video, 2- and 3-column content, divider | ✗ Map and video need third-party frames; columns and divider are page-builder layout. Golementor exists for that. |
+| Map, video, 2- and 3-column content, divider | ✗ Map and video need third-party frames; columns and divider are page-builder layout. Pursae Web Builder exists for that. |
 | Drag-and-drop module ordering | ✗ The modules have a fixed order (logo, headline, text, countdown, progress, subscribe, social, custom HTML) |
 | reCAPTCHA | ✗ Third party; a honeypot and a nonce are used instead |
 
 ### Advanced
 
-| Feature | Original | Maintenance-Go |
+| Feature | Original | Pursae Maintenance |
 |---|---|---|
 | Export / Import settings | ✓ Free | ✓ A JSON file. The site password is never exported. Importing keeps the current on/off state and password, and every value is re-sanitized. |
 | Reset settings | ✓ | ✓ Keeps the on/off state |
-| Force SSL on the page | PRO | ✗ TLS is the job of the server or proxy in front of WordPress Go |
-| Customize the built-in WP update page | PRO | ✗ WordPress Go has no `.maintenance` update page |
-| White-label, license dashboard | PRO | ✗ No licenses in WordPress Go |
+| Force SSL on the page | PRO | ✗ TLS is the job of the server or proxy in front of Pursae |
+| Customize the built-in WP update page | PRO | ✗ Pursae has no `.maintenance` update page |
+| White-label, license dashboard | PRO | ✗ No licenses in Pursae |
 
 ## 3. How it is built
 

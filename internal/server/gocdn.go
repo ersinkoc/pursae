@@ -522,9 +522,9 @@ func (s *Server) gocdnRT() *gocdnRuntime {
 
 // gocdnPluginRow is GoCDN's row on the Plugins screen.
 func (s *Server) gocdnPluginRow() pluginRow {
-	r := pluginRow{Slug: gocdnSlug, Name: "GoCDN", Version: gocdnVersion, Native: true, Active: s.gocdnOn(),
+	r := pluginRow{Slug: gocdnSlug, Name: "Pursae CDN", Version: gocdnVersion, Native: true, Active: s.gocdnOn(),
 		Description: "Offload the media library to Amazon S3, Cloudflare R2, DigitalOcean Spaces, Backblaze B2 or any S3-compatible storage, deliver it from a CDN, resize and convert images to WebP on the fly with signed URLs, serve theme and core assets from a CDN and purge the page cache and Cloudflare. While it is off, nothing of it runs.",
-		Author:      "WordPress Go"}
+		Author:      "Pursae"}
 	if r.Active {
 		r.SettingsURL = "/wp-admin/gocdn"
 	} else if s.settings.Bool(gocdnFallbackOption) {
@@ -585,7 +585,7 @@ func (s *Server) gocdnMenu(menu []*menuTop, u *store.User, screen string) []*men
 	if !s.gocdnOn() || u == nil || !u.Can("manage_options", nil) {
 		return menu
 	}
-	top := &menuTop{Slug: "gocdn", Title: "GoCDN", ID: "toplevel_page_gocdn", Icon: "dashicons-cloud-upload"}
+	top := &menuTop{Slug: "gocdn", Title: "Pursae CDN", ID: "toplevel_page_gocdn", Icon: "dashicons-cloud-upload"}
 	for i, p := range gocdnMenuPages {
 		slug := "gocdn"
 		if p.Page != "" {

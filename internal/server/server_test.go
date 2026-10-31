@@ -86,7 +86,7 @@ func newTestServer(t *testing.T, builder bool) (*httptest.Server, *http.Client, 
 		h.ServeHTTP(rec, r)
 		if srv.settings.Installed() {
 			if err := srv.settings.Set(r.Context(), map[string]any{golementorSetting: true}); err != nil {
-				t.Errorf("enable Golementor: %v", err)
+				t.Errorf("enable Pursae Web Builder: %v", err)
 			}
 			srv.golementorStart(r.Context())
 		}
@@ -162,7 +162,7 @@ func TestInstallLoginPublishAndView(t *testing.T) {
 	if code != http.StatusOK {
 		t.Fatalf("home %d", code)
 	}
-	if _, single, _ := get(t, c, attr(t, body, `href="([^"]*/hello-world/)"`)); !strings.Contains(single, "A WordPress Go Commenter") || !strings.Contains(single, `class="wp-block-comments`) {
+	if _, single, _ := get(t, c, attr(t, body, `href="([^"]*/hello-world/)"`)); !strings.Contains(single, "A Pursae Commenter") || !strings.Contains(single, `class="wp-block-comments`) {
 		t.Error("Hello world! misses its comment")
 	}
 

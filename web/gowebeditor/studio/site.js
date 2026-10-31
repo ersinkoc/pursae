@@ -1,4 +1,4 @@
-/* Golementor Studio — the Site tab: the kit's global colors and fonts, site name and logo (edited
+/* Pursae Web Builder Studio — the Site tab: the kit's global colors and fonts, site name and logo (edited
    in the kit document through the same commands Site Settings uses, then saved), the site's theme
    parts (header, footer, …), templates and pages. */
 (function () {

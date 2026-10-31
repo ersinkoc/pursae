@@ -111,7 +111,7 @@ func (s *Server) adminsecAdmin(c *gin.Context, page string) bool {
 				notices = append(notices, errNotice(err.Error())...)
 				break
 			}
-			s.asAudit(c, asEvent{Event: "adminsec_settings", Severity: "notice", Object: c.PostForm("tab"), Message: "AdminSecGo settings saved (" + c.PostForm("tab") + " tab)."})
+			s.asAudit(c, asEvent{Event: "adminsec_settings", Severity: "notice", Object: c.PostForm("tab"), Message: "Pursae Security settings saved (" + c.PostForm("tab") + " tab)."})
 			c.Redirect(http.StatusFound, "/wp-admin/admin?page="+asSlug+"-settings&tab="+url.QueryEscape(c.PostForm("tab"))+"&settings-updated=true")
 			return true
 		}
@@ -167,7 +167,7 @@ func (s *Server) adminsecAdmin(c *gin.Context, page string) bool {
 	if d.Page != "dashboard" {
 		screen += "-" + d.Page
 	}
-	s.adminPage(c, screen, title+" ‹ AdminSecGo", "toplevel_page_adminsecgo adminsecgo-admin", "admin/adminsecgo", d, notices...)
+	s.adminPage(c, screen, title+" ‹ Pursae Security", "toplevel_page_adminsecgo adminsecgo-admin", "admin/adminsecgo", d, notices...)
 	return true
 }
 
@@ -191,7 +191,7 @@ func (s *Server) asDashboard(c *gin.Context, d *asAdminData) {
 	set := func(tab string) string { return "/wp-admin/admin?page=" + asSlug + "-settings&tab=" + tab }
 	https := strings.HasPrefix(s.settings.String("home"), "https://")
 	d.Checks = []asCheck{
-		{Label: "E-mail delivery is configured", Detail: "Login codes and alerts need working e-mail.", OK: d.MailReady, Points: 10, FixURL: d.MailFixURL, FixLabel: "Set up WPGO Mail SMTP"},
+		{Label: "E-mail delivery is configured", Detail: "Login codes and alerts need working e-mail.", OK: d.MailReady, Points: 10, FixURL: d.MailFixURL, FixLabel: "Set up Pursae SMTP"},
 		{Label: "Your account uses two-factor authentication", Detail: "An authenticator app with e-mailed codes as the fallback.", OK: me.TOTPEnabled && me.EmailEnabled, Points: 10, FixURL: "/wp-admin/admin?page=" + asSlug + "-account", FixLabel: "Set up 2FA"},
 		{Label: "Administrators are required to use 2FA", Detail: "Two-Factor › Requirement per role.", OK: st.RequireRoles["administrator"] == "2fa", Points: 10, FixURL: set("twofactor"), FixLabel: "Require 2FA"},
 		{Label: "Every administrator has 2FA", Detail: strconv.Itoa(adminsWith2FA) + " of " + strconv.Itoa(admins) + " administrators.", OK: admins > 0 && adminsWith2FA == admins, Points: 8, FixURL: "/wp-admin/users?role=administrator", FixLabel: "See administrators"},
@@ -417,7 +417,7 @@ func (s *Server) adminsecNotices(c *gin.Context) []notice {
 			what = "two-factor authentication with an authenticator app"
 		}
 		days := int(time.Until(e.Deadline).Hours()/24 + 0.99)
-		out = append(out, notice{Type: "warning", Message: template.HTML("<strong>AdminSecGo:</strong> your role requires " + what + ". Please <a href=\"/wp-admin/admin?page=" + asSlug +
+		out = append(out, notice{Type: "warning", Message: template.HTML("<strong>Pursae Security:</strong> your role requires " + what + ". Please <a href=\"/wp-admin/admin?page=" + asSlug +
 			"-account\">set it up</a> within " + strconv.Itoa(days) + " day" + map[bool]string{true: "", false: "s"}[days == 1] + "; after that the dashboard is only available once it is set up.")})
 	}
 	return out

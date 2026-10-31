@@ -104,9 +104,9 @@ func (s *Server) maintAdminBar(c *gin.Context, u *store.User) template.HTML {
 
 // maintPluginRow is Maintenance-Go's row on the Plugins screen.
 func (s *Server) maintPluginRow() pluginRow {
-	r := pluginRow{Slug: maintSlug, Name: "Maintenance-Go", Version: "4.32.0", Native: true, Active: s.maintOn(),
+	r := pluginRow{Slug: maintSlug, Name: "Pursae Maintenance", Version: "4.32.0", Native: true, Active: s.maintOn(),
 		Description: "Put the site in maintenance or coming soon mode: a designed page with 503 and Retry-After for visitors, while logged-in users, whitelisted IPs and a secret access link see the site. Themes, countdown with auto-disable, subscribe form, social icons, login form, SEO and Google Analytics. While it is off, the site is never affected.",
-		Author:      "WordPress Go"}
+		Author:      "Pursae"}
 	if r.Active {
 		r.SettingsURL = "/wp-admin/admin?page=maintenance"
 	}
@@ -464,13 +464,13 @@ func (s *Server) maintImport(c *gin.Context) {
 		Settings json.RawMessage `json:"settings"`
 	}
 	if json.Unmarshal(raw, &in) != nil || in.Plugin != "maintenance-go" || len(in.Settings) == 0 {
-		fail("That is not a Maintenance-Go settings file.")
+		fail("That is not a Pursae Maintenance settings file.")
 		return
 	}
 	cur := s.maintLoad()
 	st := maintDefaults()
 	if err := json.Unmarshal(in.Settings, &st); err != nil {
-		fail("That is not a Maintenance-Go settings file.")
+		fail("That is not a Pursae Maintenance settings file.")
 		return
 	}
 	st.Enabled, st.SitePassword = cur.Enabled, cur.SitePassword

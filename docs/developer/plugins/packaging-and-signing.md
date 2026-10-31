@@ -20,7 +20,7 @@ A package is a zip with these files at its root and nothing else:
 
 ## wpgo-pkg
 
-The tool lives in the WordPress Go repository:
+The tool lives in the Pursae repository:
 
 ```bash
 go build -o wpgo-pkg ./internal/plugins/cmd/wpgo-pkg

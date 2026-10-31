@@ -154,7 +154,7 @@ func TestAdminRTLAndScriptTranslations(t *testing.T) {
 		}
 	}
 	if lit == "" {
-		t.Fatal(`"Delete this field?" (ACF-Go's field group editor) not among the script strings`)
+		t.Fatal(`"Delete this field?" (Pursae Custom Fields's field group editor) not among the script strings`)
 	}
 	var pack bytes.Buffer
 	zw := zip.NewWriter(&pack)

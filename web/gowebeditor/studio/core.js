@@ -1,4 +1,4 @@
-/* Golementor Studio — core: namespace, DOM helpers, icons and the thin layer over the editor's
+/* Pursae Web Builder Studio — core: namespace, DOM helpers, icons and the thin layer over the editor's
    public API ($e.run commands, elementor.documents, the selection). Every edit goes through a
    command so history, undo/redo and saving stay upstream's. */
 (function () {

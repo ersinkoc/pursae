@@ -1,6 +1,6 @@
 {{define "admin/headlessgo"}}{{template "admin-header" .}}{{with .Data}}
 <div class="wrap hg-wrap">
-<h1 class="wp-heading-inline"><span class="dashicons dashicons-rest-api hg-h1-icon" aria-hidden="true"></span>HeadlessGo &rsaquo; {{if .Type}}<span translate="no">{{.Type.DisplayName}}</span>{{else}}{{.Title}}{{end}}</h1>
+<h1 class="wp-heading-inline"><span class="dashicons dashicons-rest-api hg-h1-icon" aria-hidden="true"></span>Pursae Headless &rsaquo; {{if .Type}}<span translate="no">{{.Type.DisplayName}}</span>{{else}}{{.Title}}{{end}}</h1>
 {{if and (eq .Page "entries") .Type}}<a href="/wp-admin/headlessgo?page=entry&amp;type={{.Type.UID}}{{if .Locale}}&amp;locale={{.Locale}}{{end}}" class="page-title-action">Create new entry</a>{{end}}
 {{if eq .Page "tokens"}}<a href="/wp-admin/headlessgo?page=tokens&amp;new=1" class="page-title-action">Create new API token</a>{{end}}
 {{if eq .Page "webhooks"}}<a href="/wp-admin/headlessgo?page=webhooks&amp;new=1" class="page-title-action">Create new webhook</a>{{end}}
@@ -146,7 +146,7 @@
 		</ul><p><a href="/wp-admin/headlessgo?page=history&amp;type={{.Type.UID}}&amp;doc={{.Doc}}{{if .Locale}}&amp;locale={{.Locale}}{{end}}">Compare and restore versions</a></p></div></div>{{end}}
 		{{if .Type.Localized}}<div class="postbox"><h2 class="hndle">Locales</h2><div class="inside"><ul class="hg-locales">
 			{{range .Locales}}<li>{{if eq .Code $.Data.Locale}}<strong>{{.Name}} ({{.Code}})</strong> &middot; editing{{else if index $.Data.Versions .Code}}<a href="/wp-admin/headlessgo?page=entry&amp;type={{$.Data.Type.UID}}&amp;doc={{$.Data.Doc}}&amp;locale={{.Code}}">{{.Name}} ({{.Code}})</a>{{else if $.Data.Doc}}{{.Name}} ({{.Code}}) &middot; <a href="/wp-admin/headlessgo?page=entry&amp;type={{$.Data.Type.UID}}&amp;doc={{$.Data.Doc}}&amp;locale={{.Code}}&amp;copy={{$.Data.Locale}}">create from {{$.Data.Locale}}</a> &middot; <a href="/wp-admin/headlessgo?page=entry&amp;type={{$.Data.Type.UID}}&amp;doc={{$.Data.Doc}}&amp;locale={{.Code}}">empty</a>{{else}}{{.Name}} ({{.Code}}){{end}}</li>{{end}}
-		</ul>{{if not .GolylangOn}}<p class="description">Activate Golylang to translate entries into more languages.</p>{{end}}</div></div>{{end}}
+		</ul>{{if not .GolylangOn}}<p class="description">Activate Pursae Multi Language to translate entries into more languages.</p>{{end}}</div></div>{{end}}
 	</aside>
 </div>
 </form>
@@ -370,7 +370,7 @@
 <tr><th scope="row">GraphQL</th><td><label><input type="checkbox" name="graphql" value="1"{{if .Settings.GraphQL}} checked{{end}}> <span>GraphQL endpoint: queries, mutations and introspection</span></label> <code>{{.APIBase}}/graphql</code> &middot; <a href="/wp-admin/headlessgo?page=graphql">Open the playground</a></td></tr>
 <tr><th scope="row">Webhooks</th><td><label><input type="checkbox" name="schema_webhooks" value="1"{{if .Settings.SchemaWebhooks}} checked{{end}}> <span>Send <code>schema.update</code> when a content type or component changes</span></label>
 	<p><label for="hg-attempts">Attempts per delivery</label> <input type="number" id="hg-attempts" name="webhook_attempts" min="1" max="10" value="{{.Settings.WebhookAttempts}}" class="small-text"></p></td></tr>
-{{if not .GolylangOn}}<tr><th scope="row"><label for="hg-loc">Default locale</label></th><td><input type="text" id="hg-loc" name="default_locale" value="{{.Settings.DefaultLocale}}" class="small-text"><p class="description">The locale of entries of translatable types while Golylang is off. With Golylang active, its languages are the locales.</p></td></tr>{{else}}<input type="hidden" name="default_locale" value="{{.Settings.DefaultLocale}}">{{end}}
+{{if not .GolylangOn}}<tr><th scope="row"><label for="hg-loc">Default locale</label></th><td><input type="text" id="hg-loc" name="default_locale" value="{{.Settings.DefaultLocale}}" class="small-text"><p class="description">The locale of entries of translatable types while Pursae Multi Language is off. With Pursae Multi Language active, its languages are the locales.</p></td></tr>{{else}}<input type="hidden" name="default_locale" value="{{.Settings.DefaultLocale}}">{{end}}
 </table>
 <h2>Public access</h2>
 <p class="description">What anyone may do without a token. By default nothing is public: tick <em>find</em> and <em>findOne</em> to publish a type's published entries.</p>

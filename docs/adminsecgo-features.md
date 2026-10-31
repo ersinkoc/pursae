@@ -1,6 +1,6 @@
-# AdminSecGo — feature inventory
+# Pursae Security — feature inventory
 
-AdminSecGo is WordPress Go's native (compiled-in) login-security plugin. It covers the feature
+Pursae Security is Pursae's native (compiled-in) login-security plugin. It covers the feature
 level of **Wordfence Login Security**, **Two Factor**, **WPS Hide Login** and the login, user and
 hardening parts of **Solid Security** — without a firewall service or malware scanner.
 
@@ -10,16 +10,16 @@ hook in the core starts with `adminsecOn()` (one cached option read). **Deactiva
 users' factors** (they are simply not asked for), keeps the settings and the log, and brings
 `/wp-login` back.
 
-Legend: ✅ implemented · ◐ implemented with a WordPress Go specific difference · — left out (reason given).
+Legend: ✅ implemented · ◐ implemented with a Pursae specific difference · — left out (reason given).
 
-## 1. How it plugs into WordPress Go
+## 1. How it plugs into Pursae
 
-| | WordPress Go | |
+| | Pursae | |
 |---|---|---|
 | Activation switch | Option `native_adminsecgo`; settings in one JSON option `adminsecgo_settings` (parsed once per stored version) | ✅ |
 | Storage | Migration `0014_adminsecgo.sql`: `adminsec_factors`, `adminsec_challenges`, `adminsec_devices`, `adminsec_lockouts`, `adminsec_known_ips`, `adminsec_log` (+ an index on `login_attempts(lower(login))`). Failed and successful logins keep going to the core `login_attempts` table | ✅ |
 | Code | `internal/server/adminsec*.go`: `adminsec.go` (settings, switch, front gate, custom login URL, headers, menu, CLI), `adminsec_login.go` (login hooks, challenges, lockouts, devices), `adminsec_account.go` (Users › Security, profile block, Users column), `adminsec_admin.go` (admin screens), `adminsec_audit.go` (log, alerts, purge), `adminsec_password.go` (policy, strength), `adminsec_totp.go` (TOTP, sealing), `adminsec_qr.go` (QR encoder). Templates `web/admin/templates/pages/adminsecgo*.html` | ✅ |
-| Menu | Top-level **AdminSecGo** (Dashboard, Settings, Lockouts, Activity Log) for `manage_options`, right after Users; **Users › Security** (or **Profile › Security**) for every user — only while active | ✅ |
+| Menu | Top-level **Pursae Security** (Dashboard, Settings, Lockouts, Activity Log) for `manage_options`, right after Users; **Users › Security** (or **Profile › Security**) for every user — only while active | ✅ |
 | Daily job | `adminsecgo_daily` (scheduled on activation): purges log rows older than the retention, expired challenges and devices, lockouts older than 30 days | ✅ |
 
 ## 2. The two second factors (owner's rules)
@@ -27,7 +27,7 @@ Legend: ✅ implemented · ◐ implemented with a WordPress Go specific differen
 | Rule | Implementation | |
 |---|---|---|
 | **MFA = e-mailed one-time code**, usable on its own | Users › Security › *E-mailed codes (MFA)* | ✅ |
-| MFA needs working e-mail | `asMailReady()`: WPGO Mail SMTP active with a non-default mailer whose required field (SMTP host / API key / client ID …) is set and *Do Not Send* off, **or** the core `WPGO_SMTP_HOST`. Otherwise the card is greyed out with the reason and a link to WPGO Mail SMTP (or to the Plugins screen when it is not active); the server refuses the setup too | ✅ |
+| MFA needs working e-mail | `asMailReady()`: Pursae SMTP active with a non-default mailer whose required field (SMTP host / API key / client ID …) is set and *Do Not Send* off, **or** the core `WPGO_SMTP_HOST`. Otherwise the card is greyed out with the reason and a link to Pursae SMTP (or to the Plugins screen when it is not active); the server refuses the setup too | ✅ |
 | Setup verifies the address | A 6-digit code is mailed to the address entered (default: the account e-mail); only after it is entered are codes switched on | ✅ |
 | **2FA = authenticator app (TOTP)** | RFC 6238 / RFC 4226: HMAC-SHA1, 6 digits, 30-second steps, 160-bit random secret, ±1 step drift, **replay protection** (the last accepted step is stored; an equal or older step is refused, updated atomically) | ✅ |
 | QR code generated server-side in pure Go | `adminsec_qr.go`: ISO 18004 byte mode, level M, versions 1–40, Reed–Solomon, all 8 masks with penalty scoring; rendered as inline SVG. Checked with the browser's `BarcodeDetector` | ✅ |
@@ -46,7 +46,7 @@ Legend: ✅ implemented · ◐ implemented with a WordPress Go specific differen
 | Challenge state | `adminsec_challenges` row (15 minutes), token in the form, hashed in the database; carries Remember Me and `redirect_to` | ✅ |
 | Wrong codes count as failed logins | They feed the IP/username lockouts and the log | ✅ |
 | Application Passwords | REST Basic authentication with an Application Password **skips the second factor** (like the Two Factor plugin); the account password never works on the API. Lockouts and the block list apply to the API (429 `too_many_retries`) | ✅ |
-| XML-RPC | — WordPress Go has no XML-RPC endpoint | — |
+| XML-RPC | — Pursae has no XML-RPC endpoint | — |
 
 ## 4. Enforcement per role
 
@@ -66,8 +66,8 @@ Legend: ✅ implemented · ◐ implemented with a WordPress Go specific differen
 | Slug | Settings › Login: e.g. `my-login` → `https://site/my-login`. Validated: 3–64 of `a-z0-9-_`, not reserved (`wp-*`, `login`, `admin`, `feed`, …) and not an existing page slug | ✅ |
 | Hidden URLs | For visitors who are not logged in, `/wp-login`, `/wp-login.php` and every `/wp-admin…` path (also `.php` spellings) answer the theme's **404 page**, or redirect to a configurable path/URL | ✅ |
 | Still reachable | `/wp-admin/admin-ajax`, `/wp-admin/admin-post`, `/wp-admin/install`, admin assets, and `wp-login?action=postpass` (password-protected posts) | ✅ |
-| How it is served | `adminsecFront` runs first in `Server.Handler()` — before Maintenance-Go and the page cache — and serves the slug as `/wp-login` internally, so the cache never stores it and maintenance mode never closes it | ✅ |
-| Every core link uses it | `loginPath()` / template func `loginURL`: the login, lost-password, register and reset forms and their links, logout links (admin bar in wp-admin and on the front end, comment form, Login/out block, Maintenance-Go login form, Golementor login widget), `auth_redirect`, redirects after logout/reset/registration, the password-reset, new-user and privacy-confirmation e-mails, generic error links. A response wrapper also rewrites any `Location: /wp-login…` | ✅ |
+| How it is served | `adminsecFront` runs first in `Server.Handler()` — before Pursae Maintenance and the page cache — and serves the slug as `/wp-login` internally, so the cache never stores it and maintenance mode never closes it | ✅ |
+| Every core link uses it | `loginPath()` / template func `loginURL`: the login, lost-password, register and reset forms and their links, logout links (admin bar in wp-admin and on the front end, comment form, Login/out block, Pursae Maintenance login form, Pursae Web Builder login widget), `auth_redirect`, redirects after logout/reset/registration, the password-reset, new-user and privacy-confirmation e-mails, generic error links. A response wrapper also rewrites any `Location: /wp-login…` | ✅ |
 | `authorize-application` | A visitor opening `/wp-admin/authorize-application` is sent to the new login with `redirect_to` | ✅ |
 | Escape hatch | `WPGO_ADMINSEC_DISABLE_HIDE_LOGIN=1` in the environment brings `/wp-login` back immediately (the settings screen says so); `wpgo adminsec disable-hide-login` switches the setting off in the database | ✅ |
 | Deactivation | Restores `/wp-login` at once | ✅ |
@@ -83,8 +83,8 @@ Legend: ✅ implemented · ◐ implemented with a WordPress Go specific differen
 | IP allow list / block list | One IP or CIDR (IPv4/IPv6) per line, `#` comments. Allow list: never locked out. Block list: login, API, and optionally the whole site (403). The form refuses to block your own IP | ✅ |
 | Lockouts screen | Active lockouts with release / release all, manual IP lockout, lockout history | ✅ |
 | Generic error messages | “The username or password you entered is incorrect.” for unknown users and wrong passwords (default on) | ✅ |
-| User enumeration | `/?author=N` → 404, REST `wp/v2/users` → 401 and an empty users sitemap for visitors. **The core does this by default** (and the login form gives one message for an unknown account and a wrong password); `WPGO_EXPOSE_USERS=1` opts out. While AdminSecGo is active its "block enumeration" and "generic errors" settings decide instead, so an administrator can relax them on purpose | ✅ |
-| CAPTCHA on the login | — not included (Gontact Form has reCAPTCHA/Turnstile for forms; lockouts cover brute force) | — |
+| User enumeration | `/?author=N` → 404, REST `wp/v2/users` → 401 and an empty users sitemap for visitors. **The core does this by default** (and the login form gives one message for an unknown account and a wrong password); `WPGO_EXPOSE_USERS=1` opts out. While Pursae Security is active its "block enumeration" and "generic errors" settings decide instead, so an administrator can relax them on purpose | ✅ |
+| CAPTCHA on the login | — not included (Pursae Contact Form has reCAPTCHA/Turnstile for forms; lockouts cover brute force) | — |
 
 ## 7. Password policy
 
@@ -119,7 +119,7 @@ Legend: ✅ implemented · ◐ implemented with a WordPress Go specific differen
 
 | | | |
 |---|---|---|
-| Events | Logins (with the method: password, + app, + e-mailed code, + backup code, + remembered device), failed logins, lockouts and releases, blocked IPs, logouts, factor changes (MFA/2FA on/off, backup codes generated/used, devices remembered/forgotten, admin resets), sessions logged out, password changes and forced changes, role changes (user-edit, Users bulk, REST), users created/deleted, plugin activation/deactivation (including AdminSecGo itself), theme switches, Settings screens saved, AdminSecGo settings saved | ✅ |
+| Events | Logins (with the method: password, + app, + e-mailed code, + backup code, + remembered device), failed logins, lockouts and releases, blocked IPs, logouts, factor changes (MFA/2FA on/off, backup codes generated/used, devices remembered/forgotten, admin resets), sessions logged out, password changes and forced changes, role changes (user-edit, Users bulk, REST), users created/deleted, plugin activation/deactivation (including Pursae Security itself), theme switches, Settings screens saved, Pursae Security settings saved | ✅ |
 | Screen | Filters: event, severity, user, IP, date range; 50 per page; user agent per row | ✅ |
 | CSV export | The filtered rows, formula-safe cells | ✅ |
 | Retention | Days (default 90, 0 = forever), purged by the daily job; option to skip logging failed logins on busy sites | ✅ |

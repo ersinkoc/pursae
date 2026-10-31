@@ -269,7 +269,7 @@ func (p *gooPDF) Bytes() []byte {
 		})
 	}
 	obj(func() {
-		out.WriteString("<< /Producer (Goocommerce PDF Invoices) /Title (")
+		out.WriteString("<< /Producer (Pursae Commerce PDF Invoices) /Title (")
 		out.Write(gooPDFEscape(gooPDFEncode(p.Title)))
 		out.WriteString(") >>")
 	})

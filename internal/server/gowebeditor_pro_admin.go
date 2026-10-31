@@ -129,7 +129,7 @@ func (s *Server) gweProAdmin(c *gin.Context) {
 	if tab == "fonts" {
 		s.enqueueMedia(c, 0)
 	}
-	s.adminPage(c, "gowebeditor-pro?tab="+tab, title+" ‹ Golementor", "toplevel_page_gowebeditor-pro", "admin/gowebeditor-pro", d, notices...)
+	s.adminPage(c, "gowebeditor-pro?tab="+tab, title+" ‹ Pursae Web Builder", "toplevel_page_gowebeditor-pro", "admin/gowebeditor-pro", d, notices...)
 }
 
 func esc(s string) string { return html.EscapeString(s) }
@@ -167,7 +167,7 @@ func (s *Server) gweProPopupsScreen(c *gin.Context) string {
 	newURL := "/wp-admin/edit?action=elementor_new_post&post_type=" + gweLibrary + "&template_type=popup&_wpnonce=" + s.nonce(c, "elementor_action_new_post")
 	var b strings.Builder
 	b.WriteString(`<p><a class="button button-primary" href="` + esc(newURL) + `">Add New Popup</a></p>`)
-	b.WriteString(`<p class="description">Popups open on the pages their display conditions match (set them when you publish the popup in Golementor) and from any link that uses the Popup dynamic tag or a form's Popup action. Triggers (page load, scroll, click, exit intent, inactivity…) and advanced rules are under the editor's Settings › Popup.</p>`)
+	b.WriteString(`<p class="description">Popups open on the pages their display conditions match (set them when you publish the popup in Pursae Web Builder) and from any link that uses the Popup dynamic tag or a form's Popup action. Triggers (page load, scroll, click, exit intent, inactivity…) and advanced rules are under the editor's Settings › Popup.</p>`)
 	b.WriteString(`<table class="wp-list-table widefat fixed striped"><thead><tr><th>Title</th><th>Display Conditions</th><th>Status</th><th>Last Modified</th></tr></thead><tbody>`)
 	list := s.gweProLibraryPosts(c, "popup")
 	for _, p := range list {
@@ -179,7 +179,7 @@ func (s *Server) gweProPopupsScreen(c *gin.Context) string {
 		if cond == "" {
 			cond = `<span class="description">Only opened by links and forms</span>`
 		}
-		fmt.Fprintf(&b, `<tr><td><strong><a class="row-title" href="%s">%s</a></strong><div class="row-actions"><a href="%s">Edit with Golementor</a></div></td><td>%s</td><td>%s</td><td>%s</td></tr>`,
+		fmt.Fprintf(&b, `<tr><td><strong><a class="row-title" href="%s">%s</a></strong><div class="row-actions"><a href="%s">Edit with Pursae Web Builder</a></div></td><td>%s</td><td>%s</td><td>%s</td></tr>`,
 			esc(gweEditURL(p.ID)), esc(p.Title), esc(gweEditURL(p.ID)), cond, esc(gweStatusLabels[p.Status]), esc(wp.FormatDate(p.ModifiedAt.In(s.loc()), "Y/m/d g:i a")))
 	}
 	if len(list) == 0 {
@@ -515,7 +515,7 @@ func (s *Server) gweProRolesScreen(c *gin.Context) string {
 	}
 	rm, _ := s.settings.Get("gwe_role_manager").(map[string]any)
 	var b strings.Builder
-	b.WriteString(`<p class="description">Choose what each role may do in Golementor. Administrators always have full access.</p><form method="post">` + s.gweProNonceField(c, "roles") + `<input type="hidden" name="action" value="save"/>`)
+	b.WriteString(`<p class="description">Choose what each role may do in Pursae Web Builder. Administrators always have full access.</p><form method="post">` + s.gweProNonceField(c, "roles") + `<input type="hidden" name="action" value="save"/>`)
 	b.WriteString(`<table class="wp-list-table widefat fixed striped"><thead><tr><th>Role</th><th>No access to the editor</th><th>Access to edit content only</th></tr></thead><tbody>`)
 	for _, r := range roles {
 		ex, co := "", ""

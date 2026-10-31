@@ -194,7 +194,7 @@ func parseThemeManifest(b []byte) (*themeManifest, error) {
 		if !themeSemverRe.MatchString(m.RequiresCore) {
 			bad("requires_core %q is not a semantic version", m.RequiresCore)
 		} else if semverLess(Version, m.RequiresCore) {
-			bad("requires WordPress Go %s or newer (this is %s)", m.RequiresCore, Version)
+			bad("requires Pursae %s or newer (this is %s)", m.RequiresCore, Version)
 		}
 	}
 	for _, u := range []struct{ field, v string }{{"author_url", m.AuthorURL}, {"theme_url", m.ThemeURL}} {

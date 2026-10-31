@@ -105,7 +105,7 @@ func libFReadDemo(t *testing.T, slug string) (*themeManifest, *libFDemo) {
 	if err != nil {
 		t.Fatalf("theme.json: %v", err)
 	}
-	if m.Slug != slug || m.Version != "1.0.0" || m.RequiresCore != "0.1.0" || m.Author != "WordPress Go" {
+	if m.Slug != slug || m.Version != "1.0.0" || m.RequiresCore != "0.1.0" || m.Author != "Pursae" {
 		t.Errorf("manifest %s %s %s %s", m.Slug, m.Version, m.RequiresCore, m.Author)
 	}
 	if !libFCategories[m.Category] || m.Style == "" || len(m.Style) > 80 || strings.ContainsAny(m.Style, "<>\n") || m.Demo != "demo/demo.json" {

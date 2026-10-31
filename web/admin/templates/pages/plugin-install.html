@@ -17,7 +17,7 @@
 </div>
 {{if ne .Tab "upload"}}
 <h2 class="screen-reader-text">Filter plugins list</h2>
-<p>Plugins extend and expand the functionality of WordPress Go. Plugins are written in Go (or any language that compiles to WebAssembly), run in a sandbox and must be signed. Install them from the WordPress Go Hub marketplace below, or upload a plugin package in .zip format by clicking the button above. <a href="https://wordpressgo.dev/docs/plugins/">Learn how to build one</a>.</p>
+<p>Plugins extend and expand the functionality of Pursae. Plugins are written in Go (or any language that compiles to WebAssembly), run in a sandbox and must be signed. Install them from the Pursae Hub marketplace below, or upload a plugin package in .zip format by clicking the button above. <a href="https://wordpressgo.dev/docs/plugins/">Learn how to build one</a>.</p>
 <div class="wp-filter">
 	<ul class="filter-links">
 		<li class="plugin-install-featured"><a href="/wp-admin/plugin-install?tab=featured"{{if eq .Tab "featured"}} class="current" aria-current="page"{{end}}>Featured <span class="count">({{index .Counts "featured"}})</span></a> </li>
@@ -31,8 +31,8 @@
 		<input type="submit" id="search-submit" class="button button-compact hide-if-js" value="Search Plugins" />
 	</form>
 </div>
-{{if eq .Tab "native"}}<p class="wpgo-plugin-tab-intro">Native plugins are compiled into WordPress Go. They are always installed; switch them on or off from <a href="/wp-admin/plugins">Installed Plugins</a> and configure them from their settings screens.</p>
-{{else if eq .Tab "demos"}}<div class="notice notice-info inline wpgo-demo-notice"><p><strong>Fan-made demos.</strong> These listings are concepts imagined by the community to show what WordPress Go plugins could look like. They are not packages yet and cannot be installed.</p></div>
+{{if eq .Tab "native"}}<p class="wpgo-plugin-tab-intro">Native plugins are compiled into Pursae. They are always installed; switch them on or off from <a href="/wp-admin/plugins">Installed Plugins</a> and configure them from their settings screens.</p>
+{{else if eq .Tab "demos"}}<div class="notice notice-info inline wpgo-demo-notice"><p><strong>Fan-made demos.</strong> These listings are concepts imagined by the community to show what Pursae plugins could look like. They are not packages yet and cannot be installed.</p></div>
 {{end}}
 <br>
 <form id="plugin-filter" method="post">

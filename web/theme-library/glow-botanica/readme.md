@@ -1,6 +1,6 @@
 # Glow Botanica
 
-A soft, clean skincare and cosmetics store for Goocommerce. A floating capsule header (logo, menu, search,
+A soft, clean skincare and cosmetics store for Pursae Commerce. A floating capsule header (logo, menu, search,
 account and a bag with a mini-cart), an inset rounded hero with a frosted cream card, round "shop by ritual"
 category bubbles, blush product tiles whose add-to-cart button rises on hover, arch-framed product photos,
 pill-shaped tabs and an airy checkout with a soft order summary.

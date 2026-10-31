@@ -236,7 +236,7 @@ func (ex *hgGQLExec) schema() *hgGQLSchema {
 		}
 	}
 	// Root types.
-	q := &hgGQLTypeDef{kind: "OBJECT", name: "Query", desc: "HeadlessGo content"}
+	q := &hgGQLTypeDef{kind: "OBJECT", name: "Query", desc: "Pursae Headless content"}
 	m := &hgGQLTypeDef{kind: "OBJECT", name: "Mutation", desc: "Create, update, delete, publish and unpublish entries"}
 	status := gqlNamed("PublicationStatus")
 	sub := &hgGQLTypeDef{kind: "OBJECT", name: "Subscription", desc: "Live changes of entries, delivered as server-sent events"}

@@ -71,7 +71,7 @@ section: themes
 | `version` | yes | semver |
 | `description`, `author`, `author_url`, `theme_url` | no | shown on the Themes screen and the marketplace |
 | `tags` | no | marketplace filters (`blog`, `dark`, `one-column`, …) |
-| `requires_core` | no | minimum WordPress Go version |
+| `requires_core` | no | minimum Pursae version |
 | `screenshot` | no | a file under `assets/`, usually `screenshot.png` |
 
 ## Structure

@@ -1,16 +1,16 @@
 ---
 title: Your first plugin
-description: Write, build, pack and install a WordPress Go plugin in Go, step by step.
+description: Write, build, pack and install a Pursae plugin in Go, step by step.
 weight: 20
 section: plugins
 ---
 
-You need Go 1.27 and a checkout of the WordPress Go repository (for the SDK module and the
+You need Go 1.27 and a checkout of the Pursae repository (for the SDK module and the
 `wpgo-pkg` tool). The plugin itself is an ordinary Go `main` package.
 
 ## 1. Create the module
 
-The SDK lives in the WordPress Go repository as `wpgo/sdk/go/wpgo`. The simplest layout is a
+The SDK lives in the Pursae repository as `wpgo/sdk/go/wpgo`. The simplest layout is a
 directory inside that repository (the example plugins live in `examples/plugins/`), because the
 module `wpgo` is not published separately yet:
 
@@ -95,7 +95,7 @@ returns, and the loader rejects it with a message telling you to use `c-shared`.
 ## 5. Pack and sign
 
 ```bash
-go build -o wpgo-pkg ./internal/plugins/cmd/wpgo-pkg     # once, from the WordPress Go checkout
+go build -o wpgo-pkg ./internal/plugins/cmd/wpgo-pkg     # once, from the Pursae checkout
 ./wpgo-pkg keygen -out mykey                             # writes mykey.pub and mykey.key (keep .key private)
 ./wpgo-pkg pack -dir examples/plugins/hello-reader -wasm plugin.wasm -key mykey.key -out hello-reader-1.0.0.zip
 ./wpgo-pkg verify -pub mykey.pub hello-reader-1.0.0.zip

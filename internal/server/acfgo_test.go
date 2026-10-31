@@ -174,10 +174,10 @@ func acfgoActivate(t *testing.T, c *http.Client, base string) {
 	_, body, _ := get(t, c, base+"/wp-admin/plugins")
 	m := regexp.MustCompile(`href="(/wp-admin/plugins\?action=activate&amp;plugin=acf-go[^"]*)"`).FindStringSubmatch(body)
 	if m == nil {
-		t.Fatal("no Activate link for ACF-Go")
+		t.Fatal("no Activate link for Pursae Custom Fields")
 	}
 	if code, _, loc := get(t, c, base+html.UnescapeString(m[1])); code != http.StatusFound || !strings.Contains(loc, "activate=true") {
-		t.Fatalf("activate ACF-Go: %d %s", code, loc)
+		t.Fatalf("activate Pursae Custom Fields: %d %s", code, loc)
 	}
 }
 
@@ -211,11 +211,11 @@ func TestACFGoPlugin(t *testing.T) {
 
 	// Off by default: listed as an inactive native plugin, no screens, menu, REST field or output.
 	if srv.acfgoOn() {
-		t.Fatal("ACF-Go is on after a fresh install")
+		t.Fatal("Pursae Custom Fields is on after a fresh install")
 	}
 	_, body, _ := get(t, c, base+"/wp-admin/plugins")
 	if row := regexp.MustCompile(`(?s)<tr class="(\w+)" data-slug="acf-go"`).FindStringSubmatch(body); row == nil || row[1] != "inactive" {
-		t.Fatalf("ACF-Go not listed as inactive: %v", row)
+		t.Fatalf("Pursae Custom Fields not listed as inactive: %v", row)
 	}
 	if code, _, _ := get(t, c, base+"/wp-admin/acf-field-groups"); code != http.StatusNotFound {
 		t.Errorf("field groups screen while off: %d", code)
@@ -227,7 +227,7 @@ func TestACFGoPlugin(t *testing.T) {
 
 	acfgoActivate(t, c, base)
 	if !srv.acfgoOn() {
-		t.Fatal("activation did not switch ACF-Go on")
+		t.Fatal("activation did not switch Pursae Custom Fields on")
 	}
 	_, body, _ = get(t, c, base+"/wp-admin/")
 	if !strings.Contains(body, `href="/wp-admin/acf-field-groups"`) {

@@ -1,6 +1,6 @@
 # Ink & Needle
 
-A tattoo and piercing studio theme for WordPress Go, in black and bone with a blood-red accent.
+A tattoo and piercing studio theme for Pursae, in black and bone with a blood-red accent.
 
 - A top bar with studio hours and a booking button, a centered blackletter masthead with a star ornament, and a menu separated by stars.
 - Double-ruled frames around every image, ribbon banners for categories, a blackletter drop cap and star bullets.

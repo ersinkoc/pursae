@@ -1,7 +1,7 @@
-# Golylang: Polylang Pro feature inventory
+# Pursae Multi Language: Polylang Pro feature inventory
 
-Golylang is WordPress Go's built-in multilingual plugin, a 1:1 functional clone of **Polylang Pro**. It is a
-native (compiled-in) plugin like Classic Editor, WPGo Cache and Golementor: it is **off** on a fresh
+Pursae Multi Language is Pursae's built-in multilingual plugin, a 1:1 functional clone of **Polylang Pro**. It is a
+native (compiled-in) plugin like Classic Editor, WPGo Cache and Pursae Web Builder: it is **off** on a fresh
 install, it is switched on under **Plugins**, and while it is off it adds nothing. There are no menus, the
 `admin?page=mlang*` screens answer 403, the `pll/v1` REST namespace is hidden, posts and terms carry no
 `lang` field, there is no front-end output, and `/fr/` URLs are 404.
@@ -19,7 +19,7 @@ Code: `internal/server/golylang*.go`, `web/admin/templates/pages/golylang.html`,
 
 ## Data model
 
-| Polylang | Golylang | |
+| Polylang | Pursae Multi Language | |
 |---|---|---|
 | `language` taxonomy: name, slug, locale, rtl, flag, order (`term_group`) | `pll_languages` table, plus Pro's `active` flag | ✅ |
 | `post_language` and `post_translations` (one group term per translation set) | `pll_post_langs` (`post_id`, `lang`, `grp`) | ✅ |
@@ -43,7 +43,7 @@ Code: `internal/server/golylang*.go`, `web/admin/templates/pages/golylang.html`,
 | Notices: Language added. / updated. / deleted. | ✅ |
 | Creating a language creates its default category, linked to the default category | ✅ |
 | Deleting the default language picks another default; the language's strings and menu locations go | ✅ |
-| Downloading the WordPress `.mo` language pack | ✗ WordPress Go has no `.mo` translations of core |
+| Downloading the WordPress `.mo` language pack | ✗ Pursae has no `.mo` translations of core |
 | Setup wizard | ✗ the Languages screen does the same steps: the first language becomes the default and takes the existing content |
 | Custom flags in `/wp-content/polylang/` | ✗ there is no `wp-content` directory for site files; any two-letter code can be used as the flag |
 | Pro: locale fallback | ✗ there are no `.mo` files to fall back between |
@@ -55,7 +55,7 @@ Code: `internal/server/golylang*.go`, `web/admin/templates/pages/golylang.html`,
 | Module list table with Settings, Activate and Deactivate actions, inline configuration rows, Cancel and Save Changes | ✅ |
 | **URL modifications**: `force_lang` 0 (from content) / 1 (directory) / 2 (subdomain) / 3 (domains, with one URL per language), the plain-permalink variant ("from the code in the URL", `?lang=`), "Hide URL language information for default language", "Remove/Keep /language/ in pretty permalinks", "The front page URL contains the language code…", domain validation messages | ✅ |
 | **Detect browser language**: Accept-Language with q-values matched on the full tag, then the primary subtag; `Vary: Accept-Language`; cookie first | ✅ |
-| **Media**: translate media, Pro "automatically duplicate media in all languages" | ◐ the setting, the media language table and featured-image mapping in sync are in; the Media Library language column, the attachment translation UI and duplication at upload are not (WordPress Go's media screens are not hooked) |
+| **Media**: translate media, Pro "automatically duplicate media in all languages" | ◐ the setting, the media language table and featured-image mapping in sync are in; the Media Library language column, the attachment translation UI and duplication at upload are not (Pursae's media screens are not hooked) |
 | **Custom post types and Taxonomies**: checkbox lists of non-builtin public types and taxonomies | ✅ |
 | **Synchronization**: Taxonomies, Custom fields, Comment status, Ping status, Sticky posts, Published date, Post format, Page parent, Page template, Page order, Featured image | ✅ terms, parent and featured image are mapped to their translations |
 | Pro **Translate slugs**: translated category, tag, author and search bases per language (strings group "URL slugs") | ✅ |
@@ -68,8 +68,8 @@ Code: `internal/server/golylang*.go`, `web/admin/templates/pages/golylang.html`,
 |---|---|
 | Table with checkbox, String, Name, Group, Translations (one input or textarea per language), search "Search translations", "Filter by group" ("View all groups"), pagination | ✅ |
 | Built-in strings: Site Title and Tagline (group WordPress) | ✅ translated on the front end |
-| Date Format and Time Format strings | ✗ WordPress Go formats dates without a request context, so there is no place to apply them |
-| Widget titles and text (legacy widgets) | ✗ WordPress Go only has block widgets |
+| Date Format and Time Format strings | ✗ Pursae formats dates without a request context, so there is no place to apply them |
+| Widget titles and text (legacy widgets) | ✗ Pursae only has block widgets |
 | Strings registered by themes (`pll_register_string`, `pll__`, `pll_e`) | ✅ registered on first use (group "Theme"), kept in the option `golylang_strings` |
 | Bulk Delete for registered strings (WordPress and URL slugs strings are greyed) | ✅ |
 | "Clean strings translation database" | ✅ |
@@ -91,7 +91,7 @@ Code: `internal/server/golylang*.go`, `web/admin/templates/pages/golylang.html`,
 | Categories and tags: language columns, Language field on the add and edit forms, Translations rows (link an existing term, add with plus), the same name allowed in different languages, `from_tag`/`new_lang` add links | ✅ |
 | Admin bar language filter ("Filters content by language", "Show all languages", one entry per language) narrows posts, pages, categories, tags and menus lists | ✅ |
 | Static front page and posts page per language | ✅ each language shows its translation of the front page at its home URL, and the posts page likewise |
-| Per-language user biography | ✗ WordPress Go's profile screen is not hooked |
+| Per-language user biography | ✗ Pursae's profile screen is not hooked |
 
 ## Menus and the language switcher
 
@@ -99,11 +99,11 @@ Code: `internal/server/golylang*.go`, `web/admin/templates/pages/golylang.html`,
 |---|---|
 | Appearance > Menus > Manage Locations: one location per language ("Primary Menu English", "Primary Menu Français"); `nav_menus` option | ✅ |
 | "Language switcher" box in Appearance > Menus (adds the "Languages" item) | ✅ on the front end the item expands into one item per language |
-| Switcher options on the menu item (show flags, hide names, hide current, force home, hide if no translation) | ◐ set through the item's CSS classes (`pll-show-flags`, `pll-hide-names`, `pll-hide-current`, `pll-force-home`, `pll-hide-if-no-translation`), as WordPress Go's menu items have no meta fields |
+| Switcher options on the menu item (show flags, hide names, hide current, force home, hide if no translation) | ◐ set through the item's CSS classes (`pll-show-flags`, `pll-hide-names`, `pll-hide-current`, `pll-force-home`, `pll-hide-if-no-translation`), as Pursae's menu items have no meta fields |
 | Language switcher block (`polylang/language-switcher`, block editor and block widgets): dropdown, names, flags, force home, hide current, hide if no translation | ✅ |
 | `pll_the_languages()` with `dropdown`, `show_names`, `show_flags`, `display_names_as`, `force_home`, `hide_current`, `hide_if_no_translation`, `hide_if_empty`, `post_id`; classes `lang-item`, `lang-item-{id}`, `lang-item-{slug}`, `current-lang`, `no-translation`, `lang-item-first` | ✅ as the template function `{{pll_the_languages . "dropdown=1"}}` |
 | 3.9 layouts (horizontal, vertical, selector), alignment, flag aspect ratio and size | ✗ the legacy option set is used |
-| Classic "Language switcher" widget | ✗ WordPress Go only has block widgets; the block covers it |
+| Classic "Language switcher" widget | ✗ Pursae only has block widgets; the block covers it |
 
 ## Front end
 
@@ -120,8 +120,8 @@ Code: `internal/server/golylang*.go`, `web/admin/templates/pages/golylang.html`,
 | Per-language sitemaps (`/fr/wp-sitemap.xml` listing French content) | ✅ |
 | Translated site title and tagline | ✅ |
 | Per-language menus | ✅ |
-| Widgets restricted to one language | ✗ WordPress Go's block widgets have no per-widget settings UI to hook |
-| Auto-translation of IDs in queries (`PLL_AUTO_TRANSLATE`) | ✗ themes in WordPress Go don't query by hard-coded IDs |
+| Widgets restricted to one language | ✗ Pursae's block widgets have no per-widget settings UI to hook |
+| Auto-translation of IDs in queries (`PLL_AUTO_TRANSLATE`) | ✗ themes in Pursae don't query by hard-coded IDs |
 
 ## API
 
@@ -134,8 +134,8 @@ Code: `internal/server/golylang*.go`, `web/admin/templates/pages/golylang.html`,
 | REST `pll/v1/settings` (GET, POST) | ✅ |
 | REST `lang` parameter on wp/v2 collections; `lang` and `translations` fields on posts, pages, categories and tags; `?lang=fr&translations[en]=12` on writes | ✅ |
 | WP-CLI `wp pll` | ✗ there is no WP-CLI |
-| Language capabilities (`translate_{lang}`, `manage_translations`, `manage_languages`) | ✗ the screens need `manage_options`, as in free Polylang; WordPress Go has no role editor to grant custom caps |
-| Integrations (ACF, Yoast, WooCommerce, page builders) | ✗ not applicable. Golementor pages translate like any page; the builder document is not synchronized, since it is content |
+| Language capabilities (`translate_{lang}`, `manage_translations`, `manage_languages`) | ✗ the screens need `manage_options`, as in free Polylang; Pursae has no role editor to grant custom caps |
+| Integrations (ACF, Yoast, WooCommerce, page builders) | ✗ not applicable. Pursae Web Builder pages translate like any page; the builder document is not synchronized, since it is content |
 
 ## Shared-file changes (kept small for the parallel plugin sessions)
 

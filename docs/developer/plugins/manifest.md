@@ -33,7 +33,7 @@ silently drop a permission.
 | `version` | yes | `1.2.3` or `1.2.3-beta.1`; the Hub refuses to publish a version that is not newer than the last |
 | `description` | no | up to 2000 characters, plain text |
 | `author`, `author_uri`, `plugin_uri` | no | URIs must be absolute `http(s)` URLs |
-| `requires` | no | minimum WordPress Go version; the site refuses to install or activate a plugin that needs a newer core |
+| `requires` | no | minimum Pursae version; the site refuses to install or activate a plugin that needs a newer core |
 | `license` | no | an SPDX identifier |
 | `permissions` | yes (may be empty) | from the [permission vocabulary](permissions.md); no duplicates |
 | `hooks` | yes (may be empty) | every hook the plugin may subscribe to (letters, digits, `_ . : / -`, max 128). Registering a hook that is not listed is refused at runtime. A hook that needs a permission requires that permission to be declared |

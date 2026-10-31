@@ -34,7 +34,7 @@
 <a href="/wp-admin/theme-install" class="page-title-action">All themes</a>
 <hr class="wp-header-end">
 {{template "notices" $}}
-<p class="goo-themes-sub">Each theme comes with a complete demo store: products with images, categories, the shop, cart, checkout and account pages, menus and shipping. Pick one and it is installed, activated and filled with its demo in one step; installed themes are also listed in Appearance &rsaquo; Themes. Themes marked Golementor are built from Theme Builder parts and store widgets, so every part of the store can be edited visually.{{if .Golylang}} Golylang is active: the demo content gets the default language, ready to be translated.{{end}}</p>
+<p class="goo-themes-sub">Each theme comes with a complete demo store: products with images, categories, the shop, cart, checkout and account pages, menus and shipping. Pick one and it is installed, activated and filled with its demo in one step; installed themes are also listed in Appearance &rsaquo; Themes. Themes marked Pursae Web Builder are built from Theme Builder parts and store widgets, so every part of the store can be edited visually.{{if .Golylang}} Pursae Multi Language is active: the demo content gets the default language, ready to be translated.{{end}}</p>
 <div class="goo-themes-grid">
 {{range .Themes}}
 <div class="goo-theme-card{{if .Active}} is-active{{end}}" id="goo-theme-{{.Slug}}" data-theme="{{.Slug}}">
@@ -42,7 +42,7 @@
 		<img src="{{.Screenshot}}" alt="" loading="lazy">
 		<span class="goo-theme-badges">
 			{{if .Active}}<span class="goo-theme-badge active">Active</span>{{else if .Installed}}<span class="goo-theme-badge">Installed</span>{{end}}
-			{{if .Golementor}}<span class="goo-theme-badge gwe">Golementor</span>{{end}}
+			{{if .Golementor}}<span class="goo-theme-badge gwe">Pursae Web Builder</span>{{end}}
 		</span>
 	</a>
 	<div class="goo-theme-body">
@@ -52,7 +52,7 @@
 		<div class="goo-theme-progress" aria-live="polite">
 			<ol>
 				<li data-step="install">Installing the theme</li>
-				<li data-step="activate">Activating it{{if .Golementor}} (and Golementor){{end}}</li>
+				<li data-step="activate">Activating it{{if .Golementor}} (and Pursae Web Builder){{end}}</li>
 				<li data-step="demo">Importing the demo store</li>
 			</ol>
 			<p class="goo-theme-result"></p>

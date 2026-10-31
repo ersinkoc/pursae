@@ -1,4 +1,4 @@
-/* Goocommerce general storefront script (woocommerce.js): the store notice, the login / coupon
+/* Pursae Commerce general storefront script (woocommerce.js): the store notice, the login / coupon
    toggles, password visibility and keyboard-friendly notices. */
 (function () {
 	'use strict';

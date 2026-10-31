@@ -1,7 +1,7 @@
-WordPress Go — third-party notices
+Pursae — third-party notices
 ==================================
 
-Golementor (WordPress Go's page builder) contains material derived from Elementor and
+Pursae Web Builder (Pursae's page builder) contains material derived from Elementor and
 Elementor Pro, both licensed under the GNU General Public License version 3.
 
 Elementor Pro 4.3.0
@@ -14,14 +14,14 @@ license.txt:
   original Program. Altered source versions must be plainly marked as such, and must not be
   misrepresented as being the original Program."
 
-What WordPress Go uses, and how it is altered:
+What Pursae uses, and how it is altered:
 
 * web/gowebeditor/pro/ — Elementor Pro's built (minified) editor and front-end JavaScript and
   CSS, its jQuery SmartMenus, Sticky, Lottie and Instant Page builds, and module images, copied
   unmodified from Elementor Pro 4.3.0.
 * internal/server/gowebeditor/pro-*.gz, internal/builder/data/pro-controls.json.gz — data
   captured from Elementor Pro 4.3.0 running in a test WordPress (editor configs, Backbone
-  templates, widget control definitions). ALTERED: product names replaced with "Golementor",
+  templates, widget control definitions). ALTERED: product names replaced with "Pursae Web Builder",
   links to elementor.com removed, license/Connect/upgrade/promotion entries removed, site-specific
   values (URLs, nonces, e-mail defaults) replaced with placeholders, WooCommerce and Facebook
   widgets dropped.
@@ -29,7 +29,7 @@ What WordPress Go uses, and how it is altered:
   internal/server/gowebeditor_pro*.go — ALTERED: new Go code that ports the behaviour of
   Elementor Pro's PHP (widget render methods, dynamic tags, display conditions, custom CSS and
   attributes, global widgets, forms and their actions, popups, custom code, role manager) to
-  WordPress Go. These are WordPress Go's implementation, not Elementor Pro.
+  Pursae. These are Pursae's implementation, not Elementor Pro.
 * web/gowebeditor/pro/js/packages/{core-adapter-utils,editor-canvas-extended,
   editor-templates-extended,editor-controls-extended,editor-editing-panel-extended,
   editor-components-extended}/ and web/gowebeditor/pro/js/atomic-form-editor.min.js — Elementor
@@ -49,13 +49,13 @@ What WordPress Go uses, and how it is altered:
 
 Not used: Elementor Pro's license checks, license bypasses, Elementor Connect, the cloud
 template library, AI, telemetry, WooCommerce and Facebook SDK integrations, and all calls to
-Elementor's servers. WordPress Go is not Elementor and is not endorsed by Elementor Ltd.;
+Elementor's servers. Pursae is not Elementor and is not endorsed by Elementor Ltd.;
 "Elementor" is a trademark of Elementor Ltd.
 
 Elementor 4.3.5
 ---------------
 Copyright Elementor Ltd. Licensed under the GNU General Public License version 3. The
-Golementor editor under web/gowebeditor/ (outside pro/) is Elementor's built front end, with
+Pursae Web Builder editor under web/gowebeditor/ (outside pro/) is Elementor's built front end, with
 the alterations described in internal/server/gowebeditor.go.
 
 Prism 1.30.0
@@ -64,7 +64,7 @@ Copyright (c) 2012 Lea Verou. Licensed under the MIT License (web/gowebeditor/li
 web/gowebeditor/lib/prismjs/ holds Prism's minified core, the language components the Code
 Highlight widget offers (with their dependencies) and the autoloader, normalize-whitespace,
 line-numbers, line-highlight, toolbar and copy-to-clipboard plugins, copied unmodified from the
-prismjs 1.30.0 npm package. Upstream loads Prism 1.23.0 from a CDN; WordPress Go serves it locally.
+prismjs 1.30.0 npm package. Upstream loads Prism 1.23.0 from a CDN; Pursae serves it locally.
 
 Monaco Editor 0.55.1
 --------------------
@@ -76,7 +76,7 @@ web/gowebeditor/lib/monaco-editor/min/vs is the package's minified build, copied
 Twenty Twenty-Five 1.5
 ----------------------
 Twenty Twenty-Five WordPress Theme, (C) 2024-2026 WordPress.org and contributors. Licensed under
-the GNU General Public License version 2 or later. web/themes/twentytwentyfive/ is WordPress Go's
+the GNU General Public License version 2 or later. web/themes/twentytwentyfive/ is Pursae's
 port of the theme: ALTERED — the block templates, template parts and patterns are rewritten as Go
 templates (templates/*.html, internal/server/theme_twentytwentyfive.go) that print the same
 markup; assets/style.min.css and assets/css/ are generated from the theme's theme.json, style

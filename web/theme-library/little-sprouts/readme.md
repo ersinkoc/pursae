@@ -1,6 +1,6 @@
 # Little Sprouts
 
-A cheerful theme for kindergartens, nurseries and daycare centres, made for WordPress Go.
+A cheerful theme for kindergartens, nurseries and daycare centres, made for Pursae.
 
 - A rainbow stripe, an optional notice bar, a sprout logo mark, menu pills that light up in four colours and a green "Book a visit" button.
 - A yellow hero with bobbing shapes, a blob-shaped picture and a wavy edge; colourful programme cards by age, a daily schedule timeline in a wavy green band, parent news, parent quotes and a big yellow visit band.

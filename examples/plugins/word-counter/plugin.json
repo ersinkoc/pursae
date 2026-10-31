@@ -3,7 +3,7 @@
   "name": "Word Counter",
   "version": "1.0.0",
   "description": "Adds a word_count entry to post statistics.",
-  "author": "WordPress Go Contributors",
+  "author": "Pursae Contributors",
   "requires": "0.1.0",
   "license": "GPL-2.0-or-later",
   "permissions": ["posts:read"],

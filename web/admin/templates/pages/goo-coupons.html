@@ -5,7 +5,7 @@
 {{if .Search}}<span class="subtitle">Search results for: <strong>{{.Search}}</strong></span>{{end}}
 <hr class="wp-header-end">
 {{template "notices" $}}
-{{if not .Enabled}}<div class="notice notice-warning inline"><p>Coupons are disabled. To enable them, go to <a href="/wp-admin/goocommerce?page=settings">Goocommerce &rsaquo; Settings &rsaquo; General</a> and check "Enable the use of coupon codes".</p></div>{{end}}
+{{if not .Enabled}}<div class="notice notice-warning inline"><p>Coupons are disabled. To enable them, go to <a href="/wp-admin/goocommerce?page=settings">Pursae Commerce &rsaquo; Settings &rsaquo; General</a> and check "Enable the use of coupon codes".</p></div>{{end}}
 {{template "goo-store-views" .Views}}
 <form id="posts-filter" method="get" action="/wp-admin/goocommerce">
 <input type="hidden" name="page" value="coupons">{{if .Status}}<input type="hidden" name="post_status" value="{{.Status}}">{{end}}

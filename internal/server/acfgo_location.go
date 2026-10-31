@@ -345,9 +345,9 @@ func (s *Server) acfgoLocationValues(ctx context.Context) map[string][]acfgoChoi
 	}
 	out["taxonomy"] = taxes
 	out["attachment"] = []acfgoChoice{{"all", "All", ""}, {"image", "Image", ""}, {"video", "Video", ""}, {"audio", "Audio", ""}, {"application", "Application", ""}, {"text", "Text", ""}}
-	out["widget"] = []acfgoChoice{{"all", "All (not available in WordPress Go)", ""}}
-	out["nav_menu"] = []acfgoChoice{{"all", "All (not available in WordPress Go)", ""}}
-	out["nav_menu_item"] = []acfgoChoice{{"all", "All (not available in WordPress Go)", ""}}
+	out["widget"] = []acfgoChoice{{"all", "All (not available in Pursae)", ""}}
+	out["nav_menu"] = []acfgoChoice{{"all", "All (not available in Pursae)", ""}}
+	out["nav_menu_item"] = []acfgoChoice{{"all", "All (not available in Pursae)", ""}}
 	blocks := []acfgoChoice{{"all", "All", ""}}
 	for _, b := range s.acfgoBlocks() {
 		blocks = append(blocks, acfgoChoice{b.Name, b.Title, ""})

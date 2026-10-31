@@ -1,6 +1,6 @@
 # Roast & Ritual
 
-A warm, characterful specialty coffee roaster for Goocommerce: a scrolling ticker, an espresso-dark header with a
+A warm, characterful specialty coffee roaster for Pursae Commerce: a scrolling ticker, an espresso-dark header with a
 cup seal and a Cart pill (mini-cart on wide screens), a full-bleed hero with a wavy bottom edge, category tiles
 framed like coffee-bag labels, oat product cards with mono prices and a hard offset shadow on hover, stamp-style
 sale badges, tasting-note product pages with pill tabs and a counter-style checkout with a receipt-like summary.

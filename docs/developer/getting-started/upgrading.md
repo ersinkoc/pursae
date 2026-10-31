@@ -1,11 +1,11 @@
 ---
 title: Upgrading
-description: How to update WordPress Go, what migrations do and how to roll back.
+description: How to update Pursae, what migrations do and how to roll back.
 weight: 50
 section: getting-started
 ---
 
-WordPress Go has no in-place updater: you replace the binary (or rebuild the image) and start it.
+Pursae has no in-place updater: you replace the binary (or rebuild the image) and start it.
 Database migrations run automatically on start, before the server listens.
 
 ## Docker

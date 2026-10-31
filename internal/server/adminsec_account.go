@@ -170,7 +170,7 @@ func (s *Server) asAccountView(c *gin.Context, u *store.User) *asAccountData {
 func (s *Server) asTOTPStep(c *gin.Context, u *store.User, d *asAccountData, secret string) {
 	site := s.settings.String("blogname")
 	if site == "" {
-		site = "WordPress Go"
+		site = "Pursae"
 	}
 	d.Step, d.ManualKey = "totp_setup", groupKey(secret)
 	if q, err := qrEncode([]byte(otpauthURI(site, u.Login, secret))); err == nil {

@@ -74,7 +74,7 @@ form.is-busy .gwe-setup-busy{display:inline-flex}
 {{if .Done}}{{with .Installed}}
 <div class="gwe-setup-done">
 	<h2>Your site is ready.</h2>
-	<p>The <strong>{{.Title}}</strong> starter site is installed: {{index $.Data.Counts "page"}} pages, {{index $.Data.Counts "post"}} posts, {{index $.Data.Counts "parts"}} theme parts (header, footer and templates), the menus and your colors and fonts. Everything is a Golementor document you can edit.</p>
+	<p>The <strong>{{.Title}}</strong> starter site is installed: {{index $.Data.Counts "page"}} pages, {{index $.Data.Counts "post"}} posts, {{index $.Data.Counts "parts"}} theme parts (header, footer and templates), the menus and your colors and fonts. Everything is a Pursae Web Builder document you can edit.</p>
 	<div class="actions">
 		<a class="button button-primary button-hero" href="/">Visit your site</a>
 		{{if $.Data.FrontEdit}}<a class="button button-hero" href="{{$.Data.FrontEdit}}">Edit the home page</a>{{end}}
@@ -168,7 +168,7 @@ form.is-busy .gwe-setup-busy{display:inline-flex}
 			<p class="description">From the media library. Without a logo the header shows the site title.</p></div></div></td></tr>
 	</tbody></table>
 	<h2>Pages</h2>
-	<p class="description">Pages to create. Each one is built with Golementor and linked from the menus.</p>
+	<p class="description">Pages to create. Each one is built with Pursae Web Builder and linked from the menus.</p>
 	<div class="gwe-setup-pages">
 	{{range .Kits}}{{$kit := .}}
 		<fieldset data-kit="{{.Slug}}"{{if eq .Slug $.Data.Selected}} class="is-current"{{end}}>
@@ -187,7 +187,7 @@ form.is-busy .gwe-setup-busy{display:inline-flex}
 	<ul class="gwe-setup-summary">
 		<li><strong>Starter site</strong><span id="gwe-sum-kit"></span></li>
 		<li><strong>Colors and fonts</strong><span id="gwe-sum-style"></span></li>
-		<li><strong>Theme</strong><span>Hello Golementor becomes the active theme; the header, footer, blog, single post, page, search and 404 templates are Theme Builder parts.</span></li>
+		<li><strong>Theme</strong><span>Hello Pursae Web Builder becomes the active theme; the header, footer, blog, single post, page, search and 404 templates are Theme Builder parts.</span></li>
 		<li><strong>Reading settings</strong><span>The home page becomes the front page and the blog page shows the posts.</span></li>
 	</ul>
 	{{with .Installed}}

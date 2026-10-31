@@ -112,7 +112,7 @@ func init() {
 	gooRegisterExtension(&gooExtension{
 		Key:         gooDPKey,
 		Name:        "Dynamic Pricing",
-		Description: "Bulk pricing by quantity, buy X get Y offers, cart total discounts and role-based prices. Rules are managed on Goocommerce › Pricing rules.",
+		Description: "Bulk pricing by quantity, buy X get Y offers, cart total discounts and role-based prices. Rules are managed on Pursae Commerce › Pricing rules.",
 		Icon:        "dashicons-tag",
 		Category:    "Merchandising",
 		Fields: []gooField{

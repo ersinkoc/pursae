@@ -1,5 +1,5 @@
-/* Gontact Form block for Gotenberg: contact-form-7/contact-form-selector. The saved markup is CF7's
- * (a div with the [contact-form-7] shortcode), so posts move between WordPress and WordPress Go. */
+/* Pursae Contact Form block for Pursae Editor: contact-form-7/contact-form-selector. The saved markup is CF7's
+ * (a div with the [contact-form-7] shortcode), so posts move between WordPress and Pursae. */
 ( function ( wp ) {
 	'use strict';
 	if ( ! wp || ! wp.blocks || ! wp.element ) {
@@ -17,7 +17,7 @@
 	wp.blocks.registerBlockType( 'contact-form-7/contact-form-selector', {
 		apiVersion: 3,
 		title: 'Contact Form 7',
-		description: 'Insert a contact form you have created with Gontact Form.',
+		description: 'Insert a contact form you have created with Pursae Contact Form.',
 		category: 'widgets',
 		icon: 'email',
 		keywords: [ 'form', 'contact', 'gontact' ],

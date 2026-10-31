@@ -37,7 +37,7 @@
 @media only screen and (max-width:1080px){.theme-overlay .theme-actions .wpgo-delete-theme{position:relative;right:auto;bottom:auto}}
 </style>
 <p class="no-themes">No themes found. Try a different search.</p>
-{{/* Golementor: saved themes (JSON snapshots of the Hello Golementor design) */}}
+{{/* Pursae Web Builder: saved themes (JSON snapshots of the Hello Pursae Web Builder design) */}}
 {{if .Saved}}
 <style>
 .gwe-saved-themes{clear:both;margin-top:40px;padding-top:20px;border-top:1px solid #dcdcde}
@@ -54,8 +54,8 @@
 .gwe-saved-theme .actions form{display:inline}
 </style>
 <div class="gwe-saved-themes" id="gwe-saved-themes">
-	<h2>Saved Golementor themes</h2>
-	<p>Fixed copies of a Hello Golementor design saved from the <a href="/wp-admin/gowebeditor-theme-builder">Theme Builder</a> (theme parts, display conditions, Site Settings, custom CSS). Activate one to load its design into Hello Golementor; the saved copy stays unchanged until you save it again.</p>
+	<h2>Saved Pursae Web Builder themes</h2>
+	<p>Fixed copies of a Hello Pursae Web Builder design saved from the <a href="/wp-admin/gowebeditor-theme-builder">Theme Builder</a> (theme parts, display conditions, Site Settings, custom CSS). Activate one to load its design into Hello Pursae Web Builder; the saved copy stays unchanged until you save it again.</p>
 	<div class="gwe-saved-grid">
 	{{range .Saved}}<div class="gwe-saved-theme" data-slug="{{.Slug}}">
 		<img src="{{.Screenshot}}" alt="" />

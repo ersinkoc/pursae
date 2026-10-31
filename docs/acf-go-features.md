@@ -1,18 +1,18 @@
-# ACF-Go — feature inventory
+# Pursae Custom Fields — feature inventory
 
-ACF-Go is WordPress Go's native (compiled-in) clone of **Advanced Custom Fields PRO** 6.x. This file is
+Pursae Custom Fields is Pursae's native (compiled-in) clone of **Advanced Custom Fields PRO** 6.x. This file is
 the inventory of what ACF PRO does, written from ACF's documentation (advancedcustomfields.com/resources),
-the wordpress.org plugin page and the `AdvancedCustomFields/acf` source, and what ACF-Go does with each
+the wordpress.org plugin page and the `AdvancedCustomFields/acf` source, and what Pursae Custom Fields does with each
 item. Status: **✓** implemented, **◐** implemented in a reduced form (the note says how), **✗** left out
 (the note says why).
 
-ACF-Go is a native plugin like Classic Editor, WPGo Cache and Golementor: it is listed on Plugins,
+Pursae Custom Fields is a native plugin like Classic Editor, WPGo Cache and Pursae Web Builder: it is listed on Plugins,
 starts **off**, adds nothing to the site while off (no menu, screens, meta boxes, REST field, template
 output, routes answer 404) and keeps every field group and saved value when deactivated.
 
 ## 1. Field groups
 
-| ACF PRO | ACF-Go |
+| ACF PRO | Pursae Custom Fields |
 |---|---|
 | Field groups stored as `acf-field-group` posts, fields as `acf-field` posts | ✓ field groups are `acf-field-group` posts (content type registered on activation); the group's JSON (ACF's export format, fields nested) is the post content. Fields are not separate posts — the export/import format is unchanged |
 | List screen (ACF › Field Groups): Title, Description, Key, Location, Local JSON, Fields columns | ✓ |
@@ -27,8 +27,8 @@ output, routes answer 404) and keeps every field group and saved value when deac
 | Active toggle, Show in REST API toggle, description, menu order | ✓ |
 | Field group key `group_…`, field key `field_…` (unique ids) | ✓ (same 13-hex style keys) |
 | Local JSON (save to/load from `acf-json` folders, Sync) | ✓ folder `<data>/acf-json` (next to uploads) and `acf-json/` in the active theme package; written on save when the folder exists; "Sync available" when the file is newer than the database or not imported |
-| `acf_add_local_field_group()` (PHP) | ◐ registration from Go code (`acfgoRegisterLocalGroup`) and from local JSON; PHP does not exist in WordPress Go |
-| Revisions of field values with post revisions | ✗ WordPress Go revisions keep title/content/excerpt only |
+| `acf_add_local_field_group()` (PHP) | ◐ registration from Go code (`acfgoRegisterLocalGroup`) and from local JSON; PHP does not exist in Pursae |
+| Revisions of field values with post revisions | ✗ Pursae revisions keep title/content/excerpt only |
 
 ## 2. Field types (all with ACF's settings)
 
@@ -46,8 +46,8 @@ General settings on every field: Label, Name, Key, Type, Instructions, Required,
 | Password | placeholder, prepend, append | ✓ |
 | Image | return format (array/url/id), library (all/uploadedTo), preview size, min/max width/height/size, allowed file types | ✓ (pickers use the WordPress media modal) |
 | File | return format, library, min/max size, allowed types | ✓ |
-| WYSIWYG Editor | default, tabs (all/visual/text), toolbar (full/basic), media upload, delay | ◐ TinyMCE (with the basic/full toolbar) on screens that load the classic editor; a textarea with formatting buttons elsewhere (Gotenberg, users, terms, options pages) |
-| oEmbed | width, height | ✓ (preview through WordPress Go's oEmbed proxy) |
+| WYSIWYG Editor | default, tabs (all/visual/text), toolbar (full/basic), media upload, delay | ◐ TinyMCE (with the basic/full toolbar) on screens that load the classic editor; a textarea with formatting buttons elsewhere (Pursae Editor, users, terms, options pages) |
+| oEmbed | width, height | ✓ (preview through Pursae's oEmbed proxy) |
 | Gallery | return format, library, min/max, insert, min/max dimensions/size, types | ✓ |
 | Select | choices, default, return format (value/label/array), allow null, multiple, stylised UI, ajax, placeholder | ✓ (stylised UI / ajax ◐: settings are kept, the control is a native select) |
 | Checkbox | choices, default, return format, layout, toggle all, allow custom, save custom | ✓ |
@@ -92,7 +92,7 @@ OR groups of AND rules, operators `==` / `!=`.
 | Taxonomy (term edit/add screens) | ✓ |
 | Attachment | ✓ (attachment edit screen; values in the media item's meta) |
 | Comment | ✓ (comment edit screen; values in comment meta) |
-| Widget, Menu, Menu Item | ✗ widgets and nav menu items in WordPress Go have no meta storage that ACF could attach to; the rule types are listed (marked unavailable) and never match |
+| Widget, Menu, Menu Item | ✗ widgets and nav menu items in Pursae have no meta storage that ACF could attach to; the rule types are listed (marked unavailable) and never match |
 | Block (ACF Blocks) | ✓ |
 | Options Page | ✓ |
 
@@ -102,7 +102,7 @@ Style (standard/WP box, seamless), Position (high after title, normal, side), La
 (top/left), Instruction placement (below labels/below fields, tooltip), Order No., Description,
 Hide on screen (permalink, the content editor, excerpt, discussion, comments, revisions, slug,
 author, format, page attributes, featured image, categories, tags, send trackbacks) — **✓** in the
-classic editor. In Gotenberg the boxes sit in the editor's meta box pane (normal and side) and are
+classic editor. In Pursae Editor the boxes sit in the editor's meta box pane (normal and side) and are
 saved with the post through the meta box request, like ACF; `acf_after_title` falls back to normal
 and hide-on-screen applies to the classic editor only (ACF behaves the same).
 
@@ -135,15 +135,15 @@ capability type, exclude from search, delete with user… — **✓** stored as 
 `acf-taxonomy` posts; on save the type/taxonomy is registered (content_types / taxonomies rows),
 gets its admin menu (All / Add New, its taxonomies), the core's list, add and edit screens (classic
 editor) and term screens, and every role receives the type's capabilities (capability type "post").
-◐ Gotenberg, REST routes (`/wp/v2/<rest_base>`) and front-end permalinks/archives of custom post types
+◐ Pursae Editor, REST routes (`/wp/v2/<rest_base>`) and front-end permalinks/archives of custom post types
 need core support for arbitrary types and are not built (see "Left out").
 
 ## 9. ACF Blocks (PRO)
 
 `block.json` with an `acf` key (`renderTemplate`, `mode`), registered with `register_block_type()` —
-**◐** ACF-Go registers blocks from `acf-blocks/<name>/block.json` folders (in `<data>/acf-blocks` or the
+**◐** Pursae Custom Fields registers blocks from `acf-blocks/<name>/block.json` folders (in `<data>/acf-blocks` or the
 active theme package) with a Go `html/template` render template (`render.html`); the block appears in
-Gotenberg's inserter (category from block.json), its fields are edited in the block (Edit/Preview
+Pursae Editor's inserter (category from block.json), its fields are edited in the block (Edit/Preview
 toggle, server-rendered preview), values live in the block's `data` attribute like ACF, and the front
 end renders the template with `get_field` reading the block's data. Field groups target blocks with
 the Block location rule.
@@ -164,7 +164,7 @@ functions for every theme (bundled and theme packages; Go templates take the pos
 range over rows instead of `the_row()`), and `acfGetField`, `acfGetFieldObject`, `acfGetFields`,
 `acfUpdateField` (update_field), `acfDeleteField` (delete_field) for Go code.
 Wasm plugins: **✓** `get_post` (host API, `posts:read`) returns an `acf` object with the post's field
-values (stored format) while ACF-Go is active (`PostData.ACF` in the Go SDK).
+values (stored format) while Pursae Custom Fields is active (`PostData.ACF` in the Go SDK).
 
 Theme template usage:
 
@@ -204,7 +204,7 @@ types/taxonomies, the Wasm `get_post` payload.
 
 ## Left out (and why)
 
-- Widget, nav menu and nav menu item locations: no meta storage in WordPress Go for them.
+- Widget, nav menu and nav menu item locations: no meta storage in Pursae for them.
 - Field value revisions: core revisions do not store meta.
 - Bidirectional relationships (6.2): updating the other post's field on save.
 - PHP APIs/hooks (`acf/load_value`, `acf/format_value`, `acf/validate_value` filters, `acf_form()`
@@ -212,7 +212,7 @@ types/taxonomies, the Wasm `get_post` payload.
 - Repeater pagination, select2 "stylised UI"/ajax selects, the wpLink modal, jQuery UI date
   pickers and the Google Maps JS picker: replaced by simpler native controls (settings are kept
   and exported unchanged).
-- Custom post types: Gotenberg editing, REST routes and front-end single/archive routing (the
+- Custom post types: Pursae Editor editing, REST routes and front-end single/archive routing (the
   core only routes post and page). ACF taxonomies on posts/pages work everywhere the core's
   term screens and post terms do; their front-end archives are not routed either.
 - REST writes for users and terms; `acf` on `/comments` and `/media` responses.

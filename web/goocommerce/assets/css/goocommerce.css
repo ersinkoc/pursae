@@ -1,4 +1,4 @@
-/* Goocommerce general styles: the look of WooCommerce's woocommerce.css (buttons, notices, prices,
+/* Pursae Commerce general styles: the look of WooCommerce's woocommerce.css (buttons, notices, prices,
    product grid, single product, tabs, tables, forms, cart, checkout, My Account, widgets).
    Star ratings use text glyphs and CSS, no icon font. Theme authors override the custom properties. */
 :root {
@@ -1713,7 +1713,7 @@ a.cart-contents .count {
 	cursor: pointer;
 }
 
-/* Golylang: the language switcher of the store themes ({{goo_language_switcher .}}) */
+/* Pursae Multi Language: the language switcher of the store themes ({{goo_language_switcher .}}) */
 .goo-lang-switcher{display:inline-flex;align-items:center}
 .goo-lang-switcher ul{display:flex;gap:2px;margin:0;padding:0;list-style:none}
 .goo-lang-switcher li{margin:0;padding:0}

@@ -1,6 +1,6 @@
 ---
 title: Install the binary
-description: Build WordPress Go from source and run it against your own PostgreSQL.
+description: Build Pursae from source and run it against your own PostgreSQL.
 weight: 30
 section: getting-started
 ---

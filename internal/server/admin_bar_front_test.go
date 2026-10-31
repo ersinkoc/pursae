@@ -24,16 +24,16 @@ func TestFrontToolbarGolementor(t *testing.T) {
 	ts, c := testServer(t) // Golementor on
 	installAndLogin(t, ts, c)
 	_, body, _ := get(t, c, ts.URL+"/sample-page/")
-	if !strings.Contains(body, "Edit with Golementor") || !strings.Contains(body, "action=golementor") || !strings.Contains(body, "/wp-admin/gowebeditor-theme-builder") {
-		t.Error("a page's toolbar lacks Edit with Golementor")
+	if !strings.Contains(body, "Edit with Pursae Web Builder") || !strings.Contains(body, "action=golementor") || !strings.Contains(body, "/wp-admin/gowebeditor-theme-builder") {
+		t.Error("a page's toolbar lacks Edit with Pursae Web Builder")
 	}
 	_, body, _ = get(t, c, ts.URL+"/?s=hello")
-	if strings.Contains(body, "Edit with Golementor") || !strings.Contains(body, "wp-admin-bar-golementor_edit_page") || !strings.Contains(body, "ab-icon dashicons-layout") {
+	if strings.Contains(body, "Edit with Pursae Web Builder") || !strings.Contains(body, "wp-admin-bar-golementor_edit_page") || !strings.Contains(body, "ab-icon dashicons-layout") {
 		t.Error("a search page should offer only the Theme Builder")
 	}
 	off, c2, _ := testServerBuilderOff(t)
 	installAndLogin(t, off, c2)
 	if _, body, _ = get(t, c2, off.URL+"/sample-page/"); strings.Contains(body, "golementor_edit_page") {
-		t.Error("the toolbar shows Golementor while it is off")
+		t.Error("the toolbar shows Pursae Web Builder while it is off")
 	}
 }

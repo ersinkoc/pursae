@@ -1,4 +1,4 @@
-/* Goocommerce Quick View: loads a product summary into an accessible modal. */
+/* Pursae Commerce Quick View: loads a product summary into an accessible modal. */
 (function () {
 	'use strict';
 	var modal = document.getElementById('goo-quick-view');

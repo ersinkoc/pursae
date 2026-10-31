@@ -403,7 +403,7 @@ func renderSiteTitle(w *elemCtx) string {
 
 func renderSiteTagline(w *elemCtx) string {
 	t := w.theme()
-	text := "Just another WordPress Go site"
+	text := "Just another Pursae site"
 	if t != nil {
 		text = t.Tagline
 	}

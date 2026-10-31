@@ -1,6 +1,6 @@
-# HeadlessGo: feature inventory
+# Pursae Headless: feature inventory
 
-HeadlessGo is a native (compiled-in) WordPress Go plugin that turns the site into a **headless CMS**:
+Pursae Headless is a native (compiled-in) Pursae plugin that turns the site into a **headless CMS**:
 a Content-Type Builder, a Content Manager and a delivery API for front-end apps (Next.js, Nuxt,
 Astro, mobile apps…). Its model and query language follow the conventions of the popular open-source
 headless CMSs (collection types, single types, components, dynamic zones, `filters[field][$op]`,
@@ -75,7 +75,7 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 | Edit form generated from the schema for every field type: block editor for rich text (paragraph, headings, quote, code, lists, image; untouched blocks keep their inline formatting), media picker (WordPress media library), relation picker with search, nested components and dynamic zones with add / remove / reorder / collapse, JSON editor with validation, UID regenerate | ✓ |
 | Validation per field options; a rejected save shows the errors next to the fields and keeps the input (passwords are never echoed back) | ✓ |
 | Draft & publish: Save draft, Publish (validates required fields), Unpublish, Discard changes (back to the published version), status badges | ✓ |
-| i18n: with Golylang active its languages are the locales; each document has one version per locale, linked by `documentId`; the edit screen lists the locales, opens a translation empty or filled from the current locale. With Golylang off there is one default locale (setting) | ✓ |
+| i18n: with Pursae Multi Language active its languages are the locales; each document has one version per locale, linked by `documentId`; the edit screen lists the locales, opens a translation empty or filled from the current locale. With Pursae Multi Language off there is one default locale (setting) | ✓ |
 | Delete one locale or every locale | ✓ |
 | Bulk actions in the list: publish, unpublish, delete the selected documents in the listed locale, or "in every locale"; failures (a required field empty) are reported per document | ✓ |
 | Content history: every save, publish, unpublish, discard, restore, review step and scheduled (un)publication records the draft (last 50 per document version); the edit screen lists the latest, the History screen shows a version next to the current draft with changed fields marked, and restores it as the draft. Inverse relation fields are not part of a version; a link made or removed from the other side of a two-way relation is recorded instead (see below) | ✓ |
@@ -92,7 +92,7 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 | `GET/POST /{pluralApiId}`, `GET/PUT/PATCH/DELETE /{pluralApiId}/{documentId}`, single types `GET/PUT/DELETE /{singularApiId}` | ✓ |
 | `POST …/{documentId}/publish` and `/unpublish` (needs `update`); `publish` is refused (400) for a type with the review flow until the draft is approved in the admin | ✓ (extension) |
 | `POST …/{documentId}/schedule` with `{"data": {"publishAt", "unpublishAt"}}` (RFC 3339, `null` clears; needs `update`) | ✓ (extension) |
-| Media upload: `POST /upload` (multipart `files`, one or several; optional `fileInfo` JSON `{name, alternativeText, caption}` or a list) through the core media upload code (same file checks, image sizes, GoCDN); answer: the files in the API's media format. With `ref` (type uid or API id), `refId` (document id), `field` and optional `locale` the files are attached to the entry's draft (appended to a multiple field, replacing a single one; allowed types checked before anything is kept). `GET /upload/files/{id}` | ✓ |
+| Media upload: `POST /upload` (multipart `files`, one or several; optional `fileInfo` JSON `{name, alternativeText, caption}` or a list) through the core media upload code (same file checks, image sizes, Pursae CDN); answer: the files in the API's media format. With `ref` (type uid or API id), `refId` (document id), `field` and optional `locale` the files are attached to the entry's draft (appended to a multiple field, replacing a single one; allowed types checked before anything is kept). `GET /upload/files/{id}` | ✓ |
 | Response `{data, meta}`; entries carry `id`, `documentId`, attributes, `createdAt`, `updatedAt`, `publishedAt`, `locale`; errors `{data:null, error:{status, name, message, details}}` with `ValidationError` details `{errors:[{path, message}]}` | ✓ |
 | `filters[field][$eq|$eqi|$ne|$nei|$lt|$lte|$gt|$gte|$in|$notIn|$contains|$notContains|$containsi|$notContainsi|$startsWith(i)|$endsWith(i)|$null|$notNull|$between]`, `$and`, `$or`, `$not`, implicit `$eq` | ✓ |
 | Filtering through relations (`filters[author][name][$eq]`, nested), components (single and repeatable), media (`id`, `name`, `mime`), WordPress pages/posts (`id`, `slug`, `title`, `status`) and users (`id`, `username`, `slug`, `name`); `$null` on relations, media, components | ✓ |
@@ -106,7 +106,7 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 | Writes: `{"data": {...}}`; `?status=published` publishes, `?locale=` writes that locale's version (a new translation of an existing document); partial updates; relations as id, list or `{connect, disconnect, set}`; media as id or list | ✓ |
 | Password fields: hashed (argon2id), never returned; an empty value keeps the hash | ✓ |
 | Private fields: never returned, not filterable or sortable, but writable | ✓ |
-| WordPress content: posts, pages and media are in the core REST API (`/wp-json/wp/v2/posts`, `/pages`, `/media`) and stay reachable in headless mode; HeadlessGo adds the missing menus: `GET /wp/menus` (menus and theme locations) and `GET /wp/menus/{id|location|slug}` (published items as a tree with resolved URLs) | ✓ |
+| WordPress content: posts, pages and media are in the core REST API (`/wp-json/wp/v2/posts`, `/pages`, `/media`) and stay reachable in headless mode; Pursae Headless adds the missing menus: `GET /wp/menus` (menus and theme locations) and `GET /wp/menus/{id|location|slug}` (published items as a tree with resolved URLs) | ✓ |
 | `GET /` lists the routes the caller may read | ✓ |
 | `?rest_route=/headlessgo/v1/…` | ✓ |
 
@@ -128,7 +128,7 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 - Allow-list of origins (one per line, `*` for any) under Settings. Allowed origins get
   `Access-Control-Allow-Origin` (the origin itself) and `Vary: Origin`; preflight `OPTIONS` requests
   are answered with 204, the methods and the `Authorization, Content-Type, Accept, X-Preview-Token`
-  headers, and a one-day `Max-Age`. Other origins get no CORS headers. Applies to the HeadlessGo
+  headers, and a one-day `Max-Age`. Other origins get no CORS headers. Applies to the Pursae Headless
   namespace only. ✓
 
 ## 8. Webhooks
@@ -175,7 +175,7 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
   dynamic zone, `<Type>FiltersInput`, `<Type>Input`, scalar filter inputs, `PaginationArg`,
   `PublicationStatus`, `UploadFile`, `WpPost`, `WpUser`, scalars `JSON`, `Long`, `Date`, `DateTime`,
   `Time`), enough for GraphiQL-type clients. ✓
-- Admin playground (HeadlessGo › GraphQL): a query and variables editor that runs as the logged-in
+- Admin playground (Pursae Headless › GraphQL): a query and variables editor that runs as the logged-in
   administrator (`POST /wp-admin/headlessgo/graphql`, nonce-checked) or, with a pasted API token, against
   the public endpoint with that token's permissions; plus a reference of the root fields. ✓
 - **Validation**: a query is checked against the generated schema before it runs. An unknown field
@@ -209,8 +209,8 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
   builder's field-type, relation and target labels are translated before they are sent as JSON; the
   strings the editor and builder scripts build in the browser are translated by `wpgo-l10n.js`
   (`admin/assets/headlessgo/*.js` is one of its sources). User content is marked `translate="no"`.
-- Turkish (`web/languages/wpgo-tr_TR.json`) covers HeadlessGo's admin screens. Other languages: the
-  strings shared with WordPress core come from its language packs; HeadlessGo's own strings stay English.
+- Turkish (`web/languages/wpgo-tr_TR.json`) covers Pursae Headless's admin screens. Other languages: the
+  strings shared with WordPress core come from its language packs; Pursae Headless's own strings stay English.
 
 ## 12. Not built / limits
 
@@ -226,4 +226,4 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
   they submitted themselves.
 - GraphQL: custom directives; subscriptions are server-sent events from one process (see §10);
   component inputs are JSON.
-- Translations of HeadlessGo's own admin strings exist only in Turkish.
+- Translations of Pursae Headless's own admin strings exist only in Turkish.

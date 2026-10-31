@@ -283,7 +283,7 @@ func TestSEOGoHeadHidesProtectedPostContent(t *testing.T) {
 func TestCoreBlocksUserEnumerationWithoutAnyPlugin(t *testing.T) {
 	s := secStart(t)
 	if s.srv.adminsecOn() {
-		t.Fatal("AdminSecGo must be off in this test")
+		t.Fatal("Pursae Security must be off in this test")
 	}
 	s.post("Hello from the author", "publish", "") // gives the administrator a published post, so WordPress would list them
 	anon := asNewClient()

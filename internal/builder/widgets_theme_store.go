@@ -12,7 +12,7 @@ import "strings"
 func (w *elemCtx) storeHTML(placeholder string) string {
 	t := w.theme()
 	if t == nil || t.Store == nil {
-		return w.placeholder("Activate Goocommerce to show " + placeholder + ".")
+		return w.placeholder("Activate Pursae Commerce to show " + placeholder + ".")
 	}
 	out := t.Store(w.name, w.disp.m, w.editing())
 	if strings.TrimSpace(out) == "" {
@@ -253,7 +253,7 @@ func storeWidgetDefs() {
 	l.typography("typography", "{{WRAPPER}} .goo-lang-switcher a", "")
 	registerThemeWidget(&ThemeWidget{Name: "golylang-language-switcher", Title: "Language Switcher", Icon: "eicon-globe",
 		Keywords: []string{"language", "switcher", "translation", "multilingual", "golylang"}, Controls: l.out},
-		&widgetDef{render: storeRender("The language switcher (Golylang)")})
+		&widgetDef{render: storeRender("The language switcher (Pursae Multi Language)")})
 }
 
 func renderStoreProductTitle(w *elemCtx) string {

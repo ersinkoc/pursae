@@ -527,7 +527,7 @@ func (s *Server) gweEditorButton(c *gin.Context, p *store.Post, block bool) {
 		var ed = wp.data.select( 'core/editor' );
 		if ( ed.isEditedPostNew() || ed.isEditedPostDirty() ) {
 			var title = ed.getEditedPostAttribute( 'title' );
-			if ( ! title ) { wp.data.dispatch( 'core/editor' ).editPost( { title: 'Golementor #`+itoa64(p.ID)+`' } ); }
+			if ( ! title ) { wp.data.dispatch( 'core/editor' ).editPost( { title: 'Pursae Web Builder #`+itoa64(p.ID)+`' } ); }
 			wp.data.dispatch( 'core/editor' ).savePost().then( function() { location.href = url; } );
 		} else {
 			location.href = url;
@@ -542,7 +542,7 @@ func (s *Server) gweEditorButton(c *gin.Context, p *store.Post, block bool) {
 		b.type = 'button';
 		b.className = 'components-button is-primary';
 		b.style.marginLeft = '12px';
-		b.textContent = `+strconvQuote(s.__(c, "Edit with Golementor"))+`;
+		b.textContent = `+strconvQuote(s.__(c, "Edit with Pursae Web Builder"))+`;
 		b.addEventListener( 'click', go );
 		bar.appendChild( b );
 		return true;
@@ -558,12 +558,12 @@ func (s *Server) gweEditorButton(c *gin.Context, p *store.Post, block bool) {
 	a.AddInline("common", `jQuery( function( $ ) {
 	var $t = $( '#titlediv' );
 	if ( ! $t.length ) { return; }
-	var $b = $( '<div id="gowebeditor-switch-mode" style="margin:12px 0"><a class="button button-primary button-hero" href='+`+url+`+'>Edit with Golementor</a></div>' );
+	var $b = $( '<div id="gowebeditor-switch-mode" style="margin:12px 0"><a class="button button-primary button-hero" href='+`+url+`+'>Edit with Pursae Web Builder</a></div>' );
 	$t.after( $b );
 	$b.find( 'a' ).on( 'click', function( e ) {
 		if ( $( '#original_post_status' ).val() === 'auto-draft' ) {
 			e.preventDefault();
-			if ( ! $( '#title' ).val() ) { $( '#title' ).val( 'Golementor #`+itoa64(p.ID)+`' ); }
+			if ( ! $( '#title' ).val() ) { $( '#title' ).val( 'Pursae Web Builder #`+itoa64(p.ID)+`' ); }
 			$( '#post' ).append( '<input type="hidden" name="gowebeditor_redirect" value="1">' );
 			$( '#save-post' ).trigger( 'click' );
 		}

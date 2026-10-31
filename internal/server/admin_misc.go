@@ -29,14 +29,14 @@ func (s *Server) updateCore(c *gin.Context) {
 	if c.Query("force-check") != "" {
 		s.hubRefresh(c)
 	}
-	s.adminPage(c, "update-core", "WordPress Go Updates", "update-core-php", "admin/update-core", map[string]any{
+	s.adminPage(c, "update-core", "Pursae Updates", "update-core-php", "admin/update-core", map[string]any{
 		"Version": Version, "Checked": time.Now().In(s.loc()).Format("January 2, 2006 at 3:04 pm"), "Plugins": s.installedPlugins(c), "Themes": s.installedThemes(),
 		"Update": s.hubUpdate(c), "Hub": s.hubBase()})
 }
 
 // about is about.php: what is new in WordPress Go.
 func (s *Server) about(c *gin.Context) {
-	s.adminPage(c, "about", "About WordPress Go", "about-php", "admin/about", map[string]any{"Version": Version, "Go": runtime.Version(), "Golementor": s.golementorOn()})
+	s.adminPage(c, "about", "About Pursae", "about-php", "admin/about", map[string]any{"Version": Version, "Go": runtime.Version(), "Pursae Web Builder": s.golementorOn()})
 }
 
 // tools is tools.php.
@@ -126,8 +126,8 @@ func (s *Server) siteHealth(c *gin.Context) {
 	var tests []healthTest
 	add := func(t healthTest) { tests = append(tests, t) }
 
-	add(healthTest{Label: "Your site is running the current version of WordPress Go (" + Version + ")", Status: "good", Badge: "Performance",
-		Description: "WordPress Go is a single compiled binary; updating means replacing it and restarting."})
+	add(healthTest{Label: "Your site is running the current version of Pursae (" + Version + ")", Status: "good", Badge: "Performance",
+		Description: "Pursae is a single compiled binary; updating means replacing it and restarting."})
 	add(healthTest{Label: "Your site is running on " + runtime.Version(), Status: "good", Badge: "Performance",
 		Description: "The Go runtime is compiled into the binary. There is no interpreter to keep up to date."})
 	var pgVersion string
@@ -142,7 +142,7 @@ func (s *Server) siteHealth(c *gin.Context) {
 		add(healthTest{Label: "Your website is using an active HTTPS connection", Status: "good", Badge: "Security", Description: "An HTTPS connection helps keep your site and its visitors safe."})
 	} else {
 		add(healthTest{Label: "Your website does not use HTTPS", Status: "recommended", Badge: "Security",
-			Description: "HTTPS is already supported by most hosts and makes your site more secure. Put WordPress Go behind a TLS-terminating proxy and set WPGO_SITE_URL to an https:// address."})
+			Description: "HTTPS is already supported by most hosts and makes your site more secure. Put Pursae behind a TLS-terminating proxy and set WPGO_SITE_URL to an https:// address."})
 	}
 	if f, err := os.CreateTemp(s.cfg.UploadsDir, ".health-*"); err == nil {
 		f.Close()
@@ -258,7 +258,7 @@ func (s *Server) healthInfo(ctx context.Context) []healthSection {
 	}
 	host, _ := os.Hostname()
 	return []healthSection{
-		{"WordPress Go", [][2]string{{"Version", Version}, {"Site URL", s.settings.String("siteurl")}, {"Home URL", s.settings.String("home")},
+		{"Pursae", [][2]string{{"Version", Version}, {"Site URL", s.settings.String("siteurl")}, {"Home URL", s.settings.String("home")},
 			{"Permalink structure", defaultStr(s.settings.String("permalink_structure"), "No permalink structure set")},
 			{"Is this site discouraging search engines?", map[bool]string{true: "No", false: "Yes"}[s.settings.Bool("blog_public")]},
 			{"Default comment status", s.settings.String("default_comment_status")}, {"Environment type", "production"},

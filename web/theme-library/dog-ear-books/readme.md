@@ -1,6 +1,6 @@
 # Dog-Ear Books
 
-An independent bookshop for Goocommerce with an editorial soul. A thin strip with a note, search, account and a
+An independent bookshop for Pursae Commerce with an editorial soul. A thin strip with a note, search, account and a
 basket (with a mini-basket), a newspaper masthead (a big Playfair Display title between double rules, sections in
 small capitals), a bookplate hero, numbered section tiles, books standing on shelves, a folded dog-ear corner for
 sale badges, staff-pick product pages with a drop cap in the description and a quiet, paper-coloured checkout.

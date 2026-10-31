@@ -1,4 +1,4 @@
-# Golementor Studio library
+# Pursae Web Builder Studio library
 
 Ready sections and site kits for the Studio panel, the classic template library (Blocks tab) and the
 setup wizard (`/wp-admin/golementor-setup`). Formats and rules: `docs/golementor-studio.md`, section 3.

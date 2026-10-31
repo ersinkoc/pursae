@@ -1,6 +1,6 @@
 # Podwave
 
-A bright, rounded podcast theme for WordPress Go.
+A bright, rounded podcast theme for Pursae.
 
 - An animated equaliser logo mark, a pill menu and a pulsing "Subscribe" button in the header.
 - A hero with square show art, an ON AIR badge and a waveform band; a "latest episode" player card, host cards, stats and a "listen anywhere" panel on the front page.

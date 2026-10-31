@@ -1,4 +1,4 @@
-"""The three Golementor store themes: identity, design choices, copy and the demo store."""
+"""The three Pursae Web Builder store themes: identity, design choices, copy and the demo store."""
 
 
 def review(author, rating, text):
@@ -29,7 +29,7 @@ FERNWOOD = {
     "slug": "fernwood", "name": "Fernwood", "tag": "Home & Garden", "category": "home",
     "tagline": "Plants, planters and good advice",
     "style": "Botanical plant shop, forest green and terracotta",
-    "description": "A leafy plant shop built with Golementor: a split header with the language switcher and a hover mini-cart, an editorial "
+    "description": "A leafy plant shop built with Pursae Web Builder: a split header with the language switcher and a hover mini-cart, an editorial "
                    "hero, category tiles, featured and new plants, a care-focused product page with tabs and related plants, and a calm "
                    "two-column checkout. Every part is a Theme Builder template you can edit visually. Fraunces and Albert Sans, self-hosted. "
                    "Ships a complete store demo: houseplants in three sizes, planters, care tools and a gift box.",
@@ -170,7 +170,7 @@ GOOD_BOY = {
     "slug": "good-boy-supply", "name": "Good Boy Supply", "tag": "Pets", "category": "pets",
     "tagline": "Gear and treats for very good pets",
     "style": "Playful pet store, navy and sunshine yellow",
-    "description": "A cheerful pet store built with Golementor: a bold navy header with the language switcher and a hover mini-cart, "
+    "description": "A cheerful pet store built with Pursae Web Builder: a bold navy header with the language switcher and a hover mini-cart, "
                    "a sunny hero, rounded category tiles, bestsellers and new arrivals, a product page with size variations, tabs and related "
                    "gear, and a friendly checkout. Every part is a Theme Builder template you can edit visually. Fredoka and Nunito, self-hosted. "
                    "Ships a complete store demo: beds, harnesses in three sizes, cat furniture, toys, care and a puppy starter kit.",
@@ -309,7 +309,7 @@ KITE = {
     "slug": "kite-and-crayon", "name": "Kite & Crayon", "tag": "Kids", "category": "kids",
     "tagline": "Toys for curious minds",
     "style": "Bright kids' toy shop, cream with tomato and mint",
-    "description": "A bright toy shop built with Golementor: a centred header with search, the language switcher and a hover mini-cart, a "
+    "description": "A bright toy shop built with Pursae Web Builder: a centred header with search, the language switcher and a hover mini-cart, a "
                    "playful hero, chunky category tiles, favourites and new toys, a product page with colour variations, tabs and related toys, "
                    "and a simple checkout. Every part is a Theme Builder template you can edit visually. Outfit, Figtree and Caveat, self-hosted. "
                    "Ships a complete store demo: wooden toys, games, art supplies, room decor and a birthday bundle, priced in euros.",

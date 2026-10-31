@@ -423,7 +423,7 @@ func safeFetch(ctx context.Context, rawURL string) (body []byte, contentType str
 	if err != nil {
 		return nil, "", 0, err
 	}
-	req.Header.Set("User-Agent", "WordPress Go/"+Version+"; feed-fetcher")
+	req.Header.Set("User-Agent", "Pursae/"+Version+"; feed-fetcher")
 	req.Header.Set("Accept", "application/atom+xml, application/rss+xml, application/rdf+xml;q=0.9, application/xml;q=0.8, text/xml;q=0.8, text/html;q=0.7, */*;q=0.1")
 	resp, err := client.Do(req)
 	if err != nil {

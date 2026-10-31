@@ -32,7 +32,7 @@ func pluginLink(t *testing.T, c *http.Client, base, action string) string {
 	_, body, _ := get(t, c, base+"/wp-admin/plugins")
 	m := regexp.MustCompile(`href="(/wp-admin/plugins\?action=` + action + `&amp;plugin=golementor[^"]*)"`).FindStringSubmatch(body)
 	if m == nil {
-		t.Fatalf("no %s link for Golementor on the Plugins screen", action)
+		t.Fatalf("no %s link for Pursae Web Builder on the Plugins screen", action)
 	}
 	return html.UnescapeString(m[1])
 }
@@ -41,7 +41,7 @@ func togglePlugin(t *testing.T, c *http.Client, base, action string) string {
 	t.Helper()
 	code, _, loc := get(t, c, base+pluginLink(t, c, base, action))
 	if code != http.StatusFound || !strings.Contains(loc, action+"=true") {
-		t.Fatalf("%s Golementor: %d %s", action, code, loc)
+		t.Fatalf("%s Pursae Web Builder: %d %s", action, code, loc)
 	}
 	return loc
 }
@@ -61,32 +61,32 @@ func restGet(t *testing.T, c *http.Client, base, path string) (int, string) {
 }
 
 // builderTraces are strings that only Golementor's output contains.
-var builderTraces = []string{"elementor", "gowebeditor", "Golementor", "gwe-theme"}
+var builderTraces = []string{"elementor", "gowebeditor", "Pursae Web Builder", "gwe-theme"}
 
 func TestGolementorOffByDefault(t *testing.T) {
 	ts, c, srv := testServerBuilderOff(t)
 	base := ts.URL
 	installAndLogin(t, ts, c)
 	if srv.golementorOn() {
-		t.Fatal("Golementor is on after a fresh install")
+		t.Fatal("Pursae Web Builder is on after a fresh install")
 	}
 
 	// Plugins: listed, native and inactive.
 	_, body, _ := get(t, c, base+"/wp-admin/plugins")
 	row := regexp.MustCompile(`(?s)<tr class="(\w+)" data-slug="golementor"`).FindStringSubmatch(body)
 	if row == nil || row[1] != "inactive" {
-		t.Fatalf("Golementor is not listed as an inactive plugin: %v", row)
+		t.Fatalf("Pursae Web Builder is not listed as an inactive plugin: %v", row)
 	}
 	_, body, _ = get(t, c, base+"/wp-admin/plugin-install?tab=native")
-	if !strings.Contains(body, "plugin-card-golementor") || strings.Contains(body, `aria-label="Golementor settings"`) {
-		t.Error("the native plugin tab lacks the inactive Golementor card or shows its settings link")
+	if !strings.Contains(body, "plugin-card-golementor") || strings.Contains(body, `aria-label="Pursae Web Builder settings"`) {
+		t.Error("the native plugin tab lacks the inactive Pursae Web Builder card or shows its settings link")
 	}
 
 	// Admin: no menu entries, no screens.
 	_, body, _ = get(t, c, base+"/wp-admin/")
 	for _, bad := range []string{"menu-gowebeditor", "Theme Builder", "gowebeditor", "Custom Fonts", "Form Submissions"} {
 		if strings.Contains(body, bad) {
-			t.Errorf("the admin menu contains %q while Golementor is off", bad)
+			t.Errorf("the admin menu contains %q while Pursae Web Builder is off", bad)
 		}
 	}
 	for _, p := range []string{"/wp-admin/gowebeditor-theme-builder", "/wp-admin/gowebeditor-theme-builder?action=conditions&post=1", "/wp-admin/gowebeditor-pro?tab=popups",
@@ -102,13 +102,13 @@ func TestGolementorOffByDefault(t *testing.T) {
 		}
 	}
 	if _, b := restGet(t, c, base, "/wp-json/"); strings.Contains(b, "elementor") {
-		t.Error("the REST index lists Golementor's routes")
+		t.Error("the REST index lists Pursae Web Builder's routes")
 	}
 	if code, b := restGet(t, c, base, "/wp-json/wp/v2/themes"); code != http.StatusOK || strings.Contains(b, "hello-gowebeditor") {
-		t.Errorf("REST themes: %d, Hello Golementor listed: %v", code, strings.Contains(b, "hello-gowebeditor"))
+		t.Errorf("REST themes: %d, Hello Pursae Web Builder listed: %v", code, strings.Contains(b, "hello-gowebeditor"))
 	}
 	if code, _ := restGet(t, c, base, "/wp-json/wp/v2/themes/hello-gowebeditor"); code != http.StatusNotFound {
-		t.Errorf("REST theme Hello Golementor: %d, want 404", code)
+		t.Errorf("REST theme Hello Pursae Web Builder: %d, want 404", code)
 	}
 
 	// admin-ajax: the builder's actions are unknown, heartbeat still works.
@@ -134,7 +134,7 @@ func TestGolementorOffByDefault(t *testing.T) {
 		if code != http.StatusOK {
 			t.Errorf("%s: %d", p, code)
 		}
-		for _, bad := range []string{"Edit with Golementor", "gowebeditor", "ElementorConfig"} {
+		for _, bad := range []string{"Edit with Pursae Web Builder", "gowebeditor", "ElementorConfig"} {
 			if strings.Contains(body, bad) {
 				t.Errorf("%s contains %q", p, bad)
 			}
@@ -143,14 +143,14 @@ func TestGolementorOffByDefault(t *testing.T) {
 
 	// Themes: Hello Golementor is not listed, previewed or activatable.
 	_, body, _ = get(t, c, base+"/wp-admin/themes")
-	if strings.Contains(body, "hello-gowebeditor") || strings.Contains(body, "Hello Golementor") || strings.Contains(body, "Saved Golementor themes") {
-		t.Error("the Themes screen shows Hello Golementor")
+	if strings.Contains(body, "hello-gowebeditor") || strings.Contains(body, "Hello Pursae Web Builder") || strings.Contains(body, "Saved Pursae Web Builder themes") {
+		t.Error("the Themes screen shows Hello Pursae Web Builder")
 	}
 	if err := srv.switchTheme(context.Background(), helloThemeSlug); err == nil {
-		t.Error("Hello Golementor could be activated while Golementor is off")
+		t.Error("Hello Pursae Web Builder could be activated while Pursae Web Builder is off")
 	}
 	if th := srv.installedTheme(helloThemeSlug); th != nil {
-		t.Error("Hello Golementor is an installed theme while Golementor is off")
+		t.Error("Hello Pursae Web Builder is an installed theme while Pursae Web Builder is off")
 	}
 
 	// Front end: nothing of the builder, for visitors and for the admin.
@@ -161,7 +161,7 @@ func TestGolementorOffByDefault(t *testing.T) {
 		}
 		for _, bad := range builderTraces {
 			if strings.Contains(strings.ToLower(body), strings.ToLower(bad)) {
-				t.Errorf("the %s's front page contains %q while Golementor is off", name, bad)
+				t.Errorf("the %s's front page contains %q while Pursae Web Builder is off", name, bad)
 			}
 		}
 	}
@@ -178,11 +178,11 @@ func TestGolementorActivate(t *testing.T) {
 
 	togglePlugin(t, c, base, "activate")
 	if !srv.golementorOn() {
-		t.Fatal("the Activate link did not switch Golementor on")
+		t.Fatal("the Activate link did not switch Pursae Web Builder on")
 	}
 	_, body, _ := get(t, c, base+"/wp-admin/plugins")
 	if !regexp.MustCompile(`<tr class="active" data-slug="golementor"`).MatchString(body) {
-		t.Error("Golementor is not listed as active")
+		t.Error("Pursae Web Builder is not listed as active")
 	}
 	_, body, _ = get(t, c, base+"/wp-admin/")
 	for _, want := range []string{"menu-gowebeditor", "Theme Builder", "Custom Fonts", "Form Submissions"} {
@@ -200,11 +200,11 @@ func TestGolementorActivate(t *testing.T) {
 		t.Errorf("elementor/v1/globals: %d %.80s", code, b)
 	}
 	if code, b := restGet(t, c, base, "/wp-json/wp/v2/themes"); code != http.StatusOK || !strings.Contains(b, "hello-gowebeditor") {
-		t.Errorf("REST themes lack Hello Golementor: %d", code)
+		t.Errorf("REST themes lack Hello Pursae Web Builder: %d", code)
 	}
 	_, body, _ = get(t, c, base+"/wp-admin/edit?post_type=page")
-	if !strings.Contains(body, "/wp-admin/post?post="+pageID+"&amp;action=golementor") || !strings.Contains(body, "Edit with Golementor") {
-		t.Error("the pages list has no Edit with Golementor action")
+	if !strings.Contains(body, "/wp-admin/post?post="+pageID+"&amp;action=golementor") || !strings.Contains(body, "Edit with Pursae Web Builder") {
+		t.Error("the pages list has no Edit with Pursae Web Builder action")
 	}
 	_, body, _ = get(t, c, base+"/wp-admin/post?post="+pageID+"&action=golementor")
 	if !strings.Contains(body, "var ElementorConfig = {") {
@@ -212,7 +212,7 @@ func TestGolementorActivate(t *testing.T) {
 	}
 	_, body, _ = get(t, c, base+"/wp-admin/themes")
 	if !strings.Contains(body, "hello-gowebeditor") {
-		t.Error("the Themes screen lacks Hello Golementor")
+		t.Error("the Themes screen lacks Hello Pursae Web Builder")
 	}
 	if code, _, _ := post(t, c, base+"/wp-admin/admin-ajax", url.Values{"action": {"elementor_js_log"}}); code != http.StatusOK {
 		t.Errorf("elementor_js_log: %d", code)
@@ -239,14 +239,14 @@ func TestGolementorDeactivateFallsBackToDefaultTheme(t *testing.T) {
 	if loc := togglePlugin(t, c, base, "activate"); !strings.Contains(loc, "gwe_theme=hello") {
 		t.Errorf("activate redirect %q lacks the theme notice", loc)
 	} else if _, body, _ := get(t, c, base+loc); !strings.Contains(body, "is now the active theme") {
-		t.Error("the Plugins screen does not say Hello Golementor is active")
+		t.Error("the Plugins screen does not say Hello Pursae Web Builder is active")
 	}
 	if got := srv.settings.String("stylesheet"); got != helloThemeSlug {
-		t.Fatalf("stylesheet %q after activating, want Hello Golementor", got)
+		t.Fatalf("stylesheet %q after activating, want Hello Pursae Web Builder", got)
 	}
 	_ = ctx
 	if _, body, _ := get(t, c, base+"/"); !strings.Contains(body, "wp-theme-"+helloThemeSlug) {
-		t.Error("the site does not render with Hello Golementor while it is active")
+		t.Error("the site does not render with Hello Pursae Web Builder while it is active")
 	}
 
 	loc := togglePlugin(t, c, base, "deactivate")
@@ -257,7 +257,7 @@ func TestGolementorDeactivateFallsBackToDefaultTheme(t *testing.T) {
 		t.Errorf("stylesheet %q after deactivating, want %s", got, defaultTheme)
 	}
 	_, body, _ := get(t, c, base+loc)
-	if !strings.Contains(body, "Hello Golementor belongs to Golementor") || !strings.Contains(body, "Twenty Twenty-Five") {
+	if !strings.Contains(body, "Hello Pursae Web Builder belongs to Pursae Web Builder") || !strings.Contains(body, "Twenty Twenty-Five") {
 		t.Error("the Plugins screen has no notice about the theme switch")
 	}
 	_, body, _ = get(t, c, base+"/")
@@ -266,7 +266,7 @@ func TestGolementorDeactivateFallsBackToDefaultTheme(t *testing.T) {
 	}
 	_, body, _ = get(t, c, base+"/wp-admin/themes")
 	if strings.Contains(body, "hello-gowebeditor") {
-		t.Error("the Themes screen still lists Hello Golementor")
+		t.Error("the Themes screen still lists Hello Pursae Web Builder")
 	}
 
 	// An old install that still has Hello Golementor as its stylesheet falls back without a write.
@@ -274,10 +274,10 @@ func TestGolementorDeactivateFallsBackToDefaultTheme(t *testing.T) {
 		t.Fatal(err)
 	}
 	if th := srv.activeTheme(); th.Slug != defaultTheme {
-		t.Errorf("active theme %s while Golementor is off, want %s", th.Slug, defaultTheme)
+		t.Errorf("active theme %s while Pursae Web Builder is off, want %s", th.Slug, defaultTheme)
 	}
 	if _, body, _ = get(t, c, base+"/"); !strings.Contains(body, "wp-theme-twentytwentyfive") {
-		t.Error("a leftover Hello Golementor stylesheet does not fall back to the default theme")
+		t.Error("a leftover Hello Pursae Web Builder stylesheet does not fall back to the default theme")
 	}
 }
 
@@ -303,14 +303,14 @@ func TestGolementorBuiltPageWhileOff(t *testing.T) {
 	for name, client := range map[string]*http.Client{"admin": c, "visitor": {CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}} {
 		code, body, _ := get(t, client, base+"/sample-page/")
 		if code != http.StatusOK {
-			t.Fatalf("%s: built page %d while Golementor is off", name, code)
+			t.Fatalf("%s: built page %d while Pursae Web Builder is off", name, code)
 		}
 		if !strings.Contains(body, "Built with the builder") {
-			t.Errorf("%s: the built page shows no content while Golementor is off", name)
+			t.Errorf("%s: the built page shows no content while Pursae Web Builder is off", name)
 		}
-		for _, bad := range []string{"elementor", "gowebeditor", "Golementor"} {
+		for _, bad := range []string{"elementor", "gowebeditor", "Pursae Web Builder"} {
 			if strings.Contains(strings.ToLower(body), strings.ToLower(bad)) {
-				t.Errorf("%s: the built page contains %q while Golementor is off", name, bad)
+				t.Errorf("%s: the built page contains %q while Pursae Web Builder is off", name, bad)
 			}
 		}
 	}
@@ -363,7 +363,7 @@ func TestGolementorRestoresPreviousTheme(t *testing.T) {
 	installLibraryTheme(t, c, base, "inkwell", true)
 	togglePlugin(t, c, base, "activate")
 	if got := srv.settings.String("stylesheet"); got != helloThemeSlug {
-		t.Fatalf("stylesheet %q after activating, want Hello Golementor", got)
+		t.Fatalf("stylesheet %q after activating, want Hello Pursae Web Builder", got)
 	}
 	togglePlugin(t, c, base, "deactivate")
 	if got := srv.settings.String("stylesheet"); got != "inkwell" {

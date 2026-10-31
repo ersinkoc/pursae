@@ -1,4 +1,4 @@
-/* Golementor Studio — the Layers tab: an outline of the page. Select, rename (F2 / double-click),
+/* Pursae Web Builder Studio — the Layers tab: an outline of the page. Select, rename (F2 / double-click),
    reorder by drag or Alt+Arrow, hide in the editor, duplicate and delete. A tree with arrow-key
    navigation (WAI-ARIA tree pattern). */
 (function () {

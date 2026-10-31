@@ -47,10 +47,10 @@ query so browsers refetch after an update.
 3. the block library stylesheet and the inline theme/global styles,
 4. **your `styles[]` and head `scripts[]`**, then `css_var` custom properties from the Customizer,
 5. `rel="https://api.w.org/"`, the generator meta, canonical and shortlink,
-6. Golementor styles when the builder is on, custom background, site icon, Additional CSS,
+6. Pursae Web Builder styles when the builder is on, custom background, site icon, Additional CSS,
 7. plugin stylesheets and head scripts.
 
-`wp_footer` prints `comment-reply`, the admin bar script, Golementor scripts, your footer scripts
+`wp_footer` prints `comment-reply`, the admin bar script, Pursae Web Builder scripts, your footer scripts
 and plugin footer scripts.
 
 ## Editor styles

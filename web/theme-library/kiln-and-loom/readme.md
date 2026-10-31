@@ -1,6 +1,6 @@
 # Kiln & Loom
 
-A warm, editorial handmade-crafts market for Goocommerce: a market line, a masthead with a serif wordmark,
+A warm, editorial handmade-crafts market for Pursae Commerce: a market line, a masthead with a serif wordmark,
 an italic tagline and stitched rules (with search, account and a basket with a mini-cart), a split hero with
 words on sand beside the picture and a maker's stamp, category tiles with indigo swing tags, product cards
 that stitch a dashed outline and lift the add-to-basket button on hover, a story-led product page and an

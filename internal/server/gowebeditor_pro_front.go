@@ -326,7 +326,7 @@ func (s *Server) gweProSnippets(c *gin.Context, location string) string {
 		if code == "" {
 			code = p.Content
 		}
-		sb.WriteString("<!-- Golementor custom code: " + html.EscapeString(p.Title) + " -->\n" + code + "\n")
+		sb.WriteString("<!-- Pursae Web Builder custom code: " + html.EscapeString(p.Title) + " -->\n" + code + "\n")
 	}
 	return sb.String()
 }

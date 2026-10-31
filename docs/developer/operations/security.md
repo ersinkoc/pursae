@@ -1,6 +1,6 @@
 ---
 title: Security
-description: What WordPress Go does for you, and the checklist for a production site.
+description: What Pursae does for you, and the checklist for a production site.
 weight: 80
 section: operations
 ---
@@ -46,7 +46,7 @@ section: operations
    login, the users sitemap is empty and the login form gives the same message for an unknown account and a wrong password.
    Set `WPGO_EXPOSE_USERS=1` only if you need the public author list (a headless front end, say). Author archive pages
    (`/author/<nicename>`) stay public for authors with published posts and the slug comes from the account's login name, so
-   set a *display name* and nickname that differ from the login for every account that publishes. **AdminSecGo** (Plugins ›
+   set a *display name* and nickname that differ from the login for every account that publishes. **Pursae Security** (Plugins ›
    Installed Plugins; [built-in plugins](../built-in-plugins/adminsecgo.md)) adds two-step login, a custom login URL and
    an activity log on top, and can relax these defaults.
 10. Keep the core up to date ([upgrading](../getting-started/upgrading.md)) and rebuild the images

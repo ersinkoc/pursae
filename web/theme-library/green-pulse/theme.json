@@ -3,7 +3,7 @@
   "name": "Green Pulse",
   "version": "1.0.0",
   "description": "A climate and environmental news magazine: a live-pulse ticker over a deep forest header, bold Epilogue headlines, electric lime highlights, a magazine grid that leads with the top story, data callouts with huge numbers, numbered action guides, campaign bands, a newsletter signup and an optional dark mode.",
-  "author": "WordPress Go",
+  "author": "Pursae",
   "author_url": "https://github.com/boracomet/wordpress-go",
   "theme_url": "https://github.com/boracomet/wordpress-go/tree/main/web/theme-library/green-pulse",
   "tags": ["Environment", "News", "Magazine", "Blog", "Grid Layout", "Right Sidebar", "Left Sidebar", "Custom Colors", "Custom Logo", "Custom Menu", "Featured Images", "Sticky Post", "Threaded Comments", "Wide Blocks", "Editor Style", "Accessibility Ready"],

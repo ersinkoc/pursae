@@ -1,4 +1,4 @@
-/* Fernwood: a Golementor store theme. Layout, colours and type live in the Golementor design
+/* Fernwood: a Pursae Web Builder store theme. Layout, colours and type live in the Pursae Web Builder design
    (Theme Builder parts and Site Settings); this file carries the fonts and the store's finishing touches. */
 @font-face { font-family: "Fernwood Serif"; src: url("fonts/fraunces.woff2") format("woff2"); font-weight: 400 700; font-style: normal; font-display: swap; }
 @font-face { font-family: "Fernwood Sans"; src: url("fonts/albert-sans.woff2") format("woff2"); font-weight: 300 700; font-style: normal; font-display: swap; }

@@ -171,9 +171,9 @@ func (s *Server) asSave(ctx context.Context, st asSettings) error {
 // --- the plugin switch ---------------------------------------------------------------------
 
 func (s *Server) adminsecPluginRow() pluginRow {
-	r := pluginRow{Slug: asSlug, Name: "AdminSecGo", Version: Version, Native: true, Active: s.adminsecOn(),
-		Description: "Login security for WordPress Go: e-mailed one-time codes (MFA), authenticator app two-factor (2FA) with backup codes and remembered devices, per-role enforcement, a custom login URL, login lockouts, IP allow and block lists, password policy, session management, security headers and hardening, admin alerts and an activity log. While it is off, nothing of it runs; users' factors are kept.",
-		Author:      "WordPress Go"}
+	r := pluginRow{Slug: asSlug, Name: "Pursae Security", Version: Version, Native: true, Active: s.adminsecOn(),
+		Description: "Login security for Pursae: e-mailed one-time codes (MFA), authenticator app two-factor (2FA) with backup codes and remembered devices, per-role enforcement, a custom login URL, login lockouts, IP allow and block lists, password policy, session management, security headers and hardening, admin alerts and an activity log. While it is off, nothing of it runs; users' factors are kept.",
+		Author:      "Pursae"}
 	if r.Active {
 		r.SettingsURL = "/wp-admin/admin?page=" + asSlug + "-settings"
 	}
@@ -182,7 +182,7 @@ func (s *Server) adminsecPluginRow() pluginRow {
 
 func (s *Server) adminsecPluginAction(c *gin.Context, action string) error {
 	if action == "deactivate" && s.adminsecOn() {
-		s.asAudit(c, asEvent{Event: "plugin_deactivated", Severity: "warning", Object: "AdminSecGo", Message: "AdminSecGo deactivated: second factors are no longer asked for and the login URL is /wp-login again."})
+		s.asAudit(c, asEvent{Event: "plugin_deactivated", Severity: "warning", Object: "Pursae Security", Message: "Pursae Security deactivated: second factors are no longer asked for and the login URL is /wp-login again."})
 	}
 	if err := s.settings.Set(c, map[string]any{asSetting: action == "activate"}); err != nil {
 		return err
@@ -190,7 +190,7 @@ func (s *Server) adminsecPluginAction(c *gin.Context, action string) error {
 	if action == "activate" {
 		_, _ = s.store.Pool.Exec(c, `INSERT INTO jobs(name, run_at, recurrence)
 			SELECT 'adminsecgo_daily', now() + interval '1 hour', 'daily' WHERE NOT EXISTS (SELECT 1 FROM jobs WHERE name = 'adminsecgo_daily' AND recurrence <> '')`)
-		s.asAudit(c, asEvent{Event: "plugin_activated", Severity: "notice", Object: "AdminSecGo", Message: "AdminSecGo activated."})
+		s.asAudit(c, asEvent{Event: "plugin_activated", Severity: "notice", Object: "Pursae Security", Message: "Pursae Security activated."})
 	}
 	builder.ProELoginPath = s.loginPath()
 	s.purgeAll(c)
@@ -436,7 +436,7 @@ func (s *Server) asMailReady() (bool, string) {
 	if s.mailSMTPOn() {
 		o := s.msLoad()
 		if o.General.DoNotSend {
-			return false, "WPGO Mail SMTP has “Do Not Send” switched on, so no e-mail leaves the site."
+			return false, "Pursae SMTP has “Do Not Send” switched on, so no e-mail leaves the site."
 		}
 		if p := o.primary(); p.Mailer != "" && p.Mailer != "mail" && msConnReady(p) {
 			return true, ""
@@ -445,7 +445,7 @@ func (s *Server) asMailReady() (bool, string) {
 	if s.cfg.SMTPHost != "" {
 		return true, ""
 	}
-	return false, "E-mail delivery is not set up: configure an SMTP server or an e-mail API in WPGO Mail SMTP (or the WPGO_SMTP_* environment variables) so codes can reach users."
+	return false, "E-mail delivery is not set up: configure an SMTP server or an e-mail API in Pursae SMTP (or the WPGO_SMTP_* environment variables) so codes can reach users."
 }
 
 // msConnReady reports whether a connection's mailer has its required settings.
@@ -508,7 +508,7 @@ func (s *Server) adminsecMenu(c *gin.Context, menu []*menuTop, screen string) []
 	if u == nil || !u.Can("manage_options", nil) {
 		return menu
 	}
-	top := &menuTop{Slug: asAdminPages[0][0], Title: "AdminSecGo", ID: "toplevel_page_adminsecgo", Icon: "dashicons-shield"}
+	top := &menuTop{Slug: asAdminPages[0][0], Title: "Pursae Security", ID: "toplevel_page_adminsecgo", Icon: "dashicons-shield"}
 	for i, p := range asAdminPages {
 		ms := &menuSub{Slug: p[0], Title: template.HTML(p[1]), First: i == 0, Current: p[0] == screen}
 		top.Current = top.Current || ms.Current
@@ -531,7 +531,7 @@ func (s *Server) adminsecFileEditBlocked(c *gin.Context) bool {
 	if !s.adminsecOn() || !s.asLoad().DisableFileEdit {
 		return false
 	}
-	c.String(http.StatusForbidden, "File editing is disabled on this site (AdminSecGo › Settings › Hardening).")
+	c.String(http.StatusForbidden, "File editing is disabled on this site (Pursae Security › Settings › Hardening).")
 	return true
 }
 
@@ -664,7 +664,7 @@ func AdminSecCLI(ctx context.Context, pool *pgxpool.Pool, args []string) (string
 		return "All lockouts released.", err
 	case "deactivate":
 		_, err := pool.Exec(ctx, `INSERT INTO settings(key, value) VALUES ($1, 'false') ON CONFLICT (key) DO UPDATE SET value = 'false'`, asSetting)
-		return "AdminSecGo is deactivated (restart the server if it is running).", err
+		return "Pursae Security is deactivated (restart the server if it is running).", err
 	}
 	return "", errFmt("unknown adminsec command " + args[0])
 }

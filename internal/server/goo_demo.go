@@ -242,7 +242,7 @@ func gooValidateDemo(raw json.RawMessage, media []demoMedia) []string {
 	}
 	for _, k := range d.Extensions {
 		if gooExtensions[k] == nil {
-			bad("extensions: %q is not a Goocommerce extension", k)
+			bad("extensions: %q is not a Pursae Commerce extension", k)
 		}
 	}
 	return problems

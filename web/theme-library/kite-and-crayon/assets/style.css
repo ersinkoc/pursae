@@ -1,4 +1,4 @@
-/* Kite & Crayon: a Golementor store theme. Layout, colours and type live in the Golementor design
+/* Kite & Crayon: a Pursae Web Builder store theme. Layout, colours and type live in the Pursae Web Builder design
    (Theme Builder parts and Site Settings); this file carries the fonts and the store's finishing touches. */
 @font-face { font-family: "Kite Display"; src: url("fonts/outfit.woff2") format("woff2"); font-weight: 300 700; font-style: normal; font-display: swap; }
 @font-face { font-family: "Kite Sans"; src: url("fonts/figtree.woff2") format("woff2"); font-weight: 400 700; font-style: normal; font-display: swap; }

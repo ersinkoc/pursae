@@ -157,7 +157,7 @@ var (
 // gweJSStrings lists the UI strings of the Studio scripts (literals that start with a capital).
 func (s *Server) gweJSStrings() []string {
 	gweJSStringsOnce.Do(func() {
-		seen := map[string]bool{"Edit with Golementor": true}
+		seen := map[string]bool{"Edit with Pursae Web Builder": true}
 		files, _ := fs.Glob(s.web, "gowebeditor/studio/*.js")
 		for _, f := range files {
 			b, err := fs.ReadFile(s.web, f)

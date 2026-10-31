@@ -98,7 +98,7 @@ func gooAutoP(v string) string {
 func (s *Server) gooEmailFooter(ctx context.Context) string {
 	f := s.gooOptString("email_footer_text")
 	if f == "" {
-		f = "{site_title} &mdash; Built with WordPress Go"
+		f = "{site_title} &mdash; Built with Pursae"
 	}
 	f = s.gooT(ctx, f) // Golylang: Languages › Translations
 	home := s.links(ctx).Home

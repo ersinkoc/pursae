@@ -90,7 +90,7 @@ func (s *Server) gooAdminThemes(c *gin.Context) {
 	themes := s.gooStoreThemes(c)
 	data := map[string]any{"Themes": themes, "Nonce": s.nonce(c, gooThemesNonce), "ShopURL": s.gooShopURL(ctx),
 		"HomeURL": s.links(ctx).HomeURL("/"), "CanInstall": u.Can("install_themes", nil) && u.Can("switch_themes", nil) && u.Can("import", nil),
-		"Golylang": s.golylangOn()}
+		"Pursae Multi Language": s.golylangOn()}
 	var notices []notice
 	switch c.Query("result") {
 	case "done":
@@ -197,7 +197,7 @@ func (s *Server) gooRunThemeStep(c *gin.Context, lt *libraryTheme, step string) 
 		}
 		if m.Golementor != "" && !s.golementorOn() { // a Golementor store theme needs the builder
 			if err := s.golementorActivate(ctx); err != nil {
-				return fail("Golementor could not be activated: " + err.Error())
+				return fail("Pursae Web Builder could not be activated: " + err.Error())
 			}
 		}
 		if a := s.activeTheme(); a == nil || a.Slug != m.Slug {

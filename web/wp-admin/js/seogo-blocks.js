@@ -1,4 +1,4 @@
-/* SEO-Go blocks for Gotenberg: FAQ, How-to and Breadcrumbs (category "SEO-Go").
+/* SEO-Go blocks for Pursae Editor: FAQ, How-to and Breadcrumbs (category "SEO-Go").
    FAQ and How-to save plain HTML (the site looks the same with the plugin off); their attributes
    feed the schema graph. Breadcrumbs are rendered on the server. */
 ( function ( wp ) {

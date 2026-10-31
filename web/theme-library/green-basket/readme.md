@@ -1,6 +1,6 @@
 # Green Basket
 
-A friendly organic grocery and farm shop for Goocommerce: a delivery-note strip, a rounded header with a
+A friendly organic grocery and farm shop for Pursae Commerce: a delivery-note strip, a rounded header with a
 big product search and a cart pill showing the basket total (with a mini-cart), a leaf-green aisle bar
 with pill links, a rounded hero with a butter card and badges, round category bubbles, cheerful product
 cards with sticker sale badges and an add button that is always ready, and a soil-brown footer with a

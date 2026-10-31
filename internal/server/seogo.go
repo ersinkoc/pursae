@@ -346,7 +346,7 @@ func (s *Server) seogoDeactivate(ctx context.Context) error {
 func (s *Server) seogoPluginRow() pluginRow {
 	r := pluginRow{Slug: seogoSlug, Name: "SEO-Go", Version: "1.0.0", Native: true, Active: s.seogoOn(),
 		Description: "Search engine optimization in one place: SEO and readability analysis in both editors, titles and meta, social previews, the schema graph, XML sitemaps, breadcrumbs, redirections, a 404 monitor, internal links and more. While it is off, none of it is part of the site.",
-		Author:      "WordPress Go"}
+		Author:      "Pursae"}
 	if r.Active {
 		r.SettingsURL = "/wp-admin/seogo"
 	}

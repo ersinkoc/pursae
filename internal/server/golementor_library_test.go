@@ -272,6 +272,6 @@ func TestGolementorLibraryREST(t *testing.T) {
 	// Off with the plugin.
 	togglePlugin(t, c, base, "deactivate")
 	if code, _ := restGet(t, c, base, "/wp-json/golementor/v1/library/sections"); code != http.StatusNotFound {
-		t.Errorf("library while Golementor is off: %d", code)
+		t.Errorf("library while Pursae Web Builder is off: %d", code)
 	}
 }

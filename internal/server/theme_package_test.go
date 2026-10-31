@@ -47,7 +47,7 @@ func TestThemeManifestValidation(t *testing.T) {
 		"short slug":         {map[string]string{`"slug": "starter"`: `"slug": "s"`}, "slug"},
 		"no name":            {map[string]string{`"name": "Starter"`: `"name": " "`}, "name is required"},
 		"bad version":        {map[string]string{`"version": "1.0.0"`: `"version": "1.0"`}, "semantic version"},
-		"requires core":      {map[string]string{`"requires_core": "0.1.0"`: `"requires_core": "9.0.0"`}, "requires WordPress Go 9.0.0"},
+		"requires core":      {map[string]string{`"requires_core": "0.1.0"`: `"requires_core": "9.0.0"`}, "requires Pursae 9.0.0"},
 		"src outside assets": {map[string]string{`"src": "assets/style.css"`: `"src": "../style.css"`}, "styles[0].src"},
 		"bad handle":         {map[string]string{`"handle": "starter-style"`: `"handle": "Starter Style"`}, "styles[0].handle"},
 		"dependency cycle":   {map[string]string{`"handle": "starter-style", "src": "assets/style.css", "deps": ["wp-block-library"]`: `"handle": "starter-style", "src": "assets/style.css", "deps": ["starter-style"]`}, "cycle"},

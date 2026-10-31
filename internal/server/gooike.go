@@ -466,9 +466,9 @@ func (s *Server) gooikeDeactivate(ctx context.Context) error {
 
 // gooikePluginRow is Gooike's row on the Plugins screen.
 func (s *Server) gooikePluginRow() pluginRow {
-	r := pluginRow{Slug: gooikeSlug, Name: "Gooike", Version: gooikeVersion, Native: true, Active: s.gooikeOn(),
+	r := pluginRow{Slug: gooikeSlug, Name: "Pursae Cookie", Version: gooikeVersion, Native: true, Active: s.gooikeOn(),
 		Description: "Cookie consent the friendly way: a GDPR, KVKK and CCPA/CPRA ready banner with 14 themes, a preferences center, a script manager that blocks trackers and embeds until consent, Google Consent Mode v2, a cookie declaration with a scanner and a consent log. Works with the page cache. While it is off, nothing of it reaches the site.",
-		Author:      "WordPress Go"}
+		Author:      "Pursae"}
 	if r.Active {
 		r.SettingsURL = "/wp-admin/gooike"
 	}
@@ -501,7 +501,7 @@ func (s *Server) gooikeMenu(menu []*menuTop, u *store.User, screen string) []*me
 	if !s.gooikeOn() || u == nil || !u.Can("manage_options", nil) {
 		return menu
 	}
-	top := &menuTop{Slug: "gooike", Title: "Gooike", ID: "toplevel_page_gooike", Icon: "dashicons-shield"}
+	top := &menuTop{Slug: "gooike", Title: "Pursae Cookie", ID: "toplevel_page_gooike", Icon: "dashicons-shield"}
 	for i, p := range gooikeMenuPages {
 		slug := "gooike"
 		if p.Page != "" {

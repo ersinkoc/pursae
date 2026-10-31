@@ -552,7 +552,7 @@ func gweIDCounterNext() uint32 {
 func (s *Server) gweEditor(c *gin.Context, p *store.Post) {
 	u := currentUser(c)
 	if !gweEditable(p) {
-		c.String(http.StatusForbidden, "This item cannot be edited with Golementor.")
+		c.String(http.StatusForbidden, "This item cannot be edited with Pursae Web Builder.")
 		return
 	}
 	if !u.Can("edit_post", p) || s.gweProRoleExcluded(u) { // Golementor Pro: Role Manager
@@ -596,9 +596,9 @@ func (s *Server) gweEditor(c *gin.Context, p *store.Post) {
 		}
 		cfg["settings"] = settings
 	}
-	title := "Edit “" + p.Title + "” with Golementor"
+	title := "Edit “" + p.Title + "” with Pursae Web Builder"
 	if p.Title == "" {
-		title = "Golementor"
+		title = "Pursae Web Builder"
 	}
 	common := map[string]any{}
 	for k, v := range d.commonCfg {
@@ -706,13 +706,13 @@ func (s *Server) gweNewPost(c *gin.Context) {
 			tplType = "page"
 		}
 		p.Meta["_elementor_template_type"] = tplType
-		p.Title = "Golementor " + strings.ToUpper(tplType[:1]) + tplType[1:] + " #"
+		p.Title = "Pursae Web Builder " + strings.ToUpper(tplType[:1]) + tplType[1:] + " #"
 	case typ == "page":
 		p.Meta["_elementor_template_type"] = "wp-page"
-		p.Title = "Golementor #"
+		p.Title = "Pursae Web Builder #"
 	default:
 		p.Meta["_elementor_template_type"] = "wp-post"
-		p.Title = "Golementor #"
+		p.Title = "Pursae Web Builder #"
 	}
 	p.Meta["_elementor_data"] = "[]"
 	if err := s.store.InsertPost(c, p); err != nil {

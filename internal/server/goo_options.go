@@ -196,7 +196,7 @@ func gooSettingsTabs() []gooTab {
 			{ID: "email_sender_options_end", Type: "sectionend"},
 			{ID: "email_template_options", Title: "Email template", Type: "title", Desc: "This section lets you customize the emails sent from your store."},
 			{ID: "email_header_image", Title: "Header image", Type: "text", Default: "", Holder: "N/A", Desc: "Paste the URL of an image you want to show in the email header."},
-			{ID: "email_footer_text", Title: "Footer text", Type: "textarea", Default: "{site_title} &mdash; Built with WordPress Go", Desc: "The text to appear in the footer of all emails. Available placeholders: {site_title} {site_url}"},
+			{ID: "email_footer_text", Title: "Footer text", Type: "textarea", Default: "{site_title} &mdash; Built with Pursae", Desc: "The text to appear in the footer of all emails. Available placeholders: {site_title} {site_url}"},
 			{ID: "email_base_color", Title: "Base color", Type: "color", Default: "#7f54b3"},
 			{ID: "email_background_color", Title: "Background color", Type: "color", Default: "#f7f7f7"},
 			{ID: "email_body_background_color", Title: "Body background color", Type: "color", Default: "#ffffff"},

@@ -290,7 +290,7 @@ func (r *renderer) printElement(el *Element) (out string) {
 			if repanic {
 				panic(p)
 			}
-			out = "<!-- Golementor: failed to render element (" + strings.ReplaceAll(el.ID, "--", "-") + ") -->\n"
+			out = "<!-- Pursae Web Builder: failed to render element (" + strings.ReplaceAll(el.ID, "--", "-") + ") -->\n"
 		}
 	}()
 	if atomic.IsAtomic(el.ElType, el.WidgetType) { // Golementor v4: atomic_hook.go
@@ -358,7 +358,7 @@ func unsupportedComment(el *Element) string {
 		name = el.WidgetType
 	}
 	name = strings.ReplaceAll(name, "--", "-")
-	return "<!-- Golementor: unsupported element \"" + name + "\" (" + strings.ReplaceAll(el.ID, "--", "-") + ") -->\n"
+	return "<!-- Pursae Web Builder: unsupported element \"" + name + "\" (" + strings.ReplaceAll(el.ID, "--", "-") + ") -->\n"
 }
 
 // collectAssets mirrors Elements_Iteration_Actions\Assets::element_action: assets declared by

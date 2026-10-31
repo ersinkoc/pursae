@@ -122,7 +122,7 @@
 				<div class="wpgo-welcome-title">
 					<img class="wpgo-welcome-mascot" src="/wp-includes/images/wpgo/gopher-256.png" width="112" height="112" alt="" />
 					<div>
-						<h2>Welcome to WordPress Go!</h2>
+						<h2>Welcome to Pursae!</h2>
 						<p><a href="/wp-admin/about">Learn more about the {{version}} version.</a></p>
 					</div>
 				</div>
@@ -192,7 +192,7 @@
 					{{if .Comments}}<li class="comment-count"><a href="/wp-admin/edit-comments">{{plural .Comments "%s Comment" "%s Comments"}}</a></li>{{end}}
 					<li class="comment-mod-count{{if not .Pending}} hidden{{end}}"><a href="/wp-admin/edit-comments?comment_status=moderated" class="comments-in-moderation-text">{{plural .Pending "%s Comment in moderation" "%s Comments in moderation"}}</a></li>
 				</ul>
-				<p id="wp-version-message"><span id="wp-version">WordPress Go {{version}} running <a href="/wp-admin/themes">{{.ThemeName}}</a> theme.</span></p>
+				<p id="wp-version-message"><span id="wp-version">Pursae {{version}} running <a href="/wp-admin/themes">{{.ThemeName}}</a> theme.</span></p>
 				{{if .Discouraged}}<p class="search-engines-info"><a href="/wp-admin/options-reading">Search engines discouraged</a></p>{{end}}
 			</div>
 		{{template "dashboard-postbox-end"}}

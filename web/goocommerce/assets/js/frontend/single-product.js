@@ -1,4 +1,4 @@
-/* Goocommerce single product (single-product.js): tabs, the gallery (thumbnails swap the main image,
+/* Pursae Commerce single product (single-product.js): tabs, the gallery (thumbnails swap the main image,
    a lightbox opens it full size) and the review rating stars. */
 (function () {
 	'use strict';

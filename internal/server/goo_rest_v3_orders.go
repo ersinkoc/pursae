@@ -838,7 +838,7 @@ func (s *Server) gooV3OrdersList(c *gin.Context, req *restRequest) {
 func (s *Server) gooV3NoteJSON(ctx context.Context, n *gooOrderNote) map[string]any {
 	author := n.AddedBy
 	if author == "" {
-		author = "Goocommerce"
+		author = "Pursae Commerce"
 	}
 	return map[string]any{"id": n.ID, "author": author, "date_created": s.gooDate(&n.CreatedAt), "date_created_gmt": gooDateGMT(&n.CreatedAt),
 		"note": n.Content, "customer_note": n.IsCustomer, "added_by_user": n.AddedBy != "",

@@ -601,7 +601,7 @@ func proEFieldHTML(w *elemCtx, i string, item map[string]any, typ string) string
 			}
 			out += "<div " + ra.String() + "></div>"
 		} else if w.editing() {
-			out += "<div class=\"elementor-alert elementor-alert-info\">To use reCAPTCHA, add the keys under Golementor › Settings › Integrations.</div>"
+			out += "<div class=\"elementor-alert elementor-alert-info\">To use reCAPTCHA, add the keys under Pursae Web Builder › Settings › Integrations.</div>"
 		}
 		return out + "</div>"
 	}

@@ -450,7 +450,7 @@ func (s *Server) pllRegisterString(ctx context.Context, name, str, group string,
 		return
 	}
 	if group == "" {
-		group = "Golylang"
+		group = "Pursae Multi Language"
 	}
 	key := fmt.Sprintf("%p|%s|%s", s, group, str)
 	if _, seen := pllThemeSeen.LoadOrStore(key, true); seen {

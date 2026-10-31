@@ -248,7 +248,7 @@
 {{if index .Opts.Modules "sitemap"}}
 <p>Your sitemap index: <a href="{{.Data.Index}}" target="_blank" rel="noopener">{{.Data.Index}}</a>. While SEO-Go is active, <code>wp-sitemap.xml</code> redirects here.</p>
 {{with .Data.Links}}<ul class="ul-disc">{{range .}}<li><a href="{{.}}" target="_blank" rel="noopener">{{.}}</a></li>{{end}}</ul>{{end}}
-{{else}}<div class="notice notice-info inline"><p>The XML Sitemaps module is inactive; WordPress Go's core sitemap is used. Activate it on the <a href="/wp-admin/seogo">Dashboard</a>.</p></div>{{end}}
+{{else}}<div class="notice notice-info inline"><p>The XML Sitemaps module is inactive; Pursae's core sitemap is used. Activate it on the <a href="/wp-admin/seogo">Dashboard</a>.</p></div>{{end}}
 <form method="post" action="/wp-admin/seogo?page=sitemap">
 <input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
 <table class="form-table" role="presentation">
@@ -370,7 +370,7 @@
 <div class="postbox"><div class="postbox-header"><h2 class="hndle">robots.txt editor</h2></div><div class="inside">
 	<form method="post" action="/wp-admin/seogo?page=tools"><input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="action" value="robots" />
 	<p><textarea name="robots_txt" rows="10" class="large-text code" placeholder="{{.Data.RobotsDefault}}">{{.Opts.RobotsTxt}}</textarea></p>
-	<p class="description">Leave empty to serve the default shown in grey. <a href="{{.Home}}robots.txt" target="_blank" rel="noopener">View robots.txt</a>. WordPress Go serves it itself; there is no .htaccess to edit.</p>
+	<p class="description">Leave empty to serve the default shown in grey. <a href="{{.Home}}robots.txt" target="_blank" rel="noopener">View robots.txt</a>. Pursae serves it itself; there is no .htaccess to edit.</p>
 	<p><input type="submit" class="button button-primary" value="Save robots.txt" /></p></form></div></div>
 <div class="postbox"><div class="postbox-header"><h2 class="hndle">Instant Indexing (IndexNow)</h2></div><div class="inside">
 	{{if index .Opts.Modules "indexnow"}}
@@ -418,7 +418,7 @@
 {{define "seogo-separators"}}{{$cur := .}}<fieldset class="seogo-separators"><legend class="screen-reader-text">Title separator</legend>
 {{range list "-" "–" "—" ":" "·" "•" "*" "⋆" "|" "~" "«" "»" "<" ">"}}<label><input type="radio" name="separator" value="{{.}}"{{if eq . $cur}} checked{{end}} /><span>{{.}}</span></label>{{end}}</fieldset>{{end}}
 
-{{/* The SEO-Go box: classic editor meta box and Gotenberg sidebar share this markup. */}}
+{{/* The SEO-Go box: classic editor meta box and Pursae Editor sidebar share this markup. */}}
 {{define "seogo/metabox"}}
 <div id="seogo-metabox" class="postbox seogo-box" data-mode="{{.Mode}}">
 <div class="postbox-header"><h2 class="hndle">SEO-Go <span class="seogo-head-scores"><span class="seogo-head-score" data-kind="seo"><span class="seogo-bullet na"></span> SEO</span> <span class="seogo-head-score" data-kind="readability"><span class="seogo-bullet na"></span> Readability</span></span></h2>

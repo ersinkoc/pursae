@@ -210,9 +210,9 @@ func (s *Server) hgValidLocale(ctx context.Context, code string) bool {
 // Plugins screen ------------------------------------------------------------------------------------
 
 func (s *Server) hgPluginRow() pluginRow {
-	r := pluginRow{Slug: hgSlug, Name: "HeadlessGo", Version: hgVersion, Native: true, Active: s.hgOn(),
+	r := pluginRow{Slug: hgSlug, Name: "Pursae Headless", Version: hgVersion, Native: true, Active: s.hgOn(),
 		Description: "Turns the site into a headless CMS: a Content-Type Builder with collection types, single types, components and dynamic zones, a Content Manager with draft &amp; publish and translations, a REST API with filters, sorting, pagination and populate, API tokens, public permissions, CORS, webhooks, preview URLs and GraphQL. While it is active the front end does not render.",
-		Author:      "WordPress Go"}
+		Author:      "Pursae"}
 	if r.Active {
 		r.SettingsURL = hgAdminPath + "?page=settings"
 	}
@@ -254,7 +254,7 @@ func (s *Server) hgMenu(menu []*menuTop, u *store.User, screen string) []*menuTo
 		return menu
 	}
 	admin := u.Can("manage_options", nil)
-	top := &menuTop{Slug: hgSlug, Title: "HeadlessGo", ID: "toplevel_page_headlessgo", Icon: "dashicons-rest-api"}
+	top := &menuTop{Slug: hgSlug, Title: "Pursae Headless", ID: "toplevel_page_headlessgo", Icon: "dashicons-rest-api"}
 	cur := screen
 	if p, ok := strings.CutPrefix(screen, hgSlug+"?page="); ok && (p == "entries" || p == "entry" || p == "history") {
 		cur = hgSlug

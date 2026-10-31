@@ -1,4 +1,4 @@
-/* Golementor Studio — the Edit tab: a few plain-language fields per element type (content first,
+/* Pursae Web Builder Studio — the Edit tab: a few plain-language fields per element type (content first,
    then style), and "Advanced settings" for everything else in the upstream panel. */
 (function () {
 	'use strict';

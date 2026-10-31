@@ -27,7 +27,7 @@ import (
 const (
 	hubCacheTTL   = 12 * time.Hour
 	hubMaxPackage = 64 << 20
-	hubUserAgent  = "WordPress Go/" + Version
+	hubUserAgent  = "Pursae/" + Version
 )
 
 type hubIndex struct {
@@ -92,7 +92,7 @@ func (s *Server) hubBase() string {
 	return strings.TrimRight(u, "/")
 }
 
-var errHubOff = errors.New("the WordPress Go Hub is switched off (WPGO_HUB_URL)")
+var errHubOff = errors.New("the Pursae Hub is switched off (WPGO_HUB_URL)")
 
 func (s *Server) hubClient() *http.Client {
 	return &http.Client{Timeout: 20 * time.Second}

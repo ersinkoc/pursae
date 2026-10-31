@@ -107,7 +107,7 @@ func adminMenu(pending int, golementor, cache bool) []menuDef {
 		}},
 		{slug: "edit-comments", title: comments, cap: "edit_posts", id: "menu-comments", icon: "dashicons-admin-comments"},
 		{separator: true, cap: "read"},
-		{slug: "gowebeditor-pro?tab=popups", title: "Golementor", cap: "edit_posts", id: "menu-gowebeditor", icon: "dashicons-layout", sub: []subDef{ // Golementor Pro
+		{slug: "gowebeditor-pro?tab=popups", title: "Pursae Web Builder", cap: "edit_posts", id: "menu-gowebeditor", icon: "dashicons-layout", sub: []subDef{ // Golementor Pro
 			{slug: "gowebeditor-pro?tab=popups", title: "Popups", cap: "edit_posts"},
 			{slug: "gowebeditor-pro?tab=loops", title: "Loop Items", cap: "edit_posts"}, // gap-loops
 			{slug: "gowebeditor-pro?tab=submissions", title: "Form Submissions", cap: "manage_options"},

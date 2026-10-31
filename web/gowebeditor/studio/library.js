@@ -1,4 +1,4 @@
-/* Golementor Studio — the Add tab: the section library (golementor/v1/library/sections) and the
+/* Pursae Web Builder Studio — the Add tab: the section library (golementor/v1/library/sections) and the
    basic elements. Click inserts after the selected section (or at the chosen "+ Add section"
    divider); cards can also be dragged onto the canvas (canvas.js handles the drop). */
 (function () {

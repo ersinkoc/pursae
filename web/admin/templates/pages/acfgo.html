@@ -1,5 +1,5 @@
 {{define "acfgo-header"}}<div class="acf-admin-toolbar">
-	<h2><span class="dashicons dashicons-welcome-widgets-menus"></span> ACF-Go</h2>
+	<h2><span class="dashicons dashicons-welcome-widgets-menus"></span> Pursae Custom Fields</h2>
 	<a href="/wp-admin/acf-field-groups" class="acf-tab{{if eq .Screen "acf-field-groups" "acf-field-group"}} is-active{{end}}"><span class="dashicons dashicons-feedback"></span> Field Groups</a>
 	<a href="/wp-admin/acf-post-types" class="acf-tab{{if eq .Screen "acf-post-types" "acf-post-type"}} is-active{{end}}"><span class="dashicons dashicons-admin-post"></span> Post Types</a>
 	<a href="/wp-admin/acf-taxonomies" class="acf-tab{{if eq .Screen "acf-taxonomies" "acf-taxonomy"}} is-active{{end}}"><span class="dashicons dashicons-tag"></span> Taxonomies</a>
@@ -162,7 +162,7 @@
 <tr><th scope="row"><label for="updated_message">Updated Message</label></th><td><input type="text" name="updated_message" id="updated_message" class="regular-text" value="{{with .Str "updated_message"}}{{.}}{{else}}Options Updated{{end}}" /></td></tr>
 <tr><th scope="row">Data Storage</th><td>{{$ds := .Str "data_storage"}}<label><input type="radio" name="data_storage" value="options"{{if ne $ds "post_id"}} checked{{end}} /> Options</label> <label><input type="radio" name="data_storage" value="post_id"{{if eq $ds "post_id"}} checked{{end}} /> Custom storage</label>
 <p><input type="text" name="post_id" class="regular-text" value="{{.Str "post_id"}}" placeholder="123, user_1, term_5 or an options prefix" /></p></td></tr>
-<tr><th scope="row">Autoload Options</th><td><label><input type="checkbox" name="autoload" value="1"{{if .Bool "autoload"}} checked{{end}} /> Load the values when WordPress Go starts</label></td></tr>
+<tr><th scope="row">Autoload Options</th><td><label><input type="checkbox" name="autoload" value="1"{{if .Bool "autoload"}} checked{{end}} /> Load the values when Pursae starts</label></td></tr>
 {{else}}
 <tr><th scope="row">Labels</th><td><table class="acf-labels-table">{{range .Labels}}<tr><td><label for="label-{{.Name}}">{{.Label}}</label></td><td><input type="text" id="label-{{.Name}}" name="labels[{{.Name}}]" class="regular-text" value="{{.Value}}" /></td></tr>{{end}}</table><p class="description">Generated from the singular and plural labels when left empty.</p></td></tr>
 <tr><th scope="row">Show In UI</th><td><label><input type="hidden" name="show_ui" value="0" /><input type="checkbox" name="show_ui" value="1"{{if .Bool "show_ui"}} checked{{end}} /> Items can be edited and managed in the admin dashboard.</label></td></tr>
@@ -200,7 +200,7 @@
 <div class="postbox"><div class="postbox-header"><h2 class="hndle">Export</h2></div><div class="inside">
 <form method="post" action="/wp-admin/acf-tools">
 <input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="tool" value="export" />
-<p>Select the items you would like to export and then select your export method. Export As JSON to export to a .json file which you can then import to another ACF or ACF-Go installation.</p>
+<p>Select the items you would like to export and then select your export method. Export As JSON to export to a .json file which you can then import to another ACF or Pursae Custom Fields installation.</p>
 <p><label><input type="checkbox" class="acf-toggle-all" onclick="var c=this.checked;document.querySelectorAll('.acf-export-item').forEach(function(i){i.checked=c})" /> <strong>Toggle All</strong></label></p>
 <h4>Field Groups</h4>
 <ul class="acf-checkbox-list">{{range .Groups}}<li><label><input type="checkbox" class="acf-export-item" name="keys[]" value="{{.Key}}" /> {{.Title}}</label></li>{{else}}<li>No field groups.</li>{{end}}</ul>
@@ -213,7 +213,7 @@
 <div class="postbox"><div class="postbox-header"><h2 class="hndle">Import</h2></div><div class="inside">
 <form method="post" action="/wp-admin/acf-tools" enctype="multipart/form-data">
 <input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="tool" value="import" />
-<p>Select the ACF JSON file you would like to import. When you click the import button below, ACF-Go will import the items in that file (existing items with the same key are updated).</p>
+<p>Select the ACF JSON file you would like to import. When you click the import button below, Pursae Custom Fields will import the items in that file (existing items with the same key are updated).</p>
 <p><label for="acf_import_file">Select File</label><br /><input type="file" name="acf_import_file" id="acf_import_file" accept=".json,application/json" /></p>
 <p class="acf-submit"><input type="submit" class="button button-primary" value="Import JSON" /></p>
 </form>

@@ -1,11 +1,11 @@
 ---
-title: What is WordPress Go
+title: What is Pursae
 description: WordPress core rewritten in Go, one binary on PostgreSQL, with the WordPress admin, the block editor, sandboxed plugins and classic themes.
 weight: 10
 section: getting-started
 ---
 
-WordPress Go is a rewrite of WordPress core in Go. It ships as **one binary** that talks to a
+Pursae is a rewrite of WordPress core in Go. It ships as **one binary** that talks to a
 **PostgreSQL** database and serves the familiar WordPress admin (`/wp-admin/`), the block editor,
 the `wp/v2` REST API, classic themes and a page builder. Plugins are **WebAssembly packages** that
 run in a sandbox with permissions you grant at activation, so a broken plugin cannot take the site
@@ -15,12 +15,12 @@ down or read what it was not allowed to.
 
 - **Admin** — Dashboard, Posts, Pages, Media, Comments, Appearance (Themes, Customize, Widgets,
   Menus, Theme File Editor), Plugins, Users, Tools, Settings. Same markup and CSS as WordPress.
-- **Editors** — the block editor (Gotenberg, built on the `@wordpress/*` packages) and a built-in
+- **Editors** — the block editor (Pursae Editor, built on the `@wordpress/*` packages) and a built-in
   Classic Editor plugin (TinyMCE).
-- **Golementor** — a visual page builder with a theme builder, off on a fresh install.
+- **Pursae Web Builder** — a visual page builder with a theme builder, off on a fresh install.
 - **REST API** — `wp/v2` for posts, pages, media, terms, users, comments, settings and more, with
   cookie + nonce and Application Password authentication. See the [REST API](../rest-api/index.md).
-- **Themes** — Twenty Sixteen, Twenty Seventeen, Twenty Twenty, Twenty Twenty-One, Hello Golementor
+- **Themes** — Twenty Sixteen, Twenty Seventeen, Twenty Twenty, Twenty Twenty-One, Hello Pursae Web Builder
   and Classic, plus [theme packages](../themes/index.md) you upload as a zip.
 - **Plugins** — signed WebAssembly packages written in Go with the [plugin SDK](../plugins/index.md).
 - **WPGo Cache** — a built-in full-page cache with tag-based purging.
@@ -35,7 +35,7 @@ down or read what it was not allowed to.
 | Memory | 512 MB is comfortable | same |
 | Ports | 8088 for the site, 5432 for PostgreSQL | whatever `WPGO_ADDR` says (default `:8080`) |
 
-WordPress Go runs on Linux, macOS and Windows (amd64 and arm64). The Docker image is based on
+Pursae runs on Linux, macOS and Windows (amd64 and arm64). The Docker image is based on
 Alpine and runs as an unprivileged user.
 
 ## Where to go next

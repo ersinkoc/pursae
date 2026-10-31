@@ -225,7 +225,7 @@ func TestGapWidgetsSite(t *testing.T) {
 	}
 
 	// wp_body_open: the body-start snippet follows <body> in every theme.
-	bodyStart := regexp.MustCompile(`<body class="[^"]*">\s*<!-- Golementor custom code: Gap snippet -->\s*<div id="gap-body-start"></div>`)
+	bodyStart := regexp.MustCompile(`<body class="[^"]*">\s*<!-- Pursae Web Builder custom code: Gap snippet -->\s*<div id="gap-body-start"></div>`)
 	for _, theme := range []string{"twentytwentyfive", helloThemeSlug} {
 		_, themes, _ := get(t, c, base+"/wp-admin/themes")
 		if theme != "twentytwentyfive" {

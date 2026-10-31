@@ -243,7 +243,7 @@ func (h *pluginHost) HTTPGet(ctx context.Context, plugin, url string) (*plugins.
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("User-Agent", "WordPress Go/"+Version+" plugin/"+plugin)
+	req.Header.Set("User-Agent", "Pursae/"+Version+" plugin/"+plugin)
 	resp, err := pluginHTTP.Do(req)
 	if err != nil {
 		return nil, err
@@ -319,22 +319,22 @@ func (s *Server) installedPlugins(c *gin.Context) []pluginRow {
 	rows := []pluginRow{
 		{Slug: "classic-editor", Name: "Classic Editor", Version: "1.6.7", Native: true, Active: s.settings.Bool("native_classic_editor"),
 			Description: "Enables the previous \"classic\" editor and the old-style Edit Post screen with TinyMCE, Meta Boxes, etc. Choose the default editor and whether users may switch under Settings &rsaquo; Writing.",
-			Author:      "WordPress Go", SettingsURL: "/wp-admin/options-writing"},
+			Author:      "Pursae", SettingsURL: "/wp-admin/options-writing"},
 		{Slug: "wpgo-cache", Name: "WPGo Cache", Version: "1.0.0", Native: true, Active: s.settings.Bool("wpgo_cache_enabled"),
 			Description: "Full-page cache with tag-based purging, a crawler and page optimizations. Works behind nginx, OpenLiteSpeed, Apache or on its own.",
-			Author:      "WordPress Go", SettingsURL: "/wp-admin/admin?page=wpgo-cache"},
-		{Slug: golementorSlug, Name: "Golementor", Version: Version, Native: true, Active: s.golementorOn(),
-			Description: "Visual drag-and-drop page builder and Theme Builder (headers, footers, single and archive templates), with Hello Golementor, the blank theme to build them on. While it is off, none of it is part of the site.",
-			Author:      "WordPress Go"},
-		{Slug: msSlug, Name: "WPGO Mail SMTP", Version: Version, Native: true, Active: s.mailSMTPOn(),
-			Description: "Make email delivery easy for WordPress Go. Connect with SMTP, SendLayer, Brevo, Mailgun, SendGrid, Amazon SES, Gmail, Outlook and more, with an email log, reports, failure alerts, backup connection and smart routing. A native clone of WP Mail SMTP.",
-			Author:      "WordPress Go"},
-		{Slug: gontactSlug, Name: "Gontact Form", Version: gontactVersion, Native: true, Active: s.gontactOn(),
+			Author:      "Pursae", SettingsURL: "/wp-admin/admin?page=wpgo-cache"},
+		{Slug: golementorSlug, Name: "Pursae Web Builder", Version: Version, Native: true, Active: s.golementorOn(),
+			Description: "Visual drag-and-drop page builder and Theme Builder (headers, footers, single and archive templates), with Hello Pursae Web Builder, the blank theme to build them on. While it is off, none of it is part of the site.",
+			Author:      "Pursae"},
+		{Slug: msSlug, Name: "Pursae SMTP", Version: Version, Native: true, Active: s.mailSMTPOn(),
+			Description: "Make email delivery easy for Pursae. Connect with SMTP, SendLayer, Brevo, Mailgun, SendGrid, Amazon SES, Gmail, Outlook and more, with an email log, reports, failure alerts, backup connection and smart routing. A native clone of WP Mail SMTP.",
+			Author:      "Pursae"},
+		{Slug: gontactSlug, Name: "Pursae Contact Form", Version: gontactVersion, Native: true, Active: s.gontactOn(),
 			Description: "Just another contact form plugin. Simple but flexible: manage multiple contact forms, customize the form and the mail contents with simple markup, Ajax-powered submitting, quiz, reCAPTCHA and Turnstile spam protection, file uploads.",
-			Author:      "WordPress Go", SettingsURL: "/wp-admin/admin?page=wpcf7"},
-		{Slug: acfgoSlug, Name: "ACF-Go", Version: Version, Native: true, Active: s.acfgoOn(), SettingsURL: map[bool]string{true: "/wp-admin/acf-field-groups"}[s.acfgoOn()],
+			Author:      "Pursae", SettingsURL: "/wp-admin/admin?page=wpcf7"},
+		{Slug: acfgoSlug, Name: "Pursae Custom Fields", Version: Version, Native: true, Active: s.acfgoOn(), SettingsURL: map[bool]string{true: "/wp-admin/acf-field-groups"}[s.acfgoOn()],
 			Description: "Customize WordPress with powerful, professional and intuitive fields: field groups, repeaters, flexible content, options pages, custom post types and blocks. A native clone of Advanced Custom Fields PRO.",
-			Author:      "WordPress Go"},
+			Author:      "Pursae"},
 		golylangPluginRow(s.golylangOn()), // golylang_admin.go
 	}
 	for i := range rows { // Settings links only while active, as WordPress shows them
@@ -467,16 +467,16 @@ func (s *Server) pluginsScreen(c *gin.Context) {
 	case c.Query("activate") == "true":
 		notices = append(notices, notice{Type: "success", Message: "Plugin activated.", Dismissible: true})
 		if c.Query("gwe_theme") == "hello" { // Golementor moved the site to its blank canvas theme
-			notices = append(notices, notice{Type: "info", Message: template.HTML("<strong>Hello Golementor</strong> is now the active theme: a blank canvas for Golementor. Design the header, footer and pages under <a href=\"/wp-admin/gowebeditor-theme-builder\">Appearance &rsaquo; Theme Builder</a>. Deactivating Golementor brings back your previous theme."), Dismissible: true})
+			notices = append(notices, notice{Type: "info", Message: template.HTML("<strong>Hello Pursae Web Builder</strong> is now the active theme: a blank canvas for Pursae Web Builder. Design the header, footer and pages under <a href=\"/wp-admin/gowebeditor-theme-builder\">Appearance &rsaquo; Theme Builder</a>. Deactivating Pursae Web Builder brings back your previous theme."), Dismissible: true})
 		}
 		if c.Query("gwe_setup") == "1" && s.golementorOn() { // Golementor Studio: offer the setup wizard
-			notices = append(notices, notice{Type: "info", Message: template.HTML("<strong>Golementor is ready.</strong> Start from a complete starter site (header, footer, pages, blog, menus, colors and fonts) and edit everything afterwards.</p><p><a class=\"button button-primary\" href=\"" + gweSetupPath + "\">Run Site Setup</a> <a class=\"button\" href=\"/wp-admin/gowebeditor-theme-builder\">Start from scratch</a>"), Dismissible: true})
+			notices = append(notices, notice{Type: "info", Message: template.HTML("<strong>Pursae Web Builder is ready.</strong> Start from a complete starter site (header, footer, pages, blog, menus, colors and fonts) and edit everything afterwards.</p><p><a class=\"button button-primary\" href=\"" + gweSetupPath + "\">Run Site Setup</a> <a class=\"button\" href=\"/wp-admin/gowebeditor-theme-builder\">Start from scratch</a>"), Dismissible: true})
 		}
 	case c.Query("deactivate") == "true":
 		notices = append(notices, notice{Type: "success", Message: "Plugin deactivated.", Dismissible: true})
 		if c.Query("gwe_theme") == "reset" { // Golementor: Hello Golementor was the active theme
-			notices = append(notices, notice{Type: "warning", Message: template.HTML("Hello Golementor belongs to Golementor, so the site was switched to <strong>" +
-				template.HTMLEscapeString(s.activeTheme().Name) + "</strong>. Your saved themes and built pages are kept; they come back when you activate Golementor."), Dismissible: true})
+			notices = append(notices, notice{Type: "warning", Message: template.HTML("Hello Pursae Web Builder belongs to Pursae Web Builder, so the site was switched to <strong>" +
+				template.HTMLEscapeString(s.activeTheme().Name) + "</strong>. Your saved themes and built pages are kept; they come back when you activate Pursae Web Builder."), Dismissible: true})
 		}
 	case c.Query("activate-multi") != "":
 		notices = append(notices, notice{Type: "success", Message: "Selected plugins activated.", Dismissible: true})
@@ -802,7 +802,7 @@ func (s *Server) pluginInstall(c *gin.Context) {
 		if r.Native {
 			ic := icons[r.Slug]
 			native = append(native, marketItem{Slug: r.Slug, Name: r.Name, Version: r.Version, Description: r.Description, Author: r.Author,
-				Native: true, Active: r.Active, SettingsURL: r.SettingsURL, ActivateURL: r.ActivateURL, Icon: ic[0], IconColor: ic[1], NativeKind: "Built in to WordPress Go"})
+				Native: true, Active: r.Active, SettingsURL: r.SettingsURL, ActivateURL: r.ActivateURL, Icon: ic[0], IconColor: ic[1], NativeKind: "Built in to Pursae"})
 		}
 	}
 	var featured []marketItem
@@ -811,7 +811,7 @@ func (s *Server) pluginInstall(c *gin.Context) {
 	if s.hubBase() != "" {
 		items, err := s.hubCatalog(ctx, "plugins")
 		if err != nil {
-			notices = append(notices, notice{Type: "warning", Message: template.HTML("The WordPress Go Hub could not be reached (" + html.EscapeString(err.Error()) + "). Only locally available packages are listed."), Dismissible: true})
+			notices = append(notices, notice{Type: "warning", Message: template.HTML("The Pursae Hub could not be reached (" + html.EscapeString(err.Error()) + "). Only locally available packages are listed."), Dismissible: true})
 		}
 		for _, h := range items {
 			it := marketItem{Slug: h.Slug, Name: h.Name, Version: h.Version, Description: h.Description, Author: h.Author, Hub: true,
@@ -854,10 +854,10 @@ func (s *Server) pluginInstall(c *gin.Context) {
 	})
 	// Fan-made concept listings: not real packages, shown on their own tab so they never look installable.
 	demos := []marketItem{
-		{Name: "GoForms", Description: "Drag-and-drop contact forms with spam protection, stored submissions and e-mail notifications.", Author: "WordPress Go fans", Icon: "dashicons-feedback"},
-		{Name: "SEO Gopher", Description: "Meta titles, Open Graph tags, XML sitemaps and redirects, written as a sandboxed Wasm plugin.", Author: "WordPress Go fans", Icon: "dashicons-search"},
-		{Name: "Gopher Shop", Description: "Products, carts and checkout for small stores. Payments through Stripe and PayPal.", Author: "WordPress Go fans", Icon: "dashicons-cart"},
-		{Name: "Backup Burrow", Description: "Scheduled database and uploads backups to S3-compatible storage.", Author: "WordPress Go fans", Icon: "dashicons-backup"},
+		{Name: "GoForms", Description: "Drag-and-drop contact forms with spam protection, stored submissions and e-mail notifications.", Author: "Pursae fans", Icon: "dashicons-feedback"},
+		{Name: "SEO Gopher", Description: "Meta titles, Open Graph tags, XML sitemaps and redirects, written as a sandboxed Wasm plugin.", Author: "Pursae fans", Icon: "dashicons-search"},
+		{Name: "Gopher Shop", Description: "Products, carts and checkout for small stores. Payments through Stripe and PayPal.", Author: "Pursae fans", Icon: "dashicons-cart"},
+		{Name: "Backup Burrow", Description: "Scheduled database and uploads backups to S3-compatible storage.", Author: "Pursae fans", Icon: "dashicons-backup"},
 	}
 	for i := range demos {
 		demos[i].Demo = true

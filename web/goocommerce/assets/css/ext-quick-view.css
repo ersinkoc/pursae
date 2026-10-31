@@ -1,4 +1,4 @@
-/* Goocommerce Quick View */
+/* Pursae Commerce Quick View */
 .goo-quick-view-button{margin-top:.5em}
 @media (max-width:768px){.goo-quick-view-hide-mobile{display:none!important}}
 html.goo-quick-view-open{overflow:hidden}

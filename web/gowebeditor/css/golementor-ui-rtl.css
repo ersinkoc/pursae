@@ -1,5 +1,5 @@
 /*! This file is auto-generated */
-/* Golementor UI: light, clean, blue-accented design layer for the editor chrome.
+/* Pursae Web Builder UI: light, clean, blue-accented design layer for the editor chrome.
    Loaded after the upstream editor styles and gowebeditor-editor.css. Only colors, type, spacing, shapes
    and polish change here; element ids/classes and behavior are untouched. Dark UI theme is supported
    via the same switches theme-dark.min.css uses (prefers-color-scheme or the user's UI Theme setting). */
@@ -741,7 +741,7 @@ body.elementor-editor-active {
 
 
 /* ==========================================================================
-   React (MUI) panels: Golementor v4 / atomic element editing, Design System, etc.
+   React (MUI) panels: Pursae Web Builder v4 / atomic element editing, Design System, etc.
    ========================================================================== */
 #elementor-panel .MuiDrawer-paper,
 #elementor-panel-inner .MuiDrawer-paper {

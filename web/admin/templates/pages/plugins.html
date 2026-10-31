@@ -9,7 +9,7 @@
 {{with .Consent}}
 <div class="card" style="max-width:720px;margin:16px 0 24px;border-left:4px solid #2271b1">
 	<h2 class="title">Activate &#8220;{{.Name}}&#8221;?</h2>
-	<p>This plugin runs in a WebAssembly sandbox. It can only do what you allow below; anything else is refused by WordPress Go. You can deactivate it at any time.</p>
+	<p>This plugin runs in a WebAssembly sandbox. It can only do what you allow below; anything else is refused by Pursae. You can deactivate it at any time.</p>
 	<form method="post" action="/wp-admin/plugins">
 		<input type="hidden" name="action" value="activate" />
 		<input type="hidden" name="plugin" value="{{.Slug}}" />

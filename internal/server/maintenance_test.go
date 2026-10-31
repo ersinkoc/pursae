@@ -74,13 +74,13 @@ func maintenanceSite(t *testing.T) (*httptest.Server, *http.Client, *Server) {
 	_, body, _ := get(t, c, ts.URL+"/wp-admin/plugins")
 	m := regexp.MustCompile(`href="(/wp-admin/plugins\?action=activate&amp;plugin=maintenance[^"]*)"`).FindStringSubmatch(body)
 	if m == nil {
-		t.Fatal("no Activate link for Maintenance-Go on the Plugins screen")
+		t.Fatal("no Activate link for Pursae Maintenance on the Plugins screen")
 	}
 	if code, _, loc := get(t, c, ts.URL+html.UnescapeString(m[1])); code != http.StatusFound || !strings.Contains(loc, "activate=true") {
-		t.Fatalf("activate Maintenance-Go: %d %s", code, loc)
+		t.Fatalf("activate Pursae Maintenance: %d %s", code, loc)
 	}
 	if !srv.maintOn() {
-		t.Fatal("Maintenance-Go is not active after activation")
+		t.Fatal("Pursae Maintenance is not active after activation")
 	}
 	return ts, c, srv
 }
@@ -128,11 +128,11 @@ func TestMaintenanceOffByDefault(t *testing.T) {
 	base := ts.URL
 	installAndLogin(t, ts, c)
 	if srv.maintOn() {
-		t.Fatal("Maintenance-Go is on after a fresh install")
+		t.Fatal("Pursae Maintenance is on after a fresh install")
 	}
 	_, body, _ := get(t, c, base+"/wp-admin/plugins")
 	if row := regexp.MustCompile(`(?s)<tr class="(\w+)" data-slug="maintenance"`).FindStringSubmatch(body); row == nil || row[1] != "inactive" {
-		t.Fatalf("Maintenance-Go is not listed as an inactive plugin: %v", row)
+		t.Fatalf("Pursae Maintenance is not listed as an inactive plugin: %v", row)
 	}
 	// Settings saying "on" change nothing while the plugin is off.
 	maintEdit(t, srv, func(st *maintSettings) { st.Enabled = true })
@@ -141,14 +141,14 @@ func TestMaintenanceOffByDefault(t *testing.T) {
 	}
 	_, body, _ = get(t, c, base+"/wp-admin/")
 	if strings.Contains(body, "toplevel_page_maintenance") || strings.Contains(body, "wp-admin-bar-maintenance") {
-		t.Error("an inactive Maintenance-Go shows in the admin menu or toolbar")
+		t.Error("an inactive Pursae Maintenance shows in the admin menu or toolbar")
 	}
 	if code, _, _ := get(t, c, base+"/wp-admin/admin?page=maintenance"); code != http.StatusForbidden {
 		t.Errorf("settings screen of an inactive plugin: %d", code)
 	}
 	_, body, _ = get(t, c, base+"/wp-admin/plugin-install?tab=native")
-	if !strings.Contains(body, "Maintenance-Go") {
-		t.Error("Maintenance-Go is missing from the built-in plugins tab")
+	if !strings.Contains(body, "Pursae Maintenance") {
+		t.Error("Pursae Maintenance is missing from the built-in plugins tab")
 	}
 }
 

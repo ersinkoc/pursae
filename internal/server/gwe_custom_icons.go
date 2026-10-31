@@ -536,7 +536,7 @@ func (s *Server) gweIconsAdmin(c *gin.Context) {
 	if e := c.Query("error"); e != "" {
 		notices = append(notices, notice{Type: "error", Message: template.HTML(esc(e)), Dismissible: true})
 	}
-	s.adminPage(c, "gowebeditor-icons", "Custom Icons ‹ Golementor", "toplevel_page_gowebeditor-pro", "admin/gowebeditor-pro", d, notices...)
+	s.adminPage(c, "gowebeditor-icons", "Custom Icons ‹ Pursae Web Builder", "toplevel_page_gowebeditor-pro", "admin/gowebeditor-pro", d, notices...)
 }
 
 func (s *Server) gweIconsAdminPost(c *gin.Context) (string, error) {

@@ -379,7 +379,7 @@ func (s *Server) msSettingsScreen(c *gin.Context) {
 		s.notYet(c)
 		return
 	}
-	s.msRender(c, d, "WP Mail SMTP Settings", notices...)
+	s.msRender(c, d, "Pursae SMTP Settings", notices...)
 }
 
 func formInt(c *gin.Context, k string) int {
@@ -969,7 +969,7 @@ func (s *Server) msToolsScreen(c *gin.Context) {
 		s.notYet(c)
 		return
 	}
-	s.msRender(c, d, "WP Mail SMTP Tools", notices...)
+	s.msRender(c, d, "Pursae SMTP Tools", notices...)
 }
 
 func (s *Server) msTestFromDomain(o *msOptions, connID string) string {
@@ -1003,21 +1003,21 @@ func (s *Server) msRunTest(c *gin.Context, o *msOptions, d *msScreen) {
 		cn, d.TestConn = o.primary(), "primary"
 	}
 	site := s.settings.String("blogname")
-	msg := gomail.Message{To: []string{d.TestTo}, Subject: "WP Mail SMTP: Test Email to " + d.TestTo,
-		Body: "Congrats, test email was sent successfully!\n\nThank you for trying out WPGO Mail SMTP. This test was sent from " + site + " (" + s.settings.String("home") + ") through " + msMailerTitle(cn.Mailer) + ".\n\n- WPGO Mail SMTP"}
+	msg := gomail.Message{To: []string{d.TestTo}, Subject: "Pursae SMTP: Test Email to " + d.TestTo,
+		Body: "Congrats, test email was sent successfully!\n\nThank you for trying out Pursae SMTP. This test was sent from " + site + " (" + s.settings.String("home") + ") through " + msMailerTitle(cn.Mailer) + ".\n\n- Pursae SMTP"}
 	if d.TestHTML {
 		msg.HTML = `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:560px;margin:0 auto;padding:24px;border:1px solid #dcdcde;border-radius:4px">` +
-			`<h1 style="font-size:22px;color:#1d2327">Congrats, test email was sent successfully!</h1><p style="color:#3c434a;font-size:15px">Thank you for trying out WPGO Mail SMTP. This test was sent from <strong>` +
-			template.HTMLEscapeString(site) + `</strong> through <strong>` + template.HTMLEscapeString(msMailerTitle(cn.Mailer)) + `</strong>.</p><p style="color:#646970">- WPGO Mail SMTP</p></div>`
+			`<h1 style="font-size:22px;color:#1d2327">Congrats, test email was sent successfully!</h1><p style="color:#3c434a;font-size:15px">Thank you for trying out Pursae SMTP. This test was sent from <strong>` +
+			template.HTMLEscapeString(site) + `</strong> through <strong>` + template.HTMLEscapeString(msMailerTitle(cn.Mailer)) + `</strong>.</p><p style="color:#646970">- Pursae SMTP</p></div>`
 	}
 	var debug bytes.Buffer
 	base := s.mailer()
 	res := s.msSendVia(ctx, o, cn, base, msg, base.From, &debug)
-	s.msLogResult(ctx, o, msg, res, "WP Mail SMTP: Email Test")
+	s.msLogResult(ctx, o, msg, res, "Pursae SMTP: Email Test")
 	d.TestDebug = debug.String()
 	if res.Err != nil {
 		msLastError.Store(s, msErrorState{Err: res.Err.Error(), At: time.Now(), Mailer: cn.Mailer})
-		s.msDebugEvent(ctx, o, "error", fmt.Sprintf("Email Test (%s): %v", msMailerTitle(cn.Mailer), res.Err), "WP Mail SMTP: Email Test")
+		s.msDebugEvent(ctx, o, "error", fmt.Sprintf("Email Test (%s): %v", msMailerTitle(cn.Mailer), res.Err), "Pursae SMTP: Email Test")
 		d.TestResult = res.Err.Error()
 		d.TestHints = msHints(cn.Mailer, res.Err.Error())
 		return
@@ -1195,7 +1195,7 @@ func (s *Server) msWizard(c *gin.Context) {
 				_ = s.msSave(c, raw)
 				d.DomainCheck = msCheckDomain(c, s.msTestFromDomain(o, "primary"))
 			}
-			s.msRender(c, d, "WP Mail SMTP Setup Wizard")
+			s.msRender(c, d, "Pursae SMTP Setup Wizard")
 		default:
 			msBack(c, back+"welcome")
 		}
@@ -1223,7 +1223,7 @@ func (s *Server) msWizard(c *gin.Context) {
 		msBack(c, back+"welcome")
 		return
 	}
-	s.msRender(c, d, "WP Mail SMTP Setup Wizard")
+	s.msRender(c, d, "Pursae SMTP Setup Wizard")
 }
 
 // --- menu, notices, dashboard widget ---------------------------------------------------------
@@ -1234,7 +1234,7 @@ func (s *Server) mailSMTPMenu(c *gin.Context, menu []*menuTop, screen string) []
 	if !s.mailSMTPOn() || u == nil || !u.Can("manage_options", nil) {
 		return menu
 	}
-	top := &menuTop{Slug: "admin?page=wp-mail-smtp", Title: "WP Mail SMTP", ID: "toplevel_page_wp-mail-smtp", Icon: "dashicons-email-alt"}
+	top := &menuTop{Slug: "admin?page=wp-mail-smtp", Title: "Pursae SMTP", ID: "toplevel_page_wp-mail-smtp", Icon: "dashicons-email-alt"}
 	for i, sd := range [][2]string{{"admin?page=wp-mail-smtp", "Settings"}, {"admin?page=wp-mail-smtp-logs", "Email Log"},
 		{"admin?page=wp-mail-smtp-reports", "Email Reports"}, {"admin?page=wp-mail-smtp-tools", "Tools"}} {
 		ms := &menuSub{Slug: sd[0], Title: template.HTML(sd[1]), First: i == 0, Current: sd[0] == screen}
@@ -1266,12 +1266,12 @@ func (s *Server) mailSMTPNotices(c *gin.Context) []notice {
 	o := s.msLoad()
 	var out []notice
 	if o.General.DoNotSend {
-		out = append(out, notice{Type: "error", Message: template.HTML(`<strong>WP Mail SMTP:</strong> The "Do Not Send" option is enabled: this site is not sending any emails. <a href="` +
+		out = append(out, notice{Type: "error", Message: template.HTML(`<strong>Pursae SMTP:</strong> The "Do Not Send" option is enabled: this site is not sending any emails. <a href="` +
 			msBase + `wp-mail-smtp&amp;tab=misc">Change the setting</a>.`)})
 	}
 	if v, ok := msLastError.Load(s); ok && !o.General.HideErrors {
 		st := v.(msErrorState)
-		out = append(out, notice{Type: "error", Message: template.HTML(`<strong>Heads up! WP Mail SMTP has detected an issue: your last email failed to send.</strong><br>` +
+		out = append(out, notice{Type: "error", Message: template.HTML(`<strong>Heads up! Pursae SMTP has detected an issue: your last email failed to send.</strong><br>` +
 			template.HTMLEscapeString(msMailerTitle(st.Mailer)+": "+st.Err) + `<br><a href="` + msBase + `wp-mail-smtp-logs&amp;status=failed">View Email Log</a> &middot; <a href="` +
 			msBase + `wp-mail-smtp">Fix the settings</a> &middot; <a href="` + msBase + `wp-mail-smtp-tools">Send a test email</a>`)})
 	}

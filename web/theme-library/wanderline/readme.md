@@ -1,6 +1,6 @@
 # Wanderline
 
-An adventurous travel blog theme for WordPress Go: full-bleed landscape heroes, destination tiles,
+An adventurous travel blog theme for Pursae: full-bleed landscape heroes, destination tiles,
 postcard story cards with stamp labels, dashed route lines and contour-map accents, in a sunset palette.
 
 ## Highlights

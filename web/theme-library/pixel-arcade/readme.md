@@ -1,6 +1,6 @@
 # Pixel Arcade
 
-A retro-futuristic dark theme for video game news and reviews, made for WordPress Go.
+A retro-futuristic dark theme for video game news and reviews, made for Pursae.
 
 - An 8-bit HUD bar, a header with a pixel invader and a blinking cursor, and a ▶ selection pointer in the menu.
 - A front-page hero framed like a game screen with a health bar, then review cards with score badges, an upcoming-releases table styled as a high-score list, platform buttons and an "insert coin" newsletter box.

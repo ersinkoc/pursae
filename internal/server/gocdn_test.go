@@ -48,10 +48,10 @@ func gocdnSite(t *testing.T) *gocdnTestSite {
 	_, body, _ := get(t, c, ts.URL+"/wp-admin/plugins")
 	m := regexp.MustCompile(`href="(/wp-admin/plugins\?action=activate&amp;plugin=gocdn[^"&]*&amp;[^"]*)"`).FindStringSubmatch(body)
 	if m == nil {
-		t.Fatal("no Activate link for GoCDN on the Plugins screen")
+		t.Fatal("no Activate link for Pursae CDN on the Plugins screen")
 	}
 	if code, _, loc := get(t, c, ts.URL+html.UnescapeString(m[1])); code != http.StatusFound || !strings.Contains(loc, "activate=true") {
-		t.Fatalf("activate GoCDN: %d %s", code, loc)
+		t.Fatalf("activate Pursae CDN: %d %s", code, loc)
 	}
 	fake := s3fake.New(gocdnTestKey, gocdnTestSecret, "auto", "media")
 	t.Cleanup(fake.Close)
@@ -176,11 +176,11 @@ func TestGoCDNOffByDefault(t *testing.T) {
 	ts, c, srv := testServerBuilderOff(t)
 	installAndLogin(t, ts, c)
 	if srv.gocdnOn() {
-		t.Fatal("GoCDN is active on a fresh install")
+		t.Fatal("Pursae CDN is active on a fresh install")
 	}
 	_, body, _ := get(t, c, ts.URL+"/wp-admin/plugins")
-	if !strings.Contains(body, "GoCDN") || !strings.Contains(body, "plugin=gocdn") {
-		t.Fatal("GoCDN is not on the Plugins screen")
+	if !strings.Contains(body, "Pursae CDN") || !strings.Contains(body, "plugin=gocdn") {
+		t.Fatal("Pursae CDN is not on the Plugins screen")
 	}
 	if code, _, _ := get(t, c, ts.URL+"/wp-admin/gocdn"); code != http.StatusNotFound {
 		t.Errorf("settings screen while off: %d", code)
@@ -190,7 +190,7 @@ func TestGoCDNOffByDefault(t *testing.T) {
 	}
 	_, admin, _ := get(t, c, ts.URL+"/wp-admin/")
 	if strings.Contains(admin, "toplevel_page_gocdn") || strings.Contains(admin, "Remote Storage") {
-		t.Error("GoCDN menu shown while off")
+		t.Error("Pursae CDN menu shown while off")
 	}
 }
 

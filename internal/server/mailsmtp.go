@@ -428,9 +428,9 @@ func msClassify(subject string) (key, label string) {
 func (s *Server) msDeliver(ctx context.Context, base *gomail.Mailer, msg gomail.Message, defaultFrom string) error {
 	o := s.msLoad()
 	ctrl, label := msClassify(msg.Subject)
-	source := "WordPress Go"
+	source := "Pursae"
 	if label != "" {
-		source = "WordPress Go: " + label
+		source = "Pursae: " + label
 	} else if base.From != defaultFrom {
 		source = "Form"
 	}

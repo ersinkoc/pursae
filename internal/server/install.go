@@ -106,7 +106,7 @@ func (s *Server) installSubmit(c *gin.Context) {
 		return
 	}
 	if v.SiteTitle == "" {
-		v.SiteTitle = "My WordPress Go Site"
+		v.SiteTitle = "My Pursae Site"
 	}
 	if err := s.install(c, v); err != nil {
 		v.Error = "Installation failed: " + err.Error()
@@ -143,7 +143,7 @@ func (s *Server) install(ctx context.Context, v installView) error {
 		var postID, pageID int64
 		if err := tx.QueryRow(ctx, `INSERT INTO posts(type, author_id, slug, title, content, status, published_at, comment_count)
 			VALUES ('post', $1, 'hello-world', 'Hello world!', $2, 'publish', $3, 1) RETURNING id`,
-			userID, "<!-- wp:paragraph -->\n<p>Welcome to WordPress Go. This is your first post. Edit or delete it, then start writing!</p>\n<!-- /wp:paragraph -->", now).Scan(&postID); err != nil {
+			userID, "<!-- wp:paragraph -->\n<p>Welcome to Pursae. This is your first post. Edit or delete it, then start writing!</p>\n<!-- /wp:paragraph -->", now).Scan(&postID); err != nil {
 			return err
 		}
 		if _, err := tx.Exec(ctx, `INSERT INTO post_terms(post_id, term_id) SELECT $1, id FROM terms WHERE taxonomy='category' AND slug='uncategorized'`, postID); err != nil {
@@ -153,7 +153,7 @@ func (s *Server) install(ctx context.Context, v installView) error {
 			return err
 		}
 		if _, err := tx.Exec(ctx, `INSERT INTO comments(post_id, author_name, author_email, author_url, content, status, created_at)
-			VALUES ($1, 'A WordPress Go Commenter', 'wapuu@wordpress.example', 'https://wordpress.org/', $2, 'approved', $3)`,
+			VALUES ($1, 'A Pursae Commenter', 'wapuu@wordpress.example', 'https://wordpress.org/', $2, 'approved', $3)`,
 			postID, "Hi, this is a comment.\nTo get started with moderating, editing, and deleting comments, please visit the Comments screen in the dashboard.\nCommenters who have an account can pick their avatar from the Media Library on their profile.", now); err != nil {
 			return err
 		}
@@ -162,7 +162,7 @@ func (s *Server) install(ctx context.Context, v installView) error {
 			"<!-- wp:quote -->\n<blockquote class=\"wp-block-quote\">\n<!-- wp:paragraph -->\n<p>Hi there! I'm a bike messenger by day, aspiring actor by night, and this is my website. I live in Los Angeles, have a great dog named Jack, and I like pi&#241;a coladas. (And gettin' caught in the rain.)</p>\n<!-- /wp:paragraph -->\n</blockquote>\n<!-- /wp:quote -->\n\n" +
 			"<!-- wp:paragraph -->\n<p>...or something like this:</p>\n<!-- /wp:paragraph -->\n\n" +
 			"<!-- wp:quote -->\n<blockquote class=\"wp-block-quote\">\n<!-- wp:paragraph -->\n<p>The XYZ Doohickey Company was founded in 1971, and has been providing quality doohickeys to the public ever since. Located in Gotham City, XYZ employs over 2,000 people and does all kinds of awesome things for the Gotham community.</p>\n<!-- /wp:paragraph -->\n</blockquote>\n<!-- /wp:quote -->\n\n" +
-			"<!-- wp:paragraph -->\n<p>As a new WordPress Go user, you should go to <a href=\"" + site + "/wp-admin/\">your dashboard</a> to delete this page and create new pages for your content. Have fun!</p>\n<!-- /wp:paragraph -->"
+			"<!-- wp:paragraph -->\n<p>As a new Pursae user, you should go to <a href=\"" + site + "/wp-admin/\">your dashboard</a> to delete this page and create new pages for your content. Have fun!</p>\n<!-- /wp:paragraph -->"
 		if err := tx.QueryRow(ctx, `INSERT INTO posts(type, author_id, slug, title, content, status, published_at, comment_status, ping_status)
 			VALUES ('page', $1, 'sample-page', 'Sample Page', $2, 'publish', $3, 'closed', 'open') RETURNING id`,
 			userID, samplePage, now).Scan(&pageID); err != nil {

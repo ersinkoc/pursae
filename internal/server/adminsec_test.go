@@ -119,7 +119,7 @@ func asStart(t *testing.T) (base string, c *http.Client, srv *Server) {
 	installUsersSite(t, c, base)
 	asToggle(t, c, base, "activate")
 	if !srv.adminsecOn() {
-		t.Fatal("AdminSecGo not active")
+		t.Fatal("Pursae Security not active")
 	}
 	return base, c, srv
 }
@@ -129,7 +129,7 @@ func asToggle(t *testing.T, c *http.Client, base, action string) {
 	_, body, _ := get(t, c, base+"/wp-admin/plugins")
 	m := regexp.MustCompile(`href="(/wp-admin/plugins\?action=` + action + `&amp;plugin=adminsecgo[^"]*)"`).FindStringSubmatch(body)
 	if m == nil {
-		t.Fatalf("no %s link for AdminSecGo", action)
+		t.Fatalf("no %s link for Pursae Security", action)
 	}
 	if code, _, loc := get(t, c, base+html.UnescapeString(m[1])); code != http.StatusFound || !strings.Contains(loc, action+"=true") {
 		t.Fatalf("%s: %d %s", action, code, loc)
@@ -263,7 +263,7 @@ func TestAdminSecOffUnchanged(t *testing.T) {
 	_, _ = getPool(t).Exec(context.Background(), `INSERT INTO adminsec_factors (user_id, email_enabled, email_address) VALUES (1, true, 'admin@example.test')`)
 	body := asPage(t, c, base+"/wp-admin/")
 	if strings.Contains(body, "toplevel_page_adminsecgo") || strings.Contains(body, "page=adminsecgo-account") {
-		t.Error("AdminSecGo menu while off")
+		t.Error("Pursae Security menu while off")
 	}
 	if code, _, _ := get(t, c, base+"/wp-admin/admin?page=adminsecgo"); code != http.StatusForbidden {
 		t.Errorf("screen of an inactive plugin: %d", code)
@@ -276,7 +276,7 @@ func TestAdminSecOffUnchanged(t *testing.T) {
 	if resp.Header.Get("Permissions-Policy") != "" || resp.Header.Get("X-Frame-Options") != "SAMEORIGIN" {
 		t.Error("headers changed while off")
 	}
-	if _, body, _ := get(t, c, base+"/"); !strings.Contains(body, `<meta name="generator" content="WordPress Go `+Version) {
+	if _, body, _ := get(t, c, base+"/"); !strings.Contains(body, `<meta name="generator" content="Pursae `+Version) {
 		t.Error("generator tag missing while off")
 	}
 	anon := asNewClient()
@@ -287,7 +287,7 @@ func TestAdminSecOffUnchanged(t *testing.T) {
 		t.Errorf("/wp-admin/ for visitors: %d %s", code, loc)
 	}
 	if _, body, _ := asLogin(t, anon, base, "/wp-login", "nobody", "x"); !strings.Contains(body, "The username or password you entered is incorrect") || strings.Contains(body, "is not registered") {
-		t.Error("the core login message must not tell unknown accounts from wrong passwords, with or without AdminSecGo")
+		t.Error("the core login message must not tell unknown accounts from wrong passwords, with or without Pursae Security")
 	}
 	if code, _, loc := asLogin(t, anon, base, "/wp-login", "admin", "correct horse"); code != http.StatusFound || !strings.HasSuffix(loc, "/wp-admin/") {
 		t.Errorf("login with stored factors while off: %d %s", code, loc)
@@ -594,7 +594,7 @@ func TestAdminSecRoleEnforcement(t *testing.T) {
 	_, _ = pool.Exec(ctx, `INSERT INTO adminsec_factors (user_id, email_enabled, email_address) VALUES ($1, true, 'eddie@example.test')`, edID)
 	body = asPage(t, c, base+"/wp-admin/user-edit?user_id="+itoa64(edID))
 	if !strings.Contains(body, `value="reset-factors"`) || !strings.Contains(body, "E-mailed codes") {
-		t.Fatal("user-edit has no AdminSecGo block")
+		t.Fatal("user-edit has no Pursae Security block")
 	}
 	if code, _, _ := post(t, c, base+"/wp-admin/user-edit?user_id="+itoa64(edID), url.Values{"_wpnonce": {formNonce(t, body)}, "adminsec_action": {"reset-factors"}}); code != http.StatusFound {
 		t.Error("reset factors")

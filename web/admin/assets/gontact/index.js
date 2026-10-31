@@ -1,6 +1,6 @@
-/* Gontact Form front end: Ajax submission, validation and the DOM events of Contact Form 7
+/* Pursae Contact Form front end: Ajax submission, validation and the DOM events of Contact Form 7
  * (wpcf7beforesubmit, wpcf7submit, wpcf7invalid, wpcf7unaccepted, wpcf7spam, wpcf7mailsent,
- * wpcf7mailfailed, wpcf7aborted, wpcf7statuschanged, wpcf7reset). Written for WordPress Go. */
+ * wpcf7mailfailed, wpcf7aborted, wpcf7statuschanged, wpcf7reset). Written for Pursae. */
 ( function () {
 	'use strict';
 

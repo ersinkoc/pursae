@@ -810,7 +810,7 @@ func TestGooStoreStatusTools(t *testing.T) {
 	base, c, srv := gooSite(t)
 	ctx := context.Background()
 	body := gooStoreGet(t, c, base+"/wp-admin/goocommerce?page=status")
-	for _, want := range []string{"### Goocommerce System Status Report ###", "goo_orders", "[goocommerce_cart] &#10004;", "PostgreSQL"} {
+	for _, want := range []string{"### Pursae Commerce System Status Report ###", "goo_orders", "[goocommerce_cart] &#10004;", "PostgreSQL"} {
 		if !strings.Contains(body, want) {
 			t.Errorf("status lacks %s", want)
 		}

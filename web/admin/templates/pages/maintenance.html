@@ -217,7 +217,7 @@
 <p class="submit"><input type="submit" class="button button-primary" value="Save Changes"></p>
 </form>
 <h2 class="title">Export &amp; Import</h2>
-<p>Download all settings (except the site password) as a JSON file, or import a file exported from another WordPress Go site. Importing keeps maintenance mode as it is.</p>
+<p>Download all settings (except the site password) as a JSON file, or import a file exported from another Pursae site. Importing keeps maintenance mode as it is.</p>
 <p><a class="button" href="/wp-admin/admin?page=maintenance&amp;action=export&amp;_wpnonce={{.Nonce}}">Export Settings</a></p>
 <form method="post" action="/wp-admin/admin?page=maintenance" enctype="multipart/form-data">
 <input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="tab" value="advanced"><input type="hidden" name="import" value="1">

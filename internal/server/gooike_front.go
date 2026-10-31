@@ -48,7 +48,7 @@ func gooikeCustomCSS(d gooikeDesign) string {
 	if strings.TrimSpace(d.CustomCSS) == "" {
 		return ""
 	}
-	return "\n/* Gooike custom CSS */\n" + d.CustomCSS
+	return "\n/* Pursae Cookie custom CSS */\n" + d.CustomCSS
 }
 
 // gooikeBodyOpen is Gooike's part of wp_body_open.
@@ -86,7 +86,7 @@ func gooikeScriptsAt(st *gooikeSettings, placement string) string {
 		if code == "" {
 			continue
 		}
-		fmt.Fprintf(&b, "<!-- Gooike: %s (%s) -->\n%s\n", html.EscapeString(strings.ReplaceAll(sc.Name, "--", "-")), html.EscapeString(sc.Category), code)
+		fmt.Fprintf(&b, "<!-- Pursae Cookie: %s (%s) -->\n%s\n", html.EscapeString(strings.ReplaceAll(sc.Name, "--", "-")), html.EscapeString(sc.Category), code)
 	}
 	return b.String()
 }

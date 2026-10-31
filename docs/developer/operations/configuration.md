@@ -5,7 +5,7 @@ weight: 10
 section: operations
 ---
 
-WordPress Go is configured entirely through environment variables. Everything else (site title,
+Pursae is configured entirely through environment variables. Everything else (site title,
 permalinks, mail sender, cache settings, trusted plugin keys) lives in the options table and is
 edited in the admin.
 

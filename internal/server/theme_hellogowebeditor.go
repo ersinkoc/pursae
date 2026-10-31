@@ -34,13 +34,13 @@ var helloMenuLocations = []MenuLocation{{"primary", "Primary Menu"}, {"footer", 
 
 func init() {
 	registerTheme(&Theme{
-		Slug: helloThemeSlug, Name: "Hello Golementor", Version: helloThemeVersion,
-		Description: "A plain-vanilla, lightweight theme for Golementor: a blank canvas whose header, footer, single, archive, search and 404 templates you build with the Theme Builder. The site's design lives inside this theme as JSON; Save as theme keeps copies of it in the saved themes list, and activating a saved theme loads it back.",
-		Author:      "WordPress Go", AuthorURI: "https://github.com/wpgo", ThemeURI: "https://github.com/wpgo",
-		Tags:       []string{"Golementor", "Flexible Header", "Custom Colors", "Custom Menu", "Custom Logo", "Featured Images", "Full Width Template", "Accessibility Ready", "Theme Builder"},
+		Slug: helloThemeSlug, Name: "Hello Pursae Web Builder", Version: helloThemeVersion,
+		Description: "A plain-vanilla, lightweight theme for Pursae Web Builder: a blank canvas whose header, footer, single, archive, search and 404 templates you build with the Theme Builder. The site's design lives inside this theme as JSON; Save as theme keeps copies of it in the saved themes list, and activating a saved theme loads it back.",
+		Author:      "Pursae", AuthorURI: "https://github.com/wpgo", ThemeURI: "https://github.com/wpgo",
+		Tags:       []string{"Pursae Web Builder", "Flexible Header", "Custom Colors", "Custom Menu", "Custom Logo", "Featured Images", "Full Width Template", "Accessibility Ready", "Theme Builder"},
 		Screenshot: "screenshot.png",
 		WidgetAreas: []WidgetArea{
-			{ID: "sidebar-1", Name: "Sidebar", Description: "Widgets for the Golementor Sidebar widget. The theme itself shows no sidebar."},
+			{ID: "sidebar-1", Name: "Sidebar", Description: "Widgets for the Pursae Web Builder Sidebar widget. The theme itself shows no sidebar."},
 		},
 		MenuLocations: helloMenuLocations,
 		EditorStyles:  []string{"editor-style.css"},

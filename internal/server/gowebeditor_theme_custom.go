@@ -104,17 +104,17 @@ func (s *Server) gweRegisterCustom(ctx context.Context, row *gweThemeRow) {
 	}
 	desc := row.Description
 	if desc == "" {
-		desc = "A design saved from the Golementor Theme Builder."
+		desc = "A design saved from the Pursae Web Builder Theme Builder."
 	}
 	author := row.Author
 	if author == "" {
-		author = "Golementor"
+		author = "Pursae Web Builder"
 	}
 	registerTheme(&Theme{
 		Slug: row.Slug, Name: row.Name, Version: row.Version, Description: desc, Author: author,
-		Tags: []string{"Golementor", "Custom Logo", "Custom Menu", "Full Width Template"}, Custom: true, ScreenshotURL: shot,
+		Tags: []string{"Pursae Web Builder", "Custom Logo", "Custom Menu", "Full Width Template"}, Custom: true, ScreenshotURL: shot,
 		MenuLocations: gweMenuLocations,
-		WidgetAreas:   []WidgetArea{{ID: "sidebar-1", Name: "Sidebar", Description: "Widgets for the Golementor Sidebar widget."}},
+		WidgetAreas:   []WidgetArea{{ID: "sidebar-1", Name: "Sidebar", Description: "Widgets for the Pursae Web Builder Sidebar widget."}},
 		Supports: map[string]any{"custom-logo": map[string]any{"height": 100, "width": 350, "flex-height": true, "flex-width": true},
 			"title-tag": true, "post-thumbnails": true, "menus": true, "html5": true, "align-wide": true, "responsive-embeds": true},
 	})
@@ -321,7 +321,7 @@ func (s *Server) gweMigrateActiveSavedTheme(ctx context.Context) {
 func (s *Server) gweDeleteTheme(ctx context.Context, slug string) error {
 	t := themeBySlug(slug)
 	if t == nil || !t.Custom {
-		return errors.New("That theme is not a saved Golementor theme.")
+		return errors.New("That theme is not a saved Pursae Web Builder theme.")
 	}
 	if s.activeTheme().Slug == slug {
 		return errors.New("The active theme cannot be deleted. Activate another theme first.")
@@ -399,7 +399,7 @@ func (s *Server) gweThemeScreenshot(c *gin.Context) {
 	fmt.Fprintf(&sb, `<rect x="80" y="170" width="1040" height="330" rx="10" fill="%s" opacity=".18"/>`, esc(colors["primary"]))
 	fmt.Fprintf(&sb, `<text x="600" y="320" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="72" font-weight="700" fill="%s">%s</text>`,
 		esc(colors["secondary"]), esc(t.Name))
-	fmt.Fprintf(&sb, `<text x="600" y="390" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="28" fill="%s">Built with Golementor</text>`, esc(colors["text"]))
+	fmt.Fprintf(&sb, `<text x="600" y="390" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="28" fill="%s">Built with Pursae Web Builder</text>`, esc(colors["text"]))
 	fmt.Fprintf(&sb, `<rect x="510" y="425" width="180" height="46" rx="23" fill="%s"/>`, esc(colors["accent"]))
 	for i := 0; i < 3; i++ {
 		x := 80 + i*360
@@ -497,7 +497,7 @@ func (s *Server) gweExportTheme(c *gin.Context, slug string) ([]byte, error) {
 			}
 		}
 	}
-	manifest := map[string]any{"theme": snap, "screenshot": screenshot, "generator": "WordPress Go " + Version}
+	manifest := map[string]any{"theme": snap, "screenshot": screenshot, "generator": "Pursae " + Version}
 	mb, _ := json.MarshalIndent(manifest, "", "\t")
 	w, err := zw.Create("manifest.json")
 	if err != nil {
@@ -548,7 +548,7 @@ func (s *Server) gweImportTheme(c *gin.Context, data []byte, activate bool) (str
 		Screenshot string       `json:"screenshot"`
 	}
 	if err := json.Unmarshal(mb, &manifest); err != nil || manifest.Theme == nil || manifest.Theme.Format != gweThemeFormat {
-		return "", errors.New("The archive is not a Golementor theme.")
+		return "", errors.New("The archive is not a Pursae Web Builder theme.")
 	}
 	snap := manifest.Theme
 	// Media: new attachments, then rewrite ids and URLs in the parts and the kit.

@@ -346,7 +346,7 @@ func (s *Server) gweProAction(c *gin.Context, action string, data map[string]any
 	case "pro_forms_panel_action_data", "pro_assets_manager_panel_action_data":
 		return map[string]any{}, true, nil
 	case "pro_assets_manager_custom_icon_upload":
-		return nil, true, gweFail(http.StatusBadRequest, "Upload custom icon sets under Golementor › Custom Icons.")
+		return nil, true, gweFail(http.StatusBadRequest, "Upload custom icon sets under Pursae Web Builder › Custom Icons.")
 	case "app_site_editor_template_types":
 		return []any{}, true, nil
 	case "display_conditions_set_cache_notice_status", "screenshot_save", "screenshot_failed", "screenshot_delete",

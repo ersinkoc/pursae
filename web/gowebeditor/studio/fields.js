@@ -1,4 +1,4 @@
-/* Golementor Studio — inspector fields. Each field reads an element setting and writes it back
+/* Pursae Web Builder Studio — inspector fields. Each field reads an element setting and writes it back
    with document/elements/settings (or document/globals/settings for kit colors). Responsive fields
    write the _tablet/_mobile key while the device switcher is on tablet/mobile. */
 (function () {

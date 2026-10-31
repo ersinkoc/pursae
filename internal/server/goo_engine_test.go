@@ -23,13 +23,13 @@ func gooSite(t *testing.T) (string, *http.Client, *Server) {
 	_, body, _ := get(t, c, ts.URL+"/wp-admin/plugins")
 	m := regexp.MustCompile(`href="(/wp-admin/plugins\?action=activate&amp;plugin=goocommerce[^"]*)"`).FindStringSubmatch(body)
 	if m == nil {
-		t.Fatal("no Activate link for Goocommerce on the Plugins screen")
+		t.Fatal("no Activate link for Pursae Commerce on the Plugins screen")
 	}
 	if code, _, loc := get(t, c, ts.URL+html.UnescapeString(m[1])); code != http.StatusFound || !strings.Contains(loc, "activate=true") {
-		t.Fatalf("activate Goocommerce: %d %s", code, loc)
+		t.Fatalf("activate Pursae Commerce: %d %s", code, loc)
 	}
 	if !srv.gooOn() {
-		t.Fatal("Goocommerce is not active after activation")
+		t.Fatal("Pursae Commerce is not active after activation")
 	}
 	return ts.URL, c, srv
 }
@@ -66,7 +66,7 @@ func TestGooOffByDefault(t *testing.T) {
 	ts, c, srv := testServerBuilderOff(t)
 	installAndLogin(t, ts, c)
 	if srv.gooOn() {
-		t.Fatal("Goocommerce is active on a fresh install")
+		t.Fatal("Pursae Commerce is active on a fresh install")
 	}
 	for _, u := range []string{"/wp-admin/goocommerce", "/wp-admin/goocommerce?page=orders", gooAssets + "/css/.keep"} {
 		if code, _, _ := get(t, c, ts.URL+u); code != http.StatusNotFound {
@@ -74,7 +74,7 @@ func TestGooOffByDefault(t *testing.T) {
 		}
 	}
 	if _, body, _ := get(t, c, ts.URL+"/wp-admin/"); strings.Contains(body, "toplevel_page_goocommerce") {
-		t.Error("the Goocommerce menu shows while the plugin is off")
+		t.Error("the Pursae Commerce menu shows while the plugin is off")
 	}
 }
 

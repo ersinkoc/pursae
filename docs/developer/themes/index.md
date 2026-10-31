@@ -5,19 +5,19 @@ weight: 10
 section: themes
 ---
 
-WordPress Go renders the site with Go `html/template` files. A theme is a set of those templates
+Pursae renders the site with Go `html/template` files. A theme is a set of those templates
 plus assets, a description of the widget areas, menu locations and Customizer options it offers,
 and the styles and scripts it loads. There are two kinds:
 
 | | Bundled Go themes | Theme packages |
 |---|---|---|
-| Examples | Twenty Sixteen, Twenty Seventeen, Twenty Twenty, Twenty Twenty-One, Hello Golementor, Classic | anything you upload |
+| Examples | Twenty Sixteen, Twenty Seventeen, Twenty Twenty, Twenty Twenty-One, Hello Pursae Web Builder, Classic | anything you upload |
 | Where | compiled into the binary (`web/themes/<slug>/` + a `theme_<slug>.go`) | `<data>/themes/<slug>/` (`WPGO_THEMES_DIR`) |
 | `functions.php` equivalent | Go code: a `*Theme` registered at start-up with hooks for `wp_head`, body classes, template data | `theme.json`: everything a Go theme registers in code, declared as data |
-| Install | ship with WordPress Go | Appearance › Themes › Add Theme › Upload, or from the [marketplace](../hub/marketplace.md) |
+| Install | ship with Pursae | Appearance › Themes › Add Theme › Upload, or from the [marketplace](../hub/marketplace.md) |
 | Code | yes (Go, reviewed with the core) | **none** — templates, CSS, JS, images. Not signed; verified by SHA-256 |
 
-This section is about **theme packages**: what you write to make a theme for WordPress Go.
+This section is about **theme packages**: what you write to make a theme for Pursae.
 Everything a package can express is also what the bundled Classic theme uses, so its templates in
 `web/themes/classic/templates` are the reference implementation.
 
@@ -38,11 +38,11 @@ the loop, pagination, comments, menus, widget areas, the admin bar — and the t
 to print it. A theme never queries the database or sanitises input; it formats data the core
 already prepared, which is why packages can be code-free and safe to install.
 
-## Golementor themes
+## Pursae Web Builder themes
 
-The page builder brings its own base theme, **Hello Golementor**, and can save a complete site
+The page builder brings its own base theme, **Hello Pursae Web Builder**, and can save a complete site
 design (header, footer, templates, global styles) as a theme of its own
-([Golementor](golementor.md)). Those live in the database, not as packages.
+([Pursae Web Builder](golementor.md)). Those live in the database, not as packages.
 
 ## Editing on a live site
 

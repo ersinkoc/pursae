@@ -98,7 +98,7 @@ func gweOutboundDo(ctx context.Context, method, raw string, header http.Header, 
 		req.Header[k] = v
 	}
 	if req.Header.Get("User-Agent") == "" {
-		req.Header.Set("User-Agent", "Golementor Forms")
+		req.Header.Set("User-Agent", "Pursae Web Builder Forms")
 	}
 	rt := gweOutboundTransport
 	if rt == nil {
@@ -1056,7 +1056,7 @@ func (s *Server) gweSlackRun(ctx context.Context, rec *gweFormRecord) error {
 		att["fields"] = fields
 	}
 	if rec.setting("slack_add_ts") == "yes" {
-		att["footer"] = "Powered by Golementor"
+		att["footer"] = "Powered by Pursae Web Builder"
 		att["ts"] = time.Now().Unix()
 	}
 	data["attachments"] = []any{att}
@@ -1095,7 +1095,7 @@ func (s *Server) gweDiscordRun(ctx context.Context, rec *gweFormRecord) error {
 	embed := map[string]any{
 		"title":       or("discord_title", "A new Submission"),
 		"description": or("discord_content", "A new Form Submission has been received"),
-		"author":      map[string]any{"name": or("discord_username", "Golementor Forms"), "url": page, "icon_url": icon},
+		"author":      map[string]any{"name": or("discord_username", "Pursae Web Builder Forms"), "url": page, "icon_url": icon},
 		"url":         page, "color": color,
 	}
 	if rec.setting("discord_form_data") == "yes" {
@@ -1107,7 +1107,7 @@ func (s *Server) gweDiscordRun(ctx context.Context, rec *gweFormRecord) error {
 	}
 	if rec.setting("discord_ts") == "yes" {
 		embed["timestamp"] = time.Now().UTC().Format("2006-01-02T15:04:05-0700")
-		embed["footer"] = map[string]any{"text": "Powered by Golementor"}
+		embed["footer"] = map[string]any{"text": "Powered by Pursae Web Builder"}
 	}
 	b, _ := json.Marshal(map[string]any{"embeds": []any{embed}})
 	res, err := gweOutboundDo(ctx, http.MethodPost, hook, http.Header{"Content-Type": {"application/json; charset=utf-8"}}, b,

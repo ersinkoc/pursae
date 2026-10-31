@@ -24,7 +24,7 @@ func gontactLink(t *testing.T, c *http.Client, base, action string) string {
 	_, body, _ := get(t, c, base+"/wp-admin/plugins")
 	m := regexp.MustCompile(`href="(/wp-admin/plugins\?action=` + action + `&amp;plugin=gontact-form[^"]*)"`).FindStringSubmatch(body)
 	if m == nil {
-		t.Fatalf("no %s link for Gontact Form on the Plugins screen", action)
+		t.Fatalf("no %s link for Pursae Contact Form on the Plugins screen", action)
 	}
 	return html.UnescapeString(m[1])
 }
@@ -37,7 +37,7 @@ func gontactSetup(t *testing.T, on bool) (string, *http.Client, *Server) {
 	if on {
 		code, _, loc := get(t, c, ts.URL+gontactLink(t, c, ts.URL, "activate"))
 		if code != http.StatusFound || !strings.Contains(loc, "activate=true") {
-			t.Fatalf("activate Gontact Form: %d %s", code, loc)
+			t.Fatalf("activate Pursae Contact Form: %d %s", code, loc)
 		}
 	}
 	return ts.URL, c, srv
@@ -108,7 +108,7 @@ func multipartPost(t *testing.T, c *http.Client, u string, fields map[string]str
 	return resp.StatusCode, out, string(b)
 }
 
-const testUA = "Mozilla/5.0 (Gontact test)"
+const testUA = "Mozilla/5.0 (Pursae Contact Form test)"
 
 // mailJobs returns the payloads of the queued wp_mail jobs.
 func mailJobs(t *testing.T, srv *Server) []map[string]any {
@@ -132,11 +132,11 @@ func mailJobs(t *testing.T, srv *Server) []map[string]any {
 func TestGontactOffByDefault(t *testing.T) {
 	base, c, srv := gontactSetup(t, false)
 	if srv.gontactOn() {
-		t.Fatal("Gontact Form is on after a fresh install")
+		t.Fatal("Pursae Contact Form is on after a fresh install")
 	}
 	_, body, _ := get(t, c, base+"/wp-admin/plugins")
 	if row := regexp.MustCompile(`(?s)<tr class="(\w+)" data-slug="gontact-form"`).FindStringSubmatch(body); row == nil || row[1] != "inactive" {
-		t.Fatalf("Gontact Form is not listed as an inactive plugin: %v", row)
+		t.Fatalf("Pursae Contact Form is not listed as an inactive plugin: %v", row)
 	}
 	if strings.Contains(body, "toplevel_page_wpcf7") {
 		t.Fatal("the Contact menu is shown while the plugin is off")

@@ -16,7 +16,7 @@ import (
 // Defaults mirrors populate_options() of a fresh WordPress install. Keys keep
 // the WordPress option names so REST and import code can map 1:1.
 var Defaults = map[string]any{
-	"blogname":                      "My WordPress Go Site",
+	"blogname":                      "My Pursae Site",
 	"blogdescription":               "",
 	"siteurl":                       "",
 	"home":                          "",

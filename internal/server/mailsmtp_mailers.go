@@ -26,7 +26,7 @@ var msSESRegions = [][2]string{{"us-east-1", "US East (N. Virginia)"}, {"us-east
 
 var msMailers = []msMailerDef{
 	{Slug: "mail", Title: "Default (none)", Color: "#646970",
-		Desc: "You currently have the Default (none) mailer selected, which won't improve email deliverability. WordPress Go then sends with its built-in transport: the WPGO_SMTP_* environment variables, or .eml files in the mail directory on development sites."},
+		Desc: "You currently have the Default (none) mailer selected, which won't improve email deliverability. Pursae then sends with its built-in transport: the WPGO_SMTP_* environment variables, or .eml files in the mail directory on development sites."},
 	{Slug: "sendlayer", Title: "SendLayer", Recommended: true, Color: "#0d6efd", Docs: "https://sendlayer.com",
 		Desc:   "SendLayer is our #1 recommended mailer. Its affordable pricing and simple setup make it the perfect choice for WordPress sites.",
 		Fields: []msField{{Key: "api_key", Label: "API Key", Type: "password", Desc: "Follow this link to get an API Key from SendLayer: Get API Key."}}},
@@ -91,7 +91,7 @@ var msMailers = []msMailerDef{
 			{"in", "India (IN)"}, {"com.cn", "China (CN)"}, {"com.au", "Australia (AU)"}, {"jp", "Japan (JP)"}, {"ca", "Canada (CA)"}, {"sa", "Saudi Arabia (SA)"}}},
 			{Key: "client_id", Label: "Client ID", Type: "text"}, {Key: "client_secret", Label: "Client Secret", Type: "password"}}},
 	{Slug: "smtp", Title: "Other SMTP", Color: "#3c434a",
-		Desc: "Use the SMTP details provided by your hosting provider or email service. To see recommended settings for the popular services as well as troubleshooting tips, check out the WP Mail SMTP documentation.",
+		Desc: "Use the SMTP details provided by your hosting provider or email service. To see recommended settings for the popular services as well as troubleshooting tips, check out the Pursae SMTP documentation.",
 		Fields: []msField{{Key: "host", Label: "SMTP Host", Type: "text"},
 			{Key: "encryption", Label: "Encryption", Type: "radio", Default: "none", Options: [][2]string{{"none", "None"}, {"ssl", "SSL"}, {"tls", "TLS"}},
 				Desc: "For most servers TLS is the recommended option. If your SMTP provider offers both SSL and TLS options, we recommend using TLS."},

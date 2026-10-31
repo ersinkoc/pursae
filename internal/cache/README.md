@@ -1,6 +1,6 @@
 # wpgo-cache
 
-Full-page cache for WordPress Go, modeled on LiteSpeed Cache but server-agnostic:
+Full-page cache for Pursae, modeled on LiteSpeed Cache but server-agnostic:
 pages are cached inside the Go process (memory LRU, optional disk persistence),
 purged by tags, and annotated with headers so a front proxy can cache them too.
 

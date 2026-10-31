@@ -111,7 +111,7 @@ func TestThemeLibraryAPackages(t *testing.T) {
 			if err != nil {
 				t.Fatalf("package: %v", err)
 			}
-			if m.Slug != slug || m.Version != "1.0.0" || m.RequiresCore != "0.1.0" || m.Author != "WordPress Go" {
+			if m.Slug != slug || m.Version != "1.0.0" || m.RequiresCore != "0.1.0" || m.Author != "Pursae" {
 				t.Fatalf("manifest identity: %s %s %s %s", m.Slug, m.Version, m.RequiresCore, m.Author)
 			}
 			if _, err := loadThemePackage(dir, slug); err != nil {

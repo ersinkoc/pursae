@@ -136,7 +136,7 @@
 {{end}}
 
 {{else if eq .Page "dashboard"}}
-<h1 class="wp-heading-inline"><span class="dashicons dashicons-shield" style="font-size:28px;width:28px;height:28px;margin-right:6px;color:#2271b1"></span>AdminSecGo</h1>
+<h1 class="wp-heading-inline"><span class="dashicons dashicons-shield" style="font-size:28px;width:28px;height:28px;margin-right:6px;color:#2271b1"></span>Pursae Security</h1>
 <hr class="wp-header-end">
 {{template "notices" $}}
 <div class="asg-cards">
@@ -156,7 +156,7 @@
 <p><a href="/wp-admin/admin?page=adminsecgo-log">View the activity log &rarr;</a></p>{{else}}<p>Nothing logged yet.</p>{{end}}</div>
 
 {{else if eq .Page "settings"}}
-<h1 class="wp-heading-inline">AdminSecGo Settings</h1>
+<h1 class="wp-heading-inline">Pursae Security Settings</h1>
 <hr class="wp-header-end">
 {{template "notices" $}}
 <nav class="nav-tab-wrapper wp-clearfix" aria-label="Secondary menu">{{range .Tabs}}<a href="/wp-admin/admin?page=adminsecgo-settings&amp;tab={{index . 0}}" class="nav-tab{{if eq (index . 0) $.Data.Tab}} nav-tab-active{{end}}">{{index . 1}}</a>{{end}}</nav>
@@ -230,7 +230,7 @@
 {{else if eq .Tab "hardening"}}
 <h2 class="title">Security headers</h2>
 <table class="form-table" role="presentation">
-<tr><th scope="row">Headers</th><td><label><input type="checkbox" name="headers" value="1"{{if .S.Headers}} checked{{end}}> Send the headers below on every response</label><p class="description">The Content-Security-Policy stays WordPress Go's own; it is not changed here.</p></td></tr>
+<tr><th scope="row">Headers</th><td><label><input type="checkbox" name="headers" value="1"{{if .S.Headers}} checked{{end}}> Send the headers below on every response</label><p class="description">The Content-Security-Policy stays Pursae's own; it is not changed here.</p></td></tr>
 <tr><th scope="row"><label for="frame_options">X-Frame-Options</label></th><td><select name="frame_options" id="frame_options"><option value="SAMEORIGIN"{{if eq .S.FrameOptions "SAMEORIGIN"}} selected{{end}}>SAMEORIGIN</option><option value="DENY"{{if eq .S.FrameOptions "DENY"}} selected{{end}}>DENY (breaks same-site previews and page-builder frames)</option></select></td></tr>
 <tr><th scope="row"><label for="referrer_policy">Referrer-Policy</label></th><td><input type="text" class="regular-text" name="referrer_policy" id="referrer_policy" value="{{.S.ReferrerPolicy}}"></td></tr>
 <tr><th scope="row"><label for="permissions_policy">Permissions-Policy</label></th><td><textarea name="permissions_policy" id="permissions_policy" rows="2" class="large-text code">{{.S.PermissionsPolicy}}</textarea></td></tr>
@@ -241,7 +241,7 @@
 <h2 class="title">Hardening</h2>
 <table class="form-table" role="presentation">
 <tr><th scope="row">File editors</th><td><label><input type="checkbox" name="disable_file_edit" value="1"{{if .S.DisableFileEdit}} checked{{end}}> Disable the Theme File Editor and Plugin File Editor (DISALLOW_FILE_EDIT)</label></td></tr>
-<tr><th scope="row">Version</th><td><label><input type="checkbox" name="hide_version" value="1"{{if .S.HideVersion}} checked{{end}}> Hide the WordPress Go version from front-end markup and feeds (generator tag, <code>?ver=</code>)</label></td></tr>
+<tr><th scope="row">Version</th><td><label><input type="checkbox" name="hide_version" value="1"{{if .S.HideVersion}} checked{{end}}> Hide the Pursae version from front-end markup and feeds (generator tag, <code>?ver=</code>)</label></td></tr>
 <tr><th scope="row">REST API</th><td><label><input type="checkbox" name="rest_restrict" value="1"{{if .S.RESTVisitors}} checked{{end}}> Only logged-in users and Application Passwords may use the REST API</label>
 	<p class="description">Visitors keep oEmbed and the contact form routes, plus the route prefixes below (one per line, like <code>wp/v2/posts</code>). The block editor, headless front ends and apps that read the API without logging in stop working.</p>
 	<textarea name="rest_allow" rows="3" class="large-text code" aria-label="Extra REST routes for visitors">{{.S.RESTAllow}}</textarea></td></tr>

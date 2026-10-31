@@ -114,7 +114,7 @@
 .seogo-product[hidden] { display: none; }
 .seogo-termbox { margin-top: 24px; }
 
-/* Gotenberg sidebar: the box without its postbox chrome */
+/* Pursae Editor sidebar: the box without its postbox chrome */
 .seogo-sidebar .seogo-box { border: 0; box-shadow: none; margin: 0; }
 .seogo-sidebar .seogo-box > .postbox-header { display: none; }
 .seogo-sidebar .seogo-box > .inside { padding: 0 16px 16px; margin: 0; }

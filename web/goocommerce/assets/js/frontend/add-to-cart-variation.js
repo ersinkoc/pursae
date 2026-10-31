@@ -1,4 +1,4 @@
-/* Goocommerce variation forms (add-to-cart-variation.js): matches the chosen attributes against
+/* Pursae Commerce variation forms (add-to-cart-variation.js): matches the chosen attributes against
    data-product_variations (or asks ?goo-ajax=get_variation for large products), shows the variation's
    price, stock and description, sets variation_id, swaps the image and the SKU, and greys out the
    values no variation offers. */

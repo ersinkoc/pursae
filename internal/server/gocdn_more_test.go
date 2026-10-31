@@ -576,7 +576,7 @@ func TestGoCDNFetchBack(t *testing.T) {
 	_ = s.srv.settings.Set(context.Background(), map[string]any{gocdnSetting: false, gocdnFallbackOption: false})
 	s.srv.gocdnFetchBack(context.Background(), s.srv.gocdnLocalPath(srel))
 	if _, err := os.Stat(s.srv.gocdnLocalPath(srel)); !os.IsNotExist(err) {
-		t.Error("fetched back while GoCDN is off without the fallback")
+		t.Error("fetched back while Pursae CDN is off without the fallback")
 	}
 }
 
@@ -737,6 +737,6 @@ func TestGoCDNMediaModalRemoteTab(t *testing.T) {
 	_ = s.srv.settings.Set(context.Background(), map[string]any{gocdnSetting: false})
 	_, body, _ = get(t, s.c, s.ts.URL+"/wp-admin/upload")
 	if strings.Contains(body, "gocdnModal") {
-		t.Error("the tab is added while GoCDN is off")
+		t.Error("the tab is added while Pursae CDN is off")
 	}
 }

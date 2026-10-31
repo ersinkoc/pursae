@@ -1,16 +1,16 @@
 ---
 title: Plugins overview
-description: How WordPress Go plugins work — WebAssembly in a sandbox, permissions you approve, signed packages — and what the SDK offers.
+description: How Pursae plugins work — WebAssembly in a sandbox, permissions you approve, signed packages — and what the SDK offers.
 weight: 10
 section: plugins
 ---
 
-A WordPress Go plugin is a Go program compiled to **WebAssembly** and packed in a signed zip. The
+A Pursae plugin is a Go program compiled to **WebAssembly** and packed in a signed zip. The
 site runs it in a sandbox ([wazero](https://wazero.io), pure Go) and lets it reach the site only
 through a small host API gated by **permissions** the administrator approves when activating it.
 
 ```text
-┌──────────── WordPress Go ────────────┐      ┌──── plugin.wasm (sandbox) ────┐
+┌──────────── Pursae ────────────┐      ┌──── plugin.wasm (sandbox) ────┐
 │ the_content ──► hooks ───────────────┼─────►│ wpgo.AddFilter("the_content") │
 │ [tag] ───────► shortcodes ───────────┼─────►│ wpgo.AddShortcode("tag")      │
 │ /wp-json/<slug>/v1/… ► REST routes ──┼─────►│ wpgo.RegisterRestRoute(...)   │
@@ -28,7 +28,7 @@ through a small host API gated by **permissions** the administrator approves whe
 - **Containment.** A panic, an infinite loop or `os.Exit` in a plugin is caught: the call times
   out or fails, the filter keeps its original value, the module is re-instantiated. After five
   consecutive failures the plugin is disabled and the admin sees why.
-- **Portability.** One `plugin.wasm` runs on every platform WordPress Go runs on. The SDK is Go
+- **Portability.** One `plugin.wasm` runs on every platform Pursae runs on. The SDK is Go
   today (`wpgo/sdk/go/wpgo`); the ABI is plain JSON, so other languages can follow.
 
 ## What a plugin can do

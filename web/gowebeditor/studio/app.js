@@ -1,4 +1,4 @@
-/* Golementor Studio — the app: top bar (menu, page switcher, devices, undo/redo, Advanced, preview,
+/* Pursae Web Builder Studio — the app: top bar (menu, page switcher, devices, undo/redo, Advanced, preview,
    save/publish), the left rail (Add, Edit, Layers, Site), the upstream panel overlay for Advanced
    settings, and the wiring that keeps everything in step with the editor. */
 (function () {
@@ -48,7 +48,7 @@
 			menuItem('Exit to dashboard', null, 'back', urls.exit_to_dashboard || L.dashboard),
 			menuItem('Site setup', null, 'brush', L.siteSetup),
 			menuItem('Theme Builder', null, 'layers', L.themeBuilder),
-			menuItem('Golementor settings', null, 'gear', L.settings),
+			menuItem('Pursae Web Builder settings', null, 'gear', L.settings),
 			h('hr.gwe-sep'),
 			menuItem('Editor preferences', () => { S.openUpstream(); $e.route('panel/editor-preferences'); }, 'edit'),
 			menuItem('History and revisions', () => { S.openUpstream(); $e.route('panel/history/revisions'); }, 'history'),
@@ -74,7 +74,7 @@
 
 	// --- top bar ------------------------------------------------------------------------------
 	function topBar() {
-		const logo = h('button.gwe-logo', { type: 'button', 'aria-label': 'Golementor menu', 'aria-haspopup': 'menu', 'aria-expanded': 'false', title: 'Golementor menu', onClick: (e) => logoMenu(e.currentTarget) },
+		const logo = h('button.gwe-logo', { type: 'button', 'aria-label': 'Pursae Web Builder menu', 'aria-haspopup': 'menu', 'aria-expanded': 'false', title: 'Pursae Web Builder menu', onClick: (e) => logoMenu(e.currentTarget) },
 			h('img', { src: S.cfg.assets + 'images/gopher.png', alt: '', width: 26, height: 26 }), S.icon('down', 14));
 		els.pageTitle = h('span.gwe-page-title');
 		els.pageStatus = h('span.gwe-badge');
@@ -95,14 +95,14 @@
 		});
 		els.undo = S.iconButton('undo', 'Undo', () => S.run('document/history/undo'), { 'aria-keyshortcuts': 'Control+Z' });
 		els.redo = S.iconButton('redo', 'Redo', () => S.run('document/history/redo'), { 'aria-keyshortcuts': 'Control+Shift+Z' });
-		els.advanced = h('button.gwe-advanced', { type: 'button', role: 'switch', 'aria-checked': 'false', title: 'Show the full Golementor panel', onClick: () => window.GWEStudioToggle.toAdvanced() }, h('span.gwe-switch-track', { 'aria-hidden': 'true' }), h('span', { text: 'Advanced' }));
+		els.advanced = h('button.gwe-advanced', { type: 'button', role: 'switch', 'aria-checked': 'false', title: 'Show the full Pursae Web Builder panel', onClick: () => window.GWEStudioToggle.toAdvanced() }, h('span.gwe-switch-track', { 'aria-hidden': 'true' }), h('span', { text: 'Advanced' }));
 		const preview = S.iconButton('eye', 'Preview in a new tab', () => {
 			const d = S.doc();
 			if (d) { S.run('editor/documents/preview', { id: d.id, force: true }); }
 		});
 		els.draft = h('button.gwe-btn', { type: 'button', text: 'Save draft', onClick: () => save('draft') });
 		els.publish = h('button.gwe-btn.is-primary', { type: 'button', text: 'Publish', onClick: () => save('publish') });
-		els.top = h('header#gwe-studio-top', { role: 'banner', 'aria-label': 'Golementor Studio' },
+		els.top = h('header#gwe-studio-top', { role: 'banner', 'aria-label': 'Pursae Web Builder Studio' },
 			h('div.gwe-top-l', null, logo, h('span.gwe-top-sep'), page),
 			h('div.gwe-top-c', null, els.devices),
 			h('div.gwe-top-r', null, els.undo, els.redo, h('span.gwe-top-sep'), els.advanced, preview, h('span.gwe-top-sep'), els.draft, els.publish));

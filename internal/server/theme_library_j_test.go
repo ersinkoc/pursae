@@ -235,7 +235,7 @@ func TestThemeLibraryJ(t *testing.T) {
 			if err != nil {
 				t.Fatalf("theme.json: %v", err)
 			}
-			if m.Category == "" || m.Style == "" || m.Demo != "demo/demo.json" || m.Version != "1.0.0" || m.Author != "WordPress Go" || m.RequiresCore != "0.1.0" {
+			if m.Category == "" || m.Style == "" || m.Demo != "demo/demo.json" || m.Version != "1.0.0" || m.Author != "Pursae" || m.RequiresCore != "0.1.0" {
 				t.Fatalf("library metadata: %q %q %q %s %s", m.Category, m.Style, m.Demo, m.Version, m.Author)
 			}
 			nset := 0

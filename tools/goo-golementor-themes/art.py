@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Draws the demo images of the Golementor store themes: flat, soft-gradient illustrations with a
+"""Draws the demo images of the Pursae Web Builder store themes: flat, soft-gradient illustrations with a
 subtle grain, a floor line and soft shadows, in each theme's palette. Original artwork, dedicated to
 the public domain (CC0). Needs Pillow.
 

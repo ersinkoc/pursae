@@ -1,4 +1,4 @@
-/* Goocommerce Wishlists: the heart buttons post to /?goo-ajax=wishlist_toggle without reloading. */
+/* Pursae Commerce Wishlists: the heart buttons post to /?goo-ajax=wishlist_toggle without reloading. */
 (function () {
 	'use strict';
 	var script = document.getElementById('goo-ext-wishlist-js');

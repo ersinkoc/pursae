@@ -42,7 +42,7 @@ func (s *Server) gweDesignItems(c *gin.Context) []map[string]any {
 		out = append(out, map[string]any{
 			"template_id": d.ID, "source": "remote", "type": "page", "subtype": "page", "title": d.Title,
 			"thumbnail": lb.HomeURL(gweAssetsPath + "images/designs/" + strings.TrimPrefix(d.ID, "gwe-") + ".svg"),
-			"date":      1793000000 - i, "human_date": "", "author": "Golementor", "tags": []any{"Homepage"},
+			"date":      1793000000 - i, "human_date": "", "author": "Pursae Web Builder", "tags": []any{"Homepage"},
 			"isPro": false, "accessLevel": 0, "accessTier": "free", "popularityIndex": 100 - i, "trendIndex": 100 - i,
 			"hasPageSettings": false, "url": "", "favorite": false,
 		})

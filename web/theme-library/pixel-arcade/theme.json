@@ -3,7 +3,7 @@
   "name": "Pixel Arcade",
   "version": "1.0.0",
   "description": "A retro-futuristic dark theme for video game news and reviews. An 8-bit HUD bar, a pixel-art hero screen, review cards with score badges, verdict boxes, platform chips, an upcoming-releases high-score table and optional CRT scanlines. Colours, pixel corners, fonts, layout and the hero are set in the Customizer.",
-  "author": "WordPress Go",
+  "author": "Pursae",
   "author_url": "https://github.com/boracomet/wordpress-go",
   "theme_url": "https://github.com/boracomet/wordpress-go/tree/main/web/theme-library/pixel-arcade",
   "tags": [

@@ -231,7 +231,7 @@ func (s *Server) gweAction(c *gin.Context, action string, raw json.RawMessage, e
 		return true, err
 	case "get_templates_quota", "get_folders", "create_folder", "get_item_children", "search_templates", "load_more_templates",
 		"bulk_undo_delete_items", "import_template", "import_from_json":
-		return nil, gweFail(http.StatusBadRequest, "The cloud template library is not available in Golementor.")
+		return nil, gweFail(http.StatusBadRequest, "The cloud template library is not available in Pursae Web Builder.")
 	}
 	if strings.HasPrefix(action, "save_") && strings.HasSuffix(action, "_settings") {
 		name := strings.TrimSuffix(strings.TrimPrefix(action, "save_"), "_settings")

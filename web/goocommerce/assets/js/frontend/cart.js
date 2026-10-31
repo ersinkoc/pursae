@@ -1,4 +1,4 @@
-/* Goocommerce cart page (cart.js): the shipping calculator toggle, shipping method choice and coupons
+/* Pursae Commerce cart page (cart.js): the shipping calculator toggle, shipping method choice and coupons
    by AJAX, and the Update cart button enabled once a quantity changes. Every action also works as a
    plain form post. */
 (function () {

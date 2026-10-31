@@ -105,7 +105,7 @@ func TestCatalogLookups(t *testing.T) {
 			t.Errorf("N(%d) = %s, want %s", n, got, want)
 		}
 	}
-	if got := c.T("Forms"); got != "Formularze Gontact Form" {
+	if got := c.T("Forms"); got != "Formularze Pursae Contact Form" {
 		t.Errorf("plugin pack not rebranded: %s", got)
 	}
 	if !testManager(t).Catalog("en_US").Empty() {
@@ -115,7 +115,7 @@ func TestCatalogLookups(t *testing.T) {
 
 func TestTranslateHTML(t *testing.T) {
 	c := testManager(t).Catalog("pl_PL")
-	in := `<html lang="en-US"><head><title>Page Title &lsaquo; Site &#8212; WordPress Go</title></head><body>` +
+	in := `<html lang="en-US"><head><title>Page Title &lsaquo; Site &#8212; Pursae</title></head><body>` +
 		`<h1>Posts</h1><a class="row-title" translate="no"><span>Settings</span></a><p>Settings</p>` +
 		`<input type="submit" value="Save Changes"><input placeholder="Search Posts"><input type="text" value="Settings">` +
 		`<span>3 items</span><span>21 items</span><b>Add New Post</b><p>Tagline</p>` +
@@ -175,8 +175,8 @@ func TestEscapeAndLanguages(t *testing.T) {
 	if got := m.Installed(); len(got) != 1 || got[0] != "pl_PL" {
 		t.Errorf("Installed: %v", got)
 	}
-	if rebrandString("Elementor and Golementor") != "Golementor and Golementor" {
-		t.Error(rebrandString("Elementor and Golementor"))
+	if rebrandString("Elementor and Pursae Web Builder") != "Pursae Web Builder and Pursae Web Builder" {
+		t.Error(rebrandString("Elementor and Pursae Web Builder"))
 	}
 }
 
@@ -234,7 +234,7 @@ func TestInstallAndScriptTranslations(t *testing.T) {
 	if got := string(m.ScriptTranslations("pl_PL", "/wp-includes/js/dist/editor.min.js", "")); !strings.Contains(got, `"Publish":["Opublikuj"]`) {
 		t.Errorf("script translations: %s", got)
 	}
-	if got := string(m.PluginScriptTranslations("pl_PL", "elementor")); !strings.Contains(got, "Edytuj w Golementor") {
+	if got := string(m.PluginScriptTranslations("pl_PL", "elementor")); !strings.Contains(got, "Edytuj w Pursae Web Builder") {
 		t.Errorf("plugin script translations: %s", got)
 	}
 	if err := m.Install(context.Background(), &Installer{API: srv.URL}, "xx_XX", nil); err == nil {
@@ -249,7 +249,7 @@ func TestUpstreamNames(t *testing.T) {
 		"What&#8217;s new":                          "Neuigkeiten",
 	}), 0o644)
 	c := NewManager(dir, nil).Catalog("de_DE")
-	if tr, ok := c.Lookup("You have the latest version of WordPress Go."); !ok || tr != "Du hast die neueste Version von WordPress Go." {
+	if tr, ok := c.Lookup("You have the latest version of Pursae."); !ok || tr != "Du hast die neueste Version von Pursae." {
 		t.Errorf("upstream name: %q %v", tr, ok)
 	}
 	if tr, ok := c.Lookup("What’s new"); !ok || tr != "Neuigkeiten" {
@@ -298,7 +298,7 @@ func TestTranslateParts(t *testing.T) {
 		"Shop (ID: 5)":               "Sklep (ID: 5)",
 		"&gt; Add zone":              "&gt; Dodaj strefę",
 		"October 5, 2026":            "5 październik 2026",
-		"Customize Hello Golementor": "Dostosuj Hello Golementor",
+		"Customize Hello Pursae Web Builder": "Dostosuj Hello Pursae Web Builder",
 	} {
 		if got, ok := c.translateText(in); !ok || got != want {
 			t.Errorf("%q: got %q (%v), want %q", in, got, ok, want)

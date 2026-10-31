@@ -3,7 +3,7 @@
   "name": "Inkwell",
   "version": "1.0.0",
   "description": "A classic editorial blog theme for writers: a centered masthead between ornamental rules, refined Playfair Display headlines over Crimson Pro text, a generous reading measure, drop caps, small-caps meta and footnote-like captions on ivory paper. The sidebar can sit right, left or be switched off, and colors, type, lists and the masthead are all set in the Customizer.",
-  "author": "WordPress Go",
+  "author": "Pursae",
   "author_url": "https://github.com/boracomet/wordpress-go",
   "theme_url": "https://github.com/boracomet/wordpress-go/tree/main/web/theme-library/inkwell",
   "tags": ["Blog", "Two Columns", "Right Sidebar", "Left Sidebar", "One Column", "Custom Colors", "Custom Logo", "Custom Menu", "Editor Style", "Featured Images", "Threaded Comments", "Wide Blocks"],

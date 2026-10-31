@@ -36,7 +36,7 @@
 </style>
 <div class="wrap wpms-wrap">
 {{if eq .Page "wp-mail-smtp-setup-wizard"}}{{template "mailsmtp-wizard" .}}{{else}}
-<h1 class="wp-heading-inline wpms-logo"><span class="dashicons dashicons-email-alt"></span>{{if eq .Page "wp-mail-smtp"}}WP Mail SMTP Settings{{else if eq .Page "wp-mail-smtp-logs"}}Email Log{{else if eq .Page "wp-mail-smtp-reports"}}Email Reports{{else}}Tools{{end}}</h1>
+<h1 class="wp-heading-inline wpms-logo"><span class="dashicons dashicons-email-alt"></span>{{if eq .Page "wp-mail-smtp"}}Pursae SMTP Settings{{else if eq .Page "wp-mail-smtp-logs"}}Email Log{{else if eq .Page "wp-mail-smtp-reports"}}Email Reports{{else}}Tools{{end}}</h1>
 {{if and (eq .Page "wp-mail-smtp-logs") (not .Entry)}}{{if .Logs}}<a href="#" class="page-title-action wpms-noprint" onclick="document.getElementById('wpms-delete-all').submit();return false">Delete All Logs</a>{{end}}{{end}}
 <hr class="wp-header-end">
 {{template "notices" $}}
@@ -74,7 +74,7 @@
 {{template "mailsmtp-conn-form" .}}
 <div class="wpms-section">
 <h2>Backup Connection</h2>
-<p class="description">Don't worry about losing emails. Pick an additional connection to use as a backup: if the primary connection fails, WP Mail SMTP sends the email through the backup connection.</p>
+<p class="description">Don't worry about losing emails. Pick an additional connection to use as a backup: if the primary connection fails, Pursae SMTP sends the email through the backup connection.</p>
 <table class="form-table" role="presentation"><tr><th scope="row"><label for="backup_connection">Backup Connection</label></th><td>
 {{if .O.Connections}}<select name="backup_connection" id="backup_connection">{{range .Backups}}<option value="{{.Value}}"{{if .Checked}} selected{{end}}>{{.Label}}</option>{{end}}</select>
 {{else}}<input type="hidden" name="backup_connection" value="" /><p>Once you add an <a href="/wp-admin/admin?page=wp-mail-smtp&amp;tab=connections">additional connection</a>, you can select it here.</p>{{end}}
@@ -109,7 +109,7 @@
 <tr><th scope="row"><label for="failed_threshold">Failed Email Threshold</label></th><td><select name="failed_threshold" id="failed_threshold">{{range .Thresholds}}<option value="{{.Value}}"{{if .Checked}} selected{{end}}>{{.Label}}</option>{{end}}</select>
 <p class="description">Only send an alert when this many emails failed within 30 minutes.</p></td></tr>
 </table>
-{{template "mailsmtp-alert" (dict "Title" "Email" "Desc" "Enter the email addresses (3 max) you'd like to use to receive alerts when email sending fails. Alerts are sent with WordPress Go's built-in transport." "Prefix" "alert_email" "Enabled" .O.Alerts.Email.Enabled "Vals" .AlertEmail "Label" "Send To" "Type" "email" "Locked" (index .Locked "alerts.alert_email"))}}
+{{template "mailsmtp-alert" (dict "Title" "Email" "Desc" "Enter the email addresses (3 max) you'd like to use to receive alerts when email sending fails. Alerts are sent with Pursae's built-in transport." "Prefix" "alert_email" "Enabled" .O.Alerts.Email.Enabled "Vals" .AlertEmail "Label" "Send To" "Type" "email" "Locked" (index .Locked "alerts.alert_email"))}}
 {{template "mailsmtp-alert" (dict "Title" "Slack" "Desc" "Paste in the Slack webhook URL you'd like to use to receive alerts when email sending fails." "Prefix" "alert_slack_webhook" "Enabled" .O.Alerts.Slack.Enabled "Vals" .AlertSlack "Label" "Webhook URL" "Type" "url" "Locked" (index .Locked "alerts.alert_slack_webhook"))}}
 {{template "mailsmtp-alert" (dict "Title" "Discord" "Desc" "Paste in the Discord webhook URL you'd like to use to receive alerts when email sending fails." "Prefix" "alert_discord_webhook" "Enabled" .O.Alerts.Discord.Enabled "Vals" .AlertDiscord "Label" "Webhook URL" "Type" "url" "Locked" (index .Locked "alerts.alert_discord_webhook"))}}
 {{template "mailsmtp-alert" (dict "Title" "Microsoft Teams" "Desc" "Paste in the Microsoft Teams webhook URL you'd like to use to receive alerts when email sending fails." "Prefix" "alert_teams_webhook" "Enabled" .O.Alerts.Teams.Enabled "Vals" .AlertTeams "Label" "Webhook URL" "Type" "url" "Locked" (index .Locked "alerts.alert_teams_webhook"))}}
@@ -221,7 +221,7 @@
 <form method="post" action="/wp-admin/admin?page=wp-mail-smtp&amp;tab=control">
 <input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
 <h2>Email Controls</h2>
-<p>Manage which notification emails WordPress Go sends. Unchecked emails are not sent.</p>
+<p>Manage which notification emails Pursae sends. Unchecked emails are not sent.</p>
 <table class="form-table" role="presentation">
 {{range .Controls}}<tr><th scope="row">{{.Title}}</th><td><fieldset>{{range .Items}}<label><input type="checkbox" name="control_{{.Value}}" value="1"{{if .Checked}} checked{{end}} /> {{.Label}}</label><br />{{end}}</fieldset></td></tr>{{end}}
 </table>
@@ -235,11 +235,11 @@
 <h2>Miscellaneous</h2>
 <table class="form-table" role="presentation">
 <tr><th scope="row">Do Not Send</th><td>{{if index .Locked "general.do_not_send"}}<input type="checkbox" disabled{{if .O.General.DoNotSend}} checked{{end}} /> <p class="description">The value of this field was set using a constant ({{index .Locked "general.do_not_send"}}).</p>{{else}}<label><input type="checkbox" name="do_not_send" id="wpms-do-not-send" value="1"{{if .O.General.DoNotSend}} checked{{end}} /> Stop sending all emails</label>{{end}}
-<p class="description">Some plugins, like BuddyPress and Events Manager, are using their own email delivery solutions. By default, this option does not block their emails, as those plugins do not use default wp_mail() function to send emails. In WordPress Go every e-mail goes through wp_mail(), so this blocks all of them.</p></td></tr>
+<p class="description">Some plugins, like BuddyPress and Events Manager, are using their own email delivery solutions. By default, this option does not block their emails, as those plugins do not use default wp_mail() function to send emails. In Pursae every e-mail goes through wp_mail(), so this blocks all of them.</p></td></tr>
 <tr><th scope="row">Hide Announcements</th><td><label><input type="checkbox" name="am_notifications_hidden" value="1"{{if .O.General.HideAnnouncements}} checked{{end}} /> Hide plugin announcements and update details.</label></td></tr>
 <tr><th scope="row">Hide Email Delivery Errors</th><td><label><input type="checkbox" name="email_delivery_errors_hidden" value="1"{{if .O.General.HideErrors}} checked{{end}} /> Hide warnings alerting of email delivery errors.</label>
 <p class="description"><strong>This is not recommended</strong> and should only be done for staging or development sites.</p></td></tr>
-<tr><th scope="row">Hide Dashboard Widget</th><td><label><input type="checkbox" name="dashboard_widget_hidden" value="1"{{if .O.General.HideWidget}} checked{{end}} /> Hide the WP Mail SMTP Dashboard Widget.</label></td></tr>
+<tr><th scope="row">Hide Dashboard Widget</th><td><label><input type="checkbox" name="dashboard_widget_hidden" value="1"{{if .O.General.HideWidget}} checked{{end}} /> Hide the Pursae SMTP Dashboard Widget.</label></td></tr>
 <tr><th scope="row">Disable Email Summaries</th><td><label><input type="checkbox" name="summary_report_email_disabled" value="1"{{if .O.General.SummaryDisabled}} checked{{end}}{{if index .Locked "general.summary_report_email_disabled"}} disabled{{end}} /> Disable Email Summaries weekly delivery.</label></td></tr>
 <tr><th scope="row">Rate Limiting</th><td><label><input type="checkbox" name="rate_limit_enabled" value="1"{{if .O.RateLimit.Enabled}} checked{{end}} /> Limit the number of emails sent</label>
 <p class="description">Emails over a limit are queued and sent when the period allows it. Leave a field at 0 for no limit.</p>
@@ -248,7 +248,7 @@
 <label>Per day <input type="number" min="0" class="small-text" name="rate_day" value="{{.O.RateLimit.Day}}" /></label>
 <label>Per week <input type="number" min="0" class="small-text" name="rate_week" value="{{.O.RateLimit.Week}}" /></label>
 <label>Per month <input type="number" min="0" class="small-text" name="rate_month" value="{{.O.RateLimit.Month}}" /></label></p></td></tr>
-<tr><th scope="row">Uninstall WP Mail SMTP</th><td><label><input type="checkbox" name="uninstall" value="1"{{if .O.General.Uninstall}} checked{{end}} /> Remove ALL WP Mail SMTP data upon plugin deactivation.</label>
+<tr><th scope="row">Uninstall Pursae SMTP</th><td><label><input type="checkbox" name="uninstall" value="1"{{if .O.General.Uninstall}} checked{{end}} /> Remove ALL Pursae SMTP data upon plugin deactivation.</label>
 <p class="description">All settings, connections, email logs and debug events will be removed when the plugin is deactivated.</p></td></tr>
 </table>
 <p class="submit"><input type="submit" class="button button-primary" value="Save Settings" /></p>
@@ -475,7 +475,7 @@
 {{/* ---------------------------------------------------------------- Setup Wizard */}}
 {{define "mailsmtp-wizard"}}
 <div class="wpms-wizard">
-<h1 class="wpms-logo" style="margin-top:0"><span class="dashicons dashicons-email-alt"></span>WP Mail SMTP</h1>
+<h1 class="wpms-logo" style="margin-top:0"><span class="dashicons dashicons-email-alt"></span>Pursae SMTP</h1>
 <ol class="wpms-steps">
 <li class="{{if eq .Step "welcome"}}current{{else}}done{{end}}">Welcome</li>
 <li class="{{if eq .Step "mailer"}}current{{else if or (eq .Step "configure") (eq .Step "features") (eq .Step "check")}}done{{end}}">Choose Mailer</li>
@@ -484,8 +484,8 @@
 <li class="{{if eq .Step "check"}}current{{end}}">Check Configuration</li>
 </ol>
 {{if eq .Step "welcome"}}
-<h2>Welcome to the WP Mail SMTP Setup Wizard!</h2>
-<p>We'll guide you through each step needed to get WP Mail SMTP fully set up on your site.</p>
+<h2>Welcome to the Pursae SMTP Setup Wizard!</h2>
+<p>We'll guide you through each step needed to get Pursae SMTP fully set up on your site.</p>
 <p><a class="button button-primary button-hero" href="/wp-admin/admin?page=wp-mail-smtp-setup-wizard&amp;step=mailer">Let's Get Started &rarr;</a></p>
 <p><a href="/wp-admin/">Go back to the Dashboard</a></p>
 {{end}}
@@ -515,7 +515,7 @@
 <form method="post" action="/wp-admin/admin?page=wp-mail-smtp-setup-wizard&amp;step=features">
 <input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
 <h2>Which email features do you want to enable?</h2>
-<p>Make sure you get the most out of WP Mail SMTP. Just check all of the features you'd like to use, and we'll go ahead and enable those for you.</p>
+<p>Make sure you get the most out of Pursae SMTP. Just check all of the features you'd like to use, and we'll go ahead and enable those for you.</p>
 <fieldset>
 <p><label><input type="checkbox" checked disabled /> <strong>Improved Email Deliverability</strong> &mdash; Ensure your emails are sent successfully and reliably.</label></p>
 <p><label><input type="checkbox" checked disabled /> <strong>Email Error Tracking</strong> &mdash; Easily spot errors causing delivery issues.</label></p>
@@ -530,7 +530,7 @@
 {{end}}
 {{if eq .Step "check"}}
 {{if .TestResult}}
-{{if .TestOK}}<h2>Congrats, you've successfully set up WP Mail SMTP!</h2><p>{{.TestResult}}</p>
+{{if .TestOK}}<h2>Congrats, you've successfully set up Pursae SMTP!</h2><p>{{.TestResult}}</p>
 {{if .DomainCheck}}<h3>Domain Check</h3><table class="widefat striped wpms-dns"><tbody>{{range .DomainCheck}}<tr><td>{{.Name}}</td><td>{{if eq .Status "ok"}}&#10003;{{else}}&#9888;{{end}} <code style="white-space:normal">{{.Detail}}</code></td></tr>{{end}}</tbody></table>{{end}}
 <p class="submit"><a class="button button-primary" href="/wp-admin/admin?page=wp-mail-smtp">Finish Setup</a></p>
 {{else}}<h2>Whoops, looks like things aren't configured properly.</h2>
@@ -553,7 +553,7 @@
 
 {{/* ---------------------------------------------------------------- Dashboard widget */}}
 {{define "mailsmtp-widget"}}<div id="wp_mail_smtp_reports_widget_lite" class="postbox">
-<div class="postbox-header"><h2 class="hndle ui-sortable-handle">WP Mail SMTP</h2></div>
+<div class="postbox-header"><h2 class="hndle ui-sortable-handle">Pursae SMTP</h2></div>
 <div class="inside">
 <div style="display:flex;gap:16px;margin-bottom:8px">
 <div><span class="dashicons dashicons-email" style="color:#646970"></span> <strong>{{.Stats.Total}}</strong> total</div>

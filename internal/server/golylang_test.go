@@ -22,11 +22,11 @@ func golylangToggle(t *testing.T, c *http.Client, base, action string) {
 	_, body, _ := get(t, c, base+"/wp-admin/plugins")
 	m := regexp.MustCompile(`href="(/wp-admin/plugins\?action=` + action + `&amp;plugin=golylang[^"]*)"`).FindStringSubmatch(body)
 	if m == nil {
-		t.Fatalf("no %s link for Golylang on the Plugins screen", action)
+		t.Fatalf("no %s link for Pursae Multi Language on the Plugins screen", action)
 	}
 	code, _, loc := get(t, c, base+html.UnescapeString(m[1]))
 	if code != http.StatusFound || !strings.Contains(loc, action+"=true") {
-		t.Fatalf("%s Golylang: %d %s", action, code, loc)
+		t.Fatalf("%s Pursae Multi Language: %d %s", action, code, loc)
 	}
 }
 
@@ -84,15 +84,15 @@ func TestGolylangOffByDefault(t *testing.T) {
 	base := ts.URL
 	installAndLogin(t, ts, c)
 	if srv.golylangOn() {
-		t.Fatal("Golylang is on after a fresh install")
+		t.Fatal("Pursae Multi Language is on after a fresh install")
 	}
 	_, body, _ := get(t, c, base+"/wp-admin/plugins")
 	row := regexp.MustCompile(`(?s)<tr class="(\w+)" data-slug="golylang"`).FindStringSubmatch(body)
 	if row == nil || row[1] != "inactive" {
-		t.Fatalf("Golylang is not listed as an inactive plugin: %v", row)
+		t.Fatalf("Pursae Multi Language is not listed as an inactive plugin: %v", row)
 	}
 	if strings.Contains(body, "toplevel_page_mlang") || strings.Contains(body, "wp-admin-bar-languages") {
-		t.Fatal("the Languages menu or the language filter shows while Golylang is off")
+		t.Fatal("the Languages menu or the language filter shows while Pursae Multi Language is off")
 	}
 	for _, page := range []string{"mlang", "mlang_strings", "mlang_settings"} {
 		if code, _, _ := get(t, c, base+"/wp-admin/admin?page="+page); code != http.StatusForbidden {
@@ -103,14 +103,14 @@ func TestGolylangOffByDefault(t *testing.T) {
 		t.Errorf("pll/v1/languages while off: %d, want 404", code)
 	}
 	if _, idx := restGet(t, c, base, "/wp-json/"); strings.Contains(idx, "pll/v1") {
-		t.Error("the REST index lists pll/v1 while Golylang is off")
+		t.Error("the REST index lists pll/v1 while Pursae Multi Language is off")
 	}
 	_, post := restGet(t, c, base, "/wp-json/wp/v2/posts/1")
 	if strings.Contains(post, `"lang"`) || strings.Contains(post, `"translations"`) {
-		t.Error("posts carry lang/translations while Golylang is off")
+		t.Error("posts carry lang/translations while Pursae Multi Language is off")
 	}
 	if _, front, _ := get(t, c, base+"/"); strings.Contains(front, "hreflang") || strings.Contains(front, "lang-item") {
-		t.Error("the front end shows Golylang output while it is off")
+		t.Error("the front end shows Pursae Multi Language output while it is off")
 	}
 	if code, _, _ := get(t, c, base+"/fr/"); code != http.StatusNotFound {
 		t.Errorf("/fr/ while off: %d, want 404", code)
@@ -123,7 +123,7 @@ func TestGolylangMultilingualSite(t *testing.T) {
 	installAndLogin(t, ts, c)
 	golylangToggle(t, c, base, "activate")
 	if !srv.golylangOn() {
-		t.Fatal("Golylang did not switch on")
+		t.Fatal("Pursae Multi Language did not switch on")
 	}
 
 	// Languages screen and menu.

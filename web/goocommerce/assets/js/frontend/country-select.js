@@ -1,4 +1,4 @@
-/* Goocommerce country select (country-select.js): swaps the state field between a select and a text
+/* Pursae Commerce country select (country-select.js): swaps the state field between a select and a text
    input when the country changes (states from goo_country_select_params.countries). */
 (function () {
 	'use strict';

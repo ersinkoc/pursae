@@ -3,7 +3,7 @@
   "name": "Quiet Hours",
   "version": "1.0.0",
   "description": "An ultra-minimal, text-first blog: a single calm column, a monospaced voice, posts listed by year and a light/dark switch that remembers the reader's choice. No clutter, no chrome, just writing and whitespace.",
-  "author": "WordPress Go",
+  "author": "Pursae",
   "author_url": "https://github.com/boracomet/wordpress-go",
   "theme_url": "https://github.com/boracomet/wordpress-go/tree/main/web/theme-library/quiet-hours",
   "tags": ["Blog", "Minimal", "One Column", "Dark Mode", "Custom Colors", "Custom Menu", "Editor Style", "Footer Widgets", "Threaded Comments", "Accessibility Ready"],

@@ -114,9 +114,9 @@ func (c *Catalog) lookup(msgid string) (string, bool) {
 // upstreamNames maps WordPress Go's product names to the upstream ones its strings were written
 // after: "You have the latest version of WordPress Go." is WordPress' message with the name changed.
 var upstreamNames = []struct{ ours, theirs string }{
-	{"WordPress Go", "WordPress"}, {"Golementor Pro", "Elementor Pro"}, {"Golementor", "Elementor"}, {"Gontact Form", "Contact Form 7"},
-	{"SEO-Go", "Yoast SEO"}, {"SEO-Go", "Rank Math"}, {"Golylang", "Polylang"}, {"WPGo Cache", "LiteSpeed Cache"},
-	{"WPGo Mail SMTP", "WP Mail SMTP"}, {"ACF-Go", "ACF"}, {"ACF-Go", "Advanced Custom Fields"}, {"Goocommerce", "WooCommerce"}, {"Gotenberg", "Gutenberg"},
+	{"Pursae", "WordPress"}, {"Pursae Web Builder Pro", "Elementor Pro"}, {"Pursae Web Builder", "Elementor"}, {"Pursae Contact Form", "Contact Form 7"},
+	{"SEO-Go", "Yoast SEO"}, {"SEO-Go", "Rank Math"}, {"Pursae Multi Language", "Polylang"}, {"WPGo Cache", "LiteSpeed Cache"},
+	{"Pursae SMTP", "Pursae SMTP"}, {"Pursae Custom Fields", "ACF"}, {"Pursae Custom Fields", "Advanced Custom Fields"}, {"Pursae Commerce", "WooCommerce"}, {"Pursae Editor", "Gutenberg"},
 }
 
 func (c *Catalog) lookupUpstream(msgid string) (string, bool) {
@@ -125,15 +125,15 @@ func (c *Catalog) lookupUpstream(msgid string) (string, bool) {
 			continue
 		}
 		up := strings.ReplaceAll(msgid, n.ours, n.theirs)
-		if n.ours == "WordPress Go" && strings.Contains(msgid, "WordPress Go") {
-			up = strings.ReplaceAll(msgid, "WordPress Go", "WordPress")
+		if n.ours == "Pursae" && strings.Contains(msgid, "Pursae") {
+			up = strings.ReplaceAll(msgid, "Pursae", "WordPress")
 		}
 		tr, ok := c.lookupDirect(up)
 		if !ok {
 			continue
 		}
-		if n.ours == "WordPress Go" {
-			return strings.ReplaceAll(tr, "WordPress", "WordPress Go"), true
+		if n.ours == "Pursae" {
+			return strings.ReplaceAll(tr, "WordPress", "Pursae"), true
 		}
 		return strings.ReplaceAll(rebrandString(tr), n.theirs, n.ours), true
 	}
@@ -278,11 +278,11 @@ func (m *Manager) IsInstalled(locale string) bool {
 // brands maps the upstream product names in plugin translations to WordPress Go's own. Longer
 // names first, so "Yoast SEO" wins over "Yoast".
 var brands = []struct{ from, to string }{
-	{"Elementor Pro", "Golementor Pro"}, {"Elementor", "Golementor"},
-	{"Contact Form 7", "Gontact Form"}, {"Yoast SEO Premium", "SEO-Go"}, {"Yoast SEO", "SEO-Go"}, {"Yoast", "SEO-Go"},
-	{"Rank Math SEO", "SEO-Go"}, {"Rank Math", "SEO-Go"}, {"Polylang Pro", "Golylang"}, {"Polylang", "Golylang"},
-	{"LiteSpeed Cache", "WPGo Cache"}, {"WP Mail SMTP", "WPGo Mail SMTP"}, {"Advanced Custom Fields PRO", "ACF-Go"},
-	{"Advanced Custom Fields", "ACF-Go"}, {"WooCommerce", "Goocommerce"}, {"CookieYes", "Gooike"}, {"Cookie Notice", "Gooike"}, {"WPS Hide Login", "AdminSecGo"},
+	{"Elementor Pro", "Pursae Web Builder Pro"}, {"Elementor", "Pursae Web Builder"},
+	{"Contact Form 7", "Pursae Contact Form"}, {"Yoast SEO Premium", "SEO-Go"}, {"Yoast SEO", "SEO-Go"}, {"Yoast", "SEO-Go"},
+	{"Rank Math SEO", "SEO-Go"}, {"Rank Math", "SEO-Go"}, {"Polylang Pro", "Pursae Multi Language"}, {"Polylang", "Pursae Multi Language"},
+	{"LiteSpeed Cache", "WPGo Cache"}, {"Pursae SMTP", "Pursae SMTP"}, {"Advanced Custom Fields PRO", "Pursae Custom Fields"},
+	{"Advanced Custom Fields", "Pursae Custom Fields"}, {"WooCommerce", "Pursae Commerce"}, {"CookieYes", "Pursae Cookie"}, {"Cookie Notice", "Pursae Cookie"}, {"WPS Hide Login", "Pursae Security"},
 }
 
 func rebrand(f *moFile) {

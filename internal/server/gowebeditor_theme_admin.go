@@ -196,7 +196,7 @@ func (s *Server) gweThemeBuilder(c *gin.Context) {
 	d.Themes = s.gweSavedThemeCards(c)
 	var notices []notice
 	for key, msg := range map[string]string{"saved": "Theme saved. It is listed under <a href=\"/wp-admin/themes\">Appearance › Themes</a>.",
-		"activated": "Theme saved; Hello Golementor is now the active theme. <a href=\"/\">Visit site</a>", "deleted": "Theme part deleted.",
+		"activated": "Theme saved; Hello Pursae Web Builder is now the active theme. <a href=\"/\">Visit site</a>", "deleted": "Theme part deleted.",
 		"conditions": "Display conditions saved.", "imported": "Theme imported. It is listed under <a href=\"/wp-admin/themes\">Appearance › Themes</a>.",
 		"theme-deleted": "Theme deleted."} {
 		if c.Query("message") == key {

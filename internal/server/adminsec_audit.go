@@ -57,7 +57,7 @@ var asEventLabels = [][2]string{
 	{"plugin_deactivated", "Plugin deactivated"},
 	{"theme_switched", "Theme switched"},
 	{"settings_updated", "Settings changed"},
-	{"adminsec_settings", "AdminSecGo settings changed"},
+	{"adminsec_settings", "Pursae Security settings changed"},
 }
 
 func asEventLabel(ev string) string {
@@ -238,7 +238,7 @@ func (s *Server) asNoteLoginIP(c *gin.Context, u *store.User) {
 		return
 	}
 	site := s.settings.String("blogname")
-	body := fmt.Sprintf("The administrator account %q just logged in to %s from an IP address it has not used before.\n\nIP address: %s\nBrowser: %s\nTime: %s\n\nIf this was not expected, change the account's password, log out its other sessions (Users › Profile) and review AdminSecGo › Activity Log:\n%s\n",
+	body := fmt.Sprintf("The administrator account %q just logged in to %s from an IP address it has not used before.\n\nIP address: %s\nBrowser: %s\nTime: %s\n\nIf this was not expected, change the account's password, log out its other sessions (Users › Profile) and review Pursae Security › Activity Log:\n%s\n",
 		u.Login, site, ip, c.Request.UserAgent(), time.Now().UTC().Format(time.RFC1123), s.links(c).HomeURL("/wp-admin/admin?page=adminsecgo-log"))
 	s.sendMail(c, mail.Message{To: []string{s.asAlertTo(st)}, Subject: "[" + site + "] Administrator login from a new IP address", Body: body})
 }

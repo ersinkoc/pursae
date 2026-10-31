@@ -416,7 +416,7 @@ func (a *API) do(ctx context.Context, r apiReq) (int, http.Header, []byte, error
 	for k, v := range r.header {
 		req.Header.Set(k, v)
 	}
-	req.Header.Set("User-Agent", "WPGO Mail SMTP")
+	req.Header.Set("User-Agent", "Pursae SMTP")
 	if r.user != "" || r.pass != "" {
 		req.SetBasicAuth(r.user, r.pass)
 	}

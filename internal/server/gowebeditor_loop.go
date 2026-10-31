@@ -548,7 +548,7 @@ func (s *Server) gweLoopItemsScreen(c *gin.Context) string {
 	list := s.gweProLibraryPosts(c, "loop-item")
 	for _, p := range list {
 		b.WriteString(`<tr><td><strong><a class="row-title" href="` + esc(gweEditURL(p.ID)) + `">` + esc(p.Title) + `</a></strong><div class="row-actions"><a href="` +
-			esc(gweEditURL(p.ID)) + `">Edit with Golementor</a></div></td><td>` + esc(gweStatusLabels[p.Status]) + `</td><td>` +
+			esc(gweEditURL(p.ID)) + `">Edit with Pursae Web Builder</a></div></td><td>` + esc(gweStatusLabels[p.Status]) + `</td><td>` +
 			esc(wp.FormatDate(p.ModifiedAt.In(s.loc()), "Y/m/d g:i a")) + `</td></tr>`)
 	}
 	if len(list) == 0 {

@@ -1,4 +1,4 @@
-/* ACF-Go: field inputs and admin screens, after ACF's acf-input.css / acf-global.css. */
+/* Pursae Custom Fields: field inputs and admin screens, after ACF's acf-input.css / acf-global.css. */
 
 :root {
 	--acf-border: #dcdcde;
@@ -241,7 +241,7 @@ tr.acf-inactive .row-title { color: var(--acf-muted); }
 .acf-tools .acf-checkbox-list { columns: 2; }
 .acf-export-json { font-family: Consolas, Monaco, monospace; font-size: 12px; }
 
-/* Blocks in Gotenberg */
+/* Blocks in Pursae Editor */
 .acf-block-component .acf-block-fields { background: #fff; border: 1px solid var(--acf-border); }
 .acf-block-component .acf-block-fields .acf-form-group { margin: 0; }
 .acf-block-component .acf-block-fields .acf-form-group > h2 { display: none; }

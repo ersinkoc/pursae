@@ -1,5 +1,5 @@
 /**
- * ACF-Go field group editor: the field list (add, edit, duplicate, delete, drag to reorder, sub
+ * Pursae Custom Fields field group editor: the field list (add, edit, duplicate, delete, drag to reorder, sub
  * fields and flexible content layouts), each field's settings in ACF's tabs (General, Validation,
  * Presentation, Conditional Logic), and the group's Location Rules, Presentation and Group
  * Settings. The whole group is serialized to ACF's JSON format on save.

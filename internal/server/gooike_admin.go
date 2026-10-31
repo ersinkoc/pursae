@@ -198,7 +198,7 @@ func (s *Server) gooikeRender(c *gin.Context, page string, scan *gooikeScanResul
 		d.Stats = s.gooikeStats(c, 30)
 		d.PrivacyURL = s.gooikePrivacyURL(c, &st)
 		if d.PrivacyURL == "" {
-			notices = append(notices, notice{Type: "warning", Message: template.HTML(`<strong>Gooike:</strong> no privacy policy is linked from the banner. Choose one under <a href="/wp-admin/gooike?page=settings">Gooike &rsaquo; Settings</a> or <a href="/wp-admin/options-privacy">Settings &rsaquo; Privacy</a>.`)})
+			notices = append(notices, notice{Type: "warning", Message: template.HTML(`<strong>Pursae Cookie:</strong> no privacy policy is linked from the banner. Choose one under <a href="/wp-admin/gooike?page=settings">Pursae Cookie &rsaquo; Settings</a> or <a href="/wp-admin/options-privacy">Settings &rsaquo; Privacy</a>.`)})
 		}
 	case "banner":
 		if d.Tab != "design" && d.Tab != "texts" {
@@ -300,7 +300,7 @@ func (s *Server) gooikeRender(c *gin.Context, page string, scan *gooikeScanResul
 			rows.Close()
 		}
 	}
-	s.adminPage(c, screen, d.Title+" ‹ Gooike", "toplevel_page_gooike gooike-admin", "admin/gooike", d, notices...)
+	s.adminPage(c, screen, d.Title+" ‹ Pursae Cookie", "toplevel_page_gooike gooike-admin", "admin/gooike", d, notices...)
 }
 
 // gooikeAdminPost handles the forms of every screen; do names the action.
@@ -660,7 +660,7 @@ func (s *Server) gooikePreview(c *gin.Context) {
 		open = "banner"
 	}
 	var b strings.Builder
-	b.WriteString(`<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Gooike banner preview</title>`)
+	b.WriteString(`<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Pursae Cookie banner preview</title>`)
 	b.WriteString(`<meta name="robots" content="noindex">`)
 	b.WriteString(`<link rel="stylesheet" href="` + gooikeAssets + `/gooike.css?ver=` + gooikeVersion + `">`)
 	b.WriteString(`<style>` + gooikePreviewPageCSS + gooikeCSSVars(st.Design) + gooikeCustomCSS(st.Design) + `</style></head><body class="gk-preview-page">`)

@@ -1,4 +1,4 @@
-/* Goocommerce catalog admin: the Product data box (tabs, type-dependent fields, attributes,
+/* Pursae Commerce catalog admin: the Product data box (tabs, type-dependent fields, attributes,
  * variations, downloads, gallery, linked products), the products list (sorting, featured star)
  * and small helpers of the product edit screen. jQuery, jQuery UI and wp.media come from core. */
 (function ($) {

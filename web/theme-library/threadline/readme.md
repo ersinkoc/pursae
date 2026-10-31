@@ -1,6 +1,6 @@
 # Threadline
 
-A calm, minimal apparel boutique for Goocommerce: an announcement bar, a centred logo between the menu and the
+A calm, minimal apparel boutique for Pursae Commerce: an announcement bar, a centred logo between the menu and the
 account and cart icons with a mini-cart, an editorial hero, category tiles, generous product grids, quiet
 product pages and a focused two-column checkout.
 

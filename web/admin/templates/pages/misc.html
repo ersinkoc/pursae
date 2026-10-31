@@ -1,17 +1,17 @@
 {{define "admin/update-core"}}{{template "admin-header" .}}{{with .Data}}
 <div class="wrap">
-<h1>WordPress Go Updates</h1>
+<h1>Pursae Updates</h1>
 {{template "notices" $}}
 <p>Last checked on {{.Checked}}. <a class="button" href="/wp-admin/update-core?force-check=1">Check again</a></p>
 {{if .Update}}
-<h2>An updated version of WordPress Go is available.</h2>
-<div class="notice notice-warning inline"><p><strong>WordPress Go {{.Update.Latest}}</strong> is available; you are running {{.Version}}.{{if .Update.Released}} Released {{.Update.Released}}.{{end}}
+<h2>An updated version of Pursae is available.</h2>
+<div class="notice notice-warning inline"><p><strong>Pursae {{.Update.Latest}}</strong> is available; you are running {{.Version}}.{{if .Update.Released}} Released {{.Update.Released}}.{{end}}
 {{if .Update.DownloadURL}}<a class="button button-primary" href="{{.Update.DownloadURL}}">Download {{.Update.Latest}}</a>{{end}}{{if .Update.NotesURL}} <a href="{{.Update.NotesURL}}">Release notes</a>{{end}}</p></div>
 {{else}}
-<h2>You have the latest version of WordPress Go.</h2>
+<h2>You have the latest version of Pursae.</h2>
 {{end}}
-{{if not .Hub}}<p class="description">Update checks are off: no WordPress Go Hub is configured (<code>WPGO_HUB_URL</code>).</p>{{end}}
-<div class="notice notice-info inline"><p>WordPress Go {{.Version}} is a single binary with everything built in: core, admin, themes and the plugin sandbox. To update, replace the binary (or pull the new container image) and restart; database migrations run automatically on start.</p></div>
+{{if not .Hub}}<p class="description">Update checks are off: no Pursae Hub is configured (<code>WPGO_HUB_URL</code>).</p>{{end}}
+<div class="notice notice-info inline"><p>Pursae {{.Version}} is a single binary with everything built in: core, admin, themes and the plugin sandbox. To update, replace the binary (or pull the new container image) and restart; database migrations run automatically on start.</p></div>
 <h2>Plugins</h2>
 <p>Your plugins are all up to date.</p>
 <h2>Themes</h2>
@@ -32,7 +32,7 @@
 
 <div class="wrap about__container">
 	<div class="about__header" style="background:linear-gradient(135deg,#1d2327 0%,#2271b1 100%);color:#fff;padding:48px 40px;border-radius:8px">
-		<div class="about__header-title" style="display:flex;align-items:center;gap:20px"><div class="wpgo-about-logo" role="img" aria-label="WordPress Go Gopher"></div><h1 style="color:#fff;font-size:48px;margin:0">WordPress Go</h1></div>
+		<div class="about__header-title" style="display:flex;align-items:center;gap:20px"><div class="wpgo-about-logo" role="img" aria-label="Pursae Gopher"></div><h1 style="color:#fff;font-size:48px;margin:0">Pursae</h1></div>
 		<div class="about__header-text" style="font-size:20px;margin-top:12px;opacity:.9">WordPress, rewritten in Go. Version {{.Version}} on {{.Go}}.</div>
 	</div>
 	<nav class="about__header-navigation nav-tab-wrapper wp-clearfix" aria-label="Secondary menu" style="margin-top:16px">
@@ -41,18 +41,18 @@
 	<div class="wpgo-about-grid">
 		<div class="wpgo-about-card"><span class="dashicons dashicons-admin-generic" aria-hidden="true"></span><h3>One binary</h3><p>The whole of WordPress &mdash; admin, REST API, themes, media, cron &mdash; compiled into a single Go binary with its assets embedded. No PHP, no extensions, no FPM pool.</p></div>
 		<div class="wpgo-about-card"><span class="dashicons dashicons-database" aria-hidden="true"></span><h3>PostgreSQL with real types</h3><p>Posts, terms, users and comments live in typed tables with JSONB where flexibility helps. Full-text search uses a generated tsvector.</p></div>
-		<div class="wpgo-about-card"><span class="dashicons dashicons-edit" aria-hidden="true"></span><h3>Gotenberg</h3><p>The block editor you know, running on WordPress Go&#8217;s REST API. Prefer the classic screen? The Classic Editor plugin is built in.</p></div>
+		<div class="wpgo-about-card"><span class="dashicons dashicons-edit" aria-hidden="true"></span><h3>Pursae Editor</h3><p>The block editor you know, running on Pursae&#8217;s REST API. Prefer the classic screen? The Classic Editor plugin is built in.</p></div>
 		<div class="wpgo-about-card"><span class="dashicons dashicons-admin-plugins" aria-hidden="true"></span><h3>Sandboxed plugins</h3><p>Plugins are signed WebAssembly modules. They ask for permissions when you activate them and can&#8217;t touch anything else; a misbehaving plugin is stopped, not your site.</p></div>
 		<div class="wpgo-about-card"><span class="dashicons dashicons-performance" aria-hidden="true"></span><h3>WPGo Cache</h3><p>A LiteSpeed-style page cache built in: tag-based purges, a crawler and page optimizations, behind any web server.</p></div>
 		<div class="wpgo-about-card"><span class="dashicons dashicons-admin-users" aria-hidden="true"></span><h3>No Gravatar</h3><p>Profile pictures come from your own Media Library. Nothing about your visitors is sent to a third party to draw an avatar.</p></div>
-{{if .Golementor}}		<div class="wpgo-about-card"><span class="dashicons dashicons-layout" aria-hidden="true"></span><h3>Golementor</h3><p>A visual page and theme builder: design pages, headers, footers and archives, then save the result as a theme.</p></div>{{end}}
+{{if .Golementor}}		<div class="wpgo-about-card"><span class="dashicons dashicons-layout" aria-hidden="true"></span><h3>Pursae Web Builder</h3><p>A visual page and theme builder: design pages, headers, footers and archives, then save the result as a theme.</p></div>{{end}}
 		<div class="wpgo-about-card"><span class="dashicons dashicons-admin-appearance" aria-hidden="true"></span><h3>Twenty Twenty-Five</h3><p>The default theme ships with its original design, color schemes from its style variations, and ready-made demo sites to start from.</p></div>
 	</div>
 	<div class="wpgo-about-card" style="margin-top:24px">
 		<span class="dashicons dashicons-groups" aria-hidden="true"></span>
 		<h3>Contributors</h3>
 		<p><strong>Lead Developer:</strong> Bora Ata Türkoğlu</p>
-		<p style="margin-top:6px">WordPress Go builds on WordPress by the WordPress contributors, released under the GPL. Third-party attributions are listed in the NOTICE file.</p>
+		<p style="margin-top:6px">Pursae builds on WordPress by the WordPress contributors, released under the GPL. Third-party attributions are listed in the NOTICE file.</p>
 	</div>
 </div>
 {{end}}{{template "admin-footer" .}}{{end}}
@@ -60,7 +60,7 @@
 {{define "admin/tools"}}{{template "admin-header" .}}
 <div class="wrap">
 <h1>Tools</h1>
-<div class="card"><h2 class="title">Import and export</h2><p>Move content between WordPress sites and WordPress Go with the standard WordPress eXtended RSS (WXR) format.</p>
+<div class="card"><h2 class="title">Import and export</h2><p>Move content between WordPress sites and Pursae with the standard WordPress eXtended RSS (WXR) format.</p>
 <p><a class="button" href="/wp-admin/import">Import</a> <a class="button" href="/wp-admin/export">Export</a></p></div>
 <div class="card"><h2 class="title">Site Health</h2><p>Check the status of the binary, the database, uploads, cache and plugin sandbox.</p><p><a class="button" href="/wp-admin/site-health">Open Site Health</a></p></div>
 <div class="card"><h2 class="title">Page cache</h2><p>Purge or warm the WPGo Cache.</p><p><a class="button" href="/wp-admin/admin?page=wpgo-cache-toolbox">Cache Toolbox</a></p></div>
@@ -147,10 +147,10 @@
 		{{range $i, $c := .Categories}}<li class="{{if $c.Slug}}{{$c.Slug}}{{else}}all{{end}}">{{if $i}} |{{end}} <a href="{{$c.URL}}"{{if $c.Current}} class="current" aria-current="page"{{end}}>{{$c.Label}} <span class="count">({{$c.Count}})</span></a></li>
 		{{end}}
 	</ul>{{end}}
-	<p class="wpgo-theme-install-help">Ready-made themes that ship with WordPress Go. <strong>Install</strong> adds a theme to Appearance &rsaquo; Themes like an uploaded package; themes with demo content can be installed, activated and filled with their sample pages, posts, menus and widgets in one step. <strong>Live Preview</strong> shows a theme with its demo content before you install anything.</p>
+	<p class="wpgo-theme-install-help">Ready-made themes that ship with Pursae. <strong>Install</strong> adds a theme to Appearance &rsaquo; Themes like an uploaded package; themes with demo content can be installed, activated and filled with their sample pages, posts, menus and widgets in one step. <strong>Live Preview</strong> shows a theme with its demo content before you install anything.</p>
 	{{if .Previews}}<form method="post" action="/wp-admin/theme-preview" class="wpgo-clear-previews"><input type="hidden" name="_wpnonce" value="{{.PreviewsNonce}}" /><input type="hidden" name="action" value="clear" /><span class="description">{{.Previews}} theme preview{{if ne .Previews 1}}s are{{else}} is{{end}} kept for quick viewing.</span> <button type="submit" class="button-link">Clear theme previews</button></form>{{end}}
 	{{else}}
-	<p class="wpgo-theme-install-help">Bundled themes are compiled into WordPress Go{{if .Golementor}}, Golementor&rsquo;s <a href="/wp-admin/gowebeditor-theme-builder">Theme Builder</a> generates themes{{end}}, and theme packages (a zip of <code>theme.json</code>, templates and assets, no code) are installed from the <a href="/wp-admin/theme-install">Library</a> or with <strong>Upload Theme</strong>.</p>
+	<p class="wpgo-theme-install-help">Bundled themes are compiled into Pursae{{if .Golementor}}, Pursae Web Builder&rsquo;s <a href="/wp-admin/gowebeditor-theme-builder">Theme Builder</a> generates themes{{end}}, and theme packages (a zip of <code>theme.json</code>, templates and assets, no code) are installed from the <a href="/wp-admin/theme-install">Library</a> or with <strong>Upload Theme</strong>.</p>
 	{{end}}
 	{{if .Cards}}
 	<div class="theme-browser content-filterable rendered">
@@ -233,7 +233,7 @@
 	</div>
 	<div class="site-status-has-issues{{if not (or .Critical .Recommended)}} hide{{end}}">
 		<h2>Site Health Status</h2>
-		<p>The site health check shows information about your WordPress Go configuration and items that may need your attention.</p>
+		<p>The site health check shows information about your Pursae configuration and items that may need your attention.</p>
 		<div class="site-health-issues-wrapper{{if not .Critical}} hidden{{end}}" id="health-check-issues-critical">
 			<h3 class="site-health-issue-count-title"><span class="issue-count">{{.CriticalCount}}</span> critical issue{{if ne .CriticalCount 1}}s{{end}}</h3>
 			<p>Critical issues are items that may have a high impact on your site&#8217;s performance or security. Resolving these issues should be prioritized.</p>
@@ -256,7 +256,7 @@
 {{else}}
 <div class="health-check-body health-check-debug-tab hide-if-no-js">
 	<h2>Site Health Info</h2>
-	<p>This page can show you every detail about the configuration of your WordPress Go website. For any improvements that could be made, see the <a href="/wp-admin/site-health">Site Health Status</a> page.</p>
+	<p>This page can show you every detail about the configuration of your Pursae website. For any improvements that could be made, see the <a href="/wp-admin/site-health">Site Health Status</a> page.</p>
 	<p>If you want to export a handy list of all the information on this page, you can use the button below to copy it to the clipboard. You can then paste it in a text file and save it to your device, or paste it in an email exchange with a support engineer or theme/plugin developer for example.</p>
 	<div class="site-health-copy-buttons">
 		<div class="copy-button-wrapper">
@@ -340,7 +340,7 @@
 {{define "admin/export"}}{{template "admin-header" .}}{{with .Data}}
 <div class="wrap">
 <h1>Export</h1>
-<p>When you click the button below WordPress Go will create an XML file for you to save to your computer.</p>
+<p>When you click the button below Pursae will create an XML file for you to save to your computer.</p>
 <p>This format, which is called WordPress eXtended RSS or WXR, will contain your posts, pages, comments, custom fields, categories, and tags.</p>
 <p>Once you&#8217;ve saved the download file, you can use the Import function in another WordPress installation to import the content from this site.</p>
 <h2>Choose what to export</h2>
@@ -472,11 +472,11 @@
 {{if .Log}}<ul>{{range .Log}}<li>{{.}}</li>{{end}}</ul>{{end}}
 <p><a href="/wp-admin/edit">View posts</a> &middot; <a href="/wp-admin/import">Import another file</a></p>
 {{else}}
-<p>If you have posts or comments in another system, WordPress Go can import those into this site. The WordPress importer is built in.</p>
+<p>If you have posts or comments in another system, Pursae can import those into this site. The WordPress importer is built in.</p>
 <table class="widefat importers striped">
 <tr class="importer-item"><td class="import-system"><span class="importer-title">WordPress</span>
 <span class="importer-action"><a href="#import-upload-form">Run Importer</a></span></td>
-<td class="desc"><span class="importer-desc">Import posts, pages, comments, custom fields, categories, tags and navigation menus from a WordPress or WordPress Go export file.</span></td></tr>
+<td class="desc"><span class="importer-desc">Import posts, pages, comments, custom fields, categories, tags and navigation menus from a WordPress or Pursae export file.</span></td></tr>
 </table>
 <h2 id="import-upload-form">Import WordPress</h2>
 <p>Choose a WXR (.xml) file to upload, then click Upload file and import.</p>
@@ -503,7 +503,7 @@
 <div class="wrap">
 <h1>{{if eq .Kind "theme"}}Edit Themes{{else}}Edit Plugins{{end}}</h1>
 {{if .Editable}}{{if .Restored}}<div id="message" class="notice notice-success is-dismissible"><p>The original file has been restored.</p></div>{{end}}
-{{else}}<div id="message" class="notice notice-info"><p>{{if eq .Kind "theme"}}<strong>Read-only.</strong> {{if .Nonce}}{{else}}File editing is disabled on this site (<code>WPGO_DISALLOW_FILE_EDIT</code>). {{if .Builder}}Build or change themes with <a href="/wp-admin/gowebeditor-theme-builder">Golementor</a> or add{{else}}Add{{end}} custom CSS in the <a href="/wp-admin/customize">Customizer</a>.{{end}}{{else}}<strong>Read-only.</strong> Plugins are signed WebAssembly packages, so their files can be browsed here but not changed. Rebuild and re-sign the package to change a plugin.{{end}}</p></div>{{end}}
+{{else}}<div id="message" class="notice notice-info"><p>{{if eq .Kind "theme"}}<strong>Read-only.</strong> {{if .Nonce}}{{else}}File editing is disabled on this site (<code>WPGO_DISALLOW_FILE_EDIT</code>). {{if .Builder}}Build or change themes with <a href="/wp-admin/gowebeditor-theme-builder">Pursae Web Builder</a> or add{{else}}Add{{end}} custom CSS in the <a href="/wp-admin/customize">Customizer</a>.{{end}}{{else}}<strong>Read-only.</strong> Plugins are signed WebAssembly packages, so their files can be browsed here but not changed. Rebuild and re-sign the package to change a plugin.{{end}}</p></div>{{end}}
 {{template "notices" $}}
 {{if and (eq .Kind "plugin") (not .Choices)}}
 <p>You do not appear to have any WebAssembly plugins installed. <a href="/wp-admin/plugin-install">Add a plugin</a>.</p>
@@ -548,7 +548,7 @@
 	</div>
 	<div>
 		<div class="editor-notices"></div>
-		{{if .Editable}}<p class="description">Saved changes apply immediately; nothing has to be rebuilt. The edited copy is stored in <code>{{.OverrideDir}}</code> and layered over the file bundled with WordPress Go. Template changes that do not parse or that break the site are rolled back.{{if .Edited}} This file has been edited. <a href="{{.RestoreURL}}" onclick="return confirm('Restore the original file? Your changes to it will be lost.');">Restore original</a>{{end}}</p>
+		{{if .Editable}}<p class="description">Saved changes apply immediately; nothing has to be rebuilt. The edited copy is stored in <code>{{.OverrideDir}}</code> and layered over the file bundled with Pursae. Template changes that do not parse or that break the site are rolled back.{{if .Edited}} This file has been edited. <a href="{{.RestoreURL}}" onclick="return confirm('Restore the original file? Your changes to it will be lost.');">Restore original</a>{{end}}</p>
 		<p class="submit"><input type="submit" name="submit" id="submit" class="button button-primary" value="Update File" /><span class="spinner"></span></p>
 		{{else if eq .Kind "theme"}}<p>Theme file editing is disabled on this site.</p>{{else}}<p>This file is part of a signed plugin package and cannot be changed here.</p>{{end}}
 	</div>

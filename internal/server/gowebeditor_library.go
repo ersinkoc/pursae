@@ -59,7 +59,7 @@ func (s *Server) gweLibraryData(c *gin.Context, data map[string]any) (any, error
 func (s *Server) gweSaveTemplate(c *gin.Context, data map[string]any, editorID int64) (any, error) {
 	u := currentUser(c)
 	if src, _ := data["source"].(string); src != "" && src != "local" {
-		return nil, gweFail(http.StatusBadRequest, "The cloud template library is not available in Golementor.")
+		return nil, gweFail(http.StatusBadRequest, "The cloud template library is not available in Pursae Web Builder.")
 	}
 	typ, _ := data["type"].(string)
 	if !gweTemplateTypes[typ] {

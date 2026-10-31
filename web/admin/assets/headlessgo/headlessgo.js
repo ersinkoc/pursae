@@ -1,4 +1,4 @@
-/* HeadlessGo admin: the entry form of the Content Manager and the Content-Type Builder. Both are
+/* Pursae Headless admin: the entry form of the Content Manager and the Content-Type Builder. Both are
  * rendered from a JSON model printed by the server (#hg-editor-model, #hg-builder-model) and post
  * their state as JSON in a hidden field. */
 ( function () {
@@ -857,7 +857,7 @@
 					}, 'a draft must be submitted for review and approved by an editor before it can be published (needs draft & publish)' ),
 					check( 'Internationalization', sc.localized, function ( v ) {
 						sc.localized = v;
-					}, model.golylang ? 'one version per Golylang language' : 'locales come from Golylang when it is active' ) ] ) ] ) );
+					}, model.golylang ? 'one version per Pursae Multi Language language' : 'locales come from Pursae Multi Language when it is active' ) ] ) ] ) );
 				t.appendChild( input( 'Preview URL', sc.previewUrl, function ( v ) {
 					sc.previewUrl = v;
 				}, { type: 'url', class: 'large-text code', placeholder: 'https://app.example.com/preview?slug={slug}&secret={secret}&locale={locale}',

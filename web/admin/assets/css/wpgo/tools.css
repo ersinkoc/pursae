@@ -1,5 +1,5 @@
 /**
- * WordPress Go additions to the Tools screens. Layout comes from WordPress's own CSS.
+ * Pursae additions to the Tools screens. Layout comes from WordPress's own CSS.
  * Export filters: export.php hides each content type's filters until its radio is selected.
  */
 #export-filters ul.export-filters { display: none !important; }

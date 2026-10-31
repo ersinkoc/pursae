@@ -1,5 +1,5 @@
 /**
- * ACF-Go blocks in Gotenberg: registers every ACF block (block.json with an "acf" key) and gives it
+ * Pursae Custom Fields blocks in Pursae Editor: registers every ACF block (block.json with an "acf" key) and gives it
  * ACF's Edit / Preview modes. Edit mode shows the block's field form (rendered by the server);
  * every change is stored in the block's "data" attribute and the preview re-rendered.
  */

@@ -5,7 +5,7 @@ weight: 70
 section: themes
 ---
 
-The block editor (Gotenberg) asks `/wp-json/wp/v2/themes?status=active` what the theme supports
+The block editor (Pursae Editor) asks `/wp-json/wp/v2/themes?status=active` what the theme supports
 and styles its canvas accordingly. A theme package answers through `theme.json`.
 
 ## Supports
@@ -26,7 +26,7 @@ and styles its canvas accordingly. A theme package answers through `theme.json`.
 
 | Key | Effect |
 |-----|--------|
-| `title-tag` | the core prints `<title>`; always on in WordPress Go, kept for compatibility |
+| `title-tag` | the core prints `<title>`; always on in Pursae, kept for compatibility |
 | `post-thumbnails` | the Featured Image panel appears in the editor; `.Thumbnail` is filled for templates |
 | `custom-logo` | Site Identity gets a logo control with these dimensions; `.CustomLogo` renders it |
 | `html5` | HTML5 markup for the listed parts (search form, comment form, galleries, captions) |

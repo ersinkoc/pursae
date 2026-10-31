@@ -1,6 +1,6 @@
-/* SEO-Go editor box: the classic editor meta box and the Gotenberg sidebar share this script.
+/* SEO-Go editor box: the classic editor meta box and the Pursae Editor sidebar share this script.
    The server does the work (/wp-json/seogo/v1/analyze): variables, snippet values and both
-   analyses; this file collects the editor's values, renders the results and saves in Gotenberg. */
+   analyses; this file collects the editor's values, renders the results and saves in Pursae Editor. */
 ( function () {
 	'use strict';
 
@@ -204,7 +204,7 @@
 	}
 
 	// --- wiring -----------------------------------------------------------------------------
-	// changed reanalyzes; in Gotenberg it also marks the post as changed so Save is offered (the
+	// changed reanalyzes; in Pursae Editor it also marks the post as changed so Save is offered (the
 	// SEO fields are stored right after the post itself, see initBlock).
 	function changed( e ) {
 		schedule();

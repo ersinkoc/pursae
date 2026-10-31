@@ -1,5 +1,5 @@
 /**
- * ACF-Go field inputs: places the field boxes into the edit screens (classic editor, Gotenberg's
+ * Pursae Custom Fields field inputs: places the field boxes into the edit screens (classic editor, Pursae Editor's
  * meta box area, user / term / comment forms), and gives every field type its behaviour —
  * repeaters, flexible content, media pickers, relationship search, conditional logic, tabs,
  * accordions and validation before submit.
@@ -65,7 +65,7 @@
 		window.acfgoValidateNonce = $boxes.data( 'validate' );
 	}
 
-	// Gotenberg: the boxes go into #metaboxes as the location forms the editor moves into its
+	// Pursae Editor: the boxes go into #metaboxes as the location forms the editor moves into its
 	// meta box area and posts to window._wpMetaBoxUrl when the post is saved.
 	function placeBlockEditor( $boxes ) {
 		var $meta = $( '#metaboxes' );

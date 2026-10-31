@@ -236,7 +236,7 @@ func TestThemeLibraryC(t *testing.T) {
 			}
 			var lib struct{ Category, Style, Demo string }
 			_ = json.Unmarshal(mb, &lib)
-			if lib.Category == "" || lib.Style == "" || lib.Demo != "demo/demo.json" || m.Version != "1.0.0" || m.Author != "WordPress Go" {
+			if lib.Category == "" || lib.Style == "" || lib.Demo != "demo/demo.json" || m.Version != "1.0.0" || m.Author != "Pursae" {
 				t.Fatalf("library metadata: %+v %s %s", lib, m.Version, m.Author)
 			}
 			settings := map[string]themeCzSettings{}

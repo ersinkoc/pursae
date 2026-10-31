@@ -1,6 +1,6 @@
 # Headline Daily
 
-A bold news magazine theme for WordPress Go. A black ticker carries the latest headlines across the top of every page, a big condensed nameplate sits over a red-and-black sections bar, and the front page packs a lead story, two side stories, a numbered **Top stories** rail, a dense story grid and a row for each section you choose.
+A bold news magazine theme for Pursae. A black ticker carries the latest headlines across the top of every page, a big condensed nameplate sits over a red-and-black sections bar, and the front page packs a lead story, two side stories, a numbered **Top stories** rail, a dense story grid and a row for each section you choose.
 
 ## Features
 

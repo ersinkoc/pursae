@@ -1,6 +1,6 @@
 ---
 title: Publishing to the Hub
-description: How to get a plugin into the marketplace that every WordPress Go site sees, and what the Hub does with it.
+description: How to get a plugin into the marketplace that every Pursae site sees, and what the Hub does with it.
 weight: 130
 section: plugins
 ---

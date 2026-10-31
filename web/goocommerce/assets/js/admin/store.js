@@ -1,4 +1,4 @@
-/* Goocommerce store admin behaviour (no dependencies): order preview modal, order editor toggles
+/* Pursae Commerce store admin behaviour (no dependencies): order preview modal, order editor toggles
    (address editing, item editing, refunds, inline modals, Load / copy addresses), coupon data tabs and
    code generator, settings helpers (show_if_checked, select all, tax rows, row reordering, toggles),
    confirmations and copy buttons. Every screen works without it: forms post normally. */

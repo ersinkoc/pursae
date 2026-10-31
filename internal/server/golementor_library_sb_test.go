@@ -380,13 +380,13 @@ func TestGolementorLibrarySBRender(t *testing.T) {
 			t.Errorf("%s: front end %d", name, code)
 			continue
 		}
-		for _, badText := range []string{"Golementor: unsupported element", "Golementor: failed to render", "{{library:", "@@ASSETS@@"} {
+		for _, badText := range []string{"Pursae Web Builder: unsupported element", "Pursae Web Builder: failed to render", "{{library:", "@@ASSETS@@"} {
 			if strings.Contains(body, badText) {
 				t.Errorf("%s: page contains %q", name, badText)
 			}
 		}
 		if !strings.Contains(body, `data-elementor-id="`+id+`"`) {
-			t.Errorf("%s: no Golementor document wrapper", name)
+			t.Errorf("%s: no Pursae Web Builder document wrapper", name)
 		}
 		// every widget of the section is on the page, and its plain headings read as written
 		els, _ := builder.ParseElements(s.Content)

@@ -1,7 +1,7 @@
-# Gontact Form — Contact Form 7 feature inventory
+# Pursae Contact Form — Contact Form 7 feature inventory
 
-Gontact Form is WordPress Go's native (compiled-in) clone of **Contact Form 7** (studied at CF7 6.2.3,
-`rocklobster-in/contact-form-7`, plus contactform7.com docs). Like Classic Editor, WPGo Cache and Golementor it is
+Pursae Contact Form is Pursae's native (compiled-in) clone of **Contact Form 7** (studied at CF7 6.2.3,
+`rocklobster-in/contact-form-7`, plus contactform7.com docs). Like Classic Editor, WPGo Cache and Pursae Web Builder it is
 listed under Plugins, **off on a fresh install**, and while off it adds nothing: no menu, no screens (404/403), no
 REST namespace, no shortcode, no block, no front-end assets.
 
@@ -9,7 +9,7 @@ Legend: ✅ implemented · ◐ implemented differently / partly · ✗ left out 
 
 ## 1. Data model
 
-| CF7 | Gontact Form |
+| CF7 | Pursae Contact Form |
 |---|---|
 | Custom post type `wpcf7_contact_form` | ✅ same post type (non-public `content_types` row created on activation) |
 | Post meta `_form`, `_mail`, `_mail_2`, `_messages`, `_additional_settings`, `_locale`, `_hash` | ✅ same keys in the post's `meta` jsonb; `post_content` keeps the form template too |
@@ -20,7 +20,7 @@ Legend: ✅ implemented · ◐ implemented differently / partly · ✗ left out 
 
 ## 2. Admin screens (menu **Contact**, `dashicons-email`, after Comments)
 
-| CF7 | Gontact Form |
+| CF7 | Pursae Contact Form |
 |---|---|
 | Contact › Contact Forms (`admin.php?page=wpcf7`): list table with Title, Shortcode, Author, Date; search; bulk Delete; row actions Edit / Duplicate; pagination | ✅ (`/wp-admin/admin?page=wpcf7`) |
 | Contact › Add Contact Form (`page=wpcf7-new`) | ✅ prefilled with the default templates |
@@ -32,20 +32,20 @@ Legend: ✅ implemented · ◐ implemented differently / partly · ✗ left out 
 | Messages tab: every message with its description | ✅ all messages of the active modules |
 | Additional Settings | ✅ see §6 |
 | Configuration validator (warnings on the edit screen) | ◐ the common checks: empty/invalid To, From not an e-mail, unknown mail-tags in the mail templates, file attachment tag missing, invalid additional headers |
-| Help tabs (screen-meta) | ✗ the general WordPress Go help panel is shown instead |
+| Help tabs (screen-meta) | ✗ the general Pursae help panel is shown instead |
 | Contact › Integration (`page=wpcf7-integration`) | ✅ see §8 |
 | Welcome panel / dashboard news | ✗ promotional |
 | Legacy "Contact Form 7" admin REST (`/contact-forms` CRUD) | ✅ GET/POST `/contact-forms`, GET/POST(PUT)/DELETE `/contact-forms/{id}` for users with the caps |
 
 ## 3. Embedding
 
-| CF7 | Gontact Form |
+| CF7 | Pursae Contact Form |
 |---|---|
 | `[contact-form-7 id="<hash or id>" title="…"]` and `[contact-form …]` | ✅ through the core shortcode parser (`wp.DoShortcode`) in `theContent` |
 | Shortcode attributes `html_id`, `html_name`, `html_title`, `html_class`, `output="raw_form"` | ✅ |
 | 7-char hash ids (CF7 5.8+), legacy numeric ids, lookup by title | ✅ |
-| Block `contact-form-7/contact-form-selector` | ✅ registered in Gotenberg while on (select a form); saved markup is CF7's: a `wp-block-contact-form-7-contact-form-selector` div holding the shortcode |
-| Widgets / text widget shortcode | ◐ wherever WordPress Go renders `the_content` |
+| Block `contact-form-7/contact-form-selector` | ✅ registered in Pursae Editor while on (select a form); saved markup is CF7's: a `wp-block-contact-form-7-contact-form-selector` div holding the shortcode |
+| Widgets / text widget shortcode | ◐ wherever Pursae renders `the_content` |
 
 ## 4. Form-tags
 
@@ -81,7 +81,7 @@ wpcf7-validates-as-required …` classes, `wpcf7-not-valid-tip`, `wpcf7-response
 
 ## 5. Submission, validation and response
 
-| CF7 | Gontact Form |
+| CF7 | Pursae Contact Form |
 |---|---|
 | REST `POST /wp-json/contact-form-7/v1/contact-forms/{id}/feedback` (multipart only, 415 otherwise; 404 `wpcf7_not_found`; 400 `wpcf7_unit_tag_not_found`) | ✅ |
 | Response `{contact_form_id, status, message, invalid_fields:[{field,message,idref,error_id}], posted_data_hash, into, demo_mode?}` | ✅ |
@@ -121,20 +121,20 @@ change via the schema. ✅
 
 ## 8. Spam protection & integrations
 
-| CF7 | Gontact Form |
+| CF7 | Pursae Contact Form |
 |---|---|
 | Short User-Agent → spam; nonce check for logged-in users | ✅ |
 | Disallowed comment keys (Settings › Discussion `disallowed_keys`) | ✅ |
 | Quiz | ✅ |
 | reCAPTCHA v3 (Integration: site key / secret, score threshold 0.5, `wpcf7_recaptcha_response`) | ✅ keys on Integration, server verification against Google |
 | Cloudflare Turnstile (site key / secret, `_wpcf7_turnstile_response`) | ✅ |
-| Akismet (`akismet:author` …) | ✗ no Akismet in WordPress Go |
+| Akismet (`akismet:author` …) | ✗ no Akismet in Pursae |
 | Constant Contact, Brevo (Sendinblue), Stripe | ✗ third-party marketing/payment accounts, not relevant to a contact form clone here |
 | Really Simple CAPTCHA (`[captchac]` / `[captchar]`) | ✅ built in, see below |
 
 ### Image CAPTCHA (`[captchac]` / `[captchar]`)
 
-CF7 needs the Really Simple CAPTCHA plugin for these tags; Gontact Form generates the images itself, in pure Go:
+CF7 needs the Really Simple CAPTCHA plugin for these tags; Pursae Contact Form generates the images itself, in pure Go:
 
 - **Challenge**: 4 characters from `ABCDEFGHJKLMNPQRSTUVWXYZ23456789` (no 0/O, 1/I/l), drawn with the Go Bold font
   (`golang.org/x/image/font/gofont`, BSD licence, compiled in) at 3× the displayed size, each character rotated up to
@@ -175,7 +175,7 @@ translations (UI is English), CF7's welcome panel and promotional notices, multi
 | Submission, validation, spam, uploads, REST (feedback, schema, refill, CRUD), non-JS fallback | `internal/server/gontact_submit.go` |
 | Mail-tags and mail composition (queued through the core `wp_mail` job) | `internal/server/gontact_mail.go` |
 | Admin screens, config validator, Integration, block assets | `internal/server/gontact_admin.go`, `web/admin/templates/pages/gontact-*.html` |
-| Front-end and admin CSS/JS, Gotenberg block | `web/admin/assets/gontact/` (served at `/wp-content/gontact-form/` only while on) |
+| Front-end and admin CSS/JS, Pursae Editor block | `web/admin/assets/gontact/` (served at `/wp-content/gontact-form/` only while on) |
 | Image CAPTCHA (`[captchac]`/`[captchar]`): generation, storage, image route, refill, cleanup | `internal/server/gontact_captcha.go`, `internal/db/migrations/0012_gontact_captcha.sql` |
 | Tests | `internal/server/gontact_test.go`, `internal/server/gontact_captcha_test.go` |
 

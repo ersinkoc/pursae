@@ -3,7 +3,7 @@
   "name": "Atlas Academy",
   "version": "1.0.0",
   "description": "A bold, modern theme for independent online course creators: an announcement bar, an Enroll button in the header, a split hero with a highlighted headline and floating stat stickers, course catalogue cards with level pills and prices, numbered curriculum modules, student story cards, a free-lessons blog and an enroll call to action. Thick ink borders, chunky offset shadows and violet, coral and mint colours.",
-  "author": "WordPress Go",
+  "author": "Pursae",
   "author_url": "https://github.com/boracomet/wordpress-go",
   "theme_url": "https://github.com/boracomet/wordpress-go/tree/main/web/theme-library/atlas-academy",
   "tags": ["Education", "Blog", "Grid Layout", "Right Sidebar", "Left Sidebar", "Custom Colors", "Custom Logo", "Custom Menu", "Featured Images", "Sticky Post", "Threaded Comments", "Wide Blocks", "Editor Style", "Accessibility Ready"],

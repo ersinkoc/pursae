@@ -1,6 +1,6 @@
 # Frame by Frame
 
-A film and TV review magazine theme for WordPress Go.
+A film and TV review magazine theme for Pursae.
 
 - A black top bar with a red "on air" light and search, a centered marquee masthead and a film-perforated section bar.
 - A letterboxed hero (black bars, a slow Ken Burns move), letterbox stills on posts, wide images and cards.

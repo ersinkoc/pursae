@@ -1,6 +1,6 @@
-# Gooike: feature inventory
+# Pursae Cookie: feature inventory
 
-Gooike is a native (compiled-in) WordPress Go plugin for cookie consent and cookie management. Its feature
+Pursae Cookie is a native (compiled-in) Pursae plugin for cookie consent and cookie management. Its feature
 set is on par with the best WordPress cookie plugins (Complianz, CookieYes, Cookie Notice & Compliance). It
 is built to comply by design with the **GDPR / ePrivacy Directive** (EU, EEA, UK), Turkey's **KVKK**,
 **CCPA/CPRA** (California) and **Google Consent Mode v2**. Like every native plugin it is **off on a fresh
@@ -110,7 +110,7 @@ mono), font size, radius, floating button and position, and **custom CSS** (it c
 - ✓ **Activation** (`gooike.js`): once a category is granted, the scripts are re-created in document
   order. A blocking external script is waited for before the next one runs, so inline code that depends
   on it works. Iframes and images get their `src` back.
-- ✓ **Known services**: you paste only the ID and Gooike writes the official snippet:
+- ✓ **Known services**: you paste only the ID and Pursae Cookie writes the official snippet:
   - Google Analytics 4 (`G-…`)
   - Google Tag Manager (`GTM-…`)
   - Meta Pixel
@@ -124,7 +124,7 @@ mono), font size, radius, floating button and position, and **custom CSS** (it c
   `connect-src`, per response through `cspAllow`). The CSP gets the https origins of custom snippets too,
   plus the "Extra script hosts" setting.
 - ✓ **Embeds**: iframes of **YouTube** (including youtube-nocookie), **Vimeo** and **Google Maps** are held
-  back on rendered pages, in theme templates and Golementor pages. Each shows a placeholder: "This
+  back on rendered pages, in theme templates and Pursae Web Builder pages. Each shows a placeholder: "This
   content is hosted by YouTube…", with a **Load content** button that grants the embed category
   (Marketing by default) and a link to open the content on the provider's site. These are switches on
   the Scripts screen.
@@ -144,7 +144,7 @@ mono), font size, radius, floating button and position, and **custom CSS** (it c
 ## 4. Cookie declaration and scanner
 
 - ✓ **Declaration**: an admin-managed list (name, provider, category, purpose, duration). It supports add,
-  edit, bulk delete and `*` prefix patterns. WordPress Go's own cookies are pre-declared. It is shown in
+  edit, bulk delete and `*` prefix patterns. Pursae's own cookies are pre-declared. It is shown in
   the preferences and rendered by `[gooike_cookie_table]`, or `[gooike_cookie_table category="statistics"]`
   for one category.
 - ✓ **Scanner**: it requests the home page and any extra paths you list *through the site itself*, as an
@@ -191,7 +191,7 @@ mono), font size, radius, floating button and position, and **custom CSS** (it c
 
 ## 6. Admin
 
-- ✓ The top-level **Gooike** menu, after Settings, exists only while the plugin is active and only for
+- ✓ The top-level **Pursae Cookie** menu, after Settings, exists only while the plugin is active and only for
   administrators (`manage_options`). Its screens are Dashboard, Banner (Themes, Design with live preview,
   Texts), Categories & Cookies (Categories, Cookie Declaration, Cookie Scanner), Scripts, Consent Logs
   and Settings. They use WordPress admin markup throughout: `wrap`, `nav-tab-wrapper`, `form-table`,
@@ -218,7 +218,7 @@ mono), font size, radius, floating button and position, and **custom CSS** (it c
   - US: CCPA;
   - other countries: configurable (no banner by default).
 
-  WordPress Go ships no GeoIP database, so without a header everyone gets the main regulation.
+  Pursae ships no GeoIP database, so without a header everyone gets the main regulation.
 - ✓ **Privacy signals**: a visitor sending GPC (or DNT, when respected) is treated as having opted out. No
   banner is shown, and the decision is logged as `gpc`. Under GDPR and KVKK nothing optional runs; under
   CCPA marketing (sale and sharing) stops.
@@ -232,7 +232,7 @@ mono), font size, radius, floating button and position, and **custom CSS** (it c
   for every visitor. The consent cookie does not bypass the cache. The CSP allowance is part of the
   cached response headers. Tests check that visitors with and without consent get the same cached HTML
   (`X-WPGo-Cache: hit`).
-- ✓ The Golementor editor preview gets no banner. Logged-in users see the banner like visitors do.
+- ✓ The Pursae Web Builder editor preview gets no banner. Logged-in users see the banner like visitors do.
 
 ## 8. Tests
 

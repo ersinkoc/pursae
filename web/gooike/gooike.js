@@ -1,4 +1,4 @@
-/*! Gooike cookie consent for WordPress Go.
+/*! Pursae Cookie cookie consent for Pursae.
  *
  * The page is the same for every visitor (it may come from the page cache); this script reads the
  * visitor's choice from the gooike_consent cookie, shows the banner when there is none (or the

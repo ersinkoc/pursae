@@ -221,14 +221,14 @@ func TestGooGolylangCartCheckoutStrings(t *testing.T) {
 	// Store strings are registered in Languages › Translations and translated on the front end.
 	var group []string
 	for _, r := range srv.pllStrings(ctx) {
-		if r.Group == "Goocommerce" {
+		if r.Group == "Pursae Commerce" {
 			group = append(group, r.String)
 		}
 	}
 	joined := strings.Join(group, "|")
 	for _, want := range []string{"Free shipping this week", "Cash on delivery", "Flat rate", "Your {site_title} order has been received!"} {
 		if !strings.Contains(joined, want) {
-			t.Errorf("Goocommerce strings lack %q", want)
+			t.Errorf("Pursae Commerce strings lack %q", want)
 		}
 	}
 	for orig, tr := range map[string]string{"Cash on delivery": "Nachnahme", "Flat rate": "Pauschale", "Free shipping this week": "Versandkostenfrei diese Woche",
@@ -298,8 +298,8 @@ func TestGooGolylangStoreThemeDemo(t *testing.T) {
 	pllAddLanguage(t, c, base, "Deutsch", "de_DE", "de", "de")
 	ctx := context.Background()
 	_, body, _ := get(t, c, base+"/wp-admin/goocommerce?page=themes")
-	if !strings.Contains(body, "Golylang is active") {
-		t.Error("the Store Themes screen does not mention Golylang")
+	if !strings.Contains(body, "Pursae Multi Language is active") {
+		t.Error("the Store Themes screen does not mention Pursae Multi Language")
 	}
 	nonce := formNonce(t, body)
 	for _, step := range gooThemeSteps {

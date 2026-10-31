@@ -185,7 +185,7 @@ func (s *Server) gooWebhookDeliver(ctx context.Context, h gooWebhookRow, source 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, h.URL, bytes.NewReader(body))
 	if err == nil {
 		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("User-Agent", "Goocommerce/"+gooVersion+" Hookshot (WordPress Go)")
+		req.Header.Set("User-Agent", "Goocommerce/"+gooVersion+" Hookshot (Pursae)")
 		req.Header.Set("X-WC-Webhook-Source", source)
 		req.Header.Set("X-WC-Webhook-Topic", h.Topic)
 		req.Header.Set("X-WC-Webhook-Resource", resource)

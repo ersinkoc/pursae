@@ -1,8 +1,8 @@
-# Golementor Studio — plan and contracts
+# Pursae Web Builder Studio — plan and contracts
 
-Golementor Studio turns Golementor into a site-building app: a fresh, simple editing panel on top
+Pursae Web Builder Studio turns Pursae Web Builder into a site-building app: a fresh, simple editing panel on top
 of the existing builder engine, a setup wizard that installs a complete starter site (header,
-footer, home, blog list, single post, page, contact, search, 404) as editable Golementor documents,
+footer, home, blog list, single post, page, contact, search, 404) as editable Pursae Web Builder documents,
 and a large library of ready sections. Nothing of the existing builder is removed: the full
 upstream panel stays one click away ("Advanced") for detailed editing.
 
@@ -14,10 +14,10 @@ upstream panel stays one click away ("Advanced") for detailed editing.
   `elementor.getPreviewContainer()`, `elementor.documents`, `$e.internal`, the selection channel)
   so saving, history, undo/redo, revisions, responsive modes and the canvas keep working.
 - Look: WordPress-like, square, quiet: white/neutral surfaces, 1px borders, 2–4px radius, the
-  WordPress blue accent, system font, compact spacing; dark mode follows the existing Golementor
+  WordPress blue accent, system font, compact spacing; dark mode follows the existing Pursae Web Builder
   dark palette.
 - Layout:
-  - **Top bar**: Golementor logo menu (Exit to dashboard, Site Setup, Theme Builder, Settings),
+  - **Top bar**: Pursae Web Builder logo menu (Exit to dashboard, Site Setup, Theme Builder, Settings),
     page switcher (Pages panel), device switcher, undo/redo, preview, Save/Publish.
   - **Left rail** with four tabs:
     1. **Add** — "Sections" (the section library: categories, thumbnails, search, click or drag to
@@ -38,8 +38,8 @@ upstream panel stays one click away ("Advanced") for detailed editing.
 
 ## 2. Setup wizard
 
-`/wp-admin/golementor-setup` (Golementor › Site Setup, `edit_theme_options`; offered on the Plugins
-screen right after activating Golementor while no starter site is installed): 1) choose a starter
+`/wp-admin/golementor-setup` (Pursae Web Builder › Site Setup, `edit_theme_options`; offered on the Plugins
+screen right after activating Pursae Web Builder while no starter site is installed): 1) choose a starter
 site (kit cards with screenshot and **Live Preview**), 2) pick a color palette (the kit's, 8 presets
 or 4 custom colors) and a font pairing (the kit's or 7 presets: heading font → global fonts
 `primary`/`secondary`, body font → `text`/`accent`), 3) site title, tagline, logo (media library) and
@@ -48,14 +48,14 @@ which pages to create, 4) install. Server side: `internal/server/golementor_setu
 - Live Preview (`/wp-admin/golementor-setup/preview?kit=<slug>&page=<page slug>|blog|post-<n>&palette=…&fonts=…`)
   renders the kit's header, page and footer with the chosen colors and fonts without installing
   anything (menus link between preview pages, the blog and single post use the kit's sample posts).
-- Install creates, as Golementor documents of the Hello Golementor working copy: the theme parts
-  (Theme Builder storage, with their display conditions), the pages (built with Golementor, template
+- Install creates, as Pursae Web Builder documents of the Hello Pursae Web Builder working copy: the theme parts
+  (Theme Builder storage, with their display conditions), the pages (built with Pursae Web Builder, template
   `elementor_header_footer` unless the kit says otherwise; the posts page is a plain page), the menus
   (assigned to `primary`/`footer`), the sample posts (featured images imported into the media
   library, categories created when missing), Settings › Reading (static front page + posts page),
   title and tagline, the kit's global colors and fonts (system ids from the kit, extra ids added as
   custom globals, `settings` merged) and the logo (Site Settings `site_logo`) in the active kit
-  document; then Hello Golementor is activated. The previous working copy's theme parts and the
+  document; then Hello Pursae Web Builder is activated. The previous working copy's theme parts and the
   untouched install samples ("Hello world!", "Sample Page") go to the trash.
 - Everything created carries the meta `_gwe_starter=<kit slug>` (pages and posts also
   `_gwe_starter_ref=<slug in kit.json>`); the option `golementor_starter` records the previous
@@ -149,7 +149,7 @@ out of the library and logged with every problem (`go test -run TestGolementorLi
   (exactly one `{{library:images/…}}` token, webp/jpeg/png; imported into the media library).
 - `options`: only `blogname` / `blogdescription`, used when the wizard field is left empty.
   `settings`: extra kit Site Settings (not globals, logo or site name).
-- Parts use the theme widgets Golementor already has (site logo, nav menu, post title, post
+- Parts use the theme widgets Pursae Web Builder already has (site logo, nav menu, post title, post
   content, featured image, post info, archive posts/loop, search form, copyright/text) so they are
   dynamic. A few sample posts make the blog list and single post look real.
 - Tokens work in any string: `{{library:<path>}}` (asset URL), `{{page:<slug>}}` (the page's
@@ -161,7 +161,7 @@ out of the library and logged with every problem (`go test -run TestGolementorLi
   merged key by key), `pages[].settings.template` for `pages[].template` (moved to the page template,
   not kept as a page setting), `posts[].category` (one name) next to `categories`; kit-level `tags`
   (strings) are listed by the kits endpoint.
-- Hello Golementor lays out a Theme Builder part that fills the main area full width (`<main
+- Hello Pursae Web Builder lays out a Theme Builder part that fills the main area full width (`<main
   class="site-main gwe-main-part">`, no 1140px cap or padding); parts set their own widths with
   boxed containers, so kits need no `.site-main` override.
 - Icons: only the Font Awesome 5 names (`fas fa-…`, `far fa-…`, `fab fa-…`) render.
@@ -171,7 +171,7 @@ out of the library and logged with every problem (`go test -run TestGolementorLi
 
 ### REST and classic library
 
-Editors only (`edit_posts`; cookie + `X-WP-Nonce` like `elementor/v1`; 404 while Golementor is off):
+Editors only (`edit_posts`; cookie + `X-WP-Nonce` like `elementor/v1`; 404 while Pursae Web Builder is off):
 
 - `GET /wp-json/golementor/v1/library/sections` →
   `{"categories":[{"slug","title","count"}],"items":[{"id":"<category>/<slug>","title","category","tags","thumbnail":"<url>"}]}`

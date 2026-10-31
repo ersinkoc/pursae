@@ -1,6 +1,6 @@
 # Quiet Hours
 
-An ultra-minimal, text-first blog theme for WordPress Go. One calm column, a monospaced voice,
+An ultra-minimal, text-first blog theme for Pursae. One calm column, a monospaced voice,
 posts listed under their year, and a light/dark switch that remembers each reader's choice.
 
 ## Features

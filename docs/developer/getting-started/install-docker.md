@@ -1,6 +1,6 @@
 ---
 title: Install with Docker
-description: Run WordPress Go and PostgreSQL with docker compose in a couple of minutes.
+description: Run Pursae and PostgreSQL with docker compose in a couple of minutes.
 weight: 20
 section: getting-started
 ---
@@ -28,7 +28,7 @@ it finishes, open **http://localhost:8088** — you land on the installer
 
 | Service | What it is | Host port |
 |---------|------------|-----------|
-| `wpgo` | the WordPress Go server | `8088` |
+| `wpgo` | the Pursae server | `8088` |
 | `db` | PostgreSQL 17 | `5432` |
 
 ## Another port or address

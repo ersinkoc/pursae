@@ -1,6 +1,6 @@
-# Goocommerce: overview
+# Pursae Commerce: overview
 
-Goocommerce is a native (compiled-in) WordPress Go plugin that clones **WooCommerce**: products, cart,
+Pursae Commerce is a native (compiled-in) Pursae plugin that clones **WooCommerce**: products, cart,
 checkout, tax, shipping, coupons, orders, payment gateways, e-mails and both REST APIs, with the premium
 extensions built in as modules. Like every native plugin it is listed on **Plugins**, starts **off**
 (option `native_goocommerce`), and while it is off its screens answer 404 and its REST routes answer
@@ -17,7 +17,7 @@ inventory like the other built-in plugin pages.
 
 ## Modules
 
-Fourteen modules sit on **Goocommerce › Extensions**, all off by default and grouped by category:
+Fourteen modules sit on **Pursae Commerce › Extensions**, all off by default and grouped by category:
 
 | Category | Modules |
 |----------|---------|
@@ -44,7 +44,7 @@ To tell the store that a theme is made for it, declare support in `theme.json`:
 ```
 
 A theme that does so prints the store titles itself through the store templates instead of the page
-title, and is listed under **Goocommerce › Store Themes**. Practical rules from the bundled store
+title, and is listed under **Pursae Commerce › Store Themes**. Practical rules from the bundled store
 themes (`web/theme-library`, `category: shop`):
 
 - scope the store CSS under `#page` so it wins over `goocommerce.css`;

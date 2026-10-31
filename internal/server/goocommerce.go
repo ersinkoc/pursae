@@ -197,9 +197,9 @@ func (s *Server) gooDeactivate(ctx context.Context) error {
 
 // gooPluginRow is Goocommerce's row on the Plugins screen.
 func (s *Server) gooPluginRow() pluginRow {
-	r := pluginRow{Slug: gooSlug, Name: "Goocommerce", Version: gooVersion, Native: true, Active: s.gooOn(),
+	r := pluginRow{Slug: gooSlug, Name: "Pursae Commerce", Version: gooVersion, Native: true, Active: s.gooOn(),
 		Description: "Everything you need to sell online: products of every kind, cart, checkout, orders, coupons, taxes, shipping zones, payments, reports and a REST API, plus premium modules (subscriptions, memberships, bookings, bundles, add-ons, gift cards and more) you switch on when you need them. Compatible with WooCommerce themes and data shapes.",
-		Author:      "WordPress Go"}
+		Author:      "Pursae"}
 	if r.Active {
 		r.SettingsURL = "/wp-admin/goocommerce?page=settings"
 	}
@@ -265,7 +265,7 @@ func (s *Server) gooMenu(menu []*menuTop, u *store.User, screen string) []*menuT
 		orders += ` <span class="awaiting-mod update-plugins count-` + strconv.Itoa(pending) + `"><span class="processing-count">` + strconv.Itoa(pending) + `</span></span>`
 	}
 	if u.Can("manage_woocommerce", nil) {
-		top := &menuTop{Slug: "goocommerce", Title: "Goocommerce", ID: "toplevel_page_goocommerce", Icon: "dashicons-cart"}
+		top := &menuTop{Slug: "goocommerce", Title: "Pursae Commerce", ID: "toplevel_page_goocommerce", Icon: "dashicons-cart"}
 		sub(top, "goocommerce", "Home", "manage_woocommerce")
 		sub(top, "goocommerce?page=orders", orders, "edit_shop_orders")
 		sub(top, "goocommerce?page=customers", "Customers", "manage_woocommerce")

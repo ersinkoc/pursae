@@ -40,7 +40,7 @@ func libGCheckPackage(t *testing.T, slug string) (*themeManifest, *themeDemo) {
 	}
 	var lib struct{ Category, Style, Demo, Author, Version, RequiresCore string }
 	_ = json.Unmarshal(mb, &lib)
-	if lib.Category == "" || lib.Style == "" || len(lib.Style) > 80 || lib.Demo != "demo/demo.json" || m.Version != "1.0.0" || m.Author != "WordPress Go" {
+	if lib.Category == "" || lib.Style == "" || len(lib.Style) > 80 || lib.Demo != "demo/demo.json" || m.Version != "1.0.0" || m.Author != "Pursae" {
 		t.Fatalf("library metadata: %+v %s %s", lib, m.Version, m.Author)
 	}
 	if _, err := loadThemePackage(dir, slug); err != nil {

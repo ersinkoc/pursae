@@ -5,7 +5,7 @@ weight: 10
 section: rest-api
 ---
 
-WordPress Go serves the WordPress REST API at `/wp-json/` (and `?rest_route=/…`). The `wp/v2`
+Pursae serves the WordPress REST API at `/wp-json/` (and `?rest_route=/…`). The `wp/v2`
 namespace mirrors WordPress closely enough that the block editor, mobile apps and headless
 clients written against WordPress work unchanged.
 
@@ -37,7 +37,7 @@ curl -s 'https://blog.example.com/wp-json/wp/v2/posts?per_page=2&_fields=id,titl
 | `wp-block-editor/v1` | URL details for the editor's link preview |
 | `oembed/1.0` | the oEmbed proxy the editor uses for embeds |
 | `batch/v1` | batched requests (the editor's widget screen) |
-| `elementor/v1` | Golementor's editor API (only while the builder is on) |
+| `elementor/v1` | Pursae Web Builder's editor API (only while the builder is on) |
 | `<plugin-slug>/v1` | routes added by plugins ([plugin routes](plugin-routes.md)) |
 
 The full list with methods is on the [endpoints](endpoints.md) page. Authentication —

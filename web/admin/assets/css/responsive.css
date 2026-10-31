@@ -18,7 +18,7 @@
 
   /*
    * Admin-bar site name: WP hides the label behind a 52px home icon
-   * (text-indent + overflow). Longer "WordPress Go" still inflates
+   * (text-indent + overflow). Longer "Pursae" still inflates
    * scrollWidth ≫ clientWidth — collapse text metrics so the icon slot
    * cannot contribute horizontal overflow. :before keeps its own font.
    */

@@ -66,7 +66,7 @@ func (s *Server) wpHead(c *gin.Context, q *siteQuery, lb *links.Builder, adminBa
 	sb.WriteString("<link rel=\"https://api.w.org/\" href=\"" + html.EscapeString(lb.HomeURL("/wp-json/")) + "\" />\n")
 	sb.WriteString(oembedDiscoveryLinks(lb, q)) // wp_oembed_add_discovery_links() (rest_oembed.go)
 	if !s.asHideVersion() {                     // AdminSecGo can hide the version
-		sb.WriteString("<meta name=\"generator\" content=\"WordPress Go " + Version + "\" />\n")
+		sb.WriteString("<meta name=\"generator\" content=\"Pursae " + Version + "\" />\n")
 	}
 	if (q.Kind == "single" || q.Kind == "page" || q.Kind == "front-page") && q.Post != nil {
 		if seo == "" {
@@ -119,7 +119,7 @@ func (s *Server) frontAdminBar(c *gin.Context, q *siteQuery, lb *links.Builder, 
 	<a class="screen-reader-shortcut" href="#wp-toolbar" tabindex="1">Skip to toolbar</a>
 	<div class="quicklinks" id="wp-toolbar" role="navigation" aria-label="Toolbar">
 		<ul role='menu' id='wp-admin-bar-root-default' class="ab-top-menu">`)
-	sb.WriteString(`<li role='group' id='wp-admin-bar-wp-logo'><a class='ab-item' role="menuitem" href='/wp-admin/about'><span class="ab-icon" aria-hidden="true"></span><span class="screen-reader-text">About WordPress Go</span></a></li>`)
+	sb.WriteString(`<li role='group' id='wp-admin-bar-wp-logo'><a class='ab-item' role="menuitem" href='/wp-admin/about'><span class="ab-icon" aria-hidden="true"></span><span class="screen-reader-text">About Pursae</span></a></li>`)
 	fmt.Fprintf(&sb, `<li role='group' id='wp-admin-bar-site-name' class="menupop"><a class='ab-item' role="menuitem" aria-expanded="false" href='/wp-admin/'>%s</a><div class="ab-sub-wrapper"><ul role='menu' id='wp-admin-bar-site-name-default' class="ab-submenu">`, site)
 	if u.Can("read", nil) {
 		sb.WriteString(`<li role='group' id='wp-admin-bar-dashboard'><a class='ab-item' role="menuitem" href='/wp-admin/'>Dashboard</a></li>`)

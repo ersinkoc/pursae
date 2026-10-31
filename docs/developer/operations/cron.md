@@ -5,7 +5,7 @@ weight: 70
 section: operations
 ---
 
-WordPress runs scheduled tasks when a visitor happens to load a page. WordPress Go has a real
+WordPress runs scheduled tasks when a visitor happens to load a page. Pursae has a real
 **job runner**: every 15 seconds each instance publishes due scheduled posts and claims due rows
 of the `jobs` table with `FOR UPDATE SKIP LOCKED`, so several instances share one database
 without running a job twice. No visitor, no `wp-cron.php`, no system crontab needed.

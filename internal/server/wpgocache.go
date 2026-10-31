@@ -301,7 +301,7 @@ func (s *Server) pluginAdmin(c *gin.Context) {
 		}
 	}
 	for _, o := range [][2]string{{"auto", "Auto-detect (LiteSpeed headers only when LiteSpeed is in front)"}, {"litespeed", "LiteSpeed / OpenLiteSpeed"},
-		{"nginx", "nginx (fastcgi/proxy cache)"}, {"generic", "Generic CDN or proxy (Cache-Control, Surrogate-Key)"}, {"none", "None: cache inside WordPress Go only"}} {
+		{"nginx", "nginx (fastcgi/proxy cache)"}, {"generic", "Generic CDN or proxy (Cache-Control, Surrogate-Key)"}, {"none", "None: cache inside Pursae only"}} {
 		d.ServerOpts = append(d.ServerOpts, choice{Value: o[0], Label: o[1], Checked: o[0] == d.Server})
 	}
 	s.warm.mu.Lock()

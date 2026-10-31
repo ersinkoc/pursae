@@ -193,7 +193,7 @@
 {{range .Keys}}<tr><td class="title column-title has-row-actions column-primary"><strong><a href="{{.EditURL}}" class="row-title">{{.Description}}</a></strong>
 <div class="row-actions"><span class="id">ID: {{.ID}} | </span><span class="edit"><a href="{{.EditURL}}">View/Edit</a> | </span><span class="trash"><button type="submit" class="button-link submitdelete" name="goo_do" value="revoke:{{.ID}}" data-confirm="Are you sure you want to revoke this API key?">Revoke</button></span></div></td>
 <td class="truncated_key column-truncated_key"><code>&hellip;{{.Truncated}}</code></td><td class="user column-user">{{.User}}</td><td class="permissions column-permissions">{{.Permissions}}</td><td class="last_access column-last_access">{{.LastAccess}}</td></tr>
-{{else}}<tr class="no-items"><td colspan="5"><div class="woocommerce-BlankState"><h2 class="woocommerce-BlankState-message">The Goocommerce REST API allows external apps to view and manage store data. Access is granted only to those with valid API keys.</h2>
+{{else}}<tr class="no-items"><td colspan="5"><div class="woocommerce-BlankState"><h2 class="woocommerce-BlankState-message">The Pursae Commerce REST API allows external apps to view and manage store data. Access is granted only to those with valid API keys.</h2>
 <a class="woocommerce-BlankState-cta button-primary button" href="/wp-admin/goocommerce?page=settings&amp;tab=advanced&amp;section=keys&amp;create-key=1">Create an API key</a></div></td></tr>{{end}}
 </tbody></table>
 {{end}}

@@ -3,7 +3,7 @@
   "name": "Gopher Facts",
   "version": "1.0.0",
   "description": "Example of the plugin SDK beyond hooks: the [gopher-facts] and [recent-gophers] shortcodes, REST routes under /wp-json/shortcode-demo/v1/, a settings page, a stylesheet from the package, transients and a scheduled event.",
-  "author": "WordPress Go Contributors",
+  "author": "Pursae Contributors",
   "requires": "0.1.0",
   "license": "GPL-2.0-or-later",
   "permissions": ["options:read", "content:filter", "rest:routes", "posts:read", "users:read", "cron", "admin:settings", "storage"],

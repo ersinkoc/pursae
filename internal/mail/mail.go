@@ -88,7 +88,7 @@ func (m *Mailer) Build(msg Message) ([]byte, error) {
 	h("Date", time.Now().Format(time.RFC1123Z))
 	h("Message-ID", "<"+hex.EncodeToString(id)+"@"+domain+">")
 	h("MIME-Version", "1.0")
-	h("X-Mailer", "WordPress Go")
+	h("X-Mailer", "Pursae")
 	qp := func(s string) string {
 		var q bytes.Buffer
 		w := quotedprintable.NewWriter(&q)

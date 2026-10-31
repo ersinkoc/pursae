@@ -1,7 +1,7 @@
 # Library placeholder images
 
-Original generated artwork (vector scenes rendered to webp) for Golementor Studio sections and site kits.
-No photos, people or brands are real; free to use in any site built with WordPress Go.
+Original generated artwork (vector scenes rendered to webp) for Pursae Web Builder Studio sections and site kits.
+No photos, people or brands are real; free to use in any site built with Pursae.
 
 Reference them from section or kit JSON as `{{library:images/<file>}}`; the token is replaced with the asset URL on insert.
 

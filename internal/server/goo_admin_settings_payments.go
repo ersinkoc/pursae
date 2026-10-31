@@ -209,7 +209,7 @@ func (s *Server) gooVisibleEmails() []*gooEmailDef {
 
 func (s *Server) gooEmailsView(c *gin.Context, d *gooSettingsData) {
 	d.Kind, d.Title = "emails", "Emails"
-	d.Intro = `<p>Email notifications sent from Goocommerce are listed below. Click on an email to configure it.</p>`
+	d.Intro = `<p>Email notifications sent from Pursae Commerce are listed below. Click on an email to configure it.</p>`
 	for _, e := range s.gooVisibleEmails() {
 		st := s.gooEmailSettings(e.ID)
 		r := gooEmailRow{ID: e.ID, Title: e.Title, Desc: e.Description, Enabled: st["enabled"] == "yes", Manual: e.Manual,

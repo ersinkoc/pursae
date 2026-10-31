@@ -1340,10 +1340,10 @@ func (s *Server) gooV3SystemStatus(c *gin.Context, req *restRequest) {
 	}
 	var active []any
 	if s.gooOn() {
-		active = append(active, map[string]any{"plugin": "goocommerce", "name": "Goocommerce", "version": gooVersion, "author_name": "WordPress Go", "network_activated": false})
+		active = append(active, map[string]any{"plugin": "goocommerce", "name": "Pursae Commerce", "version": gooVersion, "author_name": "Pursae", "network_activated": false})
 	}
 	restJSON(c, http.StatusOK, map[string]any{
-		"environment": map[string]any{"home_url": lb.Home, "site_url": lb.Home, "version": gooVersion, "store_id": "", "wp_version": "WordPress Go",
+		"environment": map[string]any{"home_url": lb.Home, "site_url": lb.Home, "version": gooVersion, "store_id": "", "wp_version": "Pursae",
 			"wp_multisite": false, "wp_memory_limit": 0, "wp_debug_mode": false, "wp_cron": true, "language": s.settings.String("WPLANG"),
 			"external_object_cache": nil, "server_info": "Go " + runtime.Version(), "php_version": "", "max_upload_size": 0,
 			"default_timezone": s.settings.String("timezone_string"), "mysql_version": "", "mysql_version_string": "PostgreSQL " + dbVersion,

@@ -339,7 +339,7 @@ func (s *Server) seogoDashboardStats(ctx context.Context) map[string]any {
 	if !s.links(ctx).Pretty() {
 		problems = append(problems, "Plain permalinks are in use. Pretty permalinks (Settings › Permalinks) make better URLs and enable the keyphrase-in-slug check.")
 	}
-	if s.settings.String("blogdescription") == "Just another WordPress Go site" {
+	if s.settings.String("blogdescription") == "Just another Pursae site" {
 		problems = append(problems, "You still have the default tagline. Change it under Settings › General.")
 	}
 	out["Problems"] = problems

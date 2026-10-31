@@ -1,4 +1,4 @@
-/* Golementor Studio — on the canvas: a small square toolbar on the hovered section (move up/down,
+/* Pursae Web Builder Studio — on the canvas: a small square toolbar on the hovered section (move up/down,
    duplicate, delete, save as template), "+ Add section" dividers above and below it that open the
    section gallery in place, an "Add section" area at the end of the page, and drops from the Add tab. */
 (function () {

@@ -1,4 +1,4 @@
-/* Goocommerce checkout (checkout.js): payment method boxes, "ship to a different address", account
+/* Pursae Commerce checkout (checkout.js): payment method boxes, "ship to a different address", account
    creation fields, live totals through ?goo-ajax=update_order_review and the AJAX order submission
    through ?goo-ajax=checkout (redirect on success, error notices on failure). Without JavaScript
    the form posts to the checkout page. */

@@ -344,7 +344,7 @@ func TestSEOGoHeadSchemaSitemapsRedirects(t *testing.T) {
 	// Gotenberg: the sidebar script is loaded.
 	_ = srv.settings.Set(t.Context(), map[string]any{"classic-editor-replace": "block"})
 	if _, ed, _ := get(t, c, base+"/wp-admin/post?post="+itoa64(created.ID)+"&action=edit"); !strings.Contains(ed, "seogo-blocks.js") || !strings.Contains(ed, `"mode":"block"`) {
-		t.Error("no SEO-Go sidebar in Gotenberg")
+		t.Error("no SEO-Go sidebar in Pursae Editor")
 	}
 
 	// Breadcrumb shortcode on a page.

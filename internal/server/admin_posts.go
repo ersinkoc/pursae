@@ -460,7 +460,7 @@ func (s *Server) postRows(c *gin.Context, d *postsListData, posts []*store.Post,
 		r.DeleteURL = "/wp-admin/post?post=" + itoa64(p.ID) + "&action=delete&_wpnonce=" + s.nonce(c, "delete-post_"+itoa64(p.ID))
 		r.BuilderURL = s.gweRowAction(c, p)
 		if builderOn && gweBuilt(p) {
-			r.States = append(r.States, "Golementor")
+			r.States = append(r.States, "Pursae Web Builder")
 		}
 		if p.Status == "publish" || p.Status == "private" {
 			r.ViewURL, r.ViewLabel = lb.Permalink(p), "View"
@@ -545,7 +545,7 @@ func (s *Server) pageTemplates() []templateOption {
 		}
 	}
 	if s.golementorOn() {
-		out = append(out, templateOption{"elementor_canvas", "Golementor Canvas"}, templateOption{"elementor_header_footer", "Golementor Full Width"})
+		out = append(out, templateOption{"elementor_canvas", "Pursae Web Builder Canvas"}, templateOption{"elementor_header_footer", "Pursae Web Builder Full Width"})
 	}
 	return out
 }

@@ -3,7 +3,7 @@
   "name": "Fixture Journal",
   "version": "1.1.0",
   "description": "A test fixture for the theme library and demo content.",
-  "author": "WordPress Go",
+  "author": "Pursae",
   "tags": ["Blog"],
   "requires_core": "0.1.0",
   "category": "blog",

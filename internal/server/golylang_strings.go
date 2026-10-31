@@ -203,7 +203,7 @@ func (s *Server) pllExportPO(c *gin.Context) {
 	}
 	group := c.PostForm("group")
 	var b bytes.Buffer
-	fmt.Fprintf(&b, "msgid \"\"\nmsgstr \"\"\n\"Project-Id-Version: %s\\n\"\n\"POT-Creation-Date: %s\\n\"\n\"Language: %s\\n\"\n\"MIME-Version: 1.0\\n\"\n\"Content-Type: text/plain; charset=UTF-8\\n\"\n\"Content-Transfer-Encoding: 8bit\\n\"\n\"X-Generator: Golylang %s\\n\"\n\"Site-Reference: %s\\n\"\n\n",
+	fmt.Fprintf(&b, "msgid \"\"\nmsgstr \"\"\n\"Project-Id-Version: %s\\n\"\n\"POT-Creation-Date: %s\\n\"\n\"Language: %s\\n\"\n\"MIME-Version: 1.0\\n\"\n\"Content-Type: text/plain; charset=UTF-8\\n\"\n\"Content-Transfer-Encoding: 8bit\\n\"\n\"X-Generator: Pursae Multi Language %s\\n\"\n\"Site-Reference: %s\\n\"\n\n",
 		poEscape(s.settings.String("blogname")), time.Now().UTC().Format("2006-01-02 15:04-0700"), l.Locale, Version, poEscape(s.links(c).Home))
 	tr := s.pllStringMap(ctx, l.Slug)
 	for _, r := range s.pllStrings(ctx) {

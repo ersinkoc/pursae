@@ -1,4 +1,4 @@
-/* Goocommerce AJAX add to cart (add-to-cart.js): loop buttons with ajax_add_to_cart and the mini-cart's
+/* Pursae Commerce AJAX add to cart (add-to-cart.js): loop buttons with ajax_add_to_cart and the mini-cart's
    remove links. Without JavaScript the buttons are plain ?add-to-cart= links. */
 (function () {
 	'use strict';

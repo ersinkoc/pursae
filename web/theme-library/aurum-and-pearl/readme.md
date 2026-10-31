@@ -1,6 +1,6 @@
 # Aurum & Pearl
 
-A quiet, luxurious fine-jewellery boutique for Goocommerce: a slim announcement line, a centred masthead
+A quiet, luxurious fine-jewellery boutique for Pursae Commerce: a slim announcement line, a centred masthead
 with a letter-spaced wordmark between search and the bag (with a mini-cart), a menu between hairline rules,
 a full-bleed hero with an italic serif headline and a gold ornament, arched category frames, centred product
 cards that draw a fine gold frame and reveal "add to bag" on hover, an unhurried product page, and an onyx

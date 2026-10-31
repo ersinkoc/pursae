@@ -100,7 +100,7 @@ func TestHubMarketplaceAndUpdates(t *testing.T) {
 
 	// Updates: the Hub announced 9.9.9.
 	_, body, _ = get(t, c, base+"/wp-admin/update-core")
-	if !strings.Contains(body, "WordPress Go 9.9.9</strong> is available") || !strings.Contains(body, "https://example.test/dl") {
+	if !strings.Contains(body, "Pursae 9.9.9</strong> is available") || !strings.Contains(body, "https://example.test/dl") {
 		t.Error("update-core does not announce the new release")
 	}
 

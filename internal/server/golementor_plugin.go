@@ -146,9 +146,9 @@ func (s *Server) gweFrontAdminBar(q *siteQuery, u *store.User) string {
 	}
 	// The same Dashicon as the Golementor admin menu entry (dashicons-layout).
 	icon := `<span class="ab-icon dashicons-layout" aria-hidden="true"></span>`
-	label, href := "Golementor", "/wp-admin/gowebeditor-theme-builder"
+	label, href := "Pursae Web Builder", "/wp-admin/gowebeditor-theme-builder"
 	if canPost {
-		label, href = "Edit with Golementor", gweEditURL(q.Post.ID)
+		label, href = "Edit with Pursae Web Builder", gweEditURL(q.Post.ID)
 	}
 	var sb strings.Builder
 	sb.WriteString(`<li role='group' id='wp-admin-bar-golementor_edit_page' class="menupop"><a class='ab-item' role="menuitem" aria-expanded="false" href='` + esc(href) + `'>` + icon + `<span class="ab-label">` + label + `</span></a>`)

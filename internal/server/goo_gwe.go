@@ -439,7 +439,7 @@ func parseGweDesign(fsys fs.FS, name string) (*gweSnapshot, error) {
 // gweDesignSnapshot is the design of an installed design package.
 func gweDesignSnapshot(t *Theme) (*gweSnapshot, error) {
 	if !gweDesignTheme(t) {
-		return nil, errors.New("not a Golementor design theme")
+		return nil, errors.New("not a Pursae Web Builder design theme")
 	}
 	return parseGweDesign(os.DirFS(t.Package.Dir), gweDesignOf(t))
 }

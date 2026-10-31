@@ -1,6 +1,6 @@
-# GoCDN: feature inventory
+# Pursae CDN: feature inventory
 
-GoCDN is a native (compiled-in) WordPress Go plugin for object storage, CDN delivery and on-the-fly
+Pursae CDN is a native (compiled-in) Pursae plugin for object storage, CDN delivery and on-the-fly
 images. It covers the ground of **WP Offload Media** (Delicious Brains: offload to S3-compatible storage,
 rewrite URLs, remove local files, bulk tools, `AS3CF_SETTINGS`), an **image CDN** (imgix / Cloudflare
 Images style resize, crop, WebP and AVIF with signed URLs) and **CDN Enabler** (KeyCDN: rewrite theme,
@@ -8,12 +8,12 @@ plugin and core asset URLs to a pull CDN), with purging of **WPGo Cache** and on
 **CloudFront**, **BunnyCDN**, **KeyCDN** or **Fastly**). Like every
 native plugin it is **off on a fresh install** (`native_gocdn`), and while it is off nothing of it runs:
 its screens and routes answer 404, uploads are served from disk and no response is rewritten — with one
-deliberate exception: files GoCDN removed from the server keep being answered from the bucket after
+deliberate exception: files Pursae CDN removed from the server keep being answered from the bucket after
 deactivation (see "Deactivating the plugin" below).
 
 Legend: **✓** implemented · **≈** implemented differently (reason given) · **✗** left out (reason given).
 
-## 1. Storage connection (GoCDN › Storage)
+## 1. Storage connection (Pursae CDN › Storage)
 
 | Feature | | Notes |
 |---|---|---|
@@ -23,7 +23,7 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 | Key prefix ("Path in bucket") | ✓ | Default `wp-content/uploads/`, keys are `<prefix><year>/<month>/<file>`. |
 | Object ACL `public-read` | ✓ | Toggle; off for buckets with ACLs disabled (the test explains AccessDenied). |
 | Delivery domain (custom domain / CDN in front of the bucket) | ✓ | Mapped to the bucket root. Without it the provider's public bucket URL is used (R2 needs one). |
-| Secret stored safely | ✓ | AES-GCM with a key derived from the server secret (`gocdnSeal`/`gocdnReveal`, the WPGO Mail SMTP approach); never printed into a form: the field shows "•••• saved — type to replace" with a Clear box. Same for the Cloudflare token. |
+| Secret stored safely | ✓ | AES-GCM with a key derived from the server secret (`gocdnSeal`/`gocdnReveal`, the Pursae SMTP approach); never printed into a form: the field shows "•••• saved — type to replace" with a Clear box. Same for the Cloudflare token. |
 | Configuration from the environment | ✓ | `WPGO_CDN_SETTINGS` = JSON with the option's keys (`provider`, `endpoint`, `bucket`, `access-key-id`, `secret-access-key`, …, the names of `AS3CF_SETTINGS` where it has them). Keys set there override the database, are shown locked, and are never written to the database. |
 | Test connection | ✓ | "Save and Test Connection" / Test: PUT a probe object, HEAD it (size check), GET it through the public delivery URL (warning only), DELETE it, ListObjectsV2. Each step is reported; S3 error codes get advice (SignatureDoesNotMatch → wrong secret, NoSuchBucket, AccessDenied/ACL, region mismatch, clock skew, unreachable endpoint). |
 | SigV4 signer | ✓ | Own implementation (no AWS SDK), header signing and presigned URLs, checked against AWS's published S3 test vectors (GET object, PUT object, GET lifecycle, ListObjects, presigned GET). Also signs CloudFront invalidations. |
@@ -31,7 +31,7 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 | Server-side encryption | ✓ | Encryption setting (`sse-type`): the bucket's default, **SSE-S3** (`x-amz-server-side-encryption: AES256`), **SSE-KMS** (`aws:kms`, optional `sse-kms-key-id`: key ID, alias or ARN; empty = the account's `aws/s3` key) on every PUT / CreateMultipartUpload / CopyObject, or **SSE-C** (`sse-c-key`: 32 bytes as 64 hex or 44 base64 characters). SSE-C sends the three `x-amz-server-side-encryption-customer-*` headers on PUT, CreateMultipartUpload, **every UploadPart, GET, ranged GET and HEAD**, and on CopyObject both for the new object and, as `x-amz-copy-source-…`, for the source (so a move between buckets or a key change by copy works); the client refuses SSE-C over plain http (except loopback). The key is sealed like the storage secret, never printed, never logged (errors carry only the S3 code and message), kept in a remembered previous connection so old objects stay readable after a bucket change. Because the headers cannot be put in a link, SSE-C objects have no public or presigned URL: media URLs are not rewritten to the bucket and removed files are always proxied through the site, whatever "Files removed from the server" says. Changing the key does not re-encrypt objects already uploaded (they are unreadable without the old key: keep it). The old `server-side-encryption` boolean still works (= SSE-S3). |
 | Storage class | ✓ | Option: `x-amz-storage-class` (STANDARD_IA, INTELLIGENT_TIERING, GLACIER_IR, …; empty = bucket default). |
 
-## 2. Media offload (GoCDN › Media Offload)
+## 2. Media offload (Pursae CDN › Media Offload)
 
 | Feature | | Notes |
 |---|---|---|
@@ -39,13 +39,13 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 | Per-file offload state | ✓ | Table `gocdn_items` (migration `0021_gocdn.sql`): media id, uploads path, provider, region, bucket, key, size, MIME, `local_removed`. Rows go with the attachment (`ON DELETE CASCADE`). |
 | Remove files from the server | ✓ | After every file of an attachment is in the bucket. |
 | `/wp-content/uploads/…` for removed files | ✓ | Answered before the page cache: 302 to the delivery URL, a presigned URL (1 h, private buckets) or the file proxied through the site (with the uploads sandbox CSP). Files still on disk are served as before. |
-| Server needs a removed file | ✓ | One helper, `gocdnFetchBack(ctx, path)` (`gocdn_fetch.go`), wraps every place that reads an upload from disk: the image editor (preview/save), the Customizer's site-icon sizes (which are then offloaded too), Golementor's SVG reads (widgets, REST, atomic CSS) and theme-kit export, Goocommerce downloads and the PDF logo, Gontact mail attachments. It downloads the file back when its row says "removed"; the copy is deleted again after 10 minutes while the row still says so. The image service and `/wp-content/uploads` read the bucket directly (no disk write). |
+| Server needs a removed file | ✓ | One helper, `gocdnFetchBack(ctx, path)` (`gocdn_fetch.go`), wraps every place that reads an upload from disk: the image editor (preview/save), the Customizer's site-icon sizes (which are then offloaded too), Pursae Web Builder's SVG reads (widgets, REST, atomic CSS) and theme-kit export, Pursae Commerce downloads and the PDF logo, Pursae Contact Form mail attachments. It downloads the file back when its row says "removed"; the copy is deleted again after 10 minutes while the row still says so. The image service and `/wp-content/uploads` read the bucket directly (no disk write). |
 | Delete attachment deletes remote objects | ✓ | Through `deleteAttachmentFiles`, used by every delete path. The URLs are sent to Cloudflare when automatic purge is on. |
 | Bulk "Offload existing media" | ✓ | Background goroutine, one attachment at a time, progress in the option `gocdn_job` after each one; the screen polls `/wp-admin/gocdn?page=offload&action=progress` (JSON). Stop button. |
 | Resumable | ✓ | A job interrupted by a restart is shown as interrupted; starting it again with "Resume" continues after the last attachment done. |
 | "Download back to the server" / "Remove from the bucket" | ✓ | Same job runner. Remove downloads removed files first and refuses to delete the only copy. |
 | Bucket / provider / path changed later | ✓ | Every row keeps provider, region, bucket, **endpoint** (migration `0023_gocdn_more.sql`) and key. When the Storage screen replaces a connection that still holds items, that connection is kept in the settings (`previous-connections`, secret sealed), so old items keep their old URLs (its delivery domain or public bucket URL) and are still served, fetched back and deleted there. Media Offload then offers **"Move to the current bucket"**: a resumable job with progress that copies each such file to the current bucket under the current path — CopyObject when old and new bucket share endpoint and access key, otherwise download to a temporary file and upload (multipart when large) — updates its row (so its URL switches), optionally deletes the old object, and drops connections no item uses any more. Rows written before 0023 have no endpoint and are taken to be on the configured endpoint; settings changed only through `WPGO_CDN_SETTINGS` are remembered too: the connection in effect is stored (sealed) as `gocdn_conn_seen`, and the first load after the variable names another bucket, endpoint or provider keeps the old connection (with the old credentials) among the previous connections until no item uses it, so files offloaded to the old bucket keep being served. A connection first seen after an upgrade has no earlier record to remember. |
-| Deactivating the plugin | ✓ | When files exist only in the bucket, the Plugins screen's Deactivate link opens a confirmation screen: **"Download them back to the server, then deactivate"** (the download job; GoCDN switches itself off when it finished without failures) or **"Deactivate now and keep serving them from the bucket"**. Any deactivation that leaves removed files (also the bulk action, which cannot ask) turns on the **uploads fallback** (option `gocdn_fallback`): while GoCDN is off, `/wp-content/uploads/<file>` for those files only is answered from the bucket (redirect / presigned / proxy as configured) and fetch-back keeps working; nothing else runs (no rewriting, image service or screens), and the Plugins row says so. The flag clears on activation and when no removed file is left. Chosen as the safest UX: URLs never break, and nothing has to be downloaded unless the admin asks. |
+| Deactivating the plugin | ✓ | When files exist only in the bucket, the Plugins screen's Deactivate link opens a confirmation screen: **"Download them back to the server, then deactivate"** (the download job; Pursae CDN switches itself off when it finished without failures) or **"Deactivate now and keep serving them from the bucket"**. Any deactivation that leaves removed files (also the bulk action, which cannot ask) turns on the **uploads fallback** (option `gocdn_fallback`): while Pursae CDN is off, `/wp-content/uploads/<file>` for those files only is answered from the bucket (redirect / presigned / proxy as configured) and fetch-back keeps working; nothing else runs (no rewriting, image service or screens), and the Plugins row says so. The flag clears on activation and when no removed file is left. Chosen as the safest UX: URLs never break, and nothing has to be downloaded unless the admin asks. |
 
 ## 3. URL rewriting
 
@@ -67,9 +67,9 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 | Thumbnails | ✓ | Image objects (≤ 20 MB) are fetched and shrunk to 160 px by an admin-only endpoint, so private buckets work too. |
 | Import: Copy | ✓ | Downloaded like an upload (sizes generated; offloaded again under the library's own key when copying is on). |
 | Import: Link (remote-only attachment) | ✓ | Registered with the key's path (`<key minus prefix>`, or `gocdn-remote/<key>`), width/height read from the first 512 KB, no local file, no sub-sizes; served through the uploads fallback. Only allowed upload types; duplicates and paths with a local file are skipped. |
-| Use in the media picker | ✓ | A **"Remote storage" tab** in the `wp.media` modal (every frame built on `MediaFrame.Select`: Add Media, featured image, Customizer, widgets, ACF-Go…), for administrators while GoCDN is active and configured: folders, thumbnails, "Load more", import as copy or link. Clicking an object imports it and selects the new attachment (or the one already imported from that key) in the library, ready for Select / Insert. The tab's own strings are in its script and are not translated. |
+| Use in the media picker | ✓ | A **"Remote storage" tab** in the `wp.media` modal (every frame built on `MediaFrame.Select`: Add Media, featured image, Customizer, widgets, Pursae Custom Fields…), for administrators while Pursae CDN is active and configured: folders, thumbnails, "Load more", import as copy or link. Clicking an object imports it and selects the new attachment (or the one already imported from that key) in the library, ready for Select / Insert. The tab's own strings are in its script and are not translated. |
 
-## 5. Image service (GoCDN › Image Service)
+## 5. Image service (Pursae CDN › Image Service)
 
 | Feature | | Notes |
 |---|---|---|
@@ -86,7 +86,7 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 | Content images through the service | ✓ | Option: every upload image on the front end (src/srcset) becomes a signed `/cdn-img/` URL at a set quality, so browsers get WebP. |
 | URL builder | ✓ | On the screen, for templates and testing; `gocdnImageURL` for code. |
 
-## 6. Assets CDN (GoCDN › Assets CDN)
+## 6. Assets CDN (Pursae CDN › Assets CDN)
 
 | Feature | | Notes |
 |---|---|---|
@@ -95,16 +95,16 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 | Included extensions, exclusions | ✓ | Comma list; substrings one per line. |
 | Front-end HTML only, never wp-admin or JSON | ✓ | Relative and own-host absolute URLs; query strings (`?ver=`) kept. CDN origin added to `script-src`, `style-src`, `font-src`, `img-src`, `media-src`, `connect-src`. |
 
-## 7. Purge (GoCDN › Purge)
+## 7. Purge (Pursae CDN › Purge)
 
 | Feature | | Notes |
 |---|---|---|
 | WPGo Cache purge on settings changes, finished jobs, imports | ✓ | `purgeAll`. |
 | Purge button | ✓ | WPGo Cache, every configured CDN (everything; "Purge all CDNs (…)" when there are several), processed image cache. |
-| CDN provider selector | ✓ | None, Cloudflare, Amazon CloudFront, BunnyCDN, KeyCDN, Fastly; the screen shows the chosen provider's fields. Secrets sealed (AES-GCM, like the storage secret), never echoed, cleared when switching provider. Optional automatic purge (everything with GoCDN's automatic purges, the URLs of deleted offloaded files). API errors are shown. |
+| CDN provider selector | ✓ | None, Cloudflare, Amazon CloudFront, BunnyCDN, KeyCDN, Fastly; the screen shows the chosen provider's fields. Secrets sealed (AES-GCM, like the storage secret), never echoed, cleared when switching provider. Optional automatic purge (everything with Pursae CDN's automatic purges, the URLs of deleted offloaded files). API errors are shown. |
 | Several providers at once | ✓ | The provider selector is the main one; "Additional providers" on the Purge screen ticks any of the others, each with its own zone / key ID / secret (`purge-extra` in the settings; sealed, never echoed; a secret left empty keeps the saved one). Every purge (button, automatic purge, URLs of deleted files) goes to all of them concurrently; one failing or slow provider does not hold up the others, and the result names each failure ("Purge failed at Fastly: 401 …. Purged: Cloudflare, BunnyCDN."). Background purges log one warning per failing provider. The old single-provider settings and form keep working. |
 | Cloudflare | ✓ | Zone ID + API token (Zone › Cache Purge). `purge_cache` with `purge_everything` or `files` (30 per request). |
-| Amazon CloudFront | ✓ | Distribution ID + IAM access key / secret (`cloudfront:CreateInvalidation`). `POST /2020-05-31/distribution/<id>/invalidation`, signed with GoCDN's SigV4 signer (service `cloudfront`, `us-east-1`); everything = `/*`, URLs → their paths (3000 per invalidation). |
+| Amazon CloudFront | ✓ | Distribution ID + IAM access key / secret (`cloudfront:CreateInvalidation`). `POST /2020-05-31/distribution/<id>/invalidation`, signed with Pursae CDN's SigV4 signer (service `cloudfront`, `us-east-1`); everything = `/*`, URLs → their paths (3000 per invalidation). |
 | BunnyCDN | ✓ | Pull zone ID + account API key (`AccessKey` header): `POST /pullzone/<id>/purgeCache`, URLs one by one with `POST /purge?url=`. |
 | KeyCDN | ✓ | Zone ID + API key (HTTP basic): `DELETE /zones/purge/<id>.json`, URLs (without scheme, 200 per request) with `DELETE /zones/purgeurl/<id>.json`. |
 | Fastly | ✓ | Service ID + API token (`Fastly-Key`): `POST /service/<id>/purge_all`, URLs with `POST /purge/<host/path>`. |
@@ -112,8 +112,8 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 
 ## 8. Translations
 
-GoCDN's screens are translated after rendering like the rest of the admin (`internal/i18n`, WordPress Go's
-own strings in `web/languages/wpgo-<locale>.json`). Turkish has every GoCDN admin string (brand names stay
+Pursae CDN's screens are translated after rendering like the rest of the admin (`internal/i18n`, Pursae's
+own strings in `web/languages/wpgo-<locale>.json`). Turkish has every Pursae CDN admin string (brand names stay
 as they are); in the other languages the strings added in the second round (AVIF, animations, multipart,
 SSE, storage class, move, purge providers, deactivation screen) are still English. Numbers are kept out of
 translatable sentences. The media-modal tab's strings live in its script and are English.

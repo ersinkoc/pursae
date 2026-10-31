@@ -22,10 +22,10 @@ import (
 
 // golylangPluginRow is the Plugins screen row.
 func golylangPluginRow(active bool) pluginRow {
-	r := pluginRow{Slug: golylangSlug, Name: "Golylang", Version: Version, Native: true, Active: active,
-		Description: "Making WordPress Go multilingual: languages, translated posts, pages, categories, tags and menus, a language switcher, " +
+	r := pluginRow{Slug: golylangSlug, Name: "Pursae Multi Language", Version: Version, Native: true, Active: active,
+		Description: "Making Pursae multilingual: languages, translated posts, pages, categories, tags and menus, a language switcher, " +
 			"translated strings, per-language URLs (directory, subdomain or domain), hreflang tags and synchronization. A clone of Polylang Pro. While it is off, none of it is part of the site.",
-		Author: "WordPress Go"}
+		Author: "Pursae"}
 	if active {
 		r.SettingsURL = "/wp-admin/admin?page=mlang_settings"
 	}
@@ -499,7 +499,7 @@ func (s *Server) pllSettingsScreen(c *gin.Context) {
 	d.Modules = []pllModule{
 		{Key: "url", Title: "URL modifications", Description: "Decide how your URLs will look like."},
 		{Key: "browser", Title: "Detect browser language", Toggle: true, Active: o.Browser,
-			Description: "When the front page is visited, redirects to itself in the browser preferred language. As this doesn't work if it is cached, Golylang keeps the front page out of the cache while it is on."},
+			Description: "When the front page is visited, redirects to itself in the browser preferred language. As this doesn't work if it is cached, Pursae Multi Language keeps the front page out of the cache while it is on."},
 		{Key: "media", Title: "Media", Toggle: true, Active: o.MediaSupport,
 			Description: "Activate languages and translations for media only if you need to translate the text attached to the media: the title, the alternative text, the caption, the description... Note that the file is not duplicated."},
 		{Key: "cpt", Title: "Custom post types and Taxonomies", Description: "Activate languages and translations management for the custom post types and the taxonomies."},
@@ -509,7 +509,7 @@ func (s *Server) pllSettingsScreen(c *gin.Context) {
 		{Key: "share-slugs", Title: "Share slugs", Pro: true, Toggle: true, Active: o.ShareSlugs,
 			Description: "Allows to share the same URL slug across languages for posts and terms. The language must be set from the URL (directory, subdomain or domain) in URL modifications."},
 		{Key: "machine-translation", Title: "Machine Translation", Pro: true, Description: "Allows linkage to DeepL Translate.",
-			Unavailable: "Not available in WordPress Go: it needs a DeepL account and sends content to a third-party service."},
+			Unavailable: "Not available in Pursae: it needs a DeepL account and sends content to a third-party service."},
 	}
 	for i := range d.Modules {
 		d.Modules[i].Open = d.Modules[i].Key == d.Module

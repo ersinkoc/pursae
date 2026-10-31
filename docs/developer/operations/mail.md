@@ -1,11 +1,11 @@
 ---
 title: Mail
-description: How WordPress Go sends e-mail, SMTP settings, and the .eml drop folder for development.
+description: How Pursae sends e-mail, SMTP settings, and the .eml drop folder for development.
 weight: 60
 section: operations
 ---
 
-WordPress Go sends the same e-mails WordPress does: new-user notifications, password resets,
+Pursae sends the same e-mails WordPress does: new-user notifications, password resets,
 comment moderation and "new comment" notices, the admin e-mail change confirmation, personal
 data export links. Messages are **queued** in the jobs table and delivered by the scheduler, so a
 slow SMTP server never delays a request ([cron](cron.md)).
@@ -39,5 +39,5 @@ docker compose -f docker/compose.yaml exec wpgo ls /data/mail
 ## From the admin
 
 Settings › General holds the administration e-mail address; Settings › Discussion decides which
-comment events send a notification. WordPress Go never contacts Gravatar or any other third
+comment events send a notification. Pursae never contacts Gravatar or any other third
 party on its own.

@@ -95,13 +95,13 @@ func gooikeSite(t *testing.T) (string, *http.Client, *Server) {
 	_, body, _ := get(t, c, ts.URL+"/wp-admin/plugins")
 	m := regexp.MustCompile(`href="(/wp-admin/plugins\?action=activate&amp;plugin=gooike[^"]*)"`).FindStringSubmatch(body)
 	if m == nil {
-		t.Fatal("no Activate link for Gooike on the Plugins screen")
+		t.Fatal("no Activate link for Pursae Cookie on the Plugins screen")
 	}
 	if code, _, loc := get(t, c, ts.URL+html.UnescapeString(m[1])); code != http.StatusFound || !strings.Contains(loc, "activate=true") {
-		t.Fatalf("activate Gooike: %d %s", code, loc)
+		t.Fatalf("activate Pursae Cookie: %d %s", code, loc)
 	}
 	if !srv.gooikeOn() {
-		t.Fatal("Gooike is not active after activation")
+		t.Fatal("Pursae Cookie is not active after activation")
 	}
 	return ts.URL, c, srv
 }
@@ -136,10 +136,10 @@ func TestGooikeOffByDefault(t *testing.T) {
 	installAndLogin(t, ts, c)
 	base := ts.URL
 	if srv.gooikeOn() {
-		t.Fatal("Gooike is active on a fresh install")
+		t.Fatal("Pursae Cookie is active on a fresh install")
 	}
 	if b := bodyOf(anonGet(t, base+"/")); strings.Contains(b, "gooike") {
-		t.Error("the front end mentions Gooike while it is off")
+		t.Error("the front end mentions Pursae Cookie while it is off")
 	}
 	for _, u := range []string{"/wp-admin/gooike", "/wp-admin/gooike?page=logs", gooikeAssets + "/gooike.js"} {
 		if code, _, _ := get(t, c, base+u); code != http.StatusNotFound {
@@ -150,14 +150,14 @@ func TestGooikeOffByDefault(t *testing.T) {
 		t.Errorf("consent endpoint while off: %d", r.StatusCode)
 	}
 	if _, body, _ := get(t, c, base+"/wp-admin/"); strings.Contains(body, "toplevel_page_gooike") {
-		t.Error("the Gooike menu shows while the plugin is off")
+		t.Error("the Pursae Cookie menu shows while the plugin is off")
 	}
 }
 
 func TestGooikeFrontAndScripts(t *testing.T) {
 	base, c, srv := gooikeSite(t)
 	if _, body, _ := get(t, c, base+"/wp-admin/"); !strings.Contains(body, "toplevel_page_gooike") || !strings.Contains(body, "gooike?page=logs") {
-		t.Error("the Gooike menu is missing while the plugin is active")
+		t.Error("the Pursae Cookie menu is missing while the plugin is active")
 	}
 	for _, p := range []string{"", "banner", "banner&tab=design", "banner&tab=texts", "categories", "categories&tab=cookies", "categories&tab=scan", "scripts", "logs", "settings", "preview"} {
 		if code, body, _ := get(t, c, base+"/wp-admin/gooike?page="+p); code != http.StatusOK || strings.Contains(body, "Template error") {
@@ -263,7 +263,7 @@ func TestGooikeFrontAndScripts(t *testing.T) {
 		t.Fatal("still active")
 	}
 	if b := bodyOf(anonGet(t, base+"/")); strings.Contains(b, "gooike") || strings.Contains(b, "px.example.com") {
-		t.Error("Gooike output remains after deactivation")
+		t.Error("Pursae Cookie output remains after deactivation")
 	}
 	if len(srv.gooikeLoad().Scripts) != 3 {
 		t.Error("settings were lost on deactivation")

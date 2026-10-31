@@ -1,6 +1,6 @@
 # Peak Athletics
 
-An energetic sports and outdoor store for Goocommerce: a top bar, a bold carbon header with a three-level
+An energetic sports and outdoor store for Pursae Commerce: a top bar, a bold carbon header with a three-level
 mega menu (sports, then products), an inline product search and a volt cart button with a mini-cart; a
 full-bleed hero with a volt slash and a stats band; slanted category tiles; product cards that lift on
 hover and reveal a full-width add-to-cart bar; a chunky product page with a big volt add-to-cart button;

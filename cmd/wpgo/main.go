@@ -47,7 +47,7 @@ func main() {
 		}
 		fmt.Printf("applied %d migration(s) %v\n", len(applied), applied)
 	case "version":
-		fmt.Println("WordPress Go", server.Version)
+		fmt.Println("Pursae", server.Version)
 	case "adminsec": // AdminSecGo recovery: disable-hide-login, reset-user <login>, unlock-all, deactivate
 		pool, err := db.Connect(ctx, cfg.DatabaseURL)
 		if err != nil {

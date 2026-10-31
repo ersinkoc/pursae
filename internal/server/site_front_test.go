@@ -96,7 +96,7 @@ func TestFrontFeedsAndRedirects(t *testing.T) {
 
 	// A post's comment feed lists that post's comments, in RSS2 and Atom.
 	_, body, _ = get(t, anon, base+helloPath+"feed/")
-	for _, want := range []string{`<title>Comments on: Hello world!</title>`, `<link>` + base + helloPath + `</link>`, `<title>By: A WordPress Go Commenter</title>`, `<dc:creator><![CDATA[A WordPress Go Commenter]]></dc:creator>`} {
+	for _, want := range []string{`<title>Comments on: Hello world!</title>`, `<link>` + base + helloPath + `</link>`, `<title>By: A Pursae Commenter</title>`, `<dc:creator><![CDATA[A Pursae Commenter]]></dc:creator>`} {
 		if !strings.Contains(body, want) {
 			t.Errorf("post comments feed misses %q in %s", want, body)
 		}
@@ -105,13 +105,13 @@ func TestFrontFeedsAndRedirects(t *testing.T) {
 		t.Error("post comment feed shows the post content instead of its comments")
 	}
 	_, body, _ = get(t, anon, base+helloPath+"feed/atom/")
-	for _, want := range []string{`<feed`, `<title type="text">Comments on: Hello world!</title>`, `<link rel="self" type="application/atom+xml" href="` + base + helloPath + `feed/atom/" />`, `<title>By: A WordPress Go Commenter</title>`, `<thr:in-reply-to ref="`} {
+	for _, want := range []string{`<feed`, `<title type="text">Comments on: Hello world!</title>`, `<link rel="self" type="application/atom+xml" href="` + base + helloPath + `feed/atom/" />`, `<title>By: A Pursae Commenter</title>`, `<thr:in-reply-to ref="`} {
 		if !strings.Contains(body, want) {
 			t.Errorf("post atom comments feed misses %q", want)
 		}
 	}
 	_, body, _ = get(t, anon, base+"/comments/feed/atom/")
-	if !strings.Contains(body, `<title type="text">Comments for Front Site</title>`) || !strings.Contains(body, `<title>Comment on Hello world! by A WordPress Go Commenter</title>`) {
+	if !strings.Contains(body, `<title type="text">Comments for Front Site</title>`) || !strings.Contains(body, `<title>Comment on Hello world! by A Pursae Commenter</title>`) {
 		t.Errorf("site atom comments feed = %s", body)
 	}
 	_, body, _ = get(t, anon, base+"/comments/feed/")
@@ -438,7 +438,7 @@ func TestFrontCommentPagingFloodAndClosing(t *testing.T) {
 	}
 	srv.purgeTags("post:" + itoa64(hello.ID))
 	_, body, _ = get(t, anon, base+helloPath)
-	if !strings.Contains(body, "Second comment") || strings.Contains(body, "Third comment") || strings.Index(body, "Second comment") > strings.Index(body, "A WordPress Go Commenter") {
+	if !strings.Contains(body, "Second comment") || strings.Contains(body, "Third comment") || strings.Index(body, "Second comment") > strings.Index(body, "A Pursae Commenter") {
 		t.Errorf("oldest/desc page wrong: %s", body)
 	}
 	if !strings.Contains(body, `<div class="nav-next"><a href="`+base+helloPath+`comment-page-2/#comments" >Newer comments</a></div>`) {

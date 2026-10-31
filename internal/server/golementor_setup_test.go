@@ -287,7 +287,7 @@ func TestGolementorSetupWizard(t *testing.T) {
 	// Offered after activating Golementor; gone with it.
 	togglePlugin(t, c, base, "deactivate")
 	if code, _, _ := get(t, c, base+gweSetupPath); code != http.StatusNotFound {
-		t.Errorf("wizard while Golementor is off: %d", code)
+		t.Errorf("wizard while Pursae Web Builder is off: %d", code)
 	}
 	loc = togglePlugin(t, c, base, "activate")
 	if !strings.Contains(loc, "gwe_setup=1") {

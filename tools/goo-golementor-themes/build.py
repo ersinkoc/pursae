@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Builds the Golementor store themes of the theme library (web/theme-library/<slug>/).
+"""Builds the Pursae Web Builder store themes of the theme library (web/theme-library/<slug>/).
 
-Each theme is a package (docs/theme-package.md) whose theme.json names a Golementor design
+Each theme is a package (docs/theme-package.md) whose theme.json names a Pursae Web Builder design
 (golementor/design.json: the kit's global colors and fonts plus Theme Builder parts: header, footer,
 single product, products archive, cart, checkout and my account) and a demo (demo/demo.json: a
-store, pages built with Golementor, menus). The images come from art.py.
+store, pages built with Pursae Web Builder, menus). The images come from art.py.
 
     python3 tools/goo-golementor-themes/build.py            # writes the three packages
     python3 tools/goo-golementor-themes/art.py              # draws their demo images and screenshots
@@ -536,7 +536,7 @@ FALLBACK_HEADER = """<!doctype html>
 FALLBACK_FOOTER = """	</main>
 	<footer class="site-footer">
 		{{if has_nav_menu . "footer"}}<nav class="footer-navigation" aria-label="Footer menu">{{nav_menu . "footer"}}</nav>{{end}}
-		<p class="site-info">&copy; {{.SiteName}} &middot; Built with Golementor and Goocommerce</p>
+		<p class="site-info">&copy; {{.SiteName}} &middot; Built with Pursae Web Builder and Pursae Commerce</p>
 	</footer>
 </div>
 {{.Footer}}{{.AdminBar}}
@@ -594,9 +594,9 @@ FALLBACK = {
 def theme_json(th):
     return {
         "slug": th["slug"], "name": th["name"], "version": "1.0.0", "description": th["description"],
-        "author": "WordPress Go", "author_url": "https://github.com/boracomet/wordpress-go",
+        "author": "Pursae", "author_url": "https://github.com/boracomet/wordpress-go",
         "theme_url": f"https://github.com/boracomet/wordpress-go/tree/main/web/theme-library/{th['slug']}",
-        "tags": ["E-Commerce", "Golementor", "Theme Builder", th["tag"], "Custom Colors", "Custom Menu", "Translation Ready", "Full Width Template"],
+        "tags": ["E-Commerce", "Pursae Web Builder", "Theme Builder", th["tag"], "Custom Colors", "Custom Menu", "Translation Ready", "Full Width Template"],
         "requires_core": "0.1.0", "screenshot": "assets/screenshot.png", "category": th["category"], "style": th["style"],
         "demo": "demo/demo.json", "golementor": "golementor/design.json",
         "menu_locations": [{"id": "primary", "name": "Primary Menu"}, {"id": "footer", "name": "Footer Menu"}],
@@ -613,7 +613,7 @@ def style_css(th):
                       for fam, file, w in th["font_files"])
     r = th.get("image_radius", 18)
     br = th.get("radius", 999)
-    return f"""/* {th['name']}: a Golementor store theme. Layout, colours and type live in the Golementor design
+    return f"""/* {th['name']}: a Pursae Web Builder store theme. Layout, colours and type live in the Pursae Web Builder design
    (Theme Builder parts and Site Settings); this file carries the fonts and the store's finishing touches. */
 {faces}
 
@@ -682,17 +682,17 @@ def readme(th):
 
 {th['description']}
 
-**Built with Golementor.** Activating the theme loads its design into the Theme Builder: header, footer,
+**Built with Pursae Web Builder.** Activating the theme loads its design into the Theme Builder: header, footer,
 single product, shop and category archive, cart, checkout and my account parts, plus the Site Settings
 (global colours and fonts). Edit any of them visually in Appearance › Theme Builder; Save as theme keeps
 a copy. The store widgets (products, categories, menu cart, product images, price, add to cart, tabs,
 related products, cart, checkout, my account, breadcrumbs) are in the editor's Store panel.
 
-**Golylang ready.** The header and footer carry the language switcher; translate pages, products and
-categories with Golylang, and theme parts from the Theme Builder's language links.
+**Pursae Multi Language ready.** The header and footer carry the language switcher; translate pages, products and
+categories with Pursae Multi Language, and theme parts from the Theme Builder's language links.
 
 The demo imports a complete store: twelve products (with variations and a bundle), four categories,
-reviews, coupons (WELCOME10) and shipping, plus a home page, {th['about']['menu']} and Contact built with Golementor.
+reviews, coupons (WELCOME10) and shipping, plus a home page, {th['about']['menu']} and Contact built with Pursae Web Builder.
 
 Fonts: {th['fonts_credit']} (SIL Open Font License), self-hosted. Artwork: original illustrations made for
 this theme, dedicated to the public domain (CC0).

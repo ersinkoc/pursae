@@ -1,24 +1,24 @@
-# WPGO Mail SMTP — feature inventory
+# Pursae SMTP — feature inventory
 
-WPGO Mail SMTP is WordPress Go's native (compiled-in) clone of **WP Mail SMTP** by WPForms /
+Pursae SMTP is Pursae's native (compiled-in) clone of **Pursae SMTP** by WPForms /
 Awesome Motive (Lite and Pro), the most installed mail plugin for WordPress. Sources: the
 wordpress.org listing (`wordpress.org/plugins/wp-mail-smtp`), the wpmailsmtp.com documentation,
 and the plugin source (`awesomemotive/wp-mail-smtp`, `src/Options.php` for option keys and the
 `WPMS_*` constants).
 
-Like Classic Editor, WPGo Cache and Golementor it ships inside the binary, is listed on
+Like Classic Editor, WPGo Cache and Pursae Web Builder it ships inside the binary, is listed on
 **Plugins › Installed Plugins** and **Add Plugin**, starts **inactive** and adds nothing (menu,
 routes, notices, dashboard widget, mail behaviour) while inactive. While it is inactive,
 `wp_mail()` keeps working exactly as before: the `WPGO_SMTP_*` environment variables, or `.eml`
 files in `WPGO_MAIL_DIR` on development sites.
 
-Legend: ✅ implemented · ◐ implemented with a WordPress Go specific difference · — left out (reason given).
+Legend: ✅ implemented · ◐ implemented with a Pursae specific difference · — left out (reason given).
 
-## 1. How it plugs into WordPress Go
+## 1. How it plugs into Pursae
 
-| WP Mail SMTP | WordPress Go | |
+| Pursae SMTP | Pursae | |
 |---|---|---|
-| Replaces `wp_mail()`'s PHPMailer instance (`phpmailer_init`) | `Server.mailer()` attaches a `mail.Transport` to the `mail.Mailer` while the plugin is active. Every sender goes through it: the queued `wp_mail` job (core notifications) and direct `Send` calls (Golementor form e-mails). | ✅ |
+| Replaces `wp_mail()`'s PHPMailer instance (`phpmailer_init`) | `Server.mailer()` attaches a `mail.Transport` to the `mail.Mailer` while the plugin is active. Every sender goes through it: the queued `wp_mail` job (core notifications) and direct `Send` calls (Pursae Web Builder form e-mails). | ✅ |
 | Plugin data in options `wp_mail_smtp`, `wp_mail_smtp_*` | One JSON option `wp_mail_smtp` (same group/key names: `mail.from_email`, `smtp.host`, `mailgun.api_key`, …), activation switch `native_wp_mail_smtp` | ✅ |
 | Email log in `{prefix}wpmailsmtp_emails_log`, debug events in `{prefix}wpmailsmtp_debug_events` | Tables `wpmailsmtp_emails_log`, `wpmailsmtp_debug_events` (migration `0011_wp_mail_smtp.sql`) | ✅ |
 | Secrets stored in plain text in `wp_options` (or a constant) | Secrets (SMTP password, API keys, client secrets, OAuth tokens, Twilio token) are AES-256-GCM encrypted with a key derived from the server secret (`WPGO_SECRET` / `auth_secret`), stored as `enc:v1:…`, never printed back into a form (the field shows a "saved" placeholder and a *Remove* checkbox; leaving it blank keeps the saved value) | ◐ stronger than upstream |
@@ -28,7 +28,7 @@ Legend: ✅ implemented · ◐ implemented with a WordPress Go specific differen
 | Step | | |
 |---|---|---|
 | Welcome ("Let's get started") | Opens automatically on first activation; "Go back to the Dashboard" exits | ✅ |
-| Import from other SMTP plugins (Easy WP SMTP, FluentSMTP, Post SMTP, …) | — no such plugins exist on WordPress Go |  — |
+| Import from other SMTP plugins (Easy WP SMTP, FluentSMTP, Post SMTP, …) | — no such plugins exist on Pursae |  — |
 | Choose your SMTP mailer (logo grid, recommended mailers first) | Same grid, every mailer of §4 | ✅ |
 | Configure mailer settings (+ From Email / From Name) | Same fields as the settings screen, saved through the same code | ✅ |
 | Plugin features to enable (Email Log, Email Reports/weekly summary, Alerts, Improved deliverability, Smart routing…) | Checkboxes for Email Log, Complete Email Reports (log content), Weekly Email Summary, Instant Email Alert (to the admin e-mail), Detailed Error Reports (debug events) | ✅ |
@@ -41,15 +41,15 @@ Legend: ✅ implemented · ◐ implemented with a WordPress Go specific differen
 
 | Setting | Behaviour | |
 |---|---|---|
-| From Email + **Force From Email** | Address used for every message. Without *Force*, a message that sets its own From (e.g. a Golementor form's "From Email") keeps it; with *Force* it is always replaced | ✅ |
+| From Email + **Force From Email** | Address used for every message. Without *Force*, a message that sets its own From (e.g. a Pursae Web Builder form's "From Email") keeps it; with *Force* it is always replaced | ✅ |
 | From Name + **Force From Name** | Same for the display name (default: site title) | ✅ |
 | Return Path ("Set the return-path to match the From Email") | The SMTP envelope sender (bounces) is the From Email; when a message keeps its own From (not forced) the envelope follows it only with Return Path on | ◐ (no PHP `mail()`) |
 | Mailer | Default (none), Other SMTP and every mailer below. Pro-only mailers are included (no license) | ✅ |
 | Other SMTP: SMTP Host, Encryption (None / SSL / TLS), SMTP Port (25 / 465 / 587 suggested per encryption), Auto TLS, Authentication, SMTP Username, SMTP Password | Native `net/smtp` client; SSL = implicit TLS, TLS = STARTTLS required, None + Auto TLS = STARTTLS when the server offers it; AUTH PLAIN (LOGIN fallback when the server only advertises LOGIN) | ✅ |
-| Default (none) = PHP `mail()` | WordPress Go's built-in transport: `WPGO_SMTP_*` env SMTP, or `.eml` files | ◐ |
+| Default (none) = PHP `mail()` | Pursae's built-in transport: `WPGO_SMTP_*` env SMTP, or `.eml` files | ◐ |
 | Backup Connection (Pro) | Pick one Additional Connection; when the primary connection fails the message is retried once through it; the log records which connection delivered it | ✅ |
 | Rate limiting (Pro, per minute/hour/day/week/month) | Under Misc. Sends are counted in `wpmailsmtp_rate`; over a limit the message is re-queued as a `wp_mail` job for when the window allows it (a form's own From is not kept on the re-queued copy) | ✅ |
-| Optimized email sending (Pro, background queue) | Always on in WordPress Go: core e-mail is already sent by the job runner | ◐ |
+| Optimized email sending (Pro, background queue) | Always on in Pursae: core e-mail is already sent by the job runner | ◐ |
 
 ## 4. Mailers
 
@@ -93,13 +93,13 @@ access tokens are stored encrypted; access tokens are refreshed automatically.
 
 | | | |
 |---|---|---|
-| Settings › Email Log: Enable Log, Log Email Content, Save Attachments, Open/Click Email Tracking, Log Retention Period (forever, 1 day … 1 year) | Enable, content, retention ✅; attachments — (WordPress Go messages carry none); open/click tracking — (needs a public tracking endpoint and HTML rewriting; not done) | ◐ |
+| Settings › Email Log: Enable Log, Log Email Content, Save Attachments, Open/Click Email Tracking, Log Retention Period (forever, 1 day … 1 year) | Enable, content, retention ✅; attachments — (Pursae messages carry none); open/click tracking — (needs a public tracking endpoint and HTML rewriting; not done) | ◐ |
 | List table: Subject, From, To, Status (Sent/Failed/Waiting), Source, Date; status views (All/Sent/Failed), search (subject, recipient, content), date filter, pagination, bulk delete, "Delete All Logs" | ✅ |
 | Single email view: headers, recipients, mailer, connection, attempts, error, plain/HTML content (HTML in a sandboxed iframe), *Resend*, *Delete*, Print | ✅ |
 | Resend (single + bulk), optionally to different recipients ("forward") | ✅ |
 | Export (Tools › Export): CSV / EML (zip) / XLSX, date range, field selection | CSV and EML (zip) ✅; XLSX — | ◐ |
 | Retention: old entries removed by the daily job | ✅ |
-| Repeated attempts of a queued message update the same entry (attempt counter) instead of adding new ones; the job runner still retries failed core e-mail (1, 4, 9, 16 minutes) | ◐ WordPress Go specific |
+| Repeated attempts of a queued message update the same entry (attempt counter) instead of adding new ones; the job runner still retries failed core e-mail (1, 4, 9, 16 minutes) | ◐ Pursae specific |
 
 ## 7. Email Reports (Pro) (`admin?page=wp-mail-smtp-reports`)
 
@@ -114,7 +114,7 @@ access tokens are stored encrypted; access tokens are refreshed automatically.
 
 | Channel | | |
 |---|---|---|
-| Email (up to 3 addresses) | Sent through WordPress Go's built-in transport (the plugin's mailer just failed) | ✅ |
+| Email (up to 3 addresses) | Sent through Pursae's built-in transport (the plugin's mailer just failed) | ✅ |
 | Slack webhook, Discord webhook, Microsoft Teams webhook | JSON POST (`text` / `content` / MessageCard) | ✅ |
 | Twilio SMS (Account SID, Auth Token, From, To) | `POST api.twilio.com/2010-04-01/Accounts/{sid}/Messages.json` | ✅ |
 | Custom webhook (JSON POST of the failure) | ✅ |
@@ -124,18 +124,18 @@ access tokens are stored encrypted; access tokens are refreshed automatically.
 
 ## 9. Email Controls (Pro) (`tab=control`)
 
-Toggles for the notification e-mails WordPress Go core sends (identified by their subject):
+Toggles for the notification e-mails Pursae core sends (identified by their subject):
 comment moderation / new comment to author; admin e-mail change confirmation; user e-mail change
 request; password reset request, password changed (to admin), new user registration (admin + user);
 personal data confirm request / action confirmed / export ready / erasure fulfilled. Disabled
-types are dropped silently. Automatic core/plugin/theme update e-mails don't exist in WordPress Go. ✅
+types are dropped silently. Automatic core/plugin/theme update e-mails don't exist in Pursae. ✅
 
 ## 10. Misc tab (`tab=misc`)
 
 | | | |
 |---|---|---|
 | Do Not Send (+ confirmation) | Blocks all e-mail; a red notice reminds the admin; blocked messages become debug events | ✅ |
-| Hide Announcements | Stored for parity; WordPress Go shows no product announcements | ◐ |
+| Hide Announcements | Stored for parity; Pursae shows no product announcements | ◐ |
 | Hide Email Delivery Errors | Hides the admin-wide "last e-mail failed" notice | ✅ |
 | Hide Dashboard Widget | ✅ |
 | Disable Email Summaries | ✅ |
@@ -156,9 +156,9 @@ types are dropped silently. Automatic core/plugin/theme update e-mails don't exi
 
 | | | |
 |---|---|---|
-| Dashboard widget "WP Mail SMTP": sent/failed totals and a 7-day chart, link to the log; can be hidden (Misc) | ✅ |
+| Dashboard widget "Pursae SMTP": sent/failed totals and a 7-day chart, link to the log; can be hidden (Misc) | ✅ |
 | Admin notice when the last e-mail failed (with the error and links to the log / settings) | ✅ |
-| Admin bar "WP Mail SMTP" error menu | — notice is used instead | — |
+| Admin bar "Pursae SMTP" error menu | — notice is used instead | — |
 | Site Health tests | — (core Site Health shows the transport) | — |
 
 ## 13. Constants → environment variables
@@ -186,7 +186,7 @@ WPMS_ALERT_TWILIO_SMS_TO_PHONE_NUMBER`), `WPMS_SUMMARY_REPORT_EMAIL_DISABLED`,
 `WPMS_DEBUG_EVENTS_RETENTION_PERIOD`. License, WhatsApp, multisite and one-click constants are not
 applicable.
 
-## 14. Left out (not applicable to single-site WordPress Go)
+## 14. Left out (not applicable to single-site Pursae)
 
 Multisite network settings, license/upgrade screens and "About Us"/product upsells, usage
 tracking, WP-CLI commands, the WordPress Abilities API, importing other SMTP plugins' settings,

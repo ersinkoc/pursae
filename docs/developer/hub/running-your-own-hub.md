@@ -11,7 +11,7 @@ channel, or do not want sites to contact the public Hub at all.
 ## Deploy
 
 `wpgo-hub` is a single binary with a PostgreSQL database and a data directory for packages and
-keys. In the WordPress Go compose stack it is published on host port **8090**.
+keys. In the Pursae compose stack it is published on host port **8090**.
 
 | Variable | Default | Meaning |
 |----------|---------|---------|

@@ -240,7 +240,7 @@ func (s *Server) gweDownloadGoogleFont(ctx context.Context, family, typ string) 
 		}
 		return strings.TrimSuffix(strings.TrimRight(face, " \n\t}"), ";") + ";\n  font-display: swap;\n}"
 	})
-	header := "/* " + family + " — Google Fonts served locally by Golementor (SIL Open Font License / Apache License, see fonts.google.com) */\n"
+	header := "/* " + family + " — Google Fonts served locally by Pursae Web Builder (SIL Open Font License / Apache License, see fonts.google.com) */\n"
 	return gweWriteFileAtomic(filepath.Join(cssDir, key+".css"), []byte(header+text))
 }
 

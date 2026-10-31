@@ -106,7 +106,7 @@ Status: {{if .Configured}}<span class="gc-badge ok">Configured</span>{{else}}<sp
 <table class="form-table" role="presentation">
 <tr><th scope="row">New uploads</th><td><label><input type="checkbox" name="copy-to-s3" value="1"{{if .S.CopyToBucket}} checked{{end}}{{if .Lock "copy-to-s3"}} disabled{{end}}> Copy files to the bucket as they are uploaded (with every generated size)</label></td></tr>
 <tr><th scope="row">Server copies</th><td><label><input type="checkbox" name="remove-local-file" value="1"{{if .S.RemoveLocal}} checked{{end}}{{if .Lock "remove-local-file"}} disabled{{end}}> Remove files from the server once they are in the bucket</label>
-	<p class="description">The server fetches a file back whenever it needs to read one (image editor, site icon, page builder, downloads, mail attachments); <code>/wp-content/uploads</code> URLs keep working (see Storage › Files removed from the server), even after GoCDN is deactivated.</p></td></tr>
+	<p class="description">The server fetches a file back whenever it needs to read one (image editor, site icon, page builder, downloads, mail attachments); <code>/wp-content/uploads</code> URLs keep working (see Storage › Files removed from the server), even after Pursae CDN is deactivated.</p></td></tr>
 <tr><th scope="row">Delivery</th><td><label><input type="checkbox" name="serve-from-s3" value="1"{{if .S.ServeFromCDN}} checked{{end}}{{if .Lock "serve-from-s3"}} disabled{{end}}> Rewrite media URLs to the bucket / delivery domain</label>
 	<p class="description">On the site, in feeds and in the REST API: attachment URLs, <code>srcset</code>, post content. Only offloaded files are rewritten; wp-admin and the editors keep local URLs.</p></td></tr>
 </table>
@@ -243,7 +243,7 @@ Status: {{if .Configured}}<span class="gc-badge ok">Configured</span>{{else}}<sp
 {{end}}
 
 {{if eq .Page "purge"}}
-<p class="gc-sub">Every GoCDN settings change and finished bulk job purges WPGo Cache{{if not .CacheOn}} (WPGo Cache is not active){{end}}.</p>
+<p class="gc-sub">Every Pursae CDN settings change and finished bulk job purges WPGo Cache{{if not .CacheOn}} (WPGo Cache is not active){{end}}.</p>
 <form method="post" action="/wp-admin/gocdn?page=purge" class="gc-tools">
 <input type="hidden" name="_wpnonce" value="{{.Nonce}}">
 <button type="submit" name="do" value="purge-cache" class="button button-primary">Purge WPGo Cache</button>
@@ -285,7 +285,7 @@ Status: {{if .Configured}}<span class="gc-badge ok">Configured</span>{{else}}<sp
 	<p><label>{{.SecretName}} <input type="password" name="extra-{{.Key}}-secret" class="regular-text code" value="" autocomplete="new-password" placeholder="{{if $v.SecretSaved}}•••••••• saved — type to replace{{end}}"{{if $v.Locked}} disabled{{end}}></label>
 	{{if $v.SecretSaved}}<span class="gc-badge ok">Saved</span> <label><input type="checkbox" name="extra-{{.Key}}-secret-clear" value="1"> Clear</label>{{end}}</p></td></tr>
 {{end}}{{end}}
-<tr><th scope="row">Automatic purge</th><td><label><input type="checkbox" name="cloudflare-auto" value="1"{{if .S.CFAuto}} checked{{end}}{{if .Lock "cloudflare-auto"}} disabled{{end}}> Purge the CDN with every automatic purge of GoCDN, and purge the URLs of deleted offloaded files</label></td></tr>
+<tr><th scope="row">Automatic purge</th><td><label><input type="checkbox" name="cloudflare-auto" value="1"{{if .S.CFAuto}} checked{{end}}{{if .Lock "cloudflare-auto"}} disabled{{end}}> Purge the CDN with every automatic purge of Pursae CDN, and purge the URLs of deleted offloaded files</label></td></tr>
 </table>
 <p class="submit"><button type="submit" name="do" value="save" class="button button-primary">Save Changes</button></p>
 </form>
@@ -294,14 +294,14 @@ Status: {{if .Configured}}<span class="gc-badge ok">Configured</span>{{else}}<sp
 {{if eq .Page "deactivate"}}
 <div class="gc-job">
 <p><strong><span translate="no">{{.Removed}}</span> file(s) of the Media Library exist only in the bucket</strong> (they were removed from the server).</p>
-<p>Without GoCDN their <code>/wp-content/uploads</code> URLs would point at files that are not on the server. Choose how to deactivate:</p>
+<p>Without Pursae CDN their <code>/wp-content/uploads</code> URLs would point at files that are not on the server. Choose how to deactivate:</p>
 <form method="post" action="/wp-admin/gocdn?page=deactivate" class="gc-tools">
 	<input type="hidden" name="_wpnonce" value="{{.Nonce}}">
 	<button type="submit" name="do" value="deactivate-download" class="button button-primary"{{if .Job.Running}} disabled{{end}}>Download them back to the server, then deactivate</button>
 	<button type="submit" name="do" value="deactivate-keep" class="button">Deactivate now and keep serving them from the bucket</button>
 	<a class="button-link" href="/wp-admin/plugins">Cancel</a>
 </form>
-<p class="description">The first choice runs "Download back to the server" (progress on the Media Offload screen) and deactivates GoCDN when it finished without failures. With the second, GoCDN stops rewriting URLs, the image service and its screens, but <code>/wp-content/uploads</code> keeps answering the removed files from the bucket (as set under Storage › Files removed from the server) and the server still fetches them back when it needs them, until you activate GoCDN again and download them.</p>
+<p class="description">The first choice runs "Download back to the server" (progress on the Media Offload screen) and deactivates Pursae CDN when it finished without failures. With the second, Pursae CDN stops rewriting URLs, the image service and its screens, but <code>/wp-content/uploads</code> keeps answering the removed files from the bucket (as set under Storage › Files removed from the server) and the server still fetches them back when it needs them, until you activate Pursae CDN again and download them.</p>
 </div>
 {{end}}
 </div>

@@ -59,7 +59,7 @@
 @media (max-width:1100px){.gooike-wrap .gk-design,.gooike-wrap .gk-grid2,.gooike-wrap .gk-split{grid-template-columns:1fr}.gooike-wrap .gk-preview{position:static}}
 </style>
 <div class="wrap gooike-wrap">
-<h1 class="wp-heading-inline"><span class="dashicons dashicons-shield gk-h1-icon" aria-hidden="true"></span>Gooike &rsaquo; {{.Title}}</h1>
+<h1 class="wp-heading-inline"><span class="dashicons dashicons-shield gk-h1-icon" aria-hidden="true"></span>Pursae Cookie &rsaquo; {{.Title}}</h1>
 {{if eq .Page "scripts"}}<a href="/wp-admin/gooike?page=scripts&amp;new=1#gk-script-form" class="page-title-action">Add Custom Script</a>{{end}}
 {{if eq .Page "logs"}}<a href="/wp-admin/gooike?page=logs&amp;action=export&amp;_wpnonce={{.Nonce}}{{if .QS}}&amp;{{.QS}}{{end}}" class="page-title-action">Export CSV</a>{{end}}
 {{if eq .Page "banner"}}<a href="/wp-admin/gooike?page=preview" class="page-title-action" target="_blank" rel="noopener">Open Preview</a>{{end}}
@@ -68,7 +68,7 @@
 
 {{/* ============================== Dashboard ============================== */}}
 {{if eq .Page ""}}
-<p class="gk-subtitle">Consent decisions of the last {{.Stats.Days}} days. Gooike asks before anything optional runs under <strong>{{if eq .S.Regulation "ccpa"}}CCPA/CPRA (opt-out){{else if eq .S.Regulation "kvkk"}}KVKK (opt-in){{else}}GDPR / ePrivacy (opt-in){{end}}</strong>.</p>
+<p class="gk-subtitle">Consent decisions of the last {{.Stats.Days}} days. Pursae Cookie asks before anything optional runs under <strong>{{if eq .S.Regulation "ccpa"}}CCPA/CPRA (opt-out){{else if eq .S.Regulation "kvkk"}}KVKK (opt-in){{else}}GDPR / ePrivacy (opt-in){{end}}</strong>.</p>
 <div class="gk-cards">
 	<div class="gk-card"><span class="lbl">Decisions</span><span class="num">{{.Stats.Total}}</span><span class="sub">{{.Stats.AllTime}} in the log</span></div>
 	<div class="gk-card accept"><span class="lbl">Accept all</span><span class="num">{{.Stats.Accept}}</span><span class="sub">{{.Stats.AcceptPct}} of decisions</span></div>
@@ -221,7 +221,7 @@
 {{end}}
 {{end}}
 {{if eq .Tab "cookies"}}
-<p class="gk-subtitle">The cookie declaration shown in the preferences and by <code>[gooike_cookie_table]</code>. Names ending in <code>*</code> match a prefix. When consent is withdrawn, Gooike deletes the declared cookies of that category.</p>
+<p class="gk-subtitle">The cookie declaration shown in the preferences and by <code>[gooike_cookie_table]</code>. Names ending in <code>*</code> match a prefix. When consent is withdrawn, Pursae Cookie deletes the declared cookies of that category.</p>
 <form method="post" action="/wp-admin/gooike" id="gk-cookies-bulk"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="categories"><input type="hidden" name="tab" value="cookies"><input type="hidden" name="do" value="cookie_delete">
 <table class="wp-list-table widefat fixed striped">
 <thead><tr><td class="manage-column column-cb check-column"><input type="checkbox" aria-label="Select all" onclick="document.querySelectorAll('#gk-cookies-bulk tbody input[type=checkbox]').forEach(function(x){x.checked=this.checked}.bind(this))"></td><th scope="col" style="width:18%">Name</th><th scope="col" style="width:14%">Provider</th><th scope="col" style="width:12%">Category</th><th scope="col">Purpose</th><th scope="col" style="width:12%">Duration</th></tr></thead>
@@ -309,7 +309,7 @@
 {{end}}
 
 <h2>Known services</h2>
-<p class="description">Paste the ID: Gooike writes the official snippet, blocks it until consent, declares its cookies and allows its hosts.</p>
+<p class="description">Paste the ID: Pursae Cookie writes the official snippet, blocks it until consent, declares its cookies and allows its hosts.</p>
 <div class="gk-services">
 {{range .Services}}<form method="post" action="/wp-admin/gooike" class="gk-service">
 	<input type="hidden" name="_wpnonce" value="{{$.Data.Nonce}}"><input type="hidden" name="page" value="scripts"><input type="hidden" name="do" value="service_add"><input type="hidden" name="service" value="{{.Key}}">
@@ -431,7 +431,7 @@
 </table>
 <h2 class="title">Advanced</h2>
 <table class="form-table" role="presentation">
-<tr><th scope="row"><label for="gk-hosts">Extra script hosts</label></th><td><textarea id="gk-hosts" name="extra_hosts" rows="3" class="large-text code" placeholder="https://cdn.example.com">{{.S.ExtraHosts}}</textarea><p class="description">More origins your scripts load from or send data to, added to the site's Content-Security-Policy (<code>script-src</code>, <code>connect-src</code>) while Gooike is active.</p></td></tr>
+<tr><th scope="row"><label for="gk-hosts">Extra script hosts</label></th><td><textarea id="gk-hosts" name="extra_hosts" rows="3" class="large-text code" placeholder="https://cdn.example.com">{{.S.ExtraHosts}}</textarea><p class="description">More origins your scripts load from or send data to, added to the site's Content-Security-Policy (<code>script-src</code>, <code>connect-src</code>) while Pursae Cookie is active.</p></td></tr>
 </table>
 <p class="submit"><button type="submit" class="button button-primary">Save Changes</button></p>
 </form>

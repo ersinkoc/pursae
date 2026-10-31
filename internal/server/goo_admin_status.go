@@ -56,16 +56,16 @@ type gooStatusData struct {
 }
 
 var gooTools = []gooTool{
-	{"clear_transients", "Goocommerce transients", "Clear transients", "This tool will clear the product/shop transients cache."},
-	{"clear_expired_transients", "Expired transients", "Clear transients", "This tool will clear ALL expired transients from WordPress Go."},
+	{"clear_transients", "Pursae Commerce transients", "Clear transients", "This tool will clear the product/shop transients cache."},
+	{"clear_expired_transients", "Expired transients", "Clear transients", "This tool will clear ALL expired transients from Pursae."},
 	{"clear_expired_sessions", "Clear expired sessions", "Clear", "This tool will delete the expired customer sessions (carts) from the database."},
 	{"clear_sessions", "Clear customer sessions", "Clear", "<strong class=\"red\">Note:</strong> This tool will delete all customer session data from the database, including current carts and saved carts in the database."},
 	{"recount_terms", "Term counts", "Recount terms", "This tool will recount product terms - useful when changing your settings in a way which hides products from the catalog."},
 	{"regenerate_product_lookup_tables", "Product lookup tables", "Regenerate", "This tool will regenerate the product lookup data: the active price of every product and the price range of variable and grouped products."},
 	{"recalculate_ratings", "Recalculate product ratings", "Recalculate", "This tool will recalculate the average rating and rating count of every product from its approved reviews."},
 	{"delete_orphaned_variations", "Delete orphaned variations", "Delete orphaned variations", "This tool will delete all variations which have no parent."},
-	{"install_pages", "Create default Goocommerce pages", "Create pages", "This tool will install all the missing Goocommerce pages. Pages already defined and set up won't be replaced."},
-	{"reset_roles", "Capabilities", "Reset capabilities", "This tool will reset the admin, customer and shop_manager roles to default. Use this if your users cannot access all of the Goocommerce admin pages."},
+	{"install_pages", "Create default Pursae Commerce pages", "Create pages", "This tool will install all the missing Pursae Commerce pages. Pages already defined and set up won't be replaced."},
+	{"reset_roles", "Capabilities", "Reset capabilities", "This tool will reset the admin, customer and shop_manager roles to default. Use this if your users cannot access all of the Pursae Commerce admin pages."},
 }
 
 func (s *Server) gooAdminStatus(c *gin.Context) {
@@ -101,7 +101,7 @@ func (s *Server) gooAdminStatus(c *gin.Context) {
 		d.Tab = "status"
 		d.Sections = s.gooSystemStatus(c)
 		var b strings.Builder
-		b.WriteString("### Goocommerce System Status Report ###\n")
+		b.WriteString("### Pursae Commerce System Status Report ###\n")
 		for _, sec := range d.Sections {
 			b.WriteString("\n### " + sec.Title + " ###\n\n")
 			for _, it := range sec.Items {
@@ -128,15 +128,15 @@ func (s *Server) gooSystemStatus(c *gin.Context) []gooStatusSection {
 		return gooStatusItem{Label: label, Value: h, Plain: p}
 	}
 	home := s.links(ctx).HomeURL("/")
-	env := gooStatusSection{Title: "WordPress Go environment", Items: []gooStatusItem{
-		item("WordPress Go address (URL)", home), item("Site address (URL)", home),
-		item("Goocommerce version", gooVersion), item("WordPress Go version", Version),
+	env := gooStatusSection{Title: "Pursae environment", Items: []gooStatusItem{
+		item("Pursae address (URL)", home), item("Site address (URL)", home),
+		item("Pursae Commerce version", gooVersion), item("Pursae version", Version),
 		item("Language", defaultStr(s.settings.String("WPLANG"), "en_US")), item("Timezone", s.loc().String()),
-		flag("Goocommerce REST API", true),
+		flag("Pursae Commerce REST API", true),
 		item("Uploads directory", s.cfg.UploadsDir),
 	}}
 	srv := gooStatusSection{Title: "Server environment", Items: []gooStatusItem{
-		item("Server info", "WordPress Go (Go "+runtime.Version()+")"), item("Operating system", runtime.GOOS+"/"+runtime.GOARCH),
+		item("Server info", "Pursae (Go "+runtime.Version()+")"), item("Operating system", runtime.GOOS+"/"+runtime.GOARCH),
 		item("CPUs", strconv.Itoa(runtime.NumCPU())), item("Goroutines", strconv.Itoa(runtime.NumGoroutine())),
 	}}
 	var pgVersion, dbSize string
@@ -177,7 +177,7 @@ func (s *Server) gooSystemStatus(c *gin.Context) []gooStatusSection {
 		taxonomies = append(taxonomies, t)
 	}
 	settings.Items = append(settings.Items, item("Taxonomies: Product taxonomies", strings.Join(taxonomies, ", ")))
-	pages := gooStatusSection{Title: "Goocommerce pages"}
+	pages := gooStatusSection{Title: "Pursae Commerce pages"}
 	for _, pg := range []struct{ Key, Label, Short string }{{"shop", "Shop base", ""}, {"cart", "Cart", "[goocommerce_cart]"},
 		{"checkout", "Checkout", "[goocommerce_checkout]"}, {"myaccount", "My account", "[goocommerce_my_account]"}, {"terms", "Terms and conditions", ""}} {
 		id := s.gooPageID(pg.Key)
@@ -209,7 +209,7 @@ func (s *Server) gooSystemStatus(c *gin.Context) []gooStatusSection {
 	if t := s.activeTheme(); t != nil {
 		theme.Items = append(theme.Items, item("Name", t.Name), item("Version", t.Version), item("Author", t.Author))
 	}
-	theme.Items = append(theme.Items, flag("Goocommerce support", true))
+	theme.Items = append(theme.Items, flag("Pursae Commerce support", true))
 	return []gooStatusSection{env, srv, db, plugins, settings, pages, theme}
 }
 
@@ -288,7 +288,7 @@ func (s *Server) gooRunTool(c *gin.Context, action string) (string, error) {
 		if u := currentUser(c); u != nil {
 			uid = u.ID
 		}
-		return "All missing Goocommerce pages successfully installed", s.gooCreatePages(ctx, uid)
+		return "All missing Pursae Commerce pages successfully installed", s.gooCreatePages(ctx, uid)
 	case "reset_roles":
 		caps := `{"manage_woocommerce":true,"view_woocommerce_reports":true,"edit_products":true,"edit_others_products":true,"publish_products":true,"read_private_products":true,"delete_products":true,"delete_others_products":true,"delete_published_products":true,"delete_private_products":true,"edit_published_products":true,"edit_private_products":true,"manage_product_terms":true,"edit_shop_orders":true,"edit_shop_coupons":true}`
 		if _, err := s.store.Pool.Exec(ctx, `UPDATE roles SET capabilities = capabilities || $1::jsonb WHERE slug IN ('administrator','shop_manager')`, caps); err != nil {

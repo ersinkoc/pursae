@@ -118,7 +118,7 @@ Every template receives the same **site view** (`.`):
 | `texturize s` | escape and apply `wptexturize()` to a plain string |
 | `query s` | URL-encode a query value |
 | `json v` | encode as JSON inside a `<script>` |
-| `version` | the WordPress Go version |
+| `version` | the Pursae version |
 
 The theme package spec also lists WordPress-named helpers (`wp_head`, `wp_footer`, `body_class`,
 `post_class`, `the_content`, `wp_nav_menu`, `dynamic_sidebar`, `get_template_part`) as aliases of

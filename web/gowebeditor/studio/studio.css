@@ -1,5 +1,5 @@
-/* Golementor Studio — WordPress-admin look: white/neutral surfaces, 1px #dcdcde borders, 2–4px
-   radius, the WordPress blue, system font, 13px base. Dark UI follows the Golementor dark palette
+/* Pursae Web Builder Studio — WordPress-admin look: white/neutral surfaces, 1px #dcdcde borders, 2–4px
+   radius, the WordPress blue, system font, 13px base. Dark UI follows the Pursae Web Builder dark palette
    (#191919 / #303030) with the same switches golementor-ui.css uses. Everything is scoped to
    body.gwe-studio so Advanced mode shows the untouched upstream editor. */
 :root {

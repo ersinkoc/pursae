@@ -1,5 +1,5 @@
 /*! This file is auto-generated */
-/* Golementor branding over the upstream editor UI (loaded in the editor and its preview). */
+/* Pursae Web Builder branding over the upstream editor UI (loaded in the editor and its preview). */
 .eicon-elementor:before,
 .eicon-elementor-circle:before,
 .eicon-elementor-square:before {
@@ -43,7 +43,7 @@
 @keyframes gwe-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 @keyframes gwe-slide { 0% { transform: translateX(100%); } 100% { transform: translateX(-250%); } }
 #elementor-loading .elementor-loading-title { margin-top: 8px; }
-/* Upsells and cloud features are not part of Golementor. */
+/* Upsells and cloud features are not part of Pursae Web Builder. */
 #elementor-panel-get-pro-elements,
 #elementor-panel-get-pro-elements-sticky,
 .elementor-panel-sticky-promotion,
@@ -331,7 +331,7 @@ header.MuiAppBar-root .MuiToolbar-root .MuiStack-root:first-child > button:first
 #elementor-editor-wrapper-v2 .MuiCircularProgress-colorPrimary,
 #elementor-editor-wrapper-v2 .MuiLinearProgress-colorPrimary .MuiLinearProgress-bar { color: #2271b1; background-color: #2271b1; }
 
-/* GWE-UI-PREVIEW:BEGIN  Golementor UI: preview iframe chrome (empty-canvas area, hover/selected handles). Edited by the UI layer; keep markers. */
+/* GWE-UI-PREVIEW:BEGIN  Pursae Web Builder UI: preview iframe chrome (empty-canvas area, hover/selected handles). Edited by the UI layer; keep markers. */
 .elementor-editor-active {
 	--gwe-p-accent: #2c3338;
 	--gwe-p-accent-soft: #f0f0f1;
@@ -440,7 +440,7 @@ header.MuiAppBar-root .MuiToolbar-root .MuiStack-root:first-child > button:first
 .elementor-template-library-template-remote .elementor-template-library-favorite { display: none; }
 .elementor-template-library-template-remote .elementor-template-library-template-screenshot { background-size: cover; background-position: top center; }
 
-/* Golementor mascot in the nerd boxes (empty navigator, notices). */
+/* Pursae Web Builder mascot in the nerd boxes (empty navigator, notices). */
 .elementor-nerd-box-icon[src*="gopher-ok"] { width: 120px; height: auto; }
 /* Container "Which layout" (Flexbox / Grid) and its preset lists: dark gray, square. */
 .elementor-editor-active .e-con-select-type__title,

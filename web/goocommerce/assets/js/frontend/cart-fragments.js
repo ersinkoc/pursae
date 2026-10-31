@@ -1,4 +1,4 @@
-/* Goocommerce cart fragments (cart-fragments.js): keeps the mini-cart and the header cart link right on
+/* Pursae Commerce cart fragments (cart-fragments.js): keeps the mini-cart and the header cart link right on
    cached pages. Loaded on every page first; it also defines window.gooStore, the helpers the other
    storefront scripts share. */
 (function () {

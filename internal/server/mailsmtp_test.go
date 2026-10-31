@@ -25,7 +25,7 @@ func msPluginLink(t *testing.T, c *http.Client, base, action string) string {
 	_, body, _ := get(t, c, base+"/wp-admin/plugins")
 	m := regexp.MustCompile(`href="(/wp-admin/plugins\?action=` + action + `&amp;plugin=wp-mail-smtp[^"]*)"`).FindStringSubmatch(body)
 	if m == nil {
-		t.Fatalf("no %s link for WPGO Mail SMTP", action)
+		t.Fatalf("no %s link for Pursae SMTP", action)
 	}
 	return html.UnescapeString(m[1])
 }
@@ -102,7 +102,7 @@ func TestMailSMTPPlugin(t *testing.T) {
 
 	// Inactive: listed, but no menu, no screens, and wp_mail keeps writing .eml files.
 	_, body, _ := get(t, c, base+"/wp-admin/plugins")
-	if !strings.Contains(body, "WPGO Mail SMTP") {
+	if !strings.Contains(body, "Pursae SMTP") {
 		t.Fatal("plugin not listed")
 	}
 	if strings.Contains(msPage(t, c, base+"/wp-admin/"), "toplevel_page_wp-mail-smtp") {
@@ -200,7 +200,7 @@ func TestMailSMTPPlugin(t *testing.T) {
 			t.Fatal("queued mail not delivered through SMTP")
 		}
 		logs, _, err := srv.msLogList(ctx, msLogFilter{Search: "Password Reset"}, 10, 0)
-		if err != nil || len(logs) != 1 || logs[0].Status != "sent" || logs[0].Mailer != "smtp" || logs[0].Plain != "reset link" || !strings.HasPrefix(logs[0].Source, "WordPress Go: Reset") {
+		if err != nil || len(logs) != 1 || logs[0].Status != "sent" || logs[0].Mailer != "smtp" || logs[0].Plain != "reset link" || !strings.HasPrefix(logs[0].Source, "Pursae: Reset") {
 			t.Fatalf("log %+v %v", logs, err)
 		}
 		page := msPage(t, c, base+"/wp-admin/admin?page=wp-mail-smtp-logs")
@@ -495,7 +495,7 @@ func TestMailSMTPPlugin(t *testing.T) {
 		if logs, _, _ := srv.msLogList(ctx, msLogFilter{Search: "Hello"}, 10, 0); len(logs) != 0 {
 			t.Fatal("retention did not delete old entries")
 		}
-		if logs, _, _ := srv.msLogList(ctx, msLogFilter{Search: "Weekly WP Mail SMTP Email Summary"}, 10, 0); len(logs) != 1 {
+		if logs, _, _ := srv.msLogList(ctx, msLogFilter{Search: "Weekly Pursae SMTP Email Summary"}, 10, 0); len(logs) != 1 {
 			t.Fatal("weekly summary not sent")
 		}
 		code, _, loc := get(t, c, base+msPluginLink(t, c, base, "deactivate"))

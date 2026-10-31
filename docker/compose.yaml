@@ -30,7 +30,7 @@ services:
       WPGO_UPLOADS_DIR: /data/uploads
       # Demo only: trust the development signing key of the bundled example plugins.
       WPGO_TRUST_DEV_KEY: ${WPGO_TRUST_DEV_KEY:-1}
-      # The WordPress Go Hub (marketplace, release checks); "off" disables it.
+      # The Pursae Hub (marketplace, release checks); "off" disables it.
       WPGO_HUB_URL: ${WPGO_HUB_URL:-https://hub.wordpressgo.dev}
     ports:
       - "${WPGO_PORT:-8088}:8080"

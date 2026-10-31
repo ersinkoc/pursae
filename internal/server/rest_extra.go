@@ -90,7 +90,7 @@ func fetchOEmbed(ctx context.Context, target string, maxWidth string) (map[strin
 	ctx, cancel := context.WithTimeout(ctx, 8*time.Second)
 	defer cancel()
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, endpoint+"?"+q.Encode(), nil)
-	req.Header.Set("User-Agent", "WordPress Go/"+Version)
+	req.Header.Set("User-Agent", "Pursae/"+Version)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err

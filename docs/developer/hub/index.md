@@ -5,7 +5,7 @@ weight: 10
 section: hub
 ---
 
-The **Hub** is a small service (`wpgo-hub`) every WordPress Go site talks to. It has two faces:
+The **Hub** is a small service (`wpgo-hub`) every Pursae site talks to. It has two faces:
 
 - a **public JSON API** under `/api/v1/` that sites and the public site read — no authentication,
   cacheable, rate limited;

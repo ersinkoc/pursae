@@ -335,7 +335,7 @@ func (s *Server) hgRender(c *gin.Context, page string, failed *hgFailedSave) {
 	if page != "" {
 		screen += "?page=" + page
 	}
-	s.adminPage(c, screen, title+" ‹ HeadlessGo", "toplevel_page_headlessgo headlessgo-admin", "admin/headlessgo", d, notices...)
+	s.adminPage(c, screen, title+" ‹ Pursae Headless", "toplevel_page_headlessgo headlessgo-admin", "admin/headlessgo", d, notices...)
 }
 
 // Content Manager ----------------------------------------------------------------------------------
@@ -1000,7 +1000,7 @@ func (s *Server) hgShowToken(c *gin.Context, tok string) {
 	hgAssetsOnce.Do(hgRegisterAssets)
 	s.pageAssets(c).Style("headlessgo")
 	c.Header("Cache-Control", "no-store")
-	s.adminPage(c, hgSlug+"?page=tokens", "API Tokens ‹ HeadlessGo", "toplevel_page_headlessgo headlessgo-admin", "admin/headlessgo", d,
+	s.adminPage(c, hgSlug+"?page=tokens", "API Tokens ‹ Pursae Headless", "toplevel_page_headlessgo headlessgo-admin", "admin/headlessgo", d,
 		notice{Type: "success", Message: "<strong>Make sure to copy this token now.</strong> You won't be able to see it again."})
 }
 

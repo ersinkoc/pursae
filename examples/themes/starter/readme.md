@@ -1,6 +1,6 @@
 # Starter
 
-A minimal WordPress Go theme package: the smallest complete theme that still looks good. Use it as
+A minimal Pursae theme package: the smallest complete theme that still looks good. Use it as
 the starting point for your own package (copy the directory, change `slug`, `name` and the styles).
 
 - `theme.json` registers the Sidebar widget area, the Primary and Footer menu locations, the

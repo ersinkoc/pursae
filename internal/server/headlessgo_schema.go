@@ -917,7 +917,7 @@ type hgExport struct {
 
 func (s *Server) hgExportSchemas(ctx context.Context) hgExport {
 	reg := s.hgReg(ctx)
-	return hgExport{Version: 1, Generator: "HeadlessGo " + Version, Components: reg.Components(), Types: reg.Types()}
+	return hgExport{Version: 1, Generator: "Pursae Headless " + Version, Components: reg.Components(), Types: reg.Types()}
 }
 
 // hgImportSchemas creates or updates every schema of an export: components first (ordered so a

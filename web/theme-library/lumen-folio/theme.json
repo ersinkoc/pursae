@@ -3,7 +3,7 @@
   "name": "Lumen Folio",
   "version": "1.0.0",
   "description": "A dark, full-bleed showcase for photographers. The front page is a masonry wall of your stories, every image opens on a quiet, lightbox-like stage, and the chrome stays out of the way. Light Jost type with Cormorant italics, adjustable gallery columns, gaps and captions, all previewed live in the Customizer.",
-  "author": "WordPress Go",
+  "author": "Pursae",
   "author_url": "https://github.com/boracomet/wordpress-go",
   "theme_url": "https://github.com/boracomet/wordpress-go/tree/main/web/theme-library/lumen-folio",
   "tags": ["Photography", "Portfolio", "Dark", "Grid Layout", "Full Width Template", "Custom Colors", "Custom Logo", "Custom Menu", "Featured Images", "Footer Widgets", "Threaded Comments", "Wide Blocks"],

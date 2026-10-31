@@ -1,11 +1,11 @@
 ---
 title: Reverse proxy and TLS
-description: Putting nginx, Caddy or another proxy in front of WordPress Go, and what headers it needs.
+description: Putting nginx, Caddy or another proxy in front of Pursae, and what headers it needs.
 weight: 40
 section: operations
 ---
 
-WordPress Go serves plain HTTP. Terminate TLS in a proxy and set `WPGO_SITE_URL` to the public
+Pursae serves plain HTTP. Terminate TLS in a proxy and set `WPGO_SITE_URL` to the public
 `https://` address (or change Settings › General after installing).
 
 The server trusts `X-Forwarded-Proto: https` to decide that a request is secure: it then sets
@@ -77,7 +77,7 @@ binary with long cache headers, so no `root` or `try_files` is needed. nginx may
 
 ```ini
 [Unit]
-Description=WordPress Go
+Description=Pursae
 After=network.target postgresql.service
 
 [Service]

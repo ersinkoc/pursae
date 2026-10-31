@@ -29,8 +29,8 @@ func TestGoWebEditor(t *testing.T) {
 
 	// The pages list links to the builder.
 	_, body, _ := get(t, c, base+"/wp-admin/edit?post_type=page")
-	if !strings.Contains(body, "/wp-admin/post?post="+pageID+"&amp;action=golementor") || !strings.Contains(body, "Edit with Golementor") {
-		t.Errorf("pages list has no Edit with Golementor action")
+	if !strings.Contains(body, "/wp-admin/post?post="+pageID+"&amp;action=golementor") || !strings.Contains(body, "Edit with Pursae Web Builder") {
+		t.Errorf("pages list has no Edit with Pursae Web Builder action")
 	}
 
 	// The editor page: skeleton, ordered assets, Backbone templates and the inline configs.
@@ -40,7 +40,7 @@ func TestGoWebEditor(t *testing.T) {
 	}
 	for _, want := range []string{`<div id="elementor-editor-wrapper">`, `id="elementor-preview-responsive-wrapper"`, "var ElementorConfig = {",
 		"var elementorCommonConfig = {", `"initial_document":{`, `id="tmpl-elementor-panel"`, "/wp-content/plugins/gowebeditor/assets/js/editor.min.js",
-		"wp.i18n.setLocaleData(", "<title>Edit “Sample Page” with Golementor</title>", `"url":"` + base + `/wp-admin/admin-ajax"`,
+		"wp.i18n.setLocaleData(", "<title>Edit “Sample Page” with Pursae Web Builder</title>", `"url":"` + base + `/wp-admin/admin-ajax"`,
 		"tinyMCEPreInit", `"kit_id":`} {
 		if !strings.Contains(body, want) {
 			t.Errorf("editor page misses %q", want)

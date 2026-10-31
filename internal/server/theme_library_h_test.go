@@ -90,7 +90,7 @@ func libHCheckPackage(t *testing.T, slug string) {
 	if err != nil {
 		t.Fatalf("theme.json: %v", err)
 	}
-	if m.Slug != slug || m.Version != "1.0.0" || m.RequiresCore != "0.1.0" || m.Author != "WordPress Go" {
+	if m.Slug != slug || m.Version != "1.0.0" || m.RequiresCore != "0.1.0" || m.Author != "Pursae" {
 		t.Errorf("manifest identity: %s %s %s %s", m.Slug, m.Version, m.RequiresCore, m.Author)
 	}
 	var meta struct{ Category, Style, Demo string }

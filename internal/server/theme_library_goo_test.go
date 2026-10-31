@@ -34,7 +34,7 @@ func TestGooThemePackages(t *testing.T) {
 			if err != nil {
 				t.Fatalf("package: %v", err)
 			}
-			if m.Slug != slug || m.Author != "WordPress Go" {
+			if m.Slug != slug || m.Author != "Pursae" {
 				t.Fatalf("manifest identity: %s %s", m.Slug, m.Author)
 			}
 			if _, err := loadThemePackage(dir, slug); err != nil {

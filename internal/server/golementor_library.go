@@ -886,7 +886,7 @@ func (s *Server) gweLibBlockItems(c *gin.Context) []map[string]any {
 		out = append(out, map[string]any{
 			"template_id": gweLibSectionID + sec.ID, "source": "remote", "type": "block", "subtype": gweLibCategoryTitle(sec.Category),
 			"title": sec.Title, "thumbnail": s.gweLibAssetURL(c, sec.Thumbnail), "date": 1792000000 - i, "human_date": "",
-			"author": "Golementor", "tags": tags, "isPro": false, "accessLevel": 0, "accessTier": "free",
+			"author": "Pursae Web Builder", "tags": tags, "isPro": false, "accessLevel": 0, "accessTier": "free",
 			"popularityIndex": len(lib.Sections) - i, "trendIndex": len(lib.Sections) - i, "hasPageSettings": false, "url": "", "favorite": false,
 		})
 	}

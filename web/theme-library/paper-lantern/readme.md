@@ -1,6 +1,6 @@
 # Paper Lantern
 
-A warm, cosy personal journal theme for WordPress Go. One comfortable column on cream paper,
+A warm, cosy personal journal theme for Pursae. One comfortable column on cream paper,
 handwritten accents in Caveat, rounded Nunito for reading, polaroid photos held on with washi
 tape and a gently swaying string of lanterns over the masthead.
 
@@ -38,5 +38,5 @@ for this theme.
 ## Credits
 
 - Caveat, Nunito and Lora fonts: SIL Open Font License 1.1 (Google Fonts).
-- Illustrations: original artwork made for WordPress Go.
+- Illustrations: original artwork made for Pursae.
 - License: GPL-2.0-or-later.

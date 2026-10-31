@@ -1375,7 +1375,7 @@
          "widgetType": "theme-site-copyright",
          "isInner": false,
          "settings": {
-          "text": "© [year] [site_title]. All rights reserved. Made with WordPress Go.",
+          "text": "© [year] [site_title]. All rights reserved. Made with Pursae.",
           "typography_typography": "custom",
           "__globals__": {
            "text_color": "globals/colors?id=muted",

@@ -1,4 +1,4 @@
-/* Golementor Studio — the Studio / Advanced switch. Loaded on every editor page: in Advanced mode
+/* Pursae Web Builder Studio — the Studio / Advanced switch. Loaded on every editor page: in Advanced mode
    it adds a "Studio" button to the upstream top bar and loads the Studio on demand; the choice is
    saved per user (golementor/v1/studio/preferences). */
 (function () {
@@ -55,7 +55,7 @@
 		btn.id = 'gwe-studio-switch';
 		btn.textContent = 'Studio';
 		btn.title = 'Switch to the simple Studio panel';
-		btn.setAttribute('aria-label', 'Switch to Golementor Studio');
+		btn.setAttribute('aria-label', 'Switch to Pursae Web Builder Studio');
 		btn.style.cssText = 'position:fixed;top:12px;z-index:100000;height:30px;padding:0 12px;border:1px solid #2271b1;border-radius:2px;background:#fff;color:#2271b1;font:600 13px/28px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;cursor:pointer';
 		btn.addEventListener('click', () => T.toStudio());
 		document.body.appendChild(btn);

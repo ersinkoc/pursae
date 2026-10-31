@@ -17,7 +17,7 @@ with `permission_denied` — logged, not fatal.
 | `posts:read` | Read posts and receive post data from post lifecycle hooks | `GetPost`, `QueryPosts`; hooks `save_post`, `save_post_*`, `wp_insert_post`, `publish_post`, `transition_post_status`, `before_delete_post`, `deleted_post`, `trashed_post`, `untrashed_post`, `post_updated`, `wpgo_post_stats` |
 | `posts:write` | Create and change posts | `InsertPost`, `UpdatePost`; hooks `wp_insert_post_data`, `wp_insert_attachment_data`, `pre_post_update`, `content_save_pre`, `title_save_pre`, `excerpt_save_pre` |
 | `users:read` | See who the current user is | `CurrentUser` |
-| `forms:access` | See what visitors submit in contact forms and decide what counts as spam | hooks `wpcf7_*` (Gontact Form): `wpcf7_mail_sent` carries the submitted fields, `wpcf7_spam` the fields, IP and user agent and lets the plugin change the spam verdict |
+| `forms:access` | See what visitors submit in contact forms and decide what counts as spam | hooks `wpcf7_*` (Pursae Contact Form): `wpcf7_mail_sent` carries the submitted fields, `wpcf7_spam` the fields, IP and user agent and lets the plugin change the spam verdict |
 | `content:filter` | Modify content shown to visitors | hooks `the_*`, `comment_text`, `widget_text`, `widget_title`, `get_the_excerpt`, `wp_title`, `document_title_parts`, `body_class`, `post_class`; `AddShortcode`; `EnqueueStyle`, `EnqueueScript` |
 | `rest:routes` | Add REST API endpoints | `RegisterRestRoute` |
 | `admin:settings` | Add a settings page to the admin | `RegisterSettingsPage` |

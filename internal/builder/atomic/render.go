@@ -200,7 +200,7 @@ func (e *Env) Render(n *Node) string {
 	e.templateContext(n, et, settings, ctx)
 	out, err := data().twig.Render(et.Template, ctx)
 	if err != nil {
-		return "<!-- Golementor: " + strings.ReplaceAll(err.Error(), "--", "-") + " -->\n"
+		return "<!-- Pursae Web Builder: " + strings.ReplaceAll(err.Error(), "--", "-") + " -->\n"
 	}
 	if et.Widget {
 		if out == "" {

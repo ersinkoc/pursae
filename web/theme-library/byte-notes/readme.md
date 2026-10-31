@@ -1,6 +1,6 @@
 # Byte Notes
 
-A dark-first developer blog for WordPress Go. Glowing violet-to-cyan accents, a card grid or a
+A dark-first developer blog for Pursae. Glowing violet-to-cyan accents, a card grid or a
 compact list of notes, code blocks styled like editor windows (with a language label for
 `lang-go`, `lang-sql`, `lang-css`, `lang-bash`, `lang-js`, `lang-dockerfile` classes), tag
 pills, a newsletter box and a light/dark switch that remembers each reader's choice.
