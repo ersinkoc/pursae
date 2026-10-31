@@ -78,9 +78,9 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 | i18n: with Pursae Multi Language active its languages are the locales; each document has one version per locale, linked by `documentId`; the edit screen lists the locales, opens a translation empty or filled from the current locale. With Pursae Multi Language off there is one default locale (setting) | ✓ |
 | Delete one locale or every locale | ✓ |
 | Bulk actions in the list: publish, unpublish, delete the selected documents in the listed locale, or "in every locale"; failures (a required field empty) are reported per document | ✓ |
-| Content history: every save, publish, unpublish, discard, restore, review step and scheduled (un)publication records the draft (last 50 per document version); the edit screen lists the latest, the History screen shows a version next to the current draft with changed fields marked, and restores it as the draft. Inverse relation fields are not part of a version; a link made or removed from the other side of a two-way relation is recorded instead (see below) | ✓ |
+| Content history: every save, publish, unpublish, discard, restore, review step and scheduled (un)publication records the draft (last 50 per document version); the edit screen lists the latest, the History screen shows a version next to the current draft with changed fields marked, and restores it as the draft. Inverse relation fields are not part of a version; a change of a two-way relation is recorded on **both** sides as a "Relations changed" version with a note: on the entry whose data changed and on every entry whose inverse field now lists something else ("Linked by Book "Dune" via books"). That includes the entry that loses a link when another one takes it through the inverse field ("Unlinked by Book "Dune" via books: it now belongs to Writer "Bob""), the entries a deleted owner pointed at ("…: it was deleted"), and the entries that lose their link to a deleted document, also inside components ("Unlinked Writer "Bob" via writer: it was deleted") | ✓ |
 | Links across a two-way relation: saving an entry through its owning relation field adds a "Relations changed" version, with a note (`Linked by Book "Dune" via books`), to every entry that was linked or unlinked (their inverse field now lists something else); writing the inverse side adds one, with the new draft and a note (`Linked Writer "Ada" via writer`), to every owning entry whose data changed. Works from the admin, REST and GraphQL alike | ✓ |
-| Restoring a version checks its values against the **current** schema first (types and formats, required, min / max, regex, enumerations, media and relation targets that still exist, unique fields). If something no longer fits, nothing is restored and the mismatches are listed; the History screen shows them before you click, and offers "Restore the fields that still fit": the mismatching fields keep their current values and the message names them. Password hashes are carried over untouched | ✓ |
+| Restoring a version checks its values against the **current** schema first (types and formats, required, min / max, regex, enumerations, media and relation targets that still exist, unique fields). If something no longer fits, nothing is restored and the mismatches are listed; the History screen shows them before you click, and offers "Restore the fields that still fit": the mismatching fields keep their current values and the message names them. Values of fields the type no longer has (removed or renamed) are left out; the History screen lists them before you click and the restore message names them. Password hashes are carried over untouched | ✓ |
 | Scheduled publishing: "Publish on" / "Unpublish on" per document version (site time zone) in the edit screen, `POST …/{documentId}/schedule` in the API. The `headlessgo_tick` job of the site's job runner (every minute, rows claimed with `FOR UPDATE SKIP LOCKED`, safe across restarts and instances) publishes the draft as it is then, or unpublishes; a publication that fails validation is cleared and its reason shown on the edit screen; the list shows pending schedules | ✓ |
 | Edit lock (WordPress post-lock style): opening an existing entry takes its lock (one per document version); the page's script renews it every 15 s (`POST /wp-admin/headlessgo/lock`, nonce-checked) and releases it when the page closes; a lock nobody renewed for 90 s is free. While someone else holds it the entry opens read-only with "X is currently editing this entry" and a **Take over editing** button; the server refuses every change from another user (save, publish, unpublish, discard, schedule, restore, delete), and a taken-over editor's open page is told by its next heartbeat and switches to read-only. A form also carries the version it was loaded from: a save on top of a newer one is refused ("changed by someone else"), also without a lock. The REST and GraphQL APIs are not locked (tokens have no user) | ✓ |
 | Review flow: the type option **Review before publishing** (needs draft & publish). A draft is *submitted for review*; a user who can edit others' posts (editor and above) *approves* or *rejects* it (optional note). Publishing needs an approved draft, whatever the route: the form's Publish button (it saves the draft and publishes when that draft is approved, otherwise it says the draft was saved but not published), the REST `publish` route and `?status=published` writes, GraphQL `publish…` / `status: PUBLISHED`, bulk publish, and scheduled publication (the schedule is cleared with the reason in the edit screen). Approval is bound to the exact draft: any later change (form, API, restore, relation link) makes it "not reviewed" again. Submit, approve and reject appear in the entry history with the reviewer's note. The APIs have no user, so they can neither submit nor approve; a type without the option is unchanged | ✓ |
@@ -178,29 +178,56 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 - Admin playground (Pursae Headless › GraphQL): a query and variables editor that runs as the logged-in
   administrator (`POST /wp-admin/headlessgo/graphql`, nonce-checked) or, with a pasted API token, against
   the public endpoint with that token's permissions; plus a reference of the root fields. ✓
-- **Validation**: a query is checked against the generated schema before it runs. An unknown field
-  (also inside fragments and mutation results), an object field without a selection, a scalar with one
-  (JSON scalars may have one), an unknown root argument or an unknown fragment type is a GraphQL
-  validation error: HTTP 400, `{"errors":[{"message":"Cannot query field \"titel\" on type \"Article\". Did you
-  mean \"title\"?","extensions":{"code":"GRAPHQL_VALIDATION_FAILED"}}]}`, no `data`, nothing executed (a
-  mutation in the same request does not run). Every problem found is listed.
-- **Subscriptions** over server-sent events (the "distinct connections" mode of the graphql-sse protocol)
-  on the same endpoint: send the subscription as a `GET` (`?query=…`, works with `EventSource`) or a `POST`
-  (JSON body, works with `fetch`) with the usual `Authorization: Bearer` header and read the stream
-  (`Content-Type: text/event-stream`). Root fields per content type: `articleCreated`, `articleUpdated` and
-  `articlePublished` (only with draft & publish; the introspected `Subscription` type lists them), with
-  arguments `documentId` (collection types) and `locale`; one root field per subscription. Each event runs
-  the selection against the entry, so aliases, populate, fragments and variables work as in a query:
-  `event: next` / `data: {"data":{"articleCreated":{…}}}`, `: ping` comments every 20 s, `event: complete`
-  when the server ends the stream. Access follows REST: the type's `findOne` (single types: `find`)
-  permission; a token that may read drafts gets Created and Updated with the **draft** values and
-  Published with the published ones; every other caller gets Published only (for types without draft &
-  publish also Created and Updated, published values). Validation errors, 403 and a full server (500
-  streams) answer as plain JSON before the stream starts. Limits: events are fanned out in the process
-  that handled the write (a multi-instance setup needs the webhooks instead); unpublish and delete have
-  no subscription (use the `entry.unpublish` / `entry.delete` webhooks); a stream is ended after 30 minutes
-  (clients reconnect) and a subscriber that falls 256 events behind is dropped with an error event; no
-  WebSocket transport (graphql-ws). The admin playground cannot show a stream and says so.
+- **Validation**: a document is checked against the generated schema before anything runs, following the
+  GraphQL specification's validation rules: fields a type does not have (also inside fragments, mutation
+  results and parts that `@skip` / `@include` leave out), an object field without a selection, a scalar with
+  one (JSON scalars may have one), unknown arguments on any field (root fields and relation fields) and
+  missing required ones, unknown fields inside input objects (`filters`, `data`, `pagination`; literals and
+  variable values alike), enum literals that do not exist, variables the operation does not declare, unknown
+  fragments, fragment cycles, type conditions that are unknown or can never apply ("Fragment "W" cannot be
+  spread here…"), unknown directives and directive arguments. Every problem found is listed, with its
+  location, and nothing runs (a mutation in the same request does not either): HTTP 400, no `data`,
+  `{"errors":[{"message":"Cannot query field \"titel\" on type \"Article\". Did you mean \"title\"?",
+  "locations":[{"line":3,"column":5}],"extensions":{"code":"GRAPHQL_VALIDATION_FAILED"}}]}`. A document that
+  does not parse answers the same way with the code `GRAPHQL_PARSE_FAILED` and the location where parsing
+  stopped. Scalar values are left to the resolvers, which accept the REST spellings (`status: published`, a
+  relation as an id, a list or `{connect, disconnect, set}`). The filter input types follow the REST filters:
+  `id`, `null` / `notNull` on relations, media and components, `UploadFileFiltersInput`, `WpPostFiltersInput`,
+  `WpUserFiltersInput`, `DynamicZoneFiltersInput`.
+- **Subscriptions** on the same endpoint, over two transports with the same root fields and rules:
+  - **WebSocket**, the `graphql-transport-ws` protocol (the `graphql-ws` library, Apollo Client, urql,
+    GraphiQL): `wss://site/wp-json/headlessgo/v1/graphql` with that sub-protocol. Send the API token in the
+    `connection_init` payload (`{"Authorization": "Bearer …"}` or `{"token": "…"}`; browsers cannot set
+    headers on a WebSocket) or as the upgrade request's `Authorization` header; without one the public
+    permissions apply. One connection carries up to 50 operations at a time; queries and mutations work too
+    (one `next`, then `complete`); `{"type":"complete"}` from the client stops a subscription. Validation and
+    access errors answer the operation with an `error` message and the connection stays open; protocol
+    violations close it with the protocol's codes (4400 bad message, 4401 subscribe before
+    `connection_ack`, 4403 bad token, 4408 no `connection_init` within 10 s, 4409 duplicate id, 4429 a second
+    `connection_init`). The server pings every 20 s. A browser's `Origin` must be the site itself or one of
+    the CORS origins (Settings), otherwise the upgrade is refused (403).
+  - **Server-sent events** (the "distinct connections" mode of the graphql-sse protocol): send the
+    subscription as a `GET` (`?query=…`, works with `EventSource`) or a `POST` (JSON body, works with `fetch`)
+    with the usual `Authorization: Bearer` header and read the stream (`Content-Type: text/event-stream`):
+    `event: next` / `data: {"data":{"articleCreated":{…}}}`, `: ping` comments every 20 s, `event: complete`
+    when the server ends the stream. Validation errors, 403 and a full server (503 beyond 500 open
+    subscriptions, both transports together) answer as plain JSON before the stream starts.
+
+  Root fields per content type: `articleCreated`, `articleUpdated`, `articlePublished` and
+  `articleUnpublished` (the last two only with draft & publish) return the entry, `articleDeleted` returns an
+  `EntryReference { documentId locale }` (the entry is gone; `locale` is null for a type without
+  translations); the introspected `Subscription` type lists them. Arguments `documentId` (collection types)
+  and `locale`; one root field per subscription. Each event runs the selection against the entry, so
+  aliases, populate, fragments and variables work as in a query. Access follows REST: the type's `findOne`
+  (single types: `find`) permission; a token that may read drafts gets Created and Updated with the
+  **draft** values, Published with the published ones, and every Unpublished and Deleted; every other caller
+  gets Published, Unpublished, and Deleted for documents that had a published version (for types without
+  draft & publish also Created and Updated, published values). Limits: events are fanned out in the process
+  that handled the write (a multi-instance setup needs the webhooks instead); a stream or socket is ended
+  after 30 minutes (WebSocket close code 1001; clients reconnect) or when GraphQL is switched off; a
+  subscriber that falls 256 events behind gets an error and its subscription ends. Behind a proxy, WebSocket
+  needs the `Upgrade` headers passed on (see the reverse-proxy guide). The admin playground cannot show a
+  stream and says so.
 - Not supported: custom directives; component inputs are JSON. The endpoint can be switched off under Settings.
 
 ## 11. Translations
@@ -216,14 +243,14 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 
 - Relation ordering beyond the stored order (the owning side's order; the inverse side lists owners by
   creation).
-- History does not record link changes made by a schema conversion or by deleting a related document
-  (the deleted document's links disappear from the owners' drafts without a version), and a link that
-  moves from one inverse-side entry to another through the inverse field is recorded on the owning
-  entry and the new target, not on the entry that lost it.
+- History does not record link changes made by a schema conversion (changing a relation's target or
+  cardinality rewrites the stored ids of every entry without a version per entry).
 - Edit locks and the review flow belong to the admin: the REST and GraphQL APIs are not locked and
   cannot submit, approve or reject (they are refused when publishing an unapproved draft). The review
   capability is "may edit others' posts" and is not configurable per type; a reviewer may approve a draft
   they submitted themselves.
-- GraphQL: custom directives; subscriptions are server-sent events from one process (see §10);
-  component inputs are JSON.
+- GraphQL: custom directives; subscriptions only see the writes of the process they are connected to
+  (see §10); component inputs are JSON; unused variables and fragments are not reported (the spec calls
+  them errors, they are harmless here); scalar argument values are not type-checked during validation (the
+  resolvers report them).
 - Translations of Pursae Headless's own admin strings exist only in Turkish.

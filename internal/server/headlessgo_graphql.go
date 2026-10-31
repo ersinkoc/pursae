@@ -36,6 +36,10 @@ type hgGQLRequest struct {
 }
 
 func (s *Server) hgGraphQL(c *gin.Context, a *hgAuth, st hgSettings) {
+	if c.Request.Method == http.MethodGet && hgIsWebSocket(c.Request) {
+		s.hgGQLWebSocket(c, a, st)
+		return
+	}
 	var req hgGQLRequest
 	switch c.Request.Method {
 	case http.MethodGet:
@@ -74,18 +78,28 @@ func (s *Server) hgGQLExecute(c *gin.Context, a *hgAuth, st hgSettings, req hgGQ
 	}
 	doc, err := hgGQLParse(req.Query)
 	if err != nil {
-		return fail(http.StatusBadRequest, err.Error())
+		return http.StatusBadRequest, hgGQLRequestError(err)
 	}
 	op, err := doc.operation(req.OperationName)
 	if err != nil {
-		return fail(http.StatusBadRequest, err.Error())
+		return http.StatusBadRequest, hgGQLRequestError(err)
 	}
 	if op.kind == "subscription" {
-		return fail(http.StatusBadRequest, "Subscriptions are delivered as server-sent events by the public endpoint (send the request with Accept: text/event-stream); the playground cannot stream them")
+		return fail(http.StatusBadRequest, "Subscriptions are delivered as server-sent events or over a WebSocket by the public endpoint; the playground cannot stream them")
 	}
 	if op.kind == "mutation" && c.Request.Method == http.MethodGet {
 		return fail(http.StatusMethodNotAllowed, "Mutations need a POST request")
 	}
+	ex, sel, status, errDoc := s.hgGQLPrepare(c, a, st, req, doc, op)
+	if errDoc != nil {
+		return status, errDoc
+	}
+	return http.StatusOK, ex.run(op, sel)
+}
+
+// hgGQLPrepare validates an operation against the schema and expands its fragments and directives.
+// On failure it returns the HTTP status and the response document (no data, every problem found).
+func (s *Server) hgGQLPrepare(c *gin.Context, a *hgAuth, st hgSettings, req hgGQLRequest, doc *hgGQLDoc, op *hgGQLOp) (*hgGQLExec, []*hgGQLField, int, map[string]any) {
 	vars := map[string]any{}
 	for k, v := range op.defaults {
 		vars[k] = v
@@ -94,19 +108,21 @@ func (s *Server) hgGQLExecute(c *gin.Context, a *hgAuth, st hgSettings, req hgGQ
 		vars[k] = v
 	}
 	ex := &hgGQLExec{s: s, c: c, a: a, st: st, vars: vars}
+	if errs := ex.validateOp(doc, op); len(errs) > 0 {
+		return nil, nil, http.StatusBadRequest, map[string]any{"errors": hgGQLProblems(doc.src, errs)}
+	}
 	sel, err := doc.expand(op.sel, ex, 0, map[string]bool{})
 	if err != nil {
-		return fail(http.StatusBadRequest, err.Error())
+		return nil, nil, http.StatusBadRequest, hgGQLRequestError(err)
 	}
-	rootType := "Query"
-	if op.kind == "mutation" {
-		rootType = "Mutation"
-	}
-	if errs := ex.validate(hgGQLRootFlat(sel, rootType), op.kind); len(errs) > 0 {
-		return http.StatusBadRequest, map[string]any{"errors": hgGQLValidationErrors(errs)}
-	}
+	rootType := map[string]string{"query": "Query", "mutation": "Mutation", "subscription": "Subscription"}[op.kind]
+	return ex, hgGQLRootFlat(sel, rootType), 0, nil
+}
+
+// run executes a validated query or mutation and returns the response document.
+func (ex *hgGQLExec) run(op *hgGQLOp, sel []*hgGQLField) map[string]any {
 	out := map[string]any{}
-	for _, f := range hgGQLRootFlat(sel, rootType) {
+	for _, f := range sel {
 		var v any
 		var err error
 		if op.kind == "mutation" {
@@ -115,11 +131,11 @@ func (s *Server) hgGQLExecute(c *gin.Context, a *hgAuth, st hgSettings, req hgGQ
 			v, err = ex.root(f)
 		}
 		if err != nil {
-			return http.StatusOK, map[string]any{"data": nil, "errors": []any{map[string]any{"message": err.Error(), "path": []string{f.key()}}}}
+			return map[string]any{"data": nil, "errors": []any{map[string]any{"message": err.Error(), "path": []string{f.key()}}}}
 		}
 		out[f.key()] = v
 	}
-	return http.StatusOK, map[string]any{"data": out}
+	return map[string]any{"data": out}
 }
 
 // hgGQLRootFlat merges the root's inline fragments (on the root type, or without a condition).
@@ -150,6 +166,8 @@ type hgGQLField struct {
 	on          string // inline fragment type condition (name == "...")
 	spread      string // fragment spread: the fragment's name (name == "...")
 	dirs        []hgGQLDir
+	pos         int            // byte offset of the field (or of "...") in the document
+	argPos      map[string]int // byte offsets of the arguments
 }
 
 func (f *hgGQLField) key() string {
@@ -160,8 +178,10 @@ func (f *hgGQLField) key() string {
 }
 
 type hgGQLDir struct {
-	name string
-	args map[string]any
+	name   string
+	args   map[string]any
+	pos    int
+	argPos map[string]int
 }
 
 type hgGQLVar string
@@ -170,17 +190,45 @@ type hgGQLEnum string
 type hgGQLOp struct {
 	kind, name string
 	defaults   map[string]any
+	defined    map[string]bool // the variables the operation declares
 	sel        []*hgGQLField
 }
 
 type hgGQLFrag struct {
 	name, on string
 	sel      []*hgGQLField
+	pos      int
 }
 
 type hgGQLDoc struct {
+	src   string
 	ops   []*hgGQLOp
 	frags map[string]*hgGQLFrag
+}
+
+// hgGQLSyntaxError is a document that does not parse; pos is where the parser stopped.
+type hgGQLSyntaxError struct {
+	msg string
+	pos int
+	src string
+}
+
+func (e *hgGQLSyntaxError) Error() string { return e.msg }
+
+// hgGQLLocation turns a byte offset into the 1-based line and column of a GraphQL error location.
+func hgGQLLocation(src string, pos int) map[string]any {
+	if pos > len(src) {
+		pos = len(src)
+	}
+	line, col := 1, 1
+	for _, r := range src[:pos] {
+		if r == '\n' {
+			line, col = line+1, 1
+		} else {
+			col++
+		}
+	}
+	return map[string]any{"line": line, "column": col}
 }
 
 // operation picks the operation to run.
@@ -270,7 +318,15 @@ type hgGQLParser struct {
 
 func hgGQLParse(src string) (*hgGQLDoc, error) {
 	p := &hgGQLParser{src: src}
-	doc := &hgGQLDoc{frags: map[string]*hgGQLFrag{}}
+	doc, err := p.document()
+	if err != nil {
+		return nil, &hgGQLSyntaxError{msg: err.Error(), pos: min(p.pos, len(src)), src: src}
+	}
+	return doc, nil
+}
+
+func (p *hgGQLParser) document() (*hgGQLDoc, error) {
+	doc := &hgGQLDoc{src: p.src, frags: map[string]*hgGQLFrag{}}
 	for {
 		p.skip()
 		if p.pos >= len(p.src) {
@@ -287,14 +343,14 @@ func hgGQLParse(src string) (*hgGQLDoc, error) {
 		kw := p.name()
 		switch kw {
 		case "query", "mutation", "subscription":
-			op := &hgGQLOp{kind: kw, defaults: map[string]any{}}
+			op := &hgGQLOp{kind: kw, defaults: map[string]any{}, defined: map[string]bool{}}
 			p.skip()
 			if hgIsNameStart(p.peek()) {
 				op.name = p.name()
 				p.skip()
 			}
 			if p.peek() == '(' {
-				if err := p.varDefs(op.defaults); err != nil {
+				if err := p.varDefs(op.defaults, op.defined); err != nil {
 					return nil, err
 				}
 			}
@@ -308,6 +364,7 @@ func hgGQLParse(src string) (*hgGQLDoc, error) {
 			op.sel = sel
 			doc.ops = append(doc.ops, op)
 		case "fragment":
+			fpos := p.pos - len(kw)
 			p.skip()
 			name := p.name()
 			p.skip()
@@ -329,11 +386,12 @@ func hgGQLParse(src string) (*hgGQLDoc, error) {
 			if doc.frags[name] != nil {
 				return nil, fmt.Errorf("There can be only one fragment named %q", name)
 			}
-			doc.frags[name] = &hgGQLFrag{name: name, on: typ, sel: sel}
+			doc.frags[name] = &hgGQLFrag{name: name, on: typ, sel: sel, pos: fpos}
 		default:
 			if kw == "" {
-				return nil, fmt.Errorf("Syntax error: unexpected %q at %d", p.peek(), p.pos)
+				return nil, fmt.Errorf("Syntax error: unexpected %q", p.peek())
 			}
+			p.pos -= len(kw)
 			return nil, fmt.Errorf("Syntax error: unexpected %q", kw)
 		}
 	}
@@ -344,7 +402,7 @@ func hgGQLParse(src string) (*hgGQLDoc, error) {
 }
 
 // varDefs reads ($a: Int = 1, $b: [String!]!) and keeps the default values.
-func (p *hgGQLParser) varDefs(defaults map[string]any) error {
+func (p *hgGQLParser) varDefs(defaults map[string]any, defined map[string]bool) error {
 	p.pos++ // (
 	for {
 		p.skip()
@@ -362,6 +420,7 @@ func (p *hgGQLParser) varDefs(defaults map[string]any) error {
 		if name == "" {
 			return fmt.Errorf("Syntax error: expected a variable name")
 		}
+		defined[name] = true
 		if err := p.expect(':'); err != nil {
 			return err
 		}
@@ -418,7 +477,7 @@ func (p *hgGQLParser) typeRef(depth int) error {
 			return err
 		}
 	} else if p.name() == "" {
-		return fmt.Errorf("Syntax error: expected a type at %d", p.pos)
+		return fmt.Errorf("Syntax error: expected a type")
 	}
 	p.skip()
 	if p.peek() == '!' {
@@ -435,44 +494,46 @@ func (p *hgGQLParser) directives() ([]hgGQLDir, error) {
 		if p.peek() != '@' {
 			return out, nil
 		}
+		d := hgGQLDir{pos: p.pos}
 		p.pos++
-		d := hgGQLDir{name: p.name()}
+		d.name = p.name()
 		if d.name == "" {
 			return nil, fmt.Errorf("Syntax error: expected a directive name")
 		}
 		p.skip()
 		if p.peek() == '(' {
-			args, err := p.arguments(d.name)
+			args, pos, err := p.arguments(d.name)
 			if err != nil {
 				return nil, err
 			}
-			d.args = args
+			d.args, d.argPos = args, pos
 		}
 		out = append(out, d)
 	}
 }
 
-func (p *hgGQLParser) arguments(of string) (map[string]any, error) {
+func (p *hgGQLParser) arguments(of string) (map[string]any, map[string]int, error) {
 	p.pos++ // (
-	args := map[string]any{}
+	args, pos := map[string]any{}, map[string]int{}
 	for {
 		p.skip()
 		if p.peek() == ')' {
 			p.pos++
-			return args, nil
+			return args, pos, nil
 		}
+		at := p.pos
 		k := p.name()
 		if k == "" {
-			return nil, fmt.Errorf("Syntax error in the arguments of %s", of)
+			return nil, nil, fmt.Errorf("Syntax error in the arguments of %s", of)
 		}
 		if err := p.expect(':'); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		v, err := p.value(0)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
-		args[k] = v
+		args[k], pos[k] = v, at
 	}
 }
 
@@ -519,7 +580,7 @@ func (p *hgGQLParser) name() string {
 func (p *hgGQLParser) expect(ch byte) error {
 	p.skip()
 	if p.peek() != ch {
-		return fmt.Errorf("Syntax error: expected %q at %d", ch, p.pos)
+		return fmt.Errorf("Syntax error: expected %q", ch)
 	}
 	p.pos++
 	return nil
@@ -543,15 +604,15 @@ func (p *hgGQLParser) selection(depth int) ([]*hgGQLField, error) {
 			return nil, fmt.Errorf("Syntax error: unclosed selection set")
 		}
 		if strings.HasPrefix(p.src[p.pos:], "...") {
+			f := &hgGQLField{name: "...", pos: p.pos}
 			p.pos += 3
 			p.skip()
-			f := &hgGQLField{name: "..."}
 			save := p.pos
 			if n := p.name(); n == "on" {
 				p.skip()
 				f.on = p.name()
 				if f.on == "" {
-					return nil, fmt.Errorf("Syntax error: expected a type condition at %d", p.pos)
+					return nil, fmt.Errorf("Syntax error: expected a type condition")
 				}
 			} else if n != "" {
 				f.spread = n
@@ -574,9 +635,10 @@ func (p *hgGQLParser) selection(depth int) ([]*hgGQLField, error) {
 			continue
 		}
 		if !hgIsNameStart(p.peek()) {
-			return nil, fmt.Errorf("Syntax error: unexpected %q at %d", p.peek(), p.pos)
+			return nil, fmt.Errorf("Syntax error: unexpected %q", p.peek())
 		}
-		f := &hgGQLField{name: p.name()}
+		f := &hgGQLField{pos: p.pos}
+		f.name = p.name()
 		p.skip()
 		if p.peek() == ':' {
 			p.pos++
@@ -588,11 +650,11 @@ func (p *hgGQLParser) selection(depth int) ([]*hgGQLField, error) {
 			p.skip()
 		}
 		if p.peek() == '(' {
-			args, err := p.arguments(f.name)
+			args, pos, err := p.arguments(f.name)
 			if err != nil {
 				return nil, err
 			}
-			f.args = args
+			f.args, f.argPos = args, pos
 			p.skip()
 		}
 		dirs, err := p.directives()
@@ -711,7 +773,7 @@ func (p *hgGQLParser) value(depth int) (any, error) {
 			return hgGQLEnum(n), nil
 		}
 	}
-	return nil, fmt.Errorf("Syntax error: unexpected %q at %d", ch, p.pos)
+	return nil, fmt.Errorf("Syntax error: unexpected %q", ch)
 }
 
 // Execution ---------------------------------------------------------------------------------------------

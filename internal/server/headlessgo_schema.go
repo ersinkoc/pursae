@@ -829,42 +829,67 @@ func hgWalkComponents(reg *hgRegistry, sc *hgSchema, obj map[string]any, comp st
 
 // hgRewriteType applies fix to the draft and published data of every entry of a type.
 func hgRewriteType(ctx context.Context, tx pgx.Tx, uid string, fix func(map[string]any)) error {
+	_, err := hgRewriteTypeChanged(ctx, tx, uid, fix, nil)
+	return err
+}
+
+// hgRewriteTypeChanged is hgRewriteType that reports what changed: after each call of fix, take
+// returns what that call changed (nothing: the object is left as it was); only the entries with a
+// change are written, and their ids are returned with the collected changes. With a nil take every
+// entry is written and nothing is reported.
+func hgRewriteTypeChanged(ctx context.Context, tx pgx.Tx, uid string, fix func(map[string]any), take func() []string) (map[int64][]string, error) {
 	rows, err := tx.Query(ctx, `SELECT id, data, published_data FROM hg_entries WHERE type_uid = $1`, uid)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	type upd struct {
 		id        int64
 		data, pub []byte
 	}
 	var list []upd
+	changed := map[int64][]string{}
 	for rows.Next() {
 		var id int64
 		var d, p []byte
 		if err := rows.Scan(&id, &d, &p); err != nil {
 			rows.Close()
-			return err
+			return nil, err
 		}
+		var hits []string
 		var dm, pm map[string]any
 		_ = json.Unmarshal(d, &dm)
 		if dm == nil {
 			dm = map[string]any{}
 		}
 		fix(dm)
+		if take != nil {
+			hits = append(hits, take()...)
+		}
 		u := upd{id: id}
 		u.data, _ = json.Marshal(dm)
 		if p != nil {
 			_ = json.Unmarshal(p, &pm)
 			if pm != nil {
 				fix(pm)
+				if take != nil {
+					hits = append(hits, take()...)
+				}
 				u.pub, _ = json.Marshal(pm)
+			}
+		}
+		if take != nil && len(hits) == 0 {
+			continue
+		}
+		for _, h := range hits {
+			if !containsStr(changed[id], h) {
+				changed[id] = append(changed[id], h)
 			}
 		}
 		list = append(list, u)
 	}
 	rows.Close()
 	if err := rows.Err(); err != nil {
-		return err
+		return nil, err
 	}
 	for _, u := range list {
 		var pub any
@@ -872,10 +897,10 @@ func hgRewriteType(ctx context.Context, tx pgx.Tx, uid string, fix func(map[stri
 			pub = u.pub
 		}
 		if _, err := tx.Exec(ctx, `UPDATE hg_entries SET data = $2, published_data = $3 WHERE id = $1`, u.id, u.data, pub); err != nil {
-			return err
+			return nil, err
 		}
 	}
-	return nil
+	return changed, nil
 }
 
 // hgDeleteSchema removes a type (and its entries) or a component. A component still used by

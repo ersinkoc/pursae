@@ -60,6 +60,29 @@ Static files (`/wp-includes/`, `/wp-admin/css/`, theme and plugin assets) are se
 binary with long cache headers, so no `root` or `try_files` is needed. nginx may cache them in a
 `proxy_cache`; WPGo Cache can emit `X-Accel-Expires` for whole pages too ([caching](caching.md)).
 
+### Live GraphQL subscriptions (Pursae Headless)
+
+Pursae Headless delivers GraphQL subscriptions as server-sent events and over a WebSocket on
+`/wp-json/headlessgo/v1/graphql`. Server-sent events need nothing more (the response carries
+`X-Accel-Buffering: no`, so nginx does not buffer it). A WebSocket needs the upgrade headers passed on:
+
+```nginx
+    location = /wp-json/headlessgo/v1/graphql {
+        proxy_pass         http://127.0.0.1:8080;
+        proxy_http_version 1.1;
+        proxy_set_header   Upgrade           $http_upgrade;
+        proxy_set_header   Connection        "upgrade";
+        proxy_set_header   Host              $host;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_read_timeout 120s;           # the server pings every 20 s
+    }
+```
+
+Caddy passes WebSocket upgrades on its own; Apache needs `mod_proxy_wstunnel` (or
+`ProxyPass / http://127.0.0.1:8080/ upgrade=websocket` with Apache 2.4.47 and later). Keep the `Host` header:
+a browser's WebSocket is accepted only from the site's own origin or a CORS origin of the Headless settings.
+
 ## Apache
 
 ```apache
@@ -98,4 +121,5 @@ mail settings ([configuration](configuration.md)).
 Run as many `wpgo` processes as you like against one database with a shared uploads directory
 (NFS or an object-storage mount): the scheduler claims jobs with `FOR UPDATE SKIP LOCKED`, so
 events run once, and migrations are serialised with an advisory lock. Give every instance the
-same `WPGO_SECRET`.
+same `WPGO_SECRET`. Pursae Headless's GraphQL subscriptions only see the changes made through the instance a
+client is connected to; use its webhooks to follow changes across instances.

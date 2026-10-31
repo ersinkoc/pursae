@@ -194,7 +194,7 @@ func (s *Server) hgBulk(ctx context.Context, sc *hgSchema, action string, docs [
 			if allLocales || !sc.Localized {
 				target = "*"
 			}
-			deleted, err := s.hgDeleteEntries(ctx, sc, doc, target)
+			deleted, err := s.hgDeleteEntries(ctx, sc, doc, target, userID)
 			if err != nil {
 				res.Failed = append(res.Failed, doc+": not found")
 				continue
