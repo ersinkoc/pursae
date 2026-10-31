@@ -225,3 +225,35 @@ func TestGooPrivateProductNotForSale(t *testing.T) {
 		t.Fatalf("private product kept in a visitor's cart: %d items", len(again.Items))
 	}
 }
+
+// An individual-use coupon cannot be paired with another one by applying them in two sessions and
+// logging in (the guest cart's coupons are merged into the customer's).
+func TestGooIndividualUseCouponSurvivesSessionMerge(t *testing.T) {
+	_, _, srv := gooSite(t)
+	ctx := context.Background()
+	p := gooMakeSimple(t, srv, "Mug", 100, nil)
+	if err := srv.gooSaveCoupon(ctx, &gooCoupon{Code: "solo", DiscountType: "percent", Amount: 50, IndividualUse: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := srv.gooSaveCoupon(ctx, &gooCoupon{Code: "extra", DiscountType: "percent", Amount: 40}); err != nil {
+		t.Fatal(err)
+	}
+	cart := srv.gooCartFor(gooTestCtx())
+	if _, err := cart.Add(ctx, p.ID, 1, 0, nil, nil, nil); err != nil {
+		t.Fatal(err)
+	}
+	if err := cart.ApplyCoupon(ctx, "solo"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cart.ApplyCoupon(ctx, "extra"); err == nil {
+		t.Fatal("second coupon applied next to an individual-use one")
+	}
+	// What the login merge produces: both codes in the session.
+	cart.sess.Data.AppliedCoupons = []string{"extra", "solo"}
+	merged := &gooCart{s: srv, c: gooTestCtx(), sess: cart.sess}
+	merged.load(ctx)
+	merged.Calculate()
+	if strings.Join(merged.AppliedCoupons, ",") != "solo" || merged.Total < 50 {
+		t.Fatalf("coupons after merge %v, total %v", merged.AppliedCoupons, merged.Total)
+	}
+}

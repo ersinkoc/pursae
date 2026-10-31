@@ -212,6 +212,18 @@ func (cart *gooCart) load(ctx context.Context) {
 			cart.sess.touch()
 		}
 	}
+	// An individual-use coupon stands alone. ApplyCoupon enforces that, but logging in merges the
+	// visitor's coupons into the customer's, which could pair it with another one.
+	if len(cart.coupons) > 1 {
+		for _, cp := range cart.coupons {
+			if cp.IndividualUse {
+				cart.errors = append(cart.errors, fmt.Sprintf(`Sorry, coupon "%s" has already been applied and cannot be used in conjunction with other coupons.`, html.EscapeString(cp.Code)))
+				cart.coupons, cart.AppliedCoupons = []*gooCoupon{cp}, []string{cp.Code}
+				cart.sess.touch()
+				break
+			}
+		}
+	}
 	cart.sess.Data.AppliedCoupons = cart.AppliedCoupons
 }
 
