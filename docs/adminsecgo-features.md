@@ -83,7 +83,7 @@ Legend: ✅ implemented · ◐ implemented with a WordPress Go specific differen
 | IP allow list / block list | One IP or CIDR (IPv4/IPv6) per line, `#` comments. Allow list: never locked out. Block list: login, API, and optionally the whole site (403). The form refuses to block your own IP | ✅ |
 | Lockouts screen | Active lockouts with release / release all, manual IP lockout, lockout history | ✅ |
 | Generic error messages | “The username or password you entered is incorrect.” for unknown users and wrong passwords (default on) | ✅ |
-| User enumeration | `/?author=N` → 404, REST `wp/v2/users` → 401 and an empty users sitemap for visitors (default on). Lost-password already answers the same either way (core) | ✅ |
+| User enumeration | `/?author=N` → 404, REST `wp/v2/users` → 401 and an empty users sitemap for visitors. **The core does this by default** (and the login form gives one message for an unknown account and a wrong password); `WPGO_EXPOSE_USERS=1` opts out. While AdminSecGo is active its "block enumeration" and "generic errors" settings decide instead, so an administrator can relax them on purpose | ✅ |
 | CAPTCHA on the login | — not included (Gontact Form has reCAPTCHA/Turnstile for forms; lockouts cover brute force) | — |
 
 ## 7. Password policy
