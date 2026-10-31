@@ -109,8 +109,23 @@ func (s *Server) gooKeysPost(c *gin.Context) {
 	ctx := c.Request.Context()
 	back := gooAdminURL("settings", "tab", "advanced", "section", "keys")
 	do := c.PostForm("goo_do")
+	me := currentUser(c)
+	// Like WooCommerce, a key may only belong to (or be taken from) a user the current user may edit:
+	// a shop manager (manage_woocommerce without edit_users) handles their own keys only, so they cannot
+	// mint a key that signs in as an administrator.
+	canAssign := func(uid int64) bool { return uid == me.ID || me.Can("edit_users", nil) }
+	keyOwner := func(id int64) (int64, bool) {
+		var owner int64
+		err := s.store.Pool.QueryRow(ctx, `SELECT user_id FROM goo_api_keys WHERE id = $1`, id).Scan(&owner)
+		return owner, err == nil
+	}
+	const denied = "You do not have permission to assign API Keys to the selected user."
 	if id, ok := strings.CutPrefix(do, "revoke:"); ok {
 		n, _ := strconv.ParseInt(id, 10, 64)
+		if owner, found := keyOwner(n); found && !canAssign(owner) {
+			gooRedirect(c, back, "", "You do not have permission to revoke this API Key.")
+			return
+		}
 		_, _ = s.store.Pool.Exec(ctx, `DELETE FROM goo_api_keys WHERE id = $1`, n)
 		gooRedirect(c, back, "API key revoked.", "")
 		return
@@ -129,7 +144,15 @@ func (s *Server) gooKeysPost(c *gin.Context) {
 		gooRedirect(c, back+"&create-key=1", "", "User is missing.")
 		return
 	}
+	if !canAssign(uid) {
+		gooRedirect(c, back+"&create-key=1", "", denied)
+		return
+	}
 	if id, _ := strconv.ParseInt(c.PostForm("key_id"), 10, 64); id > 0 {
+		if owner, found := keyOwner(id); found && !canAssign(owner) {
+			gooRedirect(c, back+"&edit-key="+itoa64(id), "", denied)
+			return
+		}
 		_, _ = s.store.Pool.Exec(ctx, `UPDATE goo_api_keys SET description = $2, user_id = $3, permissions = $4 WHERE id = $1`, id, desc, uid, perm)
 		gooRedirect(c, back+"&edit-key="+itoa64(id), "API Key updated successfully.", "")
 		return
