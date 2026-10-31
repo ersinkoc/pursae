@@ -36,7 +36,7 @@ import (
 // file (or directory) the server may not write, as in the container image; such sites update by
 // pulling the new image or replacing the binary themselves.
 
-const coreMaxArtifact = 256 << 20
+const coreMaxArtifact = 1 << 30 // the binary embeds the admin, the builder and 135 languages (~300 MB)
 
 // coreArtifact is one binary of a core release.
 type coreArtifact struct {

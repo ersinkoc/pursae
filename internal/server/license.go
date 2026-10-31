@@ -222,8 +222,6 @@ func (s *Server) optionsLicense(c *gin.Context) {
 	}
 	var notices []notice
 	switch {
-	case c.Query("settings-updated") == "true":
-		notices = append(notices, notice{Type: "success", Message: "Settings saved.", Dismissible: true})
 	case c.Query("checked") == "true":
 		notices = append(notices, notice{Type: "info", Message: "The license was checked with Pursae Manager.", Dismissible: true})
 	case c.Query("error") == "invalid":

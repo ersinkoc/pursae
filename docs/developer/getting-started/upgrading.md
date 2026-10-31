@@ -15,7 +15,7 @@ When the Hub publishes a release built for the site's platform (`core.artifacts`
 `GET /api/v1/index` has the running `GOOS`/`GOARCH`), Dashboard › Updates shows **Update to version
 X**. The site then:
 
-1. downloads the binary from the Hub (at most 256 MB), checking its size and SHA-256;
+1. downloads the binary from the Hub (at most 1 GB), checking its size and SHA-256;
 2. verifies the Ed25519 signature by the Hub key named in the release (one of the index `keys`)
    over `pursae-core-v1\n{version}\n{os}-{arch}\n{sha256 hex}`;
 3. writes it next to the running executable (temporary file, fsync, mode 0755) and renames it over
