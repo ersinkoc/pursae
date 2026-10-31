@@ -257,3 +257,32 @@ func TestGooIndividualUseCouponSurvivesSessionMerge(t *testing.T) {
 		t.Fatalf("coupons after merge %v, total %v", merged.AppliedCoupons, merged.Total)
 	}
 }
+
+// With "Allow customers to create an account during checkout" off, a posted createaccount=1 must not
+// open an account (WC_Checkout::get_posted_data() ignores the box then).
+func TestGooCheckoutCreateAccountHonoursSetting(t *testing.T) {
+	base, _, srv := gooSite(t)
+	ctx := context.Background()
+	gooShopSetup(t, srv)
+	p := gooMakeSimple(t, srv, "Mug", 10, nil)
+	if err := srv.gooSetOpts(ctx, map[string]any{"enable_guest_checkout": "yes", "enable_signup_and_login_from_checkout": "no"}); err != nil {
+		t.Fatal(err)
+	}
+	v := gooFrontClient()
+	get(t, v, base+"/?add-to-cart="+itoa64(p.ID))
+	_, body, _ := get(t, v, base+"/checkout/")
+	form := gooFrontCheckoutForm(gooHidden(t, body, "woocommerce-process-checkout-nonce"))
+	form.Set("createaccount", "1")
+	form.Set("account_username", "sneaky")
+	form.Set("account_password", asStrongPass)
+	code, _, loc := post(t, v, base+"/checkout/", form)
+	if code != http.StatusFound || !strings.Contains(loc, "/checkout/order-received/") {
+		t.Fatalf("guest checkout: %d %s", code, loc)
+	}
+	if _, err := srv.store.UserByLoginOrEmail(ctx, "sneaky"); err == nil {
+		t.Fatal("checkout created an account although sign-up at checkout is off")
+	}
+	if _, err := srv.store.UserByLoginOrEmail(ctx, "ada@example.test"); err == nil {
+		t.Fatal("checkout created an account for the billing e-mail although sign-up at checkout is off")
+	}
+}

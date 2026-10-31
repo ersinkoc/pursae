@@ -326,7 +326,9 @@ func (s *Server) gooProcessCheckout(c *gin.Context, form map[string][]string) (*
 	customerID := int64(0)
 	if u != nil {
 		customerID = u.ID
-	} else if d.CreateAccount || !s.gooOptBool("enable_guest_checkout") {
+	} else if d.CreateAccount && s.gooOptBool("enable_signup_and_login_from_checkout") || !s.gooOptBool("enable_guest_checkout") {
+		// The createaccount box counts only while the store lets customers sign up at checkout
+		// (WC_Checkout::get_posted_data()): a posted createaccount=1 must not open accounts otherwise.
 		id, err := s.gooCreateCustomer(ctx, d.Fields["billing_email"], d.Fields["account_username"], d.Fields["account_password"], d.Fields)
 		if err != nil {
 			return nil, nil, []string{err.Error()}
