@@ -9,6 +9,7 @@ import (
 	"html"
 	"html/template"
 	"io"
+	"math"
 	"mime/multipart"
 	"net/http"
 	"net/mail"
@@ -480,7 +481,7 @@ func paoAddToCart(s *Server, ctx context.Context, p *gooProduct, qty int, form m
 			add(a, v, v, paoAdjusted(a), a.PriceType)
 		case "custom_price":
 			f, err := strconv.ParseFloat(v, 64)
-			if err != nil || f < 0 {
+			if err != nil || f < 0 || math.IsNaN(f) || math.IsInf(f, 0) { // ParseFloat accepts "NaN" and "Inf"
 				return gooCartErr(`Please enter a valid amount for &quot;%s&quot;.`, label)
 			}
 			if a.Restrictions && a.Min > 0 && f < a.Min {

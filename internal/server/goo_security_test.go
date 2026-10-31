@@ -465,3 +465,23 @@ func TestGooGiftCardAndPointsCannotBeDoubleSpent(t *testing.T) {
 		t.Errorf("card after release: %v %s", g.Balance, g.Status)
 	}
 }
+
+// The compare / wishlist forms go back to the posted _wp_http_referer: only to this site.
+func TestGooXCSafeRefererUnit(t *testing.T) {
+	for ref, want := range map[string]string{
+		"/shop/?orderby=price":            "/shop/?orderby=price",
+		"http://example.test/shop/":       "http://example.test/shop/",
+		`/\evil.example`:                  "/def",
+		`http:\\evil.example`:             "/def",
+		"//evil.example/":                 "/def",
+		"/\t/evil.example":                "/def",
+		"https://evil.example/":           "/def",
+		"javascript:alert(1)":             "/def",
+		"http://example.test.evil.test/x": "/def",
+	} {
+		c, _ := gooXCRequest(http.MethodPost, "http://example.test/", url.Values{"_wp_http_referer": {ref}}, nil, nil)
+		if got := gooXCSafeReferer(c, "/def"); got != want {
+			t.Errorf("%q: got %q, want %q", ref, got, want)
+		}
+	}
+}
