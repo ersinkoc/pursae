@@ -23,7 +23,7 @@ import (
 
 var themeLibraryB = []string{"lumen-folio", "atelier-nord", "studio-fizz", "velvet-runway", "encore"}
 
-const libBDir = "../../web/theme-library"
+const libBDir = "../../library/themes"
 
 // libBDemoFile mirrors demo/demo.json (docs/theme-package.md, "Demo content").
 type libBDemoFile struct {

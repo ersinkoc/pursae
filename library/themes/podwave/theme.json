@@ -1,0 +1,353 @@
+{
+  "slug": "podwave",
+  "name": "Podwave",
+  "version": "1.0.0",
+  "description": "A bright, rounded theme for podcast shows. An animated waveform logo, a subscribe pill in the header, a hero with square show art and an on-air badge, episode rows with cover art and play buttons, show-notes pages with a decorative player, timestamps and guest cards, host and guest pages, and a waveform footer. Colours, corners, waves, fonts and the subscribe button are set in the Customizer.",
+  "author": "Pursae",
+  "author_url": "https://github.com/pursae",
+  "theme_url": "https://github.com/pursae/pursae-dev/tree/main/library/themes/podwave",
+  "tags": [
+    "Podcast",
+    "Entertainment",
+    "Blog",
+    "Light",
+    "One Column",
+    "Right Sidebar",
+    "Custom Colors",
+    "Custom Logo",
+    "Custom Menu",
+    "Editor Style",
+    "Featured Images",
+    "Footer Widgets",
+    "Threaded Comments",
+    "Wide Blocks"
+  ],
+  "requires_core": "0.1.0",
+  "screenshot": "assets/screenshot.png",
+  "category": "podcast",
+  "style": "Bright, rounded show site with waveforms, violet and coral",
+  "demo": "demo/demo.json",
+  "widget_areas": [
+    {
+      "id": "sidebar-1",
+      "name": "Sidebar",
+      "description": "Beside the episode list, archives and search."
+    },
+    {
+      "id": "footer-1",
+      "name": "Footer",
+      "description": "Widgets in the footer, under the subscribe call."
+    }
+  ],
+  "menu_locations": [
+    {
+      "id": "primary",
+      "name": "Primary Menu"
+    },
+    {
+      "id": "footer",
+      "name": "Footer Links"
+    }
+  ],
+  "styles": [
+    {
+      "handle": "podwave-style",
+      "src": "assets/style.css",
+      "deps": [
+        "wp-block-library"
+      ],
+      "media": "all"
+    }
+  ],
+  "scripts": [
+    {
+      "handle": "podwave-navigation",
+      "src": "assets/js/navigation.js",
+      "deps": [],
+      "in_footer": true
+    }
+  ],
+  "editor_styles": [
+    "assets/editor-style.css"
+  ],
+  "preload_fonts": [
+    "assets/fonts/sora.woff2",
+    "assets/fonts/work-sans.woff2"
+  ],
+  "palette": [
+    {
+      "name": "Violet",
+      "slug": "violet",
+      "color": "#6c3cff"
+    },
+    {
+      "name": "Coral",
+      "slug": "coral",
+      "color": "#ff6b4a"
+    },
+    {
+      "name": "Sun",
+      "slug": "sun",
+      "color": "#ffd23f"
+    },
+    {
+      "name": "Lavender Mist",
+      "slug": "lavender-mist",
+      "color": "#f7f5ff"
+    },
+    {
+      "name": "Night Ink",
+      "slug": "night-ink",
+      "color": "#1b1340"
+    }
+  ],
+  "supports": {
+    "post-thumbnails": true,
+    "custom-logo": {
+      "width": 240,
+      "height": 64,
+      "flex-width": true,
+      "flex-height": true,
+      "header-text": [
+        "site-title",
+        "site-description"
+      ]
+    },
+    "title-tag": true,
+    "html5": [
+      "search-form",
+      "comment-form",
+      "comment-list",
+      "gallery",
+      "caption",
+      "script",
+      "style"
+    ],
+    "responsive-embeds": true,
+    "align-wide": true,
+    "wp-block-styles": true
+  },
+  "customizer": {
+    "sections": [
+      {
+        "id": "pw_colors",
+        "title": "Colours & Shapes",
+        "priority": 40,
+        "settings": [
+          {
+            "id": "accent",
+            "label": "Violet (accent)",
+            "type": "color",
+            "default": "#6c3cff",
+            "transport": "postMessage",
+            "css_var": "--pw-accent",
+            "description": "Buttons, links, the logo mark and the waves."
+          },
+          {
+            "id": "second",
+            "label": "Coral (on-air)",
+            "type": "color",
+            "default": "#ff6b4a",
+            "transport": "postMessage",
+            "css_var": "--pw-second",
+            "description": "The live dot, play buttons and kickers."
+          },
+          {
+            "id": "background",
+            "label": "Background",
+            "type": "color",
+            "default": "#f7f5ff",
+            "transport": "postMessage",
+            "css_var": "--pw-bg"
+          },
+          {
+            "id": "ink",
+            "label": "Ink",
+            "type": "color",
+            "default": "#1b1340",
+            "transport": "postMessage",
+            "css_var": "--pw-ink",
+            "description": "Text and the dark episode bands."
+          },
+          {
+            "id": "waves",
+            "label": "Waveform motifs",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "pw-waves",
+            "description": "Waveforms under the hero, the episode header, the cards and above the footer."
+          },
+          {
+            "id": "shape",
+            "label": "Corners",
+            "type": "select",
+            "default": "pill",
+            "transport": "postMessage",
+            "body_class": "pw-shape-{value}",
+            "choices": [
+              {
+                "value": "pill",
+                "label": "Round pills"
+              },
+              {
+                "value": "soft",
+                "label": "Soft corners"
+              },
+              {
+                "value": "square",
+                "label": "Square"
+              }
+            ]
+          },
+          {
+            "id": "font_pairing",
+            "label": "Font pairing",
+            "type": "select",
+            "default": "sora",
+            "transport": "postMessage",
+            "body_class": "pw-fonts-{value}",
+            "choices": [
+              {
+                "value": "sora",
+                "label": "Sora & Work Sans"
+              },
+              {
+                "value": "work",
+                "label": "Work Sans only"
+              },
+              {
+                "value": "system",
+                "label": "System fonts"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "pw_layout",
+        "title": "Episodes & Layout",
+        "priority": 41,
+        "settings": [
+          {
+            "id": "episode_layout",
+            "label": "Episode list",
+            "type": "select",
+            "default": "list",
+            "transport": "postMessage",
+            "body_class": "pw-episodes-{value}",
+            "choices": [
+              {
+                "value": "list",
+                "label": "Rows with cover art"
+              },
+              {
+                "value": "cards",
+                "label": "Cards grid"
+              }
+            ]
+          },
+          {
+            "id": "sidebar",
+            "label": "Sidebar",
+            "type": "select",
+            "default": "right",
+            "transport": "postMessage",
+            "body_class": "pw-sidebar-{value}",
+            "choices": [
+              {
+                "value": "right",
+                "label": "Right"
+              },
+              {
+                "value": "none",
+                "label": "None"
+              }
+            ]
+          },
+          {
+            "id": "show_author",
+            "label": "Show host names",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "pw-show-author"
+          },
+          {
+            "id": "sticky_header",
+            "label": "Sticky header",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "pw-sticky"
+          }
+        ]
+      },
+      {
+        "id": "pw_show",
+        "title": "Show & Subscribe",
+        "priority": 42,
+        "settings": [
+          {
+            "id": "subscribe_label",
+            "label": "Subscribe button label",
+            "type": "text",
+            "default": "Subscribe",
+            "transport": "refresh",
+            "description": "In the header, hero and footer. Leave empty to hide."
+          },
+          {
+            "id": "subscribe_url",
+            "label": "Subscribe link",
+            "type": "text",
+            "default": "/subscribe/",
+            "transport": "refresh"
+          },
+          {
+            "id": "hero_image",
+            "label": "Show artwork",
+            "type": "image",
+            "transport": "refresh",
+            "description": "The square cover art in the hero. Falls back to the front page's featured image."
+          },
+          {
+            "id": "hero_kicker",
+            "label": "Hero kicker",
+            "type": "text",
+            "default": "New episodes every Tuesday",
+            "transport": "refresh"
+          },
+          {
+            "id": "hero_heading",
+            "label": "Hero heading",
+            "type": "text",
+            "default": "",
+            "transport": "refresh",
+            "description": "Defaults to the site title."
+          },
+          {
+            "id": "cta_label",
+            "label": "Play button label",
+            "type": "text",
+            "default": "Play the latest",
+            "transport": "refresh"
+          },
+          {
+            "id": "cta_url",
+            "label": "Play button link",
+            "type": "text",
+            "default": "/episodes/",
+            "transport": "refresh"
+          },
+          {
+            "id": "footer_text",
+            "label": "Footer text",
+            "type": "text",
+            "default": "",
+            "transport": "refresh"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -43,14 +43,14 @@ func gooIsStoreManifest(m *themeManifest) bool {
 func (s *Server) gooStoreThemes(c *gin.Context) []gooStoreTheme {
 	active := s.activeTheme()
 	var out []gooStoreTheme
-	for _, lt := range s.libraryThemes() {
+	for _, lt := range s.libraryThemes(c) {
 		m := lt.Manifest
 		if !gooIsStoreManifest(m) {
 			continue
 		}
 		st := gooStoreTheme{Slug: m.Slug, Name: m.Name, Version: m.Version, Description: m.Description, Style: m.Style,
 			CategoryLabel: themeCategoryLabel(m.Category), HasDemo: m.Demo != "", Golementor: m.Golementor != "",
-			Screenshot: "/wp-admin/theme-install?action=library-screenshot&theme=" + m.Slug + "&ver=" + m.Version}
+			Screenshot: libraryScreenshotURL(m)}
 		if canPreview(currentUser(c), true) {
 			st.PreviewURL = previewURL(m.Slug, false)
 		}
@@ -138,7 +138,7 @@ func (s *Server) gooThemesPost(c *gin.Context) {
 		return
 	}
 	slug := c.PostForm("theme")
-	lt := s.libraryTheme(slug)
+	lt := s.libraryTheme(c, slug)
 	if lt == nil || !gooIsStoreManifest(lt.Manifest) {
 		if c.PostForm("action") == "step" {
 			c.JSON(http.StatusBadRequest, gooThemeStep{Message: "The requested theme does not exist."})

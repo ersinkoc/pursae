@@ -1,0 +1,97 @@
+{
+  "slug": "faithful-commons",
+  "name": "Faithful Commons",
+  "version": "1.0.0",
+  "description": "A warm, welcoming theme for places of worship and faith communities of any tradition: a service-times bar, an arched hero window, gentle stone and gold colours, inscriptional headings, reflection and sermon-note cards, event lists, a volunteer call to action and an invitation band in the footer.",
+  "author": "Pursae",
+  "author_url": "https://github.com/pursae",
+  "theme_url": "https://github.com/pursae/pursae-dev/tree/main/library/themes/faithful-commons",
+  "tags": ["Religion", "Community", "Blog", "Grid Layout", "Right Sidebar", "Left Sidebar", "Custom Colors", "Custom Logo", "Custom Menu", "Featured Images", "Sticky Post", "Threaded Comments", "Wide Blocks", "Editor Style", "Accessibility Ready"],
+  "requires_core": "0.1.0",
+  "screenshot": "assets/screenshot.png",
+  "category": "religion",
+  "style": "Welcoming place of worship in gentle stone and gold with arched windows",
+  "demo": "demo/demo.json",
+  "widget_areas": [
+    {"id": "sidebar-1", "name": "Sidebar", "description": "Beside reflections, news and archives."},
+    {"id": "footer-1", "name": "Footer", "description": "Columns in the stone footer."}
+  ],
+  "menu_locations": [
+    {"id": "primary", "name": "Primary Menu"},
+    {"id": "footer", "name": "Footer Menu"},
+    {"id": "social", "name": "Social Links"}
+  ],
+  "styles": [
+    {"handle": "faithful-commons-style", "src": "assets/style.css", "deps": ["wp-block-library"], "media": "all"}
+  ],
+  "scripts": [
+    {"handle": "faithful-commons-navigation", "src": "assets/js/navigation.js", "deps": [], "in_footer": true}
+  ],
+  "editor_styles": ["assets/editor-style.css"],
+  "preload_fonts": ["assets/fonts/marcellus.woff2", "assets/fonts/alegreya-sans.woff2"],
+  "palette": [
+    {"name": "Limestone", "slug": "limestone", "color": "#f4efe6"},
+    {"name": "Sandstone", "slug": "sandstone", "color": "#e6dccb"},
+    {"name": "Gold", "slug": "gold", "color": "#b08a3e"},
+    {"name": "Deep gold", "slug": "deep-gold", "color": "#7d5f22"},
+    {"name": "Slate", "slug": "slate", "color": "#38352f"},
+    {"name": "Ink", "slug": "ink", "color": "#2b2823"},
+    {"name": "Olive", "slug": "olive", "color": "#6b7253"}
+  ],
+  "supports": {
+    "post-thumbnails": true,
+    "custom-logo": {"width": 200, "height": 80, "flex-width": true, "flex-height": true, "header-text": ["site-title", "site-description"]},
+    "title-tag": true,
+    "html5": ["search-form", "comment-form", "comment-list", "gallery", "caption", "script", "style"],
+    "responsive-embeds": true,
+    "align-wide": true,
+    "wp-block-styles": true
+  },
+  "customizer": {
+    "sections": [
+      {
+        "id": "fc_colors", "title": "Stone & Gold Colors", "priority": 30,
+        "settings": [
+          {"id": "gold", "label": "Gold accent", "description": "Buttons, rules, the emblem and highlights.", "type": "color", "default": "#b08a3e", "transport": "postMessage", "css_var": "--fc-gold"},
+          {"id": "background", "label": "Page background", "type": "color", "default": "#f4efe6", "transport": "postMessage", "css_var": "--fc-bg"},
+          {"id": "ink", "label": "Text color", "type": "color", "default": "#2b2823", "transport": "postMessage", "css_var": "--fc-ink"},
+          {"id": "deep", "label": "Footer and service bar", "type": "color", "default": "#38352f", "transport": "postMessage", "css_var": "--fc-deep"}
+        ]
+      },
+      {
+        "id": "fc_layout", "title": "Layout & Type", "priority": 31,
+        "settings": [
+          {"id": "header_style", "label": "Header", "type": "select", "default": "centered", "transport": "postMessage", "body_class": "fc-header-{value}",
+           "choices": [{"value": "centered", "label": "Centered emblem and menu"}, {"value": "split", "label": "Name left, menu right"}]},
+          {"id": "post_layout", "label": "Reflections layout", "type": "select", "default": "cards", "transport": "postMessage", "body_class": "fc-layout-{value}",
+           "choices": [{"value": "cards", "label": "Arched cards in two columns"}, {"value": "list", "label": "List with images beside"}, {"value": "simple", "label": "Text only"}]},
+          {"id": "sidebar", "label": "Sidebar", "type": "select", "default": "right", "transport": "postMessage", "body_class": "sidebar-{value}",
+           "choices": [{"value": "right", "label": "Right"}, {"value": "left", "label": "Left"}, {"value": "none", "label": "No sidebar"}]},
+          {"id": "font_pairing", "label": "Typography", "type": "select", "default": "inscription", "transport": "postMessage", "body_class": "fc-fonts-{value}",
+           "choices": [{"value": "inscription", "label": "Inscription headings, humanist text"}, {"value": "gentle", "label": "Gentle (humanist throughout)"}, {"value": "system", "label": "System fonts"}]},
+          {"id": "arches", "label": "Arched image tops", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "fc-arches"},
+          {"id": "sticky_header", "label": "Sticky header", "type": "checkbox", "default": false, "transport": "postMessage", "body_class": "sticky-header"},
+          {"id": "show_thumbs", "label": "Show featured images", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "show-thumbs"},
+          {"id": "show_author", "label": "Show who shared each post", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "show-author"}
+        ]
+      },
+      {
+        "id": "fc_welcome", "title": "Welcome & Gatherings", "priority": 32,
+        "settings": [
+          {"id": "show_service_bar", "label": "Show the service times bar", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "fc-servicebar-on"},
+          {"id": "service_times", "label": "Service times", "type": "text", "default": "Sundays 10:00 · Wednesdays 19:00 · All are welcome"},
+          {"id": "visit_label", "label": "Visit button label", "type": "text", "default": "Plan a visit"},
+          {"id": "visit_link", "label": "Visit button link", "type": "text", "default": "#visit"},
+          {"id": "hero_image", "label": "Hero image (arched window)", "type": "image"},
+          {"id": "hero_kicker", "label": "Small line above the title", "type": "text", "default": "Welcome, whoever you are"},
+          {"id": "hero_title", "label": "Hero title", "type": "text", "default": "A place to belong, to rest and to serve"},
+          {"id": "hero_text", "label": "Hero text", "type": "textarea", "default": "We are a community of neighbours who gather each week to reflect, sing, share a meal and care for the people around us."},
+          {"id": "hero_second_label", "label": "Second button label", "type": "text", "default": "Read reflections"},
+          {"id": "hero_second_link", "label": "Second button link", "type": "text", "default": "#reflections"},
+          {"id": "invite_title", "label": "Footer invitation title", "type": "text", "default": "There is a seat saved for you"},
+          {"id": "footer_text", "label": "Footer text", "type": "text", "default": ""}
+        ]
+      }
+    ]
+  }
+}

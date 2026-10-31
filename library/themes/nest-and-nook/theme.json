@@ -1,0 +1,344 @@
+{
+  "slug": "nest-and-nook",
+  "name": "Nest & Nook",
+  "version": "1.0.0",
+  "description": "An airy interior design and home decor theme for a studio or blog: warm neutral linen tones, Marcellus capitals with Albert Sans, a full-bleed room hero, masonry journal, room-by-room tiles and galleries, labelled before/after comparisons and numbered shop-the-look lists.",
+  "author": "Pursae",
+  "author_url": "https://github.com/pursae",
+  "theme_url": "https://github.com/pursae/pursae-dev/tree/main/library/themes/nest-and-nook",
+  "tags": [
+    "Home",
+    "Blog",
+    "Portfolio",
+    "Business",
+    "Grid Layout",
+    "Custom Colors",
+    "Custom Logo",
+    "Custom Menu",
+    "Editor Style",
+    "Featured Images",
+    "Footer Widgets",
+    "Full Width Template",
+    "Threaded Comments"
+  ],
+  "requires_core": "0.1.0",
+  "screenshot": "assets/screenshot.png",
+  "category": "home",
+  "style": "Airy neutral interiors, masonry rooms, before/after and shop-the-look",
+  "demo": "demo/demo.json",
+  "widget_areas": [
+    {
+      "id": "sidebar-1",
+      "name": "Sidebar",
+      "description": "Beside the journal when a sidebar is chosen."
+    },
+    {
+      "id": "footer-1",
+      "name": "Footer",
+      "description": "Columns in the linen footer."
+    }
+  ],
+  "menu_locations": [
+    {
+      "id": "primary",
+      "name": "Primary Menu"
+    },
+    {
+      "id": "social",
+      "name": "Social Links"
+    }
+  ],
+  "styles": [
+    {
+      "handle": "nest-and-nook-style",
+      "src": "assets/style.css",
+      "deps": [
+        "wp-block-library"
+      ],
+      "media": "all"
+    }
+  ],
+  "scripts": [
+    {
+      "handle": "nest-and-nook-navigation",
+      "src": "assets/js/navigation.js",
+      "deps": [],
+      "in_footer": true
+    }
+  ],
+  "editor_styles": [
+    "assets/editor-style.css"
+  ],
+  "preload_fonts": [
+    "assets/fonts/albert-sans.woff2",
+    "assets/fonts/marcellus.woff2"
+  ],
+  "palette": [
+    {
+      "name": "Clay",
+      "slug": "clay",
+      "color": "#8a5d42"
+    },
+    {
+      "name": "Linen",
+      "slug": "linen",
+      "color": "#ece5da"
+    },
+    {
+      "name": "Taupe",
+      "slug": "taupe",
+      "color": "#a89886"
+    },
+    {
+      "name": "Sage",
+      "slug": "sage",
+      "color": "#b7bfa8"
+    },
+    {
+      "name": "Charcoal",
+      "slug": "charcoal",
+      "color": "#2e2b28"
+    },
+    {
+      "name": "Chalk",
+      "slug": "chalk",
+      "color": "#f8f5f0"
+    }
+  ],
+  "supports": {
+    "post-thumbnails": true,
+    "custom-logo": {
+      "width": 240,
+      "height": 80,
+      "flex-width": true,
+      "flex-height": true,
+      "header-text": [
+        "site-title",
+        "site-description"
+      ]
+    },
+    "title-tag": true,
+    "html5": [
+      "search-form",
+      "comment-form",
+      "comment-list",
+      "gallery",
+      "caption",
+      "script",
+      "style"
+    ],
+    "responsive-embeds": true,
+    "align-wide": true,
+    "wp-block-styles": true
+  },
+  "customizer": {
+    "sections": [
+      {
+        "id": "nn_colors",
+        "title": "Colors & Type",
+        "priority": 40,
+        "settings": [
+          {
+            "id": "accent_color",
+            "label": "Accent",
+            "type": "color",
+            "default": "#8a5d42",
+            "transport": "postMessage",
+            "css_var": "--accent",
+            "description": "Links, labels and numbers."
+          },
+          {
+            "id": "linen_color",
+            "label": "Linen",
+            "type": "color",
+            "default": "#ece5da",
+            "transport": "postMessage",
+            "css_var": "--surface",
+            "description": "Shop-the-look panels, bands and the footer."
+          },
+          {
+            "id": "background_color",
+            "label": "Background",
+            "type": "color",
+            "default": "#f8f5f0",
+            "transport": "postMessage",
+            "css_var": "--bg"
+          },
+          {
+            "id": "text_color",
+            "label": "Text",
+            "type": "color",
+            "default": "#2e2b28",
+            "transport": "postMessage",
+            "css_var": "--text"
+          },
+          {
+            "id": "font_pairing",
+            "label": "Typefaces",
+            "type": "select",
+            "default": "classic",
+            "transport": "postMessage",
+            "body_class": "nn-font-{value}",
+            "choices": [
+              {
+                "value": "classic",
+                "label": "Marcellus with Albert Sans"
+              },
+              {
+                "value": "modern",
+                "label": "Albert Sans light"
+              },
+              {
+                "value": "system",
+                "label": "System fonts"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "nn_layout",
+        "title": "Layout",
+        "priority": 41,
+        "settings": [
+          {
+            "id": "post_layout",
+            "label": "Journal layout",
+            "type": "select",
+            "default": "masonry",
+            "transport": "postMessage",
+            "body_class": "nn-layout-{value}",
+            "choices": [
+              {
+                "value": "masonry",
+                "label": "Masonry"
+              },
+              {
+                "value": "grid",
+                "label": "Even grid"
+              },
+              {
+                "value": "list",
+                "label": "List"
+              }
+            ]
+          },
+          {
+            "id": "container_width",
+            "label": "Container width",
+            "type": "select",
+            "default": "regular",
+            "transport": "postMessage",
+            "body_class": "nn-width-{value}",
+            "choices": [
+              {
+                "value": "narrow",
+                "label": "Narrow"
+              },
+              {
+                "value": "regular",
+                "label": "Regular"
+              },
+              {
+                "value": "wide",
+                "label": "Wide"
+              }
+            ]
+          },
+          {
+            "id": "header_style",
+            "label": "Header",
+            "type": "select",
+            "default": "split",
+            "transport": "postMessage",
+            "body_class": "nn-header-{value}",
+            "choices": [
+              {
+                "value": "split",
+                "label": "Name left, menu right"
+              },
+              {
+                "value": "center",
+                "label": "Centered"
+              }
+            ]
+          },
+          {
+            "id": "sidebar",
+            "label": "Sidebar",
+            "type": "select",
+            "default": "none",
+            "transport": "postMessage",
+            "body_class": "nn-sidebar-{value}",
+            "choices": [
+              {
+                "value": "none",
+                "label": "No sidebar"
+              },
+              {
+                "value": "right",
+                "label": "Right"
+              },
+              {
+                "value": "left",
+                "label": "Left"
+              }
+            ]
+          },
+          {
+            "id": "show_frame",
+            "label": "Frame the page with a fine line",
+            "type": "checkbox",
+            "default": false,
+            "transport": "postMessage",
+            "body_class": "nn-frame"
+          },
+          {
+            "id": "show_featured",
+            "label": "Show featured images",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "nn-thumbs"
+          },
+          {
+            "id": "show_author",
+            "label": "Show the author",
+            "type": "checkbox",
+            "default": false,
+            "transport": "postMessage",
+            "body_class": "nn-author"
+          }
+        ]
+      },
+      {
+        "id": "nn_home",
+        "title": "Home Page & Footer",
+        "priority": 42,
+        "settings": [
+          {
+            "id": "hero_image",
+            "label": "Hero photo",
+            "type": "image",
+            "description": "The full-width room photo on a static front page. Empty uses the page's featured image."
+          },
+          {
+            "id": "hero_caption",
+            "label": "Hero label",
+            "type": "text",
+            "default": "Interior design studio",
+            "transport": "refresh"
+          },
+          {
+            "id": "footer_text",
+            "label": "Footer text",
+            "type": "text",
+            "default": "",
+            "transport": "refresh",
+            "description": "Replaces the copyright line."
+          }
+        ]
+      }
+    ]
+  }
+}

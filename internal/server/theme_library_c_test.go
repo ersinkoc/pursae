@@ -225,7 +225,7 @@ func TestThemeLibraryC(t *testing.T) {
 
 	for _, slug := range themeLibraryC {
 		t.Run(slug, func(t *testing.T) {
-			dir := filepath.Join("..", "..", "web", "theme-library", slug)
+			dir := filepath.Join("..", "..", "library", "themes", slug)
 			if _, err := os.Stat(filepath.Join(dir, "theme.json")); err != nil {
 				t.Fatal(err)
 			}

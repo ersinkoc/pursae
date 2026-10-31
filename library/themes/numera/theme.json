@@ -1,0 +1,427 @@
+{
+  "slug": "numera",
+  "name": "Numera",
+  "version": "1.0.0",
+  "description": "A calm, clear theme for accounting firms and tax advisers: blue-green tones, Sora headings, readable tables in three styles, a deadline banner, services and pricing plans, a tax-deadline calendar page and a finance-tips blog.",
+  "author": "Pursae",
+  "author_url": "https://github.com/pursae",
+  "theme_url": "https://github.com/pursae/pursae-dev/tree/main/library/themes/numera",
+  "tags": [
+    "Finance",
+    "Accounting",
+    "Business",
+    "Blog",
+    "Two Columns",
+    "Right Sidebar",
+    "Left Sidebar",
+    "Grid Layout",
+    "Custom Colors",
+    "Custom Logo",
+    "Custom Menu",
+    "Editor Style",
+    "Featured Images",
+    "Footer Widgets",
+    "Sticky Header",
+    "Threaded Comments",
+    "Wide Blocks"
+  ],
+  "requires_core": "0.1.0",
+  "screenshot": "assets/screenshot.png",
+  "category": "finance",
+  "style": "Calm blue-green, clear tables, friendly geometric sans",
+  "demo": "demo/demo.json",
+  "widget_areas": [
+    {
+      "id": "sidebar-1",
+      "name": "Sidebar",
+      "description": "Beside posts, archives and search results (Customize sets the side or hides it)."
+    },
+    {
+      "id": "footer-1",
+      "name": "Footer",
+      "description": "Columns in the footer, next to the site name and description."
+    }
+  ],
+  "menu_locations": [
+    {
+      "id": "primary",
+      "name": "Primary Menu"
+    },
+    {
+      "id": "footer",
+      "name": "Footer Menu"
+    }
+  ],
+  "styles": [
+    {
+      "handle": "numera-style",
+      "src": "assets/style.css",
+      "deps": [
+        "wp-block-library"
+      ],
+      "media": "all"
+    }
+  ],
+  "scripts": [
+    {
+      "handle": "numera-navigation",
+      "src": "assets/js/navigation.js",
+      "deps": [],
+      "in_footer": true
+    }
+  ],
+  "editor_styles": [
+    "assets/editor-style.css"
+  ],
+  "preload_fonts": [
+    "assets/fonts/sora.woff2",
+    "assets/fonts/public-sans.woff2"
+  ],
+  "palette": [
+    {
+      "name": "Teal",
+      "slug": "teal",
+      "color": "#1d6b73"
+    },
+    {
+      "name": "Deep teal",
+      "slug": "deep-teal",
+      "color": "#0f3d44"
+    },
+    {
+      "name": "Mint",
+      "slug": "mint",
+      "color": "#5cc2a7"
+    },
+    {
+      "name": "Sky",
+      "slug": "sky",
+      "color": "#e6f2f2"
+    },
+    {
+      "name": "Ink",
+      "slug": "ink",
+      "color": "#17323a"
+    },
+    {
+      "name": "White",
+      "slug": "white",
+      "color": "#ffffff"
+    }
+  ],
+  "supports": {
+    "post-thumbnails": true,
+    "custom-logo": {
+      "width": 240,
+      "height": 64,
+      "flex-width": true,
+      "flex-height": true,
+      "header-text": [
+        "site-title",
+        "site-description"
+      ]
+    },
+    "title-tag": true,
+    "html5": [
+      "search-form",
+      "comment-form",
+      "comment-list",
+      "gallery",
+      "caption",
+      "script",
+      "style"
+    ],
+    "responsive-embeds": true,
+    "align-wide": true,
+    "wp-block-styles": true
+  },
+  "customizer": {
+    "sections": [
+      {
+        "id": "numera_colors",
+        "title": "Colors & Type",
+        "priority": 40,
+        "settings": [
+          {
+            "id": "primary_color",
+            "label": "Primary (teal)",
+            "type": "color",
+            "default": "#1d6b73",
+            "transport": "postMessage",
+            "css_var": "--nm-primary",
+            "description": "Buttons, links, table headers and the footer."
+          },
+          {
+            "id": "accent_color",
+            "label": "Accent (mint)",
+            "type": "color",
+            "default": "#5cc2a7",
+            "transport": "postMessage",
+            "css_var": "--nm-accent",
+            "description": "Highlights, check marks and the featured plan."
+          },
+          {
+            "id": "surface_color",
+            "label": "Soft surface",
+            "type": "color",
+            "default": "#eef6f5",
+            "transport": "postMessage",
+            "css_var": "--nm-surface",
+            "description": "Background of alternating sections and cards."
+          },
+          {
+            "id": "font_pairing",
+            "label": "Typefaces",
+            "type": "select",
+            "default": "sora",
+            "transport": "postMessage",
+            "body_class": "nm-font-{value}",
+            "choices": [
+              {
+                "value": "sora",
+                "label": "Sora headings, Public Sans text"
+              },
+              {
+                "value": "public",
+                "label": "Public Sans throughout"
+              },
+              {
+                "value": "system",
+                "label": "System fonts"
+              }
+            ]
+          },
+          {
+            "id": "table_style",
+            "label": "Table style",
+            "type": "select",
+            "default": "striped",
+            "transport": "postMessage",
+            "body_class": "nm-tables-{value}",
+            "choices": [
+              {
+                "value": "striped",
+                "label": "Striped rows"
+              },
+              {
+                "value": "lined",
+                "label": "Thin lines"
+              },
+              {
+                "value": "boxed",
+                "label": "Boxed cells"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "numera_header",
+        "title": "Header & Deadline Banner",
+        "priority": 41,
+        "settings": [
+          {
+            "id": "header_style",
+            "label": "Header style",
+            "type": "select",
+            "default": "light",
+            "transport": "postMessage",
+            "body_class": "nm-header-{value}",
+            "choices": [
+              {
+                "value": "light",
+                "label": "White bar"
+              },
+              {
+                "value": "teal",
+                "label": "Teal bar"
+              },
+              {
+                "value": "floating",
+                "label": "Floating rounded bar"
+              }
+            ]
+          },
+          {
+            "id": "sticky_header",
+            "label": "Keep the header visible while scrolling",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "nm-sticky"
+          },
+          {
+            "id": "deadline_banner",
+            "label": "Deadline banner",
+            "type": "text",
+            "default": "Next deadline: quarterly estimated tax payments are due on January 15.",
+            "transport": "refresh",
+            "description": "Leave empty to hide the banner."
+          },
+          {
+            "id": "deadline_url",
+            "label": "Deadline banner link",
+            "type": "text",
+            "default": "/tax-calendar/",
+            "transport": "refresh"
+          },
+          {
+            "id": "cta_label",
+            "label": "Header button label",
+            "type": "text",
+            "default": "Book a free call",
+            "transport": "refresh",
+            "description": "Leave empty to hide the button."
+          },
+          {
+            "id": "cta_url",
+            "label": "Header button link",
+            "type": "text",
+            "default": "/contact/",
+            "transport": "refresh"
+          }
+        ]
+      },
+      {
+        "id": "numera_hero",
+        "title": "Front Page Hero",
+        "priority": 42,
+        "settings": [
+          {
+            "id": "hero_image",
+            "label": "Hero image",
+            "description": "Without an image the front page's featured image is used.",
+            "type": "image"
+          },
+          {
+            "id": "hero_kicker",
+            "label": "Small label above the heading",
+            "type": "text",
+            "default": "Accounting · Tax · Payroll",
+            "transport": "refresh"
+          },
+          {
+            "id": "hero_heading",
+            "label": "Heading",
+            "type": "text",
+            "default": "",
+            "transport": "refresh",
+            "description": "Empty uses the page title."
+          },
+          {
+            "id": "hero_text",
+            "label": "Text",
+            "type": "textarea",
+            "default": "",
+            "transport": "refresh"
+          },
+          {
+            "id": "hero_stat_value",
+            "label": "Stat card value",
+            "type": "text",
+            "default": "99.7%",
+            "transport": "refresh",
+            "description": "The floating card on the hero image; leave empty to hide it."
+          },
+          {
+            "id": "hero_stat_label",
+            "label": "Stat card label",
+            "type": "text",
+            "default": "of returns filed before the deadline last season",
+            "transport": "refresh"
+          },
+          {
+            "id": "hero_button_label",
+            "label": "Second link label",
+            "type": "text",
+            "default": "See pricing",
+            "transport": "refresh"
+          },
+          {
+            "id": "hero_button_url",
+            "label": "Second link URL",
+            "type": "text",
+            "default": "/pricing/",
+            "transport": "refresh"
+          }
+        ],
+        "description": "The split hero on a static front page."
+      },
+      {
+        "id": "numera_blog",
+        "title": "Blog & Footer",
+        "priority": 43,
+        "settings": [
+          {
+            "id": "blog_layout",
+            "label": "Post list layout",
+            "type": "select",
+            "default": "grid",
+            "transport": "postMessage",
+            "body_class": "nm-blog-{value}",
+            "choices": [
+              {
+                "value": "grid",
+                "label": "Cards in a grid"
+              },
+              {
+                "value": "list",
+                "label": "List with thumbnails"
+              },
+              {
+                "value": "compact",
+                "label": "Compact rows"
+              }
+            ]
+          },
+          {
+            "id": "sidebar_position",
+            "label": "Sidebar",
+            "type": "select",
+            "default": "right",
+            "transport": "postMessage",
+            "body_class": "nm-sidebar-{value}",
+            "choices": [
+              {
+                "value": "right",
+                "label": "Right"
+              },
+              {
+                "value": "left",
+                "label": "Left"
+              },
+              {
+                "value": "none",
+                "label": "No sidebar"
+              }
+            ]
+          },
+          {
+            "id": "show_featured",
+            "label": "Show featured images",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "nm-thumbs"
+          },
+          {
+            "id": "show_author",
+            "label": "Show the author on posts and cards",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "nm-show-author"
+          },
+          {
+            "id": "footer_text",
+            "label": "Footer text",
+            "type": "text",
+            "default": "",
+            "transport": "refresh",
+            "description": "Replaces the copyright line."
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -82,10 +82,15 @@ type hubItem struct {
 	DownloadURL   string   `json:"download_url"`
 	Access        string   `json:"access"`  // public | pro | private
 	Channel       string   `json:"channel"` // stable | beta, of the listed version
+	// Themes: the listed version's theme.json (library metadata without a download, theme_library.go)
+	// and whether a new site installs the theme right after its installer.
+	Manifest   json.RawMessage `json:"manifest,omitempty"`
+	Preinstall bool            `json:"preinstall,omitempty"`
 }
 
 type hubList struct {
 	Total int       `json:"total"`
+	Pages int       `json:"pages"`
 	Items []hubItem `json:"items"`
 }
 
@@ -257,15 +262,28 @@ func (s *Server) hubTrustKeys(keys []hubKey) {
 	}
 }
 
-// hubCatalog lists the Hub's plugins or themes (kind "plugins" | "themes"), cached for 12 hours.
+// hubCatalogMaxPages bounds the pages of one catalog read (100 listings each).
+const hubCatalogMaxPages = 50
+
+// hubCatalog lists the Hub's plugins or themes (kind "plugins" | "themes"), every page of them,
+// cached for 12 hours under the license's cache key.
 func (s *Server) hubCatalog(ctx context.Context, kind string) ([]hubItem, error) {
 	var list hubList
 	key := s.hubCacheKey("wpgo_hub_" + kind)
 	if s.hubCacheGet(ctx, key, &list) {
 		return list.Items, nil
 	}
-	if err := s.hubGet(ctx, "/api/v1/"+kind+"?per_page=100&sort=downloads", &list); err != nil {
-		return nil, err
+	list = hubList{}
+	for page := 1; page <= hubCatalogMaxPages; page++ {
+		var p hubList
+		if err := s.hubGet(ctx, "/api/v1/"+kind+"?per_page=100&sort=downloads&page="+strconv.Itoa(page), &p); err != nil {
+			return nil, err
+		}
+		list.Items = append(list.Items, p.Items...)
+		list.Total, list.Pages = p.Total, p.Pages
+		if len(p.Items) == 0 || page >= p.Pages || len(list.Items) >= p.Total {
+			break
+		}
 	}
 	s.hubCacheSet(ctx, key, list, hubCacheTTL)
 	return list.Items, nil
@@ -331,6 +349,9 @@ func (s *Server) hubDownload(ctx context.Context, it *hubItem) ([]byte, error) {
 	if len(data) > hubMaxPackage {
 		return nil, errors.New("hub: the package is larger than 64 MiB")
 	}
+	if it.Size > 0 && int64(len(data)) != it.Size {
+		return nil, errors.New("hub: the downloaded package does not have the published size")
+	}
 	sum := sha256.Sum256(data)
 	if it.SHA256 != "" && !strings.EqualFold(hex.EncodeToString(sum[:]), it.SHA256) {
 		return nil, errors.New("hub: the downloaded package does not match the published checksum")
@@ -384,6 +405,7 @@ func (s *Server) hubPing(ctx context.Context) error {
 // hubDropCaches forgets every cached Manager answer (index, catalogs, under any license key).
 func (s *Server) hubDropCaches(ctx context.Context) {
 	_, _ = s.store.Pool.Exec(ctx, `DELETE FROM transients WHERE key LIKE 'wpgo\_hub\_%'`)
+	s.libraryForget()
 }
 
 // hubRefresh drops the cached catalog and index (Updates › Check again).

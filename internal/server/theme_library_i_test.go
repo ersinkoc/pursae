@@ -17,13 +17,13 @@ import (
 )
 
 // Theme library, group I: Launchpad, Cloudline, Datafield, AppNest and Northstar Ventures. Each
-// package is zipped from web/theme-library/<slug>, uploaded through Appearance › Add Themes › Upload,
+// package is zipped from library/themes/<slug>, uploaded through Appearance › Add Themes › Upload,
 // activated and rendered for every kind of request; then its demo content is validated with the real
 // parser, imported, browsed page by page and removed again.
 
 var libIThemes = []string{"launchpad", "cloudline", "datafield", "appnest", "northstar-ventures"}
 
-const libIDir = "../../web/theme-library"
+const libIDir = "../../library/themes"
 
 // libIFront is what the home page shows once the demo is imported: a designed static front page,
 // or (Datafield) the blog with its intro.

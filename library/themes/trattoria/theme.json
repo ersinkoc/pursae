@@ -1,0 +1,100 @@
+{
+  "slug": "trattoria",
+  "name": "Trattoria",
+  "version": "1.0.0",
+  "description": "A warm Italian restaurant theme: terracotta and olive on cream paper, Playfair Display and Lora, a full-bleed hero with a reservation button, a menu page laid out in columns with dotted price leaders, opening hours in the footer and a news blog from the kitchen.",
+  "author": "Pursae",
+  "author_url": "https://github.com/pursae",
+  "theme_url": "https://github.com/pursae/pursae-dev/tree/main/library/themes/trattoria",
+  "tags": ["Restaurant", "Food", "Cafe", "One Column", "Right Sidebar", "Grid Layout", "Custom Colors", "Custom Logo", "Custom Menu", "Editor Style", "Featured Images", "Footer Widgets", "Threaded Comments", "Wide Blocks"],
+  "requires_core": "0.1.0",
+  "screenshot": "assets/screenshot.png",
+  "category": "restaurant",
+  "style": "Warm terracotta trattoria, classic serif, menu with price leaders",
+  "demo": "demo/demo.json",
+
+  "widget_areas": [
+    {"id": "sidebar-1", "name": "Sidebar", "description": "Beside news posts while Customize › Footer, Hours & Blog shows the sidebar."},
+    {"id": "footer-1", "name": "Footer", "description": "The right-hand footer column, next to the opening hours and the address."}
+  ],
+  "menu_locations": [
+    {"id": "primary", "name": "Primary Menu"},
+    {"id": "social", "name": "Social Links"}
+  ],
+
+  "styles": [
+    {"handle": "trattoria-style", "src": "assets/style.css", "deps": ["wp-block-library"], "media": "all"}
+  ],
+  "scripts": [
+    {"handle": "trattoria-navigation", "src": "assets/js/navigation.js", "deps": [], "in_footer": true}
+  ],
+  "editor_styles": ["assets/editor-style.css"],
+  "preload_fonts": ["assets/fonts/playfair-display-700.woff2", "assets/fonts/lora-400.woff2"],
+
+  "palette": [
+    {"name": "Terracotta", "slug": "terracotta", "color": "#b5482a"},
+    {"name": "Olive", "slug": "olive", "color": "#4d5a2c"},
+    {"name": "Espresso", "slug": "espresso", "color": "#2b1d16"},
+    {"name": "Cream", "slug": "cream", "color": "#f7f0e3"},
+    {"name": "Parchment", "slug": "parchment", "color": "#efe2cc"},
+    {"name": "Wine", "slug": "wine", "color": "#6e1f2a"}
+  ],
+  "supports": {
+    "post-thumbnails": true,
+    "custom-logo": {"width": 240, "height": 90, "flex-width": true, "flex-height": true, "header-text": ["site-title", "site-description"]},
+    "title-tag": true,
+    "html5": ["search-form", "comment-form", "comment-list", "gallery", "caption", "script", "style"],
+    "responsive-embeds": true,
+    "align-wide": true,
+    "wp-block-styles": true
+  },
+
+  "customizer": {
+    "sections": [
+      {
+        "id": "trattoria_colors", "title": "Colors & Type", "priority": 40,
+        "settings": [
+          {"id": "accent_color", "label": "Terracotta accent", "description": "Buttons, links, ornaments and prices.", "type": "color", "default": "#b5482a", "transport": "postMessage", "css_var": "--tr-accent"},
+          {"id": "olive_color", "label": "Olive", "description": "Navigation bar, footer and section bands.", "type": "color", "default": "#4d5a2c", "transport": "postMessage", "css_var": "--tr-olive"},
+          {"id": "paper_color", "label": "Paper background", "type": "color", "default": "#f7f0e3", "transport": "postMessage", "css_var": "--tr-paper"},
+          {"id": "font_pairing", "label": "Typefaces", "type": "select", "default": "lora", "transport": "postMessage", "body_class": "tr-font-{value}",
+            "choices": [{"value": "lora", "label": "Playfair Display with Lora"}, {"value": "sans", "label": "Playfair Display with a clean sans"}, {"value": "system", "label": "System serif"}]},
+          {"id": "paper_texture", "label": "Subtle linen texture on the background", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "tr-texture"}
+        ]
+      },
+      {
+        "id": "trattoria_header", "title": "Header & Reservations", "priority": 41,
+        "settings": [
+          {"id": "header_layout", "label": "Header layout", "type": "select", "default": "centered", "transport": "postMessage", "body_class": "tr-header-{value}",
+            "choices": [{"value": "centered", "label": "Centered name, menu bar below"}, {"value": "split", "label": "Name left, menu right"}]},
+          {"id": "reservation_label", "label": "Reservation button label", "description": "Shown in the header, the hero and the footer. Empty hides it.", "type": "text", "default": "Reserve a table", "transport": "refresh"},
+          {"id": "reservation_url", "label": "Reservation link", "type": "text", "default": "/reservations/", "transport": "refresh"},
+          {"id": "phone", "label": "Phone number", "type": "text", "default": "+1 (555) 018-4410", "transport": "refresh"}
+        ]
+      },
+      {
+        "id": "trattoria_front", "title": "Front Page Hero", "description": "The full-width hero of a static front page. Without an image the page's featured image is used.", "priority": 42,
+        "settings": [
+          {"id": "hero_image", "label": "Hero image", "type": "image"},
+          {"id": "hero_heading", "label": "Heading", "description": "Empty uses the page title.", "type": "text", "default": "", "transport": "refresh"},
+          {"id": "hero_text", "label": "Text", "type": "textarea", "default": "", "transport": "refresh"},
+          {"id": "hero_height", "label": "Hero height", "type": "select", "default": "tall", "transport": "postMessage", "body_class": "tr-hero-{value}",
+            "choices": [{"value": "tall", "label": "Tall (most of the screen)"}, {"value": "medium", "label": "Medium"}]},
+          {"id": "menu_button_label", "label": "Second button label", "type": "text", "default": "See the menu", "transport": "refresh"},
+          {"id": "menu_button_url", "label": "Second button link", "type": "text", "default": "/menu/", "transport": "refresh"}
+        ]
+      },
+      {
+        "id": "trattoria_footer", "title": "Footer, Hours & Blog", "priority": 43,
+        "settings": [
+          {"id": "hours_text", "label": "Opening hours", "description": "One line per day or group of days.", "type": "textarea", "default": "Tuesday – Thursday  12:00 – 22:00\nFriday – Saturday  12:00 – 23:30\nSunday  12:00 – 21:00\nMonday  closed", "transport": "refresh"},
+          {"id": "address", "label": "Address", "type": "textarea", "default": "Via dei Fornai 14\nOld Town", "transport": "refresh"},
+          {"id": "blog_layout", "label": "News layout", "type": "select", "default": "cards", "transport": "postMessage", "body_class": "tr-blog-{value}",
+            "choices": [{"value": "cards", "label": "Cards, two per row"}, {"value": "classic", "label": "Classic, one per row"}]},
+          {"id": "show_sidebar", "label": "Show the sidebar beside news", "type": "checkbox", "default": false, "transport": "postMessage", "body_class": "tr-has-sidebar"},
+          {"id": "footer_text", "label": "Footer text", "description": "Replaces the copyright line.", "type": "text", "default": "", "transport": "refresh"}
+        ]
+      }
+    ]
+  }
+}

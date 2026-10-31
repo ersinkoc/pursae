@@ -17,12 +17,12 @@ import (
 )
 
 // Theme library, group d: Wanderline, Evergreen Care, Open Hands, Campus Commons and Ever After.
-// Each package is zipped from web/theme-library/<slug>, uploaded through Appearance › Add Themes ›
+// Each package is zipped from library/themes/<slug>, uploaded through Appearance › Add Themes ›
 // Upload, activated and rendered for every kind of request; its demo content is checked offline.
 
 var themeLibraryD = []string{"wanderline", "evergreen-care", "open-hands", "campus-commons", "ever-after"}
 
-const libDDir = "../../web/theme-library"
+const libDDir = "../../library/themes"
 
 // demoFile mirrors docs/theme-package.md, "Demo content".
 type demoFile struct {

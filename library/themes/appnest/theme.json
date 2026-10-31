@@ -1,0 +1,410 @@
+{
+  "slug": "appnest",
+  "name": "AppNest",
+  "version": "1.0.0",
+  "description": "A friendly marketing site for a mobile app: a hero with a CSS phone mockup around your screenshot, app store buttons, a feature tour, FAQ accordions, pricing and release notes. Outfit is self-hosted; brand colors, phone finish and store links are in the Customizer.",
+  "author": "Pursae",
+  "author_url": "https://github.com/pursae",
+  "theme_url": "https://github.com/pursae/pursae-dev/tree/main/library/themes/appnest",
+  "tags": [
+    "Startup",
+    "Mobile App",
+    "Landing Page",
+    "Custom Colors",
+    "Custom Logo",
+    "Custom Menu",
+    "Editor Style",
+    "Featured Images",
+    "Full Width Template",
+    "Sticky Post",
+    "Threaded Comments",
+    "Wide Blocks"
+  ],
+  "requires_core": "0.1.0",
+  "screenshot": "assets/screenshot.png",
+  "category": "startup",
+  "style": "Mobile app marketing site with phone mockups and store buttons",
+  "demo": "demo/demo.json",
+  "widget_areas": [
+    {
+      "id": "sidebar-1",
+      "name": "Sidebar",
+      "description": "Beside posts and archives when Customize › AppNest Layout › Sidebar is on."
+    },
+    {
+      "id": "footer-1",
+      "name": "Footer",
+      "description": "Columns of widgets in the footer."
+    }
+  ],
+  "menu_locations": [
+    {
+      "id": "primary",
+      "name": "Primary Menu"
+    },
+    {
+      "id": "footer",
+      "name": "Footer Links"
+    }
+  ],
+  "styles": [
+    {
+      "handle": "appnest-style",
+      "src": "assets/style.css",
+      "deps": [
+        "wp-block-library"
+      ],
+      "media": "all"
+    }
+  ],
+  "scripts": [
+    {
+      "handle": "appnest-navigation",
+      "src": "assets/js/navigation.js",
+      "deps": [],
+      "in_footer": true
+    }
+  ],
+  "editor_styles": [
+    "assets/editor-style.css"
+  ],
+  "preload_fonts": [
+    "assets/fonts/outfit.woff2"
+  ],
+  "palette": [
+    {
+      "name": "Lagoon",
+      "slug": "lagoon",
+      "color": "#0fb5a4"
+    },
+    {
+      "name": "Grape",
+      "slug": "grape",
+      "color": "#5b4bdb"
+    },
+    {
+      "name": "Coral",
+      "slug": "coral",
+      "color": "#ff7a59"
+    },
+    {
+      "name": "Night",
+      "slug": "night",
+      "color": "#14152b"
+    },
+    {
+      "name": "Mist",
+      "slug": "mist",
+      "color": "#eef8f6"
+    },
+    {
+      "name": "Lilac",
+      "slug": "lilac",
+      "color": "#efedff"
+    },
+    {
+      "name": "White",
+      "slug": "white",
+      "color": "#ffffff"
+    }
+  ],
+  "supports": {
+    "post-thumbnails": true,
+    "custom-logo": {
+      "width": 200,
+      "height": 48,
+      "flex-width": true,
+      "flex-height": true,
+      "header-text": [
+        "site-title",
+        "site-description"
+      ]
+    },
+    "title-tag": true,
+    "html5": [
+      "search-form",
+      "comment-form",
+      "comment-list",
+      "gallery",
+      "caption",
+      "script",
+      "style"
+    ],
+    "responsive-embeds": true,
+    "align-wide": true,
+    "wp-block-styles": true
+  },
+  "customizer": {
+    "sections": [
+      {
+        "id": "appnest_colors",
+        "title": "AppNest Colors",
+        "priority": 40,
+        "settings": [
+          {
+            "id": "brand",
+            "label": "Brand color",
+            "type": "color",
+            "default": "#0fb5a4",
+            "transport": "postMessage",
+            "css_var": "--an-brand",
+            "description": "Buttons, links, icons and the hero glow."
+          },
+          {
+            "id": "brand_2",
+            "label": "Second color",
+            "type": "color",
+            "default": "#5b4bdb",
+            "transport": "postMessage",
+            "css_var": "--an-brand-2",
+            "description": "Gradients, badges and the call to action band."
+          },
+          {
+            "id": "tint",
+            "label": "Background tint",
+            "type": "color",
+            "default": "#eef8f6",
+            "transport": "postMessage",
+            "css_var": "--an-tint",
+            "description": "The hero and alternating sections."
+          },
+          {
+            "id": "phone_finish",
+            "label": "Phone finish",
+            "type": "select",
+            "default": "midnight",
+            "transport": "postMessage",
+            "body_class": "an-phone-{value}",
+            "choices": [
+              {
+                "value": "midnight",
+                "label": "Midnight"
+              },
+              {
+                "value": "silver",
+                "label": "Silver"
+              },
+              {
+                "value": "brand",
+                "label": "Brand color"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "appnest_layout",
+        "title": "AppNest Layout",
+        "priority": 41,
+        "settings": [
+          {
+            "id": "header_style",
+            "label": "Header style",
+            "type": "select",
+            "default": "glass",
+            "transport": "postMessage",
+            "body_class": "an-header-{value}",
+            "choices": [
+              {
+                "value": "glass",
+                "label": "Frosted glass"
+              },
+              {
+                "value": "solid",
+                "label": "Solid white"
+              }
+            ]
+          },
+          {
+            "id": "corners",
+            "label": "Corner roundness",
+            "type": "select",
+            "default": "soft",
+            "transport": "postMessage",
+            "body_class": "an-corners-{value}",
+            "choices": [
+              {
+                "value": "soft",
+                "label": "Soft"
+              },
+              {
+                "value": "bubbly",
+                "label": "Bubbly"
+              },
+              {
+                "value": "crisp",
+                "label": "Crisp"
+              }
+            ]
+          },
+          {
+            "id": "font_pairing",
+            "label": "Font",
+            "type": "select",
+            "default": "outfit",
+            "transport": "postMessage",
+            "body_class": "an-font-{value}",
+            "choices": [
+              {
+                "value": "outfit",
+                "label": "Outfit"
+              },
+              {
+                "value": "mixed",
+                "label": "Outfit headings, system text"
+              },
+              {
+                "value": "system",
+                "label": "System UI"
+              }
+            ]
+          },
+          {
+            "id": "blog_layout",
+            "label": "Blog layout",
+            "type": "select",
+            "default": "cards",
+            "transport": "postMessage",
+            "body_class": "an-blog-{value}",
+            "choices": [
+              {
+                "value": "cards",
+                "label": "Cards"
+              },
+              {
+                "value": "list",
+                "label": "List"
+              }
+            ]
+          },
+          {
+            "id": "sidebar",
+            "label": "Sidebar",
+            "type": "select",
+            "default": "none",
+            "transport": "refresh",
+            "body_class": "an-sidebar-{value}",
+            "choices": [
+              {
+                "value": "right",
+                "label": "Right"
+              },
+              {
+                "value": "left",
+                "label": "Left"
+              },
+              {
+                "value": "none",
+                "label": "No sidebar"
+              }
+            ]
+          },
+          {
+            "id": "show_thumbnails",
+            "label": "Show featured images",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "an-thumbs"
+          },
+          {
+            "id": "show_author",
+            "label": "Show author names",
+            "type": "checkbox",
+            "default": false,
+            "transport": "postMessage",
+            "body_class": "an-show-author"
+          }
+        ]
+      },
+      {
+        "id": "appnest_app",
+        "title": "AppNest App & Hero",
+        "priority": 42,
+        "settings": [
+          {
+            "id": "store_show",
+            "label": "Show app store buttons",
+            "type": "checkbox",
+            "default": true,
+            "transport": "refresh",
+            "body_class": "an-store"
+          },
+          {
+            "id": "store_ios_url",
+            "label": "App Store link",
+            "type": "text",
+            "default": "#download",
+            "transport": "refresh"
+          },
+          {
+            "id": "store_android_url",
+            "label": "Google Play link",
+            "type": "text",
+            "default": "#download",
+            "transport": "refresh"
+          },
+          {
+            "id": "cta_label",
+            "label": "Header button label",
+            "type": "text",
+            "default": "Get the app",
+            "transport": "refresh"
+          },
+          {
+            "id": "cta_url",
+            "label": "Header button link",
+            "type": "text",
+            "default": "#download",
+            "transport": "refresh"
+          },
+          {
+            "id": "hero_kicker",
+            "label": "Hero kicker",
+            "type": "text",
+            "default": "New in version 3",
+            "transport": "refresh"
+          },
+          {
+            "id": "hero_heading",
+            "label": "Hero heading",
+            "type": "text",
+            "default": "",
+            "transport": "refresh",
+            "description": "Empty uses the front page's title."
+          },
+          {
+            "id": "hero_text",
+            "label": "Hero text",
+            "type": "textarea",
+            "default": "The calm way to plan your day, on every device you own.",
+            "transport": "refresh"
+          },
+          {
+            "id": "rating_text",
+            "label": "Rating line",
+            "type": "text",
+            "default": "4.8 from 12,000 reviews",
+            "transport": "refresh",
+            "description": "Empty hides the stars."
+          },
+          {
+            "id": "hero_image",
+            "label": "Phone screen image",
+            "type": "image",
+            "transport": "refresh",
+            "description": "A portrait screenshot shown inside the phone; empty uses the front page's featured image."
+          },
+          {
+            "id": "footer_text",
+            "label": "Footer text",
+            "type": "text",
+            "default": "",
+            "transport": "refresh",
+            "description": "Replaces the copyright line."
+          }
+        ]
+      }
+    ]
+  }
+}

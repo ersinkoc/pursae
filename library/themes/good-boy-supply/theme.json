@@ -1,0 +1,129 @@
+{
+  "slug": "good-boy-supply",
+  "name": "Good Boy Supply",
+  "version": "1.0.0",
+  "description": "A cheerful pet store built with Pursae Web Builder: a bold navy header with the language switcher and a hover mini-cart, a sunny hero, rounded category tiles, bestsellers and new arrivals, a product page with size variations, tabs and related gear, and a friendly checkout. Every part is a Theme Builder template you can edit visually. Fredoka and Nunito, self-hosted. Ships a complete store demo: beds, harnesses in three sizes, cat furniture, toys, care and a puppy starter kit.",
+  "author": "Pursae",
+  "author_url": "https://github.com/pursae",
+  "theme_url": "https://github.com/pursae/pursae-dev/tree/main/library/themes/good-boy-supply",
+  "tags": [
+    "E-Commerce",
+    "Pursae Web Builder",
+    "Theme Builder",
+    "Pets",
+    "Custom Colors",
+    "Custom Menu",
+    "Translation Ready",
+    "Full Width Template"
+  ],
+  "requires_core": "0.1.0",
+  "screenshot": "assets/screenshot.png",
+  "category": "pets",
+  "style": "Playful pet store, navy and sunshine yellow",
+  "demo": "demo/demo.json",
+  "golementor": "golementor/design.json",
+  "menu_locations": [
+    {
+      "id": "primary",
+      "name": "Primary Menu"
+    },
+    {
+      "id": "footer",
+      "name": "Footer Menu"
+    }
+  ],
+  "styles": [
+    {
+      "handle": "good-boy-supply-style",
+      "src": "assets/style.css",
+      "deps": [],
+      "media": "all"
+    }
+  ],
+  "preload_fonts": [
+    "assets/fonts/fredoka.woff2"
+  ],
+  "palette": [
+    {
+      "name": "Navy",
+      "slug": "primary",
+      "color": "#1C2752"
+    },
+    {
+      "name": "Sky",
+      "slug": "secondary",
+      "color": "#3E7CB1"
+    },
+    {
+      "name": "Ink",
+      "slug": "text",
+      "color": "#3A4060"
+    },
+    {
+      "name": "Coral",
+      "slug": "accent",
+      "color": "#F2643D"
+    },
+    {
+      "name": "Paper",
+      "slug": "paper",
+      "color": "#FFFFFF"
+    },
+    {
+      "name": "Cream",
+      "slug": "cream",
+      "color": "#FFF7E6"
+    },
+    {
+      "name": "Butter",
+      "slug": "sand",
+      "color": "#FFE9B3"
+    },
+    {
+      "name": "Line",
+      "slug": "line",
+      "color": "#E6E2F0"
+    },
+    {
+      "name": "Muted",
+      "slug": "muted",
+      "color": "#7C819C"
+    },
+    {
+      "name": "Sunshine",
+      "slug": "sun",
+      "color": "#FFC83D"
+    },
+    {
+      "name": "Midnight",
+      "slug": "deep",
+      "color": "#121A3B"
+    },
+    {
+      "name": "Pale on dark",
+      "slug": "pale",
+      "color": "#B9C0DD"
+    },
+    {
+      "name": "Sky light",
+      "slug": "skyl",
+      "color": "#E3F0FB"
+    }
+  ],
+  "supports": {
+    "post-thumbnails": true,
+    "title-tag": true,
+    "align-wide": true,
+    "responsive-embeds": true,
+    "woocommerce": true,
+    "html5": [
+      "search-form",
+      "comment-form",
+      "comment-list",
+      "gallery",
+      "caption",
+      "script",
+      "style"
+    ]
+  }
+}

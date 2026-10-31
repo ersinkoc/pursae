@@ -14,6 +14,9 @@ type Config struct {
 	Secret      string // optional; generated and stored in settings when empty
 	WebDir      string // when set, web assets and templates are read from this directory and reloaded per request
 	HubURL      string // the WordPress Go Hub (marketplace, release checks, site count); "off" disables it
+	// ThemeLibraryDir (WPGO_THEME_LIBRARY_DIR) serves the theme library from a directory of theme package
+	// directories (development, offline sites, tests) instead of Pursae Manager.
+	ThemeLibraryDir string
 	// TrustedProxies lists the proxies (IPs or CIDRs, comma separated) whose X-Forwarded-For / X-Real-IP is believed
 	// when deriving the visitor address. Empty: loopback and private ranges; "none": no proxy is trusted.
 	TrustedProxies string
@@ -39,6 +42,7 @@ func Load() Config {
 		Secret:          os.Getenv("WPGO_SECRET"),
 		WebDir:          os.Getenv("WPGO_WEB_DIR"),
 		HubURL:          strings.TrimRight(env("WPGO_HUB_URL", "https://hub.wordpressgo.dev"), "/"),
+		ThemeLibraryDir: os.Getenv("WPGO_THEME_LIBRARY_DIR"),
 		TrustedProxies:  os.Getenv("WPGO_TRUSTED_PROXIES"),
 		ExposeUsers:     os.Getenv("WPGO_EXPOSE_USERS") == "1",
 		LangDir:         os.Getenv("WPGO_LANG_DIR"),

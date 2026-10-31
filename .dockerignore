@@ -2,3 +2,4 @@ bin
 data
 .git
 web/editor/node_modules
+library

@@ -1,0 +1,398 @@
+{
+  "slug": "evergreen-care",
+  "name": "Evergreen Care",
+  "version": "1.0.0",
+  "description": "A calm, trustworthy theme for clinics, family practices and health professionals: soft teal and white, rounded cards, an info bar with phone and opening hours, a header appointment button, a split hero with reassurance badges, services and doctors sections, an appointment band above the footer and readable health articles.",
+  "author": "Pursae",
+  "author_url": "https://github.com/pursae",
+  "theme_url": "https://github.com/pursae/pursae-dev/tree/main/library/themes/evergreen-care",
+  "tags": [
+    "Health",
+    "Business",
+    "Two Columns",
+    "Right Sidebar",
+    "Left Sidebar",
+    "Custom Colors",
+    "Custom Logo",
+    "Custom Menu",
+    "Featured Images",
+    "Sticky Post",
+    "Threaded Comments",
+    "Wide Blocks",
+    "Editor Style",
+    "Accessibility Ready"
+  ],
+  "requires_core": "0.1.0",
+  "screenshot": "assets/screenshot.png",
+  "category": "health",
+  "style": "Calm clinic site in soft teal and white with an appointment call to action",
+  "demo": "demo/demo.json",
+  "widget_areas": [
+    {
+      "id": "sidebar-1",
+      "name": "Sidebar",
+      "description": "Beside articles and archives."
+    },
+    {
+      "id": "footer-1",
+      "name": "Footer",
+      "description": "Columns in the footer, next to the practice details."
+    }
+  ],
+  "menu_locations": [
+    {
+      "id": "primary",
+      "name": "Primary Menu"
+    },
+    {
+      "id": "footer",
+      "name": "Footer Menu"
+    }
+  ],
+  "styles": [
+    {
+      "handle": "evergreen-care-style",
+      "src": "assets/style.css",
+      "deps": [
+        "wp-block-library"
+      ],
+      "media": "all"
+    }
+  ],
+  "scripts": [
+    {
+      "handle": "evergreen-care-navigation",
+      "src": "assets/js/navigation.js",
+      "deps": [],
+      "in_footer": true
+    }
+  ],
+  "editor_styles": [
+    "assets/editor-style.css"
+  ],
+  "preload_fonts": [
+    "assets/fonts/figtree.woff2"
+  ],
+  "palette": [
+    {
+      "name": "Teal",
+      "slug": "teal",
+      "color": "#0f766e"
+    },
+    {
+      "name": "Deep teal",
+      "slug": "deep-teal",
+      "color": "#0b3d3a"
+    },
+    {
+      "name": "Mint",
+      "slug": "mint",
+      "color": "#e7f5f2"
+    },
+    {
+      "name": "Coral",
+      "slug": "coral",
+      "color": "#e8795b"
+    },
+    {
+      "name": "Ink",
+      "slug": "ink",
+      "color": "#14302c"
+    },
+    {
+      "name": "White",
+      "slug": "white",
+      "color": "#ffffff"
+    }
+  ],
+  "supports": {
+    "post-thumbnails": true,
+    "custom-logo": {
+      "width": 240,
+      "height": 80,
+      "flex-width": true,
+      "flex-height": true,
+      "header-text": [
+        "site-title",
+        "site-description"
+      ]
+    },
+    "title-tag": true,
+    "html5": [
+      "search-form",
+      "comment-form",
+      "comment-list",
+      "gallery",
+      "caption",
+      "script",
+      "style"
+    ],
+    "responsive-embeds": true,
+    "align-wide": true,
+    "wp-block-styles": true
+  },
+  "customizer": {
+    "sections": [
+      {
+        "id": "ec_colors",
+        "title": "Evergreen Colors",
+        "priority": 30,
+        "settings": [
+          {
+            "id": "accent",
+            "label": "Accent (teal)",
+            "description": "Buttons, links and highlights.",
+            "type": "color",
+            "default": "#0f766e",
+            "transport": "postMessage",
+            "css_var": "--ec-accent"
+          },
+          {
+            "id": "soft",
+            "label": "Soft background",
+            "description": "Tinted sections, the info bar and cards.",
+            "type": "color",
+            "default": "#e7f5f2",
+            "transport": "postMessage",
+            "css_var": "--ec-soft"
+          },
+          {
+            "id": "deep",
+            "label": "Footer and headings",
+            "type": "color",
+            "default": "#0b3d3a",
+            "transport": "postMessage",
+            "css_var": "--ec-deep"
+          }
+        ]
+      },
+      {
+        "id": "ec_layout",
+        "title": "Evergreen Layout",
+        "priority": 31,
+        "settings": [
+          {
+            "id": "header_layout",
+            "label": "Header layout",
+            "type": "select",
+            "default": "split",
+            "transport": "postMessage",
+            "body_class": "ec-header-{value}",
+            "choices": [
+              {
+                "value": "split",
+                "label": "Logo left, menu right"
+              },
+              {
+                "value": "centered",
+                "label": "Centered logo, menu below"
+              }
+            ]
+          },
+          {
+            "id": "post_layout",
+            "label": "Article layout",
+            "type": "select",
+            "default": "cards",
+            "transport": "postMessage",
+            "body_class": "ec-layout-{value}",
+            "choices": [
+              {
+                "value": "cards",
+                "label": "Cards"
+              },
+              {
+                "value": "list",
+                "label": "List with thumbnails"
+              },
+              {
+                "value": "compact",
+                "label": "Compact (no excerpts)"
+              }
+            ]
+          },
+          {
+            "id": "sidebar",
+            "label": "Sidebar",
+            "type": "select",
+            "default": "right",
+            "transport": "postMessage",
+            "body_class": "sidebar-{value}",
+            "choices": [
+              {
+                "value": "right",
+                "label": "Right"
+              },
+              {
+                "value": "left",
+                "label": "Left"
+              },
+              {
+                "value": "none",
+                "label": "No sidebar"
+              }
+            ]
+          },
+          {
+            "id": "corners",
+            "label": "Corners",
+            "type": "select",
+            "default": "rounded",
+            "transport": "postMessage",
+            "body_class": "ec-corners-{value}",
+            "choices": [
+              {
+                "value": "rounded",
+                "label": "Rounded"
+              },
+              {
+                "value": "soft",
+                "label": "Slightly rounded"
+              },
+              {
+                "value": "square",
+                "label": "Square"
+              }
+            ]
+          },
+          {
+            "id": "font_pairing",
+            "label": "Typography",
+            "type": "select",
+            "default": "friendly",
+            "transport": "postMessage",
+            "body_class": "ec-fonts-{value}",
+            "choices": [
+              {
+                "value": "friendly",
+                "label": "Friendly (Figtree)"
+              },
+              {
+                "value": "classic",
+                "label": "Classic (Source Serif headings)"
+              },
+              {
+                "value": "system",
+                "label": "System fonts"
+              }
+            ]
+          },
+          {
+            "id": "sticky_header",
+            "label": "Sticky header",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "sticky-header"
+          },
+          {
+            "id": "show_thumbs",
+            "label": "Show featured images",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "show-thumbs"
+          },
+          {
+            "id": "show_author",
+            "label": "Show the author",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "show-author"
+          },
+          {
+            "id": "show_cta_band",
+            "label": "Appointment band above the footer",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "ec-cta-band"
+          }
+        ]
+      },
+      {
+        "id": "ec_practice",
+        "title": "Practice Details & Hero",
+        "priority": 32,
+        "description": "Shown in the info bar, the hero, the appointment band and the footer.",
+        "settings": [
+          {
+            "id": "show_topbar",
+            "label": "Show the info bar",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "ec-topbar"
+          },
+          {
+            "id": "phone",
+            "label": "Phone",
+            "type": "text",
+            "default": "(555) 010-2040"
+          },
+          {
+            "id": "hours",
+            "label": "Opening hours",
+            "type": "text",
+            "default": "Mon–Fri 8:00–18:00 · Sat 9:00–13:00"
+          },
+          {
+            "id": "address",
+            "label": "Address",
+            "type": "text",
+            "default": "12 Linden Avenue, Riverside"
+          },
+          {
+            "id": "cta_label",
+            "label": "Appointment button label",
+            "type": "text",
+            "default": "Book an appointment"
+          },
+          {
+            "id": "cta_link",
+            "label": "Appointment button link",
+            "type": "text",
+            "default": "#contact"
+          },
+          {
+            "id": "hero_image",
+            "label": "Hero image",
+            "type": "image"
+          },
+          {
+            "id": "hero_kicker",
+            "label": "Small line above the title",
+            "type": "text",
+            "default": "Family medicine & wellbeing"
+          },
+          {
+            "id": "hero_title",
+            "label": "Hero title",
+            "type": "text",
+            "default": "Unhurried care for every stage of life"
+          },
+          {
+            "id": "hero_text",
+            "label": "Hero text",
+            "type": "textarea",
+            "default": "A friendly practice where appointments start on time, questions are welcome and nobody is just a number."
+          },
+          {
+            "id": "hero_badges",
+            "label": "Reassurance badges",
+            "description": "Separated by commas.",
+            "type": "text",
+            "default": "Same-week appointments,Accepting new patients,Online prescriptions"
+          },
+          {
+            "id": "footer_text",
+            "label": "Footer text",
+            "type": "text",
+            "default": ""
+          }
+        ]
+      }
+    ]
+  }
+}

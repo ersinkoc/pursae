@@ -1,0 +1,361 @@
+{
+  "slug": "frame-by-frame",
+  "name": "Frame by Frame",
+  "version": "1.0.0",
+  "description": "A film and TV review magazine with cinematic letterbox stills, a centered marquee masthead over a film-perforated section bar, ticket-stub category labels, star ratings, festival dispatches, numbered watchlists and closing credits in the footer. A screening-room dark mode, film grain, poster-wall or list layouts and fonts are set in the Customizer.",
+  "author": "Pursae",
+  "author_url": "https://github.com/pursae",
+  "theme_url": "https://github.com/pursae/pursae-dev/tree/main/library/themes/frame-by-frame",
+  "tags": [
+    "Entertainment",
+    "Magazine",
+    "Blog",
+    "Light",
+    "Dark",
+    "Grid Layout",
+    "Right Sidebar",
+    "Custom Colors",
+    "Custom Logo",
+    "Custom Menu",
+    "Editor Style",
+    "Featured Images",
+    "Footer Widgets",
+    "Threaded Comments",
+    "Wide Blocks"
+  ],
+  "requires_core": "0.1.0",
+  "screenshot": "assets/screenshot.png",
+  "category": "entertainment",
+  "style": "Cinematic letterbox magazine in paper, ink and festival gold",
+  "demo": "demo/demo.json",
+  "widget_areas": [
+    {
+      "id": "sidebar-1",
+      "name": "Sidebar",
+      "description": "Beside reviews, archives and search results."
+    },
+    {
+      "id": "footer-1",
+      "name": "Closing credits",
+      "description": "Widgets in the footer."
+    }
+  ],
+  "menu_locations": [
+    {
+      "id": "primary",
+      "name": "Section Bar"
+    },
+    {
+      "id": "footer",
+      "name": "Footer Menu"
+    }
+  ],
+  "styles": [
+    {
+      "handle": "frame-by-frame-style",
+      "src": "assets/style.css",
+      "deps": [
+        "wp-block-library"
+      ],
+      "media": "all"
+    }
+  ],
+  "scripts": [
+    {
+      "handle": "frame-by-frame-navigation",
+      "src": "assets/js/navigation.js",
+      "deps": [],
+      "in_footer": true
+    }
+  ],
+  "editor_styles": [
+    "assets/editor-style.css"
+  ],
+  "preload_fonts": [
+    "assets/fonts/big-shoulders.woff2",
+    "assets/fonts/newsreader.woff2"
+  ],
+  "palette": [
+    {
+      "name": "Festival Gold",
+      "slug": "festival-gold",
+      "color": "#c8932b"
+    },
+    {
+      "name": "Velvet",
+      "slug": "velvet",
+      "color": "#7a1d2b"
+    },
+    {
+      "name": "Paper",
+      "slug": "paper",
+      "color": "#f3ede2"
+    },
+    {
+      "name": "Ink",
+      "slug": "ink",
+      "color": "#161311"
+    },
+    {
+      "name": "Projection Booth",
+      "slug": "booth",
+      "color": "#0c0b0a"
+    }
+  ],
+  "supports": {
+    "post-thumbnails": true,
+    "custom-logo": {
+      "width": 240,
+      "height": 64,
+      "flex-width": true,
+      "flex-height": true,
+      "header-text": [
+        "site-title",
+        "site-description"
+      ]
+    },
+    "title-tag": true,
+    "html5": [
+      "search-form",
+      "comment-form",
+      "comment-list",
+      "gallery",
+      "caption",
+      "script",
+      "style"
+    ],
+    "responsive-embeds": true,
+    "align-wide": true,
+    "wp-block-styles": true
+  },
+  "customizer": {
+    "sections": [
+      {
+        "id": "fx_colors",
+        "title": "Colours & Screen",
+        "priority": 40,
+        "settings": [
+          {
+            "id": "gold",
+            "label": "Festival gold (accent)",
+            "type": "color",
+            "default": "#c8932b",
+            "transport": "postMessage",
+            "css_var": "--fx-gold",
+            "description": "Stars, underlines, buttons and the hero kicker."
+          },
+          {
+            "id": "velvet",
+            "label": "Velvet (labels)",
+            "type": "color",
+            "default": "#7a1d2b",
+            "transport": "postMessage",
+            "css_var": "--fx-velvet",
+            "description": "Ticket stubs, kickers and drop caps."
+          },
+          {
+            "id": "paper",
+            "label": "Paper",
+            "type": "color",
+            "default": "#f3ede2",
+            "transport": "postMessage",
+            "css_var": "--fx-paper",
+            "description": "The page colour (the text colour in the screening room)."
+          },
+          {
+            "id": "ink",
+            "label": "Ink",
+            "type": "color",
+            "default": "#161311",
+            "transport": "postMessage",
+            "css_var": "--fx-ink",
+            "description": "The text colour."
+          },
+          {
+            "id": "dark_mode",
+            "label": "Screening room (dark mode)",
+            "type": "checkbox",
+            "default": false,
+            "transport": "postMessage",
+            "body_class": "fx-dark",
+            "description": "Turns the lights down: dark page, paper-coloured text."
+          },
+          {
+            "id": "film_grain",
+            "label": "Film grain",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "fx-grain"
+          },
+          {
+            "id": "font_pairing",
+            "label": "Font pairing",
+            "type": "select",
+            "default": "marquee",
+            "transport": "postMessage",
+            "body_class": "fx-fonts-{value}",
+            "choices": [
+              {
+                "value": "marquee",
+                "label": "Big Shoulders & Newsreader"
+              },
+              {
+                "value": "classic",
+                "label": "Newsreader only (classic)"
+              },
+              {
+                "value": "system",
+                "label": "System condensed & Charter"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "fx_layout",
+        "title": "Layout",
+        "priority": 41,
+        "settings": [
+          {
+            "id": "grid",
+            "label": "Post layout",
+            "type": "select",
+            "default": "letterbox",
+            "transport": "postMessage",
+            "body_class": "fx-grid-{value}",
+            "choices": [
+              {
+                "value": "letterbox",
+                "label": "Two-up letterbox"
+              },
+              {
+                "value": "poster",
+                "label": "Poster wall"
+              },
+              {
+                "value": "list",
+                "label": "Reviews list"
+              }
+            ]
+          },
+          {
+            "id": "letterbox",
+            "label": "Letterbox images",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "fx-letterbox",
+            "description": "Black bars and a 2.39:1 crop on stills, the hero and wide images."
+          },
+          {
+            "id": "sidebar",
+            "label": "Sidebar",
+            "type": "select",
+            "default": "right",
+            "transport": "postMessage",
+            "body_class": "fx-sidebar-{value}",
+            "choices": [
+              {
+                "value": "right",
+                "label": "Right"
+              },
+              {
+                "value": "none",
+                "label": "None"
+              }
+            ]
+          },
+          {
+            "id": "show_thumbs",
+            "label": "Show stills",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "fx-show-thumbs"
+          },
+          {
+            "id": "show_author",
+            "label": "Show critic names",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "fx-show-author"
+          },
+          {
+            "id": "sticky_header",
+            "label": "Sticky section bar",
+            "type": "checkbox",
+            "default": false,
+            "transport": "postMessage",
+            "body_class": "fx-sticky"
+          }
+        ]
+      },
+      {
+        "id": "fx_front",
+        "title": "Front Page & Footer",
+        "priority": 42,
+        "settings": [
+          {
+            "id": "hero_image",
+            "label": "Hero still",
+            "type": "image",
+            "transport": "refresh",
+            "description": "Falls back to the front page's featured image."
+          },
+          {
+            "id": "hero_kicker",
+            "label": "Hero kicker",
+            "type": "text",
+            "default": "Now showing",
+            "transport": "refresh"
+          },
+          {
+            "id": "hero_heading",
+            "label": "Hero heading",
+            "type": "text",
+            "default": "",
+            "transport": "refresh",
+            "description": "Defaults to the site title."
+          },
+          {
+            "id": "hero_dek",
+            "label": "Hero line",
+            "type": "text",
+            "default": "Reviews, festivals and the films worth leaving the house for.",
+            "transport": "refresh"
+          },
+          {
+            "id": "cta_label",
+            "label": "Button label",
+            "type": "text",
+            "default": "Read the review",
+            "transport": "refresh"
+          },
+          {
+            "id": "cta_url",
+            "label": "Button link",
+            "type": "text",
+            "default": "/reviews/",
+            "transport": "refresh"
+          },
+          {
+            "id": "issue_line",
+            "label": "Top bar line",
+            "type": "text",
+            "default": "Issue 42 · Autumn season",
+            "transport": "refresh"
+          },
+          {
+            "id": "footer_text",
+            "label": "Footer text",
+            "type": "text",
+            "default": "",
+            "transport": "refresh"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -10,6 +10,7 @@ import (
 	"io"
 	"io/fs"
 	"log"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"os"
@@ -197,6 +198,12 @@ func (s *Server) loadThemePackages() {
 // installThemePackage validates a package, extracts it to <themes dir>/<slug>/ and registers the theme.
 // An installed package with the same slug is replaced only by a higher version.
 func (s *Server) installThemePackage(ctx context.Context, data []byte) (*Theme, error) {
+	return s.installThemePackageFrom(ctx, data, themeSourceUpload)
+}
+
+// installThemePackageFrom is installThemePackage recording where the package came from
+// (themeSourceUpload, themeSourceHub or themeSourceLibrary; theme_library.go).
+func (s *Server) installThemePackageFrom(ctx context.Context, data []byte, source string) (*Theme, error) {
 	files, m, err := unpackThemeZip(data)
 	if err != nil {
 		return nil, err
@@ -220,23 +227,17 @@ func (s *Server) installThemePackage(ctx context.Context, data []byte) (*Theme, 
 		return nil, err
 	}
 	cleanup := func() { _ = os.RemoveAll(tmp) }
-	for _, f := range files {
-		target := filepath.Join(tmp, filepath.FromSlash(f.Path))
-		if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
-			cleanup()
-			return nil, err
-		}
-		if err := os.WriteFile(target, f.Data, 0o644); err != nil {
-			cleanup()
-			return nil, err
-		}
-	}
-	// The templates must parse before anything is replaced.
-	if _, err := parsePackageTemplates(os.DirFS(tmp), "templates", s.tmpl.funcs()); err != nil {
+	if err := writeThemeFiles(tmp, files); err != nil {
 		cleanup()
-		return nil, fmt.Errorf("templates: %v", err)
+		return nil, err
 	}
-	if _, err := loadThemePackage(tmp, m.Slug); err != nil {
+	if source != "" {
+		if err := os.WriteFile(filepath.Join(tmp, themeSourceFile), []byte(source+"\n"), 0o644); err != nil {
+			cleanup()
+			return nil, err
+		}
+	}
+	if err := s.checkThemeDir(tmp, m.Slug); err != nil {
 		cleanup()
 		return nil, err
 	}
@@ -269,6 +270,30 @@ func (s *Server) installThemePackage(ctx context.Context, data []byte) (*Theme, 
 	s.afterThemeChange(ctx, t.Slug)
 	s.hubEvent(event, "theme", t.Slug, t.Version) // statistics (hub_telemetry.go)
 	return t, nil
+}
+
+// writeThemeFiles writes the files of an unpacked package below dir.
+func writeThemeFiles(dir string, files []themeZipFile) error {
+	for _, f := range files {
+		target := filepath.Join(dir, filepath.FromSlash(f.Path))
+		if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
+			return err
+		}
+		if err := os.WriteFile(target, f.Data, 0o644); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// checkThemeDir validates an extracted package before it is put in place: the templates parse and
+// theme.json, the files it references and the demo content are valid.
+func (s *Server) checkThemeDir(dir, slug string) error {
+	if _, err := parsePackageTemplates(os.DirFS(dir), "templates", s.tmpl.funcs()); err != nil {
+		return fmt.Errorf("templates: %v", err)
+	}
+	_, err := loadThemePackage(dir, slug)
+	return err
 }
 
 // afterThemeChange re-parses the theme templates and drops cached pages after a package was
@@ -371,6 +396,9 @@ func (s *Server) themeInstall(c *gin.Context) {
 	case "install-theme": // a deleted bundled theme (theme_delete.go) or a library theme (theme_library.go)
 		s.themeInstallAction(c)
 		return
+	case "install-recommended": // the Manager's preinstall themes (theme_library.go)
+		s.themeInstallRecommended(c)
+		return
 	}
 	if c.Request.Method == http.MethodPost {
 		if !s.checkNonce(c, "theme-upload") {
@@ -408,8 +436,18 @@ func (s *Server) themeInstall(c *gin.Context) {
 		return "/wp-admin/themes?action=activate&stylesheet=" + slug + "&_wpnonce=" + s.nonce(c, "switch-theme_"+slug)
 	}
 	canDemo := u.Can("switch_themes", nil) && u.Can("import", nil)
+	var libraryNotice string
+	recommended := 0
 	if browse == "library" {
-		library := s.libraryThemes()
+		library, libErr := s.libraryThemesErr(c)
+		switch {
+		case errors.Is(libErr, errLibraryOff):
+			libraryNotice = "The theme library comes from Pursae Manager, and no Pursae Manager is configured (WPGO_HUB_URL)."
+		case libErr != nil:
+			libraryNotice = "The theme library comes from Pursae Manager, and Pursae Manager is not reachable right now. Try again later."
+			slog.Warn("theme library", "err", libErr)
+		}
+		recommended = len(s.preinstallPending(library))
 		counts := map[string]int{}
 		for _, lt := range library {
 			counts[lt.Manifest.Category]++
@@ -434,7 +472,7 @@ func (s *Server) themeInstall(c *gin.Context) {
 				continue
 			}
 			cd := themeInstallCard{Name: m.Name, Author: m.Author, Slug: m.Slug, Description: m.Description, Version: m.Version,
-				Screenshot: "/wp-admin/theme-install?action=library-screenshot&theme=" + m.Slug + "&ver=" + m.Version,
+				Screenshot: libraryScreenshotURL(m),
 				Library:    true, Style: m.Style, CategoryLabel: themeCategoryLabel(m.Category), Package: true}
 			if canPreview(u, true) {
 				cd.DemoPreviewURL = previewURL(m.Slug, false)
@@ -495,6 +533,9 @@ func (s *Server) themeInstall(c *gin.Context) {
 	if msg := c.Query("error"); msg != "" {
 		notices = append(notices, notice{Type: "error", Message: template.HTML(template.HTMLEscapeString(msg)), Dismissible: true})
 	}
+	if v := c.Query("recommended"); v != "" {
+		notices = append(notices, notice{Type: "success", Message: template.HTML("Recommended themes installed: <strong>" + template.HTMLEscapeString(v) + "</strong>."), Dismissible: true})
+	}
 	if c.Query("previews") == "cleared" {
 		notices = append(notices, notice{Type: "success", Message: "The theme previews have been cleared.", Dismissible: true})
 	}
@@ -504,7 +545,10 @@ func (s *Server) themeInstall(c *gin.Context) {
 	}
 	data := map[string]any{"Cards": cards, "Browse": browse, "Search": c.Query("search"), "Count": len(cards), "Golementor": s.golementorOn(),
 		"UploadNonce": s.nonce(c, "theme-upload"), "MaxSize": fmt.Sprintf("%d MB", themeZipMaxBytes>>20),
-		"Categories": categories, "Category": category}
+		"Categories": categories, "Category": category, "LibraryNotice": libraryNotice, "FromManager": s.themeLibrary == nil}
+	if recommended > 0 {
+		data["Recommended"], data["RecommendedNonce"] = recommended, s.nonce(c, "install-recommended-themes")
+	}
 	if browse == "library" && canPreview(u, true) {
 		data["Previews"], data["PreviewsNonce"] = s.previewCount(c), s.nonce(c, "clear-theme-previews")
 	}
@@ -535,7 +579,7 @@ func (s *Server) themeInstallAction(c *gin.Context) {
 		c.Redirect(http.StatusFound, "/wp-admin/themes?installed="+url.QueryEscape(slug))
 		return
 	}
-	lt := s.libraryTheme(slug)
+	lt := s.libraryTheme(c, slug)
 	if lt == nil {
 		fail("The requested theme does not exist.")
 		return
@@ -577,4 +621,26 @@ func (s *Server) themeInstallAction(c *gin.Context) {
 		return
 	}
 	c.Redirect(http.StatusFound, "/wp-admin/themes?activated=true&"+rep.query())
+}
+
+// themeInstallRecommended is Add Themes › Library › Install recommended themes: the themes Pursae
+// Manager marks for preinstall (installed on new sites after the installer), installed on demand.
+func (s *Server) themeInstallRecommended(c *gin.Context) {
+	if c.Request.Method != http.MethodPost {
+		c.Redirect(http.StatusFound, "/wp-admin/theme-install")
+		return
+	}
+	if !s.checkNonce(c, "install-recommended-themes") {
+		s.denyNonce(c)
+		return
+	}
+	done, err := s.preinstallThemes(c)
+	q := url.Values{}
+	if len(done) > 0 {
+		q.Set("recommended", strings.Join(done, ", "))
+	}
+	if err != nil {
+		q.Set("error", "Some themes could not be installed: "+err.Error())
+	}
+	c.Redirect(http.StatusFound, "/wp-admin/theme-install?"+q.Encode())
 }

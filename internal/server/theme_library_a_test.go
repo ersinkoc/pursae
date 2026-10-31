@@ -23,7 +23,7 @@ import (
 // TestThemeLibraryAInstall installs every package through Upload Theme, activates it, imports a
 // slice of its demo content over REST and renders the main template kinds.
 
-const themeLibraryDir = "../../web/theme-library"
+const themeLibraryDir = "../../library/themes"
 
 var themeLibraryASlugs = []string{"inkwell", "paper-lantern", "headline-daily", "quiet-hours", "byte-notes"}
 

@@ -1,0 +1,82 @@
+{
+  "slug": "dog-ear-books",
+  "name": "Dog-Ear Books",
+  "version": "1.1.0",
+  "description": "An independent bookshop for Pursae Commerce with an editorial soul. A thin strip with search, account and basket above a newspaper masthead (a big Playfair Display title between double rules, sections in small capitals), a bookplate hero, numbered section tiles, books standing on shelves with a folded dog-ear corner for sale badges, staff-pick product pages with a drop cap, and a quiet, paper-coloured checkout. Playfair Display, Crimson Pro and Libre Franklin, self-hosted. Ships a complete bookshop demo with invented titles, a notebook in three colours and a downloadable e-book.",
+  "author": "Pursae",
+  "author_url": "https://github.com/pursae",
+  "theme_url": "https://github.com/pursae/pursae-dev/tree/main/library/themes/dog-ear-books",
+  "tags": ["E-Commerce", "Books", "Editorial", "Grid Layout", "Custom Colors", "Custom Logo", "Custom Menu", "Editor Style", "Featured Images", "Footer Widgets", "Wide Blocks"],
+  "requires_core": "0.1.0",
+  "screenshot": "assets/screenshot.png",
+  "category": "shop",
+  "style": "Indie bookshop, newspaper masthead and shelves",
+  "demo": "demo/demo.json",
+
+  "widget_areas": [
+    {"id": "footer-1", "name": "Footer", "description": "Widgets in the footer columns."},
+    {"id": "shop-sidebar", "name": "Shop Sidebar", "description": "Filters beside the product catalog."}
+  ],
+  "menu_locations": [
+    {"id": "primary", "name": "Sections"},
+    {"id": "footer", "name": "Footer Menu"}
+  ],
+
+  "styles": [
+    {"handle": "dog-ear-books-style", "src": "assets/style.css", "deps": ["wp-block-library"], "media": "all"}
+  ],
+  "scripts": [
+    {"handle": "dog-ear-books-navigation", "src": "assets/js/navigation.js", "deps": [], "in_footer": true}
+  ],
+  "editor_styles": ["assets/editor-style.css"],
+  "preload_fonts": ["assets/fonts/crimson-pro.woff2", "assets/fonts/playfair-display.woff2"],
+
+  "palette": [
+    {"name": "Paper", "slug": "paper", "color": "#f7f1e3"},
+    {"name": "Oxblood", "slug": "oxblood", "color": "#7a2e2e"},
+    {"name": "Navy", "slug": "navy", "color": "#1e2a44"},
+    {"name": "Mustard", "slug": "mustard", "color": "#d9a441"},
+    {"name": "Ink", "slug": "ink", "color": "#26221d"},
+    {"name": "Card", "slug": "card", "color": "#efe6d0"}
+  ],
+  "supports": {
+    "post-thumbnails": true,
+    "custom-logo": {"width": 320, "height": 100, "flex-width": true, "flex-height": true, "header-text": ["site-title", "site-description"]},
+    "title-tag": true,
+    "html5": ["search-form", "comment-form", "comment-list", "gallery", "caption", "script", "style"],
+    "responsive-embeds": true,
+    "align-wide": true,
+    "wp-block-styles": true,
+    "woocommerce": true
+  },
+
+  "customizer": {
+    "sections": [
+      {
+        "id": "dogear_colors", "title": "Colours & Type", "priority": 40,
+        "settings": [
+          {"id": "accent", "label": "Accent colour", "description": "Buttons, links and the basket.", "type": "color", "default": "#7a2e2e", "transport": "postMessage", "css_var": "--de-accent"},
+          {"id": "navy", "label": "Shelf colour", "description": "Shelves, the footer and section tiles.", "type": "color", "default": "#1e2a44", "transport": "postMessage", "css_var": "--de-navy"},
+          {"id": "mustard", "label": "Highlight colour", "description": "Dog-ear sale corners, ribbons and highlights.", "type": "color", "default": "#d9a441", "transport": "postMessage", "css_var": "--de-mustard"},
+          {"id": "background", "label": "Paper", "type": "color", "default": "#f7f1e3", "transport": "postMessage", "css_var": "--de-bg"},
+          {"id": "text_color", "label": "Text colour", "type": "color", "default": "#26221d", "transport": "postMessage", "css_var": "--de-ink"},
+          {"id": "font_pairing", "label": "Font pairing", "type": "select", "default": "classic", "transport": "postMessage", "body_class": "de-fonts-{value}",
+            "choices": [{"value": "classic", "label": "Playfair Display, Crimson Pro & Libre Franklin"}, {"value": "bookish", "label": "Crimson Pro throughout"}, {"value": "modern", "label": "Playfair Display & Libre Franklin"}]}
+        ]
+      },
+      {
+        "id": "dogear_store", "title": "Masthead & Shelves", "priority": 41,
+        "settings": [
+          {"id": "masthead_style", "label": "Masthead", "type": "select", "default": "newspaper", "transport": "postMessage", "body_class": "de-masthead-{value}",
+            "choices": [{"value": "newspaper", "label": "Newspaper (centred, between rules)"}, {"value": "compact", "label": "Compact (title left, sections right)"}]},
+          {"id": "show_announcement", "label": "Show the note in the top strip", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "de-has-note"},
+          {"id": "announcement", "label": "Top strip note", "type": "text", "default": "Free UK delivery on orders over £25 · Signed copies while they last", "transport": "refresh"},
+          {"id": "show_shelves", "label": "Stand books on shelves", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "de-shelves"},
+          {"id": "catalog_columns", "label": "Books per shelf (large screens)", "type": "select", "default": "4", "transport": "postMessage", "body_class": "de-cols-{value}",
+            "choices": [{"value": "4", "label": "4"}, {"value": "5", "label": "5"}]},
+          {"id": "footer_text", "label": "Footer text", "type": "text", "default": "", "transport": "refresh"}
+        ]
+      }
+    ]
+  }
+}

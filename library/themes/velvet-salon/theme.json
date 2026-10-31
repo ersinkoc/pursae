@@ -1,0 +1,364 @@
+{
+  "slug": "velvet-salon",
+  "name": "Velvet Salon",
+  "version": "1.0.0",
+  "description": "An elegant hair and beauty salon theme: dusty rose and champagne, Marcellus capitals with Mulish text, arch-shaped photographs, a split hero with a booking button, a service price list with durations, stylist cards, a gallery and a beauty tips journal.",
+  "author": "Pursae",
+  "author_url": "https://github.com/pursae",
+  "theme_url": "https://github.com/pursae/pursae-dev/tree/main/library/themes/velvet-salon",
+  "tags": [
+    "Beauty",
+    "Salon",
+    "Spa",
+    "Business",
+    "Grid Layout",
+    "Right Sidebar",
+    "Custom Colors",
+    "Custom Logo",
+    "Custom Menu",
+    "Editor Style",
+    "Featured Images",
+    "Footer Widgets",
+    "Threaded Comments",
+    "Wide Blocks"
+  ],
+  "requires_core": "0.1.0",
+  "screenshot": "assets/screenshot.png",
+  "category": "beauty",
+  "style": "Hair and beauty salon in dusty rose and champagne, arched images",
+  "demo": "demo/demo.json",
+  "widget_areas": [
+    {
+      "id": "sidebar-1",
+      "name": "Sidebar",
+      "description": "Beside journal posts while Customize › Journal & Footer shows the sidebar."
+    },
+    {
+      "id": "footer-1",
+      "name": "Footer",
+      "description": "The middle footer column, between the salon details and the opening hours."
+    }
+  ],
+  "menu_locations": [
+    {
+      "id": "primary",
+      "name": "Primary Menu"
+    },
+    {
+      "id": "social",
+      "name": "Social Links"
+    }
+  ],
+  "styles": [
+    {
+      "handle": "velvet-salon-style",
+      "src": "assets/style.css",
+      "deps": [
+        "wp-block-library"
+      ],
+      "media": "all"
+    }
+  ],
+  "scripts": [
+    {
+      "handle": "velvet-salon-navigation",
+      "src": "assets/js/navigation.js",
+      "deps": [],
+      "in_footer": true
+    }
+  ],
+  "editor_styles": [
+    "assets/editor-style.css"
+  ],
+  "preload_fonts": [
+    "assets/fonts/marcellus.woff2",
+    "assets/fonts/mulish.woff2"
+  ],
+  "palette": [
+    {
+      "name": "Dusty rose",
+      "slug": "dusty-rose",
+      "color": "#b46e78"
+    },
+    {
+      "name": "Deep rose",
+      "slug": "deep-rose",
+      "color": "#8c4a55"
+    },
+    {
+      "name": "Champagne",
+      "slug": "champagne",
+      "color": "#f4e8dc"
+    },
+    {
+      "name": "Blush",
+      "slug": "blush",
+      "color": "#fbf5f1"
+    },
+    {
+      "name": "Plum ink",
+      "slug": "plum-ink",
+      "color": "#3b2a30"
+    },
+    {
+      "name": "Gold",
+      "slug": "gold",
+      "color": "#b8956a"
+    }
+  ],
+  "supports": {
+    "post-thumbnails": true,
+    "custom-logo": {
+      "width": 240,
+      "height": 80,
+      "flex-width": true,
+      "flex-height": true,
+      "header-text": [
+        "site-title",
+        "site-description"
+      ]
+    },
+    "title-tag": true,
+    "html5": [
+      "search-form",
+      "comment-form",
+      "comment-list",
+      "gallery",
+      "caption",
+      "script",
+      "style"
+    ],
+    "responsive-embeds": true,
+    "align-wide": true,
+    "wp-block-styles": true
+  },
+  "customizer": {
+    "sections": [
+      {
+        "id": "velvet_colors",
+        "title": "Colors & Type",
+        "priority": 40,
+        "settings": [
+          {
+            "id": "rose_color",
+            "label": "Rose accent",
+            "type": "color",
+            "default": "#b46e78",
+            "transport": "postMessage",
+            "css_var": "--vs-rose",
+            "description": "Buttons, links, arches and prices."
+          },
+          {
+            "id": "champagne_color",
+            "label": "Champagne",
+            "type": "color",
+            "default": "#f4e8dc",
+            "transport": "postMessage",
+            "css_var": "--vs-champagne",
+            "description": "Hero, footer and soft section backgrounds."
+          },
+          {
+            "id": "ink_color",
+            "label": "Text color",
+            "type": "color",
+            "default": "#3b2a30",
+            "transport": "postMessage",
+            "css_var": "--vs-ink"
+          },
+          {
+            "id": "font_pairing",
+            "label": "Typefaces",
+            "type": "select",
+            "default": "marcellus",
+            "transport": "postMessage",
+            "body_class": "vs-font-{value}",
+            "choices": [
+              {
+                "value": "marcellus",
+                "label": "Marcellus with Mulish"
+              },
+              {
+                "value": "didone",
+                "label": "High-contrast serif"
+              },
+              {
+                "value": "sans",
+                "label": "Clean sans only"
+              }
+            ]
+          },
+          {
+            "id": "image_shape",
+            "label": "Image shape",
+            "type": "select",
+            "default": "arch",
+            "transport": "postMessage",
+            "body_class": "vs-shape-{value}",
+            "choices": [
+              {
+                "value": "arch",
+                "label": "Arches"
+              },
+              {
+                "value": "rounded",
+                "label": "Soft rounded"
+              },
+              {
+                "value": "square",
+                "label": "Square"
+              }
+            ],
+            "description": "Hero, stylist portraits and journal pictures."
+          }
+        ]
+      },
+      {
+        "id": "velvet_header",
+        "title": "Header & Booking",
+        "priority": 41,
+        "settings": [
+          {
+            "id": "header_layout",
+            "label": "Header layout",
+            "type": "select",
+            "default": "inline",
+            "transport": "postMessage",
+            "body_class": "vs-header-{value}",
+            "choices": [
+              {
+                "value": "inline",
+                "label": "Name left, menu right"
+              },
+              {
+                "value": "centered",
+                "label": "Centered name, menu below"
+              }
+            ]
+          },
+          {
+            "id": "sticky_header",
+            "label": "Keep the header visible while scrolling",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "vs-sticky"
+          },
+          {
+            "id": "booking_label",
+            "label": "Booking button label",
+            "type": "text",
+            "default": "Book an appointment",
+            "transport": "refresh",
+            "description": "Shown in the header, the hero and the footer. Empty hides it."
+          },
+          {
+            "id": "booking_url",
+            "label": "Booking link",
+            "type": "text",
+            "default": "/book/",
+            "transport": "refresh"
+          },
+          {
+            "id": "phone",
+            "label": "Phone number",
+            "type": "text",
+            "default": "+1 (555) 014-2290",
+            "transport": "refresh"
+          },
+          {
+            "id": "hours_line",
+            "label": "Top bar line",
+            "type": "text",
+            "default": "Tue – Sat · 9 am to 7 pm",
+            "transport": "refresh",
+            "description": "The short line at the very top. Empty hides the top bar text."
+          }
+        ]
+      },
+      {
+        "id": "velvet_front",
+        "title": "Front Page Hero",
+        "priority": 42,
+        "settings": [
+          {
+            "id": "hero_image",
+            "label": "Hero image",
+            "type": "image",
+            "description": "Without an image the front page's featured image is used."
+          },
+          {
+            "id": "hero_heading",
+            "label": "Heading",
+            "type": "text",
+            "default": "",
+            "transport": "refresh",
+            "description": "Empty uses the page title."
+          },
+          {
+            "id": "hero_text",
+            "label": "Text",
+            "type": "textarea",
+            "default": "",
+            "transport": "refresh"
+          }
+        ]
+      },
+      {
+        "id": "velvet_footer",
+        "title": "Journal & Footer",
+        "priority": 43,
+        "settings": [
+          {
+            "id": "blog_layout",
+            "label": "Journal layout",
+            "type": "select",
+            "default": "grid",
+            "transport": "postMessage",
+            "body_class": "blog-{value}",
+            "choices": [
+              {
+                "value": "grid",
+                "label": "Grid of cards"
+              },
+              {
+                "value": "list",
+                "label": "List with images beside"
+              }
+            ]
+          },
+          {
+            "id": "show_sidebar",
+            "label": "Show the sidebar beside journal posts",
+            "type": "checkbox",
+            "default": false,
+            "transport": "postMessage",
+            "body_class": "has-sidebar"
+          },
+          {
+            "id": "hours_text",
+            "label": "Opening hours",
+            "type": "textarea",
+            "default": "Tuesday – Friday  9:00 – 19:00\nSaturday  9:00 – 17:00\nSunday & Monday  closed",
+            "transport": "refresh",
+            "description": "One line per day or group of days."
+          },
+          {
+            "id": "address",
+            "label": "Address",
+            "type": "textarea",
+            "default": "27 Linden Arcade\nRiverside Quarter",
+            "transport": "refresh"
+          },
+          {
+            "id": "footer_text",
+            "label": "Footer text",
+            "type": "text",
+            "default": "",
+            "transport": "refresh",
+            "description": "Replaces the copyright line."
+          }
+        ]
+      }
+    ]
+  }
+}

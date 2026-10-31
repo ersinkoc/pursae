@@ -16,13 +16,13 @@ import (
 
 // Theme library, group g: Pixel Arcade, Frame by Frame, Podwave, Ink & Needle and Little Sprouts.
 // Each package is validated with the real manifest and demo parsers, zipped from
-// web/theme-library/<slug>, uploaded through Appearance › Add Themes › Upload, activated, its demo
+// library/themes/<slug>, uploaded through Appearance › Add Themes › Upload, activated, its demo
 // imported with importThemeDemo, and every kind of request rendered; the demo is removed again so
 // the next theme starts from a clean site.
 
 var libGThemes = []string{"pixel-arcade", "frame-by-frame", "podwave", "ink-and-needle", "little-sprouts"}
 
-const libGDir = "../../web/theme-library"
+const libGDir = "../../library/themes"
 
 var libGTokenRe = regexp.MustCompile(`\{\{(media|media_id|page|post|category|tag):([^}]*)\}\}`)
 

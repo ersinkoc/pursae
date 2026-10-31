@@ -1,0 +1,392 @@
+{
+  "slug": "open-hands",
+  "name": "Open Hands",
+  "version": "1.0.0",
+  "description": "A warm, hopeful theme for charities, community groups and nonprofits: a mission-statement hero with a hand-drawn highlight, impact numbers you set in the Customizer, a donate button in the header (and pinned on phones), an announcement bar, story cards with warm duotone images and a give-monthly band.",
+  "author": "Pursae",
+  "author_url": "https://github.com/pursae",
+  "theme_url": "https://github.com/pursae/pursae-dev/tree/main/library/themes/open-hands",
+  "tags": [
+    "Nonprofit",
+    "Blog",
+    "Grid Layout",
+    "Right Sidebar",
+    "Left Sidebar",
+    "Custom Colors",
+    "Custom Logo",
+    "Custom Menu",
+    "Featured Images",
+    "Sticky Post",
+    "Threaded Comments",
+    "Wide Blocks",
+    "Editor Style"
+  ],
+  "requires_core": "0.1.0",
+  "screenshot": "assets/screenshot.png",
+  "category": "nonprofit",
+  "style": "Warm, hopeful charity site with impact numbers and donate buttons",
+  "demo": "demo/demo.json",
+  "widget_areas": [
+    {
+      "id": "sidebar-1",
+      "name": "Sidebar",
+      "description": "Beside stories and archives."
+    },
+    {
+      "id": "footer-1",
+      "name": "Footer",
+      "description": "Columns in the green footer."
+    }
+  ],
+  "menu_locations": [
+    {
+      "id": "primary",
+      "name": "Primary Menu"
+    },
+    {
+      "id": "footer",
+      "name": "Footer Menu"
+    }
+  ],
+  "styles": [
+    {
+      "handle": "open-hands-style",
+      "src": "assets/style.css",
+      "deps": [
+        "wp-block-library"
+      ],
+      "media": "all"
+    }
+  ],
+  "scripts": [
+    {
+      "handle": "open-hands-navigation",
+      "src": "assets/js/navigation.js",
+      "deps": [],
+      "in_footer": true
+    }
+  ],
+  "editor_styles": [
+    "assets/editor-style.css"
+  ],
+  "preload_fonts": [
+    "assets/fonts/nunito.woff2",
+    "assets/fonts/fraunces.woff2"
+  ],
+  "palette": [
+    {
+      "name": "Ember",
+      "slug": "ember",
+      "color": "#e8590c"
+    },
+    {
+      "name": "Sunflower",
+      "slug": "sunflower",
+      "color": "#fcc419"
+    },
+    {
+      "name": "Fern",
+      "slug": "fern",
+      "color": "#2f5d50"
+    },
+    {
+      "name": "Clay",
+      "slug": "clay",
+      "color": "#f4d8c4"
+    },
+    {
+      "name": "Cream",
+      "slug": "cream",
+      "color": "#fff8ef"
+    },
+    {
+      "name": "Cocoa",
+      "slug": "cocoa",
+      "color": "#2b1d16"
+    }
+  ],
+  "supports": {
+    "post-thumbnails": true,
+    "custom-logo": {
+      "width": 240,
+      "height": 80,
+      "flex-width": true,
+      "flex-height": true,
+      "header-text": [
+        "site-title",
+        "site-description"
+      ]
+    },
+    "title-tag": true,
+    "html5": [
+      "search-form",
+      "comment-form",
+      "comment-list",
+      "gallery",
+      "caption",
+      "script",
+      "style"
+    ],
+    "responsive-embeds": true,
+    "align-wide": true,
+    "wp-block-styles": true
+  },
+  "customizer": {
+    "sections": [
+      {
+        "id": "oh_colors",
+        "title": "Open Hands Colors",
+        "priority": 30,
+        "settings": [
+          {
+            "id": "accent",
+            "label": "Ember (donate and links)",
+            "type": "color",
+            "default": "#e8590c",
+            "transport": "postMessage",
+            "css_var": "--oh-ember"
+          },
+          {
+            "id": "sun",
+            "label": "Sunflower (highlights)",
+            "type": "color",
+            "default": "#fcc419",
+            "transport": "postMessage",
+            "css_var": "--oh-sun"
+          },
+          {
+            "id": "fern",
+            "label": "Fern (footer and sections)",
+            "type": "color",
+            "default": "#2f5d50",
+            "transport": "postMessage",
+            "css_var": "--oh-fern"
+          }
+        ]
+      },
+      {
+        "id": "oh_layout",
+        "title": "Open Hands Layout",
+        "priority": 31,
+        "settings": [
+          {
+            "id": "post_layout",
+            "label": "Story layout",
+            "type": "select",
+            "default": "feature",
+            "transport": "postMessage",
+            "body_class": "oh-layout-{value}",
+            "choices": [
+              {
+                "value": "feature",
+                "label": "First story featured, then a grid"
+              },
+              {
+                "value": "grid",
+                "label": "Grid"
+              },
+              {
+                "value": "list",
+                "label": "List"
+              }
+            ]
+          },
+          {
+            "id": "sidebar",
+            "label": "Sidebar",
+            "type": "select",
+            "default": "none",
+            "transport": "postMessage",
+            "body_class": "sidebar-{value}",
+            "choices": [
+              {
+                "value": "right",
+                "label": "Right"
+              },
+              {
+                "value": "left",
+                "label": "Left"
+              },
+              {
+                "value": "none",
+                "label": "No sidebar"
+              }
+            ]
+          },
+          {
+            "id": "header_style",
+            "label": "Header",
+            "type": "select",
+            "default": "classic",
+            "transport": "postMessage",
+            "body_class": "oh-header-{value}",
+            "choices": [
+              {
+                "value": "classic",
+                "label": "Logo left, donate right"
+              },
+              {
+                "value": "centered",
+                "label": "Centered logo"
+              }
+            ]
+          },
+          {
+            "id": "font_pairing",
+            "label": "Typography",
+            "type": "select",
+            "default": "warm",
+            "transport": "postMessage",
+            "body_class": "oh-fonts-{value}",
+            "choices": [
+              {
+                "value": "warm",
+                "label": "Warm (Fraunces + Nunito)"
+              },
+              {
+                "value": "modern",
+                "label": "Modern (Nunito)"
+              }
+            ]
+          },
+          {
+            "id": "image_tone",
+            "label": "Image tone on story cards",
+            "type": "select",
+            "default": "warm",
+            "transport": "postMessage",
+            "body_class": "oh-tone-{value}",
+            "choices": [
+              {
+                "value": "warm",
+                "label": "Warm tint"
+              },
+              {
+                "value": "natural",
+                "label": "Natural"
+              },
+              {
+                "value": "duotone",
+                "label": "Duotone"
+              }
+            ]
+          },
+          {
+            "id": "sticky_header",
+            "label": "Sticky header",
+            "type": "checkbox",
+            "default": false,
+            "transport": "postMessage",
+            "body_class": "sticky-header"
+          },
+          {
+            "id": "show_thumbs",
+            "label": "Show featured images",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "show-thumbs"
+          },
+          {
+            "id": "show_author",
+            "label": "Show the author",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "show-author"
+          }
+        ]
+      },
+      {
+        "id": "oh_campaign",
+        "title": "Mission, Donate & Banner",
+        "priority": 32,
+        "settings": [
+          {
+            "id": "show_banner",
+            "label": "Show the announcement bar",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "oh-banner"
+          },
+          {
+            "id": "banner_text",
+            "label": "Announcement",
+            "type": "text",
+            "default": "Winter appeal: every gift is matched until the end of the month."
+          },
+          {
+            "id": "banner_link",
+            "label": "Announcement link",
+            "type": "text",
+            "default": "#donate"
+          },
+          {
+            "id": "donate_label",
+            "label": "Donate button label",
+            "type": "text",
+            "default": "Donate"
+          },
+          {
+            "id": "donate_link",
+            "label": "Donate button link",
+            "type": "text",
+            "default": "#donate"
+          },
+          {
+            "id": "mobile_donate",
+            "label": "Pin the donate button on phones",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "oh-pin-donate"
+          },
+          {
+            "id": "hero_image",
+            "label": "Hero image",
+            "type": "image"
+          },
+          {
+            "id": "hero_kicker",
+            "label": "Small line above the mission",
+            "type": "text",
+            "default": "Our mission"
+          },
+          {
+            "id": "hero_title",
+            "label": "Mission statement",
+            "type": "text",
+            "default": "No one in our town should face hard times"
+          },
+          {
+            "id": "hero_highlight",
+            "label": "Highlighted ending",
+            "description": "Shown after the statement with a hand-drawn underline.",
+            "type": "text",
+            "default": "alone."
+          },
+          {
+            "id": "hero_text",
+            "label": "Hero text",
+            "type": "textarea",
+            "default": "We share meals, teach, mentor and stand beside families through the toughest seasons — with neighbours as volunteers."
+          },
+          {
+            "id": "impact_stats",
+            "label": "Impact numbers",
+            "description": "number|label pairs separated by semicolons.",
+            "type": "textarea",
+            "default": "48,200|meals shared last year;1,350|children in after-school clubs;640|volunteers from our town;87%|of every gift spent on programs"
+          },
+          {
+            "id": "footer_text",
+            "label": "Footer text",
+            "type": "text",
+            "default": ""
+          }
+        ]
+      }
+    ]
+  }
+}

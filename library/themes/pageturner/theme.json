@@ -1,0 +1,99 @@
+{
+  "slug": "pageturner",
+  "name": "Pageturner",
+  "version": "1.0.0",
+  "description": "A literary theme for authors and book bloggers: a large Caslon author name over small-caps navigation between double rules, a new-book announcement, a front page with a three-dimensional book cover, a wooden bookshelf of covers, numbered reading-note entries with italic initials, bookmark ribbons, drop caps, signing tables, a newsletter letter in the footer and a night-reading mode.",
+  "author": "Pursae",
+  "author_url": "https://github.com/pursae",
+  "theme_url": "https://github.com/pursae/pursae-dev/tree/main/library/themes/pageturner",
+  "tags": ["Books", "Blog", "Writing", "Portfolio", "One Column", "Right Sidebar", "Left Sidebar", "Custom Colors", "Custom Logo", "Custom Menu", "Featured Images", "Sticky Post", "Threaded Comments", "Wide Blocks", "Editor Style", "Accessibility Ready"],
+  "requires_core": "0.1.0",
+  "screenshot": "assets/screenshot.png",
+  "category": "books",
+  "style": "Literary author site with Caslon type, oxblood ink and a shelf of book covers",
+  "demo": "demo/demo.json",
+  "widget_areas": [
+    {"id": "sidebar-1", "name": "Sidebar", "description": "Beside the journal and archives."},
+    {"id": "footer-1", "name": "Footer", "description": "Columns in the footer."}
+  ],
+  "menu_locations": [
+    {"id": "primary", "name": "Primary Menu"},
+    {"id": "footer", "name": "Footer Menu"},
+    {"id": "social", "name": "Social Links"}
+  ],
+  "styles": [
+    {"handle": "pageturner-style", "src": "assets/style.css", "deps": ["wp-block-library"], "media": "all"}
+  ],
+  "scripts": [
+    {"handle": "pageturner-navigation", "src": "assets/js/navigation.js", "deps": [], "in_footer": true}
+  ],
+  "editor_styles": ["assets/editor-style.css"],
+  "preload_fonts": ["assets/fonts/libre-caslon-display.woff2", "assets/fonts/spectral.woff2"],
+  "palette": [
+    {"name": "Paper", "slug": "paper", "color": "#fdfbf7"},
+    {"name": "Ink", "slug": "ink", "color": "#1f1a17"},
+    {"name": "Oxblood", "slug": "oxblood", "color": "#7a1f2b"},
+    {"name": "Slate teal", "slug": "slate-teal", "color": "#3e5c5a"},
+    {"name": "Shelf wood", "slug": "shelf-wood", "color": "#8a5a3b"},
+    {"name": "Vellum", "slug": "vellum", "color": "#f1ebdf"}
+  ],
+  "supports": {
+    "post-thumbnails": true,
+    "custom-logo": {"width": 240, "height": 80, "flex-width": true, "flex-height": true, "header-text": ["site-title", "site-description"]},
+    "title-tag": true,
+    "html5": ["search-form", "comment-form", "comment-list", "gallery", "caption", "script", "style"],
+    "responsive-embeds": true,
+    "align-wide": true,
+    "wp-block-styles": true
+  },
+  "customizer": {
+    "sections": [
+      {
+        "id": "pt_colors", "title": "Paper & Ink", "priority": 30,
+        "settings": [
+          {"id": "accent", "label": "Accent ink (oxblood)", "description": "Links, buttons, initials and ribbons.", "type": "color", "default": "#7a1f2b", "transport": "postMessage", "css_var": "--pt-accent"},
+          {"id": "secondary", "label": "Second ink (slate teal)", "description": "Dates, kickers and the newsletter band.", "type": "color", "default": "#3e5c5a", "transport": "postMessage", "css_var": "--pt-teal"},
+          {"id": "paper", "label": "Paper", "type": "color", "default": "#fdfbf7", "transport": "postMessage", "css_var": "--pt-paper"},
+          {"id": "ink", "label": "Text", "type": "color", "default": "#1f1a17", "transport": "postMessage", "css_var": "--pt-ink"},
+          {"id": "night_mode", "label": "Night reading (dark pages)", "type": "checkbox", "default": false, "transport": "postMessage", "body_class": "pt-night"}
+        ]
+      },
+      {
+        "id": "pt_layout", "title": "Layout & Type", "priority": 31,
+        "settings": [
+          {"id": "post_layout", "label": "Journal layout", "type": "select", "default": "journal", "transport": "postMessage", "body_class": "pt-layout-{value}",
+           "choices": [{"value": "journal", "label": "Numbered journal entries"}, {"value": "cards", "label": "Cards in two columns"}, {"value": "list", "label": "List with covers beside"}]},
+          {"id": "sidebar", "label": "Sidebar", "type": "select", "default": "right", "transport": "postMessage", "body_class": "sidebar-{value}",
+           "choices": [{"value": "right", "label": "Right"}, {"value": "left", "label": "Left"}, {"value": "none", "label": "No sidebar"}]},
+          {"id": "font_pairing", "label": "Typography", "type": "select", "default": "caslon", "transport": "postMessage", "body_class": "pt-fonts-{value}",
+           "choices": [{"value": "caslon", "label": "Caslon display, Spectral text"}, {"value": "spectral", "label": "Spectral throughout"}, {"value": "system", "label": "System serif"}]},
+          {"id": "text_size", "label": "Reading size", "type": "select", "default": "normal", "transport": "postMessage", "body_class": "pt-text-{value}",
+           "choices": [{"value": "small", "label": "Compact"}, {"value": "normal", "label": "Comfortable"}, {"value": "large", "label": "Large print"}]},
+          {"id": "drop_caps", "label": "Drop caps on posts", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "pt-dropcaps"},
+          {"id": "sticky_header", "label": "Sticky header", "type": "checkbox", "default": false, "transport": "postMessage", "body_class": "sticky-header"},
+          {"id": "show_thumbs", "label": "Show featured images", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "show-thumbs"},
+          {"id": "show_author", "label": "Show the author", "type": "checkbox", "default": false, "transport": "postMessage", "body_class": "show-author"}
+        ]
+      },
+      {
+        "id": "pt_book", "title": "The New Book & Newsletter", "priority": 32,
+        "settings": [
+          {"id": "announce_text", "label": "Announcement above the header", "description": "Leave empty to hide.", "type": "text", "default": "The new novel is out now in hardback and audio"},
+          {"id": "announce_link", "label": "Announcement link", "type": "text", "default": "#books"},
+          {"id": "hero_image", "label": "Book cover (front page)", "type": "image"},
+          {"id": "hero_kicker", "label": "Small line above the title", "type": "text", "default": "The new novel"},
+          {"id": "hero_title", "label": "Book title", "type": "text", "default": "A story worth staying up for"},
+          {"id": "hero_text", "label": "Blurb", "type": "textarea", "default": "Introduce your latest book here: a few lines that make a reader reach for it."},
+          {"id": "hero_button_label", "label": "First button label", "type": "text", "default": "Buy the book"},
+          {"id": "hero_button_link", "label": "First button link", "type": "text", "default": "#buy"},
+          {"id": "hero_second_label", "label": "Second button label", "type": "text", "default": "Read an excerpt"},
+          {"id": "hero_second_link", "label": "Second button link", "type": "text", "default": "#excerpt"},
+          {"id": "newsletter_title", "label": "Newsletter title", "description": "Leave empty to hide the footer letter.", "type": "text", "default": "Letters from the writing desk"},
+          {"id": "newsletter_text", "label": "Newsletter text", "type": "textarea", "default": "One letter a month: what I am reading, writing and thinking about. No spam, ever."},
+          {"id": "newsletter_link", "label": "Newsletter link", "type": "text", "default": "#newsletter"},
+          {"id": "footer_text", "label": "Footer text", "type": "text", "default": ""}
+        ]
+      }
+    ]
+  }
+}

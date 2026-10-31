@@ -16,13 +16,13 @@ import (
 
 // Theme library, group j: Faithful Commons, Green Pulse, Pageturner, Summit Trails and Atlas Academy.
 // Each package is validated with the real manifest and demo parsers, zipped from
-// web/theme-library/<slug>, uploaded through Appearance › Add Themes › Upload, activated, rendered for
+// library/themes/<slug>, uploaded through Appearance › Add Themes › Upload, activated, rendered for
 // every kind of request, and then its demo content is imported and every imported page, post and
 // category is rendered.
 
 var libJThemes = []string{"faithful-commons", "green-pulse", "pageturner", "summit-trails", "atlas-academy"}
 
-const libJDir = "../../web/theme-library"
+const libJDir = "../../library/themes"
 
 // libJDemo is the part of demo/demo.json the offline checks read (docs/theme-package.md, "Demo content").
 type libJDemo struct {

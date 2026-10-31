@@ -22,7 +22,7 @@ var gooGweThemes = []struct{ slug, product, variable, cat string }{
 func TestGooGolementorThemePackages(t *testing.T) {
 	_, _, srv := testServerBuilderOff(t)
 	for _, tc := range gooGweThemes {
-		lt := srv.libraryTheme(tc.slug)
+		lt := srv.libraryTheme(context.Background(), tc.slug)
 		if lt == nil {
 			t.Fatalf("%s is not in the library", tc.slug)
 		}

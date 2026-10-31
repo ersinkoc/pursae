@@ -1,0 +1,98 @@
+{
+  "slug": "green-pulse",
+  "name": "Green Pulse",
+  "version": "1.0.0",
+  "description": "A climate and environmental news magazine: a live-pulse ticker over a deep forest header, bold Epilogue headlines, electric lime highlights, a magazine grid that leads with the top story, data callouts with huge numbers, numbered action guides, campaign bands, a newsletter signup and an optional dark mode.",
+  "author": "Pursae",
+  "author_url": "https://github.com/pursae",
+  "theme_url": "https://github.com/pursae/pursae-dev/tree/main/library/themes/green-pulse",
+  "tags": ["Environment", "News", "Magazine", "Blog", "Grid Layout", "Right Sidebar", "Left Sidebar", "Custom Colors", "Custom Logo", "Custom Menu", "Featured Images", "Sticky Post", "Threaded Comments", "Wide Blocks", "Editor Style", "Accessibility Ready"],
+  "requires_core": "0.1.0",
+  "screenshot": "assets/screenshot.png",
+  "category": "environment",
+  "style": "Climate news magazine, deep forest and electric lime, data callouts",
+  "demo": "demo/demo.json",
+  "widget_areas": [
+    {"id": "sidebar-1", "name": "Sidebar", "description": "Beside stories, sections and search results."},
+    {"id": "footer-1", "name": "Footer", "description": "Columns in the forest footer."}
+  ],
+  "menu_locations": [
+    {"id": "primary", "name": "Primary Menu"},
+    {"id": "footer", "name": "Footer Menu"},
+    {"id": "social", "name": "Social Links"}
+  ],
+  "styles": [
+    {"handle": "green-pulse-style", "src": "assets/style.css", "deps": ["wp-block-library"], "media": "all"}
+  ],
+  "scripts": [
+    {"handle": "green-pulse-navigation", "src": "assets/js/navigation.js", "deps": [], "in_footer": true}
+  ],
+  "editor_styles": ["assets/editor-style.css"],
+  "preload_fonts": ["assets/fonts/epilogue.woff2", "assets/fonts/public-sans.woff2"],
+  "palette": [
+    {"name": "Mint paper", "slug": "mint-paper", "color": "#f5f9f4"},
+    {"name": "Forest", "slug": "forest", "color": "#0f3d2e"},
+    {"name": "Leaf", "slug": "leaf", "color": "#2f9e44"},
+    {"name": "Lime", "slug": "lime", "color": "#c6f432"},
+    {"name": "Moss", "slug": "moss", "color": "#dcebd6"},
+    {"name": "Ink", "slug": "ink", "color": "#10231b"},
+    {"name": "Heat", "slug": "heat", "color": "#e8590c"}
+  ],
+  "supports": {
+    "post-thumbnails": true,
+    "custom-logo": {"width": 220, "height": 60, "flex-width": true, "flex-height": true, "header-text": ["site-title", "site-description"]},
+    "title-tag": true,
+    "html5": ["search-form", "comment-form", "comment-list", "gallery", "caption", "script", "style"],
+    "responsive-embeds": true,
+    "align-wide": true,
+    "wp-block-styles": true
+  },
+  "customizer": {
+    "sections": [
+      {
+        "id": "gp_colors", "title": "Pulse Colors", "priority": 30,
+        "settings": [
+          {"id": "forest", "label": "Header and footer (forest)", "type": "color", "default": "#0f3d2e", "transport": "postMessage", "css_var": "--gp-forest"},
+          {"id": "lime", "label": "Highlight (lime)", "description": "Ticker, marker highlights, big numbers, buttons on dark.", "type": "color", "default": "#c6f432", "transport": "postMessage", "css_var": "--gp-lime"},
+          {"id": "leaf", "label": "Links and labels (leaf)", "type": "color", "default": "#2f9e44", "transport": "postMessage", "css_var": "--gp-leaf"},
+          {"id": "paper", "label": "Page background", "type": "color", "default": "#f5f9f4", "transport": "postMessage", "css_var": "--gp-paper"},
+          {"id": "dark_mode", "label": "Dark mode (forest night)", "type": "checkbox", "default": false, "transport": "postMessage", "body_class": "gp-dark"}
+        ]
+      },
+      {
+        "id": "gp_layout", "title": "Newsroom Layout", "priority": 31,
+        "settings": [
+          {"id": "post_layout", "label": "Story layout", "type": "select", "default": "magazine", "transport": "postMessage", "body_class": "gp-layout-{value}",
+           "choices": [{"value": "magazine", "label": "Magazine (lead story large)"}, {"value": "grid", "label": "Even grid"}, {"value": "list", "label": "List with images beside"}]},
+          {"id": "sidebar", "label": "Sidebar", "type": "select", "default": "right", "transport": "postMessage", "body_class": "sidebar-{value}",
+           "choices": [{"value": "right", "label": "Right"}, {"value": "left", "label": "Left"}, {"value": "none", "label": "No sidebar"}]},
+          {"id": "container", "label": "Container width", "type": "select", "default": "normal", "transport": "postMessage", "body_class": "gp-width-{value}",
+           "choices": [{"value": "narrow", "label": "Narrow (1080px)"}, {"value": "normal", "label": "Normal (1240px)"}, {"value": "wide", "label": "Wide (1440px)"}]},
+          {"id": "font_pairing", "label": "Typography", "type": "select", "default": "epilogue", "transport": "postMessage", "body_class": "gp-fonts-{value}",
+           "choices": [{"value": "epilogue", "label": "Epilogue headlines, Public Sans text"}, {"value": "public", "label": "Public Sans throughout"}, {"value": "editorial", "label": "Epilogue with serif body"}]},
+          {"id": "sticky_header", "label": "Sticky header", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "sticky-header"},
+          {"id": "show_thumbs", "label": "Show featured images", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "show-thumbs"},
+          {"id": "show_author", "label": "Show bylines", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "show-author"}
+        ]
+      },
+      {
+        "id": "gp_front", "title": "Ticker, Lead Story & Newsletter", "priority": 32,
+        "settings": [
+          {"id": "show_ticker", "label": "Show the live pulse ticker", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "gp-ticker-on"},
+          {"id": "ticker_text", "label": "Ticker text", "type": "text", "default": "CO₂ 424 ppm · Global temperature +1.3 °C · Renewables 30% of world power"},
+          {"id": "hero_image", "label": "Lead image", "type": "image"},
+          {"id": "hero_kicker", "label": "Lead kicker", "type": "text", "default": "Climate, data and action"},
+          {"id": "hero_title", "label": "Lead headline", "type": "text", "default": "The news that keeps the planet's pulse"},
+          {"id": "hero_text", "label": "Lead text", "type": "textarea", "default": "Clear reporting on climate and nature, the numbers behind the headlines, and practical ways to act where you live."},
+          {"id": "hero_button_label", "label": "Lead button label", "type": "text", "default": "Take action"},
+          {"id": "hero_button_link", "label": "Lead button link", "type": "text", "default": "#act"},
+          {"id": "signup_title", "label": "Newsletter title", "type": "text", "default": "The Friday Pulse"},
+          {"id": "signup_text", "label": "Newsletter text", "type": "textarea", "default": "One email a week: the numbers that moved, the wins worth celebrating and one thing you can do."},
+          {"id": "signup_label", "label": "Newsletter button label", "type": "text", "default": "Subscribe free"},
+          {"id": "signup_link", "label": "Newsletter button link", "type": "text", "default": "#newsletter"},
+          {"id": "footer_text", "label": "Footer text", "type": "text", "default": ""}
+        ]
+      }
+    ]
+  }
+}

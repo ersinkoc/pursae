@@ -1,0 +1,352 @@
+{
+  "slug": "bean-there",
+  "name": "Bean There",
+  "version": "1.0.0",
+  "description": "A warm specialty-coffee café theme: espresso browns with a fresh mint accent, Young Serif and Outfit with Chivo Mono for prices, a dark header with a live opening-hours chip, a round-photo hero, a chalkboard menu page with dotted price leaders, locations and hours cards and brewing-guide posts with spec cards.",
+  "author": "Pursae",
+  "author_url": "https://github.com/pursae",
+  "theme_url": "https://github.com/pursae/pursae-dev/tree/main/library/themes/bean-there",
+  "tags": [
+    "Restaurant",
+    "Food",
+    "Business",
+    "Blog",
+    "Grid Layout",
+    "Custom Colors",
+    "Custom Logo",
+    "Custom Menu",
+    "Editor Style",
+    "Featured Images",
+    "Footer Widgets",
+    "Full Width Template",
+    "Threaded Comments"
+  ],
+  "requires_core": "0.1.0",
+  "screenshot": "assets/screenshot.png",
+  "category": "restaurant",
+  "style": "Espresso café with mint accent, menu board and brew guides",
+  "demo": "demo/demo.json",
+  "widget_areas": [
+    {
+      "id": "sidebar-1",
+      "name": "Sidebar",
+      "description": "Beside the journal when a sidebar is chosen in Customize › Layout."
+    },
+    {
+      "id": "footer-1",
+      "name": "Footer",
+      "description": "Columns in the espresso footer: hours, address, links."
+    }
+  ],
+  "menu_locations": [
+    {
+      "id": "primary",
+      "name": "Primary Menu"
+    },
+    {
+      "id": "social",
+      "name": "Social Links"
+    }
+  ],
+  "styles": [
+    {
+      "handle": "bean-there-style",
+      "src": "assets/style.css",
+      "deps": [
+        "wp-block-library"
+      ],
+      "media": "all"
+    }
+  ],
+  "scripts": [
+    {
+      "handle": "bean-there-navigation",
+      "src": "assets/js/navigation.js",
+      "deps": [],
+      "in_footer": true
+    }
+  ],
+  "editor_styles": [
+    "assets/editor-style.css"
+  ],
+  "preload_fonts": [
+    "assets/fonts/outfit.woff2",
+    "assets/fonts/young-serif.woff2"
+  ],
+  "palette": [
+    {
+      "name": "Espresso",
+      "slug": "espresso",
+      "color": "#2a1a14"
+    },
+    {
+      "name": "Crema",
+      "slug": "crema",
+      "color": "#c8a27a"
+    },
+    {
+      "name": "Mint",
+      "slug": "mint",
+      "color": "#8fe0c5"
+    },
+    {
+      "name": "Deep mint",
+      "slug": "deep-mint",
+      "color": "#1f7a62"
+    },
+    {
+      "name": "Milk",
+      "slug": "milk",
+      "color": "#f7f1ea"
+    },
+    {
+      "name": "Latte",
+      "slug": "latte",
+      "color": "#efe4d6"
+    }
+  ],
+  "supports": {
+    "post-thumbnails": true,
+    "custom-logo": {
+      "width": 240,
+      "height": 80,
+      "flex-width": true,
+      "flex-height": true,
+      "header-text": [
+        "site-title",
+        "site-description"
+      ]
+    },
+    "title-tag": true,
+    "html5": [
+      "search-form",
+      "comment-form",
+      "comment-list",
+      "gallery",
+      "caption",
+      "script",
+      "style"
+    ],
+    "responsive-embeds": true,
+    "align-wide": true,
+    "wp-block-styles": true
+  },
+  "customizer": {
+    "sections": [
+      {
+        "id": "bt_colors",
+        "title": "Colors & Type",
+        "priority": 40,
+        "settings": [
+          {
+            "id": "accent_color",
+            "label": "Accent",
+            "type": "color",
+            "default": "#1f7a62",
+            "transport": "postMessage",
+            "css_var": "--accent",
+            "description": "Links and buttons on light backgrounds."
+          },
+          {
+            "id": "mint_color",
+            "label": "Mint highlight",
+            "type": "color",
+            "default": "#8fe0c5",
+            "transport": "postMessage",
+            "css_var": "--mint",
+            "description": "Highlights on the dark espresso surfaces."
+          },
+          {
+            "id": "roast_color",
+            "label": "Espresso",
+            "type": "color",
+            "default": "#2a1a14",
+            "transport": "postMessage",
+            "css_var": "--roast",
+            "description": "The header, hero, menu board and footer."
+          },
+          {
+            "id": "background_color",
+            "label": "Milk background",
+            "type": "color",
+            "default": "#f7f1ea",
+            "transport": "postMessage",
+            "css_var": "--bg"
+          },
+          {
+            "id": "font_pairing",
+            "label": "Typefaces",
+            "type": "select",
+            "default": "serif",
+            "transport": "postMessage",
+            "body_class": "bt-font-{value}",
+            "choices": [
+              {
+                "value": "serif",
+                "label": "Young Serif headings, Outfit text"
+              },
+              {
+                "value": "sans",
+                "label": "Outfit throughout"
+              },
+              {
+                "value": "mono",
+                "label": "Chivo Mono headings"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "bt_layout",
+        "title": "Layout",
+        "priority": 41,
+        "settings": [
+          {
+            "id": "header_style",
+            "label": "Header",
+            "type": "select",
+            "default": "dark",
+            "transport": "postMessage",
+            "body_class": "bt-header-{value}",
+            "choices": [
+              {
+                "value": "dark",
+                "label": "Espresso"
+              },
+              {
+                "value": "light",
+                "label": "Light"
+              }
+            ]
+          },
+          {
+            "id": "card_style",
+            "label": "Post cards",
+            "type": "select",
+            "default": "ticket",
+            "transport": "postMessage",
+            "body_class": "bt-cards-{value}",
+            "choices": [
+              {
+                "value": "ticket",
+                "label": "Paper ticket"
+              },
+              {
+                "value": "tile",
+                "label": "Dark tile"
+              }
+            ]
+          },
+          {
+            "id": "blog_layout",
+            "label": "Post list",
+            "type": "select",
+            "default": "grid",
+            "transport": "postMessage",
+            "body_class": "bt-layout-{value}",
+            "choices": [
+              {
+                "value": "grid",
+                "label": "Grid"
+              },
+              {
+                "value": "list",
+                "label": "List"
+              }
+            ]
+          },
+          {
+            "id": "sidebar",
+            "label": "Sidebar",
+            "type": "select",
+            "default": "none",
+            "transport": "postMessage",
+            "body_class": "bt-sidebar-{value}",
+            "choices": [
+              {
+                "value": "none",
+                "label": "No sidebar"
+              },
+              {
+                "value": "right",
+                "label": "Right"
+              },
+              {
+                "value": "left",
+                "label": "Left"
+              }
+            ]
+          },
+          {
+            "id": "show_featured",
+            "label": "Show featured images",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "bt-thumbs"
+          },
+          {
+            "id": "show_author",
+            "label": "Show the author",
+            "type": "checkbox",
+            "default": false,
+            "transport": "postMessage",
+            "body_class": "bt-author"
+          }
+        ]
+      },
+      {
+        "id": "bt_cafe",
+        "title": "Café Details",
+        "priority": 42,
+        "settings": [
+          {
+            "id": "show_hours",
+            "label": "Show the opening hours in the header",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "bt-hours"
+          },
+          {
+            "id": "hours_text",
+            "label": "Opening hours",
+            "type": "text",
+            "default": "Open today 7:00–18:00",
+            "transport": "refresh"
+          },
+          {
+            "id": "hero_image",
+            "label": "Front page photo",
+            "type": "image",
+            "description": "The round photo in the front page hero. Empty uses the page's featured image."
+          },
+          {
+            "id": "hero_button_label",
+            "label": "Hero button label",
+            "type": "text",
+            "default": "See the menu",
+            "transport": "refresh"
+          },
+          {
+            "id": "hero_button_url",
+            "label": "Hero button link",
+            "type": "text",
+            "default": "/menu/",
+            "transport": "refresh"
+          },
+          {
+            "id": "footer_text",
+            "label": "Footer text",
+            "type": "text",
+            "default": "",
+            "transport": "refresh",
+            "description": "Replaces the copyright line."
+          }
+        ],
+        "description": "Opening hours, the front page hero and the footer line."
+      }
+    ]
+  }
+}

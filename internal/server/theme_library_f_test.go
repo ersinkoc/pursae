@@ -24,12 +24,12 @@ import (
 
 // Theme library, group F: Justitia, Ironbeam Construction, Numera, Bright Smile Dental and Archform.
 // Each package is checked offline (manifest, assets, demo file with the real parser), then zipped from
-// web/theme-library/<slug>, uploaded through Appearance › Add Themes › Upload, activated and rendered for
+// library/themes/<slug>, uploaded through Appearance › Add Themes › Upload, activated and rendered for
 // every kind of request, before and after its demo content is imported with importThemeDemo.
 
 var libFThemes = []string{"justitia", "ironbeam", "numera", "bright-smile", "archform"}
 
-const libFDir = "../../web/theme-library"
+const libFDir = "../../library/themes"
 
 var libFCategories = map[string]bool{"blog": true, "magazine": true, "portfolio": true, "photography": true, "business": true,
 	"agency": true, "restaurant": true, "food": true, "travel": true, "fashion": true, "technology": true, "education": true,

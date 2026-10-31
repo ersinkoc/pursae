@@ -16,13 +16,13 @@ import (
 )
 
 // Theme library, group E: Sugar & Saffron, Hearth & Herb, Bean There, Nest & Nook and Petal & Stem.
-// Each package is zipped from web/theme-library/<slug>, uploaded through Appearance › Add Themes ›
+// Each package is zipped from library/themes/<slug>, uploaded through Appearance › Add Themes ›
 // Upload, activated and rendered for every kind of request; then its demo content is imported with
 // importThemeDemo, the demo's pages, posts and archives are rendered, and the demo is removed again.
 
 var libEThemes = []string{"sugar-and-saffron", "hearth-and-herb", "bean-there", "nest-and-nook", "petal-and-stem"}
 
-const libEDir = "../../web/theme-library"
+const libEDir = "../../library/themes"
 
 var libETokenRe = regexp.MustCompile(`\{\{(media|media_id|page|post|category|tag):([^}]*)\}\}`)
 

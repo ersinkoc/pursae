@@ -1,0 +1,343 @@
+{
+  "slug": "pixel-arcade",
+  "name": "Pixel Arcade",
+  "version": "1.0.0",
+  "description": "A retro-futuristic dark theme for video game news and reviews. An 8-bit HUD bar, a pixel-art hero screen, review cards with score badges, verdict boxes, platform chips, an upcoming-releases high-score table and optional CRT scanlines. Colours, pixel corners, fonts, layout and the hero are set in the Customizer.",
+  "author": "Pursae",
+  "author_url": "https://github.com/pursae",
+  "theme_url": "https://github.com/pursae/pursae-dev/tree/main/library/themes/pixel-arcade",
+  "tags": [
+    "Gaming",
+    "Entertainment",
+    "Dark",
+    "Grid Layout",
+    "Right Sidebar",
+    "Left Sidebar",
+    "Custom Colors",
+    "Custom Logo",
+    "Custom Menu",
+    "Editor Style",
+    "Featured Images",
+    "Footer Widgets",
+    "Threaded Comments",
+    "Wide Blocks"
+  ],
+  "requires_core": "0.1.0",
+  "screenshot": "assets/screenshot.png",
+  "category": "gaming",
+  "style": "Retro-futuristic dark UI with pixel type and neon scores",
+  "demo": "demo/demo.json",
+  "widget_areas": [
+    {
+      "id": "sidebar-1",
+      "name": "Sidebar",
+      "description": "Beside posts, archives and search results."
+    },
+    {
+      "id": "footer-1",
+      "name": "Footer",
+      "description": "Widgets above the footer bar."
+    }
+  ],
+  "menu_locations": [
+    {
+      "id": "primary",
+      "name": "Primary Menu"
+    },
+    {
+      "id": "footer",
+      "name": "Footer Menu"
+    }
+  ],
+  "styles": [
+    {
+      "handle": "pixel-arcade-style",
+      "src": "assets/style.css",
+      "deps": [
+        "wp-block-library"
+      ],
+      "media": "all"
+    }
+  ],
+  "scripts": [
+    {
+      "handle": "pixel-arcade-navigation",
+      "src": "assets/js/navigation.js",
+      "deps": [],
+      "in_footer": true
+    }
+  ],
+  "editor_styles": [
+    "assets/editor-style.css"
+  ],
+  "preload_fonts": [
+    "assets/fonts/press-start-2p.woff2",
+    "assets/fonts/chakra-petch-400.woff2"
+  ],
+  "palette": [
+    {
+      "name": "Coin Yellow",
+      "slug": "coin-yellow",
+      "color": "#ffcc00"
+    },
+    {
+      "name": "Neon Cyan",
+      "slug": "neon-cyan",
+      "color": "#00e0ff"
+    },
+    {
+      "name": "Hot Pink",
+      "slug": "hot-pink",
+      "color": "#ff3d7f"
+    },
+    {
+      "name": "Screen",
+      "slug": "screen",
+      "color": "#100c26"
+    },
+    {
+      "name": "Cartridge",
+      "slug": "cartridge",
+      "color": "#0b0818"
+    },
+    {
+      "name": "Phosphor",
+      "slug": "phosphor",
+      "color": "#ece9ff"
+    }
+  ],
+  "supports": {
+    "post-thumbnails": true,
+    "custom-logo": {
+      "width": 240,
+      "height": 64,
+      "flex-width": true,
+      "flex-height": true,
+      "header-text": [
+        "site-title",
+        "site-description"
+      ]
+    },
+    "title-tag": true,
+    "html5": [
+      "search-form",
+      "comment-form",
+      "comment-list",
+      "gallery",
+      "caption",
+      "script",
+      "style"
+    ],
+    "responsive-embeds": true,
+    "align-wide": true,
+    "wp-block-styles": true
+  },
+  "customizer": {
+    "sections": [
+      {
+        "id": "pa_colors",
+        "title": "Colours & Effects",
+        "priority": 40,
+        "settings": [
+          {
+            "id": "accent",
+            "label": "Coin yellow (accent)",
+            "type": "color",
+            "default": "#ffcc00",
+            "transport": "postMessage",
+            "css_var": "--pa-accent",
+            "description": "Buttons, kickers, scores and highlights."
+          },
+          {
+            "id": "secondary",
+            "label": "Neon cyan (links)",
+            "type": "color",
+            "default": "#00e0ff",
+            "transport": "postMessage",
+            "css_var": "--pa-second",
+            "description": "Links, chips, grid lines and card hover."
+          },
+          {
+            "id": "hot",
+            "label": "Hot pink (shadows)",
+            "type": "color",
+            "default": "#ff3d7f",
+            "transport": "postMessage",
+            "css_var": "--pa-hot",
+            "description": "Pixel drop shadows, hearts and the 404."
+          },
+          {
+            "id": "background",
+            "label": "Screen colour",
+            "type": "color",
+            "default": "#100c26",
+            "transport": "postMessage",
+            "css_var": "--pa-bg"
+          },
+          {
+            "id": "scanlines",
+            "label": "CRT scanlines",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "pa-scanlines",
+            "description": "A faint scanline overlay across the screen."
+          },
+          {
+            "id": "pixel_corners",
+            "label": "Stepped pixel corners",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "pa-pixel-corners",
+            "description": "Cut 8-bit corners on cards, buttons and images."
+          },
+          {
+            "id": "font_pairing",
+            "label": "Font pairing",
+            "type": "select",
+            "default": "pixel",
+            "transport": "postMessage",
+            "body_class": "pa-fonts-{value}",
+            "choices": [
+              {
+                "value": "pixel",
+                "label": "Press Start 2P & Chakra Petch"
+              },
+              {
+                "value": "tech",
+                "label": "Chakra Petch only"
+              },
+              {
+                "value": "system",
+                "label": "System mono & sans"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "pa_layout",
+        "title": "Layout",
+        "priority": 41,
+        "settings": [
+          {
+            "id": "card_layout",
+            "label": "Post layout",
+            "type": "select",
+            "default": "grid",
+            "transport": "postMessage",
+            "body_class": "pa-cards-{value}",
+            "choices": [
+              {
+                "value": "grid",
+                "label": "Grid of cards"
+              },
+              {
+                "value": "list",
+                "label": "Wide list"
+              }
+            ]
+          },
+          {
+            "id": "sidebar",
+            "label": "Sidebar",
+            "type": "select",
+            "default": "right",
+            "transport": "postMessage",
+            "body_class": "pa-sidebar-{value}",
+            "choices": [
+              {
+                "value": "right",
+                "label": "Right"
+              },
+              {
+                "value": "left",
+                "label": "Left"
+              },
+              {
+                "value": "none",
+                "label": "No sidebar"
+              }
+            ]
+          },
+          {
+            "id": "show_thumbs",
+            "label": "Show featured images",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "pa-thumbs"
+          },
+          {
+            "id": "show_author",
+            "label": "Show author names",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "pa-show-author"
+          },
+          {
+            "id": "sticky_header",
+            "label": "Sticky header",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "pa-sticky"
+          }
+        ]
+      },
+      {
+        "id": "pa_hero",
+        "title": "Front Page Hero",
+        "priority": 42,
+        "settings": [
+          {
+            "id": "hero_image",
+            "label": "Hero screen image",
+            "type": "image",
+            "transport": "refresh",
+            "description": "Falls back to the front page's featured image."
+          },
+          {
+            "id": "hero_kicker",
+            "label": "Hero kicker",
+            "type": "text",
+            "default": "Game of the month",
+            "transport": "refresh"
+          },
+          {
+            "id": "hero_heading",
+            "label": "Hero heading",
+            "type": "text",
+            "default": "",
+            "transport": "refresh",
+            "description": "Defaults to the site title."
+          },
+          {
+            "id": "cta_label",
+            "label": "Button label",
+            "type": "text",
+            "default": "Read the review",
+            "transport": "refresh",
+            "description": "Leave empty to hide the button."
+          },
+          {
+            "id": "cta_url",
+            "label": "Button link",
+            "type": "text",
+            "default": "/reviews/",
+            "transport": "refresh"
+          },
+          {
+            "id": "footer_text",
+            "label": "Footer text",
+            "type": "text",
+            "default": "",
+            "transport": "refresh"
+          }
+        ]
+      }
+    ]
+  }
+}

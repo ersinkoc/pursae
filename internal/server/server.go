@@ -6,9 +6,11 @@ import (
 	"context"
 	"io/fs"
 	"log"
+	"log/slog"
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"path"
 	"regexp"
 	"strings"
@@ -39,8 +41,10 @@ type Server struct {
 	settings *settings.Store
 	auth     *auth.Manager
 	web      fs.FS
-	// themeLibrary is web/theme-library: one theme package directory per slug (theme_library.go).
+	// themeLibrary is the directory source of the theme library (WPGO_THEME_LIBRARY_DIR): one theme
+	// package directory per slug. Nil: the library comes from Pursae Manager (theme_library.go).
 	themeLibrary fs.FS
+	library      libraryState
 	tmpl         *templates
 	engine       *gin.Engine
 	rest         *restAPI
@@ -104,8 +108,11 @@ func newServer(ctx context.Context, cfg config.Config, pool *pgxpool.Pool, sb *s
 		web:      overlayFS{base: web.FS(cfg.WebDir), dir: themeOverrideDir(cfg.UploadsDir)},
 		sandbox:  sb,
 	}
-	if lib, err := fs.Sub(web.FS(cfg.WebDir), "theme-library"); err == nil {
-		s.themeLibrary = lib
+	if cfg.ThemeLibraryDir != "" && sb == nil {
+		if st, err := os.Stat(cfg.ThemeLibraryDir); err != nil || !st.IsDir() {
+			slog.Warn("theme library: WPGO_THEME_LIBRARY_DIR is not a directory", "dir", cfg.ThemeLibraryDir)
+		}
+		s.themeLibrary = os.DirFS(cfg.ThemeLibraryDir)
 	}
 	s.initLanguages()
 	if sb != nil {

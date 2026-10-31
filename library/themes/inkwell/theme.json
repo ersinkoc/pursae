@@ -1,0 +1,91 @@
+{
+  "slug": "inkwell",
+  "name": "Inkwell",
+  "version": "1.0.0",
+  "description": "A classic editorial blog theme for writers: a centered masthead between ornamental rules, refined Playfair Display headlines over Crimson Pro text, a generous reading measure, drop caps, small-caps meta and footnote-like captions on ivory paper. The sidebar can sit right, left or be switched off, and colors, type, lists and the masthead are all set in the Customizer.",
+  "author": "Pursae",
+  "author_url": "https://github.com/pursae",
+  "theme_url": "https://github.com/pursae/pursae-dev/tree/main/library/themes/inkwell",
+  "tags": ["Blog", "Two Columns", "Right Sidebar", "Left Sidebar", "One Column", "Custom Colors", "Custom Logo", "Custom Menu", "Editor Style", "Featured Images", "Threaded Comments", "Wide Blocks"],
+  "requires_core": "0.1.0",
+  "screenshot": "assets/screenshot.png",
+
+  "category": "blog",
+  "style": "Classic editorial serif with drop caps and a centered masthead",
+  "demo": "demo/demo.json",
+
+  "widget_areas": [
+    {"id": "sidebar-1", "name": "Sidebar", "description": "Beside posts, archives and pages (Customize › Inkwell layout › Sidebar)."},
+    {"id": "footer-1", "name": "Footer", "description": "Up to three columns above the colophon."}
+  ],
+  "menu_locations": [
+    {"id": "primary", "name": "Primary Menu"},
+    {"id": "footer", "name": "Footer Menu"}
+  ],
+
+  "styles": [
+    {"handle": "inkwell-style", "src": "assets/style.css", "deps": ["wp-block-library"], "media": "all"}
+  ],
+  "scripts": [
+    {"handle": "inkwell-navigation", "src": "assets/js/navigation.js", "deps": [], "in_footer": true}
+  ],
+  "editor_styles": ["assets/editor-style.css"],
+  "preload_fonts": ["assets/fonts/crimson-pro.woff2", "assets/fonts/playfair-display.woff2"],
+
+  "palette": [
+    {"name": "Oxblood", "slug": "oxblood", "color": "#7a222e"},
+    {"name": "Ink", "slug": "ink", "color": "#1e1b18"},
+    {"name": "Graphite", "slug": "graphite", "color": "#5a534c"},
+    {"name": "Vellum", "slug": "vellum", "color": "#ebe3d3"},
+    {"name": "Ivory", "slug": "ivory", "color": "#f8f4ec"}
+  ],
+  "supports": {
+    "post-thumbnails": true,
+    "custom-logo": {"width": 240, "height": 80, "flex-width": true, "flex-height": true, "header-text": ["site-title", "site-description"]},
+    "title-tag": true,
+    "html5": ["search-form", "comment-form", "comment-list", "gallery", "caption", "script", "style"],
+    "responsive-embeds": true,
+    "align-wide": true,
+    "wp-block-styles": true
+  },
+
+  "customizer": {
+    "sections": [
+      {
+        "id": "inkwell_colors", "title": "Inkwell colors", "description": "Paper, ink and the single accent.", "priority": 40,
+        "settings": [
+          {"id": "accent", "label": "Accent color", "description": "Links, drop caps, ornaments and buttons.", "type": "color", "default": "#7a222e", "transport": "postMessage", "css_var": "--iw-accent"},
+          {"id": "paper_color", "label": "Paper color", "description": "The page background.", "type": "color", "default": "#f8f4ec", "transport": "postMessage", "css_var": "--iw-paper"},
+          {"id": "ink_color", "label": "Ink color", "description": "Body text and headings.", "type": "color", "default": "#1e1b18", "transport": "postMessage", "css_var": "--iw-ink"}
+        ]
+      },
+      {
+        "id": "inkwell_type", "title": "Inkwell typography", "description": "Typefaces, size and the opening letter.", "priority": 41,
+        "settings": [
+          {"id": "font_pairing", "label": "Font pairing", "type": "select", "default": "classic", "transport": "postMessage", "body_class": "iw-fonts-{value}",
+            "choices": [{"value": "classic", "label": "Playfair Display + Crimson Pro"}, {"value": "bookish", "label": "Crimson Pro throughout"}, {"value": "modern", "label": "Playfair Display + system sans"}, {"value": "system", "label": "System serif (Georgia)"}]},
+          {"id": "text_size", "label": "Text size", "type": "select", "default": "medium", "transport": "postMessage", "body_class": "iw-size-{value}",
+            "choices": [{"value": "small", "label": "Small"}, {"value": "medium", "label": "Medium"}, {"value": "large", "label": "Large"}]},
+          {"id": "drop_caps", "label": "Drop cap on the first paragraph", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "iw-dropcaps"}
+        ]
+      },
+      {
+        "id": "inkwell_layout", "title": "Inkwell layout", "description": "Masthead, sidebar, post lists and footer.", "priority": 42,
+        "settings": [
+          {"id": "masthead_style", "label": "Masthead", "type": "select", "default": "ornate", "transport": "postMessage", "body_class": "iw-masthead-{value}",
+            "choices": [{"value": "ornate", "label": "Centered with ornaments"}, {"value": "plain", "label": "Centered, plain rules"}, {"value": "compact", "label": "Compact, left-aligned"}]},
+          {"id": "show_kicker", "label": "Show the masthead line", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "iw-has-kicker"},
+          {"id": "masthead_kicker", "label": "Masthead line", "description": "A small line above the site title.", "type": "text", "default": "A journal of letters", "transport": "refresh"},
+          {"id": "sidebar_position", "label": "Sidebar", "type": "select", "default": "right", "transport": "postMessage", "body_class": "iw-sidebar-{value}",
+            "choices": [{"value": "right", "label": "Right"}, {"value": "left", "label": "Left"}, {"value": "none", "label": "No sidebar"}]},
+          {"id": "list_style", "label": "Post list", "type": "select", "default": "classic", "transport": "postMessage", "body_class": "iw-list-{value}",
+            "choices": [{"value": "classic", "label": "Classic (lead story, then entries)"}, {"value": "grid", "label": "Two-column grid"}, {"value": "index", "label": "Table of contents"}]},
+          {"id": "show_featured", "label": "Show featured images", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "iw-show-images"},
+          {"id": "show_author", "label": "Show the author", "type": "checkbox", "default": true, "transport": "postMessage", "body_class": "iw-show-author"},
+          {"id": "sticky_header", "label": "Keep the menu bar visible when scrolling", "type": "checkbox", "default": false, "transport": "postMessage", "body_class": "iw-sticky-nav"},
+          {"id": "footer_text", "label": "Footer text", "description": "Replaces the copyright line.", "type": "text", "default": "", "transport": "refresh"}
+        ]
+      }
+    ]
+  }
+}

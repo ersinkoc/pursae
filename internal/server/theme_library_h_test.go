@@ -17,13 +17,13 @@ import (
 )
 
 // Theme library, group h: Velvet Salon, Paws & Whiskers, Gearhead Garage, Driftwood Inn and
-// Greenleaf Market. Each package is zipped from web/theme-library/<slug>, uploaded through
+// Greenleaf Market. Each package is zipped from library/themes/<slug>, uploaded through
 // Appearance › Add Themes › Upload, activated and rendered for every kind of request, then its
 // demo content is imported with the real importer and the imported site is rendered too.
 
 var libHThemes = []string{"velvet-salon", "paws-and-whiskers", "gearhead-garage", "driftwood-inn", "greenleaf-market"}
 
-const libHDir = "../../web/theme-library"
+const libHDir = "../../library/themes"
 
 type libHDemo struct {
 	Version    int                 `json:"version"`

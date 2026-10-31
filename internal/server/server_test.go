@@ -69,7 +69,8 @@ func newTestServer(t *testing.T, builder bool) (*httptest.Server, *http.Client, 
 	if _, err := db.Migrate(ctx, pool); err != nil {
 		t.Fatal(err)
 	}
-	cfg := config.Config{SiteURL: "http://example.test", UploadsDir: t.TempDir(), WebDir: "../../web"}
+	// The theme library is read from the repository (library/themes), not from Pursae Manager.
+	cfg := config.Config{SiteURL: "http://example.test", UploadsDir: t.TempDir(), WebDir: "../../web", ThemeLibraryDir: "../../library/themes"}
 	ts := httptest.NewUnstartedServer(nil)
 	cfg.SiteURL = "http://" + ts.Listener.Addr().String()
 	srv, err := New(ctx, cfg, pool)

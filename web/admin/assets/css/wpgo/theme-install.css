@@ -58,3 +58,11 @@
 .wpgo-clear-previews .button-link {
 	color: #b32d2e;
 }
+
+/* Library tab: Pursae Manager's recommended themes (theme_library.go). */
+.wpgo-install-recommended {
+	margin: -12px 0 20px;
+}
+.wpgo-install-recommended .button {
+	vertical-align: middle;
+}

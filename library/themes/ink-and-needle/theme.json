@@ -1,0 +1,339 @@
+{
+  "slug": "ink-and-needle",
+  "name": "Ink & Needle",
+  "version": "1.0.0",
+  "description": "A tattoo and piercing studio theme in black and bone with a blood-red accent. A blackletter masthead with star ornaments, ribbon banners, double-ruled frames around every image, flash sheets with price tags, artist portfolios, aftercare steps in Roman numerals and booking buttons everywhere they are needed. Switch to a bone page, colours, ornaments, texture, fonts and the portfolio grid in the Customizer.",
+  "author": "Pursae",
+  "author_url": "https://github.com/pursae",
+  "theme_url": "https://github.com/pursae/pursae-dev/tree/main/library/themes/ink-and-needle",
+  "tags": [
+    "Beauty",
+    "Portfolio",
+    "Business",
+    "Dark",
+    "Light",
+    "Grid Layout",
+    "Custom Colors",
+    "Custom Logo",
+    "Custom Menu",
+    "Editor Style",
+    "Featured Images",
+    "Footer Widgets",
+    "Threaded Comments",
+    "Wide Blocks"
+  ],
+  "requires_core": "0.1.0",
+  "screenshot": "assets/screenshot.png",
+  "category": "beauty",
+  "style": "Black and bone tattoo parlour with blackletter and blood red",
+  "demo": "demo/demo.json",
+  "widget_areas": [
+    {
+      "id": "sidebar-1",
+      "name": "Sidebar",
+      "description": "Beside the journal when the sidebar is on."
+    },
+    {
+      "id": "footer-1",
+      "name": "Footer",
+      "description": "Studio details in the footer."
+    }
+  ],
+  "menu_locations": [
+    {
+      "id": "primary",
+      "name": "Primary Menu"
+    },
+    {
+      "id": "footer",
+      "name": "Footer Menu"
+    }
+  ],
+  "styles": [
+    {
+      "handle": "ink-and-needle-style",
+      "src": "assets/style.css",
+      "deps": [
+        "wp-block-library"
+      ],
+      "media": "all"
+    }
+  ],
+  "scripts": [
+    {
+      "handle": "ink-and-needle-navigation",
+      "src": "assets/js/navigation.js",
+      "deps": [],
+      "in_footer": true
+    }
+  ],
+  "editor_styles": [
+    "assets/editor-style.css"
+  ],
+  "preload_fonts": [
+    "assets/fonts/pirata-one.woff2",
+    "assets/fonts/spectral-400.woff2"
+  ],
+  "palette": [
+    {
+      "name": "Blood Red",
+      "slug": "blood-red",
+      "color": "#a31d1d"
+    },
+    {
+      "name": "Bone",
+      "slug": "bone",
+      "color": "#e9e1d3"
+    },
+    {
+      "name": "Ink",
+      "slug": "ink",
+      "color": "#0f0d0c"
+    },
+    {
+      "name": "Sailor Green",
+      "slug": "sailor-green",
+      "color": "#2f6b4f"
+    },
+    {
+      "name": "Old Gold",
+      "slug": "old-gold",
+      "color": "#d4a239"
+    }
+  ],
+  "supports": {
+    "post-thumbnails": true,
+    "custom-logo": {
+      "width": 220,
+      "height": 110,
+      "flex-width": true,
+      "flex-height": true,
+      "header-text": [
+        "site-title",
+        "site-description"
+      ]
+    },
+    "title-tag": true,
+    "html5": [
+      "search-form",
+      "comment-form",
+      "comment-list",
+      "gallery",
+      "caption",
+      "script",
+      "style"
+    ],
+    "responsive-embeds": true,
+    "align-wide": true,
+    "wp-block-styles": true
+  },
+  "customizer": {
+    "sections": [
+      {
+        "id": "in_colors",
+        "title": "Ink & Colours",
+        "priority": 40,
+        "settings": [
+          {
+            "id": "red",
+            "label": "Blood red (accent)",
+            "type": "color",
+            "default": "#a31d1d",
+            "transport": "postMessage",
+            "css_var": "--in-red",
+            "description": "Banners, buttons, stars and drop caps."
+          },
+          {
+            "id": "bone",
+            "label": "Bone",
+            "type": "color",
+            "default": "#e9e1d3",
+            "transport": "postMessage",
+            "css_var": "--in-bone",
+            "description": "Text on ink, and the flash-sheet paper."
+          },
+          {
+            "id": "ink",
+            "label": "Ink",
+            "type": "color",
+            "default": "#0f0d0c",
+            "transport": "postMessage",
+            "css_var": "--in-ink",
+            "description": "The page colour, and text on bone."
+          },
+          {
+            "id": "mode",
+            "label": "Page",
+            "type": "select",
+            "default": "ink",
+            "transport": "postMessage",
+            "body_class": "in-mode-{value}",
+            "choices": [
+              {
+                "value": "ink",
+                "label": "Black ink page, bone text"
+              },
+              {
+                "value": "bone",
+                "label": "Bone page, black text"
+              }
+            ]
+          },
+          {
+            "id": "ornaments",
+            "label": "Ornaments",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "in-ornaments",
+            "description": "Stars between menu items, the masthead ornament and list stars."
+          },
+          {
+            "id": "texture",
+            "label": "Paper texture",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "in-texture",
+            "description": "A faint grain over the page."
+          },
+          {
+            "id": "font_pairing",
+            "label": "Font pairing",
+            "type": "select",
+            "default": "blackletter",
+            "transport": "postMessage",
+            "body_class": "in-fonts-{value}",
+            "choices": [
+              {
+                "value": "blackletter",
+                "label": "Pirata One & Spectral"
+              },
+              {
+                "value": "serif",
+                "label": "Spectral only"
+              },
+              {
+                "value": "system",
+                "label": "System serif"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "in_layout",
+        "title": "Portfolio & Layout",
+        "priority": 41,
+        "settings": [
+          {
+            "id": "grid",
+            "label": "Post layout",
+            "type": "select",
+            "default": "two",
+            "transport": "postMessage",
+            "body_class": "in-grid-{value}",
+            "choices": [
+              {
+                "value": "two",
+                "label": "Two framed columns"
+              },
+              {
+                "value": "three",
+                "label": "Three framed columns"
+              },
+              {
+                "value": "list",
+                "label": "Framed list"
+              }
+            ]
+          },
+          {
+            "id": "sidebar",
+            "label": "Sidebar",
+            "type": "select",
+            "default": "none",
+            "transport": "postMessage",
+            "body_class": "in-sidebar-{value}",
+            "choices": [
+              {
+                "value": "none",
+                "label": "None"
+              },
+              {
+                "value": "right",
+                "label": "Right"
+              }
+            ]
+          },
+          {
+            "id": "show_author",
+            "label": "Show artist names",
+            "type": "checkbox",
+            "default": true,
+            "transport": "postMessage",
+            "body_class": "in-show-author"
+          }
+        ]
+      },
+      {
+        "id": "in_studio",
+        "title": "Studio & Booking",
+        "priority": 42,
+        "settings": [
+          {
+            "id": "booking_label",
+            "label": "Booking button label",
+            "type": "text",
+            "default": "Book a session",
+            "transport": "refresh",
+            "description": "In the top bar, hero and footer. Leave empty to hide."
+          },
+          {
+            "id": "booking_url",
+            "label": "Booking link",
+            "type": "text",
+            "default": "/booking/",
+            "transport": "refresh"
+          },
+          {
+            "id": "studio_info",
+            "label": "Top bar text",
+            "type": "text",
+            "default": "Tue to Sat · 11:00 to 20:00 · 14 Harrow Lane",
+            "transport": "refresh"
+          },
+          {
+            "id": "hero_image",
+            "label": "Hero image",
+            "type": "image",
+            "transport": "refresh",
+            "description": "Falls back to the front page's featured image."
+          },
+          {
+            "id": "hero_kicker",
+            "label": "Hero banner",
+            "type": "text",
+            "default": "Est. 2014",
+            "transport": "refresh"
+          },
+          {
+            "id": "hero_heading",
+            "label": "Hero heading",
+            "type": "text",
+            "default": "",
+            "transport": "refresh",
+            "description": "Defaults to the site title."
+          },
+          {
+            "id": "footer_text",
+            "label": "Footer text",
+            "type": "text",
+            "default": "",
+            "transport": "refresh"
+          }
+        ]
+      }
+    ]
+  }
+}

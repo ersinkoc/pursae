@@ -195,8 +195,9 @@ func (s *Server) hubPingBody(ctx context.Context) hubPingPayload {
 	return p
 }
 
-// themeInventory lists the installed themes with where they came from: bundled and library themes
-// ship with the core (native), other packages were uploaded.
+// themeInventory lists the installed themes with where they came from: bundled themes ship with the
+// core (native), library themes installed from Pursae Manager are hub, other packages were uploaded
+// (a theme from a local library directory, WPGO_THEME_LIBRARY_DIR, counts as native).
 func (s *Server) themeInventory() []hubPackageInfo {
 	active := ""
 	if t := s.activeTheme(); t != nil {
@@ -208,8 +209,14 @@ func (s *Server) themeInventory() []hubPackageInfo {
 			continue
 		}
 		src := pluginSourceNative
-		if t.Package != nil && s.libraryTheme(t.Slug) == nil {
-			src = pluginSourceUpload
+		if t.Package != nil {
+			switch themePackageSource(t) {
+			case themeSourceHub:
+				src = pluginSourceHub
+			case themeSourceLibrary:
+			default:
+				src = pluginSourceUpload
+			}
 		}
 		out = append(out, hubPackageInfo{Slug: t.Slug, Version: t.Version, Active: t.Slug == active, Source: src})
 	}

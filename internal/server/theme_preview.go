@@ -101,12 +101,15 @@ type previewSource struct {
 }
 
 func (src *previewSource) zip() ([]byte, error) {
-	return (&libraryTheme{Manifest: src.Manifest, Dir: src.dir}).zip(src.fsys)
+	return zipThemeDir(src.fsys, src.dir)
 }
 
 // previewSourceFor finds a theme to preview: kind "installed" is an installed package with demo
-// content, anything else the library theme (falling back to an installed package with a demo).
-func (s *Server) previewSourceFor(slug, kind string) *previewSource {
+// content, anything else the library theme (falling back to an installed package with a demo); the
+// library is only looked at with library set (the user may preview library themes). A Manager
+// library theme is downloaded into the library cache first (theme_library.go); the error says why
+// that failed.
+func (s *Server) previewSourceFor(ctx context.Context, slug, kind string, library bool) (*previewSource, error) {
 	installed := func() *previewSource {
 		t := s.installedTheme(slug)
 		if t == nil || t.Package == nil || t.Package.Manifest.Demo == "" {
@@ -115,12 +118,16 @@ func (s *Server) previewSourceFor(slug, kind string) *previewSource {
 		return &previewSource{Manifest: t.Package.Manifest, fsys: os.DirFS(filepath.Dir(t.Package.Dir)), dir: filepath.Base(t.Package.Dir)}
 	}
 	if kind == "installed" {
-		return installed()
+		return installed(), nil
 	}
-	if lt := s.libraryTheme(slug); lt != nil {
-		return &previewSource{Manifest: lt.Manifest, Library: true, fsys: s.themeLibrary, dir: lt.Dir}
+	if lt := s.libraryTheme(ctx, slug); library && lt != nil {
+		fsys, dir, err := s.libraryFiles(ctx, lt)
+		if err != nil {
+			return nil, err
+		}
+		return &previewSource{Manifest: lt.Manifest, Library: true, fsys: fsys, dir: dir}, nil
 	}
-	return installed()
+	return installed(), nil
 }
 
 // Manager ----------------------------------------------------------------------------------
@@ -601,8 +608,16 @@ func (s *Server) themePreviewScreen(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"state": state, "error": msg})
 		return
 	}
+	if !canPreview(u, false) {
+		c.String(http.StatusForbidden, "Sorry, you are not allowed to preview themes on this site.")
+		return
+	}
 	installedSource := c.Query("source") == "installed"
-	src := s.previewSourceFor(slug, c.Query("source"))
+	src, err := s.previewSourceFor(c, slug, c.Query("source"), canPreview(u, true))
+	if err != nil {
+		c.String(http.StatusBadGateway, "The theme could not be downloaded from Pursae Manager: "+err.Error())
+		return
+	}
 	if src == nil || (installedSource && src.Library) {
 		c.String(http.StatusNotFound, "The requested theme does not exist.")
 		return
@@ -627,9 +642,9 @@ func (s *Server) themePreviewScreen(c *gin.Context) {
 		"Style": m.Style, "Category": themeCategoryLabel(m.Category), "HasDemo": m.Demo != "", "Back": back,
 		"Frame": previewPrefix + "/" + slug + "/", "Library": src.Library}
 	if src.Library {
-		d["Screenshot"] = "/wp-admin/theme-install?action=library-screenshot&theme=" + url.QueryEscape(slug) + "&ver=" + url.QueryEscape(m.Version)
+		d["Screenshot"] = libraryScreenshotURL(m)
 		// Previous / next theme of the library.
-		lib := s.libraryThemes()
+		lib := s.libraryThemes(c)
 		for i, lt := range lib {
 			if lt.Manifest.Slug != slug {
 				continue
@@ -700,12 +715,15 @@ func (s *Server) themePreviewSite(c *gin.Context) {
 	}
 	b := s.previews.get(slug)
 	if b == nil || b.state() == "missing" {
-		src := s.previewSourceFor(slug, "")
+		src, err := s.previewSourceFor(c, slug, "", canPreview(u, true))
+		if err != nil {
+			c.String(http.StatusBadGateway, "The theme could not be downloaded from Pursae Manager: "+err.Error())
+			return
+		}
 		if src == nil || !canPreview(u, src.Library) {
 			c.Status(http.StatusNotFound)
 			return
 		}
-		var err error
 		if b, err = s.previews.ensure(src, false); err != nil {
 			c.String(http.StatusInternalServerError, err.Error())
 			return
