@@ -4,13 +4,14 @@ import (
 	"context"
 	"fmt"
 	"io/fs"
+	"net/url"
 	"os"
 	"regexp"
 	"sort"
 	"testing"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5"
 )
 
 var migrationName = regexp.MustCompile(`^migrations/\d{4}_[a-z0-9_]+\.sql$`)
@@ -41,36 +42,15 @@ func TestMigrationFilesAreWellFormed(t *testing.T) {
 	}
 }
 
-// TestMigrateIsIdempotent runs every migration in a scratch schema of the test database and then
-// runs Migrate again, which must apply nothing. Skipped without WPGO_TEST_DB.
+// TestMigrateIsIdempotent runs every migration in a fresh database and then runs Migrate again, which must apply
+// nothing. Skipped without WPGO_TEST_ADMIN_DB.
 func TestMigrateIsIdempotent(t *testing.T) {
-	url := os.Getenv("WPGO_TEST_DB")
-	if url == "" {
-		t.Skip("WPGO_TEST_DB not set")
-	}
 	ctx := context.Background()
-	base, err := pgxpool.ParseConfig(url)
-	if err != nil {
-		t.Fatal(err)
-	}
-	admin, err := pgxpool.NewWithConfig(ctx, base)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer admin.Close()
-
-	schema := fmt.Sprintf("dbtest_%d", time.Now().UnixNano())
-	if _, err := admin.Exec(ctx, `CREATE SCHEMA `+schema); err != nil {
-		t.Fatal(err)
-	}
-	defer admin.Exec(context.Background(), `DROP SCHEMA `+schema+` CASCADE`)
-
-	pool, err := ConnectSchema(ctx, base, schema, 2)
+	pool, err := Connect(ctx, tempDatabase(t, "wpgo_dbtest"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer pool.Close()
-
 	first, err := Migrate(ctx, pool)
 	if err != nil {
 		t.Fatal(err)
@@ -86,4 +66,34 @@ func TestMigrateIsIdempotent(t *testing.T) {
 	if len(second) != 0 {
 		t.Errorf("second run applied %v, want none", second)
 	}
+}
+
+// tempDatabase creates an empty database next to the admin database (WPGO_TEST_ADMIN_DB, an existing database
+// such as "wpgo") and drops it after the test, so the test needs no other database to exist. Skipped without it.
+func tempDatabase(t *testing.T, prefix string) string {
+	t.Helper()
+	adminURL := os.Getenv("WPGO_TEST_ADMIN_DB")
+	if adminURL == "" {
+		t.Skip("WPGO_TEST_ADMIN_DB not set")
+	}
+	ctx := context.Background()
+	admin, err := pgx.Connect(ctx, adminURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	name := fmt.Sprintf("%s_%d", prefix, time.Now().UnixNano())
+	if _, err := admin.Exec(ctx, `CREATE DATABASE `+pgx.Identifier{name}.Sanitize()); err != nil {
+		admin.Close(ctx)
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_, _ = admin.Exec(context.Background(), `DROP DATABASE IF EXISTS `+pgx.Identifier{name}.Sanitize()+` WITH (FORCE)`)
+		admin.Close(context.Background())
+	})
+	u, err := url.Parse(adminURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	u.Path = "/" + name
+	return u.String()
 }

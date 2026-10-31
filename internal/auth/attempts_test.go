@@ -3,39 +3,21 @@ package auth
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"os"
 	"testing"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5"
 
 	"wpgo/internal/db"
 )
 
-// attemptsManager returns a Manager on a scratch schema of the test database (skipped without
-// WPGO_TEST_DB), so these tests never touch another test's data.
+// attemptsManager returns a Manager on a fresh, migrated database that is dropped after the test.
 func attemptsManager(t *testing.T) *Manager {
 	t.Helper()
-	url := os.Getenv("WPGO_TEST_DB")
-	if url == "" {
-		t.Skip("WPGO_TEST_DB not set")
-	}
 	ctx := context.Background()
-	base, err := pgxpool.ParseConfig(url)
-	if err != nil {
-		t.Fatal(err)
-	}
-	admin, err := pgxpool.NewWithConfig(ctx, base)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(admin.Close)
-	schema := fmt.Sprintf("authtest_%d", time.Now().UnixNano())
-	if _, err := admin.Exec(ctx, `CREATE SCHEMA `+schema); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { admin.Exec(context.Background(), `DROP SCHEMA `+schema+` CASCADE`) })
-	pool, err := db.ConnectSchema(ctx, base, schema, 2)
+	pool, err := db.Connect(ctx, tempDatabase(t, "wpgo_authtest"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -44,6 +26,36 @@ func attemptsManager(t *testing.T) *Manager {
 		t.Fatal(err)
 	}
 	return NewManager(pool, "test-secret")
+}
+
+// tempDatabase creates an empty database next to the admin database (WPGO_TEST_ADMIN_DB, an existing database
+// such as "wpgo") and drops it after the test, so the test needs no other database to exist. Skipped without it.
+func tempDatabase(t *testing.T, prefix string) string {
+	t.Helper()
+	adminURL := os.Getenv("WPGO_TEST_ADMIN_DB")
+	if adminURL == "" {
+		t.Skip("WPGO_TEST_ADMIN_DB not set")
+	}
+	ctx := context.Background()
+	admin, err := pgx.Connect(ctx, adminURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	name := fmt.Sprintf("%s_%d", prefix, time.Now().UnixNano())
+	if _, err := admin.Exec(ctx, `CREATE DATABASE `+pgx.Identifier{name}.Sanitize()); err != nil {
+		admin.Close(ctx)
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_, _ = admin.Exec(context.Background(), `DROP DATABASE IF EXISTS `+pgx.Identifier{name}.Sanitize()+` WITH (FORCE)`)
+		admin.Close(context.Background())
+	})
+	u, err := url.Parse(adminURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	u.Path = "/" + name
+	return u.String()
 }
 
 // A successful login must clear only that login's failures. Otherwise an attacker with one valid
