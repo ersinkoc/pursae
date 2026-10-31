@@ -3,12 +3,15 @@ package gocdn
 import (
 	"bytes"
 	"context"
+	"crypto/md5"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/xml"
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -24,8 +27,12 @@ type Client struct {
 	AccessKey string
 	SecretKey string
 	PathStyle bool // https://endpoint/bucket/key instead of https://bucket.endpoint/key
-	HTTP      *http.Client
-	Now       func() time.Time
+	// SSECKey is the 256-bit customer key of SSE-C: sent with every request that reads or writes
+	// object data (PUT, multipart, GET, HEAD, the source of a COPY). Objects written with it cannot
+	// be read without it, nor through a public or presigned URL. Never logged.
+	SSECKey []byte
+	HTTP    *http.Client
+	Now     func() time.Time
 }
 
 // Object is an entry of a listing (or the result of a HEAD).
@@ -47,11 +54,13 @@ type ListResult struct {
 
 // PutOptions are the optional headers of a PUT (and of CreateMultipartUpload / CopyObject).
 type PutOptions struct {
-	ContentType  string
-	CacheControl string
-	ACL          string // "public-read" or "" (bucket default)
-	SSE          string // x-amz-server-side-encryption: "AES256" (SSE-S3) or "" (bucket default)
-	StorageClass string // x-amz-storage-class: STANDARD, STANDARD_IA, INTELLIGENT_TIERING… or ""
+	ContentType       string
+	CacheControl      string
+	ACL               string // "public-read" or "" (bucket default)
+	SSE               string // x-amz-server-side-encryption: "AES256" (SSE-S3), "aws:kms" or "" (bucket default)
+	CopySourceSSECKey []byte // Copy only: the SSE-C key of the source object, when it has one
+	SSEKMSKeyID       string // x-amz-server-side-encryption-aws-kms-key-id with SSE "aws:kms" ("" = the account's aws/s3 key)
+	StorageClass      string // x-amz-storage-class: STANDARD, STANDARD_IA, INTELLIGENT_TIERING… or ""
 }
 
 func (o PutOptions) headers() http.Header {
@@ -71,6 +80,52 @@ func (o PutOptions) headers() http.Header {
 	if o.StorageClass != "" {
 		h.Set("X-Amz-Storage-Class", o.StorageClass)
 	}
+	if o.SSE == "aws:kms" && o.SSEKMSKeyID != "" {
+		h.Set("X-Amz-Server-Side-Encryption-Aws-Kms-Key-Id", o.SSEKMSKeyID)
+	}
+	return h
+}
+
+// ParseSSECKey reads a customer key given as 64 hex characters or as base64 of 32 bytes.
+func ParseSSECKey(s string) ([]byte, error) {
+	s = strings.TrimSpace(s)
+	if len(s) == 64 {
+		if k, err := hex.DecodeString(s); err == nil {
+			return k, nil
+		}
+	}
+	if k, err := base64.StdEncoding.DecodeString(s); err == nil && len(k) == 32 {
+		return k, nil
+	}
+	return nil, errors.New("the SSE-C key must be 32 bytes: 64 hex characters or 44 base64 characters")
+}
+
+// sseCHeaders sets the three SSE-C headers for key under the given header prefix
+// ("X-Amz-Server-Side-Encryption-Customer-" or the "X-Amz-Copy-Source-…" variant).
+func sseCHeaders(h http.Header, prefix string, key []byte) {
+	sum := md5.Sum(key)
+	h.Set(prefix+"Algorithm", "AES256")
+	h.Set(prefix+"Key", base64.StdEncoding.EncodeToString(key))
+	h.Set(prefix+"Key-Md5", base64.StdEncoding.EncodeToString(sum[:]))
+}
+
+const (
+	sseCPrefix     = "X-Amz-Server-Side-Encryption-Customer-"
+	sseCCopyPrefix = "X-Amz-Copy-Source-Server-Side-Encryption-Customer-"
+)
+
+// withSSEC adds the client's SSE-C headers to h (made when nil). Those replace any SSE-S3/KMS
+// header: S3 refuses the combination.
+func (c *Client) withSSEC(h http.Header) http.Header {
+	if len(c.SSECKey) == 0 {
+		return h
+	}
+	if h == nil {
+		h = http.Header{}
+	}
+	h.Del("X-Amz-Server-Side-Encryption")
+	h.Del("X-Amz-Server-Side-Encryption-Aws-Kms-Key-Id")
+	sseCHeaders(h, sseCPrefix, c.SSECKey)
 	return h
 }
 
@@ -124,12 +179,25 @@ func (c *Client) Validate() error {
 		return errors.New("no bucket name")
 	case c.AccessKey == "" || c.SecretKey == "":
 		return errors.New("no access key or secret key")
+	case len(c.SSECKey) != 0 && len(c.SSECKey) != 32:
+		return errors.New("the SSE-C key must be 32 bytes")
 	}
 	u, err := url.Parse(c.Endpoint)
 	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
 		return errors.New("the endpoint must be an http(s) URL")
 	}
+	if len(c.SSECKey) != 0 && u.Scheme != "https" && !isLoopback(u.Hostname()) {
+		return errors.New("SSE-C sends the key with every request and needs an https endpoint")
+	}
 	return nil
+}
+
+func isLoopback(host string) bool {
+	if host == "localhost" || strings.HasSuffix(host, ".localhost") {
+		return true
+	}
+	ip := net.ParseIP(host)
+	return ip != nil && ip.IsLoopback()
 }
 
 // objectURL is the request URL of a key ("" for the bucket itself).
@@ -224,7 +292,7 @@ func (c *Client) Put(ctx context.Context, key string, body []byte, o PutOptions)
 	if body == nil {
 		body = []byte{}
 	}
-	resp, err := c.do(ctx, http.MethodPut, key, nil, body, o.headers())
+	resp, err := c.do(ctx, http.MethodPut, key, nil, body, c.withSSEC(o.headers()))
 	if err != nil {
 		return err
 	}
@@ -234,7 +302,7 @@ func (c *Client) Put(ctx context.Context, key string, body []byte, o PutOptions)
 
 // Get downloads an object; the caller closes the body.
 func (c *Client) Get(ctx context.Context, key string) (io.ReadCloser, Object, error) {
-	resp, err := c.do(ctx, http.MethodGet, key, nil, nil, nil)
+	resp, err := c.do(ctx, http.MethodGet, key, nil, nil, c.withSSEC(nil))
 	if err != nil {
 		return nil, Object{}, err
 	}
@@ -243,7 +311,7 @@ func (c *Client) Get(ctx context.Context, key string) (io.ReadCloser, Object, er
 
 // GetRange downloads part of an object (first..last bytes, inclusive).
 func (c *Client) GetRange(ctx context.Context, key string, first, last int64) ([]byte, error) {
-	h := http.Header{}
+	h := c.withSSEC(http.Header{})
 	h.Set("Range", "bytes="+strconv.FormatInt(first, 10)+"-"+strconv.FormatInt(last, 10))
 	resp, err := c.do(ctx, http.MethodGet, key, nil, nil, h)
 	if err != nil {
@@ -255,7 +323,7 @@ func (c *Client) GetRange(ctx context.Context, key string, first, last int64) ([
 
 // Head returns an object's metadata.
 func (c *Client) Head(ctx context.Context, key string) (Object, error) {
-	resp, err := c.do(ctx, http.MethodHead, key, nil, nil, nil)
+	resp, err := c.do(ctx, http.MethodHead, key, nil, nil, c.withSSEC(nil))
 	if err != nil {
 		return Object{}, err
 	}
@@ -331,6 +399,9 @@ func (c *Client) List(ctx context.Context, prefix, delimiter, token string, max 
 func (c *Client) PresignGet(key string, expires time.Duration) (string, error) {
 	if err := c.Validate(); err != nil {
 		return "", err
+	}
+	if len(c.SSECKey) != 0 {
+		return "", errors.New("objects encrypted with a customer key (SSE-C) cannot be fetched through a presigned URL")
 	}
 	u, err := c.objectURL(key)
 	if err != nil {

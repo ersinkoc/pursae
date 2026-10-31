@@ -31,7 +31,8 @@ func (s *Server) gocdnRewrite() gin.HandlerFunc {
 			return
 		}
 		st := s.gocdnLoad()
-		media := st.ServeFromCDN && gocdnPublicBase(st) != ""
+		// SSE-C objects cannot be fetched without the key header: nothing public to point at.
+		media := st.ServeFromCDN && gocdnPublicBase(st) != "" && st.SSEType != "customer"
 		assets := st.Assets && st.AssetsURL != "" && !strings.HasPrefix(c.Request.URL.Path, "/wp-json")
 		if !media && !assets && !st.ImgRewrite {
 			c.Next()

@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/gen2brain/avif"
+	"github.com/gen2brain/webp"
 )
 
 func photo(w, h int) *image.RGBA {
@@ -153,4 +154,51 @@ func TestTransformGIFBudget(t *testing.T) {
 	if !IsAnimatedGIF(src) || IsAnimatedGIF(animGIF(1, 10, 10, false)) {
 		t.Error("IsAnimatedGIF")
 	}
+}
+
+// TestTransformGIFToAnimatedWebPAVIF checks the animated WebP / AVIF encoders: every frame, the
+// resized size, the delays and (WebP) the loop count survive, and the transparent strip stays so.
+func TestTransformGIFToAnimatedWebPAVIF(t *testing.T) {
+	src := animGIF(6, 200, 100, true)
+	src.LoopCount = 3
+	var wb bytes.Buffer
+	if err := TransformGIFTo(&wb, src, ImageParams{W: 50}, AnimLimits{}, "webp", 80); err != nil {
+		t.Fatal(err)
+	}
+	w, err := webp.DecodeAll(bytes.NewReader(wb.Bytes()))
+	if err != nil || len(w.Image) != 6 || w.Image[0].Bounds().Dx() != 50 || w.Image[0].Bounds().Dy() != 25 {
+		t.Fatalf("webp: err %v frames %v", err, w)
+	}
+	if w.Delay[0] != 100 || w.Delay[5] != 150 || webpLoop(wb.Bytes()) != 3 {
+		t.Errorf("webp delays %v loop %d", w.Delay, w.LoopCount)
+	}
+	if _, _, _, a := w.Image[2].At(2, 12).RGBA(); a != 0 {
+		t.Error("webp: transparent strip became opaque")
+	}
+	var ab bytes.Buffer
+	if err := TransformGIFTo(&ab, src, ImageParams{W: 50}, AnimLimits{}, "avif", 80); err != nil {
+		t.Fatal(err)
+	}
+	a, err := avif.DecodeAll(bytes.NewReader(ab.Bytes()))
+	if err != nil || len(a.Image) != 6 || a.Image[0].Bounds().Dx() != 50 {
+		t.Fatalf("avif: err %v", err)
+	}
+	if d := a.Delay[0] - 0.1; d > 0.01 || d < -0.01 {
+		t.Errorf("avif delay %v", a.Delay[0])
+	}
+	if err := TransformGIFTo(&wb, src, ImageParams{W: 50}, AnimLimits{MaxFrames: 2}, "webp", 80); !errors.Is(err, ErrAnimBudget) {
+		t.Errorf("budget: %v", err)
+	}
+	if err := TransformGIFTo(&wb, src, ImageParams{W: 50}, AnimLimits{}, "jpeg", 80); !errors.Is(err, ErrBadParam) {
+		t.Errorf("format: %v", err)
+	}
+}
+
+// webpLoop reads the loop count of the ANIM chunk (the decoder does not report it).
+func webpLoop(b []byte) int {
+	i := bytes.Index(b, []byte("ANIM"))
+	if i < 0 || len(b) < i+14 {
+		return -1
+	}
+	return int(b[i+12]) | int(b[i+13])<<8
 }

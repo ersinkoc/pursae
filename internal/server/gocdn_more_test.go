@@ -20,6 +20,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gen2brain/avif"
+	"github.com/gen2brain/webp"
+
 	"wpgo/internal/builder"
 	"wpgo/internal/gocdn"
 	"wpgo/internal/gocdn/s3fake"
@@ -92,7 +95,7 @@ func TestGoCDNMultipartSSEStorageClass(t *testing.T) {
 	if _, _, loc := post(t, s.c, s.ts.URL+"/wp-admin/gocdn", form); !strings.Contains(loc, "gocdn-error") {
 		t.Errorf("invalid storage class accepted: %s", loc)
 	}
-	if !strings.Contains(body, `name="server-side-encryption" value="1" checked`) || !strings.Contains(body, `value="STANDARD_IA"`) {
+	if !strings.Contains(body, `name="sse-type" value="s3" checked`) || !strings.Contains(body, `value="STANDARD_IA"`) {
 		t.Error("the Storage screen does not show the SSE / storage class settings")
 	}
 }
@@ -138,23 +141,47 @@ func TestGoCDNImageAVIFAndAnimation(t *testing.T) {
 	if resp.Header.Get("Content-Type") != "image/avif" {
 		t.Errorf("fm=avif got %s", resp.Header.Get("Content-Type"))
 	}
-	// The animated GIF stays animated (all frames, resized), whatever the browser accepts.
+	// The animated GIF stays animated (all frames, resized) in the negotiated format: AVIF for a
+	// browser that accepts it, WebP for a WebP-only one, GIF for the rest or with fm=gif.
 	resp = doGet(t, anon, s.ts.URL+"/cdn-img/"+animRel+"?w=60", chrome)
 	body = readAll(resp)
-	if resp.StatusCode != http.StatusOK || resp.Header.Get("Content-Type") != "image/gif" {
-		t.Fatalf("animated GIF: %d %s", resp.StatusCode, resp.Header.Get("Content-Type"))
+	if resp.StatusCode != http.StatusOK || resp.Header.Get("Content-Type") != "image/avif" {
+		t.Fatalf("animated GIF for AVIF browser: %d %s", resp.StatusCode, resp.Header.Get("Content-Type"))
+	}
+	av, err := avif.DecodeAll(bytes.NewReader(body))
+	if err != nil || len(av.Image) != 6 || av.Image[0].Bounds().Dx() != 60 || av.Image[0].Bounds().Dy() != 40 {
+		t.Fatalf("animated AVIF: err %v, frames %d", err, len(av.Image))
+	}
+	resp = doGet(t, anon, s.ts.URL+"/cdn-img/"+animRel+"?w=60", map[string]string{"Accept": "image/webp,*/*"})
+	body = readAll(resp)
+	if resp.Header.Get("Content-Type") != "image/webp" {
+		t.Fatalf("animated GIF for WebP browser: %s", resp.Header.Get("Content-Type"))
+	}
+	wp, err := webp.DecodeAll(bytes.NewReader(body))
+	if err != nil || len(wp.Image) != 6 || wp.Image[0].Bounds().Dx() != 60 || wp.Delay[0] != 70 {
+		t.Fatalf("animated WebP: err %v, %v", err, wp)
+	}
+	resp = doGet(t, anon, s.ts.URL+"/cdn-img/"+animRel+"?w=60", map[string]string{"Accept": "*/*"})
+	body = readAll(resp)
+	if resp.Header.Get("Content-Type") != "image/gif" {
+		t.Fatalf("animated GIF for a plain browser: %s", resp.Header.Get("Content-Type"))
 	}
 	g, err := gif.DecodeAll(bytes.NewReader(body))
 	if err != nil || len(g.Image) != 6 || g.Config.Width != 60 || g.Config.Height != 40 || g.Delay[0] != 7 {
 		t.Fatalf("animation: err %v, %d frames, %dx%d", err, len(g.Image), g.Config.Width, g.Config.Height)
 	}
-	// Over the frame budget: the first frame only, still a GIF (a different variant).
+	// Over the frame budget: the first frame only (a different variant).
 	save(url.Values{"img-avif": {"1"}, "img-max-frames": {"3"}})
-	resp = doGet(t, anon, s.ts.URL+"/cdn-img/"+animRel+"?w=60", chrome)
+	resp = doGet(t, anon, s.ts.URL+"/cdn-img/"+animRel+"?w=60&fm=gif", chrome)
 	body = readAll(resp)
 	g, err = gif.DecodeAll(bytes.NewReader(body))
 	if err != nil || len(g.Image) != 1 || resp.Header.Get("X-GoCDN-Animation") != "flattened" {
 		t.Fatalf("over budget: err %v, frames %d, header %q", err, len(g.Image), resp.Header.Get("X-GoCDN-Animation"))
+	}
+	resp = doGet(t, anon, s.ts.URL+"/cdn-img/"+animRel+"?w=60", chrome)
+	readAll(resp)
+	if resp.Header.Get("X-GoCDN-Animation") != "flattened" || resp.Header.Get("Content-Type") != "image/avif" {
+		t.Errorf("over budget, AVIF browser: %q %s", resp.Header.Get("X-GoCDN-Animation"), resp.Header.Get("Content-Type"))
 	}
 	// An explicit still format is honoured.
 	resp = doGet(t, anon, s.ts.URL+"/cdn-img/"+animRel+"?w=60&fm=png", chrome)

@@ -75,8 +75,13 @@ type gocdnSettings struct {
 	CDNDomain  string `json:"delivery-domain"`
 	// Uploads: multipart from this size on (MB), SSE-S3 and the storage class of new objects.
 	MultipartMB  int    `json:"multipart-threshold-mb"`
-	SSE          bool   `json:"server-side-encryption"` // x-amz-server-side-encryption: AES256
+	SSE          bool   `json:"server-side-encryption"` // legacy: = SSEType "s3" (x-amz-server-side-encryption: AES256)
 	StorageClass string `json:"storage-class"`          // "" = the bucket's default
+	// Encryption at rest: "" (the bucket's default), "s3" (SSE-S3), "kms" (SSE-KMS, key SSEKMSKey
+	// or the account's default aws/s3 key) or "customer" (SSE-C, 256-bit SSECKey, sealed at rest).
+	SSEType   string `json:"sse-type"`
+	SSEKMSKey string `json:"sse-kms-key-id"` // key ID, alias or ARN
+	SSECKey   string `json:"sse-c-key"`      // 64 hex characters or base64 of 32 bytes; sealed
 
 	// Offload
 	CopyToBucket  bool   `json:"copy-to-s3"`
@@ -116,6 +121,9 @@ type gocdnSettings struct {
 	PurgeZone     string `json:"purge-zone"`          // CloudFront distribution ID, Bunny pull zone ID, KeyCDN zone ID, Fastly service ID
 	PurgeKeyID    string `json:"purge-access-key-id"` // CloudFront: the IAM access key ID
 	PurgeSecret   string `json:"purge-secret"`        // sealed: CloudFront secret key, Bunny / KeyCDN API key, Fastly API token
+
+	// More CDNs purged together with the one above (gocdn_purge.go): each has its own credentials.
+	PurgeExtra []gocdnPurgeConf `json:"purge-extra,omitempty"`
 
 	// Connections replaced on the Storage screen while items still live there (gocdn_move.go).
 	Previous []gocdnConn `json:"previous-connections,omitempty"`
@@ -203,7 +211,7 @@ func (s *Server) gocdnLoad() gocdnSettings {
 		raw, _ := json.Marshal(env)
 		_ = json.Unmarshal(raw, &st)
 	}
-	return gocdnSanitize(st)
+	return s.gocdnTrackConn(gocdnSanitize(st))
 }
 
 func gocdnSanitize(st gocdnSettings) gocdnSettings {
@@ -233,6 +241,20 @@ func gocdnSanitize(st gocdnSettings) gocdnSettings {
 	clamp(&st.ImgMaxSource, 1, 400, 60)
 	clamp(&st.ImgMaxFrames, 1, 1000, 200)
 	clamp(&st.MultipartMB, 5, 5120, 16)
+	switch st.SSEType {
+	case "s3", "kms", "customer":
+	case "":
+		if st.SSE {
+			st.SSEType = "s3"
+		}
+	default:
+		st.SSEType = ""
+	}
+	st.SSE = st.SSEType == "s3"
+	st.SSEKMSKey = strings.TrimSpace(st.SSEKMSKey)
+	if !gocdnKMSKeyRe.MatchString(st.SSEKMSKey) {
+		st.SSEKMSKey = ""
+	}
 	st.StorageClass = strings.ToUpper(strings.TrimSpace(st.StorageClass))
 	if !gocdnStorageClassRe.MatchString(st.StorageClass) {
 		st.StorageClass = ""
@@ -246,8 +268,12 @@ func gocdnSanitize(st gocdnSettings) gocdnSettings {
 	st.CF = st.PurgeProvider == "cloudflare"
 	st.PurgeZone = strings.TrimSpace(st.PurgeZone)
 	st.PurgeKeyID = strings.TrimSpace(st.PurgeKeyID)
+	st.PurgeExtra = gocdnCleanExtras(st.PurgeProvider, st.PurgeExtra)
 	return st
 }
+
+// gocdnKMSKeyRe: a key ID, alias (alias/name) or ARN.
+var gocdnKMSKeyRe = regexp.MustCompile(`^[A-Za-z0-9:/_+=,.@-]{0,1000}$`)
 
 var gocdnStorageClassRe = regexp.MustCompile(`^[A-Z_]{0,40}$`)
 
@@ -257,8 +283,11 @@ func gocdnPutOptions(st gocdnSettings, rel string) gocdn.PutOptions {
 	if st.PublicRead {
 		o.ACL = "public-read"
 	}
-	if st.SSE {
+	switch st.SSEType {
+	case "s3":
 		o.SSE = "AES256"
+	case "kms":
+		o.SSE, o.SSEKMSKeyID = "aws:kms", st.SSEKMSKey
 	}
 	return o
 }
@@ -288,10 +317,16 @@ func (s *Server) gocdnSave(ctx context.Context, st gocdnSettings) error {
 	}
 	st.SecretKey = s.gocdnSeal(st.SecretKey)
 	st.CFToken = s.gocdnSeal(st.CFToken)
+	st.SSECKey = s.gocdnSeal(st.SSECKey)
 	st.PurgeSecret = s.gocdnSeal(st.PurgeSecret)
+	st.PurgeExtra = append([]gocdnPurgeConf(nil), st.PurgeExtra...)
+	for i := range st.PurgeExtra {
+		st.PurgeExtra[i].Secret = s.gocdnSeal(st.PurgeExtra[i].Secret)
+	}
 	st.Previous = append([]gocdnConn(nil), st.Previous...)
 	for i := range st.Previous {
 		st.Previous[i].SecretKey = s.gocdnSeal(st.Previous[i].SecretKey)
+		st.Previous[i].SSECKey = s.gocdnSeal(st.Previous[i].SSECKey)
 	}
 	st.ImgKey = s.gocdnSeal(st.ImgKey)
 	// Keys defined by WPGO_CDN_SETTINGS are never written to the database: what was stored before
@@ -312,6 +347,7 @@ func (s *Server) gocdnSave(ctx context.Context, st gocdnSettings) error {
 	if err := s.settings.Set(ctx, map[string]any{gocdnOption: m}); err != nil {
 		return err
 	}
+	s.gocdnMarkSeen(ctx, st)
 	s.gocdnPurge(ctx, true)
 	return nil
 }
@@ -407,6 +443,13 @@ func (s *Server) gocdnClient(st gocdnSettings) (*gocdn.Client, error) {
 	if c.Endpoint == "" {
 		return nil, errors.New("no endpoint: enter the S3 endpoint URL of your provider")
 	}
+	if st.SSEType == "customer" {
+		key, err := gocdn.ParseSSECKey(s.gocdnReveal(st.SSECKey))
+		if err != nil {
+			return nil, errors.New("SSE-C is on but no valid customer key is set")
+		}
+		c.SSECKey = key
+	}
 	return c, c.Validate()
 }
 
@@ -462,6 +505,8 @@ func gocdnObjectKey(st gocdnSettings, rel string) string {
 // background job.
 type gocdnRuntime struct {
 	mu       sync.Mutex
+	seen     *gocdnConn // the connection last seen in effect (plain secrets), nil until loaded
+	pending  *gocdnConn // a replaced connection being remembered (gocdnTrackConn)
 	job      *gocdnJobState
 	reRemove map[string]bool // fetched-back copies waiting to be deleted again
 }

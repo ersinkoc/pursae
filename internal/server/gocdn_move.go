@@ -2,9 +2,11 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 
 	"wpgo/internal/gocdn"
@@ -32,11 +34,16 @@ type gocdnConn struct {
 	PathStyle bool   `json:"use-path-style"`
 	Prefix    string `json:"object-prefix"`
 	CDNDomain string `json:"delivery-domain"`
+	SSECKey   string `json:"sse-c-key,omitempty"` // sealed; set when the objects were written with SSE-C
 }
 
 func gocdnConnOf(st gocdnSettings) gocdnConn {
-	return gocdnConn{Provider: st.Provider, Endpoint: gocdnEndpoint(st), Region: gocdnRegion(st), Bucket: st.Bucket, AccessKey: st.AccessKey,
+	c := gocdnConn{Provider: st.Provider, Endpoint: gocdnEndpoint(st), Region: gocdnRegion(st), Bucket: st.Bucket, AccessKey: st.AccessKey,
 		SecretKey: st.SecretKey, PathStyle: st.PathStyle, Prefix: st.Prefix, CDNDomain: st.CDNDomain}
+	if st.SSEType == "customer" {
+		c.SSECKey = st.SSECKey
+	}
+	return c
 }
 
 // same reports whether two connections reach the same bucket.
@@ -60,6 +67,13 @@ func gocdnConnFor(st gocdnSettings, it *gocdnItem) gocdnSettings {
 		if c.Bucket == it.Bucket && c.Provider == it.Provider && (it.Endpoint == "" || c.Endpoint == it.Endpoint) {
 			out.Provider, out.Endpoint, out.Region, out.Bucket = c.Provider, c.Endpoint, c.Region, c.Bucket
 			out.AccessKey, out.SecretKey, out.PathStyle, out.Prefix, out.CDNDomain = c.AccessKey, c.SecretKey, c.PathStyle, c.Prefix, c.CDNDomain
+			// The old objects were written with the old SSE-C key (or none).
+			out.SSECKey = c.SSECKey
+			if c.SSECKey != "" {
+				out.SSEType = "customer"
+			} else if out.SSEType == "customer" {
+				out.SSEType = ""
+			}
 			return out
 		}
 	}
@@ -89,6 +103,119 @@ func (s *Server) gocdnRememberConn(ctx context.Context, prev, next gocdnSettings
 	}
 	next.Previous = keep
 	return next
+}
+
+// The connection in effect is also kept in the option gocdn_conn_seen (secrets sealed). The Storage
+// screen remembers a replaced connection itself (gocdnRememberConn), but settings that come from
+// WPGO_CDN_SETTINGS change behind the plugin's back: the next load after the environment variable
+// names another bucket, endpoint or provider compares the connection in effect with the one seen
+// last time and remembers the old one, so files offloaded to the old bucket are still reached with
+// the old credentials (and keep their URLs) until the move job has copied them.
+const gocdnSeenOption = "gocdn_conn_seen"
+
+// gocdnPlainConn is a connection with its secrets opened.
+func (s *Server) gocdnPlainConn(c gocdnConn) gocdnConn {
+	c.SecretKey, c.SSECKey = s.gocdnReveal(c.SecretKey), s.gocdnReveal(c.SSECKey)
+	return c
+}
+
+// gocdnTrackConn notices a changed connection (see above) and returns the settings with the old
+// one among Previous. Nothing runs while the plugin is off or has no bucket.
+func (s *Server) gocdnTrackConn(st gocdnSettings) gocdnSettings {
+	if st.Bucket == "" || s.store == nil || s.store.Pool == nil || s.settings == nil || !s.gocdnOn() {
+		return st
+	}
+	cur := s.gocdnPlainConn(gocdnConnOf(st))
+	rt := s.gocdnRT()
+	rt.mu.Lock()
+	if rt.seen == nil {
+		var stored gocdnConn
+		if v := s.settings.Get(gocdnSeenOption); v != nil {
+			raw, _ := json.Marshal(v)
+			_ = json.Unmarshal(raw, &stored)
+		}
+		stored = s.gocdnPlainConn(stored)
+		rt.seen = &stored
+	}
+	prev := *rt.seen
+	pending := rt.pending
+	changed := prev != cur
+	if changed {
+		rt.seen = &cur
+		if prev.Bucket != "" && !prev.same(cur) {
+			rt.pending = &prev
+			pending = &prev
+		}
+	}
+	rt.mu.Unlock()
+	if pending != nil {
+		st.Previous = gocdnWithPrevious(st.Previous, *pending, cur)
+	}
+	if changed {
+		go s.gocdnPersistSeen(cur, prev)
+	}
+	return st
+}
+
+// gocdnWithPrevious adds c to a list of previous connections unless it is the current one or there.
+func gocdnWithPrevious(list []gocdnConn, c, cur gocdnConn) []gocdnConn {
+	if c.same(cur) {
+		return list
+	}
+	for _, e := range list {
+		if e.same(c) {
+			return list
+		}
+	}
+	return append(append([]gocdnConn(nil), list...), c)
+}
+
+// gocdnPersistSeen stores the new connection in effect and, when it replaced another bucket that
+// still holds items, the old connection in the settings' previous connections.
+func (s *Server) gocdnPersistSeen(cur, prev gocdnConn) {
+	ctx := context.Background()
+	rt := s.gocdnRT()
+	defer func() {
+		rt.mu.Lock()
+		if rt.pending != nil && rt.pending.same(prev) {
+			rt.pending = nil
+		}
+		rt.mu.Unlock()
+	}()
+	st := s.gocdnLoad()
+	if prev.Bucket == "" || prev.same(cur) { // first sight, or only credentials changed: nothing to remember
+		s.gocdnMarkSeen(ctx, st)
+		return
+	}
+	old := gocdnSettings{Provider: prev.Provider, Endpoint: prev.Endpoint, Region: prev.Region, Bucket: prev.Bucket, AccessKey: prev.AccessKey,
+		SecretKey: prev.SecretKey, PathStyle: prev.PathStyle, Prefix: prev.Prefix, CDNDomain: prev.CDNDomain, SSECKey: prev.SSECKey}
+	if prev.SSECKey != "" {
+		old.SSEType = "customer"
+	}
+	st = s.gocdnRememberConn(ctx, old, st)
+	if err := s.gocdnSave(ctx, st); err != nil { // also records the connection in effect
+		slog.Warn("gocdn: remembering the previous storage connection", "err", err)
+	}
+}
+
+// gocdnMarkSeen records st as the connection in effect (after the Storage screen saved it).
+func (s *Server) gocdnMarkSeen(ctx context.Context, st gocdnSettings) {
+	if st.Bucket == "" {
+		return
+	}
+	cur := s.gocdnPlainConn(gocdnConnOf(st))
+	rt := s.gocdnRT()
+	rt.mu.Lock()
+	rt.seen = &cur
+	rt.mu.Unlock()
+	sealed := cur
+	sealed.SecretKey, sealed.SSECKey = s.gocdnSeal(cur.SecretKey), s.gocdnSeal(cur.SSECKey)
+	raw, _ := json.Marshal(sealed)
+	var m map[string]any
+	_ = json.Unmarshal(raw, &m)
+	if err := s.settings.Set(ctx, map[string]any{gocdnSeenOption: m}); err != nil {
+		slog.Warn("gocdn: storing the connection in effect", "err", err)
+	}
 }
 
 // gocdnMoveFilter is the SQL condition (on gocdn_items g) of items not in the configured bucket

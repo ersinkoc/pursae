@@ -15,13 +15,16 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"wpgo/internal/gocdn"
 )
 
 // Purging. Every change that moves URLs (settings, a finished bulk job, the Purge screen) empties
-// WPGo Cache through purgeAll. One CDN can be configured on the Purge screen: Cloudflare (zone ID
+// WPGo Cache through purgeAll. One or more CDNs can be configured on the Purge screen (the main
+// provider and any number of additional ones, each with its own credentials; a purge goes to all of
+// them at once and a failure is reported per provider). The providers: Cloudflare (zone ID
 // + API token with "Zone › Cache Purge"), Amazon CloudFront (distribution ID + IAM key with
 // cloudfront:CreateInvalidation; invalidations signed with GoCDN's own SigV4 signer), BunnyCDN
 // (pull zone ID + account API key), KeyCDN (zone ID + API key) or Fastly (service ID + API token
@@ -72,19 +75,68 @@ func gocdnPurgerByKey(k string) *gocdnPurger {
 	return nil
 }
 
-// gocdnPurgeReady reports whether a CDN purge provider is fully configured.
-func (s *Server) gocdnPurgeReady(st gocdnSettings) bool {
-	p := gocdnPurgerByKey(st.PurgeProvider)
-	switch {
-	case st.PurgeProvider == "" || p == nil:
-		return false
-	case st.PurgeProvider == "cloudflare":
-		return gocdnZoneID.MatchString(st.CFZone) && s.gocdnReveal(st.CFToken) != ""
-	}
-	return p.Zone.MatchString(st.PurgeZone) && s.gocdnReveal(st.PurgeSecret) != "" && (p.KeyIDLabel == "" || st.PurgeKeyID != "")
+// gocdnPurgeConf is an additional purge provider: the primary one lives in the flat settings
+// (PurgeProvider and its fields), more of them here. For Cloudflare Zone is the zone ID and Secret
+// the API token; the other providers use the zone / service ID, key ID (CloudFront) and secret.
+type gocdnPurgeConf struct {
+	Provider string `json:"provider"`
+	Zone     string `json:"zone"`
+	KeyID    string `json:"access-key-id,omitempty"`
+	Secret   string `json:"secret"` // sealed
 }
 
-// gocdnPurge empties the page cache; withCDN also purges the CDN (in the background) when
+// gocdnCleanExtras drops unknown, duplicate and empty providers and the primary one.
+func gocdnCleanExtras(primary string, in []gocdnPurgeConf) []gocdnPurgeConf {
+	var out []gocdnPurgeConf
+	seen := map[string]bool{primary: true, "": true}
+	for _, c := range in {
+		if seen[c.Provider] || gocdnPurgerByKey(c.Provider) == nil {
+			continue
+		}
+		seen[c.Provider] = true
+		c.Zone, c.KeyID = strings.TrimSpace(c.Zone), strings.TrimSpace(c.KeyID)
+		out = append(out, c)
+	}
+	return out
+}
+
+// gocdnPurgeTargets are the configured purge providers, the primary one first (whether or not
+// their credentials are complete: gocdnTargetReady says).
+func gocdnPurgeTargets(st gocdnSettings) []gocdnPurgeConf {
+	var out []gocdnPurgeConf
+	switch st.PurgeProvider {
+	case "":
+	case "cloudflare":
+		out = append(out, gocdnPurgeConf{Provider: "cloudflare", Zone: st.CFZone, Secret: st.CFToken})
+	default:
+		out = append(out, gocdnPurgeConf{Provider: st.PurgeProvider, Zone: st.PurgeZone, KeyID: st.PurgeKeyID, Secret: st.PurgeSecret})
+	}
+	return append(out, gocdnCleanExtras(st.PurgeProvider, st.PurgeExtra)...)
+}
+
+// gocdnTargetReady reports whether a purge provider's credentials are complete.
+func (s *Server) gocdnTargetReady(t gocdnPurgeConf) bool {
+	p := gocdnPurgerByKey(t.Provider)
+	switch {
+	case t.Provider == "" || p == nil:
+		return false
+	case t.Provider == "cloudflare":
+		return gocdnZoneID.MatchString(t.Zone) && s.gocdnReveal(t.Secret) != ""
+	}
+	return p.Zone.MatchString(t.Zone) && s.gocdnReveal(t.Secret) != "" && (p.KeyIDLabel == "" || t.KeyID != "")
+}
+
+// gocdnPurgeReady reports whether any CDN purge provider is fully configured.
+func (s *Server) gocdnPurgeReady(st gocdnSettings) bool {
+	for _, t := range gocdnPurgeTargets(st) {
+		if s.gocdnTargetReady(t) {
+			return true
+		}
+	}
+	return false
+}
+
+// gocdnPurge empties the page cache; withCDN also purges the CDNs (in the background) when
 // automatic purging is on.
 func (s *Server) gocdnPurge(ctx context.Context, withCDN bool) {
 	s.purgeAll(ctx)
@@ -92,39 +144,103 @@ func (s *Server) gocdnPurge(ctx context.Context, withCDN bool) {
 		return
 	}
 	st := s.gocdnLoad()
-	if st.PurgeProvider != "" && st.CFAuto && s.gocdnOn() {
-		go func() {
-			if err := s.gocdnCDNPurge(context.Background(), st, nil); err != nil {
-				slog.Warn("gocdn: CDN purge", "provider", st.PurgeProvider, "err", err)
-			}
-		}()
+	if len(gocdnPurgeTargets(st)) > 0 && st.CFAuto && s.gocdnOn() {
+		go s.gocdnCDNPurgeLogged(st, nil)
 	}
 }
 
-// gocdnCDNPurge purges the listed URLs, or everything with none, at the configured provider.
+// gocdnCDNPurgeLogged purges every provider and logs a warning for each one that fails.
+func (s *Server) gocdnCDNPurgeLogged(st gocdnSettings, urls []string) {
+	for _, r := range s.gocdnCDNPurgeEach(context.Background(), st, urls) {
+		if r.Err != nil {
+			slog.Warn("gocdn: CDN purge", "provider", r.Provider, "err", r.Err)
+		}
+	}
+}
+
+// gocdnPurgeResult is the outcome at one provider.
+type gocdnPurgeResult struct {
+	Provider, Name string
+	Err            error
+}
+
+// gocdnCDNPurgeEach purges the listed URLs, or everything with none, at every configured provider
+// (all at once: one slow or failing provider does not hold up the others) and reports each.
+func (s *Server) gocdnCDNPurgeEach(ctx context.Context, st gocdnSettings, urls []string) []gocdnPurgeResult {
+	targets := gocdnPurgeTargets(st)
+	res := make([]gocdnPurgeResult, len(targets))
+	var wg sync.WaitGroup
+	for i, t := range targets {
+		name := t.Provider
+		if p := gocdnPurgerByKey(t.Provider); p != nil && p.Name != "" {
+			name = p.Name
+		}
+		res[i] = gocdnPurgeResult{Provider: t.Provider, Name: name}
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			res[i].Err = s.gocdnPurgeOne(ctx, st, t, urls)
+		}()
+	}
+	wg.Wait()
+	return res
+}
+
+// gocdnCDNPurge purges the listed URLs, or everything with none, at all configured providers. The
+// error names every provider that failed.
 func (s *Server) gocdnCDNPurge(ctx context.Context, st gocdnSettings, urls []string) error {
-	p := gocdnPurgerByKey(st.PurgeProvider)
-	if st.PurgeProvider == "" || p == nil {
+	res := s.gocdnCDNPurgeEach(ctx, st, urls)
+	if len(res) == 0 {
 		return errors.New("no CDN is configured for purging")
 	}
-	if st.PurgeProvider == "cloudflare" {
+	return gocdnPurgeError(res)
+}
+
+// gocdnPurgeError is nil when every provider succeeded, else one message with a part per failure
+// (the provider's name first unless the provider's own message starts with it).
+func gocdnPurgeError(res []gocdnPurgeResult) error {
+	var parts []string
+	for _, r := range res {
+		if r.Err == nil {
+			continue
+		}
+		msg := r.Err.Error()
+		if !strings.HasPrefix(msg, r.Name) {
+			msg = r.Name + ": " + msg
+		}
+		parts = append(parts, msg)
+	}
+	if len(parts) == 0 {
+		return nil
+	}
+	return errors.New(strings.Join(parts, "; "))
+}
+
+// gocdnPurgeOne purges at one provider.
+func (s *Server) gocdnPurgeOne(ctx context.Context, st gocdnSettings, t gocdnPurgeConf, urls []string) error {
+	p := gocdnPurgerByKey(t.Provider)
+	if t.Provider == "" || p == nil {
+		return errors.New("unknown CDN provider")
+	}
+	if t.Provider == "cloudflare" {
+		st.CFZone, st.CFToken = t.Zone, t.Secret
 		return s.gocdnCloudflarePurge(ctx, st, urls)
 	}
-	if !s.gocdnPurgeReady(st) {
+	if !s.gocdnTargetReady(t) {
 		return fmt.Errorf("%s is not configured: the %s and the %s are needed", p.Name, strings.ToLower(p.ZoneLabel), strings.ToLower(p.SecretName))
 	}
-	secret := s.gocdnReveal(st.PurgeSecret)
+	secret := s.gocdnReveal(t.Secret)
 	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
-	switch st.PurgeProvider {
+	switch t.Provider {
 	case "cloudfront":
-		return gocdnCloudFrontInvalidate(ctx, st.PurgeZone, st.PurgeKeyID, secret, urls)
+		return gocdnCloudFrontInvalidate(ctx, t.Zone, t.KeyID, secret, urls)
 	case "bunny":
-		return gocdnBunnyPurge(ctx, st.PurgeZone, secret, urls)
+		return gocdnBunnyPurge(ctx, t.Zone, secret, urls)
 	case "keycdn":
-		return gocdnKeyCDNPurge(ctx, st.PurgeZone, secret, urls)
+		return gocdnKeyCDNPurge(ctx, t.Zone, secret, urls)
 	case "fastly":
-		return gocdnFastlyPurge(ctx, st.PurgeZone, secret, urls)
+		return gocdnFastlyPurge(ctx, t.Zone, secret, urls)
 	}
 	return errors.New("unknown CDN provider")
 }
