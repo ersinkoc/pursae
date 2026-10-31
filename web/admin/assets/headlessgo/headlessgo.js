@@ -852,6 +852,9 @@
 					check( 'Draft & publish', sc.draftAndPublish, function ( v ) {
 						sc.draftAndPublish = v;
 					}, 'entries are drafts until published; turning it off publishes every entry' ),
+					check( 'Review before publishing', sc.reviewWorkflow, function ( v ) {
+						sc.reviewWorkflow = v;
+					}, 'a draft must be submitted for review and approved by an editor before it can be published (needs draft & publish)' ),
 					check( 'Internationalization', sc.localized, function ( v ) {
 						sc.localized = v;
 					}, model.golylang ? 'one version per Golylang language' : 'locales come from Golylang when it is active' ) ] ) ] ) );
@@ -1391,6 +1394,64 @@
 		} );
 	}
 
+	// Edit lock: renew it while the page is open, tell the user when somebody takes it over, give it up
+	// when the page closes. A locked entry (someone else edits it) is read-only.
+	function initLock( model ) {
+		var form = document.getElementById( 'hg-entry-form' );
+		var holder = document.getElementById( 'hg-lock-data' );
+		if ( ! form || model.isNew ) {
+			return;
+		}
+		function field( n ) {
+			var i = form.querySelector( '[name="' + n + '"]' );
+			return i ? i.value : '';
+		}
+		function freeze( by ) {
+			form.querySelectorAll( '#hg-editor input, #hg-editor select, #hg-editor textarea, #hg-editor button, .hg-actions button' ).forEach( function ( x ) {
+				x.disabled = true;
+			} );
+			var hasBanner = document.getElementById( 'hg-lock-banner' );
+			if ( ! hasBanner ) {
+				var n = el( 'div', { id: 'hg-lock-banner', class: 'notice notice-warning' }, [ el( 'p', { text: by + ' is now editing this entry. Reload the page to take over editing.' } ) ] );
+				form.parentNode.insertBefore( n, form );
+			}
+		}
+		if ( model.locked ) {
+			freeze( holder ? holder.getAttribute( 'data-by' ) : '' );
+			return;
+		}
+		function send( op, beacon ) {
+			var fd = new FormData();
+			fd.append( '_wpnonce', field( '_wpnonce' ) );
+			[ 'type', 'doc', 'locale' ].forEach( function ( k ) {
+				fd.append( k, field( k ) );
+			} );
+			fd.append( 'op', op );
+			if ( beacon && navigator.sendBeacon ) {
+				navigator.sendBeacon( '/wp-admin/headlessgo/lock', fd );
+				return Promise.resolve( null );
+			}
+			return fetch( '/wp-admin/headlessgo/lock', { method: 'POST', credentials: 'same-origin', body: fd } ).then( function ( r ) {
+				return r.json();
+			} );
+		}
+		var beat = ( holder ? parseInt( holder.getAttribute( 'data-beat' ), 10 ) : 0 ) || 15;
+		var timer = setInterval( function () {
+			send( 'heartbeat' ).then( function ( r ) {
+				if ( r && r.locked ) {
+					clearInterval( timer );
+					freeze( r.by );
+				}
+			} ).catch( function () {} );
+		}, beat * 1000 );
+		window.addEventListener( 'pagehide', function () {
+			send( 'release', true );
+		} );
+		form.addEventListener( 'submit', function () {
+			clearInterval( timer );
+		} );
+	}
+
 	function boot() {
 		var g = document.getElementById( 'hg-gql-form' );
 		if ( g ) {
@@ -1398,7 +1459,9 @@
 		}
 		var m = document.getElementById( 'hg-editor-model' );
 		if ( m ) {
-			initEditor( JSON.parse( m.textContent ) );
+			var model = JSON.parse( m.textContent );
+			initEditor( model );
+			initLock( model );
 		}
 		var b = document.getElementById( 'hg-builder-model' );
 		if ( b ) {

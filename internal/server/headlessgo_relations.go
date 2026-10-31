@@ -296,8 +296,9 @@ func (h *hgCoercer) inverse(sc *hgSchema, doc, loc string) []hgInverseChange {
 }
 
 // hgApplyInverse writes planned inverse changes for document doc: it is added to or removed from
-// the owning field of each owning entry, in its draft and its published version.
-func (s *Server) hgApplyInverse(ctx context.Context, doc string, changes []hgInverseChange) error {
+// the owning field of each owning entry, in its draft and its published version. Each owning entry
+// that changed gets a "link" history version; from names the entry the change was made from.
+func (s *Server) hgApplyInverse(ctx context.Context, doc string, changes []hgInverseChange, from string, userID int64) error {
 	if len(changes) == 0 {
 		return nil
 	}
@@ -306,6 +307,11 @@ func (s *Server) hgApplyInverse(ctx context.Context, doc string, changes []hgInv
 		return err
 	}
 	defer tx.Rollback(ctx)
+	type linked struct {
+		e    *hgEntry
+		note string
+	}
+	var done []linked
 	edit := func(raw []byte, field string, add, single bool) ([]byte, bool) {
 		if raw == nil {
 			return nil, false
@@ -366,13 +372,65 @@ func (s *Server) hgApplyInverse(ctx context.Context, doc string, changes []hgInv
 						pubArg = np
 					}
 				}
-				if _, err := tx.Exec(ctx, `UPDATE hg_entries SET data = $2, published_data = $3, updated_at = now() WHERE id = $1`, id, nd, pubArg); err != nil {
+				oe, err := hgScanEntry(tx.QueryRow(ctx, `UPDATE hg_entries SET data = $2, published_data = $3, updated_at = now() WHERE id = $1 RETURNING `+hgEntryCols, id, nd, pubArg))
+				if err != nil {
 					return err
 				}
+				verb := "Unlinked"
+				if step.add {
+					verb = "Linked"
+				}
+				done = append(done, linked{oe, fmt.Sprintf("%s %s via %s", verb, from, ch.field)})
 			}
 		}
 	}
-	return tx.Commit(ctx)
+	if err := tx.Commit(ctx); err != nil {
+		return err
+	}
+	for _, d := range done {
+		s.hgRecordVersionNote(ctx, d.e, "link", userID, d.note)
+	}
+	return nil
+}
+
+// hgEntryLabel names an entry in a history note: Book "Dune" (or its document id).
+func hgEntryLabel(sc *hgSchema, data map[string]any, doc string) string {
+	if t, _ := data[sc.TitleField()].(string); t != "" {
+		return fmt.Sprintf("%s %q", sc.DisplayName, t)
+	}
+	return sc.DisplayName + " " + doc
+}
+
+// hgRecordLinkHistory records, for a save of an entry through its owning relation fields, a "link"
+// version on each entry that was linked or unlinked (their inverse field now lists something else).
+func (s *Server) hgRecordLinkHistory(ctx context.Context, sc *hgSchema, e *hgEntry, old map[string]any, userID int64) {
+	reg := s.hgReg(ctx)
+	for i := range sc.Fields {
+		f := &sc.Fields[i]
+		if f.Type != "relation" || f.MappedBy != "" || f.InversedBy == "" {
+			continue
+		}
+		target := reg.Get(f.Target)
+		if target == nil {
+			continue
+		}
+		was, now := hgList(old[f.Name]), hgList(e.Data[f.Name])
+		for _, step := range []struct {
+			from, to []any
+			verb     string
+		}{{now, was, "Linked"}, {was, now, "Unlinked"}} {
+			for _, x := range step.from {
+				if hgAnyIn(x, step.to) {
+					continue
+				}
+				te, err := s.hgGetEntry(ctx, target.UID, fmt.Sprint(x), s.hgOwnerLocale(ctx, target, e.Locale))
+				if err != nil || te.ID == e.ID {
+					continue
+				}
+				s.hgRecordVersionNote(ctx, te, "link", userID, fmt.Sprintf("%s by %s via %s", step.verb, hgEntryLabel(sc, e.Data, e.DocumentID), f.InversedBy))
+			}
+		}
+	}
 }
 
 // hgUnlinkDocument removes a deleted document (no locale version left) from every relation that

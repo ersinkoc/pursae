@@ -45,6 +45,8 @@ type hgGQLSchema struct {
 	types    map[string]*hgGQLTypeDef
 	query    string
 	mutation string
+	// subscription is the root type of subscriptions ("" when there is no content type).
+	subscription string
 }
 
 func (sc *hgGQLSchema) add(t *hgGQLTypeDef) *hgGQLTypeDef {
@@ -106,7 +108,7 @@ func (ex *hgGQLExec) schema() *hgGQLSchema {
 		return ex.sch
 	}
 	reg := ex.s.hgReg(ex.c)
-	g := &hgGQLSchema{types: map[string]*hgGQLTypeDef{}, query: "Query", mutation: "Mutation"}
+	g := &hgGQLSchema{types: map[string]*hgGQLTypeDef{}, query: "Query", mutation: "Mutation", subscription: "Subscription"}
 	for _, sc := range hgGQLScalars {
 		g.add(&hgGQLTypeDef{kind: "SCALAR", name: sc[0], desc: sc[1]})
 	}
@@ -237,8 +239,19 @@ func (ex *hgGQLExec) schema() *hgGQLSchema {
 	q := &hgGQLTypeDef{kind: "OBJECT", name: "Query", desc: "HeadlessGo content"}
 	m := &hgGQLTypeDef{kind: "OBJECT", name: "Mutation", desc: "Create, update, delete, publish and unpublish entries"}
 	status := gqlNamed("PublicationStatus")
+	sub := &hgGQLTypeDef{kind: "OBJECT", name: "Subscription", desc: "Live changes of entries, delivered as server-sent events"}
 	for _, sc := range reg.Types() {
 		p := hgPascal(sc)
+		subArgs := []*hgGQLInput{{name: "locale", typ: str}}
+		if sc.IsCollection() {
+			subArgs = append([]*hgGQLInput{{name: "documentId", typ: gqlNamed("ID")}}, subArgs...)
+		}
+		for _, ev := range hgSubEvents {
+			if ev.suffix == "Published" && !sc.DraftAndPublish {
+				continue
+			}
+			sub.fields = append(sub.fields, &hgGQLFieldDef{name: hgCamel(sc.SingularName) + ev.suffix, desc: "An entry of " + sc.DisplayName + " was " + strings.ToLower(ev.suffix), args: subArgs, typ: gqlNamed(p)})
+		}
 		read := []*hgGQLInput{{name: "locale", typ: str}, {name: "status", typ: status}}
 		write := []*hgGQLInput{{name: "data", typ: gqlNonNull(gqlNamed(p + "Input"))}, {name: "locale", typ: str}, {name: "status", typ: status}}
 		docArg := &hgGQLInput{name: "documentId", typ: gqlNonNull(gqlNamed("ID"))}
@@ -275,6 +288,11 @@ func (ex *hgGQLExec) schema() *hgGQLSchema {
 		g.add(m)
 	} else {
 		g.mutation = ""
+	}
+	if len(sub.fields) > 0 {
+		g.add(sub)
+	} else {
+		g.subscription = ""
 	}
 	ex.sch = g
 	return g
@@ -338,7 +356,12 @@ func (g *hgGQLSchema) schemaObj() *hgIntro {
 				return (*hgIntro)(nil)
 			}
 			return g.typeObj(g.mutation)
-		case "subscriptionType", "description":
+		case "subscriptionType":
+			if g.subscription == "" {
+				return (*hgIntro)(nil)
+			}
+			return g.typeObj(g.subscription)
+		case "description":
 			return nil
 		case "types":
 			names := make([]string, 0, len(g.types))
