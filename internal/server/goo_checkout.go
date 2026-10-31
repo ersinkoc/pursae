@@ -414,6 +414,22 @@ func (s *Server) gooCreateOrderFromCart(c *gin.Context, cart *gooCart, d *gooChe
 			return nil, err
 		}
 	}
+	var releases []func()
+	undo := func() {
+		for _, r := range releases {
+			r()
+		}
+	}
+	for _, h := range gooCheckoutReserveHooks {
+		release, err := h(s, ctx, cart, o)
+		if err != nil {
+			undo()
+			return nil, err
+		}
+		if release != nil {
+			releases = append(releases, release)
+		}
+	}
 	// The Store API's checkout-draft order becomes this order (it keeps its id and creation date).
 	if sess := cart.sess; sess != nil && sess.Data.Extra[gooDraftKey] != nil {
 		if d, err := s.gooGetOrder(ctx, gooInt(sess.Data.Extra[gooDraftKey])); err == nil && d.Status == "checkout-draft" {
@@ -423,6 +439,7 @@ func (s *Server) gooCreateOrderFromCart(c *gin.Context, cart *gooCart, d *gooChe
 		sess.touch()
 	}
 	if err := s.gooSaveOrder(ctx, o, true); err != nil {
+		undo()
 		return nil, err
 	}
 	_ = s.gooAddOrderNote(ctx, o, "Order created.", false, "")

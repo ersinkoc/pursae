@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 
@@ -400,5 +401,67 @@ func TestGooGiftCardKeptOnFailedOrder(t *testing.T) {
 	}
 	if g, _ := srv.gcGet(ctx, card.ID); g.Balance != 100 {
 		t.Errorf("card after the failed order was cancelled: %v", g.Balance)
+	}
+}
+
+// Two checkouts at once must not both spend one gift card balance or one points balance: the debit is
+// taken atomically before the order is saved, and the second checkout fails.
+func TestGooGiftCardAndPointsCannotBeDoubleSpent(t *testing.T) {
+	_, _, srv := gooSite(t)
+	ctx := context.Background()
+	for _, k := range []string{gcKey, gptsKey} {
+		if err := srv.gooSetExtension(ctx, k, true); err != nil {
+			t.Fatal(err)
+		}
+	}
+	card := &gcCard{Initial: 100, Recipient: "r@example.test"}
+	if err := srv.gcCreate(ctx, card, 1, "test"); err != nil {
+		t.Fatal(err)
+	}
+	cust := gxaCustomer(t, srv, "points@example.test")
+	if err := srv.gptsLog(ctx, cust.ID, 100, "admin-adjustment", 0, ""); err != nil {
+		t.Fatal(err)
+	}
+	order := func() *gooOrder {
+		return &gooOrder{CustomerID: cust.ID, Meta: map[string]any{"_wc_points_redeemed": float64(100)},
+			Items: []*gooOrderItem{{Type: "fee", Name: "Gift card", Quantity: 1, Total: -100, Meta: map[string]any{"_fee_id": gcFeePref + card.Code}}}}
+	}
+	var wg sync.WaitGroup
+	var gcOK, ptsOK atomic.Int32
+	for i := 0; i < 8; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if _, err := gcReserve(srv, ctx, nil, order()); err == nil {
+				gcOK.Add(1)
+			}
+			if _, err := gptsReserve(srv, ctx, nil, order()); err == nil {
+				ptsOK.Add(1)
+			}
+		}()
+	}
+	wg.Wait()
+	if gcOK.Load() != 1 || ptsOK.Load() != 1 {
+		t.Fatalf("concurrent checkouts that spent the balance: gift card %d, points %d (want 1 each)", gcOK.Load(), ptsOK.Load())
+	}
+	if g, _ := srv.gcGet(ctx, card.ID); g.Balance != 0 || g.Status != "redeemed" {
+		t.Errorf("card after one debit: %v %s", g.Balance, g.Status)
+	}
+	if b := srv.gptsBalance(ctx, cust.ID); b != 0 {
+		t.Errorf("points balance %d", b)
+	}
+
+	// A checkout that fails after the reservation gives the balance back.
+	card2 := &gcCard{Initial: 100, Recipient: "r@example.test"}
+	_ = srv.gcCreate(ctx, card2, 1, "test")
+	o := order()
+	o.Items[0].Meta["_fee_id"] = gcFeePref + card2.Code
+	release, err := gcReserve(srv, ctx, nil, o)
+	if err != nil {
+		t.Fatal(err)
+	}
+	release()
+	if g, _ := srv.gcGet(ctx, card2.ID); g.Balance != 100 || g.Status != "active" {
+		t.Errorf("card after release: %v %s", g.Balance, g.Status)
 	}
 }
