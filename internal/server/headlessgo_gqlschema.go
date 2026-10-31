@@ -118,6 +118,8 @@ func (ex *hgGQLExec) schema() *hgGQLSchema {
 	g.add(&hgGQLTypeDef{kind: "OBJECT", name: "Pagination", fields: []*hgGQLFieldDef{{name: "total", typ: intT}, {name: "page", typ: intT}, {name: "pageSize", typ: intT},
 		{name: "pageCount", typ: intT}, {name: "start", typ: intT}, {name: "limit", typ: intT}}})
 	g.add(&hgGQLTypeDef{kind: "OBJECT", name: "DeleteMutationResponse", fields: []*hgGQLFieldDef{{name: "documentId", typ: gqlNonNull(gqlNamed("ID"))}}})
+	g.add(&hgGQLTypeDef{kind: "OBJECT", name: "EntryReference", desc: "An entry that was unpublished or deleted", fields: []*hgGQLFieldDef{
+		{name: "documentId", typ: gqlNonNull(gqlNamed("ID"))}, {name: "locale", typ: str}}})
 	g.add(&hgGQLTypeDef{kind: "OBJECT", name: "UploadFile", desc: "A file of the media library", fields: []*hgGQLFieldDef{
 		{name: "id", typ: gqlNonNull(gqlNamed("ID"))}, {name: "name", typ: str}, {name: "title", typ: str}, {name: "alternativeText", typ: str}, {name: "caption", typ: str},
 		{name: "width", typ: intT}, {name: "height", typ: intT}, {name: "formats", typ: gqlNamed("JSON")}, {name: "ext", typ: str}, {name: "mime", typ: str},
@@ -138,6 +140,35 @@ func (ex *hgGQLExec) schema() *hgGQLSchema {
 		t.inputs = append(t.inputs, &hgGQLInput{name: "in", typ: gqlList(gqlNamed(sc))}, &hgGQLInput{name: "notIn", typ: gqlList(gqlNamed(sc))},
 			&hgGQLInput{name: "between", typ: gqlList(gqlNamed(sc))}, &hgGQLInput{name: "null", typ: boolT}, &hgGQLInput{name: "notNull", typ: boolT})
 		g.add(t)
+	}
+	// Filters of what relations and media point at, as the REST API accepts them. Every object
+	// filter also takes null / notNull: "has none" / "has some" for a relation, media or component.
+	nullOps := func(name string) []*hgGQLInput {
+		return []*hgGQLInput{{name: "and", typ: gqlList(gqlNamed(name))}, {name: "or", typ: gqlList(gqlNamed(name))}, {name: "not", typ: gqlNamed(name)},
+			{name: "null", typ: boolT}, {name: "notNull", typ: boolT}}
+	}
+	for name, cols := range map[string][]string{"UploadFileFiltersInput": {"name", "mime", "alternativeText", "caption"},
+		"WpPostFiltersInput": {"slug", "title", "status"}, "WpUserFiltersInput": {"username", "slug", "name"}} {
+		t := &hgGQLTypeDef{kind: "INPUT_OBJECT", name: name, inputs: []*hgGQLInput{{name: "id", typ: gqlNamed("IDFilterInput")}}}
+		for _, c := range cols {
+			t.inputs = append(t.inputs, &hgGQLInput{name: c, typ: gqlNamed("StringFilterInput")})
+		}
+		t.inputs = append(t.inputs, nullOps(name)...)
+		g.add(t)
+	}
+	g.add(&hgGQLTypeDef{kind: "INPUT_OBJECT", name: "DynamicZoneFiltersInput", desc: "Dynamic zones can only be tested for being empty",
+		inputs: []*hgGQLInput{{name: "null", typ: boolT}, {name: "notNull", typ: boolT}}})
+	filterName := func(uid string) string {
+		switch uid {
+		case "wp:post", "wp:page":
+			return "WpPostFiltersInput"
+		case "wp:user":
+			return "WpUserFiltersInput"
+		}
+		if t := reg.Get(uid); t != nil {
+			return hgPascal(t) + "FiltersInput"
+		}
+		return ""
 	}
 	typeName := func(uid string) string {
 		switch uid {
@@ -162,7 +193,7 @@ func (ex *hgGQLExec) schema() *hgGQLSchema {
 			filt.inputs = append(filt.inputs, &hgGQLInput{name: "id", typ: gqlNamed("IDFilterInput")})
 		} else {
 			obj.fields = append(obj.fields, &hgGQLFieldDef{name: "documentId", typ: gqlNonNull(gqlNamed("ID"))})
-			filt.inputs = append(filt.inputs, &hgGQLInput{name: "documentId", typ: gqlNamed("IDFilterInput")})
+			filt.inputs = append(filt.inputs, &hgGQLInput{name: "id", typ: gqlNamed("IDFilterInput")}, &hgGQLInput{name: "documentId", typ: gqlNamed("IDFilterInput")})
 		}
 		for i := range sc.Fields {
 			f := &sc.Fields[i]
@@ -181,11 +212,14 @@ func (ex *hgGQLExec) schema() *hgGQLSchema {
 			switch f.Type {
 			case "media":
 				ref = gqlNamed("UploadFile")
+				filt.inputs = append(filt.inputs, &hgGQLInput{name: f.Name, typ: gqlNamed("UploadFileFiltersInput")})
 				in.inputs = append(in.inputs, &hgGQLInput{name: f.Name, typ: hgGQLMaybeList(f, gqlNamed("ID"))})
 			case "relation":
 				ref = gqlNamed(typeName(f.Target))
+				if fn := filterName(f.Target); fn != "" {
+					filt.inputs = append(filt.inputs, &hgGQLInput{name: f.Name, typ: gqlNamed(fn)})
+				}
 				if t := reg.Get(f.Target); t != nil {
-					filt.inputs = append(filt.inputs, &hgGQLInput{name: f.Name, typ: gqlNamed(hgPascal(t) + "FiltersInput")})
 					if f.multi() {
 						args = []*hgGQLInput{{name: "filters", typ: gqlNamed(hgPascal(t) + "FiltersInput")}, {name: "sort", typ: gqlList(str)}}
 					}
@@ -206,6 +240,7 @@ func (ex *hgGQLExec) schema() *hgGQLSchema {
 				}
 				g.add(u)
 				ref = gqlNamed(u.name)
+				filt.inputs = append(filt.inputs, &hgGQLInput{name: f.Name, typ: gqlNamed("DynamicZoneFiltersInput")})
 				in.inputs = append(in.inputs, &hgGQLInput{name: f.Name, typ: gqlList(gqlNamed("JSON"))})
 			}
 			if ref == nil {
@@ -227,8 +262,7 @@ func (ex *hgGQLExec) schema() *hgGQLSchema {
 				filt.inputs = append(filt.inputs, &hgGQLInput{name: "locale", typ: gqlNamed("StringFilterInput")})
 			}
 		}
-		filt.inputs = append(filt.inputs, &hgGQLInput{name: "and", typ: gqlList(gqlNamed(filt.name))}, &hgGQLInput{name: "or", typ: gqlList(gqlNamed(filt.name))},
-			&hgGQLInput{name: "not", typ: gqlNamed(filt.name)})
+		filt.inputs = append(filt.inputs, nullOps(filt.name)...)
 		g.add(obj)
 		g.add(filt)
 		if !sc.IsComponent() {
@@ -239,7 +273,7 @@ func (ex *hgGQLExec) schema() *hgGQLSchema {
 	q := &hgGQLTypeDef{kind: "OBJECT", name: "Query", desc: "Pursae Headless content"}
 	m := &hgGQLTypeDef{kind: "OBJECT", name: "Mutation", desc: "Create, update, delete, publish and unpublish entries"}
 	status := gqlNamed("PublicationStatus")
-	sub := &hgGQLTypeDef{kind: "OBJECT", name: "Subscription", desc: "Live changes of entries, delivered as server-sent events"}
+	sub := &hgGQLTypeDef{kind: "OBJECT", name: "Subscription", desc: "Live changes of entries, delivered as server-sent events or over a WebSocket (graphql-transport-ws)"}
 	for _, sc := range reg.Types() {
 		p := hgPascal(sc)
 		subArgs := []*hgGQLInput{{name: "locale", typ: str}}
@@ -247,10 +281,14 @@ func (ex *hgGQLExec) schema() *hgGQLSchema {
 			subArgs = append([]*hgGQLInput{{name: "documentId", typ: gqlNamed("ID")}}, subArgs...)
 		}
 		for _, ev := range hgSubEvents {
-			if ev.suffix == "Published" && !sc.DraftAndPublish {
+			if ev.dp && !sc.DraftAndPublish {
 				continue
 			}
-			sub.fields = append(sub.fields, &hgGQLFieldDef{name: hgCamel(sc.SingularName) + ev.suffix, desc: "An entry of " + sc.DisplayName + " was " + strings.ToLower(ev.suffix), args: subArgs, typ: gqlNamed(p)})
+			typ := gqlNamed(p)
+			if ev.ref {
+				typ = gqlNonNull(gqlNamed("EntryReference"))
+			}
+			sub.fields = append(sub.fields, &hgGQLFieldDef{name: hgCamel(sc.SingularName) + ev.suffix, desc: "An entry of " + sc.DisplayName + " was " + strings.ToLower(ev.suffix), args: subArgs, typ: typ})
 		}
 		read := []*hgGQLInput{{name: "locale", typ: str}, {name: "status", typ: status}}
 		write := []*hgGQLInput{{name: "data", typ: gqlNonNull(gqlNamed(p + "Input"))}, {name: "locale", typ: str}, {name: "status", typ: status}}
