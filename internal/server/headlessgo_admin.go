@@ -1221,7 +1221,7 @@ func (s *Server) hgAdminEntryPost(c *gin.Context, sc *hgSchema, do string) {
 		if c.PostForm("all_locales") == "1" || !sc.Localized {
 			target = "*"
 		}
-		deleted, err := s.hgDeleteEntries(c, sc, doc, target)
+		deleted, err := s.hgDeleteEntries(c, sc, doc, target, u.ID)
 		if err != nil {
 			hgRedirect(c, url.Values{"page": {"entries"}, "type": {sc.UID}}, "", errors.New("The entry no longer exists."))
 			return

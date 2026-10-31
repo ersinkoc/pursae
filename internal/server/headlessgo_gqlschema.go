@@ -685,7 +685,7 @@ func (ex *hgGQLExec) mutation(f *hgGQLField) (any, error) {
 			} else if !sc.Localized {
 				target = ""
 			}
-			deleted, err := ex.s.hgDeleteEntries(ex.c, sc, doc, target)
+			deleted, err := ex.s.hgDeleteEntries(ex.c, sc, doc, target, 0)
 			if err != nil {
 				return nil, hgGQLWriteError(err)
 			}

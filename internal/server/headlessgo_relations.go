@@ -227,6 +227,9 @@ type hgInverseChange struct {
 	locale string // owner locale column
 	add    []string
 	remove []string
+	// The inverse side: its type, the locale of the entry being saved and the inverse field (for
+	// the history of an entry that loses an owner to it).
+	self, selfLocale, inverse string
 }
 
 // inverse plans the writes of the inverse fields of an entry save (doc in entry locale loc): the
@@ -270,7 +273,7 @@ func (h *hgCoercer) inverse(sc *hgSchema, doc, loc string) []hgInverseChange {
 			}
 		}
 		want, _ := nv.([]any)
-		ch := hgInverseChange{owner: owner, field: of.Name, single: !of.multi(), locale: oloc}
+		ch := hgInverseChange{owner: owner, field: of.Name, single: !of.multi(), locale: oloc, self: sc.UID, selfLocale: loc, inverse: f.Name}
 		for _, x := range want {
 			d := fmt.Sprint(x)
 			if !hgAnyIn(d, cur) {
@@ -297,7 +300,9 @@ func (h *hgCoercer) inverse(sc *hgSchema, doc, loc string) []hgInverseChange {
 
 // hgApplyInverse writes planned inverse changes for document doc: it is added to or removed from
 // the owning field of each owning entry, in its draft and its published version. Each owning entry
-// that changed gets a "link" history version; from names the entry the change was made from.
+// that changed gets a "link" history version; from names the entry the change was made from. When
+// a single owning field moves to doc, the entry it pointed at before loses an owner through its
+// inverse field: it gets a "link" version too.
 func (s *Server) hgApplyInverse(ctx context.Context, doc string, changes []hgInverseChange, from string, userID int64) error {
 	if len(changes) == 0 {
 		return nil
@@ -312,6 +317,27 @@ func (s *Server) hgApplyInverse(ctx context.Context, doc string, changes []hgInv
 		note string
 	}
 	var done []linked
+	type lost struct {
+		uid, doc, locale, note string
+	}
+	var losers []lost
+	// previous lists the ids a single owning field held other than doc (in the draft or the
+	// published version).
+	previous := func(field string, raws ...[]byte) []string {
+		var out []string
+		for _, raw := range raws {
+			var m map[string]any
+			if raw == nil || json.Unmarshal(raw, &m) != nil {
+				continue
+			}
+			for _, x := range hgList(m[field]) {
+				if d := fmt.Sprint(x); d != doc && !containsStr(out, d) {
+					out = append(out, d)
+				}
+			}
+		}
+		return out
+	}
 	edit := func(raw []byte, field string, add, single bool) ([]byte, bool) {
 		if raw == nil {
 			return nil, false
@@ -357,6 +383,10 @@ func (s *Server) hgApplyInverse(ctx context.Context, doc string, changes []hgInv
 					ch.owner.UID, od, ch.locale).Scan(&id, &data, &pub); err != nil {
 					continue
 				}
+				var prev []string
+				if step.add && ch.single {
+					prev = previous(ch.field, data, pub)
+				}
 				nd, c1 := edit(data, ch.field, step.add, ch.single)
 				np, c2 := edit(pub, ch.field, step.add, ch.single)
 				if !c1 && !c2 {
@@ -381,6 +411,10 @@ func (s *Server) hgApplyInverse(ctx context.Context, doc string, changes []hgInv
 					verb = "Linked"
 				}
 				done = append(done, linked{oe, fmt.Sprintf("%s %s via %s", verb, from, ch.field)})
+				for _, pd := range prev {
+					losers = append(losers, lost{ch.self, pd, ch.selfLocale,
+						fmt.Sprintf("Unlinked by %s via %s: it now belongs to %s", hgEntryLabel(ch.owner, oe.Data, od), ch.inverse, from)})
+				}
 			}
 		}
 	}
@@ -389,6 +423,11 @@ func (s *Server) hgApplyInverse(ctx context.Context, doc string, changes []hgInv
 	}
 	for _, d := range done {
 		s.hgRecordVersionNote(ctx, d.e, "link", userID, d.note)
+	}
+	for _, l := range losers {
+		if le, err := s.hgGetEntry(ctx, l.uid, l.doc, l.locale); err == nil {
+			s.hgRecordVersionNote(ctx, le, "link", userID, l.note)
+		}
 	}
 	return nil
 }
@@ -433,10 +472,41 @@ func (s *Server) hgRecordLinkHistory(ctx context.Context, sc *hgSchema, e *hgEnt
 	}
 }
 
+// hgRecordDeletedOwner records, for a deleted entry, a "link" version on every entry its owning
+// two-way relation fields pointed at (in the draft or the published version): their inverse field
+// no longer lists it.
+func (s *Server) hgRecordDeletedOwner(ctx context.Context, sc *hgSchema, e *hgEntry, userID int64) {
+	reg := s.hgReg(ctx)
+	for i := range sc.Fields {
+		f := &sc.Fields[i]
+		if f.Type != "relation" || f.MappedBy != "" || f.InversedBy == "" {
+			continue
+		}
+		target := reg.Get(f.Target)
+		if target == nil {
+			continue
+		}
+		var ids []string
+		for _, x := range append(hgList(e.Data[f.Name]), hgList(e.Published[f.Name])...) {
+			if d := fmt.Sprint(x); !containsStr(ids, d) {
+				ids = append(ids, d)
+			}
+		}
+		for _, d := range ids {
+			te, err := s.hgGetEntry(ctx, target.UID, d, s.hgOwnerLocale(ctx, target, e.Locale))
+			if err != nil {
+				continue
+			}
+			s.hgRecordVersionNote(ctx, te, "link", userID, fmt.Sprintf("Unlinked by %s via %s: it was deleted", hgEntryLabel(sc, e.Data, e.DocumentID), f.InversedBy))
+		}
+	}
+}
+
 // hgUnlinkDocument removes a deleted document (no locale version left) from every relation that
 // points at it: owning fields of every type, also inside components and dynamic zones, in drafts
-// and published versions.
-func (s *Server) hgUnlinkDocument(ctx context.Context, uid, doc string) error {
+// and published versions. Every entry that lost a link gets a "link" history version naming the
+// deleted document (label).
+func (s *Server) hgUnlinkDocument(ctx context.Context, uid, doc, label string, userID int64) error {
 	var remaining bool
 	if err := s.store.Pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM hg_entries WHERE type_uid = $1 AND document_id = $2)`, uid, doc).Scan(&remaining); err != nil || remaining {
 		return err
@@ -447,15 +517,32 @@ func (s *Server) hgUnlinkDocument(ctx context.Context, uid, doc string) error {
 		return err
 	}
 	defer tx.Rollback(ctx)
+	changed := map[int64][]string{} // entry id => the fields that lost the link
+	note := func(id int64, field string) {
+		if !containsStr(changed[id], field) {
+			changed[id] = append(changed[id], field)
+		}
+	}
 	for _, t := range reg.Types() {
 		for _, f := range t.Fields {
 			if f.Type != "relation" || f.Target != uid || f.MappedBy != "" {
 				continue
 			}
 			for _, col := range []string{"data", "published_data"} {
-				if _, err := tx.Exec(ctx, `UPDATE hg_entries SET `+col+` = CASE WHEN (`+col+`->$2::text) - $3::text = '[]'::jsonb THEN `+col+` - $2::text
+				rows, err := tx.Query(ctx, `UPDATE hg_entries SET `+col+` = CASE WHEN (`+col+`->$2::text) - $3::text = '[]'::jsonb THEN `+col+` - $2::text
 					ELSE jsonb_set(`+col+`, ARRAY[$2::text], (`+col+`->$2::text) - $3::text) END
-					WHERE type_uid = $1 AND `+col+` IS NOT NULL AND jsonb_typeof(`+col+`->$2::text) = 'array' AND (`+col+`->$2::text) ? $3::text`, t.UID, f.Name, doc); err != nil {
+					WHERE type_uid = $1 AND `+col+` IS NOT NULL AND jsonb_typeof(`+col+`->$2::text) = 'array' AND (`+col+`->$2::text) ? $3::text RETURNING id`, t.UID, f.Name, doc)
+				if err != nil {
+					return err
+				}
+				for rows.Next() {
+					var id int64
+					if rows.Scan(&id) == nil {
+						note(id, f.Name)
+					}
+				}
+				rows.Close()
+				if err := rows.Err(); err != nil {
 					return err
 				}
 			}
@@ -471,6 +558,7 @@ func (s *Server) hgUnlinkDocument(ctx context.Context, uid, doc string) error {
 		if len(fields) == 0 {
 			continue
 		}
+		var hit []string // the fields of the object being fixed that lost the link
 		fix := func(obj map[string]any) {
 			for _, name := range fields {
 				list, ok := obj[name].([]any)
@@ -483,6 +571,10 @@ func (s *Server) hgUnlinkDocument(ctx context.Context, uid, doc string) error {
 						keep = append(keep, x)
 					}
 				}
+				if len(keep) == len(list) {
+					continue
+				}
+				hit = append(hit, cs.UID+"."+name)
 				if len(keep) == 0 {
 					delete(obj, name)
 				} else {
@@ -490,11 +582,35 @@ func (s *Server) hgUnlinkDocument(ctx context.Context, uid, doc string) error {
 				}
 			}
 		}
-		if err := hgMigrateEntries(ctx, tx, reg, cs.UID, fix); err != nil {
-			return err
+		for _, t := range reg.Types() {
+			if !hgSchemaReaches(reg, t, cs.UID, 0) {
+				continue
+			}
+			tt := t
+			ids, err := hgRewriteTypeChanged(ctx, tx, tt.UID, func(obj map[string]any) {
+				hgWalkComponents(reg, tt, obj, cs.UID, fix, 0)
+			}, func() []string { h := hit; hit = nil; return h })
+			if err != nil {
+				return err
+			}
+			for id, fs := range ids {
+				for _, f := range fs {
+					note(id, f)
+				}
+			}
 		}
 	}
-	return tx.Commit(ctx)
+	if err := tx.Commit(ctx); err != nil {
+		return err
+	}
+	for id, fields := range changed {
+		e, err := hgScanEntry(s.store.Pool.QueryRow(ctx, `SELECT `+hgEntryCols+` FROM hg_entries WHERE id = $1`, id))
+		if err != nil {
+			continue
+		}
+		s.hgRecordVersionNote(ctx, e, "link", userID, fmt.Sprintf("Unlinked %s via %s: it was deleted", label, strings.Join(fields, ", ")))
+	}
+	return nil
 }
 
 // Filtering and sorting through relations -----------------------------------------------------------

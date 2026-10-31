@@ -578,7 +578,7 @@ func (s *Server) hgDelete(c *gin.Context, a *hgAuth, sc *hgSchema, doc string) {
 	} else if !sc.Localized {
 		loc = ""
 	}
-	deleted, err := s.hgDeleteEntries(c, sc, doc, loc)
+	deleted, err := s.hgDeleteEntries(c, sc, doc, loc, 0)
 	if err != nil {
 		hgFail(c, err)
 		return

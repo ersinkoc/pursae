@@ -1066,8 +1066,9 @@ func (s *Server) hgDiscardDraft(ctx context.Context, sc *hgSchema, doc, locale s
 }
 
 // hgDeleteEntries deletes a document's version in one locale, or in every locale when locale is
-// "*". It returns the deleted entries.
-func (s *Server) hgDeleteEntries(ctx context.Context, sc *hgSchema, doc, locale string) ([]*hgEntry, error) {
+// "*". It returns the deleted entries. userID (0: an API call) is recorded in the history of the
+// entries that lose their links to the document when no version of it is left.
+func (s *Server) hgDeleteEntries(ctx context.Context, sc *hgSchema, doc, locale string, userID int64) ([]*hgEntry, error) {
 	q := `DELETE FROM hg_entries WHERE type_uid = $1 AND document_id = $2 AND locale = $3 RETURNING ` + hgEntryCols
 	args := []any{sc.UID, doc, locale}
 	if locale == "*" {
@@ -1089,7 +1090,10 @@ func (s *Server) hgDeleteEntries(ctx context.Context, sc *hgSchema, doc, locale 
 		return nil, errHGNotFound
 	}
 	rows.Close()
-	if err := s.hgUnlinkDocument(ctx, sc.UID, doc); err != nil {
+	for _, e := range out {
+		s.hgRecordDeletedOwner(ctx, sc, e, userID)
+	}
+	if err := s.hgUnlinkDocument(ctx, sc.UID, doc, hgEntryLabel(sc, out[0].Data, doc), userID); err != nil {
 		return out, err
 	}
 	return out, nil
