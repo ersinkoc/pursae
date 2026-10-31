@@ -7,11 +7,15 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"log"
+	"net"
 	"net/http"
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
+	"syscall"
 	"time"
 )
 
@@ -23,8 +27,36 @@ import (
 
 const gooWebhookMaxFailures = 5
 
-// gooWebhookClient delivers webhooks (a variable so tests can swap it).
-var gooWebhookClient = &http.Client{Timeout: 15 * time.Second}
+// gooWebhookClient delivers webhooks (a variable so tests can swap it). Like wp_safe_remote_request,
+// which WooCommerce delivers with, it connects to public addresses only: the address is checked when
+// the connection is made, after DNS resolution and on every redirect, so a delivery URL cannot reach
+// the server's own services, the private network or a cloud metadata endpoint.
+var gooWebhookClient = &http.Client{
+	Timeout: 15 * time.Second,
+	Transport: &http.Transport{TLSHandshakeTimeout: 10 * time.Second, DialContext: (&net.Dialer{Timeout: 10 * time.Second,
+		Control: func(_, address string, _ syscall.RawConn) error {
+			host, _, err := net.SplitHostPort(address)
+			if err != nil {
+				return err
+			}
+			if !gooWebhookAllowPrivate.Load() && !publicIP(net.ParseIP(host)) {
+				return errors.New("webhook delivery URL points at a private network address")
+			}
+			return nil
+		}}).DialContext},
+	CheckRedirect: func(req *http.Request, via []*http.Request) error {
+		if len(via) >= 5 {
+			return errors.New("too many redirects")
+		}
+		if req.URL.Scheme != "http" && req.URL.Scheme != "https" {
+			return errors.New("unsupported redirect scheme")
+		}
+		return nil
+	},
+}
+
+// gooWebhookAllowPrivate lets tests deliver to httptest servers on the loopback address.
+var gooWebhookAllowPrivate atomic.Bool
 
 // gooWebhookWG tracks deliveries in flight (tests wait on it).
 var gooWebhookWG sync.WaitGroup

@@ -4,9 +4,12 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"net"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"strings"
+	"sync/atomic"
 	"testing"
 )
 
@@ -107,5 +110,35 @@ func TestGooAPIKeyAssignmentNeedsEditUser(t *testing.T) {
 	var perms string
 	if err := srv.store.Pool.QueryRow(ctx, `SELECT user_id, permissions FROM goo_api_keys WHERE id = $1`, adminKey).Scan(&owner, &perms); err != nil || owner != 1 || perms != "read" {
 		t.Errorf("admin key after shop manager edits: owner %d perms %q err %v", owner, perms, err)
+	}
+}
+
+// Webhook deliveries refuse loopback / private / metadata addresses, also when a public URL redirects
+// there (WooCommerce delivers with wp_safe_remote_request).
+func TestGooWebhookRefusesPrivateAddresses(t *testing.T) {
+	_, _, srv := gooSite(t)
+	ctx := context.Background()
+	var hits atomic.Int32
+	internal := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { hits.Add(1) }))
+	defer internal.Close()
+	var id int64
+	if err := srv.store.Pool.QueryRow(ctx, `INSERT INTO goo_webhooks (name, status, topic, delivery_url, secret) VALUES ('Internal', 'active', 'product.created', $1, 's')
+		RETURNING id`, internal.URL+"/admin").Scan(&id); err != nil {
+		t.Fatal(err)
+	}
+	gooMakeSimple(t, srv, "Hooked", 1, nil)
+	gooWebhookWG.Wait()
+	if hits.Load() != 0 {
+		t.Fatal("webhook delivered to a loopback address")
+	}
+	var failures int
+	_ = srv.store.Pool.QueryRow(ctx, `SELECT failures FROM goo_webhooks WHERE id = $1`, id).Scan(&failures)
+	if failures != 1 {
+		t.Errorf("refused delivery not counted as a failure: %d", failures)
+	}
+	for _, ip := range []string{"127.0.0.1", "10.1.2.3", "169.254.169.254", "100.64.0.1", "0.0.0.0", "::1"} {
+		if publicIP(net.ParseIP(ip)) {
+			t.Errorf("%s treated as public", ip)
+		}
 	}
 }
