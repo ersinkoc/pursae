@@ -147,6 +147,8 @@ func (m *Manager) Throttled(ctx context.Context, ip string) (bool, error) {
 func (m *Manager) RecordAttempt(ctx context.Context, ip, login string, success bool) {
 	_, _ = m.pool.Exec(ctx, `INSERT INTO login_attempts(ip, login, success) VALUES ($1,$2,$3)`, ip, login, success)
 	if success {
-		_, _ = m.pool.Exec(ctx, `DELETE FROM login_attempts WHERE ip = $1 AND NOT success`, ip)
+		// Only this login's failures: a success on one account must not reset the count of guesses
+		// made at another account from the same address.
+		_, _ = m.pool.Exec(ctx, `DELETE FROM login_attempts WHERE ip = $1 AND lower(login) = lower($2) AND NOT success`, ip, login)
 	}
 }

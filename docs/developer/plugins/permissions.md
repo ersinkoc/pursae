@@ -13,7 +13,7 @@ with `permission_denied` — logged, not fatal.
 | Permission | Shown to the admin as | Unlocks |
 |------------|----------------------|---------|
 | `options:read` | Read site options | `GetOption` and friends (secrets and other plugins' options are hidden); reading the plugin's own settings page values |
-| `options:write` | Create and change site options | `UpdateOption` for `<slug>_*` and `plugin_<slug>_*` options |
+| `options:write` | Create and change site options | `UpdateOption` for `<slug>_*` and `plugin_<slug>_*` options. A core option is never writable, even when its name starts with your slug (a plugin slugged `default` cannot write `default_role`), and neither are names starting with `auth_`, `wpgo_`, `native_` or another plugin's `plugin_` prefix |
 | `posts:read` | Read posts and receive post data from post lifecycle hooks | `GetPost`, `QueryPosts`; hooks `save_post`, `save_post_*`, `wp_insert_post`, `publish_post`, `transition_post_status`, `before_delete_post`, `deleted_post`, `trashed_post`, `untrashed_post`, `post_updated`, `wpgo_post_stats` |
 | `posts:write` | Create and change posts | `InsertPost`, `UpdatePost`; hooks `wp_insert_post_data`, `wp_insert_attachment_data`, `pre_post_update`, `content_save_pre`, `title_save_pre`, `excerpt_save_pre` |
 | `users:read` | See who the current user is | `CurrentUser` |

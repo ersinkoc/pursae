@@ -252,8 +252,9 @@ func (s *Server) listComments(sb *strings.Builder, list []*store.Comment, p *sto
 			name = "Anonymous"
 		}
 		author := html.EscapeString(name)
-		if cm.AuthorURL != "" {
-			author = fmt.Sprintf(`<a href="%s" class="url" rel="ugc external nofollow">%s</a>`, html.EscapeString(cm.AuthorURL), author)
+		// Stored URLs are re-checked here: rows written before the check, or by other paths, must not become script links.
+		if link := commentAuthorURL(cm.AuthorURL); link != "" {
+			author = fmt.Sprintf(`<a href="%s" class="url" rel="ugc external nofollow">%s</a>`, html.EscapeString(link), author)
 		}
 		t := cm.CreatedAt.In(loc)
 		fmt.Fprintf(sb, `<li id="comment-%d" class="%s">
@@ -364,6 +365,49 @@ func (s *Server) commentForm(c *gin.Context, p *store.Post, lb *links.Builder, u
 var linkRe = regexp.MustCompile(`(?i)<a\s|https?://`)
 
 // commentPost is wp-comments-post.php: validation, moderation rules and the redirect back to the post.
+// commentAuthorURL is esc_url_raw() for a comment author's URL, which is shown as a link: only http and
+// https URLs with a host are kept. Like the comment form, a value without a scheme gets "http://";
+// "javascript:alert(1)" becomes "http://javascript:alert(1)", which does not parse, so it is dropped.
+// Control characters (browsers delete tab and newline from a URL) and every other scheme give "".
+func commentAuthorURL(raw string) string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" || hasControlChar(raw) {
+		return ""
+	}
+	if l := strings.ToLower(raw); !strings.HasPrefix(l, "http://") && !strings.HasPrefix(l, "https://") {
+		// "example.com:8080/x" is a host and port; "javascript:x", "mailto:a@b" and "ftp://h" carry another scheme.
+		if i := strings.Index(raw, ":"); i > 0 && schemeLike(raw[:i]) && (strings.HasPrefix(raw[i+1:], "//") || !startsWithPort(raw[i+1:])) {
+			return ""
+		}
+		raw = "http://" + raw
+	}
+	u, err := url.Parse(raw)
+	if err != nil || u.Hostname() == "" || (u.Scheme != "http" && u.Scheme != "https") || strings.ContainsAny(u.Host, " ") {
+		return ""
+	}
+	return raw
+}
+
+// schemeLike reports whether s has the shape of a URL scheme (letters, digits, + - .; starting with a letter).
+func schemeLike(s string) bool {
+	for i, r := range s {
+		letter := r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z'
+		if i == 0 && !letter || !letter && (r < '0' || r > '9') && r != '+' && r != '-' && r != '.' {
+			return false
+		}
+	}
+	return s != ""
+}
+
+// startsWithPort reports whether s begins with digits that end the authority (end, "/", "?" or "#").
+func startsWithPort(s string) bool {
+	n := 0
+	for n < len(s) && s[n] >= '0' && s[n] <= '9' {
+		n++
+	}
+	return n > 0 && (n == len(s) || s[n] == '/' || s[n] == '?' || s[n] == '#')
+}
+
 func (s *Server) commentPost(c *gin.Context) {
 	ctx := c.Request.Context()
 	u := currentUser(c)
@@ -398,10 +442,7 @@ func (s *Server) commentPost(c *gin.Context) {
 	} else {
 		cm.AuthorName = strings.TrimSpace(c.PostForm("author"))
 		cm.AuthorEmail = strings.TrimSpace(c.PostForm("email"))
-		cm.AuthorURL = strings.TrimSpace(c.PostForm("url"))
-		if cm.AuthorURL != "" && !strings.HasPrefix(cm.AuthorURL, "http://") && !strings.HasPrefix(cm.AuthorURL, "https://") {
-			cm.AuthorURL = "http://" + cm.AuthorURL
-		}
+		cm.AuthorURL = commentAuthorURL(c.PostForm("url"))
 		if s.settings.Bool("require_name_email") {
 			if cm.AuthorName == "" || cm.AuthorEmail == "" {
 				s.commentDie(c, http.StatusBadRequest, "<strong>Error:</strong> Please fill the required fields.")

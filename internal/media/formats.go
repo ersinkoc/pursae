@@ -139,6 +139,17 @@ func svgDimensions(data []byte) (int, int) {
 var svgDropElements = map[string]bool{"script": true, "foreignobject": true, "iframe": true, "embed": true,
 	"object": true, "audio": true, "video": true, "handler": true, "listener": true}
 
+// urlAsParsed is v the way a browser reads it as a URL: ASCII tab, CR, LF and the other control characters
+// are deleted wherever they occur, then surrounding spaces are trimmed. "java&#9;script:" is a script URL.
+func urlAsParsed(v string) string {
+	return strings.TrimSpace(strings.Map(func(r rune) rune {
+		if r < 0x20 || r == 0x7f {
+			return -1
+		}
+		return r
+	}, v))
+}
+
 var svgScriptURL = regexp.MustCompile(`(?i)^\s*(javascript|vbscript|livescript):`)
 var svgSafeData = regexp.MustCompile(`(?i)^\s*data:image/(png|jpe?g|gif|webp|avif);`)
 var svgBadCSS = regexp.MustCompile(`(?i)(@import|expression\s*\(|javascript:|url\s*\(\s*['"]?\s*(?:javascript|https?:|//))`)
@@ -201,6 +212,7 @@ func SanitizeSVG(data []byte) ([]byte, error) {
 				case strings.HasPrefix(an, "on"):
 					continue
 				case an == "href" || an == "src" || an == "action" || an == "formaction":
+					v = urlAsParsed(v)
 					lv := strings.ToLower(v)
 					if svgScriptURL.MatchString(v) || (strings.HasPrefix(lv, "data:") && !svgSafeData.MatchString(v)) {
 						continue

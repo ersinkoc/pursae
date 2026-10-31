@@ -14,6 +14,9 @@ type Config struct {
 	Secret      string // optional; generated and stored in settings when empty
 	WebDir      string // when set, web assets and templates are read from this directory and reloaded per request
 	HubURL      string // the WordPress Go Hub (marketplace, release checks, site count); "off" disables it
+	// TrustedProxies lists the proxies (IPs or CIDRs, comma separated) whose X-Forwarded-For / X-Real-IP is believed
+	// when deriving the visitor address. Empty: loopback and private ranges; "none": no proxy is trusted.
+	TrustedProxies string
 	// LangDir holds the downloaded language packs (WP_LANG_DIR); default: "languages" next to the uploads.
 	LangDir         string
 	TranslationsAPI string // the WordPress.org translation API; default https://api.wordpress.org/translations
@@ -33,6 +36,7 @@ func Load() Config {
 		Secret:          os.Getenv("WPGO_SECRET"),
 		WebDir:          os.Getenv("WPGO_WEB_DIR"),
 		HubURL:          strings.TrimRight(env("WPGO_HUB_URL", "https://hub.wordpressgo.dev"), "/"),
+		TrustedProxies:  os.Getenv("WPGO_TRUSTED_PROXIES"),
 		LangDir:         os.Getenv("WPGO_LANG_DIR"),
 		TranslationsAPI: os.Getenv("WPGO_TRANSLATIONS_API"),
 		SMTPHost:        os.Getenv("WPGO_SMTP_HOST"),

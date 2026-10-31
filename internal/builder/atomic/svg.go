@@ -63,6 +63,18 @@ var (
 
 var svgBadElements = map[string]bool{"script": true, "foreignobject": true, "iframe": true, "embed": true, "object": true, "handler": true, "listener": true}
 
+// svgScriptScheme reports whether a link value is a script URL as a browser reads it: tab, CR, LF and the other
+// control characters are deleted wherever they occur ("java&#9;script:" is still javascript:).
+func svgScriptScheme(v string) bool {
+	flat := strings.ToLower(strings.TrimSpace(strings.Map(func(r rune) rune {
+		if r < 0x20 || r == 0x7f {
+			return -1
+		}
+		return r
+	}, v)))
+	return strings.HasPrefix(flat, "javascript:") || strings.HasPrefix(flat, "vbscript:") || strings.HasPrefix(flat, "livescript:")
+}
+
 func sanitizeSVG(content string) string {
 	content = svgCommentRe.ReplaceAllString(content, "")
 	content = svgCSSComRe.ReplaceAllString(content, "")
@@ -108,7 +120,7 @@ func sanitizeSVG(content string) string {
 					if strings.HasPrefix(low, "on") {
 						continue
 					}
-					if (low == "href") && strings.HasPrefix(strings.ToLower(strings.TrimSpace(a.Value)), "javascript:") {
+					if (low == "href" || low == "src") && svgScriptScheme(a.Value) {
 						continue
 					}
 					b.WriteString(" " + an + `="` + xmlEscapeAttr(a.Value) + `"`)

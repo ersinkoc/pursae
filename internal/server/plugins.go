@@ -25,6 +25,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"wpgo/internal/plugins"
+	"wpgo/internal/settings"
 	"wpgo/internal/store"
 )
 
@@ -192,11 +193,34 @@ func (h *pluginHost) GetOption(_ context.Context, plugin string, name string) (a
 // UpdateOption only writes options in the plugin's own namespace (<slug>_* with dashes as underscores,
 // and the plugin_<slug>_* options of its settings page).
 func (h *pluginHost) UpdateOption(ctx context.Context, plugin, name string, value any) error {
-	prefix := strings.ReplaceAll(plugin, "-", "_") + "_"
-	if !strings.HasPrefix(name, prefix) && !strings.HasPrefix(name, plugins.SettingsOptionPrefix(plugin)) {
-		return fmt.Errorf("plugins may only write options starting with %q", prefix)
+	if !pluginOptionAllowed(plugin, name) {
+		return fmt.Errorf("plugins may only write their own options (%q or %q) and never a core option", strings.ReplaceAll(plugin, "-", "_")+"_*", plugins.SettingsOptionPrefix(plugin)+"*")
 	}
 	return h.s.settings.Set(ctx, map[string]any{name: value})
+}
+
+// pluginOptionAllowed reports whether plugin may write the option name. The options table is one flat key
+// space shared with the core, so the prefix test alone is not enough: a plugin slugged "default" would
+// reach default_role, "plugin-allow" would reach plugin_allow_unsigned. Known core options (every default)
+// and the core's own prefixes are therefore never writable by a plugin.
+func pluginOptionAllowed(plugin, name string) bool {
+	own := plugins.SettingsOptionPrefix(plugin) // plugin_<slug>_: the options of its settings page
+	prefix := strings.ReplaceAll(plugin, "-", "_") + "_"
+	if !strings.HasPrefix(name, prefix) && !strings.HasPrefix(name, own) {
+		return false
+	}
+	if _, core := settings.Defaults[name]; core {
+		return false
+	}
+	if strings.HasPrefix(name, own) {
+		return true
+	}
+	for _, p := range []string{"auth_", "wpgo_", "native_", "plugin_"} {
+		if strings.HasPrefix(name, p) {
+			return false
+		}
+	}
+	return true
 }
 
 var pluginHTTP = &http.Client{

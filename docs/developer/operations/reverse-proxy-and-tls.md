@@ -9,8 +9,16 @@ WordPress Go serves plain HTTP. Terminate TLS in a proxy and set `WPGO_SITE_URL`
 `https://` address (or change Settings › General after installing).
 
 The server trusts `X-Forwarded-Proto: https` to decide that a request is secure: it then sets
-`Strict-Transport-Security` and secure cookies, and generates `https://` links. Send
-`X-Forwarded-For` so login throttling sees the visitor's address instead of the proxy's.
+`Strict-Transport-Security` and secure cookies, and generates `https://` links.
+
+Send `X-Forwarded-For` so login throttling, the comment flood check and the logs see the visitor's address
+instead of the proxy's. The header is believed only when the request comes from a **trusted proxy**: by
+default loopback and the private ranges (`127.0.0.0/8`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `::1`,
+`fc00::/7`), which is where a proxy next to the server normally sits. A client that reaches the server directly
+from the internet is not trusted, so it cannot pick its own address. If your proxy has a public address, list it
+in `WPGO_TRUSTED_PROXIES` (comma separated IPs and CIDRs); `none` trusts no proxy. Without a trusted proxy in
+front, every visitor would otherwise share the proxy's address, and five failed logins from one visitor would lock
+everybody out for 15 minutes.
 
 ## Caddy
 

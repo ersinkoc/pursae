@@ -408,7 +408,7 @@ func (s *Server) editCommentAjax(c *gin.Context) {
 	}
 	cm.AuthorName = strings.TrimSpace(c.PostForm("newcomment_author"))
 	cm.AuthorEmail = strings.TrimSpace(c.PostForm("newcomment_author_email"))
-	cm.AuthorURL = strings.TrimSpace(c.PostForm("newcomment_author_url"))
+	cm.AuthorURL = commentAuthorURL(c.PostForm("newcomment_author_url"))
 	cm.Content = c.PostForm("content")
 	if !u.Can("unfiltered_html", nil) {
 		cm.Content = wp.KsesPost(cm.Content)
@@ -654,7 +654,7 @@ func (s *Server) commentScreen(c *gin.Context) {
 		}
 		cm.AuthorName = strings.TrimSpace(c.PostForm("newcomment_author"))
 		cm.AuthorEmail = strings.TrimSpace(c.PostForm("newcomment_author_email"))
-		cm.AuthorURL = strings.TrimSpace(c.PostForm("newcomment_author_url"))
+		cm.AuthorURL = commentAuthorURL(c.PostForm("newcomment_author_url"))
 		cm.Content = c.PostForm("content")
 		if !u.Can("unfiltered_html", nil) {
 			cm.Content = wp.KsesPost(cm.Content)

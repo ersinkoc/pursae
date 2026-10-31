@@ -387,7 +387,7 @@ func (api *restAPI) applyCommentFields(c *gin.Context, r *restRequest, cm *store
 		cm.AuthorEmail = v
 	}
 	if v, ok := r.Str(c, "author_url"); ok {
-		cm.AuthorURL = v
+		cm.AuthorURL = commentAuthorURL(v) // esc_url_raw(): other schemes such as javascript: are dropped
 	}
 	if canModerate(u) {
 		if v, ok := r.Str(c, "author_ip"); ok {

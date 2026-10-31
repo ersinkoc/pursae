@@ -204,6 +204,10 @@ func stripPHP(p string) (string, bool) {
 func (s *Server) routes() *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
+	if err := applyTrustedProxies(r, s.cfg.TrustedProxies); err != nil {
+		log.Printf("wpgo: WPGO_TRUSTED_PROXIES: %v; trusting no proxy", err)
+		_ = r.SetTrustedProxies(nil)
+	}
 	r.Use(gin.Recovery(), accessLog(), requestOrigin(), securityHeaders(), s.loadUser(), s.requireInstall(), s.acfgoMiddleware(), s.golylangRequest())
 	r.HandleMethodNotAllowed = false
 	r.Use(s.gocdnRewrite()) // GoCDN: media and asset URLs to the CDN (gocdn_rewrite.go)
@@ -591,7 +595,12 @@ func (s *Server) loc() *time.Location {
 	return wp.Location(s.settings.String("timezone_string"), s.settings.Float("gmt_offset"))
 }
 
+// clientIP is the visitor's address: the connection's peer, or the address a trusted proxy forwarded
+// (see applyTrustedProxies). The login throttle, comment flood check and audit logs key on it.
 func clientIP(c *gin.Context) string {
+	if ip := c.ClientIP(); ip != "" {
+		return ip
+	}
 	host, _, err := net.SplitHostPort(c.Request.RemoteAddr)
 	if err != nil {
 		return c.Request.RemoteAddr
@@ -599,12 +608,46 @@ func clientIP(c *gin.Context) string {
 	return host
 }
 
+// defaultTrustedProxies are the addresses a reverse proxy normally has when it runs next to the server:
+// loopback and private networks. A client reaching the server directly from the internet is not among
+// them, so it cannot choose its own address with an X-Forwarded-For header.
+const defaultTrustedProxies = "127.0.0.0/8,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,fc00::/7"
+
+// applyTrustedProxies sets which peers may report the visitor address (WPGO_TRUSTED_PROXIES: a comma separated
+// list of IPs and CIDRs; empty means defaultTrustedProxies; "none" trusts nobody). Without this gin would
+// believe X-Forwarded-For from every client, and behind a proxy every visitor would share the proxy's address.
+func applyTrustedProxies(r *gin.Engine, spec string) error {
+	spec = strings.TrimSpace(spec)
+	if spec == "" {
+		spec = defaultTrustedProxies
+	}
+	var list []string
+	if !strings.EqualFold(spec, "none") {
+		for _, p := range strings.FieldsFunc(spec, func(r rune) bool { return r == ',' || r == ' ' || r == '\n' }) {
+			list = append(list, p)
+		}
+	}
+	return r.SetTrustedProxies(list)
+}
+
 // safeRedirect keeps redirects on this site (wp_safe_redirect()).
 func safeRedirect(target, fallback string) string {
-	if target == "" || !strings.HasPrefix(target, "/") || strings.HasPrefix(target, "//") || strings.Contains(target, "\\") {
+	// Browsers delete tab, CR and LF from a URL before reading it, so "/<TAB>/host" would become "//host":
+	// any control character makes the target unsafe.
+	if target == "" || !strings.HasPrefix(target, "/") || strings.HasPrefix(target, "//") || strings.Contains(target, "\\") || hasControlChar(target) {
 		return fallback
 	}
 	return path.Clean("/"+strings.SplitN(target, "?", 2)[0]) + queryPart(target)
+}
+
+// hasControlChar reports whether s contains an ASCII control character (including tab, CR and LF) or DEL.
+func hasControlChar(s string) bool {
+	for _, r := range s {
+		if r < 0x20 || r == 0x7f {
+			return true
+		}
+	}
+	return false
 }
 
 func queryPart(u string) string {
