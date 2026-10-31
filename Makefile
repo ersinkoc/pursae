@@ -10,7 +10,7 @@ db:
 	$(COMPOSE) up -d db
 
 build:
-	CGO_ENABLED=0 go build -o bin/wpgo ./cmd/wpgo
+	CGO_ENABLED=0 go build -buildmode=exe -tags nodynamic -o bin/wpgo ./cmd/wpgo
 
 ## test: unit tests plus the Postgres integration test against the compose database
 test: db

@@ -373,13 +373,13 @@ func TestCoreArtifactInstall(t *testing.T) {
 		}, bin},
 	} {
 		reset()
-		if err := installCoreArtifact(target, "0.2.0", tc.art(), keys, bytes.NewReader(tc.body)); err == nil {
+		if err := installCoreArtifact(target, "0.2.0", tc.art(), keys, bytes.NewReader(tc.body), nil); err == nil {
 			t.Errorf("%s: accepted", tc.name)
 		}
 		unchanged(tc.name)
 	}
 	reset()
-	if err := installCoreArtifact(target, "0.2.0", signedCore("0.2.0", "linux", "amd64", bin, priv, "hub-2026"), keys, bytes.NewReader(bin)); err != nil {
+	if err := installCoreArtifact(target, "0.2.0", signedCore("0.2.0", "linux", "amd64", bin, priv, "hub-2026"), keys, bytes.NewReader(bin), nil); err != nil {
 		t.Fatal(err)
 	}
 	if b, _ := os.ReadFile(target); !bytes.Equal(b, bin) {
@@ -477,5 +477,31 @@ func TestCoreSelfUpdate(t *testing.T) {
 	}
 	if b, _ := os.ReadFile(target); string(b) != "old binary" {
 		t.Error("a tampered binary replaced the executable")
+	}
+}
+
+// The fake binaries of these tests cannot run; coreTryBinary has its own test below.
+func init() { coreTryBinary = func(string, string) error { return nil } }
+
+func TestCoreTryBinary(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("shell scripts")
+	}
+	dir := t.TempDir()
+	good := filepath.Join(dir, "good")
+	os.WriteFile(good, []byte("#!/bin/sh\necho Pursae 0.5.0\n"), 0o755)
+	bad := filepath.Join(dir, "bad")
+	os.WriteFile(bad, []byte("#!/nonexistent/interpreter\n"), 0o755)
+	saved := coreTryBinary
+	coreTryBinary = realCoreTryBinary
+	defer func() { coreTryBinary = saved }()
+	if err := coreTryBinary(good, "0.5.0"); err != nil {
+		t.Errorf("good binary: %v", err)
+	}
+	if err := coreTryBinary(good, "0.6.0"); err == nil {
+		t.Error("a binary reporting another version was accepted")
+	}
+	if err := coreTryBinary(bad, "0.5.0"); err == nil || !strings.Contains(err.Error(), "does not run") {
+		t.Errorf("a binary that cannot start was accepted: %v", err)
 	}
 }

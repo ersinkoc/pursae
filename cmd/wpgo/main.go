@@ -7,14 +7,17 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 	_ "time/tzdata" // site time zones work on minimal images
 
 	"wpgo/internal/config"
+	"wpgo/internal/coreupdate"
 	"wpgo/internal/db"
 	"wpgo/internal/server"
 )
@@ -32,6 +35,9 @@ func main() {
 
 	switch cmd {
 	case "serve":
+		if exe, err := executable(); err == nil {
+			coreupdate.Guard(exe, server.Version) // a failed core update goes back to the previous binary here
+		}
 		if err := serve(ctx, cfg); err != nil {
 			log.Fatal(err)
 		}
@@ -46,6 +52,17 @@ func main() {
 			log.Fatal(err)
 		}
 		fmt.Printf("applied %d migration(s) %v\n", len(applied), applied)
+	case "launch": // container entrypoint: run the installed binary (see internal/coreupdate.Launch)
+		exe, err := executable()
+		if err != nil {
+			log.Fatal(err)
+		}
+		dir := os.Getenv("WPGO_BIN_DIR")
+		args := os.Args[2:]
+		if len(args) == 0 {
+			args = []string{"serve"}
+		}
+		log.Fatal(coreupdate.Launch(exe, dir, args))
 	case "version":
 		fmt.Println("Pursae", server.Version)
 	case "adminsec": // AdminSecGo recovery: disable-hide-login, reset-user <login>, unlock-all, deactivate
@@ -60,7 +77,7 @@ func main() {
 		}
 		fmt.Println(out)
 	default:
-		flag.Usage = func() { fmt.Fprintln(os.Stderr, "usage: wpgo [serve|migrate|version|adminsec]") }
+		flag.Usage = func() { fmt.Fprintln(os.Stderr, "usage: wpgo [serve|launch|migrate|version|adminsec]") }
 		flag.Usage()
 		os.Exit(2)
 	}
@@ -99,9 +116,42 @@ func serve(ctx context.Context, cfg config.Config) error {
 		_ = httpSrv.Shutdown(shutdown)
 	}()
 	go srv.RunScheduler(ctx)
+	go confirmUpdate(ctx, cfg.Addr)
 	log.Printf("listening on %s (site %s)", cfg.Addr, cfg.SiteURL)
 	if err := httpSrv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}
 	return nil
+}
+
+func executable() (string, error) {
+	exe, err := os.Executable()
+	if err != nil {
+		return "", err
+	}
+	return filepath.EvalSymlinks(exe)
+}
+
+// confirmUpdate ends a pending core update once this binary answers requests (internal/coreupdate).
+func confirmUpdate(ctx context.Context, addr string) {
+	exe, err := executable()
+	if err != nil {
+		return
+	}
+	if st := coreupdate.Read(exe); st == nil || st.Status != "pending" || st.To != server.Version {
+		return
+	}
+	host, port, err := net.SplitHostPort(addr)
+	if err != nil {
+		return
+	}
+	if host == "" || host == "0.0.0.0" || host == "::" {
+		host = "127.0.0.1"
+	}
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
+	defer cancel()
+	if coreupdate.WaitHealthy(ctx, "http://"+net.JoinHostPort(host, port)+"/wp-login") {
+		coreupdate.Confirm(exe, server.Version)
+		log.Printf("core update to %s confirmed", server.Version)
+	}
 }

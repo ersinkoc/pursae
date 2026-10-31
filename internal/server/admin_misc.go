@@ -17,6 +17,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"wpgo/internal/coreupdate"
+
 	"wpgo/internal/media"
 	"wpgo/internal/store"
 )
@@ -87,6 +89,13 @@ func (s *Server) updateCore(c *gin.Context) {
 	}
 	if v := c.Query("error"); v != "" {
 		notices = append(notices, notice{Type: "error", Message: template.HTML(template.HTMLEscapeString(v))})
+	}
+	if exe, err := coreExecutable(); err == nil { // a core update that did not start was rolled back (core_update.go)
+		if st := coreupdate.Read(exe); st != nil && st.Status == "rolled_back" {
+			notices = append(notices, notice{Type: "error", Message: template.HTML(template.HTMLEscapeString(st.Message) +
+				" Nothing was lost; the update can be tried again once a fixed release is out.")})
+			coreupdate.Clear(exe)
+		}
 	}
 	s.adminPage(c, "update-core", "Pursae Updates", "update-core-php", "admin/update-core", d, notices...)
 }

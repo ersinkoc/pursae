@@ -21,6 +21,8 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile
+      args:
+        VERSION: ${WPGO_VERSION:-}
     depends_on:
       db:
         condition: service_healthy
@@ -34,7 +36,10 @@ services:
       WPGO_HUB_URL: ${WPGO_HUB_URL:-https://hub.wordpressgo.dev}
     ports:
       - "${WPGO_PORT:-8088}:8080"
+    # A core update that does not start is rolled back on the next start (internal/coreupdate).
+    restart: unless-stopped
     volumes:
+      - bin:/data/bin # the running binary: Dashboard › Updates replaces it
       - uploads:/data/uploads
       - plugins:/data/plugins
       - themes:/data/themes # files edited in Appearance › Theme File Editor
@@ -61,6 +66,7 @@ services:
     command: ["go", "test", "./..."]
 
 volumes:
+  bin:
   pgdata:
   uploads:
   plugins:

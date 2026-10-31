@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -21,6 +22,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"wpgo/internal/coreupdate"
 	"wpgo/internal/plugins"
 )
 
@@ -137,11 +139,8 @@ func coreReplaceable(exe string) error {
 	if !fi.Mode().IsRegular() {
 		return errors.New("the executable is not a regular file")
 	}
-	if f, err := os.OpenFile(exe, os.O_WRONLY, 0); err != nil {
-		return fmt.Errorf("the executable %s is not writable by the server; replace it (or pull the new container image) yourself", exe)
-	} else {
-		f.Close()
-	}
+	// The new binary is written next to exe and renamed over it, so only the directory has to be
+	// writable. (Opening a running executable for writing fails on Linux with "text file busy".)
 	probe, err := os.CreateTemp(filepath.Dir(exe), ".pursae-update-probe-")
 	if err != nil {
 		return fmt.Errorf("the directory %s is not writable by the server; replace the executable (or pull the new container image) yourself", filepath.Dir(exe))
@@ -153,7 +152,8 @@ func coreReplaceable(exe string) error {
 
 // installCoreArtifact streams body into a temporary file next to target, verifies it and renames it over
 // target. Nothing is replaced unless the size, SHA-256 and signature match.
-func installCoreArtifact(target, version string, art *coreArtifact, keys []hubKey, body io.Reader) error {
+// before runs right before the rename (core_update keeps the running binary for a rollback there).
+func installCoreArtifact(target, version string, art *coreArtifact, keys []hubKey, body io.Reader, before func() error) error {
 	f, err := os.CreateTemp(filepath.Dir(target), "."+filepath.Base(target)+".update-")
 	if err != nil {
 		return err
@@ -185,6 +185,14 @@ func installCoreArtifact(target, version string, art *coreArtifact, keys []hubKe
 	}
 	if err := os.Chmod(tmp, 0o755); err != nil {
 		return err
+	}
+	if err := coreTryBinary(tmp, version); err != nil {
+		return err
+	}
+	if before != nil {
+		if err := before(); err != nil {
+			return err
+		}
 	}
 	if err := os.Rename(tmp, target); err != nil {
 		return err
@@ -234,7 +242,10 @@ func (s *Server) coreUpdate(ctx context.Context, target string) (string, error) 
 	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("download: HTTP %d", resp.StatusCode)
 	}
-	if err := installCoreArtifact(target, idx.Core.Latest, art, idx.Keys, resp.Body); err != nil {
+	// The running binary stays as <exe>.prev until the new one has started and answered requests;
+	// if it dies before that, the next start goes back to it (internal/coreupdate).
+	keep := func() error { return coreupdate.Prepare(target, Version, idx.Core.Latest) }
+	if err := installCoreArtifact(target, idx.Core.Latest, art, idx.Keys, resp.Body, keep); err != nil {
 		return "", err
 	}
 	return idx.Core.Latest, nil
@@ -269,7 +280,27 @@ func (s *Server) upgradeCore(c *gin.Context) {
 		cancel()
 		time.Sleep(time.Second) // let the page reach the browser
 		if err := coreRestart(target); err != nil {
-			slog.Error("core update: restart", "err", err)
+			// Still running the old code: put the old binary back so the next start is not the new one.
+			slog.Error("core update: restart failed, going back to the previous binary", "err", err)
+			coreupdate.Restore(target, err)
 		}
 	}()
+}
+
+// coreTryBinary runs the downloaded binary once (`version`) before it replaces the running one: a
+// binary this system cannot start (wrong platform, a missing ELF interpreter, …) is refused while
+// nothing has changed yet.
+var coreTryBinary = realCoreTryBinary
+
+func realCoreTryBinary(path, version string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+	out, err := exec.CommandContext(ctx, path, "version").CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("the new binary does not run on this system (%v); nothing was changed", err)
+	}
+	if !strings.Contains(string(out), version) {
+		return fmt.Errorf("the new binary reports %q instead of %s; nothing was changed", strings.TrimSpace(string(out)), version)
+	}
+	return nil
 }
