@@ -201,7 +201,7 @@ func TestGoWebEditor(t *testing.T) {
 
 	// The front end shows the builder wrapper with the frontend assets.
 	_, body, _ = getPage(t, c, base+"/?page_id="+pageID)
-	for _, want := range []string{`class="elementor elementor-` + pageID, "gowebeditor/assets/css/frontend.min.css", "elementorFrontendConfig", "elementor-page-" + pageID} {
+	for _, want := range []string{`class="elementor elementor-` + pageID, "web-builder/assets/css/frontend.min.css", "elementorFrontendConfig", "elementor-page-" + pageID} {
 		if !strings.Contains(body, want) {
 			t.Errorf("front end misses %q", want)
 		}

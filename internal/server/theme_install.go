@@ -499,7 +499,7 @@ func (s *Server) themeInstall(c *gin.Context) {
 	if browse == "upload" {
 		bodyClass += " show-upload-view"
 	}
-	data := map[string]any{"Cards": cards, "Browse": browse, "Search": c.Query("search"), "Count": len(cards), "Pursae Web Builder": s.golementorOn(),
+	data := map[string]any{"Cards": cards, "Browse": browse, "Search": c.Query("search"), "Count": len(cards), "Golementor": s.golementorOn(),
 		"UploadNonce": s.nonce(c, "theme-upload"), "MaxSize": fmt.Sprintf("%d MB", themeZipMaxBytes>>20),
 		"Categories": categories, "Category": category}
 	if browse == "library" && canPreview(u, true) {

@@ -90,7 +90,7 @@ func (s *Server) gooAdminThemes(c *gin.Context) {
 	themes := s.gooStoreThemes(c)
 	data := map[string]any{"Themes": themes, "Nonce": s.nonce(c, gooThemesNonce), "ShopURL": s.gooShopURL(ctx),
 		"HomeURL": s.links(ctx).HomeURL("/"), "CanInstall": u.Can("install_themes", nil) && u.Can("switch_themes", nil) && u.Can("import", nil),
-		"Pursae Multi Language": s.golylangOn()}
+		"Golylang": s.golylangOn()}
 	var notices []notice
 	switch c.Query("result") {
 	case "done":

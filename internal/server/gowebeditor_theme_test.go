@@ -143,7 +143,7 @@ func TestGoWebEditorThemeBuilder(t *testing.T) {
 	// The site's own parts apply on top of the bundled theme.
 	_, body, _ = getPage(t, c, base+"/?p=1")
 	for _, want := range []string{"elementor-location-header", "gwe-theme", ">Theme Site</a></p>", "elementor-location-footer", "footer part",
-		"elementor-widget-theme-post-title", "Hello world!", "Welcome to WordPress", "elementor-post-info", "/wp-content/themes/hello-web-builder/style.css",
+		"elementor-widget-theme-post-title", "Hello world!", "Welcome to Pursae", "elementor-post-info", "/wp-content/themes/hello-web-builder/style.css",
 		"widget-theme-elements.min.css", "/wp-content/uploads/elementor/css/post-" + headerID + ".css", "elementorFrontendConfig"} {
 		if !strings.Contains(body, want) {
 			t.Errorf("single post with parts misses %q", want)
@@ -218,7 +218,7 @@ func TestGoWebEditorThemeBuilder(t *testing.T) {
 	}
 	_, body, _ = getPage(t, c, base+"/?p=1")
 	for _, want := range []string{"wp-theme-hello-web-builder", "elementor-location-header", "footer part", "elementor-widget-theme-post-title",
-		"Welcome to WordPress", `<main id="content" class="site-main`, "hello-web-builder-css", "elementor-kit-"} {
+		"Welcome to Pursae", `<main id="content" class="site-main`, "hello-web-builder-css", "elementor-kit-"} {
 		if !strings.Contains(body, want) {
 			t.Errorf("hello theme single misses %q", want)
 		}
@@ -339,7 +339,7 @@ func TestGoWebEditorThemeBuilder(t *testing.T) {
 		t.Errorf("the site kit changed on activation: %s != %s", activeKit, siteKit)
 	}
 	_, body, _ = getPage(t, c, base+"/?p=1")
-	for _, want := range []string{"wp-theme-hello-web-builder", "elementor-location-header", ">Theme Site</a></p>", "footer part", "Welcome to WordPress"} {
+	for _, want := range []string{"wp-theme-hello-web-builder", "elementor-location-header", ">Theme Site</a></p>", "footer part", "Welcome to Pursae"} {
 		if !strings.Contains(body, want) {
 			t.Errorf("loaded saved theme misses %q", want)
 		}
