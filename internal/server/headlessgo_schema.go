@@ -58,18 +58,21 @@ type hgField struct {
 
 // hgSchema is a content type or a component.
 type hgSchema struct {
-	UID             string    `json:"uid"`
-	Kind            string    `json:"kind"`
-	DisplayName     string    `json:"displayName"`
-	SingularName    string    `json:"singularName,omitempty"`
-	PluralName      string    `json:"pluralName,omitempty"`
-	Category        string    `json:"category,omitempty"` // component
-	Description     string    `json:"description,omitempty"`
-	DraftAndPublish bool      `json:"draftAndPublish,omitempty"`
-	Localized       bool      `json:"localized,omitempty"`
-	PreviewURL      string    `json:"previewUrl,omitempty"`
-	Icon            string    `json:"icon,omitempty"`
-	Fields          []hgField `json:"attributes"`
+	UID             string `json:"uid"`
+	Kind            string `json:"kind"`
+	DisplayName     string `json:"displayName"`
+	SingularName    string `json:"singularName,omitempty"`
+	PluralName      string `json:"pluralName,omitempty"`
+	Category        string `json:"category,omitempty"` // component
+	Description     string `json:"description,omitempty"`
+	DraftAndPublish bool   `json:"draftAndPublish,omitempty"`
+	// ReviewWorkflow: an entry must be submitted for review and approved (by a user who may edit
+	// others' posts) before it can be published. Needs draft & publish.
+	ReviewWorkflow bool      `json:"reviewWorkflow,omitempty"`
+	Localized      bool      `json:"localized,omitempty"`
+	PreviewURL     string    `json:"previewUrl,omitempty"`
+	Icon           string    `json:"icon,omitempty"`
+	Fields         []hgField `json:"attributes"`
 }
 
 func (sc *hgSchema) IsComponent() bool  { return sc.Kind == hgKindComponent }
@@ -289,6 +292,9 @@ func hgNormalizeSchema(sc *hgSchema) {
 	sc.PluralName = strings.TrimSpace(strings.ToLower(sc.PluralName))
 	sc.Category = strings.TrimSpace(strings.ToLower(sc.Category))
 	sc.PreviewURL = strings.TrimSpace(sc.PreviewURL)
+	if sc.IsComponent() || !sc.DraftAndPublish {
+		sc.ReviewWorkflow = false
+	}
 	if sc.IsComponent() {
 		sc.SingularName, sc.PluralName, sc.DraftAndPublish, sc.Localized, sc.PreviewURL = "", "", false, false, ""
 		if sc.UID == "" && sc.Category != "" {

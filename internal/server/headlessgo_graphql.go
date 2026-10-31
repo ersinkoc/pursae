@@ -56,6 +56,12 @@ func (s *Server) hgGraphQL(c *gin.Context, a *hgAuth, st hgSettings) {
 		hgGQLError(c, http.StatusMethodNotAllowed, "Use GET or POST")
 		return
 	}
+	if doc, err := hgGQLParse(req.Query); err == nil {
+		if op, err := doc.operation(req.OperationName); err == nil && op.kind == "subscription" {
+			s.hgGQLSubscribe(c, a, st, req, doc, op)
+			return
+		}
+	}
 	status, out := s.hgGQLExecute(c, a, st, req)
 	c.Header("Cache-Control", "no-store")
 	c.JSON(status, out)
@@ -75,7 +81,7 @@ func (s *Server) hgGQLExecute(c *gin.Context, a *hgAuth, st hgSettings, req hgGQ
 		return fail(http.StatusBadRequest, err.Error())
 	}
 	if op.kind == "subscription" {
-		return fail(http.StatusBadRequest, "Subscriptions are not supported")
+		return fail(http.StatusBadRequest, "Subscriptions are delivered as server-sent events by the public endpoint (send the request with Accept: text/event-stream); the playground cannot stream them")
 	}
 	if op.kind == "mutation" && c.Request.Method == http.MethodGet {
 		return fail(http.StatusMethodNotAllowed, "Mutations need a POST request")
@@ -95,6 +101,9 @@ func (s *Server) hgGQLExecute(c *gin.Context, a *hgAuth, st hgSettings, req hgGQ
 	rootType := "Query"
 	if op.kind == "mutation" {
 		rootType = "Mutation"
+	}
+	if errs := ex.validate(hgGQLRootFlat(sel, rootType), op.kind); len(errs) > 0 {
+		return http.StatusBadRequest, map[string]any{"errors": hgGQLValidationErrors(errs)}
 	}
 	out := map[string]any{}
 	for _, f := range hgGQLRootFlat(sel, rootType) {

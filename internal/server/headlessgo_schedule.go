@@ -108,6 +108,11 @@ func (s *Server) hgRunSchedule(ctx context.Context, id int64, publish bool) bool
 	}
 	event, action := "entry.unpublish", "unschedule"
 	if publish {
+		if err := hgReviewGate(sc, e); err != nil {
+			_, _ = tx.Exec(ctx, `UPDATE hg_entries SET publish_at = NULL, schedule_error = $2 WHERE id = $1`, id, "The scheduled publication failed: "+err.Error())
+			_ = tx.Commit(ctx)
+			return false
+		}
 		h := &hgCoercer{s: s, ctx: ctx, reg: s.hgReg(ctx), required: true}
 		h.object(sc, map[string]any{}, e.Data, nil, true)
 		if len(h.errs) > 0 {

@@ -109,21 +109,27 @@
 
 {{if eq .Page "entry"}}
 {{if .Type.IsCollection}}<p><a href="/wp-admin/headlessgo?page=entries&amp;type={{.Type.UID}}{{if .Locale}}&amp;locale={{.Locale}}{{end}}">&larr; Back to <span translate="no">{{.Type.DisplayName}}</span></a></p>{{end}}
+{{if .Lock}}<div class="notice notice-warning hg-lock" id="hg-lock-data" data-by="{{.Lock.Name}}"><p><strong translate="no">{{.Lock.Name}}</strong> is currently editing this entry. You can read it, but saving is switched off so nothing is overwritten.</p>
+<form method="post" action="/wp-admin/headlessgo" class="hg-inline"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="entry"><input type="hidden" name="do" value="lock_takeover"><input type="hidden" name="type" value="{{.Type.UID}}"><input type="hidden" name="doc" value="{{.Doc}}"><input type="hidden" name="locale" value="{{.Locale}}"><button class="button button-primary">Take over editing</button></form>
+{{if .Type.IsCollection}}<a class="button" href="/wp-admin/headlessgo?page=entries&amp;type={{.Type.UID}}{{if .Locale}}&amp;locale={{.Locale}}{{end}}">Go back</a>{{end}}</div>{{else if .Entry}}<span id="hg-lock-data" data-beat="{{.LockBeat}}" hidden></span>{{end}}
 {{if .Errors}}<div class="notice notice-error"><p><strong>The entry was not saved:</strong></p><ul class="hg-errlist">{{range .Errors}}<li><code translate="no">{{range $i, $p := .Path}}{{if $i}}.{{end}}{{$p}}{{end}}</code> {{.Message}}</li>{{end}}</ul></div>{{end}}
 <form method="post" action="/wp-admin/headlessgo" id="hg-entry-form" class="hg-entry">
 <input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="entry"><input type="hidden" name="do" value="save_entry">
 <input type="hidden" name="type" value="{{.Type.UID}}"><input type="hidden" name="doc" value="{{.Doc}}"><input type="hidden" name="locale" value="{{.Locale}}">
-<input type="hidden" name="payload" id="hg-payload" value=""><input type="hidden" name="publish" id="hg-publish" value="">
+{{if .Entry}}<input type="hidden" name="base" value="{{.BaseStamp}}">{{end}}<input type="hidden" name="payload" id="hg-payload" value=""><input type="hidden" name="publish" id="hg-publish" value="">
 <div class="hg-entry-grid">
 	<div class="hg-fields" id="hg-editor"><p class="description">Loading the form…</p><noscript><p>The entry form needs JavaScript.</p></noscript></div>
 	<aside class="hg-entry-side">
 		<div class="postbox"><h2 class="hndle">Entry</h2><div class="inside">
 			{{if .Type.DraftAndPublish}}<p>Status: {{if .Entry}}<span class="hg-status hg-status-{{.EntryStatus}}">{{if eq .EntryStatus "draft"}}Draft{{else if eq .EntryStatus "modified"}}Modified{{else}}Published{{end}}</span>{{else}}<span class="hg-status hg-status-draft">New</span>{{end}}</p>{{end}}
-			<p class="hg-actions">
+			{{if and .Entry .Type.ReviewWorkflow}}<p>Review: <span class="hg-status hg-status-{{if .ReviewState}}{{.ReviewState}}{{else}}draft{{end}}">{{if eq .ReviewState "pending"}}Waiting for review{{else if eq .ReviewState "approved"}}Approved{{else if eq .ReviewState "rejected"}}Rejected{{else}}Not submitted{{end}}</span>
+				{{if and .Entry.ReviewNote (or (eq .ReviewState "approved") (eq .ReviewState "rejected"))}}<br><em translate="no">{{.Entry.ReviewNote}}</em>{{end}}</p>
+			{{else if and .Type.ReviewWorkflow (not .Entry)}}<p class="description">This type is reviewed: save the draft, submit it for review, and publish it once it is approved.</p>{{end}}
+			{{if not .Lock}}<p class="hg-actions">
 				{{if .Type.DraftAndPublish}}<button type="submit" class="button" data-hg-publish="0">Save draft</button>
 				<button type="submit" class="button button-primary" data-hg-publish="1">Publish</button>
 				{{else}}<button type="submit" class="button button-primary" data-hg-publish="1">Save</button>{{end}}
-			</p>
+			</p>{{end}}
 			{{if .PreviewURL}}<p><a class="button" href="{{.PreviewURL}}" target="_blank" rel="noopener" id="hg-preview">Open preview</a></p>{{end}}
 			{{if .Entry}}{{if .Entry.ScheduleError}}<div class="notice notice-error inline"><p>{{.Entry.ScheduleError}}</p></div>{{end}}
 			<p class="hg-meta">Document ID <code translate="no">{{.Entry.DocumentID}}</code><br>Created {{.Entry.CreatedAt.Format "2006-01-02 15:04"}}<br>Updated {{.Entry.UpdatedAt.Format "2006-01-02 15:04"}}{{if .Entry.PublishedAt}}<br>Published {{.Entry.PublishedAt.Format "2006-01-02 15:04"}}{{end}}</p>
@@ -145,7 +151,11 @@
 </div>
 </form>
 {{if .Entry}}<form method="post" action="/wp-admin/headlessgo" id="hg-schedule-form"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="entry"><input type="hidden" name="do" value="schedule_entry"><input type="hidden" name="type" value="{{.Type.UID}}"><input type="hidden" name="doc" value="{{.Doc}}"><input type="hidden" name="locale" value="{{.Locale}}"></form>{{end}}
-{{if .Entry}}<div class="hg-entry-more">
+{{if and .Entry (not .Lock)}}<div class="hg-entry-more">
+	{{if .Type.ReviewWorkflow}}
+	{{if or (eq .ReviewState "") (eq .ReviewState "rejected")}}<form method="post" action="/wp-admin/headlessgo" class="hg-inline"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="entry"><input type="hidden" name="type" value="{{.Type.UID}}"><input type="hidden" name="doc" value="{{.Doc}}"><input type="hidden" name="locale" value="{{.Locale}}"><input type="hidden" name="do" value="submit_review"><button class="button">Submit for review</button></form>{{end}}
+	{{if and .CanReview (eq .ReviewState "pending")}}<form method="post" action="/wp-admin/headlessgo" class="hg-inline"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="entry"><input type="hidden" name="type" value="{{.Type.UID}}"><input type="hidden" name="doc" value="{{.Doc}}"><input type="hidden" name="locale" value="{{.Locale}}"><input type="text" name="note" placeholder="Note (optional)" class="regular-text"> <button class="button button-primary" name="do" value="approve_review">Approve</button> <button class="button" name="do" value="reject_review">Reject</button></form>{{end}}
+	{{end}}
 	{{if and .Type.DraftAndPublish (ne .EntryStatus "draft")}}<form method="post" action="/wp-admin/headlessgo" class="hg-inline"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="entry"><input type="hidden" name="type" value="{{.Type.UID}}"><input type="hidden" name="doc" value="{{.Doc}}"><input type="hidden" name="locale" value="{{.Locale}}"><input type="hidden" name="do" value="unpublish_entry"><button class="button">Unpublish</button></form>{{end}}
 	{{if eq .EntryStatus "modified"}}<form method="post" action="/wp-admin/headlessgo" class="hg-inline" onsubmit="return confirm('Discard the changes made since the last publication?')"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="entry"><input type="hidden" name="type" value="{{.Type.UID}}"><input type="hidden" name="doc" value="{{.Doc}}"><input type="hidden" name="locale" value="{{.Locale}}"><input type="hidden" name="do" value="discard_entry"><button class="button">Discard changes</button></form>{{end}}
 	<form method="post" action="/wp-admin/headlessgo" class="hg-inline" onsubmit="return confirm('Delete this entry? This cannot be undone.')"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="entry"><input type="hidden" name="type" value="{{.Type.UID}}"><input type="hidden" name="doc" value="{{.Doc}}"><input type="hidden" name="locale" value="{{.Locale}}"><input type="hidden" name="do" value="delete_entry">{{if .Type.Localized}}<label><input type="checkbox" name="all_locales" value="1"> all locales</label> {{end}}<button class="button button-link-delete">Delete</button></form>
@@ -156,7 +166,7 @@
 {{if eq .Page "history"}}
 <p><a href="/wp-admin/headlessgo?page=entry&amp;type={{.Type.UID}}&amp;doc={{.Doc}}{{if .Locale}}&amp;locale={{.Locale}}{{end}}">&larr; Back to the entry</a>{{if .Locale}} &middot; <span translate="no">{{.Locale}}</span>{{end}}</p>
 <div class="hg-history-grid">
-<ul class="hg-history-list">{{range .History}}<li{{if and $.Data.Version (eq $.Data.Version.ID .ID)}} class="current"{{end}}><a href="/wp-admin/headlessgo?page=history&amp;type={{$.Data.Type.UID}}&amp;doc={{$.Data.Doc}}{{if $.Data.Locale}}&amp;locale={{$.Data.Locale}}{{end}}&amp;v={{.ID}}"><strong>{{.CreatedAt.Format "2006-01-02 15:04:05"}}</strong><br>{{.ActionLabel}}{{if .Published}} &middot; live{{end}}{{if .Author}} &middot; <span translate="no">{{.Author}}</span>{{end}}</a></li>{{else}}<li>No versions yet.</li>{{end}}</ul>
+<ul class="hg-history-list">{{range .History}}<li{{if and $.Data.Version (eq $.Data.Version.ID .ID)}} class="current"{{end}}><a href="/wp-admin/headlessgo?page=history&amp;type={{$.Data.Type.UID}}&amp;doc={{$.Data.Doc}}{{if $.Data.Locale}}&amp;locale={{$.Data.Locale}}{{end}}&amp;v={{.ID}}"><strong>{{.CreatedAt.Format "2006-01-02 15:04:05"}}</strong><br>{{.ActionLabel}}{{if .Published}} &middot; live{{end}}{{if .Author}} &middot; <span translate="no">{{.Author}}</span>{{end}}</a>{{if .Note}}<br><em translate="no">{{.Note}}</em>{{end}}</li>{{else}}<li>No versions yet.</li>{{end}}</ul>
 <div class="hg-history-main">
 {{if .Version}}
 <h2>Version of {{.Version.CreatedAt.Format "2006-01-02 15:04:05"}} &middot; {{.Version.ActionLabel}}</h2>
@@ -167,7 +177,10 @@
 <form method="post" action="/wp-admin/headlessgo" class="hg-restore" onsubmit="return confirm('Replace the current draft with this version?')">
 	<input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="entry"><input type="hidden" name="do" value="restore_version">
 	<input type="hidden" name="type" value="{{.Type.UID}}"><input type="hidden" name="doc" value="{{.Doc}}"><input type="hidden" name="locale" value="{{.Locale}}"><input type="hidden" name="version" value="{{.Version.ID}}">
-	<p><button type="submit" class="button button-primary">Restore this version</button> <span class="description">It becomes the draft{{if .Type.DraftAndPublish}}; publish it to make it live{{end}}.</span></p>
+	{{if .RestoreErrs}}<div class="notice notice-warning inline"><p><strong>Some values of this version no longer fit the content type:</strong></p><ul class="hg-errlist">{{range .RestoreErrs}}<li><code translate="no">{{range $i, $p := .Path}}{{if $i}}.{{end}}{{$p}}{{end}}</code> {{.Message}}</li>{{end}}</ul>
+	<p class="description">Restoring the whole version is refused. You can restore the other fields: these keep their current values.</p></div>
+	<p><button type="submit" class="button button-primary" name="partial" value="1">Restore the fields that still fit</button></p>
+	{{else}}<p><button type="submit" class="button button-primary">Restore this version</button> <span class="description">It becomes the draft{{if .Type.DraftAndPublish}}; publish it to make it live{{end}}.</span></p>{{end}}
 </form>
 {{end}}
 </div></div>

@@ -74,11 +74,18 @@ type hgAdminData struct {
 	PublishAt   string // schedule, as datetime-local values in the site's time zone
 	UnpublishAt string
 	TimeZone    string
+	Lock        *hgLock // set while another user edits the entry (the form is read-only)
+	LockBeat    int     // heartbeat interval in seconds
+	BaseStamp   string  // the version the form was loaded from (see hgGuardWrite)
+	ReviewState string  // review status of the draft (types with a review flow)
+	CanReview   bool
 
 	// History
 	History []*hgEntryVersion
 	Version *hgEntryVersion
 	Diff    []hgDiffRow
+	// RestoreErrs are the values of the chosen version that no longer fit the content type.
+	RestoreErrs hgValidationError
 
 	// Builder
 	BuilderJSON template.JS
@@ -505,6 +512,13 @@ func (s *Server) hgAdminEntry(c *gin.Context, d *hgAdminData, failed *hgFailedSa
 			d.EntryStatus = e.Status()
 			d.PreviewURL = s.hgPreviewURL(c, sc, e)
 			d.History = s.hgVersions(c, e.ID, 8)
+			d.BaseStamp = hgLockStamp(e)
+			d.ReviewState = e.ReviewState()
+			d.CanReview = hgCanReview(currentUser(c))
+			d.LockBeat = hgLockBeat
+			if failed == nil {
+				d.Lock = s.hgAcquireLock(c, e.ID, currentUser(c).ID)
+			}
 			if e.PublishAt != nil {
 				d.PublishAt = e.PublishAt.In(s.loc()).Format("2006-01-02T15:04")
 			}
@@ -537,7 +551,7 @@ func (s *Server) hgAdminEntry(c *gin.Context, d *hgAdminData, failed *hgFailedSa
 	}
 	d.TimeZone = s.loc().String()
 	model := map[string]any{"schema": sc, "components": comps, "types": types, "data": data, "media": media, "relations": rels,
-		"errors": errs, "searchURL": hgAdminPath + "/search", "locale": d.Locale, "isNew": d.Entry == nil}
+		"errors": errs, "searchURL": hgAdminPath + "/search", "locale": d.Locale, "isNew": d.Entry == nil, "locked": d.Lock != nil}
 	raw, _ := json.Marshal(model)
 	d.EditorJSON = template.JS(raw)
 	return true
@@ -768,7 +782,7 @@ func (s *Server) hgAdminPost(c *gin.Context, page string) {
 	do := c.PostForm("do")
 	back := url.Values{"page": {page}}
 	switch do {
-	case "save_entry", "delete_entry", "publish_entry", "unpublish_entry", "discard_entry", "schedule_entry", "restore_version", "bulk_entries":
+	case "save_entry", "delete_entry", "publish_entry", "unpublish_entry", "discard_entry", "schedule_entry", "restore_version", "bulk_entries", "lock_takeover", "submit_review", "approve_review", "reject_review":
 		sc := reg.Get(c.PostForm("type"))
 		if sc == nil || sc.IsComponent() {
 			hgRedirect(c, url.Values{}, "", errors.New("Unknown content type."))
@@ -1013,6 +1027,56 @@ func (s *Server) hgAdminEntryPost(c *gin.Context, sc *hgSchema, do string) {
 		return q
 	}
 	switch do {
+	case "save_entry", "publish_entry", "unpublish_entry", "discard_entry", "schedule_entry", "restore_version", "delete_entry":
+		base := ""
+		if do == "save_entry" {
+			base = c.PostForm("base")
+		}
+		if err := s.hgGuardWrite(c, sc, doc, loc, u.ID, base); err != nil {
+			hgRedirect(c, entryURL(doc), "", err)
+			return
+		}
+	}
+	switch do {
+	case "lock_takeover":
+		e, err := s.hgGetEntry(c, sc.UID, doc, loc)
+		if err == nil {
+			err = s.hgTakeOverLock(c, e.ID, u.ID)
+		}
+		if err != nil {
+			hgRedirect(c, entryURL(doc), "", errors.New("The entry no longer exists."))
+			return
+		}
+		hgRedirect(c, entryURL(doc), "You are now editing this entry.", nil)
+	case "submit_review", "approve_review", "reject_review":
+		var err error
+		msg := "Submitted for review."
+		switch do {
+		case "submit_review":
+			if err = s.hgGuardWrite(c, sc, doc, loc, u.ID, ""); err == nil {
+				_, err = s.hgSubmitForReview(c, sc, doc, loc, u.ID)
+			}
+		default:
+			if !hgCanReview(u) {
+				hgRedirect(c, entryURL(doc), "", errors.New("You are not allowed to review entries."))
+				return
+			}
+			note := strings.TrimSpace(c.PostForm("note"))
+			_, err = s.hgDecideReview(c, sc, doc, loc, u.ID, do == "approve_review", note)
+			msg = "Approved. The entry can now be published."
+			if do == "reject_review" {
+				msg = "Rejected."
+			}
+		}
+		if err != nil {
+			var ve hgValidationError
+			if errors.As(err, &ve) {
+				err = errors.New("The draft cannot be submitted yet: " + ve.Error())
+			}
+			hgRedirect(c, entryURL(doc), "", err)
+			return
+		}
+		hgRedirect(c, entryURL(doc), msg, nil)
 	case "save_entry":
 		var data map[string]any
 		if err := json.Unmarshal([]byte(c.PostForm("payload")), &data); err != nil || data == nil {
@@ -1020,6 +1084,10 @@ func (s *Server) hgAdminEntryPost(c *gin.Context, sc *hgSchema, do string) {
 			return
 		}
 		publish := c.PostForm("publish") == "1"
+		wantPublish := publish && sc.ReviewWorkflow && sc.DraftAndPublish
+		if wantPublish {
+			publish = false // the draft is saved first; it goes live only when it is approved
+		}
 		e, events, err := s.hgSaveEntry(c, sc, doc, data, hgSaveOpts{Locale: loc, Publish: publish, UserID: u.ID})
 		if err != nil {
 			var ve hgValidationError
@@ -1035,6 +1103,15 @@ func (s *Server) hgAdminEntryPost(c *gin.Context, sc *hgSchema, do string) {
 		}
 		msg := "Saved."
 		if publish || !sc.DraftAndPublish {
+			msg = "Published."
+		}
+		if wantPublish {
+			pe, perr := s.hgPublishEntry(c, sc, e.DocumentID, loc, u.ID)
+			if perr != nil {
+				hgRedirect(c, entryURL(e.DocumentID), "", errors.New("Saved as a draft, but not published: "+perr.Error()))
+				return
+			}
+			s.hgEmit(c, "entry.publish", sc, pe)
 			msg = "Published."
 		}
 		hgRedirect(c, entryURL(e.DocumentID), msg, nil)
@@ -1095,13 +1172,26 @@ func (s *Server) hgAdminEntryPost(c *gin.Context, sc *hgSchema, do string) {
 			hgRedirect(c, entryURL(doc), "", errors.New("This version no longer exists."))
 			return
 		}
-		e, err := s.hgRestoreVersion(c, sc, vid, u.ID)
+		e, skipped, err := s.hgRestoreVersion(c, sc, vid, u.ID, c.PostForm("partial") == "1")
 		if err != nil {
+			var ve hgValidationError
+			if errors.As(err, &ve) {
+				back := url.Values{"page": {"history"}, "type": {sc.UID}, "doc": {doc}, "v": {strconv.FormatInt(vid, 10)}}
+				if loc != "" {
+					back.Set("locale", loc)
+				}
+				hgRedirect(c, back, "", errors.New("This version does not fit the current content type, nothing was restored: "+ve.Error()))
+				return
+			}
 			hgRedirect(c, entryURL(doc), "", err)
 			return
 		}
 		s.hgEmit(c, "entry.update", sc, e)
-		hgRedirect(c, entryURL(doc), "The version was restored as the draft.", nil)
+		msg := "The version was restored as the draft."
+		if len(skipped) > 0 {
+			msg = "The version was restored as the draft, except for " + strings.Join(skipped, ", ") + ": those values no longer fit the content type and kept their current values."
+		}
+		hgRedirect(c, entryURL(doc), msg, nil)
 	case "bulk_entries":
 		back := url.Values{"page": {"entries"}, "type": {sc.UID}}
 		if loc != "" {
@@ -1225,6 +1315,13 @@ func (s *Server) hgAdminHistory(c *gin.Context, d *hgAdminData) bool {
 	}
 	if d.Version != nil {
 		d.Diff = hgDiff(s.hgReg(c), sc, d.Version.Data, e.Data)
+		data := map[string]any{}
+		for k, val := range d.Version.Data {
+			if f := sc.Field(k); f != nil && f.MappedBy == "" {
+				data[k] = val
+			}
+		}
+		d.RestoreErrs = s.hgCheckRestored(c, sc, e.DocumentID, e.Locale, data)
 	}
 	return true
 }

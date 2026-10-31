@@ -21,7 +21,8 @@ import (
 // Golylang, a delivery REST API under /wp-json/headlessgo/v1 with filters, sorting, pagination,
 // populate and field selection, API tokens, a public-role permission matrix, CORS, webhooks,
 // preview URLs, a GraphQL endpoint (queries, mutations, introspection), content history, scheduled
-// publishing, bulk actions, media upload and bidirectional relations.
+// publishing, bulk actions, media upload, bidirectional relations, edit locks, a review flow and
+// GraphQL subscriptions (server-sent events).
 //
 // While it is active the site's front end does not render (headless mode): visitors get a JSON
 // 404, a plain 404 or a redirect to the front-end app, as configured. wp-admin, wp-login, the REST
@@ -290,6 +291,7 @@ func (s *Server) registerHeadlessGo(admin *gin.RouterGroup) {
 	admin.POST("/headlessgo", s.hgOnly(), s.hgAdmin)
 	admin.GET("/headlessgo/search", s.hgOnly(), s.hgAdminSearch)
 	admin.POST("/headlessgo/graphql", s.hgOnly(), s.hgAdminGraphQL)
+	admin.POST("/headlessgo/lock", s.hgOnly(), s.hgAdminLock)
 }
 
 // The gate --------------------------------------------------------------------------------------------

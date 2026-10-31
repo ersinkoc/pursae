@@ -43,6 +43,12 @@ type hgEntry struct {
 	PublishAt     *time.Time
 	UnpublishAt   *time.Time
 	ScheduleError string
+	// Review flow (types with ReviewWorkflow): see headlessgo_review.go.
+	ReviewStatus string // "", pending, approved, rejected, as stored
+	ReviewHash   string // hash of the draft the status was given for
+	ReviewBy     int64
+	ReviewNote   string
+	ReviewAt     *time.Time
 }
 
 // Status is draft (never published), published, or modified (published, with newer draft changes).
@@ -66,13 +72,13 @@ func (e *hgEntry) Version(status string) map[string]any {
 	return e.Published
 }
 
-const hgEntryCols = `id, document_id, type_uid, locale, data, published_data, published_at, created_at, updated_at, created_by, updated_by, publish_at, unpublish_at, schedule_error`
+const hgEntryCols = `id, document_id, type_uid, locale, data, published_data, published_at, created_at, updated_at, created_by, updated_by, publish_at, unpublish_at, schedule_error, review_status, review_hash, review_by, review_note, review_at`
 
 func hgScanEntry(row pgx.Row) (*hgEntry, error) {
 	e := &hgEntry{}
 	var d, p []byte
 	if err := row.Scan(&e.ID, &e.DocumentID, &e.TypeUID, &e.Locale, &d, &p, &e.PublishedAt, &e.CreatedAt, &e.UpdatedAt, &e.CreatedBy, &e.UpdatedBy,
-		&e.PublishAt, &e.UnpublishAt, &e.ScheduleError); err != nil {
+		&e.PublishAt, &e.UnpublishAt, &e.ScheduleError, &e.ReviewStatus, &e.ReviewHash, &e.ReviewBy, &e.ReviewNote, &e.ReviewAt); err != nil {
 		return nil, err
 	}
 	_ = json.Unmarshal(d, &e.Data)
@@ -950,6 +956,10 @@ func (s *Server) hgSaveEntry(ctx context.Context, sc *hgSchema, doc string, inpu
 		doc = hgNewDocumentID()
 	}
 	publish := o.Publish || !sc.DraftAndPublish
+	if publish && sc.ReviewWorkflow && sc.DraftAndPublish {
+		// New values cannot have been approved: save the draft, get it approved, then publish it.
+		return nil, nil, errHGNotApproved
+	}
 	h := &hgCoercer{s: s, ctx: ctx, reg: reg, required: publish, create: existing == nil}
 	var old map[string]any
 	if existing != nil {
@@ -986,7 +996,7 @@ func (s *Server) hgSaveEntry(ctx context.Context, sc *hgSchema, doc string, inpu
 	if err != nil {
 		return nil, nil, err
 	}
-	if err := s.hgApplyInverse(ctx, doc, invChanges); err != nil {
+	if err := s.hgApplyInverse(ctx, doc, invChanges, hgEntryLabel(sc, e.Data, doc), o.UserID); err != nil {
 		return nil, nil, err
 	}
 	action := "save"
@@ -997,6 +1007,7 @@ func (s *Server) hgSaveEntry(ctx context.Context, sc *hgSchema, doc string, inpu
 		action = "publish"
 	}
 	s.hgRecordVersion(ctx, e, action, o.UserID)
+	s.hgRecordLinkHistory(ctx, sc, e, old, o.UserID)
 	events := []string{"entry.update"}
 	if existing == nil {
 		events = []string{"entry.create"}
@@ -1012,6 +1023,9 @@ func (s *Server) hgPublishEntry(ctx context.Context, sc *hgSchema, doc, locale s
 	e, err := s.hgGetEntry(ctx, sc.UID, doc, locale)
 	if err != nil {
 		return nil, errHGNotFound
+	}
+	if err := hgReviewGate(sc, e); err != nil {
+		return nil, err
 	}
 	h := &hgCoercer{s: s, ctx: ctx, reg: s.hgReg(ctx), required: true}
 	h.object(sc, map[string]any{}, e.Data, nil, true)

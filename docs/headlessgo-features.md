@@ -31,6 +31,8 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 - Migration `0022_headlessgo_more.sql` adds the schedule columns of `hg_entries` (`publish_at`,
   `unpublish_at`, `schedule_error`), the content history `hg_entry_versions`, `hg_api_tokens.can_upload`
   and `hg_webhook_queue`.
+- Migration `0024_headlessgo_review_lock.sql` adds the edit locks (`hg_entry_locks`), the review columns of
+  `hg_entries` (`review_status`, `review_hash`, `review_by`, `review_note`, `review_at`) and the history note.
 - Inverse relation fields (`mappedBy`) store nothing: their value is computed from the owning side.
 
 ## 2. Headless mode
@@ -55,7 +57,7 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 | Deleting a document (its last locale) removes it from every relation pointing at it: owning fields of every type, also inside components and dynamic zones, drafts and published versions | ✓ |
 | One-to-one / one-to-many exclusivity (a target belongs to one entry) | ✓ |
 | Options: required, unique, min/max (length, value or item count), default, private (never in the API), regex (text, UID, email) | ✓ |
-| Type options: draft & publish, internationalization, preview URL template, description | ✓ |
+| Type options: draft & publish, review before publishing, internationalization, preview URL template, description | ✓ |
 | Builder page: type list, settings, field table with edit / delete / reorder, add-field panel with a type picker and per-type options | ✓ |
 | Validation: kebab-case API ids, unique singular/plural ids, reserved names (`id`, `documentId`, `locale`, …), valid targets, no component cycles, no dynamic zone in components | ✓ |
 | Schema changes migrate data: renamed fields (the builder sends `renamedFrom`) move their values; removed fields are dropped — in the type's entries, or inside every component value when a component changes (also nested and in dynamic zones); i18n on/off converts locales; draft & publish off publishes every draft | ✓ |
@@ -76,16 +78,19 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 | i18n: with Golylang active its languages are the locales; each document has one version per locale, linked by `documentId`; the edit screen lists the locales, opens a translation empty or filled from the current locale. With Golylang off there is one default locale (setting) | ✓ |
 | Delete one locale or every locale | ✓ |
 | Bulk actions in the list: publish, unpublish, delete the selected documents in the listed locale, or "in every locale"; failures (a required field empty) are reported per document | ✓ |
-| Content history: every save, publish, unpublish, discard, restore and scheduled (un)publication records the draft (last 50 per document version); the edit screen lists the latest, the History screen shows a version next to the current draft with changed fields marked, and restores it as the draft. Inverse relation fields are not part of a version | ✓ |
+| Content history: every save, publish, unpublish, discard, restore, review step and scheduled (un)publication records the draft (last 50 per document version); the edit screen lists the latest, the History screen shows a version next to the current draft with changed fields marked, and restores it as the draft. Inverse relation fields are not part of a version; a link made or removed from the other side of a two-way relation is recorded instead (see below) | ✓ |
+| Links across a two-way relation: saving an entry through its owning relation field adds a "Relations changed" version, with a note (`Linked by Book "Dune" via books`), to every entry that was linked or unlinked (their inverse field now lists something else); writing the inverse side adds one, with the new draft and a note (`Linked Writer "Ada" via writer`), to every owning entry whose data changed. Works from the admin, REST and GraphQL alike | ✓ |
+| Restoring a version checks its values against the **current** schema first (types and formats, required, min / max, regex, enumerations, media and relation targets that still exist, unique fields). If something no longer fits, nothing is restored and the mismatches are listed; the History screen shows them before you click, and offers "Restore the fields that still fit": the mismatching fields keep their current values and the message names them. Password hashes are carried over untouched | ✓ |
 | Scheduled publishing: "Publish on" / "Unpublish on" per document version (site time zone) in the edit screen, `POST …/{documentId}/schedule` in the API. The `headlessgo_tick` job of the site's job runner (every minute, rows claimed with `FOR UPDATE SKIP LOCKED`, safe across restarts and instances) publishes the draft as it is then, or unpublishes; a publication that fails validation is cleared and its reason shown on the edit screen; the list shows pending schedules | ✓ |
-| Editing lock, review workflows | ✗ not in this version |
+| Edit lock (WordPress post-lock style): opening an existing entry takes its lock (one per document version); the page's script renews it every 15 s (`POST /wp-admin/headlessgo/lock`, nonce-checked) and releases it when the page closes; a lock nobody renewed for 90 s is free. While someone else holds it the entry opens read-only with "X is currently editing this entry" and a **Take over editing** button; the server refuses every change from another user (save, publish, unpublish, discard, schedule, restore, delete), and a taken-over editor's open page is told by its next heartbeat and switches to read-only. A form also carries the version it was loaded from: a save on top of a newer one is refused ("changed by someone else"), also without a lock. The REST and GraphQL APIs are not locked (tokens have no user) | ✓ |
+| Review flow: the type option **Review before publishing** (needs draft & publish). A draft is *submitted for review*; a user who can edit others' posts (editor and above) *approves* or *rejects* it (optional note). Publishing needs an approved draft, whatever the route: the form's Publish button (it saves the draft and publishes when that draft is approved, otherwise it says the draft was saved but not published), the REST `publish` route and `?status=published` writes, GraphQL `publish…` / `status: PUBLISHED`, bulk publish, and scheduled publication (the schedule is cleared with the reason in the edit screen). Approval is bound to the exact draft: any later change (form, API, restore, relation link) makes it "not reviewed" again. Submit, approve and reject appear in the entry history with the reviewer's note. The APIs have no user, so they can neither submit nor approve; a type without the option is unchanged | ✓ |
 
 ## 5. Delivery REST API — `/wp-json/headlessgo/v1`
 
 | Feature | Status |
 |---|---|
 | `GET/POST /{pluralApiId}`, `GET/PUT/PATCH/DELETE /{pluralApiId}/{documentId}`, single types `GET/PUT/DELETE /{singularApiId}` | ✓ |
-| `POST …/{documentId}/publish` and `/unpublish` (needs `update`) | ✓ (extension) |
+| `POST …/{documentId}/publish` and `/unpublish` (needs `update`); `publish` is refused (400) for a type with the review flow until the draft is approved in the admin | ✓ (extension) |
 | `POST …/{documentId}/schedule` with `{"data": {"publishAt", "unpublishAt"}}` (RFC 3339, `null` clears; needs `update`) | ✓ (extension) |
 | Media upload: `POST /upload` (multipart `files`, one or several; optional `fileInfo` JSON `{name, alternativeText, caption}` or a list) through the core media upload code (same file checks, image sizes, GoCDN); answer: the files in the API's media format. With `ref` (type uid or API id), `refId` (document id), `field` and optional `locale` the files are attached to the entry's draft (appended to a multiple field, replacing a single one; allowed types checked before anything is kept). `GET /upload/files/{id}` | ✓ |
 | Response `{data, meta}`; entries carry `id`, `documentId`, attributes, `createdAt`, `updatedAt`, `publishedAt`, `locale`; errors `{data:null, error:{status, name, message, details}}` with `ValidationError` details `{errors:[{path, message}]}` | ✓ |
@@ -173,9 +178,30 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 - Admin playground (HeadlessGo › GraphQL): a query and variables editor that runs as the logged-in
   administrator (`POST /wp-admin/headlessgo/graphql`, nonce-checked) or, with a pasted API token, against
   the public endpoint with that token's permissions; plus a reference of the root fields. ✓
-- Not supported: subscriptions, custom directives, the full validation of a query against the schema
-  (unknown fields inside a selection come back as `null` instead of an error). The endpoint can be
-  switched off under Settings.
+- **Validation**: a query is checked against the generated schema before it runs. An unknown field
+  (also inside fragments and mutation results), an object field without a selection, a scalar with one
+  (JSON scalars may have one), an unknown root argument or an unknown fragment type is a GraphQL
+  validation error: HTTP 400, `{"errors":[{"message":"Cannot query field \"titel\" on type \"Article\". Did you
+  mean \"title\"?","extensions":{"code":"GRAPHQL_VALIDATION_FAILED"}}]}`, no `data`, nothing executed (a
+  mutation in the same request does not run). Every problem found is listed.
+- **Subscriptions** over server-sent events (the "distinct connections" mode of the graphql-sse protocol)
+  on the same endpoint: send the subscription as a `GET` (`?query=…`, works with `EventSource`) or a `POST`
+  (JSON body, works with `fetch`) with the usual `Authorization: Bearer` header and read the stream
+  (`Content-Type: text/event-stream`). Root fields per content type: `articleCreated`, `articleUpdated` and
+  `articlePublished` (only with draft & publish; the introspected `Subscription` type lists them), with
+  arguments `documentId` (collection types) and `locale`; one root field per subscription. Each event runs
+  the selection against the entry, so aliases, populate, fragments and variables work as in a query:
+  `event: next` / `data: {"data":{"articleCreated":{…}}}`, `: ping` comments every 20 s, `event: complete`
+  when the server ends the stream. Access follows REST: the type's `findOne` (single types: `find`)
+  permission; a token that may read drafts gets Created and Updated with the **draft** values and
+  Published with the published ones; every other caller gets Published only (for types without draft &
+  publish also Created and Updated, published values). Validation errors, 403 and a full server (500
+  streams) answer as plain JSON before the stream starts. Limits: events are fanned out in the process
+  that handled the write (a multi-instance setup needs the webhooks instead); unpublish and delete have
+  no subscription (use the `entry.unpublish` / `entry.delete` webhooks); a stream is ended after 30 minutes
+  (clients reconnect) and a subscriber that falls 256 events behind is dropped with an error event; no
+  WebSocket transport (graphql-ws). The admin playground cannot show a stream and says so.
+- Not supported: custom directives; component inputs are JSON. The endpoint can be switched off under Settings.
 
 ## 11. Translations
 
@@ -188,10 +214,16 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 
 ## 12. Not built / limits
 
-- Editing lock, review workflows, relation ordering beyond the stored order (the owning side's order;
-  the inverse side lists owners by creation).
-- History does not record link changes made from the other side of a relation or by a schema
-  conversion; a restored version that no longer validates (the schema changed) is reported when it is
-  published or saved again.
-- GraphQL: subscriptions, custom directives, strict query validation; component inputs are JSON.
+- Relation ordering beyond the stored order (the owning side's order; the inverse side lists owners by
+  creation).
+- History does not record link changes made by a schema conversion or by deleting a related document
+  (the deleted document's links disappear from the owners' drafts without a version), and a link that
+  moves from one inverse-side entry to another through the inverse field is recorded on the owning
+  entry and the new target, not on the entry that lost it.
+- Edit locks and the review flow belong to the admin: the REST and GraphQL APIs are not locked and
+  cannot submit, approve or reject (they are refused when publishing an unapproved draft). The review
+  capability is "may edit others' posts" and is not configurable per type; a reviewer may approve a draft
+  they submitted themselves.
+- GraphQL: custom directives; subscriptions are server-sent events from one process (see §10);
+  component inputs are JSON.
 - Translations of HeadlessGo's own admin strings exist only in Turkish.
