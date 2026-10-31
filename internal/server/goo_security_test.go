@@ -333,3 +333,30 @@ func TestGooMembershipsRestrictRESTContent(t *testing.T) {
 		t.Errorf("members-only shortcode over REST: %s", r.Raw)
 	}
 }
+
+// My Account › Gift Cards matched cards by the account's e-mail, which a customer can change without
+// verification: pointing it at a recipient's address revealed the recipient's codes.
+func TestGooGiftCardCodesNotShownByEmailMatch(t *testing.T) {
+	_, _, srv := gooSite(t)
+	ctx := context.Background()
+	if err := srv.gooSetExtension(ctx, gcKey, true); err != nil {
+		t.Fatal(err)
+	}
+	g := &gcCard{Initial: 50, Recipient: "victim@example.test", Delivered: true}
+	if err := srv.gcCreate(ctx, g, 0, "test"); err != nil {
+		t.Fatal(err)
+	}
+	attacker := gxaCustomer(t, srv, "victim@example.test") // an account that took the recipient's address
+	c := gooTestCtx()
+	c.Set(ctxUser, attacker)
+	out := string(gcAccount(srv, c, ""))
+	if strings.Contains(out, g.Code) || !strings.Contains(out, gcMaskCode(g.Code)) {
+		t.Fatalf("recipient-matched card code shown: %s", out)
+	}
+	if strings.Contains(out, "50.00") {
+		t.Errorf("recipient-matched card balance shown: %s", out)
+	}
+	if m := gcMaskCode("ABCD-EFGH-IJKL-MNOP"); m != "XXXX-XXXX-XXXX-MNOP" {
+		t.Errorf("mask %q", m)
+	}
+}
