@@ -86,6 +86,8 @@ type hgAdminData struct {
 	Diff    []hgDiffRow
 	// RestoreErrs are the values of the chosen version that no longer fit the content type.
 	RestoreErrs hgValidationError
+	// RestoreDropped are the fields of the chosen version the content type no longer has.
+	RestoreDropped []string
 
 	// Builder
 	BuilderJSON template.JS
@@ -1172,6 +1174,7 @@ func (s *Server) hgAdminEntryPost(c *gin.Context, sc *hgSchema, do string) {
 			hgRedirect(c, entryURL(doc), "", errors.New("This version no longer exists."))
 			return
 		}
+		dropped := hgVersionDropped(sc, v.Data)
 		e, skipped, err := s.hgRestoreVersion(c, sc, vid, u.ID, c.PostForm("partial") == "1")
 		if err != nil {
 			var ve hgValidationError
@@ -1190,6 +1193,9 @@ func (s *Server) hgAdminEntryPost(c *gin.Context, sc *hgSchema, do string) {
 		msg := "The version was restored as the draft."
 		if len(skipped) > 0 {
 			msg = "The version was restored as the draft, except for " + strings.Join(skipped, ", ") + ": those values no longer fit the content type and kept their current values."
+		}
+		if len(dropped) > 0 {
+			msg += " Left out, the content type no longer has these fields: " + strings.Join(dropped, ", ") + "."
 		}
 		hgRedirect(c, entryURL(doc), msg, nil)
 	case "bulk_entries":
@@ -1322,6 +1328,7 @@ func (s *Server) hgAdminHistory(c *gin.Context, d *hgAdminData) bool {
 			}
 		}
 		d.RestoreErrs = s.hgCheckRestored(c, sc, e.DocumentID, e.Locale, data)
+		d.RestoreDropped = hgVersionDropped(sc, d.Version.Data)
 	}
 	return true
 }

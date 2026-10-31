@@ -177,6 +177,7 @@
 <form method="post" action="/wp-admin/headlessgo" class="hg-restore" onsubmit="return confirm('Replace the current draft with this version?')">
 	<input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="entry"><input type="hidden" name="do" value="restore_version">
 	<input type="hidden" name="type" value="{{.Type.UID}}"><input type="hidden" name="doc" value="{{.Doc}}"><input type="hidden" name="locale" value="{{.Locale}}"><input type="hidden" name="version" value="{{.Version.ID}}">
+	{{if .RestoreDropped}}<div class="notice notice-info inline"><p>This version has values of fields the content type no longer has; they are left out when it is restored: {{range $i, $f := .RestoreDropped}}{{if $i}}, {{end}}<code translate="no">{{$f}}</code>{{end}}</p></div>{{end}}
 	{{if .RestoreErrs}}<div class="notice notice-warning inline"><p><strong>Some values of this version no longer fit the content type:</strong></p><ul class="hg-errlist">{{range .RestoreErrs}}<li><code translate="no">{{range $i, $p := .Path}}{{if $i}}.{{end}}{{$p}}{{end}}</code> {{.Message}}</li>{{end}}</ul>
 	<p class="description">Restoring the whole version is refused. You can restore the other fields: these keep their current values.</p></div>
 	<p><button type="submit" class="button button-primary" name="partial" value="1">Restore the fields that still fit</button></p>

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
+	"sort"
 	"time"
 )
 
@@ -182,6 +183,19 @@ func (s *Server) hgCheckRestored(ctx context.Context, sc *hgSchema, doc, locale 
 	errs := h.errs
 	errs = append(errs, s.hgCheckUnique(ctx, sc, doc, locale, data)...)
 	return errs
+}
+
+// hgVersionDropped lists the fields of a version's values that the type no longer has (removed or
+// renamed since); a restore leaves them out.
+func hgVersionDropped(sc *hgSchema, data map[string]any) []string {
+	var out []string
+	for k := range data {
+		if sc.Field(k) == nil {
+			out = append(out, k)
+		}
+	}
+	sort.Strings(out)
+	return out
 }
 
 // hgRestoreVersion makes a version the entry's draft. Its values are checked against the current
