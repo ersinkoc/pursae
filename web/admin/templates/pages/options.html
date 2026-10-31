@@ -223,6 +223,13 @@ Discourage search engines from indexing this site</label>
 <h2 class="title">Uploading Files</h2>
 <table class="form-table" role="presentation">
 <tr><th scope="row" colspan="2" class="th-full"><label for="uploads_use_yearmonth_folders"><input name="uploads_use_yearmonth_folders" type="checkbox" id="uploads_use_yearmonth_folders" value="1"{{if settingBool "uploads_use_yearmonth_folders"}} checked="checked"{{end}} /> Organize my uploads into month- and year-based folders</label></th></tr>
+<tr><th scope="row"><label for="image_output_format">Image output format</label></th>
+<td><select name="image_output_format" id="image_output_format" aria-describedby="image-output-format-description">
+<option value=""{{if eq (settingStr "image_output_format") ""}} selected="selected"{{end}}>JPEG sizes for WebP uploads</option>
+<option value="webp"{{if eq (settingStr "image_output_format") "webp"}} selected="selected"{{end}}>WebP sizes for WebP uploads</option>
+<option value="webp-all"{{if eq (settingStr "image_output_format") "webp-all"}} selected="selected"{{end}}>WebP for JPEG, PNG and WebP uploads</option>
+</select>
+<p class="description" id="image-output-format-description">The format of the sizes made of each uploaded image. With WebP for JPEG and PNG uploads, the image itself is saved as WebP too and the uploaded file is kept as the original image. Images already in the Media Library are not changed.</p></td></tr>
 </table>{{end}}
 
 {{define "options-permalink"}}<p>WordPress offers you the ability to create a custom URL structure for your permalinks and archives. Custom URL structures can improve the aesthetics, usability, and forward-compatibility of your links. A <a href="https://wordpress.org/documentation/article/customize-permalinks/">number of tags are available</a>, and here are some examples to get you started.</p>

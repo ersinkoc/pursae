@@ -36,7 +36,7 @@ var optionPages = map[string][]string{
 		"comment_moderation", "comment_previously_approved", "comment_max_links", "moderation_keys", "disallowed_keys",
 		"show_avatars", "avatar_rating", "avatar_default"},
 	"media": {"thumbnail_size_w", "thumbnail_size_h", "thumbnail_crop", "medium_size_w", "medium_size_h", "large_size_w", "large_size_h",
-		"uploads_use_yearmonth_folders"},
+		"uploads_use_yearmonth_folders", "image_output_format"},
 	"permalink": {"permalink_structure", "category_base", "tag_base"},
 }
 
@@ -264,6 +264,10 @@ func (s *Server) optionsSave(c *gin.Context) {
 		if v, ok := values["default_role"].(string); ok && v == "administrator" {
 			// WordPress allows it but warns; keep the choice.
 			values["default_role"] = v
+		}
+	case "media":
+		if v, ok := values["image_output_format"].(string); ok && v != "" && v != "webp" && v != "webp-all" {
+			delete(values, "image_output_format")
 		}
 	case "discussion":
 		for _, k := range []string{"default_ping_status", "default_comment_status"} {

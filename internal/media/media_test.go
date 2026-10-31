@@ -68,3 +68,90 @@ func TestSaveAndProcess(t *testing.T) {
 		t.Errorf("php upload allowed: %v", err)
 	}
 }
+
+// TestProcessImageWebP checks the image output format mapping (image_editor_output_format): by
+// default a WebP upload gets JPEG sizes; mapped to WebP it keeps WebP sizes; a JPEG mapped to WebP
+// is converted, its sizes are WebP and the upload stays as the original image.
+func TestProcessImageWebP(t *testing.T) {
+	dir := t.TempDir()
+	img := image.NewRGBA(image.Rect(0, 0, 900, 600))
+	for y := 0; y < 600; y++ {
+		for x := 0; x < 900; x++ {
+			img.Set(x, y, color.RGBA{uint8(x), uint8(y), 120, 255})
+		}
+	}
+	write := func(name, format string) string {
+		var buf bytes.Buffer
+		if err := EncodeTo(&buf, img, format); err != nil {
+			t.Fatal(err)
+		}
+		st, err := Save(dir, false, time.Now(), name, &buf)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return st.RelPath
+	}
+	sizes := []Size{{"thumbnail", 150, 150, true}, {"medium", 300, 300, false}}
+	isWebP := func(name string) bool {
+		b, err := os.ReadFile(filepath.Join(dir, name))
+		return err == nil && len(b) > 12 && string(b[:4]) == "RIFF" && string(b[8:12]) == "WEBP"
+	}
+
+	rel := write("flower.webp", "webp")
+	info, err := ProcessImage(dir, rel, sizes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(info.Variants) != 2 || info.Variants[0].File != "flower-150x150.jpg" || info.Variants[0].Mime != "image/jpeg" || info.RelPath != rel {
+		t.Errorf("default: %+v", info)
+	}
+
+	webp := Options{OutputFormat: map[string]string{"image/webp": "image/webp"}}
+	info, err = ProcessImageWith(dir, rel, sizes, webp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(info.Variants) != 2 || info.Variants[1].File != "flower-300x200.webp" || info.Variants[1].Mime != "image/webp" ||
+		!isWebP("flower-300x200.webp") || info.OriginalFile != "" || info.RelPath != rel {
+		t.Errorf("webp: %+v", info)
+	}
+
+	rel = write("meadow.jpg", "jpeg")
+	all := Options{OutputFormat: map[string]string{"image/jpeg": "image/webp", "image/webp": "image/webp"}}
+	info, err = ProcessImageWith(dir, rel, sizes, all)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.RelPath != "meadow.webp" || info.OriginalFile != "meadow.jpg" || !isWebP("meadow.webp") || info.Width != 900 ||
+		len(info.Variants) != 2 || info.Variants[0].File != "meadow-150x150.webp" || !isWebP("meadow-150x150.webp") {
+		t.Errorf("jpeg to webp: %+v", info)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "meadow.jpg")); err != nil {
+		t.Error("the JPEG original is gone")
+	}
+	// A mapping to a format that cannot be written is ignored.
+	info, _ = ProcessImageWith(dir, "meadow.jpg", sizes, Options{OutputFormat: map[string]string{"image/jpeg": "image/avif"}})
+	if info.RelPath != "meadow.jpg" || info.Variants[0].Mime != "image/jpeg" {
+		t.Errorf("avif mapping: %+v", info)
+	}
+}
+
+// TestProcessImageWebPScaled checks a big image mapped to WebP: the "-scaled" main file is WebP.
+func TestProcessImageWebPScaled(t *testing.T) {
+	dir := t.TempDir()
+	var buf bytes.Buffer
+	if err := jpeg.Encode(&buf, image.NewRGBA(image.Rect(0, 0, 3000, 1000)), nil); err != nil {
+		t.Fatal(err)
+	}
+	st, err := Save(dir, false, time.Now(), "wide.jpg", &buf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	info, err := ProcessImageWith(dir, st.RelPath, []Size{{"medium", 300, 300, false}}, Options{OutputFormat: map[string]string{"image/jpeg": "image/webp"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.RelPath != "wide-scaled.webp" || info.OriginalFile != "wide.jpg" || info.Width != 2560 || info.Variants[0].File != "wide-300x100.webp" {
+		t.Errorf("scaled: %+v", info)
+	}
+}

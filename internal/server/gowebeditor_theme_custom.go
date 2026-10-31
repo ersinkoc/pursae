@@ -638,14 +638,7 @@ func (s *Server) gweImportMedia(c *gin.Context, name string, data []byte) (*stor
 	a := &store.Attachment{UploaderID: u.ID, FilePath: st.RelPath, Mime: st.Mime, FileSize: st.Size,
 		Title: title, Slug: wp.SanitizeTitle(title), Meta: map[string]any{"filesize": st.Size}}
 	if strings.HasPrefix(st.Mime, "image/") && st.Mime != "image/svg+xml" {
-		if info, err := media.ProcessImage(s.cfg.UploadsDir, st.RelPath, s.imageSizes()); err == nil {
-			a.Width, a.Height, a.FilePath, a.FileSize = info.Width, info.Height, info.RelPath, info.FileSize
-			dir := path.Dir(info.RelPath)
-			for _, v := range info.Variants {
-				a.Variants = append(a.Variants, store.AttachmentVariant{Name: v.Name, FilePath: path.Join(dir, v.File),
-					Width: v.Width, Height: v.Height, Mime: v.Mime, FileSize: v.Size})
-			}
-		}
+		s.createImageSubsizes(c, a)
 	}
 	if err := s.store.InsertAttachment(c, a); err != nil {
 		return nil, err

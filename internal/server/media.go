@@ -46,6 +46,60 @@ func (s *Server) imageSizes() []media.Size {
 	}
 }
 
+// imageEditorOptions is image_editor_output_format for an upload: WordPress' default mapping (HEIC to
+// JPEG), the image_output_format setting (Settings › Media) and the image_editor_output_format
+// filter. "" keeps the default: WebP uploads get JPEG sizes; "webp" keeps WebP uploads in WebP (what
+// WordPress does); "webp-all" also writes JPEG and PNG uploads as WebP, keeping the upload as the
+// original image.
+func (s *Server) imageEditorOptions(ctx context.Context, file, mime string) media.Options {
+	m := map[string]any{"image/heic": "image/jpeg", "image/heif": "image/jpeg", "image/heic-sequence": "image/jpeg", "image/heif-sequence": "image/jpeg"}
+	switch s.settings.String("image_output_format") {
+	case "webp":
+		m["image/webp"] = "image/webp"
+	case "webp-all":
+		m["image/webp"] = "image/webp"
+		m["image/jpeg"] = "image/webp"
+		m["image/png"] = "image/webp"
+	}
+	if v, ok := s.applyFilters(ctx, "image_editor_output_format", m, file, mime).(map[string]any); ok {
+		m = v
+	}
+	out := map[string]string{}
+	for k, v := range m {
+		if to, ok := v.(string); ok {
+			out[k] = to
+		}
+	}
+	return media.Options{OutputFormat: out}
+}
+
+// createImageSubsizes is wp_create_image_subsizes() for a new attachment: its dimensions, the
+// "-scaled" or converted main file and the registered sizes.
+func (s *Server) createImageSubsizes(ctx context.Context, a *store.Attachment) {
+	info, err := media.ProcessImageWith(s.cfg.UploadsDir, a.FilePath, s.imageSizes(), s.imageEditorOptions(ctx, path.Base(a.FilePath), a.Mime))
+	if err != nil {
+		return
+	}
+	a.Width, a.Height = info.Width, info.Height
+	a.FilePath = info.RelPath
+	a.FileSize = info.FileSize
+	if a.Meta == nil {
+		a.Meta = map[string]any{}
+	}
+	a.Meta["filesize"] = info.FileSize
+	if info.OriginalFile != "" {
+		a.Meta["original_image"] = info.OriginalFile
+		if m := media.MimeFor(info.RelPath); m != "" {
+			a.Mime = m // converted (image_editor_output_format)
+		}
+	}
+	dir := path.Dir(info.RelPath)
+	for _, v := range info.Variants {
+		a.Variants = append(a.Variants, store.AttachmentVariant{Name: v.Name, FilePath: path.Join(dir, v.File),
+			Width: v.Width, Height: v.Height, Mime: v.Mime, FileSize: v.Size})
+	}
+}
+
 // uploadURL is wp_get_attachment_url() for a path relative to the uploads dir.
 func (s *Server) uploadURL(c context.Context, rel string) string {
 	return s.links(c).HomeURL("/wp-content/uploads/" + rel)
@@ -78,20 +132,7 @@ func (s *Server) saveUpload(c *gin.Context, field string, postID int64) (*store.
 	a := &store.Attachment{UploaderID: u.ID, PostID: postID, FilePath: st.RelPath, Mime: st.Mime, FileSize: st.Size,
 		Title: title, Slug: wp.SanitizeTitle(title), Meta: map[string]any{"filesize": st.Size}}
 	if strings.HasPrefix(st.Mime, "image/") {
-		if info, err := media.ProcessImage(s.cfg.UploadsDir, st.RelPath, s.imageSizes()); err == nil {
-			a.Width, a.Height = info.Width, info.Height
-			a.FilePath = info.RelPath
-			a.FileSize = info.FileSize
-			a.Meta["filesize"] = info.FileSize
-			if info.OriginalFile != "" {
-				a.Meta["original_image"] = info.OriginalFile
-			}
-			dir := path.Dir(info.RelPath)
-			for _, v := range info.Variants {
-				a.Variants = append(a.Variants, store.AttachmentVariant{Name: v.Name, FilePath: path.Join(dir, v.File),
-					Width: v.Width, Height: v.Height, Mime: v.Mime, FileSize: v.Size})
-			}
-		}
+		s.createImageSubsizes(c, a)
 	}
 	if err := s.store.InsertAttachment(c, a); err != nil {
 		return nil, err
@@ -125,20 +166,7 @@ func (s *Server) insertAttachmentFile(ctx context.Context, name string, r io.Rea
 	a := &store.Attachment{UploaderID: uploaderID, PostID: postID, FilePath: st.RelPath, Mime: st.Mime, FileSize: st.Size,
 		Title: title, Slug: wp.SanitizeTitle(title), Meta: map[string]any{"filesize": st.Size}}
 	if strings.HasPrefix(st.Mime, "image/") {
-		if info, err := media.ProcessImage(s.cfg.UploadsDir, st.RelPath, s.imageSizes()); err == nil {
-			a.Width, a.Height = info.Width, info.Height
-			a.FilePath = info.RelPath
-			a.FileSize = info.FileSize
-			a.Meta["filesize"] = info.FileSize
-			if info.OriginalFile != "" {
-				a.Meta["original_image"] = info.OriginalFile
-			}
-			dir := path.Dir(info.RelPath)
-			for _, v := range info.Variants {
-				a.Variants = append(a.Variants, store.AttachmentVariant{Name: v.Name, FilePath: path.Join(dir, v.File),
-					Width: v.Width, Height: v.Height, Mime: v.Mime, FileSize: v.Size})
-			}
-		}
+		s.createImageSubsizes(ctx, a)
 	}
 	if err := s.store.InsertAttachment(ctx, a); err != nil {
 		return nil, err

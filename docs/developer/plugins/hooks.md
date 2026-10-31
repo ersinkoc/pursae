@@ -35,6 +35,12 @@ the manifest's `hooks` array.
 | `admin_notices` | action | — | none. Queue a notice with `wpgo.AdminNotice`; it is escaped and shown on the current admin screen | `admin:notices` |
 | `wpgo_post_stats` | filter | `map[string]any` of statistics shown in the classic editor's publish box (key → value; underscores become spaces) | `post`: `{"id", "title", "content"}` | `posts:read` |
 
+### Media
+
+| Hook | Type | Value | Arguments | Permission |
+|------|------|-------|-----------|------------|
+| `image_editor_output_format` | filter | `map[string]any` source MIME type → output MIME type for the generated image sizes, e.g. `{"image/jpeg": "image/webp"}`; it starts as WordPress' default (HEIC → JPEG) plus the Settings › Media › Image output format choice. A mapping that changes the format converts the main image too; `image/jpeg`, `image/png`, `image/gif` and `image/webp` can be written | the upload's file name, its MIME type | — |
+
 ### Lifecycle
 
 | Hook | Type | Arguments | Permission |

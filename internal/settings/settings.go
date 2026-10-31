@@ -104,6 +104,7 @@ var Defaults = map[string]any{
 	"large_size_w":                  1024,
 	"large_size_h":                  1024,
 	"uploads_use_yearmonth_folders": true,
+	"image_output_format":           "", // Settings › Media: "", "webp" or "webp-all" (Server.imageEditorOptions)
 	"permalink_structure":           "/%year%/%monthnum%/%day%/%postname%/",
 	"category_base":                 "",
 	"tag_base":                      "",

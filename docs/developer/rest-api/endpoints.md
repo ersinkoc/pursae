@@ -22,7 +22,7 @@ ones; `HEAD` works wherever `GET` does and `PUT`/`PATCH` wherever `POST` does.
 
 | Route | Methods | Notes |
 |-------|---------|-------|
-| `/media` | GET, POST | upload with `multipart/form-data` (`file`) or a raw body with `Content-Disposition: attachment; filename=…`; image sizes are generated |
+| `/media` | GET, POST | upload with `multipart/form-data` (`file`) or a raw body with `Content-Disposition: attachment; filename=…`; image sizes are generated (in the format of Settings › Media › Image output format) |
 | `/media/{id}` | GET, POST, DELETE | `title`, `caption`, `alt_text`, `description`, `post` |
 | `/media/{id}/post-process` | POST | |
 

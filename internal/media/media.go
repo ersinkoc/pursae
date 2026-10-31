@@ -16,6 +16,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gen2brain/webp"
 	"golang.org/x/image/draw"
 	_ "golang.org/x/image/webp"
 
@@ -179,10 +180,25 @@ type ImageInfo struct {
 // BigImageThreshold is the big_image_size_threshold default.
 const BigImageThreshold = 2560
 
-// ProcessImage reads an uploaded image, creates the -scaled main file when needed and every
-// registered size that is smaller than the original. Formats Go can't encode (WebP, AVIF, …)
-// keep their original file only.
+// Options are the image editor's choices for one image.
+type Options struct {
+	// OutputFormat is image_editor_output_format: a source MIME type mapped to the MIME type the
+	// image's sub-sizes are saved in, e.g. {"image/webp": "image/webp"} keeps WebP uploads in WebP,
+	// {"image/jpeg": "image/webp"} writes WebP sizes of JPEG uploads. When the mapping changes the
+	// format, the main image is converted too (wp_create_image_subsizes()) and the uploaded file is
+	// kept as the original image. Mappings to a format that cannot be written are ignored.
+	OutputFormat map[string]string
+}
+
+// ProcessImage is ProcessImageWith with the default options.
 func ProcessImage(uploadsDir, relPath string, sizes []Size) (*ImageInfo, error) {
+	return ProcessImageWith(uploadsDir, relPath, sizes, Options{})
+}
+
+// ProcessImageWith reads an uploaded image, creates the -scaled main file when needed and every
+// registered size that is smaller than the original. Formats Go can't decode (AVIF, HEIC) keep
+// their original file only.
+func ProcessImageWith(uploadsDir, relPath string, sizes []Size, opts Options) (*ImageInfo, error) {
 	full := filepath.Join(uploadsDir, filepath.FromSlash(relPath))
 	f, err := os.Open(full)
 	if err != nil {
@@ -219,9 +235,17 @@ func ProcessImage(uploadsDir, relPath string, sizes []Size) (*ImageInfo, error) 
 	dir := filepath.Dir(full)
 	ext := filepath.Ext(full)
 	base := strings.TrimSuffix(filepath.Base(full), ext)
-	// Sub-sizes keep the format WordPress Go can write: WebP/BMP/TIFF become JPEG (PNG with
-	// transparency) and the original stays as uploaded, with no "-scaled" copy.
+	// Sub-sizes keep the upload's format, or the one opts.OutputFormat maps it to. Without a mapping,
+	// WebP/BMP/TIFF sizes are JPEG (PNG with transparency) and the original stays as uploaded, with
+	// no "-scaled" copy.
 	out := outputFormat(format, img)
+	convert := false
+	if to, ok := opts.OutputFormat["image/"+format]; ok {
+		if f := strings.TrimPrefix(to, "image/"); writable(f) {
+			out = f
+			convert = f != format
+		}
+	}
 	native := out == format
 	outExt := ext
 	if !native {
@@ -229,11 +253,12 @@ func ProcessImage(uploadsDir, relPath string, sizes []Size) (*ImageInfo, error) 
 	}
 
 	src := img
-	if native && (info.Width > BigImageThreshold || info.Height > BigImageThreshold) {
+	big := info.Width > BigImageThreshold || info.Height > BigImageThreshold
+	if (native || convert) && big {
 		w, h := fitWithin(info.Width, info.Height, BigImageThreshold, BigImageThreshold)
 		scaled := resize(img, w, h, false)
-		name := base + "-scaled" + ext
-		if err := encode(filepath.Join(dir, name), scaled, format); err == nil {
+		name := base + "-scaled" + outExt
+		if err := encode(filepath.Join(dir, name), scaled, out); err == nil {
 			info.OriginalFile = filepath.Base(full)
 			info.RelPath = filepath.ToSlash(filepath.Join(filepath.Dir(relPath), name))
 			info.Width, info.Height = w, h
@@ -241,6 +266,16 @@ func ProcessImage(uploadsDir, relPath string, sizes []Size) (*ImageInfo, error) 
 				info.FileSize = st.Size()
 			}
 			src = scaled
+		}
+	} else if convert {
+		// The image converted at its own size: photo.jpg → photo.webp, the upload kept as the original.
+		name := uniqueName(dir, base+outExt)
+		if err := encode(filepath.Join(dir, name), img, out); err == nil {
+			info.OriginalFile = filepath.Base(full)
+			info.RelPath = filepath.ToSlash(filepath.Join(filepath.Dir(relPath), name))
+			if st, err := os.Stat(filepath.Join(dir, name)); err == nil {
+				info.FileSize = st.Size()
+			}
 		}
 	}
 
@@ -350,14 +385,7 @@ func encode(path string, img image.Image, format string) error {
 	if err != nil {
 		return err
 	}
-	switch format {
-	case "jpeg":
-		err = jpeg.Encode(f, img, &jpeg.Options{Quality: 82}) // WordPress' default JPEG quality
-	case "gif":
-		err = gif.Encode(f, img, nil)
-	default:
-		err = png.Encode(f, img)
-	}
+	err = EncodeTo(f, img, format)
 	if cerr := f.Close(); err == nil {
 		err = cerr
 	}
@@ -513,11 +541,15 @@ func Decode(uploadsDir, relPath string) (image.Image, string, error) {
 // Resize scales an image to exactly w×h.
 func Resize(img image.Image, w, h int) image.Image { return resize(img, w, h, false) }
 
-// Encode writes img to w in the given format (jpeg, png or gif).
+// EncodeTo writes img to w in the given format (jpeg, webp, png or gif), at WordPress' default
+// qualities (WP_Image_Editor::get_default_quality(): 82, WebP 86).
 func EncodeTo(w io.Writer, img image.Image, format string) error {
 	switch format {
 	case "jpeg":
 		return jpeg.Encode(w, img, &jpeg.Options{Quality: 82})
+	case "webp":
+		// libwebp transpiled to Go (no cgo; the nodynamic build tag keeps it from loading a system library).
+		return webp.Encode(w, img, webp.Options{Quality: 86, Method: 4})
 	case "gif":
 		return gif.Encode(w, img, nil)
 	}

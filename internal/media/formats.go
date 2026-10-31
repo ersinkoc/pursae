@@ -16,9 +16,11 @@ import (
 	_ "golang.org/x/image/tiff" // decode TIFF uploads for their sizes
 )
 
-// Formats beyond JPEG/PNG/GIF. Images the standard library can decode but not write (WebP, BMP,
-// TIFF) get their sub-sizes as JPEG, or PNG when they have transparency, like WordPress'
-// image_editor_output_format mapping (HEIC → JPEG). AVIF and HEIC cannot be decoded here: their
+// Formats beyond JPEG/PNG/GIF. Images decoded here but not written by default (WebP, BMP, TIFF)
+// get their sub-sizes as JPEG, or PNG when they have transparency, like WordPress'
+// image_editor_output_format mapping (HEIC → JPEG). WebP can be written: Options.OutputFormat
+// (the site's image output format setting) keeps WebP uploads in WebP or converts JPEG and PNG
+// uploads to WebP. AVIF and HEIC cannot be decoded here: their
 // width and height are read from the ISO-BMFF "ispe" box and no sub-sizes are made, so the
 // original is used everywhere. SVG is sanitized on upload and measured from its root element.
 
@@ -42,6 +44,15 @@ func hasAlpha(img image.Image) bool {
 		return !o.Opaque()
 	}
 	return true
+}
+
+// writable reports whether images can be saved in a format.
+func writable(format string) bool {
+	switch format {
+	case "jpeg", "png", "gif", "webp":
+		return true
+	}
+	return false
 }
 
 // formatExt is the file extension for an output format.
