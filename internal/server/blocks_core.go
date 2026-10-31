@@ -97,6 +97,20 @@ func wrapperClass(b *blocks.Block, extra string) string {
 	return `class="` + html.EscapeString(strings.Join(classes, " ")) + `"`
 }
 
+// rootPaddingAware is theme.json's settings.useRootPaddingAwareAlignments of the active theme: constrained
+// layouts then get has-global-padding (wp_render_layout_support_flag).
+func (s *Server) rootPaddingAware() bool {
+	if s == nil || s.settings == nil {
+		return false
+	}
+	t := s.activeTheme()
+	if t == nil || t.Settings == nil {
+		return false
+	}
+	v, _ := t.Settings["useRootPaddingAwareAlignments"].(bool)
+	return v
+}
+
 func registerCoreBlocks(s *Server) {
 	blocks.RegisterDynamic("core/heading", func(_ context.Context, _ *blocks.Block, content string) string {
 		return blocks.AddClass(content, "wp-block-heading", "h1", "h2", "h3", "h4", "h5", "h6")
@@ -117,7 +131,11 @@ func registerCoreBlocks(s *Server) {
 			if name == "columns" || name == "buttons" || name == "social-links" || name == "gallery" {
 				typ = "flex"
 			}
-			return blocks.AddClass(content, "is-layout-"+typ+" wp-block-"+name+"-is-layout-"+typ)
+			cls := "is-layout-" + typ + " wp-block-" + name + "-is-layout-" + typ
+			if typ == "constrained" && s.rootPaddingAware() {
+				cls = "has-global-padding " + cls // theme.json's useRootPaddingAwareAlignments
+			}
+			return blocks.AddClass(content, cls)
 		}
 	}
 	for _, n := range []string{"group", "columns", "column", "buttons", "social-links", "quote", "details", "gallery"} {
