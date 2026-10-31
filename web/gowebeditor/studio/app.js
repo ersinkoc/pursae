@@ -75,7 +75,7 @@
 	// --- top bar ------------------------------------------------------------------------------
 	function topBar() {
 		const logo = h('button.gwe-logo', { type: 'button', 'aria-label': 'Pursae Web Builder menu', 'aria-haspopup': 'menu', 'aria-expanded': 'false', title: 'Pursae Web Builder menu', onClick: (e) => logoMenu(e.currentTarget) },
-			h('img', { src: S.cfg.assets + 'images/gopher.png', alt: '', width: 26, height: 26 }), S.icon('down', 14));
+			h('img', { src: S.cfg.logo, alt: '', width: 26, height: 26 }), S.icon('down', 14));
 		els.pageTitle = h('span.gwe-page-title');
 		els.pageStatus = h('span.gwe-badge');
 		const page = h('button.gwe-page', { type: 'button', 'aria-haspopup': 'dialog', 'aria-expanded': 'false', title: 'Switch page', onClick: (e) => pageMenu(e.currentTarget) }, S.icon('pages', 16), els.pageTitle, els.pageStatus, S.icon('down', 14));

@@ -15,7 +15,7 @@ directory inside that repository (the example plugins live in `examples/plugins/
 module `wpgo` is not published separately yet:
 
 ```bash
-cd wordpress-go
+cd pursae-dev
 mkdir -p examples/plugins/hello-reader
 cd examples/plugins/hello-reader
 ```
@@ -24,7 +24,7 @@ To keep the plugin in its own repository instead, create a module and point it a
 
 ```bash
 go mod init example.com/hello-reader
-go mod edit -require=wpgo@v0.0.0 -replace=wpgo=../wordpress-go
+go mod edit -require=wpgo@v0.0.0 -replace=wpgo=../pursae-dev
 ```
 
 ## 2. Write the code
@@ -122,6 +122,6 @@ Rebuild, re-pack, upload again (the same slug replaces the package), deactivate 
 During development run the site with `plugin_allow_unsigned` and skip the key. Unit-test your
 callbacks on a normal Go toolchain with `wpgo.Dispatch` ([testing](testing.md)).
 
-Next: the [shortcode-demo](https://github.com/boracomet/wordpress-go/tree/main/examples/plugins/shortcode-demo)
+Next: the [shortcode-demo](https://github.com/pursae/pursae-dev/tree/main/examples/plugins/shortcode-demo)
 example uses shortcodes, REST routes, a settings page, assets, transients and a scheduled event
 in about 150 lines.

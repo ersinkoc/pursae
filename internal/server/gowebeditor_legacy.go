@@ -70,3 +70,20 @@ func gweLegacyUploadPath(p string) string {
 	}
 	return p
 }
+
+// pluginURLSlug is the builder plugin's slug as Plugins screen links show it; the stored slug
+// (active plugins, settings) stays golementor.
+func pluginURLSlug(slug string) string {
+	if slug == golementorSlug {
+		return "web-builder"
+	}
+	return slug
+}
+
+// pluginSlugFromURL maps a slug from a Plugins screen link back to the stored one.
+func pluginSlugFromURL(slug string) string {
+	if slug == "web-builder" {
+		return golementorSlug
+	}
+	return slug
+}

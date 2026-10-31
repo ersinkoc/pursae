@@ -379,6 +379,9 @@ func (s *Server) static(r *gin.Engine, prefix, dir string, guards ...gin.Handler
 			c.Status(http.StatusNotFound)
 			return
 		}
+		if dir == "wp-includes" && s.serveBrandOverride(c, c.Param("filepath")) { // the Hub's logo (brand.go)
+			return
+		}
 		edited := false
 		if o, ok := s.overlay(); ok && o.overridden(dir+c.Param("filepath")) {
 			edited = true

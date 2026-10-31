@@ -291,13 +291,13 @@ func partsCatalog(t *testing.T) *Catalog {
 func TestTranslateParts(t *testing.T) {
 	c := partsCatalog(t)
 	for in, want := range map[string]string{
-		"Brazil — Amazonas":          "Brazylia — Amazonas",
-		"Alaska, Spain":              "Alaska, Hiszpania",
-		"Polska — Mazowieckie":       "Polska — Mazowieckie", // a message translated as itself
-		"Algerian dinar (د.ج) — DZD": "Dinar algierski (د.ج) — DZD",
-		"Shop (ID: 5)":               "Sklep (ID: 5)",
-		"&gt; Add zone":              "&gt; Dodaj strefę",
-		"October 5, 2026":            "5 październik 2026",
+		"Brazil — Amazonas":                  "Brazylia — Amazonas",
+		"Alaska, Spain":                      "Alaska, Hiszpania",
+		"Polska — Mazowieckie":               "Polska — Mazowieckie", // a message translated as itself
+		"Algerian dinar (د.ج) — DZD":         "Dinar algierski (د.ج) — DZD",
+		"Shop (ID: 5)":                       "Sklep (ID: 5)",
+		"&gt; Add zone":                      "&gt; Dodaj strefę",
+		"October 5, 2026":                    "5 październik 2026",
 		"Customize Hello Pursae Web Builder": "Dostosuj Hello Pursae Web Builder",
 	} {
 		if got, ok := c.translateText(in); !ok || got != want {

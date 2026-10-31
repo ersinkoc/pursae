@@ -367,7 +367,7 @@ func (s *Server) exportScreen(c *gin.Context) {
 	b.WriteString("</channel>\n</rss>\n")
 	name := wp.SanitizeTitle(s.settings.String("blogname"))
 	if name == "" {
-		name = "wordpress-go"
+		name = "pursae"
 	}
 	c.Header("Content-Description", "File Transfer")
 	c.Header("Content-Disposition", "attachment; filename="+name+".WordPress."+time.Now().Format("2006-01-02")+".xml")

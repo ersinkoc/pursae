@@ -3,7 +3,7 @@
 	content: "" !important;
 }
 html body #wpadminbar #wp-toolbar #wp-admin-bar-root-default #wp-admin-bar-wp-logo > .ab-item span.ab-icon {
-	background-image: url(../images/wpgo/gopher-64.png) !important;
+	background-image: url(../images/brand/logo-64.png) !important;
 	background-position: center !important;
 	background-size: 24px 24px !important;
 	background-repeat: no-repeat !important;
@@ -27,7 +27,7 @@ html body #wpadminbar #wp-toolbar #wp-admin-bar-root-default #wp-admin-bar-wp-lo
 .login h1 a,
 .login .wp-login-logo a,
 #logo {
-	background-image: url(../images/wpgo/gopher-256.png) !important;
+	background-image: url(../images/brand/logo-256.png) !important;
 	background-size: 84px !important;
 	background-position: center !important;
 	width: 84px !important;
@@ -37,7 +37,7 @@ html body #wpadminbar #wp-toolbar #wp-admin-bar-root-default #wp-admin-bar-wp-lo
 .wpgo-about-logo {
 	width: 96px;
 	height: 96px;
-	background: url(../images/wpgo/gopher-256.png) center / contain no-repeat;
+	background: url(../images/brand/logo-256.png) center / contain no-repeat;
 }
 
 /* Dashboard welcome panel: the Gopher on a light WordPress-blue gradient instead of the dark artwork. */

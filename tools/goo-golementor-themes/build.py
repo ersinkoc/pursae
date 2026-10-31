@@ -594,8 +594,8 @@ FALLBACK = {
 def theme_json(th):
     return {
         "slug": th["slug"], "name": th["name"], "version": "1.0.0", "description": th["description"],
-        "author": "Pursae", "author_url": "https://github.com/boracomet/wordpress-go",
-        "theme_url": f"https://github.com/boracomet/wordpress-go/tree/main/web/theme-library/{th['slug']}",
+        "author": "Pursae", "author_url": "https://github.com/pursae",
+        "theme_url": f"https://github.com/pursae/pursae-dev/tree/main/web/theme-library/{th['slug']}",
         "tags": ["E-Commerce", "Pursae Web Builder", "Theme Builder", th["tag"], "Custom Colors", "Custom Menu", "Translation Ready", "Full Width Template"],
         "requires_core": "0.1.0", "screenshot": "assets/screenshot.png", "category": th["category"], "style": th["style"],
         "demo": "demo/demo.json", "golementor": "golementor/design.json",

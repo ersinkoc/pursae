@@ -4,8 +4,8 @@
   "version": "1.0.0",
   "description": "A bright, rounded theme for podcast shows. An animated waveform logo, a subscribe pill in the header, a hero with square show art and an on-air badge, episode rows with cover art and play buttons, show-notes pages with a decorative player, timestamps and guest cards, host and guest pages, and a waveform footer. Colours, corners, waves, fonts and the subscribe button are set in the Customizer.",
   "author": "Pursae",
-  "author_url": "https://github.com/boracomet/wordpress-go",
-  "theme_url": "https://github.com/boracomet/wordpress-go/tree/main/web/theme-library/podwave",
+  "author_url": "https://github.com/pursae",
+  "theme_url": "https://github.com/pursae/pursae-dev/tree/main/web/theme-library/podwave",
   "tags": [
     "Podcast",
     "Entertainment",

@@ -58,6 +58,7 @@ func (s *Server) gweStudioInject(c *gin.Context, p *store.Post, page string) str
 		"rest":       lb.HomeURL("/wp-json/"),
 		"nonce":      s.nonce(c, "wp_rest"),
 		"assets":     lb.HomeURL(gweAssetsPath),
+		"logo":       lb.HomeURL(brandLogoPath),
 		"css":        assets + "studio.css?ver=" + ver,
 		"scripts":    scripts,
 		"editURL":    lb.HomeURL("/wp-admin/post?action=web-builder&post="),

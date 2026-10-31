@@ -36,6 +36,7 @@ type hubIndex struct {
 	Core   *hubCore       `json:"core"`
 	Keys   []hubKey       `json:"keys"`
 	Counts map[string]int `json:"counts"`
+	Brand  *hubBrand      `json:"brand,omitempty"` // brand.go
 }
 
 type hubCore struct {
@@ -167,6 +168,7 @@ func (s *Server) hubFetchIndex(ctx context.Context) (*hubIndex, error) {
 	}
 	s.hubCacheSet(ctx, "wpgo_hub_index", idx, hubCacheTTL)
 	s.hubTrustKeys(idx.Keys)
+	s.hubSyncBrand(ctx, idx.Brand)
 	return &idx, nil
 }
 

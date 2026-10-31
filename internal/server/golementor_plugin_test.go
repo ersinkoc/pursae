@@ -30,7 +30,7 @@ func installAndLogin(t *testing.T, ts *httptest.Server, c *http.Client) {
 func pluginLink(t *testing.T, c *http.Client, base, action string) string {
 	t.Helper()
 	_, body, _ := get(t, c, base+"/wp-admin/plugins")
-	m := regexp.MustCompile(`href="(/wp-admin/plugins\?action=` + action + `&amp;plugin=golementor[^"]*)"`).FindStringSubmatch(body)
+	m := regexp.MustCompile(`href="(/wp-admin/plugins\?action=` + action + `&amp;plugin=web-builder[^"]*)"`).FindStringSubmatch(body)
 	if m == nil {
 		t.Fatalf("no %s link for Pursae Web Builder on the Plugins screen", action)
 	}

@@ -4,8 +4,8 @@
   "version": "1.0.0",
   "description": "A research notebook for data science writing: a paper-white page with gridlines, a serif reading face, mono labels, numbered figure captions, footnotes, data tables and notebook-style code cells, with series colors you pick in the Customizer. Newsreader, Source Sans 3 and Spline Sans Mono are self-hosted.",
   "author": "Pursae",
-  "author_url": "https://github.com/boracomet/wordpress-go",
-  "theme_url": "https://github.com/boracomet/wordpress-go/tree/main/web/theme-library/datafield",
+  "author_url": "https://github.com/pursae",
+  "theme_url": "https://github.com/pursae/pursae-dev/tree/main/web/theme-library/datafield",
   "tags": [
     "Blog",
     "Science",

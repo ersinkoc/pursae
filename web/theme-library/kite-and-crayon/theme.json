@@ -4,8 +4,8 @@
   "version": "1.0.0",
   "description": "A bright toy shop built with Pursae Web Builder: a centred header with search, the language switcher and a hover mini-cart, a playful hero, chunky category tiles, favourites and new toys, a product page with colour variations, tabs and related toys, and a simple checkout. Every part is a Theme Builder template you can edit visually. Outfit, Figtree and Caveat, self-hosted. Ships a complete store demo: wooden toys, games, art supplies, room decor and a birthday bundle, priced in euros.",
   "author": "Pursae",
-  "author_url": "https://github.com/boracomet/wordpress-go",
-  "theme_url": "https://github.com/boracomet/wordpress-go/tree/main/web/theme-library/kite-and-crayon",
+  "author_url": "https://github.com/pursae",
+  "theme_url": "https://github.com/pursae/pursae-dev/tree/main/web/theme-library/kite-and-crayon",
   "tags": [
     "E-Commerce",
     "Pursae Web Builder",

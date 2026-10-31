@@ -627,7 +627,8 @@ func (s *Server) gweEditor(c *gin.Context, p *store.Post) {
 		page = strings.Replace(page, "@@CFG:"+id+"@@", js, 1)
 	}
 	page = strings.ReplaceAll(page, "@@TITLE@@", html.EscapeString(title))
-	page = gweWithSplash(page) // the loading screen (gowebeditor_splash.go); @@ASSETS@@ is filled next
+	page = gweWithSplash(page)                                                                        // the loading screen (gowebeditor_splash.go); @@ASSETS@@ is filled next
+	page = strings.ReplaceAll(page, "@@ASSETS@@images/gopher.png", s.links(c).HomeURL(brandLogoPath)) // the product logo (brand.go)
 	// The Pages panel: every page of the site, opened, added, duplicated or set as the homepage from the builder.
 	page = strings.Replace(page, `"is_pages_panel_active":false`, `"is_pages_panel_active":true`, 1)
 	page = s.gweFill(c, page)

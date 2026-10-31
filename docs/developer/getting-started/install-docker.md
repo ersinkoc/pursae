@@ -11,8 +11,8 @@ You need **Docker** (Docker Desktop on macOS/Windows, Docker Engine with Compose
 ## Start
 
 ```bash
-git clone https://github.com/boracomet/wordpress-go.git
-cd wordpress-go
+git clone https://github.com/pursae/pursae-dev.git
+cd pursae-dev
 make docker-up
 ```
 

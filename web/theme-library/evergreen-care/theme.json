@@ -4,8 +4,8 @@
   "version": "1.0.0",
   "description": "A calm, trustworthy theme for clinics, family practices and health professionals: soft teal and white, rounded cards, an info bar with phone and opening hours, a header appointment button, a split hero with reassurance badges, services and doctors sections, an appointment band above the footer and readable health articles.",
   "author": "Pursae",
-  "author_url": "https://github.com/boracomet/wordpress-go",
-  "theme_url": "https://github.com/boracomet/wordpress-go/tree/main/web/theme-library/evergreen-care",
+  "author_url": "https://github.com/pursae",
+  "theme_url": "https://github.com/pursae/pursae-dev/tree/main/web/theme-library/evergreen-care",
   "tags": [
     "Health",
     "Business",

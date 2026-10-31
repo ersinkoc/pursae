@@ -40,8 +40,8 @@ The fastest way to try Pursae. You only need **Docker** (Docker Desktop on macOS
 Docker Engine + Compose v2 on Linux) and **git**.
 
 ```sh
-git clone https://github.com/boracomet/wordpress-go.git
-cd wordpress-go
+git clone https://github.com/pursae/pursae-dev.git
+cd pursae-dev
 make docker-up
 ```
 

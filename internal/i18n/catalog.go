@@ -114,9 +114,10 @@ func (c *Catalog) lookup(msgid string) (string, bool) {
 // upstreamNames maps WordPress Go's product names to the upstream ones its strings were written
 // after: "You have the latest version of WordPress Go." is WordPress' message with the name changed.
 var upstreamNames = []struct{ ours, theirs string }{
-	{"Pursae", "WordPress"}, {"Pursae Web Builder Pro", "Elementor Pro"}, {"Pursae Web Builder", "Elementor"}, {"Pursae Contact Form", "Contact Form 7"},
+	{"Pursae Web Builder Pro", "Elementor Pro"}, {"Pursae Web Builder", "Elementor"}, {"Pursae Contact Form", "Contact Form 7"},
 	{"SEO-Go", "Yoast SEO"}, {"SEO-Go", "Rank Math"}, {"Pursae Multi Language", "Polylang"}, {"WPGo Cache", "LiteSpeed Cache"},
-	{"Pursae SMTP", "Pursae SMTP"}, {"Pursae Custom Fields", "ACF"}, {"Pursae Custom Fields", "Advanced Custom Fields"}, {"Pursae Commerce", "WooCommerce"}, {"Pursae Editor", "Gutenberg"},
+	{"Pursae SMTP", "WP Mail SMTP"}, {"Pursae Custom Fields", "ACF"}, {"Pursae Custom Fields", "Advanced Custom Fields"}, {"Pursae Commerce", "WooCommerce"}, {"Pursae Editor", "Gutenberg"},
+	{"Pursae", "WordPress"}, // last: every product name above starts with it
 }
 
 func (c *Catalog) lookupUpstream(msgid string) (string, bool) {
@@ -281,7 +282,7 @@ var brands = []struct{ from, to string }{
 	{"Elementor Pro", "Pursae Web Builder Pro"}, {"Elementor", "Pursae Web Builder"},
 	{"Contact Form 7", "Pursae Contact Form"}, {"Yoast SEO Premium", "SEO-Go"}, {"Yoast SEO", "SEO-Go"}, {"Yoast", "SEO-Go"},
 	{"Rank Math SEO", "SEO-Go"}, {"Rank Math", "SEO-Go"}, {"Polylang Pro", "Pursae Multi Language"}, {"Polylang", "Pursae Multi Language"},
-	{"LiteSpeed Cache", "WPGo Cache"}, {"Pursae SMTP", "Pursae SMTP"}, {"Advanced Custom Fields PRO", "Pursae Custom Fields"},
+	{"LiteSpeed Cache", "WPGo Cache"}, {"WP Mail SMTP", "Pursae SMTP"}, {"Advanced Custom Fields PRO", "Pursae Custom Fields"},
 	{"Advanced Custom Fields", "Pursae Custom Fields"}, {"WooCommerce", "Pursae Commerce"}, {"CookieYes", "Pursae Cookie"}, {"Cookie Notice", "Pursae Cookie"}, {"WPS Hide Login", "Pursae Security"},
 }
 

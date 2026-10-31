@@ -314,7 +314,7 @@ type pluginsData struct {
 
 func (s *Server) installedPlugins(c *gin.Context) []pluginRow {
 	n := func(action, slug string) string {
-		return "/wp-admin/plugins?action=" + action + "&plugin=" + slug + "&_wpnonce=" + s.nonce(c, action+"-plugin_"+slug)
+		return "/wp-admin/plugins?action=" + action + "&plugin=" + pluginURLSlug(slug) + "&_wpnonce=" + s.nonce(c, action+"-plugin_"+slug)
 	}
 	rows := []pluginRow{
 		{Slug: "classic-editor", Name: "Classic Editor", Version: "1.6.7", Native: true, Active: s.settings.Bool("native_classic_editor"),
@@ -409,7 +409,7 @@ func (s *Server) pluginsScreen(c *gin.Context) {
 		return
 	}
 	if a := c.Query("action"); a != "" && c.Request.Method == http.MethodGet && a != "activate" {
-		s.pluginAction(c, a, c.Query("plugin"))
+		s.pluginAction(c, a, pluginSlugFromURL(c.Query("plugin")))
 		return
 	}
 	if c.Request.Method == http.MethodPost {
@@ -421,7 +421,7 @@ func (s *Server) pluginsScreen(c *gin.Context) {
 			s.pluginsBulk(c, bulk)
 			return
 		}
-		s.pluginAction(c, c.PostForm("action"), c.PostForm("plugin"))
+		s.pluginAction(c, c.PostForm("action"), pluginSlugFromURL(c.PostForm("plugin")))
 		return
 	}
 	d := pluginsData{Status: c.DefaultQuery("plugin_status", "all"), BulkNonce: s.nonce(c, "bulk-plugins"), CanDelete: u.Can("delete_plugins", nil)}
@@ -446,7 +446,7 @@ func (s *Server) pluginsScreen(c *gin.Context) {
 	}
 	// Activating a Wasm plugin first shows the permissions it asks for.
 	if c.Query("action") == "activate" {
-		slug := c.Query("plugin")
+		slug := pluginSlugFromURL(c.Query("plugin"))
 		if !s.checkNonce(c, "activate-plugin_"+slug) {
 			s.denyNonce(c)
 			return

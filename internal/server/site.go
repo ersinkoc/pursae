@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"html"
 	"html/template"
-	"io/fs"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -97,9 +96,9 @@ func (s *Server) site(c *gin.Context) {
 		return
 	case "favicon.ico":
 		// No site icon is a 404 in WordPress; WordPress Go answers with the Gopher.
-		if b, err := fs.ReadFile(s.web, "wp-includes/images/wpgo/gopher-32.png"); err == nil {
+		if b, ct, err := s.brandFavicon(); err == nil {
 			c.Header("Cache-Control", "public, max-age=86400")
-			c.Data(http.StatusOK, "image/png", b)
+			c.Data(http.StatusOK, ct, b)
 			return
 		}
 		c.Status(http.StatusNotFound)
