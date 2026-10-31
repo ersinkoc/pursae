@@ -1,6 +1,6 @@
 COMPOSE = docker compose -f docker/compose.yaml
 
-.PHONY: dev db test docker-up docker-down docker-test build
+.PHONY: dev db test docker-up docker-down docker-test build publish-themes
 
 ## dev: run Postgres in Docker and the app locally, reading templates from ./web
 dev: db
@@ -27,3 +27,9 @@ docker-down:
 ## docker-test: run the whole test suite inside a Go container next to Postgres
 docker-test:
 	$(COMPOSE) --profile test run --rm test
+
+## publish-themes: import library/themes into Pursae Manager (tools/publish-themes.sh). Needs
+## PURSAE_MANAGER_DIR (a pursae-manager checkout with its environment) or PURSAE_MANAGER (its binary);
+## optional PREINSTALL=slug,slug|all (installed on every new site) and ACCESS=public|pro|private.
+publish-themes:
+	tools/publish-themes.sh $(if $(PREINSTALL),-preinstall $(PREINSTALL)) $(if $(ACCESS),-access $(ACCESS))

@@ -168,7 +168,8 @@ bundled ones. See `examples/themes/starter` for a complete, minimal theme and
 
 `zip -r starter.zip theme.json templates assets readme.md` from inside the theme directory
 (the files sit at the zip root, not under a folder; a single top-level folder is also
-accepted and stripped; `tools/build-themes.sh` does this for the examples). Limits: 32 MiB
+accepted and stripped; `tools/build-themes.sh` does this for the examples and for any
+`library/themes/<slug>` given to it). Limits: 32 MiB
 per package, 4 MiB per file, 64 MiB extracted, 2000 files, only these extensions:
 `.json .html .css .js .map .svg .png .jpg .jpeg .gif .webp .avif .ico .woff .woff2 .ttf
 .otf .md .txt`. The templates must parse before anything is replaced. Uploading needs the
@@ -321,16 +322,60 @@ before, so its pages, menus, front page and color scheme never stay behind.
 
 ## Theme library
 
-Pursae ships a library of ready themes in `web/theme-library/<slug>/` (each a complete
-theme package directory whose name is its slug, embedded in the binary; a directory that does
-not validate is logged and left out). Appearance › Add Themes opens on the **Library** tab: the
-themes with screenshot, name, category and style, filter links for the categories that have
-themes, and search. **Install** zips the directory in memory and hands it to the same
-installer as Upload Theme, so the package lands in `<data>/themes` with the same validation
-(including the demo file); an installed theme shows Activate / Live Preview, and when the
-library carries a higher `version` than the installed one the card offers **Update** (theme
-mods and widgets are kept). The installed theme can be customized and deleted like any
-package. The All, Bundled and Uploaded tabs list the installed themes as before.
+The library of ready themes is **not part of the binary** (the bundled themes in `web/themes/`
+are). Its sources live in the repository under `library/themes/<slug>/` (each a complete theme
+package directory whose name is its slug) and are published to Pursae Manager as theme packages
+(`make publish-themes`, below). A site reads the library from
+
+- **Pursae Manager** (the default, `WPGO_HUB_URL`): `GET /api/v1/themes`, every page, cached 12
+  hours per license key like the plugin catalog. Each listing carries the version's `theme.json`
+  (`manifest`), so cards, categories, styles, search and the store themes need no download. Pro,
+  private and beta themes appear only for a site whose license includes them. A package is
+  downloaded when it is installed, previewed or its files are needed: its size and SHA-256 must
+  match the listing (themes are not signed), it is validated like an upload (and must carry the
+  listed slug and version) and extracted into `<data>/theme-library-cache/<slug>/<version>/`.
+  Screenshots are fetched once from the Manager into the same directory and served by the site
+  (`/wp-admin/theme-install?action=library-screenshot&theme=<slug>`), so the browser never talks to
+  the Manager. When the Manager does not answer, it is not asked again for two minutes.
+- **a directory** when `WPGO_THEME_LIBRARY_DIR` is set (development, offline sites, the tests:
+  `WPGO_THEME_LIBRARY_DIR=library/themes make dev`). A directory that does not validate is logged
+  and left out.
+- neither: the Library tab is empty and says why (no Manager configured, or not reachable).
+
+Appearance › Add Themes opens on the **Library** tab: the themes with screenshot, name, category
+and style, filter links for the categories that have themes, and search. **Install** hands the
+package to the same installer as Upload Theme, so it lands in `<data>/themes` with the same
+validation (including the demo file); an installed theme shows Activate / Live Preview, and when
+the library carries a higher `version` than the installed one the card offers **Update** (theme
+mods and widgets are kept). The installed theme can be customized and deleted like any package.
+The All, Bundled and Uploaded tabs list the installed themes as before.
+
+The installer records where a package came from in `<data>/themes/<slug>/.pursae-source`: `hub`
+(the library from Pursae Manager), `library` (a library directory) or `upload`. Themes from the
+Manager — and packages installed before the source was recorded — get **updates**: when the
+catalog lists a higher version, Appearance › Themes shows WordPress' *New version available.
+Update now* notice on the card and in the details, and Dashboard › Updates lists the theme under
+**Themes** with **Update Themes**. Updating downloads the package, checks its size and SHA-256 and
+installs it in place; the theme stays active if it was, and the site sends a `theme_update` event.
+Nothing is updated automatically. Uploaded packages are updated by uploading the new version.
+
+**Recommended themes.** The operator marks Manager listings `preinstall`. Right after the installer
+of a new site finishes, the site installs, in the background, every such theme it may see (not
+activated; one `theme_install` event each); errors are logged and never affect the installer, and
+nothing happens without a Manager. Existing sites get the same with **Install recommended themes**
+on the Library tab, shown while a recommended theme is not installed.
+
+**Publishing the library.** `make publish-themes PURSAE_MANAGER_DIR=/path/to/pursae-manager`
+(or `tools/publish-themes.sh`) runs the Manager's bulk import against `library/themes`:
+
+```sh
+pursae-manager import -kind theme -publish [-preinstall slug,slug|all] [-access pro] library/themes/*
+```
+
+from the pursae-manager checkout, with that checkout's environment (`DATABASE_URL`,
+`PURSAE_MANAGER_DATA_DIR`). `PREINSTALL=slug,slug|all` and `ACCESS=public|pro|private` are passed
+on; `PURSAE_MANAGER=/path/to/pursae-manager-binary` runs a built binary instead of `go run`. Versions
+the Manager already has are skipped, so bump a theme's `version` to publish a change.
 
 ## Live Preview with demo content
 

@@ -38,6 +38,7 @@ inspect them. See [Mail](mail.md).
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `WPGO_THEMES_DIR` | `<data>/themes` | theme packages (`<slug>/theme.json`) and the overrides saved by the Theme File Editor |
+| `WPGO_THEME_LIBRARY_DIR` | — (the library comes from the Hub) | serve Add Themes › Library from this directory of theme package directories instead of the Hub (development, offline sites; the repository's is `library/themes`). Hub downloads are cached in `theme-library-cache/` next to the uploads |
 | `WPGO_DISALLOW_FILE_EDIT` | off | set to `1`/`true` to make the Theme File Editor read-only (like `DISALLOW_FILE_EDIT`) |
 | `WPGO_PLUGIN_KEYS` | — | comma-separated base64 Ed25519 public keys trusted to sign plugin packages, in addition to the `plugin_trusted_keys` option |
 | `WPGO_MARKET_DIR` | `examples/plugins/dist`, then `/usr/share/wpgo/plugins` | a directory of `.zip` packages offered on Plugins › Add Plugin |

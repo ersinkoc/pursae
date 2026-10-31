@@ -31,7 +31,12 @@ Listing fields come from `plugin.json` (`slug`, `name`, `version`, `description`
 
 A theme package is a zip with `theme.json`, `templates/` and `assets/`
 ([your first theme](../themes/your-first-theme.md)). The Hub validates it, records `tags` and
-the screenshot, and serves it with its SHA-256. Themes are not signed.
+the screenshot, and serves it with its SHA-256 and the version's `theme.json` as `manifest`
+(sites build their theme library from it without downloading packages). Themes are not signed.
+The core repository's theme library (`library/themes`) is published in bulk with
+`make publish-themes PURSAE_MANAGER_DIR=/path/to/pursae-manager [PREINSTALL=slug,slug|all]`, which
+runs `pursae-manager import -kind theme -publish …`; listings marked `preinstall` are installed on
+every new site.
 
 ## After publishing
 

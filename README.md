@@ -325,7 +325,7 @@ first build; make sure Docker has network access. Later builds are cached.
   the style variations' palettes as a Customizer color scheme, editor styles for Pursae Editor), one
   small stylesheet plus the core styles of the blocks a page uses, and four demo content sets
   (Appearance › Themes › Import Demo Content). Hello Pursae Web Builder comes with Pursae Web Builder, and the
-  theme library offers more themes to install.
+  theme library (from Pursae Manager, not part of the binary) offers more themes to install.
 - **WPGo Cache** (built-in plugin) — in-process full-page cache with tag-based purges, crawler,
   gzip + ETag, CDN purge headers, lazy images, deferred scripts, font preloads.
 - **Plugins** — signed WebAssembly packages, granted permissions, hooks `init`, `the_content`,

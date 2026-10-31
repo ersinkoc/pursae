@@ -78,8 +78,9 @@ nothing — it then has no marketplace, no license and no update notices either.
 ```
 
 `plugins` lists every plugin, built-in (`native`), installed from the Hub (`hub`) or uploaded
-(`upload`); `themes` lists the installed themes (bundled and library themes are `native`, uploaded
-packages `upload`; Web Builder designs saved as themes are site content and not listed).
+(`upload`); `themes` lists the installed themes (bundled themes are `native`, library themes
+installed from the Hub `hub`, uploaded packages `upload`; Web Builder designs saved as themes are
+site content and not listed).
 
 **Events** (`POST /api/v1/sites/events`) record what happens on the site: `plugin_install`,
 `plugin_update`, `plugin_activate`, `plugin_deactivate`, `plugin_delete` (built-in and package

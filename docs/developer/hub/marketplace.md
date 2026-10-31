@@ -28,11 +28,19 @@ check, so your own key must be in `WPGO_PLUGIN_KEYS` or `plugin_trusted_keys`, o
 
 ## Appearance › Themes › Add Theme
 
-Lists themes from `GET /api/v1/themes` with screenshot, author, description and tags, with
-search and tag filters, plus **Upload Theme**. Theme packages contain no code, so they are not
-signed; the installer checks the SHA-256 from the listing, validates `theme.json` and the
-templates, and unpacks the package into `<data>/themes/<slug>/`. **Preview** renders the site with
-the theme through the Customizer before you **Activate** it.
+The **Library** tab is the Hub's theme catalog (`GET /api/v1/themes`, every page, cached 12 hours
+per license key): screenshot, name, category and style from each listing's `manifest` (the
+version's `theme.json`), category filters and search, plus **Upload Theme**. Theme packages contain
+no code, so they are not signed; **Install** downloads the package, checks its size and the SHA-256
+from the listing, validates `theme.json`, the templates and the demo like an upload, and unpacks it
+into `<data>/themes/<slug>/`. **Live Preview** builds a sandbox with the theme's demo content from
+the downloaded package (kept in `<data>/theme-library-cache/`) before anything is installed.
+Screenshots are fetched once by the site and served from that cache.
+
+Listings marked **preinstall** by the operator are installed (not activated) on every new site
+right after its installer, in the background; existing sites get them with **Install recommended
+themes** on the Library tab. Without a reachable Hub the tab says so; `WPGO_THEME_LIBRARY_DIR`
+serves the library from a local directory instead (development, offline sites).
 
 ## Updates
 
@@ -49,9 +57,13 @@ active, the new version is loaded straight away with the permissions granted bef
 new version still asks for; if it asks for more, deactivate and activate it to review them). Plugins
 that were uploaded are updated by uploading the new version.
 
-Appearance › Add Theme does not list Hub themes yet, so there are no theme updates from the Hub.
+Themes installed from the Hub (and library themes installed before the source was recorded) are
+updated the same way: Appearance › Themes shows *New version available. Update now* on the card and
+in the details, Dashboard › Updates lists them under **Themes** with **Update Themes**. The package's
+size and SHA-256 must match; the theme is replaced in place and stays active if it was. Uploaded
+theme packages are updated by uploading the new version. Nothing is updated automatically.
 
 ## Offline sites
 
-Without a reachable Hub the screens show only built-in plugins and local packages, and uploads
-still work. Nothing else in the admin depends on the Hub.
+Without a reachable Hub the screens show only built-in plugins, bundled themes and local packages
+(and the theme library of `WPGO_THEME_LIBRARY_DIR`, if set), and uploads still work. Nothing else in the admin depends on the Hub.

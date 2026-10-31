@@ -45,7 +45,7 @@ To tell the store that a theme is made for it, declare support in `theme.json`:
 
 A theme that does so prints the store titles itself through the store templates instead of the page
 title, and is listed under **Pursae Commerce › Store Themes**. Practical rules from the bundled store
-themes (`web/theme-library`, `category: shop`):
+themes (`library/themes`, published to Pursae Manager; `category: shop`):
 
 - scope the store CSS under `#page` so it wins over `goocommerce.css`;
 - the checkout lays its rows on a grid, so reset the width and float of `.form-row-first` and

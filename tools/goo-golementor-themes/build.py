@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Builds the Pursae Web Builder store themes of the theme library (web/theme-library/<slug>/).
+"""Builds the Pursae Web Builder store themes of the theme library (library/themes/<slug>/, published to
+Pursae Manager with tools/publish-themes.sh).
 
 Each theme is a package (docs/theme-package.md) whose theme.json names a Pursae Web Builder design
 (golementor/design.json: the kit's global colors and fonts plus Theme Builder parts: header, footer,
@@ -19,7 +20,7 @@ import shutil
 import sys
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-LIB = os.path.join(ROOT, "web", "theme-library")
+LIB = os.path.join(ROOT, "library", "themes")
 sys.path.insert(0, os.path.dirname(__file__))
 from themes import THEMES  # noqa: E402
 
@@ -595,7 +596,7 @@ def theme_json(th):
     return {
         "slug": th["slug"], "name": th["name"], "version": "1.0.0", "description": th["description"],
         "author": "Pursae", "author_url": "https://github.com/pursae",
-        "theme_url": f"https://github.com/pursae/pursae-dev/tree/main/web/theme-library/{th['slug']}",
+        "theme_url": f"https://github.com/pursae/pursae-dev/tree/main/library/themes/{th['slug']}",
         "tags": ["E-Commerce", "Pursae Web Builder", "Theme Builder", th["tag"], "Custom Colors", "Custom Menu", "Translation Ready", "Full Width Template"],
         "requires_core": "0.1.0", "screenshot": "assets/screenshot.png", "category": th["category"], "style": th["style"],
         "demo": "demo/demo.json", "golementor": "golementor/design.json",
