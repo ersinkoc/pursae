@@ -70,6 +70,8 @@ type hgWSConn struct {
 	ops    map[string]chan struct{} // running operations by id; closed to stop one
 	done   chan struct{}
 	once   sync.Once
+	// wg counts the goroutines that use c: the handler waits for them, gin reuses c afterwards.
+	wg sync.WaitGroup
 }
 
 // hgGQLWebSocket upgrades the request and serves the connection until it closes.
@@ -146,9 +148,14 @@ func (wc *hgWSConn) closeWith(code uint16, reason string) {
 }
 
 func (wc *hgWSConn) serve() {
+	defer wc.wg.Wait()
 	defer wc.closeWith(1000, "")
 	defer wc.stopAll()
-	go wc.keepAlive()
+	wc.wg.Add(1)
+	go func() {
+		defer wc.wg.Done()
+		wc.keepAlive()
+	}()
 	acked := false
 	_ = wc.ws.SetReadDeadline(time.Now().Add(hgWSInitTimeout))
 	for {
@@ -281,7 +288,9 @@ func (wc *hgWSConn) subscribe(id string, payload json.RawMessage) bool {
 	wc.mu.Lock()
 	wc.ops[id] = stop
 	wc.mu.Unlock()
+	wc.wg.Add(1)
 	go func() {
+		defer wc.wg.Done()
 		defer sub.close()
 		for {
 			select {
