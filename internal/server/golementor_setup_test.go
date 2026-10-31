@@ -37,12 +37,12 @@ func TestGolementorSetupWizard(t *testing.T) {
 	}
 
 	// A theme part of the user's own (the working copy) and the kit's state before.
-	code, tb, _ := get(t, c, base+"/wp-admin/gowebeditor-theme-builder")
+	code, tb, _ := get(t, c, base+"/wp-admin/theme-builder")
 	tbNonce := nonceRe.FindStringSubmatch(tb)
 	if code != http.StatusOK || tbNonce == nil {
 		t.Fatalf("theme builder: %d", code)
 	}
-	_, _, loc := post(t, c, base+"/wp-admin/gowebeditor-theme-builder", url.Values{"_wpnonce": {tbNonce[1]}, "action": {"new"}, "type": {"header"}, "title": {"My own header"}})
+	_, _, loc := post(t, c, base+"/wp-admin/theme-builder", url.Values{"_wpnonce": {tbNonce[1]}, "action": {"new"}, "type": {"header"}, "title": {"My own header"}})
 	ownPart := regexp.MustCompile(`post=(\d+)`).FindStringSubmatch(loc)
 	if ownPart == nil {
 		t.Fatalf("new part: %q", loc)
@@ -55,9 +55,9 @@ func TestGolementorSetupWizard(t *testing.T) {
 	if code != http.StatusOK {
 		t.Fatalf("wizard: %d %.300s", code, body)
 	}
-	for _, want := range []string{`<h1 class="wp-heading-inline">Site Setup</h1>`, `href="/wp-admin/golementor-setup"`, "Fixture Studio", "Choose a starter site",
+	for _, want := range []string{`<h1 class="wp-heading-inline">Site Setup</h1>`, `href="/wp-admin/web-builder-setup"`, "Fixture Studio", "Choose a starter site",
 		`name="kit" value="fixture-studio" checked`, `value="ocean"`, "Playfair Display / Source Sans 3", `name="pages_fixture-studio[]" value="services"`,
-		`/wp-content/plugins/gowebeditor/assets/library/kits/fixture-studio/screenshot.webp`, "Live Preview", `name="logo_id"`} {
+		`/wp-content/plugins/web-builder/assets/library/kits/fixture-studio/screenshot.webp`, "Live Preview", `name="logo_id"`} {
 		if !strings.Contains(body, want) {
 			t.Errorf("wizard misses %q", want)
 		}
@@ -177,7 +177,7 @@ func TestGolementorSetupWizard(t *testing.T) {
 		return body
 	}
 	contactURL := base + "/contact/"
-	home := page("/", http.StatusOK, "FX-HEADER", "FX-FOOTER", "FX-HOME welcome", `href="`+contactURL+`"`, "/wp-content/plugins/gowebeditor/assets/library/images/hero.webp",
+	home := page("/", http.StatusOK, "FX-HEADER", "FX-FOOTER", "FX-HOME welcome", `href="`+contactURL+`"`, "/wp-content/plugins/web-builder/assets/library/images/hero.webp",
 		"FX Site", ">Journal<", "FX Footer About", "elementor-location-header", "elementor-location-footer")
 	if strings.Contains(home, "FX-SINGLE-PAGE") {
 		t.Error("the front page uses the single page part")
@@ -211,7 +211,7 @@ func TestGolementorSetupWizard(t *testing.T) {
 	}
 
 	// Sections inserted now link the installed kit pages.
-	if _, b := restGet(t, c, base, "/wp-json/golementor/v1/library/sections/hero/hero-split"); !strings.Contains(b, `"url":"`+contactURL+`"`) {
+	if _, b := restGet(t, c, base, "/wp-json/web-builder/v1/library/sections/hero/hero-split"); !strings.Contains(b, `"url":"`+contactURL+`"`) {
 		t.Errorf("section page token: %.400s", b)
 	}
 
@@ -293,7 +293,7 @@ func TestGolementorSetupWizard(t *testing.T) {
 	if !strings.Contains(loc, "gwe_setup=1") {
 		t.Fatalf("activation redirect: %s", loc)
 	}
-	if _, body, _ = get(t, c, base+loc); !strings.Contains(body, `href="/wp-admin/golementor-setup">Run Site Setup</a>`) {
+	if _, body, _ = get(t, c, base+loc); !strings.Contains(body, `href="/wp-admin/web-builder-setup">Run Site Setup</a>`) {
 		t.Error("no Site Setup offer after activation")
 	}
 }

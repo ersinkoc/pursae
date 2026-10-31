@@ -74,7 +74,7 @@ func TestThemeWidgetsRender(t *testing.T) {
 		`<input id="elementor-search-form-w000009"`,
 		`© 2031 Go Site. All rights reserved.`,
 		`elementor-widget-theme-site-logo elementor-widget-image`,
-		`src="http://x.test/wp-content/plugins/gowebeditor/assets/images/placeholder.png"`,
+		`src="http://x.test/wp-content/plugins/web-builder/assets/images/placeholder.png"`,
 		`src="http://x.test/wp-content/uploads/a.jpg"`,
 	} {
 		if !strings.Contains(res.HTML, want) {

@@ -29,17 +29,17 @@ func TestGoWebEditor(t *testing.T) {
 
 	// The pages list links to the builder.
 	_, body, _ := get(t, c, base+"/wp-admin/edit?post_type=page")
-	if !strings.Contains(body, "/wp-admin/post?post="+pageID+"&amp;action=golementor") || !strings.Contains(body, "Edit with Pursae Web Builder") {
+	if !strings.Contains(body, "/wp-admin/post?post="+pageID+"&amp;action=web-builder") || !strings.Contains(body, "Edit with Pursae Web Builder") {
 		t.Errorf("pages list has no Edit with Pursae Web Builder action")
 	}
 
 	// The editor page: skeleton, ordered assets, Backbone templates and the inline configs.
-	code, body, _ := get(t, c, base+"/wp-admin/post?post="+pageID+"&action=golementor")
+	code, body, _ := get(t, c, base+"/wp-admin/post?post="+pageID+"&action=web-builder")
 	if code != http.StatusOK {
 		t.Fatalf("editor: %d %.300s", code, body)
 	}
 	for _, want := range []string{`<div id="elementor-editor-wrapper">`, `id="elementor-preview-responsive-wrapper"`, "var ElementorConfig = {",
-		"var elementorCommonConfig = {", `"initial_document":{`, `id="tmpl-elementor-panel"`, "/wp-content/plugins/gowebeditor/assets/js/editor.min.js",
+		"var elementorCommonConfig = {", `"initial_document":{`, `id="tmpl-elementor-panel"`, "/wp-content/plugins/web-builder/assets/js/editor.min.js",
 		"wp.i18n.setLocaleData(", "<title>Edit “Sample Page” with Pursae Web Builder</title>", `"url":"` + base + `/wp-admin/admin-ajax"`,
 		"tinyMCEPreInit", `"kit_id":`} {
 		if !strings.Contains(body, want) {
@@ -63,7 +63,7 @@ func TestGoWebEditor(t *testing.T) {
 	if rest == nil {
 		t.Fatal("no REST nonce")
 	}
-	if code, _, _ := get(t, c, base+"/wp-content/plugins/gowebeditor/assets/js/editor.min.js"); code != http.StatusOK {
+	if code, _, _ := get(t, c, base+"/wp-content/plugins/web-builder/assets/js/editor.min.js"); code != http.StatusOK {
 		t.Errorf("editor asset: %d", code)
 	}
 

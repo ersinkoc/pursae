@@ -89,9 +89,9 @@ func TestGolementorOffByDefault(t *testing.T) {
 			t.Errorf("the admin menu contains %q while Pursae Web Builder is off", bad)
 		}
 	}
-	for _, p := range []string{"/wp-admin/gowebeditor-theme-builder", "/wp-admin/gowebeditor-theme-builder?action=conditions&post=1", "/wp-admin/gowebeditor-pro?tab=popups",
-		"/wp-admin/gowebeditor-pro?tab=settings", "/wp-admin/gowebeditor-icons", "/wp-content/plugins/gowebeditor/assets/js/editor.min.js",
-		"/wp-content/gowebeditor/theme-screenshot/x.svg", "/wp-content/themes/hello-gowebeditor/style.css"} {
+	for _, p := range []string{"/wp-admin/theme-builder", "/wp-admin/theme-builder?action=conditions&post=1", "/wp-admin/web-builder?tab=popups",
+		"/wp-admin/web-builder?tab=settings", "/wp-admin/web-builder-icons", "/wp-content/plugins/web-builder/assets/js/editor.min.js",
+		"/wp-content/web-builder/theme-screenshot/x.svg", "/wp-content/themes/hello-web-builder/style.css"} {
 		if code, _, _ := get(t, c, base+p); code != http.StatusNotFound {
 			t.Errorf("%s: %d, want 404", p, code)
 		}
@@ -104,10 +104,10 @@ func TestGolementorOffByDefault(t *testing.T) {
 	if _, b := restGet(t, c, base, "/wp-json/"); strings.Contains(b, "elementor") {
 		t.Error("the REST index lists Pursae Web Builder's routes")
 	}
-	if code, b := restGet(t, c, base, "/wp-json/wp/v2/themes"); code != http.StatusOK || strings.Contains(b, "hello-gowebeditor") {
-		t.Errorf("REST themes: %d, Hello Pursae Web Builder listed: %v", code, strings.Contains(b, "hello-gowebeditor"))
+	if code, b := restGet(t, c, base, "/wp-json/wp/v2/themes"); code != http.StatusOK || strings.Contains(b, "hello-web-builder") {
+		t.Errorf("REST themes: %d, Hello Pursae Web Builder listed: %v", code, strings.Contains(b, "hello-web-builder"))
 	}
-	if code, _ := restGet(t, c, base, "/wp-json/wp/v2/themes/hello-gowebeditor"); code != http.StatusNotFound {
+	if code, _ := restGet(t, c, base, "/wp-json/wp/v2/themes/hello-web-builder"); code != http.StatusNotFound {
 		t.Errorf("REST theme Hello Pursae Web Builder: %d, want 404", code)
 	}
 
@@ -129,7 +129,7 @@ func TestGolementorOffByDefault(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, p := range []string{"/wp-admin/edit?post_type=page", "/wp-admin/post?post=" + pageID + "&action=edit", "/wp-admin/post?post=" + pageID + "&action=edit&classic-editor",
-		"/wp-admin/post?post=" + pageID + "&action=golementor", "/wp-admin/edit?action=elementor_new_post&post_type=page&_wpnonce=x"} {
+		"/wp-admin/post?post=" + pageID + "&action=web-builder", "/wp-admin/edit?action=elementor_new_post&post_type=page&_wpnonce=x"} {
 		code, body, _ := get(t, c, base+p)
 		if code != http.StatusOK {
 			t.Errorf("%s: %d", p, code)
@@ -143,7 +143,7 @@ func TestGolementorOffByDefault(t *testing.T) {
 
 	// Themes: Hello Golementor is not listed, previewed or activatable.
 	_, body, _ = get(t, c, base+"/wp-admin/themes")
-	if strings.Contains(body, "hello-gowebeditor") || strings.Contains(body, "Hello Pursae Web Builder") || strings.Contains(body, "Saved Pursae Web Builder themes") {
+	if strings.Contains(body, "hello-web-builder") || strings.Contains(body, "Hello Pursae Web Builder") || strings.Contains(body, "Saved Pursae Web Builder themes") {
 		t.Error("the Themes screen shows Hello Pursae Web Builder")
 	}
 	if err := srv.switchTheme(context.Background(), helloThemeSlug); err == nil {
@@ -190,8 +190,8 @@ func TestGolementorActivate(t *testing.T) {
 			t.Errorf("the admin menu misses %q", want)
 		}
 	}
-	for _, p := range []string{"/wp-admin/gowebeditor-theme-builder", "/wp-admin/gowebeditor-pro?tab=popups", "/wp-admin/gowebeditor-icons",
-		"/wp-content/plugins/gowebeditor/assets/js/editor.min.js", "/wp-content/themes/hello-gowebeditor/style.css"} {
+	for _, p := range []string{"/wp-admin/theme-builder", "/wp-admin/web-builder?tab=popups", "/wp-admin/web-builder-icons",
+		"/wp-content/plugins/web-builder/assets/js/editor.min.js", "/wp-content/themes/hello-web-builder/style.css"} {
 		if code, _, _ := get(t, c, base+p); code != http.StatusOK {
 			t.Errorf("%s: %d, want 200", p, code)
 		}
@@ -199,27 +199,27 @@ func TestGolementorActivate(t *testing.T) {
 	if code, b := restGet(t, c, base, "/wp-json/elementor/v1/globals"); code != http.StatusOK || !strings.Contains(b, "colors") {
 		t.Errorf("elementor/v1/globals: %d %.80s", code, b)
 	}
-	if code, b := restGet(t, c, base, "/wp-json/wp/v2/themes"); code != http.StatusOK || !strings.Contains(b, "hello-gowebeditor") {
+	if code, b := restGet(t, c, base, "/wp-json/wp/v2/themes"); code != http.StatusOK || !strings.Contains(b, "hello-web-builder") {
 		t.Errorf("REST themes lack Hello Pursae Web Builder: %d", code)
 	}
 	_, body, _ = get(t, c, base+"/wp-admin/edit?post_type=page")
-	if !strings.Contains(body, "/wp-admin/post?post="+pageID+"&amp;action=golementor") || !strings.Contains(body, "Edit with Pursae Web Builder") {
+	if !strings.Contains(body, "/wp-admin/post?post="+pageID+"&amp;action=web-builder") || !strings.Contains(body, "Edit with Pursae Web Builder") {
 		t.Error("the pages list has no Edit with Pursae Web Builder action")
 	}
-	_, body, _ = get(t, c, base+"/wp-admin/post?post="+pageID+"&action=golementor")
+	_, body, _ = get(t, c, base+"/wp-admin/post?post="+pageID+"&action=web-builder")
 	if !strings.Contains(body, "var ElementorConfig = {") {
 		t.Error("the builder does not open")
 	}
 	_, body, _ = get(t, c, base+"/wp-admin/themes")
-	if !strings.Contains(body, "hello-gowebeditor") {
+	if !strings.Contains(body, "hello-web-builder") {
 		t.Error("the Themes screen lacks Hello Pursae Web Builder")
 	}
 	if code, _, _ := post(t, c, base+"/wp-admin/admin-ajax", url.Values{"action": {"elementor_js_log"}}); code != http.StatusOK {
 		t.Errorf("elementor_js_log: %d", code)
 	}
 	// The editor's upstream admin links (Theme Builder app, settings…) land on the native screens.
-	for page, want := range map[string]string{"elementor-app&ver=4.3.5": "/wp-admin/gowebeditor-theme-builder",
-		"elementor-settings": "/wp-admin/gowebeditor-pro?tab=settings", "e-form-submissions": "/wp-admin/gowebeditor-pro?tab=submissions"} {
+	for page, want := range map[string]string{"elementor-app&ver=4.3.5": "/wp-admin/theme-builder",
+		"elementor-settings": "/wp-admin/web-builder?tab=settings", "e-form-submissions": "/wp-admin/web-builder?tab=submissions"} {
 		if code, _, loc := get(t, c, base+"/wp-admin/admin?page="+page); code != http.StatusFound || loc != want {
 			t.Errorf("admin?page=%s: %d %q, want a redirect to %s", page, code, loc, want)
 		}
@@ -265,7 +265,7 @@ func TestGolementorDeactivateFallsBackToDefaultTheme(t *testing.T) {
 		t.Error("the site does not render with Twenty Twenty-Five after deactivating")
 	}
 	_, body, _ = get(t, c, base+"/wp-admin/themes")
-	if strings.Contains(body, "hello-gowebeditor") {
+	if strings.Contains(body, "hello-web-builder") {
 		t.Error("the Themes screen still lists Hello Pursae Web Builder")
 	}
 
@@ -340,7 +340,7 @@ func TestInactiveNativePluginLeavesAdmin(t *testing.T) {
 		t.Fatalf("deactivate WPGo Cache: %d", code)
 	}
 	_, body, _ = get(t, c, base+"/wp-admin/")
-	for _, gone := range []string{"toplevel_page_wpgo-cache", "wp-admin-bar-wpgo-cache", "menu-gowebeditor", "gowebeditor-theme-builder"} {
+	for _, gone := range []string{"toplevel_page_wpgo-cache", "wp-admin-bar-wpgo-cache", "menu-gowebeditor", "theme-builder"} {
 		if strings.Contains(body, gone) {
 			t.Errorf("inactive plugin still in the admin: %s", gone)
 		}

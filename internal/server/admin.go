@@ -107,23 +107,23 @@ func adminMenu(pending int, golementor, cache bool) []menuDef {
 		}},
 		{slug: "edit-comments", title: comments, cap: "edit_posts", id: "menu-comments", icon: "dashicons-admin-comments"},
 		{separator: true, cap: "read"},
-		{slug: "gowebeditor-pro?tab=popups", title: "Pursae Web Builder", cap: "edit_posts", id: "menu-gowebeditor", icon: "dashicons-layout", sub: []subDef{ // Golementor Pro
-			{slug: "gowebeditor-pro?tab=popups", title: "Popups", cap: "edit_posts"},
-			{slug: "gowebeditor-pro?tab=loops", title: "Loop Items", cap: "edit_posts"}, // gap-loops
-			{slug: "gowebeditor-pro?tab=submissions", title: "Form Submissions", cap: "manage_options"},
-			{slug: "gowebeditor-pro?tab=code", title: "Custom Code", cap: "manage_options"},
-			{slug: "gowebeditor-pro?tab=fonts", title: "Custom Fonts", cap: "manage_options"},
-			{slug: "gowebeditor-icons", title: "Custom Icons", cap: "manage_options"}, // gap-widgets
-			{slug: "gowebeditor-pro?tab=roles", title: "Role Manager", cap: "manage_options"},
-			{slug: "golementor-setup", title: "Site Setup", cap: "edit_theme_options"}, // Golementor Studio wizard
-			{slug: "gowebeditor-pro?tab=settings", title: "Settings", cap: "manage_options"},
+		{slug: "web-builder?tab=popups", title: "Pursae Web Builder", cap: "edit_posts", id: "menu-gowebeditor", icon: "dashicons-layout", sub: []subDef{ // Golementor Pro
+			{slug: "web-builder?tab=popups", title: "Popups", cap: "edit_posts"},
+			{slug: "web-builder?tab=loops", title: "Loop Items", cap: "edit_posts"}, // gap-loops
+			{slug: "web-builder?tab=submissions", title: "Form Submissions", cap: "manage_options"},
+			{slug: "web-builder?tab=code", title: "Custom Code", cap: "manage_options"},
+			{slug: "web-builder?tab=fonts", title: "Custom Fonts", cap: "manage_options"},
+			{slug: "web-builder-icons", title: "Custom Icons", cap: "manage_options"}, // gap-widgets
+			{slug: "web-builder?tab=roles", title: "Role Manager", cap: "manage_options"},
+			{slug: "web-builder-setup", title: "Site Setup", cap: "edit_theme_options"}, // Golementor Studio wizard
+			{slug: "web-builder?tab=settings", title: "Settings", cap: "manage_options"},
 		}},
 		{slug: "themes", title: "Appearance", cap: "switch_themes", id: "menu-appearance", icon: "dashicons-admin-appearance", sub: []subDef{
 			{slug: "themes", title: "Themes", cap: "switch_themes"},
 			{slug: "customize", title: "Customize", cap: "edit_theme_options"},
 			{slug: "widgets", title: "Widgets", cap: "edit_theme_options"},
 			{slug: "nav-menus", title: "Menus", cap: "edit_theme_options"},
-			{slug: "gowebeditor-theme-builder", title: "Theme Builder", cap: "edit_theme_options"}, // Golementor
+			{slug: "theme-builder", title: "Theme Builder", cap: "edit_theme_options"}, // Golementor
 			{slug: "theme-editor", title: "Theme File Editor", cap: "edit_themes"},
 		}},
 		{slug: "plugins", title: `Plugins <span class="update-plugins count-0"><span class="plugin-count">0</span></span>`, cap: "activate_plugins", id: "menu-plugins", icon: "dashicons-admin-plugins", sub: []subDef{
@@ -176,7 +176,7 @@ func adminMenu(pending int, golementor, cache bool) []menuDef {
 		if !golementor && d.id == "menu-appearance" {
 			subs := make([]subDef, 0, len(d.sub))
 			for _, sd := range d.sub {
-				if sd.slug != "gowebeditor-theme-builder" {
+				if sd.slug != "theme-builder" {
 					subs = append(subs, sd)
 				}
 			}

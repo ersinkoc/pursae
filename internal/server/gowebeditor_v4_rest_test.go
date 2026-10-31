@@ -27,7 +27,7 @@ func TestGoWebEditorV4REST(t *testing.T) {
 	if err := getPool(t).QueryRow(context.Background(), `SELECT id::text FROM posts WHERE type='page' AND title='Sample Page'`).Scan(&pageID); err != nil {
 		t.Fatal(err)
 	}
-	_, body, _ := get(t, c, base+"/wp-admin/post?post="+pageID+"&action=golementor")
+	_, body, _ := get(t, c, base+"/wp-admin/post?post="+pageID+"&action=web-builder")
 	m := regexp.MustCompile(`"X-WP-Nonce":"([^"]+)"`).FindStringSubmatch(body)
 	if m == nil {
 		m = regexp.MustCompile(`"nonce":"([^"]+)"`).FindStringSubmatch(body)

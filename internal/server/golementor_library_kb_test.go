@@ -688,7 +688,7 @@ func glibKBInstall(t *testing.T, base string, c *http.Client, srv *Server, k *gl
 
 	// Hello Golementor is the theme the kits are made for.
 	_, body, _ := get(t, c, base+"/wp-admin/themes")
-	act := regexp.MustCompile(`href="(/wp-admin/themes\?action=activate&amp;stylesheet=hello-gowebeditor&amp;_wpnonce=[^"]+)"`).FindStringSubmatch(body)
+	act := regexp.MustCompile(`href="(/wp-admin/themes\?action=activate&amp;stylesheet=hello-web-builder&amp;_wpnonce=[^"]+)"`).FindStringSubmatch(body)
 	if act == nil {
 		t.Fatal("no activate link for Hello Pursae Web Builder")
 	}
@@ -715,7 +715,7 @@ func glibKBInstall(t *testing.T, base string, c *http.Client, srv *Server, k *gl
 		s.pageURL[pg.Slug], _ = out["link"].(string)
 	}
 	// The editor's nonce comes with the editor page.
-	_, body, _ = get(t, c, base+"/wp-admin/post?post="+itoa64(s.pages[k.Pages[0].Slug])+"&action=golementor")
+	_, body, _ = get(t, c, base+"/wp-admin/post?post="+itoa64(s.pages[k.Pages[0].Slug])+"&action=web-builder")
 	m := regexp.MustCompile(`"ajax":\{"nonce":"([^"]+)"`).FindStringSubmatch(body)
 	if m == nil {
 		t.Fatal("no elementor_ajax nonce")
@@ -779,12 +779,12 @@ func glibKBInstall(t *testing.T, base string, c *http.Client, srv *Server, k *gl
 	}
 
 	// Theme parts through the Theme Builder: Add New, save_builder, display conditions.
-	_, body, _ = get(t, c, base+"/wp-admin/gowebeditor-theme-builder")
+	_, body, _ = get(t, c, base+"/wp-admin/theme-builder")
 	s.tbNonce = formNonce(t, body)
 	for _, part := range k.Parts {
-		code, _, loc := post(t, c, base+"/wp-admin/gowebeditor-theme-builder", url.Values{"_wpnonce": {s.tbNonce}, "action": {"new"},
+		code, _, loc := post(t, c, base+"/wp-admin/theme-builder", url.Values{"_wpnonce": {s.tbNonce}, "action": {"new"},
 			"type": {part.Type}, "title": {part.Title}})
-		pm := regexp.MustCompile(`^/wp-admin/post\?post=(\d+)&action=golementor$`).FindStringSubmatch(loc)
+		pm := regexp.MustCompile(`^/wp-admin/post\?post=(\d+)&action=web-builder$`).FindStringSubmatch(loc)
 		if code != http.StatusFound || pm == nil {
 			t.Fatalf("new %s: %d %q", part.Type, code, loc)
 		}
@@ -798,7 +798,7 @@ func glibKBInstall(t *testing.T, base string, c *http.Client, srv *Server, k *gl
 			form.Add("mode[]", mode)
 			form.Add("rule[]", rule)
 		}
-		if code, _, loc := post(t, c, base+"/wp-admin/gowebeditor-theme-builder", form); code != http.StatusFound || !strings.Contains(loc, "message=conditions") {
+		if code, _, loc := post(t, c, base+"/wp-admin/theme-builder", form); code != http.StatusFound || !strings.Contains(loc, "message=conditions") {
 			t.Fatalf("conditions of %s: %d %s", part.Type, code, loc)
 		}
 		var conds string

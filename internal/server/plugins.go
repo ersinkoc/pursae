@@ -353,7 +353,7 @@ func (s *Server) installedPlugins(c *gin.Context) []pluginRow {
 		rows[1].SettingsURL = "" // WordPress shows a plugin's Settings link only while it is active
 	}
 	if rows[2].Active {
-		rows[2].SettingsURL = "/wp-admin/gowebeditor-theme-builder"
+		rows[2].SettingsURL = "/wp-admin/theme-builder"
 	}
 	rows = append(rows, s.maintPluginRow())    // Maintenance-Go (maintenance_admin.go)
 	rows = append(rows, s.seogoPluginRow())    // SEO-Go (seogo.go)
@@ -467,10 +467,10 @@ func (s *Server) pluginsScreen(c *gin.Context) {
 	case c.Query("activate") == "true":
 		notices = append(notices, notice{Type: "success", Message: "Plugin activated.", Dismissible: true})
 		if c.Query("gwe_theme") == "hello" { // Golementor moved the site to its blank canvas theme
-			notices = append(notices, notice{Type: "info", Message: template.HTML("<strong>Hello Pursae Web Builder</strong> is now the active theme: a blank canvas for Pursae Web Builder. Design the header, footer and pages under <a href=\"/wp-admin/gowebeditor-theme-builder\">Appearance &rsaquo; Theme Builder</a>. Deactivating Pursae Web Builder brings back your previous theme."), Dismissible: true})
+			notices = append(notices, notice{Type: "info", Message: template.HTML("<strong>Hello Pursae Web Builder</strong> is now the active theme: a blank canvas for Pursae Web Builder. Design the header, footer and pages under <a href=\"/wp-admin/theme-builder\">Appearance &rsaquo; Theme Builder</a>. Deactivating Pursae Web Builder brings back your previous theme."), Dismissible: true})
 		}
 		if c.Query("gwe_setup") == "1" && s.golementorOn() { // Golementor Studio: offer the setup wizard
-			notices = append(notices, notice{Type: "info", Message: template.HTML("<strong>Pursae Web Builder is ready.</strong> Start from a complete starter site (header, footer, pages, blog, menus, colors and fonts) and edit everything afterwards.</p><p><a class=\"button button-primary\" href=\"" + gweSetupPath + "\">Run Site Setup</a> <a class=\"button\" href=\"/wp-admin/gowebeditor-theme-builder\">Start from scratch</a>"), Dismissible: true})
+			notices = append(notices, notice{Type: "info", Message: template.HTML("<strong>Pursae Web Builder is ready.</strong> Start from a complete starter site (header, footer, pages, blog, menus, colors and fonts) and edit everything afterwards.</p><p><a class=\"button button-primary\" href=\"" + gweSetupPath + "\">Run Site Setup</a> <a class=\"button\" href=\"/wp-admin/theme-builder\">Start from scratch</a>"), Dismissible: true})
 		}
 	case c.Query("deactivate") == "true":
 		notices = append(notices, notice{Type: "success", Message: "Plugin deactivated.", Dismissible: true})

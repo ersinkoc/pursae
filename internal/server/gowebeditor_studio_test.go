@@ -14,7 +14,7 @@ func TestGolementorStudio(t *testing.T) {
 	ts, c := testServer(t)
 	base := ts.URL
 	installAndLogin(t, ts, c)
-	editor := base + "/wp-admin/post?post=2&action=golementor"
+	editor := base + "/wp-admin/post?post=2&action=web-builder"
 	studioAssets := []string{"studio/studio.css", "studio/core.js", "studio/fields.js", "studio/library.js", "studio/inspector.js",
 		"studio/layers.js", "studio/site.js", "studio/canvas.js", "studio/app.js"}
 
@@ -41,25 +41,25 @@ func TestGolementorStudio(t *testing.T) {
 		t.Errorf("Studio scripts: %s", got)
 	}
 	for _, f := range append(studioAssets, "studio/toggle.js") {
-		if code, _, _ := get(t, c, base+"/wp-content/plugins/gowebeditor/assets/"+f); code != http.StatusOK {
+		if code, _, _ := get(t, c, base+"/wp-content/plugins/web-builder/assets/"+f); code != http.StatusOK {
 			t.Errorf("asset %s: %d", f, code)
 		}
 	}
 
 	// The preference endpoint.
-	if code, b := restGet(t, c, base, "/wp-json/golementor/v1/studio/preferences"); code != http.StatusOK || !strings.Contains(b, `"mode":"studio"`) {
+	if code, b := restGet(t, c, base, "/wp-json/web-builder/v1/studio/preferences"); code != http.StatusOK || !strings.Contains(b, `"mode":"studio"`) {
 		t.Errorf("GET preferences: %d %s", code, b)
 	}
-	if code, _ := restSend(t, c, base, http.MethodPost, "/wp-json/golementor/v1/studio/preferences", `{"mode":"fancy"}`); code != http.StatusBadRequest {
+	if code, _ := restSend(t, c, base, http.MethodPost, "/wp-json/web-builder/v1/studio/preferences", `{"mode":"fancy"}`); code != http.StatusBadRequest {
 		t.Errorf("bad mode: %d", code)
 	}
-	if code, b := restSend(t, c, base, http.MethodPost, "/wp-json/golementor/v1/studio/preferences", `{"mode":"advanced"}`); code != http.StatusOK || !strings.Contains(b, `"mode":"advanced"`) {
+	if code, b := restSend(t, c, base, http.MethodPost, "/wp-json/web-builder/v1/studio/preferences", `{"mode":"advanced"}`); code != http.StatusOK || !strings.Contains(b, `"mode":"advanced"`) {
 		t.Fatalf("POST preferences: %d %s", code, b)
 	}
-	if code, b := restGet(t, c, base, "/wp-json/golementor/v1/studio/preferences"); code != http.StatusOK || !strings.Contains(b, `"mode":"advanced"`) {
+	if code, b := restGet(t, c, base, "/wp-json/web-builder/v1/studio/preferences"); code != http.StatusOK || !strings.Contains(b, `"mode":"advanced"`) {
 		t.Errorf("preference not saved: %d %s", code, b)
 	}
-	resp, err := http.Post(base+"/wp-json/golementor/v1/studio/preferences", "application/json", strings.NewReader(`{"mode":"studio"}`))
+	resp, err := http.Post(base+"/wp-json/web-builder/v1/studio/preferences", "application/json", strings.NewReader(`{"mode":"studio"}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -86,7 +86,7 @@ func TestGolementorStudio(t *testing.T) {
 	}
 
 	// Back to Studio.
-	if code, _ := restSend(t, c, base, http.MethodPost, "/wp-json/golementor/v1/studio/preferences", `{"mode":"studio"}`); code != http.StatusOK {
+	if code, _ := restSend(t, c, base, http.MethodPost, "/wp-json/web-builder/v1/studio/preferences", `{"mode":"studio"}`); code != http.StatusOK {
 		t.Fatalf("POST studio: %d", code)
 	}
 	if _, body, _ = get(t, c, editor); !strings.Contains(body, `id="gwe-studio-css"`) {
@@ -94,7 +94,7 @@ func TestGolementorStudio(t *testing.T) {
 	}
 
 	// The section library the gallery reads (served by the stand-in until the library lands).
-	code, b := restGet(t, c, base, "/wp-json/golementor/v1/library/sections")
+	code, b := restGet(t, c, base, "/wp-json/web-builder/v1/library/sections")
 	var list struct {
 		Categories []struct {
 			Slug, Title string
@@ -105,14 +105,14 @@ func TestGolementorStudio(t *testing.T) {
 	if code != http.StatusOK || json.Unmarshal([]byte(b), &list) != nil || len(list.Items) == 0 || len(list.Categories) == 0 {
 		t.Fatalf("sections: %d %.200s", code, b)
 	}
-	code, b = restGet(t, c, base, "/wp-json/golementor/v1/library/sections/"+list.Items[0].ID)
+	code, b = restGet(t, c, base, "/wp-json/web-builder/v1/library/sections/"+list.Items[0].ID)
 	var one struct {
 		Content []map[string]any `json:"content"`
 	}
 	if code != http.StatusOK || json.Unmarshal([]byte(b), &one) != nil || len(one.Content) == 0 || one.Content[0]["elType"] != "container" {
 		t.Errorf("section: %d %.200s", code, b)
 	}
-	if code, _ := restGet(t, c, base, "/wp-json/golementor/v1/library/sections/nope"); code != http.StatusNotFound {
+	if code, _ := restGet(t, c, base, "/wp-json/web-builder/v1/library/sections/nope"); code != http.StatusNotFound {
 		t.Errorf("unknown section: %d", code)
 	}
 }

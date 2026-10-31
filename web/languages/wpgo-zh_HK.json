@@ -545,7 +545,7 @@
  "Bump it after changing your cookie policy or adding a service: stored choices of an older version no longer count.": "變更 Cookie 政策或新增服務後請提高版本:舊版本儲存的選擇將不再有效。",
  "Bump version and ask everyone again": "提高版本並重新徵求所有人同意",
  "Bundled": "隨附",
- "Bundled themes are compiled into Pursae, Pursae Web Builder&rsquo;s <a href=\"/wp-admin/gowebeditor-theme-builder\">Theme Builder</a> generates themes, and theme packages (a zip of <code>theme.json</code>, templates and assets, no code) are installed from the <a href=\"/wp-admin/theme-install\">Library</a> or with <strong>Upload Theme</strong>.": "隨附的佈景主題已編譯至 Pursae 中,Pursae Web Builder 的<a href=\"/wp-admin/gowebeditor-theme-builder\">佈景主題建構工具</a>可產生佈景主題,而佈景主題套件 (包含 <code>theme.json</code>、範本及資源的 zip 檔案,不含程式碼) 則可從<a href=\"/wp-admin/theme-install\">資料庫</a>或透過 <strong>上傳佈景主題</strong> 安裝。",
+ "Bundled themes are compiled into Pursae, Pursae Web Builder&rsquo;s <a href=\"/wp-admin/theme-builder\">Theme Builder</a> generates themes, and theme packages (a zip of <code>theme.json</code>, templates and assets, no code) are installed from the <a href=\"/wp-admin/theme-install\">Library</a> or with <strong>Upload Theme</strong>.": "隨附的佈景主題已編譯至 Pursae 中,Pursae Web Builder 的<a href=\"/wp-admin/theme-builder\">佈景主題建構工具</a>可產生佈景主題,而佈景主題套件 (包含 <code>theme.json</code>、範本及資源的 zip 檔案,不含程式碼) 則可從<a href=\"/wp-admin/theme-install\">資料庫</a>或透過 <strong>上傳佈景主題</strong> 安裝。",
  "BunnyCDN cache purged.": "已清除 BunnyCDN 快取。",
  "Burgundy and charcoal, Caslon serif, gold hairlines": "酒紅與炭灰,Caslon 襯線字體,金色細線",
  "Burkina Faso": "布吉納法索",

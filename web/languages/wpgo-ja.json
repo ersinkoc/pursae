@@ -545,7 +545,7 @@
  "Bump it after changing your cookie policy or adding a service: stored choices of an older version no longer count.": "Cookie ポリシーを変更したりサービスを追加したりした後に上げてください。古いバージョンで保存された選択は無効になります。",
  "Bump version and ask everyone again": "バージョンを上げて全員に再確認",
  "Bundled": "同梱",
- "Bundled themes are compiled into Pursae, Pursae Web Builder&rsquo;s <a href=\"/wp-admin/gowebeditor-theme-builder\">Theme Builder</a> generates themes, and theme packages (a zip of <code>theme.json</code>, templates and assets, no code) are installed from the <a href=\"/wp-admin/theme-install\">Library</a> or with <strong>Upload Theme</strong>.": "同梱テーマは Pursae にコンパイルされています。Pursae Web Builder の<a href=\"/wp-admin/gowebeditor-theme-builder\">テーマビルダー</a>はテーマを生成し、テーマパッケージ (<code>theme.json</code>、テンプレート、アセットを含みコードを含まない zip) は<a href=\"/wp-admin/theme-install\">ライブラリ</a>または<strong>テーマのアップロード</strong>からインストールします。",
+ "Bundled themes are compiled into Pursae, Pursae Web Builder&rsquo;s <a href=\"/wp-admin/theme-builder\">Theme Builder</a> generates themes, and theme packages (a zip of <code>theme.json</code>, templates and assets, no code) are installed from the <a href=\"/wp-admin/theme-install\">Library</a> or with <strong>Upload Theme</strong>.": "同梱テーマは Pursae にコンパイルされています。Pursae Web Builder の<a href=\"/wp-admin/theme-builder\">テーマビルダー</a>はテーマを生成し、テーマパッケージ (<code>theme.json</code>、テンプレート、アセットを含みコードを含まない zip) は<a href=\"/wp-admin/theme-install\">ライブラリ</a>または<strong>テーマのアップロード</strong>からインストールします。",
  "BunnyCDN cache purged.": "BunnyCDN のキャッシュを削除しました。",
  "Burgundy and charcoal, Caslon serif, gold hairlines": "バーガンディとチャコール、Caslon セリフ、金色の細線",
  "Burkina Faso": "ブルキナファソ",

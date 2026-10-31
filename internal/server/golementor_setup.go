@@ -26,7 +26,7 @@ import (
 	"wpgo/internal/store"
 )
 
-// Golementor Studio setup wizard (docs/golementor-studio.md, section 2): /wp-admin/golementor-setup
+// Golementor Studio setup wizard (docs/golementor-studio.md, section 2): /wp-admin/web-builder-setup
 // installs a site kit from the library (golementor_library.go) as editable Golementor documents of
 // the Hello Golementor working copy: theme parts with display conditions, pages built with
 // Golementor, menus, sample posts with featured images, Settings › Reading, the kit's global colors
@@ -43,12 +43,12 @@ import (
 // or to keep it and only apply the colors, fonts and site details.
 
 const (
-	gweSetupPath     = "/wp-admin/golementor-setup"
+	gweSetupPath     = "/wp-admin/web-builder-setup"
 	gweStarterMeta   = "_gwe_starter"       // kit slug on every created item
 	gweStarterRef    = "_gwe_starter_ref"   // the item's slug inside kit.json (pages, posts)
 	gweStarterOption = "golementor_starter" // the install record
 	gweSetupTimeout  = 3 * time.Minute
-	gweSetupNonce    = "golementor-setup"
+	gweSetupNonce    = "web-builder-setup"
 	// gweSetupPreviewID is the document id base of the live preview (never a real post).
 	gweSetupPreviewID int64 = 2_000_000_000_000
 )
@@ -968,7 +968,7 @@ func (s *Server) gweSetupScreen(c *gin.Context) {
 		notices = append(notices, notice{Type: "error", Message: template.HTML(html.EscapeString(e)), Dismissible: true})
 	}
 	s.enqueueMedia(c, 0)
-	s.adminPage(c, "golementor-setup", "Site Setup", "golementor_page_golementor-setup", "admin/golementor-setup", d, notices...)
+	s.adminPage(c, "web-builder-setup", "Site Setup", "golementor_page_golementor-setup", "admin/golementor-setup", d, notices...)
 }
 
 // gweStarterCounts counts what the installed starter site made.
@@ -1180,7 +1180,7 @@ func (s *Server) gweSetupPreview(c *gin.Context) {
 	ver := "?ver=" + gweAssetVer()
 	var head strings.Builder
 	if t := helloTheme(); t != nil {
-		head.WriteString(gweLink("hello-gowebeditor", t.URI()+"/style.css?ver="+helloThemeVersion))
+		head.WriteString(gweLink("hello-web-builder", t.URI()+"/style.css?ver="+helloThemeVersion))
 	}
 	head.WriteString(gweLink("elementor-frontend", assets+"css/frontend.min.css"+ver))
 	head.WriteString(gweLink("widget-theme-elements", assets+"css/widget-theme-elements.min.css"+ver))

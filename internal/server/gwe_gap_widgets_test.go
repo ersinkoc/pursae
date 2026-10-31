@@ -210,7 +210,7 @@ func TestGapWidgetsSite(t *testing.T) {
 		t.Errorf("video page CSP = %s", csp)
 	}
 	if strings.Contains(body, "cdnjs.cloudflare.com") || !regexp.MustCompile(`(?s)id="prismjs_core-js".*id="prismjs_loader-js".*id="prismjs_normalize-js".*id="prismjs_toolbar-js".*id="prismjs_copy_to_clipboard-js"`).MatchString(body) ||
-		!strings.Contains(body, `/wp-content/plugins/gowebeditor/assets/lib/prismjs/components/prism-core.min.js`) {
+		!strings.Contains(body, `/wp-content/plugins/web-builder/assets/lib/prismjs/components/prism-core.min.js`) {
 		t.Error("Prism scripts are not the local copies in upstream order")
 	}
 	if !strings.Contains(body, `<a itemprop="item" href="`+base+`/sample-page/"><span itemprop="name">Sample Page</span></a>`) ||
@@ -249,7 +249,7 @@ func TestGapWidgetsSite(t *testing.T) {
 	}
 
 	// Custom Icons: upload a Fontello export, see it in the editor's library and on the page.
-	_, adminPage, _ := get(t, c, base+"/wp-admin/gowebeditor-icons")
+	_, adminPage, _ := get(t, c, base+"/wp-admin/web-builder-icons")
 	m := regexp.MustCompile(`name="_wpnonce" value="([^"]+)"`).FindStringSubmatch(adminPage)
 	if m == nil {
 		t.Fatal("no icons nonce")
@@ -267,7 +267,7 @@ func TestGapWidgetsSite(t *testing.T) {
 	fw, _ := mw.CreateFormFile("zip_upload", "gap.zip")
 	fw.Write(zipData)
 	mw.Close()
-	resp, err := c.Post(base+"/wp-admin/gowebeditor-icons", mw.FormDataContentType(), &form)
+	resp, err := c.Post(base+"/wp-admin/web-builder-icons", mw.FormDataContentType(), &form)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -275,22 +275,22 @@ func TestGapWidgetsSite(t *testing.T) {
 	if loc := resp.Header.Get("Location"); resp.StatusCode != http.StatusFound || !strings.Contains(loc, "message=") {
 		t.Fatalf("upload: %d %s", resp.StatusCode, loc)
 	}
-	if code, _, _ := get(t, c, base+"/wp-content/uploads/gowebeditor/custom-icons/gaptest/css/gaptest.css"); code != http.StatusOK {
+	if code, _, _ := get(t, c, base+"/wp-content/uploads/web-builder/custom-icons/gaptest/css/gaptest.css"); code != http.StatusOK {
 		t.Errorf("icon stylesheet: %d", code)
 	}
-	if code, _, _ := get(t, c, base+"/wp-content/uploads/gowebeditor/custom-icons/gaptest/demo.html"); code == http.StatusOK {
+	if code, _, _ := get(t, c, base+"/wp-content/uploads/web-builder/custom-icons/gaptest/demo.html"); code == http.StatusOK {
 		t.Error("demo.html from the archive was published")
 	}
 	body, _ = fetch("/sample-page/gap-video/")
-	if !strings.Contains(body, `id='elementor-icons-gaptest-css' href='`+base+`/wp-content/uploads/gowebeditor/custom-icons/gaptest/css/gaptest.css`) {
+	if !strings.Contains(body, `id='elementor-icons-gaptest-css' href='`+base+`/wp-content/uploads/web-builder/custom-icons/gaptest/css/gaptest.css`) {
 		t.Error("custom icon stylesheet not printed on the page using it")
 	}
 	if plain, _ := fetch("/gap-plain/"); strings.Contains(plain, "elementor-icons-gaptest") {
 		t.Error("custom icon stylesheet printed on a page without its icons")
 	}
-	_, editor, _ := get(t, c, base+"/wp-admin/post?post="+itoa64(videoPage)+"&action=golementor")
+	_, editor, _ := get(t, c, base+"/wp-admin/post?post="+itoa64(videoPage)+"&action=web-builder")
 	if !strings.Contains(editor, `"custom_icon_type":"Fontello"`) || !strings.Contains(editor, `"label":"Gap Icons"`) ||
-		!strings.Contains(editor, `"customIconsURL":"`+base+`/wp-admin/gowebeditor-icons"`) {
+		!strings.Contains(editor, `"customIconsURL":"`+base+`/wp-admin/web-builder-icons"`) {
 		t.Error("editor icon library misses the custom set")
 	}
 
@@ -310,7 +310,7 @@ func TestGapWidgetsSite(t *testing.T) {
 	}
 
 	// Popup editor: page settings CSS targets this popup's dialog.
-	_, popupEditor, _ := get(t, c, base+"/wp-admin/post?post="+itoa64(popupID)+"&action=golementor")
+	_, popupEditor, _ := get(t, c, base+"/wp-admin/post?post="+itoa64(popupID)+"&action=web-builder")
 	if !strings.Contains(popupEditor, `"cssWrapperSelector":"#elementor-popup-modal-`+itoa64(popupID)+`"`) {
 		t.Error("popup document cssWrapperSelector is not the popup's modal")
 	}

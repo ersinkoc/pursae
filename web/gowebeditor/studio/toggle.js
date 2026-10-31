@@ -1,6 +1,6 @@
 /* Pursae Web Builder Studio — the Studio / Advanced switch. Loaded on every editor page: in Advanced mode
    it adds a "Studio" button to the upstream top bar and loads the Studio on demand; the choice is
-   saved per user (golementor/v1/studio/preferences). */
+   saved per user (web-builder/v1/studio/preferences). */
 (function () {
 	'use strict';
 	const cfg = window.GWEStudioConfig || {};
@@ -8,7 +8,7 @@
 
 	T.save = function (mode) {
 		cfg.mode = mode;
-		return fetch(cfg.rest + 'golementor/v1/studio/preferences', {
+		return fetch(cfg.rest + 'web-builder/v1/studio/preferences', {
 			method: 'POST', credentials: 'same-origin',
 			headers: { 'X-WP-Nonce': cfg.nonce, 'Content-Type': 'application/json' },
 			body: JSON.stringify({ mode }),

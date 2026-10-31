@@ -396,7 +396,7 @@ func TestGolementorLibrarySA_Render(t *testing.T) {
 	ts, c := testServer(t)
 	base := ts.URL
 	installAndLogin(t, ts, c)
-	_, body, _ := get(t, c, base+"/wp-admin/post?post=2&action=golementor")
+	_, body, _ := get(t, c, base+"/wp-admin/post?post=2&action=web-builder")
 	nonce := regexp.MustCompile(`"ajax":\{"nonce":"([^"]+)"`).FindStringSubmatch(body)
 	if nonce == nil {
 		t.Fatal("no elementor_ajax nonce")

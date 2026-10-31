@@ -38,14 +38,14 @@ upstream panel stays one click away ("Advanced") for detailed editing.
 
 ## 2. Setup wizard
 
-`/wp-admin/golementor-setup` (Pursae Web Builder › Site Setup, `edit_theme_options`; offered on the Plugins
+`/wp-admin/web-builder-setup` (Pursae Web Builder › Site Setup, `edit_theme_options`; offered on the Plugins
 screen right after activating Pursae Web Builder while no starter site is installed): 1) choose a starter
 site (kit cards with screenshot and **Live Preview**), 2) pick a color palette (the kit's, 8 presets
 or 4 custom colors) and a font pairing (the kit's or 7 presets: heading font → global fonts
 `primary`/`secondary`, body font → `text`/`accent`), 3) site title, tagline, logo (media library) and
 which pages to create, 4) install. Server side: `internal/server/golementor_setup.go`.
 
-- Live Preview (`/wp-admin/golementor-setup/preview?kit=<slug>&page=<page slug>|blog|post-<n>&palette=…&fonts=…`)
+- Live Preview (`/wp-admin/web-builder-setup/preview?kit=<slug>&page=<page slug>|blog|post-<n>&palette=…&fonts=…`)
   renders the kit's header, page and footer with the chosen colors and fonts without installing
   anything (menus link between preview pages, the blog and single post use the kit's sample posts).
 - Install creates, as Pursae Web Builder documents of the Hello Pursae Web Builder working copy: the theme parts
@@ -70,7 +70,7 @@ which pages to create, 4) install. Server side: `internal/server/golementor_setu
 Loaded, validated and cached by `internal/server/golementor_library.go`; an invalid file is left
 out of the library and logged with every problem (`go test -run TestGolementorLibraryContent
 ./internal/server/` lists them). JSON is read strictly: unknown keys are errors. Files are served at
-`/wp-content/plugins/gowebeditor/assets/library/…`.
+`/wp-content/plugins/web-builder/assets/library/…`.
 
 ### Section templates — `web/gowebeditor/library/sections/<category>/<slug>.json`
 
@@ -173,12 +173,12 @@ out of the library and logged with every problem (`go test -run TestGolementorLi
 
 Editors only (`edit_posts`; cookie + `X-WP-Nonce` like `elementor/v1`; 404 while Pursae Web Builder is off):
 
-- `GET /wp-json/golementor/v1/library/sections` →
+- `GET /wp-json/web-builder/v1/library/sections` →
   `{"categories":[{"slug","title","count"}],"items":[{"id":"<category>/<slug>","title","category","tags","thumbnail":"<url>"}]}`
   (only non-empty categories).
-- `GET /wp-json/golementor/v1/library/sections/<category>/<slug>` → `{"content":[…]}`: tokens
+- `GET /wp-json/web-builder/v1/library/sections/<category>/<slug>` → `{"content":[…]}`: tokens
   replaced, fresh element ids, ready for `document/elements/import` or `create`.
-- `GET /wp-json/golementor/v1/library/kits` →
+- `GET /wp-json/web-builder/v1/library/kits` →
   `{"kits":[{"slug","title","category","description","screenshot":"<url>","pages":[{"slug","title","front_page","posts_page","optional"}],"parts":["header",…],"colors":[{"_id","title","color"}],"fonts":[{"_id","title","family"}],"posts":<n>}]}`.
 - The classic template library's **Blocks** tab lists every section (`source: remote`, `type: block`,
   `template_id: "gwe-section:<category>/<slug>"`, `subtype`: the category title) and inserts it

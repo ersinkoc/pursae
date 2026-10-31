@@ -146,7 +146,7 @@ func (s *Server) gweFrontAdminBar(q *siteQuery, u *store.User) string {
 	}
 	// The same Dashicon as the Golementor admin menu entry (dashicons-layout).
 	icon := `<span class="ab-icon dashicons-layout" aria-hidden="true"></span>`
-	label, href := "Pursae Web Builder", "/wp-admin/gowebeditor-theme-builder"
+	label, href := "Pursae Web Builder", "/wp-admin/theme-builder"
 	if canPost {
 		label, href = "Edit with Pursae Web Builder", gweEditURL(q.Post.ID)
 	}
@@ -161,7 +161,7 @@ func (s *Server) gweFrontAdminBar(q *siteQuery, u *store.User) string {
 		sb.WriteString(`<li role='group' id='wp-admin-bar-golementor_edit_doc'><a class='ab-item' role="menuitem" href='` + esc(gweEditURL(q.Post.ID)) + `'>` + esc(title) + `</a></li>`)
 	}
 	if canTheme {
-		sb.WriteString(`<li role='group' id='wp-admin-bar-golementor_theme_builder'><a class='ab-item' role="menuitem" href='/wp-admin/gowebeditor-theme-builder'>Theme Builder</a></li>`)
+		sb.WriteString(`<li role='group' id='wp-admin-bar-golementor_theme_builder'><a class='ab-item' role="menuitem" href='/wp-admin/theme-builder'>Theme Builder</a></li>`)
 	}
 	sb.WriteString(`</ul></div></li>`)
 	return sb.String()

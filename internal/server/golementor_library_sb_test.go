@@ -347,7 +347,7 @@ func TestGolementorLibrarySBRender(t *testing.T) {
 			t.Fatalf("%s: create page: %d %.200s", name, code, b)
 		}
 		id := strconv.FormatInt(page.ID, 10)
-		_, editor, _ := get(t, c, base+"/wp-admin/post?post="+id+"&action=golementor")
+		_, editor, _ := get(t, c, base+"/wp-admin/post?post="+id+"&action=web-builder")
 		m := nonceRe.FindStringSubmatch(editor)
 		if m == nil {
 			t.Fatalf("%s: no editor nonce", name)

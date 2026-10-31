@@ -33,7 +33,7 @@ func TestGoWebEditorV4Gaps(t *testing.T) {
 	}
 
 	// --- editor shell ---
-	_, body, _ := get(t, c, base+"/wp-admin/post?post="+pageID+"&action=golementor")
+	_, body, _ := get(t, c, base+"/wp-admin/post?post="+pageID+"&action=web-builder")
 	for _, want := range []string{"pro/js/packages/editor-components-extended/editor-components-extended.min.js?ver=4.3.5-",
 		"pro/js/packages/editor-controls-extended/editor-controls-extended.min.js", "pro/js/atomic-form-editor.min.js",
 		"js/packages/editor-canvas/editor-canvas.min.js?ver=4.3.5-", "owner@example.test"} {
@@ -245,7 +245,7 @@ func TestGoWebEditorV4Gaps(t *testing.T) {
 		t.Fatal(err)
 	}
 	resp.Body.Close()
-	_, body, _ = get(t, c, base+"/wp-admin/post?post="+pageID+"&action=golementor")
+	_, body, _ = get(t, c, base+"/wp-admin/post?post="+pageID+"&action=web-builder")
 	if !strings.Contains(body, `"id":"aut0sav"`) {
 		t.Error("the editor does not open the newer autosave")
 	}

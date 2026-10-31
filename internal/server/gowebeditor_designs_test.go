@@ -18,14 +18,14 @@ func TestGolementorPagesPanelAndDesigns(t *testing.T) {
 	base := ts.URL
 	installAndLogin(t, ts, c)
 
-	_, body, _ := get(t, c, base+"/wp-admin/post?post=2&action=golementor")
+	_, body, _ := get(t, c, base+"/wp-admin/post?post=2&action=web-builder")
 	if !strings.Contains(body, `"is_pages_panel_active":true`) {
 		t.Error("the Pages panel is not switched on")
 	}
 	if !strings.Contains(body, `"subscription_plans":{"free"`) {
 		t.Error("the library has no free plan for its listings")
 	}
-	if code, _, loc := get(t, c, base+"/wp-admin/post?post=2&action=elementor"); code != http.StatusMovedPermanently || !strings.Contains(loc, "action=golementor") {
+	if code, _, loc := get(t, c, base+"/wp-admin/post?post=2&action=elementor"); code != http.StatusMovedPermanently || !strings.Contains(loc, "action=web-builder") {
 		t.Errorf("old editor URL: %d %q", code, loc)
 	}
 	nonce := regexp.MustCompile(`"ajax":\{"nonce":"([^"]+)"`).FindStringSubmatch(body)

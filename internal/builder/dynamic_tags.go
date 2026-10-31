@@ -742,7 +742,7 @@ func init() {
 		if s.LogoURL != "" {
 			return map[string]any{"id": "", "url": s.LogoURL}
 		}
-		return map[string]any{"id": "", "url": strings.TrimRight(t.r.rc.HomeURL, "/") + "/wp-content/plugins/gowebeditor/assets/images/placeholder.png"}
+		return map[string]any{"id": "", "url": strings.TrimRight(t.r.rc.HomeURL, "/") + "/wp-content/plugins/web-builder/assets/images/placeholder.png"}
 	}
 	dynamicTagFns["page-title"] = func(t *tagCtx) any {
 		return t.r.pageTitle(t.yes("include_context"), t.yes("show_home_title"))

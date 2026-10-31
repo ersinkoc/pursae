@@ -131,13 +131,13 @@ func TestGolementorLibraryREST(t *testing.T) {
 	srv.gweLibOverride = os.DirFS(gweLibFixture)
 	base := ts.URL
 	installAndLogin(t, ts, c)
-	assets := base + "/wp-content/plugins/gowebeditor/assets/library/"
+	assets := base + "/wp-content/plugins/web-builder/assets/library/"
 
 	// Editors only: a cookie without the REST nonce counts as logged out.
-	if code, _, _ := get(t, c, base+"/wp-json/golementor/v1/library/sections"); code != http.StatusUnauthorized {
+	if code, _, _ := get(t, c, base+"/wp-json/web-builder/v1/library/sections"); code != http.StatusUnauthorized {
 		t.Errorf("without nonce: %d", code)
 	}
-	code, body := restGet(t, c, base, "/wp-json/golementor/v1/library/sections")
+	code, body := restGet(t, c, base, "/wp-json/web-builder/v1/library/sections")
 	if code != http.StatusOK {
 		t.Fatalf("sections: %d %s", code, body)
 	}
@@ -171,7 +171,7 @@ func TestGolementorLibraryREST(t *testing.T) {
 
 	fetch := func(id string) []any {
 		t.Helper()
-		code, body := restGet(t, c, base, "/wp-json/golementor/v1/library/sections/"+id)
+		code, body := restGet(t, c, base, "/wp-json/web-builder/v1/library/sections/"+id)
 		var out map[string][]any
 		if code != http.StatusOK || json.Unmarshal([]byte(body), &out) != nil || len(out["content"]) == 0 || len(out) != 1 {
 			t.Fatalf("section %s: %d %.300s", id, code, body)
@@ -211,11 +211,11 @@ func TestGolementorLibraryREST(t *testing.T) {
 	if cta := ids(fetch("cta/cta-banner")); strings.Contains(strings.Join(cta, ","), "keepme") {
 		t.Errorf("ids kept: %v", cta)
 	}
-	if code, _ := restGet(t, c, base, "/wp-json/golementor/v1/library/sections/hero/nope"); code != http.StatusNotFound {
+	if code, _ := restGet(t, c, base, "/wp-json/web-builder/v1/library/sections/hero/nope"); code != http.StatusNotFound {
 		t.Errorf("unknown section: %d", code)
 	}
 
-	code, body = restGet(t, c, base, "/wp-json/golementor/v1/library/kits")
+	code, body = restGet(t, c, base, "/wp-json/web-builder/v1/library/kits")
 	if code != http.StatusOK {
 		t.Fatalf("kits: %d %s", code, body)
 	}
@@ -250,7 +250,7 @@ func TestGolementorLibraryREST(t *testing.T) {
 	if cats, _ := json.Marshal(tl.Config); string(cats) != `{"block":{"categories":["Hero","Call to action","Contact"]}}` {
 		t.Errorf("library config: %s", cats)
 	}
-	_, editor, _ := get(t, c, base+"/wp-admin/post?post=2&action=golementor")
+	_, editor, _ := get(t, c, base+"/wp-admin/post?post=2&action=web-builder")
 	nonce := regexp.MustCompile(`"ajax":\{"nonce":"([^"]+)"`).FindStringSubmatch(editor)
 	if nonce == nil {
 		t.Fatal("no elementor_ajax nonce")
@@ -271,7 +271,7 @@ func TestGolementorLibraryREST(t *testing.T) {
 
 	// Off with the plugin.
 	togglePlugin(t, c, base, "deactivate")
-	if code, _ := restGet(t, c, base, "/wp-json/golementor/v1/library/sections"); code != http.StatusNotFound {
+	if code, _ := restGet(t, c, base, "/wp-json/web-builder/v1/library/sections"); code != http.StatusNotFound {
 		t.Errorf("library while Pursae Web Builder is off: %d", code)
 	}
 }

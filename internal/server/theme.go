@@ -591,7 +591,7 @@ func (s *Server) themesScreen(c *gin.Context) {
 			Autoupdate: map[string]any{"enabled": false, "supported": false, "forced": nil},
 			Actions:    map[string]any{"activate": t.ActivateURL, "customize": customize, "delete": nil, "autoupdate": nil}}
 		if t.Slug == helloThemeSlug { // Golementor: the hello theme is built in the Theme Builder
-			j.Builder = "/wp-admin/gowebeditor-theme-builder"
+			j.Builder = "/wp-admin/theme-builder"
 		}
 		if t.Active && hasDemo {
 			if demoImported {

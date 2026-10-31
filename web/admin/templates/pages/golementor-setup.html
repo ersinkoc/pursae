@@ -78,7 +78,7 @@ form.is-busy .gwe-setup-busy{display:inline-flex}
 	<div class="actions">
 		<a class="button button-primary button-hero" href="/">Visit your site</a>
 		{{if $.Data.FrontEdit}}<a class="button button-hero" href="{{$.Data.FrontEdit}}">Edit the home page</a>{{end}}
-		<a class="button button-hero" href="/wp-admin/gowebeditor-theme-builder">Header, footer and templates</a>
+		<a class="button button-hero" href="/wp-admin/theme-builder">Header, footer and templates</a>
 	</div>
 </div>
 {{end}}{{end}}
@@ -86,7 +86,7 @@ form.is-busy .gwe-setup-busy{display:inline-flex}
 {{with .Installed}}
 <div class="gwe-setup-installed" id="gwe-setup-installed">
 	<p><strong>Installed starter site: {{.Title}}.</strong> {{index $.Data.Counts "page"}} pages, {{index $.Data.Counts "post"}} posts and {{index $.Data.Counts "parts"}} theme parts are tagged as part of it. <em>Remove starter site</em> deletes exactly those, the menus it made and its media, and brings back your previous reading settings, site title, colors, fonts and theme.</p>
-	<form method="post" action="/wp-admin/golementor-setup" onsubmit="return confirm('Remove the starter site? Its pages, posts, theme parts, menus and images are deleted, including any changes you made to them.')">
+	<form method="post" action="/wp-admin/web-builder-setup" onsubmit="return confirm('Remove the starter site? Its pages, posts, theme parts, menus and images are deleted, including any changes you made to them.')">
 		<input type="hidden" name="_wpnonce" value="{{$.Data.Nonce}}" />
 		<input type="hidden" name="action" value="remove" />
 		<button type="submit" class="button">Remove starter site</button>
@@ -99,7 +99,7 @@ form.is-busy .gwe-setup-busy{display:inline-flex}
 {{if not .Kits}}
 <div class="gwe-setup-panel" style="border-top:1px solid #c3c4c7;margin-top:16px"><p>No starter sites are available in this build.</p></div>
 {{else}}
-<form method="post" action="/wp-admin/golementor-setup" id="gwe-setup-form">
+<form method="post" action="/wp-admin/web-builder-setup" id="gwe-setup-form">
 <input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
 <input type="hidden" name="action" value="install" />
 <ol class="gwe-setup-steps" role="tablist">

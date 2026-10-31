@@ -15,7 +15,7 @@ import (
 )
 
 // Hello Golementor: the blank, builder-first base theme (in the spirit of Hello).
-// Templates live in web/themes/hello-gowebeditor. Its header, footer and content are the
+// Templates live in web/themes/hello-web-builder. Its header, footer and content are the
 // theme-builder parts of the site's working copy (gowebeditor_theme.go); without a matching part
 // a page shows the minimal defaults from the templates.
 //
@@ -25,7 +25,7 @@ import (
 // back into the working copy and makes Hello Golementor the active theme, while the snapshot
 // itself stays as saved.
 
-const helloThemeSlug = "hello-gowebeditor"
+const helloThemeSlug = "hello-web-builder"
 
 const helloThemeVersion = "1.0.2"
 
@@ -57,7 +57,7 @@ func init() {
 			"automatic-feed-links": true,
 		},
 		Head: func(s *Server, c *gin.Context, v *siteView) string {
-			return "<link rel='stylesheet' id='hello-gowebeditor-css' href='" + v.ThemeURI + "/style.css?ver=" + helloThemeVersion + "' media='all' />\n"
+			return "<link rel='stylesheet' id='hello-web-builder-css' href='" + v.ThemeURI + "/style.css?ver=" + helloThemeVersion + "' media='all' />\n"
 		},
 	})
 }

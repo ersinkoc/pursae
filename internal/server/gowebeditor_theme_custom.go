@@ -93,7 +93,7 @@ func (s *Server) gweRegisterCustom(ctx context.Context, row *gweThemeRow) {
 	gweSnapMu.Lock()
 	gweSnaps[row.Slug] = row.Data
 	gweSnapMu.Unlock()
-	shot := s.links(ctx).HomeURL("/wp-content/gowebeditor/theme-screenshot/" + row.Slug + ".svg?ver=" + strconv.FormatInt(row.Data.Saved.Unix(), 10))
+	shot := s.links(ctx).HomeURL("/wp-content/web-builder/theme-screenshot/" + row.Slug + ".svg?ver=" + strconv.FormatInt(row.Data.Saved.Unix(), 10))
 	if row.ScreenshotID > 0 {
 		if a, err := s.store.GetAttachment(ctx, row.ScreenshotID); err == nil {
 			shot = s.uploadURL(ctx, a.FilePath)

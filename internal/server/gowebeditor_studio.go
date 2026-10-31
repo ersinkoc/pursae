@@ -60,12 +60,12 @@ func (s *Server) gweStudioInject(c *gin.Context, p *store.Post, page string) str
 		"assets":     lb.HomeURL(gweAssetsPath),
 		"css":        assets + "studio.css?ver=" + ver,
 		"scripts":    scripts,
-		"editURL":    lb.HomeURL("/wp-admin/post?action=golementor&post="),
+		"editURL":    lb.HomeURL("/wp-admin/post?action=web-builder&post="),
 		"parts":      parts,
 		"canEditKit": u != nil && (u.Can("manage_options", nil) || u.Can("edit_theme_options", nil)),
 		"links": map[string]string{
 			"dashboard":    lb.HomeURL("/wp-admin/"),
-			"siteSetup":    lb.HomeURL("/wp-admin/golementor-setup"),
+			"siteSetup":    lb.HomeURL("/wp-admin/web-builder-setup"),
 			"themeBuilder": lb.HomeURL(gweThemeBuilderPath),
 			"templates":    lb.HomeURL("/wp-admin/edit?post_type=" + gweLibrary),
 			"settings":     lb.HomeURL(gweProAdminPath + "?tab=settings"),
@@ -95,10 +95,10 @@ func (s *Server) gweStudioInject(c *gin.Context, p *store.Post, page string) str
 	return strings.Replace(page, "</body>", body+"</body>", 1)
 }
 
-// registerStudioREST adds golementor/v1/studio/preferences: GET returns and POST saves the
+// registerStudioREST adds web-builder/v1/studio/preferences: GET returns and POST saves the
 // current user's Studio settings ({"mode": "studio" | "advanced"}).
 func (s *Server) registerStudioREST() {
-	const ns = "golementor/v1"
+	const ns = "web-builder/v1"
 	handler := func(c *gin.Context, r *restRequest) {
 		u := restCurrent(c)
 		if u == nil || !u.Can("edit_posts", nil) {
@@ -120,5 +120,5 @@ func (s *Server) registerStudioREST() {
 		}
 		c.JSON(http.StatusOK, map[string]any{"mode": gweStudioMode(u)})
 	}
-	s.rest.register(ns, "/golementor/v1/studio/preferences", map[string]restHandler{http.MethodGet: handler, http.MethodPost: handler}, nil)
+	s.rest.register(ns, "/web-builder/v1/studio/preferences", map[string]restHandler{http.MethodGet: handler, http.MethodPost: handler}, nil)
 }

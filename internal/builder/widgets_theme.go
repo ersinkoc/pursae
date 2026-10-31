@@ -107,7 +107,7 @@ func (w *elemCtx) homeURL() string {
 }
 
 func (w *elemCtx) placeholderImage() string {
-	return strings.TrimRight(w.r.rc.HomeURL, "/") + "/wp-content/plugins/gowebeditor/assets/images/placeholder.png"
+	return strings.TrimRight(w.r.rc.HomeURL, "/") + "/wp-content/plugins/web-builder/assets/images/placeholder.png"
 }
 
 // currentPost is the post the widget is about; a post never shows inside its own document.

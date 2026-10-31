@@ -29,7 +29,7 @@ import (
 //
 // When Hello Golementor is active (or a saved theme is previewed), or when one of the site's
 // parts matches a page on another bundled theme, the page renders through the Hello Golementor
-// templates (web/themes/hello-gowebeditor): wp_head, the header part, the single/archive/404 part
+// templates (web/themes/hello-web-builder): wp_head, the header part, the single/archive/404 part
 // (or the template's own minimal markup), the footer part and wp_footer.
 
 const (

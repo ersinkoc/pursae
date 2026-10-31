@@ -11,7 +11,7 @@ Builder** for headers, footers, single and archive templates, popups and loops.
 
 ## Hello Pursae Web Builder
 
-A blank canvas theme (`web/themes/hello-gowebeditor`): minimal markup, no styling of its own,
+A blank canvas theme (`web/themes/hello-web-builder`): minimal markup, no styling of its own,
 the right place for a design built entirely in the builder. It appears on the Themes screen only
 while Pursae Web Builder is active; deactivating the plugin switches the site to Twenty Sixteen (the
 Plugins screen says so) and hides everything the builder added. Saved themes and built pages are

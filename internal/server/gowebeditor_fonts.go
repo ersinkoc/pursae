@@ -32,7 +32,7 @@ import (
 // (only families from the Google Fonts catalogue are handled; others are ignored).
 
 const (
-	gweFontsBase         = "gowebeditor/google-fonts" // under the uploads dir
+	gweFontsBase         = gweUploadsDir + "/google-fonts" // under the uploads dir
 	gweFontsUserAgent    = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
 	gweFontsWait         = 4 * time.Second // how long a page waits for a first download
 	gweFontsDownloadTime = 3 * time.Minute

@@ -1,4 +1,4 @@
-/* Pursae Web Builder Studio — the Add tab: the section library (golementor/v1/library/sections) and the
+/* Pursae Web Builder Studio — the Add tab: the section library (web-builder/v1/library/sections) and the
    basic elements. Click inserts after the selected section (or at the chosen "+ Add section"
    divider); cards can also be dragged onto the canvas (canvas.js handles the drop). */
 (function () {
@@ -11,7 +11,7 @@
 	let listing = null;
 	L.load = function () {
 		if (!listing) {
-			listing = S.rest('golementor/v1/library/sections').then((d) => ({ categories: (d && d.categories) || [], items: (d && d.items) || [] }))
+			listing = S.rest('web-builder/v1/library/sections').then((d) => ({ categories: (d && d.categories) || [], items: (d && d.items) || [] }))
 				.catch((e) => { listing = null; throw e; });
 		}
 		return listing;
@@ -19,7 +19,7 @@
 	/** Fetches a section's element JSON and inserts it into the page at an index (end when null). */
 	L.insertSection = async function (id, at) {
 		try {
-			const d = await S.rest('golementor/v1/library/sections/' + encodeURIComponent(id));
+			const d = await S.rest('web-builder/v1/library/sections/' + encodeURIComponent(id));
 			const content = (d && d.content) || [];
 			if (!content.length) { throw new Error('The section is empty.'); }
 			const made = S.insert(content, S.root(), at == null ? S.root().children.length : at, 'Section');

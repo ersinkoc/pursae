@@ -37,6 +37,6 @@ patch(f'{DST}/atomic-form-editor.min.js', [
 patch(f'{DST}/packages/editor-controls-extended/editor-controls-extended.min.js', [
     # the code editor (custom CSS) is served locally, not from a CDN
     ('{paths:{vs:`https://cdn.jsdelivr.net/npm/monaco-editor@0.55.1/min/vs`}}',
-     '{paths:{vs:((window.elementorCommon&&elementorCommon.config&&elementorCommon.config.urls&&elementorCommon.config.urls.assets)||"/wp-content/plugins/gowebeditor/assets/")+"lib/monaco-editor/min/vs"}}'),
+     '{paths:{vs:((window.elementorCommon&&elementorCommon.config&&elementorCommon.config.urls&&elementorCommon.config.urls.assets)||"/wp-content/plugins/web-builder/assets/")+"lib/monaco-editor/min/vs"}}'),
 ])
 print('ok')

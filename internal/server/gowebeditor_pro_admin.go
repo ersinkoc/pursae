@@ -22,11 +22,11 @@ import (
 	"wpgo/internal/wp"
 )
 
-// Golementor Pro admin screens (/wp-admin/gowebeditor-pro?tab=...): Popups, Form Submissions,
+// Golementor Pro admin screens (/wp-admin/web-builder?tab=...): Popups, Form Submissions,
 // Custom Code, Custom Fonts, Role Manager and Settings (reCAPTCHA). They replace the upstream
 // plugin's admin pages; there is no license, Connect or upgrade screen.
 
-const gweProAdminPath = "/wp-admin/gowebeditor-pro"
+const gweProAdminPath = "/wp-admin/web-builder"
 
 // gweProTabs are the screens in menu order.
 var gweProTabs = []struct{ Tab, Title, Cap string }{
@@ -52,9 +52,9 @@ type gweProTabLink struct {
 }
 
 func (s *Server) registerGoWebEditorProAdmin(admin *gin.RouterGroup) {
-	admin.GET("/gowebeditor-pro", s.golementorOnly(), s.gweProAdmin)
-	admin.POST("/gowebeditor-pro", s.golementorOnly(), s.gweProAdmin)
-	admin.Match([]string{http.MethodGet, http.MethodPost}, "/gowebeditor-icons", s.golementorOnly(), s.gweIconsAdmin) // gap-widgets: Custom Icons (gwe_custom_icons.go)
+	admin.GET("/web-builder", s.golementorOnly(), s.gweProAdmin)
+	admin.POST("/web-builder", s.golementorOnly(), s.gweProAdmin)
+	admin.Match([]string{http.MethodGet, http.MethodPost}, "/web-builder-icons", s.golementorOnly(), s.gweIconsAdmin) // gap-widgets: Custom Icons (gwe_custom_icons.go)
 }
 
 func (s *Server) gweProAdmin(c *gin.Context) {
@@ -129,7 +129,7 @@ func (s *Server) gweProAdmin(c *gin.Context) {
 	if tab == "fonts" {
 		s.enqueueMedia(c, 0)
 	}
-	s.adminPage(c, "gowebeditor-pro?tab="+tab, title+" ‹ Pursae Web Builder", "toplevel_page_gowebeditor-pro", "admin/gowebeditor-pro", d, notices...)
+	s.adminPage(c, "web-builder?tab="+tab, title+" ‹ Pursae Web Builder", "toplevel_page_gowebeditor-pro", "admin/gowebeditor-pro", d, notices...)
 }
 
 func esc(s string) string { return html.EscapeString(s) }
@@ -635,7 +635,7 @@ func (s *Server) gweProAdminPost(c *gin.Context, tab string) (string, error) {
 			return "", fmt.Errorf("Choose the font files.")
 		}
 		v := gweProFontVarian{Weight: c.PostForm("weight"), Style: c.PostForm("style")}
-		dir := filepath.Join(s.cfg.UploadsDir, "gowebeditor", "fonts")
+		dir := filepath.Join(s.cfg.UploadsDir, gweUploadsDir, "fonts")
 		if err := os.MkdirAll(dir, 0o755); err != nil {
 			return "", err
 		}
@@ -668,7 +668,7 @@ func (s *Server) gweProAdminPost(c *gin.Context, tab string) (string, error) {
 			if err != nil {
 				return "", err
 			}
-			u := s.links(c).HomeURL("/wp-content/uploads/gowebeditor/fonts/" + name)
+			u := s.links(c).HomeURL("/wp-content/uploads/web-builder/fonts/" + name)
 			switch ext {
 			case "woff2":
 				v.WOFF2 = u

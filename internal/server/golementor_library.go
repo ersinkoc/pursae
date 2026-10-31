@@ -21,7 +21,7 @@ import (
 
 // Golementor Studio library (docs/golementor-studio.md, section 3): ready sections and site kits,
 // JSON files under web/gowebeditor/library/ (served with the editor assets at
-// /wp-content/plugins/gowebeditor/assets/library/). The files are loaded from the web FS, validated
+// /wp-content/plugins/web-builder/assets/library/). The files are loaded from the web FS, validated
 // and cached; invalid files are left out (and logged) so one broken file never hides the rest.
 //
 //   sections/<category>/<slug>.json + <slug>.webp   one section (upstream element JSON)
@@ -33,10 +33,10 @@ import (
 // of that kit page when a starter site is installed, else "#") and {{page_id:slug}} (its id, "0"
 // when there is none; meant for display conditions like "include/singular/page/{{page_id:about}}").
 //
-// REST (namespace golementor/v1, editors only, cookie + X-WP-Nonce like elementor/v1):
-//   GET /wp-json/golementor/v1/library/sections                    categories and items
-//   GET /wp-json/golementor/v1/library/sections/<category>/<slug>  {"content":[…]} ready to insert
-//   GET /wp-json/golementor/v1/library/kits                        the kits with screenshot URLs
+// REST (namespace web-builder/v1, editors only, cookie + X-WP-Nonce like elementor/v1):
+//   GET /wp-json/web-builder/v1/library/sections                    categories and items
+//   GET /wp-json/web-builder/v1/library/sections/<category>/<slug>  {"content":[…]} ready to insert
+//   GET /wp-json/web-builder/v1/library/kits                        the kits with screenshot URLs
 // The sections also list in the classic template library's Blocks tab (source remote, type block).
 
 const (
@@ -802,12 +802,12 @@ func (s *Server) gweLibSectionContent(ctx context.Context, sec *gweLibSection) (
 // --- REST --------------------------------------------------------------------------------------
 
 func (s *Server) registerGolementorLibraryREST(editor func(restHandler) restHandler) {
-	const ns = "golementor/v1"
+	const ns = "web-builder/v1"
 	api := s.rest
-	api.register(ns, "/golementor/v1/library/sections", map[string]restHandler{http.MethodGet: editor(func(c *gin.Context, _ *restRequest) {
+	api.register(ns, "/web-builder/v1/library/sections", map[string]restHandler{http.MethodGet: editor(func(c *gin.Context, _ *restRequest) {
 		c.JSON(http.StatusOK, s.gweLibSectionsPayload(c))
 	})}, nil)
-	api.register(ns, "/golementor/v1/library/sections/(?P<category>[a-z0-9-]+)/(?P<slug>[a-z0-9-]+)", map[string]restHandler{http.MethodGet: editor(func(c *gin.Context, r *restRequest) {
+	api.register(ns, "/web-builder/v1/library/sections/(?P<category>[a-z0-9-]+)/(?P<slug>[a-z0-9-]+)", map[string]restHandler{http.MethodGet: editor(func(c *gin.Context, r *restRequest) {
 		sec := s.gweLib().section(r.Params["category"] + "/" + r.Params["slug"])
 		if sec == nil {
 			restErr(c, http.StatusNotFound, "rest_not_found", "Section not found.")
@@ -820,7 +820,7 @@ func (s *Server) registerGolementorLibraryREST(editor func(restHandler) restHand
 		}
 		c.JSON(http.StatusOK, map[string]any{"content": tree})
 	})}, nil)
-	api.register(ns, "/golementor/v1/library/kits", map[string]restHandler{http.MethodGet: editor(func(c *gin.Context, _ *restRequest) {
+	api.register(ns, "/web-builder/v1/library/kits", map[string]restHandler{http.MethodGet: editor(func(c *gin.Context, _ *restRequest) {
 		c.JSON(http.StatusOK, map[string]any{"kits": s.gweLibKitsPayload(c)})
 	})}, nil)
 }

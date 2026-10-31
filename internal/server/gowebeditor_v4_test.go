@@ -31,7 +31,7 @@ func TestGoWebEditorV4(t *testing.T) {
 	}
 
 	// Editor page: v4 experiments, atomic config, v2 panels, no upstream branding.
-	code, body, _ := get(t, c, base+"/wp-admin/post?post="+pageID+"&action=golementor")
+	code, body, _ := get(t, c, base+"/wp-admin/post?post="+pageID+"&action=web-builder")
 	if code != http.StatusOK {
 		t.Fatalf("editor: %d", code)
 	}

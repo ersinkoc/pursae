@@ -7,7 +7,7 @@ package server
 // The handles keep upstream's names and print order (after lottie), so pages load no third-party
 // script and the front-end CSP stays 'self'.
 
-const gwePrismBase = "/wp-content/plugins/gowebeditor/assets/lib/prismjs/"
+const gwePrismBase = "/wp-content/plugins/web-builder/assets/lib/prismjs/"
 
 // gwePrismHandles are the Prism script handles in upstream's registration order.
 var gwePrismHandles = []string{"prismjs_core", "prismjs_loader", "prismjs_normalize", "prismjs_line_numbers",

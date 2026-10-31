@@ -34,7 +34,7 @@ var gweProCoreStyles = map[string]string{"flatpickr": "lib/flatpickr/flatpickr.m
 var gweProScriptFiles = map[string]string{
 	"smartmenus": "lib/smartmenus/jquery.smartmenus.min.js", "e-sticky": "lib/sticky/jquery.sticky.min.js", "elementor-sticky": "lib/sticky/jquery.sticky.min.js",
 	"lottie": "lib/lottie/lottie.min.js", "instant-page": "lib/instant-page/instant-page.min.js", "page-transitions": "js/page-transitions.min.js",
-	"flatpickr": "/wp-content/plugins/gowebeditor/assets/lib/flatpickr/flatpickr.min.js",
+	"flatpickr": "/wp-content/plugins/web-builder/assets/lib/flatpickr/flatpickr.min.js",
 	"elementor-pro-collection-loop-pagination-handler": "js/collection-loop-pagination-handler.min.js",
 	// reCAPTCHA (only printed when the site has keys under Golementor › Settings › Integrations)
 	"elementor-recaptcha-api":    "https://www.google.com/recaptcha/api.js?render=explicit",
@@ -82,7 +82,7 @@ func (s *Server) gweProHead(c *gin.Context, results []gweRendered, preview bool)
 		for _, h := range []string{"e-popup", "e-motion-fx", "e-sticky", "e-transitions", "e-ribbon", "pro-editor-preview"} {
 			sb.WriteString(gweLink(h, assets+"pro/"+gweProStyleFiles[h]+ver))
 		}
-		sb.WriteString(gweLink("flatpickr", "/wp-content/plugins/gowebeditor/assets/lib/flatpickr/flatpickr.min.css"+ver))
+		sb.WriteString(gweLink("flatpickr", "/wp-content/plugins/web-builder/assets/lib/flatpickr/flatpickr.min.css"+ver))
 		return sb.String()
 	}
 	if len(s.gweProPopupsFor(c, results)) > 0 { // their CSS files and widget styles come with the recorded results

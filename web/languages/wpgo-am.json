@@ -545,7 +545,7 @@
  "Bump it after changing your cookie policy or adding a service: stored choices of an older version no longer count.": "የኩኪ መመሪያዎን ከቀየሩ ወይም አገልግሎት ካከሉ በኋላ ያሳድጉት፦ የቆየ ስሪት የተቀመጡ ምርጫዎች ከአሁን በኋላ አይቆጠሩም።",
  "Bump version and ask everyone again": "ስሪቱን አሳድግ እና ሁሉንም እንደገና ጠይቅ",
  "Bundled": "የተጠቀለለ",
- "Bundled themes are compiled into Pursae, Pursae Web Builder&rsquo;s <a href=\"/wp-admin/gowebeditor-theme-builder\">Theme Builder</a> generates themes, and theme packages (a zip of <code>theme.json</code>, templates and assets, no code) are installed from the <a href=\"/wp-admin/theme-install\">Library</a> or with <strong>Upload Theme</strong>.": "የተጠቀለሉ ገጽታዎች በPursae ውስጥ ተጠናቅረዋል፣ የPursae Web Builder <a href=\"/wp-admin/gowebeditor-theme-builder\">የገጽታ ገንቢ</a> ገጽታዎችን ይፈጥራል፣ እና የገጽታ ጥቅሎች (የ<code>theme.json</code>፣ አብነቶች እና ንብረቶች zip፣ ኮድ የሌለው) ከ<a href=\"/wp-admin/theme-install\">ቤተ-መጽሐፍት</a> ወይም በ<strong>ገጽታ ስቀል</strong> ይጫናሉ።",
+ "Bundled themes are compiled into Pursae, Pursae Web Builder&rsquo;s <a href=\"/wp-admin/theme-builder\">Theme Builder</a> generates themes, and theme packages (a zip of <code>theme.json</code>, templates and assets, no code) are installed from the <a href=\"/wp-admin/theme-install\">Library</a> or with <strong>Upload Theme</strong>.": "የተጠቀለሉ ገጽታዎች በPursae ውስጥ ተጠናቅረዋል፣ የPursae Web Builder <a href=\"/wp-admin/theme-builder\">የገጽታ ገንቢ</a> ገጽታዎችን ይፈጥራል፣ እና የገጽታ ጥቅሎች (የ<code>theme.json</code>፣ አብነቶች እና ንብረቶች zip፣ ኮድ የሌለው) ከ<a href=\"/wp-admin/theme-install\">ቤተ-መጽሐፍት</a> ወይም በ<strong>ገጽታ ስቀል</strong> ይጫናሉ።",
  "BunnyCDN cache purged.": "የBunnyCDN መሸጎጫ ጸድቷል።",
  "Burgundy and charcoal, Caslon serif, gold hairlines": "ቡርጋንዲ እና ከሰል፣ Caslon serif፣ የወርቅ ቀጭን መስመሮች",
  "Burkina Faso": "ቡርኪና ፋሶ",

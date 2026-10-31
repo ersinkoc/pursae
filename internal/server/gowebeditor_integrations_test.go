@@ -340,20 +340,20 @@ func TestGWEGoogleFontsLocal(t *testing.T) {
 	if len(*got) != 4 || !strings.Contains((*got)[0], "family=Roboto:100,100italic") || !strings.Contains((*got)[0], "display=swap") {
 		t.Errorf("fetched %v", *got)
 	}
-	css, err := os.ReadFile(filepath.Join(dir, "gowebeditor", "google-fonts", "css", "roboto.css"))
+	css, err := os.ReadFile(filepath.Join(dir, "web-builder", "google-fonts", "css", "roboto.css"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if strings.Contains(string(css), "gstatic") || !strings.Contains(string(css), "url(../fonts/roboto-") || strings.Count(string(css), "font-display: swap") != 3 {
 		t.Errorf("local css:\n%s", css)
 	}
-	files, _ := filepath.Glob(filepath.Join(dir, "gowebeditor", "google-fonts", "fonts", "roboto-*.woff2"))
+	files, _ := filepath.Glob(filepath.Join(dir, "web-builder", "google-fonts", "fonts", "roboto-*.woff2"))
 	if len(files) != 3 {
 		t.Errorf("font files: %v", files)
 	}
 	// The preload is the regular latin face.
 	pre := gweFontPreloadFile(string(css))
-	if b, _ := os.ReadFile(filepath.Join(dir, "gowebeditor", "google-fonts", "fonts", pre)); !strings.Contains(string(b), "KFOmCnqEu92Fr1Mu4mxK.woff2") {
+	if b, _ := os.ReadFile(filepath.Join(dir, "web-builder", "google-fonts", "fonts", pre)); !strings.Contains(string(b), "KFOmCnqEu92Fr1Mu4mxK.woff2") {
 		t.Errorf("preload %q = %s", pre, b)
 	}
 	// Early access stylesheets get font-display added.
@@ -414,7 +414,7 @@ func TestGWEIntegrationsServer(t *testing.T) {
 	pool := getPool(t)
 
 	// --- settings screen: keys are saved, never printed back -------------------------------------
-	_, body, _ := get(t, c, base+"/wp-admin/gowebeditor-pro?tab=settings")
+	_, body, _ := get(t, c, base+"/wp-admin/web-builder?tab=settings")
 	for _, want := range []string{`id="integrations"`, `name="gwe_mailchimp_api_key"`, `name="gwe_stripe_test_secret_key"`, `name="gwe_local_google_fonts"`, "Validate API Key"} {
 		if !strings.Contains(body, want) {
 			t.Errorf("settings screen misses %q", want)
@@ -422,10 +422,10 @@ func TestGWEIntegrationsServer(t *testing.T) {
 	}
 	form := url.Values{"_wpnonce": {formNonce(t, body)}, "action": {"save"}, "gwe_mailchimp_api_key": {"secretkey9876-us7"},
 		"gwe_stripe_test_secret_key": {"sk_test_fake_123456"}, "gwe_local_google_fonts": {"1"}, "gwe_recaptcha_secret_key": {"recaptcha-secret-4321"}}
-	if code, _, loc := post(t, c, base+"/wp-admin/gowebeditor-pro?tab=settings", form); code != http.StatusFound || !strings.Contains(loc, "message=") {
+	if code, _, loc := post(t, c, base+"/wp-admin/web-builder?tab=settings", form); code != http.StatusFound || !strings.Contains(loc, "message=") {
 		t.Fatalf("save settings: %d %s", code, loc)
 	}
-	_, body, _ = get(t, c, base+"/wp-admin/gowebeditor-pro?tab=settings")
+	_, body, _ = get(t, c, base+"/wp-admin/web-builder?tab=settings")
 	if strings.Contains(body, "secretkey9876") || strings.Contains(body, "sk_test_fake_123456") || strings.Contains(body, "recaptcha-secret") || !strings.Contains(body, "••••••••••••-us7") {
 		t.Errorf("settings screen echoes a key")
 	}
@@ -438,7 +438,7 @@ func TestGWEIntegrationsServer(t *testing.T) {
 	form.Set("gwe_mailchimp_api_key", mask[1])
 	form.Set("gwe_stripe_test_secret_key", gweMaskSecret("sk_test_fake_123456"))
 	form.Set("gwe_recaptcha_secret_key", gweMaskSecret("recaptcha-secret-4321"))
-	post(t, c, base+"/wp-admin/gowebeditor-pro?tab=settings", form)
+	post(t, c, base+"/wp-admin/web-builder?tab=settings", form)
 	var stored string
 	_ = pool.QueryRow(ctx, `SELECT value #>> '{}' FROM settings WHERE key = 'gwe_mailchimp_api_key'`).Scan(&stored)
 	if stored != "secretkey9876-us7" {
@@ -493,7 +493,7 @@ func TestGWEIntegrationsServer(t *testing.T) {
 	if csp := resp.Header.Get("Content-Security-Policy"); !strings.Contains(csp, "form-action 'self' https://www.paypal.com") {
 		t.Errorf("CSP without PayPal: %s", csp)
 	}
-	if !strings.Contains(page, "/wp-content/uploads/gowebeditor/google-fonts/css/roboto.css?ver=") || !regexp.MustCompile(`<link rel="preload" href="[^"]+/google-fonts/fonts/roboto-[0-9a-f]{8}\.woff2" as="font" type="font/woff2" crossorigin>`).MatchString(page) {
+	if !strings.Contains(page, "/wp-content/uploads/web-builder/google-fonts/css/roboto.css?ver=") || !regexp.MustCompile(`<link rel="preload" href="[^"]+/google-fonts/fonts/roboto-[0-9a-f]{8}\.woff2" as="font" type="font/woff2" crossorigin>`).MatchString(page) {
 		t.Errorf("page misses the local Google font")
 	}
 	if strings.Contains(page, "fonts.googleapis.com") || strings.Contains(page, "fonts.gstatic.com") {
@@ -503,7 +503,7 @@ func TestGWEIntegrationsServer(t *testing.T) {
 		t.Errorf("fonts not downloaded")
 	}
 	// The local stylesheet is served.
-	if code, css, _ := get(t, c, base+"/wp-content/uploads/gowebeditor/google-fonts/css/roboto.css"); code != 200 || !strings.Contains(css, "font-display: swap") {
+	if code, css, _ := get(t, c, base+"/wp-content/uploads/web-builder/google-fonts/css/roboto.css"); code != 200 || !strings.Contains(css, "font-display: swap") {
 		t.Errorf("local css: %d", code)
 	}
 
@@ -581,7 +581,7 @@ func TestGWEIntegrationsServer(t *testing.T) {
 	}
 
 	// --- editor: panel data, tax rates, alerts, local fonts --------------------------------------------
-	_, ebody, _ := get(t, c, base+"/wp-admin/post?post="+pageID+"&action=golementor")
+	_, ebody, _ := get(t, c, base+"/wp-admin/post?post="+pageID+"&action=web-builder")
 	if !strings.Contains(ebody, `id="gwe-local-google-fonts-js"`) {
 		t.Errorf("editor misses the local fonts script")
 	}
@@ -623,7 +623,7 @@ func TestGWEIntegrationsServer(t *testing.T) {
 	r = ajax(`{"a":{"action":"get_widgets_config","data":{"exclude":{}}}}`)
 	wc, _ := json.Marshal(r["data"])
 	if !strings.Contains(string(wc), "You are using MailChimp API Key set in the") || !strings.Contains(string(wc), "Set your Drip API Token in the") ||
-		strings.Contains(string(wc), "page=elementor-settings") || !strings.Contains(string(wc), "gowebeditor-pro?tab=settings#integrations") {
+		strings.Contains(string(wc), "page=elementor-settings") || !strings.Contains(string(wc), "web-builder?tab=settings#integrations") {
 		t.Errorf("widgets config alerts not patched")
 	}
 	for _, req := range f.requests() {

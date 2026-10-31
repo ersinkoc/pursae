@@ -24,7 +24,7 @@ func TestFrontToolbarGolementor(t *testing.T) {
 	ts, c := testServer(t) // Golementor on
 	installAndLogin(t, ts, c)
 	_, body, _ := get(t, c, ts.URL+"/sample-page/")
-	if !strings.Contains(body, "Edit with Pursae Web Builder") || !strings.Contains(body, "action=golementor") || !strings.Contains(body, "/wp-admin/gowebeditor-theme-builder") {
+	if !strings.Contains(body, "Edit with Pursae Web Builder") || !strings.Contains(body, "action=web-builder") || !strings.Contains(body, "/wp-admin/theme-builder") {
 		t.Error("a page's toolbar lacks Edit with Pursae Web Builder")
 	}
 	_, body, _ = get(t, c, ts.URL+"/?s=hello")

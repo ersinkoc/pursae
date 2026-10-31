@@ -29,7 +29,7 @@
 <div class="wrap gwe-theme-builder">
 <h1 class="wp-heading-inline">Theme Builder</h1>
 <a href="#gwe-add-new" class="page-title-action" data-gwe-focus="gwe-new-type">Add New</a>
-{{if $u.Can "switch_themes" nil}}<a href="{{"/wp-admin/gowebeditor-theme-builder?action=save-theme"}}" class="page-title-action" id="gwe-save-theme-toggle">Save as theme</a>{{end}}
+{{if $u.Can "switch_themes" nil}}<a href="{{"/wp-admin/theme-builder?action=save-theme"}}" class="page-title-action" id="gwe-save-theme-toggle">Save as theme</a>{{end}}
 <hr class="wp-header-end">
 {{template "notices" $}}
 
@@ -37,7 +37,7 @@
 	{{/* Pursae Web Builder (hello theme): the parts are the working copy of Hello Pursae Web Builder */}}
 	{{if .Hello}}<p>These theme parts, with the Site Settings, are the design of <strong>Hello Pursae Web Builder</strong>, your active theme. Published parts whose conditions match a page replace its header, footer and content. Use <em>Save as theme</em> to keep a fixed copy in the saved themes list.</p>
 	{{else}}<p>These are your site&rsquo;s theme parts (the design of the <strong>Hello Pursae Web Builder</strong> theme). Published parts whose conditions match a page replace the layout of <strong>{{.ActiveName}}</strong>. Use <em>Save as theme</em> to keep a fixed copy in the saved themes list.</p>{{end}}
-	<form class="gwe-tb-add" id="gwe-add-new" method="post" action="/wp-admin/gowebeditor-theme-builder">
+	<form class="gwe-tb-add" id="gwe-add-new" method="post" action="/wp-admin/theme-builder">
 		<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
 		<input type="hidden" name="action" value="new" />
 		<label class="screen-reader-text" for="gwe-new-type">Template type</label>
@@ -51,7 +51,7 @@
 <div class="gwe-tb-save" id="gwe-save-theme"{{if not .ShowSave}} hidden{{end}}>
 	<h2>Save as theme</h2>
 	<p>Saves the Site Settings (colors, fonts, layout) and all theme parts below with their display conditions as a new theme under <a href="/wp-admin/themes">Appearance › Themes</a>.</p>
-	<form method="post" action="/wp-admin/gowebeditor-theme-builder">
+	<form method="post" action="/wp-admin/theme-builder">
 		<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
 		<input type="hidden" name="action" value="save-theme" />
 		<table class="form-table" role="presentation"><tbody>
@@ -75,7 +75,7 @@
 		<tbody>
 		{{range .Rows}}<tr id="gwe-part-{{.ID}}">
 			<td class="title column-title has-row-actions column-primary" data-colname="Title"><strong><a translate="no" class="row-title" href="{{.EditURL}}">{{.Title}}</a></strong>
-				<div class="row-actions"><span class="edit_with_gowebeditor"><a href="{{.EditURL}}">Edit with Pursae Web Builder</a> | </span><span class="conditions"><a href="{{.ConditionsURL}}">Conditions</a> | </span><span class="trash"><form method="post" action="/wp-admin/gowebeditor-theme-builder" style="display:inline" onsubmit="return confirm('Delete this theme part permanently?')"><input type="hidden" name="_wpnonce" value="{{$.Data.Nonce}}" /><input type="hidden" name="action" value="delete" /><input type="hidden" name="post" value="{{.ID}}" /><button type="submit" class="button-link submitdelete">Delete</button></form></span></div>
+				<div class="row-actions"><span class="edit_with_gowebeditor"><a href="{{.EditURL}}">Edit with Pursae Web Builder</a> | </span><span class="conditions"><a href="{{.ConditionsURL}}">Conditions</a> | </span><span class="trash"><form method="post" action="/wp-admin/theme-builder" style="display:inline" onsubmit="return confirm('Delete this theme part permanently?')"><input type="hidden" name="_wpnonce" value="{{$.Data.Nonce}}" /><input type="hidden" name="action" value="delete" /><input type="hidden" name="post" value="{{.ID}}" /><button type="submit" class="button-link submitdelete">Delete</button></form></span></div>
 				<button type="button" class="toggle-row"><span class="screen-reader-text">Show more details</span></button></td>
 			<td class="column-conditions" data-colname="Display Conditions">{{range .Conditions}}<span class="gwe-tb-cond{{if contains . "Exclude:"}} is-exclude{{end}}">{{.}}</span>{{else}}<span class="description">Not shown anywhere</span>{{end}}{{if .Langs}}<div class="gwe-tb-langs">{{.Langs}}</div>{{end}}</td>
 			<td class="column-status" data-colname="Status">{{.StatusLabel}}</td>
@@ -97,12 +97,12 @@
 		<div class="actions">
 			<a class="button button-primary" href="{{.ActivateURL}}">Activate</a> <a class="button" href="{{.PreviewURL}}" target="_blank" rel="noopener">Live Preview</a>
 			<a class="button" href="{{.ExportURL}}">Export</a>
-			<form method="post" action="/wp-admin/gowebeditor-theme-builder" onsubmit="return confirm('Delete this saved theme permanently? The current design is not affected.')"><input type="hidden" name="_wpnonce" value="{{$.Data.Nonce}}" /><input type="hidden" name="action" value="delete-theme" /><input type="hidden" name="theme" value="{{.Slug}}" /><button type="submit" class="button-link submitdelete">Delete</button></form>
+			<form method="post" action="/wp-admin/theme-builder" onsubmit="return confirm('Delete this saved theme permanently? The current design is not affected.')"><input type="hidden" name="_wpnonce" value="{{$.Data.Nonce}}" /><input type="hidden" name="action" value="delete-theme" /><input type="hidden" name="theme" value="{{.Slug}}" /><button type="submit" class="button-link submitdelete">Delete</button></form>
 		</div>
 	</div>
 </div>{{end}}
 </div>{{else}}<p class="description">No saved Pursae Web Builder themes yet.</p>{{end}}
-{{if $u.Can "upload_files" nil}}<form class="gwe-tb-import" method="post" enctype="multipart/form-data" action="/wp-admin/gowebeditor-theme-builder">
+{{if $u.Can "upload_files" nil}}<form class="gwe-tb-import" method="post" enctype="multipart/form-data" action="/wp-admin/theme-builder">
 	<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
 	<input type="hidden" name="action" value="import" />
 	<label for="gwe-import-file"><strong>Import a theme</strong></label>

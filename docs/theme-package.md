@@ -14,7 +14,7 @@ the same directory the Theme File Editor writes its overrides to), one sub-direc
 slug: `<data>/themes/<slug>/theme.json`. The server loads every such directory at start-up
 and right after Appearance › Themes › Add Theme › Upload Theme installs one; a package that
 does not validate is logged and skipped. A package whose slug matches a bundled theme
-(`twentytwentyfive`, `hello-gowebeditor`, …) is rejected, and the directory name must equal the slug.
+(`twentytwentyfive`, `hello-web-builder`, …) is rejected, and the directory name must equal the slug.
 Appearance › Themes › Theme Details › Delete removes the directory and the registration
 (capability `delete_themes`; the active theme cannot be deleted).
 

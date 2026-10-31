@@ -150,7 +150,7 @@
 	<p class="wpgo-theme-install-help">Ready-made themes that ship with Pursae. <strong>Install</strong> adds a theme to Appearance &rsaquo; Themes like an uploaded package; themes with demo content can be installed, activated and filled with their sample pages, posts, menus and widgets in one step. <strong>Live Preview</strong> shows a theme with its demo content before you install anything.</p>
 	{{if .Previews}}<form method="post" action="/wp-admin/theme-preview" class="wpgo-clear-previews"><input type="hidden" name="_wpnonce" value="{{.PreviewsNonce}}" /><input type="hidden" name="action" value="clear" /><span class="description">{{.Previews}} theme preview{{if ne .Previews 1}}s are{{else}} is{{end}} kept for quick viewing.</span> <button type="submit" class="button-link">Clear theme previews</button></form>{{end}}
 	{{else}}
-	<p class="wpgo-theme-install-help">Bundled themes are compiled into Pursae{{if .Golementor}}, Pursae Web Builder&rsquo;s <a href="/wp-admin/gowebeditor-theme-builder">Theme Builder</a> generates themes{{end}}, and theme packages (a zip of <code>theme.json</code>, templates and assets, no code) are installed from the <a href="/wp-admin/theme-install">Library</a> or with <strong>Upload Theme</strong>.</p>
+	<p class="wpgo-theme-install-help">Bundled themes are compiled into Pursae{{if .Golementor}}, Pursae Web Builder&rsquo;s <a href="/wp-admin/theme-builder">Theme Builder</a> generates themes{{end}}, and theme packages (a zip of <code>theme.json</code>, templates and assets, no code) are installed from the <a href="/wp-admin/theme-install">Library</a> or with <strong>Upload Theme</strong>.</p>
 	{{end}}
 	{{if .Cards}}
 	<div class="theme-browser content-filterable rendered">
@@ -174,7 +174,7 @@
 					{{if not .Active}}<a class="button button-compact activate" href="{{.ActivateURL}}" aria-label="Activate {{.Name}}">Activate</a>{{end}}
 					{{if .DemoPreviewURL}}<a class="button button-compact preview install-theme-preview" href="{{.DemoPreviewURL}}" aria-label="Live Preview {{.Name}} {{.NewVersion}}">Live Preview</a>{{end}}
 				{{else if .Active}}<button class="button button-primary button-compact disabled">Activated</button>
-					{{if .Custom}}<a class="button button-compact" href="/wp-admin/gowebeditor-theme-builder">Theme Builder</a>{{else}}<a class="button button-compact load-customize" href="/wp-admin/customize">Customize</a>{{end}}
+					{{if .Custom}}<a class="button button-compact" href="/wp-admin/theme-builder">Theme Builder</a>{{else}}<a class="button button-compact load-customize" href="/wp-admin/customize">Customize</a>{{end}}
 				{{else}}<a class="button button-primary button-compact activate" href="{{.ActivateURL}}" aria-label="Activate {{.Name}}">Activate</a>
 					<a class="button button-compact preview install-theme-preview" href="{{if .DemoPreviewURL}}{{.DemoPreviewURL}}{{else}}{{.PreviewURL}}{{end}}" aria-label="Live Preview {{.Name}}">Live Preview</a>{{end}}
 				</div>
@@ -503,7 +503,7 @@
 <div class="wrap">
 <h1>{{if eq .Kind "theme"}}Edit Themes{{else}}Edit Plugins{{end}}</h1>
 {{if .Editable}}{{if .Restored}}<div id="message" class="notice notice-success is-dismissible"><p>The original file has been restored.</p></div>{{end}}
-{{else}}<div id="message" class="notice notice-info"><p>{{if eq .Kind "theme"}}<strong>Read-only.</strong> {{if .Nonce}}{{else}}File editing is disabled on this site (<code>WPGO_DISALLOW_FILE_EDIT</code>). {{if .Builder}}Build or change themes with <a href="/wp-admin/gowebeditor-theme-builder">Pursae Web Builder</a> or add{{else}}Add{{end}} custom CSS in the <a href="/wp-admin/customize">Customizer</a>.{{end}}{{else}}<strong>Read-only.</strong> Plugins are signed WebAssembly packages, so their files can be browsed here but not changed. Rebuild and re-sign the package to change a plugin.{{end}}</p></div>{{end}}
+{{else}}<div id="message" class="notice notice-info"><p>{{if eq .Kind "theme"}}<strong>Read-only.</strong> {{if .Nonce}}{{else}}File editing is disabled on this site (<code>WPGO_DISALLOW_FILE_EDIT</code>). {{if .Builder}}Build or change themes with <a href="/wp-admin/theme-builder">Pursae Web Builder</a> or add{{else}}Add{{end}} custom CSS in the <a href="/wp-admin/customize">Customizer</a>.{{end}}{{else}}<strong>Read-only.</strong> Plugins are signed WebAssembly packages, so their files can be browsed here but not changed. Rebuild and re-sign the package to change a plugin.{{end}}</p></div>{{end}}
 {{template "notices" $}}
 {{if and (eq .Kind "plugin") (not .Choices)}}
 <p>You do not appear to have any WebAssembly plugins installed. <a href="/wp-admin/plugin-install">Add a plugin</a>.</p>

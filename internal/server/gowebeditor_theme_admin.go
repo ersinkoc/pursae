@@ -20,7 +20,7 @@ import (
 // grouped by type, with Add New (opens the editor), conditions, delete, "Save as theme", and the
 // list of saved Golementor themes with activate, preview, export, import and delete.
 
-const gweThemeBuilderPath = "/wp-admin/gowebeditor-theme-builder"
+const gweThemeBuilderPath = "/wp-admin/theme-builder"
 
 type gweTBRow struct {
 	ID                                   int64
@@ -207,7 +207,7 @@ func (s *Server) gweThemeBuilder(c *gin.Context) {
 		notices = append(notices, notice{Type: "error", Message: template.HTML(html.EscapeString(e)), Dismissible: true})
 	}
 	s.enqueueMedia(c, 0)
-	s.adminPage(c, "gowebeditor-theme-builder", "Theme Builder", "appearance_page_gowebeditor-theme-builder", "admin/gowebeditor-theme-builder", d, notices...)
+	s.adminPage(c, "theme-builder", "Theme Builder", "appearance_page_gowebeditor-theme-builder", "admin/gowebeditor-theme-builder", d, notices...)
 }
 
 func (s *Server) gweTBRedirect(c *gin.Context, q string) {
@@ -447,5 +447,5 @@ func (s *Server) gweConditionsScreen(c *gin.Context) {
 		d.RuleOpts = append(d.RuleOpts, other)
 	}
 	d.RuleOpts = s.gooGweRuleOpts(c, d.RuleOpts) // Goocommerce: the store's pages and archives (goo_gwe.go)
-	s.adminPage(c, "gowebeditor-theme-builder", "Display Conditions", "appearance_page_gowebeditor-theme-builder", "admin/gowebeditor-theme-conditions", d)
+	s.adminPage(c, "theme-builder", "Display Conditions", "appearance_page_gowebeditor-theme-builder", "admin/gowebeditor-theme-conditions", d)
 }

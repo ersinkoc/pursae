@@ -33,12 +33,12 @@ func TestGoWebEditorThemeBuilder(t *testing.T) {
 	pool := getPool(t)
 
 	// The Theme Builder screen is under Appearance.
-	code, body, _ := get(t, c, base+"/wp-admin/gowebeditor-theme-builder")
+	code, body, _ := get(t, c, base+"/wp-admin/theme-builder")
 	if code != http.StatusOK {
 		t.Fatalf("theme builder: %d %.300s", code, body)
 	}
 	for _, want := range []string{"<h1 class=\"wp-heading-inline\">Theme Builder</h1>", "Headers", "Single Posts", "404 Pages", "Save as theme",
-		`href="/wp-admin/gowebeditor-theme-builder"`, "Twenty Twenty-Five"} {
+		`href="/wp-admin/theme-builder"`, "Twenty Twenty-Five"} {
 		if !strings.Contains(body, want) {
 			t.Errorf("theme builder misses %q", want)
 		}
@@ -52,8 +52,8 @@ func TestGoWebEditorThemeBuilder(t *testing.T) {
 	// newPart creates a part with "Add New" and returns its id (the redirect opens the editor).
 	newPart := func(typ, title string) string {
 		t.Helper()
-		code, _, loc := post(t, c, base+"/wp-admin/gowebeditor-theme-builder", url.Values{"_wpnonce": {nonce}, "action": {"new"}, "type": {typ}, "title": {title}})
-		m := regexp.MustCompile(`^/wp-admin/post\?post=(\d+)&action=golementor$`).FindStringSubmatch(loc)
+		code, _, loc := post(t, c, base+"/wp-admin/theme-builder", url.Values{"_wpnonce": {nonce}, "action": {"new"}, "type": {typ}, "title": {title}})
+		m := regexp.MustCompile(`^/wp-admin/post\?post=(\d+)&action=web-builder$`).FindStringSubmatch(loc)
 		if code != http.StatusFound || m == nil {
 			t.Fatalf("new %s: %d %q", typ, code, loc)
 		}
@@ -62,7 +62,7 @@ func TestGoWebEditorThemeBuilder(t *testing.T) {
 	headerID := newPart("header", "Main Header")
 
 	// The editor opens a theme part like a page: header document, Site widgets, links back.
-	code, body, _ = get(t, c, base+"/wp-admin/post?post="+headerID+"&action=golementor")
+	code, body, _ = get(t, c, base+"/wp-admin/post?post="+headerID+"&action=web-builder")
 	if code != http.StatusOK {
 		t.Fatalf("editor: %d %.300s", code, body)
 	}
@@ -143,7 +143,7 @@ func TestGoWebEditorThemeBuilder(t *testing.T) {
 	// The site's own parts apply on top of the bundled theme.
 	_, body, _ = getPage(t, c, base+"/?p=1")
 	for _, want := range []string{"elementor-location-header", "gwe-theme", ">Theme Site</a></p>", "elementor-location-footer", "footer part",
-		"elementor-widget-theme-post-title", "Hello world!", "Welcome to WordPress", "elementor-post-info", "/wp-content/themes/hello-gowebeditor/style.css",
+		"elementor-widget-theme-post-title", "Hello world!", "Welcome to WordPress", "elementor-post-info", "/wp-content/themes/hello-web-builder/style.css",
 		"widget-theme-elements.min.css", "/wp-content/uploads/elementor/css/post-" + headerID + ".css", "elementorFrontendConfig"} {
 		if !strings.Contains(body, want) {
 			t.Errorf("single post with parts misses %q", want)
@@ -171,11 +171,11 @@ func TestGoWebEditorThemeBuilder(t *testing.T) {
 	}
 
 	// Display conditions: exclude the sample page from the header.
-	code, body, _ = get(t, c, base+"/wp-admin/gowebeditor-theme-builder?action=conditions&post="+headerID)
+	code, body, _ = get(t, c, base+"/wp-admin/theme-builder?action=conditions&post="+headerID)
 	if code != http.StatusOK || !strings.Contains(body, `value="general" selected`) || !strings.Contains(body, `value="singular/page/`+pageID+`"`) {
 		t.Fatalf("conditions screen: %d", code)
 	}
-	code, _, loc := post(t, c, base+"/wp-admin/gowebeditor-theme-builder", url.Values{"_wpnonce": {nonce}, "action": {"conditions"}, "post": {headerID},
+	code, _, loc := post(t, c, base+"/wp-admin/theme-builder", url.Values{"_wpnonce": {nonce}, "action": {"conditions"}, "post": {headerID},
 		"mode[]": {"include", "exclude"}, "rule[]": {"general", "singular/page/" + pageID}})
 	if code != http.StatusFound || !strings.Contains(loc, "message=conditions") {
 		t.Fatalf("save conditions: %d %s", code, loc)
@@ -184,7 +184,7 @@ func TestGoWebEditorThemeBuilder(t *testing.T) {
 	if strings.Contains(body, "elementor-location-header") || !strings.Contains(body, `<header id="site-header" class="site-header">`) {
 		t.Errorf("excluded page still shows the header part")
 	}
-	_, body, _ = get(t, c, base+"/wp-admin/gowebeditor-theme-builder")
+	_, body, _ = get(t, c, base+"/wp-admin/theme-builder")
 	if !strings.Contains(body, "Exclude: Page: Sample Page") || !strings.Contains(body, "Entire Site") {
 		t.Errorf("theme builder list does not show the conditions")
 	}
@@ -192,7 +192,7 @@ func TestGoWebEditorThemeBuilder(t *testing.T) {
 	// Hello Golementor is listed with the bundled themes and can be activated; the site's parts
 	// are its design (the working copy).
 	_, themesBody, _ := get(t, c, base+"/wp-admin/themes")
-	for _, want := range []string{`data-slug="hello-gowebeditor"`, "Hello Pursae Web Builder", "/wp-content/themes/hello-gowebeditor/screenshot.png"} {
+	for _, want := range []string{`data-slug="hello-web-builder"`, "Hello Pursae Web Builder", "/wp-content/themes/hello-web-builder/screenshot.png"} {
 		if !strings.Contains(themesBody, want) {
 			t.Errorf("themes screen misses %q", want)
 		}
@@ -211,14 +211,14 @@ func TestGoWebEditorThemeBuilder(t *testing.T) {
 			t.Fatalf("activate %s: %d %s", slug, code, loc)
 		}
 	}
-	activate("hello-gowebeditor")
+	activate("hello-web-builder")
 	_, body, _ = get(t, c, base+"/wp-admin/themes")
-	if !strings.Contains(body, "<span>Active:</span> Hello Pursae Web Builder") || !regexp.MustCompile(`<a class="button[^>]*href="/wp-admin/gowebeditor-theme-builder">Theme Builder</a>`).MatchString(body) {
+	if !strings.Contains(body, "<span>Active:</span> Hello Pursae Web Builder") || !regexp.MustCompile(`<a class="button[^>]*href="/wp-admin/theme-builder">Theme Builder</a>`).MatchString(body) {
 		t.Errorf("Hello Pursae Web Builder is not shown as active with a Theme Builder button")
 	}
 	_, body, _ = getPage(t, c, base+"/?p=1")
-	for _, want := range []string{"wp-theme-hello-gowebeditor", "elementor-location-header", "footer part", "elementor-widget-theme-post-title",
-		"Welcome to WordPress", `<main id="content" class="site-main`, "hello-gowebeditor-css", "elementor-kit-"} {
+	for _, want := range []string{"wp-theme-hello-web-builder", "elementor-location-header", "footer part", "elementor-widget-theme-post-title",
+		"Welcome to WordPress", `<main id="content" class="site-main`, "hello-web-builder-css", "elementor-kit-"} {
 		if !strings.Contains(body, want) {
 			t.Errorf("hello theme single misses %q", want)
 		}
@@ -247,13 +247,13 @@ func TestGoWebEditorThemeBuilder(t *testing.T) {
 	}
 	_ = pool.QueryRow(ctx, `UPDATE posts SET status='publish' WHERE id=$1::bigint RETURNING 1`, headerID).Scan(new(int))
 	_ = pool.QueryRow(ctx, `UPDATE posts SET status='publish' WHERE id=$1::bigint RETURNING 1`, footerID).Scan(new(int))
-	_, body, _ = get(t, c, base+"/wp-admin/gowebeditor-theme-builder")
+	_, body, _ = get(t, c, base+"/wp-admin/theme-builder")
 	if !strings.Contains(body, "the design of <strong>Hello Pursae Web Builder</strong>, your active theme") {
 		t.Errorf("theme builder does not describe the working copy")
 	}
 
 	// Save as theme: a JSON snapshot in the saved list; the working copy is untouched.
-	code, _, loc = post(t, c, base+"/wp-admin/gowebeditor-theme-builder", url.Values{"_wpnonce": {nonce}, "action": {"save-theme"},
+	code, _, loc = post(t, c, base+"/wp-admin/theme-builder", url.Values{"_wpnonce": {nonce}, "action": {"save-theme"},
 		"name": {"Go Studio"}, "description": {"Made in the Theme Builder."}})
 	if code != http.StatusFound || !strings.Contains(loc, "message=saved") {
 		t.Fatalf("save as theme: %d %s", code, loc)
@@ -285,10 +285,10 @@ func TestGoWebEditorThemeBuilder(t *testing.T) {
 	_, body, _ = get(t, c, base+"/wp-admin/themes")
 	if !strings.Contains(body, "Saved Pursae Web Builder themes") || !strings.Contains(body, `class="gwe-saved-theme" data-slug="gwe-go-studio"`) ||
 		strings.Contains(body, `class="theme" data-slug="gwe-go-studio"`) || !strings.Contains(body, "<span>Loaded:</span> Go Studio") ||
-		!strings.Contains(body, "/wp-content/gowebeditor/theme-screenshot/gwe-go-studio.svg") || strings.Contains(body, `"id":"gwe-go-studio"`) {
+		!strings.Contains(body, "/wp-content/web-builder/theme-screenshot/gwe-go-studio.svg") || strings.Contains(body, `"id":"gwe-go-studio"`) {
 		t.Fatalf("themes screen does not list the saved theme in its section")
 	}
-	if code, svg, _ := get(t, c, base+"/wp-content/gowebeditor/theme-screenshot/gwe-go-studio.svg"); code != http.StatusOK || !strings.Contains(svg, "Go Studio") {
+	if code, svg, _ := get(t, c, base+"/wp-content/web-builder/theme-screenshot/gwe-go-studio.svg"); code != http.StatusOK || !strings.Contains(svg, "Go Studio") {
 		t.Errorf("screenshot: %d", code)
 	}
 	// Live preview renders from the snapshot with its own kit.
@@ -330,7 +330,7 @@ func TestGoWebEditorThemeBuilder(t *testing.T) {
 	activate("gwe-go-studio")
 	var stylesheet string
 	_ = pool.QueryRow(ctx, `SELECT value::text FROM settings WHERE key='stylesheet'`).Scan(&stylesheet)
-	if stylesheet != `"hello-gowebeditor"` {
+	if stylesheet != `"hello-web-builder"` {
 		t.Errorf("stylesheet after activating a saved theme: %s", stylesheet)
 	}
 	var activeKit string
@@ -339,7 +339,7 @@ func TestGoWebEditorThemeBuilder(t *testing.T) {
 		t.Errorf("the site kit changed on activation: %s != %s", activeKit, siteKit)
 	}
 	_, body, _ = getPage(t, c, base+"/?p=1")
-	for _, want := range []string{"wp-theme-hello-gowebeditor", "elementor-location-header", ">Theme Site</a></p>", "footer part", "Welcome to WordPress"} {
+	for _, want := range []string{"wp-theme-hello-web-builder", "elementor-location-header", ">Theme Site</a></p>", "footer part", "Welcome to WordPress"} {
 		if !strings.Contains(body, want) {
 			t.Errorf("loaded saved theme misses %q", want)
 		}
@@ -378,7 +378,7 @@ func TestGoWebEditorThemeBuilder(t *testing.T) {
 	}
 
 	// Export and import.
-	code, zipBody, _ := get(t, c, base+"/wp-admin/gowebeditor-theme-builder?action=export&theme=gwe-go-studio&_wpnonce="+nonce)
+	code, zipBody, _ := get(t, c, base+"/wp-admin/theme-builder?action=export&theme=gwe-go-studio&_wpnonce="+nonce)
 	if code != http.StatusOK {
 		t.Fatalf("export: %d", code)
 	}
@@ -396,7 +396,7 @@ func TestGoWebEditorThemeBuilder(t *testing.T) {
 	fw, _ := mw.CreateFormFile("theme_zip", "go-studio.zip")
 	_, _ = fw.Write([]byte(zipBody))
 	mw.Close()
-	resp, err := c.Post(base+"/wp-admin/gowebeditor-theme-builder", mw.FormDataContentType(), &buf)
+	resp, err := c.Post(base+"/wp-admin/theme-builder", mw.FormDataContentType(), &buf)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -409,7 +409,7 @@ func TestGoWebEditorThemeBuilder(t *testing.T) {
 		t.Errorf("imported theme: %.200s", data)
 	}
 	// Delete the imported theme from the Themes screen.
-	code, _, loc = post(t, c, base+"/wp-admin/gowebeditor-theme-builder", url.Values{"_wpnonce": {nonce}, "action": {"delete-theme"}, "theme": {"gwe-go-studio-2"}, "back": {"themes"}})
+	code, _, loc = post(t, c, base+"/wp-admin/theme-builder", url.Values{"_wpnonce": {nonce}, "action": {"delete-theme"}, "theme": {"gwe-go-studio-2"}, "back": {"themes"}})
 	if code != http.StatusFound || !strings.Contains(loc, "/wp-admin/themes?gwe=theme-deleted") {
 		t.Errorf("delete theme: %d %s", code, loc)
 	}

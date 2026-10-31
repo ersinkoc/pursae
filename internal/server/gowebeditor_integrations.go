@@ -1121,7 +1121,7 @@ func (s *Server) gweDiscordRun(ctx context.Context, rec *gweFormRecord) error {
 // --- editor widgets config --------------------------------------------------------------------------
 
 // gweIntegrationsSettingsURL is Golementor › Settings › Integrations.
-const gweIntegrationsSettingsURL = "/wp-admin/gowebeditor-pro?tab=settings#integrations"
+const gweIntegrationsSettingsURL = "/wp-admin/web-builder?tab=settings#integrations"
 
 // gweIntegrationsWidgetsConfig points the form and payment widgets' notices at Golementor ›
 // Settings and turns each "API key" alert into upstream's info / warning variant depending on

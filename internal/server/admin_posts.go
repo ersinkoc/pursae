@@ -1623,7 +1623,7 @@ func (s *Server) postEdit(c *gin.Context) {
 	case action == gweEditAction && s.golementorOn(): // Golementor
 		s.gweEditor(c, p)
 		return
-	case action == "elementor" && s.golementorOn():
+	case (action == "elementor" || action == "golementor") && s.golementorOn():
 		// Upstream's editor URL (bundled JS, old links): the browser keeps the #fragment across the redirect.
 		c.Redirect(http.StatusMovedPermanently, gweEditURL(p.ID))
 		return

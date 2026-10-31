@@ -50,11 +50,11 @@ func TestGoWebEditorPro(t *testing.T) {
 	}
 
 	// --- the editor ---------------------------------------------------------------------------------
-	code, body, _ := get(t, c, base+"/wp-admin/post?post="+pageID+"&action=golementor")
+	code, body, _ := get(t, c, base+"/wp-admin/post?post="+pageID+"&action=web-builder")
 	if code != http.StatusOK {
 		t.Fatalf("editor: %d", code)
 	}
-	for _, want := range []string{"/wp-content/plugins/gowebeditor/assets/pro/js/editor.min.js", "var elementorProEditorConfig = {",
+	for _, want := range []string{"/wp-content/plugins/web-builder/assets/pro/js/editor.min.js", "var elementorProEditorConfig = {",
 		"var elementorAppProConfig = ", "window.ElementorProDisplayConditions", `id="tmpl-elementor-form-content"`,
 		`id="tmpl-elementor-theme-builder-conditions-view"`, `"pro-elements":{"title":"Pro"`, `"displayConditions":{`,
 		`"dynamicTags":{"tags":{`, `"post-title":{`, "pro/js/packages/editor-documents-extended/editor-documents-extended.min.js"} {
@@ -152,7 +152,7 @@ func TestGoWebEditorPro(t *testing.T) {
 	for _, want := range []string{
 		`<h2 class="elementor-heading-title elementor-size-default">Pro Site</h2>`, // dynamic tag
 		"elementor-nav-menu", "About Us", "elementor-posts-container", "Hello world", "elementor-form", `name="form_fields[email]"`,
-		"/wp-content/plugins/gowebeditor/assets/pro/js/frontend.min.js", "pro/js/elements-handlers.min.js", "var ElementorProFrontendConfig",
+		"/wp-content/plugins/web-builder/assets/pro/js/frontend.min.js", "pro/js/elements-handlers.min.js", "var ElementorProFrontendConfig",
 		"pro/css/widget-nav-menu.min.css", "pro/css/widget-posts.min.css", "pro/css/widget-form.min.css", "smartmenus",
 	} {
 		if !strings.Contains(page, want) {
@@ -235,7 +235,7 @@ func TestGoWebEditorPro(t *testing.T) {
 
 	// --- admin screens ----------------------------------------------------------------------------------
 	for _, tab := range []string{"popups", "submissions", "code", "fonts", "roles", "settings"} {
-		code, body, _ := get(t, c, base+"/wp-admin/gowebeditor-pro?tab="+tab)
+		code, body, _ := get(t, c, base+"/wp-admin/web-builder?tab="+tab)
 		if code != http.StatusOK || !strings.Contains(body, "nav-tab-active") {
 			t.Errorf("admin %s: %d", tab, code)
 		}

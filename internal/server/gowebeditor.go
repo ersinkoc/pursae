@@ -28,7 +28,7 @@ import (
 )
 
 // Golementor is WordPress Go's page builder. Its editor UI is upstream 4.3.5's GPL-3.0 front end
-// (the built JS/CSS under web/gowebeditor, served at /wp-content/plugins/gowebeditor/assets/), rebranded
+// (the built JS/CSS under web/gowebeditor, served at /wp-content/plugins/web-builder/assets/), rebranded
 // and talking to this Go back end: the editor page and preview (this file), the elementor_ajax protocol
 // (gowebeditor_ajax.go), the REST routes the editor shell calls (gowebeditor_rest.go), the site kit
 // (gowebeditor_kit.go) and the front end (gowebeditor_front.go). Rendering and CSS generation live in
@@ -48,7 +48,7 @@ var gweFS embed.FS
 
 const (
 	gweVersion    = "4.3.5" // upstream editor build
-	gweAssetsPath = "/wp-content/plugins/gowebeditor/assets/"
+	gweAssetsPath = "/wp-content/plugins/web-builder/assets/"
 	gweLibrary    = "elementor_library" // content type of templates and the kit
 )
 
@@ -239,7 +239,7 @@ func gweEditURL(id int64) string {
 	return "/wp-admin/post?post=" + itoa64(id) + "&action=" + gweEditAction
 }
 
-const gweEditAction = "golementor"
+const gweEditAction = "web-builder"
 
 var gweStatusLabels = map[string]string{"publish": "Published", "draft": "Draft", "pending": "Pending", "private": "Private",
 	"future": "Scheduled", "auto-draft": "Draft", "inherit": "Revision", "trash": "Trash"}
@@ -548,7 +548,7 @@ func gweIDCounterNext() uint32 {
 
 // --- editor page ------------------------------------------------------------------------------
 
-// gweEditor is post.php?action=golementor: the Golementor editor for one post.
+// gweEditor is post.php?action=web-builder: the Golementor editor for one post.
 func (s *Server) gweEditor(c *gin.Context, p *store.Post) {
 	u := currentUser(c)
 	if !gweEditable(p) {

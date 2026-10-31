@@ -598,9 +598,9 @@ func glibKAInstall(t *testing.T, base string, c *http.Client, srv *Server, k *gl
 
 	// Hello Golementor, the theme the parts are bound to.
 	_, body, _ := get(t, c, base+"/wp-admin/themes")
-	act := regexp.MustCompile(`href="(/wp-admin/themes\?action=activate&amp;stylesheet=hello-gowebeditor&amp;_wpnonce=[^"]+)"`).FindStringSubmatch(body)
+	act := regexp.MustCompile(`href="(/wp-admin/themes\?action=activate&amp;stylesheet=hello-web-builder&amp;_wpnonce=[^"]+)"`).FindStringSubmatch(body)
 	if act == nil {
-		t.Fatal("no activate link for hello-gowebeditor")
+		t.Fatal("no activate link for hello-web-builder")
 	}
 	if code, _, loc := get(t, c, base+html.UnescapeString(act[1])); code != http.StatusFound || !strings.Contains(loc, "activated=true") {
 		t.Fatalf("activate: %d %s", code, loc)
@@ -621,7 +621,7 @@ func glibKAInstall(t *testing.T, base string, c *http.Client, srv *Server, k *gl
 	}
 
 	// The editor's ajax nonce, then everything is saved like the editor saves it.
-	_, body, _ = get(t, c, fmt.Sprintf("%s/wp-admin/post?post=%d&action=golementor", base, st.pages["home"]))
+	_, body, _ = get(t, c, fmt.Sprintf("%s/wp-admin/post?post=%d&action=web-builder", base, st.pages["home"]))
 	nonce := regexp.MustCompile(`"ajax":\{"nonce":"([^"]+)"`).FindStringSubmatch(body)
 	if nonce == nil {
 		t.Fatal("no elementor_ajax nonce")
@@ -722,14 +722,14 @@ func glibKAInstall(t *testing.T, base string, c *http.Client, srv *Server, k *gl
 
 	// Theme parts: created in the Theme Builder, saved in the editor, conditions set on the
 	// conditions screen.
-	_, body, _ = get(t, c, base+"/wp-admin/gowebeditor-theme-builder")
+	_, body, _ = get(t, c, base+"/wp-admin/theme-builder")
 	tb := nonceRe.FindStringSubmatch(body)
 	if tb == nil {
 		t.Fatal("no theme builder nonce")
 	}
 	for _, p := range k.Parts {
-		code, _, loc := post(t, c, base+"/wp-admin/gowebeditor-theme-builder", url.Values{"_wpnonce": {tb[1]}, "action": {"new"}, "type": {p.Type}, "title": {p.Title}})
-		m := regexp.MustCompile(`^/wp-admin/post\?post=(\d+)&action=golementor$`).FindStringSubmatch(loc)
+		code, _, loc := post(t, c, base+"/wp-admin/theme-builder", url.Values{"_wpnonce": {tb[1]}, "action": {"new"}, "type": {p.Type}, "title": {p.Title}})
+		m := regexp.MustCompile(`^/wp-admin/post\?post=(\d+)&action=web-builder$`).FindStringSubmatch(loc)
 		if code != http.StatusFound || m == nil {
 			t.Fatalf("new %s: %d %q", p.Type, code, loc)
 		}
@@ -747,7 +747,7 @@ func glibKAInstall(t *testing.T, base string, c *http.Client, srv *Server, k *gl
 			form.Add("mode[]", mode)
 			form.Add("rule[]", rule)
 		}
-		if code, _, loc := post(t, c, base+"/wp-admin/gowebeditor-theme-builder", form); code != http.StatusFound || !strings.Contains(loc, "message=conditions") {
+		if code, _, loc := post(t, c, base+"/wp-admin/theme-builder", form); code != http.StatusFound || !strings.Contains(loc, "message=conditions") {
 			t.Fatalf("conditions %s: %d %s", p.Type, code, loc)
 		}
 	}

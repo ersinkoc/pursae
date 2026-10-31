@@ -545,7 +545,7 @@
  "Bump it after changing your cookie policy or adding a service: stored choices of an older version no longer count.": "쿠키 정책을 변경하거나 서비스를 추가한 후 올리세요. 이전 버전에서 저장된 선택은 더 이상 유효하지 않습니다.",
  "Bump version and ask everyone again": "버전을 올리고 모두에게 다시 묻기",
  "Bundled": "번들됨",
- "Bundled themes are compiled into Pursae, Pursae Web Builder&rsquo;s <a href=\"/wp-admin/gowebeditor-theme-builder\">Theme Builder</a> generates themes, and theme packages (a zip of <code>theme.json</code>, templates and assets, no code) are installed from the <a href=\"/wp-admin/theme-install\">Library</a> or with <strong>Upload Theme</strong>.": "번들 테마는 Pursae에 컴파일되어 있고, Pursae Web Builder의 <a href=\"/wp-admin/gowebeditor-theme-builder\">테마 빌더</a>가 테마를 생성하며, 테마 패키지(<code>theme.json</code>, 템플릿 및 에셋의 zip, 코드 없음)는 <a href=\"/wp-admin/theme-install\">라이브러리</a> 또는 <strong>테마 업로드</strong>로 설치합니다.",
+ "Bundled themes are compiled into Pursae, Pursae Web Builder&rsquo;s <a href=\"/wp-admin/theme-builder\">Theme Builder</a> generates themes, and theme packages (a zip of <code>theme.json</code>, templates and assets, no code) are installed from the <a href=\"/wp-admin/theme-install\">Library</a> or with <strong>Upload Theme</strong>.": "번들 테마는 Pursae에 컴파일되어 있고, Pursae Web Builder의 <a href=\"/wp-admin/theme-builder\">테마 빌더</a>가 테마를 생성하며, 테마 패키지(<code>theme.json</code>, 템플릿 및 에셋의 zip, 코드 없음)는 <a href=\"/wp-admin/theme-install\">라이브러리</a> 또는 <strong>테마 업로드</strong>로 설치합니다.",
  "BunnyCDN cache purged.": "BunnyCDN 캐시를 비웠습니다.",
  "Burgundy and charcoal, Caslon serif, gold hairlines": "버건디와 차콜, Caslon 세리프, 금색 헤어라인",
  "Burkina Faso": "부르키나파소",
