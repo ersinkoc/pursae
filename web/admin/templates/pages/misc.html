@@ -1,23 +1,101 @@
 {{define "admin/update-core"}}{{template "admin-header" .}}{{with .Data}}
+<style>.wpgo-badge{display:inline-block;margin:0 4px;padding:0 6px;border-radius:2px;font-size:11px;font-weight:600;line-height:18px;vertical-align:middle;background:#dba617;color:#1d2327}</style>
 <div class="wrap">
 <h1>Pursae Updates</h1>
 {{template "notices" $}}
-<p>Last checked on {{.Checked}}. <a class="button" href="/wp-admin/update-core?force-check=1">Check again</a></p>
+<p class="update-last-checked">Last checked on {{.Checked}}. <a class="button" href="/wp-admin/update-core?force-check=1">Check again</a></p>
 {{if .Update}}
 <h2>An updated version of Pursae is available.</h2>
-<div class="notice notice-warning inline"><p><strong>Pursae {{.Update.Latest}}</strong> is available; you are running {{.Version}}.{{if .Update.Released}} Released {{.Update.Released}}.{{end}}
-{{if .Update.DownloadURL}}<a class="button button-primary" href="{{.Update.DownloadURL}}">Download {{.Update.Latest}}</a>{{end}}{{if .Update.NotesURL}} <a href="{{.Update.NotesURL}}">Release notes</a>{{end}}</p></div>
+<div class="notice notice-warning inline"><p><strong>Pursae {{.Update.Latest}}</strong>{{if eq .Update.Channel "beta"}} <span class="wpgo-badge wpgo-badge-beta">Beta</span>{{end}} is available; you are running {{.Version}}.{{if .Update.Released}} Released {{.Update.Released}}.{{end}}{{if .Update.NotesURL}} <a href="{{.Update.NotesURL}}">Release notes</a>{{end}}</p></div>
+{{if .Artifact}}{{if .CoreBlocked}}
+<div class="notice notice-error inline"><p>This site cannot update itself: {{.CoreBlocked}}.</p></div>
+{{if .Update.DownloadURL}}<p><a class="button" href="{{.Update.DownloadURL}}">Download {{.Update.Latest}}</a></p>{{end}}
+{{else}}
+<ul class="core-updates"><li>
+<form method="post" action="/wp-admin/update-core?action=do-core-upgrade" name="upgrade" class="upgrade">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<p><input name="version" value="{{.Update.Latest}}" type="hidden" /><input type="submit" name="upgrade" id="upgrade" class="button button-primary regular" value="Update to version {{.Update.Latest}}" /></p>
+</form>
+</li></ul>
+<p>The new {{.Artifact.OS}}/{{.Artifact.Arch}} binary is downloaded from Pursae Manager, its checksum and signature are verified, it replaces the running one and Pursae restarts. Database migrations run on start.</p>
+{{end}}{{else}}
+{{if .Update.DownloadURL}}<p><a class="button button-primary" href="{{.Update.DownloadURL}}">Download {{.Update.Latest}}</a></p>{{end}}
+<div class="notice notice-info inline"><p>Pursae {{.Version}} is a single binary with everything built in: core, admin, themes and the plugin sandbox. There is no build of this release for your platform on Pursae Manager, so replace the binary (or pull the new container image) and restart; database migrations run automatically on start.</p></div>
+{{end}}
 {{else}}
 <h2>You have the latest version of Pursae.</h2>
 {{end}}
-{{if not .Hub}}<p class="description">Update checks are off: no Pursae Hub is configured (<code>WPGO_HUB_URL</code>).</p>{{end}}
-<div class="notice notice-info inline"><p>Pursae {{.Version}} is a single binary with everything built in: core, admin, themes and the plugin sandbox. To update, replace the binary (or pull the new container image) and restart; database migrations run automatically on start.</p></div>
+{{if not .Hub}}<p class="description">Update checks are off: no Pursae Manager is configured (<code>WPGO_HUB_URL</code>).</p>{{end}}
 <h2>Plugins</h2>
+{{if .PluginUpdates}}
+<p>The following plugins have new versions available. Check the ones you want to update and then click &#8220;Update Plugins&#8221;.</p>
+<form method="post" action="/wp-admin/update-core?action=do-plugin-upgrade" name="upgrade-plugins" class="upgrade">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+{{if .CanUpdatePlugins}}<p><input id="upgrade-plugins" class="button" type="submit" value="Update Plugins" name="upgrade" /></p>{{end}}
+<table class="widefat updates-table" id="update-plugins-table">
+	<thead><tr><td class="manage-column check-column"><input type="checkbox" id="plugins-select-all" /></td><td class="manage-column"><label for="plugins-select-all">Select All</label></td></tr></thead>
+	<tbody class="plugins">
+	{{range .PluginUpdates}}
+	<tr>
+		<td class="check-column"><input type="checkbox" name="checked[]" id="checkbox_{{.Slug}}" value="{{.Slug}}" /><label for="checkbox_{{.Slug}}"><span class="screen-reader-text">Select {{.Name}}</span></label></td>
+		<td class="plugin-title"><p><span class="dashicons dashicons-admin-plugins" aria-hidden="true"></span> <strong>{{.Name}}</strong> You have version {{.Version}} installed. Update to {{.Update.Version}}.{{if eq .Update.Channel "beta"}} <span class="wpgo-badge wpgo-badge-beta">Beta</span>{{end}}{{if .Update.Homepage}} <a href="{{.Update.Homepage}}">View version {{.Update.Version}} details.</a>{{end}}</p></td>
+	</tr>
+	{{end}}
+	</tbody>
+	<tfoot><tr><td class="manage-column check-column"><input type="checkbox" id="plugins-select-all-2" /></td><td class="manage-column"><label for="plugins-select-all-2">Select All</label></td></tr></tfoot>
+</table>
+{{if .CanUpdatePlugins}}<p><input id="upgrade-plugins-2" class="button" type="submit" value="Update Plugins" name="upgrade" /></p>{{end}}
+</form>
+{{else}}
 <p>Your plugins are all up to date.</p>
+{{end}}
 <h2>Themes</h2>
 <p>Your themes are all up to date.</p>
 <h2>Translations</h2>
 <p>Your translations are all up to date.</p>
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}
+
+{{define "admin/update-core-restart"}}{{template "admin-header" .}}{{with .Data}}
+<div class="wrap">
+<h1>Pursae Updates</h1>
+<div class="notice notice-success inline"><p>Updated to Pursae {{.Version}}, restarting&hellip;</p></div>
+<p>The new version is starting. This page goes back to Dashboard &rsaquo; Updates in a few seconds; if it does not, <a href="/wp-admin/update-core">reload it</a>.</p>
+<script>setTimeout(function(){location.href="/wp-admin/update-core"},6000)</script>
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}
+
+{{define "admin/options-license"}}{{template "admin-header" .}}{{with .Data}}
+<div class="wrap">
+<h1>License Settings</h1>
+{{template "notices" $}}
+<form method="post" action="/wp-admin/options-license" novalidate="novalidate">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<table class="form-table" role="presentation">
+<tr>
+<th scope="row"><label for="pursae_license_key">License Key</label></th>
+<td><input name="pursae_license_key" type="text" id="pursae_license_key" value="{{.Key}}" class="regular-text code" autocomplete="off" spellcheck="false" placeholder="PRS-XXXX-XXXX-XXXX-XXXX" />
+<p class="description" id="pursae-license-description">The key of your Pursae license. It unlocks Pro and private plugins and themes and, with a beta license, beta versions and releases. It is sent to Pursae Manager with every request.</p></td>
+</tr>
+<tr>
+<th scope="row">Status</th>
+<td>{{if not .Key}}<p>No license key entered. Pursae Manager shows public plugins and themes and stable releases only.</p>
+{{else if .Status.Valid}}<p class="pursae-license-status pursae-license-valid"><span class="dashicons dashicons-yes-alt" style="color:#00a32a" aria-hidden="true"></span> <strong>Valid</strong></p>
+{{else}}<div class="notice notice-error inline pursae-license-status pursae-license-invalid"><p><strong>{{if eq .Status.Error "unreachable"}}Not checked{{else if eq .Status.Error "off"}}Not checked{{else}}Not valid{{end}}:</strong> {{.Message}}</p></div>{{end}}</td>
+</tr>
+{{if and .Key .Status.Valid}}
+<tr><th scope="row">Plan</th><td>{{.Plan}}</td></tr>
+<tr><th scope="row">Pro features</th><td>{{if .Status.Pro}}Included{{else}}Not included{{end}}</td></tr>
+<tr><th scope="row">Beta channel</th><td>{{if .Status.Beta}}Included: beta versions and releases are offered{{else}}Not included{{end}}</td></tr>
+<tr><th scope="row">Expires</th><td>{{.Expires}}</td></tr>
+<tr><th scope="row">Sites</th><td>{{range $i, $d := .Status.Domains}}{{if $i}}<br />{{end}}<code>{{$d}}</code>{{else}}&mdash;{{end}}</td></tr>
+{{if .Status.Packages}}<tr><th scope="row">Private packages</th><td>{{range $i, $p := .Status.Packages}}{{if $i}}, {{end}}<code>{{$p}}</code>{{end}}</td></tr>{{end}}
+{{end}}
+{{if .Checked}}<tr><th scope="row">Last checked</th><td>{{.Checked}}</td></tr>{{end}}
+</table>
+{{if not .Hub}}<p class="description">No Pursae Manager is configured (<code>WPGO_HUB_URL</code>), so the key cannot be checked.</p>{{end}}
+<p class="submit"><input type="submit" name="submit" id="submit" class="button button-primary" value="Save Changes" /> {{if .Key}}<input type="submit" name="check" id="check" class="button" value="Check now" />{{end}}</p>
+</form>
 </div>
 {{end}}{{template "admin-footer" .}}{{end}}
 

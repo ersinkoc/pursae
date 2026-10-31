@@ -33,11 +33,16 @@ func (s *Server) deletedThemes() []string {
 func (s *Server) themeDeleted(slug string) bool { return slices.Contains(s.deletedThemes(), slug) }
 
 // deleteTheme removes an inactive theme from the site.
-func (s *Server) deleteTheme(ctx context.Context, slug string) error {
+func (s *Server) deleteTheme(ctx context.Context, slug string) (err error) {
 	t := s.installedTheme(slug)
 	if t == nil {
 		return errors.New("The requested theme does not exist.")
 	}
+	defer func() {
+		if err == nil && !t.Custom {
+			s.hubEvent("theme_delete", "theme", slug, t.Version) // statistics (hub_telemetry.go)
+		}
+	}()
 	if s.activeTheme().Slug == slug {
 		return errors.New("You cannot delete a theme while it is active on the site.")
 	}
@@ -52,7 +57,7 @@ func (s *Server) deleteTheme(ctx context.Context, slug string) error {
 		return nil
 	}
 	themeSaveMu.Lock()
-	err := os.RemoveAll(filepath.Join(themeOverrideDir(s.cfg.UploadsDir), slug))
+	err = os.RemoveAll(filepath.Join(themeOverrideDir(s.cfg.UploadsDir), slug))
 	themeSaveMu.Unlock()
 	if err != nil {
 		return err
@@ -73,5 +78,9 @@ func (s *Server) restoreTheme(ctx context.Context, slug string) error {
 	if i < 0 {
 		return nil
 	}
-	return s.settings.Set(ctx, map[string]any{deletedThemesSetting: slices.Delete(list, i, i+1)})
+	if err := s.settings.Set(ctx, map[string]any{deletedThemesSetting: slices.Delete(list, i, i+1)}); err != nil {
+		return err
+	}
+	s.hubEvent("theme_install", "theme", slug, s.themeVersion(slug)) // statistics (hub_telemetry.go)
+	return nil
 }

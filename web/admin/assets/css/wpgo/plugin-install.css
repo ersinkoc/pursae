@@ -80,3 +80,8 @@
 	color: #646970;
 	font-style: italic;
 }
+
+/* Pursae Manager access and channel badges (Pro, Private, Beta) */
+.wpgo-badge{display:inline-block;margin:0 4px;padding:0 6px;border-radius:2px;font-size:11px;font-weight:600;line-height:18px;vertical-align:middle;color:#fff;background:#2271b1}
+.wpgo-badge-private{background:#50575e}
+.wpgo-badge-beta{background:#dba617;color:#1d2327}

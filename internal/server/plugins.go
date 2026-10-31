@@ -179,7 +179,7 @@ type pluginHost struct{ s *Server }
 // hiddenOptions are never readable by plugins.
 func hiddenOption(name string) bool {
 	return strings.HasPrefix(name, "auth_") || strings.Contains(name, "secret") || strings.Contains(name, "password") ||
-		strings.HasPrefix(name, "plugin_") || name == "admin_email" || name == "mailserver_pass"
+		strings.HasPrefix(name, "plugin_") || name == "admin_email" || name == "mailserver_pass" || name == licenseOption
 }
 
 func (h *pluginHost) GetOption(_ context.Context, plugin string, name string) (any, bool, error) {
@@ -215,7 +215,7 @@ func pluginOptionAllowed(plugin, name string) bool {
 	if strings.HasPrefix(name, own) {
 		return true
 	}
-	for _, p := range []string{"auth_", "wpgo_", "native_", "plugin_"} {
+	for _, p := range []string{"auth_", "wpgo_", "native_", "plugin_", "pursae_"} {
 		if strings.HasPrefix(name, p) {
 			return false
 		}
@@ -294,6 +294,8 @@ type pluginRow struct {
 	Permissions                                                    []permRow
 	ActivateURL, DeactivateURL, DeleteURL, SettingsURL             string
 	Logs                                                           []plugins.LogEntry
+	Source                                                         string        // native | hub | upload
+	Update                                                         *pluginUpdate // a newer version on Pursae Manager (hub_updates.go)
 }
 
 type permRow struct {
@@ -312,10 +314,23 @@ type pluginsData struct {
 	CanDelete        bool
 }
 
+// installedPlugins are the rows of the Plugins screen: every plugin with its action links.
 func (s *Server) installedPlugins(c *gin.Context) []pluginRow {
 	n := func(action, slug string) string {
 		return "/wp-admin/plugins?action=" + action + "&plugin=" + pluginURLSlug(slug) + "&_wpnonce=" + s.nonce(c, action+"-plugin_"+slug)
 	}
+	rows := s.pluginInventory(c.Request.Context())
+	for i := range rows {
+		rows[i].ActivateURL, rows[i].DeactivateURL = n("activate", rows[i].Slug), n("deactivate", rows[i].Slug)
+		if !rows[i].Native {
+			rows[i].DeleteURL = n("delete", rows[i].Slug)
+		}
+	}
+	return rows
+}
+
+// nativePluginRows are the plugins built into the core.
+func (s *Server) nativePluginRows() []pluginRow {
 	rows := []pluginRow{
 		{Slug: "classic-editor", Name: "Classic Editor", Version: "1.6.7", Native: true, Active: s.settings.Bool("native_classic_editor"),
 			Description: "Enables the previous \"classic\" editor and the old-style Edit Post screen with TinyMCE, Meta Boxes, etc. Choose the default editor and whether users may switch under Settings &rsaquo; Writing.",
@@ -363,23 +378,30 @@ func (s *Server) installedPlugins(c *gin.Context) []pluginRow {
 	rows = append(rows, s.gocdnPluginRow())    // GoCDN (gocdn.go)
 	rows = append(rows, s.hgPluginRow())       // HeadlessGo (headlessgo.go)
 	for i := range rows {
-		rows[i].ActivateURL, rows[i].DeactivateURL = n("activate", rows[i].Slug), n("deactivate", rows[i].Slug)
+		rows[i].Source = pluginSourceNative
 	}
-	dbRows, err := s.store.Pool.Query(c, `SELECT slug, status FROM plugins ORDER BY slug`)
+	return rows
+}
+
+// pluginInventory is every plugin, native and installed packages, without action links (the Plugins
+// screen adds them; the Manager ping sends the inventory).
+func (s *Server) pluginInventory(ctx context.Context) []pluginRow {
+	rows := s.nativePluginRows()
+	dbRows, err := s.store.Pool.Query(ctx, `SELECT slug, status, version, source FROM plugins ORDER BY slug`)
 	if err != nil {
 		return rows
 	}
-	type inst struct{ slug, status string }
+	type inst struct{ slug, status, version, source string }
 	var list []inst
 	for dbRows.Next() {
 		var r inst
-		if dbRows.Scan(&r.slug, &r.status) == nil {
+		if dbRows.Scan(&r.slug, &r.status, &r.version, &r.source) == nil {
 			list = append(list, r)
 		}
 	}
 	dbRows.Close()
 	for _, r := range list {
-		row := pluginRow{Slug: r.slug, Name: r.slug, Active: r.status == "active"}
+		row := pluginRow{Slug: r.slug, Name: r.slug, Version: r.version, Active: r.status == "active", Source: r.source}
 		if pkg, err := plugins.LoadPackageFile(filepath.Join(s.plugins.dir, r.slug+".zip"), s.plugins.keys, false); err == nil {
 			m := pkg.Manifest
 			row.Name, row.Version, row.Description, row.Author, row.AuthorURI, row.PluginURI = m.Name, m.Version, template.HTMLEscapeString(m.Description), m.Author, m.AuthorURI, m.PluginURI
@@ -396,7 +418,6 @@ func (s *Server) installedPlugins(c *gin.Context) []pluginRow {
 				}
 			}
 		}
-		row.ActivateURL, row.DeactivateURL, row.DeleteURL = n("activate", r.slug), n("deactivate", r.slug), n("delete", r.slug)
 		rows = append(rows, row)
 	}
 	return rows
@@ -406,6 +427,10 @@ func (s *Server) pluginsScreen(c *gin.Context) {
 	u := currentUser(c)
 	if !u.Can("activate_plugins", nil) {
 		c.String(http.StatusForbidden, "Sorry, you are not allowed to manage plugins for this site.")
+		return
+	}
+	if c.Query("action") == "upgrade-plugin" && c.Request.Method == http.MethodGet { // hub_updates.go
+		s.pluginUpgrade(c)
 		return
 	}
 	if a := c.Query("action"); a != "" && c.Request.Method == http.MethodGet && a != "activate" {
@@ -428,7 +453,7 @@ func (s *Server) pluginsScreen(c *gin.Context) {
 	if s.plugins.initErr != nil {
 		d.RuntimeErr = s.plugins.initErr.Error()
 	}
-	all := s.installedPlugins(c)
+	all := s.pluginsWithUpdates(c, s.installedPlugins(c))
 	d.Search = strings.TrimSpace(c.Query("s"))
 	q := strings.ToLower(d.Search)
 	for _, r := range all {
@@ -486,6 +511,8 @@ func (s *Server) pluginsScreen(c *gin.Context) {
 		notices = append(notices, notice{Type: "success", Message: "The selected plugins have been deleted.", Dismissible: true})
 	case c.Query("deleted") == "true":
 		notices = append(notices, notice{Type: "success", Message: "The selected plugin has been deleted.", Dismissible: true})
+	case c.Query("updated") != "":
+		notices = append(notices, notice{Type: "success", Message: template.HTML("Plugin updated: <strong>" + template.HTMLEscapeString(c.Query("updated")) + "</strong>."), Dismissible: true})
 	case c.Query("installed") != "":
 		notices = append(notices, notice{Type: "success", Message: template.HTML("Plugin <strong>" + template.HTMLEscapeString(c.Query("installed")) + "</strong> installed. Activate it to review and grant its permissions."), Dismissible: true})
 	case c.Query("error") != "":
@@ -508,6 +535,14 @@ func (s *Server) pluginAction(c *gin.Context, action, slug string) {
 	}
 	if action == "activate" || action == "deactivate" {
 		defer s.asAuditPlugin(c, action, slug)
+	}
+	if action == "activate" || action == "deactivate" || action == "delete" { // statistics (hub_telemetry.go)
+		ver := s.pluginVersion(c.Request.Context(), slug)
+		defer func() {
+			if loc := c.Writer.Header().Get("Location"); c.Writer.Status() == http.StatusFound && !strings.Contains(loc, "error=") {
+				s.hubEvent("plugin_"+action, "plugin", slug, ver)
+			}
+		}()
 	}
 	switch slug {
 	case asSlug: // AdminSecGo
@@ -680,8 +715,15 @@ func (s *Server) pluginAction(c *gin.Context, action, slug string) {
 	c.Redirect(http.StatusFound, "/wp-admin/plugins?"+action+"=true")
 }
 
-// installPackage verifies a package and stores it as an inactive plugin.
+// installPackage verifies an uploaded package and stores it as an inactive plugin.
 func (s *Server) installPackage(ctx context.Context, data []byte) (*plugins.Manifest, error) {
+	return s.installPackageFrom(ctx, data, pluginSourceUpload, "")
+}
+
+// installPackageFrom verifies a package and stores it: a new plugin is inactive, an installed one
+// keeps its status (the caller reloads it). source is hub or upload; with wantSlug set the package
+// must be that plugin.
+func (s *Server) installPackageFrom(ctx context.Context, data []byte, source, wantSlug string) (*plugins.Manifest, error) {
 	pkg, err := plugins.LoadPackage(bytes.NewReader(data), int64(len(data)), s.plugins.keys, !s.settings.Bool("plugin_allow_unsigned"))
 	if err != nil {
 		if errors.Is(err, plugins.ErrUnsigned) || errors.Is(err, plugins.ErrBadSignature) {
@@ -693,16 +735,56 @@ func (s *Server) installPackage(ctx context.Context, data []byte) (*plugins.Mani
 		return nil, err
 	}
 	slug := pkg.Manifest.Slug
+	if wantSlug != "" && slug != wantSlug {
+		return nil, fmt.Errorf("the package is the plugin %q, not %q", slug, wantSlug)
+	}
 	if slug == "classic-editor" || slug == "wpgo-cache" || slug == maintSlug || slug == msSlug || slug == gontactSlug || slug == acfgoSlug || slug == golylangSlug || slug == seogoSlug || slug == gooikeSlug || slug == gooSlug || slug == gocdnSlug || slug == hgSlug {
 		return nil, errors.New("that slug belongs to a built-in plugin")
 	}
-	if err := os.WriteFile(filepath.Join(s.plugins.dir, slug+".zip"), data, 0o644); err != nil {
+	var before string
+	_ = s.store.Pool.QueryRow(ctx, `SELECT version FROM plugins WHERE slug = $1`, slug).Scan(&before)
+	if err := writeFileAtomic(filepath.Join(s.plugins.dir, slug+".zip"), data, 0o644); err != nil {
 		return nil, err
 	}
-	_, err = s.store.Pool.Exec(ctx, `INSERT INTO plugins (slug, version, signature) VALUES ($1, $2, $3)
-		ON CONFLICT (slug) DO UPDATE SET version = EXCLUDED.version, signature = EXCLUDED.signature`,
-		slug, pkg.Manifest.Version, fmt.Sprintf("%x", pkg.Digest))
-	return pkg.Manifest, err
+	_, err = s.store.Pool.Exec(ctx, `INSERT INTO plugins (slug, version, signature, source) VALUES ($1, $2, $3, $4)
+		ON CONFLICT (slug) DO UPDATE SET version = EXCLUDED.version, signature = EXCLUDED.signature, source = EXCLUDED.source, updated_at = now()`,
+		slug, pkg.Manifest.Version, fmt.Sprintf("%x", pkg.Digest), source)
+	if err != nil {
+		return nil, err
+	}
+	if before == "" {
+		s.hubEvent("plugin_install", "plugin", slug, pkg.Manifest.Version)
+	} else {
+		s.hubEvent("plugin_update", "plugin", slug, pkg.Manifest.Version)
+	}
+	return pkg.Manifest, nil
+}
+
+// writeFileAtomic writes a file through a temporary file in the same directory and a rename, so a
+// reader (the plugin runtime) never sees half a package.
+func writeFileAtomic(path string, data []byte, perm os.FileMode) error {
+	f, err := os.CreateTemp(filepath.Dir(path), "."+filepath.Base(path)+".tmp-")
+	if err != nil {
+		return err
+	}
+	tmp := f.Name()
+	_, err = f.Write(data)
+	if err == nil {
+		err = f.Sync()
+	}
+	if cerr := f.Close(); err == nil {
+		err = cerr
+	}
+	if err == nil {
+		err = os.Chmod(tmp, perm)
+	}
+	if err == nil {
+		err = os.Rename(tmp, path)
+	}
+	if err != nil {
+		_ = os.Remove(tmp)
+	}
+	return err
 }
 
 type marketItem struct {
@@ -719,6 +801,8 @@ type marketItem struct {
 	Homepage  string
 	Downloads int
 	Updated   string
+	Access    string // public | pro | private (Manager listings)
+	Channel   string // stable | beta
 	// Native (built-in) plugins.
 	Native, Active           bool
 	SettingsURL, ActivateURL string
@@ -815,7 +899,7 @@ func (s *Server) pluginInstall(c *gin.Context) {
 		}
 		for _, h := range items {
 			it := marketItem{Slug: h.Slug, Name: h.Name, Version: h.Version, Description: h.Description, Author: h.Author, Hub: true,
-				IconURL: h.IconURL, Homepage: h.Homepage, Downloads: h.Downloads, Installed: installed[h.Slug], Icon: "dashicons-admin-plugins", IconColor: "teal",
+				IconURL: h.IconURL, Homepage: h.Homepage, Downloads: h.Downloads, Access: h.Access, Channel: h.Channel, Installed: installed[h.Slug], Icon: "dashicons-admin-plugins", IconColor: "teal",
 				InstallURL: "/wp-admin/plugin-install?action=install-plugin&source=hub&plugin=" + h.Slug + "&_wpnonce=" + s.nonce(c, "install-plugin_"+h.Slug)}
 			if t, err := time.Parse(time.RFC3339, h.Updated); err == nil {
 				it.Updated = t.In(s.loc()).Format("January 2, 2006")

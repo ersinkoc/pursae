@@ -616,6 +616,7 @@ func (s *Server) themePreviewScreen(c *gin.Context) {
 		return
 	}
 	m := src.Manifest
+	s.hubEvent("theme_preview", "theme", slug, m.Version) // statistics (hub_telemetry.go)
 	back := "/wp-admin/theme-install"
 	if !src.Library {
 		back = "/wp-admin/themes?theme=" + url.QueryEscape(slug)

@@ -201,7 +201,9 @@ func (s *Server) installThemePackage(ctx context.Context, data []byte) (*Theme, 
 	if err != nil {
 		return nil, err
 	}
+	event := "theme_install"
 	if t := s.themeFor(m.Slug); t != nil {
+		event = "theme_update"
 		if t.Package == nil {
 			return nil, fmt.Errorf("the slug %q belongs to a bundled theme", m.Slug)
 		}
@@ -265,6 +267,7 @@ func (s *Server) installThemePackage(ctx context.Context, data []byte) (*Theme, 
 	}
 	s.registerPackage(t)
 	s.afterThemeChange(ctx, t.Slug)
+	s.hubEvent(event, "theme", t.Slug, t.Version) // statistics (hub_telemetry.go)
 	return t, nil
 }
 

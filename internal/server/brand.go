@@ -115,11 +115,10 @@ func (s *Server) hubFetchLogo(ctx context.Context, logoURL string) error {
 	if err != nil || (u.Scheme != "https" && u.Scheme != "http") {
 		return fmt.Errorf("bad logo URL %q", logoURL)
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
+	req, err := s.hubNewRequest(ctx, http.MethodGet, u.String(), nil)
 	if err != nil {
 		return err
 	}
-	req.Header.Set("User-Agent", hubUserAgent)
 	resp, err := s.hubClient().Do(req)
 	if err != nil {
 		return err

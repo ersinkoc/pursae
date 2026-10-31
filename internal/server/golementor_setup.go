@@ -340,6 +340,14 @@ var gweSetupMu sync.Mutex
 
 // gweStarterInstall installs a kit for user uid.
 func (s *Server) gweStarterInstall(ctx context.Context, uid int64, ch gweSetupChoices) error {
+	err := s.gweStarterInstallRun(ctx, uid, ch)
+	if err == nil { // statistics (hub_telemetry.go): a Web Builder starter site is the builder's demo import
+		s.hubEvent("demo_import", "plugin", golementorSlug, Version)
+	}
+	return err
+}
+
+func (s *Server) gweStarterInstallRun(ctx context.Context, uid int64, ch gweSetupChoices) error {
 	gweSetupMu.Lock()
 	defer gweSetupMu.Unlock()
 	k := s.gweLib().kit(ch.Kit)

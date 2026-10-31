@@ -55,8 +55,8 @@
 <table class="wp-list-table widefat plugins">
 <thead>{{template "plugins-head" true}}</thead>
 <tbody id="the-list">
-{{range .Rows}}
-<tr class="{{if .Active}}active{{else}}inactive{{end}}" data-slug="{{.Slug}}" data-plugin="{{.Slug}}">
+{{range $row := .Rows}}
+<tr class="{{if .Active}}active{{else}}inactive{{end}}{{if .Update}} update{{end}}" data-slug="{{.Slug}}" data-plugin="{{.Slug}}">
 	<th scope="row" class="check-column"><input type="checkbox" name="checked[]" value="{{.Slug}}" id="checkbox_{{.Slug}}" /><label for="checkbox_{{.Slug}}"><span class="screen-reader-text">Select {{.Name}}</span></label></th>
 	<td class="plugin-title column-primary"><strong>{{.Name}}</strong>
 		<div class="row-actions visible">
@@ -73,6 +73,7 @@
 {{end}}</pre></details>{{end}}
 	</td>
 </tr>
+{{with .Update}}<tr class="plugin-update-tr {{if $row.Active}}active{{else}}inactive{{end}}" id="{{$row.Slug}}-update" data-slug="{{$row.Slug}}" data-plugin="{{$row.Slug}}"><td colspan="3" class="plugin-update colspanchange"><div class="update-message notice inline notice-warning notice-alt"><p>There is a new version of {{$row.Name}} available.{{if .Homepage}} <a href="{{.Homepage}}" class="thickbox open-plugin-details-modal" aria-label="View {{$row.Name}} version {{.Version}} details">View version {{.Version}} details</a> or{{end}} <a href="{{.URL}}" class="update-link" aria-label="Update {{$row.Name}} now">{{if .Homepage}}update now{{else}}Update now{{end}}</a>.</p></div></td></tr>{{end}}
 {{else}}<tr class="no-items"><td class="colspanchange" colspan="3">No plugins found.</td></tr>{{end}}
 </tbody>
 <tfoot>{{template "plugins-head" false}}</tfoot>

@@ -26,12 +26,47 @@ func (s *Server) updateCore(c *gin.Context) {
 		c.String(http.StatusForbidden, "Sorry, you are not allowed to update this site.")
 		return
 	}
+	if c.Request.Method == http.MethodPost {
+		switch c.Query("action") {
+		case "do-plugin-upgrade": // hub_updates.go
+			s.updatePlugins(c)
+		case "do-core-upgrade": // core_update.go
+			s.upgradeCore(c)
+		default:
+			c.Redirect(http.StatusFound, "/wp-admin/update-core")
+		}
+		return
+	}
 	if c.Query("force-check") != "" {
 		s.hubRefresh(c)
 	}
-	s.adminPage(c, "update-core", "Pursae Updates", "update-core-php", "admin/update-core", map[string]any{
-		"Version": Version, "Checked": time.Now().In(s.loc()).Format("January 2, 2006 at 3:04 pm"), "Plugins": s.installedPlugins(c), "Themes": s.installedThemes(),
-		"Update": s.hubUpdate(c), "Hub": s.hubBase()})
+	d := map[string]any{
+		"Version": Version, "Checked": time.Now().In(s.loc()).Format("January 2, 2006 at 3:04 pm"), "Themes": s.installedThemes(),
+		"Hub": s.hubBase(), "Nonce": s.nonce(c, "upgrade-core"), "CanUpdatePlugins": currentUser(c).Can("update_plugins", nil)}
+	var pluginUpdates []pluginRow
+	for _, r := range s.pluginsWithUpdates(c, s.installedPlugins(c)) {
+		if r.Update != nil {
+			pluginUpdates = append(pluginUpdates, r)
+		}
+	}
+	d["PluginUpdates"] = pluginUpdates
+	if up := s.hubUpdate(c); up != nil {
+		d["Update"] = up
+		if art := up.artifactFor(runtime.GOOS, runtime.GOARCH); art != nil {
+			d["Artifact"] = art
+			if _, err := coreUpdateTarget(); err != nil {
+				d["CoreBlocked"] = err.Error()
+			}
+		}
+	}
+	var notices []notice
+	if v := c.Query("plugins-updated"); v != "" {
+		notices = append(notices, notice{Type: "success", Message: template.HTML("Plugins updated: <strong>" + template.HTMLEscapeString(v) + "</strong>."), Dismissible: true})
+	}
+	if v := c.Query("error"); v != "" {
+		notices = append(notices, notice{Type: "error", Message: template.HTML(template.HTMLEscapeString(v))})
+	}
+	s.adminPage(c, "update-core", "Pursae Updates", "update-core-php", "admin/update-core", d, notices...)
 }
 
 // about is about.php: what is new in WordPress Go.

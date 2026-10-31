@@ -11,6 +11,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -18,17 +19,21 @@ import (
 	"wpgo/internal/plugins"
 )
 
-// The WordPress Go Hub is the api.wordpress.org of WordPress Go: it lists the plugin and theme
-// marketplace, announces core releases and counts the sites that run WordPress Go. The contract is
-// wpgo-admin/API.md. A site sends it its URL host and core version, nothing else, once a day
-// (wpgo_hub_ping, like WordPress' update checks), reads the catalog for Plugins › Add Plugin and
-// Appearance › Add Theme, and trusts the Hub's signing keys so published packages install.
+// Pursae Manager (formerly the Hub) is the api.wordpress.org of Pursae: it lists the plugin and theme
+// marketplace, announces core releases (with signed binaries the site can install itself, core_update.go),
+// checks license keys (license.go) and collects the sites' statistics. The contract is
+// pursae-manager/API.md. Every request carries the site's home URL and, when one is entered, its
+// license key (hubNewRequest); the answers may depend on the license, so the cached ones are keyed by it.
+// Once a day the site pings the Manager with its version and inventory and sends the events it queued
+// (hub_telemetry.go); statistics are always on.
 
 const (
 	hubCacheTTL   = 12 * time.Hour
 	hubMaxPackage = 64 << 20
-	hubUserAgent  = "Pursae/" + Version
 )
+
+// hubUserAgent is the User-Agent of every request to Pursae Manager.
+func hubUserAgent() string { return "Pursae/" + Version }
 
 type hubIndex struct {
 	Hub    string         `json:"hub"`
@@ -40,11 +45,13 @@ type hubIndex struct {
 }
 
 type hubCore struct {
-	Latest      string `json:"latest"`
-	Released    string `json:"released"`
-	DownloadURL string `json:"download_url"`
-	NotesURL    string `json:"notes_url"`
-	Notes       string `json:"notes"`
+	Latest      string         `json:"latest"`
+	Channel     string         `json:"channel"` // stable | beta (beta only reaches beta licenses)
+	Released    string         `json:"released"`
+	DownloadURL string         `json:"download_url"`
+	NotesURL    string         `json:"notes_url"`
+	Notes       string         `json:"notes"`
+	Artifacts   []coreArtifact `json:"artifacts"` // signed binaries built by the Manager (core_update.go)
 }
 
 type hubKey struct {
@@ -73,6 +80,8 @@ type hubItem struct {
 	SHA256        string   `json:"sha256"`
 	SignedBy      string   `json:"signed_by"`
 	DownloadURL   string   `json:"download_url"`
+	Access        string   `json:"access"`  // public | pro | private
+	Channel       string   `json:"channel"` // stable | beta, of the listed version
 }
 
 type hubList struct {
@@ -93,10 +102,64 @@ func (s *Server) hubBase() string {
 	return strings.TrimRight(u, "/")
 }
 
-var errHubOff = errors.New("the Pursae Hub is switched off (WPGO_HUB_URL)")
+var errHubOff = errors.New("Pursae Manager is switched off (WPGO_HUB_URL)")
 
 func (s *Server) hubClient() *http.Client {
 	return &http.Client{Timeout: 20 * time.Second}
+}
+
+// hubNewRequest builds every request to Pursae Manager (JSON documents, package and core downloads,
+// the logo, the ping and the events): the User-Agent, X-Pursae-Site (the site's home URL) and, when
+// a key is entered under Settings › License, X-Pursae-License. The site and license headers go only
+// to the Manager itself, never to a third-party URL (an absolute logo_url).
+func (s *Server) hubNewRequest(ctx context.Context, method, u string, body io.Reader) (*http.Request, error) {
+	req, err := http.NewRequestWithContext(ctx, method, u, body)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("User-Agent", hubUserAgent()+"; "+s.settings.String("home"))
+	if body != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
+	if base := s.hubBase(); base != "" && strings.HasPrefix(u, base+"/") {
+		if site := hubSiteURL(s.settings.String("home")); site != "" {
+			req.Header.Set("X-Pursae-Site", site)
+		}
+		if key := s.licenseKey(); key != "" {
+			req.Header.Set("X-Pursae-License", key)
+		}
+	}
+	return req, nil
+}
+
+// hubSiteURL normalises the home URL like the Manager does for pings: scheme://host[:port], the host
+// lower-cased, default ports, path, query and user info dropped.
+func hubSiteURL(home string) string {
+	u, err := url.Parse(strings.TrimSpace(home))
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
+		return ""
+	}
+	host, port := strings.ToLower(u.Hostname()), u.Port()
+	if (u.Scheme == "http" && port == "80") || (u.Scheme == "https" && port == "443") {
+		port = ""
+	}
+	if strings.Contains(host, ":") {
+		host = "[" + host + "]"
+	}
+	if port != "" {
+		host += ":" + port
+	}
+	return u.Scheme + "://" + host
+}
+
+// hubCacheKey is the transient key of a cached Manager answer. The answers depend on the license
+// (pro and private listings, beta versions and releases), so a site with a key caches them under a
+// key of its own; a new key never sees the answers given to the old one.
+func (s *Server) hubCacheKey(name string) string {
+	if key := s.licenseKey(); key != "" {
+		return name + "_" + licenseHash(key)
+	}
+	return name
 }
 
 // hubGet fetches a JSON document from the Hub.
@@ -105,11 +168,10 @@ func (s *Server) hubGet(ctx context.Context, path string, out any) error {
 	if base == "" {
 		return errHubOff
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, base+path, nil)
+	req, err := s.hubNewRequest(ctx, http.MethodGet, base+path, nil)
 	if err != nil {
 		return err
 	}
-	req.Header.Set("User-Agent", hubUserAgent+"; "+s.settings.String("home"))
 	req.Header.Set("Accept", "application/json")
 	resp, err := s.hubClient().Do(req)
 	if err != nil {
@@ -146,7 +208,7 @@ func (s *Server) hubCacheSet(ctx context.Context, key string, v any, ttl time.Du
 // hubIndexCached is the Hub index (latest core release, signing keys), cached for 12 hours.
 func (s *Server) hubIndexCached(ctx context.Context) (*hubIndex, error) {
 	var idx hubIndex
-	if s.hubCacheGet(ctx, "wpgo_hub_index", &idx) && idx.API > 0 {
+	if s.hubCacheGet(ctx, s.hubCacheKey("wpgo_hub_index"), &idx) && idx.API > 0 {
 		s.hubTrustKeys(idx.Keys)
 		return &idx, nil
 	}
@@ -156,7 +218,7 @@ func (s *Server) hubIndexCached(ctx context.Context) (*hubIndex, error) {
 // hubTrustCached trusts the keys of an already cached index without going to the network (start-up).
 func (s *Server) hubTrustCached(ctx context.Context) {
 	var idx hubIndex
-	if s.hubCacheGet(ctx, "wpgo_hub_index", &idx) {
+	if s.hubCacheGet(ctx, s.hubCacheKey("wpgo_hub_index"), &idx) {
 		s.hubTrustKeys(idx.Keys)
 	}
 }
@@ -166,7 +228,7 @@ func (s *Server) hubFetchIndex(ctx context.Context) (*hubIndex, error) {
 	if err := s.hubGet(ctx, "/api/v1/index", &idx); err != nil {
 		return nil, err
 	}
-	s.hubCacheSet(ctx, "wpgo_hub_index", idx, hubCacheTTL)
+	s.hubCacheSet(ctx, s.hubCacheKey("wpgo_hub_index"), idx, hubCacheTTL)
 	s.hubTrustKeys(idx.Keys)
 	s.hubSyncBrand(ctx, idx.Brand)
 	return &idx, nil
@@ -198,13 +260,14 @@ func (s *Server) hubTrustKeys(keys []hubKey) {
 // hubCatalog lists the Hub's plugins or themes (kind "plugins" | "themes"), cached for 12 hours.
 func (s *Server) hubCatalog(ctx context.Context, kind string) ([]hubItem, error) {
 	var list hubList
-	if s.hubCacheGet(ctx, "wpgo_hub_"+kind, &list) {
+	key := s.hubCacheKey("wpgo_hub_" + kind)
+	if s.hubCacheGet(ctx, key, &list) {
 		return list.Items, nil
 	}
 	if err := s.hubGet(ctx, "/api/v1/"+kind+"?per_page=100&sort=downloads", &list); err != nil {
 		return nil, err
 	}
-	s.hubCacheSet(ctx, "wpgo_hub_"+kind, list, hubCacheTTL)
+	s.hubCacheSet(ctx, key, list, hubCacheTTL)
 	return list.Items, nil
 }
 
@@ -246,16 +309,18 @@ func (s *Server) hubDownload(ctx context.Context, it *hubItem) ([]byte, error) {
 		// Only the Hub itself may serve packages: no third-party download URLs.
 		return nil, fmt.Errorf("hub: %s has no download on the Hub", it.Slug)
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
+	req, err := s.hubNewRequest(ctx, http.MethodGet, u, nil)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("User-Agent", hubUserAgent+"; "+s.settings.String("home"))
 	resp, err := s.hubClient().Do(req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode == http.StatusForbidden {
+		return nil, errors.New("hub: this package needs a license that includes it (Settings › License)")
+	}
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("hub: download: HTTP %d", resp.StatusCode)
 	}
@@ -286,41 +351,44 @@ func (s *Server) hubInstallPlugin(ctx context.Context, slug string) (*plugins.Ma
 	if err != nil {
 		return nil, err
 	}
-	return s.installPackage(ctx, data)
+	return s.installPackageFrom(ctx, data, pluginSourceHub, slug)
 }
 
-// hubPing tells the Hub this site exists (URL host and version only) and refreshes the cached index.
-// It is the daily wpgo_hub_check event; WordPress does the same against api.wordpress.org.
+// hubPing is the daily wpgo_hub_check event (WordPress does the same against api.wordpress.org): it
+// sends the Manager the site's version and inventory (hubPingBody), flushes the queued events and
+// refreshes the cached index.
 func (s *Server) hubPing(ctx context.Context) error {
 	base := s.hubBase()
-	if base == "" {
+	if base == "" || s.sandbox != nil {
 		return nil
 	}
-	if s.settings.Bool("wpgo_hub_ping") {
-		body, _ := json.Marshal(map[string]string{"url": s.settings.String("home"), "version": Version})
-		req, err := http.NewRequestWithContext(ctx, http.MethodPost, base+"/api/v1/sites/ping", bytes.NewReader(body))
-		if err != nil {
-			return err
-		}
-		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("User-Agent", hubUserAgent)
-		resp, err := s.hubClient().Do(req)
-		if err != nil {
-			return err
-		}
-		io.Copy(io.Discard, io.LimitReader(resp.Body, 1<<20)) //nolint:errcheck
-		resp.Body.Close()
-		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusTooManyRequests {
-			return fmt.Errorf("hub: ping: HTTP %d", resp.StatusCode)
-		}
+	body, _ := json.Marshal(s.hubPingBody(ctx))
+	req, err := s.hubNewRequest(ctx, http.MethodPost, base+"/api/v1/sites/ping", bytes.NewReader(body))
+	if err != nil {
+		return err
 	}
-	_, err := s.hubFetchIndex(ctx)
+	resp, err := s.hubClient().Do(req)
+	if err != nil {
+		return err
+	}
+	io.Copy(io.Discard, io.LimitReader(resp.Body, 1<<20)) //nolint:errcheck
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusTooManyRequests {
+		return fmt.Errorf("hub: ping: HTTP %d", resp.StatusCode)
+	}
+	s.hubFlushEvents(ctx)
+	_, err = s.hubFetchIndex(ctx)
 	return err
+}
+
+// hubDropCaches forgets every cached Manager answer (index, catalogs, under any license key).
+func (s *Server) hubDropCaches(ctx context.Context) {
+	_, _ = s.store.Pool.Exec(ctx, `DELETE FROM transients WHERE key LIKE 'wpgo\_hub\_%'`)
 }
 
 // hubRefresh drops the cached catalog and index (Updates › Check again).
 func (s *Server) hubRefresh(ctx context.Context) {
-	_, _ = s.store.Pool.Exec(ctx, `DELETE FROM transients WHERE key IN ('wpgo_hub_index', 'wpgo_hub_plugins', 'wpgo_hub_themes')`)
+	s.hubDropCaches(ctx)
 	if _, err := s.hubFetchIndex(ctx); err != nil && !errors.Is(err, errHubOff) {
 		slog.Warn("hub: refresh", "err", err)
 	}

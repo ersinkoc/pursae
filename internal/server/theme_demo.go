@@ -679,6 +679,14 @@ func (s *Server) importThemeDemo(ctx context.Context, uid int64, t *Theme) (*dem
 
 // importDemo imports a demo content set into theme t (its menus, widget areas and theme mods).
 func (s *Server) importDemo(ctx context.Context, uid int64, t *Theme, src *demoSource) (*demoReport, error) {
+	rep, err := s.importDemoRun(ctx, uid, t, src)
+	if err == nil {
+		s.hubEvent("demo_import", "theme", t.Slug, t.Version) // statistics (hub_telemetry.go)
+	}
+	return rep, err
+}
+
+func (s *Server) importDemoRun(ctx context.Context, uid int64, t *Theme, src *demoSource) (*demoReport, error) {
 	d := src.Demo
 	ctx, cancel := context.WithTimeout(ctx, demoTimeLimit)
 	defer cancel()

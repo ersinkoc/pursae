@@ -46,6 +46,7 @@
 			<div class="name column-name">
 				<h3>
 					{{if .Homepage}}<a href="{{.Homepage}}" target="_blank" rel="noopener">{{.Name}}</a>{{else}}{{.Name}}{{end}}
+					{{if eq .Access "pro"}}<span class="wpgo-badge wpgo-badge-pro" title="Needs a Pro license">Pro</span>{{else if eq .Access "private"}}<span class="wpgo-badge wpgo-badge-private" title="Granted to your license">Private</span>{{end}}{{if eq .Channel "beta"}}<span class="wpgo-badge wpgo-badge-beta" title="A beta version">Beta</span>{{end}}
 					{{if .IconURL}}<img src="{{.IconURL}}" class="plugin-icon" alt="" width="128" height="128">{{else}}<span class="plugin-icon wpgo-plugin-icon wpgo-plugin-icon-{{if .Demo}}demo{{else}}{{.IconColor}}{{end}}" aria-hidden="true"><span class="dashicons {{.Icon}}"></span></span>{{end}}
 				</h3>
 			</div>

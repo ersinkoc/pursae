@@ -161,6 +161,7 @@ func adminMenu(pending int, golementor, cache bool) []menuDef {
 			{slug: "options-media", title: "Media", cap: "manage_options"},
 			{slug: "options-permalink", title: "Permalinks", cap: "manage_options"},
 			{slug: "options-privacy", title: "Privacy", cap: "manage_privacy_options"},
+			{slug: "options-license", title: "License", cap: "manage_options"},
 		}},
 	}
 	if golementor && cache {
@@ -276,9 +277,11 @@ var screenStyles = map[string][]string{
 	"admin/user-new":             {"pages/users.css"},
 	"admin/user-delete":          {"pages/users.css"},
 	"admin/update-core":          {},
+	"admin/update-core-restart":  {},
 	"admin/about":                {},
 	"admin/tools":                {},
 	"admin/options-privacy":      {},
+	"admin/options-license":      {},
 	"admin/privacy-policy-guide": {},
 	"admin/theme-install":        {"wpgo/theme-install.css"},
 	"admin/theme-preview":        {},

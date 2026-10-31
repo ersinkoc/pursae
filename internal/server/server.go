@@ -28,8 +28,10 @@ import (
 	"wpgo/web"
 )
 
-// Version is shown in the admin footer and the generator meta tag.
-const Version = "0.1.0"
+// Version is shown in the admin footer and the generator meta tag, sent to Pursae Manager and compared
+// with its core releases. It is a variable so release builds set it:
+// go build -ldflags "-X wpgo/internal/server.Version=0.2.0" ./cmd/wpgo
+var Version = "0.1.0"
 
 type Server struct {
 	cfg      config.Config
@@ -66,6 +68,9 @@ type Server struct {
 
 	// lang holds the installed language packs (i18n.go).
 	lang *i18n.Manager
+
+	// mgr is the Pursae Manager client's state: the license answer and the queued events.
+	mgr managerState
 }
 
 // New builds the server of the site.
@@ -296,10 +301,13 @@ func (s *Server) routes() *gin.Engine {
 	admin.GET("/revision", s.revisionScreen)
 	admin.GET("/users", s.usersScreen)
 	admin.GET("/update-core", s.updateCore)
+	admin.POST("/update-core", s.updateCore) // Update Plugins, Update to version X (hub_updates.go, core_update.go)
 	admin.GET("/about", s.about)
 	admin.GET("/tools", s.tools)
 	admin.GET("/options-privacy", s.optionsPrivacy)
 	admin.POST("/options-privacy", s.optionsPrivacy)
+	admin.GET("/options-license", s.optionsLicense) // Settings › License (license.go)
+	admin.POST("/options-license", s.optionsLicense)
 	admin.GET("/theme-install", s.themeInstall)
 	admin.POST("/theme-install", s.themeInstall)
 	if s.sandbox == nil { // theme previews with demo content (theme_preview.go)

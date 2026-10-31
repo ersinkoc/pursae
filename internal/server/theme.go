@@ -285,6 +285,7 @@ func (s *Server) switchTheme(ctx context.Context, slug string) error {
 	s.configureCache() // preloads follow the theme; rebuilding also empties the cache
 	if old == nil || old.Slug != t.Slug {
 		s.asAudit(ctx, asEvent{Event: "theme_switched", Severity: "notice", Object: t.Name, Message: "Theme switched to " + t.Name + "."})
+		s.hubEvent("theme_activate", "theme", t.Slug, t.Version) // statistics (hub_telemetry.go)
 	}
 	return nil
 }
