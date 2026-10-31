@@ -58,7 +58,7 @@ ones; `HEAD` works wherever `GET` does and `PUT`/`PATCH` wherever `POST` does.
 | `/widget-types`, `/widget-types/{id}`, `/widget-types/{id}/encode`, `/widget-types/{id}/render` | GET, POST | |
 | `/menu-locations` | GET | |
 | `/block-renderer/{name}` | GET, POST | server-side rendering of dynamic blocks |
-| `/block-patterns/patterns`, `/block-patterns/categories` | GET | the core patterns |
+| `/block-patterns/patterns`, `/block-patterns/categories` | GET | core's patterns and the active theme's (Twenty Twenty-Five); users who can edit posts |
 | `/block-types`, `/block-directory/search`, `/pattern-directory/patterns`, `/wp_pattern_category` | GET | empty lists |
 | `/templates`, `/templates/lookup`, `/template-parts` | GET | empty (no site editor) |
 | `/global-styles/{id}`, `/global-styles/themes/{stylesheet}`, `/global-styles/themes/{stylesheet}/variations` | GET, POST | |

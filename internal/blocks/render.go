@@ -22,6 +22,13 @@ func RegisterDynamic(name string, fn RenderFunc) {
 	mu.Unlock()
 }
 
+// IsDynamic reports whether a server-side renderer is registered for a block name.
+func IsDynamic(name string) bool {
+	mu.RLock()
+	defer mu.RUnlock()
+	return dynamic[name] != nil
+}
+
 // Render is do_blocks(): freeform HTML is emitted as is, static blocks emit
 // their saved markup and dynamic blocks call their renderer.
 func Render(ctx context.Context, content string) string {

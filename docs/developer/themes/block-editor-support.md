@@ -65,6 +65,16 @@ Go, and the block library stylesheet is always loaded. Your theme styles the res
 
 ## Patterns and templates
 
+The editor's Patterns inserter lists core's block patterns and, for the bundled Twenty
+Twenty-Five, the theme's own patterns (`patterns/*.php` in WordPress) by category, from
+`/wp/v2/block-patterns/patterns` and `/wp/v2/block-patterns/categories`. The core has no PHP, so
+the pattern files are run by WordPress once, at build time (`tools/twentytwentyfive/build.php`
+writes `web/themes/twentytwentyfive/patterns.json`; `{{theme_uri}}` in it is the theme's URL). Old
+core categories are migrated as WordPress does (`query` → `posts`, `buttons` → `call-to-action`,
+`columns` → `text`). Patterns built from blocks that only a block theme's templates render (site
+title, navigation, query loop, comments, template parts) are returned with `inserter: false`: post
+content does not render those blocks.
+
 Block patterns and the site editor's block templates are not part of theme packages in this
-version: `/wp/v2/templates` returns an empty list and the editor shows the core patterns only.
-Classic PHP-style templates (this section) are the way to build a theme.
+version: `/wp/v2/templates` returns an empty list. Classic PHP-style templates (this section) are
+the way to build a theme.

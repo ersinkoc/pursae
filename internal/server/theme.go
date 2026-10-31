@@ -73,6 +73,11 @@ type Theme struct {
 	// Demos are a bundled theme's demo content sets (theme_demo_sets.go).
 	Demos []themeDemoSet
 
+	// Patterns is a JSON file under web/themes/<slug>/ with the theme's block patterns and pattern
+	// categories as /wp/v2/block-patterns returns them (theme_patterns.go); "{{theme_uri}}" in a
+	// pattern's content is the theme's URL.
+	Patterns string
+
 	// Package is set for a theme installed as a package (theme_package.go): its manifest and directory.
 	Package *themePackage
 

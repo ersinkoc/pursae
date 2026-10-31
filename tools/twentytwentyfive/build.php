@@ -8,6 +8,11 @@
  *                            container rules of the theme's templates, Twenty Twenty-Five's own
  *                            style.min.css and wpgo.css (WordPress Go additions).
  *   css/editor-global.min.css  the global styles for Gotenberg (font URLs absolute).
+ *   ../patterns.json         the theme's block patterns (patterns/*.php) and pattern categories, as
+ *                            WordPress' /wp/v2/block-patterns REST endpoints return them: the PHP of the
+ *                            pattern files is run here (translations, theme URLs), nested wp:pattern
+ *                            blocks are resolved, and the theme's URL becomes {{theme_uri}} (the port
+ *                            serves assets/ as the theme directory).
  *   css/styles/<slug>.min.css  per color variation (styles/colors/*.json): only the rules and custom
  *                            properties that differ from the default palette, and the section styles
  *                            (is-style-section-N) the variation changes, such as their button colors;
@@ -162,6 +167,33 @@ if ( $variation ) {
 	echo wp_get_global_stylesheet(), SECTIONS_MARKER, section_styles( $theme_dir );
 	exit;
 }
+
+// The theme's block patterns and pattern categories, as the REST API returns them to the editor.
+$patterns   = array();
+$controller = new WP_REST_Block_Patterns_Controller();
+$request    = new WP_REST_Request( 'GET', '/wp/v2/block-patterns/patterns' );
+foreach ( WP_Block_Patterns_Registry::get_instance()->get_all_registered() as $pattern ) {
+	if ( 0 !== strpos( $pattern['name'], 'twentytwentyfive/' ) ) {
+		continue;
+	}
+	$item            = $controller->prepare_item_for_response( $pattern, $request )->get_data();
+	$item['content'] = str_replace( 'http://example.test/wp-content/themes/twentytwentyfive/assets/', '{{theme_uri}}/', $item['content'] );
+	if ( false !== strpos( $item['content'], 'example.test' ) ) {
+		fwrite( STDERR, "pattern {$item['name']}: unexpected URL\n" );
+		exit( 1 );
+	}
+	$patterns[] = $item;
+}
+$categories = array();
+$controller = new WP_REST_Block_Pattern_Categories_Controller();
+$request    = new WP_REST_Request( 'GET', '/wp/v2/block-patterns/categories' );
+foreach ( WP_Block_Pattern_Categories_Registry::get_instance()->get_all_registered() as $category ) {
+	if ( 0 === strpos( $category['name'], 'twentytwentyfive_' ) ) {
+		$categories[] = $controller->prepare_item_for_response( $category, $request )->get_data();
+	}
+}
+file_put_contents( dirname( $out_dir ) . '/patterns.json', json_encode( array( 'categories' => $categories, 'patterns' => $patterns ), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) . "\n" );
+echo 'patterns.json ', count( $patterns ), ' patterns, ', count( $categories ), " categories\n";
 
 $block = function ( $name ) use ( $wp_dir ) {
 	return file_get_contents( $wp_dir . 'wp-includes/blocks/' . $name . '/style.min.css' );

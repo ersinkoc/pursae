@@ -74,6 +74,8 @@ func init() {
 			{Slug: "field-and-light", Name: "Field & Light", Description: "A landscape photography portfolio: a gallery homepage, prints and commissions, and a journal of stories behind the pictures.", Image: "demos/field-and-light.webp"},
 			{Slug: "slow-seasons", Name: "Slow Seasons", Description: "A slow-living magazine: home and garden, seasonal cooking, time outdoors and short essays, with a newsletter page.", Image: "demos/slow-seasons.webp"},
 		},
+		// The theme's block patterns (patterns/*.php), converted by tools/twentytwentyfive/build.php.
+		Patterns:           "patterns.json",
 		BlockStyles:        tt5BundledBlocks,
 		Settings:           tt5ThemeSettings(),
 		EditorGlobalStyles: "css/editor-global.min.css",
