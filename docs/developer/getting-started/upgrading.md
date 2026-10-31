@@ -25,6 +25,11 @@ X**. The site then:
 5. shows *Updated, restarting…*, records a `core_update` event and re-executes itself; the new
    version runs its migrations on start.
 
+The restart does not drop visitors: the listening socket is handed to the new binary
+(`WPGO_LISTEN_FD`), requests in flight finish first (up to 10 seconds), and connections that arrive
+meanwhile wait in the kernel's queue until the new version accepts them — a second or two, no
+error page, also behind a proxy such as Traefik in Dokploy.
+
 **Rollback.** The new binary confirms the update once it answers requests (within two minutes);
 until then `.update.json` stays *pending*. If it dies first and is started again — by Docker's
 `restart: unless-stopped` (set in `docker/compose.yaml`), systemd's `Restart=always` or any other

@@ -17,7 +17,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -60,7 +59,9 @@ var (
 		}
 		return filepath.EvalSymlinks(exe)
 	}
-	coreRestart = func(exe string) error { return syscall.Exec(exe, os.Args, os.Environ()) }
+	// The listening socket goes to the new binary and requests in flight finish first, so visitors
+	// wait a moment instead of getting an error (internal/coreupdate/listener.go).
+	coreRestart = func(exe string) error { return coreupdate.Restart(exe, 10*time.Second) }
 )
 
 // artifactFor is the release's binary for this platform.

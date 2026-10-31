@@ -117,9 +117,17 @@ func serve(ctx context.Context, cfg config.Config) error {
 	}()
 	go srv.RunScheduler(ctx)
 	go confirmUpdate(ctx, cfg.Addr)
-	log.Printf("listening on %s (site %s)", cfg.Addr, cfg.SiteURL)
-	if err := httpSrv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+	ln, err := coreupdate.Listen(cfg.Addr) // inherited across a core update's restart
+	if err != nil {
 		return err
+	}
+	coreupdate.Serving(ln, httpSrv.Shutdown)
+	log.Printf("listening on %s (site %s)", cfg.Addr, cfg.SiteURL)
+	if err := httpSrv.Serve(ln); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		return err
+	}
+	if coreupdate.Restarting() {
+		select {} // the core update execs the new binary; do not exit before it does
 	}
 	return nil
 }
