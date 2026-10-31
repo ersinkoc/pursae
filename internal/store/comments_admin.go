@@ -8,15 +8,21 @@ import (
 
 // CommentQuery filters the admin comments list (WP_Comment_Query as edit-comments.php uses it).
 type CommentQuery struct {
-	Status  string // all (pending+approved), pending, approved, spam, trash
-	PostID  int64
-	UserID  int64  // "mine": comments by this user
-	Type    string // comment, pings
-	Search  string
-	OrderBy string // date, author, post
-	Order   string
-	Page    int
-	PerPage int
+	Status string // all (pending+approved), pending, approved, spam, trash
+	PostID int64
+	// PostAuthorID limits the result to comments on posts written by this user (the comments screen for users who
+	// cannot moderate comments).
+	PostAuthorID int64
+	UserID       int64  // "mine": comments by this user
+	Type         string // comment, pings
+	Search       string
+	// SearchPublic limits Search to the comment text and the author's name. The REST API uses it for callers who
+	// may not see commenter e-mail addresses or IPs: matching on them would reveal them.
+	SearchPublic bool
+	OrderBy      string // date, author, post
+	Order        string
+	Page         int
+	PerPage      int
 }
 
 // QueryComments returns one page of comments and the total count.
@@ -33,6 +39,9 @@ func (s *Store) QueryComments(ctx context.Context, q CommentQuery) ([]*Comment, 
 	if q.PostID > 0 {
 		where = append(where, "c.post_id = "+arg(q.PostID))
 	}
+	if q.PostAuthorID > 0 {
+		where = append(where, "c.post_id IN (SELECT id FROM posts WHERE author_id = "+arg(q.PostAuthorID)+")")
+	}
 	if q.UserID > 0 {
 		where = append(where, "c.user_id = "+arg(q.UserID))
 	}
@@ -44,7 +53,11 @@ func (s *Store) QueryComments(ctx context.Context, q CommentQuery) ([]*Comment, 
 	}
 	if q.Search != "" {
 		p := arg("%" + strings.ToLower(q.Search) + "%")
-		where = append(where, "(lower(c.content) LIKE "+p+" OR lower(c.author_name) LIKE "+p+" OR lower(c.author_email) LIKE "+p+" OR c.author_ip LIKE "+p+")")
+		if q.SearchPublic {
+			where = append(where, "(lower(c.content) LIKE "+p+" OR lower(c.author_name) LIKE "+p+")")
+		} else {
+			where = append(where, "(lower(c.content) LIKE "+p+" OR lower(c.author_name) LIKE "+p+" OR lower(c.author_email) LIKE "+p+" OR c.author_ip LIKE "+p+")")
+		}
 	}
 	cond := strings.Join(where, " AND ")
 	var total int

@@ -1436,7 +1436,9 @@ func (s *Server) gooV3CustomerUpdate(c *gin.Context, id int64, b map[string]any)
 	if v, ok := b["password"]; ok && gooStr(v) != "" {
 		hash, err := auth.HashPassword(gooStr(v))
 		if err == nil {
-			_ = s.store.SetUserPassword(ctx, u.ID, hash)
+			if s.store.SetUserPassword(ctx, u.ID, hash) == nil {
+				s.endSessionsAfterPasswordChange(ctx, nil, u.ID) // the API caller is never the customer's own browser session
+			}
 		}
 	}
 	meta, aerr := s.gooV3ApplyCustomer(ctx, u, b)

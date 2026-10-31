@@ -503,6 +503,18 @@ func currentSession(c *gin.Context) *auth.Session {
 	return nil
 }
 
+// endSessionsAfterPasswordChange ends the sessions of the user whose password was just changed, so a stolen
+// session cookie does not survive it. The session that made the change (when it is the user's own) stays.
+func (s *Server) endSessionsAfterPasswordChange(ctx context.Context, c *gin.Context, userID int64) {
+	var keep int64
+	if c != nil {
+		if sess := currentSession(c); sess != nil && sess.UserID == userID {
+			keep = sess.ID
+		}
+	}
+	_ = s.auth.DestroyOthers(ctx, userID, keep)
+}
+
 // nonce is wp_create_nonce() for the current visitor.
 func (s *Server) nonce(c *gin.Context, action string) string {
 	var uid int64

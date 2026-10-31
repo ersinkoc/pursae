@@ -575,15 +575,19 @@ var asRESTVisitorRoutes = []string{"/oembed/", "/" + gontactNamespace + "/"}
 // adminsecRESTBlocked answers REST requests visitors may not make: user listing (enumeration) and,
 // when opted in, everything but the routes the front end needs.
 func (s *Server) adminsecRESTBlocked(c *gin.Context, route string, u *store.User) bool {
-	if u != nil || !s.adminsecOn() {
+	if u != nil {
 		return false
 	}
-	st := s.asLoad()
 	r := "/" + strings.Trim(route, "/")
-	if st.BlockEnumeration && (r == "/wp/v2/users" || strings.HasPrefix(r, "/wp/v2/users/")) {
+	reading := c.Request.Method == http.MethodGet || c.Request.Method == http.MethodHead
+	if reading && s.blockEnumeration() && (r == "/wp/v2/users" || strings.HasPrefix(r, "/wp/v2/users/")) {
 		restErr(c, http.StatusUnauthorized, "rest_user_cannot_view", "Sorry, you are not allowed to list users.")
 		return true
 	}
+	if !s.adminsecOn() {
+		return false
+	}
+	st := s.asLoad()
 	if !st.RESTVisitors {
 		return false
 	}
@@ -604,7 +608,7 @@ func (s *Server) adminsecRESTBlocked(c *gin.Context, route string, u *store.User
 
 // adminsecAuthorQuery hides ?author=N from visitors (user enumeration).
 func (s *Server) adminsecAuthorQuery(c *gin.Context) bool {
-	if !s.adminsecOn() || currentUser(c) != nil || !s.asLoad().BlockEnumeration {
+	if currentUser(c) != nil || !s.blockEnumeration() {
 		return false
 	}
 	if v := c.Query("author"); v != "" {
@@ -618,7 +622,17 @@ func (s *Server) adminsecAuthorQuery(c *gin.Context) bool {
 
 // asBlockAuthorSitemap leaves the users sitemap empty while enumeration is blocked.
 func (s *Server) asBlockAuthorSitemap() bool {
-	return s.adminsecOn() && s.asLoad().BlockEnumeration
+	return s.blockEnumeration()
+}
+
+// blockEnumeration reports whether visitors are kept from listing accounts (REST users, /?author=N, the users
+// sitemap). This is the core's own default, so a site is safe without enabling any plugin: WPGO_EXPOSE_USERS=1 turns
+// it off, and when AdminSecGo is active its "block enumeration" setting (on by default) decides instead.
+func (s *Server) blockEnumeration() bool {
+	if s.adminsecOn() {
+		return s.asLoad().BlockEnumeration
+	}
+	return !s.cfg.ExposeUsers
 }
 
 // --- recovery from the command line --------------------------------------------------------

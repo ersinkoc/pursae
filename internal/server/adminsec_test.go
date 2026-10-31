@@ -286,8 +286,8 @@ func TestAdminSecOffUnchanged(t *testing.T) {
 	if code, _, loc := get(t, anon, base+"/wp-admin/"); code != http.StatusFound || !strings.Contains(loc, "/wp-login?redirect_to=") {
 		t.Errorf("/wp-admin/ for visitors: %d %s", code, loc)
 	}
-	if _, body, _ := asLogin(t, anon, base, "/wp-login", "nobody", "x"); !strings.Contains(body, "is not registered on this site") {
-		t.Error("detailed error message changed while off")
+	if _, body, _ := asLogin(t, anon, base, "/wp-login", "nobody", "x"); !strings.Contains(body, "The username or password you entered is incorrect") || strings.Contains(body, "is not registered") {
+		t.Error("the core login message must not tell unknown accounts from wrong passwords, with or without AdminSecGo")
 	}
 	if code, _, loc := asLogin(t, anon, base, "/wp-login", "admin", "correct horse"); code != http.StatusFound || !strings.HasSuffix(loc, "/wp-admin/") {
 		t.Errorf("login with stored factors while off: %d %s", code, loc)

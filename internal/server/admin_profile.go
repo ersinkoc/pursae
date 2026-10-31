@@ -304,6 +304,7 @@ func (s *Server) saveUser(c *gin.Context, target *store.User) {
 	if pass1 != "" {
 		if hash, err := auth.HashPassword(pass1); err == nil {
 			if s.store.SetUserPassword(c, target.ID, hash) == nil {
+				s.endSessionsAfterPasswordChange(c, c, target.ID)
 				s.adminsecPasswordChanged(c, target)
 			}
 		}

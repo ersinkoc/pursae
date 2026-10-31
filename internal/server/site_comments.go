@@ -413,7 +413,8 @@ func (s *Server) commentPost(c *gin.Context) {
 	u := currentUser(c)
 	postID, _ := strconv.ParseInt(c.PostForm("comment_post_ID"), 10, 64)
 	p, err := s.store.GetPost(ctx, postID)
-	if err != nil || (p.Status != "publish" && p.Status != "private") {
+	if err != nil || (p.Status != "publish" && p.Status != "private") || (p.Status == "private" && !u.Can("read_post", p)) {
+		// A private post answers like a missing one to visitors who cannot read it.
 		s.commentDie(c, http.StatusNotFound, "Sorry, comments are closed for this item.")
 		return
 	}

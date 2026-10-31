@@ -102,10 +102,10 @@ func (s *Server) commentsScreen(c *gin.Context) {
 		}
 	}
 	if !u.Can("moderate_comments", nil) {
-		q.UserID = 0 // authors see comments on their own posts only; simplified: list all approved
-		if q.Status == "all" {
-			q.Status = "approved"
-		}
+		// Without moderation rights: only approved comments, only on the user's own posts.
+		q.UserID, q.PostAuthorID = 0, u.ID
+		q.Status = "approved"
+		d.Status = "all"
 	}
 	list, total, err := s.store.QueryComments(ctx, q)
 	if err != nil {
@@ -114,6 +114,9 @@ func (s *Server) commentsScreen(c *gin.Context) {
 	}
 	d.Total = total
 	d.Counts, _ = s.store.CommentCounts(ctx)
+	if !u.Can("moderate_comments", nil) {
+		d.Counts, _ = s.store.CommentCountsForPostAuthor(ctx, u.ID)
+	}
 	d.All = d.Counts["pending"] + d.Counts["approved"]
 	posts := map[int64]*store.Post{}
 	for i, cm := range list {

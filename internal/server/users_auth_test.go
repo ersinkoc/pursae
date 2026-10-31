@@ -725,8 +725,9 @@ func TestRESTCommentsUsersRevisions(t *testing.T) {
 	if code, e, _, _ := anon.do("GET", "/wp/v2/users?roles=author", nil); code != http.StatusUnauthorized || e["code"] != "rest_user_cannot_view" {
 		t.Errorf("anonymous roles filter: %d %v", code, e)
 	}
-	if code, _, pub, _ := anon.do("GET", "/wp/v2/users", nil); code != http.StatusOK || len(pub) != 1 { // only admin has published posts
-		t.Errorf("public user list: %d %d", code, len(pub))
+	// The core no longer lists accounts to visitors (WPGO_EXPOSE_USERS=1 brings the public list back).
+	if code, e, _, _ := anon.do("GET", "/wp/v2/users", nil); code != http.StatusUnauthorized || e["code"] != "rest_user_cannot_view" {
+		t.Errorf("anonymous user list: %d %v", code, e)
 	}
 	if code, e, _, _ := anon.do("GET", "/wp/v2/users/"+uid, nil); code != http.StatusUnauthorized || e["code"] != "rest_user_cannot_view" {
 		t.Errorf("public read of a user without posts: %d %v", code, e)

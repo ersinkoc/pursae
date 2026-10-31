@@ -881,6 +881,7 @@ func (api *restAPI) saveUser(c *gin.Context, r *restRequest, u *store.User) {
 		}
 		if hash, err := auth.HashPassword(v); err == nil {
 			if s.store.SetUserPassword(c, u.ID, hash) == nil {
+				s.endSessionsAfterPasswordChange(c, c, u.ID)
 				s.adminsecPasswordChanged(c, u)
 			}
 		}
@@ -1132,7 +1133,7 @@ func (api *restAPI) registerMedia() {
 	api.register("wp/v2", `/wp/v2/media/(?P<id>[\d]+)`, map[string]restHandler{
 		http.MethodGet: func(c *gin.Context, r *restRequest) {
 			a, err := api.s.store.GetAttachment(c, r.ID())
-			if err != nil {
+			if err != nil || !api.mediaReadable(c, a) {
 				restErr(c, http.StatusNotFound, "rest_post_invalid_id", "Invalid post ID.")
 				return
 			}
@@ -1142,6 +1143,10 @@ func (api *restAPI) registerMedia() {
 		http.MethodDelete: api.deleteMedia,
 	}, nil)
 	api.register("wp/v2", `/wp/v2/media/(?P<id>[\d]+)/post-process`, map[string]restHandler{http.MethodPost: func(c *gin.Context, r *restRequest) {
+		if !restCurrent(c).Can("upload_files", nil) {
+			forbidden(c, "rest_cannot_edit", "Sorry, you are not allowed to edit this attachment.")
+			return
+		}
 		a, err := api.s.store.GetAttachment(c, r.ID())
 		if err != nil {
 			restErr(c, http.StatusNotFound, "rest_post_invalid_id", "Invalid post ID.")
@@ -1151,10 +1156,23 @@ func (api *restAPI) registerMedia() {
 	}}, nil)
 }
 
+// mediaReadable reports whether the caller may read the attachment: whoever can upload files may, others only when
+// it is unattached or belongs to a published post without a password (what the public site shows anyway).
+func (api *restAPI) mediaReadable(c *gin.Context, a *store.Attachment) bool {
+	if restCurrent(c).Can("upload_files", nil) || a.PostID == 0 {
+		return true
+	}
+	p, err := api.s.store.GetPost(c, a.PostID)
+	return err == nil && p.Status == "publish" && p.Password == ""
+}
+
 func (api *restAPI) listMedia(c *gin.Context, r *restRequest) {
 	s := api.s
 	page, per := pageArgs(c)
 	q := store.AttachmentQuery{Search: c.Query("search"), Page: page, PerPage: per, OrderBy: c.DefaultQuery("orderby", "date"), Order: c.DefaultQuery("order", "desc")}
+	if !restCurrent(c).Can("upload_files", nil) {
+		q.PublicParentsOnly = true // visitors and users who cannot upload see only media of the public site
+	}
 	if mt := c.Query("media_type"); mt != "" {
 		if mt == "application" || mt == "text" || mt == "image" || mt == "audio" || mt == "video" {
 			q.MimePrefix = []string{mt}

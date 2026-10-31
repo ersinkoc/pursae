@@ -158,13 +158,16 @@ type AttachmentQuery struct {
 	Year       int
 	Month      int
 	PostID     *int64 // uploaded to; 0 = unattached
-	AuthorID   int64
-	IDs        []int64
-	Exclude    []int64
-	OrderBy    string // date, title, menuOrder, id
-	Order      string
-	Page       int
-	PerPage    int
+	// PublicParentsOnly keeps unattached files and files of published posts without a password: what a visitor
+	// could reach through the site anyway.
+	PublicParentsOnly bool
+	AuthorID          int64
+	IDs               []int64
+	Exclude           []int64
+	OrderBy           string // date, title, menuOrder, id
+	Order             string
+	Page              int
+	PerPage           int
 }
 
 func (s *Store) QueryAttachments(ctx context.Context, q AttachmentQuery) ([]*Attachment, int, error) {
@@ -201,6 +204,9 @@ func (s *Store) QueryAttachments(ctx context.Context, q AttachmentQuery) ([]*Att
 	}
 	if q.AuthorID > 0 {
 		conds = append(conds, "uploader_id = "+add(q.AuthorID))
+	}
+	if q.PublicParentsOnly {
+		conds = append(conds, "(post_id IS NULL OR post_id IN (SELECT id FROM posts WHERE status = 'publish' AND coalesce(password, '') = ''))")
 	}
 	if len(q.IDs) > 0 {
 		conds = append(conds, "id = ANY("+add(q.IDs)+")")

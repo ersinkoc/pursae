@@ -213,6 +213,11 @@ type PostQuery struct {
 	Loc         *time.Location // site time zone for year/month/day filters
 	Format      string         // post format slug (edit.php?post_format=aside)
 	Sticky      *bool          // only sticky (true) or only non-sticky (false) posts (edit.php?show_sticky=1)
+	// ReadableBy limits the result to what that user may read without a capability of their own: published
+	// posts (and private ones when ReadablePrivate) of anybody, and their own posts of any status. This is
+	// WordPress' perm=readable, used by the list screens for users who cannot edit others' posts.
+	ReadableBy      int64
+	ReadablePrivate bool
 }
 
 func (q *PostQuery) where(args *[]any) string {
@@ -223,6 +228,13 @@ func (q *PostQuery) where(args *[]any) string {
 	var conds []string
 	if len(q.Types) > 0 {
 		conds = append(conds, "type = ANY("+add(q.Types)+")")
+	}
+	if q.ReadableBy != 0 {
+		open := "status = 'publish'"
+		if q.ReadablePrivate {
+			open = "status IN ('publish', 'private')"
+		}
+		conds = append(conds, "("+open+" OR author_id = "+add(q.ReadableBy)+")")
 	}
 	if len(q.Statuses) > 0 {
 		conds = append(conds, "status = ANY("+add(q.Statuses)+")")
@@ -322,6 +334,31 @@ func (s *Store) QueryPosts(ctx context.Context, q PostQuery) ([]*Post, int, erro
 }
 
 // StatusCounts returns the number of posts per status for a type, skipping auto-drafts.
+// StatusCountsReadable counts like StatusCounts, but only the posts viewer may read without a capability of their
+// own: published (and private when readablePrivate) posts of anybody and the viewer's own posts of any status.
+func (s *Store) StatusCountsReadable(ctx context.Context, typ string, viewerID int64, readablePrivate bool) (map[string]int, error) {
+	open := "status = 'publish'"
+	if readablePrivate {
+		open = "status IN ('publish', 'private')"
+	}
+	rows, err := s.Pool.Query(ctx, `SELECT status, count(*) FROM posts WHERE type = $1 AND status <> 'auto-draft'
+		AND (`+open+` OR author_id = $2) GROUP BY status`, typ, viewerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := map[string]int{}
+	for rows.Next() {
+		var st string
+		var n int
+		if err := rows.Scan(&st, &n); err != nil {
+			return nil, err
+		}
+		out[st] = n
+	}
+	return out, rows.Err()
+}
+
 func (s *Store) StatusCounts(ctx context.Context, typ string, authorID int64) (map[string]int, error) {
 	q := `SELECT status, count(*) FROM posts WHERE type = $1 AND status <> 'auto-draft'`
 	args := []any{typ}

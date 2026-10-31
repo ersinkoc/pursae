@@ -277,6 +277,13 @@ func (s *Server) seogoHead(c *gin.Context, q *siteQuery, lb *links.Builder) stri
 	}
 	sc := s.seogoCtxFor(c.Request.Context(), q)
 	sc.lb = lb
+	if p := sc.Post; p != nil && p.Password != "" && !currentUser(c).Can("edit_post", p) {
+		// The head is public and cacheable: nothing in it (schema, image, reading time) may come from the body
+		// of a password-protected post.
+		cp := *p
+		cp.Content, cp.Excerpt = "", ""
+		sc.Post, sc.Pages = &cp, 1
+	}
 	return s.seogoHeadFor(sc, q.Preview)
 }
 

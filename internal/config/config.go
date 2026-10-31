@@ -17,6 +17,9 @@ type Config struct {
 	// TrustedProxies lists the proxies (IPs or CIDRs, comma separated) whose X-Forwarded-For / X-Real-IP is believed
 	// when deriving the visitor address. Empty: loopback and private ranges; "none": no proxy is trusted.
 	TrustedProxies string
+	// ExposeUsers (WPGO_EXPOSE_USERS=1) lets visitors list accounts (REST users, /?author=N, the users sitemap). Off by
+	// default: those routes disclose account names.
+	ExposeUsers bool
 	// LangDir holds the downloaded language packs (WP_LANG_DIR); default: "languages" next to the uploads.
 	LangDir         string
 	TranslationsAPI string // the WordPress.org translation API; default https://api.wordpress.org/translations
@@ -37,6 +40,7 @@ func Load() Config {
 		WebDir:          os.Getenv("WPGO_WEB_DIR"),
 		HubURL:          strings.TrimRight(env("WPGO_HUB_URL", "https://hub.wordpressgo.dev"), "/"),
 		TrustedProxies:  os.Getenv("WPGO_TRUSTED_PROXIES"),
+		ExposeUsers:     os.Getenv("WPGO_EXPOSE_USERS") == "1",
 		LangDir:         os.Getenv("WPGO_LANG_DIR"),
 		TranslationsAPI: os.Getenv("WPGO_TRANSLATIONS_API"),
 		SMTPHost:        os.Getenv("WPGO_SMTP_HOST"),

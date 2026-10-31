@@ -564,7 +564,9 @@ func (s *Server) gooSaveAccountPost(c *gin.Context) {
 	}
 	if changePass {
 		if hash, err := auth.HashPassword(p1); err == nil {
-			_ = s.store.SetUserPassword(ctx, u.ID, hash)
+			if s.store.SetUserPassword(ctx, u.ID, hash) == nil {
+				s.endSessionsAfterPasswordChange(ctx, c, u.ID)
+			}
 		}
 	}
 	s.gooAddNotice(c, "success", "Account details changed successfully.")

@@ -358,8 +358,8 @@ func max1(v int) int {
 // adminsecLoginError is the message for a wrong username or password: WordPress' detailed one,
 // or one generic sentence that does not tell which part was wrong.
 func (s *Server) adminsecGenericError() (template.HTML, bool) {
-	if !s.adminsecOn() || !s.asLoad().GenericErrors {
-		return "", false
+	if s.adminsecOn() && !s.asLoad().GenericErrors {
+		return "", false // AdminSecGo active with generic errors switched off by the administrator
 	}
 	return template.HTML(`<strong>Error:</strong> The username or password you entered is incorrect. <a href="` + s.loginPath() + `?action=lostpassword">Lost your password?</a>`), true
 }

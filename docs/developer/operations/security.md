@@ -42,11 +42,13 @@ section: operations
 7. Back up the database and the data directories ([backups](backups.md)).
 8. Review plugin permissions on activation; grant only what a plugin needs. A plugin that keeps
    failing is disabled automatically after five consecutive failures.
-9. Activate **AdminSecGo** (Plugins › Installed Plugins; see [built-in plugins](../built-in-plugins/adminsecgo.md)).
-   Like WordPress, the core answers `/?author=1` with a redirect to the author page and lists authors at
-   `/wp-json/wp/v2/users`, which hands attackers usernames to guess passwords for. AdminSecGo blocks both
-   (its "block enumeration" setting is on by default), and adds two-step login, a custom login URL and an
-   activity log.
+9. The core already keeps visitors from listing accounts, without any plugin: `/?author=N` answers 404, `/wp/v2/users` needs a
+   login, the users sitemap is empty and the login form gives the same message for an unknown account and a wrong password.
+   Set `WPGO_EXPOSE_USERS=1` only if you need the public author list (a headless front end, say). Author archive pages
+   (`/author/<nicename>`) stay public for authors with published posts and the slug comes from the account's login name, so
+   set a *display name* and nickname that differ from the login for every account that publishes. **AdminSecGo** (Plugins ›
+   Installed Plugins; [built-in plugins](../built-in-plugins/adminsecgo.md)) adds two-step login, a custom login URL and
+   an activity log on top, and can relax these defaults.
 10. Keep the core up to date ([upgrading](../getting-started/upgrading.md)) and rebuild the images
     regularly: the Docker build uses the latest `golang:1.27` image, and `govulncheck ./...` should stay clean.
 

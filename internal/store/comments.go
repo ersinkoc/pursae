@@ -183,7 +183,20 @@ func (s *Store) LastCommentAt(ctx context.Context, ip, email string, userID int6
 }
 
 func (s *Store) CommentCounts(ctx context.Context) (map[string]int, error) {
-	rows, err := s.Pool.Query(ctx, `SELECT status, count(*) FROM comments GROUP BY status`)
+	return s.commentCounts(ctx, 0)
+}
+
+// CommentCountsForPostAuthor counts only the comments on posts written by authorID.
+func (s *Store) CommentCountsForPostAuthor(ctx context.Context, authorID int64) (map[string]int, error) {
+	return s.commentCounts(ctx, authorID)
+}
+
+func (s *Store) commentCounts(ctx context.Context, postAuthorID int64) (map[string]int, error) {
+	q, args := `SELECT status, count(*) FROM comments GROUP BY status`, []any{}
+	if postAuthorID > 0 {
+		q, args = `SELECT status, count(*) FROM comments WHERE post_id IN (SELECT id FROM posts WHERE author_id = $1) GROUP BY status`, []any{postAuthorID}
+	}
+	rows, err := s.Pool.Query(ctx, q, args...)
 	if err != nil {
 		return nil, err
 	}

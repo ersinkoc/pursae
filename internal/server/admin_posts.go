@@ -233,6 +233,12 @@ func (s *Server) postsList(c *gin.Context) {
 	if !u.Can("read_private_"+typ+"s", nil) && status == "all" {
 		q.Statuses = []string{"publish", "future", "draft", "pending"}
 	}
+	// Without edit_others_posts the list shows what the user may read (published posts, their own of any status):
+	// other users' drafts, pending and trashed posts and their post passwords stay hidden.
+	othersVisible := u.Can("edit_others_"+typ+"s", nil)
+	if !othersVisible {
+		q.ReadableBy, q.ReadablePrivate = u.ID, u.Can("read_private_"+typ+"s", nil)
+	}
 	if showSticky {
 		yes := true
 		q.Sticky = &yes
@@ -278,6 +284,9 @@ func (s *Server) postsList(c *gin.Context) {
 		Hidden: s.hiddenColumns(u, "edit-"+typ), Mode: mode, Format: q.Format, Sticky: showSticky}
 
 	counts, _ := s.store.StatusCounts(ctx, typ, 0)
+	if !othersVisible {
+		counts, _ = s.store.StatusCountsReadable(ctx, typ, u.ID, q.ReadablePrivate)
+	}
 	all := counts["publish"] + counts["future"] + counts["draft"] + counts["pending"] + counts["private"]
 	base := "/wp-admin/edit"
 	if typ == "page" {
@@ -416,6 +425,9 @@ func (s *Server) postRows(c *gin.Context, d *postsListData, posts []*store.Post,
 			r.Excerpt = wp.TrimWords(template.HTMLEscapeString(wp.StripTags(defaultStr(p.Excerpt, p.Content))), 55, "&hellip;")
 		}
 		r.Inline = s.inlineDataFor(p, cats[p.ID], tags[p.ID])
+		if !r.CanEdit {
+			r.Inline.Password = "" // the post password is for people who can edit the post
+		}
 		switch p.Status {
 		case "draft":
 			r.States = append(r.States, "Draft")

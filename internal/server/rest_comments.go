@@ -142,7 +142,7 @@ func (api *restAPI) listComments(c *gin.Context, r *restRequest) {
 		}
 	}
 	page, per := pageArgs(c)
-	q := store.CommentQuery{Search: c.Query("search"), Order: c.DefaultQuery("order", "desc"), OrderBy: c.DefaultQuery("orderby", "date_gmt"), PerPage: 100000}
+	q := store.CommentQuery{Search: c.Query("search"), SearchPublic: !canModerate(u), Order: c.DefaultQuery("order", "desc"), OrderBy: c.DefaultQuery("orderby", "date_gmt"), PerPage: 100000}
 	switch status {
 	case "approve", "approved":
 		q.Status = "approved"
@@ -209,8 +209,8 @@ func (api *restAPI) listComments(c *gin.Context, r *restRequest) {
 		if t := c.Query("type"); t != "" && t != cm.Type {
 			continue
 		}
-		if len(postIDs) == 0 && u == nil {
-			// Visitors only see comments of posts they may read.
+		if len(postIDs) == 0 && !canModerate(u) {
+			// Everybody who cannot moderate sees only comments of posts they may read.
 			if p, err := s.store.GetPost(c, cm.PostID); err != nil || !api.postReadableWithPassword(c, p, "") {
 				continue
 			}
@@ -444,6 +444,11 @@ func (api *restAPI) updateComment(c *gin.Context, r *restRequest) {
 		np, err := s.store.GetPost(c, pid)
 		if err != nil {
 			restErr(c, http.StatusForbidden, "rest_comment_invalid_post_id", "Invalid post ID.")
+			return
+		}
+		if !canModerate(u) && (!u.Can("edit_post", np) || np.CommentStatus != "open") {
+			// Without moderation rights a comment may only move to a post the user can edit and that takes comments.
+			forbidden(c, "rest_cannot_edit", "Sorry, you are not allowed to move this comment to that post.")
 			return
 		}
 		cm.PostID = np.ID
