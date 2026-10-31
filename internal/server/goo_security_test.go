@@ -360,3 +360,45 @@ func TestGooGiftCardCodesNotShownByEmailMatch(t *testing.T) {
 		t.Errorf("mask %q", m)
 	}
 }
+
+// A failed order can still be paid (Pay for order) with its gift card discount, so failing it must not
+// credit the card back: that let one balance pay for the order and then be spent again. Cancelling does.
+func TestGooGiftCardKeptOnFailedOrder(t *testing.T) {
+	_, _, srv := gooSite(t)
+	ctx := context.Background()
+	gxTestGateway(t, srv)
+	if err := srv.gooSetExtension(ctx, gcKey, true); err != nil {
+		t.Fatal(err)
+	}
+	lamp := gooMakeSimple(t, srv, "Lamp", 150, func(p *gooProduct) { p.Virtual = true })
+	card := &gcCard{Initial: 100, Recipient: "r@example.test", Sender: "Shop"}
+	if err := srv.gcCreate(ctx, card, 1, "test"); err != nil {
+		t.Fatal(err)
+	}
+	c := gooTestCtx()
+	cart := srv.gooCartFor(c)
+	cart.sess.Data.Customer.Billing = map[string]string{"country": "US", "state": "CA", "postcode": "90210", "email": "buyer@example.test"}
+	if _, err := cart.Add(ctx, lamp.ID, 1, 0, nil, nil, nil); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := srv.gcApply(c, card.Code); err != nil {
+		t.Fatal(err)
+	}
+	o, errs := gxCheckout(t, srv, c, "goo_test")
+	if len(errs) > 0 || o == nil {
+		t.Fatalf("checkout: %v", errs)
+	}
+	if err := srv.gooSetStatus(ctx, o, "failed", "Payment declined.", ""); err != nil {
+		t.Fatal(err)
+	}
+	if g, _ := srv.gcGet(ctx, card.ID); g.Balance != 0 {
+		t.Fatalf("card credited back on a failed order that can still be paid: %v", g.Balance)
+	}
+	o, _ = srv.gooGetOrder(ctx, o.ID)
+	if err := srv.gooSetStatus(ctx, o, "cancelled", "", ""); err != nil {
+		t.Fatal(err)
+	}
+	if g, _ := srv.gcGet(ctx, card.ID); g.Balance != 100 {
+		t.Errorf("card after the failed order was cancelled: %v", g.Balance)
+	}
+}

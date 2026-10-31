@@ -280,8 +280,9 @@ func (s *Server) gptsAward(ctx context.Context, o *gooOrder) {
 	}
 }
 
-// gptsReverse takes back an order's earned points and returns its redeemed ones (cancelled / refunded).
-func (s *Server) gptsReverse(ctx context.Context, o *gooOrder) {
+// gptsReverse takes back an order's earned points and, with refundRedeemed, returns its redeemed ones
+// (cancelled / refunded; a failed order keeps them, see the order_status_changed hook).
+func (s *Server) gptsReverse(ctx context.Context, o *gooOrder, refundRedeemed bool) {
 	if o.CustomerID == 0 {
 		return
 	}
@@ -292,7 +293,7 @@ func (s *Server) gptsReverse(ctx context.Context, o *gooOrder) {
 		_ = s.gooAddOrderNote(ctx, o, fmt.Sprintf("%d %s removed.", earned, s.gptsLabel(earned)), false, "")
 		changed = true
 	}
-	if red := gxaInt(o.Meta, "_wc_points_redeemed"); red > 0 && o.Meta["_wc_points_logged_redemption"] == true && o.Meta["_wc_points_redeem_refunded"] == nil {
+	if red := gxaInt(o.Meta, "_wc_points_redeemed"); refundRedeemed && red > 0 && o.Meta["_wc_points_logged_redemption"] == true && o.Meta["_wc_points_redeem_refunded"] == nil {
 		_ = s.gptsLog(ctx, o.CustomerID, red, "order-refunded", o.ID, "")
 		o.Meta["_wc_points_redeem_refunded"] = true
 		_ = s.gooAddOrderNote(ctx, o, fmt.Sprintf("%d %s refunded to the customer.", red, s.gptsLabel(red)), false, "")
@@ -453,8 +454,11 @@ func init() {
 		switch {
 		case containsStr(gooPaidStatuses, ch.To) && containsStr(gooPaidStatuses, o.Status):
 			s.gptsAward(ctx, o)
-		case ch.To == "cancelled" || ch.To == "refunded" || ch.To == "failed":
-			s.gptsReverse(ctx, o)
+		case ch.To == "cancelled" || ch.To == "refunded":
+			s.gptsReverse(ctx, o, true)
+		case ch.To == "failed":
+			// Redeemed points stay spent: the order can still be paid (Pay for order) with their discount.
+			s.gptsReverse(ctx, o, false)
 		}
 	})
 	gooOn("customer_created", 50, func(s *Server, ctx context.Context, arg any) {

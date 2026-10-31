@@ -548,7 +548,9 @@ func (s *Server) gcOrderCreated(ctx context.Context, o *gooOrder) {
 }
 
 // gcOrderStatus issues the cards of a paid order and credits back the cards that paid for an order
-// that was cancelled, failed or refunded (what partial refunds have not credited back already).
+// that was cancelled or refunded (what partial refunds have not credited back already). A failed order
+// keeps its debit: it can still be paid from Pay for order with the gift card discount, so crediting
+// the card back there let one balance pay for the order and then be spent again.
 func (s *Server) gcOrderStatus(ctx context.Context, ch *gooStatusChange) {
 	if !s.gooExtOn(gcKey) {
 		return
@@ -557,7 +559,7 @@ func (s *Server) gcOrderStatus(ctx context.Context, ch *gooStatusChange) {
 	switch ch.To {
 	case "processing", "completed":
 		s.gcIssue(ctx, o)
-	case "cancelled", "refunded", "failed":
+	case "cancelled", "refunded":
 		outstanding, ids := s.gcOutstandingRefx(ctx, o.ID)
 		type due struct {
 			id  int64
