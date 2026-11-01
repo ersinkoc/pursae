@@ -2122,7 +2122,7 @@
  "Purge WPGo Cache": "Garbitu WPGo Cache",
  "Purge by URL": "Garbitu URLaren arabera",
  "Purge or warm the WPGo Cache.": "Garbitu edo berotu WPGo Cache.",
- "Purge the CDN with every automatic purge of Pursae CDN, and purge the URLs of deleted offloaded files": "Garbitu CDNa GoCDNren garbiketa automatiko bakoitzarekin, eta garbitu ezabatutako fitxategi deskargatuen URLak",
+ "Purge the CDN with every automatic purge of Pursae CDN, and purge the URLs of deleted offloaded files": "Garbitu CDNa Pursae CDNren garbiketa automatiko bakoitzarekin, eta garbitu ezabatutako fitxategi deskargatuen URLak",
  "Purge the site's Cloudflare zone from here": "Garbitu gunearen Cloudflare zona hemendik",
  "Purpose": "Helburua",
  "Put Tag Manager in Necessary to use Consent Mode's advanced mode: it then always loads and its tags follow the consent signals Pursae Cookie sends.": "Jarri Tag Manager Beharrezkoak atalean Consent Mode-ren modu aurreratua erabiltzeko: orduan beti kargatzen da eta bere etiketek Pursae Cookie-k bidaltzen dituen baimen-seinaleak jarraitzen dituzte.",
