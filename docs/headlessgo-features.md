@@ -137,6 +137,7 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 |---|---|
 | Events `entry.create`, `entry.update`, `entry.publish`, `entry.unpublish`, `entry.delete`, and `schema.update` (setting) | ✓ |
 | Per webhook: name, URL, events, custom headers (reserved ones refused), signing secret, enabled | ✓ |
+| Deliveries go to public addresses only: the address is checked when the connection is made (after DNS resolution), so loopback, private, link-local (cloud metadata) and carrier-grade NAT addresses fail with an error; redirects are not followed | ✓ |
 | Payload `{event, createdAt, model, uid, entry}` (public scalar attributes; private fields never sent) | ✓ |
 | `X-HeadlessGo-Signature: sha256=<hex HMAC-SHA256 of the body>`, `X-HeadlessGo-Event`, `X-HeadlessGo-Delivery` | ✓ |
 | Durable delivery queue (`hg_webhook_queue`): the first attempt starts at once in the background; a network error or a non-2xx answer is retried with an exponential backoff (10 s, 40 s, 160 s, 640 s…, at most 6 h) up to the "Attempts per delivery" setting (5 by default, 1–10), then the delivery is failed. Short backoffs are retried in-process; the `headlessgo_tick` job delivers whatever is due, so retries survive restarts (rows claimed with `FOR UPDATE SKIP LOCKED`; rows left running by a crashed instance return after 5 minutes). Finished rows are removed after a day | ✓ |

@@ -11,9 +11,12 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"strings"
 	"sync"
+	"sync/atomic"
+	"syscall"
 	"time"
 	"unicode/utf8"
 
@@ -61,7 +64,29 @@ func hgWebhookBackoff(n int) time.Duration {
 	return d
 }
 
-var hgWebhookClient = &http.Client{Timeout: 10 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+// hgWebhookClient delivers webhooks to public addresses only, like wp_safe_remote_request and the
+// core's feed and plugin fetchers: the address is checked when the connection is made (after DNS
+// resolution, so a host name pointing at 127.0.0.1 is refused too), and redirects are not
+// followed. A delivery URL cannot reach the server's own services, the private network or a
+// cloud metadata endpoint — the log shows the start of the answer, so that would be readable.
+var hgWebhookClient = &http.Client{
+	Timeout: 10 * time.Second,
+	Transport: &http.Transport{TLSHandshakeTimeout: 10 * time.Second, DialContext: (&net.Dialer{Timeout: 10 * time.Second,
+		Control: func(_, address string, _ syscall.RawConn) error {
+			host, _, err := net.SplitHostPort(address)
+			if err != nil {
+				return err
+			}
+			if !hgWebhookAllowPrivate.Load() && !publicIP(net.ParseIP(host)) {
+				return errors.New("the webhook URL points at a private network address")
+			}
+			return nil
+		}}).DialContext},
+	CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
+}
+
+// hgWebhookAllowPrivate lets tests deliver to httptest servers on the loopback address.
+var hgWebhookAllowPrivate atomic.Bool
 
 // hgWebhookWG tracks in-process deliveries and pending in-process retries (tests wait on it).
 var hgWebhookWG sync.WaitGroup

@@ -4,7 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"net/http/httptest"
+	"net/url"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -163,5 +166,32 @@ func TestHeadlessGoPreviewTokenScope(t *testing.T) {
 	resp.Body.Close()
 	if raw, _ := json.Marshal(out); strings.Contains(string(raw), "Brouillon") || out["errors"] == nil {
 		t.Errorf("GraphQL preview in another locale: %s", raw)
+	}
+}
+
+// Webhooks are delivered to public addresses only: the address is checked when the connection
+// is made (after DNS resolution), so a webhook cannot read the server's own services.
+func TestHeadlessGoWebhookPublicOnly(t *testing.T) {
+	_, _, srv := hgSite(t)
+	ctx := context.Background()
+	var hits atomic.Int32
+	inside := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits.Add(1)
+		_, _ = w.Write([]byte("internal-secret-body"))
+	}))
+	defer inside.Close()
+	u, _ := url.Parse(inside.URL)
+	for _, target := range []string{inside.URL + "/x", "http://localhost:" + u.Port() + "/x"} {
+		w := &hgWebhook{Name: "Inside", URL: target, Events: []string{"entry.create"}, Enabled: true}
+		if err := srv.hgSaveWebhook(ctx, w); err != nil {
+			t.Fatal(err)
+		}
+		res := srv.hgTestWebhook(ctx, w)
+		if res.Success || res.StatusCode != 0 || strings.Contains(res.Response, "internal-secret") || res.Error == "" {
+			t.Errorf("webhook to %s: %+v", target, res)
+		}
+	}
+	if hits.Load() != 0 {
+		t.Errorf("the loopback server was reached %d times", hits.Load())
 	}
 }

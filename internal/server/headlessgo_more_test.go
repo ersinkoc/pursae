@@ -627,6 +627,8 @@ func TestHeadlessGoBulkActions(t *testing.T) {
 }
 
 func TestHeadlessGoDurableWebhooks(t *testing.T) {
+	hgWebhookAllowPrivate.Store(true) // deliveries go to httptest servers on 127.0.0.1
+	defer hgWebhookAllowPrivate.Store(false)
 	base, c, srv := hgSite(t)
 	ctx := context.Background()
 	saved := hgWebhookBase

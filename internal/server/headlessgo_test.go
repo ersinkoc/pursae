@@ -912,6 +912,8 @@ func TestHeadlessGoAdminScreens(t *testing.T) {
 
 func TestHeadlessGoWebhooks(t *testing.T) {
 	base, c, srv := hgSite(t)
+	hgWebhookAllowPrivate.Store(true) // deliveries go to httptest servers on 127.0.0.1
+	defer hgWebhookAllowPrivate.Store(false)
 	ctx := context.Background()
 	saved := hgWebhookBase
 	hgWebhookBase = 20 * time.Millisecond
