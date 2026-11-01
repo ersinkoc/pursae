@@ -160,7 +160,7 @@ Status: {{if .Configured}}<span class="gc-badge ok">Configured</span>{{else}}<sp
 {{end}}
 
 {{if eq .Page "remote"}}
-<p class="gc-sub">Files in <code translate="no">{{.S.Bucket}}</code>. Import them into the Media Library: <em>Copy</em> downloads the file like an upload (sizes are generated); <em>Link</em> adds it as an attachment that stays in the bucket only.</p>
+{{if .S.Bucket}}<p class="gc-sub">Files in <code translate="no">{{.S.Bucket}}</code>. Import them into the Media Library: <em>Copy</em> downloads the file like an upload (sizes are generated); <em>Link</em> adds it as an attachment that stays in the bucket only.</p>{{end}}
 {{with .Remote}}
 <div class="gc-crumbs"><a href="/wp-admin/gocdn?page=remote&amp;prefix=">Bucket root</a>{{range .Crumbs}} / <a href="/wp-admin/gocdn?page=remote&amp;prefix={{.Prefix}}" translate="no">{{.Name}}</a>{{end}}</div>
 <form method="post" action="/wp-admin/gocdn?page=remote">

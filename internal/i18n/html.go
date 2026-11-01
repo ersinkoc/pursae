@@ -443,33 +443,39 @@ func inlineContent(src string, i int, name string) (string, int, bool) {
 	return "", 0, false
 }
 
-// translateTitle translates the parts of a document title before the site's name.
+// translateTitle translates the parts of a document title before the site's name: "Settings ‹
+// Pursae Security &lsaquo; Site &#8212; Pursae", "Analytics &rsaquo; Orders &lsaquo; …".
 func (c *Catalog) translateTitle(t string) (string, bool) {
-	sep := " &lsaquo; "
-	if !strings.Contains(t, sep) {
-		sep = " ‹ "
-	}
-	parts := strings.Split(t, sep)
-	if len(parts) < 2 {
+	cut := strings.LastIndex(t, " &lsaquo; ")
+	if cut < 0 {
 		return "", false
 	}
-	any := false
-	for i := range parts[:len(parts)-1] {
-		p := strings.TrimSpace(parts[i])
-		if tr, ok := c.translateText(p); ok {
-			parts[i], any = tr, true
-			continue
-		}
-		sub := strings.Split(p, " &rsaquo; ")
-		for j := range sub {
-			if tr, ok := c.translateText(sub[j]); ok {
-				sub[j], any = tr, true
-			}
-		}
-		parts[i] = strings.Join(sub, " &rsaquo; ")
+	page, site := t[:cut], t[cut:]
+	if tr, ok := c.translateText(strings.TrimSpace(page)); ok {
+		return tr + site, true
 	}
-	return strings.Join(parts, sep), any
+	seps := titleSep.FindAllStringIndex(page, -1)
+	any, last := false, 0
+	var b strings.Builder
+	for i := 0; i <= len(seps); i++ {
+		end := len(page)
+		if i < len(seps) {
+			end = seps[i][0]
+		}
+		part := page[last:end]
+		if tr, ok := c.translateText(strings.TrimSpace(part)); ok {
+			part, any = tr, true
+		}
+		b.WriteString(part)
+		if i < len(seps) {
+			b.WriteString(page[seps[i][0]:seps[i][1]])
+			last = seps[i][1]
+		}
+	}
+	return b.String() + site, any
 }
+
+var titleSep = regexp.MustCompile(`\s+(?:&lsaquo;|‹|&rsaquo;|›)\s+`)
 
 // leadingControl finds an <input> that opens the content at src[i] (after whitespace): its
 // start, and the index just past it.

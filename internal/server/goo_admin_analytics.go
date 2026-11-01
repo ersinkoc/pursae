@@ -493,7 +493,7 @@ func (s *Server) gooAdminAnalytics(c *gin.Context) {
 	if d.Path != "" {
 		screen += "&path=" + d.Path
 	}
-	s.gooStoreRender(c, screen, "wc-admin", "Analytics &rsaquo; "+d.Title, "admin/goo-analytics", d)
+	s.gooStoreRender(c, screen, "wc-admin", "Analytics › "+d.Title, "admin/goo-analytics", d)
 }
 
 func gooH(v string) template.HTML { return template.HTML(template.HTMLEscapeString(v)) }

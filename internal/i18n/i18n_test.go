@@ -336,3 +336,14 @@ func TestTranslateParts(t *testing.T) {
 		}
 	}
 }
+
+// TestTitleParts: every part of an admin title but the site's is translated on its own.
+func TestTitleParts(t *testing.T) {
+	c := testManager(t).Catalog("pl_PL")
+	got := string(c.TranslateHTML([]byte(`<title>Settings ‹ Pursae Security &lsaquo; Site &#8212; Pursae</title><title>Analytics › Posts ‹ Shop &lsaquo; Site &#8212; Pursae</title>`)))
+	for _, want := range []string{`<title>Ustawienia ‹ Pursae Security &lsaquo; Site &#8212; Pursae</title>`, `<title>Analytics › Wpisy ‹ Shop &lsaquo; Site &#8212; Pursae</title>`} {
+		if !strings.Contains(got, want) {
+			t.Errorf("missing %s in %s", want, got)
+		}
+	}
+}
