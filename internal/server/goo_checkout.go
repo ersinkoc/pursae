@@ -167,7 +167,7 @@ func (s *Server) gooValidateCheckout(c *gin.Context, cart *gooCart, d *gooChecko
 				required = false
 			}
 			if required && v == "" {
-				errs = append(errs, fmt.Sprintf("<strong>%s %s</strong> is a required field.", prefix, f.Label))
+				errs = append(errs, fmt.Sprintf("<strong>%s</strong> is a required field.", s.gooFieldName(c, prefix, f.Label)))
 				continue
 			}
 			if v == "" {
@@ -176,7 +176,7 @@ func (s *Server) gooValidateCheckout(c *gin.Context, cart *gooCart, d *gooChecko
 			switch {
 			case strings.HasSuffix(f.Key, "_email"):
 				if _, err := mail.ParseAddress(v); err != nil || !strings.Contains(v, "@") {
-					errs = append(errs, fmt.Sprintf("<strong>%s %s</strong> is not a valid email address.", prefix, f.Label))
+					errs = append(errs, fmt.Sprintf("<strong>%s</strong> is not a valid email address.", s.gooFieldName(c, prefix, f.Label)))
 				}
 			case strings.HasSuffix(f.Key, "_phone"):
 				if !gooPhoneRe.MatchString(v) {

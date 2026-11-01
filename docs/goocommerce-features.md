@@ -52,6 +52,13 @@ themes (`library/themes`, published to Pursae Manager; `category: shop`):
   `.form-row-last`;
 - store asset URLs carry a content hash, so a changed stylesheet is picked up without a version bump.
 
+The store markup is shown in the site language (with Pursae Multi Language, the language of the
+page), like WooCommerce loading its text domain on the front end: the WordPress.org WooCommerce
+language pack, downloaded with the site language, translates it, and Pursae's own catalog
+(`web/languages`) covers the texts that differ. Only the store's own markup is translated; product
+names, descriptions, reviews and the theme around it stay as written. E-mails and the optional
+modules' front-end texts are still English.
+
 A store theme may also ship demo content with a `goocommerce` section in `demo/demo.json` (products,
 reviews, coupons, shipping), imported with the rest of the demo. The package format is in
 `docs/theme-package.md`.

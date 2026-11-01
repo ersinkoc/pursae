@@ -683,7 +683,7 @@ func (s *Server) gooArchiveHTML(c *gin.Context, fv *gooFrontView) string {
 		b.WriteString(`<h1 class="woocommerce-products-header__title page-title">` + title + `</h1>`)
 	}
 	if fv.Term != nil && strings.TrimSpace(fv.Term.Description) != "" && fv.Paged <= 1 {
-		b.WriteString(`<div class="term-description">` + wp.Autop(wp.KsesPost(fv.Term.Description)) + `</div>`)
+		b.WriteString(`<div class="term-description">` + s.gooKeep(c, wp.Autop(wp.KsesPost(fv.Term.Description))) + `</div>`)
 	} else if fv.Kind == "shop" && fv.Paged <= 1 && fv.Search == "" {
 		if pg, err := s.store.GetPost(ctx, s.gooPageIDIn(ctx, "shop")); err == nil && strings.TrimSpace(pg.Content) != "" && !strings.Contains(pg.Content, gooRenderTag) {
 			b.WriteString(`<div class="page-description">` + s.gooRenderContent(ctx, c, pg.Content) + `</div>`)
@@ -781,7 +781,7 @@ func (s *Server) gooRenderContent(ctx context.Context, c *gin.Context, content s
 	out := s.renderPostContent(ctx, content)
 	out = s.doShortcodes(ctx, out)
 	out = s.gooShortcodes(ctx, out)
-	return out
+	return s.gooKeep(c, out) // the user's text: the store's translation leaves it alone
 }
 
 // gooResultCount is woocommerce_result_count().
@@ -947,7 +947,7 @@ func (s *Server) gooBreadcrumb(c *gin.Context, fv *gooFrontView) string {
 	case "shop":
 		if fv.Search != "" {
 			shop()
-			crumbs = append(crumbs, crumb{"Search results for &ldquo;" + gooEsc(fv.Search) + "&rdquo;", ""})
+			crumbs = append(crumbs, crumb{gooEsc(s.gooL10nText(ctx, "Search results for “"+fv.Search+"”")), ""}) // text after the delimiter: translated here
 		} else if id := s.gooPageIDIn(ctx, "shop"); id > 0 {
 			if pg, err := s.store.GetPost(ctx, id); err == nil {
 				crumbs = append(crumbs, crumb{pg.Title, ""})
@@ -959,7 +959,7 @@ func (s *Server) gooBreadcrumb(c *gin.Context, fv *gooFrontView) string {
 		crumbs[len(crumbs)-1].url = ""
 	case "product_tag":
 		shop()
-		crumbs = append(crumbs, crumb{"Products tagged &ldquo;" + gooEsc(fv.Term.Name) + "&rdquo;", ""})
+		crumbs = append(crumbs, crumb{gooEsc(s.gooL10nText(ctx, "Products tagged “"+fv.Term.Name+"”")), ""})
 	case "product_attr":
 		shop()
 		crumbs = append(crumbs, crumb{gooEsc(fv.Term.Name), ""})
@@ -976,7 +976,7 @@ func (s *Server) gooBreadcrumb(c *gin.Context, fv *gooFrontView) string {
 	}
 	if fv.Paged > 1 {
 		crumbs[len(crumbs)-1].url = fv.BaseURL
-		crumbs = append(crumbs, crumb{"Page " + strconv.Itoa(fv.Paged), ""})
+		crumbs = append(crumbs, crumb{gooEsc(s.gooL10nText(ctx, "Page "+strconv.Itoa(fv.Paged))), ""})
 	}
 	var b strings.Builder
 	b.WriteString(`<nav class="woocommerce-breadcrumb" aria-label="Breadcrumb">`)

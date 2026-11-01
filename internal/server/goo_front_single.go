@@ -410,7 +410,8 @@ func (s *Server) gooVariationData(c *gin.Context, parent, v *gooProduct) map[str
 	if strings.TrimSpace(v.Description) != "" {
 		desc = wp.Autop(wp.KsesPost(v.Description))
 	}
-	availability := s.gooFrontStockHTML(c, v)
+	availability := s.gooL10n(c, s.gooFrontStockHTML(c, v))
+	weightHTML, dims = s.gooL10nText(ctx, weightHTML), s.gooL10nText(ctx, dims)
 	return map[string]any{
 		"attributes":            attrs,
 		"availability_html":     availability,
@@ -670,7 +671,7 @@ func (s *Server) gooReviewsHTML(c *gin.Context, p *gooProduct) string {
 				t := r.CreatedAt.In(s.loc())
 				b.WriteString(`<span class="woocommerce-review__dash">&ndash;</span> <time class="woocommerce-review__published-date" datetime="` + t.Format(time.RFC3339) + `">` + wp.FormatDate(t, df) + `</time></p>`)
 			}
-			b.WriteString(`<div class="description">` + wp.Autop(wp.Texturize(r.Content)) + `</div></div></div></li>`)
+			b.WriteString(`<div class="description">` + s.gooKeep(c, wp.Autop(wp.Texturize(r.Content))) + `</div></div></div></li>`)
 		}
 		b.WriteString(`</ol>`)
 	} else {

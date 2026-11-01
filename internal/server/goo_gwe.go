@@ -117,8 +117,20 @@ func (s *Server) gooGweSampleProduct(c *gin.Context) *gooProduct {
 	return p
 }
 
-// gooGweStore is ThemeData.Store: the markup of a store widget for the request.
+// gooGweStore is ThemeData.Store: the markup of a store widget for the request, in the store
+// front's language (the language switcher lists languages by their own names: left as it is).
 func (s *Server) gooGweStore(ctx context.Context) func(name string, st map[string]any, editing bool) string {
+	markup := s.gooGweStoreMarkup(ctx)
+	return func(name string, st map[string]any, editing bool) string {
+		out := markup(name, st, editing)
+		if name == "golylang-language-switcher" {
+			return out
+		}
+		return s.gooL10n(gooCtxGin(ctx), out)
+	}
+}
+
+func (s *Server) gooGweStoreMarkup(ctx context.Context) func(name string, st map[string]any, editing bool) string {
 	return func(name string, st map[string]any, editing bool) string {
 		c := gooCtxGin(ctx)
 		if c == nil || !s.gooOn() {
