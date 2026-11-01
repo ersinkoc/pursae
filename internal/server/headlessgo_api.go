@@ -71,12 +71,13 @@ type hgAuth struct {
 	Public  map[string][]string
 	PrevUID string
 	PrevDoc string
+	PrevLoc string // the locale a preview token reads ("" for a type without i18n)
 }
 
 func (a *hgAuth) can(uid, action string) bool {
 	switch a.Kind {
-	case "preview":
-		return action == "find" || action == "findOne"
+	case "preview": // its own type; other types (populate, relation filters) as the public role
+		return (action == "find" || action == "findOne") && (uid == a.PrevUID || containsStr(a.Public[uid], action))
 	case "token":
 		switch a.Token.Kind {
 		case "full-access":
@@ -103,11 +104,23 @@ func (a *hgAuth) relatedDrafts(uid string) bool {
 	return a == nil || (a.Kind == "token" && a.drafts(uid))
 }
 
+// previewLocale is the locale a read of type sc uses: the requested one, except that a preview
+// token reads its own locale only (ok is false when another one is asked for).
+func (a *hgAuth) previewLocale(sc *hgSchema, requested string) (string, bool) {
+	if a.Kind != "preview" || !sc.Localized || a.PrevLoc == "" {
+		return requested, true
+	}
+	if requested != "" && requested != a.PrevLoc {
+		return "", false
+	}
+	return a.PrevLoc, true
+}
+
 // drafts reports whether status=draft may be read.
 func (a *hgAuth) drafts(uid string) bool {
 	switch a.Kind {
 	case "preview":
-		return true
+		return uid == a.PrevUID
 	case "token":
 		return a.Token.Kind == "full-access" || a.Token.Drafts
 	}
@@ -141,12 +154,12 @@ func (s *Server) hgAuthenticate(c *gin.Context, st hgSettings) (*hgAuth, bool) {
 		return nil, false
 	}
 	if strings.HasPrefix(tok, hgPreviewPrefix) {
-		uid, doc, ok := s.hgCheckPreviewToken(st, tok)
+		uid, doc, loc, ok := s.hgCheckPreviewToken(st, tok)
 		if !ok {
 			hgErr(c, http.StatusUnauthorized, "UnauthorizedError", "Missing or invalid credentials", nil)
 			return nil, false
 		}
-		a.Kind, a.PrevUID, a.PrevDoc = "preview", uid, doc
+		a.Kind, a.PrevUID, a.PrevDoc, a.PrevLoc = "preview", uid, doc, loc
 		return a, true
 	}
 	t := s.hgTokenByValue(c, tok)
@@ -291,6 +304,11 @@ func (s *Server) hgParseRead(c *gin.Context, a *hgAuth, sc *hgSchema, st hgSetti
 		return nil, false
 	}
 	loc, _ := qs["locale"].(string)
+	loc, ok := a.previewLocale(sc, loc)
+	if !ok {
+		hgForbidden(c, a)
+		return nil, false
+	}
 	l, err := s.hgEntryLocale(c, sc, loc)
 	if err != nil {
 		hgErr(c, http.StatusBadRequest, "ValidationError", err.Error(), nil)
@@ -998,7 +1016,7 @@ func (h *hgSer) relation(f *hgField, ids []any, pop *hgPop, depth int) ([]any, b
 	if target == nil {
 		return nil, false, nil
 	}
-	if !h.a.can(target.UID, "find") && !h.a.can(target.UID, "findOne") && h.a.Kind != "preview" {
+	if !h.a.reads(target.UID) {
 		return nil, false, nil // the caller may not read the target type: the attribute is left out
 	}
 	var docs []string

@@ -2,9 +2,11 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"wpgo/internal/store"
 )
@@ -99,5 +101,67 @@ func TestHeadlessGoWritePopulateHidesDrafts(t *testing.T) {
 	r = hgCall(t, base, "POST", "/articles?populate=categories", full, map[string]any{"data": map[string]any{"title": "Ours", "categories": []any{cat}}})
 	if !strings.Contains(r.Raw, "Unannounced") {
 		t.Errorf("full-access write response: %s", r.Raw)
+	}
+}
+
+// A preview token reads its own document's draft in its own locale, and nothing else: no other
+// locale, no drafts of related entries, no types the public may not read.
+func TestHeadlessGoPreviewTokenScope(t *testing.T) {
+	base, c, srv := hgSite(t)
+	ctx := context.Background()
+	golylangToggle(t, c, base, "activate")
+	pllAddLanguage(t, c, base, "English", "en_US", "en", "us")
+	pllAddLanguage(t, c, base, "Français", "fr_FR", "fr", "fr")
+	hgModel(t, srv)
+	st := srv.hgLoad()
+	st.Public = map[string][]string{"article": {"find", "findOne"}, "category": {"find", "findOne"}}
+	_ = srv.hgSaveSettings(ctx, st)
+	full := hgNewToken(t, srv, &hgToken{Name: "Full", Kind: "full-access"})
+	r := hgCall(t, base, "POST", "/authors", full, map[string]any{"data": map[string]any{"name": "Ada Hidden"}})
+	ada := r.data()["documentId"].(string)
+	r = hgCall(t, base, "POST", "/categories", full, map[string]any{"data": map[string]any{"name": "Unannounced"}})
+	cat := r.data()["documentId"].(string)
+	r = hgCall(t, base, "POST", "/articles", full, map[string]any{"data": map[string]any{"title": "Draft en", "author": ada, "categories": []any{cat}}})
+	doc := r.data()["documentId"].(string)
+	if r := hgCall(t, base, "PUT", "/articles/"+doc+"?locale=fr", full, map[string]any{"data": map[string]any{"title": "Brouillon secret"}}); r.Code != 200 {
+		t.Fatalf("fr draft: %d %s", r.Code, r.Raw)
+	}
+	ptok := srv.hgPreviewToken(srv.hgLoad(), "article", doc, "en", time.Hour)
+
+	if r := hgCall(t, base, "GET", "/articles/"+doc+"?status=draft", ptok, nil); r.Code != 200 || r.data()["title"] != "Draft en" {
+		t.Fatalf("preview read: %d %s", r.Code, r.Raw)
+	}
+	for _, path := range []string{"/articles/" + doc + "?status=draft&locale=fr", "/articles?status=draft&locale=fr"} {
+		if r := hgCall(t, base, "GET", path, ptok, nil); r.Code != http.StatusForbidden || strings.Contains(r.Raw, "Brouillon") {
+			t.Errorf("preview token in another locale %s: %d %s", path, r.Code, r.Raw)
+		}
+	}
+	r = hgCall(t, base, "GET", "/articles/"+doc+"?status=draft&populate=author,categories,localizations", ptok, nil)
+	if r.Code != 200 || strings.Contains(r.Raw, "Ada Hidden") || strings.Contains(r.Raw, "Unannounced") || strings.Contains(r.Raw, "Brouillon") {
+		t.Errorf("preview populate reaches other drafts or types: %d %s", r.Code, r.Raw)
+	}
+	if r := hgCall(t, base, "GET", "/articles?status=draft&filters[categories][name][$eq]=Unannounced", ptok, nil); r.Code != 200 || len(r.list()) != 0 {
+		t.Errorf("preview filter through a draft category: %d %s", r.Code, r.Raw)
+	}
+	if r := hgCall(t, base, "GET", "/articles?status=draft&filters[author][name][$eq]=Ada%20Hidden", ptok, nil); r.Code != 400 {
+		t.Errorf("preview filter through a type the public cannot read: %d %s", r.Code, r.Raw)
+	}
+	if r := hgCall(t, base, "GET", "/categories/"+cat+"?status=draft", ptok, nil); r.Code != http.StatusForbidden {
+		t.Errorf("preview token on another type: %d %s", r.Code, r.Raw)
+	}
+	// GraphQL: the same scope.
+	q := `{"query":"{ article(documentId: \"` + doc + `\", status: DRAFT, locale: \"fr\") { title } }"}`
+	req, _ := http.NewRequest(http.MethodPost, base+hgAPIPrefix+"/graphql", strings.NewReader(q))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+ptok)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out map[string]any
+	_ = json.NewDecoder(resp.Body).Decode(&out)
+	resp.Body.Close()
+	if raw, _ := json.Marshal(out); strings.Contains(string(raw), "Brouillon") || out["errors"] == nil {
+		t.Errorf("GraphQL preview in another locale: %s", raw)
 	}
 }

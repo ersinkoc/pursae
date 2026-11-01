@@ -26,8 +26,9 @@ import (
 // type × action, plus an optional "may read drafts").
 //
 // A preview token is "hgp_" + base64url(uid|documentId|locale|expiry) + "." + an HMAC-SHA256 of it
-// keyed by the preview secret and the site secret. It reads one document's draft (find, filtered
-// to that document, or findOne) until it expires.
+// keyed by the preview secret and the site secret. It reads one document's draft in its locale
+// (find, filtered to that document, or findOne) until it expires; related entries only as the
+// public role may read them, in their published version.
 
 const (
 	hgTokenPrefix   = "hg_"
@@ -223,30 +224,31 @@ func (s *Server) hgPreviewToken(st hgSettings, uid, doc, locale string, ttl time
 	return hgPreviewPrefix + enc + "." + base64.RawURLEncoding.EncodeToString(m.Sum(nil))
 }
 
-func (s *Server) hgCheckPreviewToken(st hgSettings, tok string) (uid, doc string, ok bool) {
+// hgCheckPreviewToken verifies a preview token and returns the type, document and locale it reads.
+func (s *Server) hgCheckPreviewToken(st hgSettings, tok string) (uid, doc, locale string, ok bool) {
 	body, sig, found := strings.Cut(strings.TrimPrefix(tok, hgPreviewPrefix), ".")
 	if !found || st.PreviewSecret == "" {
-		return "", "", false
+		return "", "", "", false
 	}
 	m := hmac.New(sha256.New, s.hgPreviewKey(st))
 	m.Write([]byte(body))
 	want := base64.RawURLEncoding.EncodeToString(m.Sum(nil))
 	if !hmac.Equal([]byte(sig), []byte(want)) {
-		return "", "", false
+		return "", "", "", false
 	}
 	raw, err := base64.RawURLEncoding.DecodeString(body)
 	if err != nil {
-		return "", "", false
+		return "", "", "", false
 	}
 	parts := strings.Split(string(raw), "|")
 	if len(parts) != 4 {
-		return "", "", false
+		return "", "", "", false
 	}
 	exp, err := strconv.ParseInt(parts[3], 10, 64)
 	if err != nil || time.Now().Unix() >= exp {
-		return "", "", false
+		return "", "", "", false
 	}
-	return parts[0], parts[1], true
+	return parts[0], parts[1], parts[2], true
 }
 
 var hgPlaceholderRe = regexp.MustCompile(`\{([A-Za-z][A-Za-z0-9_]*)\}`)

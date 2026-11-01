@@ -152,9 +152,10 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 - The preview secret (Settings, regenerable) is the `{secret}` front ends compare; it also keys the
   preview tokens. ✓
 - `{previewToken}`: a signed, short-lived token (lifetime setting, 60 min by default) that reads one
-  document's draft: `findOne` of that document, or `find` restricted to it, with `status=draft`. Sent
-  as `Authorization: Bearer`, `X-Preview-Token` or `?previewToken=`. Rotating the secret revokes every
-  preview token. ✓
+  document's draft in the entry's locale: `findOne` of that document, or `find` restricted to it, with
+  `status=draft`; another `locale=` is 403. Related entries, `localizations` and relation filters see
+  only what the public role may read, in their published version. Sent as `Authorization: Bearer`,
+  `X-Preview-Token` or `?previewToken=`. Rotating the secret revokes every preview token. ✓
 
 ## 10. GraphQL
 
