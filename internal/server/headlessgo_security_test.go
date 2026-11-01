@@ -195,3 +195,49 @@ func TestHeadlessGoWebhookPublicOnly(t *testing.T) {
 		t.Errorf("the loopback server was reached %d times", hits.Load())
 	}
 }
+
+// The admin relation picker lists what the user may read: a contributor sees published posts and
+// their own, never other users' drafts or private posts, and never login names.
+func TestHeadlessGoAdminSearchScope(t *testing.T) {
+	base, c, srv := hgSite(t)
+	ctx := context.Background()
+	hgModel(t, srv)
+	contrib := hgSecondUser(t, srv, base, "contrib", "contributor")
+	var cid int64
+	_ = srv.store.Pool.QueryRow(ctx, `SELECT id FROM users WHERE login = 'contrib'`).Scan(&cid)
+	_, _ = srv.store.Pool.Exec(ctx, `UPDATE users SET display_name = 'Site Owner', nicename = 'owner' WHERE id = 1`)
+	for _, p := range []*store.Post{
+		{Type: "post", Title: "Hello public", Slug: "hello-public", Status: "publish", AuthorID: 1},
+		{Type: "post", Title: "Secret plan", Slug: "secret-plan", Status: "draft", AuthorID: 1},
+		{Type: "post", Title: "Private memo", Slug: "private-memo", Status: "private", AuthorID: 1},
+		{Type: "post", Title: "My own draft", Slug: "my-own-draft", Status: "draft", AuthorID: cid},
+	} {
+		if err := srv.store.InsertPost(ctx, p); err != nil {
+			t.Fatal(err)
+		}
+	}
+	_, body, _ := get(t, contrib, base+"/wp-admin/headlessgo/search?target=wp:post&q=")
+	if !strings.Contains(body, "Hello public") || !strings.Contains(body, "My own draft") {
+		t.Errorf("contributor search misses readable posts: %s", body)
+	}
+	if strings.Contains(body, "Secret plan") || strings.Contains(body, "Private memo") {
+		t.Errorf("contributor search lists other users' drafts or private posts: %s", body)
+	}
+	_, body, _ = get(t, contrib, base+"/wp-admin/headlessgo/search?target=wp:user&q=adm")
+	if strings.Contains(body, "admin") {
+		t.Errorf("contributor user search by login name: %s", body)
+	}
+	_, body, _ = get(t, contrib, base+"/wp-admin/headlessgo/search?target=wp:user&q=Owner")
+	if !strings.Contains(body, "Site Owner") || strings.Contains(body, "(admin)") {
+		t.Errorf("contributor user search: %s", body)
+	}
+	// The administrator still finds everything, logins included.
+	_, body, _ = get(t, c, base+"/wp-admin/headlessgo/search?target=wp:post&q=")
+	if !strings.Contains(body, "Secret plan") || !strings.Contains(body, "Private memo") {
+		t.Errorf("administrator search: %s", body)
+	}
+	_, body, _ = get(t, c, base+"/wp-admin/headlessgo/search?target=wp:user&q=adm")
+	if !strings.Contains(body, "(admin)") {
+		t.Errorf("administrator user search: %s", body)
+	}
+}

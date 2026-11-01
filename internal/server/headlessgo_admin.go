@@ -630,14 +630,15 @@ func (s *Server) hgRelLabel(c *gin.Context, reg *hgRegistry, target string, x an
 	switch target {
 	case "wp:post", "wp:page":
 		if id, ok := hgToInt(x); ok {
-			if p, err := s.store.GetPost(c, id); err == nil {
+			if p, err := s.store.GetPost(c, id); err == nil && currentUser(c).Can("read_post", p) {
 				return defaultStr(p.Title, "(no title)") + " #" + itoa64(id)
 			}
+			return "#" + itoa64(id) // a post the user may not read: no title
 		}
 	case "wp:user":
 		if id, ok := hgToInt(x); ok {
 			if u, err := s.store.UserByID(c, id); err == nil {
-				return u.DisplayName + " (" + u.Login + ")"
+				return hgUserLabel(currentUser(c), u.DisplayName, u.Login)
 			}
 		}
 	default:
@@ -660,7 +661,20 @@ func (s *Server) hgRelLabel(c *gin.Context, reg *hgRegistry, target string, x an
 	return fmt.Sprint(x)
 }
 
-// hgAdminSearch answers the relation picker: GET /wp-admin/headlessgo/search?target=&q=.
+// hgUserLabel is a user in the relation picker: the display name, with the login name only for
+// users who may list users (login names are half of a credential).
+func hgUserLabel(viewer *store.User, name, login string) string {
+	if viewer.Can("list_users", nil) {
+		return name + " (" + login + ")"
+	}
+	return name
+}
+
+// hgAdminSearch answers the relation picker: GET /wp-admin/headlessgo/search?target=&q=. It lists
+// what the user may read: WordPress posts and pages as on the Posts screen (without
+// edit_others_posts: published ones and the user's own; private ones with read_private_posts),
+// users without their login name unless the user may list users. Headless entries are listed
+// like the Content Manager, which every user with edit_posts manages.
 func (s *Server) hgAdminSearch(c *gin.Context) {
 	u := currentUser(c)
 	if !u.Can("edit_posts", nil) {
@@ -671,21 +685,34 @@ func (s *Server) hgAdminSearch(c *gin.Context) {
 	out := []map[string]any{}
 	switch target {
 	case "wp:post", "wp:page":
-		posts, _, err := s.store.QueryPosts(c, store.PostQuery{Types: []string{strings.TrimPrefix(target, "wp:")}, Statuses: []string{"publish", "draft", "future", "private", "pending"},
-			Search: q, PerPage: 20, Page: 1, OrderBy: "date", Order: "DESC"})
+		typ := strings.TrimPrefix(target, "wp:")
+		pq := store.PostQuery{Types: []string{typ}, Statuses: []string{"publish", "draft", "future", "private", "pending"},
+			Search: q, PerPage: 20, Page: 1, OrderBy: "date", Order: "DESC"}
+		readPrivate := u.Can("read_private_"+typ+"s", nil)
+		if !readPrivate {
+			pq.Statuses = []string{"publish", "draft", "future", "pending"}
+		}
+		if !u.Can("edit_others_"+typ+"s", nil) {
+			pq.ReadableBy, pq.ReadablePrivate = u.ID, readPrivate
+		}
+		posts, _, err := s.store.QueryPosts(c, pq)
 		if err == nil {
 			for _, p := range posts {
 				out = append(out, map[string]any{"id": p.ID, "label": defaultStr(p.Title, "(no title)") + " #" + itoa64(p.ID), "status": p.Status})
 			}
 		}
 	case "wp:user":
-		rows, err := s.store.Pool.Query(c, `SELECT id, display_name, login FROM users WHERE $1 = '' OR display_name ILIKE '%' || $1 || '%' OR login ILIKE '%' || $1 || '%' ORDER BY display_name LIMIT 20`, q)
+		cond := `display_name ILIKE '%' || $1 || '%' OR nicename ILIKE '%' || $1 || '%'`
+		if u.Can("list_users", nil) {
+			cond += ` OR login ILIKE '%' || $1 || '%'`
+		}
+		rows, err := s.store.Pool.Query(c, `SELECT id, display_name, login FROM users WHERE $1 = '' OR `+cond+` ORDER BY display_name LIMIT 20`, q)
 		if err == nil {
 			for rows.Next() {
 				var id int64
 				var name, login string
 				if rows.Scan(&id, &name, &login) == nil {
-					out = append(out, map[string]any{"id": id, "label": name + " (" + login + ")"})
+					out = append(out, map[string]any{"id": id, "label": hgUserLabel(u, name, login)})
 				}
 			}
 			rows.Close()
