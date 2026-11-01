@@ -76,15 +76,30 @@ func (c *Catalog) TranslateHTML(doc []byte) []byte {
 			}
 		} else {
 			out.WriteString(c.attrs(tag, name, attrs))
-			// The document title: "Page &lsaquo; Site &#8212; WordPress Go" translates the page part.
+			// The document title: "Page &lsaquo; Plugin &lsaquo; Site &#8212; Pursae" translates every
+			// part but the site's ("Analytics &rsaquo; Orders" part by part).
 			if name == "title" {
 				if end := strings.Index(src[i:], "</title>"); end >= 0 {
-					t := src[i : i+end]
-					page, rest, found := strings.Cut(t, " &lsaquo; ")
-					if tr, ok := c.translateText(strings.TrimSpace(page)); ok && found {
-						out.WriteString(tr + " &lsaquo; " + rest)
+					if tr, ok := c.translateTitle(src[i : i+end]); ok {
+						out.WriteString(tr)
 						i += end
 						continue
+					}
+				}
+			}
+			// "<label><input type="checkbox"> Sentence with <code>markup</code></label>": the control
+			// leads, the sentence after it is one message (not a fragment on each side of the markup).
+			if name == "label" && !selfClosing {
+				if ctl, after, ok := leadingControl(src, i); ok {
+					if inner, end, ok := inlineContent(src, after, name); ok {
+						if tr, ok := c.translateMarkup(inner); ok {
+							out.WriteString(src[i:ctl] + c.attrs(src[ctl:after], "input", scanAttrs(src[ctl:after])) + tr)
+							i = end
+							continue
+						}
+						if MissHook != nil {
+							MissHook(spaceRun.ReplaceAllString(strings.TrimSpace(inner), " "))
+						}
 					}
 				}
 			}
@@ -143,6 +158,15 @@ func (c *Catalog) text(t string, skip bool) string {
 	return lead + tr + t[len(lead)+len(core):]
 }
 
+// Text translates plain text the way a text node of a page is translated (messages, printf
+// patterns, dates): for strings a script shows, like a progress line.
+func (c *Catalog) Text(plain string) string {
+	if c.Empty() || strings.TrimSpace(plain) == "" {
+		return plain
+	}
+	return html.UnescapeString(c.text(html.EscapeString(plain), false))
+}
+
 var spaceRun = regexp.MustCompile(`\s+`)
 
 // miss reports escaped text without a translation to MissHook, unless the language writes the
@@ -167,6 +191,13 @@ func (c *Catalog) translateText(core string) (string, bool) {
 	plain := html.UnescapeString(norm)
 	if tr, ok := c.lookup(plain); ok {
 		return escapeText(tr), true
+	}
+	// "First name&nbsp;" before the required marker: the no-break spaces stay around the message.
+	if t := strings.TrimSpace(plain); t != plain && t != "" {
+		if tr, ok := c.lookup(t); ok {
+			i := strings.Index(plain, t)
+			return plain[:i] + escapeText(tr) + plain[i+len(t):], true
+		}
 	}
 	// "Settings:" and "Settings" are usually the same message.
 	if strings.HasSuffix(plain, ":") {
@@ -374,38 +405,90 @@ var inlineTags = map[string]bool{"img": true, "a": true, "strong": true, "em": t
 
 // inlineContent returns the content of the element opened just before src[i] when it holds
 // text with inline markup only (no block elements, no element of the same name), and the
-// index of its closing tag.
+// index of its closing tag. Inline elements marked translate="no" may be part of it: a message
+// matches them with placeholders ("<span translate="no">%s</span> file(s) moved") and keeps
+// their content as it is.
 func inlineContent(src string, i int, name string) (string, int, bool) {
 	limit := i + 2000
 	if limit > len(src) {
 		limit = len(src)
 	}
-	end := strings.Index(src[i:limit], "</"+name)
-	if end < 0 {
-		return "", 0, false
-	}
-	inner := src[i : i+end]
-	if !strings.Contains(inner, "<") || !hasLetter(inner) {
-		return "", 0, false
-	}
-	for k := 0; k < len(inner); k++ {
-		if inner[k] != '<' {
+	depth := 0 // nested elements of the same name ("Required fields are marked <span class="required">*</span>" in a span)
+	for k := i; k < limit; k++ {
+		if src[k] != '<' {
 			continue
 		}
-		gt := tagEndAt(inner, k)
-		if gt < 0 {
+		gt := tagEndAt(src, k)
+		if gt < 0 || gt >= limit {
 			return "", 0, false
 		}
-		n, _ := tagName(inner[k : gt+1])
-		if !inlineTags[n] || n == name {
+		tag := src[k : gt+1]
+		n, closing := tagName(tag)
+		if n == name && closing {
+			if depth == 0 {
+				inner := src[i:k]
+				if !strings.Contains(inner, "<") || !hasLetter(inner) {
+					return "", 0, false
+				}
+				return inner, k, true
+			}
+			depth--
+		} else if !inlineTags[n] {
 			return "", 0, false
-		}
-		if v, ok := scanAttrs(inner[k : gt+1]).get("translate"); ok && strings.EqualFold(v, "no") {
-			return "", 0, false
+		} else if n == name && !strings.HasSuffix(tag, "/>") && !voidElements[n] {
+			depth++
 		}
 		k = gt
 	}
-	return inner, i + end, true
+	return "", 0, false
+}
+
+// translateTitle translates the parts of a document title before the site's name.
+func (c *Catalog) translateTitle(t string) (string, bool) {
+	sep := " &lsaquo; "
+	if !strings.Contains(t, sep) {
+		sep = " ‹ "
+	}
+	parts := strings.Split(t, sep)
+	if len(parts) < 2 {
+		return "", false
+	}
+	any := false
+	for i := range parts[:len(parts)-1] {
+		p := strings.TrimSpace(parts[i])
+		if tr, ok := c.translateText(p); ok {
+			parts[i], any = tr, true
+			continue
+		}
+		sub := strings.Split(p, " &rsaquo; ")
+		for j := range sub {
+			if tr, ok := c.translateText(sub[j]); ok {
+				sub[j], any = tr, true
+			}
+		}
+		parts[i] = strings.Join(sub, " &rsaquo; ")
+	}
+	return strings.Join(parts, sep), any
+}
+
+// leadingControl finds an <input> that opens the content at src[i] (after whitespace): its
+// start, and the index just past it.
+func leadingControl(src string, i int) (int, int, bool) {
+	k := i
+	for k < len(src) && isSpace(src[k]) {
+		k++
+	}
+	if !strings.HasPrefix(src[k:], "<input") || k+6 >= len(src) || !(isSpace(src[k+6]) || src[k+6] == '>' || src[k+6] == '/') {
+		return 0, 0, false
+	}
+	gt := tagEndAt(src, k)
+	if gt < 0 {
+		return 0, 0, false
+	}
+	if v, ok := scanAttrs(src[k : gt+1]).get("translate"); ok && strings.EqualFold(v, "no") {
+		return 0, 0, false
+	}
+	return k, gt + 1, true
 }
 
 // translateMarkup translates inner HTML that WordPress writes as one message with markup.
@@ -476,6 +559,7 @@ func (c *Catalog) attrs(tag, name string, a attrList) string {
 
 type pattern struct {
 	re    *regexp.Regexp
+	lit   int   // letters of literal text: the most specific of several matching messages wins
 	args  []int // argument number of each capture group (1-based)
 	forms entry // the translation; several forms for a plural message
 	rule  *pluralRule
@@ -531,12 +615,9 @@ func compilePattern(msgid string, raw bool) (*pattern, string) {
 	var re strings.Builder
 	re.WriteString("^")
 	var args []int
-	var literals []string
 	last, seq := 0, 0
 	for _, m := range placeholderRe.FindAllStringSubmatchIndex(msgid, -1) {
-		lit := msgid[last:m[0]]
-		literals = append(literals, lit)
-		re.WriteString(quote(lit))
+		re.WriteString(quote(msgid[last:m[0]]))
 		last = m[1]
 		if msgid[m[4]:m[5]] == "%" {
 			re.WriteString("%")
@@ -557,9 +638,12 @@ func compilePattern(msgid string, raw bool) (*pattern, string) {
 	if len(args) == 0 {
 		return nil, ""
 	}
-	literals = append(literals, msgid[last:])
 	re.WriteString(quote(msgid[last:]))
 	re.WriteString("$")
+	// The lookup key comes from the text between the placeholders with whole tags removed: a
+	// literal like `? <a href="` (a placeholder in an attribute) must not give "href", which the
+	// page's text never contains.
+	literals := strings.Split(stripTags(placeholderRe.ReplaceAllString(msgid, "\x00")), "\x00")
 	longest := ""
 	letters := 0
 	for _, l := range literals {
@@ -581,7 +665,7 @@ func compilePattern(msgid string, raw bool) (*pattern, string) {
 	if err != nil {
 		return nil, ""
 	}
-	return &pattern{re: r, args: args}, key
+	return &pattern{re: r, lit: letters, args: args}, key
 }
 
 func firstWord(s string) string {
@@ -617,6 +701,9 @@ func matchIn(index map[string][]*pattern, text string, raw bool) (string, bool) 
 		words = stripTags(text)
 	}
 	seen := map[string]bool{}
+	var best *pattern
+	var bestM []string
+	// Every message keyed by a word of the text is tried; "Search results: “%s”" beats "Search %s".
 	for _, w := range strings.FieldsFunc(words, func(r rune) bool { return !unicode.IsLetter(r) && !unicode.IsDigit(r) }) {
 		w = strings.ToLower(w)
 		if seen[w] {
@@ -624,6 +711,9 @@ func matchIn(index map[string][]*pattern, text string, raw bool) (string, bool) 
 		}
 		seen[w] = true
 		for _, p := range index[w] {
+			if best != nil && p.lit <= best.lit {
+				continue
+			}
 			m := p.re.FindStringSubmatch(text)
 			if m == nil {
 				continue
@@ -631,26 +721,30 @@ func matchIn(index map[string][]*pattern, text string, raw bool) (string, bool) 
 			if !raw && sentenceArg(m[1:]) {
 				continue
 			}
-			vals := map[int]string{}
-			count := int64(-1)
-			for i, n := range p.args {
-				vals[n] = m[i+1]
-				if count < 0 {
-					if v, err := strconv.ParseInt(strings.NewReplacer(",", "", ".", "", " ", "", "\u00a0", "").Replace(m[i+1]), 10, 64); err == nil {
-						count = v
-					}
-				}
-			}
-			msgstr := p.forms[0]
-			if len(p.forms) > 1 && count >= 0 {
-				if k := p.rule.index(count); k >= 0 && k < len(p.forms) && p.forms[k] != "" {
-					msgstr = p.forms[k]
-				}
-			}
-			return fillPlaceholders(msgstr, vals, raw), true
+			best, bestM = p, m
 		}
 	}
-	return "", false
+	if best == nil {
+		return "", false
+	}
+	p, m := best, bestM
+	vals := map[int]string{}
+	count := int64(-1)
+	for i, n := range p.args {
+		vals[n] = m[i+1]
+		if count < 0 {
+			if v, err := strconv.ParseInt(strings.NewReplacer(",", "", ".", "", " ", "", "\u00a0", "").Replace(m[i+1]), 10, 64); err == nil {
+				count = v
+			}
+		}
+	}
+	msgstr := p.forms[0]
+	if len(p.forms) > 1 && count >= 0 {
+		if k := p.rule.index(count); k >= 0 && k < len(p.forms) && p.forms[k] != "" {
+			msgstr = p.forms[k]
+		}
+	}
+	return fillPlaceholders(msgstr, vals, raw), true
 }
 
 var sentenceEnd = regexp.MustCompile(`[.!?]\s+\p{Lu}|[.!?]$`)
@@ -665,6 +759,16 @@ func sentenceArg(args []string) bool {
 		}
 	}
 	return false
+}
+
+// Sprintf fills a WordPress-style format ("via %s", "%2$s of %1$s") with args, as written:
+// sprintf() of a translated message.
+func Sprintf(format string, args ...string) string {
+	vals := map[int]string{}
+	for i, a := range args {
+		vals[i+1] = a
+	}
+	return fillPlaceholders(format, vals, true)
 }
 
 // fillPlaceholders writes the captured arguments into a translation's placeholders.
