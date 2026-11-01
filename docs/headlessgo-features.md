@@ -120,7 +120,7 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 | Upload permission: full-access tokens always, custom tokens with "May upload media", read-only tokens and the public role never | ✓ |
 | Only a SHA-256 of the token is stored; it is shown once (on the response page, never in a URL) with its last four characters in the list | ✓ |
 | `Authorization: Bearer <token>`; a bad token is 401 `UnauthorizedError`, a missing permission 403 `ForbiddenError` | ✓ |
-| Populated relations to a type the caller may not read are left out (not an error) | ✓ |
+| Populated relations to a type the caller may not read are left out (not an error). Related entries (and other locales) of a draft response — a draft read or the answer to a write — are shown as drafts only to tokens allowed to read drafts; other callers get their published versions | ✓ |
 | Cookie / Application Password auth on this namespace | ✗ tokens only (the admin uses its own screens) |
 
 ## 7. CORS

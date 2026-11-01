@@ -770,12 +770,19 @@ func (h *hgSer) localizations(sc *hgSchema, e *hgEntry) []any {
 		locs = append(locs, l)
 	}
 	sort.Strings(locs)
+	status := h.relStatus(sc.UID) // other locales' drafts are other versions: the same rule as related entries
+	sub := h
+	if status != h.p.Status {
+		p := *h.p
+		p.Status = status
+		sub = &hgSer{s: h.s, c: h.c, reg: h.reg, a: h.a, p: &p, media: h.media}
+	}
 	for _, l := range locs {
 		v := versions[l]
-		if l == e.Locale || v.Version(h.p.Status) == nil {
+		if l == e.Locale || v.Version(status) == nil {
 			continue
 		}
-		obj, err := h.entry(sc, v, nil, nil)
+		obj, err := sub.entry(sc, v, nil, nil)
 		if err == nil {
 			out = append(out, obj)
 		}
@@ -825,7 +832,7 @@ func (h *hgSer) object(sc *hgSchema, data map[string]any, pop *hgPop, fields []s
 			if h.cur == nil {
 				continue
 			}
-			v = hgAnyStrings(h.s.hgInverseIDs(h.c, f, h.cur.DocumentID, h.cur.Locale, h.p.Status))
+			v = hgAnyStrings(h.s.hgInverseIDs(h.c, f, h.cur.DocumentID, h.cur.Locale, h.relStatus(f.Target)))
 		}
 		val, keep, err := h.populated(sc, f, v, sub, depth)
 		if err != nil {
@@ -1010,7 +1017,7 @@ func (h *hgSer) relation(f *hgField, ids []any, pop *hgPop, depth int) ([]any, b
 			}
 		}
 	}
-	status := h.p.Status
+	status := h.relStatus(target.UID)
 	if !target.DraftAndPublish {
 		status = "published"
 	}
@@ -1047,6 +1054,16 @@ func (h *hgSer) relation(f *hgField, ids []any, pop *hgPop, depth int) ([]any, b
 		out = append(out, obj)
 	}
 	return out, true, nil
+}
+
+// relStatus is the status related entries of a type are shown in: the request's, except that a
+// draft response (a draft read, or a write's answer) shows related drafts only to callers that
+// may read them (hgAuth.relatedDrafts); others see the published versions.
+func (h *hgSer) relStatus(uid string) string {
+	if h.p.Status == "draft" && !h.a.relatedDrafts(uid) {
+		return "published"
+	}
+	return h.p.Status
 }
 
 // entryAt serializes a related entry below the root.

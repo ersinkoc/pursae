@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"net/http"
+	"strings"
 	"testing"
 
 	"wpgo/internal/store"
@@ -74,5 +75,29 @@ func TestHeadlessGoRelationFilterPermissions(t *testing.T) {
 	}
 	if r := hgCall(t, base, "GET", "/articles?filters[writer][username][$eq]=admin", full, nil); r.Code != 400 {
 		t.Errorf("login names are not filterable, even with a token: %d %s", r.Code, r.Raw)
+	}
+}
+
+// A write's response with populate shows related entries as a read would: no drafts for a token
+// that may not read them.
+func TestHeadlessGoWritePopulateHidesDrafts(t *testing.T) {
+	base, _, srv := hgSite(t)
+	hgModel(t, srv)
+	full := hgNewToken(t, srv, &hgToken{Name: "Full", Kind: "full-access"})
+	r := hgCall(t, base, "POST", "/categories", full, map[string]any{"data": map[string]any{"name": "Unannounced"}})
+	cat := r.data()["documentId"].(string)
+	writer := hgNewToken(t, srv, &hgToken{Name: "Writer", Kind: "custom", Permissions: map[string][]string{
+		"article": {"create", "find", "findOne"}, "category": {"find", "findOne"}}})
+	r = hgCall(t, base, "POST", "/articles?populate=categories", writer, map[string]any{"data": map[string]any{"title": "Mine", "categories": []any{cat}}})
+	if r.Code != http.StatusCreated {
+		t.Fatalf("create: %d %s", r.Code, r.Raw)
+	}
+	if strings.Contains(r.Raw, "Unannounced") {
+		t.Errorf("a write response shows a related draft: %s", r.Raw)
+	}
+	// The full-access token reads drafts: it sees the related draft.
+	r = hgCall(t, base, "POST", "/articles?populate=categories", full, map[string]any{"data": map[string]any{"title": "Ours", "categories": []any{cat}}})
+	if !strings.Contains(r.Raw, "Unannounced") {
+		t.Errorf("full-access write response: %s", r.Raw)
 	}
 }
