@@ -317,12 +317,13 @@ func (s *Server) gooPaymentHTML(c *gin.Context, cart *gooCart) string {
 				chk = ` checked="checked"`
 			}
 			b.WriteString(`<p class="form-row validate-required"><label class="woocommerce-form__label woocommerce-form__label-for-checkbox checkbox"><input type="checkbox" class="woocommerce-form__input woocommerce-form__input-checkbox input-checkbox" name="terms"` + chk + ` id="terms" />` +
-				` <span class="woocommerce-terms-and-conditions-checkbox-text">I have read and agree to the website <a href="` + gooEsc(s.links(ctx).Permalink(tp)) + `" class="woocommerce-terms-and-conditions-link" target="_blank">terms and conditions</a></span>&nbsp;<abbr class="required" title="required">*</abbr></label>` +
+				` <span class="woocommerce-terms-and-conditions-checkbox-text">I have read and agree to the website <a href="` + gooEsc(s.links(ctx).Permalink(tp)) + `" class="woocommerce-terms-and-conditions-link" target="_blank">` + gooEsc(s.gooL10nText(ctx, "terms and conditions")) + `</a></span>&nbsp;<abbr class="required" title="required">*</abbr></label>` +
 				`<input type="hidden" name="terms-field" value="1" /></p>`)
 		}
 	}
 	b.WriteString(`</div>`)
-	b.WriteString(`<button type="submit" class="button alt" name="woocommerce_checkout_place_order" id="place_order" value="Place order" data-value="Place order">Place order</button>`)
+	place := gooEsc(s.gooL10nText(ctx, "Place order")) // the script puts it back when the payment method changes
+	b.WriteString(`<button type="submit" class="button alt" name="woocommerce_checkout_place_order" id="place_order" value="` + place + `" data-value="` + place + `">` + place + `</button>`)
 	b.WriteString(`<input type="hidden" name="woocommerce-process-checkout-nonce" value="` + s.nonce(c, "woocommerce-process_checkout") + `" />`)
 	b.WriteString(`</div></div>`)
 	return b.String()
@@ -331,10 +332,10 @@ func (s *Server) gooPaymentHTML(c *gin.Context, cart *gooCart) string {
 // gooPrivacyText replaces [privacy_policy] with the privacy page link (wc_replace_policy_page_link_placeholders).
 func (s *Server) gooPrivacyText(c *gin.Context, txt string) string {
 	ctx := c.Request.Context()
-	link := "privacy policy"
+	link := gooEsc(s.gooL10nText(ctx, "privacy policy"))
 	if id := int64(s.settings.Int("wp_page_for_privacy_policy")); id > 0 {
 		if p, err := s.store.GetPost(ctx, id); err == nil && p.Status == "publish" {
-			link = `<a href="` + gooEsc(s.links(ctx).Permalink(p)) + `" class="woocommerce-privacy-policy-link" target="_blank">privacy policy</a>`
+			link = `<a href="` + gooEsc(s.links(ctx).Permalink(p)) + `" class="woocommerce-privacy-policy-link" target="_blank">` + link + `</a>`
 		}
 	}
 	return strings.ReplaceAll(wp.KsesPost(txt), "[privacy_policy]", link)
@@ -363,20 +364,20 @@ func gooCheckoutForm(c *gin.Context) url.Values {
 func (s *Server) gooUpdateOrderReview(c *gin.Context) {
 	form := gooCheckoutForm(c)
 	if !s.checkNonceValue(c, form.Get("security"), "update-order-review") {
-		c.JSON(http.StatusOK, gin.H{"result": "failure", "messages": gooErrorList([]string{"Your session has expired. Please reload the page and try again."}), "reload": true})
+		c.JSON(http.StatusOK, gin.H{"result": "failure", "messages": s.gooL10n(c, gooErrorList([]string{"Your session has expired. Please reload the page and try again."})), "reload": true})
 		return
 	}
 	cart := s.gooCartFor(c)
 	if cart.IsEmpty() {
-		c.JSON(http.StatusOK, gin.H{"result": "failure", "messages": gooErrorList([]string{"Sorry, your session has expired."}), "reload": true})
+		c.JSON(http.StatusOK, gin.H{"result": "failure", "messages": s.gooL10n(c, gooErrorList([]string{"Sorry, your session has expired."})), "reload": true})
 		return
 	}
 	d := gooPostedCheckout(form)
 	s.gooUpdateCustomerFromCheckout(c, d)
 	cart.Calculate()
 	frags := map[string]string{
-		".woocommerce-checkout-review-order-table": s.gooReviewOrderHTML(c, cart),
-		".woocommerce-checkout-payment":            s.gooPaymentHTML(c, cart),
+		".woocommerce-checkout-review-order-table": s.gooL10n(c, s.gooReviewOrderHTML(c, cart)),
+		".woocommerce-checkout-payment":            s.gooL10n(c, s.gooPaymentHTML(c, cart)),
 	}
 	s.gooSaveSession(c)
 	c.JSON(http.StatusOK, gin.H{"result": "success", "messages": "", "reload": false, "fragments": frags})
@@ -388,7 +389,7 @@ func (s *Server) gooCheckoutAjax(c *gin.Context) {
 	res, errs := s.gooRunCheckout(c, form)
 	s.gooSaveSession(c)
 	if len(errs) > 0 {
-		c.JSON(http.StatusOK, gin.H{"result": "failure", "messages": gooErrorList(errs), "refresh": false, "reload": false})
+		c.JSON(http.StatusOK, gin.H{"result": "failure", "messages": s.gooL10n(c, gooErrorList(errs)), "refresh": false, "reload": false})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"result": res.Result, "redirect": res.Redirect})
@@ -508,7 +509,7 @@ func (s *Server) gooOrderTotals(ctx context.Context, o *gooOrder) [][3]string {
 		if amt == 0 {
 			v = strings.Join(names, ", ")
 		} else {
-			v += `&nbsp;<small class="shipped_via">via ` + strings.Join(names, ", ") + `</small>`
+			v += `&nbsp;<small class="shipped_via">` + s.gooL10nf(ctx, "via %s", strings.Join(names, ", ")) + `</small>`
 		}
 		rows = append(rows, [3]string{"shipping", "Shipping:", v})
 	}

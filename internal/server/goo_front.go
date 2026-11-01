@@ -237,10 +237,12 @@ func (s *Server) gooFooter(c *gin.Context, q *siteQuery) string {
 		notice := s.gooT(ctx, s.gooOptString("demo_store_notice")) // Golylang: Languages › Translations
 		if strings.TrimSpace(notice) == "" {
 			notice = "This is a demo store for testing purposes &mdash; no orders shall be fulfilled."
+		} else {
+			s.gooKeep(c, wp.KsesPost(notice))
 		}
 		id := gooMD5(notice)[:12]
-		b.WriteString(`<p role="complementary" aria-label="Store notice" class="woocommerce-store-notice demo_store" data-notice-id="` + id + `" style="display:none;">` +
-			wp.KsesPost(notice) + ` <a role="button" href="#" class="woocommerce-store-notice__dismiss-link">Dismiss</a></p>` + "\n")
+		b.WriteString(s.gooL10n(c, `<p role="complementary" aria-label="Store notice" class="woocommerce-store-notice demo_store" data-notice-id="`+id+`" style="display:none;">`+
+			wp.KsesPost(notice)+` <a role="button" href="#" class="woocommerce-store-notice__dismiss-link">Dismiss</a></p>`) + "\n")
 	}
 	b.WriteString(string(s.gooPageHTML(c, "footer")))
 	// woocommerce-no-js → woocommerce-js
@@ -272,6 +274,12 @@ func (s *Server) gooFooter(c *gin.Context, q *siteQuery) string {
 		"option_guest_checkout":            s.gooOptBool("enable_guest_checkout"),
 		"i18n_checkout_error":              "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.",
 	}
+	params["i18n_password_show"], params["i18n_password_hide"] = "Show password", "Hide password"
+	for k, v := range params {
+		if str, ok := v.(string); ok && strings.HasPrefix(k, "i18n_") {
+			params[k] = s.gooL10nText(ctx, str)
+		}
+	}
 	fv := gooViewFrom(c)
 	if fv != nil && fv.Kind == "cart" {
 		params["is_cart"] = true
@@ -288,7 +296,7 @@ func (s *Server) gooFooter(c *gin.Context, q *siteQuery) string {
 		js("single-product")        // gallery, tabs, rating stars (also [product_page])
 		js("add-to-cart-variation") // variation forms (also [product_page])
 		if s.gooNeedsCountrySelect(c, q) {
-			b.WriteString(`<script id="goo-country-select-params">var goo_country_select_params = ` + s.gooStatesJSON() + `;</script>` + "\n")
+			b.WriteString(`<script id="goo-country-select-params">var goo_country_select_params = ` + s.gooStatesJSON(ctx) + `;</script>` + "\n")
 			js("country-select")
 		}
 		if fv != nil && fv.Kind == "cart" || q != nil && q.Post != nil && strings.Contains(q.Post.Content, "_cart]") {
@@ -321,8 +329,8 @@ var gooStatesOnce struct {
 	js string
 }
 
-// gooStatesJSON is wc_country_select_params.countries: country → {code: name}.
-func (s *Server) gooStatesJSON() string {
+// gooStatesJSON is wc_country_select_params: countries (country → {code: name}) and the prompt.
+func (s *Server) gooStatesJSON(ctx context.Context) string {
 	gooStatesOnce.Do(func() {
 		m := map[string]map[string]string{}
 		for cc, list := range gooStates {
@@ -332,10 +340,11 @@ func (s *Server) gooStatesJSON() string {
 			}
 			m[cc] = mm
 		}
-		raw, _ := jsonMarshalNoEscape(map[string]any{"countries": m, "i18n_select_state_text": "Select an option…"})
+		raw, _ := jsonMarshalNoEscape(m)
 		gooStatesOnce.js = string(raw)
 	})
-	return gooStatesOnce.js
+	prompt, _ := jsonMarshalNoEscape(s.gooL10nText(ctx, "Select an option…"))
+	return `{"countries":` + gooStatesOnce.js + `,"i18n_select_state_text":` + string(prompt) + `}`
 }
 
 // gooCacheTags tags cached store pages so product and stock changes purge them.
@@ -658,7 +667,7 @@ func (s *Server) gooServeStorePage(c *gin.Context, key, endpoint, value string) 
 	}
 	copy := *page
 	if t := s.gooEndpointTitle(endpoint, value); t != "" && (u != nil || key == "checkout") {
-		copy.Title = t
+		copy.Title = s.gooL10nText(ctx, t)
 	}
 	q := &siteQuery{Kind: "page", Post: &copy, Paged: 1}
 	c.Set(ctxSiteQuery, q)
@@ -755,7 +764,7 @@ func (s *Server) gooServeArchive(c *gin.Context, fv *gooFrontView) {
 		fv.Paged = 1
 	}
 	c.Set(gooCtxView, fv)
-	title, slug, id := "Shop", "shop", s.gooPageIDIn(ctx, "shop")
+	title, slug, id := s.gooL10nText(ctx, "Shop"), "shop", s.gooPageIDIn(ctx, "shop")
 	if fv.PageID > 0 && s.gooPageIs(ctx, fv.PageID, "shop") {
 		id = fv.PageID
 	}
@@ -773,7 +782,7 @@ func (s *Server) gooServeArchive(c *gin.Context, fv *gooFrontView) {
 		id = fv.Term.ID
 		src = nil
 	case fv.Search != "":
-		title = "Search results: &ldquo;" + gooEsc(fv.Search) + "&rdquo;"
+		title = gooEsc(s.gooL10nText(ctx, "Search results: “"+fv.Search+"”"))
 	}
 	fv.BaseURL = s.gooArchiveBase(c, fv)
 	body := s.gooArchiveHTML(c, fv)
@@ -804,7 +813,7 @@ func (s *Server) gooSyntheticPost(ctx context.Context, id int64, title, slug str
 
 // gooRenderSynthetic renders pre-built store markup as the content of a page of the active theme.
 func (s *Server) gooRenderSynthetic(c *gin.Context, post *store.Post, body string, paged int) {
-	c.Set(gooCtxRender, body)
+	c.Set(gooCtxRender, s.gooL10n(c, body))
 	s.gooSaveSession(c)
 	q := &siteQuery{Kind: "page", Post: post, Paged: paged}
 	c.Set(ctxSiteQuery, q)

@@ -3,6 +3,7 @@ package server
 import (
 	"archive/zip"
 	"bytes"
+	"context"
 	"fmt"
 	"html"
 	"net/http"
@@ -79,6 +80,11 @@ func TestAdminUntranslated(t *testing.T) {
 		if srv.siteLocale() != loc {
 			t.Fatalf("locale %s not set (%s)", loc, srv.siteLocale())
 		}
+		if os.Getenv("WPGO_I18N_MISSES_REAL") != "" { // the plugin packs download in the background: wait for them
+			if err := srv.lang.Install(context.Background(), srv.langInstaller(), loc, langPluginPacks); err != nil {
+				t.Logf("%s: language packs: %v", loc, err)
+			}
+		}
 		mu.Lock()
 		misses = map[string]bool{}
 		mu.Unlock()
@@ -111,6 +117,88 @@ func TestAdminUntranslated(t *testing.T) {
 		t.Logf("%s: %d pages, %d untranslated texts", loc, len(seen), len(list))
 		if dir := os.Getenv("WPGO_I18N_MISSES_OUT"); dir != "" {
 			os.WriteFile(dir+"/"+loc+".txt", []byte(strings.Join(list, "\n")+"\n"), 0o644)
+		}
+	}
+}
+
+// TestStoreFrontUntranslated lists the store front texts (shop, product, cart, checkout, order
+// received, My account) without a translation in the locales of WPGO_I18N_MISSES, with the real
+// WordPress.org packs (core and WooCommerce): what is left is Pursae Commerce's own text.
+// WPGO_I18N_MISSES_OUT gets one store-<locale>.txt per locale; WPGO_I18N_MISSES_DUMP is a directory
+// for the pages themselves (<locale>-NN.html).
+func TestStoreFrontUntranslated(t *testing.T) {
+	locales := strings.Split(os.Getenv("WPGO_I18N_MISSES"), ",")
+	if locales[0] == "" {
+		t.Skip("WPGO_I18N_MISSES not set")
+	}
+	base, admin, srv := gooSite(t)
+	ctx := context.Background()
+	f := gooFrontCatalog(t, srv)
+	_ = srv.gooSetOpts(ctx, map[string]any{"goo_test_settings": map[string]any{"enabled": "yes"}, "default_country": "US:CA"})
+	z := &gooZone{Name: "US", Locations: []gooZoneLocation{{Code: "US", Type: "country"}}}
+	_ = srv.gooSaveZone(ctx, z)
+	_, _ = srv.gooAddMethod(ctx, z.ID, "flat_rate", map[string]any{"cost": "5"})
+	_, _ = srv.gooAddMethod(ctx, z.ID, "free_shipping", map[string]any{})
+	_ = srv.gooSaveCoupon(ctx, &gooCoupon{Code: "save5", DiscountType: "fixed_cart", Amount: 5})
+
+	var mu sync.Mutex
+	var misses map[string]bool
+	i18n.MissHook = func(s string) { mu.Lock(); misses[s] = true; mu.Unlock() }
+	defer func() { i18n.MissHook = nil }()
+
+	for _, loc := range locales {
+		if err := srv.settings.Set(ctx, map[string]any{"WPLANG": loc}); err != nil {
+			t.Fatal(err)
+		}
+		if err := srv.lang.Install(ctx, srv.langInstaller(), loc, langPluginPacks); err != nil {
+			t.Logf("%s: language packs: %v", loc, err)
+		}
+		mu.Lock()
+		misses = map[string]bool{}
+		mu.Unlock()
+		v := gooFrontClient()
+		n := 0
+		get := func(t *testing.T, c *http.Client, u string) (int, string, string) {
+			code, body, where := get(t, c, u)
+			if dir := os.Getenv("WPGO_I18N_MISSES_DUMP"); dir != "" && code == http.StatusOK {
+				n++
+				os.WriteFile(fmt.Sprintf("%s/%s-%02d.html", dir, loc, n), []byte("<!-- "+u+" -->\n"+body), 0o644)
+			}
+			return code, body, where
+		}
+		pages := []string{"/shop/", "/product/shirt/", "/product/hoodie/", "/product/breakfast-set/", "/product/partner-lamp/", "/product-category/clothing/",
+			"/?s=shirt&post_type=product", "/my-account/", "/my-account/lost-password/", "/cart/"}
+		for _, p := range pages {
+			get(t, v, base+p)
+		}
+		get(t, v, base+"/?add-to-cart="+itoa64(f.mug.ID))
+		get(t, v, base+"/?add-to-cart="+itoa64(f.shirt.ID))
+		get(t, v, base+"/cart/")
+		_, body, _ := get(t, v, base+"/checkout/")
+		if strings.Contains(body, "woocommerce-process-checkout-nonce") {
+			bad := gooFrontCheckoutForm(gooHidden(t, body, "woocommerce-process-checkout-nonce"))
+			bad.Del("billing_first_name")
+			bad.Set("billing_email", "x")
+			post(t, v, base+"/checkout/", bad)
+			_, body, _ = get(t, v, base+"/checkout/")
+			_, _, rec := post(t, v, base+"/checkout/", gooFrontCheckoutForm(gooHidden(t, body, "woocommerce-process-checkout-nonce")))
+			if rec != "" {
+				get(t, v, rec)
+			}
+		}
+		for _, p := range []string{"/shop/", "/my-account/", "/my-account/orders/", "/my-account/edit-address/", "/my-account/edit-address/billing/", "/my-account/edit-account/", "/my-account/downloads/", "/cart/", "/checkout/"} {
+			get(t, admin, base+p)
+		}
+		mu.Lock()
+		var list []string
+		for s := range misses {
+			list = append(list, s)
+		}
+		mu.Unlock()
+		sort.Strings(list)
+		t.Logf("%s: %d untranslated store texts", loc, len(list))
+		if dir := os.Getenv("WPGO_I18N_MISSES_OUT"); dir != "" {
+			os.WriteFile(dir+"/store-"+loc+".txt", []byte(strings.Join(list, "\n")+"\n"), 0o644)
 		}
 	}
 }

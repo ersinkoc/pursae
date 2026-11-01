@@ -281,7 +281,7 @@ func (s *Server) gooAccountAddresses(c *gin.Context, u *store.User, typ string) 
 		if t == "shipping" && !s.gooShippingEnabled() {
 			continue
 		}
-		title := map[string]string{"billing": "Billing address", "shipping": "Shipping address"}[t]
+		title := s.gooL10nText(ctx, map[string]string{"billing": "Billing address", "shipping": "Shipping address"}[t]) // also inside "Edit %s"
 		addr := map[string]string{}
 		for _, k := range gooAddressKeys {
 			if v, ok := u.Meta[t+"_"+k].(string); ok {
@@ -445,7 +445,7 @@ func (s *Server) gooSaveAddressPost(c *gin.Context) {
 		if strings.HasSuffix(f.Key, "_postcode") && gooPostcodeOptional[country] {
 			req = false
 		}
-		label := f.Label
+		label := s.gooL10nText(c.Request.Context(), f.Label) // inside a sentence: translated on its own
 		if req && v == "" {
 			errs = append(errs, "<strong>"+gooEsc(label)+"</strong> is a required field.")
 			continue
@@ -515,7 +515,7 @@ func (s *Server) gooSaveAccountPost(c *gin.Context) {
 	var errs []string
 	for _, f := range [][2]string{{first, "First name"}, {last, "Last name"}, {display, "Display name"}, {email, "Email address"}} {
 		if f[0] == "" {
-			errs = append(errs, "<strong>"+f[1]+"</strong> is a required field.")
+			errs = append(errs, "<strong>"+gooEsc(s.gooL10nText(c.Request.Context(), f[1]))+"</strong> is a required field.")
 		}
 	}
 	if strings.Contains(display, "@") && display != u.Email && display != email {

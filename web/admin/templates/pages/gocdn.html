@@ -46,7 +46,7 @@ Status: {{if .Configured}}<span class="gc-badge ok">Configured</span>{{else}}<sp
 	{{with .Provider}}<p class="description">{{.Help}}</p>{{end}}</td></tr>
 <tr><th scope="row"><label for="gc-endpoint">Endpoint</label></th><td>
 	<input type="url" id="gc-endpoint" name="endpoint" class="regular-text code" value="{{.S.Endpoint}}" placeholder="{{with .Provider}}{{.Endpoint}}{{end}}" translate="no"{{if .Lock "endpoint"}} disabled{{end}}>
-	<p class="description">Leave empty to use the provider's endpoint for the region{{if .Endpoint}} (now <code translate="no">{{.Endpoint}}</code>){{end}}. Cloudflare R2: <code>https://&lt;ACCOUNT_ID&gt;.r2.cloudflarestorage.com</code>; MinIO: e.g. <code>http://127.0.0.1:9000</code>.</p></td></tr>
+	<p class="description">{{if .Endpoint}}Leave empty to use the provider's endpoint for the region (now <code translate="no">{{.Endpoint}}</code>). Cloudflare R2: <code>https://&lt;ACCOUNT_ID&gt;.r2.cloudflarestorage.com</code>; MinIO: e.g. <code>http://127.0.0.1:9000</code>.{{else}}Leave empty to use the provider's endpoint for the region. Cloudflare R2: <code>https://&lt;ACCOUNT_ID&gt;.r2.cloudflarestorage.com</code>; MinIO: e.g. <code>http://127.0.0.1:9000</code>.{{end}}</p></td></tr>
 <tr><th scope="row"><label for="gc-region">Region</label></th><td>
 	<input type="text" id="gc-region" name="region" class="regular-text code" value="{{.S.Region}}" placeholder="{{with .Provider}}{{.Region}}{{end}}" translate="no"{{if .Lock "region"}} disabled{{end}}>
 	<p class="description">R2 uses <code>auto</code>.</p></td></tr>
@@ -144,8 +144,8 @@ Status: {{if .Configured}}<span class="gc-badge ok">Configured</span>{{else}}<sp
 	function set(id,v){var e=document.getElementById(id);if(e)e.textContent=v;}
 	function poll(){
 		fetch(url,{credentials:'same-origin'}).then(function(r){return r.json();}).then(function(j){
-			if(j.kind){set('gc-job-label',j.label);set('gc-job-count',j.done+' done, '+j.failed+' failed of '+j.total+' ('+j.files+' files)');}
-			set('gc-job-state',j.running?'running':(j.finished?'finished':(j.stopped?'stopped':(j.resumable?'interrupted — start it again to resume':''))));
+			if(j.kind){set('gc-job-label',j.label);set('gc-job-count',j.count_text);}
+			set('gc-job-state',j.state_text);
 			document.getElementById('gc-job-bar').style.width=j.percent+'%';
 			var ul=document.getElementById('gc-job-errors');ul.innerHTML='';
 			(j.errors||[]).forEach(function(e){var li=document.createElement('li');li.textContent=e;li.setAttribute('translate','no');ul.appendChild(li);});
@@ -160,7 +160,7 @@ Status: {{if .Configured}}<span class="gc-badge ok">Configured</span>{{else}}<sp
 {{end}}
 
 {{if eq .Page "remote"}}
-<p class="gc-sub">Files in <code translate="no">{{.S.Bucket}}</code>. Import them into the Media Library: <em>Copy</em> downloads the file like an upload (sizes are generated); <em>Link</em> adds it as an attachment that stays in the bucket only.</p>
+{{if .S.Bucket}}<p class="gc-sub">Files in <code translate="no">{{.S.Bucket}}</code>. Import them into the Media Library: <em>Copy</em> downloads the file like an upload (sizes are generated); <em>Link</em> adds it as an attachment that stays in the bucket only.</p>{{end}}
 {{with .Remote}}
 <div class="gc-crumbs"><a href="/wp-admin/gocdn?page=remote&amp;prefix=">Bucket root</a>{{range .Crumbs}} / <a href="/wp-admin/gocdn?page=remote&amp;prefix={{.Prefix}}" translate="no">{{.Name}}</a>{{end}}</div>
 <form method="post" action="/wp-admin/gocdn?page=remote">
@@ -185,7 +185,7 @@ Status: {{if .Configured}}<span class="gc-badge ok">Configured</span>{{else}}<sp
 {{end}}
 
 {{if eq .Page "images"}}
-<p class="gc-sub">Resize, crop and convert uploads on the fly: <code>{{.Home}}cdn-img/2026/10/photo.jpg?w=800&amp;h=600&amp;fit=cover&amp;q=75&amp;fm=auto&amp;s=…</code>. The same parameters work on <code>/wp-content/uploads/…</code> URLs. <code>fm=auto</code> sends AVIF (when turned on below) or WebP to browsers that accept them{{if not .WebP}} (WebP is not available on this server){{end}}.</p>
+<p class="gc-sub">{{if .WebP}}Resize, crop and convert uploads on the fly: <code translate="no">{{.Home}}cdn-img/2026/10/photo.jpg?w=800&amp;h=600&amp;fit=cover&amp;q=75&amp;fm=auto&amp;s=…</code>. The same parameters work on <code>/wp-content/uploads/…</code> URLs. <code>fm=auto</code> sends AVIF (when turned on below) or WebP to browsers that accept them.{{else}}Resize, crop and convert uploads on the fly: <code translate="no">{{.Home}}cdn-img/2026/10/photo.jpg?w=800&amp;h=600&amp;fit=cover&amp;q=75&amp;fm=auto&amp;s=…</code>. The same parameters work on <code>/wp-content/uploads/…</code> URLs. <code>fm=auto</code> sends AVIF (when turned on below) or WebP to browsers that accept them (WebP is not available on this server).{{end}}</p>
 <form method="post" action="/wp-admin/gocdn?page=images">
 <input type="hidden" name="_wpnonce" value="{{.Nonce}}">
 <table class="form-table" role="presentation">
@@ -233,7 +233,7 @@ Status: {{if .Configured}}<span class="gc-badge ok">Configured</span>{{else}}<sp
 <table class="form-table" role="presentation">
 <tr><th scope="row">Assets CDN</th><td><label><input type="checkbox" name="assets-enabled" value="1"{{if .S.Assets}} checked{{end}}{{if .Lock "assets-enabled"}} disabled{{end}}> Rewrite asset URLs to the CDN</label></td></tr>
 <tr><th scope="row"><label for="gc-cdn">CDN URL</label></th><td><input type="url" id="gc-cdn" name="assets-url" class="regular-text code" value="{{.S.AssetsURL}}" placeholder="https://cdn.example.com" translate="no"{{if .Lock "assets-url"}} disabled{{end}}>
-	<p class="description"><code>{{.Home}}wp-includes/js/x.js</code> becomes <code translate="no">{{if .S.AssetsURL}}{{.S.AssetsURL}}{{else}}https://cdn.example.com{{end}}/wp-includes/js/x.js</code>. The CDN's origin is added to the page's Content-Security-Policy.</p></td></tr>
+	<p class="description"><code translate="no">{{.Home}}wp-includes/js/x.js</code> becomes <code translate="no">{{if .S.AssetsURL}}{{.S.AssetsURL}}{{else}}https://cdn.example.com{{end}}/wp-includes/js/x.js</code>. The CDN's origin is added to the page's Content-Security-Policy.</p></td></tr>
 <tr><th scope="row"><label for="gc-dirs">Included folders</label></th><td><textarea id="gc-dirs" name="assets-dirs" rows="5" class="large-text code" translate="no"{{if .Lock "assets-dirs"}} disabled{{end}}>{{.S.AssetsDirs}}</textarea><p class="description">One path per line. Uploads are handled by Media Offload.</p></td></tr>
 <tr><th scope="row"><label for="gc-ext">File extensions</label></th><td><input type="text" id="gc-ext" name="assets-extensions" class="large-text code" value="{{.S.AssetsExt}}" translate="no"{{if .Lock "assets-extensions"}} disabled{{end}}></td></tr>
 <tr><th scope="row"><label for="gc-ex">Exclusions</label></th><td><textarea id="gc-ex" name="assets-exclude" rows="4" class="large-text code" placeholder=".php&#10;/wp-includes/js/wp-emoji" translate="no"{{if .Lock "assets-exclude"}} disabled{{end}}>{{.S.AssetsExclude}}</textarea><p class="description">URLs containing any of these strings (one per line) are left alone.</p></td></tr>
@@ -243,11 +243,11 @@ Status: {{if .Configured}}<span class="gc-badge ok">Configured</span>{{else}}<sp
 {{end}}
 
 {{if eq .Page "purge"}}
-<p class="gc-sub">Every Pursae CDN settings change and finished bulk job purges WPGo Cache{{if not .CacheOn}} (WPGo Cache is not active){{end}}.</p>
+<p class="gc-sub">{{if .CacheOn}}Every Pursae CDN settings change and finished bulk job purges WPGo Cache.{{else}}Every Pursae CDN settings change and finished bulk job purges WPGo Cache (WPGo Cache is not active).{{end}}</p>
 <form method="post" action="/wp-admin/gocdn?page=purge" class="gc-tools">
 <input type="hidden" name="_wpnonce" value="{{.Nonce}}">
 <button type="submit" name="do" value="purge-cache" class="button button-primary">Purge WPGo Cache</button>
-<button type="submit" name="do" value="purge-cdn" class="button"{{if not .PurgeReady}} disabled{{end}}>{{if gt .PurgeCount 1}}Purge all CDNs ({{.PurgerNames}}){{else}}Purge {{with .Purger}}{{.Name}}{{else}}the CDN{{end}}{{end}} (everything)</button>
+<button type="submit" name="do" value="purge-cdn" class="button"{{if not .PurgeReady}} disabled{{end}}>{{if gt .PurgeCount 1}}Purge all CDNs ({{.PurgerNames}}) (everything){{else if .Purger}}Purge {{.Purger.Name}} (everything){{else}}Purge the CDN (everything){{end}}</button>
 <button type="submit" name="do" value="purge-images" class="button">Empty the processed image cache</button>
 </form>
 <h2>CDN</h2>

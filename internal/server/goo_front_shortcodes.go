@@ -90,7 +90,7 @@ func (s *Server) gooExpandShortcodes(ctx context.Context, content string) string
 			}
 			return ""
 		}
-		return s.gooShortcode(c, gooShortcodeAlias(tag), attrs)
+		return s.gooL10n(c, s.gooShortcode(c, gooShortcodeAlias(tag), attrs)) // the store's markup in the site language
 	})
 	if _, ok := c.Get(gooCtxSession); ok {
 		s.gooSaveSession(c) // notices shown, cart recalculated: before the page is written

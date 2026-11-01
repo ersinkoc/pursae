@@ -377,7 +377,7 @@ func (s *Server) gooMiniCart(c *gin.Context) template.HTML {
 	b.WriteString(`<div class="widget_shopping_cart_content">`)
 	if cart.IsEmpty() {
 		b.WriteString(`<p class="woocommerce-mini-cart__empty-message">No products in the cart.</p></div>`)
-		return template.HTML(b.String())
+		return template.HTML(s.gooL10n(c, b.String()))
 	}
 	b.WriteString(`<ul class="woocommerce-mini-cart cart_list product_list_widget">`)
 	for _, it := range cart.Items {
@@ -399,7 +399,7 @@ func (s *Server) gooMiniCart(c *gin.Context) template.HTML {
 	b.WriteString(`<p class="woocommerce-mini-cart__buttons buttons"><a href="` + gooEsc(s.gooPageURL(ctx, "cart")) + `" class="button wc-forward">View cart</a>` +
 		`<a href="` + gooEsc(s.gooPageURL(ctx, "checkout")) + `" class="button checkout wc-forward">Checkout</a></p>`)
 	b.WriteString(`</div>`)
-	return template.HTML(b.String())
+	return template.HTML(s.gooL10n(c, b.String()))
 }
 
 // gooCartLink is the header cart link themes print (a.cart-contents with the amount and the count).
@@ -410,8 +410,8 @@ func (s *Server) gooCartLink(c *gin.Context) template.HTML {
 	if n == 1 {
 		items = "1 item"
 	}
-	return template.HTML(`<a class="cart-contents" href="` + gooEsc(s.gooPageURL(c.Request.Context(), "cart")) + `" title="View your shopping cart">` +
-		string(s.gooPrice(cart.SubtotalDisplay())) + ` <span class="count">` + items + `</span></a>`)
+	return template.HTML(s.gooL10n(c, `<a class="cart-contents" href="`+gooEsc(s.gooPageURL(c.Request.Context(), "cart"))+`" title="View your shopping cart">`+
+		string(s.gooPrice(cart.SubtotalDisplay()))+` <span class="count">`+items+`</span></a>`))
 }
 
 // gooFragments are the cart fragments (woocommerce_add_to_cart_fragments).
@@ -923,7 +923,7 @@ func (s *Server) gooAjax(c *gin.Context, action string) {
 
 func (s *Server) gooAjaxHTML(c *gin.Context, body string) {
 	s.gooSaveSession(c)
-	c.Data(http.StatusOK, "text/html; charset=UTF-8", []byte(body))
+	c.Data(http.StatusOK, "text/html; charset=UTF-8", []byte(s.gooL10n(c, body)))
 }
 
 // gooJSONFragments answers with the refreshed fragments and the cart hash.

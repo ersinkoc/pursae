@@ -113,6 +113,28 @@ func TestCatalogLookups(t *testing.T) {
 	}
 }
 
+// TestLabelAfterControl: a checkbox label whose text has markup is one message, not the
+// fragments on each side of the <code>; without that message the fragments still translate.
+func TestLabelAfterControl(t *testing.T) {
+	dir := t.TempDir()
+	core := writeMO(map[string]string{"": "Plural-Forms: nplurals=2; plural=n != 1;\n",
+		"Upload objects as <code>public-read</code>": "<code>public-read</code> olarak yükle",
+		"Path-style requests (":                      "Yol tarzı istekler ("})
+	if err := os.WriteFile(filepath.Join(dir, "admin-tr_TR.mo"), core, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	c := NewManager(dir, nil).Catalog("tr_TR")
+	in := `<label><input type="checkbox" name="public-read" value="1" checked> Upload objects as <code>public-read</code></label>` +
+		`<label><input type="checkbox" name="p"> Path-style requests (<code>a/b</code>)</label>`
+	got := string(c.TranslateHTML([]byte(in)))
+	for _, want := range []string{`<label><input type="checkbox" name="public-read" value="1" checked> <code>public-read</code> olarak yükle</label>`,
+		`<input type="checkbox" name="p"> Yol tarzı istekler (<code>a/b</code>)</label>`} {
+		if !strings.Contains(got, want) {
+			t.Errorf("missing %s\nin %s", want, got)
+		}
+	}
+}
+
 func TestTranslateHTML(t *testing.T) {
 	c := testManager(t).Catalog("pl_PL")
 	in := `<html lang="en-US"><head><title>Page Title &lsaquo; Site &#8212; Pursae</title></head><body>` +
@@ -311,6 +333,17 @@ func TestTranslateParts(t *testing.T) {
 	} {
 		if got, ok := c.translateText(in); ok {
 			t.Errorf("%q must stay English, got %q", in, got)
+		}
+	}
+}
+
+// TestTitleParts: every part of an admin title but the site's is translated on its own.
+func TestTitleParts(t *testing.T) {
+	c := testManager(t).Catalog("pl_PL")
+	got := string(c.TranslateHTML([]byte(`<title>Settings ‹ Pursae Security &lsaquo; Site &#8212; Pursae</title><title>Analytics › Posts ‹ Shop &lsaquo; Site &#8212; Pursae</title>`)))
+	for _, want := range []string{`<title>Ustawienia ‹ Pursae Security &lsaquo; Site &#8212; Pursae</title>`, `<title>Analytics › Wpisy ‹ Shop &lsaquo; Site &#8212; Pursae</title>`} {
+		if !strings.Contains(got, want) {
+			t.Errorf("missing %s in %s", want, got)
 		}
 	}
 }

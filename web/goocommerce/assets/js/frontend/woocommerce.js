@@ -60,13 +60,14 @@
 			var btn = document.createElement('button');
 			btn.type = 'button';
 			btn.className = 'show-password-input';
-			btn.setAttribute('aria-label', 'Show password');
+			var gp = window.goocommerce_params || {}, showText = gp.i18n_password_show || 'Show password', hideText = gp.i18n_password_hide || 'Hide password';
+			btn.setAttribute('aria-label', showText);
 			btn.textContent = '\u{1F441}';
 			btn.style.cssText = 'position:absolute;right:.5em;background:none;border:0;cursor:pointer;opacity:.6';
 			btn.addEventListener('click', function () {
 				var show = input.type === 'password';
 				input.type = show ? 'text' : 'password';
-				btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+				btn.setAttribute('aria-label', show ? hideText : showText);
 			});
 			wrap.appendChild(btn);
 		});

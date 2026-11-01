@@ -99,7 +99,7 @@ func (s *Server) gooStoreRender(c *gin.Context, screen, wcPage, title, tmpl stri
 	if wcPage == "wc-admin" {
 		body = "toplevel_page_goocommerce woocommerce-admin-page"
 	}
-	s.adminPage(c, screen, title+" &lsaquo; Pursae Commerce", body, tmpl, data, append(gooStoreNotices(c), notices...)...)
+	s.adminPage(c, screen, title+" ‹ Pursae Commerce", body, tmpl, data, append(gooStoreNotices(c), notices...)...)
 }
 
 // gooDeny answers a failed nonce check.
