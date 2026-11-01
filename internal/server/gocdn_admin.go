@@ -360,7 +360,7 @@ func (s *Server) gocdnAdminPost(c *gin.Context, page string) {
 				}
 				setSecret("purge-secret", &st.PurgeSecret)
 				if p := gocdnPurgerByKey(st.PurgeProvider); st.PurgeZone != "" && !p.Zone.MatchString(st.PurgeZone) {
-					fail("The " + p.Name + " " + strings.ToLower(p.ZoneLabel) + " is not valid.")
+					fail(fmt.Sprintf("%s: the %s is not valid.", p.Name, s.__(c, p.ZoneLabel)))
 					return
 				}
 			}
@@ -427,9 +427,9 @@ func (s *Server) gocdnAdminPost(c *gin.Context, page string) {
 			}
 		}
 		if err := gocdnPurgeError(res); err != nil {
-			msg := "Purge failed at " + err.Error()
+			msg := fmt.Sprintf("Purge failed at %s.", err.Error())
 			if len(ok) > 0 {
-				msg += ". Purged: " + strings.Join(ok, ", ") + "."
+				msg = fmt.Sprintf("Purge failed at %s. Purged: %s.", err.Error(), strings.Join(ok, ", "))
 			}
 			fail(msg)
 			return
@@ -457,7 +457,7 @@ func (s *Server) gocdnAdminPost(c *gin.Context, page string) {
 		q := "&prefix=" + url.QueryEscape(c.PostForm("prefix"))
 		msg := fmt.Sprintf("%d object(s) imported into the Media Library.", n)
 		if len(skipped) > 0 {
-			msg += " Skipped: " + strings.Join(skipped, "; ")
+			msg = fmt.Sprintf("%d object(s) imported into the Media Library. Skipped: %s", n, strings.Join(skipped, "; "))
 		}
 		if err != nil {
 			c.Redirect(http.StatusFound, back+sep+"gocdn-error="+url.QueryEscape(err.Error()+" "+msg)+q)
@@ -508,7 +508,7 @@ func (s *Server) gocdnReadExtras(c *gin.Context, st gocdnSettings) ([]gocdnPurge
 		e := gocdnPurgeConf{Provider: p.Key, Zone: strings.TrimSpace(c.PostForm("extra-" + p.Key + "-zone")),
 			KeyID: strings.TrimSpace(c.PostForm("extra-" + p.Key + "-key-id")), Secret: strings.TrimSpace(c.PostForm("extra-" + p.Key + "-secret"))}
 		if e.Zone != "" && !p.Zone.MatchString(e.Zone) {
-			return nil, "The " + p.Name + " " + strings.ToLower(p.ZoneLabel) + " is not valid."
+			return nil, fmt.Sprintf("%s: the %s is not valid.", p.Name, s.__(c, p.ZoneLabel))
 		}
 		if e.Secret == "" && c.PostForm("extra-"+p.Key+"-secret-clear") == "" {
 			for _, old := range st.PurgeExtra {
@@ -533,10 +533,24 @@ func (s *Server) gocdnProgress(c *gin.Context) {
 	if errs == nil {
 		errs = []string{}
 	}
+	// The screen shows whole sentences in the user's language, like the rendered page.
+	cat := s.catalog(c)
+	state := ""
+	switch {
+	case j.Running && j.live:
+		state = "running"
+	case j.Finished:
+		state = "finished"
+	case j.Stopped:
+		state = "stopped"
+	case j.Running:
+		state = "interrupted — start it again to resume"
+	}
 	c.Header("Cache-Control", "no-store")
-	c.JSON(http.StatusOK, gin.H{"kind": j.Kind, "label": gocdnJobKinds[j.Kind], "running": j.Running && j.live, "total": j.Total, "done": j.Done,
+	c.JSON(http.StatusOK, gin.H{"kind": j.Kind, "label": cat.Text(gocdnJobKinds[j.Kind]), "running": j.Running && j.live, "total": j.Total, "done": j.Done,
 		"failed": j.Failed, "files": j.Files, "percent": pct, "finished": j.Finished, "stopped": j.Stopped, "errors": errs,
-		"resumable": j.Running && !j.live, "stats": s.gocdnStats(c)})
+		"resumable": j.Running && !j.live, "stats": s.gocdnStats(c),
+		"count_text": cat.Text(fmt.Sprintf("%d done, %d failed of %d (%d files)", j.Done, j.Failed, j.Total, j.Files)), "state_text": cat.Text(state)})
 }
 
 // gocdnTest checks the connection with a probe object: PUT, HEAD, GET through the delivery URL

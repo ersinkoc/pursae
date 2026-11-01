@@ -814,7 +814,7 @@
 		function check( label, value, onchange, help ) {
 			return el( 'label', { class: 'hg-check' }, [ el( 'input', { type: 'checkbox', checked: !! value, onchange: function ( e ) {
 				onchange( e.target.checked );
-			} } ), ' ' + label, help ? el( 'span', { class: 'description', text: ' — ' + help } ) : null ] );
+			} } ), ' ' + label, help ? el( 'span', { class: 'description' }, [ ' — ', el( 'span', { text: help } ) ] ) : null ] ); // the help is a message of its own (wpgo-l10n.js)
 		}
 
 		function settingsBox() {
@@ -851,13 +851,13 @@
 				t.appendChild( el( 'tr', {}, [ el( 'th', { scope: 'row', text: 'Options' } ), el( 'td', {}, [
 					check( 'Draft & publish', sc.draftAndPublish, function ( v ) {
 						sc.draftAndPublish = v;
-					}, 'entries are drafts until published; turning it off publishes every entry' ),
+					}, 'Entries are drafts until published; turning it off publishes every entry' ),
 					check( 'Review before publishing', sc.reviewWorkflow, function ( v ) {
 						sc.reviewWorkflow = v;
-					}, 'a draft must be submitted for review and approved by an editor before it can be published (needs draft & publish)' ),
+					}, 'A draft must be submitted for review and approved by an editor before it can be published (needs draft & publish)' ),
 					check( 'Internationalization', sc.localized, function ( v ) {
 						sc.localized = v;
-					}, model.golylang ? 'one version per Pursae Multi Language language' : 'locales come from Pursae Multi Language when it is active' ) ] ) ] ) );
+					}, model.golylang ? 'One version per Pursae Multi Language language' : 'Locales come from Pursae Multi Language when it is active' ) ] ) ] ) );
 				t.appendChild( input( 'Preview URL', sc.previewUrl, function ( v ) {
 					sc.previewUrl = v;
 				}, { type: 'url', class: 'large-text code', placeholder: 'https://app.example.com/preview?slug={slug}&secret={secret}&locale={locale}',
@@ -1204,15 +1204,15 @@
 			var adv = el( 'td' );
 			adv.appendChild( check( 'Required field', f.required, function ( v ) {
 				f.required = v;
-			}, 'entries cannot be published without it' ) );
+			}, 'Entries cannot be published without it' ) );
 			if ( [ 'text', 'number', 'date', 'datetime', 'time', 'email', 'enumeration', 'uid' ].indexOf( f.type ) >= 0 ) {
 				adv.appendChild( check( 'Unique field', f.unique || f.type === 'uid', function ( v ) {
 					f.unique = v;
-				}, 'no two entries share a value' ) );
+				}, 'No two entries share a value' ) );
 			}
 			adv.appendChild( check( 'Private field', f.private || f.type === 'password', function ( v ) {
 				f.private = v;
-			}, 'never returned by the API' ) );
+			}, 'Never returned by the API' ) );
 			t.appendChild( el( 'tr', {}, [ el( 'th', { scope: 'row', text: 'Settings' } ), adv ] ) );
 			var minLabel = { number: [ 'Minimum value', 'Maximum value' ], component: [ 'Minimum items', 'Maximum items' ], dynamiczone: [ 'Minimum items', 'Maximum items' ],
 				media: [ 'Minimum files', 'Maximum files' ], relation: [ 'Minimum entries', 'Maximum entries' ] }[ f.type ] || [ 'Minimum length', 'Maximum length' ];
@@ -1406,13 +1406,18 @@
 			var i = form.querySelector( '[name="' + n + '"]' );
 			return i ? i.value : '';
 		}
+		// One sentence with the name in it, translated as a whole (wpgo-l10n.js's dictionary).
+		function lockMessage( by ) {
+			var msg = 'This entry is now being edited by {name}. Reload the page to take over editing.';
+			return ( ( window.WPGOL10n && window.WPGOL10n[ msg ] ) || msg ).replace( '{name}', by || '' );
+		}
 		function freeze( by ) {
 			form.querySelectorAll( '#hg-editor input, #hg-editor select, #hg-editor textarea, #hg-editor button, .hg-actions button' ).forEach( function ( x ) {
 				x.disabled = true;
 			} );
 			var hasBanner = document.getElementById( 'hg-lock-banner' );
 			if ( ! hasBanner ) {
-				var n = el( 'div', { id: 'hg-lock-banner', class: 'notice notice-warning' }, [ el( 'p', { text: by + ' is now editing this entry. Reload the page to take over editing.' } ) ] );
+				var n = el( 'div', { id: 'hg-lock-banner', class: 'notice notice-warning' }, [ el( 'p', { text: lockMessage( by ) } ) ] );
 				form.parentNode.insertBefore( n, form );
 			}
 		}
