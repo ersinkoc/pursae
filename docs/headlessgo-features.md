@@ -72,7 +72,7 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 |---|---|
 | Home with a card per type (entry counts, API route); side navigation | ✓ |
 | Entries list: search (text fields and document id), status filter (draft / published / modified), locale filter, sortable columns, pagination | ✓ |
-| Edit form generated from the schema for every field type: block editor for rich text (paragraph, headings, quote, code, lists, image; untouched blocks keep their inline formatting), media picker (WordPress media library), relation picker with search, nested components and dynamic zones with add / remove / reorder / collapse, JSON editor with validation, UID regenerate | ✓ |
+| Edit form generated from the schema for every field type: block editor for rich text (paragraph, headings, quote, code, lists, image; untouched blocks keep their inline formatting), media picker (WordPress media library), relation picker with search (WordPress posts and pages as the Posts screen shows them to the user: without `edit_others_posts` only published ones and their own; users by display name, with the login name only for users who may list users), nested components and dynamic zones with add / remove / reorder / collapse, JSON editor with validation, UID regenerate | ✓ |
 | Validation per field options; a rejected save shows the errors next to the fields and keeps the input (passwords are never echoed back) | ✓ |
 | Draft & publish: Save draft, Publish (validates required fields), Unpublish, Discard changes (back to the published version), status badges | ✓ |
 | i18n: with Pursae Multi Language active its languages are the locales; each document has one version per locale, linked by `documentId`; the edit screen lists the locales, opens a translation empty or filled from the current locale. With Pursae Multi Language off there is one default locale (setting) | ✓ |
@@ -95,9 +95,9 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 | Media upload: `POST /upload` (multipart `files`, one or several; optional `fileInfo` JSON `{name, alternativeText, caption}` or a list) through the core media upload code (same file checks, image sizes, Pursae CDN); answer: the files in the API's media format. With `ref` (type uid or API id), `refId` (document id), `field` and optional `locale` the files are attached to the entry's draft (appended to a multiple field, replacing a single one; allowed types checked before anything is kept). `GET /upload/files/{id}` | ✓ |
 | Response `{data, meta}`; entries carry `id`, `documentId`, attributes, `createdAt`, `updatedAt`, `publishedAt`, `locale`; errors `{data:null, error:{status, name, message, details}}` with `ValidationError` details `{errors:[{path, message}]}` | ✓ |
 | `filters[field][$eq|$eqi|$ne|$nei|$lt|$lte|$gt|$gte|$in|$notIn|$contains|$notContains|$containsi|$notContainsi|$startsWith(i)|$endsWith(i)|$null|$notNull|$between]`, `$and`, `$or`, `$not`, implicit `$eq` | ✓ |
-| Filtering through relations (`filters[author][name][$eq]`, nested), components (single and repeatable), media (`id`, `name`, `mime`), WordPress pages/posts (`id`, `slug`, `title`, `status`) and users (`id`, `username`, `slug`, `name`); `$null` on relations, media, components | ✓ |
+| Filtering through relations (`filters[author][name][$eq]`, nested), components (single and repeatable), media (`id`, `name`, `mime`), WordPress pages/posts (`id`, `slug`, `title`, `status`; only published posts/pages of the target type match) and users (`id`, `slug`, `name`; the login name is not filterable); `$null` on relations, media, components. A relation to a type the caller may not read (find/findOne) is an invalid key (400); a draft read sees related drafts only with a token allowed to read drafts, otherwise their published version | ✓ |
 | `sort=a:asc,b:desc`, `sort[0]=…`, `sort[a]=desc` on scalar attributes and system fields | ✓ |
-| Sorting through relations and single components: `sort=author.name:asc`, `author.company.name`, `seo.metaTitle`, `page.title` (WordPress posts/pages: `id`, `slug`, `title`; users: `id`, `username`, `slug`, `name`), also through single-valued inverse relations. To-many relations and repeatable components are refused (400). Entries without the related value sort last | ✓ |
+| Sorting through relations and single components: `sort=author.name:asc`, `author.company.name`, `seo.metaTitle`, `page.title` (WordPress posts/pages: `id`, `slug`, `title`, published ones only; users: `id`, `slug`, `name`), also through single-valued inverse relations. The same permission rules as for filtering apply. To-many relations and repeatable components are refused (400). Entries without the related value sort last | ✓ |
 | Filtering through inverse relations (`filters[books][title][$eq]`, `filters[books][$null]=true`) | ✓ |
 | `pagination[page]&pagination[pageSize]` or `pagination[start]&pagination[limit]` (mixing is a 400), `pagination[withCount]=false`; default/max page size are settings (25/100) | ✓ |
 | `populate=*` (one level), `populate=a,b`, `populate=a.b`, `populate[a][populate]…`, `[fields]`, `[filters]`, `[sort]`, dynamic zones `populate[zone][on][comp.uid]…`, `populate=localizations` | ✓ |
@@ -120,7 +120,7 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 | Upload permission: full-access tokens always, custom tokens with "May upload media", read-only tokens and the public role never | ✓ |
 | Only a SHA-256 of the token is stored; it is shown once (on the response page, never in a URL) with its last four characters in the list | ✓ |
 | `Authorization: Bearer <token>`; a bad token is 401 `UnauthorizedError`, a missing permission 403 `ForbiddenError` | ✓ |
-| Populated relations to a type the caller may not read are left out (not an error) | ✓ |
+| Populated relations to a type the caller may not read are left out (not an error). Related entries (and other locales) of a draft response — a draft read or the answer to a write — are shown as drafts only to tokens allowed to read drafts; other callers get their published versions | ✓ |
 | Cookie / Application Password auth on this namespace | ✗ tokens only (the admin uses its own screens) |
 
 ## 7. CORS
@@ -137,6 +137,7 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 |---|---|
 | Events `entry.create`, `entry.update`, `entry.publish`, `entry.unpublish`, `entry.delete`, and `schema.update` (setting) | ✓ |
 | Per webhook: name, URL, events, custom headers (reserved ones refused), signing secret, enabled | ✓ |
+| Deliveries go to public addresses only: the address is checked when the connection is made (after DNS resolution), so loopback, private, link-local (cloud metadata) and carrier-grade NAT addresses fail with an error; redirects are not followed | ✓ |
 | Payload `{event, createdAt, model, uid, entry}` (public scalar attributes; private fields never sent) | ✓ |
 | `X-HeadlessGo-Signature: sha256=<hex HMAC-SHA256 of the body>`, `X-HeadlessGo-Event`, `X-HeadlessGo-Delivery` | ✓ |
 | Durable delivery queue (`hg_webhook_queue`): the first attempt starts at once in the background; a network error or a non-2xx answer is retried with an exponential backoff (10 s, 40 s, 160 s, 640 s…, at most 6 h) up to the "Attempts per delivery" setting (5 by default, 1–10), then the delivery is failed. Short backoffs are retried in-process; the `headlessgo_tick` job delivers whatever is due, so retries survive restarts (rows claimed with `FOR UPDATE SKIP LOCKED`; rows left running by a crashed instance return after 5 minutes). Finished rows are removed after a day | ✓ |
@@ -152,9 +153,10 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 - The preview secret (Settings, regenerable) is the `{secret}` front ends compare; it also keys the
   preview tokens. ✓
 - `{previewToken}`: a signed, short-lived token (lifetime setting, 60 min by default) that reads one
-  document's draft: `findOne` of that document, or `find` restricted to it, with `status=draft`. Sent
-  as `Authorization: Bearer`, `X-Preview-Token` or `?previewToken=`. Rotating the secret revokes every
-  preview token. ✓
+  document's draft in the entry's locale: `findOne` of that document, or `find` restricted to it, with
+  `status=draft`; another `locale=` is 403. Related entries, `localizations` and relation filters see
+  only what the public role may read, in their published version. Sent as `Authorization: Bearer`,
+  `X-Preview-Token` or `?previewToken=`. Rotating the secret revokes every preview token. ✓
 
 ## 10. GraphQL
 

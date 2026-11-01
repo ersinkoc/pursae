@@ -71,12 +71,13 @@ type hgAuth struct {
 	Public  map[string][]string
 	PrevUID string
 	PrevDoc string
+	PrevLoc string // the locale a preview token reads ("" for a type without i18n)
 }
 
 func (a *hgAuth) can(uid, action string) bool {
 	switch a.Kind {
-	case "preview":
-		return action == "find" || action == "findOne"
+	case "preview": // its own type; other types (populate, relation filters) as the public role
+		return (action == "find" || action == "findOne") && (uid == a.PrevUID || containsStr(a.Public[uid], action))
 	case "token":
 		switch a.Token.Kind {
 		case "full-access":
@@ -90,11 +91,36 @@ func (a *hgAuth) can(uid, action string) bool {
 	return containsStr(a.Public[uid], action)
 }
 
+// reads reports whether the caller may read entries of a type (find or findOne): filtering,
+// sorting and populating through a relation needs it on the target. nil is the admin (anything).
+func (a *hgAuth) reads(uid string) bool {
+	return a == nil || a.can(uid, "find") || a.can(uid, "findOne")
+}
+
+// relatedDrafts reports whether drafts of related entries of a type may be read (filtered,
+// sorted, populated) when the request reads drafts: only tokens allowed to read drafts, and the
+// admin (nil). Other callers see related entries in their published version.
+func (a *hgAuth) relatedDrafts(uid string) bool {
+	return a == nil || (a.Kind == "token" && a.drafts(uid))
+}
+
+// previewLocale is the locale a read of type sc uses: the requested one, except that a preview
+// token reads its own locale only (ok is false when another one is asked for).
+func (a *hgAuth) previewLocale(sc *hgSchema, requested string) (string, bool) {
+	if a.Kind != "preview" || !sc.Localized || a.PrevLoc == "" {
+		return requested, true
+	}
+	if requested != "" && requested != a.PrevLoc {
+		return "", false
+	}
+	return a.PrevLoc, true
+}
+
 // drafts reports whether status=draft may be read.
 func (a *hgAuth) drafts(uid string) bool {
 	switch a.Kind {
 	case "preview":
-		return true
+		return uid == a.PrevUID
 	case "token":
 		return a.Token.Kind == "full-access" || a.Token.Drafts
 	}
@@ -128,12 +154,12 @@ func (s *Server) hgAuthenticate(c *gin.Context, st hgSettings) (*hgAuth, bool) {
 		return nil, false
 	}
 	if strings.HasPrefix(tok, hgPreviewPrefix) {
-		uid, doc, ok := s.hgCheckPreviewToken(st, tok)
+		uid, doc, loc, ok := s.hgCheckPreviewToken(st, tok)
 		if !ok {
 			hgErr(c, http.StatusUnauthorized, "UnauthorizedError", "Missing or invalid credentials", nil)
 			return nil, false
 		}
-		a.Kind, a.PrevUID, a.PrevDoc = "preview", uid, doc
+		a.Kind, a.PrevUID, a.PrevDoc, a.PrevLoc = "preview", uid, doc, loc
 		return a, true
 	}
 	t := s.hgTokenByValue(c, tok)
@@ -250,6 +276,7 @@ func (s *Server) hgIndex(c *gin.Context, a *hgAuth) {
 
 // hgReadParams are the parsed read parameters of a request.
 type hgReadParams struct {
+	Auth     *hgAuth // who reads: relation filters and sorting check its permissions (nil: the admin)
 	Status   string
 	Locale   string // the locale column ("" without i18n)
 	Filters  map[string]any
@@ -261,7 +288,7 @@ type hgReadParams struct {
 
 func (s *Server) hgParseRead(c *gin.Context, a *hgAuth, sc *hgSchema, st hgSettings) (*hgReadParams, bool) {
 	qs := hgParseQS(c.Request.URL.Query())
-	p := &hgReadParams{Status: "published"}
+	p := &hgReadParams{Auth: a, Status: "published"}
 	if v, _ := qs["status"].(string); v != "" {
 		if v != "draft" && v != "published" {
 			hgErr(c, http.StatusBadRequest, "ValidationError", "Invalid status: use draft or published", nil)
@@ -277,6 +304,11 @@ func (s *Server) hgParseRead(c *gin.Context, a *hgAuth, sc *hgSchema, st hgSetti
 		return nil, false
 	}
 	loc, _ := qs["locale"].(string)
+	loc, ok := a.previewLocale(sc, loc)
+	if !ok {
+		hgForbidden(c, a)
+		return nil, false
+	}
 	l, err := s.hgEntryLocale(c, sc, loc)
 	if err != nil {
 		hgErr(c, http.StatusBadRequest, "ValidationError", err.Error(), nil)
@@ -325,7 +357,7 @@ type hgFindOpts struct {
 // hgFind runs a find: the entries of a type in one locale and status matching the filters.
 func (s *Server) hgFind(ctx context.Context, sc *hgSchema, p *hgReadParams, o hgFindOpts) ([]*hgEntry, int, error) {
 	reg := s.hgReg(ctx)
-	q := &hgQuery{reg: reg, sql: &hgSQL{}, status: p.Status, locale: p.Locale}
+	q := &hgQuery{reg: reg, sql: &hgSQL{}, status: p.Status, locale: p.Locale, a: p.Auth}
 	if p.Locale == "" {
 		q.locale = s.hgDefaultLocale(ctx)
 	}
@@ -756,12 +788,19 @@ func (h *hgSer) localizations(sc *hgSchema, e *hgEntry) []any {
 		locs = append(locs, l)
 	}
 	sort.Strings(locs)
+	status := h.relStatus(sc.UID) // other locales' drafts are other versions: the same rule as related entries
+	sub := h
+	if status != h.p.Status {
+		p := *h.p
+		p.Status = status
+		sub = &hgSer{s: h.s, c: h.c, reg: h.reg, a: h.a, p: &p, media: h.media}
+	}
 	for _, l := range locs {
 		v := versions[l]
-		if l == e.Locale || v.Version(h.p.Status) == nil {
+		if l == e.Locale || v.Version(status) == nil {
 			continue
 		}
-		obj, err := h.entry(sc, v, nil, nil)
+		obj, err := sub.entry(sc, v, nil, nil)
 		if err == nil {
 			out = append(out, obj)
 		}
@@ -811,7 +850,7 @@ func (h *hgSer) object(sc *hgSchema, data map[string]any, pop *hgPop, fields []s
 			if h.cur == nil {
 				continue
 			}
-			v = hgAnyStrings(h.s.hgInverseIDs(h.c, f, h.cur.DocumentID, h.cur.Locale, h.p.Status))
+			v = hgAnyStrings(h.s.hgInverseIDs(h.c, f, h.cur.DocumentID, h.cur.Locale, h.relStatus(f.Target)))
 		}
 		val, keep, err := h.populated(sc, f, v, sub, depth)
 		if err != nil {
@@ -977,7 +1016,7 @@ func (h *hgSer) relation(f *hgField, ids []any, pop *hgPop, depth int) ([]any, b
 	if target == nil {
 		return nil, false, nil
 	}
-	if !h.a.can(target.UID, "find") && !h.a.can(target.UID, "findOne") && h.a.Kind != "preview" {
+	if !h.a.reads(target.UID) {
 		return nil, false, nil // the caller may not read the target type: the attribute is left out
 	}
 	var docs []string
@@ -996,7 +1035,7 @@ func (h *hgSer) relation(f *hgField, ids []any, pop *hgPop, depth int) ([]any, b
 			}
 		}
 	}
-	status := h.p.Status
+	status := h.relStatus(target.UID)
 	if !target.DraftAndPublish {
 		status = "published"
 	}
@@ -1011,7 +1050,7 @@ func (h *hgSer) relation(f *hgField, ids []any, pop *hgPop, depth int) ([]any, b
 	if len(pop.Filters) > 0 {
 		filters = map[string]any{"$and": []any{filters, pop.Filters}}
 	}
-	rp := &hgReadParams{Status: status, Locale: loc, Filters: filters, Sort: pop.Sort, Page: hgPagination{Page: 1, PageSize: 1000}}
+	rp := &hgReadParams{Auth: h.a, Status: status, Locale: loc, Filters: filters, Sort: pop.Sort, Page: hgPagination{Page: 1, PageSize: 1000}}
 	list, _, err := h.s.hgFind(ctx, target, rp, hgFindOpts{NoLim: true})
 	if err != nil {
 		return nil, false, err
@@ -1033,6 +1072,16 @@ func (h *hgSer) relation(f *hgField, ids []any, pop *hgPop, depth int) ([]any, b
 		out = append(out, obj)
 	}
 	return out, true, nil
+}
+
+// relStatus is the status related entries of a type are shown in: the request's, except that a
+// draft response (a draft read, or a write's answer) shows related drafts only to callers that
+// may read them (hgAuth.relatedDrafts); others see the published versions.
+func (h *hgSer) relStatus(uid string) string {
+	if h.p.Status == "draft" && !h.a.relatedDrafts(uid) {
+		return "published"
+	}
+	return h.p.Status
 }
 
 // entryAt serializes a related entry below the root.

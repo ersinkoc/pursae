@@ -622,6 +622,15 @@ func (q *hgQuery) inverseFilter(f *hgField, m map[string]any, alias string) (str
 	if owner == nil || alias == "" {
 		return "", hgBad("Invalid key %s", f.Name)
 	}
+	status, err := q.target(owner, f.Name)
+	if err != nil {
+		return "", err
+	}
+	return q.in(status, func() (string, error) { return q.inverseFilterIn(owner, f, m, alias) })
+}
+
+// inverseFilterIn compiles inverseFilter in the owner entries' status (q.status).
+func (q *hgQuery) inverseFilterIn(owner *hgSchema, f *hgField, m map[string]any, alias string) (string, error) {
 	a := q.sql.next("o")
 	cond := a + ".type_uid = " + q.sql.arg(owner.UID)
 	if owner.Localized {
@@ -708,7 +717,10 @@ func (q *hgQuery) sortExpr(sc *hgSchema, path []string, col, alias string, depth
 			cols := map[string]string{"id": "id", "slug": "slug", "title": "title"}
 			table := "posts"
 			if f.Target == "wp:user" {
-				cols, table = map[string]string{"id": "id", "username": "login", "slug": "nicename", "name": "display_name"}, "users"
+				cols, table = map[string]string{}, "users"
+				for k, c := range hgWPUserCols {
+					cols[k] = c[0]
+				}
 			}
 			c, ok := cols[path[1]]
 			if !ok {
@@ -719,33 +731,47 @@ func (q *hgQuery) sortExpr(sc *hgSchema, path []string, col, alias string, depth
 			if c != "id" {
 				expr = "lower(" + expr + ")"
 			}
-			return "(SELECT " + expr + " FROM " + table + " " + a + " WHERE " + a + ".id::text = " + first + ")", nil
+			cond := a + ".id::text = " + first
+			if table == "posts" {
+				cond += " AND " + hgWPPostCond(a, f.Target)
+			}
+			return "(SELECT " + expr + " FROM " + table + " " + a + " WHERE " + cond + ")", nil
 		}
 		target := q.reg.Get(f.Target)
 		if target == nil {
 			return "", hgBad("Invalid sort key %s", key)
 		}
-		a := q.sql.next("s")
-		cond := a + ".type_uid = " + q.sql.arg(target.UID)
-		if f.MappedBy != "" {
-			if alias == "" {
-				return "", hgBad("Invalid sort key %s", key)
-			}
-			cond += " AND " + q.versionCol(a) + "->'" + f.MappedBy + "' @> jsonb_build_array(" + alias + ".document_id)"
-		} else {
-			cond += " AND " + a + ".document_id = " + first
-		}
-		if target.Localized {
-			cond += " AND " + a + ".locale = " + q.sql.arg(q.locale)
-		}
-		if q.status != "draft" {
-			cond += " AND " + a + ".published_data IS NOT NULL"
-		}
-		inner, err := q.sortExpr(target, path[1:], q.versionCol(a), a, depth+1)
+		status, err := q.target(target, key)
 		if err != nil {
-			return "", err
+			return "", hgBad("Invalid sort key %s", key)
 		}
-		return "(SELECT " + inner + " FROM hg_entries " + a + " WHERE " + cond + " ORDER BY " + a + ".id LIMIT 1)", nil
+		return q.in(status, func() (string, error) { return q.sortThrough(f, target, path, alias, first, depth) })
 	}
 	return "", hgBad("Invalid sort key %s", key)
+}
+
+// sortThrough compiles a sort key through a relation to an entry, in the target entries'
+// status (q.status).
+func (q *hgQuery) sortThrough(f *hgField, target *hgSchema, path []string, alias, first string, depth int) (string, error) {
+	a := q.sql.next("s")
+	cond := a + ".type_uid = " + q.sql.arg(target.UID)
+	if f.MappedBy != "" {
+		if alias == "" {
+			return "", hgBad("Invalid sort key %s", strings.Join(path, "."))
+		}
+		cond += " AND " + q.versionCol(a) + "->'" + f.MappedBy + "' @> jsonb_build_array(" + alias + ".document_id)"
+	} else {
+		cond += " AND " + a + ".document_id = " + first
+	}
+	if target.Localized {
+		cond += " AND " + a + ".locale = " + q.sql.arg(q.locale)
+	}
+	if q.status != "draft" {
+		cond += " AND " + a + ".published_data IS NOT NULL"
+	}
+	inner, err := q.sortExpr(target, path[1:], q.versionCol(a), a, depth+1)
+	if err != nil {
+		return "", err
+	}
+	return "(SELECT " + inner + " FROM hg_entries " + a + " WHERE " + cond + " ORDER BY " + a + ".id LIMIT 1)", nil
 }
