@@ -15,7 +15,6 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
-	"syscall"
 	"time"
 )
 
@@ -34,16 +33,7 @@ const gooWebhookMaxFailures = 5
 var gooWebhookClient = &http.Client{
 	Timeout: 15 * time.Second,
 	Transport: &http.Transport{TLSHandshakeTimeout: 10 * time.Second, DialContext: (&net.Dialer{Timeout: 10 * time.Second,
-		Control: func(_, address string, _ syscall.RawConn) error {
-			host, _, err := net.SplitHostPort(address)
-			if err != nil {
-				return err
-			}
-			if !gooWebhookAllowPrivate.Load() && !publicIP(net.ParseIP(host)) {
-				return errors.New("webhook delivery URL points at a private network address")
-			}
-			return nil
-		}}).DialContext},
+		Control: publicOnly(gooWebhookAllowPrivate.Load, "webhook delivery URL points at a private network address")}).DialContext},
 	CheckRedirect: func(req *http.Request, via []*http.Request) error {
 		if len(via) >= 5 {
 			return errors.New("too many redirects")

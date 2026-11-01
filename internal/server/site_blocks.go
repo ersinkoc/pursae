@@ -391,21 +391,30 @@ func publicIP(ip net.IP) bool {
 	return true
 }
 
+// publicOnly is a net.Dialer Control that refuses non-public addresses (publicIP) when the
+// connection is made — after DNS resolution and for every redirect — unless allow says otherwise
+// (tests reaching httptest servers on the loopback address). Every outbound fetch whose URL comes
+// from users, plugins or the network uses it.
+func publicOnly(allow func() bool, refusal string) func(network, address string, c syscall.RawConn) error {
+	return func(_, address string, _ syscall.RawConn) error {
+		host, _, err := net.SplitHostPort(address)
+		if err != nil {
+			return err
+		}
+		if (allow == nil || !allow()) && !publicIP(net.ParseIP(host)) {
+			return errors.New(refusal)
+		}
+		return nil
+	}
+}
+
 // allowPrivateFeedHosts is switched on by tests so a local httptest feed can be fetched.
 var allowPrivateFeedHosts = false
 
 // safeFetch downloads a URL, refusing private hosts at connect time (after DNS resolution) and on every redirect.
 func safeFetch(ctx context.Context, rawURL string) (body []byte, contentType string, status int, err error) {
-	dialer := &net.Dialer{Timeout: 10 * time.Second, Control: func(network, address string, _ syscall.RawConn) error {
-		host, _, err := net.SplitHostPort(address)
-		if err != nil {
-			return err
-		}
-		if !allowPrivateFeedHosts && !publicIP(net.ParseIP(host)) {
-			return errors.New("the address points at a private network")
-		}
-		return nil
-	}}
+	dialer := &net.Dialer{Timeout: 10 * time.Second,
+		Control: publicOnly(func() bool { return allowPrivateFeedHosts }, "the address points at a private network")}
 	client := &http.Client{
 		Timeout:   10 * time.Second,
 		Transport: &http.Transport{DialContext: dialer.DialContext, Proxy: http.ProxyFromEnvironment, TLSHandshakeTimeout: 10 * time.Second},

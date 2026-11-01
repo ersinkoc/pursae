@@ -16,7 +16,6 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
-	"syscall"
 	"time"
 	"unicode/utf8"
 
@@ -72,16 +71,7 @@ func hgWebhookBackoff(n int) time.Duration {
 var hgWebhookClient = &http.Client{
 	Timeout: 10 * time.Second,
 	Transport: &http.Transport{TLSHandshakeTimeout: 10 * time.Second, DialContext: (&net.Dialer{Timeout: 10 * time.Second,
-		Control: func(_, address string, _ syscall.RawConn) error {
-			host, _, err := net.SplitHostPort(address)
-			if err != nil {
-				return err
-			}
-			if !hgWebhookAllowPrivate.Load() && !publicIP(net.ParseIP(host)) {
-				return errors.New("the webhook URL points at a private network address")
-			}
-			return nil
-		}}).DialContext},
+		Control: publicOnly(hgWebhookAllowPrivate.Load, "the webhook URL points at a private network address")}).DialContext},
 	CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
 }
 

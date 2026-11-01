@@ -19,7 +19,6 @@ import (
 	"sort"
 	"strings"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -225,14 +224,8 @@ func pluginOptionAllowed(plugin, name string) bool {
 
 var pluginHTTP = &http.Client{
 	Timeout: 8 * time.Second,
-	Transport: &http.Transport{DialContext: (&net.Dialer{Timeout: 5 * time.Second, Control: func(_, address string, _ syscall.RawConn) error {
-		host, _, _ := net.SplitHostPort(address)
-		ip := net.ParseIP(host)
-		if !publicIP(ip) { // the same policy as the feed fetcher: also carrier-grade NAT, 0.0.0.0/8 and broadcast
-			return errors.New("destination not allowed for plugins")
-		}
-		return nil
-	}}).DialContext},
+	Transport: &http.Transport{DialContext: (&net.Dialer{Timeout: 5 * time.Second,
+		Control: publicOnly(nil, "destination not allowed for plugins")}).DialContext},
 }
 
 func (h *pluginHost) HTTPGet(ctx context.Context, plugin, url string) (*plugins.HTTPResponse, error) {
