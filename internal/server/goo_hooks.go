@@ -110,6 +110,14 @@ type gooCheckoutHook func(s *Server, ctx context.Context, cart *gooCart, order *
 
 var gooCheckoutHooks []gooCheckoutHook
 
+// gooCheckoutReserveHook takes what the order spends from a shared balance (gift cards, points) once the
+// checkout hooks have passed, atomically, so two checkouts at once cannot both spend the same balance:
+// it fails when the balance no longer covers the order. release gives the balance back when the order
+// is not created after all.
+type gooCheckoutReserveHook func(s *Server, ctx context.Context, cart *gooCart, order *gooOrder) (release func(), err error)
+
+var gooCheckoutReserveHooks []gooCheckoutReserveHook
+
 // Front-end output ----------------------------------------------------------------------------------
 
 // gooHTMLHook prints markup at a template location for a product:

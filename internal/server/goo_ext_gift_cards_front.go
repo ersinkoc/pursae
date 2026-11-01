@@ -288,8 +288,12 @@ func gcAccount(s *Server, c *gin.Context, arg string) template.HTML {
 	cards := s.gcQuery(ctx, `(lower(recipient) = lower($1) OR redeemed_by = $2) AND (delivered OR redeemed_by = $2) ORDER BY created DESC`, u.Email, u.ID)
 	var b strings.Builder
 	total := 0.0
+	// The account's e-mail address is not verified (a customer can change it under Account details, or
+	// register with an address that has no account yet), so a card merely addressed to it shows its code
+	// masked and no balance: the full code is in the recipient's e-mail, and adding it here (by code)
+	// makes it the account's.
 	for _, g := range cards {
-		if s.gcUsable(g) == nil {
+		if g.RedeemedBy == u.ID && s.gcUsable(g) == nil {
 			total += g.Balance
 		}
 	}
@@ -310,8 +314,12 @@ func gcAccount(s *Server, c *gin.Context, arg string) template.HTML {
 					status = "Expired"
 				}
 			}
+			code, balance := g.Code, s.gooPriceIn(g.Balance, g.Currency)
+			if g.RedeemedBy != u.ID {
+				code, balance, status = gcMaskCode(g.Code), "&ndash;", "Not added"
+			}
 			fmt.Fprintf(&b, `<tr><td data-title="Code"><code>%s</code></td><td data-title="From">%s</td><td data-title="Balance">%s</td><td data-title="Expires">%s</td><td data-title="Status">%s</td></tr>`,
-				html.EscapeString(g.Code), html.EscapeString(g.Sender), s.gooPriceIn(g.Balance, g.Currency), exp, status)
+				html.EscapeString(code), html.EscapeString(g.Sender), balance, exp, status)
 		}
 		b.WriteString(`</tbody></table>`)
 	}
@@ -364,6 +372,17 @@ func gcPanelSave(s *Server, c *gin.Context, p *gooProduct) {
 		lo = mn
 	}
 	p.RegularPrice, p.SalePrice = &lo, nil
+}
+
+// gcMaskCode hides all but the last four characters of a gift card code.
+func gcMaskCode(code string) string {
+	r := []rune(code)
+	for i := 0; i < len(r)-4; i++ {
+		if r[i] != '-' {
+			r[i] = 'X'
+		}
+	}
+	return string(r)
 }
 
 // gcCardsForEmail is used by the admin and the tests: the cards sent to an address.

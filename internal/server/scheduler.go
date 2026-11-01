@@ -119,12 +119,17 @@ func (s *Server) mailer() *mail.Mailer {
 }
 
 // queueJob schedules a one-off job (runAt zero means now).
+//
+// "Now" is the database's clock, the one runDueJobs compares run_at with: a timestamp from this
+// process would leave the job in the future whenever the app host's clock runs ahead of the
+// database's (Docker VMs drift), so a mail queued "now" would wait for the next scheduler tick.
 func (s *Server) queueJob(ctx context.Context, name string, payload any, runAt time.Time) error {
-	if runAt.IsZero() {
-		runAt = time.Now()
-	}
 	raw, _ := json.Marshal(payload)
-	_, err := s.store.Pool.Exec(ctx, `INSERT INTO jobs(name, payload, run_at) VALUES ($1, $2, $3)`, name, raw, runAt)
+	var at *time.Time
+	if !runAt.IsZero() {
+		at = &runAt
+	}
+	_, err := s.store.Pool.Exec(ctx, `INSERT INTO jobs(name, payload, run_at) VALUES ($1, $2, COALESCE($3, now()))`, name, raw, at)
 	return err
 }
 

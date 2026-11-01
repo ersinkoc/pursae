@@ -104,7 +104,9 @@ func (s *Server) gweAjaxBatch(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"success": false, "data": gin.H{"responses": gin.H{"": gin.H{"success": false, "code": 200, "data": "Token Expired."}}}})
 		return
 	}
-	if !u.Can("edit_posts", nil) {
+	// Role Manager's "no access to the editor" holds for the editor's AJAX too, not only its page (the
+	// nonce is also handed out by the heartbeat).
+	if !u.Can("edit_posts", nil) || s.gweProRoleExcluded(u) {
 		c.JSON(http.StatusForbidden, gin.H{"success": false, "data": "Access denied."})
 		return
 	}
@@ -249,6 +251,9 @@ func (s *Server) gweAction(c *gin.Context, action string, raw json.RawMessage, e
 				return nil, err
 			}
 			settings := gwePageSettings(p)
+			if gweNeedsKses(u) {
+				gweKsesValue(values)
+			}
 			for k, v := range values {
 				settings[k] = v
 			}
@@ -413,6 +418,14 @@ func (s *Server) gweSaveBuilder(c *gin.Context, p *store.Post, data map[string]a
 	settings, _ := data["settings"].(map[string]any)
 	if settings == nil {
 		settings = map[string]any{}
+	}
+	if gweNeedsKses(u) { // no unfiltered_html: no script in the stored document (gowebeditor_kses.go)
+		filtered, err := gweKsesJSON(elements)
+		if err != nil {
+			return nil, gweFail(http.StatusBadRequest, "Invalid elements.")
+		}
+		elements = filtered
+		gweKsesValue(settings)
 	}
 	typ := gweDocType(p)
 	published := p.Status == "publish" || p.Status == "private" || p.Status == "future"

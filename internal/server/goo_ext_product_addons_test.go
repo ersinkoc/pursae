@@ -89,6 +89,11 @@ func TestGooExtAddons(t *testing.T) {
 	if _, err := cart.Add(ctx, mug.ID, 1, 0, nil, map[string][]string{name(1): {"Hi5"}}, nil); err == nil || !strings.Contains(err.Error(), "Only letters") {
 		t.Errorf("digits in a letters-only engraving: %v", err)
 	}
+	for _, bad := range []string{"NaN", "Inf", "-Inf"} { // ParseFloat accepts these; a NaN price would make the cart free
+		if _, err := cart.Add(ctx, mug.ID, 1, 0, nil, map[string][]string{name(1): {"Hi"}, name(5): {bad}}, nil); err == nil || !strings.Contains(err.Error(), "valid amount") {
+			t.Errorf("custom price %q: %v", bad, err)
+		}
+	}
 	if _, err := cart.Add(ctx, mug.ID, 1, 0, nil, map[string][]string{name(1): {"Hi"}, name(5): {"500"}}, nil); err == nil || !strings.Contains(err.Error(), "maximum allowed amount") {
 		t.Errorf("tip above the max: %v", err)
 	}

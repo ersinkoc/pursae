@@ -608,7 +608,9 @@ func (s *Server) pllFront(c *gin.Context) bool {
 			lang, byURL = l, true
 			stripped = "/"
 			if len(seg) > 1 {
-				stripped = "/" + seg[1]
+				// "/en//evil.example" must not become the protocol-relative "//evil.example" (nor
+				// "/\evil.example", which browsers read the same way) when the code is dropped below.
+				stripped = "/" + strings.TrimLeft(seg[1], "/\\")
 			}
 		}
 	case o.ForceLang == 2:
@@ -630,6 +632,9 @@ func (s *Server) pllFront(c *gin.Context) bool {
 	if byURL && lang.IsDefault && o.HideDefault && o.ForceLang == 1 && !s.pllQueryMode(o) && get {
 		// The default language has no code in its URLs.
 		target := stripped
+		if hasControlChar(target) || strings.Contains(target, "\\") { // browsers drop tabs and read "\" as "/"
+			target = "/"
+		}
 		if c.Request.URL.RawQuery != "" {
 			target += "?" + c.Request.URL.RawQuery
 		}

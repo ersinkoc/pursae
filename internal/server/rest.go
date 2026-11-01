@@ -171,13 +171,17 @@ func (api *restAPI) register(namespace, pattern string, methods map[string]restH
 }
 
 // restUser authenticates REST requests: cookie + X-WP-Nonce (as WordPress requires for
-// cookie auth) or HTTP Basic with an Application Password.
-func (s *Server) restAuthUser(c *gin.Context) (*store.User, error) {
+// cookie auth) or HTTP Basic with an Application Password. route is the requested REST route and
+// method the effective method (after X-HTTP-Method-Override / _method).
+func (s *Server) restAuthUser(c *gin.Context, route, method string) (*store.User, error) {
 	if user, pass, ok := c.Request.BasicAuth(); ok {
-		if strings.HasPrefix(user, "ck_") && s.gooOn() { // Goocommerce REST API keys (goo_rest_auth.go)
-			u, aerr := s.gooKeyAuth(c, user, pass, c.Request.Method)
+		// Goocommerce REST API keys (goo_rest_auth.go) sign in to the store's own namespaces only, like
+		// WC_REST_Authentication: elsewhere "ck_…" is just an unknown user name. The key's read / write
+		// permission is checked against the effective method, so ?_method=DELETE needs a write key.
+		if strings.HasPrefix(user, "ck_") && s.gooOn() && gooKeyRoute(route) {
+			u, aerr := s.gooKeyAuth(c, user, pass, method)
 			if aerr != nil {
-				return nil, errors.New("incorrect_password")
+				return nil, aerr // woocommerce_rest_authentication_error with its reason
 			}
 			return u, nil
 		}
@@ -272,9 +276,12 @@ func (api *restAPI) serve(c *gin.Context, route string) {
 		method = strings.ToUpper(m)
 	}
 
-	u, err := s.restAuthUser(c)
+	u, err := s.restAuthUser(c, route, method)
 	if err != nil {
-		if err.Error() == "rest_cookie_invalid_nonce" {
+		var keyErr *gooAPIErr
+		if errors.As(err, &keyErr) {
+			gooFail(c, keyErr)
+		} else if err.Error() == "rest_cookie_invalid_nonce" {
 			restErr(c, http.StatusForbidden, "rest_cookie_invalid_nonce", "Cookie check failed")
 		} else if err.Error() == "adminsec_locked" {
 			restErr(c, http.StatusTooManyRequests, "too_many_retries", "Too many failed login attempts, or access from this IP address is blocked.")

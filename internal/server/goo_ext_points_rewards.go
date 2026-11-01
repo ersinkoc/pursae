@@ -280,8 +280,9 @@ func (s *Server) gptsAward(ctx context.Context, o *gooOrder) {
 	}
 }
 
-// gptsReverse takes back an order's earned points and returns its redeemed ones (cancelled / refunded).
-func (s *Server) gptsReverse(ctx context.Context, o *gooOrder) {
+// gptsReverse takes back an order's earned points and, with refundRedeemed, returns its redeemed ones
+// (cancelled / refunded; a failed order keeps them, see the order_status_changed hook).
+func (s *Server) gptsReverse(ctx context.Context, o *gooOrder, refundRedeemed bool) {
 	if o.CustomerID == 0 {
 		return
 	}
@@ -292,7 +293,7 @@ func (s *Server) gptsReverse(ctx context.Context, o *gooOrder) {
 		_ = s.gooAddOrderNote(ctx, o, fmt.Sprintf("%d %s removed.", earned, s.gptsLabel(earned)), false, "")
 		changed = true
 	}
-	if red := gxaInt(o.Meta, "_wc_points_redeemed"); red > 0 && o.Meta["_wc_points_logged_redemption"] == true && o.Meta["_wc_points_redeem_refunded"] == nil {
+	if red := gxaInt(o.Meta, "_wc_points_redeemed"); refundRedeemed && red > 0 && o.Meta["_wc_points_logged_redemption"] == true && o.Meta["_wc_points_redeem_refunded"] == nil {
 		_ = s.gptsLog(ctx, o.CustomerID, red, "order-refunded", o.ID, "")
 		o.Meta["_wc_points_redeem_refunded"] = true
 		_ = s.gooAddOrderNote(ctx, o, fmt.Sprintf("%d %s refunded to the customer.", red, s.gptsLabel(red)), false, "")
@@ -304,6 +305,38 @@ func (s *Server) gptsReverse(ctx context.Context, o *gooOrder) {
 }
 
 // Redemption ----------------------------------------------------------------------------------------------
+
+// gptsReserve debits the points a checkout redeems before the order is saved. The balance check and the
+// debit run under a per-customer advisory lock, so two checkouts at once cannot both spend the same
+// points (each would otherwise get the discount and leave the balance negative).
+func gptsReserve(s *Server, ctx context.Context, _ *gooCart, o *gooOrder) (func(), error) {
+	pts := gxaInt(o.Meta, "_wc_points_redeemed")
+	if !s.gooExtOn(gptsKey) || o.CustomerID == 0 || pts <= 0 {
+		return nil, nil
+	}
+	conn, err := s.store.Pool.Acquire(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Release()
+	key := "goo_points:" + itoa64(o.CustomerID)
+	if _, err := conn.Exec(ctx, `SELECT pg_advisory_lock(hashtextextended($1, 0))`, key); err != nil {
+		return nil, err
+	}
+	defer func() {
+		_, _ = conn.Exec(context.WithoutCancel(ctx), `SELECT pg_advisory_unlock(hashtextextended($1, 0))`, key)
+	}()
+	if s.gptsBalance(ctx, o.CustomerID) < pts {
+		return nil, fmt.Errorf("You no longer have enough %s for this discount. Please review your order.", strings.ToLower(s.gptsLabel(2)))
+	}
+	if err := s.gptsLog(ctx, o.CustomerID, -pts, "order-redeem", 0, ""); err != nil {
+		return nil, err
+	}
+	o.Meta["_wc_points_logged_redemption"], o.Meta["_wc_points_reserved"] = true, true
+	return func() {
+		_ = s.gptsLog(context.WithoutCancel(ctx), o.CustomerID, pts, "order-refunded", 0, "Checkout did not complete.")
+	}, nil
+}
 
 // gptsRedeemable is the discount and the points a user may redeem on a cart, at most want points
 // (0 = as many as allowed).
@@ -423,12 +456,19 @@ func init() {
 		}
 		return nil
 	})
+	gooCheckoutReserveHooks = append(gooCheckoutReserveHooks, gptsReserve)
 	gooOn("order_created", 50, func(s *Server, ctx context.Context, arg any) {
 		o, ok := arg.(*gooOrder)
 		if !ok || !s.gooExtOn(gptsKey) || o.CustomerID == 0 {
 			return
 		}
-		if pts := gxaInt(o.Meta, "_wc_points_redeemed"); pts > 0 && o.Meta["_wc_points_logged_redemption"] == nil {
+		if pts := gxaInt(o.Meta, "_wc_points_redeemed"); pts > 0 && o.Meta["_wc_points_reserved"] == true {
+			// Checkout debited the points (gptsReserve) before the order had an id: link the entry.
+			_, _ = s.store.Pool.Exec(ctx, `UPDATE goo_points_log SET order_id = $1 WHERE id = (SELECT id FROM goo_points_log
+				WHERE user_id = $2 AND type = 'order-redeem' AND order_id = 0 AND points = $3 ORDER BY id DESC LIMIT 1)`, o.ID, o.CustomerID, -pts)
+			_ = s.gooAddOrderNote(ctx, o, fmt.Sprintf("%d %s redeemed for a %s discount.", pts, s.gptsLabel(pts),
+				s.gooPricePlain(gxaFloat(o.Meta, "_wc_points_redeemed_amount"), o.Currency)), false, "")
+		} else if pts > 0 && o.Meta["_wc_points_logged_redemption"] == nil {
 			o.Meta["_wc_points_logged_redemption"] = true
 			_ = s.gooSaveOrder(ctx, o, false)
 			_ = s.gptsLog(ctx, o.CustomerID, -pts, "order-redeem", o.ID, "")
@@ -453,8 +493,11 @@ func init() {
 		switch {
 		case containsStr(gooPaidStatuses, ch.To) && containsStr(gooPaidStatuses, o.Status):
 			s.gptsAward(ctx, o)
-		case ch.To == "cancelled" || ch.To == "refunded" || ch.To == "failed":
-			s.gptsReverse(ctx, o)
+		case ch.To == "cancelled" || ch.To == "refunded":
+			s.gptsReverse(ctx, o, true)
+		case ch.To == "failed":
+			// Redeemed points stay spent: the order can still be paid (Pay for order) with their discount.
+			s.gptsReverse(ctx, o, false)
 		}
 	})
 	gooOn("customer_created", 50, func(s *Server, ctx context.Context, arg any) {

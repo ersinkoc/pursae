@@ -12,6 +12,8 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+
+	"wpgo/internal/store"
 )
 
 // The cart (WC_Cart) and its totals (WC_Cart_Totals). A gooCart is built per request from the session
@@ -165,7 +167,14 @@ func (cart *gooCart) load(ctx context.Context) {
 		if st.VariationID != 0 {
 			pid = st.VariationID
 		}
+		if st.Quantity <= 0 || st.Quantity > gooMaxLineQty { // never from Add / SetQuantity: a damaged or forged session
+			cart.sess.touch()
+			continue
+		}
 		p := products[pid]
+		if p != nil && (!cart.mayBuyPrivate(p) || !cart.mayBuyPrivate(products[st.ProductID])) {
+			p = nil
+		}
 		if p == nil || !s.gooIsPurchasable(ctx, p) {
 			name := "A product"
 			if p != nil {
@@ -201,6 +210,18 @@ func (cart *gooCart) load(ctx context.Context) {
 		} else {
 			cart.errors = append(cart.errors, fmt.Sprintf(`Coupon "%s" has been removed from your cart because it no longer exists.`, html.EscapeString(code)))
 			cart.sess.touch()
+		}
+	}
+	// An individual-use coupon stands alone. ApplyCoupon enforces that, but logging in merges the
+	// visitor's coupons into the customer's, which could pair it with another one.
+	if len(cart.coupons) > 1 {
+		for _, cp := range cart.coupons {
+			if cp.IndividualUse {
+				cart.errors = append(cart.errors, fmt.Sprintf(`Sorry, coupon "%s" has already been applied and cannot be used in conjunction with other coupons.`, html.EscapeString(cp.Code)))
+				cart.coupons, cart.AppliedCoupons = []*gooCoupon{cp}, []string{cp.Code}
+				cart.sess.touch()
+				break
+			}
 		}
 	}
 	cart.sess.Data.AppliedCoupons = cart.AppliedCoupons
@@ -239,6 +260,24 @@ func (cart *gooCart) Item(key string) *gooCartItem {
 	return nil
 }
 
+// mayBuyPrivate is the status half of is_purchasable(): a private product is for sale only to users who
+// may edit it (shop staff testing it), never to visitors who guess its ID.
+func (cart *gooCart) mayBuyPrivate(p *gooProduct) bool {
+	if p == nil || p.Status != "private" {
+		return true
+	}
+	var u *store.User
+	if cart.c != nil {
+		u = currentUser(cart.c)
+	}
+	return u != nil && p.Post != nil && u.Can("edit_post", p.Post)
+}
+
+// gooMaxLineQty caps the quantity of a cart line. Quantities are machine integers: without a cap,
+// adding MaxInt64 twice to a line wraps it to a negative quantity, a negative line total and a free
+// (or discounted) order, with stock "returned" on payment.
+const gooMaxLineQty = 1_000_000
+
 // gooCartError is an add-to-cart / update failure with WooCommerce's message (HTML-safe).
 type gooCartError struct{ Msg string }
 
@@ -253,8 +292,11 @@ func (cart *gooCart) Add(ctx context.Context, productID int64, qty int, variatio
 	if qty <= 0 {
 		return "", gooCartErr("Please choose a quantity of items to add to your cart.")
 	}
+	if qty > gooMaxLineQty {
+		return "", gooCartErr("You cannot add that amount to the cart.")
+	}
 	p, err := s.gooGetProduct(ctx, productID)
-	if err != nil || (p.Status != "publish" && p.Status != "private") {
+	if err != nil || (p.Status != "publish" && p.Status != "private") || !cart.mayBuyPrivate(p) {
 		return "", gooCartErr("Sorry, this product cannot be purchased.")
 	}
 	if p.Type == gooTypeVariation {
@@ -268,7 +310,7 @@ func (cart *gooCart) Add(ctx context.Context, productID int64, qty int, variatio
 			}
 		}
 		p, err = s.gooGetProduct(ctx, productID)
-		if err != nil {
+		if err != nil || !cart.mayBuyPrivate(p) {
 			return "", gooCartErr("Sorry, this product cannot be purchased.")
 		}
 	}
@@ -364,6 +406,9 @@ func (cart *gooCart) Add(ctx context.Context, productID int64, qty int, variatio
 		return "", gooCartErr("You cannot add that amount of &quot;%s&quot; to the cart because there is not enough stock (%d remaining).", html.EscapeString(p.Name), stock)
 	}
 	if existing != nil {
+		if existing.Quantity+qty > gooMaxLineQty {
+			return "", gooCartErr("You cannot add that amount to the cart.")
+		}
 		existing.Quantity += qty
 	} else {
 		buy.parent = nil
@@ -392,6 +437,9 @@ func (cart *gooCart) SetQuantity(ctx context.Context, key string, qty int) error
 	if qty <= 0 {
 		cart.Remove(key)
 		return nil
+	}
+	if qty > gooMaxLineQty {
+		return gooCartErr("You cannot add that amount to the cart.")
 	}
 	if it.product.SoldIndividually && qty > 1 {
 		return gooCartErr("You can only have 1 %s in your cart.", html.EscapeString(it.product.Name))

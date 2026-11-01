@@ -64,6 +64,9 @@ func (s *Server) restPost(c *gin.Context, p *store.Post, ctxName string) map[str
 	if protected && !u.Can("edit_post", p) {
 		excerpt = "" // the first words of a password-protected post are as private as the rest of it
 	}
+	if !u.Can("edit_post", p) {
+		rendered, excerpt = s.gooRESTRestrict(c.Request.Context(), u, p, rendered, excerpt) // Goocommerce Memberships
+	}
 	date := p.Date().In(loc)
 	var dateGMT any = gmt(p.Date())
 	if p.PublishedAt == nil && (p.Status == "draft" || p.Status == "auto-draft" || p.Status == "pending") {

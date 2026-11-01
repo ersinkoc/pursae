@@ -311,8 +311,22 @@ func gooXCSafeReferer(c *gin.Context, def string) string {
 	if ref == "" {
 		return def
 	}
+	// Browsers read "\" as "/" and drop tabs and newlines, so "/\evil.example" or "http:\\evil.example"
+	// would leave the site although url.Parse sees no host.
+	if strings.Contains(ref, "\\") || hasControlChar(ref) {
+		return def
+	}
 	u, err := url.Parse(ref)
-	if err != nil || (u.Host != "" && u.Host != c.Request.Host) || (u.Scheme != "" && u.Scheme != "http" && u.Scheme != "https") {
+	if err != nil {
+		return def
+	}
+	if u.Host == "" && u.Scheme == "" {
+		if !strings.HasPrefix(ref, "/") || strings.HasPrefix(ref, "//") {
+			return def
+		}
+		return ref // a path on this site
+	}
+	if u.Host != c.Request.Host || (u.Scheme != "http" && u.Scheme != "https") {
 		return def
 	}
 	return ref

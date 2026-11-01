@@ -95,6 +95,13 @@ func (s *Server) gooKeyAuth(c *gin.Context, ck, cs, method string) (*store.User,
 	return u, nil
 }
 
+// gooKeyRoute reports whether a REST route belongs to the store's API (wc/…, wc-…), the only routes
+// that accept API keys (WC_REST_Authentication::is_request_to_rest_api).
+func gooKeyRoute(route string) bool {
+	route = strings.TrimLeft(route, "/")
+	return strings.HasPrefix(route, "wc/") || strings.HasPrefix(route, "wc-")
+}
+
 // gooSecureRequest reports whether keys may be sent: HTTPS (directly or behind a proxy) or a local
 // development host.
 func gooSecureRequest(c *gin.Context) bool {

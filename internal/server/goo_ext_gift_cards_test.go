@@ -256,8 +256,14 @@ func TestGooExtGiftCards(t *testing.T) {
 	_, _ = srv.store.Pool.Exec(ctx, `UPDATE goo_gift_cards SET recipient = $1 WHERE id = $2`, admin.Email, card.ID)
 	ac := gooTestCtx()
 	ac.Set(ctxUser, admin)
-	if out := string(gcAccount(srv, ac, "")); !strings.Contains(out, card.Code) || !strings.Contains(out, "add_gift_card_to_account") {
+	// A card addressed to the account's (unverified) e-mail is listed with its code masked; once added
+	// by code it is the account's and shows in full.
+	if out := string(gcAccount(srv, ac, "")); strings.Contains(out, card.Code) || !strings.Contains(out, gcMaskCode(card.Code)) || !strings.Contains(out, "add_gift_card_to_account") {
 		t.Errorf("account gift cards: %s", out)
+	}
+	_, _ = srv.store.Pool.Exec(ctx, `UPDATE goo_gift_cards SET redeemed_by = $1 WHERE id = $2`, admin.ID, card.ID)
+	if out := string(gcAccount(srv, ac, "")); !strings.Contains(out, card.Code) {
+		t.Errorf("account gift cards after adding: %s", out)
 	}
 }
 

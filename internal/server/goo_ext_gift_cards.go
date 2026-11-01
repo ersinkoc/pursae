@@ -61,6 +61,7 @@ func init() {
 	gooCartFeesHooks = append(gooCartFeesHooks, gcCartFees)
 	gooPriceHTMLHooks = append(gooPriceHTMLHooks, gcPriceHTML)
 	gooOn("order_created", 20, func(s *Server, ctx context.Context, arg any) { s.gcOrderCreated(ctx, arg.(*gooOrder)) })
+	gooCheckoutReserveHooks = append(gooCheckoutReserveHooks, gcReserve)
 	gooOn("order_status_changed", 20, func(s *Server, ctx context.Context, arg any) { s.gcOrderStatus(ctx, arg.(*gooStatusChange)) })
 	gooOn("order_partially_refunded", 20, func(s *Server, ctx context.Context, arg any) { s.gcRefundCreditProp(ctx, arg.(*gooRefundEvent)) })
 	gooOn("cart_emptied", 20, func(s *Server, ctx context.Context, arg any) {
@@ -532,23 +533,71 @@ func gcOrderFees(o *gooOrder) map[string]float64 {
 	return out
 }
 
-// gcOrderCreated debits the gift cards used by the order.
+// gcReserve debits the gift cards a checkout uses before the order is saved, each in one conditional
+// UPDATE: a card whose balance no longer covers its share (another checkout spent it meanwhile) fails
+// the checkout instead of discounting two orders with one balance.
+func gcReserve(s *Server, ctx context.Context, _ *gooCart, o *gooOrder) (func(), error) {
+	if !s.gooExtOn(gcKey) {
+		return nil, nil
+	}
+	dp := s.gooDecimals()
+	type debit struct {
+		id     int64
+		amount float64
+	}
+	var done []debit
+	release := func() {
+		for _, d := range done {
+			_, _ = s.store.Pool.Exec(context.WithoutCancel(ctx), `UPDATE goo_gift_cards SET balance = balance + $2::numeric,
+				status = CASE WHEN status = 'redeemed' THEN 'active' ELSE status END WHERE id = $1`, d.id, d.amount)
+		}
+	}
+	for code, amount := range gcOrderFees(o) {
+		amount = gooRound(amount, dp)
+		if amount <= 0 {
+			continue
+		}
+		var id int64
+		err := s.store.Pool.QueryRow(ctx, `UPDATE goo_gift_cards SET balance = balance - $2::numeric,
+			status = CASE WHEN balance - $2::numeric <= 0 THEN 'redeemed' ELSE status END
+			WHERE code = $1 AND status = 'active' AND balance >= $2::numeric RETURNING id`, code, amount).Scan(&id)
+		if err != nil {
+			release()
+			return nil, fmt.Errorf("The balance of gift card %s has changed. Please review your order.", html.EscapeString(code))
+		}
+		done = append(done, debit{id, amount})
+	}
+	if len(done) > 0 {
+		o.Meta["_gc_debited"] = true
+	}
+	return release, nil
+}
+
+// gcOrderCreated records the debit of the gift cards used by the order (checkout reserved it already;
+// an order made elsewhere is debited here).
 func (s *Server) gcOrderCreated(ctx context.Context, o *gooOrder) {
 	if !s.gooExtOn(gcKey) {
 		return
 	}
+	reserved := o.Meta["_gc_debited"] == true
 	for code, amount := range gcOrderFees(o) {
 		g, err := s.gcByCode(ctx, code)
 		if err != nil || amount <= 0 {
 			continue
 		}
-		_ = s.gcAdjust(ctx, g, -amount, "used", o.ID, o.CustomerID, "")
+		if reserved {
+			_ = s.gcLog(ctx, g.ID, "used", gooRound(amount, s.gooDecimals()), o.ID, o.CustomerID, "")
+		} else {
+			_ = s.gcAdjust(ctx, g, -amount, "used", o.ID, o.CustomerID, "")
+		}
 		_ = s.gooAddOrderNote(ctx, o, fmt.Sprintf("Gift card %s debited: %s.", g.Code, s.gooPricePlain(amount, o.Currency)), false, "")
 	}
 }
 
 // gcOrderStatus issues the cards of a paid order and credits back the cards that paid for an order
-// that was cancelled, failed or refunded (what partial refunds have not credited back already).
+// that was cancelled or refunded (what partial refunds have not credited back already). A failed order
+// keeps its debit: it can still be paid from Pay for order with the gift card discount, so crediting
+// the card back there let one balance pay for the order and then be spent again.
 func (s *Server) gcOrderStatus(ctx context.Context, ch *gooStatusChange) {
 	if !s.gooExtOn(gcKey) {
 		return
@@ -557,7 +606,7 @@ func (s *Server) gcOrderStatus(ctx context.Context, ch *gooStatusChange) {
 	switch ch.To {
 	case "processing", "completed":
 		s.gcIssue(ctx, o)
-	case "cancelled", "refunded", "failed":
+	case "cancelled", "refunded":
 		outstanding, ids := s.gcOutstandingRefx(ctx, o.ID)
 		type due struct {
 			id  int64

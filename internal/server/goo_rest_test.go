@@ -658,6 +658,8 @@ func TestGooAPIPluginOff(t *testing.T) {
 }
 
 func TestGooAPIWebhooks(t *testing.T) {
+	gooWebhookAllowPrivate.Store(true) // deliveries go to httptest servers on 127.0.0.1
+	defer gooWebhookAllowPrivate.Store(false)
 	base, c, srv := gooSite(t)
 	ctx := context.Background()
 	var mu sync.Mutex
@@ -753,6 +755,8 @@ func TestGooAPIWebhooksCRUD(t *testing.T) {
 
 // Trashing, restoring and deleting in the admin deliver the same topics as the REST API.
 func TestGooAPIWebhooksFromAdmin(t *testing.T) {
+	gooWebhookAllowPrivate.Store(true) // deliveries go to httptest servers on 127.0.0.1
+	defer gooWebhookAllowPrivate.Store(false)
 	_, _, srv := gooSite(t)
 	ctx := context.Background()
 	var mu sync.Mutex

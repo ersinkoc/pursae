@@ -201,7 +201,8 @@ func (s *Server) acfgoSaveScreen(c *gin.Context, screen string) {
 			return
 		}
 		if c.PostForm("post_type") == "attachment" {
-			if a, err := s.store.GetAttachment(ctx, id); err == nil && u.Can("upload_files", nil) {
+			// The same rule as attachmentSave: one's own uploads, or edit_others_posts.
+			if a, err := s.store.GetAttachment(ctx, id); err == nil && u.Can("upload_files", nil) && (a.UploaderID == u.ID || u.Can("edit_others_posts", nil)) {
 				save(&acfObject{Kind: "attachment", ID: a.ID, meta: orEmptyMap(a.Meta)})
 			}
 			return
@@ -579,7 +580,17 @@ func (s *Server) acfgoQueryPostsAjax(c *gin.Context) {
 		HTML string `json:"html"`
 	}
 	out := []item{}
-	for _, p := range s.acfgoPostChoices(ctx, f, strings.TrimSpace(c.Query("s")), c.Query("post_type")) {
+	typ := c.Query("post_type")
+	if typ != "" && !containsStr(acfgoAllowedTypes(f), typ) {
+		typ = "-" // the type filter narrows the field's post types; it cannot name another one
+	}
+	u := currentUser(c)
+	for _, p := range s.acfgoPostChoices(ctx, f, strings.TrimSpace(c.Query("s")), typ) {
+		// The search also matches content: never answer with posts the user may not read (other
+		// users' drafts and private posts for a contributor).
+		if p.Status != "publish" && !u.Can("read_post", p) {
+			continue
+		}
 		out = append(out, item{p.ID, s.acfgoRelItemLabel(ctx, f, p)})
 	}
 	c.JSON(http.StatusOK, gin.H{"success": true, "data": out})

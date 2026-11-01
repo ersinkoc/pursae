@@ -114,13 +114,13 @@ func (sc *seogoCtx) robots(preview bool) []string {
 		}
 		if meta != nil {
 			for _, f := range []string{"max_snippet", "max_image_preview", "max_video_preview"} {
-				if v := seogoMeta(meta, f); v != "" {
-					limits[strings.ReplaceAll(f, "_", "-")] = v
+				if k, v := strings.ReplaceAll(f, "_", "-"), seogoMeta(meta, f); v != "" && seogoRobotsLimitOK(k, v) {
+					limits[k] = v // an invalid value keeps the site default
 				}
 			}
 		}
 		for _, k := range []string{"max-snippet", "max-image-preview", "max-video-preview"} {
-			if v, ok := limits[k]; ok && v != "" {
+			if v, ok := limits[k]; ok && seogoRobotsLimitOK(k, v) {
 				out = append(out, k+":"+v)
 			}
 		}
@@ -287,6 +287,17 @@ func (s *Server) seogoHead(c *gin.Context, q *siteQuery, lb *links.Builder) stri
 	return s.seogoHeadFor(sc, q.Preview)
 }
 
+// seogoRobotsLimitOK accepts the values the robots limits can have: a number of characters / seconds
+// (-1 = no limit) or an image preview size. Anything else (the fields are free text in post meta) is
+// dropped instead of reaching the robots tag.
+func seogoRobotsLimitOK(k, v string) bool {
+	if k == "max-image-preview" {
+		return v == "none" || v == "standard" || v == "large"
+	}
+	n, err := strconv.Atoi(v)
+	return err == nil && n >= -1
+}
+
 // seogoHeadFor renders the head block of a context (also the REST get_head endpoint).
 func (s *Server) seogoHeadFor(sc *seogoCtx, preview bool) string {
 	o := s.seogoOpts()
@@ -299,7 +310,7 @@ func (s *Server) seogoHeadFor(sc *seogoCtx, preview bool) string {
 		fmt.Fprintf(&sb, "<meta name=\"description\" content=\"%s\" />\n", esc(desc))
 	}
 	robots := sc.robots(preview)
-	fmt.Fprintf(&sb, "<meta name=\"robots\" content=\"%s\" />\n", strings.Join(robots, ", "))
+	fmt.Fprintf(&sb, "<meta name=\"robots\" content=\"%s\" />\n", esc(strings.Join(robots, ", ")))
 	noindex := robots[0] == "noindex"
 	canonical := sc.canonical()
 	if canonical != "" && !noindex {

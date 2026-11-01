@@ -188,7 +188,15 @@ func (s *Server) gweProData(ctx context.Context) *builder.ProData {
 		}
 		// Published templates only, except in the editor for users who may edit them; a fresh
 		// document every call (rendering mutates it).
-		if p.Status != "publish" && p.Status != "private" {
+		switch {
+		case p.Status == "publish":
+		case p.Status == "private":
+			// Any post id can be put in a Template widget: a private one shows only to visitors who may
+			// read it (upstream renders published templates only).
+			if c == nil || !currentUser(c).Can("read_post", p) {
+				return nil
+			}
+		default:
 			if c == nil || !pd.IsEditor || !currentUser(c).Can("edit_post", p) {
 				return nil
 			}

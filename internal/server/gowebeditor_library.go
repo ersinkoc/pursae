@@ -80,6 +80,16 @@ func (s *Server) gweSaveTemplate(c *gin.Context, data map[string]any, editorID i
 	if _, err := builder.ParseElements(content); err != nil || !strings.HasPrefix(strings.TrimSpace(string(content)), "[") {
 		return nil, gweFail(http.StatusBadRequest, "Template content must be a JSON array.")
 	}
+	if gweNeedsKses(u) { // no unfiltered_html: no script in the stored template (gowebeditor_kses.go)
+		filtered, err := gweKsesJSON(content)
+		if err != nil {
+			return nil, gweFail(http.StatusBadRequest, "Template content must be a JSON array.")
+		}
+		content = filtered
+		if ps, ok := data["page_settings"].(map[string]any); ok {
+			gweKsesValue(ps)
+		}
+	}
 	title, _ := data["title"].(string)
 	if strings.TrimSpace(title) == "" {
 		title = "(no title)"
@@ -87,7 +97,11 @@ func (s *Server) gweSaveTemplate(c *gin.Context, data map[string]any, editorID i
 	if err := s.gweEnsureLibraryType(c); err != nil {
 		return nil, err
 	}
-	p := &store.Post{Type: gweLibrary, AuthorID: u.ID, Title: strings.TrimSpace(title), Status: "publish", CommentStatus: "closed", PingStatus: "closed",
+	status := "publish" // Source_Local::save_item(): pending for users who may not publish
+	if !u.Can("publish_posts", nil) {
+		status = "pending"
+	}
+	p := &store.Post{Type: gweLibrary, AuthorID: u.ID, Title: strings.TrimSpace(title), Status: status, CommentStatus: "closed", PingStatus: "closed",
 		Meta: map[string]any{"_elementor_edit_mode": "builder", "_elementor_template_type": typ, "_elementor_version": gweVersion, "_elementor_data": string(content)}}
 	if ps, ok := data["page_settings"].(map[string]any); ok {
 		p.Meta["_elementor_page_settings"] = ps
