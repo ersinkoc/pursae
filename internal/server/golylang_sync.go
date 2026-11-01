@@ -130,10 +130,13 @@ func (s *Server) golylangSaved(ctx context.Context, p *store.Post) {
 			_ = s.pllSetLang(ctx, pllPost, p.ID, l.Slug)
 		}
 		if m := gc.QueryMap("translations"); len(m) > 0 {
+			u := pllActor(ctx)
 			tr := s.pllTranslations(ctx, pllPost, p.ID)
 			for lang, v := range m {
 				id, _ := strconv.ParseInt(v, 10, 64)
-				if t, err := s.store.GetPost(ctx, id); err == nil && t.Type == p.Type && s.pllObjLang(ctx, pllPost, id) == lang {
+				// Linking moves the other post into this translation group (and under its
+				// synchronization): only for posts the user may edit, as the admin-ajax linking checks.
+				if t, err := s.store.GetPost(ctx, id); err == nil && t.Type == p.Type && s.pllObjLang(ctx, pllPost, id) == lang && u != nil && u.Can("edit_post", t) {
 					tr[lang] = id
 				}
 			}
@@ -144,6 +147,18 @@ func (s *Server) golylangSaved(ctx context.Context, p *store.Post) {
 	if p.Status != "trash" {
 		s.pllSync(ctx, p)
 	}
+}
+
+// pllActor is the user saving: the REST user, else the cookie user; nil outside a request.
+func pllActor(ctx context.Context) *store.User {
+	gc, ok := ctx.(*gin.Context)
+	if !ok {
+		return nil
+	}
+	if u := restCurrent(gc); u != nil {
+		return u
+	}
+	return currentUser(gc)
 }
 
 func pllIsREST(c *gin.Context) bool {
@@ -157,12 +172,19 @@ func (s *Server) pllSync(ctx context.Context, p *store.Post) {
 		return
 	}
 	own := s.pllObjLang(ctx, pllPost, p.ID)
+	_, inRequest := ctx.(*gin.Context)
+	u := pllActor(ctx)
 	for lang, id := range s.pllTranslations(ctx, pllPost, p.ID) {
 		if id == p.ID || lang == own {
 			continue
 		}
 		t, err := s.store.GetPost(ctx, id)
 		if err != nil {
+			continue
+		}
+		// A save copies its fields only onto translations the saving user may edit too (Polylang
+		// does not synchronize what the user could not change by hand).
+		if inRequest && (u == nil || !u.Can("edit_post", t)) {
 			continue
 		}
 		if o.syncs("comment_status") {
