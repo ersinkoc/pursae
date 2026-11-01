@@ -673,6 +673,18 @@ func (s *Server) registerGoWebEditorProREST() {
 			h(c, r)
 		}
 	}
+	// Form submissions hold visitors' personal data: like upstream's submissions controller, only
+	// administrators (manage_options) may read or trash them.
+	submissions := func(h restHandler) restHandler {
+		return func(c *gin.Context, r *restRequest) {
+			u := restCurrent(c)
+			if u == nil || !u.Can("manage_options", nil) {
+				restErr(c, http.StatusForbidden, "rest_forbidden", "Sorry, you are not allowed to do that.")
+				return
+			}
+			h(c, r)
+		}
+	}
 	static := func(v any) restHandler {
 		return editor(func(c *gin.Context, _ *restRequest) { c.JSON(http.StatusOK, v) })
 	}
@@ -693,10 +705,10 @@ func (s *Server) registerGoWebEditorProREST() {
 	api.register(ns, "/elementor-pro/v1/refresh-loop", map[string]restHandler{http.MethodPost: s.gweLoopRefresh, http.MethodGet: s.gweLoopRefresh}, nil)               // gap-loops
 	api.register(ns, "/elementor-pro/v1/refresh-search", map[string]restHandler{http.MethodPost: s.gweLoopRefreshSearch, http.MethodGet: s.gweLoopRefreshSearch}, nil) // gap-loops
 	api.register(ns, "/elementor-pro/v1/collection-loop/loop-preview", map[string]restHandler{http.MethodPost: editor(s.gweLoopPreview)}, nil)                         // gap-loops
-	api.register(ns, "/elementor-pro/v1/forms/submissions", map[string]restHandler{http.MethodGet: editor(func(c *gin.Context, _ *restRequest) {
+	api.register(ns, "/elementor-pro/v1/forms/submissions", map[string]restHandler{http.MethodGet: submissions(func(c *gin.Context, _ *restRequest) {
 		s.gweProSubmissionsREST(c)
 	})}, nil)
-	api.register(ns, "/elementor-pro/v1/forms/submissions/(?P<id>\\d+)", map[string]restHandler{http.MethodDelete: editor(func(c *gin.Context, r *restRequest) {
+	api.register(ns, "/elementor-pro/v1/forms/submissions/(?P<id>\\d+)", map[string]restHandler{http.MethodDelete: submissions(func(c *gin.Context, r *restRequest) {
 		id, _ := strconv.ParseInt(r.Params["id"], 10, 64)
 		_, err := s.store.Pool.Exec(c, `UPDATE gwe_form_submissions SET status = 'trash' WHERE id = $1`, id)
 		if err != nil {

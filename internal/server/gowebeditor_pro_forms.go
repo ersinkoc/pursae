@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html"
 	"io"
@@ -16,6 +17,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -160,6 +162,9 @@ func (s *Server) gweProFindWidget(c *gin.Context, postID int64, elementID, widge
 }
 
 func (s *Server) gweProSendForm(c *gin.Context) {
+	// Visitors post here: the body is capped at the site's upload size (the multipart parser alone only
+	// limits what it keeps in memory and spools the rest to disk).
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxUploadBytes+(1<<20))
 	if err := c.Request.ParseMultipartForm(32 << 20); err != nil && err != http.ErrNotMultipart {
 		_ = c.Request.ParseForm()
 	}
@@ -215,12 +220,19 @@ func (s *Server) gweProSendForm(c *gin.Context) {
 				res.addError(f.ID, err)
 			}
 			continue
-		case "upload":
-			if err := s.gweProFormUpload(c, f, items); err != "" {
-				res.addError(f.ID, err)
-			}
 		}
 		kept = append(kept, f)
+	}
+	// Files are written only for a submission that passed the spam checks: a bot that fails the
+	// honeypot or reCAPTCHA must not be able to fill the uploads folder.
+	if len(res.errors) == 0 {
+		for _, f := range kept {
+			if f.Type == "upload" {
+				if err := s.gweProFormUpload(c, f, items); err != "" {
+					res.addError(f.ID, err)
+				}
+			}
+		}
 	}
 	s.gweFormProcess(c, p, settings, kept, res)
 	s.gweProFormSend(c, res)
@@ -642,8 +654,7 @@ func (s *Server) gweProFormWebhook(c *gin.Context, settings map[string]any, fiel
 		return err
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	client := &http.Client{Timeout: 10 * time.Second, CheckRedirect: func(r *http.Request, _ []*http.Request) error { return gweSafeURL(r.URL.String()) }}
-	resp, err := client.Do(req)
+	resp, err := gweWebhookClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("Webhook error.")
 	}
@@ -656,6 +667,8 @@ func (s *Server) gweProFormWebhook(c *gin.Context, settings map[string]any, fiel
 }
 
 // gweSafeURL refuses non-HTTP URLs and hosts that resolve to private networks (wp_safe_remote_post).
+// It is the early, friendly check; gweWebhookClient enforces the rule where it matters, on the address
+// it actually connects to.
 func gweSafeURL(raw string) error {
 	u, err := url.Parse(raw)
 	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Hostname() == "" {
@@ -666,11 +679,36 @@ func gweSafeURL(raw string) error {
 		return fmt.Errorf("Webhook host not found.")
 	}
 	for _, ip := range ips {
-		if ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast() || ip.IsUnspecified() || ip.IsMulticast() {
+		if !publicIP(ip) {
 			return fmt.Errorf("Webhook URL is not public.")
 		}
 	}
 	return nil
+}
+
+// gweWebhookClient posts form webhooks. The page editor chooses the URL and any visitor triggers it,
+// so the address is checked when the connection is made (after DNS resolution, for every redirect):
+// a host that resolved to a public address for gweSafeURL and to 127.0.0.1 a moment later (DNS
+// rebinding) is refused.
+var gweWebhookClient = &http.Client{
+	Timeout: 10 * time.Second,
+	Transport: &http.Transport{TLSHandshakeTimeout: 10 * time.Second, DialContext: (&net.Dialer{Timeout: 10 * time.Second,
+		Control: func(_, address string, _ syscall.RawConn) error {
+			host, _, err := net.SplitHostPort(address)
+			if err != nil {
+				return err
+			}
+			if !publicIP(net.ParseIP(host)) {
+				return errors.New("webhook URL is not public")
+			}
+			return nil
+		}}).DialContext},
+	CheckRedirect: func(r *http.Request, via []*http.Request) error {
+		if len(via) >= 5 {
+			return errors.New("too many redirects")
+		}
+		return gweSafeURL(r.URL.String())
+	},
 }
 
 // gweProVerifyRecaptcha checks the g-recaptcha-response with Google ("" = valid).
@@ -805,10 +843,16 @@ func (s *Server) gweProSaveSubmission(c *gin.Context, p *store.Post, settings ma
 			pid = fp // the page the form was submitted on (a global form's template id otherwise)
 		}
 	}
+	// The page the visitor says the form was on is shown as a link in the admin: keep it only when it is
+	// an http(s) URL of this site (a "javascript:" referrer would run in wp-admin when clicked).
+	referer := c.PostForm("referrer")
+	if !gweSameSite(referer, s.links(c).Home) {
+		referer = ""
+	}
 	var id int64
 	err := s.store.Pool.QueryRow(c, `INSERT INTO gwe_form_submissions (post_id, element_id, form_name, referer, referer_title, user_id, user_ip,
 		user_agent, fields, meta, actions) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10::jsonb,'[]'::jsonb) RETURNING id`,
-		pid, gweStr(settings["id"]), gweStr(settings["form_name"]), c.PostForm("referrer"), c.PostForm("referer_title"), uid,
+		pid, gweStr(settings["id"]), gweStr(settings["form_name"]), referer, c.PostForm("referer_title"), uid,
 		c.ClientIP(), c.Request.UserAgent(), string(fj), string(mj)).Scan(&id)
 	return id, err
 }

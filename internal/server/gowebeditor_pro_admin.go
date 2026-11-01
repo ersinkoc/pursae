@@ -242,7 +242,11 @@ func (s *Server) gweProSubmissionsScreen(c *gin.Context) string {
 		}
 		b.WriteString(`</tbody></table><h3>Details</h3><table class="widefat striped"><tbody>`)
 		fmt.Fprintf(&b, `<tr><th style="width:220px">Form</th><td>%s (%s)</td></tr>`, esc(sub.FormName), esc(sub.ElementID))
-		fmt.Fprintf(&b, `<tr><th>Page</th><td><a href="%s">%s</a></td></tr>`, esc(sub.Referer), esc(sub.RefererTitle+" "+sub.Referer))
+		if gweSameSite(sub.Referer, s.links(c).Home) {
+			fmt.Fprintf(&b, `<tr><th>Page</th><td><a href="%s">%s</a></td></tr>`, esc(sub.Referer), esc(sub.RefererTitle+" "+sub.Referer))
+		} else { // stored before referrers were checked: text, never a link
+			fmt.Fprintf(&b, `<tr><th>Page</th><td>%s</td></tr>`, esc(sub.RefererTitle+" "+sub.Referer))
+		}
 		fmt.Fprintf(&b, `<tr><th>Submitted</th><td>%s</td></tr>`, esc(wp.FormatDate(sub.Created.In(s.loc()), "F j, Y g:i a")))
 		fmt.Fprintf(&b, `<tr><th>IP / User agent</th><td>%s<br>%s</td></tr>`, esc(sub.UserIP), esc(sub.Agent))
 		for _, a := range sub.Actions {
@@ -308,19 +312,15 @@ func (s *Server) gweProSubmissionsCSV(c *gin.Context) {
 	w := csv.NewWriter(c.Writer)
 	_ = w.Write(append(append([]string{"ID", "Form", "Page", "Date"}, cols...), "IP"))
 	for _, sub := range list {
-		row := []string{strconv.FormatInt(sub.ID, 10), sub.FormName, sub.Referer, sub.Created.In(s.loc()).Format("2006-01-02 15:04:05")}
+		row := []string{strconv.FormatInt(sub.ID, 10), csvSafe(sub.FormName), csvSafe(sub.Referer), sub.Created.In(s.loc()).Format("2006-01-02 15:04:05")}
 		vals := map[string]string{}
 		for _, f := range sub.Fields {
 			vals[f.Title] = f.Value
 		}
 		for _, col := range cols {
-			v := vals[col]
-			if strings.HasPrefix(v, "=") || strings.HasPrefix(v, "+") || strings.HasPrefix(v, "-") || strings.HasPrefix(v, "@") {
-				v = "'" + v // keep spreadsheet formulas out
-			}
-			row = append(row, v)
+			row = append(row, csvSafe(vals[col])) // keep spreadsheet formulas out
 		}
-		_ = w.Write(append(row, sub.UserIP))
+		_ = w.Write(append(row, csvSafe(sub.UserIP)))
 	}
 	w.Flush()
 }
