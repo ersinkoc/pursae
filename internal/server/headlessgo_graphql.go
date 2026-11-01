@@ -880,7 +880,7 @@ func (ex *hgGQLExec) root(f *hgGQLField) (any, error) {
 
 // params converts GraphQL arguments to REST read parameters.
 func (ex *hgGQLExec) params(sc *hgSchema, f *hgGQLField, sel []*hgGQLField) (*hgReadParams, error) {
-	p := &hgReadParams{Status: "published"}
+	p := &hgReadParams{Auth: ex.a, Status: "published"}
 	args := map[string]any{}
 	for k, v := range f.args {
 		args[k] = ex.resolve(v)

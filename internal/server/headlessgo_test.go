@@ -387,7 +387,6 @@ func TestHeadlessGoDeliveryAPI(t *testing.T) {
 		"filters[views][$gt]=20&sort=views:desc":                                 {"Second post", "Third thing"},
 		"filters[views][$between][0]=20&filters[views][$between][1]=40":          {"Third thing"},
 		"filters[$or][0][views][$lt]=20&filters[$or][1][kind][$eq]=news&sort=id": {"Hello Go", "Second post"},
-		"filters[author][name][$eq]=Ada&sort=title":                              {"Hello Go", "Third thing"},
 		"filters[categories][slug][$eq]=web&sort=title:desc":                     {"Second post", "Hello Go"},
 		"filters[seo][metaTitle][$startsWith]=Hello":                             {"Hello Go"},
 		"filters[faq][by][$eqi]=ada":                                             {"Hello Go"},
@@ -398,7 +397,6 @@ func TestHeadlessGoDeliveryAPI(t *testing.T) {
 		"filters[day][$gte]=2024-01-01":                                          {"Hello Go"},
 		"filters[at][$lt]=2024-05-01T09:00:00Z":                                  {"Hello Go"},
 		"filters[cover][$notNull]=true":                                          {"Hello Go"},
-		"filters[author][$null]=true":                                            nil,
 		"filters[rating][$gte]=4.5":                                              {"Hello Go"},
 		"filters[featured][$eq]=false&sort=views":                                {"Hello Go", "Third thing", "Second post"},
 		"sort[0]=views:desc&pagination[page]=2&pagination[pageSize]=1":           {"Third thing"},
@@ -414,6 +412,16 @@ func TestHeadlessGoDeliveryAPI(t *testing.T) {
 		}
 		if got := titles(r); strings.Join(got, "|") != strings.Join(want, "|") {
 			t.Errorf("%s: got %v, want %v", qs, got, want)
+		}
+	}
+	// Authors are not public: filtering through them needs a caller that may read them.
+	for qs, want := range map[string][]string{"filters[author][name][$eq]=Ada&sort=title": {"Hello Go", "Third thing"}, "filters[author][$null]=true": nil} {
+		if r := q(qs); r.Code != 400 {
+			t.Errorf("public %s: %d %s", qs, r.Code, r.Raw)
+		}
+		r := hgCall(t, base, "GET", "/articles?"+qs, full, nil)
+		if got := titles(r); r.Code != 200 || strings.Join(got, "|") != strings.Join(want, "|") {
+			t.Errorf("token %s: %d got %v, want %v", qs, r.Code, got, want)
 		}
 	}
 	for _, qs := range []string{"filters[internal][$eq]=x", "filters[nope][$eq]=1", "sort=nope:asc", "pagination[page]=1&pagination[limit]=2", "fields[0]=internal", "populate=nope", "status=maybe", "locale=xx"} {

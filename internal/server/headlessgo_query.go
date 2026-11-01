@@ -459,10 +459,46 @@ func (q *hgSQL) next(prefix string) string {
 type hgQuery struct {
 	reg    *hgRegistry
 	sql    *hgSQL
-	status string // draft or published
-	locale string // the requested locale, for localized relation targets
+	status string  // draft or published
+	locale string  // the requested locale, for localized relation targets
+	a      *hgAuth // the caller (nil: the admin): relation targets must be readable by it
 	depth  int
 }
+
+// target checks that the caller may read a relation's target type (key names the attribute in
+// the error) and returns the status its entries are compiled in: a draft read sees related
+// drafts only when the caller may read them, otherwise their published version.
+func (q *hgQuery) target(target *hgSchema, key string) (string, error) {
+	if !q.a.reads(target.UID) {
+		return "", hgBad("Invalid key %s", key)
+	}
+	if q.status == "draft" && !q.a.relatedDrafts(target.UID) {
+		return "published", nil
+	}
+	return q.status, nil
+}
+
+// in compiles fn with the status of a relation's target entries.
+func (q *hgQuery) in(status string, fn func() (string, error)) (string, error) {
+	saved := q.status
+	q.status = status
+	defer func() { q.status = saved }()
+	return fn()
+}
+
+// hgWPPostCond limits a relation to WordPress posts or pages (alias a) to what anyone may read:
+// published ones of the target's type. hgWPUserCols are the users' columns a relation filters
+// and sorts on; the login name is not one of them (the API's username is the public nicename,
+// and private attributes are not filterable).
+func hgWPPostCond(a, target string) string {
+	typ := "post"
+	if target == "wp:page" {
+		typ = "page"
+	}
+	return a + ".status = 'publish' AND " + a + ".type = '" + typ + "'"
+}
+
+var hgWPUserCols = map[string][2]string{"id": {"id", "bigint"}, "slug": {"nicename", "text"}, "name": {"display_name", "text"}}
 
 // versionCol is the JSONB column of the requested status.
 func (q *hgQuery) versionCol(alias string) string {
@@ -586,6 +622,11 @@ func (q *hgQuery) field(sc *hgSchema, name string, v any, col, alias string) (st
 		}
 		return "", hgBad("Dynamic zones cannot be filtered")
 	case "relation", "media":
+		if f.Type == "relation" && !strings.HasPrefix(f.Target, "wp:") && f.MappedBy == "" {
+			if target := q.reg.Get(f.Target); target != nil && !q.a.reads(target.UID) {
+				return "", hgBad("Invalid key %s", name)
+			}
+		}
 		if f.MappedBy != "" {
 			m, ok := v.(map[string]any)
 			if !ok {
@@ -683,10 +724,10 @@ func (q *hgQuery) relation(f *hgField, m map[string]any, expr string) (string, e
 		if err != nil {
 			return "", err
 		}
-		return "EXISTS (SELECT 1 FROM posts " + a + " WHERE " + a + ".id IN (SELECT (" + ids + ")::bigint) AND " + inner + ")", nil
+		return "EXISTS (SELECT 1 FROM posts " + a + " WHERE " + a + ".id IN (SELECT (" + ids + ")::bigint) AND " + hgWPPostCond(a, f.Target) + " AND " + inner + ")", nil
 	case "wp:user":
 		a := q.sql.next("u")
-		inner, err := q.table(m, a, map[string][2]string{"id": {"id", "bigint"}, "username": {"login", "text"}, "slug": {"nicename", "text"}, "name": {"display_name", "text"}})
+		inner, err := q.table(m, a, hgWPUserCols)
 		if err != nil {
 			return "", err
 		}
@@ -696,19 +737,25 @@ func (q *hgQuery) relation(f *hgField, m map[string]any, expr string) (string, e
 	if target == nil {
 		return "", hgBad("Invalid relation %s", f.Name)
 	}
-	a := q.sql.next("r")
-	cond := a + ".type_uid = " + q.sql.arg(target.UID) + " AND " + a + ".document_id IN (SELECT " + ids + ")"
-	if target.Localized {
-		cond += " AND " + a + ".locale = " + q.sql.arg(q.locale)
-	}
-	if q.status != "draft" {
-		cond += " AND " + a + ".published_data IS NOT NULL"
-	}
-	inner, err := q.filters(target, m, q.versionCol(a), a)
+	status, err := q.target(target, f.Name)
 	if err != nil {
 		return "", err
 	}
-	return "EXISTS (SELECT 1 FROM hg_entries " + a + " WHERE " + cond + " AND " + inner + ")", nil
+	return q.in(status, func() (string, error) {
+		a := q.sql.next("r")
+		cond := a + ".type_uid = " + q.sql.arg(target.UID) + " AND " + a + ".document_id IN (SELECT " + ids + ")"
+		if target.Localized {
+			cond += " AND " + a + ".locale = " + q.sql.arg(q.locale)
+		}
+		if q.status != "draft" {
+			cond += " AND " + a + ".published_data IS NOT NULL"
+		}
+		inner, err := q.filters(target, m, q.versionCol(a), a)
+		if err != nil {
+			return "", err
+		}
+		return "EXISTS (SELECT 1 FROM hg_entries " + a + " WHERE " + cond + " AND " + inner + ")", nil
+	})
 }
 
 // table compiles a filter on a WordPress table's columns (posts, users, media).

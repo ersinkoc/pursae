@@ -90,6 +90,19 @@ func (a *hgAuth) can(uid, action string) bool {
 	return containsStr(a.Public[uid], action)
 }
 
+// reads reports whether the caller may read entries of a type (find or findOne): filtering,
+// sorting and populating through a relation needs it on the target. nil is the admin (anything).
+func (a *hgAuth) reads(uid string) bool {
+	return a == nil || a.can(uid, "find") || a.can(uid, "findOne")
+}
+
+// relatedDrafts reports whether drafts of related entries of a type may be read (filtered,
+// sorted, populated) when the request reads drafts: only tokens allowed to read drafts, and the
+// admin (nil). Other callers see related entries in their published version.
+func (a *hgAuth) relatedDrafts(uid string) bool {
+	return a == nil || (a.Kind == "token" && a.drafts(uid))
+}
+
 // drafts reports whether status=draft may be read.
 func (a *hgAuth) drafts(uid string) bool {
 	switch a.Kind {
@@ -250,6 +263,7 @@ func (s *Server) hgIndex(c *gin.Context, a *hgAuth) {
 
 // hgReadParams are the parsed read parameters of a request.
 type hgReadParams struct {
+	Auth     *hgAuth // who reads: relation filters and sorting check its permissions (nil: the admin)
 	Status   string
 	Locale   string // the locale column ("" without i18n)
 	Filters  map[string]any
@@ -261,7 +275,7 @@ type hgReadParams struct {
 
 func (s *Server) hgParseRead(c *gin.Context, a *hgAuth, sc *hgSchema, st hgSettings) (*hgReadParams, bool) {
 	qs := hgParseQS(c.Request.URL.Query())
-	p := &hgReadParams{Status: "published"}
+	p := &hgReadParams{Auth: a, Status: "published"}
 	if v, _ := qs["status"].(string); v != "" {
 		if v != "draft" && v != "published" {
 			hgErr(c, http.StatusBadRequest, "ValidationError", "Invalid status: use draft or published", nil)
@@ -325,7 +339,7 @@ type hgFindOpts struct {
 // hgFind runs a find: the entries of a type in one locale and status matching the filters.
 func (s *Server) hgFind(ctx context.Context, sc *hgSchema, p *hgReadParams, o hgFindOpts) ([]*hgEntry, int, error) {
 	reg := s.hgReg(ctx)
-	q := &hgQuery{reg: reg, sql: &hgSQL{}, status: p.Status, locale: p.Locale}
+	q := &hgQuery{reg: reg, sql: &hgSQL{}, status: p.Status, locale: p.Locale, a: p.Auth}
 	if p.Locale == "" {
 		q.locale = s.hgDefaultLocale(ctx)
 	}
@@ -1011,7 +1025,7 @@ func (h *hgSer) relation(f *hgField, ids []any, pop *hgPop, depth int) ([]any, b
 	if len(pop.Filters) > 0 {
 		filters = map[string]any{"$and": []any{filters, pop.Filters}}
 	}
-	rp := &hgReadParams{Status: status, Locale: loc, Filters: filters, Sort: pop.Sort, Page: hgPagination{Page: 1, PageSize: 1000}}
+	rp := &hgReadParams{Auth: h.a, Status: status, Locale: loc, Filters: filters, Sort: pop.Sort, Page: hgPagination{Page: 1, PageSize: 1000}}
 	list, _, err := h.s.hgFind(ctx, target, rp, hgFindOpts{NoLim: true})
 	if err != nil {
 		return nil, false, err
