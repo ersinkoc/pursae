@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+
+	"wpgo/internal/i18n"
 )
 
 // Analytics (page=analytics&path=…): WooCommerce Admin's Overview with performance cards, a chart and
@@ -83,12 +85,62 @@ func (s *Server) gooAnalyticsPeriod(c *gin.Context) gooPeriod {
 	return p
 }
 
-func (p gooPeriod) RangeText() string {
-	return p.From.Format("Jan 2, 2006") + " - " + p.To.AddDate(0, 0, -1).Format("Jan 2, 2006")
+// gooPeriodText is the line under the date filters, "Month to date (Nov 1, 2026 - Nov 1, 2026) vs.
+// Nov 1, 2025 - Nov 1, 2025", in the user's language.
+func (s *Server) gooPeriodText(c *gin.Context, p gooPeriod) string {
+	span := func(from, to time.Time) string {
+		return s.gooShortDate(c, from, true) + " - " + s.gooShortDate(c, to.AddDate(0, 0, -1), true)
+	}
+	return i18n.Sprintf(s.__(c, "%1$s (%2$s) vs. %3$s"), s.__(c, p.Label), span(p.From, p.To), span(p.PrevFrom, p.PrevTo))
 }
 
-func (p gooPeriod) PrevText() string {
-	return p.PrevFrom.Format("Jan 2, 2006") + " - " + p.PrevTo.AddDate(0, 0, -1).Format("Jan 2, 2006")
+// gooShortDate is a chart or range date ("Nov 1", "Nov 1, 2026") in the user's language: the month
+// abbreviation from the catalog ("Kas"), the day first where the language's date format ("F j, Y"
+// translated) puts it first ("1 Kas 2026").
+func (s *Server) gooShortDate(c *gin.Context, t time.Time, year bool) string {
+	cat := s.catalog(c)
+	mon := t.Format("Jan")
+	if tr, ok := cat.Lookup(mon); ok {
+		mon = tr
+	}
+	day := strconv.Itoa(t.Day())
+	if f, ok := cat.Lookup("F j, Y"); ok && strings.Index(f, "j") >= 0 && strings.Index(f, "j") < strings.Index(f, "F") {
+		if year {
+			return day + " " + mon + " " + strconv.Itoa(t.Year())
+		}
+		return day + " " + mon
+	}
+	if year {
+		return mon + " " + day + ", " + strconv.Itoa(t.Year())
+	}
+	return mon + " " + day
+}
+
+// gooL10nIntervals writes the chart labels of intervals in the user's language ("Nov 1", or "Nov"
+// for months).
+func (s *Server) gooL10nIntervals(c *gin.Context, ivs []gooInterval, byMonth bool) {
+	cat := s.catalog(c)
+	if cat.Empty() {
+		return
+	}
+	for i := range ivs {
+		if byMonth {
+			if tr, ok := cat.Lookup(ivs[i].Start.Format("Jan")); ok {
+				ivs[i].Label = tr
+			}
+			continue
+		}
+		ivs[i].Label = s.gooShortDate(c, ivs[i].Start, false)
+	}
+}
+
+// gooOrdersTitle is a chart bar's title, "Nov 1: 3 orders", as one message.
+func (s *Server) gooOrdersTitle(c *gin.Context, label string, n int) string {
+	format := "%1$s: %2$d orders"
+	if n == 1 {
+		format = "%1$s: %2$d order"
+	}
+	return i18n.Sprintf(s.__(c, format), label, strconv.Itoa(n))
 }
 
 // gooPerf are the overview's performance indicators for a range.
@@ -130,6 +182,7 @@ type gooLeader struct {
 type gooAnalyticsData struct {
 	Path, Title string
 	Period      gooPeriod
+	PeriodText  string
 	Periods     []gooOpt
 	Cards       []gooCard
 	Chart       gooChart
@@ -159,6 +212,7 @@ func (s *Server) gooAdminAnalytics(c *gin.Context) {
 	path := strings.Trim(c.Query("path"), "/")
 	path = strings.TrimPrefix(path, "analytics/")
 	d := &gooAnalyticsData{Path: path, Period: s.gooAnalyticsPeriod(c), Periods: gooPeriods}
+	d.PeriodText = s.gooPeriodText(c, d.Period)
 	valid := false
 	for _, p := range gooAnalyticsPages {
 		if p.Value == path {
@@ -185,7 +239,9 @@ func (s *Server) gooAdminAnalytics(c *gin.Context) {
 		return gooCard{Key: key, Label: label, Value: template.HTML(formatNumber(a)), Prev: template.HTML(formatNumber(b)), Delta: delta, Up: up, Down: down, Raw: float64(a), URL: link}
 	}
 	an := func(p string) string { return gooAdminURL("analytics", "path", p) + "&" + q }
-	ivs := gooRange{From: from, To: to, ByMonth: to.Sub(from) > 92*24*time.Hour}.Intervals()
+	byMonth := to.Sub(from) > 92*24*time.Hour
+	ivs := gooRange{From: from, To: to, ByMonth: byMonth}.Intervals()
+	s.gooL10nIntervals(c, ivs, byMonth)
 	tbl := &gooTable{Empty: "No data for the selected date range"}
 	switch d.Path {
 	case "":
@@ -302,7 +358,7 @@ func (s *Server) gooAdminAnalytics(c *gin.Context) {
 			d.Cards[3].Value = gooH(strconv.FormatFloat(float64(cur.ItemsSold)/float64(cur.Orders), 'f', 1, 64))
 		}
 		cnt := s.gooSeries(ctx, ivs, "1", "")
-		d.Chart = gooBars(ivs, cnt, nil, func(i int) string { return fmt.Sprintf("%s: %d orders", ivs[i].Label, int(cnt[i])) })
+		d.Chart = gooBars(ivs, cnt, nil, func(i int) string { return s.gooOrdersTitle(c, ivs[i].Label, int(cnt[i])) })
 		d.ChartLabel = "Orders"
 	case "categories":
 		tbl.Headers = []string{"Category", "Items sold", "Net sales", "Products", "Orders"}

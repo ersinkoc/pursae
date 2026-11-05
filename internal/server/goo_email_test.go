@@ -3,6 +3,8 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -200,5 +202,80 @@ func TestGooEmailAccountsAndStock(t *testing.T) {
 	subj, html := srv.gooEmailPreview("customer_processing_order")
 	if subj != "Your Toggle Site order has been received!" || !strings.Contains(html, "Dummy Product") || !strings.Contains(html, "Color:") {
 		t.Errorf("preview: %q %d", subj, len(html))
+	}
+}
+
+// TestGooEmailTurkish: with Turkish as the site language the store's e-mails are Turkish, as
+// WooCommerce sends them with its language pack (here a small one): the customer's order e-mail
+// (subject, heading, greeting, order table, addresses, footer) and the store's new order e-mail. A
+// store e-mail goes out in the language of the user it is addressed to when they chose one in their
+// profile. The product's name stays as the shop owner wrote it.
+func TestGooEmailTurkish(t *testing.T) {
+	_, _, srv := gooSite(t)
+	ctx := context.Background()
+	dir := srv.lang.Dir
+	if err := os.MkdirAll(filepath.Join(dir, "plugins"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	head := "Plural-Forms: nplurals=2; plural=(n > 1);\n"
+	if err := os.WriteFile(filepath.Join(dir, "admin-tr_TR.mo"), i18nMO(map[string]string{"": head, "F j, Y": "j F Y", "November": "Kasım"}), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	woo := i18nMO(map[string]string{"": head,
+		"Your {site_title} order has been received!": "{site_title} siparişiniz alındı!", "Thank you for your order": "Siparişiniz için teşekkürler",
+		"Hi %s,": "Merhaba %s,", "Just to let you know &mdash; we've received your order #%s, and it is now being processed:": "Bilginize &mdash; #%s numaralı siparişinizi aldık ve şu anda işleniyor:",
+		"[Order #%s]": "[Sipariş #%s]", "Product": "Ürün", "Quantity": "Miktar", "Price": "Fiyat", "Subtotal:": "Ara toplam:", "Total:": "Toplam:",
+		"Payment method:": "Ödeme yöntemi:", "Billing address": "Fatura adresi", "Thanks for using {site_url}!": "{site_url} kullandığınız için teşekkürler!",
+		"[{site_title}]: New order #{order_number}": "[{site_title}]: Yeni sipariş #{order_number}", "New Order: #{order_number}": "Yeni sipariş: #{order_number}",
+		"You’ve received the following order from %s:": "%s adlı kişiden şu siparişi aldınız:",
+		"Teapot": "YANLIŞ: ürün adı çevrildi", // the product's name must stay as written
+	})
+	if err := os.WriteFile(filepath.Join(dir, "plugins", "woocommerce-tr_TR.mo"), woo, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := srv.settings.Set(ctx, map[string]any{"WPLANG": "tr_TR"}); err != nil {
+		t.Fatal(err)
+	}
+	srv.lang.Reset()
+
+	p := gooMakeSimple(t, srv, "Teapot", 10, nil)
+	o := gooTestOrder(t, srv, p, 2)
+	if err := srv.gooSetStatus(ctx, o, "processing", "", ""); err != nil {
+		t.Fatal(err)
+	}
+	num := o.Number()
+	cust := gooMailsWith(t, srv, "Toggle Site siparişiniz alındı!")
+	if len(cust) != 1 || gooMailTo(cust[0]) != "ann@example.test" {
+		t.Fatalf("Turkish customer_processing_order: %v", gooMails(t, srv))
+	}
+	html, body := gooStr(cust[0]["HTML"]), gooStr(cust[0]["Body"])
+	for _, want := range []string{`<html lang="tr-TR">`, "Siparişiniz için teşekkürler", "Merhaba Ann,", "Bilginize &mdash; #" + num + " numaralı siparişinizi aldık",
+		"[Sipariş #" + num + "]", ">Ürün<", ">Miktar<", ">Fiyat<", "Ara toplam:", "Toplam:", "Ödeme yöntemi:", "Fatura adresi",
+		"Teapot", "Pursae ile oluşturuldu", // Pursae's own footer text (web/languages/wpgo-tr_TR.json)
+	} {
+		if !strings.Contains(html, want) {
+			t.Errorf("Turkish e-mail lacks %q", want)
+		}
+	}
+	for _, unwanted := range []string{"YANLIŞ", "Thank you for your order", "Billing address", "Built with Pursae"} {
+		if strings.Contains(html, unwanted) || strings.Contains(body, unwanted) {
+			t.Errorf("Turkish e-mail has %q", unwanted)
+		}
+	}
+	if !strings.Contains(body, "Merhaba Ann,") || !strings.Contains(body, "Bilginize — #"+num) || !strings.Contains(body, "Fatura adresi") {
+		t.Errorf("Turkish plain part: %s", body)
+	}
+	if admin := gooMailsWith(t, srv, "[Toggle Site]: Yeni sipariş #"+num); len(admin) != 1 || !strings.Contains(gooStr(admin[0]["HTML"]), "Ann Lee adlı kişiden şu siparişi aldınız:") {
+		t.Errorf("Turkish new_order: %v", gooMails(t, srv))
+	}
+
+	// The administrator reads English (their profile language): the store's e-mail to them is English.
+	if _, err := srv.store.Pool.Exec(ctx, `UPDATE users SET meta = meta || '{"locale": "en_US"}' WHERE email = 'admin@example.test'`); err != nil {
+		t.Fatal(err)
+	}
+	o2 := gooTestOrder(t, srv, p, 1)
+	_ = srv.gooSetStatus(ctx, o2, "processing", "", "")
+	if len(gooMailsWith(t, srv, "[Toggle Site]: New order #"+o2.Number())) != 1 {
+		t.Errorf("new_order to an English-speaking administrator: %v", gooMails(t, srv))
 	}
 }

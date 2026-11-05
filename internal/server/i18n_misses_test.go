@@ -125,7 +125,8 @@ func TestAdminUntranslated(t *testing.T) {
 // received, My account) without a translation in the locales of WPGO_I18N_MISSES, with the real
 // WordPress.org packs (core and WooCommerce): what is left is Pursae Commerce's own text.
 // WPGO_I18N_MISSES_OUT gets one store-<locale>.txt per locale; WPGO_I18N_MISSES_DUMP is a directory
-// for the pages themselves (<locale>-NN.html).
+// for the pages themselves (<locale>-NN.html). Every optional module is on, so their front end
+// (wishlist and compare buttons, My account endpoints, points messages, …) is crawled too.
 func TestStoreFrontUntranslated(t *testing.T) {
 	locales := strings.Split(os.Getenv("WPGO_I18N_MISSES"), ",")
 	if locales[0] == "" {
@@ -140,6 +141,11 @@ func TestStoreFrontUntranslated(t *testing.T) {
 	_, _ = srv.gooAddMethod(ctx, z.ID, "flat_rate", map[string]any{"cost": "5"})
 	_, _ = srv.gooAddMethod(ctx, z.ID, "free_shipping", map[string]any{})
 	_ = srv.gooSaveCoupon(ctx, &gooCoupon{Code: "save5", DiscountType: "fixed_cart", Amount: 5})
+	for _, e := range gooExtensionList() {
+		if err := srv.gooSetExtension(ctx, e.Key, true); err != nil {
+			t.Logf("module %s: %v", e.Key, err)
+		}
+	}
 
 	var mu sync.Mutex
 	var misses map[string]bool
@@ -189,6 +195,10 @@ func TestStoreFrontUntranslated(t *testing.T) {
 		for _, p := range []string{"/shop/", "/my-account/", "/my-account/orders/", "/my-account/edit-address/", "/my-account/edit-address/billing/", "/my-account/edit-account/", "/my-account/downloads/", "/cart/", "/checkout/"} {
 			get(t, admin, base+p)
 		}
+		for _, ep := range gooAccountEndpoints {
+			get(t, admin, base+"/my-account/"+ep.Slug+"/")
+		}
+		get(t, admin, base+"/product/shirt/")
 		mu.Lock()
 		var list []string
 		for s := range misses {

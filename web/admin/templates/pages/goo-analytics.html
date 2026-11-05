@@ -8,9 +8,9 @@
 <input type="hidden" name="page" value="analytics">{{if .Path}}<input type="hidden" name="path" value="{{.Path}}">{{end}}
 <label>Date range: <select name="period">{{template "goo-store-options" (dict "Opts" .Periods "Sel" .Period.Key)}}</select></label>
 <span class="goo-custom-dates"><input type="date" name="after" value="{{.Period.After}}" aria-label="Start date"> &ndash; <input type="date" name="before" value="{{.Period.Before}}" aria-label="End date"></span>
-<label>compared to <select name="compare"><option value="previous_period"{{if eq .Period.Compare "previous_period"}} selected{{end}}>Previous period</option><option value="previous_year"{{if eq .Period.Compare "previous_year"}} selected{{end}}>Previous year</option></select></label>
+<label>Compared to: <select name="compare"><option value="previous_period"{{if eq .Period.Compare "previous_period"}} selected{{end}}>Previous period</option><option value="previous_year"{{if eq .Period.Compare "previous_year"}} selected{{end}}>Previous year</option></select></label>
 <button type="submit" class="button">Update</button>
-<span class="description">{{.Period.Label}} ({{.Period.RangeText}}) vs. {{.Period.PrevText}}</span>
+<span class="description">{{.PeriodText}}</span>
 </form>
 {{if .Cards}}<ul class="woocommerce-summary goo-summary">{{range .Cards}}<li class="woocommerce-summary__item-container">{{if .URL}}<a href="{{.URL}}" class="woocommerce-summary__item">{{template "goo-store-card" .}}</a>{{else}}<div class="woocommerce-summary__item">{{template "goo-store-card" .}}</div>{{end}}</li>{{end}}</ul>{{end}}
 {{if .Chart.Bars}}<div class="postbox woocommerce-chart"><div class="postbox-header"><h2 class="hndle">{{.ChartLabel}}</h2></div><div class="inside chart-container">{{.Chart.SVG}}</div></div>{{end}}

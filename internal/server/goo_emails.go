@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"wpgo/internal/auth"
+	"wpgo/internal/i18n"
 	wpmail "wpgo/internal/mail"
 	"wpgo/internal/wp"
 )
@@ -145,7 +146,7 @@ func (s *Server) gooEmailPlaceholders(ctx context.Context, o *gooOrder) map[stri
 		"{store_email}": s.gooEmailFromAddress()}
 	if o != nil {
 		ph["{order_number}"] = o.Number()
-		ph["{order_date}"] = s.gooEmailDate(o.DateCreated)
+		ph["{order_date}"] = s.gooEmailDate(ctx, o.DateCreated)
 		ph["{order_billing_full_name}"] = o.BillingName()
 	}
 	return ph
@@ -159,7 +160,7 @@ func gooReplacePlaceholders(v string, ph map[string]string) string {
 }
 
 // gooEmailDate is wc_format_datetime(): the site's date format.
-func (s *Server) gooEmailDate(t time.Time) string {
+func (s *Server) gooEmailDate(ctx context.Context, t time.Time) string {
 	if t.IsZero() {
 		t = time.Now()
 	}
@@ -167,7 +168,8 @@ func (s *Server) gooEmailDate(t time.Time) string {
 	if f == "" {
 		f = "F j, Y"
 	}
-	return wp.FormatDate(t.In(s.loc()), f)
+	// date_i18n(): WordPress' default format in the e-mail's language ("1 Kasım 2026").
+	return gooEmailInfo(ctx).cat.Text(wp.FormatDate(t.In(s.loc()), f))
 }
 
 // gooEmailFromName / gooEmailFromAddress are the store's sender (Settings › Emails).
@@ -258,7 +260,6 @@ func (s *Server) gooRenderEmail(ctx context.Context, d *gooEmailDef, st map[stri
 	}
 	e := &gooEmail{ID: d.ID}
 	ctx = s.gooPllOrderCtx(ctx, o) // Golylang: the language the order was placed in (goo_golylang.go)
-	ph := s.gooEmailPlaceholders(ctx, o)
 	switch {
 	case gooStockEmails[d.ID]:
 		e.To = gooEmailRecipients(s.gooOptString("stock_email_recipient"))
@@ -290,6 +291,8 @@ func (s *Server) gooRenderEmail(ctx context.Context, d *gooEmailDef, st map[stri
 			e.ReplyTo = (&mail.Address{Name: o.BillingName(), Address: o.Billing["email"]}).String()
 		}
 	}
+	ctx = s.gooEmailL10n(ctx, d, e.To)
+	ph := s.gooEmailPlaceholders(ctx, o)
 	subject, heading := st["subject"], st["heading"]
 	switch d.ID {
 	case "customer_refunded_order":
@@ -312,9 +315,9 @@ func (s *Server) gooRenderEmail(ctx context.Context, d *gooEmailDef, st map[stri
 	if heading == "" {
 		heading = d.Heading
 	}
-	e.Subject = gooReplacePlaceholders(s.gooT(ctx, subject), ph)
-	e.Heading = gooReplacePlaceholders(s.gooT(ctx, heading), ph)
-	additional := gooReplacePlaceholders(s.gooT(ctx, st["additional_content"]), ph)
+	e.Subject = gooReplacePlaceholders(s.gooEmailText(ctx, subject), ph)
+	e.Heading = gooReplacePlaceholders(s.gooEmailText(ctx, heading), ph)
+	additional := gooReplacePlaceholders(s.gooEmailText(ctx, st["additional_content"]), ph)
 	content, plain := s.gooEmailContent(ctx, d, o, args)
 	e.HTML = s.gooEmailWrap(ctx, e.Heading, content+gooAutoP(additional))
 	e.Plain = "= " + e.Heading + " =\n\n" + plain
@@ -323,6 +326,70 @@ func (s *Server) gooRenderEmail(ctx context.Context, d *gooEmailDef, st map[stri
 	}
 	e.Plain += "\n\n----------------------------------------\n\n" + gooPlainMsg(s.gooEmailFooter(ctx)) + "\n"
 	return e, nil
+}
+
+// E-mails in the recipient's language, as WooCommerce sends them: a customer's e-mail in the language
+// the order was placed in (Pursae Multi Language) or the site language (WC_Email::setup_locale()
+// switches to the site locale), a store e-mail in the language of the user it goes to (their profile
+// language) or the site's. The texts come from the WooCommerce pack the site language downloads and
+// Pursae's own strings; the shop owner's own subject, heading and additional content are used as
+// written (or as translated under Languages › Translations).
+
+type gooEmailL10nKey struct{}
+
+type gooEmailL10nInfo struct {
+	locale string
+	cat    *i18n.Catalog
+}
+
+// gooEmailL10n returns ctx carrying the catalog of an e-mail's language.
+func (s *Server) gooEmailL10n(ctx context.Context, d *gooEmailDef, to []string) context.Context {
+	locale := s.siteLocale()
+	if d.Customer {
+		locale = s.gooFrontLocale(ctx)
+	} else if len(to) > 0 {
+		if u, err := s.store.UserByLoginOrEmail(ctx, to[0]); err == nil && strings.EqualFold(u.Email, to[0]) {
+			if l, _ := u.Meta["locale"].(string); l != "" {
+				locale = l
+			}
+		}
+	}
+	info := &gooEmailL10nInfo{locale: locale, cat: &i18n.Catalog{}}
+	if s.lang != nil {
+		info.cat = s.lang.Catalog(locale)
+	}
+	return context.WithValue(ctx, gooEmailL10nKey{}, info)
+}
+
+func gooEmailInfo(ctx context.Context) *gooEmailL10nInfo {
+	if v, ok := ctx.Value(gooEmailL10nKey{}).(*gooEmailL10nInfo); ok {
+		return v
+	}
+	return &gooEmailL10nInfo{locale: "en_US", cat: &i18n.Catalog{}}
+}
+
+// gooET is sprintf( __( format ), args… ) in the e-mail's language; args are written as given
+// (escaped for HTML by the caller where needed).
+func gooET(ctx context.Context, format string, args ...string) string {
+	if tr, ok := gooEmailInfo(ctx).cat.Lookup(format); ok {
+		format = tr
+	}
+	if len(args) == 0 {
+		return format
+	}
+	return i18n.Sprintf(format, args...)
+}
+
+// gooEmailText is a subject, heading or additional content: the shop owner's translation (Pursae
+// Multi Language strings) first, else the catalog's for the default texts.
+func (s *Server) gooEmailText(ctx context.Context, v string) string {
+	if t := s.gooT(ctx, v); t != v {
+		return t
+	}
+	if strings.TrimSpace(v) == "" {
+		return v
+	}
+	return gooET(ctx, v)
 }
 
 // gooEmailResetURL makes a password reset link for a user (get_password_reset_key()).

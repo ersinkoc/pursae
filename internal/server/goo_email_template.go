@@ -7,6 +7,8 @@ import (
 	"math"
 	"strconv"
 	"strings"
+
+	"wpgo/internal/i18n"
 )
 
 // The e-mail template: WooCommerce's emails/email-header.php, email-footer.php, email-order-details.php,
@@ -100,7 +102,7 @@ func (s *Server) gooEmailFooter(ctx context.Context) string {
 	if f == "" {
 		f = "{site_title} &mdash; Built with Pursae"
 	}
-	f = s.gooT(ctx, f) // Golylang: Languages › Translations
+	f = s.gooEmailText(ctx, f) // Golylang: Languages › Translations; the default in the e-mail's language
 	home := s.links(ctx).Home
 	return strings.NewReplacer("{site_title}", gooEsc(s.settings.String("blogname")), "{site_url}", home, "{site_address}", home,
 		"{store_email}", gooEsc(s.gooEmailFromAddress())).Replace(f)
@@ -110,11 +112,16 @@ func (s *Server) gooEmailFooter(ctx context.Context) string {
 func (s *Server) gooEmailWrap(ctx context.Context, heading, content string) string {
 	c := s.gooEmailPalette()
 	var b strings.Builder
-	b.WriteString(`<!DOCTYPE html><html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><title>` +
+	info := gooEmailInfo(ctx)
+	lang, dir := strings.ReplaceAll(info.locale, "_", "-"), "ltr"
+	if i18n.IsRTL(info.locale) {
+		dir = "rtl"
+	}
+	b.WriteString(`<!DOCTYPE html><html lang="` + gooEsc(lang) + `"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><title>` +
 		gooEsc(s.settings.String("blogname")) + `</title></head>`)
 	b.WriteString(`<body leftmargin="0" marginwidth="0" topmargin="0" marginheight="0" offset="0" style="background-color:` + c.BG + `;padding:0;text-align:center;">`)
 	b.WriteString(`<table width="100%" id="outer_wrapper" style="background-color:` + c.BG + `;"><tr><td></td><td width="600">`)
-	b.WriteString(`<div id="wrapper" dir="ltr" style="margin:0 auto;padding:70px 0;width:100%;max-width:600px;-webkit-text-size-adjust:none;">`)
+	b.WriteString(`<div id="wrapper" dir="` + dir + `" style="margin:0 auto;padding:70px 0;width:100%;max-width:600px;-webkit-text-size-adjust:none;">`)
 	b.WriteString(`<table border="0" cellpadding="0" cellspacing="0" height="100%" width="100%"><tr><td align="center" valign="top">`)
 	if img := strings.TrimSpace(s.gooOptString("email_header_image")); img != "" {
 		b.WriteString(`<div id="template_header_image"><p style="margin-top:0;"><img src="` + gooEsc(img) + `" alt="` + gooEsc(s.settings.String("blogname")) +
@@ -151,52 +158,54 @@ func (s *Server) gooEmailContent(ctx context.Context, d *gooEmailDef, o *gooOrde
 	}
 	hi := func() (string, string) {
 		if first == "" {
-			return gooEmailP("Hi there,"), "Hi there,\n\n"
+			hi := gooET(ctx, "Hi there,")
+			return gooEmailP(hi), gooPlainMsg(hi) + "\n\n"
 		}
-		return gooEmailP("Hi " + gooEsc(first) + ","), "Hi " + first + ",\n\n"
+		return gooEmailP(gooET(ctx, "Hi %s,", gooEsc(first))), gooPlainMsg(gooET(ctx, "Hi %s,", gooEsc(first))) + "\n\n"
 	}
 	var h, p string
 	withOrder := func(admin bool) {
 		oh, op := s.gooEmailOrderDetails(ctx, o, admin, args)
-		ah, ap := s.gooEmailAddresses(o)
+		ah, ap := s.gooEmailAddresses(ctx, o)
 		h += oh + ah
 		p += "\n" + op + "\n" + ap
 	}
 	switch d.ID {
 	case "new_order":
-		h = gooEmailP("You’ve received the following order from " + gooEsc(o.BillingName()) + ":")
-		p = "You’ve received the following order from " + o.BillingName() + ":\n"
+		msg := gooET(ctx, "You’ve received the following order from %s:", gooEsc(o.BillingName()))
+		h, p = gooEmailP(msg), gooPlainMsg(msg)+"\n"
 		withOrder(true)
 	case "cancelled_order":
-		msg := "Notification to let you know &mdash; order #" + o.Number() + " belonging to " + gooEsc(o.BillingName()) + " has been cancelled:"
+		msg := gooET(ctx, "Notification to let you know &mdash; order #%1$s belonging to %2$s has been cancelled:", o.Number(), gooEsc(o.BillingName()))
 		h, p = gooEmailP(msg), gooPlainMsg(msg)+"\n"
 		withOrder(true)
 	case "failed_order":
-		msg := "Payment for order #" + o.Number() + " from " + gooEsc(o.BillingName()) + " has failed. The order was as follows:"
+		msg := gooET(ctx, "Payment for order #%1$s from %2$s has failed. The order was as follows:", o.Number(), gooEsc(o.BillingName()))
 		h, p = gooEmailP(msg), gooPlainMsg(msg)+"\n"
 		withOrder(true)
 	case "customer_on_hold_order":
 		h, p = hi()
-		msg := "Thanks for your order. It’s on-hold until we confirm that payment has been received. In the meantime, here’s a reminder of what you ordered:"
+		msg := gooET(ctx, "Thanks for your order. It’s on-hold until we confirm that payment has been received.")
 		h += gooEmailP(msg)
-		p += msg + "\n"
+		p += gooPlainMsg(msg) + "\n"
 		withOrder(false)
 	case "customer_processing_order":
 		h, p = hi()
-		msg := "Just to let you know &mdash; we’ve received your order #" + o.Number() + ", and it is now being processed:"
+		msg := gooET(ctx, "Just to let you know &mdash; we've received your order #%s, and it is now being processed:", o.Number())
 		h += gooEmailP(msg)
 		p += gooPlainMsg(msg) + "\n"
 		withOrder(false)
 	case "customer_completed_order":
 		h, p = hi()
-		h += gooEmailP("We have finished processing your order.")
-		p += "We have finished processing your order.\n"
+		msg := gooET(ctx, "We have finished processing your order.")
+		h += gooEmailP(msg)
+		p += gooPlainMsg(msg) + "\n"
 		withOrder(false)
 	case "customer_refunded_order":
 		h, p = hi()
-		msg := "Your order on " + gooEsc(site) + " has been refunded. There are more details below for your reference:"
+		msg := gooET(ctx, "Your order on %s has been refunded. There are more details below for your reference:", gooEsc(site))
 		if gooBool(args["partial"]) {
-			msg = "Your order on " + gooEsc(site) + " has been partially refunded. There are more details below for your reference:"
+			msg = gooET(ctx, "Your order on %s has been partially refunded. There are more details below for your reference:", gooEsc(site))
 		}
 		h += gooEmailP(msg)
 		p += gooPlainMsg(msg) + "\n"
@@ -204,23 +213,24 @@ func (s *Server) gooEmailContent(ctx context.Context, d *gooEmailDef, o *gooOrde
 	case "customer_invoice":
 		h, p = hi()
 		if o.IsPaid() || o.Total <= 0 {
-			msg := "Here are the details of your order placed on " + gooEsc(s.gooEmailDate(o.DateCreated)) + ":"
+			msg := gooET(ctx, "Here are the details of your order placed on %s:", gooEsc(s.gooEmailDate(ctx, o.DateCreated)))
 			h += gooEmailP(msg)
 			p += gooPlainMsg(msg) + "\n"
 		} else {
 			pay := s.gooOrderPayURL(ctx, o)
-			h += gooEmailP("An order has been created for you on " + gooEsc(site) + ". Your invoice is below, with a link to make payment when you’re ready: " +
-				`<a href="` + gooEsc(pay) + `" style="color:` + s.gooEmailPalette().Base + `;font-weight:normal;text-decoration:underline;">Pay for this order</a>`)
-			p += "An order has been created for you on " + site + ". Your invoice is below, with a link to make payment when you’re ready: " + pay + "\n"
+			const invoice = "An order has been created for you on %1$s. Your order details are below, with a link to make payment when you’re ready: %2$s"
+			h += gooEmailP(gooET(ctx, invoice, gooEsc(site), `<a href="`+gooEsc(pay)+`" style="color:`+s.gooEmailPalette().Base+`;font-weight:normal;text-decoration:underline;">`+gooET(ctx, "Pay for this order")+`</a>`))
+			p += gooPlainMsg(gooET(ctx, invoice, gooEsc(site), gooEsc(pay))) + "\n"
 		}
 		withOrder(false)
 	case "customer_note":
 		note, _ := args["note"].(string)
 		h, p = hi()
-		h += gooEmailP("The following note has been added to your order:") +
+		added, reminder := gooET(ctx, "The following note has been added to your order:"), gooET(ctx, "As a reminder, here are your order details:")
+		h += gooEmailP(added) +
 			`<blockquote style="margin:0 0 16px;padding-left:16px;border-left:3px solid ` + s.gooEmailPalette().Base + `;">` + strings.ReplaceAll(gooEsc(note), "\n", "<br>") + "</blockquote>\n" +
-			gooEmailP("As a reminder, here are your order details:")
-		p += "The following note has been added to your order:\n\n----------\n\n" + note + "\n\n----------\n\nAs a reminder, here are your order details:\n"
+			gooEmailP(reminder)
+		p += gooPlainMsg(added) + "\n\n----------\n\n" + note + "\n\n----------\n\n" + gooPlainMsg(reminder) + "\n"
 		withOrder(false)
 	case "customer_new_account":
 		login, _ := args["login"].(string)
@@ -231,10 +241,11 @@ func (s *Server) gooEmailContent(ctx context.Context, d *gooEmailDef, o *gooOrde
 			}
 		}
 		acct := s.gooAccountURL(ctx, "")
-		h = gooEmailP("Hi "+gooEsc(login)+",") +
-			gooEmailP("Thanks for creating an account on "+gooEsc(site)+". Your username is <strong>"+gooEsc(login)+"</strong>. You can access your account area to view orders, change your password, and more at: "+
-				`<a href="`+gooEsc(acct)+`" style="color:`+s.gooEmailPalette().Base+`;font-weight:normal;text-decoration:underline;">`+gooEsc(acct)+`</a>`)
-		p = "Hi " + login + ",\n\nThanks for creating an account on " + site + ". Your username is " + login + ". You can access your account area to view orders, change your password, and more at: " + acct + "\n"
+		const thanks = "Thanks for creating an account on %1$s. Your username is %2$s. You can access your account area to view orders, change your password, and more at: %3$s"
+		h = gooEmailP(gooET(ctx, "Hi %s,", gooEsc(login))) +
+			gooEmailP(gooET(ctx, thanks, gooEsc(site), "<strong>"+gooEsc(login)+"</strong>",
+				`<a href="`+gooEsc(acct)+`" style="color:`+s.gooEmailPalette().Base+`;font-weight:normal;text-decoration:underline;">`+gooEsc(acct)+`</a>`))
+		p = gooPlainMsg(gooET(ctx, "Hi %s,", gooEsc(login))) + "\n\n" + gooPlainMsg(gooET(ctx, thanks, gooEsc(site), gooEsc(login), gooEsc(acct))) + "\n"
 		if gooBool(args["password_generated"]) {
 			link, _ := args["reset_url"].(string)
 			if link == "" && uid != 0 {
@@ -243,8 +254,8 @@ func (s *Server) gooEmailContent(ctx context.Context, d *gooEmailDef, o *gooOrde
 			if link == "" {
 				link = s.gooAccountURL(ctx, "lost-password")
 			}
-			h += gooEmailP(`<a href="` + gooEsc(link) + `" style="color:` + s.gooEmailPalette().Base + `;font-weight:normal;text-decoration:underline;">Click here to set your new password.</a>`)
-			p += "\nTo set your password, visit the following address: " + link + "\n"
+			h += gooEmailP(`<a href="` + gooEsc(link) + `" style="color:` + s.gooEmailPalette().Base + `;font-weight:normal;text-decoration:underline;">` + gooET(ctx, "Click here to set your new password.") + `</a>`)
+			p += "\n" + gooPlainMsg(gooET(ctx, "To set your password, visit the following address: %s", gooEsc(link))) + "\n"
 		}
 	case "customer_reset_password":
 		login, _ := args["login"].(string)
@@ -257,14 +268,17 @@ func (s *Server) gooEmailContent(ctx context.Context, d *gooEmailDef, o *gooOrde
 				link = s.gooEmailResetURL(ctx, uid)
 			}
 		}
-		h = gooEmailP("Hi "+gooEsc(login)+",") + gooEmailP("Someone has requested a new password for the following account on "+gooEsc(site)+":") +
-			gooEmailP("Username: <strong>"+gooEsc(login)+"</strong>") + gooEmailP("If you didn’t make this request, just ignore this email. If you’d like to proceed:") +
-			gooEmailP(`<a class="link" href="`+gooEsc(link)+`" style="color:`+s.gooEmailPalette().Base+`;font-weight:normal;text-decoration:underline;">Click here to reset your password</a>`)
-		p = "Hi " + login + ",\n\nSomeone has requested a new password for the following account on " + site + ":\n\nUsername: " + login +
-			"\n\nIf you didn’t make this request, just ignore this email. If you’d like to proceed:\n\n" + link + "\n"
+		hi := gooET(ctx, "Hi %s,", gooEsc(login))
+		someone := gooET(ctx, "Someone has requested a new password for the following account on %s:", gooEsc(site))
+		ignore := gooET(ctx, "If you didn't make this request, just ignore this email. If you'd like to proceed:")
+		h = gooEmailP(hi) + gooEmailP(someone) +
+			gooEmailP(gooET(ctx, "Username: %s", "<strong>"+gooEsc(login)+"</strong>")) + gooEmailP(ignore) +
+			gooEmailP(`<a class="link" href="`+gooEsc(link)+`" style="color:`+s.gooEmailPalette().Base+`;font-weight:normal;text-decoration:underline;">`+gooET(ctx, "Click here to reset your password")+`</a>`)
+		p = gooPlainMsg(hi) + "\n\n" + gooPlainMsg(someone) + "\n\n" + gooPlainMsg(gooET(ctx, "Username: %s", gooEsc(login))) +
+			"\n\n" + gooPlainMsg(ignore) + "\n\n" + link + "\n"
 	case "low_stock", "no_stock", "backorder":
 		prod, _ := args["product"].(*gooProduct)
-		name := "A product"
+		name := gooET(ctx, "A product")
 		qty := 0
 		if prod != nil {
 			name = s.gooProductTitle(ctx, prod)
@@ -283,16 +297,16 @@ func (s *Server) gooEmailContent(ctx context.Context, d *gooEmailDef, o *gooOrde
 		var msg string
 		switch d.ID {
 		case "low_stock":
-			msg = gooEsc(name) + " is low in stock. There are " + strconv.Itoa(qty) + " left."
+			msg = gooET(ctx, "%1$s is low in stock. There are %2$d left.", gooEsc(name), strconv.Itoa(qty))
 		case "no_stock":
-			msg = gooEsc(name) + " is out of stock."
+			msg = gooET(ctx, "%s is out of stock.", gooEsc(name))
 		default:
 			n := int(gooInt(args["quantity"]))
 			order := ""
 			if o != nil {
 				order = o.Number()
 			}
-			msg = strconv.Itoa(n) + " units of " + gooEsc(name) + " have been backordered in order #" + order + "."
+			msg = gooET(ctx, "%1$s units of %2$s have been backordered in order #%3$s.", strconv.Itoa(n), gooEsc(name), order)
 		}
 		h, p = gooEmailP(msg), html.UnescapeString(msg)+"\n"
 	default:
@@ -343,13 +357,13 @@ func (s *Server) gooEmailTotals(ctx context.Context, o *gooOrder, args map[strin
 			sub += it.SubtotalTax
 		}
 	}
-	add("Subtotal:", sub, "")
+	add(gooET(ctx, "Subtotal:"), sub, "")
 	if o.DiscountTotal > 0 {
 		d := o.DiscountTotal
 		if incl {
 			d += o.DiscountTax
 		}
-		add("Discount:", d, "-")
+		add(gooET(ctx, "Discount:"), d, "-")
 	}
 	if ships := o.ItemsOf("shipping"); len(ships) > 0 {
 		var names []string
@@ -365,10 +379,10 @@ func (s *Server) gooEmailTotals(ctx context.Context, o *gooOrder, args map[strin
 		if v == 0 {
 			h, p = gooEsc(via), via
 		} else {
-			h += `&nbsp;<small class="shipped_via">via ` + gooEsc(via) + `</small>`
-			p += " via " + via
+			h += `&nbsp;<small class="shipped_via">` + gooET(ctx, "via %s", gooEsc(via)) + `</small>`
+			p += " " + gooPlainMsg(gooET(ctx, "via %s", gooEsc(via)))
 		}
-		rows = append(rows, [3]string{"Shipping:", h, p})
+		rows = append(rows, [3]string{gooET(ctx, "Shipping:"), h, p})
 	}
 	for _, it := range o.ItemsOf("fee") {
 		v := it.Total
@@ -382,20 +396,20 @@ func (s *Server) gooEmailTotals(ctx context.Context, o *gooOrder, args map[strin
 			for _, it := range o.ItemsOf("tax") {
 				a, _ := gooFloat(it.Meta["tax_amount"])
 				b, _ := gooFloat(it.Meta["shipping_tax_amount"])
-				add(defaultStr(gooStr(it.Meta["label"]), "Tax")+":", a+b, "")
+				add(defaultStr(gooStr(it.Meta["label"]), gooET(ctx, "Tax"))+":", a+b, "")
 			}
 		} else {
-			add("Tax:", o.TotalTax, "")
+			add(gooET(ctx, "Tax:"), o.TotalTax, "")
 		}
 	}
 	if o.Total > 0 && o.PaymentMethodTitle != "" {
-		rows = append(rows, [3]string{"Payment method:", gooEsc(o.PaymentMethodTitle), o.PaymentMethodTitle})
+		rows = append(rows, [3]string{gooET(ctx, "Payment method:"), gooEsc(o.PaymentMethodTitle), o.PaymentMethodTitle})
 	}
 	refunded := 0.0
 	if !gooBool(args["preview"]) && o.ID != 0 {
 		if list, err := s.gooRefunds(ctx, o.ID); err == nil {
 			for _, r := range list {
-				add("Refund:", -r.Total, "-")
+				add(gooET(ctx, "Refund:"), -r.Total, "-")
 				refunded += -r.Total
 			}
 		}
@@ -405,7 +419,7 @@ func (s *Server) gooEmailTotals(ctx context.Context, o *gooOrder, args map[strin
 		nh, np := price(o.Total - refunded)
 		h, p = "<del>"+gooPlainMsg(h)+"</del> <ins>"+nh+"</ins>", p+" → "+np
 	}
-	rows = append(rows, [3]string{"Total:", h, p})
+	rows = append(rows, [3]string{gooET(ctx, "Total:"), h, p})
 	return rows
 }
 
@@ -413,8 +427,8 @@ func (s *Server) gooEmailTotals(ctx context.Context, o *gooOrder, args map[strin
 func (s *Server) gooEmailOrderDetails(ctx context.Context, o *gooOrder, admin bool, args map[string]any) (string, string) {
 	c := s.gooEmailPalette()
 	td := `color:` + c.TextLighter20 + `;border:1px solid #e5e5e5;vertical-align:middle;padding:12px;text-align:left;`
-	date := s.gooEmailDate(o.DateCreated)
-	title := "[Order #" + o.Number() + "]"
+	date := s.gooEmailDate(ctx, o.DateCreated)
+	title := gooET(ctx, "[Order #%s]", o.Number())
 	if admin && o.ID != 0 {
 		title = `<a class="link" href="` + gooEsc(s.links(ctx).HomeURL("/wp-admin/goocommerce?page=orders&action=edit&id="+o.Number())) + `" style="color:` + c.Base + `;font-weight:normal;text-decoration:underline;">` + title + `</a>`
 	}
@@ -423,9 +437,9 @@ func (s *Server) gooEmailOrderDetails(ctx context.Context, o *gooOrder, admin bo
 		title + ` (<time datetime="` + o.DateCreated.Format("2006-01-02T15:04:05Z07:00") + `">` + gooEsc(date) + `</time>)</h2>`)
 	b.WriteString(`<div style="margin-bottom:40px;"><table class="td" cellspacing="0" cellpadding="6" border="1" style="color:` + c.TextLighter20 +
 		`;border:1px solid #e5e5e5;vertical-align:middle;width:100%;font-family:` + gooEmailFont + `;">`)
-	b.WriteString(`<thead><tr><th class="td" scope="col" style="` + td + `">Product</th><th class="td" scope="col" style="` + td + `">Quantity</th><th class="td" scope="col" style="` + td + `">Price</th></tr></thead><tbody>`)
+	b.WriteString(`<thead><tr><th class="td" scope="col" style="` + td + `">` + gooET(ctx, "Product") + `</th><th class="td" scope="col" style="` + td + `">` + gooET(ctx, "Quantity") + `</th><th class="td" scope="col" style="` + td + `">` + gooET(ctx, "Price") + `</th></tr></thead><tbody>`)
 	var p strings.Builder
-	p.WriteString("[Order #" + o.Number() + "] (" + date + ")\n\n")
+	p.WriteString(gooPlainMsg(gooET(ctx, "[Order #%s]", o.Number())) + " (" + date + ")\n\n")
 	incl := s.gooOptString("tax_display_cart") == "incl"
 	for _, it := range o.ItemsOf("line_item") {
 		if !s.gooOrderItemVisible(ctx, it, "email") {
@@ -485,8 +499,8 @@ func (s *Server) gooEmailOrderDetails(ctx context.Context, o *gooOrder, admin bo
 		p.WriteString(row[0] + "\t" + row[2] + "\n")
 	}
 	if o.CustomerNote != "" {
-		b.WriteString(`<tr><th class="td" scope="row" colspan="2" style="` + td + `">Note:</th><td class="td" style="` + td + `">` + strings.ReplaceAll(gooEsc(o.CustomerNote), "\n", "<br>") + `</td></tr>`)
-		p.WriteString("Note:\t" + o.CustomerNote + "\n")
+		b.WriteString(`<tr><th class="td" scope="row" colspan="2" style="` + td + `">` + gooET(ctx, "Note:") + `</th><td class="td" style="` + td + `">` + strings.ReplaceAll(gooEsc(o.CustomerNote), "\n", "<br>") + `</td></tr>`)
+		p.WriteString(gooPlainMsg(gooET(ctx, "Note:")) + "\t" + o.CustomerNote + "\n")
 	}
 	b.WriteString(`</tfoot></table></div>`)
 	return b.String(), p.String()
@@ -505,7 +519,7 @@ func (s *Server) gooEmailPurchaseNote(ctx context.Context, it *gooOrderItem, o *
 }
 
 // gooEmailFormatAddress is WC_Countries::get_formatted_address() as lines.
-func gooEmailFormatAddress(a map[string]string) []string {
+func gooEmailFormatAddress(ctx context.Context, a map[string]string) []string {
 	var lines []string
 	add := func(v string) {
 		if v = strings.TrimSpace(v); v != "" {
@@ -525,28 +539,29 @@ func gooEmailFormatAddress(a map[string]string) []string {
 		lines[len(lines)-1] = strings.TrimSpace(strings.TrimPrefix(lines[len(lines)-1], ","))
 	}
 	if a["country"] != "" {
-		add(gooCountryName(a["country"]))
+		add(gooET(ctx, gooCountryName(a["country"]))) // WC()->countries: translated country names
 	}
 	return lines
 }
 
 // gooEmailAddresses is email-addresses.php: billing (with phone / e-mail) and shipping addresses.
-func (s *Server) gooEmailAddresses(o *gooOrder) (string, string) {
+func (s *Server) gooEmailAddresses(ctx context.Context, o *gooOrder) (string, string) {
 	c := s.gooEmailPalette()
 	box := `padding:12px;color:` + c.TextLighter20 + `;border:1px solid #e5e5e5;`
 	h2 := `<h2 style="color:` + c.Base + `;display:block;font-family:` + gooEmailFont + `;font-size:18px;font-weight:bold;line-height:130%;margin:0 0 18px;text-align:left;">`
-	billing := gooEmailFormatAddress(o.Billing)
+	billing := gooEmailFormatAddress(ctx, o.Billing)
+	billingTitle, shippingTitle := gooET(ctx, "Billing address"), gooET(ctx, "Shipping address")
 	var b strings.Builder
 	var p strings.Builder
 	b.WriteString(`<table id="addresses" cellspacing="0" cellpadding="0" border="0" style="width:100%;vertical-align:top;margin-bottom:40px;padding:0;"><tr>`)
-	b.WriteString(`<td valign="top" width="50%" style="text-align:left;font-family:` + gooEmailFont + `;border:0;padding:0;">` + h2 + `Billing address</h2><address class="address" style="` + box + `">`)
+	b.WriteString(`<td valign="top" width="50%" style="text-align:left;font-family:` + gooEmailFont + `;border:0;padding:0;">` + h2 + billingTitle + `</h2><address class="address" style="` + box + `">`)
 	for i, l := range billing {
 		if i > 0 {
 			b.WriteString("<br>")
 		}
 		b.WriteString(gooEsc(l))
 	}
-	p.WriteString("Billing address\n\n" + strings.Join(billing, "\n") + "\n")
+	p.WriteString(gooPlainMsg(billingTitle) + "\n\n" + strings.Join(billing, "\n") + "\n")
 	if ph := o.Billing["phone"]; ph != "" {
 		b.WriteString(`<br><a href="tel:` + gooEsc(ph) + `" style="color:` + c.Base + `;font-weight:normal;text-decoration:underline;">` + gooEsc(ph) + `</a>`)
 		p.WriteString(ph + "\n")
@@ -556,14 +571,14 @@ func (s *Server) gooEmailAddresses(o *gooOrder) (string, string) {
 		p.WriteString(em + "\n")
 	}
 	b.WriteString(`</address></td>`)
-	if shipping := gooEmailFormatAddress(o.Shipping); len(shipping) > 0 && len(o.ItemsOf("shipping")) > 0 {
+	if shipping := gooEmailFormatAddress(ctx, o.Shipping); len(shipping) > 0 && len(o.ItemsOf("shipping")) > 0 {
 		esc := make([]string, len(shipping))
 		for i, l := range shipping {
 			esc[i] = gooEsc(l)
 		}
-		b.WriteString(`<td valign="top" width="50%" style="text-align:left;font-family:` + gooEmailFont + `;padding:0;">` + h2 + `Shipping address</h2><address class="address" style="` + box + `">` +
+		b.WriteString(`<td valign="top" width="50%" style="text-align:left;font-family:` + gooEmailFont + `;padding:0;">` + h2 + shippingTitle + `</h2><address class="address" style="` + box + `">` +
 			strings.Join(esc, "<br>") + `</address></td>`)
-		p.WriteString("\nShipping address\n\n" + strings.Join(shipping, "\n") + "\n")
+		p.WriteString("\n" + gooPlainMsg(shippingTitle) + "\n\n" + strings.Join(shipping, "\n") + "\n")
 	}
 	b.WriteString(`</tr></table>`)
 	return b.String(), p.String()

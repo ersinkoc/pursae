@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+
+	"wpgo/internal/i18n"
 )
 
 // Goocommerce › Reports (page=reports&tab=orders|customers|stock&report=…): WooCommerce's legacy
@@ -245,6 +247,7 @@ func (s *Server) gooAdminReports(c *gin.Context) {
 		d.Ranges = append(d.Ranges, gooView{Label: rg.Label, URL: d.BaseURL + "&range=" + rg.Value, Current: d.Range.Key == rg.Value})
 	}
 	ivs := d.Range.Intervals()
+	s.gooL10nIntervals(c, ivs, d.Range.ByMonth)
 	from, to := d.Range.From, d.Range.To
 	cur := s.gooCurrency()
 	price := func(v float64) template.HTML { return s.gooPrice(v) }
@@ -273,7 +276,11 @@ func (s *Server) gooAdminReports(c *gin.Context) {
 		sales := s.gooSeries(ctx, ivs, "o.total", "")
 		orders := s.gooSeries(ctx, ivs, "1", "")
 		d.Chart = gooBars(ivs, sales, orders, func(i int) string {
-			return fmt.Sprintf("%s: %s, %d orders", ivs[i].Label, s.gooPricePlain(sales[i], cur), int(orders[i]))
+			format := "%1$s: %2$s, %3$d orders"
+			if int(orders[i]) == 1 {
+				format = "%1$s: %2$s, %3$d order"
+			}
+			return i18n.Sprintf(s.__(c, format), ivs[i].Label, s.gooPricePlain(sales[i], cur), strconv.Itoa(int(orders[i])))
 		})
 		d.HasChart = true
 	case "sales_by_product":
@@ -369,7 +376,7 @@ func (s *Server) gooAdminReports(c *gin.Context) {
 		co := s.gooSeries(ctx, ivs, "1", " AND o.customer_id <> 0")
 		go_ := s.gooSeries(ctx, ivs, "1", " AND o.customer_id = 0")
 		d.Chart = gooBars(ivs, co, go_, func(i int) string {
-			return fmt.Sprintf("%s: %d customer orders, %d guest orders", ivs[i].Label, int(co[i]), int(go_[i]))
+			return i18n.Sprintf(s.__(c, "%1$s: %2$d customer orders, %3$d guest orders"), ivs[i].Label, strconv.Itoa(int(co[i])), strconv.Itoa(int(go_[i])))
 		})
 		d.HasChart = true
 	case "customer_list":
