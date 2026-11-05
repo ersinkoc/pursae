@@ -117,7 +117,13 @@ func (c *Catalog) TranslateHTML(doc []byte) []byte {
 				}
 			}
 		}
-		// Raw-text elements: copy through to the closing tag untouched.
+		// Raw-text elements: copy through to the closing tag untouched. WordPress' Underscore templates
+		// (<script type="text/template" id="tmpl-…">) are HTML that PHP translated before printing them:
+		// their text is translated like the page's ("New version available."); the template's code
+		// (<# … #>, {{ data.… }}) never matches a message and is copied as it is.
+		if t, _ := attrs.get("type"); name == "script" && strings.EqualFold(t, "text/template") && skipDepth == 0 {
+			continue
+		}
 		if rawElements[name] && !selfClosing {
 			end := indexClose(src, i, name)
 			if end < 0 {

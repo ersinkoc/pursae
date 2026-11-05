@@ -143,7 +143,8 @@ func TestTranslateHTML(t *testing.T) {
 		`<span>3 items</span><span>21 items</span><b>Add New Post</b><p>Tagline</p>` +
 		`<p class="description">Read the <a href="/docs">documentation</a>.</p>` +
 		`<a class="ab-item">Howdy, <span class="display-name">Ann</span><img alt="" src="a.png"></a>` +
-		`<script>var s = "Settings";</script><textarea>Settings</textarea><!-- Settings --></body></html>`
+		`<script>var s = "Settings";</script><textarea>Settings</textarea><!-- Settings -->` +
+		`<script type="text/template" id="tmpl-x"><# if ( data.a > 1 ) { #><p>Settings</p><# } #><b>{{ data.name }}</b></script></body></html>`
 	got := string(c.TranslateHTML([]byte(in)))
 	for _, want := range []string{
 		`<title>Tytuł strony &lsaquo; Site`, `<h1>Wpisy</h1>`, `translate="no"><span>Settings</span></a><p>Ustawienia</p>`,
@@ -151,6 +152,7 @@ func TestTranslateHTML(t *testing.T) {
 		`<span>3 elementy</span>`, `<span>21 element</span>`, `<b>Dodaj wpis</b>`, `<p>Opis &#8220;strony&#8221;</p>`,
 		`Przeczytaj <a href="/docs">dokumentację</a>.`, `Witaj, <span class="display-name">Ann</span><img`,
 		`var s = "Settings";`, `<textarea>Settings</textarea>`, `<!-- Settings -->`,
+		`<script type="text/template" id="tmpl-x"><# if ( data.a > 1 ) { #><p>Ustawienia</p><# } #><b>{{ data.name }}</b></script>`,
 	} {
 		if !strings.Contains(got, want) {
 			t.Errorf("missing %s\nin %s", want, got)
