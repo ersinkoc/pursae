@@ -380,7 +380,8 @@
 </span></div></div>{{end}}
 <h2>Retention</h2>
 <form method="post" action="/wp-admin/gooike"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="logs"><input type="hidden" name="do" value="logs_purge">
-<p>Records are kept {{if eq .S.RetentionMonths 0}}forever{{else}}for <strong>{{.S.RetentionMonths}} months</strong> and deleted by a daily job{{end}} (<a href="/wp-admin/gooike?page=settings">change</a>). IP addresses are {{if eq .S.IPMode "hash"}}stored as keyed hashes{{else if eq .S.IPMode "none"}}not stored{{else}}truncated (IPv4 /24, IPv6 /48){{end}}; user agents only as hashes.</p>
+<p>{{if eq .S.RetentionMonths 0}}Records are kept forever (<a href="/wp-admin/gooike?page=settings">change</a>).{{else}}Records are kept for <strong>{{.S.RetentionMonths}} months</strong> and deleted by a daily job (<a href="/wp-admin/gooike?page=settings">change</a>).{{end}}</p>
+<p>{{if eq .S.IPMode "hash"}}IP addresses are stored as keyed hashes; user agents only as hashes.{{else if eq .S.IPMode "none"}}IP addresses are not stored; user agents only as hashes.{{else}}IP addresses are truncated (IPv4 /24, IPv6 /48); user agents only as hashes.{{end}}</p>
 <p><button type="submit" class="button">Delete expired records now</button></p></form>
 {{end}}
 {{end}}
@@ -396,8 +397,8 @@
 	<label><input type="radio" name="regulation" value="kvkk"{{if eq .S.Regulation "kvkk"}} checked{{end}}> <strong>KVKK</strong> (Turkey): opt-in with explicit consent and a link to your information notice (aydınlatma metni)</label><br>
 	<label><input type="radio" name="regulation" value="ccpa"{{if eq .S.Regulation "ccpa"}} checked{{end}}> <strong>CCPA / CPRA</strong> (California): opt-out, with a "Do Not Sell or Share My Personal Information" choice</label></fieldset></td></tr>
 <tr><th scope="row">Geo targeting</th><td><label><input type="checkbox" name="geo" value="1"{{if .S.Geo}} checked{{end}}> Pick the regulation from the visitor's country</label>
-	<p class="description">Needs a country header from your CDN or proxy (Cloudflare <code>CF-IPCountry</code>, CloudFront, Vercel, Fastly or <code>X-Country-Code</code>). EU/EEA/UK/CH get GDPR, Turkey KVKK, the US CCPA. Everyone else:
-	<select name="geo_other" aria-label="Regulation for other countries"><option value="none"{{if eq .S.GeoOther "none"}} selected{{end}}>no banner</option><option value="gdpr"{{if eq .S.GeoOther "gdpr"}} selected{{end}}>GDPR</option><option value="kvkk"{{if eq .S.GeoOther "kvkk"}} selected{{end}}>KVKK</option><option value="ccpa"{{if eq .S.GeoOther "ccpa"}} selected{{end}}>CCPA</option></select></p></td></tr>
+	<p class="description">Needs a country header from your CDN or proxy (Cloudflare <code>CF-IPCountry</code>, CloudFront, Vercel, Fastly or <code>X-Country-Code</code>). EU/EEA/UK/CH get GDPR, Turkey KVKK, the US CCPA.</p>
+	<p><label>Everyone else: <select name="geo_other" aria-label="Regulation for other countries"><option value="none"{{if eq .S.GeoOther "none"}} selected{{end}}>no banner</option><option value="gdpr"{{if eq .S.GeoOther "gdpr"}} selected{{end}}>GDPR</option><option value="kvkk"{{if eq .S.GeoOther "kvkk"}} selected{{end}}>KVKK</option><option value="ccpa"{{if eq .S.GeoOther "ccpa"}} selected{{end}}>CCPA</option></select></label></p></td></tr>
 <tr><th scope="row">Browser signals</th><td><label><input type="checkbox" name="respect_gpc" value="1"{{if .S.RespectGPC}} checked{{end}}> Respect Global Privacy Control</label><br>
 	<label><input type="checkbox" name="respect_dnt" value="1"{{if .S.RespectDNT}} checked{{end}}> Respect Do Not Track</label>
 	<p class="description">A visitor sending the signal is treated as having opted out (no banner): nothing optional under GDPR/KVKK, no marketing under CCPA.</p></td></tr>
@@ -409,7 +410,7 @@
 <h2 class="title">Links</h2>
 <table class="form-table" role="presentation">
 <tr><th scope="row"><label for="gk-privacy">Privacy policy page</label></th><td><select id="gk-privacy" name="privacy_page"><option value="0">&mdash; The site's Privacy Policy page (Settings &rsaquo; Privacy) &mdash;</option>{{range .PagesList}}<option value="{{.ID}}"{{if eq .ID $.Data.S.PrivacyPage}} selected{{end}}>{{.Title}}</option>{{end}}</select>
-	<p><label>or URL <input type="url" name="privacy_url" class="regular-text" value="{{.S.PrivacyURL}}" placeholder="https://"></label></p></td></tr>
+	<p><label>Or a URL: <input type="url" name="privacy_url" class="regular-text" value="{{.S.PrivacyURL}}" placeholder="https://"></label></p></td></tr>
 <tr><th scope="row"><label for="gk-cookiepol">Cookie policy URL</label></th><td><input type="text" id="gk-cookiepol" name="cookie_policy_url" class="regular-text" value="{{.S.CookiePolicyURL}}" placeholder="/cookie-policy/"><p class="description">A page with <code>[gooike_cookie_table]</code> and <code>[gooike_preferences]</code> makes a complete cookie policy.</p></td></tr>
 <tr><th scope="row"><label for="gk-notice">KVKK information notice URL</label></th><td><input type="text" id="gk-notice" name="notice_url" class="regular-text" value="{{.S.NoticeURL}}" placeholder="/aydinlatma-metni/"><p class="description">Linked from the banner in KVKK mode.</p></td></tr>
 </table>
