@@ -112,7 +112,17 @@ func (s *Server) gooAccountNav(c *gin.Context, current string) string {
 	base := []gooNavItem{{Key: "dashboard", Title: "Dashboard"}, {Key: "orders", Title: "Orders"}, {Key: "downloads", Title: "Downloads"},
 		{Key: "edit-address", Title: "Addresses"}, {Key: "edit-account", Title: "Account details"}, {Key: "customer-logout", Title: "Log out"}}
 	items := []gooNavItem{}
-	mods := s.gooModuleEndpoints()
+	// An endpoint without a title (view-subscription) is a detail page, not a tab: it lights up
+	// the tab it follows, the way view-order lights up Orders.
+	var mods []*gooAccountEndpoint
+	parent := map[string]string{"view-order": "orders"}
+	for _, ep := range s.gooModuleEndpoints() {
+		if ep.Title == "" {
+			parent[ep.Slug] = ep.After
+			continue
+		}
+		mods = append(mods, ep)
+	}
 	placed := map[string]bool{}
 	for _, it := range base {
 		items = append(items, it)
@@ -139,7 +149,7 @@ func (s *Server) gooAccountNav(c *gin.Context, current string) string {
 			it.URL = s.gooLogoutURL(c)
 		default:
 			it.URL = s.gooEndpointURL(ctx, "myaccount", s.gooEndpointSlug(it.Key), "")
-			it.Active = current == it.Key || (it.Key == "orders" && current == "view-order")
+			it.Active = current == it.Key || parent[current] == it.Key
 		}
 	}
 	return s.gooTpl("goo/myaccount-navigation", items)

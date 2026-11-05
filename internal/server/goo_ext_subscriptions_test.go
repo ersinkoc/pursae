@@ -294,6 +294,14 @@ func TestGooExtSubscriptions(t *testing.T) {
 	if h := string(gsubAccountView(srv, c, itoa64(sub.ID))); !strings.Contains(h, "Related orders") || !strings.Contains(h, "Cancel") {
 		t.Errorf("account view: %.300s", h)
 	}
+	// The detail page is no tab of its own: it lights up Subscriptions.
+	nav := srv.gooAccountNav(c, "view-subscription")
+	if strings.Contains(nav, "view-subscription") || strings.Contains(nav, "></a>") {
+		t.Errorf("account menu lists the subscription detail page: %s", nav)
+	}
+	if !regexp.MustCompile(`--subscriptions[^"]*is-active`).MatchString(nav) {
+		t.Errorf("Subscriptions is not active on a subscription page: %s", nav)
+	}
 	if h := string(gsubAccountView(srv, gxaCtx(gxaCustomer(t, srv, "other@example.test"), http.MethodGet, "/", nil), itoa64(sub.ID))); !strings.Contains(h, "Invalid subscription") {
 		t.Error("another customer sees the subscription")
 	}
