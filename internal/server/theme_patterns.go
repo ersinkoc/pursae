@@ -118,7 +118,34 @@ func (api *restAPI) blockPatterns(c *gin.Context, r *restRequest) {
 	if !canViewPatterns(c) {
 		return
 	}
-	restJSON(c, http.StatusOK, api.s.registeredPatterns(c))
+	restJSON(c, http.StatusOK, api.s.translatePatterns(c, api.s.registeredPatterns(c), "title", "description"))
+}
+
+// translatePatterns gives patterns or pattern categories their titles, labels and descriptions in the
+// user's language, as WordPress does when it registers them with __() (core's patterns from core's
+// pack, a theme's from its text domain: the WordPress.org theme pack's strings ship in web/languages).
+// The registry itself stays English; the entries returned are copies.
+func (s *Server) translatePatterns(c *gin.Context, list []map[string]any, keys ...string) []map[string]any {
+	cat := s.catalog(c)
+	if cat.Empty() {
+		return list
+	}
+	out := make([]map[string]any, len(list))
+	for i, p := range list {
+		q := make(map[string]any, len(p))
+		for k, v := range p {
+			q[k] = v
+		}
+		for _, k := range keys {
+			if v, ok := q[k].(string); ok && v != "" {
+				if tr, ok := cat.Lookup(v); ok {
+					q[k] = tr
+				}
+			}
+		}
+		out[i] = q
+	}
+	return out
 }
 
 // registeredPatterns is WP_Block_Patterns_Registry::get_all_registered() as the REST API returns it.
@@ -151,5 +178,5 @@ func (api *restAPI) blockPatternCategories(c *gin.Context, r *restRequest) {
 	if set := api.s.themePatterns(api.s.activeTheme()); set != nil {
 		out = append(out, set.Categories...)
 	}
-	restJSON(c, http.StatusOK, out)
+	restJSON(c, http.StatusOK, api.s.translatePatterns(c, out, "label", "description"))
 }

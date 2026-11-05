@@ -7,6 +7,8 @@ import (
 	"log"
 	"sort"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 // Content history: every save, publish, unpublish, discard, restore and scheduled publication of
@@ -113,6 +115,16 @@ func (s *Server) hgVersions(ctx context.Context, entryID int64, limit int) []*hg
 	for rows.Next() {
 		if v, err := hgScanVersion(rows); err == nil {
 			out = append(out, v)
+		}
+	}
+	// The notes of relation changes are written by Pursae Headless ("Linked %1$s via %2$s"): the
+	// admin lists show them in the user's language. A reviewer's note is shown as written.
+	if gc, ok := ctx.(*gin.Context); ok {
+		cat := s.catalog(gc)
+		for _, v := range out {
+			if v.Action == "link" && v.Note != "" {
+				v.Note = cat.Text(v.Note)
+			}
 		}
 	}
 	return out

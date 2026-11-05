@@ -259,7 +259,7 @@ func (s *Server) upgradeCore(c *gin.Context) {
 		return
 	}
 	fail := func(msg string) {
-		c.Redirect(http.StatusFound, "/wp-admin/update-core?error="+url.QueryEscape("Update failed: "+msg))
+		c.Redirect(http.StatusFound, "/wp-admin/update-core?error="+url.QueryEscape(s.updateFailed(c, msg)))
 	}
 	target, err := coreUpdateTarget()
 	if err != nil {

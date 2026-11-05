@@ -15,6 +15,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"wpgo/internal/i18n"
 	"wpgo/internal/store"
 )
 
@@ -1217,12 +1218,18 @@ func (s *Server) hgAdminEntryPost(c *gin.Context, sc *hgSchema, do string) {
 			return
 		}
 		s.hgEmit(c, "entry.update", sc, e)
-		msg := "The version was restored as the draft."
-		if len(skipped) > 0 {
-			msg = "The version was restored as the draft, except for " + strings.Join(skipped, ", ") + ": those values no longer fit the content type and kept their current values."
-		}
-		if len(dropped) > 0 {
-			msg += " Left out, the content type no longer has these fields: " + strings.Join(dropped, ", ") + "."
+		// One message per case, so each is translated as a whole sentence.
+		kept, gone := strings.Join(skipped, ", "), strings.Join(dropped, ", ")
+		var msg string
+		switch {
+		case kept != "" && gone != "":
+			msg = i18n.Sprintf("The version was restored as the draft, except for %1$s: those values no longer fit the content type and kept their current values. Left out, the content type no longer has these fields: %2$s.", kept, gone)
+		case kept != "":
+			msg = i18n.Sprintf("The version was restored as the draft, except for %s: those values no longer fit the content type and kept their current values.", kept)
+		case gone != "":
+			msg = i18n.Sprintf("The version was restored as the draft. Left out, the content type no longer has these fields: %s.", gone)
+		default:
+			msg = "The version was restored as the draft."
 		}
 		hgRedirect(c, entryURL(doc), msg, nil)
 	case "bulk_entries":
@@ -1365,17 +1372,36 @@ func (s *Server) hgAdminHistory(c *gin.Context, d *hgAdminData) bool {
 func (s *Server) hgAdminGraphQL(c *gin.Context) {
 	u := currentUser(c)
 	if !u.Can("manage_options", nil) || !s.checkNonceValue(c, c.GetHeader("X-HG-Nonce"), hgNonce) {
-		c.JSON(http.StatusForbidden, map[string]any{"data": nil, "errors": []any{map[string]any{"message": "Sorry, you are not allowed to do that."}}})
+		c.JSON(http.StatusForbidden, map[string]any{"data": nil, "errors": []any{map[string]any{"message": s.__(c, "Sorry, you are not allowed to do that.")}}})
 		return
 	}
 	var req hgGQLRequest
 	raw, _ := io.ReadAll(io.LimitReader(c.Request.Body, 1<<20))
 	if err := json.Unmarshal(raw, &req); err != nil {
-		c.JSON(http.StatusBadRequest, map[string]any{"data": nil, "errors": []any{map[string]any{"message": "The body must be JSON: {\"query\": \"...\"}"}}})
+		c.JSON(http.StatusBadRequest, map[string]any{"data": nil, "errors": []any{map[string]any{"message": s.__(c, "The body must be JSON: {\"query\": \"...\"}")}}})
 		return
 	}
 	a := &hgAuth{Kind: "token", Token: &hgToken{Kind: "full-access", Permissions: map[string][]string{}}}
 	status, out := s.hgGQLExecute(c, a, s.hgLoad(), req)
+	s.hgGQLTranslateErrors(c, out)
 	c.Header("Cache-Control", "no-store")
 	c.JSON(status, out)
+}
+
+// hgGQLTranslateErrors shows the playground's error messages (validation, syntax, access) in the
+// user's language. The public endpoint answers in English, as GraphQL servers do: clients match the
+// messages of the specification.
+func (s *Server) hgGQLTranslateErrors(c *gin.Context, out map[string]any) {
+	cat := s.catalog(c)
+	if cat.Empty() {
+		return
+	}
+	list, _ := out["errors"].([]any)
+	for _, e := range list {
+		if m, ok := e.(map[string]any); ok {
+			if msg, ok := m["message"].(string); ok {
+				m["message"] = cat.Text(msg)
+			}
+		}
+	}
 }

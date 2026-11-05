@@ -16,6 +16,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"wpgo/internal/i18n"
 	"wpgo/internal/links"
 	"wpgo/internal/store"
 	"wpgo/internal/wp"
@@ -615,8 +616,9 @@ func (s *Server) themesScreen(c *gin.Context) {
 		if t.UpdateURL != "" {
 			name := template.HTMLEscapeString(t.Name)
 			j.HasUpdate, j.UpdateURL = true, t.UpdateURL
-			j.Update = `<p><strong>There is a new version of ` + name + ` available. <a href="` + template.HTMLEscapeString(t.UpdateURL) +
-				`" class="wpgo-update-theme" aria-label="Update ` + name + ` now">Update now</a> to version ` + template.HTMLEscapeString(t.NewVersion) + `.</strong></p>`
+			// One message, translated as a whole: themes.js shows it as it is.
+			j.Update = `<p><strong>` + i18n.Sprintf(s.__(c, `There is a new version of %1$s available. <a href="%2$s" class="wpgo-update-theme" aria-label="%3$s">Update now</a> to version %4$s.`),
+				name, template.HTMLEscapeString(t.UpdateURL), template.HTMLEscapeString(i18n.Sprintf(s.__(c, "Update %s now"), t.Name)), template.HTMLEscapeString(t.NewVersion)) + `</strong></p>`
 		}
 		if t.Slug == helloThemeSlug { // Golementor: the hello theme is built in the Theme Builder
 			j.Builder = "/wp-admin/theme-builder"

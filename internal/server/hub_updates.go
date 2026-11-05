@@ -12,6 +12,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"wpgo/internal/i18n"
 	"wpgo/internal/plugins"
 )
 
@@ -161,7 +162,7 @@ func (s *Server) pluginUpgrade(c *gin.Context) {
 	}
 	m, err := s.hubUpdatePlugin(c.Request.Context(), slug)
 	if err != nil {
-		c.Redirect(http.StatusFound, "/wp-admin/plugins?error="+url.QueryEscape("Update failed: "+err.Error()))
+		c.Redirect(http.StatusFound, "/wp-admin/plugins?error="+url.QueryEscape(s.updateFailed(c, err.Error())))
 		return
 	}
 	c.Redirect(http.StatusFound, "/wp-admin/plugins?updated="+url.QueryEscape(m.Name+" "+m.Version))
@@ -269,7 +270,7 @@ func (s *Server) themeUpgrade(c *gin.Context) {
 	}
 	t, err := s.hubUpdateTheme(c, slug)
 	if err != nil {
-		c.Redirect(http.StatusFound, "/wp-admin/themes?error="+url.QueryEscape("Update failed: "+err.Error()))
+		c.Redirect(http.StatusFound, "/wp-admin/themes?error="+url.QueryEscape(s.updateFailed(c, err.Error())))
 		return
 	}
 	c.Redirect(http.StatusFound, "/wp-admin/themes?updated="+url.QueryEscape(t.Slug))
@@ -304,4 +305,10 @@ func (s *Server) updateThemes(c *gin.Context) {
 		q.Set("error", strings.Join(errs, "; "))
 	}
 	c.Redirect(http.StatusFound, "/wp-admin/update-core?"+q.Encode())
+}
+
+// updateFailed is the "Update failed: %s" notice in the user's language, the reason included: the
+// redirect carries it to the screen as text, so it is translated here as a whole.
+func (s *Server) updateFailed(c *gin.Context, reason string) string {
+	return i18n.Sprintf(s.__(c, "Update failed: %s"), s.catalog(c).Text(reason))
 }

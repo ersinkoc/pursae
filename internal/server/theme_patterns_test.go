@@ -51,7 +51,7 @@ func TestTwentyTwentyFivePatterns(t *testing.T) {
 		}
 	}
 
-	ts, c, _ := testServerBuilderOff(t)
+	ts, c, srv := testServerBuilderOff(t)
 	base := ts.URL
 	installAndLogin(t, ts, c)
 	if code, _, _ := get(t, &http.Client{}, base+"/wp-json/wp/v2/block-patterns/patterns"); code != http.StatusUnauthorized {
@@ -120,5 +120,24 @@ func TestTwentyTwentyFivePatterns(t *testing.T) {
 	if code != http.StatusOK || found["banner"] == nil || found["twentytwentyfive_page"]["label"] != "Pages" ||
 		found["twentytwentyfive_page"]["description"] != "A collection of full page layouts." || found["twentytwentyfive_post-format"] == nil {
 		t.Errorf("categories: %d %s", code, body)
+	}
+
+	// In Turkish the editor lists them with Turkish titles, descriptions and category labels (the
+	// theme's text domain: WordPress.org's twentytwentyfive pack, shipped in web/languages).
+	if err := srv.settings.Set(context.Background(), map[string]any{"WPLANG": "tr_TR"}); err != nil {
+		t.Fatal(err)
+	}
+	_, body = restGet(t, c, base, "/wp-json/wp/v2/block-patterns/patterns")
+	if !strings.Contains(body, `"title":"Kitap açıklaması içeren banner"`) || strings.Contains(body, `"title":"Banner with book description"`) {
+		t.Errorf("Turkish pattern titles: %.300s", body)
+	}
+	_, body = restGet(t, c, base, "/wp-json/wp/v2/block-patterns/categories")
+	if !strings.Contains(body, `"label":"Sayfalar"`) || !strings.Contains(body, `"description":"Tam sayfa düzenlerinden oluşan bir koleksiyon."`) {
+		t.Errorf("Turkish pattern categories: %s", body)
+	}
+	for _, p := range srv.themePatterns(srv.activeTheme()).Patterns { // the registry itself stays English
+		if p["name"] == "twentytwentyfive/banner-about-book" && p["title"] != "Banner with book description" {
+			t.Errorf("registry title %v", p["title"])
+		}
 	}
 }
