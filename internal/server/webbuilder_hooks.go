@@ -46,6 +46,7 @@ func (s *Server) wbAfterPostSave(ctx context.Context, p *store.Post) {
 		return
 	}
 	_, _ = s.wbDetectDrift(ctx, p.ID)
+	s.wbPurgeLoops(ctx, p) // pages whose Theme Builder parts list posts (webbuilder_theme_front.go)
 	if wbIsTemplate(p) {
 		// Published, unpublished, trashed or renamed: the template index and every cached page
 		// that may show it are stale (webbuilder_templates.go).

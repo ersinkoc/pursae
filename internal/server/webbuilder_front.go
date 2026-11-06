@@ -136,19 +136,27 @@ func (s *Server) wbBody(ctx context.Context, fp *wbFrontPage) string {
 
 // wbRenderPage is renderSite's hook: it writes the canvas document and reports true, or false
 // when the theme renders the view.
+//
+// While Hello Pursae renders the request (active or previewed) the Theme Builder parts replace the
+// canvas (wbRenderTheme, webbuilder_theme_front.go); every other theme keeps the canvas, with the
+// snapshot's dynamic placeholders filled the same way.
 func (s *Server) wbRenderPage(c *gin.Context, v *siteView, status int) bool {
-	if v == nil || v.Q == nil || v.Q.Post == nil || (v.Template != "page" && v.Template != "single") {
+	if v == nil || v.Q == nil {
+		return false
+	}
+	if s.wbFrontOn() && v.Theme != nil && v.Theme.Slug == wbHelloSlug {
+		return s.wbRenderTheme(c, v, status)
+	}
+	if v.Q.Post == nil || (v.Template != "page" && v.Template != "single") {
 		return false
 	}
 	fp := s.wbFrontFor(c, v.Q, v.Q.Post)
 	if fp == nil {
 		return false
 	}
-	ctx := v.ctx
-	if ctx == nil {
-		ctx = c.Request.Context()
-	}
-	out := s.wbCanvas(c, v, fp, s.wbBody(ctx, fp))
+	filled := s.wbFill(c, v, fp.doc, true)
+	wbAddCacheTags(c, false, filled.loops)
+	out := s.wbCanvas(c, v, fp, filled.html)
 	c.Data(status, "text/html; charset=UTF-8", s.asStripVersion(c, s.golylangHTML(c, s.gooikeFilterPage(c, []byte(out)))))
 	return true
 }
@@ -194,9 +202,7 @@ func (s *Server) wbCanvas(c *gin.Context, v *siteView, fp *wbFrontPage, body str
 	sb.WriteString("<body class=\"" + html.EscapeString(strings.TrimSpace(v.BodyClass+" web-builder-page")) + "\">\n")
 	sb.WriteString(string(v.BodyOpen))
 	if fp.preview && fp.draftNewer {
-		sb.WriteString(`<div class="wb-preview-notice" role="status" style="position:relative;z-index:99998;margin:0;padding:10px 16px;background:#fcf9e8;border-bottom:1px solid #dba617;color:#1d2327;font:14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">`)
-		sb.WriteString(html.EscapeString(s.__(c, "This preview shows the last published version of the page. Publish your changes in Pursae Web Builder to see them here.")))
-		sb.WriteString("</div>\n")
+		sb.WriteString(wbDraftNotice(s, c))
 	}
 	// The main landmark: the snapshot is one div.wb-page of sections, and wb.css only uses
 	// descendant selectors under .wb-page, so a wrapper changes no styling. A snapshot that brings
@@ -219,6 +225,13 @@ func (s *Server) wbCanvas(c *gin.Context, v *siteView, fp *wbFrontPage, body str
 	sb.WriteString("\n</body>\n</html>\n")
 	wbEmbedCSP(c, body)
 	return sb.String()
+}
+
+// wbDraftNotice tells a previewing editor that the preview shows the published snapshot.
+func wbDraftNotice(s *Server, c *gin.Context) string {
+	return `<div class="wb-preview-notice" role="status" style="position:relative;z-index:99998;margin:0;padding:10px 16px;background:#fcf9e8;border-bottom:1px solid #dba617;color:#1d2327;font:14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">` +
+		html.EscapeString(s.__(c, "This preview shows the last published version of the page. Publish your changes in Pursae Web Builder to see them here.")) +
+		"</div>\n"
 }
 
 // wbMainRe finds a main element or role="main" in a snapshot.
@@ -277,16 +290,23 @@ var wbPageCSSWritten sync.Map // path → hash
 // uploads/web-builder/css/post-<id>-<rev>.css (written atomically on first use; ?ver= is the
 // content hash, since uploads are served as immutable).
 func (s *Server) wbPageCSS(c *gin.Context, p *store.Post, d *store.WebBuilderDoc) string {
+	return s.wbPartCSS(c, d, "wb-css", func() bool { return p != nil && p.Status == "publish" && p.Password == "" })
+}
+
+// wbPartCSS is wbPageCSS for any published doc with the element id elemID (the Theme Builder
+// prints one per part, "wb-css-<postID>"). public is asked only for CSS above the inline limit:
+// a file is written only for a published post without a password.
+func (s *Server) wbPartCSS(c *gin.Context, d *store.WebBuilderDoc, elemID string, public func() bool) string {
 	css := strings.TrimSpace(d.CSS)
 	if css == "" || strings.Contains(strings.ToLower(css), "</style") { // the sanitizer refuses </style; never trust it blindly
 		return ""
 	}
-	inline := "<style id=\"wb-css\">\n" + css + "\n</style>\n"
+	inline := "<style id=\"" + html.EscapeString(elemID) + "\">\n" + css + "\n</style>\n"
 	if len(css) <= webbuilder.InlineCSSMax || s.cfg.UploadsDir == "" {
 		return inline
 	}
 	rel := webbuilder.PageCSSDir + "/post-" + itoa64(d.PostID) + "-" + strconv.Itoa(d.Rev) + ".css"
-	if p == nil || p.Status != "publish" || p.Password != "" {
+	if !public() {
 		// Uploads are public with predictable names: the CSS of a draft, pending, private or
 		// password-protected page stays inline, and a file written while it was public goes.
 		_ = os.Remove(filepath.Join(s.cfg.UploadsDir, filepath.FromSlash(rel)))
@@ -299,8 +319,8 @@ func (s *Server) wbPageCSS(c *gin.Context, p *store.Post, d *store.WebBuilderDoc
 		log.Printf("web builder: page css %d: %v", d.PostID, err)
 		return inline
 	}
-	return fmt.Sprintf("<link rel='stylesheet' id='wb-css' href='%s' media='all' />\n",
-		html.EscapeString(s.uploadURL(c, rel)+"?ver="+hash[:12]))
+	return fmt.Sprintf("<link rel='stylesheet' id='%s' href='%s' media='all' />\n",
+		html.EscapeString(elemID), html.EscapeString(s.uploadURL(c, rel)+"?ver="+hash[:12]))
 }
 
 func (s *Server) wbEnsurePageCSS(postID int64, rev int, path, css, hash string) error {
