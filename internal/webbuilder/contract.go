@@ -507,15 +507,14 @@ type SavedComponent struct {
 }
 
 // SectionKinds is the upstream SectionKind union. KindHTML sections are privileged.
-var SectionKinds = []string{"nav", "hero", "banner", "features", "media", "steps", "quote", "faq", "cta", "footer", "text", "image", "form", "layout", "html", "custom"}
+var SectionKinds = []string{"nav", "hero", "banner", "features", "media", "steps", "quote", "faq", "cta", "footer", "text", "image", "form", "layout", "html", "custom", "loop"}
 
 const (
 	KindHTML   = "html"
 	KindForm   = "form"
 	KindCustom = "custom"
 	KindLayout = "layout"
-	// KindLoop is the Theme Builder post loop (§11.4). It joins SectionKinds together with its
-	// validation (package TA); until then a loop section is an unknown kind.
+	// KindLoop is the Theme Builder post loop (§11.4), validated by doc.go.
 	KindLoop   = "loop"
 	KindNav    = "nav"
 	KindFooter = "footer"

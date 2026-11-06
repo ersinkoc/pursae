@@ -128,13 +128,43 @@ func assertSafe(t testing.TB, out string, opts SnapshotOptions) {
 				}
 			}
 			if name == "form" && n.Namespace == "" {
-				if act, ok := getAttr(n, "action"); ok && !strings.HasPrefix(act, opts.FormActionPrefix) {
+				act, ok := getAttr(n, "action")
+				if hasAttr(n, AttrSearch) {
+					want := opts.SearchAction
+					if want == "" {
+						want = "/"
+					}
+					if m, _ := getAttr(n, "method"); m != "get" || act != want || hasAttr(n, AttrForm) {
+						t.Fatalf("search form method %q action %q in %q", m, act, out)
+					}
+				} else if ok && !strings.HasPrefix(act, opts.FormActionPrefix) {
 					t.Fatalf("foreign form action %q", act)
+				} else if m, _ := getAttr(n, "method"); m != "post" {
+					t.Fatalf("form method %q in %q", m, out)
 				}
 			}
 			if name == "input" && n.Namespace == "" {
-				if ty, ok := getAttr(n, "type"); ok && !inputTypeSet[ty] {
+				search := false
+				for p := n.Parent; p != nil; p = p.Parent {
+					if p.Type == html.ElementNode && p.Data == "form" && hasAttr(p, AttrSearch) {
+						search = true
+					}
+				}
+				ty, ok := getAttr(n, "type")
+				if search {
+					nm, _ := getAttr(n, "name")
+					if !(ty == "search" && nm == "s") && !(ty == "submit" && nm == "") {
+						t.Fatalf("search form input type %q name %q in %q", ty, nm, out)
+					}
+				} else if ok && !inputTypeSet[ty] {
 					t.Fatalf("input type %q", ty)
+				}
+			}
+			if (name == "select" || name == "textarea") && n.Namespace == "" {
+				for p := n.Parent; p != nil; p = p.Parent {
+					if p.Type == html.ElementNode && p.Data == "form" && hasAttr(p, AttrSearch) {
+						t.Fatalf("%s in a search form: %q", name, out)
+					}
 				}
 			}
 			path = p

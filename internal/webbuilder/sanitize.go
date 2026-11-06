@@ -36,6 +36,11 @@ type SnapshotOptions struct {
 	FormActionPrefix string
 	// EmbedHTML allows sandbox="allow-scripts" srcdoc iframes (unfiltered_html authors).
 	EmbedHTML bool
+	// SearchAction is the site's home URL with a trailing slash. A form[data-wb-search] (the
+	// Theme Builder search form, contract §11.5) is kept with method="get", this action, one
+	// input[type=search][name=s] and its submit button; every other control is removed.
+	// Empty means "/".
+	SearchAction string
 }
 
 // SanitizeSnapshot cleans the snapshot HTML of a publish. changed reports that the markup was
@@ -294,9 +299,10 @@ func toSetFold(list []string) map[string]bool {
 }
 
 type treeSanitizer struct {
-	opts    SnapshotOptions
-	svgOnly bool
-	changed bool
+	opts     SnapshotOptions
+	svgOnly  bool
+	changed  bool
+	inSearch bool // below a form[data-wb-search]
 }
 
 func parseFragment(src string) ([]*html.Node, error) {
@@ -380,6 +386,10 @@ func (s *treeSanitizer) element(n *html.Node, inSVG bool) {
 		return
 	}
 	isSVG := n.Namespace == "svg"
+	if !isSVG && name == "form" && hasAttr(n, AttrSearch) && !s.inSearch {
+		s.searchForm(n)
+		return
+	}
 	s.attrs(n, isSVG)
 	// Element-specific rules that may remove the element.
 	switch {
@@ -559,14 +569,14 @@ func (s *treeSanitizer) attr(el string, isSVG bool, a html.Attribute) (string, b
 		v := strings.ToLower(strings.TrimSpace(val))
 		switch el {
 		case "input":
-			return v, inputTypeSet[v]
+			return v, inputTypeSet[v] || (s.inSearch && v == SearchInputType)
 		case "button":
 			return v, v == "submit" || v == "button" || v == "reset"
 		case "source":
 			return v, !strings.Contains(v, "<")
 		}
 	case "name":
-		return val, formNameSet[val]
+		return val, formNameSet[val] || (s.inSearch && el == "input" && val == SearchInputName)
 	case "method":
 		return "post", true
 	case "action":
@@ -676,6 +686,82 @@ func (s *treeSanitizer) form(n *html.Node) {
 	n.Attr = append(n.Attr, html.Attribute{Key: "method", Val: "post"})
 }
 
+// searchForm sanitizes a form[data-wb-search]: method get, the home URL as action, the first
+// search (or text) input becomes input[type=search][name=s], submit inputs and buttons stay,
+// every other control goes (a GET form must not carry other query variables).
+func (s *treeSanitizer) searchForm(n *html.Node) {
+	origMethod, _ := getAttr(n, "method")
+	origAction, _ := getAttr(n, "action")
+	if hasAttr(n, AttrForm) {
+		s.changed = true // a search form is never a builder form
+	}
+	delAttr(n, "method")
+	delAttr(n, "action")
+	delAttr(n, AttrForm)
+	s.inSearch = true
+	s.attrs(n, false)
+	s.children(n, false)
+	s.inSearch = false
+	action := s.opts.SearchAction
+	if v, ok := SafeHref(action); ok {
+		action = v
+	} else {
+		action = "/"
+	}
+	delAttr(n, "method")
+	delAttr(n, "action")
+	n.Attr = append(n.Attr, html.Attribute{Key: "method", Val: "get"}, html.Attribute{Key: "action", Val: action})
+	if strings.ToLower(strings.TrimSpace(origMethod)) != "get" || strings.TrimSpace(origAction) != action {
+		s.changed = true
+	}
+	found := false
+	var walk func(p *html.Node)
+	walk = func(p *html.Node) {
+		for c := p.FirstChild; c != nil; {
+			next := c.NextSibling
+			if c.Type == html.ElementNode && c.Namespace == "" {
+				switch c.Data {
+				case "input":
+					ty, _ := getAttr(c, "type")
+					switch {
+					case ty == "submit":
+						delAttr(c, "name")
+					case !found && (ty == "" || ty == "text" || ty == SearchInputType):
+						found = true
+						if name, _ := getAttr(c, "name"); ty != SearchInputType || name != SearchInputName {
+							s.changed = true
+						}
+						delAttr(c, "type")
+						delAttr(c, "name")
+						c.Attr = append(c.Attr, html.Attribute{Key: "type", Val: SearchInputType}, html.Attribute{Key: "name", Val: SearchInputName})
+					default:
+						p.RemoveChild(c)
+						s.changed = true
+					}
+				case "select", "textarea":
+					p.RemoveChild(c)
+					s.changed = true
+				default:
+					walk(c)
+				}
+			}
+			c = next
+		}
+	}
+	walk(n)
+}
+
+func delAttr(n *html.Node, key string) {
+	kept := n.Attr[:0]
+	for _, a := range n.Attr {
+		if a.Namespace == "" && a.Key == key {
+			continue
+		}
+		kept = append(kept, a)
+	}
+	n.Attr = kept
+}
+
 // iframe keeps either a video embed (src) or, for EmbedHTML, a sandboxed srcdoc.
 func (s *treeSanitizer) iframe(n *html.Node) bool {
 	_, hasSrc := getAttr(n, "src")
@@ -738,7 +824,7 @@ func snapshotPolicy() *bluemonday.Policy {
 		constrained := map[string]*regexp.Regexp{
 			"target":  re(`^_blank$`),
 			"sandbox": re(`^` + regexp.QuoteMeta(EmbedSandbox) + `$`),
-			"method":  re(`^post$`),
+			"method":  re(`^(post|get)$`),
 		}
 		for el, attrs := range ElementAttrs {
 			for _, a := range attrs {
@@ -748,7 +834,7 @@ func snapshotPolicy() *bluemonday.Policy {
 					continue
 				}
 				if el == "input" && la == "type" {
-					p.AllowAttrs("type").Matching(re(`^(` + strings.Join(InputTypes, "|") + `)$`)).OnElements("input")
+					p.AllowAttrs("type").Matching(re(`^(` + strings.Join(append(append([]string{}, InputTypes...), SearchInputType), "|") + `)$`)).OnElements("input")
 					continue
 				}
 				p.AllowAttrs(la).OnElements(el)

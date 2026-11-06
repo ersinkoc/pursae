@@ -12,7 +12,8 @@ import (
 //
 //	go test ./internal/webbuilder -run '^$' -fuzz FuzzSanitizeSnapshot -fuzztime 60s
 //
-// (and FuzzSanitizeCSS, FuzzParseDoc, FuzzSanitizeRich). Plain go test runs the seeds.
+// (and FuzzSanitizeCSS, FuzzParseDoc, FuzzSanitizeRich, FuzzCompile, FuzzConditions). Plain go
+// test runs the seeds.
 
 func FuzzSanitizeSnapshot(f *testing.F) {
 	for _, s := range xssCorpus {
@@ -20,8 +21,9 @@ func FuzzSanitizeSnapshot(f *testing.F) {
 		f.Add(s, true)
 	}
 	f.Add(goodSnapshot, false)
+	f.Add(`<form data-wb-search data-wb-form method=post action="javascript:x"><input name=s type=search><input type=hidden name=name><select name=choice></select><button>Go</button></form>`, false)
 	f.Fuzz(func(t *testing.T, inner string, embed bool) {
-		opts := SnapshotOptions{FormActionPrefix: testFormPrefix, EmbedHTML: embed}
+		opts := SnapshotOptions{FormActionPrefix: testFormPrefix, EmbedHTML: embed, SearchAction: "https://example.com/"}
 		out, _, err := SanitizeSnapshot(wrapRoot(inner), opts)
 		if err != nil {
 			if err == ErrSnapshotRoot || err == ErrSnapshotTooLarge {
@@ -167,4 +169,121 @@ func assertRich(t *testing.T, n *html.Node, allowed map[string]bool, out string)
 	for c := n.FirstChild; c != nil; c = c.NextSibling {
 		assertRich(t, c, allowed, out)
 	}
+}
+
+// hostileResolver answers every slot with attacker-chosen text and URLs; HTML slots return a
+// fixed trusted fragment (they only ever carry core generator output).
+type hostileResolver struct {
+	val   string
+	depth int
+}
+
+func (h *hostileResolver) Text(SlotName, SlotArgs) (string, bool) { return h.val, h.val != "" }
+func (h *hostileResolver) HTML(SlotName, SlotArgs) (string, bool) { return "<em>ok</em>", true }
+func (h *hostileResolver) Attrs(SlotName, SlotArgs) (map[string]string, bool) {
+	return map[string]string{"href": h.val, "src": h.val, "srcset": h.val, "sizes": h.val, "width": h.val, "alt": h.val,
+		"datetime": h.val, "aria-current": h.val, "class": h.val, "onclick": h.val, "style": h.val}, true
+}
+func (h *hostileResolver) items() LoopIter {
+	var rs []Resolver
+	for i := 0; i < 3; i++ {
+		rs = append(rs, &hostileResolver{val: h.val, depth: h.depth + 1})
+	}
+	return &SliceIter{Items: rs}
+}
+func (h *hostileResolver) Loop(string, SlotArgs) (LoopIter, bool) { return h.items(), true }
+func (h *hostileResolver) Menu(string, SlotArgs) (LoopIter, bool) { return h.items(), true }
+
+func FuzzCompile(f *testing.F) {
+	for _, s := range []string{
+		`<h1 data-wb-slot="post.title">x</h1>`,
+		`<a data-wb-slot="post.url" href="#"><img data-wb-slot="post.image"></a>`,
+		`<ul data-wb-loop="s1"><li data-wb-loop-item><span data-wb-slot="post.title"></span><ul data-wb-loop="s2"><li data-wb-loop-item><time data-wb-slot="post.date" data-wb-format="F j, Y"></time></li></ul></li><li data-wb-loop-empty>none</li></ul>`,
+		`<ul data-wb-menu-loc="primary" data-wb-loop-part="2/2"><li data-wb-loop-item><a data-wb-slot="menu.url"><span data-wb-slot="menu.label"></span></a></li></ul>`,
+		`<p data-wb-if="site.tagline" data-wb-slot="site.tagline"></p><p data-wb-if-not="search.query">none</p>`,
+		`<pre data-wb-if="x">` + "\n\nx</pre><textarea data-wb-slot=\"site.title\"></textarea>",
+		`<svg><path data-wb-slot="post.title"></path></svg><p title="data-wb-slot">x</p>`,
+	} {
+		f.Add(s, `"><script>alert(1)</script>`)
+		f.Add(s, "javascript:alert(1)")
+		f.Add(s, "")
+	}
+	f.Fuzz(func(t *testing.T, inner, val string) {
+		opts := SnapshotOptions{FormActionPrefix: testFormPrefix}
+		snap, _, err := SanitizeSnapshot(wrapRoot(inner), opts)
+		if err != nil {
+			return
+		}
+		p, err := Compile(snap)
+		if err != nil {
+			t.Fatalf("compile: %v", err)
+		}
+		if !hasPlaceholders(snap) {
+			if s, ok := p.Static(); !ok || s != snap {
+				t.Fatalf("static path changed the snapshot")
+			}
+		}
+		r := &hostileResolver{val: val}
+		out, err := p.ExecString(r)
+		if err != nil {
+			t.Fatalf("exec: %v", err)
+		}
+		again, _ := p.ExecString(r)
+		if again != out {
+			t.Fatal("exec not deterministic")
+		}
+		assertSafe(t, out, opts)
+		if strings.Contains(strings.ToLower(out), "<script") || strings.Contains(out, "onclick") {
+			t.Fatalf("injection survived: %q", out)
+		}
+		// Raw compile of unsanitized input must not panic either.
+		if q, err := Compile(inner); err == nil {
+			_, _ = q.ExecString(r)
+		}
+	})
+}
+
+func FuzzConditions(f *testing.F) {
+	for _, s := range []string{
+		"include/general", "exclude/404", "include/singular/post/in/category/3", "include/singular/page/child_of/7",
+		"include/archive/author/5", "include/archive/type/book", "include/archive/category/12", "include/singular/in",
+		"include/archive/home/1", "include/singular/post/9999999999999999999", "include/singular/front_page",
+	} {
+		f.Add(s)
+	}
+	facts := []QueryFacts{
+		{View: ViewSingular, PostType: "post", PostID: 3, ParentID: 7, AuthorID: 5, Terms: map[string][]int64{"category": {3, 12}}},
+		{View: ViewArchive, Archive: ArchiveTerm, Taxonomy: "category", TermID: 12},
+		{View: ViewArchive, Archive: ArchiveHome, FrontPage: true},
+		{View: ViewArchive, Archive: ArchiveAuthor, AuthorID: 5},
+		{View: View404},
+	}
+	f.Fuzz(func(t *testing.T, rule string) {
+		checkConditionAgainstPattern(t, rule)
+		c, err := ParseCondition(rule)
+		for _, q := range facts {
+			if err == nil {
+				_ = c.Match(q)
+			}
+		}
+		rules := strings.Split(rule, ",")
+		norm, errs := NormalizeConditions(rules)
+		for _, r := range norm {
+			if _, err := ParseCondition(r); err != nil {
+				t.Fatalf("normalized rule %q invalid", r)
+			}
+		}
+		if len(errs) == 0 {
+			// Normalizing is idempotent.
+			again, errs2 := NormalizeConditions(norm)
+			if len(errs2) != 0 || strings.Join(again, ",") != strings.Join(norm, ",") {
+				t.Fatalf("not idempotent: %v → %v", norm, again)
+			}
+		}
+		cands := []TemplateCandidate{{ID: 1, Type: TemplateHeader, Conditions: ParseConditions(rules)}, {ID: 2, Type: TemplateArchive, Conditions: ParseConditions(rules)}}
+		for _, q := range facts {
+			_ = PickTemplate(LocationMain, cands, q)
+		}
+		_ = TemplatesConflict(&cands[0], &cands[1])
+	})
 }
