@@ -431,18 +431,17 @@ func (s *Server) wbFormPageURL(c *gin.Context, p *store.Post) string {
 	if err != nil || (ref.Scheme != "http" && ref.Scheme != "https") || ref.Host == "" || ref.User != nil {
 		return home
 	}
-	same := strings.EqualFold(ref.Host, c.Request.Host)
-	if hu, err := url.Parse(home); err == nil && strings.EqualFold(ref.Host, hu.Host) {
-		same = true
-	}
-	if !same {
+	// Same origin means the home URL's host (local-origin aware through s.links), never the
+	// request's Host header, which the client controls.
+	hu, err := url.Parse(home)
+	if err != nil || hu.Host == "" || !strings.EqualFold(ref.Host, hu.Host) {
 		return home
 	}
 	path := ref.RequestURI()
 	if safeRedirect(path, "") == "" { // a path on this site, nothing a browser would read as another host
 		return home
 	}
-	return ref.Scheme + "://" + ref.Host + path
+	return hu.Scheme + "://" + hu.Host + path
 }
 
 // wbFormBackURL is the page with ?wb_form=<state> and #<section>.

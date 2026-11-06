@@ -447,3 +447,29 @@ func TestWebBuilderFormRESTVisitorsOnly(t *testing.T) {
 		t.Fatalf("restriction not active: %d", resp.StatusCode)
 	}
 }
+
+// A template form's page URL trusts the Referer only on the home URL's host, never on a forged
+// Host header.
+func TestWebBuilderFormTemplatePageURL(t *testing.T) {
+	w := wbformStart(t)
+	tp := wbtaDesigned(t, w.srv, webbuilder.TemplateFooter, "Footer form", []string{"include/general"}, "publish")
+	p, err := w.srv.store.GetPost(context.Background(), tp.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	c, _ := wbtCtx(w.srv, nil, "/")
+	home := w.srv.links(c).HomeURL("/")
+	hu, _ := url.Parse(home)
+
+	c, _ = wbtCtx(w.srv, nil, "/")
+	c.Request.Host = "evil.example"
+	c.Request.Header.Set("Referer", "https://evil.example/login")
+	if got := w.srv.wbFormPageURL(c, p); got != home {
+		t.Errorf("forged Host: page URL %q, want %q", got, home)
+	}
+	c, _ = wbtCtx(w.srv, nil, "/")
+	c.Request.Header.Set("Referer", hu.Scheme+"://"+hu.Host+"/about/?x=1")
+	if got := w.srv.wbFormPageURL(c, p); got != hu.Scheme+"://"+hu.Host+"/about/?x=1" {
+		t.Errorf("same-origin Referer: page URL %q", got)
+	}
+}
