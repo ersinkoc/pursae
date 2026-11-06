@@ -258,6 +258,7 @@ func (s *Server) routes() *gin.Engine {
 	r.GET(pluginAssetsPath+"/:slug/assets/*filepath", s.pluginAsset) // plugin package assets (plugins_host.go)
 	r.HEAD(pluginAssetsPath+"/:slug/assets/*filepath", s.pluginAsset)
 	s.registerGontact(r) // Gontact Form front-end assets
+	s.registerWebBuilder(r)
 
 	r.GET("/wp-admin/install", s.installForm)
 	r.POST("/wp-admin/install", s.installSubmit)
