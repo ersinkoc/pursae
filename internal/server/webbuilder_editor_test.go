@@ -68,7 +68,7 @@ func TestWebBuilderEditorScreen(t *testing.T) {
 	installAndLogin(t, ts, c)
 	ctx := context.Background()
 	if !srv.wbOn() {
-		t.Fatal("wbOn is false with native_golementor on")
+		t.Fatal("wbOn is false with the builder switched on")
 	}
 	page := wbTestPost(t, srv, "page", `About </script><script>alert(1)</script> us`, "draft", 1)
 

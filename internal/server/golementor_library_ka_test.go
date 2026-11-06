@@ -385,7 +385,7 @@ func glibKAValidate(t *testing.T, k *glibKAKit, schema *glibKASchema) {
 	for _, ty := range k.Globals.Typography {
 		id, _ := ty["_id"].(string)
 		fam, _ := ty["typography_font_family"].(string)
-		if id == "" || ck.typos[id] || ty["typography_typography"] != "custom" || gweGoogleFontType(fam) == "" {
+		if id == "" || ck.typos[id] || ty["typography_typography"] != "custom" || gfontType(fam) == "" {
 			ck.errorf("globals", "bad typography %v (font family must be a Google font)", ty)
 		}
 		ck.typos[id] = true

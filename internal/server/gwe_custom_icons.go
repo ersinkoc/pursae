@@ -31,7 +31,7 @@ import (
 
 const (
 	gweIconsAdminPath  = "/wp-admin/web-builder-icons"
-	gweIconsUploadsRel = gweUploadsDir + "/custom-icons"
+	gweIconsUploadsRel = builderUploadsDir + "/custom-icons"
 	gweIconsSetting    = "gwe_custom_icon_sets"
 
 	gweIconsMaxZip     = 20 << 20 // uploaded archive

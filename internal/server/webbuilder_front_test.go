@@ -186,7 +186,7 @@ func wbfAssertTheme(t *testing.T, what, body string) {
 func TestWebBuilderFrontCanvas(t *testing.T) {
 	srv, base, admin := wbfStart(t)
 	// A localized Inter (gfonts.go layout): the page links it and preloads its regular face.
-	fontsCSS := srv.gweFontsDir("css")
+	fontsCSS := srv.gfontsDir("css")
 	if err := os.MkdirAll(fontsCSS, 0o755); err != nil {
 		t.Fatal(err)
 	}

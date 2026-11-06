@@ -10,7 +10,7 @@ import (
 
 // Pursae Web Builder: the React editor built from github.com/pursae/Builder (builder/, embedded from
 // web/web-builder) as a native built-in plugin. It keeps the plugin identity of the builder it
-// replaces: slug golementor, option native_golementor, visible name "Pursae Web Builder". The
+// replaces (webbuilder.PluginSlug, webbuilder.PluginOption, visible name "Pursae Web Builder"). The
 // integration contract is docs/developer/web-builder-contract.md; the server-independent pieces
 // (doc validation, sanitizers, fallback HTML) live in internal/webbuilder, the storage in
 // internal/store/webbuilder.go.

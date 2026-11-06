@@ -1,6 +1,8 @@
 package server
 
 import (
+	"fmt"
+	"html"
 	"os"
 	"path/filepath"
 	"sort"
@@ -67,23 +69,23 @@ func (s *Server) gweFontsHead(c *gin.Context, results []gweRendered) string {
 // needed) and returns its local stylesheet so the preview can link it.
 func (s *Server) gweFontsEnqueueAjax(c *gin.Context, data map[string]any) (any, error) {
 	family := strings.TrimSpace(gweStr(data["font_name"]))
-	if gweGoogleFontType(family) == "" || !s.gweGoogleFontsEnabled() {
+	if gfontType(family) == "" || !s.gweGoogleFontsEnabled() {
 		return false, nil
 	}
-	if !s.gweEnsureGoogleFont(family, 20*time.Second) {
+	if !s.gfontEnsure(family, 20*time.Second) {
 		return false, nil
 	}
-	key := gweFontKey(family)
-	cssPath := filepath.Join(s.gweFontsDir("css"), key+".css")
+	key := gfontKey(family)
+	cssPath := filepath.Join(s.gfontsDir("css"), key+".css")
 	st, err := os.Stat(cssPath)
 	if err != nil {
 		return false, nil
 	}
 	lb := s.links(c)
-	base := "/wp-content/uploads/" + gweFontsBase
+	base := "/wp-content/uploads/" + gfontsBase
 	out := map[string]any{"font": family, "id": "gwe-gf-local-" + key, "url": lb.HomeURL(base + "/css/" + key + ".css?ver=" + strconv.FormatInt(st.ModTime().Unix(), 10))}
 	if b, err := os.ReadFile(cssPath); err == nil {
-		if p := gweFontPreloadFile(string(b)); p != "" {
+		if p := gfontPreloadFile(string(b)); p != "" {
 			out["preload"] = lb.HomeURL(base + "/fonts/" + p)
 		}
 	}
@@ -138,4 +140,105 @@ func (s *Server) gweFontsEditorScript(c *gin.Context) string {
 })();
 </script>
 `
+}
+
+// gweFontsWait is how long a page waits for a first download.
+const gweFontsWait = 4 * time.Second
+
+// gweGoogleFontsEnabled is the "Load Google Fonts Locally" option (default on).
+func (s *Server) gweGoogleFontsEnabled() bool {
+	return s.settings.String("gwe_local_google_fonts") != "0"
+}
+
+// gweLocalFontLinks returns the preload and stylesheet tags of a downloaded family ("" if missing).
+func (s *Server) gweLocalFontLinks(c *gin.Context, family string) string {
+	key := gfontKey(family)
+	cssPath := filepath.Join(s.gfontsDir("css"), key+".css")
+	st, err := os.Stat(cssPath)
+	if err != nil {
+		return ""
+	}
+	ver := strconv.FormatInt(st.ModTime().Unix(), 10)
+	preload := ""
+	if v, ok := gfontPreloadCache.Load(cssPath); ok && v.([2]string)[0] == ver {
+		preload = v.([2]string)[1]
+	} else if b, err := os.ReadFile(cssPath); err == nil {
+		preload = gfontPreloadFile(string(b))
+		gfontPreloadCache.Store(cssPath, [2]string{ver, preload})
+	}
+	lb := s.links(c)
+	base := "/wp-content/uploads/" + gfontsBase
+	var sb strings.Builder
+	if preload != "" {
+		fmt.Fprintf(&sb, "<link rel=\"preload\" href=\"%s\" as=\"font\" type=\"font/woff2\" crossorigin>\n", html.EscapeString(lb.HomeURL(base+"/fonts/"+preload)))
+	}
+	fmt.Fprintf(&sb, "<link rel='stylesheet' id='%s-css' href='%s' media='all' />\n", "gwe-gf-local-"+key, html.EscapeString(lb.HomeURL(base+"/css/"+key+".css?ver="+ver)))
+	return sb.String()
+}
+
+// gweGoogleFontsHead returns the <link> tags that load the given families from this site,
+// downloading them first when needed. It is the entry point for other code (classic widgets, the
+// kit, atomic elements): families outside the Google Fonts catalogue are skipped, duplicates are
+// printed once per request.
+func (s *Server) gweGoogleFontsHead(c *gin.Context, families []string) string {
+	if !s.gweGoogleFontsEnabled() {
+		return ""
+	}
+	done := map[string]bool{}
+	if c != nil {
+		if v, ok := c.Get("gwe.fonts.printed"); ok {
+			done = v.(map[string]bool)
+		}
+	}
+	var sb strings.Builder
+	for _, f := range families {
+		f = strings.TrimSpace(strings.Trim(strings.TrimSpace(f), `"'`))
+		key := gfontKey(f)
+		if done[key] || gfontType(f) == "" {
+			continue
+		}
+		done[key] = true
+		if s.gfontEnsure(f, gweFontsWait) {
+			sb.WriteString(s.gweLocalFontLinks(c, f))
+		}
+	}
+	if c != nil {
+		c.Set("gwe.fonts.printed", done)
+	}
+	return sb.String()
+}
+
+// --- settings ------------------------------------------------------------------------------------------
+
+func (s *Server) gweFontsSettingsSection(c *gin.Context) string {
+	on, off := " selected", ""
+	if !s.gweGoogleFontsEnabled() {
+		on, off = "", " selected"
+	}
+	n := 0
+	if entries, err := os.ReadDir(s.gfontsDir("css")); err == nil {
+		for _, e := range entries {
+			if strings.HasSuffix(e.Name(), ".css") {
+				n++
+			}
+		}
+	}
+	return `<h2 id="fonts">Fonts</h2><table class="form-table" role="presentation"><tbody>` +
+		`<tr><th scope="row"><label for="gwe_local_google_fonts">Load Google Fonts Locally</label></th><td><select id="gwe_local_google_fonts" name="gwe_local_google_fonts">` +
+		`<option value="1"` + on + `>Enable</option><option value="0"` + off + `>Disable</option></select>` +
+		`<p class="description">Google Fonts used on the site are downloaded once by the server and served from this site (font-display: swap), so visitors' browsers never contact Google. Disable to not load Google Fonts at all; pages then use the fallback fonts.</p></td></tr>` +
+		`<tr><th scope="row">Downloaded families</th><td>` + strconv.Itoa(n) + ` <label style="margin-left:12px"><input type="checkbox" name="gwe_google_fonts_clear" value="1"/> Delete the downloaded files (they are fetched again when needed)</label></td></tr>` +
+		`</tbody></table>`
+}
+
+func (s *Server) gweFontsSaveSettings(c *gin.Context, vals map[string]any) {
+	v := c.PostForm("gwe_local_google_fonts")
+	if v == "0" || v == "1" {
+		vals["gwe_local_google_fonts"] = v
+	}
+	if c.PostForm("gwe_google_fonts_clear") == "1" {
+		_ = os.RemoveAll(filepath.Join(s.cfg.UploadsDir, filepath.FromSlash(gfontsBase)))
+		gfontPreloadCache.Range(func(k, _ any) bool { gfontPreloadCache.Delete(k); return true })
+		gfontFailures.Range(func(k, _ any) bool { gfontFailures.Delete(k); return true })
+	}
 }

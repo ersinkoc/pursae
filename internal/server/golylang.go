@@ -18,7 +18,7 @@ import (
 	"wpgo/internal/store"
 )
 
-// Golylang is a native plugin like Golementor: a clone of Polylang Pro. It is off on a fresh install;
+// Golylang is a native plugin: a clone of Polylang Pro. It is off on a fresh install;
 // while it is off its routes answer 404/403 and it adds nothing to the admin, the front end or the REST
 // API. The switch is the option native_golylang. Its settings live in the option "golylang" with
 // Polylang's keys (force_lang, hide_default, rewrite, …); languages, translation groups and string

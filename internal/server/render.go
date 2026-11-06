@@ -67,12 +67,6 @@ func (t *templates) load() error {
 	return nil
 }
 
-// gweShell is the template set Golementor theme parts and saved themes render through: Hello
-// Golementor's (theme_hellogowebeditor.go).
-func (t *templates) gweShell() *template.Template {
-	return t.getTheme(true, helloThemeSlug)
-}
-
 func parseTree(fsys fs.FS, dir string, funcs template.FuncMap) (*template.Template, error) {
 	root := template.New("").Funcs(funcs)
 	err := fs.WalkDir(fsys, dir, func(p string, d fs.DirEntry, err error) error {
@@ -106,9 +100,6 @@ func (t *templates) getTheme(theme bool, slug string) *template.Template {
 	if theme {
 		if set := t.themes[slug]; set != nil {
 			return set
-		}
-		if th := themeBySlug(slug); th != nil && th.Custom { // Golementor saved theme (live preview)
-			return t.themes[helloThemeSlug]
 		}
 		return t.themes[defaultTheme]
 	}

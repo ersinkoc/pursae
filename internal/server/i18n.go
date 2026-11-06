@@ -28,7 +28,7 @@ import (
 // langPluginPacks are the WordPress.org plugins whose translations the native plugins share
 // strings with: they are downloaded together with the core pack.
 var langPluginPacks = []string{
-	"classic-editor", "elementor", "contact-form-7", "wp-mail-smtp", "wordpress-seo", "seo-by-rank-math",
+	"classic-editor", "contact-form-7", "wp-mail-smtp", "wordpress-seo", "seo-by-rank-math",
 	"advanced-custom-fields", "polylang", "maintenance", "litespeed-cache", "cookie-law-info", "cookie-notice",
 	"two-factor", "wps-hide-login", "limit-login-attempts-reloaded", "woocommerce",
 }
@@ -210,7 +210,7 @@ func (s *Server) __(c *gin.Context, msgid string) string {
 }
 
 // adminRequest reports whether the request is for the admin or the login screen: only those are
-// translated. Front-end pages (and Golementor's preview of them) carry the user's content.
+// translated. Front-end pages carry the user's content.
 func (s *Server) adminRequest(c *gin.Context) bool {
 	if c == nil || c.Request == nil {
 		return false

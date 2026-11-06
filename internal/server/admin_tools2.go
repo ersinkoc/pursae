@@ -138,7 +138,6 @@ type fileEditorData struct {
 	Nonce                      string
 	RestoreURL                 string
 	OverrideDir                string
-	Builder                    bool // Golementor is active (the read-only notice points to its Theme Builder)
 }
 
 func (s *Server) fileEditorAssets(c *gin.Context, d *fileEditorData) {
@@ -207,7 +206,7 @@ func (s *Server) themeEditor(c *gin.Context) {
 			src = "themes/" + theme.Slug + "/" + file
 		}
 	}
-	d := &fileEditorData{Kind: "theme", Name: theme.Name, Slug: theme.Slug, File: file, State: "inactive", Builder: s.golementorOn()}
+	d := &fileEditorData{Kind: "theme", Name: theme.Name, Slug: theme.Slug, File: file, State: "inactive"}
 	if o, ok := s.overlay(); ok && !fileEditingDisabled() && !theme.Custom {
 		d.Editable, d.OverrideDir, d.Restored = true, filepath.Join(o.dir, theme.Slug), c.Query("restored") == "1"
 		d.Nonce = s.nonce(c, "edit-theme_"+theme.Slug+"_"+file)

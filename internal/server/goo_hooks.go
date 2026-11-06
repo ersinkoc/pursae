@@ -9,7 +9,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"wpgo/internal/builder"
 	"wpgo/internal/store"
 )
 
@@ -402,21 +401,6 @@ func (s *Server) gooHiddenProduct(ctx context.Context, id int64) bool {
 // gooAdjacent is get_adjacent_post() without the posts hidden from the visitor (previous/next links).
 func (s *Server) gooAdjacent(ctx context.Context, p *store.Post, previous bool) (*store.Post, error) {
 	return s.store.AdjacentExcept(ctx, p, previous, s.gooListingKinds(ctx, []string{p.Type}))
-}
-
-// gooLoopQuery adds the posts hidden from the visitor to a builder loop query's exclusions.
-func (s *Server) gooLoopQuery(ctx context.Context, q *builder.PostQuery) *builder.PostQuery {
-	types := q.PostTypes
-	if len(types) == 0 {
-		types = []string{"post"}
-	}
-	ex := s.gooListingKinds(ctx, types)
-	if len(ex) == 0 {
-		return q
-	}
-	cp := *q
-	cp.ExcludeIDs = append(append([]int64{}, q.ExcludeIDs...), ex...)
-	return &cp
 }
 
 // gooSingleAccessHook decides whether the visitor may open a single post, page or product: "" serves

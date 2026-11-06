@@ -635,7 +635,7 @@ func (s *Server) gweProAdminPost(c *gin.Context, tab string) (string, error) {
 			return "", fmt.Errorf("Choose the font files.")
 		}
 		v := gweProFontVarian{Weight: c.PostForm("weight"), Style: c.PostForm("style")}
-		dir := filepath.Join(s.cfg.UploadsDir, gweUploadsDir, "fonts")
+		dir := filepath.Join(s.cfg.UploadsDir, builderUploadsDir, "fonts")
 		if err := os.MkdirAll(dir, 0o755); err != nil {
 			return "", err
 		}

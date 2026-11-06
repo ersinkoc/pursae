@@ -21,7 +21,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"wpgo/internal/builder"
 	"wpgo/internal/store"
 )
 
@@ -163,7 +162,6 @@ func (s *Server) asSave(ctx context.Context, st asSettings) error {
 	if err := s.settings.Set(ctx, map[string]any{asOption: st}); err != nil {
 		return err
 	}
-	builder.ProELoginPath = s.loginPath()
 	s.purgeAll(ctx) // login links, the generator tag and headers live in cached pages
 	return nil
 }
@@ -192,15 +190,13 @@ func (s *Server) adminsecPluginAction(c *gin.Context, action string) error {
 			SELECT 'adminsecgo_daily', now() + interval '1 hour', 'daily' WHERE NOT EXISTS (SELECT 1 FROM jobs WHERE name = 'adminsecgo_daily' AND recurrence <> '')`)
 		s.asAudit(c, asEvent{Event: "plugin_activated", Severity: "notice", Object: "Pursae Security", Message: "Pursae Security activated."})
 	}
-	builder.ProELoginPath = s.loginPath()
 	s.purgeAll(c)
 	return nil
 }
 
-// adminsecStart points the Golementor login widget at the current login URL.
-func (s *Server) adminsecStart() {
-	builder.ProELoginPath = s.loginPath()
-}
+// adminsecStart is the startup hook server.go calls. The login URL is read per request
+// (s.loginPath), so there is nothing to prime any more.
+func (s *Server) adminsecStart() {}
 
 // --- custom login URL --------------------------------------------------------------------
 

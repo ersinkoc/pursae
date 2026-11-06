@@ -364,7 +364,7 @@ func TestGolementorLibraryKBSchema(t *testing.T) {
 				}
 				typos[id] = true
 				fam, _ := ty["typography_font_family"].(string)
-				if gweGoogleFontType(fam) == "" {
+				if gfontType(fam) == "" {
 					t.Errorf("typography %s: %q is not a Google font Pursae Web Builder can load", id, fam)
 				}
 				fonts[fam] = true

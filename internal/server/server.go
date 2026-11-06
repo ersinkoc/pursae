@@ -250,7 +250,7 @@ func (s *Server) routes() *gin.Engine {
 		// Uploaded files are data, never code: HTML or SVG uploads run in a sandbox.
 		c.Header("Content-Security-Policy", "sandbox; default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; media-src 'self'")
 		c.Header("Cache-Control", "public, max-age=31536000, immutable")
-		c.Request.URL.Path = gweLegacyUploadPath(c.Request.URL.Path)
+		c.Request.URL.Path = legacyUploadPath(c.Request.URL.Path)
 		uploads.ServeHTTP(c.Writer, c.Request)
 	}
 	r.GET("/wp-content/uploads/*filepath", serveUpload)

@@ -19,9 +19,8 @@ import (
 // Every such place goes through gocdnFetchBack(ctx, path-on-disk): when the file is missing and
 // GoCDN tracks it as removed, it is downloaded back from the bucket first (gocdnEnsureLocal) and
 // the path is returned unchanged, so the call site stays `os.ReadFile(s.gocdnFetchBack(ctx, p))`.
-// Users: the Customizer's site-icon sizes, Golementor's SVG reads (widgets, REST, atomic CSS) and
-// theme export, WooCommerce-like downloads and PDF logo, contact-form mail attachments, the image
-// editor (gocdnEnsureLocal). The image service and /wp-content/uploads read the bucket directly
+// Users: the Customizer's site-icon sizes, theme export, WooCommerce-like downloads and PDF logo,
+// contact-form mail attachments, the image editor (gocdnEnsureLocal). The image service and /wp-content/uploads read the bucket directly
 // without writing to disk. A copy fetched back is deleted again after gocdnReRemoveDelay while its
 // row still says "removed" (the "Download back to the server" job clears that and keeps it).
 //
