@@ -58,6 +58,7 @@ func TestGooGolementorThemePackages(t *testing.T) {
 }
 
 func TestGooGolementorThemesInstall(t *testing.T) {
+	t.Skip("old builder detached from Pursae Commerce, Multi Language and REST (R1b); this file goes in R2")
 	for _, tc := range gooGweThemes {
 		t.Run(tc.slug, func(t *testing.T) {
 			base, c, srv := gooSite(t)
@@ -182,6 +183,7 @@ func TestGooGolementorStoreConditions(t *testing.T) {
 // its language, the language switcher widget lists the languages; a duplicated Golementor page
 // keeps its design.
 func TestGooGolementorThemeLanguages(t *testing.T) {
+	t.Skip("old builder detached from Pursae Commerce, Multi Language and REST (R1b); this file goes in R2")
 	base, c, srv := gooSite(t)
 	ctx := context.Background()
 	_, body, _ := get(t, c, base+"/wp-admin/goocommerce?page=themes")
