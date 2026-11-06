@@ -36,6 +36,7 @@ type dashboardData struct {
 	Future, Published, Drafts         []activityItem
 	RecentComments                    []dashboardComment
 	QuickDraftNonce                   string
+	ClosedNonce, OrderNonce           string
 	ThemeName                         string
 	Health                            healthSummary
 	MailSMTP                          template.HTML // WPGO Mail SMTP widget
@@ -133,7 +134,7 @@ func (s *Server) dashboard(c *gin.Context) {
 		return
 	}
 	ctx := c.Request.Context()
-	d := dashboardData{QuickDraftNonce: s.nonce(c, "add-post"), Discouraged: !s.settings.Bool("blog_public"), ThemeName: s.activeTheme().Name}
+	d := dashboardData{QuickDraftNonce: s.nonce(c, "add-post"), ClosedNonce: s.nonce(c, "closedpostboxes"), OrderNonce: s.nonce(c, "meta-box-order"), Discouraged: !s.settings.Bool("blog_public"), ThemeName: s.activeTheme().Name}
 	if u.Can("manage_options", nil) {
 		d.Health = s.siteHealthSummary(ctx)
 	} else {
@@ -215,6 +216,8 @@ func (s *Server) dashboard(c *gin.Context) {
 		})
 	}
 
+	// Drag, collapse and move up/down of the boxes (postbox.js on top of jquery-ui-sortable).
+	s.pageAssets(c).Script("postbox").AddInline("postbox", `jQuery(function(){postboxes.add_postbox_toggles(pagenow);});`)
 	s.adminPage(c, "", "Dashboard", "index-php", "admin/dashboard", d)
 }
 
