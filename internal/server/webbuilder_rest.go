@@ -586,7 +586,11 @@ func (s *Server) wbRESTPublish(c *gin.Context, r *restRequest) {
 		restErr(c, http.StatusInternalServerError, "db_error", "Could not publish the page.")
 		return
 	}
-	defer tx.Rollback(context.WithoutCancel(c))
+	// Every query until Commit runs on tx: the post, its revision, the doc and the draft commit or roll
+	// back together, and the handler never waits for a second pooled connection while holding this one.
+	// Answers that look up users (lock holder, rev conflict) roll back first for the same reason.
+	rollback := func() { _ = tx.Rollback(context.WithoutCancel(c)) }
+	defer rollback()
 	if _, err := tx.Exec(c, `SELECT pg_advisory_xact_lock($1, $2)`, wbPublishLockClass, int32(p.ID)); err != nil {
 		restErr(c, http.StatusInternalServerError, "db_error", "Could not publish the page.")
 		return
@@ -601,6 +605,7 @@ func (s *Server) wbRESTPublish(c *gin.Context, r *restRequest) {
 		row = nil
 	}
 	if (row == nil && body.BaseRev != 0) || (row != nil && row.Rev != body.BaseRev) {
+		rollback()
 		s.wbRevConflict(c, row)
 		return
 	}
@@ -609,12 +614,14 @@ func (s *Server) wbRESTPublish(c *gin.Context, r *restRequest) {
 		return
 	}
 	// The post as it is now (another save may have changed its meta since the request started).
-	fresh, err := s.store.GetPost(c, p.ID)
+	fresh, err := store.GetPostTx(c, tx, p.ID)
 	if err != nil {
 		restErr(c, http.StatusInternalServerError, "db_error", "Could not read the post.")
 		return
 	}
-	if lock := s.wbLockHolder(c, fresh, u.ID); lock != nil {
+	if wbLockedByOther(fresh, u.ID) {
+		rollback()
+		lock := s.wbLockHolder(c, fresh, u.ID)
 		restErr(c, http.StatusConflict, webbuilder.ErrLocked, lock.User.Name+" is editing this page.", map[string]any{"lock": lock})
 		return
 	}
@@ -647,9 +654,7 @@ func (s *Server) wbRESTPublish(c *gin.Context, r *restRequest) {
 	} else if seogoMeta(fresh.Meta, "noindex") == "noindex" {
 		fresh.Meta[seogoKey("noindex")] = "" // back to the site default
 	}
-	// The core update runs on its own connection (it opens its own transaction); the advisory lock
-	// held by tx keeps other publishes of this post out until tx commits.
-	if err := s.store.UpdatePost(c, fresh, u.ID); err != nil {
+	if err := store.UpdatePostTx(c, tx, fresh, u.ID); err != nil {
 		restErr(c, http.StatusInternalServerError, "db_update_error", "Could not update post in the database.")
 		return
 	}
@@ -671,6 +676,7 @@ func (s *Server) wbRESTPublish(c *gin.Context, r *restRequest) {
 	if err := wbtx.PublishDoc(c, d, body.BaseRev); err != nil {
 		var rc *store.RevConflictError
 		if errors.As(err, &rc) {
+			rollback()
 			s.wbRevConflict(c, &store.WebBuilderDoc{Rev: rc.Rev, UpdatedAt: rc.UpdatedAt, SnapshotUser: rc.SnapshotUser})
 			return
 		}

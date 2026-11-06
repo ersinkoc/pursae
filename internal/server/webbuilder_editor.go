@@ -352,15 +352,21 @@ func wbParseLock(v any) (uid int64, at time.Time, ok bool) {
 
 // wbLockHolder is another user's live lock on p (wp_check_post_lock), else nil.
 func (s *Server) wbLockHolder(ctx context.Context, p *store.Post, me int64) *webbuilder.LockInfo {
-	uid, at, ok := wbParseLock(p.Meta[webbuilder.EditLockMeta])
-	if !ok || uid == 0 || uid == me || time.Since(at) > webbuilder.LockTTLSeconds*time.Second {
+	if !wbLockedByOther(p, me) {
 		return nil
 	}
+	uid, at, _ := wbParseLock(p.Meta[webbuilder.EditLockMeta])
 	info := &webbuilder.LockInfo{User: webbuilder.UserRef{ID: uid}, Since: at.UTC().Format(time.RFC3339)}
 	if lu, err := s.store.UserByID(ctx, uid); err == nil {
 		info.User.Name = wbUserName(lu)
 	}
 	return info
+}
+
+// wbLockedByOther reports whether a user other than me holds a live edit lock on p (no DB access).
+func wbLockedByOther(p *store.Post, me int64) bool {
+	uid, at, ok := wbParseLock(p.Meta[webbuilder.EditLockMeta])
+	return ok && uid != 0 && uid != me && time.Since(at) <= webbuilder.LockTTLSeconds*time.Second
 }
 
 // wbTakeLock is wp_set_post_lock: it writes "<now>:<uid>" when the lock is free, expired, unreadable

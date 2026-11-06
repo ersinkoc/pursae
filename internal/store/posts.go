@@ -385,6 +385,10 @@ func (s *Store) StatusCounts(ctx context.Context, typ string, authorID int64) (m
 
 // UniqueSlug is wp_unique_post_slug(): appends -2, -3 … until the slug is free among siblings.
 func (s *Store) UniqueSlug(ctx context.Context, typ string, parentID int64, slug string, excludeID int64) (string, error) {
+	return uniqueSlug(ctx, s.Pool, typ, parentID, slug, excludeID)
+}
+
+func uniqueSlug(ctx context.Context, q DBTX, typ string, parentID int64, slug string, excludeID int64) (string, error) {
 	if slug == "" {
 		return "", nil
 	}
@@ -393,7 +397,7 @@ func (s *Store) UniqueSlug(ctx context.Context, typ string, parentID int64, slug
 		var taken bool
 		args := []any{typ, parentID, cand, excludeID}
 		scope := slugScope(ctx, "post", excludeID, &args)
-		err := s.Pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM posts WHERE type=$1 AND coalesce(parent_id,0)=$2
+		err := q.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM posts WHERE type=$1 AND coalesce(parent_id,0)=$2
 			AND slug=$3 AND id<>$4 AND status NOT IN ('auto-draft','trash')`+scope+`)`, args...).Scan(&taken)
 		if err != nil {
 			return "", err
@@ -414,6 +418,10 @@ func nullable(id int64) any {
 
 // prepare normalizes a post before writing: slug, block tree and publish date.
 func (s *Store) prepare(ctx context.Context, p *Post) ([]byte, error) {
+	return prepareIn(ctx, s.Pool, p)
+}
+
+func prepareIn(ctx context.Context, q DBTX, p *Post) ([]byte, error) {
 	if p.Status != "auto-draft" && p.Status != "draft" && p.Status != "pending" {
 		if p.Slug == "" {
 			p.Slug = wp.SanitizeTitle(p.Title)
@@ -423,7 +431,7 @@ func (s *Store) prepare(ctx context.Context, p *Post) ([]byte, error) {
 		}
 	}
 	if p.Slug != "" {
-		slug, err := s.UniqueSlug(ctx, p.Type, p.ParentID, wp.SanitizeTitle(p.Slug), p.ID)
+		slug, err := uniqueSlug(ctx, q, p.Type, p.ParentID, wp.SanitizeTitle(p.Slug), p.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -475,34 +483,43 @@ func (s *Store) InsertPost(ctx context.Context, p *Post) error {
 
 // UpdatePost writes every editable field and stores a revision of the previous content when it changed.
 func (s *Store) UpdatePost(ctx context.Context, p *Post, editorID int64) error {
-	old, err := s.GetPost(ctx, p.ID)
+	return pgx.BeginFunc(ctx, s.Pool, func(tx pgx.Tx) error { return UpdatePostTx(ctx, tx, p, editorID) })
+}
+
+// GetPostTx reads a post inside tx and locks its row until tx ends.
+func GetPostTx(ctx context.Context, tx pgx.Tx, id int64) (*Post, error) {
+	return scanPost(tx.QueryRow(ctx, `SELECT `+postCols+` FROM posts WHERE id = $1 FOR UPDATE`, id))
+}
+
+// UpdatePostTx is UpdatePost inside the caller's transaction: every read and write runs on tx, so
+// the post commits or rolls back with the caller's other writes and no second connection is needed.
+func UpdatePostTx(ctx context.Context, tx pgx.Tx, p *Post, editorID int64) error {
+	old, err := scanPost(tx.QueryRow(ctx, `SELECT `+postCols+` FROM posts WHERE id = $1`, p.ID))
 	if err != nil {
 		return err
 	}
-	tree, err := s.prepare(ctx, p)
+	tree, err := prepareIn(ctx, tx, p)
 	if err != nil {
 		return err
 	}
 	recordOldSlug(p, old)
 	meta, _ := json.Marshal(p.Meta)
-	return pgx.BeginFunc(ctx, s.Pool, func(tx pgx.Tx) error {
-		_, err := tx.Exec(ctx, `UPDATE posts SET author_id=$2, parent_id=$3, slug=$4, title=$5, excerpt=$6, content=$7,
-			blocks=$8, status=$9, password=$10, published_at=$11, featured_media_id=$12, menu_order=$13,
-			comment_status=$14, ping_status=$15, sticky=$16, format=$17, meta=$18, modified_at=now()
-			WHERE id=$1`,
-			p.ID, nullable(p.AuthorID), nullable(p.ParentID), p.Slug, p.Title, p.Excerpt, p.Content, tree,
-			p.Status, p.Password, p.PublishedAt, nullable(p.FeaturedMediaID), p.MenuOrder, p.CommentStatus,
-			p.PingStatus, p.Sticky, p.Format, meta)
-		if err != nil {
-			return err
-		}
-		changed := old.Title != p.Title || old.Content != p.Content || old.Excerpt != p.Excerpt
-		if changed && old.Status != "auto-draft" {
-			_, err = tx.Exec(ctx, `INSERT INTO post_revisions(post_id, author_id, title, excerpt, content)
-				VALUES ($1,$2,$3,$4,$5)`, p.ID, nullable(editorID), p.Title, p.Excerpt, p.Content)
-		}
+	_, err = tx.Exec(ctx, `UPDATE posts SET author_id=$2, parent_id=$3, slug=$4, title=$5, excerpt=$6, content=$7,
+		blocks=$8, status=$9, password=$10, published_at=$11, featured_media_id=$12, menu_order=$13,
+		comment_status=$14, ping_status=$15, sticky=$16, format=$17, meta=$18, modified_at=now()
+		WHERE id=$1`,
+		p.ID, nullable(p.AuthorID), nullable(p.ParentID), p.Slug, p.Title, p.Excerpt, p.Content, tree,
+		p.Status, p.Password, p.PublishedAt, nullable(p.FeaturedMediaID), p.MenuOrder, p.CommentStatus,
+		p.PingStatus, p.Sticky, p.Format, meta)
+	if err != nil {
 		return err
-	})
+	}
+	changed := old.Title != p.Title || old.Content != p.Content || old.Excerpt != p.Excerpt
+	if changed && old.Status != "auto-draft" {
+		_, err = tx.Exec(ctx, `INSERT INTO post_revisions(post_id, author_id, title, excerpt, content)
+			VALUES ($1,$2,$3,$4,$5)`, p.ID, nullable(editorID), p.Title, p.Excerpt, p.Content)
+	}
+	return err
 }
 
 // OldSlugMeta is the post meta key WordPress uses for previous slugs (_wp_old_slug).
