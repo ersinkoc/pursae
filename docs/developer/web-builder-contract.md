@@ -1028,7 +1028,8 @@ changed. Other themes keep the canvas of §10.
   previous theme (if it is installed and not `hello-pursae`), else to the default theme; the
   option is cleared. If the user changed the theme in between, nothing happens.
 - Sites that had the plugin on before the Theme Builder are never switched silently: they get a
-  dismissible "Switch to Hello Pursae" notice; dismissing it sets `web_builder_theme_offer`.
+  dismissible "Switch to Hello Pursae" notice; dismissing it (or switching) sets
+  `web_builder_theme_offer` to `true`, which activation also sets.
 - The old builder's `golementor_previous_theme` is never read or written, and the upgrade code
   does not treat `hello-pursae` as an old builder theme.
 

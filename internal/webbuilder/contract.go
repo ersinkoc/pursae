@@ -959,8 +959,9 @@ const (
 	OptionPreviousTheme = "web_builder_previous_theme"
 	// OptionThemeNotice is the one-shot admin notice after the automatic switch.
 	OptionThemeNotice = "web_builder_theme_notice"
-	// OptionThemeOffer is "dismissed" once a site that had the plugin on before the Theme Builder
-	// existed closed the "Switch to Hello Pursae" notice (such sites are never switched silently).
+	// OptionThemeOffer is true once the "Switch to Hello Pursae" offer is done: activation sets it,
+	// and so do the offer's Dismiss and Switch links, shown to a site that had the plugin on before
+	// the Theme Builder existed (such sites are never switched silently).
 	OptionThemeOffer = "web_builder_theme_offer"
 
 	// MenuLocationPrimary and MenuLocationFooter are Hello Pursae's menu locations.

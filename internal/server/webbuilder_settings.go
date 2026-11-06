@@ -69,14 +69,14 @@ func (s *Server) wbSetActive(ctx context.Context, on bool) error {
 
 const (
 	// wbPreviousThemeOption is the theme the site had before activation switched it to Hello Pursae.
-	wbPreviousThemeOption = "web_builder_previous_theme"
+	wbPreviousThemeOption = webbuilder.OptionPreviousTheme
 	// wbThemeNoticeOption holds the pending "Your site now uses Hello Pursae" notice:
 	// {"previous": "<slug>"}. Absent once dismissed, switched back or the plugin is off.
-	wbThemeNoticeOption = "web_builder_theme_notice"
+	wbThemeNoticeOption = webbuilder.OptionThemeNotice
 	// wbHelloOfferedOption marks the "Switch to Hello Pursae" offer as done: set by activation and by
 	// the offer's Dismiss or Switch link, so only a site that had the plugin on before Hello Pursae
 	// existed sees the offer, once.
-	wbHelloOfferedOption = "web_builder_hello_offered"
+	wbHelloOfferedOption = webbuilder.OptionThemeOffer
 	// wbThemeNoticeNonce is the nonce action of the notices' links (wbThemeNoticeAction).
 	wbThemeNoticeNonce = "web-builder-theme-notice"
 )
