@@ -123,6 +123,8 @@ type wbSlotEnv struct {
 	// the doc and the request (never on the outer item of a nested loop), so every data-wb-loop
 	// element of the same id, at any depth, shares one query.
 	loopMemo map[string]wbLoopResult
+	// publicTax: publicTaxonomy answers by taxonomy.
+	publicTax map[string]bool
 
 	logo     map[string]string
 	logoDone bool
@@ -314,6 +316,9 @@ func (r *wbSlotResolver) HTML(slot webbuilder.SlotName, a webbuilder.SlotArgs) (
 		sep := a.Sep
 		if sep == "" {
 			sep = ", "
+		}
+		if !e.publicTaxonomy(tax) {
+			return "", false // data-wb-tax comes from the snapshot: never print a private taxonomy
 		}
 		terms := sp.termsOf(e, tax)
 		parts := make([]string, 0, len(terms))
@@ -657,6 +662,33 @@ func (sp *wbSlotPost) contentOf(e *wbSlotEnv) string {
 }
 
 // termsOf is the post's terms of a taxonomy (loop items arrive with theirs batched).
+// publicTaxonomy reports whether the terms of tax may be shown to visitors: the built-in
+// public taxonomies, Pursae Commerce's product categories and tags, and public Pursae Custom
+// Fields taxonomies.
+func (e *wbSlotEnv) publicTaxonomy(tax string) bool {
+	switch tax {
+	case "category", "post_tag", "product_cat", "product_tag":
+		return true
+	}
+	if v, ok := e.publicTax[tax]; ok {
+		return v
+	}
+	pub := false
+	if e.s != nil {
+		for _, tx := range e.s.acfgoTaxonomies(e.ctx) {
+			if tx.Name == tax {
+				pub = tx.Public
+				break
+			}
+		}
+	}
+	if e.publicTax == nil {
+		e.publicTax = map[string]bool{}
+	}
+	e.publicTax[tax] = pub
+	return pub
+}
+
 func (sp *wbSlotPost) termsOf(e *wbSlotEnv, tax string) []*store.Term {
 	if sp.terms == nil {
 		sp.terms = map[string][]*store.Term{}

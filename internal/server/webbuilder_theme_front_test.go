@@ -15,6 +15,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"wpgo/internal/cache"
+	"wpgo/internal/links"
 	"wpgo/internal/store"
 	"wpgo/internal/webbuilder"
 )
@@ -100,6 +101,26 @@ func TestWBThemeFrontLoopMemo(t *testing.T) {
 	}
 	if _, ok := e.loopPosts("nope"); ok {
 		t.Error("unknown loop id resolved")
+	}
+}
+
+// post.terms prints only public taxonomies, whatever data-wb-tax the snapshot names.
+func TestWBThemeFrontTermsPublicOnly(t *testing.T) {
+	lb := &links.Builder{Home: "http://x"}
+	e := &wbSlotEnv{lb: lb, publicTax: map[string]bool{"internal_status": false, "genre": true}}
+	sp := &wbSlotPost{p: &store.Post{ID: 1}, terms: map[string][]*store.Term{
+		"category":        {{ID: 2, Taxonomy: "category", Slug: "news", Name: "News"}},
+		"internal_status": {{ID: 3, Taxonomy: "internal_status", Slug: "hold", Name: "Legal hold"}},
+	}}
+	r := &wbSlotResolver{env: e, post: sp}
+	if out, ok := r.HTML(webbuilder.SlotPostTerms, webbuilder.SlotArgs{Tax: "internal_status"}); ok || strings.Contains(out, "Legal hold") {
+		t.Errorf("private taxonomy printed: %q", out)
+	}
+	if out, ok := r.HTML(webbuilder.SlotPostTerms, webbuilder.SlotArgs{Tax: "category"}); !ok || !strings.Contains(out, ">News</a>") {
+		t.Errorf("category terms: %q %v", out, ok)
+	}
+	if e.publicTaxonomy("unknown_tax") {
+		t.Error("an unregistered taxonomy counts as public")
 	}
 }
 
