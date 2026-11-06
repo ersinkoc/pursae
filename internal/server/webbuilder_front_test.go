@@ -461,3 +461,26 @@ func TestWebBuilderFrontMainLandmark(t *testing.T) {
 		}
 	}
 }
+
+// A post of another builder-enabled type (an ACF-Go type) with a published doc gets the canvas;
+// the same type with the builder switched off for it does not.
+func TestWebBuilderFrontEnabledCustomType(t *testing.T) {
+	srv, _, _ := wbfStart(t)
+	ctx := context.Background()
+	if _, err := srv.store.Pool.Exec(ctx, `INSERT INTO content_types (slug, name, hierarchical, public, rest_base, is_builtin, supports, labels)
+		VALUES ('wbt_event', 'Events', false, true, 'events', false, '{"title":true,"editor":true}', '{"name":"Events"}')`); err != nil {
+		t.Fatal(err)
+	}
+	p := wbfPage(t, srv, "wbt_event", "Builder Event", []string{}, "", "")
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c.Request = httptest.NewRequest(http.MethodGet, "/?p="+itoa64(p.ID), nil)
+	if srv.wbFrontDecide(c, nil, p) != nil {
+		t.Error("canvas for a type the builder is not enabled for")
+	}
+	if err := srv.settings.Set(ctx, map[string]any{wbPostTypesOption: "page,post,wbt_event"}); err != nil {
+		t.Fatal(err)
+	}
+	if srv.wbFrontDecide(c, nil, p) == nil {
+		t.Error("no canvas for a published doc of a builder-enabled custom type")
+	}
+}

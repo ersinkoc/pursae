@@ -82,7 +82,9 @@ func (s *Server) wbFrontFor(c *gin.Context, q *siteQuery, p *store.Post) *wbFron
 }
 
 func (s *Server) wbFrontDecide(c *gin.Context, q *siteQuery, p *store.Post) *wbFrontPage {
-	if (p.Type != "page" && p.Type != "post") || p.Status == "trash" {
+	// Pages and posts, plus any type the builder is enabled for (a product, an ACF-Go type): the
+	// builder publishes those too, so their singular view must show the snapshot.
+	if (p.Type != "page" && p.Type != "post" && !s.wbEnabledType(p.Type)) || p.Status == "trash" {
 		return nil
 	}
 	if s.passwordRequired(c, p) { // the theme prints the password form
