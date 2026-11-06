@@ -563,7 +563,7 @@ func (s *Server) importScreen(c *gin.Context) {
 }
 
 type importReport struct {
-	Posts, Pages, Blocks, Skipped, Terms, Comments, Attachments, MenuItems int
+	Posts, Pages, Blocks, Templates, Skipped, Terms, Comments, Attachments, MenuItems int // Templates: Theme Builder (wb_template)
 	Log                                                                    []string
 }
 
@@ -781,6 +781,8 @@ func (s *Server) importWXR(c *gin.Context, u *store.User, data []byte) (*importR
 			rep.Posts++
 		case "page":
 			rep.Pages++
+		case "wb_template":
+			rep.Templates++
 		default:
 			rep.Blocks++
 		}

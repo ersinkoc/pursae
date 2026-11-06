@@ -569,7 +569,7 @@
 {{if .Error}}<div class="notice notice-error"><p>{{.Error}}</p></div>{{end}}
 {{with .Report}}
 <div class="notice notice-success"><p><strong>All done.</strong> Have fun!</p></div>
-<p>Imported {{.Posts}} posts, {{.Pages}} pages, {{.Blocks}} patterns, {{.MenuItems}} menu items, {{.Attachments}} media files, {{.Comments}} comments and {{.Terms}} new categories and tags.{{if .Skipped}} {{.Skipped}} items were skipped.{{end}}</p>
+<p>Imported {{.Posts}} posts, {{.Pages}} pages, {{.Blocks}} patterns, {{if .Templates}}{{.Templates}} Theme Builder templates, {{end}}{{.MenuItems}} menu items, {{.Attachments}} media files, {{.Comments}} comments and {{.Terms}} new categories and tags.{{if .Skipped}} {{.Skipped}} items were skipped.{{end}}</p>
 {{if .Log}}<ul>{{range .Log}}<li>{{.}}</li>{{end}}</ul>{{end}}
 <p><a href="/wp-admin/edit">View posts</a> &middot; <a href="/wp-admin/import">Import another file</a></p>
 {{else}}

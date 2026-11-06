@@ -609,6 +609,9 @@ func TestWBTemplateWXRRoundTrip(t *testing.T) {
 		}
 	}
 	body := wbhImport(t, admin, base, xml)
+	if !strings.Contains(body, " 1 patterns, 1 Theme Builder templates, ") && !strings.Contains(body, " 0 patterns, 1 Theme Builder templates, ") {
+		t.Errorf("the report does not count the template on its own: %s", body)
+	}
 	if !strings.Contains(body, "exclude/singular/page/999999") {
 		t.Errorf("the dropped rule is not in the report")
 	}
