@@ -82,11 +82,20 @@ func (s *Server) wbThemeParts(c *gin.Context, v *siteView) *wbThemeParts {
 		}
 	}
 	var header, footer *wbPart
+	if out.canvas && s.wbTemplatePreviewing(c) {
+		// A header or footer template previewed on a canvas page (its preview object is often the
+		// front page): show it, or the preview would be empty.
+		if d, id, ok := s.wbTemplatePreview(c, webbuilder.LocationHeader); ok {
+			header, out.canvas = &wbPart{loc: webbuilder.LocationHeader, id: id, template: true, doc: d}, false
+		} else if d, id, ok := s.wbTemplatePreview(c, webbuilder.LocationFooter); ok {
+			footer, out.canvas = &wbPart{loc: webbuilder.LocationFooter, id: id, template: true, doc: d}, false
+		}
+	}
 	if !out.canvas {
-		if d, id := s.wbPickTemplate(c, webbuilder.LocationHeader, q); d != nil {
+		if d, id := s.wbPickTemplate(c, webbuilder.LocationHeader, q); d != nil && header == nil {
 			header = &wbPart{loc: webbuilder.LocationHeader, id: id, template: true, doc: d}
 		}
-		if d, id := s.wbPickTemplate(c, webbuilder.LocationFooter, q); d != nil {
+		if d, id := s.wbPickTemplate(c, webbuilder.LocationFooter, q); d != nil && footer == nil {
 			footer = &wbPart{loc: webbuilder.LocationFooter, id: id, template: true, doc: d}
 		}
 	}
