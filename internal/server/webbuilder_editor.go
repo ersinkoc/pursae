@@ -129,6 +129,11 @@ type wbBoot struct {
 	Media           webbuilder.BootMedia `json:"media"`
 	SiteAssets      string               `json:"siteAssets"`
 	AI              webbuilder.BootAI    `json:"ai"`
+	// Theme Builder (contract APIVersion 2). Until the Theme Builder fills them, Template is null
+	// and Site / Dynamic carry empty lists so the editor sees the contract's shape.
+	Template *webbuilder.TemplateBoot `json:"template"`
+	Site     webbuilder.SiteBoot      `json:"site"`
+	Dynamic  webbuilder.DynContext    `json:"dynamic"`
 }
 
 // wbDocument is webbuilder.DocumentResponse with raw doc / page JSON (GET documents/{id} answers it
@@ -281,6 +286,11 @@ func (s *Server) wbBootFor(c *gin.Context, p *store.Post, u *store.User, doc *wb
 		Media:      webbuilder.BootMedia{MaxUploadBytes: maxUploadBytes, Types: wbMediaTypes()},
 		SiteAssets: lb.HomeURL(webbuilder.SiteAssetsPath),
 		AI:         webbuilder.BootAI{Enabled: false, Providers: []webbuilder.AIProviderInfo{}},
+		Site: webbuilder.SiteBoot{Home: strings.TrimRight(lb.HomeURL("/"), "/"),
+			Locations: []webbuilder.MenuLocation{}, Menus: map[string][]webbuilder.DynMenuItem{},
+			PostTypes: []webbuilder.PostTypeInfo{}, Taxonomies: []webbuilder.TaxonomyInfo{}},
+		Dynamic: webbuilder.DynContext{Site: webbuilder.DynSite{Home: strings.TrimRight(lb.HomeURL("/"), "/")},
+			Locations: []webbuilder.MenuLocation{}, Menus: map[string][]webbuilder.DynMenuItem{}, Posts: []webbuilder.DynPost{}},
 	}
 }
 
