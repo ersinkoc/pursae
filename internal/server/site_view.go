@@ -178,7 +178,7 @@ func (s *Server) buildSiteView(c *gin.Context, q *siteQuery) (*siteView, error) 
 		}
 		pv := s.postView(ctx, c, q.Post, true, lb, u)
 		v.Post = pv
-		if q.Post.Type == "post" {
+		if pt := siteCPT(q.Post.Type); q.Post.Type == "post" || (pt != nil && !pt.Hierarchical) {
 			v.PostNav = s.postNavigation(ctx, q.Post, lb)
 		}
 		if s.commentsOpen(q.Post) || q.Post.CommentCount > 0 {
@@ -192,8 +192,10 @@ func (s *Server) buildSiteView(c *gin.Context, q *siteQuery) (*siteView, error) 
 			if q.Post.ParentID != 0 {
 				bodyClasses = append(bodyClasses, "page-child", "parent-pageid-"+itoa64(q.Post.ParentID))
 			}
-		} else {
+		} else if q.Post.Type == "post" {
 			bodyClasses = append(bodyClasses, "post-template-default", "single", "single-post", "postid-"+itoa64(q.Post.ID), "single-format-"+q.Post.Format)
+		} else { // a custom post type: body_class() without post formats
+			bodyClasses = append(bodyClasses, q.Post.Type+"-template-default", "single", "single-"+q.Post.Type, "postid-"+itoa64(q.Post.ID))
 		}
 	case "404":
 		v.Template = "404"
@@ -244,6 +246,8 @@ func (s *Server) buildSiteView(c *gin.Context, q *siteQuery) (*siteView, error) 
 				bodyClasses = append(bodyClasses, "author", "author-"+q.Author.Nicename, "author-"+itoa64(q.Author.ID))
 			case "date":
 				bodyClasses = append(bodyClasses, "date")
+			case "post-type-archive":
+				bodyClasses = append(bodyClasses, "post-type-archive", "post-type-archive-"+q.PostType)
 			}
 		}
 		if q.Paged > 1 {
@@ -314,6 +318,10 @@ func (s *Server) archiveBase(q *siteQuery, lb *links.Builder) string {
 		return lb.YearLink(q.Year)
 	case "search":
 		return lb.SearchLink(q.Search)
+	case "post-type-archive":
+		if link := lb.PostTypeArchiveLink(q.PostType); link != "" {
+			return link
+		}
 	}
 	if q.PostsPage != nil {
 		return lb.Permalink(q.PostsPage)

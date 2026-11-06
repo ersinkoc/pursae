@@ -163,6 +163,8 @@ func (s *Server) cacheTags(c *gin.Context, q *siteQuery) {
 			}
 		}
 		tags = append(tags, d, "archive:post")
+	case "post-type-archive":
+		tags = append(tags, "archive:"+q.PostType)
 	case "search":
 		tags = append(tags, "search")
 	case "404":
