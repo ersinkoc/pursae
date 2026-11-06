@@ -54,6 +54,19 @@ func (s *Server) wbAfterPostSave(ctx context.Context, p *store.Post) {
 	}
 }
 
+// wbAfterStatusChange runs after a trash, untrash or delete has been stored (the admin screens
+// call afterPostSave before the store call): the loop pages and the template index are purged
+// again, so a request rendered in between cannot keep the old status in the cache.
+func (s *Server) wbAfterStatusChange(ctx context.Context, p *store.Post) {
+	if p == nil || p.ID <= 0 {
+		return
+	}
+	s.wbPurgeLoops(ctx, p)
+	if wbIsTemplate(p) {
+		s.wbTemplatesChanged(ctx)
+	}
+}
+
 // wbDetectDrift compares the stored posts.content (not an in-memory copy, which a caller may have
 // changed after the save) with content_hash and sets detached when they differ. It never clears the
 // flag and reports whether this call detached the doc. A post without a doc costs one indexed

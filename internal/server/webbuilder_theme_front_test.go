@@ -678,3 +678,41 @@ func TestWBThemeFrontAutosaveKeepsLoopCache(t *testing.T) {
 		t.Error("publishing a post did not purge the loop pages")
 	}
 }
+
+// Trashing from the admin purges the loop pages again once the trash is stored: a page rendered
+// between the early purge (afterPostSave) and the trash does not keep the post in the cache.
+func TestWBThemeFrontTrashPurgesLoopsAfterStore(t *testing.T) {
+	srv, base, _ := wbtfStart(t)
+	if !srv.settings.Bool("wpgo_cache_enabled") {
+		t.Skip("WPGo Cache is off by default")
+	}
+	ctx := context.Background()
+	wbtfTemplate(t, srv, webbuilder.TemplateFooter, "Loop footer", []string{"include/general"},
+		`<section>LOOP-FOOTER<div data-wb-loop="fl"><p data-wb-loop-item=""><span data-wb-slot="post.title"></span></p></div></section>`,
+		`{"sections":[{"id":"fl","kind":"loop","content":{"source":"query","perPage":"5","postType":"post"}}],"site":{}}`, "", nil)
+	doomed := wbtfPost(t, srv, "post", "Soon Trashed", "<p>x</p>", 0)
+	// A concurrent visitor: re-renders (and caches) the page right after every post save hook.
+	prev := srv.onPostSaved
+	srv.onPostSaved = func(c context.Context, p *store.Post) {
+		if prev != nil {
+			prev(c, p)
+		}
+		if p.ID == doomed.ID {
+			anonGet(t, base+"/about-the-loop/") // any URL: a cached page with the footer loop
+		}
+	}
+	if b := bodyOf(anonGet(t, base+"/about-the-loop/")); !strings.Contains(b, "Soon Trashed") {
+		t.Fatal("the loop does not list the post")
+	}
+	adminU, err := srv.store.UserByID(ctx, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	id := itoa64(doomed.ID)
+	if w := wbtaDirect(srv, adminU, "/wp-admin/post?post="+id+"&action=trash", "trash-post_"+id, srv.postEdit); w.Code != http.StatusFound {
+		t.Fatalf("trash: %d", w.Code)
+	}
+	if b := bodyOf(anonGet(t, base+"/about-the-loop/")); strings.Contains(b, "Soon Trashed") {
+		t.Error("the cached loop still lists the trashed post")
+	}
+}

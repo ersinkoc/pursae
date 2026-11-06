@@ -708,6 +708,7 @@ func (s *Server) postsBulkAction(c *gin.Context, typ, action string) {
 			continue
 		}
 		if err == nil {
+			s.wbAfterStatusChange(c, p) // Pursae Web Builder: purge again now the status is stored
 			n++
 			done = append(done, raw)
 		}
@@ -1609,6 +1610,7 @@ func (s *Server) postEdit(c *gin.Context) {
 			c.String(http.StatusInternalServerError, err.Error())
 			return
 		}
+		s.wbAfterStatusChange(c, p) // Pursae Web Builder: purge again now the status is stored
 		c.Redirect(http.StatusFound, "/wp-admin/edit?post_type="+p.Type+"&"+key+"=1&ids="+itoa64(p.ID))
 		return
 	}
