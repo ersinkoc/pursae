@@ -241,6 +241,7 @@ func (s *Server) routes() *gin.Engine {
 	r.HEAD(pluginAssetsPath+"/:slug/assets/*filepath", s.pluginAsset)
 	s.registerGontact(r) // Gontact Form front-end assets
 	s.registerWebBuilder(r)
+	s.registerWebBuilderRedirects(r) // old builder admin URLs -> 301 (before the /wp-admin routes: it adds a middleware)
 
 	r.GET("/wp-admin/install", s.installForm)
 	r.POST("/wp-admin/install", s.installSubmit)

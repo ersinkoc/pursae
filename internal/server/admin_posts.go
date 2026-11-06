@@ -458,7 +458,7 @@ func (s *Server) postRows(c *gin.Context, d *postsListData, posts []*store.Post,
 		r.RestoreURL = "/wp-admin/post?post=" + itoa64(p.ID) + "&action=untrash&_wpnonce=" + s.nonce(c, "untrash-post_"+itoa64(p.ID))
 		r.DeleteURL = "/wp-admin/post?post=" + itoa64(p.ID) + "&action=delete&_wpnonce=" + s.nonce(c, "delete-post_"+itoa64(p.ID))
 		r.BuilderURL = s.wbRowAction(c, p)
-		if built[p.ID] && wbEnabledType(p.Type) {
+		if built[p.ID] && s.wbEnabledType(p.Type) {
 			r.States = append(r.States, "Pursae Web Builder")
 		}
 		if p.Status == "publish" || p.Status == "private" {

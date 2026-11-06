@@ -24,7 +24,7 @@ import (
 
 // wbCanBuild reports whether u may open p in the builder now.
 func (s *Server) wbCanBuild(u *store.User, p *store.Post) bool {
-	return p != nil && u != nil && s.wbOn() && wbEnabledType(p.Type) && p.Status != "trash" && u.Can("edit_post", p)
+	return p != nil && u != nil && s.wbOn() && s.wbEnabledType(p.Type) && p.Status != "trash" && u.Can("edit_post", p)
 }
 
 // wbDocIDs reports which of the posts have a builder document.
@@ -147,7 +147,7 @@ func wbMoveLegacyUploads(uploadsDir string) {
 	if uploadsDir == "" {
 		return
 	}
-	old, cur := filepath.Join(uploadsDir, gweLegacyUploadsDir), filepath.Join(uploadsDir, gweUploadsDir)
+	old, cur := filepath.Join(uploadsDir, legacyBuilderUploadsDir), filepath.Join(uploadsDir, builderUploadsDir)
 	if _, err := os.Stat(old); err != nil {
 		return
 	}
