@@ -13,6 +13,7 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"wpgo/internal/store"
 	"wpgo/internal/webbuilder"
@@ -697,5 +698,58 @@ func TestWebBuilderRESTPublishWithoutPage(t *testing.T) {
 	}
 	if p.Title != "Kept Title" || p.Slug != page.Slug {
 		t.Errorf("post after a publish without page: title %q slug %q, want %q %q", p.Title, p.Slug, "Kept Title", page.Slug)
+	}
+}
+
+func TestWebBuilderPageOverlay(t *testing.T) {
+	post := json.RawMessage(`{"title":"New","slug":"new","description":"D","indexable":false}`)
+	got := map[string]any{}
+	_ = json.Unmarshal(wbPageOverlay(json.RawMessage(`{"title":"Old","slug":"old","description":"x","indexable":true,"extra":1}`), post), &got)
+	if got["title"] != "New" || got["slug"] != "new" || got["description"] != "D" || got["indexable"] != false || got["extra"] != float64(1) {
+		t.Errorf("overlay: %v", got)
+	}
+	if string(wbPageOverlay(json.RawMessage(`{}`), post)) != string(post) {
+		t.Error("empty stored page: want the post page")
+	}
+}
+
+// A rename through /wp/v2/pages (which does not detach) is what the builder shows next, so the
+// following publish does not revert it; the page object's other keys are kept.
+func TestWebBuilderRESTRenameOutsideBuilder(t *testing.T) {
+	srv, base, admin := wbrStart(t)
+	page := wbrPost(t, srv, "page", "Old Title", "draft", 1)
+	doc, render := wbrFixture(t, "initial")
+	ps := map[string]any{"title": "Landing", "slug": "landing", "description": "A landing page", "indexable": true, "future": "kept"}
+	if code, v, _ := admin.do(http.MethodPost, wbrDocPath(page.ID, "/publish"), wbrPublishBody(doc, render, 0, "publish", ps), nil); code != http.StatusOK {
+		t.Fatalf("publish: %d %v", code, v)
+	}
+	// The user's draft, saved before the rename.
+	if code, v, _ := admin.do(http.MethodPut, wbrDocPath(page.ID, "/autosave"), map[string]any{"doc": doc, "page": map[string]any{"title": "Draft title", "slug": "landing"}, "baseRev": 1}, nil); code != http.StatusOK {
+		t.Fatalf("autosave: %d %v", code, v)
+	}
+	time.Sleep(20 * time.Millisecond)
+	if code, body := restSend(t, admin.c, base, http.MethodPost, "/wp-json/wp/v2/pages/"+itoa64(page.ID), `{"title":"Renamed","excerpt":"New excerpt"}`); code != http.StatusOK {
+		t.Fatalf("rename: %d %s", code, body)
+	}
+	_, v, _ := admin.do(http.MethodGet, wbrDocPath(page.ID, ""), nil, nil)
+	out := wbrObj(v)
+	if out["detached"] == true {
+		t.Fatalf("rename detached the page: %v", out)
+	}
+	pg := wbrObj(out["page"])
+	if pg["title"] != "Renamed" || pg["description"] != "New excerpt" || pg["slug"] != "landing" || pg["future"] != "kept" {
+		t.Errorf("page after rename: %v", pg)
+	}
+	d := wbrObj(out["draft"])
+	if d == nil || wbrObj(d["page"])["title"] != "Renamed" {
+		t.Errorf("draft page after rename: %v", d)
+	}
+	// The next publish with the page the editor was given keeps the new title.
+	body := wbrPublishBody(doc, render, 1, "publish", pg)
+	if code, v, _ := admin.do(http.MethodPost, wbrDocPath(page.ID, "/publish"), body, nil); code != http.StatusOK {
+		t.Fatalf("republish: %d %v", code, v)
+	}
+	if p, _ := srv.store.GetPost(context.Background(), page.ID); p.Title != "Renamed" {
+		t.Errorf("title after republish: %q", p.Title)
 	}
 }

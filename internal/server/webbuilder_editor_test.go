@@ -211,7 +211,7 @@ func TestWebBuilderEditorScreen(t *testing.T) {
 
 	// A stored doc and the user's newer draft come through as stored JSON (unknown fields kept).
 	docJSON := `{"sections":[{"id":"s1","kind":"hero","future":{"x":1}}],"site":{"brand":"#123456"}}`
-	d := &store.WebBuilderDoc{PostID: page.ID, Doc: json.RawMessage(docJSON), Page: json.RawMessage(`{"title":"Stored","slug":"stored","description":"","indexable":false}`), Renderer: 1}
+	d := &store.WebBuilderDoc{PostID: page.ID, Doc: json.RawMessage(docJSON), Page: json.RawMessage(`{"title":"Stored","slug":"stored","description":"","indexable":false,"future":"kept"}`), Renderer: 1}
 	if err := srv.store.WebBuilder().PublishDoc(ctx, d, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -225,13 +225,18 @@ func TestWebBuilderEditorScreen(t *testing.T) {
 	}
 	_, body, _ = wbOpen(t, c, base, page.ID)
 	boot, raw = wbBootOf(t, body)
-	if wbPath(boot, "document.rev") != float64(1) || wbPath(boot, "document.renderer") != float64(1) || wbPath(boot, "document.page.title") != "Stored" {
+	if wbPath(boot, "document.rev") != float64(1) || wbPath(boot, "document.renderer") != float64(1) || wbPath(boot, "document.page.future") != "kept" {
 		t.Errorf("document = %#v", wbPath(boot, "document"))
 	}
 	if !strings.Contains(raw, `"future":{"x":1}`) {
 		t.Error("unknown doc fields were dropped")
 	}
-	if wbPath(boot, "document.draft.baseRev") != float64(1) || wbPath(boot, "document.draft.page.title") != "Stored" {
+	// The post owns title, slug, description and noindex: they come from the post, not the stored
+	// page object (a rename through /wp/v2/pages is not reverted by the next publish).
+	if wbPath(boot, "document.page.title") != page.Title || wbPath(boot, "document.page.slug") != page.Slug || wbPath(boot, "document.page.indexable") != true {
+		t.Errorf("document.page = %#v, want the post's title and slug", wbPath(boot, "document.page"))
+	}
+	if wbPath(boot, "document.draft.baseRev") != float64(1) || wbPath(boot, "document.draft.page.title") != page.Title {
 		t.Errorf("draft = %#v", wbPath(boot, "document.draft"))
 	}
 	if strings.Contains(raw, "theirs") {

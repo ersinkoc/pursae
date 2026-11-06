@@ -170,7 +170,9 @@ func (s *Server) wbDocumentFor(ctx context.Context, p *store.Post, u *store.User
 		return nil, err
 	default:
 		d.Rev, d.Doc, d.Detached, d.Renderer = row.Rev, row.Doc, row.Detached, row.Renderer
-		d.Page = wbPageJSON(row.Page, postPage)
+		// The post owns title, slug, description and noindex: a rename through /wp/v2/pages (which
+		// does not detach) must not be reverted by the next builder publish.
+		d.Page = wbPageOverlay(row.Page, postPage)
 	}
 	if u != nil {
 		dr, err := wb.Draft(ctx, p.ID, u.ID)
@@ -179,7 +181,12 @@ func (s *Server) wbDocumentFor(ctx context.Context, p *store.Post, u *store.User
 		case err != nil:
 			return nil, err
 		case row == nil || dr.UpdatedAt.After(row.UpdatedAt):
-			d.Draft = &wbDraft{Doc: dr.Doc, Page: wbPageJSON(dr.Page, d.Page), BaseRev: dr.BaseRev,
+			page := wbPageJSON(dr.Page, d.Page)
+			if dr.UpdatedAt.Before(p.ModifiedAt) {
+				// The post changed after the draft was saved: its own fields win.
+				page = wbPageOverlay(page, postPage)
+			}
+			d.Draft = &wbDraft{Doc: dr.Doc, Page: page, BaseRev: dr.BaseRev,
 				SavedAt: dr.UpdatedAt.UTC().Format(time.RFC3339)}
 		}
 		d.Lock = s.wbLockHolder(ctx, p, u.ID)
@@ -206,6 +213,29 @@ func wbPageJSON(raw, def json.RawMessage) json.RawMessage {
 		return def
 	}
 	return raw
+}
+
+// wbPageOverlay is a stored page object (or post when nothing was stored) with the post-owned
+// fields (title, slug, description, indexable) taken from post; its other keys are kept.
+func wbPageOverlay(raw, post json.RawMessage) json.RawMessage {
+	var m map[string]json.RawMessage
+	if len(raw) == 0 || json.Unmarshal(raw, &m) != nil || len(m) == 0 {
+		return post
+	}
+	var pm map[string]json.RawMessage
+	if json.Unmarshal(post, &pm) != nil {
+		return raw
+	}
+	for _, k := range []string{"title", "slug", "description", "indexable"} {
+		if v, ok := pm[k]; ok {
+			m[k] = v
+		}
+	}
+	b, err := json.Marshal(m)
+	if err != nil {
+		return raw
+	}
+	return b
 }
 
 // wbBootFor is window.__WEB_BUILDER__ for p. It carries no secret: the REST nonce is the user's
