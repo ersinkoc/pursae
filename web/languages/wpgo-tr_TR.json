@@ -3654,5 +3654,8 @@
  "Any name": "Herhangi bir ad",
  "Breadcrumb": "Ekmek kırıntısı",
  "If you have a coupon code, please apply it below.": "Kupon kodunuz varsa lütfen aşağıda uygulayın.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Siparişiniz işlenirken bir hata oluştu. Lütfen siparişi yeniden vermeden önce ödeme yönteminizde herhangi bir tahsilat olup olmadığını kontrol edin ve sipariş geçmişinizi gözden geçirin."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Siparişiniz işlenirken bir hata oluştu. Lütfen siparişi yeniden vermeden önce ödeme yönteminizde herhangi bir tahsilat olup olmadığını kontrol edin ve sipariş geçmişinizi gözden geçirin.",
+ "Edit Header": "Üst bilgiyi düzenle",
+ "Edit Footer": "Alt bilgiyi düzenle",
+ "Edit Template": "Şablonu düzenle"
 }
