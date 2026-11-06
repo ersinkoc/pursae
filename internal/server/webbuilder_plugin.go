@@ -50,19 +50,6 @@ func wbEditURL(id int64) string {
 	return "/wp-admin/post?post=" + itoa64(id) + "&action=" + wbEditAction
 }
 
-// wbPostTypes are the post types the builder edits: pages and posts.
-var wbPostTypes = []string{"page", "post"}
-
-// wbEnabledType reports whether posts of the type open in the builder.
-func wbEnabledType(typ string) bool {
-	for _, t := range wbPostTypes {
-		if t == typ {
-			return true
-		}
-	}
-	return false
-}
-
 // registerWebBuilder adds the builder's routes that live outside wp-admin and the REST API.
 func (s *Server) registerWebBuilder(r *gin.Engine) {
 	s.wbRegisterAssets(r) // webbuilder_assets.go

@@ -41,7 +41,7 @@ func (s *Server) wbEditor(c *gin.Context, p *store.Post) {
 		c.String(http.StatusForbidden, "You cannot edit this item because it is in the Trash. Please restore it and try again.")
 		return
 	}
-	if !wbEnabledType(p.Type) {
+	if !s.wbEnabledType(p.Type) {
 		c.String(http.StatusForbidden, "This item cannot be edited with Pursae Web Builder.")
 		return
 	}

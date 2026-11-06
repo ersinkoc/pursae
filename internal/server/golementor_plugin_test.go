@@ -218,6 +218,7 @@ func TestGolementorActivate(t *testing.T) {
 }
 
 func TestGolementorDeactivateFallsBackToDefaultTheme(t *testing.T) {
+	t.Skip("old builder: activation no longer switches the theme or offers the setup wizard (R1d); the test goes with R2")
 	ts, c, srv := testServerBuilderOff(t)
 	base := ts.URL
 	installAndLogin(t, ts, c)
@@ -329,6 +330,7 @@ func TestInactiveNativePluginLeavesAdmin(t *testing.T) {
 
 // Deactivating goes back to the theme that was active before Golementor, not always the default.
 func TestGolementorRestoresPreviousTheme(t *testing.T) {
+	t.Skip("old builder: activation no longer switches the theme or offers the setup wizard (R1d); the test goes with R2")
 	t.Setenv("WPGO_THEMES_DIR", t.TempDir())
 	ts, c, srv := testServerBuilderOff(t)
 	base := ts.URL

@@ -410,8 +410,10 @@ func (s *Server) pluginSettingsPage(slug string) *plugins.SettingsPage {
 	return nil
 }
 
-// pluginMenuEntries adds the plugins' settings pages under Settings.
+// pluginMenuEntries adds the plugins' settings pages under Settings, after the built-in Settings ›
+// Web Builder.
 func (s *Server) pluginMenuEntries(menu []*menuTop, screen string) {
+	s.wbSettingsMenu(menu, screen) // webbuilder_settings.go
 	if s.plugins == nil || s.plugins.rt == nil {
 		return
 	}
@@ -460,6 +462,10 @@ func settingValue(v any, f plugins.SettingsField) (text string, checked bool) {
 
 // pluginSettingsScreen renders Settings › <plugin>; it reports false when slug has no page.
 func (s *Server) pluginSettingsScreen(c *gin.Context, slug string) bool {
+	if slug == wbSettingsPage { // Settings › Web Builder, built in (webbuilder_settings.go)
+		s.wbSettingsScreen(c)
+		return true
+	}
 	page := s.pluginSettingsPage(slug)
 	if page == nil {
 		return false
@@ -482,6 +488,10 @@ func (s *Server) pluginSettingsScreen(c *gin.Context, slug string) bool {
 // pluginSettingsSave handles the form POST (option_page = "plugin:<slug>").
 func (s *Server) pluginSettingsSave(c *gin.Context, optionPage string) {
 	slug := strings.TrimPrefix(optionPage, pluginSettingsSlug)
+	if slug == wbSettingsPage { // Settings › Web Builder, built in (webbuilder_settings.go)
+		s.wbSettingsSave(c)
+		return
+	}
 	page := s.pluginSettingsPage(slug)
 	if page == nil {
 		c.String(http.StatusBadRequest, "Error: The options page was not found in the allowed options list.")

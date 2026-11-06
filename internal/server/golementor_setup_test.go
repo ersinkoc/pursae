@@ -14,6 +14,7 @@ import (
 // TestGolementorSetupWizard installs the fixture kit with the wizard, checks what it made and the
 // front end through the Theme Builder conditions, re-runs it (keep, replace) and removes it.
 func TestGolementorSetupWizard(t *testing.T) {
+	t.Skip("old builder: activation no longer switches the theme or offers the setup wizard (R1d); the test goes with R2")
 	ts, c, srv := newTestServer(t, true)
 	srv.gweLibOverride = os.DirFS(gweLibFixture)
 	base := ts.URL
