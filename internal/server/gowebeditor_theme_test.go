@@ -16,6 +16,7 @@ import (
 // parts made in the Theme Builder and saved with save_builder, display conditions, the parts on a
 // bundled theme, Save as theme, activation, editing the active theme, export and import.
 func TestGoWebEditorThemeBuilder(t *testing.T) {
+	t.Skip("old builder detached from routing, admin and front (R1c/R1d); this file goes in R2")
 	ts, c := testServer(t)
 	base := ts.URL
 	if code, body, _ := post(t, c, base+"/wp-admin/install?step=2", url.Values{

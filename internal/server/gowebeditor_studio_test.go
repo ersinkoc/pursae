@@ -11,6 +11,7 @@ import (
 // Golementor Studio: the editor page loads the Studio by default, only the toggle once the user
 // picked Advanced, and the preference endpoint saves the choice per user.
 func TestGolementorStudio(t *testing.T) {
+	t.Skip("old builder detached from routing, admin and front (R1c/R1d); this file goes in R2")
 	ts, c := testServer(t)
 	base := ts.URL
 	installAndLogin(t, ts, c)

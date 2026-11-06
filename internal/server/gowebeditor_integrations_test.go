@@ -373,6 +373,7 @@ func TestGWEGoogleFontsLocal(t *testing.T) {
 // TestGWEIntegrationsServer runs the form actions, the settings screen, the Stripe and PayPal
 // buttons and local Google Fonts through a real server (database needed).
 func TestGWEIntegrationsServer(t *testing.T) {
+	t.Skip("old builder detached from routing, admin and front (R1c/R1d); this file goes in R2")
 	ts, c := testServer(t)
 	base := ts.URL
 	if code, body, _ := post(t, c, base+"/wp-admin/install?step=2", url.Values{

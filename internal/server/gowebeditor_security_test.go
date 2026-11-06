@@ -76,6 +76,7 @@ const gweScriptTree = `[{"id":"a1b2c3d","elType":"container","isInner":false,"se
 // A contributor or author (no unfiltered_html) must not store script in a builder document that runs
 // for the administrator previewing or publishing it (Elementor's Document::save() runs wp_kses_post).
 func TestGWEBuilderSaveFiltersScriptWithoutUnfilteredHTML(t *testing.T) {
+	t.Skip("old builder detached from routing, admin and front (R1c/R1d); this file goes in R2")
 	s := gweSecStart(t)
 	ctx := context.Background()
 	contrib, cid := s.login("contrib", "contributor")
@@ -137,6 +138,7 @@ func TestGWEKsesJSONUnit(t *testing.T) {
 
 // Role Manager keeps excluded roles out of the editor; its AJAX (save_builder) must refuse them too.
 func TestGWERoleManagerExcludedRoleCannotSave(t *testing.T) {
+	t.Skip("old builder detached from routing, admin and front (R1c/R1d); this file goes in R2")
 	s := gweSecStart(t)
 	ctx := context.Background()
 	author, aid := s.login("writer", "author")
@@ -161,6 +163,7 @@ func TestGWERoleManagerExcludedRoleCannotSave(t *testing.T) {
 // admin's submission view ran script), files are written only for submissions that pass the spam
 // checks, and only administrators may read or trash submissions over REST.
 func TestGWEFormSubmissionsHardening(t *testing.T) {
+	t.Skip("old builder detached from routing, admin and front (R1c/R1d); this file goes in R2")
 	s := gweSecStart(t)
 	ctx := context.Background()
 	base := s.ts.URL
@@ -245,6 +248,7 @@ func secREST(t *testing.T, s *gweSecSite, login, role string) (*http.Client, *re
 
 // A Template widget can name any post id; a private page must not render for visitors who cannot read it.
 func TestGWETemplateWidgetHidesPrivatePosts(t *testing.T) {
+	t.Skip("old builder detached from routing, admin and front (R1c/R1d); this file goes in R2")
 	s := gweSecStart(t)
 	ctx := context.Background()
 	secret := &store.Post{Type: "page", Title: "Board notes", Slug: "board-notes", Status: "private", AuthorID: 1, Meta: map[string]any{}}

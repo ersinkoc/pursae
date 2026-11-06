@@ -886,6 +886,7 @@ func glibKBTexts(raw json.RawMessage, n int) []string {
 }
 
 func TestGolementorLibraryKBInstall(t *testing.T) {
+	t.Skip("old builder detached from routing, admin and front (R1c/R1d); this file goes in R2")
 	hold := os.Getenv("GLIBKB_HOLD") // screenshots: keep each installed site up until this file is removed
 	for _, slug := range glibKBKits {
 		t.Run(slug, func(t *testing.T) {

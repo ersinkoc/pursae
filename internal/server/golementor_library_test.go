@@ -127,6 +127,7 @@ func TestGolementorLibraryFreshTree(t *testing.T) {
 
 // TestGolementorLibraryREST: the editor routes, the classic library's Blocks tab and inserting.
 func TestGolementorLibraryREST(t *testing.T) {
+	t.Skip("old builder detached from routing, admin and front (R1c/R1d); this file goes in R2")
 	ts, c, srv := newTestServer(t, true)
 	srv.gweLibOverride = os.DirFS(gweLibFixture)
 	base := ts.URL

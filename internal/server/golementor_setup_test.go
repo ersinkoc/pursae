@@ -304,6 +304,7 @@ func TestGolementorSetupWizard(t *testing.T) {
 // must load without a problem; front page, every page, the blog, a post, search and 404 must
 // render through the kit's header and footer (and its single/archive/search/404 parts).
 func TestGolementorSetupKits(t *testing.T) {
+	t.Skip("old builder detached from routing, admin and front (R1c/R1d); this file goes in R2")
 	dir := os.Getenv("WPGO_GWE_LIBRARY")
 	if dir == "" {
 		dir = "../../web/gowebeditor/library"

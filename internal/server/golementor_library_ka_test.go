@@ -823,6 +823,7 @@ func glibKAFirstHeading(raw json.RawMessage) string {
 
 // TestGolementorLibraryKAInstall installs each kit on a fresh site and renders its pages.
 func TestGolementorLibraryKAInstall(t *testing.T) {
+	t.Skip("old builder detached from routing, admin and front (R1c/R1d); this file goes in R2")
 	for _, slug := range glibKASlugs {
 		t.Run(slug, func(t *testing.T) {
 			k := glibKALoad(t, slug)

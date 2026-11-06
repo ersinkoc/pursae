@@ -10,6 +10,7 @@ import (
 // A built page with a carousel links Swiper's core stylesheet before e-swiper, as upstream's
 // style dependencies do; without it the slides stack and render blank.
 func TestGolementorCarouselLoadsSwiperCSS(t *testing.T) {
+	t.Skip("old builder detached from routing, admin and front (R1c/R1d); this file goes in R2")
 	ts, c := testServer(t)
 	base := ts.URL
 	installAndLogin(t, ts, c)

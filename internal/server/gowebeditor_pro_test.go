@@ -20,6 +20,7 @@ import (
 // renders; a form submission is stored and e-mailed; a popup prints its markup; render_tags
 // resolves a dynamic tag.
 func TestGoWebEditorPro(t *testing.T) {
+	t.Skip("old builder detached from routing, admin and front (R1c/R1d); this file goes in R2")
 	ts, c := testServer(t)
 	mailDir := filepath.Join(filepath.Dir(t.TempDir()), "mail") // mailer(): <uploads>/../mail
 	base := ts.URL

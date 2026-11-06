@@ -110,9 +110,9 @@ func TestWebBuilderEntryPoints(t *testing.T) {
 	if code != http.StatusMovedPermanently || loc != wbEditURL(built.ID) {
 		t.Errorf("action=web-builder-next: %d %q", code, loc)
 	}
-	for _, old := range []string{"elementor", "golementor"} { // the old builder's actions open the core editor
-		if code, body, _ := get(t, c, base+"/wp-admin/post?post="+itoa64(built.ID)+"&action="+old); code != http.StatusOK || strings.Contains(body, "__WEB_BUILDER__") {
-			t.Errorf("action=%s: %d", old, code)
+	for _, old := range []string{"elementor", "golementor"} { // the old builder's actions redirect to the new editor (webbuilder_redirects.go)
+		if code, _, loc := get(t, c, base+"/wp-admin/post?post="+itoa64(built.ID)+"&action="+old); code != http.StatusMovedPermanently || loc != wbEditURL(built.ID) {
+			t.Errorf("action=%s: %d %q, want 301 to %s", old, code, loc, wbEditURL(built.ID))
 		}
 	}
 

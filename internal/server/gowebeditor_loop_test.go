@@ -27,6 +27,7 @@ func TestGweLoopSearchWords(t *testing.T) {
 // TestGweSearchProps: a search submitted by a Search widget (e_search_props) lists only what the
 // widget's query allows (here: posts in Guides), on one page; an unknown widget is a 404.
 func TestGweSearchProps(t *testing.T) {
+	t.Skip("old builder detached from routing, admin and front (R1c/R1d); this file goes in R2")
 	ts, c := testServer(t)
 	base := ts.URL
 	if code, body, _ := post(t, c, base+"/wp-admin/install?step=2", url.Values{

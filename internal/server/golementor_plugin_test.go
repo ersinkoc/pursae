@@ -64,6 +64,7 @@ func restGet(t *testing.T, c *http.Client, base, path string) (int, string) {
 var builderTraces = []string{"elementor", "gowebeditor", "Pursae Web Builder", "gwe-theme"}
 
 func TestGolementorOffByDefault(t *testing.T) {
+	t.Skip("old builder detached from routing, admin and front (R1c/R1d); this file goes in R2")
 	ts, c, srv := testServerBuilderOff(t)
 	base := ts.URL
 	installAndLogin(t, ts, c)
@@ -156,6 +157,7 @@ func TestGolementorOffByDefault(t *testing.T) {
 }
 
 func TestGolementorActivate(t *testing.T) {
+	t.Skip("old builder detached from routing, admin and front (R1c/R1d); this file goes in R2")
 	ts, c, srv := testServerBuilderOff(t)
 	base := ts.URL
 	installAndLogin(t, ts, c)
@@ -256,6 +258,7 @@ func TestGolementorDeactivateFallsBackToDefaultTheme(t *testing.T) {
 }
 
 func TestGolementorBuiltPageWhileOff(t *testing.T) {
+	t.Skip("old builder detached from routing, admin and front (R1c/R1d); this file goes in R2")
 	ts, c, _ := testServerBuilderOff(t)
 	base := ts.URL
 	installAndLogin(t, ts, c)

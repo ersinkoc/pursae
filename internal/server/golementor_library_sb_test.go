@@ -321,6 +321,7 @@ func TestGolementorLibrarySBImages(t *testing.T) {
 
 // Every section saved as a Golementor page through save_builder renders on the front end.
 func TestGolementorLibrarySBRender(t *testing.T) {
+	t.Skip("old builder detached from routing, admin and front (R1c/R1d); this file goes in R2")
 	secs := glibSBLoad(t)
 	ts, c := testServer(t)
 	base := ts.URL
