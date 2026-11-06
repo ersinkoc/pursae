@@ -68,26 +68,51 @@ func (s *Server) wbTemplatesPage(c *gin.Context) bool {
 	return true
 }
 
-// wbThemeBuilderMenu adds Appearance › Theme Builder while the plugin is on, for users with
-// edit_theme_options (pluginMenuEntries calls it; add_theme_page() appends to the submenu).
-func (s *Server) wbThemeBuilderMenu(menu []*menuTop, screen string, u *store.User) {
-	if !s.wbOn() || u == nil || !u.Can(webbuilder.TemplateCap, nil) {
-		return
+// wbMenu adds the plugin's own top-level "Web Builder" menu while the plugin is on, right after
+// Appearance: Theme Builder (templates, edit_theme_options) and Settings (manage_options). The
+// screens keep their URLs (themes?page=web-builder-templates, options-general?page=web-builder).
+func (s *Server) wbMenu(menu []*menuTop, screen string, u *store.User) []*menuTop {
+	if !s.wbOn() || u == nil {
+		return menu
 	}
-	slug := strings.TrimPrefix(wbThemeBuilderURL(), "/wp-admin/")
-	for _, top := range menu {
-		if top.ID != "menu-appearance" {
-			continue
-		}
-		sub := &menuSub{Slug: slug, Title: template.HTML("Theme Builder"), Current: slug == screen}
+	top := &menuTop{Title: template.HTML("Web Builder"), ID: "toplevel_page_web-builder", Icon: "dashicons-admin-customizer"}
+	add := func(slug, title string) {
+		sub := &menuSub{Slug: slug, Title: template.HTML(title), Current: slug == screen, First: len(top.Sub) == 0}
 		if sub.Current {
 			top.Current = true
-			for _, o := range top.Sub {
-				o.Current = false
-			}
 		}
 		top.Sub = append(top.Sub, sub)
 	}
+	if u.Can(webbuilder.TemplateCap, nil) {
+		add(strings.TrimPrefix(wbThemeBuilderURL(), "/wp-admin/"), "Theme Builder")
+	}
+	if u.Can("manage_options", nil) {
+		add("options-general?page="+wbSettingsPage, "Settings")
+	}
+	if len(top.Sub) == 0 {
+		return menu
+	}
+	top.Slug = top.Sub[0].Slug
+	out := make([]*menuTop, 0, len(menu)+1)
+	placed := false
+	for _, m := range menu {
+		out = append(out, m)
+		if m.ID == "menu-appearance" {
+			out = append(out, top)
+			placed = true
+		}
+	}
+	if !placed {
+		out = append(out, top)
+	}
+	for i, m := range out { // First/Last follow the position, like buildMenu
+		if m.Separator {
+			continue
+		}
+		m.First = i == 0 || out[i-1].Separator
+		m.Last = i == len(out)-1 || out[i+1].Separator
+	}
+	return out
 }
 
 func (s *Server) wbTBDeny(c *gin.Context) {

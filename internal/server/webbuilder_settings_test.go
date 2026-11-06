@@ -72,7 +72,7 @@ func TestWebBuilderPluginToggle(t *testing.T) {
 	}
 }
 
-// Settings › Web Builder: menu entry and screen only while the plugin is on, manage_options only,
+// Settings › Web Builder (now Web Builder › Settings): menu entry and screen only while the plugin is on, manage_options only,
 // the post types decide what opens in the builder, outdated pages are listed.
 func TestWebBuilderSettingsScreen(t *testing.T) {
 	ts, c, srv := testServerBuilderOff(t)
@@ -84,7 +84,7 @@ func TestWebBuilderSettingsScreen(t *testing.T) {
 		t.Errorf("settings while off: %d, want 403", code)
 	}
 	if _, body, _ := get(t, c, base+"/wp-admin/"); strings.Contains(body, "options-general?page=web-builder") {
-		t.Error("the Settings menu lists Web Builder while the plugin is off")
+		t.Error("the admin menu lists Web Builder while the plugin is off")
 	}
 	if err := srv.wbSetActive(ctx, true); err != nil {
 		t.Fatal(err)
@@ -97,8 +97,8 @@ func TestWebBuilderSettingsScreen(t *testing.T) {
 	if code != http.StatusOK || !strings.Contains(body, "<h1>Web Builder Settings</h1>") {
 		t.Fatalf("settings: %d %.300s", code, body)
 	}
-	if !regexp.MustCompile(`<li class=" ?current"><a href="[^"]*options-general\?page=web-builder"[^>]*>Web Builder</a>`).MatchString(body) {
-		t.Errorf("no current Settings › Web Builder menu entry:\n%s", regexp.MustCompile(`(?s)id="menu-settings".*?</ul>`).FindString(body))
+	if !regexp.MustCompile(`<li class=" ?current"><a href="[^"]*options-general\?page=web-builder"[^>]*>Settings</a>`).MatchString(body) {
+		t.Errorf("no current Web Builder › Settings menu entry:\n%s", regexp.MustCompile(`(?s)id="toplevel_page_web-builder".*?</ul>`).FindString(body))
 	}
 	for _, want := range []string{`name="option_page" value="plugin:web-builder"`, `id="web_builder_post_types-page" value="page" checked="checked"`,
 		`id="web_builder_post_types-post" value="post" checked="checked"`, `<h2 class="title">Regenerate pages</h2>`, `id="web-builder-outdated-none"`} {

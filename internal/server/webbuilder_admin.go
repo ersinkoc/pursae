@@ -137,7 +137,7 @@ func (s *Server) wbAdminBarNode(c *gin.Context, q *siteQuery, u *store.User) str
 		return ""
 	}
 	return `<li role='group' id='wp-admin-bar-web_builder_edit_page'><a class='ab-item' role="menuitem" href='` +
-		html.EscapeString(wbEditURL(q.Post.ID)) + `'><span class="ab-icon dashicons-layout" aria-hidden="true"></span><span class="ab-label">` +
+		html.EscapeString(wbEditURL(q.Post.ID)) + `'><span class="ab-icon dashicons-admin-customizer" aria-hidden="true"></span><span class="ab-label">` +
 		html.EscapeString(s.__(c, "Edit with Pursae Web Builder")) + `</span></a></li>`
 }
 

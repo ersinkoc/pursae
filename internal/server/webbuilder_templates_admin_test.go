@@ -246,8 +246,8 @@ func TestWBTemplatesAdminScreen(t *testing.T) {
 			t.Errorf("screen lacks %s", want)
 		}
 	}
-	if !regexp.MustCompile(`<li class=" ?current"><a href="/wp-admin/themes\?page=web-builder-templates"[^>]*>Theme Builder</a>`).MatchString(body) {
-		t.Error("no current Appearance › Theme Builder menu entry")
+	if !regexp.MustCompile(`<li class="(?:wp-first-item )?current"><a href="/wp-admin/themes\?page=web-builder-templates"[^>]*>Theme Builder</a>`).MatchString(body) {
+		t.Error("no current Web Builder › Theme Builder menu entry")
 	}
 	if !strings.Contains(body, `data-conditions="[&#34;include/singular/page/`+itoa64(about.ID)) || !strings.Contains(body, `&#34;include/singular/page/`+itoa64(about.ID)+`&#34;:&#34;About&#34;}"`) {
 		t.Errorf("row data for the conditions dialog: %s", regexp.MustCompile(`data-conditions="[^"]*" data-labels="[^"]*"`).FindAllString(body, -1))

@@ -238,14 +238,14 @@ func wbInsertAdminBarNodes(bar, nodes string) string {
 	return bar[:i] + nodes + bar[i:]
 }
 
-// wbThemeAdminBarNodes: Edit Header, Edit Template, Edit Footer for the template parts of the
-// page, for users who may edit templates.
+// wbThemeAdminBarNodes is one "Theme Builder" toolbar item whose submenu lists Edit Header, Edit
+// Template and Edit Footer for the template parts of the page, for users who may edit templates.
 func (s *Server) wbThemeAdminBarNodes(c *gin.Context, tp *wbThemeParts) string {
 	u := currentUser(c)
 	if u == nil || !u.Can(webbuilder.TemplateCap, nil) {
 		return ""
 	}
-	var sb strings.Builder
+	var items strings.Builder
 	for _, p := range tp.parts {
 		if !p.template {
 			continue
@@ -257,9 +257,14 @@ func (s *Server) wbThemeAdminBarNodes(c *gin.Context, tp *wbThemeParts) string {
 		case webbuilder.LocationFooter:
 			id, label = "web_builder_edit_footer", "Edit Footer"
 		}
-		sb.WriteString(`<li role='group' id='wp-admin-bar-` + id + `'><a class='ab-item' role="menuitem" href='` +
-			html.EscapeString(wbEditURL(p.id)) + `'><span class="ab-icon dashicons-layout" aria-hidden="true"></span><span class="ab-label">` +
-			html.EscapeString(s.__(c, label)) + `</span></a></li>`)
+		items.WriteString(`<li role='group' id='wp-admin-bar-` + id + `'><a class='ab-item' role="menuitem" href='` +
+			html.EscapeString(wbEditURL(p.id)) + `'>` + html.EscapeString(s.__(c, label)) + `</a></li>`)
 	}
-	return sb.String()
+	if items.Len() == 0 {
+		return ""
+	}
+	return `<li role='group' id='wp-admin-bar-web_builder_theme' class="menupop"><a class='ab-item' role="menuitem" aria-expanded="false" href='` +
+		html.EscapeString("/wp-admin/themes?page="+webbuilder.ThemeBuilderPage) + `'><span class="ab-icon dashicons-admin-customizer" aria-hidden="true"></span><span class="ab-label">` +
+		html.EscapeString(s.__(c, "Theme Builder")) + `</span></a><div class="ab-sub-wrapper"><ul role='menu' id='wp-admin-bar-web_builder_theme-default' class="ab-submenu">` +
+		items.String() + `</ul></div></li>`
 }

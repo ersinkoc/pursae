@@ -376,22 +376,3 @@ func (s *Server) wbSettingsSave(c *gin.Context) {
 	s.purgeAll(ctx) // the toolbar's "Edit with Pursae Web Builder" and built pages follow the types
 	c.Redirect(http.StatusFound, wbSettingsURL+"&settings-updated=true")
 }
-
-// wbSettingsMenu adds Settings › Web Builder while the plugin is active (plugins_host.go calls it
-// from pluginMenuEntries).
-func (s *Server) wbSettingsMenu(menu []*menuTop, screen string) {
-	if !s.wbOn() {
-		return
-	}
-	for _, top := range menu {
-		if top.ID != "menu-settings" {
-			continue
-		}
-		slug := "options-general?page=" + wbSettingsPage
-		sub := &menuSub{Slug: slug, Title: template.HTML("Web Builder"), Current: slug == screen}
-		if sub.Current {
-			top.Current = true
-		}
-		top.Sub = append(top.Sub, sub)
-	}
-}

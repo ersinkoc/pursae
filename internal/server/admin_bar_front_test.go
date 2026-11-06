@@ -28,7 +28,7 @@ func TestFrontToolbarWebBuilder(t *testing.T) {
 	srv, base, c := wbfStart(t)
 	built := wbfPage(t, srv, "page", "Toolbar Built", []string{}, "", "")
 	_, body, _ := get(t, c, wbfURL(base, built))
-	if !strings.Contains(body, "Edit with Pursae Web Builder") || !strings.Contains(body, "action=web-builder'") || !strings.Contains(body, "ab-icon dashicons-layout") {
+	if !strings.Contains(body, "Edit with Pursae Web Builder") || !strings.Contains(body, "action=web-builder'") || !strings.Contains(body, "ab-icon dashicons-admin-customizer") {
 		t.Error("a builder page's toolbar lacks Edit with Pursae Web Builder")
 	}
 	for _, u := range []string{base + "/sample-page/", base + "/?s=hello"} {

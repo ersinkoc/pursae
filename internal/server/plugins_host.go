@@ -410,10 +410,8 @@ func (s *Server) pluginSettingsPage(slug string) *plugins.SettingsPage {
 	return nil
 }
 
-// pluginMenuEntries adds the plugins' settings pages under Settings, after the built-in Settings ›
-// Web Builder.
+// pluginMenuEntries adds the plugins' settings pages under Settings.
 func (s *Server) pluginMenuEntries(menu []*menuTop, screen string) {
-	s.wbSettingsMenu(menu, screen) // webbuilder_settings.go
 	if s.plugins == nil || s.plugins.rt == nil {
 		return
 	}
