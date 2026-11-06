@@ -1,10 +1,14 @@
 /*
 Theme Name: Hello Pursae
 Description: A plain, lightweight theme for Pursae Web Builder. Design the header, footer and content templates with the Theme Builder; this stylesheet only normalizes the browser defaults.
-Version: 1.0.0
+Version: 1.0.1
 License: GNU General Public License v2 or later
 Text Domain: hello-pursae
 */
+/* Every rule sits in the cascade layer "hello-pursae". It is declared before the builder's
+   stylesheet (whose Tailwind layers come later), so it is the lowest layer: the builder's reset
+   and utility classes always win over these element defaults, on the front as in the editor. */
+@layer hello-pursae{
 *,:after,:before{box-sizing:border-box}
 html{line-height:1.15;-webkit-text-size-adjust:100%}
 body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:1rem;line-height:1.5;color:#1e1e1e;background:#fff;-webkit-font-smoothing:antialiased}
@@ -56,3 +60,4 @@ button:hover,input[type=submit]:hover,[type=button]:hover{background:#135e96;bor
 .site-info{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
 /* Theme Builder parts span the viewport; they bring their own layout */
 .wb-part,.site-main.wb-main-part{width:100%;max-width:none;padding:0}
+}

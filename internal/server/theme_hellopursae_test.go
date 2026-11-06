@@ -71,6 +71,11 @@ func TestHelloPursaeRegistration(t *testing.T) {
 	if err != nil || len(css) > 5000 || !bytes.Contains(css, []byte("Theme Name: Hello Pursae")) {
 		t.Errorf("style.css: %d bytes, %v", len(css), err)
 	}
+	// Every rule sits in the low "hello-pursae" layer, so the builder's layered Tailwind CSS (its
+	// reset and utilities) beats the theme's element defaults on builder parts and pages.
+	if !regexp.MustCompile(`(?s)^/\*.*?\*/\s*(/\*.*?\*/\s*)?@layer hello-pursae\{.*\}\s*$`).Match(css) || bytes.Count(css, []byte("@layer")) != 1 {
+		t.Error("style.css rules are not all inside @layer hello-pursae")
+	}
 	if _, err := os.Stat("../../web/themes/hello-pursae/assets/editor-style.css"); err != nil {
 		t.Error(err)
 	}

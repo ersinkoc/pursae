@@ -21,7 +21,7 @@ const (
 	// wbHelloSlug is Hello Pursae's slug (theme directory, stylesheet option).
 	wbHelloSlug = "hello-pursae"
 	// wbHelloVersion is the theme's version (asset cache busting).
-	wbHelloVersion = "1.0.0"
+	wbHelloVersion = "1.0.1"
 	// wbThemePartsKey is the v.Data key of the Theme Builder parts (*wbThemePartsView).
 	wbThemePartsKey = "wb"
 )
