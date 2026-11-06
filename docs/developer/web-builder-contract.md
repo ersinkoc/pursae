@@ -192,7 +192,8 @@ Server steps, in one transaction:
 2. `baseRev != rev` → **409** `wb_rev_conflict` with `data: {rev, modified, modifiedBy}`.
 3. Validate the doc (§8.1) → **422** `wb_invalid_doc`, `data.errors: ValidationError[]`.
 4. Without `unfiltered_html`: drop html sections and every `style.css` from the doc **and** the
-   snapshot, and drop `render.css`.
+   snapshot, and drop `render.css` and `utilityCss` (both are page-wide custom CSS; the editor
+   sends `utilityCss` empty).
 5. Sanitize `render.html` (§8.2) and `utilityCss` + `render.css` (§8.3).
 6. Map PageSettings: `title` → post title, `slug` → `post_name`, `description` → excerpt and
    Pursae SEO description, `indexable=false` → Pursae SEO noindex.
@@ -431,7 +432,7 @@ draft and the Wasm host's `UpdatePost`, whether or not the plugin is active. It 
 | `/wp-content/plugins/web-builder/dist/editor/` | `web/web-builder/editor/` | AI build; **404 when `WPGO_BUILDER_AI=0`**; plugin active only |
 | `/wp-content/plugins/web-builder/dist/editor-noai/` | `web/web-builder/editor-noai/` | no-AI build (no provider strings, no `/ai/` paths); plugin active only |
 | `/wp-content/web-builder/site/` | `web/web-builder/site/` | public `runtime.<hash>.js` and `wb.<hash>.css`; `Cache-Control: public, max-age=31536000, immutable` |
-| `/wp-content/uploads/web-builder/css/` | uploads | page CSS above 24 KiB: `post-<id>-<rev>.css` |
+| `/wp-content/uploads/web-builder/css/` | uploads | page CSS above 24 KiB of published pages without a password: `post-<id>-<rev>.css` |
 | `/wp-content/uploads/web-builder/fonts/` | uploads | localized Google Fonts |
 
 None of these overlap the old builder's `/wp-content/plugins/web-builder/assets/`.
@@ -602,10 +603,11 @@ Site cloning is not ported (no endpoint; the tool reports itself unavailable).
 ## 10. Front-end page (for reference)
 
 No React for visitors. A builder page is a canvas document: `<!doctype html>`, `lang`, the
-non-theme head (SEO, analytics, cookie, plugin heads), page CSS (inline ≤ 24 KiB or file), local
+non-theme head (SEO, analytics, cookie, plugin heads), page CSS (inline ≤ 24 KiB or a file; only
+a published page without a password gets the file, every other status stays inline), local
 `@font-face` with a preload of the first face, the base CSS, the `.wb-js` inline script when
 `features` is not empty, the body-open hooks, the stored snapshot (images through
 `filterContentTags`) inside `<main id="wb-main">` (left out when the snapshot has its own main
 landmark), `<script defer src="…/site/runtime.<hash>.js">` when `features` is not
-empty, the admin bar and the footer hooks. Plugin off or detached → the theme renders
-`posts.content`.
+empty, the admin bar and the footer hooks. Pages, posts and every builder-enabled post type get
+the canvas. Plugin off or detached → the theme renders `posts.content`.
