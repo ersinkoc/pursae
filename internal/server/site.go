@@ -392,6 +392,28 @@ func siteViewableType(typ string) bool {
 	return typ == "post" || typ == "page" || siteCPT(typ) != nil
 }
 
+// siteSearchTypes are the post types a front search covers, like WP_Query's 'any' for is_search():
+// posts, pages and the public Pursae Custom Fields types not excluded from search. Theme Builder
+// templates and Goocommerce products never are (siteCPT refuses them).
+func siteSearchTypes() []string {
+	out := []string{"post", "page"}
+	acfgoRegistry.RLock()
+	names := make([]string, 0, len(acfgoRegistry.types))
+	for name, pt := range acfgoRegistry.types {
+		if !pt.ExcludeFromSearch {
+			names = append(names, name)
+		}
+	}
+	acfgoRegistry.RUnlock()
+	sort.Strings(names)
+	for _, name := range names {
+		if siteCPT(name) != nil {
+			out = append(out, name)
+		}
+	}
+	return out
+}
+
 // siteCPTSlugs are the rewrite slug and archive slug of a routed post type ("" archive: none).
 func siteCPTSlugs(pt *acfgoPostTypeDef) (base, archive string) {
 	base = strings.Trim(defaultStr(pt.Slug, pt.Name), "/")
@@ -594,7 +616,7 @@ func (s *Server) mainPosts(ctx context.Context, q *siteQuery, u *store.User) ([]
 	case "post-type-archive":
 		pq.Types = []string{q.PostType}
 	case "search":
-		pq.Types = []string{"post", "page"}
+		pq.Types = siteSearchTypes()
 		pq.Search = q.Search
 		if q.Search == "" {
 			return nil, 0, perPage, nil

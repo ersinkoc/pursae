@@ -97,7 +97,7 @@ func (s *Server) feedPosts(ctx context.Context, q *siteQuery) []*store.Post {
 			return nil
 		}
 		pq.Search = q.Search
-		pq.Types = []string{"post", "page"}
+		pq.Types = siteSearchTypes()
 	}
 	posts, _, _ := s.store.QueryPosts(ctx, pq)
 	return posts

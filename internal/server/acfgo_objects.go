@@ -51,6 +51,7 @@ type acfgoPostTypeDef struct {
 	Taxonomies           []string
 	HasArchive           bool
 	ArchiveSlug, Slug    string
+	ExcludeFromSearch    bool // exclude_from_search; defaults to !public like register_post_type()
 }
 
 func (d *acfgoPostTypeDef) label(name string) string {
@@ -219,6 +220,10 @@ func acfgoPostTypeFrom(d map[string]any) *acfgoPostTypeDef {
 	}
 	if v, ok := d["show_in_rest"]; ok {
 		pt.ShowInREST = acfgoBool(v)
+	}
+	pt.ExcludeFromSearch = !pt.Public
+	if v, ok := d["exclude_from_search"]; ok {
+		pt.ExcludeFromSearch = acfgoBool(v)
 	}
 	if m, ok := d["menu_icon"].(map[string]any); ok { // ACF 6.3 stores {type, value}
 		pt.MenuIcon = acfgoStr(m["value"])

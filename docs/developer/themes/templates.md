@@ -32,6 +32,7 @@ first template the package has. Only `index.html` is required.
 Custom post types are the public types registered in Pursae Custom Fields: an entry is served at
 `/<rewrite slug>/<post>/` (with its ancestors for hierarchical types) and, when the type has an
 archive, the archive at `/<archive slug>/` (also `?post_type=<type>`), with pagination and a feed.
+Search results cover posts, pages and the public custom types not marked *Exclude From Search*.
 Bundled themes render the archive with `theme/archive`; the view has `.ArchiveTitle`
 ("Archives: <plural name>") and the body classes `post-type-archive post-type-archive-<type>`.
 

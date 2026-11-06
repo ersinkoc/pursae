@@ -24,6 +24,7 @@ func TestSiteViewableType(t *testing.T) {
 		"secret":      {Name: "secret", Public: false, Slug: "secret", HasArchive: true},
 		"wb_template": {Name: "wb_template", Public: true, Slug: "wb_template", HasArchive: true},
 		"product":     {Name: "product", Public: true, Slug: "product", HasArchive: true},
+		"faq":         {Name: "faq", Public: true, Slug: "faq", ExcludeFromSearch: true},
 	}
 	acfgoRegistry.Unlock()
 	t.Cleanup(func() {
@@ -49,8 +50,12 @@ func TestSiteViewableType(t *testing.T) {
 	if siteArchiveType("note") != nil || siteArchiveType("book") == nil || siteArchiveType("secret") != nil {
 		t.Error("siteArchiveType")
 	}
-	if got := len(siteRoutedTypes()); got != 2 {
-		t.Errorf("routed types = %d, want 2", got)
+	if got := len(siteRoutedTypes()); got != 3 {
+		t.Errorf("routed types = %d, want 3", got)
+	}
+	// Front search: public types not excluded from search; never templates or products.
+	if got := strings.Join(siteSearchTypes(), ","); got != "post,page,book,note" {
+		t.Errorf("search types = %s", got)
 	}
 	q := &siteQuery{Kind: "post-type-archive", PostType: "book"}
 	if full, plain := q.archiveTitle(); full != "Archives: <span>book</span>" || plain != "book" {
@@ -112,6 +117,11 @@ func TestFrontCustomPostTypes(t *testing.T) {
 	}
 	if got := lb.PostTypeArchiveLink("chapter"); got != "" {
 		t.Errorf("chapter has no archive, link = %s", got)
+	}
+
+	// Front search finds public custom post type entries, like WordPress.
+	if code, body, _ := get(t, anon, base+"/?s=Dune"); code != http.StatusOK || !strings.Contains(body, base+"/books/dune/") {
+		t.Errorf("search for a book: %d", code)
 	}
 
 	// Single entry.
