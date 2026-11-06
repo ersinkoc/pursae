@@ -134,17 +134,20 @@ type wbBoot struct {
 // wbDocument is webbuilder.DocumentResponse with raw doc / page JSON (GET documents/{id} answers it
 // too).
 type wbDocument struct {
-	PostID   int64                `json:"postId"`
-	PostType string               `json:"postType"`
-	Status   string               `json:"status"`
-	Rev      int                  `json:"rev"`
-	Doc      json.RawMessage      `json:"doc"` // null: a new page
-	Page     json.RawMessage      `json:"page"`
-	Draft    *wbDraft             `json:"draft"`
-	Detached bool                 `json:"detached"`
-	Modified string               `json:"modified"`
-	Renderer int                  `json:"renderer"`
-	Lock     *webbuilder.LockInfo `json:"lock"`
+	PostID   int64           `json:"postId"`
+	PostType string          `json:"postType"`
+	Status   string          `json:"status"`
+	Rev      int             `json:"rev"`
+	Doc      json.RawMessage `json:"doc"` // null: a new page
+	Page     json.RawMessage `json:"page"`
+	Draft    *wbDraft        `json:"draft"`
+	Detached bool            `json:"detached"`
+	Modified string          `json:"modified"`
+	// DocModified is when the stored doc was last written ("" without one): the editor keeps a
+	// draft only when it is newer than this, not than the post (contract §3).
+	DocModified string               `json:"docModified"`
+	Renderer    int                  `json:"renderer"`
+	Lock        *webbuilder.LockInfo `json:"lock"`
 }
 
 // wbDraft is webbuilder.DraftState with raw JSON.
@@ -170,6 +173,7 @@ func (s *Server) wbDocumentFor(ctx context.Context, p *store.Post, u *store.User
 		return nil, err
 	default:
 		d.Rev, d.Doc, d.Detached, d.Renderer = row.Rev, row.Doc, row.Detached, row.Renderer
+		d.DocModified = row.UpdatedAt.UTC().Format(time.RFC3339) // seconds, like draft.savedAt
 		// The post owns title, slug, description and noindex: a rename through /wp/v2/pages (which
 		// does not detach) must not be reverted by the next builder publish.
 		d.Page = wbPageOverlay(row.Page, postPage)

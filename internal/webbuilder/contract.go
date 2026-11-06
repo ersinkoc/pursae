@@ -555,8 +555,11 @@ type DocumentResponse struct {
 	Draft    *DraftState  `json:"draft"`    // the current user's autosave, only if newer than the doc
 	Detached bool         `json:"detached"` // posts.content was edited outside the builder
 	Modified string       `json:"modified"` // RFC 3339, posts.modified_at
-	Renderer int          `json:"renderer"` // renderer of the stored snapshot
-	Lock     *LockInfo    `json:"lock"`     // another user's live lock, else null
+	// DocModified is when the stored doc was last written (RFC 3339, "" without a doc); the editor
+	// keeps a draft only when it is newer than this.
+	DocModified string    `json:"docModified"`
+	Renderer    int       `json:"renderer"` // renderer of the stored snapshot
+	Lock        *LockInfo `json:"lock"`     // another user's live lock, else null
 }
 
 // AutosaveRequest is the body of PUT RouteAutosave.

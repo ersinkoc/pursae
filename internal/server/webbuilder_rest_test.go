@@ -756,6 +756,11 @@ func TestWebBuilderRESTRenameOutsideBuilder(t *testing.T) {
 	if d == nil || wbrObj(d["page"])["title"] != "Renamed" {
 		t.Errorf("draft page after rename: %v", d)
 	}
+	// The editor keeps a draft whose savedAt is not older than docModified (the doc's own time,
+	// which the rename did not change), whatever the post's modified says.
+	if dm, _ := out["docModified"].(string); dm == "" || d == nil || d["savedAt"].(string) < dm {
+		t.Errorf("docModified %v, draft savedAt %v", out["docModified"], d["savedAt"])
+	}
 	// The next publish with the page the editor was given keeps the new title.
 	body := wbrPublishBody(doc, render, 1, "publish", pg)
 	if code, v, _ := admin.do(http.MethodPost, wbrDocPath(page.ID, "/publish"), body, nil); code != http.StatusOK {

@@ -160,6 +160,7 @@ DocumentResponse:
 | `draft` | DraftState \| null | the **current user's** autosave, only when newer than `doc` |
 | `detached` | bool | `posts.content` was edited outside the builder (§6.3) |
 | `modified` | string | `posts.modified_at` |
+| `docModified` | string | when the stored doc was last written (`""` without one); the editor keeps `draft` only when its `savedAt` is not older than this (not `modified`: a rename outside the builder must not discard the draft) |
 | `renderer` | number | renderer of the stored snapshot |
 | `lock` | LockInfo \| null | another user's live lock |
 
