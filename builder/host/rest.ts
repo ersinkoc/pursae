@@ -201,3 +201,59 @@ export async function uploadMedia(rest: RestClient, file: File, postId: number):
   if (!r.data || typeof r.data.source_url !== 'string') throw new RestError(500, 'wb_upload', 'The upload did not return a file URL.')
   return r.data
 }
+
+/* ---------- Theme Builder: id search in core collections (contract §11.3 dialog) ---------- */
+
+/** Core wp/v2 collections the conditions dialog and the preview picker search ids in. */
+export const SEARCH_COLLECTIONS = ['posts', 'pages', 'categories', 'tags', 'users'] as const
+export type SearchCollection = (typeof SEARCH_COLLECTIONS)[number]
+
+export interface FoundItem {
+  id: number
+  label: string
+}
+
+const decodeEntities = (s: string) =>
+  s
+    .replace(/<[^>]*>/g, '')
+    .replace(/&(#x[0-9a-f]+|#[0-9]+|amp|lt|gt|quot|apos|nbsp|hellip|ndash|mdash|lsquo|rsquo|ldquo|rdquo);/gi, (m, e: string) => {
+      const named: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', hellip: '…', ndash: '–', mdash: '—', lsquo: '‘', rsquo: '’', ldquo: '“', rdquo: '”' }
+      if (e[0] !== '#') return named[e.toLowerCase()] ?? m
+      const n = e[1] === 'x' || e[1] === 'X' ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10)
+      return Number.isFinite(n) && n > 0 && n <= 0x10ffff ? String.fromCodePoint(n) : m
+    })
+    .trim()
+
+/** Display label of one wp/v2 item: a post's rendered title, a term's or user's name. */
+export function itemLabel(raw: unknown): string {
+  if (!raw || typeof raw !== 'object') return ''
+  const o = raw as { title?: unknown; name?: unknown }
+  if (o.title && typeof o.title === 'object' && typeof (o.title as { rendered?: unknown }).rendered === 'string') return decodeEntities((o.title as { rendered: string }).rendered)
+  if (typeof o.title === 'string') return decodeEntities(o.title)
+  if (typeof o.name === 'string') return decodeEntities(o.name)
+  return ''
+}
+
+const toFound = (raw: unknown): FoundItem | null => {
+  const id = raw && typeof raw === 'object' ? (raw as { id?: unknown }).id : undefined
+  if (typeof id !== 'number' || !Number.isInteger(id) || id <= 0) return null
+  return { id, label: itemLabel(raw) || `#${id}` }
+}
+
+/** GET wp/v2/{collection}?search= (10 results, only the fields the dialog shows). */
+export async function searchItems(rest: RestClient, collection: SearchCollection, search: string, signal?: AbortSignal): Promise<FoundItem[]> {
+  const fields = collection === 'posts' || collection === 'pages' ? 'id,title' : 'id,name'
+  const query: RequestOptions['query'] = { search: search.trim() || undefined, per_page: 10, _fields: fields }
+  const r = await rest.request<unknown[]>('GET', `wp/v2/${collection}`, { query, signal })
+  return Array.isArray(r.data) ? r.data.map(toFound).filter((x): x is FoundItem => x !== null) : []
+}
+
+/** The label of one item by id (GET wp/v2/{collection}/{id}); '' when it cannot be read. */
+export async function itemTitle(rest: RestClient, collection: SearchCollection, id: number, signal?: AbortSignal): Promise<string> {
+  try {
+    const r = await rest.request<unknown>('GET', `wp/v2/${collection}/${id}`, { query: { _fields: collection === 'posts' || collection === 'pages' ? 'id,title' : 'id,name' }, signal })
+    return itemLabel(r.data)
+  } catch {
+    return ''
+  }
+}

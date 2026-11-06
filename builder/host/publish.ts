@@ -10,6 +10,7 @@ import type { DocState, PageSettings } from '@/builder/types'
 import { ERR, LIMITS, routes, type Boot, type LockResponse, type PublishRequest, type PublishResponse, type PublishStatus, type RenderOptions, type RenderResult, type Stripped } from './contract'
 import { isRestError, type RestClient } from './rest'
 import type { HostSession, HostUi } from './cms-host'
+import { t } from './i18n'
 
 export interface LiveRenderer {
   renderStaticAsync(doc: DocState, opts: RenderOptions): Promise<RenderResult>
@@ -29,6 +30,11 @@ export interface PublishContext {
   /** Leaves the editor (navigation); injectable for tests. */
   navigate(url: string): void
   reload(): void
+  /**
+   * Template mode: the "Preview as" front URL, shown instead of the publish answer's permalink (a
+   * template has no page of its own).
+   */
+  previewUrl?: () => string
 }
 
 export interface PublishOutcome {
@@ -82,7 +88,9 @@ const STRIPPED_TEXT: Record<Stripped, string> = {
   css: 'Some CSS rules were removed by the server.',
 }
 
-export function successMessage(status: string): string {
+export function successMessage(status: string, template = false): string {
+  // A template is live (publish) or disabled (draft); it has no review or private path.
+  if (template) return status === 'publish' ? t('Template published') : t('Template saved as draft')
   switch (status) {
     case 'pending':
       return 'Submitted for review'
@@ -153,15 +161,17 @@ export async function publishDocument(ctx: PublishContext, input: { doc: DocStat
       const r = await rest.request<PublishResponse>('POST', routes.publish(boot.document.postId), { json: body })
       const out = r.data
       session.published(out.rev, input)
-      const message = successMessage(out.status)
+      const isTemplate = !!boot.template
+      const message = successMessage(out.status, isTemplate)
+      const permalink = (isTemplate && ctx.previewUrl?.()) || out.permalink
       const stripped = Array.isArray(out.stripped) ? out.stripped : []
       if (stripped.length) {
         ui.notify({ tone: 'warning', title: message, message: stripped.map((k) => STRIPPED_TEXT[k] ?? k).join(' ') })
       }
-      if (out.permalink) {
-        ui.notify({ tone: 'success', message: `${message}.`, actions: [{ id: 'view', label: 'View page', href: out.permalink, external: true }], timeout: 8000 })
+      if (permalink) {
+        ui.notify({ tone: 'success', message: `${message}.`, actions: [{ id: 'view', label: isTemplate ? t('Preview on the site') : 'View page', href: permalink, external: true }], timeout: 8000 })
       }
-      return { message, permalink: out.permalink, rev: out.rev, status: out.status, stripped }
+      return { message, permalink, rev: out.rev, status: out.status, stripped }
     } catch (e) {
       if (!isRestError(e)) throw e
       if (e.code === ERR.apiMismatch) {

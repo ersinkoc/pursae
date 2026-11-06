@@ -1,10 +1,12 @@
 /**
  * The CMS host's own UI next to the builder: notices / prompts (reload, conflicts, restored draft,
- * lock) and the media library dialog. State lives in HostUi (cms-host.ts).
+ * lock), the media library dialog and, in template mode, the display conditions dialog and the
+ * "Preview as" picker. State lives in HostUi (cms-host.ts) and TemplateController (template.ts).
  */
 import { useSyncExternalStore } from 'react'
 import type { CmsHost, Notice, NoticeTone } from './cms-host'
 import { MediaPicker } from './MediaPicker'
+import { TemplateDialogs } from './TemplateBar'
 
 const TONE: Record<NoticeTone, string> = {
   info: 'border-white/10',
@@ -53,6 +55,7 @@ export function HostLayer({ host }: { host: CmsHost }) {
   const images = host.boot.media.types.filter((t) => t.startsWith('image/'))
   return (
     <>
+      {host.templates && <TemplateDialogs host={host} controller={host.templates} />}
       {state.notices.length > 0 && (
         <div className="pointer-events-none fixed top-[64px] right-4 z-[85] flex flex-col items-end gap-2">
           {state.notices.map((n) => (
