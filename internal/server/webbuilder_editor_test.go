@@ -255,9 +255,9 @@ func TestWebBuilderEditorScreen(t *testing.T) {
 	} else if boot, _ := wbBootOf(t, body); wbPath(boot, "links.exit") != base+"/wp-admin/edit" {
 		t.Errorf("post links.exit = %v", wbPath(boot, "links.exit"))
 	}
-	// The old builder's action is untouched.
-	if code, body, _ := get(t, c, base+"/wp-admin/post?post="+itoa64(post.ID)+"&action=web-builder"); code != http.StatusOK || strings.Contains(body, "__WEB_BUILDER__") {
-		t.Errorf("action=web-builder: %d, new editor: %v", code, strings.Contains(body, "__WEB_BUILDER__"))
+	// The development action of the side-by-side phase redirects to the editor action.
+	if code, _, loc := get(t, c, base+"/wp-admin/post?post="+itoa64(post.ID)+"&action=web-builder-next"); code != http.StatusMovedPermanently || loc != wbEditURL(post.ID) {
+		t.Errorf("action=web-builder-next: %d %q", code, loc)
 	}
 }
 

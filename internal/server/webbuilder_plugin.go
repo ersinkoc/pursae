@@ -15,14 +15,18 @@ import (
 // (doc validation, sanitizers, fallback HTML) live in internal/webbuilder, the storage in
 // internal/store/webbuilder.go.
 //
-// While both builders ship side by side, the new editor opens with action=web-builder-next
-// (wbEditAction) and action=web-builder keeps opening the old editor; the switchover points
-// wbEditAction at webbuilder.EditAction. New code uses wb* names and webbuilder_*.go files, the
-// REST namespace web-builder/v2 and the asset prefixes /wp-content/plugins/web-builder/dist/ and
-// /wp-content/web-builder/site/, none of which the old builder uses.
+// The editor opens with /wp-admin/post?post={id}&action=web-builder (wbEditAction); the
+// development action web-builder-next of the side-by-side phase answers 301 to it. The entry
+// points are WordPress' own: the editors' "Edit with" button, the list row action and post state
+// (webbuilder_admin.go) and the toolbar node on the site (frontAdminBar). New code uses wb* names
+// and webbuilder_*.go files, the REST namespace web-builder/v2 and the asset prefixes
+// /wp-content/plugins/web-builder/dist/ and /wp-content/web-builder/site/.
 
-// wbEditAction is the postEdit action that opens the new editor (webbuilder_editor.go).
-const wbEditAction = "web-builder-next"
+// wbEditAction is the postEdit action that opens the editor (webbuilder_editor.go).
+const wbEditAction = webbuilder.EditAction
+
+// wbEditActionDev is the editor's action while both builders shipped; it redirects to wbEditAction.
+const wbEditActionDev = "web-builder-next"
 
 // wbOn reports whether Pursae Web Builder is active: the same option as the plugin it replaces,
 // one cached read.

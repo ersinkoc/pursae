@@ -235,27 +235,10 @@ type tagCount struct {
 	Count int
 }
 
-// gweUpstreamAdminPages maps the admin?page= links in Golementor's editor bundles (the
-// Theme Builder app, settings, tools, submissions…) to the native screens that replace them.
-var gweUpstreamAdminPages = map[string]string{
-	"elementor-app":      gweThemeBuilderPath,
-	"elementor":          gweProAdminPath + "?tab=settings",
-	"elementor-settings": gweProAdminPath + "?tab=settings",
-	"elementor-tools":    gweProAdminPath + "?tab=settings",
-	"elementor-connect":  gweProAdminPath + "?tab=settings",
-	"elementor-apps":     "/wp-admin/plugins",
-	"e-form-submissions": gweProAdminPath + "?tab=submissions",
-}
-
 // pluginAdmin serves /wp-admin/admin?page=..., the screens registered by native plugins.
 func (s *Server) pluginAdmin(c *gin.Context) {
 	page := c.Query("page")
 	if s.acfgoAdminPage(c) { // ACF-Go options pages
-		return
-	}
-	if to, ok := gweUpstreamAdminPages[page]; ok && s.golementorOn() {
-		// Golementor's editor links to upstream's admin pages; they live on the native screens.
-		c.Redirect(http.StatusFound, to)
 		return
 	}
 	if s.adminsecAdmin(c, page) { // AdminSecGo: admin?page=adminsecgo… (adminsec_admin.go)

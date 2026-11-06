@@ -65,8 +65,7 @@ type Server struct {
 	// previews are the site's theme-preview sandboxes (nil on a sandbox).
 	previews *previewManager
 
-	// Golementor Studio library (golementor_library.go): the loaded sections and kits, and the
-	// tests' fixture directory in place of web/gowebeditor/library.
+	// State of the old page builder's files, unused here; deleted together with them (R2).
 	gweLibCache    atomic.Pointer[gweStudioLib]
 	gweLibOverride fs.FS
 
@@ -83,7 +82,7 @@ func New(ctx context.Context, cfg config.Config, pool *pgxpool.Pool) (*Server, e
 }
 
 // newServer builds the site's server, or with sb a theme-preview sandbox: no page cache, plugin
-// runtime, Golementor or ACF-Go start-up, and nothing written to the process-wide registries.
+// runtime or ACF-Go start-up, and nothing written to the process-wide registries.
 func newServer(ctx context.Context, cfg config.Config, pool *pgxpool.Pool, sb *sandboxInfo) (*Server, error) {
 	st := settings.New(pool)
 	if err := st.Load(ctx); err != nil {
@@ -99,7 +98,7 @@ func newServer(ctx context.Context, cfg config.Config, pool *pgxpool.Pool, sb *s
 			}
 		}
 	}
-	gweMoveLegacyDirs(cfg.UploadsDir, themeOverrideDir(cfg.UploadsDir))
+	wbMoveLegacyUploads(cfg.UploadsDir) // Pursae Web Builder: uploads folder of before the Pursae rename
 	s := &Server{
 		cfg:      cfg,
 		store:    store.New(pool),
@@ -120,11 +119,6 @@ func newServer(ctx context.Context, cfg config.Config, pool *pgxpool.Pool, sb *s
 	}
 	s.auth.Idle = s.adminsecIdle // AdminSecGo: idle session timeout
 	s.previews = newPreviewManager(s)
-	if s.golementorOn() {
-		s.gweLoadCustomThemes(ctx) // Golementor custom themes stored in this site's database
-	} else {
-		s.gweUnloadCustomThemes() // the theme registry is shared by every server in the process
-	}
 	s.loadThemePackages() // theme packages installed under <data>/themes (theme_install.go)
 	s.migrateRemovedThemes(ctx)
 	tmpl, err := newTemplates(s)
@@ -141,9 +135,6 @@ func newServer(ctx context.Context, cfg config.Config, pool *pgxpool.Pool, sb *s
 		}
 	}
 	s.configureCache()
-	if s.golementorOn() {
-		s.gweMigrateActiveSavedTheme(ctx) // Golementor: a saved theme active from before Hello Golementor
-	}
 	if s.acfgoOn() {
 		s.acfgoStart(ctx) // ACF-Go: content types, post types and taxonomies
 	}
@@ -230,21 +221,12 @@ func (s *Server) routes() *gin.Engine {
 		if th.Custom || th.Package != nil { // packages are installed at run time: packageThemeAsset serves them
 			continue
 		}
-		if th.Slug == helloThemeSlug {
-			s.static(r, th.URI(), "themes/"+th.Slug+"/assets", s.golementorOnly())
-		} else {
-			s.static(r, th.URI(), "themes/"+th.Slug+"/assets")
-		}
+		s.static(r, th.URI(), "themes/"+th.Slug+"/assets")
 	}
 	s.static(r, "/wp-includes", "wp-includes")
 	s.static(r, "/wp-admin/js", "wp-admin/js")
 	s.static(r, "/wp-admin/css", "wp-admin/css")
 	s.static(r, "/wp-admin/images", "wp-admin/images")
-	s.static(r, strings.TrimSuffix(gweAssetsPath, "/"), "gowebeditor", s.golementorOnly()) // Golementor's editor and frontend assets
-	r.GET("/wp-content/web-builder/theme-screenshot/:slug", s.golementorOnly(), s.gweThemeScreenshot)
-	// The builder's URLs before the Pursae rename: stylesheets and pages saved with them keep working.
-	s.static(r, "/wp-content/plugins/gowebeditor/assets", "gowebeditor", s.golementorOnly())
-	r.GET("/wp-content/gowebeditor/theme-screenshot/:slug", s.golementorOnly(), s.gweThemeScreenshot)
 	uploads := http.StripPrefix("/wp-content/uploads", http.FileServer(http.Dir(s.cfg.UploadsDir)))
 	serveUpload := func(c *gin.Context) {
 		// Uploaded files are data, never code: HTML or SVG uploads run in a sandbox.
@@ -345,33 +327,22 @@ func (s *Server) routes() *gin.Engine {
 	admin.POST("/plugin-install", s.pluginInstall)
 	admin.GET("/admin", s.pluginAdmin)
 	admin.POST("/admin", s.pluginAdmin)
-	admin.GET("/theme-builder", s.golementorOnly(), s.gweThemeBuilder) // Golementor Theme Builder
-	admin.POST("/theme-builder", s.golementorOnly(), s.gweThemeBuilder)
-	admin.GET("/web-builder-setup", s.golementorOnly(), s.gweSetupScreen) // Golementor Studio setup wizard
-	admin.POST("/web-builder-setup", s.golementorOnly(), s.gweSetupScreen)
-	admin.GET("/web-builder-setup/preview", s.golementorOnly(), s.gweSetupPreview)
-	for old, cur := range gweLegacyAdminPaths {
-		admin.Match([]string{http.MethodGet, http.MethodPost}, old, gweLegacyRedirect(cur))
-	}
-	s.registerGoWebEditorProAdmin(admin) // Golementor Pro screens (gowebeditor_pro_admin.go)
-	s.acfgoRegisterRoutes(admin)         // ACF-Go screens (acfgo.go)
-	s.registerSEOGoAdmin(admin)          // SEO-Go screens (seogo_admin.go)
-	s.registerGooike(r, admin)           // Gooike: assets and screens (gooike.go)
-	s.registerGoocommerce(r, admin)      // Goocommerce: assets and screens (goocommerce.go)
-	s.registerGoCDN(admin)               // GoCDN screens (gocdn.go)
-	s.registerHeadlessGo(admin)          // HeadlessGo screens (headlessgo.go)
+	s.acfgoRegisterRoutes(admin)    // ACF-Go screens (acfgo.go)
+	s.registerSEOGoAdmin(admin)     // SEO-Go screens (seogo_admin.go)
+	s.registerGooike(r, admin)      // Gooike: assets and screens (gooike.go)
+	s.registerGoocommerce(r, admin) // Goocommerce: assets and screens (goocommerce.go)
+	s.registerGoCDN(admin)          // GoCDN screens (gocdn.go)
+	s.registerHeadlessGo(admin)     // HeadlessGo screens (headlessgo.go)
 	admin.GET("/customize", s.customizeScreen)
 	admin.POST("/customize", s.customizeSave)
 	admin.GET("/:screen", s.notYet)
 
 	s.rest = s.restRoutes()
-	s.registerGoWebEditorREST()
 	s.registerGontactREST()
 	// Pursae Web Builder: public web-builder/v2/forms (webbuilder_forms.go)
 	s.registerWebBuilderForms()
 	s.registerGolylangREST() // pll/v1 (golylang_rest.go)
 	s.registerSEOGoREST()    // SEO-Go: seogo/v1, yoast/v1/get_head, rankmath/v1/getHead (seogo_editor.go)
-	s.registerStudioREST()   // Golementor Studio: web-builder/v1/studio/preferences (gowebeditor_studio.go)
 	s.registerGooikeREST()   // Gooike: gooike/v1 consent log and geo (gooike_consent.go)
 	s.registerGooREST()      // Goocommerce: wc/store/v1 and wc/v3 (goo_rest.go)
 	// Pursae Web Builder: web-builder/v2 (webbuilder_rest.go)
@@ -382,7 +353,7 @@ func (s *Server) routes() *gin.Engine {
 		r.Handle(m, "/wp-json", restHandler)
 	}
 
-	r.NoRoute(s.gwePreview, s.packageThemeAsset, s.embedRoute, s.site) // Golementor preview iframe, theme package assets, /<post>/embed/, then the site
+	r.NoRoute(s.packageThemeAsset, s.embedRoute, s.site) // theme package assets, /<post>/embed/, then the site
 	return r
 }
 
@@ -452,7 +423,7 @@ func securityHeaders() gin.HandlerFunc {
 		if c.Request.TLS != nil || c.GetHeader("X-Forwarded-Proto") == "https" {
 			h.Set("Strict-Transport-Security", "max-age=31536000")
 		}
-		c.Writer = &cspWriter{ResponseWriter: c.Writer, c: c} // gap-widgets: per-response CSP allow-list (gwe_embed_csp.go)
+		c.Writer = &cspWriter{ResponseWriter: c.Writer, c: c} // per-response CSP allow-list (csp_embed.go)
 		c.Next()
 	}
 }
@@ -497,10 +468,6 @@ func (s *Server) requireInstall() gin.HandlerFunc {
 func (s *Server) requireLogin() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		u := currentUser(c)
-		if u == nil && s.golementorOn() && gweProNoPriv(c) { // Golementor Pro: visitors' form submissions (wp_ajax_nopriv_)
-			c.Next()
-			return
-		}
 		if u == nil {
 			c.Redirect(http.StatusFound, s.loginPath()+"?redirect_to="+urlEscape(c.Request.URL.RequestURI())+"&reauth=1")
 			c.Abort()
