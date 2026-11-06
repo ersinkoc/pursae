@@ -34,7 +34,7 @@ Privacy Policy page and the default sidebar widgets. Then sign in at `/wp-login`
 | Users | roles administrator, editor, author, contributor, subscriber, with per-user capability overrides |
 | Tools | Import and Export (WXR), Site Health, personal data export and erasure |
 | Settings | General, Writing, Reading, Discussion, Media, Permalinks, Privacy, plus the pages plugins add |
-| WPGo Cache | the built-in page cache |
+| Pursae Cache | the built-in page cache |
 
 ## Write a post
 

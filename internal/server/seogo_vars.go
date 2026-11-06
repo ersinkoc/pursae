@@ -15,7 +15,7 @@ import (
 	"wpgo/internal/wp"
 )
 
-// Replacement variables. SEO-Go writes Rank Math's %var% syntax and accepts Yoast's %%var%% as
+// Replacement variables. Pursae SEO writes Rank Math's %var% syntax and accepts Yoast's %%var%% as
 // well; names of both plugins are understood (%term% and %term_title%, %search_query% and
 // %searchphrase%, %sitedesc% and %tagline%…).
 

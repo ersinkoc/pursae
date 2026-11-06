@@ -6,7 +6,7 @@ the wordpress.org plugin page and the `AdvancedCustomFields/acf` source, and wha
 item. Status: **✓** implemented, **◐** implemented in a reduced form (the note says how), **✗** left out
 (the note says why).
 
-Pursae Custom Fields is a native plugin like Classic Editor, WPGo Cache and Pursae Web Builder: it is listed on Plugins,
+Pursae Custom Fields is a native plugin like Classic Editor, Pursae Cache and Pursae Web Builder: it is listed on Plugins,
 starts **off**, adds nothing to the site while off (no menu, screens, meta boxes, REST field, template
 output, routes answer 404) and keeps every field group and saved value when deactivated.
 

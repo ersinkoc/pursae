@@ -179,7 +179,7 @@ product, cart, checkout, account) keep their store layout inside the header and 
   users with `edit_theme_options`; never cached). Row action **Preview** on the Theme Builder
   screen does the same.
 - **Publish** makes the template active; saving it as a draft or **Disable** takes it off the site.
-  Publishing, disabling, trashing and changing conditions clear WPGo Cache completely. Pages with
+  Publishing, disabling, trashing and changing conditions clear Pursae Cache completely. Pages with
   post loops are refreshed when any post is saved.
 - The site's admin bar shows **Edit Header**, **Edit Template** and **Edit Footer** for the
   templates on the current page.

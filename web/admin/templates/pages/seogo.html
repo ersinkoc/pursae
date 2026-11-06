@@ -1,7 +1,7 @@
 {{define "admin/seogo"}}{{template "admin-header" .}}{{with .Data}}
 <link rel="stylesheet" id="seogo-css" href="/wp-admin/css/seogo.css?ver=1.0.0" media="all" />
 <div class="wrap seogo-wrap seogo-page-{{if .Page}}{{.Page}}{{else}}dashboard{{end}}">
-<h1 class="wp-heading-inline"><span class="dashicons dashicons-chart-line seogo-logo" aria-hidden="true"></span>{{if eq .Page ""}}SEO-Go{{else}}{{.Title}}{{end}}</h1>
+<h1 class="wp-heading-inline"><span class="dashicons dashicons-chart-line seogo-logo" aria-hidden="true"></span>{{if eq .Page ""}}Pursae SEO{{else}}{{.Title}}{{end}}</h1>
 {{if eq .Page "redirections"}}<a href="/wp-admin/seogo?page=redirections#seogo-redirect-form" class="page-title-action">Add New Redirection</a>
 <a href="/wp-admin/seogo?page=redirections&amp;action=export&amp;_wpnonce={{.Nonce}}" class="page-title-action">Export CSV</a>{{end}}
 <hr class="wp-header-end">
@@ -9,7 +9,7 @@
 
 {{/* ============================== Dashboard ============================== */}}
 {{if eq .Page ""}}
-{{if not .Opts.WizardDone}}<div class="notice notice-info inline seogo-wizard-notice"><p><strong>Welcome to SEO-Go!</strong> Run the setup wizard to tell search engines who is behind this site and pick the features you need.</p>
+{{if not .Opts.WizardDone}}<div class="notice notice-info inline seogo-wizard-notice"><p><strong>Welcome to Pursae SEO!</strong> Run the setup wizard to tell search engines who is behind this site and pick the features you need.</p>
 <p><a class="button button-primary" href="/wp-admin/seogo?page=wizard">Start the Setup Wizard</a></p></div>{{end}}
 {{with .Data.Problems}}<div class="notice notice-warning inline"><p><strong>SEO problems</strong></p><ul class="ul-disc">{{range .}}<li>{{.}}</li>{{end}}</ul></div>{{end}}
 <div class="seogo-cards">
@@ -93,12 +93,12 @@
 {{else if eq .Step 4}}
 <h2>Import SEO data</h2>
 {{if or .Data.Detected.Yoast .Data.Detected.RankMath}}
-<p>Content imported from WordPress carries SEO data: <strong>{{.Data.Detected.Yoast}}</strong> item(s) from Yoast SEO and <strong>{{.Data.Detected.RankMath}}</strong> from Rank Math. SEO-Go reads it as it is; importing copies it into SEO-Go's own fields.</p>
+<p>Content imported from WordPress carries SEO data: <strong>{{.Data.Detected.Yoast}}</strong> item(s) from Yoast SEO and <strong>{{.Data.Detected.RankMath}}</strong> from Rank Math. Pursae SEO reads it as it is; importing copies it into Pursae SEO's own fields.</p>
 <p><label><input type="checkbox" name="import" value="1" checked /> Import titles, descriptions, focus keyphrases, robots settings, canonical URLs, social fields and cornerstone flags</label></p>
 {{else}}<p>No Yoast SEO or Rank Math data was found. Nothing to import.</p>{{end}}
 {{else}}
-<h2>SEO-Go is ready</h2>
-<p>Open any post or page to see the SEO-Go box: the snippet preview, the focus keyphrase and the SEO and readability analysis.</p>
+<h2>Pursae SEO is ready</h2>
+<p>Open any post or page to see the Pursae SEO box: the snippet preview, the focus keyphrase and the SEO and readability analysis.</p>
 {{end}}
 <p class="submit">
 	{{if lt .Step 5}}<button type="submit" class="button button-primary button-large">Save and Continue</button>{{else}}<button type="submit" class="button button-primary button-large">Go to the Dashboard</button>{{end}}
@@ -147,7 +147,7 @@
 	<label><input type="checkbox" name="bc_bold_last" value="1"{{if .Opts.BCBoldLast}} checked{{end}} /> Bold the last page</label><br />
 	<label><input type="checkbox" name="bc_show_blog" value="1"{{if .Opts.BCShowBlog}} checked{{end}} /> Show the blog page</label><br />
 	<label><input type="checkbox" name="bc_hide_title" value="1"{{if .Opts.BCHideTitle}} checked{{end}} /> Hide the title of the current page</label></fieldset></td></tr>
-<tr><th scope="row">How to add breadcrumbs</th><td><p>Insert the <strong>Breadcrumbs</strong> block (SEO-Go category) or the <code>[seogo_breadcrumb]</code> shortcode. Yoast's <code>[wpseo_breadcrumb]</code> and Rank Math's <code>[rank_math_breadcrumb]</code> work as well.</p></td></tr>
+<tr><th scope="row">How to add breadcrumbs</th><td><p>Insert the <strong>Breadcrumbs</strong> block (Pursae SEO category) or the <code>[seogo_breadcrumb]</code> shortcode. Yoast's <code>[wpseo_breadcrumb]</code> and Rank Math's <code>[rank_math_breadcrumb]</code> work as well.</p></td></tr>
 {{else if eq .Tab "rss"}}
 <tr><th scope="row"><label for="rss_before">Content to put before each post in the feed</label></th><td><textarea name="rss_before" id="rss_before" rows="3" class="large-text code">{{.Opts.RSSBefore}}</textarea></td></tr>
 <tr><th scope="row"><label for="rss_after">Content to put after each post in the feed</label></th><td><textarea name="rss_after" id="rss_after" rows="3" class="large-text code">{{.Opts.RSSAfter}}</textarea>
@@ -165,7 +165,7 @@
 
 {{/* ============================== Search appearance ============================== */}}
 {{if eq .Page "titles"}}
-<p>Templates for the SEO title and meta description of each kind of page. A post's own values in the SEO-Go box win.</p>
+<p>Templates for the SEO title and meta description of each kind of page. A post's own values in the Pursae SEO box win.</p>
 <p class="seogo-vars-help">Variables: {{range .Vars}}<code title="{{index . 1}}">{{index . 0}}</code> {{end}}</p>
 <form method="post" action="/wp-admin/seogo?page=titles">
 <input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
@@ -237,7 +237,7 @@
 <tr><th scope="row">Coordinates</th><td><input name="local_lat" type="text" class="small-text" value="{{.Opts.Local.Lat}}" placeholder="Latitude" aria-label="Latitude" /> <input name="local_lng" type="text" class="small-text" value="{{.Opts.Local.Lng}}" placeholder="Longitude" aria-label="Longitude" /></td></tr>
 <tr><th scope="row"><label for="local_hours">Opening hours</label></th><td><textarea name="local_hours" id="local_hours" rows="4" class="large-text code" placeholder="Mo-Fr 09:00-17:00&#10;Sa 10:00-14:00">{{.Opts.Local.Hours}}</textarea></td></tr>
 </table>
-<p class="description">Page and article types per post type are set under <a href="/wp-admin/seogo?page=titles">Search Appearance</a>; each post can override them, add Product data or custom JSON-LD in its SEO-Go box. FAQ and How-to blocks add their own schema.</p>
+<p class="description">Page and article types per post type are set under <a href="/wp-admin/seogo?page=titles">Search Appearance</a>; each post can override them, add Product data or custom JSON-LD in its Pursae SEO box. FAQ and How-to blocks add their own schema.</p>
 <p class="submit"><input type="submit" class="button button-primary" value="Save Changes" /></p>
 </form>
 {{end}}
@@ -246,7 +246,7 @@
 {{if eq .Page "sitemap"}}
 {{if not .Data.Public}}<div class="notice notice-warning inline"><p>Search engines are asked not to index this site, so the sitemaps answer with 404.</p></div>{{end}}
 {{if index .Opts.Modules "sitemap"}}
-<p>Your sitemap index: <a href="{{.Data.Index}}" target="_blank" rel="noopener">{{.Data.Index}}</a>. While SEO-Go is active, <code>wp-sitemap.xml</code> redirects here.</p>
+<p>Your sitemap index: <a href="{{.Data.Index}}" target="_blank" rel="noopener">{{.Data.Index}}</a>. While Pursae SEO is active, <code>wp-sitemap.xml</code> redirects here.</p>
 {{with .Data.Links}}<ul class="ul-disc">{{range .}}<li><a href="{{.}}" target="_blank" rel="noopener">{{.}}</a></li>{{end}}</ul>{{end}}
 {{else}}<div class="notice notice-info inline"><p>The XML Sitemaps module is inactive; Pursae's core sitemap is used. Activate it on the <a href="/wp-admin/seogo">Dashboard</a>.</p></div>{{end}}
 <form method="post" action="/wp-admin/seogo?page=sitemap">
@@ -363,7 +363,7 @@
 {{if eq .Page "tools"}}
 <div class="seogo-tools">
 <div class="postbox"><div class="postbox-header"><h2 class="hndle">Import from Yoast SEO and Rank Math</h2></div><div class="inside">
-	<p>Found SEO data on <strong>{{.Data.Detected.Yoast}}</strong> item(s) from Yoast SEO and <strong>{{.Data.Detected.RankMath}}</strong> from Rank Math (for example after a WordPress import). SEO-Go reads it already; importing copies it into SEO-Go's own fields so it can be edited. The original data stays.</p>
+	<p>Found SEO data on <strong>{{.Data.Detected.Yoast}}</strong> item(s) from Yoast SEO and <strong>{{.Data.Detected.RankMath}}</strong> from Rank Math (for example after a WordPress import). Pursae SEO reads it already; importing copies it into Pursae SEO's own fields so it can be edited. The original data stays.</p>
 	<form method="post" action="/wp-admin/seogo?page=tools"><input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="action" value="import_meta" />
 	<input type="submit" class="button button-primary" value="Import SEO data" /></form>
 	<p class="description">Redirects can be imported as CSV under <a href="/wp-admin/seogo?page=redirections#seogo-redirect-form">Redirections</a>.</p></div></div>
@@ -395,7 +395,7 @@
 
 {{/* ============================== Role manager ============================== */}}
 {{if eq .Page "roles"}}
-<p>Choose what each role may do with SEO-Go. Administrators can always do everything.</p>
+<p>Choose what each role may do with Pursae SEO. Administrators can always do everything.</p>
 <form method="post" action="/wp-admin/seogo?page=roles">
 <input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
 {{range $r := .Roles}}
@@ -418,11 +418,11 @@
 {{define "seogo-separators"}}{{$cur := .}}<fieldset class="seogo-separators"><legend class="screen-reader-text">Title separator</legend>
 {{range list "-" "–" "—" ":" "·" "•" "*" "⋆" "|" "~" "«" "»" "<" ">"}}<label><input type="radio" name="separator" value="{{.}}"{{if eq . $cur}} checked{{end}} /><span>{{.}}</span></label>{{end}}</fieldset>{{end}}
 
-{{/* The SEO-Go box: classic editor meta box and Pursae Editor sidebar share this markup. */}}
+{{/* The Pursae SEO box: classic editor meta box and Pursae Editor sidebar share this markup. */}}
 {{define "seogo/metabox"}}
 <div id="seogo-metabox" class="postbox seogo-box" data-mode="{{.Mode}}">
-<div class="postbox-header"><h2 class="hndle">SEO-Go <span class="seogo-head-scores"><span class="seogo-head-score" data-kind="seo"><span class="seogo-bullet na"></span> SEO</span> <span class="seogo-head-score" data-kind="readability"><span class="seogo-bullet na"></span> Readability</span></span></h2>
-<div class="handle-actions hide-if-no-js"><button type="button" class="handlediv" aria-expanded="true"><span class="screen-reader-text">Toggle panel: SEO-Go</span><span class="toggle-indicator" aria-hidden="true"></span></button></div></div>
+<div class="postbox-header"><h2 class="hndle">Pursae SEO <span class="seogo-head-scores"><span class="seogo-head-score" data-kind="seo"><span class="seogo-bullet na"></span> SEO</span> <span class="seogo-head-score" data-kind="readability"><span class="seogo-bullet na"></span> Readability</span></span></h2>
+<div class="handle-actions hide-if-no-js"><button type="button" class="handlediv" aria-expanded="true"><span class="screen-reader-text">Toggle panel: Pursae SEO</span><span class="toggle-indicator" aria-hidden="true"></span></button></div></div>
 <div class="inside">
 <input type="hidden" name="seogo_present" value="1" />
 <div class="seogo-tabs" role="tablist">
@@ -536,7 +536,7 @@
 
 {{define "seogo/termbox"}}
 <div class="seogo-termbox">
-<h2>SEO-Go</h2>
+<h2>Pursae SEO</h2>
 <input type="hidden" name="seogo_present" value="1" />
 <table class="form-table" role="presentation">
 <tr class="form-field"><th scope="row"><label for="seogo-focus">Focus keyphrase</label></th><td><input type="text" id="seogo-focus" name="seogo[focus]" value="{{index .Fields "focus"}}" /></td></tr>

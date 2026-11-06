@@ -43,7 +43,7 @@ services:
       - uploads:/data/uploads
       - plugins:/data/plugins
       - themes:/data/themes # files edited in Appearance › Theme File Editor
-      - pagecache:/data/wpgo-cache # WPGo Cache disk persistence (survives rebuilds)
+      - pagecache:/data/wpgo-cache # Pursae Cache disk persistence (survives rebuilds)
       - languages:/data/languages # language packs downloaded from WordPress.org (Settings › General › Site Language)
 
   # Runs the Go test suite against the same Postgres: docker compose --profile test run --rm test

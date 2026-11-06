@@ -772,7 +772,7 @@ func (s *Server) importWXR(c *gin.Context, u *store.User, data []byte) (*importR
 				p.Meta[m.Key] = m.Value
 			}
 		}
-		seogoImportMeta(p.Meta) // Yoast SEO / Rank Math meta into SEO-Go's keys (seogo_meta.go)
+		seogoImportMeta(p.Meta) // Yoast SEO / Rank Math meta into Pursae SEO's keys (seogo_meta.go)
 		if err := s.store.InsertPost(ctx, p); err != nil {
 			rep.Log = append(rep.Log, fmt.Sprintf("Failed to import “%s”: %v", it.Title, err))
 			continue

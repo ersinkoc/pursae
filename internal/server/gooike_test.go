@@ -363,7 +363,7 @@ func TestGooikeConsentLog(t *testing.T) {
 func TestGooikePageCache(t *testing.T) {
 	base, c, srv := gooikeSite(t)
 	if !srv.settings.Bool("wpgo_cache_enabled") {
-		t.Skip("WPGo Cache is off by default")
+		t.Skip("Pursae Cache is off by default")
 	}
 	gooikePost(t, c, base, url.Values{"page": {"scripts"}, "do": {"service_add"}, "service": {"meta"}, "service_id": {"123456789012"}})
 	first := anonGet(t, base+"/")

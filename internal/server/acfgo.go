@@ -15,7 +15,7 @@ import (
 )
 
 // ACF-Go is the native clone of Advanced Custom Fields PRO (docs/acf-go-features.md). Like Classic
-// Editor, WPGo Cache and Pursae Web Builder it is compiled in, off on a fresh install and switched on the
+// Editor, Pursae Cache and Pursae Web Builder it is compiled in, off on a fresh install and switched on the
 // Plugins screen (option native_acfgo). While it is off its routes answer 404 and nothing of it
 // reaches the admin menu, the editors, REST responses or theme output; field groups and saved
 // values stay in the database.

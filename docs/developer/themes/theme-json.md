@@ -88,7 +88,7 @@ section: themes
 | `styles[]` | `wp_enqueue_style()`: `handle`, `src` (a path in the package, served under the theme URI, or an absolute URL), `deps` (core handles such as `wp-block-library`, or the theme's own), `media` |
 | `scripts[]` | `wp_enqueue_script()`: `handle`, `src`, `deps` (`jquery`, the theme's own), `in_footer` |
 | `editor_styles[]` | `add_editor_style()`: stylesheets loaded into the block editor and TinyMCE |
-| `preload_fonts[]` | font files WPGo Cache preloads with `<link rel="preload">` |
+| `preload_fonts[]` | font files Pursae Cache preloads with `<link rel="preload">` |
 
 Order follows dependencies, like `wp_enqueue_*`. See [styles and scripts](styles-and-scripts.md).
 

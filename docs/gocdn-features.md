@@ -4,7 +4,7 @@ Pursae CDN is a native (compiled-in) Pursae plugin for object storage, CDN deliv
 images. It covers the ground of **WP Offload Media** (Delicious Brains: offload to S3-compatible storage,
 rewrite URLs, remove local files, bulk tools, `AS3CF_SETTINGS`), an **image CDN** (imgix / Cloudflare
 Images style resize, crop, WebP and AVIF with signed URLs) and **CDN Enabler** (KeyCDN: rewrite theme,
-plugin and core asset URLs to a pull CDN), with purging of **WPGo Cache** and one or more CDNs (**Cloudflare**,
+plugin and core asset URLs to a pull CDN), with purging of **Pursae Cache** and one or more CDNs (**Cloudflare**,
 **CloudFront**, **BunnyCDN**, **KeyCDN** or **Fastly**). Like every
 native plugin it is **off on a fresh install** (`native_gocdn`), and while it is off nothing of it runs:
 its screens and routes answer 404, uploads are served from disk and no response is rewritten — with one
@@ -99,8 +99,8 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 
 | Feature | | Notes |
 |---|---|---|
-| WPGo Cache purge on settings changes, finished jobs, imports | ✓ | `purgeAll`. |
-| Purge button | ✓ | WPGo Cache, every configured CDN (everything; "Purge all CDNs (…)" when there are several), processed image cache. |
+| Pursae Cache purge on settings changes, finished jobs, imports | ✓ | `purgeAll`. |
+| Purge button | ✓ | Pursae Cache, every configured CDN (everything; "Purge all CDNs (…)" when there are several), processed image cache. |
 | CDN provider selector | ✓ | None, Cloudflare, Amazon CloudFront, BunnyCDN, KeyCDN, Fastly; the screen shows the chosen provider's fields. Secrets sealed (AES-GCM, like the storage secret), never echoed, cleared when switching provider. Optional automatic purge (everything with Pursae CDN's automatic purges, the URLs of deleted offloaded files). API errors are shown. |
 | Several providers at once | ✓ | The provider selector is the main one; "Additional providers" on the Purge screen ticks any of the others, each with its own zone / key ID / secret (`purge-extra` in the settings; sealed, never echoed; a secret left empty keeps the saved one). Every purge (button, automatic purge, URLs of deleted files) goes to all of them concurrently; one failing or slow provider does not hold up the others, and the result names each failure ("Purge failed at Fastly: 401 …. Purged: Cloudflare, BunnyCDN."). Background purges log one warning per failing provider. The old single-provider settings and form keep working. |
 | Cloudflare | ✓ | Zone ID + API token (Zone › Cache Purge). `purge_cache` with `purge_everything` or `files` (30 per request). |

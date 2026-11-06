@@ -115,7 +115,7 @@ func (c *Catalog) lookup(msgid string) (string, bool) {
 // after: "You have the latest version of WordPress Go." is WordPress' message with the name changed.
 var upstreamNames = []struct{ ours, theirs string }{
 	{"Pursae Contact Form", "Contact Form 7"},
-	{"SEO-Go", "Yoast SEO"}, {"SEO-Go", "Rank Math"}, {"Pursae Multi Language", "Polylang"}, {"WPGo Cache", "LiteSpeed Cache"},
+	{"Pursae SEO", "Yoast SEO"}, {"Pursae SEO", "Rank Math"}, {"Pursae Multi Language", "Polylang"}, {"Pursae Cache", "LiteSpeed Cache"},
 	{"Pursae SMTP", "WP Mail SMTP"}, {"Pursae Custom Fields", "ACF"}, {"Pursae Custom Fields", "Advanced Custom Fields"}, {"Pursae Commerce", "WooCommerce"}, {"Pursae Editor", "Gutenberg"},
 	{"Pursae", "WordPress"}, // last: every product name above starts with it
 }
@@ -279,9 +279,9 @@ func (m *Manager) IsInstalled(locale string) bool {
 // brands maps the upstream product names in plugin translations to WordPress Go's own. Longer
 // names first, so "Yoast SEO" wins over "Yoast".
 var brands = []struct{ from, to string }{
-	{"Contact Form 7", "Pursae Contact Form"}, {"Yoast SEO Premium", "SEO-Go"}, {"Yoast SEO", "SEO-Go"}, {"Yoast", "SEO-Go"},
-	{"Rank Math SEO", "SEO-Go"}, {"Rank Math", "SEO-Go"}, {"Polylang Pro", "Pursae Multi Language"}, {"Polylang", "Pursae Multi Language"},
-	{"LiteSpeed Cache", "WPGo Cache"}, {"WP Mail SMTP", "Pursae SMTP"}, {"Advanced Custom Fields PRO", "Pursae Custom Fields"},
+	{"Contact Form 7", "Pursae Contact Form"}, {"Yoast SEO Premium", "Pursae SEO"}, {"Yoast SEO", "Pursae SEO"}, {"Yoast", "Pursae SEO"},
+	{"Rank Math SEO", "Pursae SEO"}, {"Rank Math", "Pursae SEO"}, {"Polylang Pro", "Pursae Multi Language"}, {"Polylang", "Pursae Multi Language"},
+	{"LiteSpeed Cache", "Pursae Cache"}, {"WP Mail SMTP", "Pursae SMTP"}, {"Advanced Custom Fields PRO", "Pursae Custom Fields"},
 	{"Advanced Custom Fields", "Pursae Custom Fields"}, {"WooCommerce", "Pursae Commerce"}, {"CookieYes", "Pursae Cookie"}, {"Cookie Notice", "Pursae Cookie"}, {"WPS Hide Login", "Pursae Security"},
 }
 

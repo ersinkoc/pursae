@@ -16,7 +16,7 @@ import (
 	"wpgo/internal/store"
 )
 
-// The SEO-Go box of both editors: a meta box in the classic editor and a sidebar (plus a
+// The Pursae SEO box of both editors: a meta box in the classic editor and a sidebar (plus a
 // document settings panel) in Gotenberg, both built from the same markup (seogo/metabox) and the
 // same script (/wp-admin/js/seogo-editor.js). Analysis, snippet preview values and saving go
 // through the seogo/v1 REST routes registered here, together with the get_head endpoints.
@@ -101,7 +101,7 @@ func (s *Server) seogoRenderPartial(name string, data any) template.HTML {
 	return template.HTML(buf.String())
 }
 
-// seogoEditor adds the SEO-Go box to the classic editor or Gotenberg (renderEdit).
+// seogoEditor adds the Pursae SEO box to the classic editor or Gotenberg (renderEdit).
 func (s *Server) seogoEditor(c *gin.Context, p *store.Post, block bool) {
 	if !s.seogoOn() || p == nil || (p.Type != "post" && p.Type != "page") || !s.seogoCan(currentUser(c), "seogo_onpage_general") {
 		return
@@ -482,7 +482,7 @@ func (s *Server) seogoSuggestions(ctx context.Context, postID int64, text string
 }
 
 // seogoRESTHead is Yoast's /yoast/v1/get_head (html + json + status), Rank Math's
-// /rankmath/v1/getHead (success + head) and SEO-Go's own (Yoast's shape).
+// /rankmath/v1/getHead (success + head) and Pursae SEO's own (Yoast's shape).
 func (s *Server) seogoRESTHead(flavor string) restHandler {
 	return func(c *gin.Context, r *restRequest) {
 		raw := c.Query("url")

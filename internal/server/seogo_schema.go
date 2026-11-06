@@ -434,7 +434,7 @@ func textOf(v any) string {
 	return ""
 }
 
-// seogoBlockSchema reads the FAQ and HowTo blocks of the content (SEO-Go's, Yoast's and Rank Math's).
+// seogoBlockSchema reads the FAQ and HowTo blocks of the content (Pursae SEO's, Yoast's and Rank Math's).
 func seogoBlockSchema(content, url string) (questions, howtos []ldNode) {
 	if !strings.Contains(content, "<!-- wp:") {
 		return nil, nil

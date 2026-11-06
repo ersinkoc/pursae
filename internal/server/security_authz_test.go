@@ -245,7 +245,7 @@ func TestPasswordChangeEndsOtherSessions(t *testing.T) {
 	}
 }
 
-// SEO-Go builds the page head from the stored post. For a password-protected post the head must not contain
+// Pursae SEO builds the page head from the stored post. For a password-protected post the head must not contain
 // anything derived from the protected body (here the og:image fallback, the first image of the content).
 func TestSEOGoHeadHidesProtectedPostContent(t *testing.T) {
 	s := secStart(t)
@@ -266,12 +266,12 @@ func TestSEOGoHeadHidesProtectedPostContent(t *testing.T) {
 	}
 	_, open, _ := get(t, asNewClient(), s.base+"/open-post/")
 	if !strings.Contains(open, "HIDDENANSWER") {
-		t.Skip("SEO-Go does not emit the FAQ schema in this setup, so the protected-post check cannot be exercised here")
+		t.Skip("Pursae SEO does not emit the FAQ schema in this setup, so the protected-post check cannot be exercised here")
 	}
 	anon := asNewClient()
 	_, body, _ := get(t, anon, s.base+"/members-only/")
 	if !strings.Contains(body, "og:title") && !strings.Contains(body, "application/ld+json") {
-		t.Fatal("SEO-Go head is not rendered, so this test would prove nothing")
+		t.Fatal("Pursae SEO head is not rendered, so this test would prove nothing")
 	}
 	if strings.Contains(body, "secret-picture.png") || strings.Contains(body, "The rest of the secret") || strings.Contains(body, "HIDDENANSWER") {
 		t.Error("the page head of a password-protected post exposes its content")

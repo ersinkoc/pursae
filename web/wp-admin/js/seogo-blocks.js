@@ -1,4 +1,4 @@
-/* SEO-Go blocks for Pursae Editor: FAQ, How-to and Breadcrumbs (category "SEO-Go").
+/* Pursae SEO blocks for Pursae Editor: FAQ, How-to and Breadcrumbs (category "Pursae SEO").
    FAQ and How-to save plain HTML (the site looks the same with the plugin off); their attributes
    feed the schema graph. Breadcrumbs are rendered on the server. */
 ( function ( wp ) {
@@ -10,7 +10,7 @@
 	var c = wp.components;
 	var cats = wp.blocks.getCategories();
 	if ( ! cats.some( function ( x ) { return x.slug === 'seogo'; } ) ) {
-		wp.blocks.setCategories( cats.concat( [ { slug: 'seogo', title: 'SEO-Go', icon: 'chart-line' } ] ) );
+		wp.blocks.setCategories( cats.concat( [ { slug: 'seogo', title: 'Pursae SEO', icon: 'chart-line' } ] ) );
 	}
 	function uid( p ) { return p + '-' + Date.now().toString( 36 ) + Math.random().toString( 36 ).slice( 2, 6 ); }
 	function update( list, i, key, value ) {

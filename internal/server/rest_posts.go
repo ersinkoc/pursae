@@ -544,7 +544,7 @@ func (api *restAPI) savePost(c *gin.Context, r *restRequest, typ string, id int6
 func (s *Server) afterPostSave(ctx context.Context, p *store.Post) {
 	s.autoAddPage(ctx, p)
 	s.golylangSaved(ctx, p)  // Golylang: language of new posts, REST lang/translations, synchronization
-	s.seogoAfterSave(ctx, p) // SEO-Go: slug-change redirect, IndexNow
+	s.seogoAfterSave(ctx, p) // Pursae SEO: slug-change redirect, IndexNow
 	// Pursae Web Builder: detach the doc when posts.content was edited outside the builder.
 	s.wbAfterPostSave(ctx, p)
 	if s.onPostSaved != nil {

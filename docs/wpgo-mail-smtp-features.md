@@ -6,7 +6,7 @@ wordpress.org listing (`wordpress.org/plugins/wp-mail-smtp`), the wpmailsmtp.com
 and the plugin source (`awesomemotive/wp-mail-smtp`, `src/Options.php` for option keys and the
 `WPMS_*` constants).
 
-Like Classic Editor, WPGo Cache and Pursae Web Builder it ships inside the binary, is listed on
+Like Classic Editor, Pursae Cache and Pursae Web Builder it ships inside the binary, is listed on
 **Plugins › Installed Plugins** and **Add Plugin**, starts **inactive** and adds nothing (menu,
 routes, notices, dashboard widget, mail behaviour) while inactive. While it is inactive,
 `wp_mail()` keeps working exactly as before: the `WPGO_SMTP_*` environment variables, or `.eml`

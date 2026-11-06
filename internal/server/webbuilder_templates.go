@@ -71,7 +71,7 @@ type wbTemplateIndex struct {
 }
 
 // wbTemplatesChanged is called whenever the set of active templates or their rules may have
-// changed: the index generation is bumped and WPGo Cache is purged completely (every page may
+// changed: the index generation is bumped and Pursae Cache is purged completely (every page may
 // show a header or footer template).
 func (s *Server) wbTemplatesChanged(ctx context.Context) {
 	s.wbTemplateState().gen.Add(1)

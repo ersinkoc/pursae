@@ -220,10 +220,10 @@ func (s *Server) siteHealth(c *gin.Context) {
 	if s.settings.Bool("wpgo_cache_enabled") {
 		st := s.currentCache().Stats()
 		add(healthTest{Label: "Page cache is enabled", Status: "good", Badge: "Performance",
-			Description: fmt.Sprintf("WPGo Cache serves pages from memory (%d cached, %.0f%% hit ratio since start).", st.Entries, st.HitRatio*100)})
+			Description: fmt.Sprintf("Pursae Cache serves pages from memory (%d cached, %.0f%% hit ratio since start).", st.Entries, st.HitRatio*100)})
 	} else {
 		add(healthTest{Label: "Page cache is not enabled", Status: "recommended", Badge: "Performance",
-			Description: "Page cache can improve your site performance by caching pages in memory.", Action: `<a href="/wp-admin/admin?page=wpgo-cache-settings">Turn on WPGo Cache</a>`})
+			Description: "Page cache can improve your site performance by caching pages in memory.", Action: `<a href="/wp-admin/admin?page=wpgo-cache-settings">Turn on Pursae Cache</a>`})
 	}
 	if s.plugins != nil && s.plugins.initErr == nil {
 		add(healthTest{Label: "The plugin sandbox is running", Status: "good", Badge: "Security", Description: "Plugins run as WebAssembly with only the permissions you granted."})
@@ -330,7 +330,7 @@ func (s *Server) healthInfo(ctx context.Context) []healthSection {
 			{"Default comment status", s.settings.String("default_comment_status")}, {"Environment type", "production"},
 			{"User count", strconv.Itoa(users)}, {"Content items", strconv.Itoa(posts)}, {"Comments", strconv.Itoa(comments)}}},
 		{"Active Theme", [][2]string{{"Name", t.Name + " (" + t.Slug + ")"}, {"Version", t.Version}, {"Author", t.Author}, {"Widget areas", strconv.Itoa(len(t.WidgetAreas))}}},
-		{"Plugins", [][2]string{{"Built-in", "Classic Editor 1.6.7, WPGo Cache 1.0.0"}, {"Active Wasm plugins", defaultStr(strings.Join(pluginList, ", "), "None")}}},
+		{"Plugins", [][2]string{{"Built-in", "Classic Editor 1.6.7, Pursae Cache 1.0.0"}, {"Active Wasm plugins", defaultStr(strings.Join(pluginList, ", "), "None")}}},
 		{"Media Handling", [][2]string{{"Image library", "Go image (golang.org/x/image) – JPEG, PNG, GIF, WebP decode"}, {"Max upload size", media.HumanSize(maxUploadBytes)},
 			{"Attachments", strconv.Itoa(attachments)}, {"Uploads size", media.HumanSize(uploadBytes)}}},
 		{"Server", [][2]string{{"Server architecture", runtime.GOOS + " " + runtime.GOARCH}, {"Host name", host}, {"Go version", runtime.Version()},

@@ -1,4 +1,4 @@
-/* SEO-Go admin screens: image pickers (Media Library), variable menus and score bullets. */
+/* Pursae SEO admin screens: image pickers (Media Library), variable menus and score bullets. */
 ( function () {
 	'use strict';
 

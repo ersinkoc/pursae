@@ -170,7 +170,7 @@ func (s *Server) seogoBreadcrumbsFor(ctx context.Context) string {
 
 var seogoBreadcrumbTags = []string{"seogo_breadcrumb", "wpseo_breadcrumb", "rank_math_breadcrumb"}
 
-// seogoContent is SEO-Go's the_content filter: Image SEO and the breadcrumb shortcodes.
+// seogoContent is Pursae SEO's the_content filter: Image SEO and the breadcrumb shortcodes.
 func (s *Server) seogoContent(ctx context.Context, content string) string {
 	if !s.seogoOn() {
 		return content
@@ -189,7 +189,7 @@ func (s *Server) seogoContent(ctx context.Context, content string) string {
 	return content
 }
 
-// seogoRegisterBlocks registers the server renderers of SEO-Go's blocks. They return the saved
+// seogoRegisterBlocks registers the server renderers of Pursae SEO's blocks. They return the saved
 // markup untouched while the plugin is off, so the content looks the same either way. The block
 // registry is shared by every Server in the process: the renderer uses the server of the render
 // context (a theme-preview sandbox has its own), falling back to the one that registered it.

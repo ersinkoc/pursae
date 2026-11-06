@@ -410,7 +410,7 @@ func TestMaintenancePageCache(t *testing.T) {
 	ts, c, srv := maintenanceSite(t)
 	base := ts.URL
 	if !srv.settings.Bool("wpgo_cache_enabled") {
-		t.Skip("WPGo Cache is off by default")
+		t.Skip("Pursae Cache is off by default")
 	}
 	anonGet(t, base+"/")
 	if r := anonGet(t, base+"/"); r.Header.Get("X-WPGo-Cache") != "hit" {

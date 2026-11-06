@@ -37,6 +37,8 @@ type dashboardData struct {
 	RecentComments                    []dashboardComment
 	QuickDraftNonce                   string
 	ClosedNonce, OrderNonce           string
+	Normal, Side, Col3, Col4          []string        // widget ids per column, in the user's saved order
+	Closed                            map[string]bool // collapsed widgets
 	ThemeName                         string
 	Health                            healthSummary
 	MailSMTP                          template.HTML // WPGO Mail SMTP widget
@@ -216,6 +218,8 @@ func (s *Server) dashboard(c *gin.Context) {
 		})
 	}
 
+	d.Normal, d.Side, d.Col3, d.Col4 = dashboardLayout(u, d.MailSMTP != "")
+	d.Closed = userMetaSet(u, "closedpostboxes_dashboard")
 	// Drag, collapse and move up/down of the boxes (postbox.js on top of jquery-ui-sortable).
 	s.pageAssets(c).Script("postbox").AddInline("postbox", `jQuery(function(){postboxes.add_postbox_toggles(pagenow);});`)
 	s.adminPage(c, "", "Dashboard", "index-php", "admin/dashboard", d)
@@ -274,4 +278,67 @@ func paragraphsToBlocks(text string) string {
 		parts = append(parts, "<!-- wp:paragraph -->\n<p>"+para+"</p>\n<!-- /wp:paragraph -->")
 	}
 	return strings.Join(parts, "\n\n")
+}
+
+// Dashboard widgets and their default columns (normal = left, side = second column).
+var dashboardDefaultNormal = []string{"dashboard_site_health", "dashboard_right_now", "dashboard_activity"}
+var dashboardDefaultSide = []string{"dashboard_quick_press", "dashboard_primary", "wp_mail_smtp_reports_widget_lite"}
+
+// dashboardLayout applies the user's saved meta-box-order_dashboard (postbox.js drag and move up/down):
+// saved ids keep their saved column and position, unknown or missing widgets fall back to their
+// default column, so a widget added later still shows up.
+func dashboardLayout(u *store.User, mail bool) (normal, side, col3, col4 []string) {
+	avail := map[string]bool{}
+	for _, id := range append(append([]string{}, dashboardDefaultNormal...), dashboardDefaultSide...) {
+		avail[id] = id != "wp_mail_smtp_reports_widget_lite" || mail
+	}
+	placed := map[string]bool{}
+	cols := map[string]*[]string{"normal": &normal, "side": &side, "column3": &col3, "column4": &col4}
+	saved, _ := u.Meta["meta-box-order_dashboard"].(map[string]any)
+	for _, key := range []string{"normal", "side", "column3", "column4"} {
+		str, _ := saved[key].(string)
+		for _, id := range strings.Split(str, ",") {
+			if id = strings.TrimSpace(id); id != "" && avail[id] && !placed[id] {
+				placed[id] = true
+				*cols[key] = append(*cols[key], id)
+			}
+		}
+	}
+	for _, id := range dashboardDefaultNormal {
+		if avail[id] && !placed[id] {
+			normal = append(normal, id)
+		}
+	}
+	for _, id := range dashboardDefaultSide {
+		if avail[id] && !placed[id] {
+			side = append(side, id)
+		}
+	}
+	return
+}
+
+// metaBoxOrderAjax is wp_ajax_meta_box_order(): postbox.js saves the box order of a screen after a drag
+// or a move up/down. Stored as the user meta meta-box-order_{page} ({"normal": "a,b", "side": "c"}).
+func (s *Server) metaBoxOrderAjax(c *gin.Context) {
+	if !s.checkNonceValue(c, c.PostForm("meta-box-order-nonce"), "meta-box-order") {
+		c.String(http.StatusForbidden, "-1")
+		return
+	}
+	page := c.PostForm("page")
+	if page == "" || page != sanitizeKey(page) {
+		c.String(http.StatusOK, "0")
+		return
+	}
+	order := map[string]string{}
+	for loc, ids := range c.PostFormMap("order") {
+		if loc = sanitizeKey(loc); loc != "" {
+			order[loc] = ids
+		}
+	}
+	u := currentUser(c)
+	_ = s.setUserMeta(c, u, "meta-box-order_"+page, order)
+	if cols, err := strconv.Atoi(c.PostForm("page_columns")); err == nil && cols > 0 && cols <= 4 {
+		_ = s.setUserMeta(c, u, "screen_layout_"+page, cols)
+	}
+	c.String(http.StatusOK, "1")
 }

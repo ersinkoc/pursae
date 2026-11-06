@@ -48,7 +48,7 @@ conversation:
    publish`; templates are skipped in *keep* mode).
 3. `POST /web-builder/v2/themes/{slug}/finish` `{mode, templates: [ids], pages: [ids]}`: only posts of this
    theme that are published count. In *replace* mode the other published templates of the same types are set
-   to draft; the demo menus are created and assigned; the template index and WPGo Cache are purged
+   to draft; the demo menus are created and assigned; the template index and Pursae Cache are purged
    (`wbTemplatesChanged`).
 
 Until step 3 the old templates stay live, so a stopped import changes nothing visible; running it again resumes.

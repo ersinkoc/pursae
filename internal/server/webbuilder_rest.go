@@ -717,7 +717,7 @@ func (s *Server) wbRESTPublish(c *gin.Context, r *restRequest) {
 	if after, err := s.store.GetPost(c, p.ID); err == nil {
 		fresh = after
 	}
-	// save_post side effects, WPGo Cache purge of the post included; for a template
+	// save_post side effects, Pursae Cache purge of the post included; for a template
 	// wbAfterPostSave calls wbTemplatesChanged (index generation + full purge).
 	s.afterPostSave(c, fresh)
 	permalink := s.links(c).Permalink(fresh)

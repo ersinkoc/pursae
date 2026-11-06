@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-// SEO-Go post and term meta. Every field has its own _seogo_* key; reads fall back to the keys
+// Pursae SEO post and term meta. Every field has its own _seogo_* key; reads fall back to the keys
 // Yoast SEO (_yoast_wpseo_*) and Rank Math (rank_math_*) store, so content imported from a WordPress
 // site keeps its SEO data without a conversion step. seogoImportMeta copies them over for good.
 
@@ -103,7 +103,7 @@ func phpMap(v string) map[string]string {
 	return out
 }
 
-// seogoMeta reads one logical field: SEO-Go's own key first, then Yoast's, then Rank Math's.
+// seogoMeta reads one logical field: Pursae SEO's own key first, then Yoast's, then Rank Math's.
 func seogoMeta(m map[string]any, field string) string {
 	if v, ok := seogoRaw(m, seogoKey(field)); ok {
 		return v
@@ -174,7 +174,7 @@ func seogoMeta(m map[string]any, field string) string {
 	return ""
 }
 
-// yoastVars rewrites Yoast's %%var%% syntax into SEO-Go's %var% (both are accepted anyway).
+// yoastVars rewrites Yoast's %%var%% syntax into Pursae SEO's %var% (both are accepted anyway).
 func yoastVars(v string) string {
 	if !strings.Contains(v, "%%") {
 		return v
@@ -184,7 +184,7 @@ func yoastVars(v string) string {
 
 var yoastVarRe = regexp.MustCompile(`%%([a-zA-Z0-9_]+)%%`)
 
-// seogoSetMeta writes one field under SEO-Go's key ("" removes it so the fallbacks apply again
+// seogoSetMeta writes one field under Pursae SEO's key ("" removes it so the fallbacks apply again
 // only when no Yoast/Rank Math value exists; otherwise an empty override is stored).
 func seogoSetMeta(m map[string]any, field, value string) {
 	value = strings.TrimSpace(value)
@@ -206,7 +206,7 @@ func seogoSetMeta(m map[string]any, field, value string) {
 	m[seogoKey(field)] = value
 }
 
-// seogoImportMeta copies Yoast SEO and Rank Math meta into SEO-Go's keys (WXR import, Tools › Import).
+// seogoImportMeta copies Yoast SEO and Rank Math meta into Pursae SEO's keys (WXR import, Tools › Import).
 // The original keys stay so that switching back to WordPress loses nothing. It reports how many
 // fields it filled.
 func seogoImportMeta(m map[string]any) int {

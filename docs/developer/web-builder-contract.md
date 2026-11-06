@@ -230,7 +230,7 @@ Server steps, in one transaction:
    `content_hash` = sha256 hex of exactly that string. The core update creates a
    `post_revisions` row; a `web_builder_revisions` row is written for it.
 8. Upsert `web_builder_docs` (`rev = rev + 1`, `detached = false`), set `_web_builder=1`,
-   delete the caller's draft, purge WPGo Cache for the post.
+   delete the caller's draft, purge Pursae Cache for the post.
 
 PublishResponse: `{rev, status, permalink, revisionId, modified, stripped}` (for a template
 `permalink` is `template.preview.url`, §11.7); `stripped` lists
@@ -452,7 +452,7 @@ draft and the Wasm host's `UpdatePost`, whether or not the plugin is active. It 
 - **Pursae Multi Language** "Duplicate content" copies the doc and snapshot to the new translation
   (form actions retargeted to it, `content_hash` of its content, detached when the source is);
   custom-field synchronization never copies `_web_builder*` meta.
-- **WPGo Cache**: public builder pages carry the `web-builder` tag (`wbPurgePages`) besides
+- **Pursae Cache**: public builder pages carry the `web-builder` tag (`wbPurgePages`) besides
   `post:<id>`.
 
 ## 7. Assets and build output
@@ -992,7 +992,7 @@ All routes need `X-WB-Api` and `edit_theme_options`, except `preview-context` (`
 - Document routes (§3.1) accept a `wb_template` through `wbEditable`. Publishing a template needs
   `edit_theme_options`; its status is `publish` or `draft` (no pending path; `pending`/`private`
   → 422 `wb_bad_template`). Publishing, unpublishing, trashing a template and changing its
-  conditions call `wbTemplatesChanged()`: the template index generation is bumped and WPGo Cache
+  conditions call `wbTemplatesChanged()`: the template index generation is bumped and Pursae Cache
   is purged completely.
 
 Error codes added: `wb_bad_condition` (422), `wb_bad_template` (422), `wb_bad_preview` (422).

@@ -17,7 +17,7 @@ import (
 )
 
 // Tests of the Web Builder hooks into the rest of the CMS (webbuilder_hooks.go): drift, WXR,
-// Pursae Multi Language copies and WPGo Cache tags. The unit tests run without a database; the
+// Pursae Multi Language copies and Pursae Cache tags. The unit tests run without a database; the
 // integration tests need WPGO_TEST_ADMIN_DB / WPGO_TEST_DB and reuse the REST test helpers.
 
 // --- unit ------------------------------------------------------------------------------------------
@@ -375,7 +375,7 @@ func TestWebBuilderHooksGolylangCopy(t *testing.T) {
 func TestWebBuilderHooksCachePurge(t *testing.T) {
 	srv, base, admin := wbrStart(t)
 	if !srv.settings.Bool("wpgo_cache_enabled") {
-		t.Skip("WPGo Cache is off")
+		t.Skip("Pursae Cache is off")
 	}
 	built := wbhPublish(t, srv, admin, "Cached", "cached", "initial")
 	plain := wbrPost(t, srv, "page", "Plain cached", "publish", 1)

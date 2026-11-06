@@ -17,7 +17,7 @@ specification is the [integration contract](web-builder-contract.md); this page 
 
 ### Switching it on
 
-Like Classic Editor and WPGo Cache it is listed on Plugins and is **off on a fresh install**.
+Like Classic Editor and Pursae Cache it is listed on Plugins and is **off on a fresh install**.
 Plugins › Pursae Web Builder › **Activate** turns it on and switches the site to **Hello Pursae**,
 the blank theme the Theme Builder designs on; the theme it leaves is remembered
 (`web_builder_previous_theme`) and a notice on the Dashboard, Plugins and Themes screens offers
@@ -97,7 +97,7 @@ footer or stylesheet. Either way SEO, analytics, cookie-consent and plugin heads
 page CSS is inlined up to 24 KiB (a cached file above that), fonts are local `@font-face`, images
 go through the core image filters (sizes, `srcset`, lazy loading). The runtime (`runtime.<hash>.js`, under 8 KB gzipped) is loaded only when
 the page uses menus, FAQ/accordions, tabs, dismissible bars, forms, motion or embeds, and the
-content is readable with JavaScript off. Builder pages are cached by WPGo Cache and purged on
+content is readable with JavaScript off. Builder pages are cached by Pursae Cache and purged on
 publish; publishing, disabling or trashing a template, or changing its conditions, purges the whole
 cache, and pages with post loops are purged whenever a public post is saved.
 

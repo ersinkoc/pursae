@@ -22,7 +22,7 @@ import (
 //     into a docs row without a snapshot (renderer 0, so Regenerate re-renders it; until then the
 //     imported posts.content fallback shows);
 //   - Pursae Multi Language: a translation created with Duplicate content starts from the source's doc;
-//   - WPGo Cache: builder pages carry the "web-builder" tag.
+//   - Pursae Cache: builder pages carry the "web-builder" tag.
 //
 // None of these depend on the plugin being active: the data must stay consistent while it is off,
 // so that turning it back on never shows a page that was edited meanwhile.
@@ -344,7 +344,7 @@ func wbRetargetForms(html string, srcID, dstID int64) string {
 
 // Cache -----------------------------------------------------------------------------------------
 
-// wbCacheTags are the WPGo Cache tags of a public page rendered from a builder doc ("web-builder"),
+// wbCacheTags are the Pursae Cache tags of a public page rendered from a builder doc ("web-builder"),
 // so a change that affects every builder page (the plugin's settings, a Regenerate run, an import)
 // purges them with wbPurgePages. The post's own "post:N" tag comes from cacheTags.
 func (s *Server) wbCacheTags(_ *gin.Context, q *siteQuery) []string {

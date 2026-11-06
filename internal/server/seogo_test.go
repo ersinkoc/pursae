@@ -14,22 +14,22 @@ import (
 	"time"
 )
 
-// seogoToggle clicks SEO-Go's Activate or Deactivate link on the Plugins screen.
+// seogoToggle clicks Pursae SEO's Activate or Deactivate link on the Plugins screen.
 func seogoToggle(t *testing.T, c *http.Client, base, action string) string {
 	t.Helper()
 	_, body, _ := get(t, c, base+"/wp-admin/plugins")
 	m := regexp.MustCompile(`href="(/wp-admin/plugins\?action=` + action + `&amp;plugin=seo-go[^"]*)"`).FindStringSubmatch(body)
 	if m == nil {
-		t.Fatalf("no %s link for SEO-Go on the Plugins screen", action)
+		t.Fatalf("no %s link for Pursae SEO on the Plugins screen", action)
 	}
 	code, _, loc := get(t, c, base+html.UnescapeString(m[1]))
 	if code != http.StatusFound {
-		t.Fatalf("%s SEO-Go: %d", action, code)
+		t.Fatalf("%s Pursae SEO: %d", action, code)
 	}
 	return loc
 }
 
-// seogoForm posts an SEO-Go admin form with the screen's nonce.
+// seogoForm posts an Pursae SEO admin form with the screen's nonce.
 func seogoForm(t *testing.T, c *http.Client, base, page string, form url.Values) (int, string) {
 	t.Helper()
 	q := ""
@@ -39,7 +39,7 @@ func seogoForm(t *testing.T, c *http.Client, base, page string, form url.Values)
 	_, body, _ := get(t, c, base+"/wp-admin/seogo"+q)
 	m := regexp.MustCompile(`name="_wpnonce" value="([^"]+)"`).FindStringSubmatch(body)
 	if m == nil {
-		t.Fatalf("no nonce on SEO-Go screen %q", page)
+		t.Fatalf("no nonce on Pursae SEO screen %q", page)
 	}
 	form.Set("_wpnonce", m[1])
 	code, _, loc := post(t, c, base+"/wp-admin/seogo"+q, form)
@@ -50,7 +50,7 @@ func seogoJSONLD(t *testing.T, body string) []map[string]any {
 	t.Helper()
 	m := regexp.MustCompile(`(?s)<script type="application/ld\+json" class="seogo-schema-graph">(.*?)</script>`).FindStringSubmatch(body)
 	if m == nil {
-		t.Fatal("no SEO-Go JSON-LD in the page")
+		t.Fatal("no Pursae SEO JSON-LD in the page")
 	}
 	var doc struct {
 		Context string           `json:"@context"`
@@ -88,16 +88,16 @@ func TestSEOGoOffByDefaultAndToggle(t *testing.T) {
 	base := ts.URL
 	installAndLogin(t, ts, c)
 	if srv.seogoOn() {
-		t.Fatal("SEO-Go is on after a fresh install")
+		t.Fatal("Pursae SEO is on after a fresh install")
 	}
 	_, body, _ := get(t, c, base+"/wp-admin/plugins")
 	if row := regexp.MustCompile(`(?s)<tr class="(\w+)" data-slug="seo-go"`).FindStringSubmatch(body); row == nil || row[1] != "inactive" {
-		t.Fatalf("SEO-Go is not listed as an inactive plugin: %v", row)
+		t.Fatalf("Pursae SEO is not listed as an inactive plugin: %v", row)
 	}
 	// Off: nothing of it anywhere.
 	_, home, _ := get(t, c, base+"/")
-	if strings.Contains(home, "SEO-Go") || strings.Contains(home, "seogo") || !strings.Contains(home, "<meta name='robots' content='max-image-preview:large' />") {
-		t.Error("the front page changed while SEO-Go is off")
+	if strings.Contains(home, "Pursae SEO") || strings.Contains(home, "seogo") || !strings.Contains(home, "<meta name='robots' content='max-image-preview:large' />") {
+		t.Error("the front page changed while Pursae SEO is off")
 	}
 	if code, _, _ := get(t, c, base+"/wp-sitemap.xml"); code != http.StatusOK {
 		t.Errorf("core sitemap while off: %d", code)
@@ -110,7 +110,7 @@ func TestSEOGoOffByDefaultAndToggle(t *testing.T) {
 	}
 	_, dash, _ := get(t, c, base+"/wp-admin/")
 	if strings.Contains(dash, "toplevel_page_seogo") {
-		t.Error("SEO-Go menu while off")
+		t.Error("Pursae SEO menu while off")
 	}
 	if code, _ := restGet(t, c, base, "/wp-json/yoast/v1/get_head?url="+url.QueryEscape(base+"/")); code != http.StatusNotFound {
 		t.Errorf("get_head while off: %d", code)
@@ -121,7 +121,7 @@ func TestSEOGoOffByDefaultAndToggle(t *testing.T) {
 		t.Errorf("activation went to %q, not the setup wizard", loc)
 	}
 	if !srv.seogoOn() || srv.seogoOpts().IndexNowKey == "" {
-		t.Fatal("SEO-Go did not switch on")
+		t.Fatal("Pursae SEO did not switch on")
 	}
 	code, dash, _ := get(t, c, base+"/wp-admin/seogo")
 	if code != http.StatusOK || !strings.Contains(dash, `id="toplevel_page_seogo"`) || !strings.Contains(dash, "Modules") {
@@ -133,15 +133,15 @@ func TestSEOGoOffByDefaultAndToggle(t *testing.T) {
 		}
 	}
 	_, home, _ = get(t, c, base+"/")
-	if !strings.Contains(home, "<!-- This site is optimized with SEO-Go") || strings.Contains(home, "max-image-preview:large' />") {
-		t.Error("the SEO-Go head block does not replace core's robots meta")
+	if !strings.Contains(home, "<!-- This site is optimized with Pursae SEO") || strings.Contains(home, "max-image-preview:large' />") {
+		t.Error("the Pursae SEO head block does not replace core's robots meta")
 	}
 
 	// Off again: the site is as before.
 	seogoToggle(t, c, base, "deactivate")
 	_, home, _ = get(t, c, base+"/")
-	if strings.Contains(home, "SEO-Go") {
-		t.Error("SEO-Go output after deactivation")
+	if strings.Contains(home, "Pursae SEO") {
+		t.Error("Pursae SEO output after deactivation")
 	}
 	if code, _, _ := get(t, c, base+"/wp-admin/seogo"); code != http.StatusNotFound {
 		t.Errorf("admin screen after deactivation: %d", code)
@@ -328,7 +328,7 @@ func TestSEOGoHeadSchemaSitemapsRedirects(t *testing.T) {
 	_ = srv.settings.Set(t.Context(), map[string]any{"classic-editor-replace": "classic"})
 	_, edit, _ := get(t, c, base+"/wp-admin/post?post="+itoa64(thanks.ID)+"&action=edit")
 	if !strings.Contains(edit, `id="seogo-metabox"`) || !strings.Contains(edit, "seogo-editor.js") {
-		t.Fatal("no SEO-Go box in the classic editor")
+		t.Fatal("no Pursae SEO box in the classic editor")
 	}
 	code, _, _ = post(t, c, base+"/wp-admin/post", url.Values{"_wpnonce": {formNonce(t, edit)}, "action": {"editpost"}, "visibility": {"public"}, "post_ID": {itoa64(thanks.ID)}, "post_type": {"page"},
 		"post_title": {"Thank you"}, "content": {"<p>Thanks!</p>"}, "post_name": {"thank-you"}, "save": {"Update"}, "post_status": {"publish"},
@@ -344,7 +344,7 @@ func TestSEOGoHeadSchemaSitemapsRedirects(t *testing.T) {
 	// Gotenberg: the sidebar script is loaded.
 	_ = srv.settings.Set(t.Context(), map[string]any{"classic-editor-replace": "block"})
 	if _, ed, _ := get(t, c, base+"/wp-admin/post?post="+itoa64(created.ID)+"&action=edit"); !strings.Contains(ed, "seogo-blocks.js") || !strings.Contains(ed, `"mode":"block"`) {
-		t.Error("no SEO-Go sidebar in Pursae Editor")
+		t.Error("no Pursae SEO sidebar in Pursae Editor")
 	}
 
 	// Breadcrumb shortcode on a page.

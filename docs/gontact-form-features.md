@@ -1,7 +1,7 @@
 # Pursae Contact Form — Contact Form 7 feature inventory
 
 Pursae Contact Form is Pursae's native (compiled-in) clone of **Contact Form 7** (studied at CF7 6.2.3,
-`rocklobster-in/contact-form-7`, plus contactform7.com docs). Like Classic Editor, WPGo Cache and Pursae Web Builder it is
+`rocklobster-in/contact-form-7`, plus contactform7.com docs). Like Classic Editor, Pursae Cache and Pursae Web Builder it is
 listed under Plugins, **off on a fresh install**, and while off it adds nothing: no menu, no screens (404/403), no
 REST namespace, no shortcode, no block, no front-end assets.
 

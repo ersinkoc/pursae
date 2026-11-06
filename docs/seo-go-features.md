@@ -1,14 +1,14 @@
-# SEO-Go: feature map (Yoast SEO Premium + Rank Math Pro → Pursae)
+# Pursae SEO: feature map (Yoast SEO Premium + Rank Math Pro → Pursae)
 
-SEO-Go is the native SEO plugin of Pursae. It takes the union of what Yoast SEO (Premium)
+Pursae SEO is the native SEO plugin of Pursae. It takes the union of what Yoast SEO (Premium)
 and Rank Math (Pro) do and presents it as one plugin with a WordPress-style admin UI. It is
-compiled in like Classic Editor, WPGo Cache and Pursae Web Builder. It is **off on a fresh install**, and
+compiled in like Classic Editor, Pursae Cache and Pursae Web Builder. It is **off on a fresh install**, and
 while it is off the site, the editors and the admin menu are exactly as without it: its routes
 answer 404, nothing is added to `<head>`, and core's `wp-sitemap.xml` and `robots.txt` are served.
 
 Verified reference facts (thresholds, meta keys, URL schemes, with source links) are in
 [`seo-go-research.md`](seo-go-research.md). This document maps every feature to both plugins and
-says what SEO-Go does with it.
+says what Pursae SEO does with it.
 
 Legend: **✓** implemented · **◐** partly (see note) · **✗** left out (see "Left out" below).
 
@@ -17,11 +17,11 @@ Legend: **✓** implemented · **◐** partly (see note) · **✗** left out (se
 | Topic | Decision |
 |---|---|
 | Plugin switch | Option `native_seogo` (Plugins screen, slug `seo-go`). All settings live in one JSON option, `seogo_options` (`seogo.go`). Turning the plugin off keeps settings, meta, redirects and the 404 log. |
-| Variables | SEO-Go writes Rank Math's `%var%` syntax and also accepts Yoast's `%%var%%`. Both plugins' names work (`%term%` and `%term_title%`, `%search_query%` and `%searchphrase%`, `%tagline%` and `%sitedesc%`). After replacement, doubled spaces and dangling separators are removed, as both plugins do. |
-| Post and term meta | SEO-Go stores its own `_seogo_*` keys. Every read falls back to Yoast's `_yoast_wpseo_*` keys and then to Rank Math's `rank_math_*` keys, including Yoast's 0/1/2 noindex flag and Rank Math's serialized PHP robots arrays. A site imported from WordPress keeps its SEO data with no conversion step. *Tools › Import* and the WXR importer also copy that data into SEO-Go's keys, and the originals stay. |
+| Variables | Pursae SEO writes Rank Math's `%var%` syntax and also accepts Yoast's `%%var%%`. Both plugins' names work (`%term%` and `%term_title%`, `%search_query%` and `%searchphrase%`, `%tagline%` and `%sitedesc%`). After replacement, doubled spaces and dangling separators are removed, as both plugins do. |
+| Post and term meta | Pursae SEO stores its own `_seogo_*` keys. Every read falls back to Yoast's `_yoast_wpseo_*` keys and then to Rank Math's `rank_math_*` keys, including Yoast's 0/1/2 noindex flag and Rank Math's serialized PHP robots arrays. A site imported from WordPress keeps its SEO data with no conversion step. *Tools › Import* and the WXR importer also copy that data into Pursae SEO's keys, and the originals stay. |
 | Scores | The traffic light uses Yoast's assessments and scores: SEO = Σscore / (n×9) × 100, and readability uses penalty points, giving 30, 60 or 90. Rank Math's tests that Yoast has no counterpart for are listed as unscored "Additional checks". Rank Math's 100-point score is shown next to the SEO heading. |
 | Analysis engine | One Go implementation (`seogo_analysis.go`) behind `POST /wp-json/seogo/v1/analyze`, used by both editors, the bulk editor and the stored scores. |
-| Editors | One box markup (`seogo/metabox`) and one script (`seogo-editor.js`). In the classic editor it is a meta box at the top of the main column. In Pursae Editor it is a `PluginSidebar` with a toolbar icon and a More-menu item, plus a "SEO-Go" document settings panel with both scores. |
+| Editors | One box markup (`seogo/metabox`) and one script (`seogo-editor.js`). In the classic editor it is a meta box at the top of the main column. In Pursae Editor it is a `PluginSidebar` with a toolbar icon and a More-menu item, plus a "Pursae SEO" document settings panel with both scores. |
 | Redirect storage | The core `redirects` table, extended by migration `0010_seogo.sql` (match type, status, category, origin, last hit). A new `seogo_404` table holds the 404 log. |
 | Sitemaps | Yoast's URL scheme (`/sitemap_index.xml`, `/{type}-sitemap{N}.xml`, `/main-sitemap.xsl`), 1000 URLs per file (configurable), with image entries. `/sitemap.xml` and every `/wp-sitemap*.xml` redirect (301) to the index, as Yoast does. |
 
@@ -29,7 +29,7 @@ Legend: **✓** implemented · **◐** partly (see note) · **✗** left out (se
 
 ### Setup and dashboard
 
-| Feature | Yoast | Rank Math | SEO-Go |
+| Feature | Yoast | Rank Math | Pursae SEO |
 |---|---|---|---|
 | Setup wizard | First-time configuration (site representation, social profiles, personal preferences) | Setup Wizard (site type, logo, Search Console, sitemaps, optimization, role manager) | ✓ Five steps: site representation (organization or person, logo, separator), social profiles, search engines (sitemaps, redirections, 404 monitor, breadcrumbs, IndexNow, single-author site, empty terms), import from Yoast/Rank Math, done. It opens on the first activation. |
 | Dashboard | SEO and readability score overview, problems and notifications | Modules grid, Analytics | ✓ SEO and readability distribution of published content, cornerstone count, orphaned content, redirections, logged 404s, SEO problems (search engines discouraged, plain permalinks, default tagline), sitemap link. |
@@ -38,7 +38,7 @@ Legend: **✓** implemented · **◐** partly (see note) · **✗** left out (se
 
 ### Per-post SEO box (classic editor meta box + Pursae Editor sidebar)
 
-| Feature | Yoast | Rank Math | SEO-Go |
+| Feature | Yoast | Rank Math | Pursae SEO |
 |---|---|---|---|
 | Focus keyphrase | Focus keyphrase (+ Premium related keyphrases) | Focus keyword (+ secondary keywords) | ✓ A comma list; the first entry is the focus keyphrase, the others are related keyphrases (checked in the text, unscored). |
 | Snippet preview | Google preview, mobile and desktop | Google preview, desktop and mobile | ✓ Mobile and desktop, server-resolved title and description, breadcrumb-style URL, keyphrase highlighted, length/width bars. |
@@ -57,7 +57,7 @@ Legend: **✓** implemented · **◐** partly (see note) · **✗** left out (se
 
 ### Site-wide settings
 
-| Feature | Yoast | Rank Math | SEO-Go |
+| Feature | Yoast | Rank Math | Pursae SEO |
 |---|---|---|---|
 | Search appearance per type | Content types, taxonomies, archives, special pages | Titles & Meta | ✓ Home, posts, pages, categories, tags, author archives, date archives, search, 404: title and description templates, noindex, sitemap inclusion, schema defaults (posts/pages), disable author/date archives (301 to home). |
 | Separator | 14 choices | ✓ | ✓ The same 14 characters. |
@@ -72,7 +72,7 @@ Legend: **✓** implemented · **◐** partly (see note) · **✗** left out (se
 
 ### Head output and schema
 
-| Feature | Yoast | Rank Math | SEO-Go |
+| Feature | Yoast | Rank Math | Pursae SEO |
 |---|---|---|---|
 | Title tag | ✓ | ✓ | ✓ Replaces `wp_get_document_title()`. |
 | Meta description, robots, canonical, rel prev | ✓ | ✓ | ✓ Core's robots meta and canonical link are replaced (one canonical); no canonical on noindexed pages. |
@@ -87,14 +87,14 @@ Legend: **✓** implemented · **◐** partly (see note) · **✗** left out (se
 
 ### Breadcrumbs
 
-| Feature | Yoast | Rank Math | SEO-Go |
+| Feature | Yoast | Rank Math | Pursae SEO |
 |---|---|---|---|
 | Settings | Separator, home anchor, prefixes, 404 text, bold last, blog page | Same, plus hide title | ✓ All of them. |
 | Output | `yoast_breadcrumb()`, shortcode, block | `rank_math_the_breadcrumbs()`, shortcode, block | ✓ The `seogo/breadcrumbs` block (and `yoast-seo/breadcrumbs`). The `[seogo_breadcrumb]`, `[wpseo_breadcrumb]` and `[rank_math_breadcrumb]` shortcodes. BreadcrumbList schema. ◐ No PHP-style template function: Pursae themes are compiled, so the block and shortcode take its place. |
 
 ### Sitemaps, robots and indexing
 
-| Feature | Yoast | Rank Math | SEO-Go |
+| Feature | Yoast | Rank Math | Pursae SEO |
 |---|---|---|---|
 | XML sitemap index and per-type sitemaps | ✓ | ✓ | ✓ post, page, category, post_tag and author sitemaps; paged at the configured size; lastmod; image entries (featured image and content images). The XSL stylesheet shows them in a browser. |
 | Exclusions | noindex, per type | Per post/term IDs, per type | ✓ Noindexed, password-protected and canonicalized-elsewhere content, excluded post and term IDs, types switched off in Search Appearance, empty terms. |
@@ -105,7 +105,7 @@ Legend: **✓** implemented · **◐** partly (see note) · **✗** left out (se
 
 ### Redirections and 404 monitor
 
-| Feature | Yoast | Rank Math | SEO-Go |
+| Feature | Yoast | Rank Math | Pursae SEO |
 |---|---|---|---|
 | Redirect types | 301, 302, 307, 410, 451 | 301, 302, 307, 410, 451 | ✓ |
 | Matching | Plain, regex | Exact, contains, starts with, ends with, regex | ✓ All five; regex targets may use `$1`, `$2`… |
@@ -117,7 +117,7 @@ Legend: **✓** implemented · **◐** partly (see note) · **✗** left out (se
 
 ### Links and bulk editing
 
-| Feature | Yoast | Rank Math | SEO-Go |
+| Feature | Yoast | Rank Math | Pursae SEO |
 |---|---|---|---|
 | Link counter | Text link counter (internal/received) | Link counter | ✓ Internal, outbound and received links per post and page. |
 | Orphaned content | Premium | — | ✓ Filter of the Link Counter, count on the dashboard. |
@@ -125,7 +125,7 @@ Legend: **✓** implemented · **◐** partly (see note) · **✗** left out (se
 
 ### Images, import, REST
 
-| Feature | Yoast | Rank Math | SEO-Go |
+| Feature | Yoast | Rank Math | Pursae SEO |
 |---|---|---|---|
 | Image SEO (missing alt/title) | — | Image SEO (Pro) | ✓ Module: fills empty alt and missing title attributes in rendered content from templates (`%filename%`, `%title%`…). Tools: writes alt texts into the Media Library. |
 | Import from Yoast / Rank Math | Import from other plugins | Import from Yoast and others | ✓ Data is read in place, copied during WXR import, and copied for all content in Tools. Redirects come in through CSV. |
@@ -160,6 +160,6 @@ Legend: **✓** implemented · **◐** partly (see note) · **✗** left out (se
 | `web/wp-admin/js/seogo-*.js`, `web/wp-admin/css/seogo.css` | Editor box, Pursae Editor blocks, admin helpers, styles |
 | `internal/db/migrations/0010_seogo.sql` | Redirects columns, 404 log |
 
-Hooks into shared files are one or two lines each and are marked "SEO-Go". They are in
+Hooks into shared files are one or two lines each and are marked "Pursae SEO". They are in
 `plugins.go`, `admin.go`, `server.go`, `site.go`, `site_head.go`, `site_view.go`, `feed.go`,
 `admin_posts.go`, `rest_posts.go`, `admin_terms.go` and `wxr.go`.

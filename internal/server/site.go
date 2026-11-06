@@ -84,7 +84,7 @@ func (s *Server) site(c *gin.Context) {
 		return
 	}
 	raw := strings.Trim(c.Request.URL.Path, "/")
-	if s.seogoIntercept(c, raw) { // SEO-Go: redirections, robots.txt, sitemaps (seogo_front.go)
+	if s.seogoIntercept(c, raw) { // Pursae SEO: redirections, robots.txt, sitemaps (seogo_front.go)
 		return
 	}
 	path := s.golylangSitePath(c, raw) // Golylang: without the language code
@@ -146,7 +146,7 @@ func (s *Server) site(c *gin.Context) {
 		c.Redirect(http.StatusMovedPermanently, target)
 		return
 	}
-	if s.seogoQueryRedirect(c, q) { // SEO-Go: disabled author/date archives
+	if s.seogoQueryRedirect(c, q) { // Pursae SEO: disabled author/date archives
 		return
 	}
 	if s.gooGuardSiteQuery(c, q) { // Goocommerce Memberships: hidden or redirected restricted content
@@ -682,7 +682,7 @@ func (s *Server) renderSite(c *gin.Context, q *siteQuery) {
 	status := http.StatusOK
 	if q.Kind == "404" {
 		status = http.StatusNotFound
-		if s.seogo404(c) { // SEO-Go: 404 monitor and fallback redirect
+		if s.seogo404(c) { // Pursae SEO: 404 monitor and fallback redirect
 			return
 		}
 	}

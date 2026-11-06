@@ -22,7 +22,7 @@ import (
 )
 
 // Purging. Every change that moves URLs (settings, a finished bulk job, the Purge screen) empties
-// WPGo Cache through purgeAll. One or more CDNs can be configured on the Purge screen (the main
+// Pursae Cache through purgeAll. One or more CDNs can be configured on the Purge screen (the main
 // provider and any number of additional ones, each with its own credentials; a purge goes to all of
 // them at once and a failure is reported per provider). The providers: Cloudflare (zone ID
 // + API token with "Zone › Cache Purge"), Amazon CloudFront (distribution ID + IAM key with

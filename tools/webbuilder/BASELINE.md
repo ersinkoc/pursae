@@ -54,7 +54,7 @@ Counts are top-level tests (subtests not counted separately).
 | builder TestProBDump | `PROB_DUMP` not set (manual dump helper) |
 | server TestAdminUntranslated, TestStoreFrontUntranslated | `WPGO_I18N_MISSES` not set (manual report) |
 | server TestHubMarketplaceAndUpdates, TestLicenseScreenAndHeaders, TestHubAccessBadges, TestHubEventsBatching, TestHubPluginUpdate, TestCoreSelfUpdate, TestManagerThemeLibrary, TestManagerThemeUpdate, TestManagerThemePreinstall | example packages not built: run `tools/build-plugins.sh` first (`examples/plugins/dist/*.zip` missing) |
-| server TestSEOGoHeadHidesProtectedPostContent | SEO-Go emits no FAQ schema in this setup (test skips itself) |
+| server TestSEOGoHeadHidesProtectedPostContent | Pursae SEO emits no FAQ schema in this setup (test skips itself) |
 
 Not run here: `go test ./cmd/... ./sdk/... ./examples/...` (outside `./internal/...`).
 

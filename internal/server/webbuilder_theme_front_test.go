@@ -671,7 +671,7 @@ func TestWBThemeFrontAutosaveKeepsLoopCache(t *testing.T) {
 	srv, base, c := wbtfStart(t)
 	admin := newWBRClient(t, c, base)
 	if !srv.settings.Bool("wpgo_cache_enabled") {
-		t.Skip("WPGo Cache is off by default")
+		t.Skip("Pursae Cache is off by default")
 	}
 	wbtfTemplate(t, srv, webbuilder.TemplateFooter, "Loop footer", []string{"include/general"},
 		`<section>LOOP-FOOTER<div data-wb-loop="fl"><p data-wb-loop-item=""><span data-wb-slot="post.title"></span></p></div></section>`,
@@ -702,7 +702,7 @@ func TestWBThemeFrontAutosaveKeepsLoopCache(t *testing.T) {
 func TestWBThemeFrontTrashPurgesLoopsAfterStore(t *testing.T) {
 	srv, base, _ := wbtfStart(t)
 	if !srv.settings.Bool("wpgo_cache_enabled") {
-		t.Skip("WPGo Cache is off by default")
+		t.Skip("Pursae Cache is off by default")
 	}
 	ctx := context.Background()
 	wbtfTemplate(t, srv, webbuilder.TemplateFooter, "Loop footer", []string{"include/general"},

@@ -136,7 +136,7 @@ func adminMenu(pending int, cache bool) []menuDef {
 			{slug: "export-personal-data", title: "Export Personal Data", cap: "manage_options"},
 			{slug: "erase-personal-data", title: "Erase Personal Data", cap: "manage_options"},
 		}},
-		{slug: "admin?page=wpgo-cache", title: "WPGo Cache", cap: "manage_options", id: "toplevel_page_wpgo-cache", icon: "dashicons-performance", sub: []subDef{
+		{slug: "admin?page=wpgo-cache", title: "Pursae Cache", cap: "manage_options", id: "toplevel_page_wpgo-cache", icon: "dashicons-performance", sub: []subDef{
 			{slug: "admin?page=wpgo-cache", title: "Dashboard", cap: "manage_options"},
 			{slug: "admin?page=wpgo-cache-settings", title: "Cache", cap: "manage_options"},
 			{slug: "admin?page=wpgo-cache-optimize", title: "Page Optimization", cap: "manage_options"},
@@ -156,7 +156,7 @@ func adminMenu(pending int, cache bool) []menuDef {
 	if cache {
 		return menu
 	}
-	// Like WordPress, an inactive plugin adds nothing to the admin menu: without WPGo Cache its
+	// Like WordPress, an inactive plugin adds nothing to the admin menu: without Pursae Cache its
 	// top-level menu goes.
 	out := menu[:0]
 	for _, d := range menu {
@@ -304,6 +304,9 @@ func (s *Server) adminPage(c *gin.Context, screen, title, bodyClass, tmpl string
 	}
 	v.AdminPage = strings.Fields(bodyClass + " index-php")[0]
 	v.PageNow = strings.TrimSuffix(v.AdminPage, "-php")
+	if v.PageNow == "index" { // WP_Screen id of the Dashboard: the key postbox.js saves its order and closed boxes under
+		v.PageNow = "dashboard"
+	}
 	if strings.Contains(bodyClass, "post-type-") {
 		for _, cl := range strings.Fields(bodyClass) {
 			if strings.HasPrefix(cl, "post-type-") {
@@ -345,7 +348,7 @@ func (s *Server) adminPage(c *gin.Context, screen, title, bodyClass, tmpl string
 	v.Notices = append(v.Notices, s.mailSMTPNotices(c)...)
 	// ACF-Go: its menu, options pages and post types (acfgo.go)
 	v.Menu = s.acfgoMenu(c, v.Menu, screen)
-	// SEO-Go's menu (seogo.go)
+	// Pursae SEO's menu (seogo.go)
 	v.Menu = s.seogoMenu(v.Menu, u, screen)
 	v.Menu = s.gooikeMenu(v.Menu, u, screen) // Gooike (gooike.go)
 	v.Menu = s.gooMenu(v.Menu, u, screen)    // Goocommerce: its menus after Comments (goocommerce.go)
@@ -373,7 +376,7 @@ func (s *Server) adminPage(c *gin.Context, screen, title, bodyClass, tmpl string
 func flashNotices(c *gin.Context) []notice {
 	var out []notice
 	if m := c.Query("wpgo-cache-msg"); m != "" {
-		out = append(out, notice{Type: "success", Message: template.HTML("<strong>WPGo Cache:</strong> " + template.HTMLEscapeString(m)), Dismissible: true})
+		out = append(out, notice{Type: "success", Message: template.HTML("<strong>Pursae Cache:</strong> " + template.HTMLEscapeString(m)), Dismissible: true})
 	}
 	if c.Query("settings-updated") == "true" {
 		out = append(out, notice{Type: "success", Message: "<strong>Settings saved.</strong>", Dismissible: true})
@@ -454,6 +457,8 @@ func (s *Server) adminAjax(c *gin.Context) {
 		s.deleteMetaAjax(c)
 	case "hidden-columns":
 		s.hiddenColumnsAjax(c)
+	case "meta-box-order":
+		s.metaBoxOrderAjax(c)
 	case "closed-postboxes":
 		s.closedPostboxesAjax(c)
 	default:

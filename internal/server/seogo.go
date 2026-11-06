@@ -15,7 +15,7 @@ import (
 	"wpgo/internal/store"
 )
 
-// SEO-Go is a native plugin like Classic Editor, WPGo Cache and Pursae Web Builder: the union of Yoast SEO
+// Pursae SEO is a native plugin like Classic Editor, Pursae Cache and Pursae Web Builder: the union of Yoast SEO
 // (Premium) and Rank Math (Pro) in one WordPress-style UI. It is off on a fresh install; while it is
 // off its routes answer 404 and the site, the editors and the admin menu are exactly as without it.
 // The switch is the option native_seogo; every setting lives in the one JSON option seogo_options.
@@ -28,12 +28,12 @@ const (
 	seogoOptionsKey = "seogo_options"
 )
 
-// seogoOn reports whether the SEO-Go plugin is active: one cached option read.
+// seogoOn reports whether the Pursae SEO plugin is active: one cached option read.
 func (s *Server) seogoOn() bool {
 	return s.settings.Bool(seogoSetting)
 }
 
-// seogoOnly is the middleware of SEO-Go's own routes: 404 while the plugin is off.
+// seogoOnly is the middleware of Pursae SEO's own routes: 404 while the plugin is off.
 func (s *Server) seogoOnly() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if !s.seogoOn() {
@@ -55,7 +55,7 @@ type seogoTypeOpts struct {
 	Sitemap     bool   `json:"sitemap"`
 }
 
-// seogoOptions is every SEO-Go setting (seogo_options).
+// seogoOptions is every Pursae SEO setting (seogo_options).
 type seogoOptions struct {
 	WizardDone bool            `json:"wizard_done"`
 	Modules    map[string]bool `json:"modules"`
@@ -128,7 +128,7 @@ type seogoOptions struct {
 	// Local SEO
 	Local seogoLocal `json:"local"`
 
-	// Role manager: role slug → granted SEO-Go capabilities (administrators have them all)
+	// Role manager: role slug → granted Pursae SEO capabilities (administrators have them all)
 	Roles map[string][]string `json:"roles"`
 }
 
@@ -162,7 +162,7 @@ var seogoModules = []struct{ Key, Name, Desc, Icon string }{
 	{"news_sitemap", "News Sitemap", "A Google News sitemap of the posts of the last two days.", "dashicons-media-document"},
 	{"video_sitemap", "Video Sitemap", "A video sitemap of posts that embed YouTube or Vimeo videos.", "dashicons-video-alt3"},
 	{"indexnow", "Instant Indexing (IndexNow)", "Tells Bing, Yandex and other IndexNow engines when content is published or updated.", "dashicons-performance"},
-	{"role_manager", "Role Manager", "Choose which roles may use which SEO-Go features.", "dashicons-admin-users"},
+	{"role_manager", "Role Manager", "Choose which roles may use which Pursae SEO features.", "dashicons-admin-users"},
 }
 
 // seogoCaps are the capabilities of the role manager (Rank Math's rank_math_* capabilities).
@@ -342,9 +342,9 @@ func (s *Server) seogoDeactivate(ctx context.Context) error {
 	return nil
 }
 
-// seogoPluginRow is SEO-Go's row on the Plugins screen.
+// seogoPluginRow is Pursae SEO's row on the Plugins screen.
 func (s *Server) seogoPluginRow() pluginRow {
-	r := pluginRow{Slug: seogoSlug, Name: "SEO-Go", Version: "1.0.0", Native: true, Active: s.seogoOn(),
+	r := pluginRow{Slug: seogoSlug, Name: "Pursae SEO", Version: "1.0.0", Native: true, Active: s.seogoOn(),
 		Description: "Search engine optimization in one place: SEO and readability analysis in both editors, titles and meta, social previews, the schema graph, XML sitemaps, breadcrumbs, redirections, a 404 monitor, internal links and more. While it is off, none of it is part of the site.",
 		Author:      "Pursae"}
 	if r.Active {
@@ -372,7 +372,7 @@ func (s *Server) seogoPluginAction(c *gin.Context, action string) {
 	c.Redirect(http.StatusFound, "/wp-admin/plugins?"+action+"=true")
 }
 
-// seogoMenuDef is the SEO-Go top-level menu (after Settings, like Yoast SEO and Rank Math).
+// seogoMenuDef is the Pursae SEO top-level menu (after Settings, like Yoast SEO and Rank Math).
 func (s *Server) seogoMenuDef() menuDef {
 	sub := []subDef{
 		{slug: "seogo", title: "Dashboard", cap: "seogo_general"},
@@ -388,10 +388,10 @@ func (s *Server) seogoMenuDef() menuDef {
 		{slug: "seogo?page=tools", title: "Tools", cap: "seogo_general"},
 		{slug: "seogo?page=roles", title: "Role Manager", cap: "seogo_role_manager"},
 	}
-	return menuDef{slug: "seogo", title: "SEO-Go", cap: "seogo_onpage_general", id: "toplevel_page_seogo", icon: "dashicons-chart-line", sub: sub}
+	return menuDef{slug: "seogo", title: "Pursae SEO", cap: "seogo_onpage_general", id: "toplevel_page_seogo", icon: "dashicons-chart-line", sub: sub}
 }
 
-// seogoMenu adds the SEO-Go menu to a built admin menu (adminPage), only while the plugin is on.
+// seogoMenu adds the Pursae SEO menu to a built admin menu (adminPage), only while the plugin is on.
 func (s *Server) seogoMenu(menu []*menuTop, u *store.User, screen string) []*menuTop {
 	if !s.seogoOn() || u == nil {
 		return menu

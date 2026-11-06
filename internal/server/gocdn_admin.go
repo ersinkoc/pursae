@@ -413,7 +413,7 @@ func (s *Server) gocdnAdminPost(c *gin.Context, page string) {
 		done("The job stops after the current attachment.")
 	case "purge-cache":
 		s.purgeAll(c)
-		done("WPGo Cache purged.")
+		done("Pursae Cache purged.")
 	case "purge-cloudflare", "purge-cdn":
 		res := s.gocdnCDNPurgeEach(c, st, nil)
 		if len(res) == 0 {

@@ -840,7 +840,7 @@ func TestGoCDNCloudflarePurge(t *testing.T) {
 		t.Fatalf("API error not reported: %v", err)
 	}
 	// The page cache purge button.
-	if code, _, loc := s.pageForm("purge", url.Values{"do": {"purge-cache"}}); code != http.StatusFound || !strings.Contains(loc, "WPGo+Cache+purged") {
+	if code, _, loc := s.pageForm("purge", url.Values{"do": {"purge-cache"}}); code != http.StatusFound || !strings.Contains(loc, "Pursae+Cache+purged") {
 		t.Fatalf("purge cache: %d %s", code, loc)
 	}
 }

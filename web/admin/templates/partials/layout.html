@@ -80,7 +80,7 @@ var _wpColorScheme = {{.Color.Icons}};
 {{end}}</div>
 {{end}}{{end}}
 
-{{define "notices"}}{{range .Notices}}<div class="notice notice-{{.Type}}{{if .Dismissible}} is-dismissible{{end}}"><p>{{.Message}}</p>{{if .Dismissible}}<button type="button" class="notice-dismiss"><span class="screen-reader-text">Dismiss this notice.</span></button>{{end}}</div>
+{{define "notices"}}{{range .Notices}}<div class="notice notice-{{.Type}}{{if .Dismissible}} is-dismissible{{end}}"><p>{{.Message}}</p></div>
 {{end}}{{end}}
 
 {{define "admin-footer"}}

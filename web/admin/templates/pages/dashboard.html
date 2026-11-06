@@ -172,8 +172,30 @@
 	<div id="dashboard-widgets-wrap">
 	<div id="dashboard-widgets" class="metabox-holder">
 	<div id="postbox-container-1" class="postbox-container">
-	<div id="normal-sortables" class="meta-box-sortables">
-		{{template "dashboard-postbox-start" dict "ID" "dashboard_site_health" "Title" "Site Health Status"}}
+	<div id="normal-sortables" class="meta-box-sortables{{if not .Normal}} empty-container{{end}}"{{if not .Normal}} data-emptystring="Drag boxes here"{{end}}>{{range .Normal}}{{template "dw" dict "ID" . "Root" $.Data}}{{end}}</div>
+	</div>
+	<div id="postbox-container-2" class="postbox-container">
+	<div id="side-sortables" class="meta-box-sortables{{if not .Side}} empty-container{{end}}"{{if not .Side}} data-emptystring="Drag boxes here"{{end}}>{{range .Side}}{{template "dw" dict "ID" . "Root" $.Data}}{{end}}</div>
+	</div>
+	<div id="postbox-container-3" class="postbox-container"><div id="column3-sortables" class="meta-box-sortables{{if not .Col3}} empty-container{{end}}"{{if not .Col3}} data-emptystring="Drag boxes here"{{end}}>{{range .Col3}}{{template "dw" dict "ID" . "Root" $.Data}}{{end}}</div></div>
+	<div id="postbox-container-4" class="postbox-container"><div id="column4-sortables" class="meta-box-sortables{{if not .Col4}} empty-container{{end}}"{{if not .Col4}} data-emptystring="Drag boxes here"{{end}}>{{range .Col4}}{{template "dw" dict "ID" . "Root" $.Data}}{{end}}</div></div>
+	</div>
+	</div>
+	{{end}}
+</div><!-- wrap -->
+{{template "admin-footer" .}}{{end}}
+
+{{define "dashboard-postbox-start"}}<div id="{{.ID}}" class="postbox{{if .Closed}} closed{{end}}">
+<div class="postbox-header"><h2 class="hndle ui-sortable-handle">{{.Title}}</h2>
+<div class="handle-actions hide-if-no-js"><button type="button" class="handle-order-higher" aria-disabled="false" aria-describedby="{{.ID}}-handle-order-higher-description"><span class="screen-reader-text">Move up</span><span class="order-higher-indicator" aria-hidden="true"></span></button><span class="hidden" id="{{.ID}}-handle-order-higher-description">Move {{.Title}} box up</span><button type="button" class="handle-order-lower" aria-disabled="false" aria-describedby="{{.ID}}-handle-order-lower-description"><span class="screen-reader-text">Move down</span><span class="order-lower-indicator" aria-hidden="true"></span></button><span class="hidden" id="{{.ID}}-handle-order-lower-description">Move {{.Title}} box down</span><button type="button" class="handlediv" aria-expanded="{{if .Closed}}false{{else}}true{{end}}"><span class="screen-reader-text">Toggle panel: {{.Title}}</span><span class="toggle-indicator" aria-hidden="true"></span></button></div></div>
+<div class="inside">
+{{end}}
+{{define "dashboard-postbox-end"}}</div>
+</div>
+{{end}}
+
+{{define "dw"}}{{$r := .Root}}{{if eq .ID "dashboard_site_health"}}{{template "dw-dashboard_site_health" $r}}{{else}}{{if eq .ID "dashboard_right_now"}}{{template "dw-dashboard_right_now" $r}}{{else}}{{if eq .ID "dashboard_activity"}}{{template "dw-dashboard_activity" $r}}{{else}}{{if eq .ID "dashboard_quick_press"}}{{template "dw-dashboard_quick_press" $r}}{{else}}{{if eq .ID "dashboard_primary"}}{{template "dw-dashboard_primary" $r}}{{else}}{{if eq .ID "wp_mail_smtp_reports_widget_lite"}}{{$r.MailSMTP}}{{end}}{{end}}{{end}}{{end}}{{end}}{{end}}{{end}}
+{{define "dw-dashboard_site_health"}}{{template "dashboard-postbox-start" dict "ID" "dashboard_site_health" "Title" "Site Health Status" "Closed" (index .Closed "dashboard_site_health")}}
 			<div class="health-check-widget">
 				<div class="health-check-widget-title-section site-health-progress-wrapper {{.Health.Class}} hide-if-no-js">
 					<div class="site-health-progress"><svg aria-hidden="true" focusable="false" width="100%" height="100%" viewBox="0 0 200 200" version="1.1" xmlns="http://www.w3.org/2000/svg"><circle r="90" cx="100" cy="100" fill="transparent" stroke-dasharray="565.48" stroke-dashoffset="0"></circle><circle id="bar" r="90" cx="100" cy="100" fill="transparent" stroke-dasharray="565.48" stroke-dashoffset="{{.Health.Offset}}px"></circle></svg></div>
@@ -184,9 +206,8 @@
 					{{if gt .Health.Issues 0}}<p>Take a look at the <strong>{{plural .Health.Issues "%s item" "%s items"}}</strong> on the <a href="/wp-admin/site-health">Site Health screen</a>.</p>{{end}}
 				</div>
 			</div>
-		{{template "dashboard-postbox-end"}}
-
-		{{template "dashboard-postbox-start" dict "ID" "dashboard_right_now" "Title" "At a Glance"}}
+		{{template "dashboard-postbox-end"}}{{end}}
+{{define "dw-dashboard_right_now"}}{{template "dashboard-postbox-start" dict "ID" "dashboard_right_now" "Title" "At a Glance" "Closed" (index .Closed "dashboard_right_now")}}
 			<div class="main">
 				<ul>
 					{{if .Posts}}<li class="post-count"><a href="/wp-admin/edit?post_type=post">{{plural .Posts "%s Post" "%s Posts"}}</a></li>{{end}}
@@ -197,9 +218,8 @@
 				<p id="wp-version-message"><span id="wp-version">Pursae {{version}} running <a href="/wp-admin/themes">{{.ThemeName}}</a> theme.</span></p>
 				{{if .Discouraged}}<p class="search-engines-info"><a href="/wp-admin/options-reading">Search engines discouraged</a></p>{{end}}
 			</div>
-		{{template "dashboard-postbox-end"}}
-
-		{{template "dashboard-postbox-start" dict "ID" "dashboard_activity" "Title" "Activity"}}
+		{{template "dashboard-postbox-end"}}{{end}}
+{{define "dw-dashboard_activity"}}{{template "dashboard-postbox-start" dict "ID" "dashboard_activity" "Title" "Activity" "Closed" (index .Closed "dashboard_activity")}}
 			<div id="activity-widget">
 				{{if .Future}}<div id="future-posts" class="activity-block">
 					<h3>Publishing Soon</h3>
@@ -232,12 +252,8 @@
 				</div>{{end}}
 				{{if not (or .Future .Published .RecentComments)}}<div class="no-activity"><p>No activity yet!</p></div>{{end}}
 			</div>
-		{{template "dashboard-postbox-end"}}
-	</div>
-	</div>
-	<div id="postbox-container-2" class="postbox-container">
-	<div id="side-sortables" class="meta-box-sortables">
-		{{template "dashboard-postbox-start" dict "ID" "dashboard_quick_press" "Title" "Quick Draft"}}
+		{{template "dashboard-postbox-end"}}{{end}}
+{{define "dw-dashboard_quick_press"}}{{template "dashboard-postbox-start" dict "ID" "dashboard_quick_press" "Title" "Quick Draft" "Closed" (index .Closed "dashboard_quick_press")}}
 			<form name="post" action="/wp-admin/index" method="post" id="quick-press" class="initial-form hide-if-no-js">
 				<div class="input-text-wrap" id="title-wrap">
 					<label for="title">Title</label>
@@ -259,9 +275,8 @@
 				<h2 class="hide-if-no-js">Your Recent Drafts</h2>
 				<ul>{{range .Drafts}}<li><div class="draft-title"><a href="{{.EditURL}}" aria-label="Edit &#8220;{{.Title}}&#8221;" translate="no">{{.Title}}</a><time datetime="{{.ISO}}">{{.When}}</time></div>{{if .Excerpt}}<p translate="no">{{.Excerpt}}</p>{{end}}</li>{{end}}</ul>
 			</div>{{end}}
-		{{template "dashboard-postbox-end"}}
-
-		{{template "dashboard-postbox-start" dict "ID" "dashboard_primary" "Title" "WordPress Events and News"}}
+		{{template "dashboard-postbox-end"}}{{end}}
+{{define "dw-dashboard_primary"}}{{template "dashboard-postbox-start" dict "ID" "dashboard_primary" "Title" "WordPress Events and News" "Closed" (index .Closed "dashboard_primary")}}
 			<div class="wordpress-news hide-if-no-js">
 				<div class="rss-widget"><p>News feeds are not loaded yet.</p></div>
 			</div>
@@ -270,23 +285,4 @@
 				<a href="https://central.wordcamp.org/schedule/" target="_blank">WordCamps<span class="screen-reader-text"> (opens in a new tab)</span><span aria-hidden="true" class="dashicons dashicons-external"></span></a> |
 				<a href="https://wordpress.org/news/" target="_blank">News<span class="screen-reader-text"> (opens in a new tab)</span><span aria-hidden="true" class="dashicons dashicons-external"></span></a>
 			</p>
-		{{template "dashboard-postbox-end"}}
-		{{.MailSMTP}}
-	</div>
-	</div>
-	<div id="postbox-container-3" class="postbox-container"><div id="column3-sortables" class="meta-box-sortables empty-container" data-emptystring="Drag boxes here"></div></div>
-	<div id="postbox-container-4" class="postbox-container"><div id="column4-sortables" class="meta-box-sortables empty-container" data-emptystring="Drag boxes here"></div></div>
-	</div>
-	</div>
-	{{end}}
-</div><!-- wrap -->
-{{template "admin-footer" .}}{{end}}
-
-{{define "dashboard-postbox-start"}}<div id="{{.ID}}" class="postbox">
-<div class="postbox-header"><h2 class="hndle ui-sortable-handle">{{.Title}}</h2>
-<div class="handle-actions hide-if-no-js"><button type="button" class="handle-order-higher" aria-disabled="false" aria-describedby="{{.ID}}-handle-order-higher-description"><span class="screen-reader-text">Move up</span><span class="order-higher-indicator" aria-hidden="true"></span></button><span class="hidden" id="{{.ID}}-handle-order-higher-description">Move {{.Title}} box up</span><button type="button" class="handle-order-lower" aria-disabled="false" aria-describedby="{{.ID}}-handle-order-lower-description"><span class="screen-reader-text">Move down</span><span class="order-lower-indicator" aria-hidden="true"></span></button><span class="hidden" id="{{.ID}}-handle-order-lower-description">Move {{.Title}} box down</span><button type="button" class="handlediv" aria-expanded="true"><span class="screen-reader-text">Toggle panel: {{.Title}}</span><span class="toggle-indicator" aria-hidden="true"></span></button></div></div>
-<div class="inside">
-{{end}}
-{{define "dashboard-postbox-end"}}</div>
-</div>
-{{end}}
+		{{template "dashboard-postbox-end"}}{{end}}

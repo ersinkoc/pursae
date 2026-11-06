@@ -1,15 +1,15 @@
 ---
-title: Caching (WPGo Cache)
+title: Caching (Pursae Cache)
 description: The built-in full-page cache, its settings, tags and purging, and how to pair it with nginx, LiteSpeed or a CDN.
 weight: 50
 section: operations
 ---
 
-**WPGo Cache** is a built-in plugin (on by default) that caches rendered public pages inside the
+**Pursae Cache** is a built-in plugin (on by default) that caches rendered public pages inside the
 Go process, purges them precisely by tags when content changes, and can tell a front proxy or CDN
 to cache them as well. It is modelled on LiteSpeed Cache but works with any server.
 
-Find it under **WPGo Cache** in the admin menu (Dashboard, Cache, Page Optimization, Toolbox) and
+Find it under **Pursae Cache** in the admin menu (Dashboard, Cache, Page Optimization, Toolbox) and
 switch it off or on under Plugins.
 
 ## What is cached
@@ -19,7 +19,7 @@ cookie. Pages that set cookies, send `Cache-Control: private`/`no-store`, or tha
 with `X-WPGo-Cache-Control: no-cache` (forms with nonces) are never cached. Responses carry
 `X-WPGo-Cache: hit|miss|bypass`.
 
-## Settings (WPGo Cache › Cache)
+## Settings (Pursae Cache › Cache)
 
 | Option | Default | Meaning |
 |--------|---------|---------|

@@ -337,7 +337,7 @@ func (s *Server) nativePluginRows() []pluginRow {
 		{Slug: "classic-editor", Name: "Classic Editor", Version: "1.6.7", Native: true, Active: s.settings.Bool("native_classic_editor"),
 			Description: "Enables the previous \"classic\" editor and the old-style Edit Post screen with TinyMCE, Meta Boxes, etc. Choose the default editor and whether users may switch under Settings &rsaquo; Writing.",
 			Author:      "Pursae", SettingsURL: "/wp-admin/options-writing"},
-		{Slug: "wpgo-cache", Name: "WPGo Cache", Version: "1.0.0", Native: true, Active: s.settings.Bool("wpgo_cache_enabled"),
+		{Slug: "wpgo-cache", Name: "Pursae Cache", Version: "1.0.0", Native: true, Active: s.settings.Bool("wpgo_cache_enabled"),
 			Description: "Full-page cache with tag-based purging, a crawler and page optimizations. Works behind nginx, OpenLiteSpeed, Apache or on its own.",
 			Author:      "Pursae", SettingsURL: "/wp-admin/admin?page=wpgo-cache"},
 		{Slug: webbuilder.PluginSlug, Name: "Pursae Web Builder", Version: Version, Native: true, Active: s.wbOn(),
@@ -357,7 +357,7 @@ func (s *Server) nativePluginRows() []pluginRow {
 	nativeSettingsLinks(rows)
 	rows = append(rows, s.maintPluginRow())    // Maintenance-Go (maintenance_admin.go)
 	rows = append(rows, s.bmgrPluginRow())     // Backup Manager (backup.go)
-	rows = append(rows, s.seogoPluginRow())    // SEO-Go (seogo.go)
+	rows = append(rows, s.seogoPluginRow())    // Pursae SEO (seogo.go)
 	rows = append(rows, s.gooikePluginRow())   // Gooike (gooike.go)
 	rows = append(rows, s.gooPluginRow())      // Goocommerce (goocommerce.go)
 	rows = append(rows, s.adminsecPluginRow()) // AdminSecGo (adminsec.go)

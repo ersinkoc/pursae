@@ -1,4 +1,4 @@
-# SEO-Go research: Yoast SEO (Premium) + Rank Math (Pro) reference facts
+# Pursae SEO research: Yoast SEO (Premium) + Rank Math (Pro) reference facts
 
 Collected 2026-10-28 from official docs and the plugins' GitHub sources (`Yoast/wordpress-seo@trunk`, `rankmath/seo-by-rank-math@master`).
 Source code beats docs where they disagree, and those cases are flagged. **unverified** marks a value from memory or secondary sources that I couldn't confirm in a primary source.
@@ -228,7 +228,7 @@ Sources:
 | BreadcrumbList | `{canonical}#breadcrumb` |
 | Legacy constants | `#author`, `#authorlogo` |
 
-- `wp_hash()` is salted per site, so person ids are site-specific and not reproducible. SEO-Go needs its own stable salted hash.
+- `wp_hash()` is salted per site, so person ids are site-specific and not reproducible. Pursae SEO needs its own stable salted hash.
 - developer.yoast.com proposes a newer `{site}/#/schema/{type}/{id}` pattern, but the shipping code still uses the constants above.
 
 ### 4.2 Graph shape

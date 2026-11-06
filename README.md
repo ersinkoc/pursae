@@ -238,7 +238,7 @@ Rebuild the image afterwards and they appear under Plugins › Add New.
 
 ## Pursae Web Builder (page builder)
 
-Pursae Web Builder is a built-in plugin, like Classic Editor and WPGo Cache, and it is **off on a fresh
+Pursae Web Builder is a built-in plugin, like Classic Editor and Pursae Cache, and it is **off on a fresh
 install**. Switch it on under Plugins › Pursae Web Builder › **Activate** (or Plugins › Add Plugin ›
 Native Plugins). Until then it leaves no trace: no menu entries, "Edit with Pursae Web Builder" links,
 builder routes, assets or front-end output.
@@ -337,7 +337,7 @@ first build; make sure Docker has network access. Later builds are cached.
   small stylesheet plus the core styles of the blocks a page uses, and four demo content sets
   (Appearance › Themes › Import Demo Content). The
   theme library (from Pursae Manager, not part of the binary) offers more themes to install.
-- **WPGo Cache** (built-in plugin) — in-process full-page cache with tag-based purges, crawler,
+- **Pursae Cache** (built-in plugin) — in-process full-page cache with tag-based purges, crawler,
   gzip + ETag, CDN purge headers, lazy images, deferred scripts, font preloads.
 - **Plugins** — signed WebAssembly packages, granted permissions, hooks `init`, `the_content`,
   `admin_notices`, `wpgo_post_stats` and scheduled `cron_*` events; shortcodes, REST routes,
@@ -346,7 +346,7 @@ first build; make sure Docker has network access. Later builds are cached.
   events, e-mail, WXR import/export.
 
 - **Built-in plugins** (listed on Plugins, off on a fresh install; one page each in the
-  [developer docs](docs/developer/built-in-plugins/index.md)) — SEO-Go, Pursae Custom Fields, Pursae Headless, Pursae CDN,
+  [developer docs](docs/developer/built-in-plugins/index.md)) — Pursae SEO, Pursae Custom Fields, Pursae Headless, Pursae CDN,
   Pursae Contact Form, Pursae Multi Language, Pursae Security, Pursae Cookie, Pursae Maintenance, Pursae SMTP and Pursae Commerce.
 - **Pursae Commerce** — a native WooCommerce clone (products, cart, checkout, tax, shipping, coupons,
   orders, gateways, e-mails, REST) with the premium extensions as built-in modules (off by default)
@@ -363,7 +363,7 @@ docker/             Dockerfile and compose.yaml
 internal/blocks     block parser, renderer, serializer
 internal/store      data access (pgx)
 internal/server     routes, admin screens, REST API, editors, themes, cron, mail glue
-internal/cache      WPGo Cache page-cache engine
+internal/cache      Pursae Cache page-cache engine
 internal/plugins    Wasm plugin runtime, hooks, permissions, signed packages
 internal/webbuilder Pursae Web Builder document schema, sanitizer, CSS, fallback and forms
 internal/mail       wp_mail(): SMTP or .eml files

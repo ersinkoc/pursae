@@ -1,4 +1,4 @@
-/* SEO-Go editor box: the classic editor meta box and the Pursae Editor sidebar share this script.
+/* Pursae SEO editor box: the classic editor meta box and the Pursae Editor sidebar share this script.
    The server does the work (/wp-json/seogo/v1/analyze): variables, snippet values and both
    analyses; this file collects the editor's values, renders the results and saves in Pursae Editor. */
 ( function () {
@@ -292,15 +292,15 @@
 				bullet( r.seo, 'SEO analysis' ), bullet( r.readability, 'Readability analysis' ),
 				el( 'button', { type: 'button', className: 'components-button is-secondary', onClick: function () {
 					wp.data.dispatch( 'core/edit-post' ).openGeneralSidebar( 'seogo/seogo-sidebar' );
-				} }, 'Open SEO-Go' ) );
+				} }, 'Open Pursae SEO' ) );
 		}
 		wp.plugins.registerPlugin( 'seogo', {
 			icon: 'chart-line',
 			render: function () {
 				return el( wp.element.Fragment, null,
-					MoreItem ? el( MoreItem, { target: 'seogo-sidebar', icon: 'chart-line' }, 'SEO-Go' ) : null,
-					el( PluginSidebar, { name: 'seogo-sidebar', title: 'SEO-Go', icon: 'chart-line' }, el( Mount ) ),
-					DocPanel ? el( DocPanel, { name: 'seogo-summary', title: 'SEO-Go', className: 'seogo-summary' }, el( Summary ) ) : null
+					MoreItem ? el( MoreItem, { target: 'seogo-sidebar', icon: 'chart-line' }, 'Pursae SEO' ) : null,
+					el( PluginSidebar, { name: 'seogo-sidebar', title: 'Pursae SEO', icon: 'chart-line' }, el( Mount ) ),
+					DocPanel ? el( DocPanel, { name: 'seogo-summary', title: 'Pursae SEO', className: 'seogo-summary' }, el( Summary ) ) : null
 				);
 			}
 		} );

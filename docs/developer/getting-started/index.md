@@ -24,7 +24,7 @@ down or read what it was not allowed to.
 - **Themes** — Twenty Sixteen, Twenty Seventeen, Twenty Twenty, Twenty Twenty-One and
   Classic, plus [theme packages](../themes/index.md) you upload as a zip.
 - **Plugins** — signed WebAssembly packages written in Go with the [plugin SDK](../plugins/index.md).
-- **WPGo Cache** — a built-in full-page cache with tag-based purging.
+- **Pursae Cache** — a built-in full-page cache with tag-based purging.
 - **System** — migrations on start, a job runner for scheduled events and e-mail, WXR import/export.
 
 ## Requirements

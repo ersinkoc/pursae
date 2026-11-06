@@ -39,7 +39,7 @@ func TestPluginsBulkActions(t *testing.T) {
 	if _, b, _ := get(t, c, base+loc); !strings.Contains(b, "Selected plugins activated.") {
 		t.Error("no bulk activation notice")
 	}
-	// Classic Editor and WPGo Cache start active; an already inactive plugin is left alone.
+	// Classic Editor and Pursae Cache start active; an already inactive plugin is left alone.
 	loc = send("deactivate-selected", "classic-editor", "wpgo-cache", gontactSlug, webbuilder.PluginSlug, maintSlug)
 	if !strings.Contains(loc, "deactivate-multi=4") || srv.settings.Bool("native_classic_editor") || srv.wbOn() || srv.gontactOn() || srv.settings.Bool("wpgo_cache_enabled") {
 		t.Fatalf("bulk deactivate: %s", loc)

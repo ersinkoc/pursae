@@ -70,6 +70,6 @@ environment variables:
 |--------|-------|---------|
 | `plugin_trusted_keys` | — | newline- or comma-separated public keys, merged with `WPGO_PLUGIN_KEYS` |
 | `plugin_allow_unsigned` | — | `true` accepts unsigned plugin packages (development only) |
-| `wpgo_cache_*`, `wpgo_opt_*` | WPGo Cache screens | page cache and page optimisation ([caching](caching.md)) |
+| `wpgo_cache_*`, `wpgo_opt_*` | Pursae Cache screens | page cache and page optimisation ([caching](caching.md)) |
 | `image_output_format` | Settings › Media | the format of the sizes generated for each uploaded image: `""` (default) JPEG sizes for WebP uploads (PNG with transparency); `webp` WebP sizes for WebP uploads, as WordPress does; `webp-all` WebP for JPEG, PNG and WebP uploads: the image itself is saved as WebP (`photo.jpg` → `photo.webp`, or `photo-scaled.webp` above 2560 px) and the upload is kept as the original image. WebP is written at quality 86 by libwebp transpiled to Go (no cgo). Plugins can change the mapping with the `image_editor_output_format` filter ([hooks](../plugins/hooks.md#media)). Existing images are not regenerated |
 | `pursae_license_key` | Settings › License | the license key sent to the Hub ([licenses](../hub/index.md#licenses)) |

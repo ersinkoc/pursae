@@ -65,11 +65,11 @@ exactly as for WordPress; the core scopes them for you.
 ## Fonts
 
 Put font files under `assets/fonts/` and reference them from your CSS with relative URLs.
-`preload_fonts[]` adds `<link rel="preload" as="font">` for the files WPGo Cache's page
+`preload_fonts[]` adds `<link rel="preload" as="font">` for the files Pursae Cache's page
 optimisation considers critical. No external font service is contacted unless you add one.
 
-## WPGo Cache
+## Pursae Cache
 
 Page optimisation (lazy images, deferred scripts, minified HTML) applies to your output too.
-Mark a script that must not be deferred by listing it in WPGo Cache › Page Optimization ›
+Mark a script that must not be deferred by listing it in Pursae Cache › Page Optimization ›
 exclusions, or inline it.

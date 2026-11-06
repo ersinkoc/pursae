@@ -20,7 +20,7 @@ func (s *Server) wpHead(c *gin.Context, q *siteQuery, lb *links.Builder, adminBa
 	sb.WriteString(s.gooikeHead(c)) // Gooike: Consent Mode defaults first, banner styles, head scripts (gooike_front.go)
 	sb.WriteString(s.gooHead(c, q)) // Goocommerce: store styles (goo_front.go)
 	sb.WriteString(v.Theme.HeadTop)
-	seo := s.seogoHead(c, q, lb) // SEO-Go replaces the robots meta and the canonical link (seogo_head.go)
+	seo := s.seogoHead(c, q, lb) // Pursae SEO replaces the robots meta and the canonical link (seogo_head.go)
 	if seo != "" {
 		sb.WriteString(seo)
 	} else if s.settings.Bool("blog_public") && q.Kind != "404" && !q.Preview {

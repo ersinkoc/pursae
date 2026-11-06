@@ -301,7 +301,7 @@ func (s *Server) pluginAdmin(c *gin.Context) {
 		d.WarmAt = s.warm.at.In(s.loc()).Format("Jan 2, 15:04")
 	}
 	s.warm.mu.Unlock()
-	titles := map[string]string{"wpgo-cache": "WPGo Cache", "wpgo-cache-settings": "Cache Settings",
+	titles := map[string]string{"wpgo-cache": "Pursae Cache", "wpgo-cache-settings": "Cache Settings",
 		"wpgo-cache-optimize": "Page Optimization", "wpgo-cache-toolbox": "Toolbox"}
 	s.adminPage(c, "admin?page="+page, titles[page], "wpgo-cache-page", "admin/wpgo-cache", d)
 }

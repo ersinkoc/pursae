@@ -19,7 +19,7 @@ import (
 	"wpgo/internal/store"
 )
 
-// The SEO-Go admin screens, all under /wp-admin/seogo?page=…: Dashboard (with the modules),
+// The Pursae SEO admin screens, all under /wp-admin/seogo?page=…: Dashboard (with the modules),
 // Setup Wizard, General Settings, Search Appearance, Social, Schema, Sitemaps, Redirections,
 // 404 Monitor, Link Counter, Bulk Editor, Tools and Role Manager.
 
@@ -193,7 +193,7 @@ func (s *Server) seogoAdmin(c *gin.Context) {
 		screen = "seogo?page=" + page
 	}
 	s.enqueueMedia(c, 0)
-	s.adminPage(c, screen, d.Title+" ‹ SEO-Go", "toplevel_page_seogo seogo-admin", "admin/seogo", d, seogoFlash(c)...)
+	s.adminPage(c, screen, d.Title+" ‹ Pursae SEO", "toplevel_page_seogo seogo-admin", "admin/seogo", d, seogoFlash(c)...)
 }
 
 func (s *Server) seogoBack(c *gin.Context, page, kind, msg string) {
@@ -488,7 +488,7 @@ func (s *Server) seogoDetectImport(ctx context.Context) seogoDetected {
 	return d
 }
 
-// seogoImportAll converts every post's and term's Yoast / Rank Math meta into SEO-Go's keys.
+// seogoImportAll converts every post's and term's Yoast / Rank Math meta into Pursae SEO's keys.
 func (s *Server) seogoImportAll(ctx context.Context) (int, error) {
 	n := 0
 	rows, err := s.store.Pool.Query(ctx, `SELECT id, meta FROM posts WHERE meta::text LIKE '%yoast_wpseo%' OR meta::text LIKE '%rank_math_%'`)
@@ -905,7 +905,7 @@ func (s *Server) seogoToolsPost(c *gin.Context, o *seogoOptions) (string, error)
 
 func (s *Server) seogoRenderWizard(c *gin.Context, d *seogoPage) {
 	s.enqueueMedia(c, 0)
-	s.adminPage(c, "seogo", "Setup Wizard ‹ SEO-Go", "toplevel_page_seogo seogo-admin seogo-wizard-page", "admin/seogo", d, seogoFlash(c)...)
+	s.adminPage(c, "seogo", "Setup Wizard ‹ Pursae SEO", "toplevel_page_seogo seogo-admin seogo-wizard-page", "admin/seogo", d, seogoFlash(c)...)
 }
 
 func (s *Server) seogoWizardPost(c *gin.Context, o *seogoOptions) (string, error) {
@@ -949,7 +949,7 @@ func (s *Server) seogoWizardPost(c *gin.Context, o *seogoOptions) (string, error
 	if c.PostForm("skip") == "1" || step >= 5 {
 		o.WizardDone = true
 		_ = s.seogoSave(ctx, o)
-		c.Redirect(http.StatusFound, "/wp-admin/seogo?seogo-updated="+url.QueryEscape("SEO-Go is set up."))
+		c.Redirect(http.StatusFound, "/wp-admin/seogo?seogo-updated="+url.QueryEscape("Pursae SEO is set up."))
 		return "ok", nil
 	}
 	c.Redirect(http.StatusFound, "/wp-admin/seogo?page=wizard&step="+strconv.Itoa(next))

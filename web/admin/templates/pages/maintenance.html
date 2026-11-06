@@ -212,7 +212,7 @@
 <tr><th scope="row">Toolbar Menu</th><td><label><input type="checkbox" name="toolbar_menu" value="1"{{if .S.AdminBarMenu}} checked{{end}}> Show the Maintenance menu with its on/off switch in the toolbar</label></td></tr>
 <tr><th scope="row">REST API</th><td><label><input type="checkbox" name="block_rest" value="1"{{if .S.BlockREST}} checked{{end}}> Answer REST API requests of visitors who are not logged in with 503</label><p class="description">Logged-in users keep using the REST API (the editor needs it).</p></td></tr>
 <tr><th scope="row">Feeds &amp; Sitemaps</th><td><label><input type="checkbox" name="block_feeds" value="1"{{if .S.BlockFeeds}} checked{{end}}> Close RSS feeds and the XML sitemap too</label></td></tr>
-<tr><th scope="row">Page Cache</th><td><p class="description">{{if .CacheEnabled}}WPGo Cache is active: it is purged whenever maintenance mode or these settings change, and the maintenance page is never cached.{{else}}The maintenance page is sent with no-cache headers, so proxies and browsers never keep it.{{end}}</p></td></tr>
+<tr><th scope="row">Page Cache</th><td><p class="description">{{if .CacheEnabled}}Pursae Cache is active: it is purged whenever maintenance mode or these settings change, and the maintenance page is never cached.{{else}}The maintenance page is sent with no-cache headers, so proxies and browsers never keep it.{{end}}</p></td></tr>
 </table>
 <p class="submit"><input type="submit" class="button button-primary" value="Save Changes"></p>
 </form>

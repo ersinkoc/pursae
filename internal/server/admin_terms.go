@@ -358,7 +358,7 @@ func (s *Server) termEdit(c *gin.Context) {
 	if c.Query("message") == "3" {
 		notices = append(notices, notice{Type: "success", Message: template.HTML(lab.Singular + " updated."), Dismissible: true})
 	}
-	s.seogoTermBox(c, t) // SEO-Go term fields
+	s.seogoTermBox(c, t) // Pursae SEO term fields
 	s.adminPage(c, "term?taxonomy="+lab.Tax, "Edit "+lab.Singular, "term-php taxonomy-"+lab.Tax, "admin/term-edit", d, notices...)
 }
 
@@ -393,7 +393,7 @@ func (s *Server) termSave(c *gin.Context) {
 		c.String(http.StatusBadRequest, "A name is required for this term.")
 		return
 	}
-	s.seogoTermSave(c, t) // SEO-Go term fields
+	s.seogoTermSave(c, t) // Pursae SEO term fields
 	if err := s.store.UpdateTerm(ctx, t); err != nil {
 		c.String(http.StatusInternalServerError, err.Error())
 		return

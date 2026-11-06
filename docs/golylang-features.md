@@ -1,7 +1,7 @@
 # Pursae Multi Language: Polylang Pro feature inventory
 
 Pursae Multi Language is Pursae's built-in multilingual plugin, a 1:1 functional clone of **Polylang Pro**. It is a
-native (compiled-in) plugin like Classic Editor, WPGo Cache and Pursae Web Builder: it is **off** on a fresh
+native (compiled-in) plugin like Classic Editor, Pursae Cache and Pursae Web Builder: it is **off** on a fresh
 install, it is switched on under **Plugins**, and while it is off it adds nothing. There are no menus, the
 `admin?page=mlang*` screens answer 403, the `pll/v1` REST namespace is hidden, posts and terms carry no
 `lang` field, there is no front-end output, and `/fr/` URLs are 404.

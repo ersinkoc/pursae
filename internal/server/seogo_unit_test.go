@@ -40,7 +40,7 @@ func TestSEOGoMetaFallbacks(t *testing.T) {
 			t.Errorf("seogoMeta(%s) = %q, want %q", f, got, want)
 		}
 	}
-	// Yoast's "2" means index; an explicit SEO-Go value wins over both plugins.
+	// Yoast's "2" means index; an explicit Pursae SEO value wins over both plugins.
 	if got := seogoMeta(map[string]any{"_yoast_wpseo_meta-robots-noindex": "2"}, "noindex"); got != "index" {
 		t.Errorf("Yoast index flag: %q", got)
 	}
@@ -157,14 +157,14 @@ func TestSEOGoAnalysisScoring(t *testing.T) {
 }
 
 func TestSEOGoBlockSchemaAndCustom(t *testing.T) {
-	content := `<!-- wp:seogo/faq {"questions":[{"id":"faq-question-1","question":"What is SEO-Go?","answer":"An SEO plugin."}]} -->
+	content := `<!-- wp:seogo/faq {"questions":[{"id":"faq-question-1","question":"What is Pursae SEO?","answer":"An SEO plugin."}]} -->
 <div class="wp-block-seogo-faq seogo-faq"></div>
 <!-- /wp:seogo/faq -->
 <!-- wp:yoast/how-to-block {"jsonTitle":"Brew tea","steps":[{"id":"s1","jsonName":"Boil","jsonText":"Boil water."}]} -->
 <div></div>
 <!-- /wp:yoast/how-to-block -->`
 	qs, hs := seogoBlockSchema(content, "https://example.test/p/")
-	if len(qs) != 1 || qs[0]["name"] != "What is SEO-Go?" || qs[0]["@id"] != "https://example.test/p/#faq-question-1" {
+	if len(qs) != 1 || qs[0]["name"] != "What is Pursae SEO?" || qs[0]["@id"] != "https://example.test/p/#faq-question-1" {
 		t.Fatalf("faq: %v", qs)
 	}
 	if len(hs) != 1 || hs[0]["name"] != "Brew tea" {

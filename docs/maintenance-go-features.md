@@ -2,7 +2,7 @@
 
 Pursae Maintenance is a native (compiled-in) Pursae plugin that clones **Maintenance** by WebFactory
 (wordpress.org/plugins/maintenance, v4.32, 2026-07-13). It also includes the parts of **Maintenance PRO**
-that make sense for a single-site Go install. Like Classic Editor, WPGo Cache and Pursae Web Builder, it is
+that make sense for a single-site Go install. Like Classic Editor, Pursae Cache and Pursae Web Builder, it is
 **off on a fresh install**, and while it is off nothing of it runs or shows anywhere.
 
 Sources: the plugin's wordpress.org page, readme and changelog, and the v4.32 source (`maintenance.php`

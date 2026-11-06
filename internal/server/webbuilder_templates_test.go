@@ -764,7 +764,7 @@ func TestWBTemplateGolylang(t *testing.T) {
 }
 
 // A failed index build renders the theme defaults but marks the response uncacheable, so the
-// degraded page does not outlive the error in WPGo Cache.
+// degraded page does not outlive the error in Pursae Cache.
 func TestWBTemplateIndexErrorNotCached(t *testing.T) {
 	srv, _, _ := wbrStart(t)
 	post := wbrPost(t, srv, "post", "Err Post", "publish", 1)

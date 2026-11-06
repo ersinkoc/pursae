@@ -58,7 +58,7 @@ server {
 
 Static files (`/wp-includes/`, `/wp-admin/css/`, theme and plugin assets) are served by the Go
 binary with long cache headers, so no `root` or `try_files` is needed. nginx may cache them in a
-`proxy_cache`; WPGo Cache can emit `X-Accel-Expires` for whole pages too ([caching](caching.md)).
+`proxy_cache`; Pursae Cache can emit `X-Accel-Expires` for whole pages too ([caching](caching.md)).
 
 ### Live GraphQL subscriptions (Pursae Headless)
 

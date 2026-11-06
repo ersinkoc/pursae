@@ -16,7 +16,7 @@ import (
 	"wpgo/internal/store"
 )
 
-// The <head> output of SEO-Go: title, meta description, robots, canonical, Open Graph, Twitter/X
+// The <head> output of Pursae SEO: title, meta description, robots, canonical, Open Graph, Twitter/X
 // cards, webmaster verification and the JSON-LD graph (seogo_schema.go). While the plugin is on,
 // wpHead prints this block instead of core's robots meta and canonical link.
 
@@ -270,7 +270,7 @@ func (s *Server) seogoLocale() string {
 	return "en_US"
 }
 
-// seogoHead is the SEO-Go block of wp_head (empty while the plugin is off).
+// seogoHead is the Pursae SEO block of wp_head (empty while the plugin is off).
 func (s *Server) seogoHead(c *gin.Context, q *siteQuery, lb *links.Builder) string {
 	if !s.seogoOn() || q == nil {
 		return ""
@@ -303,7 +303,7 @@ func (s *Server) seogoHeadFor(sc *seogoCtx, preview bool) string {
 	o := s.seogoOpts()
 	esc := html.EscapeString
 	var sb strings.Builder
-	sb.WriteString("<!-- This site is optimized with SEO-Go " + "1.0.0" + " - Pursae -->\n")
+	sb.WriteString("<!-- This site is optimized with Pursae SEO " + "1.0.0" + " - Pursae -->\n")
 	title := sc.title()
 	desc := sc.description()
 	if desc != "" {
@@ -420,7 +420,7 @@ func (s *Server) seogoHeadFor(sc *seogoCtx, preview bool) string {
 	if o.Modules["schema"] && sc.Kind != "404" {
 		sb.WriteString(s.seogoSchemaScript(sc, title, desc))
 	}
-	sb.WriteString("<!-- / SEO-Go -->\n")
+	sb.WriteString("<!-- / Pursae SEO -->\n")
 	return sb.String()
 }
 

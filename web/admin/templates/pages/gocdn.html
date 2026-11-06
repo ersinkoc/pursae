@@ -243,10 +243,10 @@ Status: {{if .Configured}}<span class="gc-badge ok">Configured</span>{{else}}<sp
 {{end}}
 
 {{if eq .Page "purge"}}
-<p class="gc-sub">{{if .CacheOn}}Every Pursae CDN settings change and finished bulk job purges WPGo Cache.{{else}}Every Pursae CDN settings change and finished bulk job purges WPGo Cache (WPGo Cache is not active).{{end}}</p>
+<p class="gc-sub">{{if .CacheOn}}Every Pursae CDN settings change and finished bulk job purges Pursae Cache.{{else}}Every Pursae CDN settings change and finished bulk job purges Pursae Cache (Pursae Cache is not active).{{end}}</p>
 <form method="post" action="/wp-admin/gocdn?page=purge" class="gc-tools">
 <input type="hidden" name="_wpnonce" value="{{.Nonce}}">
-<button type="submit" name="do" value="purge-cache" class="button button-primary">Purge WPGo Cache</button>
+<button type="submit" name="do" value="purge-cache" class="button button-primary">Purge Pursae Cache</button>
 <button type="submit" name="do" value="purge-cdn" class="button"{{if not .PurgeReady}} disabled{{end}}>{{if gt .PurgeCount 1}}Purge all CDNs ({{.PurgerNames}}) (everything){{else if .Purger}}Purge {{.Purger.Name}} (everything){{else}}Purge the CDN (everything){{end}}</button>
 <button type="submit" name="do" value="purge-images" class="button">Empty the processed image cache</button>
 </form>

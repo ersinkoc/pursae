@@ -280,7 +280,7 @@ func (s *Server) buildSiteView(c *gin.Context, q *siteQuery) (*siteView, error) 
 	v.BodyClass = strings.Join(bodyClasses, " ")
 
 	v.DocumentTitle = template.HTML(s.documentTitle(q, plainTitle))
-	if t := s.seogoDocumentTitle(c, q); t != "" { // SEO-Go title (seogo_head.go)
+	if t := s.seogoDocumentTitle(c, q); t != "" { // Pursae SEO title (seogo_head.go)
 		v.DocumentTitle = t
 	}
 	v.Head = s.wpHead(c, q, lb, showBar, v)
@@ -445,7 +445,7 @@ func (s *Server) theContent(ctx context.Context, c *gin.Context, p *store.Post, 
 	}
 	content = s.doShortcodes(ctx, content)      // plugin shortcodes (do_shortcode at priority 11)
 	content = s.gontactShortcodes(ctx, content) // Gontact Form's [contact-form-7]
-	content = s.seogoContent(ctx, content)      // SEO-Go breadcrumb shortcodes and Image SEO
+	content = s.seogoContent(ctx, content)      // Pursae SEO breadcrumb shortcodes and Image SEO
 	content = s.gooikeShortcodes(ctx, content)  // Gooike: [gooike_preferences], [gooike_cookie_table], …
 	content = s.gooShortcodes(ctx, content)     // Goocommerce: [goocommerce_cart], [products], … (goo_front.go)
 	content = s.filterContentTags(ctx, content) // wp_filter_content_tags (priority 12)

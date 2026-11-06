@@ -16,7 +16,7 @@ import (
 )
 
 // Admin screens that build their text in the browser (ACF-Go's field group editor, Gontact Form's
-// builder, Goocommerce's store screens, SEO-Go's editor panel, inline scripts of the templates)
+// builder, Goocommerce's store screens, Pursae SEO's editor panel, inline scripts of the templates)
 // get the translations of their scripts' UI strings: wpgo-l10n.js holds them, swaps them into
 // the page as the scripts add elements, and translates the message of alert(), confirm() and
 // prompt().
