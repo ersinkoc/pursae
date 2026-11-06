@@ -226,7 +226,7 @@ func (s *Server) saveUser(c *gin.Context, target *store.User) {
 		c.Redirect(http.StatusFound, back)
 		return
 	}
-	if _, ok := c.GetPostForm("do_new_application_password"); ok || c.PostForm("action") == "revoke-application-password" || c.PostForm("action") == "revoke-all-application-passwords" {
+	if _, ok := c.GetPostForm("do_new_application_password"); ok || c.PostForm("revoke_application_password") != "" || c.PostForm("revoke_all_application_passwords") != "" {
 		s.appPasswordsForm(c, target, back)
 		return
 	}
