@@ -193,7 +193,7 @@ func (s *Server) wbFormTarget(c *gin.Context, r *restRequest) (*store.Post, webb
 		restErr(c, http.StatusInternalServerError, "db_error", "Could not read the post.")
 		return nil, webbuilder.FormSchema{}, false
 	}
-	if !wbEnabledType(p.Type) {
+	if !s.wbEnabledType(p.Type) {
 		restErr(c, http.StatusNotFound, webbuilder.ErrNotBuilder, "Pursae Web Builder is not enabled for this post type.")
 		return nil, webbuilder.FormSchema{}, false
 	}

@@ -132,7 +132,7 @@ func (s *Server) wbPost(c *gin.Context, r *restRequest) (*store.User, *store.Pos
 		}
 		return nil, nil
 	}
-	if !wbEnabledType(p.Type) {
+	if !s.wbEnabledType(p.Type) {
 		restErr(c, http.StatusNotFound, webbuilder.ErrNotBuilder, "Pursae Web Builder is not enabled for this post type.")
 		return nil, nil
 	}

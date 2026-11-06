@@ -112,7 +112,7 @@ func (s *Server) wbImportDocs(ctx context.Context, u *store.User, postIDs []int6
 		rawPage, _ := p.Meta[wbWXRPageMeta].(string)
 		detached := p.Meta[wbWXRDetachedMeta] == "1"
 		keep := false
-		if hasDoc && wbEnabledType(p.Type) {
+		if hasDoc && s.wbEnabledType(p.Type) {
 			res, err := webbuilder.ParseDoc([]byte(rep.Replace(rawDoc)), webbuilder.DocOptions{UnfilteredHTML: unfiltered, PathPrefix: "/doc"})
 			if err == nil && res.Valid() {
 				d := &store.WebBuilderDoc{PostID: p.ID, Doc: res.JSON, Page: wbImportPage(rep.Replace(rawPage)),

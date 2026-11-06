@@ -35,12 +35,12 @@ var Defaults = map[string]any{
 	"classic-editor-replace":        "block",
 	"classic-editor-allow-users":    "disallow",
 	"native_classic_editor":         true,
-	"native_golementor":             false, // the page builder is a plugin that starts switched off
-	"golementor_previous_theme":     "",    // the theme Golementor left for Hello Golementor; restored on deactivation
-	"native_golylang":               false, // the multilingual plugin (Polylang Pro clone) starts switched off
-	"native_gooike":                 false, // Gooike, the cookie consent plugin, starts switched off
-	"native_goocommerce":            false, // Goocommerce, the e-commerce plugin, starts switched off
-	"native_headlessgo":             false, // HeadlessGo, the headless CMS plugin, starts switched off
+	"native_golementor":             false,       // Pursae Web Builder is a plugin that starts switched off
+	"web_builder_post_types":        "page,post", // Settings › Web Builder: the post types it edits
+	"native_golylang":               false,       // the multilingual plugin (Polylang Pro clone) starts switched off
+	"native_gooike":                 false,       // Gooike, the cookie consent plugin, starts switched off
+	"native_goocommerce":            false,       // Goocommerce, the e-commerce plugin, starts switched off
+	"native_headlessgo":             false,       // HeadlessGo, the headless CMS plugin, starts switched off
 	"plugin_trusted_keys":           "",
 	"plugin_allow_unsigned":         false,
 	"wpgo_hub_url":                  "",   // overrides WPGO_HUB_URL when set

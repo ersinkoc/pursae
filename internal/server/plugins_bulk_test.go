@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+
+	"wpgo/internal/webbuilder"
 )
 
 // Plugins › Bulk actions activate and deactivate several plugins at once, like plugins.php.
@@ -30,16 +32,16 @@ func TestPluginsBulkActions(t *testing.T) {
 		}
 		return loc
 	}
-	loc := send("activate-selected", gontactSlug, golementorSlug)
-	if !strings.Contains(loc, "activate-multi=2") || !srv.gontactOn() || !srv.golementorOn() {
+	loc := send("activate-selected", gontactSlug, webbuilder.PluginSlug)
+	if !strings.Contains(loc, "activate-multi=2") || !srv.gontactOn() || !srv.wbOn() {
 		t.Fatalf("bulk activate: %s", loc)
 	}
 	if _, b, _ := get(t, c, base+loc); !strings.Contains(b, "Selected plugins activated.") {
 		t.Error("no bulk activation notice")
 	}
 	// Classic Editor and WPGo Cache start active; an already inactive plugin is left alone.
-	loc = send("deactivate-selected", "classic-editor", "wpgo-cache", gontactSlug, golementorSlug, maintSlug)
-	if !strings.Contains(loc, "deactivate-multi=4") || srv.settings.Bool("native_classic_editor") || srv.golementorOn() || srv.gontactOn() || srv.settings.Bool("wpgo_cache_enabled") {
+	loc = send("deactivate-selected", "classic-editor", "wpgo-cache", gontactSlug, webbuilder.PluginSlug, maintSlug)
+	if !strings.Contains(loc, "deactivate-multi=4") || srv.settings.Bool("native_classic_editor") || srv.wbOn() || srv.gontactOn() || srv.settings.Bool("wpgo_cache_enabled") {
 		t.Fatalf("bulk deactivate: %s", loc)
 	}
 	// Built-in plugins cannot be deleted.

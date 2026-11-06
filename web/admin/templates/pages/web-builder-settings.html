@@ -1,0 +1,32 @@
+{{define "admin/web-builder-settings"}}{{template "admin-header" .}}{{with .Data}}
+<div class="wrap">
+<h1>Web Builder Settings</h1>
+{{template "notices" $}}
+<form method="post" action="/wp-admin/options" novalidate="novalidate">
+<input type="hidden" name="option_page" value="{{.OptionPage}}" /><input type="hidden" name="action" value="update" />
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<table class="form-table" role="presentation">
+<tr>
+<th scope="row">Post types</th>
+<td><fieldset><legend class="screen-reader-text"><span>Post types</span></legend>
+{{range .Types}}<label for="web_builder_post_types-{{.Slug}}"><input name="web_builder_post_types[]" type="checkbox" id="web_builder_post_types-{{.Slug}}" value="{{.Slug}}"{{if .Checked}} checked="checked"{{end}} /> {{.Label}}</label><br />
+{{else}}<p>No post types are available.</p>
+{{end}}<p class="description">Items of these post types can be opened in Pursae Web Builder. Pages built with a type that is switched off keep their published content.</p>
+</fieldset></td>
+</tr>
+</table>
+<p class="submit"><input type="submit" name="submit" id="submit" class="button button-primary" value="Save Changes" /></p>
+</form>
+
+<h2 class="title">Regenerate pages</h2>
+<p>Pursae Web Builder publishes each page as static HTML that the editor renders. When an update brings a new renderer, pages published before it keep their markup until they are opened in the editor and updated; nothing can regenerate them on the server.</p>
+{{if .OutdatedErr}}<div class="notice notice-error inline"><p>The pages to regenerate could not be listed.</p></div>
+{{else if .Outdated}}<p>{{if eq .OutdatedTotal 1}}1 item was{{else}}{{.OutdatedTotal}} items were{{end}} published with an older renderer (current: version {{.RendererVersion}}). Open each one and click Update:</p>
+<ul class="ul-disc" id="web-builder-outdated">
+{{range .Outdated}}<li><a href="{{.EditURL}}">{{.Title}}</a> &mdash; {{.Type}}{{if ne .Status "publish"}}, {{.Status}}{{end}} (renderer {{.Renderer}})</li>
+{{end}}</ul>
+{{if .OutdatedMore}}<p class="description">Only the {{len .Outdated}} most recently modified items are listed.</p>{{end}}
+{{else}}<p id="web-builder-outdated-none">All built pages use the current renderer (version {{.RendererVersion}}).</p>
+{{end}}
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}
