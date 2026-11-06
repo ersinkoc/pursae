@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"sort"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -161,18 +160,7 @@ func wbImportPage(raw string) json.RawMessage {
 // wbURLReplacer replaces old URLs with new ones, longest first (so photo.jpg is not replaced
 // inside photo-300x200.jpg's own mapping).
 func wbURLReplacer(urlMap map[string]string) *strings.Replacer {
-	from := make([]string, 0, len(urlMap))
-	for k := range urlMap {
-		if k != "" {
-			from = append(from, k)
-		}
-	}
-	sort.Slice(from, func(i, j int) bool { return len(from[i]) > len(from[j]) })
-	pairs := make([]string, 0, 2*len(from))
-	for _, k := range from {
-		pairs = append(pairs, k, urlMap[k])
-	}
-	return strings.NewReplacer(pairs...)
+	return wxrURLReplacer(urlMap) // the same pairs as the content backfill, image-size stems included
 }
 
 // Copies -----------------------------------------------------------------------------------------

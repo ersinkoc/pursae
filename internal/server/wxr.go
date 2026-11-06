@@ -821,25 +821,7 @@ func (s *Server) importWXR(c *gin.Context, u *store.User, data []byte) (*importR
 	}
 	// backfill_attachment_urls(): links to the old site's uploads point at the imported files, longest URLs first.
 	if len(urlMap) > 0 {
-		var pairs []string
-		for from, to := range urlMap {
-			pairs = append(pairs, from, to)
-			if ext := path.Ext(from); ext != "" && path.Ext(to) != "" {
-				// Image sizes: photo-300x200.jpg follows photo.jpg.
-				pairs = append(pairs, strings.TrimSuffix(from, ext), strings.TrimSuffix(to, path.Ext(to)))
-			}
-		}
-		type pair struct{ from, to string }
-		var ordered []pair
-		for i := 0; i+1 < len(pairs); i += 2 {
-			ordered = append(ordered, pair{pairs[i], pairs[i+1]})
-		}
-		sort.Slice(ordered, func(i, j int) bool { return len(ordered[i].from) > len(ordered[j].from) })
-		var oldnew []string
-		for _, p := range ordered {
-			oldnew = append(oldnew, p.from, p.to)
-		}
-		rep := strings.NewReplacer(oldnew...)
+		rep := wxrURLReplacer(urlMap)
 		for _, id := range imported {
 			p, err := s.store.GetPost(ctx, id)
 			if err != nil {
@@ -1038,4 +1020,47 @@ func (s *Server) sideloadURL(ctx context.Context, rawURL string, uploaderID, pos
 		return nil, errors.New("Zero size file downloaded.")
 	}
 	return a, err
+}
+
+// wxrURLReplacer is backfill_attachment_urls()'s replacer: every old attachment URL becomes the
+// imported one, and its extension-less stem follows too so image sizes (photo-300x200.jpg after
+// photo.jpg) are remapped. Longest URLs first; the order is deterministic. The content backfill and
+// the Pursae Web Builder doc import share it.
+func wxrURLReplacer(urlMap map[string]string) *strings.Replacer {
+	keys := make([]string, 0, len(urlMap))
+	for k := range urlMap {
+		if k != "" {
+			keys = append(keys, k)
+		}
+	}
+	sort.Strings(keys)
+	m := make(map[string]string, 2*len(keys))
+	for _, k := range keys {
+		m[k] = urlMap[k]
+	}
+	for _, k := range keys {
+		to := urlMap[k]
+		if ext := path.Ext(k); ext != "" && path.Ext(to) != "" {
+			if stem := strings.TrimSuffix(k, ext); stem != "" {
+				if _, ok := m[stem]; !ok {
+					m[stem] = strings.TrimSuffix(to, path.Ext(to))
+				}
+			}
+		}
+	}
+	from := make([]string, 0, len(m))
+	for k := range m {
+		from = append(from, k)
+	}
+	sort.Slice(from, func(i, j int) bool {
+		if len(from[i]) != len(from[j]) {
+			return len(from[i]) > len(from[j])
+		}
+		return from[i] < from[j]
+	})
+	pairs := make([]string, 0, 2*len(from))
+	for _, k := range from {
+		pairs = append(pairs, k, m[k])
+	}
+	return strings.NewReplacer(pairs...)
 }

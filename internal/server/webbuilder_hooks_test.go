@@ -47,6 +47,10 @@ func TestWebBuilderHooksURLReplacer(t *testing.T) {
 	if got != `{"src":"https://new.test/up/a-large.jpg","b":"https://new.test/up/a.jpg"}` {
 		t.Fatalf("replace: %s", got)
 	}
+	// Image sizes follow the full-size file, as in the imported posts.content.
+	if got := r.Replace(`"https://old.test/up/photo-1024x683.jpg"`); got != `"https://new.test/up/a-1024x683.jpg"` {
+		t.Fatalf("sized variant: %s", got)
+	}
 	if wbURLReplacer(nil).Replace("x") != "x" {
 		t.Fatal("empty replacer changed the input")
 	}
