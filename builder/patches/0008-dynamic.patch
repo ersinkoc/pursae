@@ -1403,7 +1403,7 @@ index 0000000..9a36c12
 +}
 diff --git a/src/builder/dynamic/widgets.tsx b/src/builder/dynamic/widgets.tsx
 new file mode 100644
-index 0000000..4218b50
+index 0000000..8298f17
 --- /dev/null
 +++ b/src/builder/dynamic/widgets.tsx
 @@ -0,0 +1,419 @@
@@ -1598,7 +1598,7 @@ index 0000000..4218b50
 +    case 'post-nav':
 +      return <div className={POST_NAV} {...html(m, 'post.nav', postNavHtml(post, m.ctx.posts))} />
 +    case 'post-comments':
-+      if (m.ph) return <div data-wb-slot="post.comments" />
++      if (m.ph) return <div className="wb-comments" data-wb-slot="post.comments" />
 +      // Language-neutral stand-in: the published page shows the theme's comments template.
 +      return (
 +        <div className="p-6" style={{ border: '1.5px dashed var(--line)', borderRadius: 'var(--r-card)' }}>
@@ -2104,6 +2104,225 @@ index bc41729..455cc56 100644
  }
  const count = (sections: Section[]) => sections.length
  console.log(`[web-builder] fixtures: ${cases.length} docs, ${cases.reduce((n, [, d]) => n + count(d.sections), 0)} sections, ${(bytes / 1024).toFixed(0)} KB of render JSON → ${out}`)
+diff --git a/src/builder/live/page.css b/src/builder/live/page.css
+index ee8c51d..ac11190 100644
+--- a/src/builder/live/page.css
++++ b/src/builder/live/page.css
+@@ -195,3 +195,214 @@
+   outline: 2px solid #d63638;
+   outline-offset: 2px;
+ }
++
++/* ---------- Dynamic widgets (patch 0008) ---------- */
++/* Comments widget: the theme's comments template (WordPress comment list and comment_form() markup). */
++.wb-page .wb-comments {
++  font-size: 16px;
++  line-height: 1.6;
++}
++.wb-page .wb-comments :is(.comments-title, .comment-reply-title) {
++  margin: 0 0 20px;
++  font-family: var(--f-head);
++  font-size: 1.6em;
++  font-weight: 500;
++  line-height: 1.2;
++  letter-spacing: -0.01em;
++}
++.wb-page .wb-comments .comment-reply-title small {
++  margin-inline-start: 10px;
++  font-family: var(--f-body);
++  font-size: 14px;
++  font-weight: 500;
++  letter-spacing: 0;
++}
++.wb-page .wb-comments a {
++  color: inherit;
++  text-underline-offset: 2px;
++}
++.wb-page .wb-comments a:hover {
++  text-decoration: underline;
++}
++.wb-page .wb-comments :is(.comment-list, .children) {
++  margin: 0;
++  padding: 0;
++  list-style: none;
++}
++.wb-page .wb-comments .comment-list {
++  margin-bottom: 40px;
++}
++.wb-page .wb-comments .comment-list > li + li {
++  margin-top: 16px;
++  padding-top: 16px;
++  border-top: 1px solid var(--line);
++}
++.wb-page .wb-comments .children {
++  margin-top: 16px;
++  padding-inline-start: 20px;
++  border-inline-start: 2px solid var(--line);
++}
++.wb-page .wb-comments .children > li + li {
++  margin-top: 16px;
++}
++.wb-page .wb-comments .comment-body {
++  position: relative;
++  min-height: 42px;
++  padding-inline-start: 56px;
++}
++.wb-page .wb-comments .comment-author {
++  line-height: 1.4;
++}
++.wb-page .wb-comments .comment-author .avatar {
++  position: absolute;
++  top: 0;
++  inset-inline-start: 0;
++  width: 42px;
++  height: 42px;
++  border-radius: 999px;
++  object-fit: cover;
++  background: var(--card);
++}
++.wb-page .wb-comments .comment-author .fn {
++  font-weight: 600;
++}
++.wb-page .wb-comments .says {
++  position: absolute;
++  width: 1px;
++  height: 1px;
++  overflow: hidden;
++  clip: rect(0 0 0 0);
++  white-space: nowrap;
++}
++.wb-page .wb-comments .comment-metadata {
++  margin-top: 2px;
++  font-size: 13.5px;
++  color: var(--muted);
++}
++.wb-page .wb-comments .comment-metadata .edit-link::before {
++  content: '·';
++  margin-inline-end: 6px;
++}
++.wb-page .wb-comments .comment-awaiting-moderation {
++  display: block;
++  margin-top: 6px;
++  font-size: 14px;
++  color: var(--muted);
++}
++.wb-page .wb-comments .comment-content {
++  margin-top: 8px;
++  overflow-wrap: anywhere;
++}
++.wb-page .wb-comments .comment-content :is(p, ul, ol, blockquote) {
++  margin: 0 0 0.75em;
++}
++.wb-page .wb-comments .comment-content > :last-child {
++  margin-bottom: 0;
++}
++.wb-page .wb-comments .comment-content a {
++  text-decoration: underline;
++}
++.wb-page .wb-comments .reply {
++  margin-top: 8px;
++  font-size: 14px;
++  font-weight: 600;
++}
++.wb-page .wb-comments .comment-reply-link {
++  color: var(--accent, var(--brand));
++}
++.wb-page .wb-comments .comments-navigation .nav-links {
++  display: flex;
++  justify-content: space-between;
++  gap: 16px;
++  margin: 0 0 20px;
++  font-size: 14px;
++}
++.wb-page .wb-comments .no-comments {
++  margin: 0 0 24px;
++  color: var(--muted);
++}
++.wb-page .wb-comments .comment-respond {
++  padding: clamp(20px, 4cqi, 32px);
++  border-radius: var(--r-card);
++  background: var(--card);
++}
++.wb-page .wb-comments .comment-list .comment-respond {
++  margin-top: 16px;
++}
++.wb-page .wb-comments .comment-form {
++  display: grid;
++  grid-template-columns: minmax(0, 1fr);
++  gap: 16px;
++}
++@container canvas (min-width: 640px) {
++  .wb-page .wb-comments .comment-form {
++    grid-template-columns: repeat(3, minmax(0, 1fr));
++  }
++  .wb-page .wb-comments .comment-form > :not(.comment-form-author, .comment-form-email, .comment-form-url) {
++    grid-column: 1 / -1;
++  }
++}
++.wb-page .wb-comments .comment-form p {
++  margin: 0;
++}
++.wb-page .wb-comments :is(.comment-notes, .logged-in-as, .must-log-in) {
++  margin: 0;
++  font-size: 14px;
++  color: var(--muted);
++}
++.wb-page .wb-comments .comment-form label {
++  display: block;
++  margin-bottom: 6px;
++  font-size: 14px;
++  font-weight: 600;
++}
++.wb-page .wb-comments .required {
++  color: #d63638;
++}
++.wb-page .wb-comments .comment-form :is(input[type='text'], input[type='email'], input[type='url'], textarea) {
++  display: block;
++  width: 100%;
++  padding: 10px 12px;
++  border: 1px solid color-mix(in srgb, var(--fg) 18%, transparent);
++  border-radius: min(var(--r-btn), 10px);
++  background: var(--bg);
++  color: var(--fg);
++  font: inherit;
++  line-height: 1.5;
++}
++.wb-page .wb-comments .comment-form textarea {
++  min-height: 140px;
++  resize: vertical;
++}
++.wb-page .wb-comments .comment-form :is(input, textarea):focus-visible {
++  outline: 2px solid var(--brand);
++  outline-offset: 1px;
++}
++.wb-page .wb-comments .comment-form-cookies-consent {
++  display: flex;
++  align-items: flex-start;
++  gap: 8px;
++}
++.wb-page .wb-comments .comment-form-cookies-consent input {
++  margin-top: 4px;
++  accent-color: var(--brand);
++}
++.wb-page .wb-comments .comment-form-cookies-consent label {
++  margin: 0;
++  font-weight: 400;
++  color: var(--muted);
++}
++.wb-page .wb-comments .form-submit .submit {
++  padding: 11px 22px;
++  border: 0;
++  border-radius: var(--r-btn);
++  background: var(--btn-bg);
++  color: var(--btn-fg);
++  font: inherit;
++  font-weight: 600;
++  cursor: pointer;
++  transition: filter 0.15s;
++}
++.wb-page .wb-comments .form-submit .submit:hover {
++  filter: brightness(1.08);
++}
 diff --git a/src/builder/live/renderStatic.tsx b/src/builder/live/renderStatic.tsx
 index b9b1356..69c0713 100644
 --- a/src/builder/live/renderStatic.tsx
