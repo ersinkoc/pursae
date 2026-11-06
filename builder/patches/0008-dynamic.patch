@@ -1,0 +1,2506 @@
+diff --git a/src/builder/Builder.tsx b/src/builder/Builder.tsx
+index 81f57a8..3846900 100644
+--- a/src/builder/Builder.tsx
++++ b/src/builder/Builder.tsx
+@@ -20,6 +20,7 @@ import { BuilderCtx, historyReducer, initHistory, insertBounds, type BasicView,
+ import type { Device, ElStyle, Mode, PageSettings, Payload, SavedComponent, Section, Selection } from './types'
+ import { cn, ease } from './ui'
+ import { t } from './i18n'
++import { dynDefaults, isDynWidget } from './dynamic/model'
+ 
+ const PANEL_W = 316
+ 
+@@ -105,7 +106,9 @@ export default function Builder() {
+         setInsertAt(null)
+         return
+       }
+-      const section = p.section ? cloneSection(p.section) : createSection(p.kind, p.content)
++      let section = p.section ? cloneSection(p.section) : createSection(p.kind, p.content)
++      // A dynamic widget added to the page: a one-cell container holding it.
++      if (isDynWidget(p.cell) && section.kind === 'layout' && section.items[0]) section = { ...section, items: [{ ...section.items[0], title: p.cell, text: '', dyn: dynDefaults(p.cell) }, ...section.items.slice(1)] }
+       dispatch({ type: 'insert', section, index: at })
+       setFlags((f) => ({ ...f, section: true }))
+       setInsertAt(null)
+diff --git a/src/builder/ContainerInspector.tsx b/src/builder/ContainerInspector.tsx
+index 7e1b832..a900f5e 100644
+--- a/src/builder/ContainerInspector.tsx
++++ b/src/builder/ContainerInspector.tsx
+@@ -42,6 +42,8 @@ import { AdvancedTab, ColorInput, Ctl, IconSeg, Panel, Select, Slider, StyleTab,
+ import { ElMotionPanel } from './MotionPanel'
+ import { ElFontFamily, ElFontWeight, ElTextStyle } from './TypographyControls'
+ import { t } from './i18n'
++import { DynCellPanel } from './dynamic/inspector'
++import { cellTypeOptions, isDynWidget } from './dynamic/model'
+ 
+ const ZERO: Box4 = { t: 0, r: 0, b: 0, l: 0 }
+ 
+@@ -413,7 +415,7 @@ export function CellLayoutTab({ s, el }: { s: Section; el: string }) {
+     <>
+       <Panel title={t('Cell {v}', { v: index + 1 })}>
+         <Ctl label={t('Content type')}>
+-          <Select value={type} w={120} onChange={(v) => b.dispatch({ type: 'cell', id: s.id, itemId: item.id, cell: v })} options={CELL_TYPES.filter((o) => o.value !== 'layout' || canNest || type === 'layout')} />
++          <Select value={type} w={120} onChange={(v) => b.dispatch({ type: 'cell', id: s.id, itemId: item.id, cell: v })} options={cellTypeOptions(type, CELL_TYPES.filter((o) => o.value !== 'layout' || canNest || type === 'layout'))} />
+         </Ctl>
+         {type === 'layout' && item.sub && (
+           <div className="flex items-center gap-2.5 rounded-[6px] border border-white/[0.07] bg-ink-850 p-2">
+@@ -454,6 +456,7 @@ export function CellLayoutTab({ s, el }: { s: Section; el: string }) {
+           </div>
+         )}
+       </Panel>
++      {isDynWidget(type) && <DynCellPanel s={s} item={item} />}
+       <Panel title={t('Cell layout')}>
+         {!grid && (
+           <Ctl label={t('Width')}>
+diff --git a/src/builder/StudioPanel.tsx b/src/builder/StudioPanel.tsx
+index cedbda0..1567d7b 100644
+--- a/src/builder/StudioPanel.tsx
++++ b/src/builder/StudioPanel.tsx
+@@ -39,6 +39,8 @@ import { useB } from './store'
+ import type { CellType, CornerId, Device, Payload, Section, Selection } from './types'
+ import { Toggle, cn, ease, spring } from './ui'
+ import { intlLocale, t } from './i18n'
++import { DynSectionPanel } from './dynamic/inspector'
++import { cellTypeOptions, isDynWidget } from './dynamic/model'
+ 
+ export function StudioPanel() {
+   const b = useB()
+@@ -513,6 +515,7 @@ function ContentTab({ s, el }: { s: Section; el?: string }) {
+           </Ctl>
+         ))}
+       </Panel>
++      <DynSectionPanel s={s} />
+       {s.kind === 'layout' && (
+         <>
+           <Panel title={t('Structure')}>
+@@ -522,9 +525,9 @@ function ContentTab({ s, el }: { s: Section; el?: string }) {
+             {s.items.map((it, n) => (
+               <div key={it.id} className="space-y-2 rounded-[5px] border border-white/[0.07] p-2">
+                 <Ctl label={t('Cell {v}', { v: n + 1 })}>
+-                  <Select value={it.title as CellType} w={120} onChange={(v) => b.dispatch({ type: 'cell', id: s.id, itemId: it.id, cell: v })} options={CELL_TYPES} />
++                  <Select value={it.title as CellType} w={120} onChange={(v) => b.dispatch({ type: 'cell', id: s.id, itemId: it.id, cell: v })} options={cellTypeOptions(it.title as CellType, CELL_TYPES)} />
+                 </Ctl>
+-                {it.title === 'image' ? (
++                {isDynWidget(it.title) ? null : it.title === 'image' ? (
+                   <ImagePick s={s} el={`items.${it.id}.text`} />
+                 ) : (
+                   it.title && <StudioText s={s} el={`items.${it.id}.text`} label={t('Text')} rows={it.title === 'text' ? 3 : 1} />
+diff --git a/src/builder/data.ts b/src/builder/data.ts
+index 6599eae..21ed446 100644
+--- a/src/builder/data.ts
++++ b/src/builder/data.ts
+@@ -64,6 +64,7 @@ import type {
+   Structure,
+ } from './types'
+ import { intlLocale, t } from './i18n'
++import { CARD_CELLS, DYN_CELL_TEXT, DYN_WIDGET_GROUPS, LOOP_DEFAULTS, type DynGroup } from './dynamic/model'
+ 
+ export const uid = (p = 's') => `${p}_${Math.random().toString(36).slice(2, 9)}`
+ 
+@@ -440,6 +441,14 @@ export const KINDS: Record<SectionKind, KindDef> = {
+     align: false,
+     spacing: false,
+   },
++  loop: {
++    name: t('Post loop'),
++    icon: Repeat,
++    blurb: t('A grid of posts from your site'),
++    fields: [],
++    align: false,
++    spacing: true,
++  },
+ }
+ 
+ /* ---------- Factories ---------- */
+@@ -583,6 +592,21 @@ const DEFAULTS: Record<SectionKind, Omit<Section, 'id' | 'name' | 'hidden' | 'ki
+     items: [],
+     style: { palette: 'light', align: 'left', padding: 0, titleSize: 40, hideOn: [] },
+   },
++  loop: {
++    content: { ...LOOP_DEFAULTS },
++    items: [],
++    style: { palette: 'light', align: 'left', padding: 72, titleSize: 22, hideOn: [] },
++  },
++}
++
++/** Post card of a new loop section (items[0].sub): a one-column grid of post widgets. */
++function loopCard(palette: PaletteId): Section['items'] {
++  const card = createLayout('grid', 'g3r', { nested: true, palette })
++  card.name = t('Post card')
++  card.style = { ...card.style, titleSize: 22 }
++  card.items = CARD_CELLS.map(([w, dyn]) => ({ id: uid('c'), title: w, text: '', dyn: { ...dyn, ...(dyn.fields ? { fields: [...dyn.fields] } : {}) } }))
++  card.box = { ...defaultBox(card), ...card.box, gridCols: 1, gridRows: card.items.length, gapX: 12, gapY: 12 }
++  return [{ id: uid('c'), title: 'layout', text: '', sub: card }]
+ }
+ 
+ /** Starter tree for a new free-form section: a centered box with a heading, text and button. */
+@@ -606,7 +630,7 @@ export function createSection(kind: SectionKind, content?: Record<string, string
+     name: kind === 'layout' ? layoutName : KINDS[kind].name,
+     hidden: false,
+     content: merged,
+-    items: kind === 'layout' ? resizeCells([], merged.structure) : kind === 'custom' ? customStarter() : d.items.map((i) => ({ ...i, id: uid('i') })),
++    items: kind === 'layout' ? resizeCells([], merged.structure) : kind === 'custom' ? customStarter() : kind === 'loop' ? loopCard(d.style.palette) : d.items.map((i) => ({ ...i, id: uid('i') })),
+     style: { ...d.style, hideOn: [] },
+   }
+ }
+@@ -649,7 +673,9 @@ export const CELL_TYPES: { value: CellType; label: string }[] = [
+   { value: 'layout', label: t('Container') },
+ ]
+ 
++/** Default text of a new cell; dynamic widget cells keep their settings in `dyn` (no text). */
+ export const CELL_DEFAULTS: Record<CellType, string> = {
++  ...DYN_CELL_TEXT,
+   '': '',
+   heading: t('New heading'),
+   text: t('Write a short paragraph here. What do you want to tell your visitors?'),
+@@ -779,7 +805,11 @@ const w = (id: string, label: string, icon: LucideIcon, kind: SectionKind, conte
+   payload: { kind, label, content, cell: CELL_FOR[id] },
+ })
+ 
+-export const WIDGET_GROUPS: { title: string; items: Widget[] }[] = [
++/**
++ * Studio widget panel. Theme Builder groups (Site, Post, Archive, Search) carry `dynamic`; the
++ * editor shows them only where dynamic data exists (template mode, patch 0009).
++ */
++export const WIDGET_GROUPS: { title: string; items: Widget[]; dynamic?: DynGroup }[] = [
+   {
+     title: t('Structure'),
+     items: [
+@@ -790,7 +820,6 @@ export const WIDGET_GROUPS: { title: string; items: Widget[] }[] = [
+       w('list', t('List'), List, 'steps', undefined, true),
+       w('accordion', t('Accordion'), ListCollapse, 'faq', undefined, true),
+       w('bgvideo', t('Background video'), Film, 'image', { video: '1' }, true),
+-      w('loop', t('Loop'), Repeat, 'features'),
+     ],
+   },
+   {
+@@ -818,6 +847,7 @@ export const WIDGET_GROUPS: { title: string; items: Widget[] }[] = [
+       w('submit', t('Submit'), Send, 'form'),
+     ],
+   },
++  ...DYN_WIDGET_GROUPS,
+ ]
+ 
+ /* ---------- Helpers ---------- */
+@@ -1067,6 +1097,7 @@ export const GRID_CAPS: Partial<Record<Section['kind'], GridCaps>> = {
+   hero: { gapX: true, gapY: true, label: t('Highlight list') },
+   nav: { gapX: true, label: t('Menu links') },
+   footer: { gapX: true, gapY: true, label: t('Link list') },
++  loop: { cols: true, gapX: true, gapY: true, label: t('Post grid') },
+ }
+ 
+ const GRID_DEFAULTS: Partial<Record<Section['kind'], Partial<GridSettings>>> = {
+@@ -1076,6 +1107,7 @@ const GRID_DEFAULTS: Partial<Record<Section['kind'], Partial<GridSettings>>> = {
+   hero: { gapX: 24, gapY: 8 },
+   nav: { gapX: 24 },
+   footer: { gapX: 28, gapY: 8 },
++  loop: { cols: 3, colsT: 2, colsM: 1, gapX: 28, gapY: 44 },
+ }
+ 
+ export function getGrid(s: Section): GridSettings {
+diff --git a/src/builder/dynamic/ctx.tsx b/src/builder/dynamic/ctx.tsx
+new file mode 100644
+index 0000000..38994af
+--- /dev/null
++++ b/src/builder/dynamic/ctx.tsx
+@@ -0,0 +1,86 @@
++import { createContext, useContext, useSyncExternalStore, type ReactNode } from 'react'
++import { getHost } from '../host'
++import { useLive } from '../live/ctx'
++import { SAMPLE_DYNAMIC } from './sample'
++import type { DynContext, DynPost } from './types'
++
++/*
++ * Where dynamic widgets get their data:
++ *
++ *  - editor (and previews, thumbnails): the host's sample data (BuilderHost.dynamic, kept current
++ *    through onDynamic), else the built-in SAMPLE_DYNAMIC; a DynCtx provider can override both;
++ *  - live (renderStatic): placeholders only (contract §11.5): the server fills them per request;
++ *  - live with RenderOptions.sample (fixtures and the parity suite only): the placeholder markup
++ *    filled with that sample, i.e. what the server would send for it.
++ */
++
++/** Overrides the host's sample data below it (tests, thumbnails of a fixed context). */
++export const DynCtx = createContext<DynContext | null>(null)
++
++/** The post a loop card is drawn for; post widgets read it before the view's own post. */
++export const LoopPostCtx = createContext<DynPost | null>(null)
++
++const subscribe = (cb: () => void) => getHost().onDynamic?.(() => cb()) ?? (() => {})
++const read = () => getHost().dynamic?.() ?? SAMPLE_DYNAMIC
++
++/** The editor's sample data: a DynCtx provider, else the host's, else the built-in sample. */
++export function useDynamic(): DynContext {
++  const over = useContext(DynCtx)
++  const fromHost = useSyncExternalStore(subscribe, read, read)
++  return over ?? fromHost
++}
++
++export interface DynMode {
++  /** Drawing for the published page (renderStatic). */
++  live: boolean
++  /** Emit placeholders (data-wb-slot …) instead of values: live without a sample. */
++  ph: boolean
++  /** Sample data (editor, or a live sample render); placeholders still read the site URL from it. */
++  ctx: DynContext
++  /** The post post-widgets show: the loop card's post, else the view's post. */
++  post: DynPost | null
++  /** Home URL without a trailing slash (search form action). */
++  home: string
++}
++
++export function useDyn(): DynMode {
++  const live = useLive()
++  const editor = useDynamic()
++  const loopPost = useContext(LoopPostCtx)
++  const ctx = live ? (live.sample ?? editor) : editor
++  return {
++    live: !!live,
++    ph: !!live && !live.sample,
++    ctx,
++    post: loopPost ?? ctx.post,
++    home: (live ? live.siteUrl : ctx.site.home).replace(/\/+$/, ''),
++  }
++}
++
++/* ---------- Slot helpers: one element tree, values or placeholders ---------- */
++
++type Props = Record<string, unknown>
++
++/** A text slot: the value as children, or data-wb-slot (the server writes the escaped text). */
++export function txt(m: DynMode, slot: string, value: string | number | undefined | null): Props {
++  return m.ph ? { 'data-wb-slot': slot } : { children: value ?? '' }
++}
++
++/** An HTML slot: trusted markup from the host / the server's core generators. */
++export function html(m: DynMode, slot: string, value: string | undefined | null): Props {
++  return m.ph ? { 'data-wb-slot': slot } : { dangerouslySetInnerHTML: { __html: value ?? '' } }
++}
++
++/** An attribute slot: the attributes, or data-wb-slot (the element keeps its content). */
++export function attr(m: DynMode, slot: string, values: Props): Props {
++  return m.ph ? { 'data-wb-slot': slot } : values
++}
++
++/**
++ * Conditional element: placeholders carry data-wb-if / data-wb-if-not and stay in the markup;
++ * with values the element is drawn only when `has` says so.
++ */
++export function When({ m, slot, has, not, children }: { m: DynMode; slot: string; has: boolean; not?: boolean; children: (p: Props) => ReactNode }) {
++  if (m.ph) return <>{children(not ? { 'data-wb-if-not': slot } : { 'data-wb-if': slot })}</>
++  return (not ? !has : has) ? <>{children({})}</> : null
++}
+diff --git a/src/builder/dynamic/format.ts b/src/builder/dynamic/format.ts
+new file mode 100644
+index 0000000..167f200
+--- /dev/null
++++ b/src/builder/dynamic/format.ts
+@@ -0,0 +1,108 @@
++/**
++ * Small formatting helpers for drawing sample data the way the server fills placeholders
++ * (WordPress date formats, trimmed excerpts, term lists, pagination, safe HTML).
++ */
++import { liveHref } from '../live/ctx'
++import type { DynPost } from './types'
++
++export const escapeHtml = (v: string) => v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
++
++/** DynSettings.format rule (contract §11.4). */
++export const DATE_FORMAT_RE = /^[A-Za-z ,.:/-]{1,32}$/
++
++const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
++const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
++const pad = (n: number) => String(n).padStart(2, '0')
++const suffix = (d: number) => (d % 10 === 1 && d !== 11 ? 'st' : d % 10 === 2 && d !== 12 ? 'nd' : d % 10 === 3 && d !== 13 ? 'rd' : 'th')
++
++/**
++ * An RFC 3339 date in a WordPress (PHP) date format, in the date's own offset; `fallback` (the
++ * site's date_format text the host sent) when there is no custom format. English names: the
++ * server formats with the site's locale.
++ */
++export function formatDate(iso: string, format: string | undefined, fallback: string): string {
++  if (!format || !DATE_FORMAT_RE.test(format)) return fallback
++  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/.exec(iso)
++  if (!m) return fallback
++  const [Y, Mo, D, H, Mi, S] = m.slice(1).map(Number)
++  const dow = new Date(Date.UTC(Y, Mo - 1, D)).getUTCDay()
++  const h12 = H % 12 || 12
++  const map: Record<string, string> = {
++    d: pad(D), j: String(D), S: suffix(D), D: DAYS[dow].slice(0, 3), l: DAYS[dow], N: String(dow || 7), w: String(dow),
++    F: MONTHS[Mo - 1], M: MONTHS[Mo - 1].slice(0, 3), m: pad(Mo), n: String(Mo),
++    Y: String(Y), y: String(Y).slice(2),
++    a: H < 12 ? 'am' : 'pm', A: H < 12 ? 'AM' : 'PM', g: String(h12), G: String(H), h: pad(h12), H: pad(H), i: pad(Mi), s: pad(S),
++  }
++  return [...format].map((c) => map[c] ?? c).join('')
++}
++
++/** The first `words` words of a plain text, with an ellipsis when cut (WordPress wp_trim_words). */
++export function trimWords(text: string, words: number | undefined): string {
++  const n = Math.min(100, Math.max(5, words ?? 55))
++  const all = text.trim().split(/\s+/).filter(Boolean)
++  return all.length > n ? `${all.slice(0, n).join(' ')}…` : all.join(' ')
++}
++
++/** Escaped term links of one taxonomy joined by `sep` (the server's post.terms markup). */
++export function termsHtml(post: DynPost | null, tax: string, sep: string): string {
++  return (post?.terms[tax] ?? []).map((x) => `<a href="${escapeHtml(liveHref(x.url) ?? '#')}" rel="tag">${escapeHtml(x.name)}</a>`).join(escapeHtml(sep))
++}
++
++/** Previous / next post links like WordPress' the_post_navigation(). */
++export function postNavHtml(post: DynPost | null, posts: DynPost[]): string {
++  if (!post) return ''
++  const i = posts.findIndex((p) => p.id === post.id)
++  const prev = i >= 0 ? posts[i + 1] : undefined
++  const next = i > 0 ? posts[i - 1] : undefined
++  const link = (p: DynPost | undefined, cls: string, rel: string, text: (t: string) => string) =>
++    p ? `<div class="${cls}"><a href="${escapeHtml(liveHref(p.url) ?? '#')}" rel="${rel}">${text(escapeHtml(p.title))}</a></div>` : ''
++  const body = link(prev, 'nav-previous', 'prev', (x) => `← ${x}`) + link(next, 'nav-next', 'next', (x) => `${x} →`)
++  return body ? `<nav class="navigation post-navigation" aria-label="Posts"><div class="nav-links">${body}</div></nav>` : ''
++}
++
++/** Page links like WordPress' paginate_links() (numbers) or previous / next only. */
++export function paginationHtml(p: { current: number; total: number }, kind: 'numbers' | 'prev-next' = 'numbers'): string {
++  const total = Math.max(1, p.total)
++  const cur = Math.min(total, Math.max(1, p.current))
++  if (total < 2) return ''
++  const a = (n: number, cls: string, text: string) => `<a class="${cls}" href="#page-${n}">${text}</a>`
++  const out: string[] = []
++  if (cur > 1) out.push(a(cur - 1, 'prev page-numbers', '← Previous'))
++  if (kind === 'numbers') {
++    for (let n = 1; n <= total; n++) {
++      if (n === cur) out.push(`<span aria-current="page" class="page-numbers current">${n}</span>`)
++      else if (n === 1 || n === total || Math.abs(n - cur) <= 1) out.push(a(n, 'page-numbers', String(n)))
++      else if (out[out.length - 1] !== '<span class="page-numbers dots">…</span>') out.push('<span class="page-numbers dots">…</span>')
++    }
++  }
++  if (cur < total) out.push(a(cur + 1, 'next page-numbers', 'Next →'))
++  return out.join('')
++}
++
++const DROP_ELEMENTS = 'script,style,iframe,frame,object,embed,form,input,button,textarea,select,link,meta,base,template,noscript'
++const URL_ATTRS = new Set(['href', 'src', 'action', 'formaction', 'xlink:href', 'poster', 'srcset'])
++
++/**
++ * Defence in depth for post content shown in the editor: the host already sends it sanitized
++ * (UGC policy); this drops anything active anyway. Outside a browser (fixtures) only the
++ * element and handler patterns are removed.
++ */
++export function cleanHtml(raw: string): string {
++  if (!raw) return ''
++  if (typeof DOMParser === 'undefined') {
++    return raw
++      .replace(/<(script|style|iframe|object|embed|template|noscript)\b[\s\S]*?<\/\1\s*>/gi, '')
++      .replace(/<(?:script|style|iframe|object|embed|link|meta|base)\b[^>]*>/gi, '')
++      .replace(/\s+on[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
++  }
++  const doc = new DOMParser().parseFromString(`<!doctype html><body>${raw}`, 'text/html')
++  doc.body.querySelectorAll(DROP_ELEMENTS).forEach((n) => n.remove())
++  for (const el of Array.from(doc.body.querySelectorAll('*'))) {
++    for (const a of Array.from(el.attributes)) {
++      const name = a.name.toLowerCase()
++      if (name.startsWith('on') || name === 'style' || name.startsWith('data-wb')) el.removeAttribute(a.name)
++      else if (URL_ATTRS.has(name) && (name === 'srcset' ? /javascript:/i.test(a.value) : liveHref(a.value) === undefined && !/^data:image\//i.test(a.value.trim()))) el.removeAttribute(a.name)
++    }
++  }
++  return doc.body.innerHTML
++}
+diff --git a/src/builder/dynamic/inspector.tsx b/src/builder/dynamic/inspector.tsx
+new file mode 100644
+index 0000000..47bae7b
+--- /dev/null
++++ b/src/builder/dynamic/inspector.tsx
+@@ -0,0 +1,294 @@
++import type { ReactNode } from 'react'
++import { useB } from '../store'
++import type { DynSettings, DynWidget, Item, Section } from '../types'
++import { Toggle, cn } from '../ui'
++import { Ctl, Panel, Select, Slider, inputCls } from '../StudioPanel'
++import { t } from '../i18n'
++import { useDynamic } from './ctx'
++import { CONTENT_LOGO_SOURCE, CONTENT_MENU } from './menu'
++import { BURGER_WIDTHS, DYN_DEFS, burgerWidth, isDynWidget, loopQuery } from './model'
++import { DATE_FORMAT_RE } from './format'
++
++/* Studio inspector panels of the Theme Builder: dynamic widget settings, the loop query and the nav / footer binding. */
++
++const TAGS = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'div', 'span'] as const
++const has = (w: DynWidget, list: DynWidget[]) => list.includes(w)
++
++function Text({ value, onChange, max, placeholder, rows }: { value: string; onChange: (v: string) => void; max: number; placeholder?: string; rows?: number }) {
++  const cls = 'w-full rounded-[5px] border border-white/[0.08] bg-ink-850 px-2 py-1.5 text-[12px] text-ink-100 outline-none focus:border-accent/70'
++  return rows ? (
++    <textarea rows={rows} value={value} maxLength={max} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} className={cn(cls, 'resize-y leading-snug')} />
++  ) : (
++    <input value={value} maxLength={max} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} className={cn(inputCls, 'w-[150px]')} />
++  )
++}
++
++function Hint({ children }: { children: ReactNode }) {
++  return <p className="text-[11px] leading-relaxed text-ink-500">{children}</p>
++}
++
++/** Settings of a layout cell holding a dynamic widget (Content tab of the cell). */
++export function DynCellPanel({ s, item }: { s: Section; item: Item }) {
++  const b = useB()
++  const ctx = useDynamic()
++  if (!isDynWidget(item.title)) return null
++  const w = item.title
++  const d: DynSettings = { ...DYN_DEFS[w].defaults, ...item.dyn }
++  const set = (patch: Partial<DynSettings>, key?: string) => b.dispatch({ type: 'dyn', id: s.id, itemId: item.id, patch, key })
++  const locations = ctx.locations.length ? ctx.locations : [{ slug: 'primary', name: t('Primary menu') }]
++  const taxes = [...new Set(['category', 'post_tag', d.tax ?? 'category'])]
++  const taxLabel = (x: string) => (x === 'category' ? t('Categories') : x === 'post_tag' ? t('Tags') : x)
++  return (
++    <Panel title={DYN_DEFS[w].label}>
++      {has(w, ['site-title', 'site-tagline', 'post-title', 'archive-title', 'search-query']) && (
++        <Ctl label={t('HTML tag')}>
++          <Select value={d.tag ?? 'p'} w={90} onChange={(v) => set({ tag: v })} options={TAGS.map((v) => ({ value: v, label: v.toUpperCase() }))} />
++        </Ctl>
++      )}
++      {has(w, ['site-logo', 'site-title', 'post-title', 'post-image', 'post-author']) && (
++        <Ctl label={w.startsWith('site') ? t('Link to the home page') : w === 'post-author' ? t('Link to the author') : t('Link to the post')}>
++          <Toggle on={!!d.link} onChange={(v) => set({ link: v })} />
++        </Ctl>
++      )}
++      {w === 'nav-menu' && (
++        <>
++          <Ctl label={t('Menu location')}>
++            <Select value={d.location ?? 'primary'} onChange={(v) => set({ location: v })} options={locations.map((l) => ({ value: l.slug, label: l.name }))} />
++          </Ctl>
++          <Ctl label={t('Layout')}>
++            <Select
++              value={d.menuLayout ?? 'row'}
++              onChange={(v) => set({ menuLayout: v })}
++              options={[
++                { value: 'row', label: t('Row') },
++                { value: 'column', label: t('Column') },
++                { value: 'burger', label: t('Menu button') },
++              ]}
++            />
++          </Ctl>
++          {(d.menuLayout ?? 'row') === 'row' && (
++            <Ctl label={t('Menu button below')}>
++              <Select value={burgerWidth(d.burgerAt)} w={110} onChange={(v) => set({ burgerAt: v })} options={[{ value: 0, label: t('Never') }, ...BURGER_WIDTHS.map((px) => ({ value: px, label: `${px}px` }))]} />
++            </Ctl>
++          )}
++        </>
++      )}
++      {w === 'search-form' && (
++        <>
++          <Ctl label={t('Placeholder')}>
++            <Text value={d.placeholder ?? ''} max={80} onChange={(v) => set({ placeholder: v }, 'ph')} />
++          </Ctl>
++          <Ctl label={t('Button text')}>
++            <Text value={d.button ?? ''} max={40} placeholder={t('Icon only')} onChange={(v) => set({ button: v }, 'btn')} />
++          </Ctl>
++        </>
++      )}
++      {has(w, ['copyright', 'post-terms', 'post-date', 'post-author', 'search-query']) && (
++        <Ctl label={t('Text before')}>
++          <Text value={d.prefix ?? ''} max={60} onChange={(v) => set({ prefix: v }, 'prefix')} />
++        </Ctl>
++      )}
++      {w === 'post-image' && (
++        <>
++          <Ctl label={t('Image size')}>
++            <Select
++              value={d.size ?? 'large'}
++              onChange={(v) => set({ size: v })}
++              options={[
++                { value: 'thumbnail', label: t('Thumbnail') },
++                { value: 'medium', label: t('Medium') },
++                { value: 'large', label: t('Large') },
++                { value: 'full', label: t('Full size') },
++              ]}
++            />
++          </Ctl>
++          <Ctl label={t('Aspect ratio')}>
++            <Select
++              value={d.ratio ?? 0}
++              w={110}
++              onChange={(v) => set({ ratio: v || undefined })}
++              options={[
++                { value: 0, label: t('Original') },
++                { value: 1.78, label: '16:9' },
++                { value: 1.6, label: '16:10' },
++                { value: 1.5, label: '3:2' },
++                { value: 1.33, label: '4:3' },
++                { value: 1, label: '1:1' },
++                { value: 0.75, label: '3:4' },
++              ]}
++            />
++          </Ctl>
++        </>
++      )}
++      {w === 'post-meta' && (
++        <Ctl label={t('Show')} stack>
++          <div className="grid grid-cols-2 gap-1.5">
++            {(
++              [
++                ['date', t('Date')],
++                ['modified', t('Last updated')],
++                ['author', t('Author')],
++                ['comments', t('Comments')],
++                ['terms', t('Terms')],
++              ] as const
++            ).map(([f, label]) => {
++              const on = (d.fields ?? []).includes(f)
++              return (
++                <label key={f} className="flex items-center gap-2 text-[12px] text-ink-200">
++                  <input type="checkbox" checked={on} onChange={() => set({ fields: on ? (d.fields ?? []).filter((x) => x !== f) : [...(d.fields ?? []), f] })} className="accent-[var(--color-accent)]" />
++                  {label}
++                </label>
++              )
++            })}
++          </div>
++        </Ctl>
++      )}
++      {(w === 'post-terms' || (w === 'post-meta' && d.fields?.includes('terms'))) && (
++        <Ctl label={t('Taxonomy')}>
++          <Select value={d.tax ?? 'category'} onChange={(v) => set({ tax: v })} options={taxes.map((x) => ({ value: x, label: taxLabel(x) }))} />
++        </Ctl>
++      )}
++      {(w === 'post-meta' || w === 'post-terms') && (
++        <Ctl label={t('Separator')}>
++          <Text value={d.sep ?? ''} max={8} onChange={(v) => set({ sep: v }, 'sep')} />
++        </Ctl>
++      )}
++      {(w === 'post-date' || (w === 'post-meta' && (d.fields?.includes('date') || d.fields?.includes('modified')))) && (
++        <>
++          <Ctl label={t('Date format')}>
++            <Text value={d.format ?? ''} max={32} placeholder="F j, Y" onChange={(v) => set({ format: v }, 'format')} />
++          </Ctl>
++          {d.format && !DATE_FORMAT_RE.test(d.format) ? <Hint>{t('Use letters, spaces and , . : / - only.')}</Hint> : <Hint>{t("Empty = the site's date format.")}</Hint>}
++        </>
++      )}
++      {w === 'post-excerpt' && (
++        <Ctl label={t('Words')}>
++          <Slider value={d.words ?? 30} min={5} max={100} unit="" onChange={(v) => set({ words: v }, 'words')} />
++        </Ctl>
++      )}
++      {has(w, ['post-excerpt', 'post-terms', 'archive-desc']) && (
++        <Ctl label={t('Text when empty')} stack>
++          <Text value={d.empty ?? ''} max={200} rows={2} onChange={(v) => set({ empty: v }, 'empty')} />
++        </Ctl>
++      )}
++      {w === 'post-content' && <Hint>{t('The post content is edited in the post editor; here it is shown read-only.')}</Hint>}
++      {w === 'post-comments' && <Hint>{t('The comments and the reply form show here on the site.')}</Hint>}
++      <Hint>{t('Shows the data of the post or page being viewed.')}</Hint>
++    </Panel>
++  )
++}
++
++/** Content tab panels of a loop section and of a nav / footer section (menu and logo binding). */
++export function DynSectionPanel({ s }: { s: Section }) {
++  const b = useB()
++  const ctx = useDynamic()
++  const set = (key: string, value: string, label: string) => b.dispatch({ type: 'content', id: s.id, key, value, label: t('{label} changed', { label }) })
++  if (s.kind === 'nav' || s.kind === 'footer') {
++    const locs = ctx.locations
++    return (
++      <Panel title={t('Site data')}>
++        <Ctl label={t('Links')}>
++          <Select value={s.content[CONTENT_MENU] ?? ''} onChange={(v) => set(CONTENT_MENU, v, t('Links'))} options={[{ value: '', label: t('This section') }, ...locs.map((l) => ({ value: l.slug, label: l.name }))]} />
++        </Ctl>
++        <Ctl label={t('Logo')}>
++          <Select
++            value={s.content[CONTENT_LOGO_SOURCE] === 'site' ? 'site' : ''}
++            onChange={(v) => set(CONTENT_LOGO_SOURCE, v, t('Logo'))}
++            options={[
++              { value: '', label: t('This section') },
++              { value: 'site', label: t('Site logo') },
++            ]}
++          />
++        </Ctl>
++        <Hint>{t('Links from a menu location follow the menu: edit them under Appearance › Menus.')}</Hint>
++      </Panel>
++    )
++  }
++  if (s.kind !== 'loop') return null
++  const q = loopQuery(s.content)
++  const types = [...new Set(['post', 'page', q.postType])]
++  return (
++    <Panel title={t('Query')}>
++      <Ctl label={t('Source')}>
++        <Select
++          value={q.source}
++          onChange={(v) => set('source', v, t('Source'))}
++          options={[
++            { value: 'main', label: t('Posts of the page') },
++            { value: 'query', label: t('Custom query') },
++            { value: 'related', label: t('Related posts') },
++          ]}
++        />
++      </Ctl>
++      {q.source === 'main' ? (
++        <>
++          <Ctl label={t('Pagination')}>
++            <Select
++              value={q.pagination}
++              onChange={(v) => set('pagination', v, t('Pagination'))}
++              options={[
++                { value: 'numbers', label: t('Numbers') },
++                { value: 'prev-next', label: t('Previous / next') },
++                { value: 'none', label: t('None') },
++              ]}
++            />
++          </Ctl>
++          <Hint>{t('Shows the posts of the archive, search or blog page being viewed.')}</Hint>
++        </>
++      ) : (
++        <>
++          <Ctl label={t('Post type')}>
++            <Select value={q.postType} onChange={(v) => set('postType', v, t('Post type'))} options={types.map((x) => ({ value: x, label: x === 'post' ? t('Posts') : x === 'page' ? t('Pages') : x }))} />
++          </Ctl>
++          <Ctl label={t('Posts')}>
++            <Slider value={Number(q.perPage)} min={1} max={24} unit="" onChange={(v) => set('perPage', String(v), t('Posts'))} />
++          </Ctl>
++          <Ctl label={t('Order by')}>
++            <Select
++              value={q.orderBy}
++              onChange={(v) => set('orderBy', v, t('Order by'))}
++              options={[
++                { value: 'date', label: t('Date') },
++                { value: 'modified', label: t('Last updated') },
++                { value: 'title', label: t('Title') },
++                { value: 'menu_order', label: t('Menu order') },
++                { value: 'comment_count', label: t('Comments') },
++                { value: 'rand', label: t('Random') },
++              ]}
++            />
++          </Ctl>
++          <Ctl label={t('Order')}>
++            <Select
++              value={q.order}
++              onChange={(v) => set('order', v, t('Order'))}
++              options={[
++                { value: 'desc', label: t('Newest first') },
++                { value: 'asc', label: t('Oldest first') },
++              ]}
++            />
++          </Ctl>
++          {q.source === 'query' && (
++            <>
++              <Ctl label={t('Terms')}>
++                <Text value={s.content.terms ?? ''} max={400} placeholder="category:12" onChange={(v) => set('terms', v.replace(/\s+/g, ''), t('Terms'))} />
++              </Ctl>
++              <Ctl label={t('Author ID')}>
++                <Text value={s.content.author ?? ''} max={19} onChange={(v) => set('author', v.replace(/\D+/g, ''), t('Author ID'))} />
++              </Ctl>
++            </>
++          )}
++          <Ctl label={t('Skip')}>
++            <Slider value={Number(q.offset)} min={0} max={50} unit="" onChange={(v) => set('offset', String(v), t('Skip'))} />
++          </Ctl>
++          <Ctl label={t('Leave out the current post')}>
++            <Toggle on={q.exclude === 'current'} onChange={(v) => set('exclude', v ? 'current' : '', t('Leave out the current post'))} />
++          </Ctl>
++        </>
++      )}
++      <Ctl label={t('Text when empty')} stack>
++        <Text value={s.content.empty ?? ''} max={200} rows={2} onChange={(v) => set('empty', v, t('Text when empty'))} />
++      </Ctl>
++      <Hint>{t('Design the card once: select it on the canvas to change its widgets and style.')}</Hint>
++    </Panel>
++  )
++}
+diff --git a/src/builder/dynamic/loop.tsx b/src/builder/dynamic/loop.tsx
+new file mode 100644
+index 0000000..dfd866b
+--- /dev/null
++++ b/src/builder/dynamic/loop.tsx
+@@ -0,0 +1,97 @@
++import type { ReactNode } from 'react'
++import { Repeat } from 'lucide-react'
++import { getGrid } from '../data'
++import { NestedLayout, secPad } from '../sections'
++import { useB } from '../store'
++import type { Section } from '../types'
++import { cn } from '../ui'
++import { GRID_CLS, W, gridStyle } from '../variants/kit'
++import { t } from '../i18n'
++import { LoopPostCtx, useDyn, type DynMode } from './ctx'
++import { paginationHtml } from './format'
++import { loopQuery } from './model'
++import type { DynPost } from './types'
++import { PAGINATION } from './widgets'
++
++/*
++ * The 'loop' section (contract §11.4): a grid of post cards. The card design is items[0].sub (a
++ * layout container whose cells hold post widgets), the query is `content`, the grid `section.grid`.
++ * The snapshot holds one card template in a data-wb-loop list (the server repeats it per post and
++ * reads the query from the stored doc, never from the markup); the editor draws the sample posts.
++ */
++
++const MUTED = { color: 'var(--muted)' }
++
++/** Sample posts of a loop: the view's posts, a custom query shaped like the real one. */
++function samplePosts(m: DynMode, s: Section): DynPost[] {
++  const q = loopQuery(s.content)
++  if (q.source === 'main') return m.ctx.posts
++  let list = m.ctx.posts.filter((p) => q.postType === p.type)
++  if (q.exclude === 'current' || q.source === 'related') list = list.filter((p) => p.id !== m.ctx.post?.id)
++  return list.slice(Number(q.offset), Number(q.offset) + Number(q.perPage))
++}
++
++export function LoopSection({ s }: { s: Section }) {
++  const b = useB()
++  const m = useDyn()
++  const q = loopQuery(s.content)
++  const g = getGrid(s)
++  const card = s.items[0]?.sub
++  const pages = q.source === 'main' && q.pagination !== 'none'
++  const drawCard = (key: string | number, inert?: boolean): ReactNode =>
++    card ? (
++      <div key={key} className={cn('flex min-w-0 flex-col', inert && 'pointer-events-none')} aria-hidden={inert || undefined}>
++        <NestedLayout parent={s} sub={card} fill={false} />
++      </div>
++    ) : null
++
++  if (m.ph)
++    return (
++      <div style={secPad(s)}>
++        <W>
++          <div data-wb-loop={s.id} className={GRID_CLS} style={gridStyle(g)}>
++            <div data-wb-loop-item="" className="flex min-w-0 flex-col">
++              {card && <NestedLayout parent={s} sub={card} fill={false} />}
++            </div>
++            {q.empty && (
++              <p data-wb-loop-empty="" className="col-span-full text-[16px]" style={MUTED}>
++                {q.empty}
++              </p>
++            )}
++          </div>
++          {pages && <nav aria-label="Pagination" data-wb-slot="loop.pagination" className={cn(PAGINATION, 'mt-12 justify-center')} />}
++        </W>
++      </div>
++    )
++
++  const posts = samplePosts(m, s)
++  const pag = pages ? paginationHtml(m.ctx.pagination, q.pagination === 'prev-next' ? 'prev-next' : 'numbers') : ''
++  return (
++    <div style={secPad(s)}>
++      <W>
++        {posts.length > 0 ? (
++          <div className={GRID_CLS} style={gridStyle(g)}>
++            {posts.map((p, i) => (
++              <LoopPostCtx.Provider key={p.id} value={p}>
++                {drawCard(p.id, !m.live && i > 0)}
++              </LoopPostCtx.Provider>
++            ))}
++          </div>
++        ) : q.empty ? (
++          <p className="text-[16px]" style={MUTED}>
++            {q.empty}
++          </p>
++        ) : (
++          !m.live &&
++          !b.preview && (
++            <div className="flex items-center gap-2 p-6 text-[14px]" style={{ ...MUTED, border: '1.5px dashed var(--line)', borderRadius: 'var(--r-card)' }}>
++              <Repeat size={16} aria-hidden />
++              {t('No posts match this loop in the preview.')}
++            </div>
++          )
++        )}
++        {pag && <nav aria-label="Pagination" className={cn(PAGINATION, 'mt-12 justify-center')} dangerouslySetInnerHTML={{ __html: pag }} />}
++      </W>
++    </div>
++  )
++}
+diff --git a/src/builder/dynamic/menu.tsx b/src/builder/dynamic/menu.tsx
+new file mode 100644
+index 0000000..2af8708
+--- /dev/null
++++ b/src/builder/dynamic/menu.tsx
+@@ -0,0 +1,126 @@
++import { createContext, createElement, useContext, useMemo, type CSSProperties, type ReactNode } from 'react'
++import type { Item, Section } from '../types'
++import { cn } from '../ui'
++import { liveHref } from '../live/ctx'
++import { When, attr, txt, useDyn, type DynMode } from './ctx'
++
++/*
++ * nav / footer binding (contract §11.4): `content.menu = '<location>'` takes the links from that
++ * menu location, `content.logoSource = 'site'` shows the custom logo or the site title.
++ *
++ * The designs stay untouched: the section they draw is derived. Bound links become items with
++ * `wbm-` ids (the menu's items in the editor, read-only; two placeholder templates in the
++ * snapshot, one per half, so split-logo designs keep their halves and every other design draws
++ * both halves one after the other). E() asks boundEl() how to draw those items and the brand.
++ */
++
++export const CONTENT_MENU = 'menu'
++export const CONTENT_LOGO_SOURCE = 'logoSource'
++
++/** Placeholder link templates of a bound menu: first and second half of the items. */
++const TEMPLATES: Item[] = [
++  { id: 'wbm-1', title: 'Menu', text: '' },
++  { id: 'wbm-2', title: 'Menu', text: '' },
++]
++const PART: Record<string, string> = { 'wbm-1': '1/2', 'wbm-2': '2/2' }
++
++/** Link items drawn from a menu location (editor or placeholder); never in the stored doc. */
++export const isBoundItem = (i: Pick<Item, 'id'>) => i.id.startsWith('wbm-')
++/** A placeholder link template (snapshot only). */
++export const isMenuTemplate = (i: Pick<Item, 'id'>) => i.id in PART
++
++const menuLoc = (s: Section) => {
++  const v = s.content[CONTENT_MENU] ?? ''
++  return /^[a-z0-9_-]{1,40}$/.test(v) ? v : ''
++}
++const siteLogo = (s: Section) => s.content[CONTENT_LOGO_SOURCE] === 'site'
++
++/** True when the section takes links or its logo from the site. */
++export const isBound = (s: Section) => (s.kind === 'nav' || s.kind === 'footer') && (!!menuLoc(s) || siteLogo(s))
++
++/** The section a nav / footer design draws: links from the menu, no logo letter with the site logo. */
++export function boundSection(s: Section, m: DynMode): Section {
++  if (!isBound(s)) return s
++  const loc = menuLoc(s)
++  let items = s.items
++  if (loc) items = m.ph ? TEMPLATES : (m.ctx.menus[loc] ?? []).map((i) => ({ id: `wbm-${i.id}`, title: i.label, text: '', href: i.url }))
++  let content = s.content
++  if (siteLogo(s)) {
++    content = { ...s.content }
++    delete content.logo
++  }
++  return { ...s, items, content }
++}
++
++interface Bound {
++  m: DynMode
++  /** The stored section (selection, editing). */
++  s: Section
++}
++
++const BoundCtx = createContext<Bound | null>(null)
++
++/** E() reads this: set while a bound nav / footer section is drawn. */
++export const useBound = () => useContext(BoundCtx)
++
++/** Wraps a nav / footer renderer: draws the derived section when the stored one is bound. */
++export function withBinding(R: (p: { s: Section }) => ReactNode) {
++  function Bound({ s }: { s: Section }) {
++    const m = useDyn()
++    const sb = useMemo(() => boundSection(s, m), [s, m])
++    const value = useMemo(() => ({ m, s }), [m, s])
++    if (sb === s) return <R s={s} />
++    return (
++      <BoundCtx.Provider value={value}>
++        <R s={sb} />
++      </BoundCtx.Provider>
++    )
++  }
++  return Bound
++}
++
++/**
++ * How E() draws an element of a bound section: undefined = as usual. `select` selects the
++ * section (bound elements are not edited on the canvas).
++ */
++export function boundEl(o: { bound: Bound; s: Section; el: string; as: string; className?: string; style: CSSProperties; value: string; preview: boolean; select: () => void }): ReactNode | undefined {
++  const { bound, s, el, as, className, style, value } = o
++  const { m } = bound
++  const editorProps = {
++    'data-el': `${s.id}:${el}`,
++    onClick: (e: React.MouseEvent) => {
++      e.preventDefault()
++      if (o.preview) return
++      e.stopPropagation()
++      o.select()
++    },
++  }
++  if (siteLogo(s) && el === 'logo') return null
++  if (siteLogo(s) && el === 'brand') {
++    const logo = m.ctx.site.logo
++    return (
++      <a className={cn('ed inline-flex items-center', className)} style={style} {...editorProps} {...attr(m, 'site.url', { href: liveHref(m.home + '/') })}>
++        <When m={m} slot="site.logo" has={!!logo}>
++          {(p) => <img {...p} alt="" {...attr(m, 'site.logo', logo ? { src: logo.url, width: logo.width, height: logo.height, alt: logo.alt } : {})} className="block h-[1.6em] w-auto max-w-full" />}
++        </When>
++        <When m={m} slot="site.logo" has={!!logo} not>
++          {(p) => <span {...p} {...txt(m, 'site.title', m.ctx.site.title)} />}
++        </When>
++      </a>
++    )
++  }
++  if (!el.startsWith('items.wbm-')) return undefined
++  const id = el.split('.')[1]
++  // Only the label is drawn: menu items have no description or icon.
++  if (!el.endsWith('.title')) return null
++  if (m.ph) {
++    const loc = menuLoc(s)
++    return (
++      <span className="contents" data-wb-menu-loc={loc} data-wb-loop-part={PART[id]}>
++        {createElement(as, { className: cn('ed', className), style, 'data-el': `${s.id}:${el}`, 'data-wb-loop-item': '', 'data-wb-slot': 'menu.url' }, <span data-wb-slot="menu.label" />)}
++      </span>
++    )
++  }
++  const item = s.items.find((i) => i.id === id)
++  return createElement(as, { className: cn('ed', className), style, ...editorProps, href: as === 'a' ? liveHref(item?.href) : undefined }, value)
++}
+diff --git a/src/builder/dynamic/model.ts b/src/builder/dynamic/model.ts
+new file mode 100644
+index 0000000..e6c73c7
+--- /dev/null
++++ b/src/builder/dynamic/model.ts
+@@ -0,0 +1,185 @@
++/**
++ * Theme Builder data model: dynamic widgets (layout cell types that show site or post data), their
++ * default settings and widget panel groups, and the post loop section (contract §11.4).
++ * No React here: data.ts and store.ts import it.
++ */
++import {
++  AlignLeft,
++  ArrowLeftRight,
++  CalendarDays,
++  Copyright,
++  FileText,
++  Heading1,
++  Image as ImageIcon,
++  Info,
++  LetterText,
++  ListOrdered,
++  Menu,
++  MessagesSquare,
++  Repeat,
++  Search,
++  SearchCheck,
++  Tags,
++  TextQuote,
++  Type,
++  User,
++  UserSquare,
++  Hexagon,
++  type LucideIcon,
++} from 'lucide-react'
++import type { CellType, DynSettings, DynWidget, LoopContent, Payload } from '../types'
++import { t } from '../i18n'
++
++/** Every dynamic widget, in panel order. */
++export const DYN_WIDGETS: readonly DynWidget[] = [
++  'site-logo', 'site-title', 'site-tagline', 'nav-menu', 'search-form', 'copyright',
++  'post-title', 'post-content', 'post-excerpt', 'post-image', 'post-meta', 'post-terms', 'post-date', 'post-author', 'author-box', 'post-nav', 'post-comments',
++  'archive-title', 'archive-desc', 'search-query', 'pagination',
++]
++
++const DYN_SET = new Set<string>(DYN_WIDGETS)
++/** Dynamic cells have no text (CELL_DEFAULTS entries). */
++export const DYN_CELL_TEXT = Object.fromEntries(DYN_WIDGETS.map((w) => [w, ''])) as Record<DynWidget, ''>
++export const isDynWidget = (v: string | undefined | null): v is DynWidget => !!v && DYN_SET.has(v)
++
++/** Widget panel group of a dynamic widget (template mode decides which groups show, patch 0009). */
++export type DynGroup = 'site' | 'post' | 'archive' | 'search'
++
++export interface DynWidgetDef {
++  label: string
++  icon: LucideIcon
++  group: DynGroup
++  /** Settings a new cell of this type starts with. */
++  defaults: DynSettings
++}
++
++export const DYN_DEFS: Record<DynWidget, DynWidgetDef> = {
++  'site-logo': { label: t('Site logo'), icon: Hexagon, group: 'site', defaults: { link: true } },
++  'site-title': { label: t('Site title'), icon: Type, group: 'site', defaults: { tag: 'p', link: true } },
++  'site-tagline': { label: t('Tagline'), icon: TextQuote, group: 'site', defaults: { tag: 'p' } },
++  'nav-menu': { label: t('Menu'), icon: Menu, group: 'site', defaults: { location: 'primary', menuLayout: 'row', burgerAt: 768 } },
++  'search-form': { label: t('Search form'), icon: Search, group: 'site', defaults: { placeholder: 'Search…', button: 'Search' } },
++  copyright: { label: t('Copyright'), icon: Copyright, group: 'site', defaults: { prefix: '©' } },
++  'post-title': { label: t('Post title'), icon: Heading1, group: 'post', defaults: { tag: 'h1', link: false } },
++  'post-content': { label: t('Post content'), icon: FileText, group: 'post', defaults: {} },
++  'post-excerpt': { label: t('Post excerpt'), icon: LetterText, group: 'post', defaults: { words: 30 } },
++  'post-image': { label: t('Featured image'), icon: ImageIcon, group: 'post', defaults: { size: 'large', ratio: 1.6, link: false } },
++  'post-meta': { label: t('Post info'), icon: Info, group: 'post', defaults: { fields: ['date', 'author', 'comments'], sep: '·' } },
++  'post-terms': { label: t('Post terms'), icon: Tags, group: 'post', defaults: { tax: 'category', sep: ', ' } },
++  'post-date': { label: t('Post date'), icon: CalendarDays, group: 'post', defaults: {} },
++  'post-author': { label: t('Post author'), icon: User, group: 'post', defaults: { link: true } },
++  'author-box': { label: t('Author box'), icon: UserSquare, group: 'post', defaults: {} },
++  'post-nav': { label: t('Post navigation'), icon: ArrowLeftRight, group: 'post', defaults: {} },
++  'post-comments': { label: t('Comments'), icon: MessagesSquare, group: 'post', defaults: {} },
++  'archive-title': { label: t('Archive title'), icon: Heading1, group: 'archive', defaults: { tag: 'h1' } },
++  'archive-desc': { label: t('Archive description'), icon: AlignLeft, group: 'archive', defaults: {} },
++  'search-query': { label: t('Search query'), icon: SearchCheck, group: 'search', defaults: { tag: 'h1', prefix: 'Search results for:' } },
++  pagination: { label: t('Pagination'), icon: ListOrdered, group: 'archive', defaults: {} },
++}
++
++export const dynLabel = (w: DynWidget) => DYN_DEFS[w].label
++
++/** Widgets that fill their grid cell like an empty or container cell (blocks, not text runs). */
++const BLOCK_WIDGETS = new Set<string>(['post-content', 'post-image', 'author-box', 'post-nav', 'post-comments', 'search-form', 'pagination'])
++export const isBlockWidget = (v: string) => BLOCK_WIDGETS.has(v)
++
++/** Settings of a new dynamic cell (a fresh copy). */
++export const dynDefaults = (w: DynWidget): DynSettings => {
++  const d = DYN_DEFS[w].defaults
++  return { ...d, ...(d.fields ? { fields: [...d.fields] } : {}) }
++}
++
++
++/* ---------- Widget panel ---------- */
++
++export interface DynWidgetEntry {
++  id: string
++  label: string
++  icon: LucideIcon
++  payload: Payload
++}
++
++/** A dynamic widget dropped into a cell becomes that cell type; dropped on the page, a one-cell container holding it. */
++const entry = (w: DynWidget): DynWidgetEntry => ({
++  id: w,
++  label: DYN_DEFS[w].label,
++  icon: DYN_DEFS[w].icon,
++  payload: { kind: 'layout', label: DYN_DEFS[w].label, content: { type: 'flex', structure: 'col' }, cell: w },
++})
++
++const LOOP_ENTRY: DynWidgetEntry = { id: 'loop', label: t('Posts'), icon: Repeat, payload: { kind: 'loop', label: t('Posts') } }
++
++export const DYN_GROUP_LABELS: Record<DynGroup, string> = { site: t('Site'), post: t('Post'), archive: t('Archive'), search: t('Search') }
++
++/** Widget panel groups of the Theme Builder, in order; `dynamic` names the group (data.ts WIDGET_GROUPS). */
++export const DYN_WIDGET_GROUPS: { title: string; dynamic: DynGroup; items: DynWidgetEntry[] }[] = (['site', 'post', 'archive', 'search'] as DynGroup[]).map((g) => ({
++  title: DYN_GROUP_LABELS[g],
++  dynamic: g,
++  items: [
++    ...DYN_WIDGETS.filter((w) => DYN_DEFS[w].group === g).map(entry),
++    ...(g === 'archive' || g === 'search' ? [LOOP_ENTRY] : []),
++    ...(g === 'search' ? [entry('search-form'), entry('pagination')] : []),
++  ],
++}))
++
++/* ---------- Menus ---------- */
++
++/** Container widths (px) a row menu can switch to a burger at; the published stylesheet has classes for exactly these. */
++export const BURGER_WIDTHS = [480, 640, 768, 896, 1024] as const
++/** The supported width closest to `px`; 0 = never. */
++export function burgerWidth(px: number | undefined): number {
++  if (!px || px <= 0) return 0
++  return BURGER_WIDTHS.reduce((a, b) => (Math.abs(b - px) < Math.abs(a - px) ? b : a), BURGER_WIDTHS[0])
++}
++
++/* ---------- Loop ---------- */
++
++export const LOOP_DEFAULTS: Required<LoopContent> = {
++  source: 'main',
++  postType: 'post',
++  perPage: '6',
++  orderBy: 'date',
++  order: 'desc',
++  terms: '',
++  author: '',
++  exclude: '',
++  offset: '0',
++  pagination: 'numbers',
++  empty: '',
++}
++
++/** A loop section's query with defaults filled in and values clamped to the contract ranges. */
++export function loopQuery(content: Record<string, string>): Required<LoopContent> {
++  const c = { ...LOOP_DEFAULTS, ...content } as Record<string, string>
++  const int = (v: string, lo: number, hi: number, d: number) => {
++    const n = Number.parseInt(v, 10)
++    return String(Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : d)
++  }
++  const pick = <T extends string>(v: string, allowed: readonly T[], d: T): T => ((allowed as readonly string[]).includes(v) ? (v as T) : d)
++  return {
++    source: pick(c.source, ['main', 'query', 'related'], 'main'),
++    postType: /^[a-z0-9_-]{1,32}$/.test(c.postType) ? c.postType : 'post',
++    perPage: int(c.perPage, 1, 24, 6),
++    orderBy: pick(c.orderBy, ['date', 'modified', 'title', 'menu_order', 'comment_count', 'rand'], 'date'),
++    order: pick(c.order, ['desc', 'asc'], 'desc'),
++    terms: c.terms,
++    author: /^[1-9][0-9]{0,18}$/.test(c.author) ? c.author : '',
++    exclude: c.exclude === 'current' ? 'current' : '',
++    offset: int(c.offset, 0, 50, 0),
++    pagination: pick(c.pagination, ['numbers', 'prev-next', 'none'], 'numbers'),
++    empty: c.empty.slice(0, 200),
++  }
++}
++
++/** Cells of a new post card, top to bottom. */
++export const CARD_CELLS: [DynWidget, DynSettings][] = [
++  ['post-image', { size: 'medium', ratio: 1.5, link: true }],
++  ['post-meta', { fields: ['date'], sep: '·' }],
++  ['post-title', { tag: 'h3', link: true }],
++  ['post-excerpt', { words: 20 }],
++]
++
++/** Cell type choices of the inspector: a dynamic cell keeps its own type in the list. */
++export function cellTypeOptions(current: CellType, options: { value: CellType; label: string }[]): { value: CellType; label: string }[] {
++  return isDynWidget(current) && !options.some((o) => o.value === current) ? [...options, { value: current, label: DYN_DEFS[current].label }] : options
++}
+diff --git a/src/builder/dynamic/sample.ts b/src/builder/dynamic/sample.ts
+new file mode 100644
+index 0000000..cb1d16d
+--- /dev/null
++++ b/src/builder/dynamic/sample.ts
+@@ -0,0 +1,101 @@
++/**
++ * Built-in sample data for dynamic widgets: used when the host supplies none (the standalone app,
++ * the parity harness, fixtures). A CMS host passes the site's real content instead
++ * (BuilderHost.dynamic). Document-like content, so plain English and not translated.
++ */
++import { IMAGES } from '../data'
++import type { DynContext, DynImage, DynMenuItem, DynPost } from './types'
++
++const HOME = 'https://pursae.dev'
++
++const image = (n: number): DynImage => ({ url: IMAGES[n].url, width: 1400, height: 933, alt: IMAGES[n].alt })
++
++const BODY = [
++  '<p>Pursae keeps the parts of WordPress people rely on and rewrites the rest in Go: one binary, one PostgreSQL database and plugins that run in a WebAssembly sandbox.</p>',
++  '<h2>Why a rewrite?</h2>',
++  '<p>Most sites spend their time waiting on PHP workers and on the database. A compiled server with a connection pool answers the same pages with a fraction of the memory.</p>',
++  '<ul><li>The dashboard and the block editor work as before.</li><li>Themes and menus keep their familiar shape.</li><li>Caching is built in.</li></ul>',
++  '<blockquote><p>We moved forty sites in an afternoon and our hosting bill halved.</p></blockquote>',
++  '<p>Read the migration guide to move an existing site, or start fresh with the built-in theme.</p>',
++].join('\n')
++
++const author = { name: 'Ada Lovelace', url: `${HOME}/author/ada/`, avatar: IMAGES[3].url, bio: 'Writes about fast websites, plain HTML and the people who build them.' }
++
++function post(id: number, title: string, slug: string, excerpt: string, day: number, img: number, cat: string, comments: number): DynPost {
++  const date = `2026-10-${String(day).padStart(2, '0')}T09:30:00+00:00`
++  const text = `October ${day}, 2026`
++  return {
++    id,
++    type: 'post',
++    title,
++    url: `${HOME}/${slug}/`,
++    excerpt,
++    contentHtml: BODY,
++    date,
++    dateText: text,
++    modified: date,
++    modifiedText: text,
++    author,
++    image: image(img),
++    terms: {
++      category: [{ name: cat, url: `${HOME}/category/${cat.toLowerCase()}/` }],
++      post_tag: [
++        { name: 'Go', url: `${HOME}/tag/go/` },
++        { name: 'Performance', url: `${HOME}/tag/performance/` },
++      ],
++    },
++    commentsCount: comments,
++    commentsUrl: `${HOME}/${slug}/#comments`,
++  }
++}
++
++const POSTS: DynPost[] = [
++  post(101, 'WordPress, at the speed of Go', 'wordpress-at-the-speed-of-go', 'One binary, one database and a sandbox for plugins: what changes when the core is compiled.', 28, 0, 'News', 4),
++  post(102, 'Moving forty sites in an afternoon', 'moving-forty-sites', 'A step-by-step account of a real migration, with the numbers before and after.', 21, 1, 'Guides', 2),
++  post(103, 'Designing a header that works on every screen', 'designing-a-header', 'Logo, menu and search: small decisions that make a site easy to find your way around.', 14, 2, 'Design', 0),
++  post(104, 'Why plugins run in a sandbox', 'why-plugins-run-in-a-sandbox', 'WebAssembly lets plugins do their job without reaching into the rest of the site.', 7, 4, 'Engineering', 7),
++  post(105, 'Caching without the plugin hunt', 'caching-without-plugins', 'The built-in cache knows which pages a change touches, so purges stay small.', 3, 5, 'Engineering', 1),
++  post(106, 'A theme in three files', 'a-theme-in-three-files', 'Header, content and footer: the smallest theme that still looks finished.', 1, 6, 'Design', 3),
++]
++
++const menu = (labels: [string, string][]): DynMenuItem[] => labels.map(([label, path], i) => ({ id: 900 + i, label, url: `${HOME}${path}`, current: i === 0, children: [] }))
++
++/** The standalone default: a blog with a few posts, two menus and no custom logo. */
++export const SAMPLE_DYNAMIC: DynContext = {
++  object: 'front',
++  site: { title: 'Pursae', tagline: 'WordPress, at the speed of Go', home: HOME, logo: null, year: '2026' },
++  locations: [
++    { slug: 'primary', name: 'Primary Menu' },
++    { slug: 'footer', name: 'Footer Menu' },
++  ],
++  menus: {
++    primary: menu([
++      ['Home', '/'],
++      ['Blog', '/blog/'],
++      ['Guides', '/category/guides/'],
++      ['About', '/about/'],
++      ['Contact', '/contact/'],
++    ]),
++    footer: menu([
++      ['Privacy', '/privacy/'],
++      ['Terms', '/terms/'],
++      ['Contact', '/contact/'],
++    ]),
++  },
++  view: { kind: 'single', archiveTitle: 'Category: Engineering', archiveDesc: 'How Pursae works under the hood.', search: 'cache', total: POSTS.length },
++  post: POSTS[0],
++  posts: POSTS,
++  pagination: { current: 1, total: 3 },
++}
++
++/** No data at all (a host that has nothing to show yet). */
++export const EMPTY_DYNAMIC: DynContext = {
++  object: '',
++  site: { title: '', tagline: '', home: '', logo: null, year: '' },
++  locations: [],
++  menus: {},
++  view: { kind: 'single', archiveTitle: '', archiveDesc: '', search: '', total: 0 },
++  post: null,
++  posts: [],
++  pagination: { current: 1, total: 1 },
++}
+diff --git a/src/builder/dynamic/starters.ts b/src/builder/dynamic/starters.ts
+new file mode 100644
+index 0000000..3a27bc4
+--- /dev/null
++++ b/src/builder/dynamic/starters.ts
+@@ -0,0 +1,90 @@
++/**
++ * Starter designs of Theme Builder templates (contract §11.2): the editor loads one when a
++ * template's doc is empty (patch 0009); the fixtures render them too. Document content, so plain
++ * English and not translated.
++ */
++import { createLayout, createSection, defaultBox, uid } from '../data'
++import type { DynSettings, DynWidget, Section } from '../types'
++import { dynDefaults } from './model'
++
++export const STARTER_IDS = ['blank', 'header', 'footer', 'single', 'archive', 'search'] as const
++export type StarterId = (typeof STARTER_IDS)[number]
++
++/** A boxed one-column grid of dynamic widgets, top to bottom. */
++function stack(cells: [DynWidget, DynSettings?][], o: { width?: number; padT?: number; padB?: number; gap?: number } = {}): Section {
++  const s = createLayout('grid', 'g3r')
++  s.name = 'Content'
++  s.items = cells.map(([w, dyn]) => ({ id: uid('c'), title: w, text: '', dyn: { ...dynDefaults(w), ...dyn } }))
++  // Side padding of a ready-made section's content (W: 40px on wide screens), so stacks line up with loops.
++  const pad = { t: o.padT ?? 64, r: 40, b: o.padB ?? 64, l: 40 }
++  s.box = { ...defaultBox(s), gridCols: 1, gridRows: s.items.length, width: o.width ?? 760, gapX: 16, gapY: o.gap ?? 20, padding: pad }
++  return s
++}
++
++function header(): Section[] {
++  const nav = createSection('nav', { menu: 'primary', logoSource: 'site', primary: 'Contact' })
++  nav.name = 'Header'
++  return [nav]
++}
++
++function footer(): Section[] {
++  const f = createSection('footer', { menu: 'footer', logoSource: 'site', note: '' })
++  f.name = 'Footer'
++  const legal = stack([['copyright']], { width: 1160, padT: 0, padB: 32 })
++  legal.name = 'Copyright'
++  legal.style = { ...legal.style, palette: f.style.palette }
++  return [f, legal]
++}
++
++function single(): Section[] {
++  return [
++    stack(
++      [
++        ['post-title', { tag: 'h1' }],
++        ['post-meta', { fields: ['date', 'author', 'comments'] }],
++        ['post-image', { size: 'large', ratio: 1.78 }],
++        ['post-content'],
++        ['post-terms', { prefix: 'Filed under' }],
++        ['author-box'],
++        ['post-nav'],
++        ['post-comments'],
++      ],
++      { gap: 28 },
++    ),
++  ]
++}
++
++function loop(empty: string): Section {
++  const l = createSection('loop', { source: 'main', pagination: 'numbers', empty })
++  l.box = { ...defaultBox(l), padding: { t: 16, r: 0, b: 96, l: 0 } }
++  return l
++}
++
++function archive(): Section[] {
++  return [stack([['archive-title', { tag: 'h1' }], ['archive-desc']], { width: 1160, padB: 24, gap: 12 }), loop('No posts yet.')]
++}
++
++function search(): Section[] {
++  return [
++    stack([['search-query', { tag: 'h1', prefix: 'Search results for:' }], ['search-form']], { width: 1160, padB: 24, gap: 16 }),
++    loop('Nothing matched your search. Try different words.'),
++  ]
++}
++
++/** The sections of a starter (fresh ids on every call). */
++export function starterSections(id: StarterId): Section[] {
++  switch (id) {
++    case 'header':
++      return header()
++    case 'footer':
++      return footer()
++    case 'single':
++      return single()
++    case 'archive':
++      return archive()
++    case 'search':
++      return search()
++    default:
++      return []
++  }
++}
+diff --git a/src/builder/dynamic/types.ts b/src/builder/dynamic/types.ts
+new file mode 100644
+index 0000000..9a36c12
+--- /dev/null
++++ b/src/builder/dynamic/types.ts
+@@ -0,0 +1,63 @@
++/**
++ * Theme Builder sample data the editor draws dynamic widgets with (contract §11.6, DynContext).
++ * The embedding host supplies it (BuilderHost.dynamic); the shapes are the same as
++ * builder/host/contract.ts. Type-only module: host.ts imports it.
++ */
++
++/** Preview object: post:<id> | term:<tax>:<id> | author:<id> | type:<ptype> | search:<q> | front | home | 404 | latest. */
++export type PreviewObject = string
++
++export interface DynImage {
++  url: string
++  width: number
++  height: number
++  alt: string
++}
++
++export interface DynPost {
++  id: number
++  type: string
++  title: string
++  url: string
++  excerpt: string
++  /** UGC-sanitized by the host; shown read-only. */
++  contentHtml: string
++  /** RFC 3339 */
++  date: string
++  /** date in the site's date_format */
++  dateText: string
++  modified: string
++  modifiedText: string
++  author: { name: string; url: string; avatar: string; bio: string }
++  image: DynImage | null
++  terms: Record<string, { name: string; url: string }[]>
++  commentsCount: number
++  commentsUrl: string
++}
++
++export interface DynMenuItem {
++  id: number
++  label: string
++  url: string
++  current: boolean
++  /** Always [] in v1 (top level only). */
++  children: DynMenuItem[]
++}
++
++export interface MenuLocation {
++  slug: string
++  name: string
++}
++
++export type DynViewKind = 'single' | 'page' | 'front-page' | 'home' | 'archive' | 'search' | '404'
++
++export interface DynContext {
++  object: PreviewObject
++  site: { title: string; tagline: string; home: string; logo: DynImage | null; year: string }
++  locations: MenuLocation[]
++  menus: Record<string, DynMenuItem[]>
++  view: { kind: DynViewKind; archiveTitle: string; archiveDesc: string; search: string; total: number }
++  post: DynPost | null
++  posts: DynPost[]
++  pagination: { current: number; total: number }
++}
+diff --git a/src/builder/dynamic/widgets.tsx b/src/builder/dynamic/widgets.tsx
+new file mode 100644
+index 0000000..4218b50
+--- /dev/null
++++ b/src/builder/dynamic/widgets.tsx
+@@ -0,0 +1,419 @@
++import { createElement, useMemo, type CSSProperties, type MouseEvent, type ReactNode } from 'react'
++import { Image as ImageIcon, Lock, Menu, MessageCircle, Search } from 'lucide-react'
++import { elCss } from '../data'
++import { useB } from '../store'
++import type { DynSettings, DynWidget, ElKind, Item, Section } from '../types'
++import { cn } from '../ui'
++import { liveHref } from '../live/ctx'
++import { LiveMenu } from '../live/ui'
++import { t } from '../i18n'
++import { DYN_DEFS, burgerWidth } from './model'
++import { When, attr, html, txt, useDyn, type DynMode } from './ctx'
++import { DATE_FORMAT_RE, cleanHtml, formatDate, paginationHtml, postNavHtml, termsHtml, trimWords } from './format'
++import type { DynMenuItem } from './types'
++
++/*
++ * Dynamic widgets: layout cells that show site or post data (contract §11.4). One element tree per
++ * widget; the editor fills it with the sample data, the published snapshot carries the placeholder
++ * attributes of §11.5 instead (dynamic/ctx.tsx). Everything a widget draws sits inside one root
++ * <div class="ed"> that takes the cell element's style (els['items.<id>.text']).
++ */
++
++type P = Record<string, unknown>
++
++const MUTED: CSSProperties = { color: 'var(--muted)' }
++const PRIMARY: CSSProperties = { background: 'var(--btn-bg)', color: 'var(--btn-fg)', borderRadius: 'var(--r-btn)' }
++
++/** Class lists the published stylesheet must contain (scanned from this file by live/site.css). */
++const HIDE_BELOW: Record<number, string> = { 480: '@max-[480px]:hidden!', 640: '@max-[640px]:hidden!', 768: '@max-[768px]:hidden!', 896: '@max-[896px]:hidden!', 1024: '@max-[1024px]:hidden!' }
++const HIDE_FROM: Record<number, string> = { 480: '@min-[480px]:hidden!', 640: '@min-[640px]:hidden!', 768: '@min-[768px]:hidden!', 896: '@min-[896px]:hidden!', 1024: '@min-[1024px]:hidden!' }
++
++/** WordPress post content (core blocks, classic HTML). */
++export const PROSE =
++  'text-[17px] leading-[1.75] [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_p]:my-5 [&_h2]:mb-3 [&_h2]:mt-10 [&_h2]:text-[1.6em] [&_h2]:font-semibold [&_h2]:leading-tight [&_h3]:mb-2 [&_h3]:mt-8 [&_h3]:text-[1.3em] [&_h3]:font-semibold [&_h4]:mt-6 [&_h4]:font-semibold [&_ul]:my-5 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:my-5 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:my-1 [&_blockquote]:my-7 [&_blockquote]:border-l-4 [&_blockquote]:border-(--line) [&_blockquote]:pl-5 [&_blockquote]:italic [&_img]:h-auto [&_img]:max-w-full [&_figure]:my-7 [&_figcaption]:mt-2 [&_figcaption]:text-[14px] [&_figcaption]:text-(--muted) [&_a]:underline [&_a]:underline-offset-2 [&_pre]:my-6 [&_pre]:overflow-x-auto [&_code]:font-mono [&_code]:text-[0.9em] [&_hr]:my-10 [&_hr]:border-(--line) [&_table]:my-6 [&_table]:w-full [&_td]:border [&_td]:border-(--line) [&_td]:p-2 [&_th]:border [&_th]:border-(--line) [&_th]:p-2'
++
++/** WordPress paginate_links() markup. */
++export const PAGINATION =
++  'flex flex-wrap items-center gap-2 text-[14.5px] [&_.page-numbers]:inline-grid [&_.page-numbers]:h-10 [&_.page-numbers]:min-w-10 [&_.page-numbers]:place-items-center [&_.page-numbers]:px-3 [&_.page-numbers]:rounded-[min(var(--r-btn),10px)] [&_a.page-numbers]:shadow-[inset_0_0_0_1px_var(--line)] [&_a.page-numbers]:transition-colors [&_a.page-numbers:hover]:bg-[color-mix(in_srgb,var(--fg)_6%,transparent)] [&_.current]:bg-(--btn-bg) [&_.current]:text-(--btn-fg) [&_.dots]:min-w-0 [&_.dots]:px-1'
++
++/** WordPress the_post_navigation() markup. */
++const POST_NAV = '[&_.nav-links]:flex [&_.nav-links]:flex-wrap [&_.nav-links]:justify-between [&_.nav-links]:gap-4 [&_.nav-next]:ml-auto [&_.nav-next]:text-right [&_a]:font-medium [&_a]:transition-opacity [&_a:hover]:opacity-70'
++
++/** Typography a widget starts from before the element style. */
++function baseStyle(w: DynWidget, title: CSSProperties, body: CSSProperties): { style: CSSProperties; kind: ElKind } {
++  switch (w) {
++    case 'post-title':
++    case 'archive-title':
++    case 'search-query':
++      return { style: title, kind: 'heading' }
++    case 'site-title':
++      return { style: { fontFamily: 'var(--f-head)', fontWeight: 600, fontSize: 22, lineHeight: 1.2, letterSpacing: '-0.01em' }, kind: 'heading' }
++    case 'site-tagline':
++    case 'post-excerpt':
++    case 'archive-desc':
++      return { style: { ...body, fontSize: body.fontSize ?? 16, lineHeight: 1.65 }, kind: 'text' }
++    case 'post-meta':
++    case 'post-terms':
++    case 'post-date':
++    case 'post-author':
++    case 'copyright':
++      return { style: { ...MUTED, fontSize: 14 }, kind: 'text' }
++    case 'nav-menu':
++      return { style: { fontSize: 15, fontWeight: 500 }, kind: 'text' }
++    default:
++      return { style: { fontSize: 16 }, kind: 'text' }
++  }
++}
++
++/** Editor: links inside a widget never navigate away from the canvas. */
++const stopLinks = (e: MouseEvent) => {
++  if ((e.target as HTMLElement).closest('a')) e.preventDefault()
++}
++
++/** A layout cell holding a dynamic widget. `title` / `body`: the section's heading and body styles. */
++export function DynWidgetView({ s, item, title, body }: { s: Section; item: Item; title: CSSProperties; body: CSSProperties }) {
++  const b = useB()
++  const m = useDyn()
++  const w = item.title as DynWidget
++  const def = DYN_DEFS[w]
++  const d: DynSettings = { ...def.defaults, ...item.dyn }
++  const el = `items.${item.id}.text`
++  const es = s.els?.[el]
++  if (m.live && es?.removed) return null
++  const base = baseStyle(w, title, body)
++  const selected = b.selection?.sectionId === s.id && b.selection.el === el
++  return (
++    <div
++      className="ed"
++      data-el={`${s.id}:${el}`}
++      data-label={def.label}
++      data-selected={selected || undefined}
++      style={{ ...base.style, ...elCss(es, base.kind) }}
++      onClickCapture={m.live ? undefined : stopLinks}
++    >
++      <Widget w={w} d={d} m={m} editing={!m.live && !b.preview} />
++    </div>
++  )
++}
++
++const tagOf = (d: DynSettings, fallback: string) => (d.tag && /^(h[1-6]|p|div|span)$/.test(d.tag) ? d.tag : fallback)
++
++/** <Tag> with the given props: the root's typography comes from the widget root. */
++const mk = (tag: string, props: P, ...children: ReactNode[]) => createElement(tag, props, ...children)
++
++function Widget({ w, d, m, editing }: { w: DynWidget; d: DynSettings; m: DynMode; editing: boolean }) {
++  const site = m.ctx.site
++  const post = m.post
++  switch (w) {
++    case 'site-logo':
++      return <SiteLogo m={m} link={d.link !== false} />
++    case 'site-title': {
++      const tag = tagOf(d, 'p')
++      if (d.link === false) return mk(tag, txt(m, 'site.title', site.title))
++      return mk(tag, {}, <a {...attr(m, 'site.url', { href: liveHref(m.home + '/') })} key="a"><span {...txt(m, 'site.title', site.title)} /></a>)
++    }
++    case 'site-tagline':
++      return mk(tagOf(d, 'p'), txt(m, 'site.tagline', site.tagline))
++    case 'nav-menu':
++      return <NavMenu m={m} d={d} />
++    case 'search-form':
++      return <SearchForm m={m} d={d} editing={editing} />
++    case 'copyright':
++      return (
++        <p>
++          {d.prefix ? `${d.prefix} ` : ''}
++          <span {...txt(m, 'site.year', site.year)} /> <span {...txt(m, 'site.title', site.title)} />
++        </p>
++      )
++    case 'post-title': {
++      const tag = tagOf(d, 'h1')
++      if (!d.link) return mk(tag, txt(m, 'post.title', post?.title))
++      return mk(tag, {}, <a {...attr(m, 'post.url', { href: liveHref(post?.url) })} key="a"><span {...txt(m, 'post.title', post?.title)} /></a>)
++    }
++    case 'post-content':
++      return <PostContent m={m} editing={editing} />
++    case 'post-excerpt': {
++      const words = clampWords(d.words)
++      return (
++        <Empty m={m} slot="post.excerpt" has={!!post?.excerpt} empty={d.empty}>
++          {(p) => <p {...p} {...(m.ph ? { 'data-wb-words': String(words) } : {})} {...txt(m, 'post.excerpt', trimWords(post?.excerpt ?? '', words))} />}
++        </Empty>
++      )
++    }
++    case 'post-image':
++      return <PostImage m={m} d={d} editing={editing} />
++    case 'post-meta':
++      return <PostMeta m={m} d={d} />
++    case 'post-terms': {
++      const tax = taxOf(d)
++      const sep = sepOf(d, ', ')
++      return (
++        <Empty m={m} slot="post.terms" has={!!post?.terms[tax]?.length} empty={d.empty}>
++          {(p) => (
++            <p {...p}>
++              {d.prefix ? `${d.prefix} ` : ''}
++              <span {...(m.ph ? { 'data-wb-tax': tax, 'data-wb-sep': sep } : {})} {...html(m, 'post.terms', termsHtml(post, tax, sep))} />
++            </p>
++          )}
++        </Empty>
++      )
++    }
++    case 'post-date':
++      return (
++        <p>
++          {d.prefix ? `${d.prefix} ` : ''}
++          <DateEl m={m} which="date" format={d.format} />
++        </p>
++      )
++    case 'post-author':
++      return (
++        <p>
++          {d.prefix ? `${d.prefix} ` : ''}
++          {d.link === false ? <span {...txt(m, 'post.author', post?.author.name)} /> : <AuthorLink m={m} />}
++        </p>
++      )
++    case 'author-box':
++      return (
++        <div className="flex items-start gap-4 p-5" style={{ background: 'color-mix(in srgb, var(--fg) 4%, transparent)', borderRadius: 'var(--r-card)' }}>
++          <When m={m} slot="post.avatar" has={!!post?.author.avatar}>
++            {(p) => <img {...p} alt="" {...attr(m, 'post.avatar', { src: post?.author.avatar })} width={64} height={64} loading="lazy" className="size-16 shrink-0 rounded-full object-cover" />}
++          </When>
++          <div className="min-w-0">
++            <p className="text-[17px] font-semibold">
++              <AuthorLink m={m} />
++            </p>
++            <p className="mt-1 text-[15px] leading-[1.6]" style={MUTED} {...txt(m, 'post.author-bio', post?.author.bio)} />
++          </div>
++        </div>
++      )
++    case 'post-nav':
++      return <div className={POST_NAV} {...html(m, 'post.nav', postNavHtml(post, m.ctx.posts))} />
++    case 'post-comments':
++      if (m.ph) return <div data-wb-slot="post.comments" />
++      // Language-neutral stand-in: the published page shows the theme's comments template.
++      return (
++        <div className="p-6" style={{ border: '1.5px dashed var(--line)', borderRadius: 'var(--r-card)' }}>
++          <p className="flex items-center gap-2 text-[18px] font-semibold">
++            <MessageCircle size={18} aria-hidden />
++            {post?.commentsCount ?? 0}
++          </p>
++          {[78, 62, 70].map((w, i) => (
++            <div key={i} aria-hidden className="mt-3 h-2.5 rounded-full" style={{ width: `${w}%`, background: 'color-mix(in srgb, var(--fg) 8%, transparent)' }} />
++          ))}
++        </div>
++      )
++    case 'archive-title':
++      return mk(tagOf(d, 'h1'), txt(m, 'archive.title', m.ctx.view.archiveTitle))
++    case 'archive-desc':
++      return (
++        <Empty m={m} slot="archive.description" has={!!m.ctx.view.archiveDesc} empty={d.empty}>
++          {(p) => <div {...p} {...txt(m, 'archive.description', m.ctx.view.archiveDesc)} />}
++        </Empty>
++      )
++    case 'search-query':
++      return mk(tagOf(d, 'h1'), {}, d.prefix ? `${d.prefix} ` : '', <span key="q" {...txt(m, 'search.query', m.ctx.view.search)} />)
++    case 'pagination':
++      return <nav aria-label="Pagination" className={PAGINATION} {...html(m, 'loop.pagination', paginationHtml(m.ctx.pagination))} />
++  }
++}
++
++const clampWords = (v: number | undefined) => Math.min(100, Math.max(5, Math.round(v ?? 30)))
++const taxOf = (d: DynSettings) => (d.tax && /^[a-z0-9_-]{1,32}$/.test(d.tax) ? d.tax : 'category')
++const sepOf = (d: DynSettings, fallback: string) => [...(d.sep ?? fallback)].slice(0, 8).join('')
++
++/** The value element when the slot has a value, else the `empty` text (only when one is set). */
++function Empty({ m, slot, has, empty, children }: { m: DynMode; slot: string; has: boolean; empty?: string; children: (p: P) => ReactNode }) {
++  const text = (empty ?? '').slice(0, 200)
++  if (!text) return <>{children({})}</>
++  return (
++    <>
++      <When m={m} slot={slot} has={has}>
++        {children}
++      </When>
++      <When m={m} slot={slot} has={has} not>
++        {(p) => <p {...p}>{text}</p>}
++      </When>
++    </>
++  )
++}
++
++function SiteLogo({ m, link }: { m: DynMode; link: boolean }) {
++  const logo = m.ctx.site.logo
++  const inner = (
++    <>
++      <When m={m} slot="site.logo" has={!!logo}>
++        {(p) => <img {...p} alt="" {...attr(m, 'site.logo', logo ? { src: logo.url, width: logo.width, height: logo.height, alt: logo.alt } : {})} className="block h-10 w-auto max-w-full" />}
++      </When>
++      <When m={m} slot="site.logo" has={!!logo} not>
++        {(p) => <span {...p} className="text-[22px] font-semibold tracking-[-0.01em]" style={{ fontFamily: 'var(--f-head)' }} {...txt(m, 'site.title', m.ctx.site.title)} />}
++      </When>
++    </>
++  )
++  return link ? (
++    <a className="inline-flex items-center" {...attr(m, 'site.url', { href: liveHref(m.home + '/') })}>
++      {inner}
++    </a>
++  ) : (
++    <span className="inline-flex items-center">{inner}</span>
++  )
++}
++
++/** Menu links of a location: one placeholder template, or the sample items. */
++function MenuList({ m, loc, className, linkClass }: { m: DynMode; loc: string; className: string; linkClass: string }) {
++  if (m.ph)
++    return (
++      <div className={className} data-wb-menu-loc={loc}>
++        <a data-wb-loop-item="" data-wb-slot="menu.url" className={linkClass}>
++          <span data-wb-slot="menu.label" />
++        </a>
++      </div>
++    )
++  const items: DynMenuItem[] = m.ctx.menus[loc] ?? []
++  return (
++    <div className={className}>
++      {items.map((i) => (
++        <a key={i.id} href={liveHref(i.url)} aria-current={i.current ? 'page' : undefined} className={cn(linkClass, i.current && 'is-current')}>
++          {i.label}
++        </a>
++      ))}
++    </div>
++  )
++}
++
++const MENU_LINK = 'transition-opacity hover:opacity-70 [&.is-current]:text-(--accent)'
++
++function NavMenu({ m, d }: { m: DynMode; d: DynSettings }) {
++  const loc = d.location && /^[a-z0-9_-]{1,40}$/.test(d.location) ? d.location : 'primary'
++  const layout = d.menuLayout === 'column' || d.menuLayout === 'burger' ? d.menuLayout : 'row'
++  const at = layout === 'row' ? burgerWidth(d.burgerAt) : 0
++  if (!m.ph && !(m.ctx.menus[loc] ?? []).length && !m.live)
++    return <p className="text-[13px]" style={MUTED}>{t('No menu is assigned to this location yet.')}</p>
++  const burger = (className?: string) =>
++    m.live ? (
++      <LiveMenu className={className} summaryClass="grid size-10 place-items-center" panelClass="absolute right-0 top-full z-50 min-w-[240px] p-5 shadow-[0_30px_40px_-30px_rgba(0,0,0,.35)]" panelStyle={{ background: 'var(--bg)', color: 'var(--fg)', borderRadius: 'min(var(--r-card), 14px)' }}>
++        <MenuList m={m} loc={loc} className="flex flex-col" linkClass={cn(MENU_LINK, 'block border-b py-2.5')} />
++      </LiveMenu>
++    ) : (
++      <span className={cn('grid size-10 place-items-center', className)}>
++        <Menu size={21} aria-hidden />
++      </span>
++    )
++  return (
++    <nav aria-label="Menu" className="relative">
++      {layout !== 'burger' && <MenuList m={m} loc={loc} className={cn(layout === 'column' ? 'flex flex-col gap-2' : 'flex flex-wrap items-center gap-x-6 gap-y-2', at > 0 && HIDE_BELOW[at])} linkClass={MENU_LINK} />}
++      {(layout === 'burger' || at > 0) && burger(at > 0 ? HIDE_FROM[at] : undefined)}
++    </nav>
++  )
++}
++
++function SearchForm({ m, d, editing }: { m: DynMode; d: DynSettings; editing: boolean }) {
++  const label = (d.button ?? '').slice(0, 40)
++  return (
++    <form data-wb-search="" method="get" action={m.home + '/'} className="flex items-stretch gap-2" onSubmit={(e) => e.preventDefault()}>
++      <input
++        type="search"
++        name="s"
++        placeholder={d.placeholder ?? ''}
++        aria-label={t('Search')}
++        readOnly={editing || undefined}
++        tabIndex={editing ? -1 : undefined}
++        className="h-11 min-w-0 flex-1 bg-transparent px-3.5 text-[15px] outline-none"
++        style={{ border: '1px solid var(--line)', borderRadius: 'min(var(--r-btn), 12px)', color: 'var(--fg)' }}
++      />
++      <button type="submit" aria-label={label ? undefined : t('Search')} className="inline-flex h-11 shrink-0 items-center justify-center gap-2 px-4 text-[14.5px] font-semibold" style={PRIMARY}>
++        {label || <Search size={18} aria-hidden />}
++      </button>
++    </form>
++  )
++}
++
++function PostContent({ m, editing }: { m: DynMode; editing: boolean }) {
++  const raw = m.ph ? '' : m.post?.contentHtml ?? ''
++  const safe = useMemo(() => cleanHtml(raw), [raw])
++  if (m.ph) return <div className={PROSE} data-wb-slot="post.content" />
++  return (
++    <div className="relative">
++      <div className={cn(PROSE, editing && 'pointer-events-none select-none')} dangerouslySetInnerHTML={{ __html: safe }} />
++      {editing && (
++        <span className="absolute -top-3 right-0 z-10 inline-flex items-center gap-1 rounded-full px-2 py-[3px] text-[10.5px] font-semibold" style={{ background: 'var(--ov)', color: 'var(--ov-ink)' }}>
++          <Lock size={10} aria-hidden />
++          {t('Post content · edited in the post editor')}
++        </span>
++      )}
++    </div>
++  )
++}
++
++function PostImage({ m, d, editing }: { m: DynMode; d: DynSettings; editing: boolean }) {
++  const img = m.post?.image ?? null
++  const size = d.size && ['thumbnail', 'medium', 'large', 'full'].includes(d.size) ? d.size : 'large'
++  const ratio = d.ratio && d.ratio >= 0.2 && d.ratio <= 5 ? d.ratio : undefined
++  const frame: CSSProperties = { aspectRatio: ratio ? String(ratio) : undefined, borderRadius: 'var(--r-card)' }
++  const pic = (p: P) => <img {...p} alt="" {...attr(m, 'post.image', img ? { src: img.url, width: img.width, height: img.height, alt: img.alt } : {})} {...(m.ph ? { 'data-wb-size': size } : {})} loading="lazy" className="block size-full object-cover" style={frame} />
++  return (
++    <>
++      <When m={m} slot="post.image" has={!!img}>
++        {(p) => (d.link ? <a {...p} className="block" {...attr(m, 'post.url', { href: liveHref(m.post?.url) })}>{pic({})}</a> : pic(p))}
++      </When>
++      {!img && editing && !m.ph && (
++        <div className="grid place-items-center" style={{ ...frame, aspectRatio: String(ratio ?? 1.6), background: 'color-mix(in srgb, var(--fg) 6%, transparent)', color: 'var(--muted)' }}>
++          <ImageIcon size={28} strokeWidth={1.4} aria-label={t('No featured image')} />
++        </div>
++      )}
++    </>
++  )
++}
++
++function AuthorLink({ m }: { m: DynMode }) {
++  return (
++    <a {...attr(m, 'post.author-url', { href: liveHref(m.post?.author.url) })}>
++      <span {...txt(m, 'post.author', m.post?.author.name)} />
++    </a>
++  )
++}
++
++function DateEl({ m, which, format }: { m: DynMode; which: 'date' | 'modified'; format?: string }) {
++  const post = m.post
++  const fmt = format && DATE_FORMAT_RE.test(format) ? format : undefined
++  const iso = which === 'date' ? post?.date ?? '' : post?.modified ?? ''
++  const text = formatDate(iso, fmt, which === 'date' ? post?.dateText ?? '' : post?.modifiedText ?? '')
++  return <time {...(m.ph ? { 'data-wb-slot': `post.${which}`, ...(fmt ? { 'data-wb-format': fmt } : {}) } : { dateTime: iso || undefined, children: text })} />
++}
++
++const META_FIELDS = ['date', 'modified', 'author', 'comments', 'terms'] as const
++
++function PostMeta({ m, d }: { m: DynMode; d: DynSettings }) {
++  const fields = (d.fields ?? []).filter((f, i, a) => META_FIELDS.includes(f) && a.indexOf(f) === i)
++  const sep = sepOf(d, '·')
++  const post = m.post
++  const parts = fields.map((f) => {
++    switch (f) {
++      case 'date':
++      case 'modified':
++        return <DateEl key={f} m={m} which={f} format={d.format} />
++      case 'author':
++        return <AuthorLink key={f} m={m} />
++      case 'comments':
++        return (
++          <a key={f} className="inline-flex items-center gap-1" {...attr(m, 'post.comments-url', { href: liveHref(post?.commentsUrl) })}>
++            <MessageCircle size={14} aria-hidden />
++            <span {...txt(m, 'post.comments-count', post?.commentsCount ?? 0)} />
++          </a>
++        )
++      case 'terms': {
++        const tax = taxOf(d)
++        return <span key={f} {...(m.ph ? { 'data-wb-tax': tax, 'data-wb-sep': ', ' } : {})} {...html(m, 'post.terms', termsHtml(post, tax, ', '))} />
++      }
++    }
++  })
++  return (
++    <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
++      {parts.map((part, i) => (
++        <span key={i} className="contents">
++          {i > 0 && sep && <span aria-hidden="true">{sep}</span>}
++          {part}
++        </span>
++      ))}
++    </p>
++  )
++}
+diff --git a/src/builder/host.ts b/src/builder/host.ts
+index 6274fe0..37c35f1 100644
+--- a/src/builder/host.ts
++++ b/src/builder/host.ts
+@@ -10,6 +10,7 @@
+  * Keep this file free of React and of runtime imports: hosts import it on its own.
+  */
+ import type { DocState, PageSettings } from './types'
++import type { DynContext } from './dynamic/types'
+ 
+ /* ---------- Local persistence (used by the standalone host) ---------- */
+ export const STORE_KEY = 'pursae-builder:v2'
+@@ -126,6 +127,14 @@ export interface BuilderHost {
+   ai?: BuilderHostAi
+   /** BCP 47 or WordPress-style locale of the editor UI (e.g. "tr", "en_US"). */
+   locale: string
++  /**
++   * Theme Builder: the sample data dynamic widgets are drawn with in the editor (contract §11.6).
++   * Must return the same object until the data changes. Absent = the built-in sample
++   * (dynamic/sample.ts). Published output never contains it: live mode emits placeholders only.
++   */
++  dynamic?(): DynContext
++  /** Calls `cb` whenever dynamic() changes (e.g. "Preview as"); returns the unsubscribe function. */
++  onDynamic?(cb: (ctx: DynContext) => void): () => void
+ }
+ 
+ export const AI_DISABLED: BuilderHostAi = Object.freeze({ enabled: false, serverKeys: false, allowCode: false, cloneEndpoint: null })
+diff --git a/src/builder/i18n/tr.ts b/src/builder/i18n/tr.ts
+index 3bd6de8..1f15529 100644
+--- a/src/builder/i18n/tr.ts
++++ b/src/builder/i18n/tr.ts
+@@ -1368,6 +1368,96 @@ const tr: Record<string, string> = {
+   'Zigzag': 'Zikzak',
+   'Zoom in': 'Yakınlaşma',
+   'Zoom out': 'Uzaklaşma',
++  /* Theme Builder (patch 0008-dynamic) */
++  'A grid of posts from your site': 'Sitendeki yazılardan bir ızgara',
++  'Archive description': 'Arşiv açıklaması',
++  'Archive title': 'Arşiv başlığı',
++  'Archive': 'Arşiv',
++  'Aspect ratio': 'En-boy oranı',
++  'Author ID': 'Yazar kimliği',
++  'Author box': 'Yazar kutusu',
++  'Author': 'Yazar',
++  'Button text': 'Düğme metni',
++  'Comments': 'Yorumlar',
++  'Copyright': 'Telif hakkı',
++  'Custom query': 'Özel sorgu',
++  'Date format': 'Tarih biçimi',
++  'Date': 'Tarih',
++  'Design the card once: select it on the canvas to change its widgets and style.': 'Kartı bir kez tasarla: bileşenlerini ve stilini değiştirmek için kanvasta seç.',
++  'Empty = the site\'s date format.': 'Boş = sitenin tarih biçimi.',
++  'Featured image': 'Öne çıkan görsel',
++  'Full size': 'Tam boyut',
++  'Icon only': 'Yalnızca simge',
++  'Image size': 'Görsel boyutu',
++  'Last updated': 'Son güncelleme',
++  'Leave out the current post': 'Görüntülenen yazıyı dışarıda bırak',
++  'Link to the author': 'Yazara bağlantı ver',
++  'Link to the home page': 'Ana sayfaya bağlantı ver',
++  'Link to the post': 'Yazıya bağlantı ver',
++  'Links from a menu location follow the menu: edit them under Appearance › Menus.': 'Menü konumundan gelen bağlantılar menüyü izler: onları Görünüm › Menüler altında düzenle.',
++  'Logo': 'Logo',
++  'Menu button below': 'Menü düğmesine geçiş',
++  'Menu button': 'Menü düğmesi',
++  'Menu location': 'Menü konumu',
++  'Menu order': 'Menü sırası',
++  'Menu': 'Menü',
++  'Never': 'Hiçbir zaman',
++  'Newest first': 'Önce en yeni',
++  'No featured image': 'Öne çıkan görsel yok',
++  'No menu is assigned to this location yet.': 'Bu konuma henüz bir menü atanmadı.',
++  'No posts match this loop in the preview.': 'Önizlemede bu döngüye uyan yazı yok.',
++  'Oldest first': 'Önce en eski',
++  'Order by': 'Sıralama ölçütü',
++  'Order': 'Sıra',
++  'Original': 'Özgün',
++  'Pages': 'Sayfalar',
++  'Pagination': 'Sayfalama',
++  'Placeholder': 'Yer tutucu',
++  'Post author': 'Yazı yazarı',
++  'Post card': 'Yazı kartı',
++  'Post content · edited in the post editor': 'Yazı içeriği · yazı düzenleyicide düzenlenir',
++  'Post content': 'Yazı içeriği',
++  'Post date': 'Yazı tarihi',
++  'Post excerpt': 'Yazı özeti',
++  'Post grid': 'Yazı ızgarası',
++  'Post info': 'Yazı bilgisi',
++  'Post loop': 'Yazı döngüsü',
++  'Post navigation': 'Yazı gezintisi',
++  'Post terms': 'Yazı terimleri',
++  'Post title': 'Yazı başlığı',
++  'Post type': 'Yazı türü',
++  'Post': 'Yazı',
++  'Posts of the page': 'Sayfanın yazıları',
++  'Posts': 'Yazılar',
++  'Previous / next': 'Önceki / sonraki',
++  'Primary menu': 'Ana menü',
++  'Query': 'Sorgu',
++  'Random': 'Rastgele',
++  'Related posts': 'İlgili yazılar',
++  'Search form': 'Arama formu',
++  'Search query': 'Arama sorgusu',
++  'Separator': 'Ayırıcı',
++  'Shows the data of the post or page being viewed.': 'Görüntülenen yazının ya da sayfanın verilerini gösterir.',
++  'Shows the posts of the archive, search or blog page being viewed.': 'Görüntülenen arşiv, arama ya da blog sayfasının yazılarını gösterir.',
++  'Site data': 'Site verileri',
++  'Site logo': 'Site logosu',
++  'Site title': 'Site başlığı',
++  'Site': 'Site',
++  'Skip': 'Atla',
++  'Source': 'Kaynak',
++  'Tagline': 'Slogan',
++  'Tags': 'Etiketler',
++  'Taxonomy': 'Sınıflandırma',
++  'Terms': 'Terimler',
++  'Text before': 'Önceki metin',
++  'Text when empty': 'Boşken gösterilecek metin',
++  'The comments and the reply form show here on the site.': 'Yorumlar ve yanıt formu sitede burada görünür.',
++  'The post content is edited in the post editor; here it is shown read-only.': 'Yazı içeriği yazı düzenleyicide düzenlenir; burada salt okunur gösterilir.',
++  'This section': 'Bu bölüm',
++  'Thumbnail': 'Küçük resim',
++  'Use letters, spaces and , . : / - only.': 'Yalnızca harf, boşluk ve , . : / - kullan.',
++  'Widget setting changed': 'Bileşen ayarı değişti',
++  'Words': 'Kelime',
+ }
+ 
+ export default tr
+diff --git a/src/builder/live/ctx.ts b/src/builder/live/ctx.ts
+index 832dbf8..28974e0 100644
+--- a/src/builder/live/ctx.ts
++++ b/src/builder/live/ctx.ts
+@@ -1,4 +1,5 @@
+ import { createContext, useContext } from 'react'
++import type { DynContext } from '../dynamic/types'
+ 
+ /**
+  * Live (static snapshot) rendering state. Present only while renderStatic() draws a page for publishing;
+@@ -18,6 +19,10 @@ export interface LiveState {
+   css: string[]
+   /** data-el keys to keep in the output as data-wb-el (targets of generated CSS). */
+   keepEl: Set<string>
++  /** Home URL, no trailing slash (Theme Builder search form action). */
++  siteUrl: string
++  /** Fixtures / parity only: draw dynamic widgets filled with this sample instead of placeholders. */
++  sample?: DynContext
+ }
+ 
+ export const LiveCtx = createContext<LiveState | null>(null)
+diff --git a/src/builder/live/fixtures.tsx b/src/builder/live/fixtures.tsx
+index bc41729..455cc56 100644
+--- a/src/builder/live/fixtures.tsx
++++ b/src/builder/live/fixtures.tsx
+@@ -8,12 +8,16 @@
+ import './seed'
+ import fs from 'node:fs'
+ import path from 'node:path'
+-import { KINDS, createLayout, createSection, initialDoc } from '../data'
++import { KINDS, createLayout, createSection, defaultBox, initialDoc, uid } from '../data'
+ import { historyReducer, initHistory } from '../store'
+ import type { DocAction } from '../store'
+ import type { DocState, Section, SectionKind } from '../types'
+ import { LIBRARY, createVariantSection } from '../variants'
+ import { renderStatic, type RenderResult } from './renderStatic'
++import { DYN_WIDGETS } from '../dynamic/model'
++import { SAMPLE_DYNAMIC } from '../dynamic/sample'
++import { starterSections } from '../dynamic/starters'
++import type { DynSettings, DynWidget } from '../types'
+ 
+ const POST = 42
+ const SITE = 'https://example.com'
+@@ -23,7 +27,8 @@ const site = initialDoc.site
+ const cases: [string, DocState][] = []
+ 
+ cases.push(['initial', initialDoc])
+-cases.push(['kinds', { site, sections: (Object.keys(KINDS) as SectionKind[]).map((k) => createSection(k)) }])
++// The Theme Builder loop has its own fixtures (dynamic-*).
++cases.push(['kinds', { site, sections: (Object.keys(KINDS) as SectionKind[]).filter((k) => k !== 'loop').map((k) => createSection(k)) }])
+ for (const kv of LIBRARY) {
+   const sections = kv.variants.filter((v) => v.C).map((v) => createVariantSection(kv.kind, v.id))
+   if (sections.length) cases.push([`variants-${kv.kind}`, { site, sections }])
+@@ -76,6 +81,75 @@ function behavioursDoc(): DocState {
+ }
+ cases.push(['behaviours', behavioursDoc()])
+ 
++/* ---------- Theme Builder (patch 0008): placeholders, plus a <name>.sample.json filled with SAMPLE_DYNAMIC ---------- */
++
++/** Every dynamic widget in a grid, each also with its other settings (links, tags, empty texts, menu layouts). */
++function widgetsDoc(): DocState {
++  const cell = (w: DynWidget, dyn?: DynSettings) => ({ id: uid('c'), title: w, text: '', dyn: { ...dyn } })
++  const grid = (name: string, items: ReturnType<typeof cell>[]) => {
++    const g = createLayout('grid', 'g2x2')
++    g.name = name
++    g.items = items
++    g.box = { ...defaultBox(g), gridCols: 2, gridRows: Math.ceil(items.length / 2) }
++    return g
++  }
++  const all = grid('Widgets', DYN_WIDGETS.map((w) => cell(w)))
++  const variants = grid('Widget settings', [
++    cell('site-title', { tag: 'h2', link: false }),
++    cell('site-logo', { link: false }),
++    cell('post-title', { tag: 'h2', link: true }),
++    cell('post-image', { size: 'thumbnail', ratio: 1, link: true }),
++    cell('post-excerpt', { words: 8, empty: 'No excerpt.' }),
++    cell('post-meta', { fields: ['modified', 'terms', 'author'], sep: '/', tax: 'post_tag', format: 'j M Y' }),
++    cell('post-date', { format: 'l, F jS', prefix: 'Posted on' }),
++    cell('post-terms', { tax: 'post_tag', sep: ' · ', prefix: 'Tags:', empty: 'Untagged' }),
++    cell('post-author', { link: false, prefix: 'By' }),
++    cell('archive-desc', { empty: 'No description.' }),
++    cell('nav-menu', { location: 'footer', menuLayout: 'column' }),
++    cell('nav-menu', { location: 'primary', menuLayout: 'burger' }),
++    cell('nav-menu', { location: 'primary', menuLayout: 'row', burgerAt: 1024 }),
++    cell('search-form', { placeholder: 'Find a post', button: '' }),
++  ])
++  return { site, sections: [all, variants] }
++}
++
++/** Every nav and footer design bound to a menu location and the site logo. */
++function boundDoc(kind: 'nav' | 'footer'): DocState {
++  const kv = LIBRARY.find((k) => k.kind === kind)!
++  const sections = kv.variants
++    .filter((v) => v.C)
++    .map((v) => {
++      const sec = createVariantSection(kind, v.id)
++      return { ...sec, content: { ...sec.content, menu: kind === 'nav' ? 'primary' : 'footer', logoSource: 'site' } }
++    })
++  return { site, sections }
++}
++
++/** A loop of each source and pagination, with the default card. */
++function loopsDoc(): DocState {
++  const loop = (content: Record<string, string>) => createSection('loop', content)
++  const custom = loop({ source: 'query', perPage: '4', orderBy: 'title', order: 'asc', terms: 'category:3', exclude: 'current', empty: 'Nothing here yet.' })
++  custom.grid = { cols: 4, colsT: 2, colsM: 1, gapX: 16, gapY: 24 }
++  return { site, sections: [loop({ source: 'main', pagination: 'numbers', empty: 'No posts.' }), loop({ source: 'main', pagination: 'prev-next' }), custom, loop({ source: 'related', perPage: '3', pagination: 'none' })] }
++}
++
++const dynamicCases: [string, DocState][] = [
++  ['dynamic-header', { site, sections: starterSections('header') }],
++  ['dynamic-footer', { site, sections: starterSections('footer') }],
++  ['dynamic-single', { site, sections: starterSections('single') }],
++  ['dynamic-archive', { site, sections: starterSections('archive') }],
++  ['dynamic-search', { site, sections: starterSections('search') }],
++  ['dynamic-widgets', widgetsDoc()],
++  ['dynamic-loops', loopsDoc()],
++  ['dynamic-navs', boundDoc('nav')],
++  ['dynamic-footers', boundDoc('footer')],
++]
++cases.push(...dynamicCases)
++const dynamicNames = new Set(dynamicCases.map(([n]) => n))
++
++/** Sample values that must never reach a published snapshot (placeholders only, contract §11.5). */
++const SAMPLE_ONLY = [...SAMPLE_DYNAMIC.posts.map((p) => p.title), SAMPLE_DYNAMIC.posts[0].author.name, SAMPLE_DYNAMIC.site.tagline, SAMPLE_DYNAMIC.view.archiveTitle]
++
+ /* ---------- Checks ---------- */
+ const cssEscape = (v: string) =>
+   v.replace(/[^A-Za-z0-9_-]/g, (c) => `\\${c}`).replace(/^([0-9])/, (d) => `\\3${d} `)
+@@ -114,6 +188,20 @@ for (const [name, doc] of cases) {
+   bytes += json.length
+   fs.writeFileSync(path.join(out, `${name}.doc.json`), JSON.stringify(doc) + '\n')
+   fs.writeFileSync(path.join(out, `${name}.render.json`), json)
++  if (!dynamicNames.has(name)) continue
++  // Placeholders only; the parity suite compares the editor with the snapshot filled like the server would.
++  for (const v of SAMPLE_ONLY) if (r.html.includes(v)) problems.push(`${name}: sample value ${JSON.stringify(v)} in the snapshot`)
++  if (!/ data-wb-(slot|loop|menu-loc)=/.test(r.html)) problems.push(`${name}: no placeholders`)
++  let filled: RenderResult
++  try {
++    filled = renderStatic(doc, { ...opts, sample: SAMPLE_DYNAMIC })
++  } catch (e) {
++    problems.push(`${name} (sample): ${(e as Error).stack ?? e}`)
++    continue
++  }
++  if (siteCss) problems.push(...check(`${name} (sample)`, filled, siteCss))
++  if (/ data-wb-(slot|if|if-not|menu-loc)=/.test(filled.html)) problems.push(`${name} (sample): placeholder left in the filled snapshot`)
++  fs.writeFileSync(path.join(out, `${name}.sample.json`), JSON.stringify(filled) + '\n')
+ }
+ const count = (sections: Section[]) => sections.length
+ console.log(`[web-builder] fixtures: ${cases.length} docs, ${cases.reduce((n, [, d]) => n + count(d.sections), 0)} sections, ${(bytes / 1024).toFixed(0)} KB of render JSON → ${out}`)
+diff --git a/src/builder/live/renderStatic.tsx b/src/builder/live/renderStatic.tsx
+index b9b1356..69c0713 100644
+--- a/src/builder/live/renderStatic.tsx
++++ b/src/builder/live/renderStatic.tsx
+@@ -11,6 +11,7 @@ import { withSourceLocale } from '../i18n'
+ import { cn } from '../ui'
+ import { pageVars } from '../variants/Preview'
+ import { LiveCtx, type LiveState } from './ctx'
++import type { DynContext } from '../dynamic/types'
+ 
+ /*
+  * Static snapshot of a page for publishing (no editor, no React on the visitor's side). The server stores the
+@@ -35,6 +36,11 @@ export interface RenderOptions {
+   formAction: (sectionId: string) => string
+   /** Home URL, no trailing slash. Relative links in the doc stay relative. */
+   siteUrl: string
++  /**
++   * Fixtures and the parity suite only: dynamic widgets drawn filled with this sample (what the
++   * server sends after filling the placeholders). Never set when publishing.
++   */
++  sample?: DynContext
+ }
+ 
+ export interface RenderResult {
+@@ -205,7 +211,7 @@ interface Acc {
+ function renderSection(s: Section, index: number, doc: DocState, opts: RenderOptions, api: BuilderApi, acc: Acc): { html: string; ids: string[] } {
+   const baseId = s.style.cssId || s.id
+   const run = (width: number, copy: string, id: string, className?: string) => {
+-    const live: LiveState = { postId: opts.postId, sectionId: s.id, formAction: opts.formAction, width, bps: new Set(), css: acc.css, keepEl: acc.keepEl }
++    const live: LiveState = { postId: opts.postId, sectionId: s.id, formAction: opts.formAction, width, bps: new Set(), css: acc.css, keepEl: acc.keepEl, siteUrl: opts.siteUrl, sample: opts.sample }
+     const html = renderToStaticMarkup(
+       <BuilderCtx.Provider value={api}>
+         <LiveCtx.Provider value={live}>
+diff --git a/src/builder/live/runtime.ts b/src/builder/live/runtime.ts
+index ba73b97..f28db42 100644
+--- a/src/builder/live/runtime.ts
++++ b/src/builder/live/runtime.ts
+@@ -83,8 +83,9 @@ function tabs() {
+ 
+ /* ---------- dismiss ---------- */
+ function dismiss() {
+-  const post = document.querySelector<HTMLElement>('[data-wb-root]')?.dataset.wbPost ?? ''
+   for (const el of $$('[data-wb-dismiss]')) {
++    // A Theme Builder page has several roots (header, main, footer): the key is per document.
++    const post = el.closest<HTMLElement>('[data-wb-root]')?.dataset.wbPost ?? ''
+     const key = `wb-dismiss:${post}:${el.dataset.wbDismiss}`
+     const host = el.closest<HTMLElement>('section') ?? el
+     try {
+diff --git a/src/builder/live/site.css b/src/builder/live/site.css
+index 619ca4a..1716058 100644
+--- a/src/builder/live/site.css
++++ b/src/builder/live/site.css
+@@ -15,6 +15,9 @@
+ @source '../variants/*.tsx';
+ @source './ui.tsx';
+ @source './renderStatic.tsx';
++@source '../dynamic/widgets.tsx';
++@source '../dynamic/loop.tsx';
++@source '../dynamic/menu.tsx';
+ 
+ /* Per-device hiding (hideOnClass in sections.tsx). */
+ @source inline('@max-[640px]:hidden! @min-[640px]:@max-[1024px]:hidden! @min-[1024px]:hidden!');
+diff --git a/src/builder/navTree.ts b/src/builder/navTree.ts
+index 5aa578b..ef40962 100644
+--- a/src/builder/navTree.ts
++++ b/src/builder/navTree.ts
+@@ -3,6 +3,7 @@ import { iconLook } from './icons'
+ import { toPlain } from './rich'
+ import type { DocState, Item, Section, Selection } from './types'
+ import { t } from './i18n'
++import { dynLabel, isDynWidget } from './dynamic/model'
+ 
+ /** Rows of the Yapı (navigator) panel below one container. */
+ export type NavRow =
+@@ -40,9 +41,12 @@ export function navRows(s: Section): NavRow[] {
+       const el = `items.${i.id}.text`
+       if (i.title === 'layout' && i.sub) return { type: 'sub', key: i.sub.id, sub: i.sub, cell: t('Cell {v}', { v: n + 1 }) }
+       if (!i.title) return { ...elRow(s, el, t('Cell'), t('{v} · empty', { v: n + 1 })), dim: true } as NavRow
++      if (isDynWidget(i.title)) return elRow(s, el, dynLabel(i.title), t('Cell {v}', { v: n + 1 }))
+       return elRow(s, el, EL_NAMES[fieldKind(s, el)] ?? t('Element'), i.title === 'image' ? t('Cell {v}', { v: n + 1 }) : short(i.text) || t('Cell {v}', { v: n + 1 }))
+     })
+   }
++  // Theme Builder loop: its post card container.
++  if (s.kind === 'loop') return s.items.flatMap((i): NavRow[] => (i.sub ? [{ type: 'sub', key: i.sub.id, sub: i.sub, cell: t('Post card') }] : []))
+   if (s.kind === 'custom') {
+     const ids = new Set(s.items.map((i) => i.id))
+     const kids = new Map<string, Item[]>()
+diff --git a/src/builder/sections.tsx b/src/builder/sections.tsx
+index e4830cf..59b7515 100644
+--- a/src/builder/sections.tsx
++++ b/src/builder/sections.tsx
+@@ -17,6 +17,10 @@ import { withVariants } from './variants/render'
+ import { liveHref, useLive } from './live/ctx'
+ import { LIVE_ANIM, LiveForm, LiveMenu } from './live/ui'
+ import { t } from './i18n'
++import { isBlockWidget, isDynWidget } from './dynamic/model'
++import { DynWidgetView } from './dynamic/widgets'
++import { LoopSection } from './dynamic/loop'
++import { boundEl, useBound, withBinding } from './dynamic/menu'
+ 
+ const PLACEHOLDER = t('Add text')
+ 
+@@ -51,6 +55,7 @@ export function E({
+ }) {
+   const b = useB()
+   const live = useLive()
++  const bound = useBound()
+   const value = getValue(s, el)
+   const lists = rich && kind === 'text' && !!multiline
+   const html = useMemo(() => (isRich(value) ? sanitizeRich(value, { lists }) : null), [value, lists])
+@@ -86,6 +91,18 @@ export function E({
+   const selected = b.selection?.sectionId === s.id && b.selection.el === el
+   const linked = b.activeField?.sectionId === s.id && b.activeField.el === el
+   const label = b.mode === 'studio' ? `${EL_NAMES[kind]}${hint ? ` · ${hint}` : ''}` : t('{v} · double-click to type', { v: fieldLabel(s, el) })
++  const elStyle: CSSProperties = {
++    ...style,
++    ...elCss(s.els?.[el], kind),
++    ...(kind === 'button' && s.els?.[el]?.width !== undefined && !s.els[el].align ? { textAlign: 'center' } : {}),
++    // Vertical margin/padding and width/height need a box on inline elements.
++    ...((s.els?.[el]?.margin || s.els?.[el]?.padding || s.els?.[el]?.mt !== undefined || s.els?.[el]?.mb !== undefined || s.els?.[el]?.width !== undefined || s.els?.[el]?.height !== undefined || s.els?.[el]?.maxWidth !== undefined) && !/\b(block|flex|inline-flex|inline-block)\b/.test(className ?? '') ? { display: 'inline-block' } : {}),
++  }
++  // Theme Builder: links and logo of a nav / footer bound to a menu location or the site logo.
++  if (bound) {
++    const out = boundEl({ bound, s, el, as, className, style: elStyle, value, preview: b.preview, select: () => b.select({ sectionId: s.id }) })
++    if (out !== undefined) return out
++  }
+ 
+   const node = createElement(
+     as,
+@@ -93,13 +110,7 @@ export function E({
+       key: ver,
+       ref,
+       className: cn('ed', rich && 'rt', !value && 'opacity-40', className),
+-      style: {
+-        ...style,
+-        ...elCss(s.els?.[el], kind),
+-        ...(kind === 'button' && s.els?.[el]?.width !== undefined && !s.els[el].align ? { textAlign: 'center' } : {}),
+-        // Vertical margin/padding and width/height need a box on inline elements.
+-        ...((s.els?.[el]?.margin || s.els?.[el]?.padding || s.els?.[el]?.mt !== undefined || s.els?.[el]?.mb !== undefined || s.els?.[el]?.width !== undefined || s.els?.[el]?.height !== undefined || s.els?.[el]?.maxWidth !== undefined) && !/\b(block|flex|inline-flex|inline-block)\b/.test(className ?? '') ? { display: 'inline-block' } : {}),
+-      },
++      style: elStyle,
+       ...(live && as === 'a' ? { href: liveHref(getHref(s, el)) } : {}),
+       'data-label': label,
+       'data-el': `${s.id}:${el}`,
+@@ -268,6 +279,8 @@ function Head({ s, center, className }: { s: Section; center?: boolean; classNam
+ }
+ 
+ function Logo({ s }: { s: Section }) {
++  // A nav / footer showing the site logo (Theme Builder binding) has no logo letter.
++  if (s.content.logo === undefined) return null
+   return (
+     <span className="grid size-[30px] shrink-0 place-items-center rounded-full border-2 border-current">
+       <E s={s} el="logo" kind="text" className="font-[Space_Grotesk] text-[14px] font-bold leading-none" />
+@@ -1098,6 +1111,7 @@ function Cell({ s, item, tall, dashed }: { s: Section; item: Item; tall: boolean
+         </div>
+       )}
+       {type === 'image' && <EImage s={s} el={el} className={cn('w-full', tall ? 'h-full min-h-[260px]' : 'aspect-[4/3]')} />}
++      {isDynWidget(type) && <DynWidgetView s={s} item={item} title={title(s.style.titleSize, 24)} body={body} />}
+       {nested && item.sub && <NestedLayout parent={s} sub={item.sub} fill={!item.box?.valign} />}
+ 
+       {type && !nested && !b.preview && (
+@@ -1199,7 +1213,7 @@ function CellBoxView({ s, item, index, width, row, tall, grid }: { s: Section; i
+     ;(style as Record<string, string>)['--w'] = row ? `calc(${w}% - ${(bx.gapX * (1 - w / 100)).toFixed(2)}px)` : `${w}%`
+   }
+   // Empty and container cells always fill their grid area: an empty one is a drop target, a container sizes from it.
+-  if (grid && (!item.title || item.title === 'layout')) style.justifySelf = 'stretch'
++  if (grid && (!item.title || item.title === 'layout' || isBlockWidget(item.title))) style.justifySelf = 'stretch'
+   return (
+     <div
+       className={cn('cell relative flex flex-col', !grid && 'shrink', !grid && w !== undefined && (bx.stackMobile ? 'w-full @3xl:w-(--w)' : 'w-(--w)'))}
+@@ -1302,8 +1316,8 @@ function Layout({ s }: { s: Section }) {
+   )
+ }
+ 
+-/** A Flexbox / Grid container inside a layout cell. Same data and inspector as a top-level layout section. */
+-function NestedLayout({ parent, sub, fill }: { parent: Section; sub: Section; fill: boolean }) {
++/** A Flexbox / Grid container inside a layout cell (or a loop's post card). Same data and inspector as a top-level layout section. */
++export function NestedLayout({ parent, sub, fill }: { parent: Section; sub: Section; fill: boolean }) {
+   const b = useB()
+   const live = useLive()
+   const depth = useContext(NestDepth) + 1
+@@ -1380,7 +1394,7 @@ function HtmlBlock({ s }: { s: Section }) {
+ }
+ 
+ export const RENDERERS: Record<Section['kind'], (p: { s: Section }) => ReactNode> = {
+-  nav: withVariants('nav', Nav),
++  nav: withBinding(withVariants('nav', Nav)),
+   hero: withVariants('hero', Hero),
+   banner: withVariants('banner', Banner),
+   features: withVariants('features', Features),
+@@ -1389,11 +1403,12 @@ export const RENDERERS: Record<Section['kind'], (p: { s: Section }) => ReactNode
+   quote: withVariants('quote', Quote),
+   faq: withVariants('faq', Faq),
+   cta: withVariants('cta', Cta),
+-  footer: withVariants('footer', Footer),
++  footer: withBinding(withVariants('footer', Footer)),
+   text: TextBlock,
+   image: ImageBlock,
+   form: withVariants('form', Form),
+   layout: Layout,
+   html: HtmlBlock,
+   custom: CustomSection,
++  loop: LoopSection,
+ }
+diff --git a/src/builder/store.ts b/src/builder/store.ts
+index b89c269..43b6311 100644
+--- a/src/builder/store.ts
++++ b/src/builder/store.ts
+@@ -2,6 +2,8 @@ import { createContext, useContext } from 'react'
+ import { CELL_DEFAULTS, KINDS, MAX_DEPTH, cloneSection, createLayout, defaultBox, findSection, getValue, fieldLabel, isCardEl, locate, nestHeight, newItem, resizeCells, uid } from './data'
+ import type { BgSettings, CellBox, CellType, ContainerBox, Device, ElStyle, GridSettings, Item, PageSettings, SavedComponent, DocState, LayoutType, Mode, Payload, Section, SectionStyle, Selection, SiteSettings } from './types'
+ import { t } from './i18n'
++import { dynDefaults, isDynWidget } from './dynamic/model'
++import type { DynSettings } from './types'
+ export type DocAction =
+   | { type: 'field'; id: string; el: string; value: string }
+   | { type: 'content'; id: string; key: string; value: string; label: string }
+@@ -26,6 +28,8 @@ export type DocAction =
+   | { type: 'grid'; id: string; patch: Partial<GridSettings>; key?: string }
+   | { type: 'bg'; id: string; patch: Partial<BgSettings>; key?: string; label?: string }
+   | { type: 'itemPatch'; id: string; itemId: string; patch: Partial<Item> }
++  /** Theme Builder: settings of a dynamic widget cell. */
++  | { type: 'dyn'; id: string; itemId: string; patch: Partial<DynSettings>; key?: string }
+   | { type: 'setElStyle'; id: string; el: string; style: ElStyle }
+   | { type: 'replace'; doc: DocState; label: string }
+   | { type: 'jump'; cursor: number }
+@@ -76,7 +80,7 @@ const mapSection = (doc: DocState, id: string, fn: (s: Section) => Section): Doc
+   return sections ? { ...doc, sections } : doc
+ }
+ 
+-const emptyCell = (i: Item): Item => ({ ...i, title: '', text: '', sub: undefined })
++const emptyCell = (i: Item): Item => ({ ...i, title: '', text: '', sub: undefined, dyn: undefined })
+ 
+ /** Allowed index range: nav stays first and footer stays last. */
+ export function insertBounds(sections: Section[]) {
+@@ -117,7 +121,7 @@ function apply(doc: DocState, a: DocAction): { doc: DocState; label: string; key
+         return apply(doc, { type: 'nest', id: a.id, itemId: a.itemId, section: createLayout('flex', '50-50', { nested: true, palette: loc.s.style.palette }) })
+       }
+       return {
+-        doc: mapSection(doc, a.id, (s) => ({ ...s, items: s.items.map((i) => (i.id === a.itemId ? { ...emptyCell(i), title: a.cell, text: CELL_DEFAULTS[a.cell] } : i)) })),
++        doc: mapSection(doc, a.id, (s) => ({ ...s, items: s.items.map((i) => (i.id === a.itemId ? { ...emptyCell(i), title: a.cell, text: CELL_DEFAULTS[a.cell], ...(isDynWidget(a.cell) ? { dyn: dynDefaults(a.cell) } : {}) } : i)) })),
+         label: a.cell ? t('Element added to cell') : t('Cell emptied'),
+         structural: !!findSection(doc, a.id)?.items.find((i) => i.id === a.itemId)?.sub,
+       }
+@@ -268,6 +272,12 @@ function apply(doc: DocState, a: DocAction): { doc: DocState; label: string; key
+         doc: mapSection(doc, a.id, (s) => ({ ...s, items: s.items.map((i) => (i.id === a.itemId ? { ...i, ...a.patch } : i)) })),
+         label: t('Link changed'),
+       }
++    case 'dyn':
++      return {
++        doc: mapSection(doc, a.id, (s) => ({ ...s, items: s.items.map((i) => (i.id === a.itemId ? { ...i, dyn: { ...i.dyn, ...a.patch } } : i)) })),
++        label: t('Widget setting changed'),
++        key: a.key ? `d:${a.id}:${a.itemId}:${a.key}` : undefined,
++      }
+     case 'setElStyle':
+       return { doc: mapSection(doc, a.id, (s) => ({ ...s, els: { ...s.els, [a.el]: a.style } })), label: t('Style pasted') }
+     case 'replace':
+diff --git a/src/builder/types.ts b/src/builder/types.ts
+index af26a14..2f77f3e 100644
+--- a/src/builder/types.ts
++++ b/src/builder/types.ts
+@@ -19,6 +19,8 @@ export type SectionKind =
+   | 'layout'
+   | 'html'
+   | 'custom'
++  /** Theme Builder: a grid of post cards (dynamic/loop.tsx, contract §11.4). */
++  | 'loop'
+ export type PaletteId = 'brand' | 'dark' | 'light' | 'soft' | 'sand'
+ export type FontPairId = 'elegant' | 'modern' | 'plain'
+ export type CornerId = 'sharp' | 'soft' | 'round'
+@@ -86,6 +88,8 @@ export interface Item {
+   lay?: NodeLayout
+   /** Layout cells of type 'layout': the nested Flexbox / Grid container. */
+   sub?: Section
++  /** Layout cells holding a dynamic widget (Theme Builder): its settings. */
++  dyn?: DynSettings
+ }
+ 
+ /** Elementor-style container settings for Flexbox / Grid sections. */
+@@ -246,7 +250,62 @@ export interface KindDef {
+   pinned?: boolean
+ }
+ 
+-export type CellType = '' | 'heading' | 'text' | 'button' | 'image' | 'layout'
++/* ---------- Theme Builder: dynamic widgets (contract §11.4; same shapes as builder/host/contract.ts) ---------- */
++/** Layout cell types that show site or post data (list: DYN_WIDGETS in dynamic/model.ts). */
++export type DynWidget =
++  | 'site-logo' | 'site-title' | 'site-tagline' | 'nav-menu' | 'search-form' | 'copyright'
++  | 'post-title' | 'post-content' | 'post-excerpt' | 'post-image' | 'post-meta' | 'post-terms' | 'post-date' | 'post-author' | 'author-box' | 'post-nav' | 'post-comments'
++  | 'archive-title' | 'archive-desc' | 'search-query' | 'pagination'
++
++export interface DynSettings {
++  tag?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'p' | 'div' | 'span'
++  link?: boolean
++  /** WordPress date format, /^[A-Za-z ,.:/-]{1,32}$/; '' = the site's date_format. */
++  format?: string
++  size?: 'thumbnail' | 'medium' | 'large' | 'full'
++  /** width / height, 0.2…5 */
++  ratio?: number
++  fields?: ('date' | 'modified' | 'author' | 'comments' | 'terms')[]
++  /** ≤ 8 characters */
++  sep?: string
++  tax?: string
++  location?: string
++  menuLayout?: 'row' | 'column' | 'burger'
++  /** Container width (px) below which a row menu becomes a burger; 0 = never. */
++  burgerAt?: number
++  /** 5…100 */
++  words?: number
++  prefix?: string
++  placeholder?: string
++  button?: string
++  /** ≤ 200 characters */
++  empty?: string
++}
++
++/** Section.content keys of a 'loop' section (all strings); card = items[0].sub, grid = section.grid. */
++export interface LoopContent {
++  source?: 'main' | 'query' | 'related'
++  postType?: string
++  /** '1'…'24' */
++  perPage?: string
++  orderBy?: 'date' | 'modified' | 'title' | 'menu_order' | 'comment_count' | 'rand'
++  order?: 'desc' | 'asc'
++  /** 'category:12,post_tag:4', ≤ 20 pairs */
++  terms?: string
++  /** '<user id>' | '' */
++  author?: string
++  exclude?: 'current' | ''
++  /** '0'…'50' */
++  offset?: string
++  /** source main only */
++  pagination?: 'numbers' | 'prev-next' | 'none'
++  empty?: string
++}
++
++/** PageSettings.layout: 'site' = header / footer templates around the doc, 'canvas' = the doc is the whole page. */
++export type PageLayout = 'site' | 'canvas'
++
++export type CellType = '' | 'heading' | 'text' | 'button' | 'image' | 'layout' | DynWidget
+ export type LayoutType = 'flex' | 'grid'
+ 
+ export interface Structure {
+@@ -273,6 +332,8 @@ export interface PageSettings {
+   slug: string
+   description: string
+   indexable: boolean
++  /** Theme Builder (contract §11.4); absent = canvas when the doc has a top-level nav / footer, else site. */
++  layout?: PageLayout
+ }
+ 
+ export interface SavedComponent {
+diff --git a/src/builder/variants/footer-parts.tsx b/src/builder/variants/footer-parts.tsx
+index 4ec1c99..293a91a 100644
+--- a/src/builder/variants/footer-parts.tsx
++++ b/src/builder/variants/footer-parts.tsx
+@@ -5,6 +5,7 @@ import { useB } from '../store'
+ import type { Item, Section } from '../types'
+ import { Brand, Btn, E, Slot, Social, SocialIcon, W, cn, list, useType } from './kit'
+ import { liveHref, useLive } from '../live/ctx'
++import { isMenuTemplate } from '../dynamic/menu'
+ 
+ type P = { s: Section }
+ 
+@@ -47,7 +48,7 @@ function LinkRow({ s, items = s.items, className, ulClass, linkClass, label = NA
+     <nav aria-label={label} className={cn('text-[14px]', className)} style={{ color: 'var(--muted)' }}>
+       <ul data-grid={s.id} className={cn('flex flex-wrap', ulClass)} style={{ columnGap: g.gapX, rowGap: g.gapY }}>
+         {items.map((i) => (
+-          <li key={i.id}>
++          <li key={i.id} className={isMenuTemplate(i) ? 'contents' : undefined}>
+             <FLink s={s} i={i} className={linkClass} />
+           </li>
+         ))}
+@@ -95,7 +96,7 @@ function LinkCols({
+             </div>
+             <ul className={cn('mt-4 flex flex-col text-[14.5px] leading-6', ulClass)} style={{ rowGap: g.gapY, color: 'var(--muted)' }}>
+               {c.map((i) => (
+-                <li key={i.id}>
++                <li key={i.id} className={isMenuTemplate(i) ? 'contents' : undefined}>
+                   <FLink s={s} i={i} className={linkClass} />
+                 </li>
+               ))}
+@@ -282,7 +283,7 @@ export function FooterMega({ s }: P) {
+             <nav aria-label="Legal links">
+               <ul className="flex flex-wrap gap-x-6 gap-y-2 text-[13px]" style={{ color: 'var(--muted)' }}>
+                 {legal.map((i) => (
+-                  <li key={i.id}>
++                  <li key={i.id} className={isMenuTemplate(i) ? 'contents' : undefined}>
+                     <FLink s={s} i={i} />
+                   </li>
+                 ))}
+@@ -705,7 +706,7 @@ export function FooterStatus({ s }: P) {
+           <nav aria-label={NAV_LABEL}>
+             <ul data-grid={s.id} className="flex flex-wrap @4xl:justify-end" style={{ columnGap: Math.min(g.gapX, 10), rowGap: Math.max(g.gapY, 8) }}>
+               {s.items.map((i) => (
+-                <li key={i.id}>
++                <li key={i.id} className={isMenuTemplate(i) ? 'contents' : undefined}>
+                   <FLink
+                     s={s}
+                     i={i}

@@ -44,7 +44,9 @@ export function fixtureNames(): string[] {
 }
 
 export function readRender(name: string): RenderResult {
-  return JSON.parse(fs.readFileSync(path.join(FIXTURES, `${name}.render.json`), 'utf8'))
+  // Theme Builder fixtures (dynamic-*): the snapshot filled with the sample data the editor draws.
+  const sample = path.join(FIXTURES, `${name}.sample.json`)
+  return JSON.parse(fs.readFileSync(fs.existsSync(sample) ? sample : path.join(FIXTURES, `${name}.render.json`), 'utf8'))
 }
 
 let cache: { entry: { js: string; css: string[] }; fontFaces: string; site: { runtime: string; css: string } } | null = null
