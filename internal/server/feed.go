@@ -90,6 +90,8 @@ func (s *Server) feedPosts(ctx context.Context, q *siteQuery) []*store.Post {
 		pq.AuthorID = q.Author.ID
 	case "date":
 		pq.Year, pq.Month, pq.Day = q.Year, q.Month, q.Day
+	case "post-type-archive":
+		pq.Types = []string{q.PostType}
 	case "search":
 		if q.Search == "" {
 			return nil

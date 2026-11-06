@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -21,7 +22,8 @@ import (
 
 // siteQuery is the parsed main query (WP_Query's query vars and conditionals).
 type siteQuery struct {
-	Kind      string // home, front-page, single, page, category, tag, author, date, search, 404, feed
+	Kind      string // home, front-page, single, page, category, tag, author, date, search, post-type-archive, 404, feed
+	PostType  string // the post type of a post-type-archive view
 	Post      *store.Post
 	Term      *store.Term
 	Author    *store.User
@@ -231,6 +233,9 @@ func (s *Server) resolve(c *gin.Context, path string) (*siteQuery, error) {
 		}
 		q.Kind, q.Author = "author", u
 		return q, nil
+	case path == "" && v.Get("post_type") != "" && siteArchiveType(v.Get("post_type")) != nil:
+		q.Kind, q.PostType = "post-type-archive", v.Get("post_type")
+		return q, nil
 	case v.Get("m") != "":
 		m := v.Get("m")
 		if len(m) >= 4 {
@@ -327,6 +332,10 @@ func (s *Server) resolvePretty(c *gin.Context, q *siteQuery, path string) (*site
 		return q, nil
 	}
 
+	if sq, ok := s.resolveTypePath(c, q, path); ok {
+		return sq, nil
+	}
+
 	if m, ok := links.NewMatcher(lb.Structure).Match(path); ok {
 		var p *store.Post
 		var err error
@@ -356,6 +365,132 @@ func (s *Server) resolvePretty(c *gin.Context, q *siteQuery, path string) (*site
 		return s.singular(c, q, p)
 	}
 	return nil, errNotFound
+}
+
+// Custom post types ----------------------------------------------------------------------------
+
+// siteCPT is a public post type registered in Pursae Custom Fields that the front end routes, or nil.
+// The core types, the Web Builder's templates and Pursae Commerce products (routed by goo_front.go)
+// are never returned.
+func siteCPT(typ string) *acfgoPostTypeDef {
+	switch typ {
+	case "", "post", "page", "attachment", "revision", "nav_menu_item", "wb_template", "product", "product_variation":
+		return nil
+	}
+	acfgoRegistry.RLock()
+	pt := acfgoRegistry.types[typ]
+	acfgoRegistry.RUnlock()
+	if pt == nil || !pt.Public {
+		return nil
+	}
+	return pt
+}
+
+// siteViewableType is is_post_type_viewable() for the core's front end: posts, pages and public
+// Pursae Custom Fields types.
+func siteViewableType(typ string) bool {
+	return typ == "post" || typ == "page" || siteCPT(typ) != nil
+}
+
+// siteCPTSlugs are the rewrite slug and archive slug of a routed post type ("" archive: none).
+func siteCPTSlugs(pt *acfgoPostTypeDef) (base, archive string) {
+	base = strings.Trim(defaultStr(pt.Slug, pt.Name), "/")
+	if pt.HasArchive {
+		archive = strings.Trim(defaultStr(pt.ArchiveSlug, base), "/")
+	}
+	return base, archive
+}
+
+// siteTypeBase is links.Builder.TypeBase.
+func siteTypeBase(typ string) (string, string) {
+	pt := siteCPT(typ)
+	if pt == nil {
+		return "", ""
+	}
+	return siteCPTSlugs(pt)
+}
+
+// siteArchiveType is the routed post type typ when it has an archive, else nil.
+func siteArchiveType(typ string) *acfgoPostTypeDef {
+	pt := siteCPT(typ)
+	if pt == nil || !pt.HasArchive {
+		return nil
+	}
+	return pt
+}
+
+// siteRoutedTypes lists the routed custom post types, sorted by name for a stable match order.
+func siteRoutedTypes() []*acfgoPostTypeDef {
+	acfgoRegistry.RLock()
+	names := make([]string, 0, len(acfgoRegistry.types))
+	for n := range acfgoRegistry.types {
+		names = append(names, n)
+	}
+	acfgoRegistry.RUnlock()
+	sort.Strings(names)
+	var out []*acfgoPostTypeDef
+	for _, n := range names {
+		if pt := siteCPT(n); pt != nil {
+			out = append(out, pt)
+		}
+	}
+	return out
+}
+
+// resolveTypePath matches the rewrite rules of the routed post types: "<archive slug>" is the
+// post type archive, "<slug>/<post>" (with ancestors for hierarchical types) a single entry.
+// ok false lets the remaining rules (posts, dates, pages) try the path.
+func (s *Server) resolveTypePath(c *gin.Context, q *siteQuery, path string) (*siteQuery, bool) {
+	ctx := c.Request.Context()
+	for _, pt := range siteRoutedTypes() {
+		base, archive := siteCPTSlugs(pt)
+		if archive != "" && path == archive {
+			q.Kind, q.PostType = "post-type-archive", pt.Name
+			return q, true
+		}
+		if base == "" || !strings.HasPrefix(path, base+"/") {
+			continue
+		}
+		rest := strings.Trim(strings.TrimPrefix(path, base+"/"), "/")
+		if rest == "" {
+			continue
+		}
+		var p *store.Post
+		var err error
+		switch {
+		case pt.Hierarchical: // a child lives under its ancestors' path
+			p, err = s.typePostByPath(ctx, pt.Name, rest)
+		case strings.Contains(rest, "/"):
+			continue
+		default:
+			p, err = s.store.PostBySlug(ctx, pt.Name, rest)
+		}
+		if err != nil || p == nil || p.Type != pt.Name {
+			continue
+		}
+		if sq, err := s.singular(c, q, p); err == nil {
+			return sq, true
+		}
+		return nil, false
+	}
+	return nil, false
+}
+
+// typePostByPath is get_page_by_path() for a hierarchical custom post type.
+func (s *Server) typePostByPath(ctx context.Context, typ, path string) (*store.Post, error) {
+	var parent, id int64
+	for _, slug := range strings.Split(path, "/") {
+		if slug == "" {
+			return nil, errNotFound
+		}
+		if err := s.store.Pool.QueryRow(ctx, `SELECT id FROM posts
+			WHERE type = $1 AND slug = $2 AND coalesce(parent_id, 0) = $3 AND status NOT IN ('auto-draft', 'trash')
+			ORDER BY (status = 'publish') DESC, id LIMIT 1`, typ, slug, parent).Scan(&id); err != nil {
+			return nil, errNotFound
+		}
+		parent = id
+	}
+	return s.store.GetPost(ctx, id)
 }
 
 // splitPages is the <!--nextpage--> split of setup_postdata(): the block delimiters around the tag go,
@@ -406,7 +541,7 @@ func (s *Server) singular(c *gin.Context, q *siteQuery, p *store.Post) (*siteQue
 	default:
 		return nil, errNotFound
 	}
-	if p.Type != "post" && p.Type != "page" {
+	if !siteViewableType(p.Type) {
 		return nil, errNotFound
 	}
 	q.Post = p
@@ -456,6 +591,8 @@ func (s *Server) mainPosts(ctx context.Context, q *siteQuery, u *store.User) ([]
 		pq.AuthorID = q.Author.ID
 	case "date":
 		pq.Year, pq.Month, pq.Day = q.Year, q.Month, q.Day
+	case "post-type-archive":
+		pq.Types = []string{q.PostType}
 	case "search":
 		pq.Types = []string{"post", "page"}
 		pq.Search = q.Search
@@ -626,6 +763,12 @@ func (q *siteQuery) archiveTitle() (string, string) {
 		default:
 			return "Year: <span>" + itoa(q.Year) + "</span>", itoa(q.Year)
 		}
+	case "post-type-archive":
+		name := q.PostType
+		if pt := siteCPT(q.PostType); pt != nil && pt.label("name") != "" {
+			name = pt.label("name")
+		}
+		return "Archives: <span>" + html.EscapeString(name) + "</span>", html.EscapeString(name)
 	}
 	return "Archives", "Archives"
 }

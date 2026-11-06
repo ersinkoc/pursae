@@ -27,6 +27,11 @@ type Builder struct {
 	CategoryPath  func(t *store.Term) string // parent/child slug path
 	AuthorSlug    func(id int64) string
 
+	// TypeBase, when set, gives the rewrite slug of a public custom post type and its archive slug
+	// (register_post_type()'s rewrite.slug and has_archive). base "" means the type has no pretty
+	// permalinks (its posts keep /?p=ID); archive "" means it has no archive.
+	TypeBase func(typ string) (base, archive string)
+
 	// LinkFilter, when set, rewrites the public URLs below like WordPress' post_link, term_link and
 	// home_url filters (Golylang adds the language). kind is "post", "term" or "home" (archives, feeds,
 	// search); obj is the *store.Post or *store.Term, nil for "home". It must be idempotent.
@@ -74,7 +79,50 @@ func (b *Builder) permalink(p *store.Post) string {
 	case "post":
 		return b.postLink(p)
 	}
+	if base := b.typeBase(p.Type); base != "" {
+		return b.typeLink(p, base)
+	}
 	return b.HomeURL("/?p=" + strconv.FormatInt(p.ID, 10))
+}
+
+func (b *Builder) typeBase(typ string) string {
+	if b.TypeBase == nil || typ == "post" || typ == "page" {
+		return ""
+	}
+	base, _ := b.TypeBase(typ)
+	return strings.Trim(base, "/")
+}
+
+// typeLink is get_post_permalink(): /<rewrite slug>/<ancestors…>/<slug>/ for a custom post type.
+// Plain permalinks and drafts keep /?p=ID.
+func (b *Builder) typeLink(p *store.Post, base string) string {
+	if !b.Pretty() || draftLike(p) {
+		return b.HomeURL("/?p=" + strconv.FormatInt(p.ID, 10))
+	}
+	parts := []string{base}
+	if b.Ancestors != nil && p.ParentID != 0 {
+		for _, a := range b.Ancestors(p) {
+			parts = append(parts, a.Slug)
+		}
+	}
+	parts = append(parts, p.Slug)
+	return b.HomeURL(b.trailing("/" + strings.Join(parts, "/")))
+}
+
+// PostTypeArchiveLink is get_post_type_archive_link(): "" when the type has no archive.
+func (b *Builder) PostTypeArchiveLink(typ string) string {
+	if b.TypeBase == nil || typ == "post" || typ == "page" {
+		return ""
+	}
+	_, archive := b.TypeBase(typ)
+	archive = strings.Trim(archive, "/")
+	if archive == "" {
+		return ""
+	}
+	if !b.Pretty() {
+		return b.filter("home", nil, b.HomeURL("/?post_type="+url.QueryEscape(typ)))
+	}
+	return b.filter("home", nil, b.HomeURL(b.trailing("/"+archive)))
 }
 
 func draftLike(p *store.Post) bool {
@@ -122,6 +170,14 @@ func (b *Builder) PermalinkTemplate(p *store.Post) string {
 	}
 	if p.Type == "page" {
 		return b.HomeURL(b.trailing("/%pagename%"))
+	}
+	if base := b.typeBase(p.Type); base != "" {
+		q := *p
+		q.Slug = "%postname%"
+		if q.Status != "publish" && q.Status != "private" {
+			q.Status = "publish"
+		}
+		return b.typeLink(&q, base)
 	}
 	q := *p
 	q.Slug = "%postname%"
