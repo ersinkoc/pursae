@@ -47,8 +47,27 @@ func Can(userID int64, g Grants, cap string, post Post) bool {
 	return true
 }
 
+// typeCaps maps a post type to the one primitive capability that every post meta capability
+// (edit/delete/publish/read) on posts of that type requires, whoever the author is. It is for
+// types that are site configuration rather than content, such as Theme Builder templates
+// (edit_theme_options), so screens that only check edit_post cannot be used to change them.
+// Filled once at start-up by RegisterTypeCap; read-only afterwards.
+var typeCaps = map[string]string{}
+
+// RegisterTypeCap makes every post meta capability on posts of postType require cap.
+// Call it during package initialisation only.
+func RegisterTypeCap(postType, cap string) { typeCaps[postType] = cap }
+
 // MapMetaCap returns the primitive capabilities required for cap, like WordPress' map_meta_cap().
 func MapMetaCap(userID int64, cap string, post Post) []string {
+	if post != nil {
+		if tc, ok := typeCaps[post.PostType()]; ok {
+			switch cap {
+			case "edit_post", "edit_page", "delete_post", "delete_page", "publish_post", "read_post", "read_page":
+				return []string{tc}
+			}
+		}
+	}
 	if post == nil {
 		switch cap {
 		case "edit_post", "delete_post", "publish_post", "read_post", "edit_page", "delete_page", "read_page":

@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -486,5 +487,39 @@ func TestWBTemplatesAdminCoreTrash(t *testing.T) {
 	w = wbtaDirect(srv, editor, wbtaScreen+"&post="+id+"&action=trash", "trash-wb-template_"+id, srv.themesScreen)
 	if w.Code != http.StatusForbidden || wbtaStatus(t, srv, tp.ID) != "draft" {
 		t.Errorf("editor Theme Builder trash: %d", w.Code)
+	}
+}
+
+// Core screens that only check edit_post (Quick Edit, revisions, Pursae Multi Language ajax)
+// cannot change a template for an editor: template meta caps map to edit_theme_options.
+func TestWBTemplatesCoreScreensNeedThemeCap(t *testing.T) {
+	srv, base, admin := wbrStart(t)
+	ctx := context.Background()
+	head := wbtaDesigned(t, srv, webbuilder.TemplateHeader, "Site header", []string{"include/general"}, "publish")
+	var revID int64
+	if err := srv.store.Pool.QueryRow(ctx, `INSERT INTO post_revisions(post_id, author_id, title, excerpt, content) VALUES ($1, 1, 'Old header', '', 'old') RETURNING id`, head.ID).Scan(&revID); err != nil {
+		t.Fatal(err)
+	}
+	ed := wbrUser(t, srv, base, "tbcore-editor", "editor")
+	_, body, _ := get(t, ed.c, base+"/wp-admin/edit")
+	inline := attr(t, body, `id="_inline_edit" name="_inline_edit" value="([^"]+)"`)
+	_, out, _ := post(t, ed.c, base+"/wp-admin/admin-ajax", url.Values{"action": {"inline-save"}, "_inline_edit": {inline}, "post_ID": {itoa64(head.ID)},
+		"post_type": {webbuilder.TemplatePostType}, "post_title": {"Hacked"}, "_status": {"draft"}})
+	if !strings.Contains(out, "not allowed") {
+		t.Errorf("editor inline-save on a template = %.200q", out)
+	}
+	if got := wbtaStatus(t, srv, head.ID); got != "publish" {
+		t.Errorf("template status after editor inline-save = %s", got)
+	}
+	if code, _, _ := get(t, ed.c, base+"/wp-admin/revision?revision="+itoa64(revID)); code != http.StatusForbidden {
+		t.Errorf("editor revision screen on a template: %d", code)
+	}
+	// The admin keeps Quick Edit on templates.
+	_, body, _ = get(t, admin.c, base+"/wp-admin/edit")
+	inline = attr(t, body, `id="_inline_edit" name="_inline_edit" value="([^"]+)"`)
+	post(t, admin.c, base+"/wp-admin/admin-ajax", url.Values{"action": {"inline-save"}, "_inline_edit": {inline}, "post_ID": {itoa64(head.ID)},
+		"post_type": {webbuilder.TemplatePostType}, "post_title": {"Site header"}, "_status": {"draft"}})
+	if got := wbtaStatus(t, srv, head.ID); got != "draft" {
+		t.Errorf("admin inline-save on a template: status %s", got)
 	}
 }

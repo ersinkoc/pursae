@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"wpgo/internal/cache"
+	"wpgo/internal/caps"
 	"wpgo/internal/store"
 	"wpgo/internal/webbuilder"
 )
@@ -400,9 +401,15 @@ func wbFactsOf(q *siteQuery) webbuilder.QueryFacts {
 	return f
 }
 
+// Templates are site design: every post meta capability on one (edit_post, delete_post,
+// publish_post, read_post) maps to TemplateCap, so the core screens that only check edit_post
+// (Quick Edit, bulk edit, revisions, trash, Pursae Multi Language ajax) cannot change them for
+// users without edit_theme_options.
+func init() { caps.RegisterTypeCap(webbuilder.TemplatePostType, webbuilder.TemplateCap) }
+
 // wbEditable reports whether u may edit p in the builder: a template needs edit_theme_options
-// (caps.MapMetaCap maps wb_template to *_posts, so edit_post alone would admit authors and
-// editors); any other post needs a builder post type and edit_post.
+// (also what caps.MapMetaCap maps its meta caps to); any other post needs a builder post type
+// and edit_post.
 func (s *Server) wbEditable(u *store.User, p *store.Post) bool {
 	if u == nil || p == nil {
 		return false

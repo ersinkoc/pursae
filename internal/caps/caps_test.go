@@ -63,3 +63,26 @@ func TestMetaCaps(t *testing.T) {
 		}
 	}
 }
+
+func TestRegisteredTypeCapOverridesPostCaps(t *testing.T) {
+	RegisterTypeCap("tb_test_type", "edit_theme_options")
+	defer delete(typeCaps, "tb_test_type")
+	editor := Grants{"edit_posts": true, "edit_others_posts": true, "edit_published_posts": true,
+		"publish_posts": true, "delete_others_posts": true, "delete_published_posts": true, "read": true}
+	tpl := fakePost{author: 1, status: "publish", typ: "tb_test_type"}
+	for _, c := range []string{"edit_post", "delete_post", "publish_post", "read_post"} {
+		if Can(2, editor, c, tpl) {
+			t.Errorf("editor without edit_theme_options passed %s on a registered type", c)
+		}
+		if Can(1, editor, c, tpl) {
+			t.Errorf("author of the post passed %s without edit_theme_options", c)
+		}
+		if !Can(2, Grants{"edit_theme_options": true}, c, tpl) {
+			t.Errorf("edit_theme_options did not grant %s", c)
+		}
+	}
+	// Other types keep the normal mapping.
+	if !Can(2, editor, "edit_post", fakePost{author: 1, status: "publish", typ: "post"}) {
+		t.Error("editor lost edit_post on an ordinary post")
+	}
+}
