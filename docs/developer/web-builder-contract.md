@@ -109,10 +109,12 @@ The editor UI is English; translations are catalogs in the patched upstream sour
   language by the locale's language part (`tr_TR`, `tr-TR`, `tr` → Turkish); a language without a
   catalog is English. Outside a browser (Node: fixtures, tests) it is English.
 - `src/builder/i18n/tr.ts`: the Turkish catalog (English source → Turkish). Shipped catalogs: `tr`.
-- `builder/host/locale.ts` calls `setLocale(window.__WEB_BUILDER__.locale)` and is the first import
-  of `host/editor-entry.tsx`: some strings are translated once at module load (section kinds,
-  design names, constant option tables), so the language is fixed for the page; a locale change
-  takes effect on the next editor load.
+- `builder/host/locale.ts` calls `setLocale(window.__WEB_BUILDER__.locale)`. `host/editor-entry.tsx`
+  imports it and only then loads the editor (`host/editor-main.tsx`) with a dynamic import: some
+  strings are translated once at module load (section kinds, dynamic widget labels, design names,
+  constant option tables), and a statically imported chunk would run before the entry's code and
+  see the upstream default (Turkish). The language is fixed for the page; a locale change takes
+  effect on the next editor load.
 - Only the editor chrome is translated. Document content (the default page, the default texts of a
   new section or design, form placeholders) is plain English and stays as stored.
 - `renderStatic` runs inside `withSourceLocale()`: published HTML never depends on the editor's

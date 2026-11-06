@@ -15,7 +15,7 @@
  *                     conditions-first publish step (template.ts); themeParts from Boot.site
  *
  * The host's own messages (reload prompts, conflicts, restored drafts) go through HostUi, which
- * editor-entry.tsx renders next to the builder.
+ * editor-main.tsx renders next to the builder.
  */
 import type { BuilderHost, BuilderHostAi, BuilderHostStorage, FormResult, MediaAsset, MediaKind, PublishInput, PublishResult } from '@/builder/host'
 import type { DocState, PageSettings, SavedComponent } from '@/builder/types'
@@ -36,7 +36,7 @@ export const MAX_SVG_BYTES = LIMITS.maxStringBytes
 export const HOST_AI_OFF: BuilderHostAi = Object.freeze({ enabled: false, serverKeys: true, allowCode: false, cloneEndpoint: null })
 
 /* ======================================================================================
- * Host UI store (notices, prompts, the media dialog) — rendered by editor-entry.tsx
+ * Host UI store (notices, prompts, the media dialog) — rendered by editor-main.tsx
  * ==================================================================================== */
 
 export type NoticeTone = 'info' | 'success' | 'warning' | 'error'
@@ -635,7 +635,7 @@ export function readBoot(w: { __WEB_BUILDER__?: Boot } = window): Boot {
 /** URL of the wp_rest nonce refresh (admin-ajax next to the site home). */
 export const nonceUrl = (boot: Boot) => `${boot.links.site.replace(/\/+$/, '')}/wp-admin/admin-ajax?action=rest-nonce`
 
-/** The css2 endpoint without its query (upstream appends "?family=…"); the nonce is added per link (editor-entry). */
+/** The css2 endpoint without its query (upstream appends "?family=…"); the nonce is added per link (editor-main). */
 export const fontsBase = (boot: Boot) => boot.fonts.cssUrl.split('?')[0]
 
 export function createCmsHost(boot: Boot, deps: CmsHostDeps = {}): CmsHost {
