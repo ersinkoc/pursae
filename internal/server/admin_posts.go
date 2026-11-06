@@ -191,6 +191,9 @@ func (s *Server) postsList(c *gin.Context) {
 	if s.gooAdminScreen(c, "edit") { // Goocommerce: the products list
 		return
 	}
+	if s.wbTemplatesListRedirect(c) { // Theme Builder templates are listed on Appearance › Theme Builder
+		return
+	}
 	typ := c.DefaultQuery("post_type", "post")
 	if typ != "post" && typ != "page" && !acfgoIsPostType(typ) {
 		c.String(http.StatusBadRequest, "Invalid post type.")
@@ -1576,6 +1579,9 @@ func (s *Server) postEdit(c *gin.Context) {
 	}
 	if err != nil {
 		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+	if s.wbTemplatePostScreen(c, p) { // Theme Builder templates: edit_theme_options, the builder only
 		return
 	}
 	switch c.DefaultQuery("action", "edit") {

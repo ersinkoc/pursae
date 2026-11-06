@@ -443,6 +443,9 @@ type wpThemeJS struct {
 
 // themesScreen is themes.php.
 func (s *Server) themesScreen(c *gin.Context) {
+	if s.wbTemplatesPage(c) { // Appearance › Theme Builder (webbuilder_templates_admin.go)
+		return
+	}
 	u := currentUser(c)
 	if !u.Can("switch_themes", nil) {
 		c.String(http.StatusForbidden, "Sorry, you are not allowed to edit theme options on this site.")

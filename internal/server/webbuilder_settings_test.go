@@ -28,8 +28,8 @@ func TestWebBuilderPluginToggle(t *testing.T) {
 	if row == "" || !strings.Contains(row, "Pursae Web Builder") || !strings.Contains(row, "publish them as fast, static HTML") {
 		t.Fatalf("Plugins row: %.600s", row)
 	}
-	if strings.Contains(row, "Theme Builder") || strings.Contains(row, "Hello Pursae Web Builder") {
-		t.Error("the row still describes the old builder")
+	if strings.Contains(row, "Hello Pursae Web Builder") || !strings.Contains(row, "Appearance &rsaquo; Theme Builder") {
+		t.Error("the row describes the old builder, or not the Theme Builder")
 	}
 
 	loc := togglePlugin(t, c, base, "activate")

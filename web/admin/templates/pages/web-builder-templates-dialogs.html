@@ -1,0 +1,57 @@
+{{define "wb-templates-add-dialog"}}<dialog class="web-builder-dialog" id="web-builder-add-template" aria-labelledby="web-builder-add-template-title">
+<form method="get" action="/wp-admin/themes" class="web-builder-dialog-form" id="web-builder-add-template-form">
+	<input type="hidden" name="page" value="web-builder-templates" />
+	<input type="hidden" name="action" value="create" />
+	<input type="hidden" name="_wpnonce" value="{{.CreateNonce}}" />
+	<div class="web-builder-dialog-header">
+		<h2 id="web-builder-add-template-title">Add New Template</h2>
+		<button type="button" class="web-builder-dialog-close" data-close><span class="screen-reader-text">Close dialog</span><span class="dashicons dashicons-no-alt" aria-hidden="true"></span></button>
+	</div>
+	<div class="web-builder-dialog-body">
+		<p>Templates design the header, the footer and the main content of the site&#8217;s pages. Choose a type, name it and start from a design.</p>
+		<div class="notice notice-error inline web-builder-dialog-error" hidden><p></p></div>
+		<table class="form-table" role="presentation"><tbody>
+			<tr><th scope="row"><label for="web-builder-new-type">Template type</label></th>
+				<td><select name="type" id="web-builder-new-type">{{range .Types}}<option value="{{.Value}}"{{if .Selected}} selected="selected"{{end}}{{if and (eq .Value "single") (not $.PostTypes)}} disabled="disabled"{{end}}>{{.Label}}</option>{{end}}</select>
+				{{if not .PostTypes}}<p class="description">A Single template needs a public custom post type (Pursae Custom Fields).</p>{{end}}</td></tr>
+			<tr class="web-builder-new-post-type-row"{{if not .PostTypes}} hidden{{end}}><th scope="row"><label for="web-builder-new-post-type">Post type</label></th>
+				<td><select name="post_type" id="web-builder-new-post-type">{{range .PostTypes}}<option value="{{.Value}}">{{.Label}}</option>{{end}}</select>
+				<p class="description">Single templates show entries of one custom post type.</p></td></tr>
+			<tr><th scope="row"><label for="web-builder-new-title">Name</label></th>
+				<td><input type="text" name="title" id="web-builder-new-title" class="regular-text" maxlength="200" placeholder="Enter template name" /></td></tr>
+		</tbody></table>
+		<fieldset class="web-builder-starters">
+			<legend>Start from</legend>
+			<label class="web-builder-starter" data-starter=""><input type="radio" name="starter" value="" checked="checked" /> <span class="web-builder-starter-name">Suggested</span><span class="web-builder-starter-desc">The usual design for the template type.</span></label>
+			{{range .Starters}}<label class="web-builder-starter" data-starter="{{.ID}}"><input type="radio" name="starter" value="{{.ID}}" /> <span class="web-builder-starter-name">{{.Label}}</span><span class="web-builder-starter-desc">{{.Description}}</span></label>
+			{{end}}
+		</fieldset>
+	</div>
+	<div class="web-builder-dialog-footer">
+		<button type="button" class="button" data-close>Cancel</button>
+		<button type="submit" class="button button-primary" id="web-builder-create-template">Create Template</button>
+	</div>
+</form>
+</dialog>{{end}}
+
+{{define "wb-templates-conditions-dialog"}}<dialog class="web-builder-dialog web-builder-conditions-dialog" id="web-builder-conditions" aria-labelledby="web-builder-conditions-title">
+<form method="dialog" class="web-builder-dialog-form" id="web-builder-conditions-form">
+	<div class="web-builder-dialog-header">
+		<h2 id="web-builder-conditions-title">Display Conditions</h2>
+		<button type="button" class="web-builder-dialog-close" data-close><span class="screen-reader-text">Close dialog</span><span class="dashicons dashicons-no-alt" aria-hidden="true"></span></button>
+	</div>
+	<div class="web-builder-dialog-body">
+		<p class="web-builder-conditions-intro">Choose where <strong class="web-builder-conditions-name"></strong> is shown. Exclude rules win over include rules; when several templates match a page, the most specific one is used, then the higher priority.</p>
+		<div class="notice notice-error inline web-builder-dialog-error" hidden><p></p></div>
+		<ul class="web-builder-condition-rows"></ul>
+		<p><button type="button" class="button web-builder-add-condition"><span class="dashicons dashicons-plus-alt2" aria-hidden="true"></span> Add Condition</button></p>
+		<p class="web-builder-priority"><label for="web-builder-priority">Priority</label>
+			<input type="number" id="web-builder-priority" class="small-text" step="1" min="-100" max="100" value="0" />
+			<span class="description">From &minus;100 to 100. Breaks ties between equally specific templates: the higher number wins.</span></p>
+	</div>
+	<div class="web-builder-dialog-footer">
+		<button type="button" class="button" data-close>Cancel</button>
+		<button type="submit" class="button button-primary web-builder-save-conditions">Save &amp; Close</button>
+	</div>
+</form>
+</dialog>{{end}}
