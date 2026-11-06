@@ -1,0 +1,176 @@
+{{define "admin/backup"}}{{template "admin-header" .}}{{with .Data}}
+<style>
+.bmgr .bmgr-cats{border:1px solid #c3c4c7;background:#fff;margin:12px 0;max-width:900px}
+.bmgr .bmgr-cat{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-top:1px solid #f0f0f1}
+.bmgr .bmgr-cat:first-child{border-top:0}
+.bmgr .bmgr-cat input[type=checkbox]{margin-top:3px}
+.bmgr .bmgr-cat label{flex:1;cursor:pointer}
+.bmgr .bmgr-cat b{display:block;font-size:14px}
+.bmgr .bmgr-cat span.d{display:block;color:#646970;margin-top:2px}
+.bmgr .bmgr-cat em{font-style:normal;color:#50575e;white-space:nowrap;font-size:12px}
+.bmgr .bmgr-sub{margin:10px 0 0 28px;padding:10px 12px;background:#f6f7f7;border:1px solid #dcdcde;display:none}
+.bmgr .bmgr-sub.on{display:block}
+.bmgr .bmgr-sub label{display:inline-block;margin:0 14px 4px 0;cursor:pointer}
+.bmgr .bmgr-list{max-height:180px;overflow:auto;border:1px solid #dcdcde;background:#fff;padding:6px 10px;margin-top:6px}
+.bmgr .bmgr-list label{display:block;margin:2px 0}
+.bmgr .bmgr-bar{height:14px;background:#dcdcde;border-radius:7px;overflow:hidden;margin:8px 0}
+.bmgr .bmgr-bar i{display:block;height:100%;width:0;background:#2271b1;transition:width .3s}
+.bmgr .bmgr-job{border:1px solid #c3c4c7;background:#fff;padding:14px 16px;margin:12px 0;max-width:900px}
+.bmgr .bmgr-log{max-height:220px;overflow:auto;background:#1d2327;color:#dcdcde;font:12px/1.5 Menlo,Consolas,monospace;padding:8px 10px;margin:8px 0 0;white-space:pre-wrap}
+.bmgr .bmgr-steps{max-width:900px;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin:12px 0}
+.bmgr .bmgr-steps div{background:#fff;border:1px solid #c3c4c7;padding:12px 14px}
+.bmgr .bmgr-steps b{display:block;margin-bottom:4px}
+.bmgr .bmgr-tag{display:inline-block;padding:1px 8px;border-radius:10px;background:#f0f0f1;font-size:12px;margin:0 4px 4px 0}
+.bmgr .bmgr-warn{max-width:900px}
+</style>
+<div class="wrap bmgr">
+<h1 class="wp-heading-inline"><span class="dashicons dashicons-database-export" style="font-size:28px;width:28px;height:28px;margin-right:6px;color:#2271b1"></span>Backup Manager</h1>
+<hr class="wp-header-end">
+{{template "notices" $}}
+<nav class="nav-tab-wrapper wp-clearfix" aria-label="Secondary menu">
+	<a href="/wp-admin/admin?page=backup-manager&amp;tab=create" class="nav-tab{{if eq .Tab "create"}} nav-tab-active{{end}}">Create backup</a>
+	<a href="/wp-admin/admin?page=backup-manager&amp;tab=backups" class="nav-tab{{if eq .Tab "backups"}} nav-tab-active{{end}}">Backups</a>
+	<a href="/wp-admin/admin?page=backup-manager&amp;tab=import" class="nav-tab{{if eq .Tab "import"}} nav-tab-active{{end}}">Import / Migrate</a>
+</nav>
+
+{{if .Job}}
+<div class="bmgr-job" id="bmgr-job" data-job="{{.Job}}">
+	<strong id="bmgr-phase">Starting…</strong> <span id="bmgr-pct"></span>
+	<div class="bmgr-bar"><i id="bmgr-fill"></i></div>
+	<div id="bmgr-result"></div>
+	<pre class="bmgr-log" id="bmgr-log"></pre>
+</div>
+{{end}}
+
+{{if eq .Tab "create"}}
+<p class="description" style="max-width:900px">Choose what goes into the backup. The result is one <code>.zip</code> file you can download and restore on any Pursae site: no SQL dump, no command line.</p>
+<form method="post" action="/wp-admin/admin?page=backup-manager" id="bmgr-create">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="do" value="backup">
+<div class="bmgr-cats">
+{{range .Cats}}
+<div class="bmgr-cat">
+	<input type="checkbox" name="cat" value="{{.Key}}" id="cat-{{.Key}}" checked>
+	<label for="cat-{{.Key}}"><b>{{.Label}}</b><span class="d">{{.Desc}}</span></label>
+	<em>{{if .Tables}}~{{.Rows}} rows{{end}}{{if and .Tables .HasFiles}} · {{end}}{{if .HasFiles}}{{.FilesText}} of files{{end}}</em>
+</div>
+{{if eq .Key "users"}}
+<div class="bmgr-sub" id="bmgr-users">
+	<strong>Which users?</strong><br>
+	<label><input type="radio" name="user_mode" value="all" checked> All users</label>
+	<label><input type="radio" name="user_mode" value="roles"> By role</label>
+	<label><input type="radio" name="user_mode" value="ids"> Pick users</label>
+	<div id="bmgr-roles" style="display:none;margin-top:6px">
+	{{range $.Data.Roles}}<label><input type="checkbox" name="role" value="{{.Slug}}"> {{.Name}}</label>{{end}}
+	</div>
+	<div id="bmgr-pick" style="display:none" class="bmgr-list">
+	{{range $.Data.Users}}<label><input type="checkbox" name="user" value="{{.ID}}"> {{.Login}} <span class="description">{{.Mail}}</span></label>{{end}}
+	</div>
+	<p class="description">Posts written by users who are left out are given to the administrator who restores the backup.</p>
+</div>
+{{end}}
+{{end}}
+</div>
+<p><label for="bmgr-note"><strong>Note</strong> (optional)</label><br><input type="text" class="regular-text" id="bmgr-note" name="note" maxlength="300" placeholder="Before the redesign"></p>
+<p class="description bmgr-warn"><span class="dashicons dashicons-lock"></span> A backup contains password hashes and site secrets. It is kept outside the web root and only administrators can download it. Keep downloaded copies private.</p>
+<p><button type="submit" class="button button-primary button-hero">Create backup</button></p>
+</form>
+{{end}}
+
+{{if eq .Tab "backups"}}
+{{if .Entries}}
+<table class="wp-list-table widefat fixed striped" style="max-width:1100px;margin-top:12px">
+<thead><tr><th>Backup</th><th>Contains</th><th style="width:90px">Size</th><th style="width:240px">Actions</th></tr></thead>
+<tbody>
+{{range .Entries}}
+<tr>
+	<td><strong>{{.Name}}</strong><br><span class="description">{{.When}}{{if .Kind}} · {{.Kind}}{{end}}{{if .Site}} · {{.Site}}{{end}}</span>{{if .Note}}<br><em>{{.Note}}</em>{{end}}{{if .Err}}<br><span style="color:#b32d2e">{{.Err}}</span>{{end}}</td>
+	<td>{{range .Parts}}<span class="bmgr-tag">{{.}}</span>{{end}}</td>
+	<td>{{.SizeText}}</td>
+	<td>
+		<a class="button button-small" href="{{.DownloadURL}}">Download</a>
+		{{if .RestoreURL}}<a class="button button-small button-primary" href="{{.RestoreURL}}">Restore</a>{{end}}
+		<a class="button button-small" style="color:#b32d2e;border-color:#b32d2e" href="{{.DeleteURL}}" onclick="return confirm('Delete this backup permanently?')">Delete</a>
+	</td>
+</tr>
+{{end}}
+</tbody></table>
+{{else}}
+<p style="margin-top:16px">No backups yet. <a href="/wp-admin/admin?page=backup-manager&amp;tab=create">Create the first one</a>.</p>
+{{end}}
+<p class="description" style="margin-top:12px">Stored in <code>{{.Dir}}</code>. A <code>.zip</code> backup copied into that folder shows up here, which is the way to bring in very large files.</p>
+{{end}}
+
+{{if eq .Tab "import"}}
+<div class="bmgr-steps">
+	<div><b>1. On the old site</b>Create a backup of everything and download it.</div>
+	<div><b>2. On this site</b>Upload the file below.</div>
+	<div><b>3. Restore</b>Pick the parts and click Restore. The old address is rewritten to this site's address.</div>
+</div>
+<form id="bmgr-upload" method="post" enctype="multipart/form-data" action="/wp-admin/admin?page=backup-manager&amp;action=upload&amp;_wpnonce={{.Nonce}}">
+<p><input type="file" name="archive" id="bmgr-file" accept=".zip,application/zip" required>
+<button type="submit" class="button button-primary" id="bmgr-up-btn">Upload and continue</button></p>
+<div class="bmgr-bar" id="bmgr-upbar" style="display:none;max-width:500px"><i id="bmgr-upfill"></i></div>
+<p class="description" id="bmgr-upmsg"></p>
+</form>
+<p class="description">Very large backups: copy the file into <code>{{.Dir}}</code> on the server instead; it appears under <a href="/wp-admin/admin?page=backup-manager&amp;tab=backups">Backups</a>. Reverse proxies often limit upload sizes.</p>
+{{end}}
+
+{{if and (eq .Tab "restore") .Restore}}{{with .Restore}}
+<h2>Restore {{.File}}</h2>
+<p>Taken <strong>{{.Created}}</strong> on <code>{{.Site}}</code> (Pursae {{.Version}}).{{if .Note}} <em>{{.Note}}</em>{{end}} {{.UserNote}}</p>
+<div class="notice notice-warning inline bmgr-warn"><p><strong>This replaces the selected parts of this site</strong> with the backup's content. The database part is applied in one step: if anything fails, nothing changes. Restoring users or settings may sign you out; log in with the backup's account afterwards.</p></div>
+<form method="post" action="/wp-admin/admin?page=backup-manager">
+<input type="hidden" name="_wpnonce" value="{{$.Data.Nonce}}"><input type="hidden" name="do" value="restore"><input type="hidden" name="file" value="{{.File}}">
+<div class="bmgr-cats">
+{{range .Cats}}
+<div class="bmgr-cat">
+	<input type="checkbox" name="cat" value="{{.Key}}" id="rcat-{{.Key}}" checked>
+	<label for="rcat-{{.Key}}"><b>{{.Label}}</b></label>
+	<em>{{if .Tables}}{{.Rows}} rows in {{.Tables}} tables{{end}}{{if and .Tables .Files}} · {{end}}{{if .Files}}{{.Files}} files ({{.FilesText}}){{end}}</em>
+</div>
+{{end}}
+</div>
+<p><label><input type="checkbox" name="rewrite" value="1"{{if not .SameURL}} checked{{end}}> Replace the old address <code>{{.OldURL}}</code> with this site's <code>{{.NewURL}}</code> in all restored data</label></p>
+<p><label><input type="checkbox" name="safety" value="1" checked> Take a safety snapshot of this site first (recommended)</label></p>
+<p><label><input type="checkbox" name="confirm" value="1"> <strong>I understand</strong> that the selected parts of this site will be replaced.</label></p>
+<p><button type="submit" class="button button-primary button-hero">Restore</button> <a class="button" href="/wp-admin/admin?page=backup-manager&amp;tab=backups">Cancel</a></p>
+</form>
+{{end}}{{end}}
+</div>
+<script>
+(function(){
+var $=function(s){return document.querySelector(s)};
+var users=$('#cat-users'),sub=$('#bmgr-users');
+if(users&&sub){
+ var sync=function(){sub.classList.toggle('on',users.checked)};users.addEventListener('change',sync);sync();
+ document.querySelectorAll('input[name=user_mode]').forEach(function(r){r.addEventListener('change',function(){
+  var m=document.querySelector('input[name=user_mode]:checked').value;
+  $('#bmgr-roles').style.display=m==='roles'?'block':'none';$('#bmgr-pick').style.display=m==='ids'?'block':'none';});});
+}
+var up=$('#bmgr-upload');
+if(up){up.addEventListener('submit',function(e){
+ var f=$('#bmgr-file').files[0];if(!f||!window.XMLHttpRequest||!window.FormData)return;
+ e.preventDefault();$('#bmgr-up-btn').disabled=true;$('#bmgr-upbar').style.display='block';
+ var x=new XMLHttpRequest();x.open('POST',up.action);
+ x.upload.onprogress=function(ev){if(ev.lengthComputable){var p=Math.round(ev.loaded*100/ev.total);$('#bmgr-upfill').style.width=p+'%';$('#bmgr-upmsg').textContent='Uploading… '+p+'%'}};
+ x.onload=function(){if(x.responseURL){window.location=x.responseURL}else{location.reload()}};
+ x.onerror=function(){$('#bmgr-upmsg').textContent='The upload failed. Check the connection and the server upload limit.';$('#bmgr-up-btn').disabled=false};
+ var fd=new FormData();fd.append('archive',f);x.send(fd);});}
+var job=$('#bmgr-job');
+if(job){
+ var id=job.getAttribute('data-job'),fill=$('#bmgr-fill'),log=$('#bmgr-log'),res=$('#bmgr-result');
+ var esc=function(t){var d=document.createElement('div');d.textContent=t;return d.innerHTML};
+ var tick=function(){
+  fetch('/wp-admin/admin?page=backup-manager&action=status&job='+encodeURIComponent(id),{credentials:'same-origin'}).then(function(r){return r.json()}).then(function(j){
+   $('#bmgr-phase').textContent=j.phase;$('#bmgr-pct').textContent=j.percent+'%';fill.style.width=j.percent+'%';
+   log.textContent=(j.log||[]).join('\n');log.scrollTop=log.scrollHeight;
+   if(j.state==='running'){setTimeout(tick,1000);return}
+   if(j.state==='error'){fill.style.background='#d63638';res.innerHTML='<p style="color:#b32d2e"><strong>Failed:</strong> '+esc(j.error)+'</p>';return}
+   if(j.kind==='backup'){res.innerHTML='<p><strong>Backup created.</strong> <a class="button button-primary" href="/wp-admin/admin?page=backup-manager&tab=backups">Go to Backups</a></p>'}
+   else{res.innerHTML='<p><strong>Restore finished.</strong> If you restored users or settings, <a href="/wp-login">log in again</a>. Restart Pursae if you restored plugins.</p>'}
+  }).catch(function(){setTimeout(tick,2000)});};
+ tick();
+}
+})();
+</script>
+{{end}}{{template "admin-footer" .}}{{end}}
