@@ -3,3 +3,8 @@ data
 .git
 web/editor/node_modules
 library
+builder/upstream
+builder/node_modules
+builder/.work
+builder/.cache
+builder/test-results
