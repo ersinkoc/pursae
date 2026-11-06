@@ -226,6 +226,56 @@ describe('TemplateController', () => {
     expect(await p).toBe(true)
   })
 
+  it('conditions saved through the Conditions button make the first publish go straight on', async () => {
+    const { m, c } = make({ [`PUT ${COND}`]: { json: { conditions: ['include/singular/post'], priority: 0 } } })
+    expect(c.needsConditionsFirst()).toBe(true)
+    const edit = c.openConditions('edit')
+    expect((await c.saveConditions(['include/singular/post'], 0)).ok).toBe(true)
+    c.closeConditions(true)
+    expect(await edit).toBe(true)
+    expect(c.getState().confirmed).toBe(true)
+    expect(c.needsConditionsFirst()).toBe(false)
+    expect(await c.beforePublish()).toBe(true)
+    expect(c.getState().dialog).toBeNull()
+    expect(m.find('PUT', COND)).toHaveLength(1)
+  })
+
+  it('an edit-mode save without an include rule still asks on publish', async () => {
+    const { c } = make({ [`PUT ${COND}`]: { json: { conditions: ['exclude/singular/post/5'], priority: 0 } } })
+    c.openConditions('edit')
+    expect((await c.saveConditions(['exclude/singular/post/5'], 0)).ok).toBe(true)
+    c.closeConditions(true)
+    expect(c.needsConditionsFirst()).toBe(true)
+    const p = c.beforePublish()
+    expect(c.getState().dialog).toMatchObject({ mode: 'publish' })
+    c.closeConditions(false)
+    expect(await p).toBe(false)
+  })
+
+  it('opening the Conditions dialog without saving, or a failed save, does not count as confirmation', async () => {
+    const { c } = make({ [`PUT ${COND}`]: restErr(403, 'rest_forbidden') })
+    const edit = c.openConditions('edit')
+    c.closeConditions(false)
+    expect(await edit).toBe(false)
+    expect(c.needsConditionsFirst()).toBe(true)
+    c.openConditions('edit')
+    expect((await c.saveConditions(['include/singular/post'], 0)).ok).toBe(false)
+    c.closeConditions(false)
+    expect(c.getState().confirmed).toBe(false)
+    expect(c.needsConditionsFirst()).toBe(true)
+  })
+
+  it('a save from the publish dialog confirms that publish only, not a later first publish', async () => {
+    const { c } = make({ [`PUT ${COND}`]: { json: { conditions: ['include/singular/post'], priority: 0 } } })
+    const p = c.beforePublish()
+    expect((await c.saveConditions(['include/singular/post'], 0)).ok).toBe(true)
+    c.closeConditions(true)
+    expect(await p).toBe(true)
+    expect(c.getState().confirmed).toBe(false)
+    // The publish itself failed (no markPublished): the next try asks again.
+    expect(c.needsConditionsFirst()).toBe(true)
+  })
+
   it('a disabled (draft) template that was published before only asks without an include rule', async () => {
     const { c } = make({}, {}, { status: 'draft', rev: 2 })
     // rev > 0 but not live: still a "first publish" in the sense of going live again.

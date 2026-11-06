@@ -6,7 +6,10 @@
  *   preview                 PUT templates/{id}/preview → {preview, dynamic} → DynStore.set
  *   beforePublish           the first publish of a template, and any publish of a template
  *                           without an include rule, opens the conditions dialog first; the
- *                           publish goes on only when the user saves it
+ *                           publish goes on only when the user saves it. Rules the user already
+ *                           saved through the Conditions button in this session count as that
+ *                           confirmation: with an include rule among them, the first publish
+ *                           goes straight on
  *
  * Plain store (subscribe / getState) for useSyncExternalStore; no React here.
  */
@@ -30,6 +33,8 @@ export interface TemplateUiState {
   picker: boolean
   /** Other published templates of the same location that can match the same views; null = not loaded. */
   conflicts: TemplateConflict[] | null
+  /** The user saved the conditions from the dialog in 'edit' mode (Conditions button) in this session. */
+  confirmed: boolean
 }
 
 export interface SaveResult {
@@ -92,6 +97,7 @@ export class TemplateController {
       dialog: null,
       picker: false,
       conflicts: null,
+      confirmed: false,
     }
   }
 
@@ -136,7 +142,10 @@ export class TemplateController {
     try {
       const r = await this.rest.request<TemplateConditionsResponse>('PUT', routes.templateConditions(this.postId), { json: { conditions, priority: clampPriority(priority) } })
       const out = r.data
-      this.set({ conditions: Array.isArray(out?.conditions) ? out.conditions : conditions, priority: typeof out?.priority === 'number' ? out.priority : clampPriority(priority) })
+      // A save from the Conditions button is the user's explicit choice; a save from the publish
+      // dialog confirms that publish only (the dialog's promise).
+      const confirmed = this.state.confirmed || this.state.dialog?.mode === 'edit'
+      this.set({ conditions: Array.isArray(out?.conditions) ? out.conditions : conditions, priority: typeof out?.priority === 'number' ? out.priority : clampPriority(priority), confirmed })
       void this.loadConflicts()
       return { ok: true, errors: {}, message: '' }
     } catch (e) {
@@ -193,9 +202,14 @@ export class TemplateController {
 
   /* ---------- Publish ---------- */
 
-  /** Whether publishing should open the conditions dialog first. */
+  /**
+   * Whether publishing should open the conditions dialog first: always without an include rule;
+   * with one, only on the first publish the user has not already confirmed by saving the
+   * conditions through the Conditions button in this session.
+   */
   needsConditionsFirst(): boolean {
-    return !this.state.published || !hasInclude(this.state.conditions)
+    if (!hasInclude(this.state.conditions)) return true
+    return !this.state.published && !this.state.confirmed
   }
 
   /** BuilderHost.beforePublish: true = publish now. */
