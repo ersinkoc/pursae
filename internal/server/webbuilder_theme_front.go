@@ -50,10 +50,6 @@ type wbThemeParts struct {
 	canvas bool      // the page's own doc with layout canvas: no header and footer part
 }
 
-// wbCanvasMarker fills the header and footer of a layout-canvas page: Hello Pursae prints its
-// minimal header and footer for an empty part, and a canvas page shows neither.
-const wbCanvasMarker template.HTML = "<!-- web-builder: layout canvas -->"
-
 // wbThemeParts picks and fills the parts of the request. nil when no location has one.
 func (s *Server) wbThemeParts(c *gin.Context, v *siteView) *wbThemeParts {
 	q := v.Q
@@ -117,9 +113,7 @@ func (s *Server) wbThemeParts(c *gin.Context, v *siteView) *wbThemeParts {
 	if len(out.parts) == 0 {
 		return nil
 	}
-	if out.canvas {
-		out.view.Header, out.view.Footer = wbCanvasMarker, wbCanvasMarker
-	}
+	out.view.Canvas = out.canvas // Hello Pursae then prints no header or footer at all
 	return out
 }
 

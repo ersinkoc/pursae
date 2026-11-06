@@ -40,6 +40,9 @@ type wbThemePartsView struct {
 	// HasMain reports that Main carries its own <main> landmark: the theme then wraps it in
 	// div#content instead of main#content, so the page has exactly one main element.
 	HasMain bool
+	// Canvas is a builder page with layout canvas: the theme prints neither a header nor a footer
+	// (no part, no wrapper, no default markup), only Main between its head and footer hooks.
+	Canvas bool
 }
 
 // wbHelloMenuLocations are Hello Pursae's menu locations.

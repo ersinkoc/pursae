@@ -146,6 +146,17 @@ func TestHelloPursaeTemplates(t *testing.T) {
 	if strings.Count(out, "<main") != 1 || !strings.Contains(out, `<header id="site-header"`) || !strings.Contains(out, `<footer id="site-footer"`) {
 		t.Error("own main: one main element, default header and footer")
 	}
+	// Canvas: no header or footer, neither the parts' wrappers nor the defaults.
+	v.Data[wbThemePartsKey] = &wbThemePartsView{Main: "<section>CANVAS</section>", Canvas: true}
+	out = helloRender(t, set, "theme/page", v)
+	if !strings.Contains(out, "<section>CANVAS</section>") {
+		t.Error("canvas: main missing")
+	}
+	for _, bad := range []string{"wb-part", "site-header", "site-footer"} {
+		if strings.Contains(out, bad) {
+			t.Errorf("canvas prints %s", bad)
+		}
+	}
 	// An empty Main keeps the theme's content.
 	v.Data[wbThemePartsKey] = &wbThemePartsView{Header: "<header>HDR</header>"}
 	if out = helloRender(t, set, "theme/page", v); !strings.Contains(out, "Page body") || !strings.Contains(out, `<main id="content" class="site-main">`) {

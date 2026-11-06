@@ -1,6 +1,6 @@
 {{/* Hello Pursae: a blank, builder-first theme. While Pursae Web Builder is on, the Theme Builder's
-     parts of the request arrive in .Data.wb (wbThemePartsView: Header, Main, Footer, HasMain) and
-     replace the minimal markup below. */}}
+     parts of the request arrive in .Data.wb (wbThemePartsView: Header, Main, Footer, HasMain, Canvas)
+     and replace the minimal markup below; a canvas page (Canvas) has no header or footer at all. */}}
 {{define "header"}}<!DOCTYPE html>
 <html lang="en-US">
 <head>
@@ -15,7 +15,7 @@
 {{template "site-header" .}}
 {{end}}
 
-{{define "site-header"}}{{$wb := .Data.wb}}{{if and $wb $wb.Header}}<div class="wb-part wb-part-header">{{$wb.Header}}</div>{{else}}<header id="site-header" class="site-header">
+{{define "site-header"}}{{$wb := .Data.wb}}{{if and $wb $wb.Canvas}}{{else if and $wb $wb.Header}}<div class="wb-part wb-part-header">{{$wb.Header}}</div>{{else}}<header id="site-header" class="site-header">
 	<div class="site-branding">
 		{{.CustomLogo}}
 		{{if .TitleIsH1}}<h1 class="site-title"><a href="{{.HomeURL}}" rel="home"{{if .IsFront}} aria-current="page"{{end}}>{{.SiteName}}</a></h1>{{else}}<p class="site-title"><a href="{{.HomeURL}}" rel="home"{{if .IsFront}} aria-current="page"{{end}}>{{.SiteName}}</a></p>{{end}}
@@ -30,7 +30,7 @@
 </html>
 {{end}}
 
-{{define "site-footer"}}{{$wb := .Data.wb}}{{if and $wb $wb.Footer}}<div class="wb-part wb-part-footer">{{$wb.Footer}}</div>{{else}}<footer id="site-footer" class="site-footer">
+{{define "site-footer"}}{{$wb := .Data.wb}}{{if and $wb $wb.Canvas}}{{else if and $wb $wb.Footer}}<div class="wb-part wb-part-footer">{{$wb.Footer}}</div>{{else}}<footer id="site-footer" class="site-footer">
 	{{with .Data.FooterMenu}}<nav class="site-navigation" aria-label="Footer menu">{{.}}</nav>{{end}}
 	<div class="site-info">
 		<p class="copyright">&copy; {{.Data.Year}} <a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></p>

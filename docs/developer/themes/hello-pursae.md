@@ -49,13 +49,14 @@ markup to the theme in `.Data.wb` (`wbThemePartsView`):
 | `.Data.wb.Header` | the header template, filled | Hello Pursae's header: custom logo or site title, tagline, the `primary` menu |
 | `.Data.wb.Main` | the page's own builder design, else the matching Single Post, Single Page, Single, Front Page, Archive, Search Results or 404 template, filled | the theme's default view (the post, the loop with pagination, the 404 message) |
 | `.Data.wb.HasMain` | `Main` carries its own `<main>` landmark | — |
+| `.Data.wb.Canvas` | a builder page set to canvas: print no header and no footer (neither part nor default) | — |
 | `.Data.wb.Footer` | the footer template, filled | the `footer` menu, copyright and privacy link |
 
 `.Data.wb` is absent when the plugin is off; then every view prints the theme's own markup. The
 templates wrap each part:
 
 ```html
-{{define "site-header"}}{{$wb := .Data.wb}}{{if and $wb $wb.Header}}<div class="wb-part wb-part-header">{{$wb.Header}}</div>{{else}}<header id="site-header" class="site-header">…</header>{{end}}{{end}}
+{{define "site-header"}}{{$wb := .Data.wb}}{{if and $wb $wb.Canvas}}{{else if and $wb $wb.Header}}<div class="wb-part wb-part-header">{{$wb.Header}}</div>{{else}}<header id="site-header" class="site-header">…</header>{{end}}{{end}}
 
 {{define "main-open"}}{{$wb := .Data.wb}}{{if and $wb $wb.Main}}{{if $wb.HasMain}}<div id="content" class="site-main wb-main-part">{{else}}<main id="content" class="site-main wb-main-part">{{end}}{{else}}<main id="content" class="site-main">{{end}}{{end}}
 ```

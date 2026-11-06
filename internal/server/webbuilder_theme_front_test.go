@@ -392,7 +392,7 @@ func TestWBThemeFrontRender(t *testing.T) {
 	canvasPage := wbtfPage(t, srv, "page", "Landing Canvas", `<nav>OWN-NAV</nav><section>CANVAS-MARK</section>`, `{"sections":[{"id":"n","kind":"nav","content":{}}],"site":{}}`, "")
 	_, body = wbtfGet(t, base+"/landing-canvas/")
 	wbtfWant(t, "canvas layout", body, "CANVAS-MARK", "OWN-NAV", "hello-pursae-css")
-	wbtfBad(t, "canvas layout", body, "HEADER-MARK", "FOOTER-MARK", `id="site-header"`, `id="site-footer"`)
+	wbtfBad(t, "canvas layout", body, "HEADER-MARK", "FOOTER-MARK", `id="site-header"`, `id="site-footer"`, "wb-part-header", "wb-part-footer", "layout canvas")
 	_ = canvasPage
 	_ = own
 
