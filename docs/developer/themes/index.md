@@ -38,11 +38,12 @@ the loop, pagination, comments, menus, widget areas, the admin bar — and the t
 to print it. A theme never queries the database or sanitises input; it formats data the core
 already prepared, which is why packages can be code-free and safe to install.
 
-## Pursae Web Builder themes
+## Pursae Web Builder pages
 
-The page builder brings its own base theme, **Hello Pursae Web Builder**, and can save a complete site
-design (header, footer, templates, global styles) as a theme of its own
-([Pursae Web Builder](golementor.md)). Those live in the database, not as packages.
+Pursae Web Builder designs pages, not themes. A page published from the builder is served as a
+canvas document without the theme's header, footer and stylesheet; while the plugin is off, or
+after the page was edited outside the builder, the theme renders the page's content as usual
+([contract](../web-builder-contract.md), section 10).
 
 ## Editing on a live site
 

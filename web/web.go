@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-//go:embed admin themes wp-includes wp-admin gowebeditor web-builder gooike goocommerce languages
+//go:embed admin themes wp-includes wp-admin web-builder gooike goocommerce languages
 var embedded embed.FS
 
 // FS returns the web assets. With dir set (development) files are read from disk

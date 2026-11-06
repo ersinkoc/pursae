@@ -82,6 +82,20 @@ serving, which is handy in a deploy step.
 3. Check plugin compatibility: a plugin's `plugin.json` names the minimum core version it needs
    (`requires`); the Plugins screen refuses to activate one that needs a newer core.
 
+## Release notes
+
+- **New Pursae Web Builder — back up the database before upgrading: old Web Builder data is
+  deleted.** The release that brings the new builder replaces the old one and deletes everything it
+  stored, with no converter (migration `0028_drop_old_builder`): its tables (builder revisions,
+  global classes and variables, default styles, form submissions), saved templates, theme parts,
+  popups and components, every `_elementor_*`/`_gwe_*` post meta key, its options (integration API
+  keys, reCAPTCHA keys, custom fonts and icon sets, role manager, site kit) and the themes saved
+  with it. Pages keep their content as plain HTML; pages on the old Canvas or Full Width template
+  go back to the theme's default template. At the next start the old builder's generated CSS, form
+  uploads and custom icon sets are removed from the uploads directory (local fonts stay), and a site
+  on Hello Web Builder or a theme saved with the old builder moves to its previous theme or Twenty
+  Twenty-Five. Restoring the backup is the only way back.
+
 ## Rolling back
 
 Stop the new version, restore the database backup, start the previous binary. Uploads, plugin

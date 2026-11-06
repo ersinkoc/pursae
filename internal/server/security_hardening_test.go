@@ -9,6 +9,7 @@ import (
 
 	"wpgo/internal/plugins"
 	"wpgo/internal/store"
+	"wpgo/internal/webbuilder"
 )
 
 // A comment author's URL is shown as a link, so only http and https URLs may be stored or rendered.
@@ -52,7 +53,7 @@ func TestPluginOptionAllowed(t *testing.T) {
 	deny := []struct{ slug, name string }{
 		{"default", "default_role"}, {"users", "users_can_register"}, {"plugin-allow", "plugin_allow_unsigned"},
 		{"allow", "plugin_allow_unsigned"}, {"trusted", "plugin_trusted_keys"}, {"wpgo", "wpgo_hub_url"}, {"wpgo", "wpgo_hub_trust_keys"},
-		{"auth", "auth_secret"}, {"wpgo", "wpgo_plugin_note"}, {"native", "native_golementor"}, {"hello-gopher", "default_role"}, {"hello-gopher", "blogname"},
+		{"auth", "auth_secret"}, {"wpgo", "wpgo_plugin_note"}, {"native", webbuilder.PluginOption}, {"hello-gopher", "default_role"}, {"hello-gopher", "blogname"},
 		{"blogname", "blogname"}, {"admin", "admin_email"}, {"date", "date_format"}, {"time", "time_format"}, {"start", "start_of_week"},
 	}
 	for _, c := range deny {
@@ -122,10 +123,10 @@ func TestPublicIPPolicyIsShared(t *testing.T) {
 	}
 }
 
-// Meta keys starting with an underscore are protected: a plugin must not write the page builder's element tree
-// (rendered unescaped) or any other trusted core value through insert_post and update_post.
+// Meta keys starting with an underscore are protected: a plugin must not write the page builder's marker
+// or any other trusted core value through insert_post and update_post.
 func TestPluginPostMetaRefusesProtectedKeys(t *testing.T) {
-	for _, k := range []string{"_elementor_data", "_elementor_edit_mode", "_wp_page_template", "_thumbnail_id"} {
+	for _, k := range []string{webbuilder.PostMarkerMeta, webbuilder.UserPrefsMeta, "_wp_page_template", "_thumbnail_id"} {
 		p := &store.Post{}
 		if err := applyPostInput(p, plugins.PostInput{Meta: map[string]any{k: "x"}}); err == nil {
 			t.Errorf("meta key %q was accepted", k)

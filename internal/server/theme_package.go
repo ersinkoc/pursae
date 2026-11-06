@@ -42,13 +42,9 @@ type themeManifest struct {
 	Screenshot   string   `json:"screenshot"`
 
 	// Library metadata (docs/theme-package.md, "Library metadata").
-	Category string `json:"category"`
-	Style    string `json:"style"`
-	Demo     string `json:"demo"` // the demo content file, demo/demo.json (theme_demo.go)
-	// themeManifestRetired holds manifest keys that are no longer part of the format but still have
-	// readers elsewhere until those go; packages that carry them install as plain themes.
-	themeManifestRetired
-
+	Category      string                  `json:"category"`
+	Style         string                  `json:"style"`
+	Demo          string                  `json:"demo"` // the demo content file, demo/demo.json (theme_demo.go)
 	WidgetAreas   []themeManifestArea     `json:"widget_areas"`
 	MenuLocations []themeManifestLocation `json:"menu_locations"`
 

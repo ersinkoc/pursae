@@ -71,9 +71,6 @@ type siteView struct {
 	SiteIcon   template.HTML
 	CustomCSS  string
 	Customize  *czChangeset
-
-	// GWE is unused: read only by the old page builder's files, deleted with them (R2).
-	GWE *gweThemeView
 }
 
 type postView struct {

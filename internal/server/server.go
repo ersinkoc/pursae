@@ -65,10 +65,6 @@ type Server struct {
 	// previews are the site's theme-preview sandboxes (nil on a sandbox).
 	previews *previewManager
 
-	// State of the old page builder's files, unused here; deleted together with them (R2).
-	gweLibCache    atomic.Pointer[gweStudioLib]
-	gweLibOverride fs.FS
-
 	// lang holds the installed language packs (i18n.go).
 	lang *i18n.Manager
 
@@ -98,7 +94,8 @@ func newServer(ctx context.Context, cfg config.Config, pool *pgxpool.Pool, sb *s
 			}
 		}
 	}
-	wbMoveLegacyUploads(cfg.UploadsDir) // Pursae Web Builder: uploads folder of before the Pursae rename
+	wbMoveLegacyUploads(cfg.UploadsDir)       // Pursae Web Builder: uploads folder of before the Pursae rename
+	wbRemoveOldBuilderUploads(cfg.UploadsDir) // the old builder's generated files (webbuilder_cleanup.go)
 	s := &Server{
 		cfg:      cfg,
 		store:    store.New(pool),

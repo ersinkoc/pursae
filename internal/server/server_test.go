@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"html"
 	"io"
 	"net/http"
 	"net/http/cookiejar"
@@ -16,6 +17,7 @@ import (
 
 	"wpgo/internal/config"
 	"wpgo/internal/db"
+	"wpgo/internal/webbuilder"
 )
 
 // testServer starts the app against a freshly created database. It needs
@@ -28,15 +30,15 @@ func testServer(t *testing.T) (*httptest.Server, *http.Client) {
 	return ts, c
 }
 
-// testServerBuilderOff is testServer with Golementor left switched off, as a fresh install has it.
+// testServerBuilderOff is testServer with Pursae Web Builder left switched off, as a fresh install has it.
 func testServerBuilderOff(t *testing.T) (*httptest.Server, *http.Client, *Server) {
 	t.Helper()
 	return newTestServer(t, false)
 }
 
-// newTestServer starts the app. A fresh install has Golementor switched off; with builder set the
-// installer's answer is followed by native_golementor=true (before the client sees the response),
-// so the builder tests, which install the site themselves, find the plugin active.
+// newTestServer starts the app. A fresh install has Pursae Web Builder switched off; with builder set
+// the installer's answer is followed by switching the plugin on (before the client sees the
+// response), so the builder tests, which install the site themselves, find the plugin active.
 func newTestServer(t *testing.T, builder bool) (*httptest.Server, *http.Client, *Server) {
 	t.Helper()
 	adminURL, testURL := os.Getenv("WPGO_TEST_ADMIN_DB"), os.Getenv("WPGO_TEST_DB")
@@ -86,10 +88,9 @@ func newTestServer(t *testing.T, builder bool) (*httptest.Server, *http.Client, 
 		rec := httptest.NewRecorder()
 		h.ServeHTTP(rec, r)
 		if srv.settings.Installed() {
-			if err := srv.settings.Set(r.Context(), map[string]any{golementorSetting: true}); err != nil {
+			if err := srv.settings.Set(r.Context(), map[string]any{webbuilder.PluginOption: true}); err != nil {
 				t.Errorf("enable Pursae Web Builder: %v", err)
 			}
-			srv.golementorStart(r.Context())
 		}
 		for k, v := range rec.Header() {
 			w.Header()[k] = v
@@ -312,3 +313,66 @@ func getPool(t *testing.T) *pgx.Conn {
 	t.Cleanup(func() { conn.Close(context.Background()) })
 	return conn
 }
+
+// installAndLogin installs the site on a test server and logs the admin in.
+func installAndLogin(t *testing.T, ts *httptest.Server, c *http.Client) {
+	t.Helper()
+	if code, body, _ := post(t, c, ts.URL+"/wp-admin/install?step=2", url.Values{
+		"weblog_title": {"Toggle Site"}, "user_name": {"admin"}, "admin_password": {"correct horse"}, "admin_email": {"admin@example.test"},
+	}); code != http.StatusOK || !strings.Contains(body, "Success!") {
+		t.Fatalf("install: %d", code)
+	}
+	if code, _, _ := post(t, c, ts.URL+"/wp-login", url.Values{"log": {"admin"}, "pwd": {"correct horse"}}); code != http.StatusFound {
+		t.Fatalf("login: %d", code)
+	}
+}
+
+// togglePlugin follows Pursae Web Builder's Activate or Deactivate link on the Plugins screen and
+// returns the redirect target.
+func togglePlugin(t *testing.T, c *http.Client, base, action string) string {
+	t.Helper()
+	_, body, _ := get(t, c, base+"/wp-admin/plugins")
+	m := regexp.MustCompile(`href="(/wp-admin/plugins\?action=` + action + `&amp;plugin=web-builder[^"]*)"`).FindStringSubmatch(body)
+	if m == nil {
+		t.Fatalf("no %s link for Pursae Web Builder on the Plugins screen", action)
+	}
+	code, _, loc := get(t, c, base+html.UnescapeString(m[1]))
+	if code != http.StatusFound || !strings.Contains(loc, action+"=true") {
+		t.Fatalf("%s Pursae Web Builder: %d %s", action, code, loc)
+	}
+	return loc
+}
+
+// restGet reads a REST route with the cookie session's nonce.
+func restGet(t *testing.T, c *http.Client, base, path string) (int, string) {
+	t.Helper()
+	return restDo(t, c, base, http.MethodGet, path, "", false)
+}
+
+// restSend sends a JSON body to a REST route with the cookie session's nonce.
+func restSend(t *testing.T, c *http.Client, base, method, path, body string) (int, string) {
+	t.Helper()
+	return restDo(t, c, base, method, path, body, true)
+}
+
+func restDo(t *testing.T, c *http.Client, base, method, path, body string, isJSON bool) (int, string) {
+	t.Helper()
+	_, nonce, _ := get(t, c, base+"/wp-admin/admin-ajax?action=rest-nonce")
+	req, _ := http.NewRequest(method, base+path, strings.NewReader(body))
+	req.Header.Set("X-WP-Nonce", nonce)
+	if isJSON {
+		req.Header.Set("Content-Type", "application/json")
+	}
+	resp, err := c.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	b, _ := io.ReadAll(resp.Body)
+	return resp.StatusCode, string(b)
+}
+
+// roundTripFunc is an http.RoundTripper made of a function (fake outbound transports).
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripFunc) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }

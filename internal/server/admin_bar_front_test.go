@@ -32,7 +32,7 @@ func TestFrontToolbarWebBuilder(t *testing.T) {
 		t.Error("a builder page's toolbar lacks Edit with Pursae Web Builder")
 	}
 	for _, u := range []string{base + "/sample-page/", base + "/?s=hello"} {
-		if _, body, _ = get(t, c, u); strings.Contains(body, "web_builder_edit_page") || strings.Contains(body, "golementor_edit_page") || strings.Contains(body, "/wp-admin/theme-builder") {
+		if _, body, _ = get(t, c, u); strings.Contains(body, "web_builder_edit_page") || strings.Contains(body, "/wp-admin/theme-builder") {
 			t.Errorf("%s: the toolbar offers the builder", u)
 		}
 	}
