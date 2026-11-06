@@ -327,14 +327,15 @@ func (s *Store) RecountTerms(ctx context.Context, ids []int64) error {
 	return err
 }
 
-// TermsForPosts returns each post's terms of a taxonomy in assignment order.
+// TermsForPosts returns each post's terms of a taxonomy, ordered by name; an empty taxonomy
+// returns the terms of every taxonomy (cache tags, product duplicates).
 func (s *Store) TermsForPosts(ctx context.Context, postIDs []int64, taxonomy string) (map[int64][]*Term, error) {
 	out := map[int64][]*Term{}
 	if len(postIDs) == 0 {
 		return out, nil
 	}
 	rows, err := s.Pool.Query(ctx, `SELECT pt.post_id, `+prefixed("t", termCols)+` FROM post_terms pt
-		JOIN terms t ON t.id = pt.term_id WHERE pt.post_id = ANY($1) AND t.taxonomy = $2
+		JOIN terms t ON t.id = pt.term_id WHERE pt.post_id = ANY($1) AND ($2 = '' OR t.taxonomy = $2)
 		ORDER BY pt.post_id, lower(t.name)`, postIDs, taxonomy)
 	if err != nil {
 		return nil, err
