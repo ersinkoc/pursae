@@ -65,10 +65,6 @@ type Server struct {
 	// previews are the site's theme-preview sandboxes (nil on a sandbox).
 	previews *previewManager
 
-	// State of the old page builder's files, unused here; deleted together with them (R2).
-	gweLibCache    atomic.Pointer[gweStudioLib]
-	gweLibOverride fs.FS
-
 	// lang holds the installed language packs (i18n.go).
 	lang *i18n.Manager
 

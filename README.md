@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="web/gowebeditor/images/gopher.png" alt="Pursae" width="96">
+  <img src="web/wp-includes/images/brand/logo-256.png" alt="Pursae" width="96">
 </p>
 
 <h1 align="center">Pursae</h1>
@@ -27,7 +27,7 @@
 - [Everyday commands](#everyday-commands)
 - [Editing theme files](#editing-theme-files)
 - [Plugins](#plugins)
-- [Pursae Web Builder (page builder)](#golementor-page-builder)
+- [Pursae Web Builder (page builder)](#pursae-web-builder-page-builder)
 - [Production checklist](#production-checklist)
 - [Troubleshooting](#troubleshooting)
 - [What works in 0.1](#what-works-in-01)
@@ -353,7 +353,7 @@ internal/store      data access (pgx)
 internal/server     routes, admin screens, REST API, editors, themes, cron, mail glue
 internal/cache      WPGo Cache page-cache engine
 internal/plugins    Wasm plugin runtime, hooks, permissions, signed packages
-internal/builder    Pursae Web Builder document model, renderer and CSS engine
+internal/webbuilder Pursae Web Builder document schema, sanitizer, CSS, fallback and forms
 internal/mail       wp_mail(): SMTP or .eml files
 internal/links      permalinks and URL builders
 internal/caps       capabilities and meta-capability mapping

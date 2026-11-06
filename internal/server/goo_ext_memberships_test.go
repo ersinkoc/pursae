@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"wpgo/internal/builder"
 	"wpgo/internal/store"
 )
 
@@ -361,13 +360,5 @@ func TestGooExtMembershipsHideEverywhere(t *testing.T) {
 	}
 	if prev, err := srv.gooAdjacent(withPluginUser(ctx, member), newer, true); err != nil || prev.ID != secret.ID {
 		t.Errorf("member previous post: %v %v", prev, err)
-	}
-
-	// Page builder loops.
-	if q := srv.gooLoopQuery(ctx, &builder.PostQuery{PostTypes: []string{"post", "product"}}); !gooInt64In(secret.ID, q.ExcludeIDs) || !gooInt64In(vip.ID, q.ExcludeIDs) {
-		t.Errorf("loop exclusions: %v", q.ExcludeIDs)
-	}
-	if q := srv.gooLoopQuery(withPluginUser(ctx, member), &builder.PostQuery{}); len(q.ExcludeIDs) != 0 {
-		t.Errorf("member loop exclusions: %v", q.ExcludeIDs)
 	}
 }

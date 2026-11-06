@@ -23,7 +23,6 @@ import (
 	"github.com/gen2brain/avif"
 	"github.com/gen2brain/webp"
 
-	"wpgo/internal/builder"
 	"wpgo/internal/gocdn"
 	"wpgo/internal/gocdn/s3fake"
 )
@@ -559,16 +558,12 @@ func TestGoCDNFetchBack(t *testing.T) {
 		t.Fatal("the new site icon size was not offloaded")
 	}
 
-	// Golementor's SVG loader reads a removed SVG.
+	// A removed SVG (the fetch-back below works on it).
 	svg := []byte(`<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10" fill="red"/></svg>`)
 	satt := s.upload("logo.svg", svg)
 	srel := gocdnRelOfURL(satt["source_url"].(string))
 	if _, err := os.Stat(s.srv.gocdnLocalPath(srel)); !os.IsNotExist(err) {
 		t.Fatal("svg not removed")
-	}
-	s.srv.gweSetSVGLoader()
-	if out := builder.SVGLoader(int64(satt["id"].(float64))); !strings.Contains(out, "<rect") {
-		t.Fatalf("SVG loader on a removed file: %q", out)
 	}
 
 	// Plugin off without the fallback (nothing removed is tracked): no fetch.

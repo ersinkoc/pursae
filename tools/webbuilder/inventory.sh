@@ -56,9 +56,23 @@ hits() {
 ALL=$(hits | LC_ALL=C sort -t: -k1,1 -k2,2n -u)
 
 classify='
-function group(p,   b) {
+function group(p, t,   b) {
 	b = p; sub(/.*\//, "", b)
-	if (p ~ /^internal\/db\/migrations\/00(05|06|07|25)_/) return "KEEP"
+	# KEEP: residue that stays after R2 (each rule names why).
+	# Old migrations stay unchanged; 0028 is the migration that drops the old builder data (R3).
+	if (p ~ /^internal\/db\/migrations\/00(05|06|07|25|28)_/) return "KEEP"
+	# Plugin identity kept by the new builder: slug "golementor", option "native_golementor".
+	if (p == "internal/webbuilder/contract.go" || t ~ /native_golementor/) return "KEEP"
+	# Old upload paths, old admin/editor URLs (301 table) and the one-time theme upgrade off the old builder.
+	if (p ~ /^internal\/server\/(uploads_legacy|webbuilder_redirects|webbuilder_redirects_test|webbuilder_upgrade|webbuilder_upgrade_test)\.go$/) return "KEEP"
+	# New-builder tests that assert old-builder traces (old actions, menu ids, asset paths) are absent.
+	if (p ~ /^internal\/server\/webbuilder_(admin|editor|settings)_test\.go$/) return "KEEP"
+	# Not the old builder: the Google font "Gwendolyn" and Welsh words ("gwe-": web, "gweinyddwr").
+	if (t ~ /Gwendolyn/ || p == "web/languages/wpgo-cy.json") return "KEEP"
+	# Demo copy of the upstream builder ("Golementor" in sample sections), its patch, fixtures and dist.
+	if (p ~ /^(builder\/patches|internal\/webbuilder\/testdata|web\/web-builder)\//) return "KEEP"
+	# Docs, README and NOTICE: rewritten by X2; NOTICE keeps the attribution for the old migrations.
+	if (p ~ /^docs\// || p == "README.md" || p == "NOTICE") return "KEEP"
 	if (p ~ /^(internal\/builder|internal\/server\/gowebeditor|web\/gowebeditor|web\/themes\/hello-web-builder|tools\/gowebeditor|tools\/goo-golementor-themes|internal\/server\/testdata\/golementor[^\/]*)\//) return "R2"
 	if (p ~ /^internal\/server\/[^\/]*$/ && b ~ /^(gowebeditor|gwe_|golementor_|goo_gwe|theme_hellogowebeditor|i18n_golementor)/) return "R2"
 	if (p ~ /^web\/admin\/templates\/pages\/(golementor|gowebeditor)-/) return "R2"
@@ -95,6 +109,11 @@ report_r0() {
 		'internal/server/gowebeditor_fonts.go internal/server/gowebeditor_fonts_list.go|@fonts'; do
 		def=${spec%%|*}
 		syms=${spec#*|}
+		if [ ! -e "${def%% *}" ]; then
+			echo
+			echo "### $def: deleted (R2)"
+			continue
+		fi
 		if [ "$syms" = "@fonts" ]; then
 			# shellcheck disable=SC2086
 			syms=$(git grep -h -o -E '^(func (\([^)]*\) )?|var |const |type |	)gwe[A-Za-z0-9_]*' -- $def 2>/dev/null |
@@ -115,7 +134,7 @@ report_r0() {
 			printf '%s\n' "$uses" | awk "$classify"'
 				{ i = index($0, ":"); p = substr($0, 1, i-1); r = substr($0, i+1); j = index(r, ":")
 				  t = substr(r, j+1); gsub(/^[ \t]+/, "", t); if (length(t) > 140) t = substr(t, 1, 140) "..."
-				  printf "    %s:%s [%s] %s\n", p, substr(r, 1, j-1), group(p), t }'
+				  printf "    %s:%s [%s] %s\n", p, substr(r, 1, j-1), group(p, t), t }'
 		done
 	done
 	echo
@@ -132,7 +151,7 @@ NF == 0 { next }
 {
 	i = index($0, ":"); p = substr($0, 1, i-1); r = substr($0, i+1); j = index(r, ":")
 	ln = substr(r, 1, j-1); t = substr(r, j+1)
-	g = group(p)
+	g = group(p, t)
 	cnt[g]++
 	if (!((g, p) in fc)) { files[g] = files[g] SUBSEP p; nf[g]++ }
 	fc[g, p]++
@@ -181,7 +200,7 @@ if [ "$SUMMARY" = 0 ]; then
 fi
 
 if [ "$CHECK" = 1 ]; then
-	left=$(printf '%s\n' "$ALL" | awk "$classify"'NF { i = index($0, ":"); if (group(substr($0, 1, i-1)) != "KEEP") c++ } END { print c+0 }')
+	left=$(printf '%s\n' "$ALL" | awk "$classify"'NF { i = index($0, ":"); p = substr($0, 1, i-1); r = substr($0, i+1); j = index(r, ":"); if (group(p, substr(r, j+1)) != "KEEP") c++ } END { print c+0 }')
 	if [ "$left" -gt 0 ]; then
 		echo "check: $left references remain outside KEEP" >&2
 		exit 1

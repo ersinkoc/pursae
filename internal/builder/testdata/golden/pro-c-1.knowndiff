@@ -1,2 +1,0 @@
-css: rule order of the injected thumbs_ratio control differs (dump lists injected controls at the style-section position); every rule set matches, checked in TestProCGolden
-html: TestProCGolden compares the rest exactly
