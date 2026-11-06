@@ -86,7 +86,7 @@ serving, which is handy in a deploy step.
 
 - **Pursae Web Builder: Theme Builder and Hello Pursae.** Headers, footers and single, page,
   custom post type, front page, archive, search and 404 templates are designed in the builder
-  (Appearance › Theme Builder) and shown by the new bundled theme **Hello Pursae**
+  (Web Builder › Theme Builder) and shown by the new bundled theme **Hello Pursae**
   ([Theme Builder guide](../web-builder-theme-builder.md)). Migration
   `0029_web_builder_templates.sql` adds the `wb_template` post type; nothing existing is changed.
   - **Sites with the plugin already on are not switched.** The upgrade keeps the active theme and

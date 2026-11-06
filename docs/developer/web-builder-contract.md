@@ -71,9 +71,9 @@ ever part of it.**
 | `links.site` | string | home URL, no trailing slash |
 | `links.permalink` | string | the post's permalink |
 | `links.preview` | string | preview URL (`?preview=true`) |
-| `links.exit` | string | logo / Exit target: the post type's list screen (templates: Appearance › Theme Builder) |
+| `links.exit` | string | logo / Exit target: the post type's list screen (templates: Web Builder › Theme Builder) |
 | `links.editPost` | string | the core editor for this post |
-| `links.settings` | string | Settings › Web Builder; `""` without `manage_options` |
+| `links.settings` | string | Web Builder › Settings; `""` without `manage_options` |
 | `caps.publish` | bool | `publish_posts`/`publish_pages` for the type; false = publish becomes pending (templates: `edit_theme_options`, always true there) |
 | `caps.uploadFiles` | bool | `upload_files` |
 | `caps.unfilteredHtml` | bool | `unfiltered_html`: html sections and custom CSS are kept |
@@ -162,6 +162,7 @@ Request bodies of document routes are capped at **4 MiB** (`413 wb_too_large`, `
 | PUT | `/templates/{id}/conditions` | `edit_theme_options` | TemplateConditionsRequest → TemplateConditionsResponse |
 | PUT | `/templates/{id}/preview` | `edit_theme_options` | TemplatePreviewRequest → TemplatePreviewResponse |
 | GET | `/templates/{id}/conflicts` | `edit_theme_options` | — → TemplateConflict[] |
+| GET | `/navigator` | `edit_posts` or `edit_theme_options` | — → NavigatorResponse: templates (`edit_theme_options` only, ≤200) and per enabled post type the ≤100 newest-modified posts the user may edit; trash excluded. The editor's page switcher |
 | GET | `/themes` | `edit_theme_options` | — → `{themes, existing, source}` (theme library, [guide](web-builder-theme-library.md)) |
 | POST | `/themes/{slug}/import` | `edit_theme_options` (+ `edit_pages`, `publish_pages`) | `{mode, pages}` → drafts with docs `{templates, pages, media}` |
 | POST | `/themes/{slug}/finish` | `edit_theme_options` | `{mode, templates, pages}` → `{disabled, menus, pages}` |
@@ -672,7 +673,7 @@ time. Go names are in `contract.go` (section "Theme Builder"), TypeScript names 
 | Theme | `hello-pursae` (`HelloPursaeTheme`) | menu locations `primary` ("Primary Menu"), `footer` ("Footer Menu") |
 | Preview query | `?wb_template_preview=<id>` | forces that template on a front URL; `edit_theme_options` only; never cached |
 | Cache tags | `wb-theme`, `wb-loop` | §11.9 |
-| Admin screen | `/wp-admin/themes?page=web-builder-templates` | Appearance › Theme Builder, plugin active only |
+| Admin screen | `/wp-admin/themes?page=web-builder-templates` | Web Builder › Theme Builder, plugin active only |
 | Options | `web_builder_previous_theme`, `web_builder_theme_notice`, `web_builder_theme_offer` | §11.10 |
 
 The doc, snapshot, drafts, revisions, lock and library are the existing ones (§3, §6):
@@ -952,7 +953,7 @@ A malformed object answers **422** `wb_bad_preview`; one that names nothing answ
 | `priority` | number | |
 | `starter` | StarterId | loaded when the doc is empty |
 | `preview` | `{object, label, url}` | `label` like "Post: Hello world"; `url` the object's front URL with `?wb_template_preview=<id>` |
-| `manageUrl` | string | Appearance › Theme Builder |
+| `manageUrl` | string | Web Builder › Theme Builder |
 
 `site` (SiteBoot, always present): `{title, tagline, home, logo: DynImage | null, locations,
 menus, themeParts, postTypes: {slug, label, archive, hierarchical}[], taxonomies: {slug, label,

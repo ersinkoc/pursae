@@ -1,0 +1,369 @@
+diff --git a/src/builder/PageSwitcher.tsx b/src/builder/PageSwitcher.tsx
+new file mode 100644
+index 0000000..a915274
+--- /dev/null
++++ b/src/builder/PageSwitcher.tsx
+@@ -0,0 +1,251 @@
++import { useEffect, useMemo, useRef, useState } from 'react'
++import { Check, ChevronDown, CloudCheck, FileText, LayoutTemplate, LoaderCircle, Search, Settings2 } from 'lucide-react'
++import { useB } from './store'
++import { getHost, type NavItem } from './host'
++import { Tip, cn } from './ui'
++import { t } from './i18n'
++
++type Load = { state: 'idle' | 'loading' | 'error' } | { state: 'ready'; items: NavItem[] }
++
++const STATUS_LABEL: Record<string, () => string> = {
++  draft: () => t('Draft'),
++  pending: () => t('Pending'),
++  private: () => t('Private'),
++  future: () => t('Scheduled'),
++}
++
++/** The row's small trailing label: "Disabled", the post status, or the template type. */
++function detailOf(it: NavItem): string {
++  if (it.disabled) return t('Disabled')
++  if (it.kind === 'post') return STATUS_LABEL[it.status]?.() ?? ''
++  return it.detail ?? ''
++}
++
++/** Items matching q (title, group or detail), kept in list order. */
++export function filterNav(items: NavItem[], q: string): NavItem[] {
++  const needle = q.trim().toLowerCase()
++  if (!needle) return items
++  return items.filter((it) => `${it.title} ${it.group} ${it.detail ?? ''}`.toLowerCase().includes(needle))
++}
++
++/**
++ * The top bar's centre block: the document's title and state. With a host navigator it opens a
++ * dropdown to jump to another template, page or post (pending autosave is flushed first; unpublished
++ * changes ask before leaving), whose first row still opens the page / template settings.
++ */
++export function PageSwitcher({ template }: { template: boolean }) {
++  const b = useB()
++  const host = getHost()
++  const [open, setOpen] = useState(false)
++  const [load, setLoad] = useState<Load>({ state: 'idle' })
++  const [q, setQ] = useState('')
++  const [active, setActive] = useState(0)
++  const [confirm, setConfirm] = useState<NavItem | null>(null)
++  const [busy, setBusy] = useState<NavItem | null>(null)
++  const ref = useRef<HTMLDivElement>(null)
++  const input = useRef<HTMLInputElement>(null)
++  const seq = useRef(0)
++
++  const fetchList = () => {
++    const nav = host.navigator
++    if (!nav) return
++    const mine = ++seq.current
++    setLoad({ state: 'loading' })
++    nav().then(
++      (items) => mine === seq.current && setLoad({ state: 'ready', items }),
++      () => mine === seq.current && setLoad({ state: 'error' }),
++    )
++  }
++
++  const close = () => {
++    setOpen(false)
++    setConfirm(null)
++    setQ('')
++    setActive(0)
++  }
++
++  useEffect(() => {
++    if (!open) return
++    fetchList()
++    const away = (e: MouseEvent) => {
++      if (!ref.current?.contains(e.target as Node)) close()
++    }
++    const esc = (e: KeyboardEvent) => {
++      if (e.key === 'Escape') close()
++    }
++    document.addEventListener('mousedown', away)
++    document.addEventListener('keydown', esc)
++    return () => {
++      document.removeEventListener('mousedown', away)
++      document.removeEventListener('keydown', esc)
++      seq.current++
++    }
++    // eslint-disable-next-line react-hooks/exhaustive-deps
++  }, [open])
++
++  const items = load.state === 'ready' ? load.items : []
++  const shown = useMemo(() => filterNav(items, q), [items, q])
++  useEffect(() => setActive(0), [q])
++  useEffect(() => {
++    ref.current?.querySelector<HTMLElement>('[data-active="true"]')?.scrollIntoView({ block: 'nearest' })
++  }, [active, shown])
++
++  const title = b.page.title?.trim() || (template ? t('Untitled template') : t('Home page'))
++  const block = (
++    <>
++      <FileText size={14} className="text-ink-500" />
++      <span className="max-w-[220px] truncate font-medium text-ink-100">{title}</span>
++      <span className={cn('rounded-full px-1.5 py-px text-[10.5px] font-medium transition-colors', b.dirty ? 'bg-amber-400/12 text-amber-300' : 'bg-emerald-400/12 text-emerald-300')}>
++        {b.dirty ? t('Draft') : t('Published')}
++      </span>
++      <span className="flex items-center gap-1 text-[11px] text-ink-500 2xl:w-[86px]">
++        {b.saveState === 'saving' ? <LoaderCircle size={12} className="animate-spin" /> : <CloudCheck size={13} />}
++        <span className="hidden 2xl:inline">{b.saveState === 'saving' ? t('Saving') : t('Saved')}</span>
++      </span>
++    </>
++  )
++  const BTN = 'hidden h-[51px] items-center gap-2 border-r border-white/[0.07] px-4 text-[12.5px] transition-colors hover:bg-white/[0.03] lg:flex'
++
++  // No navigator on this host: the block opens the settings dialog as before.
++  if (!host.navigator) {
++    return (
++      <Tip label={template ? t('Template settings') : t('Page settings and SEO')}>
++        <button type="button" onClick={() => b.setDialog('settings')} className={BTN}>
++          {block}
++        </button>
++      </Tip>
++    )
++  }
++
++  const leave = async (it: NavItem) => {
++    setBusy(it)
++    try {
++      await host.beforeLeave?.()
++    } catch {
++      /* the unload warning still protects what could not be sent */
++    }
++    window.location.assign(it.editUrl)
++  }
++  const pick = (it: NavItem) => {
++    if (busy) return
++    if (it.id === host.currentId) return close()
++    if (b.dirty && confirm?.id !== it.id) return setConfirm(it)
++    void leave(it)
++  }
++
++  const onKey = (e: React.KeyboardEvent) => {
++    if (confirm || !shown.length) return
++    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
++      e.preventDefault()
++      setActive((i) => (i + (e.key === 'ArrowDown' ? 1 : shown.length - 1)) % shown.length)
++    } else if (e.key === 'Enter') {
++      e.preventDefault()
++      pick(shown[Math.min(active, shown.length - 1)])
++    }
++  }
++
++  const ROW = 'flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-[12.5px] text-ink-100 outline-none transition-colors hover:bg-white/[0.07] focus-visible:bg-white/[0.07] disabled:opacity-60'
++  let lastGroup = ''
++  return (
++    <div ref={ref} className="relative hidden h-[51px] border-r border-white/[0.07] lg:flex">
++      <button
++        type="button"
++        aria-haspopup="dialog"
++        aria-expanded={open}
++        aria-label={t('Switch page or template')}
++        onClick={() => (open ? close() : (setOpen(true), window.setTimeout(() => input.current?.focus(), 0)))}
++        className={cn('flex h-full items-center gap-2 px-4 text-[12.5px] transition-colors hover:bg-white/[0.03]', open && 'bg-white/[0.03]')}
++      >
++        {block}
++        <ChevronDown size={14} className={cn('text-ink-400 transition-transform', open && 'rotate-180')} />
++      </button>
++      {open && (
++        <div role="dialog" aria-label={t('Switch page or template')} onKeyDown={onKey} className="absolute left-1/2 top-full z-[60] mt-1.5 w-[340px] -translate-x-1/2 rounded-lg border border-white/10 bg-[#202227] p-1 shadow-xl shadow-black/40">
++          <button
++            type="button"
++            className={ROW}
++            onClick={() => {
++              close()
++              b.setDialog('settings')
++            }}
++          >
++            <Settings2 size={14} className="text-ink-300" />
++            <span className="font-medium">{template ? t('Template settings') : t('Page settings')}</span>
++          </button>
++          <div className="my-1 h-px bg-white/[0.07]" />
++          {confirm ? (
++            <div className="px-2.5 py-2 text-[12.5px]" role="alertdialog">
++              <p className="mb-2.5 leading-snug text-ink-200">{template ? t('This template has unpublished changes. They stay saved as a draft.') : t('This page has unpublished changes. They stay saved as a draft.')}</p>
++              <div className="flex justify-end gap-1.5">
++                <button type="button" disabled={!!busy} onClick={() => setConfirm(null)} className="h-7 rounded-md bg-white/[0.06] px-3 font-medium text-ink-100 hover:bg-white/[0.1] disabled:opacity-60">
++                  {t('Cancel')}
++                </button>
++                <button type="button" autoFocus disabled={!!busy} onClick={() => void leave(confirm)} className="flex h-7 items-center gap-1.5 rounded-md bg-accent px-3 font-semibold text-white hover:bg-[#6b89ff] disabled:opacity-60">
++                  {busy && <LoaderCircle size={12} className="animate-spin" />}
++                  {t('Open anyway')}
++                </button>
++              </div>
++            </div>
++          ) : (
++            <>
++              <label className="mb-1 flex items-center gap-2 rounded-md bg-black/30 px-2.5 ring-1 ring-white/[0.06] focus-within:ring-accent">
++                <Search size={13} className="text-ink-500" />
++                <input
++                  ref={input}
++                  value={q}
++                  onChange={(e) => setQ(e.target.value)}
++                  placeholder={t('Search pages and templates')}
++                  aria-label={t('Search pages and templates')}
++                  className="h-8 w-full bg-transparent text-[12.5px] text-ink-100 outline-none placeholder:text-ink-500"
++                />
++              </label>
++              <div className="max-h-[min(60vh,380px)] overflow-y-auto" role="listbox">
++                {load.state === 'loading' && (
++                  <p className="flex items-center gap-2 px-2.5 py-3 text-[12px] text-ink-400">
++                    <LoaderCircle size={13} className="animate-spin" /> {t('Loading…')}
++                  </p>
++                )}
++                {load.state === 'error' && (
++                  <p className="flex items-center justify-between gap-2 px-2.5 py-3 text-[12px] text-ink-300">
++                    {t('Could not load the list.')}
++                    <button type="button" onClick={fetchList} className="rounded-md bg-white/[0.06] px-2.5 py-1 font-medium text-ink-100 hover:bg-white/[0.1]">
++                      {t('Retry')}
++                    </button>
++                  </p>
++                )}
++                {load.state === 'ready' && !items.length && <p className="px-2.5 py-3 text-[12px] text-ink-400">{t('Nothing else to edit yet.')}</p>}
++                {load.state === 'ready' && !!items.length && !shown.length && <p className="px-2.5 py-3 text-[12px] text-ink-400">{t('No matches')}</p>}
++                {shown.map((it, i) => {
++                  const head = it.group !== lastGroup
++                  lastGroup = it.group
++                  const cur = it.id === host.currentId
++                  const detail = detailOf(it)
++                  return (
++                    <div key={`${it.kind}-${it.id}`}>
++                      {head && <div className="px-2.5 pb-1 pt-2 text-[10.5px] font-semibold uppercase tracking-wider text-ink-500">{it.kind === 'template' ? t('Templates') : it.group}</div>}
++                      <button
++                        type="button"
++                        role="option"
++                        aria-selected={cur}
++                        data-active={i === active}
++                        disabled={!!busy && busy.id !== it.id}
++                        onMouseMove={() => setActive(i)}
++                        onClick={() => pick(it)}
++                        className={cn(ROW, i === active && 'bg-white/[0.07]', it.disabled && 'text-ink-300')}
++                      >
++                        {it.kind === 'template' ? <LayoutTemplate size={13} className="shrink-0 text-ink-500" /> : <FileText size={13} className="shrink-0 text-ink-500" />}
++                        <span className="min-w-0 flex-1 truncate">{it.title || t('(no title)')}</span>
++                        {busy?.id === it.id ? <LoaderCircle size={13} className="shrink-0 animate-spin text-ink-300" aria-label={t('Opening {title}…', { title: it.title })} /> : cur ? <Check size={13} className="shrink-0 text-accent-soft" aria-label={t('Current')} /> : null}
++                        {detail && <span className="shrink-0 text-[11px] text-ink-500">{detail}</span>}
++                      </button>
++                    </div>
++                  )
++                })}
++              </div>
++            </>
++          )}
++        </div>
++      )}
++    </div>
++  )
++}
+diff --git a/src/builder/TopBar.tsx b/src/builder/TopBar.tsx
+index 8476ee5..fe40961 100644
+--- a/src/builder/TopBar.tsx
++++ b/src/builder/TopBar.tsx
+@@ -1,6 +1,6 @@
+ import { useEffect, useRef, useState } from 'react'
+ import { AnimatePresence, motion } from 'motion/react'
+-import { ArrowLeft, Check, ChevronDown, CloudCheck, Command, Sparkles, Contrast, Eye, EyeOff, FileText, Keyboard, Layers, LoaderCircle, Monitor, Plus, Redo2, Search, Smartphone, Tablet, Undo2 } from 'lucide-react'
++import { ArrowLeft, Check, ChevronDown, CloudCheck, Command, Sparkles, Contrast, Eye, EyeOff, Keyboard, Layers, LoaderCircle, Monitor, Plus, Redo2, Search, Smartphone, Tablet, Undo2 } from 'lucide-react'
+ import { HistoryButton } from './HistoryPanel'
+ import { useB } from './store'
+ import { useAi } from './ai/AiProvider'
+@@ -9,6 +9,7 @@ import { getHost, hostAi, hostTemplate } from './host'
+ import type { Device, Mode } from './types'
+ import { IconBtn, Tip, cn, ease, spring } from './ui'
+ import { t } from './i18n'
++import { PageSwitcher } from './PageSwitcher'
+ 
+ const DEVICES: { d: Device; icon: typeof Monitor; label: string }[] = [
+   { d: 'desktop', icon: Monitor, label: t('Desktop') },
+@@ -169,19 +170,7 @@ export function TopBar() {
+ 
+       {/* center */}
+       <div className="flex h-full items-center border-x border-white/[0.07]">
+-        <Tip label={template ? t('Template settings') : t('Page settings and SEO')}>
+-          <button type="button" onClick={() => b.setDialog('settings')} className="hidden h-[51px] items-center gap-2 border-r border-white/[0.07] px-4 text-[12.5px] transition-colors hover:bg-white/[0.03] lg:flex">
+-            <FileText size={14} className="text-ink-500" />
+-            <span className="max-w-[220px] truncate font-medium text-ink-100">{b.page.title?.trim() || (template ? t('Untitled template') : t('Home page'))}</span>
+-            <span className={cn('rounded-full px-1.5 py-px text-[10.5px] font-medium transition-colors', b.dirty ? 'bg-amber-400/12 text-amber-300' : 'bg-emerald-400/12 text-emerald-300')}>
+-              {b.dirty ? t('Draft') : t('Published')}
+-            </span>
+-            <span className="flex items-center gap-1 text-[11px] text-ink-500 2xl:w-[86px]">
+-              {b.saveState === 'saving' ? <LoaderCircle size={12} className="animate-spin" /> : <CloudCheck size={13} />}
+-              <span className="hidden 2xl:inline">{b.saveState === 'saving' ? t('Saving') : t('Saved')}</span>
+-            </span>
+-          </button>
+-        </Tip>
++        <PageSwitcher template={template} />
+         <div className="flex h-full items-center gap-1 px-3">
+           {DEVICES.map(({ d, icon: I, label }) => (
+             <Tip key={d} label={label}>
+diff --git a/src/builder/host.ts b/src/builder/host.ts
+index 7bb8f6b..1e01b39 100644
+--- a/src/builder/host.ts
++++ b/src/builder/host.ts
+@@ -101,6 +101,24 @@ export interface BuilderHostAi {
+   cloneEndpoint?: string | null
+ }
+ 
++/* ---------- Page switcher ---------- */
++
++/** One thing the editor can switch to (the page switcher in the top bar). */
++export interface NavItem {
++  id: number
++  title: string
++  /** Group heading ("Templates", "Pages", …). */
++  group: string
++  kind: 'template' | 'post'
++  /** Template type label ("Header", …) or post status; shown next to the title. */
++  detail?: string
++  /** WordPress status: publish, draft, pending, private, future. */
++  status: string
++  /** Where the item opens in the builder. */
++  editUrl: string
++  disabled?: boolean
++}
++
+ /* ---------- The host ---------- */
+ 
+ export interface BuilderHost {
+@@ -158,6 +176,12 @@ export interface BuilderHost {
+    * host first opens its display conditions dialog). A rejection is shown like a publish error.
+    */
+   beforePublish?(input: PublishInput): boolean | Promise<boolean>
++  /** Id of the document being edited; marks it in the page switcher. */
++  currentId?: number
++  /** The page switcher's list (templates, pages, posts); absent = the top bar title opens page settings. */
++  navigator?(): Promise<NavItem[]>
++  /** Runs before the editor navigates to another item: send pending changes (autosave flush). */
++  beforeLeave?(): Promise<void>
+ }
+ 
+ export const AI_DISABLED: BuilderHostAi = Object.freeze({ enabled: false, serverKeys: false, allowCode: false, cloneEndpoint: null })
+diff --git a/src/builder/i18n/tr.ts b/src/builder/i18n/tr.ts
+index 1100647..83109f1 100644
+--- a/src/builder/i18n/tr.ts
++++ b/src/builder/i18n/tr.ts
+@@ -1469,6 +1469,24 @@ const tr: Record<string, string> = {
+   'The page shows only its own sections, without the header and footer of the site.': 'Sayfa, sitenin üst ve alt bilgisi olmadan yalnızca kendi bölümlerini gösterir.',
+   'This page only (canvas)': 'Yalnızca bu sayfa (kanvas)',
+   'Untitled template': 'Başlıksız şablon',
++  'Templates': 'Şablonlar',
++  'Loading…': 'Yükleniyor…',
++  '(no title)': '(başlıksız)',
++  'Retry': 'Yeniden dene',
++  'Open anyway': 'Yine de aç',
++  'Current': 'Şu an açık',
++  'Disabled': 'Devre dışı',
++  'Private': 'Özel',
++  'Pending': 'Beklemede',
++  'Scheduled': 'Zamanlanmış',
++  'Switch page or template': 'Sayfa veya şablon değiştir',
++  'Search pages and templates': 'Sayfa ve şablon ara',
++  'No matches': 'Eşleşme yok',
++  'Could not load the list.': 'Liste yüklenemedi.',
++  'Nothing else to edit yet.': 'Düzenlenecek başka bir şey yok.',
++  'This page has unpublished changes. They stay saved as a draft.': 'Bu sayfada yayımlanmamış değişiklikler var. Taslak olarak kayıtlı kalırlar.',
++  'This template has unpublished changes. They stay saved as a draft.': 'Bu şablonda yayımlanmamış değişiklikler var. Taslak olarak kayıtlı kalırlar.',
++  'Opening {title}…': '{title} açılıyor…',
+ }
+ 
+ export default tr

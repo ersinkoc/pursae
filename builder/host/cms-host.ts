@@ -17,9 +17,9 @@
  * The host's own messages (reload prompts, conflicts, restored drafts) go through HostUi, which
  * editor-main.tsx renders next to the builder.
  */
-import type { BuilderHost, BuilderHostAi, BuilderHostStorage, FormResult, MediaAsset, MediaKind, PublishInput, PublishResult } from '@/builder/host'
+import type { BuilderHost, BuilderHostAi, NavItem, BuilderHostStorage, FormResult, MediaAsset, MediaKind, PublishInput, PublishResult } from '@/builder/host'
 import type { DocState, PageSettings, SavedComponent } from '@/builder/types'
-import { API_VERSION, ERR, LIMITS, PREF_KEY_PATTERN, routes, type AutosaveResponse, type Boot, type DraftState, type LibraryItem, type LockResponse, type MediaItem, type Prefs } from './contract'
+import { API_VERSION, ERR, LIMITS, PREF_KEY_PATTERN, routes, type AutosaveResponse, type Boot, type DraftState, type NavigatorResponse, type LibraryItem, type LockResponse, type MediaItem, type Prefs } from './contract'
 import { publishDocument, loadLiveRenderer, type RendererLoader } from './publish'
 import { createRest, isRestError, uploadMedia, type FetchLike, type RestClient } from './rest'
 import { DynStore } from './dynamic'
@@ -33,6 +33,18 @@ export const LOCK_REFRESH_MS = LIMITS.lockRefreshSeconds * 1000
 export const MAX_SVG_BYTES = LIMITS.maxStringBytes
 
 /** AI is out of scope: no AI mode, no AI requests. */
+/** The page switcher's flat list: templates first (Theme Builder order), then each post type's posts. */
+export function navItems(r: NavigatorResponse): NavItem[] {
+  const out: NavItem[] = []
+  for (const t of r.templates ?? []) {
+    out.push({ id: t.id, title: t.title, group: 'Templates', kind: 'template', detail: t.typeLabel, status: t.status, editUrl: t.editUrl, disabled: t.disabled || undefined })
+  }
+  for (const p of r.posts ?? []) {
+    out.push({ id: p.id, title: p.title, group: p.typeLabel, kind: 'post', status: p.status, editUrl: p.editUrl })
+  }
+  return out
+}
+
 export const HOST_AI_OFF: BuilderHostAi = Object.freeze({ enabled: false, serverKeys: true, allowCode: false, cloneEndpoint: null })
 
 /* ======================================================================================
@@ -757,6 +769,11 @@ export function createCmsHost(boot: Boot, deps: CmsHostDeps = {}): CmsHost {
     template: () => templateBoot,
     themeParts: !template && !!boot.site?.themeParts,
     beforePublish: templates ? () => templates.beforePublish() : undefined,
+    currentId: postId,
+    navigator: async () => navItems((await rest.request<NavigatorResponse>('GET', routes.navigator())).data),
+    // Pending edits are sent before the page switcher leaves; a failed flush never blocks leaving
+    // (the unload warning covers what stayed unsaved).
+    beforeLeave: () => (session.stopped ? Promise.resolve() : autosaver.flush()),
     async start() {
       // An older boot config without sample data: fetch it instead of drawing empty widgets.
       if (!dyn.fromBoot) void dyn.load(template?.preview?.object || `post:${postId}`).catch(() => undefined)

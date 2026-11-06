@@ -1,0 +1,28 @@
+diff --git a/src/builder/PageSwitcher.tsx b/src/builder/PageSwitcher.tsx
+index a915274..ffe77d1 100644
+--- a/src/builder/PageSwitcher.tsx
++++ b/src/builder/PageSwitcher.tsx
+@@ -172,6 +172,7 @@ export function PageSwitcher({ template }: { template: boolean }) {
+             <Settings2 size={14} className="text-ink-300" />
+             <span className="font-medium">{template ? t('Template settings') : t('Page settings')}</span>
+           </button>
++          {host.switcherExtra?.(close)}
+           <div className="my-1 h-px bg-white/[0.07]" />
+           {confirm ? (
+             <div className="px-2.5 py-2 text-[12.5px]" role="alertdialog">
+diff --git a/src/builder/host.ts b/src/builder/host.ts
+index 1e01b39..539c975 100644
+--- a/src/builder/host.ts
++++ b/src/builder/host.ts
+@@ -176,6 +176,11 @@ export interface BuilderHost {
+    * host first opens its display conditions dialog). A rejection is shown like a publish error.
+    */
+   beforePublish?(input: PublishInput): boolean | Promise<boolean>
++  /**
++   * Extra rows of the page switcher's dropdown, under its settings row (the host's template controls:
++   * display conditions, preview picker). close() closes the dropdown.
++   */
++  switcherExtra?(close: () => void): ReactNode
+   /** Id of the document being edited; marks it in the page switcher. */
+   currentId?: number
+   /** The page switcher's list (templates, pages, posts); absent = the top bar title opens page settings. */

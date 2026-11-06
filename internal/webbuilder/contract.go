@@ -20,7 +20,7 @@ const (
 	// and dynamic blocks, template routes, Item.dyn, PageSettings.layout, the loop section).
 	APIVersion = 2
 	// RendererVersion is the version of the static markup and the data-wb-* runtime contract.
-	// Snapshots with an older renderer are listed by Settings › Web Builder › Regenerate pages.
+	// Snapshots with an older renderer are listed by Web Builder › Settings › Regenerate pages.
 	// Bump it only for an incompatible change: one that makes a stored snapshot render wrong or
 	// makes the runtime or the server misread it. Additive markup (new data-wb-* attributes, new
 	// cell types or section kinds an older snapshot never contains) keeps the version.
@@ -62,6 +62,7 @@ const (
 	RouteTemplatePreview    = "/web-builder/v2/templates/{id}/preview"    // PUT
 	RouteTemplateConflicts  = "/web-builder/v2/templates/{id}/conflicts"  // GET
 	RoutePreviewContext     = "/web-builder/v2/preview-context"           // GET ?object=
+	RouteNavigator          = "/web-builder/v2/navigator"                 // GET: the editor's page switcher
 	MediaRoute              = "/wp/v2/media"                              // existing core route
 )
 
@@ -712,7 +713,7 @@ type BootLinks struct {
 	Preview   string `json:"preview"`
 	Exit      string `json:"exit"`     // where the logo / Exit goes (the post's list screen)
 	EditPost  string `json:"editPost"` // core editor of this post
-	Settings  string `json:"settings"` // Settings › Web Builder, "" without manage_options
+	Settings  string `json:"settings"` // Web Builder › Settings, "" without manage_options
 }
 
 type BootCaps struct {
@@ -977,7 +978,7 @@ const (
 	// CacheTagLoop is on every page whose parts run a post loop; saving any public post purges it.
 	CacheTagLoop = "wb-loop"
 
-	// ThemeBuilderPage is Appearance › Theme Builder: /wp-admin/themes?page=web-builder-templates.
+	// ThemeBuilderPage is Web Builder › Theme Builder: /wp-admin/themes?page=web-builder-templates.
 	ThemeBuilderPage = "web-builder-templates"
 
 	// PartCSSIDPrefix: each part's CSS is inlined as <style id="wb-css-<postID>">.
@@ -1507,7 +1508,7 @@ type TemplateBoot struct {
 	Priority   int             `json:"priority"`
 	Starter    StarterID       `json:"starter"` // loaded by the editor when the doc is empty
 	Preview    TemplatePreview `json:"preview"`
-	ManageURL  string          `json:"manageUrl"` // Appearance › Theme Builder
+	ManageURL  string          `json:"manageUrl"` // Web Builder › Theme Builder
 }
 
 type PostTypeInfo struct {
@@ -1552,6 +1553,41 @@ type TemplateSummary struct {
 	EditURL    string       `json:"editUrl"`
 	PreviewURL string       `json:"previewUrl"`
 }
+
+// NavigatorTemplate is one template of the editor's page switcher (GET RouteNavigator).
+type NavigatorTemplate struct {
+	ID        int64        `json:"id"`
+	Title     string       `json:"title"`
+	Type      TemplateType `json:"type"`
+	TypeLabel string       `json:"typeLabel"`
+	Status    string       `json:"status"`
+	EditURL   string       `json:"editUrl"`
+	Disabled  bool         `json:"disabled"` // a draft template is not shown on the site
+}
+
+// NavigatorPost is one page or post of the editor's page switcher.
+type NavigatorPost struct {
+	ID        int64  `json:"id"`
+	Title     string `json:"title"`
+	PostType  string `json:"postType"`
+	TypeLabel string `json:"typeLabel"`
+	Status    string `json:"status"`
+	EditURL   string `json:"editUrl"`
+}
+
+// NavigatorResponse is GET RouteNavigator: every template (edit_theme_options only, at most
+// NavigatorMaxTemplates) and, per enabled post type, the newest-modified posts the user may edit
+// (at most NavigatorMaxPosts per type). Trash is excluded.
+type NavigatorResponse struct {
+	Templates []NavigatorTemplate `json:"templates"`
+	Posts     []NavigatorPost     `json:"posts"`
+}
+
+// Limits of the page switcher list.
+const (
+	NavigatorMaxTemplates = 200
+	NavigatorMaxPosts     = 100
+)
 
 // TemplateCreateRequest is the body of POST RouteTemplates. PostType is required for
 // TemplateSingle (a public custom post type, never post or page) and refused otherwise.

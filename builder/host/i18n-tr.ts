@@ -73,7 +73,6 @@ const tr: Record<string, string> = {
   "Posts Page: {name}": "Yazılar sayfası: {name}", // i18n-ignore
   "Posts page": "Yazılar sayfası", // i18n-ignore
   "Preview as": "Önizleme içeriği", // i18n-ignore
-  "Preview as: {label}": "Önizleme içeriği: {label}", // i18n-ignore
   "Preview on the site": "Sitede önizle", // i18n-ignore
   "Priority": "Öncelik", // i18n-ignore
   "Priority {n}": "Öncelik {n}", // i18n-ignore
@@ -99,7 +98,6 @@ const tr: Record<string, string> = {
   "Tags": "Etiketler", // i18n-ignore
   "Template published": "Şablon yayınlandı", // i18n-ignore
   "Template saved as draft": "Şablon taslak olarak kaydedildi", // i18n-ignore
-  "Template type": "Şablon türü", // i18n-ignore
   "The content the dynamic widgets show while you edit. It does not change where the template is used.": "Dinamik bileşenlerin düzenleme sırasında gösterdiği içerik. Şablonun nerede kullanıldığını değiştirmez.", // i18n-ignore
   "The display conditions could not be saved.": "Görünme koşulları kaydedilemedi.", // i18n-ignore
   "The preview could not be changed.": "Önizleme değiştirilemedi.", // i18n-ignore

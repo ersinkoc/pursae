@@ -1,7 +1,7 @@
 /**
- * The host's controls in the builder's top bar in template mode (BuilderHost.topBarExtra, patch
- * 0009): the template type badge, the "Display Conditions" button and the "Preview as" button.
- * The dialogs themselves are drawn by HostLayer (TemplateDialogs), outside the top bar.
+ * The host's template controls in template mode: the "Display Conditions" and "Preview as" rows of
+ * the page switcher's dropdown (BuilderHost.switcherExtra, patch 0012). The dialogs themselves are
+ * drawn by HostLayer (TemplateDialogs), outside the top bar.
  */
 import { useSyncExternalStore } from 'react'
 import { Eye, ListFilter } from 'lucide-react'
@@ -11,9 +11,9 @@ import { ruleLabel } from './conditions'
 import { t } from './i18n'
 import { PreviewPicker } from './PreviewPicker'
 import { previewLabel } from './preview'
-import { typeLabel, type TemplateController } from './template'
+import type { TemplateController } from './template'
 
-const BTN = 'flex h-8 min-w-0 items-center gap-1.5 rounded-lg px-2.5 text-[12px] text-ink-300 ring-1 ring-white/[0.06] transition-colors hover:bg-white/[0.04] hover:text-ink-100'
+const ROW = 'flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-[12.5px] text-ink-100 outline-none transition-colors hover:bg-white/[0.07] focus-visible:bg-white/[0.07]'
 
 /** Short summary of the rules for the button ("Entire Site", "Posts +2", "None"). */
 export function conditionsSummary(host: Pick<CmsHost, 'boot'>, rules: string[]): string {
@@ -24,24 +24,24 @@ export function conditionsSummary(host: Pick<CmsHost, 'boot'>, rules: string[]):
   return more > 0 ? t('{first} +{n}', { first, n: more }) : first
 }
 
-export function TemplateBar({ host, controller }: { host: CmsHost; controller: TemplateController }) {
+/** The two template rows of the page switcher's dropdown (BuilderHost.switcherExtra): display conditions and "Preview as". */
+export function TemplateMenuRows({ host, controller, close }: { host: CmsHost; controller: TemplateController; close: () => void }) {
   const s = useSyncExternalStore(controller.subscribe, controller.getState, controller.getState)
   const summary = conditionsSummary(host, s.conditions)
+  const preview = previewLabel(s.preview?.label || '') || s.preview?.object || ''
   return (
-    <>
-      <span data-wb-template-type={controller.type} title={t('Template type')} className="hidden shrink-0 rounded-full bg-accent/15 px-2 py-0.5 text-[11px] font-semibold text-accent md:inline">
-        {typeLabel(controller.type)}
-      </span>
-      <button type="button" onClick={() => void controller.openConditions('edit')} aria-label={t('Display Conditions')} title={`${t('Display Conditions')}: ${summary}`} className={BTN + ' shrink-0'}>
-        <ListFilter size={13} className="shrink-0" />
-        <span className="hidden lg:inline 2xl:hidden">{t('Conditions')}</span>
-        <span className="hidden max-w-[150px] truncate 2xl:inline">{summary}</span>
+    <div data-wb-template-type={controller.type}>
+      <button type="button" className={ROW} onClick={() => { close(); void controller.openConditions('edit') }}>
+        <ListFilter size={14} className="shrink-0 text-ink-300" />
+        <span className="font-medium">{t('Display Conditions')}</span>
+        <span className="ml-auto max-w-[130px] truncate text-[11px] text-ink-500">{summary}</span>
       </button>
-      <button type="button" onClick={() => controller.openPreview()} aria-label={t('Preview as')} title={t('Preview as: {label}', { label: previewLabel(s.preview?.label || '') || s.preview?.object || '' })} className={BTN}>
-        <Eye size={13} className="shrink-0" />
-        <span className="hidden max-w-[160px] truncate xl:inline">{previewLabel(s.preview?.label || '') || t('Preview as')}</span>
+      <button type="button" className={ROW} onClick={() => { close(); controller.openPreview() }}>
+        <Eye size={14} className="shrink-0 text-ink-300" />
+        <span className="font-medium">{t('Preview as')}</span>
+        <span className="ml-auto max-w-[130px] truncate text-[11px] text-ink-500">{preview}</span>
       </button>
-    </>
+    </div>
   )
 }
 
@@ -74,6 +74,6 @@ export function TemplateDialogs({ host, controller }: { host: CmsHost; controlle
 export function installTemplateUi(host: CmsHost): boolean {
   const controller = host.templates
   if (!controller) return false
-  host.topBarExtra = () => <TemplateBar host={host} controller={controller} />
+  host.switcherExtra = (close) => <TemplateMenuRows host={host} controller={controller} close={close} />
   return true
 }

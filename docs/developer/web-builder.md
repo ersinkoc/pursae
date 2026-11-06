@@ -28,7 +28,7 @@ Hello Pursae** notice instead ([upgrading](getting-started/upgrading.md#release-
 no setup wizard. While the plugin is off there are no menu entries, "Edit with" links, routes,
 assets or front-end output, and built pages show their readable fallback inside the theme.
 
-**Settings › Web Builder** (`manage_options`) picks the post types the builder edits — pages and
+**Web Builder › Settings** (`manage_options`) picks the post types the builder edits — pages and
 posts by default; Theme Builder templates are always editable by users with `edit_theme_options` —
 and lists the pages whose published markup came from an older renderer
 ("Regenerate pages"; each one is refreshed by opening it in the builder and publishing again).
@@ -68,7 +68,7 @@ follow later.
 
 ### Theme Builder
 
-**Appearance › Theme Builder** (`edit_theme_options`) lists the site's templates: Header, Footer,
+**Web Builder › Theme Builder** (`edit_theme_options`) lists the site's templates: Header, Footer,
 Single Post, Single Page, Single (a custom post type), Front Page, Archive, Search Results and 404
 Page. A template is a builder document like a page, designed with **dynamic widgets** (site logo,
 title, menu, search form, post title, content, featured image, post info, terms, author box,
@@ -205,6 +205,7 @@ Cookie + `X-WP-Nonce` (or an Application Password), plus `X-WB-Api: 1` on every 
 | `PUT templates/{id}/conditions` | display conditions and priority |
 | `PUT templates/{id}/preview` | the template's preview object, answers the new sample data |
 | `GET templates/{id}/conflicts` | other published templates that can show on the same views |
+| `GET navigator` | the page switcher list: templates and editable pages/posts with their builder URLs |
 | `GET preview-context?object=` | sample data (DynContext) for the editor |
 
 Payloads, status codes and limits: [contract §3](web-builder-contract.md#3-rest-namespace-web-builderv2)

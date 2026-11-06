@@ -8,7 +8,11 @@
     "0006-no-remote-fonts.patch": "f0fc54ad32bafcf9633b410a334a27a14a20a68102c25b03a1a4f8a1d6fe8f93",
     "0007-page-title.patch": "8b9a2f9833856d20ff650da99faa3647c6a08c87546aa31c43c280e70f56228a",
     "0008-dynamic.patch": "4c70e12866ca8668d5d97129abed232db28253f5e21869369eb473cbf646f63f",
-    "0009-template-mode.patch": "6e8a7379e79986e02728e21007a734504df4a817accb811483b57175e03d2aa8"
+    "0009-template-mode.patch": "6e8a7379e79986e02728e21007a734504df4a817accb811483b57175e03d2aa8",
+    "0010-brand-menu.patch": "8a79c47020d2a6e99bc2d918a3a9c4b8c8b17b877a2ae09bdbcf07da337982ef",
+    "0011-page-switcher.patch": "422be057c6f75af163f56716c89993a2ded49a9eb8eede2a8d5060ba656e75cd",
+    "0012-switcher-extra.patch": "30d93e6fdf69d7345cfe06294f855308196bea4c21acde63194952cff633343f",
+    "0013-theme-library.patch": "7f5e16f590c663b6eb23640aa264947ddf5b411ee6b74f9273c2ec2fd411b1a8"
   },
   "apiVersion": 2,
   "rendererVersion": 1

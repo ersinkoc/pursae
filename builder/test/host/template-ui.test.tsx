@@ -11,7 +11,7 @@ import { createCmsHost } from '../../host/cms-host'
 import { ConditionsDialog } from '../../host/ConditionsDialog'
 import { IdPicker } from '../../host/IdPicker'
 import { PreviewPicker } from '../../host/PreviewPicker'
-import { TemplateBar, TemplateDialogs, conditionsSummary, installTemplateUi } from '../../host/TemplateBar'
+import { TemplateMenuRows, TemplateDialogs, conditionsSummary, installTemplateUi } from '../../host/TemplateBar'
 import { createRest, itemLabel, itemTitle, searchItems } from '../../host/rest'
 import tr from '../../host/i18n-tr'
 import { ROOT, makeBoot, mockFetch } from './helpers'
@@ -59,13 +59,13 @@ describe('id search (core wp/v2 collections)', () => {
   })
 })
 
-describe('TemplateBar', () => {
-  it('shows the type badge, the conditions summary and the preview label', () => {
+describe('TemplateMenuRows', () => {
+  it('shows the conditions summary and the preview label as dropdown rows', () => {
     const host = createCmsHost(makeTemplateBoot({ conditions: ['include/singular/post', 'exclude/singular/post/5'] }), { fetch: mockFetch({}).fetch, local: null })
-    const html = renderToStaticMarkup(<TemplateBar host={host} controller={host.templates!} />)
+    const html = renderToStaticMarkup(<TemplateMenuRows host={host} controller={host.templates!} close={() => {}} />)
     expect(html).toContain('data-wb-template-type="single-post"')
-    expect(html).toContain('Single Post')
-    expect(html).toContain('aria-label="Display Conditions"')
+    expect(html).toContain('Display Conditions')
+    expect(html).toContain('Preview as')
     expect(html).toContain('Posts +1')
     expect(html).toContain('Post: Hello world')
   })
@@ -77,13 +77,14 @@ describe('TemplateBar', () => {
     expect(conditionsSummary(host, ['include/general'])).toBe('Entire Site')
   })
 
-  it('installTemplateUi sets topBarExtra in template mode only', () => {
+  it('installTemplateUi sets switcherExtra (and no top bar extra) in template mode only', () => {
     const host = createCmsHost(makeTemplateBoot(), { fetch: mockFetch({}).fetch, local: null })
     expect(installTemplateUi(host)).toBe(true)
-    expect(renderToStaticMarkup(<>{host.topBarExtra!()}</>)).toContain('Display Conditions')
+    expect(host.topBarExtra).toBeUndefined()
+    expect(renderToStaticMarkup(<>{host.switcherExtra!(() => {})}</>)).toContain('Display Conditions')
     const page = createCmsHost(makeBoot(), { fetch: mockFetch({}).fetch, local: null })
     expect(installTemplateUi(page)).toBe(false)
-    expect(page.topBarExtra).toBeUndefined()
+    expect(page.switcherExtra).toBeUndefined()
   })
 
   it('TemplateDialogs draws the dialogs the controller opened', () => {

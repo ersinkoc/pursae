@@ -54,6 +54,7 @@ export const routes = {
   templateConditions: (id: number) => `web-builder/v2/templates/${id}/conditions`,
   templatePreview: (id: number) => `web-builder/v2/templates/${id}/preview`,
   templateConflicts: (id: number) => `web-builder/v2/templates/${id}/conflicts`,
+  navigator: () => 'web-builder/v2/navigator',
   previewContext: () => 'web-builder/v2/preview-context',
   media: () => 'wp/v2/media',
 } as const
@@ -809,6 +810,33 @@ export interface TemplateSummary {
   modified: string
   editUrl: string
   previewUrl: string
+}
+
+/** One template of the editor's page switcher (GET navigator; edit_theme_options only). */
+export interface NavigatorTemplate {
+  id: number
+  title: string
+  type: TemplateType
+  typeLabel: string
+  status: string
+  editUrl: string
+  /** a draft template is not shown on the site */
+  disabled: boolean
+}
+
+export interface NavigatorPost {
+  id: number
+  title: string
+  postType: string
+  typeLabel: string
+  status: string
+  editUrl: string
+}
+
+/** GET navigator: at most 200 templates and 100 posts per enabled post type, newest modified first. */
+export interface NavigatorResponse {
+  templates: NavigatorTemplate[]
+  posts: NavigatorPost[]
 }
 
 export interface TemplateCreateRequest {

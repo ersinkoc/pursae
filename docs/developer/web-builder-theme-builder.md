@@ -30,7 +30,7 @@ The field-by-field rules are in the [contract, section 11](web-builder-contract.
 
 ## Managing templates
 
-**Appearance › Theme Builder** lists every template with its type, its display conditions in
+**Web Builder › Theme Builder** lists every template with its type, its display conditions in
 words ("Entire Site", "Category: News", "Excluded: Page 'About'"), its priority, author and date.
 The tabs filter by type; row actions are **Edit with Pursae Web Builder**, **Edit Conditions**,
 **Preview**, **Duplicate**, **Disable** / **Enable** and **Trash**. When Hello Pursae is not the

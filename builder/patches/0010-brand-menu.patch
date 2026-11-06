@@ -1,0 +1,95 @@
+diff --git a/src/builder/TopBar.tsx b/src/builder/TopBar.tsx
+index e4855c7..8476ee5 100644
+--- a/src/builder/TopBar.tsx
++++ b/src/builder/TopBar.tsx
+@@ -1,5 +1,6 @@
++import { useEffect, useRef, useState } from 'react'
+ import { AnimatePresence, motion } from 'motion/react'
+-import { Check, CloudCheck, Command, Sparkles, Contrast, Eye, EyeOff, FileText, Keyboard, Layers, LoaderCircle, Monitor, Plus, Redo2, Search, Smartphone, Tablet, Undo2 } from 'lucide-react'
++import { ArrowLeft, Check, ChevronDown, CloudCheck, Command, Sparkles, Contrast, Eye, EyeOff, FileText, Keyboard, Layers, LoaderCircle, Monitor, Plus, Redo2, Search, Smartphone, Tablet, Undo2 } from 'lucide-react'
+ import { HistoryButton } from './HistoryPanel'
+ import { useB } from './store'
+ import { useAi } from './ai/AiProvider'
+@@ -78,23 +79,57 @@ function AiChip() {
+   )
+ }
+ 
+-const LOGO_CLS = 'mr-2 flex items-center gap-2.5 pr-1'
++const LOGO_CLS = 'mr-2 flex h-8 items-center gap-1.5 rounded-lg px-2 text-[13.5px] font-semibold text-ink-100'
+ 
++/** The product name opens a small menu; its first entry leaves the builder for the CMS dashboard. */
+ function Logo() {
+   const exit = getHost().exitUrl
+-  const inner = (
+-    <>
+-      <span className="grid size-[30px] place-items-center rounded-[9px] bg-gradient-to-br from-[#6d8bff] to-[#3c55e0] text-[15px] font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,.25)]">P</span>
+-      <span className="hidden whitespace-nowrap text-[13.5px] font-semibold text-ink-100 xl:block">Pursae Web Builder</span>
+-    </>
+-  )
+-  if (!exit) return <div className={LOGO_CLS}>{inner}</div>
++  const [open, setOpen] = useState(false)
++  const ref = useRef<HTMLDivElement>(null)
++  useEffect(() => {
++    if (!open) return
++    const away = (e: MouseEvent) => {
++      if (!ref.current?.contains(e.target as Node)) setOpen(false)
++    }
++    const esc = (e: KeyboardEvent) => {
++      if (e.key === 'Escape') setOpen(false)
++    }
++    document.addEventListener('mousedown', away)
++    document.addEventListener('keydown', esc)
++    return () => {
++      document.removeEventListener('mousedown', away)
++      document.removeEventListener('keydown', esc)
++    }
++  }, [open])
++  const name = <span className="hidden whitespace-nowrap xl:block">Pursae Web Builder</span>
++  if (!exit) return <div className={LOGO_CLS}>{name}</div>
+   return (
+-    <Tip label={t('Back to the dashboard')}>
+-      <a href={exit} aria-label={t('Back to the dashboard')} className={cn(LOGO_CLS, 'rounded-[10px] outline-none focus-visible:ring-2 focus-visible:ring-accent')}>
+-        {inner}
+-      </a>
+-    </Tip>
++    <div ref={ref} className="relative mr-1">
++      <button
++        type="button"
++        aria-haspopup="menu"
++        aria-expanded={open}
++        aria-label={t('Builder menu')}
++        onClick={() => setOpen((v) => !v)}
++        className={cn(LOGO_CLS, 'mr-0 outline-none transition hover:bg-white/[0.06] focus-visible:ring-2 focus-visible:ring-accent', open && 'bg-white/[0.06]')}
++      >
++        {name}
++        <ChevronDown size={14} className={cn('text-ink-300 transition-transform', open && 'rotate-180')} />
++      </button>
++      {open && (
++        <div role="menu" className="absolute left-0 top-full z-[60] mt-1.5 min-w-[220px] rounded-lg border border-white/10 bg-[#202227] p-1 shadow-xl shadow-black/40">
++          <a
++            role="menuitem"
++            href={exit}
++            autoFocus
++            className="flex items-center gap-2 rounded-md px-2.5 py-2 text-[12.5px] font-medium text-ink-100 outline-none hover:bg-white/[0.07] focus-visible:bg-white/[0.07]"
++          >
++            <ArrowLeft size={14} className="text-ink-300" />
++            {t('Back to the dashboard')}
++          </a>
++        </div>
++      )}
++    </div>
+   )
+ }
+ 
+diff --git a/src/builder/i18n/tr.ts b/src/builder/i18n/tr.ts
+index 8dfeb94..1100647 100644
+--- a/src/builder/i18n/tr.ts
++++ b/src/builder/i18n/tr.ts
+@@ -221,6 +221,7 @@ const tr: Record<string, string> = {
+   'Back to global': 'Globale dön',
+   'Back to sections': 'Bölümlere dön',
+   'Back to the dashboard': 'Panele dön',
++  'Builder menu': 'Oluşturucu menüsü',
+   'Back to the original colors': 'Orijinal renklere dön',
+   'Back-to-top link': 'Başa dön bağlantısı',
+   'Background': 'Arka plan',
