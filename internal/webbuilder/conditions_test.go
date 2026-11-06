@@ -248,9 +248,9 @@ func TestPickTemplate(t *testing.T) {
 		t.Errorf("main on search = %d", id(LocationMain, search))
 	}
 	cat := QueryFacts{View: ViewArchive, Archive: ArchiveTerm, Taxonomy: "category", TermID: 1}
-	// Contract §11.2: search-results passes the archive gate, so with the same rule and no bonus
-	// the tie goes to the higher id (7) on a category archive too.
-	if id(LocationMain, cat) != 7 {
+	// Contract §11.2: search-results only passes the archive gate on search views, so a category
+	// archive goes to the archive template with the same rule (6) despite the higher id (7).
+	if id(LocationMain, cat) != 6 {
 		t.Errorf("main on category = %d", id(LocationMain, cat))
 	}
 	if id(LocationMain, QueryFacts{View: View404}) != 8 {
@@ -317,6 +317,9 @@ func TestTemplatesConflict(t *testing.T) {
 		{mk(1, TemplateArchive, "include/archive/category"), mk(2, TemplateArchive, "include/archive/post_tag"), false},
 		{mk(1, TemplateArchive, "include/archive/search"), mk(2, TemplateSearch, "include/archive"), true},
 		{mk(1, TemplateArchive, "include/archive/date"), mk(2, TemplateSearch, "include/archive/search"), false},
+		{mk(1, TemplateArchive, "include/archive/category"), mk(2, TemplateSearch, "include/archive"), false}, // search gate
+		{mk(1, TemplateArchive, "include/archive"), mk(2, TemplateSearch, "include/general"), true},
+		{mk(1, TemplateSearch, "include/archive/date"), mk(2, TemplateSearch, "include/archive"), false},
 		{mk(1, TemplateFrontPage, "include/singular/front_page"), mk(2, TemplateArchive, "include/archive/home"), true},
 		{mk(1, TemplateFrontPage, "include/singular/front_page"), mk(2, TemplateSinglePage, "include/singular/page/4"), true},
 		{mk(1, TemplateFrontPage, "include/singular/front_page"), mk(2, TemplateSinglePost, "include/singular/post"), false},

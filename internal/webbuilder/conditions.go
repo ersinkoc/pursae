@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -474,10 +475,17 @@ func ViewAllowed(t TemplateType, view string) bool {
 	return false
 }
 
+// ArchiveAllowed is the archive part of the view gate: a type with TemplateTypeArchives renders
+// only on those archive kinds; any other type on every archive.
+func ArchiveAllowed(t TemplateType, archive string) bool {
+	kinds, ok := TemplateTypeArchives[t]
+	return !ok || slices.Contains(kinds, archive)
+}
+
 // TemplateScore is the candidate's score for the request: view gate, exclude veto, best include,
 // plus SearchTypeBonus for a search-results template on a search view.
 func TemplateScore(c *TemplateCandidate, q QueryFacts) (int, bool) {
-	if !ViewAllowed(c.Type, q.View) {
+	if !ViewAllowed(c.Type, q.View) || (q.View == ViewArchive && !ArchiveAllowed(c.Type, q.Archive)) {
 		return 0, false
 	}
 	if q.Store && TemplateLocation(c.Type) == LocationMain {
@@ -543,17 +551,33 @@ func TemplatesConflict(a, b *TemplateCandidate) bool {
 				continue
 			}
 			ca, ok := ra.constraint(view)
-			if !ok {
+			if !ok || !archiveGateOK(a.Type, view, ca) {
 				continue
 			}
 			for _, rb := range b.Conditions {
 				if rb.Exclude {
 					continue
 				}
-				if cb, ok := rb.constraint(view); ok && ca.compatible(cb) {
+				if cb, ok := rb.constraint(view); ok && archiveGateOK(b.Type, view, cb) && ca.compatible(cb) &&
+					archiveGateOK(a.Type, view, cb) && archiveGateOK(b.Type, view, ca) {
 					return true
 				}
 			}
+		}
+	}
+	return false
+}
+
+// archiveGateOK: on the archive view, a constraint can be met by a request the type's archive
+// gate (TemplateTypeArchives) admits.
+func archiveGateOK(t TemplateType, view string, c viewConstraint) bool {
+	kinds, ok := TemplateTypeArchives[t]
+	if view != ViewArchive || !ok {
+		return true
+	}
+	for _, k := range kinds {
+		if c.compatible(viewConstraint{kind: k}) {
+			return true
 		}
 	}
 	return false

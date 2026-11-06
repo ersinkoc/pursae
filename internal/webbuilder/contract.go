@@ -1056,6 +1056,13 @@ var TemplateTypeViews = map[TemplateType][]string{
 	Template404:        {View404},
 }
 
+// TemplateTypeArchives narrows the archive view gate: a type listed here renders on the archive
+// view only for these archive kinds (QueryFacts.Archive). search-results never renders a term,
+// date, author or post type archive, whatever its rules say.
+var TemplateTypeArchives = map[TemplateType][]string{
+	TemplateSearch: {ArchiveSearch},
+}
+
 // DefaultConditions are written when a template is created. TemplateSingle has none here: its
 // default is "include/singular/<postType>" from the create request.
 var DefaultConditions = map[TemplateType][]string{

@@ -689,12 +689,15 @@ single template never renders an archive, even with `include/general`.
 | `single` | Single | main | singular | `include/singular/<postType>` (create request) | `single` | `latest` |
 | `front-page` | Front Page | main | singular, archive | `include/singular/front_page` | `blank` | `front` |
 | `archive` | Archive | main | archive | `include/archive` | `archive` | `home` |
-| `search-results` | Search Results | main | archive | `include/archive/search` | `search` | `search:a` |
+| `search-results` | Search Results | main | archive (search only) | `include/archive/search` | `search` | `search:a` |
 | `error-404` | 404 Page | main | 404 | `include/404` | `blank` | `404` |
 
 Views: **singular** = a single post, page or custom post type entry (a static front page too);
 **archive** = the posts index, a term, author, date or post type archive, search results;
 **404**. `front-page` passes both gates because the front page may be the posts index.
+`search-results` passes the archive gate on search views only (`TemplateTypeArchives`): even
+with `include/archive` or `include/general` it never renders a term, date, author or post type
+archive.
 
 Starters (`blank header footer single archive search`, upstream `dynamic/starters.ts`) are loaded
 by the editor when a template's doc is empty; `blank` is an empty doc.
