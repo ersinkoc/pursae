@@ -506,7 +506,7 @@ func TestWebBuilderRESTContributorForged(t *testing.T) {
 			t.Errorf("stored snapshot contains %q", bad)
 		}
 	}
-	if strings.Contains(row.CSS, "@import") || strings.Contains(row.CSS, "#x{") || !strings.Contains(row.CSS, "padding:1rem") {
+	if strings.TrimSpace(row.CSS) != "" {
 		t.Errorf("stored css %q", row.CSS)
 	}
 	if strings.Contains(string(row.Doc), "s_evilhtml") || strings.Contains(string(row.Doc), "javascript:") || strings.Contains(string(row.Doc), `"css"`) {
@@ -689,6 +689,10 @@ func TestWebBuilderRESTPublishWithoutPage(t *testing.T) {
 	srv, _, admin := wbrStart(t)
 	ctx := context.Background()
 	page := wbrPost(t, srv, "page", "Kept Title", "draft", 1)
+	page.Meta = map[string]any{seogoKey("description"): "Kept SEO description"}
+	if err := srv.store.UpdatePost(ctx, page, 1); err != nil {
+		t.Fatal(err)
+	}
 	doc, render := wbrFixture(t, "initial")
 	body := wbrPublishBody(doc, render, 0, "publish", nil)
 	delete(body, "page")

@@ -451,18 +451,24 @@ func (s *Server) wbSanitizeRender(c *gin.Context, p *store.Post, body *wbPublish
 	if changed {
 		add(webbuilder.StrippedMarkup)
 	}
-	sectionCSS := rr.CSS
+	sectionCSS, utilityCSS := rr.CSS, body.UtilityCSS
 	if !unfiltered && strings.TrimSpace(sectionCSS) != "" {
 		sectionCSS = ""
 		add(webbuilder.StrippedCustomCSS)
 	}
-	if len(body.UtilityCSS)+len(sectionCSS) > webbuilder.MaxCSSBytes {
+	// The editor never sends utilityCss (it is empty since utility classes were dropped); a forged one
+	// is a page-wide stylesheet, which is custom CSS and needs unfiltered_html like render.css.
+	if !unfiltered && strings.TrimSpace(utilityCSS) != "" {
+		utilityCSS = ""
+		add(webbuilder.StrippedCustomCSS)
+	}
+	if len(utilityCSS)+len(sectionCSS) > webbuilder.MaxCSSBytes {
 		restErr(c, http.StatusRequestEntityTooLarge, webbuilder.ErrTooLarge, "The page CSS is too large.", map[string]any{"limit": webbuilder.MaxCSSBytes})
 		return nil, false
 	}
 	opts := webbuilder.CSSOptions{SiteOrigin: strings.TrimRight(lb.HomeURL("/"), "/")}
 	var parts []string
-	for _, x := range []struct{ path, css string }{{"/utilityCss", body.UtilityCSS}, {"/render/css", sectionCSS}} {
+	for _, x := range []struct{ path, css string }{{"/utilityCss", utilityCSS}, {"/render/css", sectionCSS}} {
 		if strings.TrimSpace(x.css) == "" {
 			continue
 		}
