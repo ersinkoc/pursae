@@ -374,6 +374,8 @@ func (s *Server) routes() *gin.Engine {
 	s.registerStudioREST()   // Golementor Studio: web-builder/v1/studio/preferences (gowebeditor_studio.go)
 	s.registerGooikeREST()   // Gooike: gooike/v1 consent log and geo (gooike_consent.go)
 	s.registerGooREST()      // Goocommerce: wc/store/v1 and wc/v3 (goo_rest.go)
+	// Pursae Web Builder: web-builder/v2 (webbuilder_rest.go)
+	s.registerWebBuilderREST()
 	restHandler := func(c *gin.Context) { s.rest.serve(c, c.Param("route")) }
 	for _, m := range []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete, http.MethodOptions, http.MethodHead} {
 		r.Handle(m, "/wp-json/*route", restHandler)

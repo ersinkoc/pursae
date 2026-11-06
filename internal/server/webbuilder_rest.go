@@ -1,0 +1,1228 @@
+package server
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"errors"
+	"io"
+	"io/fs"
+	"net/http"
+	"os"
+	"path/filepath"
+	"regexp"
+	"sort"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+	"unicode/utf8"
+
+	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5"
+
+	"wpgo/internal/store"
+	"wpgo/internal/webbuilder"
+)
+
+// Pursae Web Builder REST API, namespace web-builder/v2 (docs/developer/web-builder-contract.md §3):
+// documents (load, autosave, edit lock, publish), revisions, the site's saved components, the
+// user's editor preferences and the local Google Fonts stylesheet. The public form endpoint lives
+// in webbuilder_forms.go and the AI proxy (off for now) in webbuilder_ai.go.
+//
+// Authentication is the core one (restAuthUser: cookie + X-WP-Nonce, or an Application Password).
+// Every route answers 404 rest_no_route while the plugin is off, and every route but fonts/css2
+// needs the X-WB-Api handshake header. The snapshot and CSS a publish carries come from the browser
+// and are untrusted: the doc is validated and normalized by internal/webbuilder, the snapshot and
+// CSS are sanitized there, and posts.content is generated in Go from the doc.
+
+const (
+	wbRevisionsPerPage = webbuilder.MaxRevisionsListed
+	wbNameMax          = 200 // saved component name, runes
+	wbTitleMax         = 1000
+	wbSlugMax          = 200
+	wbDescriptionMax   = 5000
+	wbFontsPerRequest  = 12
+	wbFontsWait        = 20 * time.Second // how long the editor's stylesheet waits for a first download
+	wbFontsDiskCap     = 256 << 20        // no new download once the localized fonts take this much space
+	wbFontsDiskTTL     = 60 * time.Second // how long a measured disk usage is trusted
+	wbPublishLockClass = int32(0x5742)    // pg_advisory_xact_lock(class, post id): one publish per post at a time
+	wbFontsCacheMaxAge = "private, max-age=3600"
+)
+
+// wbREST wraps a web-builder/v2 handler: 404 while the plugin is off and, unless exempt, the
+// X-WB-Api handshake (409 wb_api_mismatch, data.reload).
+func (s *Server) wbREST(h restHandler, handshake bool) restHandler {
+	return func(c *gin.Context, r *restRequest) {
+		if !s.wbOn() {
+			restErr(c, http.StatusNotFound, "rest_no_route", "No route was found matching the URL and request method.")
+			return
+		}
+		if handshake && strings.TrimSpace(c.GetHeader(webbuilder.APIHeader)) != strconv.Itoa(webbuilder.APIVersion) {
+			restErr(c, http.StatusConflict, webbuilder.ErrAPIMismatch, "The editor is out of date. Reload it to keep working.",
+				map[string]any{"reload": true, "apiVersion": webbuilder.APIVersion})
+			return
+		}
+		h(c, r)
+	}
+}
+
+// registerWebBuilderREST adds the web-builder/v2 routes (the handlers check wbOn on every request,
+// so switching the plugin needs no restart).
+func (s *Server) registerWebBuilderREST() {
+	const ns = webbuilder.RESTNamespace
+	const doc = `/web-builder/v2/documents/(?P<id>[\d]+)`
+	reg := func(pattern string, methods map[string]restHandler, handshake bool) {
+		wrapped := make(map[string]restHandler, len(methods))
+		for m, h := range methods {
+			wrapped[m] = s.wbREST(h, handshake)
+		}
+		s.rest.register(ns, pattern, wrapped, nil)
+	}
+	reg(doc, map[string]restHandler{http.MethodGet: s.wbRESTDocument}, true)
+	reg(doc+`/autosave`, map[string]restHandler{http.MethodPut: s.wbRESTAutosave, http.MethodDelete: s.wbRESTAutosaveDelete}, true)
+	reg(doc+`/lock`, map[string]restHandler{http.MethodPost: s.wbRESTLock}, true)
+	reg(doc+`/publish`, map[string]restHandler{http.MethodPost: s.wbRESTPublish}, true)
+	reg(doc+`/revisions`, map[string]restHandler{http.MethodGet: s.wbRESTRevisions}, true)
+	reg(doc+`/revisions/(?P<rid>[\d]+)`, map[string]restHandler{http.MethodGet: s.wbRESTRevision}, true)
+	reg(doc+`/revisions/(?P<rid>[\d]+)/restore`, map[string]restHandler{http.MethodPost: s.wbRESTRestore}, true)
+	reg(`/web-builder/v2/library`, map[string]restHandler{http.MethodGet: s.wbRESTLibrary, http.MethodPost: s.wbRESTLibraryCreate}, true)
+	reg(`/web-builder/v2/library/(?P<id>[\d]+)`, map[string]restHandler{http.MethodDelete: s.wbRESTLibraryDelete}, true)
+	reg(`/web-builder/v2/prefs`, map[string]restHandler{http.MethodGet: s.wbRESTPrefs, http.MethodPut: s.wbRESTPrefsSave}, true)
+	reg(`/web-builder/v2/fonts/css2`, map[string]restHandler{http.MethodGet: s.wbRESTFontsCSS}, false) // a stylesheet: nonce in ?_wpnonce=
+}
+
+// --- shared helpers --------------------------------------------------------------------------------
+
+func wbTime(t time.Time) string { return t.UTC().Format(time.RFC3339) }
+
+// wbForbidden answers 401 for a logged-out request and 403 otherwise (core rest_forbidden).
+func wbForbidden(c *gin.Context, u *store.User) {
+	if u == nil {
+		restErr(c, http.StatusUnauthorized, webbuilder.ErrForbidden, "Sorry, you are not allowed to do that.")
+		return
+	}
+	restErr(c, http.StatusForbidden, webbuilder.ErrForbidden, "Sorry, you are not allowed to do that.")
+}
+
+// wbUser is the request's user when it has cap (edit_posts and the like), else it answers 401/403.
+func wbUser(c *gin.Context, cap string) *store.User {
+	u := restCurrent(c)
+	if u == nil || !u.Can(cap, nil) {
+		wbForbidden(c, u)
+		return nil
+	}
+	return u
+}
+
+// wbPost loads the {id} post for a document route: logged in, a builder post type, not trashed and
+// editable by the user (edit_post). It answers the error itself and returns nil on failure.
+func (s *Server) wbPost(c *gin.Context, r *restRequest) (*store.User, *store.Post) {
+	u := restCurrent(c)
+	if u == nil {
+		wbForbidden(c, nil)
+		return nil, nil
+	}
+	p, err := s.store.GetPost(c, r.ID())
+	if err != nil {
+		if errors.Is(err, store.ErrNotFound) {
+			restErr(c, http.StatusNotFound, webbuilder.ErrNotFound, "Invalid post ID.")
+		} else {
+			restErr(c, http.StatusInternalServerError, "db_error", "Could not read the post.")
+		}
+		return nil, nil
+	}
+	if !wbEnabledType(p.Type) {
+		restErr(c, http.StatusNotFound, webbuilder.ErrNotBuilder, "Pursae Web Builder is not enabled for this post type.")
+		return nil, nil
+	}
+	if p.Status == "trash" {
+		restErr(c, http.StatusNotFound, webbuilder.ErrNotFound, "Invalid post ID.")
+		return nil, nil
+	}
+	if !u.Can("edit_post", p) {
+		wbForbidden(c, u)
+		return nil, nil
+	}
+	return u, p
+}
+
+// wbBody is the raw request body, at most limit bytes (413 wb_too_large, data.limit). The REST
+// dispatcher has already decoded a JSON body into r.Body; it is re-encoded (without HTML escaping)
+// so the doc parser sees one JSON object either way.
+func wbBody(c *gin.Context, r *restRequest, limit int) ([]byte, bool) {
+	tooLarge := func() ([]byte, bool) {
+		restErr(c, http.StatusRequestEntityTooLarge, webbuilder.ErrTooLarge, "The request body is too large.", map[string]any{"limit": limit})
+		return nil, false
+	}
+	if c.Request.ContentLength > int64(limit) {
+		return tooLarge()
+	}
+	var raw []byte
+	if len(r.Body) > 0 {
+		var buf bytes.Buffer
+		enc := json.NewEncoder(&buf)
+		enc.SetEscapeHTML(false)
+		if err := enc.Encode(r.Body); err != nil {
+			restErr(c, http.StatusBadRequest, "rest_invalid_json", "Invalid JSON body passed.")
+			return nil, false
+		}
+		raw = bytes.TrimSpace(buf.Bytes())
+	} else if c.Request.Body != nil {
+		b, err := io.ReadAll(io.LimitReader(c.Request.Body, int64(limit)+1))
+		if err != nil {
+			restErr(c, http.StatusBadRequest, "rest_invalid_json", "Invalid JSON body passed.")
+			return nil, false
+		}
+		raw = bytes.TrimSpace(b)
+	}
+	if len(raw) > limit {
+		return tooLarge()
+	}
+	if len(raw) == 0 {
+		raw = []byte("{}")
+	}
+	return raw, true
+}
+
+// wbDecode decodes the body into v; 400 rest_invalid_json on failure.
+func wbDecode(c *gin.Context, raw []byte, v any) bool {
+	if err := json.Unmarshal(raw, v); err != nil {
+		restErr(c, http.StatusBadRequest, "rest_invalid_json", "Invalid JSON body passed.")
+		return false
+	}
+	return true
+}
+
+func wbInvalid(c *gin.Context, errs []webbuilder.ValidationError) {
+	msg := "The page could not be saved: it is not valid."
+	if len(errs) > 0 && errs[0].Message != "" {
+		msg = errs[0].Message
+	}
+	restErr(c, http.StatusUnprocessableEntity, webbuilder.ErrInvalidDoc, msg, map[string]any{"errors": errs})
+}
+
+func wbInvalid1(c *gin.Context, path, code, msg string) {
+	wbInvalid(c, []webbuilder.ValidationError{{Path: path, Code: code, Message: msg}})
+}
+
+// wbParseDoc validates and normalizes a doc for u (privileged parts stripped without
+// unfiltered_html). It answers 413 / 422 itself.
+func wbParseDoc(c *gin.Context, raw json.RawMessage, u *store.User) (*webbuilder.DocResult, bool) {
+	if len(raw) == 0 || string(raw) == "null" {
+		wbInvalid1(c, "/doc", webbuilder.VErrRequired, "The doc is required.")
+		return nil, false
+	}
+	res, err := webbuilder.ParseDoc(raw, webbuilder.DocOptions{UnfilteredHTML: u.Can("unfiltered_html", nil), PathPrefix: "/doc"})
+	switch {
+	case errors.Is(err, webbuilder.ErrDocTooLarge):
+		restErr(c, http.StatusRequestEntityTooLarge, webbuilder.ErrTooLarge, "The page is too large.", map[string]any{"limit": webbuilder.MaxDocBytes})
+		return nil, false
+	case err != nil:
+		wbInvalid1(c, "/doc", webbuilder.VErrRequired, "The doc is not a valid page document.")
+		return nil, false
+	case !res.Valid():
+		wbInvalid(c, res.Errors)
+		return nil, false
+	}
+	return res, true
+}
+
+// wbPage is a normalized PageSettings plus its JSON: the client's object with the four known
+// fields replaced by their normalized values (fields a newer editor adds are kept).
+func wbPage(raw json.RawMessage) (webbuilder.PageSettings, json.RawMessage) {
+	var ps webbuilder.PageSettings
+	obj := map[string]any{}
+	if len(raw) > 0 && string(raw) != "null" {
+		_ = json.Unmarshal(raw, &obj)
+		_ = json.Unmarshal(raw, &ps)
+	}
+	if obj == nil {
+		obj = map[string]any{}
+	}
+	ps.Title = wbClip(strings.TrimSpace(ps.Title), wbTitleMax)
+	ps.Slug = wbClip(strings.TrimSpace(ps.Slug), wbSlugMax)
+	ps.Description = wbClip(strings.TrimSpace(ps.Description), wbDescriptionMax)
+	if _, ok := obj["indexable"]; !ok {
+		ps.Indexable = true // a page is indexable unless it says otherwise
+	}
+	return ps, wbPageMerge(obj, ps)
+}
+
+func wbPageMerge(obj map[string]any, ps webbuilder.PageSettings) json.RawMessage {
+	obj["title"], obj["slug"], obj["description"], obj["indexable"] = ps.Title, ps.Slug, ps.Description, ps.Indexable
+	b, _ := json.Marshal(obj)
+	return b
+}
+
+// wbClip shortens s to at most n runes.
+func wbClip(s string, n int) string {
+	if utf8.RuneCountInString(s) <= n {
+		return s
+	}
+	r := []rune(s)
+	return string(r[:n])
+}
+
+// wbUserRefs resolves user ids to {id, name}, once per id per request.
+type wbUserRefs struct {
+	s     *Server
+	ctx   context.Context
+	cache map[int64]webbuilder.UserRef
+}
+
+func (s *Server) wbUserRefs(ctx context.Context) *wbUserRefs {
+	return &wbUserRefs{s: s, ctx: ctx, cache: map[int64]webbuilder.UserRef{}}
+}
+
+func (r *wbUserRefs) get(id int64) webbuilder.UserRef {
+	if ref, ok := r.cache[id]; ok {
+		return ref
+	}
+	ref := webbuilder.UserRef{ID: id}
+	if id > 0 {
+		if u, err := r.s.store.UserByID(r.ctx, id); err == nil {
+			ref.Name = wbUserName(u)
+		}
+	}
+	r.cache[id] = ref
+	return ref
+}
+
+// --- documents -------------------------------------------------------------------------------------
+
+// wbRESTDocument is GET documents/{id}: the doc, the user's newer draft and another user's lock.
+func (s *Server) wbRESTDocument(c *gin.Context, r *restRequest) {
+	u, p := s.wbPost(c, r)
+	if p == nil {
+		return
+	}
+	d, err := s.wbDocumentFor(c, p, u)
+	if err != nil {
+		restErr(c, http.StatusInternalServerError, "db_error", "Could not read the page.")
+		return
+	}
+	c.Header("Cache-Control", "no-store")
+	c.JSON(http.StatusOK, d)
+}
+
+type wbAutosaveBody struct {
+	Doc     json.RawMessage `json:"doc"`
+	Page    json.RawMessage `json:"page"`
+	BaseRev int             `json:"baseRev"`
+}
+
+// wbRESTAutosave is PUT documents/{id}/autosave: the user's draft row (the live page is untouched).
+func (s *Server) wbRESTAutosave(c *gin.Context, r *restRequest) {
+	u, p := s.wbPost(c, r)
+	if p == nil {
+		return
+	}
+	raw, ok := wbBody(c, r, webbuilder.MaxDocBytes)
+	if !ok {
+		return
+	}
+	var body wbAutosaveBody
+	if !wbDecode(c, raw, &body) {
+		return
+	}
+	res, ok := wbParseDoc(c, body.Doc, u)
+	if !ok {
+		return
+	}
+	_, pageJSON := wbPage(body.Page)
+	wb := s.store.WebBuilder()
+	d := &store.WebBuilderDraft{PostID: p.ID, UserID: u.ID, Doc: res.JSON, Page: pageJSON, BaseRev: body.BaseRev}
+	if err := wb.SaveDraft(c, d); err != nil {
+		restErr(c, http.StatusInternalServerError, "db_error", "Could not save the draft.")
+		return
+	}
+	_, _ = s.wbTakeLock(c, p.ID, u.ID, false) // autosave refreshes the caller's own (or a free) lock
+	rev, _ := wb.DocRev(c, p.ID)
+	c.JSON(http.StatusOK, webbuilder.AutosaveResponse{SavedAt: wbTime(d.UpdatedAt), Rev: rev})
+}
+
+// wbRESTAutosaveDelete is DELETE documents/{id}/autosave.
+func (s *Server) wbRESTAutosaveDelete(c *gin.Context, r *restRequest) {
+	u, p := s.wbPost(c, r)
+	if p == nil {
+		return
+	}
+	if err := s.store.WebBuilder().DeleteDraft(c, p.ID, u.ID); err != nil {
+		restErr(c, http.StatusInternalServerError, "db_error", "Could not delete the draft.")
+		return
+	}
+	c.JSON(http.StatusOK, map[string]any{"deleted": true})
+}
+
+// wbRESTLock is POST documents/{id}/lock: take a free or own lock, or with take another user's.
+func (s *Server) wbRESTLock(c *gin.Context, r *restRequest) {
+	u, p := s.wbPost(c, r)
+	if p == nil {
+		return
+	}
+	raw, ok := wbBody(c, r, 4<<10)
+	if !ok {
+		return
+	}
+	var body webbuilder.LockRequest
+	if !wbDecode(c, raw, &body) {
+		return
+	}
+	held, err := s.wbTakeLock(c, p.ID, u.ID, body.Take)
+	if err != nil {
+		restErr(c, http.StatusInternalServerError, "db_error", "Could not lock the page.")
+		return
+	}
+	ttl := time.Duration(webbuilder.LockTTLSeconds) * time.Second
+	if held {
+		c.JSON(http.StatusOK, webbuilder.LockResponse{Lock: nil, Expires: wbTime(time.Now().Add(ttl))})
+		return
+	}
+	fresh, err := s.store.GetPost(c, p.ID)
+	if err != nil {
+		restErr(c, http.StatusInternalServerError, "db_error", "Could not read the post.")
+		return
+	}
+	resp := webbuilder.LockResponse{Lock: s.wbLockHolder(c, fresh, u.ID), Expires: wbTime(time.Now().Add(ttl))}
+	if resp.Lock != nil {
+		if since, err := time.Parse(time.RFC3339, resp.Lock.Since); err == nil {
+			resp.Expires = wbTime(since.Add(ttl))
+		}
+	}
+	c.JSON(http.StatusOK, resp)
+}
+
+type wbPublishBody struct {
+	BaseRev    int                     `json:"baseRev"`
+	Status     string                  `json:"status"`
+	Reattach   bool                    `json:"reattach"`
+	Doc        json.RawMessage         `json:"doc"`
+	Page       json.RawMessage         `json:"page"`
+	Render     webbuilder.RenderResult `json:"render"`
+	UtilityCSS string                  `json:"utilityCss"`
+}
+
+// wbSnapshot is the sanitized part of a publish.
+type wbSnapshot struct {
+	html, css string
+	features  []string
+	stripped  []string
+}
+
+// wbSanitizeRender cleans the snapshot and CSS of a publish (contract steps 4 and 5). Without
+// unfiltered_html the section CSS (render.css) is dropped and srcdoc embeds are removed by the
+// snapshot sanitizer. It answers 413 / 422 itself.
+func (s *Server) wbSanitizeRender(c *gin.Context, p *store.Post, body *wbPublishBody, unfiltered bool, stripped []string) (*wbSnapshot, bool) {
+	out := &wbSnapshot{stripped: append([]string{}, stripped...)}
+	add := func(what string) {
+		for _, x := range out.stripped {
+			if x == what {
+				return
+			}
+		}
+		out.stripped = append(out.stripped, what)
+	}
+	rr := &body.Render
+	if rr.Renderer != webbuilder.RendererVersion {
+		wbInvalid1(c, "/render/renderer", webbuilder.VErrRenderer, "The page was rendered by an editor of another version. Reload the editor.")
+		return nil, false
+	}
+	lb := s.links(c)
+	html, changed, err := webbuilder.SanitizeSnapshot(rr.HTML, webbuilder.SnapshotOptions{
+		FormActionPrefix: lb.HomeURL("/wp-json/" + webbuilder.RESTNamespace + "/forms/" + itoa64(p.ID) + "/"),
+		EmbedHTML:        unfiltered,
+	})
+	switch {
+	case errors.Is(err, webbuilder.ErrSnapshotTooLarge):
+		wbInvalid1(c, "/render/html", webbuilder.VErrTooLong, "The rendered page is too large.")
+		return nil, false
+	case err != nil:
+		wbInvalid1(c, "/render/html", webbuilder.VErrEnum, "The rendered page must be exactly one wb-page root element.")
+		return nil, false
+	}
+	out.html = html
+	if changed {
+		add(webbuilder.StrippedMarkup)
+	}
+	sectionCSS := rr.CSS
+	if !unfiltered && strings.TrimSpace(sectionCSS) != "" {
+		sectionCSS = ""
+		add(webbuilder.StrippedCustomCSS)
+	}
+	if len(body.UtilityCSS)+len(sectionCSS) > webbuilder.MaxCSSBytes {
+		restErr(c, http.StatusRequestEntityTooLarge, webbuilder.ErrTooLarge, "The page CSS is too large.", map[string]any{"limit": webbuilder.MaxCSSBytes})
+		return nil, false
+	}
+	opts := webbuilder.CSSOptions{SiteOrigin: strings.TrimRight(lb.HomeURL("/"), "/")}
+	var parts []string
+	for _, x := range []struct{ path, css string }{{"/utilityCss", body.UtilityCSS}, {"/render/css", sectionCSS}} {
+		if strings.TrimSpace(x.css) == "" {
+			continue
+		}
+		clean, changed, err := webbuilder.SanitizeCSS(x.css, opts)
+		switch {
+		case errors.Is(err, webbuilder.ErrCSSTooLarge):
+			restErr(c, http.StatusRequestEntityTooLarge, webbuilder.ErrTooLarge, "The page CSS is too large.", map[string]any{"limit": webbuilder.MaxCSSBytes})
+			return nil, false
+		case err != nil:
+			wbInvalid1(c, x.path, webbuilder.VErrCSS, "The page CSS is not valid.")
+			return nil, false
+		}
+		if changed {
+			add(webbuilder.StrippedCSS)
+		}
+		if clean = strings.TrimSpace(clean); clean != "" {
+			parts = append(parts, clean)
+		}
+	}
+	out.css = strings.Join(parts, "\n")
+	out.features = wbFeatures(rr.Features)
+	return out, true
+}
+
+// wbFeatures keeps the known runtime features, sorted and unique.
+func wbFeatures(in []webbuilder.Feature) []string {
+	known := map[webbuilder.Feature]bool{webbuilder.FeatureMenu: true, webbuilder.FeatureAcc: true, webbuilder.FeatureTabs: true,
+		webbuilder.FeatureDismiss: true, webbuilder.FeatureForm: true, webbuilder.FeatureMotion: true, webbuilder.FeatureEmbed: true}
+	seen := map[string]bool{}
+	out := []string{}
+	for _, f := range in {
+		if known[f] && !seen[string(f)] {
+			seen[string(f)] = true
+			out = append(out, string(f))
+		}
+	}
+	sort.Strings(out)
+	return out
+}
+
+// wbRevConflict answers 409 wb_rev_conflict with the stored state.
+func (s *Server) wbRevConflict(c *gin.Context, row *store.WebBuilderDoc) {
+	data := map[string]any{"rev": 0, "modified": "", "modifiedBy": nil}
+	if row != nil {
+		data["rev"], data["modified"] = row.Rev, wbTime(row.UpdatedAt)
+		if row.SnapshotUser > 0 {
+			data["modifiedBy"] = s.wbUserRefs(c).get(row.SnapshotUser)
+		}
+	}
+	restErr(c, http.StatusConflict, webbuilder.ErrRevConflict, "This page was published by someone else after you started editing.", data)
+}
+
+// wbRESTPublish is POST documents/{id}/publish (contract §3.1, steps 1–8).
+func (s *Server) wbRESTPublish(c *gin.Context, r *restRequest) {
+	u, p := s.wbPost(c, r)
+	if p == nil {
+		return
+	}
+	if lock := s.wbLockHolder(c, p, u.ID); lock != nil {
+		restErr(c, http.StatusConflict, webbuilder.ErrLocked, lock.User.Name+" is editing this page.", map[string]any{"lock": lock})
+		return
+	}
+	raw, ok := wbBody(c, r, webbuilder.MaxDocBytes)
+	if !ok {
+		return
+	}
+	var body wbPublishBody
+	if !wbDecode(c, raw, &body) {
+		return
+	}
+	status := body.Status
+	switch status {
+	case webbuilder.StatusPublish, webbuilder.StatusPrivate:
+		if !u.Can("publish_post", p) {
+			status = webbuilder.StatusPending
+		}
+	case webbuilder.StatusDraft, webbuilder.StatusPending:
+	default:
+		restErr(c, http.StatusBadRequest, "rest_invalid_param", "Invalid parameter(s): status")
+		return
+	}
+	wb := s.store.WebBuilder()
+	// Cheap early rev check; the authoritative one runs under the publish lock below.
+	row, err := wb.Doc(c, p.ID)
+	if err != nil && !errors.Is(err, store.ErrNotFound) {
+		restErr(c, http.StatusInternalServerError, "db_error", "Could not read the page.")
+		return
+	}
+	if err != nil {
+		row = nil
+	}
+	if (row == nil && body.BaseRev != 0) || (row != nil && row.Rev != body.BaseRev) {
+		s.wbRevConflict(c, row)
+		return
+	}
+	if row != nil && row.Detached && !body.Reattach {
+		restErr(c, http.StatusConflict, webbuilder.ErrDetached, "This page was edited outside the builder.")
+		return
+	}
+	unfiltered := u.Can("unfiltered_html", nil)
+	res, ok := wbParseDoc(c, body.Doc, u)
+	if !ok {
+		return
+	}
+	snap, ok := s.wbSanitizeRender(c, p, &body, unfiltered, res.Stripped)
+	if !ok {
+		return
+	}
+	ps, _ := wbPage(body.Page)
+	fonts, _ := json.Marshal(webbuilder.DocFonts(&res.Doc))
+	content := webbuilder.FallbackHTML(&res.Doc)
+
+	tx, err := s.store.Pool.Begin(c)
+	if err != nil {
+		restErr(c, http.StatusInternalServerError, "db_error", "Could not publish the page.")
+		return
+	}
+	defer tx.Rollback(context.WithoutCancel(c))
+	if _, err := tx.Exec(c, `SELECT pg_advisory_xact_lock($1, $2)`, wbPublishLockClass, int32(p.ID)); err != nil {
+		restErr(c, http.StatusInternalServerError, "db_error", "Could not publish the page.")
+		return
+	}
+	wbtx := store.WebBuilderIn(tx)
+	row, err = wbtx.DocForUpdate(c, p.ID)
+	if err != nil && !errors.Is(err, store.ErrNotFound) {
+		restErr(c, http.StatusInternalServerError, "db_error", "Could not read the page.")
+		return
+	}
+	if err != nil {
+		row = nil
+	}
+	if (row == nil && body.BaseRev != 0) || (row != nil && row.Rev != body.BaseRev) {
+		s.wbRevConflict(c, row)
+		return
+	}
+	if row != nil && row.Detached && !body.Reattach {
+		restErr(c, http.StatusConflict, webbuilder.ErrDetached, "This page was edited outside the builder.")
+		return
+	}
+	// The post as it is now (another save may have changed its meta since the request started).
+	fresh, err := s.store.GetPost(c, p.ID)
+	if err != nil {
+		restErr(c, http.StatusInternalServerError, "db_error", "Could not read the post.")
+		return
+	}
+	if lock := s.wbLockHolder(c, fresh, u.ID); lock != nil {
+		restErr(c, http.StatusConflict, webbuilder.ErrLocked, lock.User.Name+" is editing this page.", map[string]any{"lock": lock})
+		return
+	}
+	prevRevision, err := wbtx.LatestPostRevisionID(c, p.ID)
+	if err != nil {
+		restErr(c, http.StatusInternalServerError, "db_error", "Could not publish the page.")
+		return
+	}
+	// Step 6: PageSettings → the post; step 7: posts.content is the fallback generated from the doc.
+	fresh.Title = ps.Title
+	if ps.Slug != "" {
+		fresh.Slug = ps.Slug
+	}
+	fresh.Excerpt = ps.Description
+	fresh.Content = content
+	fresh.Status = status
+	if fresh.Meta == nil {
+		fresh.Meta = map[string]any{}
+	}
+	fresh.Meta[webbuilder.PostMarkerMeta] = "1"
+	fresh.Meta[webbuilder.EditLockMeta] = strconv.FormatInt(time.Now().Unix(), 10) + ":" + itoa64(u.ID)
+	fresh.Meta[seogoKey("description")] = ps.Description
+	if !ps.Indexable {
+		fresh.Meta[seogoKey("noindex")] = "noindex"
+	} else if seogoMeta(fresh.Meta, "noindex") == "noindex" {
+		fresh.Meta[seogoKey("noindex")] = "" // back to the site default
+	}
+	// The core update runs on its own connection (it opens its own transaction); the advisory lock
+	// held by tx keeps other publishes of this post out until tx commits.
+	if err := s.store.UpdatePost(c, fresh, u.ID); err != nil {
+		restErr(c, http.StatusInternalServerError, "db_update_error", "Could not update post in the database.")
+		return
+	}
+	revisionID, err := wbtx.LatestPostRevisionID(c, p.ID)
+	if err == nil && revisionID == prevRevision {
+		// Same title, excerpt and content (a style-only change): the core update wrote no revision,
+		// but every builder publish gets one.
+		err = tx.QueryRow(c, `INSERT INTO post_revisions(post_id, author_id, title, excerpt, content) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+			p.ID, u.ID, fresh.Title, fresh.Excerpt, fresh.Content).Scan(&revisionID)
+	}
+	if err != nil {
+		restErr(c, http.StatusInternalServerError, "db_error", "Could not record the revision.")
+		return
+	}
+	pageJSON := wbPageMerge(wbPageObject(body.Page), webbuilder.PageSettings{Title: fresh.Title, Slug: fresh.Slug, Description: ps.Description, Indexable: ps.Indexable})
+	d := &store.WebBuilderDoc{PostID: p.ID, Doc: res.JSON, Page: pageJSON, HTML: snap.html, CSS: snap.css, Fonts: fonts,
+		Features: snap.features, Renderer: webbuilder.RendererVersion, ContentHash: store.WebBuilderContentHash(fresh.Content),
+		SnapshotUser: u.ID, SnapshotUnfiltered: unfiltered}
+	if err := wbtx.PublishDoc(c, d, body.BaseRev); err != nil {
+		var rc *store.RevConflictError
+		if errors.As(err, &rc) {
+			s.wbRevConflict(c, &store.WebBuilderDoc{Rev: rc.Rev, UpdatedAt: rc.UpdatedAt, SnapshotUser: rc.SnapshotUser})
+			return
+		}
+		restErr(c, http.StatusInternalServerError, "db_error", "Could not publish the page.")
+		return
+	}
+	if err := wbtx.AddRevision(c, &store.WebBuilderRevision{RevisionID: revisionID, PostID: p.ID, Rev: d.Rev, Doc: res.JSON,
+		Page: pageJSON, Renderer: webbuilder.RendererVersion}); err != nil {
+		restErr(c, http.StatusInternalServerError, "db_error", "Could not record the revision.")
+		return
+	}
+	if err := wbtx.DeleteDraft(c, p.ID, u.ID); err != nil {
+		restErr(c, http.StatusInternalServerError, "db_error", "Could not publish the page.")
+		return
+	}
+	if err := tx.Commit(c); err != nil {
+		restErr(c, http.StatusInternalServerError, "db_error", "Could not publish the page.")
+		return
+	}
+	if after, err := s.store.GetPost(c, p.ID); err == nil {
+		fresh = after
+	}
+	s.afterPostSave(c, fresh) // save_post side effects, WPGo Cache purge of the post included
+	c.JSON(http.StatusOK, webbuilder.PublishResponse{Rev: d.Rev, Status: fresh.Status, Permalink: s.links(c).Permalink(fresh),
+		RevisionID: revisionID, Modified: wbTime(fresh.ModifiedAt), Stripped: snap.stripped})
+}
+
+// wbPageObject is the client's page object ({} when it is not one).
+func wbPageObject(raw json.RawMessage) map[string]any {
+	obj := map[string]any{}
+	if len(raw) > 0 {
+		_ = json.Unmarshal(raw, &obj)
+	}
+	if obj == nil {
+		obj = map[string]any{}
+	}
+	return obj
+}
+
+// --- revisions -------------------------------------------------------------------------------------
+
+// wbRESTRevisions is GET documents/{id}/revisions?page=N (newest first, 50 per page).
+func (s *Server) wbRESTRevisions(c *gin.Context, r *restRequest) {
+	_, p := s.wbPost(c, r)
+	if p == nil {
+		return
+	}
+	page := 1
+	if n, err := strconv.Atoi(c.Query("page")); err == nil && n > 0 {
+		page = n
+	}
+	wb := s.store.WebBuilder()
+	total, err := wb.CountRevisions(c, p.ID)
+	if err != nil {
+		restErr(c, http.StatusInternalServerError, "db_error", "Could not read the revisions.")
+		return
+	}
+	list, err := wb.Revisions(c, p.ID, wbRevisionsPerPage, (page-1)*wbRevisionsPerPage)
+	if err != nil {
+		restErr(c, http.StatusInternalServerError, "db_error", "Could not read the revisions.")
+		return
+	}
+	refs := s.wbUserRefs(c)
+	out := make([]webbuilder.RevisionSummary, 0, len(list))
+	for _, x := range list {
+		out = append(out, webbuilder.RevisionSummary{ID: x.RevisionID, Rev: x.Rev, Author: refs.get(x.AuthorID),
+			Date: wbTime(x.Date), Title: x.Title, Renderer: x.Renderer})
+	}
+	pages := (total + wbRevisionsPerPage - 1) / wbRevisionsPerPage
+	if pages < 1 {
+		pages = 1
+	}
+	c.Header("X-WP-Total", strconv.Itoa(total))
+	c.Header("X-WP-TotalPages", strconv.Itoa(pages))
+	c.JSON(http.StatusOK, out)
+}
+
+// wbRevision loads the {rid} builder revision of the {id} post.
+func (s *Server) wbRevision(c *gin.Context, r *restRequest) (*store.User, *store.Post, *store.WebBuilderRevision) {
+	u, p := s.wbPost(c, r)
+	if p == nil {
+		return nil, nil, nil
+	}
+	rid, _ := strconv.ParseInt(r.Params["rid"], 10, 64)
+	rev, err := s.store.WebBuilder().Revision(c, p.ID, rid)
+	if err != nil {
+		if errors.Is(err, store.ErrNotFound) {
+			restErr(c, http.StatusNotFound, webbuilder.ErrNotFound, "Invalid revision ID.")
+		} else {
+			restErr(c, http.StatusInternalServerError, "db_error", "Could not read the revision.")
+		}
+		return nil, nil, nil
+	}
+	return u, p, rev
+}
+
+type wbRevisionJSON struct {
+	ID   int64           `json:"id"`
+	Rev  int             `json:"rev"`
+	Doc  json.RawMessage `json:"doc"`
+	Page json.RawMessage `json:"page"`
+}
+
+// wbRESTRevision is GET documents/{id}/revisions/{rid}.
+func (s *Server) wbRESTRevision(c *gin.Context, r *restRequest) {
+	_, _, rev := s.wbRevision(c, r)
+	if rev == nil {
+		return
+	}
+	c.JSON(http.StatusOK, wbRevisionJSON{ID: rev.RevisionID, Rev: rev.Rev, Doc: rev.Doc, Page: wbPageJSON(rev.Page, json.RawMessage("{}"))})
+}
+
+// wbRESTRestore is POST documents/{id}/revisions/{rid}/restore: the revision becomes the caller's
+// draft (re-normalized for the caller's capabilities); the editor loads it and publishes.
+func (s *Server) wbRESTRestore(c *gin.Context, r *restRequest) {
+	u, p, rev := s.wbRevision(c, r)
+	if rev == nil {
+		return
+	}
+	raw, ok := wbBody(c, r, 4<<10)
+	if !ok {
+		return
+	}
+	var body webbuilder.RestoreRequest
+	if !wbDecode(c, raw, &body) {
+		return
+	}
+	res, ok := wbParseDoc(c, rev.Doc, u)
+	if !ok {
+		return
+	}
+	_, pageJSON := wbPage(rev.Page)
+	d := &store.WebBuilderDraft{PostID: p.ID, UserID: u.ID, Doc: res.JSON, Page: pageJSON, BaseRev: body.BaseRev}
+	if err := s.store.WebBuilder().SaveDraft(c, d); err != nil {
+		restErr(c, http.StatusInternalServerError, "db_error", "Could not save the draft.")
+		return
+	}
+	c.JSON(http.StatusOK, wbDraft{Doc: d.Doc, Page: d.Page, BaseRev: d.BaseRev, SavedAt: wbTime(d.UpdatedAt)})
+}
+
+// --- library ---------------------------------------------------------------------------------------
+
+type wbLibraryJSON struct {
+	ID      string             `json:"id"`
+	Name    string             `json:"name"`
+	Section json.RawMessage    `json:"section"`
+	Author  webbuilder.UserRef `json:"author"`
+	Created string             `json:"created"`
+}
+
+func wbLibraryOut(it *store.WebBuilderLibraryItem, refs *wbUserRefs) wbLibraryJSON {
+	return wbLibraryJSON{ID: itoa64(it.ID), Name: it.Name, Section: it.Data, Author: refs.get(it.AuthorID), Created: wbTime(it.CreatedAt)}
+}
+
+// wbRESTLibrary is GET library: the site's saved components, newest first.
+func (s *Server) wbRESTLibrary(c *gin.Context, _ *restRequest) {
+	if wbUser(c, "edit_posts") == nil {
+		return
+	}
+	items, err := s.store.WebBuilder().LibraryItems(c)
+	if err != nil {
+		restErr(c, http.StatusInternalServerError, "db_error", "Could not read the library.")
+		return
+	}
+	refs := s.wbUserRefs(c)
+	out := make([]wbLibraryJSON, 0, len(items))
+	for _, it := range items {
+		out = append(out, wbLibraryOut(it, refs))
+	}
+	c.Header("Cache-Control", "no-store")
+	c.JSON(http.StatusOK, out)
+}
+
+type wbLibraryBody struct {
+	Name    string          `json:"name"`
+	Section json.RawMessage `json:"section"`
+}
+
+// wbRESTLibraryCreate is POST library: a saved component, validated like a doc section.
+func (s *Server) wbRESTLibraryCreate(c *gin.Context, r *restRequest) {
+	u := wbUser(c, "edit_posts")
+	if u == nil {
+		return
+	}
+	raw, ok := wbBody(c, r, webbuilder.MaxDocBytes)
+	if !ok {
+		return
+	}
+	var body wbLibraryBody
+	if !wbDecode(c, raw, &body) {
+		return
+	}
+	name := strings.TrimSpace(body.Name)
+	switch {
+	case name == "":
+		wbInvalid1(c, "/name", webbuilder.VErrRequired, "The component needs a name.")
+		return
+	case utf8.RuneCountInString(name) > wbNameMax:
+		wbInvalid1(c, "/name", webbuilder.VErrTooLong, "The component name is too long.")
+		return
+	case len(body.Section) == 0 || string(body.Section) == "null":
+		wbInvalid1(c, "/section", webbuilder.VErrRequired, "The component needs a section.")
+		return
+	}
+	res, err := webbuilder.ParseSection(body.Section, webbuilder.DocOptions{UnfilteredHTML: u.Can("unfiltered_html", nil), PathPrefix: "/section"})
+	switch {
+	case errors.Is(err, webbuilder.ErrDocTooLarge):
+		restErr(c, http.StatusRequestEntityTooLarge, webbuilder.ErrTooLarge, "The component is too large.", map[string]any{"limit": webbuilder.MaxDocBytes})
+		return
+	case err != nil:
+		wbInvalid1(c, "/section", webbuilder.VErrRequired, "The component is not a valid section.")
+		return
+	case !res.Valid():
+		wbInvalid(c, res.Errors)
+		return
+	case res.Section == nil:
+		restErr(c, http.StatusForbidden, webbuilder.ErrForbidden, "Sorry, you are not allowed to save HTML sections.")
+		return
+	}
+	it := &store.WebBuilderLibraryItem{Name: name, Data: res.JSON, AuthorID: u.ID}
+	if err := s.store.WebBuilder().AddLibraryItem(c, it, webbuilder.MaxLibraryItems); err != nil {
+		if errors.Is(err, store.ErrLibraryFull) {
+			restErr(c, http.StatusConflict, "wb_library_full", "The library is full. Delete a saved component first.", map[string]any{"limit": webbuilder.MaxLibraryItems})
+			return
+		}
+		restErr(c, http.StatusInternalServerError, "db_error", "Could not save the component.")
+		return
+	}
+	c.JSON(http.StatusCreated, wbLibraryOut(it, s.wbUserRefs(c)))
+}
+
+// wbRESTLibraryDelete is DELETE library/{id}: the author, or a user with edit_others_posts.
+func (s *Server) wbRESTLibraryDelete(c *gin.Context, r *restRequest) {
+	u := wbUser(c, "edit_posts")
+	if u == nil {
+		return
+	}
+	wb := s.store.WebBuilder()
+	it, err := wb.LibraryItem(c, r.ID())
+	if err != nil {
+		if errors.Is(err, store.ErrNotFound) {
+			restErr(c, http.StatusNotFound, webbuilder.ErrNotFound, "Invalid component ID.")
+		} else {
+			restErr(c, http.StatusInternalServerError, "db_error", "Could not read the library.")
+		}
+		return
+	}
+	if it.AuthorID != u.ID && !u.Can("edit_others_posts", nil) {
+		wbForbidden(c, u)
+		return
+	}
+	if err := wb.DeleteLibraryItem(c, it.ID); err != nil && !errors.Is(err, store.ErrNotFound) {
+		restErr(c, http.StatusInternalServerError, "db_error", "Could not delete the component.")
+		return
+	}
+	c.JSON(http.StatusOK, map[string]any{"deleted": true})
+}
+
+// --- prefs -----------------------------------------------------------------------------------------
+
+var wbPrefKeyRe = regexp.MustCompile(webbuilder.PrefKeyPattern)
+
+// wbRESTPrefs is GET prefs: the user's editor preferences.
+func (s *Server) wbRESTPrefs(c *gin.Context, _ *restRequest) {
+	u := wbUser(c, "edit_posts")
+	if u == nil {
+		return
+	}
+	var raw []byte
+	err := s.store.Pool.QueryRow(c, `SELECT coalesce(meta->$2, '{}'::jsonb) FROM users WHERE id = $1`, u.ID, webbuilder.UserPrefsMeta).Scan(&raw)
+	if err != nil {
+		restErr(c, http.StatusInternalServerError, "db_error", "Could not read the preferences.")
+		return
+	}
+	c.Header("Cache-Control", "no-store")
+	c.Data(http.StatusOK, "application/json; charset=utf-8", wbPrefsObject(raw))
+}
+
+// wbPrefsObject is raw when it is a JSON object, else {}.
+func wbPrefsObject(raw []byte) []byte {
+	var m map[string]json.RawMessage
+	if json.Unmarshal(raw, &m) != nil || m == nil {
+		return []byte("{}")
+	}
+	return raw
+}
+
+// wbRESTPrefsSave is PUT prefs: the body is merged into the stored preferences; null deletes a key.
+func (s *Server) wbRESTPrefsSave(c *gin.Context, r *restRequest) {
+	u := wbUser(c, "edit_posts")
+	if u == nil {
+		return
+	}
+	raw, ok := wbBody(c, r, 4*webbuilder.MaxPrefsBytes)
+	if !ok {
+		return
+	}
+	var patch map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &patch); err != nil || patch == nil {
+		restErr(c, http.StatusBadRequest, "rest_invalid_json", "The preferences must be a JSON object.")
+		return
+	}
+	for k := range patch {
+		if !wbPrefKeyRe.MatchString(k) {
+			restErr(c, http.StatusBadRequest, "rest_invalid_param", "Invalid preference key: "+wbClip(k, 64), map[string]any{"key": wbClip(k, 64)})
+			return
+		}
+	}
+	var out []byte
+	tooLarge := errors.New("too large")
+	err := pgx.BeginFunc(c, s.store.Pool, func(tx pgx.Tx) error {
+		var cur []byte
+		if err := tx.QueryRow(c, `SELECT coalesce(meta->$2, '{}'::jsonb) FROM users WHERE id = $1 FOR UPDATE`, u.ID, webbuilder.UserPrefsMeta).Scan(&cur); err != nil {
+			return err
+		}
+		m := map[string]json.RawMessage{}
+		_ = json.Unmarshal(wbPrefsObject(cur), &m)
+		for k, v := range patch {
+			if string(bytes.TrimSpace(v)) == "null" {
+				delete(m, k)
+			} else {
+				m[k] = v
+			}
+		}
+		b, err := json.Marshal(m)
+		if err != nil {
+			return err
+		}
+		if len(b) > webbuilder.MaxPrefsBytes {
+			return tooLarge
+		}
+		out = b
+		_, err = tx.Exec(c, `UPDATE users SET meta = coalesce(meta, '{}'::jsonb) || jsonb_build_object($2::text, $3::jsonb) WHERE id = $1`,
+			u.ID, webbuilder.UserPrefsMeta, string(b))
+		return err
+	})
+	if errors.Is(err, tooLarge) {
+		restErr(c, http.StatusRequestEntityTooLarge, webbuilder.ErrTooLarge, "The preferences are too large.", map[string]any{"limit": webbuilder.MaxPrefsBytes})
+		return
+	}
+	if err != nil {
+		restErr(c, http.StatusInternalServerError, "db_error", "Could not save the preferences.")
+		return
+	}
+	c.Data(http.StatusOK, "application/json; charset=utf-8", out)
+}
+
+// --- fonts -----------------------------------------------------------------------------------------
+
+// wbFontRequest is one family= of a Google Fonts css2 query, resolved against the builder's font
+// library: weights snapped to the ones the family ships (contract §3.3 weight allowlist).
+type wbFontRequest struct {
+	family string
+	normal map[int]bool
+	italic map[int]bool
+}
+
+// wbParseCSS2Family parses "Inter:wght@400;700" / "Inter:ital,wght@0,400;1,700" / "Inter". ok is
+// false for a family outside the builder's library or the Google Fonts catalogue.
+func wbParseCSS2Family(v string) (wbFontRequest, bool) {
+	name, axes, _ := strings.Cut(v, ":")
+	name = strings.TrimSpace(strings.ReplaceAll(name, "+", " "))
+	f, ok := webbuilder.LookupFont(name)
+	if !ok || gweGoogleFontType(f.Family) == "" {
+		return wbFontRequest{}, false
+	}
+	req := wbFontRequest{family: f.Family, normal: map[int]bool{}, italic: map[int]bool{}}
+	snap := func(list []int, w int) (int, bool) {
+		if len(list) == 0 {
+			return 0, false
+		}
+		best := list[0]
+		for _, x := range list {
+			if wbAbs(x-w) < wbAbs(best-w) {
+				best = x
+			}
+		}
+		return best, true
+	}
+	addW := func(italic bool, w int) {
+		if w < 100 || w > 900 {
+			return
+		}
+		if italic {
+			if x, ok := snap(f.Italics, w); ok {
+				req.italic[x] = true
+			}
+			return
+		}
+		if x, ok := snap(f.Weights, w); ok {
+			req.normal[x] = true
+		}
+	}
+	tags, tuples, _ := strings.Cut(axes, "@")
+	names := strings.Split(tags, ",")
+	italIdx, wghtIdx := -1, -1
+	for i, n := range names {
+		switch strings.TrimSpace(n) {
+		case "ital":
+			italIdx = i
+		case "wght":
+			wghtIdx = i
+		}
+	}
+	if axes != "" && tuples != "" {
+		for _, t := range strings.Split(tuples, ";") {
+			vals := strings.Split(t, ",")
+			if len(vals) != len(names) {
+				continue
+			}
+			italic := italIdx >= 0 && strings.TrimSpace(vals[italIdx]) == "1"
+			w := 400
+			if wghtIdx >= 0 {
+				// "100..900" ranges (variable fonts) ask for every weight in the range.
+				lo, hi, isRange := strings.Cut(strings.TrimSpace(vals[wghtIdx]), "..")
+				a, err1 := strconv.Atoi(lo)
+				if err1 != nil {
+					continue
+				}
+				if isRange {
+					b, err2 := strconv.Atoi(hi)
+					if err2 != nil {
+						continue
+					}
+					for x := (a + 99) / 100 * 100; x <= b; x += 100 {
+						addW(italic, x)
+					}
+					continue
+				}
+				w = a
+			}
+			addW(italic, w)
+		}
+	}
+	if len(req.normal) == 0 && len(req.italic) == 0 {
+		addW(false, 400)
+	}
+	return req, true
+}
+
+func wbAbs(x int) int {
+	if x < 0 {
+		return -x
+	}
+	return x
+}
+
+var (
+	wbFaceBlockRe = regexp.MustCompile(`(?s)(/\*[^*]*\*/\s*)?@font-face\s*\{[^}]*\}`)
+	wbFaceURLRe   = regexp.MustCompile(`url\(\s*['"]?\.\./fonts/([A-Za-z0-9._-]+)['"]?\s*\)`)
+	wbFaceWRe     = regexp.MustCompile(`font-weight\s*:\s*([0-9]+|normal|bold)(?:\s+([0-9]+))?`)
+)
+
+// wbFontFaces filters a localized family stylesheet (gfonts.go, every weight) down to the
+// requested faces and points their src at fontsURL (absolute, ends with "/").
+func wbFontFaces(css string, req wbFontRequest, fontsURL string) string {
+	var sb strings.Builder
+	for _, m := range wbFaceBlockRe.FindAllString(css, -1) {
+		italic := gweFaceStyleRe.MatchString(m) && gweFaceStyleRe.FindStringSubmatch(m)[1] == "italic"
+		want := req.normal
+		if italic {
+			want = req.italic
+		}
+		lo, hi := 400, 400
+		if w := wbFaceWRe.FindStringSubmatch(m); w != nil {
+			switch w[1] {
+			case "normal":
+			case "bold":
+				lo, hi = 700, 700
+			default:
+				lo, _ = strconv.Atoi(w[1])
+				hi = lo
+				if w[2] != "" {
+					hi, _ = strconv.Atoi(w[2])
+				}
+			}
+		}
+		keep := false
+		for w := range want {
+			if w >= lo && w <= hi {
+				keep = true
+				break
+			}
+		}
+		if !keep {
+			continue
+		}
+		sb.WriteString(wbFaceURLRe.ReplaceAllString(m, "url("+fontsURL+"$1)"))
+		sb.WriteString("\n")
+	}
+	return sb.String()
+}
+
+// wbFontsDisk measures the localized fonts once per wbFontsDiskTTL.
+var wbFontsDisk struct {
+	sync.Mutex
+	dir  string
+	at   time.Time
+	size int64
+}
+
+func (s *Server) wbFontsDiskUsage() int64 {
+	dir := filepath.Join(s.cfg.UploadsDir, filepath.FromSlash(gweFontsBase))
+	wbFontsDisk.Lock()
+	defer wbFontsDisk.Unlock()
+	if wbFontsDisk.dir == dir && time.Since(wbFontsDisk.at) < wbFontsDiskTTL {
+		return wbFontsDisk.size
+	}
+	var n int64
+	_ = filepath.WalkDir(dir, func(_ string, d fs.DirEntry, err error) error {
+		if err == nil && !d.IsDir() {
+			if info, err := d.Info(); err == nil {
+				n += info.Size()
+			}
+		}
+		return nil
+	})
+	wbFontsDisk.dir, wbFontsDisk.at, wbFontsDisk.size = dir, time.Now(), n
+	return n
+}
+
+// wbRESTFontsCSS is GET fonts/css2?family=…: the Google Fonts css2 API served from this site. The
+// families are downloaded (once, all weights, by the localizer in gfonts.go) only here, for editor
+// users; the answer lists the requested faces with src under the local uploads directory.
+func (s *Server) wbRESTFontsCSS(c *gin.Context, _ *restRequest) {
+	if wbUser(c, "edit_posts") == nil {
+		return
+	}
+	families := c.QueryArray("family")
+	if len(families) == 0 {
+		restErr(c, http.StatusBadRequest, "rest_invalid_param", "Missing parameter(s): family")
+		return
+	}
+	if len(families) > wbFontsPerRequest {
+		restErr(c, http.StatusBadRequest, "rest_invalid_param", "Too many families in one request.", map[string]any{"limit": wbFontsPerRequest})
+		return
+	}
+	fontsURL := s.links(c).HomeURL("/wp-content/uploads/" + gweFontsBase + "/fonts/")
+	var sb strings.Builder
+	sb.WriteString("/* Google Fonts served locally by Pursae Web Builder (SIL Open Font License / Apache License, see fonts.google.com) */\n")
+	seen := map[string]bool{}
+	for _, v := range families {
+		req, ok := wbParseCSS2Family(v)
+		if !ok {
+			sb.WriteString("/* skipped: not a library font */\n")
+			continue
+		}
+		if seen[req.family] {
+			continue
+		}
+		seen[req.family] = true
+		cssPath := filepath.Join(s.gweFontsDir("css"), gweFontKey(req.family)+".css")
+		if _, err := os.Stat(cssPath); err != nil {
+			if s.wbFontsDiskUsage() >= wbFontsDiskCap {
+				sb.WriteString("/* " + req.family + ": not downloaded, the font storage is full */\n")
+				continue
+			}
+			if !s.gweEnsureGoogleFont(req.family, wbFontsWait) {
+				sb.WriteString("/* " + req.family + ": not available yet */\n")
+				continue
+			}
+		}
+		b, err := os.ReadFile(cssPath)
+		if err != nil {
+			continue
+		}
+		sb.WriteString(wbFontFaces(string(b), req, fontsURL))
+	}
+	c.Header("Cache-Control", wbFontsCacheMaxAge)
+	c.Header("X-Content-Type-Options", "nosniff")
+	c.Data(http.StatusOK, "text/css; charset=utf-8", []byte(sb.String()))
+}
