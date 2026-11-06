@@ -665,4 +665,41 @@ func TestWBTemplateGolylang(t *testing.T) {
 			t.Errorf("%s: %d, want %d", lang, id, want)
 		}
 	}
+
+	// Duplicate keeps the language, not the translation group.
+	src, err := srv.store.WebBuilder().Template(ctx, fr.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cp, err := srv.wbDuplicateTemplate(ctx, src, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := srv.pllObjLang(ctx, pllPost, cp.ID); got != "fr" {
+		t.Errorf("duplicate language = %q, want fr", got)
+	}
+	if tr := srv.pllTranslations(ctx, pllPost, cp.ID); len(tr) != 1 || tr["fr"] != cp.ID {
+		t.Errorf("duplicate joined the translation group: %v", tr)
+	}
+	if tr := srv.pllTranslations(ctx, pllPost, fr.ID); tr["fr"] != fr.ID || tr["en"] != en.ID {
+		t.Errorf("source group changed: %v", tr)
+	}
+
+	// A new translation copies the template's type, conditions and priority.
+	foot := wbtTemplate(t, srv, webbuilder.TemplateFooter, "Footer EN", []string{"include/general", "exclude/404"}, 9, "")
+	_ = srv.pllSetLang(ctx, pllPost, foot.ID, "en")
+	dst, err := srv.store.WebBuilder().CreateTemplate(ctx, store.NewWBTemplate{Type: webbuilder.TemplateHeader, Title: "Pied FR", AuthorID: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	srcPost, _ := srv.store.GetPost(ctx, foot.ID)
+	dstPost, _ := srv.store.GetPost(ctx, dst.ID)
+	srv.pllCopyForTranslation(ctx, srcPost, dstPost, srv.pllLang(ctx, "fr"), false)
+	got, err := srv.store.WebBuilder().Template(ctx, dst.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Type != webbuilder.TemplateFooter || strings.Join(got.Conditions, ",") != "include/general,exclude/404" || got.Priority != 9 {
+		t.Errorf("translation template meta: %+v", got)
+	}
 }

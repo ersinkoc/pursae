@@ -6,6 +6,7 @@ import (
 	"errors"
 	"html"
 	"html/template"
+	"log"
 	"net/http"
 	"net/url"
 	"sort"
@@ -325,6 +326,23 @@ func (s *Server) pllTranslations(ctx context.Context, k pllKind, id int64) map[s
 // pllGet is pll_get_post() / pll_get_term(): the translation in lang, 0 when there is none.
 func (s *Server) pllGet(ctx context.Context, k pllKind, id int64, lang string) int64 {
 	return s.pllTranslations(ctx, k, id)[lang]
+}
+
+// pllCopyLang gives a copy (a duplicate, not a translation) the language of its source, in a
+// translation group of its own. Nothing happens when the source has no language row.
+func (s *Server) pllCopyLang(ctx context.Context, k pllKind, from, to int64) {
+	tbl, col := k.table()
+	var lang string
+	if s.store.Pool.QueryRow(ctx, `SELECT lang FROM `+tbl+` WHERE `+col+` = $1`, from).Scan(&lang) != nil || lang == "" {
+		return
+	}
+	if _, err := s.store.Pool.Exec(ctx, `INSERT INTO `+tbl+` (`+col+`, lang, grp) VALUES ($1, $2, nextval('pll_translation_groups'))
+		ON CONFLICT (`+col+`) DO UPDATE SET lang = EXCLUDED.lang, grp = EXCLUDED.grp`, to, lang); err != nil {
+		log.Printf("golylang: copy the language of %d to %d: %v", from, to, err)
+	}
+	if r := pllFrom(ctx); r != nil {
+		r.cache.Delete(string(k) + ":" + strconv.FormatInt(to, 10))
+	}
 }
 
 // pllSetLang is pll_set_post_language(). A new language keeps the translation group unless another member

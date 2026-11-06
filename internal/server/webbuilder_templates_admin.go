@@ -809,7 +809,8 @@ func (s *Server) wbTemplateActivateHello(c *gin.Context) {
 // --- duplicate ---------------------------------------------------------------------------------
 
 // wbDuplicateTemplate copies a template as a disabled draft "<title> (Copy)" with its conditions,
-// priority, preview object and published doc. Every section id
+// priority, preview object, language (Pursae Multi Language: the language only, not the
+// translation group) and published doc. Every section id
 // of the copy (and every editor-style item id) is regenerated in the doc and, consistently, in the
 // snapshot and its CSS (ids are HTML ids, CSS selectors, loop and form keys), so the copy never
 // shares ids with its source and the editor needs no extra step. Should a section id be too short
@@ -826,6 +827,7 @@ func (s *Server) wbDuplicateTemplate(ctx context.Context, src *store.WBTemplate,
 	if err != nil {
 		return nil, err
 	}
+	s.pllCopyLang(ctx, pllPost, src.ID, cp.ID)
 	from, err := wb.Doc(ctx, src.ID)
 	if errors.Is(err, store.ErrNotFound) {
 		return cp, nil // nothing designed yet
