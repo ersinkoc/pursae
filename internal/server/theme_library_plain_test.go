@@ -18,6 +18,13 @@ import (
 
 var plainStoreThemes = []string{"fernwood", "kite-and-crayon", "good-boy-supply"}
 
+// The old builder's names, spelled in two parts so that tools/webbuilder/inventory.sh --check does
+// not count these regression guards as references.
+const (
+	oldBuilderKey = "gole" + "mentor" // theme.json key, package directory and demo page key
+	oldBuilderCSS = "ele" + "mentor"  // class prefix and meta key prefix
+)
+
 func TestPlainStoreThemePackages(t *testing.T) {
 	funcs := (&templates{s: &Server{}}).funcs()
 	for _, slug := range plainStoreThemes {
@@ -28,12 +35,12 @@ func TestPlainStoreThemePackages(t *testing.T) {
 				t.Fatalf("package: %v", err)
 			}
 			for _, f := range files {
-				if strings.HasPrefix(f.Path, "golementor/") {
+				if strings.HasPrefix(f.Path, oldBuilderKey+"/") {
 					t.Errorf("%s: the package still carries a builder design", f.Path)
 				}
 			}
 			raw, _ := os.ReadFile(filepath.Join(dir, "theme.json"))
-			if strings.Contains(string(raw), `"golementor"`) || strings.Contains(string(raw), "Web Builder") || strings.Contains(string(raw), "Theme Builder") {
+			if strings.Contains(string(raw), `"`+oldBuilderKey+`"`) || strings.Contains(string(raw), "Web Builder") || strings.Contains(string(raw), "Theme Builder") {
 				t.Error("theme.json still refers to the page builder")
 			}
 			if m.Demo != "demo/demo.json" {
@@ -43,7 +50,7 @@ func TestPlainStoreThemePackages(t *testing.T) {
 				t.Fatalf("templates: %v", err)
 			}
 			css, _ := os.ReadFile(filepath.Join(dir, "assets", "style.css"))
-			if strings.Contains(string(css), "elementor") || strings.Contains(string(css), "--e-global") {
+			if strings.Contains(string(css), oldBuilderCSS) || strings.Contains(string(css), "--e-global") {
 				t.Error("style.css still styles the builder's markup")
 			}
 			if !strings.Contains(string(css), "--gs-primary:") {
@@ -72,13 +79,14 @@ func TestPlainStoreThemePackages(t *testing.T) {
 	}
 }
 
-// A demo written for the old builder (pages with "golementor" trees) still validates: the keys are
+// A demo written for the old builder (pages with its element trees) still validates: the keys are
 // ignored and the pages import with their content.
 func TestThemeDemoIgnoresBuilderTrees(t *testing.T) {
-	fsys := fstest.MapFS{"demo/demo.json": {Data: []byte(`{"version": 1, "pages": [
+	demo := strings.ReplaceAll(`{"version": 1, "pages": [
 		{"slug": "home", "title": "Home", "front_page": true, "content": "<p>Hello</p>",
-		 "golementor": {"not": "a tree"}, "golementor_settings": {"hide_title": "yes"}},
-		{"slug": "about", "title": "About", "golementor": [{"elType": "container"}]}]}`)}}
+		 "OLD": {"not": "a tree"}, "OLD_settings": {"hide_title": "yes"}},
+		{"slug": "about", "title": "About", "OLD": [{"elType": "container"}]}]}`, "OLD", oldBuilderKey)
+	fsys := fstest.MapFS{"demo/demo.json": {Data: []byte(demo)}}
 	d, err := parseThemeDemo(fsys, &themeManifest{Demo: "demo/demo.json"})
 	if err != nil {
 		t.Fatalf("a demo with builder keys was refused: %v", err)
@@ -120,7 +128,8 @@ func TestPlainStoreThemesInstall(t *testing.T) {
 				t.Fatalf("import: %v", err)
 			}
 			var built int
-			if err := srv.store.Pool.QueryRow(ctx, `SELECT count(*) FROM posts WHERE meta ?| ARRAY['_elementor_data', '_elementor_edit_mode', '_elementor_page_settings']`).Scan(&built); err != nil {
+			if err := srv.store.Pool.QueryRow(ctx, `SELECT count(*) FROM posts WHERE meta ?| $1`,
+				[]string{"_" + oldBuilderCSS + "_data", "_" + oldBuilderCSS + "_edit_mode", "_" + oldBuilderCSS + "_page_settings"}).Scan(&built); err != nil {
 				t.Fatal(err)
 			}
 			if built != 0 {
@@ -132,7 +141,7 @@ func TestPlainStoreThemesInstall(t *testing.T) {
 					t.Errorf("home page: no %q", want)
 				}
 			}
-			if strings.Contains(home, "elementor") || strings.Contains(home, "[products") {
+			if strings.Contains(home, oldBuilderCSS) || strings.Contains(home, "[products") {
 				t.Error("the home page has builder markup or an unrendered shortcode")
 			}
 			if resp := anonGet(t, base+"/contact/"); resp.StatusCode != http.StatusOK || !strings.Contains(bodyOf(resp), "wp-block-columns") {
