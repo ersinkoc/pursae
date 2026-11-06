@@ -20,8 +20,8 @@ first template the package has. Only `index.html` is required.
 | blog index (posts page) | `home.html`, `index.html` |
 | a post | `single.html`, `index.html` |
 | a page | `page.html`, `index.html` |
-| an entry of a custom post type | `single.html`, `index.html` |
-| a custom post type archive | `index.html` |
+| an entry of a custom post type | `single-<type>.html`, `single.html`, `index.html` |
+| a custom post type archive | `archive-<type>.html`, `archive.html`, `index.html` |
 | category archive | `category.html`, `archive.html`, `index.html` |
 | tag archive | `tag.html`, `archive.html`, `index.html` |
 | author archive | `author.html`, `archive.html`, `index.html` |

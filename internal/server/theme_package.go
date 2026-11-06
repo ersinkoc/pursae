@@ -789,10 +789,19 @@ func themeTemplateCandidates(q *siteQuery) []string {
 	case "home":
 		return []string{"home", "index"}
 	case "single":
-		if q.Post != nil && q.Post.Format != "" && q.Post.Format != "standard" {
-			return []string{"single-" + q.Post.Format, "single", "singular", "index"}
+		var out []string
+		if q.Post != nil && q.Post.Type != "" && q.Post.Type != "post" {
+			out = append(out, "single-"+q.Post.Type) // a custom post type entry (single-{post_type})
 		}
-		return []string{"single", "singular", "index"}
+		if q.Post != nil && q.Post.Format != "" && q.Post.Format != "standard" {
+			out = append(out, "single-"+q.Post.Format)
+		}
+		return append(out, "single", "singular", "index")
+	case "post-type-archive":
+		if q.PostType != "" {
+			return []string{"archive-" + q.PostType, "archive", "index"}
+		}
+		return []string{"archive", "index"}
 	case "category":
 		if q.Term != nil {
 			return []string{"category-" + q.Term.Slug, "category", "archive", "index"}

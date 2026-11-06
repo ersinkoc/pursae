@@ -14,6 +14,8 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+
+	"wpgo/internal/store"
 )
 
 const starterDir = "../../examples/themes/starter"
@@ -134,6 +136,15 @@ func TestThemeManifestValidation(t *testing.T) {
 		if set.Lookup(name) == nil {
 			t.Fatalf("template %s missing", name)
 		}
+	}
+	if got := strings.Join(themeTemplateCandidates(&siteQuery{Kind: "post-type-archive", PostType: "book"}), ","); got != "archive-book,archive,index" {
+		t.Errorf("post type archive candidates = %s", got)
+	}
+	if got := strings.Join(themeTemplateCandidates(&siteQuery{Kind: "single", Post: &store.Post{Type: "book"}}), ","); got != "single-book,single,singular,index" {
+		t.Errorf("custom post type entry candidates = %s", got)
+	}
+	if got := strings.Join(themeTemplateCandidates(&siteQuery{Kind: "single", Post: &store.Post{Type: "post"}}), ","); got != "single,singular,index" {
+		t.Errorf("post candidates = %s", got)
 	}
 	if got := themeTemplateCandidates(&siteQuery{Kind: "category"}); got[0] != "category" || got[len(got)-1] != "index" {
 		t.Fatalf("hierarchy %v", got)
