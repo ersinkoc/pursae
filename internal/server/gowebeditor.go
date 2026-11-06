@@ -144,16 +144,8 @@ func (s *Server) gweFill(c *gin.Context, text string) string {
 	})
 }
 
-// gweJSON marshals a config without HTML escaping (the editor's inline scripts print it raw).
-func gweJSON(v any) string {
-	var buf bytes.Buffer
-	enc := json.NewEncoder(&buf)
-	enc.SetEscapeHTML(false)
-	_ = enc.Encode(v)
-	out := strings.TrimSuffix(buf.String(), "\n")
-	// </script> inside a string must not end the inline script.
-	return strings.ReplaceAll(out, "</", `<\/`)
-}
+// gweJSON marshals a config for the editor's inline scripts (scriptJSON).
+func gweJSON(v any) string { return scriptJSON(v) }
 
 // --- documents --------------------------------------------------------------------------------
 

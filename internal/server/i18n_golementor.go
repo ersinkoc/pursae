@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"hash/fnv"
 	"io/fs"
-	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -149,9 +148,6 @@ func gweTranslateLabel(cat *i18n.Catalog, s string) string {
 var (
 	gweJSStringsOnce sync.Once
 	gweJSStringsList []string
-	gweJSLiteral     = regexp.MustCompile(`'((?:[^'\\\n]|\\.){0,160})'|"((?:[^"\\\n]|\\.){0,160})"|` + "`([^`$\\n]{0,160})`")
-	gweJSNotText     = regexp.MustCompile(`[{}<>=;]|^\.|^#|gwe-|e-con|elementor|\\u|https?:|^[A-Z][a-z]+[A-Z]|^[A-Z_]+$`)
-	gweJSHasWord     = regexp.MustCompile(`[A-Za-z]{2}`)
 )
 
 // gweJSStrings lists the UI strings of the Studio scripts (literals that start with a capital).
@@ -164,11 +160,11 @@ func (s *Server) gweJSStrings() []string {
 			if err != nil {
 				continue
 			}
-			for _, m := range gweJSLiteral.FindAllStringSubmatch(string(b), -1) {
+			for _, m := range jsLiteralRe.FindAllStringSubmatch(string(b), -1) {
 				lit := m[1] + m[2] + m[3]
 				lit = strings.NewReplacer(`\'`, "'", `\"`, `"`).Replace(lit)
 				t := strings.TrimSpace(lit)
-				if t == "" || !gweJSHasWord.MatchString(t) || gweJSNotText.MatchString(t) || !strings.ContainsAny(t[:1], "ABCDEFGHIJKLMNOPQRSTUVWXYZ“\"(") {
+				if t == "" || !jsHasWordRe.MatchString(t) || jsNotTextRe.MatchString(t) || !strings.ContainsAny(t[:1], "ABCDEFGHIJKLMNOPQRSTUVWXYZ“\"(") {
 					continue
 				}
 				seen[lit] = true

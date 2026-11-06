@@ -38,32 +38,6 @@ func (s *Server) golementorOnly() gin.HandlerFunc {
 	}
 }
 
-// themeVisible reports whether a theme may be listed, previewed or activated: Hello Golementor and
-// the saved Golementor themes belong to the plugin.
-func (s *Server) themeVisible(t *Theme) bool {
-	return t != nil && ((t.Slug != helloThemeSlug && !t.Custom) || s.golementorOn()) && !s.themeDeleted(t.Slug)
-}
-
-// installedThemes is allThemes without the themes of an inactive Golementor.
-func (s *Server) installedThemes() []*Theme {
-	all := s.themeList()
-	out := all[:0]
-	for _, t := range all {
-		if s.themeVisible(t) {
-			out = append(out, t)
-		}
-	}
-	return out
-}
-
-// installedTheme is themeBySlug for the themes of this site (nil for Golementor's themes while it is off).
-func (s *Server) installedTheme(slug string) *Theme {
-	if t := s.themeFor(slug); s.themeVisible(t) {
-		return t
-	}
-	return nil
-}
-
 // golementorActivate switches the plugin on and does the setup the builder needs at startup: the
 // saved themes join the theme list and a saved theme left active by an old install is migrated.
 // The kit and the template types are created on first use, as ever; all of it is idempotent.

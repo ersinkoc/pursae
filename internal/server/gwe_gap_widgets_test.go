@@ -59,7 +59,7 @@ func TestGapEmbedScan(t *testing.T) {
 		{"lightbox action", `<a href="#elementor-action%3Aaction%3Dlightbox%26settings%3D` + url.QueryEscape(lb) + `">`, nil, []string{cspVimeoPlayer}},
 		{"plain link", `<a href="https://www.youtube.com/watch?v=x">watch</a><p>https://vimeo.com/1</p>`, nil, nil},
 	} {
-		n := &gweEmbedNeeds{}
+		n := &embedNeeds{}
 		gweEmbedScan(tc.markup, n)
 		if strings.Join(n.script, ",") != strings.Join(tc.wantScript, ",") || strings.Join(n.frame, ",") != strings.Join(tc.wantFra, ",") {
 			t.Errorf("%s: script=%v frame=%v, want %v %v", tc.name, n.script, n.frame, tc.wantScript, tc.wantFra)
