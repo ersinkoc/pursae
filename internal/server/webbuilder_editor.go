@@ -22,7 +22,7 @@ import (
 	"wpgo/internal/webbuilder"
 )
 
-// The full-screen editor of Pursae Web Builder: /wp-admin/post?post={id}&action=web-builder-next
+// The full-screen editor of Pursae Web Builder: /wp-admin/post?post={id}&action=web-builder
 // (postEdit dispatches here). The page is a bare HTML document — no admin chrome, no admin-page
 // translation — that loads the editor bundle named by the manifest and hands it the boot config
 // window.__WEB_BUILDER__ (contract §2). The admin CSP already fits: the bundle, its fonts and the

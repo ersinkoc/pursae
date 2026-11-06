@@ -85,7 +85,7 @@ func (s *Server) wbFrontDecide(c *gin.Context, q *siteQuery, p *store.Post) *wbF
 	if (p.Type != "page" && p.Type != "post") || p.Status == "trash" {
 		return nil
 	}
-	if s.passwordRequired(c, p) || gwePreviewing(c) { // the theme prints the password form
+	if s.passwordRequired(c, p) { // the theme prints the password form
 		return nil
 	}
 	ctx := c.Request.Context()
@@ -166,7 +166,6 @@ func (s *Server) wbCanvas(c *gin.Context, v *siteView, fp *wbFrontPage, body str
 	// and no Additional CSS (the Customizer's CSS belongs to the theme).
 	bare := *v
 	bare.Theme = &Theme{Slug: v.Theme.Slug, Name: v.Theme.Name, BlockStyles: []string{}}
-	bare.GWE = nil
 	bare.CustomCSS = ""
 	head := strings.Replace(string(s.wpHead(c, v.Q, lb, adminBar, &bare)), blockStylesMarker, "", 1)
 

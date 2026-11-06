@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -78,7 +79,7 @@ type subDef struct {
 	match            []string // extra screens that highlight this item
 }
 
-func adminMenu(pending int, golementor, cache bool) []menuDef {
+func adminMenu(pending int, cache bool) []menuDef {
 	comments := "Comments"
 	if pending > 0 {
 		comments = fmt.Sprintf(`Comments <span class="awaiting-mod count-%d"><span class="pending-count" aria-hidden="true">%d</span><span class="comments-in-moderation-text screen-reader-text">%d Comments in moderation</span></span>`, pending, pending, pending)
@@ -107,23 +108,11 @@ func adminMenu(pending int, golementor, cache bool) []menuDef {
 		}},
 		{slug: "edit-comments", title: comments, cap: "edit_posts", id: "menu-comments", icon: "dashicons-admin-comments"},
 		{separator: true, cap: "read"},
-		{slug: "web-builder?tab=popups", title: "Pursae Web Builder", cap: "edit_posts", id: "menu-gowebeditor", icon: "dashicons-layout", sub: []subDef{ // Golementor Pro
-			{slug: "web-builder?tab=popups", title: "Popups", cap: "edit_posts"},
-			{slug: "web-builder?tab=loops", title: "Loop Items", cap: "edit_posts"}, // gap-loops
-			{slug: "web-builder?tab=submissions", title: "Form Submissions", cap: "manage_options"},
-			{slug: "web-builder?tab=code", title: "Custom Code", cap: "manage_options"},
-			{slug: "web-builder?tab=fonts", title: "Custom Fonts", cap: "manage_options"},
-			{slug: "web-builder-icons", title: "Custom Icons", cap: "manage_options"}, // gap-widgets
-			{slug: "web-builder?tab=roles", title: "Role Manager", cap: "manage_options"},
-			{slug: "web-builder-setup", title: "Site Setup", cap: "edit_theme_options"}, // Golementor Studio wizard
-			{slug: "web-builder?tab=settings", title: "Settings", cap: "manage_options"},
-		}},
 		{slug: "themes", title: "Appearance", cap: "switch_themes", id: "menu-appearance", icon: "dashicons-admin-appearance", sub: []subDef{
 			{slug: "themes", title: "Themes", cap: "switch_themes"},
 			{slug: "customize", title: "Customize", cap: "edit_theme_options"},
 			{slug: "widgets", title: "Widgets", cap: "edit_theme_options"},
 			{slug: "nav-menus", title: "Menus", cap: "edit_theme_options"},
-			{slug: "theme-builder", title: "Theme Builder", cap: "edit_theme_options"}, // Golementor
 			{slug: "theme-editor", title: "Theme File Editor", cap: "edit_themes"},
 		}},
 		{slug: "plugins", title: `Plugins <span class="update-plugins count-0"><span class="plugin-count">0</span></span>`, cap: "activate_plugins", id: "menu-plugins", icon: "dashicons-admin-plugins", sub: []subDef{
@@ -164,24 +153,15 @@ func adminMenu(pending int, golementor, cache bool) []menuDef {
 			{slug: "options-license", title: "License", cap: "manage_options"},
 		}},
 	}
-	if golementor && cache {
+	if cache {
 		return menu
 	}
-	// Like WordPress, an inactive plugin adds nothing to the admin menu: without Golementor its
-	// top-level menu and the Theme Builder submenu go, without WPGo Cache its top-level menu.
+	// Like WordPress, an inactive plugin adds nothing to the admin menu: without WPGo Cache its
+	// top-level menu goes.
 	out := menu[:0]
 	for _, d := range menu {
-		if (!golementor && d.id == "menu-gowebeditor") || (!cache && d.id == "toplevel_page_wpgo-cache") {
+		if d.id == "toplevel_page_wpgo-cache" {
 			continue
-		}
-		if !golementor && d.id == "menu-appearance" {
-			subs := make([]subDef, 0, len(d.sub))
-			for _, sd := range d.sub {
-				if sd.slug != "theme-builder" {
-					subs = append(subs, sd)
-				}
-			}
-			d.sub = subs
 		}
 		out = append(out, d)
 	}
@@ -189,9 +169,9 @@ func adminMenu(pending int, golementor, cache bool) []menuDef {
 }
 
 // buildMenu filters the menu by capability and marks the current screen, like _wp_menu_output().
-func buildMenu(u *store.User, screen string, pending int, golementor, cache bool) []*menuTop {
+func buildMenu(u *store.User, screen string, pending int, cache bool) []*menuTop {
 	var out []*menuTop
-	for _, d := range adminMenu(pending, golementor, cache) {
+	for _, d := range adminMenu(pending, cache) {
 		if d.separator {
 			out = append(out, &menuTop{Separator: true})
 			continue
@@ -293,10 +273,6 @@ var screenStyles = map[string][]string{
 	"admin/plugin-install":       {"wpgo/plugin-install.css"},
 	"admin/wpgo-cache":           {},
 	"admin/mailsmtp":             {},
-	// Golementor Theme Builder
-	"admin/gowebeditor-theme-builder":    {},
-	"admin/gowebeditor-theme-conditions": {},
-	"admin/golementor-setup":             {}, // Golementor Studio setup wizard
 }
 
 // adminPage renders an admin screen with the shared chrome.
@@ -307,7 +283,7 @@ func (s *Server) adminPage(c *gin.Context, screen, title, bodyClass, tmpl string
 		Title:     title,
 		BodyClass: bodyClass,
 		Screen:    screen,
-		Menu:      buildMenu(u, screen, counts["pending"], s.golementorOn(), s.settings.Bool("wpgo_cache_enabled")),
+		Menu:      buildMenu(u, screen, counts["pending"], s.settings.Bool("wpgo_cache_enabled")),
 		User:      u,
 		Avatar26:  s.avatarURL(c, u.Email, 26),
 		Avatar64:  s.avatarURL(c, u.Email, 64),
@@ -438,7 +414,8 @@ func (s *Server) adminAjax(c *gin.Context) {
 	if s.mediaAjax(c, action) {
 		return
 	}
-	if s.gweAjax(c, action) { // Golementor: elementor_ajax, heartbeat, elementor_js_log
+	if action == "heartbeat" { // wp_ajax_heartbeat: the editors' heartbeat
+		s.heartbeat(c)
 		return
 	}
 	if s.acfgoAjax(c, action) { // ACF-Go: acfgo/* actions
@@ -497,4 +474,19 @@ func addBodyHTML(c *gin.Context, h template.HTML) {
 		h = v.(template.HTML) + h
 	}
 	c.Set("wpgo.bodyHTML", h)
+}
+
+// heartbeat answers the Heartbeat API (wp_ajax_heartbeat): the auth check and server time, an
+// expired heartbeat nonce, and fresh REST and heartbeat nonces when the editor asks for them
+// (wp_refresh_post_nonces / wp_refresh_heartbeat_nonces).
+func (s *Server) heartbeat(c *gin.Context) {
+	out := gin.H{"wp-auth-check": currentUser(c) != nil, "server_time": time.Now().Unix()}
+	if n := c.PostForm("_nonce"); n != "" && !s.checkNonceValue(c, n, "heartbeat-nonce") {
+		out["nonces_expired"] = true
+	}
+	if c.PostForm("data[wp-refresh-post-nonces][post_id]") != "" || c.PostForm("data[wp-refresh-nonces]") != "" {
+		out["rest_nonce"] = s.nonce(c, "wp_rest")
+		out["heartbeat_nonce"] = s.nonce(c, "heartbeat-nonce")
+	}
+	c.JSON(http.StatusOK, out)
 }

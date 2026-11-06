@@ -36,10 +36,10 @@ type siteQuery struct {
 	Preview   bool
 	PostsPage *store.Post // page_for_posts when the blog lives on a page
 
-	SearchProps string // gap-loops2: the Search widget's e_search_props (gowebeditor_loop.go)
+	SearchProps string // unused: read only by the old page builder's files, deleted with them (R2)
 
-	// Store and StoreTerm describe a Goocommerce view for the Theme Builder's conditions (goo_gwe.go):
-	// product, shop, product_cat, product_tag, product_attr, cart, checkout, myaccount; the term id.
+	// Store and StoreTerm describe a Goocommerce view: product, shop, product_cat, product_tag,
+	// product_attr, cart, checkout, myaccount; the term id.
 	Store     string
 	StoreTerm int64
 }
@@ -207,11 +207,6 @@ func (s *Server) resolve(c *gin.Context, path string) (*siteQuery, error) {
 		return s.singular(c, q, p)
 	case v.Get("s") != "" || v.Has("s"):
 		q.Kind, q.Search = "search", strings.TrimSpace(v.Get("s"))
-		if s.golementorOn() {
-			if q.SearchProps = v.Get("e_search_props"); q.SearchProps != "" && !s.gweSearchPropsOK(ctx, q.SearchProps) { // gap-loops2
-				return nil, errNotFound
-			}
-		}
 		return q, nil
 	case v.Get("cat") != "":
 		id, _ := strconv.ParseInt(v.Get("cat"), 10, 64)
@@ -467,9 +462,6 @@ func (s *Server) mainPosts(ctx context.Context, q *siteQuery, u *store.User) ([]
 		if q.Search == "" {
 			return nil, 0, perPage, nil
 		}
-		if q.SearchProps != "" { // gap-loops2: narrowed by the Search widget (gowebeditor_loop.go)
-			return s.gweSearchPropsPosts(ctx, q, u)
-		}
 	}
 	pq.ExcludeID = append(pq.ExcludeID, s.gooListingExclude(withPluginUser(ctx, u), "post")...) // Goocommerce Memberships
 	posts, total, err := s.store.QueryPosts(ctx, pq)
@@ -532,12 +524,6 @@ func (s *Server) renderSite(c *gin.Context, q *siteQuery) {
 	}
 	s.cacheTags(c, q)
 	if s.wbRenderPage(c, v, status) { // Pursae Web Builder canvas (webbuilder_front.go)
-		return
-	}
-	if s.gweRenderTemplate(c, v, status) { // Golementor Canvas / Full Width page templates
-		return
-	}
-	if s.gweRenderShell(c, v, status) { // Golementor custom theme / theme parts
 		return
 	}
 	s.renderSiteTemplate(c, v, status)
