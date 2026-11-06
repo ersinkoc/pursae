@@ -67,7 +67,7 @@ ever part of it.**
 | `caps.uploadFiles` | bool | `upload_files` |
 | `caps.unfilteredHtml` | bool | `unfiltered_html`: html sections and custom CSS are kept |
 | `caps.editOthers` | bool | `edit_others_posts`: may delete others' library items |
-| `locale` | string | WordPress locale (`en_US`, `tr_TR`); picks the i18n catalog |
+| `locale` | string | the user's WordPress locale (`en_US`, `tr_TR`; `userLocale`); its language part picks the editor UI catalog, see §2.1 |
 | `fonts.cssUrl` | string | absolute `fonts/css2` URL with `_wpnonce` |
 | `fonts.local` | string[] | families already localized under `uploads/web-builder/fonts/` |
 | `media.maxUploadBytes` | number | upload size limit |
@@ -84,6 +84,35 @@ ever part of it.**
 | `llmBase` | `""` | absolute `…/wp-json/web-builder/v2/ai/llm/` |
 | `imagesUrl` | `""` | absolute `…/wp-json/web-builder/v2/ai/images` |
 | `allowCode` | `false` | `false` (AI tools may not write html sections or custom CSS) |
+
+### 2.1 Editor UI language
+
+The editor UI is English; translations are catalogs in the patched upstream sources
+(`builder/patches/0004-i18n.patch`):
+
+- `src/builder/i18n.ts`: `t('English source', { name: value })` returns the string in the current
+  language (`{name}` placeholders), falling back to the English source. `setLocale(locale)` picks the
+  language by the locale's language part (`tr_TR`, `tr-TR`, `tr` → Turkish); a language without a
+  catalog is English. Outside a browser (Node: fixtures, tests) it is English.
+- `src/builder/i18n/tr.ts`: the Turkish catalog (English source → Turkish). Shipped catalogs: `tr`.
+- `builder/host/locale.ts` calls `setLocale(window.__WEB_BUILDER__.locale)` and is the first import
+  of `host/editor-entry.tsx`: some strings are translated once at module load (section kinds,
+  design names, constant option tables), so the language is fixed for the page; a locale change
+  takes effect on the next editor load.
+- Only the editor chrome is translated. Document content (the default page, the default texts of a
+  new section or design, form placeholders) is plain English and stays as stored.
+- `renderStatic` runs inside `withSourceLocale()`: published HTML never depends on the editor's
+  language (`test/host/i18n.test.ts` renders the same document in `en_US` and `tr_TR`).
+- `make builder-test` runs `builder/scripts/lint-strings.mjs`: it fails on Turkish text (Turkish
+  letters, or words only found on the Turkish side of the catalog) in any string of the patched
+  upstream sources or `builder/host`, on a `t()` string without a Turkish entry, and on catalog
+  entries whose placeholders differ from the source. `src/builder/ai/**` (stubbed out of the build)
+  is not scanned; a non-UI literal can opt out with an `i18n-ignore` comment.
+
+New UI strings: write `t('English')` upstream and add the Turkish entry to `tr.ts` in the same
+patch. Other CMS languages (the 135 of `internal/i18n`) are a follow-up: the editor screen would
+pass a catalog for `locale` in the boot config and `i18n.ts` would register it before the builder
+modules load; nothing reads such a field yet.
 
 ## 3. REST: namespace `web-builder/v2`
 

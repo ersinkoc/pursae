@@ -2,10 +2,11 @@
  * Editor entry of the Pursae Web Builder inside the CMS (replaces upstream src/main.tsx in the
  * build, see builder/vite.config.ts editorEntry()).
  *
- * Reads window.__WEB_BUILDER__ (written by the editor screen), installs the CMS host with setHost()
- * before the builder first renders, then mounts upstream's App and the host layer (notices, media
- * dialog) into #root.
+ * Reads window.__WEB_BUILDER__ (written by the editor screen), sets the UI language (./locale, which
+ * must stay the first import), installs the CMS host with setHost() before the builder first renders,
+ * then mounts upstream's App and the host layer (notices, media dialog) into #root.
  */
+import './locale'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from '@/App'
