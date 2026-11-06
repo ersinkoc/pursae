@@ -153,7 +153,7 @@ func (s *Server) exportScreen(c *gin.Context) {
 		f.Start, f.End = c.Query("attachment_start_date"), c.Query("attachment_end_date")
 	default:
 		what = "all"
-		types = []string{"post", "page", "wp_block"}
+		types = []string{"post", "page", "wp_block", "wb_template"} // + Theme Builder templates
 	}
 	if f.Status == "0" {
 		f.Status = ""
@@ -455,6 +455,7 @@ func phpUnserializeStrings(v string) []string {
 type wxrDoc struct {
 	Channel struct {
 		Authors []struct {
+			ID          int64  `xml:"author_id"`
 			Login       string `xml:"author_login"`
 			Email       string `xml:"author_email"`
 			DisplayName string `xml:"author_display_name"`
@@ -657,7 +658,7 @@ func (s *Server) importWXR(c *gin.Context, u *store.User, data []byte) (*importR
 	for i := range doc.Channel.Items {
 		it := &doc.Channel.Items[i]
 		switch it.Type {
-		case "post", "page", "wp_block":
+		case "post", "page", "wp_block", "wb_template":
 		case "attachment":
 			if it.Status == "trash" {
 				rep.Skipped++
@@ -833,7 +834,13 @@ func (s *Server) importWXR(c *gin.Context, u *store.User, data []byte) (*importR
 			}
 		}
 	}
-	rep.Log = append(rep.Log, s.wbImportDocs(ctx, u, imported, urlMap)...) // Pursae Web Builder docs (webbuilder_hooks.go)
+	oldUsers := map[int64]int64{} // author ids in the file -> ours (Theme Builder conditions)
+	for _, a := range doc.Channel.Authors {
+		if a.ID != 0 {
+			oldUsers[a.ID] = authors[a.Login]
+		}
+	}
+	rep.Log = append(rep.Log, s.wbImportDocs(ctx, u, imported, urlMap, wbImportIDs{Posts: idMap, Terms: oldTerms, Users: oldUsers})...) // Pursae Web Builder docs (webbuilder_hooks.go)
 	// process_menu_item(): items whose object was not imported are skipped (custom links always import).
 	menuItemIDs := map[int64]int64{}
 	menuOrphans := map[int64]int64{}

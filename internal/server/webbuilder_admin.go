@@ -24,7 +24,7 @@ import (
 
 // wbCanBuild reports whether u may open p in the builder now.
 func (s *Server) wbCanBuild(u *store.User, p *store.Post) bool {
-	return p != nil && u != nil && s.wbOn() && s.wbEnabledType(p.Type) && p.Status != "trash" && u.Can("edit_post", p)
+	return p != nil && u != nil && s.wbOn() && p.Status != "trash" && s.wbEditable(u, p)
 }
 
 // wbDocIDs reports which of the posts have a builder document.
