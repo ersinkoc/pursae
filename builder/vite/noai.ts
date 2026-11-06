@@ -80,6 +80,9 @@ export function noAi({ upstreamSrc, stubDir }: NoAiOptions): Plugin {
       // renders in 'ai' mode, which is then unreachable.
       const entry = /^[ \t]*\{\s*m:\s*'ai'\s*,[^\n]*\},?[ \t]*\r?\n/m
       if (entry.test(code)) return { code: code.replace(entry, ''), map: null }
+      // With the host seam patch the entry is gated: ...(hostAi().enabled ? [{ m: 'ai' as const, … }] : []),
+      const gated = /^[ \t]*\.\.\.\(\s*hostAi\(\)\.enabled\s*\?\s*\[\s*\{\s*m:\s*'ai'(?:\s+as\s+const)?\s*,[^\n]*\}\s*\]\s*:\s*\[\]\s*\),?[ \t]*\r?\n/m
+      if (gated.test(code)) return { code: code.replace(gated, ''), map: null }
       if (/m:\s*'ai'/.test(code)) {
         throw new Error("[noai] TopBar.tsx still offers the 'ai' mode but the transform target moved; update builder/vite/noai.ts.")
       }

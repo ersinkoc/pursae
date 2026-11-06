@@ -1,6 +1,8 @@
 {
   "upstreamSha": "22ff4976a1416accd3b7370e176d7206bf390aee",
-  "patches": {},
+  "patches": {
+    "0001-host-seam.patch": "f390a21f467fb8677fe9d8673e6c2aa07b7e95eb12f4e338b841fba140d5d2ab"
+  },
   "apiVersion": 1,
   "rendererVersion": 1
 }
