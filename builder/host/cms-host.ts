@@ -10,6 +10,9 @@
  *   media             wp/v2/media upload + a React media library dialog (MediaPicker.tsx)
  *   fontsCss          the server's local Google Fonts css2 endpoint
  *   ai                always disabled (AI is out of scope)
+ *   dynamic           sample data of dynamic widgets: Boot.dynamic, changed by "Preview as" (dynamic.ts)
+ *   template          Theme Builder template mode: Boot.template, display conditions, preview and the
+ *                     conditions-first publish step (template.ts); themeParts from Boot.site
  *
  * The host's own messages (reload prompts, conflicts, restored drafts) go through HostUi, which
  * editor-entry.tsx renders next to the builder.
@@ -19,6 +22,8 @@ import type { DocState, PageSettings, SavedComponent } from '@/builder/types'
 import { API_VERSION, ERR, LIMITS, PREF_KEY_PATTERN, routes, type AutosaveResponse, type Boot, type DraftState, type LibraryItem, type LockResponse, type MediaItem, type Prefs } from './contract'
 import { publishDocument, loadLiveRenderer, type RendererLoader } from './publish'
 import { createRest, isRestError, uploadMedia, type FetchLike, type RestClient } from './rest'
+import { DynStore } from './dynamic'
+import { TemplateController, readTemplate } from './template'
 
 /** Autosave debounce and minimum gap between two autosave requests (contract AutosaveMinMillis). */
 export const AUTOSAVE_MIN_MS = LIMITS.autosaveMinMillis
@@ -595,6 +600,10 @@ export interface CmsHost extends BuilderHost {
   readonly storage: HostStorage
   /** What loadDoc/loadPage return. */
   readonly initial: InitialDoc
+  /** Sample data of dynamic widgets (BuilderHost.dynamic / onDynamic). */
+  readonly dyn: DynStore
+  /** Template mode (Boot.template), else null. */
+  readonly templates: TemplateController | null
   /** Async start-up (prefs, library) and the notices about the loaded document; call before mounting. */
   start(): Promise<void>
   /** Takes or refreshes the edit lock; returns the other holder's lock, if any. */
@@ -645,6 +654,9 @@ export function createCmsHost(boot: Boot, deps: CmsHostDeps = {}): CmsHost {
   const storage = new HostStorage({ rest, userId: boot.user.id, postId, ui, local: deps.local === undefined ? localStorageOrNull() : deps.local, timers })
   const loadRenderer = deps.loadRenderer ?? loadLiveRenderer
   let lockTimer: unknown = null
+  const dyn = new DynStore(rest, boot)
+  const template = readTemplate(boot)
+  const templates = template ? new TemplateController(rest, dyn, boot, template) : null
 
   const media = {
     async upload(file: File, kind: MediaKind): Promise<MediaAsset> {
@@ -709,6 +721,8 @@ export function createCmsHost(boot: Boot, deps: CmsHostDeps = {}): CmsHost {
     autosaver,
     storage,
     initial,
+    dyn,
+    templates,
     loadDoc: () => initial.doc,
     loadPage: () => initial.page,
     saveDraft: (doc, page) => autosaver.save(doc, page),
@@ -719,7 +733,8 @@ export function createCmsHost(boot: Boot, deps: CmsHostDeps = {}): CmsHost {
       await autosaver.flush()
       autosaver.hold(true)
       try {
-        const out = await publishDocument({ boot, rest, ui, session, loadRenderer, navigate, reload }, input)
+        const out = await publishDocument({ boot, rest, ui, session, loadRenderer, navigate, reload, previewUrl: templates ? () => templates.getState().preview?.url ?? '' : undefined }, input)
+        templates?.markPublished()
         return { message: out.message, permalink: out.permalink }
       } finally {
         // Edits made while publishing were held back; one that differs from the published input
@@ -734,7 +749,14 @@ export function createCmsHost(boot: Boot, deps: CmsHostDeps = {}): CmsHost {
     submitForm: async (): Promise<FormResult> => ({ ok: false, message: 'Forms are sent from the published page.' }),
     ai: HOST_AI_OFF,
     locale: boot.locale || 'en_US',
+    dynamic: dyn.get,
+    onDynamic: (cb) => dyn.subscribe(cb),
+    template: () => template,
+    themeParts: !template && !!boot.site?.themeParts,
+    beforePublish: templates ? () => templates.beforePublish() : undefined,
     async start() {
+      // An older boot config without sample data: fetch it instead of drawing empty widgets.
+      if (!dyn.fromBoot) void dyn.load(template?.preview?.object || `post:${postId}`).catch(() => undefined)
       await storage.init()
       if (initial.draft) {
         void ui

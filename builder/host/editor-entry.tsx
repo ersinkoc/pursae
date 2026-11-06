@@ -14,6 +14,7 @@ import { setHost } from '@/builder/host'
 import '@/index.css'
 import { createCmsHost, fontsBase, readBoot, type CmsHost } from './cms-host'
 import { HostLayer } from './HostLayer'
+import { installTemplateUi } from './TemplateBar'
 
 function mountPoint(): HTMLElement {
   let el = document.getElementById('root')
@@ -70,6 +71,8 @@ async function boot() {
     fail(e instanceof Error ? e.message : String(e))
     return
   }
+  // Template mode: the type badge, display conditions and "Preview as" in the top bar.
+  installTemplateUi(host)
   setHost(host)
   window.__WEB_BUILDER_HOST__ = host
   installFontNonce(host)
