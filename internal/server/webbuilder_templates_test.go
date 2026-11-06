@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -651,6 +652,31 @@ func TestWBTemplateWXRRoundTrip(t *testing.T) {
 	// Without a snapshot it does not render until it is published in the editor.
 	if id := wbtPick(srv, webbuilder.LocationMain, &siteQuery{Kind: "single", Post: np}); id != 0 {
 		t.Errorf("snapshot-less import rendered: %d", id)
+	}
+	// Importing the same file again does not add a second copy of a template without a slug.
+	wbhImport(t, admin, base, xml)
+	if list, _ = srv.store.WebBuilder().Templates(ctx, store.WBTemplateFilter{Type: webbuilder.TemplateSinglePost}); len(list) != 1 {
+		t.Errorf("templates after a second import: %d", len(list))
+	}
+	// An author the target site does not have: the rule about them is dropped, not moved to the
+	// importing user.
+	if err := srv.store.DeletePost(ctx, got.ID); err != nil {
+		t.Fatal(err)
+	}
+	ghost := regexp.MustCompile(`<wp:author_login>(<!\[CDATA\[)?admin(\]\]>)?</wp:author_login>`).ReplaceAllString(xml, "<wp:author_login>ghost-author</wp:author_login>")
+	if ghost == xml {
+		t.Fatal("no admin author in the export")
+	}
+	body = wbhImport(t, admin, base, ghost)
+	list, _ = srv.store.WebBuilder().Templates(ctx, store.WBTemplateFilter{Type: webbuilder.TemplateSinglePost})
+	if len(list) != 1 {
+		t.Fatalf("templates after the ghost import: %d", len(list))
+	}
+	if strings.Contains(strings.Join(list[0].Conditions, ","), "by_author") {
+		t.Errorf("an unmatched author's rule was kept: %v", list[0].Conditions)
+	}
+	if !strings.Contains(body, "by_author/1") {
+		t.Errorf("the dropped author rule is not in the report")
 	}
 }
 

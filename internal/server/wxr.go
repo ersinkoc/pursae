@@ -564,7 +564,7 @@ func (s *Server) importScreen(c *gin.Context) {
 
 type importReport struct {
 	Posts, Pages, Blocks, Templates, Skipped, Terms, Comments, Attachments, MenuItems int // Templates: Theme Builder (wb_template)
-	Log                                                                    []string
+	Log                                                                               []string
 }
 
 func (s *Server) importWXR(c *gin.Context, u *store.User, data []byte) (*importReport, error) {
@@ -577,9 +577,10 @@ func (s *Server) importWXR(c *gin.Context, u *store.User, data []byte) (*importR
 	}
 	rep := &importReport{}
 	authors := map[string]int64{}
+	matched := map[string]bool{} // logins that exist on this site (not mapped to the importer)
 	for _, a := range doc.Channel.Authors {
 		if ex, err := s.store.UserByLoginOrEmail(ctx, a.Login); err == nil {
-			authors[a.Login] = ex.ID
+			authors[a.Login], matched[a.Login] = ex.ID, true
 		} else {
 			authors[a.Login] = u.ID
 		}
@@ -723,6 +724,19 @@ func (s *Server) importWXR(c *gin.Context, u *store.User, data []byte) (*importR
 			rep.Skipped++
 			continue
 		}
+		// Theme Builder templates often have no slug (drafts, duplicates, ones enabled from the
+		// list): the same title and content mean the same template, so a re-import does not add a
+		// competing copy.
+		if it.Type == "wb_template" && it.Name == "" {
+			var exID int64
+			if err := s.store.Pool.QueryRow(ctx, `SELECT id FROM posts WHERE type = 'wb_template' AND status <> 'trash'
+				AND title = $1 AND content = $2 ORDER BY id LIMIT 1`, it.Title, it.Content).Scan(&exID); err == nil {
+				rep.Log = append(rep.Log, fmt.Sprintf("%s “%s” already exists.", wxrTypeLabel(it.Type), it.Title))
+				idMap[it.PostID] = exID
+				rep.Skipped++
+				continue
+			}
+		}
 		p := &store.Post{Type: it.Type, AuthorID: authors[it.Creator], Title: it.Title, Content: it.Content, Excerpt: it.Excerpt,
 			Status: defaultStr(it.Status, "draft"), Slug: it.Name, MenuOrder: it.MenuOrder, Password: it.Password,
 			CommentStatus: defaultStr(it.CommentStatus, "open"), PingStatus: defaultStr(it.PingStatus, "open"), Sticky: it.Sticky == 1, Format: "standard",
@@ -836,9 +850,11 @@ func (s *Server) importWXR(c *gin.Context, u *store.User, data []byte) (*importR
 			}
 		}
 	}
-	oldUsers := map[int64]int64{} // author ids in the file -> ours (Theme Builder conditions)
+	// Author ids in the file -> ours (Theme Builder conditions). Only authors that exist here: a
+	// rule about an author who was mapped to the importer is dropped, not moved to the importer.
+	oldUsers := map[int64]int64{}
 	for _, a := range doc.Channel.Authors {
-		if a.ID != 0 {
+		if a.ID != 0 && matched[a.Login] {
 			oldUsers[a.ID] = authors[a.Login]
 		}
 	}
