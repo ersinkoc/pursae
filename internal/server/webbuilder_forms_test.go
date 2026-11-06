@@ -91,25 +91,25 @@ func TestWebBuilderFormHelpers(t *testing.T) {
 
 // --- integration -------------------------------------------------------------------------------
 
-type wbfSite struct {
+type wbformSite struct {
 	srv  *Server
 	base string
 	user *http.Client // logged in (cookies, no nonce)
 	page *store.Post
 }
 
-func wbfStart(t *testing.T) *wbfSite {
+func wbformStart(t *testing.T) *wbformSite {
 	t.Helper()
 	ts, c, srv := newTestServer(t, true)
 	installAndLogin(t, ts, c)
 	if !srv.wbOn() {
 		t.Fatal("Pursae Web Builder is off")
 	}
-	return &wbfSite{srv: srv, base: ts.URL, user: c, page: wbfPage(t, srv, "Contact", "publish")}
+	return &wbformSite{srv: srv, base: ts.URL, user: c, page: wbformPage(t, srv, "Contact", "publish")}
 }
 
-// wbfPage inserts a page and publishes the variants-form fixture as its builder doc.
-func wbfPage(t *testing.T, srv *Server, title, status string) *store.Post {
+// wbformPage inserts a page and publishes the variants-form fixture as its builder doc.
+func wbformPage(t *testing.T, srv *Server, title, status string) *store.Post {
 	t.Helper()
 	ctx := context.Background()
 	p := &store.Post{Type: "page", Title: title, Slug: strings.ToLower(title), Status: status, AuthorID: 1, Content: "<p>fallback</p>"}
@@ -128,7 +128,7 @@ func wbfPage(t *testing.T, srv *Server, title, status string) *store.Post {
 }
 
 // submit posts form values to a form of the page; json selects the runtime's Accept header.
-func (w *wbfSite) submit(t *testing.T, c *http.Client, postID int64, section string, v url.Values, asJSON bool) (int, map[string]any, http.Header) {
+func (w *wbformSite) submit(t *testing.T, c *http.Client, postID int64, section string, v url.Values, asJSON bool) (int, map[string]any, http.Header) {
 	t.Helper()
 	req, _ := http.NewRequest(http.MethodPost, w.base+"/wp-json/web-builder/v2/forms/"+strconv.FormatInt(postID, 10)+"/"+section, strings.NewReader(v.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -159,7 +159,7 @@ func wbfValid() url.Values {
 }
 
 func TestWebBuilderFormSubmit(t *testing.T) {
-	w := wbfStart(t)
+	w := wbformStart(t)
 
 	// A visitor (no cookies) sends a valid message: JSON answer, one mail to admin_email.
 	v := wbfValid()
@@ -213,7 +213,7 @@ func TestWebBuilderFormSubmit(t *testing.T) {
 }
 
 func TestWebBuilderFormInvalid(t *testing.T) {
-	w := wbfStart(t)
+	w := wbformStart(t)
 	v := wbfValid()
 	v.Set("email", "not an email")
 	v.Set("name", strings.Repeat("x", webbuilder.FormNameMax+1))
@@ -255,7 +255,7 @@ func TestWebBuilderFormInvalid(t *testing.T) {
 }
 
 func TestWebBuilderFormSpamSilent(t *testing.T) {
-	w := wbfStart(t)
+	w := wbformStart(t)
 	for name, mod := range map[string]func(url.Values){
 		"honeypot": func(v url.Values) { v.Set("wb_hp", "http://spam.example") },
 		"too fast": func(v url.Values) { v.Set("wb_t", "150") },
@@ -281,7 +281,7 @@ func TestWebBuilderFormSpamSilent(t *testing.T) {
 }
 
 func TestWebBuilderFormRateLimit(t *testing.T) {
-	w := wbfStart(t)
+	w := wbformStart(t)
 	v := url.Values{"email": {"x@example.test"}, "wb_t": {"5000"}}
 	for i := 0; i < wbFormLimit; i++ {
 		if code, out, _ := w.submit(t, nil, w.page.ID, wbfNewsletter, v, true); code != http.StatusOK {
@@ -305,11 +305,11 @@ func TestWebBuilderFormRateLimit(t *testing.T) {
 }
 
 func TestWebBuilderFormNotFound(t *testing.T) {
-	w := wbfStart(t)
+	w := wbformStart(t)
 	ctx := context.Background()
-	draft := wbfPage(t, w.srv, "Draft", "draft")
-	private := wbfPage(t, w.srv, "Private", "private")
-	detached := wbfPage(t, w.srv, "Detached", "publish")
+	draft := wbformPage(t, w.srv, "Draft", "draft")
+	private := wbformPage(t, w.srv, "Private", "private")
+	detached := wbformPage(t, w.srv, "Detached", "publish")
 	if err := w.srv.store.WebBuilder().SetDetached(ctx, detached.ID, true); err != nil {
 		t.Fatal(err)
 	}
@@ -317,7 +317,7 @@ func TestWebBuilderFormNotFound(t *testing.T) {
 	if err := w.srv.store.InsertPost(ctx, plain); err != nil {
 		t.Fatal(err)
 	}
-	locked := wbfPage(t, w.srv, "Locked", "publish")
+	locked := wbformPage(t, w.srv, "Locked", "publish")
 	if _, err := w.srv.store.Pool.Exec(ctx, `UPDATE posts SET password = 'secret' WHERE id = $1`, locked.ID); err != nil {
 		t.Fatal(err)
 	}
@@ -350,7 +350,7 @@ func TestWebBuilderFormNotFound(t *testing.T) {
 		t.Errorf("wp_block: %d %v", code, out)
 	}
 	// Content edited outside the builder (drift not yet flagged) hides the form too.
-	drift := wbfPage(t, w.srv, "Drift", "publish")
+	drift := wbformPage(t, w.srv, "Drift", "publish")
 	if _, err := w.srv.store.Pool.Exec(ctx, `UPDATE posts SET content = '<p>edited</p>' WHERE id = $1`, drift.ID); err != nil {
 		t.Fatal(err)
 	}
@@ -382,7 +382,7 @@ func (r *captchaRT) RoundTrip(req *http.Request) (*http.Response, error) {
 }
 
 func TestWebBuilderFormCaptcha(t *testing.T) {
-	w := wbfStart(t)
+	w := wbformStart(t)
 	rt := &captchaRT{}
 	old := gontactCaptchaClient
 	gontactCaptchaClient = &http.Client{Transport: rt}
@@ -428,7 +428,7 @@ func TestWebBuilderFormCaptcha(t *testing.T) {
 
 // Pursae Security's "REST API for logged-in users only" keeps the public form route open.
 func TestWebBuilderFormRESTVisitorsOnly(t *testing.T) {
-	w := wbfStart(t)
+	w := wbformStart(t)
 	if err := w.srv.settings.Set(context.Background(), map[string]any{asSetting: true}); err != nil {
 		t.Fatal(err)
 	}
