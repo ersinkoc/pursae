@@ -49,6 +49,17 @@ function NoticeCard({ n, onAnswer }: { n: Notice; onAnswer: (id: string | null) 
   )
 }
 
+/**
+ * Keeps keystrokes inside the host layer (its dialogs, pickers and notices) away from the
+ * builder: its shortcut handler listens on window and skips only text fields, so Backspace,
+ * Cmd+Z, "p", Alt+Arrow or Cmd+D on a dialog button would otherwise edit the document behind the
+ * modal. Call it after createRoot(layer): React's own listener on the layer runs first, so the
+ * dialogs' handlers still see every key.
+ */
+export function isolateHostKeys(layer: Pick<HTMLElement, 'addEventListener'>): void {
+  layer.addEventListener('keydown', (e) => e.stopPropagation())
+}
+
 export function HostLayer({ host }: { host: CmsHost }) {
   const ui = host.ui
   const state = useSyncExternalStore(ui.subscribe, ui.getState, ui.getState)

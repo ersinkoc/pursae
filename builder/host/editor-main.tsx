@@ -10,7 +10,7 @@ import { createRoot } from 'react-dom/client'
 import App from '@/App'
 import { setHost } from '@/builder/host'
 import { createCmsHost, fontsBase, readBoot, type CmsHost } from './cms-host'
-import { HostLayer } from './HostLayer'
+import { HostLayer, isolateHostKeys } from './HostLayer'
 import { installTemplateUi } from './TemplateBar'
 
 function mountPoint(): HTMLElement {
@@ -99,6 +99,7 @@ async function boot() {
     </StrictMode>,
   )
   createRoot(layer).render(<HostLayer host={host} />)
+  isolateHostKeys(layer) // after createRoot: the layer's React listener runs first
 }
 
 void boot()
