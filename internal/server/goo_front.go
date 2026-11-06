@@ -194,14 +194,6 @@ func (s *Server) gooIsStorePage(c *gin.Context, q *siteQuery) bool {
 	if gooViewFrom(c) != nil {
 		return true
 	}
-	if s.golementorOn() { // Golementor: store widgets in the page or the theme's parts (goo_gwe.go)
-		if t := s.activeTheme(); t != nil && (gweDesignTheme(t) || t.Slug == helloThemeSlug) {
-			return true
-		}
-		if q != nil && gooUsesStoreWidgets(q.Post) {
-			return true
-		}
-	}
 	return q != nil && q.Post != nil && s.gooHasShortcode(q.Post.Content)
 }
 
@@ -217,9 +209,6 @@ func (s *Server) gooHead(c *gin.Context, q *siteQuery) string {
 	b.WriteString(`<link rel="stylesheet" id="woocommerce-smallscreen-css" href="` + gooAssets + `/css/goocommerce-smallscreen.css` + v + `" media="only screen and (max-width: 768px)" />` + "\n")
 	b.WriteString(`<link rel="stylesheet" id="woocommerce-general-css" href="` + gooAssets + `/css/goocommerce.css` + v + `" media="all" />` + "\n")
 	b.WriteString(`<noscript><style>.woocommerce-product-gallery{ opacity: 1 !important; }</style></noscript>` + "\n")
-	if s.golementorOn() { // the store widgets of Golementor (goo_gwe.go)
-		b.WriteString(`<link rel="stylesheet" id="goocommerce-elements-css" href="` + gooAssets + `/css/goocommerce-elements.css` + v + `" media="all" />` + "\n")
-	}
 	if fv := gooViewFrom(c); fv != nil && fv.Kind == "product" && fv.Product != nil {
 		b.WriteString(s.gooProductJSONLD(c, fv.Product))
 	}

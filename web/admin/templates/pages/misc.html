@@ -144,7 +144,7 @@
 		<div class="wpgo-about-card"><span class="dashicons dashicons-admin-plugins" aria-hidden="true"></span><h3>Sandboxed plugins</h3><p>Plugins are signed WebAssembly modules. They ask for permissions when you activate them and can&#8217;t touch anything else; a misbehaving plugin is stopped, not your site.</p></div>
 		<div class="wpgo-about-card"><span class="dashicons dashicons-performance" aria-hidden="true"></span><h3>WPGo Cache</h3><p>A LiteSpeed-style page cache built in: tag-based purges, a crawler and page optimizations, behind any web server.</p></div>
 		<div class="wpgo-about-card"><span class="dashicons dashicons-admin-users" aria-hidden="true"></span><h3>No Gravatar</h3><p>Profile pictures come from your own Media Library. Nothing about your visitors is sent to a third party to draw an avatar.</p></div>
-{{if .Golementor}}		<div class="wpgo-about-card"><span class="dashicons dashicons-layout" aria-hidden="true"></span><h3>Pursae Web Builder</h3><p>A visual page and theme builder: design pages, headers, footers and archives, then save the result as a theme.</p></div>{{end}}
+{{if .WebBuilder}}		<div class="wpgo-about-card"><span class="dashicons dashicons-layout" aria-hidden="true"></span><h3>Pursae Web Builder</h3><p>A visual page builder: put pages together from ready-made sections, edit them in place and publish them as fast, static HTML.</p></div>{{end}}
 		<div class="wpgo-about-card"><span class="dashicons dashicons-admin-appearance" aria-hidden="true"></span><h3>Twenty Twenty-Five</h3><p>The default theme ships with its original design, color schemes from its style variations, and ready-made demo sites to start from.</p></div>
 	</div>
 	<div class="wpgo-about-card" style="margin-top:24px">
@@ -251,7 +251,7 @@
 	{{if .Recommended}}<form method="post" action="/wp-admin/theme-install?action=install-recommended" class="wpgo-install-recommended"><input type="hidden" name="_wpnonce" value="{{.RecommendedNonce}}" /><span class="description">{{.Recommended}} recommended theme{{if ne .Recommended 1}}s are{{else}} is{{end}} not installed yet.</span> <input type="submit" class="button" value="Install recommended themes" /></form>{{end}}
 	{{if .Previews}}<form method="post" action="/wp-admin/theme-preview" class="wpgo-clear-previews"><input type="hidden" name="_wpnonce" value="{{.PreviewsNonce}}" /><input type="hidden" name="action" value="clear" /><span class="description">{{.Previews}} theme preview{{if ne .Previews 1}}s are{{else}} is{{end}} kept for quick viewing.</span> <button type="submit" class="button-link">Clear theme previews</button></form>{{end}}
 	{{else}}
-	<p class="wpgo-theme-install-help">Bundled themes are compiled into Pursae{{if .Golementor}}, Pursae Web Builder&rsquo;s <a href="/wp-admin/theme-builder">Theme Builder</a> generates themes{{end}}, and theme packages (a zip of <code>theme.json</code>, templates and assets, no code) are installed from the <a href="/wp-admin/theme-install">Library</a> or with <strong>Upload Theme</strong>.</p>
+	<p class="wpgo-theme-install-help">Bundled themes are compiled into Pursae, and theme packages (a zip of <code>theme.json</code>, templates and assets, no code) are installed from the <a href="/wp-admin/theme-install">Library</a> or with <strong>Upload Theme</strong>.</p>
 	{{end}}
 	{{if .Cards}}
 	<div class="theme-browser content-filterable rendered">
@@ -604,7 +604,7 @@
 <div class="wrap">
 <h1>{{if eq .Kind "theme"}}Edit Themes{{else}}Edit Plugins{{end}}</h1>
 {{if .Editable}}{{if .Restored}}<div id="message" class="notice notice-success is-dismissible"><p>The original file has been restored.</p></div>{{end}}
-{{else}}<div id="message" class="notice notice-info"><p>{{if eq .Kind "theme"}}<strong>Read-only.</strong> {{if .Nonce}}{{else}}File editing is disabled on this site (<code>WPGO_DISALLOW_FILE_EDIT</code>). {{if .Builder}}Build or change themes with <a href="/wp-admin/theme-builder">Pursae Web Builder</a> or add{{else}}Add{{end}} custom CSS in the <a href="/wp-admin/customize">Customizer</a>.{{end}}{{else}}<strong>Read-only.</strong> Plugins are signed WebAssembly packages, so their files can be browsed here but not changed. Rebuild and re-sign the package to change a plugin.{{end}}</p></div>{{end}}
+{{else}}<div id="message" class="notice notice-info"><p>{{if eq .Kind "theme"}}<strong>Read-only.</strong> {{if .Nonce}}{{else}}File editing is disabled on this site (<code>WPGO_DISALLOW_FILE_EDIT</code>). Add custom CSS in the <a href="/wp-admin/customize">Customizer</a>.{{end}}{{else}}<strong>Read-only.</strong> Plugins are signed WebAssembly packages, so their files can be browsed here but not changed. Rebuild and re-sign the package to change a plugin.{{end}}</p></div>{{end}}
 {{template "notices" $}}
 {{if and (eq .Kind "plugin") (not .Choices)}}
 <p>You do not appear to have any WebAssembly plugins installed. <a href="/wp-admin/plugin-install">Add a plugin</a>.</p>

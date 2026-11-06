@@ -628,9 +628,9 @@ func TestWebBuilderRESTLibraryAndPrefs(t *testing.T) {
 func TestWebBuilderRESTFonts(t *testing.T) {
 	srv, base, admin := wbrStart(t)
 	var fetches atomic.Int32
-	prev := gweFontFetch
-	t.Cleanup(func() { gweFontFetch = prev })
-	gweFontFetch = func(_ context.Context, raw string) ([]byte, error) {
+	prev := gfontFetch
+	t.Cleanup(func() { gfontFetch = prev })
+	gfontFetch = func(_ context.Context, raw string) ([]byte, error) {
 		fetches.Add(1)
 		if strings.Contains(raw, "fonts.googleapis.com") {
 			return []byte(`/* latin */

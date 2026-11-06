@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"html/template"
 	"net/url"
 	"sort"
 	"strings"
@@ -266,4 +267,10 @@ func (s *Server) gweBackupWorkingCopy(ctx context.Context, authorID int64, loadi
 	name := "Backup " + time.Now().In(s.loc()).Format("2006-01-02 15:04")
 	in := gweSaveThemeInput{Name: name, Description: "Design saved automatically before \"" + loading + "\" was loaded."}
 	return s.gweCreateTheme(ctx, authorID, s.gweUniqueSlug(ctx, name), in, "", gwePageSettings(kit), parts, s.gweWorkingCSS())
+}
+
+// gweShell is the template set Golementor theme parts and saved themes render through: Hello
+// Golementor's (theme_hellogowebeditor.go).
+func (t *templates) gweShell() *template.Template {
+	return t.getTheme(true, helloThemeSlug)
 }

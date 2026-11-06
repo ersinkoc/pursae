@@ -85,7 +85,7 @@ func (s *Server) wbFrontDecide(c *gin.Context, q *siteQuery, p *store.Post) *wbF
 	if (p.Type != "page" && p.Type != "post") || p.Status == "trash" {
 		return nil
 	}
-	if s.passwordRequired(c, p) || gwePreviewing(c) { // the theme prints the password form
+	if s.passwordRequired(c, p) { // the theme prints the password form
 		return nil
 	}
 	ctx := c.Request.Context()
@@ -166,7 +166,6 @@ func (s *Server) wbCanvas(c *gin.Context, v *siteView, fp *wbFrontPage, body str
 	// and no Additional CSS (the Customizer's CSS belongs to the theme).
 	bare := *v
 	bare.Theme = &Theme{Slug: v.Theme.Slug, Name: v.Theme.Name, BlockStyles: []string{}}
-	bare.GWE = nil
 	bare.CustomCSS = ""
 	head := strings.Replace(string(s.wpHead(c, v.Q, lb, adminBar, &bare)), blockStylesMarker, "", 1)
 
@@ -343,7 +342,7 @@ func (s *Server) wbFontLinks(c *gin.Context, raw json.RawMessage) string {
 		return ""
 	}
 	lb := s.links(c)
-	base := "/wp-content/uploads/" + gweFontsBase
+	base := "/wp-content/uploads/" + gfontsBase
 	var sb strings.Builder
 	seen := map[string]bool{}
 	preloaded := false
@@ -352,12 +351,12 @@ func (s *Server) wbFontLinks(c *gin.Context, raw json.RawMessage) string {
 		if !ok {
 			continue
 		}
-		key := gweFontKey(f.Family)
+		key := gfontKey(f.Family)
 		if seen[key] {
 			continue
 		}
 		seen[key] = true
-		cssPath := filepath.Join(s.gweFontsDir("css"), key+".css")
+		cssPath := filepath.Join(s.gfontsDir("css"), key+".css")
 		st, err := os.Stat(cssPath)
 		if err != nil {
 			continue
@@ -378,15 +377,15 @@ func (s *Server) wbFontLinks(c *gin.Context, raw json.RawMessage) string {
 
 // wbFontPreload is the woff2 file of a localized family's regular face (cached per file version).
 func (s *Server) wbFontPreload(cssPath, ver string) string {
-	if v, ok := gwePreloadCache.Load(cssPath); ok && v.([2]string)[0] == ver {
+	if v, ok := gfontPreloadCache.Load(cssPath); ok && v.([2]string)[0] == ver {
 		return v.([2]string)[1]
 	}
 	b, err := os.ReadFile(cssPath)
 	if err != nil {
 		return ""
 	}
-	file := gweFontPreloadFile(string(b))
-	gwePreloadCache.Store(cssPath, [2]string{ver, file})
+	file := gfontPreloadFile(string(b))
+	gfontPreloadCache.Store(cssPath, [2]string{ver, file})
 	return file
 }
 

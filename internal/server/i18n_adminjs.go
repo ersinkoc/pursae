@@ -19,7 +19,7 @@ import (
 // builder, Goocommerce's store screens, SEO-Go's editor panel, inline scripts of the templates)
 // get the translations of their scripts' UI strings: wpgo-l10n.js holds them, swaps them into
 // the page as the scripts add elements, and translates the message of alert(), confirm() and
-// prompt(). Golementor Studio has its own dictionary (gweL10nScript).
+// prompt().
 
 // adminJSSources are the scripts whose string literals are UI text; templates contribute the
 // literals of their inline scripts and event handler attributes.

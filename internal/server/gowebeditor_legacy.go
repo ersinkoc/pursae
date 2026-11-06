@@ -40,7 +40,7 @@ func gweLegacyRedirect(to string) gin.HandlerFunc {
 // gweMoveLegacyDirs renames, once, the folders that carried the old names: uploads/gowebeditor
 // and the Theme File Editor's copy of the hello-gowebeditor theme.
 func gweMoveLegacyDirs(uploadsDir, themesDir string) {
-	moveDir(filepath.Join(uploadsDir, gweLegacyUploadsDir), filepath.Join(uploadsDir, gweUploadsDir))
+	moveDir(filepath.Join(uploadsDir, legacyBuilderUploadsDir), filepath.Join(uploadsDir, builderUploadsDir))
 	moveDir(filepath.Join(themesDir, "hello-gowebeditor"), filepath.Join(themesDir, helloThemeSlug))
 }
 

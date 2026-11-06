@@ -14,6 +14,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"wpgo/internal/builder"
 	"wpgo/internal/store"
 )
 
@@ -613,4 +614,19 @@ func (s *Server) gooGweLangParts(ctx context.Context, parts []*gwePart) []*gwePa
 		}
 	}
 	return out
+}
+
+// gooLoopQuery adds the posts hidden from the visitor to a builder loop query's exclusions.
+func (s *Server) gooLoopQuery(ctx context.Context, q *builder.PostQuery) *builder.PostQuery {
+	types := q.PostTypes
+	if len(types) == 0 {
+		types = []string{"post"}
+	}
+	ex := s.gooListingKinds(ctx, types)
+	if len(ex) == 0 {
+		return q
+	}
+	cp := *q
+	cp.ExcludeIDs = append(append([]int64{}, q.ExcludeIDs...), ex...)
+	return &cp
 }

@@ -2,9 +2,9 @@
 
 package server
 
-// gweGoogleFontList is the Google Fonts catalogue the font control offers (one family per line;
+// gfontList is the Google Fonts catalogue the font control offers (one family per line;
 // a leading "*" marks a Google Early Access family).
-const gweGoogleFontList = `ABeeZee
+const gfontList = `ABeeZee
 ADLaM Display
 AR One Sans
 Abel

@@ -173,10 +173,6 @@ func TestWebBuilderRoutesNoConflict(t *testing.T) {
 	// The routes of server.go that share a prefix with ours.
 	r.GET("/wp-content/uploads/*filepath", sentinel(251))
 	r.GET(pluginAssetsPath+"/:slug/assets/*filepath", sentinel(252))
-	r.GET(strings.TrimSuffix(gweAssetsPath, "/")+"/*filepath", sentinel(253))
-	r.GET("/wp-content/web-builder/theme-screenshot/:slug", sentinel(254))
-	r.GET("/wp-content/plugins/gowebeditor/assets/*filepath", sentinel(255))
-	r.GET("/wp-content/gowebeditor/theme-screenshot/:slug", sentinel(256))
 	s := &Server{cfg: config.Config{WebDir: "../../web"}, web: web.FS("../../web")}
 	func() {
 		defer func() {
@@ -199,9 +195,6 @@ func TestWebBuilderRoutesNoConflict(t *testing.T) {
 	for path, want := range map[string]int{
 		"/wp-content/uploads/2026/11/a.png":                        251,
 		"/wp-content/plugins/some-plugin/assets/x.js":              252,
-		"/wp-content/plugins/web-builder/assets/js/editor.js":      253,
-		"/wp-content/web-builder/theme-screenshot/kite":            254,
-		"/wp-content/plugins/gowebeditor/assets/js/editor.js":      255,
 		webbuilder.EditorAssetsPath + m.Editor.JS:                  200,
 		webbuilder.SiteAssetsPath + m.Site.Runtime:                 200,
 		webbuilder.SiteAssetsPath + m.Site.CSS:                     200,

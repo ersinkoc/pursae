@@ -21,7 +21,7 @@ func pllMetaSkipped(key string) bool {
 	case "_edit_lock", "_edit_last", "_wp_old_slug", "_encloseme", "_pingme", "_wp_page_template", "_thumbnail_id", "classic-editor-remember":
 		return true
 	}
-	return strings.HasPrefix(key, "_wp_trash_meta") || strings.Contains(key, "elementor") || strings.HasPrefix(key, "_pll") || strings.HasPrefix(key, "_web_builder")
+	return strings.HasPrefix(key, "_wp_trash_meta") || strings.HasPrefix(key, "_pll") || strings.HasPrefix(key, "_web_builder")
 }
 
 // pllCopyForTranslation fills a new translation from its source like Polylang: terms (translated), featured
@@ -36,13 +36,6 @@ func (s *Server) pllCopyForTranslation(ctx context.Context, src, dst *store.Post
 	}
 	if tpl, ok := src.Meta["_wp_page_template"]; ok {
 		meta["_wp_page_template"] = tpl
-	}
-	if duplicate && gweBuilt(src) { // a Golementor page: the translation starts from its design
-		for _, k := range []string{"_elementor_data", "_elementor_edit_mode", "_elementor_template_type", "_elementor_page_settings", "_elementor_version"} {
-			if v, ok := src.Meta[k]; ok {
-				meta[k] = v
-			}
-		}
 	}
 	rawMeta, _ := json.Marshal(meta)
 	parent := s.pllTranslatedID(ctx, pllPost, src.ParentID, l.Slug)

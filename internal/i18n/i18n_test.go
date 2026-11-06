@@ -199,8 +199,8 @@ func TestEscapeAndLanguages(t *testing.T) {
 	if got := m.Installed(); len(got) != 1 || got[0] != "pl_PL" {
 		t.Errorf("Installed: %v", got)
 	}
-	if rebrandString("Elementor and Pursae Web Builder") != "Pursae Web Builder and Pursae Web Builder" {
-		t.Error(rebrandString("Elementor and Pursae Web Builder"))
+	if rebrandString("Contact Form 7 and Pursae Contact Form") != "Pursae Contact Form and Pursae Contact Form" {
+		t.Error(rebrandString("Contact Form 7 and Pursae Contact Form"))
 	}
 }
 
@@ -216,20 +216,20 @@ func TestInstallAndScriptTranslations(t *testing.T) {
 		return b.Bytes()
 	}
 	js := `{"locale_data":{"messages":{"":{"domain":"messages"},"Publish":["Opublikuj"]}}}`
-	pjs := `{"locale_data":{"messages":{"":{"domain":"messages"},"Edit with Elementor":["Edytuj w Elementor"]}}}`
+	pjs := `{"locale_data":{"messages":{"":{"domain":"messages"},"Edit with Contact Form 7":["Edytuj w Contact Form 7"]}}}`
 	sum := md5.Sum([]byte("wp-includes/js/dist/editor.js"))
 	core := zipOf(map[string][]byte{
 		"admin-pl_PL.mo": writeMO(map[string]string{"Posts": "Wpisy"}), "admin-pl_PL.po": []byte("po"),
 		"pl_PL-" + hex.EncodeToString(sum[:]) + ".json": []byte(js), "../evil.mo": []byte("x"),
 	})
-	plug := zipOf(map[string][]byte{"elementor-pl_PL.mo": writeMO(map[string]string{"Forms": "Formularze"}),
-		"elementor-pl_PL-abc.json": []byte(pjs)})
+	plug := zipOf(map[string][]byte{"contact-form-7-pl_PL.mo": writeMO(map[string]string{"Forms": "Formularze"}),
+		"contact-form-7-pl_PL-abc.json": []byte(pjs)})
 	var srv *httptest.Server
 	srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case r.URL.Path == "/core/1.0/":
 			fmt.Fprintf(w, `{"translations":[{"language":"pl_PL","package":"%s/core.zip"}]}`, srv.URL)
-		case r.URL.Path == "/plugins/1.0/" && r.URL.Query().Get("slug") == "elementor":
+		case r.URL.Path == "/plugins/1.0/" && r.URL.Query().Get("slug") == "contact-form-7":
 			fmt.Fprintf(w, `{"translations":[{"language":"pl_PL","package":"%s/el.zip"}]}`, srv.URL)
 		case r.URL.Path == "/plugins/1.0/":
 			fmt.Fprint(w, `{"translations":[]}`)
@@ -243,7 +243,7 @@ func TestInstallAndScriptTranslations(t *testing.T) {
 	}))
 	defer srv.Close()
 	m := NewManager(t.TempDir(), nil)
-	if err := m.Install(context.Background(), &Installer{API: srv.URL}, "pl_PL", []string{"elementor", "polylang"}); err != nil {
+	if err := m.Install(context.Background(), &Installer{API: srv.URL}, "pl_PL", []string{"contact-form-7", "polylang"}); err != nil {
 		t.Fatal(err)
 	}
 	if !m.IsInstalled("pl_PL") || m.Catalog("pl_PL").T("Posts") != "Wpisy" || m.Catalog("pl_PL").T("Forms") != "Formularze" {
@@ -258,7 +258,7 @@ func TestInstallAndScriptTranslations(t *testing.T) {
 	if got := string(m.ScriptTranslations("pl_PL", "/wp-includes/js/dist/editor.min.js", "")); !strings.Contains(got, `"Publish":["Opublikuj"]`) {
 		t.Errorf("script translations: %s", got)
 	}
-	if got := string(m.PluginScriptTranslations("pl_PL", "elementor")); !strings.Contains(got, "Edytuj w Pursae Web Builder") {
+	if got := string(m.PluginScriptTranslations("pl_PL", "contact-form-7")); !strings.Contains(got, "Edytuj w Pursae Contact Form") {
 		t.Errorf("plugin script translations: %s", got)
 	}
 	if err := m.Install(context.Background(), &Installer{API: srv.URL}, "xx_XX", nil); err == nil {

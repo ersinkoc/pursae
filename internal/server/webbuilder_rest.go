@@ -1017,7 +1017,7 @@ func wbParseCSS2Family(v string) (wbFontRequest, bool) {
 	name, axes, _ := strings.Cut(v, ":")
 	name = strings.TrimSpace(strings.ReplaceAll(name, "+", " "))
 	f, ok := webbuilder.LookupFont(name)
-	if !ok || gweGoogleFontType(f.Family) == "" {
+	if !ok || gfontType(f.Family) == "" {
 		return wbFontRequest{}, false
 	}
 	req := wbFontRequest{family: f.Family, normal: map[int]bool{}, italic: map[int]bool{}}
@@ -1112,7 +1112,7 @@ var (
 func wbFontFaces(css string, req wbFontRequest, fontsURL string) string {
 	var sb strings.Builder
 	for _, m := range wbFaceBlockRe.FindAllString(css, -1) {
-		italic := gweFaceStyleRe.MatchString(m) && gweFaceStyleRe.FindStringSubmatch(m)[1] == "italic"
+		italic := gfontFaceStyleRe.MatchString(m) && gfontFaceStyleRe.FindStringSubmatch(m)[1] == "italic"
 		want := req.normal
 		if italic {
 			want = req.italic
@@ -1156,7 +1156,7 @@ var wbFontsDisk struct {
 }
 
 func (s *Server) wbFontsDiskUsage() int64 {
-	dir := filepath.Join(s.cfg.UploadsDir, filepath.FromSlash(gweFontsBase))
+	dir := filepath.Join(s.cfg.UploadsDir, filepath.FromSlash(gfontsBase))
 	wbFontsDisk.Lock()
 	defer wbFontsDisk.Unlock()
 	if wbFontsDisk.dir == dir && time.Since(wbFontsDisk.at) < wbFontsDiskTTL {
@@ -1191,7 +1191,7 @@ func (s *Server) wbRESTFontsCSS(c *gin.Context, _ *restRequest) {
 		restErr(c, http.StatusBadRequest, "rest_invalid_param", "Too many families in one request.", map[string]any{"limit": wbFontsPerRequest})
 		return
 	}
-	fontsURL := s.links(c).HomeURL("/wp-content/uploads/" + gweFontsBase + "/fonts/")
+	fontsURL := s.links(c).HomeURL("/wp-content/uploads/" + gfontsBase + "/fonts/")
 	var sb strings.Builder
 	sb.WriteString("/* Google Fonts served locally by Pursae Web Builder (SIL Open Font License / Apache License, see fonts.google.com) */\n")
 	seen := map[string]bool{}
@@ -1205,13 +1205,13 @@ func (s *Server) wbRESTFontsCSS(c *gin.Context, _ *restRequest) {
 			continue
 		}
 		seen[req.family] = true
-		cssPath := filepath.Join(s.gweFontsDir("css"), gweFontKey(req.family)+".css")
+		cssPath := filepath.Join(s.gfontsDir("css"), gfontKey(req.family)+".css")
 		if _, err := os.Stat(cssPath); err != nil {
 			if s.wbFontsDiskUsage() >= wbFontsDiskCap {
 				sb.WriteString("/* " + req.family + ": not downloaded, the font storage is full */\n")
 				continue
 			}
-			if !s.gweEnsureGoogleFont(req.family, wbFontsWait) {
+			if !s.gfontEnsure(req.family, wbFontsWait) {
 				sb.WriteString("/* " + req.family + ": not available yet */\n")
 				continue
 			}

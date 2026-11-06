@@ -15,7 +15,7 @@ func TestGoogleFontFetchHosts(t *testing.T) {
 		"https://user@fonts.gstatic.com/x.woff2",
 		"https://fonts.gstatic.com.evil.test/x.woff2",
 	} {
-		if _, err := gweFontFetch(context.Background(), raw); err == nil {
+		if _, err := gfontFetch(context.Background(), raw); err == nil {
 			t.Errorf("%s was fetched", raw)
 		}
 	}

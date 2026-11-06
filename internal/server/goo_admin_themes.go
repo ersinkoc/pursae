@@ -10,8 +10,8 @@ import (
 
 // Goocommerce › Store Themes (/wp-admin/goocommerce?page=themes): the store themes of the theme
 // library (packages that declare supports.woocommerce) with their screenshots, a live preview with
-// the demo store and one action that does the whole job: install the package, activate it (and
-// Golementor for a theme built with it) and import its demo store. The steps run one request each
+// the demo store and one action that does the whole job: install the package, activate it and
+// import its demo store. The steps run one request each
 // so the screen can show progress; without JavaScript one POST runs them all. Nothing here installs
 // or imports by itself: the steps call the same code as Appearance › Add Themes (installLibraryTheme,
 // switchTheme, importThemeDemo), so an installed store theme is an ordinary theme of Appearance › Themes.
@@ -23,11 +23,10 @@ type gooStoreTheme struct {
 	Slug, Name, Version, Description string
 	Style, CategoryLabel, Screenshot string
 	PreviewURL                       string // Live Preview with the demo store (theme_preview.go)
-	Golementor                       bool   // built with Golementor (Theme Builder parts and store widgets)
 	Installed, Active, Imported      bool
 	Update                           bool // an older version is installed
 	HasDemo                          bool
-	CustomizeURL, BuilderURL         string
+	CustomizeURL                     string
 }
 
 // gooIsStoreManifest reports whether a theme package is a store theme.
@@ -39,7 +38,7 @@ func gooIsStoreManifest(m *themeManifest) bool {
 	return v
 }
 
-// gooStoreThemes lists the store themes of the library, Golementor themes first, then by name.
+// gooStoreThemes lists the store themes of the library, the active one first, then by name.
 func (s *Server) gooStoreThemes(c *gin.Context) []gooStoreTheme {
 	active := s.activeTheme()
 	var out []gooStoreTheme
@@ -49,7 +48,7 @@ func (s *Server) gooStoreThemes(c *gin.Context) []gooStoreTheme {
 			continue
 		}
 		st := gooStoreTheme{Slug: m.Slug, Name: m.Name, Version: m.Version, Description: m.Description, Style: m.Style,
-			CategoryLabel: themeCategoryLabel(m.Category), HasDemo: m.Demo != "", Golementor: m.Golementor != "",
+			CategoryLabel: themeCategoryLabel(m.Category), HasDemo: m.Demo != "",
 			Screenshot: libraryScreenshotURL(m)}
 		if canPreview(currentUser(c), true) {
 			st.PreviewURL = previewURL(m.Slug, false)
@@ -60,21 +59,12 @@ func (s *Server) gooStoreThemes(c *gin.Context) []gooStoreTheme {
 			st.Imported = s.demoImported(m.Slug)
 			if st.Active {
 				st.CustomizeURL = "/wp-admin/customize"
-				if st.Golementor && s.golementorOn() {
-					st.BuilderURL = gweThemeBuilderPath
-				}
 			}
 		}
 		out = append(out, st)
 	}
 	sort.SliceStable(out, func(i, j int) bool {
-		if out[i].Active != out[j].Active {
-			return out[i].Active
-		}
-		if out[i].Golementor != out[j].Golementor {
-			return out[i].Golementor
-		}
-		return false
+		return out[i].Active && !out[j].Active
 	})
 	return out
 }
@@ -194,11 +184,6 @@ func (s *Server) gooRunThemeStep(c *gin.Context, lt *libraryTheme, step string) 
 	case "activate":
 		if themeBySlug(m.Slug) == nil {
 			return fail("Install the theme first.")
-		}
-		if m.Golementor != "" && !s.golementorOn() { // a Golementor store theme needs the builder
-			if err := s.golementorActivate(ctx); err != nil {
-				return fail("Pursae Web Builder could not be activated: " + err.Error())
-			}
 		}
 		if a := s.activeTheme(); a == nil || a.Slug != m.Slug {
 			if err := s.switchTheme(c, m.Slug); err != nil {

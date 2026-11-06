@@ -310,8 +310,8 @@ func fakeFontFetch(t *testing.T) *[]string {
 	t.Helper()
 	var mu sync.Mutex
 	var got []string
-	old := gweFontFetch
-	gweFontFetch = func(ctx context.Context, raw string) ([]byte, error) {
+	old := gfontFetch
+	gfontFetch = func(ctx context.Context, raw string) ([]byte, error) {
 		mu.Lock()
 		got = append(got, raw)
 		mu.Unlock()
@@ -324,7 +324,7 @@ func fakeFontFetch(t *testing.T) *[]string {
 		}
 		return []byte("wOF2-fake-" + raw), nil
 	}
-	t.Cleanup(func() { gweFontFetch = old })
+	t.Cleanup(func() { gfontFetch = old })
 	return &got
 }
 
@@ -334,7 +334,7 @@ func TestGWEGoogleFontsLocal(t *testing.T) {
 	dir := t.TempDir()
 	s := &Server{}
 	s.cfg.UploadsDir = dir
-	if err := s.gweDownloadGoogleFont(context.Background(), "Roboto", "googlefonts"); err != nil {
+	if err := s.gfontDownload(context.Background(), "Roboto", "googlefonts"); err != nil {
 		t.Fatal(err)
 	}
 	if len(*got) != 4 || !strings.Contains((*got)[0], "family=Roboto:100,100italic") || !strings.Contains((*got)[0], "display=swap") {
@@ -352,20 +352,20 @@ func TestGWEGoogleFontsLocal(t *testing.T) {
 		t.Errorf("font files: %v", files)
 	}
 	// The preload is the regular latin face.
-	pre := gweFontPreloadFile(string(css))
+	pre := gfontPreloadFile(string(css))
 	if b, _ := os.ReadFile(filepath.Join(dir, "web-builder", "google-fonts", "fonts", pre)); !strings.Contains(string(b), "KFOmCnqEu92Fr1Mu4mxK.woff2") {
 		t.Errorf("preload %q = %s", pre, b)
 	}
 	// Early access stylesheets get font-display added.
-	if out := gweFontFaceRe.ReplaceAllStringFunc("@font-face { font-family: 'X'; src: url(a.woff2); }", func(face string) string {
+	if out := gfontFaceRe.ReplaceAllStringFunc("@font-face { font-family: 'X'; src: url(a.woff2); }", func(face string) string {
 		return strings.TrimSuffix(strings.TrimRight(face, " \n\t}"), ";") + ";\n  font-display: swap;\n}"
 	}); !strings.Contains(out, "font-display: swap") {
 		t.Errorf("font-display: %s", out)
 	}
-	if gweGoogleFontType("Roboto") != "googlefonts" || gweGoogleFontType("Arial") != "" || gweGoogleFontType("Alef Hebrew") != "earlyaccess" {
+	if gfontType("Roboto") != "googlefonts" || gfontType("Arial") != "" || gfontType("Alef Hebrew") != "earlyaccess" {
 		t.Errorf("font types")
 	}
-	if gweFontKey("Roboto Slab") != "robotoslab" {
+	if gfontKey("Roboto Slab") != "robotoslab" {
 		t.Errorf("font key")
 	}
 }

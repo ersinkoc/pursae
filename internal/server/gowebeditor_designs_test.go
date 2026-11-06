@@ -14,6 +14,7 @@ import (
 // endpoint follows Settings › Reading, pages carry user_can, a page duplicates, and the designs
 // list in the library's Pages tab and insert as templates.
 func TestGolementorPagesPanelAndDesigns(t *testing.T) {
+	t.Skip("old builder detached from Pursae Commerce, Multi Language and REST (R1b); this file goes in R2")
 	ts, c := testServer(t)
 	base := ts.URL
 	installAndLogin(t, ts, c)

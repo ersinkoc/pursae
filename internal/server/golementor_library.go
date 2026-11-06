@@ -526,7 +526,7 @@ func gweLibLoadKit(fsys fs.FS, name string) (*gweLibKit, []string) {
 		if strings.TrimSpace(fam) == "" {
 			return "typography_font_family is missing"
 		}
-		if gweGoogleFontType(fam) == "" && !gweSetupSystemFonts[fam] {
+		if gfontType(fam) == "" && !gweSetupSystemFonts[fam] {
 			return fmt.Sprintf("font %q is neither a Google font nor a system font", fam)
 		}
 		return ""

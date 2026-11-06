@@ -260,11 +260,11 @@ var wbMediaTypes = sync.OnceValue(func() []string {
 	return out
 })
 
-// wbFontFamilies maps a font key (gweFontKey) to its Google Fonts family name.
+// wbFontFamilies maps a font key (gfontKey) to its Google Fonts family name.
 var wbFontFamilies = sync.OnceValue(func() map[string]string {
 	m := map[string]string{}
-	for fam := range gweGoogleFontsOnce() {
-		m[gweFontKey(fam)] = fam
+	for fam := range gfontCatalog() {
+		m[gfontKey(fam)] = fam
 	}
 	return m
 })
@@ -273,7 +273,7 @@ var wbFontFamilies = sync.OnceValue(func() map[string]string {
 // (one css/<key>.css per family, gfonts.go), sorted.
 func (s *Server) wbLocalFonts() []string {
 	out := []string{}
-	entries, err := os.ReadDir(s.gweFontsDir("css"))
+	entries, err := os.ReadDir(s.gfontsDir("css"))
 	if err != nil {
 		return out
 	}

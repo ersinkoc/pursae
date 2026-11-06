@@ -25,6 +25,6 @@ func scriptJSON(v any) string {
 // (no template substitutions), jsHasWordRe asks for a word, jsNotTextRe rejects code-like text.
 var (
 	jsLiteralRe = regexp.MustCompile(`'((?:[^'\\\n]|\\.){0,160})'|"((?:[^"\\\n]|\\.){0,160})"|` + "`([^`$\\n]{0,160})`")
-	jsNotTextRe = regexp.MustCompile(`[{}<>=;]|^\.|^#|gwe-|e-con|elementor|\\u|https?:|^[A-Z][a-z]+[A-Z]|^[A-Z_]+$`)
+	jsNotTextRe = regexp.MustCompile(`[{}<>=;]|^\.|^#|\\u|https?:|^[A-Z][a-z]+[A-Z]|^[A-Z_]+$`)
 	jsHasWordRe = regexp.MustCompile(`[A-Za-z]{2}`)
 )
