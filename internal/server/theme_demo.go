@@ -89,10 +89,8 @@ type demoPost struct {
 	Format        string        `json:"format"`
 	Sticky        bool          `json:"sticky"`
 	Comments      []demoComment `json:"comments"`
-	// Golementor is a page built with Golementor: its element tree (_elementor_data), with the demo
-	// tokens like the content; GolementorSettings are its page settings (goo_gwe.go).
-	Golementor         json.RawMessage `json:"golementor"`
-	GolementorSettings map[string]any  `json:"golementor_settings"`
+	// Keys this struct does not name (such as the page-builder trees older demos carried) are
+	// ignored: the page is imported with its content.
 }
 
 type demoComment struct {
@@ -293,12 +291,6 @@ func parseThemeDemo(fsys fs.FS, m *themeManifest) (*themeDemo, error) {
 		if p.Date != "" || len(p.Categories) > 0 || len(p.Tags) > 0 || p.Sticky || len(p.Comments) > 0 || (p.Format != "" && p.Format != "standard") {
 			bad("%s: date, categories, tags, format, sticky and comments are for posts", at)
 		}
-		if len(p.Golementor) > 0 {
-			var tree []any
-			if err := json.Unmarshal(p.Golementor, &tree); err != nil {
-				bad("%s.golementor must be an element tree (a JSON array): %v", at, err)
-			}
-		}
 	}
 	if front > 1 || blog > 1 {
 		bad("pages: only one front_page and one posts_page")
@@ -396,7 +388,7 @@ func parseThemeDemo(fsys fs.FS, m *themeManifest) (*themeDemo, error) {
 		}
 	}
 	for i, p := range d.Pages {
-		tokens(fmt.Sprintf("pages[%d]", i), p.Content+p.Excerpt+string(p.Golementor))
+		tokens(fmt.Sprintf("pages[%d]", i), p.Content+p.Excerpt)
 	}
 	for i, p := range d.Posts {
 		tokens(fmt.Sprintf("posts[%d]", i), p.Content+p.Excerpt)
@@ -871,16 +863,6 @@ func (s *Server) importDemoRun(ctx context.Context, uid int64, t *Theme, src *de
 			if it.Template != "" {
 				p.Meta["_wp_page_template"] = it.Template
 			}
-			if len(it.Golementor) > 0 { // a Golementor page (goo_gwe.go)
-				p.Meta["_elementor_data"] = string(it.Golementor)
-				p.Meta["_elementor_edit_mode"], p.Meta["_elementor_template_type"], p.Meta["_elementor_version"] = "builder", "wp-page", gweVersion
-				if it.Template == "" {
-					p.Meta["_wp_page_template"] = "elementor_header_footer"
-				}
-				if len(it.GolementorSettings) > 0 {
-					p.Meta["_elementor_page_settings"] = it.GolementorSettings
-				}
-			}
 		}
 		if it.Date != "" {
 			if dt, err := parseDemoDate(it.Date, loc); err == nil {
@@ -983,8 +965,7 @@ func (s *Server) importDemoRun(ctx context.Context, uid int64, t *Theme, src *de
 	}
 	for _, f := range fresh {
 		content, excerpt := replace(f.p.Content), replace(f.p.Excerpt)
-		data, _ := f.p.Meta["_elementor_data"].(string)
-		if content == f.p.Content && excerpt == f.p.Excerpt && replace(data) == data {
+		if content == f.p.Content && excerpt == f.p.Excerpt {
 			continue
 		}
 		p, err := s.store.GetPost(ctx, f.p.ID)
@@ -992,9 +973,6 @@ func (s *Server) importDemoRun(ctx context.Context, uid int64, t *Theme, src *de
 			return rep, err
 		}
 		p.Content, p.Excerpt = content, excerpt
-		if data != "" {
-			p.Meta["_elementor_data"] = replace(data)
-		}
 		if err := s.store.UpdatePost(ctx, p, uid); err != nil {
 			return rep, err
 		}

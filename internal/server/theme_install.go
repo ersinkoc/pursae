@@ -362,7 +362,6 @@ type themeInstallCard struct {
 	Installed, Active, Package     bool
 	Description                    string
 	ActivateURL, PreviewURL        string
-	Custom                         bool
 	Version                        string
 	InstallURL                     string // a deleted bundled theme or a library theme: Install puts it in place
 	// Library themes.
@@ -494,14 +493,14 @@ func (s *Server) themeInstall(c *gin.Context) {
 	} else {
 		list := s.installedThemes()
 		for _, slug := range s.deletedThemes() {
-			if t := themeBySlug(slug); t != nil && t.Package == nil && !t.Custom && (t.Slug != helloThemeSlug || s.golementorOn()) {
+			if t := themeBySlug(slug); t != nil && t.Package == nil {
 				list = append(list, t)
 			}
 		}
 		for _, t := range list {
 			cd := themeInstallCard{Name: t.Name, Author: t.Author, Screenshot: t.ScreenshotSrc() + "?ver=" + t.Version, Slug: t.Slug,
 				Installed: true, Active: t.Slug == active.Slug, Description: t.Description, Package: t.Package != nil, Version: t.Version,
-				ActivateURL: activateURL(t.Slug), PreviewURL: "/?theme=" + t.Slug, Custom: t.Custom}
+				ActivateURL: activateURL(t.Slug), PreviewURL: "/?theme=" + t.Slug}
 			if t.Package != nil {
 				cd.Style, cd.CategoryLabel = t.Package.Manifest.Style, themeCategoryLabel(t.Package.Manifest.Category)
 			}
@@ -514,7 +513,7 @@ func (s *Server) themeInstall(c *gin.Context) {
 			}
 			switch browse {
 			case "bundled":
-				if cd.Package || cd.Custom {
+				if cd.Package {
 					continue
 				}
 			case "uploaded":
@@ -543,7 +542,7 @@ func (s *Server) themeInstall(c *gin.Context) {
 	if browse == "upload" {
 		bodyClass += " show-upload-view"
 	}
-	data := map[string]any{"Cards": cards, "Browse": browse, "Search": c.Query("search"), "Count": len(cards), "Golementor": s.golementorOn(),
+	data := map[string]any{"Cards": cards, "Browse": browse, "Search": c.Query("search"), "Count": len(cards),
 		"UploadNonce": s.nonce(c, "theme-upload"), "MaxSize": fmt.Sprintf("%d MB", themeZipMaxBytes>>20),
 		"Categories": categories, "Category": category, "LibraryNotice": libraryNotice, "FromManager": s.themeLibrary == nil}
 	if recommended > 0 {
@@ -568,10 +567,6 @@ func (s *Server) themeInstallAction(c *gin.Context) {
 		c.Redirect(http.StatusFound, "/wp-admin/theme-install?error="+url.QueryEscape(msg))
 	}
 	if t := themeBySlug(slug); t != nil && t.Package == nil {
-		if t.Custom {
-			fail("The requested theme does not exist.")
-			return
-		}
 		if err := s.restoreTheme(c, slug); err != nil {
 			fail(err.Error())
 			return
