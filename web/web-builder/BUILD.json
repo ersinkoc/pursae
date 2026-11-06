@@ -5,7 +5,8 @@
     "0002-live-render.patch": "9a8ce69012a14d9077371dfc849c31a05cc07611e0db08401193c449ad51a431",
     "0004-i18n.patch": "0aed5b4719c029a83da33e2a9b0bb38d42287ff2447e0c13e37205849fc95426",
     "0005-parity.patch": "609da34b8a2409c1586bc6ac8b80dfb4555e8a5c07fa1c2e2848acf226032cc8",
-    "0006-no-remote-fonts.patch": "f0fc54ad32bafcf9633b410a334a27a14a20a68102c25b03a1a4f8a1d6fe8f93"
+    "0006-no-remote-fonts.patch": "f0fc54ad32bafcf9633b410a334a27a14a20a68102c25b03a1a4f8a1d6fe8f93",
+    "0007-page-title.patch": "8b9a2f9833856d20ff650da99faa3647c6a08c87546aa31c43c280e70f56228a"
   },
   "apiVersion": 1,
   "rendererVersion": 1
