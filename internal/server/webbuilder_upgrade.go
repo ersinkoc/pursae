@@ -123,7 +123,7 @@ func (s *Server) wbUpgradeNotice(c *gin.Context) (notice, bool) {
 	if u := currentUser(c); u == nil || !u.Can("manage_options", nil) {
 		return notice{}, false
 	}
-	msg := "<strong>Pursae Web Builder was replaced by the new builder.</strong> Pages built with the old builder were removed"
+	msg := "<strong>Pursae Web Builder was replaced by the new builder.</strong> The designs of pages built with the old builder were removed; those pages now show their text content in the theme"
 	if th, _ := m["theme"].(string); th != "" {
 		msg += "; the theme was switched to <strong>" + template.HTMLEscapeString(th) + "</strong>."
 	} else {

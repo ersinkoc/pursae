@@ -168,7 +168,7 @@ func TestWebBuilderUpgrade(t *testing.T) {
 		t.Errorf("ordinary theme switched to %s", got)
 	}
 	_, body, _ = get(t, c, base+"/wp-admin/")
-	if !strings.Contains(body, "Pages built with the old builder were removed.") || strings.Contains(body, "the theme was switched") {
+	if !strings.Contains(body, "those pages now show their text content in the theme.") || strings.Contains(body, "the theme was switched") {
 		t.Error("notice without a theme switch")
 	}
 }
