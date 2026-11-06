@@ -201,6 +201,25 @@ describe('host strings', () => {
     expect(t('Priority {n}', { n: 3 })).toBe('Priority 3')
   })
 
+  it('shows the server English labels of built-in types and preview objects in the editor language', async () => {
+    vi.resetModules()
+    const i18n = await import('@/builder/i18n')
+    const { builtinLabel } = await import('../../host/conditions')
+    const { previewLabel } = await import('../../host/preview')
+    i18n.setLocale('tr_TR')
+    expect(builtinLabel('post', 'Posts')).toBe(tr['Posts'])
+    expect(builtinLabel('post_tag', 'Tags')).toBe(tr['Tags'])
+    expect(builtinLabel('book', 'Books')).toBe('Books') // a custom type keeps its own label
+    expect(builtinLabel('post', 'Articles')).toBe('Articles') // a renamed built-in keeps it too
+    expect(previewLabel('Category: News')).toBe(tr['Category: {name}'].replace('{name}', 'News'))
+    expect(previewLabel('Posts Page: Blog')).toBe(tr['Posts Page: {name}'].replace('{name}', 'Blog'))
+    expect(previewLabel('Front Page')).toBe(tr['Front Page'])
+    expect(previewLabel('Book: Dune')).toBe('Book: Dune')
+    i18n.setLocale('en_US')
+    expect(previewLabel('Category: News')).toBe('Category: News')
+    expect(builtinLabel('page', 'Pages')).toBe('Pages')
+  })
+
   it('never names the upstream product', () => {
     for (const f of fs.readdirSync(HOST).filter((x) => /\.(ts|tsx)$/.test(x))) {
       expect(fs.readFileSync(path.join(HOST, f), 'utf8')).not.toMatch(/elementor/i)

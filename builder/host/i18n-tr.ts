@@ -22,11 +22,15 @@ const tr: Record<string, string> = {
   "An entry (by ID)": "Bir içerik (ID ile)", // i18n-ignore
   "Apply": "Uygula", // i18n-ignore
   "Archive": "Arşiv", // i18n-ignore
+  "Archive: {name}": "Arşiv: {name}", // i18n-ignore
   "Archives": "Arşivler", // i18n-ignore
   "At most {n} conditions.": "En fazla {n} koşul.", // i18n-ignore
   "Author Archives": "Yazar arşivleri", // i18n-ignore
+  "Author: {name}": "Yazar: {name}", // i18n-ignore
   "By author": "Yazara göre", // i18n-ignore
   "Cancel": "Vazgeç", // i18n-ignore
+  "Categories": "Kategoriler", // i18n-ignore
+  "Category: {name}": "Kategori: {name}", // i18n-ignore
   "Child of": "Alt öğesi", // i18n-ignore
   "Choose an item, or pick “All”.": "Bir öğe seç ya da “Tümü”nü seç.", // i18n-ignore
   "Choose where this template is used on the site.": "Bu şablonun sitede nerede kullanılacağını seç.", // i18n-ignore
@@ -60,8 +64,13 @@ const tr: Record<string, string> = {
   "On each view the most specific rule decides which template is used.": "Her görünümde hangi şablonun kullanılacağına en belirgin kural karar verir.", // i18n-ignore
   "Open on the site": "Sitede aç", // i18n-ignore
   "Other published templates can show on the same views:": "Yayındaki başka şablonlar da aynı görünümlerde çıkabilir:", // i18n-ignore
+  "Page: {name}": "Sayfa: {name}", // i18n-ignore
+  "Pages": "Sayfalar", // i18n-ignore
   "Post type": "Yazı tipi", // i18n-ignore
+  "Post: {name}": "Yazı: {name}", // i18n-ignore
+  "Posts": "Yazılar", // i18n-ignore
   "Posts Page": "Yazılar sayfası", // i18n-ignore
+  "Posts Page: {name}": "Yazılar sayfası: {name}", // i18n-ignore
   "Posts page": "Yazılar sayfası", // i18n-ignore
   "Preview as": "Önizleme içeriği", // i18n-ignore
   "Preview as: {label}": "Önizleme içeriği: {label}", // i18n-ignore
@@ -75,6 +84,7 @@ const tr: Record<string, string> = {
   "Search Results": "Arama sonuçları", // i18n-ignore
   "Search for": "Aranacak", // i18n-ignore
   "Search results": "Arama sonuçları", // i18n-ignore
+  "Search: {name}": "Arama: {name}", // i18n-ignore
   "Searching…": "Aranıyor…", // i18n-ignore
   "Search…": "Ara…", // i18n-ignore
   "Show": "Göster", // i18n-ignore
@@ -85,6 +95,8 @@ const tr: Record<string, string> = {
   "Specific author": "Belirli bir yazar", // i18n-ignore
   "Specific item": "Belirli bir öğe", // i18n-ignore
   "Specific term": "Belirli bir terim", // i18n-ignore
+  "Tag: {name}": "Etiket: {name}", // i18n-ignore
+  "Tags": "Etiketler", // i18n-ignore
   "Template published": "Şablon yayınlandı", // i18n-ignore
   "Template saved as draft": "Şablon taslak olarak kaydedildi", // i18n-ignore
   "Template type": "Şablon türü", // i18n-ignore

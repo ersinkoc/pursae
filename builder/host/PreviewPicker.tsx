@@ -7,7 +7,8 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import type { SiteBoot, TemplatePreview, TemplateType } from './contract'
 import { FIELD, IdPicker } from './IdPicker'
 import { t } from './i18n'
-import { kindIdSource, kindOptions, parsePreview, previewKinds, previewObject, type PreviewChoice, type PreviewKind } from './preview'
+import { builtinLabel } from './conditions'
+import { kindIdSource, kindOptions, parsePreview, previewKinds, previewLabel, previewObject, type PreviewChoice, type PreviewKind } from './preview'
 import type { RestClient } from './rest'
 
 export interface PreviewPickerProps {
@@ -93,7 +94,7 @@ export function PreviewPicker({ rest, site, type, preview, apply, onClose }: Pre
           }}
         >
           <p className="text-[12.5px] text-ink-400">
-            {t('Now: {label}', { label: preview.label || preview.object })}
+            {t('Now: {label}', { label: previewLabel(preview.label) || preview.object })}
             {preview.url && (
               <>
                 {' · '}
@@ -135,7 +136,7 @@ export function PreviewPicker({ rest, site, type, preview, apply, onClose }: Pre
               <select value={choice.text} onChange={(e) => setChoice((c) => ({ ...c, text: e.target.value }))} className={FIELD}>
                 {archives.map((p) => (
                   <option key={p.slug} value={p.slug}>
-                    {p.label || p.slug}
+                    {builtinLabel(p.slug, p.label)}
                   </option>
                 ))}
               </select>

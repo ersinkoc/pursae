@@ -82,6 +82,43 @@ export function kindLabel(k: PreviewKind): string {
   }
 }
 
+/**
+ * The server's label of a preview object ("Category: News", "Front Page", contract §11.6) in the
+ * editor's language. The server writes it in English; names (titles, terms, search words) and
+ * labels of custom post types stay as they are.
+ */
+export function previewLabel(label: string): string {
+  switch (label) {
+    case 'Front Page':
+      return t('Front Page')
+    case 'Posts Page':
+      return t('Posts Page')
+    case '404 Page':
+      return t('404 Page')
+  }
+  const m = /^(Post|Page|Posts Page|Category|Tag|Author|Archive|Search): ([\s\S]*)$/.exec(label)
+  if (!m) return label
+  const name = m[2]
+  switch (m[1]) {
+    case 'Post':
+      return t('Post: {name}', { name })
+    case 'Page':
+      return t('Page: {name}', { name })
+    case 'Posts Page':
+      return t('Posts Page: {name}', { name })
+    case 'Category':
+      return t('Category: {name}', { name })
+    case 'Tag':
+      return t('Tag: {name}', { name })
+    case 'Author':
+      return t('Author: {name}', { name })
+    case 'Archive':
+      return t('Archive: {name}', { name })
+    default:
+      return t('Search: {name}', { name })
+  }
+}
+
 export const kindOptions = (kinds: PreviewKind[]): Option[] => kinds.map((k) => ({ value: k, label: kindLabel(k) }))
 
 /** Whether the kind needs an id, and where it is searched (null = typed in). */

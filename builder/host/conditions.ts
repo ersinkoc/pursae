@@ -144,10 +144,32 @@ export function clampPriority(n: number): number {
 
 /* ---------- Cascade options ---------- */
 
+/**
+ * Display label of a post type or taxonomy from the boot config. The server sends the built-in
+ * ones (post, page, category, post_tag) in English: those are shown in the editor's language.
+ */
+export function builtinLabel(slug: string, label?: string): string {
+  switch (slug) {
+    case 'post':
+      if (!label || label === 'Posts') return t('Posts')
+      break
+    case 'page':
+      if (!label || label === 'Pages') return t('Pages')
+      break
+    case 'category':
+      if (!label || label === 'Categories') return t('Categories')
+      break
+    case 'post_tag':
+      if (!label || label === 'Tags') return t('Tags')
+      break
+  }
+  return label || slug
+}
+
 const typeOf = (site: Site, slug: string): PostTypeInfo | undefined => site.postTypes.find((p) => p.slug === slug)
 const taxOf = (site: Site, slug: string): TaxonomyInfo | undefined => site.taxonomies.find((x) => x.slug === slug)
-const typeLabel = (site: Site, slug: string) => typeOf(site, slug)?.label || slug
-const taxLabel = (site: Site, slug: string) => taxOf(site, slug)?.label || slug
+const typeLabel = (site: Site, slug: string) => builtinLabel(slug, typeOf(site, slug)?.label)
+const taxLabel = (site: Site, slug: string) => builtinLabel(slug, taxOf(site, slug)?.label)
 
 export function groupOptions(): Option[] {
   return [
@@ -162,7 +184,7 @@ export function groupOptions(): Option[] {
 export function subOptions(site: Site, group: ConditionGroup, keep = ''): Option[] {
   let out: Option[] = []
   if (group === 'singular') {
-    out = [{ value: '', label: t('All Singular') }, { value: 'front_page', label: t('Front Page') }, ...site.postTypes.map((p) => ({ value: p.slug, label: p.label || p.slug }))]
+    out = [{ value: '', label: t('All Singular') }, { value: 'front_page', label: t('Front Page') }, ...site.postTypes.map((p) => ({ value: p.slug, label: builtinLabel(p.slug, p.label) }))]
   } else if (group === 'archive') {
     out = [
       { value: '', label: t('All Archives') },
@@ -170,8 +192,8 @@ export function subOptions(site: Site, group: ConditionGroup, keep = ''): Option
       { value: 'date', label: t('Date Archives') },
       { value: 'search', label: t('Search Results') },
       { value: 'author', label: t('Author Archives') },
-      ...site.postTypes.filter((p) => p.archive || p.slug === 'post').map((p) => ({ value: `type/${p.slug}`, label: t('{type} Archive', { type: p.label || p.slug }) })),
-      ...site.taxonomies.map((x) => ({ value: x.slug, label: x.label || x.slug })),
+      ...site.postTypes.filter((p) => p.archive || p.slug === 'post').map((p) => ({ value: `type/${p.slug}`, label: t('{type} Archive', { type: builtinLabel(p.slug, p.label) }) })),
+      ...site.taxonomies.map((x) => ({ value: x.slug, label: builtinLabel(x.slug, x.label) })),
     ]
   }
   if (keep && !out.some((o) => o.value === keep)) out.push({ value: keep, label: keep.startsWith('type/') ? t('{type} Archive', { type: keep.slice(5) }) : keep })
@@ -185,7 +207,7 @@ export function targetOptions(site: Site, row: Pick<ConditionRow, 'group' | 'sub
     const pt = typeOf(site, row.sub)
     const label = typeLabel(site, row.sub)
     out = [{ value: '', label: t('All {type}', { type: label }) }, { value: 'id', label: t('Specific item') }]
-    for (const x of site.taxonomies.filter((x) => x.types.includes(row.sub))) out.push({ value: `in/${x.slug}`, label: t('In {taxonomy}', { taxonomy: x.label || x.slug }) })
+    for (const x of site.taxonomies.filter((x) => x.types.includes(row.sub))) out.push({ value: `in/${x.slug}`, label: t('In {taxonomy}', { taxonomy: builtinLabel(x.slug, x.label) }) })
     if (pt?.hierarchical) out.push({ value: 'child_of', label: t('Child of') })
     out.push({ value: 'by_author', label: t('By author') })
   } else if (row.group === 'archive' && (row.sub === 'author' || isTaxSub(row.sub))) {

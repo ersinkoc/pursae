@@ -10,6 +10,7 @@ import { ConditionsDialog } from './ConditionsDialog'
 import { ruleLabel } from './conditions'
 import { t } from './i18n'
 import { PreviewPicker } from './PreviewPicker'
+import { previewLabel } from './preview'
 import { typeLabel, type TemplateController } from './template'
 
 const BTN = 'flex h-8 min-w-0 items-center gap-1.5 rounded-lg px-2.5 text-[12px] text-ink-300 ring-1 ring-white/[0.06] transition-colors hover:bg-white/[0.04] hover:text-ink-100'
@@ -36,9 +37,9 @@ export function TemplateBar({ host, controller }: { host: CmsHost; controller: T
         <span className="hidden lg:inline 2xl:hidden">{t('Conditions')}</span>
         <span className="hidden max-w-[150px] truncate 2xl:inline">{summary}</span>
       </button>
-      <button type="button" onClick={() => controller.openPreview()} aria-label={t('Preview as')} title={t('Preview as: {label}', { label: s.preview?.label || s.preview?.object || '' })} className={BTN}>
+      <button type="button" onClick={() => controller.openPreview()} aria-label={t('Preview as')} title={t('Preview as: {label}', { label: previewLabel(s.preview?.label || '') || s.preview?.object || '' })} className={BTN}>
         <Eye size={13} className="shrink-0" />
-        <span className="hidden max-w-[160px] truncate xl:inline">{s.preview?.label || t('Preview as')}</span>
+        <span className="hidden max-w-[160px] truncate xl:inline">{previewLabel(s.preview?.label || '') || t('Preview as')}</span>
       </button>
     </>
   )
