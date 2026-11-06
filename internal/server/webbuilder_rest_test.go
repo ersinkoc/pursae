@@ -489,7 +489,9 @@ func TestWebBuilderRESTContributorForged(t *testing.T) {
 		t.Errorf("contributor status %v, want pending", wbrObj(v)["status"])
 	}
 	stripped := mustJSON(wbrObj(v)["stripped"])
-	for _, want := range []string{webbuilder.StrippedHTMLSections, webbuilder.StrippedCustomCSS, webbuilder.StrippedMarkup, webbuilder.StrippedCSS} {
+	// utilityCss is a page-wide stylesheet: without unfiltered_html it is dropped whole like
+	// render.css (custom-css), not sanitized and kept.
+	for _, want := range []string{webbuilder.StrippedHTMLSections, webbuilder.StrippedCustomCSS, webbuilder.StrippedMarkup} {
 		if !strings.Contains(stripped, want) {
 			t.Errorf("stripped %s lacks %s", stripped, want)
 		}
@@ -705,6 +707,9 @@ func TestWebBuilderRESTPublishWithoutPage(t *testing.T) {
 	}
 	if p.Title != "Kept Title" || p.Slug != page.Slug {
 		t.Errorf("post after a publish without page: title %q slug %q, want %q %q", p.Title, p.Slug, "Kept Title", page.Slug)
+	}
+	if got := seogoMeta(p.Meta, "description"); got != "Kept SEO description" {
+		t.Errorf("SEO description after a publish without page = %q, want it kept", got)
 	}
 }
 

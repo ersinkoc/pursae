@@ -625,9 +625,10 @@ func (s *Server) wbRESTPublish(c *gin.Context, r *restRequest) {
 		restErr(c, http.StatusConflict, webbuilder.ErrLocked, lock.User.Name+" is editing this page.", map[string]any{"lock": lock})
 		return
 	}
-	if wbPageMissing(body.Page) {
+	pageMissing := wbPageMissing(body.Page)
+	if pageMissing {
 		// No page settings in the request (a REST client other than the editor): the post keeps
-		// its title, slug, excerpt and noindex instead of losing them.
+		// its title, slug, excerpt, SEO description and noindex instead of losing them.
 		ps = webbuilder.PageSettings{Title: fresh.Title, Description: fresh.Excerpt, Indexable: seogoMeta(fresh.Meta, "noindex") != "noindex"}
 	}
 	prevRevision, err := wbtx.LatestPostRevisionID(c, p.ID)
@@ -648,7 +649,9 @@ func (s *Server) wbRESTPublish(c *gin.Context, r *restRequest) {
 	}
 	fresh.Meta[webbuilder.PostMarkerMeta] = "1"
 	fresh.Meta[webbuilder.EditLockMeta] = strconv.FormatInt(time.Now().Unix(), 10) + ":" + itoa64(u.ID)
-	fresh.Meta[seogoKey("description")] = ps.Description
+	if !pageMissing {
+		fresh.Meta[seogoKey("description")] = ps.Description
+	}
 	if !ps.Indexable {
 		fresh.Meta[seogoKey("noindex")] = "noindex"
 	} else if seogoMeta(fresh.Meta, "noindex") == "noindex" {
