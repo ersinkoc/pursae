@@ -4,14 +4,15 @@
  * Docker image need no Node):
  *
  *   editor/            the editor (React), every upstream src/builder/ai/** module stubbed out
- *   site/runtime.*.js  the public runtime (IIFE, no dependencies); a placeholder until the
- *                      live-render patch adds upstream src/builder/live/runtime.ts
+ *   site/runtime.*.js  the public runtime (IIFE, no dependencies; upstream src/builder/live/runtime.ts)
+ *   site/wb.*.css      the published-page stylesheet (scripts/live.mjs)
  *   manifest.json      entry files per bundle (contract: Manifest)
  *   BUILD.json         upstream SHA, patch hashes, API and renderer versions (contract: BuildInfo)
  *
  * Steps: check the submodule is at UPSTREAM_SHA → clone it into .work/upstream → apply
  * patches/*.patch in name order with `git apply --3way` (zero patches is fine) → clean the output
- * → vite build (editor, runtime) → manifest + BUILD.json → test/audit.mjs.
+ * → vite build (editor, runtime), site css → manifest + BUILD.json → renderStatic fixtures
+ * (internal/webbuilder/testdata/render, scripts/live.mjs) → test/audit.mjs.
  *
  * Usage: node scripts/build.mjs [--watch]   (--watch rebuilds the editor on source changes;
  * edits to upstream/ or patches/ need a restart because the sources are a patched copy.)
@@ -21,6 +22,7 @@ import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { buildSiteCss, exportFixtures } from './live.mjs'
 
 const BUILDER = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const REPO = path.resolve(BUILDER, '..')
@@ -126,8 +128,9 @@ function readEditorManifest() {
 }
 
 let runtimeFile = ''
+let siteCssFile = ''
 function writeManifest(editor) {
-  const manifest = { editor, site: { runtime: runtimeFile, css: '' } }
+  const manifest = { editor, site: { runtime: runtimeFile, css: siteCssFile } }
   fs.writeFileSync(path.join(OUT, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n')
 }
 
@@ -179,6 +182,7 @@ function audit() {
 }
 
 await buildRuntime()
+siteCssFile = await buildSiteCss({ work: WORK, siteDir: path.join(OUT, 'site') })
 writeBuildInfo()
 
 if (!watch) {
@@ -186,6 +190,7 @@ if (!watch) {
   const editor = readEditorManifest()
   writeManifest(editor)
   log(`editor: editor/${editor.js} + ${editor.css.length} stylesheet(s)`)
+  await exportFixtures({ builder: BUILDER, work: WORK, outDir: path.join(REPO, 'internal', 'webbuilder', 'testdata', 'render'), siteCssFile: path.join(OUT, 'site', siteCssFile) })
   audit()
   log(`done → ${path.relative(REPO, OUT)}/`)
 } else {

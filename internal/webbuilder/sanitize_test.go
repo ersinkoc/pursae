@@ -455,7 +455,7 @@ func TestRenderFixtures(t *testing.T) {
 	if len(files) == 0 {
 		t.Skip("no renderStatic fixtures in testdata/render yet (exported by U2)")
 	}
-	opts := SnapshotOptions{FormActionPrefix: testFormPrefix}
+	opts := SnapshotOptions{FormActionPrefix: testFormPrefix, EmbedHTML: true} // docs validate as unfiltered_html
 	for _, f := range files {
 		b, err := os.ReadFile(f)
 		if err != nil {
