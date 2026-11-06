@@ -57,6 +57,7 @@ type Server struct {
 
 	cache   atomic.Pointer[pageCache] // wpgo-cache, rebuilt when its options change
 	plugins *pluginSystem
+	bmgr    bmgrRuntime // Backup Manager state (backup.go)
 	warm    warmState
 
 	// sandbox is set on a theme-preview sandbox (theme_preview.go): a second Server over its own

@@ -364,6 +364,7 @@ func (s *Server) nativePluginRows() []pluginRow {
 		rows[2].SettingsURL = "/wp-admin/theme-builder"
 	}
 	rows = append(rows, s.maintPluginRow())    // Maintenance-Go (maintenance_admin.go)
+	rows = append(rows, s.bmgrPluginRow())     // Backup Manager (backup.go)
 	rows = append(rows, s.seogoPluginRow())    // SEO-Go (seogo.go)
 	rows = append(rows, s.gooikePluginRow())   // Gooike (gooike.go)
 	rows = append(rows, s.gooPluginRow())      // Goocommerce (goocommerce.go)
@@ -552,6 +553,13 @@ func (s *Server) pluginAction(c *gin.Context, action, slug string) {
 	case "wpgo-cache":
 		_ = s.settings.Set(c, map[string]any{"wpgo_cache_enabled": action == "activate"})
 		s.configureCache()
+		c.Redirect(http.StatusFound, "/wp-admin/plugins?"+action+"=true")
+		return
+	case bmgrSlug: // Backup Manager
+		if err := s.bmgrPluginAction(c, action); err != nil {
+			fail(err)
+			return
+		}
 		c.Redirect(http.StatusFound, "/wp-admin/plugins?"+action+"=true")
 		return
 	case maintSlug: // Maintenance-Go

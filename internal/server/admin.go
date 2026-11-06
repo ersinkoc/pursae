@@ -362,6 +362,7 @@ func (s *Server) adminPage(c *gin.Context, screen, title, bodyClass, tmpl string
 	v.Menu = s.gontactMenu(v.Menu, u, screen)
 	s.pluginMenuEntries(v.Menu, screen) // plugin settings pages under Settings (plugins_host.go)
 	v.Menu = s.maintMenu(v.Menu, u, screen)
+	v.Menu = s.bmgrMenu(v.Menu, u, screen)
 	v.Menu = s.mailSMTPMenu(c, v.Menu, screen)
 	v.Notices = append(v.Notices, s.mailSMTPNotices(c)...)
 	// ACF-Go: its menu, options pages and post types (acfgo.go)

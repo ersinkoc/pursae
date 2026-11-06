@@ -260,6 +260,10 @@ func (s *Server) pluginAdmin(c *gin.Context) {
 	if s.adminsecAdmin(c, page) { // AdminSecGo: admin?page=adminsecgo… (adminsec_admin.go)
 		return
 	}
+	if page == bmgrSlug { // Backup Manager (backup_admin.go)
+		s.bmgrAdmin(c)
+		return
+	}
 	if page == maintSlug { // Maintenance-Go (maintenance_admin.go)
 		s.maintAdmin(c)
 		return
