@@ -106,6 +106,9 @@ for (const f of shipped) {
   const text = fs.readFileSync(f, 'utf8').toLowerCase()
   for (const s of FORBIDDEN) if (text.includes(s)) fail(`${rel(f)} contains forbidden string "${s}"`)
   if (f.endsWith('.css') && /@import\s+(url\()?\s*['"]?https?:/i.test(text)) fail(`${rel(f)} has a remote @import`)
+  // Fonts come from the site's own css2 endpoint (host.fontsCss); a hard-coded remote stylesheet
+  // (e.g. in an iframe srcdoc) is blocked by the admin CSP and would call Google from the editor.
+  if (/<link[^>]*href=\\?["']https?:\/\/fonts\.(googleapis\.com|bunny\.net)/i.test(text)) fail(`${rel(f)} has a hard-coded remote font stylesheet`)
 }
 for (const f of walk(OUT)) {
   if (/(^|\/)ai-images(\/|$)/.test(rel(f))) fail(`${rel(f)}: upstream public/ai-images must not ship`)
