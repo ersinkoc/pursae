@@ -190,6 +190,7 @@ make docker-down        # stop (data is kept)
 make test               # unit tests + PostgreSQL integration tests
 make docker-test        # the same suite inside a Go container
 make build              # compile bin/wpgo
+make builder            # rebuild the Web Builder editor into web/web-builder (needs Node 22+)
 ```
 
 Logs and restart:
@@ -240,12 +241,21 @@ Rebuild the image afterwards and they appear under Plugins › Add New.
 Pursae Web Builder is a built-in plugin, like Classic Editor and WPGo Cache, and it is **off on a fresh
 install**. Switch it on under Plugins › Pursae Web Builder › **Activate** (or Plugins › Add Plugin ›
 Native Plugins). Until then it leaves no trace: no menu entries, "Edit with Pursae Web Builder" links,
-builder routes, assets, front-end output or Hello Pursae Web Builder theme.
+builder routes, assets or front-end output.
 
-Deactivating it again hides everything. If Hello Pursae Web Builder is the active theme the site is
-switched to Twenty Twenty-Five (the Plugins screen says so). Pages built with Pursae Web Builder show the
-plain-text content saved with them while it is off; saved themes, theme parts and the builder
-data stay in the database and come back on the next activation.
+It is a section-based visual editor (a React app built from `github.com/pursae/Builder`, embedded in
+the binary). Open a page with **Edit with Pursae Web Builder** (block or classic editor, the Pages
+list, the toolbar on the site); edits autosave as your draft, and **Publish** stores the page document
+plus a sanitized HTML/CSS snapshot that visitors get without any React. Settings › Web Builder picks the
+post types (pages and posts by default).
+
+Deactivating it again hides everything. Pages built with Pursae Web Builder then show, inside the
+theme, the readable HTML version saved with them; the builder data stays in the database and comes
+back on the next activation. Details: [docs/developer/web-builder.md](docs/developer/web-builder.md).
+
+**Upgrading from a release with the previous builder:** that builder and all its data (templates,
+theme parts, kits, popups, form submissions and the page data it stored) are deleted on the first start.
+Back up the database first; see [Upgrading](docs/developer/getting-started/upgrading.md).
 
 ## Production checklist
 
@@ -314,9 +324,10 @@ first build; make sure Docker has network access. Later builds are cached.
   preloading, autosaves, revisions, media, patterns, oEmbed proxy.
 - **Classic Editor** (built-in plugin) — TinyMCE + Quicktags, Add Media, featured image;
   default editor and per-user switching under Settings › Writing.
-- **Pursae Web Builder** — a visual page builder: classic and atomic (V4) elements, theme builder
-  (headers, footers, archives, single templates), popups, forms with integrations, loops,
-  dynamic tags, saved themes, built on the Hello Pursae Web Builder base theme.
+- **Pursae Web Builder** (built-in plugin) — a section-based visual page builder: ready-made
+  sections and designs, desktop/tablet/mobile views, brand colours, self-hosted Google Fonts,
+  menus, FAQ, tabs, forms and motion; autosave, revisions and saved sections. Pages publish as a
+  static HTML/CSS snapshot with a small optional script.
 - **REST API `wp/v2`** — posts, pages, media, blocks, terms, users, comments, settings, types,
   taxonomies, statuses, themes, search, patterns, sidebars/widgets; `_fields`, `_embed`,
   pagination headers, cookie + nonce and Application Password authentication.
@@ -324,7 +335,7 @@ first build; make sure Docker has network access. Later builds are cached.
   templates with the same markup and its theme.json design (Manrope and Fira Code self-hosted,
   the style variations' palettes as a Customizer color scheme, editor styles for Pursae Editor), one
   small stylesheet plus the core styles of the blocks a page uses, and four demo content sets
-  (Appearance › Themes › Import Demo Content). Hello Pursae Web Builder comes with Pursae Web Builder, and the
+  (Appearance › Themes › Import Demo Content). The
   theme library (from Pursae Manager, not part of the binary) offers more themes to install.
 - **WPGo Cache** (built-in plugin) — in-process full-page cache with tag-based purges, crawler,
   gzip + ETag, CDN purge headers, lazy images, deferred scripts, font preloads.
@@ -346,6 +357,7 @@ Open gaps are tracked in the project notes.
 ## Project layout
 
 ```
+builder/            Pursae Web Builder editor sources: upstream submodule, patches, host adapter (Node)
 cmd/wpgo            entry point (serve, migrate, version)
 docker/             Dockerfile and compose.yaml
 internal/blocks     block parser, renderer, serializer
@@ -360,6 +372,7 @@ internal/caps       capabilities and meta-capability mapping
 internal/wp         WordPress formatting helpers (dates, slugs, autop, kses)
 sdk/go/wpgo         plugin SDK; examples in examples/plugins
 web/admin           admin templates and the vendored wp-admin CSS/JS
+web/web-builder     the built editor and site runtime (output of `make builder`, committed)
 web/themes          bundled themes: assets (GPL) and their Go templates
 web/wp-includes     vendored core CSS/JS (block library, dashicons, admin bar, jQuery)
 ```
@@ -367,6 +380,7 @@ web/wp-includes     vendored core CSS/JS (block library, dashicons, admin bar, j
 ## License
 
 GPL-2.0-or-later. The bundled themes and the vendored WordPress CSS/JS are GPL-licensed by the
-WordPress contributors. Pursae Web Builder's editor UI is GPL-3.0 licensed third-party code, so builds
-that include it are distributed under GPL-3.0. "WordPress" is a trademark of its owner;
+WordPress contributors. Pursae Web Builder's editor is built from `github.com/pursae/Builder`
+(`builder/upstream`); that repository needs a GPL-compatible LICENSE before a release ships it.
+"WordPress" is a trademark of its owner;
 Pursae is not affiliated with it. Third-party attributions are in [NOTICE](NOTICE).

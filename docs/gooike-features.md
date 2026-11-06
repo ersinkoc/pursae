@@ -232,7 +232,7 @@ mono), font size, radius, floating button and position, and **custom CSS** (it c
   for every visitor. The consent cookie does not bypass the cache. The CSP allowance is part of the
   cached response headers. Tests check that visitors with and without consent get the same cached HTML
   (`X-WPGo-Cache: hit`).
-- ✓ The Pursae Web Builder editor preview gets no banner. Logged-in users see the banner like visitors do.
+- ✓ The Pursae Web Builder editor is an admin screen and gets no banner. Logged-in users see the banner like visitors do.
 
 ## 8. Tests
 

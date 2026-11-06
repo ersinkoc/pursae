@@ -85,8 +85,8 @@ serving, which is handy in a deploy step.
 ## Release notes
 
 - **New Pursae Web Builder — back up the database before upgrading: old Web Builder data is
-  deleted.** The release that brings the new builder replaces the old one and deletes everything it
-  stored, with no converter (migration `0028_drop_old_builder`): its tables (builder revisions,
+  deleted.** The release that brings the new builder replaces the previous Elementor-derived builder
+  and deletes everything it stored, with no converter (migration `0028_drop_old_builder`): its tables (builder revisions,
   global classes and variables, default styles, form submissions), saved templates, theme parts,
   popups and components, every `_elementor_*`/`_gwe_*` post meta key, its options (integration API
   keys, reCAPTCHA keys, custom fonts and icon sets, role manager, site kit) and the themes saved
@@ -94,7 +94,11 @@ serving, which is handy in a deploy step.
   go back to the theme's default template. At the next start the old builder's generated CSS, form
   uploads and custom icon sets are removed from the uploads directory (local fonts stay), and a site
   on Hello Web Builder or a theme saved with the old builder moves to its previous theme or Twenty
-  Twenty-Five. Restoring the backup is the only way back.
+  Twenty-Five. Restoring the backup is the only way back. The plugin keeps its switch (active stays
+  active); a page built with the old builder opens in the new one as a new document, so rebuild it
+  there and publish. Features the new builder does not have yet (theme builder, popups, form
+  integrations, payments, Pursae Commerce widgets, global classes and variables, kits) are gone with
+  it; see [Pursae Web Builder](../web-builder.md#limits).
 
 ## Rolling back
 
