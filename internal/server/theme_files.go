@@ -110,7 +110,7 @@ func (s *Server) saveThemeFile(c *gin.Context, slug, file, content string) error
 		return &themeFileError{"unavailable", "Theme file editing is not available."}
 	}
 	th := s.installedTheme(slug)
-	if th == nil || th.Custom {
+	if th == nil {
 		return &themeFileError{"bad_theme_path", "Sorry, that theme cannot be edited here."}
 	}
 	clean := path.Clean("/" + file)[1:]

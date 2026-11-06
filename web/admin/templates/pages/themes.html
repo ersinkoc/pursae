@@ -19,7 +19,7 @@
 	<div class="theme-id-container">
 		{{if .Active}}<h2 class="theme-name" id="{{.Slug}}-name"><span>Active:</span> {{.Name}}</h2>{{else}}<h2 class="theme-name" id="{{.Slug}}-name">{{.Name}}</h2>{{end}}
 		<div class="theme-actions">
-			{{if .Active}}{{if or .Custom (eq .Slug "hello-web-builder")}}<a class="button button-compact button-primary" aria-label="Open the Theme Builder for {{.Name}}" href="/wp-admin/theme-builder">Theme Builder</a>{{else}}<a class="button button-compact button-primary customize load-customize hide-if-no-customize" href="/wp-admin/customize" aria-label="Customize {{.Name}}">Customize</a>{{end}}
+			{{if .Active}}<a class="button button-compact button-primary customize load-customize hide-if-no-customize" href="/wp-admin/customize" aria-label="Customize {{.Name}}">Customize</a>
 			{{if .DemoImportURL}}<a class="button button-compact wpgo-import-demo" href="{{.DemoImportURL}}" aria-label="Import demo content of {{.Name}}">Import Demo Content</a>{{end}}
 			{{if .DemoRemoveURL}}<a class="button button-compact wpgo-remove-demo" href="{{.DemoRemoveURL}}" onclick="return window.confirm( _wpThemeSettings.settings.confirmRemoveDemo );" aria-label="Remove demo content of {{.Name}}">Remove Demo Content</a>{{end}}
 			{{else}}<a class="button button-compact activate" href="{{.ActivateURL}}" aria-label="Activate {{.Name}}">Activate</a>
@@ -38,42 +38,6 @@
 @media only screen and (max-width:1080px){.theme-overlay .theme-actions .wpgo-delete-theme{position:relative;right:auto;bottom:auto}}
 </style>
 <p class="no-themes">No themes found. Try a different search.</p>
-{{/* Pursae Web Builder: saved themes (JSON snapshots of the Hello Pursae Web Builder design) */}}
-{{if .Saved}}
-<style>
-.gwe-saved-themes{clear:both;margin-top:40px;padding-top:20px;border-top:1px solid #dcdcde}
-.gwe-saved-themes h2{margin:0 0 4px}
-.gwe-saved-themes>p{margin:0 0 16px;color:#50575e}
-.gwe-saved-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px}
-.gwe-saved-theme{background:#fff;border:1px solid #dcdcde;box-shadow:0 1px 1px rgba(0,0,0,.04)}
-.gwe-saved-theme img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;background:#f6f7f7;border-bottom:1px solid #dcdcde}
-.gwe-saved-theme .inner{padding:12px 14px}
-.gwe-saved-theme h3{margin:0 0 4px;font-size:14px}
-.gwe-saved-theme h3 span{color:#2271b1}
-.gwe-saved-theme .meta{color:#646970;margin:0 0 10px;font-size:12px}
-.gwe-saved-theme .actions{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
-.gwe-saved-theme .actions form{display:inline}
-</style>
-<div class="gwe-saved-themes" id="gwe-saved-themes">
-	<h2>Saved Pursae Web Builder themes</h2>
-	<p>Fixed copies of a Hello Pursae Web Builder design saved from the <a href="/wp-admin/theme-builder">Theme Builder</a> (theme parts, display conditions, Site Settings, custom CSS). Activate one to load its design into Hello Pursae Web Builder; the saved copy stays unchanged until you save it again.</p>
-	<div class="gwe-saved-grid">
-	{{range .Saved}}<div class="gwe-saved-theme" data-slug="{{.Slug}}">
-		<img src="{{.Screenshot}}" alt="" />
-		<div class="inner">
-			<h3>{{if .Loaded}}<span>Loaded:</span> {{end}}{{.Name}}</h3>
-			<p class="meta">{{.Parts}} theme part{{if ne .Parts 1}}s{{end}}{{if .Saved}} &middot; saved {{.Saved}}{{end}}{{if .Description}} &middot; {{.Description}}{{end}}</p>
-			<div class="actions">
-				<a class="button button-primary activate" href="{{.ActivateURL}}" aria-label="Activate {{.Name}}">Activate</a>
-				<a class="button" href="{{.PreviewURL}}" aria-label="Live Preview {{.Name}}">Live Preview</a>
-				<a class="button" href="{{.ExportURL}}">Export</a>
-				<form method="post" action="/wp-admin/theme-builder" onsubmit="return confirm('Delete this saved theme permanently? The current design is not affected.')"><input type="hidden" name="_wpnonce" value="{{$.Data.Nonce}}" /><input type="hidden" name="action" value="delete-theme" /><input type="hidden" name="theme" value="{{.Slug}}" /><input type="hidden" name="back" value="themes" /><button type="submit" class="button-link submitdelete">Delete</button></form>
-			</div>
-		</div>
-	</div>{{end}}
-	</div>
-</div>
-{{end}}
 </div><!-- .wrap -->
 {{safe `<script id="tmpl-theme" type="text/template">
 	<# if ( data.screenshot[0] ) { #>
@@ -102,9 +66,7 @@
 		<# } #>
 		<div class="theme-actions">
 		<# if ( data.active ) { #>
-			<# if ( data.wpgoBuilder ) { #>
-				<a class="button button-compact button-primary" href="{{ data.wpgoBuilder }}" aria-label="Open the Theme Builder for {{ data.name }}">Theme Builder</a>
-			<# } else if ( data.actions.customize ) { #>
+			<# if ( data.actions.customize ) { #>
 				<a class="button button-compact button-primary customize load-customize hide-if-no-customize" href="{{{ data.actions.customize }}}" aria-label="Customize {{ data.name }}">Customize</a>
 			<# } #>
 			<# if ( data.wpgoDemoImport ) { #>
@@ -158,12 +120,7 @@
 		</div>
 		<div class="theme-actions">
 			<div class="active-theme">
-				<# if ( data.wpgoBuilder ) { #>
-					<a class="button button-compact button-primary" href="{{ data.wpgoBuilder }}">Theme Builder</a>
-					<a class="button button-compact customize load-customize hide-if-no-customize" href="{{{ data.actions.customize }}}">Customize</a>
-				<# } else { #>
-					<a class="button button-compact button-primary customize load-customize hide-if-no-customize" href="{{{ data.actions.customize }}}">Customize</a>
-				<# } #>
+				<a class="button button-compact button-primary customize load-customize hide-if-no-customize" href="{{{ data.actions.customize }}}">Customize</a>
 				<a class="button button-compact" href="/wp-admin/widgets">Widgets</a> <a class="button button-compact" href="/wp-admin/nav-menus">Menus</a>
 				<# if ( data.wpgoDemoImport ) { #>
 					<a class="button button-compact wpgo-import-demo" href="{{{ data.wpgoDemoImport }}}">Import Demo Content</a>

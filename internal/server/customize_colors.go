@@ -76,9 +76,6 @@ func (s *Server) themeMods(slug string) map[string]any {
 			out[k] = v
 		}
 	}
-	if snap := gweSnapshotFor(slug); snap != nil && snap.CustomCSS != "" { // live preview of a saved Golementor theme
-		out["custom_css"] = snap.CustomCSS
-	}
 	return out
 }
 

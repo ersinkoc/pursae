@@ -2,14 +2,12 @@
   "slug": "fernwood",
   "name": "Fernwood",
   "version": "1.0.0",
-  "description": "A leafy plant shop built with Pursae Web Builder: a split header with the language switcher and a hover mini-cart, an editorial hero, category tiles, featured and new plants, a care-focused product page with tabs and related plants, and a calm two-column checkout. Every part is a Theme Builder template you can edit visually. Fraunces and Albert Sans, self-hosted. Ships a complete store demo: houseplants in three sizes, planters, care tools and a gift box.",
+  "description": "A leafy plant shop: a split header with the language switcher and the cart, an editorial hero, category tiles, featured and new plants, and calm store pages in forest green and terracotta. Fraunces and Albert Sans, self-hosted. Ships a complete store demo: houseplants in three sizes, planters, care tools and a gift box.",
   "author": "Pursae",
   "author_url": "https://github.com/pursae",
   "theme_url": "https://github.com/pursae/pursae-dev/tree/main/library/themes/fernwood",
   "tags": [
     "E-Commerce",
-    "Pursae Web Builder",
-    "Theme Builder",
     "Home & Garden",
     "Custom Colors",
     "Custom Menu",
@@ -21,7 +19,6 @@
   "category": "home",
   "style": "Botanical plant shop, forest green and terracotta",
   "demo": "demo/demo.json",
-  "golementor": "golementor/design.json",
   "menu_locations": [
     {
       "id": "primary",
