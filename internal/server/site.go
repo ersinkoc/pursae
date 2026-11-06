@@ -40,9 +40,11 @@ type siteQuery struct {
 
 	SearchProps string // unused: read only by the old page builder's files, deleted with them (R2)
 
-	// Store and StoreTerm describe a Goocommerce view: product, shop, product_cat, product_tag,
-	// product_attr, cart, checkout, myaccount; the term id.
+	// Store, StoreTax and StoreTerm describe a Goocommerce view: product, shop, product_cat,
+	// product_tag, product_attr, cart, checkout, myaccount; the archived term's taxonomy and id.
+	// The store renders every view as a synthetic page (Kind "page"); these say what it really is.
 	Store     string
+	StoreTax  string
 	StoreTerm int64
 }
 

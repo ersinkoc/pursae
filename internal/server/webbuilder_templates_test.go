@@ -40,6 +40,11 @@ func TestWBTemplateFactsOf(t *testing.T) {
 		{&siteQuery{Kind: "404"}, webbuilder.QueryFacts{View: webbuilder.View404}},
 		{&siteQuery{Kind: "single", Post: &store.Post{ID: 9, Type: "product"}, Store: "product"}, webbuilder.QueryFacts{View: webbuilder.ViewSingular, Store: true, PostType: "product", PostID: 9}},
 		{&siteQuery{Kind: "home", Store: "shop"}, webbuilder.QueryFacts{View: webbuilder.ViewArchive, Archive: webbuilder.ArchiveHome, FrontPage: true, Store: true}},
+		// The store renders every view as a synthetic page: facts follow Store, never the page.
+		{&siteQuery{Kind: "page", Post: &store.Post{ID: 9, Type: "page"}, Store: "product"}, webbuilder.QueryFacts{View: webbuilder.ViewSingular, Store: true, PostType: "product", PostID: 9}},
+		{&siteQuery{Kind: "page", Post: &store.Post{ID: 42, Type: "page"}, Store: "product_cat", StoreTax: "product_cat", StoreTerm: 42}, webbuilder.QueryFacts{View: webbuilder.ViewArchive, Store: true, Archive: webbuilder.ArchiveTerm, Taxonomy: "product_cat", TermID: 42}},
+		{&siteQuery{Kind: "page", Post: &store.Post{ID: 11, Type: "page"}, Store: "shop"}, webbuilder.QueryFacts{View: webbuilder.ViewArchive, Store: true, Archive: webbuilder.ArchivePostType, PostType: "product"}},
+		{&siteQuery{Kind: "page", Post: &store.Post{ID: 12, Type: "page"}, Store: "cart"}, webbuilder.QueryFacts{View: webbuilder.ViewSingular, Store: true, PostType: "page", PostID: 12}},
 	}
 	for i, tc := range cases {
 		got := wbFactsOf(tc.q)

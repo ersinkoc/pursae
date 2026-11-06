@@ -392,7 +392,21 @@ func wbFactsOf(q *siteQuery) webbuilder.QueryFacts {
 		f.View, f.Archive, f.PostType = webbuilder.ViewArchive, webbuilder.ArchivePostType, q.PostType
 		return f
 	}
-	if q.Post != nil { // single, page, front-page and the store's singular views
+	switch q.Store { // the store's synthetic pages: report what the view really is
+	case "product":
+		f.View, f.PostType = webbuilder.ViewSingular, "product"
+		if q.Post != nil {
+			f.PostID = q.Post.ID // the product id
+		}
+		return f
+	case "shop":
+		f.View, f.Archive, f.PostType = webbuilder.ViewArchive, webbuilder.ArchivePostType, "product"
+		return f
+	case "product_cat", "product_tag", "product_attr":
+		f.View, f.Archive, f.Taxonomy, f.TermID = webbuilder.ViewArchive, webbuilder.ArchiveTerm, q.StoreTax, q.StoreTerm
+		return f
+	}
+	if q.Post != nil { // single, page, front-page and the store's own pages (cart, checkout, account)
 		singular(q.Post)
 		f.FrontPage = q.Kind == "front-page"
 		return f

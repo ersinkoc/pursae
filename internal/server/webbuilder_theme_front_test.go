@@ -613,3 +613,33 @@ func fsReadFile(srv *Server, name string) (string, error) {
 	b, err := fs.ReadFile(srv.web, name)
 	return string(b), err
 }
+
+// Store views render as synthetic pages: page rules must not reach them, the main template stays
+// the store's, and a term archive is never mistaken for the page with the same id.
+func TestWBThemeFrontStoreViews(t *testing.T) {
+	base, _, srv := gooSite(t)
+	ctx := context.Background()
+	f := gooFrontCatalog(t, srv)
+	if err := srv.wbSetActive(ctx, true); err != nil {
+		t.Fatal(err)
+	}
+	if got := srv.settings.String("stylesheet"); got != webbuilder.HelloPursaeTheme {
+		t.Fatalf("stylesheet %s", got)
+	}
+	wbtfTemplate(t, srv, webbuilder.TemplateSinglePage, "Page layout", []string{"include/singular/page"}, `<div class="wb-page" data-wb-root><p>PAGE-TPL-MARK</p></div>`, "", "", nil)
+	wbtfTemplate(t, srv, webbuilder.TemplateHeader, "Page header", []string{"include/general", "exclude/singular/page"}, `<div class="wb-page" data-wb-root><p>HDR-MARK</p></div>`, "", "", nil)
+	wbtfTemplate(t, srv, webbuilder.TemplateHeader, "Entry header", []string{"include/singular/page/" + itoa64(f.cat.ID)}, `<div class="wb-page" data-wb-root><p>ENTRY-HDR-MARK</p></div>`, "", "", nil)
+	v := gooFrontClient()
+	for _, u := range []string{"/shop/", "/product/shirt/", "/product-category/clothing/"} {
+		code, body, _ := get(t, v, base+u)
+		if code != http.StatusOK {
+			t.Fatalf("%s: %d", u, code)
+		}
+		if strings.Contains(body, "PAGE-TPL-MARK") {
+			t.Errorf("%s: a page template took over the store view", u)
+		}
+		if !strings.Contains(body, "HDR-MARK") || strings.Contains(body, "ENTRY-HDR-MARK") {
+			t.Errorf("%s: header: page-rule header %v, entry header %v", u, strings.Contains(body, ">HDR-MARK"), strings.Contains(body, "ENTRY-HDR-MARK"))
+		}
+	}
+}

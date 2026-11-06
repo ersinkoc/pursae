@@ -658,7 +658,7 @@ func (s *Server) gooServeStorePage(c *gin.Context, key, endpoint, value string) 
 	if t := s.gooEndpointTitle(endpoint, value); t != "" && (u != nil || key == "checkout") {
 		copy.Title = s.gooL10nText(ctx, t)
 	}
-	q := &siteQuery{Kind: "page", Post: &copy, Paged: 1}
+	q := &siteQuery{Kind: "page", Post: &copy, Paged: 1, Store: key}
 	c.Set(ctxSiteQuery, q)
 	s.renderSite(c, q)
 	return true
@@ -805,10 +805,16 @@ func (s *Server) gooRenderSynthetic(c *gin.Context, post *store.Post, body strin
 	c.Set(gooCtxRender, s.gooL10n(c, body))
 	s.gooSaveSession(c)
 	q := &siteQuery{Kind: "page", Post: post, Paged: paged}
-	c.Set(ctxSiteQuery, q)
-	if fv := gooViewFrom(c); fv != nil && fv.Search != "" {
-		c.Header("Cache-Control", "no-cache, must-revalidate, max-age=0")
+	if fv := gooViewFrom(c); fv != nil {
+		q.Store = fv.Kind
+		if fv.Term != nil {
+			q.StoreTax, q.StoreTerm = fv.Term.Taxonomy, fv.Term.ID
+		}
+		if fv.Search != "" {
+			c.Header("Cache-Control", "no-cache, must-revalidate, max-age=0")
+		}
 	}
+	c.Set(ctxSiteQuery, q)
 	s.renderSite(c, q)
 }
 
