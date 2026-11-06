@@ -403,6 +403,9 @@ func (s *Server) theContent(ctx context.Context, c *gin.Context, p *store.Post, 
 <p><label for="pwbox-%d">Password: <input name="post_password" id="pwbox-%d" type="password" spellcheck="false" required size="20" /></label> <input type="submit" name="Submit" value="Enter" /></p></form>
 `, html.EscapeString(lb.Permalink(p)), p.ID, p.ID)
 	}
+	if out, ok := s.wbContent(ctx, c, p, singular); ok { // Pursae Web Builder snapshot (webbuilder_front.go)
+		return out
+	}
 	if out, ok := s.gweContent(c, p); ok { // Golementor documents and the editor preview
 		return out
 	}

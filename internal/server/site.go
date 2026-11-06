@@ -531,6 +531,9 @@ func (s *Server) renderSite(c *gin.Context, q *siteQuery) {
 		c.Header("Cache-Control", "no-cache, must-revalidate, max-age=0")
 	}
 	s.cacheTags(c, q)
+	if s.wbRenderPage(c, v, status) { // Pursae Web Builder canvas (webbuilder_front.go)
+		return
+	}
 	if s.gweRenderTemplate(c, v, status) { // Golementor Canvas / Full Width page templates
 		return
 	}
