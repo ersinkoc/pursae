@@ -48,9 +48,10 @@ builder-watch: builder/node_modules/.package-lock.json
 	git submodule update --init builder/upstream
 	cd builder && node scripts/build.mjs --watch
 
-## builder-test: audit the built dist (no AI provider strings, manifest/BUILD.json shape, size budgets)
+## builder-test: host unit tests (vitest), audit the built dist (no AI provider strings, manifest/BUILD.json shape, size budgets)
 ## and check BUILD.json against builder/UPSTREAM_SHA and the patch hashes
-builder-test:
+builder-test: builder/node_modules/.package-lock.json
+	cd builder && npm test --silent
 	node builder/test/audit.mjs
 	go test ./web -run TestWebBuilderDistIsCurrent -count=1
 
