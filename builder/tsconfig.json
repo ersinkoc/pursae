@@ -1,0 +1,22 @@
+{
+  "//": "Type check of the CMS host (host/) and its tests against the patched upstream copy in .work/upstream (prepared by `make builder`). Run: npm run typecheck",
+  "compilerOptions": {
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": { "@/*": ["./.work/upstream/src/*"] },
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "types": ["node"],
+    "strict": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["host", "test/host", ".work/upstream/src/vite-env.d.ts"]
+}
