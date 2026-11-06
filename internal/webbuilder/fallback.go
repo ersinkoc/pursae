@@ -11,7 +11,8 @@ import (
 // sitemaps and the theme (plugin off or page detached) show. Per visible section: headings (h1
 // for the first hero title, h2 for section titles, h3 for items), paragraphs, lists, images with
 // alt, links and buttons as <a>, quotes as <blockquote>, FAQ as h3 + p, nav and footer links as
-// <ul>. Forms, html sections, decor and motion are omitted.
+// <ul>. Forms, html sections, decor and motion are omitted, and so is everything the Theme
+// Builder fills per request: loop sections, dynamic cells, menu-bound links and the site logo.
 
 // FallbackHTML renders the fallback HTML of a doc.
 func FallbackHTML(d *DocState) string {
@@ -240,10 +241,12 @@ func (f *fallback) section(s *Section, depth int, wrap bool) {
 	body := f.b.Len()
 	switch s.Kind {
 	case "nav":
-		if b := f.val(s, "brand"); b != "" {
+		if b := f.val(s, "brand"); b != "" && s.Content[ContentLogoSource] != LogoSourceSite {
 			f.w("<p><strong>", inline(b), "</strong></p>\n")
 		}
-		f.linkList(s)
+		if s.Content[ContentMenu] == "" { // a bound menu's links come from the site
+			f.linkList(s)
+		}
 		f.buttons(s, "primary")
 	case "hero":
 		f.intro(s, 1)
@@ -295,10 +298,12 @@ func (f *fallback) section(s *Section, depth int, wrap bool) {
 		f.intro(s, 2)
 		f.buttons(s, "primary", "secondary")
 	case "footer":
-		if b := f.val(s, "brand"); b != "" {
+		if b := f.val(s, "brand"); b != "" && s.Content[ContentLogoSource] != LogoSourceSite {
 			f.w("<p><strong>", inline(b), "</strong></p>\n")
 		}
-		f.linkList(s)
+		if s.Content[ContentMenu] == "" {
+			f.linkList(s)
+		}
 		f.para(f.val(s, "note"))
 	case "text":
 		f.heading(2, f.val(s, "title"))
@@ -324,6 +329,8 @@ func (f *fallback) section(s *Section, depth int, wrap bool) {
 			}
 			f.w("</figure>\n")
 		}
+	case KindLoop:
+		// Post cards are filled per request; the fallback has no posts to show.
 	case KindLayout:
 		f.layout(s, depth)
 	case KindCustom:
@@ -366,8 +373,8 @@ func (f *fallback) layout(s *Section, depth int) {
 			f.section(it.Sub, depth+1, false)
 			continue
 		}
-		if !shown(s, "items."+it.ID+".text") {
-			continue
+		if !shown(s, "items."+it.ID+".text") || IsDynWidget(it.Title) {
+			continue // dynamic cells are filled per request
 		}
 		text := strings.TrimSpace(it.Text)
 		switch it.Title {

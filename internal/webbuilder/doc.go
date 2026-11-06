@@ -150,7 +150,8 @@ func decodeObject(raw []byte) (map[string]any, error) {
 var (
 	docKeys     = []string{"sections", "site"}
 	sectionKeys = []string{"id", "kind", "name", "hidden", "content", "items", "style", "box", "els", "grid", "bg"}
-	itemKeys    = []string{"id", "title", "text", "icon", "box", "href", "node", "parent", "tag", "lay", "sub"}
+	itemKeys    = []string{"id", "title", "text", "icon", "box", "href", "node", "parent", "tag", "lay", "sub", "dyn"}
+	dynKeys     = []string{"tag", "link", "format", "size", "ratio", "fields", "sep", "tax", "location", "menuLayout", "burgerAt", "words", "prefix", "placeholder", "button", "empty"}
 	styleKeys   = []string{"palette", "align", "padding", "titleSize", "titleWeight", "letterSpacing", "titleColor", "bodySize", "bg", "hideOn", "cssId", "css", "anim", "motion"}
 )
 
@@ -187,6 +188,9 @@ func canonSection(s map[string]any) {
 				continue
 			}
 			dropCaseVariants(im, itemKeys)
+			if dm, ok := im["dyn"].(map[string]any); ok {
+				dropCaseVariants(dm, dynKeys)
+			}
 			if sub, ok := im["sub"].(map[string]any); ok {
 				canonSection(sub)
 			}
@@ -342,15 +346,25 @@ var enums = map[string]map[string]bool{
 	"parallaxOn":  toSet([]string{"bg", "content"}),
 	"hoverOn":     toSet([]string{"self", "items"}),
 	"kind":        toSet(SectionKinds),
+	"dynTag":      toSet(DynTags),
+	"dynSize":     toSet(DynImageSizes),
+	"dynField":    toSet(DynMetaFields),
+	"menuLayout":  toSet(DynMenuLayouts),
+	"loopSource":  toSet(LoopSources),
+	"loopOrderBy": toSet(LoopOrderBys),
+	"loopOrder":   toSet(LoopOrders),
+	"loopPaging":  toSet(LoopPaginations),
+	"pageLayout":  toSet([]string{PageLayoutSite, PageLayoutCanvas}),
 }
 
 const maxValidationErrors = 100
 
 type validator struct {
-	opts   DocOptions
-	prefix string
-	errs   []ValidationError
-	ids    map[string]bool
+	opts      DocOptions
+	prefix    string
+	errs      []ValidationError
+	ids       map[string]bool
+	loopDepth int // loop sections enclosing the one being validated
 }
 
 func newValidator(opts DocOptions) *validator {
@@ -471,6 +485,17 @@ func (v *validator) section(s *Section, path string, depth int) {
 	} else if !enums["kind"][s.Kind] {
 		v.add(ptr(path, "kind"), VErrKind, fmt.Sprintf("unknown kind %q", trunc(s.Kind, 40)))
 	}
+	switch s.Kind {
+	case KindLoop:
+		v.loopDepth++
+		defer func() { v.loopDepth-- }()
+		if v.loopDepth > MaxLoopDepth {
+			v.add(path, VErrTooDeep, fmt.Sprintf("loops nested deeper than %d", MaxLoopDepth))
+		}
+		v.loop(s, path)
+	case KindNav, KindFooter:
+		v.binding(s, path)
+	}
 	if len(s.Items) > MaxItems {
 		v.add(ptr(path, "items"), VErrTooMany, fmt.Sprintf("more than %d items", MaxItems))
 		return
@@ -571,6 +596,9 @@ func (v *validator) item(s *Section, it *Item, path string, depth int, ids map[s
 		v.enum(ptr(lp, "align"), "seas", l.Align)
 		v.enum(ptr(lp, "justify"), "layJustify", l.Justify)
 		v.enum(ptr(lp, "self"), "seas", l.Self)
+	}
+	if it.Dyn != nil {
+		v.dyn(it.Dyn, ptr(path, "dyn"))
 	}
 	if it.Sub != nil {
 		v.section(it.Sub, ptr(path, "sub"), depth+1)
