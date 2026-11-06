@@ -64,6 +64,8 @@ function group(p, t,   b) {
 	# Plugin identity kept by the new builder: slug "golementor", option "native_golementor".
 	if (p == "internal/webbuilder/contract.go" || t ~ /native_golementor/) return "KEEP"
 	# Old upload paths, old admin/editor URLs (301 table) and the one-time theme upgrade off the old builder.
+	# R3 data cleanup: the start-up removal of the old builder upload folders and the 0028 migration test name what they delete.
+	if (p ~ /^internal\/server\/webbuilder_cleanup(_test)?\.go$/ || p == "internal/db/drop_old_builder_test.go") return "KEEP"
 	if (p ~ /^internal\/server\/(uploads_legacy|webbuilder_redirects|webbuilder_redirects_test|webbuilder_upgrade|webbuilder_upgrade_test)\.go$/) return "KEEP"
 	# New-builder tests that assert old-builder traces (old actions, menu ids, asset paths) are absent.
 	if (p ~ /^internal\/server\/webbuilder_(admin|editor|settings)_test\.go$/) return "KEEP"
