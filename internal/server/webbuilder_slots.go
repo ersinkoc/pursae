@@ -119,6 +119,10 @@ type wbSlotEnv struct {
 	main  *wbSlotPost // the singular post of the request, nil elsewhere
 	users map[int64]*store.User
 	loops bool // the snapshot has a post loop (cache tag wb-loop)
+	// loopMemo: the posts of each loop id, resolved once per fill. A loop's posts depend only on
+	// the doc and the request (never on the outer item of a nested loop), so every data-wb-loop
+	// element of the same id, at any depth, shares one query.
+	loopMemo map[string]wbLoopResult
 
 	logo     map[string]string
 	logoDone bool
@@ -697,6 +701,25 @@ func (s *Server) wbTermsForPosts(ctx context.Context, ids []int64) (map[int64]ma
 // (main), a custom query or the related posts of the singular post. ok is false when the doc has
 // no such loop (a forged or stale data-wb-loop id).
 func (e *wbSlotEnv) loopPosts(id string) ([]*wbSlotPost, bool) {
+	if r, ok := e.loopMemo[id]; ok {
+		return r.posts, r.ok
+	}
+	posts, ok := e.queryLoop(id)
+	if e.loopMemo == nil {
+		e.loopMemo = map[string]wbLoopResult{}
+	}
+	e.loopMemo[id] = wbLoopResult{posts, ok}
+	return posts, ok
+}
+
+// wbLoopResult is one memoized loopPosts answer.
+type wbLoopResult struct {
+	posts []*wbSlotPost
+	ok    bool
+}
+
+// queryLoop runs the query of loop id (see loopPosts).
+func (e *wbSlotEnv) queryLoop(id string) ([]*wbSlotPost, bool) {
 	def, ok := wbLoopDefs(e.doc)[id]
 	if !ok {
 		return nil, false

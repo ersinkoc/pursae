@@ -84,6 +84,25 @@ func TestWBThemeFrontLoopDefs(t *testing.T) {
 	}
 }
 
+// A loop id is resolved once per fill: a second data-wb-loop element of the same id (or a nested
+// one, once per outer item) reuses the posts instead of running its query again.
+func TestWBThemeFrontLoopMemo(t *testing.T) {
+	d := &store.WebBuilderDoc{PostID: 990002, Rev: 1, Doc: []byte(`{"sections":[{"id":"r1","kind":"loop","content":{"source":"related"}}]}`)}
+	e := &wbSlotEnv{doc: d} // no server: a second query would panic
+	if posts, ok := e.loopPosts("r1"); !ok || posts != nil {
+		t.Fatalf("related loop without a singular post: %v %v", posts, ok)
+	}
+	e.main = &wbSlotPost{p: &store.Post{ID: 1, Type: "post"}}
+	for i := 0; i < 3; i++ {
+		if posts, ok := e.loopPosts("r1"); !ok || posts != nil {
+			t.Fatalf("memoized loop: %v %v", posts, ok)
+		}
+	}
+	if _, ok := e.loopPosts("nope"); ok {
+		t.Error("unknown loop id resolved")
+	}
+}
+
 // --- integration helpers ---------------------------------------------------------------------------
 
 // wbtfTemplate creates a published template whose snapshot root holds body, with doc as the
