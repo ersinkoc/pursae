@@ -1,0 +1,3 @@
+[submodule "builder/upstream"]
+	path = builder/upstream
+	url = https://github.com/pursae/Builder.git
