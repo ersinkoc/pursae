@@ -578,7 +578,9 @@ func (s *Server) wbRESTPublish(c *gin.Context, r *restRequest) {
 		return
 	}
 	ps, _ := wbPage(body.Page)
-	fonts, _ := json.Marshal(webbuilder.DocFonts(&res.Doc))
+	needs := webbuilder.DocFonts(&res.Doc)
+	fonts, _ := json.Marshal(needs)
+	s.wbLocalizeFonts(needs) // before the transaction: the page's fonts must exist locally for visitors
 	content := webbuilder.FallbackHTML(&res.Doc)
 
 	tx, err := s.store.Pool.Begin(c)
@@ -1201,6 +1203,35 @@ func (s *Server) wbFontsDiskUsage() int64 {
 	})
 	wbFontsDisk.dir, wbFontsDisk.at, wbFontsDisk.size = dir, time.Now(), n
 	return n
+}
+
+// wbLocalizeFonts downloads the library fonts a page uses (once, by the localizer in gfonts.go) when
+// an editor publishes it. The editor ships some families itself (@fontsource), so it never asks
+// fonts/css2 for them, yet visitors only get fonts that are already local: a visitor's request never
+// starts a download. A slow or failed download does not fail the publish; the page is linked to
+// the font as soon as the background download finishes (the next cache purge or view).
+func (s *Server) wbLocalizeFonts(needs []webbuilder.FontNeed) {
+	var wg sync.WaitGroup
+	seen := map[string]bool{}
+	for _, n := range needs {
+		f, ok := webbuilder.LookupFont(n.Family)
+		if !ok || seen[f.Family] {
+			continue
+		}
+		seen[f.Family] = true
+		if _, err := os.Stat(filepath.Join(s.gfontsDir("css"), gfontKey(f.Family)+".css")); err == nil {
+			continue
+		}
+		if s.wbFontsDiskUsage() >= wbFontsDiskCap {
+			return
+		}
+		wg.Add(1)
+		go func(family string) {
+			defer wg.Done()
+			s.gfontEnsure(family, wbFontsWait)
+		}(f.Family)
+	}
+	wg.Wait()
 }
 
 // wbRESTFontsCSS is GET fonts/css2?family=…: the Google Fonts css2 API served from this site. The
