@@ -2,7 +2,8 @@
   "upstreamSha": "22ff4976a1416accd3b7370e176d7206bf390aee",
   "patches": {
     "0001-host-seam.patch": "f390a21f467fb8677fe9d8673e6c2aa07b7e95eb12f4e338b841fba140d5d2ab",
-    "0002-live-render.patch": "9a8ce69012a14d9077371dfc849c31a05cc07611e0db08401193c449ad51a431"
+    "0002-live-render.patch": "9a8ce69012a14d9077371dfc849c31a05cc07611e0db08401193c449ad51a431",
+    "0004-i18n.patch": "0aed5b4719c029a83da33e2a9b0bb38d42287ff2447e0c13e37205849fc95426"
   },
   "apiVersion": 1,
   "rendererVersion": 1
