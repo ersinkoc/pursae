@@ -218,6 +218,10 @@ func (s *Server) wbBootFor(c *gin.Context, p *store.Post, u *store.User, doc *wb
 	if p.Type != "post" {
 		exit += "?post_type=" + p.Type
 	}
+	settings := "" // contract §2: "" without manage_options
+	if u.Can("manage_options", nil) {
+		settings = lb.HomeURL(wbSettingsURL)
+	}
 	return &wbBoot{
 		APIVersion:      webbuilder.APIVersion,
 		RendererVersion: webbuilder.RendererVersion,
@@ -230,7 +234,7 @@ func (s *Server) wbBootFor(c *gin.Context, p *store.Post, u *store.User, doc *wb
 			Preview:   permalink + previewSep(permalink) + "preview=true",
 			Exit:      lb.HomeURL(exit),
 			EditPost:  lb.HomeURL("/wp-admin/post?post=" + itoa64(p.ID) + "&action=edit"),
-			Settings:  "", // Settings › Web Builder arrives with the switchover's admin screens
+			Settings:  settings,
 		},
 		Caps: webbuilder.BootCaps{
 			Publish:        u.Can("publish_post", p),

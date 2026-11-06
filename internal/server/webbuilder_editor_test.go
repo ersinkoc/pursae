@@ -131,6 +131,7 @@ func TestWebBuilderEditorScreen(t *testing.T) {
 		"user.id":                 float64(1), "rest.root": base + "/wp-json/", "rest.namespace": "web-builder/v2",
 		"links.site": base, "links.exit": base + "/wp-admin/edit?post_type=page",
 		"links.editPost": base + "/wp-admin/post?post=" + itoa64(page.ID) + "&action=edit",
+		"links.settings": base + wbSettingsURL,
 		"caps.publish":   true, "caps.uploadFiles": true, "caps.unfilteredHtml": true, "caps.editOthers": true,
 		"locale": "en_US", "siteAssets": base + webbuilder.SiteAssetsPath,
 		"ai.enabled": false, "ai.llmBase": "", "ai.imagesUrl": "", "ai.allowCode": false,
@@ -301,7 +302,7 @@ func TestWebBuilderEditorCaps(t *testing.T) {
 		t.Fatalf("contributor's own draft: %d %.300s", code, body)
 	}
 	boot, _ := wbBootOf(t, body)
-	for k, v := range map[string]any{"caps.publish": false, "caps.uploadFiles": false, "caps.unfilteredHtml": false, "caps.editOthers": false, "user.id": float64(u.ID)} {
+	for k, v := range map[string]any{"caps.publish": false, "caps.uploadFiles": false, "caps.unfilteredHtml": false, "caps.editOthers": false, "user.id": float64(u.ID), "links.settings": ""} {
 		if got := wbPath(boot, k); got != v {
 			t.Errorf("contributor boot %s = %v, want %v", k, got, v)
 		}

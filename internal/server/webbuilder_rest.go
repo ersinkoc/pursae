@@ -249,6 +249,12 @@ func wbPage(raw json.RawMessage) (webbuilder.PageSettings, json.RawMessage) {
 	return ps, wbPageMerge(obj, ps)
 }
 
+// wbPageMissing reports a request without page settings (absent or null).
+func wbPageMissing(raw json.RawMessage) bool {
+	t := strings.TrimSpace(string(raw))
+	return t == "" || t == "null"
+}
+
 func wbPageMerge(obj map[string]any, ps webbuilder.PageSettings) json.RawMessage {
 	obj["title"], obj["slug"], obj["description"], obj["indexable"] = ps.Title, ps.Slug, ps.Description, ps.Indexable
 	b, _ := json.Marshal(obj)
@@ -605,6 +611,11 @@ func (s *Server) wbRESTPublish(c *gin.Context, r *restRequest) {
 	if lock := s.wbLockHolder(c, fresh, u.ID); lock != nil {
 		restErr(c, http.StatusConflict, webbuilder.ErrLocked, lock.User.Name+" is editing this page.", map[string]any{"lock": lock})
 		return
+	}
+	if wbPageMissing(body.Page) {
+		// No page settings in the request (a REST client other than the editor): the post keeps
+		// its title, slug, excerpt and noindex instead of losing them.
+		ps = webbuilder.PageSettings{Title: fresh.Title, Description: fresh.Excerpt, Indexable: seogoMeta(fresh.Meta, "noindex") != "noindex"}
 	}
 	prevRevision, err := wbtx.LatestPostRevisionID(c, p.ID)
 	if err != nil {

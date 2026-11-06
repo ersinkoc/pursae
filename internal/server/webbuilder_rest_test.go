@@ -678,3 +678,24 @@ func TestWebBuilderRESTFonts(t *testing.T) {
 		t.Errorf("no family: %d", code)
 	}
 }
+
+// A publish without page settings (a REST client other than the editor) keeps the post's title,
+// slug and excerpt instead of blanking them.
+func TestWebBuilderRESTPublishWithoutPage(t *testing.T) {
+	srv, _, admin := wbrStart(t)
+	ctx := context.Background()
+	page := wbrPost(t, srv, "page", "Kept Title", "draft", 1)
+	doc, render := wbrFixture(t, "initial")
+	body := wbrPublishBody(doc, render, 0, "publish", nil)
+	delete(body, "page")
+	if code, v, _ := admin.do(http.MethodPost, wbrDocPath(page.ID, "/publish"), body, nil); code != http.StatusOK {
+		t.Fatalf("publish: %d %v", code, v)
+	}
+	p, err := srv.store.GetPost(ctx, page.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p.Title != "Kept Title" || p.Slug != page.Slug {
+		t.Errorf("post after a publish without page: title %q slug %q, want %q %q", p.Title, p.Slug, "Kept Title", page.Slug)
+	}
+}
