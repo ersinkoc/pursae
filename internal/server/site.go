@@ -434,6 +434,12 @@ func siteTypeBase(typ string) (string, string) {
 	return siteCPTSlugs(pt)
 }
 
+// siteTypeHierarchical is links.Builder.TypeHierarchical.
+func siteTypeHierarchical(typ string) bool {
+	pt := siteCPT(typ)
+	return pt != nil && pt.Hierarchical
+}
+
 // siteArchiveType is the routed post type typ when it has an archive, else nil.
 func siteArchiveType(typ string) *acfgoPostTypeDef {
 	pt := siteCPT(typ)

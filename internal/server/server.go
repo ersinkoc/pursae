@@ -594,6 +594,10 @@ func (s *Server) links(ctx context.Context) *links.Builder {
 		}
 		return u.Nicename
 	}
+	b.TypeHierarchical = siteTypeHierarchical
+	if s.settings.String("show_on_front") == "page" {
+		b.FrontPageID = int64(s.settings.Int("page_on_front"))
+	}
 	b.TypeBase = siteTypeBase                        // public Pursae Custom Fields post types (site.go)
 	b.LinkFilter = s.golylangLinkFilter(ctx, b.Home) // Golylang: URLs carry their language
 	return b

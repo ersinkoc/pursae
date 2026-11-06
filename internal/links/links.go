@@ -31,6 +31,13 @@ type Builder struct {
 	// (register_post_type()'s rewrite.slug and has_archive). base "" means the type has no pretty
 	// permalinks (its posts keep /?p=ID); archive "" means it has no archive.
 	TypeBase func(typ string) (base, archive string)
+	// TypeHierarchical reports whether a custom post type is hierarchical: only those entries carry
+	// their ancestors' slugs in the permalink (get_post_permalink()). nil: none is.
+	TypeHierarchical func(typ string) bool
+
+	// FrontPageID is page_on_front when show_on_front is "page" (0 otherwise): that page's
+	// permalink is the home URL, like _get_page_link().
+	FrontPageID int64
 
 	// LinkFilter, when set, rewrites the public URLs below like WordPress' post_link, term_link and
 	// home_url filters (Golylang adds the language). kind is "post", "term" or "home" (archives, feeds,
@@ -100,7 +107,7 @@ func (b *Builder) typeLink(p *store.Post, base string) string {
 		return b.HomeURL("/?p=" + strconv.FormatInt(p.ID, 10))
 	}
 	parts := []string{base}
-	if b.Ancestors != nil && p.ParentID != 0 {
+	if b.Ancestors != nil && p.ParentID != 0 && b.TypeHierarchical != nil && b.TypeHierarchical(p.Type) {
 		for _, a := range b.Ancestors(p) {
 			parts = append(parts, a.Slug)
 		}
@@ -130,6 +137,9 @@ func draftLike(p *store.Post) bool {
 }
 
 func (b *Builder) pageLink(p *store.Post) string {
+	if b.FrontPageID != 0 && p.ID == b.FrontPageID && p.Status == "publish" {
+		return b.HomeURL("/")
+	}
 	if !b.Pretty() || draftLike(p) {
 		return b.HomeURL("/?page_id=" + strconv.FormatInt(p.ID, 10))
 	}

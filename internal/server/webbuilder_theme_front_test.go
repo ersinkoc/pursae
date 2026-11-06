@@ -528,6 +528,10 @@ func TestWBThemeFrontViews(t *testing.T) {
 		t.Errorf("front loop: books by title asc: %.600s", tail)
 	}
 	wbtfBad(t, "front", body, "Front body.")
+	// The front page's own path redirects to the home URL, so front_page rules see one URL.
+	if code, _, loc := get(t, gooFrontClient(), base+"/welcome-home/"); code != http.StatusMovedPermanently || (loc != base+"/" && loc != "/") {
+		t.Errorf("front page path: %d %q", code, loc)
+	}
 	// Custom loops show private posts only to users who may read them.
 	hidden := wbtfPost(t, srv, "book", "Hidden Book", "<p>Private.</p>", time.Hour)
 	if _, err := srv.store.Pool.Exec(ctx, `UPDATE posts SET status = 'private' WHERE id = $1`, hidden.ID); err != nil {

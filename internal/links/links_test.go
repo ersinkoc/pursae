@@ -63,6 +63,7 @@ func TestCustomPostTypeLinks(t *testing.T) {
 	}
 	parent := &store.Post{ID: 3, Type: "book", Slug: "series", Status: "publish", PublishedAt: &date}
 	b := &Builder{Home: "http://ex.test", Structure: "/%postname%/", Loc: time.UTC, TypeBase: typeBase,
+		TypeHierarchical: func(typ string) bool { return typ == "book" },
 		Ancestors: func(p *store.Post) []*store.Post {
 			if p.ParentID == 3 {
 				return []*store.Post{parent}
@@ -76,6 +77,11 @@ func TestCustomPostTypeLinks(t *testing.T) {
 	child := &store.Post{ID: 10, Type: "book", Slug: "part-two", ParentID: 3, Status: "publish", PublishedAt: &date}
 	if got := b.Permalink(child); got != "http://ex.test/books/series/part-two/" {
 		t.Errorf("hierarchical cpt permalink = %s", got)
+	}
+	// A non-hierarchical type never adds ancestors (its router cannot resolve them).
+	evChild := &store.Post{ID: 14, Type: "event", Slug: "day-two", ParentID: 3, Status: "publish", PublishedAt: &date}
+	if got := b.Permalink(evChild); got != "http://ex.test/event/day-two/" {
+		t.Errorf("non-hierarchical cpt with a parent = %s", got)
 	}
 	if got := b.PermalinkTemplate(book); got != "http://ex.test/books/%postname%/" {
 		t.Errorf("cpt permalink template = %s", got)
@@ -114,5 +120,27 @@ func TestCustomPostTypeLinks(t *testing.T) {
 	}
 	if got := plain.Paged(plain.PostTypeArchiveLink("book"), 2); got != "http://ex.test/?paged=2&post_type=book" {
 		t.Errorf("plain archive paged = %s", got)
+	}
+}
+
+// The static front page's permalink is the home URL (_get_page_link()).
+func TestFrontPageLink(t *testing.T) {
+	date := time.Date(2026, 10, 3, 12, 0, 0, 0, time.UTC)
+	home := &store.Post{ID: 7, Type: "page", Slug: "home", Status: "publish", PublishedAt: &date}
+	other := &store.Post{ID: 8, Type: "page", Slug: "about", Status: "publish", PublishedAt: &date}
+	b := &Builder{Home: "http://ex.test", Structure: "/%postname%/", Loc: time.UTC, FrontPageID: 7}
+	if got := b.Permalink(home); got != "http://ex.test/" {
+		t.Errorf("front page permalink = %s", got)
+	}
+	if got := b.Permalink(other); got != "http://ex.test/about/" {
+		t.Errorf("other page permalink = %s", got)
+	}
+	plain := &Builder{Home: "http://ex.test", FrontPageID: 7}
+	if got := plain.Permalink(home); got != "http://ex.test/" {
+		t.Errorf("plain front page permalink = %s", got)
+	}
+	b.FrontPageID = 0
+	if got := b.Permalink(home); got != "http://ex.test/home/" {
+		t.Errorf("posts on the front: page permalink = %s", got)
 	}
 }
