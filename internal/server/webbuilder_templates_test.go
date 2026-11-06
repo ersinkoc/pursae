@@ -335,6 +335,25 @@ func TestWBTemplatePreviewContext(t *testing.T) {
 		t.Errorf("contentHtml %q", html)
 	}
 
+	// A singular preview samples recent posts (with the current one) so loops and post.nav draw;
+	// a page preview also gets posts. Drafts never appear.
+	ids := func(v any) map[float64]string {
+		out := map[float64]string{}
+		for _, x := range wbrObj(v)["posts"].([]any) {
+			out[wbrObj(x)["id"].(float64)] = wbrObj(x)["type"].(string)
+		}
+		return out
+	}
+	_, v, _ = admin.do(http.MethodGet, "/web-builder/v2/preview-context?object=post:"+itoa64(p.ID), nil, nil)
+	if got := ids(v); got[float64(p.ID)] != "post" || got[float64(evil.ID)] != "post" || got[float64(draft.ID)] != "" {
+		t.Errorf("single sample posts %v", got)
+	}
+	pg := wbrPost(t, srv, "page", "Sample Page", "publish", 1)
+	_, v, _ = admin.do(http.MethodGet, "/web-builder/v2/preview-context?object=post:"+itoa64(pg.ID), nil, nil)
+	if got := ids(v); got[float64(pg.ID)] != "page" || got[float64(p.ID)] != "post" {
+		t.Errorf("page sample posts %v", got)
+	}
+
 	// PUT templates/{id}/preview stores the object and answers its label, URL and sample data.
 	tp := wbtTemplate(t, srv, webbuilder.TemplateSinglePost, "Single", []string{"include/singular/post"}, 0, "draft")
 	code, v, _ := admin.do(http.MethodPut, "/web-builder/v2/templates/"+itoa64(tp.ID)+"/preview", map[string]any{"object": "post:" + itoa64(p.ID)}, nil)

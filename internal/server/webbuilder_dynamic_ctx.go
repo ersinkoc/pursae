@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"html"
+	"log"
 	"regexp"
 	"strconv"
 	"strings"
@@ -418,12 +419,66 @@ func (s *Server) wbDynContext(c *gin.Context, object string, q *siteQuery) (webb
 		}
 		out.Posts = append(out.Posts, s.wbDynPost(ctx, pv, lb))
 	}
+	if len(out.Posts) == 0 && v.Post != nil && q.Post != nil {
+		// A singular view lists no posts of its own: sample the recent entries so the editor can
+		// draw loop cards (query and related loops) and the post navigation.
+		for _, pv := range s.wbDynSamplePosts(ctx, c, q.Post, v.Post, lb) {
+			out.Posts = append(out.Posts, s.wbDynPost(ctx, pv, lb))
+		}
+	}
 	cur := q.Paged
 	if cur < 1 {
 		cur = 1
 	}
 	out.Pagination = webbuilder.DynPaging{Current: cur, Total: v.TotalPages}
 	return out, nil
+}
+
+// wbDynSamplePosts are the sample posts of a singular preview: the recent published entries of the
+// current post's type, newest first, with the current post in its date position (so post.nav finds
+// its neighbours), then the recent posts when the type is another one (loops of posts on a page).
+func (s *Server) wbDynSamplePosts(ctx context.Context, c *gin.Context, cur *store.Post, curView *postView, lb *links.Builder) []*postView {
+	u := currentUser(c)
+	types := []string{cur.Type}
+	if cur.Type != "post" {
+		types = append(types, "post")
+	}
+	var out []*postView
+	for _, typ := range types {
+		if !siteViewableType(typ) {
+			continue
+		}
+		posts, _, err := s.store.QueryPosts(ctx, store.PostQuery{Types: []string{typ}, Statuses: []string{"publish"},
+			OrderBy: "date", Order: "desc", Page: 1, PerPage: webbuilder.MaxLoopPerPage, Loc: s.loc()})
+		if err != nil {
+			log.Printf("web builder: preview sample posts: %v", err)
+			continue
+		}
+		if typ == cur.Type {
+			found := false
+			for _, p := range posts {
+				found = found || p.ID == cur.ID
+			}
+			if !found {
+				at := len(posts)
+				for i, p := range posts {
+					if p.Date().Before(cur.Date()) {
+						at = i
+						break
+					}
+				}
+				posts = append(posts[:at], append([]*store.Post{cur}, posts[at:]...)...)
+			}
+		}
+		for _, p := range posts {
+			if p.ID == cur.ID && curView != nil {
+				out = append(out, curView)
+				continue
+			}
+			out = append(out, s.postView(ctx, c, p, false, lb, u))
+		}
+	}
+	return out
 }
 
 // wbDynSite is DynSite of the theme (title and tagline from the options; buildSiteView's values

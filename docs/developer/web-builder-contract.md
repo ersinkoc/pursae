@@ -910,7 +910,7 @@ The editor shows real content, never invented samples. `GET preview-context?obje
 | `menus` | `Record<location, DynMenuItem[]>` | Pursae Multi Language swapped |
 | `view` | `{kind, archiveTitle, archiveDesc, search, total}` | `kind`: `single page front-page home archive search 404` |
 | `post` | DynPost \| null | the singular post |
-| `posts` | DynPost[] | the main query's posts, ≤ 24 |
+| `posts` | DynPost[] | the main query's posts, ≤ 24; on a singular view (which lists none) the recent published entries of its type with the current one, then recent posts when the type is another one, ≤ 24 per type |
 | `pagination` | `{current, total}` | |
 
 DynPost: `{id, type, title, url, excerpt, contentHtml, date, dateText, modified, modifiedText,
