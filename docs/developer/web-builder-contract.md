@@ -162,6 +162,9 @@ Request bodies of document routes are capped at **4 MiB** (`413 wb_too_large`, `
 | PUT | `/templates/{id}/conditions` | `edit_theme_options` | TemplateConditionsRequest → TemplateConditionsResponse |
 | PUT | `/templates/{id}/preview` | `edit_theme_options` | TemplatePreviewRequest → TemplatePreviewResponse |
 | GET | `/templates/{id}/conflicts` | `edit_theme_options` | — → TemplateConflict[] |
+| GET | `/themes` | `edit_theme_options` | — → `{themes, existing, source}` (theme library, [guide](web-builder-theme-library.md)) |
+| POST | `/themes/{slug}/import` | `edit_theme_options` (+ `edit_pages`, `publish_pages`) | `{mode, pages}` → drafts with docs `{templates, pages, media}` |
+| POST | `/themes/{slug}/finish` | `edit_theme_options` | `{mode, templates, pages}` → `{disabled, menus, pages}` |
 | GET | `/preview-context?object=` | `edit_posts` (+ `read_post` for `post:<id>`) | — → DynContext (§11.6) |
 
 `{id}` of a document route must be a post of an enabled post type (pages by default, posts

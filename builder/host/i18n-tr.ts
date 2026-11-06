@@ -117,6 +117,55 @@ const tr: Record<string, string> = {
   "{type} by {item}": "{item} yazarlı {type}", // i18n-ignore
   "{type} in {taxonomy}: {item}": "{taxonomy} içindeki {type}: {item}", // i18n-ignore
   "{type}: child of {item}": "{type}: {item} alt öğesi", // i18n-ignore
+  "Back to the library": "Kütüphaneye dön", // i18n-ignore
+  "Back": "Geri", // i18n-ignore
+  "Browse theme library": "Tema kütüphanesine göz at", // i18n-ignore
+  "Creating the templates…": "Şablonlar oluşturuluyor…", // i18n-ignore
+  "Demo pages: {list}": "Demo sayfaları: {list}", // i18n-ignore
+  "Disabled (you can enable them again): {list}": "Devre dışı bırakıldı (yeniden etkinleştirebilirsiniz): {list}", // i18n-ignore
+  "Finishing…": "Tamamlanıyor…", // i18n-ignore
+  "Import as drafts": "Taslak olarak içe aktar", // i18n-ignore
+  "Import theme": "Temayı içe aktar", // i18n-ignore
+  "Import {name}": "{name} temasını içe aktar", // i18n-ignore
+  "Import": "İçe aktar", // i18n-ignore
+  "Imported": "İçe aktarıldı", // i18n-ignore
+  "Keep both": "İkisini de tut", // i18n-ignore
+  "Keep this window open until it is done.": "Bitene kadar bu pencereyi açık tutun.", // i18n-ignore
+  "Loading themes…": "Temalar yükleniyor…", // i18n-ignore
+  "Nothing of the theme is live yet. Importing again picks up where it stopped; your own content was not changed.": "Temanın hiçbir parçası henüz yayında değil. Yeniden içe aktarmak kaldığı yerden devam eder; kendi içeriğinize dokunulmadı.", // i18n-ignore
+  "Published today: {list}.": "Şu an yayında: {list}.", // i18n-ignore
+  "Publishing “{name}”…": "“{name}” yayınlanıyor…", // i18n-ignore
+  "Ready-made full-site themes · header, footer and pages": "Hazır site temaları · üst bilgi, alt bilgi ve sayfalar", // i18n-ignore
+  "Ready-made full-site themes: header, footer and every page template": "Hazır site temaları: üst bilgi, alt bilgi ve her sayfa şablonu", // i18n-ignore
+  "Replace them": "Onların yerine geç", // i18n-ignore
+  "Saved as drafts": "Taslak olarak kaydedildi", // i18n-ignore
+  "Shop pages (products, cart, checkout) keep using Pursae Commerce; the theme only designs the header, footer and the pages around them.": "Mağaza sayfaları (ürünler, sepet, ödeme) Pursae Commerce'i kullanmaya devam eder; tema yalnızca üst bilgiyi, alt bilgiyi ve çevresindeki sayfaları tasarlar.", // i18n-ignore
+  "Templates: {list}": "Şablonlar: {list}", // i18n-ignore
+  "The import stopped.": "İçe aktarma durdu.", // i18n-ignore
+  "The library has no themes for Pursae Web Builder yet.": "Kütüphanede henüz Pursae Web Builder için tema yok.", // i18n-ignore
+  "The theme could not be imported.": "Tema içe aktarılamadı.", // i18n-ignore
+  "The theme library could not be loaded.": "Tema kütüphanesi yüklenemedi.", // i18n-ignore
+  "The theme’s menus, in the Primary and Footer menu locations": "Temanın menüleri, Birincil ve Alt bilgi menü konumlarında", // i18n-ignore
+  "Theme library": "Tema kütüphanesi", // i18n-ignore
+  "This editor is out of date. Reload it and try again.": "Bu düzenleyici güncel değil. Yeniden yükleyip tekrar deneyin.", // i18n-ignore
+  "Try again": "Tekrar dene", // i18n-ignore
+  "View the site": "Siteyi görüntüle", // i18n-ignore
+  "What you get": "Neler geliyor", // i18n-ignore
+  "Your site already has templates": "Sitenizde zaten şablonlar var", // i18n-ignore
+  "Your site has no templates yet, so nothing is replaced. Your posts, pages and settings stay as they are.": "Sitenizde henüz şablon yok, bu yüzden hiçbir şey değiştirilmez. Yazılarınız, sayfalarınız ve ayarlarınız olduğu gibi kalır.", // i18n-ignore
+  "the theme’s templates are saved as drafts; nothing changes on your site until you publish them.": "temanın şablonları taslak olarak kaydedilir; siz yayınlayana kadar sitenizde hiçbir şey değişmez.", // i18n-ignore
+  "the theme’s templates go live; yours are disabled (not deleted) and stay in the Theme Builder.": "temanın şablonları yayına girer; sizinkiler devre dışı kalır (silinmez) ve Tema Oluşturucu'da durur.", // i18n-ignore
+  "{name} is live": "{name} yayında", // i18n-ignore
+  "{n} demo images, added to your Media Library": "{n} demo görseli, Ortam Kitaplığınıza eklenir", // i18n-ignore
+  "{n} demo pages published": "{n} demo sayfası yayınlandı", // i18n-ignore
+  "{n} images added to the Media Library": "{n} görsel Ortam Kitaplığına eklendi", // i18n-ignore
+  "{n} menus created and assigned": "{n} menü oluşturuldu ve atandı", // i18n-ignore
+  "{n} menus": "{n} menü", // i18n-ignore
+  "{n} pages": "{n} sayfa", // i18n-ignore
+  "{n} templates published": "{n} şablon yayınlandı", // i18n-ignore
+  "{n} templates saved as drafts in the Theme Builder": "{n} şablon Tema Oluşturucu'da taslak olarak kaydedildi", // i18n-ignore
+  "{n} templates": "{n} şablon", // i18n-ignore
+  "“{name}” has no design.": "“{name}” için tasarım yok.", // i18n-ignore
 }
 
 export default tr

@@ -1,0 +1,1446 @@
+{
+ "format": "web-builder-theme",
+ "version": 1,
+ "templates": [
+  {
+   "key": "header",
+   "type": "header",
+   "title": "Header",
+   "conditions": [
+    "include/general"
+   ],
+   "priority": 0,
+   "doc": {
+    "site": {
+     "brand": "#C2613F",
+     "fontPair": "elegant",
+     "corners": "soft",
+     "headingFont": "Fraunces",
+     "headingWeight": 600,
+     "bodyFont": "Albert Sans",
+     "bodyWeight": 400
+    },
+    "sections": [
+     {
+      "id": "s_nj377kj",
+      "kind": "banner",
+      "name": "Announcement bar",
+      "hidden": false,
+      "content": {
+       "text": "Free shipping on plants over €50 · each one arrives healthy or we replace it",
+       "link": ""
+      },
+      "items": [],
+      "style": {
+       "palette": "dark",
+       "align": "center",
+       "padding": 0,
+       "titleSize": 16,
+       "hideOn": [],
+       "bg": "#132A1D"
+      }
+     },
+     {
+      "id": "s_8liwe57",
+      "kind": "nav",
+      "name": "Header",
+      "hidden": false,
+      "content": {
+       "logo": "P",
+       "brand": "Pursae",
+       "primary": "Shop",
+       "menu": "primary",
+       "logoSource": "site",
+       "primaryHref": "/shop/"
+      },
+      "items": [],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 0,
+       "titleSize": 20,
+       "hideOn": [],
+       "bg": "#FFFDF8",
+       "titleColor": "#1F3D2B"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "key": "footer",
+   "type": "footer",
+   "title": "Footer",
+   "conditions": [
+    "include/general"
+   ],
+   "priority": 0,
+   "doc": {
+    "site": {
+     "brand": "#C2613F",
+     "fontPair": "elegant",
+     "corners": "soft",
+     "headingFont": "Fraunces",
+     "headingWeight": 600,
+     "bodyFont": "Albert Sans",
+     "bodyWeight": 400
+    },
+    "sections": [
+     {
+      "id": "s_y38kfuf",
+      "kind": "footer",
+      "name": "Footer",
+      "hidden": false,
+      "content": {
+       "logo": "P",
+       "brand": "Pursae",
+       "note": "© Fernwood · Plants, planters and good advice",
+       "menu": "footer",
+       "logoSource": "site"
+      },
+      "items": [],
+      "style": {
+       "palette": "dark",
+       "align": "left",
+       "padding": 0,
+       "titleSize": 18,
+       "hideOn": [],
+       "bg": "#132A1D"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "key": "front-page",
+   "type": "front-page",
+   "title": "Front page",
+   "conditions": [
+    "include/singular/front_page"
+   ],
+   "priority": 0,
+   "doc": {
+    "site": {
+     "brand": "#C2613F",
+     "fontPair": "elegant",
+     "corners": "soft",
+     "headingFont": "Fraunces",
+     "headingWeight": 600,
+     "bodyFont": "Albert Sans",
+     "bodyWeight": 400
+    },
+    "sections": [
+     {
+      "id": "s_td14qeq",
+      "kind": "hero",
+      "name": "Hero",
+      "hidden": false,
+      "content": {
+       "eyebrow": "Plants, planters and good advice",
+       "title": "Bring a little",
+       "accent": "greenhouse home.",
+       "body": "Healthy houseplants, handmade planters and simple care guides from a family-run greenhouse.",
+       "primary": "Shop houseplants",
+       "secondary": "Visit our greenhouse",
+       "visual": "image",
+       "image": "{{media:hero}}",
+       "termTitle": "~/site",
+       "terminal": "$ docker compose up -d\n✓ db       postgres:17 · healthy\n✓ pursae   one binary · started\n\n$ pursae serve\n› schema migrations  up to date\n› task runner        running\n› wasm plugins       3 loaded, signatures ok\n› http://localhost:8080  *ready*",
+       "card1Label": "PLUGIN SANDBOX",
+       "card1Value": "Signature verified",
+       "card2Label": "PAGE CACHE",
+       "card2Value": "On",
+       "card2Sub": "hit rate 94%",
+       "html": "<div class=\"card\">\n  <span class=\"tag\">Live</span>\n  <h3>Write your own HTML here</h3>\n  <p>This area runs real HTML and CSS: badges, tables, embed codes…</p>\n  <button onclick=\"this.textContent='Clicked ✓'\">Try it</button>\n</div>\n<style>\n  .card { font-family: Inter, sans-serif; padding: 28px; border-radius: 16px;\n          background: linear-gradient(135deg, #1b1d22, #262a33); color: #eef0f3; }\n  .tag  { font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;\n          color: #4ade80; }\n  h3    { margin: 10px 0 6px; font-size: 22px; }\n  p     { margin: 0 0 18px; color: #a3a8b2; line-height: 1.6; }\n  button{ font: 600 14px Inter, sans-serif; padding: 10px 16px; border: 0; border-radius: 8px;\n          background: #5b7cfa; color: #fff; cursor: pointer; }\n</style>",
+       "primaryHref": "/shop/",
+       "secondaryHref": "/about/"
+      },
+      "items": [],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 96,
+       "titleSize": 92,
+       "hideOn": [],
+       "bg": "#F6F1E7",
+       "titleColor": "#1F3D2B"
+      }
+     },
+     {
+      "id": "s_zjzha65",
+      "kind": "features",
+      "name": "Features",
+      "hidden": false,
+      "content": {
+       "eyebrow": "Shop by category",
+       "title": "Everything a plant needs.",
+       "body": ""
+      },
+      "items": [
+       {
+        "id": "i_0fgbvzc",
+        "title": "Houseplants",
+        "text": "From easy-going to adventurous.",
+        "icon": "shield",
+        "href": "/product-category/houseplants/"
+       },
+       {
+        "id": "i_qkcbr1g",
+        "title": "Planters",
+        "text": "Terracotta, ceramic and hanging.",
+        "icon": "box",
+        "href": "/product-category/planters/"
+       },
+       {
+        "id": "i_t7xabax",
+        "title": "Care & Tools",
+        "text": "Watering cans, food and shears.",
+        "icon": "puzzle",
+        "href": "/product-category/care/"
+       },
+       {
+        "id": "i_mijbwdr",
+        "title": "Gifts",
+        "text": "Boxes that keep on growing.",
+        "icon": "zap",
+        "href": "/product-category/gifts/"
+       }
+      ],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 112,
+       "titleSize": 56,
+       "hideOn": [],
+       "bg": "#FFFDF8",
+       "titleColor": "#1F3D2B"
+      }
+     },
+     {
+      "id": "s_az8nfo7",
+      "kind": "features",
+      "name": "Features",
+      "hidden": false,
+      "content": {
+       "eyebrow": "Grown with care",
+       "title": "Plants that arrive happy.",
+       "body": "We grow, pack and ship every plant ourselves."
+      },
+      "items": [
+       {
+        "id": "i_p9x1ycs",
+        "title": "Healthy guarantee",
+        "text": "If it arrives unhappy, we send a new one.",
+        "icon": "shield"
+       },
+       {
+        "id": "i_2zftvh9",
+        "title": "Care guides",
+        "text": "Light, water and feeding made simple.",
+        "icon": "box"
+       },
+       {
+        "id": "i_1nnla6o",
+        "title": "Plastic-light packing",
+        "text": "Recycled paper and compostable fill.",
+        "icon": "puzzle"
+       },
+       {
+        "id": "i_p2f1xqc",
+        "title": "Gift ready",
+        "text": "Wrapped and with a handwritten note.",
+        "icon": "zap"
+       }
+      ],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 112,
+       "titleSize": 56,
+       "hideOn": [],
+       "bg": "#F6F1E7",
+       "titleColor": "#1F3D2B"
+      }
+     },
+     {
+      "id": "s_v2337fr",
+      "kind": "media",
+      "name": "Image and text",
+      "hidden": false,
+      "content": {
+       "eyebrow": "Our greenhouse",
+       "title": "A family greenhouse, open to everyone.",
+       "body": "Three generations of growers, one glasshouse and a stubborn belief that everybody can keep a plant alive.",
+       "primary": "Read our story",
+       "image": "{{media:about}}",
+       "imageSide": "left",
+       "primaryHref": "/about/"
+      },
+      "items": [],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 112,
+       "titleSize": 48,
+       "hideOn": [],
+       "bg": "#FFFDF8",
+       "titleColor": "#1F3D2B"
+      }
+     },
+     {
+      "id": "s_u83n0u5",
+      "kind": "quote",
+      "name": "Testimonial",
+      "hidden": false,
+      "content": {
+       "quote": "My monstera has doubled in size since the care card arrived. I finally feel like a plant person.",
+       "author": "Elif T.",
+       "role": "Customer since 2024"
+      },
+      "items": [],
+      "style": {
+       "palette": "light",
+       "align": "center",
+       "padding": 112,
+       "titleSize": 40,
+       "hideOn": [],
+       "bg": "#F6F1E7",
+       "titleColor": "#1F3D2B"
+      }
+     },
+     {
+      "id": "s_hbooti4",
+      "kind": "cta",
+      "name": "Call to action",
+      "hidden": false,
+      "content": {
+       "title": "Not sure where to start?",
+       "body": "The plant gift box pairs an easy plant with a handmade pot and a care card.",
+       "primary": "See the gift box",
+       "secondary": "Browse everything",
+       "primaryHref": "/shop/",
+       "secondaryHref": "/shop/"
+      },
+      "items": [],
+      "style": {
+       "palette": "brand",
+       "align": "center",
+       "padding": 120,
+       "titleSize": 64,
+       "hideOn": [],
+       "bg": "#1F3D2B",
+       "titleColor": "#1F3D2B"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "key": "single-post",
+   "type": "single-post",
+   "title": "Single post",
+   "conditions": [
+    "include/singular/post"
+   ],
+   "priority": 0,
+   "doc": {
+    "site": {
+     "brand": "#C2613F",
+     "fontPair": "elegant",
+     "corners": "soft",
+     "headingFont": "Fraunces",
+     "headingWeight": 600,
+     "bodyFont": "Albert Sans",
+     "bodyWeight": 400
+    },
+    "sections": [
+     {
+      "id": "s_hgjcow5",
+      "kind": "layout",
+      "name": "Post header",
+      "hidden": false,
+      "content": {
+       "type": "grid",
+       "structure": "g3r"
+      },
+      "items": [
+       {
+        "id": "c_uzxjgjk",
+        "title": "post-title",
+        "text": "",
+        "dyn": {
+         "tag": "h1",
+         "link": false
+        }
+       },
+       {
+        "id": "c_o1lfe01",
+        "title": "post-meta",
+        "text": "",
+        "dyn": {
+         "fields": [
+          "date",
+          "author",
+          "comments"
+         ],
+         "sep": "·"
+        }
+       }
+      ],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 72,
+       "titleSize": 36,
+       "hideOn": [],
+       "bg": "#FFFDF8",
+       "titleColor": "#1F3D2B"
+      },
+      "box": {
+       "contentWidth": "boxed",
+       "width": 760,
+       "widthUnit": "px",
+       "minHeight": 0,
+       "minHeightUnit": "px",
+       "direction": "row",
+       "justify": "start",
+       "align": "stretch",
+       "wrap": true,
+       "stackMobile": true,
+       "gapX": 16,
+       "gapY": 12,
+       "gridCols": 1,
+       "gridRows": 2,
+       "margin": {
+        "t": 0,
+        "r": 0,
+        "b": 0,
+        "l": 0
+       },
+       "padding": {
+        "t": 64,
+        "r": 40,
+        "b": 32,
+        "l": 40
+       },
+       "borderStyle": "none",
+       "borderWidth": 1,
+       "borderColor": "#d0d4db",
+       "radius": 0,
+       "shadow": "none",
+       "zIndex": 0
+      }
+     },
+     {
+      "id": "s_t3ifrzz",
+      "kind": "layout",
+      "name": "Content",
+      "hidden": false,
+      "content": {
+       "type": "grid",
+       "structure": "g3r"
+      },
+      "items": [
+       {
+        "id": "c_a1ntj21",
+        "title": "post-image",
+        "text": "",
+        "dyn": {
+         "size": "large",
+         "ratio": 1.78,
+         "link": false
+        }
+       },
+       {
+        "id": "c_akkw4sm",
+        "title": "post-content",
+        "text": "",
+        "dyn": {}
+       },
+       {
+        "id": "c_lz62txj",
+        "title": "post-terms",
+        "text": "",
+        "dyn": {
+         "tax": "category",
+         "sep": ", ",
+         "prefix": "Filed under"
+        }
+       },
+       {
+        "id": "c_gz3ma5z",
+        "title": "author-box",
+        "text": "",
+        "dyn": {}
+       },
+       {
+        "id": "c_1nzload",
+        "title": "post-nav",
+        "text": "",
+        "dyn": {}
+       },
+       {
+        "id": "c_g6qu1gg",
+        "title": "post-comments",
+        "text": "",
+        "dyn": {}
+       }
+      ],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 72,
+       "titleSize": 36,
+       "hideOn": [],
+       "bg": "#FFFDF8",
+       "titleColor": "#1F3D2B"
+      },
+      "box": {
+       "contentWidth": "boxed",
+       "width": 760,
+       "widthUnit": "px",
+       "minHeight": 0,
+       "minHeightUnit": "px",
+       "direction": "row",
+       "justify": "start",
+       "align": "stretch",
+       "wrap": true,
+       "stackMobile": true,
+       "gapX": 16,
+       "gapY": 32,
+       "gridCols": 1,
+       "gridRows": 6,
+       "margin": {
+        "t": 0,
+        "r": 0,
+        "b": 0,
+        "l": 0
+       },
+       "padding": {
+        "t": 0,
+        "r": 40,
+        "b": 64,
+        "l": 40
+       },
+       "borderStyle": "none",
+       "borderWidth": 1,
+       "borderColor": "#d0d4db",
+       "radius": 0,
+       "shadow": "none",
+       "zIndex": 0
+      }
+     }
+    ]
+   }
+  },
+  {
+   "key": "single-page",
+   "type": "single-page",
+   "title": "Single page",
+   "conditions": [
+    "include/singular/page"
+   ],
+   "priority": 0,
+   "doc": {
+    "site": {
+     "brand": "#C2613F",
+     "fontPair": "elegant",
+     "corners": "soft",
+     "headingFont": "Fraunces",
+     "headingWeight": 600,
+     "bodyFont": "Albert Sans",
+     "bodyWeight": 400
+    },
+    "sections": [
+     {
+      "id": "s_znthb4e",
+      "kind": "layout",
+      "name": "Post header",
+      "hidden": false,
+      "content": {
+       "type": "grid",
+       "structure": "g3r"
+      },
+      "items": [
+       {
+        "id": "c_8i06a1i",
+        "title": "post-title",
+        "text": "",
+        "dyn": {
+         "tag": "h1",
+         "link": false
+        }
+       }
+      ],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 72,
+       "titleSize": 36,
+       "hideOn": [],
+       "bg": "#FFFDF8",
+       "titleColor": "#1F3D2B"
+      },
+      "box": {
+       "contentWidth": "boxed",
+       "width": 760,
+       "widthUnit": "px",
+       "minHeight": 0,
+       "minHeightUnit": "px",
+       "direction": "row",
+       "justify": "start",
+       "align": "stretch",
+       "wrap": true,
+       "stackMobile": true,
+       "gapX": 16,
+       "gapY": 12,
+       "gridCols": 1,
+       "gridRows": 1,
+       "margin": {
+        "t": 0,
+        "r": 0,
+        "b": 0,
+        "l": 0
+       },
+       "padding": {
+        "t": 64,
+        "r": 40,
+        "b": 32,
+        "l": 40
+       },
+       "borderStyle": "none",
+       "borderWidth": 1,
+       "borderColor": "#d0d4db",
+       "radius": 0,
+       "shadow": "none",
+       "zIndex": 0
+      }
+     },
+     {
+      "id": "s_tu0qtd3",
+      "kind": "layout",
+      "name": "Content",
+      "hidden": false,
+      "content": {
+       "type": "grid",
+       "structure": "g3r"
+      },
+      "items": [
+       {
+        "id": "c_d18702j",
+        "title": "post-image",
+        "text": "",
+        "dyn": {
+         "size": "large",
+         "ratio": 1.78,
+         "link": false
+        }
+       },
+       {
+        "id": "c_zbt6523",
+        "title": "post-content",
+        "text": "",
+        "dyn": {}
+       },
+       {
+        "id": "c_aigfgk4",
+        "title": "post-comments",
+        "text": "",
+        "dyn": {}
+       }
+      ],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 72,
+       "titleSize": 36,
+       "hideOn": [],
+       "bg": "#FFFDF8",
+       "titleColor": "#1F3D2B"
+      },
+      "box": {
+       "contentWidth": "boxed",
+       "width": 760,
+       "widthUnit": "px",
+       "minHeight": 0,
+       "minHeightUnit": "px",
+       "direction": "row",
+       "justify": "start",
+       "align": "stretch",
+       "wrap": true,
+       "stackMobile": true,
+       "gapX": 16,
+       "gapY": 32,
+       "gridCols": 1,
+       "gridRows": 3,
+       "margin": {
+        "t": 0,
+        "r": 0,
+        "b": 0,
+        "l": 0
+       },
+       "padding": {
+        "t": 0,
+        "r": 40,
+        "b": 64,
+        "l": 40
+       },
+       "borderStyle": "none",
+       "borderWidth": 1,
+       "borderColor": "#d0d4db",
+       "radius": 0,
+       "shadow": "none",
+       "zIndex": 0
+      }
+     }
+    ]
+   }
+  },
+  {
+   "key": "archive",
+   "type": "archive",
+   "title": "Archive",
+   "conditions": [
+    "include/archive"
+   ],
+   "priority": 0,
+   "doc": {
+    "site": {
+     "brand": "#C2613F",
+     "fontPair": "elegant",
+     "corners": "soft",
+     "headingFont": "Fraunces",
+     "headingWeight": 600,
+     "bodyFont": "Albert Sans",
+     "bodyWeight": 400
+    },
+    "sections": [
+     {
+      "id": "s_grb5w6u",
+      "kind": "layout",
+      "name": "Content",
+      "hidden": false,
+      "content": {
+       "type": "grid",
+       "structure": "g3r"
+      },
+      "items": [
+       {
+        "id": "c_yil3jnc",
+        "title": "archive-title",
+        "text": "",
+        "dyn": {
+         "tag": "h1"
+        }
+       },
+       {
+        "id": "c_3fvuubn",
+        "title": "archive-desc",
+        "text": "",
+        "dyn": {}
+       }
+      ],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 72,
+       "titleSize": 36,
+       "hideOn": [],
+       "bg": "#FFFDF8",
+       "titleColor": "#1F3D2B"
+      },
+      "box": {
+       "contentWidth": "boxed",
+       "width": 1160,
+       "widthUnit": "px",
+       "minHeight": 0,
+       "minHeightUnit": "px",
+       "direction": "row",
+       "justify": "start",
+       "align": "stretch",
+       "wrap": true,
+       "stackMobile": true,
+       "gapX": 16,
+       "gapY": 12,
+       "gridCols": 1,
+       "gridRows": 2,
+       "margin": {
+        "t": 0,
+        "r": 0,
+        "b": 0,
+        "l": 0
+       },
+       "padding": {
+        "t": 64,
+        "r": 40,
+        "b": 24,
+        "l": 40
+       },
+       "borderStyle": "none",
+       "borderWidth": 1,
+       "borderColor": "#d0d4db",
+       "radius": 0,
+       "shadow": "none",
+       "zIndex": 0
+      }
+     },
+     {
+      "id": "s_oorvg7c",
+      "kind": "loop",
+      "name": "Post loop",
+      "hidden": false,
+      "content": {
+       "source": "main",
+       "postType": "post",
+       "perPage": "6",
+       "orderBy": "date",
+       "order": "desc",
+       "terms": "",
+       "author": "",
+       "exclude": "",
+       "offset": "0",
+       "pagination": "numbers",
+       "empty": "No posts yet."
+      },
+      "items": [
+       {
+        "id": "c_uxgs790",
+        "title": "layout",
+        "text": "",
+        "sub": {
+         "id": "s_9zgzaci",
+         "kind": "layout",
+         "name": "Post card",
+         "hidden": false,
+         "content": {
+          "type": "grid",
+          "structure": "g3r"
+         },
+         "items": [
+          {
+           "id": "c_1jivrcs",
+           "title": "post-image",
+           "text": "",
+           "dyn": {
+            "size": "medium",
+            "ratio": 1.5,
+            "link": true
+           }
+          },
+          {
+           "id": "c_aur2ml2",
+           "title": "post-meta",
+           "text": "",
+           "dyn": {
+            "fields": [
+             "date"
+            ],
+            "sep": "·"
+           }
+          },
+          {
+           "id": "c_akp5wbw",
+           "title": "post-title",
+           "text": "",
+           "dyn": {
+            "tag": "h3",
+            "link": true
+           }
+          },
+          {
+           "id": "c_82pz7i7",
+           "title": "post-excerpt",
+           "text": "",
+           "dyn": {
+            "words": 20
+           }
+          }
+         ],
+         "style": {
+          "palette": "light",
+          "align": "left",
+          "padding": 72,
+          "titleSize": 22,
+          "hideOn": []
+         },
+         "box": {
+          "contentWidth": "full",
+          "width": 100,
+          "widthUnit": "%",
+          "minHeight": 0,
+          "minHeightUnit": "px",
+          "direction": "row",
+          "justify": "start",
+          "align": "stretch",
+          "wrap": true,
+          "stackMobile": true,
+          "gapX": 12,
+          "gapY": 12,
+          "gridCols": 1,
+          "gridRows": 4,
+          "margin": {
+           "t": 0,
+           "r": 0,
+           "b": 0,
+           "l": 0
+          },
+          "padding": {
+           "t": 0,
+           "r": 0,
+           "b": 0,
+           "l": 0
+          },
+          "borderStyle": "none",
+          "borderWidth": 1,
+          "borderColor": "#d0d4db",
+          "radius": 0,
+          "shadow": "none",
+          "zIndex": 0
+         }
+        }
+       }
+      ],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 72,
+       "titleSize": 22,
+       "hideOn": [],
+       "bg": "#FFFDF8",
+       "titleColor": "#1F3D2B"
+      },
+      "box": {
+       "contentWidth": "full",
+       "width": 100,
+       "widthUnit": "%",
+       "minHeight": 0,
+       "minHeightUnit": "px",
+       "direction": "row",
+       "justify": "start",
+       "align": "stretch",
+       "wrap": true,
+       "stackMobile": true,
+       "gapX": 32,
+       "gapY": 32,
+       "gridCols": 2,
+       "gridRows": 1,
+       "margin": {
+        "t": 0,
+        "r": 0,
+        "b": 0,
+        "l": 0
+       },
+       "padding": {
+        "t": 16,
+        "r": 0,
+        "b": 96,
+        "l": 0
+       },
+       "borderStyle": "none",
+       "borderWidth": 1,
+       "borderColor": "#d0d4db",
+       "radius": 0,
+       "shadow": "none",
+       "zIndex": 0
+      }
+     }
+    ]
+   }
+  },
+  {
+   "key": "search-results",
+   "type": "search-results",
+   "title": "Search results",
+   "conditions": [
+    "include/archive/search"
+   ],
+   "priority": 0,
+   "doc": {
+    "site": {
+     "brand": "#C2613F",
+     "fontPair": "elegant",
+     "corners": "soft",
+     "headingFont": "Fraunces",
+     "headingWeight": 600,
+     "bodyFont": "Albert Sans",
+     "bodyWeight": 400
+    },
+    "sections": [
+     {
+      "id": "s_91pe10u",
+      "kind": "layout",
+      "name": "Content",
+      "hidden": false,
+      "content": {
+       "type": "grid",
+       "structure": "g3r"
+      },
+      "items": [
+       {
+        "id": "c_j7uu7wl",
+        "title": "search-query",
+        "text": "",
+        "dyn": {
+         "tag": "h1",
+         "prefix": "Search results for:"
+        }
+       },
+       {
+        "id": "c_n1wscmd",
+        "title": "search-form",
+        "text": "",
+        "dyn": {
+         "placeholder": "Search…",
+         "button": "Search"
+        }
+       }
+      ],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 72,
+       "titleSize": 36,
+       "hideOn": [],
+       "bg": "#FFFDF8",
+       "titleColor": "#1F3D2B"
+      },
+      "box": {
+       "contentWidth": "boxed",
+       "width": 1160,
+       "widthUnit": "px",
+       "minHeight": 0,
+       "minHeightUnit": "px",
+       "direction": "row",
+       "justify": "start",
+       "align": "stretch",
+       "wrap": true,
+       "stackMobile": true,
+       "gapX": 16,
+       "gapY": 16,
+       "gridCols": 1,
+       "gridRows": 2,
+       "margin": {
+        "t": 0,
+        "r": 0,
+        "b": 0,
+        "l": 0
+       },
+       "padding": {
+        "t": 64,
+        "r": 40,
+        "b": 24,
+        "l": 40
+       },
+       "borderStyle": "none",
+       "borderWidth": 1,
+       "borderColor": "#d0d4db",
+       "radius": 0,
+       "shadow": "none",
+       "zIndex": 0
+      }
+     },
+     {
+      "id": "s_kfewvd2",
+      "kind": "loop",
+      "name": "Post loop",
+      "hidden": false,
+      "content": {
+       "source": "main",
+       "postType": "post",
+       "perPage": "6",
+       "orderBy": "date",
+       "order": "desc",
+       "terms": "",
+       "author": "",
+       "exclude": "",
+       "offset": "0",
+       "pagination": "numbers",
+       "empty": "Nothing matched your search. Try different words."
+      },
+      "items": [
+       {
+        "id": "c_f6z5zyo",
+        "title": "layout",
+        "text": "",
+        "sub": {
+         "id": "s_jginhmx",
+         "kind": "layout",
+         "name": "Post card",
+         "hidden": false,
+         "content": {
+          "type": "grid",
+          "structure": "g3r"
+         },
+         "items": [
+          {
+           "id": "c_tfg6jy0",
+           "title": "post-image",
+           "text": "",
+           "dyn": {
+            "size": "medium",
+            "ratio": 1.5,
+            "link": true
+           }
+          },
+          {
+           "id": "c_sfzpfai",
+           "title": "post-meta",
+           "text": "",
+           "dyn": {
+            "fields": [
+             "date"
+            ],
+            "sep": "·"
+           }
+          },
+          {
+           "id": "c_aygbnwx",
+           "title": "post-title",
+           "text": "",
+           "dyn": {
+            "tag": "h3",
+            "link": true
+           }
+          },
+          {
+           "id": "c_opkluqp",
+           "title": "post-excerpt",
+           "text": "",
+           "dyn": {
+            "words": 20
+           }
+          }
+         ],
+         "style": {
+          "palette": "light",
+          "align": "left",
+          "padding": 72,
+          "titleSize": 22,
+          "hideOn": []
+         },
+         "box": {
+          "contentWidth": "full",
+          "width": 100,
+          "widthUnit": "%",
+          "minHeight": 0,
+          "minHeightUnit": "px",
+          "direction": "row",
+          "justify": "start",
+          "align": "stretch",
+          "wrap": true,
+          "stackMobile": true,
+          "gapX": 12,
+          "gapY": 12,
+          "gridCols": 1,
+          "gridRows": 4,
+          "margin": {
+           "t": 0,
+           "r": 0,
+           "b": 0,
+           "l": 0
+          },
+          "padding": {
+           "t": 0,
+           "r": 0,
+           "b": 0,
+           "l": 0
+          },
+          "borderStyle": "none",
+          "borderWidth": 1,
+          "borderColor": "#d0d4db",
+          "radius": 0,
+          "shadow": "none",
+          "zIndex": 0
+         }
+        }
+       }
+      ],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 72,
+       "titleSize": 22,
+       "hideOn": [],
+       "bg": "#FFFDF8",
+       "titleColor": "#1F3D2B"
+      },
+      "box": {
+       "contentWidth": "full",
+       "width": 100,
+       "widthUnit": "%",
+       "minHeight": 0,
+       "minHeightUnit": "px",
+       "direction": "row",
+       "justify": "start",
+       "align": "stretch",
+       "wrap": true,
+       "stackMobile": true,
+       "gapX": 32,
+       "gapY": 32,
+       "gridCols": 2,
+       "gridRows": 1,
+       "margin": {
+        "t": 0,
+        "r": 0,
+        "b": 0,
+        "l": 0
+       },
+       "padding": {
+        "t": 16,
+        "r": 0,
+        "b": 96,
+        "l": 0
+       },
+       "borderStyle": "none",
+       "borderWidth": 1,
+       "borderColor": "#d0d4db",
+       "radius": 0,
+       "shadow": "none",
+       "zIndex": 0
+      }
+     }
+    ]
+   }
+  },
+  {
+   "key": "error-404",
+   "type": "error-404",
+   "title": "404 page",
+   "conditions": [
+    "include/404"
+   ],
+   "priority": 0,
+   "doc": {
+    "site": {
+     "brand": "#C2613F",
+     "fontPair": "elegant",
+     "corners": "soft",
+     "headingFont": "Fraunces",
+     "headingWeight": 600,
+     "bodyFont": "Albert Sans",
+     "bodyWeight": 400
+    },
+    "sections": [
+     {
+      "id": "s_vl2r1qp",
+      "kind": "text",
+      "name": "Text block",
+      "hidden": false,
+      "content": {
+       "title": "This path leads nowhere",
+       "body": "The page you wanted has been repotted somewhere else. Let us help you find it."
+      },
+      "items": [],
+      "style": {
+       "palette": "light",
+       "align": "center",
+       "padding": 88,
+       "titleSize": 44,
+       "hideOn": [],
+       "bg": "#FFFDF8",
+       "titleColor": "#1F3D2B"
+      }
+     },
+     {
+      "id": "s_sdsc3qs",
+      "kind": "cta",
+      "name": "Call to action",
+      "hidden": false,
+      "content": {
+       "title": "Keep exploring",
+       "body": "The shop is only a click away.",
+       "primary": "Go to the shop",
+       "secondary": "Back to the home page",
+       "primaryHref": "/shop/",
+       "secondaryHref": "/"
+      },
+      "items": [],
+      "style": {
+       "palette": "brand",
+       "align": "center",
+       "padding": 120,
+       "titleSize": 64,
+       "hideOn": [],
+       "bg": "#1F3D2B",
+       "titleColor": "#1F3D2B"
+      }
+     }
+    ]
+   }
+  }
+ ],
+ "pages": [
+  {
+   "key": "about",
+   "slug": "about",
+   "title": "Our greenhouse",
+   "doc": {
+    "site": {
+     "brand": "#C2613F",
+     "fontPair": "elegant",
+     "corners": "soft",
+     "headingFont": "Fraunces",
+     "headingWeight": 600,
+     "bodyFont": "Albert Sans",
+     "bodyWeight": 400
+    },
+    "sections": [
+     {
+      "id": "s_s0inybr",
+      "kind": "text",
+      "name": "Text block",
+      "hidden": false,
+      "content": {
+       "title": "Our greenhouse",
+       "body": "We grow most of what we sell ourselves, and the rest comes from growers we have known for years."
+      },
+      "items": [],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 88,
+       "titleSize": 44,
+       "hideOn": [],
+       "bg": "#F6F1E7",
+       "titleColor": "#1F3D2B"
+      }
+     },
+     {
+      "id": "s_hyjtrir",
+      "kind": "features",
+      "name": "Features",
+      "hidden": false,
+      "content": {
+       "eyebrow": "",
+       "title": "",
+       "body": ""
+      },
+      "items": [
+       {
+        "id": "i_165z1l9",
+        "title": "Grown locally",
+        "text": "Acclimatised to indoor life before they ship.",
+        "icon": "shield"
+       },
+       {
+        "id": "i_s77nsz6",
+        "title": "Shared know-how",
+        "text": "Care cards in every box.",
+        "icon": "box"
+       },
+       {
+        "id": "i_hmaxqct",
+        "title": "Low waste",
+        "text": "Reused pots and recycled packaging.",
+        "icon": "puzzle"
+       }
+      ],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 112,
+       "titleSize": 56,
+       "hideOn": [],
+       "bg": "#FFFDF8",
+       "titleColor": "#1F3D2B"
+      }
+     },
+     {
+      "id": "s_v33nl9j",
+      "kind": "media",
+      "name": "Image and text",
+      "hidden": false,
+      "content": {
+       "eyebrow": "",
+       "title": "A family greenhouse, open to everyone.",
+       "body": "Three generations of growers, one glasshouse and a stubborn belief that everybody can keep a plant alive.",
+       "primary": "",
+       "image": "{{media:about}}",
+       "imageSide": "right"
+      },
+      "items": [],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 112,
+       "titleSize": 48,
+       "hideOn": [],
+       "bg": "#F6F1E7",
+       "titleColor": "#1F3D2B"
+      }
+     },
+     {
+      "id": "s_hzo1qmm",
+      "kind": "cta",
+      "name": "Call to action",
+      "hidden": false,
+      "content": {
+       "title": "Not sure where to start?",
+       "body": "The plant gift box pairs an easy plant with a handmade pot and a care card.",
+       "primary": "See the gift box",
+       "secondary": "Browse everything",
+       "primaryHref": "/shop/",
+       "secondaryHref": "/shop/"
+      },
+      "items": [],
+      "style": {
+       "palette": "brand",
+       "align": "center",
+       "padding": 120,
+       "titleSize": 64,
+       "hideOn": [],
+       "bg": "#1F3D2B",
+       "titleColor": "#1F3D2B"
+      }
+     }
+    ]
+   },
+   "page": {
+    "layout": "site"
+   }
+  },
+  {
+   "key": "contact",
+   "slug": "contact",
+   "title": "Ask a grower",
+   "doc": {
+    "site": {
+     "brand": "#C2613F",
+     "fontPair": "elegant",
+     "corners": "soft",
+     "headingFont": "Fraunces",
+     "headingWeight": 600,
+     "bodyFont": "Albert Sans",
+     "bodyWeight": 400
+    },
+    "sections": [
+     {
+      "id": "s_baw68dd",
+      "kind": "form",
+      "name": "Contact form",
+      "hidden": false,
+      "content": {
+       "eyebrow": "Contact",
+       "title": "Ask a grower",
+       "body": "Yellow leaves? Not sure which pot? Write to us and a grower will answer.",
+       "primary": "Send message"
+      },
+      "items": [],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 104,
+       "titleSize": 52,
+       "hideOn": [],
+       "bg": "#F6F1E7",
+       "titleColor": "#1F3D2B"
+      }
+     }
+    ]
+   },
+   "page": {
+    "layout": "site"
+   }
+  }
+ ]
+}

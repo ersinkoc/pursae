@@ -44,7 +44,8 @@ type themeManifest struct {
 	// Library metadata (docs/theme-package.md, "Library metadata").
 	Category      string                  `json:"category"`
 	Style         string                  `json:"style"`
-	Demo          string                  `json:"demo"` // the demo content file, demo/demo.json (theme_demo.go)
+	Demo          string                  `json:"demo"`        // the demo content file, demo/demo.json (theme_demo.go)
+	WebBuilder    string                  `json:"web_builder"` // Theme Builder parts for Pursae Web Builder, web-builder/parts.json (webbuilder_themes.go)
 	WidgetAreas   []themeManifestArea     `json:"widget_areas"`
 	MenuLocations []themeManifestLocation `json:"menu_locations"`
 
@@ -212,6 +213,10 @@ func parseThemeManifest(b []byte) (*themeManifest, error) {
 	}
 	if m.Demo != "" && (!strings.HasPrefix(m.Demo, "demo/") || !strings.HasSuffix(m.Demo, ".json") || !fs.ValidPath(m.Demo)) {
 		bad("demo %q must be a .json file under demo/", m.Demo)
+	}
+
+	if m.WebBuilder != "" && (!strings.HasPrefix(m.WebBuilder, "web-builder/") || !strings.HasSuffix(m.WebBuilder, ".json") || !fs.ValidPath(m.WebBuilder)) {
+		bad("web_builder %q must be a .json file under web-builder/", m.WebBuilder)
 	}
 
 	ids := map[string]bool{}

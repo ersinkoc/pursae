@@ -9,9 +9,13 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from '@/App'
 import { setHost } from '@/builder/host'
+import { setThemeLibrarySeam } from '@/builder/themeLibraryHost'
 import { createCmsHost, fontsBase, readBoot, type CmsHost } from './cms-host'
 import { HostLayer, isolateHostKeys } from './HostLayer'
 import { installTemplateUi } from './TemplateBar'
+import { t } from './i18n'
+import { ThemeLibraryController } from './theme-library'
+import { ThemeLibraryDialog } from './ThemeLibraryDialog'
 
 function mountPoint(): HTMLElement {
   let el = document.getElementById('root')
@@ -100,6 +104,18 @@ async function boot() {
   )
   createRoot(layer).render(<HostLayer host={host} />)
   isolateHostKeys(layer) // after createRoot: the layer's React listener runs first
+
+  // Theme library (patch 0013): the "Browse theme library" card of the Items panel opens a dialog
+  // of its own (the server answers 403 to users without edit_theme_options).
+  {
+    const themes = new ThemeLibraryController({ rest: host.rest, boot: host.boot })
+    const themeLayer = document.createElement('div')
+    themeLayer.id = 'wb-theme-library-layer'
+    document.body.appendChild(themeLayer)
+    createRoot(themeLayer).render(<ThemeLibraryDialog controller={themes} />)
+    isolateHostKeys(themeLayer)
+    setThemeLibrarySeam({ title: t('Browse theme library'), blurb: t('Ready-made full-site themes · header, footer and pages'), open: themes.open })
+  }
 }
 
 void boot()

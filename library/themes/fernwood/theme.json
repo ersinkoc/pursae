@@ -1,7 +1,7 @@
 {
   "slug": "fernwood",
   "name": "Fernwood",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A leafy plant shop: a split header with the language switcher and the cart, an editorial hero, category tiles, featured and new plants, and calm store pages in forest green and terracotta. Fraunces and Albert Sans, self-hosted. Ships a complete store demo: houseplants in three sizes, planters, care tools and a gift box.",
   "author": "Pursae",
   "author_url": "https://github.com/pursae",
@@ -19,6 +19,7 @@
   "category": "home",
   "style": "Botanical plant shop, forest green and terracotta",
   "demo": "demo/demo.json",
+  "web_builder": "web-builder/parts.json",
   "menu_locations": [
     {
       "id": "primary",

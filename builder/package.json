@@ -12,7 +12,8 @@
     "watch": "node scripts/build.mjs --watch",
     "audit": "node test/audit.mjs",
     "test": "vitest run",
-    "typecheck": "tsc -p tsconfig.json"
+    "typecheck": "tsc -p tsconfig.json",
+    "gen:themes": "vitest run --config vitest.gen.config.ts"
   },
   "dependencies": {
     "@fontsource/instrument-serif": "5.3.0",

@@ -1,7 +1,7 @@
 {
   "slug": "kite-and-crayon",
   "name": "Kite & Crayon",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A bright toy shop: a header with the language switcher and the cart, a playful hero, chunky category tiles, favourites and new toys, and simple store pages in navy, mint and coral. Outfit, Figtree and Caveat, self-hosted. Ships a complete store demo: wooden toys, games, art supplies, room decor and a birthday bundle, priced in euros.",
   "author": "Pursae",
   "author_url": "https://github.com/pursae",
@@ -19,6 +19,7 @@
   "category": "kids",
   "style": "Bright kids' toy shop, cream with tomato and mint",
   "demo": "demo/demo.json",
+  "web_builder": "web-builder/parts.json",
   "menu_locations": [
     {
       "id": "primary",

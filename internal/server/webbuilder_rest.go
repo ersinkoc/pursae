@@ -92,6 +92,8 @@ func (s *Server) registerWebBuilderREST() {
 	reg(`/web-builder/v2/fonts/css2`, map[string]restHandler{http.MethodGet: s.wbRESTFontsCSS}, false) // a stylesheet: nonce in ?_wpnonce=
 	// Theme Builder (webbuilder_templates_rest.go)
 	s.wbRegisterTemplateREST(reg)
+	// Theme library (webbuilder_themes.go)
+	s.wbRegisterThemeREST(reg)
 }
 
 // --- shared helpers --------------------------------------------------------------------------------

@@ -195,6 +195,7 @@ Hub:
   `pets`, `automotive`, `hotel`, `startup`, `science`, `religion`, `environment`, `books`, `sports`.
 - `style`: a short phrase shown on the library card (at most 80 characters, one line, no markup).
 - `demo`: path of the demo content file inside the package, a `.json` file under `demo/` (below).
+- `web_builder`: path of the Pursae Web Builder parts file, a `.json` file under `web-builder/` (below, "Pursae Web Builder").
 
 The REST themes endpoint (`wp/v2/themes`) reports them as `category`, `style` and `has_demo`.
 
@@ -203,8 +204,8 @@ The REST themes endpoint (`wp/v2/themes`) reports them as `category`, `style` an
 A theme package has nothing to declare for Pursae Web Builder: a published builder page renders
 without the theme (see `docs/developer/web-builder.md`), and the builder's Theme Builder headers,
 footers and templates are shown only by the bundled Hello Pursae theme
-(`docs/developer/themes/hello-pursae.md`), never by a package. There are no builder headers,
-footers, kits or design files in the format. Older packages that still carry the retired page-builder design key and folder
+(`docs/developer/themes/hello-pursae.md`), never by a package. A package may opt in to the builder's theme library with `"web_builder": "web-builder/parts.json"` (templates and demo pages as builder docs;
+see `docs/developer/web-builder-theme-library.md`); the market install ignores that file. Older packages that still carry the retired page-builder design key and folder
 install as plain themes; both are ignored. A store theme declares
 `"supports": {"woocommerce": true}` and is listed under Pursae Commerce › Store Themes, like
 Fernwood, Good Boy Supply and Kite & Crayon.
