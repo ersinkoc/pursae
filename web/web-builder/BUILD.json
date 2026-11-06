@@ -8,6 +8,6 @@
     "0006-no-remote-fonts.patch": "f0fc54ad32bafcf9633b410a334a27a14a20a68102c25b03a1a4f8a1d6fe8f93",
     "0007-page-title.patch": "8b9a2f9833856d20ff650da99faa3647c6a08c87546aa31c43c280e70f56228a"
   },
-  "apiVersion": 1,
+  "apiVersion": 2,
   "rendererVersion": 1
 }
