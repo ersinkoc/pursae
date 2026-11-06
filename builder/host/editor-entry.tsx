@@ -83,7 +83,9 @@ async function boot() {
     e.returnValue = ''
   })
   window.addEventListener('pagehide', () => {
-    void host.storage.flushPrefs()
+    // keepalive requests survive the unload (a plain fetch is cancelled with the page).
+    if (host.autosaver.pending && !host.session.stopped) void host.autosaver.flush({ keepalive: true })
+    void host.storage.flushPrefs({ keepalive: true })
     host.dispose()
   })
 

@@ -180,4 +180,34 @@ test.describe('runtime', () => {
     expect(Number(sent.get('wb_t'))).toBeGreaterThan(0)
     expect(sent.get('wb_hp')).toBe('')
   })
+
+  test('form marks the fields a 422 rejects and clears them on the next submit', async ({ page, context }) => {
+    let n = 0
+    await context.route('https://example.com/wp-json/web-builder/v2/forms/**', async (route) => {
+      n++
+      if (n === 1) {
+        await route.fulfill({ status: 422, contentType: 'application/json', body: JSON.stringify({ code: 'wb_form_invalid', message: 'Please check the highlighted fields.', data: { status: 422, fields: { email: 'invalid' } } }) })
+      } else {
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, message: 'Thanks, we got it.' }) })
+      }
+    })
+    await page.goto(`${ORIGIN}/static.html?f=behaviours`)
+    const form = page.locator('form[data-wb-form]').filter({ has: page.locator('input[name=email]') }).first()
+    await form.scrollIntoViewIfNeeded()
+    for (const input of await form.locator('input[name]:not([name^="wb_"]):visible, textarea[name]:visible').all()) {
+      const name = await input.getAttribute('name')
+      await input.fill(name === 'email' ? 'visitor@localhost' : name === 'phone' ? '+1 555 0100' : 'Parity test')
+    }
+    await form.locator('[type=submit], button:not([type=button])').first().click()
+    const email = form.locator('input[name=email]')
+    await expect(form.locator('[data-wb-form-status]')).toHaveText('Please check the highlighted fields.')
+    await expect(email).toHaveAttribute('aria-invalid', 'true')
+    await expect(email).toHaveAttribute('data-wb-invalid', '')
+    await expect(email).toBeFocused()
+    await expect(form.locator('[data-wb-invalid]')).toHaveCount(1)
+    await form.locator('[type=submit], button:not([type=button])').first().click()
+    await expect(form).toHaveAttribute('data-wb-state', 'sent')
+    await expect(form.locator('[data-wb-invalid]')).toHaveCount(0)
+    await expect(email).not.toHaveAttribute('aria-invalid', 'true')
+  })
 })

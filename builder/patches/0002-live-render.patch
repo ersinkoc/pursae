@@ -273,7 +273,7 @@ new file mode 100644
 index 0000000..4a49d88
 --- /dev/null
 +++ b/src/builder/live/page.css
-@@ -0,0 +1,189 @@
+@@ -0,0 +1,194 @@
 +/*
 + * Styles shared by the editor canvas and the published page (theme tokens, rich text, badges), plus the
 + * published page's own rules (.wb-page root, data-wb-* behaviours, CSS stand-ins for editor animations).
@@ -462,6 +462,11 @@ index 0000000..4a49d88
 +    scale: 1.45;
 +    opacity: 0;
 +  }
++}
++/* Fields the server rejected (form runtime: aria-invalid + data-wb-invalid). */
++.wb-page [data-wb-invalid] {
++  outline: 2px solid #d63638;
++  outline-offset: 2px;
 +}
 diff --git a/src/builder/live/renderStatic.tsx b/src/builder/live/renderStatic.tsx
 new file mode 100644
@@ -836,7 +841,7 @@ new file mode 100644
 index 0000000..aa2f178
 --- /dev/null
 +++ b/src/builder/live/runtime.ts
-@@ -0,0 +1,215 @@
+@@ -0,0 +1,233 @@
 +/*
 + * Published-page runtime (IIFE, no dependencies, ≤ 8 KB gzip). Loaded with `defer` only on pages whose snapshot
 + * lists features. Everything is opt-in by data-wb-* attributes (contract §5); the page works without it.
@@ -952,17 +957,35 @@ index 0000000..aa2f178
 +      f.dataset.wbState = state
 +      if (status) status.textContent = msg
 +    }
++    // 422 wb_form_invalid names the rejected fields (data.fields): mark them and focus the first.
++    const mark = (fields?: Record<string, unknown>) => {
++      for (const el of f.querySelectorAll('[data-wb-invalid]')) {
++        el.removeAttribute('data-wb-invalid')
++        el.removeAttribute('aria-invalid')
++      }
++      let first: HTMLElement | null = null
++      for (const name of Object.keys(fields || {})) {
++        for (const el of f.querySelectorAll<HTMLElement>(`[name="${CSS.escape(name)}"]`)) {
++          el.setAttribute('aria-invalid', 'true')
++          el.setAttribute('data-wb-invalid', '')
++          first ??= el
++        }
++      }
++      first?.focus()
++    }
 +    f.addEventListener('submit', async (e) => {
 +      e.preventDefault()
 +      if (f.dataset.wbState === 'sending') return
 +      const t = f.querySelector<HTMLInputElement>('input[name=wb_t]')
 +      if (t) t.value = String(Date.now() - t0)
 +      say('sending', '')
++      mark()
 +      try {
 +        const r = await fetch(f.action, { method: 'POST', body: new URLSearchParams(new FormData(f) as unknown as Record<string, string>), headers: { Accept: 'application/json' }, credentials: 'same-origin' })
-+        const j = (await r.json().catch(() => ({}))) as { ok?: boolean; message?: string }
++        const j = (await r.json().catch(() => ({}))) as { ok?: boolean; message?: string; data?: { fields?: Record<string, unknown> } }
 +        const ok = r.ok && j.ok !== false
 +        say(ok ? 'sent' : 'error', j.message || (ok ? 'Thank you, your message was sent.' : 'Sorry, the message could not be sent.'))
++        if (!ok) mark(j.data?.fields)
 +        if (ok) f.reset()
 +      } catch {
 +        say('error', 'Sorry, the message could not be sent.')

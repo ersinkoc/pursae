@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { AUTOSAVE_MIN_MS, createCmsHost, pickInitial, readBoot, type CmsHost } from '../../host/cms-host'
+import { AUTOSAVE_MIN_MS, AUTOSAVE_RETRY_MS, createCmsHost, pickInitial, readBoot, type CmsHost } from '../../host/cms-host'
 import { MemoryStorage, PAGE, makeBoot, makeDoc, mockFetch, restErr } from './helpers'
 
 const AUTOSAVE = 'web-builder/v2/documents/42/autosave'
@@ -31,6 +31,14 @@ describe('initial document: draft preference', () => {
     expect(init.baseRev).toBe(3)
   })
 
+  it('keeps a draft newer than the doc even when the post was renamed after it', () => {
+    // A Quick Edit rename bumps posts.modified_at (modified) but not the doc (docModified).
+    const draft = { doc: makeDoc('draft'), page: PAGE, baseRev: 3, savedAt: '2026-11-02T09:00:00Z' }
+    const init = pickInitial(makeBoot({ draft, docModified: '2026-11-01T10:00:00Z', modified: '2026-11-03T10:00:00Z' }).document)
+    expect(init.draft).toEqual(draft)
+    expect(init.doc).toEqual(makeDoc('draft'))
+  })
+
   it('starts fresh (null doc) on a new page and takes page settings from the post', () => {
     const host = createCmsHost(makeBoot({ doc: null, rev: 0, page: { ...PAGE, title: 'From post' } }), { fetch: mockFetch({}).fetch, local: null })
     expect(host.loadDoc()).toBeNull()
@@ -52,6 +60,34 @@ describe('initial document: draft preference', () => {
     expect(reload).toHaveBeenCalled()
     host.dispose()
   })
+
+  it('discard waits for an autosave in flight before deleting the draft', async () => {
+    const draft = { doc: makeDoc('draft'), page: PAGE, baseRev: 3, savedAt: '2026-11-02T09:00:00Z' }
+    let release!: () => void
+    const gate = new Promise<void>((r) => (release = r))
+    const order: string[] = []
+    const m = mockFetch({
+      ...okPrefs,
+      'POST web-builder/v2/documents/42/lock': { json: { lock: null, expires: '' } },
+      [`PUT ${AUTOSAVE}`]: async () => {
+        await gate
+        order.push('put')
+        return { json: { savedAt: 'x', rev: 3 } }
+      },
+      [`DELETE ${AUTOSAVE}`]: () => (order.push('delete'), { json: { deleted: true } }),
+    })
+    const host = createCmsHost(makeBoot({ draft }), { fetch: m.fetch, local: null, reload: vi.fn() })
+    await host.start()
+    void host.autosaver.save(makeDoc('edit'), PAGE).catch(() => undefined)
+    await vi.advanceTimersByTimeAsync(0)
+    host.ui.answer(host.ui.getState().notices.find((x) => x.key === 'draft')!.id, 'discard')
+    await vi.advanceTimersByTimeAsync(0)
+    expect(order).toEqual([])
+    release()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(order).toEqual(['put', 'delete'])
+    host.dispose()
+  })
 })
 
 describe('host surface', () => {
@@ -63,7 +99,8 @@ describe('host surface', () => {
     // Upstream appends "?family=…": the base must not carry a query.
     expect(host.fontsCss).toBe('https://example.test/wp-json/web-builder/v2/fonts/css2')
     expect(host.ai?.enabled).toBe(false)
-    expect(host.autosaveDelay).toBeGreaterThanOrEqual(2000)
+    // The builder hands changes over at once (so they count as pending); the Autosaver throttles.
+    expect(host.autosaveDelay).toBe(0)
   })
 
   it('keeps AI disabled even if the boot config says otherwise', () => {
@@ -135,7 +172,7 @@ describe('autosave', () => {
 
   it('skips a save when nothing changed since the loaded doc', async () => {
     const { m, host } = setup()
-    await host.saveDraft(makeDoc('stored'), PAGE)
+    await Promise.all([host.saveDraft(makeDoc('stored'), PAGE), vi.advanceTimersByTimeAsync(0)])
     await vi.advanceTimersByTimeAsync(AUTOSAVE_MIN_MS)
     expect(m.calls).toHaveLength(0)
   })
@@ -160,6 +197,49 @@ describe('autosave', () => {
     expect(puts.map((c) => c.headers['x-wp-nonce'])).toEqual(['nonce1', 'nonce2'])
     expect(m.calls.find((c) => c.url.includes('admin-ajax'))?.query.get('action')).toBe('rest-nonce')
     expect(host.rest.nonce()).toBe('nonce2')
+  })
+
+  it('counts a change as pending from the moment it is made', async () => {
+    const { host } = setup()
+    await Promise.all([host.saveDraft(makeDoc('1'), PAGE), vi.advanceTimersByTimeAsync(0)])
+    expect(host.autosaver.pending).toBe(false)
+    void host.saveDraft(makeDoc('2'), PAGE) // throttled: no request for AUTOSAVE_MIN_MS
+    expect(host.autosaver.pending).toBe(true)
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_MIN_MS)
+    expect(host.autosaver.pending).toBe(false)
+  })
+
+  it('keeps a failed change pending and retries it without a new change', async () => {
+    const { m, host } = setup([restErr(500, 'db_error', {}, 'Database down'), { json: { savedAt: 'x', rev: 3 } }])
+    const p = host.autosaver.save(makeDoc('1'), PAGE).catch((e: unknown) => e)
+    await vi.advanceTimersByTimeAsync(0)
+    expect(await p).toBeInstanceOf(Error)
+    expect(host.autosaver.pending).toBe(true)
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_RETRY_MS[0])
+    const puts = m.find('PUT', AUTOSAVE)
+    expect(puts).toHaveLength(2)
+    expect((puts[1].body as { doc: unknown }).doc).toEqual(makeDoc('1'))
+    expect(host.autosaver.pending).toBe(false)
+  })
+
+  it('holds autosaves while held and saves only a state that differs after release', async () => {
+    const { m, host } = setup()
+    host.autosaver.hold(true)
+    void host.saveDraft(makeDoc('during'), PAGE)
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_MIN_MS * 2)
+    expect(m.find('PUT', AUTOSAVE)).toHaveLength(0)
+    expect(host.autosaver.pending).toBe(true)
+    host.autosaver.hold(false)
+    await vi.advanceTimersByTimeAsync(0)
+    expect(m.find('PUT', AUTOSAVE)).toHaveLength(1)
+    // A held change equal to what the server has (the published input) sends nothing.
+    host.autosaver.hold(true)
+    void host.saveDraft(makeDoc('published'), PAGE)
+    host.session.published(4, { doc: makeDoc('published'), page: PAGE })
+    host.autosaver.hold(false)
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_MIN_MS * 2)
+    expect(m.find('PUT', AUTOSAVE)).toHaveLength(1)
+    expect(host.autosaver.pending).toBe(false)
   })
 
   it('rejects with a readable message when the save fails, and retries on the next change', async () => {
@@ -227,6 +307,60 @@ describe('storage', () => {
     await vi.advanceTimersByTimeAsync(2000)
     expect(m.find('PUT', 'web-builder/v2/prefs')).toHaveLength(0)
     expect(local.getItem('pursae-builder:u7:layout-width')).toBe('"boxed"')
+  })
+
+  it('keeps the local saved list when the library answers after the builder read it', async () => {
+    const section = makeDoc('lib').sections[0]
+    const local = new MemoryStorage()
+    local.setItem('pursae-builder:u7:saved', JSON.stringify([{ id: 'l1', name: 'Mine', section }]))
+    let release!: () => void
+    const gate = new Promise<void>((r) => (release = r))
+    const m = mockFetch({
+      'GET web-builder/v2/prefs': { json: {} },
+      'GET web-builder/v2/library': async () => {
+        await gate
+        return { json: [{ id: '11', name: 'Hero A', section, author: { id: 7, name: 'Ada' }, created: 'x' }] }
+      },
+      'POST web-builder/v2/library': { status: 201, json: { id: '12', name: 'New', section, author: { id: 7, name: 'Ada' }, created: 'x' } },
+      'POST web-builder/v2/documents/42/lock': { json: { lock: null, expires: '' } },
+    })
+    const host = createCmsHost(makeBoot(), { fetch: m.fetch, local })
+    const started = host.start()
+    // Start-up timed out: the builder mounts and writes its initial list back.
+    const saved = host.storage.get<{ id: string }[]>('saved', [])
+    expect(saved.map((s) => s.id)).toEqual(['l1'])
+    host.storage.set('saved', saved)
+    expect(JSON.parse(local.getItem('pursae-builder:u7:saved')!)).toHaveLength(1)
+    release()
+    await started
+    // The late library answer enables syncing: a new component goes to the server, removing a
+    // local-only one sends no DELETE.
+    host.storage.set('saved', [...saved, { id: 'local-2', name: 'New', section }])
+    await vi.advanceTimersByTimeAsync(0)
+    expect(m.find('POST', 'web-builder/v2/library')).toHaveLength(1)
+    host.storage.set('saved', [])
+    await vi.advanceTimersByTimeAsync(0)
+    expect(m.calls.filter((c) => c.method === 'DELETE').map((c) => c.route)).toEqual(['web-builder/v2/library/12'])
+    host.dispose()
+  })
+
+  it('sends prefs on pagehide with keepalive and keeps them after a failed write', async () => {
+    const seen: (boolean | undefined)[] = []
+    const m = mockFetch({ ...okPrefs, 'PUT web-builder/v2/prefs': [restErr(500, 'db_error'), { json: {} }], 'POST web-builder/v2/documents/42/lock': { json: { lock: null, expires: '' } } })
+    const fetch = (input: string, init?: RequestInit) => {
+      if (init?.method === 'PUT') seen.push(init.keepalive)
+      return m.fetch(input, init)
+    }
+    const host = createCmsHost(makeBoot(), { fetch, local: null })
+    await host.start()
+    host.storage.set('layout-width', 'full')
+    await host.storage.flushPrefs({ keepalive: true })
+    await host.storage.flushPrefs({ keepalive: true }) // the failed write is still dirty
+    expect(seen).toEqual([true, true])
+    expect(m.find('PUT', 'web-builder/v2/prefs').map((c) => c.body)).toEqual([{ 'pursae-builder:layout-width': 'full' }, { 'pursae-builder:layout-width': 'full' }])
+    await host.storage.flushPrefs()
+    expect(m.find('PUT', 'web-builder/v2/prefs')).toHaveLength(2)
+    host.dispose()
   })
 
   it('syncs saved components with the library', async () => {
@@ -320,6 +454,21 @@ describe('lock', () => {
     const locks = m.find('POST', 'web-builder/v2/documents/42/lock')
     expect(locks).toHaveLength(3)
     expect(locks[2].body).toEqual({ take: true })
+    host.dispose()
+  })
+
+  it('does not stack another prompt on every heartbeat while someone else holds the lock', async () => {
+    const m = mockFetch({ ...okPrefs, 'POST web-builder/v2/documents/42/lock': { json: { lock: { user: { id: 8, name: 'Bob' }, since: 'x' }, expires: 'x' } } })
+    const host = createCmsHost(makeBoot({ lock: { user: { id: 8, name: 'Bob' }, since: 'x' } }), { fetch: m.fetch, local: null })
+    await host.start()
+    await vi.advanceTimersByTimeAsync(5 * 60_000)
+    expect(m.find('POST', 'web-builder/v2/documents/42/lock').length).toBeGreaterThanOrEqual(5)
+    const locked = host.ui.getState().notices.filter((x) => x.key === 'locked')
+    expect(locked).toHaveLength(1)
+    // Dismissed: the next beat may show it again (still locked), once.
+    host.ui.dismiss(locked[0].id)
+    await vi.advanceTimersByTimeAsync(60_000)
+    expect(host.ui.getState().notices.filter((x) => x.key === 'locked')).toHaveLength(1)
     host.dispose()
   })
 })

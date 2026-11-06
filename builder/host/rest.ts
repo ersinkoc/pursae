@@ -45,6 +45,8 @@ export interface RequestOptions {
   body?: BodyInit
   query?: Record<string, string | number | undefined>
   signal?: AbortSignal
+  /** fetch keepalive: the request outlives the page (pagehide flushes; small bodies only). */
+  keepalive?: boolean
 }
 
 export interface RestResponse<T> {
@@ -111,7 +113,8 @@ export function createRest(opts: RestOptions): RestClient {
   }
 
   async function send<T>(method: string, route: string, o: RequestOptions, retried: boolean): Promise<RestResponse<T>> {
-    const headers: Record<string, string> = { Accept: 'application/json', [NONCE_HEADER]: nonce }
+    const sent = nonce
+    const headers: Record<string, string> = { Accept: 'application/json', [NONCE_HEADER]: sent }
     if (route.startsWith(REST_NAMESPACE + '/')) headers[API_HEADER] = String(API_VERSION)
     let body: BodyInit | undefined = o.body
     if (o.json !== undefined) {
@@ -120,15 +123,18 @@ export function createRest(opts: RestOptions): RestClient {
     }
     let res: Response
     try {
-      res = await doFetch(url(route, o.query), { method, headers, body, credentials: 'same-origin', cache: 'no-store', signal: o.signal })
+      const init: RequestInit = { method, headers, body, credentials: 'same-origin', cache: 'no-store', signal: o.signal }
+      if (o.keepalive) init.keepalive = true
+      res = await doFetch(url(route, o.query), init)
     } catch (e) {
       if (e instanceof DOMException && e.name === 'AbortError') throw e
       throw new RestError(0, 'wb_network', messageFor(0))
     }
     if ((res.status === 401 || res.status === 403) && !retried && opts.nonceUrl) {
-      const before = nonce
+      // Compare with the nonce this request carried: another request may have refreshed it already.
+      if (nonce !== sent) return send<T>(method, route, o, true)
       const after = await refreshNonce()
-      if (after !== before) return send<T>(method, route, o, true)
+      if (after !== sent) return send<T>(method, route, o, true)
     }
     const text = await res.text()
     let parsed: unknown = null

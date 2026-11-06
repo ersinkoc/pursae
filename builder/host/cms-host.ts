@@ -222,7 +222,9 @@ const time = (s: string | undefined) => {
  */
 export function pickInitial(d: Boot['document']): InitialDoc {
   const draft = d.draft && d.draft.doc && typeof d.draft.doc === 'object' ? d.draft : null
-  const newer = draft && !(time(draft.savedAt) < time(d.modified))
+  // Against the doc's own time (docModified), not the post's: a rename outside the builder bumps
+  // posts.modified_at, and the server already overlays the post's fields on such a draft.
+  const newer = draft && !(time(draft.savedAt) < time(d.docModified))
   if (draft && newer) return { doc: draft.doc, page: { ...d.page, ...draft.page }, baseRev: typeof draft.baseRev === 'number' ? draft.baseRev : d.rev, draft }
   return { doc: d.doc, page: d.page, baseRev: d.rev, draft: null }
 }
@@ -246,17 +248,27 @@ export interface AutosaverDeps {
   timers?: Timers
 }
 
+/** Retry delays after a failed autosave (the last one repeats). */
+export const AUTOSAVE_RETRY_MS = [5_000, 15_000, 30_000, 60_000]
+
 /**
  * Coalescing autosave: at most one request in flight and at least `minInterval` between two
  * request starts; only the latest {doc, page} is sent. Each save() resolves when a request that
  * includes its payload succeeded (or nothing needed saving).
+ *
+ * save() is cheap (no serialization): the builder calls it on every change (autosaveDelay 0), so
+ * `pending` is true from the first unsaved edit and the throttling lives here. A failed request keeps
+ * its change pending and retries with backoff. hold() keeps requests back while a publish is in
+ * flight (the publish deletes the draft; an autosave racing it would be wiped or marked saved).
  */
 export class Autosaver {
-  private latest: { doc: DocState; page: PageSettings; json: string } | null = null
+  private latest: { doc: DocState; page: PageSettings } | null = null
   private waiters: Waiter[] = []
   private inflight: Promise<void> | null = null
   private timer: unknown = null
   private lastStart = -Infinity
+  private failures = 0
+  private held = false
   private readonly min: number
   private readonly now: () => number
   private readonly timers: Timers
@@ -274,52 +286,71 @@ export class Autosaver {
 
   save(doc: DocState, page: PageSettings): Promise<void> {
     if (this.d.session.stopped) return Promise.resolve()
-    const json = draftJson(doc, page)
-    if (!this.inflight && json === this.d.session.lastSavedJson) {
-      this.latest = null
-      return Promise.resolve()
-    }
-    this.latest = { doc, page, json }
+    this.latest = { doc, page }
     const p = new Promise<void>((resolve, reject) => this.waiters.push({ resolve, reject }))
-    this.schedule()
+    if (this.failures > 0) this.clearTimer() // a new change does not wait out the retry backoff
+    this.schedule(0)
     return p
   }
 
-  /** Sends a pending change now (ignoring the interval) and waits for it. */
-  async flush(): Promise<void> {
+  /** Sends a pending change now (ignoring the interval and any hold) and waits for it. */
+  async flush(opts: { keepalive?: boolean } = {}): Promise<void> {
+    this.clearTimer()
+    if (this.inflight) await this.inflight.catch(() => undefined)
+    if (this.latest) await this.run(opts.keepalive).catch(() => undefined)
+  }
+
+  /** While held (a publish in flight) nothing is sent; on release a newer change is saved. */
+  hold(on: boolean) {
+    this.held = on
+    if (on) this.clearTimer()
+    else if (this.latest) this.schedule(0)
+  }
+
+  /** Drops the pending change and waits for a request in flight (before deleting the draft). */
+  async cancel(): Promise<void> {
+    this.clearTimer()
+    this.latest = null
+    for (const w of this.waiters.splice(0)) w.resolve()
+    if (this.inflight) await this.inflight.catch(() => undefined)
+  }
+
+  private clearTimer() {
     if (this.timer !== null) {
       this.timers.clear(this.timer)
       this.timer = null
     }
-    if (this.inflight) await this.inflight.catch(() => undefined)
-    if (this.latest) await this.run().catch(() => undefined)
   }
 
-  private schedule() {
-    if (this.inflight || this.timer !== null) return
-    const wait = Math.max(0, this.lastStart + this.min - this.now())
+  private schedule(delay: number) {
+    if (this.held || this.inflight || this.timer !== null) return
+    const wait = Math.max(delay, this.lastStart + this.min - this.now())
     this.timer = this.timers.set(() => {
       this.timer = null
       void this.run().catch(() => undefined)
     }, wait)
   }
 
-  private run(): Promise<void> {
+  private run(keepalive = false): Promise<void> {
     const item = this.latest
-    if (!item || this.d.session.stopped) {
+    const { rest, postId, session, ui } = this.d
+    const json = item && !session.stopped ? draftJson(item.doc, item.page) : ''
+    if (!item || session.stopped || json === session.lastSavedJson) {
+      // Nothing to send, or the server already has exactly this (an undo back to the saved state).
       const ws = this.waiters.splice(0)
       for (const w of ws) w.resolve()
       this.latest = null
+      this.failures = 0
       return Promise.resolve()
     }
     this.latest = null
     const batch = this.waiters.splice(0)
     this.lastStart = this.now()
-    const { rest, postId, session, ui } = this.d
     const task = (async () => {
       try {
-        const r = await rest.request<AutosaveResponse>('PUT', routes.autosave(postId), { json: { doc: item.doc, page: item.page, baseRev: session.baseRev } })
-        session.lastSavedJson = item.json
+        const r = await rest.request<AutosaveResponse>('PUT', routes.autosave(postId), { json: { doc: item.doc, page: item.page, baseRev: session.baseRev }, keepalive })
+        session.lastSavedJson = json
+        this.failures = 0
         if (typeof r.data?.rev === 'number' && r.data.rev > session.baseRev && !session.newerRevNotified) {
           session.newerRevNotified = true
           ui.notify({
@@ -337,13 +368,18 @@ export class Autosaver {
           for (const w of batch) w.resolve()
           return
         }
-        // Retried with the next change; the builder shows the message.
-        const err = new Error(isRestError(e) && e.status !== 0 ? `Changes could not be saved: ${e.message}` : 'Changes could not be saved. Check your connection; the next change retries.')
+        // The change stays pending (unless a newer one replaced it) and is retried with backoff.
+        this.latest ??= item
+        const retry = AUTOSAVE_RETRY_MS[Math.min(this.failures, AUTOSAVE_RETRY_MS.length - 1)]
+        this.failures++
+        const err = new Error(isRestError(e) && e.status !== 0 ? `Changes could not be saved: ${e.message}` : 'Changes could not be saved. Check your connection; saving is retried.')
         for (const w of batch) w.reject(err)
+        this.inflight = null
+        this.schedule(retry)
         throw err
       } finally {
         this.inflight = null
-        if (this.latest) this.schedule()
+        if (this.latest) this.schedule(this.min)
       }
     })()
     this.inflight = task
@@ -389,8 +425,14 @@ export class HostStorage implements BuilderHostStorage {
   private used = false
   private readonly timers: Timers
 
+  /** Library ids known on the server (only these are ever deleted there). */
+  private serverIds = new Set<string>()
+
   constructor(private d: StorageDeps) {
     this.timers = d.timers ?? realTimers
+    // Until init() answers, the builder sees this browser's copy (never an empty list it would
+    // then write back over that copy).
+    this.saved = this.readLocal<SavedComponent[]>(SAVED_KEY, [])
   }
 
   /** Local key: namespaced by user, and by post for per-post keys. */
@@ -406,15 +448,14 @@ export class HostStorage implements BuilderHostStorage {
       this.prefs = { ...prefs.value.data }
       this.prefsOk = true
     }
-    // The builder already read or wrote saved components (start-up timed out): keep them local, so a
-    // late library answer can never be diffed against the builder's state (which would delete items).
-    if (this.used) return
-    if (lib.status === 'fulfilled' && Array.isArray(lib.value.data)) {
-      this.saved = lib.value.data.filter((x) => x && x.section).map(toSaved)
-      this.libraryOk = true
-    } else {
-      this.saved = this.readLocal<SavedComponent[]>(SAVED_KEY, [])
-    }
+    const items = lib.status === 'fulfilled' && Array.isArray(lib.value.data) ? lib.value.data.filter((x) => x && x.section) : null
+    if (!items) return // this.saved already holds the localStorage copy
+    for (const x of items) this.serverIds.add(String(x.id))
+    this.libraryOk = true
+    // The builder already read the list (start-up timed out): it keeps what it holds, and from now
+    // on new saved components go to the library. Only server ids are ever deleted there, so the
+    // builder's local items are never diffed into DELETEs.
+    if (!this.used) this.saved = items.map(toSaved)
   }
 
   private readLocal<T>(key: string, fallback: T): T {
@@ -472,15 +513,24 @@ export class HostStorage implements BuilderHostStorage {
   }
 
   /** Writes changed user prefs (merged on the server; null deletes). */
-  async flushPrefs(): Promise<void> {
+  async flushPrefs(opts: { keepalive?: boolean } = {}): Promise<void> {
     if (!this.dirty.size) return
+    if (this.prefsTimer !== null) {
+      this.timers.clear(this.prefsTimer)
+      this.prefsTimer = null
+    }
     const patch = Object.fromEntries(this.dirty)
-    this.dirty.clear()
-    if (new TextEncoder().encode(JSON.stringify({ ...this.prefs })).length > LIMITS.maxPrefsBytes) return // kept locally only
+    if (new TextEncoder().encode(JSON.stringify({ ...this.prefs })).length > LIMITS.maxPrefsBytes) {
+      this.dirty.clear()
+      return // kept locally only
+    }
     try {
-      await this.d.rest.request<Prefs>('PUT', routes.prefs(), { json: patch })
+      // keepalive: the pagehide flush must survive the page going away.
+      await this.d.rest.request<Prefs>('PUT', routes.prefs(), { json: patch, keepalive: opts.keepalive })
+      // Clear only what was sent and not changed again meanwhile.
+      for (const [k, v] of Object.entries(patch)) if (this.dirty.get(k) === v) this.dirty.delete(k)
     } catch {
-      /* the localStorage copy keeps it on this browser */
+      /* the localStorage copy keeps it on this browser; the next change or flush sends it again */
     }
   }
 
@@ -497,7 +547,11 @@ export class HostStorage implements BuilderHostStorage {
   private addToLibrary(s: SavedComponent) {
     const task = this.d.rest
       .request<LibraryItem>('POST', routes.library(), { json: { name: s.name, section: s.section } })
-      .then((r) => String(r.data.id))
+      .then((r) => {
+        const id = String(r.data.id)
+        this.serverIds.add(id)
+        return id
+      })
       .catch((e: unknown) => {
         this.d.ui.notify({ tone: 'error', message: `“${s.name}” could not be saved to the library${isRestError(e) ? `: ${e.message}` : '.'}`, timeout: 8000 })
         return null
@@ -508,8 +562,9 @@ export class HostStorage implements BuilderHostStorage {
   private removeFromLibrary(id: string) {
     const known = this.alias.get(id)
     this.alias.delete(id)
-    void (known ?? Promise.resolve(id)).then((serverId) => {
+    void (known ?? Promise.resolve(this.serverIds.has(id) ? id : null)).then((serverId) => {
       if (!serverId) return
+      this.serverIds.delete(serverId)
       return this.d.rest.request('DELETE', routes.libraryItem(serverId)).catch((e: unknown) => {
         this.d.ui.notify({ tone: 'error', message: `The saved component could not be removed from the library${isRestError(e) ? `: ${e.message}` : '.'}`, timeout: 8000 })
       })
@@ -624,7 +679,10 @@ export function createCmsHost(boot: Boot, deps: CmsHostDeps = {}): CmsHost {
     }
   }
 
+  let lockedOpen = false
   const showLocked = (name?: string) => {
+    if (lockedOpen) return // the heartbeat must not stack another prompt while one is open
+    lockedOpen = true
     void ui
       .ask({
         key: 'locked',
@@ -637,6 +695,7 @@ export function createCmsHost(boot: Boot, deps: CmsHostDeps = {}): CmsHost {
         ],
       })
       .then((a) => {
+        lockedOpen = false
         if (a === 'take') void refreshLock(true)
         else if (a === 'exit') navigate(boot.links.exit)
       })
@@ -653,11 +712,20 @@ export function createCmsHost(boot: Boot, deps: CmsHostDeps = {}): CmsHost {
     loadDoc: () => initial.doc,
     loadPage: () => initial.page,
     saveDraft: (doc, page) => autosaver.save(doc, page),
-    autosaveDelay: AUTOSAVE_MIN_MS,
+    // The builder hands every change over at once; the Autosaver debounces (AUTOSAVE_MIN_MS), so an
+    // edit counts as pending (unload warning, flush) from the moment it is made.
+    autosaveDelay: 0,
     async publish(input: PublishInput): Promise<PublishResult & { permalink: string }> {
       await autosaver.flush()
-      const out = await publishDocument({ boot, rest, ui, session, loadRenderer, navigate, reload }, input)
-      return { message: out.message, permalink: out.permalink }
+      autosaver.hold(true)
+      try {
+        const out = await publishDocument({ boot, rest, ui, session, loadRenderer, navigate, reload }, input)
+        return { message: out.message, permalink: out.permalink }
+      } finally {
+        // Edits made while publishing were held back; one that differs from the published input
+        // is saved now as the new draft.
+        autosaver.hold(false)
+      }
     },
     media,
     fontsCss: fontsBase(boot),
@@ -682,6 +750,7 @@ export function createCmsHost(boot: Boot, deps: CmsHostDeps = {}): CmsHost {
           .then(async (a) => {
             if (a !== 'discard') return
             session.stop('reload')
+            await autosaver.cancel() // a save in flight must land before the DELETE, not after it
             await rest.request('DELETE', routes.autosave(postId)).catch(() => undefined)
             reload()
           })

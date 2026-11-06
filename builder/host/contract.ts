@@ -215,7 +215,10 @@ export interface DocumentResponse {
   /** The current user's autosave, only when newer than doc. */
   draft: DraftState | null
   detached: boolean
+  /** posts.modified_at */
   modified: string
+  /** When the stored doc was last written ("" without one); a draft is newer than this. */
+  docModified?: string
   renderer: number
   /** Another user's live lock, else null. */
   lock: LockInfo | null

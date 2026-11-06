@@ -186,9 +186,11 @@ export async function publishDocument(ctx: PublishContext, input: { doc: DocStat
           continue
         }
         if (choice === 'reload') {
-          // Their version wins: drop this user's draft so the reload does not bring it back.
-          await rest.request('DELETE', routes.autosave(boot.document.postId)).catch(() => undefined)
+          // Their version wins: drop this user's draft so the reload does not bring it back. Stop
+          // first, so no autosave can write a new draft after the DELETE (the host holds autosaves
+          // while publishing, so none is in flight).
           session.stop('reload')
+          await rest.request('DELETE', routes.autosave(boot.document.postId)).catch(() => undefined)
           ctx.reload()
           throw new PublishCancelled('Loading the latest version…')
         }

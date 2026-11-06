@@ -104,6 +104,31 @@ describe('publish payload', () => {
 describe('publish 409 flows', () => {
   const conflict = restErr(409, 'wb_rev_conflict', { rev: 6, modified: '2026-11-05T08:00:00Z', modifiedBy: { id: 8, name: 'Bob' } })
 
+  it('an edit made while publishing is not marked saved: it is saved as the new draft afterwards', async () => {
+    let release!: () => void
+    const gate = new Promise<void>((r) => (release = r))
+    const order: string[] = []
+    const m = mockFetch({
+      [`PUT ${AUTOSAVE}`]: (c) => (order.push(`autosave:${JSON.stringify((c.body as { doc: unknown }).doc)}`), { json: { savedAt: 'x', rev: 4 } }),
+      [`POST ${PUBLISH}`]: async () => {
+        await gate
+        order.push('publish')
+        return ok()
+      },
+    })
+    const host = createCmsHost(makeBoot(), { fetch: m.fetch, local: null, loadRenderer: async () => ({ renderStaticAsync: async () => RENDER }) })
+    const r = host.publish({ doc: makeDoc('d1'), page: PAGE })
+    await new Promise((res) => setTimeout(res, 0))
+    void host.saveDraft(makeDoc('d2'), PAGE) // edited during the publish
+    await new Promise((res) => setTimeout(res, 2500))
+    expect(order).toEqual([]) // held: the publish would delete it
+    release()
+    await r
+    await new Promise((res) => setTimeout(res, 0))
+    expect(order).toEqual(['publish', `autosave:${JSON.stringify(makeDoc('d2'))}`])
+    expect(host.autosaver.pending).toBe(false)
+  })
+
   it('rev conflict: "publish mine anyway" retries on the server rev', async () => {
     const { m, host } = setup([conflict, ok({ rev: 7 })])
     const asked = answerNext(host.ui, 'overwrite')
@@ -116,8 +141,16 @@ describe('publish 409 flows', () => {
 
   it('rev conflict: "load their version" drops the draft and reloads', async () => {
     const { m, host, reload } = setup(conflict)
+    let stoppedAtDelete: unknown = 'not called'
+    const origRequest = host.rest.request.bind(host.rest)
+    host.rest.request = (method, route, o) => {
+      if (method === 'DELETE') stoppedAtDelete = host.session.stopped
+      return origRequest(method, route, o)
+    }
     void answerNext(host.ui, 'reload')
     await expect(host.publish({ doc: makeDoc(), page: PAGE })).rejects.toThrow(/latest version/)
+    // Stopped before the DELETE, so no autosave can write a draft after it.
+    expect(stoppedAtDelete).toBe('reload')
     expect(m.find('DELETE', AUTOSAVE)).toHaveLength(1)
     expect(reload).toHaveBeenCalled()
     expect(m.find('POST', PUBLISH)).toHaveLength(1)

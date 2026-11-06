@@ -38,6 +38,37 @@ describe('rest client', () => {
     expect(rest.nonce()).toBe('n1')
   })
 
+  it('retries a 403 that arrives after another request already refreshed the nonce', async () => {
+    let releaseB!: () => void
+    const gateB = new Promise<void>((r) => (releaseB = r))
+    let n = 0
+    const m = mockFetch({
+      'GET a': (c) => (c.headers['x-wp-nonce'] === 'fresh1' ? { json: 'a' } : restErr(403, 'rest_cookie_invalid_nonce')),
+      'GET b': async (c) => {
+        if (c.headers['x-wp-nonce'] === 'fresh1') return { json: 'b' }
+        await gateB
+        return restErr(403, 'rest_cookie_invalid_nonce')
+      },
+      'GET https://example.test/wp-admin/admin-ajax': () => ({ text: `fresh${++n}` }),
+    })
+    const rest = createRest({ root: ROOT, nonce: 'old', nonceUrl: NONCE_URL, fetch: m.fetch })
+    const b = rest.request('GET', 'b') // sent with "old", answers late
+    await expect(rest.request('GET', 'a')).resolves.toMatchObject({ data: 'a' }) // refreshes to fresh1
+    releaseB()
+    await expect(b).resolves.toMatchObject({ data: 'b' })
+    expect(m.find('GET', 'b').map((c) => c.headers['x-wp-nonce'])).toEqual(['old', 'fresh1'])
+    expect(n).toBe(1)
+  })
+
+  it('sends keepalive only when asked', async () => {
+    const inits: RequestInit[] = []
+    const m = mockFetch({ 'PUT p': { json: {} } })
+    const rest = createRest({ root: ROOT, nonce: 'n', nonceUrl: '', fetch: (u, i) => (inits.push(i ?? {}), m.fetch(u, i)) })
+    await rest.request('PUT', 'p', { json: {} })
+    await rest.request('PUT', 'p', { json: {}, keepalive: true })
+    expect(inits.map((i) => i.keepalive)).toEqual([undefined, true])
+  })
+
   it('shares one nonce refresh between concurrent requests', async () => {
     let n = 0
     const m = mockFetch({

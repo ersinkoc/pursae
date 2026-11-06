@@ -14,7 +14,7 @@ export function makeBoot(doc: Partial<DocumentResponse> = {}, over: Partial<Boot
   return {
     apiVersion: 1,
     rendererVersion: 1,
-    document: { postId: 42, postType: 'page', status: 'publish', rev: 3, doc: makeDoc('stored'), page: PAGE, draft: null, detached: false, modified: '2026-11-01T10:00:00Z', renderer: 1, lock: null, ...doc },
+    document: { postId: 42, postType: 'page', status: 'publish', rev: 3, doc: makeDoc('stored'), page: PAGE, draft: null, detached: false, modified: '2026-11-01T10:00:00Z', docModified: '2026-11-01T10:00:00Z', renderer: 1, lock: null, ...doc },
     user: { id: 7, name: 'Ada' },
     rest: { root: ROOT, namespace: 'web-builder/v2', nonce: 'nonce1' },
     links: { site: 'https://example.test', permalink: 'https://example.test/home/', preview: 'https://example.test/home/?preview=true', exit: 'https://example.test/wp-admin/edit?post_type=page', editPost: 'https://example.test/wp-admin/post?post=42&action=edit', settings: '' },
