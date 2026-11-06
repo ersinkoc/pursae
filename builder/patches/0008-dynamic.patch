@@ -1238,10 +1238,10 @@ index 0000000..cb1d16d
 +}
 diff --git a/src/builder/dynamic/starters.ts b/src/builder/dynamic/starters.ts
 new file mode 100644
-index 0000000..3a27bc4
+index 0000000..819edc9
 --- /dev/null
 +++ b/src/builder/dynamic/starters.ts
-@@ -0,0 +1,90 @@
+@@ -0,0 +1,103 @@
 +/**
 + * Starter designs of Theme Builder templates (contract §11.2): the editor loads one when a
 + * template's doc is empty (patch 0009); the fixtures render them too. Document content, so plain
@@ -1280,21 +1280,34 @@ index 0000000..3a27bc4
 +  return [f, legal]
 +}
 +
++/**
++ * An article header: the title and what sits right under it, close together, above the body.
++ * The body stack starts with no top padding so the header's bottom padding is the only gap.
++ */
++function postHeader(cells: [DynWidget, DynSettings?][]): Section {
++  const s = stack(cells, { padB: 32, gap: 12 })
++  s.name = 'Post header'
++  return s
++}
++
++function postBody(cells: [DynWidget, DynSettings?][]): Section {
++  return stack(cells, { padT: 0, gap: 32 })
++}
++
 +function single(): Section[] {
 +  return [
-+    stack(
-+      [
-+        ['post-title', { tag: 'h1' }],
-+        ['post-meta', { fields: ['date', 'author', 'comments'] }],
-+        ['post-image', { size: 'large', ratio: 1.78 }],
-+        ['post-content'],
-+        ['post-terms', { prefix: 'Filed under' }],
-+        ['author-box'],
-+        ['post-nav'],
-+        ['post-comments'],
-+      ],
-+      { gap: 28 },
-+    ),
++    postHeader([
++      ['post-title', { tag: 'h1' }],
++      ['post-meta', { fields: ['date', 'author', 'comments'] }],
++    ]),
++    postBody([
++      ['post-image', { size: 'large', ratio: 1.78 }],
++      ['post-content'],
++      ['post-terms', { prefix: 'Filed under' }],
++      ['author-box'],
++      ['post-nav'],
++      ['post-comments'],
++    ]),
 +  ]
 +}
 +
@@ -1403,7 +1416,7 @@ index 0000000..9a36c12
 +}
 diff --git a/src/builder/dynamic/widgets.tsx b/src/builder/dynamic/widgets.tsx
 new file mode 100644
-index 0000000..8298f17
+index 0000000..56593b1
 --- /dev/null
 +++ b/src/builder/dynamic/widgets.tsx
 @@ -0,0 +1,419 @@
@@ -1493,7 +1506,7 @@ index 0000000..8298f17
 +  const selected = b.selection?.sectionId === s.id && b.selection.el === el
 +  return (
 +    <div
-+      className="ed"
++      className={cn('ed', m.ph && 'wb-dyn')}
 +      data-el={`${s.id}:${el}`}
 +      data-label={def.label}
 +      data-selected={selected || undefined}
@@ -2105,15 +2118,23 @@ index bc41729..455cc56 100644
  const count = (sections: Section[]) => sections.length
  console.log(`[web-builder] fixtures: ${cases.length} docs, ${cases.reduce((n, [, d]) => n + count(d.sections), 0)} sections, ${(bytes / 1024).toFixed(0)} KB of render JSON → ${out}`)
 diff --git a/src/builder/live/page.css b/src/builder/live/page.css
-index ee8c51d..ac11190 100644
+index ee8c51d..0e2e37e 100644
 --- a/src/builder/live/page.css
 +++ b/src/builder/live/page.css
-@@ -195,3 +195,214 @@
+@@ -195,3 +195,222 @@
    outline: 2px solid #d63638;
    outline-offset: 2px;
  }
 +
 +/* ---------- Dynamic widgets (patch 0008) ---------- */
++/* A widget that resolved to nothing (no featured image, no post navigation, comments closed and
++   none left) takes no row of a one-column section stack, so it adds no second row gap. Only the
++   section's own grid: loop cards keep their rows aligned. */
++.wb-page .sf > .relative > div > .grid[style*='grid-template-columns:repeat(1,'] > .cell:has(> div > .wb-dyn:empty),
++.wb-page .sf > .relative > div > .grid[style*='grid-template-columns:repeat(1,'] > .cell:has(> div > .wb-dyn > [data-wb-slot]:not(img):empty:only-child) {
++  display: none;
++}
++
 +/* Comments widget: the theme's comments template (WordPress comment list and comment_form() markup). */
 +.wb-page .wb-comments {
 +  font-size: 16px;

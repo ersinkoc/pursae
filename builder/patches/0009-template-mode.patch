@@ -407,7 +407,7 @@ index 21ed446..9e9da59 100644
  export const TEMPLATES: Payload[] = [
    { kind: 'hero', label: t('Hero') },
 diff --git a/src/builder/dynamic/starters.ts b/src/builder/dynamic/starters.ts
-index 3a27bc4..6befbd0 100644
+index 819edc9..84c0b81 100644
 --- a/src/builder/dynamic/starters.ts
 +++ b/src/builder/dynamic/starters.ts
 @@ -1,14 +1,28 @@
@@ -445,19 +445,19 @@ index 3a27bc4..6befbd0 100644
  
  /** A boxed one-column grid of dynamic widgets, top to bottom. */
  function stack(cells: [DynWidget, DynSettings?][], o: { width?: number; padT?: number; padB?: number; gap?: number } = {}): Section {
-@@ -36,6 +50,11 @@ function footer(): Section[] {
-   return [f, legal]
+@@ -50,6 +64,11 @@ function postBody(cells: [DynWidget, DynSettings?][]): Section {
+   return stack(cells, { padT: 0, gap: 32 })
  }
  
 +/** A page has no meta line, terms, author box or post navigation. */
 +function singlePage(): Section[] {
-+  return [stack([['post-title', { tag: 'h1' }], ['post-image', { size: 'large', ratio: 1.78 }], ['post-content'], ['post-comments']], { gap: 28 })]
++  return [postHeader([['post-title', { tag: 'h1' }]]), postBody([['post-image', { size: 'large', ratio: 1.78 }], ['post-content'], ['post-comments']])]
 +}
 +
  function single(): Section[] {
    return [
-     stack(
-@@ -71,15 +90,18 @@ function search(): Section[] {
+     postHeader([
+@@ -84,15 +103,18 @@ function search(): Section[] {
    ]
  }
  
@@ -479,7 +479,7 @@ index 3a27bc4..6befbd0 100644
      case 'archive':
        return archive()
      case 'search':
-@@ -88,3 +110,9 @@ export function starterSections(id: StarterId): Section[] {
+@@ -101,3 +123,9 @@ export function starterSections(id: StarterId): Section[] {
        return []
    }
  }
