@@ -20,12 +20,24 @@ first template the package has. Only `index.html` is required.
 | blog index (posts page) | `home.html`, `index.html` |
 | a post | `single.html`, `index.html` |
 | a page | `page.html`, `index.html` |
+| an entry of a custom post type | `single.html`, `index.html` |
+| a custom post type archive | `index.html` |
 | category archive | `category.html`, `archive.html`, `index.html` |
 | tag archive | `tag.html`, `archive.html`, `index.html` |
 | author archive | `author.html`, `archive.html`, `index.html` |
 | date archive | `date.html`, `archive.html`, `index.html` |
 | search results | `search.html`, `index.html` |
 | not found | `404.html`, `index.html` |
+
+Custom post types are the public types registered in Pursae Custom Fields: an entry is served at
+`/<rewrite slug>/<post>/` (with its ancestors for hierarchical types) and, when the type has an
+archive, the archive at `/<archive slug>/` (also `?post_type=<type>`), with pagination and a feed.
+Bundled themes render the archive with `theme/archive`; the view has `.ArchiveTitle`
+("Archives: <plural name>") and the body classes `post-type-archive post-type-archive-<type>`.
+
+With Pursae Web Builder on and the bundled Hello Pursae theme active, Theme Builder templates can
+replace a view's header, main content and footer; theme packages never receive them
+([Hello Pursae and the Theme Builder](hello-pursae.md)).
 
 Parts — `header.html`, `footer.html`, `sidebar.html`, `comments.html`, `content*.html` — are
 included with `{{template "header" .}}`. Every file is parsed into one template set, so a

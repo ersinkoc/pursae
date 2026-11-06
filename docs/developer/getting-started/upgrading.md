@@ -84,6 +84,26 @@ serving, which is handy in a deploy step.
 
 ## Release notes
 
+- **Pursae Web Builder: Theme Builder and Hello Pursae.** Headers, footers and single, page,
+  custom post type, front page, archive, search and 404 templates are designed in the builder
+  (Appearance › Theme Builder) and shown by the new bundled theme **Hello Pursae**
+  ([Theme Builder guide](../web-builder-theme-builder.md)). Migration
+  `0029_web_builder_templates.sql` adds the `wb_template` post type; nothing existing is changed.
+  - **Sites with the plugin already on are not switched.** The upgrade keeps the active theme and
+    every page as it was; the Dashboard, Plugins and Themes screens show a one-time notice
+    **Switch to Hello Pursae** (or **Dismiss**) to users who may switch themes. Templates show
+    only once Hello Pursae is active. From now on, activating the plugin switches to Hello Pursae
+    (remembering the previous theme, with a **Switch back** link) and deactivating it switches
+    back.
+  - Pages built before this release that have their own navigation or footer section keep
+    rendering as full-page canvases (no doubled header); other builder pages show the header and
+    footer templates around them once Hello Pursae is active. Each page can choose under
+    **Header & footer** in its page settings.
+  - The builder's API version is now 2: an editor tab left open across the upgrade asks to reload.
+    Published pages need no regeneration.
+  - Public Pursae Custom Fields post types now have pretty permalinks (`/<slug>/<post>/`) and,
+    when enabled, an archive (`/<archive slug>/`); old `?p=<id>` links redirect to them. Check
+    that no page or post uses the same slug as a custom post type's rewrite or archive slug.
 - **New Pursae Web Builder — back up the database before upgrading: old Web Builder data is
   deleted.** The release that brings the new builder replaces the previous Elementor-derived builder
   and deletes everything it stored, with no converter (migration `0028_drop_old_builder`): its tables (builder revisions,
