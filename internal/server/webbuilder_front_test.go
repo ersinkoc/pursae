@@ -293,6 +293,20 @@ func TestWebBuilderFrontCanvas(t *testing.T) {
 	if cssResp.StatusCode != http.StatusOK || bodyOf(cssResp) != strings.TrimSpace(big) {
 		t.Fatalf("page CSS file over HTTP: %d", cssResp.StatusCode)
 	}
+
+	// Made private: the CSS is inlined for the viewer who may see it and the public file goes.
+	q.Status = "private"
+	if err := srv.store.UpdatePost(context.Background(), q, 1); err != nil {
+		t.Fatal(err)
+	}
+	wbfPurge(srv)
+	_, pbody, _ := get(t, admin, wbfURL(base, q))
+	if !strings.Contains(pbody, wbfSnapshotMark) || !strings.Contains(pbody, `<style id="wb-css">`) || strings.Contains(pbody, "web-builder/css/post-") {
+		t.Error("a private page's large CSS is not inline")
+	}
+	if _, err := os.Stat(file); !os.IsNotExist(err) {
+		t.Errorf("a private page's CSS file is still public: %v", err)
+	}
 }
 
 func TestWebBuilderFrontFallback(t *testing.T) {

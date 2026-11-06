@@ -187,7 +187,7 @@ func (s *Server) wbCanvas(c *gin.Context, v *siteView, fp *wbFrontPage, body str
 			html.EscapeString(lb.HomeURL(webbuilder.SiteAssetsPath+site.CSS)))
 	}
 	sb.WriteString(s.wbFontLinks(c, d.Fonts))
-	sb.WriteString(s.wbPageCSS(c, d))
+	sb.WriteString(s.wbPageCSS(c, v.Q.Post, d))
 	sb.WriteString("</head>\n")
 	sb.WriteString("<body class=\"" + html.EscapeString(strings.TrimSpace(v.BodyClass+" web-builder-page")) + "\">\n")
 	sb.WriteString(string(v.BodyOpen))
@@ -274,7 +274,7 @@ var wbPageCSSWritten sync.Map // path → hash
 // <style id="wb-css"> up to InlineCSSMax, otherwise a stylesheet link to
 // uploads/web-builder/css/post-<id>-<rev>.css (written atomically on first use; ?ver= is the
 // content hash, since uploads are served as immutable).
-func (s *Server) wbPageCSS(c *gin.Context, d *store.WebBuilderDoc) string {
+func (s *Server) wbPageCSS(c *gin.Context, p *store.Post, d *store.WebBuilderDoc) string {
 	css := strings.TrimSpace(d.CSS)
 	if css == "" || strings.Contains(strings.ToLower(css), "</style") { // the sanitizer refuses </style; never trust it blindly
 		return ""
@@ -283,9 +283,16 @@ func (s *Server) wbPageCSS(c *gin.Context, d *store.WebBuilderDoc) string {
 	if len(css) <= webbuilder.InlineCSSMax || s.cfg.UploadsDir == "" {
 		return inline
 	}
+	rel := webbuilder.PageCSSDir + "/post-" + itoa64(d.PostID) + "-" + strconv.Itoa(d.Rev) + ".css"
+	if p == nil || p.Status != "publish" || p.Password != "" {
+		// Uploads are public with predictable names: the CSS of a draft, pending, private or
+		// password-protected page stays inline, and a file written while it was public goes.
+		_ = os.Remove(filepath.Join(s.cfg.UploadsDir, filepath.FromSlash(rel)))
+		wbPageCSSWritten.Delete(filepath.Join(s.cfg.UploadsDir, filepath.FromSlash(rel)))
+		return inline
+	}
 	sum := sha256.Sum256([]byte(css))
 	hash := hex.EncodeToString(sum[:])
-	rel := webbuilder.PageCSSDir + "/post-" + itoa64(d.PostID) + "-" + strconv.Itoa(d.Rev) + ".css"
 	if err := s.wbEnsurePageCSS(d.PostID, d.Rev, filepath.Join(s.cfg.UploadsDir, filepath.FromSlash(rel)), css, hash); err != nil {
 		log.Printf("web builder: page css %d: %v", d.PostID, err)
 		return inline
