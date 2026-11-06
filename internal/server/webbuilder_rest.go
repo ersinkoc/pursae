@@ -438,6 +438,7 @@ func (s *Server) wbSanitizeRender(c *gin.Context, p *store.Post, body *wbPublish
 	html, changed, err := webbuilder.SanitizeSnapshot(rr.HTML, webbuilder.SnapshotOptions{
 		FormActionPrefix: lb.HomeURL("/wp-json/" + webbuilder.RESTNamespace + "/forms/" + itoa64(p.ID) + "/"),
 		EmbedHTML:        unfiltered,
+		SearchAction:     lb.HomeURL("/"),
 	})
 	switch {
 	case errors.Is(err, webbuilder.ErrSnapshotTooLarge):

@@ -93,7 +93,7 @@ func firstDiff(a, b []string) string {
 // passes the sanitizer with an equivalent DOM (nothing the renderer emits is outside the allowlist), and the
 // page CSS passes the CSS sanitizer unchanged.
 func TestRenderFixturesSanitizeEquivalent(t *testing.T) {
-	opts := SnapshotOptions{FormActionPrefix: testFormPrefix, EmbedHTML: true}
+	opts := SnapshotOptions{FormActionPrefix: testFormPrefix, EmbedHTML: true, SearchAction: testHome}
 	for _, f := range loadRenderFixtures(t) {
 		t.Run(f.name, func(t *testing.T) {
 			out, changed, err := SanitizeSnapshot(f.rr.HTML, opts)
@@ -115,7 +115,7 @@ func TestRenderFixturesSanitizeEquivalent(t *testing.T) {
 
 // Without unfiltered_html the html sections' srcdoc iframes go and nothing else changes.
 func TestRenderFixturesWithoutEmbed(t *testing.T) {
-	opts := SnapshotOptions{FormActionPrefix: testFormPrefix}
+	opts := SnapshotOptions{FormActionPrefix: testFormPrefix, SearchAction: testHome}
 	srcdoc := regexp.MustCompile(`(?i) srcdoc="[^"]*"`)
 	for _, f := range loadRenderFixtures(t) {
 		out, _, err := SanitizeSnapshot(f.rr.HTML, opts)
