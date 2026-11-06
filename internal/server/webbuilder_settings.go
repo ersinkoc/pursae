@@ -100,9 +100,10 @@ func (s *Server) wbSwitchToHello(ctx context.Context) {
 }
 
 // wbSwitchBack moves a site on Hello Pursae back to the theme it had before (wbPreviousTheme) and
-// forgets that theme and the notice. A site on another theme keeps it.
+// forgets that theme and the notice. Only a switch activation made is undone: a site on another
+// theme, or one whose owner chose Hello Pursae themselves (nothing remembered), keeps its theme.
 func (s *Server) wbSwitchBack(ctx context.Context) {
-	if s.settings.String("stylesheet") == wbHelloSlug {
+	if s.settings.String("stylesheet") == wbHelloSlug && s.settings.String(wbPreviousThemeOption) != "" {
 		back := s.wbPreviousTheme(ctx)
 		_ = s.restoreTheme(ctx, back) // the default theme comes back even after a delete
 		if err := s.switchTheme(ctx, back); err != nil {

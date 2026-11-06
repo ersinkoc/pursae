@@ -55,6 +55,21 @@ func TestWebBuilderPluginToggle(t *testing.T) {
 	if got := srv.settings.String("stylesheet"); got != theme {
 		t.Errorf("deactivation left the theme on %s, want %s", got, theme)
 	}
+
+	// A site already on Hello Pursae (the owner's own choice) keeps it after deactivation.
+	ctx := context.Background()
+	if err := srv.switchTheme(ctx, wbHelloSlug); err != nil {
+		t.Fatal(err)
+	}
+	if err := srv.wbSetActive(ctx, true); err != nil {
+		t.Fatal(err)
+	}
+	if err := srv.wbSetActive(ctx, false); err != nil {
+		t.Fatal(err)
+	}
+	if got := srv.settings.String("stylesheet"); got != wbHelloSlug {
+		t.Errorf("deactivation moved a site whose owner chose Hello Pursae to %s", got)
+	}
 }
 
 // Settings › Web Builder: menu entry and screen only while the plugin is on, manage_options only,

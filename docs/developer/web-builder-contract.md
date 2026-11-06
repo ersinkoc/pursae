@@ -1029,9 +1029,10 @@ changed. Other themes keep the canvas of §10.
   `hello-pursae` it is stored in `web_builder_previous_theme`, the site switches to Hello Pursae
   and `web_builder_theme_notice` holds a one-shot notice ("Your site now uses Hello Pursae.
   Previous theme: X." with "Switch back").
-- **Plugin off**: when the active theme is still `hello-pursae`, the site switches to the stored
-  previous theme (if it is installed and not `hello-pursae`), else to the default theme; the
-  option is cleared. If the user changed the theme in between, nothing happens.
+- **Plugin off**: when the active theme is still `hello-pursae` and activation stored a previous
+  theme, the site switches to it (if it is installed and not `hello-pursae`), else to the default
+  theme; the option is cleared. If the user changed the theme in between, or the site was already
+  on Hello Pursae when the plugin was turned on (nothing stored), nothing happens.
 - Sites that had the plugin on before the Theme Builder are never switched silently: they get a
   dismissible "Switch to Hello Pursae" notice; dismissing it (or switching) sets
   `web_builder_theme_offer` to `true`, which activation also sets.

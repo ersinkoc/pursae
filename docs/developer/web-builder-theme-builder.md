@@ -19,7 +19,8 @@ The field-by-field rules are in the [contract, section 11](web-builder-contract.
 - **Turn on Pursae Web Builder** (Plugins › Pursae Web Builder › Activate). Activating it switches
   the site to **Hello Pursae** and remembers the previous theme; a notice on the Dashboard,
   Plugins and Themes screens says so and offers **Switch back**. Deactivating the plugin later puts
-  the previous theme back (unless you picked another theme in between).
+  the previous theme back (unless you picked another theme in between, or chose Hello Pursae
+  yourself before turning the plugin on).
 - On a site that already had the plugin on before the Theme Builder existed, nothing switches by
   itself: the same screens show a one-time **Switch to Hello Pursae** notice.
 - Templates need the `edit_theme_options` capability (administrators). Authors and editors can
