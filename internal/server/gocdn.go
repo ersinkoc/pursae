@@ -522,7 +522,7 @@ func (s *Server) gocdnRT() *gocdnRuntime {
 
 // gocdnPluginRow is GoCDN's row on the Plugins screen.
 func (s *Server) gocdnPluginRow() pluginRow {
-	r := pluginRow{Slug: gocdnSlug, Name: "Pursae CDN", Version: gocdnVersion, Native: true, Active: s.gocdnOn(),
+	r := pluginRow{Slug: gocdnSlug, Name: "Pursae CDN", Version: builtinPluginVersion, Native: true, Active: s.gocdnOn(),
 		Description: "Offload the media library to Amazon S3, Cloudflare R2, DigitalOcean Spaces, Backblaze B2 or any S3-compatible storage, deliver it from a CDN, resize and convert images to WebP on the fly with signed URLs, serve theme and core assets from a CDN and purge the page cache and Cloudflare. While it is off, nothing of it runs.",
 		Author:      "Pursae"}
 	if r.Active {

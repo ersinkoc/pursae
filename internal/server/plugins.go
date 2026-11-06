@@ -289,8 +289,12 @@ func (h *pluginHost) AdminNotice(ctx context.Context, plugin string, n plugins.N
 
 // Plugins screen -------------------------------------------------------------------
 
+// builtinPluginVersion is the version every Pursae built-in plugin shows on the Plugins screen.
+const builtinPluginVersion = "0.1.0"
+
 type pluginRow struct {
 	Slug, Name, Version, Description, Author, AuthorURI, PluginURI string
+	Like                                                           string // "Like WP Mail SMTP": the WordPress plugin it replaces
 	Native, Active, Disabled                                       bool
 	DisabledWhy                                                    string
 	Permissions                                                    []permRow
@@ -337,19 +341,19 @@ func (s *Server) nativePluginRows() []pluginRow {
 		{Slug: "classic-editor", Name: "Classic Editor", Version: "1.6.7", Native: true, Active: s.settings.Bool("native_classic_editor"),
 			Description: "Enables the previous \"classic\" editor and the old-style Edit Post screen with TinyMCE, Meta Boxes, etc. Choose the default editor and whether users may switch under Settings &rsaquo; Writing.",
 			Author:      "Pursae", SettingsURL: "/wp-admin/options-writing"},
-		{Slug: "wpgo-cache", Name: "Pursae Cache", Version: "1.0.0", Native: true, Active: s.settings.Bool("wpgo_cache_enabled"),
+		{Slug: "wpgo-cache", Name: "Pursae Cache", Version: builtinPluginVersion, Like: "LiteSpeed Cache", Native: true, Active: s.settings.Bool("wpgo_cache_enabled"),
 			Description: "Full-page cache with tag-based purging, a crawler and page optimizations. Works behind nginx, OpenLiteSpeed, Apache or on its own.",
 			Author:      "Pursae", SettingsURL: "/wp-admin/admin?page=wpgo-cache"},
-		{Slug: webbuilder.PluginSlug, Name: "Pursae Web Builder", Version: Version, Native: true, Active: s.wbOn(),
+		{Slug: webbuilder.PluginSlug, Name: "Pursae Web Builder", Version: builtinPluginVersion, Like: "Elementor Builder", Native: true, Active: s.wbOn(),
 			Description: "Build pages visually from ready-made sections, then publish them as fast, static HTML. Design the site&#8217;s header, footer and templates for posts, pages, archives, search results and 404 pages under Appearance &rsaquo; Theme Builder, shown by the bundled Hello Pursae theme. Choose which post types it edits under Settings &rsaquo; Web Builder.",
 			Author:      "Pursae"},
-		{Slug: msSlug, Name: "Pursae SMTP", Version: Version, Native: true, Active: s.mailSMTPOn(),
+		{Slug: msSlug, Name: "Pursae SMTP", Version: builtinPluginVersion, Like: "WP Mail SMTP", Native: true, Active: s.mailSMTPOn(),
 			Description: "Make email delivery easy for Pursae. Connect with SMTP, SendLayer, Brevo, Mailgun, SendGrid, Amazon SES, Gmail, Outlook and more, with an email log, reports, failure alerts, backup connection and smart routing. A native clone of WP Mail SMTP.",
 			Author:      "Pursae"},
-		{Slug: gontactSlug, Name: "Pursae Contact Form", Version: gontactVersion, Native: true, Active: s.gontactOn(),
+		{Slug: gontactSlug, Name: "Pursae Contact Form", Version: builtinPluginVersion, Like: "Contact Form 7", Native: true, Active: s.gontactOn(),
 			Description: "Just another contact form plugin. Simple but flexible: manage multiple contact forms, customize the form and the mail contents with simple markup, Ajax-powered submitting, quiz, reCAPTCHA and Turnstile spam protection, file uploads.",
 			Author:      "Pursae", SettingsURL: "/wp-admin/admin?page=wpcf7"},
-		{Slug: acfgoSlug, Name: "Pursae Custom Fields", Version: Version, Native: true, Active: s.acfgoOn(), SettingsURL: map[bool]string{true: "/wp-admin/acf-field-groups"}[s.acfgoOn()],
+		{Slug: acfgoSlug, Name: "Pursae Custom Fields", Version: builtinPluginVersion, Like: "Advanced Custom Fields (ACF)", Native: true, Active: s.acfgoOn(), SettingsURL: map[bool]string{true: "/wp-admin/acf-field-groups"}[s.acfgoOn()],
 			Description: "Customize WordPress with powerful, professional and intuitive fields: field groups, repeaters, flexible content, options pages, custom post types and blocks. A native clone of Advanced Custom Fields PRO.",
 			Author:      "Pursae"},
 		golylangPluginRow(s.golylangOn()), // golylang_admin.go

@@ -169,7 +169,7 @@ func (s *Server) asSave(ctx context.Context, st asSettings) error {
 // --- the plugin switch ---------------------------------------------------------------------
 
 func (s *Server) adminsecPluginRow() pluginRow {
-	r := pluginRow{Slug: asSlug, Name: "Pursae Security", Version: Version, Native: true, Active: s.adminsecOn(),
+	r := pluginRow{Slug: asSlug, Name: "Pursae Security", Version: builtinPluginVersion, Native: true, Active: s.adminsecOn(),
 		Description: "Login security for Pursae: e-mailed one-time codes (MFA), authenticator app two-factor (2FA) with backup codes and remembered devices, per-role enforcement, a custom login URL, login lockouts, IP allow and block lists, password policy, session management, security headers and hardening, admin alerts and an activity log. While it is off, nothing of it runs; users' factors are kept.",
 		Author:      "Pursae"}
 	if r.Active {

@@ -22,7 +22,7 @@ import (
 
 // golylangPluginRow is the Plugins screen row.
 func golylangPluginRow(active bool) pluginRow {
-	r := pluginRow{Slug: golylangSlug, Name: "Pursae Multi Language", Version: Version, Native: true, Active: active,
+	r := pluginRow{Slug: golylangSlug, Name: "Pursae Multi Language", Version: builtinPluginVersion, Like: "Polylang", Native: true, Active: active,
 		Description: "Making Pursae multilingual: languages, translated posts, pages, categories, tags and menus, a language switcher, " +
 			"translated strings, per-language URLs (directory, subdomain or domain), hreflang tags and synchronization. A clone of Polylang Pro. While it is off, none of it is part of the site.",
 		Author: "Pursae"}

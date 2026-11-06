@@ -303,7 +303,7 @@ func (s *Server) seogoHeadFor(sc *seogoCtx, preview bool) string {
 	o := s.seogoOpts()
 	esc := html.EscapeString
 	var sb strings.Builder
-	sb.WriteString("<!-- This site is optimized with Pursae SEO " + "1.0.0" + " - Pursae -->\n")
+	sb.WriteString("<!-- This site is optimized with Pursae SEO " + builtinPluginVersion + " - Pursae -->\n")
 	title := sc.title()
 	desc := sc.description()
 	if desc != "" {

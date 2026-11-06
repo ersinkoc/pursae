@@ -163,7 +163,7 @@ func (s *Server) bmgrFileRoots() map[string]string {
 
 // bmgrPluginRow is the plugin's row on the Plugins screen.
 func (s *Server) bmgrPluginRow() pluginRow {
-	r := pluginRow{Slug: bmgrSlug, Name: "Pursae Backup Manager", Version: bmgrVersion, Native: true, Active: s.bmgrOn(),
+	r := pluginRow{Slug: bmgrSlug, Name: "Pursae Backup Manager", Version: builtinPluginVersion, Native: true, Active: s.bmgrOn(),
 		Description: "Back up and move a whole site in one click: database, media, themes, plugins, page builder data and users, each one selectable. No SQL dump needed: restore the .zip on another site and the address is rewritten for you.",
 		Author:      "Pursae"}
 	if r.Active {

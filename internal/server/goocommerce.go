@@ -197,7 +197,7 @@ func (s *Server) gooDeactivate(ctx context.Context) error {
 
 // gooPluginRow is Goocommerce's row on the Plugins screen.
 func (s *Server) gooPluginRow() pluginRow {
-	r := pluginRow{Slug: gooSlug, Name: "Pursae Commerce", Version: gooVersion, Native: true, Active: s.gooOn(),
+	r := pluginRow{Slug: gooSlug, Name: "Pursae Commerce", Version: builtinPluginVersion, Like: "WooCommerce", Native: true, Active: s.gooOn(),
 		Description: "Everything you need to sell online: products of every kind, cart, checkout, orders, coupons, taxes, shipping zones, payments, reports and a REST API, plus premium modules (subscriptions, memberships, bookings, bundles, add-ons, gift cards and more) you switch on when you need them. Compatible with WooCommerce themes and data shapes.",
 		Author:      "Pursae"}
 	if r.Active {

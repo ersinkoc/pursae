@@ -320,7 +320,12 @@ func dashboardLayout(u *store.User, mail bool) (normal, side, col3, col4 []strin
 // metaBoxOrderAjax is wp_ajax_meta_box_order(): postbox.js saves the box order of a screen after a drag
 // or a move up/down. Stored as the user meta meta-box-order_{page} ({"normal": "a,b", "side": "c"}).
 func (s *Server) metaBoxOrderAjax(c *gin.Context) {
-	if !s.checkNonceValue(c, c.PostForm("meta-box-order-nonce"), "meta-box-order") {
+	// postbox.js sends the nonce as _ajax_nonce (check_ajax_referer also accepts _wpnonce).
+	nonce := c.PostForm("_ajax_nonce")
+	if nonce == "" {
+		nonce = c.PostForm("_wpnonce")
+	}
+	if !s.checkNonceValue(c, nonce, "meta-box-order") {
 		c.String(http.StatusForbidden, "-1")
 		return
 	}
