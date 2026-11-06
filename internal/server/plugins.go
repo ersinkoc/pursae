@@ -345,24 +345,7 @@ func (s *Server) nativePluginRows() []pluginRow {
 			Author:      "Pursae"},
 		golylangPluginRow(s.golylangOn()), // golylang_admin.go
 	}
-	for i := range rows { // Settings links only while active, as WordPress shows them
-		switch rows[i].Slug {
-		case msSlug:
-			if rows[i].Active {
-				rows[i].SettingsURL = "/wp-admin/admin?page=" + msSlug
-			}
-		case gontactSlug:
-			if !rows[i].Active {
-				rows[i].SettingsURL = ""
-			}
-		}
-	}
-	if !rows[1].Active {
-		rows[1].SettingsURL = "" // WordPress shows a plugin's Settings link only while it is active
-	}
-	if rows[2].Active {
-		rows[2].SettingsURL = "/wp-admin/theme-builder"
-	}
+	nativeSettingsLinks(rows)
 	rows = append(rows, s.maintPluginRow())    // Maintenance-Go (maintenance_admin.go)
 	rows = append(rows, s.seogoPluginRow())    // SEO-Go (seogo.go)
 	rows = append(rows, s.gooikePluginRow())   // Gooike (gooike.go)
@@ -374,6 +357,31 @@ func (s *Server) nativePluginRows() []pluginRow {
 		rows[i].Source = pluginSourceNative
 	}
 	return rows
+}
+
+// nativeSettingsLinks sets the Settings links of the core plugins that WordPress shows only while
+// a plugin is active. Rows are found by slug, so the order of nativePluginRows does not matter.
+func nativeSettingsLinks(rows []pluginRow) {
+	for i := range rows {
+		switch rows[i].Slug {
+		case "wpgo-cache":
+			if !rows[i].Active {
+				rows[i].SettingsURL = ""
+			}
+		case golementorSlug:
+			if rows[i].Active {
+				rows[i].SettingsURL = "/wp-admin/theme-builder"
+			}
+		case msSlug:
+			if rows[i].Active {
+				rows[i].SettingsURL = "/wp-admin/admin?page=" + msSlug
+			}
+		case gontactSlug:
+			if !rows[i].Active {
+				rows[i].SettingsURL = ""
+			}
+		}
+	}
 }
 
 // pluginInventory is every plugin, native and installed packages, without action links (the Plugins

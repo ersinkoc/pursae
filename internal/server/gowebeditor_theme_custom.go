@@ -645,11 +645,3 @@ func (s *Server) gweImportMedia(c *gin.Context, name string, data []byte) (*stor
 	}
 	return a, nil
 }
-
-// gweAbsURL makes a site-relative URL absolute.
-func gweAbsURL(home, u string) string {
-	if strings.HasPrefix(u, "http://") || strings.HasPrefix(u, "https://") {
-		return u
-	}
-	return strings.TrimRight(home, "/") + u
-}

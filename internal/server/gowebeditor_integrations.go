@@ -33,8 +33,8 @@ import (
 // the host before connecting), never follow redirects and time out. Tests swap the transport
 // (gweOutboundTransport) for httptest fakes.
 
-// gweOutboundTransport, when set, carries every request to the integrations, Stripe and Google
-// Fonts (tests point it at httptest servers). nil = http.DefaultTransport.
+// gweOutboundTransport, when set, carries every request to the integrations and Stripe (Google
+// Fonts fetch on their own, gfonts.go; tests point it at httptest servers). nil = http.DefaultTransport.
 var gweOutboundTransport http.RoundTripper
 
 // gweOutboundTimeout bounds one request to a third-party API.

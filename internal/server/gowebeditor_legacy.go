@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -38,13 +37,6 @@ func gweLegacyRedirect(to string) gin.HandlerFunc {
 	}
 }
 
-// gweUploadsDir is the builder's folder in the uploads dir (fonts, Google Fonts cache, custom icons);
-// gweLegacyUploadsDir is its name before the rename.
-const (
-	gweUploadsDir       = "web-builder"
-	gweLegacyUploadsDir = "gowebeditor"
-)
-
 // gweMoveLegacyDirs renames, once, the folders that carried the old names: uploads/gowebeditor
 // and the Theme File Editor's copy of the hello-gowebeditor theme.
 func gweMoveLegacyDirs(uploadsDir, themesDir string) {
@@ -61,29 +53,4 @@ func moveDir(old, cur string) {
 		return
 	}
 	_ = os.Rename(old, cur)
-}
-
-// gweLegacyUploadPath maps a stored /wp-content/uploads/gowebeditor/... URL path onto the moved folder.
-func gweLegacyUploadPath(p string) string {
-	if rest, ok := strings.CutPrefix(p, "/wp-content/uploads/"+gweLegacyUploadsDir+"/"); ok {
-		return "/wp-content/uploads/" + gweUploadsDir + "/" + rest
-	}
-	return p
-}
-
-// pluginURLSlug is the builder plugin's slug as Plugins screen links show it; the stored slug
-// (active plugins, settings) stays golementor.
-func pluginURLSlug(slug string) string {
-	if slug == golementorSlug {
-		return "web-builder"
-	}
-	return slug
-}
-
-// pluginSlugFromURL maps a slug from a Plugins screen link back to the stored one.
-func pluginSlugFromURL(slug string) string {
-	if slug == "web-builder" {
-		return golementorSlug
-	}
-	return slug
 }
