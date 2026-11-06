@@ -21,7 +21,7 @@ func pllMetaSkipped(key string) bool {
 	case "_edit_lock", "_edit_last", "_wp_old_slug", "_encloseme", "_pingme", "_wp_page_template", "_thumbnail_id", "classic-editor-remember":
 		return true
 	}
-	return strings.HasPrefix(key, "_wp_trash_meta") || strings.Contains(key, "elementor") || strings.HasPrefix(key, "_pll")
+	return strings.HasPrefix(key, "_wp_trash_meta") || strings.Contains(key, "elementor") || strings.HasPrefix(key, "_pll") || strings.HasPrefix(key, "_web_builder")
 }
 
 // pllCopyForTranslation fills a new translation from its source like Polylang: terms (translated), featured
@@ -60,6 +60,9 @@ func (s *Server) pllCopyForTranslation(ctx context.Context, src, dst *store.Post
 		title = CASE WHEN $9 THEN $10 ELSE title END, content = CASE WHEN $9 THEN $11 ELSE content END, excerpt = CASE WHEN $9 THEN $12 ELSE excerpt END
 		WHERE id = $1`, dst.ID, dst.MenuOrder, nullable64(parent), nullable64(featured), dst.Format, dst.CommentStatus, dst.PingStatus, rawMeta,
 		duplicate, src.Title, src.Content, src.Excerpt)
+	if duplicate {
+		s.wbCopyDoc(ctx, src, dst) // Pursae Web Builder: the translation starts from the source's doc
+	}
 	s.pllCopyTerms(ctx, src.ID, dst.ID, l.Slug)
 }
 

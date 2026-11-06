@@ -210,6 +210,7 @@ func (h *pluginHost) UpdatePost(ctx context.Context, _ string, id int64, in plug
 	if err := h.s.store.UpdatePost(ctx, p, editor); err != nil {
 		return nil, err
 	}
+	h.s.wbAfterPostSave(ctx, p) // Pursae Web Builder drift
 	h.s.purgeAll(ctx)
 	return h.GetPost(ctx, "", p.ID)
 }

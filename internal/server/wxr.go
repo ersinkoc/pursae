@@ -316,6 +316,7 @@ func (s *Server) exportScreen(c *gin.Context) {
 					b.WriteString(postmeta(k, v))
 				}
 			}
+			b.WriteString(s.wbExportMeta(ctx, p.ID, postmeta)) // Pursae Web Builder doc (webbuilder_hooks.go)
 			comments, _, _ := s.store.QueryComments(ctx, store.CommentQuery{PostID: p.ID, Status: "approved", PerPage: 100000, Order: "asc"})
 			for _, cm := range comments {
 				fmt.Fprintf(&b, "\t\t<wp:comment>\n\t\t\t<wp:comment_id>%d</wp:comment_id>\n\t\t\t<wp:comment_author>%s</wp:comment_author>\n\t\t\t<wp:comment_author_email>%s</wp:comment_author_email>\n\t\t\t<wp:comment_author_url>%s</wp:comment_author_url>\n\t\t\t<wp:comment_author_IP>%s</wp:comment_author_IP>\n\t\t\t<wp:comment_date>%s</wp:comment_date>\n\t\t\t<wp:comment_date_gmt>%s</wp:comment_date_gmt>\n\t\t\t<wp:comment_content>%s</wp:comment_content>\n\t\t\t<wp:comment_approved>%s</wp:comment_approved>\n\t\t\t<wp:comment_type>%s</wp:comment_type>\n\t\t\t<wp:comment_parent>%d</wp:comment_parent>\n\t\t\t<wp:comment_user_id>%d</wp:comment_user_id>\n\t\t</wp:comment>\n",
@@ -850,6 +851,7 @@ func (s *Server) importWXR(c *gin.Context, u *store.User, data []byte) (*importR
 			}
 		}
 	}
+	rep.Log = append(rep.Log, s.wbImportDocs(ctx, u, imported, urlMap)...) // Pursae Web Builder docs (webbuilder_hooks.go)
 	// process_menu_item(): items whose object was not imported are skipped (custom links always import).
 	menuItemIDs := map[int64]int64{}
 	menuOrphans := map[int64]int64{}
