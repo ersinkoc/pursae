@@ -200,10 +200,11 @@ The REST themes endpoint (`wp/v2/themes`) reports them as `category`, `style` an
 
 ### Pursae Web Builder
 
-A theme package has nothing to declare for Pursae Web Builder: the builder designs pages, not
-themes, and a published builder page renders without the theme (see
-`docs/developer/web-builder.md`). There are no builder headers, footers, kits or design files in
-the format. Older packages that still carry the retired page-builder design key and folder
+A theme package has nothing to declare for Pursae Web Builder: a published builder page renders
+without the theme (see `docs/developer/web-builder.md`), and the builder's Theme Builder headers,
+footers and templates are shown only by the bundled Hello Pursae theme
+(`docs/developer/themes/hello-pursae.md`), never by a package. There are no builder headers,
+footers, kits or design files in the format. Older packages that still carry the retired page-builder design key and folder
 install as plain themes; both are ignored. A store theme declares
 `"supports": {"woocommerce": true}` and is listed under Pursae Commerce › Store Themes, like
 Fernwood, Good Boy Supply and Kite & Crayon.

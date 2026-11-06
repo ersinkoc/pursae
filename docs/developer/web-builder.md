@@ -1,6 +1,6 @@
 ---
 title: Pursae Web Builder
-description: The built-in visual page builder — how editing and publishing work, where the data lives, the web-builder/v2 REST API, how the editor is built, and what it does not do yet.
+description: The built-in visual page builder — how editing and publishing work, the Theme Builder and Hello Pursae, where the data lives, the web-builder/v2 REST API, how the editor is built, and what it does not do yet.
 weight: 890
 section: built-in-plugins
 ---
@@ -8,7 +8,9 @@ section: built-in-plugins
 Pursae Web Builder is a section-based visual page builder that ships inside the binary as a
 built-in plugin (slug `golementor`, option `native_golementor`). The editor is a React app built
 from [`github.com/pursae/Builder`](https://github.com/pursae/Builder); visitors never load React:
-a published page is a static HTML/CSS snapshot with a small optional script. The field-by-field
+a published page is a static HTML/CSS snapshot with a small optional script. With the
+**Theme Builder** it also designs the site's header, footer and content templates, shown by the
+bundled **Hello Pursae** theme ([user guide](web-builder-theme-builder.md)). The field-by-field
 specification is the [integration contract](web-builder-contract.md); this page is the overview.
 
 ## For site owners
@@ -16,12 +18,19 @@ specification is the [integration contract](web-builder-contract.md); this page 
 ### Switching it on
 
 Like Classic Editor and WPGo Cache it is listed on Plugins and is **off on a fresh install**.
-Plugins › Pursae Web Builder › **Activate** turns it on; nothing else changes (no theme switch, no
-setup wizard). While it is off there are no menu entries, "Edit with" links, routes, assets or
-front-end output, and built pages show their readable fallback inside the theme.
+Plugins › Pursae Web Builder › **Activate** turns it on and switches the site to **Hello Pursae**,
+the blank theme the Theme Builder designs on; the theme it leaves is remembered
+(`web_builder_previous_theme`) and a notice on the Dashboard, Plugins and Themes screens offers
+**Switch back**. **Deactivate** puts that theme back (or the default theme when it is gone) while
+the site is still on Hello Pursae; if you picked another theme in between, it stays. Sites that had
+the plugin on before the Theme Builder existed are not switched: they get a one-time **Switch to
+Hello Pursae** notice instead ([upgrading](getting-started/upgrading.md#release-notes)). There is
+no setup wizard. While the plugin is off there are no menu entries, "Edit with" links, routes,
+assets or front-end output, and built pages show their readable fallback inside the theme.
 
 **Settings › Web Builder** (`manage_options`) picks the post types the builder edits — pages and
-posts by default — and lists the pages whose published markup came from an older renderer
+posts by default; Theme Builder templates are always editable by users with `edit_theme_options` —
+and lists the pages whose published markup came from an older renderer
 ("Regenerate pages"; each one is refreshed by opening it in the builder and publishing again).
 
 ### Editing flow
@@ -57,15 +66,45 @@ the page to the other editor.
 The editor UI is English; Turkish is included, picked from the user's language. Other languages
 follow later.
 
+### Theme Builder
+
+**Appearance › Theme Builder** (`edit_theme_options`) lists the site's templates: Header, Footer,
+Single Post, Single Page, Single (a custom post type), Front Page, Archive, Search Results and 404
+Page. A template is a builder document like a page, designed with **dynamic widgets** (site logo,
+title, menu, search form, post title, content, featured image, post info, terms, author box,
+comments, archive title, pagination…) and **post loops** (a card designed once and repeated for
+the request's posts, a custom query or related posts). The editor draws them with the site's real
+content, picked with **Preview as**. **Display conditions** (include/exclude rules from "Entire
+Site" down to one entry, term or author) choose one template per place and request; the most
+specific rule wins, then the priority. Published = active, draft = disabled.
+
+While Hello Pursae is the active theme every front-end page is assembled from three parts: the
+header template, the main content (the page's own builder design, else the matching main
+template, else the theme's default) and the footer template; a place without a template shows
+Hello Pursae's minimal header, content or footer. A builder page chooses **Header & footer: Site
+templates** or **This page only (canvas)** in its page settings. With any other theme templates
+are not used and pages keep the canvas below.
+
+The [Theme Builder guide](web-builder-theme-builder.md) shows how to design each template and
+gives condition examples; the rules are in [contract §11](web-builder-contract.md#11-theme-builder).
+
 ### What visitors get
 
-A published page is a canvas document: no theme header, footer or stylesheet; SEO, analytics,
-cookie-consent and plugin heads are kept. The page CSS is inlined up to 24 KiB (a cached file
-above that), fonts are local `@font-face`, images go through the core image filters (sizes,
-`srcset`, lazy loading). The runtime (`runtime.<hash>.js`, under 8 KB gzipped) is loaded only when
+With Hello Pursae, a page is the theme's document with the header, main and footer parts above;
+each part's CSS is inlined as its own `<style>`, fonts and runtime features are merged, and the
+runtime loads once. With any other theme a published page is a canvas document: no theme header,
+footer or stylesheet. Either way SEO, analytics, cookie-consent and plugin heads are kept. The
+page CSS is inlined up to 24 KiB (a cached file above that), fonts are local `@font-face`, images
+go through the core image filters (sizes, `srcset`, lazy loading). The runtime (`runtime.<hash>.js`, under 8 KB gzipped) is loaded only when
 the page uses menus, FAQ/accordions, tabs, dismissible bars, forms, motion or embeds, and the
 content is readable with JavaScript off. Builder pages are cached by WPGo Cache and purged on
-publish.
+publish; publishing, disabling or trashing a template, or changing its conditions, purges the whole
+cache, and pages with post loops are purged whenever a public post is saved.
+
+Dynamic widgets and loops are placeholders in the published snapshot; the server fills them on each
+request from the data the page already computed (escaped text, HTML only from the core's own
+generators, URL attributes scheme-checked), so a published template never needs republishing when
+posts, menus or the logo change.
 
 Forms post to the site itself (`web-builder/v2/forms/{page}/{section}`): the fields come from the
 stored page, not the request; a honeypot, a minimum fill time, a per-IP rate limit and the Pursae
@@ -82,12 +121,13 @@ Not in the builder (yet):
 
 - **AI** — the upstream AI assistant, AI images and site cloning are stubbed out of the build; no
   AI request leaves the site. The design for a server-side proxy is in the contract (§9).
-- **Theme builder** (headers, footers, archive and single templates), **popups**, **loops** and
-  dynamic content.
+- **Popups**.
+- **Sub-menus**: menus bound to a menu location show their top level only (no drop-downs yet);
+  archives of Pursae Custom Fields taxonomies are not routed, so conditions on them match nothing.
 - **Form integrations** (mailing lists, webhooks, CRMs), stored form submissions and **payments**.
 - **Pursae Commerce widgets** (product grids, cart, checkout); store pages use the store theme.
 - **Global classes and variables**, **kits** and site-wide design settings; colours and fonts are
-  set per page.
+  set per page or template.
 - A setup wizard, a template library beyond saved sections, and a revisions panel in the editor.
 
 These come back as later features. The previous builder and its data were removed in the release
@@ -99,9 +139,11 @@ that introduced this one ([upgrading](getting-started/upgrading.md)).
 
 | Path | What |
 |------|------|
-| `internal/webbuilder/` | server-independent pieces: contract types (`contract.go`), doc validation, HTML and CSS sanitizers, fallback HTML, forms, fonts |
-| `internal/store/webbuilder.go` | storage (docs, drafts, revisions, library) |
+| `internal/webbuilder/` | server-independent pieces: contract types (`contract.go`), doc validation, HTML and CSS sanitizers, fallback HTML, forms, fonts; Theme Builder engine: `dynamic.go` (placeholder fill), `conditions.go` (display conditions) |
+| `internal/store/webbuilder.go`, `webbuilder_templates.go` | storage (docs, drafts, revisions, library; templates and their index) |
 | `internal/server/webbuilder_*.go` | plugin switch and settings, admin entry points, editor screen, assets, REST, front-end render, forms, hooks (drift, copies, export, cache), redirects of old URLs, one-time upgrade and cleanup |
+| `internal/server/webbuilder_templates*.go`, `webbuilder_dynamic_ctx.go`, `webbuilder_theme_front.go`, `webbuilder_slots.go` | Theme Builder: template index and pick, template REST, editor sample data, front assembly, slot resolver and loops |
+| `internal/server/theme_hellopursae.go`, `web/themes/hello-pursae/` | the Hello Pursae theme |
 | `builder/` | Node workspace: `upstream/` (git submodule, pinned by `UPSTREAM_SHA`), `patches/`, `host/` (CMS adapter), `vite/`, `scripts/`, `test/` |
 | `web/web-builder/` | the committed build output, embedded in the binary |
 
@@ -118,10 +160,19 @@ is untrusted. Migration `0027_web_builder.sql` adds:
   created with.
 - `web_builder_library` — saved sections.
 
+Theme Builder templates are posts of the non-public type `wb_template` (migration
+`0029_web_builder_templates.sql`) with the same docs, drafts and revisions; their type, display
+conditions, priority, preview object and starter are post meta (`_wb_template_type`,
+`_wb_conditions`, `_wb_priority`, `_wb_preview`, `_wb_starter`). Every template path checks
+`edit_theme_options` explicitly — for a non-page type `edit_post` alone would let authors in.
+
 The post itself only gets the marker meta `_web_builder = "1"`. Page settings map to the post:
 title, slug, excerpt, and Pursae SEO description and noindex. WXR export carries the doc
 (`_web_builder_doc`, `_web_builder_page`), import validates it again; Pursae Multi Language's
-"Duplicate content" copies doc and snapshot to the translation.
+"Duplicate content" copies doc and snapshot to the translation; templates are a translated type,
+and each language shows the translation of the winning template. WXR carries template meta, and
+the ids in conditions are remapped on import (rules whose target was not imported are dropped and
+logged).
 
 ### Publish = static snapshot
 
@@ -150,8 +201,16 @@ Cookie + `X-WP-Nonce` (or an Application Password), plus `X-WB-Api: 1` on every 
 | `GET` / `PUT prefs` | the user's editor preferences |
 | `GET fonts/css2` | Google Fonts css2 query answered with local files |
 | `POST forms/{id}/{section}` | public form endpoint |
+| `GET templates?type=`, `POST templates` | list templates, create a draft template |
+| `PUT templates/{id}/conditions` | display conditions and priority |
+| `PUT templates/{id}/preview` | the template's preview object, answers the new sample data |
+| `GET templates/{id}/conflicts` | other published templates that can show on the same views |
+| `GET preview-context?object=` | sample data (DynContext) for the editor |
 
-Payloads, status codes and limits: [contract §3](web-builder-contract.md#3-rest-namespace-web-builderv2).
+Payloads, status codes and limits: [contract §3](web-builder-contract.md#3-rest-namespace-web-builderv2)
+and, for templates, [§11.8](web-builder-contract.md#118-template-rest). The Theme Builder raised
+`APIVersion` to 2 (an editor tab opened before the upgrade reloads); `RendererVersion` stayed 1,
+because the placeholders only add attributes.
 
 ### Building the editor
 
@@ -176,6 +235,13 @@ the build loudly.
   runtime.
 - `0004-i18n` — `t()` with English sources and the Turkish catalog
   ([contract §2.1](web-builder-contract.md#21-editor-ui-language)).
+- `0005-parity`, `0006-no-remote-fonts`, `0007-page-title` — fixes found by the parity suite
+  (`make builder-parity`), no remote font stylesheet in the editor, the page title in the top bar.
+- `0008-dynamic` — dynamic widgets, the loop section, menu/logo binding, starters, the sample
+  `DynContext` seam and placeholder output in live mode.
+- `0009-template-mode` — template mode driven by the host (`BuilderHost.template()`, top-bar
+  controls, `beforePublish`, the page `layout` setting while Hello Pursae is active). The Theme
+  Builder dialogs themselves (Display Conditions, Preview as) live in `builder/host/`.
 
 (`0003`, the AI seam, is reserved for when AI comes back.) Change a patch by editing the patched
 copy, regenerating the diff against the pinned upstream and rebuilding.
