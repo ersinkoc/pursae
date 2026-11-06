@@ -195,6 +195,21 @@ func TestDynamicAttrSafety(t *testing.T) {
 	}
 }
 
+// Image slots write src/srcset/sizes only on images: an iframe keeps the src the sanitizer vetted.
+func TestDynamicImageSlotOnIframe(t *testing.T) {
+	r := &fakeResolver{attrs: map[SlotName]map[string]string{
+		SlotPostImage: {"src": "/wp-content/uploads/file.pdf", "srcset": "/wp-content/uploads/a.png 1x", "sizes": "100vw", "alt": "x"},
+	}}
+	out := run(t, `<div><iframe src="https://www.youtube.com/embed/x" data-wb-slot="post.image"></iframe></div>`, r)
+	if strings.Contains(out, "file.pdf") || strings.Contains(out, "srcset") || strings.Contains(out, "sizes") || !strings.Contains(out, `src="https://www.youtube.com/embed/x"`) {
+		t.Errorf("iframe got image attributes: %s", out)
+	}
+	out = run(t, `<div><img data-wb-slot="post.image"></div>`, r)
+	if !strings.Contains(out, `src="/wp-content/uploads/file.pdf"`) {
+		t.Errorf("img lost its src: %s", out)
+	}
+}
+
 func TestDynamicConditions(t *testing.T) {
 	r := &fakeResolver{text: map[SlotName]string{SlotSiteTagline: "Just another site", SlotSearchQuery: ""}}
 	src := `<div><p data-wb-if="site.tagline">has</p><p data-wb-if-not="site.tagline">none</p>` +

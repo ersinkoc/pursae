@@ -688,6 +688,14 @@ func slotAttrValue(tag, key, v string) (string, bool) {
 		return "", false
 	}
 	switch key {
+	case "src", "srcset", "sizes":
+		// Image slots only write image attributes on images: on an iframe, video or embed the
+		// value would replace a src the sanitizer vetted under that element's own rule.
+		if tag != "img" && tag != "source" {
+			return "", false
+		}
+	}
+	switch key {
 	case "href":
 		return SafeHref(v)
 	case "src":
