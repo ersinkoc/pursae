@@ -45,9 +45,9 @@ and the plugin's own `plugin_<slug>_*` settings. Names are at most 191 character
 site's time zone), `Author` (user id), `Link` (permalink of published posts), `Terms` (map by
 taxonomy: `category`, `post_tag`, each `{ID, Name, Slug, Taxonomy}`) and `Meta` (the post's meta
 map).
-`InsertPost` and `UpdatePost` refuse meta keys that start with an underscore: those are protected, the core and
-other plugins keep trusted data there (the page builder's element tree is rendered unescaped, and plugins never
-hold `unfiltered_html`).
+`InsertPost` and `UpdatePost` refuse meta keys that start with an underscore. Those are protected: the core and
+other plugins keep trusted data there (edit locks, Pursae Web Builder's `_web_builder` marker), and plugins never
+hold `unfiltered_html`.
 
 `PostQuery`: `Type` (`post` default, `page`), `Status` (`publish` default, `draft`, `pending`,
 `private`, `future`, `any`), `Search`, `Author`, `Term` (term id), `OrderBy` (`date`, `title`,

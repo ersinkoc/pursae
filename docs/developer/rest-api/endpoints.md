@@ -71,5 +71,5 @@ ones; `HEAD` works wherever `GET` does and `PUT`/`PATCH` wherever `POST` does.
 | `/batch/v1` | POST | up to 25 requests in one call |
 | `/oembed/1.0/proxy` | GET | `url=` — fetches the provider's oEmbed for the editor |
 | `/wp-block-editor/v1/url-details` | GET | `url=` — title, icon, description of a link |
-| `/elementor/v1/…` | various | Pursae Web Builder's editor API (global classes, variables, components, kit defaults, default styles, design-system sync); only while the builder is on |
+| `/web-builder/v2/…` | various | Pursae Web Builder: `documents/{id}` (load, autosave, publish, lock, revisions), `library`, `prefs`, `fonts/css2` and the public `forms/{id}/{section}`; only while the builder is on. Requests and errors are in the [contract](../web-builder-contract.md#3-rest-namespace-web-builderv2) |
 | `/<plugin-slug>/v1/…` | as registered | [plugin routes](plugin-routes.md) |

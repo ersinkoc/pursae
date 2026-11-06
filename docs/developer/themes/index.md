@@ -11,7 +11,7 @@ and the styles and scripts it loads. There are two kinds:
 
 | | Bundled Go themes | Theme packages |
 |---|---|---|
-| Examples | Twenty Sixteen, Twenty Seventeen, Twenty Twenty, Twenty Twenty-One, Hello Pursae Web Builder, Classic | anything you upload |
+| Examples | Twenty Sixteen, Twenty Seventeen, Twenty Twenty, Twenty Twenty-One, Classic | anything you upload |
 | Where | compiled into the binary (`web/themes/<slug>/` + a `theme_<slug>.go`) | `<data>/themes/<slug>/` (`WPGO_THEMES_DIR`) |
 | `functions.php` equivalent | Go code: a `*Theme` registered at start-up with hooks for `wp_head`, body classes, template data | `theme.json`: everything a Go theme registers in code, declared as data |
 | Install | ship with Pursae | Appearance › Themes › Add Theme › Upload, or from the [marketplace](../hub/marketplace.md) |
@@ -43,7 +43,8 @@ already prepared, which is why packages can be code-free and safe to install.
 Pursae Web Builder designs pages, not themes. A page published from the builder is served as a
 canvas document without the theme's header, footer and stylesheet; while the plugin is off, or
 after the page was edited outside the builder, the theme renders the page's content as usual
-([contract](../web-builder-contract.md), section 10).
+([Pursae Web Builder](../web-builder.md), [contract](../web-builder-contract.md) section 10).
+A theme needs nothing for the builder: there are no builder templates, theme parts or kits.
 
 ## Editing on a live site
 

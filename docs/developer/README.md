@@ -10,7 +10,7 @@ Start here when writing a theme or a plugin:
 |----------|------|
 | A plugin (Wasm, Go SDK `sdk/go/wpgo`) | `plugins/index.md`, `plugins/your-first-plugin.md`, `plugins/manifest.md`, `plugins/hooks.md`, `plugins/host-api.md`, `plugins/permissions.md`, `plugins/packaging-and-signing.md` |
 | A theme | `themes/index.md`, `themes/your-first-theme.md`, `themes/templates.md`, `themes/theme-json.md`, `themes/styles-and-scripts.md`, and the package format in `../theme-package.md` |
-| Pages built with Pursae Web Builder | `web-builder-contract.md` |
+| Pursae Web Builder (pages, the editor build, `builder/`) | `web-builder.md` (overview: editing, publishing, data, REST, `make builder`, patches, limits), then `web-builder-contract.md` (field-by-field contract) |
 | A built-in plugin (what it does, what it leaves out) | `built-in-plugins/index.md` is generated: the sources are `../<name>-features.md` (`goocommerce`, `seo-go`, `acf-go`, `headlessgo`, `gocdn`, `gontact-form`, `golylang`, `adminsecgo`, `gooike`, `maintenance-go`, `wpgo-mail-smtp`); edit them there, `make sync-docs` publishes them |
 | REST clients / plugin routes | `rest-api/*.md` |
 | Running a site | `getting-started/*.md`, `operations/*.md` |

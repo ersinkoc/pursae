@@ -435,6 +435,10 @@ draft and the Wasm host's `UpdatePost`, whether or not the plugin is active. It 
 
 None of these overlap the old builder's `/wp-content/plugins/web-builder/assets/`.
 
+Today `make builder` writes only `editor/` (AI modules stubbed, see §9) and `site/`; the
+manifest has no `editor-noai` entry and the server serves whichever editor bundle the manifest
+names. The `editor-noai` prefix stays reserved for the AI split.
+
 `web/web-builder/manifest.json` (Manifest; paths relative to each bundle directory):
 
 ```json
@@ -447,7 +451,7 @@ None of these overlap the old builder's `/wp-content/plugins/web-builder/assets/
 
 `web/web-builder/BUILD.json` (BuildInfo):
 `{"upstreamSha": "<40 hex>", "patches": {"0001-host-seam.patch": "<sha256>", …}, "apiVersion": 1, "rendererVersion": 1}`.
-A Go test compares it with `builder/UPSTREAM`, the patch files and the constants in
+A Go test compares it with `builder/UPSTREAM_SHA`, the patch files and the constants in
 `contract.go`.
 
 ## 8. Trust: validation and sanitizer allowlist
@@ -517,6 +521,12 @@ as sent (the stored doc is the client JSON with privileged fields removed at the
 - Pages ≤ 24 KiB of CSS inline it in `<style id="wb-css">`, larger ones get a file (§7).
 
 ## 9. AI
+
+> **Status: not implemented.** AI is out of scope for the first release. The only bundle built is
+> `editor/`, with every upstream `src/builder/ai/**` module stubbed out (`builder/vite/noai.ts`);
+> the boot config always sends `ai.enabled = false` with no providers, no `/ai/*` route is
+> registered and no `WPGO_BUILDER_AI*` variable is read. This section is the design for when AI
+> comes back; nothing below is live yet.
 
 ### 9.1 Environment (read once by `internal/config` as `Config.BuilderAI` and friends)
 
