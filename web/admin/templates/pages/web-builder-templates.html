@@ -1,0 +1,88 @@
+{{define "admin/web-builder-templates"}}{{template "admin-header" .}}{{with .Data}}
+<link rel="stylesheet" id="web-builder-templates-css" href="/wp-admin/assets/css/wpgo/web-builder-templates.css?ver={{.Ver}}" media="all" />
+<div class="wrap web-builder-templates">
+<h1 class="wp-heading-inline">Theme Builder</h1>
+<a href="#web-builder-add-template" class="page-title-action" id="web-builder-add-template-button" aria-haspopup="dialog">Add New Template</a>
+{{if .Search}}<span class="subtitle">Search results for: <strong>{{.Search}}</strong></span>{{end}}
+<hr class="wp-header-end">
+{{template "notices" $}}
+{{if .ThemeNotice}}<div class="notice notice-warning" id="web-builder-theme-notice"><p>Theme Builder templates are shown by the <strong>Hello Pursae</strong> theme{{if .ThemeName}}; your active theme is <strong>{{.ThemeName}}</strong>{{end}}. Headers, footers and templates you design here appear on the site once Hello Pursae is active.{{if .ActivateURL}} <a href="{{.ActivateURL}}" class="button button-primary" id="web-builder-activate-hello">Activate</a>{{end}}</p></div>{{end}}
+<h2 class="screen-reader-text">Filter templates list</h2>
+<ul class="subsubsub">
+{{range $i, $v := .Views}}	<li class="{{$v.Key}}">{{if $i}} |{{end}}<a href="{{$v.URL}}"{{if $v.Current}} class="current" aria-current="page"{{end}}>{{$v.Label}} <span class="count">({{num $v.Count}})</span></a></li>
+{{end}}</ul>
+<form id="posts-filter" method="get" action="/wp-admin/themes">
+<input type="hidden" name="page" value="web-builder-templates" />
+<p class="search-box">
+	<label class="screen-reader-text" for="post-search-input">Search Templates:</label>
+	<input type="search" id="post-search-input" name="s" value="{{.Search}}" />
+	<input type="submit" id="search-submit" class="button button-compact" value="Search Templates" />
+</p>
+{{if .IsTrash}}<input type="hidden" name="post_status" class="post_status_page" value="trash" />{{end}}
+{{if .Type}}<input type="hidden" name="template_type" value="{{.Type}}" />{{end}}
+<input type="hidden" name="_wpnonce" value="{{.BulkNonce}}" />
+
+<div class="tablenav top">
+	{{template "wb-templates-bulk" dict "Pos" "top" "Trash" .IsTrash}}
+	{{template "tablenav-pages" .Pagination}}
+	<br class="clear" />
+</div>
+<h2 class="screen-reader-text">Templates list</h2>
+<table class="wp-list-table widefat fixed striped table-view-list posts web-builder-templates-table">
+	<thead>{{template "wb-templates-head" dict "Top" true}}</thead>
+	<tbody id="the-list">
+	{{range .Rows}}{{template "wb-templates-row" .}}
+	{{else}}<tr class="no-items"><td class="colspanchange" colspan="7">{{if $.Data.IsTrash}}No templates found in Trash.{{else if $.Data.Search}}No templates found.{{else}}No templates yet. <a href="#web-builder-add-template" class="web-builder-add-template-link">Add your first template</a>.{{end}}</td></tr>
+	{{end}}
+	</tbody>
+	<tfoot>{{template "wb-templates-head" dict "Top" false}}</tfoot>
+</table>
+<div class="tablenav bottom">
+	{{template "wb-templates-bulk" dict "Pos" "bottom" "Trash" .IsTrash}}
+	{{template "tablenav-pages" .Pagination}}
+	<br class="clear" />
+</div>
+</form>
+{{template "wb-templates-add-dialog" .}}
+{{template "wb-templates-conditions-dialog" .}}
+<script type="application/json" id="web-builder-templates-config">{{.Config}}</script>
+<script src="/wp-admin/assets/js/web-builder-templates.js?ver={{.Ver}}" id="web-builder-templates-js"></script>
+<div class="clear"></div>
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}
+
+{{define "wb-templates-bulk"}}<div class="alignleft actions bulkactions">
+	<label for="bulk-action-selector-{{.Pos}}" class="screen-reader-text">Select bulk action</label>
+	<select name="{{if eq .Pos "top"}}action{{else}}action2{{end}}" id="bulk-action-selector-{{.Pos}}">
+		<option value="-1">Bulk actions</option>
+		{{if .Trash}}<option value="untrash">Restore</option>
+		<option value="delete">Delete permanently</option>{{else}}<option value="enable">Enable</option>
+		<option value="disable">Disable</option>
+		<option value="trash">Move to Trash</option>{{end}}
+	</select>
+	<input type="submit" name="bulk_action" id="doaction{{if eq .Pos "bottom"}}2{{end}}" class="button action button-compact" value="Apply" />
+</div>{{end}}
+
+{{define "wb-templates-head"}}<tr>
+		<td{{if .Top}} id="cb"{{end}} class="manage-column column-cb check-column"><input id="cb-select-all-{{if .Top}}1{{else}}2{{end}}" type="checkbox" /><label for="cb-select-all-{{if .Top}}1{{else}}2{{end}}"><span class="screen-reader-text">Select All</span></label></td>
+		<th scope="col"{{if .Top}} id="title"{{end}} class="manage-column column-title column-primary">Title</th>
+		<th scope="col"{{if .Top}} id="template_type"{{end}} class="manage-column column-template_type">Type</th>
+		<th scope="col"{{if .Top}} id="conditions"{{end}} class="manage-column column-conditions">Display Conditions</th>
+		<th scope="col"{{if .Top}} id="priority"{{end}} class="manage-column column-priority num">Priority</th>
+		<th scope="col"{{if .Top}} id="author"{{end}} class="manage-column column-author">Author</th>
+		<th scope="col"{{if .Top}} id="date"{{end}} class="manage-column column-date">Date</th>
+	</tr>{{end}}
+
+{{define "wb-templates-row"}}<tr id="post-{{.ID}}" class="{{.Classes}}" data-id="{{.ID}}" data-type="{{.Type}}" data-title="{{.Title}}" data-priority="{{.Priority}}" data-conditions="{{.ConditionsJSON}}" data-labels="{{.LabelsJSON}}">
+		<th scope="row" class="check-column"><input id="cb-select-{{.ID}}" type="checkbox" name="post[]" value="{{.ID}}" /><label for="cb-select-{{.ID}}"><span class="screen-reader-text">Select {{.Title}}</span></label></th>
+		<td class="title column-title has-row-actions column-primary page-title" data-colname="Title">
+			<strong>{{if not .IsTrash}}<a translate="no" class="row-title" href="{{.EditURL}}" aria-label="&#8220;{{.Title}}&#8221; (Edit with Pursae Web Builder)">{{.Title}}</a>{{else}}<span translate="no">{{.Title}}</span>{{end}}{{if and .Disabled (not .IsTrash)}} &mdash; <span class="post-state">Disabled</span>{{end}}</strong>
+			<div class="row-actions">{{if .IsTrash}}<span class="untrash"><a href="{{.RestoreURL}}" aria-label="Restore &#8220;{{.Title}}&#8221; from the Trash">Restore</a>{{if .CanDelete}} | {{end}}</span>{{if .CanDelete}}<span class="delete"><a href="{{.DeleteURL}}" class="submitdelete web-builder-confirm" data-confirm="You are about to permanently delete this template. This cannot be undone." aria-label="Delete &#8220;{{.Title}}&#8221; permanently">Delete Permanently</a></span>{{end}}{{else}}<span class="edit_with_web_builder"><a href="{{.EditURL}}" aria-label="Edit &#8220;{{.Title}}&#8221; with Pursae Web Builder">Edit with Pursae Web Builder</a> | </span><span class="conditions hide-if-no-js"><button type="button" class="button-link web-builder-edit-conditions" aria-haspopup="dialog" aria-label="Edit the display conditions of &#8220;{{.Title}}&#8221;">Edit Conditions</button> | </span>{{if .PreviewURL}}<span class="view"><a href="{{.PreviewURL}}" target="_blank" rel="noopener" aria-label="Preview &#8220;{{.Title}}&#8221; (opens in a new tab)">Preview</a> | </span>{{end}}<span class="duplicate"><a href="{{.DuplicateURL}}" aria-label="Duplicate &#8220;{{.Title}}&#8221;">Duplicate</a> | </span><span class="toggle {{if .Disabled}}enable{{else}}disable{{end}}"><a href="{{.ToggleURL}}" aria-label="{{.ToggleLabel}} &#8220;{{.Title}}&#8221;">{{.ToggleLabel}}</a> | </span><span class="trash"><a href="{{.TrashURL}}" class="submitdelete" aria-label="Move &#8220;{{.Title}}&#8221; to the Trash">Trash</a></span>{{end}}</div>
+			<button type="button" class="toggle-row"><span class="screen-reader-text">Show more details</span></button>
+		</td>
+		<td class="template_type column-template_type" data-colname="Type">{{.TypeLabel}}</td>
+		<td class="conditions column-conditions" data-colname="Display Conditions">{{range .Conditions}}<span class="web-builder-condition{{if .Exclude}} is-exclude{{end}}">{{.Label}}</span> {{else}}<span class="description">Not shown anywhere</span>{{end}}</td>
+		<td class="priority column-priority num" data-colname="Priority">{{.Priority}}</td>
+		<td class="author column-author" data-colname="Author">{{if .Author}}{{.Author}}{{else}}<span aria-hidden="true">&#8212;</span>{{end}}</td>
+		<td class="date column-date" data-colname="Date">{{.DateLabel}}<br />{{.DateValue}}</td>
+	</tr>{{end}}

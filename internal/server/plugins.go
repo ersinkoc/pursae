@@ -341,7 +341,7 @@ func (s *Server) nativePluginRows() []pluginRow {
 			Description: "Full-page cache with tag-based purging, a crawler and page optimizations. Works behind nginx, OpenLiteSpeed, Apache or on its own.",
 			Author:      "Pursae", SettingsURL: "/wp-admin/admin?page=wpgo-cache"},
 		{Slug: webbuilder.PluginSlug, Name: "Pursae Web Builder", Version: Version, Native: true, Active: s.wbOn(),
-			Description: "Build pages visually from ready-made sections, then publish them as fast, static HTML that works with any theme. Choose which post types it edits under Settings &rsaquo; Web Builder.",
+			Description: "Build pages visually from ready-made sections, then publish them as fast, static HTML. Design the site&#8217;s header, footer and templates for posts, pages, archives, search results and 404 pages under Appearance &rsaquo; Theme Builder, shown by the bundled Hello Pursae theme. Choose which post types it edits under Settings &rsaquo; Web Builder.",
 			Author:      "Pursae"},
 		{Slug: msSlug, Name: "Pursae SMTP", Version: Version, Native: true, Active: s.mailSMTPOn(),
 			Description: "Make email delivery easy for Pursae. Connect with SMTP, SendLayer, Brevo, Mailgun, SendGrid, Amazon SES, Gmail, Outlook and more, with an email log, reports, failure alerts, backup connection and smart routing. A native clone of WP Mail SMTP.",
