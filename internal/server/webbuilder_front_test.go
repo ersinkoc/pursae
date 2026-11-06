@@ -408,6 +408,14 @@ func TestWebBuilderFrontPageCache(t *testing.T) {
 	if b1 != b2 {
 		t.Error("cached copy differs from the rendered page")
 	}
+	// The cache's theme-font preload is for pages that load the theme; the canvas has none.
+	if strings.Contains(b1, "/wp-content/themes/twentytwentyfive/fonts/") {
+		t.Error("canvas page got the theme's font preload")
+	}
+	// A theme page still gets it.
+	if sp := bodyOf(anonGet(t, base+"/sample-page/")); !strings.Contains(sp, `rel="preload" href="/wp-content/themes/twentytwentyfive/fonts/`) {
+		t.Errorf("theme page lost the font preload")
+	}
 	for _, r := range []*http.Response{first, second} {
 		if csp := r.Header.Get("Content-Security-Policy"); !strings.Contains(csp, "https://widgets.example.com") {
 			t.Errorf("CSP (%s) lacks the embed host: %s", r.Header.Get("X-WPGo-Cache"), csp)

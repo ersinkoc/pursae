@@ -185,6 +185,10 @@ type PreloadAsset struct {
 	As          string // "font", "style", "script", "image", ...
 	Type        string // optional MIME type, e.g. "font/woff2"
 	CrossOrigin bool   // adds crossorigin (required for fonts)
+	// IfDocContains, when set, injects the preload only into documents that contain this text
+	// (e.g. a theme's URI: its fonts are preloaded only on pages that load the theme, not on a
+	// Pursae Web Builder canvas page, which has no theme stylesheet).
+	IfDocContains string
 }
 
 func (o OptimizeConfig) enabled() bool {

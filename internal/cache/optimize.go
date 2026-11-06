@@ -424,7 +424,7 @@ func preloadLinks(assets []PreloadAsset, doc string) string {
 	var b strings.Builder
 	lcDoc := asciiLower(doc)
 	for _, a := range assets {
-		if a.Href == "" {
+		if a.Href == "" || (a.IfDocContains != "" && !strings.Contains(doc, a.IfDocContains)) {
 			continue
 		}
 		href := html.EscapeString(a.Href)

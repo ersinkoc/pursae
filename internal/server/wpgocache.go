@@ -74,7 +74,8 @@ func (s *Server) cacheConfig() cache.Config {
 		if t := s.activeTheme(); t != nil {
 			for _, f := range t.PreloadFonts {
 				cfg.Optimize.Preload = append(cfg.Optimize.Preload, cache.PreloadAsset{
-					Href: t.URI() + "/" + f, As: "font", Type: "font/woff2", CrossOrigin: true})
+					Href: t.URI() + "/" + f, As: "font", Type: "font/woff2", CrossOrigin: true,
+					IfDocContains: t.URI() + "/"}) // not on pages without the theme (builder canvas)
 			}
 		}
 	}
