@@ -94,7 +94,8 @@ func newServer(ctx context.Context, cfg config.Config, pool *pgxpool.Pool, sb *s
 			}
 		}
 	}
-	wbMoveLegacyUploads(cfg.UploadsDir) // Pursae Web Builder: uploads folder of before the Pursae rename
+	wbMoveLegacyUploads(cfg.UploadsDir)       // Pursae Web Builder: uploads folder of before the Pursae rename
+	wbRemoveOldBuilderUploads(cfg.UploadsDir) // the old builder's generated files (webbuilder_cleanup.go)
 	s := &Server{
 		cfg:      cfg,
 		store:    store.New(pool),
