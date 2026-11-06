@@ -699,7 +699,10 @@ func (api *restAPI) createAutosave(c *gin.Context, r *restRequest, typ string) {
 			restErr(c, http.StatusInternalServerError, "db_update_error", "Could not update post in the database.")
 			return
 		}
-		s.wbAfterPostSave(c, p) // Pursae Web Builder drift: this autosave writes posts.content
+		// Pursae Web Builder drift: this autosave writes posts.content. Only the drift check: the
+		// post stays a draft or pending, so no loop or template a visitor sees changes (purging
+		// wb-loop on every autosave would empty most of the page cache once a minute).
+		_, _ = s.wbDetectDrift(c, p.ID)
 		p, _ = s.store.GetPost(c, p.ID)
 		rv := revision{ID: p.ID, PostID: p.ID, AuthorID: u.ID, Title: p.Title, Excerpt: p.Excerpt, Content: p.Content, IsAutosave: true, CreatedAt: p.ModifiedAt}
 		out := s.restRevision(c, rv, p)

@@ -647,3 +647,34 @@ func TestWBThemeFrontStoreViews(t *testing.T) {
 		}
 	}
 }
+
+// A draft autosave changes nothing a loop shows: it does not purge the wb-loop pages; a publish does.
+func TestWBThemeFrontAutosaveKeepsLoopCache(t *testing.T) {
+	srv, base, c := wbtfStart(t)
+	admin := newWBRClient(t, c, base)
+	if !srv.settings.Bool("wpgo_cache_enabled") {
+		t.Skip("WPGo Cache is off by default")
+	}
+	wbtfTemplate(t, srv, webbuilder.TemplateFooter, "Loop footer", []string{"include/general"},
+		`<section>LOOP-FOOTER<div data-wb-loop="fl"><p data-wb-loop-item=""><span data-wb-slot="post.title"></span></p></div></section>`,
+		`{"sections":[{"id":"fl","kind":"loop","content":{"source":"query","perPage":"5","postType":"post"}}],"site":{}}`, "", nil)
+	draft := wbrPost(t, srv, "post", "Draft In Progress", "draft", 1)
+	anonGet(t, base+"/")
+	if r := anonGet(t, base+"/"); r.Header.Get("X-WPGo-Cache") != "hit" {
+		t.Fatalf("front page not cached: %q", r.Header.Get("X-WPGo-Cache"))
+	} else if !strings.Contains(bodyOf(r), "LOOP-FOOTER") {
+		t.Fatal("the loop footer does not render")
+	}
+	if code, v, _ := admin.do(http.MethodPost, "/wp/v2/posts/"+itoa64(draft.ID)+"/autosaves", map[string]any{"content": "<p>typing</p>"}, nil); code != http.StatusOK {
+		t.Fatalf("autosave: %d %v", code, v)
+	}
+	if r := anonGet(t, base+"/"); r.Header.Get("X-WPGo-Cache") != "hit" {
+		t.Errorf("a draft autosave purged the loop pages: %q", r.Header.Get("X-WPGo-Cache"))
+	}
+	if code, v, _ := admin.do(http.MethodPost, "/wp/v2/posts/"+itoa64(draft.ID), map[string]any{"status": "publish"}, nil); code != http.StatusOK {
+		t.Fatalf("publish: %d %v", code, v)
+	}
+	if r := anonGet(t, base+"/"); r.Header.Get("X-WPGo-Cache") == "hit" {
+		t.Error("publishing a post did not purge the loop pages")
+	}
+}
