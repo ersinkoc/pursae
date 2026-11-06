@@ -268,7 +268,7 @@ func (s *Server) listComments(sb *strings.Builder, list []*store.Comment, p *sto
 			cm.ID, strings.Join(classes, " "), cm.ID, s.avatarImg(context.Background(), cm.AuthorEmail, 42), author,
 			html.EscapeString(strings.TrimSuffix(s.commentLink(p, lb, cpage, 0, cm.ID), "#comment-"+itoa64(cm.ID))), cm.ID, t.Format(time.RFC3339), wp.FormatDate(t, s.settings.String("date_format")), wp.FormatDate(t, s.settings.String("time_format")))
 		if u.Can("moderate_comments", nil) {
-			fmt.Fprintf(sb, `<span class="edit-link"><a class="comment-edit-link" href="/wp-admin/comment?action=editcomment&amp;c=%d">Edit</a></span>`, cm.ID)
+			fmt.Fprintf(sb, ` <span class="edit-link"><a class="comment-edit-link" href="/wp-admin/comment?action=editcomment&amp;c=%d">Edit</a></span>`, cm.ID)
 		}
 		sb.WriteString("						</div><!-- .comment-metadata -->\n\n")
 		if cm.Status == "pending" {
