@@ -177,6 +177,7 @@ func (s *Server) cacheTags(c *gin.Context, q *siteQuery) {
 		c.Header(cache.HeaderTTL, strconv.Itoa(s.settings.Int("wpgo_cache_ttl_front")))
 	}
 	tags = append(tags, s.gooCacheTags(c, q)...) // Goocommerce: products and the shop (goo_front.go)
+	tags = append(tags, s.wbCacheTags(c, q)...)  // Pursae Web Builder pages (webbuilder_hooks.go)
 	c.Header(cache.HeaderTags, strings.Join(tags, ","))
 }
 

@@ -402,6 +402,27 @@ renders `posts.content` in the theme; the editor shows "Edited outside the build
 choices: publish with `reattach: true` (discard the outside edits) or leave the builder for this
 page.
 
+The check runs in `afterPostSave` (every admin, REST and Quick Edit save), the core autosave of a
+draft and the Wasm host's `UpdatePost`, whether or not the plugin is active. It hashes the
+**stored** `posts.content` and never clears the flag; only a publish does.
+
+### 6.4 Export, import and copies
+
+- **WXR export** adds three post meta rows to a post that has a doc: `_web_builder_doc` (DocState
+  JSON), `_web_builder_page` (PageSettings JSON) and, on a detached page, `_web_builder_detached =
+  "1"`, next to the ordinary `_web_builder = "1"` marker. The snapshot is not exported.
+- **WXR import** validates the doc like a publish (stripping html sections and custom CSS without
+  `unfiltered_html`), applies the attachment URL backfill to it and writes a docs row with
+  `renderer = 0`, an empty snapshot, `rev = 1` and `content_hash` of the imported `posts.content`.
+  The transport keys never stay in `posts.meta`; an invalid doc is reported in the import log and
+  the post stays an ordinary post (marker removed). Until Regenerate renders it, the front shows
+  the fallback (`renderer < RendererVersion` with no `html`).
+- **Pursae Multi Language** "Duplicate content" copies the doc and snapshot to the new translation
+  (form actions retargeted to it, `content_hash` of its content, detached when the source is);
+  custom-field synchronization never copies `_web_builder*` meta.
+- **WPGo Cache**: public builder pages carry the `web-builder` tag (`wbPurgePages`) besides
+  `post:<id>`.
+
 ## 7. Assets and build output
 
 | URL prefix | Served from | Rules |
