@@ -570,7 +570,7 @@ func (s *Server) asStripVersion(c *gin.Context, b []byte) []byte {
 
 // --- REST and enumeration --------------------------------------------------------------------
 
-var asRESTVisitorRoutes = []string{"/oembed/", "/" + gontactNamespace + "/"}
+var asRESTVisitorRoutes = []string{"/oembed/", "/" + gontactNamespace + "/", "/web-builder/v2/forms/"}
 
 // adminsecRESTBlocked answers REST requests visitors may not make: user listing (enumeration) and,
 // when opted in, everything but the routes the front end needs.

@@ -366,6 +366,8 @@ func (s *Server) routes() *gin.Engine {
 	s.rest = s.restRoutes()
 	s.registerGoWebEditorREST()
 	s.registerGontactREST()
+	// Pursae Web Builder: public web-builder/v2/forms (webbuilder_forms.go)
+	s.registerWebBuilderForms()
 	s.registerGolylangREST() // pll/v1 (golylang_rest.go)
 	s.registerSEOGoREST()    // SEO-Go: seogo/v1, yoast/v1/get_head, rankmath/v1/getHead (seogo_editor.go)
 	s.registerStudioREST()   // Golementor Studio: web-builder/v1/studio/preferences (gowebeditor_studio.go)
