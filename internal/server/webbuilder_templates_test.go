@@ -88,7 +88,7 @@ func TestWBTemplateCandidatesLanguage(t *testing.T) {
 		return webbuilder.TemplateCandidate{ID: id, Type: webbuilder.TemplateHeader, Conditions: webbuilder.ParseConditions([]string{"include/general"})}
 	}
 	idx := &wbTemplateIndex{
-		entries: []store.WBTemplateIndexEntry{{ID: 1}, {ID: 2}, {ID: 3}, {ID: 4}, {ID: 5}},
+		entries: []store.WBTemplateIndexEntry{{ID: 1, HasHTML: true}, {ID: 2, HasHTML: true}, {ID: 3, HasHTML: true}, {ID: 4, HasHTML: true}, {ID: 5, HasHTML: true}},
 		cands:   []webbuilder.TemplateCandidate{cand(1), cand(2), cand(3), cand(4), cand(5)},
 		// 1 (en) + 2 (fr) are one group, 3 (de) + 4 (fr) another; 5 has no language row.
 		lang:  map[int64]string{1: "en", 2: "fr", 3: "de", 4: "fr"},
@@ -110,6 +110,13 @@ func TestWBTemplateCandidatesLanguage(t *testing.T) {
 	if got := ids(idx.candidates("", "de")); got != "1,3,5" {
 		t.Errorf("no language, default de: %s", got)
 	}
+	// A request-language member without a snapshot (an import not rendered yet) does not hide
+	// its usable default-language sibling, and never competes itself.
+	idx.entries[1].HasHTML = false
+	if got := ids(idx.candidates("fr", "en")); got != "1,4,5" {
+		t.Errorf("fr with an unrendered fr member: %s", got)
+	}
+	idx.entries[1].HasHTML = true
 	if idx.translation(1, "fr") != 2 || idx.translation(2, "en") != 1 || idx.translation(3, "en") != 3 || idx.translation(5, "fr") != 5 {
 		t.Error("translation mapping")
 	}
@@ -572,13 +579,15 @@ func TestWBTemplateForms(t *testing.T) {
 	}
 	c, _ := wbtCtx(srv, nil, "/")
 	p, _ := srv.store.GetPost(context.Background(), id)
-	c.Request.Host = "example.test"
-	c.Request.Header.Set("Referer", "http://example.test/about/?x=1")
-	if got := srv.wbFormPageURL(c, p); got != "http://example.test/about/?x=1" {
+	home := srv.links(c).HomeURL("/")
+	origin := strings.TrimSuffix(home, "/")
+	c.Request.Header.Set("Referer", origin+"/about/?x=1")
+	if got := srv.wbFormPageURL(c, p); got != origin+"/about/?x=1" {
 		t.Errorf("same-origin referer: %s", got)
 	}
-	home := srv.links(c).HomeURL("/")
-	for _, ref := range []string{"https://evil.test/x", "javascript:alert(1)", "", "http://user@example.test/x", "//evil.test/"} {
+	// The request's Host header proves nothing: only the home URL's host counts.
+	c.Request.Host = "example.test"
+	for _, ref := range []string{"http://example.test/about/", "https://evil.test/x", "javascript:alert(1)", "", "http://user@example.test/x", "//evil.test/"} {
 		c.Request.Header.Set("Referer", ref)
 		if got := srv.wbFormPageURL(c, p); got != home {
 			t.Errorf("referer %q: %s", ref, got)
@@ -706,5 +715,27 @@ func TestWBTemplateGolylang(t *testing.T) {
 	}
 	if got.Type != webbuilder.TemplateFooter || strings.Join(got.Conditions, ",") != "include/general,exclude/404" || got.Priority != 9 {
 		t.Errorf("translation template meta: %+v", got)
+	}
+}
+
+// A failed index build renders the theme defaults but marks the response uncacheable, so the
+// degraded page does not outlive the error in WPGo Cache.
+func TestWBTemplateIndexErrorNotCached(t *testing.T) {
+	srv, _, _ := wbrStart(t)
+	post := wbrPost(t, srv, "post", "Err Post", "publish", 1)
+	wbtTemplate(t, srv, webbuilder.TemplateHeader, "General header", []string{"include/general"}, 0, "")
+	srv.wbTemplatesChanged(context.Background()) // the next pick rebuilds the index
+	c, _ := wbtCtx(srv, nil, "/")
+	cctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	c.Request = c.Request.WithContext(cctx)
+	if _, id := srv.wbPickTemplate(c, webbuilder.LocationHeader, &siteQuery{Kind: "single", Post: post}); id != 0 {
+		t.Fatalf("picked %d with a failed index", id)
+	}
+	if got := c.Writer.Header().Get(cache.HeaderControl); got != "no-store" {
+		t.Errorf("%s = %q after a failed index build", cache.HeaderControl, got)
+	}
+	if id := wbtPick(srv, webbuilder.LocationHeader, &siteQuery{Kind: "single", Post: post}); id == 0 {
+		t.Error("the index did not recover")
 	}
 }

@@ -66,6 +66,8 @@ type wbTemplateIndex struct {
 
 	docMu sync.Mutex
 	docs  map[int64]*store.WebBuilderDoc // published docs of winners, loaded on demand (nil = none)
+
+	failed bool // the build failed: an empty stand-in, not cached, whose responses are not cached either
 }
 
 // wbTemplatesChanged is called whenever the set of active templates or their rules may have
@@ -95,7 +97,7 @@ func (s *Server) wbTemplateIndex(ctx context.Context) *wbTemplateIndex {
 	idx, err := s.wbBuildTemplateIndex(ctx)
 	if err != nil {
 		log.Printf("web builder: template index: %v", err)
-		return &wbTemplateIndex{docs: map[int64]*store.WebBuilderDoc{}}
+		return &wbTemplateIndex{docs: map[int64]*store.WebBuilderDoc{}, failed: true}
 	}
 	idx.gen, idx.built = gen, time.Now()
 	st.idx.Store(idx)
@@ -141,13 +143,11 @@ func (s *Server) wbBuildTemplateIndex(ctx context.Context) (*wbTemplateIndex, er
 	return idx, nil
 }
 
-// candidates are the index's candidates for one request language: of each translation group only
-// one member competes — the one in lang, else the one in the default language, else the oldest.
-// Templates without a group always compete.
+// candidates are the index's candidates for one request language. A template without a snapshot
+// (an import not rendered yet) never renders, so it never competes and does not hide the next best
+// one. Of each translation group only one usable member competes — the one in lang, else the one
+// in the default language, else the oldest. Templates without a group always compete.
 func (idx *wbTemplateIndex) candidates(lang, def string) []webbuilder.TemplateCandidate {
-	if len(idx.group) == 0 {
-		return idx.cands
-	}
 	rank := func(id int64) int {
 		l := idx.lang[id]
 		switch {
@@ -158,10 +158,11 @@ func (idx *wbTemplateIndex) candidates(lang, def string) []webbuilder.TemplateCa
 		}
 		return 0
 	}
+	usable := func(i int) bool { return i < len(idx.entries) && idx.entries[i].HasHTML }
 	best := map[int64]int64{} // group → representative id
-	for _, c := range idx.cands {
+	for i, c := range idx.cands {
 		g, ok := idx.group[c.ID]
-		if !ok {
+		if !ok || !usable(i) {
 			continue
 		}
 		cur, seen := best[g]
@@ -170,7 +171,10 @@ func (idx *wbTemplateIndex) candidates(lang, def string) []webbuilder.TemplateCa
 		}
 	}
 	out := make([]webbuilder.TemplateCandidate, 0, len(idx.cands))
-	for _, c := range idx.cands {
+	for i, c := range idx.cands {
+		if !usable(i) {
+			continue
+		}
 		if g, ok := idx.group[c.ID]; ok && best[g] != c.ID {
 			continue
 		}
@@ -241,6 +245,12 @@ func (s *Server) wbPickTemplate(c *gin.Context, location string, q *siteQuery) (
 	}
 	ctx := c.Request.Context()
 	idx := s.wbTemplateIndex(ctx)
+	if idx.failed {
+		// The parts of this response are a fallback for a passing error: never cache it, or it
+		// would outlive the error (the index generation does not change, so nothing purges it).
+		c.Header(cache.HeaderControl, "no-store")
+		return nil, 0
+	}
 	if len(idx.cands) == 0 {
 		return nil, 0
 	}
@@ -254,15 +264,7 @@ func (s *Server) wbPickTemplate(c *gin.Context, location string, q *siteQuery) (
 		}
 	}
 	facts := s.wbQueryFacts(c, q, idx.needTerms)
-	cands := idx.candidates(lang, def)
-	// A template without a snapshot (an import not rendered yet) never renders, so it does not
-	// hide the next best one.
-	usable := make([]webbuilder.TemplateCandidate, 0, len(cands))
-	for _, cd := range cands {
-		if e := idx.entry(cd.ID); e != nil && e.HasHTML {
-			usable = append(usable, cd)
-		}
-	}
+	usable := idx.candidates(lang, def)
 	i := webbuilder.PickTemplate(location, usable, facts)
 	if i < 0 {
 		return nil, 0
