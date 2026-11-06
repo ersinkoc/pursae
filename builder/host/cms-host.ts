@@ -23,7 +23,7 @@ import { API_VERSION, ERR, LIMITS, PREF_KEY_PATTERN, routes, type AutosaveRespon
 import { publishDocument, loadLiveRenderer, type RendererLoader } from './publish'
 import { createRest, isRestError, uploadMedia, type FetchLike, type RestClient } from './rest'
 import { DynStore } from './dynamic'
-import { TemplateController, readTemplate } from './template'
+import { TemplateController, readTemplate, templateLive } from './template'
 
 /** Autosave debounce and minimum gap between two autosave requests (contract AutosaveMinMillis). */
 export const AUTOSAVE_MIN_MS = LIMITS.autosaveMinMillis
@@ -657,6 +657,9 @@ export function createCmsHost(boot: Boot, deps: CmsHostDeps = {}): CmsHost {
   const dyn = new DynStore(rest, boot)
   const template = readTemplate(boot)
   const templates = template ? new TemplateController(rest, dyn, boot, template) : null
+  // What the editor sees of the template: live tells it whether Publish is needed although a
+  // stored doc or a restored draft is loaded (a duplicate, a disabled or never published template).
+  const templateBoot = template ? { ...template, live: templateLive(boot) } : null
 
   const media = {
     async upload(file: File, kind: MediaKind): Promise<MediaAsset> {
@@ -751,7 +754,7 @@ export function createCmsHost(boot: Boot, deps: CmsHostDeps = {}): CmsHost {
     locale: boot.locale || 'en_US',
     dynamic: dyn.get,
     onDynamic: (cb) => dyn.subscribe(cb),
-    template: () => template,
+    template: () => templateBoot,
     themeParts: !template && !!boot.site?.themeParts,
     beforePublish: templates ? () => templates.beforePublish() : undefined,
     async start() {

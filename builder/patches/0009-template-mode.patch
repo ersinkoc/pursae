@@ -65,7 +65,7 @@ index 8515235..f44f4b7 100644
      </div>
    )
 diff --git a/src/builder/Builder.tsx b/src/builder/Builder.tsx
-index 3846900..3d5763e 100644
+index 3846900..d556acb 100644
 --- a/src/builder/Builder.tsx
 +++ b/src/builder/Builder.tsx
 @@ -14,10 +14,11 @@ import { ContextMenu } from './ContextMenu'
@@ -107,17 +107,18 @@ index 3846900..3d5763e 100644
    const doc = history.entries[history.cursor].doc
  
    const [mode, setModeRaw] = useState<Mode>('basic')
-@@ -51,7 +64,8 @@ export default function Builder() {
+@@ -51,7 +64,9 @@ export default function Builder() {
    const [toasts, setToasts] = useState<Toast[]>([])
    const [structureOpen, setStructureOpen] = useState(true)
    const [publishState, setPublishState] = useState<'idle' | 'busy'>('idle')
 -  const [publishedRev, setPublishedRev] = useState(0)
-+  // A template that starts from its starter has never been published: it can be published as is.
-+  const [publishedRev, setPublishedRev] = useState(() => (template && !loaded ? -1 : 0))
++  // A template that is not live (never published, or disabled) can be published as is, even when
++  // a stored doc or a restored draft was loaded.
++  const [publishedRev, setPublishedRev] = useState(() => (template && (!loaded || template.live === false) ? -1 : 0))
    const canvasArea = useRef<HTMLDivElement>(null)
    const [clipboard, setClipboard] = useState<Section | null>(null)
    const [styleClipboard, setStyleClipboard] = useState<ElStyle | null>(null)
-@@ -59,7 +73,11 @@ export default function Builder() {
+@@ -59,7 +74,11 @@ export default function Builder() {
    const [menu, setMenu] = useState<MenuState | null>(null)
    const [paletteOpen, setPaletteOpen] = useState(false)
    const [dialog, setDialog] = useState<BuilderExtras['dialog']>(null)
@@ -130,7 +131,7 @@ index 3846900..3d5763e 100644
    const initialPage = useRef(page)
    const [saveState, setSaveState] = useState<'saved' | 'saving'>('saved')
    const [flags, setFlags] = useState<Pick<Milestones, 'section' | 'publish' | 'dismissed'>>(() => host.storage.get('flags', { section: false, publish: false, dismissed: false }))
-@@ -139,9 +157,13 @@ export default function Builder() {
+@@ -139,9 +158,13 @@ export default function Builder() {
      publishing.current = true
      setPublishState('busy')
      const rev = history.rev
@@ -147,7 +148,7 @@ index 3846900..3d5763e 100644
          setPublishedRev(rev)
          setFlags((f) => ({ ...f, publish: true }))
          notify(r?.message || t('Page published'))
-@@ -226,7 +248,7 @@ export default function Builder() {
+@@ -226,7 +249,7 @@ export default function Builder() {
    const removeSaved = useCallback((id: string) => setSaved((l) => l.filter((x) => x.id !== id)), [])
    const scrollTo = useCallback((id: string) => setScrollReq({ id, n: Date.now() }), [])
    const resetPage = useCallback(() => {
@@ -489,10 +490,10 @@ index 3a27bc4..6befbd0 100644
 +  return { site: { ...initialDoc.site }, sections: starterSections(id, type) }
 +}
 diff --git a/src/builder/dynamic/types.ts b/src/builder/dynamic/types.ts
-index 9a36c12..e5a773d 100644
+index 9a36c12..2dab580 100644
 --- a/src/builder/dynamic/types.ts
 +++ b/src/builder/dynamic/types.ts
-@@ -61,3 +61,30 @@ export interface DynContext {
+@@ -61,3 +61,35 @@ export interface DynContext {
    posts: DynPost[]
    pagination: { current: number; total: number }
  }
@@ -522,6 +523,11 @@ index 9a36c12..e5a773d 100644
 +  preview: TemplatePreview
 +  /** Appearance › Theme Builder */
 +  manageUrl: string
++  /**
++   * The template renders on the site (published and enabled). false: Publish stays available
++   * when the editor opens, whatever doc was loaded. Absent: treated as live.
++   */
++  live?: boolean
 +}
 diff --git a/src/builder/host.ts b/src/builder/host.ts
 index 37c35f1..7bb8f6b 100644

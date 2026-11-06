@@ -63,6 +63,11 @@ export function readTemplate(boot: Pick<Boot, 'template'>): TemplateBoot | null 
   return tpl
 }
 
+/** The template renders on the site: published (enabled) with a stored doc. */
+export function templateLive(boot: Pick<Boot, 'document'>): boolean {
+  return boot.document.status === 'publish' && boot.document.rev > 0
+}
+
 export class TemplateController {
   readonly boot: TemplateBoot
   readonly postId: number
@@ -83,7 +88,7 @@ export class TemplateController {
       conditions: Array.isArray(tpl.conditions) ? tpl.conditions.filter((x) => typeof x === 'string') : [],
       priority: clampPriority(Number(tpl.priority) || 0),
       preview: tpl.preview,
-      published: boot.document.status === 'publish' && boot.document.rev > 0,
+      published: templateLive(boot),
       dialog: null,
       picker: false,
       conflicts: null,

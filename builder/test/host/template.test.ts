@@ -254,7 +254,7 @@ describe('cms-host in template mode', () => {
   it('exposes template, dynamic data and no themeParts for the template itself', () => {
     const boot = makeTemplateBoot()
     const host = createCmsHost(boot, { fetch: mockFetch({}).fetch, local: null })
-    expect(host.template?.()).toBe(boot.template)
+    expect(host.template?.()).toEqual({ ...boot.template, live: false })
     expect(host.template?.()).toBe(host.template?.())
     expect(host.themeParts).toBe(false)
     expect(host.dynamic?.()).toBe(boot.dynamic)
@@ -265,6 +265,14 @@ describe('cms-host in template mode', () => {
     host.dyn.set(makeDyn('home'))
     off()
     expect(seen).toEqual(['home'])
+  })
+
+  it('reports whether the template is live, so a stored but unpublished doc can be published', () => {
+    // A duplicate or a disabled template has a doc (rev > 0) but is a draft: not live.
+    const dup = createCmsHost(makeTemplateBoot({}, { status: 'draft', rev: 3, doc: makeDoc() }), { fetch: mockFetch({}).fetch, local: null })
+    expect(dup.template?.()?.live).toBe(false)
+    const live = createCmsHost(makeTemplateBoot({}, { status: 'publish', rev: 3, doc: makeDoc() }), { fetch: mockFetch({}).fetch, local: null })
+    expect(live.template?.()?.live).toBe(true)
   })
 
   it('ordinary pages: no template, themeParts from the boot site, boot dynamic', () => {
