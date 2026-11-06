@@ -18,6 +18,7 @@ import (
 // the server is the theme: Hello Web Builder, a theme saved with the old builder and the old
 // builder's design packages render through code that no longer exists, so a site on one of them
 // moves to the theme it had before (golementor_previous_theme) or, failing that, the default theme.
+// So does a site whose active theme is not installed at all.
 // An admin notice on the Dashboard and the Themes screen says what happened until it is dismissed.
 
 const (
@@ -47,7 +48,9 @@ func (s *Server) wbUpgrade(ctx context.Context) {
 	// The old builder was in use when its plugin was on or it once moved the site to its theme.
 	used := s.settings.Bool(webbuilder.PluginOption) || s.settings.String(wbPrevThemeOption) != ""
 	switched := ""
-	if cur := s.settings.String("stylesheet"); s.wbOldBuilderTheme(ctx, cur) {
+	// A theme whose files are gone (an old builder theme or one nothing knows about) cannot render
+	// either: it moves too, or the fallback would never run once the upgrade is marked done.
+	if cur := s.settings.String("stylesheet"); s.wbOldBuilderTheme(ctx, cur) || (cur != "" && s.installedTheme(cur) == nil) {
 		target := s.wbUpgradeTarget(ctx)
 		_ = s.restoreTheme(ctx, target) // the default theme comes back even after a delete
 		if err := s.switchTheme(ctx, target); err != nil {

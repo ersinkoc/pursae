@@ -161,6 +161,19 @@ func TestWebBuilderUpgrade(t *testing.T) {
 		t.Errorf("design package: now %s, want wbu-previous", got)
 	}
 
+	// An active theme that is not installed at all (its files are gone) moves to the default theme
+	// with the notice, instead of staying active with the upgrade marked done.
+	for _, missing := range []string{"wbu-missing-theme", "hello-web-builder"} {
+		wbuReset(t, srv, map[string]any{"stylesheet": missing, "template": missing, wbPrevThemeOption: "", webbuilder.PluginOption: false})
+		srv.wbUpgrade(ctx)
+		if got := srv.settings.String("stylesheet"); got != defaultTheme || !srv.settings.Bool(wbUpgradedOption) {
+			t.Errorf("missing theme %s: now %s, want %s", missing, got, defaultTheme)
+		}
+		if m, _ := srv.settings.Get(wbUpgradeNoticeOption).(map[string]any); m == nil || m["theme"] != "Twenty Twenty-Five" {
+			t.Errorf("missing theme %s: notice %v", missing, srv.settings.Get(wbUpgradeNoticeOption))
+		}
+	}
+
 	// An ordinary theme is left alone, and a site that had the plugin on still gets the notice.
 	wbuReset(t, srv, map[string]any{"stylesheet": "wbu-previous", "template": "wbu-previous", webbuilder.PluginOption: true})
 	srv.wbUpgrade(ctx)
