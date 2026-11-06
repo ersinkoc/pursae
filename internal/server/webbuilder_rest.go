@@ -1089,6 +1089,8 @@ func wbParseCSS2Family(v string) (wbFontRequest, bool) {
 					if err2 != nil {
 						continue
 					}
+					// Only 100..900 can name a weight: clamp first so a huge bound cannot spin the loop.
+					a, b = max(a, 100), min(b, 900)
 					for x := (a + 99) / 100 * 100; x <= b; x += 100 {
 						addW(italic, x)
 					}

@@ -36,6 +36,9 @@ func TestWebBuilderCSS2FamilyParse(t *testing.T) {
 		{"Inter:ital,wght@0,400;1,700", true, "Inter", []int{400}, []int{700}},
 		{"Inter:wght@450;1000;50", true, "Inter", []int{400}, nil}, // snapped / out of range ignored → default
 		{"Inter:wght@100..300", true, "Inter", []int{100, 200, 300}, nil},
+		// Huge bounds are clamped to 100..900 (an unclamped MaxInt64 bound overflowed and looped forever).
+		{"Inter:wght@100..9223372036854775807", true, "Inter", []int{100, 200, 300, 400, 500, 600, 700, 800, 900}, nil},
+		{"Inter:wght@-9223372036854775808..200", true, "Inter", []int{100, 200}, nil},
 		{"Space Grotesk:wght@900", true, "Space Grotesk", []int{700}, nil}, // snapped to the shipped weights
 		{"Not A Font:wght@400", false, "", nil, nil},
 		{"../../etc/passwd", false, "", nil, nil},
