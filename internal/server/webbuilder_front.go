@@ -123,6 +123,14 @@ func (s *Server) wbContent(ctx context.Context, c *gin.Context, p *store.Post, s
 	if fp == nil {
 		return "", false
 	}
+	if s.wbTemplatePreviewing(c) {
+		// A main template forced by ?wb_template_preview wins over the page's own doc (wbThemeParts)
+		// and shows this content in its post.content slot: the unfilled snapshot without its CSS
+		// would render broken there, so the template gets the page's plain content instead.
+		if _, _, ok := s.wbTemplatePreview(c, webbuilder.LocationMain); ok {
+			return "", false
+		}
+	}
 	return s.wbBody(ctx, fp), true
 }
 

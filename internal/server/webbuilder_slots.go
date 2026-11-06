@@ -661,7 +661,6 @@ func (sp *wbSlotPost) contentOf(e *wbSlotEnv) string {
 	return *sp.content
 }
 
-// termsOf is the post's terms of a taxonomy (loop items arrive with theirs batched).
 // publicTaxonomy reports whether the terms of tax may be shown to visitors: the built-in
 // public taxonomies, Pursae Commerce's product categories and tags, and public Pursae Custom
 // Fields taxonomies.
@@ -689,6 +688,7 @@ func (e *wbSlotEnv) publicTaxonomy(tax string) bool {
 	return pub
 }
 
+// termsOf is the post's terms of a taxonomy (loop items arrive with theirs batched).
 func (sp *wbSlotPost) termsOf(e *wbSlotEnv, tax string) []*store.Term {
 	if sp.terms == nil {
 		sp.terms = map[string][]*store.Term{}

@@ -454,6 +454,16 @@ func TestWBThemeFrontRender(t *testing.T) {
 	_, body = wbtfGet(t, pv)
 	wbtfWant(t, "visitor preview", body, "OWN-MARK")
 	wbtfBad(t, "visitor preview", body, "DRAFT-PAGE-MARK")
+	// A forced main template's post.content on a builder page is the page's plain content, not
+	// its unfilled snapshot.
+	draftC := wbtfTemplate(t, srv, webbuilder.TemplateSinglePage, "Draft content layout", nil, `<section>DRAFT-CONTENT-MARK<div data-wb-slot="post.content"></div></section>`, "", "", nil)
+	if _, err := srv.store.Pool.Exec(ctx, `UPDATE posts SET status = 'draft' WHERE id = $1`, draftC.ID); err != nil {
+		t.Fatal(err)
+	}
+	srv.wbTemplatesChanged(ctx)
+	_, abody, _ = get(t, admin, base+"/landing-own/?"+webbuilder.PreviewQuery+"="+itoa64(draftC.ID))
+	wbtfWant(t, "content preview", abody, "DRAFT-CONTENT-MARK", "Fallback of Landing Own")
+	wbtfBad(t, "content preview", abody, "OWN-MARK")
 	// A header template previewed on a canvas page shows (the page otherwise has no header).
 	draftHdr := wbtfTemplate(t, srv, webbuilder.TemplateHeader, "Draft header", nil, "<section>DRAFT-HEADER-MARK</section>", "", "", nil)
 	if _, err := srv.store.Pool.Exec(ctx, `UPDATE posts SET status = 'draft' WHERE id = $1`, draftHdr.ID); err != nil {
