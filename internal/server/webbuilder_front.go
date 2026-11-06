@@ -196,7 +196,17 @@ func (s *Server) wbCanvas(c *gin.Context, v *siteView, fp *wbFrontPage, body str
 		sb.WriteString(html.EscapeString(s.__(c, "This preview shows the last published version of the page. Publish your changes in Pursae Web Builder to see them here.")))
 		sb.WriteString("</div>\n")
 	}
+	// The main landmark: the snapshot is one div.wb-page of sections, and wb.css only uses
+	// descendant selectors under .wb-page, so a wrapper changes no styling. A snapshot that brings
+	// its own main (an HTML section) keeps it as the only one.
+	ownMain := wbHasMainLandmark(body)
+	if !ownMain {
+		sb.WriteString(`<main id="wb-main">`)
+	}
 	sb.WriteString(body)
+	if !ownMain {
+		sb.WriteString("</main>")
+	}
 	sb.WriteString("\n")
 	if runtime {
 		fmt.Fprintf(&sb, "<script defer src=\"%s\" id=\"web-builder-runtime-js\"></script>\n",
@@ -208,6 +218,12 @@ func (s *Server) wbCanvas(c *gin.Context, v *siteView, fp *wbFrontPage, body str
 	wbEmbedCSP(c, body)
 	return sb.String()
 }
+
+// wbMainRe finds a main element or role="main" in a snapshot.
+var wbMainRe = regexp.MustCompile(`(?i)<main[\s>]|\srole\s*=\s*["']?main\b`)
+
+// wbHasMainLandmark reports whether the snapshot already has a main landmark.
+func wbHasMainLandmark(body string) bool { return wbMainRe.MatchString(body) }
 
 // --- site assets -------------------------------------------------------------------------------
 

@@ -604,6 +604,7 @@ No React for visitors. A builder page is a canvas document: `<!doctype html>`, `
 non-theme head (SEO, analytics, cookie, plugin heads), page CSS (inline ≤ 24 KiB or file), local
 `@font-face` with a preload of the first face, the base CSS, the `.wb-js` inline script when
 `features` is not empty, the body-open hooks, the stored snapshot (images through
-`filterContentTags`), `<script defer src="…/site/runtime.<hash>.js">` when `features` is not
+`filterContentTags`) inside `<main id="wb-main">` (left out when the snapshot has its own main
+landmark), `<script defer src="…/site/runtime.<hash>.js">` when `features` is not
 empty, the admin bar and the footer hooks. Plugin off or detached → the theme renders
 `posts.content`.

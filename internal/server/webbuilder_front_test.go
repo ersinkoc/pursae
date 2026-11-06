@@ -249,6 +249,12 @@ func TestWebBuilderFrontCanvas(t *testing.T) {
 	if strings.Count(body, "<html") != 1 || strings.Count(body, "</body>") != 1 || strings.Count(body, "data-wb-root") != 1 {
 		t.Error("not exactly one document / one snapshot root")
 	}
+	// One main landmark, wrapping the snapshot root and nothing else (the toolbar and footer
+	// scripts stay outside).
+	if strings.Count(body, "<main") != 1 || !regexp.MustCompile(`<main id="wb-main"><div class="wb-page[^"]*" data-wb-root`).MatchString(body) ||
+		!regexp.MustCompile(`(?s)</div></main>\s.*</body>`).MatchString(body) || strings.Index(body, "</main>") > strings.Index(body, "web-builder-runtime-js") {
+		t.Error("the snapshot is not wrapped in one <main> landmark")
+	}
 	// The class script comes before the stylesheets, so .wb-js rules apply on first paint.
 	if strings.Index(body, "classList.add('wb-js')") > strings.Index(body, "web-builder-css") {
 		t.Error("wb-js script after the base CSS")
@@ -424,5 +430,20 @@ func TestWebBuilderFrontPageCache(t *testing.T) {
 	// Tagged like any post, so a publish purge reaches it.
 	if tags := first.Header.Get("X-WPGo-Cache-Tags"); tags != "" && !strings.Contains(tags, "post:"+itoa64(p.ID)) {
 		t.Errorf("cache tags %q", tags)
+	}
+}
+
+func TestWebBuilderFrontMainLandmark(t *testing.T) {
+	for in, want := range map[string]bool{
+		`<div class="wb-page" data-wb-root><section class="sf"></section></div>`: false,
+		`<div class="wb-page" data-wb-root><main>x</main></div>`:                 true,
+		`<div class="wb-page" data-wb-root><MAIN class="a">x</MAIN></div>`:       true,
+		`<div class="wb-page" data-wb-root><div role="main">x</div></div>`:       true,
+		`<div class="wb-page" data-wb-root><p>maintain the main road</p></div>`:  false,
+		`<div class="wb-page" data-wb-root><mainx></mainx></div>`:                false,
+	} {
+		if got := wbHasMainLandmark(in); got != want {
+			t.Errorf("wbHasMainLandmark(%q) = %v, want %v", in, got, want)
+		}
 	}
 }
