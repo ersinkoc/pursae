@@ -1620,6 +1620,9 @@ func (s *Server) postEdit(c *gin.Context) {
 		return
 	}
 	switch action := c.Query("action"); {
+	case action == wbEditAction && s.wbOn(): // Pursae Web Builder, the new editor (webbuilder_editor.go)
+		s.wbEditor(c, p)
+		return
 	case action == gweEditAction && s.golementorOn(): // Golementor
 		s.gweEditor(c, p)
 		return
