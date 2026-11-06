@@ -58,7 +58,7 @@ func (s *Server) gooStoreThemes(c *gin.Context) []gooStoreTheme {
 			st.Active = active != nil && active.Slug == m.Slug
 			st.Imported = s.demoImported(m.Slug)
 			if st.Active {
-				st.CustomizeURL = "/wp-admin/customize"
+				st.CustomizeURL = s.customizeURL()
 			}
 		}
 		out = append(out, st)

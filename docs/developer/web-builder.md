@@ -66,6 +66,17 @@ the page to the other editor.
 The editor UI is English; Turkish is included, picked from the user's language. Other languages
 follow later.
 
+### Site settings
+
+While the builder is on, the Customizer is hidden (Appearance menu, toolbar, Dashboard panel;
+`/wp-admin/customize` and every "Customize" button lead to Web Builder › Theme Builder). Its
+settings are managed in the editor: open the **Pursae Web Builder** menu in the top bar and choose
+**Site settings**. The dialog edits the site title and tagline, the logo (when the theme supports
+one), the site icon, what the homepage shows (latest posts or a static page and the posts page) and
+Additional CSS. Values are validated and stored exactly like the Customizer does, so switching the
+builder off shows the same settings there. Needs `edit_theme_options`. Menus and widgets are still
+managed under Appearance. REST: [contract §3.6](web-builder-contract.md).
+
 ### Theme Builder
 
 **Web Builder › Theme Builder** (`edit_theme_options`) lists the site's templates: Header, Footer,

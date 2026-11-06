@@ -324,6 +324,12 @@ func customizeReturn(c *gin.Context) string {
 // customizeScreen renders /wp-admin/customize.
 func (s *Server) customizeScreen(c *gin.Context) {
 	u := currentUser(c)
+	if s.wbOn() && c.Query("theme") == "" && u.Can("edit_theme_options", nil) {
+		// While the Pursae Web Builder is active it manages the site settings (Site settings in the
+		// builder menu): open its Theme Builder instead.
+		c.Redirect(http.StatusFound, s.customizeURL())
+		return
+	}
 	if !u.Can("edit_theme_options", nil) {
 		c.String(http.StatusForbidden, "Sorry, you are not allowed to customize this site.")
 		return

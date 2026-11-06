@@ -4,6 +4,30 @@
  * in upstream's catalog. test/host/i18n-host.test.ts keeps it complete.
  */
 const tr: Record<string, string> = {
+  "Site settings": "Site ayarları", // i18n-ignore
+  "Site identity": "Site kimliği", // i18n-ignore
+  "Site title": "Site başlığı", // i18n-ignore
+  "Tagline": "Slogan", // i18n-ignore
+  "In a few words, explain what this site is about.": "Bu sitenin ne hakkında olduğunu birkaç sözcükle anlatın.", // i18n-ignore
+  "Logo": "Logo", // i18n-ignore
+  "Shown by the header of your theme.": "Temanızın üst bölümünde gösterilir.", // i18n-ignore
+  "Site icon": "Site simgesi", // i18n-ignore
+  "The icon in browser tabs and bookmarks. It should be square, at least 512 × 512 pixels.": "Tarayıcı sekmelerinde ve yer imlerinde görünen simge. Kare olmalı ve en az 512 × 512 piksel olmalıdır.", // i18n-ignore
+  "Change": "Değiştir", // i18n-ignore
+  "Select": "Seç", // i18n-ignore
+  "Remove": "Kaldır", // i18n-ignore
+  "Homepage": "Ana sayfa", // i18n-ignore
+  "Your homepage displays": "Ana sayfanız şunu gösterir", // i18n-ignore
+  "Your latest posts": "Son yazılarınız", // i18n-ignore
+  "A static page": "Sabit bir sayfa", // i18n-ignore
+  "— Select —": "— Seçin —", // i18n-ignore
+  "Additional CSS": "Ek CSS", // i18n-ignore
+  "CSS added here applies to your whole site.": "Buraya eklenen CSS tüm sitenize uygulanır.", // i18n-ignore
+  "Loading settings…": "Ayarlar yükleniyor…", // i18n-ignore
+  "Saved. The changes are live.": "Kaydedildi. Değişiklikler yayında.", // i18n-ignore
+  "Save changes": "Değişiklikleri kaydet", // i18n-ignore
+  "The site settings could not be loaded.": "Site ayarları yüklenemedi.", // i18n-ignore
+  "The site settings could not be saved.": "Site ayarları kaydedilemedi.", // i18n-ignore
   "(no title)": "(başlıksız)", // i18n-ignore
   "404 Page": "404 Sayfası", // i18n-ignore
   "404 page": "404 sayfası", // i18n-ignore

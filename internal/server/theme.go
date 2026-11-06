@@ -580,7 +580,7 @@ func (s *Server) themesScreen(c *gin.Context) {
 		if t.AuthorURI != "" {
 			andURI = `<a href="` + template.HTMLEscapeString(t.AuthorURI) + `">` + author + `</a>`
 		}
-		customize := "/wp-admin/customize"
+		customize := s.customizeURL()
 		if !t.Active {
 			customize = t.PreviewURL
 		}

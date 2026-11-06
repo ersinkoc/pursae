@@ -43,7 +43,7 @@ var (
 )
 
 func TestCustomize(t *testing.T) {
-	ts, c := testServer(t)
+	ts, c, _ := testServerBuilderOff(t) // with the Web Builder on its site settings replace the Customizer
 	base := ts.URL
 	if code, body, _ := post(t, c, base+"/wp-admin/install?step=2", url.Values{
 		"weblog_title": {"Test Site"}, "user_name": {"admin"}, "admin_password": {"correct horse"}, "admin_email": {"admin@example.test"},

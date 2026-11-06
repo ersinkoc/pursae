@@ -1,0 +1,28 @@
+diff --git a/src/builder/TopBar.tsx b/src/builder/TopBar.tsx
+index fe40961..90668cd 100644
+--- a/src/builder/TopBar.tsx
++++ b/src/builder/TopBar.tsx
+@@ -128,6 +128,7 @@ function Logo() {
+             <ArrowLeft size={14} className="text-ink-300" />
+             {t('Back to the dashboard')}
+           </a>
++          {getHost().menuExtra?.(() => setOpen(false))}
+         </div>
+       )}
+     </div>
+diff --git a/src/builder/host.ts b/src/builder/host.ts
+index 539c975..08ab7bd 100644
+--- a/src/builder/host.ts
++++ b/src/builder/host.ts
+@@ -181,6 +181,11 @@ export interface BuilderHost {
+    * display conditions, preview picker). close() closes the dropdown.
+    */
+   switcherExtra?(close: () => void): ReactNode
++  /**
++   * Extra rows of the builder menu (the product name in the top bar), under "Back to the dashboard":
++   * the host's site settings. close() closes the menu.
++   */
++  menuExtra?(close: () => void): ReactNode
+   /** Id of the document being edited; marks it in the page switcher. */
+   currentId?: number
+   /** The page switcher's list (templates, pages, posts); absent = the top bar title opens page settings. */

@@ -56,7 +56,7 @@
 {{define "admin/nav-menus"}}{{template "admin-header" .}}{{with .Data}}
 <div class="wrap">
 <h1 class="wp-heading-inline">Menus</h1>
-<a href="/wp-admin/customize" class="page-title-action hide-if-no-customize">Manage with Live Preview</a>
+{{if customizerOn}}<a href="/wp-admin/customize" class="page-title-action hide-if-no-customize">Manage with Live Preview</a>{{end}}
 <hr class="wp-header-end">
 <nav class="nav-tab-wrapper wp-clearfix" aria-label="Secondary menu">
 	<a href="/wp-admin/nav-menus" class="nav-tab{{if eq .Tab "edit"}} nav-tab-active{{end}}"{{if eq .Tab "edit"}} aria-current="page"{{end}}>Edit Menus</a>

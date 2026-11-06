@@ -78,6 +78,7 @@ ever part of it.**
 | `caps.uploadFiles` | bool | `upload_files` |
 | `caps.unfilteredHtml` | bool | `unfiltered_html`: html sections and custom CSS are kept |
 | `caps.editOthers` | bool | `edit_others_posts`: may delete others' library items |
+| `caps.editThemeOptions` | bool | `edit_theme_options`: the builder menu shows "Site settings" |
 | `locale` | string | the user's WordPress locale (`en_US`, `tr_TR`; `userLocale`); its language part picks the editor UI catalog, see §2.1 |
 | `fonts.cssUrl` | string | absolute `fonts/css2` URL with `_wpnonce` |
 | `fonts.local` | string[] | families already localized under `uploads/web-builder/fonts/` |
@@ -166,6 +167,8 @@ Request bodies of document routes are capped at **4 MiB** (`413 wb_too_large`, `
 | GET | `/themes` | `edit_theme_options` | — → `{themes, existing, source}` (theme library, [guide](web-builder-theme-library.md)) |
 | POST | `/themes/{slug}/import` | `edit_theme_options` (+ `edit_pages`, `publish_pages`) | `{mode, pages}` → drafts with docs `{templates, pages, media}` |
 | POST | `/themes/{slug}/finish` | `edit_theme_options` | `{mode, templates, pages}` → `{disabled, menus, pages}` |
+| GET | `/site-settings` | `edit_theme_options` | — → SiteSettings (§3.6) |
+| PUT | `/site-settings` | `edit_theme_options` | partial SiteSettingsRequest → SiteSettings |
 | GET | `/preview-context?object=` | `edit_posts` (+ `read_post` for `post:<id>`) | — → DynContext (§11.6) |
 
 `{id}` of a document route must be a post of an enabled post type (pages by default, posts
@@ -296,6 +299,26 @@ admin email through the core mailer.
 - `Accept: application/json` (runtime) → `200 {ok: true, message}`.
 - Otherwise (no JS) → **303** to the page with `?wb_form=sent` (or `?wb_form=error`) and
   `#<section id>`.
+
+### 3.6 Site settings
+
+While the builder is active the editor manages what the Customizer manages otherwise, so the
+Customizer is hidden (menu, admin bar, `/wp-admin/customize` redirects to the builder's settings).
+The builder menu (product name in the top bar) has a **Site settings** row (patch 0014,
+`BuilderHost.menuExtra`) that opens the dialog.
+
+SiteSettings (GET and the PUT response): `blogname`, `blogdescription`, `site_icon`
+`{id, url} | null`, `custom_logo` `{id, url} | null` (only when the active theme supports a custom
+logo: `supports_logo`), `show_on_front` (`posts` | `page`), `page_on_front`, `page_for_posts`
+(page ids, 0 = none), `custom_css`, `pages` `[{id, title}]` (published pages, for the pickers),
+`can_upload`.
+
+PUT takes any subset of `blogname`, `blogdescription`, `site_icon`, `custom_logo` (attachment ids,
+0 removes), `show_on_front`, `page_on_front`, `page_for_posts` and `custom_css`. The server validates
+with the Customizer's own rules (`czSanitize`: tags stripped, images must be image attachments,
+pages must be pages, homepage and posts page must differ) and stores the same options and theme mods,
+then purges the page cache. Unknown keys and invalid values: **400** `rest_invalid_param`, nothing is
+saved. Menus and widgets are not part of this route.
 
 ## 4. `renderStatic` result
 

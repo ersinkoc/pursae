@@ -55,6 +55,7 @@ export const routes = {
   templatePreview: (id: number) => `web-builder/v2/templates/${id}/preview`,
   templateConflicts: (id: number) => `web-builder/v2/templates/${id}/conflicts`,
   navigator: () => 'web-builder/v2/navigator',
+  siteSettings: () => 'web-builder/v2/site-settings',
   previewContext: () => 'web-builder/v2/preview-context',
   media: () => 'wp/v2/media',
 } as const
@@ -352,7 +353,7 @@ export interface Boot {
   user: UserRef
   rest: { root: string; namespace: string; nonce: string }
   links: { site: string; permalink: string; preview: string; exit: string; editPost: string; settings: string }
-  caps: { publish: boolean; uploadFiles: boolean; unfilteredHtml: boolean; editOthers: boolean }
+  caps: { publish: boolean; uploadFiles: boolean; unfilteredHtml: boolean; editOthers: boolean; editThemeOptions?: boolean }
   /** WordPress locale, e.g. en_US, tr_TR. */
   locale: string
   fonts: { cssUrl: string; local: string[] }

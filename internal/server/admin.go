@@ -342,6 +342,7 @@ func (s *Server) adminPage(c *gin.Context, screen, title, bodyClass, tmpl string
 	s.pluginMenuEntries(v.Menu, screen) // plugin settings pages under Settings (plugins_host.go)
 	// the plugin's own top-level Web Builder menu (webbuilder_templates_admin.go)
 	v.Menu = s.wbMenu(v.Menu, screen, u)
+	v.Menu = s.wbHideCustomizer(v.Menu) // the builder's site settings replace the Customizer
 	v.Menu = s.maintMenu(v.Menu, u, screen)
 	v.Menu = s.bmgrMenu(v.Menu, u, screen)
 	v.Menu = s.mailSMTPMenu(c, v.Menu, screen)

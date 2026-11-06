@@ -16,6 +16,8 @@ import { installTemplateUi } from './TemplateBar'
 import { t } from './i18n'
 import { ThemeLibraryController } from './theme-library'
 import { ThemeLibraryDialog } from './ThemeLibraryDialog'
+import { SiteSettingsController } from './site-settings'
+import { SiteSettingsDialog, SiteSettingsMenuRow } from './SiteSettingsDialog'
 
 function mountPoint(): HTMLElement {
   let el = document.getElementById('root')
@@ -74,6 +76,10 @@ async function boot() {
   }
   // Template mode: the type badge, display conditions and "Preview as" in the top bar.
   installTemplateUi(host)
+  // Site settings (patch 0014): a row in the builder menu opens a dialog with what the Customizer
+  // manages while the builder is off (site identity, homepage, additional CSS).
+  const siteSettings = new SiteSettingsController({ rest: host.rest, pickImage: host.media.pick ? () => host.media.pick!('image') : undefined })
+  if (host.boot.caps.editThemeOptions) host.menuExtra = (close) => <SiteSettingsMenuRow controller={siteSettings} close={close} />
   setHost(host)
   window.__WEB_BUILDER_HOST__ = host
   installFontNonce(host)
@@ -102,6 +108,12 @@ async function boot() {
       <App />
     </StrictMode>,
   )
+  // Below the host layer: the media library it draws must stay on top of this dialog.
+  const siteLayer = document.createElement('div')
+  siteLayer.id = 'wb-site-settings-layer'
+  document.body.insertBefore(siteLayer, layer)
+  createRoot(siteLayer).render(<SiteSettingsDialog controller={siteSettings} />)
+  isolateHostKeys(siteLayer)
   createRoot(layer).render(<HostLayer host={host} />)
   isolateHostKeys(layer) // after createRoot: the layer's React listener runs first
 

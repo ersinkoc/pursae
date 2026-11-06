@@ -19,7 +19,7 @@
 	<div class="theme-id-container">
 		{{if .Active}}<h2 class="theme-name" id="{{.Slug}}-name"><span>Active:</span> {{.Name}}</h2>{{else}}<h2 class="theme-name" id="{{.Slug}}-name">{{.Name}}</h2>{{end}}
 		<div class="theme-actions">
-			{{if .Active}}<a class="button button-compact button-primary customize load-customize hide-if-no-customize" href="/wp-admin/customize" aria-label="Customize {{.Name}}">Customize</a>
+			{{if .Active}}<a class="button button-compact button-primary customize load-customize hide-if-no-customize" href="{{customizeURL}}" aria-label="Customize {{.Name}}">Customize</a>
 			{{if .DemoImportURL}}<a class="button button-compact wpgo-import-demo" href="{{.DemoImportURL}}" aria-label="Import demo content of {{.Name}}">Import Demo Content</a>{{end}}
 			{{if .DemoRemoveURL}}<a class="button button-compact wpgo-remove-demo" href="{{.DemoRemoveURL}}" onclick="return window.confirm( _wpThemeSettings.settings.confirmRemoveDemo );" aria-label="Remove demo content of {{.Name}}">Remove Demo Content</a>{{end}}
 			{{else}}<a class="button button-compact activate" href="{{.ActivateURL}}" aria-label="Activate {{.Name}}">Activate</a>

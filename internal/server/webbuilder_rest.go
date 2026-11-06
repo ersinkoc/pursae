@@ -90,6 +90,7 @@ func (s *Server) registerWebBuilderREST() {
 	reg(`/web-builder/v2/library/(?P<id>[\d]+)`, map[string]restHandler{http.MethodDelete: s.wbRESTLibraryDelete}, true)
 	reg(`/web-builder/v2/prefs`, map[string]restHandler{http.MethodGet: s.wbRESTPrefs, http.MethodPut: s.wbRESTPrefsSave}, true)
 	reg(`/web-builder/v2/fonts/css2`, map[string]restHandler{http.MethodGet: s.wbRESTFontsCSS}, false) // a stylesheet: nonce in ?_wpnonce=
+	reg(`/web-builder/v2/site-settings`, map[string]restHandler{http.MethodGet: s.wbRESTSiteSettings, http.MethodPut: s.wbRESTSiteSettingsSave}, true)
 	// Theme Builder (webbuilder_templates_rest.go)
 	s.wbRegisterTemplateREST(reg)
 	// Theme library (webbuilder_themes.go)

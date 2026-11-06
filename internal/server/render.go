@@ -162,8 +162,10 @@ func (t *templates) funcs() template.FuncMap {
 
 func (t *templates) coreFuncs(s *Server) template.FuncMap {
 	return template.FuncMap{
-		"safe":    func(v string) template.HTML { return template.HTML(v) },
-		"safeURL": func(v string) template.URL { return template.URL(v) },
+		"customizerOn": func() bool { return !s.wbOn() }, // the Customizer is hidden while the Web Builder is active
+		"customizeURL": s.customizeURL,
+		"safe":         func(v string) template.HTML { return template.HTML(v) },
+		"safeURL":      func(v string) template.URL { return template.URL(v) },
 		"safeAttr": func(v string) template.HTMLAttr {
 			return template.HTMLAttr(v)
 		},

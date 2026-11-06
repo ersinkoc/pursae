@@ -717,10 +717,11 @@ type BootLinks struct {
 }
 
 type BootCaps struct {
-	Publish        bool `json:"publish"` // publish_posts / publish_pages for the type
-	UploadFiles    bool `json:"uploadFiles"`
-	UnfilteredHTML bool `json:"unfilteredHtml"` // html sections and custom CSS
-	EditOthers     bool `json:"editOthers"`     // edit_others_posts: library delete of others' items
+	Publish          bool `json:"publish"` // publish_posts / publish_pages for the type
+	UploadFiles      bool `json:"uploadFiles"`
+	UnfilteredHTML   bool `json:"unfilteredHtml"`   // html sections and custom CSS
+	EditOthers       bool `json:"editOthers"`       // edit_others_posts: library delete of others' items
+	EditThemeOptions bool `json:"editThemeOptions"` // edit_theme_options: the site settings dialog (site-settings route)
 }
 
 type BootFonts struct {

@@ -677,7 +677,7 @@ func (s *Server) themePreviewScreen(c *gin.Context) {
 	case installed != nil && installed.Slug != active.Slug:
 		d["Primary"], d["PrimaryLabel"] = activateURL, "Activate"
 	case installed != nil:
-		d["Primary"], d["PrimaryLabel"] = "/wp-admin/customize", "Customize"
+		d["Primary"], d["PrimaryLabel"] = s.customizeURL(), "Customize"
 		if m.Demo != "" && u.Can("import", nil) && !s.demoImported(slug) {
 			d["ImportURL"] = "/wp-admin/themes?action=import-demo&stylesheet=" + slug + "&_wpnonce=" + s.nonce(c, "import-demo_"+slug)
 		}

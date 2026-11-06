@@ -120,7 +120,7 @@ func (s *Server) frontAdminBar(c *gin.Context, q *siteQuery, lb *links.Builder, 
 		sb.WriteString(`<ul role='menu' id='wp-admin-bar-appearance' class="ab-submenu"><li role='group' id='wp-admin-bar-themes'><a class='ab-item' role="menuitem" href='/wp-admin/themes'>Themes</a></li><li role='group' id='wp-admin-bar-widgets'><a class='ab-item' role="menuitem" href='/wp-admin/widgets'>Widgets</a></li><li role='group' id='wp-admin-bar-menus'><a class='ab-item' role="menuitem" href='/wp-admin/nav-menus'>Menus</a></li></ul>`)
 	}
 	sb.WriteString(`</div></li>`)
-	if u.Can("edit_theme_options", nil) {
+	if u.Can("edit_theme_options", nil) && !s.wbOn() { // the builder's site settings replace the Customizer
 		sb.WriteString(`<li role='group' id='wp-admin-bar-customize' class="hide-if-no-customize"><a class='ab-item' role="menuitem" href='/wp-admin/customize'>Customize</a></li>`)
 	}
 	if u.Can("moderate_comments", nil) {

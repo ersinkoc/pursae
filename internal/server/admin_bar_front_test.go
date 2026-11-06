@@ -11,7 +11,7 @@ import (
 // On the site, the toolbar shows Customize to users who can change the theme, as WordPress does:
 // the link is .hide-if-no-customize, made visible by the customize-support body class script.
 func TestFrontToolbarCustomize(t *testing.T) {
-	ts, c := testServer(t)
+	ts, c, _ := testServerBuilderOff(t) // with the Web Builder on its site settings replace the Customizer
 	installAndLogin(t, ts, c)
 	_, body, _ := get(t, c, ts.URL+"/")
 	for _, want := range []string{`id='wp-admin-bar-customize'`, `href='/wp-admin/customize'`, `' customize-support'`, "no-customize-support"} {

@@ -140,7 +140,7 @@
 					<a href="/wp-admin/post-new?post_type=page">Add a new page</a>
 				</div>
 			</div>
-			<div class="welcome-panel-column">
+			{{if customizerOn}}<div class="welcome-panel-column">
 				<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
 				<rect width="48" height="48" rx="4" fill="#2271b1"/>
 				<path fill-rule="evenodd" clip-rule="evenodd" d="M18 16h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H18a2 2 0 0 1-2-2V18a2 2 0 0 1 2-2zm12 1.5H18a.5.5 0 0 0-.5.5v3h13v-3a.5.5 0 0 0-.5-.5zm.5 5H22v8h8a.5.5 0 0 0 .5-.5v-7.5zm-10 0h-3V30a.5.5 0 0 0 .5.5h2.5v-8z" fill="#fff"/>
@@ -150,7 +150,7 @@
 					<p>Configure your site&#8217;s logo, header, menus, and more in the Customizer.</p>
 					<a class="load-customize hide-if-no-customize" href="/wp-admin/customize">Open the Customizer</a>
 				</div>
-			</div>
+			</div>{{end}}
 			<div class="welcome-panel-column">
 				<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
 				<rect width="48" height="48" rx="4" fill="#2271b1"/>

@@ -12,7 +12,8 @@
     "0010-brand-menu.patch": "8a79c47020d2a6e99bc2d918a3a9c4b8c8b17b877a2ae09bdbcf07da337982ef",
     "0011-page-switcher.patch": "422be057c6f75af163f56716c89993a2ded49a9eb8eede2a8d5060ba656e75cd",
     "0012-switcher-extra.patch": "30d93e6fdf69d7345cfe06294f855308196bea4c21acde63194952cff633343f",
-    "0013-theme-library.patch": "7f5e16f590c663b6eb23640aa264947ddf5b411ee6b74f9273c2ec2fd411b1a8"
+    "0013-theme-library.patch": "7f5e16f590c663b6eb23640aa264947ddf5b411ee6b74f9273c2ec2fd411b1a8",
+    "0014-menu-extra.patch": "978423248c4da02ae5ad0131016aa1e75e5f5f64c9d432eb0aac302facf6f1be"
   },
   "apiVersion": 2,
   "rendererVersion": 1

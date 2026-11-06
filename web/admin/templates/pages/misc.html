@@ -339,7 +339,7 @@
 					{{if not .Active}}<a class="button button-compact activate" href="{{.ActivateURL}}" aria-label="Activate {{.Name}}">Activate</a>{{end}}
 					{{if .DemoPreviewURL}}<a class="button button-compact preview install-theme-preview" href="{{.DemoPreviewURL}}" aria-label="Live Preview {{.Name}} {{.NewVersion}}">Live Preview</a>{{end}}
 				{{else if .Active}}<button class="button button-primary button-compact disabled">Activated</button>
-					<a class="button button-compact load-customize" href="/wp-admin/customize">Customize</a>
+					<a class="button button-compact load-customize" href="{{customizeURL}}">Customize</a>
 				{{else}}<a class="button button-primary button-compact activate" href="{{.ActivateURL}}" aria-label="Activate {{.Name}}">Activate</a>
 					<a class="button button-compact preview install-theme-preview" href="{{if .DemoPreviewURL}}{{.DemoPreviewURL}}{{else}}{{.PreviewURL}}{{end}}" aria-label="Live Preview {{.Name}}">Live Preview</a>{{end}}
 				</div>
