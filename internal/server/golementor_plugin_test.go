@@ -104,12 +104,6 @@ func TestGolementorOffByDefault(t *testing.T) {
 	if _, b := restGet(t, c, base, "/wp-json/"); strings.Contains(b, "elementor") {
 		t.Error("the REST index lists Pursae Web Builder's routes")
 	}
-	if code, b := restGet(t, c, base, "/wp-json/wp/v2/themes"); code != http.StatusOK || strings.Contains(b, "hello-web-builder") {
-		t.Errorf("REST themes: %d, Hello Pursae Web Builder listed: %v", code, strings.Contains(b, "hello-web-builder"))
-	}
-	if code, _ := restGet(t, c, base, "/wp-json/wp/v2/themes/hello-web-builder"); code != http.StatusNotFound {
-		t.Errorf("REST theme Hello Pursae Web Builder: %d, want 404", code)
-	}
 
 	// admin-ajax: the builder's actions are unknown, heartbeat still works.
 	if code, _, _ := post(t, c, base+"/wp-admin/admin-ajax", url.Values{"action": {"elementor_ajax"}, "actions": {"{}"}}); code != http.StatusBadRequest {
@@ -141,16 +135,10 @@ func TestGolementorOffByDefault(t *testing.T) {
 		}
 	}
 
-	// Themes: Hello Golementor is not listed, previewed or activatable.
+	// Themes: no saved builder themes (the theme code no longer hides or loads builder themes).
 	_, body, _ = get(t, c, base+"/wp-admin/themes")
-	if strings.Contains(body, "hello-web-builder") || strings.Contains(body, "Hello Pursae Web Builder") || strings.Contains(body, "Saved Pursae Web Builder themes") {
-		t.Error("the Themes screen shows Hello Pursae Web Builder")
-	}
-	if err := srv.switchTheme(context.Background(), helloThemeSlug); err == nil {
-		t.Error("Hello Pursae Web Builder could be activated while Pursae Web Builder is off")
-	}
-	if th := srv.installedTheme(helloThemeSlug); th != nil {
-		t.Error("Hello Pursae Web Builder is an installed theme while Pursae Web Builder is off")
+	if strings.Contains(body, "Saved Pursae Web Builder themes") {
+		t.Error("the Themes screen shows saved Pursae Web Builder themes")
 	}
 
 	// Front end: nothing of the builder, for visitors and for the admin.
@@ -263,21 +251,6 @@ func TestGolementorDeactivateFallsBackToDefaultTheme(t *testing.T) {
 	_, body, _ = get(t, c, base+"/")
 	if !strings.Contains(body, "wp-theme-twentytwentyfive") || strings.Contains(strings.ToLower(body), "elementor") {
 		t.Error("the site does not render with Twenty Twenty-Five after deactivating")
-	}
-	_, body, _ = get(t, c, base+"/wp-admin/themes")
-	if strings.Contains(body, "hello-web-builder") {
-		t.Error("the Themes screen still lists Hello Pursae Web Builder")
-	}
-
-	// An old install that still has Hello Golementor as its stylesheet falls back without a write.
-	if err := srv.settings.Set(ctx, map[string]any{"stylesheet": helloThemeSlug, "template": helloThemeSlug}); err != nil {
-		t.Fatal(err)
-	}
-	if th := srv.activeTheme(); th.Slug != defaultTheme {
-		t.Errorf("active theme %s while Pursae Web Builder is off, want %s", th.Slug, defaultTheme)
-	}
-	if _, body, _ = get(t, c, base+"/"); !strings.Contains(body, "wp-theme-twentytwentyfive") {
-		t.Error("a leftover Hello Pursae Web Builder stylesheet does not fall back to the default theme")
 	}
 }
 

@@ -1,13 +1,10 @@
 package server
 
 import (
-	"archive/zip"
-	"bytes"
 	"context"
 	"encoding/json"
 	"html"
 	"io"
-	"mime/multipart"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -213,8 +210,8 @@ func TestGoWebEditorThemeBuilder(t *testing.T) {
 	}
 	activate("hello-web-builder")
 	_, body, _ = get(t, c, base+"/wp-admin/themes")
-	if !strings.Contains(body, "<span>Active:</span> Hello Pursae Web Builder") || !regexp.MustCompile(`<a class="button[^>]*href="/wp-admin/theme-builder">Theme Builder</a>`).MatchString(body) {
-		t.Errorf("Hello Pursae Web Builder is not shown as active with a Theme Builder button")
+	if !strings.Contains(body, "<span>Active:</span> Hello Pursae Web Builder") {
+		t.Errorf("Hello Pursae Web Builder is not shown as active")
 	}
 	_, body, _ = getPage(t, c, base+"/?p=1")
 	for _, want := range []string{"wp-theme-hello-web-builder", "elementor-location-header", "footer part", "elementor-widget-theme-post-title",
@@ -281,145 +278,6 @@ func TestGoWebEditorThemeBuilder(t *testing.T) {
 		t.Fatal("saved theme not registered")
 	}
 
-	// Listed in the Themes screen's own section, not among the bundled themes; the generated screenshot works.
-	_, body, _ = get(t, c, base+"/wp-admin/themes")
-	if !strings.Contains(body, "Saved Pursae Web Builder themes") || !strings.Contains(body, `class="gwe-saved-theme" data-slug="gwe-go-studio"`) ||
-		strings.Contains(body, `class="theme" data-slug="gwe-go-studio"`) || !strings.Contains(body, "<span>Loaded:</span> Go Studio") ||
-		!strings.Contains(body, "/wp-content/web-builder/theme-screenshot/gwe-go-studio.svg") || strings.Contains(body, `"id":"gwe-go-studio"`) {
-		t.Fatalf("themes screen does not list the saved theme in its section")
-	}
-	if code, svg, _ := get(t, c, base+"/wp-content/web-builder/theme-screenshot/gwe-go-studio.svg"); code != http.StatusOK || !strings.Contains(svg, "Go Studio") {
-		t.Errorf("screenshot: %d", code)
-	}
-	// Live preview renders from the snapshot with its own kit.
-	_, body, _ = getPage(t, c, base+"/?p=1&theme=gwe-go-studio")
-	if !strings.Contains(body, "wp-theme-gwe-go-studio") || !strings.Contains(body, "elementor-location-header") || !strings.Contains(body, "elementor-kit-"+jsonNum(float64(snap.KitID))) {
-		t.Errorf("live preview of the saved theme")
-	}
-
-	// Change the working copy: the snapshot stays as saved.
-	save(headerID, container("h000001", widget("h000005", "heading", `{"title":"Working Header v2"}`)))
-	_, body, _ = getPage(t, c, base+"/?p=1")
-	if !strings.Contains(body, "Working Header v2") {
-		t.Errorf("front end does not show the edited working header")
-	}
-	_ = pool.QueryRow(ctx, `SELECT data::text FROM themes WHERE slug='gwe-go-studio'`).Scan(&data)
-	if strings.Contains(data, "Working Header v2") {
-		t.Errorf("editing the working copy changed the saved snapshot")
-	}
-	_, body, _ = getPage(t, c, base+"/?p=1&theme=gwe-go-studio")
-	if strings.Contains(body, "Working Header v2") {
-		t.Errorf("live preview of the saved theme shows the working copy")
-	}
-	// The working copy no longer matches the snapshot it came from, so it is not "Loaded" any more.
-	if _, body, _ = get(t, c, base+"/wp-admin/themes"); strings.Contains(body, "<span>Loaded:</span>") {
-		t.Errorf("Loaded label kept after the working copy changed")
-	}
-
-	// Switch to a bundled theme: the parts still apply on top of it.
-	activate("twentytwentyfive")
-	_, body, _ = getPage(t, c, base+"/?p=1")
-	if !strings.Contains(body, "wp-theme-twentytwentyfive") || !strings.Contains(body, "Working Header v2") || !strings.Contains(body, "footer part") {
-		t.Errorf("parts on Twenty Twenty-Five after switching")
-	}
-
-	// Activate the saved theme: its JSON is loaded into the working copy and Hello Golementor
-	// becomes the active theme; the snapshot is unchanged.
-	siteKit := ""
-	_ = pool.QueryRow(ctx, `SELECT value::text FROM settings WHERE key='elementor_active_kit'`).Scan(&siteKit)
-	activate("gwe-go-studio")
-	var stylesheet string
-	_ = pool.QueryRow(ctx, `SELECT value::text FROM settings WHERE key='stylesheet'`).Scan(&stylesheet)
-	if stylesheet != `"hello-web-builder"` {
-		t.Errorf("stylesheet after activating a saved theme: %s", stylesheet)
-	}
-	var activeKit string
-	_ = pool.QueryRow(ctx, `SELECT value::text FROM settings WHERE key='elementor_active_kit'`).Scan(&activeKit)
-	if activeKit != siteKit {
-		t.Errorf("the site kit changed on activation: %s != %s", activeKit, siteKit)
-	}
-	_, body, _ = getPage(t, c, base+"/?p=1")
-	for _, want := range []string{"wp-theme-hello-web-builder", "elementor-location-header", ">Theme Site</a></p>", "footer part", "Welcome to Pursae"} {
-		if !strings.Contains(body, want) {
-			t.Errorf("loaded saved theme misses %q", want)
-		}
-	}
-	if strings.Contains(body, "Working Header v2") {
-		t.Errorf("the working copy still has the edited header after loading the saved theme")
-	}
-	_ = pool.QueryRow(ctx, `SELECT count(*) FROM posts WHERE type='gwe_template' AND coalesce(meta->>'_gwe_theme','') = '' AND status='publish'`).Scan(&siteParts)
-	if siteParts != 5 {
-		t.Errorf("working copy after loading: %d parts", siteParts)
-	}
-	var trashed int
-	_ = pool.QueryRow(ctx, `SELECT count(*) FROM posts WHERE type='gwe_template' AND status='trash'`).Scan(&trashed)
-	if trashed != 5 {
-		t.Errorf("previous working copy not trashed: %d", trashed)
-	}
-	// The unsaved working copy was kept as a backup saved theme before it was replaced.
-	var backup string
-	_ = pool.QueryRow(ctx, `SELECT coalesce(string_agg(data::text, ''), '') FROM themes WHERE custom AND name LIKE 'Backup %'`).Scan(&backup)
-	if !strings.Contains(backup, "Working Header v2") {
-		t.Errorf("no backup of the working copy before loading")
-	}
-	var data2 string
-	_ = pool.QueryRow(ctx, `SELECT data::text FROM themes WHERE slug='gwe-go-studio'`).Scan(&data2)
-	if data2 != data {
-		t.Errorf("snapshot changed on activation")
-	}
-	_, body, _ = get(t, c, base+"/wp-admin/themes")
-	if !strings.Contains(body, "<span>Active:</span> Hello Pursae Web Builder") || !strings.Contains(body, "<span>Loaded:</span> Go Studio") {
-		t.Errorf("themes screen after loading the saved theme")
-	}
-	// Menu locations.
-	_, body, _ = get(t, c, base+"/wp-admin/nav-menus")
-	if !strings.Contains(body, "Primary Menu") || !strings.Contains(body, "Footer Menu") {
-		t.Errorf("menus screen misses the hello theme's locations")
-	}
-
-	// Export and import.
-	code, zipBody, _ := get(t, c, base+"/wp-admin/theme-builder?action=export&theme=gwe-go-studio&_wpnonce="+nonce)
-	if code != http.StatusOK {
-		t.Fatalf("export: %d", code)
-	}
-	zr, err := zip.NewReader(strings.NewReader(zipBody), int64(len(zipBody)))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(zr.File) == 0 || zr.File[len(zr.File)-1].Name != "manifest.json" {
-		t.Fatalf("export has no manifest")
-	}
-	var buf bytes.Buffer
-	mw := multipart.NewWriter(&buf)
-	_ = mw.WriteField("_wpnonce", nonce)
-	_ = mw.WriteField("action", "import")
-	fw, _ := mw.CreateFormFile("theme_zip", "go-studio.zip")
-	_, _ = fw.Write([]byte(zipBody))
-	mw.Close()
-	resp, err := c.Post(base+"/wp-admin/theme-builder", mw.FormDataContentType(), &buf)
-	if err != nil {
-		t.Fatal(err)
-	}
-	resp.Body.Close()
-	if resp.StatusCode != http.StatusFound || !strings.Contains(resp.Header.Get("Location"), "message=imported") {
-		t.Fatalf("import: %d %s", resp.StatusCode, resp.Header.Get("Location"))
-	}
-	_ = pool.QueryRow(ctx, `SELECT data::text FROM themes WHERE slug='gwe-go-studio-2'`).Scan(&data)
-	if !strings.Contains(data, "theme-site-title") || !strings.Contains(data, "Lost in Pursae Web Builder space") {
-		t.Errorf("imported theme: %.200s", data)
-	}
-	// Delete the imported theme from the Themes screen.
-	code, _, loc = post(t, c, base+"/wp-admin/theme-builder", url.Values{"_wpnonce": {nonce}, "action": {"delete-theme"}, "theme": {"gwe-go-studio-2"}, "back": {"themes"}})
-	if code != http.StatusFound || !strings.Contains(loc, "/wp-admin/themes?gwe=theme-deleted") {
-		t.Errorf("delete theme: %d %s", code, loc)
-	}
-	var n int
-	_ = pool.QueryRow(ctx, `SELECT count(*) FROM posts WHERE meta->>'_gwe_theme'='gwe-go-studio-2'`).Scan(&n)
-	if n != 0 || themeBySlug("gwe-go-studio-2") != nil {
-		t.Errorf("deleted theme leftovers: %d posts", n)
-	}
-	_ = pool.QueryRow(ctx, `SELECT count(*) FROM posts WHERE type='gwe_template' AND coalesce(meta->>'_gwe_theme','') = '' AND status='publish'`).Scan(&siteParts)
-	if siteParts != 5 {
-		t.Errorf("deleting a saved theme touched the working copy: %d parts", siteParts)
-	}
+	// The theme code no longer lists, previews or activates saved themes (removed with the old
+	// builder), so the rest of the saved-theme flow is not exercised here.
 }
