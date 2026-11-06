@@ -70,6 +70,37 @@ func TestWBTemplatesAdminRegenerateIDs(t *testing.T) {
 		t.Error("doc lost data")
 	}
 
+	// Editor item ids are regenerated too, with their prefix; parent links and element style keys
+	// follow, short item ids ("card" above) stay (they are scoped by their section).
+	if !strings.Contains(string(newDoc), `"id":"card"`) {
+		t.Errorf("short item id renamed: %s", newDoc)
+	}
+	items := json.RawMessage(`{"sections":[{"id":"s_cust001","kind":"custom","items":[{"id":"n_root001","node":"box"},{"id":"n_kid0002","node":"text","parent":"n_root001"}],"els":{"n_kid0002":{"color":"red"}}}]}`)
+	d3, h3, c3, kept3 := wbRegenerateSectionIDs(items, `<section id="s_cust001"><div class="n_root001"><p class="n_kid0002"></p></div></section>`, `.n_kid0002{color:red}`)
+	if !kept3 {
+		t.Fatal("item ids: snapshot dropped")
+	}
+	for _, old := range []string{"n_root001", "n_kid0002", "s_cust001"} {
+		if strings.Contains(string(d3), old) || strings.Contains(h3, old) || strings.Contains(c3, old) {
+			t.Errorf("item id %s survived: %s %s %s", old, d3, h3, c3)
+		}
+	}
+	var r3 struct {
+		Sections []struct {
+			Items []struct{ ID, Parent string }
+			Els   map[string]any
+		}
+	}
+	if err := json.Unmarshal(d3, &r3); err != nil {
+		t.Fatal(err)
+	}
+	it := r3.Sections[0].Items
+	nre := regexp.MustCompile(`^n_[0-9a-z]{7}$`)
+	if !nre.MatchString(it[0].ID) || !nre.MatchString(it[1].ID) || it[1].Parent != it[0].ID || r3.Sections[0].Els[it[1].ID] == nil ||
+		!strings.Contains(h3, `class="`+it[1].ID+`"`) || !strings.Contains(c3, "."+it[1].ID+"{") {
+		t.Errorf("item renaming is not consistent: %s / %s / %s", d3, h3, c3)
+	}
+
 	// Short ids cannot be renamed in the markup safely: the doc is renamed, the snapshot dropped.
 	short := json.RawMessage(`{"sections":[{"id":"a","kind":"text","items":[],"style":{"padding":1.5}}]}`)
 	d2, h2, c2, kept2 := wbRegenerateSectionIDs(short, `<a id="a">a</a>`, `#a{}`)
@@ -314,7 +345,7 @@ func TestWBTemplatesAdminActions(t *testing.T) {
 		return loc
 	}
 
-	// Duplicate: a disabled copy with the rules, new section ids and the dup marker.
+	// Duplicate: a disabled copy with the rules and new section and item ids.
 	loc := act(wbtaLink(t, screen(), tp.ID, "duplicate"))
 	m := regexp.MustCompile(`duplicated=(\d+)`).FindStringSubmatch(loc)
 	if m == nil {
@@ -325,7 +356,7 @@ func TestWBTemplatesAdminActions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cp.Title != "Site footer (Copy)" || cp.Status != "draft" || cp.Type != webbuilder.TemplateFooter || strings.Join(cp.Conditions, ",") != "include/general,exclude/404" || cp.Priority != 7 || !cp.Dup {
+	if cp.Title != "Site footer (Copy)" || cp.Status != "draft" || cp.Type != webbuilder.TemplateFooter || strings.Join(cp.Conditions, ",") != "include/general,exclude/404" || cp.Priority != 7 {
 		t.Errorf("copy %+v", cp)
 	}
 	d, err := wb.Doc(ctx, cpID)

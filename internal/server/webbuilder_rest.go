@@ -712,10 +712,6 @@ func (s *Server) wbRESTPublish(c *gin.Context, r *restRequest) {
 		restErr(c, http.StatusInternalServerError, "db_error", "Could not publish the page.")
 		return
 	}
-	if _, dup := p.Meta[webbuilder.MetaDup]; dup && wbIsTemplate(p) {
-		// The editor regenerated the section ids of a duplicate before this first publish.
-		_ = s.store.WebBuilder().SetTemplateDup(c, p.ID, false)
-	}
 	if after, err := s.store.GetPost(c, p.ID); err == nil {
 		fresh = after
 	}

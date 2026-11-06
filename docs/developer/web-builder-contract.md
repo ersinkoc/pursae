@@ -663,7 +663,6 @@ time. Go names are in `contract.go` (section "Theme Builder"), TypeScript names 
 | Priority meta | `_wb_priority` | decimal −100…100, default 0 |
 | Preview meta | `_wb_preview` | preview object (§11.6); empty = the type's default |
 | Starter meta | `_wb_starter` | the starter id the template was created from |
-| Duplicate marker | `_wb_dup = "1"` | the editor regenerates every section id on first load, then the marker goes |
 | Active | `post_status = publish` | `draft` = disabled; `pending`/`private` are refused (422 `wb_bad_template`) |
 | Theme | `hello-pursae` (`HelloPursaeTheme`) | menu locations `primary` ("Primary Menu"), `footer` ("Footer Menu") |
 | Preview query | `?wb_template_preview=<id>` | forces that template on a front URL; `edit_theme_options` only; never cached |

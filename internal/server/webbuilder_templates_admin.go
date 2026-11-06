@@ -809,11 +809,12 @@ func (s *Server) wbTemplateActivateHello(c *gin.Context) {
 // --- duplicate ---------------------------------------------------------------------------------
 
 // wbDuplicateTemplate copies a template as a disabled draft "<title> (Copy)" with its conditions,
-// priority, preview object and published doc. Every section id of the copy is regenerated in the
-// doc and, consistently, in the snapshot and its CSS (ids are HTML ids, CSS selectors, loop and
-// form keys), so the copy never shares ids with its source; the copy keeps the _wb_dup marker
-// for the editor (contract §11.1). Should an id be too short to be replaced safely in the
-// snapshot, the copy keeps only the doc and is rendered on its first publish.
+// priority, preview object and published doc. Every section id
+// of the copy (and every editor-style item id) is regenerated in the doc and, consistently, in the
+// snapshot and its CSS (ids are HTML ids, CSS selectors, loop and form keys), so the copy never
+// shares ids with its source and the editor needs no extra step. Should a section id be too short
+// to be replaced safely in the snapshot, the copy keeps only the doc and is rendered on its first
+// publish.
 func (s *Server) wbDuplicateTemplate(ctx context.Context, src *store.WBTemplate, authorID int64) (*store.WBTemplate, error) {
 	if src.Type == "" {
 		return nil, store.ErrTemplateType
@@ -859,17 +860,16 @@ func (s *Server) wbDuplicateTemplate(ctx context.Context, src *store.WBTemplate,
 		cp.ID, content, webbuilder.PostMarkerMeta); err != nil {
 		return cp, err
 	}
-	if err := wb.SetTemplateDup(ctx, cp.ID, true); err != nil {
-		return cp, err
-	}
 	return cp, nil
 }
 
 // wbRegenerateSectionIDs gives every section of a doc (nested layout sections included) a new id
-// and applies the same renaming to the snapshot html and css. When every old id is distinctive
-// enough to be renamed as a whole token (the editor's ids look like "s_k3j9x0a"), the three texts
-// are rewritten token by token and kept is true; otherwise only the doc is rewritten and kept is
-// false (the snapshot must be rendered again).
+// and applies the same renaming to the snapshot html and css. When every old section id is
+// distinctive enough to be renamed as a whole token (the editor's ids look like "s_k3j9x0a"), the
+// three texts are rewritten token by token and kept is true; the distinctive item ids ("i_…",
+// "c_…", "n_…": item parents and element style keys follow, being the same tokens) are renamed
+// with them. Otherwise only the section ids of the doc are rewritten and kept is false (the
+// snapshot must be rendered again).
 func wbRegenerateSectionIDs(doc json.RawMessage, html, css string) (json.RawMessage, string, string, bool) {
 	dec := json.NewDecoder(strings.NewReader(string(doc)))
 	dec.UseNumber()
@@ -877,28 +877,52 @@ func wbRegenerateSectionIDs(doc json.RawMessage, html, css string) (json.RawMess
 	if dec.Decode(&root) != nil {
 		return doc, html, css, html != ""
 	}
-	var ids []string
+	var ids, itemIDs []string
 	wbWalkSections(root, func(sec map[string]any) {
 		if id, ok := sec["id"].(string); ok && id != "" {
 			ids = append(ids, id)
+		}
+		items, _ := sec["items"].([]any)
+		for _, it := range items {
+			if im, ok := it.(map[string]any); ok {
+				if id, ok := im["id"].(string); ok && wbDistinctiveID(id) {
+					itemIDs = append(itemIDs, id)
+				}
+			}
 		}
 	})
 	if len(ids) == 0 {
 		return doc, html, css, true
 	}
 	all := string(doc) + html + css
-	m := make(map[string]string, len(ids))
+	m := make(map[string]string, len(ids)+len(itemIDs))
+	taken := func(n string) bool {
+		if strings.Contains(all, n) || slices.Contains(ids, n) || slices.Contains(itemIDs, n) {
+			return true
+		}
+		for _, v := range m {
+			if v == n {
+				return true
+			}
+		}
+		return false
+	}
 	safe := true
 	for _, id := range ids {
 		if _, dup := m[id]; dup {
 			continue
 		}
-		m[id] = wbNewSectionID(func(n string) bool { return strings.Contains(all, n) || slices.Contains(ids, n) })
+		m[id] = wbNewSectionID(taken)
 		if !wbDistinctiveID(id) {
 			safe = false
 		}
 	}
 	if safe {
+		for _, id := range itemIDs {
+			if _, dup := m[id]; !dup {
+				m[id] = wbNewItemID(id, taken)
+			}
+		}
 		return json.RawMessage(wbReplaceTokens(string(doc), m)), wbReplaceTokens(html, m), wbReplaceTokens(css, m), true
 	}
 	wbWalkSections(root, func(sec map[string]any) {
@@ -948,10 +972,23 @@ func wbDistinctiveID(id string) bool {
 }
 
 // wbNewSectionID is a fresh editor-style id ("s_" + 7 base-36 characters) for which taken is false.
-func wbNewSectionID(taken func(string) bool) string {
+func wbNewSectionID(taken func(string) bool) string { return wbNewID("s_", taken) }
+
+// wbNewItemID is a fresh editor-style id for the item id old, keeping its prefix ("i_", "c_",
+// "n_"; "i_" when it has none).
+func wbNewItemID(old string, taken func(string) bool) string {
+	prefix := "i_"
+	if i := strings.IndexByte(old, '_'); i > 0 && i <= 3 {
+		prefix = old[:i+1]
+	}
+	return wbNewID(prefix, taken)
+}
+
+// wbNewID is prefix + 7 random base-36 characters, for which taken is false.
+func wbNewID(prefix string, taken func(string) bool) string {
 	const alphabet = "0123456789abcdefghijklmnopqrstuvwxyz"
 	for {
-		b := []byte("s_")
+		b := []byte(prefix)
 		for range 7 {
 			n, err := rand.Int(rand.Reader, big.NewInt(int64(len(alphabet))))
 			if err != nil {

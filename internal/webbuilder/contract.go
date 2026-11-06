@@ -950,7 +950,6 @@ const (
 	MetaPriority     = "_wb_priority"      // decimal PriorityMin…PriorityMax, default 0
 	MetaPreview      = "_wb_preview"       // preview object (PreviewObject grammar), "" = the type's default
 	MetaStarter      = "_wb_starter"       // the StarterID the template was created from
-	MetaDup          = "_wb_dup"           // "1" on a duplicate until the editor regenerated its section ids
 
 	// HelloPursaeTheme is the bundled blank-canvas theme that renders the template parts.
 	HelloPursaeTheme = "hello-pursae"

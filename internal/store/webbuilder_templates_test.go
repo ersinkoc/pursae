@@ -123,7 +123,7 @@ func TestWebBuilderTemplates(t *testing.T) {
 		t.Fatal(err)
 	}
 	if got.Type != webbuilder.TemplateSingle || got.AuthorID != u2 || got.Priority != 100 ||
-		!slices.Equal(got.Conditions, []string{"include/singular/book"}) || got.Preview != "latest" || got.Dup {
+		!slices.Equal(got.Conditions, []string{"include/singular/book"}) || got.Preview != "latest" {
 		t.Fatalf("Template: %+v", got)
 	}
 	if _, err := wb.Template(ctx, pageID); !errors.Is(err, ErrNotFound) {
@@ -133,40 +133,32 @@ func TestWebBuilderTemplates(t *testing.T) {
 		t.Fatalf("Template(missing): %v", err)
 	}
 
-	// Conditions, priority, preview, duplicate marker.
+	// Conditions, priority, preview.
 	if err := wb.SetTemplateConditions(ctx, hdr.ID, []string{"include/general", "exclude/singular/page/" + wbtID(pageID)}, -300); err != nil {
 		t.Fatal(err)
 	}
 	if err := wb.SetTemplatePreview(ctx, hdr.ID, "post:"+wbtID(pageID)); err != nil {
 		t.Fatal(err)
 	}
-	if err := wb.SetTemplateDup(ctx, hdr.ID, true); err != nil {
-		t.Fatal(err)
-	}
 	got, _ = wb.Template(ctx, hdr.ID)
 	if got.Priority != -100 || len(got.Conditions) != 2 || got.Conditions[1] != "exclude/singular/page/"+wbtID(pageID) ||
-		got.Preview != "post:"+wbtID(pageID) || !got.Dup || got.Starter != webbuilder.StarterHeader {
+		got.Preview != "post:"+wbtID(pageID) || got.Starter != webbuilder.StarterHeader {
 		t.Fatalf("after setters: %+v", got)
-	}
-	if err := wb.SetTemplateDup(ctx, hdr.ID, false); err != nil {
-		t.Fatal(err)
 	}
 	if err := wb.SetTemplateConditions(ctx, hdr.ID, nil, 5); err != nil {
 		t.Fatal(err)
 	}
 	got, _ = wb.Template(ctx, hdr.ID)
-	if got.Dup || got.Conditions == nil || len(got.Conditions) != 0 || got.Priority != 5 {
+	if got.Conditions == nil || len(got.Conditions) != 0 || got.Priority != 5 {
 		t.Fatalf("after clearing: %+v", got)
 	}
 	p, _ = s.GetPost(ctx, hdr.ID)
-	if _, ok := p.Meta[webbuilder.MetaDup]; ok || p.Meta[webbuilder.MetaConditions] != "[]" {
+	if p.Meta[webbuilder.MetaConditions] != "[]" {
 		t.Fatalf("meta after clearing: %v", p.Meta)
 	}
 	for _, err := range []error{
 		wb.SetTemplateConditions(ctx, pageID, []string{"include/general"}, 0),
 		wb.SetTemplatePreview(ctx, pageID, "front"),
-		wb.SetTemplateDup(ctx, pageID, true),
-		wb.SetTemplateDup(ctx, pageID, false),
 	} {
 		if !errors.Is(err, ErrNotFound) {
 			t.Fatalf("setter on a page: %v", err)

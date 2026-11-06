@@ -40,7 +40,6 @@ type WBTemplate struct {
 	Priority   int                     // clamped to PriorityMin…PriorityMax
 	Preview    string                  // preview object, "" = the type's default
 	Starter    webbuilder.StarterID
-	Dup        bool // _wb_dup: the editor still has to regenerate the section ids
 	AuthorID   int64
 	AuthorName string // display name, "" when the author is gone
 	ModifiedAt time.Time
@@ -87,16 +86,15 @@ type NewWBTemplate struct {
 
 const wbTemplateCols = `p.id, p.title, p.status, coalesce(p.author_id,0), coalesce(u.display_name,''),
 	p.modified_at, p.created_at, p.meta->'` + webbuilder.MetaTemplateType + `', p.meta->'` + webbuilder.MetaConditions + `',
-	p.meta->'` + webbuilder.MetaPriority + `', p.meta->'` + webbuilder.MetaPreview + `', p.meta->'` + webbuilder.MetaStarter + `',
-	p.meta->'` + webbuilder.MetaDup + `'`
+	p.meta->'` + webbuilder.MetaPriority + `', p.meta->'` + webbuilder.MetaPreview + `', p.meta->'` + webbuilder.MetaStarter + `'`
 
 const wbTemplateFrom = ` FROM posts p LEFT JOIN users u ON u.id = p.author_id WHERE p.type = '` + webbuilder.TemplatePostType + `'`
 
 func scanWBTemplate(row pgx.Row) (*WBTemplate, error) {
 	t := &WBTemplate{}
-	var typ, conds, prio, preview, starter, dup []byte
+	var typ, conds, prio, preview, starter []byte
 	err := row.Scan(&t.ID, &t.Title, &t.Status, &t.AuthorID, &t.AuthorName, &t.ModifiedAt, &t.CreatedAt,
-		&typ, &conds, &prio, &preview, &starter, &dup)
+		&typ, &conds, &prio, &preview, &starter)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -108,10 +106,6 @@ func scanWBTemplate(row pgx.Row) (*WBTemplate, error) {
 	t.Priority = wbPriorityMeta(prio)
 	t.Preview = metaText(preview)
 	t.Starter = webbuilder.StarterID(metaText(starter))
-	switch metaText(dup) {
-	case "1", "true":
-		t.Dup = true
-	}
 	return t, nil
 }
 
@@ -324,22 +318,6 @@ func (w WebBuilderDB) SetTemplateConditions(ctx context.Context, id int64, condi
 // SetTemplatePreview stores a template's preview object ("" = the type's default).
 func (w WebBuilderDB) SetTemplatePreview(ctx context.Context, id int64, object string) error {
 	return w.setTemplateMeta(ctx, id, map[string]string{webbuilder.MetaPreview: object})
-}
-
-// SetTemplateDup sets or clears the duplicate marker (_wb_dup = "1"); clearing removes the key.
-func (w WebBuilderDB) SetTemplateDup(ctx context.Context, id int64, on bool) error {
-	if on {
-		return w.setTemplateMeta(ctx, id, map[string]string{webbuilder.MetaDup: "1"})
-	}
-	tag, err := w.q.Exec(ctx, `UPDATE posts SET meta = meta - $2::text, updated_at = now()
-		WHERE id = $1 AND type = '`+webbuilder.TemplatePostType+`'`, id, webbuilder.MetaDup)
-	if err != nil {
-		return err
-	}
-	if tag.RowsAffected() == 0 {
-		return ErrNotFound
-	}
-	return nil
 }
 
 // PublishedTemplates is the resolver's template index: every published template of a known type
