@@ -170,7 +170,7 @@ func (s *Server) wbRESTForm(c *gin.Context, r *restRequest) {
 		finish(wbFormInvalid, map[string]string{"captcha": reason})
 		return
 	}
-	if err := s.wbFormMail(c.Request.Context(), p, schema, clean, clientIP(c)); err != nil {
+	if err := s.wbFormMail(c.Request.Context(), p, s.wbFormPageURL(c, p), schema, clean, clientIP(c)); err != nil {
 		slog.Error("web builder form: mail", "post", p.ID, "section", schema.SectionID, "err", err)
 		finish(wbFormFailed, nil)
 		return
@@ -179,7 +179,8 @@ func (s *Server) wbRESTForm(c *gin.Context, r *restRequest) {
 }
 
 // wbFormTarget loads the published page and the stored schema of the {section} form. Anything that
-// is not a visible form section of a published, non-detached builder page answers 404.
+// is not a visible form section of a published, non-detached builder page or of a published
+// Theme Builder template (contract §11.9) answers 404.
 func (s *Server) wbFormTarget(c *gin.Context, r *restRequest) (*store.Post, webbuilder.FormSchema, bool) {
 	notFound := func() (*store.Post, webbuilder.FormSchema, bool) {
 		restErr(c, http.StatusNotFound, webbuilder.ErrNotFound, "Invalid form.")
@@ -193,7 +194,7 @@ func (s *Server) wbFormTarget(c *gin.Context, r *restRequest) (*store.Post, webb
 		restErr(c, http.StatusInternalServerError, "db_error", "Could not read the post.")
 		return nil, webbuilder.FormSchema{}, false
 	}
-	if !s.wbEnabledType(p.Type) {
+	if !s.wbEnabledType(p.Type) && !wbIsTemplate(p) {
 		restErr(c, http.StatusNotFound, webbuilder.ErrNotBuilder, "Pursae Web Builder is not enabled for this post type.")
 		return nil, webbuilder.FormSchema{}, false
 	}
@@ -209,8 +210,8 @@ func (s *Server) wbFormTarget(c *gin.Context, r *restRequest) (*store.Post, webb
 		return nil, webbuilder.FormSchema{}, false
 	}
 	// A detached page (content edited outside the builder, §6.3) shows the theme fallback: its
-	// forms are not on the page any more.
-	if row.Detached || (row.ContentHash != "" && row.ContentHash != store.WebBuilderContentHash(p.Content)) {
+	// forms are not on the page any more. Templates have no core editor and never detach.
+	if !wbIsTemplate(p) && (row.Detached || (row.ContentHash != "" && row.ContentHash != store.WebBuilderContentHash(p.Content))) {
 		return notFound()
 	}
 	var doc webbuilder.DocState
@@ -337,8 +338,9 @@ func (s *Server) wbFormCaptcha(ctx context.Context, values map[string]string, ip
 	return ""
 }
 
-// wbFormMail queues the message to admin_email (the wp_mail job of the core mailer).
-func (s *Server) wbFormMail(ctx context.Context, p *store.Post, schema webbuilder.FormSchema, clean map[string]string, ip string) error {
+// wbFormMail queues the message to admin_email (the wp_mail job of the core mailer). link is the
+// page the form was sent from (wbFormPageURL).
+func (s *Server) wbFormMail(ctx context.Context, p *store.Post, link string, schema webbuilder.FormSchema, clean map[string]string, ip string) error {
 	to := strings.TrimSpace(s.settings.String("admin_email"))
 	if to == "" {
 		return errors.New("no admin_email")
@@ -354,7 +356,6 @@ func (s *Server) wbFormMail(ctx context.Context, p *store.Post, schema webbuilde
 	if utf8.RuneCountInString(title) > wbFormTitle {
 		title = string([]rune(title)[:wbFormTitle]) + "…"
 	}
-	link := s.links(ctx).Permalink(p)
 
 	var b strings.Builder
 	b.WriteString("New message from the form \"" + title + "\" on " + defaultStr(wbFormLine(p.Title), "(no title)") + "\n")
@@ -415,7 +416,33 @@ func (s *Server) wbFormRespond(c *gin.Context, p *store.Post, section string, wa
 	if o != wbFormSent {
 		state = "error"
 	}
-	c.Redirect(http.StatusSeeOther, wbFormBackURL(s.links(c).Permalink(p), state, section))
+	c.Redirect(http.StatusSeeOther, wbFormBackURL(s.wbFormPageURL(c, p), state, section))
+}
+
+// wbFormPageURL is the page a form was sent from: the builder page itself, or for a form inside a
+// Theme Builder template (shown on many pages) the same-origin Referer, else the home page.
+func (s *Server) wbFormPageURL(c *gin.Context, p *store.Post) string {
+	lb := s.links(c)
+	if !wbIsTemplate(p) {
+		return lb.Permalink(p)
+	}
+	home := lb.HomeURL("/")
+	ref, err := url.Parse(c.GetHeader("Referer"))
+	if err != nil || (ref.Scheme != "http" && ref.Scheme != "https") || ref.Host == "" || ref.User != nil {
+		return home
+	}
+	same := strings.EqualFold(ref.Host, c.Request.Host)
+	if hu, err := url.Parse(home); err == nil && strings.EqualFold(ref.Host, hu.Host) {
+		same = true
+	}
+	if !same {
+		return home
+	}
+	path := ref.RequestURI()
+	if safeRedirect(path, "") == "" { // a path on this site, nothing a browser would read as another host
+		return home
+	}
+	return ref.Scheme + "://" + ref.Host + path
 }
 
 // wbFormBackURL is the page with ?wb_form=<state> and #<section>.

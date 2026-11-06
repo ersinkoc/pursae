@@ -46,6 +46,11 @@ func (s *Server) wbAfterPostSave(ctx context.Context, p *store.Post) {
 		return
 	}
 	_, _ = s.wbDetectDrift(ctx, p.ID)
+	if wbIsTemplate(p) {
+		// Published, unpublished, trashed or renamed: the template index and every cached page
+		// that may show it are stale (webbuilder_templates.go).
+		s.wbTemplatesChanged(ctx)
+	}
 }
 
 // wbDetectDrift compares the stored posts.content (not an in-memory copy, which a caller may have
@@ -89,17 +94,23 @@ func (s *Server) wbExportMeta(ctx context.Context, postID int64, postmeta func(k
 // unfiltered_html, html sections and custom CSS are stripped, like a publish. The row has no
 // snapshot (renderer 0): the front shows the fallback until Regenerate renders it. The transport
 // keys are always removed from posts.meta; a post whose doc is missing or invalid also loses the
-// _web_builder marker and stays an ordinary post. It returns log lines for the import report.
-func (s *Server) wbImportDocs(ctx context.Context, u *store.User, postIDs []int64, urlMap map[string]string) []string {
+// _web_builder marker and stays an ordinary post. Theme Builder templates also get their display
+// conditions and preview object remapped to the imported ids (wbImportTemplateMeta). It returns
+// log lines for the import report.
+func (s *Server) wbImportDocs(ctx context.Context, u *store.User, postIDs []int64, urlMap map[string]string, ids wbImportIDs) []string {
 	var log []string
 	unfiltered := u != nil && u.Can("unfiltered_html", nil)
 	rep := wbURLReplacer(urlMap)
 	wb := s.store.WebBuilder()
-	kept := 0
+	kept, templates := 0, 0
 	for _, id := range postIDs {
 		p, err := s.store.GetPost(ctx, id)
 		if err != nil || p == nil {
 			continue
+		}
+		if wbIsTemplate(p) {
+			templates++
+			log = append(log, s.wbImportTemplateMeta(ctx, u, p, ids)...)
 		}
 		rawDoc, hasDoc := p.Meta[wbWXRDocMeta].(string)
 		_, hasMarker := p.Meta[webbuilder.PostMarkerMeta]
@@ -111,7 +122,7 @@ func (s *Server) wbImportDocs(ctx context.Context, u *store.User, postIDs []int6
 		rawPage, _ := p.Meta[wbWXRPageMeta].(string)
 		detached := p.Meta[wbWXRDetachedMeta] == "1"
 		keep := false
-		if hasDoc && s.wbEnabledType(p.Type) {
+		if hasDoc && (s.wbEnabledType(p.Type) || wbIsTemplate(p)) {
 			res, err := webbuilder.ParseDoc([]byte(rep.Replace(rawDoc)), webbuilder.DocOptions{UnfilteredHTML: unfiltered, PathPrefix: "/doc"})
 			if err == nil && res.Valid() {
 				d := &store.WebBuilderDoc{PostID: p.ID, Doc: res.JSON, Page: wbImportPage(rep.Replace(rawPage)),
@@ -129,6 +140,8 @@ func (s *Server) wbImportDocs(ctx context.Context, u *store.User, postIDs []int6
 			}
 			if !keep {
 				log = append(log, "The Pursae Web Builder design of “"+p.Title+"” could not be imported; the page keeps its content.")
+			} else if wbIsTemplate(p) {
+				log = append(log, "The template “"+p.Title+"” was imported; open it in Pursae Web Builder and publish it to show it on the site.")
 			}
 		}
 		drop := []string{wbWXRDocMeta, wbWXRPageMeta, wbWXRDetachedMeta}
@@ -143,6 +156,88 @@ func (s *Server) wbImportDocs(ctx context.Context, u *store.User, postIDs []int6
 	}
 	if kept > 0 {
 		s.wbPurgePages()
+	}
+	if templates > 0 {
+		s.wbTemplatesChanged(ctx)
+	}
+	return log
+}
+
+// wbImportIDs are the importer's id maps (ids in the file → ours), for the ids inside template
+// display conditions and preview objects.
+type wbImportIDs struct {
+	Posts, Terms, Users map[int64]int64
+}
+
+// wbImportTemplateMeta remaps the ids in an imported template's display conditions and preview
+// object; a rule whose target was not imported is dropped and logged, a preview object that names
+// nothing imported goes back to the type's default. A template imported by a user without
+// edit_theme_options is saved as a draft (disabled).
+func (s *Server) wbImportTemplateMeta(ctx context.Context, u *store.User, p *store.Post, ids wbImportIDs) []string {
+	var log []string
+	wb := s.store.WebBuilder()
+	t, err := wb.Template(ctx, p.ID)
+	if err != nil {
+		return nil
+	}
+	mapID := func(m map[int64]int64, id int64) (int64, bool) {
+		n, ok := m[id]
+		return n, ok && n > 0
+	}
+	rules := make([]string, 0, len(t.Conditions))
+	for _, raw := range t.Conditions {
+		c, err := webbuilder.ParseCondition(strings.TrimSpace(raw))
+		if err != nil {
+			log = append(log, "The display condition “"+raw+"” of the template “"+p.Title+"” is not valid and was dropped.")
+			continue
+		}
+		if c.ID != 0 {
+			var m map[int64]int64
+			switch c.Scope {
+			case webbuilder.ScopeEntry, webbuilder.ScopeChildOf:
+				m = ids.Posts
+			case webbuilder.ScopeInTerm, webbuilder.ScopeTaxonomy:
+				m = ids.Terms
+			case webbuilder.ScopeByAuthor, webbuilder.ScopeAuthor:
+				m = ids.Users
+			}
+			n, ok := mapID(m, c.ID)
+			if !ok {
+				log = append(log, "The display condition “"+raw+"” of the template “"+p.Title+"” was dropped: what it names was not imported.")
+				continue
+			}
+			c.ID = n
+		}
+		rules = append(rules, c.String())
+	}
+	rules, _ = webbuilder.NormalizeConditions(rules)
+	if len(rules) > webbuilder.MaxConditions {
+		rules = rules[:webbuilder.MaxConditions]
+	}
+	_ = wb.SetTemplateConditions(ctx, p.ID, rules, t.Priority)
+	preview := ""
+	if pv, err := wbParsePreview(t.Preview); err == nil {
+		preview = t.Preview
+		var n int64
+		ok := true
+		switch pv.Kind {
+		case "post":
+			n, ok = mapID(ids.Posts, pv.ID)
+			preview = webbuilder.PreviewPost + itoa64(n)
+		case "term":
+			n, ok = mapID(ids.Terms, pv.ID)
+			preview = webbuilder.PreviewTerm + pv.Name + ":" + itoa64(n)
+		case "author":
+			n, ok = mapID(ids.Users, pv.ID)
+			preview = webbuilder.PreviewAuthor + itoa64(n)
+		}
+		if !ok {
+			preview = ""
+		}
+	}
+	_ = wb.SetTemplatePreview(ctx, p.ID, preview)
+	if (u == nil || !u.Can(webbuilder.TemplateCap, nil)) && p.Status != "draft" {
+		_, _ = s.store.Pool.Exec(ctx, `UPDATE posts SET status = 'draft' WHERE id = $1`, p.ID)
 	}
 	return log
 }

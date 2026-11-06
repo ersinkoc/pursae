@@ -248,7 +248,7 @@ func (s *Server) pllDefault(ctx context.Context) *pllLanguage {
 
 // pllPostTypes are the translated post types: posts and pages, plus the custom types ticked in Settings.
 func (s *Server) pllPostTypes() []string {
-	return append(append([]string{"post", "page"}, s.gooPllPostTypes()...), s.pllOpts().PostTypes...) // Goocommerce: products (goo_golylang.go)
+	return append(append(append([]string{"post", "page"}, s.gooPllPostTypes()...), s.wbPllPostTypes()...), s.pllOpts().PostTypes...) // Goocommerce: products (goo_golylang.go); Web Builder templates
 }
 
 // pllTaxonomies are the translated taxonomies: categories and tags, plus the custom ones ticked in Settings.

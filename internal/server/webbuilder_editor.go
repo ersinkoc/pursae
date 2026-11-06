@@ -33,7 +33,7 @@ import (
 func (s *Server) wbEditor(c *gin.Context, p *store.Post) {
 	c.Header("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0")
 	u := currentUser(c)
-	if u == nil || !u.Can("edit_post", p) {
+	if u == nil || (wbIsTemplate(p) && !u.Can(webbuilder.TemplateCap, nil)) || (!wbIsTemplate(p) && !u.Can("edit_post", p)) {
 		c.String(http.StatusForbidden, "Sorry, you are not allowed to edit this item.")
 		return
 	}
@@ -41,7 +41,7 @@ func (s *Server) wbEditor(c *gin.Context, p *store.Post) {
 		c.String(http.StatusForbidden, "You cannot edit this item because it is in the Trash. Please restore it and try again.")
 		return
 	}
-	if !s.wbEnabledType(p.Type) {
+	if !s.wbEditable(u, p) {
 		c.String(http.StatusForbidden, "This item cannot be edited with Pursae Web Builder.")
 		return
 	}
@@ -129,8 +129,8 @@ type wbBoot struct {
 	Media           webbuilder.BootMedia `json:"media"`
 	SiteAssets      string               `json:"siteAssets"`
 	AI              webbuilder.BootAI    `json:"ai"`
-	// Theme Builder (contract APIVersion 2). Until the Theme Builder fills them, Template is null
-	// and Site / Dynamic carry empty lists so the editor sees the contract's shape.
+	// Theme Builder (contract APIVersion 2): Template is null unless the post is a template; Site
+	// and Dynamic are always filled (webbuilder_dynamic_ctx.go).
 	Template *webbuilder.TemplateBoot `json:"template"`
 	Site     webbuilder.SiteBoot      `json:"site"`
 	Dynamic  webbuilder.DynContext    `json:"dynamic"`
@@ -261,6 +261,32 @@ func (s *Server) wbBootFor(c *gin.Context, p *store.Post, u *store.User, doc *wb
 	if u.Can("manage_options", nil) {
 		settings = lb.HomeURL(wbSettingsURL)
 	}
+	preview := permalink + previewSep(permalink) + "preview=true"
+	editPost := lb.HomeURL("/wp-admin/post?post=" + itoa64(p.ID) + "&action=edit")
+	publish := u.Can("publish_post", p)
+	// Theme Builder (contract §11.7): a template's boot names its type, rules and preview object;
+	// it exits to Appearance › Theme Builder and previews on the front with ?wb_template_preview.
+	var tplBoot *webbuilder.TemplateBoot
+	var tpl *store.WBTemplate
+	if wbIsTemplate(p) {
+		if t, err := s.store.WebBuilder().Template(c, p.ID); err == nil {
+			tpl = t
+			info, _ := s.wbTemplatePreviewInfo(c, t)
+			starter := t.Starter
+			if starter == "" {
+				starter = webbuilder.DefaultStarters[t.Type]
+			}
+			if starter == "" {
+				starter = webbuilder.StarterBlank
+			}
+			tplBoot = &webbuilder.TemplateBoot{Type: t.Type, Conditions: t.Conditions, Priority: t.Priority, Starter: starter,
+				Preview: info, ManageURL: lb.HomeURL(wbThemeBuilderURL())}
+			permalink, preview, editPost = info.URL, info.URL, ""
+			exit = wbThemeBuilderURL()
+		}
+		publish = u.Can(webbuilder.TemplateCap, nil)
+	}
+	dyn := s.wbDynamicFor(c, p, tpl)
 	return &wbBoot{
 		APIVersion:      webbuilder.APIVersion,
 		RendererVersion: webbuilder.RendererVersion,
@@ -270,13 +296,13 @@ func (s *Server) wbBootFor(c *gin.Context, p *store.Post, u *store.User, doc *wb
 		Links: webbuilder.BootLinks{
 			Site:      strings.TrimRight(lb.HomeURL("/"), "/"),
 			Permalink: permalink,
-			Preview:   permalink + previewSep(permalink) + "preview=true",
+			Preview:   preview,
 			Exit:      lb.HomeURL(exit),
-			EditPost:  lb.HomeURL("/wp-admin/post?post=" + itoa64(p.ID) + "&action=edit"),
+			EditPost:  editPost,
 			Settings:  settings,
 		},
 		Caps: webbuilder.BootCaps{
-			Publish:        u.Can("publish_post", p),
+			Publish:        publish,
 			UploadFiles:    u.Can("upload_files", nil),
 			UnfilteredHTML: u.Can("unfiltered_html", nil),
 			EditOthers:     u.Can("edit_others_posts", nil),
@@ -286,11 +312,9 @@ func (s *Server) wbBootFor(c *gin.Context, p *store.Post, u *store.User, doc *wb
 		Media:      webbuilder.BootMedia{MaxUploadBytes: maxUploadBytes, Types: wbMediaTypes()},
 		SiteAssets: lb.HomeURL(webbuilder.SiteAssetsPath),
 		AI:         webbuilder.BootAI{Enabled: false, Providers: []webbuilder.AIProviderInfo{}},
-		Site: webbuilder.SiteBoot{Home: strings.TrimRight(lb.HomeURL("/"), "/"),
-			Locations: []webbuilder.MenuLocation{}, Menus: map[string][]webbuilder.DynMenuItem{},
-			PostTypes: []webbuilder.PostTypeInfo{}, Taxonomies: []webbuilder.TaxonomyInfo{}},
-		Dynamic: webbuilder.DynContext{Site: webbuilder.DynSite{Home: strings.TrimRight(lb.HomeURL("/"), "/")},
-			Locations: []webbuilder.MenuLocation{}, Menus: map[string][]webbuilder.DynMenuItem{}, Posts: []webbuilder.DynPost{}},
+		Template:   tplBoot,
+		Site:       s.wbSiteBoot(c, &dyn),
+		Dynamic:    dyn,
 	}
 }
 

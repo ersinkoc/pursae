@@ -90,6 +90,8 @@ func (s *Server) registerWebBuilderREST() {
 	reg(`/web-builder/v2/library/(?P<id>[\d]+)`, map[string]restHandler{http.MethodDelete: s.wbRESTLibraryDelete}, true)
 	reg(`/web-builder/v2/prefs`, map[string]restHandler{http.MethodGet: s.wbRESTPrefs, http.MethodPut: s.wbRESTPrefsSave}, true)
 	reg(`/web-builder/v2/fonts/css2`, map[string]restHandler{http.MethodGet: s.wbRESTFontsCSS}, false) // a stylesheet: nonce in ?_wpnonce=
+	// Theme Builder (webbuilder_templates_rest.go)
+	s.wbRegisterTemplateREST(reg)
 }
 
 // --- shared helpers --------------------------------------------------------------------------------
@@ -115,8 +117,9 @@ func wbUser(c *gin.Context, cap string) *store.User {
 	return u
 }
 
-// wbPost loads the {id} post for a document route: logged in, a builder post type, not trashed and
-// editable by the user (edit_post). It answers the error itself and returns nil on failure.
+// wbPost loads the {id} post for a document route: logged in, a builder post type (or a Theme
+// Builder template), not trashed and editable by the user (wbEditable: edit_post, or
+// edit_theme_options for a template). It answers the error itself and returns nil on failure.
 func (s *Server) wbPost(c *gin.Context, r *restRequest) (*store.User, *store.Post) {
 	u := restCurrent(c)
 	if u == nil {
@@ -132,7 +135,7 @@ func (s *Server) wbPost(c *gin.Context, r *restRequest) (*store.User, *store.Pos
 		}
 		return nil, nil
 	}
-	if !s.wbEnabledType(p.Type) {
+	if !s.wbEnabledType(p.Type) && !wbIsTemplate(p) {
 		restErr(c, http.StatusNotFound, webbuilder.ErrNotBuilder, "Pursae Web Builder is not enabled for this post type.")
 		return nil, nil
 	}
@@ -140,7 +143,7 @@ func (s *Server) wbPost(c *gin.Context, r *restRequest) (*store.User, *store.Pos
 		restErr(c, http.StatusNotFound, webbuilder.ErrNotFound, "Invalid post ID.")
 		return nil, nil
 	}
-	if !u.Can("edit_post", p) {
+	if !s.wbEditable(u, p) {
 		wbForbidden(c, u)
 		return nil, nil
 	}
@@ -541,12 +544,19 @@ func (s *Server) wbRESTPublish(c *gin.Context, r *restRequest) {
 		return
 	}
 	status := body.Status
-	switch status {
-	case webbuilder.StatusPublish, webbuilder.StatusPrivate:
+	switch {
+	case wbIsTemplate(p):
+		// A template is active (publish) or disabled (draft); wbEditable already required
+		// edit_theme_options, so there is no pending path.
+		if !wbTemplateStatusOK(status) {
+			wbBadTemplate(c, "A template can only be published or saved as a draft.")
+			return
+		}
+	case status == webbuilder.StatusPublish || status == webbuilder.StatusPrivate:
 		if !u.Can("publish_post", p) {
 			status = webbuilder.StatusPending
 		}
-	case webbuilder.StatusDraft, webbuilder.StatusPending:
+	case status == webbuilder.StatusDraft || status == webbuilder.StatusPending:
 	default:
 		restErr(c, http.StatusBadRequest, "rest_invalid_param", "Invalid parameter(s): status")
 		return
@@ -702,10 +712,16 @@ func (s *Server) wbRESTPublish(c *gin.Context, r *restRequest) {
 		restErr(c, http.StatusInternalServerError, "db_error", "Could not publish the page.")
 		return
 	}
+	if _, dup := p.Meta[webbuilder.MetaDup]; dup && wbIsTemplate(p) {
+		// The editor regenerated the section ids of a duplicate before this first publish.
+		_ = s.store.WebBuilder().SetTemplateDup(c, p.ID, false)
+	}
 	if after, err := s.store.GetPost(c, p.ID); err == nil {
 		fresh = after
 	}
-	s.afterPostSave(c, fresh) // save_post side effects, WPGo Cache purge of the post included
+	// save_post side effects, WPGo Cache purge of the post included; for a template
+	// wbAfterPostSave calls wbTemplatesChanged (index generation + full purge).
+	s.afterPostSave(c, fresh)
 	c.JSON(http.StatusOK, webbuilder.PublishResponse{Rev: d.Rev, Status: fresh.Status, Permalink: s.links(c).Permalink(fresh),
 		RevisionID: revisionID, Modified: wbTime(fresh.ModifiedAt), Stripped: snap.stripped})
 }
