@@ -1,0 +1,69 @@
+{{/* Each view: the Theme Builder part for the page (.Data.wb.Main) or the minimal default. */}}
+{{define "theme/index"}}{{template "header" .}}
+{{template "main-open" .}}
+{{$wb := .Data.wb}}{{if and $wb $wb.Main}}{{$wb.Main}}{{else}}
+	{{if .IsHomeHeader}}<header class="page-header"><h1 class="entry-title">{{.PostsPageTitle}}</h1></header>{{end}}
+	<div class="page-content">
+	{{range .Posts}}{{template "content" .}}{{else}}{{template "content-none" .}}{{end}}
+	</div>
+	{{.Pagination}}
+{{end}}
+{{template "main-close" .}}
+{{template "footer" .}}{{end}}
+
+{{define "theme/single"}}{{template "header" .}}
+{{template "main-open" .}}
+{{$wb := .Data.wb}}{{if and $wb $wb.Main}}{{$wb.Main}}{{else}}
+	{{with .Post}}{{template "content-single" .}}{{end}}
+	{{.PostNav}}
+	{{template "comments" .}}
+{{end}}
+{{template "main-close" .}}
+{{template "footer" .}}{{end}}
+
+{{/* Pages, and the store pages (shop, product, cart, checkout, account): their markup is the
+     page content, printed like any page. */}}
+{{define "theme/page"}}{{template "header" .}}
+{{template "main-open" .}}
+{{$wb := .Data.wb}}{{if and $wb $wb.Main}}{{$wb.Main}}{{else}}
+	{{with .Post}}{{template "content-page" .}}{{end}}
+	{{template "comments" .}}
+{{end}}
+{{template "main-close" .}}
+{{template "footer" .}}{{end}}
+
+{{define "theme/archive"}}{{template "header" .}}
+{{template "main-open" .}}
+{{$wb := .Data.wb}}{{if and $wb $wb.Main}}{{$wb.Main}}{{else}}
+	<header class="page-header"><h1 class="entry-title">{{.ArchiveTitle}}</h1>{{if .ArchiveDesc}}<div class="archive-description">{{.ArchiveDesc}}</div>{{end}}</header>
+	<div class="page-content">
+	{{range .Posts}}{{template "content" .}}{{else}}{{template "content-none" .}}{{end}}
+	</div>
+	{{.Pagination}}
+{{end}}
+{{template "main-close" .}}
+{{template "footer" .}}{{end}}
+
+{{define "theme/search"}}{{template "header" .}}
+{{template "main-open" .}}
+{{$wb := .Data.wb}}{{if and $wb $wb.Main}}{{$wb.Main}}{{else}}
+	<header class="page-header"><h1 class="entry-title">Search results for: <span>{{.SearchQuery}}</span></h1></header>
+	<div class="page-content">
+	{{range .Posts}}{{template "content" .}}{{else}}{{template "content-none" .}}{{end}}
+	</div>
+	{{.Pagination}}
+{{end}}
+{{template "main-close" .}}
+{{template "footer" .}}{{end}}
+
+{{define "theme/404"}}{{template "header" .}}
+{{template "main-open" .}}
+{{$wb := .Data.wb}}{{if and $wb $wb.Main}}{{$wb.Main}}{{else}}
+	<header class="page-header"><h1 class="entry-title">The page can&rsquo;t be found.</h1></header>
+	<div class="page-content">
+		<p>It looks like nothing was found at this location.</p>
+		{{template "searchform" .}}
+	</div>
+{{end}}
+{{template "main-close" .}}
+{{template "footer" .}}{{end}}
