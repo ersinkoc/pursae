@@ -1,0 +1,725 @@
+diff --git a/src/builder/BasicPanel.tsx b/src/builder/BasicPanel.tsx
+index 8515235..f44f4b7 100644
+--- a/src/builder/BasicPanel.tsx
++++ b/src/builder/BasicPanel.tsx
+@@ -36,8 +36,8 @@ import { LinkField } from './LinkField'
+ import { RichField, richKind } from './RichText'
+ import { isRich } from './rich'
+ import { DecorPicker } from './ContainerInspector'
+-import { BRANDS, CORNERS, FEATURE_ICONS, GRID_CAPS, IMAGES, KINDS, POSITIONED_DECOR, createLayout, fieldKind, findSection, getBg, getBox, getGrid, PALETTES, TEMPLATES, getValue, palette, sectionSummary, sized } from './data'
+-import { getHost, type MediaAsset } from './host'
++import { BRANDS, CORNERS, FEATURE_ICONS, GRID_CAPS, IMAGES, KINDS, isPinned, POSITIONED_DECOR, createLayout, fieldKind, findSection, getBg, getBox, getGrid, PALETTES, TEMPLATES, getValue, palette, sectionSummary, sized } from './data'
++import { getHost, hostTemplate, type MediaAsset } from './host'
+ import { useB, type BasicView } from './store'
+ import { entranceLabel, getMotion, motionPatch, replayMotion } from './motion'
+ import { FontPresetGrid } from './TypographyControls'
+@@ -121,7 +121,7 @@ function Thumb({ s, size = 38 }: { s: Section; size?: number }) {
+ 
+ function Row({ s, dragHandle }: { s: Section; dragHandle?: ReactNode }) {
+   const b = useB()
+-  const pinned = KINDS[s.kind].pinned
++  const pinned = isPinned(s.kind)
+   return (
+     <div
+       onMouseEnter={() => b.setHoverSection(s.id)}
+@@ -182,12 +182,12 @@ function DraggableRow({ s }: { s: Section }) {
+ function SectionList() {
+   const b = useB()
+   const all = b.doc.sections
+-  const head = all.filter((s) => s.kind === 'nav')
+-  const tail = all.filter((s) => s.kind === 'footer')
+-  const middle = all.filter((s) => s.kind !== 'nav' && s.kind !== 'footer')
++  const head = all.filter((s) => s.kind === 'nav' && isPinned(s.kind))
++  const tail = all.filter((s) => s.kind === 'footer' && isPinned(s.kind))
++  const middle = all.filter((s) => !head.includes(s) && !tail.includes(s))
+   return (
+     <div className="px-3 pb-6">
+-      {!b.milestones.dismissed && <Checklist />}
++      {!b.milestones.dismissed && !hostTemplate() && <Checklist />}
+       <div className="space-y-0.5">
+         {head.map((s) => (
+           <Row key={s.id} s={s} />
+@@ -696,11 +696,11 @@ function SectionEditor({ s }: { s: Section }) {
+       <Group title={t('Section')}>
+         <div className="grid grid-cols-5 gap-1.5">
+           {[
+-            { i: ArrowUp, l: t('Up'), f: () => b.dispatch({ type: 'move', id: s.id, dir: -1 }), off: def.pinned },
+-            { i: ArrowDown, l: t('Down'), f: () => b.dispatch({ type: 'move', id: s.id, dir: 1 }), off: def.pinned },
+-            { i: Copy, l: t('Duplicate'), f: () => b.dispatch({ type: 'duplicate', id: s.id }), off: def.pinned },
++            { i: ArrowUp, l: t('Up'), f: () => b.dispatch({ type: 'move', id: s.id, dir: -1 }), off: isPinned(s.kind) },
++            { i: ArrowDown, l: t('Down'), f: () => b.dispatch({ type: 'move', id: s.id, dir: 1 }), off: isPinned(s.kind) },
++            { i: Copy, l: t('Duplicate'), f: () => b.dispatch({ type: 'duplicate', id: s.id }), off: isPinned(s.kind) },
+             { i: s.hidden ? Eye : EyeOff, l: s.hidden ? t('Show') : t('Hide'), f: () => b.dispatch({ type: 'toggleHidden', id: s.id }) },
+-            { i: Trash2, l: t('Delete'), f: () => b.remove(s.id), off: def.pinned, danger: true },
++            { i: Trash2, l: t('Delete'), f: () => b.remove(s.id), off: isPinned(s.kind), danger: true },
+           ].map(({ i: I, l, f, off, danger }) => (
+             <button
+               key={l}
+@@ -717,7 +717,7 @@ function SectionEditor({ s }: { s: Section }) {
+             </button>
+           ))}
+         </div>
+-        {def.pinned && <p className="text-[12px] text-ink-500">{t('This section is fixed on the page; it cannot be moved or deleted.')}</p>}
++        {isPinned(s.kind) && <p className="text-[12px] text-ink-500">{t('This section is fixed on the page; it cannot be moved or deleted.')}</p>}
+       </Group>
+     </div>
+   )
+diff --git a/src/builder/Builder.tsx b/src/builder/Builder.tsx
+index 3846900..3d5763e 100644
+--- a/src/builder/Builder.tsx
++++ b/src/builder/Builder.tsx
+@@ -14,10 +14,11 @@ import { ContextMenu } from './ContextMenu'
+ import { deleteSelection, duplicateSelection, parentSelection } from './selectionActions'
+ import { Dialogs } from './Dialogs'
+ import { LibraryHost } from './variants/LibraryHost'
+-import { cloneSection, createSection, findSection, initialDoc, locate, normalizeDoc } from './data'
+-import { getHost, hostAi } from './host'
++import { cloneSection, createSection, findSection, initialDoc, locate, normalizeDoc, siteDoc } from './data'
++import { getHost, hostAi, hostTemplate, hostThemeParts } from './host'
++import { starterDoc } from './dynamic/starters'
+ import { BuilderCtx, historyReducer, initHistory, insertBounds, type BasicView, type BuilderApi, type BuilderExtras, type MenuState, type Milestones, type PickerState, type StudioTab, type Toast } from './store'
+-import type { Device, ElStyle, Mode, PageSettings, Payload, SavedComponent, Section, Selection } from './types'
++import type { Device, DocState, ElStyle, Mode, PageSettings, Payload, SavedComponent, Section, Selection } from './types'
+ import { cn, ease } from './ui'
+ import { t } from './i18n'
+ import { dynDefaults, isDynWidget } from './dynamic/model'
+@@ -26,10 +27,22 @@ const PANEL_W = 316
+ 
+ const DEFAULT_PAGE: PageSettings = { title: 'Pursae — WordPress at the speed of Go', slug: '', description: 'Pursae rewrites the WordPress core in Go: one binary, PostgreSQL and WebAssembly plugins.', indexable: true }
+ 
++/**
++ * The doc a page starts from when nothing is stored: a template's starter (template mode), the
++ * starter page without nav and footer while the theme draws them (themeParts), else initialDoc.
++ */
++function freshDoc(): DocState {
++  const tpl = hostTemplate()
++  if (tpl) return starterDoc(tpl.type, tpl.starter)
++  return hostThemeParts() ? siteDoc() : initialDoc
++}
++
+ export default function Builder() {
+   const host = useMemo(getHost, [])
+   const aiOn = hostAi(host).enabled
+-  const [history, dispatch] = useReducer(historyReducer, initialDoc, (d) => initHistory(normalizeDoc(host.loadDoc()) ?? d))
++  const template = useMemo(() => hostTemplate(host), [host])
++  const [loaded] = useState(() => normalizeDoc(host.loadDoc()))
++  const [history, dispatch] = useReducer(historyReducer, loaded, (d) => initHistory(d ?? freshDoc()))
+   const doc = history.entries[history.cursor].doc
+ 
+   const [mode, setModeRaw] = useState<Mode>('basic')
+@@ -51,7 +64,8 @@ export default function Builder() {
+   const [toasts, setToasts] = useState<Toast[]>([])
+   const [structureOpen, setStructureOpen] = useState(true)
+   const [publishState, setPublishState] = useState<'idle' | 'busy'>('idle')
+-  const [publishedRev, setPublishedRev] = useState(0)
++  // A template that starts from its starter has never been published: it can be published as is.
++  const [publishedRev, setPublishedRev] = useState(() => (template && !loaded ? -1 : 0))
+   const canvasArea = useRef<HTMLDivElement>(null)
+   const [clipboard, setClipboard] = useState<Section | null>(null)
+   const [styleClipboard, setStyleClipboard] = useState<ElStyle | null>(null)
+@@ -59,7 +73,11 @@ export default function Builder() {
+   const [menu, setMenu] = useState<MenuState | null>(null)
+   const [paletteOpen, setPaletteOpen] = useState(false)
+   const [dialog, setDialog] = useState<BuilderExtras['dialog']>(null)
+-  const [page, setPage] = useState<PageSettings>(() => ({ ...DEFAULT_PAGE, ...host.loadPage() }))
++  const [page, setPage] = useState<PageSettings>(() => {
++    const p = { ...DEFAULT_PAGE, ...host.loadPage() }
++    // A new page under the theme's header and footer templates (contract §11.4).
++    return !loaded && !p.layout && hostThemeParts(host) ? { ...p, layout: 'site' } : p
++  })
+   const initialPage = useRef(page)
+   const [saveState, setSaveState] = useState<'saved' | 'saving'>('saved')
+   const [flags, setFlags] = useState<Pick<Milestones, 'section' | 'publish' | 'dismissed'>>(() => host.storage.get('flags', { section: false, publish: false, dismissed: false }))
+@@ -139,9 +157,13 @@ export default function Builder() {
+     publishing.current = true
+     setPublishState('busy')
+     const rev = history.rev
+-    host
+-      .publish({ doc, page })
+-      .then((r) => {
++    const input = { doc, page }
++    Promise.resolve()
++      .then(() => (host.beforePublish ? host.beforePublish(input) : true))
++      .then((go) => (go === false ? null : host.publish(input).then((r) => ({ r }))))
++      .then((out) => {
++        if (!out) return
++        const { r } = out
+         setPublishedRev(rev)
+         setFlags((f) => ({ ...f, publish: true }))
+         notify(r?.message || t('Page published'))
+@@ -226,7 +248,7 @@ export default function Builder() {
+   const removeSaved = useCallback((id: string) => setSaved((l) => l.filter((x) => x.id !== id)), [])
+   const scrollTo = useCallback((id: string) => setScrollReq({ id, n: Date.now() }), [])
+   const resetPage = useCallback(() => {
+-    dispatch({ type: 'replace', doc: initialDoc, label: t('Page reset') })
++    dispatch({ type: 'replace', doc: freshDoc(), label: t('Page reset') })
+     setSelection(null)
+     setBasicView('list')
+     notify(t('The page is back to its original state'), { label: t('Undo'), run: () => dispatch({ type: 'undo' }) })
+diff --git a/src/builder/Canvas.tsx b/src/builder/Canvas.tsx
+index 8415356..cc18768 100644
+--- a/src/builder/Canvas.tsx
++++ b/src/builder/Canvas.tsx
+@@ -1,7 +1,7 @@
+ import { useEffect, useRef, useState, type CSSProperties, type DragEvent, type ReactNode, type PointerEvent as RPointerEvent } from 'react'
+ import { AnimatePresence, motion } from 'motion/react'
+ import { ArrowDown, ArrowUp, Copy, Eye, EyeOff, GripHorizontal, LayoutTemplate, Pencil, Plus, Trash2, X } from 'lucide-react'
+-import { CORNERS, KINDS, createLayout, getBox, paletteVars } from './data'
++import { CORNERS, KINDS, isPinned, createLayout, getBox, paletteVars } from './data'
+ import { LayoutPicker } from './LayoutPicker'
+ import { siteFontVars, useDocFonts } from './fonts'
+ import { DecorHandle, SectionBackground } from './Decor'
+@@ -281,7 +281,7 @@ function ToolBtn({ icon: I, label, onClick, danger }: { icon: typeof Plus; label
+ 
+ function BasicToolbar({ s }: { s: Section }) {
+   const b = useB()
+-  const pinned = KINDS[s.kind].pinned
++  const pinned = isPinned(s.kind)
+   return (
+     <motion.div
+       initial={{ opacity: 0, y: -6, scale: 0.96 }}
+diff --git a/src/builder/ContextMenu.tsx b/src/builder/ContextMenu.tsx
+index 18b4030..d93fb21 100644
+--- a/src/builder/ContextMenu.tsx
++++ b/src/builder/ContextMenu.tsx
+@@ -2,7 +2,7 @@ import { useEffect } from 'react'
+ import { createPortal } from 'react-dom'
+ import { AnimatePresence, motion } from 'motion/react'
+ import { ArrowDown, ArrowUp, BookmarkPlus, ClipboardCopy, ClipboardPaste, Copy, CornerLeftUp, Eye, EyeOff, LayoutTemplate, Paintbrush, Pencil, RotateCcw, Settings2, Trash2, type LucideIcon } from 'lucide-react'
+-import { KINDS, locate } from './data'
++import { isPinned, locate } from './data'
+ import { hasVariants } from './variants'
+ import { openLibrary } from './variants/libraryState'
+ import { deleteSelection, describeTarget, duplicateSelection, resolveTarget, toggleHideSelection } from './selectionActions'
+@@ -32,7 +32,7 @@ export function ContextMenu() {
+   const s = loc?.s
+   const entries: Entry[] = []
+   if (m && s) {
+-    const pinned = !!KINDS[s.kind].pinned
++    const pinned = isPinned(s.kind)
+     const studio = b.mode === 'studio'
+     const parent = loc?.parent
+     const tv = m.el ? resolveTarget(b.doc, { sectionId: s.id, el: m.el }) : null
+diff --git a/src/builder/Dialogs.tsx b/src/builder/Dialogs.tsx
+index bd0b0f8..6c63b34 100644
+--- a/src/builder/Dialogs.tsx
++++ b/src/builder/Dialogs.tsx
+@@ -2,10 +2,11 @@ import { useEffect, useState, type ReactNode } from 'react'
+ import { createPortal } from 'react-dom'
+ import { AnimatePresence, motion } from 'motion/react'
+ import { BookmarkPlus, Globe, Keyboard, X } from 'lucide-react'
+-import { findSection } from './data'
+-import { siteLabel } from './host'
++import { defaultPageLayout, findSection } from './data'
++import { hostTemplate, hostThemeParts, siteLabel } from './host'
+ import { useB } from './store'
+-import { Toggle, cn, ease } from './ui'
++import type { PageLayout } from './types'
++import { Segmented, Toggle, cn, ease } from './ui'
+ import { t } from './i18n'
+ 
+ export function Modal({ open, onClose, children, width = 520, top }: { open: boolean; onClose: () => void; children: ReactNode; width?: number; top?: boolean }) {
+@@ -68,6 +69,52 @@ function slugify(t: string) {
+     .replace(/^-|-$/g, '')
+ }
+ 
++/** Template mode: a template has a name only; its address, SEO and layout come from the pages it shows on. */
++function TemplateSettingsDialog() {
++  const b = useB()
++  const p = b.page
++  const close = () => b.setDialog(null)
++  return (
++    <>
++      <Head icon={Globe} title={t('Template settings')} sub={t('The name of the template in the Theme Builder.')} onClose={close} />
++      <div className="px-5 py-5">
++        <label className="block">
++          <span className="mb-1.5 block text-[12.5px] font-medium text-ink-300">{t('Template name')}</span>
++          <input value={p.title} onChange={(e) => b.setPage({ ...p, title: e.target.value })} className={field} />
++        </label>
++      </div>
++      <div className="flex justify-end border-t border-white/[0.07] px-5 py-3">
++        <button type="button" onClick={close} className="h-9 rounded-lg bg-accent px-4 text-[13px] font-semibold text-white hover:bg-[#6b89ff]">
++          {t('OK')}
++        </button>
++      </div>
++    </>
++  )
++}
++
++/** PageSettings.layout while the theme draws the header and footer templates (contract §11.4). */
++function LayoutField() {
++  const b = useB()
++  const value: PageLayout = b.page.layout ?? defaultPageLayout(b.doc)
++  return (
++    <div className="block">
++      <span className="mb-1.5 block text-[12.5px] font-medium text-ink-300">{t('Header & footer')}</span>
++      <Segmented<PageLayout>
++        id="page-layout"
++        value={value}
++        onChange={(v) => b.setPage({ ...b.page, layout: v })}
++        options={[
++          { value: 'site', label: t('Site templates') },
++          { value: 'canvas', label: t('This page only (canvas)') },
++        ]}
++      />
++      <p className="mt-1.5 text-[12px] text-ink-500">
++        {value === 'site' ? t('The header and footer templates of the site show around this page.') : t('The page shows only its own sections, without the header and footer of the site.')}
++      </p>
++    </div>
++  )
++}
++
+ function PageSettingsDialog() {
+   const b = useB()
+   const p = b.page
+@@ -75,6 +122,7 @@ function PageSettingsDialog() {
+   const close = () => b.setDialog(null)
+   const site = siteLabel()
+   const url = `${site}/${p.slug || ''}`
++  if (hostTemplate()) return <TemplateSettingsDialog />
+   return (
+     <>
+       <Head icon={Globe} title={t('Page settings')} sub={t('How should your page look on Google and when shared?')} onClose={close} />
+@@ -105,6 +153,7 @@ function PageSettingsDialog() {
+           </div>
+           <Toggle label={t('Show in search engines')} on={p.indexable} onChange={(v) => set({ indexable: v })} />
+         </div>
++        {hostThemeParts() && <LayoutField />}
+         <div>
+           <div className="mb-2 text-[11px] font-semibold uppercase tracking-[.1em] text-ink-500">{t('Google preview')}</div>
+           <div className="rounded-xl bg-white p-4 font-[Arial,sans-serif]">
+diff --git a/src/builder/StudioPanel.tsx b/src/builder/StudioPanel.tsx
+index 1567d7b..d87fcda 100644
+--- a/src/builder/StudioPanel.tsx
++++ b/src/builder/StudioPanel.tsx
+@@ -33,6 +33,7 @@ import { LinkField } from './LinkField'
+ import { RichField, richKind } from './RichText'
+ import { isRich } from './rich'
+ import { parentSelection, restoreEl, toggleHideSelection } from './selectionActions'
++import { hostTemplate } from './host'
+ import { CardContentTab } from './CardInspector'
+ import { DesignRow, LibraryButton } from './variants/VariantControls'
+ import { useB } from './store'
+@@ -125,6 +126,8 @@ function useDragAdd() {
+ }
+ 
+ function Widgets() {
++  // Post, Archive and Search widgets need a template's view to mean anything; Site widgets fit any page.
++  const template = !!hostTemplate()
+   const [q, setQ] = useState('')
+   const [closed, setClosed] = useState<string[]>([])
+   const drag = useDragAdd()
+@@ -137,7 +140,7 @@ function Widgets() {
+           <input id="widget-search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('Search widgets…')} className="w-full bg-transparent text-[12px] text-ink-100 outline-none placeholder:text-ink-500" />
+         </label>
+       </div>
+-      {WIDGET_GROUPS.map((g) => {
++      {WIDGET_GROUPS.filter((g) => !g.dynamic || g.dynamic === 'site' || template).map((g) => {
+         const items = g.items.filter((w) => w.label.toLocaleLowerCase(intlLocale()).includes(query))
+         if (!items.length) return null
+         const isClosed = closed.includes(g.title) && !query
+diff --git a/src/builder/TopBar.tsx b/src/builder/TopBar.tsx
+index 8a4ff5f..e4855c7 100644
+--- a/src/builder/TopBar.tsx
++++ b/src/builder/TopBar.tsx
+@@ -4,7 +4,7 @@ import { HistoryButton } from './HistoryPanel'
+ import { useB } from './store'
+ import { useAi } from './ai/AiProvider'
+ import { fmtTokens } from './ai/providers'
+-import { getHost, hostAi } from './host'
++import { getHost, hostAi, hostTemplate } from './host'
+ import type { Device, Mode } from './types'
+ import { IconBtn, Tip, cn, ease, spring } from './ui'
+ import { t } from './i18n'
+@@ -102,6 +102,8 @@ export function TopBar() {
+   const b = useB()
+   const studio = b.mode === 'studio'
+   const aiOn = hostAi().enabled
++  const template = !!hostTemplate()
++  const extra = getHost().topBarExtra?.()
+   return (
+     <header className="relative z-50 flex h-[52px] shrink-0 items-center border-b border-white/[0.07] bg-ink-900">
+       {/* left */}
+@@ -132,10 +134,10 @@ export function TopBar() {
+ 
+       {/* center */}
+       <div className="flex h-full items-center border-x border-white/[0.07]">
+-        <Tip label={t('Page settings and SEO')}>
++        <Tip label={template ? t('Template settings') : t('Page settings and SEO')}>
+           <button type="button" onClick={() => b.setDialog('settings')} className="hidden h-[51px] items-center gap-2 border-r border-white/[0.07] px-4 text-[12.5px] transition-colors hover:bg-white/[0.03] lg:flex">
+             <FileText size={14} className="text-ink-500" />
+-            <span className="max-w-[220px] truncate font-medium text-ink-100">{b.page.title?.trim() || t('Home page')}</span>
++            <span className="max-w-[220px] truncate font-medium text-ink-100">{b.page.title?.trim() || (template ? t('Untitled template') : t('Home page'))}</span>
+             <span className={cn('rounded-full px-1.5 py-px text-[10.5px] font-medium transition-colors', b.dirty ? 'bg-amber-400/12 text-amber-300' : 'bg-emerald-400/12 text-emerald-300')}>
+               {b.dirty ? t('Draft') : t('Published')}
+             </span>
+@@ -159,6 +161,11 @@ export function TopBar() {
+ 
+       {/* right */}
+       <div className="flex flex-1 items-center justify-end gap-1 pr-3">
++        {extra != null && extra !== false && (
++          <div data-wb-topbar-extra="" className="mr-1 flex min-w-0 items-center gap-1">
++            {extra}
++          </div>
++        )}
+         <Tip label={t('Search everything')} kbd="⌘K">
+           <button type="button" onClick={() => b.setPaletteOpen(true)} className="mr-1 hidden h-8 items-center gap-2 rounded-lg bg-white/[0.04] pl-2.5 pr-2 text-[12px] text-ink-400 ring-1 ring-white/[0.06] transition-colors hover:text-ink-100 xl:flex">
+             <Search size={13} /> {t('Search')}
+diff --git a/src/builder/data.ts b/src/builder/data.ts
+index 21ed446..9e9da59 100644
+--- a/src/builder/data.ts
++++ b/src/builder/data.ts
+@@ -1,7 +1,7 @@
+ import type { CSSProperties } from 'react'
+ import { toPlain } from './rich'
+ import { typeCss } from './fonts'
+-import { STORE_KEY, loadJSON } from './host'
++import { STORE_KEY, hostTemplate, loadJSON } from './host'
+ import {
+   Box,
+   CircleHelp,
+@@ -57,6 +57,7 @@ import type {
+   Item,
+   KindDef,
+   LayoutType,
++  PageLayout,
+   PaletteId,
+   Payload,
+   Section,
+@@ -772,6 +773,18 @@ export const initialDoc: DocState = {
+   ),
+ }
+ 
++/**
++ * A pinned kind stays first (nav) / last (footer) and cannot be moved, duplicated or deleted, except
++ * in a Theme Builder template, where a header or footer is ordinary content.
++ */
++export const isPinned = (kind: SectionKind) => !!KINDS[kind].pinned && !hostTemplate()
++
++/** A new page while the theme draws the header and footer templates: the starter page without its own nav and footer. */
++export const siteDoc = (): DocState => ({ site: { ...initialDoc.site }, sections: initialDoc.sections.filter((s) => s.kind !== 'nav' && s.kind !== 'footer').map((s) => createSection(s.kind)) })
++
++/** PageSettings.layout when the page has none (contract §11.4): canvas when the doc has its own top-level nav or footer. */
++export const defaultPageLayout = (doc: Pick<DocState, 'sections'>): PageLayout => (doc.sections.some((s) => s.kind === 'nav' || s.kind === 'footer') ? 'canvas' : 'site')
++
+ /* ---------- Basic mode templates ---------- */
+ export const TEMPLATES: Payload[] = [
+   { kind: 'hero', label: t('Hero') },
+diff --git a/src/builder/dynamic/starters.ts b/src/builder/dynamic/starters.ts
+index 3a27bc4..6befbd0 100644
+--- a/src/builder/dynamic/starters.ts
++++ b/src/builder/dynamic/starters.ts
+@@ -1,14 +1,28 @@
+ /**
+  * Starter designs of Theme Builder templates (contract §11.2): the editor loads one when a
+- * template's doc is empty (patch 0009); the fixtures render them too. Document content, so plain
+- * English and not translated.
++ * template's doc is empty (starterDoc, template mode); the fixtures render them too. Document
++ * content, so plain English and not translated.
+  */
+-import { createLayout, createSection, defaultBox, uid } from '../data'
+-import type { DynSettings, DynWidget, Section } from '../types'
++import { createLayout, createSection, defaultBox, initialDoc, uid } from '../data'
++import type { DocState, DynSettings, DynWidget, Section } from '../types'
+ import { dynDefaults } from './model'
++import type { StarterId, TemplateType } from './types'
+ 
+-export const STARTER_IDS = ['blank', 'header', 'footer', 'single', 'archive', 'search'] as const
+-export type StarterId = (typeof STARTER_IDS)[number]
++export type { StarterId } from './types'
++export const STARTER_IDS = ['blank', 'header', 'footer', 'single', 'archive', 'search'] as const satisfies readonly StarterId[]
++
++/** The starter a template type gets when the host names none (contract DEFAULT_STARTERS). */
++export const DEFAULT_STARTER: Record<TemplateType, StarterId> = {
++  header: 'header',
++  footer: 'footer',
++  'single-post': 'single',
++  'single-page': 'single',
++  single: 'single',
++  'front-page': 'blank',
++  archive: 'archive',
++  'search-results': 'search',
++  'error-404': 'blank',
++}
+ 
+ /** A boxed one-column grid of dynamic widgets, top to bottom. */
+ function stack(cells: [DynWidget, DynSettings?][], o: { width?: number; padT?: number; padB?: number; gap?: number } = {}): Section {
+@@ -36,6 +50,11 @@ function footer(): Section[] {
+   return [f, legal]
+ }
+ 
++/** A page has no meta line, terms, author box or post navigation. */
++function singlePage(): Section[] {
++  return [stack([['post-title', { tag: 'h1' }], ['post-image', { size: 'large', ratio: 1.78 }], ['post-content'], ['post-comments']], { gap: 28 })]
++}
++
+ function single(): Section[] {
+   return [
+     stack(
+@@ -71,15 +90,18 @@ function search(): Section[] {
+   ]
+ }
+ 
+-/** The sections of a starter (fresh ids on every call). */
+-export function starterSections(id: StarterId): Section[] {
++/**
++ * The sections of a starter (fresh ids on every call). `type` adapts a starter to the template
++ * type it is loaded for: 'single' on a Single Page template leaves out the post-only widgets.
++ */
++export function starterSections(id: StarterId, type?: TemplateType): Section[] {
+   switch (id) {
+     case 'header':
+       return header()
+     case 'footer':
+       return footer()
+     case 'single':
+-      return single()
++      return type === 'single-page' ? singlePage() : single()
+     case 'archive':
+       return archive()
+     case 'search':
+@@ -88,3 +110,9 @@ export function starterSections(id: StarterId): Section[] {
+       return []
+   }
+ }
++
++/** A template's first doc: its starter (else the type's default) with the default site settings. */
++export function starterDoc(type: TemplateType, starter?: StarterId | string): DocState {
++  const id = (STARTER_IDS as readonly string[]).includes(starter ?? '') ? (starter as StarterId) : (DEFAULT_STARTER[type] ?? 'blank')
++  return { site: { ...initialDoc.site }, sections: starterSections(id, type) }
++}
+diff --git a/src/builder/dynamic/types.ts b/src/builder/dynamic/types.ts
+index 9a36c12..e5a773d 100644
+--- a/src/builder/dynamic/types.ts
++++ b/src/builder/dynamic/types.ts
+@@ -61,3 +61,30 @@ export interface DynContext {
+   posts: DynPost[]
+   pagination: { current: number; total: number }
+ }
++
++/* ---------- Template mode (contract §11.7, TemplateBoot) ---------- */
++
++export type TemplateType = 'header' | 'footer' | 'single-post' | 'single-page' | 'single' | 'front-page' | 'archive' | 'search-results' | 'error-404'
++
++/** Starter design of a new template (dynamic/starters.ts STARTER_IDS). */
++export type StarterId = 'blank' | 'header' | 'footer' | 'single' | 'archive' | 'search'
++
++export interface TemplatePreview {
++  object: PreviewObject
++  /** e.g. "Post: Hello world" */
++  label: string
++  /** Front URL of the object with ?wb_template_preview=<id>. */
++  url: string
++}
++
++/** What the host reports while the edited document is a Theme Builder template. */
++export interface TemplateBoot {
++  type: TemplateType
++  conditions: string[]
++  priority: number
++  /** Loaded when the template's doc is empty. */
++  starter: StarterId
++  preview: TemplatePreview
++  /** Appearance › Theme Builder */
++  manageUrl: string
++}
+diff --git a/src/builder/host.ts b/src/builder/host.ts
+index 37c35f1..7bb8f6b 100644
+--- a/src/builder/host.ts
++++ b/src/builder/host.ts
+@@ -9,8 +9,9 @@
+  *
+  * Keep this file free of React and of runtime imports: hosts import it on its own.
+  */
++import type { ReactNode } from 'react'
+ import type { DocState, PageSettings } from './types'
+-import type { DynContext } from './dynamic/types'
++import type { DynContext, TemplateBoot } from './dynamic/types'
+ 
+ /* ---------- Local persistence (used by the standalone host) ---------- */
+ export const STORE_KEY = 'pursae-builder:v2'
+@@ -135,6 +136,28 @@ export interface BuilderHost {
+   dynamic?(): DynContext
+   /** Calls `cb` whenever dynamic() changes (e.g. "Preview as"); returns the unsubscribe function. */
+   onDynamic?(cb: (ctx: DynContext) => void): () => void
++  /**
++   * Theme Builder template mode (contract §11.7): the template being edited, null / absent for an
++   * ordinary page. Read once when the editor starts; must not change afterwards. In template mode
++   * the editor starts an empty doc from `starter`, nav and footer sections are not pinned, page
++   * settings show only the title and the Post, Archive and Search widget groups are offered.
++   */
++  template?(): TemplateBoot | null
++  /**
++   * The site's theme draws header and footer templates around pages (Hello Pursae): page settings
++   * offer PageSettings.layout, and a new page starts without nav and footer, with layout 'site'.
++   */
++  themeParts?: boolean
++  /**
++   * The host's own controls in the top bar (template type badge, display conditions, preview
++   * picker, …). Rendered inside the builder's React tree, so it may use the builder's hooks.
++   */
++  topBarExtra?(): ReactNode
++  /**
++   * Runs when the user asks to publish, before publish(); resolve false to cancel quietly (e.g. the
++   * host first opens its display conditions dialog). A rejection is shown like a publish error.
++   */
++  beforePublish?(input: PublishInput): boolean | Promise<boolean>
+ }
+ 
+ export const AI_DISABLED: BuilderHostAi = Object.freeze({ enabled: false, serverKeys: false, allowCode: false, cloneEndpoint: null })
+@@ -193,5 +216,11 @@ export function getHost(): BuilderHost {
+ /** The host's AI settings, AI_DISABLED when it has none. */
+ export const hostAi = (h: BuilderHost = getHost()): BuilderHostAi => h.ai ?? AI_DISABLED
+ 
++/** The template being edited (template mode), else null. */
++export const hostTemplate = (h: BuilderHost = getHost()): TemplateBoot | null => h.template?.() ?? null
++
++/** Pages may use the theme's header and footer templates (PageSettings.layout applies). */
++export const hostThemeParts = (h: BuilderHost = getHost()): boolean => !!h.themeParts && !hostTemplate(h)
++
+ /** Site URL without the scheme, for display ("example.com/path"). */
+ export const siteLabel = (h: BuilderHost = getHost()) => h.siteUrl.replace(/^[a-z][a-z0-9+.-]*:\/\//i, '').replace(/\/+$/, '')
+diff --git a/src/builder/i18n/tr.ts b/src/builder/i18n/tr.ts
+index 1f15529..8dfeb94 100644
+--- a/src/builder/i18n/tr.ts
++++ b/src/builder/i18n/tr.ts
+@@ -1458,6 +1458,16 @@ const tr: Record<string, string> = {
+   'Use letters, spaces and , . : / - only.': 'Yalnızca harf, boşluk ve , . : / - kullan.',
+   'Widget setting changed': 'Bileşen ayarı değişti',
+   'Words': 'Kelime',
++  /* Theme Builder template mode (patch 0009-template-mode) */
++  'Header & footer': 'Üst ve alt bilgi',
++  'Site templates': 'Site şablonları',
++  'Template name': 'Şablon adı',
++  'Template settings': 'Şablon ayarları',
++  'The header and footer templates of the site show around this page.': 'Sitenin üst ve alt bilgi şablonları bu sayfanın çevresinde görünür.',
++  'The name of the template in the Theme Builder.': 'Şablonun Tema Oluşturucu’daki adı.',
++  'The page shows only its own sections, without the header and footer of the site.': 'Sayfa, sitenin üst ve alt bilgisi olmadan yalnızca kendi bölümlerini gösterir.',
++  'This page only (canvas)': 'Yalnızca bu sayfa (kanvas)',
++  'Untitled template': 'Başlıksız şablon',
+ }
+ 
+ export default tr
+diff --git a/src/builder/live/fixtures.tsx b/src/builder/live/fixtures.tsx
+index 455cc56..f6075d5 100644
+--- a/src/builder/live/fixtures.tsx
++++ b/src/builder/live/fixtures.tsx
+@@ -137,6 +137,7 @@ const dynamicCases: [string, DocState][] = [
+   ['dynamic-header', { site, sections: starterSections('header') }],
+   ['dynamic-footer', { site, sections: starterSections('footer') }],
+   ['dynamic-single', { site, sections: starterSections('single') }],
++  ['dynamic-single-page', { site, sections: starterSections('single', 'single-page') }],
+   ['dynamic-archive', { site, sections: starterSections('archive') }],
+   ['dynamic-search', { site, sections: starterSections('search') }],
+   ['dynamic-widgets', widgetsDoc()],
+diff --git a/src/builder/selectionActions.ts b/src/builder/selectionActions.ts
+index 390fb36..c60b790 100644
+--- a/src/builder/selectionActions.ts
++++ b/src/builder/selectionActions.ts
+@@ -1,4 +1,4 @@
+-import { CARD_NOUN, EL_NAMES, KINDS, NODE_NAMES, cloneSection, fieldKind, fieldLabel, getValue, isCardEl, locate, uid } from './data'
++import { CARD_NOUN, EL_NAMES, KINDS, isPinned, NODE_NAMES, cloneSection, fieldKind, fieldLabel, getValue, isCardEl, locate, uid } from './data'
+ import { toPlain } from './rich'
+ import type { BuilderApi, DocAction } from './store'
+ import type { DocState, ElStyle, Item, Section, SectionKind, Selection } from './types'
+@@ -146,7 +146,7 @@ export function deleteSelection(c: SelCtx, sel: Selection | null): boolean {
+   const { s, el } = tv
+   switch (tv.kind) {
+     case 'section':
+-      if (KINDS[s.kind].pinned) {
++      if (isPinned(s.kind)) {
+         c.notify(t('{name} is a fixed section · it cannot be deleted, but it can be hidden', { name: s.name }))
+         return false
+       }
+@@ -197,7 +197,7 @@ export function duplicateSelection(c: SelCtx, sel: Selection | null): boolean {
+   switch (tv.kind) {
+     case 'section':
+     case 'container':
+-      if (KINDS[s.kind].pinned) {
++      if (isPinned(s.kind)) {
+         c.notify(t('{name} cannot be duplicated', { name: s.name }))
+         return false
+       }
+diff --git a/src/builder/store.ts b/src/builder/store.ts
+index 43b6311..1085336 100644
+--- a/src/builder/store.ts
++++ b/src/builder/store.ts
+@@ -1,5 +1,5 @@
+ import { createContext, useContext } from 'react'
+-import { CELL_DEFAULTS, KINDS, MAX_DEPTH, cloneSection, createLayout, defaultBox, findSection, getValue, fieldLabel, isCardEl, locate, nestHeight, newItem, resizeCells, uid } from './data'
++import { CELL_DEFAULTS, MAX_DEPTH, isPinned, cloneSection, createLayout, defaultBox, findSection, getValue, fieldLabel, isCardEl, locate, nestHeight, newItem, resizeCells, uid } from './data'
+ import type { BgSettings, CellBox, CellType, ContainerBox, Device, ElStyle, GridSettings, Item, PageSettings, SavedComponent, DocState, LayoutType, Mode, Payload, Section, SectionStyle, Selection, SiteSettings } from './types'
+ import { t } from './i18n'
+ import { dynDefaults, isDynWidget } from './dynamic/model'
+@@ -84,9 +84,9 @@ const emptyCell = (i: Item): Item => ({ ...i, title: '', text: '', sub: undefine
+ 
+ /** Allowed index range: nav stays first and footer stays last. */
+ export function insertBounds(sections: Section[]) {
+-  const min = sections[0] && KINDS[sections[0].kind].pinned ? 1 : 0
++  const min = sections[0] && isPinned(sections[0].kind) ? 1 : 0
+   const last = sections[sections.length - 1]
+-  const max = last && KINDS[last.kind].pinned && sections.length > min ? sections.length - 1 : sections.length
++  const max = last && isPinned(last.kind) && sections.length > min ? sections.length - 1 : sections.length
+   return { min, max }
+ }
+ 
+@@ -194,7 +194,7 @@ function apply(doc: DocState, a: DocAction): { doc: DocState; label: string; key
+       const i = list.findIndex((s) => s.id === a.id)
+       const j = i + a.dir
+       const { min, max } = insertBounds(list)
+-      if (i < 0 || KINDS[list[i].kind].pinned || j < min || j >= max) return null
++      if (i < 0 || isPinned(list[i].kind) || j < min || j >= max) return null
+       ;[list[i], list[j]] = [list[j], list[i]]
+       return { doc: { ...doc, sections: list }, label: t('Section moved'), structural: true }
+     }
+@@ -202,8 +202,8 @@ function apply(doc: DocState, a: DocAction): { doc: DocState; label: string; key
+       const byId = new Map(doc.sections.map((s) => [s.id, s]))
+       const moved = a.ids.map((id) => byId.get(id)).filter(Boolean) as Section[]
+       const rest = doc.sections.filter((s) => !a.ids.includes(s.id))
+-      const head = rest.filter((s) => s.kind === 'nav')
+-      const tail = rest.filter((s) => s.kind !== 'nav')
++      const head = rest.filter((s) => s.kind === 'nav' && isPinned(s.kind))
++      const tail = rest.filter((s) => !head.includes(s))
+       return { doc: { ...doc, sections: [...head, ...moved, ...tail] }, label: t('Section moved'), key: 'reorder', structural: true }
+     }
+     case 'toggleHidden': {
+@@ -240,7 +240,7 @@ function apply(doc: DocState, a: DocAction): { doc: DocState; label: string; key
+         }
+       }
+       const i = doc.sections.findIndex((s) => s.id === a.id)
+-      if (i < 0 || KINDS[doc.sections[i].kind].pinned) return null
++      if (i < 0 || isPinned(doc.sections[i].kind)) return null
+       const src = doc.sections[i]
+       // Free-form sections keep their tree (parent links) and per-node styles.
+       const copy: Section = src.kind === 'custom' ? cloneSection(src, t('{name} (copy)', { name: src.name })) : { ...src, id: uid(), name: t('{name} (copy)', { name: src.name }), items: src.items.map((x) => ({ ...x, id: uid('i') })) }
+diff --git a/src/builder/variants/DesignLibrary.tsx b/src/builder/variants/DesignLibrary.tsx
+index 5b47a03..b2ad91f 100644
+--- a/src/builder/variants/DesignLibrary.tsx
++++ b/src/builder/variants/DesignLibrary.tsx
+@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
+ import { createPortal } from 'react-dom'
+ import { motion } from 'motion/react'
+ import { Check, LayoutTemplate, Monitor, Search, Smartphone, SwatchBook, X } from 'lucide-react'
+-import { KINDS } from '../data'
++import { KINDS, isPinned } from '../data'
+ import { useB } from '../store'
+ import type { Section, SectionKind } from '../types'
+ import { cn, ease } from '../ui'
+@@ -55,7 +55,7 @@ export default function DesignLibrary({ state }: { state: LibraryState }) {
+   /** Section a click in `kind` restyles: the one being changed, or the page's only header / footer. */
+   const targetOf = (kind: SectionKind): Section | undefined => {
+     if (changing && changing.kind === kind) return changing
+-    if (KINDS[kind].pinned) return sections.find((s) => s.kind === kind)
++    if (isPinned(kind)) return sections.find((s) => s.kind === kind)
+     return undefined
+   }
+   const insertAt = state.mode === 'add' ? state.index : changing ? sections.indexOf(changing) + 1 : undefined
+@@ -71,7 +71,7 @@ export default function DesignLibrary({ state }: { state: LibraryState }) {
+       b.select({ sectionId: target.id }, { scroll: true })
+     } else {
+       const section = createVariantSection(kind, v.id)
+-      const index = KINDS[kind].pinned ? (kind === 'nav' ? 0 : sections.length) : insertAt
++      const index = isPinned(kind) ? (kind === 'nav' ? 0 : sections.length) : insertAt
+       b.add({ kind, label: `${KINDS[kind].name} · ${v.name}`, section }, index)
+     }
+     closeLibrary()
