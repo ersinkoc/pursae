@@ -866,6 +866,7 @@ var SVGAttrs = []string{
 	"stroke-width", "stroke-linecap", "stroke-linejoin", "stroke-opacity", "stroke-dasharray",
 	"offset", "stop-color", "stop-opacity", "gradientUnits", "gradientTransform", "viewBox",
 	"preserveAspectRatio", "clip-path", "mask", "href", "font-size", "font-weight", "text-anchor",
+	"vector-effect",
 }
 
 // InputTypes are the allowed <input type> values.
