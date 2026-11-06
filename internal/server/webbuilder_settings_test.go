@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"slices"
 	"strings"
 	"testing"
 
@@ -156,5 +157,81 @@ func TestWebBuilderSettingsScreen(t *testing.T) {
 	form.Set("_wpnonce", nonce[1])
 	if code, _, _ := post(t, ec, base+"/wp-admin/options", form); code != http.StatusForbidden {
 		t.Errorf("editor saving the settings: %d, want 403", code)
+	}
+}
+
+// Settings › Web Builder offers only post types that exist right now: Products only while Pursae
+// Commerce is on (its content_types row stays when it is off), ACF-Go types only with show_ui.
+func TestWebBuilderSettingsPostTypesRegistered(t *testing.T) {
+	ts, c, srv := testServerBuilderOff(t)
+	installAndLogin(t, ts, c)
+	ctx := context.Background()
+	if err := srv.wbSetActive(ctx, true); err != nil {
+		t.Fatal(err)
+	}
+	slugs := func() []string {
+		var out []string
+		for _, ch := range srv.wbPostTypeChoices(ctx) {
+			out = append(out, ch.Slug)
+		}
+		return out
+	}
+	has := func(slug string) bool { return slices.Contains(slugs(), slug) }
+
+	if err := srv.settings.Set(ctx, map[string]any{gooSetting: false}); err != nil {
+		t.Fatal(err)
+	}
+	if has("product") || !has("page") || !has("post") {
+		t.Errorf("Commerce off: %v", slugs())
+	}
+	if _, body, _ := get(t, c, ts.URL+wbSettingsURL); strings.Contains(body, `value="product"`) {
+		t.Error("the screen lists product while Commerce is off")
+	}
+	if err := srv.settings.Set(ctx, map[string]any{gooSetting: true}); err != nil {
+		t.Fatal(err)
+	}
+	if !has("product") {
+		t.Errorf("Commerce on: %v", slugs())
+	}
+	_ = srv.settings.Set(ctx, map[string]any{gooSetting: false})
+
+	// An ACF-Go type: listed while registered with show_ui, not without it or once unregistered.
+	if _, err := srv.store.Pool.Exec(ctx, `INSERT INTO content_types (slug, name, hierarchical, public, rest_base, is_builtin, supports, labels)
+		VALUES ('wbt_book', 'Books', false, true, 'books', false, '{"title":true,"editor":true}', '{"name":"Books"}') ON CONFLICT (slug) DO NOTHING`); err != nil {
+		t.Fatal(err)
+	}
+	set := func(pt *acfgoPostTypeDef) {
+		acfgoRegistry.Lock()
+		if pt == nil {
+			delete(acfgoRegistry.types, "wbt_book")
+		} else {
+			acfgoRegistry.types["wbt_book"] = pt
+		}
+		acfgoRegistry.Unlock()
+	}
+	t.Cleanup(func() { set(nil) })
+	if has("wbt_book") {
+		t.Error("unregistered ACF-Go type listed")
+	}
+	set(&acfgoPostTypeDef{Name: "wbt_book", Public: true, ShowUI: false})
+	if has("wbt_book") {
+		t.Error("ACF-Go type without show_ui listed")
+	}
+	set(&acfgoPostTypeDef{Name: "wbt_book", Public: true, ShowUI: true})
+	if !has("wbt_book") {
+		t.Errorf("registered ACF-Go type missing: %v", slugs())
+	}
+
+	// An enabled type that no longer exists is still listed (checked) so it can be switched off.
+	if err := srv.settings.Set(ctx, map[string]any{wbPostTypesOption: "page,post,product"}); err != nil {
+		t.Fatal(err)
+	}
+	for _, ch := range srv.wbPostTypeChoices(ctx) {
+		if ch.Slug == "product" && !ch.Checked {
+			t.Error("enabled product not checked")
+		}
+	}
+	if !has("product") {
+		t.Error("enabled product missing while Commerce is off")
 	}
 }

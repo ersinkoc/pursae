@@ -62,8 +62,10 @@ type wbTypeChoice struct {
 	Checked     bool
 }
 
-// wbPostTypeChoices are the public post types with an editor (attachments excluded), in
-// registration order, plus any enabled type that no longer qualifies so it can be switched off.
+// wbPostTypeChoices are the registered, public, UI-visible post types with an editor (attachments
+// excluded), in registration order, plus any enabled type that no longer qualifies so it can be
+// switched off. content_types keeps rows of types whose plugin is off (posts reference them), so a
+// row alone does not make a type available (wbTypeRegistered).
 func (s *Server) wbPostTypeChoices(ctx context.Context) []wbTypeChoice {
 	enabled := s.wbEnabledTypes()
 	var out []wbTypeChoice
@@ -72,7 +74,7 @@ func (s *Server) wbPostTypeChoices(ctx context.Context) []wbTypeChoice {
 	if err == nil {
 		for rows.Next() {
 			var ch wbTypeChoice
-			if rows.Scan(&ch.Slug, &ch.Label) == nil {
+			if rows.Scan(&ch.Slug, &ch.Label) == nil && s.wbTypeRegistered(ch.Slug) {
 				ch.Checked = slices.Contains(enabled, ch.Slug)
 				out = append(out, ch)
 			}
@@ -85,6 +87,22 @@ func (s *Server) wbPostTypeChoices(ctx context.Context) []wbTypeChoice {
 		}
 	}
 	return out
+}
+
+// wbTypeRegistered reports whether post type typ exists right now with an admin UI: posts and
+// pages always, products while Pursae Commerce is on, ACF-Go post types while ACF-Go registers them
+// with show_ui.
+func (s *Server) wbTypeRegistered(typ string) bool {
+	switch typ {
+	case "post", "page":
+		return true
+	case "product":
+		return s.gooOn()
+	}
+	acfgoRegistry.RLock()
+	pt := acfgoRegistry.types[typ]
+	acfgoRegistry.RUnlock()
+	return pt != nil && pt.ShowUI
 }
 
 // wbOutdatedPage is a built post whose snapshot an older renderer produced.
