@@ -15,8 +15,8 @@ below field for field:
   `@/builder/types`, the rest is declared there)
 
 A change to the contract changes this page and both files in one commit. Incompatible payload
-changes bump `APIVersion`; changes to the static markup or the `data-wb-*` attributes bump
-`RendererVersion`.
+changes bump `APIVersion`; incompatible changes to the static markup or the `data-wb-*`
+attributes bump `RendererVersion` (see the rules in §1).
 
 The plugin keeps its identity: slug `golementor`, option `native_golementor`, visible name
 "Pursae Web Builder", edit URL `/wp-admin/post?post={id}&action=web-builder`.
@@ -25,13 +25,24 @@ The plugin keeps its identity: slug `golementor`, option `native_golementor`, vi
 
 | Constant | Value | Meaning |
 |----------|-------|---------|
-| `APIVersion` / `API_VERSION` | `1` | REST and boot schema |
+| `APIVersion` / `API_VERSION` | `2` | REST and boot schema (2 = Theme Builder, §11) |
 | `RendererVersion` / `RENDERER_VERSION` | `1` | static markup + runtime attributes |
 | `APIHeader` | `X-WB-Api` | sent by the editor on every `web-builder/v2` request |
 | `UpstreamTypesSHA` | `22ff4976a1416accd3b7370e176d7206bf390aee` | upstream commit the Go doc types were copied from |
 
 Rules:
 
+- `APIVersion` changes with any incompatible change to a payload of §2, §3 or §11 (a field
+  removed, renamed or retyped, a new required field, a new value an older editor would misread).
+  Version 2 added the Theme Builder: `template`, `site` and `dynamic` in the boot config, the
+  template routes, `Item.dyn`, `PageSettings.layout` and the `loop` section kind. An editor bundle
+  built for another version stops at boot ("does not match the server") or on its first request
+  (409 below).
+- `RendererVersion` changes only with an **incompatible** change to the static markup: one that
+  makes a stored snapshot render wrong, or makes the runtime or the server misread it. Additive
+  markup — new `data-wb-*` attributes, new cell types or section kinds that an older snapshot
+  never contains, the Theme Builder placeholders of §11.5 — keeps the version, so existing
+  snapshots stay current and need no Regenerate.
 - Every editor request to `web-builder/v2` sends `X-WP-Nonce: <wp_rest nonce>` and
   `X-WB-Api: <API_VERSION>`.
 - A missing or different `X-WB-Api` answers **409** `wb_api_mismatch` with
@@ -60,10 +71,10 @@ ever part of it.**
 | `links.site` | string | home URL, no trailing slash |
 | `links.permalink` | string | the post's permalink |
 | `links.preview` | string | preview URL (`?preview=true`) |
-| `links.exit` | string | logo / Exit target: the post type's list screen |
+| `links.exit` | string | logo / Exit target: the post type's list screen (templates: Appearance › Theme Builder) |
 | `links.editPost` | string | the core editor for this post |
 | `links.settings` | string | Settings › Web Builder; `""` without `manage_options` |
-| `caps.publish` | bool | `publish_posts`/`publish_pages` for the type; false = publish becomes pending |
+| `caps.publish` | bool | `publish_posts`/`publish_pages` for the type; false = publish becomes pending (templates: `edit_theme_options`, always true there) |
 | `caps.uploadFiles` | bool | `upload_files` |
 | `caps.unfilteredHtml` | bool | `unfiltered_html`: html sections and custom CSS are kept |
 | `caps.editOthers` | bool | `edit_others_posts`: may delete others' library items |
@@ -74,6 +85,9 @@ ever part of it.**
 | `media.types` | string[] | accepted MIME types |
 | `siteAssets` | string | absolute `/wp-content/web-builder/site/` |
 | `ai` | BootAi | below; always present |
+| `template` | TemplateBoot \| null | Theme Builder: `null` unless the post is a `wb_template` (§11.7) |
+| `site` | SiteBoot | site identity, menus, post types and taxonomies (§11.7); always present |
+| `dynamic` | DynContext | sample data for dynamic widgets (§11.6): the template's preview object, else the post itself |
 
 `ai` (BootAi):
 
@@ -141,9 +155,18 @@ Request bodies of document routes are capped at **4 MiB** (`413 wb_too_large`, `
 | GET | `/ai/status` | `edit_posts` | — → AiStatusResponse |
 | POST | `/ai/llm/{provider}/{path}` | `edit_posts` | provider-native JSON → provider response / SSE |
 | POST | `/ai/images` | `edit_posts` + `upload_files` | AiImageRequest → AiImageResponse |
+| GET | `/templates?type=` | `edit_theme_options` | — → TemplateSummary[] (§11.8) |
+| POST | `/templates` | `edit_theme_options` | TemplateCreateRequest → TemplateCreateResponse (201) |
+| PUT | `/templates/{id}/conditions` | `edit_theme_options` | TemplateConditionsRequest → TemplateConditionsResponse |
+| PUT | `/templates/{id}/preview` | `edit_theme_options` | TemplatePreviewRequest → TemplatePreviewResponse |
+| GET | `/templates/{id}/conflicts` | `edit_theme_options` | — → TemplateConflict[] |
+| GET | `/preview-context?object=` | `edit_posts` (+ `read_post` for `post:<id>`) | — → DynContext (§11.6) |
 
-`{id}` must be a post of an enabled post type (pages by default, posts optional): otherwise
-**404** `wb_not_enabled`. Trashed posts answer **404** `wb_not_found`.
+`{id}` of a document route must be a post of an enabled post type (pages by default, posts
+optional) or a `wb_template`: otherwise **404** `wb_not_enabled`. Trashed posts answer **404**
+`wb_not_found`. A `wb_template` additionally needs `edit_theme_options` on **every** document
+route (403 `rest_forbidden` otherwise): the core maps its meta caps to `*_posts`, so `edit_post`
+alone would admit authors and editors. The server's check is `wbEditable(user, post)`.
 
 ### 3.1 Documents
 
@@ -452,7 +475,7 @@ names. The `editor-noai` prefix stays reserved for the AI split.
 ```
 
 `web/web-builder/BUILD.json` (BuildInfo):
-`{"upstreamSha": "<40 hex>", "patches": {"0001-host-seam.patch": "<sha256>", …}, "apiVersion": 1, "rendererVersion": 1}`.
+`{"upstreamSha": "<40 hex>", "patches": {"0001-host-seam.patch": "<sha256>", …}, "apiVersion": 2, "rendererVersion": 1}`.
 A Go test compares it with `builder/UPSTREAM_SHA`, the patch files and the constants in
 `contract.go`.
 
@@ -471,7 +494,9 @@ built from them.
 | Items per section | ≤ 500 |
 | `Item.sub` nesting | ≤ 4 |
 | Ids (section, item, saved component) | `^[A-Za-z0-9_-]{1,64}$`, unique per doc |
-| `kind` | `nav hero banner features media steps quote faq cta footer text image form layout html custom` |
+| `kind` | `nav hero banner features media steps quote faq cta footer text image form layout html custom`, and `loop` (§11.4) once its validation lands |
+| `Item.dyn` | DynSettings (§11.4): enums, lengths and ranges of that table; only on a layout cell whose `title` is a dynamic widget |
+| `PageSettings.layout` | `site`, `canvas` or absent |
 | Strings | ≤ 64 KiB; `content.html` of a `html` section ≤ 256 KiB |
 | Rich text in content strings | upstream rich.ts subset: `b i u s code a(href) br ul ol li` |
 | `href` | `http`, `https`, `mailto`, `tel`, `#…`, relative |
@@ -611,3 +636,418 @@ a published page without a password gets the file, every other status stays inli
 landmark), `<script defer src="…/site/runtime.<hash>.js">` when `features` is not
 empty, the admin bar and the footer hooks. Pages, posts and every builder-enabled post type get
 the canvas. Plugin off or detached → the theme renders `posts.content`.
+
+With **Hello Pursae** active (§11.9) the canvas is replaced by the theme's own document: the
+header, main and footer parts (each a snapshot with its placeholders filled) are printed inside
+Hello Pursae's skeleton, with the head and footer hooks of an ordinary theme page. A builder page
+with `layout: canvas` still shows only its own doc between Hello Pursae's head and footer (no
+header or footer part). Every other theme keeps the canvas behaviour above.
+
+## 11. Theme Builder
+
+Header, footer and main-content **templates** are designed in the builder like pages and shown on
+the site by the bundled **Hello Pursae** theme. Display conditions choose one template per
+location and request; dynamic widgets and post loops fill in the site's real content at request
+time. Go names are in `contract.go` (section "Theme Builder"), TypeScript names in
+`builder/host/contract.ts` (section "Theme Builder").
+
+### 11.1 Identity
+
+| Thing | Value | Notes |
+|-------|-------|-------|
+| Post type | `wb_template` (`TemplatePostType`) | not public, no archive, no core editor; translatable by Pursae Multi Language |
+| Capability | `edit_theme_options` (`TemplateCap`) | checked explicitly on every template path: REST, editor, forms, hooks, core trash/untrash/delete |
+| Type meta | `_wb_template_type` | one of the types of §11.2 |
+| Conditions meta | `_wb_conditions` | JSON array of rules (§11.3), e.g. `["include/general"]` |
+| Priority meta | `_wb_priority` | decimal −100…100, default 0 |
+| Preview meta | `_wb_preview` | preview object (§11.6); empty = the type's default |
+| Starter meta | `_wb_starter` | the starter id the template was created from |
+| Duplicate marker | `_wb_dup = "1"` | the editor regenerates every section id on first load, then the marker goes |
+| Active | `post_status = publish` | `draft` = disabled; `pending`/`private` are refused (422 `wb_bad_template`) |
+| Theme | `hello-pursae` (`HelloPursaeTheme`) | menu locations `primary` ("Primary Menu"), `footer` ("Footer Menu") |
+| Preview query | `?wb_template_preview=<id>` | forces that template on a front URL; `edit_theme_options` only; never cached |
+| Cache tags | `wb-theme`, `wb-loop` | §11.9 |
+| Admin screen | `/wp-admin/themes?page=web-builder-templates` | Appearance › Theme Builder, plugin active only |
+| Options | `web_builder_previous_theme`, `web_builder_theme_notice`, `web_builder_theme_offer` | §11.10 |
+
+The doc, snapshot, drafts, revisions, lock and library are the existing ones (§3, §6):
+a template is an ordinary builder document of another post type. Migration
+`0029_web_builder_templates.sql` holds whatever indexes the template index needs (package TB).
+
+### 11.2 Template types
+
+Header and footer fill their own location; every other type fills **main**. A main template is
+considered only on the views of its type (the *view gate*), before conditions are scored: a
+single template never renders an archive, even with `include/general`.
+
+| Type | Label | Location | Views | Default conditions | Starter | Default preview |
+|------|-------|----------|-------|--------------------|---------|-----------------|
+| `header` | Header | header | all | `include/general` | `header` | `front` |
+| `footer` | Footer | footer | all | `include/general` | `footer` | `front` |
+| `single-post` | Single Post | main | singular | `include/singular/post` | `single` | `latest` |
+| `single-page` | Single Page | main | singular | `include/singular/page` | `single` | `latest` |
+| `single` | Single | main | singular | `include/singular/<postType>` (create request) | `single` | `latest` |
+| `front-page` | Front Page | main | singular, archive | `include/singular/front_page` | `blank` | `front` |
+| `archive` | Archive | main | archive | `include/archive` | `archive` | `home` |
+| `search-results` | Search Results | main | archive | `include/archive/search` | `search` | `search:a` |
+| `error-404` | 404 Page | main | 404 | `include/404` | `blank` | `404` |
+
+Views: **singular** = a single post, page or custom post type entry (a static front page too);
+**archive** = the posts index, a term, author, date or post type archive, search results;
+**404**. `front-page` passes both gates because the front page may be the posts index.
+
+Starters (`blank header footer single archive search`, upstream `dynamic/starters.ts`) are loaded
+by the editor when a template's doc is empty; `blank` is an empty doc.
+
+Goocommerce store views (`q.Store`: shop, product, cart, checkout, account) never get a main
+template; header and footer still apply.
+
+### 11.3 Display conditions
+
+A rule is `<mode>/<scope>`, mode `include` or `exclude`. Scopes:
+
+| Scope | Matches | Score |
+|-------|---------|-------|
+| `general` | every view | 10 |
+| `singular` | every singular view | 20 |
+| `archive` | every archive view | 20 |
+| `singular/<ptype>` | singular views of that post type | 30 |
+| `archive/home` | the posts index (`is_home`) | 30 |
+| `archive/date` | date archives | 30 |
+| `archive/search` | search results | 30 |
+| `archive/author` | author archives | 30 |
+| `archive/type/<ptype>` | that post type's archive | 30 |
+| `archive/<tax>` | any term archive of that taxonomy | 30 |
+| `singular/<ptype>/in/<tax>/<id>` | entries of the type that have that term | 40 |
+| `singular/<ptype>/child_of/<id>` | direct children of that entry (hierarchical types) | 40 |
+| `singular/<ptype>/by_author/<id>` | entries of the type written by that user | 40 |
+| `singular/front_page` | the front page (`is_front_page`: static page or posts index) | 45 |
+| `404` | the 404 view | 45 |
+| `singular/<ptype>/<id>` | that entry | 50 |
+| `archive/<tax>/<id>` | that term's archive | 50 |
+| `archive/author/<id>` | that user's archive | 50 |
+
+- `<ptype>` and `<tax>` match `^[a-z0-9_-]{1,32}$`; `<id>` is a positive decimal without
+  leading zeros (≤ 19 digits). The whole grammar is `ConditionPattern` / `CONDITION_PATTERN`.
+- Reserved words cannot be a `<ptype>` after `singular/` (`front_page in child_of by_author`) or
+  a `<tax>` after `archive/` (`home date search author type`). The regular expression cannot
+  express this; the parser (`internal/webbuilder/conditions.go`) rejects them.
+- v1 resolves the taxonomies `category` and `post_tag`, the types `post`, `page` and public
+  Pursae Custom Fields types; other names are valid rules that match nothing (custom taxonomy
+  archives and sub-menus come later without a grammar change). `wb_template` and `product`
+  never match.
+- At most **50** rules per template, **200** bytes per rule. An invalid rule answers **422**
+  `wb_bad_condition` with `data.errors: ValidationError[]` (`path: /conditions/<i>`,
+  `code: bad_condition`). Rules are trimmed; duplicates are dropped, order is kept.
+
+Resolution for one location and request (pure code over a `QueryFacts` struct, package TA):
+
+1. Candidates: published templates of the location's types whose view gate admits the view.
+2. Any matching `exclude` rule vetoes the template.
+3. The template's score is its best matching `include` score; no include match = not a
+   candidate. On a search view a `search-results` template gets **+1** (`SearchTypeBonus`), so it
+   beats an `archive` template with the same rule.
+4. The highest score wins; ties go to the higher `_wb_priority`, then the newer `modified_at`,
+   then the higher id.
+5. With Pursae Multi Language the winner is swapped for its translation in the request's
+   language when one is published.
+6. The winner must have a published doc with a snapshot; otherwise the location falls back to
+   the theme default (§11.9).
+
+A template with no rules (or only excludes) matches nothing; the editor opens the conditions
+dialog on the first publish of such a template.
+
+### 11.4 Doc additions
+
+**Dynamic widgets** are layout cells whose `Item.title` (upstream `CellType`) is one of:
+
+`site-logo site-title site-tagline nav-menu search-form copyright post-title post-content
+post-excerpt post-image post-meta post-terms post-date post-author author-box post-nav
+post-comments archive-title archive-desc search-query pagination`
+
+so `CellType = '' | 'heading' | 'text' | 'button' | 'image' | 'layout' | DynWidget`. Their
+settings are `Item.dyn` (DynSettings, every field optional):
+
+| Field | Type | Rule |
+|-------|------|------|
+| `tag` | string | `h1`…`h6`, `p`, `div`, `span` |
+| `link` | bool | wrap the value in the post (or site) URL |
+| `format` | string | WordPress date format, `^[A-Za-z ,.:/-]{1,32}$`; empty = the site's `date_format` |
+| `size` | string | `thumbnail medium large full` |
+| `ratio` | number | image width / height, 0.2…5 |
+| `fields` | string[] | post-meta, in order: `date modified author comments terms` |
+| `sep` | string | separator, ≤ 8 characters |
+| `tax` | string | post-terms taxonomy (slug), default `category` |
+| `location` | string | nav-menu: a menu location of the active theme |
+| `menuLayout` | string | `row column burger` |
+| `burgerAt` | number | container width (px) below which a row menu becomes a burger; 0 = never |
+| `words` | number | excerpt length, 5…100 |
+| `prefix` | string | text before the value ("Posted on", "Search results for:") |
+| `placeholder` | string | search-form input placeholder |
+| `button` | string | search-form button label; empty = icon only |
+| `empty` | string | text when the value is empty, ≤ 200 characters |
+
+**Loop section** (`kind: 'loop'`): a grid of post cards. The query is `content` (all strings),
+the card design is `items[0].sub` (a layout section whose cells use post widgets), the grid is
+`section.grid`. The server always reads the query from the **stored** doc, never from snapshot
+attributes.
+
+| `content` key | Values | Default |
+|---------------|--------|---------|
+| `source` | `main` (the request's own posts), `query` (custom), `related` (same type, shares a term with the current post) | `main` |
+| `postType` | a viewable post type (query, related) | `post` |
+| `perPage` | `1`…`24` (query, related; main uses `posts_per_page`) | `6` |
+| `orderBy` | `date modified title menu_order comment_count rand` | `date` |
+| `order` | `desc asc` | `desc` |
+| `terms` | `category:12,post_tag:4` (≤ 20 pairs; related: the taxonomies to compare) | `""` (related: `category`) |
+| `author` | a user id or `""` | `""` |
+| `exclude` | `current` (leave out the post being viewed) or `""` | `""` |
+| `offset` | `0`…`50` | `0` |
+| `pagination` | `numbers prev-next none` (main only) | `numbers` |
+| `empty` | text when there are no posts, ≤ 200 characters | `""` |
+
+Loops nest at most 2 deep and render at most 50 items each. Custom loops show published posts
+(plus private ones for users with `read_private_posts`), never Pursae Commerce membership-excluded
+posts, never non-public types.
+
+**nav / footer binding** (`content` keys of a `nav` or `footer` section):
+`menu = '<location>'` takes the links from that menu location (read-only in the editor; `""` =
+the section's own links); `logoSource = 'site'` takes the custom logo or, without one, the site
+title.
+
+**`PageSettings.layout`**: `site` (the page shows the header and footer templates around its doc)
+or `canvas` (the page is the whole document). Absent = `canvas` when the doc has a top-level
+`nav` or `footer` section (pages built before the Theme Builder, so no page shows two headers),
+else `site` (`DefaultPageLayout`). It only matters while Hello Pursae renders the front; templates
+ignore it. The server keeps unknown PageSettings keys when it merges post fields
+(`wbPageMerge`). While Hello Pursae is active, a new page starts without nav and footer and with
+`layout: 'site'`.
+
+### 11.5 Snapshot placeholders
+
+In live mode the renderer emits placeholders only, never sample values. The attributes are
+existing elements with `data-wb-*` attributes, so the sanitizer allowlist of §8.2 is unchanged
+(one exception: the search form below).
+
+| Attribute | On | Meaning |
+|-----------|----|---------|
+| `data-wb-slot="<slot>"` | any element | filled from the slot (table below) |
+| `data-wb-if="<slot>"` | any element | removed when the slot is empty |
+| `data-wb-if-not="<slot>"` | any element | removed when the slot is not empty |
+| `data-wb-loop="<section id>"` | the loop's list | repeats its `data-wb-loop-item` child per post; spec from the stored doc |
+| `data-wb-loop-item` | exactly one child | the card template |
+| `data-wb-loop-empty` | one child | shown only when the loop has no posts |
+| `data-wb-menu-loc="<location>"` | a link list | repeats its `data-wb-loop-item` (`<a data-wb-slot="menu.url"><span data-wb-slot="menu.label">`) per top-level item |
+| `data-wb-loop-part="1/2"` \| `"2/2"` | a `data-wb-menu-loc` list | first / second half of the items (split-logo navs) |
+| `data-wb-format`, `data-wb-size`, `data-wb-tax`, `data-wb-sep`, `data-wb-words` | a slot element | `Item.dyn` values; the server re-validates them (§11.4 rules) |
+| `data-wb-search` | `<form method="get" action="<home>/">` | search form; one `<input type="search" name="s">` |
+
+The menu binding is **not** `data-wb-menu`: that name is the runtime's disclosure menu
+(`<details data-wb-menu>`, §5) and its feature detection.
+
+The search form is the one sanitizer exception: a `form[data-wb-search]` is kept with
+`method="get"`, `action` equal to the site's home URL (with a trailing slash) and only
+`input[type=search][name=s]` plus a submit button; any other form still needs the builder form
+action of §8.2.
+
+Slots:
+
+| Slot | Mode | Value |
+|------|------|-------|
+| `site.title`, `site.tagline` | text | `blogname`, `blogdescription` |
+| `site.url` | attr | `href` = home URL |
+| `site.logo` | attr | `img` attributes of `custom_logo` (`attachmentImage`) |
+| `site.year` | text | current year in the site time zone |
+| `menu.label` | text | menu item label |
+| `menu.url` | attr | `href`; the current item also gets `aria-current="page"` and class `is-current` |
+| `post.title` | html | `theTitle` |
+| `post.url` | attr | `href` = permalink |
+| `post.content` | html | `theContent` (rendered only when the snapshot uses the slot) |
+| `post.excerpt` | html | `theExcerpt`, or the content trimmed to `data-wb-words` words |
+| `post.date`, `post.modified` | text | `wp.FormatDate(data-wb-format or date_format)`; on `<time>` also `datetime` (RFC 3339) |
+| `post.author` | text | display name |
+| `post.author-url` | attr | `href` = author archive |
+| `post.avatar` | attr | `img` attributes of the Media Library avatar |
+| `post.author-bio` | text | user description |
+| `post.image` | attr | `img` attributes of the featured image at `data-wb-size` |
+| `post.terms` | html | escaped term links of `data-wb-tax`, joined by `data-wb-sep` |
+| `post.comments-count` | text | approved comments |
+| `post.comments-url` | attr | `href` = permalink + `#comments` |
+| `post.nav` | html | previous / next post links (`v.PostNav`) |
+| `post.comments` | html | Hello Pursae's comments template for the post |
+| `archive.title`, `archive.description` | html | archive title and description |
+| `search.query` | text | the search query |
+| `search.count` | text | posts found (`v.TotalPosts`) |
+| `loop.pagination` | html | `paginateLinks` of the main query (main loops only) |
+
+- `post.*` resolves to the nearest loop item, else the main post on a singular view, else empty.
+- **text** slots replace the element's content with `html.EscapeString(value)`; **html** slots
+  only take HTML from the trusted core generators named above; **attr** slots write only
+  `href src srcset sizes width height alt datetime aria-current class`, URLs through the same
+  scheme check as §8.1, and keep the element's content.
+- An unknown slot renders empty. Values come from what `buildSiteView` already computed
+  (`v.Posts`, `v.Pagination`, `v.Post`, `v.PostNav`, `v.Comments`, `v.Menus`, archive title,
+  search query); loops add one batched query each.
+- Engine (`internal/webbuilder/dynamic.go`, package TA): compiled programs are cached in an LRU of
+  256 keyed `postID:rev:sha256(html)[:16]`; a snapshot without placeholders is one static segment
+  (no cost). Front order: fill → `filterContentTags` → the existing filters.
+
+### 11.6 Sample data: DynContext
+
+The editor shows real content, never invented samples. `GET preview-context?object=` and the boot
+`dynamic` field carry a DynContext:
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `object` | string | the preview object it was built for |
+| `site` | `{title, tagline, home, logo: DynImage \| null, year}` | |
+| `locations` | `{slug, name}[]` | the active theme's menu locations |
+| `menus` | `Record<location, DynMenuItem[]>` | Pursae Multi Language swapped |
+| `view` | `{kind, archiveTitle, archiveDesc, search, total}` | `kind`: `single page front-page home archive search 404` |
+| `post` | DynPost \| null | the singular post |
+| `posts` | DynPost[] | the main query's posts, ≤ 24 |
+| `pagination` | `{current, total}` | |
+
+DynPost: `{id, type, title, url, excerpt, contentHtml, date, dateText, modified, modifiedText,
+author: {name, url, avatar, bio}, image: DynImage | null, terms: Record<tax, {name, url}[]>,
+commentsCount, commentsUrl}`. `title` and `excerpt` are plain text; `contentHtml` is sanitized
+with the UGC policy and shown read-only in an overlay; `date`/`modified` are RFC 3339 and
+`dateText`/`modifiedText` use the site's `date_format` (the editor formats a custom
+`dyn.format` itself). DynImage: `{url, width, height, alt}`. DynMenuItem:
+`{id, label, url, current, children}`; `children` is always `[]` in v1 (top level only).
+
+Preview objects (≤ 200 bytes):
+
+| Object | Means |
+|--------|-------|
+| `post:<id>` | that entry (needs `read_post`) |
+| `term:<tax>:<id>` | that term's archive |
+| `author:<id>` | that author's archive |
+| `type:<ptype>` | that post type's archive |
+| `search:<q>` | search results for `q` (≤ 100 characters) |
+| `front` | the site's front page (`/`) |
+| `home` | the posts index (`is_home`) |
+| `404` | the 404 view |
+| `latest` | template-relative: single-post → newest post; single-page → static front page, else newest page; single → newest entry of the template's post type (its first `include/singular/<ptype>` rule); elsewhere `front` |
+
+A malformed object answers **422** `wb_bad_preview`; one that names nothing answers **404**
+`wb_not_found`.
+
+### 11.7 Boot additions
+
+`template` (TemplateBoot, `null` on ordinary posts):
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `type` | TemplateType | §11.2 |
+| `conditions` | string[] | the stored rules |
+| `priority` | number | |
+| `starter` | StarterId | loaded when the doc is empty |
+| `preview` | `{object, label, url}` | `label` like "Post: Hello world"; `url` the object's front URL with `?wb_template_preview=<id>` |
+| `manageUrl` | string | Appearance › Theme Builder |
+
+`site` (SiteBoot, always present): `{title, tagline, home, logo: DynImage | null, locations,
+menus, themeParts, postTypes: {slug, label, archive, hierarchical}[], taxonomies: {slug, label,
+types}[]}`. `themeParts` is true while Hello Pursae is active (pages may then use
+`layout: 'site'`); `postTypes` lists the viewable types (post, page, public custom types; never
+`wb_template`, `product`), `archive` is the archive URL or `""`; `taxonomies` is `category` and
+`post_tag` in v1.
+
+For a template: `links.exit` = the Theme Builder screen, `links.preview` and `links.permalink` =
+`template.preview.url`, `links.editPost` = `""`, `caps.publish` = `edit_theme_options` (true).
+In template mode the editor shows a type badge, a "Display Conditions" dialog and a "Preview as"
+picker; nav and footer sections are not pinned; page settings show only the title.
+
+### 11.8 Template REST
+
+All routes need `X-WB-Api` and `edit_theme_options`, except `preview-context` (`edit_posts`, and
+`read_post` for a `post:<id>` object).
+
+- `GET templates?type=` → TemplateSummary[] `{id, title, type, status, conditions, priority,
+  author: {id, name}, modified, editUrl, previewUrl}`, newest first, trash excluded; `type`
+  filters (unknown → 422 `wb_bad_template`).
+- `POST templates` `{type, title, starter?, postType?}` → **201** `{id, editUrl}`: a draft with
+  the type's default conditions and preview, `_wb_starter` set. `title` empty = the type label;
+  `starter` empty = the type's default. `postType` is required for `single` (a public custom
+  type, never `post` or `page`, which have their own types) and refused for other types. Bad
+  type, starter or postType → 422 `wb_bad_template`.
+- `PUT templates/{id}/conditions` `{conditions, priority}` → the normalized `{conditions,
+  priority}`. Validates (§11.3; priority outside −100…100 → 422 `wb_bad_condition` with path
+  `/priority`), writes the meta and calls `wbTemplatesChanged()`.
+- `PUT templates/{id}/preview` `{object}` → `{preview: {object, label, url}, dynamic:
+  DynContext}`; stores `_wb_preview`.
+- `GET templates/{id}/conflicts` → TemplateConflict[] `{id, title, type, conditions, priority,
+  editUrl}`: other published templates of the same location whose include rules can match a view
+  this template's include rules match. A warning only; scores decide at request time.
+- `GET preview-context?object=` → DynContext.
+- Document routes (§3.1) accept a `wb_template` through `wbEditable`. Publishing a template needs
+  `edit_theme_options`; its status is `publish` or `draft` (no pending path; `pending`/`private`
+  → 422 `wb_bad_template`). Publishing, unpublishing, trashing a template and changing its
+  conditions call `wbTemplatesChanged()`: the template index generation is bumped and WPGo Cache
+  is purged completely.
+
+Error codes added: `wb_bad_condition` (422), `wb_bad_template` (422), `wb_bad_preview` (422).
+
+### 11.9 Front with Hello Pursae
+
+While the plugin is on and the active (or previewed) theme is `hello-pursae`, `wbRenderPage`
+builds the parts and renders the theme's own skeleton (`renderSiteTemplate`); `site.go` is not
+changed. Other themes keep the canvas of §10.
+
+- **Template index** (`webbuilder_templates.go`): published templates in memory, rebuilt by one
+  query when the generation changes or after 5 minutes. `wbPickTemplate(c, location, q)` applies
+  §11.3.
+- **Main**: a singular post with its own builder doc → that snapshot, filled (`layout: canvas` →
+  no header or footer part); else the picked main template, filled over the request's view; else
+  none (the theme's default loop / content / 404).
+- **Header / footer**: the picked template, else none (Hello Pursae's minimal header: logo or
+  site title plus the `primary` menu; minimal footer).
+- Each part is wrapped in `div.wb-part.wb-part-<header|main|footer>`; `<body>` gets `wb-site`
+  when at least one part renders. Fonts are merged (deduplicated), features are the union; each
+  part's CSS is `<style id="wb-css-<postID>">`. The base CSS and the `.wb-js` script are printed
+  once in the head, the runtime `<script defer>` once before `</body>`. The runtime reads the
+  dismiss key's post id from `el.closest('[data-wb-root]')` (several roots per page).
+- `?wb_template_preview=<id>`: with `edit_theme_options` that template fills its location
+  whatever the conditions; the response is never cached.
+- **Cache**: pages with a part carry `wb-theme`; pages whose parts run a loop also carry
+  `wb-loop`, purged when any public post is saved. Menu, logo and site title changes purge
+  everything.
+- **Admin bar**: "Edit Header", "Edit Footer", "Edit Template" for the parts in use.
+- **Forms** inside a template post to `forms/<template id>/<section>`; a published `wb_template`
+  is a valid form target. Without JavaScript the 303 goes back to the same-origin `Referer`, else
+  home.
+- Store views print `v.Post.Content` like Twenty Twenty-Five.
+
+### 11.10 Theme switch
+
+- **Plugin on**: Hello Pursae is installed if needed; when the active stylesheet is not
+  `hello-pursae` it is stored in `web_builder_previous_theme`, the site switches to Hello Pursae
+  and `web_builder_theme_notice` holds a one-shot notice ("Your site now uses Hello Pursae.
+  Previous theme: X." with "Switch back").
+- **Plugin off**: when the active theme is still `hello-pursae`, the site switches to the stored
+  previous theme (if it is installed and not `hello-pursae`), else to the default theme; the
+  option is cleared. If the user changed the theme in between, nothing happens.
+- Sites that had the plugin on before the Theme Builder are never switched silently: they get a
+  dismissible "Switch to Hello Pursae" notice; dismissing it sets `web_builder_theme_offer`.
+- The old builder's `golementor_previous_theme` is never read or written, and the upgrade code
+  does not treat `hello-pursae` as an old builder theme.
+
+### 11.11 Decisions on open points
+
+Where the design left a choice, the contract fixed it as follows:
+
+- The menu binding attribute is `data-wb-menu-loc`, not `data-wb-menu` (runtime clash, §11.5).
+- Higher `_wb_priority` wins a tie; then the newer, then the higher id.
+- Main templates pass a view gate per type (§11.2) before scoring.
+- `404` is a top-level scope (score 45), not a singular one.
+- `latest` and `front` were added to the preview objects; `home` is the posts index.
+- `PUT templates/{id}/preview` answers `{preview, dynamic}` (the editor needs the new label and
+  URL), not a bare DynContext.
+- `POST templates` takes `postType` for the `single` type.
+- DynPost carries `dateText`/`modifiedText` and `commentsUrl` besides the RFC 3339 dates.
+- `SiteBoot.postTypes[].hierarchical` tells the conditions dialog where `child_of` applies.
+- `loop` joins the accepted section kinds together with its validation (package TA); until then
+  the Go `SectionKinds` list, and so validation, is unchanged.
+- TS: the doc model additions (`DynSettings`, `CellType`, `LoopContent`, `PageLayout`) are
+  declared in `host/contract.ts` until patch 0008 adds the same shapes to upstream `types.ts`;
+  from then on they must stay identical.

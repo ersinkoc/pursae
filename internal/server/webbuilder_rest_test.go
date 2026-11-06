@@ -264,7 +264,7 @@ func TestWebBuilderRESTAuth(t *testing.T) {
 		t.Errorf("anonymous autosave: %d", code)
 	}
 	// API handshake.
-	for _, h := range []string{"", "0", "2"} {
+	for _, h := range []string{"", "0", strconv.Itoa(webbuilder.APIVersion + 1)} {
 		code, v, _ := admin.do(http.MethodGet, doc, nil, map[string]string{webbuilder.APIHeader: h})
 		if code != http.StatusConflict || wbrCode(v) != webbuilder.ErrAPIMismatch || wbrData(v)["reload"] != true || wbrData(v)["apiVersion"] != float64(webbuilder.APIVersion) {
 			t.Errorf("X-WB-Api %q: %d %v", h, code, v)

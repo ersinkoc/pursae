@@ -16,9 +16,13 @@ export type { DocState, PageSettings, SavedComponent, Section }
 
 /* ---------- Versions and handshake ---------- */
 
-/** REST/boot schema version; sent as X-WB-Api on every web-builder/v2 request. */
-export const API_VERSION = 1
-/** Static markup + data-wb-* runtime version; stamped into RenderResult.renderer. */
+/** REST/boot schema version; sent as X-WB-Api on every web-builder/v2 request. 2 = Theme Builder. */
+export const API_VERSION = 2
+/**
+ * Static markup + data-wb-* runtime version; stamped into RenderResult.renderer. Bumped only for an
+ * incompatible markup change (a stored snapshot would render wrong or be misread); additive
+ * attributes, cell types and section kinds keep it.
+ */
 export const RENDERER_VERSION = 1
 export const API_HEADER = 'X-WB-Api'
 export const NONCE_HEADER = 'X-WP-Nonce'
@@ -46,6 +50,11 @@ export const routes = {
   aiStatus: () => 'web-builder/v2/ai/status',
   aiLlm: (provider: AiProviderId, path: string) => `web-builder/v2/ai/llm/${provider}/${path}`,
   aiImages: () => 'web-builder/v2/ai/images',
+  templates: () => 'web-builder/v2/templates',
+  templateConditions: (id: number) => `web-builder/v2/templates/${id}/conditions`,
+  templatePreview: (id: number) => `web-builder/v2/templates/${id}/preview`,
+  templateConflicts: (id: number) => `web-builder/v2/templates/${id}/conflicts`,
+  previewContext: () => 'web-builder/v2/preview-context',
   media: () => 'wp/v2/media',
 } as const
 
@@ -110,6 +119,9 @@ export const ERR = {
   aiNoKey: 'wb_ai_no_key', // 503
   aiUpstream: 'wb_ai_upstream', // 502
   aiTimeout: 'wb_ai_timeout', // 504
+  badCondition: 'wb_bad_condition', // 422, data.errors (path /conditions/<i>, code bad_condition)
+  badTemplate: 'wb_bad_template', // 422
+  badPreview: 'wb_bad_preview', // 422
   forbidden: 'rest_forbidden', // 401 / 403
   invalidNonce: 'rest_cookie_invalid_nonce', // 403
 } as const
@@ -129,7 +141,7 @@ export interface LockInfo {
 export interface ValidationError {
   /** JSON pointer into the request body, e.g. /doc/sections/3/items/0/href */
   path: string
-  code: 'required' | 'unknown_kind' | 'bad_id' | 'too_long' | 'too_many' | 'too_deep' | 'bad_url' | 'bad_css' | 'bad_value' | 'bad_renderer'
+  code: 'required' | 'unknown_kind' | 'bad_id' | 'too_long' | 'too_many' | 'too_deep' | 'bad_url' | 'bad_css' | 'bad_value' | 'bad_renderer' | 'bad_condition'
   message: string
 }
 
@@ -347,6 +359,11 @@ export interface Boot {
   /** Absolute SITE_ASSETS_PATH. */
   siteAssets: string
   ai: BootAi
+  /** Theme Builder (API 2): null unless the post is a wb_template. */
+  template: TemplateBoot | null
+  site: SiteBoot
+  /** Sample data for dynamic widgets: the template's preview object, else the post itself. */
+  dynamic: DynContext
 }
 
 declare global {
@@ -470,4 +487,363 @@ export interface BuildInfo {
   patches: Record<string, string>
   apiVersion: number
   rendererVersion: number
+}
+
+
+/* ---------- Theme Builder (contract doc §11) ---------- */
+
+export const TEMPLATE_POST_TYPE = 'wb_template'
+export const TEMPLATE_CAP = 'edit_theme_options'
+export const HELLO_PURSAE_THEME = 'hello-pursae'
+export const PREVIEW_QUERY = 'wb_template_preview'
+export const THEME_BUILDER_PAGE = 'web-builder-templates'
+export const MENU_LOCATION_PRIMARY = 'primary'
+export const MENU_LOCATION_FOOTER = 'footer'
+
+export const TEMPLATE_TYPES = ['header', 'footer', 'single-post', 'single-page', 'single', 'front-page', 'archive', 'search-results', 'error-404'] as const
+export type TemplateType = (typeof TEMPLATE_TYPES)[number]
+
+export const TEMPLATE_TYPE_LABELS: Record<TemplateType, string> = {
+  header: 'Header',
+  footer: 'Footer',
+  'single-post': 'Single Post',
+  'single-page': 'Single Page',
+  single: 'Single',
+  'front-page': 'Front Page',
+  archive: 'Archive',
+  'search-results': 'Search Results',
+  'error-404': '404 Page',
+}
+
+export type TemplateLocation = 'header' | 'main' | 'footer'
+export const templateLocation = (t: TemplateType): TemplateLocation => (t === 'header' ? 'header' : t === 'footer' ? 'footer' : 'main')
+
+/** Default rules written at create; 'single' gets include/singular/<postType> from the request. */
+export const DEFAULT_CONDITIONS: Partial<Record<TemplateType, readonly string[]>> = {
+  header: ['include/general'],
+  footer: ['include/general'],
+  'single-post': ['include/singular/post'],
+  'single-page': ['include/singular/page'],
+  'front-page': ['include/singular/front_page'],
+  archive: ['include/archive'],
+  'search-results': ['include/archive/search'],
+  'error-404': ['include/404'],
+}
+
+export const STARTER_IDS = ['blank', 'header', 'footer', 'single', 'archive', 'search'] as const
+export type StarterId = (typeof STARTER_IDS)[number]
+
+export const DEFAULT_STARTERS: Record<TemplateType, StarterId> = {
+  header: 'header',
+  footer: 'footer',
+  'single-post': 'single',
+  'single-page': 'single',
+  single: 'single',
+  'front-page': 'blank',
+  archive: 'archive',
+  'search-results': 'search',
+  'error-404': 'blank',
+}
+
+/** Display conditions: "<include|exclude>/<scope>", grammar in §11.2. */
+export const CONDITION_LIMITS = { maxConditions: 50, maxConditionBytes: 200, priorityMin: -100, priorityMax: 100 } as const
+export const CONDITION_PATTERN =
+  /^(include|exclude)\/(general|404|singular(\/front_page|\/[a-z0-9_-]{1,32}(\/[1-9][0-9]{0,18}|\/in\/[a-z0-9_-]{1,32}\/[1-9][0-9]{0,18}|\/child_of\/[1-9][0-9]{0,18}|\/by_author\/[1-9][0-9]{0,18})?)?|archive(\/home|\/date|\/search|\/author(\/[1-9][0-9]{0,18})?|\/type\/[a-z0-9_-]{1,32}|\/[a-z0-9_-]{1,32}(\/[1-9][0-9]{0,18})?)?)$/
+export const RESERVED_SINGULAR_WORDS = ['front_page', 'in', 'child_of', 'by_author'] as const
+export const RESERVED_ARCHIVE_WORDS = ['home', 'date', 'search', 'author', 'type'] as const
+
+/** Preview object: post:<id> | term:<tax>:<id> | author:<id> | type:<ptype> | search:<q> | front | home | 404 | latest. */
+export type PreviewObject = string
+export const DEFAULT_PREVIEWS: Record<TemplateType, PreviewObject> = {
+  header: 'front',
+  footer: 'front',
+  'single-post': 'latest',
+  'single-page': 'latest',
+  single: 'latest',
+  'front-page': 'front',
+  archive: 'home',
+  'search-results': 'search:a',
+  'error-404': '404',
+}
+
+/** PageSettings.layout (upstream PageSettings gains it in patch 0008). '' / absent = defaultPageLayout. */
+export type PageLayout = 'site' | 'canvas'
+
+/* Dynamic widgets: layout cells whose Item.title is a DynWidget. Patch 0008 adds these shapes to
+ * upstream types.ts (CellType, Item.dyn, SectionKind 'loop', PageSettings.layout); they must stay
+ * identical to the declarations here. */
+
+export const DYN_WIDGETS = [
+  'site-logo', 'site-title', 'site-tagline', 'nav-menu', 'search-form', 'copyright',
+  'post-title', 'post-content', 'post-excerpt', 'post-image', 'post-meta', 'post-terms', 'post-date', 'post-author', 'author-box', 'post-nav', 'post-comments',
+  'archive-title', 'archive-desc', 'search-query', 'pagination',
+] as const
+export type DynWidget = (typeof DYN_WIDGETS)[number]
+export type CellType = '' | 'heading' | 'text' | 'button' | 'image' | 'layout' | DynWidget
+
+export interface DynSettings {
+  tag?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'p' | 'div' | 'span'
+  link?: boolean
+  /** WordPress date format, /^[A-Za-z ,.:/-]{1,32}$/; '' = the site's date_format. */
+  format?: string
+  size?: 'thumbnail' | 'medium' | 'large' | 'full'
+  /** width / height, 0.2…5 */
+  ratio?: number
+  fields?: ('date' | 'modified' | 'author' | 'comments' | 'terms')[]
+  /** ≤ 8 characters */
+  sep?: string
+  tax?: string
+  location?: string
+  menuLayout?: 'row' | 'column' | 'burger'
+  /** Container width (px) below which a row menu becomes a burger; 0 = never. */
+  burgerAt?: number
+  /** 5…100 */
+  words?: number
+  prefix?: string
+  placeholder?: string
+  button?: string
+  /** ≤ 200 characters */
+  empty?: string
+}
+
+export const DYN_LIMITS = { maxSepRunes: 8, maxEmptyRunes: 200, minWords: 5, maxWords: 100, minRatio: 0.2, maxRatio: 5 } as const
+export const DYN_FORMAT_PATTERN = /^[A-Za-z ,.:/-]{1,32}$/
+
+/** Section.content keys of a 'loop' section (all strings); card = items[0].sub, grid = section.grid. */
+export interface LoopContent {
+  source?: 'main' | 'query' | 'related'
+  postType?: string
+  /** '1'…'24' */
+  perPage?: string
+  orderBy?: 'date' | 'modified' | 'title' | 'menu_order' | 'comment_count' | 'rand'
+  order?: 'desc' | 'asc'
+  /** 'category:12,post_tag:4', ≤ 20 pairs */
+  terms?: string
+  /** '<user id>' | '' */
+  author?: string
+  exclude?: 'current' | ''
+  /** '0'…'50' */
+  offset?: string
+  /** source main only */
+  pagination?: 'numbers' | 'prev-next' | 'none'
+  empty?: string
+}
+
+export const LOOP_LIMITS = { maxPerPage: 24, maxTerms: 20, maxOffset: 50, maxDepth: 2, maxIterations: 50 } as const
+
+/** nav / footer Section.content binding keys. */
+export const CONTENT_MENU = 'menu'
+export const CONTENT_LOGO_SOURCE = 'logoSource'
+export const LOGO_SOURCE_SITE = 'site'
+
+/** Snapshot placeholder attributes. Not data-wb-menu (the runtime disclosure menu): data-wb-menu-loc. */
+export const DYN_ATTR = {
+  slot: 'data-wb-slot',
+  if: 'data-wb-if',
+  ifNot: 'data-wb-if-not',
+  loop: 'data-wb-loop',
+  loopItem: 'data-wb-loop-item',
+  loopEmpty: 'data-wb-loop-empty',
+  menuLoc: 'data-wb-menu-loc',
+  loopPart: 'data-wb-loop-part',
+  format: 'data-wb-format',
+  size: 'data-wb-size',
+  tax: 'data-wb-tax',
+  sep: 'data-wb-sep',
+  words: 'data-wb-words',
+  search: 'data-wb-search',
+} as const
+
+export const CLASS_CURRENT = 'is-current'
+export const SEARCH_INPUT_NAME = 's'
+
+export type SlotMode = 'text' | 'html' | 'attr'
+export const SLOTS = {
+  'site.title': 'text',
+  'site.tagline': 'text',
+  'site.url': 'attr',
+  'site.logo': 'attr',
+  'site.year': 'text',
+  'menu.label': 'text',
+  'menu.url': 'attr',
+  'post.title': 'html',
+  'post.url': 'attr',
+  'post.content': 'html',
+  'post.excerpt': 'html',
+  'post.date': 'text',
+  'post.modified': 'text',
+  'post.author': 'text',
+  'post.author-url': 'attr',
+  'post.avatar': 'attr',
+  'post.author-bio': 'text',
+  'post.image': 'attr',
+  'post.terms': 'html',
+  'post.comments-count': 'text',
+  'post.comments-url': 'attr',
+  'post.nav': 'html',
+  'post.comments': 'html',
+  'archive.title': 'html',
+  'archive.description': 'html',
+  'search.query': 'text',
+  'search.count': 'text',
+  'loop.pagination': 'html',
+} as const satisfies Record<string, SlotMode>
+export type SlotName = keyof typeof SLOTS
+// HTML attribute names, not UI text. i18n-ignore
+export const SLOT_ATTRS = ['href', 'src', 'srcset', 'sizes', 'width', 'height', 'alt', 'datetime', 'aria-current', 'class'] as const
+
+/* ---------- Sample data: preview-context and Boot.dynamic ---------- */
+
+export interface DynImage {
+  url: string
+  width: number
+  height: number
+  alt: string
+}
+
+export interface DynPost {
+  id: number
+  type: string
+  title: string
+  url: string
+  excerpt: string
+  /** UGC-sanitized; shown read-only. */
+  contentHtml: string
+  /** RFC 3339 */
+  date: string
+  /** date in the site's date_format */
+  dateText: string
+  modified: string
+  modifiedText: string
+  author: { name: string; url: string; avatar: string; bio: string }
+  image: DynImage | null
+  terms: Record<string, { name: string; url: string }[]>
+  commentsCount: number
+  commentsUrl: string
+}
+
+export interface DynMenuItem {
+  id: number
+  label: string
+  url: string
+  current: boolean
+  /** Always [] in v1 (top level only). */
+  children: DynMenuItem[]
+}
+
+export interface MenuLocation {
+  slug: string
+  name: string
+}
+
+export type DynViewKind = 'single' | 'page' | 'front-page' | 'home' | 'archive' | 'search' | '404'
+
+export interface DynContext {
+  object: PreviewObject
+  site: { title: string; tagline: string; home: string; logo: DynImage | null; year: string }
+  locations: MenuLocation[]
+  menus: Record<string, DynMenuItem[]>
+  view: { kind: DynViewKind; archiveTitle: string; archiveDesc: string; search: string; total: number }
+  post: DynPost | null
+  posts: DynPost[]
+  pagination: { current: number; total: number }
+}
+
+/* ---------- Boot additions ---------- */
+
+export interface TemplatePreview {
+  object: PreviewObject
+  label: string
+  /** Front URL of the object with ?wb_template_preview=<id>. */
+  url: string
+}
+
+export interface TemplateBoot {
+  type: TemplateType
+  conditions: string[]
+  priority: number
+  starter: StarterId
+  preview: TemplatePreview
+  /** Appearance › Theme Builder */
+  manageUrl: string
+}
+
+export interface PostTypeInfo {
+  slug: string
+  label: string
+  /** Archive URL, '' without one. */
+  archive: string
+  hierarchical: boolean
+}
+
+export interface TaxonomyInfo {
+  slug: string
+  label: string
+  types: string[]
+}
+
+export interface SiteBoot {
+  title: string
+  tagline: string
+  home: string
+  logo: DynImage | null
+  locations: MenuLocation[]
+  menus: Record<string, DynMenuItem[]>
+  /** Hello Pursae is active: pages may use layout 'site'. */
+  themeParts: boolean
+  postTypes: PostTypeInfo[]
+  taxonomies: TaxonomyInfo[]
+}
+
+/* ---------- Template REST payloads ---------- */
+
+export interface TemplateSummary {
+  id: number
+  title: string
+  type: TemplateType
+  /** publish = active, draft = disabled */
+  status: string
+  conditions: string[]
+  priority: number
+  author: UserRef
+  modified: string
+  editUrl: string
+  previewUrl: string
+}
+
+export interface TemplateCreateRequest {
+  type: TemplateType
+  title: string
+  starter?: StarterId
+  /** Required for 'single' (a public custom post type), refused otherwise. */
+  postType?: string
+}
+
+export interface TemplateCreateResponse {
+  id: number
+  editUrl: string
+}
+
+export interface TemplateConditionsRequest {
+  conditions: string[]
+  priority: number
+}
+export type TemplateConditionsResponse = TemplateConditionsRequest
+
+export interface TemplatePreviewRequest {
+  object: PreviewObject
+}
+
+export interface TemplatePreviewResponse {
+  preview: TemplatePreview
+  dynamic: DynContext
+}
+
+export interface TemplateConflict {
+  id: number
+  title: string
+  type: TemplateType
+  conditions: string[]
+  priority: number
+  editUrl: string
 }

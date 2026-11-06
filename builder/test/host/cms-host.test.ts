@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AUTOSAVE_MIN_MS, AUTOSAVE_RETRY_MS, createCmsHost, pickInitial, readBoot, type CmsHost } from '../../host/cms-host'
 import { MemoryStorage, PAGE, makeBoot, makeDoc, mockFetch, restErr } from './helpers'
+import { API_VERSION } from '../../host/contract'
 
 const AUTOSAVE = 'web-builder/v2/documents/42/autosave'
 const okPrefs = { 'GET web-builder/v2/prefs': { json: {} }, 'GET web-builder/v2/library': { json: [] } }
@@ -110,7 +111,7 @@ describe('host surface', () => {
 
   it('readBoot rejects a missing config and an API mismatch', () => {
     expect(() => readBoot({})).toThrow(/missing/)
-    expect(() => readBoot({ __WEB_BUILDER__: makeBoot({}, { apiVersion: 2 }) })).toThrow(/does not match/)
+    expect(() => readBoot({ __WEB_BUILDER__: makeBoot({}, { apiVersion: API_VERSION + 1 }) })).toThrow(/does not match/)
     expect(readBoot({ __WEB_BUILDER__: makeBoot() }).document.postId).toBe(42)
   })
 })
@@ -133,7 +134,7 @@ describe('autosave', () => {
     expect(puts).toHaveLength(1)
     expect(puts[0].body).toEqual({ doc: makeDoc('3'), page: PAGE, baseRev: 3 })
     expect(puts[0].headers['x-wp-nonce']).toBe('nonce1')
-    expect(puts[0].headers['x-wb-api']).toBe('1')
+    expect(puts[0].headers['x-wb-api']).toBe(String(API_VERSION))
   })
 
   it('keeps at least AUTOSAVE_MIN_MS between two requests', async () => {
@@ -178,7 +179,7 @@ describe('autosave', () => {
   })
 
   it('stops on 409 wb_api_mismatch and offers a reload', async () => {
-    const { m, host } = setup(restErr(409, 'wb_api_mismatch', { reload: true, apiVersion: 2 }))
+    const { m, host } = setup(restErr(409, 'wb_api_mismatch', { reload: true, apiVersion: API_VERSION + 1 }))
     await Promise.all([host.saveDraft(makeDoc('1'), PAGE), vi.advanceTimersByTimeAsync(0)])
     expect(host.session.stopped).toBe('api')
     const n = host.ui.getState().notices.find((x) => x.key === 'reload')
@@ -294,7 +295,7 @@ describe('storage', () => {
     const puts = m.find('PUT', 'web-builder/v2/prefs')
     expect(puts).toHaveLength(1)
     expect(puts[0].body).toEqual({ 'pursae-builder:recent-fonts': ['Lora', 'Inter'] })
-    expect(puts[0].headers['x-wb-api']).toBe('1')
+    expect(puts[0].headers['x-wb-api']).toBe(String(API_VERSION))
     expect(local.getItem('pursae-builder:u7:recent-fonts')).toBe('["Lora","Inter"]')
   })
 

@@ -1,5 +1,5 @@
 import type { DocState, PageSettings } from '@/builder/types'
-import type { Boot, DocumentResponse } from '../../host/contract'
+import { API_VERSION, type Boot, type DocumentResponse } from '../../host/contract'
 import type { HostUi } from '../../host/cms-host'
 
 export const ROOT = 'https://example.test/wp-json/'
@@ -12,7 +12,7 @@ export const PAGE: PageSettings = { title: 'Home', slug: 'home', description: ''
 
 export function makeBoot(doc: Partial<DocumentResponse> = {}, over: Partial<Boot> = {}): Boot {
   return {
-    apiVersion: 1,
+    apiVersion: API_VERSION,
     rendererVersion: 1,
     document: { postId: 42, postType: 'page', status: 'publish', rev: 3, doc: makeDoc('stored'), page: PAGE, draft: null, detached: false, modified: '2026-11-01T10:00:00Z', docModified: '2026-11-01T10:00:00Z', renderer: 1, lock: null, ...doc },
     user: { id: 7, name: 'Ada' },
@@ -24,6 +24,18 @@ export function makeBoot(doc: Partial<DocumentResponse> = {}, over: Partial<Boot
     media: { maxUploadBytes: 1 << 20, types: ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'] },
     siteAssets: 'https://example.test/wp-content/web-builder/site/',
     ai: { enabled: false, providers: [], llmBase: '', imagesUrl: '', allowCode: false },
+    template: null,
+    site: { title: 'Example', tagline: '', home: 'https://example.test', logo: null, locations: [], menus: {}, themeParts: false, postTypes: [], taxonomies: [] },
+    dynamic: {
+      object: 'post:42',
+      site: { title: 'Example', tagline: '', home: 'https://example.test', logo: null, year: '2026' },
+      locations: [],
+      menus: {},
+      view: { kind: 'page', archiveTitle: '', archiveDesc: '', search: '', total: 0 },
+      post: null,
+      posts: [],
+      pagination: { current: 1, total: 1 },
+    },
     ...over,
   }
 }

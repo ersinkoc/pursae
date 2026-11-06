@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { RestError, createRest, listMedia } from '../../host/rest'
 import { ROOT, mockFetch, restErr } from './helpers'
+import { API_VERSION } from '../../host/contract'
 
 const NONCE_URL = 'https://example.test/wp-admin/admin-ajax?action=rest-nonce'
 
@@ -10,7 +11,7 @@ describe('rest client', () => {
     const rest = createRest({ root: ROOT, nonce: 'n', nonceUrl: '', fetch: m.fetch })
     await rest.request('GET', 'web-builder/v2/prefs')
     await rest.request('GET', 'wp/v2/media')
-    expect(m.calls[0].headers['x-wb-api']).toBe('1')
+    expect(m.calls[0].headers['x-wb-api']).toBe(String(API_VERSION))
     expect(m.calls[1].headers['x-wb-api']).toBeUndefined()
     expect(m.calls.every((c) => c.headers['x-wp-nonce'] === 'n')).toBe(true)
   })
