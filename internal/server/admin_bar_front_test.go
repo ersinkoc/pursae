@@ -1,8 +1,11 @@
 package server
 
 import (
+	"context"
 	"strings"
 	"testing"
+
+	"wpgo/internal/webbuilder"
 )
 
 // On the site, the toolbar shows Customize to users who can change the theme, as WordPress does:
@@ -18,22 +21,26 @@ func TestFrontToolbarCustomize(t *testing.T) {
 	}
 }
 
-// With Golementor active the site's toolbar offers "Edit with Golementor" on posts and pages and
-// the Theme Builder everywhere; with it off, nothing.
-func TestFrontToolbarGolementor(t *testing.T) {
-	ts, c := testServer(t) // Golementor on
-	installAndLogin(t, ts, c)
-	_, body, _ := get(t, c, ts.URL+"/sample-page/")
-	if !strings.Contains(body, "Edit with Pursae Web Builder") || !strings.Contains(body, "action=web-builder") || !strings.Contains(body, "/wp-admin/theme-builder") {
-		t.Error("a page's toolbar lacks Edit with Pursae Web Builder")
+// The site's toolbar offers "Edit with Pursae Web Builder" on a page built with it (a builder
+// document), not on other pages or listings, and nothing while the plugin is off. The old
+// builder's node (Theme Builder) is gone.
+func TestFrontToolbarWebBuilder(t *testing.T) {
+	srv, base, c := wbfStart(t)
+	built := wbfPage(t, srv, "page", "Toolbar Built", []string{}, "", "")
+	_, body, _ := get(t, c, wbfURL(base, built))
+	if !strings.Contains(body, "Edit with Pursae Web Builder") || !strings.Contains(body, "action=web-builder'") || !strings.Contains(body, "ab-icon dashicons-admin-customizer") {
+		t.Error("a builder page's toolbar lacks Edit with Pursae Web Builder")
 	}
-	_, body, _ = get(t, c, ts.URL+"/?s=hello")
-	if strings.Contains(body, "Edit with Pursae Web Builder") || !strings.Contains(body, "wp-admin-bar-golementor_edit_page") || !strings.Contains(body, "ab-icon dashicons-layout") {
-		t.Error("a search page should offer only the Theme Builder")
+	for _, u := range []string{base + "/sample-page/", base + "/?s=hello"} {
+		if _, body, _ = get(t, c, u); strings.Contains(body, "web_builder_edit_page") || strings.Contains(body, "/wp-admin/theme-builder") {
+			t.Errorf("%s: the toolbar offers the builder", u)
+		}
 	}
-	off, c2, _ := testServerBuilderOff(t)
-	installAndLogin(t, off, c2)
-	if _, body, _ = get(t, c2, off.URL+"/sample-page/"); strings.Contains(body, "golementor_edit_page") {
+	if err := srv.settings.Set(context.Background(), map[string]any{webbuilder.PluginOption: false}); err != nil {
+		t.Fatal(err)
+	}
+	wbfPurge(srv)
+	if _, body, _ = get(t, c, wbfURL(base, built)); strings.Contains(body, "web_builder_edit_page") {
 		t.Error("the toolbar shows Pursae Web Builder while it is off")
 	}
 }

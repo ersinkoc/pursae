@@ -1,15 +1,13 @@
 {
   "slug": "good-boy-supply",
   "name": "Good Boy Supply",
-  "version": "1.0.0",
-  "description": "A cheerful pet store built with Pursae Web Builder: a bold navy header with the language switcher and a hover mini-cart, a sunny hero, rounded category tiles, bestsellers and new arrivals, a product page with size variations, tabs and related gear, and a friendly checkout. Every part is a Theme Builder template you can edit visually. Fredoka and Nunito, self-hosted. Ships a complete store demo: beds, harnesses in three sizes, cat furniture, toys, care and a puppy starter kit.",
+  "version": "1.1.0",
+  "description": "A cheerful pet store: a bold header with the language switcher and the cart, a sunny hero, rounded category tiles, bestsellers and new arrivals, and friendly store pages in navy and orange. Fredoka and Nunito, self-hosted. Ships a complete store demo: beds, harnesses in three sizes, cat furniture, toys, care and a puppy starter kit.",
   "author": "Pursae",
   "author_url": "https://github.com/pursae",
   "theme_url": "https://github.com/pursae/pursae-dev/tree/main/library/themes/good-boy-supply",
   "tags": [
     "E-Commerce",
-    "Pursae Web Builder",
-    "Theme Builder",
     "Pets",
     "Custom Colors",
     "Custom Menu",
@@ -21,7 +19,7 @@
   "category": "pets",
   "style": "Playful pet store, navy and sunshine yellow",
   "demo": "demo/demo.json",
-  "golementor": "golementor/design.json",
+  "web_builder": "web-builder/parts.json",
   "menu_locations": [
     {
       "id": "primary",

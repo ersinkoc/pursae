@@ -14,7 +14,7 @@ the same directory the Theme File Editor writes its overrides to), one sub-direc
 slug: `<data>/themes/<slug>/theme.json`. The server loads every such directory at start-up
 and right after Appearance › Themes › Add Theme › Upload Theme installs one; a package that
 does not validate is logged and skipped. A package whose slug matches a bundled theme
-(`twentytwentyfive`, `hello-web-builder`, …) is rejected, and the directory name must equal the slug.
+(`twentytwentyfive`, …) is rejected, and the directory name must equal the slug.
 Appearance › Themes › Theme Details › Delete removes the directory and the registration
 (capability `delete_themes`; the active theme cannot be deleted).
 
@@ -195,24 +195,20 @@ Hub:
   `pets`, `automotive`, `hotel`, `startup`, `science`, `religion`, `environment`, `books`, `sports`.
 - `style`: a short phrase shown on the library card (at most 80 characters, one line, no markup).
 - `demo`: path of the demo content file inside the package, a `.json` file under `demo/` (below).
+- `web_builder`: path of the Pursae Web Builder parts file, a `.json` file under `web-builder/` (below, "Pursae Web Builder").
 
 The REST themes endpoint (`wp/v2/themes`) reports them as `category`, `style` and `has_demo`.
 
-### Pursae Web Builder designs
+### Pursae Web Builder
 
-A theme may be built with Pursae Web Builder: `"golementor": "golementor/design.json"` names a design in the
-format of a saved Pursae Web Builder theme (`"format": "gowebeditor-theme"`): `kit` (Site Settings: global
-colors and fonts, theme style), `custom_css`, and `parts`, each with a `type` (`header`, `footer`,
-`single-post`, `single-page`, `archive`, `search-results`, `error-404`, and with Pursae Commerce
-`single-product` and `product-archive`), a `title`, `elements` (the element tree, a JSON array) and
-`conditions` (`include/general`, `include/product`, `include/product_archive/product_cat`,
-`include/goocommerce/cart`, …). Activating the theme switches Pursae Web Builder on and loads the design
-into the Theme Builder's working copy (unsaved work there is kept as a saved theme first); pages then
-render through Hello Pursae Web Builder with the theme's own stylesheet added, so the store's header,
-footer, product page, shop, cart and checkout are edited visually. The theme's `templates/` are the
-fallback while Pursae Web Builder is off. A store theme declares `"supports": {"woocommerce": true}` and is
-listed under Pursae Commerce › Store Themes. Fernwood, Good Boy Supply and Kite & Crayon are built this
-way by `tools/goo-golementor-themes/` (`build.py` writes the packages, `art.py` draws the demo art).
+A theme package has nothing to declare for Pursae Web Builder: a published builder page renders
+without the theme (see `docs/developer/web-builder.md`), and the builder's Theme Builder headers,
+footers and templates are shown only by the bundled Hello Pursae theme
+(`docs/developer/themes/hello-pursae.md`), never by a package. A package may opt in to the builder's theme library with `"web_builder": "web-builder/parts.json"` (templates and demo pages as builder docs;
+see `docs/developer/web-builder-theme-library.md`); the market install ignores that file. Older packages that still carry the retired page-builder design key and folder
+install as plain themes; both are ignored. A store theme declares
+`"supports": {"woocommerce": true}` and is listed under Pursae Commerce › Store Themes, like
+Fernwood, Good Boy Supply and Kite & Crayon.
 
 ## Demo content
 
@@ -301,10 +297,8 @@ Rules:
   They are stored as theme mods of that theme.
 - `options` may only set `blogname`, `blogdescription` (strings), `posts_per_page` (1–100),
   `date_format`.
-- A page may be built with Pursae Web Builder: `golementor` is its element tree (`_elementor_data`, a JSON
-  array, with the same tokens as the content, e.g. `"url": "{{media:hero}}", "id": "{{media_id:hero}}"`)
-  and `golementor_settings` its page settings (`{"hide_title": "yes"}`). Without a `template` the page
-  uses Pursae Web Builder's Full Width template.
+- Demo pages are block or HTML content. Keys the format does not name (such as the page-builder
+  trees older demos carried) are ignored and the page is imported with its `content`.
 - A store theme's `goocommerce` section imports products, categories, attributes, coupons and
   shipping (`internal/server/goo_demo.go`). With Pursae Multi Language active every imported item gets the default
   language.

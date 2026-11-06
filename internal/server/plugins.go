@@ -26,6 +26,7 @@ import (
 	"wpgo/internal/plugins"
 	"wpgo/internal/settings"
 	"wpgo/internal/store"
+	"wpgo/internal/webbuilder"
 )
 
 // Plugins are signed zip packages holding a WebAssembly module and a plugin.json manifest. They run
@@ -53,6 +54,7 @@ func (s *Server) pluginDirs() (pkgDir, cacheDir string) {
 func (s *Server) startPlugins(ctx context.Context) {
 	ps := &pluginSystem{hooks: plugins.NewRegistry()}
 	s.plugins = ps
+	defer s.wbUpgrade(ctx) // the one-time switch from the old builder (webbuilder_upgrade.go)
 	pkgDir, cacheDir := s.pluginDirs()
 	ps.dir = pkgDir
 	_ = os.MkdirAll(pkgDir, 0o755)
@@ -152,16 +154,23 @@ type noticeSink struct {
 	list []plugins.Notice
 }
 
-// pluginNotices fires admin_notices and returns what plugins queued, escaped for the admin screen.
+// pluginNotices fires admin_notices and returns what plugins queued, escaped for the admin screen,
+// after the notices of the built-in plugins that show on every screen.
 func (s *Server) pluginNotices(c *gin.Context) []notice {
+	var out []notice
+	if n, ok := s.wbUpgradeNotice(c); ok { // Pursae Web Builder: the old builder was replaced (webbuilder_upgrade.go)
+		out = append(out, n)
+	}
+	if n, ok := s.wbThemeNotice(c); ok { // Pursae Web Builder: Hello Pursae switch / offer (webbuilder_settings.go)
+		out = append(out, n)
+	}
 	if s.plugins == nil || !s.plugins.hooks.HasAction("admin_notices") {
-		return nil
+		return out
 	}
 	sink := &noticeSink{}
 	ctx, cancel := context.WithTimeout(context.WithValue(c.Request.Context(), noticeKey{}, sink), 2*time.Second)
 	defer cancel()
 	s.plugins.hooks.DoAction(ctx, "admin_notices")
-	var out []notice
 	for _, n := range sink.list {
 		typ := n.Type
 		if typ != "success" && typ != "warning" && typ != "error" {
@@ -331,8 +340,8 @@ func (s *Server) nativePluginRows() []pluginRow {
 		{Slug: "wpgo-cache", Name: "WPGo Cache", Version: "1.0.0", Native: true, Active: s.settings.Bool("wpgo_cache_enabled"),
 			Description: "Full-page cache with tag-based purging, a crawler and page optimizations. Works behind nginx, OpenLiteSpeed, Apache or on its own.",
 			Author:      "Pursae", SettingsURL: "/wp-admin/admin?page=wpgo-cache"},
-		{Slug: golementorSlug, Name: "Pursae Web Builder", Version: Version, Native: true, Active: s.golementorOn(),
-			Description: "Visual drag-and-drop page builder and Theme Builder (headers, footers, single and archive templates), with Hello Pursae Web Builder, the blank theme to build them on. While it is off, none of it is part of the site.",
+		{Slug: webbuilder.PluginSlug, Name: "Pursae Web Builder", Version: Version, Native: true, Active: s.wbOn(),
+			Description: "Build pages visually from ready-made sections, then publish them as fast, static HTML. Design the site&#8217;s header, footer and templates for posts, pages, archives, search results and 404 pages under Appearance &rsaquo; Theme Builder, shown by the bundled Hello Pursae theme. Choose which post types it edits under Settings &rsaquo; Web Builder.",
 			Author:      "Pursae"},
 		{Slug: msSlug, Name: "Pursae SMTP", Version: Version, Native: true, Active: s.mailSMTPOn(),
 			Description: "Make email delivery easy for Pursae. Connect with SMTP, SendLayer, Brevo, Mailgun, SendGrid, Amazon SES, Gmail, Outlook and more, with an email log, reports, failure alerts, backup connection and smart routing. A native clone of WP Mail SMTP.",
@@ -345,24 +354,7 @@ func (s *Server) nativePluginRows() []pluginRow {
 			Author:      "Pursae"},
 		golylangPluginRow(s.golylangOn()), // golylang_admin.go
 	}
-	for i := range rows { // Settings links only while active, as WordPress shows them
-		switch rows[i].Slug {
-		case msSlug:
-			if rows[i].Active {
-				rows[i].SettingsURL = "/wp-admin/admin?page=" + msSlug
-			}
-		case gontactSlug:
-			if !rows[i].Active {
-				rows[i].SettingsURL = ""
-			}
-		}
-	}
-	if !rows[1].Active {
-		rows[1].SettingsURL = "" // WordPress shows a plugin's Settings link only while it is active
-	}
-	if rows[2].Active {
-		rows[2].SettingsURL = "/wp-admin/theme-builder"
-	}
+	nativeSettingsLinks(rows)
 	rows = append(rows, s.maintPluginRow())    // Maintenance-Go (maintenance_admin.go)
 	rows = append(rows, s.bmgrPluginRow())     // Backup Manager (backup.go)
 	rows = append(rows, s.seogoPluginRow())    // SEO-Go (seogo.go)
@@ -375,6 +367,31 @@ func (s *Server) nativePluginRows() []pluginRow {
 		rows[i].Source = pluginSourceNative
 	}
 	return rows
+}
+
+// nativeSettingsLinks sets the Settings links of the core plugins that WordPress shows only while
+// a plugin is active. Rows are found by slug, so the order of nativePluginRows does not matter.
+func nativeSettingsLinks(rows []pluginRow) {
+	for i := range rows {
+		switch rows[i].Slug {
+		case "wpgo-cache":
+			if !rows[i].Active {
+				rows[i].SettingsURL = ""
+			}
+		case webbuilder.PluginSlug:
+			if rows[i].Active {
+				rows[i].SettingsURL = wbSettingsURL // webbuilder_settings.go
+			}
+		case msSlug:
+			if rows[i].Active {
+				rows[i].SettingsURL = "/wp-admin/admin?page=" + msSlug
+			}
+		case gontactSlug:
+			if !rows[i].Active {
+				rows[i].SettingsURL = ""
+			}
+		}
+	}
 }
 
 // pluginInventory is every plugin, native and installed packages, without action links (the Plugins
@@ -485,18 +502,8 @@ func (s *Server) pluginsScreen(c *gin.Context) {
 	switch {
 	case c.Query("activate") == "true":
 		notices = append(notices, notice{Type: "success", Message: "Plugin activated.", Dismissible: true})
-		if c.Query("gwe_theme") == "hello" { // Golementor moved the site to its blank canvas theme
-			notices = append(notices, notice{Type: "info", Message: template.HTML("<strong>Hello Pursae Web Builder</strong> is now the active theme: a blank canvas for Pursae Web Builder. Design the header, footer and pages under <a href=\"/wp-admin/theme-builder\">Appearance &rsaquo; Theme Builder</a>. Deactivating Pursae Web Builder brings back your previous theme."), Dismissible: true})
-		}
-		if c.Query("gwe_setup") == "1" && s.golementorOn() { // Golementor Studio: offer the setup wizard
-			notices = append(notices, notice{Type: "info", Message: template.HTML("<strong>Pursae Web Builder is ready.</strong> Start from a complete starter site (header, footer, pages, blog, menus, colors and fonts) and edit everything afterwards.</p><p><a class=\"button button-primary\" href=\"" + gweSetupPath + "\">Run Site Setup</a> <a class=\"button\" href=\"/wp-admin/theme-builder\">Start from scratch</a>"), Dismissible: true})
-		}
 	case c.Query("deactivate") == "true":
 		notices = append(notices, notice{Type: "success", Message: "Plugin deactivated.", Dismissible: true})
-		if c.Query("gwe_theme") == "reset" { // Golementor: Hello Golementor was the active theme
-			notices = append(notices, notice{Type: "warning", Message: template.HTML("Hello Pursae Web Builder belongs to Pursae Web Builder, so the site was switched to <strong>" +
-				template.HTMLEscapeString(s.activeTheme().Name) + "</strong>. Your saved themes and built pages are kept; they come back when you activate Pursae Web Builder."), Dismissible: true})
-		}
 	case c.Query("activate-multi") != "":
 		notices = append(notices, notice{Type: "success", Message: "Selected plugins activated.", Dismissible: true})
 	case c.Query("deactivate-multi") != "":
@@ -619,31 +626,12 @@ func (s *Server) pluginAction(c *gin.Context, action, slug string) {
 	case hgSlug: // HeadlessGo (headlessgo.go)
 		s.hgPluginAction(c, action)
 		return
-	case golementorSlug:
-		q := action + "=true"
-		if action == "activate" {
-			before := s.settings.String("stylesheet")
-			if err := s.golementorActivate(c); err != nil {
-				fail(err)
-				return
-			}
-			if s.settings.String("stylesheet") != before {
-				q += "&gwe_theme=hello"
-			}
-			if s.gweStarter() == nil && len(s.gweLib().Kits) > 0 {
-				q += "&gwe_setup=1" // Golementor Studio: the setup wizard (golementor_setup.go)
-			}
-		} else {
-			switched, err := s.golementorDeactivate(c)
-			if err != nil {
-				fail(err)
-				return
-			}
-			if switched {
-				q += "&gwe_theme=reset"
-			}
+	case webbuilder.PluginSlug: // Pursae Web Builder: a plain switch (webbuilder_settings.go)
+		if err := s.wbSetActive(c, action == "activate"); err != nil {
+			fail(err)
+			return
 		}
-		c.Redirect(http.StatusFound, "/wp-admin/plugins?"+q)
+		c.Redirect(http.StatusFound, "/wp-admin/plugins?"+action+"=true")
 		return
 	case gontactSlug:
 		var err error
@@ -881,7 +869,7 @@ func (s *Server) pluginInstall(c *gin.Context) {
 	d := pluginInstallData{Tab: c.DefaultQuery("tab", "featured"), Search: strings.TrimSpace(c.Query("s")), UploadNonce: s.nonce(c, "plugin-upload")}
 	installed := map[string]bool{}
 	var native []marketItem
-	icons := map[string][2]string{"classic-editor": {"dashicons-edit-page", "blue"}, "wpgo-cache": {"dashicons-performance", "green"}, golementorSlug: {"dashicons-layout", "purple"}, maintSlug: {"dashicons-hammer", "teal"}, msSlug: {"dashicons-email-alt", "blue"}, gontactSlug: {"dashicons-email", "teal"}, acfgoSlug: {"dashicons-welcome-widgets-menus", "green"}, golylangSlug: {"dashicons-translation", "teal"}, seogoSlug: {"dashicons-chart-line", "blue"}, gooikeSlug: {"dashicons-shield", "orange"}, gooSlug: {"dashicons-cart", "purple"}, gocdnSlug: {"dashicons-cloud-upload", "blue"}, hgSlug: {"dashicons-rest-api", "blue"}}
+	icons := map[string][2]string{"classic-editor": {"dashicons-edit-page", "blue"}, "wpgo-cache": {"dashicons-performance", "green"}, webbuilder.PluginSlug: {"dashicons-layout", "purple"}, maintSlug: {"dashicons-hammer", "teal"}, msSlug: {"dashicons-email-alt", "blue"}, gontactSlug: {"dashicons-email", "teal"}, acfgoSlug: {"dashicons-welcome-widgets-menus", "green"}, golylangSlug: {"dashicons-translation", "teal"}, seogoSlug: {"dashicons-chart-line", "blue"}, gooikeSlug: {"dashicons-shield", "orange"}, gooSlug: {"dashicons-cart", "purple"}, gocdnSlug: {"dashicons-cloud-upload", "blue"}, hgSlug: {"dashicons-rest-api", "blue"}}
 	for _, r := range s.installedPlugins(c) {
 		installed[r.Slug] = true
 		if r.Native {

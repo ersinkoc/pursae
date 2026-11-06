@@ -63,7 +63,7 @@ type postRow struct {
 	Status               string
 	IsTrash              bool
 	ViewLabel            string
-	BuilderURL           string // "Edit with Golementor"
+	BuilderURL           string // "Edit with Pursae Web Builder" (webbuilder_admin.go)
 	Excerpt              string // shown in the Extended view
 	Inline               inlineData
 	PluginCols           []template.HTML // cells of plugin columns (Golylang's languages), before Comments
@@ -188,11 +188,10 @@ func newPagination(total, perPage, page int, base url.URL) pagination {
 func (s *Server) postsList(c *gin.Context) {
 	ctx := c.Request.Context()
 	u := currentUser(c)
-	if c.Query("action") == "elementor_new_post" && s.golementorOn() { // Golementor: create a draft and open the builder
-		s.gweNewPost(c)
+	if s.gooAdminScreen(c, "edit") { // Goocommerce: the products list
 		return
 	}
-	if s.gooAdminScreen(c, "edit") { // Goocommerce: the products list
+	if s.wbTemplatesListRedirect(c) { // Theme Builder templates are listed on Appearance › Theme Builder
 		return
 	}
 	typ := c.DefaultQuery("post_type", "post")
@@ -409,7 +408,10 @@ func (s *Server) postRows(c *gin.Context, d *postsListData, posts []*store.Post,
 	frontID := int64(s.settings.Int("page_on_front"))
 	postsPageID := int64(s.settings.Int("page_for_posts"))
 	privacyID := int64(s.settings.Int("wp_page_for_privacy_policy"))
-	builderOn := s.golementorOn()
+	built := map[int64]bool{} // Pursae Web Builder: posts with a builder document (post state)
+	if s.wbOn() {
+		built = s.wbDocIDs(ctx, ids)
+	}
 
 	for _, p := range posts {
 		r := postRow{ID: p.ID, Title: p.Title, Status: p.Status, IsTrash: p.Status == "trash",
@@ -458,8 +460,8 @@ func (s *Server) postRows(c *gin.Context, d *postsListData, posts []*store.Post,
 		r.TrashURL = "/wp-admin/post?post=" + itoa64(p.ID) + "&action=trash&_wpnonce=" + nonce
 		r.RestoreURL = "/wp-admin/post?post=" + itoa64(p.ID) + "&action=untrash&_wpnonce=" + s.nonce(c, "untrash-post_"+itoa64(p.ID))
 		r.DeleteURL = "/wp-admin/post?post=" + itoa64(p.ID) + "&action=delete&_wpnonce=" + s.nonce(c, "delete-post_"+itoa64(p.ID))
-		r.BuilderURL = s.gweRowAction(c, p)
-		if builderOn && gweBuilt(p) {
+		r.BuilderURL = s.wbRowAction(c, p)
+		if built[p.ID] && s.wbEnabledType(p.Type) {
 			r.States = append(r.States, "Pursae Web Builder")
 		}
 		if p.Status == "publish" || p.Status == "private" {
@@ -530,8 +532,7 @@ func (s *Server) inlineDataFor(p *store.Post, cats, tags []*store.Term) inlineDa
 	return in
 }
 
-// pageTemplates lists the active theme's page templates (get_page_templates()); Golementor adds
-// its canvas and full-width templates like Elementor's theme_page_templates filter.
+// pageTemplates lists the active theme's page templates (get_page_templates()).
 func (s *Server) pageTemplates() []templateOption {
 	var out []templateOption
 	if t := s.activeTheme(); t != nil {
@@ -543,9 +544,6 @@ func (s *Server) pageTemplates() []templateOption {
 		for _, k := range keys {
 			out = append(out, templateOption{k, t.Templates[k]})
 		}
-	}
-	if s.golementorOn() {
-		out = append(out, templateOption{"elementor_canvas", "Pursae Web Builder Canvas"}, templateOption{"elementor_header_footer", "Pursae Web Builder Full Width"})
 	}
 	return out
 }
@@ -710,6 +708,7 @@ func (s *Server) postsBulkAction(c *gin.Context, typ, action string) {
 			continue
 		}
 		if err == nil {
+			s.wbAfterStatusChange(c, p) // Pursae Web Builder: purge again now the status is stored
 			n++
 			done = append(done, raw)
 		}
@@ -1583,6 +1582,9 @@ func (s *Server) postEdit(c *gin.Context) {
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
+	if s.wbTemplatePostScreen(c, p) { // Theme Builder templates: edit_theme_options, the builder only
+		return
+	}
 	switch c.DefaultQuery("action", "edit") {
 	case "trash", "untrash", "delete":
 		action := c.Query("action")
@@ -1608,6 +1610,7 @@ func (s *Server) postEdit(c *gin.Context) {
 			c.String(http.StatusInternalServerError, err.Error())
 			return
 		}
+		s.wbAfterStatusChange(c, p) // Pursae Web Builder: purge again now the status is stored
 		c.Redirect(http.StatusFound, "/wp-admin/edit?post_type="+p.Type+"&"+key+"=1&ids="+itoa64(p.ID))
 		return
 	}
@@ -1620,12 +1623,11 @@ func (s *Server) postEdit(c *gin.Context) {
 		return
 	}
 	switch action := c.Query("action"); {
-	case action == gweEditAction && s.golementorOn(): // Golementor
-		s.gweEditor(c, p)
+	case action == wbEditAction && s.wbOn(): // Pursae Web Builder (webbuilder_editor.go)
+		s.wbEditor(c, p)
 		return
-	case (action == "elementor" || action == "golementor") && s.golementorOn():
-		// Upstream's editor URL (bundled JS, old links): the browser keeps the #fragment across the redirect.
-		c.Redirect(http.StatusMovedPermanently, gweEditURL(p.ID))
+	case action == wbEditActionDev && s.wbOn(): // the editor's action while both builders shipped
+		c.Redirect(http.StatusMovedPermanently, wbEditURL(p.ID))
 		return
 	}
 	s.renderEdit(c, p, false)
@@ -1633,8 +1635,8 @@ func (s *Server) postEdit(c *gin.Context) {
 
 func (s *Server) renderEdit(c *gin.Context, p *store.Post, isNew bool) {
 	block := s.useBlockEditor(c, p)
-	s.gweEditorButton(c, p, block)
-	s.seogoEditor(c, p, block) // SEO-Go box (seogo_editor.go)
+	s.wbEditorButton(c, p, block) // Pursae Web Builder: "Edit with Pursae Web Builder" (webbuilder_admin.go)
+	s.seogoEditor(c, p, block)    // SEO-Go box (seogo_editor.go)
 	if block {
 		if _, ok := c.GetQuery("classic-editor__forget"); ok {
 			delete(p.Meta, "classic-editor-remember")
@@ -1998,7 +2000,7 @@ func (s *Server) postSave(c *gin.Context) {
 		msg = "10"
 	}
 	s.afterPostSave(ctx, p)
-	if target, ok := s.gweClassicRedirect(c, p.ID); ok { // classic editor's "Edit with Golementor" on a new post
+	if target, ok := s.wbClassicRedirect(c, p); ok { // classic editor's "Edit with Pursae Web Builder" on a new post
 		c.Redirect(http.StatusFound, target)
 		return
 	}

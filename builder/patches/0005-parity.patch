@@ -1,0 +1,44 @@
+diff --git a/src/builder/CustomSection.tsx b/src/builder/CustomSection.tsx
+index 1c1c200..b22f00f 100644
+--- a/src/builder/CustomSection.tsx
++++ b/src/builder/CustomSection.tsx
+@@ -239,7 +239,11 @@ function mobileCss(s: Section, attr = 'data-el', keys?: Set<string>) {
+       const r = e?.padding?.r ?? 0
+       rules.push(`${sel}{padding-left:${Math.min(20, Math.max(16, l))}px!important;padding-right:${Math.min(20, Math.max(16, r))}px!important}`)
+     }
+-    if (!e) continue
++    if (!e) {
++      // A top-level box without element styles still gets the side-padding rule above: keep its key.
++      if (rules.length > before) keys?.add(`${s.id}:${elKey(it)}`)
++      continue
++    }
+     const decl: string[] = []
+     const pin = pinned.has(it.id)
+     if (e.fontSize && e.fontSize > 30) decl.push(`font-size:${Math.max(26, Math.round(e.fontSize * 0.62))}px!important`)
+diff --git a/src/builder/live/page.css b/src/builder/live/page.css
+index 4a49d88..8ef9889 100644
+--- a/src/builder/live/page.css
++++ b/src/builder/live/page.css
+@@ -63,6 +63,9 @@
+ .wb-page {
+   container-type: inline-size;
+   container-name: canvas;
++  /* Same text rendering as the editor canvas (index.css sets it on the editor's body). */
++  -webkit-font-smoothing: antialiased;
++  -moz-osx-font-smoothing: grayscale;
+ }
+ .wb-page button {
+   cursor: pointer;
+diff --git a/src/builder/sections.tsx b/src/builder/sections.tsx
+index 9a7013f..a9ca2f6 100644
+--- a/src/builder/sections.tsx
++++ b/src/builder/sections.tsx
+@@ -293,7 +293,7 @@ function Nav({ s }: { s: Section }) {
+           </nav>
+           <E s={s} el="primary" kind="button" as="a" hint="a" className="hidden h-10 items-center px-4 text-[14px] font-semibold @md:inline-flex" style={primaryStyle} />
+           {live ? (
+-            <LiveMenu className="@4xl:hidden" summaryClass="grid size-10 place-items-center" panelClass="absolute inset-x-0 top-full z-50 shadow-[0_30px_40px_-30px_rgba(0,0,0,.35)]" panelStyle={{ background: 'var(--bg)', color: 'var(--fg)' }}>
++            <LiveMenu className="@4xl:hidden" summaryClass="-m-[9.5px] grid size-10 place-items-center" panelClass="absolute inset-x-0 top-full z-50 shadow-[0_30px_40px_-30px_rgba(0,0,0,.35)]" panelStyle={{ background: 'var(--bg)', color: 'var(--fg)' }}>
+               <div className="px-6 pb-6 pt-2">
+                 <nav aria-label="Menu" className="flex flex-col text-[16px] font-medium">
+                   {s.items.map((i) => (

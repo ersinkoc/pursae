@@ -71,9 +71,6 @@ type siteView struct {
 	SiteIcon   template.HTML
 	CustomCSS  string
 	Customize  *czChangeset
-
-	// GWE is set when the page renders through the Golementor theme shell (gowebeditor_theme.go).
-	GWE *gweThemeView
 }
 
 type postView struct {
@@ -130,7 +127,6 @@ func (s *Server) buildSiteView(c *gin.Context, q *siteQuery) (*siteView, error) 
 		v.Theme = s.activeTheme()
 	}
 	v.ThemeURI = v.Theme.URI()
-	s.gweThemeBegin(c, v) // Golementor: Site widgets read this view; previewed custom themes bring their kit
 	v.IsFront = q.Paged <= 1 && (q.Kind == "front-page" || (q.Kind == "home" && q.PostsPage == nil))
 	v.TitleIsH1 = q.Kind == "home" && q.PostsPage == nil
 	v.IsHomeHeader = q.Kind == "home" && q.PostsPage != nil
@@ -182,7 +178,7 @@ func (s *Server) buildSiteView(c *gin.Context, q *siteQuery) (*siteView, error) 
 		}
 		pv := s.postView(ctx, c, q.Post, true, lb, u)
 		v.Post = pv
-		if q.Post.Type == "post" {
+		if pt := siteCPT(q.Post.Type); q.Post.Type == "post" || (pt != nil && !pt.Hierarchical) {
 			v.PostNav = s.postNavigation(ctx, q.Post, lb)
 		}
 		if s.commentsOpen(q.Post) || q.Post.CommentCount > 0 {
@@ -196,8 +192,10 @@ func (s *Server) buildSiteView(c *gin.Context, q *siteQuery) (*siteView, error) 
 			if q.Post.ParentID != 0 {
 				bodyClasses = append(bodyClasses, "page-child", "parent-pageid-"+itoa64(q.Post.ParentID))
 			}
-		} else {
+		} else if q.Post.Type == "post" {
 			bodyClasses = append(bodyClasses, "post-template-default", "single", "single-post", "postid-"+itoa64(q.Post.ID), "single-format-"+q.Post.Format)
+		} else { // a custom post type: body_class() without post formats
+			bodyClasses = append(bodyClasses, q.Post.Type+"-template-default", "single", "single-"+q.Post.Type, "postid-"+itoa64(q.Post.ID))
 		}
 	case "404":
 		v.Template = "404"
@@ -248,6 +246,8 @@ func (s *Server) buildSiteView(c *gin.Context, q *siteQuery) (*siteView, error) 
 				bodyClasses = append(bodyClasses, "author", "author-"+q.Author.Nicename, "author-"+itoa64(q.Author.ID))
 			case "date":
 				bodyClasses = append(bodyClasses, "date")
+			case "post-type-archive":
+				bodyClasses = append(bodyClasses, "post-type-archive", "post-type-archive-"+q.PostType)
 			}
 		}
 		if q.Paged > 1 {
@@ -259,7 +259,7 @@ func (s *Server) buildSiteView(c *gin.Context, q *siteQuery) (*siteView, error) 
 	if u != nil {
 		bodyClasses = append(bodyClasses, "logged-in")
 	}
-	showBar := u != nil && cs == nil && !gwePreviewing(c) // the Customizer and Golementor previews have no toolbar
+	showBar := u != nil && cs == nil // the Customizer preview has no toolbar
 	if u != nil {
 		if b, ok := u.Meta["show_admin_bar_front"].(bool); ok && !b {
 			showBar = false // the user's "Show Toolbar" choice can hide it, never bring it back into a preview
@@ -269,14 +269,12 @@ func (s *Server) buildSiteView(c *gin.Context, q *siteQuery) (*siteView, error) 
 		bodyClasses = append(bodyClasses, "admin-bar", "no-customize-support")
 	}
 	bodyClasses = append(bodyClasses, customizeBodyClasses(v)...)
-	bodyClasses = append(bodyClasses, s.gweBodyClasses(c, q)...)
 	bodyClasses = append(bodyClasses, s.gooBodyClasses(c, q)...) // Goocommerce: woocommerce, woocommerce-page, single-product, …
 	bodyClasses = append(bodyClasses, "wp-embed-responsive", "wp-theme-"+v.Theme.Slug)
-	s.gweThemePrepare(c, v, &bodyClasses) // Golementor theme parts / custom theme (sets v.GWE)
-	if v.Theme.Prepare != nil && v.GWE == nil {
+	if v.Theme.Prepare != nil {
 		v.Theme.Prepare(s, c, v)
 	}
-	if v.Theme.BodyClasses != nil && v.GWE == nil {
+	if v.Theme.BodyClasses != nil {
 		bodyClasses = append(bodyClasses, v.Theme.BodyClasses(s, v)...)
 	}
 	v.BodyClass = strings.Join(bodyClasses, " ")
@@ -288,7 +286,7 @@ func (s *Server) buildSiteView(c *gin.Context, q *siteQuery) (*siteView, error) 
 	v.Head = s.wpHead(c, q, lb, showBar, v)
 	v.BodyOpen = s.wpBodyOpen(c, v) // gap-widgets: wp_body_open (site_body_open.go)
 	v.Footer = s.wpFooter(c, q, lb, showBar)
-	if v.Theme.Footer != nil && v.GWE == nil {
+	if v.Theme.Footer != nil {
 		v.Footer += template.HTML(v.Theme.Footer(s, c, v))
 	}
 	if showBar {
@@ -320,6 +318,10 @@ func (s *Server) archiveBase(q *siteQuery, lb *links.Builder) string {
 		return lb.YearLink(q.Year)
 	case "search":
 		return lb.SearchLink(q.Search)
+	case "post-type-archive":
+		if link := lb.PostTypeArchiveLink(q.PostType); link != "" {
+			return link
+		}
 	}
 	if q.PostsPage != nil {
 		return lb.Permalink(q.PostsPage)
@@ -403,7 +405,7 @@ func (s *Server) theContent(ctx context.Context, c *gin.Context, p *store.Post, 
 <p><label for="pwbox-%d">Password: <input name="post_password" id="pwbox-%d" type="password" spellcheck="false" required size="20" /></label> <input type="submit" name="Submit" value="Enter" /></p></form>
 `, html.EscapeString(lb.Permalink(p)), p.ID, p.ID)
 	}
-	if out, ok := s.gweContent(c, p); ok { // Golementor documents and the editor preview
+	if out, ok := s.wbContent(ctx, c, p, singular); ok { // Pursae Web Builder snapshot (webbuilder_front.go)
 		return out
 	}
 	rc := renderFrom(ctx)

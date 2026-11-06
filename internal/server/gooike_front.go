@@ -22,7 +22,7 @@ import (
 
 // gooikeFront reports whether Gooike prints anything on this request.
 func (s *Server) gooikeFront(c *gin.Context) bool {
-	return c != nil && s.gooikeOn() && !gwePreviewing(c)
+	return c != nil && s.gooikeOn()
 }
 
 // gooikeHead is Gooike's part of wp_head, printed first so the consent defaults precede every tag.

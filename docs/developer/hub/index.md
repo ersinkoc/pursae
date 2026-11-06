@@ -30,7 +30,7 @@ The public Hub is `https://hub.wordpressgo.dev`. Organisations can run their own
 
 ## Product logo
 
-The logo on the admin bar, login screen, favicons, dashboard and the Web Builder's loading screen is
+The logo on the admin bar, login screen, favicons and dashboard is
 served from `/wp-includes/images/brand/` (`logo-32.png` … `logo-512.png`, `logo.svg`). A release
 changes it by replacing those files in `web/wp-includes/images/brand`. A Hub changes it on every
 connected site without a release by adding a `brand` block to `GET /api/v1/index`:
@@ -71,22 +71,20 @@ nothing — it then has no marketplace, no license and no update notices either.
 
 ```json
 {"url": "https://shop.example.com", "version": "0.2.0", "locale": "tr_TR", "os": "linux", "arch": "amd64",
- "license": "PRS-…", "theme": "hello-web-builder",
+ "license": "PRS-…", "theme": "twentytwentyfive",
  "plugins": [{"slug": "goocommerce", "version": "1.0.0", "active": true, "source": "native"},
              {"slug": "word-counter", "version": "1.0.0", "active": false, "source": "hub"}],
- "themes":  [{"slug": "hello-web-builder", "version": "1.0.2", "active": true, "source": "native"}]}
+ "themes":  [{"slug": "twentytwentyfive", "version": "1.5", "active": true, "source": "native"}]}
 ```
 
 `plugins` lists every plugin, built-in (`native`), installed from the Hub (`hub`) or uploaded
 (`upload`); `themes` lists the installed themes (bundled themes are `native`, library themes
-installed from the Hub `hub`, uploaded packages `upload`; Web Builder designs saved as themes are
-site content and not listed).
+installed from the Hub `hub`, uploaded packages `upload`).
 
 **Events** (`POST /api/v1/sites/events`) record what happens on the site: `plugin_install`,
 `plugin_update`, `plugin_activate`, `plugin_deactivate`, `plugin_delete` (built-in and package
 plugins), `theme_install`, `theme_update`, `theme_activate`, `theme_delete`, `theme_preview` (Add
-Themes › Live Preview), `demo_import` (a theme's demo content, with kind `theme`; a Web Builder
-starter site, with kind `plugin` and slug `golementor`) and `core_update`. Each event is
+Themes › Live Preview), `demo_import` (a theme's demo content, with kind `theme`) and `core_update`. Each event is
 `{"type", "kind", "slug", "version", "at"}`. They are queued in memory and sent in batches of at
 most 100: every 30 seconds, as soon as 50 are waiting, and with the daily ping. While the Hub cannot
 be reached up to 500 are kept (the oldest are dropped first); nothing is written to disk. Theme

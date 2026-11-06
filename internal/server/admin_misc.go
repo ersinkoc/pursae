@@ -102,7 +102,7 @@ func (s *Server) updateCore(c *gin.Context) {
 
 // about is about.php: what is new in WordPress Go.
 func (s *Server) about(c *gin.Context) {
-	s.adminPage(c, "about", "About Pursae", "about-php", "admin/about", map[string]any{"Version": Version, "Go": runtime.Version(), "Golementor": s.golementorOn()})
+	s.adminPage(c, "about", "About Pursae", "about-php", "admin/about", map[string]any{"Version": Version, "Go": runtime.Version(), "WebBuilder": s.wbOn()})
 }
 
 // tools is tools.php.

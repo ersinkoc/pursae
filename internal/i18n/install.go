@@ -238,7 +238,7 @@ func (m *Manager) ScriptTranslations(locale, relPath, plugin string) []byte {
 }
 
 // PluginScriptTranslations merges every JSON file of a plugin pack (for bundles whose
-// script paths differ from upstream, like Golementor's editor).
+// script paths differ from upstream).
 func (m *Manager) PluginScriptTranslations(locale, plugin string) []byte {
 	if m.Dir == "" || !validLocale(locale) || locale == "en_US" {
 		return nil

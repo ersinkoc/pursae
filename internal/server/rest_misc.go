@@ -299,7 +299,7 @@ func (api *restAPI) themes(c *gin.Context, r *restRequest) {
 			"author_uri":     map[string]string{"raw": th.AuthorURI, "rendered": th.AuthorURI},
 			"description":    map[string]string{"raw": th.Description, "rendered": th.Description},
 			"is_block_theme": false, "name": map[string]string{"raw": th.Name, "rendered": th.Name}, "requires_php": "", "requires_wp": "",
-			"screenshot": gweAbsURL(home, th.ScreenshotSrc()), "status": status, "version": th.Version, "textdomain": th.Slug,
+			"screenshot": absURL(home, th.ScreenshotSrc()), "status": status, "version": th.Version, "textdomain": th.Slug,
 			"tags":                   map[string]any{"raw": th.Tags, "rendered": strings.Join(th.Tags, ", ")},
 			"theme_uri":              map[string]string{"raw": th.ThemeURI, "rendered": th.ThemeURI},
 			"default_template_types": []any{}, "default_template_part_areas": []any{},

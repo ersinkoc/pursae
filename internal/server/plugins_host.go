@@ -210,6 +210,7 @@ func (h *pluginHost) UpdatePost(ctx context.Context, _ string, id int64, in plug
 	if err := h.s.store.UpdatePost(ctx, p, editor); err != nil {
 		return nil, err
 	}
+	h.s.wbAfterPostSave(ctx, p) // Pursae Web Builder drift
 	h.s.purgeAll(ctx)
 	return h.GetPost(ctx, "", p.ID)
 }
@@ -459,6 +460,10 @@ func settingValue(v any, f plugins.SettingsField) (text string, checked bool) {
 
 // pluginSettingsScreen renders Settings › <plugin>; it reports false when slug has no page.
 func (s *Server) pluginSettingsScreen(c *gin.Context, slug string) bool {
+	if slug == wbSettingsPage { // Settings › Web Builder, built in (webbuilder_settings.go)
+		s.wbSettingsScreen(c)
+		return true
+	}
 	page := s.pluginSettingsPage(slug)
 	if page == nil {
 		return false
@@ -481,6 +486,10 @@ func (s *Server) pluginSettingsScreen(c *gin.Context, slug string) bool {
 // pluginSettingsSave handles the form POST (option_page = "plugin:<slug>").
 func (s *Server) pluginSettingsSave(c *gin.Context, optionPage string) {
 	slug := strings.TrimPrefix(optionPage, pluginSettingsSlug)
+	if slug == wbSettingsPage { // Settings › Web Builder, built in (webbuilder_settings.go)
+		s.wbSettingsSave(c)
+		return
+	}
 	page := s.pluginSettingsPage(slug)
 	if page == nil {
 		c.String(http.StatusBadRequest, "Error: The options page was not found in the allowed options list.")

@@ -18,7 +18,7 @@ Legend: ✅ implemented · ◐ implemented with a Pursae specific difference · 
 
 | Pursae SMTP | Pursae | |
 |---|---|---|
-| Replaces `wp_mail()`'s PHPMailer instance (`phpmailer_init`) | `Server.mailer()` attaches a `mail.Transport` to the `mail.Mailer` while the plugin is active. Every sender goes through it: the queued `wp_mail` job (core notifications) and direct `Send` calls (Pursae Web Builder form e-mails). | ✅ |
+| Replaces `wp_mail()`'s PHPMailer instance (`phpmailer_init`) | `Server.mailer()` attaches a `mail.Transport` to the `mail.Mailer` while the plugin is active. Every sender goes through it: the queued `wp_mail` job (core notifications) and direct `Send` calls. | ✅ |
 | Plugin data in options `wp_mail_smtp`, `wp_mail_smtp_*` | One JSON option `wp_mail_smtp` (same group/key names: `mail.from_email`, `smtp.host`, `mailgun.api_key`, …), activation switch `native_wp_mail_smtp` | ✅ |
 | Email log in `{prefix}wpmailsmtp_emails_log`, debug events in `{prefix}wpmailsmtp_debug_events` | Tables `wpmailsmtp_emails_log`, `wpmailsmtp_debug_events` (migration `0011_wp_mail_smtp.sql`) | ✅ |
 | Secrets stored in plain text in `wp_options` (or a constant) | Secrets (SMTP password, API keys, client secrets, OAuth tokens, Twilio token) are AES-256-GCM encrypted with a key derived from the server secret (`WPGO_SECRET` / `auth_secret`), stored as `enc:v1:…`, never printed back into a form (the field shows a "saved" placeholder and a *Remove* checkbox; leaving it blank keeps the saved value) | ◐ stronger than upstream |
@@ -41,7 +41,7 @@ Legend: ✅ implemented · ◐ implemented with a Pursae specific difference · 
 
 | Setting | Behaviour | |
 |---|---|---|
-| From Email + **Force From Email** | Address used for every message. Without *Force*, a message that sets its own From (e.g. a Pursae Web Builder form's "From Email") keeps it; with *Force* it is always replaced | ✅ |
+| From Email + **Force From Email** | Address used for every message. Without *Force*, a message that sets its own From (e.g. a Pursae Contact Form form's "From") keeps it; with *Force* it is always replaced | ✅ |
 | From Name + **Force From Name** | Same for the display name (default: site title) | ✅ |
 | Return Path ("Set the return-path to match the From Email") | The SMTP envelope sender (bounces) is the From Email; when a message keeps its own From (not forced) the envelope follows it only with Return Path on | ◐ (no PHP `mail()`) |
 | Mailer | Default (none), Other SMTP and every mailer below. Pro-only mailers are included (no license) | ✅ |

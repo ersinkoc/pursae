@@ -37,7 +37,7 @@ curl -s 'https://blog.example.com/wp-json/wp/v2/posts?per_page=2&_fields=id,titl
 | `wp-block-editor/v1` | URL details for the editor's link preview |
 | `oembed/1.0` | the oEmbed proxy the editor uses for embeds |
 | `batch/v1` | batched requests (the editor's widget screen) |
-| `elementor/v1` | Pursae Web Builder's editor API (only while the builder is on) |
+| `web-builder/v2` | Pursae Web Builder: documents, autosave, publish, revisions, saved sections, fonts and the public form endpoint (only while the builder is on; [contract](../web-builder-contract.md#3-rest-namespace-web-builderv2)) |
 | `<plugin-slug>/v1` | routes added by plugins ([plugin routes](plugin-routes.md)) |
 
 The full list with methods is on the [endpoints](endpoints.md) page. Authentication —

@@ -1,8 +1,0 @@
-{"name":"pro-d-2","settings":{},"elements":[
- {"id":"d000101","elType":"container","isInner":false,"settings":{"flex_direction":"column"},"elements":[
-  {"id":"d000102","elType":"widget","widgetType":"taxonomy-filter","settings":{"selected_element":"d000103","taxonomy":"category","first_item_title":"Everything"},"elements":[]},
-  {"id":"d000103","elType":"widget","widgetType":"loop-grid","settings":{"template_id":"213","columns":"2","posts_per_page":3,"pagination_type":"numbers","post_query_post_type":"post","column_gap":{"unit":"px","size":24,"sizes":[]}},"elements":[]},
-  {"id":"d000104","elType":"widget","widgetType":"loop-carousel","settings":{"template_id":"213","posts_per_page":4,"slides_to_show":"2","autoplay":"","arrows":"yes","pagination":"fraction","post_query_orderby":"title","post_query_order":"asc"},"elements":[]},
-  {"id":"d000105","elType":"widget","widgetType":"posts","settings":{"_skin":"full_content","full_content_posts_per_page":1,"full_content_meta_data":["author"],"posts_post_type":"post","posts_exclude":["manual_selection"],"posts_exclude_ids":[197,1]},"elements":[]}
- ]}
-]}

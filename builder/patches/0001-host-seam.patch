@@ -1,0 +1,760 @@
+diff --git a/src/builder/BasicPanel.tsx b/src/builder/BasicPanel.tsx
+index cb100e3..ad7af14 100644
+--- a/src/builder/BasicPanel.tsx
++++ b/src/builder/BasicPanel.tsx
+@@ -14,6 +14,8 @@ import {
+   GripVertical,
+   Heading,
+   Image as ImageIcon,
++  Images,
++  LoaderCircle,
+   Pilcrow,
+   RectangleHorizontal,
+   SquareDashed,
+@@ -35,6 +37,7 @@ import { RichField, richKind } from './RichText'
+ import { isRich } from './rich'
+ import { DecorPicker } from './ContainerInspector'
+ import { BRANDS, CORNERS, FEATURE_ICONS, GRID_CAPS, IMAGES, KINDS, POSITIONED_DECOR, createLayout, fieldKind, findSection, getBg, getBox, getGrid, PALETTES, TEMPLATES, getValue, palette, sectionSummary, sized } from './data'
++import { getHost, type MediaAsset } from './host'
+ import { useB, type BasicView } from './store'
+ import { entranceLabel, getMotion, motionPatch, replayMotion } from './motion'
+ import { FontPresetGrid } from './TypographyControls'
+@@ -286,6 +289,15 @@ function ImageField({ s, el, label }: { s: Section; el: string; label: string })
+   const [open, setOpen] = useState(false)
+   const url = getValue(s, el)
+   const set = (v: string) => b.dispatch({ type: 'field', id: s.id, el, value: v })
++  const media = getHost().media
++  const [busy, setBusy] = useState(false)
++  const takeAsset = (task: Promise<MediaAsset | null>) => {
++    setBusy(true)
++    task
++      .then((a) => a?.url && set(a.url))
++      .catch((e: unknown) => b.notify(e instanceof Error && e.message ? e.message : 'Fotoğraf yüklenemedi'))
++      .finally(() => setBusy(false))
++  }
+   return (
+     <div>
+       <span className="mb-1.5 block text-[12.5px] font-medium text-ink-300">{label}</span>
+@@ -323,15 +335,27 @@ function ImageField({ s, el, label }: { s: Section; el: string; label: string })
+                 </button>
+               ))}
+             </div>
+-            <label className="mt-2 flex h-10 cursor-pointer items-center justify-center gap-2 rounded-[10px] border border-dashed border-white/15 text-[13px] font-medium text-ink-200 transition hover:border-accent/60 hover:text-white">
+-              <Upload size={15} /> Bilgisayardan yükle
++            {media.pick && (
++              <button
++                type="button"
++                disabled={busy}
++                onClick={() => takeAsset(media.pick!('image'))}
++                className="mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-[10px] border border-white/15 text-[13px] font-medium text-ink-200 transition hover:border-accent/60 hover:text-white disabled:opacity-60"
++              >
++                <Images size={15} /> Ortam kitaplığından seç
++              </button>
++            )}
++            <label className={cn('mt-2 flex h-10 cursor-pointer items-center justify-center gap-2 rounded-[10px] border border-dashed border-white/15 text-[13px] font-medium text-ink-200 transition hover:border-accent/60 hover:text-white', busy && 'pointer-events-none opacity-60')}>
++              {busy ? <LoaderCircle size={15} className="animate-spin" /> : <Upload size={15} />} Bilgisayardan yükle
+               <input
+                 type="file"
+                 accept="image/*"
+                 className="sr-only"
++                disabled={busy}
+                 onChange={(e) => {
+                   const f = e.target.files?.[0]
+-                  if (f) set(URL.createObjectURL(f))
++                  e.target.value = ''
++                  if (f) takeAsset(media.upload(f, 'image'))
+                 }}
+               />
+             </label>
+diff --git a/src/builder/Builder.tsx b/src/builder/Builder.tsx
+index 8b2da7e..b176a32 100644
+--- a/src/builder/Builder.tsx
++++ b/src/builder/Builder.tsx
+@@ -14,15 +14,20 @@ import { ContextMenu } from './ContextMenu'
+ import { deleteSelection, duplicateSelection, parentSelection } from './selectionActions'
+ import { Dialogs } from './Dialogs'
+ import { LibraryHost } from './variants/LibraryHost'
+-import { STORE_KEY, cloneSection, createSection, findSection, initialDoc, loadDoc, loadJSON, locate, saveJSON } from './data'
++import { cloneSection, createSection, findSection, initialDoc, locate, normalizeDoc } from './data'
++import { getHost, hostAi } from './host'
+ import { BuilderCtx, historyReducer, initHistory, insertBounds, type BasicView, type BuilderApi, type BuilderExtras, type MenuState, type Milestones, type PickerState, type StudioTab, type Toast } from './store'
+ import type { Device, ElStyle, Mode, PageSettings, Payload, SavedComponent, Section, Selection } from './types'
+ import { cn, ease } from './ui'
+ 
+ const PANEL_W = 316
+ 
++const DEFAULT_PAGE: PageSettings = { title: 'Pursae — WordPress, Go’nun hızıyla', slug: '', description: 'Pursae, WordPress çekirdeğini Go ile yeniden yazar: tek binary, PostgreSQL ve WebAssembly eklentiler.', indexable: true }
++
+ export default function Builder() {
+-  const [history, dispatch] = useReducer(historyReducer, initialDoc, (d) => initHistory(loadDoc() ?? d))
++  const host = useMemo(getHost, [])
++  const aiOn = hostAi(host).enabled
++  const [history, dispatch] = useReducer(historyReducer, initialDoc, (d) => initHistory(normalizeDoc(host.loadDoc()) ?? d))
+   const doc = history.entries[history.cursor].doc
+ 
+   const [mode, setModeRaw] = useState<Mode>('basic')
+@@ -48,15 +53,14 @@ export default function Builder() {
+   const canvasArea = useRef<HTMLDivElement>(null)
+   const [clipboard, setClipboard] = useState<Section | null>(null)
+   const [styleClipboard, setStyleClipboard] = useState<ElStyle | null>(null)
+-  const [saved, setSaved] = useState<SavedComponent[]>(() => loadJSON('pursae-builder:saved', []))
++  const [saved, setSaved] = useState<SavedComponent[]>(() => host.storage.get('saved', []))
+   const [menu, setMenu] = useState<MenuState | null>(null)
+   const [paletteOpen, setPaletteOpen] = useState(false)
+   const [dialog, setDialog] = useState<BuilderExtras['dialog']>(null)
+-  const [page, setPage] = useState<PageSettings>(() =>
+-    loadJSON('pursae-builder:page', { title: 'Pursae — WordPress, Go’nun hızıyla', slug: '', description: 'Pursae, WordPress çekirdeğini Go ile yeniden yazar: tek binary, PostgreSQL ve WebAssembly eklentiler.', indexable: true }),
+-  )
++  const [page, setPage] = useState<PageSettings>(() => ({ ...DEFAULT_PAGE, ...host.loadPage() }))
++  const initialPage = useRef(page)
+   const [saveState, setSaveState] = useState<'saved' | 'saving'>('saved')
+-  const [flags, setFlags] = useState<Pick<Milestones, 'section' | 'publish' | 'dismissed'>>(() => loadJSON('pursae-builder:flags', { section: false, publish: false, dismissed: false }))
++  const [flags, setFlags] = useState<Pick<Milestones, 'section' | 'publish' | 'dismissed'>>(() => host.storage.get('flags', { section: false, publish: false, dismissed: false }))
+ 
+   const notify = useCallback<BuilderApi['notify']>((text, action) => {
+     const id = Date.now() + Math.random()
+@@ -80,13 +84,13 @@ export default function Builder() {
+ 
+   const setMode = useCallback(
+     (m: Mode) => {
+-      if (m === mode) return
++      if (m === mode || (m === 'ai' && !aiOn)) return
+       setModeRaw(m)
+       setInsertAt(null)
+       setBasicView(selection ? 'editor' : 'list')
+       notify(m === 'basic' ? 'Basit mod · yalnızca ihtiyacın olanlar' : m === 'studio' ? 'Studio · tüm araçlar açık' : 'AI · sohbet ederek düzenle')
+     },
+-    [mode, selection, notify],
++    [mode, selection, notify, aiOn],
+   )
+ 
+   const add = useCallback<BuilderApi['add']>(
+@@ -125,30 +129,44 @@ export default function Builder() {
+     [doc, selection, notify],
+   )
+ 
++  const publishing = useRef(false)
+   const publish = useCallback(() => {
++    if (publishing.current) return
++    publishing.current = true
+     setPublishState('busy')
+     const rev = history.rev
+-    window.setTimeout(() => {
+-      setPublishState('idle')
+-      setPublishedRev(rev)
+-      setFlags((f) => ({ ...f, publish: true }))
+-      notify('Sayfa yayınlandı')
+-    }, 1300)
+-  }, [history.rev, notify])
++    host
++      .publish({ doc, page })
++      .then((r) => {
++        setPublishedRev(rev)
++        setFlags((f) => ({ ...f, publish: true }))
++        notify(r?.message || 'Sayfa yayınlandı')
++      })
++      .catch((e: unknown) => notify(e instanceof Error && e.message ? e.message : 'Sayfa yayınlanamadı'))
++      .finally(() => {
++        publishing.current = false
++        setPublishState('idle')
++      })
++  }, [host, history.rev, doc, page, notify])
+ 
+   /* ---------- Autosave ---------- */
++  const saveSeq = useRef(0)
+   useEffect(() => {
+-    if (history.rev === 0) return
++    if (history.rev === 0 && page === initialPage.current) return
+     setSaveState('saving')
+     const t = window.setTimeout(() => {
+-      saveJSON(STORE_KEY, doc)
+-      setSaveState('saved')
+-    }, 500)
++      const seq = ++saveSeq.current
++      Promise.resolve()
++        .then(() => host.saveDraft(doc, page))
++        .catch((e: unknown) => notify(e instanceof Error && e.message ? e.message : 'Değişiklikler kaydedilemedi'))
++        .finally(() => {
++          if (seq === saveSeq.current) setSaveState('saved')
++        })
++    }, host.autosaveDelay ?? 500)
+     return () => window.clearTimeout(t)
+-  }, [history.rev, doc])
+-  useEffect(() => saveJSON('pursae-builder:saved', saved), [saved])
+-  useEffect(() => saveJSON('pursae-builder:page', page), [page])
+-  useEffect(() => saveJSON('pursae-builder:flags', flags), [flags])
++  }, [host, history.rev, doc, page, notify])
++  useEffect(() => host.storage.set('saved', saved), [host, saved])
++  useEffect(() => host.storage.set('flags', flags), [host, flags])
+ 
+   /* ---------- Clipboard & saved components ---------- */
+   const copySection = useCallback(
+@@ -395,7 +413,7 @@ export default function Builder() {
+                     transition={{ duration: 0.36, ease }}
+                     className="absolute inset-0"
+                   >
+-                    {mode === 'basic' ? <BasicPanel /> : mode === 'studio' ? <StudioPanel /> : <AiSidePanel />}
++                    {mode === 'basic' ? <BasicPanel /> : mode === 'studio' || !aiOn ? <StudioPanel /> : <AiSidePanel />}
+                   </motion.div>
+                 </AnimatePresence>
+               </div>
+@@ -414,7 +432,7 @@ export default function Builder() {
+               )}
+               <Canvas />
+               <AnimatePresence>
+-                {mode === 'ai' && !preview && (
++                {aiOn && mode === 'ai' && !preview && (
+                   <motion.div key="ai-chat" className="pointer-events-none absolute inset-0 z-[55]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
+                     <AiChat />
+                   </motion.div>
+@@ -442,7 +460,7 @@ export default function Builder() {
+           <CommandPalette />
+           <Dialogs />
+           <LibraryHost />
+-          <AiSettings />
++          {aiOn && <AiSettings />}
+ 
+           {/* toasts */}
+           <div className="pointer-events-none fixed inset-x-0 bottom-5 z-[60] flex flex-col items-center gap-2">
+diff --git a/src/builder/ContainerInspector.tsx b/src/builder/ContainerInspector.tsx
+index 6ebc819..ff437e0 100644
+--- a/src/builder/ContainerInspector.tsx
++++ b/src/builder/ContainerInspector.tsx
+@@ -31,6 +31,7 @@ import { BRANDS, CARD_NOUN, CELL_TYPES, isCardEl, DECORS, EL_NAMES, GRID_CAPS, I
+ import { hasTint, isSvgSrc, normColor, svgPalette, useSvgMarkup } from './svgTint'
+ import { StructureChooser } from './LayoutPicker'
+ import { RichField } from './RichText'
++import { getHost } from './host'
+ import { useB } from './store'
+ import type { BgSettings, Box4, CellType, ContainerBox, DecorId, ElStyle, GridSettings, Section } from './types'
+ import { DecorShape } from './Decor'
+@@ -1028,7 +1029,13 @@ function BackgroundPanels({ s }: { s: Section }) {
+                 className="sr-only"
+                 onChange={async (e) => {
+                   const f = e.target.files?.[0]
+-                  if (f) set({ decorSvg: await f.text() })
++                  e.target.value = ''
++                  if (!f) return
++                  try {
++                    set({ decorSvg: await getHost().media.readSvg(f) })
++                  } catch (err) {
++                    b.notify(`${f.name}: ${err instanceof Error && err.message ? err.message : 'okunamadı'}`)
++                  }
+                 }}
+               />
+             </label>
+diff --git a/src/builder/Dialogs.tsx b/src/builder/Dialogs.tsx
+index a6803e3..1459dfa 100644
+--- a/src/builder/Dialogs.tsx
++++ b/src/builder/Dialogs.tsx
+@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
+ import { AnimatePresence, motion } from 'motion/react'
+ import { BookmarkPlus, Globe, Keyboard, X } from 'lucide-react'
+ import { findSection } from './data'
++import { siteLabel } from './host'
+ import { useB } from './store'
+ import { Toggle, cn, ease } from './ui'
+ 
+@@ -71,7 +72,8 @@ function PageSettingsDialog() {
+   const p = b.page
+   const set = (patch: Partial<typeof p>) => b.setPage({ ...p, ...patch })
+   const close = () => b.setDialog(null)
+-  const url = `pursae.dev/${p.slug || ''}`
++  const site = siteLabel()
++  const url = `${site}/${p.slug || ''}`
+   return (
+     <>
+       <Head icon={Globe} title="Sayfa ayarları" sub="Google'da ve paylaşımlarda sayfan nasıl görünsün?" onClose={close} />
+@@ -85,7 +87,7 @@ function PageSettingsDialog() {
+         <label className="block">
+           <span className="mb-1.5 block text-[12.5px] font-medium text-ink-300">Adres</span>
+           <div className="flex items-center rounded-[10px] border border-white/[0.08] bg-ink-800 pl-3 focus-within:border-accent">
+-            <span className="text-[14px] text-ink-500">pursae.dev/</span>
++            <span className="shrink-0 text-[14px] text-ink-500">{site}/</span>
+             <input value={p.slug} placeholder="ana-sayfa için boş bırak" onChange={(e) => set({ slug: slugify(e.target.value) })} className="w-full bg-transparent px-1 py-2.5 text-[14px] outline-none placeholder:text-ink-500" />
+           </div>
+         </label>
+diff --git a/src/builder/IconInspector.tsx b/src/builder/IconInspector.tsx
+index 98c4284..6475b8c 100644
+--- a/src/builder/IconInspector.tsx
++++ b/src/builder/IconInspector.tsx
+@@ -4,6 +4,7 @@ import { ChevronRight, Search, Upload } from 'lucide-react'
+ import { fieldLabel, getValue, palette } from './data'
+ import { hex, Swatches, useSwatches } from './ContainerInspector'
+ import { ICON_KEYS, ICON_SET, ICON_STYLE_KEYS, iconLook, isIconUrl } from './icons'
++import { getHost } from './host'
+ import { useB } from './store'
+ import { ColorInput, Ctl, Panel, Slider, inputCls } from './StudioPanel'
+ import { cleanSvgCode, prettySvg, svgSrc, useSvgMarkup } from './svgTint'
+@@ -45,10 +46,13 @@ export function IconContentTab({ s, el }: { s: Section; el: string }) {
+     const file = Array.from(e.clipboardData.files).find(isSvgFile)
+     if (file) {
+       e.preventDefault()
+-      void file.text().then((t) => {
+-        setCode(t)
+-        apply(t)
+-      })
++      getHost()
++        .media.readSvg(file)
++        .then((t) => {
++          setCode(t)
++          apply(t)
++        })
++        .catch((err: unknown) => setErr(err instanceof Error && err.message ? err.message : `${file.name} okunamadı`))
+       return
+     }
+     const t = e.clipboardData.getData('text/plain')
+@@ -158,7 +162,13 @@ export function IconContentTab({ s, el }: { s: Section; el: string }) {
+               const f = e.target.files?.[0]
+               e.target.value = ''
+               if (!f) return
+-              const r = cleanSvgCode(await f.text())
++              let text: string
++              try {
++                text = await getHost().media.readSvg(f)
++              } catch (err) {
++                return b.notify(`${f.name}: ${err instanceof Error && err.message ? err.message : 'okunamadı'}`)
++              }
++              const r = cleanSvgCode(text)
+               if ('error' in r) return b.notify(`${f.name}: ${r.error}`)
+               setErr('')
+               set(svgSrc(r.svg))
+diff --git a/src/builder/LayoutPicker.tsx b/src/builder/LayoutPicker.tsx
+index ac00556..ce3831a 100644
+--- a/src/builder/LayoutPicker.tsx
++++ b/src/builder/LayoutPicker.tsx
+@@ -1,7 +1,8 @@
+ import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
+ import { AnimatePresence, motion } from 'motion/react'
+ import { ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react'
+-import { FLEX_STRUCTURES, GRID_STRUCTURES, getStructure, loadJSON, saveJSON } from './data'
++import { FLEX_STRUCTURES, GRID_STRUCTURES, getStructure } from './data'
++import { getHost } from './host'
+ import { useB } from './store'
+ import type { LayoutType, Section, Structure } from './types'
+ import { Segmented, cn, ease } from './ui'
+@@ -47,7 +48,7 @@ const TYPES: { type: LayoutType; name: string; sub: string; st: string }[] = [
+   { type: 'grid', name: 'Grid', sub: 'Eşit hücreli ızgara', st: 'g3x2' },
+ ]
+ 
+-const WIDTH_KEY = 'pursae-builder:layout-width'
++const WIDTH_KEY = 'layout-width'
+ 
+ export function StructureThumb({ st, tone, dashed, className, arrow = 16 }: { st: Structure; tone: Tone; dashed?: boolean; className?: string; arrow?: number }) {
+   const t = TONES[tone]
+@@ -113,10 +114,10 @@ export function LayoutPicker({
+   onBack?: () => void
+ }) {
+   const [step, setStep] = useState<'type' | LayoutType>(initialStep)
+-  const [width, setWidthState] = useState<ContentWidth>(() => (loadJSON<string>(WIDTH_KEY, 'boxed') === 'full' ? 'full' : 'boxed'))
++  const [width, setWidthState] = useState<ContentWidth>(() => (getHost().storage.get<string>(WIDTH_KEY, 'boxed') === 'full' ? 'full' : 'boxed'))
+   const setWidth = (w: ContentWidth) => {
+     setWidthState(w)
+-    saveJSON(WIDTH_KEY, w)
++    getHost().storage.set(WIDTH_KEY, w)
+   }
+   const size: Size = sizeProp ?? (compact ? 'sm' : 'lg')
+   const z = SIZES[size]
+diff --git a/src/builder/TopBar.tsx b/src/builder/TopBar.tsx
+index f074a1e..b592240 100644
+--- a/src/builder/TopBar.tsx
++++ b/src/builder/TopBar.tsx
+@@ -4,6 +4,7 @@ import { HistoryButton } from './HistoryPanel'
+ import { useB } from './store'
+ import { useAi } from './ai/AiProvider'
+ import { fmtTokens } from './ai/providers'
++import { getHost, hostAi } from './host'
+ import type { Device, Mode } from './types'
+ import { IconBtn, Tip, cn, ease, spring } from './ui'
+ 
+@@ -18,7 +19,7 @@ function ModeSwitch() {
+   const opts: { m: Mode; label: string; tip: string }[] = [
+     { m: 'basic', label: 'Basit', tip: 'Yalnızca yazılar, fotoğraflar ve renkler' },
+     { m: 'studio', label: 'Studio', tip: 'Tüm araçlar ve ayrıntılı stil ayarları' },
+-    { m: 'ai', label: 'AI', tip: 'Sohbet ederek düzenle' },
++    ...(hostAi().enabled ? [{ m: 'ai' as const, label: 'AI', tip: 'Sohbet ederek düzenle' }] : []),
+   ]
+   return (
+     <div className="flex h-8 rounded-[9px] bg-black/40 p-[3px] ring-1 ring-white/[0.07]" role="radiogroup" aria-label="Düzenleme modu">
+@@ -76,17 +77,35 @@ function AiChip() {
+   )
+ }
+ 
++const LOGO_CLS = 'mr-2 flex items-center gap-2.5 pr-1'
++
++function Logo() {
++  const exit = getHost().exitUrl
++  const inner = (
++    <>
++      <span className="grid size-[30px] place-items-center rounded-[9px] bg-gradient-to-br from-[#6d8bff] to-[#3c55e0] text-[15px] font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,.25)]">P</span>
++      <span className="hidden whitespace-nowrap text-[13.5px] font-semibold text-ink-100 xl:block">Pursae Web Builder</span>
++    </>
++  )
++  if (!exit) return <div className={LOGO_CLS}>{inner}</div>
++  return (
++    <Tip label="Panele dön">
++      <a href={exit} aria-label="Panele dön" className={cn(LOGO_CLS, 'rounded-[10px] outline-none focus-visible:ring-2 focus-visible:ring-accent')}>
++        {inner}
++      </a>
++    </Tip>
++  )
++}
++
+ export function TopBar() {
+   const b = useB()
+   const studio = b.mode === 'studio'
++  const aiOn = hostAi().enabled
+   return (
+     <header className="relative z-50 flex h-[52px] shrink-0 items-center border-b border-white/[0.07] bg-ink-900">
+       {/* left */}
+       <div className="flex min-w-0 flex-1 items-center gap-1 pl-3">
+-        <div className="mr-2 flex items-center gap-2.5 pr-1">
+-          <span className="grid size-[30px] place-items-center rounded-[9px] bg-gradient-to-br from-[#6d8bff] to-[#3c55e0] text-[15px] font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,.25)]">P</span>
+-          <span className="hidden whitespace-nowrap text-[13.5px] font-semibold text-ink-100 xl:block">Pursae Web Builder</span>
+-        </div>
++        <Logo />
+         <AnimatePresence initial={false}>
+           {studio && (
+             <motion.div key="studio-tools" {...collapse} className="flex items-center gap-0.5 overflow-hidden">
+@@ -99,7 +118,7 @@ export function TopBar() {
+           )}
+         </AnimatePresence>
+         <AnimatePresence initial={false}>
+-          {b.mode === 'ai' && (
++          {aiOn && b.mode === 'ai' && (
+             <motion.div key="ai-tools" {...collapse} className="flex items-center overflow-hidden pr-2">
+               <AiChip />
+             </motion.div>
+diff --git a/src/builder/data.ts b/src/builder/data.ts
+index 8781323..0a0399e 100644
+--- a/src/builder/data.ts
++++ b/src/builder/data.ts
+@@ -1,6 +1,7 @@
+ import type { CSSProperties } from 'react'
+ import { toPlain } from './rich'
+ import { typeCss } from './fonts'
++import { STORE_KEY, loadJSON } from './host'
+ import {
+   Box,
+   CircleHelp,
+@@ -1027,35 +1028,26 @@ export function cloneSection(src: Section, name?: string): Section {
+ }
+ 
+ /* ---------- Local persistence ---------- */
+-export const STORE_KEY = 'pursae-builder:v2'
+-
+-export function loadJSON<T>(key: string, fallback: T): T {
+-  try {
+-    const raw = localStorage.getItem(key)
+-    return raw ? (JSON.parse(raw) as T) : fallback
+-  } catch {
+-    return fallback
+-  }
+-}
+-
+-export function saveJSON(key: string, value: unknown) {
+-  try {
+-    localStorage.setItem(key, JSON.stringify(value))
+-  } catch {
+-    /* storage full or unavailable: keep working in memory */
+-  }
+-}
++export { STORE_KEY, loadJSON, saveJSON } from './host'
+ 
+-export function loadDoc(): DocState | null {
+-  const d = loadJSON<DocState | null>(STORE_KEY, null)
+-  if (!(d && Array.isArray(d.sections) && d.site && d.sections.every((s) => s && s.id && s.kind in KINDS))) return null
+-  // Fill fields added in later versions so older saves keep working.
++/**
++ * Validates a stored document (from any host) and fills fields added in later versions, so older
++ * saves keep working. Returns null when the value is not a usable document.
++ */
++export function normalizeDoc(raw: unknown): DocState | null {
++  const d = raw as DocState | null
++  if (!(d && typeof d === 'object' && Array.isArray(d.sections) && d.site && d.sections.every((s) => s && s.id && s.kind in KINDS))) return null
+   return {
+     ...d,
+     sections: d.sections.map((s) => ((s.kind === 'nav' || s.kind === 'footer') && s.content.logo === undefined ? { ...s, content: { ...s.content, logo: 'P' } } : s)),
+   }
+ }
+ 
++/** The document saved by the standalone host (localStorage), normalized. */
++export function loadDoc(): DocState | null {
++  return normalizeDoc(loadJSON<unknown>(STORE_KEY, null))
++}
++
+ 
+ /* ---------- Item grids of ready-made sections ---------- */
+ export interface GridCaps {
+diff --git a/src/builder/fonts.ts b/src/builder/fonts.ts
+index adb7909..f14d57a 100644
+--- a/src/builder/fonts.ts
++++ b/src/builder/fonts.ts
+@@ -1,5 +1,6 @@
+ import { useEffect, type CSSProperties } from 'react'
+ import type { DocState, ElStyle, FontPairId, Section, SiteSettings } from './types'
++import { getHost } from './host'
+ 
+ /* ---------- Catalog ---------- */
+ export type FontCat = 'sans' | 'serif' | 'display' | 'hand' | 'mono'
+@@ -291,8 +292,10 @@ export const activePreset = (site: SiteSettings) =>
+ 
+ export const presetFonts = (p: FontPreset) => ({ heading: p.heading ?? PAIR_FONT[p.pair].family, weight: p.weight ?? PAIR_FONT[p.pair].weight, body: p.body ?? DEFAULT_BODY })
+ 
+-/* ---------- Loading (Google Fonts CSS2, on demand) ---------- */
+-const GF = 'https://fonts.googleapis.com/css2'
++/* ---------- Loading (Google Fonts CSS2 API or the host's compatible endpoint, on demand) ---------- */
++const GOOGLE_CSS2 = 'https://fonts.googleapis.com/css2'
++/** CSS2 endpoint of the current host (read per call: the host is installed before the first render). */
++const cssBase = () => getHost().fontsCss || GOOGLE_CSS2
+ /** family → loaded 'ital,wght' variants; index.css already ships these for the editor chrome. */
+ const have = new Map<string, Set<string>>([
+   ['Inter', new Set(['0,400', '0,500', '0,600', '0,700'])],
+@@ -307,7 +310,7 @@ let warm = false
+ function addLink(href: string) {
+   if (typeof document === 'undefined' || links.has(href)) return
+   links.add(href)
+-  if (!warm) {
++  if (!warm && /^https:\/\/fonts\.googleapis\.com\//.test(href)) {
+     warm = true
+     for (const [url, cross] of [['https://fonts.googleapis.com', false], ['https://fonts.gstatic.com', true]] as const) {
+       const p = document.createElement('link')
+@@ -335,7 +338,7 @@ const byTuple = (a: string, b: string) => {
+ export function fontCssUrl(family: string, variants: string[]) {
+   const v = [...new Set(variants)].sort(byTuple)
+   const axis = v.some((x) => x.startsWith('1,')) ? `ital,wght@${v.join(';')}` : `wght@${v.map((x) => x.split(',')[1]).join(';')}`
+-  return `${GF}?family=${famParam(family)}:${axis}&display=swap`
++  return `${cssBase()}?family=${famParam(family)}:${axis}&display=swap`
+ }
+ 
+ /** Stylesheet url for a library font (weights snapped to the family); undefined for other names. */
+@@ -373,7 +376,7 @@ export function previewFont(name: string, weight = 400) {
+   if (!f || f.stack || have.has(f.family) || previewed.has(f.family)) return
+   previewed.add(f.family)
+   const chars = [...new Set(`${f.family}${ALPHABET}`)].join('')
+-  addLink(`${GF}?family=${famParam(f.family)}:wght@${snap(f.weights, weight)}&text=${encodeURIComponent(chars)}&display=swap`)
++  addLink(`${cssBase()}?family=${famParam(f.family)}:wght@${snap(f.weights, weight)}&text=${encodeURIComponent(chars)}&display=swap`)
+ }
+ 
+ /** Every library font (and weight) the page uses: site fonts plus per-element overrides. */
+@@ -472,22 +475,14 @@ export function fontDigest(per = 12) {
+ }
+ 
+ /* ---------- Recently used ---------- */
+-const RECENT_KEY = 'pursae-builder:recent-fonts'
++const RECENT_KEY = 'recent-fonts'
+ 
+ export function recentFonts(): string[] {
+-  try {
+-    const v = JSON.parse(localStorage.getItem(RECENT_KEY) ?? '[]')
+-    return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string' && !!getFont(x)).slice(0, 6) : []
+-  } catch {
+-    return []
+-  }
++  const v = getHost().storage.get<unknown>(RECENT_KEY, [])
++  return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string' && !!getFont(x)).slice(0, 6) : []
+ }
+ 
+ export function pushRecent(name: string) {
+   if (!getFont(name)) return
+-  try {
+-    localStorage.setItem(RECENT_KEY, JSON.stringify([name, ...recentFonts().filter((x) => x !== name)].slice(0, 6)))
+-  } catch {
+-    /* storage full / blocked */
+-  }
++  getHost().storage.set(RECENT_KEY, [name, ...recentFonts().filter((x) => x !== name)].slice(0, 6))
+ }
+diff --git a/src/builder/host.ts b/src/builder/host.ts
+new file mode 100644
+index 0000000..6274fe0
+--- /dev/null
++++ b/src/builder/host.ts
+@@ -0,0 +1,188 @@
++/**
++ * Host seam: everything the builder needs from the page that embeds it.
++ *
++ * The builder never talks to storage, a server, a media library or a font CDN directly; it asks
++ * the current host. `standaloneHost` keeps the original behaviour (localStorage, blob: uploads,
++ * Google Fonts, a simulated publish), so the app still runs on its own. An embedding CMS sets its
++ * own host before the first render, either with setHost() or by assigning
++ * `window.__WEB_BUILDER_HOST__`.
++ *
++ * Keep this file free of React and of runtime imports: hosts import it on its own.
++ */
++import type { DocState, PageSettings } from './types'
++
++/* ---------- Local persistence (used by the standalone host) ---------- */
++export const STORE_KEY = 'pursae-builder:v2'
++
++export function loadJSON<T>(key: string, fallback: T): T {
++  try {
++    const raw = localStorage.getItem(key)
++    return raw ? (JSON.parse(raw) as T) : fallback
++  } catch {
++    return fallback
++  }
++}
++
++export function saveJSON(key: string, value: unknown) {
++  try {
++    localStorage.setItem(key, JSON.stringify(value))
++  } catch {
++    /* storage full or unavailable: keep working in memory */
++  }
++}
++
++/* ---------- Media ---------- */
++
++export type MediaKind = 'image'
++
++/** A stored media file. `url` is what goes into the document. */
++export interface MediaAsset {
++  url: string
++  id?: number
++  alt?: string
++  width?: number
++  height?: number
++}
++
++export interface BuilderHostMedia {
++  /** Stores a file the user chose from their computer and returns where it now lives. */
++  upload(file: File, kind: MediaKind): Promise<MediaAsset>
++  /** Optional media library dialog; null when the user cancels. Absent = no library button. */
++  pick?(kind: MediaKind): Promise<MediaAsset | null>
++  /**
++   * Reads an .svg file the user chose; the markup is inlined into the document, so a host can
++   * enforce its own size or content rules here (reject by throwing an Error with a message).
++   */
++  readSvg(file: File): Promise<string>
++}
++
++/* ---------- Storage (per-user editor preferences) ---------- */
++
++/**
++ * Small per-user preferences (saved components, onboarding flags, recent fonts, …). Keys are short
++ * names like "flags"; the host namespaces them. Synchronous on purpose: they seed initial state.
++ */
++export interface BuilderHostStorage {
++  get<T>(key: string, fallback: T): T
++  set(key: string, value: unknown): void
++}
++
++/* ---------- Publish / forms / AI ---------- */
++
++export interface PublishInput {
++  doc: DocState
++  page: PageSettings
++}
++
++export interface PublishResult {
++  /** Toast text instead of the default "published" message (e.g. "Submitted for review"). */
++  message?: string
++}
++
++export interface FormResult {
++  ok: boolean
++  message: string
++}
++
++export interface BuilderHostAi {
++  /** false: no AI mode, no AI chip, no AI settings, no AI requests. */
++  enabled: boolean
++  /** Base URL the LLM client calls instead of the provider APIs; undefined = call providers directly. */
++  llmBase?: string
++  /** The host holds the provider keys: the browser never asks for or sends one. */
++  serverKeys: boolean
++  /** AI tools may write html sections and custom CSS. */
++  allowCode: boolean
++  /** Image search endpoint; undefined = the built-in dev endpoint. */
++  imagesEndpoint?: string
++  /** Clone-site endpoint; undefined = the built-in dev endpoint, null = clone is unavailable. */
++  cloneEndpoint?: string | null
++}
++
++/* ---------- The host ---------- */
++
++export interface BuilderHost {
++  /** The stored document, unvalidated (the builder runs it through normalizeDoc); null = start fresh. */
++  loadDoc(): unknown
++  /** Stored page settings, or null for the defaults. */
++  loadPage(): Partial<PageSettings> | null
++  /** Autosave of the working copy. A rejected promise is shown to the user and retried on the next change. */
++  saveDraft(doc: DocState, page: PageSettings): void | Promise<void>
++  /** Debounce of saveDraft in milliseconds (default 500). */
++  autosaveDelay?: number
++  /** Makes the current document live. Reject with an Error whose message the user should see. */
++  publish(input: PublishInput): Promise<PublishResult | void>
++  storage: BuilderHostStorage
++  media: BuilderHostMedia
++  /** Google Fonts CSS2-compatible endpoint (…/css2) used to load fonts in the editor. */
++  fontsCss: string
++  /** Absolute site home URL, no trailing slash. */
++  siteUrl: string
++  /** Where the logo in the top bar leads (back to the CMS); undefined = the logo is not a link. */
++  exitUrl?: string
++  /** Sends a form section's fields; used by live pages and previews. */
++  submitForm(sectionId: string, fields: Record<string, string>): Promise<FormResult>
++  /** AI integration; absent = AI disabled. */
++  ai?: BuilderHostAi
++  /** BCP 47 or WordPress-style locale of the editor UI (e.g. "tr", "en_US"). */
++  locale: string
++}
++
++export const AI_DISABLED: BuilderHostAi = Object.freeze({ enabled: false, serverKeys: false, allowCode: false, cloneEndpoint: null })
++
++/* ---------- Standalone host (original behaviour) ---------- */
++
++const NS = 'pursae-builder:'
++const PAGE_KEY = 'page'
++
++export const standaloneHost: BuilderHost = {
++  loadDoc: () => loadJSON<unknown>(STORE_KEY, null),
++  loadPage: () => loadJSON<Partial<PageSettings> | null>(NS + PAGE_KEY, null),
++  saveDraft(doc, page) {
++    saveJSON(STORE_KEY, doc)
++    saveJSON(NS + PAGE_KEY, page)
++  },
++  autosaveDelay: 500,
++  publish: () => new Promise<void>((resolve) => window.setTimeout(resolve, 1300)),
++  storage: {
++    get: (key, fallback) => loadJSON(NS + key, fallback),
++    set: (key, value) => saveJSON(NS + key, value),
++  },
++  media: {
++    upload: async (file) => ({ url: URL.createObjectURL(file) }),
++    readSvg: (file) => file.text(),
++  },
++  fontsCss: 'https://fonts.googleapis.com/css2',
++  siteUrl: 'https://pursae.dev',
++  submitForm: async () => ({ ok: true, message: '' }),
++  ai: { enabled: true, serverKeys: false, allowCode: true },
++  locale: 'tr',
++}
++
++/* ---------- Current host ---------- */
++
++declare global {
++  interface Window {
++    /** A host installed by the embedding page before the builder loads. */
++    __WEB_BUILDER_HOST__?: BuilderHost
++  }
++}
++
++let current: BuilderHost | null = null
++
++/** Installs the host. Call before the builder first renders; later calls do not re-run loaders. */
++export function setHost(host: BuilderHost) {
++  current = host
++}
++
++/** The current host: setHost(), else window.__WEB_BUILDER_HOST__, else the standalone host. */
++export function getHost(): BuilderHost {
++  if (!current) current = (typeof window !== 'undefined' && window.__WEB_BUILDER_HOST__) || standaloneHost
++  return current
++}
++
++/** The host's AI settings, AI_DISABLED when it has none. */
++export const hostAi = (h: BuilderHost = getHost()): BuilderHostAi => h.ai ?? AI_DISABLED
++
++/** Site URL without the scheme, for display ("example.com/path"). */
++export const siteLabel = (h: BuilderHost = getHost()) => h.siteUrl.replace(/^[a-z][a-z0-9+.-]*:\/\//i, '').replace(/\/+$/, '')

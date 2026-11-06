@@ -1,0 +1,2490 @@
+diff --git a/src/builder/CustomSection.tsx b/src/builder/CustomSection.tsx
+index 94f2b02..4c7dd3b 100644
+--- a/src/builder/CustomSection.tsx
++++ b/src/builder/CustomSection.tsx
+@@ -6,6 +6,7 @@ import { E, TintImg } from './sections'
+ import { useB } from './store'
+ import type { ElStyle, Item, NodeLayout, Section } from './types'
+ import { cn } from './ui'
++import { useLive } from './live/ctx'
+ 
+ const FONT_HOST = /^https:\/\/(fonts\.googleapis\.com|fonts\.bunny\.net)\/[^"'()\\\s<>]+$/
+ const SELF = { start: 'flex-start', center: 'center', end: 'flex-end', stretch: 'stretch' } as const
+@@ -210,7 +211,7 @@ function NodeView({ c, it, parent, parentLay }: { c: Ctx; it: Item; parent: Node
+ }
+ 
+ /** Small screens: big type and spacing from desktop sources scale down. */
+-function mobileCss(s: Section) {
++function mobileCss(s: Section, attr = 'data-el', keys?: Set<string>) {
+   const rules: string[] = []
+   // Overlapping layers (a node pulled up over its previous sibling with a negative margin) only line up
+   // when the parent's padding and the sibling's height keep their desktop sizes.
+@@ -230,7 +231,8 @@ function mobileCss(s: Section) {
+     })
+   for (const it of s.items) {
+     const e = s.els?.[elKey(it)]
+-    const sel = `[data-el="${s.id}:${elKey(it)}"]`
++    const sel = `[${attr}="${s.id}:${elKey(it)}"]`
++    const before = rules.length
+     if (!it.parent && it.node === 'box') {
+       const l = e?.padding?.l ?? 0
+       const r = e?.padding?.r ?? 0
+@@ -246,6 +248,7 @@ function mobileCss(s: Section) {
+     if (e.margin && (e.margin.l > 20 || e.margin.r > 20)) decl.push('margin-left:0!important;margin-right:0!important')
+     if (!pin && e.height && e.height > 240 && it.node === 'box') decl.push('min-height:0!important')
+     if (decl.length) rules.push(`${sel}{${decl.join(';')}}`)
++    if (rules.length > before) keys?.add(`${s.id}:${elKey(it)}`)
+   }
+   return rules.length ? `@container (max-width: 640px){${rules.join('')}}` : ''
+ }
+@@ -261,8 +264,15 @@ export function CustomSection({ s }: { s: Section }) {
+     }
+     return m
+   }, [s.items])
+-  const fonts = (s.content.fonts ?? '').split('\n').map((u) => u.trim()).filter((u) => FONT_HOST.test(u))
+-  const css = useMemo(() => mobileCss(s), [s])
++  const live = useLive()
++  const fonts = live ? [] : (s.content.fonts ?? '').split('\n').map((u) => u.trim()).filter((u) => FONT_HOST.test(u))
++  const css = useMemo(() => (live ? '' : mobileCss(s)), [s, live])
++  // Published page: the small-screen rules go to the page CSS (renderStatic), targeting data-wb-el;
++  // remote font stylesheets are never linked (fonts are served locally).
++  if (live) {
++    const rules = mobileCss(s, 'data-wb-el', live.keepEl)
++    if (rules) live.css.push(rules)
++  }
+   const c = { s, kids }
+   return (
+     <div className="relative flex flex-col" style={{ fontFamily: s.content.font ? `'${s.content.font.replace(/['"\\;{}]/g, '')}', Inter, sans-serif` : undefined }}>
+diff --git a/src/builder/Decor.tsx b/src/builder/Decor.tsx
+index f1ba37c..5e6c96b 100644
+--- a/src/builder/Decor.tsx
++++ b/src/builder/Decor.tsx
+@@ -5,6 +5,8 @@ import { POSITIONED_DECOR, getBg, sanitizeSvg, sized } from './data'
+ import { useB } from './store'
+ import type { BgSettings, DecorId, Section } from './types'
+ import { cn } from './ui'
++import { useLive } from './live/ctx'
++import { LIVE_ANIM } from './live/ui'
+ 
+ /** The decorative drawing itself (also used for small previews). */
+ export function DecorShape({ id, svg, className, style }: { id: DecorId; svg?: string; className?: string; style?: CSSProperties }) {
+@@ -56,6 +58,7 @@ const ANIM = {
+ 
+ /** Background layers rendered behind a section's content. */
+ export function SectionBackground({ s }: { s: Section }) {
++  const live = useLive()
+   const g = getBg(s)
+   const color = g.decorColor || 'currentColor'
+   const pattern = g.decor === 'dots' || g.decor === 'grid'
+@@ -96,9 +99,16 @@ export function SectionBackground({ s }: { s: Section }) {
+             opacity: g.decorOpacity / 100,
+           }}
+         >
+-          <motion.div key={g.decorAnim} className="size-full" {...ANIM[g.decorAnim]}>
+-            <DecorShape id={g.decor} svg={g.decorSvg} />
+-          </motion.div>
++          {live ? (
++            // Published page: the endless loop is a CSS animation (off with reduced motion).
++            <div className={cn('size-full', g.decorAnim !== 'none' && LIVE_ANIM[g.decorAnim])}>
++              <DecorShape id={g.decor} svg={g.decorSvg} />
++            </div>
++          ) : (
++            <motion.div key={g.decorAnim} className="size-full" {...ANIM[g.decorAnim]}>
++              <DecorShape id={g.decor} svg={g.decorSvg} />
++            </motion.div>
++          )}
+         </div>
+       )}
+     </div>
+diff --git a/src/builder/live/ctx.ts b/src/builder/live/ctx.ts
+new file mode 100644
+index 0000000..832dbf8
+--- /dev/null
++++ b/src/builder/live/ctx.ts
+@@ -0,0 +1,37 @@
++import { createContext, useContext } from 'react'
++
++/**
++ * Live (static snapshot) rendering state. Present only while renderStatic() draws a page for publishing;
++ * the editor, previews and thumbnails never provide it, so every live branch is opt-in.
++ */
++export interface LiveState {
++  postId: number
++  /** Top-level section being drawn (form actions, dismiss keys). */
++  sectionId: string
++  /** Absolute action URL of a form section. */
++  formAction: (sectionId: string) => string
++  /** Container width this pass is drawn for (designs that switch on a JS width check read it). */
++  width: number
++  /** Breakpoints (px) the section asked about through useNarrow during this pass. */
++  bps: Set<number>
++  /** Generated CSS (free-form sections' small-screen rules); keyed selectors use data-wb-el. */
++  css: string[]
++  /** data-el keys to keep in the output as data-wb-el (targets of generated CSS). */
++  keepEl: Set<string>
++}
++
++export const LiveCtx = createContext<LiveState | null>(null)
++
++/** The live rendering state, or null in the editor. */
++export const useLive = () => useContext(LiveCtx)
++
++/** href values a published page may carry (mirrors the server's SafeHref: http(s), mailto, tel, #…, relative). */
++export function liveHref(raw?: string): string | undefined {
++  const v = (raw ?? '').trim()
++  if (!v) return undefined
++  const probe = v.replace(/[\u0000- \u007f-\u009f]/g, '')
++  if (/^(https?:|mailto:|tel:)/i.test(probe)) return v
++  if (/^[a-z][a-z0-9+.-]*:/i.test(probe)) return undefined
++  if (probe.startsWith('//') || probe.includes('\\')) return undefined
++  return v
++}
+diff --git a/src/builder/live/fixtures.tsx b/src/builder/live/fixtures.tsx
+new file mode 100644
+index 0000000..bc41729
+--- /dev/null
++++ b/src/builder/live/fixtures.tsx
+@@ -0,0 +1,123 @@
++/*
++ * Node-only fixture export and checks for the static renderer (not part of any bundle).
++ *   node fixtures.mjs <out-dir> <site.css>
++ * Writes <name>.doc.json (the DocState) and <name>.render.json (its RenderResult) for every case, and fails
++ * on any exception or contract violation: editor attributes, inline opacity:0, <style>/<script> in the
++ * markup, width-range classes missing from the site stylesheet.
++ */
++import './seed'
++import fs from 'node:fs'
++import path from 'node:path'
++import { KINDS, createLayout, createSection, initialDoc } from '../data'
++import { historyReducer, initHistory } from '../store'
++import type { DocAction } from '../store'
++import type { DocState, Section, SectionKind } from '../types'
++import { LIBRARY, createVariantSection } from '../variants'
++import { renderStatic, type RenderResult } from './renderStatic'
++
++const POST = 42
++const SITE = 'https://example.com'
++const opts = { postId: POST, siteUrl: SITE, formAction: (id: string) => `${SITE}/wp-json/web-builder/v2/forms/${POST}/${encodeURIComponent(id)}` }
++
++const site = initialDoc.site
++const cases: [string, DocState][] = []
++
++cases.push(['initial', initialDoc])
++cases.push(['kinds', { site, sections: (Object.keys(KINDS) as SectionKind[]).map((k) => createSection(k)) }])
++for (const kv of LIBRARY) {
++  const sections = kv.variants.filter((v) => v.C).map((v) => createVariantSection(kv.kind, v.id))
++  if (sections.length) cases.push([`variants-${kv.kind}`, { site, sections }])
++}
++
++/** Flexbox + grid layouts with every cell type, a nested container (hidden on mobile, own CSS). */
++function layoutDoc(): DocState {
++  let h = initHistory({ site, sections: [createLayout('flex', '33-33-33'), createLayout('grid', 'g-2x2')] })
++  const act = (a: unknown) => (h = historyReducer(h, a as DocAction))
++  const [a, g] = h.entries[0].doc.sections
++  const types = ['heading', 'text', 'button', 'image'] as const
++  a.items.forEach((it, i) => act({ type: 'cell', id: a.id, itemId: it.id, cell: i === 2 ? 'layout' : types[i] }))
++  g.items.forEach((it, i) => act({ type: 'cell', id: g.id, itemId: it.id, cell: types[i % 4] }))
++  const doc = h.entries[h.cursor].doc
++  const nested = doc.sections[0].items.find((i) => i.sub)?.sub
++  if (nested) nested.style = { ...nested.style, hideOn: ['mobile'], css: 'selector { outline: 1px solid var(--line); }' }
++  return doc
++}
++cases.push(['layout', layoutDoc()])
++
++/** Every runtime behaviour, per-device and per-element visibility, motion, links and custom CSS. */
++function behavioursDoc(): DocState {
++  const variant = (kind: SectionKind, id: string) => createVariantSection(kind, id)
++  const nav = createSection('nav')
++  const hero = createSection('hero')
++  const features = createSection('features')
++  const faq = createSection('faq')
++  const steps = createSection('steps')
++  const html = createSection('html')
++  const form = createSection('form')
++  const cta = createSection('cta')
++  nav.items = nav.items.map((it, i) => ({ ...it, href: ['#' + features.id, 'https://example.org/docs', 'mailto:hello@example.com', '/pricing'][i % 4] }))
++  nav.style = { ...nav.style, motion: { sticky: true } }
++  hero.content = { ...hero.content, primaryHref: '#' + form.id, secondaryHref: 'https://example.org/' }
++  hero.style = { ...hero.style, motion: { entrance: 'fade-up', stagger: true, staggerDelay: 120, parallax: 30, parallaxTarget: 'bg' } }
++  hero.bg = { ...hero.bg, decor: 'rings', decorAnim: 'spin' }
++  const [f0, f1] = features.items
++  features.style = { ...features.style, motion: { entrance: 'zoom-in', duration: 900, easing: 'spring', repeat: true, hover: 'lift', hoverTarget: 'items' } }
++  features.els = {
++    [`items.${f0.id}.title`]: { motion: { entrance: 'blur', delay: 200 } },
++    [`items.${f1.id}.text`]: { hide: true },
++    body: { removed: true },
++  }
++  steps.style = { ...steps.style, hideOn: ['mobile', 'tablet'], cssId: 'how-it-works', css: 'selector h3 { letter-spacing: -0.01em; }', motion: { scrollFade: true, scrollScale: true } }
++  cta.style = { ...cta.style, hideOn: ['desktop'], palette: 'dark' }
++  return {
++    site,
++    sections: [variant('banner', 'dismiss'), nav, hero, features, steps, faq, variant('nav', 'mega'), html, form, variant('form', 'booking'), variant('form', 'newsletter'), cta],
++  }
++}
++cases.push(['behaviours', behavioursDoc()])
++
++/* ---------- Checks ---------- */
++const cssEscape = (v: string) =>
++  v.replace(/[^A-Za-z0-9_-]/g, (c) => `\\${c}`).replace(/^([0-9])/, (d) => `\\3${d} `)
++
++function check(name: string, r: RenderResult, siteCss: string): string[] {
++  const bad: string[] = []
++  // The html section's sandboxed srcdoc is the author's own (escaped) document; check the page markup only.
++  const h = r.html.replace(/ srcdoc="[^"]*"/gi, ' srcdoc=""')
++  if (!/^<div class="wb-page[ "]/.test(h) || !h.includes(' data-wb-root=""')) bad.push('root element')
++  const editorAttr = h.match(/ data-(?!wb-)[A-Za-z0-9_.:-]+=/g)
++  if (editorAttr) bad.push(`editor attributes: ${[...new Set(editorAttr)].join(' ')}`)
++  if (/opacity:0(?![.\d])/.test(h)) bad.push('inline opacity:0')
++  if (/<(style|script|link|meta)[\s>]/i.test(h)) bad.push('style/script/link/meta element')
++  if (/ (?:on[a-z]+|contenteditable|spellcheck|draggable)=/i.test(h)) bad.push('event handler or editing attribute')
++  for (const c of r.classes) if (/^@(?:min|max)-\[/.test(c) && !siteCss.includes(`.${cssEscape(c)}`)) bad.push(`class ${c} missing from site.css`)
++  return bad.map((b) => `${name}: ${b}`)
++}
++
++const out = process.argv[2]
++const siteCss = process.argv[3] ? fs.readFileSync(process.argv[3], 'utf8') : ''
++if (!out) throw new Error('usage: fixtures <out-dir> [site.css]')
++fs.rmSync(out, { recursive: true, force: true })
++fs.mkdirSync(out, { recursive: true })
++const problems: string[] = []
++let bytes = 0
++for (const [name, doc] of cases) {
++  let r: RenderResult
++  try {
++    r = renderStatic(doc, opts)
++  } catch (e) {
++    problems.push(`${name}: ${(e as Error).stack ?? e}`)
++    continue
++  }
++  if (siteCss) problems.push(...check(name, r, siteCss))
++  const json = JSON.stringify(r) + '\n'
++  bytes += json.length
++  fs.writeFileSync(path.join(out, `${name}.doc.json`), JSON.stringify(doc) + '\n')
++  fs.writeFileSync(path.join(out, `${name}.render.json`), json)
++}
++const count = (sections: Section[]) => sections.length
++console.log(`[web-builder] fixtures: ${cases.length} docs, ${cases.reduce((n, [, d]) => n + count(d.sections), 0)} sections, ${(bytes / 1024).toFixed(0)} KB of render JSON → ${out}`)
++if (problems.length) {
++  console.error(problems.join('\n'))
++  process.exit(1)
++}
+diff --git a/src/builder/live/page.css b/src/builder/live/page.css
+new file mode 100644
+index 0000000..4a49d88
+--- /dev/null
++++ b/src/builder/live/page.css
+@@ -0,0 +1,194 @@
++/*
++ * Styles shared by the editor canvas and the published page (theme tokens, rich text, badges), plus the
++ * published page's own rules (.wb-page root, data-wb-* behaviours, CSS stand-ins for editor animations).
++ * Imported by src/index.css (editor) and by live/site.css (the page stylesheet built per release).
++ * Content stays readable without JavaScript: every rule that hides content is scoped to .wb-js.
++ */
++@theme {
++  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
++  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
++  --font-serif: 'Instrument Serif', Georgia, serif;
++  --color-ink-950: #0c0d0f;
++  --color-ink-900: #131417;
++  --color-ink-850: #17181c;
++  --color-ink-800: #1c1d22;
++  --color-ink-750: #22242a;
++  --color-ink-700: #2a2c33;
++  --color-ink-600: #393c45;
++  --color-ink-500: #5b5f6a;
++  --color-ink-400: #8a8f9a;
++  --color-ink-300: #b1b5be;
++  --color-ink-200: #d7d9de;
++  --color-ink-100: #eef0f3;
++  --color-accent: #5b7cfa;
++  --color-accent-soft: #93abff;
++  --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
++}
++
++/* Rich text (b, i, u, s, code, a, ul/ol) in canvas elements and inspector fields */
++.rt a {
++  color: inherit;
++  text-decoration: underline;
++  text-decoration-thickness: from-font;
++  text-underline-offset: 0.18em;
++}
++.rt code {
++  padding: 0.08em 0.32em;
++  border-radius: 4px;
++  background: color-mix(in srgb, currentColor 11%, transparent);
++  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
++  font-size: 0.88em;
++}
++.rt ul,
++.rt ol {
++  margin: 0.35em 0;
++  padding-left: 1.35em;
++}
++.rt ul {
++  list-style: disc;
++}
++.rt ol {
++  list-style: decimal;
++}
++.dot-badge::before {
++  content: '';
++  width: 7px;
++  height: 7px;
++  border-radius: 99px;
++  background: #4ade80;
++  box-shadow: 0 0 0 3px rgb(74 222 128 / 0.25);
++}
++
++/* ---------- Published page ---------- */
++.wb-page {
++  container-type: inline-size;
++  container-name: canvas;
++}
++.wb-page button {
++  cursor: pointer;
++}
++/* Same look as the editor's preview (basic mode): editable elements are plain boxes. */
++.wb-page .sf,
++.wb-page .ed {
++  position: relative;
++}
++.wb-page .ed {
++  border-radius: 6px;
++  box-shadow: none !important;
++}
++/* An open menu panel overlays the sections below: lift its section (sections stack by order and z-index). */
++.wb-page .sf:has(details[data-wb-menu][open]) {
++  z-index: 60 !important;
++}
++.wb-page summary {
++  list-style: none;
++}
++.wb-page summary::-webkit-details-marker {
++  display: none;
++}
++/* Tabs: without JavaScript every panel shows, stacked. */
++.wb-js .wb-page [data-wb-inactive] {
++  display: none;
++}
++
++/* Motion (data-wb-*): sticky and hover are CSS only; entrances need the runtime. */
++.wb-page [data-wb-sticky] {
++  position: sticky;
++  top: 0;
++  z-index: 6;
++}
++@media (prefers-reduced-motion: no-preference) {
++  /* Entrance targets wait hidden for the runtime; a failsafe shows them if it never runs. */
++  .wb-js [data-wb-motion]:not(.wb-in) {
++    opacity: 0;
++    animation: wb-reveal 0s 3s forwards;
++  }
++  .wb-page [data-wb-hover-on='self'],
++  .wb-page [data-wb-hover-on='items'] :is([data-wb-grid] > *, .cell) {
++    transition:
++      translate 0.4s cubic-bezier(0.22, 1, 0.36, 1),
++      scale 0.4s cubic-bezier(0.22, 1, 0.36, 1),
++      box-shadow 0.4s cubic-bezier(0.22, 1, 0.36, 1);
++  }
++  .wb-page [data-wb-hover-on='self']:hover {
++    z-index: 3;
++  }
++  .wb-page [data-wb-hover='lift'][data-wb-hover-on='self']:hover,
++  .wb-page [data-wb-hover='lift'][data-wb-hover-on='items'] :is([data-wb-grid] > *, .cell):hover {
++    translate: 0 -6px;
++    box-shadow: 0 24px 48px -24px rgb(0 0 0 / 0.35) !important;
++  }
++  .wb-page [data-wb-hover='scale'][data-wb-hover-on='self']:hover {
++    scale: 1.015;
++  }
++  .wb-page [data-wb-hover='scale'][data-wb-hover-on='items'] :is([data-wb-grid] > *, .cell):hover {
++    scale: 1.04;
++  }
++  .wb-page [data-wb-hover='glow'][data-wb-hover-on='self']:hover {
++    box-shadow:
++      inset 0 0 0 1px color-mix(in srgb, var(--brand) 40%, transparent),
++      inset 0 0 140px -40px color-mix(in srgb, var(--brand) 55%, transparent);
++  }
++  .wb-page [data-wb-hover='glow'][data-wb-hover-on='items'] :is([data-wb-grid] > *, .cell):hover {
++    box-shadow:
++      0 0 0 1px color-mix(in srgb, var(--brand) 45%, transparent),
++      0 18px 50px -18px color-mix(in srgb, var(--brand) 65%, transparent) !important;
++  }
++
++  /* Endless decorative loops (the editor runs them with motion/react). */
++  .wb-spin {
++    animation: wb-spin 90s linear infinite;
++  }
++  .wb-float {
++    animation: wb-float 7s ease-in-out infinite;
++  }
++  .wb-pulse {
++    animation: wb-pulse 6s ease-in-out infinite;
++  }
++  .wb-bob {
++    animation: wb-bob 5s ease-in-out infinite;
++  }
++  .wb-ping {
++    animation: wb-ping 2.4s ease-out infinite;
++  }
++}
++@keyframes wb-reveal {
++  to {
++    opacity: 1;
++  }
++}
++@keyframes wb-spin {
++  to {
++    rotate: 360deg;
++  }
++}
++@keyframes wb-float {
++  50% {
++    translate: 0 -18px;
++  }
++}
++@keyframes wb-pulse {
++  50% {
++    scale: 1.06;
++  }
++}
++@keyframes wb-bob {
++  50% {
++    translate: 0 -6px;
++  }
++}
++@keyframes wb-ping {
++  from {
++    scale: 1;
++    opacity: 0.6;
++  }
++  to {
++    scale: 1.45;
++    opacity: 0;
++  }
++}
++/* Fields the server rejected (form runtime: aria-invalid + data-wb-invalid). */
++.wb-page [data-wb-invalid] {
++  outline: 2px solid #d63638;
++  outline-offset: 2px;
++}
+diff --git a/src/builder/live/renderStatic.tsx b/src/builder/live/renderStatic.tsx
+new file mode 100644
+index 0000000..12f5f01
+--- /dev/null
++++ b/src/builder/live/renderStatic.tsx
+@@ -0,0 +1,362 @@
++import { renderToStaticMarkup } from 'react-dom/server'
++import { paletteVars } from '../data'
++import { SectionBackground } from '../Decor'
++import { docFontNeeds, getFont } from '../fonts'
++import { getElMotion, getMotion, hasEntrance, hasScrollFx, MOTION_DEFAULTS, type Motion } from '../motion'
++import { RENDERERS, containerFrameStyle, framePad, hideOnClass } from '../sections'
++import { BuilderCtx, initHistory, type BuilderApi } from '../store'
++import { hasTint, isSvgSrc, preloadSvgs } from '../svgTint'
++import type { DocState, PageSettings, Section } from '../types'
++import { cn } from '../ui'
++import { pageVars } from '../variants/Preview'
++import { LiveCtx, type LiveState } from './ctx'
++
++/*
++ * Static snapshot of a page for publishing (no editor, no React on the visitor's side). The server stores the
++ * HTML after sanitizing it; behaviour comes from the data-wb-* runtime (live/runtime.ts), styles from the
++ * per-release site stylesheet (live/site.css) plus the page's `css`. Contract: docs/developer/web-builder-contract.md §4–§5.
++ */
++
++/** Static markup + data-wb-* runtime version (contract RENDERER_VERSION). */
++export const RENDERER_VERSION = 1
++
++export type Feature = 'menu' | 'acc' | 'tabs' | 'dismiss' | 'form' | 'motion' | 'embed'
++
++export interface FontNeed {
++  family: string
++  weights: number[]
++  italic: boolean
++}
++
++export interface RenderOptions {
++  postId: number
++  /** Absolute action URL of a form section. */
++  formAction: (sectionId: string) => string
++  /** Home URL, no trailing slash. Relative links in the doc stay relative. */
++  siteUrl: string
++}
++
++export interface RenderResult {
++  /** One root <div class="wb-page …" data-wb-root>…</div>. */
++  html: string
++  /** Section custom CSS (style.css, `selector` → the section's id) and generated small-screen rules. */
++  css: string
++  /** Tailwind candidate classes used by html. */
++  classes: string[]
++  fonts: FontNeed[]
++  /** Sorted, unique; empty = the page needs no runtime. */
++  features: Feature[]
++  renderer: number
++}
++
++/** Container widths at or above this are treated as "never" (designs that are always in their narrow form). */
++const NEVER = 4000
++/** Width the widest copy of a section is drawn at. */
++const DESKTOP = 1280
++
++const noop = () => {}
++
++/** Read-only builder context: preview mode, nothing selectable, every action a no-op. */
++function stubApi(doc: DocState): BuilderApi {
++  return {
++    doc,
++    history: initHistory(doc),
++    dispatch: noop,
++    canUndo: false,
++    canRedo: false,
++    mode: 'basic',
++    setMode: noop,
++    device: 'desktop',
++    setDevice: noop,
++    preview: true,
++    setPreview: noop,
++    selection: null,
++    select: noop,
++    hoverSection: null,
++    setHoverSection: noop,
++    activeField: null,
++    setActiveField: noop,
++    focusReq: null,
++    scrollReq: null,
++    basicView: 'list',
++    setBasicView: noop,
++    studioTab: 'widgets',
++    setStudioTab: noop,
++    picker: null,
++    boxHint: null,
++    setBoxHint: noop,
++    setPicker: noop,
++    insertAt: null,
++    setInsertAt: noop,
++    dragging: null,
++    setDragging: noop,
++    drop: null,
++    setDrop: noop,
++    add: noop,
++    remove: noop,
++    notify: noop,
++    structureOpen: false,
++    setStructureOpen: noop,
++    publishState: 'idle',
++    dirty: false,
++    publish: noop,
++    clipboard: null,
++    copySection: noop,
++    pasteSection: noop,
++    styleClipboard: null,
++    copyStyle: noop,
++    pasteStyle: noop,
++    saved: [],
++    saveComponent: noop,
++    removeSaved: noop,
++    menu: null,
++    setMenu: noop,
++    paletteOpen: false,
++    setPaletteOpen: noop,
++    dialog: null,
++    setDialog: noop,
++    page: {} as PageSettings,
++    setPage: noop,
++    saveState: 'saved',
++    scrollTo: noop,
++    milestones: { title: true, color: true, section: true, publish: true, dismissed: true },
++    setMilestone: noop,
++    resetPage: noop,
++  }
++}
++
++/* ---------- Motion attributes (contract §5 "motion") ---------- */
++type Attrs = Record<string, string>
++
++/** data-wb-* attributes of an entrance / scroll effect; `scope` marks a section's content (animates its children). */
++export function motionData(m: Motion, scope: boolean): Attrs {
++  const a: Attrs = {}
++  if (hasEntrance(m)) {
++    a['data-wb-motion'] = m.entrance
++    if (scope) a['data-wb-scope'] = ''
++    if (m.duration !== MOTION_DEFAULTS.duration) a['data-wb-dur'] = String(Math.round(m.duration))
++    if (m.delay !== MOTION_DEFAULTS.delay) a['data-wb-delay'] = String(Math.round(m.delay))
++    if (m.easing !== MOTION_DEFAULTS.easing) a['data-wb-ease'] = m.easing
++    if (m.repeat) a['data-wb-repeat'] = ''
++    if (scope && m.stagger) a['data-wb-stagger'] = String(Math.round(m.staggerDelay))
++  }
++  if (scope && hasScrollFx(m)) {
++    if (m.parallax) {
++      a['data-wb-parallax'] = String(Math.round(m.parallax))
++      a['data-wb-parallax-on'] = m.parallaxTarget
++    }
++    if (m.scrollFade) a['data-wb-scroll-fade'] = ''
++    if (m.scrollScale) a['data-wb-scroll-scale'] = ''
++  }
++  return a
++}
++
++/** One top-level section like the editor's preview frame, with the published page's attributes. */
++function LiveSection({ s, brand, id, className }: { s: Section; brand: string; id: string; className?: string }) {
++  const R = RENDERERS[s.kind]
++  const m = getMotion(s)
++  const fx: Attrs = {
++    ...(m.sticky ? { 'data-wb-sticky': '' } : {}),
++    ...(m.hover !== 'none' ? { 'data-wb-hover': m.hover, 'data-wb-hover-on': m.hoverTarget } : {}),
++  }
++  return (
++    <section className={cn('sf', hideOnClass(s.style.hideOn), className)} id={id} {...fx} style={{ ...paletteVars(s.style.palette, brand, s.style.bg), background: 'var(--bg)', color: 'var(--fg)', ...containerFrameStyle(s) }}>
++      <SectionBackground s={s} />
++      <div className="relative z-[1]" style={framePad(s)} {...motionData(m, true)}>
++        <R s={s} />
++      </div>
++    </section>
++  )
++}
++
++/* ---------- Helpers ---------- */
++/** CSS identifier escape (CSS.escape is not available outside the browser). */
++export function cssIdent(v: string): string {
++  return v
++    .replace(/[^A-Za-z0-9_-]/g, (c) => `\\${c.codePointAt(0)!.toString(16)} `)
++    .replace(/^(-?)([0-9])/, (_m, d: string, n: string) => `${d}\\3${n} `)
++}
++
++const htmlAttr = (v: string) => v.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')
++const unescapeAttr = (v: string) => v.replace(/&quot;/g, '"').replace(/&#x27;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&')
++const attrString = (a: Attrs) =>
++  Object.entries(a)
++    .map(([k, v]) => ` ${k}="${htmlAttr(v)}"`)
++    .join('')
++
++/** Every section, nested containers included. */
++function walk(list: Section[], f: (s: Section, nested: boolean) => void, nested = false) {
++  for (const s of list) {
++    f(s, nested)
++    for (const it of s.items) if (it.sub) walk([it.sub], f, true)
++  }
++}
++
++interface Acc {
++  css: string[]
++  keepEl: Set<string>
++}
++
++/**
++ * Draws one top-level section. Designs that switch layout on a JS width check (useNarrow) report their
++ * breakpoints; such a section is drawn once per width range and each copy is shown by container query.
++ */
++function renderSection(s: Section, index: number, doc: DocState, opts: RenderOptions, api: BuilderApi, acc: Acc): { html: string; ids: string[] } {
++  const baseId = s.style.cssId || s.id
++  const run = (width: number, copy: string, id: string, className?: string) => {
++    const live: LiveState = { postId: opts.postId, sectionId: s.id, formAction: opts.formAction, width, bps: new Set(), css: acc.css, keepEl: acc.keepEl }
++    const html = renderToStaticMarkup(
++      <BuilderCtx.Provider value={api}>
++        <LiveCtx.Provider value={live}>
++          <LiveSection s={s} brand={doc.site.brand} id={id} className={className} />
++        </LiveCtx.Provider>
++      </BuilderCtx.Provider>,
++      { identifierPrefix: `wb${index}${copy}-` },
++    )
++    return { html, bps: live.bps }
++  }
++  const finite = (set: Set<number>) => [...set].filter((b) => b > 0 && b < NEVER)
++  const first = run(DESKTOP, '', baseId)
++  let bps = new Set(finite(first.bps))
++  if (!bps.size) return { html: first.html, ids: [baseId] }
++  for (let round = 0; round < 3; round++) {
++    const cuts = [...bps].sort((a, b) => a - b)
++    const ranges = [0, ...cuts].map((lo, i) => ({ lo, hi: cuts[i] ?? Infinity }))
++    const copies = ranges.map((r, i) => {
++      const top = r.hi === Infinity
++      const id = top ? baseId : `${baseId}-w${r.lo}`
++      const cls = cn(r.lo > 0 && `@max-[${r.lo}px]:hidden!`, !top && `@min-[${r.hi}px]:hidden!`)
++      return { id, ...run(top ? Math.max(r.lo, DESKTOP) : r.lo, `w${i}`, id, cls) }
++    })
++    const more = new Set(bps)
++    for (const c of copies) for (const b of finite(c.bps)) more.add(b)
++    if (more.size === bps.size || round === 2) return { html: copies.map((c) => c.html).join(''), ids: copies.map((c) => c.id) }
++    bps = more
++  }
++  return { html: first.html, ids: [baseId] }
++}
++
++/**
++ * Turns editor markup into published markup: hidden / deleted elements get `hidden`, elements with their
++ * own motion get data-wb-* motion attributes, generated-CSS targets keep data-wb-el, editor-only data-*
++ * and editing attributes go.
++ */
++function finalize(html: string, doc: DocState, keepEl: Set<string>): string {
++  const hidden = new Set<string>()
++  const motion = new Map<string, Attrs>()
++  walk(doc.sections, (s) => {
++    for (const [el, es] of Object.entries(s.els ?? {})) {
++      const key = `${s.id}:${el}`
++      if (es.removed || es.hide) hidden.add(key)
++      if (es.motion && hasEntrance(es.motion)) motion.set(key, motionData(getElMotion(es), false))
++    }
++  })
++  return html
++    .replace(/ data-el="([^"]*)"/g, (_m, raw: string) => {
++      const key = unescapeAttr(raw)
++      let out = ''
++      if (hidden.has(key)) out += ' hidden=""'
++      const m = motion.get(key)
++      if (m) out += attrString(m)
++      if (keepEl.has(key)) out += ` data-wb-el="${raw}"`
++      return out
++    })
++    .replace(/ data-mbg="[^"]*"/g, ' data-wb-bg=""')
++    .replace(/ data-grid="[^"]*"/g, ' data-wb-grid=""')
++    .replace(/ data-(?!wb-)[A-Za-z0-9_.:-]+="[^"]*"/g, '')
++    .replace(/ (?:spellcheck|draggable|contenteditable)="[^"]*"/gi, '')
++    // React's resource hints for images (the page head is the server's business).
++    .replace(/<link rel="preload"[^>]*>/g, '')
++}
++
++/* ---------- Fonts ---------- */
++/** Families the designs name directly (wordmarks, logo marks, mono / serif utilities). */
++const FIXED_FONTS: { family: string; test: RegExp; weights: number[]; italic: boolean }[] = [
++  { family: 'Space Grotesk', test: /Space[_ ]Grotesk/, weights: [500, 600, 700], italic: false },
++  { family: 'Instrument Serif', test: /Instrument[_ ]Serif|\bfont-serif\b/, weights: [400], italic: true },
++  { family: 'JetBrains Mono', test: /JetBrains[_ ]Mono|\bfont-mono\b/, weights: [400, 500], italic: false },
++]
++
++function fontNeeds(doc: DocState, html: string): FontNeed[] {
++  const need = new Map<string, { w: Set<number>; italic: boolean }>()
++  const add = (family: string, weights: number[], italic: boolean) => {
++    const e = need.get(family) ?? { w: new Set<number>(), italic: false }
++    for (const w of weights) e.w.add(w)
++    e.italic ||= italic
++    need.set(family, e)
++  }
++  for (const [family, n] of docFontNeeds(doc)) add(family, [...n.w], n.i.size > 0)
++  for (const f of FIXED_FONTS) if (f.test.test(html)) add(f.family, f.weights, f.italic)
++  walk(doc.sections, (s) => {
++    const f = s.kind === 'custom' ? getFont(s.content.font) : undefined
++    if (f && !f.stack) add(f.family, [400, 600, 700], false)
++  })
++  return [...need]
++    .map(([family, e]) => ({ family, weights: [...e.w].sort((a, b) => a - b), italic: e.italic }))
++    .sort((a, b) => a.family.localeCompare(b.family))
++}
++
++/* ---------- Public API ---------- */
++const FEATURES: [Feature, RegExp][] = [
++  ['acc', / data-wb-acc=/],
++  ['dismiss', / data-wb-dismiss=/],
++  ['embed', / data-wb-embed=/],
++  ['form', / data-wb-form=/],
++  ['menu', / data-wb-menu=/],
++  ['motion', / data-wb-(?:motion|parallax|scroll-fade|scroll-scale)=/],
++  ['tabs', / data-wb-tabs=/],
++]
++
++/**
++ * Remote SVG sources that are recolored (icon colors) must be loaded before the synchronous render;
++ * call this first (renderStaticAsync does).
++ */
++export function prepareStatic(doc: DocState): Promise<void> {
++  const srcs: string[] = []
++  walk(doc.sections, (s) => {
++    if (!Object.values(s.els ?? {}).some(hasTint)) return
++    // Any SVG source of a section with a recolored element (content fields, item fields, icons).
++    for (const v of [...Object.values(s.content), ...s.items.flatMap((i) => [i.title, i.text, i.icon])]) if (v && isSvgSrc(v)) srcs.push(v)
++  })
++  return srcs.length ? preloadSvgs(srcs) : Promise.resolve()
++}
++
++/** Static snapshot of `doc` (contract RenderResult). Synchronous; see prepareStatic for recolored remote SVGs. */
++export function renderStatic(doc: DocState, opts: RenderOptions): RenderResult {
++  const api = stubApi(doc)
++  const acc: Acc = { css: [], keepEl: new Set() }
++  const parts: string[] = []
++  const css: string[] = []
++  doc.sections.forEach((s, i) => {
++    if (s.hidden || (['mobile', 'tablet', 'desktop'] as const).every((d) => s.style.hideOn.includes(d))) return
++    const { html, ids } = renderSection(s, i, doc, opts, api, acc)
++    parts.push(html)
++    if (s.style.css) {
++      const sel = ids.length === 1 ? `#${cssIdent(ids[0])}` : `:is(${ids.map((x) => `#${cssIdent(x)}`).join(',')})`
++      css.push(s.style.css.replace(/\bselector\b/g, sel))
++    }
++    for (const it of s.items)
++      if (it.sub)
++        walk([it.sub], (sub) => {
++          if (sub.style.css && !sub.hidden) css.push(sub.style.css.replace(/\bselector\b/g, `#${cssIdent(sub.style.cssId || sub.id)}`))
++        })
++  })
++  const inner = finalize(parts.join(''), doc, acc.keepEl)
++  const root = renderToStaticMarkup(<div className="wb-page cv @container relative bg-white text-left" data-wb-root="" data-wb-post={String(opts.postId)} style={pageVars(doc.site)} dangerouslySetInnerHTML={{ __html: inner }} />)
++  const classes = new Set<string>()
++  for (const m of root.matchAll(/ class="([^"]*)"/g)) for (const c of unescapeAttr(m[1]).split(/\s+/)) if (c) classes.add(c)
++  return {
++    html: root,
++    css: [...css, ...new Set(acc.css)].join('\n'),
++    classes: [...classes].sort(),
++    fonts: fontNeeds(doc, root),
++    features: FEATURES.filter(([, re]) => re.test(root)).map(([f]) => f),
++    renderer: RENDERER_VERSION,
++  }
++}
++
++/** prepareStatic + renderStatic. */
++export async function renderStaticAsync(doc: DocState, opts: RenderOptions): Promise<RenderResult> {
++  await prepareStatic(doc)
++  return renderStatic(doc, opts)
++}
+diff --git a/src/builder/live/runtime.ts b/src/builder/live/runtime.ts
+new file mode 100644
+index 0000000..aa2f178
+--- /dev/null
++++ b/src/builder/live/runtime.ts
+@@ -0,0 +1,233 @@
++/*
++ * Published-page runtime (IIFE, no dependencies, ≤ 8 KB gzip). Loaded with `defer` only on pages whose snapshot
++ * lists features. Everything is opt-in by data-wb-* attributes (contract §5); the page works without it.
++ */
++import { EASING_CSS, FRAMES, MOTION_DEFAULTS, hasEntrance, hasScrollFx, playOnView, reducedMotion, scrollFx, sectionTargets, type Motion, type Track } from '../motion-core'
++import type { EasingId, EntranceId } from '../types'
++
++const $$ = <T extends Element = HTMLElement>(sel: string, root: ParentNode = document) => Array.from(root.querySelectorAll<T>(sel))
++const IN = 'wb-in'
++
++/* ---------- menu: <details data-wb-menu> ---------- */
++function menus() {
++  const all = $$<HTMLDetailsElement>('details[data-wb-menu]')
++  if (!all.length) return
++  const sync = (d: HTMLDetailsElement) => d.querySelector(':scope > summary')?.setAttribute('aria-expanded', String(d.open))
++  for (const d of all) {
++    sync(d)
++    d.addEventListener('toggle', () => sync(d))
++    d.addEventListener('click', (e) => {
++      if ((e.target as Element).closest('a') && d.open) d.open = false
++    })
++  }
++  document.addEventListener('keydown', (e) => {
++    if (e.key !== 'Escape') return
++    for (const d of all)
++      if (d.open) {
++        d.open = false
++        d.querySelector<HTMLElement>(':scope > summary')?.focus()
++      }
++  })
++  document.addEventListener('click', (e) => {
++    for (const d of all) if (d.open && !d.contains(e.target as Node)) d.open = false
++  })
++}
++
++/* ---------- acc: <details data-wb-acc>, one open per [data-wb-acc-single] group ---------- */
++function accordions() {
++  for (const d of $$<HTMLDetailsElement>('details[data-wb-acc]'))
++    d.addEventListener('toggle', () => {
++      const g = d.open && d.closest('[data-wb-acc-single]')
++      if (g) for (const o of $$<HTMLDetailsElement>('details[data-wb-acc]', g)) if (o !== d) o.open = false
++    })
++}
++
++/* ---------- tabs ---------- */
++function tabs() {
++  for (const box of $$('[data-wb-tabs]')) {
++    const list = $$('[data-wb-tab]', box)
++    if (!list.length) continue
++    const panels = $$('[data-wb-panel]', box)
++    const pick = (t: HTMLElement, focus?: boolean) => {
++      for (const o of list) {
++        const on = o === t
++        o.setAttribute('aria-selected', String(on))
++        o.tabIndex = on ? 0 : -1
++      }
++      for (const p of panels) p.toggleAttribute('data-wb-inactive', p.dataset.wbPanel !== t.dataset.wbTab)
++      if (focus) t.focus()
++    }
++    const step = (d: number) => {
++      const i = list.findIndex((o) => o.getAttribute('aria-selected') === 'true')
++      return list[(i + d + list.length) % list.length]
++    }
++    list.forEach((t, i) => {
++      t.addEventListener('click', () => pick(t))
++      t.addEventListener('keydown', (e) => {
++        const k = e.key
++        const n = k === 'ArrowRight' || k === 'ArrowDown' ? step(1) : k === 'ArrowLeft' || k === 'ArrowUp' ? step(-1) : k === 'Home' ? list[0] : k === 'End' ? list[list.length - 1] : null
++        if (!n) return
++        e.preventDefault()
++        pick(n, true)
++      })
++      if (i === 0 && !list.some((o) => o.getAttribute('aria-selected') === 'true')) pick(t)
++    })
++    const ms = Number(box.dataset.wbAutoplay)
++    if (ms >= 1000 && !reducedMotion()) {
++      let paused = false
++      for (const [ev, v] of [['mouseenter', true], ['mouseleave', false], ['focusin', true], ['focusout', false]] as const) box.addEventListener(ev, () => (paused = v))
++      setInterval(() => !paused && !document.hidden && pick(step(1)), ms)
++    }
++  }
++}
++
++/* ---------- dismiss ---------- */
++function dismiss() {
++  const post = document.querySelector<HTMLElement>('[data-wb-root]')?.dataset.wbPost ?? ''
++  for (const el of $$('[data-wb-dismiss]')) {
++    const key = `wb-dismiss:${post}:${el.dataset.wbDismiss}`
++    const host = el.closest<HTMLElement>('section') ?? el
++    try {
++      if (sessionStorage.getItem(key)) host.hidden = true
++    } catch {
++      /* storage blocked */
++    }
++    el.querySelector('[data-wb-dismiss-btn]')?.addEventListener('click', () => {
++      host.hidden = true
++      try {
++        sessionStorage.setItem(key, '1')
++      } catch {
++        /* storage blocked */
++      }
++    })
++  }
++}
++
++/* ---------- form ---------- */
++function forms() {
++  const t0 = Date.now()
++  for (const f of $$<HTMLFormElement>('form[data-wb-form]')) {
++    if (!f.getAttribute('action')) continue
++    const status = f.querySelector<HTMLElement>('[data-wb-form-status]')
++    const say = (state: string, msg: string) => {
++      f.dataset.wbState = state
++      if (status) status.textContent = msg
++    }
++    // 422 wb_form_invalid names the rejected fields (data.fields): mark them and focus the first.
++    const mark = (fields?: Record<string, unknown>) => {
++      for (const el of f.querySelectorAll('[data-wb-invalid]')) {
++        el.removeAttribute('data-wb-invalid')
++        el.removeAttribute('aria-invalid')
++      }
++      let first: HTMLElement | null = null
++      for (const name of Object.keys(fields || {})) {
++        for (const el of f.querySelectorAll<HTMLElement>(`[name="${CSS.escape(name)}"]`)) {
++          el.setAttribute('aria-invalid', 'true')
++          el.setAttribute('data-wb-invalid', '')
++          first ??= el
++        }
++      }
++      first?.focus()
++    }
++    f.addEventListener('submit', async (e) => {
++      e.preventDefault()
++      if (f.dataset.wbState === 'sending') return
++      const t = f.querySelector<HTMLInputElement>('input[name=wb_t]')
++      if (t) t.value = String(Date.now() - t0)
++      say('sending', '')
++      mark()
++      try {
++        const r = await fetch(f.action, { method: 'POST', body: new URLSearchParams(new FormData(f) as unknown as Record<string, string>), headers: { Accept: 'application/json' }, credentials: 'same-origin' })
++        const j = (await r.json().catch(() => ({}))) as { ok?: boolean; message?: string; data?: { fields?: Record<string, unknown> } }
++        const ok = r.ok && j.ok !== false
++        say(ok ? 'sent' : 'error', j.message || (ok ? 'Thank you, your message was sent.' : 'Sorry, the message could not be sent.'))
++        if (!ok) mark(j.data?.fields)
++        if (ok) f.reset()
++      } catch {
++        say('error', 'Sorry, the message could not be sent.')
++      }
++    })
++  }
++}
++
++/* ---------- embed: html sections report their height ---------- */
++function embeds() {
++  const frames = $$<HTMLIFrameElement>('iframe[data-wb-embed]')
++  if (!frames.length) return
++  addEventListener('message', (e) => {
++    const d = e.data as { __wb?: unknown; h?: unknown }
++    if (!d || typeof d.__wb !== 'string' || typeof d.h !== 'number' || !isFinite(d.h)) return
++    const f = frames.find((x) => x.contentWindow === e.source && x.dataset.wbEmbed === d.__wb)
++    if (f) f.style.height = `${Math.min(Math.max(Math.ceil(d.h), 40), 20000)}px`
++  })
++}
++
++/* ---------- motion ---------- */
++const num = (v: string | undefined, def: number, lo: number, hi: number) => {
++  const n = Number(v)
++  return v === undefined || v === '' || !isFinite(n) ? def : Math.min(hi, Math.max(lo, n))
++}
++
++/** Motion settings from data-wb-* attributes (validated: unknown values fall back to the defaults). */
++function readMotion(el: HTMLElement): Motion {
++  const d = el.dataset
++  const entrance = (d.wbMotion ?? '') in FRAMES ? (d.wbMotion as EntranceId) : 'none'
++  return {
++    ...MOTION_DEFAULTS,
++    entrance,
++    duration: num(d.wbDur, MOTION_DEFAULTS.duration, 0, 10000),
++    delay: num(d.wbDelay, 0, 0, 10000),
++    easing: (d.wbEase ?? '') in EASING_CSS ? (d.wbEase as EasingId) : MOTION_DEFAULTS.easing,
++    repeat: d.wbRepeat !== undefined,
++    stagger: d.wbStagger !== undefined,
++    staggerDelay: num(d.wbStagger, MOTION_DEFAULTS.staggerDelay, 0, 2000),
++    parallax: num(d.wbParallax, 0, -100, 100),
++    parallaxTarget: d.wbParallaxOn === 'content' ? 'content' : 'bg',
++    scrollFade: d.wbScrollFade !== undefined,
++    scrollScale: d.wbScrollScale !== undefined,
++  }
++}
++
++function motion() {
++  const reduced = reducedMotion()
++  const targets = $$('[data-wb-motion]')
++  const reveal = (el: Element) => el.classList.add(IN)
++  // Element-level effects (an element with its own entrance), played on their own.
++  const own = targets.filter((el) => !('wbScope' in el.dataset))
++  const mine = new Set<Element>(own)
++  if (reduced) {
++    // No animation: everything shows at once.
++    targets.forEach(reveal)
++    return
++  }
++  for (const el of own) {
++    const m = readMotion(el)
++    const t: Track = { el, m, offset: 0 }
++    playOnView(el, [t], m.repeat, false)
++    reveal(el)
++  }
++  for (const root of $$('[data-wb-scope],[data-wb-parallax],[data-wb-scroll-fade],[data-wb-scroll-scale]')) {
++    const m = readMotion(root)
++    if (hasEntrance(m) && 'wbScope' in root.dataset) {
++      const items = sectionTargets(root, m, '[data-wb-grid]', mine)
++      if (items.length) playOnView(root, items, m.repeat, false)
++      reveal(root)
++    }
++    const section = root.parentElement
++    if (section && hasScrollFx(m)) scrollFx(section, root, m, '[data-wb-bg]')
++  }
++  // Anything left (e.g. an entrance on an element the design no longer has) is shown.
++  targets.forEach(reveal)
++}
++
++function init() {
++  for (const f of [menus, accordions, tabs, dismiss, forms, embeds, motion])
++    try {
++      f()
++    } catch (e) {
++      console.error('[web-builder]', e)
++    }
++}
++
++if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init)
++else init()
+diff --git a/src/builder/live/seed.ts b/src/builder/live/seed.ts
+new file mode 100644
+index 0000000..d0c7467
+--- /dev/null
++++ b/src/builder/live/seed.ts
+@@ -0,0 +1,9 @@
++// Deterministic ids for the fixture export (uid() uses Math.random): imported before any builder module.
++let x = 0x2f6b9e1d
++Math.random = () => {
++  x ^= x << 13
++  x ^= x >>> 17
++  x ^= x << 5
++  return (x >>> 0) / 0x100000000
++}
++export {}
+diff --git a/src/builder/live/site.css b/src/builder/live/site.css
+new file mode 100644
+index 0000000..619ca4a
+--- /dev/null
++++ b/src/builder/live/site.css
+@@ -0,0 +1,20 @@
++/*
++ * Stylesheet of published pages (one per builder release, served as a hashed immutable file).
++ * Utilities come from a scan of the files that draw sections only (no editor chrome); classes the
++ * renderer builds at run time are listed with @source inline. The build appends the width-range classes
++ * of the designs that switch on a JS width check (useNarrow breakpoints, see renderStatic).
++ */
++@import './page.css';
++@import 'tailwindcss' source(none);
++
++@source '../sections.tsx';
++@source '../Decor.tsx';
++@source '../CustomSection.tsx';
++@source '../EIcon.tsx';
++@source '../RichText.tsx';
++@source '../variants/*.tsx';
++@source './ui.tsx';
++@source './renderStatic.tsx';
++
++/* Per-device hiding (hideOnClass in sections.tsx). */
++@source inline('@max-[640px]:hidden! @min-[640px]:@max-[1024px]:hidden! @min-[1024px]:hidden!');
+diff --git a/src/builder/live/ui.tsx b/src/builder/live/ui.tsx
+new file mode 100644
+index 0000000..d731e21
+--- /dev/null
++++ b/src/builder/live/ui.tsx
+@@ -0,0 +1,57 @@
++import type { CSSProperties, ReactNode } from 'react'
++import { Menu, X } from 'lucide-react'
++import { cn } from '../ui'
++import { useLive } from './ctx'
++
++/**
++ * Disclosure menu of the published page: a native <details data-wb-menu> (works without JavaScript; the
++ * runtime adds Escape / outside-click / link-click closing). The panel is absolutely positioned against the
++ * nearest positioned ancestor (the header), so it overlays the content below instead of pushing it down.
++ */
++export function LiveMenu({ label = 'Menu', className, summaryClass, panelClass, panelStyle, icon, children }: { label?: string; className?: string; summaryClass?: string; panelClass?: string; panelStyle?: CSSProperties; icon?: ReactNode; children: ReactNode }) {
++  return (
++    <details data-wb-menu="" className={cn('group/m', className)}>
++      <summary aria-label={label} className={cn('cursor-pointer list-none [&::-webkit-details-marker]:hidden', summaryClass)}>
++        {icon ?? (
++          <>
++            <Menu size={21} aria-hidden className="group-open/m:hidden" />
++            <X size={21} aria-hidden className="hidden group-open/m:block" />
++          </>
++        )}
++      </summary>
++      <div className={panelClass} style={panelStyle}>
++        {children}
++      </div>
++    </details>
++  )
++}
++
++/** Inline CSS animation classes standing in for the editor's infinite motion loops (page.css). */
++export const LIVE_ANIM = { spin: 'wb-spin', float: 'wb-float', pulse: 'wb-pulse', bob: 'wb-bob', ping: 'wb-ping' } as const
++
++/**
++ * A real form on the published page: posts to this section's form endpoint (plain POST without JavaScript,
++ * fetch with the runtime), with the honeypot and timing fields and a live status line.
++ */
++export function LiveForm({ label, className, style, children }: { label?: string; className?: string; style?: CSSProperties; children: ReactNode }) {
++  const live = useLive()!
++  return (
++    <form data-wb-form="" method="post" action={live.formAction(live.sectionId)} aria-label={label} className={className} style={style}>
++      {children}
++      <div aria-hidden="true" className="sr-only">
++        <input type="text" name="wb_hp" tabIndex={-1} autoComplete="off" />
++      </div>
++      <input type="hidden" name="wb_t" defaultValue="" />
++      <p data-wb-form-status="" aria-live="polite" className="text-[14px] empty:hidden" />
++    </form>
++  )
++}
++
++/** Form control name on the published page (contract §3.5); unknown fields get none and are not sent. */
++export function fieldName(o: { type?: string; auto?: string; rows?: number }): string | undefined {
++  if (o.rows) return 'message'
++  if (o.auto === 'name') return 'name'
++  if (o.type === 'email' || o.auto === 'email') return 'email'
++  if (o.type === 'tel' || o.auto === 'tel') return 'phone'
++  return undefined
++}
+diff --git a/src/builder/motion-core.ts b/src/builder/motion-core.ts
+new file mode 100644
+index 0000000..11dfb84
+--- /dev/null
++++ b/src/builder/motion-core.ts
+@@ -0,0 +1,225 @@
++import type { EasingId, EntranceId, MotionSettings } from './types'
++
++/*
++ * DOM-only motion engine (WAAPI + scroll), shared by the editor (motion.ts) and the published page's
++ * runtime (live/runtime.ts). No React, no labels: everything here ships to visitors.
++ */
++
++export type Motion = Required<MotionSettings>
++
++export const MOTION_DEFAULTS: Motion = {
++  entrance: 'none',
++  duration: 700,
++  delay: 0,
++  easing: 'smooth',
++  repeat: false,
++  stagger: false,
++  staggerDelay: 90,
++  parallax: 0,
++  parallaxTarget: 'bg',
++  scrollFade: false,
++  scrollScale: false,
++  sticky: false,
++  hover: 'none',
++  hoverTarget: 'self',
++}
++
++export const EASING_CSS: Record<EasingId, string> = {
++  smooth: 'cubic-bezier(.22,1,.36,1)',
++  'ease-out': 'cubic-bezier(0,0,.2,1)',
++  'ease-in-out': 'cubic-bezier(.65,0,.35,1)',
++  ease: 'ease',
++  spring: 'cubic-bezier(.34,1.56,.64,1)',
++  linear: 'linear',
++}
++
++export const hasEntrance = (m: MotionSettings) => !!m.entrance && m.entrance !== 'none'
++export const hasScrollFx = (m: MotionSettings) => !!m.parallax || !!m.scrollFade || !!m.scrollScale
++
++/* ---------- Keyframes ---------- */
++const T0 = 'translate3d(0,0,0)'
++const move = (x: number, y: number): Keyframe[] => [
++  { opacity: 0, transform: `translate3d(${x}px,${y}px,0)` },
++  { opacity: 1, transform: T0 },
++]
++const slide = (x: number, y: number): Keyframe[] => [{ opacity: 0, transform: `translate3d(${x}px,${y}px,0)` }, { opacity: 1, offset: 0.35 }, { opacity: 1, transform: T0 }]
++
++export const FRAMES: Record<Exclude<EntranceId, 'none'>, Keyframe[]> = {
++  fade: [{ opacity: 0 }, { opacity: 1 }],
++  'fade-up': move(0, 40),
++  'fade-down': move(0, -40),
++  'fade-left': move(-48, 0),
++  'fade-right': move(48, 0),
++  'zoom-in': [
++    { opacity: 0, transform: 'scale(.86)' },
++    { opacity: 1, transform: 'scale(1)' },
++  ],
++  'zoom-out': [
++    { opacity: 0, transform: 'scale(1.14)' },
++    { opacity: 1, transform: 'scale(1)' },
++  ],
++  'slide-up': slide(0, 120),
++  'slide-left': slide(-140, 0),
++  'slide-right': slide(140, 0),
++  blur: [
++    { opacity: 0, filter: 'blur(14px)', transform: 'scale(1.03)' },
++    { opacity: 1, filter: 'blur(0px)', transform: 'scale(1)' },
++  ],
++  flip: [
++    { opacity: 0, transformOrigin: '50% 0%', transform: 'perspective(1200px) rotateX(-38deg) translate3d(0,24px,0)' },
++    { opacity: 1, transformOrigin: '50% 0%', transform: `perspective(1200px) rotateX(0deg) ${T0}` },
++  ],
++  bounce: [
++    { opacity: 0, transform: 'translate3d(0,64px,0)' },
++    { opacity: 1, transform: 'translate3d(0,-10px,0)', offset: 0.55 },
++    { transform: 'translate3d(0,4px,0)', offset: 0.78 },
++    { opacity: 1, transform: T0 },
++  ],
++}
++
++export const reducedMotion = () => typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
++
++export interface Track {
++  el: HTMLElement
++  m: Motion
++  /** Extra delay (stagger), ms. */
++  offset: number
++}
++
++/** Paused at its first frame (hidden) until played; leaves no styles behind when finished or cancelled. */
++export function arm(t: Track, reduced: boolean): Animation | null {
++  if (!hasEntrance(t.m) || typeof t.el.animate !== 'function') return null
++  const frames = reduced ? FRAMES.fade : FRAMES[t.m.entrance as Exclude<EntranceId, 'none'>]
++  if (!frames) return null
++  const a = t.el.animate(frames, {
++    duration: reduced ? Math.min(t.m.duration, 300) : t.m.duration,
++    delay: reduced ? Math.min(t.offset, 120) : t.m.delay + t.offset,
++    easing: EASING_CSS[t.m.easing] ?? 'ease',
++    fill: 'backwards',
++  })
++  a.pause()
++  return a
++}
++
++/* ---------- Targets ---------- */
++export const shown = (el: Element): el is HTMLElement => el instanceof HTMLElement && !(el instanceof HTMLStyleElement) && el.getClientRects().length > 0
++
++/** Content blocks for staggering: unwraps single-child wrappers and expands card grids (`grid` selector) into their cards. */
++export function blocks(root: Element, grid: string, depth = 0): HTMLElement[] {
++  let el = root
++  while (el.children.length === 1) el = el.children[0]
++  return Array.from(el.children)
++    .filter(shown)
++    .flatMap((c) => {
++      if (c.matches(grid)) return Array.from(c.children).filter(shown)
++      if (depth < 3 && c.querySelector(grid)) return blocks(c, grid, depth + 1)
++      return [c]
++    })
++}
++
++/** Section-level entrance targets: the content's blocks (stagger) or direct children, minus elements with their own motion. */
++export function sectionTargets(root: HTMLElement, m: Motion, grid: string, mine: Set<Element>): Track[] {
++  if (!hasEntrance(m)) return []
++  const list = (m.stagger ? blocks(root, grid) : Array.from(root.children).filter(shown)).filter((el) => !mine.has(el)).slice(0, 48)
++  return list.map((el, i) => ({ el, m, offset: m.stagger ? Math.min(i * m.staggerDelay, 1500) : 0 }))
++}
++
++/**
++ * Plays armed tracks when `trigger` scrolls into view; with `repeat`, re-arms them when it leaves.
++ * Returns a cleanup.
++ */
++export function playOnView(trigger: Element, items: Track[], repeat: boolean, reduced: boolean, onPlay?: () => void): () => void {
++  let anims = items.map((t) => arm(t, reduced))
++  let played = false
++  const io = new IntersectionObserver(
++    (es) => {
++      if (!played && es.some((e) => e.isIntersecting)) {
++        played = true
++        onPlay?.()
++        anims.forEach((a) => a?.play())
++      }
++    },
++    { rootMargin: '0px 0px -12% 0px' },
++  )
++  io.observe(trigger)
++  const exit = repeat
++    ? new IntersectionObserver((es) => {
++        if (played && es.every((e) => !e.isIntersecting)) {
++          played = false
++          anims.forEach((a) => a?.cancel())
++          anims = items.map((t) => arm(t, reduced))
++        }
++      })
++    : null
++  exit?.observe(trigger)
++  return () => {
++    io.disconnect()
++    exit?.disconnect()
++    anims.forEach((a) => a?.cancel())
++  }
++}
++
++/* ---------- Scroll effects ---------- */
++function scrollParent(el: HTMLElement): HTMLElement | null {
++  for (let p = el.parentElement; p; p = p.parentElement) {
++    const o = getComputedStyle(p).overflowY
++    if (o === 'auto' || o === 'scroll') return p
++  }
++  return null
++}
++
++const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v))
++const smooth = (a: number, b: number, v: number) => {
++  const t = clamp((v - a) / (b - a), 0, 1)
++  return t * t * (3 - 2 * t)
++}
++
++/** Parallax / scroll fade / scroll scale of one section; `bg` selects the section's background layer box. */
++export function scrollFx(section: HTMLElement, content: HTMLElement, m: Motion, bg: string) {
++  const scroller = scrollParent(section)
++  const layers = m.parallax && m.parallaxTarget === 'bg' ? Array.from(section.querySelector(`:scope > ${bg}`)?.children ?? []).filter((c): c is HTMLElement => c instanceof HTMLElement) : []
++  const moveContent = !!m.parallax && m.parallaxTarget === 'content'
++  const prevTransition = content.style.transitionProperty
++  if (m.scrollFade) content.style.transitionProperty = 'none'
++  let frame = 0
++  const update = () => {
++    frame = 0
++    const vp = scroller ? scroller.getBoundingClientRect() : { top: 0, height: window.innerHeight }
++    const r = section.getBoundingClientRect()
++    // -1: leaving at the top, 0: centered, 1: entering at the bottom.
++    const p = clamp((r.top + r.height / 2 - (vp.top + vp.height / 2)) / (vp.height / 2 + r.height / 2), -1, 1)
++    if (layers.length) {
++      const amp = Math.abs(m.parallax) * 1.2
++      const y = -p * amp * Math.sign(m.parallax)
++      const sc = 1 + (2 * amp) / Math.max(r.height, 1) + 0.01
++      for (const l of layers) {
++        l.style.translate = `0 ${y.toFixed(1)}px`
++        l.style.scale = sc.toFixed(4)
++      }
++    }
++    const ty = moveContent ? p * m.parallax * 0.8 : 0
++    content.style.translate = ty ? `0 ${ty.toFixed(1)}px` : ''
++    content.style.scale = m.scrollScale ? (1 - smooth(0.3, 1, Math.abs(p)) * 0.12).toFixed(4) : ''
++    content.style.opacity = m.scrollFade ? (1 - smooth(0.35, 0.95, Math.abs(p)) * 0.9).toFixed(3) : ''
++  }
++  const onScroll = () => {
++    if (!frame) frame = requestAnimationFrame(update)
++  }
++  update()
++  const target: HTMLElement | Window = scroller ?? window
++  target.addEventListener('scroll', onScroll, { passive: true })
++  window.addEventListener('resize', onScroll)
++  return () => {
++    cancelAnimationFrame(frame)
++    target.removeEventListener('scroll', onScroll)
++    window.removeEventListener('resize', onScroll)
++    for (const l of layers) {
++      l.style.translate = ''
++      l.style.scale = ''
++    }
++    content.style.translate = ''
++    content.style.scale = ''
++    content.style.opacity = ''
++    content.style.transitionProperty = prevTransition
++  }
++}
+diff --git a/src/builder/motion.ts b/src/builder/motion.ts
+index 8e6181b..c53ea6d 100644
+--- a/src/builder/motion.ts
++++ b/src/builder/motion.ts
+@@ -1,7 +1,10 @@
+ import { useLayoutEffect, useRef, type RefObject } from 'react'
+ import type { EasingId, ElStyle, EntranceId, HoverId, MotionSettings, Section, SectionStyle } from './types'
++import { EASING_CSS, MOTION_DEFAULTS, arm, hasEntrance, hasScrollFx, playOnView, reducedMotion, scrollFx, sectionTargets, type Motion } from './motion-core'
+ import './motion.css'
+ 
++export { MOTION_DEFAULTS, hasEntrance, hasScrollFx, reducedMotion, type Motion }
++
+ /* ---------- Presets ---------- */
+ export const ENTRANCES: { id: EntranceId; label: string; heavy?: boolean }[] = [
+   { id: 'none', label: 'Yok' },
+@@ -21,12 +24,12 @@ export const ENTRANCES: { id: EntranceId; label: string; heavy?: boolean }[] = [
+ ]
+ 
+ export const EASINGS: { id: EasingId; label: string; css: string }[] = [
+-  { id: 'smooth', label: 'Yumuşak', css: 'cubic-bezier(.22,1,.36,1)' },
+-  { id: 'ease-out', label: 'Yavaşlayarak', css: 'cubic-bezier(0,0,.2,1)' },
+-  { id: 'ease-in-out', label: 'Hızlan · yavaşla', css: 'cubic-bezier(.65,0,.35,1)' },
+-  { id: 'ease', label: 'Standart', css: 'ease' },
+-  { id: 'spring', label: 'Esnek (taşma)', css: 'cubic-bezier(.34,1.56,.64,1)' },
+-  { id: 'linear', label: 'Doğrusal', css: 'linear' },
++  { id: 'smooth', label: 'Yumuşak', css: EASING_CSS.smooth },
++  { id: 'ease-out', label: 'Yavaşlayarak', css: EASING_CSS['ease-out'] },
++  { id: 'ease-in-out', label: 'Hızlan · yavaşla', css: EASING_CSS['ease-in-out'] },
++  { id: 'ease', label: 'Standart', css: EASING_CSS.ease },
++  { id: 'spring', label: 'Esnek (taşma)', css: EASING_CSS.spring },
++  { id: 'linear', label: 'Doğrusal', css: EASING_CSS.linear },
+ ]
+ 
+ export const HOVERS: { id: HoverId; label: string }[] = [
+@@ -36,25 +39,6 @@ export const HOVERS: { id: HoverId; label: string }[] = [
+   { id: 'scale', label: 'Büyüt' },
+ ]
+ 
+-export type Motion = Required<MotionSettings>
+-
+-export const MOTION_DEFAULTS: Motion = {
+-  entrance: 'none',
+-  duration: 700,
+-  delay: 0,
+-  easing: 'smooth',
+-  repeat: false,
+-  stagger: false,
+-  staggerDelay: 90,
+-  parallax: 0,
+-  parallaxTarget: 'bg',
+-  scrollFade: false,
+-  scrollScale: false,
+-  sticky: false,
+-  hover: 'none',
+-  hoverTarget: 'self',
+-}
+-
+ /** Old `style.anim` values. */
+ const LEGACY: Record<string, EntranceId> = { fade: 'fade', up: 'fade-up', zoom: 'zoom-in', left: 'fade-left' }
+ export const legacyEntrance = (anim?: string): EntranceId | undefined => (anim ? LEGACY[anim] : undefined)
+@@ -72,8 +56,6 @@ export function motionPatch(s: Section, patch: MotionSettings): Partial<SectionS
+   return { motion: { ...(legacy ? { entrance: legacy } : {}), ...s.style.motion, ...patch }, anim: undefined }
+ }
+ 
+-export const hasEntrance = (m: MotionSettings) => !!m.entrance && m.entrance !== 'none'
+-export const hasScrollFx = (m: MotionSettings) => !!m.parallax || !!m.scrollFade || !!m.scrollScale
+ export const isHeavy = (m: MotionSettings) => !!ENTRANCES.find((e) => e.id === m.entrance)?.heavy || !!m.parallax || !!m.sticky
+ export const entranceLabel = (id: EntranceId) => ENTRANCES.find((e) => e.id === id)?.label ?? id
+ 
+@@ -97,92 +79,11 @@ export function motionAttrs(s: Section, live: boolean): { 'data-msticky'?: strin
+   }
+ }
+ 
+-/* ---------- Keyframes ---------- */
+-const T0 = 'translate3d(0,0,0)'
+-const move = (x: number, y: number): Keyframe[] => [
+-  { opacity: 0, transform: `translate3d(${x}px,${y}px,0)` },
+-  { opacity: 1, transform: T0 },
+-]
+-const slide = (x: number, y: number): Keyframe[] => [{ opacity: 0, transform: `translate3d(${x}px,${y}px,0)` }, { opacity: 1, offset: 0.35 }, { opacity: 1, transform: T0 }]
+-
+-const FRAMES: Record<Exclude<EntranceId, 'none'>, Keyframe[]> = {
+-  fade: [{ opacity: 0 }, { opacity: 1 }],
+-  'fade-up': move(0, 40),
+-  'fade-down': move(0, -40),
+-  'fade-left': move(-48, 0),
+-  'fade-right': move(48, 0),
+-  'zoom-in': [
+-    { opacity: 0, transform: 'scale(.86)' },
+-    { opacity: 1, transform: 'scale(1)' },
+-  ],
+-  'zoom-out': [
+-    { opacity: 0, transform: 'scale(1.14)' },
+-    { opacity: 1, transform: 'scale(1)' },
+-  ],
+-  'slide-up': slide(0, 120),
+-  'slide-left': slide(-140, 0),
+-  'slide-right': slide(140, 0),
+-  blur: [
+-    { opacity: 0, filter: 'blur(14px)', transform: 'scale(1.03)' },
+-    { opacity: 1, filter: 'blur(0px)', transform: 'scale(1)' },
+-  ],
+-  flip: [
+-    { opacity: 0, transformOrigin: '50% 0%', transform: 'perspective(1200px) rotateX(-38deg) translate3d(0,24px,0)' },
+-    { opacity: 1, transformOrigin: '50% 0%', transform: `perspective(1200px) rotateX(0deg) ${T0}` },
+-  ],
+-  bounce: [
+-    { opacity: 0, transform: 'translate3d(0,64px,0)' },
+-    { opacity: 1, transform: 'translate3d(0,-10px,0)', offset: 0.55 },
+-    { transform: 'translate3d(0,4px,0)', offset: 0.78 },
+-    { opacity: 1, transform: T0 },
+-  ],
+-}
+-
+-export const reducedMotion = () => typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+-
+-interface Track {
+-  el: HTMLElement
+-  m: Motion
+-  /** Extra delay (stagger), ms. */
+-  offset: number
+-}
+-
+-/** Paused at its first frame (hidden) until played; leaves no styles behind when finished or cancelled. */
+-function arm(t: Track, reduced: boolean): Animation | null {
+-  if (!hasEntrance(t.m) || typeof t.el.animate !== 'function') return null
+-  const frames = reduced ? FRAMES.fade : FRAMES[t.m.entrance as Exclude<EntranceId, 'none'>]
+-  const a = t.el.animate(frames, {
+-    duration: reduced ? Math.min(t.m.duration, 300) : t.m.duration,
+-    delay: reduced ? Math.min(t.offset, 120) : t.m.delay + t.offset,
+-    easing: EASINGS.find((e) => e.id === t.m.easing)?.css ?? 'ease',
+-    fill: 'backwards',
+-  })
+-  a.pause()
+-  return a
+-}
+-
+ /* ---------- Targets ---------- */
+-const shown = (el: Element): el is HTMLElement => el instanceof HTMLElement && !(el instanceof HTMLStyleElement) && el.getClientRects().length > 0
+-
+-/** Content blocks for staggering: unwraps single-child wrappers and expands card grids into their cards. */
+-function blocks(root: Element, depth = 0): HTMLElement[] {
+-  let el = root
+-  while (el.children.length === 1) el = el.children[0]
+-  return Array.from(el.children)
+-    .filter(shown)
+-    .flatMap((c) => {
+-      if (c.matches('[data-grid]')) return Array.from(c.children).filter(shown)
+-      if (depth < 3 && c.querySelector('[data-grid]')) return blocks(c, depth + 1)
+-      return [c]
+-    })
+-}
+-
+ function tracks(root: HTMLElement, sectionId: string, m: Motion, els: [string, Motion][]) {
+   const own = els.map(([key, em]) => ({ el: root.querySelector<HTMLElement>(`[data-el="${sectionId}:${CSS.escape(key)}"]`), m: em })).filter((t): t is { el: HTMLElement; m: Motion } => !!t.el)
+-  const mine = new Set(own.map((t) => t.el))
+-  const list = hasEntrance(m) ? (m.stagger ? blocks(root) : Array.from(root.children).filter(shown)).filter((el) => !mine.has(el)).slice(0, 48) : []
+   return {
+-    section: list.map((el, i) => ({ el, m, offset: m.stagger ? Math.min(i * m.staggerDelay, 1500) : 0 })),
++    section: sectionTargets(root, m, '[data-grid]', new Set(own.map((t) => t.el))),
+     own: own.map((t) => ({ ...t, offset: 0 })),
+   }
+ }
+@@ -201,70 +102,6 @@ export function replayMotion(sectionId: string, el?: string) {
+   window.setTimeout(fire, 450)
+ }
+ 
+-/* ---------- Scroll effects ---------- */
+-function scrollParent(el: HTMLElement): HTMLElement | null {
+-  for (let p = el.parentElement; p; p = p.parentElement) {
+-    const o = getComputedStyle(p).overflowY
+-    if (o === 'auto' || o === 'scroll') return p
+-  }
+-  return null
+-}
+-
+-const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v))
+-const smooth = (a: number, b: number, v: number) => {
+-  const t = clamp((v - a) / (b - a), 0, 1)
+-  return t * t * (3 - 2 * t)
+-}
+-
+-function scrollFx(section: HTMLElement, content: HTMLElement, m: Motion) {
+-  const scroller = scrollParent(section)
+-  const layers = m.parallax && m.parallaxTarget === 'bg' ? Array.from(section.querySelector(':scope > [data-mbg]')?.children ?? []).filter((c): c is HTMLElement => c instanceof HTMLElement) : []
+-  const moveContent = !!m.parallax && m.parallaxTarget === 'content'
+-  const prevTransition = content.style.transitionProperty
+-  if (m.scrollFade) content.style.transitionProperty = 'none'
+-  let frame = 0
+-  const update = () => {
+-    frame = 0
+-    const vp = scroller ? scroller.getBoundingClientRect() : { top: 0, height: window.innerHeight }
+-    const r = section.getBoundingClientRect()
+-    // -1: leaving at the top, 0: centered, 1: entering at the bottom.
+-    const p = clamp((r.top + r.height / 2 - (vp.top + vp.height / 2)) / (vp.height / 2 + r.height / 2), -1, 1)
+-    if (layers.length) {
+-      const amp = Math.abs(m.parallax) * 1.2
+-      const y = -p * amp * Math.sign(m.parallax)
+-      const sc = 1 + (2 * amp) / Math.max(r.height, 1) + 0.01
+-      for (const l of layers) {
+-        l.style.translate = `0 ${y.toFixed(1)}px`
+-        l.style.scale = sc.toFixed(4)
+-      }
+-    }
+-    const ty = moveContent ? p * m.parallax * 0.8 : 0
+-    content.style.translate = ty ? `0 ${ty.toFixed(1)}px` : ''
+-    content.style.scale = m.scrollScale ? (1 - smooth(0.3, 1, Math.abs(p)) * 0.12).toFixed(4) : ''
+-    content.style.opacity = m.scrollFade ? (1 - smooth(0.35, 0.95, Math.abs(p)) * 0.9).toFixed(3) : ''
+-  }
+-  const onScroll = () => {
+-    if (!frame) frame = requestAnimationFrame(update)
+-  }
+-  update()
+-  const target: HTMLElement | Window = scroller ?? window
+-  target.addEventListener('scroll', onScroll, { passive: true })
+-  window.addEventListener('resize', onScroll)
+-  return () => {
+-    cancelAnimationFrame(frame)
+-    target.removeEventListener('scroll', onScroll)
+-    window.removeEventListener('resize', onScroll)
+-    for (const l of layers) {
+-      l.style.translate = ''
+-      l.style.scale = ''
+-    }
+-    content.style.translate = ''
+-    content.style.scale = ''
+-    content.style.opacity = ''
+-    content.style.transitionProperty = prevTransition
+-  }
+-}
+-
+ /* ---------- Hook used by the canvas frame ---------- */
+ /**
+  * Entrance animations and scroll effects for one section. `live` (preview / published page) plays them on
+@@ -292,36 +129,8 @@ export function useSectionMotion(ref: RefObject<HTMLElement | null>, s: Section,
+     if (live) {
+       const { section: list, own } = tracks(root, s.id, m, els)
+       const groups = [...(list.length ? [{ trigger: root, items: list, repeat: m.repeat }] : []), ...own.map((t) => ({ trigger: t.el, items: [t], repeat: t.m.repeat }))]
+-      for (const g of groups) {
+-        let anims = g.items.map((t) => arm(t, reduced))
+-        let played = false
+-        const enter = new IntersectionObserver(
+-          (entries) => {
+-            if (!played && entries.some((e) => e.isIntersecting)) {
+-              played = true
+-              anims.forEach((a) => a?.play())
+-            }
+-          },
+-          { rootMargin: '0px 0px -12% 0px' },
+-        )
+-        enter.observe(g.trigger)
+-        const exit = g.repeat
+-          ? new IntersectionObserver((entries) => {
+-              if (played && entries.every((e) => !e.isIntersecting)) {
+-                played = false
+-                anims.forEach((a) => a?.cancel())
+-                anims = g.items.map((t) => arm(t, reduced))
+-              }
+-            })
+-          : null
+-        exit?.observe(g.trigger)
+-        cleanups.push(() => {
+-          enter.disconnect()
+-          exit?.disconnect()
+-          anims.forEach((a) => a?.cancel())
+-        })
+-      }
+-      if (!reduced && hasScrollFx(m)) cleanups.push(scrollFx(section, root, m))
++      for (const g of groups) cleanups.push(playOnView(g.trigger, g.items, g.repeat, reduced))
++      if (!reduced && hasScrollFx(m)) cleanups.push(scrollFx(section, root, m, '[data-mbg]'))
+     }
+ 
+     const onReplay = (e: Event) => {
+diff --git a/src/builder/sections.tsx b/src/builder/sections.tsx
+index 965e716..aaad058 100644
+--- a/src/builder/sections.tsx
++++ b/src/builder/sections.tsx
+@@ -14,6 +14,8 @@ import { EIcon } from './EIcon'
+ import { FloatingRichToolbar, richKind, richPaste } from './RichText'
+ import { isRich, sanitizeRich, toPlain, toStored } from './rich'
+ import { withVariants } from './variants/render'
++import { liveHref, useLive } from './live/ctx'
++import { LIVE_ANIM, LiveForm, LiveMenu } from './live/ui'
+ 
+ const PLACEHOLDER = 'Yazı ekle'
+ 
+@@ -47,6 +49,7 @@ export function E({
+   rich?: boolean
+ }) {
+   const b = useB()
++  const live = useLive()
+   const value = getValue(s, el)
+   const lists = rich && kind === 'text' && !!multiline
+   const html = useMemo(() => (isRich(value) ? sanitizeRich(value, { lists }) : null), [value, lists])
+@@ -67,6 +70,8 @@ export function E({
+   }, [editing])
+ 
+   if (!value && b.preview) return null
++  // Deleted elements are never drawn on the published page (hidden ones get `hidden`, see renderStatic).
++  if (live && s.els?.[el]?.removed) return null
+ 
+   const finish = (commit: boolean) => {
+     if (done.current) return
+@@ -94,6 +99,7 @@ export function E({
+         // Vertical margin/padding and width/height need a box on inline elements.
+         ...((s.els?.[el]?.margin || s.els?.[el]?.padding || s.els?.[el]?.mt !== undefined || s.els?.[el]?.mb !== undefined || s.els?.[el]?.width !== undefined || s.els?.[el]?.height !== undefined || s.els?.[el]?.maxWidth !== undefined) && !/\b(block|flex|inline-flex|inline-block)\b/.test(className ?? '') ? { display: 'inline-block' } : {}),
+       },
++      ...(live && as === 'a' ? { href: liveHref(getHref(s, el)) } : {}),
+       'data-label': label,
+       'data-el': `${s.id}:${el}`,
+       'data-selected': selected || undefined,
+@@ -163,11 +169,13 @@ export function TintImg({ src, es, alt = '', className, style }: { src: string;
+ 
+ export function EImage({ s, el = 'image', className, children }: { s: Section; el?: string; className?: string; children?: ReactNode }) {
+   const b = useB()
++  const live = useLive()
+   const raw = getValue(s, el)
+   const url = useTintedSrc(raw, s.els?.[el])
+   const selected = b.selection?.sectionId === s.id && b.selection.el === el
+   const linked = b.activeField?.sectionId === s.id && b.activeField.el === el
+   const es = s.els?.[el]
++  if (live && es?.removed) return null
+   return (
+     <div
+       className={cn('ed overflow-visible', className)}
+@@ -268,6 +276,7 @@ function Logo({ s }: { s: Section }) {
+ 
+ /* ---------- Section renderers ---------- */
+ function Nav({ s }: { s: Section }) {
++  const live = useLive()
+   return (
+     <div className="flex h-[68px] items-center">
+       <W className="flex items-center justify-between gap-6">
+@@ -282,7 +291,24 @@ function Nav({ s }: { s: Section }) {
+             ))}
+           </nav>
+           <E s={s} el="primary" kind="button" as="a" hint="a" className="hidden h-10 items-center px-4 text-[14px] font-semibold @md:inline-flex" style={primaryStyle} />
+-          <Menu size={21} className="@4xl:hidden" />
++          {live ? (
++            <LiveMenu className="@4xl:hidden" summaryClass="grid size-10 place-items-center" panelClass="absolute inset-x-0 top-full z-50 shadow-[0_30px_40px_-30px_rgba(0,0,0,.35)]" panelStyle={{ background: 'var(--bg)', color: 'var(--fg)' }}>
++              <div className="px-6 pb-6 pt-2">
++                <nav aria-label="Menu" className="flex flex-col text-[16px] font-medium">
++                  {s.items.map((i) => (
++                    <E key={i.id} s={s} el={`items.${i.id}.title`} kind="link" as="a" hint="a" className="block border-b py-3" style={{ borderColor: 'var(--line)' }} />
++                  ))}
++                </nav>
++                {s.content.primary && (
++                  <div className="mt-5 flex">
++                    <E s={s} el="primary" kind="button" as="a" hint="a" className="flex h-11 flex-1 items-center justify-center px-5 text-[14.5px] font-semibold" style={primaryStyle} />
++                  </div>
++                )}
++              </div>
++            </LiveMenu>
++          ) : (
++            <Menu size={21} className="@4xl:hidden" />
++          )}
+         </div>
+       </W>
+     </div>
+@@ -399,6 +425,26 @@ function TerminalView({ s }: { s: Section }) {
+ 
+ /** Custom HTML in a sandboxed iframe that reports its own height. */
+ export function HtmlEmbed({ s, el = 'html' }: { s: Section; el?: string }) {
++  const live = useLive()
++  if (live) return <LiveEmbed s={s} el={el} />
++  return <EditorEmbed s={s} el={el} />
++}
++
++/**
++ * Published html section: sandboxed srcdoc iframe (no Google Fonts, no same-origin) that reports its
++ * height to the page runtime as {__wb: id, h}.
++ */
++function LiveEmbed({ s, el }: { s: Section; el: string }) {
++  const id = `${s.id}-${el.replace(/[^A-Za-z0-9_-]/g, '-')}`
++  const doc = `<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:transparent;font-family:Inter,system-ui,sans-serif}</style></head><body>${s.content[el] ?? ''}<script>const post=()=>parent.postMessage({__wb:${JSON.stringify(id)},h:document.documentElement.scrollHeight},'*');new ResizeObserver(post).observe(document.documentElement);addEventListener('load',post);post();</script></body></html>`
++  return (
++    <div className="ed relative block" data-el={`${s.id}:${el}`} style={{ borderRadius: 12 }}>
++      <iframe title="Custom HTML" sandbox="allow-scripts" srcDoc={doc} data-wb-embed={id} loading="lazy" className="block w-full border-0" style={{ height: 240 }} />
++    </div>
++  )
++}
++
++function EditorEmbed({ s, el }: { s: Section; el: string }) {
+   const b = useB()
+   const id = useId()
+   const [h, setH] = useState(240)
+@@ -437,6 +483,12 @@ export function HtmlEmbed({ s, el = 'html' }: { s: Section; el?: string }) {
+ }
+ 
+ function FloatCard({ className, delay = 0, still, children }: { className: string; delay?: number; still?: boolean; children: ReactNode }) {
++  if (useLive())
++    return (
++      <div className={cn('absolute hidden rounded-[10px] bg-white px-4 py-3 text-[#121418] shadow-[0_18px_40px_-12px_rgba(0,0,0,.45)] @3xl:block', !still && LIVE_ANIM.bob, className)} style={still ? undefined : { animationDelay: `${delay}s` }}>
++        {children}
++      </div>
++    )
+   return (
+     <motion.div
+       animate={still ? { y: 0 } : { y: [0, -6, 0] }}
+@@ -532,12 +584,13 @@ function cardStyle(g: GridSettings): CSSProperties {
+ }
+ 
+ /** Selectable card box of a list item: clicking its padding / background selects "items.<id>.card". */
+-function ECard({ s, id, className, style, children }: { s: Section; id: string; className?: string; style?: CSSProperties; children: ReactNode }) {
++function ECard({ s, id, className, style, children, as: Tag = 'div', attrs }: { s: Section; id: string; className?: string; style?: CSSProperties; children: ReactNode; as?: 'div' | 'details'; attrs?: Record<string, unknown> }) {
+   const b = useB()
+   const el = `items.${id}.card`
+   const selected = b.selection?.sectionId === s.id && b.selection.el === el
+   return (
+-    <div
++    <Tag
++      {...attrs}
+       className={cn('ed edb', className)}
+       style={{ ...style, ...cardCss(s.els?.[el]) }}
+       data-el={`${s.id}:${el}`}
+@@ -550,7 +603,7 @@ function ECard({ s, id, className, style, children }: { s: Section; id: string;
+       }}
+     >
+       {children}
+-    </div>
++    </Tag>
+   )
+ }
+ 
+@@ -661,7 +714,38 @@ function Quote({ s }: { s: Section }) {
+   )
+ }
+ 
++/** Published FAQ: every answer in the HTML, native <details> (one open at a time with the runtime). */
++function LiveFaq({ s }: { s: Section }) {
++  return (
++    <div style={secPad(s)}>
++      <W className="grid gap-12 @4xl:grid-cols-[.8fr_1.2fr]">
++        <Head s={s} />
++        <div className="border-t" data-wb-acc-single="" style={{ borderColor: 'var(--line)' }}>
++          {s.items.map((i, n) => (
++            <ECard key={i.id} s={s} id={i.id} as="details" attrs={{ 'data-wb-acc': '', open: n === 0 || undefined }} className="group/q border-b" style={{ borderColor: 'var(--line)', paddingBlock: getGrid(s).gapY / 2 }}>
++              <summary className="flex cursor-pointer list-none items-start justify-between gap-6 [&::-webkit-details-marker]:hidden">
++                <E s={s} el={`items.${i.id}.title`} kind="heading" as="h3" hint="h3" className="text-[17px] font-semibold" />
++                <span aria-hidden className="grid size-7 shrink-0 place-items-center rounded-full border" style={{ borderColor: 'var(--line)' }}>
++                  <ChevronDown size={15} className="transition-transform duration-300 group-open/q:rotate-180" />
++                </span>
++              </summary>
++              <div className="pt-3 pr-12">
++                <E s={s} el={`items.${i.id}.text`} kind="text" as="p" hint="p" multiline className="block text-[15px] leading-[1.65]" style={{ color: 'var(--muted)' }} />
++              </div>
++            </ECard>
++          ))}
++        </div>
++      </W>
++    </div>
++  )
++}
++
+ function Faq({ s }: { s: Section }) {
++  if (useLive()) return <LiveFaq s={s} />
++  return <EditorFaq s={s} />
++}
++
++function EditorFaq({ s }: { s: Section }) {
+   const [open, setOpen] = useState<string | null>(s.items[0]?.id ?? null)
+   return (
+     <div style={secPad(s)}>
+@@ -777,20 +861,30 @@ function Form({ s }: { s: Section }) {
+   const field = 'h-12 w-full border bg-transparent px-4 text-[15px] outline-none transition-colors focus:border-[var(--accent)]'
+   const fs: CSSProperties = { borderColor: 'var(--line)', borderRadius: 'var(--r-btn)', background: 'var(--card)' }
+   const { preview } = useB()
++  const live = useLive()
++  const fields = (
++    <>
++      <div className="grid gap-3 @md:grid-cols-2">
++        <input disabled={!preview} name={live ? 'name' : undefined} aria-label={live ? 'Name' : undefined} autoComplete={live ? 'name' : undefined} placeholder="Adınız" className={field} style={fs} />
++        <input disabled={!preview} name={live ? 'email' : undefined} type={live ? 'email' : undefined} aria-label={live ? 'Email' : undefined} autoComplete={live ? 'email' : undefined} placeholder="E-posta" className={field} style={fs} />
++      </div>
++      <textarea disabled={!preview} name={live ? 'message' : undefined} aria-label={live ? 'Message' : undefined} placeholder="Mesajınız" rows={5} className={cn(field, 'h-auto resize-none py-3')} style={{ ...fs, borderRadius: 'min(var(--r-card), 18px)' }} />
++      <div>
++        <E s={s} el="primary" kind="button" as="button" hint="button" className={cn(btnBase, 'mt-2')} style={primaryStyle} />
++      </div>
++    </>
++  )
+   return (
+     <div style={secPad(s)}>
+       <W className="grid gap-12 @4xl:grid-cols-2 @4xl:gap-20">
+         <Head s={s} />
+-        <form className="grid gap-3" onSubmit={(e) => e.preventDefault()}>
+-          <div className="grid gap-3 @md:grid-cols-2">
+-            <input disabled={!preview} placeholder="Adınız" className={field} style={fs} />
+-            <input disabled={!preview} placeholder="E-posta" className={field} style={fs} />
+-          </div>
+-          <textarea disabled={!preview} placeholder="Mesajınız" rows={5} className={cn(field, 'h-auto resize-none py-3')} style={{ ...fs, borderRadius: 'min(var(--r-card), 18px)' }} />
+-          <div>
+-            <E s={s} el="primary" kind="button" as="button" hint="button" className={cn(btnBase, 'mt-2')} style={primaryStyle} />
+-          </div>
+-        </form>
++        {live ? (
++          <LiveForm className="grid gap-3">{fields}</LiveForm>
++        ) : (
++          <form className="grid gap-3" onSubmit={(e) => e.preventDefault()}>
++            {fields}
++          </form>
++        )}
+       </W>
+     </div>
+   )
+@@ -1051,6 +1145,14 @@ export function BoxBars({ v, outside }: { v: { t: number; r: number; b: number;
+ const JUSTIFY = { start: 'flex-start', center: 'center', end: 'flex-end', 'space-between': 'space-between', 'space-around': 'space-around', 'space-evenly': 'space-evenly' } as const
+ const ALIGN = { stretch: 'stretch', start: 'flex-start', center: 'center', end: 'flex-end' } as const
+ 
++/**
++ * Container-query classes for per-device hiding on the published page (mobile < 640px, tablet 640–1023px,
++ * desktop ≥ 1024px, measured on the page container). `!` beats inline display styles.
++ */
++export function hideOnClass(on: Section['style']['hideOn']): string {
++  return cn(on.includes('mobile') && '@max-[640px]:hidden!', on.includes('tablet') && '@min-[640px]:@max-[1024px]:hidden!', on.includes('desktop') && '@min-[1024px]:hidden!')
++}
++
+ /** Section-level frame styles for containers (margin, border, radius, shadow…). */
+ export function containerFrameStyle(s: Section): CSSProperties {
+   const bx = getBox(s)
+@@ -1202,10 +1304,12 @@ function Layout({ s }: { s: Section }) {
+ /** A Flexbox / Grid container inside a layout cell. Same data and inspector as a top-level layout section. */
+ function NestedLayout({ parent, sub, fill }: { parent: Section; sub: Section; fill: boolean }) {
+   const b = useB()
++  const live = useLive()
+   const depth = useContext(NestDepth) + 1
+   const selected = b.selection?.sectionId === sub.id
+   const sectionOnly = selected && !b.selection?.el
+-  const hiddenHere = sub.hidden || sub.style.hideOn.includes(b.device)
++  // The published page has no device: per-device hiding becomes container-query classes.
++  const hiddenHere = sub.hidden || (!live && sub.style.hideOn.includes(b.device))
+   if (b.preview && hiddenHere) return null
+   // Inherits the surrounding colors unless it has its own palette or background.
+   const own = !!sub.style.bg || sub.style.palette !== parent.style.palette
+@@ -1213,8 +1317,8 @@ function NestedLayout({ parent, sub, fill }: { parent: Section; sub: Section; fi
+   return (
+     <NestDepth.Provider value={depth}>
+       <div
+-        id={sub.style.cssId || undefined}
+-        className={cn('nf', !b.preview && hiddenHere && 'opacity-40')}
++        id={live ? sub.style.cssId || sub.id : sub.style.cssId || undefined}
++        className={cn('nf', !b.preview && hiddenHere && 'opacity-40', live && hideOnClass(sub.style.hideOn))}
+         data-section={sub.id}
+         data-selected={selected || undefined}
+         data-hint={(b.hoverSection === sub.id && !selected) || undefined}
+@@ -1230,7 +1334,7 @@ function NestedLayout({ parent, sub, fill }: { parent: Section; sub: Section; fi
+           b.select({ sectionId: sub.id })
+         }}
+       >
+-        {sub.style.css && <style>{sub.style.css.replace(/\bselector\b/g, `[data-section="${sub.id}"]`)}</style>}
++        {sub.style.css && !live && <style>{sub.style.css.replace(/\bselector\b/g, `[data-section="${sub.id}"]`)}</style>}
+         {sub.bg && <SectionBackground s={sub} />}
+         <div className="relative z-[1]">
+           <Layout s={sub} />
+diff --git a/src/builder/svgTint.ts b/src/builder/svgTint.ts
+index 591300d..05d4481 100644
+--- a/src/builder/svgTint.ts
++++ b/src/builder/svgTint.ts
+@@ -273,3 +273,12 @@ export function useTintedSrc(src: string, e?: ElStyle): string {
+   const key = tinted ? `${e?.iconColor ?? ''}|${JSON.stringify(map ?? {})}` : ''
+   return useMemo(() => (tinted && markup ? tintSvg(markup, e?.iconColor, map) ?? src : src), [markup, key, src]) // eslint-disable-line react-hooks/exhaustive-deps
+ }
++
++/**
++ * Loads the markup of remote SVG sources so a synchronous render (the published page snapshot) can recolor
++ * them; data: URLs and non-SVG sources are skipped. Failures are ignored (the original image is used).
++ */
++export async function preloadSvgs(srcs: Iterable<string>): Promise<void> {
++  const todo = [...new Set(srcs)].filter((src) => isSvgSrc(src) && !src.startsWith('data:') && !texts.has(src))
++  await Promise.all(todo.map((src) => load(src)))
++}
+diff --git a/src/builder/variants/banner.tsx b/src/builder/variants/banner.tsx
+index cb988b9..c60443c 100644
+--- a/src/builder/variants/banner.tsx
++++ b/src/builder/variants/banner.tsx
+@@ -1,6 +1,7 @@
+ import { useState, type CSSProperties } from 'react'
+ import { ArrowRight, ArrowUpRight, ChevronRight, Cookie, Megaphone, Sparkles, X } from 'lucide-react'
+ import { useB } from '../store'
++import { useLive } from '../live/ctx'
+ import type { Section } from '../types'
+ import { Btn, E, W, cn } from './kit'
+ import type { KindVariants } from './types'
+@@ -186,10 +187,11 @@ function BannerSplit({ s }: { s: Section }) {
+ 
+ function BannerDismiss({ s }: { s: Section }) {
+   const { preview } = useB()
++  const live = useLive()
+   const [closed, setClosed] = useState(false)
+   if (preview && closed) return null
+   return (
+-    <div className="relative border-t-2 py-3" style={{ borderColor: 'var(--accent)' }}>
++    <div className="relative border-t-2 py-3" data-wb-dismiss={live ? s.id : undefined} style={{ borderColor: 'var(--accent)' }}>
+       <W className="flex items-center gap-4">
+         <span aria-hidden className="hidden w-8 shrink-0 @3xl:block" />
+         <p className="flex min-w-0 flex-1 flex-wrap items-center justify-center gap-x-2 gap-y-1 text-center text-[14px]">
+@@ -199,6 +201,7 @@ function BannerDismiss({ s }: { s: Section }) {
+         <button
+           type="button"
+           aria-label="Duyuruyu kapat"
++          data-wb-dismiss-btn={live ? '' : undefined}
+           onClick={(e) => {
+             e.stopPropagation()
+             if (preview) setClosed(true)
+diff --git a/src/builder/variants/footer-parts.tsx b/src/builder/variants/footer-parts.tsx
+index b560a6c..48bf996 100644
+--- a/src/builder/variants/footer-parts.tsx
++++ b/src/builder/variants/footer-parts.tsx
+@@ -4,6 +4,7 @@ import { getGrid } from '../data'
+ import { useB } from '../store'
+ import type { Item, Section } from '../types'
+ import { Brand, Btn, E, Slot, Social, SocialIcon, W, cn, list, useType } from './kit'
++import { liveHref, useLive } from '../live/ctx'
+ 
+ type P = { s: Section }
+ 
+@@ -734,6 +735,7 @@ const NET_NAMES: Record<string, string> = { x: 'X', twitter: 'X', instagram: 'In
+ 
+ function SocialCards({ s }: P) {
+   const b = useB()
++  const live = useLive()
+   return (
+     <Slot s={s} el="social" as="ul" className="grid grid-cols-2 gap-3 @2xl:grid-cols-3 @4xl:grid-cols-5">
+       {list(s.content.social).map((n, k) => {
+@@ -742,7 +744,7 @@ function SocialCards({ s }: P) {
+         return (
+           <li key={`${n}-${k}`}>
+             <a
+-              href={url || '#'}
++              href={live ? liveHref(url) : url || '#'}
+               onClick={(e) => {
+                 e.preventDefault()
+                 if (b.preview && url && /^https?:/.test(url)) window.open(url, '_blank', 'noopener')
+diff --git a/src/builder/variants/form.tsx b/src/builder/variants/form.tsx
+index 3dacfc2..055fbd3 100644
+--- a/src/builder/variants/form.tsx
++++ b/src/builder/variants/form.tsx
+@@ -5,6 +5,8 @@ import { useB } from '../store'
+ import type { Section } from '../types'
+ import { BTN, E, EImage, LOOK, Slot, W, cn, initials, list, secPad, useType } from './kit'
+ import type { KindVariants } from './types'
++import { useLive } from '../live/ctx'
++import { LiveForm, fieldName } from '../live/ui'
+ 
+ /* ---------- Shared bits ---------- */
+ const SOLID = 'linear-gradient(var(--card), var(--card)), var(--bg)'
+@@ -42,6 +44,7 @@ type FieldProps = {
+ function Field({ s, sr, label, ph, type = 'text', auto, rows, cls = BOX, st = rows ? AREA_ST : BOX_ST, labelCls = LABEL, className }: FieldProps) {
+   const id = useId()
+   const { preview } = useB()
++  const name = useLive() ? fieldName({ type, auto, rows }) : undefined
+   const shown = !!label && s.content[label] !== undefined && !(preview && !s.content[label])
+   return (
+     <div className={className}>
+@@ -55,9 +58,9 @@ function Field({ s, sr, label, ph, type = 'text', auto, rows, cls = BOX, st = ro
+         </label>
+       )}
+       {rows ? (
+-        <textarea id={id} rows={rows} disabled={!preview} placeholder={ph} className={cn(cls, 'h-auto resize-none py-3')} style={st} />
++        <textarea id={id} name={name} rows={rows} disabled={!preview} placeholder={ph} className={cn(cls, 'h-auto resize-none py-3')} style={st} />
+       ) : (
+-        <input id={id} type={type} autoComplete={auto} disabled={!preview} placeholder={ph} className={cls} style={st} />
++        <input id={id} name={name} type={type} autoComplete={auto} disabled={!preview} placeholder={ph} className={cls} style={st} />
+       )}
+     </div>
+   )
+@@ -84,7 +87,7 @@ function Choice({ s, sr, label, options, icon, labelCls = LABEL, className }: {
+             {icon}
+           </span>
+         )}
+-        <select id={id} disabled={!preview} className={cn(BOX, 'appearance-none pr-10', !!icon && 'pl-11')} style={BOX_ST}>
++        <select id={id} name={useLive() ? 'date' : undefined} disabled={!preview} className={cn(BOX, 'appearance-none pr-10', !!icon && 'pl-11')} style={BOX_ST}>
+           {options.map((o) => (
+             <option key={o}>{o}</option>
+           ))}
+@@ -117,11 +120,19 @@ function Note({ s, className, style }: { s: Section; className?: string; style?:
+   return <E s={s} el="note" kind="text" as="p" hint="p" className={cn('block text-[12.5px] leading-snug', className)} style={{ color: 'var(--muted)', ...style }} />
+ }
+ 
+-const Form = ({ children, className, style, label }: { children: ReactNode; className?: string; style?: CSSProperties; label?: string }) => (
+-  <form noValidate aria-label={label ?? 'İletişim formu'} onSubmit={(e) => e.preventDefault()} className={className} style={style}>
+-    {children}
+-  </form>
+-)
++function Form({ children, className, style, label }: { children: ReactNode; className?: string; style?: CSSProperties; label?: string }) {
++  if (useLive())
++    return (
++      <LiveForm label={label ?? 'İletişim formu'} className={className} style={style}>
++        {children}
++      </LiveForm>
++    )
++  return (
++    <form noValidate aria-label={label ?? 'İletişim formu'} onSubmit={(e) => e.preventDefault()} className={className} style={style}>
++      {children}
++    </form>
++  )
++}
+ 
+ const CONTACT = [
+   { key: 'address', icon: MapPin, sr: 'Adres' },
+@@ -301,6 +312,7 @@ function FormUnderline({ s }: { s: Section }) {
+ 
+ function FormNewsletter({ s }: { s: Section }) {
+   const { preview } = useB()
++  const live = useLive()
+   const id = useId()
+   return (
+     <div style={secPad(s)}>
+@@ -322,7 +334,7 @@ function FormNewsletter({ s }: { s: Section }) {
+             </label>
+             <div className="flex flex-col gap-2 border p-1.5 @md:flex-row @md:items-center" style={{ borderColor: 'var(--line)', borderRadius: 'calc(var(--r-btn) + 6px)', background: 'var(--bg)' }}>
+               <Mail aria-hidden size={18} className="ml-3 hidden shrink-0 @md:block" style={{ color: 'var(--muted)' }} />
+-              <input id={id} type="email" autoComplete="email" disabled={!preview} placeholder="E-posta adresiniz" className={cn(CTL, 'h-12 min-w-0 flex-1 px-3')} />
++              <input id={id} name={live ? 'email' : undefined} type="email" autoComplete="email" disabled={!preview} placeholder="E-posta adresiniz" className={cn(CTL, 'h-12 min-w-0 flex-1 px-3')} />
+               <Submit s={s} className="shrink-0" />
+             </div>
+             <Note s={s} className="mt-3 pl-1" />
+@@ -338,6 +350,7 @@ const TIMES = ['09:30', '11:00', '13:30', '15:00', '16:30']
+ function FormBooking({ s }: { s: Section }) {
+   const [time, setTime] = useState(1)
+   const { preview } = useB()
++  const live = useLive()
+   const tid = useId()
+   const showTime = s.content.timeLabel !== undefined && !(preview && !s.content.timeLabel)
+   return (
+@@ -379,7 +392,15 @@ function FormBooking({ s }: { s: Section }) {
+                 </span>
+               )}
+               <div className="grid grid-cols-3 gap-2 @md:grid-cols-5">
+-                {TIMES.map((t, n) => {
++                {live &&
++                  // Published page: native radio chips (field "choice"), styled by :checked; no script needed.
++                  TIMES.map((t, n) => (
++                    <label key={t} className="relative grid h-11 cursor-pointer place-items-center border border-(--line) bg-(--bg) text-[14px] font-medium tabular-nums text-(--fg) transition-colors has-checked:border-(--accent) has-checked:bg-[color-mix(in_srgb,var(--accent)_12%,var(--bg))] has-checked:text-(--accent) has-focus-visible:ring-2 has-focus-visible:ring-(--accent)" style={{ borderRadius: 'var(--r-btn)' }}>
++                      <input type="radio" name="choice" value={t} defaultChecked={n === time} className="sr-only" />
++                      {t}
++                    </label>
++                  ))}
++                {!live && TIMES.map((t, n) => {
+                   const on = n === time
+                   return (
+                     <button
+diff --git a/src/builder/variants/hero-parts.tsx b/src/builder/variants/hero-parts.tsx
+index 740a91f..f6bdc3c 100644
+--- a/src/builder/variants/hero-parts.tsx
++++ b/src/builder/variants/hero-parts.tsx
+@@ -4,6 +4,8 @@ import { Check, Lock, Mail, Play } from 'lucide-react'
+ import { getGrid } from '../data'
+ import type { Section } from '../types'
+ import { Btn, E, EIcon, EImage, Slot, W, cn, secPad, useType, type LOOK, type BTN } from './kit'
++import { useLive } from '../live/ctx'
++import { LIVE_ANIM } from '../live/ui'
+ 
+ /* ---------- Shared hero pieces ---------- */
+ export type P = { s: Section }
+@@ -247,6 +249,7 @@ export function HeroBgImage({ s }: P) {
+ 
+ /* ---------- Video ---------- */
+ export function HeroVideo({ s }: P) {
++  const live = useLive()
+   return (
+     <Shell s={s} className="isolate flex min-h-[min(820px,96cqi)] items-center overflow-hidden">
+       <div className="absolute inset-0 -z-10" style={vars({ '--r-card': '0px' })}>
+@@ -258,7 +261,11 @@ export function HeroVideo({ s }: P) {
+       <W className="relative flex flex-col items-center text-center">
+         <div className="flex flex-col items-center gap-4">
+           <button type="button" aria-label="Tanıtım videosunu oynat" className="group relative grid size-20 place-items-center rounded-full @3xl:size-24" style={{ background: tint('var(--fg)', 16), boxShadow: 'inset 0 0 0 1px var(--line)' }}>
+-            <motion.span aria-hidden className="absolute inset-0 rounded-full" style={{ boxShadow: `0 0 0 2px ${tint('var(--fg)', 45)}` }} animate={{ scale: [1, 1.45], opacity: [0.6, 0] }} transition={{ duration: 2.4, repeat: Infinity, ease: 'easeOut' }} />
++            {live ? (
++              <span aria-hidden className={cn('absolute inset-0 rounded-full', LIVE_ANIM.ping)} style={{ boxShadow: `0 0 0 2px ${tint('var(--fg)', 45)}` }} />
++            ) : (
++              <motion.span aria-hidden className="absolute inset-0 rounded-full" style={{ boxShadow: `0 0 0 2px ${tint('var(--fg)', 45)}` }} animate={{ scale: [1, 1.45], opacity: [0.6, 0] }} transition={{ duration: 2.4, repeat: Infinity, ease: 'easeOut' }} />
++            )}
+             <span className="grid size-14 place-items-center rounded-full transition-transform duration-300 group-hover:scale-105 @3xl:size-[68px]" style={{ background: 'var(--fg)', color: 'var(--bg)' }}>
+               <Play size={24} fill="currentColor" className="translate-x-[2px]" aria-hidden />
+             </span>
+diff --git a/src/builder/variants/kit.tsx b/src/builder/variants/kit.tsx
+index dcfe452..9f6c101 100644
+--- a/src/builder/variants/kit.tsx
++++ b/src/builder/variants/kit.tsx
+@@ -7,6 +7,8 @@ import { siteFonts } from '../fonts'
+ import { useB } from '../store'
+ import type { GridSettings, Section } from '../types'
+ import { cn, ease } from '../ui'
++import { liveHref, useLive } from '../live/ctx'
++import { LiveMenu } from '../live/ui'
+ 
+ /*
+  * Shared building blocks of the section designs (variants/*). Every visible text / image / icon is an
+@@ -114,7 +116,12 @@ export function NavLinks({ s, className, style, linkClass, linkStyle, label = 'A
+ 
+ /** True while the element is narrower than `px` (container width, so device previews and thumbnails work). */
+ export function useNarrow(ref: RefObject<HTMLElement | null>, px = 896) {
+-  const [narrow, setNarrow] = useState(false)
++  const live = useLive()
++  const [measured, setNarrow] = useState(false)
++  // Static (live) rendering has no layout: the pass's container width decides, and the breakpoint is
++  // recorded so the renderer can draw one copy per width range (shown by container queries).
++  if (live) live.bps.add(px)
++  const narrow = live ? live.width < px : measured
+   useEffect(() => {
+     const node = ref.current
+     if (!node) return
+@@ -138,10 +145,35 @@ export function useMobileMenu(s: Section, opts: { breakpoint?: number; sheet?: b
+   const [open, setOpen] = useState(false)
+   const id = useId()
+   const solid = useSolidBg(s)
++  const live = useLive()
++  const extra = useRef<ReactNode>(undefined)
+   useEffect(() => {
+     if (!narrow) setOpen(false)
+   }, [narrow])
+-  const toggle = narrow ? (
++  const links = (
++    <nav aria-label="Mobil menü" className="flex flex-col text-[16px] font-medium">
++      {s.items.map((i) => (
++        <E key={i.id} s={s} el={`items.${i.id}.title`} kind="link" as="a" hint="a" className="block border-b py-3" style={{ borderColor: 'var(--line)' }} />
++      ))}
++    </nav>
++  )
++  // Published page: one <details> holds the toggle and the panel; the panel's extra content is handed over
++  // by panel() below, which runs before this element renders.
++  const LivePanel = () => (
++    <div className={cn('px-6 pb-6 pt-2', opts.sheet && 'px-5 pt-3')}>
++      {links}
++      {extra.current && <div className="mt-5 flex flex-wrap gap-3">{extra.current}</div>}
++    </div>
++  )
++  const toggle = narrow && live ? (
++    <LiveMenu
++      summaryClass="grid size-10 shrink-0 place-items-center rounded-full transition-colors hover:bg-[color-mix(in_srgb,var(--fg)_8%,transparent)]"
++      panelClass={cn('z-50', opts.sheet ? 'absolute right-3 top-full mt-2 w-[min(320px,calc(100%-24px))] rounded-[min(var(--r-card),18px)] shadow-[0_30px_60px_-20px_rgba(0,0,0,.45)] ring-1 ring-[var(--line)]' : 'absolute inset-x-0 top-full overflow-hidden shadow-[0_30px_40px_-30px_rgba(0,0,0,.35)]')}
++      panelStyle={{ background: solid, color: 'var(--fg)' }}
++    >
++      <LivePanel />
++    </LiveMenu>
++  ) : narrow ? (
+     <button
+       type="button"
+       aria-label={open ? 'Menüyü kapat' : 'Menüyü aç'}
+@@ -156,7 +188,12 @@ export function useMobileMenu(s: Section, opts: { breakpoint?: number; sheet?: b
+       {open ? <X size={21} /> : <Menu size={21} />}
+     </button>
+   ) : null
+-  const panel = (extra?: ReactNode) => (
++  const panel = (more?: ReactNode) => {
++    if (live) {
++      extra.current = more
++      return null
++    }
++    return (
+     <AnimatePresence initial={false}>
+       {narrow && open && (
+         <motion.div
+@@ -171,17 +208,14 @@ export function useMobileMenu(s: Section, opts: { breakpoint?: number; sheet?: b
+           style={{ background: solid, color: 'var(--fg)' }}
+         >
+           <div className={cn('px-6 pb-6 pt-2', opts.sheet && 'px-5 pt-3')}>
+-            <nav aria-label="Mobil menü" className="flex flex-col text-[16px] font-medium">
+-              {s.items.map((i) => (
+-                <E key={i.id} s={s} el={`items.${i.id}.title`} kind="link" as="a" hint="a" className="block border-b py-3" style={{ borderColor: 'var(--line)' }} />
+-              ))}
+-            </nav>
+-            {extra && <div className="mt-5 flex flex-wrap gap-3">{extra}</div>}
++            {links}
++            {more && <div className="mt-5 flex flex-wrap gap-3">{more}</div>}
+           </div>
+         </motion.div>
+       )}
+     </AnimatePresence>
+-  )
++    )
++  }
+   return { ref, narrow, open, setOpen, toggle, panel }
+ }
+ 
+@@ -335,6 +369,7 @@ export function SocialIcon({ name, size = 18 }: { name: string; size?: number })
+  */
+ export function Social({ s, el = 'social', tile, size = 18, className, style }: { s: Section; el?: string; tile?: 'round' | 'square' | 'outline'; size?: number; className?: string; style?: CSSProperties }) {
+   const b = useB()
++  const live = useLive()
+   const nets = list(s.content[el])
+   return (
+     <Slot s={s} el={el} className={cn('flex flex-wrap items-center gap-2', className)} style={style}>
+@@ -344,7 +379,7 @@ export function Social({ s, el = 'social', tile, size = 18, className, style }:
+         return (
+           <a
+             key={`${n}-${i}`}
+-            href={url || '#'}
++            href={live ? liveHref(url) : url || '#'}
+             aria-label={SOCIAL_NAMES[key] ?? name}
+             onClick={(e) => {
+               e.preventDefault()
+diff --git a/src/builder/variants/nav.tsx b/src/builder/variants/nav.tsx
+index 41052e4..3991c43 100644
+--- a/src/builder/variants/nav.tsx
++++ b/src/builder/variants/nav.tsx
+@@ -7,6 +7,8 @@ import type { Item, Section } from '../types'
+ import { ease } from '../ui'
+ import { Brand, Btn, E, Slot, Social, W, cn, useMobileMenu, useNarrow, useSolidBg, useType } from './kit'
+ import type { KindVariants } from './types'
++import { useLive } from '../live/ctx'
++import { LiveMenu } from '../live/ui'
+ 
+ /* ---------- Local helpers ---------- */
+ const bsz = (s: Section) => s.style.titleSize || 19
+@@ -173,6 +175,35 @@ function NavMega({ s }: { s: Section }) {
+   const sel = b.selection?.sectionId === s.id ? b.selection.el : undefined
+   const keep = !!sel && (sel.startsWith('mega') || inPanel.some((i) => sel.startsWith(`items.${i.id}.`)))
+   const open = !m.narrow && (hover || keep)
++  const live = useLive()
++  const megaStyle: CSSProperties = { background: solid, color: 'var(--fg)', boxShadow: 'inset 0 1px 0 var(--line), 0 1px 0 var(--line), 0 40px 60px -30px rgba(0,0,0,.4)' }
++  const mega = (
++    <W className="grid gap-8 py-8 @5xl:grid-cols-[260px_1fr]">
++      <div className="flex flex-col justify-between gap-6 @5xl:pr-8 @5xl:shadow-[inset_-1px_0_0_var(--line)]">
++        <div>
++          <E s={s} el="megaTitle" kind="heading" as="h3" hint="h3" className="block text-balance" style={head(20)} />
++          <E s={s} el="megaText" kind="text" as="p" hint="p" multiline className="mt-3 block text-[14px] leading-relaxed" style={body} />
++        </div>
++        <div aria-hidden className="h-20 rounded-[min(var(--r-card),14px)]" style={{ background: 'radial-gradient(120% 140% at 0% 0%, color-mix(in srgb, var(--accent) 45%, transparent), transparent 60%), color-mix(in srgb, var(--fg) 5%, transparent)', boxShadow: 'inset 0 0 0 1px var(--line)' }} />
++      </div>
++      <ul className="grid grid-cols-2 gap-1.5 @6xl:grid-cols-3">
++        {inPanel.map((i, k) => {
++          const Icon = MEGA_ICONS[k % MEGA_ICONS.length]
++          return (
++            <li key={i.id} className="flex gap-3.5 rounded-[min(var(--r-card),14px)] p-3.5 transition-colors hover:bg-[color-mix(in_srgb,var(--fg)_5%,transparent)]">
++              <span className="grid size-10 shrink-0 place-items-center rounded-[min(var(--r-card),10px)]" style={{ background: 'color-mix(in srgb, var(--accent) 15%, transparent)', color: 'var(--accent)' }}>
++                <Icon size={18} aria-hidden />
++              </span>
++              <div className="min-w-0 pt-0.5">
++                <L s={s} i={i} className="block text-[15px] font-semibold text-[var(--fg)]! hover:opacity-80" />
++                <E s={s} el={`items.${i.id}.text`} kind="text" as="p" hint="p" className="mt-1 block text-[13.5px] leading-snug" style={{ color: 'var(--muted)' }} />
++              </div>
++            </li>
++          )
++        })}
++      </ul>
++    </W>
++  )
+   return (
+     <header
+       ref={m.ref}
+@@ -187,9 +218,22 @@ function NavMega({ s }: { s: Section }) {
+           <nav aria-label="Ana menü" data-grid={s.id} className="flex items-center text-[14.5px] font-medium" style={{ columnGap: getGrid(s).gapX }}>
+             <div className={cn('flex items-center gap-0.5', open ? 'text-[var(--fg)]' : 'text-[var(--muted)]')} onMouseEnter={() => setHover(true)}>
+               <E s={s} el="megaLabel" kind="link" as="a" hint="a" className="transition-colors hover:text-[var(--fg)]" />
+-              <button type="button" aria-expanded={open} aria-controls={pid} aria-label="Ürün menüsünü aç" onClick={() => setHover((o) => !o)} className="grid size-6 place-items-center rounded-full transition-colors hover:bg-[color-mix(in_srgb,var(--fg)_8%,transparent)]">
+-                <ChevronDown size={15} className={cn('transition-transform duration-300', open && 'rotate-180')} aria-hidden />
+-              </button>
++              {live ? (
++                // Published page: the panel is a <details> disclosure (click / keyboard; the runtime closes it).
++                <LiveMenu
++                  label="Open menu"
++                  summaryClass="grid size-6 place-items-center rounded-full transition-colors hover:bg-[color-mix(in_srgb,var(--fg)_8%,transparent)]"
++                  icon={<ChevronDown size={15} className="transition-transform duration-300 group-open/m:rotate-180" aria-hidden />}
++                  panelClass="absolute inset-x-0 top-full z-40 text-[var(--fg)]"
++                  panelStyle={megaStyle}
++                >
++                  {mega}
++                </LiveMenu>
++              ) : (
++                <button type="button" aria-expanded={open} aria-controls={pid} aria-label="Ürün menüsünü aç" onClick={() => setHover((o) => !o)} className="grid size-6 place-items-center rounded-full transition-colors hover:bg-[color-mix(in_srgb,var(--fg)_8%,transparent)]">
++                  <ChevronDown size={15} className={cn('transition-transform duration-300', open && 'rotate-180')} aria-hidden />
++                </button>
++              )}
+             </div>
+             {inBar.map((i) => (
+               <span key={i.id} onMouseEnter={() => setHover(false)}>
+@@ -213,33 +257,9 @@ function NavMega({ s }: { s: Section }) {
+             exit={{ opacity: 0, y: -8 }}
+             transition={{ duration: 0.22, ease }}
+             className="absolute inset-x-0 top-full z-40"
+-            style={{ background: solid, color: 'var(--fg)', boxShadow: 'inset 0 1px 0 var(--line), 0 1px 0 var(--line), 0 40px 60px -30px rgba(0,0,0,.4)' }}
++            style={megaStyle}
+           >
+-            <W className="grid gap-8 py-8 @5xl:grid-cols-[260px_1fr]">
+-              <div className="flex flex-col justify-between gap-6 @5xl:pr-8 @5xl:shadow-[inset_-1px_0_0_var(--line)]">
+-                <div>
+-                  <E s={s} el="megaTitle" kind="heading" as="h3" hint="h3" className="block text-balance" style={head(20)} />
+-                  <E s={s} el="megaText" kind="text" as="p" hint="p" multiline className="mt-3 block text-[14px] leading-relaxed" style={body} />
+-                </div>
+-                <div aria-hidden className="h-20 rounded-[min(var(--r-card),14px)]" style={{ background: 'radial-gradient(120% 140% at 0% 0%, color-mix(in srgb, var(--accent) 45%, transparent), transparent 60%), color-mix(in srgb, var(--fg) 5%, transparent)', boxShadow: 'inset 0 0 0 1px var(--line)' }} />
+-              </div>
+-              <ul className="grid grid-cols-2 gap-1.5 @6xl:grid-cols-3">
+-                {inPanel.map((i, k) => {
+-                  const Icon = MEGA_ICONS[k % MEGA_ICONS.length]
+-                  return (
+-                    <li key={i.id} className="flex gap-3.5 rounded-[min(var(--r-card),14px)] p-3.5 transition-colors hover:bg-[color-mix(in_srgb,var(--fg)_5%,transparent)]">
+-                      <span className="grid size-10 shrink-0 place-items-center rounded-[min(var(--r-card),10px)]" style={{ background: 'color-mix(in srgb, var(--accent) 15%, transparent)', color: 'var(--accent)' }}>
+-                        <Icon size={18} aria-hidden />
+-                      </span>
+-                      <div className="min-w-0 pt-0.5">
+-                        <L s={s} i={i} className="block text-[15px] font-semibold text-[var(--fg)]! hover:opacity-80" />
+-                        <E s={s} el={`items.${i.id}.text`} kind="text" as="p" hint="p" className="mt-1 block text-[13.5px] leading-snug" style={{ color: 'var(--muted)' }} />
+-                      </div>
+-                    </li>
+-                  )
+-                })}
+-              </ul>
+-            </W>
++            {mega}
+           </motion.div>
+         )}
+       </AnimatePresence>
+diff --git a/src/index.css b/src/index.css
+index 32fe499..fedb5fc 100755
+--- a/src/index.css
++++ b/src/index.css
+@@ -1,27 +1,8 @@
+ @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap');
++/* Theme tokens and the rules the published page shares with the canvas. */
++@import './builder/live/page.css';
+ @import 'tailwindcss';
+ 
+-@theme {
+-  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+-  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+-  --font-serif: 'Instrument Serif', Georgia, serif;
+-  --color-ink-950: #0c0d0f;
+-  --color-ink-900: #131417;
+-  --color-ink-850: #17181c;
+-  --color-ink-800: #1c1d22;
+-  --color-ink-750: #22242a;
+-  --color-ink-700: #2a2c33;
+-  --color-ink-600: #393c45;
+-  --color-ink-500: #5b5f6a;
+-  --color-ink-400: #8a8f9a;
+-  --color-ink-300: #b1b5be;
+-  --color-ink-200: #d7d9de;
+-  --color-ink-100: #eef0f3;
+-  --color-accent: #5b7cfa;
+-  --color-accent-soft: #93abff;
+-  --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
+-}
+-
+ @layer base {
+   html,
+   body,
+@@ -266,40 +247,6 @@
+ .cv[data-preview='true'] .ed::after {
+   display: none;
+ }
+-/* Rich text (b, i, u, s, code, a, ul/ol) in canvas elements and inspector fields */
+-.rt a {
+-  color: inherit;
+-  text-decoration: underline;
+-  text-decoration-thickness: from-font;
+-  text-underline-offset: 0.18em;
+-}
+-.rt code {
+-  padding: 0.08em 0.32em;
+-  border-radius: 4px;
+-  background: color-mix(in srgb, currentColor 11%, transparent);
+-  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+-  font-size: 0.88em;
+-}
+-.rt ul,
+-.rt ol {
+-  margin: 0.35em 0;
+-  padding-left: 1.35em;
+-}
+-.rt ul {
+-  list-style: disc;
+-}
+-.rt ol {
+-  list-style: decimal;
+-}
+-.dot-badge::before {
+-  content: '';
+-  width: 7px;
+-  height: 7px;
+-  border-radius: 99px;
+-  background: #4ade80;
+-  box-shadow: 0 0 0 3px rgb(74 222 128 / 0.25);
+-}
+-
+ @media (prefers-reduced-motion: reduce) {
+   .flash,
+   .tip-in {

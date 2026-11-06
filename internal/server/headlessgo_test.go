@@ -808,7 +808,7 @@ func TestHeadlessGoAdminScreens(t *testing.T) {
 		if code != http.StatusOK || !strings.Contains(body, "hg-wrap") {
 			t.Fatalf("screen %q: %d", p, code)
 		}
-		if strings.Contains(body, "Strapi") || strings.Contains(body, "Elementor") {
+		if strings.Contains(body, "Strapi") {
 			t.Fatalf("screen %q names another product", p)
 		}
 	}

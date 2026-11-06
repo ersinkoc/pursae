@@ -104,6 +104,20 @@ func TestPreload(t *testing.T) {
 	}
 }
 
+// A theme font is preloaded only on documents that load the theme (IfDocContains): a builder
+// canvas page without the theme's stylesheet gets no preload of a font it never uses.
+func TestPreloadIfDocContains(t *testing.T) {
+	asset := PreloadAsset{Href: "/wp-content/themes/t/fonts/a.woff2", As: "font", CrossOrigin: true, IfDocContains: "/wp-content/themes/t/"}
+	themed := `<html><head><link rel='stylesheet' href='/wp-content/themes/t/style.css'></head><body></body></html>`
+	if got := opt(themed, OptimizeConfig{Preload: []PreloadAsset{asset}}); !strings.Contains(got, `rel="preload" href="/wp-content/themes/t/fonts/a.woff2"`) {
+		t.Errorf("themed page lost its preload: %s", got)
+	}
+	canvas := `<html><head><link rel='stylesheet' href='/wp-content/web-builder/site/wb.css'></head><body class="web-builder-page"></body></html>`
+	if got := opt(canvas, OptimizeConfig{Preload: []PreloadAsset{asset}}); strings.Contains(got, "preload") {
+		t.Errorf("page without the theme got its font preload: %s", got)
+	}
+}
+
 func TestOptimizeDisabledAndMalformed(t *testing.T) {
 	doc := `<body><img src="a"><img src="b`
 	if got := opt(doc, OptimizeConfig{}); got != doc {

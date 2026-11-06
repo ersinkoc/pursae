@@ -1,15 +1,13 @@
 {
   "slug": "kite-and-crayon",
   "name": "Kite & Crayon",
-  "version": "1.0.0",
-  "description": "A bright toy shop built with Pursae Web Builder: a centred header with search, the language switcher and a hover mini-cart, a playful hero, chunky category tiles, favourites and new toys, a product page with colour variations, tabs and related toys, and a simple checkout. Every part is a Theme Builder template you can edit visually. Outfit, Figtree and Caveat, self-hosted. Ships a complete store demo: wooden toys, games, art supplies, room decor and a birthday bundle, priced in euros.",
+  "version": "1.1.0",
+  "description": "A bright toy shop: a header with the language switcher and the cart, a playful hero, chunky category tiles, favourites and new toys, and simple store pages in navy, mint and coral. Outfit, Figtree and Caveat, self-hosted. Ships a complete store demo: wooden toys, games, art supplies, room decor and a birthday bundle, priced in euros.",
   "author": "Pursae",
   "author_url": "https://github.com/pursae",
   "theme_url": "https://github.com/pursae/pursae-dev/tree/main/library/themes/kite-and-crayon",
   "tags": [
     "E-Commerce",
-    "Pursae Web Builder",
-    "Theme Builder",
     "Kids",
     "Custom Colors",
     "Custom Menu",
@@ -21,7 +19,7 @@
   "category": "kids",
   "style": "Bright kids' toy shop, cream with tomato and mint",
   "demo": "demo/demo.json",
-  "golementor": "golementor/design.json",
+  "web_builder": "web-builder/parts.json",
   "menu_locations": [
     {
       "id": "primary",

@@ -1,6 +1,0 @@
-{"name":"pro-b-4","settings":{},"elements":[
- {"id":"b400001","elType":"container","isInner":false,"settings":{},"elements":[
-  {"id":"b400002","elType":"widget","widgetType":"template","settings":{"template_id":"234"},"elements":[]},
-  {"id":"b400003","elType":"widget","widgetType":"template","settings":{"template_id":"999999"},"elements":[]}
- ]}
-]}

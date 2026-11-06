@@ -1,0 +1,47 @@
+{{/* The default loop item, singular content, no-results, and comments. */}}
+{{define "content"}}<article id="post-{{.ID}}" class="{{.Class}}">
+	<header class="entry-header">
+		{{if .ShowFeatured}}<span class="sticky-post">Featured</span>{{end}}
+		<h2 class="entry-title"><a href="{{.Permalink}}" rel="bookmark">{{.Title}}</a></h2>
+	</header>
+	{{if .ThumbnailURL}}<a class="post-thumbnail" href="{{.Permalink}}">{{.Thumbnail}}</a>{{end}}
+	{{if .ShowExcerpt}}<div class="entry-summary">{{.Excerpt}}</div>{{else}}<div class="entry-content">{{.Content}}</div>{{end}}
+	<footer class="entry-footer">{{.EntryMeta}}{{if .EditLink}}<span class="edit-link">{{.EditLink}}</span>{{end}}</footer>
+</article>
+{{end}}
+
+{{define "content-single"}}<article id="post-{{.ID}}" class="{{.Class}}">
+	<header class="page-header"><h1 class="entry-title">{{.Title}}</h1></header>
+	{{if .ThumbnailURL}}<div class="post-thumbnail">{{.Thumbnail}}</div>{{end}}
+	<div class="page-content">
+		{{.Content}}{{.Biography}}
+	</div>
+	<footer class="entry-footer">{{.EntryMeta}}{{if .EditLink}}<span class="edit-link">{{.EditLink}}</span>{{end}}</footer>
+</article>
+{{end}}
+
+{{define "content-page"}}<article id="post-{{.ID}}" class="{{.Class}}">
+	<header class="page-header"><h1 class="entry-title">{{.Title}}</h1></header>
+	<div class="page-content">
+		{{.Content}}
+	</div>
+	{{if .EditLink}}<footer class="entry-footer"><span class="edit-link">{{.EditLink}}</span></footer>{{end}}
+</article>
+{{end}}
+
+{{define "content-none"}}<section class="no-results not-found">
+	<header class="page-header"><h1 class="entry-title">Nothing Found</h1></header>
+	<div class="page-content">
+		{{if and (eq .Q.Kind "home") .CanPublish}}<p>Ready to publish your first post? <a href="/wp-admin/post-new">Get started here</a>.</p>
+		{{else if eq .Q.Kind "search"}}<p>Sorry, but nothing matched your search terms. Please try again with some different keywords.</p>{{template "searchform" .}}
+		{{else}}<p>It seems we can&rsquo;t find what you&rsquo;re looking for. Perhaps searching can help.</p>{{template "searchform" .}}{{end}}
+	</div>
+</section>
+{{end}}
+
+{{define "comments"}}{{with .Comments}}<div id="comments" class="comments-area">
+	{{if .Count}}<h2 class="comments-title">{{.Title}}</h2>
+	{{.Nav}}<ol class="comment-list">{{.List}}</ol>{{.Nav}}{{end}}
+	{{if .ClosedNotice}}<p class="no-comments">Comments are closed.</p>{{end}}
+	{{.Form}}
+</div>{{end}}{{end}}

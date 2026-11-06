@@ -15,6 +15,7 @@ import (
 
 	"wpgo/internal/auth"
 	"wpgo/internal/store"
+	"wpgo/internal/webbuilder"
 )
 
 // The REST API mirrors WordPress' wp/v2 namespace closely enough for the block editor
@@ -303,9 +304,9 @@ func (api *restAPI) serve(c *gin.Context, route string) {
 		return
 	}
 	route = "/" + strings.Trim(route, "/")
-	builderOn := s.golementorOn()
+	builderOn := s.wbOn()
 	for _, r := range api.routes {
-		if (!builderOn && gweRESTNamespace(r.Namespace)) || s.gontactRESTHidden(r.Namespace) || (r.Namespace == pllRESTNamespace && !s.golylangOn()) || s.gooikeRESTHidden(r.Namespace) {
+		if (!builderOn && r.Namespace == webbuilder.RESTNamespace) || s.gontactRESTHidden(r.Namespace) || (r.Namespace == pllRESTNamespace && !s.golylangOn()) || s.gooikeRESTHidden(r.Namespace) {
 			continue
 		}
 		m := r.re.FindStringSubmatch(route)
@@ -413,9 +414,9 @@ func (api *restAPI) index(c *gin.Context) {
 	lb := s.links(c)
 	routes := map[string]any{}
 	nsSet := map[string]bool{}
-	builderOn := s.golementorOn()
+	builderOn := s.wbOn()
 	for _, r := range api.routes {
-		if (!builderOn && gweRESTNamespace(r.Namespace)) || s.gontactRESTHidden(r.Namespace) || (r.Namespace == pllRESTNamespace && !s.golylangOn()) {
+		if (!builderOn && r.Namespace == webbuilder.RESTNamespace) || s.gontactRESTHidden(r.Namespace) || (r.Namespace == pllRESTNamespace && !s.golylangOn()) {
 			continue
 		}
 		var methods []string

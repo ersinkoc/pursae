@@ -135,7 +135,7 @@ Code: `internal/server/golylang*.go`, `web/admin/templates/pages/golylang.html`,
 | REST `lang` parameter on wp/v2 collections; `lang` and `translations` fields on posts, pages, categories and tags; `?lang=fr&translations[en]=12` on writes | ✅ |
 | WP-CLI `wp pll` | ✗ there is no WP-CLI |
 | Language capabilities (`translate_{lang}`, `manage_translations`, `manage_languages`) | ✗ the screens need `manage_options`, as in free Polylang; Pursae has no role editor to grant custom caps |
-| Integrations (ACF, Yoast, WooCommerce, page builders) | ✗ not applicable. Pursae Web Builder pages translate like any page; the builder document is not synchronized, since it is content |
+| Integrations (ACF, Yoast, WooCommerce, page builders) | ✗ not applicable. Pursae Web Builder pages translate like any page: "Duplicate content" copies the builder document and its published snapshot to the new translation (form actions point at it); custom-field synchronization never copies the builder's `_web_builder*` meta. While Pursae Web Builder is on, Theme Builder templates (`wb_template`) are a translated type: each language shows the published translation of the template that wins the display conditions |
 
 ## Shared-file changes (kept small for the parallel plugin sessions)
 

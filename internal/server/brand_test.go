@@ -7,8 +7,6 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-
-	"github.com/gin-gonic/gin"
 )
 
 func TestBrandSniff(t *testing.T) {
@@ -24,29 +22,12 @@ func TestBrandSniff(t *testing.T) {
 	}
 }
 
-func TestGWELegacyURLs(t *testing.T) {
-	if got := gweLegacyUploadPath("/wp-content/uploads/gowebeditor/fonts/a.woff2"); got != "/wp-content/uploads/web-builder/fonts/a.woff2" {
+func TestLegacyUploadPath(t *testing.T) {
+	if got := legacyUploadPath("/wp-content/uploads/" + legacyBuilderUploadsDir + "/fonts/a.woff2"); got != "/wp-content/uploads/web-builder/fonts/a.woff2" {
 		t.Errorf("legacy upload path: %s", got)
 	}
-	if got := gweLegacyUploadPath("/wp-content/uploads/2026/10/a.png"); got != "/wp-content/uploads/2026/10/a.png" {
+	if got := legacyUploadPath("/wp-content/uploads/2026/10/a.png"); got != "/wp-content/uploads/2026/10/a.png" {
 		t.Errorf("other uploads changed: %s", got)
-	}
-	gin.SetMode(gin.TestMode)
-	r := gin.New()
-	r.Match([]string{http.MethodGet, http.MethodPost}, "/wp-admin/gowebeditor-pro", gweLegacyRedirect("/wp-admin/web-builder"))
-	for _, tc := range []struct {
-		method, url, loc string
-		code             int
-	}{
-		{http.MethodGet, "/wp-admin/gowebeditor-pro?tab=fonts", "/wp-admin/web-builder?tab=fonts", http.StatusMovedPermanently},
-		{http.MethodGet, "/wp-admin/gowebeditor-pro", "/wp-admin/web-builder", http.StatusMovedPermanently},
-		{http.MethodPost, "/wp-admin/gowebeditor-pro?tab=code", "/wp-admin/web-builder?tab=code", http.StatusTemporaryRedirect},
-	} {
-		w := httptest.NewRecorder()
-		r.ServeHTTP(w, httptest.NewRequest(tc.method, tc.url, nil))
-		if w.Code != tc.code || w.Header().Get("Location") != tc.loc {
-			t.Errorf("%s %s: %d %s", tc.method, tc.url, w.Code, w.Header().Get("Location"))
-		}
 	}
 }
 

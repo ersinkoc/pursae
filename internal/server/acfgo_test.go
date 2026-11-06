@@ -617,6 +617,19 @@ func TestACFGoPostTypes(t *testing.T) {
 	if _, body, _ := post(t, c, base+"/wp-admin/acf-post-type", url.Values{"_wpnonce": {formNonce(t, body)}, "plural_label": {"Pages"}, "singular_label": {"Page"}, "slug": {"page"}}); !strings.Contains(body, "reserved") {
 		t.Error("reserved key accepted")
 	}
+	// An import cannot take over a reserved type either (wb_template stays the Theme Builder's).
+	if _, err := srv.acfgoImport(ctx, []byte(`[{"key":"post_type_wbt","title":"Hijack","post_type":"wb_template","active":true,"public":true,
+		"labels":{"name":"Hijack","singular_name":"Hijack"}}]`)); err != nil {
+		t.Fatal(err)
+	}
+	var name string
+	var public bool
+	if err := srv.store.Pool.QueryRow(ctx, `SELECT name, public FROM content_types WHERE slug = 'wb_template'`).Scan(&name, &public); err != nil || public || name != "Templates" {
+		t.Errorf("wb_template after import: %q public=%v err=%v", name, public, err)
+	}
+	if _, ok := acfgoTypeLabels("wb_template"); ok {
+		t.Error("wb_template registered as an ACF post type")
+	}
 }
 
 // TestACFGoBlocks covers block.json registration, the editor ajax and front-end rendering.

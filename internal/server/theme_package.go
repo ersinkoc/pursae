@@ -42,13 +42,10 @@ type themeManifest struct {
 	Screenshot   string   `json:"screenshot"`
 
 	// Library metadata (docs/theme-package.md, "Library metadata").
-	Category string `json:"category"`
-	Style    string `json:"style"`
-	Demo     string `json:"demo"` // the demo content file, demo/demo.json (theme_demo.go)
-	// Golementor is a Golementor design file (golementor/design.json, gwe_package_theme.go): the
-	// theme renders through Hello Golementor with the design's Theme Builder parts and kit.
-	Golementor string `json:"golementor"`
-
+	Category      string                  `json:"category"`
+	Style         string                  `json:"style"`
+	Demo          string                  `json:"demo"`        // the demo content file, demo/demo.json (theme_demo.go)
+	WebBuilder    string                  `json:"web_builder"` // Theme Builder parts for Pursae Web Builder, web-builder/parts.json (webbuilder_themes.go)
 	WidgetAreas   []themeManifestArea     `json:"widget_areas"`
 	MenuLocations []themeManifestLocation `json:"menu_locations"`
 
@@ -216,6 +213,10 @@ func parseThemeManifest(b []byte) (*themeManifest, error) {
 	}
 	if m.Demo != "" && (!strings.HasPrefix(m.Demo, "demo/") || !strings.HasSuffix(m.Demo, ".json") || !fs.ValidPath(m.Demo)) {
 		bad("demo %q must be a .json file under demo/", m.Demo)
+	}
+
+	if m.WebBuilder != "" && (!strings.HasPrefix(m.WebBuilder, "web-builder/") || !strings.HasSuffix(m.WebBuilder, ".json") || !fs.ValidPath(m.WebBuilder)) {
+		bad("web_builder %q must be a .json file under web-builder/", m.WebBuilder)
 	}
 
 	ids := map[string]bool{}
@@ -793,10 +794,19 @@ func themeTemplateCandidates(q *siteQuery) []string {
 	case "home":
 		return []string{"home", "index"}
 	case "single":
-		if q.Post != nil && q.Post.Format != "" && q.Post.Format != "standard" {
-			return []string{"single-" + q.Post.Format, "single", "singular", "index"}
+		var out []string
+		if q.Post != nil && q.Post.Type != "" && q.Post.Type != "post" {
+			out = append(out, "single-"+q.Post.Type) // a custom post type entry (single-{post_type})
 		}
-		return []string{"single", "singular", "index"}
+		if q.Post != nil && q.Post.Format != "" && q.Post.Format != "standard" {
+			out = append(out, "single-"+q.Post.Format)
+		}
+		return append(out, "single", "singular", "index")
+	case "post-type-archive":
+		if q.PostType != "" {
+			return []string{"archive-" + q.PostType, "archive", "index"}
+		}
+		return []string{"archive", "index"}
 	case "category":
 		if q.Term != nil {
 			return []string{"category-" + q.Term.Slug, "category", "archive", "index"}

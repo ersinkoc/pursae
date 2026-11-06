@@ -74,7 +74,8 @@ func (s *Server) cacheConfig() cache.Config {
 		if t := s.activeTheme(); t != nil {
 			for _, f := range t.PreloadFonts {
 				cfg.Optimize.Preload = append(cfg.Optimize.Preload, cache.PreloadAsset{
-					Href: t.URI() + "/" + f, As: "font", Type: "font/woff2", CrossOrigin: true})
+					Href: t.URI() + "/" + f, As: "font", Type: "font/woff2", CrossOrigin: true,
+					IfDocContains: t.URI() + "/"}) // not on pages without the theme (builder canvas)
 			}
 		}
 	}
@@ -162,6 +163,8 @@ func (s *Server) cacheTags(c *gin.Context, q *siteQuery) {
 			}
 		}
 		tags = append(tags, d, "archive:post")
+	case "post-type-archive":
+		tags = append(tags, "archive:"+q.PostType)
 	case "search":
 		tags = append(tags, "search")
 	case "404":
@@ -177,6 +180,7 @@ func (s *Server) cacheTags(c *gin.Context, q *siteQuery) {
 		c.Header(cache.HeaderTTL, strconv.Itoa(s.settings.Int("wpgo_cache_ttl_front")))
 	}
 	tags = append(tags, s.gooCacheTags(c, q)...) // Goocommerce: products and the shop (goo_front.go)
+	tags = append(tags, s.wbCacheTags(c, q)...)  // Pursae Web Builder pages (webbuilder_hooks.go)
 	c.Header(cache.HeaderTags, strings.Join(tags, ","))
 }
 
@@ -234,27 +238,10 @@ type tagCount struct {
 	Count int
 }
 
-// gweUpstreamAdminPages maps the admin?page= links in Golementor's editor bundles (the
-// Theme Builder app, settings, tools, submissions…) to the native screens that replace them.
-var gweUpstreamAdminPages = map[string]string{
-	"elementor-app":      gweThemeBuilderPath,
-	"elementor":          gweProAdminPath + "?tab=settings",
-	"elementor-settings": gweProAdminPath + "?tab=settings",
-	"elementor-tools":    gweProAdminPath + "?tab=settings",
-	"elementor-connect":  gweProAdminPath + "?tab=settings",
-	"elementor-apps":     "/wp-admin/plugins",
-	"e-form-submissions": gweProAdminPath + "?tab=submissions",
-}
-
 // pluginAdmin serves /wp-admin/admin?page=..., the screens registered by native plugins.
 func (s *Server) pluginAdmin(c *gin.Context) {
 	page := c.Query("page")
 	if s.acfgoAdminPage(c) { // ACF-Go options pages
-		return
-	}
-	if to, ok := gweUpstreamAdminPages[page]; ok && s.golementorOn() {
-		// Golementor's editor links to upstream's admin pages; they live on the native screens.
-		c.Redirect(http.StatusFound, to)
 		return
 	}
 	if s.adminsecAdmin(c, page) { // AdminSecGo: admin?page=adminsecgo… (adminsec_admin.go)

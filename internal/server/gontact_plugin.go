@@ -20,7 +20,7 @@ import (
 )
 
 // Gontact Form is WordPress Go's native clone of Contact Form 7 (see docs/gontact-form-features.md).
-// Like Golementor it is off on a fresh install and switched on the Plugins screen (option
+// Like the other native plugins it is off on a fresh install and switched on the Plugins screen (option
 // native_gontact_form). Its routes stay registered; while it is off they answer 404, the REST
 // namespace contact-form-7/v1 is hidden, the [contact-form-7] shortcode is left alone and the admin
 // menu has no Contact entry. Forms are posts of type wpcf7_contact_form with CF7's meta keys.

@@ -90,6 +90,9 @@ func (s *Server) canonicalRedirect(c *gin.Context, q *siteQuery, requestPath str
 		return ""
 	}
 	consumed := []string{"p", "page_id", "cat", "tag", "author", "m", "feed", "paged", "page", "cpage", "name", "pagename", "withcomments"}
+	if q.Kind == "post-type-archive" || (q.Post != nil && siteCPT(q.Post.Type) != nil) {
+		consumed = append(consumed, "post_type") // ?post_type=book is the plain archive link (and ?p=ID&post_type=book a single)
+	}
 	usedQueryVars := false
 	for _, k := range consumed {
 		if v.Has(k) {
@@ -111,6 +114,10 @@ func (s *Server) canonicalRedirect(c *gin.Context, q *siteQuery, requestPath str
 		}
 	case "category", "tag":
 		base = lb.TermLink(q.Term)
+	case "post-type-archive":
+		if base = lb.PostTypeArchiveLink(q.PostType); base == "" {
+			return ""
+		}
 	case "author":
 		base = lb.AuthorLink(q.Author.ID, q.Author.Nicename)
 	case "date":

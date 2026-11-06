@@ -1,0 +1,63 @@
+/*
+Theme Name: Hello Pursae
+Description: A plain, lightweight theme for Pursae Web Builder. Design the header, footer and content templates with the Theme Builder; this stylesheet only normalizes the browser defaults.
+Version: 1.0.1
+License: GNU General Public License v2 or later
+Text Domain: hello-pursae
+*/
+/* Every rule sits in the cascade layer "hello-pursae". It is declared before the builder's
+   stylesheet (whose Tailwind layers come later), so it is the lowest layer: the builder's reset
+   and utility classes always win over these element defaults, on the front as in the editor. */
+@layer hello-pursae{
+*,:after,:before{box-sizing:border-box}
+html{line-height:1.15;-webkit-text-size-adjust:100%}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:1rem;line-height:1.5;color:#1e1e1e;background:#fff;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4,h5,h6{margin:.5rem 0 1rem;font-weight:600;line-height:1.2}
+h1{font-size:2.25rem}h2{font-size:1.75rem}h3{font-size:1.5rem}h4{font-size:1.25rem}h5{font-size:1.1rem}h6{font-size:1rem}
+p{margin:0 0 .9rem}
+a{color:#2271b1;text-decoration:none}
+a:hover,a:focus{color:#135e96;text-decoration:underline}
+img{border-style:none;height:auto;max-width:100%}
+figure{margin:0}
+pre{overflow:auto;white-space:pre-wrap}
+code,kbd,pre,samp{font-family:monospace,monospace;font-size:1em}
+blockquote{margin:0 0 1rem;padding-inline-start:1rem;border-inline-start:3px solid #c3c4c7}
+hr{height:0;border:0;border-top:1px solid #dcdcde;margin:1.5rem 0}
+table{width:100%;margin-bottom:1rem;border-collapse:collapse}
+td,th{padding:.6rem;border:1px solid #dcdcde;text-align:start;vertical-align:top}
+button,input,select,textarea{font:inherit;margin:0}
+input[type=search],input[type=text],input[type=email],input[type=url],input[type=password],input[type=number],input[type=tel],select,textarea{width:100%;padding:.5rem .75rem;border:1px solid #8c8f94;border-radius:4px;background:#fff;color:inherit}
+button,input[type=submit],[type=button]{display:inline-block;padding:.5rem 1rem;border:1px solid #2271b1;border-radius:4px;background:#2271b1;color:#fff;cursor:pointer}
+button:hover,input[type=submit]:hover,[type=button]:hover{background:#135e96;border-color:#135e96}
+[hidden]{display:none}
+.screen-reader-text{clip:rect(1px,1px,1px,1px);height:1px;width:1px;overflow:hidden;position:absolute!important;word-wrap:normal!important}
+.skip-link:focus{clip:auto!important;display:block;height:auto;width:auto;left:5px;top:5px;z-index:100000;padding:12px 20px;background:#fff;color:#1e1e1e;box-shadow:0 0 2px 2px rgba(0,0,0,.6)}
+.alignleft{float:left;margin:0 1.5em 1.5em 0}
+.alignright{float:right;margin:0 0 1.5em 1.5em}
+.aligncenter{clear:both;display:block;margin:0 auto 1.5em}
+.wp-caption-text{text-align:center;font-size:.85em;margin:.5em 0 1em}
+.sticky-post{font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;color:#646970}
+/* Minimal defaults, shown where no Theme Builder template applies */
+.site-header,.site-footer,.site-main{width:100%;max-width:1140px;margin-inline:auto;padding-inline:20px}
+.site-header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;padding-block:1rem}
+.site-branding{display:flex;align-items:center;gap:12px}
+.site-title{margin:0;font-size:1.5rem;font-weight:600}
+.site-title a,.site-navigation a,.site-footer a,.entry-title a{color:inherit}
+.site-description{margin:0;font-size:.9rem;color:#646970}
+.custom-logo{display:block;max-height:60px;width:auto}
+.site-navigation ul{display:flex;flex-wrap:wrap;gap:4px 18px;margin:0;padding:0;list-style:none}
+.site-navigation ul ul{display:none}
+.site-navigation .current-menu-item>a{font-weight:700}
+.site-main{padding-block:2rem}
+.site-main article{margin-bottom:2.5rem}
+.entry-footer{color:#646970;font-size:.85rem}
+.post-thumbnail img{display:block;margin-bottom:1rem}
+.nav-links{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;margin-block:1.5rem}
+.comment-list,.comment-list .children{list-style:none;padding-inline-start:0}
+.comment-list .children{padding-inline-start:1.5rem}
+.site-footer{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding-block:2rem;border-top:1px solid #dcdcde;font-size:.9rem;color:#646970}
+.site-footer p{margin:0}
+.site-info{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+/* Theme Builder parts span the viewport; they bring their own layout */
+.wb-part,.site-main.wb-main-part{width:100%;max-width:none;padding:0}
+}

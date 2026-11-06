@@ -328,6 +328,8 @@ func TestThemeLibraryE(t *testing.T) {
 			if rep.Posts != len(d.Posts) || rep.Pages != len(d.Pages) || rep.Media != len(d.Media) {
 				t.Fatalf("import report %+v for %d posts, %d pages, %d images", rep, len(d.Posts), len(d.Pages), len(d.Media))
 			}
+			// The demo may set a static front page, whose permalink is now the home URL.
+			lb := srv.links(ctx)
 			srv.purgeAll(ctx)
 			home := check("demo home", base+"/", http.StatusOK)
 			if name, _ := d.Options["blogname"].(string); !strings.Contains(home, html.EscapeString(name)) {

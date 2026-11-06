@@ -10,7 +10,6 @@ import (
 
 // Appearance › Themes › Delete, for every inactive theme, as in WordPress (delete_theme()):
 //   - an uploaded package: its directory under <data>/themes goes;
-//   - a theme saved with Golementor: its record, parts and kit go;
 //   - a theme bundled with WordPress Go: its edited files (the Theme File Editor's copies under
 //     <data>/themes/<slug>) go and the theme leaves the site's theme list. The originals are part of
 //     the binary, so Appearance › Add Themes › Bundled lists it again for reinstalling, the way
@@ -39,22 +38,15 @@ func (s *Server) deleteTheme(ctx context.Context, slug string) (err error) {
 		return errors.New("The requested theme does not exist.")
 	}
 	defer func() {
-		if err == nil && !t.Custom {
+		if err == nil {
 			s.hubEvent("theme_delete", "theme", slug, t.Version) // statistics (hub_telemetry.go)
 		}
 	}()
 	if s.activeTheme().Slug == slug {
 		return errors.New("You cannot delete a theme while it is active on the site.")
 	}
-	switch {
-	case t.Package != nil:
+	if t.Package != nil {
 		return s.deleteThemePackage(ctx, slug)
-	case t.Custom:
-		if err := s.gweDeleteTheme(ctx, slug); err != nil {
-			return err
-		}
-		s.purgeAll(ctx)
-		return nil
 	}
 	themeSaveMu.Lock()
 	err = os.RemoveAll(filepath.Join(themeOverrideDir(s.cfg.UploadsDir), slug))

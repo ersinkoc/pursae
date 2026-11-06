@@ -15,7 +15,7 @@ import (
 	"wpgo/internal/store"
 )
 
-// SEO-Go is a native plugin like Classic Editor, WPGo Cache and Golementor: the union of Yoast SEO
+// SEO-Go is a native plugin like Classic Editor, WPGo Cache and Pursae Web Builder: the union of Yoast SEO
 // (Premium) and Rank Math (Pro) in one WordPress-style UI. It is off on a fresh install; while it is
 // off its routes answer 404 and the site, the editors and the admin menu are exactly as without it.
 // The switch is the option native_seogo; every setting lives in the one JSON option seogo_options.

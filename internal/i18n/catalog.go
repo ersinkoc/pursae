@@ -114,7 +114,7 @@ func (c *Catalog) lookup(msgid string) (string, bool) {
 // upstreamNames maps WordPress Go's product names to the upstream ones its strings were written
 // after: "You have the latest version of WordPress Go." is WordPress' message with the name changed.
 var upstreamNames = []struct{ ours, theirs string }{
-	{"Pursae Web Builder Pro", "Elementor Pro"}, {"Pursae Web Builder", "Elementor"}, {"Pursae Contact Form", "Contact Form 7"},
+	{"Pursae Contact Form", "Contact Form 7"},
 	{"SEO-Go", "Yoast SEO"}, {"SEO-Go", "Rank Math"}, {"Pursae Multi Language", "Polylang"}, {"WPGo Cache", "LiteSpeed Cache"},
 	{"Pursae SMTP", "WP Mail SMTP"}, {"Pursae Custom Fields", "ACF"}, {"Pursae Custom Fields", "Advanced Custom Fields"}, {"Pursae Commerce", "WooCommerce"}, {"Pursae Editor", "Gutenberg"},
 	{"Pursae", "WordPress"}, // last: every product name above starts with it
@@ -279,7 +279,6 @@ func (m *Manager) IsInstalled(locale string) bool {
 // brands maps the upstream product names in plugin translations to WordPress Go's own. Longer
 // names first, so "Yoast SEO" wins over "Yoast".
 var brands = []struct{ from, to string }{
-	{"Elementor Pro", "Pursae Web Builder Pro"}, {"Elementor", "Pursae Web Builder"},
 	{"Contact Form 7", "Pursae Contact Form"}, {"Yoast SEO Premium", "SEO-Go"}, {"Yoast SEO", "SEO-Go"}, {"Yoast", "SEO-Go"},
 	{"Rank Math SEO", "SEO-Go"}, {"Rank Math", "SEO-Go"}, {"Polylang Pro", "Pursae Multi Language"}, {"Polylang", "Pursae Multi Language"},
 	{"LiteSpeed Cache", "WPGo Cache"}, {"WP Mail SMTP", "Pursae SMTP"}, {"Advanced Custom Fields PRO", "Pursae Custom Fields"},
@@ -318,7 +317,7 @@ func rebrandString(s string) string {
 				out.WriteString(rest)
 				break
 			}
-			// Leave names that already carry WordPress Go's prefix ("Golementor" contains "lementor" only).
+			// Leave names that already carry WordPress Go's "Go"/"G" prefix.
 			if i > 0 && (strings.HasSuffix(rest[:i], "Go") || strings.HasSuffix(rest[:i], "G")) {
 				out.WriteString(rest[:i+len(b.from)])
 			} else {

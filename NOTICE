@@ -1,9 +1,6 @@
 Pursae — third-party notices
 ==================================
 
-Pursae Web Builder (Pursae's page builder) contains material derived from Elementor and
-Elementor Pro, both licensed under the GNU General Public License version 3.
-
 Elementor Pro 4.3.0
 -------------------
 Copyright Elementor Ltd. (https://elementor.com). Licensed under the GNU General Public License
@@ -14,64 +11,16 @@ license.txt:
   original Program. Altered source versions must be plainly marked as such, and must not be
   misrepresented as being the original Program."
 
-What Pursae uses, and how it is altered:
+Pursae's earlier page builder was derived from Elementor and Elementor Pro; it has been removed.
+What remains:
 
-* web/gowebeditor/pro/ — Elementor Pro's built (minified) editor and front-end JavaScript and
-  CSS, its jQuery SmartMenus, Sticky, Lottie and Instant Page builds, and module images, copied
-  unmodified from Elementor Pro 4.3.0.
-* internal/server/gowebeditor/pro-*.gz, internal/builder/data/pro-controls.json.gz — data
-  captured from Elementor Pro 4.3.0 running in a test WordPress (editor configs, Backbone
-  templates, widget control definitions). ALTERED: product names replaced with "Pursae Web Builder",
-  links to elementor.com removed, license/Connect/upgrade/promotion entries removed, site-specific
-  values (URLs, nonces, e-mail defaults) replaced with placeholders, WooCommerce and Facebook
-  widgets dropped.
-* internal/builder/widgets_pro_*.go, internal/builder/dynamic_tags.go,
-  internal/server/gowebeditor_pro*.go — ALTERED: new Go code that ports the behaviour of
-  Elementor Pro's PHP (widget render methods, dynamic tags, display conditions, custom CSS and
-  attributes, global widgets, forms and their actions, popups, custom code, role manager) to
-  Pursae. These are Pursae's implementation, not Elementor Pro.
-* web/gowebeditor/pro/js/packages/{core-adapter-utils,editor-canvas-extended,
-  editor-templates-extended,editor-controls-extended,editor-editing-panel-extended,
-  editor-components-extended}/ and web/gowebeditor/pro/js/atomic-form-editor.min.js — Elementor
-  Pro 4.3.0's editor packages for the atomic editor (gap-atomic). ALTERED (by
-  tools/gowebeditor/patch_pro_packages.py): the components package no longer shows
-  the AI-assistant promotion, the remote introduction image or the links to elementor.com; the
-  atomic form script reads the widgets cache instead of the deprecated config.widgets; the
-  controls package loads the code editor from web/gowebeditor/lib/monaco-editor/ instead of a CDN.
-* web/gowebeditor/pro/js/packages/editor-collection-loop/ — Elementor Pro 4.3.0's editor package
-  for the atomic Loop element (gap-loops). ALTERED (by tools/gowebeditor/patch_loop_package.py):
-  the license check that could block creating loops is removed. internal/builder/loop_*.go,
-  internal/builder/atomic/loop.go and internal/server/gowebeditor_loop.go — ALTERED: new Go code
-  porting Elementor Pro's query control, loop builder, loop filter, live search and collection
-  loop behaviour.
-* internal/db/migrations/0007_pro.sql — ALTERED: a PostgreSQL schema modelled on Elementor
-  Pro's form submissions tables.
+* internal/db/migrations/0005_builder.sql, 0006_atomic.sql and 0007_pro.sql — ALTERED: PostgreSQL
+  schemas modelled on Elementor's and Elementor Pro's data (templates, global classes, form
+  submissions). They stay unchanged so that existing databases migrate in order; a later
+  migration drops the data.
 
-Not used: Elementor Pro's license checks, license bypasses, Elementor Connect, the cloud
-template library, AI, telemetry, WooCommerce and Facebook SDK integrations, and all calls to
-Elementor's servers. Pursae is not Elementor and is not endorsed by Elementor Ltd.;
-"Elementor" is a trademark of Elementor Ltd.
-
-Elementor 4.3.5
----------------
-Copyright Elementor Ltd. Licensed under the GNU General Public License version 3. The
-Pursae Web Builder editor under web/gowebeditor/ (outside pro/) is Elementor's built front end, with
-the alterations described in internal/server/gowebeditor.go.
-
-Prism 1.30.0
-------------
-Copyright (c) 2012 Lea Verou. Licensed under the MIT License (web/gowebeditor/lib/prismjs/LICENSE).
-web/gowebeditor/lib/prismjs/ holds Prism's minified core, the language components the Code
-Highlight widget offers (with their dependencies) and the autoloader, normalize-whitespace,
-line-numbers, line-highlight, toolbar and copy-to-clipboard plugins, copied unmodified from the
-prismjs 1.30.0 npm package. Upstream loads Prism 1.23.0 from a CDN; Pursae serves it locally.
-
-Monaco Editor 0.55.1
---------------------
-Copyright (c) Microsoft Corporation. Licensed under the MIT License
-(web/gowebeditor/lib/monaco-editor/LICENSE, third-party notices in ThirdPartyNotices.txt there).
-web/gowebeditor/lib/monaco-editor/min/vs is the package's minified build, copied unmodified
-(the atomic editor's custom CSS field; upstream loads it from a CDN).
+Pursae is not Elementor and is not endorsed by Elementor Ltd.; "Elementor" is a trademark of
+Elementor Ltd.
 
 Twenty Twenty-Five 1.5
 ----------------------

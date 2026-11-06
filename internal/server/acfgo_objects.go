@@ -51,6 +51,7 @@ type acfgoPostTypeDef struct {
 	Taxonomies           []string
 	HasArchive           bool
 	ArchiveSlug, Slug    string
+	ExcludeFromSearch    bool // exclude_from_search; defaults to !public like register_post_type()
 }
 
 func (d *acfgoPostTypeDef) label(name string) string {
@@ -220,6 +221,10 @@ func acfgoPostTypeFrom(d map[string]any) *acfgoPostTypeDef {
 	if v, ok := d["show_in_rest"]; ok {
 		pt.ShowInREST = acfgoBool(v)
 	}
+	pt.ExcludeFromSearch = !pt.Public
+	if v, ok := d["exclude_from_search"]; ok {
+		pt.ExcludeFromSearch = acfgoBool(v)
+	}
 	if m, ok := d["menu_icon"].(map[string]any); ok { // ACF 6.3 stores {type, value}
 		pt.MenuIcon = acfgoStr(m["value"])
 	}
@@ -308,7 +313,8 @@ func (s *Server) acfgoPostTypes(ctx context.Context) []*acfgoPostTypeDef {
 	var out []*acfgoPostTypeDef
 	for _, it := range s.acfgoItems(ctx, acfgoPostType, false) {
 		if it.Active() {
-			if pt := acfgoPostTypeFrom(it.Data); pt.Name != "" {
+			// A reserved key (an import is not checked like the form) never replaces a core type.
+			if pt := acfgoPostTypeFrom(it.Data); pt.Name != "" && !acfgoReservedTypes[pt.Name] {
 				out = append(out, pt)
 			}
 		}
@@ -320,7 +326,7 @@ func (s *Server) acfgoTaxonomies(ctx context.Context) []*acfgoTaxonomyDef {
 	var out []*acfgoTaxonomyDef
 	for _, it := range s.acfgoItems(ctx, acfgoTaxType, false) {
 		if it.Active() {
-			if tx := acfgoTaxonomyFrom(it.Data); tx.Name != "" {
+			if tx := acfgoTaxonomyFrom(it.Data); tx.Name != "" && !acfgoReservedTypes[tx.Name] {
 				out = append(out, tx)
 			}
 		}

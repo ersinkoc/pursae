@@ -11,7 +11,7 @@ and the styles and scripts it loads. There are two kinds:
 
 | | Bundled Go themes | Theme packages |
 |---|---|---|
-| Examples | Twenty Sixteen, Twenty Seventeen, Twenty Twenty, Twenty Twenty-One, Hello Pursae Web Builder, Classic | anything you upload |
+| Examples | Twenty Sixteen, Twenty Seventeen, Twenty Twenty, Twenty Twenty-One, Twenty Twenty-Five, Classic, Hello Pursae | anything you upload |
 | Where | compiled into the binary (`web/themes/<slug>/` + a `theme_<slug>.go`) | `<data>/themes/<slug>/` (`WPGO_THEMES_DIR`) |
 | `functions.php` equivalent | Go code: a `*Theme` registered at start-up with hooks for `wp_head`, body classes, template data | `theme.json`: everything a Go theme registers in code, declared as data |
 | Install | ship with Pursae | Appearance › Themes › Add Theme › Upload, or from the [marketplace](../hub/marketplace.md) |
@@ -38,11 +38,19 @@ the loop, pagination, comments, menus, widget areas, the admin bar — and the t
 to print it. A theme never queries the database or sanitises input; it formats data the core
 already prepared, which is why packages can be code-free and safe to install.
 
-## Pursae Web Builder themes
+## Pursae Web Builder pages and templates
 
-The page builder brings its own base theme, **Hello Pursae Web Builder**, and can save a complete site
-design (header, footer, templates, global styles) as a theme of its own
-([Pursae Web Builder](golementor.md)). Those live in the database, not as packages.
+A page published from Pursae Web Builder is served as a canvas document without the theme's
+header, footer and stylesheet; while the plugin is off, or after the page was edited outside the
+builder, the theme renders the page's content as usual ([Pursae Web Builder](../web-builder.md),
+[contract](../web-builder-contract.md) section 10).
+
+The builder's **Theme Builder** goes further: header, footer, single, archive, search and 404
+templates designed in the builder replace the theme's own output — but only on the bundled
+**Hello Pursae** theme, which the plugin activates when it is switched on
+([Hello Pursae and the Theme Builder](hello-pursae.md)). A theme package needs nothing for the
+builder and cannot receive Theme Builder parts: there are no builder templates, theme parts or kits
+in the package format.
 
 ## Editing on a live site
 

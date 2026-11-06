@@ -1,0 +1,1446 @@
+{
+ "format": "web-builder-theme",
+ "version": 1,
+ "templates": [
+  {
+   "key": "header",
+   "type": "header",
+   "title": "Header",
+   "conditions": [
+    "include/general"
+   ],
+   "priority": 0,
+   "doc": {
+    "site": {
+     "brand": "#F2643D",
+     "fontPair": "plain",
+     "corners": "round",
+     "headingFont": "Fredoka",
+     "headingWeight": 600,
+     "bodyFont": "Nunito",
+     "bodyWeight": 400
+    },
+    "sections": [
+     {
+      "id": "s_pzzpbe8",
+      "kind": "banner",
+      "name": "Announcement bar",
+      "hidden": false,
+      "content": {
+       "text": "Free delivery over €45 · treats tested by real dogs and cats",
+       "link": ""
+      },
+      "items": [],
+      "style": {
+       "palette": "dark",
+       "align": "center",
+       "padding": 0,
+       "titleSize": 16,
+       "hideOn": [],
+       "bg": "#121A3B"
+      }
+     },
+     {
+      "id": "s_3iiyesx",
+      "kind": "nav",
+      "name": "Header",
+      "hidden": false,
+      "content": {
+       "logo": "P",
+       "brand": "Pursae",
+       "primary": "Shop",
+       "menu": "primary",
+       "logoSource": "site",
+       "primaryHref": "/shop/"
+      },
+      "items": [],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 0,
+       "titleSize": 20,
+       "hideOn": [],
+       "bg": "#FFFFFF",
+       "titleColor": "#1C2752"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "key": "footer",
+   "type": "footer",
+   "title": "Footer",
+   "conditions": [
+    "include/general"
+   ],
+   "priority": 0,
+   "doc": {
+    "site": {
+     "brand": "#F2643D",
+     "fontPair": "plain",
+     "corners": "round",
+     "headingFont": "Fredoka",
+     "headingWeight": 600,
+     "bodyFont": "Nunito",
+     "bodyWeight": 400
+    },
+    "sections": [
+     {
+      "id": "s_xi1qnrq",
+      "kind": "footer",
+      "name": "Footer",
+      "hidden": false,
+      "content": {
+       "logo": "P",
+       "brand": "Pursae",
+       "note": "© Good Boy Supply · Gear and treats for very good pets",
+       "menu": "footer",
+       "logoSource": "site"
+      },
+      "items": [],
+      "style": {
+       "palette": "dark",
+       "align": "left",
+       "padding": 0,
+       "titleSize": 18,
+       "hideOn": [],
+       "bg": "#121A3B"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "key": "front-page",
+   "type": "front-page",
+   "title": "Front page",
+   "conditions": [
+    "include/singular/front_page"
+   ],
+   "priority": 0,
+   "doc": {
+    "site": {
+     "brand": "#F2643D",
+     "fontPair": "plain",
+     "corners": "round",
+     "headingFont": "Fredoka",
+     "headingWeight": 600,
+     "bodyFont": "Nunito",
+     "bodyWeight": 400
+    },
+    "sections": [
+     {
+      "id": "s_omrhqdh",
+      "kind": "hero",
+      "name": "Hero",
+      "hidden": false,
+      "content": {
+       "eyebrow": "Gear and treats for very good pets",
+       "title": "Everything your pet",
+       "accent": "will tail-wag for.",
+       "body": "Beds, leashes, toys and treats picked by owners, approved by our in-house testers.",
+       "primary": "Shop for dogs",
+       "secondary": "Shop for cats",
+       "visual": "image",
+       "image": "{{media:hero}}",
+       "termTitle": "~/site",
+       "terminal": "$ docker compose up -d\n✓ db       postgres:17 · healthy\n✓ pursae   one binary · started\n\n$ pursae serve\n› schema migrations  up to date\n› task runner        running\n› wasm plugins       3 loaded, signatures ok\n› http://localhost:8080  *ready*",
+       "card1Label": "PLUGIN SANDBOX",
+       "card1Value": "Signature verified",
+       "card2Label": "PAGE CACHE",
+       "card2Value": "On",
+       "card2Sub": "hit rate 94%",
+       "html": "<div class=\"card\">\n  <span class=\"tag\">Live</span>\n  <h3>Write your own HTML here</h3>\n  <p>This area runs real HTML and CSS: badges, tables, embed codes…</p>\n  <button onclick=\"this.textContent='Clicked ✓'\">Try it</button>\n</div>\n<style>\n  .card { font-family: Inter, sans-serif; padding: 28px; border-radius: 16px;\n          background: linear-gradient(135deg, #1b1d22, #262a33); color: #eef0f3; }\n  .tag  { font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;\n          color: #4ade80; }\n  h3    { margin: 10px 0 6px; font-size: 22px; }\n  p     { margin: 0 0 18px; color: #a3a8b2; line-height: 1.6; }\n  button{ font: 600 14px Inter, sans-serif; padding: 10px 16px; border: 0; border-radius: 8px;\n          background: #5b7cfa; color: #fff; cursor: pointer; }\n</style>",
+       "primaryHref": "/shop/",
+       "secondaryHref": "/about/"
+      },
+      "items": [],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 96,
+       "titleSize": 92,
+       "hideOn": [],
+       "bg": "#FFF7E6",
+       "titleColor": "#1C2752"
+      }
+     },
+     {
+      "id": "s_td0el1s",
+      "kind": "features",
+      "name": "Features",
+      "hidden": false,
+      "content": {
+       "eyebrow": "Shop by pet",
+       "title": "Find the good stuff.",
+       "body": ""
+      },
+      "items": [
+       {
+        "id": "i_h24mecn",
+        "title": "Dogs",
+        "text": "Beds, leashes and harnesses.",
+        "icon": "shield",
+        "href": "/product-category/dogs/"
+       },
+       {
+        "id": "i_9q8rw2u",
+        "title": "Cats",
+        "text": "Trees, scratchers and wands.",
+        "icon": "box",
+        "href": "/product-category/cats/"
+       },
+       {
+        "id": "i_w8oerst",
+        "title": "Toys",
+        "text": "Tug, squeak and chase.",
+        "icon": "puzzle",
+        "href": "/product-category/toys/"
+       },
+       {
+        "id": "i_60ierrs",
+        "title": "Treats & Care",
+        "text": "Snacks and grooming.",
+        "icon": "zap",
+        "href": "/product-category/care/"
+       }
+      ],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 112,
+       "titleSize": 56,
+       "hideOn": [],
+       "bg": "#FFFFFF",
+       "titleColor": "#1C2752"
+      }
+     },
+     {
+      "id": "s_5hwg5o8",
+      "kind": "features",
+      "name": "Features",
+      "hidden": false,
+      "content": {
+       "eyebrow": "Why owners trust us",
+       "title": "Pet-tested, owner-approved.",
+       "body": "Our testers chew, scratch and nap on everything first."
+      },
+      "items": [
+       {
+        "id": "i_ybufiio",
+        "title": "Tested by pets",
+        "text": "Real dogs and cats review every new product.",
+        "icon": "shield"
+       },
+       {
+        "id": "i_1qmci61",
+        "title": "Vet-friendly",
+        "text": "Ingredients and materials we are happy to explain.",
+        "icon": "box"
+       },
+       {
+        "id": "i_3l3spj1",
+        "title": "Fast delivery",
+        "text": "Most orders leave the warehouse the same day.",
+        "icon": "puzzle"
+       },
+       {
+        "id": "i_4dh2z2b",
+        "title": "Easy returns",
+        "text": "Not a fit? Send it back within thirty days.",
+        "icon": "zap"
+       }
+      ],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 112,
+       "titleSize": 56,
+       "hideOn": [],
+       "bg": "#FFF7E6",
+       "titleColor": "#1C2752"
+      }
+     },
+     {
+      "id": "s_2d5rh1o",
+      "kind": "media",
+      "name": "Image and text",
+      "hidden": false,
+      "content": {
+       "eyebrow": "Our testers",
+       "title": "Meet the pets behind the picks.",
+       "body": "Every product spends two weeks with our tester pack before it is allowed on the shelf. Their reviews are brutally honest.",
+       "primary": "Meet the testers",
+       "image": "{{media:about}}",
+       "imageSide": "left",
+       "primaryHref": "/about/"
+      },
+      "items": [],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 112,
+       "titleSize": 48,
+       "hideOn": [],
+       "bg": "#FFFFFF",
+       "titleColor": "#1C2752"
+      }
+     },
+     {
+      "id": "s_ykbk987",
+      "kind": "quote",
+      "name": "Testimonial",
+      "hidden": false,
+      "content": {
+       "quote": "The orthopedic bed ended the midnight pacing. Biscuit sleeps till seven now.",
+       "author": "Jonas K.",
+       "role": "Biscuit’s human"
+      },
+      "items": [],
+      "style": {
+       "palette": "light",
+       "align": "center",
+       "padding": 112,
+       "titleSize": 40,
+       "hideOn": [],
+       "bg": "#FFF7E6",
+       "titleColor": "#1C2752"
+      }
+     },
+     {
+      "id": "s_c374q5n",
+      "kind": "cta",
+      "name": "Call to action",
+      "hidden": false,
+      "content": {
+       "title": "New puppy at home?",
+       "body": "The puppy starter kit has everything for week one, in one box.",
+       "primary": "See the starter kit",
+       "secondary": "Browse everything",
+       "primaryHref": "/shop/",
+       "secondaryHref": "/shop/"
+      },
+      "items": [],
+      "style": {
+       "palette": "brand",
+       "align": "center",
+       "padding": 120,
+       "titleSize": 64,
+       "hideOn": [],
+       "bg": "#1C2752",
+       "titleColor": "#1C2752"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "key": "single-post",
+   "type": "single-post",
+   "title": "Single post",
+   "conditions": [
+    "include/singular/post"
+   ],
+   "priority": 0,
+   "doc": {
+    "site": {
+     "brand": "#F2643D",
+     "fontPair": "plain",
+     "corners": "round",
+     "headingFont": "Fredoka",
+     "headingWeight": 600,
+     "bodyFont": "Nunito",
+     "bodyWeight": 400
+    },
+    "sections": [
+     {
+      "id": "s_j35fab9",
+      "kind": "layout",
+      "name": "Post header",
+      "hidden": false,
+      "content": {
+       "type": "grid",
+       "structure": "g3r"
+      },
+      "items": [
+       {
+        "id": "c_9bx2jjj",
+        "title": "post-title",
+        "text": "",
+        "dyn": {
+         "tag": "h1",
+         "link": false
+        }
+       },
+       {
+        "id": "c_vi1xoz6",
+        "title": "post-meta",
+        "text": "",
+        "dyn": {
+         "fields": [
+          "date",
+          "author",
+          "comments"
+         ],
+         "sep": "·"
+        }
+       }
+      ],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 72,
+       "titleSize": 36,
+       "hideOn": [],
+       "bg": "#FFFFFF",
+       "titleColor": "#1C2752"
+      },
+      "box": {
+       "contentWidth": "boxed",
+       "width": 760,
+       "widthUnit": "px",
+       "minHeight": 0,
+       "minHeightUnit": "px",
+       "direction": "row",
+       "justify": "start",
+       "align": "stretch",
+       "wrap": true,
+       "stackMobile": true,
+       "gapX": 16,
+       "gapY": 12,
+       "gridCols": 1,
+       "gridRows": 2,
+       "margin": {
+        "t": 0,
+        "r": 0,
+        "b": 0,
+        "l": 0
+       },
+       "padding": {
+        "t": 64,
+        "r": 40,
+        "b": 32,
+        "l": 40
+       },
+       "borderStyle": "none",
+       "borderWidth": 1,
+       "borderColor": "#d0d4db",
+       "radius": 0,
+       "shadow": "none",
+       "zIndex": 0
+      }
+     },
+     {
+      "id": "s_chygvao",
+      "kind": "layout",
+      "name": "Content",
+      "hidden": false,
+      "content": {
+       "type": "grid",
+       "structure": "g3r"
+      },
+      "items": [
+       {
+        "id": "c_mrj4r0l",
+        "title": "post-image",
+        "text": "",
+        "dyn": {
+         "size": "large",
+         "ratio": 1.78,
+         "link": false
+        }
+       },
+       {
+        "id": "c_p023w52",
+        "title": "post-content",
+        "text": "",
+        "dyn": {}
+       },
+       {
+        "id": "c_kyq1wj3",
+        "title": "post-terms",
+        "text": "",
+        "dyn": {
+         "tax": "category",
+         "sep": ", ",
+         "prefix": "Filed under"
+        }
+       },
+       {
+        "id": "c_p247t87",
+        "title": "author-box",
+        "text": "",
+        "dyn": {}
+       },
+       {
+        "id": "c_sph9sva",
+        "title": "post-nav",
+        "text": "",
+        "dyn": {}
+       },
+       {
+        "id": "c_jhrvagk",
+        "title": "post-comments",
+        "text": "",
+        "dyn": {}
+       }
+      ],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 72,
+       "titleSize": 36,
+       "hideOn": [],
+       "bg": "#FFFFFF",
+       "titleColor": "#1C2752"
+      },
+      "box": {
+       "contentWidth": "boxed",
+       "width": 760,
+       "widthUnit": "px",
+       "minHeight": 0,
+       "minHeightUnit": "px",
+       "direction": "row",
+       "justify": "start",
+       "align": "stretch",
+       "wrap": true,
+       "stackMobile": true,
+       "gapX": 16,
+       "gapY": 32,
+       "gridCols": 1,
+       "gridRows": 6,
+       "margin": {
+        "t": 0,
+        "r": 0,
+        "b": 0,
+        "l": 0
+       },
+       "padding": {
+        "t": 0,
+        "r": 40,
+        "b": 64,
+        "l": 40
+       },
+       "borderStyle": "none",
+       "borderWidth": 1,
+       "borderColor": "#d0d4db",
+       "radius": 0,
+       "shadow": "none",
+       "zIndex": 0
+      }
+     }
+    ]
+   }
+  },
+  {
+   "key": "single-page",
+   "type": "single-page",
+   "title": "Single page",
+   "conditions": [
+    "include/singular/page"
+   ],
+   "priority": 0,
+   "doc": {
+    "site": {
+     "brand": "#F2643D",
+     "fontPair": "plain",
+     "corners": "round",
+     "headingFont": "Fredoka",
+     "headingWeight": 600,
+     "bodyFont": "Nunito",
+     "bodyWeight": 400
+    },
+    "sections": [
+     {
+      "id": "s_5iozx33",
+      "kind": "layout",
+      "name": "Post header",
+      "hidden": false,
+      "content": {
+       "type": "grid",
+       "structure": "g3r"
+      },
+      "items": [
+       {
+        "id": "c_uwuhlvi",
+        "title": "post-title",
+        "text": "",
+        "dyn": {
+         "tag": "h1",
+         "link": false
+        }
+       }
+      ],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 72,
+       "titleSize": 36,
+       "hideOn": [],
+       "bg": "#FFFFFF",
+       "titleColor": "#1C2752"
+      },
+      "box": {
+       "contentWidth": "boxed",
+       "width": 760,
+       "widthUnit": "px",
+       "minHeight": 0,
+       "minHeightUnit": "px",
+       "direction": "row",
+       "justify": "start",
+       "align": "stretch",
+       "wrap": true,
+       "stackMobile": true,
+       "gapX": 16,
+       "gapY": 12,
+       "gridCols": 1,
+       "gridRows": 1,
+       "margin": {
+        "t": 0,
+        "r": 0,
+        "b": 0,
+        "l": 0
+       },
+       "padding": {
+        "t": 64,
+        "r": 40,
+        "b": 32,
+        "l": 40
+       },
+       "borderStyle": "none",
+       "borderWidth": 1,
+       "borderColor": "#d0d4db",
+       "radius": 0,
+       "shadow": "none",
+       "zIndex": 0
+      }
+     },
+     {
+      "id": "s_jkmbfpl",
+      "kind": "layout",
+      "name": "Content",
+      "hidden": false,
+      "content": {
+       "type": "grid",
+       "structure": "g3r"
+      },
+      "items": [
+       {
+        "id": "c_z7m62yz",
+        "title": "post-image",
+        "text": "",
+        "dyn": {
+         "size": "large",
+         "ratio": 1.78,
+         "link": false
+        }
+       },
+       {
+        "id": "c_7oui3q4",
+        "title": "post-content",
+        "text": "",
+        "dyn": {}
+       },
+       {
+        "id": "c_egmygpk",
+        "title": "post-comments",
+        "text": "",
+        "dyn": {}
+       }
+      ],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 72,
+       "titleSize": 36,
+       "hideOn": [],
+       "bg": "#FFFFFF",
+       "titleColor": "#1C2752"
+      },
+      "box": {
+       "contentWidth": "boxed",
+       "width": 760,
+       "widthUnit": "px",
+       "minHeight": 0,
+       "minHeightUnit": "px",
+       "direction": "row",
+       "justify": "start",
+       "align": "stretch",
+       "wrap": true,
+       "stackMobile": true,
+       "gapX": 16,
+       "gapY": 32,
+       "gridCols": 1,
+       "gridRows": 3,
+       "margin": {
+        "t": 0,
+        "r": 0,
+        "b": 0,
+        "l": 0
+       },
+       "padding": {
+        "t": 0,
+        "r": 40,
+        "b": 64,
+        "l": 40
+       },
+       "borderStyle": "none",
+       "borderWidth": 1,
+       "borderColor": "#d0d4db",
+       "radius": 0,
+       "shadow": "none",
+       "zIndex": 0
+      }
+     }
+    ]
+   }
+  },
+  {
+   "key": "archive",
+   "type": "archive",
+   "title": "Archive",
+   "conditions": [
+    "include/archive"
+   ],
+   "priority": 0,
+   "doc": {
+    "site": {
+     "brand": "#F2643D",
+     "fontPair": "plain",
+     "corners": "round",
+     "headingFont": "Fredoka",
+     "headingWeight": 600,
+     "bodyFont": "Nunito",
+     "bodyWeight": 400
+    },
+    "sections": [
+     {
+      "id": "s_37qkk3d",
+      "kind": "layout",
+      "name": "Content",
+      "hidden": false,
+      "content": {
+       "type": "grid",
+       "structure": "g3r"
+      },
+      "items": [
+       {
+        "id": "c_53pp9eb",
+        "title": "archive-title",
+        "text": "",
+        "dyn": {
+         "tag": "h1"
+        }
+       },
+       {
+        "id": "c_ln3exyw",
+        "title": "archive-desc",
+        "text": "",
+        "dyn": {}
+       }
+      ],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 72,
+       "titleSize": 36,
+       "hideOn": [],
+       "bg": "#FFFFFF",
+       "titleColor": "#1C2752"
+      },
+      "box": {
+       "contentWidth": "boxed",
+       "width": 1160,
+       "widthUnit": "px",
+       "minHeight": 0,
+       "minHeightUnit": "px",
+       "direction": "row",
+       "justify": "start",
+       "align": "stretch",
+       "wrap": true,
+       "stackMobile": true,
+       "gapX": 16,
+       "gapY": 12,
+       "gridCols": 1,
+       "gridRows": 2,
+       "margin": {
+        "t": 0,
+        "r": 0,
+        "b": 0,
+        "l": 0
+       },
+       "padding": {
+        "t": 64,
+        "r": 40,
+        "b": 24,
+        "l": 40
+       },
+       "borderStyle": "none",
+       "borderWidth": 1,
+       "borderColor": "#d0d4db",
+       "radius": 0,
+       "shadow": "none",
+       "zIndex": 0
+      }
+     },
+     {
+      "id": "s_dhjh597",
+      "kind": "loop",
+      "name": "Post loop",
+      "hidden": false,
+      "content": {
+       "source": "main",
+       "postType": "post",
+       "perPage": "6",
+       "orderBy": "date",
+       "order": "desc",
+       "terms": "",
+       "author": "",
+       "exclude": "",
+       "offset": "0",
+       "pagination": "numbers",
+       "empty": "No posts yet."
+      },
+      "items": [
+       {
+        "id": "c_pdntz1o",
+        "title": "layout",
+        "text": "",
+        "sub": {
+         "id": "s_81axlcw",
+         "kind": "layout",
+         "name": "Post card",
+         "hidden": false,
+         "content": {
+          "type": "grid",
+          "structure": "g3r"
+         },
+         "items": [
+          {
+           "id": "c_zrywubb",
+           "title": "post-image",
+           "text": "",
+           "dyn": {
+            "size": "medium",
+            "ratio": 1.5,
+            "link": true
+           }
+          },
+          {
+           "id": "c_hthe84p",
+           "title": "post-meta",
+           "text": "",
+           "dyn": {
+            "fields": [
+             "date"
+            ],
+            "sep": "·"
+           }
+          },
+          {
+           "id": "c_fj1cklj",
+           "title": "post-title",
+           "text": "",
+           "dyn": {
+            "tag": "h3",
+            "link": true
+           }
+          },
+          {
+           "id": "c_vh6rstn",
+           "title": "post-excerpt",
+           "text": "",
+           "dyn": {
+            "words": 20
+           }
+          }
+         ],
+         "style": {
+          "palette": "light",
+          "align": "left",
+          "padding": 72,
+          "titleSize": 22,
+          "hideOn": []
+         },
+         "box": {
+          "contentWidth": "full",
+          "width": 100,
+          "widthUnit": "%",
+          "minHeight": 0,
+          "minHeightUnit": "px",
+          "direction": "row",
+          "justify": "start",
+          "align": "stretch",
+          "wrap": true,
+          "stackMobile": true,
+          "gapX": 12,
+          "gapY": 12,
+          "gridCols": 1,
+          "gridRows": 4,
+          "margin": {
+           "t": 0,
+           "r": 0,
+           "b": 0,
+           "l": 0
+          },
+          "padding": {
+           "t": 0,
+           "r": 0,
+           "b": 0,
+           "l": 0
+          },
+          "borderStyle": "none",
+          "borderWidth": 1,
+          "borderColor": "#d0d4db",
+          "radius": 0,
+          "shadow": "none",
+          "zIndex": 0
+         }
+        }
+       }
+      ],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 72,
+       "titleSize": 22,
+       "hideOn": [],
+       "bg": "#FFFFFF",
+       "titleColor": "#1C2752"
+      },
+      "box": {
+       "contentWidth": "full",
+       "width": 100,
+       "widthUnit": "%",
+       "minHeight": 0,
+       "minHeightUnit": "px",
+       "direction": "row",
+       "justify": "start",
+       "align": "stretch",
+       "wrap": true,
+       "stackMobile": true,
+       "gapX": 32,
+       "gapY": 32,
+       "gridCols": 2,
+       "gridRows": 1,
+       "margin": {
+        "t": 0,
+        "r": 0,
+        "b": 0,
+        "l": 0
+       },
+       "padding": {
+        "t": 16,
+        "r": 0,
+        "b": 96,
+        "l": 0
+       },
+       "borderStyle": "none",
+       "borderWidth": 1,
+       "borderColor": "#d0d4db",
+       "radius": 0,
+       "shadow": "none",
+       "zIndex": 0
+      }
+     }
+    ]
+   }
+  },
+  {
+   "key": "search-results",
+   "type": "search-results",
+   "title": "Search results",
+   "conditions": [
+    "include/archive/search"
+   ],
+   "priority": 0,
+   "doc": {
+    "site": {
+     "brand": "#F2643D",
+     "fontPair": "plain",
+     "corners": "round",
+     "headingFont": "Fredoka",
+     "headingWeight": 600,
+     "bodyFont": "Nunito",
+     "bodyWeight": 400
+    },
+    "sections": [
+     {
+      "id": "s_z1tvnd9",
+      "kind": "layout",
+      "name": "Content",
+      "hidden": false,
+      "content": {
+       "type": "grid",
+       "structure": "g3r"
+      },
+      "items": [
+       {
+        "id": "c_qoc8jv1",
+        "title": "search-query",
+        "text": "",
+        "dyn": {
+         "tag": "h1",
+         "prefix": "Search results for:"
+        }
+       },
+       {
+        "id": "c_sbg2cj8",
+        "title": "search-form",
+        "text": "",
+        "dyn": {
+         "placeholder": "Search…",
+         "button": "Search"
+        }
+       }
+      ],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 72,
+       "titleSize": 36,
+       "hideOn": [],
+       "bg": "#FFFFFF",
+       "titleColor": "#1C2752"
+      },
+      "box": {
+       "contentWidth": "boxed",
+       "width": 1160,
+       "widthUnit": "px",
+       "minHeight": 0,
+       "minHeightUnit": "px",
+       "direction": "row",
+       "justify": "start",
+       "align": "stretch",
+       "wrap": true,
+       "stackMobile": true,
+       "gapX": 16,
+       "gapY": 16,
+       "gridCols": 1,
+       "gridRows": 2,
+       "margin": {
+        "t": 0,
+        "r": 0,
+        "b": 0,
+        "l": 0
+       },
+       "padding": {
+        "t": 64,
+        "r": 40,
+        "b": 24,
+        "l": 40
+       },
+       "borderStyle": "none",
+       "borderWidth": 1,
+       "borderColor": "#d0d4db",
+       "radius": 0,
+       "shadow": "none",
+       "zIndex": 0
+      }
+     },
+     {
+      "id": "s_swpary0",
+      "kind": "loop",
+      "name": "Post loop",
+      "hidden": false,
+      "content": {
+       "source": "main",
+       "postType": "post",
+       "perPage": "6",
+       "orderBy": "date",
+       "order": "desc",
+       "terms": "",
+       "author": "",
+       "exclude": "",
+       "offset": "0",
+       "pagination": "numbers",
+       "empty": "Nothing matched your search. Try different words."
+      },
+      "items": [
+       {
+        "id": "c_67bf94v",
+        "title": "layout",
+        "text": "",
+        "sub": {
+         "id": "s_5m9nadq",
+         "kind": "layout",
+         "name": "Post card",
+         "hidden": false,
+         "content": {
+          "type": "grid",
+          "structure": "g3r"
+         },
+         "items": [
+          {
+           "id": "c_tex1dew",
+           "title": "post-image",
+           "text": "",
+           "dyn": {
+            "size": "medium",
+            "ratio": 1.5,
+            "link": true
+           }
+          },
+          {
+           "id": "c_qpd9tcb",
+           "title": "post-meta",
+           "text": "",
+           "dyn": {
+            "fields": [
+             "date"
+            ],
+            "sep": "·"
+           }
+          },
+          {
+           "id": "c_5981jci",
+           "title": "post-title",
+           "text": "",
+           "dyn": {
+            "tag": "h3",
+            "link": true
+           }
+          },
+          {
+           "id": "c_fzbyz3z",
+           "title": "post-excerpt",
+           "text": "",
+           "dyn": {
+            "words": 20
+           }
+          }
+         ],
+         "style": {
+          "palette": "light",
+          "align": "left",
+          "padding": 72,
+          "titleSize": 22,
+          "hideOn": []
+         },
+         "box": {
+          "contentWidth": "full",
+          "width": 100,
+          "widthUnit": "%",
+          "minHeight": 0,
+          "minHeightUnit": "px",
+          "direction": "row",
+          "justify": "start",
+          "align": "stretch",
+          "wrap": true,
+          "stackMobile": true,
+          "gapX": 12,
+          "gapY": 12,
+          "gridCols": 1,
+          "gridRows": 4,
+          "margin": {
+           "t": 0,
+           "r": 0,
+           "b": 0,
+           "l": 0
+          },
+          "padding": {
+           "t": 0,
+           "r": 0,
+           "b": 0,
+           "l": 0
+          },
+          "borderStyle": "none",
+          "borderWidth": 1,
+          "borderColor": "#d0d4db",
+          "radius": 0,
+          "shadow": "none",
+          "zIndex": 0
+         }
+        }
+       }
+      ],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 72,
+       "titleSize": 22,
+       "hideOn": [],
+       "bg": "#FFFFFF",
+       "titleColor": "#1C2752"
+      },
+      "box": {
+       "contentWidth": "full",
+       "width": 100,
+       "widthUnit": "%",
+       "minHeight": 0,
+       "minHeightUnit": "px",
+       "direction": "row",
+       "justify": "start",
+       "align": "stretch",
+       "wrap": true,
+       "stackMobile": true,
+       "gapX": 32,
+       "gapY": 32,
+       "gridCols": 2,
+       "gridRows": 1,
+       "margin": {
+        "t": 0,
+        "r": 0,
+        "b": 0,
+        "l": 0
+       },
+       "padding": {
+        "t": 16,
+        "r": 0,
+        "b": 96,
+        "l": 0
+       },
+       "borderStyle": "none",
+       "borderWidth": 1,
+       "borderColor": "#d0d4db",
+       "radius": 0,
+       "shadow": "none",
+       "zIndex": 0
+      }
+     }
+    ]
+   }
+  },
+  {
+   "key": "error-404",
+   "type": "error-404",
+   "title": "404 page",
+   "conditions": [
+    "include/404"
+   ],
+   "priority": 0,
+   "doc": {
+    "site": {
+     "brand": "#F2643D",
+     "fontPair": "plain",
+     "corners": "round",
+     "headingFont": "Fredoka",
+     "headingWeight": 600,
+     "bodyFont": "Nunito",
+     "bodyWeight": 400
+    },
+    "sections": [
+     {
+      "id": "s_8d5v1ct",
+      "kind": "text",
+      "name": "Text block",
+      "hidden": false,
+      "content": {
+       "title": "Oops, that page ran off",
+       "body": "We sniffed around but could not find it. Try the shop instead."
+      },
+      "items": [],
+      "style": {
+       "palette": "light",
+       "align": "center",
+       "padding": 88,
+       "titleSize": 44,
+       "hideOn": [],
+       "bg": "#FFFFFF",
+       "titleColor": "#1C2752"
+      }
+     },
+     {
+      "id": "s_67nf5lt",
+      "kind": "cta",
+      "name": "Call to action",
+      "hidden": false,
+      "content": {
+       "title": "Keep exploring",
+       "body": "The shop is only a click away.",
+       "primary": "Go to the shop",
+       "secondary": "Back to the home page",
+       "primaryHref": "/shop/",
+       "secondaryHref": "/"
+      },
+      "items": [],
+      "style": {
+       "palette": "brand",
+       "align": "center",
+       "padding": 120,
+       "titleSize": 64,
+       "hideOn": [],
+       "bg": "#1C2752",
+       "titleColor": "#1C2752"
+      }
+     }
+    ]
+   }
+  }
+ ],
+ "pages": [
+  {
+   "key": "about",
+   "slug": "about",
+   "title": "Our testers",
+   "doc": {
+    "site": {
+     "brand": "#F2643D",
+     "fontPair": "plain",
+     "corners": "round",
+     "headingFont": "Fredoka",
+     "headingWeight": 600,
+     "bodyFont": "Nunito",
+     "bodyWeight": 400
+    },
+    "sections": [
+     {
+      "id": "s_yd0frle",
+      "kind": "text",
+      "name": "Text block",
+      "hidden": false,
+      "content": {
+       "title": "Our testers",
+       "body": "Four dogs, three cats and one very opinionated parrot test every product we sell."
+      },
+      "items": [],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 88,
+       "titleSize": 44,
+       "hideOn": [],
+       "bg": "#FFF7E6",
+       "titleColor": "#1C2752"
+      }
+     },
+     {
+      "id": "s_3460o6y",
+      "kind": "features",
+      "name": "Features",
+      "hidden": false,
+      "content": {
+       "eyebrow": "",
+       "title": "",
+       "body": ""
+      },
+      "items": [
+       {
+        "id": "i_5tkmdg4",
+        "title": "Honest reviews",
+        "text": "If it gets chewed in a day, we do not stock it.",
+        "icon": "shield"
+       },
+       {
+        "id": "i_vjkv063",
+        "title": "Real homes",
+        "text": "Testing happens on couches, not in labs.",
+        "icon": "box"
+       },
+       {
+        "id": "i_zv5rywk",
+        "title": "Happy tails",
+        "text": "Only products with a wag make the cut.",
+        "icon": "puzzle"
+       }
+      ],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 112,
+       "titleSize": 56,
+       "hideOn": [],
+       "bg": "#FFFFFF",
+       "titleColor": "#1C2752"
+      }
+     },
+     {
+      "id": "s_9wfhrub",
+      "kind": "media",
+      "name": "Image and text",
+      "hidden": false,
+      "content": {
+       "eyebrow": "",
+       "title": "Meet the pets behind the picks.",
+       "body": "Every product spends two weeks with our tester pack before it is allowed on the shelf. Their reviews are brutally honest.",
+       "primary": "",
+       "image": "{{media:about}}",
+       "imageSide": "right"
+      },
+      "items": [],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 112,
+       "titleSize": 48,
+       "hideOn": [],
+       "bg": "#FFF7E6",
+       "titleColor": "#1C2752"
+      }
+     },
+     {
+      "id": "s_s0o3wfp",
+      "kind": "cta",
+      "name": "Call to action",
+      "hidden": false,
+      "content": {
+       "title": "New puppy at home?",
+       "body": "The puppy starter kit has everything for week one, in one box.",
+       "primary": "See the starter kit",
+       "secondary": "Browse everything",
+       "primaryHref": "/shop/",
+       "secondaryHref": "/shop/"
+      },
+      "items": [],
+      "style": {
+       "palette": "brand",
+       "align": "center",
+       "padding": 120,
+       "titleSize": 64,
+       "hideOn": [],
+       "bg": "#1C2752",
+       "titleColor": "#1C2752"
+      }
+     }
+    ]
+   },
+   "page": {
+    "layout": "site"
+   }
+  },
+  {
+   "key": "contact",
+   "slug": "contact",
+   "title": "Get in touch",
+   "doc": {
+    "site": {
+     "brand": "#F2643D",
+     "fontPair": "plain",
+     "corners": "round",
+     "headingFont": "Fredoka",
+     "headingWeight": 600,
+     "bodyFont": "Nunito",
+     "bodyWeight": 400
+    },
+    "sections": [
+     {
+      "id": "s_k2rubbj",
+      "kind": "form",
+      "name": "Contact form",
+      "hidden": false,
+      "content": {
+       "eyebrow": "Contact",
+       "title": "Get in touch",
+       "body": "Need help choosing a harness size or tracking a parcel? Send us a note.",
+       "primary": "Send message"
+      },
+      "items": [],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 104,
+       "titleSize": 52,
+       "hideOn": [],
+       "bg": "#FFF7E6",
+       "titleColor": "#1C2752"
+      }
+     }
+    ]
+   },
+   "page": {
+    "layout": "site"
+   }
+  }
+ ]
+}

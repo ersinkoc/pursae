@@ -1,6 +1,6 @@
 COMPOSE = docker compose -f docker/compose.yaml
 
-.PHONY: dev db test docker-up docker-down docker-test build publish-themes
+.PHONY: dev db test docker-up docker-down docker-test build publish-themes builder builder-watch builder-test builder-parity builder-bump
 
 ## dev: run Postgres in Docker and the app locally, reading templates from ./web
 dev: db
@@ -33,3 +33,47 @@ docker-test:
 ## optional PREINSTALL=slug,slug|all (installed on every new site) and ACCESS=public|pro|private.
 publish-themes:
 	tools/publish-themes.sh $(if $(PREINSTALL),-preinstall $(PREINSTALL)) $(if $(ACCESS),-access $(ACCESS))
+
+## builder: build the Pursae Web Builder (builder/ → web/web-builder/, committed). Needs Node 22+ (builder/.nvmrc)
+## and git; Go and Docker builds use the committed dist and need no Node.
+builder: builder/node_modules/.package-lock.json
+	git submodule update --init builder/upstream
+	cd builder && node scripts/build.mjs
+
+builder/node_modules/.package-lock.json: builder/package.json builder/package-lock.json
+	cd builder && npm ci --ignore-scripts --no-audit --no-fund
+
+## builder-watch: rebuild the editor on change (pair with `make dev`, which reads web/ live)
+builder-watch: builder/node_modules/.package-lock.json
+	git submodule update --init builder/upstream
+	cd builder && node scripts/build.mjs --watch
+
+## builder-test: host unit tests (vitest), UI string lint (no Turkish outside the i18n catalog), audit the built dist
+## (no AI provider strings, manifest/BUILD.json shape, size budgets) and check BUILD.json against builder/UPSTREAM_SHA
+## and the patch hashes
+builder-test: builder/node_modules/.package-lock.json
+	cd builder && npm test --silent
+	node builder/scripts/lint-strings.mjs
+	node builder/test/audit.mjs
+	go test ./web -run TestWebBuilderDistIsCurrent -count=1
+
+## builder-parity: Playwright parity suite (builder/test/parity): every renderStatic fixture drawn by the editor's live
+## preview and as the static snapshot, pixel-compared at 1280/820/400 px (≤ 0.1 % differing pixels), the snapshot
+## without JavaScript, and the site runtime's behaviours. Needs `make builder` (run here when its scratch copy is
+## missing) and Playwright's Chromium; skips with a message when the browser is not installed
+## (cd builder && npx playwright install chromium). Report: builder/.work/parity/report.json.
+builder-parity: builder/node_modules/.package-lock.json
+	@test -d builder/.work/upstream/src/builder/live || $(MAKE) builder
+	@cd builder && { node test/parity/check-browsers.mjs; rc=$$?; if [ $$rc -eq 3 ]; then exit 0; elif [ $$rc -ne 0 ]; then exit $$rc; fi; \
+		npx playwright test -c test/parity/playwright.config.ts; }
+
+## builder-bump SHA=<commit>: move builder/upstream and builder/UPSTREAM_SHA to an upstream commit, then
+## rebuild (patches must still apply). Stages the pin; commit it with web/web-builder.
+builder-bump:
+	@test -n "$(SHA)" || { echo "usage: make builder-bump SHA=<upstream commit>"; exit 1; }
+	git submodule update --init builder/upstream
+	git -C builder/upstream fetch --quiet origin
+	git -C builder/upstream -c advice.detachedHead=false checkout --quiet --detach "$(SHA)"
+	git -C builder/upstream rev-parse HEAD > builder/UPSTREAM_SHA
+	git add builder/upstream builder/UPSTREAM_SHA
+	$(MAKE) builder

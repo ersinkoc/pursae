@@ -194,14 +194,6 @@ func (s *Server) gooIsStorePage(c *gin.Context, q *siteQuery) bool {
 	if gooViewFrom(c) != nil {
 		return true
 	}
-	if s.golementorOn() { // Golementor: store widgets in the page or the theme's parts (goo_gwe.go)
-		if t := s.activeTheme(); t != nil && (gweDesignTheme(t) || t.Slug == helloThemeSlug) {
-			return true
-		}
-		if q != nil && gooUsesStoreWidgets(q.Post) {
-			return true
-		}
-	}
 	return q != nil && q.Post != nil && s.gooHasShortcode(q.Post.Content)
 }
 
@@ -217,9 +209,6 @@ func (s *Server) gooHead(c *gin.Context, q *siteQuery) string {
 	b.WriteString(`<link rel="stylesheet" id="woocommerce-smallscreen-css" href="` + gooAssets + `/css/goocommerce-smallscreen.css` + v + `" media="only screen and (max-width: 768px)" />` + "\n")
 	b.WriteString(`<link rel="stylesheet" id="woocommerce-general-css" href="` + gooAssets + `/css/goocommerce.css` + v + `" media="all" />` + "\n")
 	b.WriteString(`<noscript><style>.woocommerce-product-gallery{ opacity: 1 !important; }</style></noscript>` + "\n")
-	if s.golementorOn() { // the store widgets of Golementor (goo_gwe.go)
-		b.WriteString(`<link rel="stylesheet" id="goocommerce-elements-css" href="` + gooAssets + `/css/goocommerce-elements.css` + v + `" media="all" />` + "\n")
-	}
 	if fv := gooViewFrom(c); fv != nil && fv.Kind == "product" && fv.Product != nil {
 		b.WriteString(s.gooProductJSONLD(c, fv.Product))
 	}
@@ -669,7 +658,7 @@ func (s *Server) gooServeStorePage(c *gin.Context, key, endpoint, value string) 
 	if t := s.gooEndpointTitle(endpoint, value); t != "" && (u != nil || key == "checkout") {
 		copy.Title = s.gooL10nText(ctx, t)
 	}
-	q := &siteQuery{Kind: "page", Post: &copy, Paged: 1}
+	q := &siteQuery{Kind: "page", Post: &copy, Paged: 1, Store: key}
 	c.Set(ctxSiteQuery, q)
 	s.renderSite(c, q)
 	return true
@@ -816,10 +805,16 @@ func (s *Server) gooRenderSynthetic(c *gin.Context, post *store.Post, body strin
 	c.Set(gooCtxRender, s.gooL10n(c, body))
 	s.gooSaveSession(c)
 	q := &siteQuery{Kind: "page", Post: post, Paged: paged}
-	c.Set(ctxSiteQuery, q)
-	if fv := gooViewFrom(c); fv != nil && fv.Search != "" {
-		c.Header("Cache-Control", "no-cache, must-revalidate, max-age=0")
+	if fv := gooViewFrom(c); fv != nil {
+		q.Store = fv.Kind
+		if fv.Term != nil {
+			q.StoreTax, q.StoreTerm = fv.Term.Taxonomy, fv.Term.ID
+		}
+		if fv.Search != "" {
+			c.Header("Cache-Control", "no-cache, must-revalidate, max-age=0")
+		}
 	}
+	c.Set(ctxSiteQuery, q)
 	s.renderSite(c, q)
 }
 

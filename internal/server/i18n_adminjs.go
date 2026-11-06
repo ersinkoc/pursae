@@ -19,7 +19,7 @@ import (
 // builder, Goocommerce's store screens, SEO-Go's editor panel, inline scripts of the templates)
 // get the translations of their scripts' UI strings: wpgo-l10n.js holds them, swaps them into
 // the page as the scripts add elements, and translates the message of alert(), confirm() and
-// prompt(). Golementor Studio has its own dictionary (gweL10nScript).
+// prompt().
 
 // adminJSSources are the scripts whose string literals are UI text; templates contribute the
 // literals of their inline scripts and event handler attributes.
@@ -34,15 +34,15 @@ var (
 	jsPlaceholder      = regexp.MustCompile(`\{[a-z_]+\}`)
 )
 
-// jsUIStrings returns the literals of a script that read as UI text (gweJSStrings' rules).
+// jsUIStrings returns the literals of a script that read as UI text (jsLiteralRe, jsHasWordRe and jsNotTextRe).
 func jsUIStrings(src string, seen map[string]bool) {
-	for _, m := range gweJSLiteral.FindAllStringSubmatch(src, -1) {
+	for _, m := range jsLiteralRe.FindAllStringSubmatch(src, -1) {
 		lit := m[1] + m[2] + m[3]
 		lit = strings.NewReplacer(`\'`, "'", `\"`, `"`, `\n`, "\n").Replace(lit)
 		t := strings.TrimSpace(lit)
 		// "Maximum rows reached ({max} rows)": a message whose {placeholders} the script fills in
 		bare := jsPlaceholder.ReplaceAllString(t, "")
-		if t == "" || !gweJSHasWord.MatchString(t) || gweJSNotText.MatchString(bare) || !strings.ContainsAny(t[:1], "ABCDEFGHIJKLMNOPQRSTUVWXYZ“\"(") {
+		if t == "" || !jsHasWordRe.MatchString(t) || jsNotTextRe.MatchString(bare) || !strings.ContainsAny(t[:1], "ABCDEFGHIJKLMNOPQRSTUVWXYZ“\"(") {
 			continue
 		}
 		seen[t] = true
@@ -97,7 +97,7 @@ func (s *Server) adminL10nFor(cat *i18n.Catalog) *adminL10n {
 	}
 	l := &adminL10n{}
 	if len(dict) > 0 {
-		l.js = "window.WPGOL10n = " + gweJSON(dict) + ";\n" + adminL10nRuntime
+		l.js = "window.WPGOL10n = " + scriptJSON(dict) + ";\n" + adminL10nRuntime
 		h := fnv.New64a()
 		h.Write([]byte(l.js))
 		l.ver = cat.Locale + "-" + strconv.FormatUint(h.Sum64(), 36)

@@ -1033,7 +1033,13 @@ func (s *Server) golylangAjax(c *gin.Context, action string) bool {
 		c.String(http.StatusOK, "1")
 		return true
 	}
-	s.purgeAll(c)
+	if wbIsTemplate(p) {
+		// A template's language and translation group decide which template wins per language:
+		// rebuild the template index, not only the page cache.
+		s.wbTemplatesChanged(c)
+	} else {
+		s.purgeAll(c)
+	}
 	s.adminHTML(c, http.StatusOK, string(s.pllBoxInner(c, p)))
 	return true
 }

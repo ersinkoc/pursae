@@ -135,8 +135,12 @@ capability type, exclude from search, delete with user… — **✓** stored as 
 `acf-taxonomy` posts; on save the type/taxonomy is registered (content_types / taxonomies rows),
 gets its admin menu (All / Add New, its taxonomies), the core's list, add and edit screens (classic
 editor) and term screens, and every role receives the type's capabilities (capability type "post").
-◐ Pursae Editor, REST routes (`/wp/v2/<rest_base>`) and front-end permalinks/archives of custom post types
-need core support for arbitrary types and are not built (see "Left out").
+Public custom post types are routed on the front end: entries at `/<rewrite slug>/<post>/` (with
+ancestors for hierarchical types), the archive at `/<archive slug>/` or `?post_type=` when the type
+has one, with pagination, feed, body classes and the "Archives: <plural>" title; `?p=<id>` redirects
+to the pretty permalink. Pursae Web Builder's Theme Builder can design their single and archive
+templates. ◐ Pursae Editor and REST routes (`/wp/v2/<rest_base>`) of custom post types need core
+support for arbitrary types and are not built (see "Left out").
 
 ## 9. ACF Blocks (PRO)
 
@@ -212,7 +216,6 @@ types/taxonomies, the Wasm `get_post` payload.
 - Repeater pagination, select2 "stylised UI"/ajax selects, the wpLink modal, jQuery UI date
   pickers and the Google Maps JS picker: replaced by simpler native controls (settings are kept
   and exported unchanged).
-- Custom post types: Pursae Editor editing, REST routes and front-end single/archive routing (the
-  core only routes post and page). ACF taxonomies on posts/pages work everywhere the core's
-  term screens and post terms do; their front-end archives are not routed either.
+- Custom post types: Pursae Editor editing and REST routes. ACF taxonomies on posts/pages work
+  everywhere the core's term screens and post terms do; their front-end archives are not routed.
 - REST writes for users and terms; `acf` on `/comments` and `/media` responses.

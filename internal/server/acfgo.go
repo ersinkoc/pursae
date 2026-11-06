@@ -15,7 +15,7 @@ import (
 )
 
 // ACF-Go is the native clone of Advanced Custom Fields PRO (docs/acf-go-features.md). Like Classic
-// Editor, WPGo Cache and Golementor it is compiled in, off on a fresh install and switched on the
+// Editor, WPGo Cache and Pursae Web Builder it is compiled in, off on a fresh install and switched on the
 // Plugins screen (option native_acfgo). While it is off its routes answer 404 and nothing of it
 // reaches the admin menu, the editors, REST responses or theme output; field groups and saved
 // values stay in the database.
@@ -172,7 +172,7 @@ func (s *Server) acfgoAjax(c *gin.Context, action string) bool {
 
 // acfgoMenuPositions are the menu positions of the core's top-level items (wp-admin/menu.php).
 var acfgoMenuPositions = map[string]float64{"menu-dashboard": 2, "menu-posts": 5, "menu-media": 10, "menu-pages": 20, "menu-comments": 25,
-	"menu-gowebeditor": 58, "menu-appearance": 60, "menu-plugins": 65, "menu-users": 70, "menu-tools": 75, "toplevel_page_wpgo-cache": 76, "menu-settings": 80}
+	"menu-appearance": 60, "menu-plugins": 65, "menu-users": 70, "menu-tools": 75, "toplevel_page_wpgo-cache": 76, "menu-settings": 80}
 
 // acfgoMenu adds the ACF menu, the menus of options pages and of the post types created in ACF.
 func (s *Server) acfgoMenu(c *gin.Context, menu []*menuTop, screen string) []*menuTop {

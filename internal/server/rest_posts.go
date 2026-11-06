@@ -111,11 +111,6 @@ func (s *Server) restPost(c *gin.Context, p *store.Post, ctxName string) map[str
 		out["parent"] = p.ParentID
 		out["menu_order"] = p.MenuOrder
 	}
-	if s.golementorOn() && (p.Type == "page" || p.Type == "post") {
-		// Golementor's user_can REST field (upstream registers it): the editor's Pages panel enables
-		// Edit, Duplicate and Delete with it.
-		out["user_can"] = map[string]bool{"edit": u.Can("edit_post", p), "delete": u.Can("delete_post", p)}
-	}
 	if p.Type == "wp_block" {
 		out["wp_pattern_sync_status"] = metaString(p.Meta, "wp_pattern_sync_status")
 		out["wp_pattern_category"] = []int64{}
@@ -550,6 +545,8 @@ func (s *Server) afterPostSave(ctx context.Context, p *store.Post) {
 	s.autoAddPage(ctx, p)
 	s.golylangSaved(ctx, p)  // Golylang: language of new posts, REST lang/translations, synchronization
 	s.seogoAfterSave(ctx, p) // SEO-Go: slug-change redirect, IndexNow
+	// Pursae Web Builder: detach the doc when posts.content was edited outside the builder.
+	s.wbAfterPostSave(ctx, p)
 	if s.onPostSaved != nil {
 		s.onPostSaved(ctx, p)
 	}
@@ -702,6 +699,10 @@ func (api *restAPI) createAutosave(c *gin.Context, r *restRequest, typ string) {
 			restErr(c, http.StatusInternalServerError, "db_update_error", "Could not update post in the database.")
 			return
 		}
+		// Pursae Web Builder drift: this autosave writes posts.content. Only the drift check: the
+		// post stays a draft or pending, so no loop or template a visitor sees changes (purging
+		// wb-loop on every autosave would empty most of the page cache once a minute).
+		_, _ = s.wbDetectDrift(c, p.ID)
 		p, _ = s.store.GetPost(c, p.ID)
 		rv := revision{ID: p.ID, PostID: p.ID, AuthorID: u.ID, Title: p.Title, Excerpt: p.Excerpt, Content: p.Content, IsAutosave: true, CreatedAt: p.ModifiedAt}
 		out := s.restRevision(c, rv, p)

@@ -25,7 +25,7 @@ import (
 
 // WPGO Mail SMTP is the native clone of WP Mail SMTP (Lite + Pro): it reconfigures wp_mail() to
 // send through SMTP or a provider's HTTP API, logs every e-mail, alerts on failures and routes
-// messages between connections. Like Golementor it starts switched off and adds nothing while
+// messages between connections. Like the other native plugins it starts switched off and adds nothing while
 // off: mailer() then hands out the plain env-configured mailer exactly as before.
 //
 // Settings live in one JSON option, wp_mail_smtp, with WP Mail SMTP's group and key names;

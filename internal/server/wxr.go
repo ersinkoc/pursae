@@ -153,7 +153,7 @@ func (s *Server) exportScreen(c *gin.Context) {
 		f.Start, f.End = c.Query("attachment_start_date"), c.Query("attachment_end_date")
 	default:
 		what = "all"
-		types = []string{"post", "page", "wp_block"}
+		types = []string{"post", "page", "wp_block", "wb_template"} // + Theme Builder templates
 	}
 	if f.Status == "0" {
 		f.Status = ""
@@ -316,6 +316,7 @@ func (s *Server) exportScreen(c *gin.Context) {
 					b.WriteString(postmeta(k, v))
 				}
 			}
+			b.WriteString(s.wbExportMeta(ctx, p.ID, postmeta)) // Pursae Web Builder doc (webbuilder_hooks.go)
 			comments, _, _ := s.store.QueryComments(ctx, store.CommentQuery{PostID: p.ID, Status: "approved", PerPage: 100000, Order: "asc"})
 			for _, cm := range comments {
 				fmt.Fprintf(&b, "\t\t<wp:comment>\n\t\t\t<wp:comment_id>%d</wp:comment_id>\n\t\t\t<wp:comment_author>%s</wp:comment_author>\n\t\t\t<wp:comment_author_email>%s</wp:comment_author_email>\n\t\t\t<wp:comment_author_url>%s</wp:comment_author_url>\n\t\t\t<wp:comment_author_IP>%s</wp:comment_author_IP>\n\t\t\t<wp:comment_date>%s</wp:comment_date>\n\t\t\t<wp:comment_date_gmt>%s</wp:comment_date_gmt>\n\t\t\t<wp:comment_content>%s</wp:comment_content>\n\t\t\t<wp:comment_approved>%s</wp:comment_approved>\n\t\t\t<wp:comment_type>%s</wp:comment_type>\n\t\t\t<wp:comment_parent>%d</wp:comment_parent>\n\t\t\t<wp:comment_user_id>%d</wp:comment_user_id>\n\t\t</wp:comment>\n",
@@ -454,6 +455,7 @@ func phpUnserializeStrings(v string) []string {
 type wxrDoc struct {
 	Channel struct {
 		Authors []struct {
+			ID          int64  `xml:"author_id"`
 			Login       string `xml:"author_login"`
 			Email       string `xml:"author_email"`
 			DisplayName string `xml:"author_display_name"`
@@ -561,8 +563,8 @@ func (s *Server) importScreen(c *gin.Context) {
 }
 
 type importReport struct {
-	Posts, Pages, Blocks, Skipped, Terms, Comments, Attachments, MenuItems int
-	Log                                                                    []string
+	Posts, Pages, Blocks, Templates, Skipped, Terms, Comments, Attachments, MenuItems int // Templates: Theme Builder (wb_template)
+	Log                                                                               []string
 }
 
 func (s *Server) importWXR(c *gin.Context, u *store.User, data []byte) (*importReport, error) {
@@ -575,9 +577,10 @@ func (s *Server) importWXR(c *gin.Context, u *store.User, data []byte) (*importR
 	}
 	rep := &importReport{}
 	authors := map[string]int64{}
+	matched := map[string]bool{} // logins that exist on this site (not mapped to the importer)
 	for _, a := range doc.Channel.Authors {
 		if ex, err := s.store.UserByLoginOrEmail(ctx, a.Login); err == nil {
-			authors[a.Login] = ex.ID
+			authors[a.Login], matched[a.Login] = ex.ID, true
 		} else {
 			authors[a.Login] = u.ID
 		}
@@ -656,7 +659,7 @@ func (s *Server) importWXR(c *gin.Context, u *store.User, data []byte) (*importR
 	for i := range doc.Channel.Items {
 		it := &doc.Channel.Items[i]
 		switch it.Type {
-		case "post", "page", "wp_block":
+		case "post", "page", "wp_block", "wb_template":
 		case "attachment":
 			if it.Status == "trash" {
 				rep.Skipped++
@@ -721,6 +724,19 @@ func (s *Server) importWXR(c *gin.Context, u *store.User, data []byte) (*importR
 			rep.Skipped++
 			continue
 		}
+		// Theme Builder templates often have no slug (drafts, duplicates, ones enabled from the
+		// list): the same title and content mean the same template, so a re-import does not add a
+		// competing copy.
+		if it.Type == "wb_template" && it.Name == "" {
+			var exID int64
+			if err := s.store.Pool.QueryRow(ctx, `SELECT id FROM posts WHERE type = 'wb_template' AND status <> 'trash'
+				AND title = $1 AND content = $2 ORDER BY id LIMIT 1`, it.Title, it.Content).Scan(&exID); err == nil {
+				rep.Log = append(rep.Log, fmt.Sprintf("%s “%s” already exists.", wxrTypeLabel(it.Type), it.Title))
+				idMap[it.PostID] = exID
+				rep.Skipped++
+				continue
+			}
+		}
 		p := &store.Post{Type: it.Type, AuthorID: authors[it.Creator], Title: it.Title, Content: it.Content, Excerpt: it.Excerpt,
 			Status: defaultStr(it.Status, "draft"), Slug: it.Name, MenuOrder: it.MenuOrder, Password: it.Password,
 			CommentStatus: defaultStr(it.CommentStatus, "open"), PingStatus: defaultStr(it.PingStatus, "open"), Sticky: it.Sticky == 1, Format: "standard",
@@ -779,6 +795,8 @@ func (s *Server) importWXR(c *gin.Context, u *store.User, data []byte) (*importR
 			rep.Posts++
 		case "page":
 			rep.Pages++
+		case "wb_template":
+			rep.Templates++
 		default:
 			rep.Blocks++
 		}
@@ -820,25 +838,7 @@ func (s *Server) importWXR(c *gin.Context, u *store.User, data []byte) (*importR
 	}
 	// backfill_attachment_urls(): links to the old site's uploads point at the imported files, longest URLs first.
 	if len(urlMap) > 0 {
-		var pairs []string
-		for from, to := range urlMap {
-			pairs = append(pairs, from, to)
-			if ext := path.Ext(from); ext != "" && path.Ext(to) != "" {
-				// Image sizes: photo-300x200.jpg follows photo.jpg.
-				pairs = append(pairs, strings.TrimSuffix(from, ext), strings.TrimSuffix(to, path.Ext(to)))
-			}
-		}
-		type pair struct{ from, to string }
-		var ordered []pair
-		for i := 0; i+1 < len(pairs); i += 2 {
-			ordered = append(ordered, pair{pairs[i], pairs[i+1]})
-		}
-		sort.Slice(ordered, func(i, j int) bool { return len(ordered[i].from) > len(ordered[j].from) })
-		var oldnew []string
-		for _, p := range ordered {
-			oldnew = append(oldnew, p.from, p.to)
-		}
-		rep := strings.NewReplacer(oldnew...)
+		rep := wxrURLReplacer(urlMap)
 		for _, id := range imported {
 			p, err := s.store.GetPost(ctx, id)
 			if err != nil {
@@ -850,6 +850,15 @@ func (s *Server) importWXR(c *gin.Context, u *store.User, data []byte) (*importR
 			}
 		}
 	}
+	// Author ids in the file -> ours (Theme Builder conditions). Only authors that exist here: a
+	// rule about an author who was mapped to the importer is dropped, not moved to the importer.
+	oldUsers := map[int64]int64{}
+	for _, a := range doc.Channel.Authors {
+		if a.ID != 0 && matched[a.Login] {
+			oldUsers[a.ID] = authors[a.Login]
+		}
+	}
+	rep.Log = append(rep.Log, s.wbImportDocs(ctx, u, imported, urlMap, wbImportIDs{Posts: idMap, Terms: oldTerms, Users: oldUsers})...) // Pursae Web Builder docs (webbuilder_hooks.go)
 	// process_menu_item(): items whose object was not imported are skipped (custom links always import).
 	menuItemIDs := map[int64]int64{}
 	menuOrphans := map[int64]int64{}
@@ -1036,4 +1045,47 @@ func (s *Server) sideloadURL(ctx context.Context, rawURL string, uploaderID, pos
 		return nil, errors.New("Zero size file downloaded.")
 	}
 	return a, err
+}
+
+// wxrURLReplacer is backfill_attachment_urls()'s replacer: every old attachment URL becomes the
+// imported one, and its extension-less stem follows too so image sizes (photo-300x200.jpg after
+// photo.jpg) are remapped. Longest URLs first; the order is deterministic. The content backfill and
+// the Pursae Web Builder doc import share it.
+func wxrURLReplacer(urlMap map[string]string) *strings.Replacer {
+	keys := make([]string, 0, len(urlMap))
+	for k := range urlMap {
+		if k != "" {
+			keys = append(keys, k)
+		}
+	}
+	sort.Strings(keys)
+	m := make(map[string]string, 2*len(keys))
+	for _, k := range keys {
+		m[k] = urlMap[k]
+	}
+	for _, k := range keys {
+		to := urlMap[k]
+		if ext := path.Ext(k); ext != "" && path.Ext(to) != "" {
+			if stem := strings.TrimSuffix(k, ext); stem != "" {
+				if _, ok := m[stem]; !ok {
+					m[stem] = strings.TrimSuffix(to, path.Ext(to))
+				}
+			}
+		}
+	}
+	from := make([]string, 0, len(m))
+	for k := range m {
+		from = append(from, k)
+	}
+	sort.Slice(from, func(i, j int) bool {
+		if len(from[i]) != len(from[j]) {
+			return len(from[i]) > len(from[j])
+		}
+		return from[i] < from[j]
+	})
+	pairs := make([]string, 0, 2*len(from))
+	for _, k := range from {
+		pairs = append(pairs, k, m[k])
+	}
+	return strings.NewReplacer(pairs...)
 }

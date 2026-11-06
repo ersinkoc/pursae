@@ -19,9 +19,7 @@ func (s *Server) wpHead(c *gin.Context, q *siteQuery, lb *links.Builder, adminBa
 	var sb strings.Builder
 	sb.WriteString(s.gooikeHead(c)) // Gooike: Consent Mode defaults first, banner styles, head scripts (gooike_front.go)
 	sb.WriteString(s.gooHead(c, q)) // Goocommerce: store styles (goo_front.go)
-	if v.GWE == nil {
-		sb.WriteString(v.Theme.HeadTop)
-	}
+	sb.WriteString(v.Theme.HeadTop)
 	seo := s.seogoHead(c, q, lb) // SEO-Go replaces the robots meta and the canonical link (seogo_head.go)
 	if seo != "" {
 		sb.WriteString(seo)
@@ -47,7 +45,7 @@ func (s *Server) wpHead(c *gin.Context, q *siteQuery, lb *links.Builder, adminBa
 		sb.WriteString("<link rel='stylesheet' id='wpgo-brand-css' href='/wp-includes/css/wpgo-brand.css?ver=" + Version + "' media='all' />\n")
 		sb.WriteString("<style id='admin-bar-inline-css'>\n@media screen { html { margin-top: 32px !important; } }\n@media screen and ( max-width: 782px ) { html { margin-top: 46px !important; } }\n</style>\n")
 	}
-	if v.GWE == nil && v.Theme.BlockStyles != nil {
+	if v.Theme.BlockStyles != nil {
 		sb.WriteString(blockStylesMarker) // the styles of the blocks the page uses (blockStylesFor)
 	} else {
 		sb.WriteString("<link rel='stylesheet' id='wp-block-library-css' href='/wp-includes/css/dist/block-library/style.min.css' media='all' />\n")
@@ -55,12 +53,7 @@ func (s *Server) wpHead(c *gin.Context, q *siteQuery, lb *links.Builder, adminBa
 		sb.WriteString("<style id='classic-theme-styles-inline-css'>\n" + s.webFile("wp-includes/css/classic-themes.min.css") + "\n</style>\n")
 		sb.WriteString("<style id='global-styles-inline-css'>\n" + s.webFile("wp-includes/css/global-styles-classic.css") + "\n</style>\n")
 	}
-	if v.GWE != nil { // Golementor theme parts: Hello Golementor's stylesheet instead of the theme's own assets
-		sb.WriteString(s.helloHead(c, v))
-		if gweDesignTheme(v.Theme) && v.Theme.Head != nil { // a Golementor design package keeps its own stylesheet (goo_gwe.go)
-			sb.WriteString(v.Theme.Head(s, c, v))
-		}
-	} else if v.Theme.Head != nil {
+	if v.Theme.Head != nil {
 		sb.WriteString(v.Theme.Head(s, c, v))
 	}
 	sb.WriteString("<link rel=\"https://api.w.org/\" href=\"" + html.EscapeString(lb.HomeURL("/wp-json/")) + "\" />\n")
@@ -78,7 +71,6 @@ func (s *Server) wpHead(c *gin.Context, q *siteQuery, lb *links.Builder, adminBa
 		}
 		fmt.Fprintf(&sb, "<link rel='shortlink' href='%s' />\n", html.EscapeString(lb.HomeURL(short+itoa64(q.Post.ID))))
 	}
-	sb.WriteString(string(s.gweHead(c)))                                                            // Golementor frontend styles
 	sb.WriteString(customizeHead(v))                                                                // custom background, site icon, Additional CSS
 	sb.WriteString(string(s.pluginStyleTags("front")) + string(s.pluginScriptTags("front", false))) // plugin assets
 	return template.HTML(sb.String())
@@ -94,7 +86,6 @@ func (s *Server) wpFooter(c *gin.Context, q *siteQuery, lb *links.Builder, admin
 		sb.WriteString("<script src=\"/wp-includes/js/hoverintent-js.min.js?ver=2.2.1\" id=\"hoverintent-js-js\"></script>\n") // admin-bar.js dependency
 		sb.WriteString("<script src=\"/wp-includes/js/admin-bar.min.js?ver=" + Version + "\" id=\"admin-bar-js\"></script>\n")
 	}
-	sb.WriteString(string(s.gweFooter(c)))                    // Golementor frontend scripts
 	sb.WriteString(string(s.pluginScriptTags("front", true))) // plugin footer scripts
 	sb.WriteString(s.gooikeFooter(c))                         // Gooike: banner, preferences, footer scripts (gooike_front.go)
 	sb.WriteString(s.gooFooter(c, q))                         // Goocommerce: store scripts, store notice (goo_front.go)
@@ -160,7 +151,7 @@ func (s *Server) frontAdminBar(c *gin.Context, q *siteQuery, lb *links.Builder, 
 		label := map[string]string{"category": "Edit Category", "post_tag": "Edit Tag"}[q.Term.Taxonomy]
 		fmt.Fprintf(&sb, `<li role='group' id='wp-admin-bar-edit'><a class='ab-item' role="menuitem" href='/wp-admin/term?taxonomy=%s&amp;tag_ID=%d'>%s</a></li>`, q.Term.Taxonomy, q.Term.ID, label)
 	}
-	sb.WriteString(s.gweFrontAdminBar(q, u))      // Golementor: Edit with Golementor
+	sb.WriteString(s.wbAdminBarNode(c, q, u))     // Pursae Web Builder: Edit with Pursae Web Builder (webbuilder_admin.go)
 	sb.WriteString(string(s.maintAdminBar(c, u))) // Maintenance-Go
 	sb.WriteString(`</ul><ul role='menu' id='wp-admin-bar-top-secondary' class="ab-top-secondary ab-top-menu">`)
 	sb.WriteString(`<li role='group' id='wp-admin-bar-search' class="admin-bar-search"><div class="ab-item ab-empty-item" tabindex="-1" role="menuitem"><form action="` + esc(lb.HomeURL("/")) + `" method="get" id="adminbarsearch"><input class="adminbar-input" name="s" id="adminbar-search" type="text" value="` + esc(q.Search) + `" maxlength="150" /><label for="adminbar-search" class="screen-reader-text">Search</label><input type="submit" class="adminbar-button" value="Search" /></form></div></li>`)
