@@ -15,8 +15,8 @@ import (
 
 // Integration tests of the plugin switch and Settings › Web Builder (need the test database).
 
-// The Plugins screen switches Pursae Web Builder on and off and nothing else: no theme switch, no
-// setup wizard, no extra notices.
+// The Plugins screen switches Pursae Web Builder on and off: Hello Pursae comes and goes with it
+// (theme_hellopursae_test.go covers the switching), no setup wizard.
 func TestWebBuilderPluginToggle(t *testing.T) {
 	ts, c, srv := testServerBuilderOff(t)
 	base := ts.URL
@@ -36,12 +36,12 @@ func TestWebBuilderPluginToggle(t *testing.T) {
 	if loc != "/wp-admin/plugins?activate=true" || !srv.wbOn() {
 		t.Fatalf("activate: %s on=%v", loc, srv.wbOn())
 	}
-	if got := srv.settings.String("stylesheet"); got != theme {
-		t.Errorf("activation switched the theme to %s", got)
+	if got := srv.settings.String("stylesheet"); got != wbHelloSlug {
+		t.Errorf("activation left the theme on %s", got)
 	}
 	_, body, _ = get(t, c, base+loc)
-	if !strings.Contains(body, "Plugin activated.") || strings.Contains(body, "Run Site Setup") || strings.Contains(body, "is now the active theme") {
-		t.Error("activation notices are not the plain ones")
+	if !strings.Contains(body, "Plugin activated.") || strings.Contains(body, "Run Site Setup") || !strings.Contains(body, "Your site now uses Hello Pursae") {
+		t.Error("activation notices")
 	}
 	row = regexp.MustCompile(`(?s)<tr class="active" data-slug="golementor".*?</tr>`).FindString(body)
 	if !strings.Contains(row, `href="`+strings.ReplaceAll(wbSettingsURL, "&", "&amp;")+`"`) && !strings.Contains(row, `href="`+wbSettingsURL+`"`) {
@@ -53,7 +53,7 @@ func TestWebBuilderPluginToggle(t *testing.T) {
 		t.Fatalf("deactivate: %s on=%v", loc, srv.wbOn())
 	}
 	if got := srv.settings.String("stylesheet"); got != theme {
-		t.Errorf("deactivation switched the theme to %s", got)
+		t.Errorf("deactivation left the theme on %s, want %s", got, theme)
 	}
 }
 

@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"html/template"
+	"log"
 	"net/http"
 	"slices"
 	"strings"
@@ -45,15 +46,171 @@ func (s *Server) wbEnabledType(typ string) bool {
 	return typ != "" && slices.Contains(s.wbEnabledTypes(), typ)
 }
 
-// wbSetActive is the Plugins screen's Activate / Deactivate of Pursae Web Builder: the option and a
-// cache purge (built pages render differently with the plugin off), nothing else. No theme switch,
-// no setup wizard, no kit: the builder needs none of them.
+// wbSetActive is the Plugins screen's Activate / Deactivate of Pursae Web Builder: the option, the
+// theme switch and a cache purge (built pages render differently with the plugin off).
+//
+// Activation moves the site to Hello Pursae, the blank canvas the Theme Builder designs on, and
+// remembers the theme it leaves (web_builder_previous_theme) for deactivation; a notice offers to
+// switch back. Deactivation moves a site still on Hello Pursae back to that theme (the default theme
+// when it is gone); a site whose theme the user changed in between keeps it.
 func (s *Server) wbSetActive(ctx context.Context, on bool) error {
+	was := s.wbOn()
 	if err := s.settings.Set(ctx, map[string]any{webbuilder.PluginOption: on}); err != nil {
 		return err
 	}
+	if on && !was {
+		s.wbSwitchToHello(ctx)
+	} else if !on && was {
+		s.wbSwitchBack(ctx)
+	}
 	s.purgeAll(ctx)
 	return nil
+}
+
+const (
+	// wbPreviousThemeOption is the theme the site had before activation switched it to Hello Pursae.
+	wbPreviousThemeOption = "web_builder_previous_theme"
+	// wbThemeNoticeOption holds the pending "Your site now uses Hello Pursae" notice:
+	// {"previous": "<slug>"}. Absent once dismissed, switched back or the plugin is off.
+	wbThemeNoticeOption = "web_builder_theme_notice"
+	// wbHelloOfferedOption marks the "Switch to Hello Pursae" offer as done: set by activation and by
+	// the offer's Dismiss or Switch link, so only a site that had the plugin on before Hello Pursae
+	// existed sees the offer, once.
+	wbHelloOfferedOption = "web_builder_hello_offered"
+	// wbThemeNoticeNonce is the nonce action of the notices' links (wbThemeNoticeAction).
+	wbThemeNoticeNonce = "web-builder-theme-notice"
+)
+
+// wbSwitchToHello makes Hello Pursae the active theme (restoring it when it was deleted) and
+// remembers the theme it replaces. A failed switch is logged: the plugin works with any theme.
+func (s *Server) wbSwitchToHello(ctx context.Context) {
+	_ = s.restoreTheme(ctx, wbHelloSlug) // the blank canvas comes with the plugin, even after a delete
+	values := map[string]any{wbHelloOfferedOption: true}
+	if cur := s.settings.String("stylesheet"); cur != wbHelloSlug {
+		if err := s.switchTheme(ctx, wbHelloSlug); err != nil {
+			log.Printf("web builder: switching to %s: %v", wbHelloSlug, err)
+		} else {
+			values[wbPreviousThemeOption] = cur
+			values[wbThemeNoticeOption] = map[string]any{"previous": cur}
+		}
+	}
+	if err := s.settings.Set(ctx, values); err != nil {
+		log.Printf("web builder: %v", err)
+	}
+}
+
+// wbSwitchBack moves a site on Hello Pursae back to the theme it had before (wbPreviousTheme) and
+// forgets that theme and the notice. A site on another theme keeps it.
+func (s *Server) wbSwitchBack(ctx context.Context) {
+	if s.settings.String("stylesheet") == wbHelloSlug {
+		back := s.wbPreviousTheme(ctx)
+		_ = s.restoreTheme(ctx, back) // the default theme comes back even after a delete
+		if err := s.switchTheme(ctx, back); err != nil {
+			log.Printf("web builder: switching back to %s: %v", back, err)
+		}
+	}
+	if err := s.settings.Set(ctx, map[string]any{wbPreviousThemeOption: nil, wbThemeNoticeOption: nil}); err != nil {
+		log.Printf("web builder: %v", err)
+	}
+}
+
+// wbPreviousTheme is the theme to go back to from Hello Pursae: the remembered one while it is
+// installed and neither Hello Pursae nor an old builder theme, else the default theme.
+func (s *Server) wbPreviousTheme(ctx context.Context) string {
+	prev := s.settings.String(wbPreviousThemeOption)
+	if prev != "" && prev != wbHelloSlug && !s.wbOldBuilderTheme(ctx, prev) && !s.themeDeleted(prev) && s.installedTheme(prev) != nil {
+		return prev
+	}
+	return defaultTheme
+}
+
+// wbThemeNotice is the Hello Pursae notice for this request, on the Dashboard, Plugins and Themes
+// screens for users who may switch themes (pluginNotices calls it): after activation "Your site now
+// uses Hello Pursae" with Switch back, or, on a site that had the plugin on before Hello Pursae
+// existed, a one-time offer to switch to it. Both have a Dismiss link that sticks.
+func (s *Server) wbThemeNotice(c *gin.Context) (notice, bool) {
+	from := ""
+	switch c.Request.URL.Path {
+	case "/wp-admin", "/wp-admin/", "/wp-admin/index":
+	case "/wp-admin/plugins":
+		from = "plugins"
+	case "/wp-admin/themes":
+		from = "themes"
+	default:
+		return notice{}, false
+	}
+	if !s.wbOn() {
+		return notice{}, false
+	}
+	if u := currentUser(c); u == nil || !u.Can("switch_themes", nil) {
+		return notice{}, false
+	}
+	link := func(action, id, label string) string {
+		href := wbSettingsURL + "&wb-theme=" + action + "&_wpnonce=" + s.nonce(c, wbThemeNoticeNonce)
+		if from != "" {
+			href += "&from=" + from
+		}
+		return `<a href="` + template.HTMLEscapeString(href) + `" id="` + id + `">` + label + `</a>`
+	}
+	esc := template.HTMLEscapeString
+	cur := s.settings.String("stylesheet")
+	if m, ok := s.settings.Get(wbThemeNoticeOption).(map[string]any); ok && cur == wbHelloSlug {
+		msg := "<strong>Your site now uses Hello Pursae</strong>, the blank canvas Pursae Web Builder designs headers, footers and templates on."
+		prev, _ := m["previous"].(string)
+		if t := s.installedTheme(prev); t != nil && prev != wbHelloSlug {
+			msg += " Previous theme: <strong>" + esc(t.Name) + "</strong>. " + link("switch-back", "web-builder-theme-switch-back", "Switch back") + " |"
+		}
+		msg += " " + link("dismiss", "web-builder-theme-dismiss", "Dismiss")
+		return notice{Type: "info", Message: template.HTML(msg), Dismissible: true}, true
+	}
+	if cur != wbHelloSlug && !s.settings.Bool(wbHelloOfferedOption) {
+		msg := "<strong>Pursae Web Builder</strong> designs headers, footers and templates on the <strong>Hello Pursae</strong> theme. " +
+			link("hello", "web-builder-theme-switch-hello", "Switch to Hello Pursae") + " | " + link("dismiss", "web-builder-theme-dismiss", "Dismiss")
+		return notice{Type: "info", Message: template.HTML(msg), Dismissible: true}, true
+	}
+	return notice{}, false
+}
+
+// wbThemeNoticeAction runs a link of wbThemeNotice (GET options-general?page=web-builder&wb-theme=…
+// with a nonce; manage_options checked by the options screen, switch_themes here) and goes back to
+// the screen that showed it: dismiss, switch-back (to the previous theme) or hello (switch to Hello
+// Pursae, plugin on only).
+func (s *Server) wbThemeNoticeAction(c *gin.Context) {
+	if !s.checkNonce(c, wbThemeNoticeNonce) {
+		s.denyNonce(c)
+		return
+	}
+	if u := currentUser(c); u == nil || !u.Can("switch_themes", nil) {
+		c.String(http.StatusForbidden, "Sorry, you are not allowed to switch themes for this site.")
+		return
+	}
+	ctx := c.Request.Context()
+	switch c.Query("wb-theme") {
+	case "dismiss":
+		if err := s.settings.Set(ctx, map[string]any{wbThemeNoticeOption: nil, wbHelloOfferedOption: true}); err != nil {
+			c.String(http.StatusInternalServerError, err.Error())
+			return
+		}
+	case "switch-back":
+		s.wbSwitchBack(ctx)
+	case "hello":
+		if !s.wbOn() {
+			c.String(http.StatusForbidden, "Sorry, you are not allowed to access this page.")
+			return
+		}
+		s.wbSwitchToHello(ctx)
+	default:
+		c.String(http.StatusBadRequest, "Unknown action.")
+		return
+	}
+	back := "/wp-admin/"
+	switch c.Query("from") {
+	case "plugins":
+		back = "/wp-admin/plugins"
+	case "themes":
+		back = "/wp-admin/themes"
+	}
+	c.Redirect(http.StatusFound, back)
 }
 
 // wbTypeChoice is a post type offered on the settings screen.
@@ -166,6 +323,10 @@ type wbSettingsData struct {
 func (s *Server) wbSettingsScreen(c *gin.Context) {
 	if c.Query("dismiss") == wbUpgradeNoticeDismiss {
 		s.wbDismissUpgradeNotice(c) // webbuilder_upgrade.go
+		return
+	}
+	if c.Query("wb-theme") != "" { // the Hello Pursae notice's links (switch back works with the plugin off too)
+		s.wbThemeNoticeAction(c)
 		return
 	}
 	if !s.wbOn() {

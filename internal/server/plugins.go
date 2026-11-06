@@ -161,6 +161,9 @@ func (s *Server) pluginNotices(c *gin.Context) []notice {
 	if n, ok := s.wbUpgradeNotice(c); ok { // Pursae Web Builder: the old builder was replaced (webbuilder_upgrade.go)
 		out = append(out, n)
 	}
+	if n, ok := s.wbThemeNotice(c); ok { // Pursae Web Builder: Hello Pursae switch / offer (webbuilder_settings.go)
+		out = append(out, n)
+	}
 	if s.plugins == nil || !s.plugins.hooks.HasAction("admin_notices") {
 		return out
 	}

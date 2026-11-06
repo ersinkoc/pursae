@@ -58,12 +58,12 @@ func TestWebBuilderUpgrade(t *testing.T) {
 	// Hello Web Builder active, the theme before it still installed: back to that theme.
 	wbuRegisterTheme(t, &Theme{Slug: "wbu-previous", Name: "WBU Previous", Version: "1.0"})
 	wbuReset(t, srv, map[string]any{"stylesheet": "hello-web-builder", "template": "hello-web-builder",
-		wbPrevThemeOption: "wbu-previous", webbuilder.PluginOption: true})
+		wbOldPrevThemeOption: "wbu-previous", webbuilder.PluginOption: true})
 	srv.wbUpgrade(ctx)
 	if got := srv.settings.String("stylesheet"); got != "wbu-previous" {
 		t.Fatalf("theme after the upgrade: %s, want wbu-previous", got)
 	}
-	if srv.settings.String(wbPrevThemeOption) != "" || !srv.settings.Bool(wbUpgradedOption) {
+	if srv.settings.String(wbOldPrevThemeOption) != "" || !srv.settings.Bool(wbUpgradedOption) {
 		t.Error("the upgrade did not clean up its options")
 	}
 	if !srv.wbOn() {
@@ -118,7 +118,7 @@ func TestWebBuilderUpgrade(t *testing.T) {
 
 	// The previous theme is gone: the default theme. The plugin being off does not matter.
 	wbuReset(t, srv, map[string]any{"stylesheet": "hello-web-builder", "template": "hello-web-builder",
-		wbPrevThemeOption: "no-such-theme", webbuilder.PluginOption: false})
+		wbOldPrevThemeOption: "no-such-theme", webbuilder.PluginOption: false})
 	srv.wbUpgrade(ctx)
 	if got := srv.settings.String("stylesheet"); got != defaultTheme {
 		t.Errorf("theme with a missing previous theme: %s, want %s", got, defaultTheme)
@@ -141,7 +141,7 @@ func TestWebBuilderUpgrade(t *testing.T) {
 		ON CONFLICT (slug) DO UPDATE SET custom = true`); err != nil {
 		t.Fatal(err)
 	}
-	wbuReset(t, srv, map[string]any{"stylesheet": "wbu-saved", "template": "wbu-saved", wbPrevThemeOption: "hello-web-builder", webbuilder.PluginOption: true})
+	wbuReset(t, srv, map[string]any{"stylesheet": "wbu-saved", "template": "wbu-saved", wbOldPrevThemeOption: "hello-web-builder", webbuilder.PluginOption: true})
 	srv.wbUpgrade(ctx)
 	if got := srv.settings.String("stylesheet"); got != defaultTheme {
 		t.Errorf("saved theme: now %s, want %s", got, defaultTheme)
@@ -155,7 +155,7 @@ func TestWebBuilderUpgrade(t *testing.T) {
 		!srv.wbOldBuilderTheme(ctx, "hello-gowebeditor") || srv.wbOldBuilderTheme(ctx, "") {
 		t.Error("wbOldBuilderTheme")
 	}
-	wbuReset(t, srv, map[string]any{"stylesheet": "wbu-design", "template": "wbu-design", wbPrevThemeOption: "wbu-previous"})
+	wbuReset(t, srv, map[string]any{"stylesheet": "wbu-design", "template": "wbu-design", wbOldPrevThemeOption: "wbu-previous"})
 	srv.wbUpgrade(ctx)
 	if got := srv.settings.String("stylesheet"); got != "wbu-previous" {
 		t.Errorf("design package: now %s, want wbu-previous", got)
@@ -164,7 +164,7 @@ func TestWebBuilderUpgrade(t *testing.T) {
 	// An active theme that is not installed at all (its files are gone) moves to the default theme
 	// with the notice, instead of staying active with the upgrade marked done.
 	for _, missing := range []string{"wbu-missing-theme", "hello-web-builder"} {
-		wbuReset(t, srv, map[string]any{"stylesheet": missing, "template": missing, wbPrevThemeOption: "", webbuilder.PluginOption: false})
+		wbuReset(t, srv, map[string]any{"stylesheet": missing, "template": missing, wbOldPrevThemeOption: "", webbuilder.PluginOption: false})
 		srv.wbUpgrade(ctx)
 		if got := srv.settings.String("stylesheet"); got != defaultTheme || !srv.settings.Bool(wbUpgradedOption) {
 			t.Errorf("missing theme %s: now %s, want %s", missing, got, defaultTheme)
@@ -183,5 +183,49 @@ func TestWebBuilderUpgrade(t *testing.T) {
 	_, body, _ = get(t, c, base+"/wp-admin/")
 	if !strings.Contains(body, "those pages now show their text content in the theme.") || strings.Contains(body, "the theme was switched") {
 		t.Error("notice without a theme switch")
+	}
+}
+
+// Hello Pursae is the new builder's theme: the upgrade neither moves a site off it nor touches its
+// option (web_builder_previous_theme), and it is no old builder theme.
+func TestWebBuilderUpgradeKeepsHelloPursae(t *testing.T) {
+	if wbOldPrevThemeOption == wbPreviousThemeOption || wbOldHelloThemes[wbHelloSlug] {
+		t.Fatal("the old builder's theme options and Hello Pursae's overlap")
+	}
+	ts, c, srv := testServerBuilderOff(t)
+	installAndLogin(t, ts, c)
+	ctx := context.Background()
+	if srv.wbOldBuilderTheme(ctx, wbHelloSlug) {
+		t.Error("wbOldBuilderTheme(hello-pursae)")
+	}
+	// Even a stray saved-theme row under its slug does not make it one.
+	if _, err := srv.store.Pool.Exec(ctx, `INSERT INTO themes (slug, version, status, custom) VALUES ($1, '1.0', 'inactive', true)
+		ON CONFLICT (slug) DO UPDATE SET custom = true`, wbHelloSlug); err != nil {
+		t.Fatal(err)
+	}
+	if srv.wbOldBuilderTheme(ctx, wbHelloSlug) {
+		t.Error("wbOldBuilderTheme(hello-pursae) with a custom row")
+	}
+	wbuRegisterTheme(t, &Theme{Slug: "wbu-before", Name: "WBU Before", Version: "1.0"})
+	for _, old := range []string{"", "wbu-before", "hello-web-builder"} {
+		wbuReset(t, srv, map[string]any{"stylesheet": wbHelloSlug, "template": wbHelloSlug, webbuilder.PluginOption: true,
+			wbPreviousThemeOption: "wbu-before", wbOldPrevThemeOption: old})
+		srv.wbUpgrade(ctx)
+		if got := srv.settings.String("stylesheet"); got != wbHelloSlug {
+			t.Errorf("golementor_previous_theme=%q: the upgrade moved Hello Pursae to %s", old, got)
+		}
+		if got := srv.settings.String(wbPreviousThemeOption); got != "wbu-before" {
+			t.Errorf("golementor_previous_theme=%q: web_builder_previous_theme is now %q", old, got)
+		}
+		if srv.settings.String(wbOldPrevThemeOption) != "" {
+			t.Error("the old option was not cleared")
+		}
+	}
+	// A site on an old builder theme moves to the theme before it, never to the one Hello Pursae remembers.
+	wbuReset(t, srv, map[string]any{"stylesheet": "hello-web-builder", "template": "hello-web-builder", webbuilder.PluginOption: true,
+		wbPreviousThemeOption: "wbu-before", wbOldPrevThemeOption: ""})
+	srv.wbUpgrade(ctx)
+	if got := srv.settings.String("stylesheet"); got != defaultTheme || srv.settings.String(wbPreviousThemeOption) != "wbu-before" {
+		t.Errorf("old theme: now %s, previous %q", got, srv.settings.String(wbPreviousThemeOption))
 	}
 }

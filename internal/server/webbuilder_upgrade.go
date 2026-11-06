@@ -27,8 +27,10 @@ const (
 	// wbUpgradeNoticeOption holds the pending notice: {"theme": "<name of the new theme>"}, theme
 	// empty when the theme was not switched. Absent or empty once dismissed.
 	wbUpgradeNoticeOption = "web_builder_upgrade_notice"
-	// wbPrevThemeOption is the theme the old builder left for Hello Web Builder on activation.
-	wbPrevThemeOption = "golementor_previous_theme"
+	// wbOldPrevThemeOption is the theme the old builder left for Hello Web Builder on activation. It is
+	// not web_builder_previous_theme (wbPreviousThemeOption, Hello Pursae's), which the upgrade never
+	// reads or writes.
+	wbOldPrevThemeOption = "golementor_previous_theme"
 	// wbUpgradeNoticeDismiss is the dismiss= value of the notice's Dismiss link (wbSettingsScreen).
 	wbUpgradeNoticeDismiss = "upgrade-notice"
 	// wbUpgradeNoticeNonce is that link's nonce action.
@@ -36,7 +38,7 @@ const (
 )
 
 // wbOldHelloThemes are the old builder's blank canvas theme, under its name before and after the
-// Pursae rename.
+// Pursae rename. Hello Pursae (wbHelloSlug) is not one of them.
 var wbOldHelloThemes = map[string]bool{"hello-web-builder": true, "hello-gowebeditor": true}
 
 // wbUpgrade runs the one-time upgrade. A site that is not installed yet has nothing to upgrade and
@@ -46,7 +48,7 @@ func (s *Server) wbUpgrade(ctx context.Context) {
 		return
 	}
 	// The old builder was in use when its plugin was on or it once moved the site to its theme.
-	used := s.settings.Bool(webbuilder.PluginOption) || s.settings.String(wbPrevThemeOption) != ""
+	used := s.settings.Bool(webbuilder.PluginOption) || s.settings.String(wbOldPrevThemeOption) != ""
 	switched := ""
 	// A theme whose files are gone (an old builder theme or one nothing knows about) cannot render
 	// either: it moves too, or the fallback would never run once the upgrade is marked done.
@@ -68,8 +70,8 @@ func (s *Server) wbUpgrade(ctx context.Context) {
 	if used {
 		values[wbUpgradeNoticeOption] = map[string]any{"theme": switched}
 	}
-	if s.settings.String(wbPrevThemeOption) != "" {
-		values[wbPrevThemeOption] = ""
+	if s.settings.String(wbOldPrevThemeOption) != "" {
+		values[wbOldPrevThemeOption] = ""
 	}
 	if err := s.settings.Set(ctx, values); err != nil {
 		log.Printf("web builder upgrade: %v", err)
@@ -79,7 +81,7 @@ func (s *Server) wbUpgrade(ctx context.Context) {
 // wbOldBuilderTheme reports whether slug is a theme of the old builder: Hello Web Builder, a theme
 // saved with it (themes.custom) or a design package (a golementor/ directory in the package).
 func (s *Server) wbOldBuilderTheme(ctx context.Context, slug string) bool {
-	if slug == "" {
+	if slug == "" || slug == wbHelloSlug { // Hello Pursae is the new builder's theme, never an old one
 		return false
 	}
 	if wbOldHelloThemes[slug] {
@@ -101,7 +103,7 @@ func (s *Server) wbOldBuilderTheme(ctx context.Context, slug string) bool {
 // wbUpgradeTarget is the theme the upgrade moves to: the one active before the old builder took
 // over when it is still installed and not itself a builder theme, else the default theme.
 func (s *Server) wbUpgradeTarget(ctx context.Context) string {
-	prev := s.settings.String(wbPrevThemeOption)
+	prev := s.settings.String(wbOldPrevThemeOption)
 	if prev != "" && !s.wbOldBuilderTheme(ctx, prev) && !s.themeDeleted(prev) && s.installedTheme(prev) != nil {
 		return prev
 	}

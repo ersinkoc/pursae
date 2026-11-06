@@ -1,0 +1,50 @@
+{{/* Hello Pursae: a blank, builder-first theme. While Pursae Web Builder is on, the Theme Builder's
+     parts of the request arrive in .Data.wb (wbThemePartsView: Header, Main, Footer, HasMain) and
+     replace the minimal markup below. */}}
+{{define "header"}}<!DOCTYPE html>
+<html lang="en-US">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="profile" href="https://gmpg.org/xfn/11">
+	<title>{{.DocumentTitle}}</title>
+{{.Head}}</head>
+
+<body class="{{.BodyClass}}">
+{{.BodyOpen}}<a class="skip-link screen-reader-text" href="#content">Skip to content</a>
+{{template "site-header" .}}
+{{end}}
+
+{{define "site-header"}}{{$wb := .Data.wb}}{{if and $wb $wb.Header}}<div class="wb-part wb-part-header">{{$wb.Header}}</div>{{else}}<header id="site-header" class="site-header">
+	<div class="site-branding">
+		{{.CustomLogo}}
+		{{if .TitleIsH1}}<h1 class="site-title"><a href="{{.HomeURL}}" rel="home"{{if .IsFront}} aria-current="page"{{end}}>{{.SiteName}}</a></h1>{{else}}<p class="site-title"><a href="{{.HomeURL}}" rel="home"{{if .IsFront}} aria-current="page"{{end}}>{{.SiteName}}</a></p>{{end}}
+		{{if .Description}}<p class="site-description">{{.Description}}</p>{{end}}
+	</div>
+	{{if .PrimaryMenu}}<nav class="site-navigation" aria-label="Menu">{{.PrimaryMenu}}</nav>{{end}}
+</header>{{end}}{{end}}
+
+{{define "footer"}}{{template "site-footer" .}}
+{{.Footer}}{{.AdminBar}}
+</body>
+</html>
+{{end}}
+
+{{define "site-footer"}}{{$wb := .Data.wb}}{{if and $wb $wb.Footer}}<div class="wb-part wb-part-footer">{{$wb.Footer}}</div>{{else}}<footer id="site-footer" class="site-footer">
+	{{with .Data.FooterMenu}}<nav class="site-navigation" aria-label="Footer menu">{{.}}</nav>{{end}}
+	<div class="site-info">
+		<p class="copyright">&copy; {{.Data.Year}} <a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></p>
+		{{.PrivacyLink}}
+	</div>
+</footer>{{end}}{{end}}
+
+{{/* main-open / main-close: main#content, or div#content when the builder part brings its own <main>. */}}
+{{define "main-open"}}{{$wb := .Data.wb}}{{if and $wb $wb.Main}}{{if $wb.HasMain}}<div id="content" class="site-main wb-main-part">{{else}}<main id="content" class="site-main wb-main-part">{{end}}{{else}}<main id="content" class="site-main">{{end}}{{end}}
+{{define "main-close"}}{{$wb := .Data.wb}}{{if and $wb $wb.Main $wb.HasMain}}</div>{{else}}</main>{{end}}{{end}}
+
+{{define "searchform"}}<form role="search" method="get" class="search-form" action="{{.HomeURL}}">
+	<label><span class="screen-reader-text">Search for:</span>
+		<input type="search" class="search-field" placeholder="Search &hellip;" value="{{.SearchQuery}}" name="s" />
+	</label>
+	<input type="submit" class="search-submit" value="Search" />
+</form>{{end}}
