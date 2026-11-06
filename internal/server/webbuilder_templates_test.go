@@ -511,6 +511,8 @@ func TestWBTemplatePurge(t *testing.T) {
 	doc, render := wbrFixture(t, "initial")
 	if code, v, _ := admin.do(http.MethodPost, wbrDocPath(id, "/publish"), wbrPublishBody(doc, render, 0, "publish", map[string]any{"title": "Site footer"}), nil); code != http.StatusOK {
 		t.Fatalf("publish: %d %v", code, v)
+	} else if pl, _ := wbrObj(v)["permalink"].(string); !strings.Contains(pl, webbuilder.PreviewQuery+"="+itoa64(id)) || strings.Contains(pl, "?p=") {
+		t.Errorf("template publish permalink %q, want its preview URL", pl)
 	}
 	if purges.Load() == n || srv.wbTemplateState().gen.Load() == gen {
 		t.Error("publishing a template did not purge / bump the index")

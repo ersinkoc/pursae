@@ -226,7 +226,8 @@ Server steps, in one transaction:
 8. Upsert `web_builder_docs` (`rev = rev + 1`, `detached = false`), set `_web_builder=1`,
    delete the caller's draft, purge WPGo Cache for the post.
 
-PublishResponse: `{rev, status, permalink, revisionId, modified, stripped}`; `stripped` lists
+PublishResponse: `{rev, status, permalink, revisionId, modified, stripped}` (for a template
+`permalink` is `template.preview.url`, §11.7); `stripped` lists
 what the server removed: `html-sections`, `custom-css`, `markup` (sanitizer changed the
 snapshot), `css` (CSS rules dropped). The editor shows a notice when it is not empty.
 

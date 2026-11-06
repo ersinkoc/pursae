@@ -722,7 +722,16 @@ func (s *Server) wbRESTPublish(c *gin.Context, r *restRequest) {
 	// save_post side effects, WPGo Cache purge of the post included; for a template
 	// wbAfterPostSave calls wbTemplatesChanged (index generation + full purge).
 	s.afterPostSave(c, fresh)
-	c.JSON(http.StatusOK, webbuilder.PublishResponse{Rev: d.Rev, Status: fresh.Status, Permalink: s.links(c).Permalink(fresh),
+	permalink := s.links(c).Permalink(fresh)
+	if wbIsTemplate(fresh) {
+		// A template has no front URL of its own (/?p=<id> is a 404): like links.permalink in the
+		// editor (contract §11.7), the permalink is the template's preview URL.
+		if t, err := s.store.WebBuilder().Template(c, fresh.ID); err == nil {
+			info, _ := s.wbTemplatePreviewInfo(c, t)
+			permalink = info.URL
+		}
+	}
+	c.JSON(http.StatusOK, webbuilder.PublishResponse{Rev: d.Rev, Status: fresh.Status, Permalink: permalink,
 		RevisionID: revisionID, Modified: wbTime(fresh.ModifiedAt), Stripped: snap.stripped})
 }
 
