@@ -183,9 +183,10 @@ copy, regenerating the diff against the pinned upstream and rebuilding.
 **Bumping upstream.** `make builder-bump SHA=<commit>` moves the submodule and
 `builder/UPSTREAM_SHA` and rebuilds; fix any patch that stops applying, then commit the pin, the
 patches and `web/web-builder/` together. `BUILD.json` records the upstream SHA, the patch hashes
-and the API and renderer versions; a Go test checks it against the repository. A change to the
-static markup or the `data-wb-*` attributes bumps `RendererVersion` (pages then show up under
-Regenerate pages); an incompatible payload change bumps `APIVersion`.
+and the API and renderer versions; a Go test checks it against the repository. An incompatible
+change to the static markup or the `data-wb-*` attributes bumps `RendererVersion` (pages then show
+up under Regenerate pages; additive attributes do not); an incompatible payload change bumps
+`APIVersion`.
 
 `builder/test/audit.mjs` fails the build when an AI provider URL or key header shows up in the
 bundles, and enforces the size budgets.

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { DocState } from '@/builder/types'
 import { createCmsHost } from '../../host/cms-host'
-import type { Boot, RenderOptions, RenderResult } from '../../host/contract'
+import { API_VERSION, type Boot, type RenderOptions, type RenderResult } from '../../host/contract'
 import { buildPublishRequest } from '../../host/publish'
 import { PAGE, ROOT, answerNext, makeBoot, makeDoc, mockFetch, restErr } from './helpers'
 
@@ -39,7 +39,7 @@ describe('publish payload', () => {
     const r = await host.publish({ doc, page: PAGE })
     expect(r).toEqual({ message: 'Page published', permalink: 'https://example.test/home/' })
     const c = m.find('POST', PUBLISH)[0]
-    expect(c.headers['x-wb-api']).toBe('1')
+    expect(c.headers['x-wb-api']).toBe(String(API_VERSION))
     expect(c.headers['x-wp-nonce']).toBe('nonce1')
     expect(c.body).toEqual({ baseRev: 3, status: 'publish', doc, page: PAGE, render: RENDER, utilityCss: '' })
     expect(c.body).not.toHaveProperty('reattach')
@@ -197,7 +197,7 @@ describe('publish 409 flows', () => {
   })
 
   it('409 wb_api_mismatch: stops and shows the reload prompt', async () => {
-    const { host } = setup(restErr(409, 'wb_api_mismatch', { reload: true, apiVersion: 2 }))
+    const { host } = setup(restErr(409, 'wb_api_mismatch', { reload: true, apiVersion: API_VERSION + 1 }))
     await expect(host.publish({ doc: makeDoc(), page: PAGE })).rejects.toThrow(/Reload/)
     expect(host.session.stopped).toBe('api')
     expect(host.ui.getState().notices.some((n) => n.key === 'reload')).toBe(true)
