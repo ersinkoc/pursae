@@ -1788,7 +1788,7 @@ func (s *Server) gooRunOrderAction(c *gin.Context, o *gooOrder, act string) erro
 		return s.gooAddOrderNote(ctx, o, "Order details manually sent to admin.", false, by)
 	case "regenerate_download_permissions":
 		_, _ = s.store.Pool.Exec(ctx, `DELETE FROM goo_download_permissions WHERE order_id = $1`, o.ID)
-		o.DownloadsGranted = false
+		_, _ = s.gooClaimOrderFlag(ctx, o, "downloads_granted", false)
 		s.gooGrantDownloads(ctx, o)
 		return nil
 	}

@@ -850,27 +850,60 @@ func (s *Server) gooUpdateStock(ctx context.Context, p *gooProduct, delta int, s
 	if !owner.ManageStock {
 		return -1, nil
 	}
-	var qty int
-	var err error
-	if set {
-		err = s.store.Pool.QueryRow(ctx, `UPDATE goo_products SET stock_quantity = $2, updated_at = now() WHERE post_id = $1 RETURNING stock_quantity`, owner.ID, delta).Scan(&qty)
-	} else {
-		err = s.store.Pool.QueryRow(ctx, `UPDATE goo_products SET stock_quantity = coalesce(stock_quantity,0) + $2, updated_at = now() WHERE post_id = $1 RETURNING stock_quantity`, owner.ID, delta).Scan(&qty)
+	var old *int
+	if owner.StockQuantity != nil {
+		v := *owner.StockQuantity
+		old = &v
 	}
+	qty, err := s.gooStockDelta(ctx, owner, delta, set, false)
 	if err != nil {
 		return 0, err
 	}
-	old := owner.StockQuantity
+	if !set {
+		v := qty - delta // the quantity this change started from
+		old = &v
+	}
+	was := math.MaxInt32
+	if old != nil {
+		was = *old
+	}
+	s.gooStockAfter(ctx, owner, was, qty, !set && delta < 0)
+	return qty, nil
+}
+
+// errGooNoStock is gooStockDelta refusing to sell more than is in stock.
+var errGooNoStock = errors.New("not enough stock")
+
+// gooStockDelta changes (or, with set, sets) the stock owner's quantity in one UPDATE that also writes
+// the matching stock status, so concurrent changes cannot leave a status that does not fit the
+// quantity. strict refuses a change that would take the quantity below zero unless the product allows
+// backorders (errGooNoStock): two orders cannot both take the last unit.
+func (s *Server) gooStockDelta(ctx context.Context, owner *gooProduct, delta int, set, strict bool) (int, error) {
+	newQty := `coalesce(stock_quantity, 0) + $2`
+	if set {
+		newQty = `$2`
+	}
+	var qty int
+	err := s.store.Pool.QueryRow(ctx, `UPDATE goo_products SET stock_quantity = `+newQty+`,
+		stock_status = CASE WHEN NOT $3 THEN stock_status WHEN `+newQty+` > $4 THEN 'instock'
+			WHEN backorders <> 'no' THEN 'onbackorder' ELSE 'outofstock' END, updated_at = now()
+		WHERE post_id = $1 AND (NOT $5 OR backorders <> 'no' OR `+newQty+` >= 0) RETURNING stock_quantity`,
+		owner.ID, delta, !gooSubsVariableLike(owner.Type), s.gooOptInt("notify_no_stock_amount"), strict).Scan(&qty)
+	if errors.Is(err, pgx.ErrNoRows) && strict {
+		return 0, errGooNoStock
+	}
+	return qty, err
+}
+
+// gooStockAfter follows a stock change of the owner: its in-memory quantity and status, the variable
+// parent's status, caches, the translations' stock and (notify) the low / no stock e-mails.
+func (s *Server) gooStockAfter(ctx context.Context, owner *gooProduct, old, qty int, notify bool) {
 	owner.StockQuantity = &qty
-	status := s.gooStockStatusFor(qty, owner.Backorders)
 	if gooSubsVariableLike(owner.Type) {
 		// Parent-managed stock of a variable product: the parent's status is synced from the variations.
 		_ = s.gooSyncVariable(ctx, owner)
 	} else {
-		owner.StockStatus = status
-		if _, err := s.store.Pool.Exec(ctx, `UPDATE goo_products SET stock_status = $2 WHERE post_id = $1`, owner.ID, status); err != nil {
-			return qty, err
-		}
+		owner.StockStatus = s.gooStockStatusFor(qty, owner.Backorders)
 		if owner.Type == gooTypeVariation {
 			if parent := s.gooParent(ctx, owner); parent != nil {
 				_ = s.gooSyncVariable(ctx, parent)
@@ -879,10 +912,9 @@ func (s *Server) gooUpdateStock(ctx context.Context, p *gooProduct, delta int, s
 	}
 	s.gooPurgeProduct(ctx, owner)
 	s.gooPllStockSync(ctx, owner) // Golylang: translations share the stock (goo_golylang.go)
-	if !set && delta < 0 {
-		s.gooStockNotifications(ctx, owner, old, qty)
+	if notify {
+		s.gooStockNotifications(ctx, owner, &old, qty)
 	}
-	return qty, nil
 }
 
 // gooStockNotifications sends the low stock / no stock e-mails when a reduction crosses a threshold.

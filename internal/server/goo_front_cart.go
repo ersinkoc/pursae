@@ -806,8 +806,7 @@ func (s *Server) gooCancelOrder(c *gin.Context) {
 		s.gooRedirect(c, target)
 		return
 	}
-	if o.Status == "pending" || o.Status == "failed" {
-		_ = s.gooSetStatus(ctx, o, "cancelled", "Order cancelled by customer.", "")
+	if err := s.gooSetStatusFrom(ctx, o, gooNeedsPaymentStatuses, "cancelled", "Order cancelled by customer.", ""); err == nil {
 		s.gooAddNotice(c, "notice", "Your order was cancelled.")
 	} else {
 		s.gooAddNotice(c, "error", "Your order can no longer be cancelled. Please contact us if you need assistance.")
