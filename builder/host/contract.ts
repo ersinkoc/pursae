@@ -56,6 +56,12 @@ export const routes = {
   templateConflicts: (id: number) => `web-builder/v2/templates/${id}/conflicts`,
   navigator: () => 'web-builder/v2/navigator',
   siteSettings: () => 'web-builder/v2/site-settings',
+  /** Page tools (page-tools.ts): which plugin tabs the page has, Pursae Multi Language, Pursae SEO. */
+  documentPlugins: (id: number) => `web-builder/v2/documents/${id}/plugins`,
+  documentLanguages: (id: number) => `web-builder/v2/documents/${id}/languages`,
+  documentTranslations: (id: number) => `web-builder/v2/documents/${id}/translations`,
+  /** Pursae SEO's own route (plugin namespace seogo/v1, not web-builder/v2). */
+  seoMeta: (id: number) => `seogo/v1/meta/${id}`,
   previewContext: () => 'web-builder/v2/preview-context',
   media: () => 'wp/v2/media',
 } as const

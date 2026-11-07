@@ -188,6 +188,62 @@ const tr: Record<string, string> = {
   "{n} templates saved as drafts in the Theme Builder": "{n} şablon Tema Oluşturucu'da taslak olarak kaydedildi", // i18n-ignore
   "{n} templates": "{n} şablon", // i18n-ignore
   "“{name}” has no design.": "“{name}” için tasarım yok.", // i18n-ignore
+  "Page tools": "Sayfa araçları", // i18n-ignore
+  "Languages": "Diller", // i18n-ignore
+  "SEO": "SEO", // i18n-ignore
+  "Loading languages…": "Diller yükleniyor…", // i18n-ignore
+  "Loading SEO settings…": "SEO ayarları yükleniyor…", // i18n-ignore
+  "The languages could not be loaded.": "Diller yüklenemedi.", // i18n-ignore
+  "Languages are not available for this page.": "Bu sayfa için diller kullanılamıyor.", // i18n-ignore
+  "This page": "Bu sayfa", // i18n-ignore
+  "No language is set for this page.": "Bu sayfa için dil belirlenmemiş.", // i18n-ignore
+  "Translations": "Çeviriler", // i18n-ignore
+  "Missing translations": "Eksik çeviriler", // i18n-ignore
+  "Current": "Geçerli", // i18n-ignore
+  "Open": "Aç", // i18n-ignore
+  "Add translation": "Çeviri ekle", // i18n-ignore
+  "A translation starts as a draft copy of the published page. Your latest changes are saved as a draft first.": "Çeviri, sayfanın yayınlanmış halinin taslak bir kopyası olarak başlar. Önce son değişiklikleriniz taslak olarak kaydedilir.", // i18n-ignore
+  "Your latest changes could not be saved yet. Try again in a moment.": "Son değişiklikleriniz henüz kaydedilemedi. Biraz sonra yeniden deneyin.", // i18n-ignore
+  "The translation was created, but your latest changes could not be saved yet. Try again in a moment.": "Çeviri oluşturuldu, ancak son değişiklikleriniz henüz kaydedilemedi. Biraz sonra yeniden deneyin.", // i18n-ignore
+  "You cannot edit this translation.": "Bu çeviriyi düzenleme yetkiniz yok.", // i18n-ignore
+  "You do not have permission to change the social sharing settings.": "Sosyal paylaşım ayarlarını değiştirme yetkiniz yok.", // i18n-ignore
+  "You do not have permission to change the canonical URL or search engine settings.": "Kanonik URL'yi veya arama motoru ayarlarını değiştirme yetkiniz yok.", // i18n-ignore
+  "The translation could not be created.": "Çeviri oluşturulamadı.", // i18n-ignore
+  "Published": "Yayında", // i18n-ignore
+  "Draft": "Taslak", // i18n-ignore
+  "Pending review": "İnceleme bekliyor", // i18n-ignore
+  "Private": "Özel", // i18n-ignore
+  "Scheduled": "Zamanlanmış", // i18n-ignore
+  "SEO score": "SEO puanı", // i18n-ignore
+  "Not analyzed yet. The score appears after you save.": "Henüz analiz edilmedi. Puan, kaydettiğinizde görünür.", // i18n-ignore
+  "Calculated from the saved page content and these settings.": "Kaydedilmiş sayfa içeriğinden ve bu ayarlardan hesaplanır.", // i18n-ignore
+  "Good": "İyi", // i18n-ignore
+  "Needs improvement": "Geliştirilmeli", // i18n-ignore
+  "Poor": "Zayıf", // i18n-ignore
+  "Search appearance": "Arama görünümü", // i18n-ignore
+  "Focus keyword": "Odak anahtar kelime", // i18n-ignore
+  "The word or phrase you want this page to be found for.": "Bu sayfanın bulunmasını istediğiniz sözcük veya ifade.", // i18n-ignore
+  "SEO title": "SEO başlığı", // i18n-ignore
+  "Leave empty to use the template from the SEO settings.": "SEO ayarlarındaki şablonu kullanmak için boş bırakın.", // i18n-ignore
+  "Meta description": "Meta açıklaması", // i18n-ignore
+  "A short summary for search results, about 155 characters.": "Arama sonuçları için kısa bir özet, yaklaşık 155 karakter.", // i18n-ignore
+  "Canonical URL": "Kanonik URL", // i18n-ignore
+  "Only when the same content lives at another address.": "Yalnızca aynı içerik başka bir adreste de bulunuyorsa.", // i18n-ignore
+  "Search engines": "Arama motorları", // i18n-ignore
+  "Hide this page from search results": "Bu sayfayı arama sonuçlarından gizle", // i18n-ignore
+  "Adds noindex: search engines will not list the page.": "noindex ekler: arama motorları sayfayı listelemez.", // i18n-ignore
+  "Do not follow links on this page": "Bu sayfadaki bağlantıları takip etme", // i18n-ignore
+  "Adds nofollow: search engines will not pass credit through its links.": "nofollow ekler: arama motorları bağlantıları üzerinden değer aktarmaz.", // i18n-ignore
+  "Social sharing": "Sosyal paylaşım", // i18n-ignore
+  "Social title": "Sosyal başlık", // i18n-ignore
+  "Leave empty to use the SEO title.": "SEO başlığını kullanmak için boş bırakın.", // i18n-ignore
+  "Social description": "Sosyal açıklama", // i18n-ignore
+  "Leave empty to use the meta description.": "Meta açıklamasını kullanmak için boş bırakın.", // i18n-ignore
+  "Social image": "Sosyal görsel", // i18n-ignore
+  "Shown when the page is shared. 1200 × 630 pixels works best.": "Sayfa paylaşıldığında gösterilir. En iyi sonuç için 1200 × 630 piksel.", // i18n-ignore
+  "Saved.": "Kaydedildi.", // i18n-ignore
+  "The SEO settings could not be loaded.": "SEO ayarları yüklenemedi.", // i18n-ignore
+  "The SEO settings could not be saved.": "SEO ayarları kaydedilemedi.", // i18n-ignore
 }
 
 export default tr

@@ -84,6 +84,7 @@ Code: `internal/server/golylang*.go`, `web/admin/templates/pages/golylang.html`,
 | Quick Edit and Bulk Edit language select, the "Filter untranslated items" dropdown | ✗ not added, to keep the shared list-table code small; the language changes in the editor |
 | Classic editor **Languages** meta box: Language select, Translations table (flag, edit/add icon, choose an existing post to link), changes saved at once over admin-ajax | ✅ |
 | Block editor **Languages** panel (document sidebar) with the same content | ✅ |
+| Pursae Web Builder editor: **Page tools** › **Languages** tab in the builder menu shows the page's language, its translations (open in the builder) and a button per missing language that creates a draft translation with a copy of the builder document (REST `web-builder/v2/documents/{id}/languages` and `/translations`, docs/developer/web-builder-contract.md §3.7 in the repository); needs `edit_post` on the page, the REST route lists a template read-only and never translates it | ✅ |
 | Add translation (`post-new?from_post=&new_lang=`, nonce `new-post-translation`): links the translation, copies terms (translated), featured image, custom fields, order, template, parent (translated), format and discussion settings | ✅ |
 | Pro **Duplicate content** toggle (per user and post type): copies title, content and excerpt | ✅ |
 | Pro **Synchronized posts**, **Bulk translate**, **XLIFF export/import of content** | ✗ out of scope for this pass (large Pro workflows on top of the parts above) |

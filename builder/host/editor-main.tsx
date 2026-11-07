@@ -18,6 +18,8 @@ import { ThemeLibraryController } from './theme-library'
 import { ThemeLibraryDialog } from './ThemeLibraryDialog'
 import { SiteSettingsController } from './site-settings'
 import { SiteSettingsDialog, SiteSettingsMenuRow } from './SiteSettingsDialog'
+import { PageToolsController } from './page-tools'
+import { PageToolsDialog, PageToolsMenuRow } from './PageToolsDialog'
 
 function mountPoint(): HTMLElement {
   let el = document.getElementById('root')
@@ -79,7 +81,26 @@ async function boot() {
   // Site settings (patch 0014): a row in the builder menu opens a dialog with what the Customizer
   // manages while the builder is off (site identity, homepage, additional CSS).
   const siteSettings = new SiteSettingsController({ rest: host.rest, pickImage: host.media.pick ? () => host.media.pick!('image') : undefined })
-  if (host.boot.caps.editThemeOptions) host.menuExtra = (close) => <SiteSettingsMenuRow controller={siteSettings} close={close} />
+  // Page tools: Languages (Pursae Multi Language) and SEO (Pursae SEO) tabs, shown for what the page reports
+  // (GET documents/{id}/plugins). Never in template mode; the row hides itself while there is no tab.
+  const pageTools = host.templates
+    ? null
+    : new PageToolsController({
+        rest: host.rest,
+        postId: host.boot.document.postId,
+        flush: () => host.autosaver.flush(),
+        pending: () => host.autosaver.pending && !host.session.stopped,
+        pickImage: host.media.pick ? () => host.media.pick!('image') : undefined,
+      })
+  const siteRow = !!host.boot.caps.editThemeOptions
+  if (siteRow || pageTools) {
+    host.menuExtra = (close) => (
+      <>
+        {siteRow && <SiteSettingsMenuRow controller={siteSettings} close={close} />}
+        {pageTools && <PageToolsMenuRow controller={pageTools} close={close} />}
+      </>
+    )
+  }
   setHost(host)
   window.__WEB_BUILDER_HOST__ = host
   installFontNonce(host)
@@ -114,6 +135,14 @@ async function boot() {
   document.body.insertBefore(siteLayer, layer)
   createRoot(siteLayer).render(<SiteSettingsDialog controller={siteSettings} />)
   isolateHostKeys(siteLayer)
+  if (pageTools) {
+    const toolsLayer = document.createElement('div')
+    toolsLayer.id = 'wb-page-tools-layer'
+    document.body.insertBefore(toolsLayer, layer)
+    createRoot(toolsLayer).render(<PageToolsDialog controller={pageTools} />)
+    isolateHostKeys(toolsLayer)
+    void pageTools.probe()
+  }
   createRoot(layer).render(<HostLayer host={host} />)
   isolateHostKeys(layer) // after createRoot: the layer's React listener runs first
 

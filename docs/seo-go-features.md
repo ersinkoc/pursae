@@ -55,6 +55,15 @@ Legend: **✓** implemented · **◐** partly (see note) · **✗** left out (se
 | Schema tab | Page type, article type | Schema generator, templates | ◐ Page type (WebPage, AboutPage, FAQPage…), article type (Article, BlogPosting, NewsArticle…, None), **Product** (price, currency, SKU, brand, availability, rating) and **custom JSON-LD**. No visual schema builder or templates. |
 | Internal linking suggestions | Premium | Link suggestions (Pro) | ✓ Full-text related content (cornerstone first); "Copy link"; already linked items marked. |
 
+Pursae Web Builder editor: while the builder is on, the same per-post fields live in the builder's
+**Page tools** dialog (builder menu) on an **SEO** tab: SEO title, meta description, focus keyphrase,
+canonical URL, noindex and nofollow, Open Graph title, description and image, and the SEO score. It
+reads and saves through `seogo/v1/meta/{id}`, so the capabilities of the Role Manager apply
+(`seogo_onpage_general`; no capability, no tab). Templates (`wb_template`) have no SEO tab. The
+builder's page settings (description, indexable) write the same `_seogo_*` meta. Which tabs a page
+gets comes from `GET web-builder/v2/documents/{id}/plugins` (docs/developer/web-builder-contract.md
+§3.7 in the repository).
+
 ### Site-wide settings
 
 | Feature | Yoast | Rank Math | Pursae SEO |

@@ -148,6 +148,9 @@ Request bodies of document routes are capped at **4 MiB** (`413 wb_too_large`, `
 | GET | `/documents/{id}/revisions?page=N` | `edit_post` | — → RevisionSummary[] (newest first, 50 per page, `X-WP-Total`, `X-WP-TotalPages`) |
 | GET | `/documents/{id}/revisions/{rid}` | `edit_post` | — → RevisionResponse |
 | POST | `/documents/{id}/revisions/{rid}/restore` | `edit_post` | RestoreRequest → DraftState |
+| GET | `/documents/{id}/plugins` | `edit_post` | — → PagePanels (§3.7) |
+| GET | `/documents/{id}/languages` | `edit_post` | — → LanguagesInfo (§3.7) |
+| POST | `/documents/{id}/translations` | `edit_post` + `edit_posts` | `{lang}` → Translation (201, §3.7) |
 | GET | `/library` | `edit_posts` | — → LibraryItem[] |
 | POST | `/library` | `edit_posts` | LibraryCreateRequest → LibraryItem (201) |
 | DELETE | `/library/{id}` | author, or `edit_others_posts` | — → `{deleted: true}` |
@@ -320,6 +323,87 @@ pages must be pages, homepage and posts page must differ) and stores the same op
 then purges the page cache. Unknown keys and invalid values: **400** `rest_invalid_param`, nothing is
 saved. Menus and widgets are not part of this route.
 
+### 3.7 Page tools: languages and SEO
+
+While Pursae Multi Language or Pursae SEO is on, the builder menu has a **Page tools** row (patch
+0014, `BuilderHost.menuExtra`; host code `builder/host/page-tools.ts`) that opens a dialog with one
+tab per plugin: **Languages** (the page's language, its translations, a button per missing
+language) and **SEO** (title, description, focus keyphrase, canonical, robots, social fields and the
+score). A page with no tab has no row, and the row is never shown in template mode. The three routes
+below are the host's own; the SEO tab talks to the plugin's routes (`seogo/v1/meta/{id}` GET and POST
+`{fields}`, `seogo/v1/analyze`), which enforce Pursae SEO's own capabilities.
+
+All three answer `Cache-Control: no-store` and follow the document-route rules of §3: a post of an
+enabled type or a `wb_template`, otherwise 404 `wb_not_enabled`; trashed → 404 `wb_not_found`;
+`edit_post` on the post (`edit_theme_options` for a template), otherwise **403** `rest_forbidden`.
+
+**PagePanels** (`GET /documents/{id}/plugins`): `{languages, seo, seoEdit, seoAdvanced, seoSocial}`, all booleans.
+
+| Field | `true` when |
+|-------|-------------|
+| `languages` | Pursae Multi Language is on, the post type is a translated type (templates are, §11.1) and at least one language is active |
+| `seo` | Pursae SEO is on, the post is not a `wb_template` and the user has the plugin's `seogo_onpage_general` capability (administrators always; others need `edit_posts` while the Role Manager module is off, else the role's grant) |
+| `seoEdit` | the user may save the general fields (title, description, focus keyword). Today equal to `seo`; the editor shows the SEO tab only when both are `true` |
+| `seoAdvanced` | `seo` and the user has `seogo_onpage_advanced`: canonical URL, noindex and nofollow are saved. Without it the plugin drops them silently, so the dialog disables those inputs |
+| `seoSocial` | `seo` and the user has `seogo_onpage_social`: social title, description and image are saved; otherwise the dialog disables them |
+
+Both off, or a capability missing, answer `200` with `false` values, never an error.
+
+**LanguagesInfo** (`GET /documents/{id}/languages`):
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `enabled` | bool | `false` (and nothing else filled) while Multi Language is off, the type is not translated or no language is active |
+| `canTranslate` | bool | the post is not a template and the user has the post type's create capability (`edit_pages` for pages, `edit_posts` for the other types), which is not implied by being able to edit this post |
+| `current` | LangRef | the page's own language (assigned the default one when it has none); absent when `enabled` is `false` |
+| `translations` | LangTranslation[] | the page itself and every live translation, in language order. One the user may not `edit_post` is listed with `readOnly: true` and empty `title`, `status` and `editUrl`; a trashed or deleted one is not listed |
+| `missing` | LangRef[] | active languages with no live translation (a trashed translation counts as missing), always `[]` for a template |
+
+LangRef: `{slug, name, flag, rtl?}` (`flag` is an emoji). LangTranslation: LangRef +
+`{postId, title, status, editUrl, current?, readOnly?}`; `editUrl` is the builder URL
+(`/wp-admin/post?post={id}&action=web-builder`), `current` marks the page itself.
+
+**Translation** (`POST /documents/{id}/translations`, body `{lang: "<language slug>"}`) creates the
+translation Pursae Multi Language's "Duplicate content" would: a **draft** of the same type authored
+by the current user, linked to the page's translation group, with title, slug, content, excerpt,
+discussion settings, format, terms and custom fields copied like Add translation does, and the
+page's builder doc and snapshot copied to it (§6.4), so the translation opens in the builder with
+the same layout. Answer **201** with a LangTranslation (`status: "draft"`, no `current`).
+
+| Status | Code | When |
+|--------|------|------|
+| 400 | `wb_bad_language` | `lang` missing, unknown or not an active language |
+| 400 | `wb_not_enabled` | the post is a `wb_template`, Multi Language is off or the type is not translated (nothing is created) |
+| 403 | `rest_forbidden` | no `edit_post` on the page, no create capability for its type (`edit_pages` / `edit_posts`), or a template without `edit_theme_options` |
+| 409 | `wb_translation_exists` | the page already has a live translation in `lang` (the page's own language included); a trashed translation does not count, the new draft replaces it in the group |
+| 500 | `db_error` | the draft could not be created or linked to the group; the draft is removed again (or trashed), so no unlinked copy is left |
+
+Error codes added: `wb_bad_language` (400), `wb_translation_exists` (409).
+
+**The dialog** (`builder/host/page-tools.ts`, `PageToolsDialog.tsx`; routes in `contract.ts`
+`routes.documentPlugins`, `documentLanguages`, `documentTranslations`, `seoMeta`):
+
+- At start the editor calls `GET /plugins` once. No tab (or a failed call, or template mode) → no
+  "Page tools" row. The Languages tab (`languages`) and the SEO tab (`seo` and `seoEdit`) appear as
+  reported; each tab loads its data every time it is shown, except that an SEO form with unsaved edits
+  is never reloaded: switching tabs or closing and reopening the dialog keeps what was typed.
+- **Languages** lists the translations (`Open` = `editUrl`, only same-site paths and `http(s)` URLs
+  are followed) and, when `canTranslate`, an **Add translation** button per `missing` language. The
+  button first sends pending edits (`autosaver.flush()`); if they still cannot be saved nothing is
+  created. Then it POSTs `{lang}`, flushes once more (edits made while the request ran are not in
+  the copy) and navigates to the answer's `editUrl`; when that second flush leaves edits unsaved the
+  dialog stays open with a message. `409 wb_translation_exists` reloads the list. **Open** also
+  flushes first and stays (with a message) when edits remain unsaved instead of dropping them; a
+  Ctrl/Cmd-click opens the page in a new tab without asking. A `readOnly` translation has no Open button.
+- **SEO** reads `seogo/v1/meta/{id}` and POSTs only the changed fields: `title`, `description`,
+  `focus`, `canonical`, `og_title`, `og_description`, `og_image` (a URL, from the media library or
+  typed), `noindex` (`"noindex"` or `""`; an explicit stored `"index"` stays unless the toggle is
+  turned on) and `nofollow` (`"1"` or `""`). The response's `seo_score` (text, `""` = never
+  analyzed) is shown with Pursae SEO's bands: 71 and up good, 41 and up needs improvement, else poor.
+  The social image preview is drawn only for a same-origin address or one chosen from the media
+  library in this session (with `referrerpolicy="no-referrer"`); typed or stored third-party URLs are
+  not requested by the editor.
+
 ## 4. `renderStatic` result
 
 The upstream live renderer (`src/builder/live/`) runs in the editor:
@@ -474,7 +558,8 @@ draft and the Wasm host's `UpdatePost`, whether or not the plugin is active. It 
   the fallback (`renderer < RendererVersion` with no `html`).
 - **Pursae Multi Language** "Duplicate content" copies the doc and snapshot to the new translation
   (form actions retargeted to it, `content_hash` of its content, detached when the source is);
-  custom-field synchronization never copies `_web_builder*` meta.
+  custom-field synchronization never copies `_web_builder*` meta. The editor's `POST
+  /documents/{id}/translations` (§3.7) uses the same copy.
 - **Pursae Cache**: public builder pages carry the `web-builder` tag (`wbPurgePages`) besides
   `post:<id>`.
 
