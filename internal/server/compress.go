@@ -94,6 +94,7 @@ type gzipWriter struct {
 	status int
 	buf    bytes.Buffer
 	gz     *gzip.Writer
+	header http.Header // the header as WriteHeader saw it: later changes are ignored, as net/http does
 }
 
 func (g *gzipWriter) Header() http.Header { return g.w.Header() }
@@ -130,6 +131,22 @@ func (g *gzipWriter) WriteHeader(code int) {
 		return
 	}
 	g.mode = gzBuffering
+	g.header = h.Clone()
+}
+
+// restoreHeader puts back the header WriteHeader saw (a handler may not change it afterwards).
+func (g *gzipWriter) restoreHeader() {
+	if g.header == nil {
+		return
+	}
+	h := g.w.Header()
+	for k := range h {
+		delete(h, k)
+	}
+	for k, v := range g.header {
+		h[k] = v
+	}
+	g.header = nil
 }
 
 // pass sends the header as it is and streams the body.
@@ -159,6 +176,7 @@ func (g *gzipWriter) Write(b []byte) (int, error) {
 
 // start decides on the buffered bytes: compress when the (sniffed) type allows it, else pass.
 func (g *gzipWriter) start() error {
+	g.restoreHeader()
 	h := g.w.Header()
 	if h.Get("Content-Type") == "" {
 		ct := http.DetectContentType(g.buf.Bytes())
@@ -184,6 +202,7 @@ func (g *gzipWriter) start() error {
 
 // flushPlain sends the header and the buffered bytes uncompressed and streams the rest.
 func (g *gzipWriter) flushPlain() error {
+	g.restoreHeader()
 	g.pass()
 	_, err := g.w.Write(g.buf.Bytes())
 	g.buf = bytes.Buffer{}
@@ -216,6 +235,7 @@ func (g *gzipWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 func (g *gzipWriter) close() {
 	switch g.mode {
 	case gzBuffering:
+		g.restoreHeader()
 		if h := g.w.Header(); h.Get("Content-Type") == "" && g.buf.Len() > 0 {
 			h.Set("Content-Type", http.DetectContentType(g.buf.Bytes()))
 		}

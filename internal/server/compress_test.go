@@ -57,6 +57,13 @@ func TestGzipResponses(t *testing.T) {
 			w.Header().Set("Content-Type", "text/html")
 			io.WriteString(w, big)
 		}, false, false},
+		{"header changed after WriteHeader", "GET", "gzip", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "text/html")
+			w.Header().Set("Location", "/first")
+			w.WriteHeader(http.StatusFound)
+			io.WriteString(w, "<a>Found</a>")
+			w.Header().Set("Location", "/second") // ignored by net/http once the header is written
+		}, false, true},
 		{"no-transform", "GET", "gzip", func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "text/html")
 			w.Header().Set("Cache-Control", "public, no-transform")
@@ -90,6 +97,9 @@ func TestGzipResponses(t *testing.T) {
 			}
 			if v := strings.Contains(rec.Header().Get("Vary"), "Accept-Encoding"); v != c.vary {
 				t.Errorf("Vary %q", rec.Header().Get("Vary"))
+			}
+			if c.name == "header changed after WriteHeader" && (rec.Code != http.StatusFound || rec.Header().Get("Location") != "/first") {
+				t.Errorf("%d Location %q", rec.Code, rec.Header().Get("Location"))
 			}
 			if !c.gzipped {
 				return
