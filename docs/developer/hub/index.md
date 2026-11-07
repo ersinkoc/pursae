@@ -13,7 +13,10 @@ The **Hub** is a small service (`wpgo-hub`) every Pursae site talks to. It has t
   core releases and signing keys.
 
 The public Hub is `https://hub.wordpressgo.dev`. Organisations can run their own
-([running your own Hub](running-your-own-hub.md)).
+([running your own Hub](running-your-own-hub.md)). Sites only talk to a Hub over **https**; plain
+http is accepted for `localhost`, loopback addresses and `*.localhost` / `*.test` development hosts.
+Redirects never downgrade to http and drop the license and site headers when they leave the Hub's
+host.
 
 ## What a site gets from it
 
@@ -25,7 +28,7 @@ The public Hub is `https://hub.wordpressgo.dev`. Organisations can run their own
 | Core releases | `GET /api/v1/index` → `core` | Dashboard › Updates; with a signed build for the site's platform, **Update to version X** installs it ([upgrading](../getting-started/upgrading.md)) |
 | Plugin updates | `GET /api/v1/plugins` | Plugins and Dashboard › Updates, for plugins installed from the Hub ([marketplace](marketplace.md#updates)) |
 | License check | `GET /api/v1/license` | Settings › License (see below) |
-| Signing keys | `GET /api/v1/index` → `keys` | added to the site's trusted plugin keys automatically; also verify core builds |
+| Signing keys | `GET /api/v1/index` → `keys` | added to the site's trusted plugin keys automatically (replaced on every refresh, so a key the Hub drops is no longer trusted); verify core builds only when a release root key endorses them ([root of trust](#root-of-trust)) |
 | Product logo | `GET /api/v1/index` → `brand` | replaces the shipped logo on every screen (see below) |
 
 ## Product logo
@@ -39,10 +42,41 @@ connected site without a release by adding a `brand` block to `GET /api/v1/index
 "brand": {"logo_url": "/media/brand/logo.svg", "logo_version": "2026-11-01"}
 ```
 
-`logo_url` is absolute or relative to the Hub; it must be a PNG, WebP or SVG of at most 1 MB.
+`logo_url` is absolute or relative to the Hub; it must be a PNG, WebP or SVG of at most 1 MB. A
+logo hosted elsewhere than the Hub must be https on a public address (private and loopback
+addresses are refused at connect time). The logo is served, `/favicon.ico` included, with a
+sandbox Content-Security-Policy and `nosniff`, so an SVG can never run as a page of the site.
 When `logo_version` changes the site downloads the image into `uploads/brand/` and serves it for
 every size; when the block goes away the shipped logo comes back. Sites read the index when they
 check for updates (at most every 12 hours, or at once from Dashboard › Updates › Check again).
+
+## Root of trust
+
+A key listed in the same answer as the release it verifies proves nothing, so a core self-update
+needs a **release root key** compiled into the binary:
+
+- `rootKeysBuiltin` in `internal/server/hub_trust.go` (empty until Pursae publishes a production
+  root key), plus
+- `go build -ldflags "-X wpgo/internal/server.rootKeysLinked=<base64>[,<base64>…]"` (the Docker
+  image: `--build-arg ROOT_KEYS=…`).
+
+A Hub key verifies a release only if a root key endorsed it. The index then carries the
+endorsement next to the key:
+
+```json
+"keys": [{"id": "hub-2026", "public": "<base64 Ed25519>", "endorsement": "<base64 Ed25519 signature>"}]
+```
+
+where `endorsement = base64(Ed25519.Sign(rootKey, "pursae-hub-key-v1\n" + id + "\n" + public))`
+(`public` exactly as listed, no trailing newline). The root's private key stays offline; the
+Hub operator asks for an endorsement whenever they generate a new key.
+
+A build **without** any root key (development, `go run`, a fork) cannot verify a release:
+Dashboard › Updates says the site cannot update itself, and the update is refused. Setting
+`WPGO_TRUST_HUB_KEYS=1` (the development compose file does) restores the old behaviour of
+trusting the listed keys — for development only. With a root key pinned, plugin packages are also
+verified only against endorsed Hub keys; without one, the listed keys are trusted for plugins as
+before (`wpgo_hub_trust_keys`).
 
 ## Licenses
 

@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"context"
+	"crypto/ed25519"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -57,6 +58,9 @@ type hubCore struct {
 type hubKey struct {
 	ID     string `json:"id"`
 	Public string `json:"public"`
+	// Endorsement is a pinned root key's signature over the key (hub_trust.go); without it the
+	// key cannot verify a core release on a build with a root key.
+	Endorsement string `json:"endorsement,omitempty"`
 }
 
 // hubItem is one plugin or theme listing.
@@ -110,7 +114,7 @@ func (s *Server) hubBase() string {
 var errHubOff = errors.New("Pursae Manager is switched off (WPGO_HUB_URL)")
 
 func (s *Server) hubClient() *http.Client {
-	return &http.Client{Timeout: 20 * time.Second}
+	return &http.Client{Timeout: 20 * time.Second, CheckRedirect: hubCheckRedirect}
 }
 
 // hubNewRequest builds every request to Pursae Manager (JSON documents, package and core downloads,
@@ -120,6 +124,9 @@ func (s *Server) hubClient() *http.Client {
 func (s *Server) hubNewRequest(ctx context.Context, method, u string, body io.Reader) (*http.Request, error) {
 	req, err := http.NewRequestWithContext(ctx, method, u, body)
 	if err != nil {
+		return nil, err
+	}
+	if err := hubURLAllowed(req.URL); err != nil {
 		return nil, err
 	}
 	req.Header.Set("User-Agent", hubUserAgent()+"; "+s.settings.String("home"))
@@ -239,27 +246,18 @@ func (s *Server) hubFetchIndex(ctx context.Context) (*hubIndex, error) {
 	return &idx, nil
 }
 
-// hubTrustKeys adds the Hub's signing keys to the trusted plugin keys (wpgo_hub_trust_keys).
+// hubTrustKeys makes the Manager's current signing keys the trusted plugin keys that come from
+// the Manager (wpgo_hub_trust_keys; with a pinned root key only endorsed ones, hub_trust.go). The
+// set is replaced, not added to, so a key the Manager stops listing stops being trusted.
 func (s *Server) hubTrustKeys(keys []hubKey) {
-	if s.plugins == nil || !s.settings.Bool("wpgo_hub_trust_keys") {
+	if s.plugins == nil {
 		return
 	}
-	for _, k := range keys {
-		pub, err := plugins.ParsePublicKey(k.Public)
-		if err != nil {
-			continue
-		}
-		known := false
-		for _, have := range s.plugins.keys {
-			if bytes.Equal(have, pub) {
-				known = true
-				break
-			}
-		}
-		if !known {
-			s.plugins.keys = append(s.plugins.keys, pub)
-		}
+	var trusted []ed25519.PublicKey
+	if s.settings.Bool("wpgo_hub_trust_keys") {
+		trusted = pluginHubKeys(keys)
 	}
+	s.plugins.setHubKeys(trusted)
 }
 
 // hubCatalogMaxPages bounds the pages of one catalog read (100 listings each).

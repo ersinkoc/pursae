@@ -3,15 +3,18 @@ package server
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
 	"log/slog"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -64,9 +67,17 @@ func (s *Server) serveBrandOverride(c *gin.Context, file string) bool {
 		return false
 	}
 	c.Header("Cache-Control", "public, max-age=3600")
-	c.Header("Content-Security-Policy", "sandbox; default-src 'none'; style-src 'unsafe-inline'")
+	brandImageHeaders(c)
 	c.Data(http.StatusOK, ct, b)
 	return true
+}
+
+// brandImageHeaders keep a logo from the Hub (which may be an SVG, a document that can carry script)
+// from ever running as a page of the site's origin: a sandbox CSP and no MIME sniffing. Every
+// response that may serve it sends them (brand files, /favicon.ico).
+func brandImageHeaders(c *gin.Context) {
+	c.Header("Content-Security-Policy", "sandbox; default-src 'none'; style-src 'unsafe-inline'")
+	c.Header("X-Content-Type-Options", "nosniff")
 }
 
 // brandFavicon is the logo for /favicon.ico.
@@ -105,7 +116,22 @@ func (s *Server) hubSyncBrand(ctx context.Context, b *hubBrand) {
 	_ = s.settings.Set(ctx, map[string]any{"wpgo_brand_logo_version": version})
 }
 
-// hubFetchLogo downloads logoURL (resolved against the Hub) into uploads/brand.
+// brandLogoClient fetches a logo hosted elsewhere than the Hub: https only and never a private or
+// loopback address (checked at connect time, after DNS, on every redirect).
+var brandLogoClient = &http.Client{
+	Timeout: 20 * time.Second,
+	Transport: &http.Transport{DialContext: (&net.Dialer{Timeout: 10 * time.Second,
+		Control: publicOnly(nil, "the logo URL points at a private network")}).DialContext, TLSHandshakeTimeout: 10 * time.Second},
+	CheckRedirect: func(req *http.Request, via []*http.Request) error {
+		if len(via) >= 5 || req.URL.Scheme != "https" {
+			return errors.New("the logo redirect is not an https URL")
+		}
+		return nil
+	},
+}
+
+// hubFetchLogo downloads logoURL (resolved against the Hub) into uploads/brand. A logo on the Hub
+// itself is fetched like every Hub request; a logo elsewhere must be https on a public address.
 func (s *Server) hubFetchLogo(ctx context.Context, logoURL string) error {
 	base, err := url.Parse(s.hubBase() + "/")
 	if err != nil {
@@ -115,11 +141,18 @@ func (s *Server) hubFetchLogo(ctx context.Context, logoURL string) error {
 	if err != nil || (u.Scheme != "https" && u.Scheme != "http") {
 		return fmt.Errorf("bad logo URL %q", logoURL)
 	}
+	client := s.hubClient()
+	if !strings.EqualFold(u.Host, base.Host) || u.Scheme != base.Scheme {
+		if u.Scheme != "https" {
+			return fmt.Errorf("the logo URL %q is not https", logoURL)
+		}
+		client = brandLogoClient
+	}
 	req, err := s.hubNewRequest(ctx, http.MethodGet, u.String(), nil)
 	if err != nil {
 		return err
 	}
-	resp, err := s.hubClient().Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return err
 	}

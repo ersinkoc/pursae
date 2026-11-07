@@ -83,7 +83,8 @@ func coreSignedMessage(version, goos, goarch, sumHex string) []byte {
 }
 
 // verifyCoreArtifact checks a downloaded binary (its size and SHA-256 as computed while it was written)
-// against the release: size, checksum, and the signature by a key the Manager lists.
+// against the release: size, checksum, and the signature by one of keys, the Manager keys this build
+// trusts for releases (coreReleaseKeys: endorsed by a pinned root key, hub_trust.go).
 func verifyCoreArtifact(version string, art *coreArtifact, keys []hubKey, size int64, sum []byte) error {
 	if art.Size > 0 && size != art.Size {
 		return fmt.Errorf("the download has %d bytes, the release says %d", size, art.Size)
@@ -103,7 +104,7 @@ func verifyCoreArtifact(version string, art *coreArtifact, keys []hubKey, size i
 		}
 	}
 	if pub == nil {
-		return fmt.Errorf("the release is signed by %q, which Pursae Manager does not list", art.KeyID)
+		return fmt.Errorf("the release is signed by %q, which is not a release key this build trusts", art.KeyID)
 	}
 	sig, err := base64.StdEncoding.DecodeString(strings.TrimSpace(art.Signature))
 	if err != nil || len(sig) != ed25519.SignatureSize {
@@ -117,6 +118,9 @@ func verifyCoreArtifact(version string, art *coreArtifact, keys []hubKey, size i
 
 // coreUpdateTarget is the executable to replace, or why it cannot be replaced.
 func coreUpdateTarget() (string, error) {
+	if err := coreTrustCheck(); err != nil { // no root key to verify a release with (hub_trust.go)
+		return "", err
+	}
 	exe, err := coreExecutable()
 	if err != nil {
 		return "", fmt.Errorf("the running executable cannot be found: %v", err)
@@ -226,13 +230,17 @@ func (s *Server) coreUpdate(ctx context.Context, target string) (string, error) 
 	if !strings.HasPrefix(art.URL, base+"/") { // only the Manager itself serves binaries
 		return "", errors.New("the release binary is not served by Pursae Manager")
 	}
+	keys, err := coreReleaseKeys(idx.Keys) // endorsed by a root key compiled into this build
+	if err != nil {
+		return "", err
+	}
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
 	defer cancel()
 	req, err := s.hubNewRequest(ctx, http.MethodGet, art.URL, nil)
 	if err != nil {
 		return "", err
 	}
-	resp, err := (&http.Client{}).Do(req)
+	resp, err := (&http.Client{CheckRedirect: hubCheckRedirect}).Do(req)
 	if err != nil {
 		return "", err
 	}
@@ -246,7 +254,7 @@ func (s *Server) coreUpdate(ctx context.Context, target string) (string, error) 
 	// The running binary stays as <exe>.prev until the new one has started and answered requests;
 	// if it dies before that, the next start goes back to it (internal/coreupdate).
 	keep := func() error { return coreupdate.Prepare(target, Version, idx.Core.Latest) }
-	if err := installCoreArtifact(target, idx.Core.Latest, art, idx.Keys, resp.Body, keep); err != nil {
+	if err := installCoreArtifact(target, idx.Core.Latest, art, keys, resp.Body, keep); err != nil {
 		return "", err
 	}
 	return idx.Core.Latest, nil
