@@ -21,7 +21,11 @@ edited in the admin.
 | `WPGO_WEB_DIR` | embedded | read admin templates, theme templates, CSS and JS from this directory instead of the binary, reloading per request (development) |
 | `WPGO_EMPTY_TRASH_DAYS` | `30` | days trashed posts and comments are kept before the daily `wp_scheduled_delete` job removes them (WordPress' `EMPTY_TRASH_DAYS`). `0` empties the trash at every daily run; unlike WordPress it does not hide the Trash links in the admin |
 | `WPGO_LOG_FORMAT` | text | `json` writes the access log as one JSON object per request (`status`, `method`, `uri`, `duration`, `ip`, `request_id`) for log shippers; other log lines are unchanged |
-
+| `WPGO_BACKUPS_DIR` | `backups/` next to uploads | where Backup Manager keeps its archives (manual, scheduled and safety snapshots). Keep it outside the uploads directory, which is served publicly |
+| `WPGO_LANG_DIR` | `languages/` next to uploads | installed language packs (Settings › General › Site Language, Dashboard › Updates › Translations) |
+| `WPGO_TRANSLATIONS_API` | `https://api.wordpress.org/translations` | the translation API language packs are downloaded from (a mirror, or a fake in tests) |
+| `WPGO_BIN_DIR` | — (`/data/bin` in the image) | persistent directory `wpgo launch` installs the binary into, so a core update made from the admin survives a container restart ([upgrading](../getting-started/upgrading.md)) |
+| `WPGO_LISTEN_FD` | — | **internal**: set by the running binary when it hands its listening socket to an updated binary; do not set it yourself |
 ## Database pool
 
 `DATABASE_URL` takes pgx's pool parameters as query parameters; each one you leave out gets the
@@ -66,6 +70,16 @@ inspect them. See [Mail](mail.md).
 | `WPGO_TRUSTED_PROXIES` | loopback and private ranges | proxies (comma separated IPs or CIDRs) whose `X-Forwarded-For` / `X-Real-IP` is believed when deriving the visitor address; `none` trusts no proxy ([reverse proxy](reverse-proxy-and-tls.md)) |
 | `WPGO_HUB_URL` | `https://hub.wordpressgo.dev` | the Hub the site talks to; empty disables it. Also the `wpgo_hub_url` option ([Hub](../hub/index.md)) |
 
+## Built-in plugins
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `WPGO_ADMINSEC_DISABLE_HIDE_LOGIN` | unset | recovery switch for Pursae Security's custom login URL: `1`/`true`/`yes` brings `/wp-login` back while it is set (restart the server after setting it). `wpgo adminsec disable-hide-login` turns the setting off for good |
+| `WPGO_CDN_SETTINGS` | unset | Pursae CDN settings as one JSON object (the keys of the `gocdn_settings` option, in the style of WP Offload Media's `AS3CF_SETTINGS`, e.g. `{"provider":"aws","bucket":"media","access-key-id":"…","secret-access-key":"…"}`). Keys given here override the saved settings and are shown read-only on the CDN screen, so credentials can stay out of the database. Invalid JSON is ignored with a warning in the log |
+
+The `WPGO_BUILDER_AI*` variables in `internal/webbuilder/contract.go` belong to the Web Builder AI module,
+which is not shipped (its upstream modules are stubbed); setting them has no effect.
+
 ## Compose only
 
 | Variable | Default | Purpose |
@@ -80,6 +94,7 @@ inspect them. See [Mail](mail.md).
 |----------|---------|
 | `WPGO_TEST_ADMIN_DB` | a connection used to drop and recreate the test database |
 | `WPGO_TEST_DB` | the test database URL; both unset skips the integration tests |
+| `WPGO_I18N_MISSES` | development: append every UI string that has no translation to this file (JSON lines); `WPGO_I18N_MISSES_*` are read by the i18n coverage tests only |
 
 ## Options worth knowing
 

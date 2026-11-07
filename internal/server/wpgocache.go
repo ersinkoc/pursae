@@ -265,8 +265,9 @@ func (s *Server) pluginAdmin(c *gin.Context) {
 	if s.golylangAdmin(c, page) { // Golylang: Languages screens (mlang, mlang_strings, mlang_settings)
 		return
 	}
-	if !strings.HasPrefix(page, "wpgo-cache") {
-		s.notYet(c)
+	// Any other page is not registered: admin.php answers that with a 403 die, never a blank screen.
+	if _, ok := cacheScreenTitles[page]; !ok {
+		c.String(http.StatusForbidden, "Sorry, you are not allowed to access this page.")
 		return
 	}
 	u := currentUser(c)
@@ -301,10 +302,12 @@ func (s *Server) pluginAdmin(c *gin.Context) {
 		d.WarmAt = s.warm.at.In(s.loc()).Format("Jan 2, 15:04")
 	}
 	s.warm.mu.Unlock()
-	titles := map[string]string{"wpgo-cache": "Pursae Cache", "wpgo-cache-settings": "Cache Settings",
-		"wpgo-cache-optimize": "Page Optimization", "wpgo-cache-toolbox": "Toolbox"}
-	s.adminPage(c, "admin?page="+page, titles[page], "wpgo-cache-page", "admin/wpgo-cache", d)
+	s.adminPage(c, "admin?page="+page, cacheScreenTitles[page], "wpgo-cache-page", "admin/wpgo-cache", d)
 }
+
+// cacheScreenTitles are Pursae Cache's admin?page= screens (the Pursae Cache menu).
+var cacheScreenTitles = map[string]string{"wpgo-cache": "Pursae Cache", "wpgo-cache-settings": "Cache Settings",
+	"wpgo-cache-optimize": "Page Optimization", "wpgo-cache-toolbox": "Toolbox"}
 
 func (s *Server) cacheAction(c *gin.Context, page string) {
 	back := "/wp-admin/admin?page=" + page

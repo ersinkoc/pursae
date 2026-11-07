@@ -90,7 +90,7 @@ var bmgrNever = map[string]bool{"schema_migrations": true, "sessions": true, "tr
 
 // bmgrKeepSettings are the options this site keeps when a backup is restored over it: its own secret
 // (so cookies and nonces stay valid), its address (rewritten from the archive's) and this plugin's state.
-var bmgrKeepSettings = []string{"auth_secret", "siteurl", "home", bmgrSetting}
+var bmgrKeepSettings = []string{"auth_secret", "siteurl", "home", bmgrSetting, bmgrOptSchedule, bmgrOptKeep, bmgrOptCats, bmgrOptLast}
 
 // bmgrCategoryOf returns the category key a table belongs to.
 func bmgrCategoryOf(table string) string {
@@ -172,9 +172,12 @@ func (s *Server) bmgrPluginRow() pluginRow {
 	return r
 }
 
-// bmgrPluginAction activates or deactivates the plugin.
+// bmgrPluginAction activates or deactivates the plugin; the scheduled backup follows it.
 func (s *Server) bmgrPluginAction(ctx context.Context, action string) error {
-	return s.settings.Set(ctx, map[string]any{bmgrSetting: action == "activate"})
+	if err := s.settings.Set(ctx, map[string]any{bmgrSetting: action == "activate"}); err != nil {
+		return err
+	}
+	return s.bmgrSyncSchedule(ctx)
 }
 
 // bmgrMenu adds the top-level Backup Manager menu above Settings while the plugin is active.
