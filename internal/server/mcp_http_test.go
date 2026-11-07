@@ -9,8 +9,8 @@ import (
 	"testing"
 )
 
-// TestMCPHTTPTransport covers /wp-json/pursae/v1/mcp at the HTTP level: GET is 405 (no SSE stream),
-// an anonymous call asks for Basic auth, a message without a method is an Invalid Request, and the
+// TestMCPHTTPTransport covers /wp-json/pursae/v1/mcp at the HTTP level: GET without a session is 405,
+// an anonymous call gets the OAuth Bearer challenge with the resource metadata URL, a message without a method is an Invalid Request, and the
 // generic tools (CRUD through REST, argument checks) work end to end.
 func TestMCPHTTPTransport(t *testing.T) {
 	ts, c, _ := testServerBuilderOff(t)
@@ -51,10 +51,10 @@ func TestMCPHTTPTransport(t *testing.T) {
 		_ = json.Unmarshal(raw, &out)
 		return r, out
 	}
-	if r, _ := send(true, "GET", ""); r.StatusCode != http.StatusMethodNotAllowed || r.Header.Get("Allow") != "POST" {
+	if r, _ := send(true, "GET", ""); r.StatusCode != http.StatusMethodNotAllowed || !strings.Contains(r.Header.Get("Allow"), "POST") {
 		t.Errorf("GET: %d Allow=%q", r.StatusCode, r.Header.Get("Allow"))
 	}
-	if r, _ := send(false, "POST", `{"jsonrpc":"2.0","id":1,"method":"ping"}`); r.StatusCode != http.StatusUnauthorized || !strings.Contains(r.Header.Get("WWW-Authenticate"), "Basic") {
+	if r, _ := send(false, "POST", `{"jsonrpc":"2.0","id":1,"method":"ping"}`); r.StatusCode != http.StatusUnauthorized || !strings.Contains(r.Header.Get("WWW-Authenticate"), "resource_metadata=") {
 		t.Errorf("anonymous: %d %q", r.StatusCode, r.Header.Get("WWW-Authenticate"))
 	}
 	if r, body := send(true, "POST", `{"jsonrpc":"2.0","id":1}`); r.StatusCode != http.StatusBadRequest || body["error"].(map[string]any)["code"] != -32600.0 {

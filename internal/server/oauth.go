@@ -319,12 +319,16 @@ func (s *Server) oauthBearer(c *gin.Context, token string) bool {
 	if s.store.Pool.QueryRow(c, `SELECT id, user_id, scopes, access_expires_at FROM oauth_tokens WHERE access_hash = $1`, oauthHash(token)).Scan(&id, &userID, &scopes, &exp) != nil || time.Now().After(exp) {
 		return false
 	}
+	known := normalizeAppScopes(scopes)
+	if len(scopes) > 0 && len(known) == 0 {
+		return false // only scopes this version no longer knows: never widen them to full access
+	}
 	c.Set(restOAuthKey, id)
 	c.Set(restOAuthUserKey, userID)
-	if scopes = normalizeAppScopes(scopes); len(scopes) > 0 {
-		c.Set(restAppScopesKey, scopes)
+	if len(known) > 0 {
+		c.Set(restAppScopesKey, known)
 	}
-	go s.store.Pool.Exec(c.Copy(), `UPDATE oauth_tokens SET last_used_at = now(), last_ip = $2 WHERE id = $1`, id, clientIP(c))
+	s.asyncExec(`UPDATE oauth_tokens SET last_used_at = now(), last_ip = $2 WHERE id = $1`, id, clientIP(c)) // bounded queue (background.go)
 	return true
 }
 
