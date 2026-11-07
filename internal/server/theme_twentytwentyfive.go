@@ -179,6 +179,7 @@ func (s *Server) tt5Prepare(c *gin.Context, v *siteView) {
 	items := tt5NavItems(v.Menus["primary"])
 	if len(v.Menus["primary"]) == 0 {
 		items = tt5PageListItems(blocks.Render(ctx, `<!-- wp:page-list {"isNested":true} /-->`))
+		cacheDep(ctx, "archive:page") // the navigation fallback lists every page
 	}
 	if items != "" {
 		d["Nav"] = template.HTML(tt5Navigation(items))
@@ -225,6 +226,7 @@ func (s *Server) tt5Prepare(c *gin.Context, v *siteView) {
 	// "More posts" (single and search).
 	if v.Template == "single" || v.Template == "search" {
 		d["MorePosts"] = s.tt5MorePosts(ctx, lb, currentUser(c))
+		cacheDep(ctx, "archive:post") // the four latest posts
 	}
 
 	// comments.php: the comments block's title, 50px avatars and the post-comments-form wrapper.

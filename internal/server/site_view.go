@@ -138,9 +138,13 @@ func (s *Server) buildSiteView(c *gin.Context, q *siteQuery) (*siteView, error) 
 	}
 	s.customizeView(c, v, cs)
 
-	widgets, _ := s.store.WidgetsByArea(ctx, v.Theme.Slug)
-	for area, ws := range widgets {
-		v.Areas[area] = s.renderWidgetArea(ctx, ws)
+	// Widget areas: a theme that registers none (Twenty Twenty-Five, Hello Pursae) prints none, so the
+	// widgets stored for it (a fresh install's sidebar-1) are not rendered.
+	if len(v.Theme.WidgetAreas) > 0 {
+		widgets, _ := s.store.WidgetsByArea(ctx, v.Theme.Slug)
+		for area, ws := range widgets {
+			v.Areas[area] = s.renderWidgetArea(ctx, ws)
+		}
 	}
 	v.Sidebar1 = v.Areas["sidebar-1"]
 	for _, loc := range v.Theme.MenuLocations {
@@ -184,6 +188,14 @@ func (s *Server) buildSiteView(c *gin.Context, q *siteQuery) (*siteView, error) 
 		v.Post = pv
 		if pt := siteCPT(q.Post.Type); q.Post.Type == "post" || (pt != nil && !pt.Hierarchical) {
 			v.PostNav = s.postNavigation(ctx, q.Post, lb)
+			cacheDep(ctx, "archive:"+q.Post.Type) // the previous/next links change with the type's posts
+		}
+		if q.Post.ParentID != 0 { // the permalink and breadcrumbs carry the ancestors' slugs and titles
+			if anc, err := s.store.Ancestors(ctx, q.Post); err == nil {
+				for _, a := range anc {
+					cacheDep(ctx, "post:"+itoa64(a.ID))
+				}
+			}
 		}
 		if s.commentsOpen(q.Post) || q.Post.CommentCount > 0 {
 			v.Comments = s.commentsView(c, q.Post, lb, u)
@@ -278,6 +290,12 @@ func (s *Server) buildSiteView(c *gin.Context, q *siteQuery) (*siteView, error) 
 	bodyClasses = append(bodyClasses, "wp-embed-responsive", "wp-theme-"+v.Theme.Slug)
 	if v.Theme.Prepare != nil {
 		v.Theme.Prepare(s, c, v)
+	}
+	for _, area := range v.Areas { // a sidebar (recent posts, comments, archives, …) depends on "widgets"
+		if area != "" {
+			cacheDepWidgets(ctx)
+			break
+		}
 	}
 	if v.Theme.BodyClasses != nil {
 		bodyClasses = append(bodyClasses, v.Theme.BodyClasses(s, v)...)
@@ -537,6 +555,15 @@ func (s *Server) postView(ctx context.Context, c *gin.Context, p *store.Post, si
 	pv.Class = strings.Join(classes, " ")
 
 	author := s.displayUser(ctx, p.AuthorID) // display fields only: no capabilities are checked for the author
+	// Pursae Cache: the page shows these terms and the author; list blocks or shortcodes in the content
+	// may show anything.
+	for _, t := range append(append([]*store.Term{}, cats...), tags...) {
+		cacheDep(ctx, "term:"+itoa64(t.ID))
+	}
+	cacheDep(ctx, "author:"+itoa64(p.AuthorID))
+	if contentListsOthers(p.Content) {
+		cacheDepWidgets(ctx)
+	}
 	pv.EntryMeta = s.entryMeta(ctx, p, author, cats, tags, singular, lb)
 	s.fillPostView(ctx, pv, p, author, cats, tags, lb)
 	if u.Can("edit_post", p) {

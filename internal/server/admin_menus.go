@@ -513,6 +513,10 @@ func (s *Server) resolveMenu(ctx context.Context, items []*store.MenuItem, lb *l
 		for _, it := range list {
 			switch it.Kind {
 			case "post_type":
+				cacheDep(ctx, "post:"+itoa64(it.TargetID)) // Pursae Cache: its title and permalink
+				if siteTypeHierarchical(it.Object) {
+					cacheDep(ctx, "archive:"+it.Object) // the permalink carries the ancestors' slugs
+				}
 				if p, err := s.store.GetPost(ctx, it.TargetID); err == nil {
 					it.URL = lb.Permalink(p)
 					if it.Label == "" {
@@ -523,6 +527,7 @@ func (s *Server) resolveMenu(ctx context.Context, items []*store.MenuItem, lb *l
 					}
 				}
 			case "taxonomy":
+				cacheDep(ctx, "term:"+itoa64(it.TargetID))
 				if t, err := s.store.GetTerm(ctx, it.TargetID); err == nil {
 					it.URL = lb.TermLink(t)
 					if it.Label == "" {

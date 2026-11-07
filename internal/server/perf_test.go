@@ -255,3 +255,66 @@ func TestFrontQueryCount(t *testing.T) {
 		_ = os.WriteFile(out+"/byte-notes-single.html", []byte(perfVolatile.ReplaceAllString(body, "$1=X")), 0o644)
 	}
 }
+
+// TestCacheTagsWidgets: only pages that show a widget area, a list block or a shortcode carry the
+// "widgets" tag (which every public post change purges); Twenty Twenty-Five's pages carry what they
+// list instead, and a classic theme's sidebar pages keep "widgets".
+func TestCacheTagsWidgets(t *testing.T) {
+	ts, c, srv := testServerBuilderOff(t)
+	installAndLogin(t, ts, c)
+	seedPerfPosts(t, srv, 3)
+	ctx := context.Background()
+	tagsOf := func(path string) map[string]bool {
+		t.Helper()
+		rec := httptest.NewRecorder()
+		srv.appHandler().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, ts.URL+path, nil))
+		if rec.Code != http.StatusOK {
+			t.Fatalf("%s: %d", path, rec.Code)
+		}
+		out := map[string]bool{}
+		for _, tag := range strings.Split(rec.Header().Get("X-WPGo-Cache-Tags"), ",") {
+			out[strings.TrimSpace(tag)] = true
+		}
+		return out
+	}
+	posts, _, _ := srv.store.QueryPosts(ctx, store.PostQuery{Types: []string{"post"}, Statuses: []string{"publish"}, PerPage: 1})
+	single := pathOf(t, ts.URL, srv.links(ctx).Permalink(posts[0]))
+	var meadows int64
+	_ = srv.store.Pool.QueryRow(ctx, `SELECT id FROM terms WHERE slug = 'meadows'`).Scan(&meadows)
+
+	home := tagsOf("/")
+	if home["widgets"] || !home["home"] || !home["archive:page"] || !home["term:"+itoa64(meadows)] {
+		t.Errorf("twentytwentyfive home tags %v", home)
+	}
+	st := tagsOf(single)
+	if st["widgets"] || !st["post:"+itoa64(posts[0].ID)] || !st["archive:post"] {
+		t.Errorf("twentytwentyfive single tags %v", st)
+	}
+
+	// A post with a list block depends on every post, like a sidebar.
+	lp := mustInsertPost(t, srv, &store.Post{Type: "post", AuthorID: posts[0].AuthorID, Title: "Latest", Content: "<!-- wp:latest-posts /-->"})
+	if tg := tagsOf(pathOf(t, ts.URL, srv.links(ctx).Permalink(lp))); !tg["widgets"] {
+		t.Errorf("a post with core/latest-posts lacks widgets: %v", tg)
+	}
+
+	// A classic theme with a filled sidebar keeps "widgets" on every page.
+	installLibraryTheme(t, c, ts.URL, "byte-notes", true)
+	theme := srv.activeTheme()
+	if len(theme.WidgetAreas) == 0 {
+		t.Skip("byte-notes has no widget area")
+	}
+	var area int64
+	if err := srv.store.Pool.QueryRow(ctx, `INSERT INTO widget_areas (slug, name, theme) VALUES ($1, 'Sidebar', $2)
+		ON CONFLICT (theme, slug) DO UPDATE SET name = EXCLUDED.name RETURNING id`, theme.WidgetAreas[0].ID, theme.Slug).Scan(&area); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := srv.store.Pool.Exec(ctx, `INSERT INTO widgets (area_id, type, settings) VALUES ($1, 'block', '{"content":"<!-- wp:latest-posts /-->"}')`, area); err != nil {
+		t.Fatal(err)
+	}
+	if tg := tagsOf("/"); !tg["widgets"] {
+		t.Errorf("byte-notes home with a sidebar lacks widgets: %v", tg)
+	}
+	if tg := tagsOf(single); !tg["widgets"] {
+		t.Errorf("byte-notes single with a sidebar lacks widgets: %v", tg)
+	}
+}

@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"sort"
 	"strings"
 	"sync"
 
@@ -19,6 +20,12 @@ type viewMemo struct {
 	attachments map[int64]*store.Attachment
 	avatarIDs   map[string]int64 // lower-cased email → avatar attachment id (0: none)
 	categorized *bool
+
+	// Pursae Cache dependencies found while building the page (cacheTags, wpgocache.go): widgets is
+	// set when the page shows something only the blunt "widgets" tag tracks (a widget area, a list
+	// block or shortcode in the content); deps are the narrower tags of what else it lists.
+	widgets bool
+	deps    map[string]bool
 }
 
 type viewMemoKey struct{}
@@ -29,7 +36,7 @@ func withViewMemo(ctx context.Context) context.Context {
 		return ctx
 	}
 	return context.WithValue(ctx, viewMemoKey{}, &viewMemo{terms: map[int64][]*store.Term{}, users: map[int64]*store.User{},
-		attachments: map[int64]*store.Attachment{}, avatarIDs: map[string]int64{}})
+		attachments: map[int64]*store.Attachment{}, avatarIDs: map[string]int64{}, deps: map[string]bool{}})
 }
 
 func viewMemoFrom(ctx context.Context) *viewMemo {
@@ -218,4 +225,67 @@ func (s *Server) avatarID(ctx context.Context, email string) int64 {
 		m.mu.Unlock()
 	}
 	return id
+}
+
+// cacheDep records cache tags the page depends on (purging one of them drops the page).
+func cacheDep(ctx context.Context, tags ...string) {
+	if m := viewMemoFrom(ctx); m != nil {
+		m.mu.Lock()
+		for _, t := range tags {
+			m.deps[t] = true
+		}
+		m.mu.Unlock()
+	}
+}
+
+// cacheDepWidgets marks the page as showing site-wide lists only the "widgets" tag tracks.
+func cacheDepWidgets(ctx context.Context) {
+	if m := viewMemoFrom(ctx); m != nil {
+		m.mu.Lock()
+		m.widgets = true
+		m.mu.Unlock()
+	}
+}
+
+// listBlockMarkers are the blocks (and the shortcode opener) whose output lists other posts, terms,
+// comments or pages; content with one of them depends on "widgets", like a sidebar does.
+var listBlockMarkers = []string{"<!-- wp:latest-posts", "<!-- wp:latest-comments", "<!-- wp:archives", "<!-- wp:categories",
+	"<!-- wp:calendar", "<!-- wp:tag-cloud", "<!-- wp:page-list", "<!-- wp:query", "<!-- wp:navigation", "<!-- wp:block ",
+	"<!-- wp:rss", "<!-- wp:widget-group", "<!-- wp:legacy-widget"}
+
+// contentListsOthers reports whether post content may render lists of other objects: a list block or
+// a shortcode (plugins' shortcodes can print anything).
+func contentListsOthers(content string) bool {
+	for _, m := range listBlockMarkers {
+		if strings.Contains(content, m) {
+			return true
+		}
+	}
+	for i := strings.IndexByte(content, '['); i >= 0 && i+1 < len(content); {
+		if c := content[i+1]; c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' {
+			return true
+		}
+		j := strings.IndexByte(content[i+1:], '[')
+		if j < 0 {
+			break
+		}
+		i += 1 + j
+	}
+	return false
+}
+
+// pageCacheDeps returns whether the page needs the "widgets" tag and its other dependency tags. A page
+// built without a memo (or with Pursae Multi Language, whose switchers list translations) keeps "widgets".
+func (s *Server) pageCacheDeps(ctx context.Context) (widgets bool, deps []string) {
+	m := viewMemoFrom(ctx)
+	if m == nil || s.golylangOn() {
+		return true, nil
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for t := range m.deps {
+		deps = append(deps, t)
+	}
+	sort.Strings(deps)
+	return m.widgets, deps
 }
