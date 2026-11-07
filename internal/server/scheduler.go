@@ -90,6 +90,7 @@ func (s *Server) jobHandlers() map[string]jobHandler {
 		},
 		"wp_mail_smtp_daily": func(ctx context.Context, _ map[string]any) error { return s.mailSMTPDaily(ctx) },
 		gooikePurgeJob:       func(ctx context.Context, _ map[string]any) error { _, err := s.gooikePurge(ctx); return err }, // Gooike consent log retention
+		pixelPurgeJob:        func(ctx context.Context, _ map[string]any) error { _, err := s.pixelPurge(ctx); return err },  // Pursae Pixel delivery log retention
 		"adminsecgo_daily":   func(ctx context.Context, _ map[string]any) error { return s.adminsecDaily(ctx) },
 		gooDailyJob:          func(ctx context.Context, _ map[string]any) error { return s.gooDaily(ctx) },  // Goocommerce
 		gooHourlyJob:         func(ctx context.Context, _ map[string]any) error { return s.gooHourly(ctx) }, // Goocommerce: held stock

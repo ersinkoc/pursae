@@ -352,6 +352,7 @@ func (s *Server) adminPage(c *gin.Context, screen, title, bodyClass, tmpl string
 	// Pursae SEO's menu (seogo.go)
 	v.Menu = s.seogoMenu(v.Menu, u, screen)
 	v.Menu = s.gooikeMenu(v.Menu, u, screen) // Gooike (gooike.go)
+	v.Menu = s.pixelMenu(v.Menu, u, screen)  // Pursae Pixel (pixelgo.go)
 	v.Menu = s.gooMenu(v.Menu, u, screen)    // Goocommerce: its menus after Comments (goocommerce.go)
 	v.Menu = s.gocdnMenu(v.Menu, u, screen)  // GoCDN: its menu and Media › Remote Storage (gocdn.go)
 	v.Menu = s.hgMenu(v.Menu, u, screen)     // HeadlessGo (headlessgo.go)

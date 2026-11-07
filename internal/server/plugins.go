@@ -363,6 +363,7 @@ func (s *Server) nativePluginRows() []pluginRow {
 	rows = append(rows, s.bmgrPluginRow())     // Backup Manager (backup.go)
 	rows = append(rows, s.seogoPluginRow())    // Pursae SEO (seogo.go)
 	rows = append(rows, s.gooikePluginRow())   // Gooike (gooike.go)
+	rows = append(rows, s.pixelPluginRow())    // Pursae Pixel (pixelgo.go)
 	rows = append(rows, s.gooPluginRow())      // Goocommerce (goocommerce.go)
 	rows = append(rows, s.adminsecPluginRow()) // AdminSecGo (adminsec.go)
 	rows = append(rows, s.gocdnPluginRow())    // GoCDN (gocdn.go)
@@ -620,6 +621,8 @@ func (s *Server) pluginAction(c *gin.Context, action, slug string) {
 		return
 	case gooikeSlug: // Gooike (gooike.go)
 		s.gooikePluginAction(c, action)
+	case pixelSlug: // Pursae Pixel (pixelgo.go)
+		s.pixelPluginAction(c, action)
 		return
 	case gooSlug: // Goocommerce (goocommerce.go)
 		s.gooPluginAction(c, action)
@@ -731,7 +734,7 @@ func (s *Server) installPackageFrom(ctx context.Context, data []byte, source, wa
 	if wantSlug != "" && slug != wantSlug {
 		return nil, fmt.Errorf("the package is the plugin %q, not %q", slug, wantSlug)
 	}
-	if slug == "classic-editor" || slug == "wpgo-cache" || slug == maintSlug || slug == msSlug || slug == gontactSlug || slug == acfgoSlug || slug == golylangSlug || slug == seogoSlug || slug == gooikeSlug || slug == gooSlug || slug == gocdnSlug || slug == hgSlug {
+	if slug == "classic-editor" || slug == "wpgo-cache" || slug == maintSlug || slug == msSlug || slug == gontactSlug || slug == acfgoSlug || slug == golylangSlug || slug == seogoSlug || slug == gooikeSlug || slug == pixelSlug || slug == gooSlug || slug == gocdnSlug || slug == hgSlug {
 		return nil, errors.New("that slug belongs to a built-in plugin")
 	}
 	var before string
@@ -873,7 +876,7 @@ func (s *Server) pluginInstall(c *gin.Context) {
 	d := pluginInstallData{Tab: c.DefaultQuery("tab", "featured"), Search: strings.TrimSpace(c.Query("s")), UploadNonce: s.nonce(c, "plugin-upload")}
 	installed := map[string]bool{}
 	var native []marketItem
-	icons := map[string][2]string{"classic-editor": {"dashicons-edit-page", "blue"}, "wpgo-cache": {"dashicons-performance", "green"}, webbuilder.PluginSlug: {"dashicons-layout", "purple"}, maintSlug: {"dashicons-hammer", "teal"}, msSlug: {"dashicons-email-alt", "blue"}, gontactSlug: {"dashicons-email", "teal"}, acfgoSlug: {"dashicons-welcome-widgets-menus", "green"}, golylangSlug: {"dashicons-translation", "teal"}, seogoSlug: {"dashicons-chart-line", "blue"}, gooikeSlug: {"dashicons-shield", "orange"}, gooSlug: {"dashicons-cart", "purple"}, gocdnSlug: {"dashicons-cloud-upload", "blue"}, hgSlug: {"dashicons-rest-api", "blue"}}
+	icons := map[string][2]string{"classic-editor": {"dashicons-edit-page", "blue"}, "wpgo-cache": {"dashicons-performance", "green"}, webbuilder.PluginSlug: {"dashicons-layout", "purple"}, maintSlug: {"dashicons-hammer", "teal"}, msSlug: {"dashicons-email-alt", "blue"}, gontactSlug: {"dashicons-email", "teal"}, acfgoSlug: {"dashicons-welcome-widgets-menus", "green"}, golylangSlug: {"dashicons-translation", "teal"}, seogoSlug: {"dashicons-chart-line", "blue"}, gooikeSlug: {"dashicons-shield", "orange"}, pixelSlug: {"dashicons-chart-area", "purple"}, gooSlug: {"dashicons-cart", "purple"}, gocdnSlug: {"dashicons-cloud-upload", "blue"}, hgSlug: {"dashicons-rest-api", "blue"}}
 	for _, r := range s.installedPlugins(c) {
 		installed[r.Slug] = true
 		if r.Native {

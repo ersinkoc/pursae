@@ -315,7 +315,7 @@ func (api *restAPI) serve(c *gin.Context, route string) {
 	}
 	builderOn := s.wbOn()
 	for _, r := range api.routes {
-		if (!builderOn && r.Namespace == webbuilder.RESTNamespace) || s.gontactRESTHidden(r.Namespace) || (r.Namespace == pllRESTNamespace && !s.golylangOn()) || s.gooikeRESTHidden(r.Namespace) {
+		if (!builderOn && r.Namespace == webbuilder.RESTNamespace) || s.gontactRESTHidden(r.Namespace) || (r.Namespace == pllRESTNamespace && !s.golylangOn()) || s.gooikeRESTHidden(r.Namespace) || s.pixelRESTHidden(r.Namespace) {
 			continue
 		}
 		m := r.re.FindStringSubmatch(route)

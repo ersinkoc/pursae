@@ -18,6 +18,7 @@ func (s *Server) wpHead(c *gin.Context, q *siteQuery, lb *links.Builder, adminBa
 	site := html.EscapeString(v.SiteName)
 	var sb strings.Builder
 	sb.WriteString(s.gooikeHead(c)) // Gooike: Consent Mode defaults first, banner styles, head scripts (gooike_front.go)
+	sb.WriteString(s.pixelHead(c, q)) // Pursae Pixel: platform tags, inert until consent (pixelgo_front.go)
 	sb.WriteString(s.gooHead(c, q)) // Goocommerce: store styles (goo_front.go)
 	sb.WriteString(v.Theme.HeadTop)
 	seo := s.seogoHead(c, q, lb) // Pursae SEO replaces the robots meta and the canonical link (seogo_head.go)
@@ -88,6 +89,7 @@ func (s *Server) wpFooter(c *gin.Context, q *siteQuery, lb *links.Builder, admin
 	}
 	sb.WriteString(string(s.pluginScriptTags("front", true))) // plugin footer scripts
 	sb.WriteString(s.gooikeFooter(c))                         // Gooike: banner, preferences, footer scripts (gooike_front.go)
+	sb.WriteString(s.pixelFooter(c, q))                       // Pursae Pixel: page config and pixelgo.js (pixelgo_front.go)
 	sb.WriteString(s.gooFooter(c, q))                         // Goocommerce: store scripts, store notice (goo_front.go)
 	return template.HTML(sb.String())
 }
