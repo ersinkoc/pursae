@@ -172,11 +172,18 @@ type Manager struct {
 	Extra fs.FS
 
 	mu   sync.Mutex
-	cats map[string]*Catalog
+	cats map[string]*catalogLoad
+}
+
+// catalogLoad is one locale's catalog, loaded once: the first caller parses the .mo files outside
+// the manager's lock, callers for the same locale wait for it, other locales are not held up.
+type catalogLoad struct {
+	done chan struct{}
+	c    *Catalog
 }
 
 func NewManager(dir string, extra fs.FS) *Manager {
-	return &Manager{Dir: dir, Extra: extra, cats: map[string]*Catalog{}}
+	return &Manager{Dir: dir, Extra: extra, cats: map[string]*catalogLoad{}}
 }
 
 // Catalog returns the (cached) catalog of locale; English has an empty one.
@@ -185,19 +192,28 @@ func (m *Manager) Catalog(locale string) *Catalog {
 		return &Catalog{Locale: "en_US"}
 	}
 	m.mu.Lock()
-	defer m.mu.Unlock()
-	if c, ok := m.cats[locale]; ok {
-		return c
+	if m.cats == nil {
+		m.cats = map[string]*catalogLoad{}
 	}
-	c := m.load(locale)
-	m.cats[locale] = c
-	return c
+	if l, ok := m.cats[locale]; ok {
+		m.mu.Unlock()
+		<-l.done
+		return l.c
+	}
+	l := &catalogLoad{done: make(chan struct{})}
+	m.cats[locale] = l
+	m.mu.Unlock()
+	defer close(l.done)
+	l.c = &Catalog{Locale: locale} // what waiters get should load panic
+	l.c = m.load(locale)
+	return l.c
 }
 
-// Reset drops cached catalogs (after a language pack was installed or updated).
+// Reset drops cached catalogs (after a language pack was installed or updated). A load still in
+// progress finishes for its callers but is not kept.
 func (m *Manager) Reset() {
 	m.mu.Lock()
-	m.cats = map[string]*Catalog{}
+	m.cats = map[string]*catalogLoad{}
 	m.mu.Unlock()
 }
 
