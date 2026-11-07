@@ -41,6 +41,12 @@ the manifest's `hooks` array.
 |------|------|-------|-----------|------------|
 | `image_editor_output_format` | filter | `map[string]any` source MIME type → output MIME type for the generated image sizes, e.g. `{"image/jpeg": "image/webp"}`; it starts as WordPress' default (HEIC → JPEG) plus the Settings › Media › Image output format choice. A mapping that changes the format converts the main image too; `image/jpeg`, `image/png`, `image/gif` and `image/webp` can be written | the upload's file name, its MIME type | — |
 
+### Posts
+
+| Hook | Type | Arguments | Permission |
+|------|------|-----------|------------|
+| `save_post_<type>`, then `save_post` | action | the post id and the post (the shape `GetPost` returns). Fired after a post or page was saved — editor, REST, quick edit, scheduled publishing, a plugin's `InsertPost`/`UpdatePost` — never for other post types | `posts:read` |
+
 ### Lifecycle
 
 | Hook | Type | Arguments | Permission |
@@ -64,14 +70,28 @@ versions, so a manifest written today stays valid:
 | `admin:notices` | `admin_notices`, `all_admin_notices`, `network_admin_notices`, `user_admin_notices` |
 | `cron` | everything starting with `cron_` or `wpgo_cron` |
 
-Subscribing to a hook the core does not fire yet is allowed; the callback simply never runs.
+Subscribing to a hook the core does not fire yet is allowed; the callback simply never runs. Of the
+names above the core fires today `the_content`, `save_post`, `save_post_<type>`,
+`wpgo_post_stats`, `admin_notices` and the `cron_*` events; `the_title`, `wp_head`,
+`transition_post_status`, `wp_insert_post_data` and the rest are reserved.
 
 ## Behaviour to know
 
 - **Timeouts.** A callback has 2 seconds. A callback that overruns is killed, the filter keeps
   its value, and the plugin is re-instantiated on the next call.
 - **Failures count.** Five consecutive failures (panic, timeout, malformed response) disable the
-  plugin until it is activated again. Permission errors do not count.
+  plugin until it is activated again. A call that succeeds but takes 75 % of its budget (1.5 s)
+  counts too: it held up every other request to the plugin. Permission errors do not count.
+- **One call at a time.** A plugin instance runs one callback at a time (its memory is its state,
+  so there is no pool of instances). A request that finds the plugin busy waits at most one call
+  timeout, or less if the request's own deadline is nearer, then skips the callback (logged) and
+  the filter keeps its value.
+- **Re-instantiation.** After a timeout or a crash the next call starts a fresh instance, which
+  runs your `init` functions and `OnInit` again; the registrations of the old instance are dropped
+  first, so register everything there (conditional registrations follow the current options).
+- **Sanitised output.** Without `content:html`, the HTML a `content:filter` hook adds is passed
+  through KSES (only the part you changed; the core's markup around it is kept), and a change
+  inside a `<script>`, `<style>` or comment is dropped.
 - **Re-entrancy.** If a host function you call fires a hook that would call back into your
   plugin on the same call chain, that callback is skipped (and logged) instead of deadlocking.
 - **Types survive.** The host decodes your return value into the Go type of the original value,

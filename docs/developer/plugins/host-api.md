@@ -28,9 +28,11 @@ return `invalid_request`; failures inside the site return `host_error`. Outside 
 | `OptionBool(name, def) bool` | `get_option` | `options:read` |
 | `UpdateOption(name, value) error` | `update_option` | `options:write` |
 
-Readable: any option except secrets (`auth_*`, names containing `secret` or `password`,
-`admin_email`, `plugin_*` of other plugins). Writable: only `<slug>_*` (dashes → underscores)
-and the plugin's own `plugin_<slug>_*` settings. Names are at most 191 characters.
+Readable: the plugin's own `<slug>_*` (dashes → underscores) and `plugin_<slug>_*` options and the
+public core options listed under [permissions](permissions.md#options-a-plugin-can-read); anything
+else reads as not found. Writable: only the plugin's own options. They are stored in the plugin's
+namespace (`wasm:<slug>:<name>`), so they never collide with a core or built-in option; the plugin
+uses the plain names. Names are at most 191 characters.
 
 ## Posts
 
@@ -114,7 +116,7 @@ chars, values ≤1 MiB) in the site's transients table, scoped to the plugin and
 
 | SDK | Host import | Permission |
 |-----|-------------|------------|
-| `HTTPGet(url) (*HTTPResponse, error)` — `Status`, `Header`, `Body` (≤1 MiB), 8 s timeout, private and loopback addresses are blocked | `http_get` | `http:outbound` |
+| `HTTPGet(url) (*HTTPResponse, error)` — `Status`, `Header`, `Body` (≤1 MiB; a larger body is an error, not truncated), 8 s timeout, private and loopback addresses are blocked | `http_get` | `http:outbound` |
 | `AdminNotice(kind, message) error` — kinds `NoticeInfo/Success/Warning/Error`, plain text ≤2000 chars, only meaningful inside an `admin_notices` callback | `add_admin_notice` | `admin:notices` |
 
 ## The wire format

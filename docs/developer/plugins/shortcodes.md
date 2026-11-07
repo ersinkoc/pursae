@@ -40,6 +40,9 @@ func init() {
 - `content` is the raw text between the tags, already autop'd by the core. Expand nested
   shortcodes yourself if you need them: the core does not recurse.
 - The return value replaces the whole shortcode. Escape anything you did not generate.
+- The core passes the return value through KSES (`wp_kses_post`: no `<script>`, `<iframe>`,
+  `<form>`, event handlers or `javascript:` URLs) unless the plugin holds `content:html`, which the
+  activation screen presents as full control of the site.
 - `ctx.Hook` is the tag, so one callback can serve several tags.
 
 A callback that panics or times out makes the shortcode disappear from the page (an empty
