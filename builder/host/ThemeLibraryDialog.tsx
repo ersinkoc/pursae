@@ -193,14 +193,44 @@ function Failed({ c }: { c: ThemeLibraryController }) {
   )
 }
 
-export function ThemeLibraryDialog({ controller: c }: { controller: ThemeLibraryController }) {
+export function ThemeLibraryDialog({ controller: c, page = false }: { controller: ThemeLibraryController; page?: boolean }) {
   const s = useSyncExternalStore(c.subscribe, c.getState, c.getState)
   const box = useRef<HTMLDivElement>(null)
   useEffect(() => {
-    if (s.open) box.current?.focus()
-  }, [s.open, s.phase])
+    if (s.open && !page) box.current?.focus()
+  }, [s.open, s.phase, page])
   if (!s.open) return null
   const title = s.selected && s.phase !== 'list' ? s.selected.name : t('Theme library')
+  const header = (
+    <header className="flex shrink-0 items-center gap-3 border-b border-white/10 px-5 py-3.5">
+      <Layers size={17} className="text-accent-soft" />
+      <h2 className="flex-1 text-[15px] font-semibold">{title}</h2>
+      {s.phase === 'list' && <p className="hidden text-[12px] text-ink-500 sm:block">{t('Ready-made full-site themes: header, footer and every page template')}</p>}
+      {!page && (
+        <button type="button" aria-label={t('Close')} disabled={c.busy} onClick={c.close} className="grid size-7 place-items-center rounded-md text-ink-400 hover:bg-white/5 hover:text-white disabled:opacity-40">
+          <X size={16} />
+        </button>
+      )}
+    </header>
+  )
+  const body = (
+    <div className="min-h-0 flex-1 overflow-y-auto">
+      {s.phase === 'list' && <Gallery c={c} />}
+      {s.phase === 'confirm' && s.selected && <Confirm c={c} card={s.selected} />}
+      {s.phase === 'working' && <Working c={c} />}
+      {s.phase === 'done' && <Done c={c} />}
+      {s.phase === 'error' && <Failed c={c} />}
+    </div>
+  )
+  // On the admin screen (library frame) the gallery fills the document instead of floating over it.
+  if (page) {
+    return (
+      <div role="region" aria-label={title} className="flex h-screen flex-col bg-ink-850 text-ink-100">
+        {header}
+        {body}
+      </div>
+    )
+  }
   return (
     <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/55 p-6 backdrop-blur-[2px]" onMouseDown={() => c.close()}>
       <div
@@ -215,21 +245,8 @@ export function ThemeLibraryDialog({ controller: c }: { controller: ThemeLibrary
         }}
         className="flex max-h-[min(88vh,820px)] w-[min(960px,100%)] flex-col overflow-hidden rounded-2xl border border-white/10 bg-ink-850 text-ink-100 shadow-[0_30px_80px_-12px_rgba(0,0,0,.8)] outline-none"
       >
-        <header className="flex shrink-0 items-center gap-3 border-b border-white/10 px-5 py-3.5">
-          <Layers size={17} className="text-accent-soft" />
-          <h2 className="flex-1 text-[15px] font-semibold">{title}</h2>
-          {s.phase === 'list' && <p className="hidden text-[12px] text-ink-500 sm:block">{t('Ready-made full-site themes: header, footer and every page template')}</p>}
-          <button type="button" aria-label={t('Close')} disabled={c.busy} onClick={c.close} className="grid size-7 place-items-center rounded-md text-ink-400 hover:bg-white/5 hover:text-white disabled:opacity-40">
-            <X size={16} />
-          </button>
-        </header>
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          {s.phase === 'list' && <Gallery c={c} />}
-          {s.phase === 'confirm' && s.selected && <Confirm c={c} card={s.selected} />}
-          {s.phase === 'working' && <Working c={c} />}
-          {s.phase === 'done' && <Done c={c} />}
-          {s.phase === 'error' && <Failed c={c} />}
-        </div>
+        {header}
+        {body}
       </div>
     </div>
   )

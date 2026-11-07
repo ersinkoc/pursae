@@ -10,8 +10,11 @@
  * catalogs), then the editor is loaded with a dynamic import, which evaluates every other module
  * after it. The stylesheet stays here so the manifest lists it with the entry. Keep this file to
  * these statements (test/host/locale-order.test.ts).
+ *
+ * The Theme Library screen (Web Builder › Theme Library) loads the same bundle: its page sets
+ * window.__WEB_BUILDER_LIBRARY__ and gets ./library-main (the gallery alone) instead of the editor.
  */
 import './locale'
 import '@/index.css'
 
-void import('./editor-main')
+void ((window as { __WEB_BUILDER_LIBRARY__?: unknown }).__WEB_BUILDER_LIBRARY__ ? import('./library-main') : import('./editor-main'))

@@ -1,0 +1,9 @@
+{{define "admin/web-builder-library"}}{{template "admin-header" .}}{{with .Data}}
+<div class="wrap web-builder-library">
+<h1 class="wp-heading-inline">Theme Library</h1>
+<hr class="wp-header-end">
+<p class="description">Ready-made full-site themes for Pursae Web Builder: header, footer and every page template. Import one to use it as a starting point.</p>
+<noscript><div class="notice notice-error inline"><p>The Theme Library needs JavaScript.</p></div></noscript>
+<iframe id="web-builder-library-frame" title="Theme Library" src="{{.FrameURL}}" style="display:block;width:100%;height:calc(100vh - 210px);min-height:560px;margin-top:12px;border:1px solid #c3c4c7;border-radius:8px;background:#17181c"></iframe>
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}

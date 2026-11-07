@@ -12,6 +12,15 @@ unchanged: the same theme can still be installed as a classic package theme.
 
 ## Importing a theme
 
+There are two ways in, with the same gallery and the same import:
+
+- **Web Builder › Theme Library** in the admin menu (needs `edit_theme_options`). The screen embeds the
+  gallery in a frame (`themes?page=web-builder-library`; the frame document is `&frame=1`). The frame loads
+  the editor bundle in library mode (`window.__WEB_BUILDER_LIBRARY__`, `builder/host/library-main.tsx`)
+  because the browser draws and publishes every imported template (contract §4); the bundle's page reset
+  is why it lives in a frame of its own. Links in the result leave the frame (`<base target="_top">`).
+- the **Browse theme library** card in the editor's Items panel.
+
 Pick a theme, read what it contains and press **Import theme**. One import creates:
 
 - the Theme Builder [templates](web-builder-theme-builder.md): Header, Footer, Front Page, Single Post, Single

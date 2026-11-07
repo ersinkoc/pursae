@@ -31,6 +31,7 @@ describe('editor entry', () => {
     const statics = [...code.matchAll(/^\s*import\s+(?:[^'"]+\s+from\s+)?['"]([^'"]+)['"]/gm)].map((m) => m[1])
     expect(statics.filter((s) => !s.endsWith('.css'))).toEqual(['./locale'])
     expect(code).toMatch(/import\(\s*['"]\.\/editor-main['"]\s*\)/)
+    expect(code).toMatch(/import\(\s*['"]\.\/library-main['"]\s*\)/)
   })
 
   it('module-load labels follow the boot locale', async () => {

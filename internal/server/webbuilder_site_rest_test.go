@@ -110,3 +110,37 @@ func TestWebBuilderHidesCustomizer(t *testing.T) {
 		t.Errorf("the Customizer is gone with the builder off")
 	}
 }
+
+// Web Builder › Theme Library: an admin screen with the gallery in a frame, a bare document for the
+// frame, a menu entry, and 403 for users who may not edit the theme.
+func TestWebBuilderLibraryScreen(t *testing.T) {
+	srv, base, admin := wbrStart(t)
+	get := func(c *wbrClient, path string) (int, string) {
+		resp, err := c.c.Get(base + path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+		b, _ := io.ReadAll(resp.Body)
+		return resp.StatusCode, string(b)
+	}
+	code, page := get(admin, "/wp-admin/themes?page=web-builder-library")
+	if code != http.StatusOK || !strings.Contains(page, `id="web-builder-library-frame"`) || !strings.Contains(page, "page=web-builder-library&amp;frame=1") {
+		t.Fatalf("screen: %d", code)
+	}
+	if !strings.Contains(page, ">Theme Library<") {
+		t.Errorf("menu lacks Theme Library")
+	}
+	code, frame := get(admin, "/wp-admin/themes?page=web-builder-library&frame=1")
+	if code != http.StatusOK || !strings.Contains(frame, "window.__WEB_BUILDER_LIBRARY__ = true") || !strings.Contains(frame, `"apiVersion"`) || !strings.Contains(frame, `<base target="_top">`) ||
+		strings.Contains(frame, `"document"`) {
+		t.Fatalf("frame: %d %.300s", code, frame)
+	}
+	sub := wbrUser(t, srv, base, "libsub", "editor")
+	if code, _ := get(sub, "/wp-admin/themes?page=web-builder-library"); code != http.StatusForbidden {
+		t.Errorf("editor role: %d", code)
+	}
+	if code, _ := get(sub, "/wp-admin/themes?page=web-builder-library&frame=1"); code != http.StatusForbidden {
+		t.Errorf("editor role frame: %d", code)
+	}
+}
