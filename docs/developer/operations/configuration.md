@@ -52,6 +52,7 @@ inspect them. See [Mail](mail.md).
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `WPGO_PORT` | `8088` | host port for the site |
+| `WPGO_BIND` | `127.0.0.1` | host address the site is published on, with `compose.prod.yaml` only (the development file publishes on every interface) |
 | `WPGO_DB_PORT` | `5432` | host port for PostgreSQL |
 
 ## Test suite

@@ -761,16 +761,18 @@ func (api *restAPI) batch(c *gin.Context, r *restRequest) {
 		for _, ck := range c.Request.Cookies() {
 			req.AddCookie(ck)
 		}
-		for _, h := range []string{"X-WP-Nonce", "Authorization", "User-Agent"} {
-			if v := c.GetHeader(h); v != "" {
-				req.Header.Set(h, v)
-			}
-		}
 		if hs, ok := m["headers"].(map[string]any); ok {
 			for k, v := range hs {
-				if sv, ok := v.(string); ok && !strings.EqualFold(k, "Authorization") && !strings.EqualFold(k, "Cookie") {
+				if sv, ok := v.(string); ok && !batchReservedHeader(k) {
 					req.Header.Set(k, sv)
 				}
+			}
+		}
+		// The caller's own credentials and connection headers, as the outer request carried them: the
+		// inner request sees the same visitor address (X-Forwarded-For only counts from a trusted proxy).
+		for _, h := range []string{"X-WP-Nonce", "Authorization", "User-Agent", "X-Forwarded-For", "X-Forwarded-Proto", "X-Forwarded-Host", "X-Real-IP", "Forwarded"} {
+			if v := c.GetHeader(h); v != "" {
+				req.Header.Set(h, v)
 			}
 		}
 		req.Host = c.Request.Host
@@ -788,6 +790,19 @@ func (api *restAPI) batch(c *gin.Context, r *restRequest) {
 		responses = append(responses, map[string]any{"body": out, "status": rec.Code, "headers": headers})
 	}
 	restJSON(c, http.StatusMultiStatus, map[string]any{"responses": responses})
+}
+
+// batchReservedHeader reports whether a header of a batch sub-request is ignored: credentials, and the
+// headers a proxy sets to report the visitor's address or scheme (a client must not pick its own address
+// for the login throttle, comment flood check and logs).
+func batchReservedHeader(name string) bool {
+	k := http.CanonicalHeaderKey(strings.TrimSpace(name))
+	switch {
+	case k == "Authorization", k == "Cookie", k == "Host", k == "X-Real-Ip", k == "Forwarded",
+		strings.HasPrefix(k, "X-Forwarded-"):
+		return true
+	}
+	return false
 }
 
 // batchOptions is what OPTIONS /batch/v1 answers in WordPress; core-data reads requests.maxItems from it.

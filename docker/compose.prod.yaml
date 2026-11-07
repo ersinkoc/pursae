@@ -9,6 +9,10 @@
 # - PostgreSQL is not published on the host.
 # - the demo signing key is not trusted; list your own keys in WPGO_PLUGIN_KEYS.
 # - WPGO_SITE_URL is required: it is the public https:// address behind your TLS proxy.
+# - the site is published on 127.0.0.1:${WPGO_PORT:-8088} only: put your TLS proxy on this host (or set
+#   WPGO_BIND to another address). Clients must not reach the server directly, or they could send their
+#   own X-Forwarded-For. WPGO_TRUSTED_PROXIES lists the proxy addresses whose X-Forwarded-For is believed
+#   (default: loopback and private networks, which includes the Docker bridge the host proxy comes from).
 name: wpgo
 
 services:
@@ -24,4 +28,7 @@ services:
       WPGO_SITE_URL: ${WPGO_SITE_URL:?set WPGO_SITE_URL to the public https:// address}
       WPGO_TRUST_DEV_KEY: "0"
       WPGO_PLUGIN_KEYS: ${WPGO_PLUGIN_KEYS:-}
+      WPGO_TRUSTED_PROXIES: ${WPGO_TRUSTED_PROXIES:-}
+    ports: !override
+      - "${WPGO_BIND:-127.0.0.1}:${WPGO_PORT:-8088}:8080"
     restart: unless-stopped

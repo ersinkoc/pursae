@@ -58,8 +58,9 @@ WPGO_DB_PASSWORD=<strong password> WPGO_SITE_URL=https://example.com \
 ```
 
 It takes the database password from `WPGO_DB_PASSWORD` (used for `POSTGRES_PASSWORD` and the
-`DATABASE_URL`), does not publish PostgreSQL, sets `WPGO_TRUST_DEV_KEY=0` and passes
-`WPGO_PLUGIN_KEYS` through. `POSTGRES_PASSWORD` only applies when the `pgdata` volume is first created; on
+`DATABASE_URL`), does not publish PostgreSQL, publishes the site on `127.0.0.1:8088` only (for a TLS proxy
+on the same host; `WPGO_BIND` changes the address), sets `WPGO_TRUST_DEV_KEY=0` and passes
+`WPGO_PLUGIN_KEYS` and `WPGO_TRUSTED_PROXIES` through. `POSTGRES_PASSWORD` only applies when the `pgdata` volume is first created; on
 an existing database change the password first (`ALTER USER wpgo PASSWORD '...'`).
 
 Also:

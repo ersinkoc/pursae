@@ -209,6 +209,9 @@ func (s *Server) routes() *gin.Engine {
 	if err := applyTrustedProxies(r, s.cfg.TrustedProxies); err != nil {
 		log.Printf("wpgo: WPGO_TRUSTED_PROXIES: %v; trusting no proxy", err)
 		_ = r.SetTrustedProxies(nil)
+	} else if strings.TrimSpace(s.cfg.TrustedProxies) == "" && strings.HasPrefix(s.cfg.SiteURL, "https://") {
+		log.Printf("wpgo: WPGO_TRUSTED_PROXIES is not set: X-Forwarded-For is believed from loopback and private networks; " +
+			"set it to your proxy's address, or \"none\" (docs: operations/reverse-proxy-and-tls)")
 	}
 	r.Use(gin.Recovery(), accessLog(), requestOrigin(), securityHeaders(), s.loadUser(), s.requireInstall(), s.acfgoMiddleware(), s.golylangRequest())
 	r.HandleMethodNotAllowed = false
@@ -627,7 +630,11 @@ func clientIP(c *gin.Context) string {
 
 // defaultTrustedProxies are the addresses a reverse proxy normally has when it runs next to the server:
 // loopback and private networks. A client reaching the server directly from the internet is not among
-// them, so it cannot choose its own address with an X-Forwarded-For header.
+// them, so it cannot choose its own address with an X-Forwarded-For header. The private ranges stay in
+// the default because in Docker a proxy on the host (or in another container) reaches the server from a
+// bridge address (172.16/12 and the like), not loopback. A server whose port is reachable from other
+// machines on a private network should set WPGO_TRUSTED_PROXIES to its proxy's address; the production
+// compose file publishes the port on 127.0.0.1 only.
 const defaultTrustedProxies = "127.0.0.0/8,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,fc00::/7"
 
 // applyTrustedProxies sets which peers may report the visitor address (WPGO_TRUSTED_PROXIES: a comma separated
