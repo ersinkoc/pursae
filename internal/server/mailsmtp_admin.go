@@ -148,8 +148,8 @@ func (s *Server) mailSMTPAdmin(c *gin.Context, page string) {
 		s.msToolsScreen(c)
 	case "wp-mail-smtp-setup-wizard":
 		s.msWizard(c)
-	default:
-		s.notYet(c)
+	default: // an unregistered page, as admin.php answers it
+		c.String(http.StatusForbidden, "Sorry, you are not allowed to access this page.")
 	}
 }
 
@@ -375,8 +375,8 @@ func (s *Server) msSettingsScreen(c *gin.Context) {
 			cur.Items = append(cur.Items, choice{Value: ec.Key, Label: ec.Label, Checked: !o.Controls[ec.Key]})
 		}
 	case "misc":
-	default:
-		s.notYet(c)
+	default: // an unknown tab opens the first one, like saving one does
+		msBack(c, msBase+"wp-mail-smtp")
 		return
 	}
 	s.msRender(c, d, "Pursae SMTP Settings", notices...)
@@ -965,8 +965,8 @@ func (s *Server) msToolsScreen(c *gin.Context) {
 			}
 			rows.Close()
 		}
-	default:
-		s.notYet(c)
+	default: // an unknown tab opens the first one
+		msBack(c, msBase+"wp-mail-smtp-tools")
 		return
 	}
 	s.msRender(c, d, "Pursae SMTP Tools", notices...)
