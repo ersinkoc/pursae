@@ -150,7 +150,7 @@ func newServer(ctx context.Context, cfg config.Config, pool *pgxpool.Pool, sb *s
 // calls aimed at the old paths still succeed.
 func (s *Server) Handler() http.Handler {
 	app := s.appHandler()
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return s.opsHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { // probes, request ID (ops_http.go)
 		if s.adminsecOn() { // AdminSecGo: blocked IPs, the custom login URL, security headers (adminsec.go)
 			var done bool
 			if w, r, done = s.adminsecFront(w, r); done {
@@ -171,7 +171,7 @@ func (s *Server) Handler() http.Handler {
 			return
 		}
 		app.ServeHTTP(w, r)
-	})
+	}))
 }
 
 // appHandler is the app without the page cache.
@@ -392,18 +392,6 @@ func (s *Server) static(r *gin.Engine, prefix, dir string, guards ...gin.Handler
 	}
 	r.GET(prefix+"/*filepath", append(guards[:len(guards):len(guards)], handler)...)
 	r.HEAD(prefix+"/*filepath", append(guards[:len(guards):len(guards)], handler)...)
-}
-
-func accessLog() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		start := time.Now()
-		c.Next()
-		p := c.Request.URL.Path
-		if strings.HasPrefix(p, "/wp-admin/assets/") || strings.HasPrefix(p, "/wp-includes/") || strings.HasPrefix(p, "/wp-content/") {
-			return
-		}
-		log.Printf("%d %s %s %s", c.Writer.Status(), c.Request.Method, c.Request.URL.RequestURI(), time.Since(start).Round(time.Microsecond))
-	}
 }
 
 // securityHeaders sets the default headers from the spec's security section.

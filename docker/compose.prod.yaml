@@ -25,3 +25,10 @@ services:
       WPGO_TRUST_DEV_KEY: "0"
       WPGO_PLUGIN_KEYS: ${WPGO_PLUGIN_KEYS:-}
     restart: unless-stopped
+    # GET /healthz (process up); `wpgo healthcheck ready` checks /readyz (database + migrations).
+    healthcheck:
+      test: ["CMD", "/usr/local/lib/pursae/wpgo", "healthcheck"]
+      interval: 30s
+      timeout: 5s
+      start_period: 60s
+      retries: 3

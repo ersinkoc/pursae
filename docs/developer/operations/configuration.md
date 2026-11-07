@@ -19,6 +19,25 @@ edited in the admin.
 | `WPGO_UPLOADS_DIR` | `./data/uploads` | media library files. The directories next to it hold plugins (`../plugins`), the compiled-plugin cache (`../plugin-cache`), themes (`../themes`) and development mail (`../mail`) |
 | `WPGO_SECRET` | generated on first start and stored in the settings | secret for session cookies and nonces. Set it when you run more than one instance against one database so every instance signs the same way |
 | `WPGO_WEB_DIR` | embedded | read admin templates, theme templates, CSS and JS from this directory instead of the binary, reloading per request (development) |
+| `WPGO_EMPTY_TRASH_DAYS` | `30` | days trashed posts and comments are kept before the daily `wp_scheduled_delete` job removes them (WordPress' `EMPTY_TRASH_DAYS`). `0` empties the trash at every daily run; unlike WordPress it does not hide the Trash links in the admin |
+| `WPGO_LOG_FORMAT` | text | `json` writes the access log as one JSON object per request (`status`, `method`, `uri`, `duration`, `ip`, `request_id`) for log shippers; other log lines are unchanged |
+
+## Database pool
+
+`DATABASE_URL` takes pgx's pool parameters as query parameters; each one you leave out gets the
+default below (pgx alone would allow only `max(4, CPUs)` connections):
+
+| Parameter | Default | Purpose |
+|-----------|---------|---------|
+| `pool_max_conns` | 4 × CPUs, at least 10, at most 40 | connections per instance. Keep the sum over all instances (plus backups and `psql`) under PostgreSQL's `max_connections` (100 by default) |
+| `pool_min_conns` | `2` | connections kept open when idle |
+| `pool_max_conn_lifetime` | `1h` (+ up to 5 min jitter) | a connection is replaced after this long |
+| `pool_max_conn_idle_time` | `15m` | idle connections above the minimum are closed after this long |
+| `pool_health_check_period` | `30s` | how often idle connections are checked |
+
+```
+DATABASE_URL=postgres://wpgo:secret@db:5432/wpgo?sslmode=disable&pool_max_conns=20
+```
 
 ## Mail
 
