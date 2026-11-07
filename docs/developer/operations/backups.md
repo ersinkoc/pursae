@@ -48,6 +48,15 @@ docker run --rm -v wpgo_uploads:/data/uploads -v wpgo_plugins:/data/plugins -v w
 3. Restore the dump, then update the URL under Settings › General if the address changed. The
    site URL is stored in the database, not in the environment, once installed.
 
+## Backup Manager
+
+The built-in **Backup Manager** plugin (off by default) makes the same backup from the admin screen as
+one `.zip` (database rows as JSON lines plus the files), restores it on this or another site, and can
+run **scheduled local backups** (daily or weekly, keeping the newest *N*). Archives go to
+`WPGO_BACKUPS_DIR` (default `<uploads>/../backups`, never inside the public uploads). Scheduled backups
+stay on the same server: copy them elsewhere (for example with the `tar` command above) — remote
+storage such as S3 or FTP is not included.
+
 ## Content export
 
 Tools › Export writes a WXR file with posts, pages, media references, comments and terms; Tools ›

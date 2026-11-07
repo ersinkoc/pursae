@@ -30,6 +30,7 @@
 <nav class="nav-tab-wrapper wp-clearfix" aria-label="Secondary menu">
 	<a href="/wp-admin/admin?page=backup-manager&amp;tab=create" class="nav-tab{{if eq .Tab "create"}} nav-tab-active{{end}}">Create backup</a>
 	<a href="/wp-admin/admin?page=backup-manager&amp;tab=backups" class="nav-tab{{if eq .Tab "backups"}} nav-tab-active{{end}}">Backups</a>
+	<a href="/wp-admin/admin?page=backup-manager&amp;tab=schedule" class="nav-tab{{if eq .Tab "schedule"}} nav-tab-active{{end}}">Schedule</a>
 	<a href="/wp-admin/admin?page=backup-manager&amp;tab=import" class="nav-tab{{if eq .Tab "import"}} nav-tab-active{{end}}">Import / Migrate</a>
 </nav>
 
@@ -99,6 +100,29 @@
 {{end}}
 <p class="description" style="margin-top:12px">Stored in <code>{{.Dir}}</code>. A <code>.zip</code> backup copied into that folder shows up here, which is the way to bring in very large files.</p>
 {{end}}
+
+{{if and (eq .Tab "schedule") .Schedule}}{{with .Schedule}}
+<p class="description" style="max-width:900px">Back the site up automatically into the backups folder on this server. Only the newest scheduled backups are kept; manual backups and safety snapshots are never deleted. Copy archives somewhere else as well: a backup on the same server does not survive the loss of the server.</p>
+<form method="post" action="/wp-admin/admin?page=backup-manager">
+<input type="hidden" name="_wpnonce" value="{{$.Data.Nonce}}"><input type="hidden" name="do" value="schedule">
+<table class="form-table" role="presentation"><tbody>
+<tr><th scope="row"><label for="bmgr-schedule">Automatic backups</label></th>
+<td><select name="schedule" id="bmgr-schedule">{{range .Freqs}}<option value="{{.Value}}"{{if .Checked}} selected{{end}}>{{.Label}}</option>{{end}}</select>
+{{if .Next}}<p class="description">Next backup: <strong>{{.Next}}</strong></p>{{end}}</td></tr>
+<tr><th scope="row"><label for="bmgr-keep">Keep</label></th>
+<td><input type="number" name="keep" id="bmgr-keep" class="small-text" min="1" max="100" step="1" value="{{.Keep}}"> scheduled backups
+<p class="description">When a new scheduled backup is made, the oldest ones beyond this number are deleted.</p></td></tr>
+<tr><th scope="row">Parts</th>
+<td><fieldset><legend class="screen-reader-text"><span>Parts</span></legend>
+{{range .Cats}}<label><input type="checkbox" name="cat" value="{{.Value}}"{{if .Checked}} checked{{end}}> {{.Label}}</label><br>{{end}}
+<p class="description">Scheduled backups always include every user.</p></fieldset></td></tr>
+<tr><th scope="row">Last scheduled backup</th>
+<td>{{if .LastWhen}}{{.LastWhen}}{{if .LastErr}} <span style="color:#b32d2e">Failed: {{.LastErr}}</span>{{else if .LastFile}} · <code>{{.LastFile}}</code>{{end}}{{else}}None yet{{end}}</td></tr>
+</tbody></table>
+<p class="description">Storing backups on a remote service (S3, FTP) is not included.</p>
+<p class="submit"><button type="submit" class="button button-primary">Save Changes</button></p>
+</form>
+{{end}}{{end}}
 
 {{if eq .Tab "import"}}
 <div class="bmgr-steps">

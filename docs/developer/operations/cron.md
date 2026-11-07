@@ -21,6 +21,7 @@ without running a job twice. No visitor, no `wp-cron.php`, no system crontab nee
 | `wpgo_cache_janitor` | hourly | drops expired page-cache entries |
 | `wp_mail` | one-off | delivers a queued e-mail ([mail](mail.md)) |
 | `publish_future_post` | every tick | publishes posts whose date has come |
+| `wpgo_backup_scheduled` | daily or weekly | Backup Manager's scheduled local backup, only while a schedule is set (Backup Manager › Schedule); not recreated by `ensureEvents` |
 
 ## Plugin events
 

@@ -137,6 +137,7 @@ func newServer(ctx context.Context, cfg config.Config, pool *pgxpool.Pool, sb *s
 		s.acfgoStart(ctx) // ACF-Go: content types, post types and taxonomies
 	}
 	s.startPlugins(ctx)
+	s.bmgrRegisterSchedule() // Backup Manager: the scheduled-backup job action (backup_schedule.go)
 	s.adminsecStart()
 	return s, nil
 }
