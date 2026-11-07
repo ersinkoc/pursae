@@ -358,7 +358,7 @@ func (s *Server) replyToCommentAjax(c *gin.Context) {
 		return
 	}
 	if !u.Can("unfiltered_html", nil) {
-		content = wp.KsesPost(content)
+		content = wp.KsesData(content)
 	}
 	parentID, _ := strconv.ParseInt(c.PostForm("comment_ID"), 10, 64)
 	var parentApproved *store.Comment
@@ -414,7 +414,7 @@ func (s *Server) editCommentAjax(c *gin.Context) {
 	cm.AuthorURL = commentAuthorURL(c.PostForm("newcomment_author_url"))
 	cm.Content = c.PostForm("content")
 	if !u.Can("unfiltered_html", nil) {
-		cm.Content = wp.KsesPost(cm.Content)
+		cm.Content = wp.KsesData(cm.Content)
 	}
 	switch c.PostForm("status") {
 	case "1", "approve", "approved":
@@ -660,7 +660,7 @@ func (s *Server) commentScreen(c *gin.Context) {
 		cm.AuthorURL = commentAuthorURL(c.PostForm("newcomment_author_url"))
 		cm.Content = c.PostForm("content")
 		if !u.Can("unfiltered_html", nil) {
-			cm.Content = wp.KsesPost(cm.Content)
+			cm.Content = wp.KsesData(cm.Content)
 		}
 		if st := c.PostForm("comment_status"); st == "approved" || st == "pending" || st == "spam" {
 			cm.Status = st

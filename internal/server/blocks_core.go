@@ -111,6 +111,28 @@ func (s *Server) rootPaddingAware() bool {
 	return v
 }
 
+// blockLayoutType is the layout type of a block's layout attribute (wp_render_layout_support_flag()):
+// flow, constrained, flex or grid. "default", a missing type and any unknown value are flow, so the
+// attribute can never put arbitrary text into the class names; with inherit, the legacy "inherit
+// default layout" toggle means constrained.
+func blockLayoutType(b *blocks.Block, inherit bool) string {
+	l, ok := b.Attrs["layout"].(map[string]any)
+	if !ok {
+		return "flow"
+	}
+	t, _ := l["type"].(string)
+	switch t {
+	case "flow", "constrained", "flex", "grid":
+		return t
+	}
+	if inherit && (t == "" || t == "default") {
+		if v, ok := l["inherit"].(bool); ok && v {
+			return "constrained"
+		}
+	}
+	return "flow"
+}
+
 func registerCoreBlocks(s *Server) {
 	blocks.RegisterDynamic("core/heading", func(_ context.Context, _ *blocks.Block, content string) string {
 		return blocks.AddClass(content, "wp-block-heading", "h1", "h2", "h3", "h4", "h5", "h6")
@@ -120,14 +142,7 @@ func registerCoreBlocks(s *Server) {
 	// classic themes; constrained layouts get their class names.
 	layout := func(name string) blocks.RenderFunc {
 		return func(_ context.Context, b *blocks.Block, content string) string {
-			typ := "flow"
-			if l, ok := b.Attrs["layout"].(map[string]any); ok {
-				if t, ok := l["type"].(string); ok && t != "default" {
-					typ = t
-				} else if inherit, ok := l["inherit"].(bool); ok && inherit {
-					typ = "constrained"
-				}
-			}
+			typ := blockLayoutType(b, true)
 			if name == "columns" || name == "buttons" || name == "social-links" || name == "gallery" {
 				typ = "flex"
 			}
@@ -143,12 +158,7 @@ func registerCoreBlocks(s *Server) {
 	}
 	// The cover block's layout applies to its inner container.
 	blocks.RegisterDynamic("core/cover", func(_ context.Context, b *blocks.Block, content string) string {
-		typ := "flow"
-		if l, ok := b.Attrs["layout"].(map[string]any); ok {
-			if t, ok := l["type"].(string); ok && t != "default" {
-				typ = t
-			}
-		}
+		typ := blockLayoutType(b, false)
 		return strings.Replace(content, `class="wp-block-cover__inner-container`, `class="wp-block-cover__inner-container is-layout-`+typ+` wp-block-cover-is-layout-`+typ, 1)
 	})
 
@@ -273,7 +283,7 @@ func renderLatestPosts(ctx context.Context, b *blocks.Block, _ string) string {
 		}
 		if attrBool(b, "displayPostContent", false) {
 			if attrStr(b, "displayPostContentRadio", "excerpt") == "excerpt" {
-				ex := p.Excerpt
+				ex := wp.KsesPost(p.Excerpt) // excerpts saved before excerpt_save_pre sanitizing existed
 				if ex == "" {
 					ex = wp.TrimWords(stripBlocks(p.Content), attrInt(b, "excerptLength", 55),
 						` … <a class="wp-block-latest-posts__read-more" href="`+html.EscapeString(link)+`" rel="noopener">Read more<span class="screen-reader-text">: `+html.EscapeString(title)+`</span></a>`)

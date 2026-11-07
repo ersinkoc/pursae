@@ -811,7 +811,7 @@ func (s *Server) gooSubmitReview(c *gin.Context) {
 		return
 	}
 	if !u.Can("unfiltered_html", nil) {
-		cm.Content = wp.KsesPost(cm.Content)
+		cm.Content = wp.KsesData(cm.Content)
 	}
 	if dup, _ := s.store.IsDuplicateComment(ctx, cm); dup {
 		fail("Duplicate review detected; it looks as though you&#8217;ve already said that!")

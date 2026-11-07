@@ -33,7 +33,9 @@ type commentsView struct {
 	Page, MaxPage int
 }
 
-// commentText is comment_text(): kses-filtered, texturized and auto-paragraphed.
+// commentText is comment_text(): kses-filtered, texturized and auto-paragraphed. Comments from users
+// without unfiltered_html are already limited to wp.KsesData when saved; the post policy here (with
+// safecss) is the safety net for rows saved before that and for HTML written with unfiltered_html.
 func commentText(content string) string {
 	return wp.Autop(wp.Texturize(wp.KsesPost(content)))
 }
@@ -464,7 +466,7 @@ func (s *Server) commentPost(c *gin.Context) {
 		return
 	}
 	if !u.Can("unfiltered_html", nil) {
-		cm.Content = wp.KsesPost(cm.Content)
+		cm.Content = wp.KsesData(cm.Content) // pre_comment_content: wp_filter_kses ($allowedtags)
 	}
 	if dup, _ := s.store.IsDuplicateComment(ctx, cm); dup {
 		s.commentDie(c, http.StatusConflict, "Duplicate comment detected; it looks as though you&#8217;ve already said that!")
