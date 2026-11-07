@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -24,15 +25,32 @@ func runMCP(ctx context.Context, args []string, stdin io.Reader, stdout, stderr 
 	fs.SetOutput(stderr)
 	site := fs.String("url", os.Getenv("PURSAE_URL"), "site URL, e.g. https://example.com (env PURSAE_URL)")
 	user := fs.String("user", os.Getenv("PURSAE_USER"), "user name (env PURSAE_USER)")
-	pass := fs.String("password", os.Getenv("PURSAE_APP_PASSWORD"), "Application Password (env PURSAE_APP_PASSWORD)")
+	pass := fs.String("password", "", "Application Password; prefer the env PURSAE_APP_PASSWORD (a flag is visible to other users in ps)")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
-	if *site == "" || *user == "" || *pass == "" {
-		return errors.New("wpgo mcp needs --url, --user and --password (or PURSAE_URL, PURSAE_USER, PURSAE_APP_PASSWORD)")
+	if *pass != "" {
+		fmt.Fprintln(stderr, "wpgo mcp: warning: --password is visible in the process list; set PURSAE_APP_PASSWORD instead")
+	} else {
+		*pass = os.Getenv("PURSAE_APP_PASSWORD")
 	}
-	endpoint := strings.TrimRight(*site, "/") + "/wp-json/pursae/v1/mcp"
-	client := &http.Client{Timeout: 5 * time.Minute}
+	if *site == "" || *user == "" || *pass == "" {
+		return errors.New("wpgo mcp needs --url, --user and PURSAE_APP_PASSWORD (or PURSAE_URL, PURSAE_USER; --password also works)")
+	}
+	u, err := url.Parse(strings.TrimRight(*site, "/"))
+	if err != nil || u.Host == "" {
+		return fmt.Errorf("wpgo mcp: invalid --url %q", *site)
+	}
+	if err := mcpURLAllowed(u); err != nil {
+		return err
+	}
+	endpoint := u.String() + "/wp-json/pursae/v1/mcp"
+	client := &http.Client{Timeout: 5 * time.Minute, CheckRedirect: func(r *http.Request, via []*http.Request) error {
+		if len(via) >= 10 {
+			return errors.New("stopped after 10 redirects")
+		}
+		return mcpURLAllowed(r.URL) // never follow a redirect that would send the password in clear text
+	}}
 	out := json.NewEncoder(stdout)
 	in := bufio.NewReader(stdin)
 	for {
@@ -51,6 +69,26 @@ func runMCP(ctx context.Context, args []string, stdin io.Reader, stdout, stderr 
 			return err
 		}
 	}
+}
+
+// mcpURLAllowed refuses plain http except to this machine: the Application Password travels in every
+// request's Authorization header.
+func mcpURLAllowed(u *url.URL) error {
+	switch strings.ToLower(u.Scheme) {
+	case "https":
+		return nil
+	case "http":
+		switch h := strings.ToLower(u.Hostname()); h {
+		case "localhost", "127.0.0.1", "::1":
+			return nil
+		default:
+			if strings.HasSuffix(h, ".localhost") {
+				return nil
+			}
+		}
+		return fmt.Errorf("wpgo mcp: refusing to send the password over plain http to %s; use https (http is allowed for localhost only)", u.Host)
+	}
+	return fmt.Errorf("wpgo mcp: unsupported URL scheme %q", u.Scheme)
 }
 
 // forwardMCP posts one message and returns the answer to print (nil for notifications). Transport

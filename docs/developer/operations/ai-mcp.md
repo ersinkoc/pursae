@@ -102,9 +102,11 @@ streamable HTTP with that header, or `wpgo mcp` over stdio.
 |------|-------------|---|
 | `--url` | `PURSAE_URL` | site address |
 | `--user` | `PURSAE_USER` | login or e-mail |
-| `--password` | `PURSAE_APP_PASSWORD` | the Application Password |
+| `--password` | `PURSAE_APP_PASSWORD` | the Application Password; prefer the environment variable (a flag shows up in `ps` for other users, and the bridge prints a warning) |
 
-The bridge prints nothing but protocol messages on stdout; errors go to stderr.
+The bridge refuses plain `http://` URLs except `localhost`, `127.0.0.1` and `::1` (and redirects to such URLs),
+because the password travels with every request. It prints nothing but protocol messages on stdout; errors
+go to stderr.
 
 ## Tools
 
