@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -48,6 +49,9 @@ type Cache struct {
 	allowedQuery  map[string]bool
 	detectLS      func(*http.Request) bool
 	lsEnv         bool
+
+	flight     flightGroup
+	flightWait time.Duration // how long a request waits for a concurrent render of its page
 }
 
 // New builds a cache. If the disk directory cannot be used, persistence is disabled
@@ -76,6 +80,7 @@ func New(cfg Config, opts Options) *Cache {
 		c.allowedQuery[q] = true
 	}
 	c.lsEnv = os.Getenv("X_LSCACHE") != "" || os.Getenv("LSCACHE") != ""
+	c.flightWait = defaultFlightWait
 
 	c.store = opts.Store
 	if c.store == nil {
@@ -146,10 +151,69 @@ func (c *Cache) Middleware(next http.Handler) http.Handler {
 			c.serve(w, r, e, "hit", d.Private)
 			return
 		}
+		var release func()
+		if r.Method == http.MethodGet && !d.Private {
+			// Concurrent misses of one page render it once: the others wait for that render
+			// and are then served from the cache with their own conditional and encoding
+			// negotiation. When it was not stored (not cacheable, purged meanwhile) or takes
+			// too long, they render the page themselves.
+			var wait <-chan struct{}
+			if release, wait = c.flight.join(d.Key); wait != nil {
+				t := time.NewTimer(c.flightWait)
+				select {
+				case <-wait:
+				case <-t.C:
+				case <-r.Context().Done():
+					t.Stop()
+					return
+				}
+				t.Stop()
+				if e, ok := c.store.Get(d.Key); ok {
+					c.serve(w, r, e, "hit", d.Private)
+					return
+				}
+			} else {
+				defer release()
+			}
+		}
 		cw := newCaptureWriter(w, c, r, d)
+		cw.release = release
 		next.ServeHTTP(cw, r)
 		cw.finish()
 	})
+}
+
+// defaultFlightWait bounds how long a request waits for another request's render of the same page.
+const defaultFlightWait = 10 * time.Second
+
+// flightGroup tracks the page renders in progress by cache key.
+type flightGroup struct {
+	mu sync.Mutex
+	m  map[string]chan struct{}
+}
+
+// join makes the caller the render of key (release != nil, to be called once the page is stored
+// or abandoned) or returns the channel closed when the render in progress ends (wait != nil).
+func (f *flightGroup) join(key string) (release func(), wait <-chan struct{}) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if ch, ok := f.m[key]; ok {
+		return nil, ch
+	}
+	if f.m == nil {
+		f.m = make(map[string]chan struct{})
+	}
+	ch := make(chan struct{})
+	f.m[key] = ch
+	var once sync.Once
+	return func() {
+		once.Do(func() {
+			f.mu.Lock()
+			delete(f.m, key)
+			f.mu.Unlock()
+			close(ch)
+		})
+	}, nil
 }
 
 // serve writes a cached (or just captured) entry, negotiating gzip and ETag.

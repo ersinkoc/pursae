@@ -47,6 +47,11 @@ settings, theme, menu and widget changes purge everything. Plugins that change p
 [posts API](../plugins/host-api.md) trigger the same purges, and saving a plugin settings page
 purges everything.
 
+A page whose render overlaps a purge that covers it (a post saved while the page was being
+built) is sent to that visitor but not stored, so the purge always wins. Concurrent misses of the
+same anonymous page are rendered once: the other requests wait (up to 10 s) and are then served
+from the cache; when that render was not cacheable they render the page themselves.
+
 The admin bar has **Purge this page** and **Purge all**; Toolbox has a crawler that warms the
 cache after a purge.
 

@@ -21,6 +21,10 @@ import (
 // such as responses carrying Set-Cookie.
 var ErrNotCacheable = errors.New("cache: response not cacheable")
 
+// ErrPurged is returned by [Store.SetSince] when a purge that covers the entry ran after the
+// generation the entry was rendered at: storing it would bring back the content just purged.
+var ErrPurged = errors.New("cache: purged while rendering")
+
 // Entry is one cached response.
 type Entry struct {
 	Key     string      // canonical cache key (see [Cache.Key])
@@ -91,7 +95,20 @@ type Store struct {
 	bytes  int64
 	hits   atomic.Int64
 	misses atomic.Int64
+
+	// Purge generations: gen counts purges; allGen, tagGen, baseGen (host+path) and pathGen (a
+	// path on every host) remember the generation of the last purge of each scope, so SetSince
+	// can refuse a render that a purge overtook.
+	gen     uint64
+	allGen  uint64
+	tagGen  map[string]uint64
+	baseGen map[string]uint64
+	pathGen map[string]uint64
 }
+
+// maxGenScopes bounds the purge-generation maps; past it they collapse into allGen (which can
+// only make SetSince refuse more, never less).
+const maxGenScopes = 10000
 
 // StoreOptions configures [NewStore].
 type StoreOptions struct {
@@ -272,7 +289,21 @@ func (s *Store) get(key string) (*Entry, bool) {
 // Set stores e, replacing any entry with the same key, persisting it to disk when
 // configured, and evicting least recently used entries to respect the limits.
 // Entries that alone exceed MaxBytes are not stored.
-func (s *Store) Set(e *Entry) error {
+func (s *Store) Set(e *Entry) error { return s.set(e, false, 0) }
+
+// Generation is the current purge generation: take it before rendering a page and pass it to
+// [Store.SetSince].
+func (s *Store) Generation() uint64 {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.gen
+}
+
+// SetSince stores e like [Store.Set] unless a purge covering it (everything, one of its tags,
+// its URL) ran after generation since; then it returns [ErrPurged] and stores nothing.
+func (s *Store) SetSince(e *Entry, since uint64) error { return s.set(e, true, since) }
+
+func (s *Store) set(e *Entry, check bool, since uint64) error {
 	if e == nil || e.Key == "" {
 		return errors.New("cache: entry without key")
 	}
@@ -284,6 +315,10 @@ func (s *Store) Set(e *Entry) error {
 		return ErrNotCacheable
 	}
 	s.mu.Lock()
+	if check && s.purgedSinceLocked(e, since) {
+		s.mu.Unlock()
+		return ErrPurged
+	}
 	if old, ok := s.items[e.Key]; ok {
 		s.removeLocked(old, false)
 	}
@@ -367,6 +402,45 @@ func (s *Store) removeLocked(it *item, deleteFile bool) {
 	}
 }
 
+// purgedSinceLocked reports whether a purge after generation since covers e.
+func (s *Store) purgedSinceLocked(e *Entry, since uint64) bool {
+	if s.gen == since {
+		return false
+	}
+	if s.allGen > since {
+		return true
+	}
+	base := keyBase(e.Key)
+	if s.baseGen[base] > since {
+		return true
+	}
+	if i := strings.IndexByte(base, '/'); i >= 0 && s.pathGen[base[i:]] > since {
+		return true
+	}
+	for _, t := range e.Tags {
+		if s.tagGen[t] > since {
+			return true
+		}
+	}
+	return false
+}
+
+// bumpLocked starts a new purge generation and returns it.
+func (s *Store) bumpLocked() uint64 {
+	s.gen++
+	if len(s.tagGen)+len(s.baseGen)+len(s.pathGen) > maxGenScopes {
+		s.allGen, s.tagGen, s.baseGen, s.pathGen = s.gen, nil, nil, nil
+	}
+	return s.gen
+}
+
+func markGen(m *map[string]uint64, k string, g uint64) {
+	if *m == nil {
+		*m = make(map[string]uint64)
+	}
+	(*m)[k] = g
+}
+
 func (s *Store) index(it *item) {
 	for _, t := range it.tags {
 		set := s.tags[t]
@@ -388,6 +462,7 @@ func (s *Store) index(it *item) {
 func (s *Store) Delete(key string) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	markGen(&s.baseGen, keyBase(key), s.bumpLocked())
 	it, ok := s.items[key]
 	if ok {
 		s.removeLocked(it, true)
@@ -398,6 +473,8 @@ func (s *Store) Delete(key string) bool {
 // PurgeAll removes every entry, in memory and on disk.
 func (s *Store) PurgeAll() int {
 	s.mu.Lock()
+	s.allGen = s.bumpLocked()
+	s.tagGen, s.baseGen, s.pathGen = nil, nil, nil
 	n := len(s.items)
 	s.items = make(map[string]*item)
 	s.lru.Init()
@@ -416,6 +493,10 @@ func (s *Store) PurgeAll() int {
 func (s *Store) PurgeTags(tags ...string) int {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	g := s.bumpLocked()
+	for _, t := range tags {
+		markGen(&s.tagGen, strings.TrimSpace(t), g)
+	}
 	n := 0
 	for _, t := range tags {
 		for key := range s.tags[strings.TrimSpace(t)] {
@@ -443,6 +524,11 @@ func (s *Store) PurgeURL(rawURL string) int {
 	host := strings.ToLower(u.Host)
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if g := s.bumpLocked(); host != "" {
+		markGen(&s.baseGen, host+p, g)
+	} else {
+		markGen(&s.pathGen, p, g)
+	}
 	var bases []string
 	if host != "" {
 		bases = []string{host + p}
