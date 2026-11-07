@@ -27,6 +27,9 @@ services:
       DATABASE_URL: postgres://wpgo:${WPGO_DB_PASSWORD:?set WPGO_DB_PASSWORD}@db:5432/wpgo?sslmode=disable
       WPGO_SITE_URL: ${WPGO_SITE_URL:?set WPGO_SITE_URL to the public https:// address}
       WPGO_TRUST_DEV_KEY: "0"
+      # Core self-updates need a release root key pinned at build time (ROOT_KEYS); set this to 1 only to
+      # trust whatever keys the Manager lists (internal/server/hub_trust.go).
+      WPGO_TRUST_HUB_KEYS: ${WPGO_TRUST_HUB_KEYS:-0}
       WPGO_PLUGIN_KEYS: ${WPGO_PLUGIN_KEYS:-}
       WPGO_TRUSTED_PROXIES: ${WPGO_TRUSTED_PROXIES:-}
     ports: !override
