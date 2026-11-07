@@ -1,6 +1,7 @@
 package server
 
 import (
+	"container/list"
 	"context"
 	_ "embed"
 	"encoding/json"
@@ -60,18 +61,74 @@ var oembedProviders = []oembedProvider{
 	{regexp.MustCompile(`^https?://(www\.)?reddit\.com/r/`), "https://www.reddit.com/oembed"},
 }
 
-var oembedCache sync.Map // url -> cached response
+// oembedCache keeps provider responses for a day, bounded so editors pasting many URLs (each URL and
+// maxwidth is a key) cannot grow memory without limit: the least recently used entry goes first.
+var oembedCache = newTTLCache[map[string]any](1000)
 
-type oembedEntry struct {
-	data    map[string]any
+// ttlCache is a small mutex-guarded LRU whose entries also expire.
+type ttlCache[V any] struct {
+	mu    sync.Mutex
+	max   int
+	ll    *list.List // front = most recently used
+	items map[string]*list.Element
+}
+
+type ttlEntry[V any] struct {
+	key     string
+	val     V
 	expires time.Time
+}
+
+func newTTLCache[V any](max int) *ttlCache[V] {
+	return &ttlCache[V]{max: max, ll: list.New(), items: map[string]*list.Element{}}
+}
+
+func (c *ttlCache[V]) Get(key string) (V, bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	var zero V
+	el, ok := c.items[key]
+	if !ok {
+		return zero, false
+	}
+	e := el.Value.(*ttlEntry[V])
+	if !e.expires.After(time.Now()) {
+		c.ll.Remove(el)
+		delete(c.items, key)
+		return zero, false
+	}
+	c.ll.MoveToFront(el)
+	return e.val, true
+}
+
+func (c *ttlCache[V]) Set(key string, val V, ttl time.Duration) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if el, ok := c.items[key]; ok {
+		e := el.Value.(*ttlEntry[V])
+		e.val, e.expires = val, time.Now().Add(ttl)
+		c.ll.MoveToFront(el)
+		return
+	}
+	c.items[key] = c.ll.PushFront(&ttlEntry[V]{key: key, val: val, expires: time.Now().Add(ttl)})
+	for c.ll.Len() > c.max {
+		old := c.ll.Back()
+		c.ll.Remove(old)
+		delete(c.items, old.Value.(*ttlEntry[V]).key)
+	}
+}
+
+func (c *ttlCache[V]) Len() int {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.ll.Len()
 }
 
 // fetchOEmbed resolves a URL through its provider, caching results for a day like WordPress' oEmbed cache.
 func fetchOEmbed(ctx context.Context, target string, maxWidth string) (map[string]any, error) {
 	key := target + "|" + maxWidth
-	if v, ok := oembedCache.Load(key); ok && v.(oembedEntry).expires.After(time.Now()) {
-		return v.(oembedEntry).data, nil
+	if v, ok := oembedCache.Get(key); ok {
+		return v, nil
 	}
 	var endpoint string
 	for _, p := range oembedProviders {
@@ -103,7 +160,7 @@ func fetchOEmbed(ctx context.Context, target string, maxWidth string) (map[strin
 	if err := json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(&data); err != nil {
 		return nil, err
 	}
-	oembedCache.Store(key, oembedEntry{data: data, expires: time.Now().Add(24 * time.Hour)})
+	oembedCache.Set(key, data, 24*time.Hour)
 	return data, nil
 }
 
