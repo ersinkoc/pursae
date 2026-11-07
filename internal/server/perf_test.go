@@ -29,20 +29,21 @@ import (
 // queryCounter is a pgx tracer that counts the statements sent to the database.
 type queryCounter struct {
 	n   atomic.Int64
+	log atomic.Bool // record statement texts in sql
 	mu  sync.Mutex
 	sql map[string]int // statement texts while logging (WPGO_PERF_SQL=1)
 }
 
 func (q *queryCounter) TraceQueryStart(ctx context.Context, _ *pgx.Conn, d pgx.TraceQueryStartData) context.Context {
 	q.n.Add(1)
-	if os.Getenv("WPGO_PERF_SQL") != "" {
+	if q.log.Load() || os.Getenv("WPGO_PERF_SQL") != "" {
 		q.mu.Lock()
 		if q.sql == nil {
 			q.sql = map[string]int{}
 		}
 		k := strings.Join(strings.Fields(d.SQL), " ")
-		if len(k) > 160 {
-			k = k[:160]
+		if len(k) > 600 {
+			k = k[:600]
 		}
 		q.sql[k]++
 		if sub := os.Getenv("WPGO_PERF_STACK"); sub != "" && strings.Contains(k, sub) {
@@ -79,7 +80,11 @@ func (q *queryCounter) dump(t *testing.T) {
 	}
 	sort.Slice(list, func(i, j int) bool { return list[i].n > list[j].n })
 	for _, e := range list {
-		t.Logf("%4d %s", e.n, e.k)
+		k := e.k
+		if len(k) > 160 {
+			k = k[:160]
+		}
+		t.Logf("%4d %s", e.n, k)
 	}
 	q.sql = nil
 }
@@ -355,6 +360,67 @@ func TestGzipThroughCache(t *testing.T) {
 		resp, body = fetch(anon, "/")
 		if resp.StatusCode != http.StatusOK || !strings.HasPrefix(strings.TrimSpace(body), "<!DOCTYPE html>") {
 			t.Errorf("home #%d (%s): %d, %.40q", i+1, resp.Header.Get("X-WPGo-Cache"), resp.StatusCode, body)
+		}
+	}
+}
+
+// TestMenuAndContentImagesBatched: a menu's posts and terms and the media-library images of the content
+// are loaded with one query each, however many there are.
+func TestMenuAndContentImagesBatched(t *testing.T) {
+	ts, c, srv, qc := newCountingTestServer(t)
+	installAndLogin(t, ts, c)
+	ctx := context.Background()
+	var admin int64
+	_ = srv.store.Pool.QueryRow(ctx, `SELECT id FROM users ORDER BY id LIMIT 1`).Scan(&admin)
+	var menu int64
+	if err := srv.store.Pool.QueryRow(ctx, `INSERT INTO menus (slug, name, location) VALUES ('main', 'Main', 'primary') RETURNING id`).Scan(&menu); err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 4; i++ {
+		p := mustInsertPost(t, srv, &store.Post{Type: "page", AuthorID: admin, Title: "Menu page " + itoa(i+1), Status: "publish"})
+		if _, err := srv.store.Pool.Exec(ctx, `INSERT INTO menu_items (menu_id, sort_order, kind, object, target_id) VALUES ($1, $2, 'post_type', 'page', $3)`, menu, i, p.ID); err != nil {
+			t.Fatal(err)
+		}
+	}
+	var cat int64
+	_ = srv.store.Pool.QueryRow(ctx, `SELECT id FROM terms WHERE taxonomy = 'category' LIMIT 1`).Scan(&cat)
+	if _, err := srv.store.Pool.Exec(ctx, `INSERT INTO menu_items (menu_id, sort_order, kind, object, target_id) VALUES ($1, 9, 'taxonomy', 'category', $2)`, menu, cat); err != nil {
+		t.Fatal(err)
+	}
+	var content strings.Builder
+	for i := 0; i < 4; i++ {
+		a := &store.Attachment{UploaderID: admin, Slug: "img" + itoa(i), FilePath: "2026/11/img" + itoa(i) + ".jpg", Mime: "image/jpeg", Width: 800, Height: 600,
+			Variants: []store.AttachmentVariant{{Name: "medium", FilePath: "2026/11/img" + itoa(i) + "-300x225.jpg", Width: 300, Height: 225, Mime: "image/jpeg"}}}
+		if err := srv.store.InsertAttachment(ctx, a); err != nil {
+			t.Fatal(err)
+		}
+		content.WriteString(`<!-- wp:image {"id":` + itoa64(a.ID) + `} --><figure class="wp-block-image"><img src="/wp-content/uploads/2026/11/img` + itoa(i) + `.jpg" alt="" class="wp-image-` + itoa64(a.ID) + `"/></figure><!-- /wp:image -->` + "\n")
+	}
+	p := mustInsertPost(t, srv, &store.Post{Type: "post", AuthorID: admin, Title: "Gallery", Content: content.String(), Status: "publish"})
+	anon := &http.Client{CheckRedirect: c.CheckRedirect}
+	path := pathOf(t, ts.URL, srv.links(ctx).Permalink(p))
+	get(t, anon, ts.URL+path+"?warm=1")
+	qc.mu.Lock()
+	qc.sql = nil
+	qc.mu.Unlock()
+	qc.log.Store(true)
+	code, body, _ := get(t, anon, ts.URL+path+"?count=1")
+	qc.log.Store(false)
+	if code != http.StatusOK {
+		t.Fatalf("single: %d", code)
+	}
+	for _, want := range []string{"Menu page 1", "Menu page 4", "img3-300x225.jpg 300w", `width="800" height="600"`} {
+		if !strings.Contains(body, want) {
+			t.Errorf("page misses %q", want)
+		}
+	}
+	qc.mu.Lock()
+	defer qc.mu.Unlock()
+	for stmt, n := range qc.sql {
+		perItem := strings.Contains(stmt, "FROM posts WHERE id = $1") || strings.Contains(stmt, "FROM terms WHERE id = $1") ||
+			strings.Contains(stmt, "FROM media WHERE id = $1")
+		if perItem && n > 1 {
+			t.Errorf("%d× %s", n, stmt)
 		}
 	}
 }

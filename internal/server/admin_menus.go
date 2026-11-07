@@ -507,6 +507,29 @@ func (s *Server) renderMenuEditItem(c *gin.Context, r menuEditRow) template.HTML
 
 // Front end: resolve menu item URLs/labels and mark the current item (wp_nav_menu_objects).
 func (s *Server) resolveMenu(ctx context.Context, items []*store.MenuItem, lb *links.Builder, q *siteQuery) {
+	// The menu's posts and terms in one query each.
+	var postIDs, termIDs []int64
+	var collect func(list []*store.MenuItem)
+	collect = func(list []*store.MenuItem) {
+		for _, it := range list {
+			switch it.Kind {
+			case "post_type":
+				postIDs = append(postIDs, it.TargetID)
+			case "taxonomy":
+				termIDs = append(termIDs, it.TargetID)
+			}
+			collect(it.Children)
+		}
+	}
+	collect(items)
+	posts, err := s.store.PostsByIDs(ctx, postIDs)
+	if err != nil {
+		posts = map[int64]*store.Post{}
+	}
+	terms, err := s.store.TermsByIDs(ctx, termIDs)
+	if err != nil {
+		terms = map[int64]*store.Term{}
+	}
 	var walk func(list []*store.MenuItem) bool
 	walk = func(list []*store.MenuItem) bool {
 		any := false
@@ -517,7 +540,7 @@ func (s *Server) resolveMenu(ctx context.Context, items []*store.MenuItem, lb *l
 				if siteTypeHierarchical(it.Object) {
 					cacheDep(ctx, "archive:"+it.Object) // the permalink carries the ancestors' slugs
 				}
-				if p, err := s.store.GetPost(ctx, it.TargetID); err == nil {
+				if p := posts[it.TargetID]; p != nil {
 					it.URL = lb.Permalink(p)
 					if it.Label == "" {
 						it.Label = defaultStr(p.Title, "(no title)")
@@ -528,7 +551,7 @@ func (s *Server) resolveMenu(ctx context.Context, items []*store.MenuItem, lb *l
 				}
 			case "taxonomy":
 				cacheDep(ctx, "term:"+itoa64(it.TargetID))
-				if t, err := s.store.GetTerm(ctx, it.TargetID); err == nil {
+				if t := terms[it.TargetID]; t != nil {
 					it.URL = lb.TermLink(t)
 					if it.Label == "" {
 						it.Label = t.Name

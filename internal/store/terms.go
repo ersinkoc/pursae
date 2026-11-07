@@ -58,6 +58,27 @@ func (s *Store) GetTerm(ctx context.Context, id int64) (*Term, error) {
 	return scanTerm(s.Pool.QueryRow(ctx, `SELECT `+termCols+` FROM terms WHERE id = $1`, id))
 }
 
+// TermsByIDs loads several terms in one query; missing ids are absent from the map.
+func (s *Store) TermsByIDs(ctx context.Context, ids []int64) (map[int64]*Term, error) {
+	out := map[int64]*Term{}
+	if len(ids) == 0 {
+		return out, nil
+	}
+	rows, err := s.Pool.Query(ctx, `SELECT `+termCols+` FROM terms WHERE id = ANY($1)`, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		t, err := scanTerm(rows)
+		if err != nil {
+			return nil, err
+		}
+		out[t.ID] = t
+	}
+	return out, rows.Err()
+}
+
 func (s *Store) TermBySlug(ctx context.Context, taxonomy, slug string) (*Term, error) {
 	args := []any{taxonomy, slug}
 	prefer := slugPrefer(ctx, "term", &args)

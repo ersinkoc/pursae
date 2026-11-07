@@ -90,6 +90,23 @@ func (s *Store) GetPost(ctx context.Context, id int64) (*Post, error) {
 	return scanPost(s.Pool.QueryRow(ctx, `SELECT `+postCols+` FROM posts WHERE id = $1`, id))
 }
 
+// PostsByIDs loads several posts (any status) in one query; missing ids are absent from the map.
+func (s *Store) PostsByIDs(ctx context.Context, ids []int64) (map[int64]*Post, error) {
+	out := map[int64]*Post{}
+	if len(ids) == 0 {
+		return out, nil
+	}
+	rows, err := s.Pool.Query(ctx, `SELECT `+postCols+` FROM posts WHERE id = ANY($1)`, ids)
+	if err != nil {
+		return nil, err
+	}
+	posts, err := scanPosts(rows)
+	for _, p := range posts {
+		out[p.ID] = p
+	}
+	return out, err
+}
+
 // PostBySlug finds a post of the given type by slug. With parentPath empty the parent is ignored.
 func (s *Store) PostBySlug(ctx context.Context, typ, slug string) (*Post, error) {
 	args := []any{typ, slug}

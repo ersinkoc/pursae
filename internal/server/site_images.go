@@ -47,19 +47,21 @@ func (s *Server) filterContentTags(ctx context.Context, content string) string {
 		return content
 	}
 	rc := renderFrom(ctx)
-	attachments := map[int64]*store.Attachment{}
+	// The media library images of the content (class wp-image-N) in one query.
+	var ids []int64
+	for _, img := range contentImgRe.FindAllString(content, -1) {
+		if m := imgClassIDRe.FindStringSubmatch(img); m != nil {
+			if id, _ := strconv.ParseInt(m[1], 10, 64); id > 0 {
+				ids = append(ids, id)
+			}
+		}
+	}
+	attachments := s.attachmentsByIDs(ctx, ids)
 	return contentImgRe.ReplaceAllStringFunc(content, func(img string) string {
 		var a *store.Attachment
 		if m := imgClassIDRe.FindStringSubmatch(img); m != nil {
 			id, _ := strconv.ParseInt(m[1], 10, 64)
-			if id > 0 {
-				if cached, ok := attachments[id]; ok {
-					a = cached
-				} else if got, err := s.store.GetAttachment(ctx, id); err == nil {
-					a = got
-					attachments[id] = a
-				}
-			}
+			a = attachments[id]
 		}
 		if a != nil && !strings.Contains(img, " width=") && !strings.Contains(img, " height=") {
 			img = s.imgAddWidthHeight(ctx, img, a)

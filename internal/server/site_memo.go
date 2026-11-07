@@ -289,3 +289,46 @@ func (s *Server) pageCacheDeps(ctx context.Context) (widgets bool, deps []string
 	sort.Strings(deps)
 	return m.widgets, deps
 }
+
+// attachmentsByIDs loads attachments with their sizes in one query (through the request memo when
+// there is one); missing ids are absent from the map.
+func (s *Server) attachmentsByIDs(ctx context.Context, ids []int64) map[int64]*store.Attachment {
+	out := map[int64]*store.Attachment{}
+	m := viewMemoFrom(ctx)
+	var need []int64
+	seen := map[int64]bool{}
+	for _, id := range ids {
+		if seen[id] {
+			continue
+		}
+		seen[id] = true
+		if m != nil {
+			m.mu.Lock()
+			a, ok := m.attachments[id]
+			m.mu.Unlock()
+			if ok {
+				if a != nil {
+					out[id] = a
+				}
+				continue
+			}
+		}
+		need = append(need, id)
+	}
+	got, err := s.store.GetAttachments(ctx, need)
+	if err != nil {
+		return out
+	}
+	for _, id := range need {
+		a := got[id]
+		if a != nil {
+			out[id] = a
+		}
+		if m != nil {
+			m.mu.Lock()
+			m.attachments[id] = a
+			m.mu.Unlock()
+		}
+	}
+	return out
+}
