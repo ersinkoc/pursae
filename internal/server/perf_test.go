@@ -1,7 +1,9 @@
 package server
 
 import (
+	"compress/gzip"
 	"context"
+	"io"
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
@@ -316,5 +318,43 @@ func TestCacheTagsWidgets(t *testing.T) {
 	}
 	if tg := tagsOf(single); !tg["widgets"] {
 		t.Errorf("byte-notes single with a sidebar lacks widgets: %v", tg)
+	}
+}
+
+// TestGzipThroughCache: the admin (never cached) is compressed by gzipResponses; a page Pursae Cache
+// stores and serves compressed itself is encoded once, not twice.
+func TestGzipThroughCache(t *testing.T) {
+	ts, c, _ := testServerBuilderOff(t)
+	installAndLogin(t, ts, c)
+	fetch := func(cl *http.Client, path string) (*http.Response, string) {
+		t.Helper()
+		req, _ := http.NewRequest(http.MethodGet, ts.URL+path, nil)
+		req.Header.Set("Accept-Encoding", "gzip")
+		resp, err := cl.Do(req) // an explicit Accept-Encoding: the transport leaves the body encoded
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+		var r io.Reader = resp.Body
+		if resp.Header.Get("Content-Encoding") == "gzip" {
+			zr, err := gzip.NewReader(resp.Body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			r = zr
+		}
+		b, _ := io.ReadAll(r)
+		return resp, string(b)
+	}
+	resp, body := fetch(c, "/wp-admin/")
+	if resp.Header.Get("Content-Encoding") != "gzip" || !strings.Contains(body, "</html>") || !strings.Contains(resp.Header.Get("Vary"), "Accept-Encoding") {
+		t.Errorf("admin: encoding %q vary %q, html %v", resp.Header.Get("Content-Encoding"), resp.Header.Get("Vary"), strings.Contains(body, "</html>"))
+	}
+	anon := &http.Client{CheckRedirect: c.CheckRedirect}
+	for i := 0; i < 2; i++ {
+		resp, body = fetch(anon, "/")
+		if resp.StatusCode != http.StatusOK || !strings.HasPrefix(strings.TrimSpace(body), "<!DOCTYPE html>") {
+			t.Errorf("home #%d (%s): %d, %.40q", i+1, resp.Header.Get("X-WPGo-Cache"), resp.StatusCode, body)
+		}
 	}
 }

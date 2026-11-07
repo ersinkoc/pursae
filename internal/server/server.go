@@ -147,7 +147,8 @@ func newServer(ctx context.Context, cfg config.Config, pool *pgxpool.Pool, sb *s
 // calls aimed at the old paths still succeed.
 func (s *Server) Handler() http.Handler {
 	app := s.appHandler()
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	// gzip for what Pursae Cache does not serve compressed itself (compress.go).
+	return gzipResponses(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if s.adminsecOn() { // AdminSecGo: blocked IPs, the custom login URL, security headers (adminsec.go)
 			var done bool
 			if w, r, done = s.adminsecFront(w, r); done {
@@ -168,7 +169,7 @@ func (s *Server) Handler() http.Handler {
 			return
 		}
 		app.ServeHTTP(w, r)
-	})
+	}))
 }
 
 // appHandler is the app without the page cache.
