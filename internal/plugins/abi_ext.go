@@ -446,6 +446,18 @@ func hostEnqueue(p *Plugin, req []byte, kind string) (any, error) {
 	if !assetWhere[a.Where] {
 		return nil, invalid(`where must be "front", "admin" or "both"`)
 	}
+	if kind == "script" {
+		// A script runs with the session of whoever views the page. In the admin that is an
+		// administrator; on the front end it is every visitor, logged-in administrators included.
+		if (a.Where == "admin" || a.Where == "both") && !p.perms.Has(PermAdminScripts) {
+			return nil, &CallError{Code: CodePermissionDenied,
+				Message: fmt.Sprintf("plugin %s lacks the %q permission required for admin scripts", p.Slug(), PermAdminScripts)}
+		}
+		if (a.Where == "front" || a.Where == "both") && !p.perms.Has(PermContentHTML) {
+			return nil, &CallError{Code: CodePermissionDenied,
+				Message: fmt.Sprintf("plugin %s lacks the %q permission required for front-end scripts", p.Slug(), PermContentHTML)}
+		}
+	}
 	if len(a.Deps) > maxAssetDeps {
 		return nil, invalid("at most %d deps", maxAssetDeps)
 	}

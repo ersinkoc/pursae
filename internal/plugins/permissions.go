@@ -54,6 +54,17 @@ const (
 	// PermForms allows subscribing to the contact form hooks (names starting
 	// with "wpcf7_"): what visitors submitted, and the spam verdict.
 	PermForms Permission = "forms:access"
+	// PermContentHTML lets the plugin's shortcodes and content filters print
+	// HTML the core does not sanitise (scripts, iframes, forms, event
+	// handlers) and enqueue scripts on the front end. Without it their
+	// output goes through KSES like a contributor's post. A script on the
+	// front end runs for logged-in administrators too, so this is close to
+	// full control of the site.
+	PermContentHTML Permission = "content:html"
+	// PermAdminScripts allows enqueueing scripts in the admin
+	// (enqueue_script with where "admin" or "both"). Code running in the
+	// admin acts with the administrator's session: full control of the site.
+	PermAdminScripts Permission = "admin:scripts"
 )
 
 // permissionDescriptions documents every permission for admin screens.
@@ -71,7 +82,13 @@ var permissionDescriptions = map[Permission]string{
 	PermUsersRead:     "See who the current user is",
 	PermAdminSettings: "Add a settings page to the admin",
 	PermForms:         "See what visitors submit in contact forms and decide what counts as spam",
+	PermContentHTML:   "Show unfiltered HTML and scripts to visitors (they also run for logged-in administrators: full control of the site)",
+	PermAdminScripts:  "Run code in the admin (full control of the site)",
 }
+
+// Dangerous reports whether p gives the plugin the equivalent of an
+// administrator's session (the consent screen leaves it unticked).
+func (p Permission) Dangerous() bool { return p == PermContentHTML || p == PermAdminScripts }
 
 // AllPermissions returns the permission vocabulary in a stable order.
 func AllPermissions() []Permission {
