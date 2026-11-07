@@ -135,3 +135,49 @@ func TestGzipStreamFlush(t *testing.T) {
 		t.Errorf("encoding %q, %d bytes", resp.Header.Get("Content-Encoding"), len(b))
 	}
 }
+
+// TestStaticETag: embedded static files carry a content-hash ETag (one per representation) and a
+// matching If-None-Match gets 304, gzipped or not.
+func TestStaticETag(t *testing.T) {
+	ts, _, _ := testServerBuilderOff(t)
+	do := func(path, ae, inm string) *http.Response {
+		t.Helper()
+		req, _ := http.NewRequest(http.MethodGet, ts.URL+path, nil)
+		req.Header.Set("Accept-Encoding", ae)
+		if inm != "" {
+			req.Header.Set("If-None-Match", inm)
+		}
+		resp, err := http.DefaultTransport.RoundTrip(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		io.Copy(io.Discard, resp.Body)
+		resp.Body.Close()
+		return resp
+	}
+	const css = "/wp-includes/css/dashicons.min.css"
+	gz := do(css, "gzip", "")
+	plain := do(css, "identity", "")
+	if gz.StatusCode != 200 || gz.Header.Get("Content-Encoding") != "gzip" || plain.Header.Get("Content-Encoding") != "" {
+		t.Fatalf("encodings %q / %q", gz.Header.Get("Content-Encoding"), plain.Header.Get("Content-Encoding"))
+	}
+	ge, pe := gz.Header.Get("ETag"), plain.Header.Get("ETag")
+	if ge == "" || pe == "" || ge == pe || !strings.HasSuffix(ge, `-gzip"`) {
+		t.Fatalf("ETags %q / %q", ge, pe)
+	}
+	if r := do(css, "gzip", ge); r.StatusCode != http.StatusNotModified {
+		t.Errorf("gzip revalidation: %d", r.StatusCode)
+	}
+	if r := do(css, "identity", pe); r.StatusCode != http.StatusNotModified {
+		t.Errorf("plain revalidation: %d", r.StatusCode)
+	}
+	if r := do(css, "gzip", `"stale"`); r.StatusCode != http.StatusOK {
+		t.Errorf("stale ETag: %d", r.StatusCode)
+	}
+	// A file too small to compress still revalidates.
+	img := "/wp-includes/images/wpgo-avatar.svg"
+	r := do(img, "gzip", "")
+	if et := r.Header.Get("ETag"); et == "" || do(img, "gzip", et).StatusCode != http.StatusNotModified {
+		t.Errorf("small file ETag %q", et)
+	}
+}
