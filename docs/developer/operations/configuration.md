@@ -26,6 +26,7 @@ edited in the admin.
 | `WPGO_TRANSLATIONS_API` | `https://api.wordpress.org/translations` | the translation API language packs are downloaded from (a mirror, or a fake in tests) |
 | `WPGO_BIN_DIR` | — (`/data/bin` in the image) | persistent directory `wpgo launch` installs the binary into, so a core update made from the admin survives a container restart ([upgrading](../getting-started/upgrading.md)) |
 | `WPGO_LISTEN_FD` | — | **internal**: set by the running binary when it hands its listening socket to an updated binary; do not set it yourself |
+
 ## Database pool
 
 `DATABASE_URL` takes pgx's pool parameters as query parameters; each one you leave out gets the
