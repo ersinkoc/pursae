@@ -1,8 +1,11 @@
 package auth
 
 import (
+	"context"
+	"errors"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestPasswordHash(t *testing.T) {
@@ -36,4 +39,40 @@ func TestNonce(t *testing.T) {
 			t.Errorf("nonce verified for %+v", c)
 		}
 	}
+}
+
+// Sign is stable (no time tick) and depends on the message and the secret.
+func TestSign(t *testing.T) {
+	m := NewManager(nil, "secret")
+	a := m.Sign("postpass|one")
+	if a != m.Sign("postpass|one") || len(a) != 64 {
+		t.Fatalf("Sign not stable: %q", a)
+	}
+	if a == m.Sign("postpass|two") || a == NewManager(nil, "other").Sign("postpass|one") {
+		t.Error("Sign ignores its message or the secret")
+	}
+}
+
+// The argon2 semaphore: a check waiting for a slot gives up when its context ends.
+func TestCheckPasswordCtxWaitsForSlot(t *testing.T) {
+	h, err := HashPassword("pw")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < cap(argonSem); i++ { // occupy every slot
+		argonSem <- struct{}{}
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	defer cancel()
+	ok, err := CheckPasswordCtx(ctx, "pw", h)
+	for i := 0; i < cap(argonSem); i++ {
+		<-argonSem
+	}
+	if ok || !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("CheckPasswordCtx with every slot busy = %v, %v; want false, deadline exceeded", ok, err)
+	}
+	if ok, err := CheckPasswordCtx(context.Background(), "pw", h); !ok || err != nil {
+		t.Fatalf("after slots are free: %v, %v", ok, err)
+	}
+	CheckDummyPassword(context.Background(), "anything") // must not panic or block
 }
