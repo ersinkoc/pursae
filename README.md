@@ -130,6 +130,10 @@ Everything is configured with environment variables.
 | `WPGO_UPLOADS_DIR` | `./data/uploads` | Where media uploads are stored |
 | `WPGO_SECRET` | generated | Signing secret; generated and stored on first start if unset |
 | `WPGO_WEB_DIR` | embedded | Read templates/CSS/JS from disk instead of the embedded copy (development) |
+| `WPGO_BACKUPS_DIR` | `backups/` next to uploads | Backup Manager archives (keep it outside the public uploads) |
+| `WPGO_LANG_DIR` | `languages/` next to uploads | Installed language packs |
+| `WPGO_TRANSLATIONS_API` | `https://api.wordpress.org/translations` | Where language packs are downloaded from |
+| `WPGO_BIN_DIR` | `/data/bin` in the image | Where `wpgo launch` keeps the (self-updated) binary |
 
 **Compose-only**
 
@@ -158,6 +162,11 @@ Everything is configured with environment variables.
 | `WPGO_MARKET_DIR` | — | Local plugin packages offered on Plugins › Add Plugin (besides the Hub catalog) |
 | `WPGO_HUB_URL` | `https://hub.wordpressgo.dev` | Pursae Manager: marketplace, licenses, release checks and self-update, and the site statistics (daily ping with version and inventory, usage events; always on). `off` disables it |
 | `WPGO_TRUST_DEV_KEY` | `1` in compose | Trust the demo signing key of the bundled example plugins (**development only**) |
+| `WPGO_EXPOSE_USERS` | unset | `1` lets visitors list accounts (REST users, `/?author=N`, users sitemap) |
+| `WPGO_TRUSTED_PROXIES` | loopback and private ranges | Proxies whose `X-Forwarded-For` is believed; `none` trusts none |
+| `WPGO_THEME_LIBRARY_DIR` | — (from the Hub) | Serve the theme library from a local directory (development, offline) |
+| `WPGO_ADMINSEC_DISABLE_HIDE_LOGIN` | unset | `1` brings `/wp-login` back when Pursae Security's custom login URL locked you out |
+| `WPGO_CDN_SETTINGS` | unset | Pursae CDN settings as a JSON object; its keys override the saved settings and are read-only in the admin |
 
 ## Data and volumes
 
