@@ -171,7 +171,9 @@ func TestAppPasswordLifecycle(t *testing.T) {
 
 	// The content-only password: content routes work, every other scope's routes are refused
 	// (media was removed by the update above).
-	limited := func(method, path string, payload any) resp { return do(anon, "admin", scopedPass, method, path, payload) }
+	limited := func(method, path string, payload any) resp {
+		return do(anon, "admin", scopedPass, method, path, payload)
+	}
 	if r := limited("GET", "/wp/v2/posts", nil); r.code != http.StatusOK {
 		t.Errorf("scoped posts: %d", r.code)
 	}
