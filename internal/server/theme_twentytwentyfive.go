@@ -93,10 +93,12 @@ func init() {
 		},
 		Prepare: func(s *Server, c *gin.Context, v *siteView) { s.tt5Prepare(c, v) },
 	})
+	czSpecsMu.Lock()
 	czSpecs["twentytwentyfive"] = &czThemeSpec{
 		Colors: []czControl{{ID: "color_scheme", Label: "Color scheme", Type: "select", Default: "default", Choices: tt5Schemes,
 			Description: "The color palettes of Twenty Twenty-Five's style variations."}},
 	}
+	czSpecsMu.Unlock()
 }
 
 // tt5ThemeSettings is theme.json's settings (the editor's presets and layout).
