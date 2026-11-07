@@ -363,7 +363,7 @@ func (s *Server) fillPostView(ctx context.Context, pv *postView, p *store.Post, 
 		pv.Tags = append(pv.Tags, termLink{t.ID, t.Name, t.Slug, lb.TermLink(t)})
 	}
 	if p.FeaturedMediaID > 0 {
-		if a, err := s.store.GetAttachment(ctx, p.FeaturedMediaID); err == nil {
+		if a, err := s.attachment(ctx, p.FeaturedMediaID); err == nil { // request memo (site_memo.go)
 			pv.ThumbnailURL = s.uploadURL(ctx, a.FilePath)
 			pv.Thumbnail = s.attachmentImage(ctx, a, "post-thumbnail", "attachment-post-thumbnail size-post-thumbnail wp-post-image")
 		}

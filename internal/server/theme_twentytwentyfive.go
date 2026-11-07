@@ -317,7 +317,7 @@ func (s *Server) tt5PostData(c *gin.Context, v *siteView, pv *postView, singular
 
 	// core/post-featured-image: 3:2 and linked in the loop and on posts, as is on pages.
 	if !locked && p.FeaturedMediaID > 0 {
-		if a, err := s.store.GetAttachment(ctx, p.FeaturedMediaID); err == nil {
+		if a, err := s.attachment(ctx, p.FeaturedMediaID); err == nil { // request memo (site_memo.go)
 			aspect := p.Type == "post" || !singular
 			img := s.tt5Image(ctx, a, aspect, *eager)
 			*eager = false

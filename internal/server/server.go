@@ -572,8 +572,7 @@ func (s *Server) links(ctx context.Context) *links.Builder {
 		return a
 	}
 	b.FirstCategory = func(p *store.Post) *store.Term {
-		m, _ := s.store.TermsForPosts(ctx, []int64{p.ID}, "category")
-		if ts := m[p.ID]; len(ts) > 0 {
+		if ts := s.postTerms(ctx, p.ID, "category"); len(ts) > 0 { // request memo (site_memo.go)
 			return ts[0]
 		}
 		return nil
@@ -592,11 +591,10 @@ func (s *Server) links(ctx context.Context) *links.Builder {
 		return path
 	}
 	b.AuthorSlug = func(id int64) string {
-		u, err := s.store.UserByID(ctx, id)
-		if err != nil {
-			return ""
+		if u := s.displayUser(ctx, id); u != nil { // request memo (site_memo.go)
+			return u.Nicename
 		}
-		return u.Nicename
+		return ""
 	}
 	b.TypeHierarchical = siteTypeHierarchical
 	if s.settings.String("show_on_front") == "page" {

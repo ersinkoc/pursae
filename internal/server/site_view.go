@@ -106,6 +106,9 @@ type postView struct {
 }
 
 func (s *Server) buildSiteView(c *gin.Context, q *siteQuery) (*siteView, error) {
+	// A request-scoped memo of terms, authors, attachments and avatars (site_memo.go); on the request too,
+	// so helpers that take the gin context share it.
+	c.Request = c.Request.WithContext(withViewMemo(c.Request.Context()))
 	ctx := c.Request.Context()
 	u := currentUser(c)
 	lb := s.links(ctx)
@@ -176,6 +179,7 @@ func (s *Server) buildSiteView(c *gin.Context, q *siteQuery) (*siteView, error) 
 		if q.Post.Type == "page" {
 			v.Template = "page"
 		}
+		s.prefetchPosts(ctx, []*store.Post{q.Post})
 		pv := s.postView(ctx, c, q.Post, true, lb, u)
 		v.Post = pv
 		if pt := siteCPT(q.Post.Type); q.Post.Type == "post" || (pt != nil && !pt.Hierarchical) {
@@ -205,6 +209,7 @@ func (s *Server) buildSiteView(c *gin.Context, q *siteQuery) (*siteView, error) 
 		if err != nil {
 			return nil, err
 		}
+		s.prefetchPosts(ctx, posts) // the loop's terms, authors, featured images and avatars in one query each
 		for _, p := range posts {
 			pv := s.postView(ctx, c, p, false, lb, u)
 			pv.ShowFeatured = p.Sticky && q.Kind == "home" && q.Paged <= 1
@@ -511,8 +516,7 @@ func (s *Server) postView(ctx context.Context, c *gin.Context, p *store.Post, si
 		pv.Excerpt = template.HTML(s.theExcerpt(p, lb))
 	}
 
-	cats, _ := s.store.TermsForPosts(ctx, []int64{p.ID}, "category")
-	tags, _ := s.store.TermsForPosts(ctx, []int64{p.ID}, "post_tag")
+	cats, tags := s.postTerms(ctx, p.ID, "category"), s.postTerms(ctx, p.ID, "post_tag") // request memo (site_memo.go)
 	classes := []string{"post-" + itoa64(p.ID), p.Type, "type-" + p.Type, "status-" + p.Status}
 	if p.Type == "post" {
 		classes = append(classes, "format-"+p.Format)
@@ -524,17 +528,17 @@ func (s *Server) postView(ctx context.Context, c *gin.Context, p *store.Post, si
 		classes = append(classes, "sticky")
 	}
 	classes = append(classes, "hentry")
-	for _, t := range cats[p.ID] {
+	for _, t := range cats {
 		classes = append(classes, "category-"+t.Slug)
 	}
-	for _, t := range tags[p.ID] {
+	for _, t := range tags {
 		classes = append(classes, "tag-"+t.Slug)
 	}
 	pv.Class = strings.Join(classes, " ")
 
-	author, _ := s.store.UserByID(ctx, p.AuthorID)
-	pv.EntryMeta = s.entryMeta(ctx, p, author, cats[p.ID], tags[p.ID], singular, lb)
-	s.fillPostView(ctx, pv, p, author, cats[p.ID], tags[p.ID], lb)
+	author := s.displayUser(ctx, p.AuthorID) // display fields only: no capabilities are checked for the author
+	pv.EntryMeta = s.entryMeta(ctx, p, author, cats, tags, singular, lb)
+	s.fillPostView(ctx, pv, p, author, cats, tags, lb)
 	if u.Can("edit_post", p) {
 		pv.EditLink = template.HTML(fmt.Sprintf(`<a class="post-edit-link" href="%s">Edit<span class="screen-reader-text"> "%s"</span></a>`,
 			html.EscapeString(links.EditLink(p.ID)), theTitle(p)))
@@ -625,11 +629,27 @@ func (s *Server) entryMeta(ctx context.Context, p *store.Post, author *store.Use
 	return template.HTML(sb.String())
 }
 
-// categorizedBlog reports whether more than one category is in use (category links show only then).
+// categorizedBlog reports whether more than one category is in use (category links show only then);
+// once per request with a view memo.
 func (s *Server) categorizedBlog(ctx context.Context) bool {
+	m := viewMemoFrom(ctx)
+	if m != nil {
+		m.mu.Lock()
+		v := m.categorized
+		m.mu.Unlock()
+		if v != nil {
+			return *v
+		}
+	}
 	var n int
 	_ = s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM (SELECT 1 FROM terms WHERE taxonomy='category' AND post_count > 0 LIMIT 2) t`).Scan(&n)
-	return n > 1
+	ok := n > 1
+	if m != nil {
+		m.mu.Lock()
+		m.categorized = &ok
+		m.mu.Unlock()
+	}
+	return ok
 }
 
 // renderWidgetArea is dynamic_sidebar() with the default before/after_widget markup.
