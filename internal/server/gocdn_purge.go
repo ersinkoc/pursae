@@ -145,16 +145,142 @@ func (s *Server) gocdnPurge(ctx context.Context, withCDN bool) {
 	}
 	st := s.gocdnLoad()
 	if len(gocdnPurgeTargets(st)) > 0 && st.CFAuto && s.gocdnOn() {
-		go s.gocdnCDNPurgeLogged(st, nil)
+		s.gocdnQueuePurge(st, nil)
 	}
 }
 
 // gocdnCDNPurgeLogged purges every provider and logs a warning for each one that fails.
-func (s *Server) gocdnCDNPurgeLogged(st gocdnSettings, urls []string) {
-	for _, r := range s.gocdnCDNPurgeEach(context.Background(), st, urls) {
+func (s *Server) gocdnCDNPurgeLogged(ctx context.Context, st gocdnSettings, urls []string) {
+	for _, r := range s.gocdnCDNPurgeEach(ctx, st, urls) {
 		if r.Err != nil {
 			slog.Warn("gocdn: CDN purge", "provider", r.Provider, "err", r.Err)
 		}
+	}
+}
+
+// Automatic purges are coalesced: requests arriving within gocdnPurgeDelay of each other become one
+// purge (of everything when any of them asked for everything, or when too many URLs pile up), and
+// at most one purge runs at a time. A burst of saves therefore costs one API call per provider
+// instead of one goroutine and one call each.
+const (
+	gocdnPurgeDelay   = 2 * time.Second
+	gocdnPurgeMaxURLs = 500
+	gocdnPurgeTimeout = 2 * time.Minute
+)
+
+// cdnPurgeQueue is the pending automatic CDN purge (runtimeState.cdn).
+type cdnPurgeQueue struct {
+	mu      sync.Mutex
+	pending bool
+	all     bool
+	urls    []string
+	seen    map[string]bool
+	st      gocdnSettings
+	timer   *time.Timer
+	running bool
+	wg      sync.WaitGroup
+	delay   time.Duration                                              // tests; 0 means gocdnPurgeDelay
+	run     func(ctx context.Context, st gocdnSettings, urls []string) // tests; nil means the providers
+}
+
+// gocdnQueuePurge schedules a CDN purge of urls (everything when urls is empty) with settings st.
+func (s *Server) gocdnQueuePurge(st gocdnSettings, urls []string) {
+	q := &s.rt.cdn
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	q.pending, q.st = true, st
+	if len(urls) == 0 {
+		q.all = true
+	}
+	if !q.all {
+		if q.seen == nil {
+			q.seen = map[string]bool{}
+		}
+		for _, u := range urls {
+			if !q.seen[u] {
+				q.seen[u] = true
+				q.urls = append(q.urls, u)
+			}
+		}
+		if len(q.urls) > gocdnPurgeMaxURLs {
+			q.all = true
+		}
+	}
+	if q.all {
+		q.urls, q.seen = nil, nil
+	}
+	if q.timer == nil {
+		d := q.delay
+		if d <= 0 {
+			d = gocdnPurgeDelay
+		}
+		q.timer = time.AfterFunc(d, func() { q.drain(s) })
+	}
+}
+
+// take removes the pending batch; ok is false when nothing is pending.
+func (q *cdnPurgeQueue) take() (st gocdnSettings, urls []string, ok bool) {
+	if !q.pending {
+		return st, nil, false
+	}
+	st, urls = q.st, q.urls
+	if q.all {
+		urls = nil
+	}
+	q.pending, q.all, q.urls, q.seen = false, false, nil, nil
+	return st, urls, true
+}
+
+// drain runs the pending purges one after the other (a purge queued meanwhile follows).
+func (q *cdnPurgeQueue) drain(s *Server) {
+	q.mu.Lock()
+	q.timer = nil
+	if q.running {
+		q.mu.Unlock()
+		return // the running loop picks the batch up
+	}
+	q.running = true
+	q.wg.Add(1)
+	defer q.wg.Done()
+	for {
+		st, urls, ok := q.take()
+		if !ok {
+			q.running = false
+			q.mu.Unlock()
+			return
+		}
+		q.mu.Unlock()
+		ctx, cancel := context.WithTimeout(context.Background(), gocdnPurgeTimeout)
+		q.exec(ctx, s, st, urls)
+		cancel()
+		q.mu.Lock()
+	}
+}
+
+func (q *cdnPurgeQueue) exec(ctx context.Context, s *Server, st gocdnSettings, urls []string) {
+	if q.run != nil {
+		q.run(ctx, st, urls)
+		return
+	}
+	s.gocdnCDNPurgeLogged(ctx, st, urls)
+}
+
+// flush runs a purge still waiting for its timer and waits for the one in flight (shutdown).
+func (q *cdnPurgeQueue) flush(ctx context.Context, s *Server) {
+	q.mu.Lock()
+	if q.timer != nil && q.timer.Stop() {
+		q.timer = nil
+	}
+	q.mu.Unlock()
+	done := make(chan struct{})
+	go func() {
+		q.drain(s)  // runs the pending batch, or returns at once when a purge is in flight …
+		q.wg.Wait() // … which then picks the batch up
+		close(done)
+	}()
+	select {
+	case <-done:
+	case <-ctx.Done():
 	}
 }
 

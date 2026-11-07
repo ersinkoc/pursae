@@ -54,6 +54,12 @@ Suggested tags: `home` (front page and blog index), `post:ID`, `term:ID`, `autho
 
 `404` is purged on publish because the new URL may have been cached as a 404.
 
+Every purge starts a new generation (`Store.Generation`). The middleware takes the generation
+before rendering a miss and stores with `Store.SetSince`, which refuses (`ErrPurged`) when a purge
+covering the page (all, one of its tags, its URL, its key) ran meanwhile. Concurrent misses of one
+anonymous GET key are coalesced (`flightGroup`): one renders, the others wait up to `flightWait`
+and are served from the store, or render themselves when nothing was stored.
+
 With a LiteSpeed front server, forward the same purge on the admin response:
 
 ```go

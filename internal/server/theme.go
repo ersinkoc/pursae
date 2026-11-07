@@ -202,6 +202,8 @@ func czSpecFor(t *Theme) *czThemeSpec {
 	if t.Package != nil {
 		return t.Package.spec
 	}
+	czSpecsMu.RLock()
+	defer czSpecsMu.RUnlock()
 	return czSpecs[t.Slug]
 }
 

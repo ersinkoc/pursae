@@ -32,3 +32,10 @@ services:
     ports: !override
       - "${WPGO_BIND:-127.0.0.1}:${WPGO_PORT:-8088}:8080"
     restart: unless-stopped
+    # GET /healthz (process up); `wpgo healthcheck ready` checks /readyz (database + migrations).
+    healthcheck:
+      test: ["CMD", "/usr/local/lib/pursae/wpgo", "healthcheck"]
+      interval: 30s
+      timeout: 5s
+      start_period: 60s
+      retries: 3

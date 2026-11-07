@@ -23,5 +23,8 @@ COPY examples/plugins/dis[t]/*.zip examples/plugins/dis[t]/dev-key.pub /usr/shar
 USER wpgo
 ENV WPGO_BIN_DIR=/data/bin
 EXPOSE 8080
+# Liveness: GET /healthz on WPGO_ADDR through the binary itself (no curl in the image). The start
+# period covers the migrations a new version runs before it listens.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 CMD ["/usr/local/lib/pursae/wpgo", "healthcheck"]
 ENTRYPOINT ["/usr/local/lib/pursae/wpgo", "launch"]
 CMD ["serve"]

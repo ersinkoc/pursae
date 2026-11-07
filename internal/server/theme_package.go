@@ -16,6 +16,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 )
@@ -913,8 +914,14 @@ func unregisterTheme(slug string) {
 	themesMu.Lock()
 	delete(themes, slug)
 	themesMu.Unlock()
+	czSpecsMu.Lock()
 	delete(czSpecs, slug)
+	czSpecsMu.Unlock()
 }
+
+// czSpecsMu guards czSpecs: theme packages are installed and deleted while requests read the
+// specs (an unguarded map write next to a read is a fatal "concurrent map" crash).
+var czSpecsMu sync.RWMutex
 
 // packageThemes lists the registered package themes.
 func packageThemes() []*Theme {
@@ -973,5 +980,7 @@ func loadThemePackage(dir, slug string) (*Theme, error) {
 // registerThemePackage puts a loaded package theme in the registry.
 func registerThemePackage(t *Theme) {
 	registerTheme(t)
+	czSpecsMu.Lock()
 	czSpecs[t.Slug] = t.Package.spec
+	czSpecsMu.Unlock()
 }
