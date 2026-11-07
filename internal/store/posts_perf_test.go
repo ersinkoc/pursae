@@ -132,6 +132,24 @@ func TestPostListOrderAndIndexes(t *testing.T) {
 	if !strings.Contains(plan.String(), "posts_list_date") || strings.Contains(plan.String(), "Sort") {
 		t.Errorf("list query plan:\n%s", plan.String())
 	}
+	// Search: both branches of "search @@ … OR title ILIKE …" are index scans (GIN tsvector, trigram).
+	var where []any
+	q := PostQuery{Search: "meadow"}
+	cond := q.where(&where)
+	plan.Reset()
+	rows, err = tx.Query(ctx, `EXPLAIN SELECT id FROM posts WHERE `+cond, where...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for rows.Next() {
+		var line string
+		_ = rows.Scan(&line)
+		plan.WriteString(line + "\n")
+	}
+	rows.Close()
+	if !strings.Contains(plan.String(), "posts_title_trgm") || !strings.Contains(plan.String(), "posts_search") {
+		t.Errorf("search plan:\n%s", plan.String())
+	}
 	for _, idx := range []string{"users_lower_email", "users_lower_login", "comments_parent", "posts_featured_media", "widgets_area", "posts_title_trgm"} {
 		var ok bool
 		_ = s.Pool.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = $1)`, idx).Scan(&ok)
