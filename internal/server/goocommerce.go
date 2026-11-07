@@ -541,7 +541,8 @@ func (s *Server) gooHourly(ctx context.Context) error {
 			rows.Close()
 			for _, id := range ids {
 				if o, err := s.gooGetOrder(ctx, id); err == nil {
-					_ = s.gooSetStatus(ctx, o, "cancelled", "Unpaid order cancelled - time limit reached.", "")
+					// Only while it is still unpaid: a payment that arrived since the query wins.
+					_ = s.gooSetStatusFrom(ctx, o, []string{"pending"}, "cancelled", "Unpaid order cancelled - time limit reached.", "")
 				}
 			}
 		}

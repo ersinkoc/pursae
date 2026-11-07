@@ -22,9 +22,77 @@ import (
 // order.created / updated / deleted, product.created / updated / deleted, customer.created / updated /
 // deleted, coupon.created / updated / deleted. The payload is the wc/v3 resource; the request carries
 // WooCommerce's X-WC-Webhook-* headers with a base64 HMAC-SHA256 signature of the body made with the
-// webhook's secret. Deliveries run in the background; a webhook is disabled after 5 consecutive failures.
+// webhook's secret. Deliveries run in the background on a small bounded pool of workers (not one
+// goroutine per delivery): a delivery that fails is retried after a pause, with the same delivery id
+// so the receiver can drop a duplicate; a delivery that still fails counts as one failure, and a
+// webhook is disabled after 5 consecutive failed deliveries (WC_Webhook::failed_delivery()).
 
 const gooWebhookMaxFailures = 5
+
+// gooWebhookWorkers deliver at most this many webhooks at once; gooWebhookQueueSize deliveries wait.
+const (
+	gooWebhookWorkers   = 4
+	gooWebhookQueueSize = 1024
+)
+
+// gooWebhookRetryDelays are the pauses before a failed delivery is tried again (tests shorten them).
+var gooWebhookRetryDelays = []time.Duration{10 * time.Second, time.Minute}
+
+// gooWebhookTask is one delivery of a payload to one webhook.
+type gooWebhookTask struct {
+	s          *Server
+	h          gooWebhookRow
+	source     string
+	resourceID int64
+	body       []byte
+	deliveryID string
+	attempt    int
+}
+
+var (
+	gooWebhookQueue     = make(chan *gooWebhookTask, gooWebhookQueueSize)
+	gooWebhookStartOnce sync.Once
+)
+
+// gooWebhookEnqueue hands a delivery to the workers; a full queue drops it as a failed delivery.
+func gooWebhookEnqueue(t *gooWebhookTask) {
+	gooWebhookStartOnce.Do(func() {
+		for range gooWebhookWorkers {
+			go func() {
+				for t := range gooWebhookQueue {
+					t.run()
+				}
+			}()
+		}
+	})
+	select {
+	case gooWebhookQueue <- t:
+	default:
+		log.Printf("goocommerce: webhook %d (%s): delivery queue full, delivery dropped", t.h.ID, t.h.Topic)
+		t.s.gooWebhookResult(context.Background(), t.h, false)
+		gooWebhookWG.Done()
+	}
+}
+
+// run makes one attempt; a failure is queued again after its pause until the retries run out.
+func (t *gooWebhookTask) run() {
+	ok, retryable := t.s.gooWebhookDeliver(context.Background(), t.h, t.source, t.resourceID, t.body, t.deliveryID)
+	if !ok && retryable && t.attempt < len(gooWebhookRetryDelays) {
+		d := gooWebhookRetryDelays[t.attempt]
+		t.attempt++
+		time.AfterFunc(d, func() {
+			select {
+			case gooWebhookQueue <- t:
+			default:
+				t.s.gooWebhookResult(context.Background(), t.h, false)
+				gooWebhookWG.Done()
+			}
+		})
+		return
+	}
+	t.s.gooWebhookResult(context.Background(), t.h, ok)
+	gooWebhookWG.Done()
+}
 
 // gooWebhookClient delivers webhooks (a variable so tests can swap it). Like wp_safe_remote_request,
 // which WooCommerce delivers with, it connects to public addresses only: the address is checked when
@@ -180,14 +248,9 @@ func (s *Server) gooWebhookFire(ctx context.Context, topic string, resourceID in
 		return
 	}
 	source := strings.TrimRight(s.links(ctx).Home, "/") + "/"
-	bg := context.WithoutCancel(ctx)
 	for _, h := range hooks {
-		h := h
 		gooWebhookWG.Add(1)
-		go func() {
-			defer gooWebhookWG.Done()
-			s.gooWebhookDeliver(bg, h, source, resourceID, body)
-		}()
+		gooWebhookEnqueue(&gooWebhookTask{s: s, h: h, source: source, resourceID: resourceID, body: body, deliveryID: gooRandomKey(32)})
 	}
 }
 
@@ -198,28 +261,36 @@ func gooWebhookSignature(body []byte, secret string) string {
 	return base64.StdEncoding.EncodeToString(m.Sum(nil))
 }
 
-// gooWebhookDeliver posts one delivery and records success or failure.
-func (s *Server) gooWebhookDeliver(ctx context.Context, h gooWebhookRow, source string, resourceID int64, body []byte) {
+// gooWebhookDeliver posts one attempt of a delivery. retryable is false when trying again cannot
+// help (the URL is malformed or points at a refused address).
+func (s *Server) gooWebhookDeliver(ctx context.Context, h gooWebhookRow, source string, resourceID int64, body []byte, deliveryID string) (ok, retryable bool) {
 	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
 	defer cancel()
 	resource, event, _ := strings.Cut(h.Topic, ".")
-	ok := false
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, h.URL, bytes.NewReader(body))
-	if err == nil {
-		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("User-Agent", "Goocommerce/"+gooVersion+" Hookshot (Pursae)")
-		req.Header.Set("X-WC-Webhook-Source", source)
-		req.Header.Set("X-WC-Webhook-Topic", h.Topic)
-		req.Header.Set("X-WC-Webhook-Resource", resource)
-		req.Header.Set("X-WC-Webhook-Event", event)
-		req.Header.Set("X-WC-Webhook-Signature", gooWebhookSignature(body, h.Secret))
-		req.Header.Set("X-WC-Webhook-ID", strconv.FormatInt(h.ID, 10))
-		req.Header.Set("X-WC-Webhook-Delivery-ID", gooRandomKey(32))
-		if resp, err := gooWebhookClient.Do(req); err == nil {
-			ok = resp.StatusCode >= 200 && resp.StatusCode < 300
-			_ = resp.Body.Close()
-		}
+	if err != nil {
+		return false, false
 	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", "Goocommerce/"+gooVersion+" Hookshot (Pursae)")
+	req.Header.Set("X-WC-Webhook-Source", source)
+	req.Header.Set("X-WC-Webhook-Topic", h.Topic)
+	req.Header.Set("X-WC-Webhook-Resource", resource)
+	req.Header.Set("X-WC-Webhook-Event", event)
+	req.Header.Set("X-WC-Webhook-Signature", gooWebhookSignature(body, h.Secret))
+	req.Header.Set("X-WC-Webhook-ID", strconv.FormatInt(h.ID, 10))
+	req.Header.Set("X-WC-Webhook-Delivery-ID", deliveryID)
+	resp, err := gooWebhookClient.Do(req)
+	if err != nil {
+		return false, !strings.Contains(err.Error(), "private network address")
+	}
+	_ = resp.Body.Close()
+	return resp.StatusCode >= 200 && resp.StatusCode < 300, true
+}
+
+// gooWebhookResult records a delivery's outcome: success resets the failure count, a failure adds one
+// and disables the webhook at gooWebhookMaxFailures.
+func (s *Server) gooWebhookResult(ctx context.Context, h gooWebhookRow, ok bool) {
 	if ok {
 		_, _ = s.store.Pool.Exec(ctx, `UPDATE goo_webhooks SET failures = 0 WHERE id = $1`, h.ID)
 		return

@@ -686,6 +686,11 @@ func (s *Server) gooEndpointTitle(endpoint, value string) string {
 		return "Account details"
 	case "payment-methods":
 		return "Payment methods"
+	case "view-subscription": // untitled detail page (no menu tab): WCS titles it like view-order
+		if value != "" {
+			return "Subscription #" + value
+		}
+		return "Subscription"
 	}
 	for _, ep := range s.gooModuleEndpoints() {
 		if ep.Slug == endpoint {

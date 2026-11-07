@@ -13,6 +13,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"wpgo/internal/store"
 )
@@ -672,7 +673,16 @@ func TestGooAPIWebhooks(t *testing.T) {
 		mu.Unlock()
 	}))
 	defer hook.Close()
-	failing := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(500) }))
+	defer func(d []time.Duration) { gooWebhookRetryDelays = d }(gooWebhookRetryDelays)
+	gooWebhookRetryDelays = []time.Duration{time.Millisecond, 2 * time.Millisecond}
+	var amu sync.Mutex
+	attempts := map[string]int{} // delivery id → attempts
+	failing := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		amu.Lock()
+		attempts[r.Header.Get("X-WC-Webhook-Delivery-ID")]++
+		amu.Unlock()
+		w.WriteHeader(500)
+	}))
 	defer failing.Close()
 	var okID, badID int64
 	_ = srv.store.Pool.QueryRow(ctx, `INSERT INTO goo_webhooks (name, status, topic, delivery_url, secret) VALUES ('Orders', 'active', 'order.created', $1, 's3cret') RETURNING id`, hook.URL).Scan(&okID)
@@ -712,6 +722,17 @@ func TestGooAPIWebhooks(t *testing.T) {
 	_ = srv.store.Pool.QueryRow(ctx, `SELECT status, failures FROM goo_webhooks WHERE id = $1`, badID).Scan(&status, &failures)
 	if status != "disabled" || failures != 5 {
 		t.Errorf("failing webhook: %s after %d failures", status, failures)
+	}
+	// Each failed delivery was tried three times under one delivery id, and counted once.
+	amu.Lock()
+	defer amu.Unlock()
+	if len(attempts) != 5 {
+		t.Errorf("failed deliveries: %v", attempts)
+	}
+	for id, n := range attempts {
+		if n != 1+len(gooWebhookRetryDelays) {
+			t.Errorf("delivery %s attempted %d times", id, n)
+		}
 	}
 }
 
