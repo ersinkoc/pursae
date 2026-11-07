@@ -131,7 +131,7 @@ func (s *Server) feedExcerpt(p *store.Post) string {
 		return "There is no excerpt because this is a protected post."
 	}
 	if p.Excerpt != "" {
-		return p.Excerpt
+		return wp.KsesPost(p.Excerpt) // stored excerpts may predate save-time filtering
 	}
 	return wp.TrimWords(stripBlocks(p.Content), 55, " [&#8230;]")
 }
