@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -120,7 +119,7 @@ func (s *Store) QueryTerms(ctx context.Context, q TermQuery) ([]*Term, int, erro
 		if page < 1 {
 			page = 1
 		}
-		sql += fmt.Sprintf(" LIMIT %d OFFSET %d", q.PerPage, (page-1)*q.PerPage)
+		sql += limitOffset(q.PerPage, page)
 	}
 	rows, err := s.Pool.Query(ctx, sql, args...)
 	if err != nil {
