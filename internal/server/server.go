@@ -71,6 +71,9 @@ type Server struct {
 
 	// mgr is the Pursae Manager client's state: the license answer and the queued events.
 	mgr managerState
+
+	// rt is the bounded background work: async writes, coalesced CDN purges (background.go).
+	rt runtimeState
 }
 
 // New builds the server of the site.

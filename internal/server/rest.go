@@ -246,7 +246,7 @@ func (s *Server) checkAppPassword(c *gin.Context, u *store.User, pass string) bo
 			if scopes = normalizeAppScopes(scopes); len(scopes) > 0 {
 				c.Set(restAppScopesKey, scopes) // app_password_scopes.go
 			}
-			go s.store.Pool.Exec(c.Copy(), `UPDATE app_passwords SET last_used_at = now(), last_ip = $2 WHERE id = $1`, id, clientIP(c))
+			s.asyncExec(`UPDATE app_passwords SET last_used_at = now(), last_ip = $2 WHERE id = $1`, id, clientIP(c)) // bounded queue (background.go)
 			return true
 		}
 	}
