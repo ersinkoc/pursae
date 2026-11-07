@@ -3,6 +3,7 @@ package server
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -17,7 +18,8 @@ import (
 //   - POST answers in application/json, or as a one-event text/event-stream when the client's Accept
 //     header lists text/event-stream before application/json (or without it).
 //   - GET with Accept: text/event-stream and a session opens the stream for server→client messages
-//     (mcpPush); keep-alive comments flow every 25 seconds. Resuming with Last-Event-ID is not supported.
+//     (mcpPush); every event has an id, the last 64 are kept, and Last-Event-ID replays what a dropped
+//     stream missed. Keep-alive comments flow every 25 seconds.
 //   - DELETE ends a session. Sessions belong to the user that created them and expire after an hour
 //     without use.
 
@@ -32,9 +34,46 @@ type mcpSession struct {
 	id     string
 	userID int64
 	last   time.Time
-	out    chan []byte // messages for the GET stream
+	mu     sync.Mutex
+	seq    int64        // id of the newest message
+	buf    []mcpMessage // the last mcpReplay messages, for Last-Event-ID resumption
+	wake   chan struct{}
 	done   chan struct{}
 	once   sync.Once
+}
+
+type mcpMessage struct {
+	id   int64
+	data []byte
+}
+
+const mcpReplay = 64
+
+func (m *mcpSession) push(data []byte) {
+	m.mu.Lock()
+	m.seq++
+	m.buf = append(m.buf, mcpMessage{m.seq, data})
+	if len(m.buf) > mcpReplay {
+		m.buf = m.buf[len(m.buf)-mcpReplay:]
+	}
+	m.mu.Unlock()
+	select {
+	case m.wake <- struct{}{}:
+	default:
+	}
+}
+
+// after returns the messages newer than id and the newest id.
+func (m *mcpSession) after(id int64) ([]mcpMessage, int64) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	var out []mcpMessage
+	for _, x := range m.buf {
+		if x.id > id {
+			out = append(out, x)
+		}
+	}
+	return out, m.seq
 }
 
 func (m *mcpSession) close() { m.once.Do(func() { close(m.done) }) }
@@ -71,7 +110,7 @@ func (m *mcpSessions) create(userID int64) *mcpSession {
 		delete(m.list, mine[oldest].id)
 		mine = append(mine[:oldest], mine[oldest+1:]...)
 	}
-	x := &mcpSession{id: newUUID(), userID: userID, last: now, out: make(chan []byte, 32), done: make(chan struct{})}
+	x := &mcpSession{id: newUUID(), userID: userID, last: now, wake: make(chan struct{}, 1), done: make(chan struct{})}
 	m.list[x.id] = x
 	return x
 }
@@ -108,10 +147,7 @@ func mcpPush(userID int64, method string, params any) {
 	defer mcpSess.mu.Unlock()
 	for _, x := range mcpSess.list {
 		if x.userID == userID {
-			select {
-			case x.out <- msg:
-			default:
-			}
+			x.push(msg)
 		}
 	}
 }
@@ -138,12 +174,25 @@ func sseHeaders(c *gin.Context) {
 func (s *Server) mcpStream(c *gin.Context, sess *mcpSession) {
 	sseHeaders(c)
 	c.Writer.Flush()
+	_, last := sess.after(0) // a new stream only sees new messages …
+	if v, err := strconv.ParseInt(c.GetHeader("Last-Event-ID"), 10, 64); err == nil && v >= 0 && v <= last {
+		last = v // … a resumed one also the ones it missed
+	}
+	flush := func() {
+		msgs, _ := sess.after(last)
+		for _, m := range msgs {
+			_, _ = c.Writer.WriteString("id: " + strconv.FormatInt(m.id, 10) + "\nevent: message\ndata: " + string(m.data) + "\n\n")
+			last = m.id
+		}
+		c.Writer.Flush()
+	}
+	flush()
 	tick := time.NewTicker(mcpStreamKeepAlive)
 	defer tick.Stop()
 	for {
 		select {
-		case msg := <-sess.out:
-			writeSSE(c, "message", msg)
+		case <-sess.wake:
+			flush()
 		case <-tick.C:
 			_, _ = c.Writer.WriteString(": keep-alive\n\n")
 			c.Writer.Flush()

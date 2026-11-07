@@ -40,6 +40,7 @@ func (s *Server) registerOAuth(r *gin.Engine) {
 	for _, m := range []string{http.MethodPost, http.MethodOptions} {
 		r.Handle(m, "/oauth/register", s.oauthRegister)
 		r.Handle(m, "/oauth/token", s.oauthToken)
+		r.Handle(m, "/oauth/revoke", s.oauthRevoke)
 	}
 }
 
@@ -93,7 +94,7 @@ func (s *Server) oauthServerMeta(c *gin.Context) {
 	iss := s.oauthIssuer(c)
 	c.JSON(http.StatusOK, gin.H{"issuer": iss,
 		"authorization_endpoint": iss + "/wp-admin/oauth-authorize", "token_endpoint": iss + "/oauth/token",
-		"registration_endpoint": iss + "/oauth/register", "scopes_supported": scopeSlugs(),
+		"registration_endpoint": iss + "/oauth/register", "revocation_endpoint": iss + "/oauth/revoke", "scopes_supported": scopeSlugs(),
 		"response_types_supported": []string{"code"}, "grant_types_supported": []string{"authorization_code", "refresh_token"},
 		"code_challenge_methods_supported": []string{"S256"}, "token_endpoint_auth_methods_supported": []string{"none"}})
 }
@@ -360,4 +361,19 @@ func (s *Server) oauthGrantRows(c *gin.Context, userID int64) []oauthGrantRow {
 		out = append(out, g)
 	}
 	return out
+}
+
+// oauthRevoke is RFC 7009: the client gives up an access or refresh token and the whole grant ends.
+// Like the RFC asks, the answer is 200 whether or not the token was known.
+func (s *Server) oauthRevoke(c *gin.Context) {
+	if oauthCORS(c) {
+		return
+	}
+	_ = c.Request.ParseForm()
+	if t := c.PostForm("token"); t != "" && isUUID(c.PostForm("client_id")) {
+		_, _ = s.store.Pool.Exec(c.Request.Context(), `DELETE FROM oauth_tokens WHERE client_id = $1 AND (access_hash = $2 OR refresh_hash = $2)`,
+			c.PostForm("client_id"), oauthHash(t))
+	}
+	c.Header("Cache-Control", "no-store")
+	c.Status(http.StatusOK)
 }

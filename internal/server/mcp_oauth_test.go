@@ -222,6 +222,28 @@ func TestMCPOAuthAndSSE(t *testing.T) {
 			t.Fatal("no pushed message on the stream")
 		}
 	}
+	// Resume: a new stream with Last-Event-ID replays what the first one carried.
+	mcpPush(1, "notifications/resources/list_changed", map[string]any{})
+	req2, _ := http.NewRequest("GET", base+"/wp-json/pursae/v1/mcp", nil)
+	req2.Header.Set("Authorization", "Bearer "+access)
+	req2.Header.Set("Accept", "text/event-stream")
+	req2.Header.Set("Mcp-Session-Id", sid)
+	req2.Header.Set("Last-Event-ID", "0")
+	rresp, err := anon.Do(req2)
+	if err != nil || rresp.StatusCode != 200 {
+		t.Fatalf("resume: %v", err)
+	}
+	rsc := bufio.NewScanner(rresp.Body)
+	var replay []string
+	for rsc.Scan() && len(replay) < 6 {
+		if l := rsc.Text(); l != "" {
+			replay = append(replay, l)
+		}
+	}
+	rresp.Body.Close()
+	if j := strings.Join(replay, "\n"); !strings.Contains(j, "id: 1") || !strings.Contains(j, "list_changed") || !strings.Contains(j, "id: 2") {
+		t.Errorf("replay: %q", j)
+	}
 	if resp, _ = mcp("DELETE", "", map[string]string{"Mcp-Session-Id": sid}); resp.StatusCode != 204 {
 		t.Errorf("DELETE session: %d", resp.StatusCode)
 	}
@@ -270,5 +292,25 @@ func TestMCPOAuthAndSSE(t *testing.T) {
 	}
 	if resp, _ := send("GET", base+"/wp-json/wp/v2/posts", nil, map[string]string{"Authorization": "Bearer " + access2}); resp.StatusCode != 401 {
 		t.Errorf("revoked token still works: %d", resp.StatusCode)
+	}
+
+	// RFC 7009: the client revokes its own token (a fresh grant, as the profile one is gone).
+	_, _, loc = post(t, c, base+"/wp-admin/oauth-authorize", form(url.Values{"approve": {"1"}}))
+	lu, _ = url.Parse(loc)
+	exchange.Set("code", lu.Query().Get("code"))
+	st, tok3 := token(exchange)
+	if st != 200 {
+		t.Fatalf("third token: %d %v", st, tok3)
+	}
+	h3 := map[string]string{"Authorization": "Bearer " + tok3["access_token"].(string)}
+	if resp, _ := send("GET", base+"/wp-json/wp/v2/posts", nil, h3); resp.StatusCode != 200 {
+		t.Fatalf("fresh token: %d", resp.StatusCode)
+	}
+	rv := url.Values{"token": {tok3["refresh_token"].(string)}, "client_id": {clientID}}
+	if resp, _ := send("POST", base+"/oauth/revoke", strings.NewReader(rv.Encode()), map[string]string{"Content-Type": "application/x-www-form-urlencoded"}); resp.StatusCode != 200 {
+		t.Errorf("revoke: %d", resp.StatusCode)
+	}
+	if resp, _ := send("GET", base+"/wp-json/wp/v2/posts", nil, h3); resp.StatusCode != 401 {
+		t.Errorf("token works after RFC 7009 revoke: %d", resp.StatusCode)
 	}
 }

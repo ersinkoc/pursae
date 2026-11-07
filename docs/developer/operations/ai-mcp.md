@@ -134,8 +134,8 @@ The bridge prints nothing but protocol messages on stdout; errors go to stderr.
 - `POST` answers with `application/json`, or as a one-event `text/event-stream` when the request's
   `Accept` header lists `text/event-stream` before `application/json` (or without it).
 - `GET` with `Accept: text/event-stream` and a session opens the server→client stream: JSON-RPC
-  notifications and a `: keep-alive` comment every 25 seconds. Resuming with `Last-Event-ID` is not
-  supported; open a new stream.
+  notifications and a `: keep-alive` comment every 25 seconds. Every event has an `id`; the last 64 are
+  kept, so a client that reconnects with `Last-Event-ID` gets what it missed.
 - `DELETE` with the session id ends the session and closes its stream (`204`).
 
 ## Tools

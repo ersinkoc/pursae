@@ -99,6 +99,7 @@ Application Password and are narrowed by scopes the same way; Basic auth keeps w
 | `POST /oauth/register` | dynamic client registration (RFC 7591), public clients only |
 | `/wp-admin/oauth-authorize` | consent screen: who asks, scope checkboxes, approve or deny |
 | `POST /oauth/token` | `authorization_code` (PKCE) and `refresh_token` grants |
+| `POST /oauth/revoke` | token revocation (RFC 7009): ends the whole grant |
 
 - PKCE with `code_challenge_method=S256` is mandatory; codes live 5 minutes and work once; redirect URIs
   must match a registered one exactly (https, http on localhost, or an app scheme such as `cursor://`).
