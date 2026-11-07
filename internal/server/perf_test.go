@@ -230,6 +230,10 @@ func TestFrontQueryCount(t *testing.T) {
 	measure("/?warm=2")
 	n, body = measure("/?count=2")
 	t.Logf("byte-notes home, 10 posts: %d queries", n)
+	// Post thumbnails: the first is the likely largest paint, the others load lazily.
+	if hi, lazy := strings.Count(body, `decoding="async" fetchpriority="high" srcset`), strings.Count(body, `decoding="async" loading="lazy" srcset`); hi != 1 || lazy != 9 {
+		t.Errorf("thumbnails: %d high priority, %d lazy; want 1 and 9", hi, lazy)
+	}
 	if out := os.Getenv("WPGO_PERF_DUMP"); out != "" {
 		_ = os.WriteFile(out+"/byte-notes-home.html", []byte(perfVolatile.ReplaceAllString(body, "$1=X")), 0o644)
 	}

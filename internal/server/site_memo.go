@@ -26,6 +26,8 @@ type viewMemo struct {
 	// block or shortcode in the content); deps are the narrower tags of what else it lists.
 	widgets bool
 	deps    map[string]bool
+
+	thumbSeen bool // a post thumbnail was printed (thumbnailLoading)
 }
 
 type viewMemoKey struct{}
