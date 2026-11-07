@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/ed25519"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -40,8 +41,39 @@ type pluginSystem struct {
 	rt      *plugins.Runtime
 	dir     string // installed packages: <dir>/<slug>.zip
 	market  []string
-	keys    []ed25519.PublicKey
 	initErr error
+
+	// The trusted signing keys: the site's own (WPGO_PLUGIN_KEYS, plugin_trusted_keys, the dev key)
+	// and the Manager's, replaced on every index refresh (hubTrustKeys). Read them with trusted().
+	keyMu    sync.RWMutex
+	siteKeys []ed25519.PublicKey
+	hubKeys  []ed25519.PublicKey
+}
+
+// trusted is a snapshot of every trusted signing key.
+func (ps *pluginSystem) trusted() []ed25519.PublicKey {
+	ps.keyMu.RLock()
+	defer ps.keyMu.RUnlock()
+	return append(append([]ed25519.PublicKey{}, ps.siteKeys...), ps.hubKeys...)
+}
+
+// setHubKeys replaces the keys that come from Pursae Manager.
+func (ps *pluginSystem) setHubKeys(keys []ed25519.PublicKey) {
+	ps.keyMu.Lock()
+	ps.hubKeys = keys
+	ps.keyMu.Unlock()
+}
+
+// isHubKey reports whether key is one of the Manager's current keys.
+func (ps *pluginSystem) isHubKey(key ed25519.PublicKey) bool {
+	ps.keyMu.RLock()
+	defer ps.keyMu.RUnlock()
+	for _, k := range ps.hubKeys {
+		if bytes.Equal(k, key) {
+			return true
+		}
+	}
+	return false
 }
 
 // pluginDirs places plugin data next to the uploads directory (/data/uploads -> /data/plugins).
@@ -58,10 +90,13 @@ func (s *Server) startPlugins(ctx context.Context) {
 	pkgDir, cacheDir := s.pluginDirs()
 	ps.dir = pkgDir
 	_ = os.MkdirAll(pkgDir, 0o755)
-	_ = os.MkdirAll(cacheDir, 0o755)
+	// Compiled plugins stay in memory: wazero would load native code from an on-disk cache without
+	// verifying it, so whoever can write that directory could run code outside the sandbox. The
+	// directory of earlier versions is removed.
+	_ = os.RemoveAll(cacheDir)
 	for _, k := range strings.FieldsFunc(os.Getenv("WPGO_PLUGIN_KEYS")+","+s.settings.String("plugin_trusted_keys"), func(r rune) bool { return r == ',' || r == '\n' || r == ' ' }) {
 		if pub, err := plugins.ParsePublicKey(k); err == nil {
-			ps.keys = append(ps.keys, pub)
+			ps.siteKeys = append(ps.siteKeys, pub)
 		}
 	}
 	// Marketplace demo: packages shipped next to the binary (or built by tools/build-plugins.sh).
@@ -73,13 +108,13 @@ func (s *Server) startPlugins(ctx context.Context) {
 			ps.market = m
 			if pub, err := os.ReadFile(filepath.Join(dir, "dev-key.pub")); err == nil && os.Getenv("WPGO_TRUST_DEV_KEY") == "1" {
 				if k, err := plugins.ParsePublicKey(lastLine(string(pub))); err == nil {
-					ps.keys = append(ps.keys, k)
+					ps.siteKeys = append(ps.siteKeys, k)
 				}
 			}
 			break
 		}
 	}
-	rt, err := plugins.NewRuntime(ctx, ps.hooks, plugins.Config{CoreVersion: Version, CacheDir: cacheDir, Logger: slog.Default(),
+	rt, err := plugins.NewRuntime(ctx, ps.hooks, plugins.Config{CoreVersion: Version, MaxHTTPBody: pluginHTTPMaxBody, Logger: slog.Default(),
 		OnDisable: func(slug, reason string) {
 			slog.Warn("plugin disabled by the runtime", "plugin", slug, "reason", reason)
 			_, _ = s.store.Pool.Exec(context.Background(), `UPDATE plugins SET status = 'inactive' WHERE slug = $1`, slug)
@@ -90,6 +125,7 @@ func (s *Server) startPlugins(ctx context.Context) {
 		return
 	}
 	ps.rt = rt
+	s.hubTrustCached(ctx) // the Manager's keys from the cached index, before Manager-signed plugins load
 	rows, err := s.store.Pool.Query(ctx, `SELECT slug, permissions FROM plugins WHERE status = 'active' ORDER BY slug`)
 	if err != nil {
 		return
@@ -112,7 +148,6 @@ func (s *Server) startPlugins(ctx context.Context) {
 		}
 	}
 	ps.hooks.DoAction(ctx, "init")
-	s.hubTrustCached(ctx)
 }
 
 func lastLine(v string) string {
@@ -128,7 +163,7 @@ func (s *Server) loadPlugin(ctx context.Context, slug string, rawPerms []byte) e
 	if ps.rt == nil {
 		return ps.initErr
 	}
-	pkg, err := plugins.LoadPackageFile(filepath.Join(ps.dir, slug+".zip"), ps.keys, !s.settings.Bool("plugin_allow_unsigned"))
+	pkg, err := plugins.LoadPackageFile(filepath.Join(ps.dir, slug+".zip"), ps.trusted(), !s.settings.Bool("plugin_allow_unsigned"))
 	if err != nil {
 		return err
 	}
@@ -184,33 +219,71 @@ func (s *Server) pluginNotices(c *gin.Context) []notice {
 // pluginHost implements plugins.Host on top of the site's options, plugin_data and a guarded HTTP client.
 type pluginHost struct{ s *Server }
 
-// hiddenOptions are never readable by plugins.
-func hiddenOption(name string) bool {
-	return strings.HasPrefix(name, "auth_") || strings.Contains(name, "secret") || strings.Contains(name, "password") ||
-		strings.HasPrefix(name, "plugin_") || name == "admin_email" || name == "mailserver_pass" || name == licenseOption
+// Plugin options. A plugin addresses its options by the names it chose (<slug>_* with dashes as
+// underscores, and plugin_<slug>_* for its settings page), but they are stored under
+// wasm:<slug>:<name> (pluginOptionKey). The options table is one key space shared with the core and
+// the built-in plugins, so without the namespace a plugin slugged after a built-in option's first
+// word ("wp-mail" → wp_mail_smtp, "gocdn" → gocdn_settings) could read or overwrite it. Reading is
+// default-deny: besides its own options a plugin sees only the public core options below.
+
+// pluginOptionNS prefixes the stored name of every plugin option; ":" never appears in a core or
+// built-in option name.
+const pluginOptionNS = "wasm:"
+
+// pluginOptionKey is the settings key a plugin option is stored under.
+func pluginOptionKey(plugin, name string) string { return pluginOptionNS + plugin + ":" + name }
+
+// pluginOwnOption reports whether name is in the plugin's own option namespace.
+func pluginOwnOption(plugin, name string) bool {
+	return strings.HasPrefix(name, strings.ReplaceAll(plugin, "-", "_")+"_") || strings.HasPrefix(name, plugins.SettingsOptionPrefix(plugin))
+}
+
+// pluginPublicOptions are the core options every plugin with options:read may read: what a theme
+// or a visitor can learn from the site anyway (WordPress' public settings), nothing about users,
+// mail, keys, licenses or the built-in plugins' configuration.
+var pluginPublicOptions = map[string]bool{
+	"blogname": true, "blogdescription": true, "siteurl": true, "home": true, "WPLANG": true,
+	"timezone_string": true, "gmt_offset": true, "date_format": true, "time_format": true, "start_of_week": true,
+	"use_smilies": true, "default_category": true, "default_post_format": true, "posts_per_page": true,
+	"posts_per_rss": true, "rss_use_excerpt": true, "show_on_front": true, "page_on_front": true,
+	"page_for_posts": true, "blog_public": true, "default_ping_status": true, "default_comment_status": true,
+	"require_name_email": true, "comment_registration": true, "close_comments_for_old_posts": true,
+	"close_comments_days_old": true, "show_comments_cookies_opt_in": true, "thread_comments": true,
+	"thread_comments_depth": true, "page_comments": true, "comments_per_page": true, "default_comments_page": true,
+	"comment_order": true, "show_avatars": true, "avatar_rating": true, "avatar_default": true,
+	"thumbnail_size_w": true, "thumbnail_size_h": true, "thumbnail_crop": true, "medium_size_w": true,
+	"medium_size_h": true, "medium_large_size_w": true, "medium_large_size_h": true, "large_size_w": true,
+	"large_size_h": true, "uploads_use_yearmonth_folders": true, "permalink_structure": true,
+	"category_base": true, "tag_base": true, "template": true, "stylesheet": true, "sticky_posts": true,
+	"wp_page_for_privacy_policy": true, "site_icon": true, "users_can_register": true, "blog_charset": true,
+	"html_type": true,
 }
 
 func (h *pluginHost) GetOption(_ context.Context, plugin string, name string) (any, bool, error) {
-	if hiddenOption(name) && !strings.HasPrefix(name, plugins.SettingsOptionPrefix(plugin)) {
+	key := name
+	switch {
+	case pluginOwnOption(plugin, name):
+		key = pluginOptionKey(plugin, name)
+	case !pluginPublicOptions[name]:
 		return nil, false, nil
 	}
-	v := h.s.settings.Get(name)
+	v := h.s.settings.Get(key)
 	return v, v != nil, nil
 }
 
 // UpdateOption only writes options in the plugin's own namespace (<slug>_* with dashes as underscores,
-// and the plugin_<slug>_* options of its settings page).
+// and the plugin_<slug>_* options of its settings page), stored under wasm:<slug>:<name>.
 func (h *pluginHost) UpdateOption(ctx context.Context, plugin, name string, value any) error {
 	if !pluginOptionAllowed(plugin, name) {
 		return fmt.Errorf("plugins may only write their own options (%q or %q) and never a core option", strings.ReplaceAll(plugin, "-", "_")+"_*", plugins.SettingsOptionPrefix(plugin)+"*")
 	}
-	return h.s.settings.Set(ctx, map[string]any{name: value})
+	return h.s.settings.Set(ctx, map[string]any{pluginOptionKey(plugin, name): value})
 }
 
-// pluginOptionAllowed reports whether plugin may write the option name. The options table is one flat key
-// space shared with the core, so the prefix test alone is not enough: a plugin slugged "default" would
-// reach default_role, "plugin-allow" would reach plugin_allow_unsigned. Known core options (every default)
-// and the core's own prefixes are therefore never writable by a plugin.
+// pluginOptionAllowed reports whether plugin may write the option name. Writes are stored in the
+// plugin's namespace (pluginOptionKey), so they can no longer reach a core option; names that look
+// like a core option (every default, the core's own prefixes) are still refused so that a plugin
+// never holds a private copy of, say, "default_role" that a reader could mistake for the real one.
 func pluginOptionAllowed(plugin, name string) bool {
 	own := plugins.SettingsOptionPrefix(plugin) // plugin_<slug>_: the options of its settings page
 	prefix := strings.ReplaceAll(plugin, "-", "_") + "_"
@@ -230,6 +303,9 @@ func pluginOptionAllowed(plugin, name string) bool {
 	}
 	return true
 }
+
+// pluginHTTPMaxBody caps a plugin's http_get response body (documented as 1 MiB).
+const pluginHTTPMaxBody = 1 << 20
 
 var pluginHTTP = &http.Client{
 	Timeout: 8 * time.Second,
@@ -251,7 +327,13 @@ func (h *pluginHost) HTTPGet(ctx context.Context, plugin, url string) (*plugins.
 		return nil, err
 	}
 	defer resp.Body.Close()
-	body, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	body, err := io.ReadAll(io.LimitReader(resp.Body, pluginHTTPMaxBody+1))
+	if err != nil {
+		return nil, err
+	}
+	if len(body) > pluginHTTPMaxBody {
+		return nil, fmt.Errorf("the response body is larger than %d bytes", pluginHTTPMaxBody)
+	}
 	hdr := map[string]string{}
 	for k := range resp.Header {
 		hdr[k] = resp.Header.Get(k)
@@ -306,6 +388,7 @@ type pluginRow struct {
 
 type permRow struct {
 	Name, Description string
+	Danger            bool // admin:scripts, content:html: the consent screen leaves them unticked
 }
 
 type pluginsData struct {
@@ -418,11 +501,11 @@ func (s *Server) pluginInventory(ctx context.Context) []pluginRow {
 	dbRows.Close()
 	for _, r := range list {
 		row := pluginRow{Slug: r.slug, Name: r.slug, Version: r.version, Active: r.status == "active", Source: r.source}
-		if pkg, err := plugins.LoadPackageFile(filepath.Join(s.plugins.dir, r.slug+".zip"), s.plugins.keys, false); err == nil {
+		if pkg, err := plugins.LoadPackageFile(filepath.Join(s.plugins.dir, r.slug+".zip"), s.plugins.trusted(), false); err == nil {
 			m := pkg.Manifest
 			row.Name, row.Version, row.Description, row.Author, row.AuthorURI, row.PluginURI = m.Name, m.Version, template.HTMLEscapeString(m.Description), m.Author, m.AuthorURI, m.PluginURI
 			for _, p := range m.Permissions {
-				row.Permissions = append(row.Permissions, permRow{string(p), p.Description()})
+				row.Permissions = append(row.Permissions, permRow{string(p), p.Description(), p.Dangerous()})
 			}
 		}
 		if s.plugins.rt != nil {
@@ -523,6 +606,13 @@ func (s *Server) pluginsScreen(c *gin.Context) {
 		notices = append(notices, notice{Type: "success", Message: template.HTML("Plugin <strong>" + template.HTMLEscapeString(c.Query("installed")) + "</strong> installed. Activate it to review and grant its permissions."), Dismissible: true})
 	case c.Query("error") != "":
 		notices = append(notices, notice{Type: "error", Message: template.HTML(template.HTMLEscapeString(c.Query("error")))})
+	}
+	if slug := c.Query("replace"); slug != "" && plugins.ValidSlug(slug) && u.Can("install_plugins", nil) {
+		if _, err := os.Stat(s.pluginPendingPath(slug)); err == nil {
+			link := "/wp-admin/plugin-install?action=replace-plugin&plugin=" + url.QueryEscape(slug) + "&_wpnonce=" + s.nonce(c, "replace-plugin_"+slug)
+			notices = append(notices, notice{Type: "warning", Message: template.HTML("Replace the installed <strong>" + template.HTMLEscapeString(slug) +
+				"</strong> with the uploaded package anyway? Only do this if you trust where the package comes from. <a class=\"button\" href=\"" + template.HTMLEscapeString(link) + "\">Replace current with uploaded</a>")})
+		}
 	}
 	if sk := c.Query("skipped"); sk != "" {
 		notices = append(notices, notice{Type: "warning", Message: template.HTML("Skipped: <strong>" + template.HTMLEscapeString(sk) +
@@ -702,6 +792,8 @@ func (s *Server) pluginAction(c *gin.Context, action, slug string) {
 		}
 		_, _ = s.store.Pool.Exec(ctx, `DELETE FROM plugins WHERE slug = $1`, slug)
 		_ = os.Remove(filepath.Join(s.plugins.dir, filepath.Base(slug)+".zip"))
+		_ = os.Remove(filepath.Join(s.plugins.dir, filepath.Base(slug)+".zip.prev"))
+		_ = os.Remove(s.pluginPendingPath(slug))
 		c.Redirect(http.StatusFound, "/wp-admin/plugins?deleted=true")
 		return
 	default:
@@ -716,11 +808,66 @@ func (s *Server) installPackage(ctx context.Context, data []byte) (*plugins.Mani
 	return s.installPackageFrom(ctx, data, pluginSourceUpload, "")
 }
 
+// pluginReplaceError refuses to replace an installed plugin with an older version or with a package
+// signed by another key than the installed one. An upload can be confirmed by the administrator
+// (WordPress' "Replace current with uploaded"); the Manager's updates are always refused.
+type pluginReplaceError struct{ Slug, Reason string }
+
+func (e *pluginReplaceError) Error() string { return e.Reason }
+
+// builtinPluginSlug reports whether slug belongs to a built-in plugin (or the name its Plugins screen
+// links use): a package may never take it, or its options and screens would mix with the built-in's.
+func (s *Server) builtinPluginSlug(slug string) bool {
+	for _, r := range s.nativePluginRows() {
+		if r.Slug == slug || pluginURLSlug(r.Slug) == slug {
+			return true
+		}
+	}
+	return false
+}
+
+// pluginSigner is the stored form of the key that verified a package ("" when unsigned).
+func pluginSigner(pkg *plugins.Package) string {
+	if pkg.SignedBy == nil {
+		return ""
+	}
+	return hex.EncodeToString(pkg.SignedBy)
+}
+
+// pluginReplaceReason says why pkg should not silently replace the installed version (installed,
+// signed by installedSigner), or "". A package signed by another key is a different publisher, except
+// when both keys are Pursae Manager's (the Manager re-signs every package and rotates its key).
+func (s *Server) pluginReplaceReason(installed, installedSigner string, pkg *plugins.Package) string {
+	m := pkg.Manifest
+	if versionLess(m.Version, installed) {
+		return fmt.Sprintf("the package is %s %s, older than the installed version %s", m.Name, m.Version, installed)
+	}
+	signer := pluginSigner(pkg)
+	if installedSigner == "" || signer == installedSigner {
+		return ""
+	}
+	if old, err := hex.DecodeString(installedSigner); err == nil && pkg.SignedBy != nil &&
+		s.plugins.isHubKey(ed25519.PublicKey(old)) && s.plugins.isHubKey(pkg.SignedBy) {
+		return ""
+	}
+	if signer == "" {
+		return fmt.Sprintf("the installed %s is signed, the package is not", m.Name)
+	}
+	return fmt.Sprintf("the package is signed by another key than the installed %s (a different publisher)", m.Name)
+}
+
 // installPackageFrom verifies a package and stores it: a new plugin is inactive, an installed one
 // keeps its status (the caller reloads it). source is hub or upload; with wantSlug set the package
-// must be that plugin.
+// must be that plugin. An older version or another signer than the installed one is refused with a
+// *pluginReplaceError.
 func (s *Server) installPackageFrom(ctx context.Context, data []byte, source, wantSlug string) (*plugins.Manifest, error) {
-	pkg, err := plugins.LoadPackage(bytes.NewReader(data), int64(len(data)), s.plugins.keys, !s.settings.Bool("plugin_allow_unsigned"))
+	return s.installPackageChecked(ctx, data, source, wantSlug, false)
+}
+
+// installPackageChecked is installPackageFrom; confirmed skips the downgrade and signer checks (the
+// administrator confirmed the replacement of an uploaded package).
+func (s *Server) installPackageChecked(ctx context.Context, data []byte, source, wantSlug string, confirmed bool) (*plugins.Manifest, error) {
+	pkg, err := plugins.LoadPackage(bytes.NewReader(data), int64(len(data)), s.plugins.trusted(), !s.settings.Bool("plugin_allow_unsigned"))
 	if err != nil {
 		if errors.Is(err, plugins.ErrUnsigned) || errors.Is(err, plugins.ErrBadSignature) {
 			return nil, fmt.Errorf("the package signature could not be verified (%v); only plugins signed with a trusted key can be installed", err)
@@ -734,17 +881,22 @@ func (s *Server) installPackageFrom(ctx context.Context, data []byte, source, wa
 	if wantSlug != "" && slug != wantSlug {
 		return nil, fmt.Errorf("the package is the plugin %q, not %q", slug, wantSlug)
 	}
-	if slug == "classic-editor" || slug == "wpgo-cache" || slug == maintSlug || slug == msSlug || slug == gontactSlug || slug == acfgoSlug || slug == golylangSlug || slug == seogoSlug || slug == gooikeSlug || slug == pixelSlug || slug == gooSlug || slug == gocdnSlug || slug == hgSlug {
+	if s.builtinPluginSlug(slug) {
 		return nil, errors.New("that slug belongs to a built-in plugin")
 	}
-	var before string
-	_ = s.store.Pool.QueryRow(ctx, `SELECT version FROM plugins WHERE slug = $1`, slug).Scan(&before)
+	var before, beforeSigner string
+	_ = s.store.Pool.QueryRow(ctx, `SELECT version, signer FROM plugins WHERE slug = $1`, slug).Scan(&before, &beforeSigner)
+	if before != "" && !confirmed {
+		if reason := s.pluginReplaceReason(before, beforeSigner, pkg); reason != "" {
+			return nil, &pluginReplaceError{Slug: slug, Reason: reason}
+		}
+	}
 	if err := writeFileAtomic(filepath.Join(s.plugins.dir, slug+".zip"), data, 0o644); err != nil {
 		return nil, err
 	}
-	_, err = s.store.Pool.Exec(ctx, `INSERT INTO plugins (slug, version, signature, source) VALUES ($1, $2, $3, $4)
-		ON CONFLICT (slug) DO UPDATE SET version = EXCLUDED.version, signature = EXCLUDED.signature, source = EXCLUDED.source, updated_at = now()`,
-		slug, pkg.Manifest.Version, fmt.Sprintf("%x", pkg.Digest), source)
+	_, err = s.store.Pool.Exec(ctx, `INSERT INTO plugins (slug, version, signature, source, signer) VALUES ($1, $2, $3, $4, $5)
+		ON CONFLICT (slug) DO UPDATE SET version = EXCLUDED.version, signature = EXCLUDED.signature, source = EXCLUDED.source, signer = EXCLUDED.signer, updated_at = now()`,
+		slug, pkg.Manifest.Version, fmt.Sprintf("%x", pkg.Digest), source, pluginSigner(pkg))
 	if err != nil {
 		return nil, err
 	}
@@ -754,6 +906,65 @@ func (s *Server) installPackageFrom(ctx context.Context, data []byte, source, wa
 		s.hubEvent("plugin_update", "plugin", slug, pkg.Manifest.Version)
 	}
 	return pkg.Manifest, nil
+}
+
+// pluginPendingPath is where an upload waiting for "Replace current with uploaded" is kept.
+func (s *Server) pluginPendingPath(slug string) string {
+	return filepath.Join(s.plugins.dir, ".pending-"+filepath.Base(slug)+".zip")
+}
+
+// reloadPlugin loads a replaced package of an active plugin with the permissions granted before that
+// the new version still declares (new ones need the consent screen).
+func (s *Server) reloadPlugin(ctx context.Context, slug string, m *plugins.Manifest, perms []byte) error {
+	var granted []plugins.Permission
+	_ = json.Unmarshal(perms, &granted)
+	keep := []plugins.Permission{}
+	for _, p := range granted {
+		for _, want := range m.Permissions {
+			if p == want {
+				keep = append(keep, p)
+			}
+		}
+	}
+	raw, _ := json.Marshal(keep)
+	if s.plugins.rt != nil {
+		_ = s.plugins.rt.Unload(ctx, slug)
+	}
+	if err := s.loadPlugin(ctx, slug, raw); err != nil {
+		return err
+	}
+	_, _ = s.store.Pool.Exec(ctx, `UPDATE plugins SET permissions = $2 WHERE slug = $1`, slug, raw)
+	s.plugins.hooks.DoAction(ctx, "init")
+	return nil
+}
+
+// pluginReplaceUpload is "Replace current with uploaded": it installs the upload kept by the refused
+// install and, when the plugin is active, loads the new package.
+func (s *Server) pluginReplaceUpload(ctx context.Context, slug string) (*plugins.Manifest, error) {
+	if !plugins.ValidSlug(slug) {
+		return nil, errors.New("Invalid plugin.")
+	}
+	path := s.pluginPendingPath(slug)
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, errors.New("The uploaded package is no longer available; upload it again.")
+	}
+	var status string
+	var perms []byte
+	_ = s.store.Pool.QueryRow(ctx, `SELECT status, permissions FROM plugins WHERE slug = $1`, slug).Scan(&status, &perms)
+	m, err := s.installPackageChecked(ctx, data, pluginSourceUpload, slug, true)
+	if err != nil {
+		return nil, err
+	}
+	_ = os.Remove(path)
+	if status == "active" {
+		if err := s.reloadPlugin(ctx, slug, m, perms); err != nil {
+			_, _ = s.store.Pool.Exec(ctx, `UPDATE plugins SET status = 'inactive' WHERE slug = $1`, slug)
+			return m, fmt.Errorf("%s was replaced by %s but could not be activated again: %v", m.Name, m.Version, err)
+		}
+	}
+	s.purgeAll(ctx)
+	return m, nil
 }
 
 // writeFileAtomic writes a file through a temporary file in the same directory and a rename, so a
@@ -834,11 +1045,33 @@ func (s *Server) pluginInstall(c *gin.Context) {
 		data, _ := io.ReadAll(io.LimitReader(f, 32<<20))
 		f.Close()
 		m, err := s.installPackage(ctx, data)
+		var replace *pluginReplaceError
+		if errors.As(err, &replace) {
+			// Like WordPress' "Replace current with uploaded": keep the upload and ask.
+			if werr := writeFileAtomic(s.pluginPendingPath(replace.Slug), data, 0o600); werr == nil {
+				c.Redirect(http.StatusFound, "/wp-admin/plugins?replace="+url.QueryEscape(replace.Slug)+"&error="+url.QueryEscape("Installation stopped: "+err.Error()+"."))
+				return
+			}
+		}
 		if err != nil {
 			c.Redirect(http.StatusFound, "/wp-admin/plugins?error="+url.QueryEscape("Installation failed: "+err.Error()))
 			return
 		}
 		c.Redirect(http.StatusFound, "/wp-admin/plugins?installed="+url.QueryEscape(m.Name))
+		return
+	}
+	if c.Query("action") == "replace-plugin" { // Replace current with uploaded
+		slug := c.Query("plugin")
+		if !s.checkNonce(c, "replace-plugin_"+slug) {
+			s.denyNonce(c)
+			return
+		}
+		m, err := s.pluginReplaceUpload(ctx, slug)
+		if err != nil {
+			c.Redirect(http.StatusFound, "/wp-admin/plugins?error="+url.QueryEscape("Installation failed: "+err.Error()))
+			return
+		}
+		c.Redirect(http.StatusFound, "/wp-admin/plugins?updated="+url.QueryEscape(m.Name+" "+m.Version))
 		return
 	}
 	if c.Query("action") == "install-plugin" {
@@ -901,7 +1134,7 @@ func (s *Server) pluginInstall(c *gin.Context) {
 				it.Updated = t.In(s.loc()).Format("January 2, 2006")
 			}
 			for _, p := range h.Permissions {
-				it.Permissions = append(it.Permissions, permRow{p, plugins.Permission(p).Description()})
+				it.Permissions = append(it.Permissions, permRow{p, plugins.Permission(p).Description(), plugins.Permission(p).Dangerous()})
 			}
 			featured = append(featured, it)
 		}
@@ -922,7 +1155,7 @@ func (s *Server) pluginInstall(c *gin.Context) {
 		it := marketItem{Slug: m.Slug, Name: m.Name, Version: m.Version, Description: m.Description, Author: m.Author,
 			Installed: installed[m.Slug], InstallURL: "/wp-admin/plugin-install?action=install-plugin&plugin=" + m.Slug + "&_wpnonce=" + s.nonce(c, "install-plugin_"+m.Slug), Icon: "dashicons-admin-plugins", IconColor: "teal"}
 		for _, p := range m.Permissions {
-			it.Permissions = append(it.Permissions, permRow{string(p), p.Description()})
+			it.Permissions = append(it.Permissions, permRow{string(p), p.Description(), p.Dangerous()})
 		}
 		featured = append(featured, it)
 	}

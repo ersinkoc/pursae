@@ -72,6 +72,9 @@ func TestHubBrandLogo(t *testing.T) {
 		if ct := resp.Header.Get("Content-Type"); ct != "image/svg+xml" {
 			t.Errorf("%s: Content-Type %q, want the Hub's SVG", p, ct)
 		}
+		if !strings.HasPrefix(resp.Header.Get("Content-Security-Policy"), "sandbox") || resp.Header.Get("X-Content-Type-Options") != "nosniff" {
+			t.Errorf("%s: the Hub's SVG is served without the sandbox CSP and nosniff", p)
+		}
 	}
 
 	brand = nil

@@ -519,7 +519,8 @@ func EnqueueStyle(s Style) {
 }
 
 // EnqueueScript adds a script to the front end and/or admin pages. Requires
-// the "content:filter" permission.
+// the "content:filter" permission, plus "content:html" for the front end and
+// "admin:scripts" for the admin (Both needs the two).
 func EnqueueScript(s Script) {
 	queueRegistration(func() {
 		if _, err := hostCall("enqueue_script", map[string]any{"handle": s.Handle, "src": s.Src, "deps": s.Deps, "where": s.Where, "in_footer": s.InFooter}); err != nil {

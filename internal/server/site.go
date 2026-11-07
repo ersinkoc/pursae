@@ -103,6 +103,7 @@ func (s *Server) site(c *gin.Context) {
 		// No site icon is a 404 in WordPress; WordPress Go answers with the Gopher.
 		if b, ct, err := s.brandFavicon(); err == nil {
 			c.Header("Cache-Control", "public, max-age=86400")
+			brandImageHeaders(c) // the Hub's logo may be an SVG (brand.go)
 			c.Data(http.StatusOK, ct, b)
 			return
 		}

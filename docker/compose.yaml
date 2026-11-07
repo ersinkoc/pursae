@@ -36,6 +36,9 @@ services:
       WPGO_HUB_URL: ${WPGO_HUB_URL:-https://hub.wordpressgo.dev}
       # Proxies whose X-Forwarded-For is believed (empty: loopback and private networks; "none": nobody).
       WPGO_TRUSTED_PROXIES: ${WPGO_TRUSTED_PROXIES:-}
+      # Development only: without a pinned release root key (ROOT_KEYS build arg), trust the keys the
+      # Manager lists for core self-updates (internal/server/hub_trust.go).
+      WPGO_TRUST_HUB_KEYS: ${WPGO_TRUST_HUB_KEYS:-1}
     ports:
       - "${WPGO_PORT:-8088}:8080"
     # A core update that does not start is rolled back on the next start (internal/coreupdate).

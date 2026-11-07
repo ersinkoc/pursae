@@ -26,6 +26,8 @@ the host chose to give it.
 | Limit | Default |
 |-------|---------|
 | Linear memory | 1024 pages = 64 MiB per plugin |
+| Concurrency | one call at a time per plugin; a request waits at most one call timeout for a busy plugin, then skips it |
+| Compiled code | kept in memory, compiled again at start-up (never loaded from a disk cache) |
 | Hook, shortcode callback | 2 s |
 | REST route handler | 10 s |
 | Instantiation + `wpgo_init` | 10 s |

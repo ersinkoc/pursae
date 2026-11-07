@@ -555,6 +555,7 @@ func (s *Server) afterPostSave(ctx context.Context, p *store.Post) {
 	s.seogoAfterSave(ctx, p) // Pursae SEO: slug-change redirect, IndexNow
 	// Pursae Web Builder: detach the doc when posts.content was edited outside the builder.
 	s.wbAfterPostSave(ctx, p)
+	s.pluginSavePost(ctx, p) // Wasm plugins: save_post_<type>, save_post (plugins_host.go)
 	if s.onPostSaved != nil {
 		s.onPostSaved(ctx, p)
 	}

@@ -7,7 +7,11 @@ section: plugins
 
 A package may contain an `assets/` directory. Its files are served at
 `/wp-content/plugins/<slug>/assets/<path>?ver=<version>` while the plugin is active and can be
-enqueued on the front end, in the admin, or both. Permission: `content:filter`.
+enqueued on the front end, in the admin, or both. Permission: `content:filter`; a **script** also
+needs `content:html` on the front end and `admin:scripts` in the admin (`wpgo.Both` needs both),
+because a script runs with the session of whoever views the page — on the front end that includes
+logged-in administrators. Both permissions are shown as "full control of the site" on the activation
+screen and are not ticked by default. A refused enqueue is logged and the asset is not printed.
 
 ## Rules
 
@@ -53,5 +57,6 @@ filter, use the absolute path `/wp-content/plugins/<slug>/assets/img/logo.svg`.
 ## Content Security Policy
 
 The site's CSP allows scripts and styles from the site's own origin only, which is where plugin
-assets are served from. Inline `<script>` tags returned from a shortcode are allowed on the
-front end (`'unsafe-inline'`) but not remote ones; prefer a packaged script.
+assets are served from. HTML a shortcode or content filter returns goes through KSES unless the
+plugin holds `content:html` ([shortcodes](shortcodes.md)), so inline `<script>` tags and event
+handlers need that permission; prefer a packaged script.

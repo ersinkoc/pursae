@@ -19,7 +19,9 @@ Settings › License ([licenses](index.md#licenses)).
 
 **Install Now** downloads the package from `download_url`, verifies that its SHA-256 matches
 `sha256` from the listing and that its signature verifies against a trusted key (the Hub's keys
-are trusted automatically), then stores it as an inactive plugin. **Activate** opens the
+are trusted automatically), then stores it as an inactive plugin and records the key that signed
+it: later versions must come from the same publisher and must not be older
+([updates and the signer](../plugins/packaging-and-signing.md#updates-and-the-signer)). **Activate** opens the
 permission screen where you grant what the plugin may do ([permissions](../plugins/permissions.md)).
 
 The **Upload Plugin** tab installs a zip you have on disk; it goes through the same signature

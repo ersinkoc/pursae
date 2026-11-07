@@ -2,11 +2,12 @@ package server
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -89,13 +90,16 @@ func (s *Server) pluginsWithUpdates(c *gin.Context, rows []pluginRow) []pluginRo
 }
 
 // hubUpdatePlugin updates one Manager-installed plugin to the newest version the Manager offers.
+// The package must come from the key that signed the installed version (or another Manager key) and
+// must not be older; the previous package stays as <slug>.zip.prev, and if the new version cannot be
+// loaded the previous one is put back.
 func (s *Server) hubUpdatePlugin(ctx context.Context, slug string) (*plugins.Manifest, error) {
 	if !plugins.ValidSlug(slug) {
 		return nil, errors.New("Invalid plugin.")
 	}
-	var installed, status, source string
+	var installed, status, source, digest, signer string
 	var perms []byte
-	if err := s.store.Pool.QueryRow(ctx, `SELECT version, status, source, permissions FROM plugins WHERE slug = $1`, slug).Scan(&installed, &status, &source, &perms); err != nil {
+	if err := s.store.Pool.QueryRow(ctx, `SELECT version, status, source, permissions, signature, signer FROM plugins WHERE slug = $1`, slug).Scan(&installed, &status, &source, &perms, &digest, &signer); err != nil {
 		return nil, errors.New("That plugin is not installed.")
 	}
 	if source != pluginSourceHub {
@@ -115,6 +119,13 @@ func (s *Server) hubUpdatePlugin(ctx context.Context, slug string) (*plugins.Man
 	if err != nil {
 		return nil, err
 	}
+	zipPath := filepath.Join(s.plugins.dir, slug+".zip")
+	prev, prevErr := os.ReadFile(zipPath)
+	if prevErr == nil {
+		if err := writeFileAtomic(zipPath+".prev", prev, 0o644); err != nil {
+			return nil, err
+		}
+	}
 	active := status == "active"
 	if active && s.plugins.rt != nil {
 		_ = s.plugins.rt.Unload(ctx, slug)
@@ -127,23 +138,17 @@ func (s *Server) hubUpdatePlugin(ctx context.Context, slug string) (*plugins.Man
 		return nil, err
 	}
 	if active {
-		var granted []plugins.Permission
-		_ = json.Unmarshal(perms, &granted)
-		var keep []plugins.Permission
-		for _, p := range granted { // only what the new version still asks for
-			for _, want := range m.Permissions {
-				if p == want {
-					keep = append(keep, p)
+		if err := s.reloadPlugin(ctx, slug, m, perms); err != nil {
+			if prevErr == nil && writeFileAtomic(zipPath, prev, 0o644) == nil { // roll back to the previous package
+				_, _ = s.store.Pool.Exec(ctx, `UPDATE plugins SET version = $2, signature = $3, signer = $4, permissions = $5 WHERE slug = $1`, slug, installed, digest, signer, perms)
+				if lerr := s.loadPlugin(ctx, slug, perms); lerr == nil {
+					s.plugins.hooks.DoAction(ctx, "init")
+					return nil, fmt.Errorf("%s %s could not be activated (%v); version %s was restored", m.Name, m.Version, err, installed)
 				}
 			}
-		}
-		raw, _ := json.Marshal(keep)
-		if err := s.loadPlugin(ctx, slug, raw); err != nil {
 			_, _ = s.store.Pool.Exec(ctx, `UPDATE plugins SET status = 'inactive' WHERE slug = $1`, slug)
 			return m, fmt.Errorf("%s was updated to %s but could not be activated again: %v", m.Name, m.Version, err)
 		}
-		_, _ = s.store.Pool.Exec(ctx, `UPDATE plugins SET permissions = $2 WHERE slug = $1`, slug, raw)
-		s.plugins.hooks.DoAction(ctx, "init")
 	}
 	s.purgeAll(ctx)
 	return m, nil

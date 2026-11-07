@@ -41,14 +41,16 @@ that are both declared and granted.
 
 | Permission | Allows |
 |------------|--------|
-| `options:read` | `get_option` (sensitive options are hidden; the plugin's own `plugin_<slug>_*` settings are readable) |
-| `options:write` | `update_option` (only `<slug>_*` and `plugin_<slug>_*` options) |
+| `options:read` | `get_option`: the plugin's own `<slug>_*` / `plugin_<slug>_*` options and an allowlist of public core options (the core's Host decides; everything else reads as not found) |
+| `options:write` | `update_option` (only `<slug>_*` and `plugin_<slug>_*` options, stored by the core as `wasm:<slug>:<name>`) |
 | `posts:read` | `get_post`, `query_posts`, and hooks that expose post data (`save_post`, `save_post_*`, `wp_insert_post`, `transition_post_status`, `wpgo_post_stats`, …) |
 | `posts:write` | `insert_post`, `update_post`, and hooks that change post data before saving (`wp_insert_post_data`, `content_save_pre`, …) |
 | `http:outbound` | `http_get` |
 | `cron` | hooks named `cron_*` / `wpgo_cron*`, `schedule_event`, `unschedule_event` |
 | `admin:notices` | `admin_notices` hooks and `add_admin_notice` |
-| `content:filter` | display filters: `the_*`, `comment_text`, `widget_text`, `body_class`, …; `register_shortcode`, `enqueue_style`, `enqueue_script` |
+| `content:filter` | display filters: `the_*`, `comment_text`, `widget_text`, `body_class`, …; `register_shortcode`, `enqueue_style`, `enqueue_script`. Shortcode output and what string content filters change go through KSES |
+| `content:html` | unsanitised shortcode / content-filter output; `enqueue_script` on the front end |
+| `admin:scripts` | `enqueue_script` in the admin (`where` `admin` or `both`) |
 | `storage` | `storage_get` / `storage_set` (private to the plugin), `transient_get` / `transient_set` / `transient_delete` |
 | `rest:routes` | `register_rest_route` |
 | `users:read` | `get_current_user` |
@@ -184,7 +186,7 @@ call `wpgo_alloc` from inside a host import.
   Guest stdout/stderr go to the plugin's log ring buffer, which you read with
   `Plugin.Logs()`.
 - **Messages:** each message may be at most `MaxMessageSize` (default 8 MiB).
-  `http_get` bodies may be at most `MaxHTTPBody` (default 4 MiB). Options,
+  `http_get` bodies may be at most `MaxHTTPBody` (default 1 MiB). Options,
   storage keys and values, and notices also have size checks. Post content is
   limited to 1 MiB, REST request and response bodies to 1 MiB, transient
   values to 1 MiB, settings pages to 50 fields, cron intervals to 60 s–1 year.

@@ -174,7 +174,7 @@ func (p *Plugin) DoShortcode(ctx context.Context, tag string, attrs map[string]s
 		p.logs.add("warning", "runtime", fmt.Sprintf("shortcode %s returned a non-string value", tag))
 		return "", errors.New("shortcode callback must return a string")
 	}
-	return out, nil
+	return p.sanitizeShortcode(out), nil
 }
 
 // ServeRest runs the route's callback for req and returns the response. The
@@ -372,4 +372,17 @@ func sortByDeps(list []Asset) []Asset {
 		visit(a, 0)
 	}
 	return out
+}
+
+// resetRegistrations forgets every hook, shortcode, route, settings page and
+// asset the plugin registered (before a fresh instance registers them again).
+func (p *Plugin) resetRegistrations() {
+	p.rt.hooks.RemoveAll(p.Slug())
+	p.state.Lock()
+	p.regs = map[RegisteredHook]HookID{}
+	p.shortcodes = nil
+	p.rest = nil
+	p.settings = nil
+	p.assets = nil
+	p.state.Unlock()
 }

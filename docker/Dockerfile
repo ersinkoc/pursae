@@ -5,10 +5,13 @@ RUN go mod download
 COPY . .
 # VERSION (optional) is the core version the binary reports, e.g. --build-arg VERSION=0.4.0.
 ARG VERSION=
+# ROOT_KEYS (optional): comma-separated base64 Ed25519 release root keys pinned into the binary; only
+# Pursae Manager keys endorsed by one of them can verify a core self-update (internal/server/hub_trust.go).
+ARG ROOT_KEYS=
 # A static binary (no ELF interpreter), so the same file runs on musl and glibc systems:
 # -buildmode=exe, and -tags nodynamic keeps github.com/gen2brain/avif off purego (it decodes AVIF
 # with its embedded WebAssembly build instead of a system libavif).
-RUN CGO_ENABLED=0 go build -trimpath -buildmode=exe -tags nodynamic -ldflags="-s -w${VERSION:+ -X wpgo/internal/server.Version=$VERSION}" -o /out/wpgo ./cmd/wpgo
+RUN CGO_ENABLED=0 go build -trimpath -buildmode=exe -tags nodynamic -ldflags="-s -w${VERSION:+ -X wpgo/internal/server.Version=$VERSION}${ROOT_KEYS:+ -X wpgo/internal/server.rootKeysLinked=$ROOT_KEYS}" -o /out/wpgo ./cmd/wpgo
 
 FROM alpine:3.22
 RUN apk add --no-cache ca-certificates tzdata && adduser -D -u 10001 wpgo \

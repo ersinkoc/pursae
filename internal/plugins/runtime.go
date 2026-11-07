@@ -31,17 +31,25 @@ type Config struct {
 	// InitTimeout bounds instantiation plus wpgo_init. Default 10s.
 	InitTimeout time.Duration
 	// MaxFailures is the number of consecutive failed callbacks (trap,
-	// timeout, panic, malformed response) after which a plugin is disabled.
+	// timeout, panic, malformed response, or a call that used at least
+	// SlowCallPercent of CallTimeout) after which a plugin is disabled.
 	// Default 5.
 	MaxFailures int
+	// SlowCallPercent is the share of CallTimeout from which a call that
+	// still succeeded counts as a failure. Default 75.
+	SlowCallPercent int
 	// LogEntries is the size of each plugin's log ring buffer. Default 256.
 	LogEntries int
 	// MaxMessageSize caps JSON messages crossing the boundary. Default 8 MiB.
 	MaxMessageSize uint32
-	// MaxHTTPBody caps http_get response bodies. Default 4 MiB.
+	// MaxHTTPBody caps http_get response bodies. Default 1 MiB, the limit
+	// the documentation promises and the core's Host enforces.
 	MaxHTTPBody int
 	// CacheDir, when set, persists compiled modules on disk; otherwise an
-	// in-memory compilation cache is used.
+	// in-memory compilation cache is used. wazero loads the native code it
+	// finds there without verifying it, so only point it at a directory no
+	// one else can write (the core does not use it; tests do, to share
+	// compilations).
 	CacheDir string
 	// CoreVersion is checked against the manifest's "requires" field.
 	CoreVersion string
@@ -72,8 +80,16 @@ func (c *Config) setDefaults() {
 		c.MaxMessageSize = 8 << 20
 	}
 	if c.MaxHTTPBody <= 0 {
-		c.MaxHTTPBody = 4 << 20
+		c.MaxHTTPBody = 1 << 20
 	}
+	if c.SlowCallPercent <= 0 || c.SlowCallPercent > 100 {
+		c.SlowCallPercent = 75
+	}
+}
+
+// slowCall is the duration from which a successful call counts as a failure.
+func (c *Config) slowCall() time.Duration {
+	return c.CallTimeout * time.Duration(c.SlowCallPercent) / 100
 }
 
 // Runtime hosts Wasm plugins in a single wazero runtime and connects them to
@@ -154,6 +170,7 @@ func (rt *Runtime) Load(ctx context.Context, pkg *Package, granted []Permission,
 		perms:     m.PermissionSet().Intersect(NewPermissionSet(granted...)),
 		host:      host,
 		regs:      map[RegisteredHook]HookID{},
+		sem:       make(chan struct{}, 1),
 		pkgAssets: pkg.Assets,
 	}
 	p.logs = newLogRing(rt.cfg.LogEntries, rt.logSink(m.Slug))
@@ -186,9 +203,9 @@ func (rt *Runtime) Load(ctx context.Context, pkg *Package, granted []Permission,
 		return fail(err)
 	}
 
-	p.mu.Lock()
+	p.lock()
 	err = p.instantiate(ctx)
-	p.mu.Unlock()
+	p.unlock()
 	if err != nil {
 		return fail(err)
 	}

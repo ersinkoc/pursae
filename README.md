@@ -161,6 +161,7 @@ Everything is configured with environment variables.
 | `WPGO_PLUGIN_KEYS` | — | Comma-separated Ed25519 public keys trusted to sign plugin packages |
 | `WPGO_MARKET_DIR` | — | Local plugin packages offered on Plugins › Add Plugin (besides the Hub catalog) |
 | `WPGO_HUB_URL` | `https://hub.wordpressgo.dev` | Pursae Manager: marketplace, licenses, release checks and self-update, and the site statistics (daily ping with version and inventory, usage events; always on). `off` disables it |
+| `WPGO_TRUST_HUB_KEYS` | `1` in compose | Builds without a pinned release root key (`ROOT_KEYS` build arg / `-ldflags -X wpgo/internal/server.rootKeysLinked=…`) refuse core self-updates; `1` trusts the keys Pursae Manager lists instead (**development only**) |
 | `WPGO_TRUST_DEV_KEY` | `1` in compose | Trust the demo signing key of the bundled example plugins (**development only**) |
 | `WPGO_EXPOSE_USERS` | unset | `1` lets visitors list accounts (REST users, `/?author=N`, users sitemap) |
 | `WPGO_TRUSTED_PROXIES` | loopback and private ranges | Proxies whose `X-Forwarded-For` is believed; `none` trusts none |
