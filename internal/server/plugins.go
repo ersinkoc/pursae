@@ -711,6 +711,7 @@ func (s *Server) pluginAction(c *gin.Context, action, slug string) {
 		return
 	case gooikeSlug: // Gooike (gooike.go)
 		s.gooikePluginAction(c, action)
+		return
 	case pixelSlug: // Pursae Pixel (pixelgo.go)
 		s.pixelPluginAction(c, action)
 		return

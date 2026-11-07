@@ -45,7 +45,7 @@ func (s *Server) exportMonths(ctx context.Context, typ string) []monthOption {
 	if typ == "attachment" {
 		q = `SELECT DISTINCT to_char(created_at AT TIME ZONE $2, 'YYYY-MM') FROM media WHERE $1 = 'attachment' ORDER BY 1 DESC`
 	}
-	rows, err := s.store.Pool.Query(ctx, q, typ, loc.String())
+	rows, err := s.store.Pool.Query(ctx, q, typ, store.PGZone(loc))
 	if err != nil {
 		return nil
 	}

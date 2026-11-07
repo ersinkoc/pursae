@@ -297,7 +297,7 @@ func (q *PostQuery) where(args *[]any) string {
 			conds = append(conds, "published_at >= "+add(from)+" AND published_at < "+add(to))
 		}
 		if q.Month == 0 && q.Day != 0 { // ?year=…&day=… without a month: that day of every month
-			conds = append(conds, "extract(day FROM published_at AT TIME ZONE "+add(locOrUTC(q.Loc).String())+") = "+add(q.Day))
+			conds = append(conds, "extract(day FROM published_at AT TIME ZONE "+add(PGZone(q.Loc))+") = "+add(q.Day))
 		}
 	}
 	return strings.Join(conds, " AND ")
@@ -308,6 +308,25 @@ func locOrUTC(loc *time.Location) *time.Location {
 		return time.UTC
 	}
 	return loc
+}
+
+// PGZone is loc as a PostgreSQL AT TIME ZONE argument. A named (IANA) zone passes through; a fixed
+// offset such as wp.SiteLocation's "UTC+3:00" is rewritten in POSIX form, whose sign is inverted
+// ("UTC-03:00" is three hours east), because PostgreSQL reads "UTC+3:00" as three hours west.
+func PGZone(loc *time.Location) string {
+	loc = locOrUTC(loc)
+	name := loc.String()
+	if name != "Local" {
+		if _, err := time.LoadLocation(name); err == nil {
+			return name
+		}
+	}
+	_, off := time.Now().In(loc).Zone()
+	sign := "-"
+	if off < 0 {
+		sign, off = "+", -off
+	}
+	return fmt.Sprintf("UTC%s%02d:%02d", sign, off/3600, off%3600/60)
 }
 
 // DateArchiveRange is the [from, to) instant range of a year, month or day archive in loc (the
@@ -665,11 +684,7 @@ func (s *Store) PostByOldSlug(ctx context.Context, slug string, year, month, day
 	sql := `SELECT ` + postCols + ` FROM posts WHERE type IN ('post','page') AND status = 'publish'
 		AND jsonb_typeof(meta->'_wp_old_slug') = 'array' AND jsonb_exists(meta->'_wp_old_slug', $1)`
 	if year != 0 {
-		tz := "UTC"
-		if loc != nil {
-			tz = loc.String()
-		}
-		args = append(args, tz, year)
+		args = append(args, PGZone(loc), year)
 		local := "(published_at AT TIME ZONE $2)"
 		sql += " AND extract(year FROM " + local + ") = $3"
 		if month != 0 {
@@ -807,7 +822,7 @@ type ArchiveMonth struct {
 func (s *Store) MonthlyArchives(ctx context.Context, loc *time.Location) ([]ArchiveMonth, error) {
 	rows, err := s.Pool.Query(ctx, `SELECT extract(year FROM published_at AT TIME ZONE $1)::int y,
 		extract(month FROM published_at AT TIME ZONE $1)::int m, count(*) FROM posts
-		WHERE type = 'post' AND status = 'publish' GROUP BY 1, 2 ORDER BY 1 DESC, 2 DESC`, loc.String())
+		WHERE type = 'post' AND status = 'publish' GROUP BY 1, 2 ORDER BY 1 DESC, 2 DESC`, PGZone(loc))
 	if err != nil {
 		return nil, err
 	}

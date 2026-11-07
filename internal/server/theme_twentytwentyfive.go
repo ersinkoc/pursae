@@ -282,7 +282,7 @@ func tt5NavItems(items []*store.MenuItem) string {
 		if it.Target != "" {
 			target = ` target="` + html.EscapeString(it.Target) + `"`
 		}
-		link := `<a class="wp-block-navigation-item__content" href="` + html.EscapeString(it.URL) + `"` + target + aria + `><span class="wp-block-navigation-item__label">` + label + `</span></a>`
+		link := `<a class="wp-block-navigation-item__content" href="` + wp.EscURL(it.URL) + `"` + target + aria + `><span class="wp-block-navigation-item__label">` + label + `</span></a>`
 		if len(it.Children) == 0 {
 			sb.WriteString(`<li class="wp-block-navigation-item` + cls + ` wp-block-navigation-link">` + link + `</li>`)
 			continue
