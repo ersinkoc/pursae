@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"path"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -764,6 +765,24 @@ func (api *restAPI) updateUser(c *gin.Context, r *restRequest) {
 	api.saveUser(c, r, u)
 }
 
+// restScopedCredentialField is the first of email, password and roles that the request tries to set
+// while authenticated by a scoped Application Password without the "users" scope ("" when none).
+func restScopedCredentialField(c *gin.Context, r *restRequest) string {
+	scopes := restScopes(c)
+	if len(scopes) == 0 || slices.Contains(scopes, "users") {
+		return ""
+	}
+	for _, f := range []string{"email", "password"} {
+		if _, ok := r.Str(c, f); ok {
+			return f
+		}
+	}
+	if _, ok := r.roles(c); ok {
+		return "roles"
+	}
+	return ""
+}
+
 // restRoles reads the roles parameter (a list or a comma string).
 func (r *restRequest) roles(c *gin.Context) ([]string, bool) {
 	if v, ok := r.Body["roles"]; ok {
@@ -839,6 +858,13 @@ func (api *restAPI) saveUser(c *gin.Context, r *restRequest, u *store.User) {
 	}
 	if v, ok := r.Str(c, "username"); ok && v != u.Login {
 		restErr(c, http.StatusBadRequest, "rest_user_invalid_argument", "Username is not editable.")
+		return
+	}
+	if field := restScopedCredentialField(c, r); field != "" {
+		// /users/me is open to every scoped Application Password, and editing one's own profile needs no
+		// capability: the credentials of the account still need the "users" scope.
+		restErr(c, http.StatusForbidden, "rest_scope_forbidden", "This application password is not allowed to change the user's "+field+".",
+			map[string]any{"required_scope": "users", "scopes": restScopes(c)})
 		return
 	}
 	if v, ok := r.Str(c, "email"); ok {
