@@ -127,10 +127,18 @@ func (s *Server) currentCache() *cache.Cache {
 
 // Tagging ----------------------------------------------------------------------
 
-// cacheTags labels a public response for tag purges. Every theme page shows the sidebar widgets
-// (recent posts, comments, archives, categories), so pages also carry "widgets".
+// cacheTags labels a public response for tag purges. Only pages that show a widget area (recent posts,
+// comments, archives, categories), a list block or a shortcode carry the blunt "widgets" tag, which
+// every public post change purges; the rest carry what they list (site_memo.go): the terms and
+// authors of their posts, the objects of their menus, "archive:<type>" for Twenty Twenty-Five's page
+// navigation and More posts or for previous/next links, and their ancestors.
 func (s *Server) cacheTags(c *gin.Context, q *siteQuery) {
-	tags := []string{"widgets"}
+	widgets, deps := s.pageCacheDeps(c.Request.Context())
+	var tags []string
+	if widgets {
+		tags = append(tags, "widgets")
+	}
+	tags = append(tags, deps...)
 	switch q.Kind {
 	case "home", "front-page":
 		tags = append(tags, "home", "archive:post")

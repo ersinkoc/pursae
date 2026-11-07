@@ -21,12 +21,11 @@ func (s *Server) avatarFor(ctx context.Context, email string, size int) string {
 	if email == "" {
 		return defaultAvatar
 	}
-	var id int64
-	_ = s.store.Pool.QueryRow(ctx, `SELECT coalesce((meta->>'avatar_id')::bigint, 0) FROM users WHERE lower(email) = $1`, email).Scan(&id)
+	id := s.avatarID(ctx, email) // request memo (site_memo.go): one lookup per email and page
 	if id == 0 {
 		return defaultAvatar
 	}
-	a, err := s.store.GetAttachment(ctx, id)
+	a, err := s.attachment(ctx, id)
 	if err != nil {
 		return defaultAvatar
 	}

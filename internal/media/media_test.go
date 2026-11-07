@@ -2,9 +2,12 @@ package media
 
 import (
 	"bytes"
+	"encoding/binary"
+	"hash/crc32"
 	"image"
 	"image/color"
 	"image/jpeg"
+	"image/png"
 	"os"
 	"path/filepath"
 	"testing"
@@ -153,5 +156,30 @@ func TestProcessImageWebPScaled(t *testing.T) {
 	}
 	if info.RelPath != "wide-scaled.webp" || info.OriginalFile != "wide.jpg" || info.Width != 2560 || info.Variants[0].File != "wide-300x100.webp" {
 		t.Errorf("scaled: %+v", info)
+	}
+}
+
+// TestProcessImagePixelLimit: an image declaring more than MaxImagePixels (a tiny file can claim a
+// 30000×30000 canvas) is measured from its header and not decoded or resized.
+func TestProcessImagePixelLimit(t *testing.T) {
+	dir := t.TempDir()
+	var buf bytes.Buffer
+	if err := png.Encode(&buf, image.NewGray(image.Rect(0, 0, 1, 1))); err != nil {
+		t.Fatal(err)
+	}
+	b := buf.Bytes()
+	// IHDR data starts at byte 16 (8 signature + 4 length + 4 type); its CRC follows the 13 data bytes.
+	binary.BigEndian.PutUint32(b[16:], 30000)
+	binary.BigEndian.PutUint32(b[20:], 30000)
+	binary.BigEndian.PutUint32(b[29:], crc32.ChecksumIEEE(b[12:29]))
+	if err := os.WriteFile(filepath.Join(dir, "bomb.png"), b, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	info, err := ProcessImage(dir, "bomb.png", []Size{{Name: "thumbnail", Width: 150, Height: 150, Crop: true}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.Width != 30000 || info.Height != 30000 || len(info.Variants) != 0 || info.RelPath != "bomb.png" {
+		t.Errorf("info %+v", info)
 	}
 }

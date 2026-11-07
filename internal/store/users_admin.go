@@ -117,7 +117,7 @@ func (s *Store) QueryUsers(ctx context.Context, q UserQuery) ([]*User, int, erro
 		q.Page = 1
 	}
 	rows, err := s.Pool.Query(ctx, `SELECT `+prefixed("u", userCols)+` FROM users u WHERE `+cond+` ORDER BY `+order+` `+dir+
-		fmt.Sprintf(` LIMIT %d OFFSET %d`, q.PerPage, (q.Page-1)*q.PerPage), args...)
+		limitOffset(q.PerPage, q.Page), args...)
 	if err != nil {
 		return nil, 0, err
 	}

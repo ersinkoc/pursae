@@ -144,3 +144,21 @@ func TestFrontPageLink(t *testing.T) {
 		t.Errorf("posts on the front: page permalink = %s", got)
 	}
 }
+
+// TestPermalinkLookupsOnlyWhenUsed: %category% and %author% are looked up only when the structure
+// has them (each lookup is a query; a loop of posts used to pay both for every link).
+func TestPermalinkLookupsOnlyWhenUsed(t *testing.T) {
+	date := time.Date(2026, 10, 3, 12, 0, 0, 0, time.UTC)
+	post := &store.Post{ID: 7, Type: "post", Slug: "hello-world", Status: "publish", PublishedAt: &date, AuthorID: 3}
+	cats, authors := 0, 0
+	b := &Builder{Home: "http://ex.test", Structure: "/%year%/%postname%/", Loc: time.UTC,
+		FirstCategory: func(*store.Post) *store.Term { cats++; return &store.Term{Slug: "news"} },
+		AuthorSlug:    func(int64) string { authors++; return "ada" }}
+	if got := b.Permalink(post); got != "http://ex.test/2026/hello-world/" || cats != 0 || authors != 0 {
+		t.Errorf("permalink %s, %d category and %d author lookups", got, cats, authors)
+	}
+	b.Structure = "/%category%/%author%/%postname%/"
+	if got := b.Permalink(post); got != "http://ex.test/news/ada/hello-world/" || cats != 1 || authors != 1 {
+		t.Errorf("permalink %s, %d category and %d author lookups", got, cats, authors)
+	}
+}

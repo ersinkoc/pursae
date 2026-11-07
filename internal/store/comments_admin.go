@@ -82,7 +82,7 @@ func (s *Store) QueryComments(ctx context.Context, q CommentQuery) ([]*Comment, 
 		q.Page = 1
 	}
 	rows, err := s.Pool.Query(ctx, `SELECT `+prefixed("c", commentCols)+` FROM comments c WHERE `+cond+
-		` ORDER BY `+order+` `+dir+`, c.id `+dir+fmt.Sprintf(` LIMIT %d OFFSET %d`, q.PerPage, (q.Page-1)*q.PerPage), args...)
+		` ORDER BY `+order+` `+dir+`, c.id `+dir+limitOffset(q.PerPage, q.Page), args...)
 	if err != nil {
 		return nil, 0, err
 	}

@@ -151,7 +151,9 @@ func newServer(ctx context.Context, cfg config.Config, pool *pgxpool.Pool, sb *s
 // calls aimed at the old paths still succeed.
 func (s *Server) Handler() http.Handler {
 	app := s.appHandler()
-	return s.opsHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { // probes, request ID (ops_http.go)
+	// Outermost: probes and the request ID (ops_http.go); then gzip for what Pursae Cache does not serve
+	// compressed itself (compress.go).
+	return s.opsHandler(gzipResponses(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if s.adminsecOn() { // AdminSecGo: blocked IPs, the custom login URL, security headers (adminsec.go)
 			var done bool
 			if w, r, done = s.adminsecFront(w, r); done {
@@ -172,7 +174,7 @@ func (s *Server) Handler() http.Handler {
 			return
 		}
 		app.ServeHTTP(w, r)
-	}))
+	})))
 }
 
 // appHandler is the app without the page cache.
@@ -570,8 +572,7 @@ func (s *Server) links(ctx context.Context) *links.Builder {
 		return a
 	}
 	b.FirstCategory = func(p *store.Post) *store.Term {
-		m, _ := s.store.TermsForPosts(ctx, []int64{p.ID}, "category")
-		if ts := m[p.ID]; len(ts) > 0 {
+		if ts := s.postTerms(ctx, p.ID, "category"); len(ts) > 0 { // request memo (site_memo.go)
 			return ts[0]
 		}
 		return nil
@@ -590,11 +591,10 @@ func (s *Server) links(ctx context.Context) *links.Builder {
 		return path
 	}
 	b.AuthorSlug = func(id int64) string {
-		u, err := s.store.UserByID(ctx, id)
-		if err != nil {
-			return ""
+		if u := s.displayUser(ctx, id); u != nil { // request memo (site_memo.go)
+			return u.Nicename
 		}
-		return u.Nicename
+		return ""
 	}
 	b.TypeHierarchical = siteTypeHierarchical
 	if s.settings.String("show_on_front") == "page" {

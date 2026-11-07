@@ -114,7 +114,7 @@ func (s *Server) gontactSubmit(c *gin.Context, f *gfForm, user *store.User, nonc
 }
 
 func gfUnitTagClean(v string) string {
-	if regexp.MustCompile(`^wpcf7-f[0-9]+(-p[0-9]+)?-o[0-9]+$`).MatchString(v) {
+	if gfUnitTagRe.MatchString(v) {
 		return v
 	}
 	return ""
@@ -172,7 +172,7 @@ func (sub *gfSubmission) setupPostedData() {
 		}
 		if t.BaseType == "url" {
 			for i, v := range vals {
-				if v != "" && !regexp.MustCompile(`(?i)^[a-z][a-z0-9.+-]*:`).MatchString(v) && strings.Contains(v, ".") {
+				if v != "" && !gfSchemeRe.MatchString(v) && strings.Contains(v, ".") {
 					vals[i] = "http://" + strings.TrimLeft(v, "/")
 				}
 			}
@@ -341,7 +341,7 @@ func (sub *gfSubmission) validate() bool {
 // gfCanonicalize is wpcf7_canonicalize() with strip_separators: lower case, no blanks or dashes.
 func gfCanonicalize(v string) string {
 	v = strings.ToLower(strings.TrimSpace(v))
-	return regexp.MustCompile(`[\s\x{00a0}\x{200b}-\x{200d}\x{2060}\x{feff}\x{3000}\-\x{2010}-\x{2015}]+`).ReplaceAllString(v, "")
+	return gfTelStripRe.ReplaceAllString(v, "")
 }
 
 // gontactQuizHash is wp_hash( $answer, 'wpcf7_quiz' ).
@@ -416,8 +416,8 @@ func (sub *gfSubmission) validateFile(t *gfTag) {
 // gfSanitizeFileName is sanitize_file_name() for uploads: no paths, no odd characters.
 func gfSanitizeFileName(name string) string {
 	name = filepath.Base(strings.ReplaceAll(name, "\\", "/"))
-	name = regexp.MustCompile(`[?\[\]/\\=<>:;,'"&$#*()|~`+"`"+`!{}%+’«»”“\x00-\x1f]+`).ReplaceAllString(name, "")
-	name = regexp.MustCompile(`[\s-]+`).ReplaceAllString(name, "-")
+	name = gfFileSpecialRe.ReplaceAllString(name, "")
+	name = gfFileDashRe.ReplaceAllString(name, "-")
 	name = strings.Trim(name, ".-_")
 	if name == "" {
 		name = "unnamed-file"
@@ -428,7 +428,7 @@ func gfSanitizeFileName(name string) string {
 // gfAntiscript is wpcf7_antiscript_file_name(): script extensions get an underscore.
 func gfAntiscript(name string) string {
 	ext := strings.ToLower(filepath.Ext(name))
-	if regexp.MustCompile(`^\.(php|phtml|pht|phar|pl|py|cgi|asp|aspx|js|sh|exe|bat|html?|svg)\d*$`).MatchString(ext) {
+	if gfBadExtRe.MatchString(ext) {
 		return name + "_.txt"
 	}
 	return name
@@ -589,7 +589,7 @@ func (sub *gfSubmission) result() map[string]any {
 			idref = inv.idref
 		}
 		invalid = append(invalid, map[string]any{"field": inv.name, "message": inv.reason, "idref": idref,
-			"error_id": regexp.MustCompile(`[^0-9a-zA-Z_-]+`).ReplaceAllString(sub.unitTag+"-ve-"+inv.name, "")})
+			"error_id": gfNonIDRe.ReplaceAllString(sub.unitTag+"-ve-"+inv.name, "")})
 	}
 	out["into"] = "#" + sub.unitTag
 	out["invalid_fields"] = invalid
@@ -907,3 +907,13 @@ func (s *Server) gontactDeleteREST(c *gin.Context, r *restRequest) {
 	}
 	restJSON(c, http.StatusOK, map[string]any{"deleted": true})
 }
+
+// Compiled once (they used to be compiled on every call).
+var (
+	gfUnitTagRe     = regexp.MustCompile(`^wpcf7-f[0-9]+(-p[0-9]+)?-o[0-9]+$`)
+	gfSchemeRe      = regexp.MustCompile(`(?i)^[a-z][a-z0-9.+-]*:`)
+	gfTelStripRe    = regexp.MustCompile(`[\s\x{00a0}\x{200b}-\x{200d}\x{2060}\x{feff}\x{3000}\-\x{2010}-\x{2015}]+`)
+	gfFileSpecialRe = regexp.MustCompile(`[?\[\]/\\=<>:;,'"&$#*()|~` + "`" + `!{}%+’«»”“\x00-\x1f]+`)
+	gfFileDashRe    = regexp.MustCompile(`[\s-]+`)
+	gfBadExtRe      = regexp.MustCompile(`^\.(php|phtml|pht|phar|pl|py|cgi|asp|aspx|js|sh|exe|bat|html?|svg)\d*$`)
+)

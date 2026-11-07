@@ -90,6 +90,23 @@ func (s *Store) GetPost(ctx context.Context, id int64) (*Post, error) {
 	return scanPost(s.Pool.QueryRow(ctx, `SELECT `+postCols+` FROM posts WHERE id = $1`, id))
 }
 
+// PostsByIDs loads several posts (any status) in one query; missing ids are absent from the map.
+func (s *Store) PostsByIDs(ctx context.Context, ids []int64) (map[int64]*Post, error) {
+	out := map[int64]*Post{}
+	if len(ids) == 0 {
+		return out, nil
+	}
+	rows, err := s.Pool.Query(ctx, `SELECT `+postCols+` FROM posts WHERE id = ANY($1)`, ids)
+	if err != nil {
+		return nil, err
+	}
+	posts, err := scanPosts(rows)
+	for _, p := range posts {
+		out[p.ID] = p
+	}
+	return out, err
+}
+
 // PostBySlug finds a post of the given type by slug. With parentPath empty the parent is ignored.
 func (s *Store) PostBySlug(ctx context.Context, typ, slug string) (*Post, error) {
 	args := []any{typ, slug}
@@ -226,7 +243,11 @@ func (q *PostQuery) where(args *[]any) string {
 		return "$" + strconv.Itoa(len(*args))
 	}
 	var conds []string
-	if len(q.Types) > 0 {
+	// A single type or status is compared with "=" so the planner can walk posts_list_date
+	// (type, status, published_at DESC, id DESC) in order instead of sorting.
+	if len(q.Types) == 1 {
+		conds = append(conds, "type = "+add(q.Types[0]))
+	} else if len(q.Types) > 0 {
 		conds = append(conds, "type = ANY("+add(q.Types)+")")
 	}
 	if q.ReadableBy != 0 {
@@ -236,7 +257,9 @@ func (q *PostQuery) where(args *[]any) string {
 		}
 		conds = append(conds, "("+open+" OR author_id = "+add(q.ReadableBy)+")")
 	}
-	if len(q.Statuses) > 0 {
+	if len(q.Statuses) == 1 {
+		conds = append(conds, "status = "+add(q.Statuses[0]))
+	} else if len(q.Statuses) > 0 {
 		conds = append(conds, "status = ANY("+add(q.Statuses)+")")
 	} else {
 		conds = append(conds, "status NOT IN ('auto-draft','trash')")
@@ -266,20 +289,49 @@ func (q *PostQuery) where(args *[]any) string {
 		conds = append(conds, "sticky = "+add(*q.Sticky))
 	}
 	if q.Year != 0 {
-		tz := "UTC"
-		if q.Loc != nil {
-			tz = q.Loc.String()
+		// Date archives are a published_at range computed in the site time zone, so the index applies.
+		from, to, ok := DateArchiveRange(q.Year, q.Month, q.Day, q.Loc)
+		if !ok {
+			conds = append(conds, "false")
+		} else {
+			conds = append(conds, "published_at >= "+add(from)+" AND published_at < "+add(to))
 		}
-		local := "(published_at AT TIME ZONE " + add(tz) + ")"
-		conds = append(conds, "extract(year FROM "+local+") = "+add(q.Year))
-		if q.Month != 0 {
-			conds = append(conds, "extract(month FROM "+local+") = "+add(q.Month))
-		}
-		if q.Day != 0 {
-			conds = append(conds, "extract(day FROM "+local+") = "+add(q.Day))
+		if q.Month == 0 && q.Day != 0 { // ?year=…&day=… without a month: that day of every month
+			conds = append(conds, "extract(day FROM published_at AT TIME ZONE "+add(locOrUTC(q.Loc).String())+") = "+add(q.Day))
 		}
 	}
 	return strings.Join(conds, " AND ")
+}
+
+func locOrUTC(loc *time.Location) *time.Location {
+	if loc == nil {
+		return time.UTC
+	}
+	return loc
+}
+
+// DateArchiveRange is the [from, to) instant range of a year, month or day archive in loc (the
+// day is ignored without a month). ok is false for a month or day that does not exist.
+func DateArchiveRange(year, month, day int, loc *time.Location) (from, to time.Time, ok bool) {
+	loc = locOrUTC(loc)
+	if year < 1 || year > 9999 || month < 0 || month > 12 || day < 0 || day > 31 {
+		return from, to, false
+	}
+	switch {
+	case month == 0:
+		from = time.Date(year, 1, 1, 0, 0, 0, 0, loc)
+		to = time.Date(year+1, 1, 1, 0, 0, 0, 0, loc)
+	case day == 0:
+		from = time.Date(year, time.Month(month), 1, 0, 0, 0, 0, loc)
+		to = time.Date(year, time.Month(month)+1, 1, 0, 0, 0, 0, loc)
+	default:
+		from = time.Date(year, time.Month(month), day, 0, 0, 0, 0, loc)
+		if from.Month() != time.Month(month) { // 31 February
+			return from, to, false
+		}
+		to = time.Date(year, time.Month(month), day+1, 0, 0, 0, 0, loc)
+	}
+	return from, to, true
 }
 
 func (q *PostQuery) orderBy() string {
@@ -288,6 +340,9 @@ func (q *PostQuery) orderBy() string {
 		dir = "ASC"
 	}
 	col := "coalesce(published_at, created_at)"
+	if q.datedOnly() {
+		col = "published_at" // published, private and scheduled posts always have a date (migration 0032)
+	}
 	switch q.OrderBy {
 	case "title":
 		col = "lower(title)"
@@ -309,6 +364,34 @@ func (q *PostQuery) orderBy() string {
 	return order
 }
 
+// datedOnly reports whether every status queried always carries published_at.
+func (q *PostQuery) datedOnly() bool {
+	if len(q.Statuses) == 0 || q.ReadableBy != 0 {
+		return false
+	}
+	for _, st := range q.Statuses {
+		if st != "publish" && st != "private" && st != "future" {
+			return false
+		}
+	}
+	return true
+}
+
+// MaxPage caps page numbers so LIMIT/OFFSET stays in range however large a requested page is
+// (a page past the end is simply empty).
+const MaxPage = 1_000_000
+
+// limitOffset is the LIMIT/OFFSET clause of a 1-based page.
+func limitOffset(perPage, page int) string {
+	if page < 1 {
+		page = 1
+	}
+	if page > MaxPage {
+		page = MaxPage
+	}
+	return fmt.Sprintf(" LIMIT %d OFFSET %d", perPage, int64(page-1)*int64(perPage))
+}
+
 // QueryPosts is WP_Query for the parts the admin and the theme need.
 func (s *Store) QueryPosts(ctx context.Context, q PostQuery) ([]*Post, int, error) {
 	var args []any
@@ -319,11 +402,7 @@ func (s *Store) QueryPosts(ctx context.Context, q PostQuery) ([]*Post, int, erro
 	}
 	sql := `SELECT ` + postCols + ` FROM posts WHERE ` + where + ` ORDER BY ` + q.orderBy()
 	if q.PerPage > 0 {
-		page := q.Page
-		if page < 1 {
-			page = 1
-		}
-		sql += fmt.Sprintf(" LIMIT %d OFFSET %d", q.PerPage, (page-1)*q.PerPage)
+		sql += limitOffset(q.PerPage, q.Page)
 	}
 	rows, err := s.Pool.Query(ctx, sql, args...)
 	if err != nil {
@@ -614,24 +693,26 @@ func (s *Store) HasPublishedPosts(ctx context.Context, typ string) (bool, error)
 
 // PostDays lists the days of a month that have published posts, in the site time zone (get_calendar()).
 func (s *Store) PostDays(ctx context.Context, year, month int, loc *time.Location) ([]int, error) {
-	tz := "UTC"
-	if loc != nil {
-		tz = loc.String()
+	from, to, ok := DateArchiveRange(year, month, 0, loc)
+	if !ok || month == 0 {
+		return nil, nil
 	}
-	rows, err := s.Pool.Query(ctx, `SELECT DISTINCT extract(day FROM published_at AT TIME ZONE $1)::int FROM posts
-		WHERE type = 'post' AND status = 'publish' AND extract(year FROM published_at AT TIME ZONE $1) = $2
-		AND extract(month FROM published_at AT TIME ZONE $1) = $3 ORDER BY 1`, tz, year, month)
+	loc = locOrUTC(loc)
+	rows, err := s.Pool.Query(ctx, `SELECT published_at FROM posts WHERE type = 'post' AND status = 'publish'
+		AND published_at >= $1 AND published_at < $2 ORDER BY published_at`, from, to)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 	var days []int
 	for rows.Next() {
-		var d int
-		if err := rows.Scan(&d); err != nil {
+		var t time.Time
+		if err := rows.Scan(&t); err != nil {
 			return nil, err
 		}
-		days = append(days, d)
+		if d := t.In(loc).Day(); len(days) == 0 || days[len(days)-1] != d {
+			days = append(days, d)
+		}
 	}
 	return days, rows.Err()
 }
