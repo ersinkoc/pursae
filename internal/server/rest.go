@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -200,20 +201,20 @@ func (s *Server) restAuthUser(c *gin.Context, route, method string) (*store.User
 		if s.adminsecRESTLocked(c, user) { // AdminSecGo: block list and lockouts apply to the API too
 			return nil, errors.New("adminsec_locked")
 		}
+		if s.restLoginThrottled(c) { // the core login throttle applies to Basic auth too (app_password_auth.go)
+			return nil, errors.New("adminsec_locked")
+		}
 		u, err := s.store.UserByLoginOrEmail(c, user)
 		if err != nil {
-			if s.adminsecOn() {
-				s.adminsecLoginFailed(c, user, nil, "Unknown user (REST API).")
-			}
+			auth.CheckDummyPassword(c.Request.Context(), pass) // no timing difference for unknown users
+			s.restLoginFailed(c, user, nil, "Unknown user (REST API).")
 			return nil, errors.New("incorrect_password")
 		}
 		// Application Passwords skip the second factor: they are the way REST clients sign in.
 		if s.checkAppPassword(c, u, pass) {
 			return scopedUser(u, restScopes(c)), nil // scopes only narrow the user's capabilities
 		}
-		if s.adminsecOn() {
-			s.adminsecLoginFailed(c, user, u, "Wrong application password (REST API).")
-		}
+		s.restLoginFailed(c, user, u, "Wrong application password (REST API).")
 		return nil, errors.New("incorrect_password")
 	}
 	u := currentUser(c)
@@ -237,31 +238,27 @@ func (s *Server) restAuthUser(c *gin.Context, route, method string) (*store.User
 	return u, nil
 }
 
-// checkAppPassword verifies an Application Password (spaces are ignored, like WordPress).
+// checkAppPassword verifies an Application Password (spaces are ignored, like WordPress). The most
+// recently used password is tried first and a recent match is remembered (app_password_auth.go), so a
+// working client normally costs one argon2 check per few minutes instead of one per stored password.
 func (s *Server) checkAppPassword(c *gin.Context, u *store.User, pass string) bool {
 	pass = strings.ReplaceAll(pass, " ", "")
-	rows, err := s.store.Pool.Query(c, `SELECT id, password_hash, scopes FROM app_passwords WHERE user_id = $1`, u.ID)
-	if err != nil {
+	m, ok := s.matchAppPassword(c, u.ID, pass)
+	if !ok {
 		return false
 	}
-	defer rows.Close()
-	for rows.Next() {
-		var id int64
-		var hash string
-		var scopes []string
-		if rows.Scan(&id, &hash, &scopes) != nil {
-			continue
-		}
-		if ok, _ := auth.CheckPassword(pass, hash); ok {
-			c.Set(restAppPasswordKey, id) // the password in use (/application-passwords/introspect)
-			if scopes = normalizeAppScopes(scopes); len(scopes) > 0 {
-				c.Set(restAppScopesKey, scopes) // app_password_scopes.go
-			}
-			go s.store.Pool.Exec(c.Copy(), `UPDATE app_passwords SET last_used_at = now(), last_ip = $2 WHERE id = $1`, id, clientIP(c))
-			return true
-		}
+	scopes := normalizeAppScopes(m.scopes)
+	if len(m.scopes) > 0 && len(scopes) == 0 {
+		// Scopes that are no longer known must not turn into full access: refuse the password.
+		log.Printf("wpgo: application password %d of user %d has only unknown scopes %v; refused", m.id, u.ID, m.scopes)
+		return false
 	}
-	return false
+	c.Set(restAppPasswordKey, m.id) // the password in use (/application-passwords/introspect)
+	if len(scopes) > 0 {
+		c.Set(restAppScopesKey, scopes) // app_password_scopes.go
+	}
+	go s.store.Pool.Exec(c.Copy(), `UPDATE app_passwords SET last_used_at = now(), last_ip = $2 WHERE id = $1`, m.id, clientIP(c))
+	return true
 }
 
 const (

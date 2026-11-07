@@ -300,7 +300,7 @@ func (s *Server) pursaeThemeFiles(c *gin.Context, r *restRequest) {
 
 // themeFilesWritable is nil when the theme's files can be saved (the Theme File Editor's conditions).
 func (s *Server) themeFilesWritable(t *Theme) error {
-	if fileEditingDisabled() || (s.adminsecOn() && s.asLoad().DisableFileEdit) {
+	if s.themeFileEditError() != nil { // saveThemeFile / restoreThemeFile check it again
 		return errors.New("File editing is disabled on this site.")
 	}
 	if _, ok := s.overlay(); !ok || t.Custom {

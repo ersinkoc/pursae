@@ -21,6 +21,10 @@ const (
 	// Login throttling: this many failures from one IP within the window blocks further attempts.
 	MaxFailedLogins = 5
 	FailedWindow    = 15 * time.Minute
+	// MaxFailedLoginsPerLogin failures for one user name (from any address) within FailedWindow block
+	// further attempts at that name, so guesses spread over many addresses are bounded too. It is higher
+	// than the per-address limit so a single attacker cannot lock the owner out as easily.
+	MaxFailedLoginsPerLogin = 20
 )
 
 var ErrNoSession = errors.New("no session")
@@ -142,6 +146,49 @@ func (m *Manager) Throttled(ctx context.Context, ip string) (bool, error) {
 		WHERE ip = $1 AND NOT success AND attempted_at > now() - $2::interval`,
 		ip, fmt.Sprintf("%d seconds", int(FailedWindow.Seconds()))).Scan(&n)
 	return n >= MaxFailedLogins, err
+}
+
+// BeginAttempt counts a login attempt before its password is checked, so parallel requests cannot all
+// pass the throttle check before any of them is recorded: the attempt is stored as a failure first and
+// the counts include it. It reports throttled when the address or the user name has too many recent
+// failures; the attempt is then removed again (a blocked request is not a guess and must not extend the
+// block). Otherwise the caller checks the password and, on success, calls AttemptSucceeded with id.
+func (m *Manager) BeginAttempt(ctx context.Context, ip, login string) (id int64, throttled bool, err error) {
+	window := fmt.Sprintf("%d seconds", int(FailedWindow.Seconds()))
+	if err = m.pool.QueryRow(ctx, `INSERT INTO login_attempts(ip, login, success) VALUES ($1,$2,false) RETURNING id`, ip, login).Scan(&id); err != nil {
+		return 0, false, err
+	}
+	var byIP, byLogin int
+	err = m.pool.QueryRow(ctx, `SELECT
+		count(*) FILTER (WHERE ip = $1),
+		count(*) FILTER (WHERE lower(login) = lower($2))
+		FROM login_attempts WHERE NOT success AND attempted_at > now() - $3::interval AND (ip = $1 OR lower(login) = lower($2))`,
+		ip, login, window).Scan(&byIP, &byLogin)
+	if err != nil {
+		return id, false, err
+	}
+	if byIP > MaxFailedLogins || (login != "" && byLogin > MaxFailedLoginsPerLogin) {
+		_, _ = m.pool.Exec(ctx, `DELETE FROM login_attempts WHERE id = $1`, id)
+		return 0, true, nil
+	}
+	return id, false, nil
+}
+
+// AttemptSucceeded turns the attempt BeginAttempt stored into a success and clears this login's
+// earlier failures from the address (RecordAttempt with success).
+func (m *Manager) AttemptSucceeded(ctx context.Context, id int64, ip, login string) {
+	if id != 0 {
+		_, _ = m.pool.Exec(ctx, `UPDATE login_attempts SET success = true, updated_at = now() WHERE id = $1`, id)
+	}
+	_, _ = m.pool.Exec(ctx, `DELETE FROM login_attempts WHERE ip = $1 AND lower(login) = lower($2) AND NOT success`, ip, login)
+}
+
+// Sign is a tick-free HMAC of msg with the site secret (hex). Unlike Nonce it does not expire; callers
+// put whatever must invalidate it (a password hash, a user ID) into msg.
+func (m *Manager) Sign(msg string) string {
+	mac := hmac.New(sha256.New, m.secret)
+	mac.Write([]byte(msg))
+	return hex.EncodeToString(mac.Sum(nil))
 }
 
 func (m *Manager) RecordAttempt(ctx context.Context, ip, login string, success bool) {

@@ -447,6 +447,11 @@ func (api *restAPI) savePost(c *gin.Context, r *restRequest, typ string, id int6
 		p.Format = v
 	}
 	if v, ok := r.Bool(c, "sticky"); ok && typ == "post" {
+		// WP_REST_Posts_Controller: making a post sticky needs edit_others_posts or publish_posts.
+		if v && !u.Can("edit_others_posts", nil) && !u.Can("publish_posts", nil) {
+			restErr(c, http.StatusForbidden, "rest_cannot_assign_sticky", "Sorry, you are not allowed to make posts sticky.")
+			return
+		}
 		p.Sticky = v
 	}
 	if v, ok := r.Int(c, "featured_media"); ok {

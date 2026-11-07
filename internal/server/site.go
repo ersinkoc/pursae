@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"crypto/hmac"
 	"errors"
 	"fmt"
 	"html"
@@ -707,13 +708,20 @@ func (s *Server) passwordRequired(c *gin.Context, p *store.Post) bool {
 	if err != nil {
 		return true
 	}
-	return ck != s.auth.Nonce("postpass|"+p.Password, 0, "")
+	return !hmac.Equal([]byte(ck), []byte(s.postPassValue(p.Password)))
+}
+
+// postPassValue is the wp-postpass cookie for a post password: a tick-free HMAC with the site secret, so
+// it lasts as long as the cookie (WordPress keeps a hash of the password there) and stops matching as
+// soon as the post's password changes.
+func (s *Server) postPassValue(pw string) string {
+	return s.auth.Sign("postpass|" + pw)
 }
 
 // postPass handles the post password form (wp-login.php?action=postpass).
 func (s *Server) postPass(c *gin.Context) {
 	pw := c.PostForm("post_password")
-	http.SetCookie(c.Writer, &http.Cookie{Name: postPassCookie, Value: s.auth.Nonce("postpass|"+pw, 0, ""), Path: "/",
+	http.SetCookie(c.Writer, &http.Cookie{Name: postPassCookie, Value: s.postPassValue(pw), Path: "/",
 		MaxAge: 10 * 24 * 3600, HttpOnly: true, SameSite: http.SameSiteLaxMode})
 	c.Redirect(http.StatusFound, safeRedirect(refererPath(c), "/"))
 }
