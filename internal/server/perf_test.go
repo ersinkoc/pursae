@@ -424,3 +424,36 @@ func TestMenuAndContentImagesBatched(t *testing.T) {
 		}
 	}
 }
+
+// TestBlockLibraryHead: package themes load the block library with ?ver=; Hello Pursae loads only its
+// common rules plus the styles of the core blocks the page prints.
+func TestBlockLibraryHead(t *testing.T) {
+	ts, c, srv := testServerBuilderOff(t)
+	installAndLogin(t, ts, c)
+	ctx := context.Background()
+	var admin int64
+	_ = srv.store.Pool.QueryRow(ctx, `SELECT id FROM users ORDER BY id LIMIT 1`).Scan(&admin)
+	p := mustInsertPost(t, srv, &store.Post{Type: "post", AuthorID: admin, Title: "Quoted", Status: "publish",
+		Content: "<!-- wp:quote -->\n<blockquote class=\"wp-block-quote\"><!-- wp:paragraph -->\n<p>Hay.</p>\n<!-- /wp:paragraph --></blockquote>\n<!-- /wp:quote -->"})
+	path := pathOf(t, ts.URL, srv.links(ctx).Permalink(p))
+	anon := &http.Client{CheckRedirect: c.CheckRedirect}
+
+	installLibraryTheme(t, c, ts.URL, "byte-notes", true)
+	_, body, _ := get(t, anon, ts.URL+path)
+	if !strings.Contains(body, "href='/wp-includes/css/dist/block-library/style.min.css?ver="+Version+"'") {
+		t.Error("package theme: the block library has no ?ver=")
+	}
+
+	if err := srv.switchTheme(ctx, wbHelloSlug); err != nil {
+		t.Fatal(err)
+	}
+	_, body, _ = get(t, anon, ts.URL+path+"?hello=1")
+	if strings.Contains(body, "block-library/style.min.css") || strings.Contains(body, "wpgo:block-styles") {
+		t.Error("Hello Pursae loads the whole block library")
+	}
+	for _, want := range []string{"href='/wp-includes/css/dist/block-library/common.min.css?ver=" + Version + "'", "<style id='wp-block-styles-inline-css'>", ".wp-block-quote", "hello-pursae-css"} {
+		if !strings.Contains(body, want) {
+			t.Errorf("Hello Pursae page misses %q", want)
+		}
+	}
+}
