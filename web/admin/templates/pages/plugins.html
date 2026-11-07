@@ -15,7 +15,7 @@
 		<input type="hidden" name="plugin" value="{{.Slug}}" />
 		<input type="hidden" name="_wpnonce" value="{{$.Data.ConsentNonce}}" />
 		<fieldset><legend class="screen-reader-text">Permissions</legend>
-		{{range .Permissions}}<p><label><input type="checkbox" name="permissions[]" value="{{.Name}}" checked /> <code>{{.Name}}</code> &mdash; {{.Description}}</label></p>{{else}}<p><em>This plugin asks for no permissions.</em></p>{{end}}
+		{{range .Permissions}}<p><label><input type="checkbox" name="permissions[]" value="{{.Name}}"{{if not .Danger}} checked{{end}} /> <code>{{.Name}}</code> &mdash; {{if .Danger}}<strong>{{.Description}}</strong>{{else}}{{.Description}}{{end}}</label></p>{{else}}<p><em>This plugin asks for no permissions.</em></p>{{end}}
 		</fieldset>
 		<p><input type="submit" class="button button-primary" value="Allow and Activate" /> <a class="button" href="/wp-admin/plugins">Cancel</a></p>
 	</form>
