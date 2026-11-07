@@ -183,22 +183,7 @@ func (s *Server) themeEditor(c *gin.Context) {
 	}
 	// assets/ is the theme root that is served to the browser (style.css, screenshot.png, js/, …);
 	// templates/ holds the Go templates that take the place of WordPress's PHP template files.
-	editable := map[string]bool{".html": true, ".css": true, ".js": true, ".json": true, ".txt": true, ".svg": true, ".md": true}
-	var files []string
-	for _, dir := range []string{"assets", "templates"} {
-		base := "themes/" + theme.Slug + "/" + dir
-		_ = fs.WalkDir(s.web, base, func(p string, d fs.DirEntry, err error) error {
-			if err == nil && !d.IsDir() && editable[path.Ext(p)] {
-				rel := strings.TrimPrefix(p, base+"/")
-				if dir == "templates" {
-					rel = "templates/" + rel
-				}
-				files = append(files, rel)
-			}
-			return nil
-		})
-	}
-	sort.Strings(files)
+	files := s.themeFileList(theme.Slug)
 	file := path.Clean("/" + c.DefaultQuery("file", "style.css"))[1:]
 	src := "themes/" + theme.Slug + "/assets/" + file
 	if strings.HasPrefix(file, "templates/") {
@@ -232,6 +217,27 @@ func (s *Server) themeEditor(c *gin.Context) {
 	}
 	s.fileEditorAssets(c, d)
 	s.adminPage(c, "theme-editor", "Edit Themes", "theme-editor-php", "admin/file-editor", d)
+}
+
+// themeFileList is the theme's editable files, as the Theme File Editor names them: paths under
+// assets/ without the prefix ("style.css"), Go templates as "templates/…".
+func (s *Server) themeFileList(slug string) []string {
+	var files []string
+	for _, dir := range []string{"assets", "templates"} {
+		base := "themes/" + slug + "/" + dir
+		_ = fs.WalkDir(s.web, base, func(p string, d fs.DirEntry, err error) error {
+			if err == nil && !d.IsDir() && themeEditableExt[path.Ext(p)] {
+				rel := strings.TrimPrefix(p, base+"/")
+				if dir == "templates" {
+					rel = "templates/" + rel
+				}
+				files = append(files, rel)
+			}
+			return nil
+		})
+	}
+	sort.Strings(files)
+	return files
 }
 
 // pluginEditor is plugin-editor.php. Plugins are signed WebAssembly packages, so the editor shows the

@@ -63,6 +63,30 @@ ones; `HEAD` works wherever `GET` does and `PUT`/`PATCH` wherever `POST` does.
 | `/templates`, `/templates/lookup`, `/template-parts` | GET | empty (no site editor) |
 | `/global-styles/{id}`, `/global-styles/themes/{stylesheet}`, `/global-styles/themes/{stylesheet}/variations` | GET, POST | |
 
+## Site management (`pursae/v1`)
+
+The routes AI agents and scripts use to run a site. Each checks the capability of its admin screen
+(shown in brackets) and belongs to an [Application Password scope](authentication.md#application-password-scopes).
+
+| Route | Methods | Notes |
+|-------|---------|-------|
+| `/pursae/v1/plugins` | GET, POST | list built-in and Wasm plugins (`activate_plugins`); `POST {"package": "<base64 zip>"}` installs a signed package, inactive (`install_plugins`) |
+| `/pursae/v1/plugins/{slug}` | GET, DELETE | one plugin; `DELETE` removes an installed Wasm plugin (`delete_plugins`; built-in plugins only deactivate) |
+| `/pursae/v1/plugins/{slug}/activate`, `/deactivate` | POST | the Plugins screen's own action; a Wasm plugin gets `permissions` (array; default: all its manifest asks for) |
+| `/pursae/v1/themes` | GET, POST | list themes (`switch_themes`); `POST {"package": "<base64 zip>", "activate": true}` installs a [theme package](../themes/index.md) (`install_themes`) |
+| `/pursae/v1/themes/{slug}/activate` | POST | switch theme |
+| `/pursae/v1/themes/{slug}/files` | GET | editable files (`edit_themes`): `style.css`, asset paths, `templates/…` |
+| `/pursae/v1/themes/{slug}/file?file=…` | GET, POST, DELETE | read; `POST {"file", "content"}` saves like the Theme File Editor (template parse + render check, rolled back on failure); `DELETE` restores the original. Refused while file editing is disabled (`WPGO_DISALLOW_FILE_EDIT` or Pursae Security) |
+| `/pursae/v1/cache` | GET | Pursae Cache status, stats and crawler (`manage_options`) |
+| `/pursae/v1/cache/purge` | POST | `{"all": true}`, `{"url": "/about/"}`, `{"post": 12}` or `{"tags": ["home"]}` |
+| `/pursae/v1/cache/settings` | GET, POST | the `wpgo_cache_*` / `wpgo_opt_*` options (typed); saving rebuilds the cache |
+| `/pursae/v1/seo/settings` | GET, POST | Pursae SEO site-wide settings; `POST {"settings": {…}}` merges a partial object |
+| `/pursae/v1/seo/redirects` | GET, POST | list; create or update (`id`) with `source`, `target`, `code` (301, 302, 307, 410, 451), `match_type`, `status` |
+| `/pursae/v1/seo/redirects/{id}` | DELETE | |
+| `/pursae/v1/options` | GET | the option groups below (`manage_options`) |
+| `/pursae/v1/options/{group}` | GET, POST | `gocdn`, `headless`, `maintenance`, `security`, `seo`, `smtp`: the built-in plugin's settings object. Secrets (passwords, keys, tokens) read as `********`; `POST {"settings": {…}}` deep-merges a partial object, and a `********` sent back keeps the stored secret |
+| `/pursae/v1/mcp` | POST | the [MCP server](../operations/ai-mcp.md) (streamable HTTP) |
+
 ## Other namespaces
 
 | Route | Methods | Notes |

@@ -29,12 +29,14 @@ type appPassword struct {
 	CreatedAt time.Time
 	LastUsed  *time.Time
 	LastIP    string
+	Scopes    []string // empty: the user's full capabilities (app_password_scopes.go)
 }
 
 // appPasswordRow is one row of the profile's application-passwords table.
 type appPasswordRow struct {
 	appPassword
 	Created, Used string
+	ScopeList     string // "Full access" or the scope labels
 }
 
 // appPasswordCreated is the one-time display of a new password (chunk_password()).
@@ -78,11 +80,11 @@ func chunkAppPassword(raw string) string {
 	return strings.TrimSpace(strings.Join(append(parts, raw), " "))
 }
 
-const appPasswordCols = `id, uuid::text, app_id, name, created_at, last_used_at, last_ip`
+const appPasswordCols = `id, uuid::text, app_id, name, created_at, last_used_at, last_ip, scopes`
 
 func scanAppPassword(row interface{ Scan(dest ...any) error }) (*appPassword, error) {
 	ap := &appPassword{}
-	if err := row.Scan(&ap.ID, &ap.UUID, &ap.AppID, &ap.Name, &ap.CreatedAt, &ap.LastUsed, &ap.LastIP); err != nil {
+	if err := row.Scan(&ap.ID, &ap.UUID, &ap.AppID, &ap.Name, &ap.CreatedAt, &ap.LastUsed, &ap.LastIP, &ap.Scopes); err != nil {
 		return nil, err
 	}
 	return ap, nil
@@ -132,7 +134,7 @@ var (
 
 // createAppPassword is WP_Application_Passwords::create_new_application_password(): returns the plaintext
 // password (shown once) and the stored record.
-func (s *Server) createAppPassword(c *gin.Context, userID int64, name, appID string) (string, *appPassword, error) {
+func (s *Server) createAppPassword(c *gin.Context, userID int64, name, appID string, scopes ...string) (string, *appPassword, error) {
 	name = strings.TrimSpace(name)
 	if name == "" {
 		return "", nil, errAppPasswordEmptyName
@@ -155,8 +157,8 @@ func (s *Server) createAppPassword(c *gin.Context, userID int64, name, appID str
 		return "", nil, err
 	}
 	var id int64
-	if err := s.store.Pool.QueryRow(c, `INSERT INTO app_passwords(user_id, uuid, app_id, name, password_hash) VALUES ($1, $2::uuid, $3, $4, $5) RETURNING id`,
-		userID, newUUID(), strings.ToLower(appID), name, hash).Scan(&id); err != nil {
+	if err := s.store.Pool.QueryRow(c, `INSERT INTO app_passwords(user_id, uuid, app_id, name, password_hash, scopes) VALUES ($1, $2::uuid, $3, $4, $5, $6) RETURNING id`,
+		userID, newUUID(), strings.ToLower(appID), name, hash, normalizeAppScopes(scopes)).Scan(&id); err != nil {
 		return "", nil, err
 	}
 	ap, err := s.appPasswordByID(c, id)
@@ -170,6 +172,13 @@ func (s *Server) renameAppPassword(c *gin.Context, ap *appPassword, name string)
 	}
 	_, err := s.store.Pool.Exec(c, `UPDATE app_passwords SET name = $2 WHERE id = $1`, ap.ID, name)
 	ap.Name = name
+	return err
+}
+
+// setAppPasswordScopes replaces a password's scopes (empty: full user capabilities).
+func (s *Server) setAppPasswordScopes(c *gin.Context, ap *appPassword, scopes []string) error {
+	ap.Scopes = normalizeAppScopes(scopes)
+	_, err := s.store.Pool.Exec(c, `UPDATE app_passwords SET scopes = $2 WHERE id = $1`, ap.ID, ap.Scopes)
 	return err
 }
 
@@ -189,7 +198,16 @@ func (s *Server) appPasswordRows(c *gin.Context, u *store.User) []appPasswordRow
 	loc := s.loc()
 	var out []appPasswordRow
 	for _, ap := range list {
-		row := appPasswordRow{appPassword: *ap, Created: ap.CreatedAt.In(loc).Format("January 2, 2006"), Used: "—"}
+		row := appPasswordRow{appPassword: *ap, Created: ap.CreatedAt.In(loc).Format("January 2, 2006"), Used: "—", ScopeList: "Full access"}
+		if len(ap.Scopes) > 0 {
+			var labels []string
+			for _, sc := range ap.Scopes {
+				if d := appScopeBySlug(sc); d != nil {
+					labels = append(labels, d.Label)
+				}
+			}
+			row.ScopeList = strings.Join(labels, ", ")
+		}
 		if ap.LastUsed != nil {
 			row.Used = ap.LastUsed.In(loc).Format("January 2, 2006")
 		}
@@ -222,7 +240,7 @@ func (s *Server) appPasswordsForm(c *gin.Context, target *store.User, back strin
 		}
 		c.Redirect(http.StatusFound, back)
 	default:
-		plain, ap, err := s.createAppPassword(c, target.ID, c.PostForm("new_application_password_name"), "")
+		plain, ap, err := s.createAppPassword(c, target.ID, c.PostForm("new_application_password_name"), "", c.PostFormArray("new_application_password_scopes[]")...)
 		if err != nil {
 			render(s.profileView(c, target), notice{Type: "error", Message: template.HTML(template.HTMLEscapeString(err.Error()))})
 			return
@@ -266,7 +284,7 @@ func (s *Server) authorizeApplication(c *gin.Context) {
 			return
 		}
 		if _, approve := c.GetPostForm("approve"); approve {
-			plain, ap, err := s.createAppPassword(c, u.ID, d["AppName"].(string), d["AppID"].(string))
+			plain, ap, err := s.createAppPassword(c, u.ID, d["AppName"].(string), d["AppID"].(string), c.PostFormArray("scopes[]")...)
 			if err != nil {
 				d["Error"] = err.Error()
 			} else if success := d["SuccessURL"].(string); success != "" {

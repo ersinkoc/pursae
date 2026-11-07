@@ -65,6 +65,11 @@ func main() {
 		log.Fatal(coreupdate.Launch(exe, dir, args))
 	case "version":
 		fmt.Println("Pursae", server.Version)
+	case "mcp": // stdio MCP bridge to a site's /wp-json/pursae/v1/mcp (mcp.go)
+		if err := runMCP(ctx, os.Args[2:], os.Stdin, os.Stdout, os.Stderr); err != nil {
+			fmt.Fprintln(os.Stderr, "wpgo mcp:", err)
+			os.Exit(1)
+		}
 	case "adminsec": // AdminSecGo recovery: disable-hide-login, reset-user <login>, unlock-all, deactivate
 		pool, err := db.Connect(ctx, cfg.DatabaseURL)
 		if err != nil {
@@ -77,7 +82,7 @@ func main() {
 		}
 		fmt.Println(out)
 	default:
-		flag.Usage = func() { fmt.Fprintln(os.Stderr, "usage: wpgo [serve|launch|migrate|version|adminsec]") }
+		flag.Usage = func() { fmt.Fprintln(os.Stderr, "usage: wpgo [serve|launch|migrate|version|adminsec|mcp]") }
 		flag.Usage()
 		os.Exit(2)
 	}

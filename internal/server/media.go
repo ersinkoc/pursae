@@ -108,6 +108,12 @@ func (s *Server) uploadURL(c context.Context, rel string) string {
 // saveUpload stores an uploaded file, generates image sizes and inserts the attachment (media_handle_upload()).
 func (s *Server) saveUpload(c *gin.Context, field string, postID int64) (*store.Attachment, error) {
 	u := currentUser(c)
+	if u == nil {
+		u = restCurrent(c) // REST uploads signed in with an Application Password have no cookie user
+	}
+	if u == nil {
+		return nil, errors.New("Sorry, you are not allowed to upload files.")
+	}
 	fh, err := c.FormFile(field)
 	if err != nil {
 		return nil, errors.New("No file was uploaded.")

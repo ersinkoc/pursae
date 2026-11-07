@@ -1,8 +1,10 @@
 package server
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -29,7 +31,11 @@ func (api *restAPI) registerAppPasswords() {
 }
 
 func (s *Server) restAppPassword(c *gin.Context, u *store.User, ap *appPassword, plain string) map[string]any {
-	out := map[string]any{"uuid": ap.UUID, "app_id": ap.AppID, "name": ap.Name, "created": gmt(ap.CreatedAt), "last_used": nil, "last_ip": nil}
+	scopes := ap.Scopes
+	if scopes == nil {
+		scopes = []string{}
+	}
+	out := map[string]any{"uuid": ap.UUID, "app_id": ap.AppID, "name": ap.Name, "created": gmt(ap.CreatedAt), "last_used": nil, "last_ip": nil, "scopes": scopes}
 	if ap.LastUsed != nil {
 		out["last_used"] = gmt(*ap.LastUsed)
 	}
@@ -113,7 +119,12 @@ func (api *restAPI) createAppPassword(c *gin.Context, r *restRequest) {
 		return
 	}
 	appID, _ := r.Str(c, "app_id")
-	plain, ap, err := api.s.createAppPassword(c, u.ID, name, appID)
+	scopes, err := restScopeParam(c, r)
+	if err != nil {
+		restErr(c, http.StatusBadRequest, "rest_invalid_param", err.Error(), map[string]any{"params": map[string]string{"scopes": err.Error()}})
+		return
+	}
+	plain, ap, err := api.s.createAppPassword(c, u.ID, name, appID, scopes...)
 	if err != nil {
 		code := "application_password_empty_name"
 		if err == errAppPasswordDuplicateName {
@@ -154,6 +165,17 @@ func (api *restAPI) updateAppPassword(c *gin.Context, r *restRequest) {
 	if name, has := r.Str(c, "name"); has {
 		if err := api.s.renameAppPassword(c, ap, name); err != nil {
 			restErr(c, http.StatusBadRequest, "application_password_empty_name", err.Error())
+			return
+		}
+	}
+	if _, has := r.get(c, "scopes"); has {
+		scopes, err := restScopeParam(c, r)
+		if err != nil {
+			restErr(c, http.StatusBadRequest, "rest_invalid_param", err.Error(), map[string]any{"params": map[string]string{"scopes": err.Error()}})
+			return
+		}
+		if err := api.s.setAppPasswordScopes(c, ap, scopes); err != nil {
+			restErr(c, http.StatusInternalServerError, "rest_cannot_update", err.Error())
 			return
 		}
 	}
@@ -214,4 +236,33 @@ func (api *restAPI) introspectAppPassword(c *gin.Context, r *restRequest) {
 	now := time.Now()
 	ap.LastUsed, ap.LastIP = &now, clientIP(c)
 	restJSON(c, http.StatusOK, api.s.restAppPassword(c, u, ap, ""))
+}
+
+// restScopeParam reads "scopes" (a JSON array or a comma list); unknown scope names are an error.
+func restScopeParam(c *gin.Context, r *restRequest) ([]string, error) {
+	v, ok := r.get(c, "scopes")
+	if !ok || v == nil {
+		return nil, nil
+	}
+	var list []string
+	switch t := v.(type) {
+	case []any:
+		for _, x := range t {
+			if sx, ok := x.(string); ok {
+				list = append(list, sx)
+			}
+		}
+	case string:
+		for _, x := range strings.Split(t, ",") {
+			if x = strings.TrimSpace(x); x != "" {
+				list = append(list, x)
+			}
+		}
+	}
+	for _, x := range list {
+		if appScopeBySlug(strings.ToLower(strings.TrimSpace(x))) == nil {
+			return nil, fmt.Errorf("unknown scope %q", x)
+		}
+	}
+	return normalizeAppScopes(list), nil
 }

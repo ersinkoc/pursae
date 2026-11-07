@@ -45,6 +45,7 @@ type profileData struct {
 	DismissURL   string
 	// Application Passwords (profile.php's application-passwords section).
 	AppPasswords   []appPasswordRow
+	AppScopes      []appScope // the scope checkboxes of "Add New Application Password"
 	NewAppPassword *appPasswordCreated
 	// AdminSec is AdminSecGo's block: two-step login status and the session list.
 	AdminSec template.HTML
@@ -120,6 +121,7 @@ func (s *Server) profileView(c *gin.Context, target *store.User) profileData {
 		}
 	}
 	d.AppPasswords = s.appPasswordRows(c, target)
+	d.AppScopes = appScopes
 	d.AdminSec = s.adminsecProfileHTML(c, target, d.Self)
 	return d
 }

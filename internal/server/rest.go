@@ -198,7 +198,7 @@ func (s *Server) restAuthUser(c *gin.Context, route, method string) (*store.User
 		}
 		// Application Passwords skip the second factor: they are the way REST clients sign in.
 		if s.checkAppPassword(c, u, pass) {
-			return u, nil
+			return scopedUser(u, restScopes(c)), nil // scopes only narrow the user's capabilities
 		}
 		if s.adminsecOn() {
 			s.adminsecLoginFailed(c, user, u, "Wrong application password (REST API).")
@@ -229,7 +229,7 @@ func (s *Server) restAuthUser(c *gin.Context, route, method string) (*store.User
 // checkAppPassword verifies an Application Password (spaces are ignored, like WordPress).
 func (s *Server) checkAppPassword(c *gin.Context, u *store.User, pass string) bool {
 	pass = strings.ReplaceAll(pass, " ", "")
-	rows, err := s.store.Pool.Query(c, `SELECT id, password_hash FROM app_passwords WHERE user_id = $1`, u.ID)
+	rows, err := s.store.Pool.Query(c, `SELECT id, password_hash, scopes FROM app_passwords WHERE user_id = $1`, u.ID)
 	if err != nil {
 		return false
 	}
@@ -237,11 +237,15 @@ func (s *Server) checkAppPassword(c *gin.Context, u *store.User, pass string) bo
 	for rows.Next() {
 		var id int64
 		var hash string
-		if rows.Scan(&id, &hash) != nil {
+		var scopes []string
+		if rows.Scan(&id, &hash, &scopes) != nil {
 			continue
 		}
 		if ok, _ := auth.CheckPassword(pass, hash); ok {
 			c.Set(restAppPasswordKey, id) // the password in use (/application-passwords/introspect)
+			if scopes = normalizeAppScopes(scopes); len(scopes) > 0 {
+				c.Set(restAppScopesKey, scopes) // app_password_scopes.go
+			}
 			go s.store.Pool.Exec(c.Copy(), `UPDATE app_passwords SET last_used_at = now(), last_ip = $2 WHERE id = $1`, id, clientIP(c))
 			return true
 		}
@@ -304,6 +308,11 @@ func (api *restAPI) serve(c *gin.Context, route string) {
 		return
 	}
 	route = "/" + strings.Trim(route, "/")
+	if !restScopeAllows(c, route) { // Application Password scopes (app_password_scopes.go)
+		restErr(c, http.StatusForbidden, "rest_scope_forbidden", "This application password is not allowed to use this route.",
+			map[string]any{"required_scope": appScopeForRoute(route), "scopes": restScopes(c)})
+		return
+	}
 	builderOn := s.wbOn()
 	for _, r := range api.routes {
 		if (!builderOn && r.Namespace == webbuilder.RESTNamespace) || s.gontactRESTHidden(r.Namespace) || (r.Namespace == pllRESTNamespace && !s.golylangOn()) || s.gooikeRESTHidden(r.Namespace) {

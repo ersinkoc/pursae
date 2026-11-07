@@ -141,6 +141,11 @@
 		<input type="text" size="30" id="new_application_password_name" name="new_application_password_name" class="input" aria-required="true" aria-describedby="new_application_password_name_desc" />
 		<p class="description" id="new_application_password_name_desc">Required to create an Application Password, but not to update the user.</p>
 	</div>
+	<fieldset class="form-field application-password-scopes">
+		<legend>Limit access to</legend>
+		{{range .AppScopes}}<label style="display:block;margin:2px 0"><input type="checkbox" name="new_application_password_scopes[]" value="{{.Slug}}" /> {{.Label}} <span class="description">&mdash; {{.Description}}</span></label>
+		{{end}}<p class="description">Leave every box unticked to give the password all of this user&#8217;s permissions. Scopes only narrow what the user can already do.</p>
+	</fieldset>
 	<button type="submit" name="do_new_application_password" value="1" id="do_new_application_password" class="button button-secondary">Add New Application Password</button>
 </div>
 <div class="application-passwords-list-table-wrapper" style="margin-top:20px">
@@ -150,6 +155,7 @@
 	<th scope="col" id="created" class="manage-column column-created">Created</th>
 	<th scope="col" id="last_used" class="manage-column column-last_used">Last Used</th>
 	<th scope="col" id="last_ip" class="manage-column column-last_ip">Last IP</th>
+	<th scope="col" id="scopes" class="manage-column column-scopes">Access</th>
 	<th scope="col" id="revoke" class="manage-column column-revoke">Revoke</th>
 </tr></thead>
 <tbody id="the-list">
@@ -158,14 +164,16 @@
 	<td class="created column-created" data-colname="Created">{{.Created}}</td>
 	<td class="last_used column-last_used" data-colname="Last Used">{{.Used}}</td>
 	<td class="last_ip column-last_ip" data-colname="Last IP">{{.LastIP}}</td>
+	<td class="scopes column-scopes" data-colname="Access">{{.ScopeList}}</td>
 	<td class="revoke column-revoke" data-colname="Revoke"><button type="submit" name="revoke_application_password" value="{{.UUID}}" class="button delete" aria-label="Revoke &#8220;{{.Name}}&#8221;">Revoke</button></td>
-</tr>{{else}}<tr class="no-items"><td class="colspanchange" colspan="5">No items found.</td></tr>{{end}}
+</tr>{{else}}<tr class="no-items"><td class="colspanchange" colspan="6">No items found.</td></tr>{{end}}
 </tbody>
 <tfoot><tr>
 	<th scope="col" class="manage-column column-name column-primary">Name</th>
 	<th scope="col" class="manage-column column-created">Created</th>
 	<th scope="col" class="manage-column column-last_used">Last Used</th>
 	<th scope="col" class="manage-column column-last_ip">Last IP</th>
+	<th scope="col" class="manage-column column-scopes">Access</th>
 	<th scope="col" class="manage-column column-revoke">Revoke</th>
 </tr></tfoot>
 </table>
