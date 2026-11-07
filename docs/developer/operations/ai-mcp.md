@@ -13,9 +13,11 @@ Application Password.
 
 ## How it works
 
-- **Endpoint:** `https://<site>/wp-json/pursae/v1/mcp`, MCP's *streamable HTTP* transport (each
-  POSTed JSON-RPC message gets one JSON answer; there is no server-sent event stream).
-- **Sign-in:** HTTP Basic with a user name and an [Application Password](../rest-api/authentication.md#application-passwords-scripts-apps-ci).
+- **Endpoint:** `https://<site>/wp-json/pursae/v1/mcp`, MCP's *streamable HTTP* transport (see
+  [Sessions and streaming](#sessions-and-streaming)).
+- **Sign-in:** [OAuth 2.1](../rest-api/authentication.md#oauth-21-mcp-clients) (clients that support it
+  open a consent screen in your browser), or HTTP Basic with a user name and an
+  [Application Password](../rest-api/authentication.md#application-passwords-scripts-apps-ci).
   Every tool runs as a REST request with the same credentials, so capabilities and
   [scopes](../rest-api/authentication.md#application-password-scopes) apply exactly as they do
   for direct REST calls.
@@ -24,7 +26,23 @@ Application Password.
 - **Resources:** the developer docs (`pursae-docs://developer/…`), so the agent can read how themes,
   templates, `theme.json` and plugins work before it changes them.
 
-## 1. Create an Application Password
+## 1. Sign in
+
+**OAuth (no password to copy).** Point the client at the endpoint. It finds the authorization server
+from the `401` answer, registers itself and opens the Authorize Application screen of your site in your browser:
+check the application's name, tick the scopes (none = all your permissions) and approve. Under Users ›
+Profile › Connected applications you can revoke it at any time. In Claude Code:
+
+```bash
+claude mcp add --transport http pursae https://example.com/wp-json/pursae/v1/mcp
+# then run /mcp inside Claude Code and choose "Authenticate"
+```
+
+Cursor and other clients that support remote MCP with OAuth need only the URL.
+
+**Application Password.** Use it for clients without OAuth, scripts and `wpgo mcp`.
+
+### Create an Application Password
 
 Users › Profile › Application Passwords: give it a name (e.g. "Claude"), tick the scopes it needs —
 or none for all of your permissions — and copy the password (it is shown once). Use a user whose
@@ -105,6 +123,20 @@ streamable HTTP with that header, or `wpgo mcp` over stdio.
 | `--password` | `PURSAE_APP_PASSWORD` | the Application Password |
 
 The bridge prints nothing but protocol messages on stdout; errors go to stderr.
+
+## Sessions and streaming
+
+- `initialize` answers with an `Mcp-Session-Id` header. A client that sends it back on later requests
+  keeps one session; a request with an unknown or ended id gets `404`, and the client should
+  initialize again. Without the header the server answers statelessly, so simple clients keep working.
+  Sessions belong to the user who created them, are capped at 10 per user and expire after an hour
+  without use.
+- `POST` answers with `application/json`, or as a one-event `text/event-stream` when the request's
+  `Accept` header lists `text/event-stream` before `application/json` (or without it).
+- `GET` with `Accept: text/event-stream` and a session opens the server→client stream: JSON-RPC
+  notifications and a `: keep-alive` comment every 25 seconds. Resuming with `Last-Event-ID` is not
+  supported; open a new stream.
+- `DELETE` with the session id ends the session and closes its stream (`204`).
 
 ## Tools
 

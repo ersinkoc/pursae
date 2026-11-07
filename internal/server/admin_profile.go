@@ -45,7 +45,8 @@ type profileData struct {
 	DismissURL   string
 	// Application Passwords (profile.php's application-passwords section).
 	AppPasswords   []appPasswordRow
-	AppScopes      []appScope // the scope checkboxes of "Add New Application Password"
+	OAuthGrants    []oauthGrantRow // connected MCP clients (oauth.go)
+	AppScopes      []scopeChoice   // the scope checkboxes of "Add New Application Password"
 	NewAppPassword *appPasswordCreated
 	// AdminSec is AdminSecGo's block: two-step login status and the session list.
 	AdminSec template.HTML
@@ -121,7 +122,8 @@ func (s *Server) profileView(c *gin.Context, target *store.User) profileData {
 		}
 	}
 	d.AppPasswords = s.appPasswordRows(c, target)
-	d.AppScopes = appScopes
+	d.AppScopes = scopeChoices(nil)
+	d.OAuthGrants = s.oauthGrantRows(c, target.ID)
 	d.AdminSec = s.adminsecProfileHTML(c, target, d.Self)
 	return d
 }
@@ -225,6 +227,11 @@ func (s *Server) saveUser(c *gin.Context, target *store.User) {
 	}
 	if self && c.PostForm("action") == "destroy-sessions" {
 		_ = s.auth.DestroyOthers(c, u.ID, currentSession(c).ID)
+		c.Redirect(http.StatusFound, back)
+		return
+	}
+	if id := c.PostForm("revoke_oauth_grant"); id != "" {
+		_, _ = s.store.Pool.Exec(c, `DELETE FROM oauth_tokens WHERE id::text = $1 AND user_id = $2`, id, target.ID)
 		c.Redirect(http.StatusFound, back)
 		return
 	}

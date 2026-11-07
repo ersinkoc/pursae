@@ -141,11 +141,7 @@
 		<input type="text" size="30" id="new_application_password_name" name="new_application_password_name" class="input" aria-required="true" aria-describedby="new_application_password_name_desc" />
 		<p class="description" id="new_application_password_name_desc">Required to create an Application Password, but not to update the user.</p>
 	</div>
-	<fieldset class="form-field application-password-scopes">
-		<legend>Limit access to</legend>
-		{{range .AppScopes}}<label style="display:block;margin:2px 0"><input type="checkbox" name="new_application_password_scopes[]" value="{{.Slug}}" /> {{.Label}} <span class="description">&mdash; {{.Description}}</span></label>
-		{{end}}<p class="description">Leave every box unticked to give the password all of this user&#8217;s permissions. Scopes only narrow what the user can already do.</p>
-	</fieldset>
+	{{template "scope-picker" (dict "Name" "new_application_password_scopes[]" "Scopes" .AppScopes)}}
 	<button type="submit" name="do_new_application_password" value="1" id="do_new_application_password" class="button button-secondary">Add New Application Password</button>
 </div>
 <div class="application-passwords-list-table-wrapper" style="margin-top:20px">
@@ -179,6 +175,12 @@
 </table>
 {{if .AppPasswords}}<div class="tablenav bottom"><div class="alignright"><button type="submit" name="revoke_all_application_passwords" value="1" id="revoke-all-application-passwords" class="button delete">Revoke all application passwords</button></div><br class="clear" /></div>{{end}}
 </div>
+{{if .OAuthGrants}}<h3 style="margin-top:24px">Connected applications</h3>
+<p>AI clients and other apps you signed in to with OAuth. Revoking one ends its access at once.</p>
+<table class="wp-list-table widefat fixed striped table-view-list">
+<thead><tr><th scope="col" class="manage-column column-primary">Application</th><th scope="col">Connected</th><th scope="col">Last Used</th><th scope="col">Access</th><th scope="col">Revoke</th></tr></thead>
+<tbody>{{range .OAuthGrants}}<tr><td class="column-primary">{{.Client}}</td><td>{{.Created}}</td><td>{{.Used}}</td><td>{{.ScopeList}}</td><td><button type="submit" name="revoke_oauth_grant" value="{{.ID}}" class="button delete" aria-label="Revoke &#8220;{{.Client}}&#8221;">Revoke</button></td></tr>
+{{end}}</tbody></table>{{end}}
 </div>
 <input type="hidden" name="action" value="update" />
 <input type="hidden" name="user_id" id="user_id" value="{{$u.ID}}" />
@@ -199,6 +201,7 @@
 		<input id="new-application-password-value" type="text" class="code" readonly="readonly" value="{{.NewPassword}}" />
 	</p>
 	<p>Be sure to save this in a safe location. You will not be able to retrieve it.</p>
+	<p>Access: <strong>{{.ScopeList}}</strong></p>
 </div>
 <p><a href="/wp-admin/">&larr; Go to the Dashboard</a></p>
 {{else}}
@@ -215,6 +218,7 @@
 			<label for="app_name">New Application Password Name</label>
 			<input type="text" id="app_name" name="app_name" value="{{.AppName}}" required />
 		</div>
+		{{template "scope-picker" (dict "Name" "scopes[]" "Scopes" .AppScopes)}}
 		<p class="submit"><input type="submit" name="approve" id="approve" class="button button-primary" value="Yes, I approve of this connection" aria-describedby="description-approve" /></p>
 		<p class="description" id="description-approve">{{if .SuccessURL}}You will be sent to <strong>{{.SuccessURL}}</strong>{{else}}You will be given a password to manually enter into the application in question.{{end}}</p>
 		<p class="submit"><input type="submit" name="reject" id="reject" class="button button-secondary" value="No, I do not approve of this connection" aria-describedby="description-reject" /></p>
@@ -222,5 +226,31 @@
 	</form>
 </div>
 {{end}}
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}
+
+{{define "scope-picker"}}<fieldset class="form-field application-password-scopes">
+	<legend>Limit access to</legend>
+	{{$n := .Name}}{{range .Scopes}}<label style="display:block;margin:2px 0"><input type="checkbox" name="{{$n}}" value="{{.Slug}}"{{if .Checked}} checked{{end}} /> {{.Label}} <span class="description">&mdash; {{.Description}}</span></label>
+	{{end}}<p class="description">Leave every box unticked to give all of this user&#8217;s permissions. Scopes only narrow what the user can already do.</p>
+</fieldset>{{end}}
+
+{{define "admin/oauth-authorize"}}{{template "admin-header" .}}{{with .Data}}
+<div class="wrap">
+<h1>Authorize Application</h1>
+<div class="card auth-app-card">
+	<h2 class="title">An application would like to connect to your account.</h2>
+	<p><strong>{{.Client}}</strong> asks to use this site&#8217;s Pursae MCP and REST API as you. Only approve it if you trust it. You can revoke it later under Users &rsaquo; Profile.</p>
+	<form action="/wp-admin/oauth-authorize" method="post" class="form-wrap">
+		<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+		<input type="hidden" name="action" value="oauth_authorize" />
+		{{range $k, $v := .Fields}}<input type="hidden" name="{{$k}}" value="{{$v}}" />
+		{{end}}
+		{{template "scope-picker" (dict "Name" "scopes[]" "Scopes" .AppScopes)}}
+		<p class="submit"><input type="submit" name="approve" id="approve" class="button button-primary" value="Yes, I approve of this connection" /></p>
+		<p class="description">You will be sent back to <strong>{{.Redirect}}</strong>.</p>
+		<p class="submit"><input type="submit" name="deny" id="deny" class="button button-secondary" value="No, I do not approve of this connection" /></p>
+	</form>
+</div>
 </div>
 {{end}}{{template "admin-footer" .}}{{end}}

@@ -1,0 +1,363 @@
+package server
+
+import (
+	"crypto/rand"
+	"crypto/sha256"
+	"crypto/subtle"
+	"encoding/base64"
+	"encoding/hex"
+	"html/template"
+	"net/http"
+	"net/url"
+	"strings"
+	"time"
+
+	"github.com/gin-gonic/gin"
+)
+
+// OAuth 2.1 for the MCP endpoint, as the MCP authorization spec asks: protected-resource and
+// authorization-server metadata, dynamic client registration (public clients), authorization code with
+// PKCE S256, short-lived access tokens and rotating refresh tokens. A token carries the scopes the user
+// ticked on the consent screen and is narrowed exactly like an Application Password
+// (app_password_scopes.go); Application Passwords keep working next to it.
+
+const (
+	oauthAccessTTL  = time.Hour
+	oauthRefreshTTL = 30 * 24 * time.Hour
+	oauthCodeTTL    = 5 * time.Minute
+	oauthMaxClients = 500
+	oauthMCPPath    = "/wp-json/pursae/v1/mcp"
+	restOAuthKey    = "wpgo.restOAuthGrant" // oauth_tokens.id that authenticated the request
+)
+
+func (s *Server) registerOAuth(r *gin.Engine) {
+	for _, m := range []string{http.MethodGet, http.MethodOptions} {
+		r.Handle(m, "/.well-known/oauth-protected-resource", s.oauthResourceMeta)
+		r.Handle(m, "/.well-known/oauth-protected-resource/*path", s.oauthResourceMeta)
+		r.Handle(m, "/.well-known/oauth-authorization-server", s.oauthServerMeta)
+		r.Handle(m, "/.well-known/oauth-authorization-server/*path", s.oauthServerMeta)
+	}
+	for _, m := range []string{http.MethodPost, http.MethodOptions} {
+		r.Handle(m, "/oauth/register", s.oauthRegister)
+		r.Handle(m, "/oauth/token", s.oauthToken)
+	}
+}
+
+func oauthCORS(c *gin.Context) bool {
+	c.Header("Access-Control-Allow-Origin", "*")
+	c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization, MCP-Protocol-Version")
+	c.Header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+	if c.Request.Method == http.MethodOptions {
+		c.Status(http.StatusNoContent)
+		return true
+	}
+	return false
+}
+
+func (s *Server) oauthIssuer(c *gin.Context) string {
+	return strings.TrimRight(s.links(c).HomeURL("/"), "/")
+}
+func (s *Server) oauthResource(c *gin.Context) string {
+	return s.links(c).HomeURL(oauthMCPPath)
+}
+
+// oauthChallenge is the WWW-Authenticate value that points a client at the resource metadata.
+func (s *Server) oauthChallenge(c *gin.Context, errCode string) string {
+	v := `Bearer resource_metadata="` + s.oauthIssuer(c) + `/.well-known/oauth-protected-resource` + oauthMCPPath + `"`
+	if errCode != "" {
+		v += `, error="` + errCode + `"`
+	}
+	return v
+}
+
+func scopeSlugs() []string {
+	out := make([]string, 0, len(appScopes))
+	for _, sc := range appScopes {
+		out = append(out, sc.Slug)
+	}
+	return out
+}
+
+func (s *Server) oauthResourceMeta(c *gin.Context) {
+	if oauthCORS(c) {
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"resource": s.oauthResource(c), "authorization_servers": []string{s.oauthIssuer(c)},
+		"scopes_supported": scopeSlugs(), "bearer_methods_supported": []string{"header"}, "resource_name": "Pursae MCP"})
+}
+
+func (s *Server) oauthServerMeta(c *gin.Context) {
+	if oauthCORS(c) {
+		return
+	}
+	iss := s.oauthIssuer(c)
+	c.JSON(http.StatusOK, gin.H{"issuer": iss,
+		"authorization_endpoint": iss + "/wp-admin/oauth-authorize", "token_endpoint": iss + "/oauth/token",
+		"registration_endpoint": iss + "/oauth/register", "scopes_supported": scopeSlugs(),
+		"response_types_supported": []string{"code"}, "grant_types_supported": []string{"authorization_code", "refresh_token"},
+		"code_challenge_methods_supported": []string{"S256"}, "token_endpoint_auth_methods_supported": []string{"none"}})
+}
+
+func oauthErr(c *gin.Context, status int, code, desc string) {
+	c.Header("Cache-Control", "no-store")
+	c.JSON(status, gin.H{"error": code, "error_description": desc})
+}
+
+func oauthRandom(prefix string) string {
+	b := make([]byte, 32)
+	_, _ = rand.Read(b)
+	return prefix + base64.RawURLEncoding.EncodeToString(b)
+}
+
+func oauthHash(v string) string { h := sha256.Sum256([]byte(v)); return hex.EncodeToString(h[:]) }
+
+// oauthRegister is RFC 7591 dynamic client registration for public clients (no secret; PKCE protects
+// the code).
+func (s *Server) oauthRegister(c *gin.Context) {
+	if oauthCORS(c) {
+		return
+	}
+	var in struct {
+		ClientName   string   `json:"client_name"`
+		RedirectURIs []string `json:"redirect_uris"`
+	}
+	if err := c.ShouldBindJSON(&in); err != nil || len(in.RedirectURIs) == 0 || len(in.RedirectURIs) > 10 {
+		oauthErr(c, http.StatusBadRequest, "invalid_client_metadata", "redirect_uris is required (1 to 10 entries).")
+		return
+	}
+	for _, u := range in.RedirectURIs {
+		pu, err := url.Parse(u)
+		if err != nil || validAuthorizeRedirect(u) != nil || pu.Fragment != "" || pu.Scheme == "" {
+			oauthErr(c, http.StatusBadRequest, "invalid_redirect_uri", "Redirect URIs must be https, http on localhost, or an app scheme, without a fragment.")
+			return
+		}
+	}
+	name := strings.TrimSpace(in.ClientName)
+	if name == "" {
+		name = "MCP client"
+	}
+	if len(name) > 100 {
+		name = name[:100]
+	}
+	ctx := c.Request.Context()
+	// Keep the table small: drop clients that never got a token, then cap what is left.
+	_, _ = s.store.Pool.Exec(ctx, `DELETE FROM oauth_clients WHERE created_at < now() - interval '7 days'
+		AND NOT EXISTS (SELECT 1 FROM oauth_tokens t WHERE t.client_id = oauth_clients.client_id)`)
+	var n int
+	_ = s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM oauth_clients`).Scan(&n)
+	if n >= oauthMaxClients {
+		oauthErr(c, http.StatusTooManyRequests, "temporarily_unavailable", "Too many registered clients.")
+		return
+	}
+	id := newUUID()
+	if _, err := s.store.Pool.Exec(ctx, `INSERT INTO oauth_clients (client_id, name, redirect_uris) VALUES ($1, $2, $3)`, id, name, in.RedirectURIs); err != nil {
+		oauthErr(c, http.StatusInternalServerError, "server_error", "Could not register the client.")
+		return
+	}
+	c.Header("Cache-Control", "no-store")
+	c.JSON(http.StatusCreated, gin.H{"client_id": id, "client_name": name, "redirect_uris": in.RedirectURIs,
+		"token_endpoint_auth_method": "none", "grant_types": []string{"authorization_code", "refresh_token"}, "response_types": []string{"code"}})
+}
+
+type oauthClient struct {
+	ID, Name string
+	Redirect []string
+}
+
+func (s *Server) oauthClientByID(c *gin.Context, id string) *oauthClient {
+	if !isUUID(id) {
+		return nil
+	}
+	cl := &oauthClient{ID: id}
+	if s.store.Pool.QueryRow(c, `SELECT name, redirect_uris FROM oauth_clients WHERE client_id = $1`, id).Scan(&cl.Name, &cl.Redirect) != nil {
+		return nil
+	}
+	return cl
+}
+
+// oauthAuthorize is the consent screen (/wp-admin/oauth-authorize): the user is signed in already
+// (the admin group redirects to the login), checks who asks for what, ticks the scopes and approves.
+func (s *Server) oauthAuthorize(c *gin.Context) {
+	u := currentUser(c)
+	_ = c.Request.ParseForm()
+	f := c.Request.Form
+	fail := func(msg string) {
+		s.adminHTML(c, http.StatusBadRequest, `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Invalid request</title>`+
+			`<link rel="stylesheet" href="/wp-admin/assets/css/wp/install.min.css"></head><body id="error-page"><div class="wp-die-message"><p>`+
+			template.HTMLEscapeString(msg)+`</p></div></body></html>`)
+	}
+	cl := s.oauthClientByID(c, f.Get("client_id"))
+	redirect := f.Get("redirect_uri")
+	if cl == nil || !containsStr(cl.Redirect, redirect) { // never redirect to an unregistered URI
+		fail("Unknown application or redirect URI.")
+		return
+	}
+	state := f.Get("state")
+	back := func(q url.Values) {
+		if state != "" {
+			q.Set("state", state)
+		}
+		sep := "?"
+		if strings.Contains(redirect, "?") {
+			sep = "&"
+		}
+		c.Redirect(http.StatusFound, redirect+sep+q.Encode())
+	}
+	if f.Get("response_type") != "code" {
+		back(url.Values{"error": {"unsupported_response_type"}})
+		return
+	}
+	challenge := f.Get("code_challenge")
+	if f.Get("code_challenge_method") != "S256" || len(challenge) < 43 || len(challenge) > 128 {
+		back(url.Values{"error": {"invalid_request"}, "error_description": {"PKCE with code_challenge_method=S256 is required."}})
+		return
+	}
+	if res := f.Get("resource"); res != "" && res != s.oauthResource(c) && res != s.oauthIssuer(c) && res != s.oauthIssuer(c)+"/" {
+		back(url.Values{"error": {"invalid_target"}})
+		return
+	}
+	asked := normalizeAppScopes(strings.Fields(strings.ReplaceAll(f.Get("scope"), ",", " ")))
+	chosen := asked
+	if c.Request.Method == http.MethodPost && c.PostForm("action") == "oauth_authorize" {
+		if !s.checkNonce(c, "oauth_authorize") {
+			s.denyNonce(c)
+			return
+		}
+		if _, deny := c.GetPostForm("deny"); deny {
+			back(url.Values{"error": {"access_denied"}})
+			return
+		}
+		chosen = normalizeAppScopes(c.PostFormArray("scopes[]"))
+		code := oauthRandom("")
+		if _, err := s.store.Pool.Exec(c, `INSERT INTO oauth_codes (code_hash, client_id, user_id, redirect_uri, scopes, challenge, expires_at)
+			VALUES ($1, $2, $3, $4, $5, $6, $7)`, oauthHash(code), cl.ID, u.ID, redirect, chosen, challenge, time.Now().Add(oauthCodeTTL)); err != nil {
+			back(url.Values{"error": {"server_error"}})
+			return
+		}
+		_, _ = s.store.Pool.Exec(c, `DELETE FROM oauth_codes WHERE expires_at < now()`)
+		back(url.Values{"code": {code}})
+		return
+	}
+	d := map[string]any{"Client": cl.Name, "Redirect": redirect, "Nonce": s.nonce(c, "oauth_authorize"), "AppScopes": scopeChoices(chosen),
+		"Fields": map[string]string{"client_id": cl.ID, "redirect_uri": redirect, "response_type": "code", "state": state,
+			"code_challenge": challenge, "code_challenge_method": "S256", "scope": f.Get("scope"), "resource": f.Get("resource")}}
+	s.adminPage(c, "oauth-authorize", "Authorize Application", "authorize-application-php", "admin/oauth-authorize", d)
+}
+
+// oauthToken is the token endpoint: authorization_code (with the PKCE verifier) and refresh_token.
+func (s *Server) oauthToken(c *gin.Context) {
+	if oauthCORS(c) {
+		return
+	}
+	ctx := c.Request.Context()
+	_ = c.Request.ParseForm()
+	grant := c.PostForm("grant_type")
+	clientID := c.PostForm("client_id")
+	if s.oauthClientByID(c, clientID) == nil {
+		oauthErr(c, http.StatusUnauthorized, "invalid_client", "Unknown client_id.")
+		return
+	}
+	var userID int64
+	var scopes []string
+	var grantID int64 // an existing grant to rotate (refresh)
+	switch grant {
+	case "authorization_code":
+		var redirect, challenge string
+		var exp time.Time
+		// The code is single use: it is deleted by the lookup whatever happens next.
+		err := s.store.Pool.QueryRow(ctx, `DELETE FROM oauth_codes WHERE code_hash = $1 AND client_id = $2
+			RETURNING user_id, redirect_uri, scopes, challenge, expires_at`, oauthHash(c.PostForm("code")), clientID).Scan(&userID, &redirect, &scopes, &challenge, &exp)
+		if err != nil || time.Now().After(exp) || redirect != c.PostForm("redirect_uri") {
+			oauthErr(c, http.StatusBadRequest, "invalid_grant", "The authorization code is invalid, expired or used.")
+			return
+		}
+		sum := sha256.Sum256([]byte(c.PostForm("code_verifier")))
+		want := base64.RawURLEncoding.EncodeToString(sum[:])
+		if v := c.PostForm("code_verifier"); len(v) < 43 || len(v) > 128 || subtle.ConstantTimeCompare([]byte(want), []byte(challenge)) != 1 {
+			oauthErr(c, http.StatusBadRequest, "invalid_grant", "PKCE verification failed.")
+			return
+		}
+	case "refresh_token":
+		var exp time.Time
+		err := s.store.Pool.QueryRow(ctx, `SELECT id, user_id, scopes, refresh_expires_at FROM oauth_tokens WHERE refresh_hash = $1 AND client_id = $2`,
+			oauthHash(c.PostForm("refresh_token")), clientID).Scan(&grantID, &userID, &scopes, &exp)
+		if err != nil || time.Now().After(exp) {
+			oauthErr(c, http.StatusBadRequest, "invalid_grant", "The refresh token is invalid or expired.")
+			return
+		}
+	default:
+		oauthErr(c, http.StatusBadRequest, "unsupported_grant_type", "Use authorization_code or refresh_token.")
+		return
+	}
+	access, refresh := oauthRandom("pat_"), oauthRandom("prt_")
+	now := time.Now()
+	var err error
+	if grantID != 0 { // rotate in place: the old refresh token stops working
+		_, err = s.store.Pool.Exec(ctx, `UPDATE oauth_tokens SET access_hash = $2, refresh_hash = $3, access_expires_at = $4, refresh_expires_at = $5 WHERE id = $1`,
+			grantID, oauthHash(access), oauthHash(refresh), now.Add(oauthAccessTTL), now.Add(oauthRefreshTTL))
+	} else {
+		_, err = s.store.Pool.Exec(ctx, `INSERT INTO oauth_tokens (client_id, user_id, access_hash, refresh_hash, scopes, access_expires_at, refresh_expires_at)
+			VALUES ($1, $2, $3, $4, $5, $6, $7)`, clientID, userID, oauthHash(access), oauthHash(refresh), scopes, now.Add(oauthAccessTTL), now.Add(oauthRefreshTTL))
+	}
+	if err != nil {
+		oauthErr(c, http.StatusInternalServerError, "server_error", "Could not issue a token.")
+		return
+	}
+	c.Header("Cache-Control", "no-store")
+	c.Header("Pragma", "no-cache")
+	c.JSON(http.StatusOK, gin.H{"access_token": access, "token_type": "Bearer", "expires_in": int(oauthAccessTTL.Seconds()),
+		"refresh_token": refresh, "scope": strings.Join(scopes, " ")})
+}
+
+// oauthBearer authenticates "Authorization: Bearer <access token>". The scopes of the grant narrow the
+// user like those of an Application Password.
+func (s *Server) oauthBearer(c *gin.Context, token string) bool {
+	var id, userID int64
+	var scopes []string
+	var exp time.Time
+	if s.store.Pool.QueryRow(c, `SELECT id, user_id, scopes, access_expires_at FROM oauth_tokens WHERE access_hash = $1`, oauthHash(token)).Scan(&id, &userID, &scopes, &exp) != nil || time.Now().After(exp) {
+		return false
+	}
+	c.Set(restOAuthKey, id)
+	c.Set(restOAuthUserKey, userID)
+	if scopes = normalizeAppScopes(scopes); len(scopes) > 0 {
+		c.Set(restAppScopesKey, scopes)
+	}
+	go s.store.Pool.Exec(c.Copy(), `UPDATE oauth_tokens SET last_used_at = now(), last_ip = $2 WHERE id = $1`, id, clientIP(c))
+	return true
+}
+
+const restOAuthUserKey = "wpgo.restOAuthUser"
+
+// oauthGrantRow is one connected application in the profile.
+type oauthGrantRow struct {
+	ID                    int64
+	Client, Created, Used string
+	ScopeList             string
+}
+
+func (s *Server) oauthGrantRows(c *gin.Context, userID int64) []oauthGrantRow {
+	rows, err := s.store.Pool.Query(c, `SELECT t.id, cl.name, t.created_at, t.last_used_at, t.scopes FROM oauth_tokens t
+		JOIN oauth_clients cl ON cl.client_id = t.client_id WHERE t.user_id = $1 ORDER BY t.id`, userID)
+	if err != nil {
+		return nil
+	}
+	defer rows.Close()
+	loc := s.loc()
+	var out []oauthGrantRow
+	for rows.Next() {
+		var g oauthGrantRow
+		var created time.Time
+		var used *time.Time
+		var scopes []string
+		if rows.Scan(&g.ID, &g.Client, &created, &used, &scopes) != nil {
+			continue
+		}
+		g.Created, g.Used, g.ScopeList = created.In(loc).Format("January 2, 2006"), "—", scopeLabels(scopes)
+		if used != nil {
+			g.Used = used.In(loc).Format("January 2, 2006")
+		}
+		out = append(out, g)
+	}
+	return out
+}

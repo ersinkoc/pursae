@@ -421,6 +421,16 @@ func TestApplicationPasswords(t *testing.T) {
 	if !regexp.MustCompile(`value="[A-Za-z0-9]{4}( [A-Za-z0-9]{4}){5}"`).MatchString(body) || !strings.Contains(body, "Your new password for <strong>Manual</strong> is:") {
 		t.Error("approve without success_url does not show the password")
 	}
+	// Scope checkboxes: preselected from scopes[] of the request, stored as ticked, shown afterwards.
+	_, body, _ = get(t, c, base+"/wp-admin/authorize-application?app_name=Scoped&scopes%5B%5D=seo&scopes=content,nope")
+	if !strings.Contains(body, `name="scopes[]" value="seo" checked`) || !strings.Contains(body, `name="scopes[]" value="content" checked`) || strings.Contains(body, `value="plugins" checked`) {
+		t.Error("authorize form does not preselect the requested scopes")
+	}
+	_, body, _ = post(t, c, base+"/wp-admin/authorize-application", url.Values{"_wpnonce": {nonce}, "action": {"authorize_application_password"}, "app_name": {"Scoped"},
+		"approve": {"1"}, "scopes[]": {"media", "seo"}})
+	if !strings.Contains(body, "Access: <strong>Media, SEO</strong>") {
+		t.Error("approved scopes are not shown")
+	}
 	if code, body, _ := get(t, c, base+"/wp-admin/authorize-application?app_name=X&success_url=http%3A%2F%2Fevil.example%2F"); code != http.StatusBadRequest || !strings.Contains(body, "The URL must be served over a secure connection.") {
 		t.Errorf("insecure success_url accepted: %d", code)
 	}

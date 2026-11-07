@@ -160,3 +160,33 @@ func restScopeAllows(c *gin.Context, route string) bool {
 	need := appScopeForRoute(route)
 	return need == "*" || (need != "" && slices.Contains(scopes, need))
 }
+
+// scopeChoice is one checkbox of the scope picker shared by Profile, authorize-application and the
+// OAuth consent screen (template "scope-picker").
+type scopeChoice struct {
+	appScope
+	Checked bool
+}
+
+// scopeChoices lists every scope with the given ones ticked.
+func scopeChoices(checked []string) []scopeChoice {
+	out := make([]scopeChoice, 0, len(appScopes))
+	for _, sc := range appScopes {
+		out = append(out, scopeChoice{sc, slices.Contains(checked, sc.Slug)})
+	}
+	return out
+}
+
+// scopeLabels is "Full access" or the scope labels, for display.
+func scopeLabels(scopes []string) string {
+	if len(scopes) == 0 {
+		return "Full access"
+	}
+	var l []string
+	for _, slug := range scopes {
+		if sc := appScopeBySlug(slug); sc != nil {
+			l = append(l, sc.Label)
+		}
+	}
+	return strings.Join(l, ", ")
+}

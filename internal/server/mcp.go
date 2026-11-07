@@ -53,17 +53,39 @@ type mcpResponse struct {
 	Error   *mcpError       `json:"error,omitempty"`
 }
 
-// mcpHTTP is the streamable HTTP endpoint. The server never opens an SSE stream: GET is 405 and every
-// POSTed request gets a single application/json answer, which the transport allows.
+// mcpHTTP is the streamable HTTP endpoint (sessions and SSE: mcp_session.go). POST carries one JSON-RPC
+// message, GET opens the server→client stream of a session, DELETE ends the session.
 func (s *Server) mcpHTTP(c *gin.Context, r *restRequest) {
-	if c.Request.Method == http.MethodGet {
-		c.Header("Allow", "POST")
-		c.AbortWithStatus(http.StatusMethodNotAllowed)
+	u := restCurrent(c)
+	if u == nil {
+		c.Writer.Header().Add("WWW-Authenticate", s.oauthChallenge(c, "")) // OAuth 2.1: where to find the authorization server
+		c.Writer.Header().Add("WWW-Authenticate", `Basic realm="Pursae"`)
+		restErr(c, http.StatusUnauthorized, "rest_not_logged_in", "Sign in with OAuth or an Application Password (HTTP Basic auth).")
 		return
 	}
-	if restCurrent(c) == nil {
-		c.Header("WWW-Authenticate", `Basic realm="Pursae"`)
-		restErr(c, http.StatusUnauthorized, "rest_not_logged_in", "Sign in with an Application Password (HTTP Basic auth).")
+	var sess *mcpSession
+	if id := c.GetHeader(mcpSessionHeader); id != "" {
+		if sess = mcpSess.get(id, u.ID); sess == nil {
+			restErr(c, http.StatusNotFound, "mcp_session_not_found", "The MCP session has ended. Initialize again.")
+			return
+		}
+	}
+	switch c.Request.Method {
+	case http.MethodDelete:
+		if sess == nil {
+			restErr(c, http.StatusBadRequest, "mcp_session_required", "Send the Mcp-Session-Id header.")
+			return
+		}
+		mcpSess.end(sess.id, u.ID)
+		c.Status(http.StatusNoContent)
+		return
+	case http.MethodGet:
+		if sess == nil || !strings.Contains(c.GetHeader("Accept"), "text/event-stream") {
+			c.Header("Allow", "GET, POST, DELETE")
+			c.AbortWithStatus(http.StatusMethodNotAllowed)
+			return
+		}
+		s.mcpStream(c, sess)
 		return
 	}
 	raw, _ := json.Marshal(r.Body)
@@ -75,6 +97,15 @@ func (s *Server) mcpHTTP(c *gin.Context, r *restRequest) {
 	resp := s.mcpHandle(c, &req)
 	if resp == nil { // a notification
 		c.Status(http.StatusAccepted)
+		return
+	}
+	if req.Method == "initialize" && resp.Error == nil && sess == nil {
+		c.Header(mcpSessionHeader, mcpSess.create(u.ID).id)
+	}
+	if wantsSSE(c.GetHeader("Accept")) {
+		out, _ := json.Marshal(resp)
+		sseHeaders(c)
+		writeSSE(c, "message", out)
 		return
 	}
 	c.JSON(http.StatusOK, resp)

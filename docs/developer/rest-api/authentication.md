@@ -39,7 +39,9 @@ revoked on its own. Create and revoke them under Users › Profile › Applicati
 password is shown once), through the REST controller
 (`/wp/v2/users/me/application-passwords`, `POST` returns the plaintext password once), or let an
 app request one through the authorization flow at `/wp-admin/authorize-application` (the REST
-index advertises it). A wrong or missing password returns `401 incorrect_password`.
+index advertises it). The authorization screen shows the same scope checkboxes as the profile: an app
+can pre-tick scopes with `scopes[]=content&scopes[]=seo` (or `scopes=content,seo`) in the request,
+the user can change them, and the chosen scopes are stored with the password. A wrong or missing password returns `401 incorrect_password`.
 
 Use Application Passwords only over TLS: Basic authentication sends the password with every
 request.
@@ -83,6 +85,30 @@ curl -u admin:… -H 'Content-Type: application/json' \
      -d '{"name":"Cursor","scopes":["content","media","seo"]}' \
      https://blog.example.com/wp-json/wp/v2/users/me/application-passwords
 ```
+
+## OAuth 2.1 (MCP clients)
+
+AI clients that speak the [MCP authorization spec](https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization)
+sign in with OAuth instead of a pasted password. The tokens work on every REST route like an
+Application Password and are narrowed by scopes the same way; Basic auth keeps working.
+
+| Endpoint | |
+|----------|-|
+| `/.well-known/oauth-protected-resource` (also `…/wp-json/pursae/v1/mcp`) | protected-resource metadata (RFC 9728) |
+| `/.well-known/oauth-authorization-server` | authorization-server metadata (RFC 8414) |
+| `POST /oauth/register` | dynamic client registration (RFC 7591), public clients only |
+| `/wp-admin/oauth-authorize` | consent screen: who asks, scope checkboxes, approve or deny |
+| `POST /oauth/token` | `authorization_code` (PKCE) and `refresh_token` grants |
+
+- PKCE with `code_challenge_method=S256` is mandatory; codes live 5 minutes and work once; redirect URIs
+  must match a registered one exactly (https, http on localhost, or an app scheme such as `cursor://`).
+- Access tokens (`pat_…`) last one hour and are sent as `Authorization: Bearer …`; refresh tokens
+  (`prt_…`) last 30 days and are rotated on every use. Only SHA-256 hashes are stored.
+- Scopes are the same names as above. Unticked means all of the user's permissions.
+- An unauthenticated request to `/wp-json/pursae/v1/mcp` gets `401` with
+  `WWW-Authenticate: Bearer resource_metadata="…"`, which is how clients find the flow. A bad or
+  expired token gets `error="invalid_token"`.
+- Users › Profile lists the connected applications; **Revoke** ends a grant at once.
 
 ## Capabilities
 

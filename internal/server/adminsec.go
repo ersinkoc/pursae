@@ -298,7 +298,7 @@ func (s *Server) adminsecFront(w http.ResponseWriter, r *http.Request) (http.Res
 		if s.maintUser(r) != nil {
 			return w, r, false
 		}
-		if strings.TrimSuffix(p, ".php") == "/wp-admin/authorize-application" { // REST app authorization starts at the login
+		if tp := strings.TrimSuffix(p, ".php"); tp == "/wp-admin/authorize-application" || tp == "/wp-admin/oauth-authorize" { // REST app authorization starts at the login
 			http.Redirect(w, r, slug+"?redirect_to="+url.QueryEscape(r.URL.RequestURI()), http.StatusFound)
 			return w, r, true
 		}

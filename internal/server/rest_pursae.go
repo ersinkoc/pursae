@@ -89,8 +89,9 @@ func (s *Server) registerPursaeREST() {
 
 	// MCP over streamable HTTP (mcp.go). Authentication is the REST API's: an Application Password.
 	api.register(pursaeNS, "/pursae/v1/mcp", map[string]restHandler{
-		http.MethodPost: s.mcpHTTP,
-		http.MethodGet:  s.mcpHTTP,
+		http.MethodPost:   s.mcpHTTP,
+		http.MethodGet:    s.mcpHTTP,
+		http.MethodDelete: s.mcpHTTP,
 	}, nil)
 }
 

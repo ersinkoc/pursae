@@ -256,6 +256,19 @@ func (s *Server) authorizeApplication(c *gin.Context) {
 	u := currentUser(c)
 	d := map[string]any{"AppName": c.Request.FormValue("app_name"), "AppID": c.Request.FormValue("app_id"),
 		"SuccessURL": c.Request.FormValue("success_url"), "RejectURL": c.Request.FormValue("reject_url"), "Nonce": s.nonce(c, "authorize_application_password")}
+	// Scopes the application asks for (scopes[]=a&scopes[]=b or scopes=a,b); on a POST the user's own
+	// ticks are what count, so the boxes can be unticked or added to.
+	_ = c.Request.ParseForm()
+	asked := c.Request.Form["scopes[]"]
+	for _, v := range c.Request.Form["scopes"] {
+		asked = append(asked, strings.Split(v, ",")...)
+	}
+	chosen := normalizeAppScopes(asked)
+	isApprove := c.Request.Method == http.MethodPost && c.PostForm("action") == "authorize_application_password"
+	if isApprove {
+		chosen = normalizeAppScopes(c.PostFormArray("scopes[]"))
+	}
+	d["AppScopes"] = scopeChoices(chosen)
 	var errs []string
 	for _, k := range []string{"SuccessURL", "RejectURL"} {
 		if err := validAuthorizeRedirect(d[k].(string)); err != nil {
@@ -284,7 +297,7 @@ func (s *Server) authorizeApplication(c *gin.Context) {
 			return
 		}
 		if _, approve := c.GetPostForm("approve"); approve {
-			plain, ap, err := s.createAppPassword(c, u.ID, d["AppName"].(string), d["AppID"].(string), c.PostFormArray("scopes[]")...)
+			plain, ap, err := s.createAppPassword(c, u.ID, d["AppName"].(string), d["AppID"].(string), chosen...)
 			if err != nil {
 				d["Error"] = err.Error()
 			} else if success := d["SuccessURL"].(string); success != "" {
@@ -296,6 +309,7 @@ func (s *Server) authorizeApplication(c *gin.Context) {
 				return
 			} else {
 				d["NewPassword"] = chunkAppPassword(plain)
+				d["ScopeList"] = scopeLabels(ap.Scopes)
 				d["AppName"] = ap.Name
 			}
 		}

@@ -175,6 +175,17 @@ func (api *restAPI) register(namespace, pattern string, methods map[string]restH
 // cookie auth) or HTTP Basic with an Application Password. route is the requested REST route and
 // method the effective method (after X-HTTP-Method-Override / _method).
 func (s *Server) restAuthUser(c *gin.Context, route, method string) (*store.User, error) {
+	if h := c.GetHeader("Authorization"); len(h) > 7 && strings.EqualFold(h[:7], "bearer ") { // OAuth access token (oauth.go)
+		if !s.oauthBearer(c, strings.TrimSpace(h[7:])) {
+			return nil, errors.New("invalid_token")
+		}
+		uid, _ := c.Get(restOAuthUserKey)
+		u, err := s.store.UserByID(c, uid.(int64))
+		if err != nil || u == nil {
+			return nil, errors.New("invalid_token")
+		}
+		return scopedUser(u, restScopes(c)), nil
+	}
 	if user, pass, ok := c.Request.BasicAuth(); ok {
 		// Goocommerce REST API keys (goo_rest_auth.go) sign in to the store's own namespaces only, like
 		// WC_REST_Authentication: elsewhere "ck_…" is just an unknown user name. The key's read / write
@@ -288,6 +299,9 @@ func (api *restAPI) serve(c *gin.Context, route string) {
 			gooFail(c, keyErr)
 		} else if err.Error() == "rest_cookie_invalid_nonce" {
 			restErr(c, http.StatusForbidden, "rest_cookie_invalid_nonce", "Cookie check failed")
+		} else if err.Error() == "invalid_token" {
+			c.Header("WWW-Authenticate", s.oauthChallenge(c, "invalid_token"))
+			restErr(c, http.StatusUnauthorized, "invalid_token", "The access token is invalid or expired.")
 		} else if err.Error() == "adminsec_locked" {
 			restErr(c, http.StatusTooManyRequests, "too_many_retries", "Too many failed login attempts, or access from this IP address is blocked.")
 		} else {

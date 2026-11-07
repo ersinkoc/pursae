@@ -271,6 +271,8 @@ func (s *Server) routes() *gin.Engine {
 	admin.POST("/options", s.optionsSave)
 	admin.GET("/authorize-application", s.authorizeApplication)
 	admin.POST("/authorize-application", s.authorizeApplication)
+	admin.GET("/oauth-authorize", s.oauthAuthorize) // OAuth 2.1 consent screen for MCP clients (oauth.go)
+	admin.POST("/oauth-authorize", s.oauthAuthorize)
 	admin.POST("/options-permalink", s.optionsSave)
 	admin.GET("/profile", s.profile)
 	admin.POST("/profile", s.profileSave)
@@ -349,6 +351,7 @@ func (s *Server) routes() *gin.Engine {
 	// Pursae Web Builder: web-builder/v2 (webbuilder_rest.go)
 	s.registerWebBuilderREST()
 	s.registerPursaeREST() // pursae/v1: plugins, themes, cache, SEO settings, option groups, MCP (rest_pursae*.go, mcp.go)
+	s.registerOAuth(r)
 	restHandler := func(c *gin.Context) { s.rest.serve(c, c.Param("route")) }
 	for _, m := range []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete, http.MethodOptions, http.MethodHead} {
 		r.Handle(m, "/wp-json/*route", restHandler)
