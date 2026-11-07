@@ -10,10 +10,16 @@ import (
 // Money helpers: wc_get_price_decimals(), wc_format_decimal(), wc_price() and wc_round_tax_total().
 // Amounts are float64 like WooCommerce's, rounded to the store's decimals where WooCommerce rounds.
 
-// gooRound rounds half away from zero to dp decimals (round() in PHP).
+// gooRound rounds half away from zero to dp decimals (round() in PHP). Like PHP it first rounds the
+// scaled value to 15 significant digits, so an amount whose binary form sits just under the half
+// (1.005 is 1.00499999999999989…) rounds the way it is written: round(1.005, 2) is 1.01, not 1.00.
 func gooRound(v float64, dp int) float64 {
 	p := math.Pow(10, float64(dp))
-	r := math.Round(v*p) / p
+	x := v * p
+	if pre, err := strconv.ParseFloat(strconv.FormatFloat(x, 'g', 15, 64), 64); err == nil && !math.IsInf(pre, 0) {
+		x = pre
+	}
+	r := math.Round(x) / p
 	if r == 0 {
 		return 0 // no negative zero
 	}
@@ -37,17 +43,72 @@ func (s *Server) gooCurrency() string {
 	return "USD"
 }
 
-// gooParseAmount reads a price typed in the admin or a form: the store's decimal separator, "" → nil.
+// gooParseAmount reads a price typed in the admin or a form, "" → nil. The store's decimal separator
+// is the decimal point; the other of "." and "," is read as thousands grouping only where it groups
+// (1,234.50 or 1.234,50) and otherwise as the decimal point the customer meant: with "." as the
+// separator, "12,50" is 12.50, not 1250 (wc_format_decimal() would drop the comma).
 func (s *Server) gooParseAmount(v string) *float64 {
+	return gooParseAmountSep(v, s.gooOptString("price_decimal_sep"), s.gooOptString("price_thousand_sep"))
+}
+
+// gooParseAmountSep is gooParseAmount with explicit separators.
+func gooParseAmountSep(v, dec, thousand string) *float64 {
 	v = strings.TrimSpace(v)
 	if v == "" {
 		return nil
 	}
-	if sep := s.gooOptString("price_decimal_sep"); sep != "" && sep != "." {
-		v = strings.ReplaceAll(v, s.gooOptString("price_thousand_sep"), "")
-		v = strings.ReplaceAll(v, sep, ".")
+	if dec == "" {
+		dec = "."
 	}
-	v = strings.ReplaceAll(v, ",", "")
+	// Spaces (and a space-like thousands separator) only group digits.
+	v = strings.NewReplacer(" ", "", "\u00a0", "", "\u202f", "", "'", "").Replace(v)
+	if thousand != "" && thousand != "." && thousand != "," {
+		v = strings.ReplaceAll(v, thousand, "")
+	}
+	if dec != "." && dec != "," {
+		v = strings.ReplaceAll(v, dec, ".") // an unusual separator: the only decimal mark
+	} else {
+		other := ","
+		if dec == "," {
+			other = "."
+		}
+		neg := strings.HasPrefix(v, "-")
+		body := strings.TrimPrefix(v, "-")
+		intPart, frac, hasDec := strings.Cut(body, dec)
+		if hasDec && strings.Contains(frac, dec) {
+			return nil // two decimal marks
+		}
+		if strings.Contains(intPart, other) {
+			groups := strings.Split(intPart, other)
+			grouping := len(groups[0]) >= 1 && len(groups[0]) <= 3
+			for _, g := range groups[1:] {
+				grouping = grouping && len(g) == 3
+			}
+			switch {
+			case grouping:
+				intPart = strings.Join(groups, "")
+			case !hasDec && len(groups) == 2:
+				intPart, frac, hasDec = groups[0], groups[1], true // "12,50": the other mark as the decimal point
+			default:
+				return nil
+			}
+		}
+		if strings.Contains(frac, other) {
+			return nil
+		}
+		v = intPart
+		if hasDec {
+			v += "." + frac
+		}
+		if neg {
+			v = "-" + v
+		}
+	}
+	for _, r := range v {
+		if (r < '0' || r > '9') && r != '.' && r != '-' && r != '+' {
+			return nil
+		}
+	}
 	f, err := strconv.ParseFloat(v, 64)
 	if err != nil || math.IsNaN(f) || math.IsInf(f, 0) {
 		return nil
