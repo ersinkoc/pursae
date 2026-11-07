@@ -1422,6 +1422,7 @@ func (s *Server) addMetaAjax(c *gin.Context) {
 			p.Status = "draft"
 			p.Title = strings.TrimSpace(c.PostForm("post_title"))
 		}
+		value = sanitizePostMeta(u, key, value)
 		p.Meta[key] = value
 		if err := s.store.UpdatePost(ctx, p, u.ID); err != nil {
 			c.String(http.StatusOK, "0")
@@ -1464,6 +1465,7 @@ func (s *Server) addMetaAjax(c *gin.Context) {
 		return
 	}
 	if oldKey != key || metaValueString(p.Meta[oldKey]) != value {
+		value = sanitizePostMeta(u, key, value)
 		delete(p.Meta, oldKey)
 		p.Meta[key] = value
 		if err := s.store.UpdatePost(ctx, p, u.ID); err != nil {
@@ -1890,6 +1892,9 @@ func (s *Server) postSave(c *gin.Context) {
 		}
 	}
 	p.Excerpt = c.PostForm("excerpt")
+	if !u.Can("unfiltered_html", nil) {
+		p.Excerpt = wp.KsesPost(p.Excerpt) // excerpt_save_pre: wp_filter_post_kses
+	}
 	p.Slug = strings.TrimSpace(c.PostForm("post_name"))
 	p.CommentStatus = map[bool]string{true: "open", false: "closed"}[c.PostForm("comment_status") == "open"]
 	p.PingStatus = map[bool]string{true: "open", false: "closed"}[c.PostForm("ping_status") == "open"]
@@ -2011,6 +2016,7 @@ func (s *Server) postSave(c *gin.Context) {
 // (meta[id][key] / meta[id][value]) are updated, deletemeta[id] rows removed, and a filled
 // metakeyinput + metavalue pair added. Protected (underscore) keys are never touched.
 func (s *Server) savePostMetaForm(c *gin.Context, p *store.Post) {
+	u := currentUser(c)
 	type change struct{ key, value string }
 	updates := map[uint32]*change{}
 	for name, vals := range c.Request.PostForm {
@@ -2045,15 +2051,25 @@ func (s *Server) savePostMetaForm(c *gin.Context, p *store.Post) {
 			continue
 		}
 		delete(p.Meta, oldKey)
-		p.Meta[ch.key] = ch.value
+		p.Meta[ch.key] = sanitizePostMeta(u, ch.key, ch.value)
 	}
 	key := strings.TrimSpace(c.PostForm("metakeyinput"))
 	if sel := c.PostForm("metakeyselect"); key == "" && sel != "" && sel != "#NONE#" {
 		key = sel
 	}
 	if key != "" && !strings.HasPrefix(key, "_") && strings.TrimSpace(c.PostForm("metavalue")) != "" {
-		p.Meta[key] = c.PostForm("metavalue")
+		p.Meta[key] = sanitizePostMeta(u, key, c.PostForm("metavalue"))
 	}
+}
+
+// sanitizePostMeta is sanitize_meta() for the Custom Fields box: WordPress registers
+// _wp_filter_post_meta_footnotes on sanitize_post_meta_footnotes for users without unfiltered_html,
+// since the footnotes block prints that meta as HTML.
+func sanitizePostMeta(u *store.User, key, value string) string {
+	if key == "footnotes" && !u.Can("unfiltered_html", nil) {
+		return filterFootnotesMeta(value)
+	}
+	return value
 }
 
 func defaultStr(v, def string) string {

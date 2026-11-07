@@ -93,6 +93,15 @@ func TestGooExtPoints(t *testing.T) {
 	if v, _ := gptsSessionPoints(srv.gooSessionFor(c2)); v != 0 {
 		t.Error("the redemption stays in the session after the order")
 	}
+	// The form redirects back to the same site only: a foreign Referer is no open redirect.
+	evil := gxaCtx(u, http.MethodPost, "/cart/", url.Values{"goo_module": {"points_rewards"}, "goo_points_remove": {"1"}, "_wpnonce": {nonce}})
+	evil.Request.Header.Set("Referer", "https://evil.example/phish")
+	if !gptsFrontRoute(srv, evil, "cart") {
+		t.Fatal("the remove form was not handled")
+	}
+	if loc := evil.Writer.Header().Get("Location"); loc == "" || strings.Contains(loc, "evil.example") {
+		t.Errorf("redirect after removing points = %q", loc)
+	}
 	// Cancelling gives the redeemed points back and takes the earned ones.
 	o2, _ = srv.gooGetOrder(ctx, o2.ID)
 	if err := srv.gooSetStatus(ctx, o2, "cancelled", "", ""); err != nil {

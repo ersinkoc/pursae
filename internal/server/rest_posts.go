@@ -57,7 +57,7 @@ func (s *Server) restPost(c *gin.Context, p *store.Post, ctxName string) map[str
 			rendered = wp.Autop(p.Content)
 		}
 	}
-	excerpt := p.Excerpt
+	excerpt := wp.KsesPost(p.Excerpt) // rendered: excerpts stored before excerpt_save_pre sanitizing
 	if excerpt == "" {
 		excerpt = wp.TrimWords(stripBlocks(p.Content), 55, " [&hellip;]")
 	}
@@ -429,6 +429,9 @@ func (api *restAPI) savePost(c *gin.Context, r *restRequest, typ string, id int6
 		p.Content = v
 	}
 	if v, ok := r.Str(c, "excerpt"); ok {
+		if !u.Can("unfiltered_html", nil) {
+			v = wp.KsesPost(v) // excerpt_save_pre
+		}
 		p.Excerpt = v
 	}
 	if v, ok := r.Str(c, "slug"); ok {
@@ -643,7 +646,7 @@ func (s *Server) restRevision(c *gin.Context, rv revision, p *store.Post) map[st
 		"guid":    map[string]any{"rendered": home + "/?p=" + itoa64(rv.ID), "raw": home + "/?p=" + itoa64(rv.ID)},
 		"title":   map[string]any{"rendered": wp.EscText(rv.Title), "raw": rv.Title},
 		"content": map[string]any{"rendered": blocks.Render(c.Request.Context(), rv.Content), "raw": rv.Content},
-		"excerpt": map[string]any{"rendered": wp.Autop(rv.Excerpt), "raw": rv.Excerpt},
+		"excerpt": map[string]any{"rendered": wp.Autop(wp.KsesPost(rv.Excerpt)), "raw": rv.Excerpt},
 		"meta":    map[string]any{"footnotes": ""}, "preview_link": preview,
 		"_links": map[string]any{"parent": []map[string]any{{"href": home + "/wp-json/wp/v2/" + base + "/" + itoa64(p.ID)}}},
 	}
@@ -693,6 +696,7 @@ func (api *restAPI) createAutosave(c *gin.Context, r *restRequest, typ string) {
 	}
 	if !u.Can("unfiltered_html", nil) {
 		content = wp.KsesPost(content)
+		excerpt = wp.KsesPost(excerpt)
 	}
 	draftLike := p.Status == "draft" || p.Status == "auto-draft" || p.Status == "pending"
 	if draftLike && p.AuthorID == u.ID {

@@ -373,7 +373,7 @@ func (api *restAPI) applyCommentFields(c *gin.Context, r *restRequest, cm *store
 		if u.Can("unfiltered_html", nil) {
 			cm.Content = v
 		} else {
-			cm.Content = wp.KsesPost(v)
+			cm.Content = wp.KsesData(v)
 		}
 	}
 	if v, ok := r.Str(c, "author_name"); ok {

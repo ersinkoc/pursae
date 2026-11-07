@@ -116,7 +116,7 @@
 <td class="name"><div class="view">{{.Name}}</div>
 <div class="edit" style="display:none"><input type="hidden" name="order_item_id[]" value="{{.ID}}"><input type="text" class="shipping_method_name" placeholder="Shipping name" name="shipping_method_title[{{.ID}}]" value="{{.Name}}">
 <select class="shipping_method" name="shipping_method[{{.ID}}]">{{template "goo-store-options" (dict "Opts" .Methods "Sel" .MethodID)}}</select></div>
-<div class="view">{{if .Meta}}<table cellspacing="0" class="display_meta">{{range .Meta}}<tr><th>{{.Key}}:</th><td><p>{{safe .Value}}</p></td></tr>{{end}}</table>{{end}}</div></td>
+<div class="view">{{if .Meta}}<table cellspacing="0" class="display_meta">{{range .Meta}}<tr><th>{{.Key}}:</th><td><p>{{kses .Value}}</p></td></tr>{{end}}</table>{{end}}</div></td>
 <td class="item_cost" width="1%">&nbsp;</td><td class="quantity" width="1%">&nbsp;</td>
 <td class="line_cost" width="1%"><div class="view">{{.TotalFmt}}{{if .RefundedAmt}}<small class="refunded">{{.RefundedAmt}}</small>{{end}}</div>
 <div class="edit" style="display:none"><input type="text" name="shipping_cost[{{.ID}}]" placeholder="0" value="{{.Total}}" class="line_total wc_input_price"></div>

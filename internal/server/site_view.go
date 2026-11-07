@@ -495,7 +495,7 @@ func (s *Server) theExcerpt(p *store.Post, lb *links.Builder) string {
 		return "<p>There is no excerpt because this is a protected post.</p>\n"
 	}
 	if p.Excerpt != "" {
-		return s.convertSmilies(lb, wp.Autop(wp.Texturize(p.Excerpt)))
+		return s.convertSmilies(lb, wp.Autop(wp.Texturize(wp.KsesPost(p.Excerpt)))) // kses: excerpts stored before excerpt_save_pre
 	}
 	more := ` &hellip; <a href="` + html.EscapeString(lb.Permalink(p)) + `" class="more-link">Continue reading<span class="screen-reader-text"> "` + theTitle(p) + `"</span></a>`
 	text := stripBlocks(p.Content)

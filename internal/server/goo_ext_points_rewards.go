@@ -637,10 +637,7 @@ func gptsFrontRoute(s *Server, c *gin.Context, path string) bool {
 	if c.Request.Method != http.MethodPost || !s.gooExtOn(gptsKey) || (c.PostForm("goo_points_redeem") == "" && c.PostForm("goo_points_remove") == "") {
 		return false
 	}
-	back := c.Request.Referer()
-	if back == "" {
-		back = s.gooPageURL(c.Request.Context(), "cart")
-	}
+	back := gooXCSafeReferer(c, s.gooPageURL(c.Request.Context(), "cart")) // same-site only: no open redirect
 	u := currentUser(c)
 	sess := s.gooSessionFor(c)
 	if u == nil || !s.checkNonce(c, "goo-points-redeem") {

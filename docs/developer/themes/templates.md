@@ -120,6 +120,7 @@ Every template receives the same **site view** (`.`):
 | Function | Does |
 |----------|------|
 | `safe s`, `safeURL s`, `safeAttr s` | mark a string as trusted HTML / URL / attribute |
+| `kses s` | `wp_kses_post()`: print user-written HTML (post meta, excerpts) with only the tags and safe styles post content may hold |
 | `date t format` | format a `time.Time` in the site's time zone with a WordPress format string (`"F j, Y"`); `""` uses the site's date format |
 | `dateFormat`, `timeFormat` | the site's formats |
 | `setting key`, `settingStr key`, `settingBool key`, `settingInt key`, `settingID key` | read an option (`settingStr "blogname"`, `settingBool "show_avatars"`) |
