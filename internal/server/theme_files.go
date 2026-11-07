@@ -75,6 +75,19 @@ func fileEditingDisabled() bool {
 	return v == "1" || v == "true" || v == "yes"
 }
 
+// themeFileEditError is non-nil when theme files must not be changed: WPGO_DISALLOW_FILE_EDIT, or Pursae
+// Security's "Disable file editors" (DISALLOW_FILE_EDIT). saveThemeFile and restoreThemeFile check it
+// themselves, so every caller (admin editor, admin-ajax, REST) obeys it.
+func (s *Server) themeFileEditError() *themeFileError {
+	if fileEditingDisabled() {
+		return &themeFileError{"disallowed", "File editing is disabled on this site (WPGO_DISALLOW_FILE_EDIT)."}
+	}
+	if s.adminsecOn() && s.asLoad().DisableFileEdit {
+		return &themeFileError{"disallowed", "File editing is disabled on this site (Pursae Security › Settings › Hardening)."}
+	}
+	return nil
+}
+
 func (s *Server) overlay() (overlayFS, bool) {
 	o, ok := s.web.(overlayFS)
 	return o, ok
@@ -102,8 +115,8 @@ func (e *themeFileError) Error() string { return e.message }
 
 // saveThemeFile is wp_edit_theme_plugin_file() for themes: write, re-parse, render-check, roll back on failure.
 func (s *Server) saveThemeFile(c *gin.Context, slug, file, content string) error {
-	if fileEditingDisabled() {
-		return &themeFileError{"disallowed", "File editing is disabled on this site (WPGO_DISALLOW_FILE_EDIT)."}
+	if fe := s.themeFileEditError(); fe != nil {
+		return fe
 	}
 	o, ok := s.overlay()
 	if !ok {
@@ -213,6 +226,9 @@ func (s *Server) themeRenderCheck(c *gin.Context, th *Theme) error {
 // restoreThemeFile drops the edited copy of a file. A package theme's files are the originals, so
 // there is nothing to restore them to.
 func (s *Server) restoreThemeFile(c *gin.Context, slug, file string) error {
+	if fe := s.themeFileEditError(); fe != nil {
+		return fe
+	}
 	o, ok := s.overlay()
 	if th := s.installedTheme(slug); !ok || th == nil || th.Package != nil {
 		return errors.New("Sorry, that theme cannot be edited here.")
