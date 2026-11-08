@@ -78,6 +78,7 @@ var _wpColorScheme = {{.Color.Icons}};
 		<button type="button" id="contextual-help-link" class="button button-compact show-settings" aria-controls="contextual-help-wrap" aria-expanded="false">Help</button>
 	</div>
 {{end}}</div>
+{{end}}{{with .CoreUpdate}}<div class="update-nag notice notice-warning inline"><strong>Pursae {{.}}</strong> is available! {{if $.CanUpdateCore}}<a href="/wp-admin/update-core" aria-label="Please update Pursae now">Please update now</a>.{{else}}Please notify the site administrator.{{end}}</div>
 {{end}}{{end}}
 
 {{define "notices"}}{{range .Notices}}<div class="notice notice-{{.Type}}{{if .Dismissible}} is-dismissible{{end}}"><p>{{.Message}}</p></div>
@@ -92,7 +93,7 @@ var _wpColorScheme = {{.Color.Icons}};
 	<p id="footer-left" class="alignleft">
 		<span id="footer-thankyou">Thank you for creating with <a href="https://github.com/pursae">Pursae</a>.</span>
 	</p>
-	<p id="footer-upgrade" class="alignright">Pursae {{version}}</p>
+	<p id="footer-upgrade" class="alignright">{{if and .FooterUpdate .CanUpdateCore}}<strong><a href="/wp-admin/update-core">Get Version {{.FooterUpdate}}</a></strong>{{else}}Pursae {{version}}{{end}}</p>
 	<div class="clear"></div>
 </div>
 </div><!-- wpwrap -->

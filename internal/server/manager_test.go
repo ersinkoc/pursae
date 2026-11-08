@@ -24,6 +24,7 @@ import (
 // managerSite starts a site connected to a fake Pursae Manager, installed and logged in.
 func managerSite(t *testing.T) (base string, c *http.Client, srv *Server, hub *fakeManager) {
 	t.Helper()
+	withTrustHubKeys(t, true) // the fake Manager's dev key carries no endorsement by the pinned root; tests of that turn it off
 	ts, c, srv := testServerBuilderOff(t)
 	installAndLogin(t, ts, c)
 	hub = fakeHub(t)

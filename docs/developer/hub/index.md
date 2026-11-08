@@ -28,7 +28,7 @@ host.
 | Plugin marketplace | `GET /api/v1/plugins` | Plugins › Add Plugin ([marketplace](marketplace.md)) |
 | Theme marketplace | `GET /api/v1/themes` | Appearance › Themes › Add Theme |
 | Package downloads | `…/{slug}/download[/{version}]` | one-click install; the site checks the SHA-256 and, for plugins, the Hub signature |
-| Core releases | `GET /api/v1/index` → `core` | Dashboard › Updates; with a signed build for the site's platform, **Update to version X** installs it ([upgrading](../getting-started/upgrading.md)) |
+| Core releases | `GET /api/v1/index` → `core` | Dashboard › Updates; with a signed build for the site's platform, **Update to version X** installs it ([upgrading](../getting-started/upgrading.md)). Every other admin screen shows "Pursae X is available! Please update now." (or "Please notify the site administrator." without `update_core`), a count on Updates and "Get Version X" in the footer, from the release remembered at the last check; pre-releases sort before their release (0.2.0-beta.1 < 0.2.0) |
 | Plugin updates | `GET /api/v1/plugins` | Plugins and Dashboard › Updates, for plugins installed from the Hub ([marketplace](marketplace.md#updates)) |
 | License check | `GET /api/v1/license` | Settings › License (see below) |
 | Signing keys | `GET /api/v1/index` → `keys` | added to the site's trusted plugin keys automatically (replaced on every refresh, so a key the Hub drops is no longer trusted); verify core builds only when a release root key endorses them ([root of trust](#root-of-trust)) |

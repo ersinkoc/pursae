@@ -223,6 +223,7 @@ func (s *Server) hubIndexCached(ctx context.Context) (*hubIndex, error) {
 	var idx hubIndex
 	if s.hubCacheGet(ctx, s.hubCacheKey("wpgo_hub_index"), &idx) && idx.API > 0 {
 		s.hubTrustKeys(idx.Keys)
+		s.rememberCoreLatest(ctx, &idx)
 		return &idx, nil
 	}
 	return s.hubFetchIndex(ctx)
@@ -233,6 +234,7 @@ func (s *Server) hubTrustCached(ctx context.Context) {
 	var idx hubIndex
 	if s.hubCacheGet(ctx, s.hubCacheKey("wpgo_hub_index"), &idx) {
 		s.hubTrustKeys(idx.Keys)
+		s.rememberCoreLatest(ctx, &idx)
 	}
 }
 
@@ -243,6 +245,7 @@ func (s *Server) hubFetchIndex(ctx context.Context) (*hubIndex, error) {
 	}
 	s.hubCacheSet(ctx, s.hubCacheKey("wpgo_hub_index"), idx, hubCacheTTL)
 	s.hubTrustKeys(idx.Keys)
+	s.rememberCoreLatest(ctx, &idx) // the admin pages' "Pursae X is available" (core_update_nag.go)
 	s.hubSyncBrand(ctx, idx.Brand)
 	return &idx, nil
 }
@@ -405,6 +408,7 @@ func (s *Server) hubPing(ctx context.Context) error {
 func (s *Server) hubDropCaches(ctx context.Context) {
 	_, _ = s.store.Pool.Exec(ctx, `DELETE FROM transients WHERE key LIKE 'wpgo\_hub\_%'`)
 	s.libraryForget()
+	s.rememberCoreLatest(ctx, nil) // a release the previous license could see is not announced any more
 }
 
 // hubRefresh drops the cached catalog and index (Updates › Check again).
@@ -427,24 +431,50 @@ func (s *Server) hubUpdate(ctx context.Context) *hubCore {
 	return nil
 }
 
-// versionLess reports whether a < b comparing major.minor.patch (pre-release suffixes ignored).
+// versionLess reports whether a < b in semver order: major.minor.patch, then a pre-release sorts
+// before its release (0.2.0-beta.1 < 0.2.0-rc.1 < 0.2.0) with dot-separated identifiers compared
+// numerically when both are numbers; build metadata (+…) is ignored.
 func versionLess(a, b string) bool {
-	parts := func(v string) [3]int {
+	parts := func(v string) ([3]int, string) {
 		v = strings.TrimPrefix(strings.TrimSpace(v), "v")
-		if i := strings.IndexAny(v, "-+"); i >= 0 {
+		if i := strings.IndexByte(v, '+'); i >= 0 {
 			v = v[:i]
+		}
+		pre := ""
+		if i := strings.IndexByte(v, '-'); i >= 0 {
+			v, pre = v[:i], v[i+1:]
 		}
 		var out [3]int
 		for i, p := range strings.SplitN(v, ".", 3) {
 			out[i], _ = strconv.Atoi(p)
 		}
-		return out
+		return out, pre
 	}
-	pa, pb := parts(a), parts(b)
+	pa, preA := parts(a)
+	pb, preB := parts(b)
 	for i := range pa {
 		if pa[i] != pb[i] {
 			return pa[i] < pb[i]
 		}
 	}
-	return false
+	if preA == "" || preB == "" {
+		return preA != "" && preB == "" // a pre-release comes before its release
+	}
+	ia, ib := strings.Split(preA, "."), strings.Split(preB, ".")
+	for i := 0; i < len(ia) && i < len(ib); i++ {
+		if ia[i] == ib[i] {
+			continue
+		}
+		na, errA := strconv.Atoi(ia[i])
+		nb, errB := strconv.Atoi(ib[i])
+		switch {
+		case errA == nil && errB == nil:
+			return na < nb
+		case errA == nil || errB == nil:
+			return errA == nil // numeric identifiers sort before alphanumeric ones
+		default:
+			return ia[i] < ib[i]
+		}
+	}
+	return len(ia) < len(ib)
 }

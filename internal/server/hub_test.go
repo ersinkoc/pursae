@@ -161,6 +161,7 @@ func (m *fakeManager) eventTypes() []string {
 }
 
 func TestHubMarketplaceAndUpdates(t *testing.T) {
+	withTrustHubKeys(t, true) // the fake Manager's dev key carries no endorsement by the pinned root
 	ts, c, srv := testServerBuilderOff(t)
 	base := ts.URL
 	installAndLogin(t, ts, c)
@@ -253,7 +254,12 @@ func TestVersionLess(t *testing.T) {
 	for _, tc := range []struct {
 		a, b string
 		want bool
-	}{{"0.1.0", "0.2.0", true}, {"0.2.0", "0.1.9", false}, {"1.0.0", "1.0.0", false}, {"v0.1.0", "0.1.1-rc1", true}, {"0.1", "0.1.0", false}} {
+	}{{"0.1.0", "0.2.0", true}, {"0.2.0", "0.1.9", false}, {"1.0.0", "1.0.0", false}, {"v0.1.0", "0.1.1-rc1", true}, {"0.1", "0.1.0", false},
+		// pre-releases: a beta site is offered the release, never the other way round
+		{"0.2.0-beta.1", "0.2.0", true}, {"0.2.0", "0.2.0-beta.1", false}, {"0.2.0-beta.1", "0.2.0-beta.2", true},
+		{"0.2.0-beta.2", "0.2.0-beta.10", true}, {"0.2.0-beta.2", "0.2.0-rc.1", true}, {"0.2.0-rc.1", "0.2.0-beta.9", false},
+		{"0.2.0-beta", "0.2.0-beta.1", true}, {"0.2.0-1", "0.2.0-beta", true}, {"0.2.0-beta.1", "0.2.0-beta.1", false},
+		{"1.0.0+build.5", "1.0.0", false}, {"1.0.0", "1.0.0+build.5", false}, {"0.1.9-beta.1", "0.2.0-beta.1", true}} {
 		if got := versionLess(tc.a, tc.b); got != tc.want {
 			t.Errorf("versionLess(%q,%q)=%v", tc.a, tc.b, got)
 		}

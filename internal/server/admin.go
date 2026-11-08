@@ -40,6 +40,10 @@ type adminView struct {
 	Help           *helpTab      // contextual Help panel (screen-meta), nil when the screen has none
 	ScreenOptions  template.HTML // the Screen Options tab (screen-options-wrap), empty when the screen has none
 	Color          adminColor    // the user's admin color scheme
+
+	CoreUpdate    string // a newer Pursae release for the "is available" notice (core_update_nag.go)
+	FooterUpdate  string // the same release for the footer's "Get Version X"
+	CanUpdateCore bool   // the user may run the update (update_core)
 }
 
 type notice struct {
@@ -359,6 +363,7 @@ func (s *Server) adminPage(c *gin.Context, screen, title, bodyClass, tmpl string
 	// AdminSecGo: its menu, Users › Security, the file editors and its notices (adminsec.go)
 	v.Menu = s.adminsecMenu(c, v.Menu, screen)
 	v.Notices = append(v.Notices, s.adminsecNotices(c)...)
+	s.coreUpdateChrome(v, tmpl) // a newer Pursae release: notice, Updates count, footer link
 	a := s.pageAssets(c)
 	a.Script("common", "admin-bar", "utils", "svg-painter")
 	v.ExtraStyles = s.styleTags(a) + s.pluginStyleTags("admin")
