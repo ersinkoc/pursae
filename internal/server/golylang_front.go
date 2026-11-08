@@ -408,6 +408,16 @@ func (s *Server) pllHreflang(ctx context.Context, l *pllLanguage) string {
 	return primary
 }
 
+// golylangHomeURL is pll_home_url() of the front-end request language: the home page of /tr/ is
+// http://site/tr/, not the site root. ok is false outside a language (plugin off, no languages).
+func (s *Server) golylangHomeURL(ctx context.Context) (string, bool) {
+	r := pllFrom(ctx)
+	if r == nil || !r.Front || r.Lang == nil || !s.golylangOn() {
+		return "", false
+	}
+	return s.pllHomeURL(ctx, r.Lang), true
+}
+
 // golylangURL moves a URL of the site home to the current request language (sitemap index entries).
 func (s *Server) golylangURL(c *gin.Context, link string) string {
 	l := s.pllCurrent(c)

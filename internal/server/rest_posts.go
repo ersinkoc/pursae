@@ -110,6 +110,9 @@ func (s *Server) restPost(c *gin.Context, p *store.Post, ctxName string) map[str
 	if p.Type == "page" {
 		out["parent"] = p.ParentID
 		out["menu_order"] = p.MenuOrder
+		if tpl, _ := p.Meta["_wp_page_template"].(string); tpl != "default" {
+			out["template"] = tpl
+		}
 	}
 	if p.Type == "wp_block" {
 		out["wp_pattern_sync_status"] = metaString(p.Meta, "wp_pattern_sync_status")
@@ -465,6 +468,16 @@ func (api *restAPI) savePost(c *gin.Context, r *restRequest, typ string, id int6
 	}
 	if v, ok := r.Int(c, "menu_order"); ok {
 		p.MenuOrder = int(v)
+	}
+	if v, ok := r.Str(c, "template"); ok && typ == "page" {
+		// WP_REST_Posts_Controller::check_template(): "" is the default template; otherwise one of the
+		// theme's page templates, or the page's current template even when the theme does not list it.
+		cur, _ := p.Meta["_wp_page_template"].(string)
+		if v != "" && v != "default" && v != cur && !s.isPageTemplate(v) {
+			restErr(c, http.StatusBadRequest, "rest_invalid_param", "Invalid parameter(s): template")
+			return
+		}
+		setPageTemplate(p, v)
 	}
 	if v, ok := r.Int(c, "author"); ok && v != p.AuthorID {
 		if !u.Can("edit_others_"+plural, nil) {

@@ -26,6 +26,7 @@ section: themes
   "menu_locations": [
     {"id": "primary", "name": "Primary Menu"}
   ],
+  "page_templates": {"page-projects": "Projects"},
 
   "styles": [
     {"handle": "starter-style", "src": "assets/style.css", "deps": [], "media": "all"}
@@ -80,6 +81,7 @@ section: themes
 |-------|-------------------|
 | `widget_areas[]` | `register_sidebar()`: `id`, `name`, `description`. Rendered areas are available to templates as `{{index .Areas "sidebar-1"}}` and managed under Appearance › Widgets. Optional `before_widget`, `after_widget`, `before_title`, `after_title` override the default `<section class="widget">` / `<h2 class="widget-title">` wrappers |
 | `menu_locations[]` | `register_nav_menus()`: `id`, `name`. Assigned under Appearance › Menus; printed with `{{wp_nav_menu "primary"}}` |
+| `page_templates` | the page templates of the Page Attributes "Template" select (a classic theme's `Template Name:` headers): an object `{"<name>": "<Label>"}`. Each name is a handle (`^[a-z0-9]+([_-][a-z0-9]+)*$`, not `index`, `page`, `front-page` or `singular`) and `templates/<name>.html` must exist; the label is one line, at most 80 characters, no markup. A page with that template (`_wp_page_template`, the REST `template` field) renders `templates/<name>.html` first |
 
 ## Assets
 

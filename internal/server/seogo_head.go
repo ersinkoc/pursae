@@ -139,9 +139,9 @@ func (sc *seogoCtx) url() string {
 		}
 		return u
 	case "front-page":
-		return lb.HomeURL("/")
+		return sc.homeURL()
 	case "home":
-		base := lb.HomeURL("/")
+		base := sc.homeURL()
 		if sc.Post != nil {
 			base = lb.Permalink(sc.Post)
 		}
@@ -178,6 +178,14 @@ func (sc *seogoCtx) url() string {
 		return u
 	}
 	return ""
+}
+
+// homeURL is the site home of the request language (Pursae Multi Language), else the site root.
+func (sc *seogoCtx) homeURL() string {
+	if u, ok := sc.s.golylangHomeURL(sc.ctx); ok {
+		return u
+	}
+	return sc.lb.HomeURL("/")
 }
 
 func (sc *seogoCtx) canonical() string {
