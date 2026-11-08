@@ -3667,5 +3667,22 @@
  "Total Emails": "Totalt antal e-postmeddelanden",
  "Video Sitemap": "Webbplatskarta för video",
  "Weekly Email Summary": "Veckovis e-postsammanfattning",
- "You need to save settings with Client ID and Client Secret before you can proceed.": "Du måste spara inställningarna med klient-ID och klienthemlighet innan du kan fortsätta."
+ "You need to save settings with Client ID and Client Secret before you can proceed.": "Du måste spara inställningarna med klient-ID och klienthemlighet innan du kan fortsätta.",
+ "Previous": "Föregående",
+ "Next": "Nästa",
+ "Previous post:": "Föregående inlägg:",
+ "Next post:": "Nästa inlägg:",
+ "Leave a Reply": "Lämna ett svar",
+ "Reply to %s": "Svara till %s",
+ "Cancel reply": "Avbryt svar",
+ "Logged in as %s": "Inloggad som %s",
+ "Logged in as %s. Edit your profile.": "Inloggad som %s. Redigera din profil.",
+ "Log out?": "Logga ut?",
+ "Your email address will not be published.": "Din e-postadress kommer inte publiceras.",
+ "Required fields are marked %s": "Obligatoriska fält är märkta %s",
+ "Comment": "Kommentar",
+ "Website": "Webbplats",
+ "Save my name, email, and website in this browser for the next time I comment.": "Spara mitt namn, min e-postadress och webbplats i denna webbläsare till nästa gång jag skriver en kommentar.",
+ "Post Comment": "Publicera kommentar",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Du måste vara <a href=\"%s\">inloggad</a> för att publicera en kommentar."
 }

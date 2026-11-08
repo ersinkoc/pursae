@@ -3654,5 +3654,22 @@
  "Any name": "Bisan unsang ngalan",
  "Breadcrumb": "Breadcrumb",
  "If you have a coupon code, please apply it below.": "Kung aduna kay code sa kupon, palihug gamita kini sa ubos.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Adunay error sa pagproseso sa imong order. Palihug susiha kung adunay mga singil sa imong paagi sa pagbayad ug susiha ang kasaysayan sa imong mga order sa dili pa mag-order pag-usab."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Adunay error sa pagproseso sa imong order. Palihug susiha kung adunay mga singil sa imong paagi sa pagbayad ug susiha ang kasaysayan sa imong mga order sa dili pa mag-order pag-usab.",
+ "Previous": "Miaging",
+ "Next": "Sunod",
+ "Previous post:": "Miaging post:",
+ "Next post:": "Sunod nga post:",
+ "Leave a Reply": "Pagbilin og Tubag",
+ "Reply to %s": "Tubag kang %s",
+ "Cancel reply": "Kanselahon ang tubag",
+ "Logged in as %s": "Naka-log in isip %s",
+ "Logged in as %s. Edit your profile.": "Naka-log in isip %s. I-edit ang imong profile.",
+ "Log out?": "Mo-log out?",
+ "Your email address will not be published.": "Dili imantala ang imong email address.",
+ "Required fields are marked %s": "Ang gikinahanglan nga mga field gimarkahan og %s",
+ "Comment": "Komento",
+ "Website": "Website",
+ "Save my name, email, and website in this browser for the next time I comment.": "I-save ang akong ngalan, email, ug website niini nga browser para sa sunod nga higayon nga mokomento ko.",
+ "Post Comment": "I-post ang Komento",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Kinahanglan nga <a href=\"%s\">naka-log in</a> ka aron makapost og komento."
 }

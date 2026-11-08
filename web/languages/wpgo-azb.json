@@ -3654,5 +3654,22 @@
  "Any name": "هر هانسی بیر آد",
  "Breadcrumb": "یول ایزی",
  "If you have a coupon code, please apply it below.": "کوپن کودونوز وارسا، لطفاً اونو آشاغیدا تطبیق ائدین.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "سفارشینیز ایشلنرکن بیر خطا باش وئردی. سفارشی یئنیدن وئرمه‌دن اؤنجه اؤدمه یولونوزدان هر هانسی پول آلینیب-آلینمادیغینی یوخلایین و سفارش تاریخچه‌نیزه باخین."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "سفارشینیز ایشلنرکن بیر خطا باش وئردی. سفارشی یئنیدن وئرمه‌دن اؤنجه اؤدمه یولونوزدان هر هانسی پول آلینیب-آلینمادیغینی یوخلایین و سفارش تاریخچه‌نیزه باخین.",
+ "Previous": "قاباقکی",
+ "Next": "سونراکی",
+ "Previous post:": "قاباقکی یازی:",
+ "Next post:": "سونراکی یازی:",
+ "Leave a Reply": "بیر جاواب یازین",
+ "Reply to %s": "%s اوچون جاواب یازین",
+ "Cancel reply": "جاوابی لغو ائت",
+ "Logged in as %s": "%s کیمی گیریش ائدیلیب",
+ "Logged in as %s. Edit your profile.": "%s کیمی گیریش ائدیلیب. پروفایلینیزی دۆزنله‌یین.",
+ "Log out?": "چیخیش ائدیلسین؟",
+ "Your email address will not be published.": "ایمیل آدرسینیز یاییملانمایاجاق.",
+ "Required fields are marked %s": "گرکلی آلانلار %s ایله ایشاره‌لنیب",
+ "Comment": "شرح",
+ "Website": "وب سایت",
+ "Save my name, email, and website in this browser for the next time I comment.": "سونراکی شرحیم اوچون آدیمی، ایمیلیمی و وب سایتیمی بو براوزرده ساخلا.",
+ "Post Comment": "شرح گؤندر",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "شرح گؤندرمک اوچون <a href=\"%s\">گیریش ائتمه‌لیسینیز</a>."
 }

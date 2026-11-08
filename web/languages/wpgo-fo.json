@@ -3654,5 +3654,22 @@
  "Any name": "Hvørt navn sum helst",
  "Breadcrumb": "Brødkrummuleið",
  "If you have a coupon code, please apply it below.": "Hevur tú eina avsláttarkodu, so vinarliga brúka hana niðanfyri.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Ein feilur stóðst, tá ið bílegging tín varð viðgjørd. Vinarliga kanna, um nakað er kravt av gjaldshátti tínum, og eftirkanna bíleggingarsøgu tína, áðrenn tú bíleggur aftur."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Ein feilur stóðst, tá ið bílegging tín varð viðgjørd. Vinarliga kanna, um nakað er kravt av gjaldshátti tínum, og eftirkanna bíleggingarsøgu tína, áðrenn tú bíleggur aftur.",
+ "Previous": "Fyrra",
+ "Next": "Næsta",
+ "Previous post:": "Fyrri postur:",
+ "Next post:": "Næsti postur:",
+ "Leave a Reply": "Skriva eina viðmerking",
+ "Reply to %s": "Svara %s",
+ "Cancel reply": "Angra svar",
+ "Logged in as %s": "Ritað inn sum %s",
+ "Logged in as %s. Edit your profile.": "Ritað inn sum %s. Broyt vangan tín.",
+ "Log out?": "Rita út?",
+ "Your email address will not be published.": "Teldupoststaður tín verður ikki almannakunngjørdur.",
+ "Required fields are marked %s": "Kravdir teigar eru merktir %s",
+ "Comment": "Viðmerking",
+ "Website": "Heimasíða",
+ "Save my name, email, and website in this browser for the next time I comment.": "Goym navn mítt, teldupost og heimasíðu í hesum kaganum til næstu ferð eg skrivi eina viðmerking.",
+ "Post Comment": "Send viðmerking",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Tú mást vera <a href=\"%s\">ritað/ur inn</a> fyri at skriva eina viðmerking."
 }

@@ -3654,5 +3654,22 @@
  "Any name": "کوئی بھی نام",
  "Breadcrumb": "بریڈ کرمب",
  "If you have a coupon code, please apply it below.": "اگر آپ کے پاس کوپن کوڈ ہے تو براہ کرم اسے نیچے لاگو کریں۔",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "آپ کے آرڈر پر کارروائی کرتے ہوئے ایک خرابی پیش آئی۔ براہ کرم دوبارہ آرڈر دینے سے پہلے اپنے ادائیگی کے طریقے میں کسی بھی چارج کو چیک کریں اور اپنی آرڈر ہسٹری کا جائزہ لیں۔"
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "آپ کے آرڈر پر کارروائی کرتے ہوئے ایک خرابی پیش آئی۔ براہ کرم دوبارہ آرڈر دینے سے پہلے اپنے ادائیگی کے طریقے میں کسی بھی چارج کو چیک کریں اور اپنی آرڈر ہسٹری کا جائزہ لیں۔",
+ "Previous": "پچھلا",
+ "Next": "اگلا",
+ "Previous post:": "پچھلی تحریر:",
+ "Next post:": "اگلی تحریر:",
+ "Leave a Reply": "جواب دیں",
+ "Reply to %s": "%s کو جواب دیں",
+ "Cancel reply": "جواب منسوخ کریں",
+ "Logged in as %s": "بطور %s لاگ ان ہیں",
+ "Logged in as %s. Edit your profile.": "بطور %s لاگ ان ہیں۔ اپنی پروفائل میں ترمیم کریں۔",
+ "Log out?": "لاگ آؤٹ کریں؟",
+ "Your email address will not be published.": "آپ کا ای میل ایڈریس شائع نہیں کیا جائے گا۔",
+ "Required fields are marked %s": "ضروری خانوں کو %s سے نشان زد کیا گیا ہے",
+ "Comment": "تبصرہ",
+ "Website": "ویب سائٹ",
+ "Save my name, email, and website in this browser for the next time I comment.": "اگلی بار تبصرہ کرنے کے لیے میرا نام، ای میل، اور ویب سائٹ اس براؤزر میں محفوظ رکھیں۔",
+ "Post Comment": "تبصرہ شائع کریں",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "تبصرہ کرنے کے لیے آپ کا <a href=\"%s\">لاگ ان</a> ہونا ضروری ہے۔"
 }

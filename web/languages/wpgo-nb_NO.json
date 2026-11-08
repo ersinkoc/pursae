@@ -3654,5 +3654,22 @@
  "Any name": "Hvilket som helst navn",
  "Breadcrumb": "Brødsmulesti",
  "If you have a coupon code, please apply it below.": "Hvis du har en rabattkode, kan du bruke den nedenfor.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Det oppstod en feil under behandlingen av bestillingen din. Sjekk om det er trukket noe fra betalingsmetoden din, og se gjennom bestillingshistorikken før du legger inn bestillingen på nytt."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Det oppstod en feil under behandlingen av bestillingen din. Sjekk om det er trukket noe fra betalingsmetoden din, og se gjennom bestillingshistorikken før du legger inn bestillingen på nytt.",
+ "Previous": "Forrige",
+ "Next": "Neste",
+ "Previous post:": "Forrige innlegg:",
+ "Next post:": "Neste innlegg:",
+ "Leave a Reply": "Legg igjen en kommentar",
+ "Reply to %s": "Svar til %s",
+ "Cancel reply": "Avbryt svar",
+ "Logged in as %s": "Logget inn som %s",
+ "Logged in as %s. Edit your profile.": "Logget inn som %s. Rediger profilen din.",
+ "Log out?": "Logge ut?",
+ "Your email address will not be published.": "Din e-postadresse vil ikke bli publisert.",
+ "Required fields are marked %s": "Obligatoriske felt er merket med %s",
+ "Comment": "Kommentar",
+ "Website": "Nettsted",
+ "Save my name, email, and website in this browser for the next time I comment.": "Lagre mitt navn, e-post og nettsted i denne nettleseren for neste gang jeg kommenterer.",
+ "Post Comment": "Publiser kommentar",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Du må være <a href=\"%s\">logget inn</a> for å publisere en kommentar."
 }

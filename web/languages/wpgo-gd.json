@@ -3654,5 +3654,22 @@
  "Any name": "Ainm sam bith",
  "Breadcrumb": "Criomagan-aran",
  "If you have a coupon code, please apply it below.": "Ma tha còd cùpain agad, cuir an sàs e gu h-ìosal.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Thachair mearachd le pròiseasadh an òrduigh agad. Thoir sùil a bheil cosgais sam bith air an dòigh-phàighidh agad agus dèan lèirmheas air eachdraidh nan òrduighean agad mus cuir thu an t-òrdugh a-rithist."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Thachair mearachd le pròiseasadh an òrduigh agad. Thoir sùil a bheil cosgais sam bith air an dòigh-phàighidh agad agus dèan lèirmheas air eachdraidh nan òrduighean agad mus cuir thu an t-òrdugh a-rithist.",
+ "Previous": "Air ais",
+ "Next": "Air adhart",
+ "Previous post:": "Am post roimhe:",
+ "Next post:": "An ath-phost:",
+ "Leave a Reply": "Fàg freagairt",
+ "Reply to %s": "Freagair %s",
+ "Cancel reply": "Sguir dhen fhreagairt",
+ "Logged in as %s": "Air do chlàradh a-steach mar %s",
+ "Logged in as %s. Edit your profile.": "Air do chlàradh a-steach mar %s. Deasaich a’ phròifil agad.",
+ "Log out?": "A bheil thu airson clàradh a-mach?",
+ "Your email address will not be published.": "Cha dèid an seòladh puist-d agad fhoillseachadh.",
+ "Required fields are marked %s": "Tha comharra %s ri raointean riatanach",
+ "Comment": "Beachd",
+ "Website": "Làrach-lìn",
+ "Save my name, email, and website in this browser for the next time I comment.": "Sàbhail m’ ainm, post-d is làrach-lìn sa bhrabhsair seo airson an ath-thuras a bheir mi beachd seachad.",
+ "Post Comment": "Postaich am beachd",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Feumaidh tu <a href=\"%s\">clàradh a-steach</a> mus postaich thu beachd."
 }

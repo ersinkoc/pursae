@@ -3654,5 +3654,22 @@
  "Any name": "ຊື່ໃດກໍໄດ້",
  "Breadcrumb": "ເສັ້ນທາງນຳທາງ",
  "If you have a coupon code, please apply it below.": "ຖ້າທ່ານມີລະຫັດຄູປອງ, ກະລຸນານຳໃຊ້ມັນຢູ່ດ້ານລຸ່ມ.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "ເກີດຂໍ້ຜິດພາດໃນການດຳເນີນການຄຳສັ່ງຊື້ຂອງທ່ານ. ກະລຸນາກວດເບິ່ງວ່າມີການເກັບເງິນໃນວິທີການຊຳລະເງິນຂອງທ່ານຫຼືບໍ່ ແລະ ກວດສອບປະຫວັດຄຳສັ່ງຊື້ຂອງທ່ານກ່ອນສັ່ງຊື້ອີກຄັ້ງ."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "ເກີດຂໍ້ຜິດພາດໃນການດຳເນີນການຄຳສັ່ງຊື້ຂອງທ່ານ. ກະລຸນາກວດເບິ່ງວ່າມີການເກັບເງິນໃນວິທີການຊຳລະເງິນຂອງທ່ານຫຼືບໍ່ ແລະ ກວດສອບປະຫວັດຄຳສັ່ງຊື້ຂອງທ່ານກ່ອນສັ່ງຊື້ອີກຄັ້ງ.",
+ "Previous": "ກ່ອນໜ້າ",
+ "Next": "ຕໍ່ໄປ",
+ "Previous post:": "ໂພສກ່ອນໜ້າ:",
+ "Next post:": "ໂພສຕໍ່ໄປ:",
+ "Leave a Reply": "ສະແດງຄວາມຄິດເຫັນ",
+ "Reply to %s": "ຕອບກັບ %s",
+ "Cancel reply": "ຍົກເລີກການຕອບກັບ",
+ "Logged in as %s": "ເຂົ້າສູ່ລະບົບເປັນ %s",
+ "Logged in as %s. Edit your profile.": "ເຂົ້າສູ່ລະບົບເປັນ %s. ແກ້ໄຂໂປຣໄຟລ໌ຂອງທ່ານ.",
+ "Log out?": "ອອກຈາກລະບົບບໍ?",
+ "Your email address will not be published.": "ທີ່ຢູ່ອີເມວຂອງທ່ານຈະບໍ່ຖືກເຜີຍແຜ່.",
+ "Required fields are marked %s": "ຊ່ອງທີ່ຈຳເປັນຖືກໝາຍດ້ວຍ %s",
+ "Comment": "ຄວາມຄິດເຫັນ",
+ "Website": "ເວັບໄຊ",
+ "Save my name, email, and website in this browser for the next time I comment.": "ບັນທຶກຊື່, ອີເມວ ແລະ ເວັບໄຊຂອງຂ້ອຍໄວ້ໃນບຣາວເຊີນີ້ສຳລັບການສະແດງຄວາມຄິດເຫັນຄັ້ງຕໍ່ໄປ.",
+ "Post Comment": "ສົ່ງຄວາມຄິດເຫັນ",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "ທ່ານຕ້ອງ<a href=\"%s\">ເຂົ້າສູ່ລະບົບ</a>ເພື່ອສະແດງຄວາມຄິດເຫັນ."
 }

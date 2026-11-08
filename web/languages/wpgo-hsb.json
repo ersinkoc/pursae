@@ -3654,5 +3654,22 @@
  "Any name": "Někajke mjeno",
  "Breadcrumb": "Nawigaciska šćežka",
  "If you have a coupon code, please apply it below.": "Jeli maće kuponowy kod, nałožće jón prošu deleka.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Při wobdźěłowanju wašeje skazanki je zmylk wustupił. Prošu přepruwujće, hač su so z wašeje płaćenskeje metody pjenjezy wotknihowali, a přehladajće stawizny swojich skazankow, prjedy hač skazanku znowa wotedaće."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Při wobdźěłowanju wašeje skazanki je zmylk wustupił. Prošu přepruwujće, hač su so z wašeje płaćenskeje metody pjenjezy wotknihowali, a přehladajće stawizny swojich skazankow, prjedy hač skazanku znowa wotedaće.",
+ "Previous": "Předchadny",
+ "Next": "Přichodny",
+ "Previous post:": "Předchadny přinošk:",
+ "Next post:": "Přichodny přinošk:",
+ "Leave a Reply": "Komentar zawostajić",
+ "Reply to %s": "Na %s wotmołwić",
+ "Cancel reply": "Wotmołwu přetorhnyć",
+ "Logged in as %s": "Přizjewjeny jako %s",
+ "Logged in as %s. Edit your profile.": "Přizjewjeny jako %s. Wobdźěłajće swój profil.",
+ "Log out?": "Wotzjewić?",
+ "Your email address will not be published.": "Waša e-mejlowa adresa so njewozjewi.",
+ "Required fields are marked %s": "Trěbne pola su z %s markěrowane",
+ "Comment": "Komentar",
+ "Website": "Websydło",
+ "Save my name, email, and website in this browser for the next time I comment.": "Moje mjeno, e-mejlowu adresu a websydło w tutym wobhladowaku za přichodny komentar składować.",
+ "Post Comment": "Komentar pósłać",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Dyrbiće <a href=\"%s\">přizjewjeny</a> być, zo byšće komentar pisał."
 }

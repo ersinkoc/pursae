@@ -3654,5 +3654,22 @@
  "Any name": "Qualsiquier nombre",
  "Breadcrumb": "Ruta de navegación",
  "If you have a coupon code, please apply it below.": "Si tiens un codigo de cupón, aplica-lo abaixo.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Ha habiu una error en procesar o tuyo pediu. Compreba si bi ha garra cargo en o tuyo metodo de pago y revisa o historial de pedius antes de tornar a fer o pediu."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Ha habiu una error en procesar o tuyo pediu. Compreba si bi ha garra cargo en o tuyo metodo de pago y revisa o historial de pedius antes de tornar a fer o pediu.",
+ "Previous": "Anterior",
+ "Next": "Siguient",
+ "Previous post:": "Articlo anterior:",
+ "Next post:": "Articlo siguient:",
+ "Leave a Reply": "Deixa una respuesta",
+ "Reply to %s": "Responder a %s",
+ "Cancel reply": "Cancelar la respuesta",
+ "Logged in as %s": "Connectau como %s",
+ "Logged in as %s. Edit your profile.": "Connectau como %s. Editar o tuyo perfil.",
+ "Log out?": "Desconnectar-se?",
+ "Your email address will not be published.": "A tuya adreza de correu electronico no se publicará.",
+ "Required fields are marked %s": "Os campos obligatorios son marcaus con %s",
+ "Comment": "Comentario",
+ "Website": "Puesto web",
+ "Save my name, email, and website in this browser for the next time I comment.": "Alzar o mio nombre, correu electronico y puesto web en este navegador pa la proxima vegada que comente.",
+ "Post Comment": "Publicar comentario",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Has d'estar <a href=\"%s\">connectau</a> pa publicar un comentario."
 }

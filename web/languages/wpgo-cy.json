@@ -3654,5 +3654,22 @@
  "Any name": "Unrhyw enw",
  "Breadcrumb": "Briwsion bara",
  "If you have a coupon code, please apply it below.": "Os oes gennych god cwpon, rhowch ef ar waith isod.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Bu gwall wrth brosesu eich archeb. Gwiriwch am unrhyw daliadau yn eich dull talu ac adolygwch hanes eich archebion cyn gosod yr archeb eto."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Bu gwall wrth brosesu eich archeb. Gwiriwch am unrhyw daliadau yn eich dull talu ac adolygwch hanes eich archebion cyn gosod yr archeb eto.",
+ "Previous": "Blaenorol",
+ "Next": "Nesaf",
+ "Previous post:": "Cofnod blaenorol:",
+ "Next post:": "Cofnod nesaf:",
+ "Leave a Reply": "Gadael Ymateb",
+ "Reply to %s": "Ymateb i %s",
+ "Cancel reply": "Diddymu ateb",
+ "Logged in as %s": "Wedi mewngofnodi fel %s",
+ "Logged in as %s. Edit your profile.": "Wedi mewngofnodi fel %s. Golygu eich proffil.",
+ "Log out?": "Allgofnodi?",
+ "Your email address will not be published.": "Ni fydd eich cyfeiriad e-bost yn cael ei gyhoeddi.",
+ "Required fields are marked %s": "Mae'r meysydd gofynnol yn cael eu marcio %s",
+ "Comment": "Sylw",
+ "Website": "Gwefan",
+ "Save my name, email, and website in this browser for the next time I comment.": "Cadw fy enw, e-bost a gwefan yn y porwr hwn ar gyfer y tro nesaf y byddaf yn gwneud sylw.",
+ "Post Comment": "Cyhoeddi Sylw",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Rhaid i chi fod wedi <a href=\"%s\">mewngofnodi</a> i gyhoeddi sylw."
 }

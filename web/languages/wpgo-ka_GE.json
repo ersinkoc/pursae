@@ -3654,5 +3654,22 @@
  "Any name": "ნებისმიერი სახელი",
  "Breadcrumb": "ნავიგაციის ბილიკი",
  "If you have a coupon code, please apply it below.": "თუ გაქვთ კუპონის კოდი, გთხოვთ, გამოიყენოთ ის ქვემოთ.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "თქვენი შეკვეთის დამუშავებისას მოხდა შეცდომა. სანამ შეკვეთას ხელახლა განათავსებთ, გთხოვთ, შეამოწმოთ, ხომ არ ჩამოგეჭრათ თანხა გადახდის საშუალებიდან, და გადახედოთ შეკვეთების ისტორიას."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "თქვენი შეკვეთის დამუშავებისას მოხდა შეცდომა. სანამ შეკვეთას ხელახლა განათავსებთ, გთხოვთ, შეამოწმოთ, ხომ არ ჩამოგეჭრათ თანხა გადახდის საშუალებიდან, და გადახედოთ შეკვეთების ისტორიას.",
+ "Previous": "წინა",
+ "Next": "შემდეგი",
+ "Previous post:": "წინა ჩანაწერი:",
+ "Next post:": "შემდეგი ჩანაწერი:",
+ "Leave a Reply": "დატოვეთ პასუხი",
+ "Reply to %s": "პასუხი %s-ს",
+ "Cancel reply": "პასუხის გაუქმება",
+ "Logged in as %s": "შესული ხართ როგორც %s",
+ "Logged in as %s. Edit your profile.": "შესული ხართ როგორც %s. პროფილის რედაქტირება.",
+ "Log out?": "გასვლა?",
+ "Your email address will not be published.": "თქვენი ელფოსტის მისამართი გამოქვეყნებული არ იქნება.",
+ "Required fields are marked %s": "სავალდებულო ველები მონიშნულია %s-ით",
+ "Comment": "კომენტარი",
+ "Website": "ვებსაიტი",
+ "Save my name, email, and website in this browser for the next time I comment.": "შეინახე ჩემი სახელი, ელფოსტა და ვებსაიტი ამ ბრაუზერში შემდეგი კომენტარისთვის.",
+ "Post Comment": "კომენტარის დამატება",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "კომენტარის დასაწერად საჭიროა <a href=\"%s\">შესვლა</a>."
 }

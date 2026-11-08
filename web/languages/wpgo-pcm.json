@@ -3654,5 +3654,22 @@
  "Any name": "Any name",
  "Breadcrumb": "Breadcrumb",
  "If you have a coupon code, please apply it below.": "If you get coupon code, abeg apply am below.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Error happen as we dey process your order. Abeg check if dem don charge your payment method and look your order history before you place di order again."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Error happen as we dey process your order. Abeg check if dem don charge your payment method and look your order history before you place di order again.",
+ "Previous": "Previous",
+ "Next": "Next",
+ "Previous post:": "Previous post:",
+ "Next post:": "Next post:",
+ "Leave a Reply": "Drop Reply",
+ "Reply to %s": "Reply %s",
+ "Cancel reply": "Cancel reply",
+ "Logged in as %s": "You don log in as %s",
+ "Logged in as %s. Edit your profile.": "You don log in as %s. Edit your profile.",
+ "Log out?": "Log out?",
+ "Your email address will not be published.": "We no go publish your email address.",
+ "Required fields are marked %s": "Fields wey you must fill get %s mark",
+ "Comment": "Comment",
+ "Website": "Website",
+ "Save my name, email, and website in this browser for the next time I comment.": "Keep my name, email, and website for dis browser for di next time wey I go comment.",
+ "Post Comment": "Post Comment",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "You must <a href=\"%s\">log in</a> before you fit post comment."
 }

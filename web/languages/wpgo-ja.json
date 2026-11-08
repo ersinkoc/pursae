@@ -3654,5 +3654,22 @@
  "Any name": "任意の名前",
  "Breadcrumb": "パンくずリスト",
  "If you have a coupon code, please apply it below.": "クーポンコードをお持ちの場合は、以下で適用してください。",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "ご注文の処理中にエラーが発生しました。もう一度注文する前に、お支払い方法で請求が発生していないか確認し、注文履歴をご確認ください。"
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "ご注文の処理中にエラーが発生しました。もう一度注文する前に、お支払い方法で請求が発生していないか確認し、注文履歴をご確認ください。",
+ "Previous": "前へ",
+ "Next": "次へ",
+ "Previous post:": "前の投稿:",
+ "Next post:": "次の投稿:",
+ "Leave a Reply": "コメントを残す",
+ "Reply to %s": "%s へ返信する",
+ "Cancel reply": "コメントをキャンセル",
+ "Logged in as %s": "%s としてログインしています。",
+ "Logged in as %s. Edit your profile.": "%s としてログインしています。プロフィールを編集します。",
+ "Log out?": "ログアウトしますか ?",
+ "Your email address will not be published.": "メールアドレスが公開されることはありません。",
+ "Required fields are marked %s": "%s が付いている欄は必須項目です",
+ "Comment": "コメント",
+ "Website": "サイト",
+ "Save my name, email, and website in this browser for the next time I comment.": "次回のコメントで使用するためブラウザーに自分の名前、メールアドレス、サイトを保存する。",
+ "Post Comment": "コメントを送信",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "コメントを投稿するには<a href=\"%s\">ログイン</a>してください。"
 }

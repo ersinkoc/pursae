@@ -3654,5 +3654,22 @@
  "Any name": "أي سمية",
  "Breadcrumb": "مسار التنقل",
  "If you have a coupon code, please apply it below.": "إلا عندك كود ديال كوبون، عافاك طبقو لتحت.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "وقع خطأ فالمعالجة ديال الطلب ديالك. عافاك تأكد واش تخصمات شي فلوس من وسيلة الخلاص ديالك وشوف السجل ديال الطلبات ديالك قبل ما تعاود دير الطلب."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "وقع خطأ فالمعالجة ديال الطلب ديالك. عافاك تأكد واش تخصمات شي فلوس من وسيلة الخلاص ديالك وشوف السجل ديال الطلبات ديالك قبل ما تعاود دير الطلب.",
+ "Previous": "السابق",
+ "Next": "التالي",
+ "Previous post:": "المقالة السابقة:",
+ "Next post:": "المقالة التالية:",
+ "Leave a Reply": "خلي تعليق",
+ "Reply to %s": "رد على %s",
+ "Cancel reply": "إلغاء الرد",
+ "Logged in as %s": "داخل باسم %s",
+ "Logged in as %s. Edit your profile.": "داخل باسم %s. بدّل الملف الشخصي ديالك.",
+ "Log out?": "تخرج؟",
+ "Your email address will not be published.": "البريد الإلكتروني ديالك ما غاديش يتنشر.",
+ "Required fields are marked %s": "الخانات اللي ضرورية معلمة بـ %s",
+ "Comment": "التعليق",
+ "Website": "الموقع الإلكتروني",
+ "Save my name, email, and website in this browser for the next time I comment.": "سجل السمية ديالي، البريد الإلكتروني، والموقع ف هاد المتصفح للمرة الجاية اللي غادي نعلق فيها.",
+ "Post Comment": "نشر التعليق",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "خاصك تكون <a href=\"%s\">داخل</a> باش تنشر تعليق."
 }

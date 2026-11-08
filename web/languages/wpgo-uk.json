@@ -3654,5 +3654,22 @@
  "Any name": "Будь-яке ім’я",
  "Breadcrumb": "Навігаційний ланцюжок",
  "If you have a coupon code, please apply it below.": "Якщо у вас є код купона, застосуйте його нижче.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Під час обробки вашого замовлення сталася помилка. Перевірте, чи не було списань із вашого способу оплати, і перегляньте історію замовлень, перш ніж оформлювати замовлення повторно."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Під час обробки вашого замовлення сталася помилка. Перевірте, чи не було списань із вашого способу оплати, і перегляньте історію замовлень, перш ніж оформлювати замовлення повторно.",
+ "Previous": "Попередній",
+ "Next": "Наступний",
+ "Previous post:": "Попередній запис:",
+ "Next post:": "Наступний запис:",
+ "Leave a Reply": "Залишити відповідь",
+ "Reply to %s": "Відповісти %s",
+ "Cancel reply": "Скасувати відповідь",
+ "Logged in as %s": "Ви увійшли як %s",
+ "Logged in as %s. Edit your profile.": "Ви увійшли як %s. Редагувати профіль.",
+ "Log out?": "Вийти?",
+ "Your email address will not be published.": "Ваша адреса ел. пошти не буде опублікована.",
+ "Required fields are marked %s": "Обов’язкові поля позначені %s",
+ "Comment": "Коментар",
+ "Website": "Сайт",
+ "Save my name, email, and website in this browser for the next time I comment.": "Зберегти моє ім’я, ел. пошту та адресу сайту в цьому браузері для моїх подальших коментарів.",
+ "Post Comment": "Опублікувати коментар",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Ви маєте <a href=\"%s\">увійти</a>, щоб опублікувати коментар."
 }

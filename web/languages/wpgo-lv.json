@@ -3654,5 +3654,22 @@
  "Any name": "Jebkurš vārds",
  "Breadcrumb": "Navigācijas ceļš",
  "If you have a coupon code, please apply it below.": "Ja jums ir kupona kods, lūdzu, izmantojiet to zemāk.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Apstrādājot jūsu pasūtījumu, radās kļūda. Pirms atkārtotas pasūtījuma veikšanas, lūdzu, pārbaudiet, vai no jūsu maksājuma veida nav iekasēta nauda, un pārskatiet savu pasūtījumu vēsturi."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Apstrādājot jūsu pasūtījumu, radās kļūda. Pirms atkārtotas pasūtījuma veikšanas, lūdzu, pārbaudiet, vai no jūsu maksājuma veida nav iekasēta nauda, un pārskatiet savu pasūtījumu vēsturi.",
+ "Previous": "Iepriekšējais",
+ "Next": "Nākamais",
+ "Previous post:": "Iepriekšējais raksts:",
+ "Next post:": "Nākamais raksts:",
+ "Leave a Reply": "Atbildēt",
+ "Reply to %s": "Atbildēt %s",
+ "Cancel reply": "Atcelt atbildi",
+ "Logged in as %s": "Pieteicies kā %s",
+ "Logged in as %s. Edit your profile.": "Pieteicies kā %s. Rediģēt savu profilu.",
+ "Log out?": "Atteikties?",
+ "Your email address will not be published.": "Jūsu e-pasta adrese netiks publicēta.",
+ "Required fields are marked %s": "Obligātie lauki ir atzīmēti ar %s",
+ "Comment": "Komentārs",
+ "Website": "Vietne",
+ "Save my name, email, and website in this browser for the next time I comment.": "Saglabāt manu vārdu, e-pastu un vietni šajā pārlūkā līdz nākamajai reizei, kad komentēšu.",
+ "Post Comment": "Publicēt komentāru",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Jums ir jābūt <a href=\"%s\">pieteikušamies</a>, lai komentētu."
 }

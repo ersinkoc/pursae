@@ -3654,5 +3654,22 @@
  "Any name": "هەر ناوێک",
  "Breadcrumb": "ڕێڕەوی ناوبەری",
  "If you have a coupon code, please apply it below.": "ئەگەر کۆدی کۆپۆنت هەیە، تکایە لە خوارەوە جێبەجێی بکە.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "هەڵەیەک ڕوویدا لە پرۆسێسکردنی داواکارییەکەت. تکایە پێش ئەوەی دووبارە داواکاری بکەیت، هەر پارەبڕینێک لە شێوازی پارەدانەکەت بپشکنە و مێژووی داواکارییەکانت پێدا بچۆرەوە."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "هەڵەیەک ڕوویدا لە پرۆسێسکردنی داواکارییەکەت. تکایە پێش ئەوەی دووبارە داواکاری بکەیت، هەر پارەبڕینێک لە شێوازی پارەدانەکەت بپشکنە و مێژووی داواکارییەکانت پێدا بچۆرەوە.",
+ "Previous": "پێشوو",
+ "Next": "دواتر",
+ "Previous post:": "بابەتی پێشوو:",
+ "Next post:": "بابەتی دواتر:",
+ "Leave a Reply": "وەڵامێک بنووسە",
+ "Reply to %s": "وەڵامدانەوە بۆ %s",
+ "Cancel reply": "هەڵوەشاندنەوەی وەڵام",
+ "Logged in as %s": "چوویتە ژوورەوە وەک %s",
+ "Logged in as %s. Edit your profile.": "چوویتە ژوورەوە وەک %s. دەستکاریی پرۆفایلەکەت بکە.",
+ "Log out?": "چوونە دەرەوە؟",
+ "Your email address will not be published.": "ئیمەیڵەکەت بڵاو ناکرێتەوە.",
+ "Required fields are marked %s": "خانە پێویستەکان بە %s نیشانە کراون",
+ "Comment": "سەرنج",
+ "Website": "ماڵپەڕ",
+ "Save my name, email, and website in this browser for the next time I comment.": "ناو، ئیمەیڵ و ماڵپەڕەکەم لەم وێبگەڕەدا هەڵبگرە بۆ جاری داهاتوو کە سەرنج دەنووسم.",
+ "Post Comment": "ناردنی سەرنج",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "دەبێت <a href=\"%s\">بچیتە ژوورەوە</a> بۆ ئەوەی سەرنج بنووسیت."
 }

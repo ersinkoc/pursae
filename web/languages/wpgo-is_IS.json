@@ -3654,5 +3654,22 @@
  "Any name": "Hvaða nafn sem er",
  "Breadcrumb": "Brauðmolaslóð",
  "If you have a coupon code, please apply it below.": "Ef þú ert með afsláttarkóða skaltu nota hann hér fyrir neðan.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Villa kom upp við vinnslu pöntunarinnar þinnar. Athugaðu hvort einhverjar færslur hafi verið gjaldfærðar á greiðslumátann þinn og farðu yfir pöntunarferilinn áður en þú pantar aftur."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Villa kom upp við vinnslu pöntunarinnar þinnar. Athugaðu hvort einhverjar færslur hafi verið gjaldfærðar á greiðslumátann þinn og farðu yfir pöntunarferilinn áður en þú pantar aftur.",
+ "Previous": "Fyrri",
+ "Next": "Næsta",
+ "Previous post:": "Fyrri færsla:",
+ "Next post:": "Næsta færsla:",
+ "Leave a Reply": "Skrifaðu athugasemd",
+ "Reply to %s": "Svara %s",
+ "Cancel reply": "Hætta við svar",
+ "Logged in as %s": "Innskráð(ur) sem %s",
+ "Logged in as %s. Edit your profile.": "Innskráð(ur) sem %s. Breyta prófílnum þínum.",
+ "Log out?": "Skrá út?",
+ "Your email address will not be published.": "Netfang þitt verður ekki birt.",
+ "Required fields are marked %s": "Nauðsynlegir reitir eru merktir %s",
+ "Comment": "Athugasemd",
+ "Website": "Vefsíða",
+ "Save my name, email, and website in this browser for the next time I comment.": "Vista nafn mitt, netfang og vefsíðu í þessum vafra fyrir næstu athugasemd.",
+ "Post Comment": "Senda athugasemd",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Þú verður að vera <a href=\"%s\">innskráð(ur)</a> til að senda athugasemd."
 }

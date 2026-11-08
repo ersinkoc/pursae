@@ -3654,5 +3654,22 @@
  "Any name": "任意姓名",
  "Breadcrumb": "面包屑导航",
  "If you have a coupon code, please apply it below.": "如果您有优惠码，请在下方使用。",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "处理您的订单时出错。再次下单前，请检查您的付款方式是否已被扣款，并查看您的订单历史。"
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "处理您的订单时出错。再次下单前，请检查您的付款方式是否已被扣款，并查看您的订单历史。",
+ "Previous": "上一篇",
+ "Next": "下一篇",
+ "Previous post:": "上一篇文章：",
+ "Next post:": "下一篇文章：",
+ "Leave a Reply": "发表回复",
+ "Reply to %s": "回复给%s",
+ "Cancel reply": "取消回复",
+ "Logged in as %s": "已以%s的身份登录",
+ "Logged in as %s. Edit your profile.": "已以%s的身份登录。编辑您的个人资料。",
+ "Log out?": "要注销吗？",
+ "Your email address will not be published.": "您的电子邮件地址不会被公开。",
+ "Required fields are marked %s": "必填项已用%s标注",
+ "Comment": "评论",
+ "Website": "网站",
+ "Save my name, email, and website in this browser for the next time I comment.": "在此浏览器中保存我的显示名称、电子邮件地址和网站地址，以便下次评论时使用。",
+ "Post Comment": "发表评论",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "要发表评论，您必须先<a href=\"%s\">登录</a>。"
 }

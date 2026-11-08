@@ -3654,5 +3654,22 @@
  "Any name": "Edozein izen",
  "Breadcrumb": "Ogi-apurrak",
  "If you have a coupon code, please apply it below.": "Kupoi-kodea baduzu, aplikatu behean.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Errore bat gertatu da zure eskaera prozesatzean. Egiaztatu zure ordainketa-metodoan kargurik dagoen eta berrikusi zure eskaeren historia eskaera berriro egin aurretik."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Errore bat gertatu da zure eskaera prozesatzean. Egiaztatu zure ordainketa-metodoan kargurik dagoen eta berrikusi zure eskaeren historia eskaera berriro egin aurretik.",
+ "Previous": "Aurrekoa",
+ "Next": "Hurrengoa",
+ "Previous post:": "Aurreko bidalketa:",
+ "Next post:": "Hurrengo bidalketa:",
+ "Leave a Reply": "Utzi erantzun bat",
+ "Reply to %s": "Erantzun honi: %s",
+ "Cancel reply": "Utzi erantzuteari",
+ "Logged in as %s": "%s gisa saioa hasita",
+ "Logged in as %s. Edit your profile.": "%s gisa saioa hasita. Editatu zure profila.",
+ "Log out?": "Saioa amaitu?",
+ "Your email address will not be published.": "Zure helbide elektronikoa ez da argitaratuko.",
+ "Required fields are marked %s": "Beharrezko eremuak %s markatuta daude",
+ "Comment": "Iruzkina",
+ "Website": "Webgunea",
+ "Save my name, email, and website in this browser for the next time I comment.": "Gorde nire izena, e-posta eta webgunea nabigatzaile honetan iruzkin egiten dudan hurrengo aldirako.",
+ "Post Comment": "Bidali iruzkina",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "<a href=\"%s\">Saioa hasi</a> behar duzu iruzkin bat bidaltzeko."
 }

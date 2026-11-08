@@ -3654,5 +3654,22 @@
  "Any name": "I'oa ato'a",
  "Breadcrumb": "Ata'e 'ōpani",
  "If you have a coupon code, please apply it below.": "Mai te mea e tāviri coupon tā 'oe, a fa'a'ohipa i te reira i raro nei.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Ua tupu te hō'ē hape i te ravera'a i tā 'oe fa'aue. A hi'o mai te mea ua 'aufauhia te tahi moni na roto i tō 'oe rāve'a 'aufaura'a e a hi'opo'a i te 'ā'amu o tā 'oe mau fa'aue hou a fa'aue fa'ahou ai."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Ua tupu te hō'ē hape i te ravera'a i tā 'oe fa'aue. A hi'o mai te mea ua 'aufauhia te tahi moni na roto i tō 'oe rāve'a 'aufaura'a e a hi'opo'a i te 'ā'amu o tā 'oe mau fa'aue hou a fa'aue fa'ahou ai.",
+ "Previous": "Nā mua",
+ "Next": "I muri",
+ "Previous post:": "Papa'ira'a nā mua:",
+ "Next post:": "Papa'ira'a i muri:",
+ "Leave a Reply": "A vaiho i te pāhonora'a",
+ "Reply to %s": "Pāhono iā %s",
+ "Cancel reply": "Fa'aru'e i te pāhonora'a",
+ "Logged in as %s": "Ua tomo 'outou mai iā %s",
+ "Logged in as %s. Edit your profile.": "Ua tomo 'outou mai iā %s. A fa'atītī'aifaro i tō 'outou 'ōti'a.",
+ "Log out?": "E haere i rapae?",
+ "Your email address will not be published.": "'Eita tō 'outou e-mail e ha'apararehia.",
+ "Required fields are marked %s": "Ua tāpa'ohia te mau vāhi e hinaarohia i te %s",
+ "Comment": "Tuatāpapara'a",
+ "Website": "Site natirara'a",
+ "Save my name, email, and website in this browser for the next time I comment.": "A tāpe'a i tō'u i'oa, e-mail e te site natirara'a i roto i teie fa'atere natirara'a no te taime i muri a'e e pāpa'i ai au i te tuatāpapara'a.",
+ "Post Comment": "Hāpono i te tuatāpapara'a",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "E ti'a ia 'outou ia <a href=\"%s\">tomo</a> no te hāpono i te tuatāpapara'a."
 }

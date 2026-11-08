@@ -3654,5 +3654,22 @@
  "Any name": "Cualsisei non",
  "Breadcrumb": "Percors di navigazion",
  "If you have a coupon code, please apply it below.": "Se tu âs un codiç coupon, aplichilu ca sot.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Al è sucedût un erôr tal elaborâ il to ordin. Controle se a son stâts adebits sul to metodi di paiament e rivêt la cronologjie dai tiei ordins prime di tornâ a fâ l'ordin."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Al è sucedût un erôr tal elaborâ il to ordin. Controle se a son stâts adebits sul to metodi di paiament e rivêt la cronologjie dai tiei ordins prime di tornâ a fâ l'ordin.",
+ "Previous": "Precedent",
+ "Next": "Sucessîf",
+ "Previous post:": "Articul precedent:",
+ "Next post:": "Articul sucessîf:",
+ "Leave a Reply": "Lasse un coment",
+ "Reply to %s": "Rispuint a %s",
+ "Cancel reply": "Anule la rispueste",
+ "Logged in as %s": "Jentrât come %s",
+ "Logged in as %s. Edit your profile.": "Jentrât come %s. Modifiche il to profîl.",
+ "Log out?": "Jessî?",
+ "Your email address will not be published.": "La tô direzion e-mail no vignarà publicade.",
+ "Required fields are marked %s": "I cjamps obligatoris a son segnâts cun %s",
+ "Comment": "Coment",
+ "Website": "Sît web",
+ "Save my name, email, and website in this browser for the next time I comment.": "Salve il gno non, e-mail e sît web in chest navigadôr pe prossime volte che o comenti.",
+ "Post Comment": "Publiche il coment",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Tu scugnis <a href=\"%s\">jentrâ</a> par publicâ un coment."
 }

@@ -3654,5 +3654,22 @@
  "Any name": "कुनै पनि नाम",
  "Breadcrumb": "ब्रेडक्रम्ब",
  "If you have a coupon code, please apply it below.": "तपाईंसँग कुपन कोड छ भने, कृपया तल लागू गर्नुहोस्।",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "तपाईंको अर्डर प्रशोधन गर्दा त्रुटि भयो। कृपया फेरि अर्डर गर्नुअघि आफ्नो भुक्तानी विधिमा कुनै शुल्क लागेको छ कि जाँच गर्नुहोस् र आफ्नो अर्डर इतिहास हेर्नुहोस्।"
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "तपाईंको अर्डर प्रशोधन गर्दा त्रुटि भयो। कृपया फेरि अर्डर गर्नुअघि आफ्नो भुक्तानी विधिमा कुनै शुल्क लागेको छ कि जाँच गर्नुहोस् र आफ्नो अर्डर इतिहास हेर्नुहोस्।",
+ "Previous": "अघिल्लो",
+ "Next": "अर्को",
+ "Previous post:": "अघिल्लो पोस्ट:",
+ "Next post:": "अर्को पोस्ट:",
+ "Leave a Reply": "प्रतिक्रिया दिनुहोस्",
+ "Reply to %s": "%s लाई जवाफ दिनुहोस्",
+ "Cancel reply": "जवाफ रद्द गर्नुहोस्",
+ "Logged in as %s": "%s को रूपमा लगइन गरिएको",
+ "Logged in as %s. Edit your profile.": "%s को रूपमा लगइन गरिएको। आफ्नो प्रोफाइल सम्पादन गर्नुहोस्।",
+ "Log out?": "लगआउट गर्ने?",
+ "Your email address will not be published.": "तपाईंको इमेल ठेगाना प्रकाशित गरिने छैन।",
+ "Required fields are marked %s": "आवश्यक फिल्डहरू %s ले चिन्ह लगाइएका छन्",
+ "Comment": "टिप्पणी",
+ "Website": "वेबसाइट",
+ "Save my name, email, and website in this browser for the next time I comment.": "अर्को पटक टिप्पणी गर्दा प्रयोग गर्न मेरो नाम, इमेल र वेबसाइट यो ब्राउजरमा सुरक्षित गर्नुहोस्।",
+ "Post Comment": "टिप्पणी पोस्ट गर्नुहोस्",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "टिप्पणी पोस्ट गर्न तपाईं <a href=\"%s\">लगइन</a> हुनुपर्छ।"
 }

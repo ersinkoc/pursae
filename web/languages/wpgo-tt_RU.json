@@ -3654,5 +3654,22 @@
  "Any name": "Теләсә нинди исем",
  "Breadcrumb": "Навигация юлы",
  "If you have a coupon code, please apply it below.": "Купон кодыгыз булса, аны түбәндә кулланыгыз.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Заказыгызны эшкәрткәндә хата килеп чыкты. Заказны кабат бирер алдыннан, зинһар, түләү ысулыгыздан акча алынганмы-юкмы икәнен тикшерегез һәм заказлар тарихын карагыз."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Заказыгызны эшкәрткәндә хата килеп чыкты. Заказны кабат бирер алдыннан, зинһар, түләү ысулыгыздан акча алынганмы-юкмы икәнен тикшерегез һәм заказлар тарихын карагыз.",
+ "Previous": "Алдагы",
+ "Next": "Киләсе",
+ "Previous post:": "Алдагы язма:",
+ "Next post:": "Киләсе язма:",
+ "Leave a Reply": "Җавап калдыру",
+ "Reply to %s": "Җавап: %s",
+ "Cancel reply": "Җавапны кире кагу",
+ "Logged in as %s": "Сез %s булып кердегез",
+ "Logged in as %s. Edit your profile.": "Сез %s булып кердегез. Профилегезне үзгәртү.",
+ "Log out?": "Чыгаргамы?",
+ "Your email address will not be published.": "Сезнең электрон почта адресыгыз бастырылмаячак.",
+ "Required fields are marked %s": "Мәҗбүри кырлар %s белән билгеләнгән",
+ "Comment": "Комментарий",
+ "Website": "Сайт",
+ "Save my name, email, and website in this browser for the next time I comment.": "Киләсе комментарийларым өчен исемемне, электрон почтамны һәм сайтымны бу браузерда саклау.",
+ "Post Comment": "Комментарий җибәрү",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Комментарий калдыру өчен <a href=\"%s\">керергә</a> кирәк."
 }

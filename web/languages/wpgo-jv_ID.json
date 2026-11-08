@@ -3654,5 +3654,22 @@
  "Any name": "Jeneng apa wae",
  "Breadcrumb": "Breadcrumb",
  "If you have a coupon code, please apply it below.": "Yen sampeyan duwe kode kupon, mangga trapake ing ngisor.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Ana kasalahan nalika ngolah pesenan sampeyan. Mangga priksa apa ana tagihan ing metode pambayaran sampeyan lan tinjau riwayat pesenan sampeyan sadurunge mesen maneh."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Ana kasalahan nalika ngolah pesenan sampeyan. Mangga priksa apa ana tagihan ing metode pambayaran sampeyan lan tinjau riwayat pesenan sampeyan sadurunge mesen maneh.",
+ "Previous": "Sadurungé",
+ "Next": "Sabanjuré",
+ "Previous post:": "Tulisan sadurungé:",
+ "Next post:": "Tulisan sabanjuré:",
+ "Leave a Reply": "Tinggalaké Wangsulan",
+ "Reply to %s": "Wangsuli %s",
+ "Cancel reply": "Batal wangsulan",
+ "Logged in as %s": "Mlebu minangka %s",
+ "Logged in as %s. Edit your profile.": "Mlebu minangka %s. Sunting profil panjenengan.",
+ "Log out?": "Metu?",
+ "Your email address will not be published.": "Alamat e-mail panjenengan ora bakal dipublikasiké.",
+ "Required fields are marked %s": "Kolom sing wajib diisi ditandhani %s",
+ "Comment": "Komentar",
+ "Website": "Situs web",
+ "Save my name, email, and website in this browser for the next time I comment.": "Simpen jeneng, e-mail, lan situs webku ing browser iki kanggo komentar sabanjuré.",
+ "Post Comment": "Kirim Komentar",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Panjenengan kudu <a href=\"%s\">mlebu</a> kanggo ngirim komentar."
 }

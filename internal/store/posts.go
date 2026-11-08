@@ -843,7 +843,8 @@ func (s *Store) Adjacent(ctx context.Context, p *Post, previous bool) (*Post, er
 	return s.AdjacentExcept(ctx, p, previous, nil)
 }
 
-// AdjacentExcept is Adjacent skipping the given ids (posts hidden from the visitor).
+// AdjacentExcept is Adjacent skipping the given ids (posts hidden from the visitor), narrowed by
+// QueryFilter (the request language).
 func (s *Store) AdjacentExcept(ctx context.Context, p *Post, previous bool, exclude []int64) (*Post, error) {
 	if p.PublishedAt == nil {
 		return nil, ErrNotFound
@@ -855,8 +856,10 @@ func (s *Store) AdjacentExcept(ctx context.Context, p *Post, previous bool, excl
 	if exclude == nil {
 		exclude = []int64{}
 	}
+	// QueryFilter keeps to the request language (Polylang's pll_post_langs join on get_adjacent_post()).
+	args := []any{p.Type, *p.PublishedAt, p.ID, exclude}
+	filter := QueryFilter.cond(ctx, "post", &args)
 	return scanPost(s.Pool.QueryRow(ctx, `SELECT `+postCols+` FROM posts WHERE type = $1 AND status = 'publish'
-		AND (published_at `+cmp+` $2 OR (published_at = $2 AND id `+cmp+` $3)) AND NOT (id = ANY($4))
-		ORDER BY published_at `+dir+`, id `+dir+` LIMIT 1`,
-		p.Type, *p.PublishedAt, p.ID, exclude))
+		AND (published_at `+cmp+` $2 OR (published_at = $2 AND id `+cmp+` $3)) AND NOT (id = ANY($4))`+filter+`
+		ORDER BY published_at `+dir+`, id `+dir+` LIMIT 1`, args...))
 }

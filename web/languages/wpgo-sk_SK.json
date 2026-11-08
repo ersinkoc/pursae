@@ -3654,5 +3654,22 @@
  "Any name": "Ľubovoľné meno",
  "Breadcrumb": "Navigačná cesta",
  "If you have a coupon code, please apply it below.": "Ak máte kód kupónu, uplatnite ho nižšie.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Pri spracovaní vašej objednávky došlo k chybe. Pred opätovným odoslaním objednávky skontrolujte, či neboli stiahnuté platby z vašej platobnej metódy, a prezrite si históriu objednávok."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Pri spracovaní vašej objednávky došlo k chybe. Pred opätovným odoslaním objednávky skontrolujte, či neboli stiahnuté platby z vašej platobnej metódy, a prezrite si históriu objednávok.",
+ "Previous": "Predchádzajúci",
+ "Next": "Nasledujúci",
+ "Previous post:": "Predchádzajúci článok:",
+ "Next post:": "Nasledujúci článok:",
+ "Leave a Reply": "Pridaj komentár",
+ "Reply to %s": "Odpovedať používateľovi %s",
+ "Cancel reply": "Zrušiť odpoveď",
+ "Logged in as %s": "Prihlásený ako %s",
+ "Logged in as %s. Edit your profile.": "Prihlásený ako %s. Upraviť profil.",
+ "Log out?": "Odhlásiť sa?",
+ "Your email address will not be published.": "Vaša e-mailová adresa nebude zverejnená.",
+ "Required fields are marked %s": "Vyžadované polia sú označené %s",
+ "Comment": "Komentár",
+ "Website": "Webová stránka",
+ "Save my name, email, and website in this browser for the next time I comment.": "Uložiť moje meno, e-mail a webovú stránku v tomto prehliadači pre moje budúce komentáre.",
+ "Post Comment": "Pridať komentár",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Ak chcete pridať komentár, musíte sa <a href=\"%s\">prihlásiť</a>."
 }

@@ -3654,5 +3654,22 @@
  "Any name": "خالىغان ئىسىم",
  "Breadcrumb": "يول كۆرسەتكۈچ",
  "If you have a coupon code, please apply it below.": "ئېتىبار بېلەت كودىڭىز بولسا، ئۇنى تۆۋەندە ئىشلىتىڭ.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "زاكازىڭىزنى بىر تەرەپ قىلىشتا خاتالىق كۆرۈلدى. قايتا زاكاز قىلىشتىن بۇرۇن، پۇل تۆلەش ئۇسۇلىڭىزدىن پۇل ئېلىنغان-ئېلىنمىغانلىقىنى تەكشۈرۈپ، زاكاز تارىخىڭىزنى كۆرۈپ چىقىڭ."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "زاكازىڭىزنى بىر تەرەپ قىلىشتا خاتالىق كۆرۈلدى. قايتا زاكاز قىلىشتىن بۇرۇن، پۇل تۆلەش ئۇسۇلىڭىزدىن پۇل ئېلىنغان-ئېلىنمىغانلىقىنى تەكشۈرۈپ، زاكاز تارىخىڭىزنى كۆرۈپ چىقىڭ.",
+ "Previous": "ئالدىنقى",
+ "Next": "كېيىنكى",
+ "Previous post:": "ئالدىنقى يازما:",
+ "Next post:": "كېيىنكى يازما:",
+ "Leave a Reply": "ئىنكاس يېزىڭ",
+ "Reply to %s": "%s غا جاۋاب",
+ "Cancel reply": "جاۋابتىن ۋاز كېچىش",
+ "Logged in as %s": "%s سالاھىيىتىدە كىردىڭىز",
+ "Logged in as %s. Edit your profile.": "%s سالاھىيىتىدە كىردىڭىز. ئارخىپىڭىزنى تەھرىرلەڭ.",
+ "Log out?": "چېكىنەمسىز؟",
+ "Your email address will not be published.": "ئېلېكترون خەت ئادرېسىڭىز ئاشكارىلانمايدۇ.",
+ "Required fields are marked %s": "زۆرۈر بۆلەكلەر %s بىلەن بەلگىلەنگەن",
+ "Comment": "ئىنكاس",
+ "Website": "تور بېكەت",
+ "Save my name, email, and website in this browser for the next time I comment.": "كېيىنكى قېتىم ئىنكاس يازغىنىمدا ئىشلىتىش ئۈچۈن ئىسمىم، ئېلېكترون خەت ئادرېسىم ۋە تور بېكىتىمنى مۇشۇ توركۆرگۈدە ساقلاش.",
+ "Post Comment": "ئىنكاس يوللاش",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "ئىنكاس يېزىش ئۈچۈن <a href=\"%s\">كىرىشىڭىز</a> كېرەك."
 }

@@ -3654,5 +3654,22 @@
  "Any name": "Kahit anong pangalan",
  "Breadcrumb": "Breadcrumb",
  "If you have a coupon code, please apply it below.": "Kung mayroon kang code ng kupon, pakigamit ito sa ibaba.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Nagkaroon ng error sa pagproseso ng iyong order. Pakitingnan kung may mga singil sa iyong paraan ng pagbabayad at suriin ang iyong history ng order bago muling mag-order."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Nagkaroon ng error sa pagproseso ng iyong order. Pakitingnan kung may mga singil sa iyong paraan ng pagbabayad at suriin ang iyong history ng order bago muling mag-order.",
+ "Previous": "Nakaraan",
+ "Next": "Susunod",
+ "Previous post:": "Nakaraang post:",
+ "Next post:": "Susunod na post:",
+ "Leave a Reply": "Mag-iwan ng Tugon",
+ "Reply to %s": "Tumugon kay %s",
+ "Cancel reply": "Kanselahin ang tugon",
+ "Logged in as %s": "Naka-login bilang %s",
+ "Logged in as %s. Edit your profile.": "Naka-login bilang %s. I-edit ang iyong profile.",
+ "Log out?": "Mag-logout?",
+ "Your email address will not be published.": "Hindi ilalathala ang iyong email address.",
+ "Required fields are marked %s": "Ang mga kinakailangang field ay may markang %s",
+ "Comment": "Komento",
+ "Website": "Website",
+ "Save my name, email, and website in this browser for the next time I comment.": "I-save ang aking pangalan, email, at website sa browser na ito para sa susunod kong pagkomento.",
+ "Post Comment": "I-post ang Komento",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Kailangan mong <a href=\"%s\">mag-login</a> para makapag-post ng komento."
 }

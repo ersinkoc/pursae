@@ -3654,5 +3654,22 @@
  "Any name": "Каалаган ат",
  "Breadcrumb": "Навигация жолу",
  "If you have a coupon code, please apply it below.": "Купон кодуңуз болсо, аны төмөндө колдонуңуз.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Буйрутмаңызды иштетүүдө ката кетти. Буйрутманы кайра берүүдөн мурун төлөм ыкмаңыздан акча алынган-алынбаганын текшерип, буйрутмалар тарыхын карап чыгыңыз."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Буйрутмаңызды иштетүүдө ката кетти. Буйрутманы кайра берүүдөн мурун төлөм ыкмаңыздан акча алынган-алынбаганын текшерип, буйрутмалар тарыхын карап чыгыңыз.",
+ "Previous": "Мурунку",
+ "Next": "Кийинки",
+ "Previous post:": "Мурунку жазуу:",
+ "Next post:": "Кийинки жазуу:",
+ "Leave a Reply": "Жооп калтыруу",
+ "Reply to %s": "%s колдонуучусуна жооп",
+ "Cancel reply": "Жоопту жокко чыгаруу",
+ "Logged in as %s": "%s катары кирдиңиз",
+ "Logged in as %s. Edit your profile.": "%s катары кирдиңиз. Профилиңизди түзөтүү.",
+ "Log out?": "Чыгасызбы?",
+ "Your email address will not be published.": "Электрондук почтаңыздын дареги жарыяланбайт.",
+ "Required fields are marked %s": "Милдеттүү талаалар %s менен белгиленген",
+ "Comment": "Комментарий",
+ "Website": "Веб-сайт",
+ "Save my name, email, and website in this browser for the next time I comment.": "Кийинки комментарий үчүн атымды, электрондук почтамды жана веб-сайтымды ушул браузерде сактоо.",
+ "Post Comment": "Комментарий жөнөтүү",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Комментарий жазуу үчүн <a href=\"%s\">кирүүңүз</a> керек."
 }

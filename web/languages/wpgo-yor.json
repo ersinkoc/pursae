@@ -3654,5 +3654,22 @@
  "Any name": "Orúkọ èyíkéyìí",
  "Breadcrumb": "Ipa-ọ̀nà ojú-ewé",
  "If you have a coupon code, please apply it below.": "Tí o bá ní kóòdù kúpọ̀nù, jọ̀wọ́ lò ó nísàlẹ̀.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Àṣìṣe kan wáyé nígbà tí a ń ṣe àṣẹ rẹ. Jọ̀wọ́ ṣàyẹ̀wò bóyá owó kankan ti jáde nínú ọ̀nà ìsanwó rẹ kí o sì wo ìtàn àṣẹ rẹ kí o tó tún ṣe àṣẹ náà."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Àṣìṣe kan wáyé nígbà tí a ń ṣe àṣẹ rẹ. Jọ̀wọ́ ṣàyẹ̀wò bóyá owó kankan ti jáde nínú ọ̀nà ìsanwó rẹ kí o sì wo ìtàn àṣẹ rẹ kí o tó tún ṣe àṣẹ náà.",
+ "Previous": "Èyí tó ṣáájú",
+ "Next": "Èyí tó kàn",
+ "Previous post:": "Àròkọ tó ṣáájú:",
+ "Next post:": "Àròkọ tó kàn:",
+ "Leave a Reply": "Fi Èsì Sílẹ̀",
+ "Reply to %s": "Fèsì sí %s",
+ "Cancel reply": "Fagilé èsì",
+ "Logged in as %s": "O wọlé gẹ́gẹ́ bí %s",
+ "Logged in as %s. Edit your profile.": "O wọlé gẹ́gẹ́ bí %s. Ṣàtúnkọ profaili rẹ.",
+ "Log out?": "Jáde?",
+ "Your email address will not be published.": "A kò ní ṣe àtẹ̀jáde àdírẹ́sì ímeèlì rẹ.",
+ "Required fields are marked %s": "A ti fi %s sàmì sí àwọn àyè tó pọndandan",
+ "Comment": "Àsọyé",
+ "Website": "Ojú-òpó wẹ́ẹ̀bù",
+ "Save my name, email, and website in this browser for the next time I comment.": "Fi orúkọ mi, ímeèlì, àti ojú-òpó wẹ́ẹ̀bù mi pamọ́ sínú aṣàwákiri yìí fún ìgbà míì tí mo bá sọ àsọyé.",
+ "Post Comment": "Fi Àsọyé Ránṣẹ́",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "O gbọ́dọ̀ <a href=\"%s\">wọlé</a> láti fi àsọyé ránṣẹ́."
 }

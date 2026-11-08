@@ -3654,5 +3654,22 @@
  "Any name": "ڪو به نالو",
  "Breadcrumb": "بريڊ ڪرمب",
  "If you have a coupon code, please apply it below.": "جيڪڏهن توهان وٽ ڪوپن ڪوڊ آهي ته مهرباني ڪري ان کي هيٺ لاڳو ڪريو.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "توهان جي آرڊر کي پروسيس ڪرڻ ۾ هڪ غلطي آئي. مهرباني ڪري ٻيهر آرڊر ڏيڻ کان اڳ پنهنجي ادائگي جي طريقي ۾ ڪنهن به چارج کي چيڪ ڪريو ۽ پنهنجي آرڊر جي تاريخ جو جائزو وٺو."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "توهان جي آرڊر کي پروسيس ڪرڻ ۾ هڪ غلطي آئي. مهرباني ڪري ٻيهر آرڊر ڏيڻ کان اڳ پنهنجي ادائگي جي طريقي ۾ ڪنهن به چارج کي چيڪ ڪريو ۽ پنهنجي آرڊر جي تاريخ جو جائزو وٺو.",
+ "Previous": "پويون",
+ "Next": "ايندڙ",
+ "Previous post:": "پوئين پوسٽ:",
+ "Next post:": "ايندڙ پوسٽ:",
+ "Leave a Reply": "جواب ڏيو",
+ "Reply to %s": "%s کي جواب ڏيو",
+ "Cancel reply": "جواب رد ڪريو",
+ "Logged in as %s": "%s طور لاگ ان ٿيل",
+ "Logged in as %s. Edit your profile.": "%s طور لاگ ان ٿيل. پنهنجي پروفائل ۾ ترميم ڪريو.",
+ "Log out?": "لاگ آئوٽ ڪريو؟",
+ "Your email address will not be published.": "توهان جو اي ميل پتو شايع نه ڪيو ويندو.",
+ "Required fields are marked %s": "گهربل خانن تي %s جو نشان لڳل آهي",
+ "Comment": "تبصرو",
+ "Website": "ويب سائيٽ",
+ "Save my name, email, and website in this browser for the next time I comment.": "ايندڙ ڀيري تبصرو ڪرڻ لاءِ منهنجو نالو، اي ميل ۽ ويب سائيٽ هن برائوزر ۾ محفوظ ڪريو.",
+ "Post Comment": "تبصرو پوسٽ ڪريو",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "تبصرو پوسٽ ڪرڻ لاءِ توهان کي <a href=\"%s\">لاگ ان</a> ٿيڻو پوندو."
 }

@@ -3654,5 +3654,22 @@
  "Any name": "Yal isem",
  "Breadcrumb": "Abrid n tunigin",
  "If you have a coupon code, please apply it below.": "Ma tesɛiḍ tangalt n tkupunt, ttxil-k snes-itt ddaw.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Teḍra-d tuccḍa deg usesfer n usuter-ik. Ttxil-k senqed ma yella ayen yettwaxelṣen deg tarrayt-ik n uxelleṣ, u wali amazray n yisuturen-ik send ad tessutreḍ tikkelt nniḍen."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Teḍra-d tuccḍa deg usesfer n usuter-ik. Ttxil-k senqed ma yella ayen yettwaxelṣen deg tarrayt-ik n uxelleṣ, u wali amazray n yisuturen-ik send ad tessutreḍ tikkelt nniḍen.",
+ "Previous": "Uzwir",
+ "Next": "Uḍfir",
+ "Previous post:": "Amagrad uzwir:",
+ "Next post:": "Amagrad uḍfir:",
+ "Leave a Reply": "Ǧǧ-d tiririt",
+ "Reply to %s": "Err ɣef %s",
+ "Cancel reply": "Sefsex tiririt",
+ "Logged in as %s": "Teqqneḍ s yisem n %s",
+ "Logged in as %s. Edit your profile.": "Teqqneḍ s yisem n %s. Ẓreg amaɣnu-ik.",
+ "Log out?": "Tuffɣa?",
+ "Your email address will not be published.": "Tansa-k imayl ur tettwasuffeɣ ara.",
+ "Required fields are marked %s": "Urtiyen ilaqen ttwacerḍen s %s",
+ "Comment": "Awennit",
+ "Website": "Asmel web",
+ "Save my name, email, and website in this browser for the next time I comment.": "Sekles isem-iw, imayl-iw, akked usmel-iw web deg yiminig-a i tikkelt i d-iteddun ara d-wennteɣ.",
+ "Post Comment": "Suffeɣ-d awennit",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Ilaq ad <a href=\"%s\">teqqneḍ</a> akken ad d-tsuffɣeḍ awennit."
 }

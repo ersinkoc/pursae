@@ -3654,5 +3654,22 @@
  "Any name": "Willekeurige naam",
  "Breadcrumb": "Kruimelpad",
  "If you have a coupon code, please apply it below.": "Als u een kortingscode hebt, pas deze dan hieronder toe.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Er is een fout opgetreden bij het verwerken van uw bestelling. Controleer of er bedragen zijn afgeschreven via uw betaalmethode en bekijk uw bestelgeschiedenis voordat u de bestelling opnieuw plaatst."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Er is een fout opgetreden bij het verwerken van uw bestelling. Controleer of er bedragen zijn afgeschreven via uw betaalmethode en bekijk uw bestelgeschiedenis voordat u de bestelling opnieuw plaatst.",
+ "Previous": "Vorige",
+ "Next": "Volgende",
+ "Previous post:": "Vorig bericht:",
+ "Next post:": "Volgend bericht:",
+ "Leave a Reply": "Geef een reactie",
+ "Reply to %s": "Reageer op %s",
+ "Cancel reply": "Reactie annuleren",
+ "Logged in as %s": "Ingelogd als %s",
+ "Logged in as %s. Edit your profile.": "Ingelogd als %s. Bewerk uw profiel.",
+ "Log out?": "Uitloggen?",
+ "Your email address will not be published.": "Uw e-mailadres wordt niet gepubliceerd.",
+ "Required fields are marked %s": "Vereiste velden zijn gemarkeerd met %s",
+ "Comment": "Reactie",
+ "Website": "Site",
+ "Save my name, email, and website in this browser for the next time I comment.": "Mijn naam, e-mail en site opslaan in deze browser voor de volgende keer wanneer ik een reactie plaats.",
+ "Post Comment": "Reactie plaatsen",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "U moet <a href=\"%s\">ingelogd</a> zijn om een reactie te plaatsen."
 }

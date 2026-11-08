@@ -3654,5 +3654,22 @@
  "Any name": "ಯಾವುದೇ ಹೆಸರು",
  "Breadcrumb": "ಬ್ರೆಡ್‌ಕ್ರಂಬ್",
  "If you have a coupon code, please apply it below.": "ನಿಮ್ಮ ಬಳಿ ಕೂಪನ್ ಕೋಡ್ ಇದ್ದರೆ, ದಯವಿಟ್ಟು ಅದನ್ನು ಕೆಳಗೆ ಅನ್ವಯಿಸಿ.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "ನಿಮ್ಮ ಆರ್ಡರ್ ಅನ್ನು ಪ್ರಕ್ರಿಯೆಗೊಳಿಸುವಾಗ ದೋಷ ಉಂಟಾಗಿದೆ. ಮತ್ತೆ ಆರ್ಡರ್ ಮಾಡುವ ಮೊದಲು ದಯವಿಟ್ಟು ನಿಮ್ಮ ಪಾವತಿ ವಿಧಾನದಲ್ಲಿ ಯಾವುದೇ ಶುಲ್ಕಗಳು ವಿಧಿಸಲಾಗಿದೆಯೇ ಎಂದು ಪರಿಶೀಲಿಸಿ ಮತ್ತು ನಿಮ್ಮ ಆರ್ಡರ್ ಇತಿಹಾಸವನ್ನು ನೋಡಿ."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "ನಿಮ್ಮ ಆರ್ಡರ್ ಅನ್ನು ಪ್ರಕ್ರಿಯೆಗೊಳಿಸುವಾಗ ದೋಷ ಉಂಟಾಗಿದೆ. ಮತ್ತೆ ಆರ್ಡರ್ ಮಾಡುವ ಮೊದಲು ದಯವಿಟ್ಟು ನಿಮ್ಮ ಪಾವತಿ ವಿಧಾನದಲ್ಲಿ ಯಾವುದೇ ಶುಲ್ಕಗಳು ವಿಧಿಸಲಾಗಿದೆಯೇ ಎಂದು ಪರಿಶೀಲಿಸಿ ಮತ್ತು ನಿಮ್ಮ ಆರ್ಡರ್ ಇತಿಹಾಸವನ್ನು ನೋಡಿ.",
+ "Previous": "ಹಿಂದಿನ",
+ "Next": "ಮುಂದಿನ",
+ "Previous post:": "ಹಿಂದಿನ ಪೋಸ್ಟ್:",
+ "Next post:": "ಮುಂದಿನ ಪೋಸ್ಟ್:",
+ "Leave a Reply": "ಪ್ರತ್ಯುತ್ತರ ನೀಡಿ",
+ "Reply to %s": "%s ಗೆ ಪ್ರತ್ಯುತ್ತರಿಸಿ",
+ "Cancel reply": "ಪ್ರತ್ಯುತ್ತರ ರದ್ದುಮಾಡಿ",
+ "Logged in as %s": "%s ಆಗಿ ಲಾಗಿನ್ ಆಗಿದ್ದೀರಿ",
+ "Logged in as %s. Edit your profile.": "%s ಆಗಿ ಲಾಗಿನ್ ಆಗಿದ್ದೀರಿ. ನಿಮ್ಮ ಪ್ರೊಫೈಲ್ ಸಂಪಾದಿಸಿ.",
+ "Log out?": "ಲಾಗ್ ಔಟ್ ಆಗಬೇಕೆ?",
+ "Your email address will not be published.": "ನಿಮ್ಮ ಇಮೇಲ್ ವಿಳಾಸವನ್ನು ಪ್ರಕಟಿಸಲಾಗುವುದಿಲ್ಲ.",
+ "Required fields are marked %s": "ಅಗತ್ಯವಿರುವ ಕ್ಷೇತ್ರಗಳನ್ನು %s ಎಂದು ಗುರುತಿಸಲಾಗಿದೆ",
+ "Comment": "ಕಾಮೆಂಟ್",
+ "Website": "ಜಾಲತಾಣ",
+ "Save my name, email, and website in this browser for the next time I comment.": "ಮುಂದಿನ ಬಾರಿ ನಾನು ಕಾಮೆಂಟ್ ಮಾಡುವಾಗ ಈ ಬ್ರೌಸರ್‌ನಲ್ಲಿ ನನ್ನ ಹೆಸರು, ಇಮೇಲ್ ಮತ್ತು ಜಾಲತಾಣವನ್ನು ಉಳಿಸಿ.",
+ "Post Comment": "ಕಾಮೆಂಟ್ ಪೋಸ್ಟ್ ಮಾಡಿ",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "ಕಾಮೆಂಟ್ ಪೋಸ್ಟ್ ಮಾಡಲು ನೀವು <a href=\"%s\">ಲಾಗಿನ್</a> ಆಗಿರಬೇಕು."
 }

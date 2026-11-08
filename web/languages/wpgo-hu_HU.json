@@ -3654,5 +3654,22 @@
  "Any name": "Bármilyen név",
  "Breadcrumb": "Morzsamenü",
  "If you have a coupon code, please apply it below.": "Ha van kuponkódja, kérjük, alább váltsa be.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Hiba történt a rendelés feldolgozása során. Mielőtt újra leadná a rendelést, ellenőrizze, történt-e terhelés a fizetési módján, és tekintse át a rendelési előzményeit."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Hiba történt a rendelés feldolgozása során. Mielőtt újra leadná a rendelést, ellenőrizze, történt-e terhelés a fizetési módján, és tekintse át a rendelési előzményeit.",
+ "Previous": "Előző",
+ "Next": "Következő",
+ "Previous post:": "Előző bejegyzés:",
+ "Next post:": "Következő bejegyzés:",
+ "Leave a Reply": "Vélemény, hozzászólás?",
+ "Reply to %s": "Válasz %s részére",
+ "Cancel reply": "Válasz megszakítása",
+ "Logged in as %s": "Bejelentkezve mint %s",
+ "Logged in as %s. Edit your profile.": "Bejelentkezve mint %s. Profil szerkesztése.",
+ "Log out?": "Kilépés?",
+ "Your email address will not be published.": "Az e-mail címet nem tesszük közzé.",
+ "Required fields are marked %s": "A kötelező mezőket %s karakterrel jelöltük",
+ "Comment": "Hozzászólás",
+ "Website": "Honlap",
+ "Save my name, email, and website in this browser for the next time I comment.": "A nevem, e-mail címem, és weboldalcímem mentése a böngészőben a következő hozzászólásomhoz.",
+ "Post Comment": "Hozzászólás küldése",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Hozzászóláshoz <a href=\"%s\">be kell jelentkezni</a>."
 }

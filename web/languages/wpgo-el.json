@@ -3654,5 +3654,22 @@
  "Any name": "Οποιοδήποτε όνομα",
  "Breadcrumb": "Διαδρομή πλοήγησης",
  "If you have a coupon code, please apply it below.": "Αν έχετε κωδικό κουπονιού, εφαρμόστε τον παρακάτω.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Παρουσιάστηκε σφάλμα κατά την επεξεργασία της παραγγελίας σας. Ελέγξτε για τυχόν χρεώσεις στον τρόπο πληρωμής σας και εξετάστε το ιστορικό παραγγελιών σας πριν υποβάλετε ξανά την παραγγελία."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Παρουσιάστηκε σφάλμα κατά την επεξεργασία της παραγγελίας σας. Ελέγξτε για τυχόν χρεώσεις στον τρόπο πληρωμής σας και εξετάστε το ιστορικό παραγγελιών σας πριν υποβάλετε ξανά την παραγγελία.",
+ "Previous": "Προηγούμενο",
+ "Next": "Επόμενο",
+ "Previous post:": "Προηγούμενο άρθρο:",
+ "Next post:": "Επόμενο άρθρο:",
+ "Leave a Reply": "Αφήστε μια απάντηση",
+ "Reply to %s": "Απάντηση στον/στην %s",
+ "Cancel reply": "Ακύρωση απάντησης",
+ "Logged in as %s": "Συνδεθήκατε ως %s",
+ "Logged in as %s. Edit your profile.": "Συνδεθήκατε ως %s. Επεξεργασία προφίλ.",
+ "Log out?": "Αποσύνδεση;",
+ "Your email address will not be published.": "Η ηλ. διεύθυνση σας δεν δημοσιεύεται.",
+ "Required fields are marked %s": "Τα υποχρεωτικά πεδία σημειώνονται με %s",
+ "Comment": "Σχόλιο",
+ "Website": "Ιστότοπος",
+ "Save my name, email, and website in this browser for the next time I comment.": "Αποθήκευσε το όνομά μου, email, και τον ιστότοπο μου σε αυτόν τον πλοηγό για την επόμενη φορά που θα σχολιάσω.",
+ "Post Comment": "Δημοσίευση σχολίου",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Πρέπει να έχετε <a href=\"%s\">συνδεθεί</a> για να σχολιάσετε."
 }

@@ -3654,5 +3654,22 @@
  "Any name": "Bet koks vardas",
  "Breadcrumb": "Naršymo kelias",
  "If you have a coupon code, please apply it below.": "Jei turite kupono kodą, pritaikykite jį žemiau.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Apdorojant jūsų užsakymą įvyko klaida. Prieš pateikdami užsakymą dar kartą, patikrinkite, ar iš jūsų mokėjimo būdo nebuvo nuskaičiuota lėšų, ir peržiūrėkite savo užsakymų istoriją."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Apdorojant jūsų užsakymą įvyko klaida. Prieš pateikdami užsakymą dar kartą, patikrinkite, ar iš jūsų mokėjimo būdo nebuvo nuskaičiuota lėšų, ir peržiūrėkite savo užsakymų istoriją.",
+ "Previous": "Ankstesnis",
+ "Next": "Kitas",
+ "Previous post:": "Ankstesnis įrašas:",
+ "Next post:": "Kitas įrašas:",
+ "Leave a Reply": "Parašykite komentarą",
+ "Reply to %s": "Atsakyti %s",
+ "Cancel reply": "Atšaukti atsakymą",
+ "Logged in as %s": "Prisijungęs kaip %s",
+ "Logged in as %s. Edit your profile.": "Prisijungęs kaip %s. Redaguoti profilį.",
+ "Log out?": "Atsijungti?",
+ "Your email address will not be published.": "El. pašto adresas nebus skelbiamas.",
+ "Required fields are marked %s": "Būtini laukeliai pažymėti %s",
+ "Comment": "Komentaras",
+ "Website": "Interneto svetainė",
+ "Save my name, email, and website in this browser for the next time I comment.": "Išsaugoti mano vardą, el. pašto adresą ir interneto svetainę šioje naršyklėje kitam kartui, kai komentuosiu.",
+ "Post Comment": "Įrašyti komentarą",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Norėdami komentuoti, turite būti <a href=\"%s\">prisijungę</a>."
 }

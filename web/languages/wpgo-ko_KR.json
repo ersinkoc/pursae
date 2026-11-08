@@ -3654,5 +3654,22 @@
  "Any name": "아무 이름",
  "Breadcrumb": "브레드크럼",
  "If you have a coupon code, please apply it below.": "쿠폰 코드가 있다면 아래에서 적용하세요.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "주문을 처리하는 중 오류가 발생했습니다. 다시 주문하기 전에 결제 수단에 청구된 내역이 있는지 확인하고 주문 내역을 검토하세요."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "주문을 처리하는 중 오류가 발생했습니다. 다시 주문하기 전에 결제 수단에 청구된 내역이 있는지 확인하고 주문 내역을 검토하세요.",
+ "Previous": "이전",
+ "Next": "다음",
+ "Previous post:": "이전 글:",
+ "Next post:": "다음 글:",
+ "Leave a Reply": "답글 남기기",
+ "Reply to %s": "%s에게 답글 남기기",
+ "Cancel reply": "답글 취소",
+ "Logged in as %s": "%s(으)로 로그인했습니다",
+ "Logged in as %s. Edit your profile.": "%s(으)로 로그인했습니다. 프로필을 편집하세요.",
+ "Log out?": "로그아웃하시겠습니까?",
+ "Your email address will not be published.": "이메일 주소는 공개되지 않습니다.",
+ "Required fields are marked %s": "필수 필드는 %s로 표시됩니다",
+ "Comment": "댓글",
+ "Website": "웹사이트",
+ "Save my name, email, and website in this browser for the next time I comment.": "다음 번 댓글 작성을 위해 이 브라우저에 이름, 이메일, 그리고 웹사이트를 저장합니다.",
+ "Post Comment": "댓글 달기",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "댓글을 달기 위해서는 <a href=\"%s\">로그인</a>해야 합니다."
 }

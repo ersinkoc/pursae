@@ -399,7 +399,7 @@ func (s *Server) tt5PostNav(ctx context.Context, p *store.Post, lb *links.Builde
 	}
 	var sb strings.Builder
 	sb.WriteString(`<div class="wp-block-group alignwide is-layout-flow wp-block-group-is-layout-flow" style="margin-top:var(--wp--preset--spacing--60);margin-bottom:var(--wp--preset--spacing--60);">
-	<nav class="wp-block-group alignwide is-content-justification-space-between is-nowrap is-layout-flex wp-container-core-group-is-layout-878fe601 wp-block-group-is-layout-flex" aria-label="Post navigation" style="border-top-color:var(--wp--preset--color--accent-6);border-top-width:1px;padding-top:var(--wp--preset--spacing--40);padding-bottom:var(--wp--preset--spacing--40)">
+	<nav class="wp-block-group alignwide is-content-justification-space-between is-nowrap is-layout-flex wp-container-core-group-is-layout-878fe601 wp-block-group-is-layout-flex" aria-label="` + s.frontE(ctx, "Post navigation") + `" style="border-top-color:var(--wp--preset--color--accent-6);border-top-width:1px;padding-top:var(--wp--preset--spacing--40);padding-bottom:var(--wp--preset--spacing--40)">
 		<div class="post-navigation-link-previous wp-block-post-navigation-link">`)
 	if prev != nil {
 		sb.WriteString(`<span class="wp-block-post-navigation-link__arrow-previous is-arrow-arrow" aria-hidden="true">←</span><a href="` + html.EscapeString(lb.Permalink(prev)) + `" rel="prev">` + s.pllUC(ctx, wp.Texturize(wp.EscText(prev.Title)), 0) + `</a>`)

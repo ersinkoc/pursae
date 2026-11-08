@@ -3654,5 +3654,22 @@
  "Any name": "ਕੋਈ ਵੀ ਨਾਮ",
  "Breadcrumb": "ਬਰੈੱਡਕਰੰਬ",
  "If you have a coupon code, please apply it below.": "ਜੇਕਰ ਤੁਹਾਡੇ ਕੋਲ ਕੂਪਨ ਕੋਡ ਹੈ, ਤਾਂ ਕਿਰਪਾ ਕਰਕੇ ਇਸਨੂੰ ਹੇਠਾਂ ਲਾਗੂ ਕਰੋ।",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "ਤੁਹਾਡੇ ਆਰਡਰ ਨੂੰ ਪ੍ਰੋਸੈਸ ਕਰਦੇ ਸਮੇਂ ਇੱਕ ਗਲਤੀ ਆਈ। ਦੁਬਾਰਾ ਆਰਡਰ ਦੇਣ ਤੋਂ ਪਹਿਲਾਂ ਕਿਰਪਾ ਕਰਕੇ ਆਪਣੇ ਭੁਗਤਾਨ ਢੰਗ ਵਿੱਚ ਕੋਈ ਖਰਚਾ ਲੱਗਿਆ ਹੈ ਜਾਂ ਨਹੀਂ ਜਾਂਚੋ ਅਤੇ ਆਪਣਾ ਆਰਡਰ ਇਤਿਹਾਸ ਵੇਖੋ।"
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "ਤੁਹਾਡੇ ਆਰਡਰ ਨੂੰ ਪ੍ਰੋਸੈਸ ਕਰਦੇ ਸਮੇਂ ਇੱਕ ਗਲਤੀ ਆਈ। ਦੁਬਾਰਾ ਆਰਡਰ ਦੇਣ ਤੋਂ ਪਹਿਲਾਂ ਕਿਰਪਾ ਕਰਕੇ ਆਪਣੇ ਭੁਗਤਾਨ ਢੰਗ ਵਿੱਚ ਕੋਈ ਖਰਚਾ ਲੱਗਿਆ ਹੈ ਜਾਂ ਨਹੀਂ ਜਾਂਚੋ ਅਤੇ ਆਪਣਾ ਆਰਡਰ ਇਤਿਹਾਸ ਵੇਖੋ।",
+ "Previous": "ਪਿਛਲਾ",
+ "Next": "ਅਗਲਾ",
+ "Previous post:": "ਪਿਛਲੀ ਪੋਸਟ:",
+ "Next post:": "ਅਗਲੀ ਪੋਸਟ:",
+ "Leave a Reply": "ਜਵਾਬ ਦਿਓ",
+ "Reply to %s": "%s ਨੂੰ ਜਵਾਬ ਦਿਓ",
+ "Cancel reply": "ਜਵਾਬ ਰੱਦ ਕਰੋ",
+ "Logged in as %s": "%s ਵਜੋਂ ਲੌਗ ਇਨ ਕੀਤਾ",
+ "Logged in as %s. Edit your profile.": "%s ਵਜੋਂ ਲੌਗ ਇਨ ਕੀਤਾ। ਆਪਣੀ ਪ੍ਰੋਫਾਈਲ ਸੋਧੋ।",
+ "Log out?": "ਲੌਗ ਆਊਟ ਕਰਨਾ ਹੈ?",
+ "Your email address will not be published.": "ਤੁਹਾਡਾ ਈਮੇਲ ਪਤਾ ਪ੍ਰਕਾਸ਼ਿਤ ਨਹੀਂ ਕੀਤਾ ਜਾਵੇਗਾ।",
+ "Required fields are marked %s": "ਲੋੜੀਂਦੇ ਖੇਤਰ %s ਨਾਲ ਚਿੰਨ੍ਹਿਤ ਹਨ",
+ "Comment": "ਟਿੱਪਣੀ",
+ "Website": "ਵੈੱਬਸਾਈਟ",
+ "Save my name, email, and website in this browser for the next time I comment.": "ਅਗਲੀ ਵਾਰ ਟਿੱਪਣੀ ਕਰਨ ਲਈ ਮੇਰਾ ਨਾਮ, ਈਮੇਲ ਅਤੇ ਵੈੱਬਸਾਈਟ ਇਸ ਬ੍ਰਾਊਜ਼ਰ ਵਿੱਚ ਸੁਰੱਖਿਅਤ ਕਰੋ।",
+ "Post Comment": "ਟਿੱਪਣੀ ਪੋਸਟ ਕਰੋ",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "ਟਿੱਪਣੀ ਪੋਸਟ ਕਰਨ ਲਈ ਤੁਹਾਨੂੰ <a href=\"%s\">ਲੌਗ ਇਨ</a> ਕਰਨਾ ਪਵੇਗਾ।"
 }

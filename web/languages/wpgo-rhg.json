@@ -3654,5 +3654,22 @@
  "Any name": "Zé kunu name",
  "Breadcrumb": "Breadcrumb",
  "If you have a coupon code, please apply it below.": "Tuñí-r coupon code thakle, meherbani gori nise apply gorón.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Tuñí-r order process gorte error óise. Abar order dibar age meherbani gori tuñí-r payment method-ót kunu charge óise ne check gorón ar order history saiyón."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Tuñí-r order process gorte error óise. Abar order dibar age meherbani gori tuñí-r payment method-ót kunu charge óise ne check gorón ar order history saiyón.",
+ "Previous": "Agor",
+ "Next": "Fóror",
+ "Previous post:": "Agor post:",
+ "Next post:": "Fóror post:",
+ "Leave a Reply": "Ekkán Reply rakhó",
+ "Reply to %s": "%s ré reply goró",
+ "Cancel reply": "Reply cancel goró",
+ "Logged in as %s": "%s hísafe log in gorísó",
+ "Logged in as %s. Edit your profile.": "%s hísafe log in gorísó. Tuáñr profile edit goró.",
+ "Log out?": "Log out goríba ne?",
+ "Your email address will not be published.": "Tuáñr email address publish no goribó.",
+ "Required fields are marked %s": "Required field ókkol %s diyé mark gorá ase",
+ "Comment": "Comment",
+ "Website": "Website",
+ "Save my name, email, and website in this browser for the next time I comment.": "Fóror bar comment gorílé, mor nam, email arr website éi browser ot save goró.",
+ "Post Comment": "Comment post goró",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Comment post goríballa tuñí <a href=\"%s\">log in</a> gorón loGibó."
 }

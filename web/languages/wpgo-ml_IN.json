@@ -3654,5 +3654,22 @@
  "Any name": "ഏതെങ്കിലും പേര്",
  "Breadcrumb": "ബ്രെഡ്ക്രംബ്",
  "If you have a coupon code, please apply it below.": "നിങ്ങൾക്ക് ഒരു കൂപ്പൺ കോഡ് ഉണ്ടെങ്കിൽ, ദയവായി അത് താഴെ പ്രയോഗിക്കുക.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "നിങ്ങളുടെ ഓർഡർ പ്രോസസ്സ് ചെയ്യുന്നതിൽ ഒരു പിശക് സംഭവിച്ചു. വീണ്ടും ഓർഡർ ചെയ്യുന്നതിന് മുമ്പ്, ദയവായി നിങ്ങളുടെ പേയ്മെന്റ് രീതിയിൽ എന്തെങ്കിലും ചാർജുകൾ ഈടാക്കിയിട്ടുണ്ടോയെന്ന് പരിശോധിക്കുകയും നിങ്ങളുടെ ഓർഡർ ചരിത്രം അവലോകനം ചെയ്യുകയും ചെയ്യുക."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "നിങ്ങളുടെ ഓർഡർ പ്രോസസ്സ് ചെയ്യുന്നതിൽ ഒരു പിശക് സംഭവിച്ചു. വീണ്ടും ഓർഡർ ചെയ്യുന്നതിന് മുമ്പ്, ദയവായി നിങ്ങളുടെ പേയ്മെന്റ് രീതിയിൽ എന്തെങ്കിലും ചാർജുകൾ ഈടാക്കിയിട്ടുണ്ടോയെന്ന് പരിശോധിക്കുകയും നിങ്ങളുടെ ഓർഡർ ചരിത്രം അവലോകനം ചെയ്യുകയും ചെയ്യുക.",
+ "Previous": "മുമ്പത്തെ",
+ "Next": "അടുത്തത്",
+ "Previous post:": "മുമ്പത്തെ പോസ്റ്റ്:",
+ "Next post:": "അടുത്ത പോസ്റ്റ്:",
+ "Leave a Reply": "ഒരു മറുപടി നൽകുക",
+ "Reply to %s": "%s എന്നതിന് മറുപടി",
+ "Cancel reply": "മറുപടി റദ്ദാക്കുക",
+ "Logged in as %s": "%s ആയി ലോഗിൻ ചെയ്തിരിക്കുന്നു",
+ "Logged in as %s. Edit your profile.": "%s ആയി ലോഗിൻ ചെയ്തിരിക്കുന്നു. നിങ്ങളുടെ പ്രൊഫൈൽ തിരുത്തുക.",
+ "Log out?": "ലോഗ് ഔട്ട് ചെയ്യണോ?",
+ "Your email address will not be published.": "നിങ്ങളുടെ ഇമെയിൽ വിലാസം പ്രസിദ്ധീകരിക്കില്ല.",
+ "Required fields are marked %s": "ആവശ്യമായ ഫീൽഡുകൾ %s എന്ന് അടയാളപ്പെടുത്തിയിരിക്കുന്നു",
+ "Comment": "അഭിപ്രായം",
+ "Website": "വെബ്സൈറ്റ്",
+ "Save my name, email, and website in this browser for the next time I comment.": "അടുത്ത തവണ ഞാൻ അഭിപ്രായമിടുമ്പോൾ ഉപയോഗിക്കാൻ എന്റെ പേര്, ഇമെയിൽ, വെബ്സൈറ്റ് എന്നിവ ഈ ബ്രൗസറിൽ സംരക്ഷിക്കുക.",
+ "Post Comment": "അഭിപ്രായം പോസ്റ്റ് ചെയ്യുക",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "അഭിപ്രായം പോസ്റ്റ് ചെയ്യാൻ നിങ്ങൾ <a href=\"%s\">ലോഗിൻ</a> ചെയ്തിരിക്കണം."
 }

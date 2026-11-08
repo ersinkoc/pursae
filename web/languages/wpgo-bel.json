@@ -3654,5 +3654,22 @@
  "Any name": "Любое імя",
  "Breadcrumb": "Навігацыйны ланцужок",
  "If you have a coupon code, please apply it below.": "Калі ў вас ёсць код купона, прымяніце яго ніжэй.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Пры апрацоўцы вашай замовы адбылася памылка. Праверце, ці не было спісанняў з вашага спосабу аплаты, і праглядзіце гісторыю замоў, перш чым афармляць замову паўторна."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Пры апрацоўцы вашай замовы адбылася памылка. Праверце, ці не было спісанняў з вашага спосабу аплаты, і праглядзіце гісторыю замоў, перш чым афармляць замову паўторна.",
+ "Previous": "Папярэдні",
+ "Next": "Наступны",
+ "Previous post:": "Папярэдні запіс:",
+ "Next post:": "Наступны запіс:",
+ "Leave a Reply": "Пакінуць каментарый",
+ "Reply to %s": "Адказаць %s",
+ "Cancel reply": "Скасаваць адказ",
+ "Logged in as %s": "Вы ўвайшлі як %s",
+ "Logged in as %s. Edit your profile.": "Вы ўвайшлі як %s. Рэдагаваць профіль.",
+ "Log out?": "Выйсці?",
+ "Your email address will not be published.": "Ваш адрас электроннай пошты не будзе апублікаваны.",
+ "Required fields are marked %s": "Абавязковыя палі пазначаны %s",
+ "Comment": "Каментарый",
+ "Website": "Сайт",
+ "Save my name, email, and website in this browser for the next time I comment.": "Захаваць маё імя, электронную пошту і адрас сайта ў гэтым браўзеры для наступных маіх каментарыяў.",
+ "Post Comment": "Адправіць каментарый",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Вы павінны <a href=\"%s\">ўвайсці</a>, каб пакінуць каментарый."
 }

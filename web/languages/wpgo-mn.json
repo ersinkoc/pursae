@@ -3654,5 +3654,22 @@
  "Any name": "Дурын нэр",
  "Breadcrumb": "Замын заалт",
  "If you have a coupon code, please apply it below.": "Хэрэв танд купоны код байгаа бол доор ашиглана уу.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Таны захиалгыг боловсруулахад алдаа гарлаа. Дахин захиалга өгөхөөсөө өмнө төлбөрийн хэрэгслээсээ мөнгө суутгагдсан эсэхийг шалгаж, захиалгын түүхээ хянана уу."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Таны захиалгыг боловсруулахад алдаа гарлаа. Дахин захиалга өгөхөөсөө өмнө төлбөрийн хэрэгслээсээ мөнгө суутгагдсан эсэхийг шалгаж, захиалгын түүхээ хянана уу.",
+ "Previous": "Өмнөх",
+ "Next": "Дараах",
+ "Previous post:": "Өмнөх нийтлэл:",
+ "Next post:": "Дараах нийтлэл:",
+ "Leave a Reply": "Хариу үлдээх",
+ "Reply to %s": "%s-д хариулах",
+ "Cancel reply": "Хариултыг цуцлах",
+ "Logged in as %s": "%s нэрээр нэвтэрсэн",
+ "Logged in as %s. Edit your profile.": "%s нэрээр нэвтэрсэн. Профайлаа засах.",
+ "Log out?": "Гарах уу?",
+ "Your email address will not be published.": "Таны имэйл хаяг нийтлэгдэхгүй.",
+ "Required fields are marked %s": "Заавал бөглөх талбаруудыг %s тэмдэглэгээгээр тэмдэглэсэн",
+ "Comment": "Сэтгэгдэл",
+ "Website": "Вэбсайт",
+ "Save my name, email, and website in this browser for the next time I comment.": "Дараагийн удаа сэтгэгдэл бичихэд зориулж нэр, имэйл, вэбсайтаа энэ хөтөчид хадгалах.",
+ "Post Comment": "Сэтгэгдэл илгээх",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Сэтгэгдэл бичихийн тулд та <a href=\"%s\">нэвтэрсэн</a> байх ёстой."
 }

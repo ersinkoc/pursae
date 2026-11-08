@@ -394,16 +394,16 @@ func (s *Server) postNavigation(ctx context.Context, p *store.Post, lb *links.Bu
 	}
 	var sb strings.Builder
 	if prev != nil {
-		fmt.Fprintf(&sb, `<div class="nav-previous"><a href="%s" rel="prev"><span class="meta-nav" aria-hidden="true">Previous</span> <span class="screen-reader-text">Previous post:</span> <span class="post-title">%s</span></a></div>`,
-			html.EscapeString(lb.Permalink(prev)), s.pllUC(ctx, wp.Texturize(wp.EscText(prev.Title)), 0))
+		fmt.Fprintf(&sb, `<div class="nav-previous"><a href="%s" rel="prev"><span class="meta-nav" aria-hidden="true">%s</span> <span class="screen-reader-text">%s</span> <span class="post-title">%s</span></a></div>`,
+			html.EscapeString(lb.Permalink(prev)), s.frontE(ctx, "Previous"), s.frontE(ctx, "Previous post:"), s.pllUC(ctx, wp.Texturize(wp.EscText(prev.Title)), 0))
 	}
 	if next != nil {
-		fmt.Fprintf(&sb, `<div class="nav-next"><a href="%s" rel="next"><span class="meta-nav" aria-hidden="true">Next</span> <span class="screen-reader-text">Next post:</span> <span class="post-title">%s</span></a></div>`,
-			html.EscapeString(lb.Permalink(next)), s.pllUC(ctx, wp.Texturize(wp.EscText(next.Title)), 0))
+		fmt.Fprintf(&sb, `<div class="nav-next"><a href="%s" rel="next"><span class="meta-nav" aria-hidden="true">%s</span> <span class="screen-reader-text">%s</span> <span class="post-title">%s</span></a></div>`,
+			html.EscapeString(lb.Permalink(next)), s.frontE(ctx, "Next"), s.frontE(ctx, "Next post:"), s.pllUC(ctx, wp.Texturize(wp.EscText(next.Title)), 0))
 	}
 	return template.HTML(`
-	<nav class="navigation post-navigation" aria-label="Posts">
-		<h2 class="screen-reader-text">Post navigation</h2>
+	<nav class="navigation post-navigation" aria-label="` + s.frontE(ctx, "Posts") + `">
+		<h2 class="screen-reader-text">` + s.frontE(ctx, "Post navigation") + `</h2>
 		<div class="nav-links">` + sb.String() + `</div>
 	</nav>`)
 }

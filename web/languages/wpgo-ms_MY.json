@@ -3654,5 +3654,22 @@
  "Any name": "Sebarang nama",
  "Breadcrumb": "Serbuk roti",
  "If you have a coupon code, please apply it below.": "Jika anda mempunyai kod kupon, sila gunakannya di bawah.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Terdapat ralat semasa memproses pesanan anda. Sila semak sebarang caj pada kaedah pembayaran anda dan semak sejarah pesanan anda sebelum membuat pesanan sekali lagi."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Terdapat ralat semasa memproses pesanan anda. Sila semak sebarang caj pada kaedah pembayaran anda dan semak sejarah pesanan anda sebelum membuat pesanan sekali lagi.",
+ "Previous": "Sebelum",
+ "Next": "Seterusnya",
+ "Previous post:": "Kiriman sebelumnya:",
+ "Next post:": "Kiriman seterusnya:",
+ "Leave a Reply": "Tinggalkan Balasan",
+ "Reply to %s": "Balas kepada %s",
+ "Cancel reply": "Batal balasan",
+ "Logged in as %s": "Log masuk sebagai %s",
+ "Logged in as %s. Edit your profile.": "Log masuk sebagai %s. Sunting profil anda.",
+ "Log out?": "Log keluar?",
+ "Your email address will not be published.": "Alamat e-mel anda tidak akan disiarkan.",
+ "Required fields are marked %s": "Medan yang diperlukan ditanda %s",
+ "Comment": "Komen",
+ "Website": "Laman web",
+ "Save my name, email, and website in this browser for the next time I comment.": "Simpan nama, e-mel dan laman web saya dalam pelayar ini untuk kali seterusnya saya memberi komen.",
+ "Post Comment": "Hantar Komen",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Anda mesti <a href=\"%s\">log masuk</a> untuk menghantar komen."
 }

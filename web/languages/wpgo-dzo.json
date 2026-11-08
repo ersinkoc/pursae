@@ -3654,5 +3654,22 @@
  "Any name": "མིང་ག་ཅི་ཨིན་རུང་",
  "Breadcrumb": "འགྲུལ་ལམ་རྟགས།",
  "If you have a coupon code, please apply it below.": "ཁྱོད་ལུ་ ཆག་ཡང་ཤོག་འཛིན་གྱི་ ཨང་རྟགས་ཡོད་པ་ཅིན་ འོག་ལུ་ ལག་ལེན་འཐབ་གནང་།",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "ཁྱོད་ཀྱི་ ཉོ་བཀོད་ ལས་སྦྱོར་འབད་བའི་སྐབས་ འཛོལ་བ་ཅིག་ བྱུང་ཡི། ཉོ་བཀོད་ ལོག་མ་འབད་བའི་ཧེ་མ་ ཁྱོད་ཀྱི་ དངུལ་སྤྲོད་ཐབས་ལམ་ནང་ དངུལ་ བཏོག་ཡོད་མེད་ ཞིབ་དཔྱད་འབད་ཞིནམ་ལས་ ཉོ་བཀོད་ལོ་རྒྱུས་ བལྟ་གནང་།"
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "ཁྱོད་ཀྱི་ ཉོ་བཀོད་ ལས་སྦྱོར་འབད་བའི་སྐབས་ འཛོལ་བ་ཅིག་ བྱུང་ཡི། ཉོ་བཀོད་ ལོག་མ་འབད་བའི་ཧེ་མ་ ཁྱོད་ཀྱི་ དངུལ་སྤྲོད་ཐབས་ལམ་ནང་ དངུལ་ བཏོག་ཡོད་མེད་ ཞིབ་དཔྱད་འབད་ཞིནམ་ལས་ ཉོ་བཀོད་ལོ་རྒྱུས་ བལྟ་གནང་།",
+ "Previous": "ཧེ་མམ་",
+ "Next": "ཤུལ་མམ་",
+ "Previous post:": "སྐུར་རྩོམ་ ཧེ་མམ་:",
+ "Next post:": "སྐུར་རྩོམ་ ཤུལ་མམ་:",
+ "Leave a Reply": "ལན་ཅིག་བཞག་",
+ "Reply to %s": "%s ལུ་ ལན་སློག་",
+ "Cancel reply": "ལན་ཆ་མེད་གཏང་",
+ "Logged in as %s": "%s སྦེ་ ནང་བསྐྱོད་འབད་ཡི་",
+ "Logged in as %s. Edit your profile.": "%s སྦེ་ ནང་བསྐྱོད་འབད་ཡི། ཁྱོད་ཀྱི་ གསལ་སྡུད་ ཞུན་དག་འབད།",
+ "Log out?": "ཕྱིར་ཐོན་འབད་ནི་ཨིན་ན?",
+ "Your email address will not be published.": "ཁྱོད་ཀྱི་ གློག་འཕྲིན་ཁ་བྱང་ དཔེ་བསྐྲུན་མི་འབད།",
+ "Required fields are marked %s": "དགོས་ངེས་ཀྱི་ས་སྒོ་ཚུ་ལུ་ %s རྟགས་བཀལ་ཡོདཔ་ཨིན།",
+ "Comment": "བསམ་འཆར་",
+ "Website": "ཝེབ་སཱའིཊི་",
+ "Save my name, email, and website in this browser for the next time I comment.": "ཤུལ་མམ་ བསམ་འཆར་བཀོད་པའི་སྐབས་ལུ་ ངའི་མིང་ གློག་འཕྲིན་ ཝེབ་སཱའིཊི་ཚུ་ བརྡ་འཚོལ་པ་འདི་ནང་ སྲུང་བཞག་འབད།",
+ "Post Comment": "བསམ་འཆར་ བཙུགས་",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "བསམ་འཆར་བཙུགས་ནིའི་དོན་ལུ་ <a href=\"%s\">ནང་བསྐྱོད་</a>འབད་དགོ།"
 }

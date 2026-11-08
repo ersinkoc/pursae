@@ -3654,5 +3654,22 @@
  "Any name": "Ajna nomo",
  "Breadcrumb": "Paĝnivelaro",
  "If you have a coupon code, please apply it below.": "Se vi havas kuponkodon, bonvolu apliki ĝin sube.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Okazis eraro dum traktado de via mendo. Bonvolu kontroli, ĉu estas pagoŝarĝoj en via pagmetodo, kaj revizii vian mendohistorion antaŭ ol fari la mendon denove."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Okazis eraro dum traktado de via mendo. Bonvolu kontroli, ĉu estas pagoŝarĝoj en via pagmetodo, kaj revizii vian mendohistorion antaŭ ol fari la mendon denove.",
+ "Previous": "Antaŭa",
+ "Next": "Sekva",
+ "Previous post:": "Antaŭa afiŝo:",
+ "Next post:": "Sekva afiŝo:",
+ "Leave a Reply": "Lasu respondon",
+ "Reply to %s": "Respondi al %s",
+ "Cancel reply": "Nuligi respondon",
+ "Logged in as %s": "Ensalutinta kiel %s",
+ "Logged in as %s. Edit your profile.": "Ensalutinta kiel %s. Redakti vian profilon.",
+ "Log out?": "Ĉu elsaluti?",
+ "Your email address will not be published.": "Via retpoŝtadreso ne estos publikigita.",
+ "Required fields are marked %s": "Devigaj kampoj estas markitaj per %s",
+ "Comment": "Komento",
+ "Website": "Retejo",
+ "Save my name, email, and website in this browser for the next time I comment.": "Konservi mian nomon, retpoŝtadreson kaj retejon en ĉi tiu retumilo por la sekva fojo, kiam mi komentos.",
+ "Post Comment": "Afiŝi komenton",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Vi devas esti <a href=\"%s\">ensalutinta</a> por afiŝi komenton."
 }

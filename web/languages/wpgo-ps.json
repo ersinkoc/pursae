@@ -3654,5 +3654,22 @@
  "Any name": "هر نوم",
  "Breadcrumb": "د لارې نښې",
  "If you have a coupon code, please apply it below.": "که د کوپون کوډ لرئ، مهرباني وکړئ لاندې یې پلي کړئ.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "ستاسو د فرمایش په پروسس کې تېروتنه وشوه. مهرباني وکړئ مخکې له دې چې بیا فرمایش ورکړئ، په خپل د تادیې طریقه کې هر ډول لګښتونه وګورئ او د خپلو فرمایشونو تاریخچه وڅېړئ."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "ستاسو د فرمایش په پروسس کې تېروتنه وشوه. مهرباني وکړئ مخکې له دې چې بیا فرمایش ورکړئ، په خپل د تادیې طریقه کې هر ډول لګښتونه وګورئ او د خپلو فرمایشونو تاریخچه وڅېړئ.",
+ "Previous": "مخکینی",
+ "Next": "بل",
+ "Previous post:": "مخکینۍ لیکنه:",
+ "Next post:": "بله لیکنه:",
+ "Leave a Reply": "ځواب پرېږدئ",
+ "Reply to %s": "%s ته ځواب",
+ "Cancel reply": "ځواب لغوه کړئ",
+ "Logged in as %s": "د %s په توګه ننوتي یاست",
+ "Logged in as %s. Edit your profile.": "د %s په توګه ننوتي یاست. خپله پېژندپاڼه سمه کړئ.",
+ "Log out?": "وتل غواړئ؟",
+ "Your email address will not be published.": "ستاسو بریښنالیک پته به نه خپرېږي.",
+ "Required fields are marked %s": "اړین ډګرونه په %s نښه شوي دي",
+ "Comment": "تبصره",
+ "Website": "وېبپاڼه",
+ "Save my name, email, and website in this browser for the next time I comment.": "زما نوم، بریښنالیک او وېبپاڼه په دې کتنمل کې د راتلونکې تبصرې لپاره خوندي کړه.",
+ "Post Comment": "تبصره خپره کړئ",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "د تبصرې خپرولو لپاره باید <a href=\"%s\">ننوتي</a> یاست."
 }

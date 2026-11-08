@@ -3654,5 +3654,22 @@
  "Any name": "ማንኛውም ስም",
  "Breadcrumb": "የአሰሳ ዱካ",
  "If you have a coupon code, please apply it below.": "የኩፖን ኮድ ካለዎት፣ እባክዎ ከታች ይተግብሩት።",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "ትዕዛዝዎን በማስኬድ ላይ ስህተት ተፈጥሯል። ትዕዛዙን እንደገና ከማስገባትዎ በፊት እባክዎ በክፍያ ዘዴዎ ላይ ማንኛውም ክፍያ መኖሩን ያረጋግጡ እና የትዕዛዝ ታሪክዎን ይገምግሙ።"
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "ትዕዛዝዎን በማስኬድ ላይ ስህተት ተፈጥሯል። ትዕዛዙን እንደገና ከማስገባትዎ በፊት እባክዎ በክፍያ ዘዴዎ ላይ ማንኛውም ክፍያ መኖሩን ያረጋግጡ እና የትዕዛዝ ታሪክዎን ይገምግሙ።",
+ "Previous": "ቀዳሚ",
+ "Next": "ቀጣይ",
+ "Previous post:": "ቀዳሚ ጽሁፍ:",
+ "Next post:": "ቀጣይ ጽሁፍ:",
+ "Leave a Reply": "አስተያየት ይስጡ",
+ "Reply to %s": "ለ%s ምላሽ ይስጡ",
+ "Cancel reply": "ምላሽ ሰርዝ",
+ "Logged in as %s": "እንደ %s ገብተዋል",
+ "Logged in as %s. Edit your profile.": "እንደ %s ገብተዋል። መገለጫዎን ያርትዑ።",
+ "Log out?": "ይውጡ?",
+ "Your email address will not be published.": "የኢሜይል አድራሻዎ አይታተምም።",
+ "Required fields are marked %s": "አስፈላጊ መስኮች %s ምልክት ተደርጎባቸዋል",
+ "Comment": "አስተያየት",
+ "Website": "ድረ-ገጽ",
+ "Save my name, email, and website in this browser for the next time I comment.": "ለሚቀጥለው ጊዜ አስተያየት ስሰጥ ስሜን፣ ኢሜይሌን እና ድረ-ገጼን በዚህ አሳሽ ውስጥ አስቀምጥ።",
+ "Post Comment": "አስተያየት ይለጥፉ",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "አስተያየት ለመለጠፍ <a href=\"%s\">መግባት</a> አለብዎት።"
 }
