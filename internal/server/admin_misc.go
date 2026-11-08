@@ -21,6 +21,7 @@ import (
 
 	"wpgo/internal/media"
 	"wpgo/internal/store"
+	"wpgo/internal/wp"
 )
 
 // updateCore is update-core.php. WordPress Go ships as one binary, so updates mean replacing it.
@@ -73,6 +74,10 @@ func (s *Server) updateCore(c *gin.Context) {
 	}
 	if up := s.hubUpdate(c); up != nil {
 		d["Update"] = up
+		d["Released"] = up.Released // shown in the site's date format when it parses
+		if t, err := time.Parse(time.RFC3339, up.Released); err == nil {
+			d["Released"] = wp.FormatDate(t.In(s.loc()), s.settings.String("date_format"))
+		}
 		if art := up.artifactFor(runtime.GOOS, runtime.GOARCH); art != nil {
 			d["Artifact"] = art
 			if _, err := coreUpdateTarget(); err != nil {

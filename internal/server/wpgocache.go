@@ -115,7 +115,28 @@ func (s *Server) configureCache() {
 		old.PurgeAll()
 	}
 	c := cache.New(s.cacheConfig(), cache.Options{LoginCookie: auth.CookieName, Logger: slog.Default()})
+	s.dropCacheOfOtherCore(c)
 	s.cache.Store(&pageCache{c: c, h: c.Middleware(s.appHandler())})
+}
+
+// cacheCoreVersionOption records which core version filled the page cache.
+const cacheCoreVersionOption = "wpgo_cache_core_version"
+
+// dropCacheOfOtherCore purges the pages persisted on disk when they were rendered by another core
+// version: after a core update (or a rollback) they carry the old generator, asset versions and
+// markup, and would otherwise be served until they expire.
+func (s *Server) dropCacheOfOtherCore(c *cache.Cache) {
+	if s.settings.String(cacheCoreVersionOption) == Version {
+		return
+	}
+	if n := c.PurgeAll(); n > 0 {
+		slog.Info("page cache emptied after a core version change", "pages", n, "version", Version)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := s.settings.Set(ctx, map[string]any{cacheCoreVersionOption: Version}); err != nil {
+		slog.Warn("page cache: recording the core version", "err", err)
+	}
 }
 
 func (s *Server) currentCache() *cache.Cache {

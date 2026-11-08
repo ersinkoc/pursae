@@ -6,7 +6,7 @@
 <p class="update-last-checked">Last checked on {{.Checked}}. <a class="button" href="/wp-admin/update-core?force-check=1">Check again</a></p>
 {{if .Update}}
 <h2>An updated version of Pursae is available.</h2>
-<div class="notice notice-warning inline"><p><strong>Pursae {{.Update.Latest}}</strong>{{if eq .Update.Channel "beta"}} <span class="wpgo-badge wpgo-badge-beta">Beta</span>{{end}} is available; you are running {{.Version}}.{{if .Update.Released}} Released {{.Update.Released}}.{{end}}{{if .Update.NotesURL}} <a href="{{.Update.NotesURL}}">Release notes</a>{{end}}</p></div>
+<div class="notice notice-warning inline"><p><strong>Pursae {{.Update.Latest}}</strong>{{if eq .Update.Channel "beta"}} <span class="wpgo-badge wpgo-badge-beta">Beta</span>{{end}} is available; you are running {{.Version}}.{{if .Released}} Released {{.Released}}.{{end}}{{if .Update.NotesURL}} <a href="{{.Update.NotesURL}}">Release notes</a>{{end}}</p></div>
 {{if .Artifact}}{{if .CoreBlocked}}
 <div class="notice notice-error inline"><p>This site cannot update itself: {{.CoreBlocked}}.</p></div>
 {{if .Update.DownloadURL}}<p><a class="button" href="{{.Update.DownloadURL}}">Download {{.Update.Latest}}</a></p>{{end}}
