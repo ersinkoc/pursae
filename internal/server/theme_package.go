@@ -58,12 +58,14 @@ type themeManifest struct {
 	Palette  []themePaletteColor `json:"palette"`
 	Supports map[string]any      `json:"supports"`
 
+	// PageTemplates are the page templates the Page Attributes "Template" select offers (the
+	// "Template Name:" headers of a classic theme): template name => label, each one a
+	// templates/<name>.html file. A bundled theme's demo set fills it from Theme.Templates.
+	PageTemplates map[string]string `json:"page_templates"`
+
 	Customizer struct {
 		Sections []themeCzSection `json:"sections"`
 	} `json:"customizer"`
-
-	// pageTemplates are a bundled theme's page templates (a bundled demo set's pages may use them).
-	pageTemplates map[string]string
 }
 
 type themeManifestArea struct {
@@ -241,6 +243,18 @@ func parseThemeManifest(b []byte) (*themeManifest, error) {
 		ids["menu:"+l.ID] = true
 		if strings.TrimSpace(l.Name) == "" {
 			bad("menu_locations[%d].name is required", i)
+		}
+	}
+
+	for _, name := range sortedKeys(m.PageTemplates) {
+		label := m.PageTemplates[name]
+		if !themeHandleRe.MatchString(name) {
+			bad("page_templates key %q must be a template name (templates/<name>.html without the extension) matching ^[a-z0-9]+([_-][a-z0-9]+)*$", name)
+		} else if name == "index" || name == "page" || name == "front-page" || name == "singular" {
+			bad("page_templates key %q is a template of the hierarchy, not a page template", name)
+		}
+		if strings.TrimSpace(label) == "" || len([]rune(label)) > 80 || strings.ContainsAny(label, "<>\r\n") {
+			bad("page_templates[%q] must be a short label (1-80 characters, one line, no markup)", name)
 		}
 	}
 
@@ -539,6 +553,12 @@ func newPackageTheme(m *themeManifest, dir string) *Theme {
 		Screenshot: strings.TrimPrefix(m.Screenshot, "assets/"),
 		Supports:   map[string]any{},
 		Package:    pkg,
+	}
+	if len(m.PageTemplates) > 0 {
+		t.Templates = make(map[string]string, len(m.PageTemplates))
+		for name, label := range m.PageTemplates {
+			t.Templates[name] = label
+		}
 	}
 	for _, a := range m.WidgetAreas {
 		t.WidgetAreas = append(t.WidgetAreas, WidgetArea{ID: a.ID, Name: a.Name, Description: a.Description,
@@ -964,6 +984,9 @@ func loadThemePackage(dir, slug string) (*Theme, error) {
 		}
 	}
 	need = append(need, m.EditorStyles...)
+	for _, name := range sortedKeys(m.PageTemplates) {
+		need = append(need, "templates/"+name+".html")
+	}
 	need = append(need, m.PreloadFonts...)
 	for _, f := range need {
 		if st, err := os.Stat(filepath.Join(dir, filepath.FromSlash(path.Clean(f)))); err != nil || st.IsDir() {

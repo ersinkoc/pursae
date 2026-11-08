@@ -275,7 +275,7 @@ func parseThemeDemo(fsys fs.FS, m *themeManifest) (*themeDemo, error) {
 			name := strings.TrimSuffix(p.Template, ".html")
 			if !demoTplRe.MatchString(p.Template) {
 				bad("%s.template %q must be the name of a file in templates/", at, p.Template)
-			} else if _, err := fs.Stat(fsys, "templates/"+name+".html"); err != nil && m.pageTemplates[name] == "" {
+			} else if _, err := fs.Stat(fsys, "templates/"+name+".html"); err != nil && m.PageTemplates[name] == "" {
 				bad("%s.template: templates/%s.html is missing", at, name)
 			}
 		}

@@ -99,6 +99,11 @@ Rules:
 - `widget_areas[].id` and `menu_locations[].id` are handles (same pattern), unique; `name`
   is required. Widget areas use the `<section id class="widget …">` / `<h2 class="widget-title">`
   markup of the bundled themes.
+- `page_templates`: an object `{"page-projects": "Projects"}` of page templates, listed in the
+  Page Attributes "Template" select of both editors, Quick Edit and Bulk Edit, and accepted by
+  the REST `template` field (`get_page_templates()`). Each key is a handle that is not a
+  hierarchy template (`index`, `page`, `front-page`, `singular`) and `templates/<key>.html`
+  must exist; the label is one line of at most 80 characters without markup.
 - `palette`: `name`, `slug` (handle) and a hex `color` each; it becomes the
   `editor-color-palette` support.
 - `customizer.sections`: `id` (handle, unique), `title` required, sorted by `priority`.
@@ -137,8 +142,11 @@ main query the first existing one of these is rendered:
 | search       | `search`, `index`                                       |
 | 404          | `404`, `index`                                          |
 
-A page whose `_wp_page_template` is set (by demo content, see below) tries that template first,
+A page whose `_wp_page_template` is set (from the Template select of the editors, Quick Edit or
+Bulk Edit, the REST `template` field, or demo content, see below) tries that template first,
 also on the front page (`page-wide` or `page-wide.html` renders `templates/page-wide.html`).
+A stored template the theme does not list in `page_templates` is kept: the editors show it as
+an extra option and saving does not reset it to the default.
 Only `index.html` is required. Parts are ordinary templates included with
 `{{template "header" .}}`, `{{template "content" .}}` and so on (`header`, `footer`,
 `sidebar`, `comments`, `searchform`, `content*`, … by convention).

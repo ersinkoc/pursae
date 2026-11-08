@@ -301,7 +301,7 @@ func (s *Server) renderBlockEditor(c *gin.Context, p *store.Post, isNew bool) {
 		"__experimentalDashboardLink":                    "/wp-admin/",
 		"__experimentalAdditionalBlockPatterns":          patterns,
 		"__experimentalAdditionalBlockPatternCategories": corePatternCategories(),
-		"availableTemplates":                             map[string]string{"": s.__(c, "Default template")},
+		"availableTemplates":                             s.editorPageTemplates(c, p),
 		"disablePostFormats":                             false,
 		"titlePlaceholder":                               s.__(c, "Add title"),
 		"bodyPlaceholder":                                s.__(c, "Type / to choose a block"),
@@ -378,3 +378,18 @@ func (s *Server) webFileExists(name string) bool {
 }
 
 func strconvQuote(v string) string { b, _ := json.Marshal(v); return string(b) }
+
+// editorPageTemplates is the block editor's availableTemplates (get_page_templates() plus the
+// default): the theme's page templates for a page, and the page's own template when the theme does
+// not list it, so the Template panel shows it and saving keeps it.
+func (s *Server) editorPageTemplates(c *gin.Context, p *store.Post) map[string]string {
+	out := map[string]string{"": s.__(c, "Default template")}
+	if p.Type != "page" {
+		return out
+	}
+	tpl, _ := p.Meta["_wp_page_template"].(string)
+	for _, o := range withPageTemplate(s.pageTemplates(), tpl) {
+		out[o.Value] = o.Label
+	}
+	return out
+}

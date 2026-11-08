@@ -13,7 +13,7 @@ ones; `HEAD` works wherever `GET` does and `PUT`/`PATCH` wherever `POST` does.
 | Route | Methods | Notes |
 |-------|---------|-------|
 | `/posts`, `/pages`, `/blocks` | GET, POST | `page`, `per_page`, `search`, `author`, `categories`, `tags`, `status`, `orderby`, `order`, `slug`, `include`, `exclude`, `parent`, `sticky`, `_embed`, `_fields`; `context=edit` for raw content |
-| `/posts/{id}`, `/pages/{id}`, `/blocks/{id}` | GET, POST, DELETE | `?force=true` deletes instead of trashing |
+| `/posts/{id}`, `/pages/{id}`, `/blocks/{id}` | GET, POST, DELETE | `?force=true` deletes instead of trashing. Pages read and write `template` (`_wp_page_template`): `""` is the default template, otherwise one of the theme's page templates (a package's `page_templates`) or the page's current template; another value is a 400 |
 | `/posts/{id}/autosaves`, `/pages/{id}/autosaves`, `/blocks/{id}/autosaves` | GET, POST | the editor's autosave |
 | `/posts/{parent}/autosaves/{id}`, … | GET | |
 | `/posts/{id}/revisions`, `/pages/{id}/revisions`, … | GET | |

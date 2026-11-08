@@ -46,7 +46,7 @@ func themeHasDemo(t *Theme) bool {
 // bundledDemoManifest is the manifest a bundled set validates against: the theme's menu locations,
 // widget areas and Customizer settings.
 func bundledDemoManifest(t *Theme) *themeManifest {
-	m := &themeManifest{Slug: t.Slug, Name: t.Name, Demo: "demo/demo.json", pageTemplates: t.Templates}
+	m := &themeManifest{Slug: t.Slug, Name: t.Name, Demo: "demo/demo.json", PageTemplates: t.Templates}
 	for _, l := range t.MenuLocations {
 		m.MenuLocations = append(m.MenuLocations, themeManifestLocation{ID: l.Slug, Name: l.Name})
 	}

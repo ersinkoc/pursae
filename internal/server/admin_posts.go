@@ -378,6 +378,11 @@ func (s *Server) inlineEditData(c *gin.Context, d *postsListData) {
 		d.Pages, _, _ = s.store.QueryPosts(ctx, store.PostQuery{Types: []string{"page"}, Statuses: []string{"publish", "private", "draft", "pending", "future"},
 			OrderBy: "menu_order", Order: "asc", PerPage: -1})
 		d.Templates = s.pageTemplates()
+		// Quick Edit selects a row's template in this shared select: a template the theme does not
+		// list needs its option here, or saving the row would reset it to the default.
+		for _, r := range d.Rows {
+			d.Templates = withPageTemplate(d.Templates, r.Inline.Template)
+		}
 	}
 	if d.CanOthers {
 		d.Authors, _ = s.store.Authors(ctx)
@@ -547,6 +552,30 @@ func (s *Server) pageTemplates() []templateOption {
 		}
 	}
 	return out
+}
+
+// isPageTemplate reports whether the active theme lists tpl as a page template.
+func (s *Server) isPageTemplate(tpl string) bool {
+	for _, o := range s.pageTemplates() {
+		if o.Value == tpl {
+			return true
+		}
+	}
+	return false
+}
+
+// withPageTemplate adds the stored template tpl to a Template select's options when the theme does
+// not list it, so the select keeps it selected and saving the form does not reset it to the default.
+func withPageTemplate(list []templateOption, tpl string) []templateOption {
+	if tpl == "" || tpl == "default" {
+		return list
+	}
+	for _, o := range list {
+		if o.Value == tpl {
+			return list
+		}
+	}
+	return append(list, templateOption{tpl, tpl})
 }
 
 func previewSep(u string) string {
@@ -876,6 +905,9 @@ func setPageTemplate(p *store.Post, tpl string) {
 	if tpl == "default" || tpl == "" {
 		delete(p.Meta, "_wp_page_template")
 		return
+	}
+	if p.Meta == nil {
+		p.Meta = map[string]any{}
 	}
 	p.Meta["_wp_page_template"] = tpl
 }
@@ -1725,11 +1757,11 @@ func (s *Server) renderClassicEdit(c *gin.Context, p *store.Post, isNew bool) {
 	d.ToPing, _ = p.Meta["_to_ping"].(string)
 	d.ToPing = strings.ReplaceAll(d.ToPing, "\n", " ") // post_trackback_meta_box() shows to_ping space-separated
 	if p.Type == "page" {
-		d.Templates = s.pageTemplates()
 		d.Template = "default"
 		if tpl, _ := p.Meta["_wp_page_template"].(string); tpl != "" {
 			d.Template = tpl
 		}
+		d.Templates = withPageTemplate(s.pageTemplates(), d.Template)
 	}
 	// Hidden and closed metaboxes come from the user's Screen Options (postbox_classes()).
 	hidden := userMetaSet(u, "metaboxhidden_"+p.Type)

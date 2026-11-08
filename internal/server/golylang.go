@@ -582,6 +582,10 @@ func (s *Server) pllDetect(c *gin.Context) bool {
 	case strings.HasPrefix(p, "/wp-json") || (strings.Trim(p, "/") == "" && c.Query("rest_route") != ""):
 		if l := s.pllLang(ctx, c.Query("lang")); l != nil {
 			pllSet(c, &pllReq{srv: s, Lang: l, Filter: true})
+		} else {
+			// No lang parameter: no language and no filter, but the request still carries the plugin, so
+			// the Share slugs check (golylang_slugs.go) scopes an edited post's slug to its own language.
+			pllSet(c, &pllReq{srv: s})
 		}
 		return true
 	case strings.HasPrefix(p, "/wp-content/") || strings.HasPrefix(p, "/wp-includes/") || strings.HasPrefix(p, "/wp-login") || p == "/wp-comments-post":
