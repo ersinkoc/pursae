@@ -8,6 +8,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
+	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"testing"
@@ -30,9 +33,12 @@ func withRootKeys(t *testing.T, roots ...ed25519.PublicKey) {
 	t.Cleanup(func() { rootKeysBuiltin, rootKeysLinked = savedBuiltin, savedLinked })
 }
 
-// withTrustHubKeys sets the devhub WPGO_TRUST_HUB_KEYS opt-in for one test.
+// withTrustHubKeys sets the devhub WPGO_TRUST_HUB_KEYS opt-in for one test; it also clears the
+// variable so a developer's exported WPGO_TRUST_HUB_KEYS=1 cannot turn "off" into "on" in a
+// devhub test run.
 func withTrustHubKeys(t *testing.T, on bool) {
 	t.Helper()
+	t.Setenv("WPGO_TRUST_HUB_KEYS", "")
 	saved := trustHubKeysForce
 	trustHubKeysForce = on
 	t.Cleanup(func() { trustHubKeysForce = saved })
@@ -43,6 +49,7 @@ const pursaeReleaseRoot = "LxoPRqTiJfpXB0fc+peWabyDCWO/NzATjpk7pSe1IdY="
 
 // Every build pins the Pursae release root; a linked key adds a root (rotation), never replaces it.
 func TestPursaeRootKeyPinned(t *testing.T) {
+	withTrustHubKeys(t, false)
 	want, err := plugins.ParsePublicKey(pursaeReleaseRoot)
 	if err != nil {
 		t.Fatal(err)
@@ -232,5 +239,31 @@ func TestFaviconAndLogoRules(t *testing.T) {
 	}
 	if err := s.hubFetchLogo(t.Context(), "https://127.0.0.1:1/logo.svg"); err == nil || !strings.Contains(err.Error(), "private network") {
 		t.Errorf("a logo on a private address: %v", err)
+	}
+}
+
+// The development compose file's default Manager URL passes the site's own transport rule, and
+// the alias it uses is mapped to the host; a name like host.docker.internal would be refused.
+func TestComposeDevHubURLAllowed(t *testing.T) {
+	raw, err := os.ReadFile(filepath.Join("..", "..", "docker", "compose.yaml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	m := regexp.MustCompile(`WPGO_DEV_HUB_URL:\s*\$\{WPGO_DEV_HUB_URL:-([^}]+)\}`).FindSubmatch(raw)
+	if m == nil {
+		t.Fatal("docker/compose.yaml has no WPGO_DEV_HUB_URL default")
+	}
+	u, err := url.Parse(string(m[1]) + "/api/v1/index")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := hubURLAllowed(u); err != nil {
+		t.Errorf("compose default %s: %v", m[1], err)
+	}
+	if !strings.Contains(string(raw), `"`+u.Hostname()+`:host-gateway"`) {
+		t.Errorf("compose maps no extra_hosts entry for %s", u.Hostname())
+	}
+	if hubURLAllowed(&url.URL{Scheme: "http", Host: "host.docker.internal:8090"}) == nil {
+		t.Error("http on host.docker.internal is allowed")
 	}
 }

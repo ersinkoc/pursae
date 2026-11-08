@@ -48,7 +48,7 @@ re-signed with it, and sites add it to their trusted keys from `GET /api/v1/inde
 
 Only a development build connects to another Hub: build it with `-tags devhub` (`make dev`, or the
 development compose file, which sets `GO_TAGS=devhub`) and set
-`WPGO_DEV_HUB_URL=http://localhost:8090` (the compose default is `http://host.docker.internal:8090`).
+`WPGO_DEV_HUB_URL=http://localhost:8090` (the compose default is `http://pursae-manager.test:8090`).
 Set `WPGO_TRUST_HUB_KEYS=1` too, since your Manager's key is not endorsed by the Pursae release
 root. The site then reads your catalog on Plugins › Add Plugin and Appearance › Add Theme, trusts
 your keys, shows your releases on Dashboard › Updates and pings your Hub once a day.

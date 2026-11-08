@@ -69,7 +69,7 @@ inspect them. See [Mail](mail.md).
 | `WPGO_TRUST_DEV_KEY` | unset (`1` in compose) | trust the `dev-key.pub` found in the market directory. **Development only** |
 | `WPGO_EXPOSE_USERS` | unset | `1` lets visitors list accounts (public REST users, `/?author=N`, users sitemap). Off by default because those routes disclose account names |
 | `WPGO_TRUSTED_PROXIES` | loopback and private ranges | proxies (comma separated IPs or CIDRs) whose `X-Forwarded-For` / `X-Real-IP` is believed when deriving the visitor address; `none` trusts no proxy ([reverse proxy](reverse-proxy-and-tls.md)) |
-| `WPGO_DEV_HUB_URL` | unset (`http://host.docker.internal:8090` in the development compose file) | **devhub builds only**: the Manager to use instead of `https://hub.pursae.com` (https, or http on localhost / `*.localhost` / `*.test`); `off` disables it. Production binaries ignore it ([development builds](#development-builds-devhub)) |
+| `WPGO_DEV_HUB_URL` | unset (`http://pursae-manager.test:8090` in the development compose file) | **devhub builds only**: the Manager to use instead of `https://hub.pursae.com` (https, or http on localhost / `*.localhost` / `*.test`); `off` disables it. Production binaries ignore it ([development builds](#development-builds-devhub)) |
 | `WPGO_TRUST_HUB_KEYS` | unset (`1` in the development compose file) | **devhub builds only**: `1` trusts every key the Manager lists, endorsed by the release root or not ([root of trust](../hub/index.md#root-of-trust)). Production binaries ignore it |
 
 ### Pursae Manager
@@ -89,7 +89,8 @@ docker compose -f docker/compose.yaml up    # builds with GO_TAGS=devhub
 ```
 
 It reads `WPGO_DEV_HUB_URL` (the development compose file defaults to the Manager on the host,
-`http://host.docker.internal:8090`) and `WPGO_TRUST_HUB_KEYS=1`, so the local Manager's throwaway
+`http://pursae-manager.test:8090`, an `extra_hosts` alias for the host gateway: plain http is
+only accepted for `localhost`, `*.localhost` and `*.test` names) and `WPGO_TRUST_HUB_KEYS=1`, so the local Manager's throwaway
 signing key verifies releases and plugins. The production compose file builds without the tag
 (`GO_TAGS=""`) and drops both variables. Never ship a devhub binary.
 
