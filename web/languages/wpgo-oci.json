@@ -3654,5 +3654,22 @@
  "Any name": "Quin nom que siá",
  "Breadcrumb": "Fil d’Ariana",
  "If you have a coupon code, please apply it below.": "Se avètz un còdi promo, aplicatz-lo çai-jos.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "I a agut una error pendent lo tractament de vòstra comanda. Verificatz se i a agut de prelevaments sus vòstre mejan de pagament e consultatz l’istoric de vòstras comandas abans de tornar passar la comanda."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "I a agut una error pendent lo tractament de vòstra comanda. Verificatz se i a agut de prelevaments sus vòstre mejan de pagament e consultatz l’istoric de vòstras comandas abans de tornar passar la comanda.",
+ "Previous": "Precedent",
+ "Next": "Seguent",
+ "Previous post:": "Article precedent :",
+ "Next post:": "Article seguent :",
+ "Leave a Reply": "Daissar un comentari",
+ "Reply to %s": "Respondre a %s",
+ "Cancel reply": "Anullar la responsa",
+ "Logged in as %s": "Connectat en tant que %s",
+ "Logged in as %s. Edit your profile.": "Connectat en tant que %s. Modificar vòstre perfil.",
+ "Log out?": "Se desconnectar ?",
+ "Your email address will not be published.": "Vòstra adreça de corrièl serà pas publicada.",
+ "Required fields are marked %s": "Los camps obligatòris son marcats %s",
+ "Comment": "Comentari",
+ "Website": "Site web",
+ "Save my name, email, and website in this browser for the next time I comment.": "Enregistrar mon nom, mon corrièl e mon site web dins aqueste navigador pel còp que ven que comentarai.",
+ "Post Comment": "Publicar lo comentari",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Vos cal èsser <a href=\"%s\">connectat</a> per publicar un comentari."
 }

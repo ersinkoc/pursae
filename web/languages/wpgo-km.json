@@ -3654,5 +3654,22 @@
  "Any name": "ឈ្មោះណាមួយ",
  "Breadcrumb": "ផ្លូវរុករក",
  "If you have a coupon code, please apply it below.": "ប្រសិនបើអ្នកមានលេខកូដគូប៉ុង សូមអនុវត្តវានៅខាងក្រោម។",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "មានកំហុសក្នុងការដំណើរការការបញ្ជាទិញរបស់អ្នក។ សូមពិនិត្យមើលការគិតប្រាក់ណាមួយនៅក្នុងវិធីបង់ប្រាក់របស់អ្នក ហើយពិនិត្យប្រវត្តិការបញ្ជាទិញរបស់អ្នក មុនពេលបញ្ជាទិញម្តងទៀត។"
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "មានកំហុសក្នុងការដំណើរការការបញ្ជាទិញរបស់អ្នក។ សូមពិនិត្យមើលការគិតប្រាក់ណាមួយនៅក្នុងវិធីបង់ប្រាក់របស់អ្នក ហើយពិនិត្យប្រវត្តិការបញ្ជាទិញរបស់អ្នក មុនពេលបញ្ជាទិញម្តងទៀត។",
+ "Previous": "មុន",
+ "Next": "បន្ទាប់",
+ "Previous post:": "ការប្រកាសមុន៖",
+ "Next post:": "ការប្រកាសបន្ទាប់៖",
+ "Leave a Reply": "ផ្ដល់មតិយោបល់",
+ "Reply to %s": "ឆ្លើយតបទៅ %s",
+ "Cancel reply": "បោះបង់ការឆ្លើយតប",
+ "Logged in as %s": "បានចូលជា %s",
+ "Logged in as %s. Edit your profile.": "បានចូលជា %s។ កែសម្រួលប្រវត្តិរូបរបស់អ្នក។",
+ "Log out?": "ចាកចេញ?",
+ "Your email address will not be published.": "អាសយដ្ឋានអ៊ីមែលរបស់អ្នកនឹងមិនត្រូវបានផ្សព្វផ្សាយទេ។",
+ "Required fields are marked %s": "វាលដែលត្រូវការត្រូវបានសម្គាល់ដោយ %s",
+ "Comment": "មតិយោបល់",
+ "Website": "គេហទំព័រ",
+ "Save my name, email, and website in this browser for the next time I comment.": "រក្សាទុកឈ្មោះ អ៊ីមែល និងគេហទំព័ររបស់ខ្ញុំនៅក្នុងកម្មវិធីរុករកនេះសម្រាប់ពេលបន្ទាប់ដែលខ្ញុំផ្ដល់មតិយោបល់។",
+ "Post Comment": "បញ្ចូនមតិយោបល់",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "អ្នកត្រូវតែ<a href=\"%s\">ចូល</a>ដើម្បីផ្ដល់មតិយោបល់។"
 }

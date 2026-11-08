@@ -3654,5 +3654,22 @@
  "Any name": "Любое имя",
  "Breadcrumb": "Навигационная цепочка",
  "If you have a coupon code, please apply it below.": "Если у вас есть код купона, примените его ниже.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "При обработке вашего заказа произошла ошибка. Проверьте, не было ли списаний с вашего способа оплаты, и просмотрите историю заказов, прежде чем оформлять заказ повторно."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "При обработке вашего заказа произошла ошибка. Проверьте, не было ли списаний с вашего способа оплаты, и просмотрите историю заказов, прежде чем оформлять заказ повторно.",
+ "Previous": "Назад",
+ "Next": "Далее",
+ "Previous post:": "Предыдущая запись:",
+ "Next post:": "Следующая запись:",
+ "Leave a Reply": "Добавить комментарий",
+ "Reply to %s": "Ответить %s",
+ "Cancel reply": "Отменить ответ",
+ "Logged in as %s": "Вы вошли как %s",
+ "Logged in as %s. Edit your profile.": "Вы вошли как %s. Изменить профиль.",
+ "Log out?": "Выйти?",
+ "Your email address will not be published.": "Ваш адрес email не будет опубликован.",
+ "Required fields are marked %s": "Обязательные поля помечены %s",
+ "Comment": "Комментарий",
+ "Website": "Сайт",
+ "Save my name, email, and website in this browser for the next time I comment.": "Сохранить моё имя, email и адрес сайта в этом браузере для последующих моих комментариев.",
+ "Post Comment": "Отправить комментарий",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Для отправки комментария вам необходимо <a href=\"%s\">авторизоваться</a>."
 }

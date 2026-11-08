@@ -3654,5 +3654,22 @@
  "Any name": "કોઈપણ નામ",
  "Breadcrumb": "બ્રેડક્રમ્બ",
  "If you have a coupon code, please apply it below.": "જો તમારી પાસે કૂપન કોડ હોય, તો કૃપા કરીને તેને નીચે લાગુ કરો.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "તમારા ઓર્ડરની પ્રક્રિયા કરતી વખતે ભૂલ આવી. ફરીથી ઓર્ડર આપતા પહેલાં કૃપા કરીને તમારી ચુકવણી પદ્ધતિમાં કોઈ શુલ્ક લાગ્યો છે કે નહીં તે તપાસો અને તમારો ઓર્ડર ઇતિહાસ જુઓ."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "તમારા ઓર્ડરની પ્રક્રિયા કરતી વખતે ભૂલ આવી. ફરીથી ઓર્ડર આપતા પહેલાં કૃપા કરીને તમારી ચુકવણી પદ્ધતિમાં કોઈ શુલ્ક લાગ્યો છે કે નહીં તે તપાસો અને તમારો ઓર્ડર ઇતિહાસ જુઓ.",
+ "Previous": "પાછલું",
+ "Next": "આગળ",
+ "Previous post:": "પાછલી પોસ્ટ:",
+ "Next post:": "આગલી પોસ્ટ:",
+ "Leave a Reply": "પ્રતિભાવ આપો",
+ "Reply to %s": "%s ને જવાબ આપો",
+ "Cancel reply": "જવાબ રદ કરો",
+ "Logged in as %s": "%s તરીકે લૉગ ઇન",
+ "Logged in as %s. Edit your profile.": "%s તરીકે લૉગ ઇન. તમારી પ્રોફાઇલ સંપાદિત કરો.",
+ "Log out?": "લૉગ આઉટ કરવું છે?",
+ "Your email address will not be published.": "તમારું ઈમેઇલ સરનામું પ્રકાશિત કરવામાં આવશે નહીં.",
+ "Required fields are marked %s": "જરૂરી ફીલ્ડ્સ %s વડે ચિહ્નિત થયેલ છે",
+ "Comment": "ટિપ્પણી",
+ "Website": "વેબસાઇટ",
+ "Save my name, email, and website in this browser for the next time I comment.": "હવે પછી હું ટિપ્પણી કરું ત્યારે માટે આ બ્રાઉઝરમાં મારું નામ, ઈમેઇલ અને વેબસાઇટ સાચવો.",
+ "Post Comment": "ટિપ્પણી પોસ્ટ કરો",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "ટિપ્પણી પોસ્ટ કરવા માટે તમારે <a href=\"%s\">લૉગ ઇન</a> કરેલું હોવું જરૂરી છે."
 }

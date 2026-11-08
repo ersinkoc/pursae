@@ -3654,5 +3654,22 @@
  "Any name": "Calquera nome",
  "Breadcrumb": "Ruta de navegación",
  "If you have a coupon code, please apply it below.": "Se tes un código de cupón, aplícao abaixo.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Produciuse un erro ao procesar o teu pedido. Comproba se hai algún cargo no teu método de pagamento e revisa o teu historial de pedidos antes de volver facer o pedido."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Produciuse un erro ao procesar o teu pedido. Comproba se hai algún cargo no teu método de pagamento e revisa o teu historial de pedidos antes de volver facer o pedido.",
+ "Previous": "Anterior",
+ "Next": "Seguinte",
+ "Previous post:": "Entrada anterior:",
+ "Next post:": "Entrada seguinte:",
+ "Leave a Reply": "Deixa unha resposta",
+ "Reply to %s": "Responder a %s",
+ "Cancel reply": "Cancelar a resposta",
+ "Logged in as %s": "Accediches como %s",
+ "Logged in as %s. Edit your profile.": "Accediches como %s. Edita o teu perfil.",
+ "Log out?": "Saír?",
+ "Your email address will not be published.": "O teu enderezo de correo electrónico non se publicará.",
+ "Required fields are marked %s": "Os campos obrigatorios están marcados con %s",
+ "Comment": "Comentario",
+ "Website": "Sitio web",
+ "Save my name, email, and website in this browser for the next time I comment.": "Gardar o meu nome, correo electrónico e sitio web neste navegador para a próxima vez que comente.",
+ "Post Comment": "Publicar comentario",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Tes que <a href=\"%s\">acceder</a> para publicar un comentario."
 }

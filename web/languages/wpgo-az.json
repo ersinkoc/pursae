@@ -3654,5 +3654,22 @@
  "Any name": "İstənilən ad",
  "Breadcrumb": "Naviqasiya cığırı",
  "If you have a coupon code, please apply it below.": "Kupon kodunuz varsa, lütfən onu aşağıda tətbiq edin.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Sifarişinizin emalı zamanı xəta baş verdi. Sifarişi yenidən verməzdən əvvəl ödəniş üsulunuzdan hər hansı məbləğ tutulub-tutulmadığını yoxlayın və sifariş tarixçənizə baxın."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Sifarişinizin emalı zamanı xəta baş verdi. Sifarişi yenidən verməzdən əvvəl ödəniş üsulunuzdan hər hansı məbləğ tutulub-tutulmadığını yoxlayın və sifariş tarixçənizə baxın.",
+ "Previous": "Əvvəlki",
+ "Next": "Növbəti",
+ "Previous post:": "Əvvəlki yazı:",
+ "Next post:": "Növbəti yazı:",
+ "Leave a Reply": "Bir cavab yazın",
+ "Reply to %s": "%s üçün cavab yazın",
+ "Cancel reply": "Cavabı ləğv et",
+ "Logged in as %s": "%s olaraq daxil olunub",
+ "Logged in as %s. Edit your profile.": "%s olaraq daxil olunub. Profilinizi redaktə edin.",
+ "Log out?": "Çıxış edilsin?",
+ "Your email address will not be published.": "E-poçt ünvanınız dərc edilməyəcək.",
+ "Required fields are marked %s": "Vacib sahələr %s ilə işarələnmişdir",
+ "Comment": "Şərh",
+ "Website": "Veb sayt",
+ "Save my name, email, and website in this browser for the next time I comment.": "Növbəti şərhim üçün adımı, e-poçtumu və veb saytımı bu brauzerdə saxla.",
+ "Post Comment": "Şərh göndər",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Şərh göndərmək üçün <a href=\"%s\">daxil olmalısınız</a>."
 }

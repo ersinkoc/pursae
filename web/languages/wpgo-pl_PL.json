@@ -3654,5 +3654,22 @@
  "Any name": "Dowolne imię i nazwisko",
  "Breadcrumb": "Okruszki",
  "If you have a coupon code, please apply it below.": "Jeśli masz kod kuponu, zastosuj go poniżej.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Wystąpił błąd podczas przetwarzania zamówienia. Sprawdź, czy nie pobrano płatności za pomocą Twojej metody płatności, i przejrzyj historię zamówień, zanim złożysz zamówienie ponownie."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Wystąpił błąd podczas przetwarzania zamówienia. Sprawdź, czy nie pobrano płatności za pomocą Twojej metody płatności, i przejrzyj historię zamówień, zanim złożysz zamówienie ponownie.",
+ "Previous": "Poprzedni",
+ "Next": "Następny",
+ "Previous post:": "Poprzedni wpis:",
+ "Next post:": "Następny wpis:",
+ "Leave a Reply": "Dodaj komentarz",
+ "Reply to %s": "Odpowiedz %s",
+ "Cancel reply": "Anuluj pisanie odpowiedzi",
+ "Logged in as %s": "Zalogowano jako %s",
+ "Logged in as %s. Edit your profile.": "Zalogowano jako %s. Edytuj swój profil.",
+ "Log out?": "Wylogować?",
+ "Your email address will not be published.": "Twój adres e-mail nie zostanie opublikowany.",
+ "Required fields are marked %s": "Wymagane pola są oznaczone %s",
+ "Comment": "Komentarz",
+ "Website": "Witryna internetowa",
+ "Save my name, email, and website in this browser for the next time I comment.": "Zapamiętaj moje dane w tej przeglądarce podczas pisania kolejnych komentarzy.",
+ "Post Comment": "Opublikuj komentarz",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Musisz się <a href=\"%s\">zalogować</a>, aby móc dodać komentarz."
 }

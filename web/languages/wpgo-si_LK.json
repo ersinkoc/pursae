@@ -3654,5 +3654,22 @@
  "Any name": "ඕනෑම නමක්",
  "Breadcrumb": "සංචාලන මාර්ගය",
  "If you have a coupon code, please apply it below.": "ඔබට කූපන් කේතයක් තිබේ නම්, කරුණාකර එය පහතින් යොදන්න.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "ඔබේ ඇණවුම සැකසීමේදී දෝෂයක් ඇති විය. ඇණවුම නැවත කිරීමට පෙර, කරුණාකර ඔබේ ගෙවීම් ක්‍රමයේ කිසියම් අය කිරීම් තිබේදැයි පරීක්ෂා කර ඔබේ ඇණවුම් ඉතිහාසය සමාලෝචනය කරන්න."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "ඔබේ ඇණවුම සැකසීමේදී දෝෂයක් ඇති විය. ඇණවුම නැවත කිරීමට පෙර, කරුණාකර ඔබේ ගෙවීම් ක්‍රමයේ කිසියම් අය කිරීම් තිබේදැයි පරීක්ෂා කර ඔබේ ඇණවුම් ඉතිහාසය සමාලෝචනය කරන්න.",
+ "Previous": "පෙර",
+ "Next": "ඊළඟ",
+ "Previous post:": "පෙර ලිපිය:",
+ "Next post:": "ඊළඟ ලිපිය:",
+ "Leave a Reply": "ප්‍රතිචාරයක් දක්වන්න",
+ "Reply to %s": "%s වෙත පිළිතුරු දෙන්න",
+ "Cancel reply": "පිළිතුර අවලංගු කරන්න",
+ "Logged in as %s": "%s ලෙස පිවිස ඇත",
+ "Logged in as %s. Edit your profile.": "%s ලෙස පිවිස ඇත. ඔබගේ පැතිකඩ සංස්කරණය කරන්න.",
+ "Log out?": "නික්මෙන්නද?",
+ "Your email address will not be published.": "ඔබගේ ඊමේල් ලිපිනය ප්‍රසිද්ධ නොකෙරේ.",
+ "Required fields are marked %s": "අවශ්‍ය ක්ෂේත්‍ර %s ලෙස සලකුණු කර ඇත",
+ "Comment": "අදහස",
+ "Website": "වෙබ් අඩවිය",
+ "Save my name, email, and website in this browser for the next time I comment.": "මම ඊළඟ වතාවේ අදහස් දක්වන විට භාවිතය සඳහා මගේ නම, ඊමේල් සහ වෙබ් අඩවිය මෙම බ්‍රවුසරයේ සුරකින්න.",
+ "Post Comment": "අදහස පළ කරන්න",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "අදහසක් පළ කිරීමට ඔබ <a href=\"%s\">පිවිසී</a> සිටිය යුතුය."
 }

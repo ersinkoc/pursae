@@ -3654,5 +3654,22 @@
  "Any name": "Elke namme",
  "Breadcrumb": "Kruimelpaad",
  "If you have a coupon code, please apply it below.": "As jo in koartingskoade hawwe, tapasse dy dan hjirûnder.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Der is in flater bard by it ferwurkjen fan jo bestelling. Kontrolearje oft der bedraggen ôfskreaun binne fan jo betelmetoade en besjoch jo bestelskiednis foardat jo de bestelling opnij pleatse."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Der is in flater bard by it ferwurkjen fan jo bestelling. Kontrolearje oft der bedraggen ôfskreaun binne fan jo betelmetoade en besjoch jo bestelskiednis foardat jo de bestelling opnij pleatse.",
+ "Previous": "Foarige",
+ "Next": "Folgjende",
+ "Previous post:": "Foarich berjocht:",
+ "Next post:": "Folgjend berjocht:",
+ "Leave a Reply": "Lit in reaksje efter",
+ "Reply to %s": "Reagearje op %s",
+ "Cancel reply": "Reaksje annulearje",
+ "Logged in as %s": "Oanmeld as %s",
+ "Logged in as %s. Edit your profile.": "Oanmeld as %s. Bewurkje dyn profyl.",
+ "Log out?": "Ofmelde?",
+ "Your email address will not be published.": "Dyn e-mailadres wurdt net publisearre.",
+ "Required fields are marked %s": "Ferplichte fjilden binne markearre mei %s",
+ "Comment": "Reaksje",
+ "Website": "Website",
+ "Save my name, email, and website in this browser for the next time I comment.": "Myn namme, e-mailadres en website bewarje yn dizze browser foar de folgjende kear dat ik in reaksje pleats.",
+ "Post Comment": "Reaksje pleatse",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Do moatst <a href=\"%s\">oanmeld</a> wêze om in reaksje te pleatsen."
 }

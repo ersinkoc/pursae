@@ -3654,5 +3654,22 @@
  "Any name": "任意姓名",
  "Breadcrumb": "導覽路徑",
  "If you have a coupon code, please apply it below.": "如果你有優惠碼，請在下方套用。",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "處理你的訂單時發生錯誤。再次下單前，請檢查你的付款方式是否有任何扣款，並查看你的訂單記錄。"
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "處理你的訂單時發生錯誤。再次下單前，請檢查你的付款方式是否有任何扣款，並查看你的訂單記錄。",
+ "Previous": "上一篇",
+ "Next": "下一篇",
+ "Previous post:": "上一篇文章:",
+ "Next post:": "下一篇文章:",
+ "Leave a Reply": "發佈留言",
+ "Reply to %s": "回覆給 %s",
+ "Cancel reply": "取消回覆",
+ "Logged in as %s": "已使用 %s 帳號登入",
+ "Logged in as %s. Edit your profile.": "已使用 %s 帳號登入。編輯個人資料。",
+ "Log out?": "要登出嗎？",
+ "Your email address will not be published.": "發佈留言必須填寫的電子郵件地址不會公開。",
+ "Required fields are marked %s": "必填欄位標示為 %s",
+ "Comment": "留言",
+ "Website": "個人網站網址",
+ "Save my name, email, and website in this browser for the next time I comment.": "在瀏覽器中儲存顯示名稱、電子郵件地址及個人網站網址，以供下次發佈留言時使用。",
+ "Post Comment": "發佈留言",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "必須<a href=\"%s\">登入</a>才能發佈留言。"
 }

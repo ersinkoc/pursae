@@ -3654,5 +3654,22 @@
  "Any name": "Qualsevol nom",
  "Breadcrumb": "Ruta de navegació",
  "If you have a coupon code, please apply it below.": "Si teniu un codi de cupó, apliqueu-lo a continuació.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "S'ha produït un error en processar la comanda. Comproveu si hi ha algun càrrec al vostre mètode de pagament i reviseu l'historial de comandes abans de tornar a fer la comanda."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "S'ha produït un error en processar la comanda. Comproveu si hi ha algun càrrec al vostre mètode de pagament i reviseu l'historial de comandes abans de tornar a fer la comanda.",
+ "Previous": "Anterior",
+ "Next": "Següent",
+ "Previous post:": "Entrada anterior:",
+ "Next post:": "Entrada següent:",
+ "Leave a Reply": "Deixa un comentari",
+ "Reply to %s": "Respon a %s",
+ "Cancel reply": "Cancel·la les respostes",
+ "Logged in as %s": "Heu iniciat la sessió com a %s",
+ "Logged in as %s. Edit your profile.": "Heu iniciat la sessió com a %s. Edita el vostre perfil.",
+ "Log out?": "Voleu sortir?",
+ "Your email address will not be published.": "L'adreça electrònica no es publicarà.",
+ "Required fields are marked %s": "Els camps necessaris estan marcats amb %s",
+ "Comment": "Comentari",
+ "Website": "Lloc web",
+ "Save my name, email, and website in this browser for the next time I comment.": "Desa el meu nom, adreça electrònica i lloc web en aquest navegador per a la pròxima vegada que comenti.",
+ "Post Comment": "Publica el comentari",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Heu d'<a href=\"%s\">iniciar la sessió</a> per a escriure un comentari."
 }

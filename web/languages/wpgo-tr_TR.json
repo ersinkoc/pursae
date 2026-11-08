@@ -3657,5 +3657,22 @@
  "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Siparişiniz işlenirken bir hata oluştu. Lütfen siparişi yeniden vermeden önce ödeme yönteminizde herhangi bir tahsilat olup olmadığını kontrol edin ve sipariş geçmişinizi gözden geçirin.",
  "Edit Header": "Üst bilgiyi düzenle",
  "Edit Footer": "Alt bilgiyi düzenle",
- "Edit Template": "Şablonu düzenle"
+ "Edit Template": "Şablonu düzenle",
+ "Previous": "Önceki",
+ "Next": "Sonraki",
+ "Previous post:": "Önceki yazı:",
+ "Next post:": "Sonraki yazı:",
+ "Leave a Reply": "Bir yanıt yazın",
+ "Reply to %s": "%s için yanıt yazın",
+ "Cancel reply": "Yanıtı iptal et",
+ "Logged in as %s": "%s olarak giriş yapıldı",
+ "Logged in as %s. Edit your profile.": "%s olarak giriş yapıldı. Profilinizi düzenleyin.",
+ "Log out?": "Çıkış yapılsın mı?",
+ "Your email address will not be published.": "E-posta adresiniz yayınlanmayacak.",
+ "Required fields are marked %s": "Gerekli alanlar %s ile işaretlenmişlerdir",
+ "Comment": "Yorum",
+ "Website": "İnternet sitesi",
+ "Save my name, email, and website in this browser for the next time I comment.": "Bir dahaki sefere yorum yaptığımda kullanılmak üzere adımı, e-posta adresimi ve web site adresimi bu tarayıcıya kaydet.",
+ "Post Comment": "Yorum gönder",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Yorum yapabilmek için <a href=\"%s\">oturum açmalısınız</a>."
 }

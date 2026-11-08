@@ -3654,5 +3654,22 @@
  "Any name": "Enige naam",
  "Breadcrumb": "Broodkrummels",
  "If you have a coupon code, please apply it below.": "As u 'n koeponkode het, pas dit asseblief hieronder toe.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Daar was 'n fout met die verwerking van u bestelling. Gaan asseblief na of daar enige heffings op u betaalmetode is en hersien u bestelgeskiedenis voordat u die bestelling weer plaas."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Daar was 'n fout met die verwerking van u bestelling. Gaan asseblief na of daar enige heffings op u betaalmetode is en hersien u bestelgeskiedenis voordat u die bestelling weer plaas.",
+ "Previous": "Vorige",
+ "Next": "Volgende",
+ "Previous post:": "Vorige plasing:",
+ "Next post:": "Volgende plasing:",
+ "Leave a Reply": "Lewer kommentaar",
+ "Reply to %s": "Antwoord %s",
+ "Cancel reply": "Kanselleer antwoord",
+ "Logged in as %s": "Aangemeld as %s",
+ "Logged in as %s. Edit your profile.": "Aangemeld as %s. Wysig jou profiel.",
+ "Log out?": "Afmeld?",
+ "Your email address will not be published.": "Jou e-posadres sal nie gepubliseer word nie.",
+ "Required fields are marked %s": "Vereiste velde word gemerk met %s",
+ "Comment": "Kommentaar",
+ "Website": "Webwerf",
+ "Save my name, email, and website in this browser for the next time I comment.": "Stoor my naam, e-pos en webwerf in hierdie blaaier vir die volgende keer wanneer ek kommentaar lewer.",
+ "Post Comment": "Plaas kommentaar",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Jy moet <a href=\"%s\">aangemeld</a> wees om kommentaar te lewer."
 }

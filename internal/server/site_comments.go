@@ -310,10 +310,10 @@ func (s *Server) commentForm(c *gin.Context, p *store.Post, lb *links.Builder, u
 	replyTo, _ := strconv.ParseInt(c.Query("replytocom"), 10, 64)
 	var sb strings.Builder
 	sb.WriteString(`<div id="respond" class="comment-respond">` + "\n")
-	title := "Leave a Reply"
+	title := s.frontE(c, "Leave a Reply")
 	if replyTo > 0 {
 		if parent, err := s.store.GetComment(c, replyTo); err == nil && parent.PostID == p.ID {
-			title = `Reply to <a href="#comment-` + itoa64(parent.ID) + `">` + esc(defaultStr(parent.AuthorName, "Anonymous")) + `</a>`
+			title = s.frontEf(c, "Reply to %s", `<a href="#comment-`+itoa64(parent.ID)+`">`+esc(defaultStr(parent.AuthorName, "Anonymous"))+`</a>`)
 		} else {
 			replyTo = 0
 		}
@@ -322,10 +322,11 @@ func (s *Server) commentForm(c *gin.Context, p *store.Post, lb *links.Builder, u
 	if replyTo > 0 {
 		cancelStyle = ""
 	}
-	fmt.Fprintf(&sb, `<h2 id="reply-title" class="comment-reply-title">%s <small><a rel="nofollow" id="cancel-comment-reply-link" href="%s#respond"%s>Cancel reply</a></small></h2>`, title, esc(permalink), cancelStyle)
+	fmt.Fprintf(&sb, `<h2 id="reply-title" class="comment-reply-title">%s <small><a rel="nofollow" id="cancel-comment-reply-link" href="%s#respond"%s>%s</a></small></h2>`, title, esc(permalink), cancelStyle, s.frontE(c, "Cancel reply"))
 
 	if s.settings.Bool("comment_registration") && u == nil {
-		fmt.Fprintf(&sb, `<p class="must-log-in">You must be <a href="%s?redirect_to=%s">logged in</a> to post a comment.</p>`, s.loginPath(), url.QueryEscape(permalink))
+		// __() with markup, like comment_form(): the link is the translation's own.
+		sb.WriteString(`<p class="must-log-in">` + i18n.Sprintf(s.frontT(c, `You must be <a href="%s">logged in</a> to post a comment.`), esc(s.loginPath()+"?redirect_to="+url.QueryEscape(permalink))) + `</p>`)
 		sb.WriteString("\t</div><!-- #respond -->\n")
 		return template.HTML(sb.String())
 	}
@@ -337,13 +338,15 @@ func (s *Server) commentForm(c *gin.Context, p *store.Post, lb *links.Builder, u
 		}
 		return ""
 	}
+	requiredMsg := `<span class="required-field-message">` + s.frontEf(c, "Required fields are marked %s", `<span class="required">*</span>`) + `</span>`
 	if u != nil {
-		fmt.Fprintf(&sb, `<p class="logged-in-as"><a href="/wp-admin/profile" aria-label="Logged in as %s. Edit your profile.">Logged in as %s</a>. <a href="%s?action=logout&amp;_wpnonce=%s">Log out?</a> <span class="required-field-message">Required fields are marked <span class="required">*</span></span></p>`,
-			esc(u.DisplayName), esc(u.DisplayName), s.loginPath(), s.nonce(c, "log-out"))
+		fmt.Fprintf(&sb, `<p class="logged-in-as"><a href="/wp-admin/profile" aria-label="%s">%s</a>. <a href="%s?action=logout&amp;_wpnonce=%s">%s</a> %s</p>`,
+			s.frontEf(c, "Logged in as %s. Edit your profile.", esc(u.DisplayName)), s.frontEf(c, "Logged in as %s", esc(u.DisplayName)),
+			s.loginPath(), s.nonce(c, "log-out"), s.frontE(c, "Log out?"), requiredMsg)
 	} else {
-		sb.WriteString(`<p class="comment-notes"><span id="email-notes">Your email address will not be published.</span> <span class="required-field-message">Required fields are marked <span class="required">*</span></span></p>`)
+		sb.WriteString(`<p class="comment-notes"><span id="email-notes">` + s.frontE(c, "Your email address will not be published.") + `</span> ` + requiredMsg + `</p>`)
 	}
-	sb.WriteString(`<p class="comment-form-comment"><label for="comment">Comment <span class="required">*</span></label> <textarea id="comment" name="comment" cols="45" rows="8" maxlength="65525" required></textarea></p>`)
+	sb.WriteString(`<p class="comment-form-comment"><label for="comment">` + s.frontE(c, "Comment") + ` <span class="required">*</span></label> <textarea id="comment" name="comment" cols="45" rows="8" maxlength="65525" required></textarea></p>`)
 	if u == nil {
 		author, _ := c.Cookie("comment_author")
 		email, _ := c.Cookie("comment_author_email")
@@ -355,21 +358,21 @@ func (s *Server) commentForm(c *gin.Context, p *store.Post, lb *links.Builder, u
 		if required {
 			reqAttr = " required"
 		}
-		fmt.Fprintf(&sb, `<p class="comment-form-author"><label for="author">Name%s</label> <input id="author" name="author" type="text" value="%s" size="30" maxlength="245" autocomplete="name"%s /></p>`, req(required), esc(author), reqAttr)
-		fmt.Fprintf(&sb, "\n"+`<p class="comment-form-email"><label for="email">Email%s</label> <input id="email" name="email" type="email" value="%s" size="30" maxlength="100" aria-describedby="email-notes" autocomplete="email"%s /></p>`, req(required), esc(email), reqAttr)
-		fmt.Fprintf(&sb, "\n"+`<p class="comment-form-url"><label for="url">Website</label> <input id="url" name="url" type="url" value="%s" size="30" maxlength="200" autocomplete="url" /></p>`, esc(site))
+		fmt.Fprintf(&sb, `<p class="comment-form-author"><label for="author">%s%s</label> <input id="author" name="author" type="text" value="%s" size="30" maxlength="245" autocomplete="name"%s /></p>`, s.frontE(c, "Name"), req(required), esc(author), reqAttr)
+		fmt.Fprintf(&sb, "\n"+`<p class="comment-form-email"><label for="email">%s%s</label> <input id="email" name="email" type="email" value="%s" size="30" maxlength="100" aria-describedby="email-notes" autocomplete="email"%s /></p>`, s.frontE(c, "Email"), req(required), esc(email), reqAttr)
+		fmt.Fprintf(&sb, "\n"+`<p class="comment-form-url"><label for="url">%s</label> <input id="url" name="url" type="url" value="%s" size="30" maxlength="200" autocomplete="url" /></p>`, s.frontE(c, "Website"), esc(site))
 		if s.settings.Bool("show_comments_cookies_opt_in") {
 			checked := ""
 			if email != "" {
 				checked = ` checked="checked"`
 			}
-			fmt.Fprintf(&sb, "\n"+`<p class="comment-form-cookies-consent"><input id="wp-comment-cookies-consent" name="wp-comment-cookies-consent" type="checkbox" value="yes"%s /> <label for="wp-comment-cookies-consent">Save my name, email, and website in this browser for the next time I comment.</label></p>`, checked)
+			fmt.Fprintf(&sb, "\n"+`<p class="comment-form-cookies-consent"><input id="wp-comment-cookies-consent" name="wp-comment-cookies-consent" type="checkbox" value="yes"%s /> <label for="wp-comment-cookies-consent">%s</label></p>`, checked, s.frontE(c, "Save my name, email, and website in this browser for the next time I comment."))
 		}
 	}
-	fmt.Fprintf(&sb, "\n"+`<p class="form-submit"><input name="submit" type="submit" id="submit" class="submit" value="Post Comment" /> <input type='hidden' name='comment_post_ID' value='%d' id='comment_post_ID' />
+	fmt.Fprintf(&sb, "\n"+`<p class="form-submit"><input name="submit" type="submit" id="submit" class="submit" value="%s" /> <input type='hidden' name='comment_post_ID' value='%d' id='comment_post_ID' />
 <input type='hidden' name='comment_parent' id='comment_parent' value='%d' />
 </p></form>	</div><!-- #respond -->
-	`, p.ID, replyTo)
+	`, s.frontE(c, "Post Comment"), p.ID, replyTo)
 	return template.HTML(sb.String())
 }
 

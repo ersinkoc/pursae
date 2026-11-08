@@ -3654,5 +3654,22 @@
  "Any name": "Ցանկացած անուն",
  "Breadcrumb": "Նավիգացիոն շղթա",
  "If you have a coupon code, please apply it below.": "Եթե ունեք կտրոնի կոդ, խնդրում ենք կիրառել այն ստորև։",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Ձեր պատվերը մշակելիս սխալ է տեղի ունեցել։ Նախքան կրկին պատվեր տեղադրելը խնդրում ենք ստուգել, թե արդյոք գանձումներ են կատարվել ձեր վճարման միջոցից, և վերանայել ձեր պատվերների պատմությունը։"
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Ձեր պատվերը մշակելիս սխալ է տեղի ունեցել։ Նախքան կրկին պատվեր տեղադրելը խնդրում ենք ստուգել, թե արդյոք գանձումներ են կատարվել ձեր վճարման միջոցից, և վերանայել ձեր պատվերների պատմությունը։",
+ "Previous": "Նախորդ",
+ "Next": "Հաջորդ",
+ "Previous post:": "Նախորդ գրառում:",
+ "Next post:": "Հաջորդ գրառում:",
+ "Leave a Reply": "Թողնել մեկնաբանություն",
+ "Reply to %s": "Պատասխանել %s-ին",
+ "Cancel reply": "Չեղարկել պատասխանը",
+ "Logged in as %s": "Մուտք եք գործել որպես %s",
+ "Logged in as %s. Edit your profile.": "Մուտք եք գործել որպես %s։ Խմբագրել ձեր պրոֆիլը։",
+ "Log out?": "Դուրս գա՞լ",
+ "Your email address will not be published.": "Ձեր էլ. փոստի հասցեն չի հրապարակվի։",
+ "Required fields are marked %s": "Պարտադիր դաշտերը նշված են %s",
+ "Comment": "Մեկնաբանություն",
+ "Website": "Կայք",
+ "Save my name, email, and website in this browser for the next time I comment.": "Պահպանել իմ անունը, էլ. փոստը և կայքը այս դիտարկիչում հաջորդ մեկնաբանության համար։",
+ "Post Comment": "Հրապարակել մեկնաբանությունը",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Մեկնաբանություն թողնելու համար պետք է <a href=\"%s\">մուտք գործեք</a>։"
 }

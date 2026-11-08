@@ -3654,5 +3654,22 @@
  "Any name": "Un nome qualsiasi",
  "Breadcrumb": "Briciole di pane",
  "If you have a coupon code, please apply it below.": "Se hai un codice promozionale, applicalo qui sotto.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Si è verificato un errore durante l’elaborazione del tuo ordine. Controlla se ci sono addebiti sul tuo metodo di pagamento e verifica la cronologia degli ordini prima di effettuare di nuovo l’ordine."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Si è verificato un errore durante l’elaborazione del tuo ordine. Controlla se ci sono addebiti sul tuo metodo di pagamento e verifica la cronologia degli ordini prima di effettuare di nuovo l’ordine.",
+ "Previous": "Precedente",
+ "Next": "Successivo",
+ "Previous post:": "Articolo precedente:",
+ "Next post:": "Articolo successivo:",
+ "Leave a Reply": "Lascia un commento",
+ "Reply to %s": "Rispondi a %s",
+ "Cancel reply": "Annulla risposta",
+ "Logged in as %s": "Connesso come %s",
+ "Logged in as %s. Edit your profile.": "Connesso come %s. Modifica il tuo profilo.",
+ "Log out?": "Disconnettersi?",
+ "Your email address will not be published.": "Il tuo indirizzo email non sarà pubblicato.",
+ "Required fields are marked %s": "I campi obbligatori sono contrassegnati %s",
+ "Comment": "Commento",
+ "Website": "Sito web",
+ "Save my name, email, and website in this browser for the next time I comment.": "Salva il mio nome, email e sito web in questo browser per la prossima volta che commento.",
+ "Post Comment": "Invia commento",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Devi essere <a href=\"%s\">connesso</a> per inviare un commento."
 }

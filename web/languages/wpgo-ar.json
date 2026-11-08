@@ -3654,5 +3654,22 @@
  "Any name": "أي اسم",
  "Breadcrumb": "مسار التنقل",
  "If you have a coupon code, please apply it below.": "إذا كان لديك رمز قسيمة، يُرجى تطبيقه أدناه.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "حدث خطأ أثناء معالجة طلبك. يُرجى التحقق من أي رسوم في وسيلة الدفع الخاصة بك ومراجعة سجل طلباتك قبل تقديم الطلب مرة أخرى."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "حدث خطأ أثناء معالجة طلبك. يُرجى التحقق من أي رسوم في وسيلة الدفع الخاصة بك ومراجعة سجل طلباتك قبل تقديم الطلب مرة أخرى.",
+ "Previous": "السابق",
+ "Next": "التالي",
+ "Previous post:": "المقالة السابقة:",
+ "Next post:": "المقالة التالية:",
+ "Leave a Reply": "اترك تعليقاً",
+ "Reply to %s": "اترك رداً على %s",
+ "Cancel reply": "إلغاء الرد",
+ "Logged in as %s": "مسجل الدخول باسم %s",
+ "Logged in as %s. Edit your profile.": "مسجل الدخول باسم %s. تحرير ملفك الشخصي.",
+ "Log out?": "تسجيل الخروج؟",
+ "Your email address will not be published.": "لن يتم نشر عنوان بريدك الإلكتروني.",
+ "Required fields are marked %s": "الحقول الإلزامية مشار إليها بـ %s",
+ "Comment": "التعليق",
+ "Website": "الموقع الإلكتروني",
+ "Save my name, email, and website in this browser for the next time I comment.": "احفظ اسمي، بريدي الإلكتروني، والموقع الإلكتروني في هذا المتصفح لاستخدامها المرة المقبلة في تعليقي.",
+ "Post Comment": "إرسال التعليق",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "يجب أن تكون <a href=\"%s\">مسجل الدخول</a> لتتمكن من نشر تعليق."
 }

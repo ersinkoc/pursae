@@ -3654,5 +3654,22 @@
  "Any name": "མིང་གང་རུང་།",
  "Breadcrumb": "འགྲུལ་ལམ་རྟགས།",
  "If you have a coupon code, please apply it below.": "གལ་ཏེ་ཁྱེད་ལ་རིན་ཆག་འཛིན་ཤོག་གི་ཨང་རྟགས་ཡོད་ན། འོག་ཏུ་བེད་སྤྱོད་གནང་རོགས།",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "ཁྱེད་ཀྱི་ཉོ་འཆར་ལས་སྣོན་བྱེད་སྐབས་ནོར་འཁྲུལ་ཞིག་བྱུང་། ཉོ་འཆར་བསྐྱར་དུ་མ་གཏོང་གོང་ཁྱེད་ཀྱི་རིན་སྤྲོད་ཐབས་ལམ་ནང་དངུལ་བཅད་ཡོད་མེད་ཞིབ་བཤེར་དང་ཉོ་འཆར་ལོ་རྒྱུས་ལ་བལྟ་རོགས།"
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "ཁྱེད་ཀྱི་ཉོ་འཆར་ལས་སྣོན་བྱེད་སྐབས་ནོར་འཁྲུལ་ཞིག་བྱུང་། ཉོ་འཆར་བསྐྱར་དུ་མ་གཏོང་གོང་ཁྱེད་ཀྱི་རིན་སྤྲོད་ཐབས་ལམ་ནང་དངུལ་བཅད་ཡོད་མེད་ཞིབ་བཤེར་དང་ཉོ་འཆར་ལོ་རྒྱུས་ལ་བལྟ་རོགས།",
+ "Previous": "སྔོན་མ།",
+ "Next": "རྗེས་མ།",
+ "Previous post:": "རྩོམ་ཡིག་སྔོན་མ།:",
+ "Next post:": "རྩོམ་ཡིག་རྗེས་མ།:",
+ "Leave a Reply": "ལན་ཞིག་འཇོག་པ།",
+ "Reply to %s": "%s ལ་ལན་འདེབས།",
+ "Cancel reply": "ལན་འདེབས་རྩིས་མེད།",
+ "Logged in as %s": "%s ཡི་མིང་ཐོག་ནང་འཛུལ་བྱས་ཡོད།",
+ "Logged in as %s. Edit your profile.": "%s ཡི་མིང་ཐོག་ནང་འཛུལ་བྱས་ཡོད། ཁྱེད་ཀྱི་སྤྱི་ཐོ་རྩོམ་སྒྲིག",
+ "Log out?": "ཕྱིར་འཐེན་བྱེད་དམ།",
+ "Your email address will not be published.": "ཁྱེད་ཀྱི་གློག་འཕྲིན་ཁ་བྱང་ཁྱབ་བསྒྲགས་མི་བྱེད།",
+ "Required fields are marked %s": "དགོས་ངེས་ཀྱི་ཁོངས་ལ་ %s རྟགས་བཀོད་ཡོད།",
+ "Comment": "ཁ་བརྗོད།",
+ "Website": "དྲ་ཚིགས།",
+ "Save my name, email, and website in this browser for the next time I comment.": "ཐེངས་རྗེས་མར་ཁ་བརྗོད་འཇོག་སྐབས་ཆེད་དུ་ངའི་མིང་དང་གློག་འཕྲིན། དྲ་ཚིགས་བཅས་བཤར་ཆས་འདིའི་ནང་ཉར་ཚགས་བྱེད།",
+ "Post Comment": "ཁ་བརྗོད་འགོད་པ།",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "ཁ་བརྗོད་འགོད་པར་ <a href=\"%s\">ནང་འཛུལ་</a>བྱེད་དགོས།"
 }

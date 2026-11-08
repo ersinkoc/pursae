@@ -3654,5 +3654,22 @@
  "Any name": "Tên bất kỳ",
  "Breadcrumb": "Đường dẫn điều hướng",
  "If you have a coupon code, please apply it below.": "Nếu bạn có mã ưu đãi, vui lòng áp dụng bên dưới.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Đã xảy ra lỗi khi xử lý đơn hàng của bạn. Vui lòng kiểm tra xem phương thức thanh toán của bạn có bị trừ tiền không và xem lại lịch sử đơn hàng trước khi đặt hàng lại."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Đã xảy ra lỗi khi xử lý đơn hàng của bạn. Vui lòng kiểm tra xem phương thức thanh toán của bạn có bị trừ tiền không và xem lại lịch sử đơn hàng trước khi đặt hàng lại.",
+ "Previous": "Trước",
+ "Next": "Tiếp theo",
+ "Previous post:": "Bài trước:",
+ "Next post:": "Bài tiếp theo:",
+ "Leave a Reply": "Để lại một bình luận",
+ "Reply to %s": "Trả lời %s",
+ "Cancel reply": "Hủy trả lời",
+ "Logged in as %s": "Đã đăng nhập bằng tài khoản %s",
+ "Logged in as %s. Edit your profile.": "Đã đăng nhập bằng tài khoản %s. Sửa hồ sơ của bạn.",
+ "Log out?": "Đăng xuất?",
+ "Your email address will not be published.": "Email của bạn sẽ không được hiển thị công khai.",
+ "Required fields are marked %s": "Các trường bắt buộc được đánh dấu %s",
+ "Comment": "Bình luận",
+ "Website": "Trang web",
+ "Save my name, email, and website in this browser for the next time I comment.": "Lưu tên của tôi, email, và trang web trong trình duyệt này cho lần bình luận kế tiếp của tôi.",
+ "Post Comment": "Gửi bình luận",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Bạn phải <a href=\"%s\">đăng nhập</a> để gửi bình luận."
 }

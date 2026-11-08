@@ -3654,5 +3654,22 @@
  "Any name": "کوئی وی ناں",
  "Breadcrumb": "بریڈ کرمب",
  "If you have a coupon code, please apply it below.": "جے تہاݙے کول کوپن کوڈ ہے تاں مہربانی کر کے ایکوں تلے لاگو کرو۔",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "تہاݙے آرڈر تے کارروائی وچ غلطی تھی ڳئی۔ ول آرڈر ݙیوݨ توں پہلے مہربانی کر کے اپݨے ادائیگی دے طریقے وچ کوئی چارج چیک کرو تے اپݨی آرڈر ہسٹری دا جائزہ گھنو۔"
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "تہاݙے آرڈر تے کارروائی وچ غلطی تھی ڳئی۔ ول آرڈر ݙیوݨ توں پہلے مہربانی کر کے اپݨے ادائیگی دے طریقے وچ کوئی چارج چیک کرو تے اپݨی آرڈر ہسٹری دا جائزہ گھنو۔",
+ "Previous": "پچھلا",
+ "Next": "اگلا",
+ "Previous post:": "پچھلی پوسٹ:",
+ "Next post:": "اگلی پوسٹ:",
+ "Leave a Reply": "جواب ݙیوو",
+ "Reply to %s": "%s کوں جواب ݙیوو",
+ "Cancel reply": "جواب منسوخ کرو",
+ "Logged in as %s": "%s دے طور تے لاگ ان ہو",
+ "Logged in as %s. Edit your profile.": "%s دے طور تے لاگ ان ہو۔ آپݨی پروفائل وچ ترمیم کرو۔",
+ "Log out?": "لاگ آؤٹ کرو؟",
+ "Your email address will not be published.": "تہاݙا ای میل پتہ شائع کائنی کیتا ویسی۔",
+ "Required fields are marked %s": "ضروری خانیاں تے %s دا نشان لڳا ہویا ہے",
+ "Comment": "تبصرہ",
+ "Website": "ویب سائٹ",
+ "Save my name, email, and website in this browser for the next time I comment.": "اگلی واری تبصرہ کرݨ کیتے میݙا ناں، ای میل تے ویب سائٹ ایں براؤزر وچ محفوظ کرو۔",
+ "Post Comment": "تبصرہ پوسٹ کرو",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "تبصرہ پوسٹ کرݨ کیتے تہاکوں <a href=\"%s\">لاگ ان</a> ہووݨ ضروری ہے۔"
 }

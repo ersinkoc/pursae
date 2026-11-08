@@ -3654,5 +3654,22 @@
  "Any name": "Mis tahes nimi",
  "Breadcrumb": "Leivapuru",
  "If you have a coupon code, please apply it below.": "Kui teil on kupongikood, rakendage see allpool.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Teie tellimuse töötlemisel tekkis viga. Enne uuesti tellimist kontrollige oma makseviisilt võimalikke tasusid ja vaadake üle oma tellimuste ajalugu."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Teie tellimuse töötlemisel tekkis viga. Enne uuesti tellimist kontrollige oma makseviisilt võimalikke tasusid ja vaadake üle oma tellimuste ajalugu.",
+ "Previous": "Eelmine",
+ "Next": "Järgmine",
+ "Previous post:": "Eelmine postitus:",
+ "Next post:": "Järgmine postitus:",
+ "Leave a Reply": "Lisa kommentaar",
+ "Reply to %s": "Vasta kasutajale %s",
+ "Cancel reply": "Tühista vastus",
+ "Logged in as %s": "Sisse logitud kui %s",
+ "Logged in as %s. Edit your profile.": "Sisse logitud kui %s. Muuda oma profiili.",
+ "Log out?": "Logi välja?",
+ "Your email address will not be published.": "Sinu e-postiaadressi ei avaldata.",
+ "Required fields are marked %s": "Nõutavad väljad on tähistatud %s",
+ "Comment": "Kommentaar",
+ "Website": "Veebileht",
+ "Save my name, email, and website in this browser for the next time I comment.": "Salvesta minu nimi, e-posti aadress ja kodulehe aadress selles brauseris järgmiseks kommentaariks.",
+ "Post Comment": "Postita kommentaar",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Kommenteerimiseks pead olema <a href=\"%s\">sisse logitud</a>."
 }

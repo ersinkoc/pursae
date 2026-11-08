@@ -3654,5 +3654,22 @@
  "Any name": "Jina lolote",
  "Breadcrumb": "Njia ya urambazaji",
  "If you have a coupon code, please apply it below.": "Ikiwa una msimbo wa kuponi, tafadhali uutumie hapa chini.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Kulikuwa na hitilafu katika kushughulikia oda yako. Tafadhali angalia kama kuna makato yoyote kwenye njia yako ya malipo na ukague historia ya oda zako kabla ya kuweka oda tena."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Kulikuwa na hitilafu katika kushughulikia oda yako. Tafadhali angalia kama kuna makato yoyote kwenye njia yako ya malipo na ukague historia ya oda zako kabla ya kuweka oda tena.",
+ "Previous": "Iliyotangulia",
+ "Next": "Inayofuata",
+ "Previous post:": "Chapisho lililotangulia:",
+ "Next post:": "Chapisho linalofuata:",
+ "Leave a Reply": "Acha Jibu",
+ "Reply to %s": "Jibu kwa %s",
+ "Cancel reply": "Ghairi jibu",
+ "Logged in as %s": "Umeingia kama %s",
+ "Logged in as %s. Edit your profile.": "Umeingia kama %s. Hariri wasifu wako.",
+ "Log out?": "Ungependa kutoka?",
+ "Your email address will not be published.": "Anwani yako ya barua pepe haitachapishwa.",
+ "Required fields are marked %s": "Sehemu zinazohitajika zimewekwa alama %s",
+ "Comment": "Maoni",
+ "Website": "Tovuti",
+ "Save my name, email, and website in this browser for the next time I comment.": "Hifadhi jina langu, barua pepe, na tovuti katika kivinjari hiki kwa wakati ujao nitakapotoa maoni.",
+ "Post Comment": "Tuma Maoni",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Lazima <a href=\"%s\">uingie</a> ili kutuma maoni."
 }

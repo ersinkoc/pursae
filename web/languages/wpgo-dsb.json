@@ -3654,5 +3654,22 @@
  "Any name": "Někake mě",
  "Breadcrumb": "Nawigaciska sćažka",
  "If you have a coupon code, please apply it below.": "Jolic maśo kuponowy kod, nałožćo jen pšosym dołojce.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Pśi wobźěłowanju wašeje skazanki jo zmólka nastała. Pšosym pśeglědujśo, lěc su se z wašeje płaśeńskeje metody pjenjeze wótknigowali, a pśeglědajśo historiju swójich skazankow, nježli až skazanku znowego pósćelośo."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Pśi wobźěłowanju wašeje skazanki jo zmólka nastała. Pšosym pśeglědujśo, lěc su se z wašeje płaśeńskeje metody pjenjeze wótknigowali, a pśeglědajśo historiju swójich skazankow, nježli až skazanku znowego pósćelośo.",
+ "Previous": "Pjerwjejšny",
+ "Next": "Pśiducy",
+ "Previous post:": "Pjerwjejšny pśinosk:",
+ "Next post:": "Pśiducy pśinosk:",
+ "Leave a Reply": "Zawóstajśo wótegrono",
+ "Reply to %s": "Na %s wótegroniś",
+ "Cancel reply": "Wótegrono pśetergnuś",
+ "Logged in as %s": "Pśizjawjony ako %s",
+ "Logged in as %s. Edit your profile.": "Pśizjawjony ako %s. Wobźěłajśo swój profil.",
+ "Log out?": "Wótzjawiś?",
+ "Your email address will not be published.": "Waša e-mailowa adresa njebuźo wózjawjona.",
+ "Required fields are marked %s": "Trěbne póla su z %s wóznamjenjone",
+ "Comment": "Komentar",
+ "Website": "Websedło",
+ "Save my name, email, and website in this browser for the next time I comment.": "Mójo mě, e-mailowu adresu a websedło w toś tom wobglědowaku za pśiducy komentar składowaś.",
+ "Post Comment": "Komentar wótpósłaś",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Musyśo <a href=\"%s\">pśizjawjony</a> byś, aby komentar pisał."
 }

@@ -3654,5 +3654,22 @@
  "Any name": "যেকোনো নাম",
  "Breadcrumb": "ব্রেডক্রাম্ব",
  "If you have a coupon code, please apply it below.": "আপনার কাছে কুপন কোড থাকলে, অনুগ্রহ করে নিচে তা প্রয়োগ করুন।",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "আপনার অর্ডার প্রক্রিয়া করার সময় একটি ত্রুটি হয়েছে। আবার অর্ডার দেওয়ার আগে অনুগ্রহ করে আপনার পেমেন্ট পদ্ধতিতে কোনো চার্জ হয়েছে কিনা দেখুন এবং আপনার অর্ডার ইতিহাস পর্যালোচনা করুন।"
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "আপনার অর্ডার প্রক্রিয়া করার সময় একটি ত্রুটি হয়েছে। আবার অর্ডার দেওয়ার আগে অনুগ্রহ করে আপনার পেমেন্ট পদ্ধতিতে কোনো চার্জ হয়েছে কিনা দেখুন এবং আপনার অর্ডার ইতিহাস পর্যালোচনা করুন।",
+ "Previous": "পূর্ববর্তী",
+ "Next": "পরবর্তী",
+ "Previous post:": "পূর্ববর্তী পোস্ট:",
+ "Next post:": "পরবর্তী পোস্ট:",
+ "Leave a Reply": "একটি উত্তর দিন",
+ "Reply to %s": "%s-কে উত্তর দিন",
+ "Cancel reply": "উত্তর বাতিল করুন",
+ "Logged in as %s": "%s হিসেবে লগ ইন করা আছে",
+ "Logged in as %s. Edit your profile.": "%s হিসেবে লগ ইন করা আছে। আপনার প্রোফাইল সম্পাদনা করুন।",
+ "Log out?": "লগ আউট করবেন?",
+ "Your email address will not be published.": "আপনার ইমেইল ঠিকানা প্রকাশ করা হবে না।",
+ "Required fields are marked %s": "প্রয়োজনীয় ঘরগুলো %s দ্বারা চিহ্নিত",
+ "Comment": "মন্তব্য",
+ "Website": "ওয়েবসাইট",
+ "Save my name, email, and website in this browser for the next time I comment.": "পরবর্তীতে মন্তব্য করার জন্য আমার নাম, ইমেইল এবং ওয়েবসাইট এই ব্রাউজারে সংরক্ষণ করুন।",
+ "Post Comment": "মন্তব্য প্রকাশ করুন",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "মন্তব্য করতে হলে আপনাকে অবশ্যই <a href=\"%s\">লগ ইন</a> করতে হবে।"
 }

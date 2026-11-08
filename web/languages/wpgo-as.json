@@ -3654,5 +3654,22 @@
  "Any name": "যিকোনো নাম",
  "Breadcrumb": "ব্ৰেডক্ৰাম্ব",
  "If you have a coupon code, please apply it below.": "আপোনাৰ ওচৰত কুপন ক'ড থাকিলে, অনুগ্ৰহ কৰি তলত প্ৰয়োগ কৰক।",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "আপোনাৰ অৰ্ডাৰ প্ৰক্ৰিয়াকৰণ কৰোঁতে এটা ত্ৰুটি হ'ল। পুনৰ অৰ্ডাৰ দিয়াৰ আগতে অনুগ্ৰহ কৰি আপোনাৰ পৰিশোধ পদ্ধতিত কোনো মাচুল লোৱা হৈছে নেকি পৰীক্ষা কৰক আৰু আপোনাৰ অৰ্ডাৰৰ ইতিহাস পৰ্যালোচনা কৰক।"
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "আপোনাৰ অৰ্ডাৰ প্ৰক্ৰিয়াকৰণ কৰোঁতে এটা ত্ৰুটি হ'ল। পুনৰ অৰ্ডাৰ দিয়াৰ আগতে অনুগ্ৰহ কৰি আপোনাৰ পৰিশোধ পদ্ধতিত কোনো মাচুল লোৱা হৈছে নেকি পৰীক্ষা কৰক আৰু আপোনাৰ অৰ্ডাৰৰ ইতিহাস পৰ্যালোচনা কৰক।",
+ "Previous": "পূৰ্বৱৰ্তী",
+ "Next": "পৰৱৰ্তী",
+ "Previous post:": "পূৰ্বৱৰ্তী পোষ্ট:",
+ "Next post:": "পৰৱৰ্তী পোষ্ট:",
+ "Leave a Reply": "এটা উত্তৰ দিয়ক",
+ "Reply to %s": "%s লৈ উত্তৰ দিয়ক",
+ "Cancel reply": "উত্তৰ বাতিল কৰক",
+ "Logged in as %s": "%s হিচাপে লগ ইন কৰা হৈছে",
+ "Logged in as %s. Edit your profile.": "%s হিচাপে লগ ইন কৰা হৈছে। আপোনাৰ প্ৰফাইল সম্পাদনা কৰক।",
+ "Log out?": "লগ আউট কৰিবনে?",
+ "Your email address will not be published.": "আপোনাৰ ই-মেইল ঠিকনা প্ৰকাশ কৰা নহ'ব।",
+ "Required fields are marked %s": "প্ৰয়োজনীয় ক্ষেত্ৰসমূহ %s দ্বাৰা চিহ্নিত কৰা হৈছে",
+ "Comment": "মন্তব্য",
+ "Website": "ৱেবছাইট",
+ "Save my name, email, and website in this browser for the next time I comment.": "পৰৱৰ্তী সময়ত মন্তব্য কৰাৰ বাবে মোৰ নাম, ই-মেইল আৰু ৱেবছাইট এই ব্ৰাউজাৰত সংৰক্ষণ কৰক।",
+ "Post Comment": "মন্তব্য প্ৰকাশ কৰক",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "মন্তব্য প্ৰকাশ কৰিবলৈ আপুনি <a href=\"%s\">লগ ইন</a> কৰিব লাগিব।"
 }

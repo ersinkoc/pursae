@@ -3654,5 +3654,22 @@
  "Any name": "ఏదైనా పేరు",
  "Breadcrumb": "బ్రెడ్‌క్రంబ్",
  "If you have a coupon code, please apply it below.": "మీ వద్ద కూపన్ కోడ్ ఉంటే, దయచేసి దాన్ని క్రింద వర్తింపజేయండి.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "మీ ఆర్డర్‌ను ప్రాసెస్ చేయడంలో లోపం సంభవించింది. మళ్లీ ఆర్డర్ చేసే ముందు దయచేసి మీ చెల్లింపు పద్ధతిలో ఏవైనా ఛార్జీలు పడ్డాయేమో తనిఖీ చేసి, మీ ఆర్డర్ చరిత్రను సమీక్షించండి."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "మీ ఆర్డర్‌ను ప్రాసెస్ చేయడంలో లోపం సంభవించింది. మళ్లీ ఆర్డర్ చేసే ముందు దయచేసి మీ చెల్లింపు పద్ధతిలో ఏవైనా ఛార్జీలు పడ్డాయేమో తనిఖీ చేసి, మీ ఆర్డర్ చరిత్రను సమీక్షించండి.",
+ "Previous": "మునుపటి",
+ "Next": "తదుపరి",
+ "Previous post:": "మునుపటి టపా:",
+ "Next post:": "తదుపరి టపా:",
+ "Leave a Reply": "స్పందించండి",
+ "Reply to %s": "%sకి స్పందన",
+ "Cancel reply": "స్పందనను రద్దుచేయి",
+ "Logged in as %s": "%sగా ప్రవేశించారు",
+ "Logged in as %s. Edit your profile.": "%sగా ప్రవేశించారు. మీ ప్రొఫైల్‌ను సవరించండి.",
+ "Log out?": "నిష్క్రమించాలా?",
+ "Your email address will not be published.": "మీ ఇమెయిల్ చిరునామా ప్రచురించబడదు.",
+ "Required fields are marked %s": "తప్పనిసరి ఖాళీలు %s తో గుర్తించబడ్డాయి",
+ "Comment": "వ్యాఖ్య",
+ "Website": "వెబ్‌సైటు",
+ "Save my name, email, and website in this browser for the next time I comment.": "నేను మళ్ళీ వ్యాఖ్యానించినప్పుడు ఉపయోగించడానికి నా పేరు, ఇమెయిల్, వెబ్‌సైటును ఈ బ్రౌజర్‌లో భద్రపరచు.",
+ "Post Comment": "వ్యాఖ్యను ప్రచురించు",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "వ్యాఖ్యానించడానికి మీరు <a href=\"%s\">ప్రవేశించి</a> ఉండాలి."
 }

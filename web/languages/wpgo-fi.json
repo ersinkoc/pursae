@@ -3654,5 +3654,22 @@
  "Any name": "Mikä tahansa nimi",
  "Breadcrumb": "Navigointipolku",
  "If you have a coupon code, please apply it below.": "Jos sinulla on kuponkikoodi, käytä se alla.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Tilauksesi käsittelyssä tapahtui virhe. Tarkista mahdolliset veloitukset maksutavaltasi ja tarkista tilaushistoriasi ennen kuin teet tilauksen uudelleen."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Tilauksesi käsittelyssä tapahtui virhe. Tarkista mahdolliset veloitukset maksutavaltasi ja tarkista tilaushistoriasi ennen kuin teet tilauksen uudelleen.",
+ "Previous": "Edellinen",
+ "Next": "Seuraava",
+ "Previous post:": "Edellinen artikkeli:",
+ "Next post:": "Seuraava artikkeli:",
+ "Leave a Reply": "Kommentoi",
+ "Reply to %s": "Vastaa käyttäjälle %s",
+ "Cancel reply": "Peruuta vastaus",
+ "Logged in as %s": "Kirjautuneena käyttäjänä %s",
+ "Logged in as %s. Edit your profile.": "Kirjautuneena käyttäjänä %s. Muokkaa profiiliasi.",
+ "Log out?": "Kirjaudu ulos?",
+ "Your email address will not be published.": "Sähköpostiosoitettasi ei julkaista.",
+ "Required fields are marked %s": "Pakolliset kentät on merkitty %s",
+ "Comment": "Kommentti",
+ "Website": "Kotisivu",
+ "Save my name, email, and website in this browser for the next time I comment.": "Tallenna nimeni, sähköpostiosoitteeni ja kotisivuni tähän selaimeen seuraavaa kommenttikertaa varten.",
+ "Post Comment": "Lähetä kommentti",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Sinun täytyy olla <a href=\"%s\">kirjautunut sisään</a> kommentoidaksesi."
 }

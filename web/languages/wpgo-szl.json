@@ -3654,5 +3654,22 @@
  "Any name": "Dowolne miano",
  "Breadcrumb": "Ôkruszki",
  "If you have a coupon code, please apply it below.": "Jeźli mŏsz kod kupōnu, użyj go niżyj.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Przi przetwarzaniu twojigo zamōwiyniŏ trefiōł sie błōnd. Sprawdź, eli niy ma ôbciōnżyń w twojij metodzie płatności, i przejrzij historyjŏ zamōwiyń, zanim zamōwisz zaś."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Przi przetwarzaniu twojigo zamōwiyniŏ trefiōł sie błōnd. Sprawdź, eli niy ma ôbciōnżyń w twojij metodzie płatności, i przejrzij historyjŏ zamōwiyń, zanim zamōwisz zaś.",
+ "Previous": "Poprzedni",
+ "Next": "Nastympny",
+ "Previous post:": "Poprzedni wpis:",
+ "Next post:": "Nastympny wpis:",
+ "Leave a Reply": "Ôstŏwcie ôdpowiydź",
+ "Reply to %s": "Ôdpowiydz %s",
+ "Cancel reply": "Pociep ôdpowiydź",
+ "Logged in as %s": "Wlogowane jako %s",
+ "Logged in as %s. Edit your profile.": "Wlogowane jako %s. Edytujcie swōj profil.",
+ "Log out?": "Wylogować?",
+ "Your email address will not be published.": "Wasza adresa e-mail niy bydzie ôpublikowanŏ.",
+ "Required fields are marked %s": "Wymŏgane pola sōm ôznaczōne %s",
+ "Comment": "Kōmyntŏrz",
+ "Website": "Strōna internetowŏ",
+ "Save my name, email, and website in this browser for the next time I comment.": "Spamiyntej moje miano, e-mail i strōna we tyj przeglōndarce na drugi rŏz, jak bydã kōmyntować.",
+ "Post Comment": "Wyślij kōmyntŏrz",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Coby wysłać kōmyntŏrz, musicie być <a href=\"%s\">wlogowani</a>."
 }

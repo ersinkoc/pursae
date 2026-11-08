@@ -3654,5 +3654,22 @@
  "Any name": "هر نامی",
  "Breadcrumb": "مسیر راهنما",
  "If you have a coupon code, please apply it below.": "اگر کد تخفیف دارید، لطفاً آن را در پایین اعمال کنید.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "هنگام پردازش سفارش شما خطایی رخ داد. لطفاً پیش از ثبت دوبارهٔ سفارش، هرگونه برداشت از روش پرداخت خود را بررسی و تاریخچهٔ سفارش‌هایتان را مرور کنید."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "هنگام پردازش سفارش شما خطایی رخ داد. لطفاً پیش از ثبت دوبارهٔ سفارش، هرگونه برداشت از روش پرداخت خود را بررسی و تاریخچهٔ سفارش‌هایتان را مرور کنید.",
+ "Previous": "قبلی",
+ "Next": "بعدی",
+ "Previous post:": "نوشتهٔ قبلی:",
+ "Next post:": "نوشتهٔ بعدی:",
+ "Leave a Reply": "دیدگاهتان را بنویسید",
+ "Reply to %s": "پاسخ به %s",
+ "Cancel reply": "لغو پاسخ",
+ "Logged in as %s": "وارد شده با نام %s",
+ "Logged in as %s. Edit your profile.": "وارد شده با نام %s. ویرایش نمایه.",
+ "Log out?": "خارج می‌شوید؟",
+ "Your email address will not be published.": "نشانی ایمیل شما منتشر نخواهد شد.",
+ "Required fields are marked %s": "بخش‌های موردنیاز علامت‌گذاری شده‌اند %s",
+ "Comment": "دیدگاه",
+ "Website": "وب‌سایت",
+ "Save my name, email, and website in this browser for the next time I comment.": "ذخیره نام، ایمیل و وب‌سایت من در این مرورگر برای زمانی که دوباره دیدگاهی می‌نویسم.",
+ "Post Comment": "فرستادن دیدگاه",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "برای فرستادن دیدگاه، باید <a href=\"%s\">وارد شوید</a>."
 }

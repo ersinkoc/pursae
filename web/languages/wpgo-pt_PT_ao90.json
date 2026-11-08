@@ -3654,5 +3654,22 @@
  "Any name": "Qualquer nome",
  "Breadcrumb": "Navegação estrutural",
  "If you have a coupon code, please apply it below.": "Se tiver um código de cupão, aplique-o abaixo.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Ocorreu um erro ao processar a sua encomenda. Verifique se foram feitas cobranças no seu método de pagamento e consulte o seu histórico de encomendas antes de voltar a fazer a encomenda."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Ocorreu um erro ao processar a sua encomenda. Verifique se foram feitas cobranças no seu método de pagamento e consulte o seu histórico de encomendas antes de voltar a fazer a encomenda.",
+ "Previous": "Anterior",
+ "Next": "Seguinte",
+ "Previous post:": "Artigo anterior:",
+ "Next post:": "Artigo seguinte:",
+ "Leave a Reply": "Deixe um comentário",
+ "Reply to %s": "Responder a %s",
+ "Cancel reply": "Cancelar resposta",
+ "Logged in as %s": "Sessão iniciada como %s",
+ "Logged in as %s. Edit your profile.": "Sessão iniciada como %s. Editar o seu perfil.",
+ "Log out?": "Terminar sessão?",
+ "Your email address will not be published.": "O seu endereço de e-mail não será publicado.",
+ "Required fields are marked %s": "Campos obrigatórios marcados com %s",
+ "Comment": "Comentário",
+ "Website": "Site",
+ "Save my name, email, and website in this browser for the next time I comment.": "Guardar o meu nome, e-mail e site neste navegador para a próxima vez que eu comentar.",
+ "Post Comment": "Publicar comentário",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Tem de <a href=\"%s\">iniciar sessão</a> para publicar um comentário."
 }

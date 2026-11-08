@@ -3654,5 +3654,22 @@
  "Any name": "Кез келген аты",
  "Breadcrumb": "Навигация жолы",
  "If you have a coupon code, please apply it below.": "Купон кодыңыз болса, оны төменде қолданыңыз.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Тапсырысыңызды өңдеу кезінде қате орын алды. Тапсырысты қайта бермес бұрын төлем әдісіңізден қаражат алынған-алынбағанын тексеріп, тапсырыстар тарихын қараңыз."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Тапсырысыңызды өңдеу кезінде қате орын алды. Тапсырысты қайта бермес бұрын төлем әдісіңізден қаражат алынған-алынбағанын тексеріп, тапсырыстар тарихын қараңыз.",
+ "Previous": "Алдыңғы",
+ "Next": "Келесі",
+ "Previous post:": "Алдыңғы жазба:",
+ "Next post:": "Келесі жазба:",
+ "Leave a Reply": "Жауап қалдыру",
+ "Reply to %s": "%s жауап беру",
+ "Cancel reply": "Жауапты болдырмау",
+ "Logged in as %s": "%s ретінде кірдіңіз",
+ "Logged in as %s. Edit your profile.": "%s ретінде кірдіңіз. Профильді өңдеу.",
+ "Log out?": "Шығу керек пе?",
+ "Your email address will not be published.": "Сіздің электрондық пошта адресіңіз жарияланбайды.",
+ "Required fields are marked %s": "Міндетті өрістер %s белгіленген",
+ "Comment": "Пікір",
+ "Website": "Веб-сайт",
+ "Save my name, email, and website in this browser for the next time I comment.": "Келесі пікір үшін атымды, электрондық поштамды және веб-сайтымды осы браузерде сақтау.",
+ "Post Comment": "Пікір жіберу",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Пікір қалдыру үшін <a href=\"%s\">жүйеге кіруіңіз</a> керек."
 }

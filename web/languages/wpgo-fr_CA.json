@@ -3654,5 +3654,22 @@
  "Any name": "N’importe quel nom",
  "Breadcrumb": "Fil d’Ariane",
  "If you have a coupon code, please apply it below.": "Si vous avez un code promo, veuillez l’appliquer ci-dessous.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Une erreur s’est produite lors du traitement de votre commande. Veuillez vérifier si des frais ont été prélevés sur votre moyen de paiement et consulter votre historique de commandes avant de passer à nouveau la commande."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Une erreur s’est produite lors du traitement de votre commande. Veuillez vérifier si des frais ont été prélevés sur votre moyen de paiement et consulter votre historique de commandes avant de passer à nouveau la commande.",
+ "Previous": "Précédent",
+ "Next": "Suivant",
+ "Previous post:": "Article précédent :",
+ "Next post:": "Article suivant :",
+ "Leave a Reply": "Laisser un commentaire",
+ "Reply to %s": "Répondre à %s",
+ "Cancel reply": "Annuler la réponse",
+ "Logged in as %s": "Connecté en tant que %s",
+ "Logged in as %s. Edit your profile.": "Connecté en tant que %s. Modifier votre profil.",
+ "Log out?": "Se déconnecter ?",
+ "Your email address will not be published.": "Votre adresse e-mail ne sera pas publiée.",
+ "Required fields are marked %s": "Les champs obligatoires sont indiqués avec %s",
+ "Comment": "Commentaire",
+ "Website": "Site web",
+ "Save my name, email, and website in this browser for the next time I comment.": "Enregistrer mon nom, mon e-mail et mon site dans le navigateur pour mon prochain commentaire.",
+ "Post Comment": "Laisser un commentaire",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Vous devez <a href=\"%s\">vous connecter</a> pour publier un commentaire."
 }

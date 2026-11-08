@@ -3654,5 +3654,22 @@
  "Any name": "Libovolné jméno",
  "Breadcrumb": "Drobečková navigace",
  "If you have a coupon code, please apply it below.": "Máte-li kód kupónu, uplatněte jej níže.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Při zpracování vaší objednávky došlo k chybě. Před opětovným odesláním objednávky zkontrolujte, zda nebyly strženy platby z vaší platební metody, a projděte historii objednávek."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Při zpracování vaší objednávky došlo k chybě. Před opětovným odesláním objednávky zkontrolujte, zda nebyly strženy platby z vaší platební metody, a projděte historii objednávek.",
+ "Previous": "Předchozí",
+ "Next": "Následující",
+ "Previous post:": "Předchozí příspěvek:",
+ "Next post:": "Následující příspěvek:",
+ "Leave a Reply": "Napsat komentář",
+ "Reply to %s": "Odpovědět uživateli %s",
+ "Cancel reply": "Zrušit odpověď na komentář",
+ "Logged in as %s": "Jste přihlášeni jako %s",
+ "Logged in as %s. Edit your profile.": "Jste přihlášeni jako %s. Upravit profil.",
+ "Log out?": "Odhlásit se?",
+ "Your email address will not be published.": "Vaše e-mailová adresa nebude zveřejněna.",
+ "Required fields are marked %s": "Vyžadované informace jsou označeny %s",
+ "Comment": "Komentář",
+ "Website": "Webová stránka",
+ "Save my name, email, and website in this browser for the next time I comment.": "Uložit do prohlížeče jméno, e-mail a webovou stránku pro budoucí komentáře.",
+ "Post Comment": "Odeslat komentář",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Pro přidávání komentářů se musíte nejdříve <a href=\"%s\">přihlásit</a>."
 }

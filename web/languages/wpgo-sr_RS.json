@@ -3654,5 +3654,22 @@
  "Any name": "Било које име",
  "Breadcrumb": "Мрвице навигације",
  "If you have a coupon code, please apply it below.": "Ако имате код купона, примените га испод.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Дошло је до грешке при обради ваше поруџбине. Проверите да ли постоје задужења на вашем начину плаћања и прегледајте историју поруџбина пре него што поново поручите."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Дошло је до грешке при обради ваше поруџбине. Проверите да ли постоје задужења на вашем начину плаћања и прегледајте историју поруџбина пре него што поново поручите.",
+ "Previous": "Претходно",
+ "Next": "Следеће",
+ "Previous post:": "Претходни чланак:",
+ "Next post:": "Следећи чланак:",
+ "Leave a Reply": "Оставите одговор",
+ "Reply to %s": "Одговорите кориснику %s",
+ "Cancel reply": "Откажи одговор",
+ "Logged in as %s": "Пријављени сте као %s",
+ "Logged in as %s. Edit your profile.": "Пријављени сте као %s. Уредите свој профил.",
+ "Log out?": "Одјавите се?",
+ "Your email address will not be published.": "Ваша адреса е-поште неће бити објављена.",
+ "Required fields are marked %s": "Неопходна поља су означена %s",
+ "Comment": "Коментар",
+ "Website": "Веб место",
+ "Save my name, email, and website in this browser for the next time I comment.": "Сачувај моје име, е-адресу и веб место у овом прегледачу за следећи пут када коментаришем.",
+ "Post Comment": "Објави коментар",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Морате бити <a href=\"%s\">пријављени</a> да бисте објавили коментар."
 }

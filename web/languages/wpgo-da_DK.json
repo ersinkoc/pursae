@@ -3654,5 +3654,22 @@
  "Any name": "Et vilkårligt navn",
  "Breadcrumb": "Brødkrumme",
  "If you have a coupon code, please apply it below.": "Hvis du har en rabatkode, bedes du anvende den nedenfor.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Der opstod en fejl under behandlingen af din ordre. Kontrollér venligst, om der er trukket beløb på din betalingsmetode, og gennemgå din ordrehistorik, før du afgiver ordren igen."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Der opstod en fejl under behandlingen af din ordre. Kontrollér venligst, om der er trukket beløb på din betalingsmetode, og gennemgå din ordrehistorik, før du afgiver ordren igen.",
+ "Previous": "Forrige",
+ "Next": "Næste",
+ "Previous post:": "Forrige indlæg:",
+ "Next post:": "Næste indlæg:",
+ "Leave a Reply": "Skriv et svar",
+ "Reply to %s": "Svar til %s",
+ "Cancel reply": "Annuller svar",
+ "Logged in as %s": "Logget ind som %s",
+ "Logged in as %s. Edit your profile.": "Logget ind som %s. Rediger din profil.",
+ "Log out?": "Log ud?",
+ "Your email address will not be published.": "Din e-mailadresse vil ikke blive publiceret.",
+ "Required fields are marked %s": "Krævede felter er markeret med %s",
+ "Comment": "Kommentar",
+ "Website": "Websted",
+ "Save my name, email, and website in this browser for the next time I comment.": "Gem mit navn, min e-mail og mit websted i denne browser til næste gang jeg kommenterer.",
+ "Post Comment": "Send kommentar",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Du skal være <a href=\"%s\">logget ind</a> for at skrive en kommentar."
 }

@@ -3654,5 +3654,22 @@
  "Any name": "မည်သည့်အမည်မဆို",
  "Breadcrumb": "လမ်းကြောင်းပြ",
  "If you have a coupon code, please apply it below.": "coupon ကုဒ် ရှိပါက အောက်တွင် အသုံးပြုပါ။",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "သင့်အော်ဒါကို လုပ်ဆောင်ရာတွင် အမှားတစ်ခု ဖြစ်ပွားခဲ့သည်။ အော်ဒါ ထပ်မမှာမီ သင့်ငွေပေးချေမှုနည်းလမ်းတွင် ကောက်ခံမှုများ ရှိမရှိ စစ်ဆေးပြီး သင့်အော်ဒါ မှတ်တမ်းကို ပြန်လည်ကြည့်ရှုပါ။"
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "သင့်အော်ဒါကို လုပ်ဆောင်ရာတွင် အမှားတစ်ခု ဖြစ်ပွားခဲ့သည်။ အော်ဒါ ထပ်မမှာမီ သင့်ငွေပေးချေမှုနည်းလမ်းတွင် ကောက်ခံမှုများ ရှိမရှိ စစ်ဆေးပြီး သင့်အော်ဒါ မှတ်တမ်းကို ပြန်လည်ကြည့်ရှုပါ။",
+ "Previous": "ယခင်",
+ "Next": "နောက်",
+ "Previous post:": "ယခင် ပို့စ်:",
+ "Next post:": "နောက် ပို့စ်:",
+ "Leave a Reply": "မှတ်ချက်တစ်ခု ချန်ထားခဲ့ပါ",
+ "Reply to %s": "%s ကို ပြန်စာရေးရန်",
+ "Cancel reply": "ပြန်စာရေးခြင်း မလုပ်တော့ပါ",
+ "Logged in as %s": "%s အဖြစ် ဝင်ရောက်ထားသည်",
+ "Logged in as %s. Edit your profile.": "%s အဖြစ် ဝင်ရောက်ထားသည်။ သင့်ပရိုဖိုင်ကို ပြင်ဆင်ရန်။",
+ "Log out?": "ထွက်မလား?",
+ "Your email address will not be published.": "သင့်အီးမေးလ်လိပ်စာကို ထုတ်ပြန်မည်မဟုတ်ပါ။",
+ "Required fields are marked %s": "လိုအပ်သော အကွက်များကို %s ဖြင့် အမှတ်အသားပြုထားသည်",
+ "Comment": "မှတ်ချက်",
+ "Website": "ဝဘ်ဆိုက်",
+ "Save my name, email, and website in this browser for the next time I comment.": "နောက်တစ်ကြိမ် မှတ်ချက်ပေးသည့်အခါအတွက် ကျွန်ုပ်၏ အမည်၊ အီးမေးလ်နှင့် ဝဘ်ဆိုက်ကို ဤဘရောက်ဇာတွင် သိမ်းဆည်းပါ။",
+ "Post Comment": "မှတ်ချက် တင်ရန်",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "မှတ်ချက်တင်ရန် <a href=\"%s\">ဝင်ရောက်</a>ထားရပါမည်။"
 }

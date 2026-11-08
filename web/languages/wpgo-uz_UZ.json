@@ -3654,5 +3654,22 @@
  "Any name": "Istalgan ism",
  "Breadcrumb": "Navigatsiya izi",
  "If you have a coupon code, please apply it below.": "Agar kupon kodingiz bo‘lsa, uni quyida qo‘llang.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Buyurtmangizni qayta ishlashda xatolik yuz berdi. Buyurtmani qayta berishdan oldin to‘lov usulingizdan pul yechilgan-yechilmaganini tekshiring va buyurtmalar tarixingizni ko‘rib chiqing."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Buyurtmangizni qayta ishlashda xatolik yuz berdi. Buyurtmani qayta berishdan oldin to‘lov usulingizdan pul yechilgan-yechilmaganini tekshiring va buyurtmalar tarixingizni ko‘rib chiqing.",
+ "Previous": "Oldingi",
+ "Next": "Keyingi",
+ "Previous post:": "Oldingi yozuv:",
+ "Next post:": "Keyingi yozuv:",
+ "Leave a Reply": "Javob qoldiring",
+ "Reply to %s": "%s ga javob",
+ "Cancel reply": "Javobni bekor qilish",
+ "Logged in as %s": "%s sifatida kirgansiz",
+ "Logged in as %s. Edit your profile.": "%s sifatida kirgansiz. Profilingizni tahrirlang.",
+ "Log out?": "Chiqasizmi?",
+ "Your email address will not be published.": "Elektron pochta manzilingiz chop etilmaydi.",
+ "Required fields are marked %s": "Majburiy maydonlar %s bilan belgilangan",
+ "Comment": "Izoh",
+ "Website": "Veb-sayt",
+ "Save my name, email, and website in this browser for the next time I comment.": "Keyingi safar izoh qoldirishim uchun ismim, elektron pochtam va veb-saytimni ushbu brauzerda saqlash.",
+ "Post Comment": "Izoh qoldirish",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Izoh qoldirish uchun <a href=\"%s\">tizimga kirishingiz</a> kerak."
 }

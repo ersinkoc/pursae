@@ -3654,5 +3654,22 @@
  "Any name": "Nama apa saja",
  "Breadcrumb": "Breadcrumb",
  "If you have a coupon code, please apply it below.": "Jika Anda memiliki kode kupon, silakan terapkan di bawah.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Terjadi kesalahan saat memproses pesanan Anda. Silakan periksa apakah ada tagihan pada metode pembayaran Anda dan tinjau riwayat pesanan Anda sebelum melakukan pemesanan lagi."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Terjadi kesalahan saat memproses pesanan Anda. Silakan periksa apakah ada tagihan pada metode pembayaran Anda dan tinjau riwayat pesanan Anda sebelum melakukan pemesanan lagi.",
+ "Previous": "Sebelumnya",
+ "Next": "Selanjutnya",
+ "Previous post:": "Pos sebelumnya:",
+ "Next post:": "Pos selanjutnya:",
+ "Leave a Reply": "Tinggalkan Balasan",
+ "Reply to %s": "Balas ke %s",
+ "Cancel reply": "Batalkan balasan",
+ "Logged in as %s": "Masuk sebagai %s",
+ "Logged in as %s. Edit your profile.": "Masuk sebagai %s. Sunting profil Anda.",
+ "Log out?": "Keluar?",
+ "Your email address will not be published.": "Alamat email Anda tidak akan dipublikasikan.",
+ "Required fields are marked %s": "Ruas yang wajib ditandai %s",
+ "Comment": "Komentar",
+ "Website": "Situs Web",
+ "Save my name, email, and website in this browser for the next time I comment.": "Simpan nama, email, dan situs web saya pada peramban ini untuk komentar saya berikutnya.",
+ "Post Comment": "Kirim Komentar",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Anda harus <a href=\"%s\">masuk</a> untuk mengirim komentar."
 }

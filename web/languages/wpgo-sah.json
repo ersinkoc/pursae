@@ -3654,5 +3654,22 @@
  "Any name": "Ханнык баҕарар аат",
  "Breadcrumb": "Навигация суола",
  "If you have a coupon code, please apply it below.": "Купон кодтаах буоллаххытына, кинини аллара туттуҥ.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Сакааскытын оҥорорго алҕас таҕыста. Сакааһы хат биэриэххит иннинэ төлөбүр ньыматыттан харчы ылыллыбытын бэрэбиэркэлээҥ уонна сакаастар историяларын көрүҥ."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Сакааскытын оҥорорго алҕас таҕыста. Сакааһы хат биэриэххит иннинэ төлөбүр ньыматыттан харчы ылыллыбытын бэрэбиэркэлээҥ уонна сакаастар историяларын көрүҥ.",
+ "Previous": "Иннинээҕи",
+ "Next": "Кэлэр",
+ "Previous post:": "Иннинээҕи сурук:",
+ "Next post:": "Кэлэр сурук:",
+ "Leave a Reply": "Хоруй хаал",
+ "Reply to %s": "Хоруй: %s",
+ "Cancel reply": "Хоруйу тохтот",
+ "Logged in as %s": "%s быһыытынан киирдиҥ",
+ "Logged in as %s. Edit your profile.": "%s быһыытынан киирдиҥ. Профилгын уларыт.",
+ "Log out?": "Тахсаҕын дуо?",
+ "Your email address will not be published.": "Эн электроннай почтаҥ аадырыһа бэчээттэммэт.",
+ "Required fields are marked %s": "Булгуччулаах түһүмэхтэр %s бэлиэтэммиттэр",
+ "Comment": "Хамаанньыйа",
+ "Website": "Саайт",
+ "Save my name, email, and website in this browser for the next time I comment.": "Кэлэр сырыыга хамаанньыйа суруйарбар аатым, электроннай почтам уонна саайтым бу браузерга харалланнын.",
+ "Post Comment": "Хамаанньыйаны ыыт",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Хамаанньыйа суруйарга <a href=\"%s\">киириэхтээххин</a>."
 }

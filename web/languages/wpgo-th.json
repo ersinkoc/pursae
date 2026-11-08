@@ -3654,5 +3654,22 @@
  "Any name": "ชื่อใดก็ได้",
  "Breadcrumb": "เส้นทางนำทาง",
  "If you have a coupon code, please apply it below.": "หากคุณมีรหัสคูปอง โปรดใช้ด้านล่าง",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "เกิดข้อผิดพลาดในการดำเนินการคำสั่งซื้อของคุณ โปรดตรวจสอบว่ามีการเรียกเก็บเงินจากวิธีการชำระเงินของคุณหรือไม่ และตรวจสอบประวัติคำสั่งซื้อก่อนสั่งซื้ออีกครั้ง"
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "เกิดข้อผิดพลาดในการดำเนินการคำสั่งซื้อของคุณ โปรดตรวจสอบว่ามีการเรียกเก็บเงินจากวิธีการชำระเงินของคุณหรือไม่ และตรวจสอบประวัติคำสั่งซื้อก่อนสั่งซื้ออีกครั้ง",
+ "Previous": "ก่อนหน้า",
+ "Next": "ถัดไป",
+ "Previous post:": "เรื่องก่อนหน้า:",
+ "Next post:": "เรื่องถัดไป:",
+ "Leave a Reply": "ใส่ความคิดเห็น",
+ "Reply to %s": "ตอบกลับ %s",
+ "Cancel reply": "ยกเลิกการตอบ",
+ "Logged in as %s": "เข้าสู่ระบบในชื่อ %s",
+ "Logged in as %s. Edit your profile.": "เข้าสู่ระบบในชื่อ %s แก้ไขโปรไฟล์ของคุณ",
+ "Log out?": "ออกจากระบบ?",
+ "Your email address will not be published.": "อีเมลของคุณจะไม่แสดงให้คนอื่นเห็น",
+ "Required fields are marked %s": "ช่องข้อมูลจำเป็นถูกทำเครื่องหมาย %s",
+ "Comment": "ความคิดเห็น",
+ "Website": "เว็บไซต์",
+ "Save my name, email, and website in this browser for the next time I comment.": "บันทึกชื่อ อีเมล และชื่อเว็บไซต์ของฉันบนเบราว์เซอร์นี้ สำหรับการแสดงความคิดเห็นครั้งถัดไป",
+ "Post Comment": "แสดงความคิดเห็น",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "คุณต้อง<a href=\"%s\">เข้าสู่ระบบ</a>เพื่อแสดงความคิดเห็น"
 }

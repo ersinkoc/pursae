@@ -3654,5 +3654,22 @@
  "Any name": "ஏதேனும் பெயர்",
  "Breadcrumb": "வழிச்சுவடு",
  "If you have a coupon code, please apply it below.": "உங்களிடம் கூப்பன் குறியீடு இருந்தால், அதைக் கீழே பயன்படுத்தவும்.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "உங்கள் ஆர்டரைச் செயலாக்குவதில் பிழை ஏற்பட்டது. மீண்டும் ஆர்டர் செய்வதற்கு முன், உங்கள் கட்டண முறையில் ஏதேனும் கட்டணங்கள் வசூலிக்கப்பட்டுள்ளனவா எனச் சரிபார்த்து, உங்கள் ஆர்டர் வரலாற்றை மதிப்பாய்வு செய்யவும்."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "உங்கள் ஆர்டரைச் செயலாக்குவதில் பிழை ஏற்பட்டது. மீண்டும் ஆர்டர் செய்வதற்கு முன், உங்கள் கட்டண முறையில் ஏதேனும் கட்டணங்கள் வசூலிக்கப்பட்டுள்ளனவா எனச் சரிபார்த்து, உங்கள் ஆர்டர் வரலாற்றை மதிப்பாய்வு செய்யவும்.",
+ "Previous": "முந்தைய",
+ "Next": "அடுத்து",
+ "Previous post:": "முந்தைய பதிவு:",
+ "Next post:": "அடுத்த பதிவு:",
+ "Leave a Reply": "மறுமொழி இடவும்",
+ "Reply to %s": "%s க்கு மறுமொழி",
+ "Cancel reply": "மறுமொழியை ரத்துசெய்",
+ "Logged in as %s": "%s ஆக உள்நுழைந்துள்ளீர்கள்",
+ "Logged in as %s. Edit your profile.": "%s ஆக உள்நுழைந்துள்ளீர்கள். உங்கள் சுயவிவரத்தைத் திருத்தவும்.",
+ "Log out?": "வெளியேறவா?",
+ "Your email address will not be published.": "உங்கள் மின்னஞ்சல் முகவரி வெளியிடப்படமாட்டாது.",
+ "Required fields are marked %s": "தேவையான புலங்கள் %s எனக் குறிக்கப்பட்டுள்ளன",
+ "Comment": "கருத்து",
+ "Website": "இணையதளம்",
+ "Save my name, email, and website in this browser for the next time I comment.": "அடுத்த முறை நான் கருத்து தெரிவிக்கும்போது பயன்படுத்த என் பெயர், மின்னஞ்சல், இணையதளம் ஆகியவற்றை இந்த உலாவியில் சேமிக்கவும்.",
+ "Post Comment": "கருத்தை இடவும்",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "கருத்து இட நீங்கள் <a href=\"%s\">உள்நுழைந்திருக்க</a> வேண்டும்."
 }

@@ -3654,5 +3654,22 @@
  "Any name": "Orice nume",
  "Breadcrumb": "Navigare ierarhică",
  "If you have a coupon code, please apply it below.": "Dacă ai un cod de cupon, aplică-l mai jos.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "A apărut o eroare la procesarea comenzii tale. Verifică dacă există debitări în metoda ta de plată și revizuiește istoricul comenzilor înainte de a plasa din nou comanda."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "A apărut o eroare la procesarea comenzii tale. Verifică dacă există debitări în metoda ta de plată și revizuiește istoricul comenzilor înainte de a plasa din nou comanda.",
+ "Previous": "Anterior",
+ "Next": "Următor",
+ "Previous post:": "Articolul anterior:",
+ "Next post:": "Articolul următor:",
+ "Leave a Reply": "Lasă un răspuns",
+ "Reply to %s": "Răspunde-i lui %s",
+ "Cancel reply": "Anulează răspunsul",
+ "Logged in as %s": "Autentificat ca %s",
+ "Logged in as %s. Edit your profile.": "Autentificat ca %s. Editează-ți profilul.",
+ "Log out?": "Te dezautentifici?",
+ "Your email address will not be published.": "Adresa ta de email nu va fi publicată.",
+ "Required fields are marked %s": "Câmpurile obligatorii sunt marcate cu %s",
+ "Comment": "Comentariu",
+ "Website": "Site web",
+ "Save my name, email, and website in this browser for the next time I comment.": "Salvează-mi numele, emailul și site-ul web în acest navigator pentru data viitoare când o să comentez.",
+ "Post Comment": "Publică comentariul",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Trebuie să fii <a href=\"%s\">autentificat</a> pentru a publica un comentariu."
 }

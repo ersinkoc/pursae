@@ -3654,5 +3654,22 @@
  "Any name": "Çfarëdo emri",
  "Breadcrumb": "Shteg navigimi",
  "If you have a coupon code, please apply it below.": "Nëse keni një kod kuponi, ju lutemi, aplikojeni më poshtë.",
- "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Pati një gabim në përpunimin e porosisë tuaj. Ju lutemi, kontrolloni për çfarëdo faturimesh te mënyra juaj e pagesës dhe shqyrtoni historikun tuaj të porosive, përpara se ta bëni sërish porosinë."
+ "There was an error processing your order. Please check for any charges in your payment method and review your order history before placing the order again.": "Pati një gabim në përpunimin e porosisë tuaj. Ju lutemi, kontrolloni për çfarëdo faturimesh te mënyra juaj e pagesës dhe shqyrtoni historikun tuaj të porosive, përpara se ta bëni sërish porosinë.",
+ "Previous": "I mëparshmi",
+ "Next": "Pasuesi",
+ "Previous post:": "Postimi i mëparshëm:",
+ "Next post:": "Postimi pasues:",
+ "Leave a Reply": "Lini një Përgjigje",
+ "Reply to %s": "Përgjigjuni %s",
+ "Cancel reply": "Anuloje përgjigjen",
+ "Logged in as %s": "I futur si %s",
+ "Logged in as %s. Edit your profile.": "I futur si %s. Përpunoni profilin tuaj.",
+ "Log out?": "Të dilet?",
+ "Your email address will not be published.": "Adresa juaj email s’do të bëhet publike.",
+ "Required fields are marked %s": "Fushat e domosdoshme janë shënuar me %s",
+ "Comment": "Koment",
+ "Website": "Sajt",
+ "Save my name, email, and website in this browser for the next time I comment.": "Ruaje emrin, email-in dhe sajtin tim në këtë shfletues për herën pasuese që komentoj.",
+ "Post Comment": "Postoje Komentin",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Që të postoni një koment, duhet të <a href=\"%s\">jeni i futur</a>."
 }

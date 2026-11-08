@@ -3804,5 +3804,22 @@
  "You can edit messages used in various situations here. For details, see": "כאן ניתן לערוך הודעות המשמשות במצבים שונים. לפרטים נוספים, ראו",
  "You can edit the form template here. For details, see": "כאן ניתן לערוך את תבנית הטופס. לפרטים נוספים, ראו",
  "You can expand the possibilities of your contact forms by integrating them with external services. For details, see": "ניתן להרחיב את האפשרויות של טפסי יצירת הקשר שלכם באמצעות שילובם עם שירותים חיצוניים. לפרטים נוספים, ראו",
- "You need to save settings with Client ID and Client Secret before you can proceed.": "יש לשמור את ההגדרות עם מזהה הלקוח וסוד הלקוח לפני שניתן יהיה להמשיך."
+ "You need to save settings with Client ID and Client Secret before you can proceed.": "יש לשמור את ההגדרות עם מזהה הלקוח וסוד הלקוח לפני שניתן יהיה להמשיך.",
+ "Previous": "הקודם",
+ "Next": "הבא",
+ "Previous post:": "הפוסט הקודם:",
+ "Next post:": "הפוסט הבא:",
+ "Leave a Reply": "כתיבת תגובה",
+ "Reply to %s": "להגיב ל-%s",
+ "Cancel reply": "ביטול תגובה",
+ "Logged in as %s": "מחובר בתור %s",
+ "Logged in as %s. Edit your profile.": "מחובר בתור %s. עריכת הפרופיל שלך.",
+ "Log out?": "להתנתק?",
+ "Your email address will not be published.": "האימייל לא יוצג באתר.",
+ "Required fields are marked %s": "שדות החובה מסומנים %s",
+ "Comment": "תגובה",
+ "Website": "אתר",
+ "Save my name, email, and website in this browser for the next time I comment.": "שמור בדפדפן זה את השם, האימייל והאתר שלי לפעם הבאה שאגיב.",
+ "Post Comment": "פרסום תגובה",
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "יש <a href=\"%s\">להתחבר</a> כדי לכתוב תגובה."
 }
