@@ -6,6 +6,7 @@ import (
 	"embed"
 	"fmt"
 	"io/fs"
+	"runtime"
 	"sort"
 	"strings"
 	"time"
@@ -19,7 +20,11 @@ var migrationFS embed.FS
 
 // Connect opens a pool and waits for the database to accept connections.
 func Connect(ctx context.Context, url string) (*pgxpool.Pool, error) {
-	pool, err := pgxpool.New(ctx, url)
+	cfg, err := PoolConfig(url)
+	if err != nil {
+		return nil, err
+	}
+	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -35,6 +40,48 @@ func Connect(ctx context.Context, url string) (*pgxpool.Pool, error) {
 		}
 		time.Sleep(time.Second)
 	}
+}
+
+// PoolConfig parses url and applies the pool defaults below to every setting the URL does not
+// carry itself (pool_max_conns, pool_min_conns, pool_max_conn_lifetime, pool_max_conn_idle_time,
+// pool_health_check_period — pgx's own query parameters).
+//
+// pgx alone would allow max(4, NumCPU) connections, too few for a site whose requests, scheduler
+// and background writers share one pool. The cap of 40 stays well inside PostgreSQL's default
+// max_connections (100) so a second instance or a backup still gets a connection.
+func PoolConfig(url string) (*pgxpool.Config, error) {
+	cfg, err := pgxpool.ParseConfig(url)
+	if err != nil {
+		return nil, err
+	}
+	set := func(param string) bool { return strings.Contains(url, param+"=") }
+	if !set("pool_max_conns") {
+		cfg.MaxConns = defaultMaxConns(runtime.NumCPU())
+	}
+	if !set("pool_min_conns") {
+		cfg.MinConns = 2
+	}
+	if cfg.MinConns > cfg.MaxConns {
+		cfg.MinConns = cfg.MaxConns
+	}
+	if !set("pool_max_conn_lifetime") {
+		cfg.MaxConnLifetime = time.Hour
+	}
+	if !set("pool_max_conn_lifetime_jitter") {
+		cfg.MaxConnLifetimeJitter = 5 * time.Minute // instances started together do not reconnect together
+	}
+	if !set("pool_max_conn_idle_time") {
+		cfg.MaxConnIdleTime = 15 * time.Minute
+	}
+	if !set("pool_health_check_period") {
+		cfg.HealthCheckPeriod = 30 * time.Second
+	}
+	return cfg, nil
+}
+
+// defaultMaxConns is 4 per CPU, at least 10 and at most 40.
+func defaultMaxConns(cpus int) int32 {
+	return int32(min(max(10, 4*cpus), 40))
 }
 
 // Migrate applies every embedded migration that has not run yet, each in its own transaction.
@@ -113,4 +160,22 @@ func ConnectSchema(ctx context.Context, base *pgxpool.Config, schema string, max
 		return nil, err
 	}
 	return pool, nil
+}
+
+// Pending counts the embedded migrations the database has not applied yet (readiness checks).
+func Pending(ctx context.Context, pool *pgxpool.Pool) (int, error) {
+	names, err := fs.Glob(migrationFS, "migrations/*.sql")
+	if err != nil {
+		return 0, err
+	}
+	want := make([]string, 0, len(names))
+	for _, name := range names {
+		want = append(want, strings.TrimSuffix(strings.TrimPrefix(name, "migrations/"), ".sql"))
+	}
+	var applied int
+	err = pool.QueryRow(ctx, `SELECT count(*) FROM schema_migrations WHERE version = ANY($1)`, want).Scan(&applied)
+	if err != nil {
+		return 0, err
+	}
+	return len(want) - applied, nil
 }

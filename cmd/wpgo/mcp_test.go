@@ -58,3 +58,40 @@ func TestMCPBridge(t *testing.T) {
 		t.Error("missing flags accepted")
 	}
 }
+
+// TestMCPBridgeTransport: the password comes from the environment (the flag still works, with a warning),
+// and plain http is refused except to this machine.
+func TestMCPBridgeTransport(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if _, p, _ := r.BasicAuth(); p != "from env" {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{"jsonrpc": "2.0", "id": 1, "result": map[string]any{}})
+	}))
+	defer ts.Close()
+	t.Setenv("PURSAE_APP_PASSWORD", "from env")
+	var out, errs bytes.Buffer
+	in := strings.NewReader(`{"jsonrpc":"2.0","id":1,"method":"ping"}` + "\n")
+	if err := runMCP(context.Background(), []string{"--url", ts.URL, "--user", "admin"}, in, &out, &errs); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out.String(), `"result"`) || strings.Contains(errs.String(), "warning") {
+		t.Errorf("env password: out=%q errs=%q", out.String(), errs.String())
+	}
+	errs.Reset()
+	_ = runMCP(context.Background(), []string{"--url", ts.URL, "--user", "admin", "--password", "x"}, strings.NewReader(""), &out, &errs)
+	if !strings.Contains(errs.String(), "PURSAE_APP_PASSWORD") {
+		t.Errorf("no warning for --password: %q", errs.String())
+	}
+	for _, u := range []string{"http://example.com", "http://10.0.0.5:8088", "ftp://example.com"} {
+		if err := runMCP(context.Background(), []string{"--url", u, "--user", "admin"}, strings.NewReader(""), &out, &errs); err == nil {
+			t.Errorf("%s accepted", u)
+		}
+	}
+	for _, u := range []string{"https://example.com", "http://localhost:8088", "http://[::1]:8088", "http://127.0.0.1"} {
+		if err := runMCP(context.Background(), []string{"--url", u, "--user", "admin"}, strings.NewReader(""), &out, &errs); err != nil {
+			t.Errorf("%s refused: %v", u, err)
+		}
+	}
+}

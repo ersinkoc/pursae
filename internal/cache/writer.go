@@ -104,10 +104,14 @@ type captureWriter struct {
 	tags   []string
 	html   bool
 	start  time.Time
+	gen    uint64 // the store's purge generation before the render (Store.SetSince)
+	// release, when set, ends this render's claim on its key (flightGroup) once the page is
+	// stored, before it is written to a possibly slow client.
+	release func()
 }
 
 func newCaptureWriter(w http.ResponseWriter, c *Cache, r *http.Request, d Decision) *captureWriter {
-	return &captureWriter{w: w, c: c, r: r, d: d, start: c.now()}
+	return &captureWriter{w: w, c: c, r: r, d: d, start: c.now(), gen: c.store.Generation()}
 }
 
 func (cw *captureWriter) Header() http.Header { return cw.w.Header() }
@@ -213,9 +217,13 @@ func (cw *captureWriter) finish() {
 		cw.w.Write(body)
 		return
 	}
-	// HEAD responses carry no body, so only GET results are stored.
+	// HEAD responses carry no body, so only GET results are stored. A purge that ran while the
+	// page rendered (a post saved meanwhile) wins: the page is served but not stored.
 	if cw.r.Method == http.MethodGet {
-		cw.c.store.Set(e)
+		_ = cw.c.store.SetSince(e, cw.gen)
+	}
+	if cw.release != nil {
+		cw.release()
 	}
 	cw.c.serve(cw.w, cw.r, e, "miss", cw.d.Private)
 }

@@ -109,9 +109,6 @@ func (s *Server) login(c *gin.Context) {
 			fail(string(msg))
 			return
 		}
-	} else if throttled, _ := s.auth.Throttled(c, ip); throttled {
-		fail("<strong>Error:</strong> Too many failed login attempts. Please try again in 15 minutes.")
-		return
 	}
 	switch {
 	case login == "" && pass == "":
@@ -124,13 +121,23 @@ func (s *Server) login(c *gin.Context) {
 		fail("<strong>Error:</strong> The password field is empty.")
 		return
 	}
+	// Core throttle: the attempt is recorded (as a failure) before the password is checked, so parallel
+	// guesses cannot all slip past the count; see auth.BeginAttempt.
+	var attemptID int64
+	if !secOn {
+		id, throttled, _ := s.auth.BeginAttempt(c, ip, login)
+		if throttled {
+			fail("<strong>Error:</strong> Too many failed login attempts. Please try again in 15 minutes.")
+			return
+		}
+		attemptID = id
+	}
 
 	u, err := s.store.UserByLoginOrEmail(c, login)
 	if errors.Is(err, store.ErrNotFound) {
+		auth.CheckDummyPassword(c.Request.Context(), pass) // same argon2 work as a wrong password: no timing difference
 		if secOn {
 			s.adminsecLoginFailed(c, login, nil, "Unknown username or e-mail address.")
-		} else {
-			s.auth.RecordAttempt(c, ip, login, false)
 		}
 		if msg, ok := s.adminsecGenericError(); ok {
 			fail(string(msg))
@@ -145,12 +152,10 @@ func (s *Server) login(c *gin.Context) {
 		fail("<strong>Error:</strong> Could not log in right now. Please try again.")
 		return
 	}
-	ok, _ := auth.CheckPassword(pass, u.PasswordHash)
+	ok, _ := auth.CheckPasswordCtx(c.Request.Context(), pass, u.PasswordHash)
 	if !ok {
 		if secOn {
 			s.adminsecLoginFailed(c, login, u, "Wrong password.")
-		} else {
-			s.auth.RecordAttempt(c, ip, login, false)
 		}
 		if msg, ok := s.adminsecGenericError(); ok {
 			fail(string(msg))
@@ -167,7 +172,7 @@ func (s *Server) login(c *gin.Context) {
 		s.adminsecPasswordOK(c, v, u, pass)
 		return
 	}
-	s.auth.RecordAttempt(c, ip, login, true)
+	s.auth.AttemptSucceeded(c, attemptID, ip, login)
 
 	sess, err := s.auth.Create(c, u.ID, v.Remember, ip, c.Request.UserAgent())
 	if err != nil {

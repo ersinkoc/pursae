@@ -158,6 +158,14 @@ func (b *Builder) postLink(p *store.Post) string {
 		return b.HomeURL("/?p=" + strconv.FormatInt(p.ID, 10))
 	}
 	t := p.Date().In(b.loc())
+	// %category% and %author% cost a lookup each: resolve them only when the structure uses them.
+	category, author := "", ""
+	if strings.Contains(b.Structure, "%category%") {
+		category = b.postCategoryPath(p)
+	}
+	if strings.Contains(b.Structure, "%author%") {
+		author = b.authorSlug(p.AuthorID)
+	}
 	r := strings.NewReplacer(
 		"%year%", strconv.Itoa(t.Year()),
 		"%monthnum%", fmt.Sprintf("%02d", int(t.Month())),
@@ -167,8 +175,8 @@ func (b *Builder) postLink(p *store.Post) string {
 		"%second%", fmt.Sprintf("%02d", t.Second()),
 		"%post_id%", strconv.FormatInt(p.ID, 10),
 		"%postname%", p.Slug,
-		"%category%", b.postCategoryPath(p),
-		"%author%", b.authorSlug(p.AuthorID),
+		"%category%", category,
+		"%author%", author,
 	)
 	return b.HomeURL(r.Replace(b.Structure))
 }

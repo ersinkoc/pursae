@@ -196,7 +196,7 @@ func init() {
 		if !ok || !s.gooExtOn(gpreKey) || o.Status != "pre-ordered" {
 			return
 		}
-		s.gooReduceStock(ctx, o)
+		_ = s.gooReduceStock(ctx, o, false) // a pre-order may sell stock still to come
 		_ = s.gooAddOrderNote(ctx, o, "Order placed as a pre-order; payment will be requested upon release.", false, "")
 		_ = s.gooTriggerEmail(ctx, "wc_pre_orders_new_pre_order", o, nil)
 		_ = s.gooTriggerEmail(ctx, "wc_pre_orders_pre_ordered", o, nil)

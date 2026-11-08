@@ -191,6 +191,7 @@ func (h *pluginHost) InsertPost(ctx context.Context, _ string, in plugins.PostIn
 			_ = h.s.store.SetPostTerms(ctx, p.ID, "category", []int64{cat})
 		}
 	}
+	h.s.pluginSavePost(ctx, p)
 	h.s.purgeAll(ctx)
 	return h.GetPost(ctx, "", p.ID)
 }
@@ -211,8 +212,27 @@ func (h *pluginHost) UpdatePost(ctx context.Context, _ string, id int64, in plug
 		return nil, err
 	}
 	h.s.wbAfterPostSave(ctx, p) // Pursae Web Builder drift
+	h.s.pluginSavePost(ctx, p)
 	h.s.purgeAll(ctx)
 	return h.GetPost(ctx, "", p.ID)
+}
+
+// pluginSavePost fires save_post_<type> and save_post (in WordPress' order) after a post or page
+// was saved (afterPostSave, and the plugins' own InsertPost/UpdatePost): the post id and the post as
+// GetPost returns it. Other post types are not visible to plugins and fire nothing.
+func (s *Server) pluginSavePost(ctx context.Context, p *store.Post) {
+	if s.plugins == nil || p == nil || !pluginPostTypes[p.Type] {
+		return
+	}
+	hooks := s.plugins.hooks
+	if !hooks.HasAction("save_post") && !hooks.HasAction("save_post_"+p.Type) {
+		return
+	}
+	data := (&pluginHost{s: s}).postData(ctx, p)
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	hooks.DoAction(ctx, "save_post_"+p.Type, p.ID, data)
+	hooks.DoAction(ctx, "save_post", p.ID, data)
 }
 
 // Current user --------------------------------------------------------------------
@@ -472,7 +492,7 @@ func (s *Server) pluginSettingsScreen(c *gin.Context, slug string) bool {
 	for _, f := range page.Fields {
 		name := f.OptionName(slug)
 		v := settingsFieldView{SettingsField: f, Name: name}
-		v.Value, v.Checked = settingValue(s.settings.Get(name), f)
+		v.Value, v.Checked = settingValue(s.settings.Get(pluginOptionKey(slug, name)), f) // plugins.go: stored in the plugin's namespace
 		d.Fields = append(d.Fields, v)
 	}
 	var notices []notice
@@ -502,10 +522,11 @@ func (s *Server) pluginSettingsSave(c *gin.Context, optionPage string) {
 	values := map[string]any{}
 	for _, f := range page.Fields {
 		name := f.OptionName(slug)
+		key := pluginOptionKey(slug, name) // plugins.go: the plugin's option namespace
 		raw, present := c.GetPostForm(name)
 		switch f.Type {
 		case "checkbox":
-			values[name] = present && raw != "" && raw != "0"
+			values[key] = present && raw != "" && raw != "0"
 		case "number":
 			if !present {
 				continue
@@ -520,14 +541,14 @@ func (s *Server) pluginSettingsSave(c *gin.Context, optionPage string) {
 			if f.Max != nil && n > *f.Max {
 				n = *f.Max
 			}
-			values[name] = n
+			values[key] = n
 		case "select":
 			if !present {
 				continue
 			}
 			for _, o := range f.Options {
 				if o.Value == raw {
-					values[name] = raw
+					values[key] = raw
 				}
 			}
 		default:
@@ -537,7 +558,7 @@ func (s *Server) pluginSettingsSave(c *gin.Context, optionPage string) {
 			if len(raw) > 64<<10 {
 				raw = raw[:64<<10]
 			}
-			values[name] = strings.ReplaceAll(raw, "\r\n", "\n")
+			values[key] = strings.ReplaceAll(raw, "\r\n", "\n")
 		}
 	}
 	if err := s.settings.Set(c.Request.Context(), values); err != nil {

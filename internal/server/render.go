@@ -165,6 +165,7 @@ func (t *templates) coreFuncs(s *Server) template.FuncMap {
 		"customizerOn": func() bool { return !s.wbOn() }, // the Customizer is hidden while the Web Builder is active
 		"customizeURL": s.customizeURL,
 		"safe":         func(v string) template.HTML { return template.HTML(v) },
+		"kses":         func(v string) template.HTML { return template.HTML(wp.KsesPost(v)) }, // wp_kses_post()
 		"safeURL":      func(v string) template.URL { return template.URL(v) },
 		"safeAttr": func(v string) template.HTMLAttr {
 			return template.HTMLAttr(v)

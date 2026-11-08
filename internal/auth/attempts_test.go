@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -90,5 +92,58 @@ func TestSuccessfulLoginClearsOwnFailures(t *testing.T) {
 	m.RecordAttempt(ctx, ip, "alice", false)
 	if throttled, _ := m.Throttled(ctx, ip); throttled {
 		t.Fatal("a user who typos a few times and then logs in should start from zero")
+	}
+}
+
+// Parallel attempts must not all pass the throttle: each is recorded before its password is checked, so
+// at most MaxFailedLogins of them get through, however many arrive at once.
+func TestBeginAttemptIsAtomic(t *testing.T) {
+	m := attemptsManager(t)
+	ctx := context.Background()
+	const ip, n = "198.51.100.20", 30
+	var wg sync.WaitGroup
+	var passed atomic.Int32
+	for i := 0; i < n; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if _, throttled, err := m.BeginAttempt(ctx, ip, "victim"); err == nil && !throttled {
+				passed.Add(1)
+			}
+		}()
+	}
+	wg.Wait()
+	if got := passed.Load(); got > MaxFailedLogins {
+		t.Fatalf("%d of %d parallel attempts passed the throttle, want at most %d", got, n, MaxFailedLogins)
+	}
+	// Blocked attempts are not stored: they do not extend the block.
+	var stored int
+	_ = m.pool.QueryRow(ctx, `SELECT count(*) FROM login_attempts WHERE ip = $1`, ip).Scan(&stored)
+	if stored > MaxFailedLogins {
+		t.Errorf("%d attempts stored, want at most %d", stored, MaxFailedLogins)
+	}
+}
+
+// Guesses at one user name spread over many addresses are bounded too.
+func TestBeginAttemptPerLogin(t *testing.T) {
+	m := attemptsManager(t)
+	ctx := context.Background()
+	for i := 0; i < MaxFailedLoginsPerLogin; i++ {
+		if _, throttled, _ := m.BeginAttempt(ctx, fmt.Sprintf("203.0.113.%d", i), "Admin"); throttled {
+			t.Fatalf("attempt %d throttled too early", i)
+		}
+	}
+	if _, throttled, _ := m.BeginAttempt(ctx, "192.0.2.1", "admin"); !throttled {
+		t.Fatal("a fresh address guessing a user name with 20 recent failures was not throttled")
+	}
+	if _, throttled, _ := m.BeginAttempt(ctx, "192.0.2.1", "someone-else"); throttled {
+		t.Fatal("another user name from a fresh address was throttled")
+	}
+	// A success turns the attempt into a success and clears that login's failures from the address.
+	id, _, _ := m.BeginAttempt(ctx, "192.0.2.9", "carol")
+	m.AttemptSucceeded(ctx, id, "192.0.2.9", "carol")
+	var ok bool
+	if err := m.pool.QueryRow(ctx, `SELECT success FROM login_attempts WHERE id = $1`, id).Scan(&ok); err != nil || !ok {
+		t.Errorf("attempt not marked as success: %v %v", ok, err)
 	}
 }

@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+
+	"wpgo/internal/store"
 )
 
 // Goocommerce › Orders: the HPOS orders list (page=orders, WooCommerce's admin.php?page=wc-orders) with
@@ -276,7 +278,7 @@ func (s *Server) gooAdminOrders(c *gin.Context) {
 			{"mark_completed", "Change status to completed"}, {"mark_cancelled", "Change status to cancelled"}}
 	}
 	// Months with orders.
-	rows, err := s.store.Pool.Query(ctx, `SELECT DISTINCT to_char(date_created AT TIME ZONE $1, 'YYYYMM') m FROM goo_orders WHERE type = 'shop_order' ORDER BY m DESC`, s.loc().String())
+	rows, err := s.store.Pool.Query(ctx, `SELECT DISTINCT to_char(date_created AT TIME ZONE $1, 'YYYYMM') m FROM goo_orders WHERE type = 'shop_order' ORDER BY m DESC`, store.PGZone(s.loc()))
 	if err == nil {
 		for rows.Next() {
 			var m string
@@ -1788,7 +1790,7 @@ func (s *Server) gooRunOrderAction(c *gin.Context, o *gooOrder, act string) erro
 		return s.gooAddOrderNote(ctx, o, "Order details manually sent to admin.", false, by)
 	case "regenerate_download_permissions":
 		_, _ = s.store.Pool.Exec(ctx, `DELETE FROM goo_download_permissions WHERE order_id = $1`, o.ID)
-		o.DownloadsGranted = false
+		_, _ = s.gooClaimOrderFlag(ctx, o, "downloads_granted", false)
 		s.gooGrantDownloads(ctx, o)
 		return nil
 	}

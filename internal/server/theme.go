@@ -202,6 +202,8 @@ func czSpecFor(t *Theme) *czThemeSpec {
 	if t.Package != nil {
 		return t.Package.spec
 	}
+	czSpecsMu.RLock()
+	defer czSpecsMu.RUnlock()
 	return czSpecs[t.Slug]
 }
 
@@ -363,15 +365,46 @@ func (s *Server) fillPostView(ctx context.Context, pv *postView, p *store.Post, 
 		pv.Tags = append(pv.Tags, termLink{t.ID, t.Name, t.Slug, lb.TermLink(t)})
 	}
 	if p.FeaturedMediaID > 0 {
-		if a, err := s.store.GetAttachment(ctx, p.FeaturedMediaID); err == nil {
+		if a, err := s.attachment(ctx, p.FeaturedMediaID); err == nil { // request memo (site_memo.go)
 			pv.ThumbnailURL = s.uploadURL(ctx, a.FilePath)
-			pv.Thumbnail = s.attachmentImage(ctx, a, "post-thumbnail", "attachment-post-thumbnail size-post-thumbnail wp-post-image")
+			pv.Thumbnail = s.attachmentImageAttrs(ctx, a, "post-thumbnail", "attachment-post-thumbnail size-post-thumbnail wp-post-image",
+				thumbnailLoading(ctx))
 		}
 	}
 }
 
+// thumbnailLoading is the loading optimisation of a post thumbnail (wp_get_loading_optimization_attributes()):
+// the page's first one is likely the largest paint and is not lazy-loaded (fetchpriority="high" unless
+// a content image already has it), later ones are lazy-loaded; feeds get neither.
+func thumbnailLoading(ctx context.Context) string {
+	rc := renderFrom(ctx)
+	if rc != nil && rc.feed {
+		return ""
+	}
+	m := viewMemoFrom(ctx)
+	if m == nil {
+		return ""
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if !m.thumbSeen {
+		m.thumbSeen = true
+		if rc != nil && rc.priorityDone { // a content image above it already has the high priority
+			return ""
+		}
+		return ` fetchpriority="high"`
+	}
+	return ` loading="lazy"`
+}
+
 // attachmentImage is wp_get_attachment_image(): the size closest to the requested one with srcset.
 func (s *Server) attachmentImage(ctx context.Context, a *store.Attachment, size, class string) template.HTML {
+	return s.attachmentImageAttrs(ctx, a, size, class, "")
+}
+
+// attachmentImageAttrs is attachmentImage with loading attributes (` loading="lazy"`, ` fetchpriority="high"`)
+// after decoding="async", where WordPress prints them.
+func (s *Server) attachmentImageAttrs(ctx context.Context, a *store.Attachment, size, class, loading string) template.HTML {
 	src, w, h := s.uploadURL(ctx, a.FilePath), a.Width, a.Height
 	if v := a.Variant(size); v != nil {
 		src, w, h = s.uploadURL(ctx, v.FilePath), v.Width, v.Height
@@ -385,8 +418,8 @@ func (s *Server) attachmentImage(ctx context.Context, a *store.Attachment, size,
 			set = append(set, fmt.Sprintf("%s %dw", s.uploadURL(ctx, v.FilePath), v.Width))
 		}
 	}
-	return template.HTML(fmt.Sprintf(`<img width="%d" height="%d" src="%s" class="%s" alt="%s" decoding="async" srcset="%s" sizes="(max-width: %dpx) 100vw, %dpx" />`,
-		w, h, html.EscapeString(src), class, html.EscapeString(a.Alt), html.EscapeString(strings.Join(set, ", ")), w, w))
+	return template.HTML(fmt.Sprintf(`<img width="%d" height="%d" src="%s" class="%s" alt="%s" decoding="async"%s srcset="%s" sizes="(max-width: %dpx) 100vw, %dpx" />`,
+		w, h, html.EscapeString(src), class, html.EscapeString(a.Alt), loading, html.EscapeString(strings.Join(set, ", ")), w, w))
 }
 
 // Themes screen --------------------------------------------------------------------

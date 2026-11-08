@@ -344,14 +344,24 @@ func (s *Server) gooLoginPost(c *gin.Context) {
 			fail(string(msg))
 			return
 		}
-	} else if throttled, _ := s.auth.Throttled(c, ip); throttled {
-		fail("<strong>Error:</strong> Too many failed login attempts. Please try again in 15 minutes.")
-		return
+	}
+	// Core throttle, as on wp-login: the attempt is recorded before the password is checked so parallel
+	// guesses cannot all pass the count (auth.BeginAttempt).
+	var attemptID int64
+	if !secOn {
+		id, throttled, _ := s.auth.BeginAttempt(c, ip, login)
+		if throttled {
+			fail("<strong>Error:</strong> Too many failed login attempts. Please try again in 15 minutes.")
+			return
+		}
+		attemptID = id
 	}
 	u, err := s.store.UserByLoginOrEmail(ctx, login)
 	ok := false
 	if err == nil {
-		ok, _ = auth.CheckPassword(pass, u.PasswordHash)
+		ok, _ = auth.CheckPasswordCtx(c.Request.Context(), pass, u.PasswordHash)
+	} else {
+		auth.CheckDummyPassword(c.Request.Context(), pass) // no timing difference for unknown users
 	}
 	if !ok {
 		if secOn {
@@ -360,8 +370,6 @@ func (s *Server) gooLoginPost(c *gin.Context) {
 				uu = u
 			}
 			s.adminsecLoginFailed(c, login, uu, "Wrong username or password.")
-		} else {
-			s.auth.RecordAttempt(c, ip, login, false)
 		}
 		if errors.Is(err, store.ErrNotFound) {
 			if strings.Contains(login, "@") {
@@ -381,7 +389,7 @@ func (s *Server) gooLoginPost(c *gin.Context) {
 			RedirectTo: target, Login: login, Remember: remember}, u, pass)
 		return
 	}
-	s.auth.RecordAttempt(c, ip, login, true)
+	s.auth.AttemptSucceeded(c, attemptID, ip, login)
 	if err := s.loginUserCookie(c, u.ID, remember); err != nil {
 		fail("<strong>Error:</strong> Could not start a session. Please try again.")
 		return

@@ -43,6 +43,12 @@ index advertises it). The authorization screen shows the same scope checkboxes a
 can pre-tick scopes with `scopes[]=content&scopes[]=seo` (or `scopes=content,seo`) in the request,
 the user can change them, and the chosen scopes are stored with the password. A wrong or missing password returns `401 incorrect_password`.
 
+Basic authentication counts toward the login throttle: after five failures from one address within
+15 minutes further Basic-auth requests from it get `429 too_many_retries` (Pursae Security, when active,
+applies its own lockouts instead). The server verifies the most recently used password first and
+remembers a successful match for a few minutes, so a working client does not pay for a password hash
+on every request; a revoked password stops working at once.
+
 Use Application Passwords only over TLS: Basic authentication sends the password with every
 request.
 
@@ -73,7 +79,10 @@ scope still cannot activate plugins.
 
 Every scoped password may also read the REST index, `/wp/v2/users/me` and use the MCP endpoint
 `/pursae/v1/mcp` (whose tools are checked route by route). Batch requests (`/batch/v1`) re-check
-each inner request.
+each inner request. On `/wp/v2/users/me` a scoped password may edit the profile fields (name, URL,
+description, …) but changing `email`, `password` or `roles` needs the `users` scope
+(`403 rest_scope_forbidden` otherwise). A password whose stored scopes are all unknown (for example a
+scope removed in a later release) is refused rather than given full access.
 
 Set scopes with the checkboxes under **Profile › Application Passwords › Limit access to**, or
 through REST: `scopes` is an array (or a comma list) on `POST /wp/v2/users/me/application-passwords`

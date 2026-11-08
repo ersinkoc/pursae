@@ -93,10 +93,12 @@ func init() {
 		},
 		Prepare: func(s *Server, c *gin.Context, v *siteView) { s.tt5Prepare(c, v) },
 	})
+	czSpecsMu.Lock()
 	czSpecs["twentytwentyfive"] = &czThemeSpec{
 		Colors: []czControl{{ID: "color_scheme", Label: "Color scheme", Type: "select", Default: "default", Choices: tt5Schemes,
 			Description: "The color palettes of Twenty Twenty-Five's style variations."}},
 	}
+	czSpecsMu.Unlock()
 }
 
 // tt5ThemeSettings is theme.json's settings (the editor's presets and layout).
@@ -179,6 +181,7 @@ func (s *Server) tt5Prepare(c *gin.Context, v *siteView) {
 	items := tt5NavItems(v.Menus["primary"])
 	if len(v.Menus["primary"]) == 0 {
 		items = tt5PageListItems(blocks.Render(ctx, `<!-- wp:page-list {"isNested":true} /-->`))
+		cacheDep(ctx, "archive:page") // the navigation fallback lists every page
 	}
 	if items != "" {
 		d["Nav"] = template.HTML(tt5Navigation(items))
@@ -225,6 +228,7 @@ func (s *Server) tt5Prepare(c *gin.Context, v *siteView) {
 	// "More posts" (single and search).
 	if v.Template == "single" || v.Template == "search" {
 		d["MorePosts"] = s.tt5MorePosts(ctx, lb, currentUser(c))
+		cacheDep(ctx, "archive:post") // the four latest posts
 	}
 
 	// comments.php: the comments block's title, 50px avatars and the post-comments-form wrapper.
@@ -278,7 +282,7 @@ func tt5NavItems(items []*store.MenuItem) string {
 		if it.Target != "" {
 			target = ` target="` + html.EscapeString(it.Target) + `"`
 		}
-		link := `<a class="wp-block-navigation-item__content" href="` + html.EscapeString(it.URL) + `"` + target + aria + `><span class="wp-block-navigation-item__label">` + label + `</span></a>`
+		link := `<a class="wp-block-navigation-item__content" href="` + wp.EscURL(it.URL) + `"` + target + aria + `><span class="wp-block-navigation-item__label">` + label + `</span></a>`
 		if len(it.Children) == 0 {
 			sb.WriteString(`<li class="wp-block-navigation-item` + cls + ` wp-block-navigation-link">` + link + `</li>`)
 			continue
@@ -317,7 +321,7 @@ func (s *Server) tt5PostData(c *gin.Context, v *siteView, pv *postView, singular
 
 	// core/post-featured-image: 3:2 and linked in the loop and on posts, as is on pages.
 	if !locked && p.FeaturedMediaID > 0 {
-		if a, err := s.store.GetAttachment(ctx, p.FeaturedMediaID); err == nil {
+		if a, err := s.attachment(ctx, p.FeaturedMediaID); err == nil { // request memo (site_memo.go)
 			aspect := p.Type == "post" || !singular
 			img := s.tt5Image(ctx, a, aspect, *eager)
 			*eager = false

@@ -71,6 +71,9 @@ type Server struct {
 
 	// mgr is the Pursae Manager client's state: the license answer and the queued events.
 	mgr managerState
+
+	// rt is the bounded background work: async writes, coalesced CDN purges (background.go).
+	rt runtimeState
 }
 
 // New builds the server of the site.
@@ -137,6 +140,7 @@ func newServer(ctx context.Context, cfg config.Config, pool *pgxpool.Pool, sb *s
 		s.acfgoStart(ctx) // ACF-Go: content types, post types and taxonomies
 	}
 	s.startPlugins(ctx)
+	s.bmgrRegisterSchedule() // Backup Manager: the scheduled-backup job action (backup_schedule.go)
 	s.adminsecStart()
 	return s, nil
 }
@@ -147,7 +151,9 @@ func newServer(ctx context.Context, cfg config.Config, pool *pgxpool.Pool, sb *s
 // calls aimed at the old paths still succeed.
 func (s *Server) Handler() http.Handler {
 	app := s.appHandler()
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	// Outermost: probes and the request ID (ops_http.go); then gzip for what Pursae Cache does not serve
+	// compressed itself (compress.go).
+	return s.opsHandler(gzipResponses(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if s.adminsecOn() { // AdminSecGo: blocked IPs, the custom login URL, security headers (adminsec.go)
 			var done bool
 			if w, r, done = s.adminsecFront(w, r); done {
@@ -168,7 +174,7 @@ func (s *Server) Handler() http.Handler {
 			return
 		}
 		app.ServeHTTP(w, r)
-	})
+	})))
 }
 
 // appHandler is the app without the page cache.
@@ -209,6 +215,9 @@ func (s *Server) routes() *gin.Engine {
 	if err := applyTrustedProxies(r, s.cfg.TrustedProxies); err != nil {
 		log.Printf("wpgo: WPGO_TRUSTED_PROXIES: %v; trusting no proxy", err)
 		_ = r.SetTrustedProxies(nil)
+	} else if strings.TrimSpace(s.cfg.TrustedProxies) == "" && strings.HasPrefix(s.cfg.SiteURL, "https://") {
+		log.Printf("wpgo: WPGO_TRUSTED_PROXIES is not set: X-Forwarded-For is believed from loopback and private networks; " +
+			"set it to your proxy's address, or \"none\" (docs: operations/reverse-proxy-and-tls)")
 	}
 	r.Use(gin.Recovery(), accessLog(), requestOrigin(), securityHeaders(), s.loadUser(), s.requireInstall(), s.acfgoMiddleware(), s.golylangRequest())
 	r.HandleMethodNotAllowed = false
@@ -394,18 +403,6 @@ func (s *Server) static(r *gin.Engine, prefix, dir string, guards ...gin.Handler
 	r.HEAD(prefix+"/*filepath", append(guards[:len(guards):len(guards)], handler)...)
 }
 
-func accessLog() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		start := time.Now()
-		c.Next()
-		p := c.Request.URL.Path
-		if strings.HasPrefix(p, "/wp-admin/assets/") || strings.HasPrefix(p, "/wp-includes/") || strings.HasPrefix(p, "/wp-content/") {
-			return
-		}
-		log.Printf("%d %s %s %s", c.Writer.Status(), c.Request.Method, c.Request.URL.RequestURI(), time.Since(start).Round(time.Microsecond))
-	}
-}
-
 // securityHeaders sets the default headers from the spec's security section.
 func securityHeaders() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -575,8 +572,7 @@ func (s *Server) links(ctx context.Context) *links.Builder {
 		return a
 	}
 	b.FirstCategory = func(p *store.Post) *store.Term {
-		m, _ := s.store.TermsForPosts(ctx, []int64{p.ID}, "category")
-		if ts := m[p.ID]; len(ts) > 0 {
+		if ts := s.postTerms(ctx, p.ID, "category"); len(ts) > 0 { // request memo (site_memo.go)
 			return ts[0]
 		}
 		return nil
@@ -595,11 +591,10 @@ func (s *Server) links(ctx context.Context) *links.Builder {
 		return path
 	}
 	b.AuthorSlug = func(id int64) string {
-		u, err := s.store.UserByID(ctx, id)
-		if err != nil {
-			return ""
+		if u := s.displayUser(ctx, id); u != nil { // request memo (site_memo.go)
+			return u.Nicename
 		}
-		return u.Nicename
+		return ""
 	}
 	b.TypeHierarchical = siteTypeHierarchical
 	if s.settings.String("show_on_front") == "page" {
@@ -630,7 +625,11 @@ func clientIP(c *gin.Context) string {
 
 // defaultTrustedProxies are the addresses a reverse proxy normally has when it runs next to the server:
 // loopback and private networks. A client reaching the server directly from the internet is not among
-// them, so it cannot choose its own address with an X-Forwarded-For header.
+// them, so it cannot choose its own address with an X-Forwarded-For header. The private ranges stay in
+// the default because in Docker a proxy on the host (or in another container) reaches the server from a
+// bridge address (172.16/12 and the like), not loopback. A server whose port is reachable from other
+// machines on a private network should set WPGO_TRUSTED_PROXIES to its proxy's address; the production
+// compose file publishes the port on 127.0.0.1 only.
 const defaultTrustedProxies = "127.0.0.0/8,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,fc00::/7"
 
 // applyTrustedProxies sets which peers may report the visitor address (WPGO_TRUSTED_PROXIES: a comma separated

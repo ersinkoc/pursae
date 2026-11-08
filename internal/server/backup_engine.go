@@ -41,7 +41,7 @@ type bmgrFilesInfo struct {
 type bmgrManifest struct {
 	Format     int             `json:"format"`
 	Created    time.Time       `json:"created"`
-	Kind       string          `json:"kind"` // manual | safety
+	Kind       string          `json:"kind"` // manual | safety | scheduled
 	Version    string          `json:"version"`
 	Schema     string          `json:"schema"` // newest applied migration
 	SiteURL    string          `json:"site_url"`
@@ -188,8 +188,11 @@ func (s *Server) bmgrRunBackup(ctx context.Context, j *bmgrJob, sel bmgrSelectio
 		kind = "manual"
 	}
 	prefix := "backup"
-	if kind == "safety" {
+	switch kind {
+	case "safety":
 		prefix = "pre-restore"
+	case bmgrScheduleKind:
+		prefix = bmgrScheduleKind
 	}
 	name := fmt.Sprintf("%s-%s-%s.zip", prefix, time.Now().Format("20060102-150405"), bmgrToken())
 	tmp := filepath.Join(dir, name+".part")

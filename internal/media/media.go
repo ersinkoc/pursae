@@ -12,6 +12,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -177,6 +178,14 @@ type ImageInfo struct {
 	FileSize      int64
 }
 
+// MaxImagePixels is the largest image (width × height) ProcessImageWith decodes: 100 megapixels,
+// about 400 MB as RGBA. Larger uploads keep their original file without generated sizes.
+const MaxImagePixels = 100_000_000
+
+// processSem bounds how many images are decoded and resized at once (memory and CPU), like the
+// CDN image service's semaphore (gocdn_img.go).
+var processSem = make(chan struct{}, max(1, min(4, runtime.NumCPU()/2)))
+
 // BigImageThreshold is the big_image_size_threshold default.
 const BigImageThreshold = 2560
 
@@ -198,12 +207,31 @@ func ProcessImage(uploadsDir, relPath string, sizes []Size) (*ImageInfo, error) 
 // ProcessImageWith reads an uploaded image, creates the -scaled main file when needed and every
 // registered size that is smaller than the original. Formats Go can't decode (AVIF, HEIC) keep
 // their original file only.
+//
+// An image over MaxImagePixels is not decoded (a small file can declare a huge canvas: 30000×30000
+// is 3.6 GB once decoded): it keeps its original file and measured size only. At most
+// cap(processSem) images are decoded and resized at a time.
 func ProcessImageWith(uploadsDir, relPath string, sizes []Size, opts Options) (*ImageInfo, error) {
 	full := filepath.Join(uploadsDir, filepath.FromSlash(relPath))
 	f, err := os.Open(full)
 	if err != nil {
 		return nil, err
 	}
+	cfg, _, cerr := image.DecodeConfig(f)
+	if cerr == nil && int64(cfg.Width)*int64(cfg.Height) > MaxImagePixels {
+		f.Close()
+		info := &ImageInfo{RelPath: relPath, Width: cfg.Width, Height: cfg.Height}
+		if st, serr := os.Stat(full); serr == nil {
+			info.FileSize = st.Size()
+		}
+		return info, nil
+	}
+	if _, err := f.Seek(0, io.SeekStart); err != nil {
+		f.Close()
+		return nil, err
+	}
+	processSem <- struct{}{}
+	defer func() { <-processSem }()
 	img, format, err := image.Decode(f)
 	f.Close()
 	if err != nil {

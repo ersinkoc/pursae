@@ -339,7 +339,8 @@ func (s *Server) libraryExtract(m *themeManifest, files []themeZipFile) error {
 	if err != nil {
 		return err
 	}
-	if err := writeThemeFiles(tmp, files); err == nil {
+	err = writeThemeFiles(tmp, files)
+	if err == nil {
 		err = s.checkThemeDir(tmp, m.Slug)
 	}
 	if err == nil {

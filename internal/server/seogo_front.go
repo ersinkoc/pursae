@@ -7,7 +7,6 @@ import (
 	"encoding/xml"
 	"fmt"
 	"html"
-	"log"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -517,11 +516,7 @@ func (s *Server) seogoRedirect(c *gin.Context) bool {
 		if !ok {
 			continue
 		}
-		go func(id int64) {
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer cancel()
-			_, _ = s.store.Pool.Exec(ctx, `UPDATE redirects SET hits = hits + 1, last_hit_at = now() WHERE id = $1`, id)
-		}(r.ID)
+		s.asyncExec(`UPDATE redirects SET hits = hits + 1, last_hit_at = now() WHERE id = $1`, r.ID) // bounded queue (background.go)
 		c.Header("X-Redirect-By", "Pursae SEO")
 		c.Header("Cache-Control", "no-cache, must-revalidate, max-age=0")
 		switch r.Code {
@@ -645,19 +640,10 @@ func (s *Server) seogo404(c *gin.Context) bool {
 		}
 		if !skip && len(uri) < 2000 {
 			ref, ua := c.Request.Referer(), c.Request.UserAgent()
-			go func() {
-				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-				defer cancel()
-				_, err := s.store.Pool.Exec(ctx, `INSERT INTO seogo_404 (uri, referer, user_agent) VALUES ($1, $2, $3)
-					ON CONFLICT (uri) DO UPDATE SET hits = seogo_404.hits + 1, last_seen = now(), referer = EXCLUDED.referer, user_agent = EXCLUDED.user_agent`, uri, cut(ref, 500), cut(ua, 500))
-				if err != nil {
-					log.Printf("seogo: 404 log: %v", err)
-					return
-				}
-				if o.MonitorLimit > 0 {
-					_, _ = s.store.Pool.Exec(ctx, `DELETE FROM seogo_404 WHERE id IN (SELECT id FROM seogo_404 ORDER BY last_seen DESC OFFSET $1)`, o.MonitorLimit)
-				}
-			}()
+			// Bounded queue (background.go); the table is trimmed to MonitorLimit by the hourly
+			// seogo_404_trim job, not per request.
+			s.asyncExec(`INSERT INTO seogo_404 (uri, referer, user_agent) VALUES ($1, $2, $3)
+				ON CONFLICT (uri) DO UPDATE SET hits = seogo_404.hits + 1, last_seen = now(), referer = EXCLUDED.referer, user_agent = EXCLUDED.user_agent`, uri, cut(ref, 500), cut(ua, 500))
 		}
 	}
 	if o.Modules["redirections"] && strings.TrimSpace(o.Redirect404) != "" {
@@ -665,6 +651,19 @@ func (s *Server) seogo404(c *gin.Context) bool {
 		return true
 	}
 	return false
+}
+
+// seogo404Trim keeps the 404 log at the monitor's limit (the hourly seogo_404_trim job).
+func (s *Server) seogo404Trim(ctx context.Context) error {
+	if !s.seogoOn() {
+		return nil
+	}
+	o := s.seogoOpts()
+	if o.MonitorLimit <= 0 {
+		return nil
+	}
+	_, err := s.store.Pool.Exec(ctx, `DELETE FROM seogo_404 WHERE id IN (SELECT id FROM seogo_404 ORDER BY last_seen DESC OFFSET $1)`, o.MonitorLimit)
+	return err
 }
 
 // seogoQueryRedirect sends disabled author and date archives to the home page (Yoast's

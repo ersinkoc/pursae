@@ -483,6 +483,9 @@ func TestGoCDNPurgeProviders(t *testing.T) {
 	s.configure(url.Values{"delivery-domain": {"https://media.cdn.test"}})
 	s.pageForm("purge", url.Values{"purge-provider": {"fastly"}, "purge-zone": {"SU1Z0isxPaozGVKXdv0eY"}, "purge-secret": {"fastly-token"}, "cloudflare-auto": {"1"}})
 	att := s.upload("gone.png", gocdnTestImage(20, 20, "png"))
+	// Purges are coalesced (gocdn_purge.go): run the purge-all the settings save queued, or the
+	// file's URL purge would be folded into it.
+	s.srv.rt.cdn.flush(context.Background(), s.srv)
 	mu.Lock()
 	before := len(fastly)
 	mu.Unlock()

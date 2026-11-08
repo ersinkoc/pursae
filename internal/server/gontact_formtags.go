@@ -4,6 +4,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 // Gontact Form form-tags: the [type* name option:value "value"] syntax of Contact Form 7
@@ -142,7 +143,7 @@ func gfParseTag(typ, attr, content string) *gfTag {
 	}
 	t.Labels = append([]string{}, t.Values...)
 	content = strings.TrimSpace(content)
-	content = regexp.MustCompile(`(?m)<br[\r\n\t ]*/?>$`).ReplaceAllString(content, "")
+	content = gfTrailingBrRe.ReplaceAllString(content, "")
 	t.Content = content
 	return t
 }
@@ -169,9 +170,23 @@ var gfOptPatterns = map[string]string{
 	"date":       `[0-9]{4,}-[0-9]{2}-[0-9]{2}`,
 }
 
+// gfOptionRes caches the "name:value" matchers by name and pattern (names come from the form
+// templates' own option names, a small set).
+var gfOptionRes sync.Map
+
+func gfOptionRe(name, pattern string) *regexp.Regexp {
+	key := name + "\x00" + pattern
+	if re, ok := gfOptionRes.Load(key); ok {
+		return re.(*regexp.Regexp)
+	}
+	re := regexp.MustCompile(`^` + regexp.QuoteMeta(name) + `:(` + gfOptPatterns[pattern] + `)$`)
+	gfOptionRes.Store(key, re)
+	return re
+}
+
 // option is get_option(): the values of every "name:value" option matching the pattern.
 func (t *gfTag) option(name, pattern string) []string {
-	re := regexp.MustCompile(`^` + regexp.QuoteMeta(name) + `:(` + gfOptPatterns[pattern] + `)$`)
+	re := gfOptionRe(name, pattern)
 	var out []string
 	for _, o := range t.Options {
 		if m := re.FindStringSubmatch(o); m != nil {
@@ -271,7 +286,7 @@ func (t *gfTag) autocompleteOption() string {
 
 // limitOption is get_limit_option(): the file size limit in bytes (1 MB by default).
 func (t *gfTag) limitOption() int64 {
-	re := regexp.MustCompile(`(?i)^limit:([1-9][0-9]*)([kKmM]?[bB])?$`)
+	re := gfLimitRe
 	if m := t.firstMatch(re); m != nil {
 		n, _ := strconv.ParseInt(m[1], 10, 64)
 		switch strings.ToLower(m[2]) {
@@ -294,7 +309,7 @@ func (t *gfTag) dateOption(name string, today func() (int, int, int)) string {
 	if v == "" {
 		return ""
 	}
-	if regexp.MustCompile(`^` + gfOptPatterns["date"] + `$`).MatchString(v) {
+	if gfAbsDateRe.MatchString(v) {
 		return v
 	}
 	m := gfRelDateRe.FindStringSubmatch(v)
@@ -335,3 +350,10 @@ func (t *gfTag) hasPipes() bool {
 	}
 	return false
 }
+
+// Compiled once (they used to be compiled on every call).
+var (
+	gfTrailingBrRe = regexp.MustCompile(`(?m)<br[\r\n\t ]*/?>$`)
+	gfLimitRe      = regexp.MustCompile(`(?i)^limit:([1-9][0-9]*)([kKmM]?[bB])?$`)
+	gfAbsDateRe    = regexp.MustCompile(`^` + gfOptPatterns["date"] + `$`)
+)

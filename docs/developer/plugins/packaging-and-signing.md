@@ -57,12 +57,30 @@ and `icon.svg` are not signed (they are display-only).
 | Site configuration | Signed by a trusted key | Signed by an unknown key | Unsigned |
 |--------------------|-------------------------|--------------------------|----------|
 | default (keys configured, `plugin_allow_unsigned` off) | installs | rejected | rejected |
-| `plugin_allow_unsigned` on | installs | rejected (a bad signature is never accepted) | installs |
-| no trusted keys at all | — | rejected | rejected unless unsigned allowed |
+| `plugin_allow_unsigned` on, some trusted keys | installs | rejected (a bad signature is never accepted) | installs |
+| `plugin_allow_unsigned` on, no trusted key at all | — | installs as unverified (there is no key to check against) | installs |
+| no trusted keys, `plugin_allow_unsigned` off | — | rejected | rejected |
 
-Trusted keys come from `WPGO_PLUGIN_KEYS` (comma-separated), the `plugin_trusted_keys` option,
-the Hub's key list, and — in development only — the `dev-key.pub` next to the example packages
-when `WPGO_TRUST_DEV_KEY=1`.
+`plugin_allow_unsigned` is an option without a screen (set it with `wpgo` SQL access or the REST
+settings of a development site); never turn it on in production.
+
+Trusted keys come from `WPGO_PLUGIN_KEYS` (comma-separated), the `plugin_trusted_keys` option
+(both read at start-up), the Manager's key list (replaced on every index refresh, so a key the
+Manager stops listing stops being trusted; with a pinned release root key only keys the root
+endorsed, see [Pursae Manager](../hub/index.md#root-of-trust)), and — in development only — the
+`dev-key.pub` next to the example packages when `WPGO_TRUST_DEV_KEY=1`.
+
+## Updates and the signer
+
+The site records which key signed each installed plugin. A new version must come from the same key
+(any two keys of Pursae Manager count as the same publisher, since the Manager re-signs every
+package and rotates its key) and must not be older than the installed one:
+
+- from Pursae Manager (Update now, Update Plugins) such a package is always refused;
+- an upload stops and offers **Replace current with uploaded**, which installs it after you confirm.
+
+Before a Manager update the previous package is kept as `<slug>.zip.prev`; if the new version cannot
+be loaded, the previous one is put back and loaded with its permissions.
 
 The install screen records the package digest; the Plugins screen shows the plugin's name,
 version, author and permissions read from the package, and the last lines of its log.

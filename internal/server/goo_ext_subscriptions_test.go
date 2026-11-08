@@ -846,3 +846,11 @@ func TestGooExtSubscriptionsSync(t *testing.T) {
 		t.Errorf("unsynced first payment: %v %v", frac, f)
 	}
 }
+
+// The subscription detail page has no menu tab, but its page still has a title (it was empty).
+func TestGooViewSubscriptionTitle(t *testing.T) {
+	s := &Server{}
+	if got := s.gooEndpointTitle("view-subscription", "42"); got != "Subscription #42" {
+		t.Errorf("view-subscription title: %q", got)
+	}
+}

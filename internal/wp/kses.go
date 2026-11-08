@@ -1,16 +1,26 @@
 package wp
 
 import (
+	"html"
 	"regexp"
+	"strings"
 	"sync"
 
 	"github.com/microcosm-cc/bluemonday"
 )
 
 var (
-	ksesOnce   sync.Once
-	ksesPolicy *bluemonday.Policy
-	blockDelim = regexp.MustCompile(`<!--\s+/?wp:[^>]*?-->`)
+	ksesOnce    sync.Once
+	ksesPolicy  *bluemonday.Policy
+	blockDelim  = regexp.MustCompile(`<!--\s+/?wp:[^>]*?-->`)
+	moreTagRe   = regexp.MustCompile(`<!--more(.*?)?-->`)
+	blockMarkRe = regexp.MustCompile("\x00WPBLOCK\x00")
+	// styleAttrRe finds style attributes in bluemonday output, where attribute values are always
+	// double-quoted and escaped (a literal " never appears inside one, nor in text).
+	styleAttrRe = regexp.MustCompile(`\sstyle="([^"]*)"`)
+
+	ksesDataOnce   sync.Once
+	ksesDataPolicy *bluemonday.Policy
 )
 
 // KsesPost is wp_kses_post() for users without unfiltered_html: it keeps the tags
@@ -39,17 +49,52 @@ func KsesPost(html string) string {
 		saved = append(saved, m)
 		return "\x00WPBLOCK\x00"
 	})
-	marked = regexp.MustCompile(`<!--more(.*?)?-->`).ReplaceAllStringFunc(marked, func(m string) string {
+	marked = moreTagRe.ReplaceAllStringFunc(marked, func(m string) string {
 		saved = append(saved, m)
 		return "\x00WPBLOCK\x00"
 	})
-	clean := ksesPolicy.Sanitize(marked)
+	clean := safeStyles(ksesPolicy.Sanitize(marked))
 	i := 0
-	return regexp.MustCompile("\x00WPBLOCK\x00").ReplaceAllStringFunc(clean, func(string) string {
+	return blockMarkRe.ReplaceAllStringFunc(clean, func(string) string {
 		if i >= len(saved) {
 			return ""
 		}
 		i++
 		return saved[i-1]
 	})
+}
+
+// safeStyles runs every style attribute of sanitized HTML through SafeCSS (safecss_filter_attr(),
+// which wp_kses_attr_check() applies to style), dropping the attribute when nothing is left.
+func safeStyles(clean string) string {
+	if !strings.Contains(clean, " style=\"") {
+		return clean
+	}
+	return styleAttrRe.ReplaceAllStringFunc(clean, func(m string) string {
+		v := SafeCSS(html.UnescapeString(styleAttrRe.FindStringSubmatch(m)[1]))
+		if v == "" {
+			return ""
+		}
+		return ` style="` + html.EscapeString(v) + `"`
+	})
+}
+
+// KsesData is wp_kses_data(): the small $allowedtags set WordPress allows in comments from users
+// without unfiltered_html (pre_comment_content) — a, abbr, acronym, b, blockquote, cite, code, del,
+// em, i, q, s, strike and strong with their few attributes; links keep allowed protocols only.
+func KsesData(s string) string {
+	ksesDataOnce.Do(func() {
+		p := bluemonday.NewPolicy()
+		p.AllowElements("b", "cite", "code", "em", "i", "s", "strike", "strong")
+		p.AllowAttrs("href", "title").OnElements("a")
+		p.AllowAttrs("title").OnElements("abbr", "acronym")
+		p.AllowAttrs("cite").OnElements("blockquote", "q")
+		p.AllowAttrs("datetime").OnElements("del")
+		p.AllowElements("a", "abbr", "acronym", "blockquote", "del", "q")
+		p.AllowURLSchemes(AllowedProtocols...)
+		p.AllowRelativeURLs(true)
+		p.RequireParseableURLs(true)
+		ksesDataPolicy = p
+	})
+	return ksesDataPolicy.Sanitize(s)
 }

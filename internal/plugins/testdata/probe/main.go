@@ -52,6 +52,23 @@ func init() {
 		os.Exit(3)
 		return v
 	})
+	// Adds markup KSES removes; the core sanitises it unless content:html is granted.
+	wpgo.AddFilter("the_excerpt", 10, func(_ wpgo.Context, v string, _ []any) string {
+		return v + `<script>alert(1)</script><b onclick="x()">bold</b>`
+	})
+	// Succeeds, but only after most of the call budget (the tests use 500 ms).
+	wpgo.AddFilter("probe_slow", 10, func(_ wpgo.Context, v string, _ []any) string {
+		time.Sleep(420 * time.Millisecond)
+		return v + " slow"
+	})
+	// Registered only while the probe_conditional option is on, so a re-instantiated
+	// instance may register less than the first one.
+	wpgo.OnInit(func() {
+		if wpgo.OptionBool("probe_conditional", false) {
+			wpgo.AddFilter("probe_conditional", 10, func(_ wpgo.Context, v string, _ []any) string { return v + " conditional" })
+		}
+	})
+
 	// Echoes the value with a suffix; used to check recovery.
 	wpgo.AddFilter("probe_echo", 10, func(_ wpgo.Context, v string, _ []any) string {
 		println("echo called") // goes to the plugin log via stderr
@@ -176,6 +193,8 @@ func init() {
 	wpgo.EnqueueStyle(wpgo.Style{Handle: "probe", Src: "probe.css", Where: wpgo.Both})
 	wpgo.EnqueueScript(wpgo.Script{Handle: "probe", Src: "js/probe.js", Deps: []string{"missing"}, InFooter: true})
 	wpgo.EnqueueScript(wpgo.Script{Handle: "nope", Src: "missing.js"}) // not in the package: refused
+	// An admin script needs admin:scripts, which the probe does not declare: refused.
+	wpgo.EnqueueScript(wpgo.Script{Handle: "probe-admin", Src: "js/probe.js", Where: wpgo.Admin})
 }
 
 func main() {}

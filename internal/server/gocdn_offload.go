@@ -296,7 +296,7 @@ func (s *Server) gocdnBeforeDelete(a *store.Attachment) {
 		_, _ = s.store.Pool.Exec(ctx, `DELETE FROM gocdn_items WHERE id = $1`, it.ID)
 	}
 	if len(gocdnPurgeTargets(st)) > 0 && st.CFAuto && len(urls) > 0 {
-		go s.gocdnCDNPurgeLogged(st, urls)
+		s.gocdnQueuePurge(st, urls) // coalesced with other purges (gocdn_purge.go)
 	}
 }
 

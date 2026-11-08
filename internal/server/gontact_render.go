@@ -179,7 +179,7 @@ func gfStatusClass(status string) string {
 	case "mail_failed":
 		return "failed"
 	}
-	return "custom-" + regexp.MustCompile(`[^0-9a-z]+`).ReplaceAllString(strings.ToLower(status), "-")
+	return "custom-" + gfNonAlnumLowerRe.ReplaceAllString(strings.ToLower(status), "-")
 }
 
 func (r *gfRender) hiddenFields() string {
@@ -229,7 +229,7 @@ func (r *gfRender) responseOutput() string {
 
 // errorID is wpcf7_get_validation_error_reference().
 func (r *gfRender) errorID(name string) string {
-	return regexp.MustCompile(`[^0-9a-zA-Z_-]+`).ReplaceAllString(r.unitTag+"-ve-"+name, "")
+	return gfNonIDRe.ReplaceAllString(r.unitTag+"-ve-"+name, "")
 }
 
 // validationError is the inline tip of a field that failed validation in a non-JS submission.
@@ -315,11 +315,11 @@ func gfControlsClass(typ string, extra ...string) string {
 }
 
 func gfSanitizeClass(c string) string {
-	return regexp.MustCompile(`[^A-Za-z0-9_-]`).ReplaceAllString(c, "")
+	return gfNonClassRe.ReplaceAllString(c, "")
 }
 
 func gfAttrClean(v string) string {
-	return regexp.MustCompile(`[^A-Za-z0-9:._-]`).ReplaceAllString(v, "")
+	return gfNonAttrRe.ReplaceAllString(v, "")
 }
 
 func (r *gfRender) wrap(t *gfTag, inner string) string {
@@ -362,7 +362,7 @@ func (r *gfRender) defaultValues(t *gfTag, multiple, shifted bool) []string {
 			if v := r.atts[t.Name]; v != "" {
 				out = append(out, v)
 			}
-		case regexp.MustCompile(`^[0-9_]+$`).MatchString(opt):
+		case gfDigitsRe.MatchString(opt):
 			for _, n := range strings.Split(opt, "_") {
 				i, err := strconv.Atoi(n)
 				if err != nil {
@@ -895,3 +895,12 @@ func (s *Server) gontactRecaptchaKeys() string {
 	}
 	return s.settings.String("gontact_recaptcha_sitekey")
 }
+
+// Compiled once (they used to be compiled on every call).
+var (
+	gfNonAlnumLowerRe = regexp.MustCompile(`[^0-9a-z]+`)
+	gfNonIDRe         = regexp.MustCompile(`[^0-9a-zA-Z_-]+`)
+	gfNonClassRe      = regexp.MustCompile(`[^A-Za-z0-9_-]`)
+	gfNonAttrRe       = regexp.MustCompile(`[^A-Za-z0-9:._-]`)
+	gfDigitsRe        = regexp.MustCompile(`^[0-9_]+$`)
+)

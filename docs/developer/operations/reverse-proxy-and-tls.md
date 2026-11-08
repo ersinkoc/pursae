@@ -20,6 +20,14 @@ in `WPGO_TRUSTED_PROXIES` (comma separated IPs and CIDRs); `none` trusts no prox
 front, every visitor would otherwise share the proxy's address, and five failed logins from one visitor would lock
 everybody out for 15 minutes.
 
+The private ranges are trusted by default because a proxy in Docker (on the host or in another container)
+reaches the server from a bridge address. That means **any** machine on those networks that can reach the
+server's port directly could pick its own address: publish the port only where the proxy can reach it
+(`docker/compose.prod.yaml` binds `127.0.0.1:8088`; `WPGO_BIND` changes the address) or set
+`WPGO_TRUSTED_PROXIES` to exactly your proxy's address. With `WPGO_SITE_URL` on `https://` and no
+`WPGO_TRUSTED_PROXIES`, the server logs a reminder at start-up. Sub-requests of `/batch/v1` cannot set
+`X-Forwarded-*`, `X-Real-IP` or `Forwarded` themselves; they carry the outer request's headers.
+
 ## Caddy
 
 ```text

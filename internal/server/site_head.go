@@ -17,9 +17,9 @@ import (
 func (s *Server) wpHead(c *gin.Context, q *siteQuery, lb *links.Builder, adminBar bool, v *siteView) template.HTML {
 	site := html.EscapeString(v.SiteName)
 	var sb strings.Builder
-	sb.WriteString(s.gooikeHead(c)) // Gooike: Consent Mode defaults first, banner styles, head scripts (gooike_front.go)
+	sb.WriteString(s.gooikeHead(c))   // Gooike: Consent Mode defaults first, banner styles, head scripts (gooike_front.go)
 	sb.WriteString(s.pixelHead(c, q)) // Pursae Pixel: platform tags, inert until consent (pixelgo_front.go)
-	sb.WriteString(s.gooHead(c, q)) // Goocommerce: store styles (goo_front.go)
+	sb.WriteString(s.gooHead(c, q))   // Goocommerce: store styles (goo_front.go)
 	sb.WriteString(v.Theme.HeadTop)
 	seo := s.seogoHead(c, q, lb) // Pursae SEO replaces the robots meta and the canonical link (seogo_head.go)
 	if seo != "" {
@@ -49,7 +49,15 @@ func (s *Server) wpHead(c *gin.Context, q *siteQuery, lb *links.Builder, adminBa
 	if v.Theme.BlockStyles != nil {
 		sb.WriteString(blockStylesMarker) // the styles of the blocks the page uses (blockStylesFor)
 	} else {
-		sb.WriteString("<link rel='stylesheet' id='wp-block-library-css' href='/wp-includes/css/dist/block-library/style.min.css' media='all' />\n")
+		if v.Theme.Slug == wbHelloSlug {
+			// Hello Pursae's pages are mostly builder parts: like should_load_separate_core_block_assets,
+			// the block library's common rules plus only the styles of the core blocks the page prints,
+			// instead of the whole 140 KB render-blocking library.
+			sb.WriteString("<link rel='stylesheet' id='wp-block-library-css' href='/wp-includes/css/dist/block-library/common.min.css?ver=" + Version + "' media='all' />\n")
+			sb.WriteString(blockStylesMarker)
+		} else {
+			sb.WriteString("<link rel='stylesheet' id='wp-block-library-css' href='/wp-includes/css/dist/block-library/style.min.css?ver=" + Version + "' media='all' />\n")
+		}
 		sb.WriteString("<style id='wp-block-library-theme-inline-css'>\n" + s.webFile("wp-includes/css/dist/block-library/theme.min.css") + "\n</style>\n")
 		sb.WriteString("<style id='classic-theme-styles-inline-css'>\n" + s.webFile("wp-includes/css/classic-themes.min.css") + "\n</style>\n")
 		sb.WriteString("<style id='global-styles-inline-css'>\n" + s.webFile("wp-includes/css/global-styles-classic.css") + "\n</style>\n")

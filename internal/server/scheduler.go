@@ -10,8 +10,10 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
+	"wpgo/internal/auth"
 	"wpgo/internal/mail"
 )
 
@@ -34,6 +36,7 @@ var coreEvents = []struct{ Name, Recurrence string }{
 	{"wpgo_cache_janitor", "hourly"},      // expired page-cache entries
 	{"wpgo_hub_check", "daily"},           // ping the Hub and refresh the release / marketplace cache
 	{"gontact_captcha_cleanup", "hourly"}, // expired Gontact Form CAPTCHA challenges
+	{"seogo_404_trim", "hourly"},          // Pursae SEO: keep the 404 log at its limit (seogo_front.go)
 }
 
 // recurrenceInterval maps a recurrence name to its interval: the WordPress names above, or
@@ -51,9 +54,10 @@ func recurrenceInterval(rec string) time.Duration {
 func (s *Server) jobHandlers() map[string]jobHandler {
 	return map[string]jobHandler{
 		"wp_scheduled_delete": func(ctx context.Context, _ map[string]any) error {
-			_, err := s.store.Pool.Exec(ctx, `DELETE FROM posts WHERE status = 'trash' AND updated_at < now() - interval '30 days'`)
+			days := emptyTrashDays()
+			_, err := s.store.Pool.Exec(ctx, `DELETE FROM posts WHERE status = 'trash' AND updated_at < now() - make_interval(days => $1)`, days)
 			if err == nil {
-				_, err = s.store.Pool.Exec(ctx, `DELETE FROM comments WHERE status = 'trash' AND updated_at < now() - interval '30 days'`)
+				_, err = s.store.Pool.Exec(ctx, `DELETE FROM comments WHERE status = 'trash' AND updated_at < now() - make_interval(days => $1)`, days)
 			}
 			return err
 		},
@@ -80,6 +84,7 @@ func (s *Server) jobHandlers() map[string]jobHandler {
 		},
 		"wpgo_hub_check":          func(ctx context.Context, _ map[string]any) error { return s.hubPing(ctx) },
 		"gontact_captcha_cleanup": func(ctx context.Context, _ map[string]any) error { return s.gontactCaptchaCleanup(ctx) },
+		"seogo_404_trim":          func(ctx context.Context, _ map[string]any) error { return s.seogo404Trim(ctx) },
 		"wp_mail": func(ctx context.Context, p map[string]any) error {
 			var msg mail.Message
 			raw, _ := json.Marshal(p)
@@ -96,6 +101,19 @@ func (s *Server) jobHandlers() map[string]jobHandler {
 		gooHourlyJob:         func(ctx context.Context, _ map[string]any) error { return s.gooHourly(ctx) }, // Goocommerce: held stock
 		hgTickJob:            func(ctx context.Context, _ map[string]any) error { return s.hgTick(ctx) },    // HeadlessGo: schedules, webhook queue
 	}
+}
+
+// emptyTrashDays is EMPTY_TRASH_DAYS: how long trashed posts and comments are kept before
+// wp_scheduled_delete removes them, from WPGO_EMPTY_TRASH_DAYS (default 30). 0 empties the trash
+// at every run of the daily job, as WordPress' cron does with EMPTY_TRASH_DAYS = 0.
+func emptyTrashDays() int {
+	if v := strings.TrimSpace(os.Getenv("WPGO_EMPTY_TRASH_DAYS")); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n >= 0 {
+			return n
+		}
+		slog.Warn("WPGO_EMPTY_TRASH_DAYS is not a whole number of days; using 30", "value", v)
+	}
+	return 30
 }
 
 // mailer is wp_mail()'s transport with the site's From address (wordpress@<domain> by default).
@@ -141,21 +159,38 @@ func (s *Server) sendMail(ctx context.Context, msg mail.Message) {
 	}
 }
 
-// ensureEvents schedules the recurring core events that are missing.
+// ensureEvents schedules the recurring core events that are missing. Recurring rows a version
+// before this one marked "failed" (after five errors in a row) are put back on the queue: a
+// recurring event never fails for good.
 func (s *Server) ensureEvents(ctx context.Context) {
+	_, _ = s.store.Pool.Exec(ctx, `UPDATE jobs SET status = 'queued', attempts = 0, locked_by = NULL, run_at = now() + interval '1 minute'
+		WHERE status = 'failed' AND recurrence <> ''`)
 	for _, e := range coreEvents {
 		_, _ = s.store.Pool.Exec(ctx, `INSERT INTO jobs(name, run_at, recurrence)
 			SELECT $1, now() + interval '1 minute', $2 WHERE NOT EXISTS (SELECT 1 FROM jobs WHERE name = $1 AND recurrence <> '')`, e.Name, e.Recurrence)
 	}
 }
 
-// RunScheduler runs scheduled posts and due jobs every 15 seconds.
+// Scheduler timing. A running job's locked_at is refreshed every jobHeartbeatEvery; a row still
+// "running" whose lock is older than jobStaleAfter belonged to an instance that died.
+const (
+	schedulerTick = 15 * time.Second
+	jobStaleAfter = 10 * time.Minute
+	jobMaxRetries = 5
+)
+
+var jobHeartbeatEvery = time.Minute // a variable for tests
+
+// RunScheduler runs scheduled posts and due jobs every 15 seconds until ctx ends. It returns once
+// the job in hand has finished (or, interrupted by ctx, was put back on the queue).
 func (s *Server) RunScheduler(ctx context.Context) {
 	s.ensureEvents(ctx)
-	worker, _ := os.Hostname()
-	worker = fmt.Sprintf("%s:%d", worker, os.Getpid())
+	host, _ := os.Hostname()
+	// The random part keeps two processes apart that share hostname and pid (a container's
+	// pid 1 across a restart), so one never refreshes the other's locks.
+	worker := fmt.Sprintf("%s:%d:%s", host, os.Getpid(), auth.RandomToken(6))
 	handlers := s.jobHandlers()
-	t := time.NewTicker(15 * time.Second)
+	t := time.NewTicker(schedulerTick)
 	defer t.Stop()
 	for {
 		if n, err := s.store.PublishDuePosts(ctx); err != nil {
@@ -175,24 +210,29 @@ func (s *Server) RunScheduler(ctx context.Context) {
 	}
 }
 
+type dueJob struct {
+	id        int64
+	name, rec string
+	payload   map[string]any
+	attempts  int
+}
+
 func (s *Server) runDueJobs(ctx context.Context, worker string, handlers map[string]jobHandler) {
-	// Jobs stuck in "running" (a crashed instance) go back to the queue.
-	_, _ = s.store.Pool.Exec(ctx, `UPDATE jobs SET status = 'queued', locked_by = NULL WHERE status = 'running' AND locked_at < now() - interval '10 minutes'`)
+	if ctx.Err() != nil {
+		return
+	}
+	// Jobs stuck in "running" (a crashed instance: a live one refreshes locked_at) go back to the queue.
+	_, _ = s.store.Pool.Exec(ctx, `UPDATE jobs SET status = 'queued', locked_by = NULL WHERE status = 'running' AND locked_at < now() - make_interval(secs => $1)`,
+		jobStaleAfter.Seconds())
 	rows, err := s.store.Pool.Query(ctx, `UPDATE jobs SET status = 'running', locked_by = $1, locked_at = now()
 		WHERE id IN (SELECT id FROM jobs WHERE status = 'queued' AND run_at <= now() ORDER BY run_at LIMIT 20 FOR UPDATE SKIP LOCKED)
 		RETURNING id, name, payload, recurrence, attempts`, worker)
 	if err != nil {
 		return
 	}
-	type job struct {
-		id        int64
-		name, rec string
-		payload   map[string]any
-		attempts  int
-	}
-	var due []job
+	var due []dueJob
 	for rows.Next() {
-		var j job
+		var j dueJob
 		var raw []byte
 		if rows.Scan(&j.id, &j.name, &raw, &j.rec, &j.attempts) == nil {
 			_ = json.Unmarshal(raw, &j.payload)
@@ -200,34 +240,105 @@ func (s *Server) runDueJobs(ctx context.Context, worker string, handlers map[str
 		}
 	}
 	rows.Close()
-	for _, j := range due {
-		h := handlers[j.name]
-		var runErr error
-		switch {
-		case h != nil:
-			runErr = h(ctx, j.payload)
-		case s.plugins != nil && s.plugins.hooks.HasAction(j.name):
-			s.plugins.hooks.DoAction(ctx, j.name, j.payload)
-		default:
-			runErr = fmt.Errorf("no handler for %q", j.name)
+	if len(due) == 0 {
+		return
+	}
+	// Status writes must land even when ctx was cancelled by a shutdown mid-job.
+	wctx := context.WithoutCancel(ctx)
+	stopBeat := s.jobHeartbeat(wctx, worker)
+	defer stopBeat()
+	for i, j := range due {
+		if ctx.Err() != nil {
+			// Shutting down: the claimed jobs not started yet go back to the queue untouched.
+			ids := make([]int64, 0, len(due)-i)
+			for _, r := range due[i:] {
+				ids = append(ids, r.id)
+			}
+			_, _ = s.store.Pool.Exec(wctx, `UPDATE jobs SET status = 'queued', locked_by = NULL WHERE id = ANY($1) AND locked_by = $2`, ids, worker)
+			return
 		}
-		switch {
-		case runErr == nil && j.rec != "":
-			_, _ = s.store.Pool.Exec(ctx, `UPDATE jobs SET status = 'queued', attempts = 0, last_error = '', locked_by = NULL,
-				run_at = greatest(run_at + $2::interval, now()) WHERE id = $1`, j.id, fmt.Sprintf("%d seconds", int(recurrenceInterval(j.rec).Seconds())))
-		case runErr == nil:
-			_, _ = s.store.Pool.Exec(ctx, `UPDATE jobs SET status = 'done', locked_by = NULL WHERE id = $1`, j.id)
-		case j.attempts+1 < 5:
-			// Retry with backoff: 1, 4, 9, 16 minutes.
-			_, _ = s.store.Pool.Exec(ctx, `UPDATE jobs SET status = 'queued', attempts = attempts + 1, last_error = $2, locked_by = NULL,
-				run_at = now() + make_interval(mins => (attempts + 1) * (attempts + 1)) WHERE id = $1`, j.id, runErr.Error())
-		default:
-			_, _ = s.store.Pool.Exec(ctx, `UPDATE jobs SET status = 'failed', attempts = attempts + 1, last_error = $2, locked_by = NULL WHERE id = $1`, j.id, runErr.Error())
-			slog.Error("job failed", "job", j.name, "err", runErr)
-		}
+		runErr := s.runJob(ctx, handlers, j)
+		s.finishJob(wctx, ctx, worker, j, runErr)
 	}
 	// Keep the table small: finished one-off jobs are kept for a week for Site Health.
-	_, _ = s.store.Pool.Exec(ctx, `DELETE FROM jobs WHERE status = 'done' AND recurrence = '' AND updated_at < now() - interval '7 days'`)
+	_, _ = s.store.Pool.Exec(wctx, `DELETE FROM jobs WHERE status = 'done' AND recurrence = '' AND updated_at < now() - interval '7 days'`)
+}
+
+// runJob runs one job's handler (or the plugin action of that name); a panic is the job's error.
+func (s *Server) runJob(ctx context.Context, handlers map[string]jobHandler, j dueJob) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("panic: %v", r)
+		}
+	}()
+	h := handlers[j.name]
+	switch {
+	case h != nil:
+		return h(ctx, j.payload)
+	case s.plugins != nil && s.plugins.hooks.HasAction(j.name):
+		s.plugins.hooks.DoAction(ctx, j.name, j.payload)
+		return nil
+	}
+	return fmt.Errorf("no handler for %q", j.name)
+}
+
+// finishJob records a job's outcome. Recurring jobs always go back to the queue: a failure is
+// retried with backoff (1, 4, 9, 16 minutes, never later than the next regular run), and after
+// jobMaxRetries failures in a row the job waits for its next regular run, keeping its error
+// for Site Health. One-off jobs fail for good after jobMaxRetries attempts. A job interrupted by
+// shutdown goes back to the queue without counting an attempt.
+func (s *Server) finishJob(wctx, ctx context.Context, worker string, j dueJob, runErr error) {
+	interval := recurrenceInterval(j.rec)
+	secs := int(interval.Seconds())
+	switch {
+	case runErr != nil && ctx.Err() != nil:
+		_, _ = s.store.Pool.Exec(wctx, `UPDATE jobs SET status = 'queued', locked_by = NULL WHERE id = $1 AND locked_by = $2`, j.id, worker)
+	case runErr == nil && j.rec != "":
+		_, _ = s.store.Pool.Exec(wctx, `UPDATE jobs SET status = 'queued', attempts = 0, last_error = '', locked_by = NULL,
+			run_at = greatest(run_at + make_interval(secs => $2), now()) WHERE id = $1`, j.id, secs)
+	case runErr == nil:
+		_, _ = s.store.Pool.Exec(wctx, `UPDATE jobs SET status = 'done', locked_by = NULL WHERE id = $1`, j.id)
+	case j.rec != "":
+		retry := time.Duration(j.attempts+1) * time.Duration(j.attempts+1) * time.Minute
+		if j.attempts+1 >= jobMaxRetries || retry > interval {
+			retry = interval
+			slog.Error("recurring job failed; next try at its next run", "job", j.name, "attempts", j.attempts+1, "err", runErr)
+		}
+		_, _ = s.store.Pool.Exec(wctx, `UPDATE jobs SET status = 'queued', attempts = attempts + 1, last_error = $2, locked_by = NULL,
+			run_at = now() + make_interval(secs => $3) WHERE id = $1`, j.id, runErr.Error(), int(retry.Seconds()))
+	case j.attempts+1 < jobMaxRetries:
+		// Retry with backoff: 1, 4, 9, 16 minutes.
+		_, _ = s.store.Pool.Exec(wctx, `UPDATE jobs SET status = 'queued', attempts = attempts + 1, last_error = $2, locked_by = NULL,
+			run_at = now() + make_interval(mins => (attempts + 1) * (attempts + 1)) WHERE id = $1`, j.id, runErr.Error())
+	default:
+		_, _ = s.store.Pool.Exec(wctx, `UPDATE jobs SET status = 'failed', attempts = attempts + 1, last_error = $2, locked_by = NULL WHERE id = $1`, j.id, runErr.Error())
+		slog.Error("job failed", "job", j.name, "err", runErr)
+	}
+}
+
+// jobHeartbeat refreshes locked_at of this worker's running jobs until the returned stop is
+// called, so a job that runs longer than jobStaleAfter is not handed to another instance.
+func (s *Server) jobHeartbeat(ctx context.Context, worker string) (stop func()) {
+	done := make(chan struct{})
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		t := time.NewTicker(jobHeartbeatEvery)
+		defer t.Stop()
+		for {
+			select {
+			case <-done:
+				return
+			case <-t.C:
+				_, _ = s.store.Pool.Exec(ctx, `UPDATE jobs SET locked_at = now() WHERE status = 'running' AND locked_by = $1`, worker)
+			}
+		}
+	}()
+	return func() {
+		close(done)
+		wg.Wait()
+	}
 }
 
 func hostOf(raw string) string {

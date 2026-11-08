@@ -58,6 +58,7 @@ type bmgrAdminData struct {
 	MaxUpload   string
 	SiteURL     string
 	Restore     *bmgrRestoreView
+	Schedule    *bmgrScheduleView
 	CanDownload bool
 }
 
@@ -133,6 +134,8 @@ func (s *Server) bmgrAdmin(c *gin.Context) {
 			s.bmgrPostBackup(c)
 		case "restore":
 			s.bmgrPostRestore(c)
+		case "schedule":
+			s.bmgrPostSchedule(c)
 		default:
 			c.Redirect(http.StatusFound, s.bmgrBack(""))
 		}
@@ -271,7 +274,7 @@ func (s *Server) bmgrPostRestore(c *gin.Context) {
 func (s *Server) bmgrScreen(c *gin.Context) {
 	tab := c.DefaultQuery("tab", "create")
 	switch tab {
-	case "create", "backups", "import", "restore":
+	case "create", "backups", "schedule", "import", "restore":
 	default:
 		tab = "create"
 	}
@@ -280,6 +283,8 @@ func (s *Server) bmgrScreen(c *gin.Context) {
 	switch c.Query("bmgr-msg") {
 	case "deleted":
 		notices = append(notices, notice{Type: "success", Message: "Backup deleted.", Dismissible: true})
+	case "scheduled":
+		notices = append(notices, notice{Type: "success", Message: "Schedule saved.", Dismissible: true})
 	}
 	if e := c.Query("bmgr-error"); e != "" {
 		notices = append(notices, notice{Type: "error", Message: template.HTML(template.HTMLEscapeString(e))})
@@ -307,6 +312,8 @@ func (s *Server) bmgrScreen(c *gin.Context) {
 		for _, e := range s.bmgrList() {
 			d.Entries = append(d.Entries, s.bmgrEntryView(c, e))
 		}
+	case "schedule":
+		d.Schedule = s.bmgrScheduleView(c)
 	case "restore":
 		file := c.Query("file")
 		p := s.bmgrPath(file)
@@ -410,6 +417,9 @@ func (s *Server) bmgrEntryView(c *gin.Context, e bmgrEntry) bmgrEntryView {
 		v.Safety = e.M.Kind == "safety"
 		v.Site, v.Note = e.M.SiteURL, e.M.Note
 		v.Kind = map[bool]string{true: "Safety snapshot", false: "Backup"}[v.Safety]
+		if e.M.Kind == bmgrScheduleKind {
+			v.Kind = "Scheduled backup"
+		}
 		labels := map[string]string{}
 		for _, c := range bmgrCategories {
 			labels[c.Key] = c.Label

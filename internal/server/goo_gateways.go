@@ -209,7 +209,7 @@ func (g *gooOfflineGateway) ProcessPayment(s *Server, c *gin.Context, o *gooOrde
 		if g.id == "cod" {
 			note = "Payment to be made upon delivery."
 		}
-		if err := s.gooSetStatus(ctx, o, g.status, note, ""); err != nil {
+		if err := s.gooSetStatusFrom(ctx, o, gooNeedsPaymentStatuses, g.status, note, ""); err != nil {
 			return gooPaymentResult{Result: "failure"}, err
 		}
 	} else if err := s.gooPaymentComplete(ctx, o, ""); err != nil {
@@ -275,7 +275,7 @@ func (gooTestGateway) ProcessPayment(s *Server, c *gin.Context, o *gooOrder) (go
 	tx := "test_" + gooRandomKey(16)
 	if s.gooGatewaySetting("goo_test", "status") == "on-hold" {
 		o.TransactionID = tx
-		if err := s.gooSetStatus(ctx, o, "on-hold", "Test payment authorized.", ""); err != nil {
+		if err := s.gooSetStatusFrom(ctx, o, gooNeedsPaymentStatuses, "on-hold", "Test payment authorized.", ""); err != nil {
 			return gooPaymentResult{Result: "failure"}, err
 		}
 	} else if err := s.gooPaymentComplete(ctx, o, tx); err != nil {

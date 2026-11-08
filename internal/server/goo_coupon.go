@@ -429,11 +429,26 @@ func (s *Server) gooApplyDiscounts(ctx context.Context, cart *gooCart) {
 	}
 }
 
-// gooIncreaseCouponUsage records a use (an order placed with the coupon).
-func (s *Server) gooIncreaseCouponUsage(ctx context.Context, code, usedBy string) error {
-	_, err := s.store.Pool.Exec(ctx, `UPDATE goo_coupons SET usage_count = usage_count + 1, used_by = array_append(used_by, $2)
-		WHERE lower(code) = lower($1) AND status <> 'trash'`, code, usedBy)
-	return err
+// gooTryIncreaseCouponUsage records a use (an order placed with the coupon) in one conditional UPDATE.
+// strict counts it only within the usage limit and the per-customer limit (keys are the customer's
+// entries in used_by: user id, lower-case e-mail), so two orders racing for a coupon's last use cannot
+// both get it; it then reports false. A coupon that no longer exists has nothing to count (true).
+func (s *Server) gooTryIncreaseCouponUsage(ctx context.Context, code, usedBy string, keys []string, strict bool) (bool, error) {
+	tag, err := s.store.Pool.Exec(ctx, `UPDATE goo_coupons SET usage_count = usage_count + 1, used_by = array_append(used_by, $2)
+		WHERE lower(code) = lower($1) AND status <> 'trash' AND (NOT $3 OR (
+			(usage_limit IS NULL OR usage_limit <= 0 OR usage_count < usage_limit) AND
+			(usage_limit_per_user IS NULL OR usage_limit_per_user <= 0 OR
+				(SELECT count(*) FROM unnest(used_by) u WHERE lower(u) = ANY($4::text[])) < usage_limit_per_user)))`,
+		code, usedBy, strict, keys)
+	if err != nil {
+		return false, err
+	}
+	if tag.RowsAffected() == 1 {
+		return true, nil
+	}
+	var exists bool
+	err = s.store.Pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM goo_coupons WHERE lower(code) = lower($1) AND status <> 'trash')`, code).Scan(&exists)
+	return !exists, err
 }
 
 // gooDecreaseCouponUsage undoes a use (a cancelled order).

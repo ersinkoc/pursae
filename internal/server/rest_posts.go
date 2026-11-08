@@ -57,7 +57,7 @@ func (s *Server) restPost(c *gin.Context, p *store.Post, ctxName string) map[str
 			rendered = wp.Autop(p.Content)
 		}
 	}
-	excerpt := p.Excerpt
+	excerpt := wp.KsesPost(p.Excerpt) // rendered: excerpts stored before excerpt_save_pre sanitizing
 	if excerpt == "" {
 		excerpt = wp.TrimWords(stripBlocks(p.Content), 55, " [&hellip;]")
 	}
@@ -429,6 +429,9 @@ func (api *restAPI) savePost(c *gin.Context, r *restRequest, typ string, id int6
 		p.Content = v
 	}
 	if v, ok := r.Str(c, "excerpt"); ok {
+		if !u.Can("unfiltered_html", nil) {
+			v = wp.KsesPost(v) // excerpt_save_pre
+		}
 		p.Excerpt = v
 	}
 	if v, ok := r.Str(c, "slug"); ok {
@@ -447,6 +450,11 @@ func (api *restAPI) savePost(c *gin.Context, r *restRequest, typ string, id int6
 		p.Format = v
 	}
 	if v, ok := r.Bool(c, "sticky"); ok && typ == "post" {
+		// WP_REST_Posts_Controller: making a post sticky needs edit_others_posts or publish_posts.
+		if v && !u.Can("edit_others_posts", nil) && !u.Can("publish_posts", nil) {
+			restErr(c, http.StatusForbidden, "rest_cannot_assign_sticky", "Sorry, you are not allowed to make posts sticky.")
+			return
+		}
 		p.Sticky = v
 	}
 	if v, ok := r.Int(c, "featured_media"); ok {
@@ -547,6 +555,7 @@ func (s *Server) afterPostSave(ctx context.Context, p *store.Post) {
 	s.seogoAfterSave(ctx, p) // Pursae SEO: slug-change redirect, IndexNow
 	// Pursae Web Builder: detach the doc when posts.content was edited outside the builder.
 	s.wbAfterPostSave(ctx, p)
+	s.pluginSavePost(ctx, p) // Wasm plugins: save_post_<type>, save_post (plugins_host.go)
 	if s.onPostSaved != nil {
 		s.onPostSaved(ctx, p)
 	}
@@ -638,7 +647,7 @@ func (s *Server) restRevision(c *gin.Context, rv revision, p *store.Post) map[st
 		"guid":    map[string]any{"rendered": home + "/?p=" + itoa64(rv.ID), "raw": home + "/?p=" + itoa64(rv.ID)},
 		"title":   map[string]any{"rendered": wp.EscText(rv.Title), "raw": rv.Title},
 		"content": map[string]any{"rendered": blocks.Render(c.Request.Context(), rv.Content), "raw": rv.Content},
-		"excerpt": map[string]any{"rendered": wp.Autop(rv.Excerpt), "raw": rv.Excerpt},
+		"excerpt": map[string]any{"rendered": wp.Autop(wp.KsesPost(rv.Excerpt)), "raw": rv.Excerpt},
 		"meta":    map[string]any{"footnotes": ""}, "preview_link": preview,
 		"_links": map[string]any{"parent": []map[string]any{{"href": home + "/wp-json/wp/v2/" + base + "/" + itoa64(p.ID)}}},
 	}
@@ -688,6 +697,7 @@ func (api *restAPI) createAutosave(c *gin.Context, r *restRequest, typ string) {
 	}
 	if !u.Can("unfiltered_html", nil) {
 		content = wp.KsesPost(content)
+		excerpt = wp.KsesPost(excerpt)
 	}
 	draftLike := p.Status == "draft" || p.Status == "auto-draft" || p.Status == "pending"
 	if draftLike && p.AuthorID == u.ID {

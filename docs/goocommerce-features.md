@@ -79,6 +79,21 @@ The store's actions (`product_saved`, `low_stock`, `no_stock`, `order_created`, 
 `payment_complete`, `order_refunded`, `customer_created`, `cart_emptied`) and product types are Go
 registrations (`gooOn`, `gooRegisterProductType` in `internal/server/goo_hooks.go`) used by the
 compiled-in modules. Outside the binary, integrate through the REST APIs and webhooks (`goo_webhooks`).
+Webhook deliveries run on a small pool of background workers; a failed delivery is tried twice more
+(after 10 s and 1 min) with the same `X-WC-Webhook-Delivery-ID`, then counts as one failure, and a
+webhook is disabled after 5 consecutive failed deliveries. Deliveries still waiting are lost on restart.
+
+## Orders under concurrency
+
+A status change is serialized per order and starts from the status stored in the database, so a
+payment and the hourly "cancel unpaid orders" job cannot both win (the job only cancels an order that
+is still pending). Saving an order loaded earlier does not undo a status change or the stock / coupon
+bookkeeping made meanwhile. Stock and coupon uses are taken with conditional updates when an order
+goes on hold or is paid: when another order got the last unit or the coupon's last use first, a
+payment puts the order on hold with a note ("Not enough units of … are available", "Usage limit for
+coupon … has been reached") instead of overselling; products that allow backorders go below zero as
+before, and a status set by a person in the admin or through `wc/v3` is applied like WooCommerce does.
+Checkout still validates stock but does not reserve it (WooCommerce's `wc_reserved_stock`).
 
 ## Known limits
 

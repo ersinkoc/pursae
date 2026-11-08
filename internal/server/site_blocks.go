@@ -324,20 +324,9 @@ func renderRSSBlock(ctx context.Context, b *blocks.Block, _ string) string {
 	return fmt.Sprintf(`<ul %s>%s</ul>`, wrapperClass(b, strings.Join(classes, " ")), sb.String())
 }
 
-// escURL is esc_url() for the schemes the RSS block links: http, https and relative URLs.
+// escURL is esc_url() for the schemes the RSS block links: http, https, mailto and relative URLs.
 func escURL(raw string) string {
-	raw = strings.TrimSpace(raw)
-	if raw == "" {
-		return ""
-	}
-	u, err := url.Parse(raw)
-	if err != nil {
-		return ""
-	}
-	if u.Scheme != "" && u.Scheme != "http" && u.Scheme != "https" && u.Scheme != "mailto" {
-		return ""
-	}
-	return html.EscapeString(raw)
+	return wp.EscURL(strings.TrimSpace(raw), "http", "https", "mailto")
 }
 
 type cachedFeed struct {
@@ -375,16 +364,61 @@ func (s *Server) fetchFeed(ctx context.Context, feedURL string) (*wp.Feed, error
 	return f, nil
 }
 
-// publicIP is the host check of wp_http_validate_url(): loopback, private, link-local, multicast and
-// unspecified addresses are refused so a feed URL cannot reach internal services.
+// nonPublicNets are the special-purpose ranges (RFC 6890) beyond what net.IP's predicates cover.
+var nonPublicNets = func() []*net.IPNet {
+	var out []*net.IPNet
+	for _, c := range []string{
+		"0.0.0.0/8",       // "this network"
+		"100.64.0.0/10",   // carrier-grade NAT
+		"192.0.0.0/24",    // IETF protocol assignments
+		"192.0.2.0/24",    // TEST-NET-1
+		"198.18.0.0/15",   // benchmarking
+		"198.51.100.0/24", // TEST-NET-2
+		"203.0.113.0/24",  // TEST-NET-3
+		"240.0.0.0/4",     // reserved, includes broadcast
+		"::/96",           // IPv4-compatible (deprecated), includes :: and ::1
+		"64:ff9b:1::/48",  // local-use NAT64
+		"2001::/32",       // Teredo (embeds an obfuscated IPv4 address)
+		"2001:db8::/32",   // documentation
+		"fec0::/10",       // site-local (deprecated)
+	} {
+		_, n, _ := net.ParseCIDR(c)
+		out = append(out, n)
+	}
+	return out
+}()
+
+// publicIP is the host check of wp_http_validate_url(): loopback, private, link-local, multicast,
+// unspecified and other special-purpose addresses are refused so a URL cannot reach internal
+// services. IPv4 addresses embedded in IPv6 (IPv4-mapped ::ffff:0:0/96, NAT64 64:ff9b::/96 and
+// 6to4 2002::/16) are checked as the IPv4 address they reach.
 func publicIP(ip net.IP) bool {
-	if ip == nil || ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() ||
+	if ip == nil {
+		return false
+	}
+	if ip16 := ip.To16(); ip16 != nil && ip.To4() == nil {
+		switch {
+		case ip16[0] == 0x00 && ip16[1] == 0x64 && ip16[2] == 0xff && ip16[3] == 0x9b && isZero(ip16[4:12]): // 64:ff9b::/96
+			return publicIP(net.IP(ip16[12:16]))
+		case ip16[0] == 0x20 && ip16[1] == 0x02: // 2002::/16
+			return publicIP(net.IP(ip16[2:6]))
+		}
+	}
+	if ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() ||
 		ip.IsMulticast() || ip.IsUnspecified() || ip.IsInterfaceLocalMulticast() {
 		return false
 	}
-	if ip4 := ip.To4(); ip4 != nil {
-		// Carrier-grade NAT (100.64.0.0/10) and the IPv4 "this network" and broadcast ranges.
-		if ip4[0] == 100 && ip4[1]&0xc0 == 64 || ip4[0] == 0 || ip4.Equal(net.IPv4bcast) {
+	for _, n := range nonPublicNets {
+		if n.Contains(ip) {
+			return false
+		}
+	}
+	return true
+}
+
+func isZero(b []byte) bool {
+	for _, x := range b {
+		if x != 0 {
 			return false
 		}
 	}
@@ -412,12 +446,14 @@ func publicOnly(allow func() bool, refusal string) func(network, address string,
 var allowPrivateFeedHosts = false
 
 // safeFetch downloads a URL, refusing private hosts at connect time (after DNS resolution) and on every redirect.
+// The transport has no proxy (ProxyFromEnvironment would make the proxy the only address dialled, so
+// publicOnly would never see the real destination).
 func safeFetch(ctx context.Context, rawURL string) (body []byte, contentType string, status int, err error) {
 	dialer := &net.Dialer{Timeout: 10 * time.Second,
 		Control: publicOnly(func() bool { return allowPrivateFeedHosts }, "the address points at a private network")}
 	client := &http.Client{
 		Timeout:   10 * time.Second,
-		Transport: &http.Transport{DialContext: dialer.DialContext, Proxy: http.ProxyFromEnvironment, TLSHandshakeTimeout: 10 * time.Second},
+		Transport: &http.Transport{DialContext: dialer.DialContext, TLSHandshakeTimeout: 10 * time.Second},
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			if len(via) >= 5 {
 				return errors.New("too many redirects")
@@ -675,7 +711,7 @@ func renderSocialLink(_ context.Context, b *blocks.Block, openInNewTab, showLabe
 	if !showLabels {
 		labelClass += " screen-reader-text"
 	}
-	return `<li ` + wrapperClass(b, "wp-social-link wp-social-link-"+service) + `><a href="` + html.EscapeString(rawURL) + `" class="wp-block-social-link-anchor"` + relAttr + target + `>` +
+	return `<li ` + wrapperClass(b, "wp-social-link wp-social-link-"+service) + `><a href="` + wp.EscURL(rawURL) + `" class="wp-block-social-link-anchor"` + relAttr + target + `>` +
 		socialLinkIcon(service) + `<span class="` + labelClass + `">` + html.EscapeString(label) + `</span></a></li>`
 }
 
@@ -775,7 +811,28 @@ func renderFootnotesBlock(ctx context.Context, b *blocks.Block, _ string) string
 	}
 	var sb strings.Builder
 	for i, n := range notes {
-		fmt.Fprintf(&sb, `<li id="%s">%s <a href="#%s-link" aria-label="Jump to footnote reference %d">↩︎</a></li>`, html.EscapeString(n.ID), n.Content, html.EscapeString(n.ID), i+1)
+		fmt.Fprintf(&sb, `<li id="%s">%s <a href="#%s-link" aria-label="Jump to footnote reference %d">↩︎</a></li>`, html.EscapeString(n.ID), wp.KsesPost(n.Content), html.EscapeString(n.ID), i+1)
 	}
 	return `<ol ` + wrapperClass(b, "") + `>` + sb.String() + `</ol>`
+}
+
+// filterFootnotesMeta is _wp_filter_post_meta_footnotes(), the sanitize_post_meta_footnotes filter for
+// users without unfiltered_html: every note keeps a sanitize_key()'d id and kses-filtered content;
+// notes missing either are dropped, and a value that is not a JSON list becomes "".
+func filterFootnotesMeta(value string) string {
+	var notes []map[string]any
+	if err := json.Unmarshal([]byte(value), &notes); err != nil {
+		return ""
+	}
+	out := make([]map[string]string, 0, len(notes))
+	for _, n := range notes {
+		id, _ := n["id"].(string)
+		content, _ := n["content"].(string)
+		if id == "" || content == "" {
+			continue
+		}
+		out = append(out, map[string]string{"id": sanitizeKey(id), "content": wp.KsesPost(content)})
+	}
+	raw, _ := json.Marshal(out)
+	return string(raw)
 }

@@ -221,13 +221,13 @@ func TestPluginShortcodeSettingsAssetsRestAndCron(t *testing.T) {
 	if code != http.StatusFound || !strings.Contains(loc, "settings-updated=true") {
 		t.Fatalf("save: %d %s", code, loc)
 	}
-	if v := srv.settings.Get("plugin_shortcode_demo_heading"); v != "Facts!" {
+	if v := srv.settings.Get(pluginOptionKey("shortcode-demo", "plugin_shortcode_demo_heading")); v != "Facts!" {
 		t.Errorf("heading = %v", v)
 	}
-	if v := srv.settings.Get("plugin_shortcode_demo_greet"); v != false {
+	if v := srv.settings.Get(pluginOptionKey("shortcode-demo", "plugin_shortcode_demo_greet")); v != false {
 		t.Errorf("unchecked checkbox = %v", v)
 	}
-	if v := srv.settings.Get("plugin_shortcode_demo_count"); v != 1.0 {
+	if v := srv.settings.Get(pluginOptionKey("shortcode-demo", "plugin_shortcode_demo_count")); v != 1.0 {
 		t.Errorf("count = %v (%T)", v, v)
 	}
 	_, body, _ = get(t, c, base+"/wp-admin/options-general?page=shortcode-demo&settings-updated=true")
@@ -341,7 +341,8 @@ func TestPluginPostsAPIAndTransientsOnDatabase(t *testing.T) {
 	_ = h.TransientDelete(ctx, "demo", "k")
 
 	// Options: the plugin's own settings options are readable, other plugin_* options are not.
-	_ = srv.settings.Set(ctx, map[string]any{"plugin_demo_x": "1", "plugin_other_x": "2", "plugin_allow_unsigned": true})
+	_ = srv.settings.Set(ctx, map[string]any{pluginOptionKey("demo", "plugin_demo_x"): "1", pluginOptionKey("other", "plugin_other_x"): "2",
+		"plugin_other_x": "2", "plugin_allow_unsigned": true, "gocdn_settings": "secret", "wp_mail_smtp": "secret"})
 	if v, ok, _ := h.GetOption(ctx, "demo", "plugin_demo_x"); !ok || v != "1" {
 		t.Error("own settings option hidden")
 	}
@@ -356,5 +357,30 @@ func TestPluginPostsAPIAndTransientsOnDatabase(t *testing.T) {
 	}
 	if err := h.UpdateOption(ctx, "demo", "plugin_other_x", "3"); err == nil {
 		t.Error("wrote another plugin's option")
+	}
+	if v := srv.settings.Get(pluginOptionKey("demo", "plugin_demo_x")); v != "3" {
+		t.Errorf("own option not stored in the plugin's namespace: %v", v)
+	}
+	// Reading is default-deny: built-in plugin options are hidden, public core options are not.
+	for _, name := range []string{"gocdn_settings", "wp_mail_smtp", "admin_email", "default_role", "mailserver_pass"} {
+		if _, ok, _ := h.GetOption(ctx, "demo", name); ok {
+			t.Errorf("%s is readable by a plugin", name)
+		}
+	}
+	if v, ok, _ := h.GetOption(ctx, "demo", "blogname"); !ok || v == nil {
+		t.Error("public core option blogname hidden")
+	}
+	// A plugin slugged after a built-in option's first word reaches only its own namespace.
+	if _, ok, _ := h.GetOption(ctx, "gocdn", "gocdn_settings"); ok {
+		t.Error("a plugin slugged gocdn reads gocdn_settings")
+	}
+	if err := h.UpdateOption(ctx, "wp-mail", "wp_mail_smtp", "pwned"); err != nil {
+		t.Fatal(err)
+	}
+	if v := srv.settings.Get("wp_mail_smtp"); v != "secret" {
+		t.Errorf("a plugin slugged wp-mail overwrote wp_mail_smtp: %v", v)
+	}
+	if v, ok, _ := h.GetOption(ctx, "wp-mail", "wp_mail_smtp"); !ok || v != "pwned" {
+		t.Errorf("the plugin does not read back its own option: %v", v)
 	}
 }

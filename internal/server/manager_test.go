@@ -413,6 +413,8 @@ func TestCoreArtifactInstall(t *testing.T) {
 }
 
 func TestCoreSelfUpdate(t *testing.T) {
+	withRootKeys(t)                      // a development build: no pinned release key …
+	t.Setenv("WPGO_TRUST_HUB_KEYS", "1") // … with the opt-in to the Manager's keys (hub_trust.go)
 	base, c, srv, hub := managerSite(t)
 	ctx := context.Background()
 	pub, priv, _ := ed25519.GenerateKey(rand.Reader)

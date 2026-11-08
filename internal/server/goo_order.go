@@ -54,6 +54,8 @@ type gooOrderItem struct {
 	Meta        map[string]any     `json:"meta_data"`
 	Position    int                `json:"-"`
 	refunded    map[string]float64 // computed: refunded qty / total / tax
+	origReduced any                // _reduced_stock as stored (gooOrderItem.keepsReduced)
+	hasOrig     bool
 }
 
 // gooItemTaxes are an item's taxes per rate id.
@@ -123,6 +125,8 @@ type gooOrder struct {
 	DateCompleted      *time.Time
 
 	Items []*gooOrderItem
+
+	orig *gooOrderSnap // the contested fields as stored (goo_order_state.go)
 }
 
 const gooOrderCols = `id, type, parent_id, status, currency, prices_include_tax, customer_id, billing, shipping, payment_method,
@@ -157,6 +161,7 @@ func gooScanOrder(row pgx.Row) (*gooOrder, error) {
 	if o.Meta == nil {
 		o.Meta = map[string]any{}
 	}
+	o.snapshot()
 	return o, nil
 }
 
@@ -199,6 +204,7 @@ func (s *Server) gooOrderItems(ctx context.Context, orderID int64) ([]*gooOrderI
 		if it.Meta == nil {
 			it.Meta = map[string]any{}
 		}
+		it.snapshot()
 		out = append(out, it)
 	}
 	return out, rows.Err()
@@ -253,7 +259,14 @@ func (o *gooOrder) ItemCount() int {
 }
 
 // gooSaveOrder writes the order row (insert when ID is 0) and, with items, replaces its items.
+// On an existing order the contested fields are written only when the caller changed them (see
+// goo_order_state.go); o is refreshed with what the database then holds.
 func (s *Server) gooSaveOrder(ctx context.Context, o *gooOrder, withItems bool) error {
+	return pgx.BeginFunc(ctx, s.store.Pool, func(tx pgx.Tx) error { return s.gooSaveOrderTx(ctx, tx, o, withItems) })
+}
+
+// gooSaveOrderTx is gooSaveOrder inside the caller's transaction.
+func (s *Server) gooSaveOrderTx(ctx context.Context, tx pgx.Tx, o *gooOrder, withItems bool) error {
 	if o.Type == "" {
 		o.Type = "shop_order"
 	}
@@ -273,67 +286,97 @@ func (s *Server) gooSaveOrder(ctx context.Context, o *gooOrder, withItems bool) 
 	shipping, _ := json.Marshal(o.Shipping)
 	meta, _ := json.Marshal(o.Meta)
 	email := strings.ToLower(strings.TrimSpace(o.Billing["email"]))
-	return pgx.BeginFunc(ctx, s.store.Pool, func(tx pgx.Tx) error {
-		var err error
-		if o.ID == 0 {
-			err = tx.QueryRow(ctx, `INSERT INTO goo_orders (type, parent_id, status, currency, prices_include_tax, customer_id, billing, shipping,
-				billing_email, payment_method, payment_method_title, transaction_id, customer_ip, user_agent, customer_note, created_via, cart_hash,
-				order_key, discount_total, discount_tax, shipping_total, shipping_tax, cart_tax, total, total_tax, refund_reason, refunded_by,
-				stock_reduced, downloads_granted, new_order_email_sent, meta, date_paid, date_completed)
-				VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33)
-				RETURNING id, date_created, date_modified`,
-				o.Type, o.ParentID, o.Status, o.Currency, o.PricesIncludeTax, o.CustomerID, billing, shipping, email, o.PaymentMethod,
-				o.PaymentMethodTitle, o.TransactionID, o.CustomerIP, o.UserAgent, o.CustomerNote, o.CreatedVia, o.CartHash, o.OrderKey,
-				o.DiscountTotal, o.DiscountTax, o.ShippingTotal, o.ShippingTax, o.CartTax, o.Total, o.TotalTax, o.RefundReason, o.RefundedBy,
-				o.StockReduced, o.DownloadsGranted, o.NewOrderEmailSent, meta, o.DatePaid, o.DateCompleted).Scan(&o.ID, &o.DateCreated, &o.DateModified)
-		} else {
-			_, err = tx.Exec(ctx, `UPDATE goo_orders SET status=$2, currency=$3, prices_include_tax=$4, customer_id=$5, billing=$6, shipping=$7,
-				billing_email=$8, payment_method=$9, payment_method_title=$10, transaction_id=$11, customer_ip=$12, user_agent=$13, customer_note=$14,
-				created_via=$15, cart_hash=$16, discount_total=$17, discount_tax=$18, shipping_total=$19, shipping_tax=$20, cart_tax=$21, total=$22,
-				total_tax=$23, refund_reason=$24, refunded_by=$25, stock_reduced=$26, downloads_granted=$27, new_order_email_sent=$28, meta=$29,
-				date_paid=$30, date_completed=$31, date_created=$32, date_modified=now() WHERE id=$1`,
-				o.ID, o.Status, o.Currency, o.PricesIncludeTax, o.CustomerID, billing, shipping, email, o.PaymentMethod, o.PaymentMethodTitle,
-				o.TransactionID, o.CustomerIP, o.UserAgent, o.CustomerNote, o.CreatedVia, o.CartHash, o.DiscountTotal, o.DiscountTax,
-				o.ShippingTotal, o.ShippingTax, o.CartTax, o.Total, o.TotalTax, o.RefundReason, o.RefundedBy, o.StockReduced, o.DownloadsGranted,
-				o.NewOrderEmailSent, meta, o.DatePaid, o.DateCompleted, o.DateCreated)
+	var err error
+	if o.ID == 0 {
+		err = tx.QueryRow(ctx, `INSERT INTO goo_orders (type, parent_id, status, currency, prices_include_tax, customer_id, billing, shipping,
+			billing_email, payment_method, payment_method_title, transaction_id, customer_ip, user_agent, customer_note, created_via, cart_hash,
+			order_key, discount_total, discount_tax, shipping_total, shipping_tax, cart_tax, total, total_tax, refund_reason, refunded_by,
+			stock_reduced, downloads_granted, new_order_email_sent, meta, date_paid, date_completed)
+			VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33)
+			RETURNING id, date_created, date_modified`,
+			o.Type, o.ParentID, o.Status, o.Currency, o.PricesIncludeTax, o.CustomerID, billing, shipping, email, o.PaymentMethod,
+			o.PaymentMethodTitle, o.TransactionID, o.CustomerIP, o.UserAgent, o.CustomerNote, o.CreatedVia, o.CartHash, o.OrderKey,
+			o.DiscountTotal, o.DiscountTax, o.ShippingTotal, o.ShippingTax, o.CartTax, o.Total, o.TotalTax, o.RefundReason, o.RefundedBy,
+			o.StockReduced, o.DownloadsGranted, o.NewOrderEmailSent, meta, o.DatePaid, o.DateCompleted).Scan(&o.ID, &o.DateCreated, &o.DateModified)
+		if err == nil {
+			o.snapshot()
 		}
-		if err != nil || !withItems {
-			return err
+	} else {
+		// A copy built without loading the order (orig nil) writes everything, as before.
+		changed := func(f func(*gooOrderSnap) bool) bool { return o.orig == nil || f(o.orig) }
+		var storedMeta []byte
+		err = tx.QueryRow(ctx, `UPDATE goo_orders SET status = CASE WHEN $33 THEN $2 ELSE status END, currency=$3, prices_include_tax=$4,
+			customer_id=$5, billing=$6, shipping=$7, billing_email=$8, payment_method=$9, payment_method_title=$10,
+			transaction_id = CASE WHEN $37 THEN $11 ELSE transaction_id END,
+			customer_ip=$12, user_agent=$13, customer_note=$14, created_via=$15, cart_hash=$16, discount_total=$17, discount_tax=$18,
+			shipping_total=$19, shipping_tax=$20, cart_tax=$21, total=$22, total_tax=$23, refund_reason=$24, refunded_by=$25,
+			stock_reduced = CASE WHEN $34 THEN $26 ELSE stock_reduced END,
+			downloads_granted = CASE WHEN $35 THEN $27 ELSE downloads_granted END, new_order_email_sent=$28,
+			meta = ($29::jsonb - $36::text[]) || coalesce((SELECT jsonb_object_agg(e.key, e.value) FROM jsonb_each(goo_orders.meta) e
+				WHERE e.key = ANY($36::text[])), '{}'::jsonb),
+			date_paid = CASE WHEN $38 THEN $30 ELSE date_paid END, date_completed = CASE WHEN $39 THEN $31 ELSE date_completed END,
+			date_created=$32, date_modified=now() WHERE id=$1
+			RETURNING status, stock_reduced, downloads_granted, meta, transaction_id, date_paid, date_completed, date_modified`,
+			o.ID, o.Status, o.Currency, o.PricesIncludeTax, o.CustomerID, billing, shipping, email, o.PaymentMethod, o.PaymentMethodTitle,
+			o.TransactionID, o.CustomerIP, o.UserAgent, o.CustomerNote, o.CreatedVia, o.CartHash, o.DiscountTotal, o.DiscountTax,
+			o.ShippingTotal, o.ShippingTax, o.CartTax, o.Total, o.TotalTax, o.RefundReason, o.RefundedBy, o.StockReduced, o.DownloadsGranted,
+			o.NewOrderEmailSent, meta, o.DatePaid, o.DateCompleted, o.DateCreated,
+			changed(func(sn *gooOrderSnap) bool { return sn.status != o.Status }),
+			changed(func(sn *gooOrderSnap) bool { return sn.stockReduced != o.StockReduced }),
+			changed(func(sn *gooOrderSnap) bool { return sn.downloadsGranted != o.DownloadsGranted }),
+			o.keptBookkeepingKeys(),
+			changed(func(sn *gooOrderSnap) bool { return sn.transactionID != o.TransactionID }),
+			changed(func(sn *gooOrderSnap) bool { return !gooSameTime(sn.datePaid, o.DatePaid) }),
+			changed(func(sn *gooOrderSnap) bool { return !gooSameTime(sn.dateCompleted, o.DateCompleted) }),
+		).Scan(&o.Status, &o.StockReduced, &o.DownloadsGranted, &storedMeta, &o.TransactionID, &o.DatePaid, &o.DateCompleted, &o.DateModified)
+		if err == nil {
+			o.gooMergeBookkeeping(storedMeta)
+			o.snapshot()
 		}
-		// Items keep their ids across saves (refund lines point at them through _refunded_item_id):
-		// stored items are updated in place, new ones inserted, the ones no longer on the order deleted.
-		keep := []int64{}
-		for i, it := range o.Items {
-			it.OrderID, it.Position = o.ID, i
-			if it.Meta == nil {
-				it.Meta = map[string]any{}
+	}
+	if err != nil || !withItems {
+		return err
+	}
+	// Items keep their ids across saves (refund lines point at them through _refunded_item_id):
+	// stored items are updated in place, new ones inserted, the ones no longer on the order deleted.
+	keep := []int64{}
+	for i, it := range o.Items {
+		it.OrderID, it.Position = o.ID, i
+		if it.Meta == nil {
+			it.Meta = map[string]any{}
+		}
+		taxes, _ := json.Marshal(it.Taxes)
+		im, _ := json.Marshal(it.Meta)
+		if it.ID != 0 {
+			var red []byte
+			err := tx.QueryRow(ctx, `UPDATE goo_order_items SET type=$3, name=$4, product_id=$5, variation_id=$6, quantity=$7, tax_class=$8,
+				subtotal=$9, subtotal_tax=$10, total=$11, total_tax=$12, taxes=$13,
+				meta = CASE WHEN $16 THEN ($14::jsonb - '_reduced_stock') || CASE WHEN goo_order_items.meta->'_reduced_stock' IS NOT NULL
+					THEN jsonb_build_object('_reduced_stock', goo_order_items.meta->'_reduced_stock') ELSE '{}'::jsonb END ELSE $14::jsonb END,
+				position=$15 WHERE id=$1 AND order_id=$2 RETURNING meta->'_reduced_stock'`,
+				it.ID, o.ID, it.Type, it.Name, it.ProductID, it.VariationID, it.Quantity, it.TaxClass, it.Subtotal, it.SubtotalTax, it.Total,
+				it.TotalTax, taxes, im, it.Position, it.keepsReduced()).Scan(&red)
+			if err == nil {
+				it.setReduced(red)
+				it.snapshot()
+				keep = append(keep, it.ID)
+				continue
 			}
-			taxes, _ := json.Marshal(it.Taxes)
-			im, _ := json.Marshal(it.Meta)
-			if it.ID != 0 {
-				tag, err := tx.Exec(ctx, `UPDATE goo_order_items SET type=$3, name=$4, product_id=$5, variation_id=$6, quantity=$7, tax_class=$8,
-					subtotal=$9, subtotal_tax=$10, total=$11, total_tax=$12, taxes=$13, meta=$14, position=$15 WHERE id=$1 AND order_id=$2`,
-					it.ID, o.ID, it.Type, it.Name, it.ProductID, it.VariationID, it.Quantity, it.TaxClass, it.Subtotal, it.SubtotalTax, it.Total,
-					it.TotalTax, taxes, im, it.Position)
-				if err != nil {
-					return err
-				}
-				if tag.RowsAffected() == 1 {
-					keep = append(keep, it.ID)
-					continue
-				}
-			}
-			if err := tx.QueryRow(ctx, `INSERT INTO goo_order_items (order_id, type, name, product_id, variation_id, quantity, tax_class, subtotal,
-				subtotal_tax, total, total_tax, taxes, meta, position) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING id`,
-				o.ID, it.Type, it.Name, it.ProductID, it.VariationID, it.Quantity, it.TaxClass, it.Subtotal, it.SubtotalTax, it.Total, it.TotalTax,
-				taxes, im, it.Position).Scan(&it.ID); err != nil {
+			if !errors.Is(err, pgx.ErrNoRows) {
 				return err
 			}
-			keep = append(keep, it.ID)
 		}
-		_, err = tx.Exec(ctx, `DELETE FROM goo_order_items WHERE order_id = $1 AND NOT (id = ANY($2))`, o.ID, keep)
-		return err
-	})
+		if err := tx.QueryRow(ctx, `INSERT INTO goo_order_items (order_id, type, name, product_id, variation_id, quantity, tax_class, subtotal,
+			subtotal_tax, total, total_tax, taxes, meta, position) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING id`,
+			o.ID, it.Type, it.Name, it.ProductID, it.VariationID, it.Quantity, it.TaxClass, it.Subtotal, it.SubtotalTax, it.Total, it.TotalTax,
+			taxes, im, it.Position).Scan(&it.ID); err != nil {
+			return err
+		}
+		it.snapshot()
+		keep = append(keep, it.ID)
+	}
+	_, err = tx.Exec(ctx, `DELETE FROM goo_order_items WHERE order_id = $1 AND NOT (id = ANY($2))`, o.ID, keep)
+	return err
 }
 
 // gooRecalculate is WC_Order::calculate_totals() for an order edited in the admin: line taxes are kept
@@ -414,8 +457,16 @@ func (s *Server) gooOrderNotes(ctx context.Context, orderID int64, customerOnly 
 // Status -------------------------------------------------------------------------------------------
 
 // gooSetStatus is WC_Order::update_status(): saves, records a note and runs the transition's
-// bookkeeping (stock, coupons, downloads, e-mails through order_status_changed).
+// bookkeeping (stock, coupons, downloads, e-mails through order_status_changed). The change starts
+// from the status the database holds, under the order's lock (goo_order_state.go).
 func (s *Server) gooSetStatus(ctx context.Context, o *gooOrder, to, note string, by string) error {
+	return s.gooSetStatusFrom(ctx, o, nil, to, note, by)
+}
+
+// gooSetStatusFrom is gooSetStatus for an order whose current status is one of from (nil: any);
+// when it no longer is (a payment arrived, the order was cancelled meanwhile) nothing changes and
+// errGooStatusChanged is returned.
+func (s *Server) gooSetStatusFrom(ctx context.Context, o *gooOrder, from []string, to, note string, by string) error {
 	to = strings.TrimPrefix(to, "wc-")
 	valid := false
 	for _, st := range gooOrderStatuses {
@@ -426,12 +477,59 @@ func (s *Server) gooSetStatus(ctx context.Context, o *gooOrder, to, note string,
 	if !valid {
 		return fmt.Errorf("invalid order status %q", to)
 	}
-	from := o.Status
-	if from == to {
+	if o.ID == 0 {
+		if err := s.gooSaveOrder(ctx, o, true); err != nil {
+			return err
+		}
+	}
+	return gooWithOrderLock(ctx, o.ID, func(ctx context.Context) error { return s.gooSetStatusLocked(ctx, o, from, to, note, by) })
+}
+
+// gooSetStatusLocked is the status change itself; the caller holds the order's lock.
+func (s *Server) gooSetStatusLocked(ctx context.Context, o *gooOrder, from []string, to, note string, by string) error {
+	if err := s.gooRefreshOrderState(ctx, o); err != nil {
+		return err
+	}
+	prev := o.Status
+	if from != nil && !containsStr(from, prev) {
+		return errGooStatusChanged
+	}
+	if prev == to {
 		if note != "" {
 			return s.gooAddOrderNote(ctx, o, note, false, by)
 		}
 		return nil
+	}
+	// WooCommerce reduces stock and counts coupon uses when an order goes on hold or is paid. Both
+	// are taken before the status is saved, each in one conditional UPDATE: when another order took
+	// the last unit or the coupon's last use meanwhile, a change the system makes (a payment, by == "")
+	// puts the order on hold with a note instead of selling what is not there. A change made by a
+	// person or an API client is their decision, as in WooCommerce: stock may go below zero.
+	var problems []string
+	if to == "processing" || to == "completed" || to == "on-hold" {
+		strict := by == ""
+		if err := s.gooReduceStock(ctx, o, strict); err != nil {
+			problems = append(problems, err.Error())
+		}
+		if err := s.gooRecordCouponUsage(ctx, o, true, strict); err != nil {
+			problems = append(problems, err.Error())
+		}
+		if len(problems) > 0 {
+			to = "on-hold"
+		}
+	}
+	join := func(parts ...string) string {
+		var out []string
+		for _, p := range parts {
+			if p = strings.TrimSpace(p); p != "" {
+				out = append(out, p)
+			}
+		}
+		return strings.Join(out, " ")
+	}
+	held := join(problems...)
+	if prev == to { // on hold already, and still short of stock or coupon uses
+		return s.gooAddOrderNote(ctx, o, join(note, held), false, by)
 	}
 	o.Status = to
 	now := time.Now()
@@ -441,28 +539,33 @@ func (s *Server) gooSetStatus(ctx context.Context, o *gooOrder, to, note string,
 	if to == "completed" {
 		o.DateCompleted = &now
 	}
-	if err := s.gooSaveOrder(ctx, o, false); err != nil {
+	// The row lock re-checks the status for another instance of the app changing it meanwhile.
+	if err := pgx.BeginFunc(ctx, s.store.Pool, func(tx pgx.Tx) error {
+		var cur string
+		if err := tx.QueryRow(ctx, `SELECT status FROM goo_orders WHERE id = $1 FOR UPDATE`, o.ID).Scan(&cur); err != nil {
+			return err
+		}
+		if cur != prev {
+			return errGooStatusChanged
+		}
+		return s.gooSaveOrderTx(ctx, tx, o, false)
+	}); err != nil {
+		o.Status = prev
 		return err
 	}
-	msg := fmt.Sprintf("Order status changed from %s to %s.", gooStatusLabel(from), gooStatusLabel(to))
-	if note != "" {
-		msg = strings.TrimSpace(note + " " + msg)
-	}
-	_ = s.gooAddOrderNote(ctx, o, msg, false, by)
-	s.gooStatusTransition(ctx, o, from, to)
-	s.gooFire(ctx, "order_status_changed", &gooStatusChange{Order: o, From: from, To: to})
+	_ = s.gooAddOrderNote(ctx, o, join(note, held, fmt.Sprintf("Order status changed from %s to %s.", gooStatusLabel(prev), gooStatusLabel(to))), false, by)
+	s.gooStatusTransition(ctx, o, prev, to)
+	s.gooFire(ctx, "order_status_changed", &gooStatusChange{Order: o, From: prev, To: to})
 	s.gooPurgeOrder(ctx, o)
 	return nil
 }
 
 // gooStatusTransition is WooCommerce's status hooks: stock is reduced when an order becomes
-// processing / completed / on-hold and restored when it is cancelled (or pending again); coupons
-// count their uses likewise; downloads are granted when paid.
+// processing / completed / on-hold (taken in gooSetStatusLocked) and restored when it is cancelled
+// (or pending again); coupons count their uses likewise; downloads are granted when paid.
 func (s *Server) gooStatusTransition(ctx context.Context, o *gooOrder, from, to string) {
 	switch to {
 	case "processing", "completed", "on-hold":
-		s.gooReduceStock(ctx, o)
-		s.gooRecordCouponUsage(ctx, o, true)
 		if to != "on-hold" || !s.gooOptBool("downloads_grant_access_after_payment") {
 			s.gooGrantDownloads(ctx, o)
 		}
@@ -474,50 +577,82 @@ func (s *Server) gooStatusTransition(ctx context.Context, o *gooOrder, from, to 
 			s.gooRestoreStock(ctx, o)
 		}
 		if to == "cancelled" {
-			s.gooRecordCouponUsage(ctx, o, false)
+			_ = s.gooRecordCouponUsage(ctx, o, false, false)
 		}
 	}
 }
 
-// gooReduceStock is wc_reduce_stock_levels(): once per order.
-func (s *Server) gooReduceStock(ctx context.Context, o *gooOrder) {
-	if o.StockReduced || !s.gooManageStock() {
-		return
+// gooStockShortage is the error of a stock reduction that would sell more than is in stock.
+type gooStockShortage struct {
+	Name      string
+	Available int
+}
+
+func (e *gooStockShortage) Error() string {
+	return fmt.Sprintf("Not enough units of %s are available in stock to fulfil this order (%d available).", e.Name, max(e.Available, 0))
+}
+
+// gooReduceStock is wc_reduce_stock_levels(): once per order (the stock_reduced flag is claimed in
+// the database). strict reduces only what is in stock (unless the product allows backorders): when a
+// line cannot be reduced, the lines reduced so far are put back and a *gooStockShortage is returned.
+func (s *Server) gooReduceStock(ctx context.Context, o *gooOrder, strict bool) error {
+	if !s.gooManageStock() {
+		return nil
 	}
-	var changes []string
+	if claimed, err := s.gooClaimOrderFlag(ctx, o, "stock_reduced", true); err != nil || !claimed {
+		return err
+	}
+	type reduced struct {
+		it       *gooOrderItem
+		p, owner *gooProduct
+		qty      int
+	}
+	var done []reduced
 	for _, it := range o.ItemsOf("line_item") {
+		if red, _ := it.Meta["_reduced_stock"].(float64); red > 0 {
+			continue // reduced already (an item added in the admin)
+		}
 		pid := it.ProductID
 		if it.VariationID != 0 {
 			pid = it.VariationID
 		}
 		p, err := s.gooGetProduct(ctx, pid)
-		if err != nil || !s.gooManagingStock(ctx, p) {
+		if err != nil || !s.gooManagingStock(ctx, p) || it.Qty() <= 0 {
 			continue
 		}
 		owner := s.gooStockOwner(ctx, p)
-		old := 0
-		if owner.StockQuantity != nil {
-			old = *owner.StockQuantity
+		n, err := s.gooStockDelta(ctx, owner, -it.Qty(), false, strict)
+		if errors.Is(err, errGooNoStock) {
+			for _, d := range done {
+				_, _ = s.gooStockDelta(ctx, d.owner, d.it.Qty(), false, false)
+			}
+			_, _ = s.gooClaimOrderFlag(ctx, o, "stock_reduced", false)
+			avail := 0
+			_ = s.store.Pool.QueryRow(ctx, `SELECT coalesce(stock_quantity, 0) FROM goo_products WHERE post_id = $1`, owner.ID).Scan(&avail)
+			return &gooStockShortage{Name: s.gooProductTitle(ctx, p), Available: avail}
 		}
-		n, err := s.gooUpdateStock(ctx, p, -it.Qty(), false)
 		if err != nil {
 			continue
 		}
-		it.Meta["_reduced_stock"] = float64(it.Qty())
-		label := s.gooProductTitle(ctx, p)
-		if p.SKU != "" {
-			label += " (" + p.SKU + ")"
+		done = append(done, reduced{it, p, owner, n})
+	}
+	var changes []string
+	for _, d := range done {
+		s.gooStockAfter(ctx, d.owner, d.qty+d.it.Qty(), d.qty, true)
+		_ = s.gooSetItemReduced(ctx, d.it, float64(d.it.Qty()))
+		label := s.gooProductTitle(ctx, d.p)
+		if d.p.SKU != "" {
+			label += " (" + d.p.SKU + ")"
 		}
-		changes = append(changes, fmt.Sprintf("%s %d&rarr;%d", html.EscapeString(label), old, n))
-		if n < 0 {
-			s.gooFire(ctx, "backorder", &gooBackorderEvent{Order: o, Product: p, Quantity: it.Qty()})
+		changes = append(changes, fmt.Sprintf("%s %d&rarr;%d", html.EscapeString(label), d.qty+d.it.Qty(), d.qty))
+		if d.qty < 0 {
+			s.gooFire(ctx, "backorder", &gooBackorderEvent{Order: o, Product: d.p, Quantity: d.it.Qty()})
 		}
 	}
-	o.StockReduced = true
-	_ = s.gooSaveOrder(ctx, o, true)
 	if len(changes) > 0 {
 		_ = s.gooAddOrderNote(ctx, o, "Stock levels reduced: "+strings.Join(changes, ", "), false, "")
 	}
+	return nil
 }
 
 // gooBackorderEvent is the argument of backorder.
@@ -527,9 +662,9 @@ type gooBackorderEvent struct {
 	Quantity int
 }
 
-// gooRestoreStock is wc_increase_stock_levels(): puts back what was reduced.
+// gooRestoreStock is wc_increase_stock_levels(): puts back what was reduced, once.
 func (s *Server) gooRestoreStock(ctx context.Context, o *gooOrder) {
-	if !o.StockReduced {
+	if claimed, err := s.gooClaimOrderFlag(ctx, o, "stock_reduced", false); err != nil || !claimed {
 		return
 	}
 	var changes []string
@@ -546,61 +681,71 @@ func (s *Server) gooRestoreStock(ctx context.Context, o *gooOrder) {
 		if err != nil {
 			continue
 		}
-		owner := s.gooStockOwner(ctx, p)
-		old := 0
-		if owner.StockQuantity != nil {
-			old = *owner.StockQuantity
-		}
 		n, err := s.gooUpdateStock(ctx, p, int(red), false)
 		if err != nil {
 			continue
 		}
-		delete(it.Meta, "_reduced_stock")
-		changes = append(changes, fmt.Sprintf("%s %d&rarr;%d", html.EscapeString(s.gooProductTitle(ctx, p)), old, n))
+		_ = s.gooSetItemReduced(ctx, it, 0)
+		changes = append(changes, fmt.Sprintf("%s %d&rarr;%d", html.EscapeString(s.gooProductTitle(ctx, p)), n-int(red), n))
 	}
-	o.StockReduced = false
-	_ = s.gooSaveOrder(ctx, o, true)
 	if len(changes) > 0 {
 		_ = s.gooAddOrderNote(ctx, o, "Stock levels increased: "+strings.Join(changes, ", "), false, "")
 	}
 }
 
-// gooRecordCouponUsage counts (or uncounts) the order's coupon uses once.
-func (s *Server) gooRecordCouponUsage(ctx context.Context, o *gooOrder, increase bool) {
-	recorded, _ := o.Meta["_recorded_coupon_usage_counts"].(bool)
-	if recorded == increase {
-		return
+// gooRecordCouponUsage counts (or uncounts) the order's coupon uses once (the flag is claimed in the
+// database). strict counts a use only within the coupon's usage limits: when a coupon has none left
+// the uses counted so far are taken back and an error is returned.
+func (s *Server) gooRecordCouponUsage(ctx context.Context, o *gooOrder, increase, strict bool) error {
+	if claimed, err := s.gooClaimOrderFlag(ctx, o, "_recorded_coupon_usage_counts", increase); err != nil || !claimed {
+		return err
 	}
 	who := o.Billing["email"]
 	if o.CustomerID != 0 {
 		who = itoa64(o.CustomerID)
 	}
-	for _, c := range o.ItemsOf("coupon") {
-		if increase {
-			_ = s.gooIncreaseCouponUsage(ctx, c.Name, who)
-		} else {
-			_ = s.gooDecreaseCouponUsage(ctx, c.Name, who)
-		}
+	var keys []string // the customer's entries in used_by (gooCart.customerKeys)
+	if o.CustomerID != 0 {
+		keys = append(keys, itoa64(o.CustomerID))
 	}
-	o.Meta["_recorded_coupon_usage_counts"] = increase
-	_ = s.gooSaveOrder(ctx, o, false)
+	if e := strings.ToLower(strings.TrimSpace(o.Billing["email"])); e != "" {
+		keys = append(keys, e)
+	}
+	var counted []string
+	for _, c := range o.ItemsOf("coupon") {
+		if !increase {
+			_ = s.gooDecreaseCouponUsage(ctx, c.Name, who)
+			continue
+		}
+		ok, err := s.gooTryIncreaseCouponUsage(ctx, c.Name, who, keys, strict)
+		if err != nil {
+			continue
+		}
+		if !ok {
+			for _, code := range counted {
+				_ = s.gooDecreaseCouponUsage(ctx, code, who)
+			}
+			_, _ = s.gooClaimOrderFlag(ctx, o, "_recorded_coupon_usage_counts", false)
+			return fmt.Errorf(`Usage limit for coupon "%s" has been reached.`, html.EscapeString(c.Name))
+		}
+		counted = append(counted, c.Name)
+	}
+	return nil
 }
 
 // gooRecordSales counts total_sales once per order.
 func (s *Server) gooRecordSales(ctx context.Context, o *gooOrder) {
-	if done, _ := o.Meta["_recorded_sales"].(bool); done {
+	if claimed, err := s.gooClaimOrderFlag(ctx, o, "_recorded_sales", true); err != nil || !claimed {
 		return
 	}
 	for _, it := range o.ItemsOf("line_item") {
 		_, _ = s.store.Pool.Exec(ctx, `UPDATE goo_products SET total_sales = total_sales + $2 WHERE post_id = $1`, it.ProductID, it.Qty())
 	}
-	o.Meta["_recorded_sales"] = true
-	_ = s.gooSaveOrder(ctx, o, false)
 }
 
 // gooGrantDownloads is wc_downloadable_product_permissions(): once per order.
 func (s *Server) gooGrantDownloads(ctx context.Context, o *gooOrder) {
-	if o.DownloadsGranted {
+	if claimed, err := s.gooClaimOrderFlag(ctx, o, "downloads_granted", true); err != nil || !claimed {
 		return
 	}
 	for _, it := range o.ItemsOf("line_item") {
@@ -625,30 +770,46 @@ func (s *Server) gooGrantDownloads(ctx context.Context, o *gooOrder) {
 				downloads_remaining, access_expires) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`, d.ID, p.ID, o.ID, o.OrderKey, o.Billing["email"], o.CustomerID, remaining, expires)
 		}
 	}
-	o.DownloadsGranted = true
-	_ = s.gooSaveOrder(ctx, o, false)
 }
 
+// gooPaymentStatuses are the statuses payment_complete() starts from
+// (woocommerce_valid_order_statuses_for_payment_complete).
+var gooPaymentStatuses = []string{"on-hold", "pending", "failed", "cancelled", "checkout-draft"}
+
+// gooNeedsPaymentStatuses are the statuses an order can be paid from (woocommerce_valid_order_statuses_for_payment).
+var gooNeedsPaymentStatuses = []string{"pending", "failed"}
+
 // gooPaymentComplete is WC_Order::payment_complete(): the transaction id, then processing (or
-// completed when nothing needs processing: only virtual downloadable items).
+// completed when nothing needs processing: only virtual downloadable items). The status is checked
+// under the order's lock, so a payment and the unpaid-order job cannot both win.
 func (s *Server) gooPaymentComplete(ctx context.Context, o *gooOrder, transactionID string) error {
-	if !containsStr([]string{"on-hold", "pending", "failed", "cancelled", "checkout-draft"}, o.Status) {
+	if o.ID == 0 {
+		if err := s.gooSaveOrder(ctx, o, true); err != nil {
+			return err
+		}
+	}
+	return gooWithOrderLock(ctx, o.ID, func(ctx context.Context) error {
+		if err := s.gooRefreshOrderState(ctx, o); err != nil {
+			return err
+		}
+		if !containsStr(gooPaymentStatuses, o.Status) {
+			return nil
+		}
+		if transactionID != "" {
+			o.TransactionID = transactionID
+		}
+		now := time.Now()
+		o.DatePaid = &now
+		to := "processing"
+		if !s.gooOrderNeedsProcessing(ctx, o) {
+			to = "completed"
+		}
+		if err := s.gooSetStatusLocked(ctx, o, gooPaymentStatuses, to, "", ""); err != nil {
+			return err
+		}
+		s.gooFire(ctx, "payment_complete", o)
 		return nil
-	}
-	if transactionID != "" {
-		o.TransactionID = transactionID
-	}
-	now := time.Now()
-	o.DatePaid = &now
-	to := "processing"
-	if !s.gooOrderNeedsProcessing(ctx, o) {
-		to = "completed"
-	}
-	if err := s.gooSetStatus(ctx, o, to, "", ""); err != nil {
-		return err
-	}
-	s.gooFire(ctx, "payment_complete", o)
-	return nil
+	})
 }
 
 // gooOrderNeedsProcessing is needs_processing(): an item that is not virtual and downloadable.

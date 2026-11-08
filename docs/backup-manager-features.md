@@ -5,8 +5,8 @@ and restores it on the same or another Pursae site, like All-in-One WP Migration
 dump: rows are exported as JSON lines straight from PostgreSQL and restored through
 `jsonb_populate_recordset`, so `pg_dump`/`psql` are not needed.
 
-Menu: **Backup Manager** (administrators, `manage_options`). Tabs: Create backup, Backups, Import / Migrate,
-plus a restore screen per archive.
+Menu: **Backup Manager** (administrators, `manage_options`). Tabs: Create backup, Backups, Schedule,
+Import / Migrate, plus a restore screen per archive.
 
 ## What can be selected
 
@@ -61,6 +61,28 @@ defaults; columns the site no longer has are ignored.
 Restoring users replaces the sessions: everyone, including the administrator running it, logs in again with the
 backup's accounts. Restoring plugins needs a restart of Pursae to load the packages.
 
+## Scheduled backups
+
+The **Schedule** tab turns on automatic local backups:
+
+| Setting | Option | Default |
+|---------|--------|---------|
+| Automatic backups: Off, Daily, Weekly | `backup_manager_schedule` | Off |
+| Keep (scheduled archives kept, 1–100) | `backup_manager_schedule_keep` | 7 |
+| Parts (same parts as a manual backup; every user is included) | `backup_manager_schedule_cats` | all |
+
+* Saving a schedule adds one recurring row (`wpgo_backup_scheduled`, `daily` or `weekly`) to the `jobs` table;
+  the first run is 10 minutes later, then one per day or week (see the cron page of the developer docs).
+  Saving again with the same frequency keeps the next run; Off, or deactivating the plugin, removes the row;
+  activating the plugin puts it back.
+* The scheduler dispatches the row to the `wpgo_backup_scheduled` action, which the core registers at start-up.
+  A run within an hour of the previous one is ignored.
+* A run writes `scheduled-<time>-<random>.zip` (manifest kind `scheduled`) into the backups folder, then
+  deletes the oldest scheduled archives beyond *Keep*. Manual backups, uploads and safety snapshots are never
+  pruned. If another backup or restore is running, the run fails and the error is shown under *Last scheduled
+  backup* (`backup_manager_schedule_last`).
+* A restore keeps this site's schedule options.
+
 ## Storage and security
 
 * Archives live in `WPGO_BACKUPS_DIR` (default `<data>/backups`, next to uploads, never inside the public
@@ -74,5 +96,5 @@ backup's accounts. Restoring plugins needs a restart of Pursae to load the packa
 
 ## Not included (yet)
 
-Scheduled backups, retention, remote storage (S3, FTP), restoring on a site that is not installed yet, merge
-(non-destructive) restore.
+Remote storage (S3, FTP, cloud drives) for scheduled or manual backups, restoring on a site that is not
+installed yet, merge (non-destructive) restore.

@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -109,6 +108,33 @@ func (s *Store) GetAttachment(ctx context.Context, id int64) (*Attachment, error
 		return nil, err
 	}
 	return a, s.loadVariants(ctx, []*Attachment{a})
+}
+
+// GetAttachments loads several attachments with their sub-sizes in two queries; missing ids are absent.
+func (s *Store) GetAttachments(ctx context.Context, ids []int64) (map[int64]*Attachment, error) {
+	out := map[int64]*Attachment{}
+	if len(ids) == 0 {
+		return out, nil
+	}
+	rows, err := s.Pool.Query(ctx, `SELECT `+attCols+` FROM media WHERE id = ANY($1)`, ids)
+	if err != nil {
+		return nil, err
+	}
+	var list []*Attachment
+	for rows.Next() {
+		a, err := scanAttachment(rows)
+		if err != nil {
+			rows.Close()
+			return nil, err
+		}
+		out[a.ID] = a
+		list = append(list, a)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return out, s.loadVariants(ctx, list)
 }
 
 // InsertAttachment stores an attachment and its sub-sizes.
@@ -243,7 +269,7 @@ func (s *Store) QueryAttachments(ctx context.Context, q AttachmentQuery) ([]*Att
 		if page < 1 {
 			page = 1
 		}
-		sql += fmt.Sprintf(" LIMIT %d OFFSET %d", q.PerPage, (page-1)*q.PerPage)
+		sql += limitOffset(q.PerPage, page)
 	}
 	rows, err := s.Pool.Query(ctx, sql, args...)
 	if err != nil {
