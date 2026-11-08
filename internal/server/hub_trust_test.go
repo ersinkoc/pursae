@@ -12,20 +12,79 @@ import (
 	"sync"
 	"testing"
 
+	"wpgo/internal/config"
 	"wpgo/internal/plugins"
 	"wpgo/internal/settings"
 )
 
-// withRootKeys pins roots for one test (the -ldflags variable).
+// withRootKeys replaces the build's root keys (the pinned Pursae root and the -ldflags ones) with
+// throwaway roots for one test; no roots is a build without any root key.
 func withRootKeys(t *testing.T, roots ...ed25519.PublicKey) {
 	t.Helper()
-	saved := rootKeysLinked
+	savedBuiltin, savedLinked := rootKeysBuiltin, rootKeysLinked
 	var list []string
 	for _, r := range roots {
 		list = append(list, base64.StdEncoding.EncodeToString(r))
 	}
-	rootKeysLinked = strings.Join(list, ",")
+	rootKeysBuiltin, rootKeysLinked = nil, strings.Join(list, ",")
+	t.Cleanup(func() { rootKeysBuiltin, rootKeysLinked = savedBuiltin, savedLinked })
+}
+
+// withTrustHubKeys sets the devhub WPGO_TRUST_HUB_KEYS opt-in for one test.
+func withTrustHubKeys(t *testing.T, on bool) {
+	t.Helper()
+	saved := trustHubKeysForce
+	trustHubKeysForce = on
+	t.Cleanup(func() { trustHubKeysForce = saved })
+}
+
+// pursaeReleaseRoot is the production release root key pinned in rootKeysBuiltin.
+const pursaeReleaseRoot = "LxoPRqTiJfpXB0fc+peWabyDCWO/NzATjpk7pSe1IdY="
+
+// Every build pins the Pursae release root; a linked key adds a root (rotation), never replaces it.
+func TestPursaeRootKeyPinned(t *testing.T) {
+	want, err := plugins.ParsePublicKey(pursaeReleaseRoot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	has := func() bool {
+		for _, k := range rootKeys() {
+			if k.Equal(want) {
+				return true
+			}
+		}
+		return false
+	}
+	if !has() {
+		t.Fatalf("rootKeys() lacks the Pursae release root %s", pursaeReleaseRoot)
+	}
+	if err := coreTrustCheck(); err != nil {
+		t.Errorf("a production build cannot update itself: %v", err)
+	}
+	extra, _, _ := ed25519.GenerateKey(rand.Reader)
+	saved := rootKeysLinked
+	rootKeysLinked = base64.StdEncoding.EncodeToString(extra)
 	t.Cleanup(func() { rootKeysLinked = saved })
+	if !has() || len(rootKeys()) != len(rootKeysBuiltin)+1 {
+		t.Errorf("a linked root replaced the pinned one: %d roots", len(rootKeys()))
+	}
+	// An unendorsed Manager key verifies neither releases nor plugins under the real root.
+	hubPub, _, _ := ed25519.GenerateKey(rand.Reader)
+	listed := []hubKey{{ID: "hub-2026", Public: base64.StdEncoding.EncodeToString(hubPub)}}
+	if _, err := coreReleaseKeys(listed); err == nil {
+		t.Error("an unendorsed Manager key verifies releases")
+	}
+	if got := pluginHubKeys(listed); len(got) != 0 {
+		t.Errorf("an unendorsed Manager key signs plugins: %d", len(got))
+	}
+}
+
+// A production build ignores WPGO_TRUST_HUB_KEYS: only a devhub build reads it.
+func TestTrustHubKeysEnvIgnored(t *testing.T) {
+	t.Setenv("WPGO_TRUST_HUB_KEYS", "1")
+	if trustHubKeysEnv() != config.DevHub {
+		t.Errorf("trustHubKeysEnv() = %v in a build with DevHub=%v", trustHubKeysEnv(), config.DevHub)
+	}
 }
 
 // endorse is a root's endorsement of a Manager key, as the index carries it.
@@ -40,22 +99,29 @@ func TestCoreReleaseKeysNeedARoot(t *testing.T) {
 
 	// No root key, no opt-in: refused, also by coreUpdateTarget (the Updates screen says why).
 	withRootKeys(t)
-	t.Setenv("WPGO_TRUST_HUB_KEYS", "")
+	withTrustHubKeys(t, false)
 	if _, err := coreReleaseKeys(listed); !errors.Is(err, errCoreNoRoot) {
 		t.Fatalf("no root: %v", err)
 	}
 	if _, err := coreUpdateTarget(); !errors.Is(err, errCoreNoRoot) {
 		t.Fatalf("coreUpdateTarget without a root: %v", err)
 	}
-	// The development opt-in keeps the old behaviour.
-	t.Setenv("WPGO_TRUST_HUB_KEYS", "1")
+	// The devhub opt-in trusts the listed keys, with or without a root (a local Manager's key).
+	withTrustHubKeys(t, true)
 	if keys, err := coreReleaseKeys(listed); err != nil || len(keys) != 1 {
 		t.Fatalf("opt-in: %v %v", keys, err)
 	}
-
-	// With a pinned root only endorsed keys count, opt-in or not.
 	rootPub, rootPriv, _ := ed25519.GenerateKey(rand.Reader)
 	withRootKeys(t, rootPub)
+	if keys, err := coreReleaseKeys(listed); err != nil || len(keys) != 1 {
+		t.Fatalf("opt-in with a root: %v %v", keys, err)
+	}
+	if got := pluginHubKeys(listed); len(got) != 1 {
+		t.Errorf("plugin hub keys with the opt-in: %d", len(got))
+	}
+
+	// Without it, a pinned root makes only endorsed keys count.
+	withTrustHubKeys(t, false)
 	if _, err := coreReleaseKeys(listed); err == nil {
 		t.Fatal("an unendorsed Manager key verifies releases")
 	}

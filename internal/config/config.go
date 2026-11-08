@@ -6,6 +6,9 @@ import (
 	"strings"
 )
 
+// DefaultHubURL is the Pursae Manager every Pursae install talks to.
+const DefaultHubURL = "https://hub.pursae.com"
+
 type Config struct {
 	Addr        string // listen address, e.g. ":8080"
 	DatabaseURL string
@@ -13,7 +16,10 @@ type Config struct {
 	UploadsDir  string
 	Secret      string // optional; generated and stored in settings when empty
 	WebDir      string // when set, web assets and templates are read from this directory and reloaded per request
-	HubURL      string // the WordPress Go Hub (marketplace, release checks, site count); "off" disables it
+	// HubURL is Pursae Manager (marketplace, licenses, release checks, statistics): always DefaultHubURL.
+	// Only a development build (-tags devhub) can point it elsewhere, with WPGO_DEV_HUB_URL
+	// (config_devhub.go); "off" there disables it. A production binary has no switch for it.
+	HubURL string
 	// ThemeLibraryDir (WPGO_THEME_LIBRARY_DIR) serves the theme library from a directory of theme package
 	// directories (development, offline sites, tests) instead of Pursae Manager.
 	ThemeLibraryDir string
@@ -41,7 +47,7 @@ func Load() Config {
 		UploadsDir:      env("WPGO_UPLOADS_DIR", "./data/uploads"),
 		Secret:          os.Getenv("WPGO_SECRET"),
 		WebDir:          os.Getenv("WPGO_WEB_DIR"),
-		HubURL:          strings.TrimRight(env("WPGO_HUB_URL", "https://hub.wordpressgo.dev"), "/"),
+		HubURL:          hubURL(),
 		ThemeLibraryDir: os.Getenv("WPGO_THEME_LIBRARY_DIR"),
 		TrustedProxies:  os.Getenv("WPGO_TRUSTED_PROXIES"),
 		ExposeUsers:     os.Getenv("WPGO_EXPOSE_USERS") == "1",

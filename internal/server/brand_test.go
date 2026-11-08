@@ -54,9 +54,7 @@ func TestHubBrandLogo(t *testing.T) {
 	}))
 	defer hub.Close()
 	ctx := context.Background()
-	if err := srv.settings.Set(ctx, map[string]any{"wpgo_hub_url": hub.URL}); err != nil {
-		t.Fatal(err)
-	}
+	srv.cfg.HubURL = hub.URL // the Manager URL is fixed in production builds
 
 	_, shipped, _ := get(t, c, base+"/wp-includes/images/brand/logo-64.png")
 	if !strings.HasPrefix(shipped, "\x89PNG") {

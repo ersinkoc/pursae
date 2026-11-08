@@ -452,14 +452,14 @@ func TestManagerThemePreinstall(t *testing.T) {
 	}
 
 	// No Manager, or one that does not answer: the Library says why it is empty.
-	srv.settings.Set(context.Background(), map[string]any{"wpgo_hub_url": "off"})
+	srv.cfg.HubURL = "off"
 	_, body, _ = get(t, c, base+"/wp-admin/theme-install")
 	if !strings.Contains(body, "no Pursae Manager is configured") {
 		t.Error("no notice without a Manager")
 	}
 	down := httptest.NewServer(http.NotFoundHandler())
 	down.Close()
-	srv.settings.Set(context.Background(), map[string]any{"wpgo_hub_url": down.URL})
+	srv.cfg.HubURL = down.URL
 	srv.hubDropCaches(context.Background())
 	_, body, _ = get(t, c, base+"/wp-admin/theme-install")
 	if !strings.Contains(body, "Pursae Manager is not reachable") {

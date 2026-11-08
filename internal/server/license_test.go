@@ -50,9 +50,10 @@ func TestLicenseFetchStates(t *testing.T) {
 	if l := srv.license(ctx); l.Error != "missing" || l.Valid {
 		t.Errorf("no key: %+v", l)
 	}
-	if err := srv.settings.Set(ctx, map[string]any{licenseOption: " PRS-TEST ", "wpgo_hub_url": "off"}); err != nil {
+	if err := srv.settings.Set(ctx, map[string]any{licenseOption: " PRS-TEST "}); err != nil {
 		t.Fatal(err)
 	}
+	srv.cfg.HubURL = "off"
 	if srv.licenseKey() != "PRS-TEST" {
 		t.Errorf("licenseKey = %q", srv.licenseKey())
 	}
@@ -81,9 +82,7 @@ func TestLicenseFetchStates(t *testing.T) {
 		_ = json.NewEncoder(w).Encode(map[string]any{"valid": false})
 	}))
 	defer hub.Close()
-	if err := srv.settings.Set(ctx, map[string]any{"wpgo_hub_url": hub.URL}); err != nil {
-		t.Fatal(err)
-	}
+	srv.cfg.HubURL = hub.URL // the Manager URL is fixed in production builds
 	srv.licenseForget(ctx)
 	if l := srv.license(ctx); l.Error != "unreachable" || !strings.Contains(l.Message, "could not be reached") {
 		t.Fatalf("Manager down: %+v", l)

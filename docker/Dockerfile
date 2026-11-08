@@ -5,13 +5,18 @@ RUN go mod download
 COPY . .
 # VERSION (optional) is the core version the binary reports, e.g. --build-arg VERSION=0.4.0.
 ARG VERSION=
-# ROOT_KEYS (optional): comma-separated base64 Ed25519 release root keys pinned into the binary; only
-# Pursae Manager keys endorsed by one of them can verify a core self-update (internal/server/hub_trust.go).
+# ROOT_KEYS (optional): comma-separated base64 Ed25519 release root keys ADDED to the Pursae release
+# root every build pins (key rotation); only Pursae Manager keys endorsed by a root verify a core
+# self-update or a Manager-signed plugin (internal/server/hub_trust.go).
 ARG ROOT_KEYS=
+# GO_TAGS (optional): extra build tags. "devhub" builds a development binary that reads
+# WPGO_DEV_HUB_URL (a local Pursae Manager) and WPGO_TRUST_HUB_KEYS; production images leave it empty,
+# so the binary always talks to https://hub.pursae.com and trusts only endorsed keys.
+ARG GO_TAGS=
 # A static binary (no ELF interpreter), so the same file runs on musl and glibc systems:
 # -buildmode=exe, and -tags nodynamic keeps github.com/gen2brain/avif off purego (it decodes AVIF
 # with its embedded WebAssembly build instead of a system libavif).
-RUN CGO_ENABLED=0 go build -trimpath -buildmode=exe -tags nodynamic -ldflags="-s -w${VERSION:+ -X wpgo/internal/server.Version=$VERSION}${ROOT_KEYS:+ -X wpgo/internal/server.rootKeysLinked=$ROOT_KEYS}" -o /out/wpgo ./cmd/wpgo
+RUN CGO_ENABLED=0 go build -trimpath -buildmode=exe -tags "nodynamic $GO_TAGS" -ldflags="-s -w${VERSION:+ -X wpgo/internal/server.Version=$VERSION}${ROOT_KEYS:+ -X wpgo/internal/server.rootKeysLinked=$ROOT_KEYS}" -o /out/wpgo ./cmd/wpgo
 
 FROM alpine:3.22
 RUN apk add --no-cache ca-certificates tzdata && adduser -D -u 10001 wpgo \

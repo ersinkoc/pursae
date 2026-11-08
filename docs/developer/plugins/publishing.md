@@ -45,5 +45,6 @@ Publish a new version the same way with a higher `version`. Old versions stay do
 
 ## Running your own Hub
 
-Organisations that ship internal plugins run their own Hub and point sites at it with
-`WPGO_HUB_URL` ([running your own Hub](../hub/running-your-own-hub.md)).
+Production sites always use `https://hub.pursae.com`. A Hub of your own serves development
+builds (`-tags devhub`, `WPGO_DEV_HUB_URL`) for testing packages before you publish them
+([running your own Hub](../hub/running-your-own-hub.md)).

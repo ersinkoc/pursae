@@ -169,7 +169,7 @@ func TestCoreSelfUpdateNeedsPinnedRoot(t *testing.T) {
 	coreRestart = func(string) error { return nil }
 
 	withRootKeys(t)
-	t.Setenv("WPGO_TRUST_HUB_KEYS", "")
+	withTrustHubKeys(t, false)
 	hub.keys = append(hub.keys, map[string]string{"id": "hub-2026", "public": base64.StdEncoding.EncodeToString(pub)})
 	srv.hubDropCaches(ctx)
 	_, body, _ := get(t, c, base+"/wp-admin/update-core")

@@ -12,9 +12,12 @@ The **Hub** is a small service (`wpgo-hub`) every Pursae site talks to. It has t
 - an **admin panel** under `/admin/` where the operator manages the plugin and theme marketplace,
   core releases and signing keys.
 
-The public Hub is `https://hub.wordpressgo.dev`. Organisations can run their own
-([running your own Hub](running-your-own-hub.md)). Sites only talk to a Hub over **https**; plain
-http is accepted for `localhost`, loopback addresses and `*.localhost` / `*.test` development hosts.
+The Hub is `https://hub.pursae.com`, and every production Pursae binary talks to it: there is no
+environment variable or option to point a site elsewhere. Only development builds (`-tags devhub`)
+read `WPGO_DEV_HUB_URL` to use a local Manager
+([development builds](../operations/configuration.md#development-builds-devhub)). Sites only talk to
+a Hub over **https**; plain http is accepted for `localhost`, loopback addresses and `*.localhost` /
+`*.test` development hosts.
 Redirects never downgrade to http and drop the license and site headers when they leave the Hub's
 host.
 
@@ -55,10 +58,10 @@ check for updates (at most every 12 hours, or at once from Dashboard › Updates
 A key listed in the same answer as the release it verifies proves nothing, so a core self-update
 needs a **release root key** compiled into the binary:
 
-- `rootKeysBuiltin` in `internal/server/hub_trust.go` (empty until Pursae publishes a production
-  root key), plus
+- `rootKeysBuiltin` in `internal/server/hub_trust.go`: the Pursae release root
+  `LxoPRqTiJfpXB0fc+peWabyDCWO/NzATjpk7pSe1IdY=`, pinned in every build, plus
 - `go build -ldflags "-X wpgo/internal/server.rootKeysLinked=<base64>[,<base64>…]"` (the Docker
-  image: `--build-arg ROOT_KEYS=…`).
+  image: `--build-arg ROOT_KEYS=…`), which **adds** roots and never removes the pinned one.
 
 A Hub key verifies a release only if a root key endorsed it. The index then carries the
 endorsement next to the key:
@@ -71,12 +74,24 @@ where `endorsement = base64(Ed25519.Sign(rootKey, "pursae-hub-key-v1\n" + id + "
 (`public` exactly as listed, no trailing newline). The root's private key stays offline; the
 Hub operator asks for an endorsement whenever they generate a new key.
 
-A build **without** any root key (development, `go run`, a fork) cannot verify a release:
-Dashboard › Updates says the site cannot update itself, and the update is refused. Setting
-`WPGO_TRUST_HUB_KEYS=1` (the development compose file does) restores the old behaviour of
-trusting the listed keys — for development only. With a root key pinned, plugin packages are also
-verified only against endorsed Hub keys; without one, the listed keys are trusted for plugins as
-before (`wpgo_hub_trust_keys`).
+Plugin packages are verified only against endorsed Hub keys too (with `wpgo_hub_trust_keys` on).
+A production binary cannot relax any of this. A development build (`-tags devhub`) with
+`WPGO_TRUST_HUB_KEYS=1` (the development compose file sets it) trusts every listed key, endorsed
+or not, so a local Manager with a throwaway key can publish test releases and plugins.
+
+### Rotating the release root
+
+1. Generate the new root offline and endorse the Manager's current signing key with it (the
+   Manager lists one endorsement per key; during the overlap, endorse with the root the sites
+   in the field carry).
+2. Ship a release whose builds carry both roots: add the new public key to `rootKeysBuiltin` (or
+   pass it with `ROOT_KEYS` for a trial build). Sites trust a Manager key endorsed by either.
+3. Once sites have updated, re-endorse the Manager keys with the new root and remove the old
+   root from `rootKeysBuiltin` in a later release.
+
+A compromised Manager key is rotated without touching the root: generate a new key in the
+Manager, have the root endorse it, and stop listing the old one (sites drop a key the Manager
+no longer lists).
 
 ## Licenses
 
@@ -95,7 +110,7 @@ key and dropped when it changes.
 
 ## What a site sends (statistics)
 
-Statistics are always on; there is no opt-out. Only a site with `WPGO_HUB_URL=off` (or empty) sends
+Statistics are always on; there is no opt-out. Only a development build with `WPGO_DEV_HUB_URL=off` sends
 nothing — it then has no marketplace, no license and no update notices either.
 
 **Every request** carries the site's home URL and, if one is entered, its license key (above).

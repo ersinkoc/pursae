@@ -321,7 +321,7 @@ are). Its sources live in the repository under `library/themes/<slug>/` (each a 
 package directory whose name is its slug) and are published to Pursae Manager as theme packages
 (`make publish-themes`, below). A site reads the library from
 
-- **Pursae Manager** (the default, `WPGO_HUB_URL`): `GET /api/v1/themes`, every page, cached 12
+- **Pursae Manager** (the default, `https://hub.pursae.com`): `GET /api/v1/themes`, every page, cached 12
   hours per license key like the plugin catalog. Each listing carries the version's `theme.json`
   (`manifest`), so cards, categories, styles, search and the store themes need no download. Pro,
   private and beta themes appear only for a site whose license includes them. A package is

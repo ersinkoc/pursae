@@ -43,7 +43,6 @@ var Defaults = map[string]any{
 	"native_headlessgo":             false,       // HeadlessGo, the headless CMS plugin, starts switched off
 	"plugin_trusted_keys":           "",
 	"plugin_allow_unsigned":         false,
-	"wpgo_hub_url":                  "",   // overrides WPGO_HUB_URL when set
 	"pursae_license_key":            "",   // Settings › License: the key sent to Pursae Manager
 	"wpgo_hub_trust_keys":           true, // packages signed by the Hub install without extra setup
 	"wpgo_cache_enabled":            true,

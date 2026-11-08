@@ -152,6 +152,15 @@ Everything is configured with environment variables.
 | `WPGO_MAIL_FROM` | — | Sender address |
 | `WPGO_MAIL_DIR` | `mail/` next to uploads | Where `.eml` files go when SMTP is off |
 
+**Pursae Manager.** Every Pursae install talks to `https://hub.pursae.com` (marketplace, licenses,
+release checks and self-update, and the site statistics: daily ping with version and inventory, usage
+events; always on). There is no variable or option to change it in a production binary, and the
+Pursae release root key is pinned in it: only Manager keys endorsed by that root verify core updates
+and Manager-signed plugins. Development builds (`go run -tags devhub`, `make dev`, the development
+compose file with `GO_TAGS=devhub`) read `WPGO_DEV_HUB_URL` and `WPGO_TRUST_HUB_KEYS` below to test
+against a local Manager. The `ROOT_KEYS` build arg (`-ldflags -X wpgo/internal/server.rootKeysLinked=…`)
+adds release roots for a key rotation; it never removes the pinned one.
+
 **Themes and plugins**
 
 | Variable | Default | Purpose |
@@ -160,8 +169,8 @@ Everything is configured with environment variables.
 | `WPGO_DISALLOW_FILE_EDIT` | off | Set to make the Theme File Editor read-only |
 | `WPGO_PLUGIN_KEYS` | — | Comma-separated Ed25519 public keys trusted to sign plugin packages |
 | `WPGO_MARKET_DIR` | — | Local plugin packages offered on Plugins › Add Plugin (besides the Hub catalog) |
-| `WPGO_HUB_URL` | `https://hub.wordpressgo.dev` | Pursae Manager: marketplace, licenses, release checks and self-update, and the site statistics (daily ping with version and inventory, usage events; always on). `off` disables it |
-| `WPGO_TRUST_HUB_KEYS` | `1` in compose | Builds without a pinned release root key (`ROOT_KEYS` build arg / `-ldflags -X wpgo/internal/server.rootKeysLinked=…`) refuse core self-updates; `1` trusts the keys Pursae Manager lists instead (**development only**) |
+| `WPGO_DEV_HUB_URL` | `http://host.docker.internal:8090` in compose | **Development builds only** (`-tags devhub`): the Pursae Manager to use instead of `https://hub.pursae.com` (`off` disables it). Production binaries ignore it |
+| `WPGO_TRUST_HUB_KEYS` | `1` in compose | **Development builds only** (`-tags devhub`): `1` trusts every signing key the Manager lists, endorsed by the release root or not (a local Manager's key). Production binaries ignore it |
 | `WPGO_TRUST_DEV_KEY` | `1` in compose | Trust the demo signing key of the bundled example plugins (**development only**) |
 | `WPGO_EXPOSE_USERS` | unset | `1` lets visitors list accounts (REST users, `/?author=N`, users sitemap) |
 | `WPGO_TRUSTED_PROXIES` | loopback and private ranges | Proxies whose `X-Forwarded-For` is believed; `none` trusts none |

@@ -23,6 +23,8 @@ services:
       dockerfile: docker/Dockerfile
       args:
         VERSION: ${WPGO_VERSION:-}
+        # Development build: the Manager URL and key trust below are read only by -tags devhub binaries.
+        GO_TAGS: ${WPGO_GO_TAGS:-devhub}
     depends_on:
       db:
         condition: service_healthy
@@ -32,13 +34,16 @@ services:
       WPGO_UPLOADS_DIR: /data/uploads
       # Demo only: trust the development signing key of the bundled example plugins.
       WPGO_TRUST_DEV_KEY: ${WPGO_TRUST_DEV_KEY:-1}
-      # The Pursae Hub (marketplace, release checks); "off" disables it.
-      WPGO_HUB_URL: ${WPGO_HUB_URL:-https://hub.wordpressgo.dev}
+      # Development only (devhub builds): the Pursae Manager to use instead of https://hub.pursae.com,
+      # by default the local one (pursae-manager on :8090); "off" disables it.
+      WPGO_DEV_HUB_URL: ${WPGO_DEV_HUB_URL:-http://host.docker.internal:8090}
       # Proxies whose X-Forwarded-For is believed (empty: loopback and private networks; "none": nobody).
       WPGO_TRUSTED_PROXIES: ${WPGO_TRUSTED_PROXIES:-}
-      # Development only: without a pinned release root key (ROOT_KEYS build arg), trust the keys the
-      # Manager lists for core self-updates (internal/server/hub_trust.go).
+      # Development only (devhub builds): trust every key the Manager lists, endorsed by the release
+      # root or not, so a local Manager's throwaway key verifies updates (internal/server/hub_trust.go).
       WPGO_TRUST_HUB_KEYS: ${WPGO_TRUST_HUB_KEYS:-1}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "${WPGO_PORT:-8088}:8080"
     # A core update that does not start is rolled back on the next start (internal/coreupdate).

@@ -98,12 +98,11 @@ type hubList struct {
 	Items []hubItem `json:"items"`
 }
 
-// hubBase is the Hub's URL: the wpgo_hub_url setting, else WPGO_HUB_URL. "off" (or empty) disables it.
+// hubBase is Pursae Manager's URL: config.DefaultHubURL (https://hub.pursae.com) in every
+// production build; no option or environment variable changes it. A development build
+// (-tags devhub) may set WPGO_DEV_HUB_URL, and tests set cfg.HubURL; "off" (or empty) disables it.
 func (s *Server) hubBase() string {
-	u := strings.TrimSpace(s.settings.String("wpgo_hub_url"))
-	if u == "" {
-		u = s.cfg.HubURL
-	}
+	u := strings.TrimSpace(s.cfg.HubURL)
 	switch strings.ToLower(u) {
 	case "", "off", "none", "0", "false":
 		return ""
@@ -111,6 +110,8 @@ func (s *Server) hubBase() string {
 	return strings.TrimRight(u, "/")
 }
 
+// errHubOff: only a devhub build (WPGO_DEV_HUB_URL=off) or a test has no Manager; the message keeps
+// its translated wording.
 var errHubOff = errors.New("Pursae Manager is switched off (WPGO_HUB_URL)")
 
 func (s *Server) hubClient() *http.Client {

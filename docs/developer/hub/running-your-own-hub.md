@@ -5,8 +5,10 @@ weight: 40
 section: hub
 ---
 
-Run a private Hub when you distribute internal plugins and themes, want an internal update
-channel, or do not want sites to contact the public Hub at all.
+Production Pursae binaries always talk to `https://hub.pursae.com`; they cannot be pointed at
+another Hub. Run your own Manager to develop and test packages and releases against development
+builds (`-tags devhub`), or as the Hub of a fork that builds its own binaries (with its own
+`config.DefaultHubURL` and release root key).
 
 ## Deploy
 
@@ -44,10 +46,13 @@ re-signed with it, and sites add it to their trusted keys from `GET /api/v1/inde
 
 ## Connect sites
 
-On each site set `WPGO_HUB_URL=https://hub.internal.example.com` (or the `wpgo_hub_url` option).
-The site then reads your catalog on Plugins › Add Plugin and Appearance › Add Theme, trusts your
-keys, shows your releases on Dashboard › Updates and pings your Hub once a day. An empty
-`WPGO_HUB_URL` disconnects a site from every Hub.
+Only a development build connects to another Hub: build it with `-tags devhub` (`make dev`, or the
+development compose file, which sets `GO_TAGS=devhub`) and set
+`WPGO_DEV_HUB_URL=http://localhost:8090` (the compose default is `http://host.docker.internal:8090`).
+Set `WPGO_TRUST_HUB_KEYS=1` too, since your Manager's key is not endorsed by the Pursae release
+root. The site then reads your catalog on Plugins › Add Plugin and Appearance › Add Theme, trusts
+your keys, shows your releases on Dashboard › Updates and pings your Hub once a day.
+`WPGO_DEV_HUB_URL=off` disconnects it from every Hub. Production binaries ignore both variables.
 
 ## Publishing a core release
 

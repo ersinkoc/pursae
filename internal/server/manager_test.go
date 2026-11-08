@@ -27,9 +27,7 @@ func managerSite(t *testing.T) (base string, c *http.Client, srv *Server, hub *f
 	ts, c, srv := testServerBuilderOff(t)
 	installAndLogin(t, ts, c)
 	hub = fakeHub(t)
-	if err := srv.settings.Set(context.Background(), map[string]any{"wpgo_hub_url": hub.URL}); err != nil {
-		t.Fatal(err)
-	}
+	srv.cfg.HubURL = hub.URL // the Manager URL is fixed in production builds
 	return ts.URL, c, srv, hub
 }
 
@@ -227,7 +225,7 @@ func TestHubEventsBatching(t *testing.T) {
 		t.Errorf("backlog %d, want %d", n, hubEventsBacklog)
 	}
 	// Switched off: dropped.
-	srv.settings.Set(ctx, map[string]any{"wpgo_hub_url": "off"})
+	srv.cfg.HubURL = "off"
 	srv.hubEvent("theme_preview", "theme", "wpgo-fixture", "1.0.0")
 	srv.hubFlushEvents(ctx)
 	if n := len(srv.hubQueuedEvents()); n != 0 {
@@ -413,8 +411,8 @@ func TestCoreArtifactInstall(t *testing.T) {
 }
 
 func TestCoreSelfUpdate(t *testing.T) {
-	withRootKeys(t)                      // a development build: no pinned release key …
-	t.Setenv("WPGO_TRUST_HUB_KEYS", "1") // … with the opt-in to the Manager's keys (hub_trust.go)
+	withRootKeys(t)           // a development build: no pinned release key …
+	withTrustHubKeys(t, true) // … with the opt-in to the Manager's keys (hub_trust.go)
 	base, c, srv, hub := managerSite(t)
 	ctx := context.Background()
 	pub, priv, _ := ed25519.GenerateKey(rand.Reader)

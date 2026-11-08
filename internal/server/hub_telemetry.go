@@ -16,7 +16,7 @@ import (
 
 // Statistics for Pursae Manager (pursae-manager/API.md, "POST /api/v1/sites/ping (extended)" and
 // "POST /api/v1/sites/events"). They are always on: the owner decided there is no opt-out; only a
-// site without a Manager (WPGO_HUB_URL=off) sends nothing.
+// site without a Manager (a devhub build with WPGO_DEV_HUB_URL=off, or a test) sends nothing.
 //
 // The daily ping carries the site's URL, version, locale, OS and architecture, license key, active
 // theme and its plugin and theme inventory. Events (a plugin installed, a theme previewed, a demo

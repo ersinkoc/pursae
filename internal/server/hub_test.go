@@ -167,9 +167,7 @@ func TestHubMarketplaceAndUpdates(t *testing.T) {
 	hub := fakeHub(t)
 	pings := &hub.pings
 	ctx := context.Background()
-	if err := srv.settings.Set(ctx, map[string]any{"wpgo_hub_url": hub.URL}); err != nil {
-		t.Fatal(err)
-	}
+	srv.cfg.HubURL = hub.URL // the Manager URL is fixed in production builds
 
 	// Plugins › Add Plugin lists the marketplace.
 	_, body, _ := get(t, c, base+"/wp-admin/plugin-install")
@@ -244,7 +242,7 @@ func TestHubMarketplaceAndUpdates(t *testing.T) {
 	}
 
 	// Switched off: no marketplace, no update notice.
-	srv.settings.Set(ctx, map[string]any{"wpgo_hub_url": "off"})
+	srv.cfg.HubURL = "off"
 	_, body, _ = get(t, c, base+"/wp-admin/update-core?force-check=1")
 	if !strings.Contains(body, "Update checks are off") {
 		t.Error("update-core does not say the Hub is off")

@@ -4,7 +4,7 @@ COMPOSE = docker compose -f docker/compose.yaml
 
 ## dev: run Postgres in Docker and the app locally, reading templates from ./web
 dev: db
-	WPGO_WEB_DIR=web go run ./cmd/wpgo serve
+	WPGO_WEB_DIR=web go run -tags devhub ./cmd/wpgo serve
 
 db:
 	$(COMPOSE) up -d db
