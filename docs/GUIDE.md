@@ -25,8 +25,8 @@ The fastest way to try Pursae on your own machine. You only need **Docker** (Doc
 macOS/Windows, Docker Engine + Compose v2 on Linux) and **git**.
 
 ```sh
-git clone https://github.com/pursae/pursae-dev.git
-cd pursae-dev
+git clone https://github.com/pursae/pursae.git
+cd pursae
 make docker-up
 ```
 

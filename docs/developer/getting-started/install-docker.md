@@ -14,8 +14,8 @@ The production build talks to `https://hub.pursae.com`, so core updates are one 
 Dashboard › Updates. Settings go in `docker/.env` (git-ignored):
 
 ```bash
-git clone https://github.com/pursae/pursae-dev.git
-cd pursae-dev
+git clone https://github.com/pursae/pursae.git
+cd pursae
 cp docker/.env.example docker/.env   # set WPGO_DB_PASSWORD, WPGO_SITE_URL (https://…), WPGO_SMTP_*, WPGO_MAIL_FROM
 make prod-up                         # site on 127.0.0.1:8088; point Caddy or nginx at it
 ```
@@ -30,8 +30,8 @@ What the production file changes: [Docker](../operations/docker.md#production-ch
 ## On your machine
 
 ```bash
-git clone https://github.com/pursae/pursae-dev.git
-cd pursae-dev
+git clone https://github.com/pursae/pursae.git
+cd pursae
 make docker-up
 ```
 

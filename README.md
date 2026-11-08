@@ -19,6 +19,7 @@ One binary · PostgreSQL · the admin you already know · 16 built-in plugins.</
   <a href="#-quick-start">Quick start</a> ·
   <a href="#-tour">Tour</a> ·
   <a href="#-built-in-plugins">Plugins</a> ·
+  <a href="#-what-pursae-sends-to-hubpursaecom">Privacy</a> ·
   <a href="docs/GUIDE.md">Full guide</a> ·
   <a href="docs/developer/README.md">Developer docs</a>
 </p>
@@ -34,7 +35,7 @@ You need Docker (with Compose v2), git and make.
 **On a server** (production build, updates from hub.pursae.com, behind your TLS proxy):
 
 ```sh
-git clone https://github.com/pursae/pursae-dev.git && cd pursae-dev
+git clone https://github.com/pursae/pursae.git && cd pursae
 cp docker/.env.example docker/.env    # set WPGO_DB_PASSWORD, WPGO_SITE_URL (https://…), SMTP
 make prod-up                          # → 127.0.0.1:8088; point Caddy or nginx at it
 ```
@@ -229,6 +230,37 @@ Native, off on a fresh install, one click under **Plugins**. Click a row to open
 <td width="50%"><img src="docs/readme/backup.webp" alt="Backup Manager"><p align="center"><a href="docs/backup-manager-features.md">Backup Manager →</a></p></td>
 </tr></table>
 </details>
+
+## 🔒 What Pursae sends to hub.pursae.com
+
+Every production build talks to **Pursae Manager at https://hub.pursae.com**. It is how a site gets
+updates, the theme and plugin marketplace and licenses. Here is everything it sends, plainly:
+
+| When | What |
+|------|------|
+| Once a day (and a minute after a core update) | the site's URL, Pursae version, language, OS and CPU architecture, license key (if you entered one), active theme, and the list of installed plugins and themes with their versions, whether they are active, and where they came from (built in, from the Hub, uploaded) |
+| As it happens (sent in batches) | what was done with packages: a plugin installed, updated, activated, deactivated or deleted; a theme installed, updated, activated, previewed or deleted; a demo imported; the core updated — each with the slug, version and time |
+| On every request to the Hub | the site's URL and license key as headers; the Hub also sees the server's IP address, as any web server does |
+
+The Hub uses this for the numbers you see on it (theme and plugin download and install counts, which
+versions sites run) and to decide what a license unlocks. **It never receives your content, users,
+e-mail addresses, passwords, visitors, orders or anything else from your database.**
+
+What a site gets back:
+
+- **Updates**: the newest Pursae release, offered under **Dashboard › Updates** and installed with
+  one click. Every core binary is signed by the Hub with a key endorsed by the Pursae release key
+  built into your binary; the site refuses anything else.
+- **Plugins**: Wasm plugins from the marketplace, each signed; by default a site installs only
+  packages whose signature it can verify.
+- **Themes**: the theme library with demo content, checked against their SHA-256.
+- **Licenses** for pro and beta packages, and the product logo.
+
+**Turning it off.** Release binaries always use hub.pursae.com. Pursae is open source (GPL), so you
+can build it without the Hub: `go build -tags devhub ./cmd/wpgo` and run it with
+`WPGO_DEV_HUB_URL=off`; such a site sends nothing. **We do not recommend it**: the site then gets no
+update notices or one-click updates — security fixes included —, no marketplace, no signed plugins
+and no licenses, and you have to replace the binary yourself for every release.
 
 ## 🛠️ Build on it
 

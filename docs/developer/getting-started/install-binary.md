@@ -11,8 +11,8 @@ the configured user can create tables in.
 ## Build
 
 ```bash
-git clone https://github.com/pursae/pursae-dev.git
-cd pursae-dev
+git clone https://github.com/pursae/pursae.git
+cd pursae
 make build                # writes bin/wpgo
 ```
 
