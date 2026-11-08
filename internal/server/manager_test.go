@@ -10,6 +10,7 @@ import (
 	"encoding/hex"
 	"html"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -478,6 +479,40 @@ func TestCoreSelfUpdate(t *testing.T) {
 	}
 	if b, _ := os.ReadFile(target); string(b) != "old binary" {
 		t.Error("a tampered binary replaced the executable")
+	}
+
+	// An imported release: the Manager redirects to the GitHub asset; the site follows, verifies
+	// and installs it, and its license and site headers stay with the Manager.
+	var assetHeaders http.Header
+	assetBin := bin
+	gh := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assetHeaders = r.Header.Clone()
+		w.Write(assetBin)
+	}))
+	t.Cleanup(gh.Close)
+	hub.mu.Lock()
+	hub.coreBin, hub.coreAt = nil, gh.URL+"/pursae/pursae/releases/download/v9.9.9/pursae-"+runtime.GOOS+"-"+runtime.GOARCH
+	hub.mu.Unlock()
+	code, body, _ = post(t, c, base+"/wp-admin/update-core?action=do-core-upgrade", url.Values{"_wpnonce": {nonce}})
+	if code != http.StatusOK || !strings.Contains(body, "Updated to Pursae 9.9.9, restarting") {
+		t.Fatalf("core update through a redirect: %d %s", code, body)
+	}
+	<-restarted
+	if b, _ := os.ReadFile(target); !bytes.Equal(b, bin) {
+		t.Error("the redirected download was not installed")
+	}
+	if assetHeaders == nil || assetHeaders.Get("X-Pursae-License") != "" || assetHeaders.Get("X-Pursae-Site") != "" {
+		t.Errorf("the asset host got the site's credentials: %v", assetHeaders)
+	}
+	// … and a file replaced on GitHub after the import is refused.
+	os.WriteFile(target, []byte("old binary"), 0o755)
+	assetBin = []byte("\x7fELF pursae 6.6.6")
+	_, _, loc = post(t, c, base+"/wp-admin/update-core?action=do-core-upgrade", url.Values{"_wpnonce": {nonce}})
+	if !strings.Contains(loc, "error=") || !strings.Contains(loc, "SHA-256") {
+		t.Errorf("replaced GitHub asset: %s", loc)
+	}
+	if b, _ := os.ReadFile(target); string(b) != "old binary" {
+		t.Error("a replaced GitHub asset was installed")
 	}
 }
 

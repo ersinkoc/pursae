@@ -60,6 +60,13 @@ func TestHubBrandLogo(t *testing.T) {
 	if !strings.HasPrefix(shipped, "\x89PNG") {
 		t.Fatal("the shipped logo is not served")
 	}
+	// Browsers must not keep the shipped logo longer than a Hub logo, which replaces it at the
+	// same URL.
+	for _, p := range []string{"/wp-includes/images/brand/logo-64.png", "/favicon.ico"} {
+		if resp, err := c.Head(base + p); err != nil || resp.Header.Get("Cache-Control") != "public, max-age=3600" {
+			t.Errorf("%s: Cache-Control %q, want public, max-age=3600", p, resp.Header.Get("Cache-Control"))
+		}
+	}
 	srv.hubRefresh(ctx)
 	for _, p := range []string{"/wp-includes/images/brand/logo-64.png", "/wp-includes/images/brand/logo-192.png", "/favicon.ico"} {
 		resp, err := c.Get(base + p)

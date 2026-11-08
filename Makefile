@@ -2,7 +2,7 @@ COMPOSE = docker compose -f docker/compose.yaml
 # Production: the development file plus compose.prod.yaml, settings from docker/.env (see docker/.env.example).
 PROD = docker compose $(if $(wildcard docker/.env),--env-file docker/.env) -f docker/compose.yaml -f docker/compose.prod.yaml
 
-.PHONY: dev db test docker-up docker-down prod-up prod-down prod-logs docker-test build publish-themes builder builder-watch builder-test builder-parity builder-bump
+.PHONY: dev db test docker-up docker-down prod-up prod-down prod-logs docker-test build publish-themes builder builder-watch builder-test builder-parity builder-bump release
 
 ## dev: run Postgres in Docker and the app locally, reading templates from ./web
 dev: db
@@ -36,6 +36,12 @@ prod-down:
 
 prod-logs:
 	$(PROD) logs -f wpgo
+
+## release: build every platform and publish GitHub release v$(VERSION) for Pursae Manager to import
+## (tools/release.sh). BETA=1 marks a pre-release, DRY_RUN=1 only builds into dist/release.
+release:
+	@test -n "$(VERSION)" || { echo "usage: make release VERSION=0.2.0 [BETA=1] [DRY_RUN=1]"; exit 2; }
+	tools/release.sh $(VERSION) $(if $(BETA),--beta) $(if $(DRY_RUN),--dry-run)
 
 ## docker-test: run the whole test suite inside a Go container next to Postgres
 docker-test:

@@ -391,6 +391,10 @@ func (s *Server) static(r *gin.Engine, prefix, dir string, guards ...gin.Handler
 		if o, ok := s.overlay(); ok && o.overridden(dir+c.Param("filepath")) {
 			edited = true
 			c.Header("Cache-Control", "no-cache") // edited in the Theme File Editor: revalidate (Last-Modified)
+		} else if dir == "wp-includes" && strings.HasPrefix(c.Param("filepath"), brandDir) {
+			// The shipped logo: a Hub logo replaces it at the same URL (brand.go), so browsers may
+			// keep it only as long as the Hub's own (serveBrandOverride).
+			c.Header("Cache-Control", "public, max-age=3600")
 		} else if s.cfg.WebDir == "" {
 			c.Header("Cache-Control", "public, max-age=604800")
 		}

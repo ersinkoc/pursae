@@ -9,3 +9,4 @@ builder/.work
 builder/.cache
 builder/test-results
 docker/.env
+dist/

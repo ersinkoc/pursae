@@ -37,6 +37,7 @@ type fakeManager struct {
 	keys     []map[string]string
 	core     map[string]any
 	coreBin  []byte
+	coreAt   string // when set, core downloads redirect here (a GitHub release asset)
 	access   string
 	channel  string
 	validKey string
@@ -97,6 +98,8 @@ func (m *fakeManager) serve(w http.ResponseWriter, r *http.Request) {
 		}
 		w.Header().Set("Content-Type", "application/zip")
 		w.Write(zip)
+	case strings.HasPrefix(r.URL.Path, "/api/v1/core/") && m.coreAt != "":
+		http.Redirect(w, r, m.coreAt, http.StatusFound)
 	case strings.HasPrefix(r.URL.Path, "/api/v1/core/"):
 		w.Header().Set("Content-Type", "application/octet-stream")
 		w.Write(m.coreBin)

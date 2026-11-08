@@ -16,6 +16,7 @@ Start here when writing a theme or a plugin:
 | A built-in plugin (what it does, what it leaves out) | `built-in-plugins/index.md` is generated: the sources are `../<name>-features.md` (`goocommerce`, `seo-go`, `acf-go`, `headlessgo`, `gocdn`, `gontact-form`, `golylang`, `adminsecgo`, `gooike`, `maintenance-go`, `wpgo-mail-smtp`); edit them there, `make sync-docs` publishes them |
 | REST clients / plugin routes | `rest-api/*.md` |
 | Running a site | `getting-started/*.md`, `operations/*.md` |
+| Shipping a core version | `operations/releases.md` (`make release`, then Manager › Core › Import) |
 | AI agents / MCP | `operations/ai-mcp.md`, `rest-api/authentication.md` (scopes), `rest-api/endpoints.md` (`pursae/v1`) |
 
 Working examples: `examples/plugins/` and `examples/themes/`. Page format (front matter, sections):

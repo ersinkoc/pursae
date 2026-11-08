@@ -47,7 +47,7 @@ offered only to sites whose license includes the beta channel. Back up first, as
 
 Release builds are static and set the version:
 `CGO_ENABLED=0 go build -buildmode=exe -tags nodynamic -ldflags "-X wpgo/internal/server.Version=0.2.0" ./cmd/wpgo`
-(`make build` and Manager's Rebuild do this). Static matters: Go's default Linux build asks for the
+(`make build` and `make release` do this; see [publishing a release](../operations/releases.md)). Static matters: Go's default Linux build asks for the
 build host's ELF interpreter, and `nodynamic` keeps the AVIF decoder off purego, which adds one —
 such a binary built on a glibc machine does not start in the Alpine image.
 
