@@ -150,8 +150,9 @@ func WaitHealthy(ctx context.Context, url string) bool {
 
 // Launch picks the binary to run in a container and execs it with args (it returns only on
 // error). image is the binary shipped in the image, dir a persistent, writable directory. The
-// image binary is installed into dir when dir has none or an older version; an installed binary
-// that is newer (an update made from the admin) is kept.
+// image binary is installed into dir when dir has none, an older version, or the same version
+// with different bytes (a rebuilt image); an installed binary that is newer (an update made from
+// the admin) is kept.
 func Launch(image, dir string, args []string) error {
 	target := image
 	if dir != "" {
@@ -159,10 +160,16 @@ func Launch(image, dir string, args []string) error {
 			installed := filepath.Join(dir, filepath.Base(image))
 			iv, cv := binaryVersion(image), binaryVersion(installed)
 			switch {
-			case cv == "" || Less(cv, iv):
+			// A rebuilt image with the same version (development builds all report the same one)
+			// also wins when its binary differs: an admin update always installs a newer version,
+			// so an equal version with other bytes can only be a stale copy of an older image.
+			case cv == "" || Less(cv, iv) || (cv == iv && !sameContent(image, installed)):
 				if err := copyFile(image, installed+".new"); err == nil && os.Rename(installed+".new", installed) == nil {
 					target = installed
-					if cv != "" {
+					switch {
+					case cv == iv:
+						fmt.Fprintf(os.Stderr, "pursae: the image has a different %s build than the installed one; using the image's\n", iv)
+					case cv != "":
 						fmt.Fprintf(os.Stderr, "pursae: the image has %s, newer than the installed %s; using the image's\n", iv, cv)
 					}
 				}
@@ -172,6 +179,40 @@ func Launch(image, dir string, args []string) error {
 		}
 	}
 	return execFn(target, append([]string{target}, args...), os.Environ())
+}
+
+// sameContent reports whether two files have the same bytes (size first, then a streamed compare).
+// Any error counts as different, so the caller reinstalls the image's binary.
+func sameContent(a, b string) bool {
+	fa, err := os.Open(a)
+	if err != nil {
+		return false
+	}
+	defer fa.Close()
+	fb, err := os.Open(b)
+	if err != nil {
+		return false
+	}
+	defer fb.Close()
+	sa, errA := fa.Stat()
+	sb, errB := fb.Stat()
+	if errA != nil || errB != nil || sa.Size() != sb.Size() {
+		return false
+	}
+	bufA, bufB := make([]byte, 1<<20), make([]byte, 1<<20)
+	for {
+		na, errA := io.ReadFull(fa, bufA)
+		nb, errB := io.ReadFull(fb, bufB)
+		if na != nb || string(bufA[:na]) != string(bufB[:nb]) {
+			return false
+		}
+		if errA == io.EOF || errA == io.ErrUnexpectedEOF {
+			return errB == errA
+		}
+		if errA != nil || errB != nil {
+			return false
+		}
+	}
 }
 
 // binaryVersion runs `<bin> version` ("Pursae 0.3.1") and returns the version, or "".

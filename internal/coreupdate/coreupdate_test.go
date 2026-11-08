@@ -105,6 +105,20 @@ func TestLaunchPicksTheNewerBinary(t *testing.T) {
 	if binaryVersion(installed) != "0.4.0" {
 		t.Fatal("the newer image was not installed")
 	}
+	// A rebuilt image with the same version but other bytes replaces the stale installed copy.
+	if err := os.WriteFile(image, []byte("#!/bin/sh\necho Pursae 0.4.0\n# rebuilt\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	Launch(image, data, nil)
+	if !sameContent(image, installed) {
+		t.Fatal("a rebuilt image with the same version did not replace the installed binary")
+	}
+	// The same image again: nothing to copy, the installed binary keeps running.
+	*execs = nil
+	Launch(image, data, nil)
+	if (*execs)[0] != installed || !sameContent(image, installed) {
+		t.Fatalf("same image restart: %v", *execs)
+	}
 	// No persistent directory: the image's binary runs.
 	*execs = nil
 	Launch(image, "", nil)

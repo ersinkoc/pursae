@@ -54,7 +54,9 @@ such a binary built on a glibc machine does not start in the Alpine image.
 The image starts with `wpgo launch`: it installs its binary into the `bin` volume (`/data/bin`,
 `WPGO_BIN_DIR`) and runs it from there, so an update made from Dashboard › Updates replaces that
 copy and survives container restarts. A newer image wins: when the image's binary reports a higher
-version than the installed one, `launch` installs the image's.
+version than the installed one, `launch` installs the image's. A rebuilt image that reports the
+same version (development builds without `VERSION`) also wins when its binary differs from the
+installed copy; an installed binary with a higher version (an admin update) is kept.
 
 ```bash
 git pull
