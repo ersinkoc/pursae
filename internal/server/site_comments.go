@@ -14,6 +14,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"wpgo/internal/i18n"
 	"wpgo/internal/links"
 	"wpgo/internal/store"
 	"wpgo/internal/wp"
@@ -139,7 +140,7 @@ func (s *Server) commentsView(c *gin.Context, p *store.Post, lb *links.Builder, 
 			if perPage > 0 {
 				listPage = page
 			}
-			s.listComments(&sb, tree, p, lb, u, depth, &counter, listPage)
+			s.listComments(&sb, tree, p, lb, u, depth, &counter, listPage, s.pllUCOn(c))
 			cv.List = template.HTML(sb.String())
 			cv.Nav = s.commentsNavigation(p, lb, page, maxPage)
 		}
@@ -227,7 +228,8 @@ func (s *Server) pageOfComment(ctx context.Context, cm *store.Comment) int {
 
 // listComments is wp_list_comments() with the html5 comment markup (avatar size 42).
 // cpage is the comment page being shown (0 when comments are not paged).
-func (s *Server) listComments(sb *strings.Builder, list []*store.Comment, p *store.Post, lb *links.Builder, u *store.User, maxDepth int, counter *int, cpage int) {
+// uc marks each comment body as user content (Pursae Multi Language, golylang_uc.go).
+func (s *Server) listComments(sb *strings.Builder, list []*store.Comment, p *store.Post, lb *links.Builder, u *store.User, maxDepth int, counter *int, cpage int, uc bool) {
 	loc := s.loc()
 	permalink := lb.Permalink(p)
 	for _, cm := range list {
@@ -254,6 +256,9 @@ func (s *Server) listComments(sb *strings.Builder, list []*store.Comment, p *sto
 			name = "Anonymous"
 		}
 		author := html.EscapeString(name)
+		if uc { // commenter names are user content (Pursae Multi Language)
+			author = i18n.UCOpen + author + i18n.UCClose
+		}
 		// Stored URLs are re-checked here: rows written before the check, or by other paths, must not become script links.
 		if link := commentAuthorURL(cm.AuthorURL); link != "" {
 			author = fmt.Sprintf(`<a href="%s" class="url" rel="ugc external nofollow">%s</a>`, html.EscapeString(link), author)
@@ -277,7 +282,11 @@ func (s *Server) listComments(sb *strings.Builder, list []*store.Comment, p *sto
 			sb.WriteString("											<em class=\"comment-awaiting-moderation\">Your comment is awaiting moderation.</em>\n")
 		}
 		sb.WriteString("									</footer><!-- .comment-meta -->\n\n				<div class=\"comment-content\">\n")
-		sb.WriteString(s.convertSmilies(lb, commentText(cm.Content)))
+		if uc {
+			sb.WriteString(i18n.UCOpen + s.convertSmilies(lb, commentText(cm.Content)) + i18n.UCClose)
+		} else {
+			sb.WriteString(s.convertSmilies(lb, commentText(cm.Content)))
+		}
 		sb.WriteString("				</div><!-- .comment-content -->\n\n")
 		if s.commentsOpen(p) && cm.Status == "approved" && maxDepth > 1 && cm.Depth < maxDepth {
 			replyURL := permalink + previewSep(permalink) + "replytocom=" + itoa64(cm.ID) + "#respond"
@@ -287,7 +296,7 @@ func (s *Server) listComments(sb *strings.Builder, list []*store.Comment, p *sto
 		sb.WriteString("			</article><!-- .comment-body -->\n")
 		if len(cm.Children) > 0 {
 			sb.WriteString("<ol class=\"children\">\n")
-			s.listComments(sb, cm.Children, p, lb, u, maxDepth, counter, cpage)
+			s.listComments(sb, cm.Children, p, lb, u, maxDepth, counter, cpage, uc)
 			sb.WriteString("</ol><!-- .children -->\n")
 		}
 		sb.WriteString("</li><!-- #comment-## -->\n")

@@ -66,3 +66,15 @@ func TestHostFunctionsOutsideHost(t *testing.T) {
 		t.Fatal("IsPermissionDenied")
 	}
 }
+
+func TestTranslateOutsideHost(t *testing.T) {
+	if got := T("Read more"); got != "Read more" {
+		t.Fatalf("T = %q", got)
+	}
+	if got := X("Post", "noun"); got != "Post" {
+		t.Fatalf("X = %q", got)
+	}
+	if got := T(""); got != "" {
+		t.Fatalf("T empty = %q", got)
+	}
+}

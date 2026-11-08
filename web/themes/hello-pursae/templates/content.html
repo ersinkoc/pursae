@@ -30,10 +30,10 @@
 {{end}}
 
 {{define "content-none"}}<section class="no-results not-found">
-	<header class="page-header"><h1 class="entry-title">Nothing Found</h1></header>
+	<header class="page-header"><h1 class="entry-title">{{__ . "Nothing Found"}}</h1></header>
 	<div class="page-content">
 		{{if and (eq .Q.Kind "home") .CanPublish}}<p>Ready to publish your first post? <a href="/wp-admin/post-new">Get started here</a>.</p>
-		{{else if eq .Q.Kind "search"}}<p>Sorry, but nothing matched your search terms. Please try again with some different keywords.</p>{{template "searchform" .}}
+		{{else if eq .Q.Kind "search"}}<p>{{__ . "Sorry, but nothing matched your search terms. Please try again with some different keywords."}}</p>{{template "searchform" .}}
 		{{else}}<p>It seems we can&rsquo;t find what you&rsquo;re looking for. Perhaps searching can help.</p>{{template "searchform" .}}{{end}}
 	</div>
 </section>
@@ -42,6 +42,6 @@
 {{define "comments"}}{{with .Comments}}<div id="comments" class="comments-area">
 	{{if .Count}}<h2 class="comments-title">{{.Title}}</h2>
 	{{.Nav}}<ol class="comment-list">{{.List}}</ol>{{.Nav}}{{end}}
-	{{if .ClosedNotice}}<p class="no-comments">Comments are closed.</p>{{end}}
+	{{if .ClosedNotice}}<p class="no-comments">{{__ $ "Comments are closed."}}</p>{{end}}
 	{{.Form}}
 </div>{{end}}{{end}}

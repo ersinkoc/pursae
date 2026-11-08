@@ -46,6 +46,7 @@ func (s *Server) filterContentTags(ctx context.Context, content string) string {
 	if !strings.Contains(content, "<img") {
 		return content
 	}
+	content = s.pllContentMedia(ctx, content) // Pursae Multi Language: alt text and captions of the visitor's language
 	rc := renderFrom(ctx)
 	// The media library images of the content (class wp-image-N) in one query.
 	var ids []int64

@@ -43,7 +43,7 @@ func (s *Server) golylangSwitch(ctx context.Context, on bool) error {
 	return nil
 }
 
-var pllPages = map[string]string{"mlang": "Languages", "mlang_strings": "Strings translations", "mlang_settings": "Settings"}
+var pllPages = map[string]string{"mlang": "Languages", "mlang_strings": "Strings translations", "mlang_settings": "Settings", "mlang_visual": "Translate visually"}
 
 // golylangAdmin serves admin?page=mlang, mlang_strings and mlang_settings; false for other pages.
 func (s *Server) golylangAdmin(c *gin.Context, page string) bool {
@@ -61,6 +61,8 @@ func (s *Server) golylangAdmin(c *gin.Context, page string) bool {
 		s.pllStringsScreen(c)
 	case "mlang_settings":
 		s.pllSettingsScreen(c)
+	case "mlang_visual":
+		s.pllVisualScreen(c) // golylang_visual.go
 	}
 	return true
 }
@@ -452,6 +454,7 @@ type pllSettingsData struct {
 	SyncItems   []pllChoice
 	Nonce       string
 	Module      string
+	MT          pllMTView // Machine translation module (golylang_mt.go)
 }
 
 type pllChoice struct {
@@ -488,6 +491,10 @@ func (s *Server) pllSettingsScreen(c *gin.Context) {
 			o.TranslateSlugs = on
 		case "share-slugs":
 			o.ShareSlugs = on
+		case "machine-translation":
+			o.MT = on
+		case "string-capture":
+			o.StringCapture = on
 		}
 		_ = s.pllSaveOpts(ctx, o)
 		c.Redirect(http.StatusFound, "/wp-admin/admin?page=mlang_settings&settings-updated=true")
@@ -495,7 +502,8 @@ func (s *Server) pllSettingsScreen(c *gin.Context) {
 	}
 	o := s.pllOpts()
 	d := pllSettingsData{Tabs: pllTabs("mlang_settings"), O: o, Langs: s.pllLanguages(ctx), Pretty: s.settings.String("permalink_structure") != "",
-		StaticFront: s.settings.String("show_on_front") == "page" && s.settings.Int("page_on_front") > 0, Nonce: s.nonce(c, "pll-module"), Module: c.Query("module")}
+		StaticFront: s.settings.String("show_on_front") == "page" && s.settings.Int("page_on_front") > 0, Nonce: s.nonce(c, "pll-module"), Module: c.Query("module"),
+		MT: s.pllMTViewFor(c)}
 	d.Modules = []pllModule{
 		{Key: "url", Title: "URL modifications", Description: "Decide how your URLs will look like."},
 		{Key: "browser", Title: "Detect browser language", Toggle: true, Active: o.Browser,
@@ -508,8 +516,10 @@ func (s *Server) pllSettingsScreen(c *gin.Context) {
 			Description: "Allows to translate the category, tag, author and search bases in URLs. The bases are translated in Languages > Translations, group URL slugs."},
 		{Key: "share-slugs", Title: "Share slugs", Pro: true, Toggle: true, Active: o.ShareSlugs,
 			Description: "Allows to share the same URL slug across languages for posts and terms. The language must be set from the URL (directory, subdomain or domain) in URL modifications."},
-		{Key: "machine-translation", Title: "Machine Translation", Pro: true, Description: "Allows linkage to DeepL Translate.",
-			Unavailable: "Not available in Pursae: it needs a DeepL account and sends content to a third-party service."},
+		{Key: "string-capture", Title: "Record strings on pages", Toggle: true, Active: o.StringCapture,
+			Description: "Lists the text of themes, plugins and builder templates found on the pages you visit (as an administrator, or in visual translation) in Languages > Translations, group Page text, so it can be translated. Visitors' page views never record anything."},
+		{Key: "machine-translation", Title: "Machine translation", Pro: true, Toggle: true, Active: o.MT,
+			Description: "Translate strings, posts and pages with DeepL, Google Cloud Translation or an OpenAI-compatible API. Text is sent to the chosen service only when you ask for a translation, never for visitors."},
 	}
 	for i := range d.Modules {
 		d.Modules[i].Open = d.Modules[i].Key == d.Module
@@ -587,6 +597,11 @@ func (s *Server) pllSettingsSave(c *gin.Context) {
 		}
 	case "media":
 		o.MediaDuplicate = c.PostForm("media_duplicate") == "1"
+	case "machine-translation":
+		if msg := s.pllMTSettingsSave(c, &o); msg != "" {
+			c.Redirect(http.StatusFound, "/wp-admin/admin?page=mlang_settings&module=machine-translation&pll_error="+url.QueryEscape(msg))
+			return
+		}
 	case "cpt":
 		o.PostTypes, o.Taxonomies = []string{}, []string{}
 		for _, v := range c.PostFormArray("post_types[]") {
@@ -694,6 +709,9 @@ func (s *Server) golylangPostColumns(c *gin.Context, d *postsListData, posts []*
 		p := posts[i]
 		m := groups[p.ID]
 		own := pllOwnLang(m, p.ID, def)
+		if p.Status == "publish" {
+			d.Rows[i].TranslateURL = s.pllVisualRowAction(c, d.Rows[i].ViewURL, own) // golylang_visual.go
+		}
 		for _, l := range langs {
 			var cell string
 			switch {
@@ -893,6 +911,10 @@ func (s *Server) pllBoxInner(c *gin.Context, p *store.Post) template.HTML {
 	dupOn, _ := dup[p.Type].(bool)
 	fmt.Fprintf(&b, `<p><label><input type="checkbox" id="pll_duplicate_content"%s /> Duplicate content</label><br /><span class="description">Copies the title, the content and the excerpt into new translations.</span></p>`,
 		map[bool]string{true: ` checked="checked"`}[dupOn])
+	if s.pllMTEnabled() {
+		fmt.Fprintf(&b, `<p id="pll-mt-copy-row"%s><label><input type="checkbox" id="pll_mt_copy"%s /> Machine translate the copy</label><br /><span class="description">New translations get the duplicated title, excerpt and content translated by the machine translation service.</span></p>`,
+			map[bool]string{false: ` style="display:none"`}[dupOn], map[bool]string{true: ` checked="checked"`}[pllMTCopyWanted(currentUser(c), p.Type)])
+	}
 	b.WriteString(`<div id="pll-translations"><p><strong>Translations</strong></p><table><tbody>`)
 	nonce := s.nonce(c, "new-post-translation")
 	def := defaultSlug(s.pllDefault(c))
@@ -949,6 +971,10 @@ document.addEventListener('change', function(e){
 		post({action: 'pll_link_translation', post_id: id, lang: t.getAttribute('data-lang'), target: t.value}, function(h){ box.innerHTML = h; });
 	} else if (t.id === 'pll_duplicate_content') {
 		post({action: 'pll_toggle_duplicate', post_id: id, on: t.checked ? '1' : '0'}, function(){});
+		var mt = box.querySelector('#pll-mt-copy-row');
+		if (mt) { mt.style.display = t.checked ? '' : 'none'; }
+	} else if (t.id === 'pll_mt_copy') {
+		post({action: 'pll_toggle_mt', post_id: id, on: t.checked ? '1' : '0'}, function(){});
 	}
 });
 })();
@@ -981,7 +1007,7 @@ func (s *Server) golylangBlockEditor(c *gin.Context, p *store.Post) {
 // golylangAjax answers the Languages box actions.
 func (s *Server) golylangAjax(c *gin.Context, action string) bool {
 	switch action {
-	case "pll_post_lang", "pll_link_translation", "pll_toggle_duplicate":
+	case "pll_post_lang", "pll_link_translation", "pll_toggle_duplicate", "pll_toggle_mt":
 	default:
 		return false
 	}
@@ -1032,6 +1058,16 @@ func (s *Server) golylangAjax(c *gin.Context, action string) bool {
 		_ = s.setUserMeta(c, u, "pll_duplicate_content", dup)
 		c.String(http.StatusOK, "1")
 		return true
+	case "pll_toggle_mt":
+		u := currentUser(c)
+		mt, _ := u.Meta["pll_mt_copy"].(map[string]any)
+		if mt == nil {
+			mt = map[string]any{}
+		}
+		mt[p.Type] = c.PostForm("on") == "1"
+		_ = s.setUserMeta(c, u, "pll_mt_copy", mt)
+		c.String(http.StatusOK, "1")
+		return true
 	}
 	if wbIsTemplate(p) {
 		// A template's language and translation group decide which template wins per language:
@@ -1075,6 +1111,7 @@ func (s *Server) golylangNewPost(c *gin.Context, p *store.Post) {
 	dup, _ := currentUser(c).Meta["pll_duplicate_content"].(map[string]any)
 	duplicate, _ := dup[p.Type].(bool)
 	s.pllCopyForTranslation(c, src, p, l, duplicate)
+	s.pllMTAfterCopy(c, src, p, l, duplicate) // Machine translate the copy (golylang_mt.go)
 }
 
 // Menus ---------------------------------------------------------------------------------------

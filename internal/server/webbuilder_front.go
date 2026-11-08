@@ -164,7 +164,7 @@ func (s *Server) wbRenderPage(c *gin.Context, v *siteView, status int) bool {
 	}
 	filled := s.wbFill(c, v, fp.doc, true)
 	wbAddCacheTags(c, false, filled.loops)
-	out := s.wbCanvas(c, v, fp, filled.html)
+	out := s.wbCanvas(c, v, fp, s.pllUC(c, filled.html, v.Q.Post.ID)) // Multi Language user content (golylang_uc.go)
 	c.Data(status, "text/html; charset=UTF-8", s.asStripVersion(c, s.golylangHTML(c, s.gooikeFilterPage(c, []byte(out)))))
 	return true
 }

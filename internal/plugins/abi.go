@@ -89,6 +89,7 @@ func (rt *Runtime) instantiateHostModule(ctx context.Context) error {
 		{"transient_delete", PermStorage, hostTransientDelete},
 		{"enqueue_style", PermContentFilter, hostEnqueueStyle},
 		{"enqueue_script", PermContentFilter, hostEnqueueScript},
+		{"translate", "", hostTranslate}, // Pursae Multi Language strings (abi_translate.go)
 	}
 	for _, f := range fns {
 		b.NewFunctionBuilder().

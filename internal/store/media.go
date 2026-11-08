@@ -31,6 +31,27 @@ type Attachment struct {
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 	Variants    []AttachmentVariant
+
+	// Base holds the media row's own texts when AttachmentFilter replaced them with a
+	// translation for the request (nil when the texts are the stored ones). UpdateAttachment
+	// writes Base, never the overlaid texts.
+	Base *AttachmentText
+}
+
+// AttachmentText is the translatable text of an attachment.
+type AttachmentText struct {
+	Alt, Title, Caption, Description string
+}
+
+// AttachmentFilter, when set, may overlay per-request texts (Pursae Multi Language: the
+// visitor's language) on attachments just read by GetAttachment, GetAttachments and
+// QueryAttachments. It must set Base before it changes a text and must not run for writes.
+var AttachmentFilter func(ctx context.Context, list []*Attachment)
+
+func filterAttachments(ctx context.Context, list []*Attachment) {
+	if AttachmentFilter != nil && len(list) > 0 {
+		AttachmentFilter(ctx, list)
+	}
 }
 
 type AttachmentVariant struct {
@@ -107,7 +128,11 @@ func (s *Store) GetAttachment(ctx context.Context, id int64) (*Attachment, error
 	if err != nil {
 		return nil, err
 	}
-	return a, s.loadVariants(ctx, []*Attachment{a})
+	if err := s.loadVariants(ctx, []*Attachment{a}); err != nil {
+		return a, err
+	}
+	filterAttachments(ctx, []*Attachment{a})
+	return a, nil
 }
 
 // GetAttachments loads several attachments with their sub-sizes in two queries; missing ids are absent.
@@ -134,7 +159,11 @@ func (s *Store) GetAttachments(ctx context.Context, ids []int64) (map[int64]*Att
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	return out, s.loadVariants(ctx, list)
+	if err := s.loadVariants(ctx, list); err != nil {
+		return out, err
+	}
+	filterAttachments(ctx, list)
+	return out, nil
 }
 
 // InsertAttachment stores an attachment and its sub-sizes.
@@ -165,11 +194,17 @@ func nullInt(n int) any {
 	return n
 }
 
-// UpdateAttachment saves the editable fields (save-attachment / REST media update).
+// UpdateAttachment saves the editable fields (save-attachment / REST media update). An
+// attachment read with translated texts (Base set) saves its base texts: a translation never
+// overwrites the media row.
 func (s *Store) UpdateAttachment(ctx context.Context, a *Attachment) error {
 	meta, _ := json.Marshal(orEmpty(a.Meta))
+	t := AttachmentText{Alt: a.Alt, Title: a.Title, Caption: a.Caption, Description: a.Description}
+	if a.Base != nil {
+		t = *a.Base
+	}
 	_, err := s.Pool.Exec(ctx, `UPDATE media SET post_id=$2, slug=$3, alt_text=$4, title=$5, caption=$6, description=$7,
-		menu_order=$8, meta=$9 WHERE id=$1`, a.ID, nullable(a.PostID), a.Slug, a.Alt, a.Title, a.Caption, a.Description, a.MenuOrder, meta)
+		menu_order=$8, meta=$9 WHERE id=$1`, a.ID, nullable(a.PostID), a.Slug, t.Alt, t.Title, t.Caption, t.Description, a.MenuOrder, meta)
 	return err
 }
 
@@ -285,7 +320,14 @@ func (s *Store) QueryAttachments(ctx context.Context, q AttachmentQuery) ([]*Att
 		list = append(list, a)
 	}
 	rows.Close()
-	return list, total, s.loadVariants(ctx, list)
+	if err := rows.Err(); err != nil {
+		return nil, 0, err
+	}
+	if err := s.loadVariants(ctx, list); err != nil {
+		return list, total, err
+	}
+	filterAttachments(ctx, list)
+	return list, total, nil
 }
 
 // AttachmentMonths lists months that have uploads, newest first.

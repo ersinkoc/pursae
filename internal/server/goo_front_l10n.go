@@ -39,7 +39,7 @@ func (s *Server) gooFrontCatalog(ctx context.Context) *i18n.Catalog {
 }
 
 // gooKeep records user content (a product description, a review) rendered into store markup, so
-// gooL10n leaves it as it is. It returns h unchanged.
+// gooL10n leaves it as it is. It returns h, marked as Multi Language user content (golylang_uc.go).
 func (s *Server) gooKeep(c *gin.Context, h string) string {
 	if c == nil || len(strings.TrimSpace(h)) < 2 {
 		return h
@@ -47,7 +47,7 @@ func (s *Server) gooKeep(c *gin.Context, h string) string {
 	list, _ := c.Get(gooCtxKeep)
 	kept, _ := list.([]string)
 	c.Set(gooCtxKeep, append(kept, h))
-	return h
+	return s.pllUC(c, h, 0) // Pursae Multi Language: user content, never page strings
 }
 
 // gooL10n translates store markup into the front end's language. User content recorded with

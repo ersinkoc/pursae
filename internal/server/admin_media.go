@@ -26,18 +26,23 @@ type mediaRow struct {
 	ParentTitle, ParentURL string
 	Date                   string
 	CanEdit                bool
+	PluginCols             []template.HTML // Pursae Multi Language: one cell per language
 }
 
 type mediaListData struct {
-	Rows       []mediaRow
-	Search     string
-	Filter     string
-	Month      string
-	Months     []monthOption
-	Pagination pagination
-	BulkNonce  string
-	Grid       bool
+	Rows        []mediaRow
+	Search      string
+	Filter      string
+	Month       string
+	Months      []monthOption
+	Pagination  pagination
+	BulkNonce   string
+	Grid        bool
+	PluginHeads []template.HTML // Pursae Multi Language: one column per language
 }
+
+// ColSpan is the column count of the list table (the empty row spans it).
+func (d mediaListData) ColSpan() int { return 6 + len(d.PluginHeads) }
 
 func (s *Server) mediaMode(c *gin.Context) string {
 	u := currentUser(c)
@@ -141,6 +146,7 @@ func (s *Server) mediaLibrary(c *gin.Context) {
 		}
 		d.Rows = append(d.Rows, r)
 	}
+	s.golylangMediaColumns(c, &d, list)
 	d.Pagination = newPagination(total, 20, page, *c.Request.URL)
 	s.adminPage(c, "upload", "Media Library", "upload-php", "admin/media-list", d, notices...)
 }
@@ -213,6 +219,7 @@ type attachmentEditData struct {
 	DeleteURL, ViewURL    string
 	Preview               string
 	IsImage               bool
+	PluginBoxes           template.HTML // Pursae Multi Language: Translations box
 }
 
 // attachmentEdit is post.php?action=edit for an attachment.
@@ -238,6 +245,7 @@ func (s *Server) attachmentEdit(c *gin.Context, a *store.Attachment, notices ...
 	if c.Query("message") == "4" {
 		notices = append(notices, notice{Type: "success", Message: "Media file updated.", Dismissible: true})
 	}
+	d.PluginBoxes = s.golylangMediaBox(c, a)
 	s.pageAssets(c).Script("clipboard", "wp-a11y")
 	s.adminPage(c, "upload", "Edit Media", "post-php post-type-attachment", "admin/attachment-edit", d, notices...)
 }
@@ -260,5 +268,6 @@ func (s *Server) attachmentSave(c *gin.Context, a *store.Attachment) {
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
+	s.golylangMediaSaved(c, a) // pll_i18n[lang][field]
 	c.Redirect(http.StatusFound, "/wp-admin/post?post="+itoa64(a.ID)+"&action=edit&message=4")
 }

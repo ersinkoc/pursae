@@ -11,7 +11,7 @@
 	</li>{{end}}</ul>{{end}}
 	<div class="wp-block-group has-global-padding is-layout-constrained wp-block-group-is-layout-constrained" style="padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--60)">
 		{{if not .Data.Items}}{{if and (eq .Q.Kind "home") .CanPublish}}<p>Ready to publish your first post? <a href="/wp-admin/post-new">Get started here</a>.</p>
-		{{else}}<p>Sorry, but nothing was found. Please try a search with different keywords.</p>{{end}}{{end}}
+		{{else}}<p>{{__ . "Sorry, but nothing was found. Please try a search with different keywords."}}</p>{{end}}{{end}}
 	</div>
 	{{with .Data.Pagination}}<div class="wp-block-group alignwide has-global-padding is-layout-constrained wp-block-group-is-layout-constrained">
 		{{.}}
@@ -22,7 +22,7 @@
 {{/* twentytwentyfive/more-posts */}}
 {{define "more-posts"}}{{with .Data.MorePosts}}
 <div class="wp-block-group alignwide has-global-padding is-layout-constrained wp-block-group-is-layout-constrained" style="padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--60)">
-	<h2 class="wp-block-heading alignwide has-small-font-size" style="font-style:normal;font-weight:700;letter-spacing:1.4px;text-transform:uppercase">More posts</h2>
+	<h2 class="wp-block-heading alignwide has-small-font-size" style="font-style:normal;font-weight:700;letter-spacing:1.4px;text-transform:uppercase">{{__ $ "More posts"}}</h2>
 	<div class="wp-block-query alignwide is-layout-flow wp-block-query-is-layout-flow">
 		<ul class="alignfull wp-block-post-template is-layout-flow wp-container-core-post-template-is-layout-b4d04ffe wp-block-post-template-is-layout-flow">{{.}}</ul>
 	</div>
@@ -32,7 +32,7 @@
 {{/* twentytwentyfive/comments: the comments block around wp_list_comments() and comment_form(). */}}
 {{define "comments"}}{{with .Comments}}
 <div id="comments" class="wp-block-comments wp-block-comments-query-loop" style="margin-top:var(--wp--preset--spacing--70);margin-bottom:var(--wp--preset--spacing--70)">
-	<h2 class="wp-block-heading has-x-large-font-size">Comments</h2>
+	<h2 class="wp-block-heading has-x-large-font-size">{{__ $ "Comments"}}</h2>
 	{{if .Count}}
 	<h3 class="wp-block-comments-title has-large-font-size">{{.Title}}</h3>
 	{{.Nav}}
@@ -40,7 +40,7 @@
 		{{.List}}	</ol>
 	{{.Nav}}
 	{{end}}
-	{{if .ClosedNotice}}<p class="no-comments">Comments are closed.</p>{{end}}
+	{{if .ClosedNotice}}<p class="no-comments">{{__ $ "Comments are closed."}}</p>{{end}}
 	{{with .Form}}<div class="wp-block-post-comments-form">{{.}}</div>{{end}}
 </div>
 {{end}}{{end}}

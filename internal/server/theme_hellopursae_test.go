@@ -22,7 +22,7 @@ import (
 // helloTemplates parses Hello Pursae's templates from the source tree.
 func helloTemplates(t *testing.T) *template.Template {
 	t.Helper()
-	set, err := parseTree(os.DirFS("../../web"), "themes/"+wbHelloSlug+"/templates", template.FuncMap{})
+	set, err := parseTree(os.DirFS("../../web"), "themes/"+wbHelloSlug+"/templates", (&Server{}).pllGettextFuncs()) // __, _x: the msgid without a request
 	if err != nil {
 		t.Fatal(err)
 	}

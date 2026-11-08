@@ -298,7 +298,7 @@ func (r *wbSlotResolver) HTML(slot webbuilder.SlotName, a webbuilder.SlotArgs) (
 			return string(sp.pv.Title), sp.pv.Title != ""
 		}
 		t := theTitle(p)
-		return t, t != ""
+		return e.s.pllUC(e.ctx, t, 0), t != "" // Multi Language user content
 	case webbuilder.SlotPostContent:
 		if sp.main && e.own {
 			return "", false // the page's own doc: its content is this snapshot
@@ -307,7 +307,7 @@ func (r *wbSlotResolver) HTML(slot webbuilder.SlotName, a webbuilder.SlotArgs) (
 		return out, strings.TrimSpace(out) != ""
 	case webbuilder.SlotPostExcerpt:
 		out := wbExcerpt(p, a.Words)
-		return out, out != ""
+		return e.s.pllUC(e.ctx, out, 0), out != "" // Multi Language user content
 	case webbuilder.SlotPostTerms:
 		tax := a.Tax
 		if tax == "" {
@@ -655,7 +655,7 @@ func (sp *wbSlotPost) contentOf(e *wbSlotEnv) string {
 		return string(sp.pv.Content)
 	}
 	if sp.content == nil {
-		out := e.s.theContent(e.ctx, e.c, sp.p, false, e.lb)
+		out := e.s.pllUC(e.ctx, e.s.theContent(e.ctx, e.c, sp.p, false, e.lb), sp.p.ID) // Multi Language user content
 		sp.content = &out
 	}
 	return *sp.content

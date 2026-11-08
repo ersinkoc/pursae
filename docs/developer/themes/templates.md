@@ -134,6 +134,31 @@ Every template receives the same **site view** (`.`):
 | `json v` | encode as JSON inside a `<script>` |
 | `version` | the Pursae version |
 
+### Translatable strings
+
+Write the theme's own fixed text through the gettext functions so multilingual sites can
+translate it. They take the view first (use `$` inside `with` / `range`); an optional last
+argument is the text domain (the theme's slug by default):
+
+| Function | Does |
+|----------|------|
+| `__ . "Skip to content"`, `_e`, `esc_html__`, `esc_attr__` (and `esc_html_e`, `esc_attr_e`) | the string in the visitor's language |
+| `_x . "Search" "submit button"` (and `_ex`, `esc_html_x`, `esc_attr_x`) | the same with a gettext context |
+| `_n . "%d comment" "%d comments" .Count` | the singular or plural form for the number (the placeholder is not filled in) |
+
+With Pursae Multi Language off they return the text unchanged (no language pack lookup, so a
+theme looks the same as with plain English text). With it on, each string is listed on
+**Languages › Translations** under "Theme: *name*" the first time a page uses it, and is
+translated with the site's own translation, then the installed language pack of the language,
+else left as it is. html/template escapes the result for its context, so `esc_html__` and
+`esc_attr__` exist only to keep ported templates readable. Text and textarea Customizer settings
+read with `theme_mod` are translated the same way (listed with the setting id as their name).
+
+Text the theme prints without these functions is still found on the page: with "Record strings on
+pages" on, an administrator's visit lists it under "Page text", and its translation replaces the
+exact text on pages of that language. Post content, titles and comments are never treated as
+strings — translate the posts themselves.
+
 The theme package spec also lists WordPress-named helpers (`wp_head`, `wp_footer`, `body_class`,
 `post_class`, `the_content`, `wp_nav_menu`, `dynamic_sidebar`, `get_template_part`) as aliases of
 the fields and templates above; prefer the fields, which work in every theme.

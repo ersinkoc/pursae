@@ -76,6 +76,8 @@ func (s *Server) pllRESTLanguage(c *gin.Context, l *pllLanguage) map[string]any 
 }
 
 func (s *Server) registerGolylangREST() {
+	s.registerPllMTREST()     // pll/v1/translate (golylang_mt.go)
+	s.registerPllVisualREST() // pll/v1/visual/strings (golylang_visual.go)
 	api := s.rest
 	findLang := func(c *gin.Context, key string) *pllLanguage {
 		for _, l := range s.pllLanguages(c) {
@@ -251,4 +253,5 @@ func (s *Server) registerGolylangREST() {
 			restJSON(c, http.StatusOK, settingsOut(c))
 		},
 	}, nil)
+	s.registerGolylangMediaREST(api) // pll/v1/media/{id}/i18n (golylang_media.go)
 }

@@ -328,6 +328,7 @@ func (s *Server) exportScreen(c *gin.Context) {
 	}
 	if what == "all" || what == "attachment" {
 		atts, _, _ := s.store.QueryAttachments(ctx, store.AttachmentQuery{Page: 1, PerPage: 100000})
+		pllMedia := s.pllMediaExport(ctx) // Pursae Multi Language: per-language texts as _pll_media_i18n
 		for _, a := range atts {
 			if !f.keep(a.CreatedAt, loc) {
 				continue
@@ -336,7 +337,7 @@ func (s *Server) exportScreen(c *gin.Context) {
 			fmt.Fprintf(&b, "\t<item>\n\t\t<title>%s</title>\n\t\t<link>%s</link>\n\t\t<pubDate>%s</pubDate>\n\t\t<dc:creator>%s</dc:creator>\n\t\t<guid isPermaLink=\"false\">%s</guid>\n\t\t<description></description>\n\t\t<content:encoded>%s</content:encoded>\n\t\t<excerpt:encoded>%s</excerpt:encoded>\n\t\t<wp:post_id>%d</wp:post_id>\n\t\t<wp:post_date>%s</wp:post_date>\n\t\t<wp:post_date_gmt>%s</wp:post_date_gmt>\n\t\t<wp:post_modified>%s</wp:post_modified>\n\t\t<wp:post_modified_gmt>%s</wp:post_modified_gmt>\n\t\t<wp:comment_status>open</wp:comment_status>\n\t\t<wp:ping_status>closed</wp:ping_status>\n\t\t<wp:post_name>%s</wp:post_name>\n\t\t<wp:status>%s</wp:status>\n\t\t<wp:post_parent>%d</wp:post_parent>\n\t\t<wp:menu_order>%d</wp:menu_order>\n\t\t<wp:post_type>%s</wp:post_type>\n\t\t<wp:post_password></wp:post_password>\n\t\t<wp:is_sticky>0</wp:is_sticky>\n\t\t<wp:attachment_url>%s</wp:attachment_url>\n%s\t</item>\n",
 				cdata(a.Title), xmlEsc(fileURL), a.CreatedAt.UTC().Format(time.RFC1123Z), cdata(logins[a.UploaderID]), xmlEsc(fileURL), cdata(a.Description), cdata(a.Caption),
 				a.ID, cdata(wpDate(a.CreatedAt)), cdata(a.CreatedAt.UTC().Format("2006-01-02 15:04:05")), cdata(wpDate(a.UpdatedAt)), cdata(a.UpdatedAt.UTC().Format("2006-01-02 15:04:05")),
-				cdata(wp.SanitizeTitle(a.Title)), cdata("inherit"), a.PostID, a.MenuOrder, cdata("attachment"), cdata(fileURL), postmeta("_wp_attachment_image_alt", a.Alt))
+				cdata(wp.SanitizeTitle(a.Title)), cdata("inherit"), a.PostID, a.MenuOrder, cdata("attachment"), cdata(fileURL), postmeta("_wp_attachment_image_alt", a.Alt)+pllMediaWXRMeta(pllMedia, a.ID, postmeta))
 		}
 	}
 	if what == "all" {
@@ -680,6 +681,7 @@ func (s *Server) importWXR(c *gin.Context, u *store.User, data []byte) (*importR
 				a.UploaderID = u.ID
 			}
 			_ = s.store.UpdateAttachment(ctx, a)
+			s.pllMediaImport(ctx, a.ID, it.meta(pllMediaWXRKey))
 			if t, err := time.ParseInLocation("2006-01-02 15:04:05", it.PostDate, loc); err == nil {
 				_, _ = s.store.Pool.Exec(ctx, `UPDATE media SET created_at = $2, uploader_id = $3 WHERE id = $1`, a.ID, t, nullable64(a.UploaderID))
 			}

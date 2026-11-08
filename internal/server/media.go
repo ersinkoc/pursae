@@ -230,7 +230,7 @@ func (s *Server) attachmentJS(c *gin.Context, a *store.Attachment) map[string]an
 		"dateFormatted": wp.FormatDate(a.CreatedAt.In(s.loc()), "F j, Y"),
 		"nonces":        map[string]any{"update": false, "delete": false, "edit": false},
 		"editLink":      false, "meta": false, "context": "",
-		"compat": map[string]string{"item": "", "meta": ""},
+		"compat": map[string]string{"item": s.golylangMediaCompat(c, a), "meta": ""}, // Pursae Multi Language fields
 	}
 	if author, err := s.store.UserByID(c, a.UploaderID); err == nil {
 		r["authorName"] = author.DisplayName
@@ -404,6 +404,7 @@ func (s *Server) mediaAjax(c *gin.Context, action string) bool {
 			jsonError(c, http.StatusOK, nil)
 			return true
 		}
+		s.pllMediaPrefetch(c, list) // the compat fields' translations in one query
 		out := make([]map[string]any, 0, len(list))
 		for _, a := range list {
 			out = append(out, s.attachmentJS(c, a))
@@ -448,6 +449,7 @@ func (s *Server) mediaAjax(c *gin.Context, action string) bool {
 			return true
 		}
 		if action == "save-attachment-compat" {
+			s.golylangMediaCompatSave(c, a) // attachments[ID][pll_i18n][lang][field]
 			jsonSuccess(c, s.attachmentJS(c, a))
 		} else {
 			jsonSuccess(c, nil)

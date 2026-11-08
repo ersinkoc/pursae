@@ -1,0 +1,30 @@
+/* Pursae Multi Language: visual translation mode, inside the page (loaded only in a visual session). */
+pll-t { display: inline; }
+pll-t.pll-v-hover, [data-pll-img].pll-v-hover, .pll-v-attr.pll-v-hover {
+	outline: 2px dashed #2271b1 !important;
+	outline-offset: 2px;
+	cursor: pointer !important;
+}
+pll-uc.pll-v-hover > * {
+	outline: 2px dashed #996800 !important;
+	outline-offset: 4px;
+	cursor: pointer !important;
+}
+pll-t.pll-v-selected, [data-pll-img].pll-v-selected, .pll-v-attr.pll-v-selected {
+	outline: 2px solid #2271b1 !important;
+	outline-offset: 2px;
+}
+pll-uc.pll-v-selected > * {
+	outline: 2px solid #996800 !important;
+	outline-offset: 4px;
+}
+.pll-v-flash {
+	animation: pll-v-flash 1.2s ease-out 1;
+}
+@keyframes pll-v-flash {
+	0% { background-color: rgba(34, 113, 177, .35); }
+	100% { background-color: transparent; }
+}
+@media (prefers-reduced-motion: reduce) {
+	.pll-v-flash { animation: none; outline: 2px solid #2271b1 !important; }
+}

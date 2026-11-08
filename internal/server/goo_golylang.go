@@ -683,7 +683,7 @@ func (s *Server) gooPllStrings() []pllRegistered {
 	var out []pllRegistered
 	add := func(name, str string, multi bool) {
 		if strings.TrimSpace(str) != "" {
-			out = append(out, pllRegistered{name, str, "Pursae Commerce", multi})
+			out = append(out, pllRegistered{Name: name, String: str, Group: "Pursae Commerce", Multiline: multi})
 		}
 	}
 	add("Store notice", s.gooOptString("demo_store_notice"), true)

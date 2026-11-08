@@ -23,6 +23,7 @@ type runtimeState struct {
 // server and the scheduler stopped, before closing the database pool.
 func (s *Server) Close(ctx context.Context) {
 	s.rt.cdn.flush(ctx, s)
+	s.pllCaptureFlush(ctx) // Multi Language strings still queued (golylang_capture.go)
 	s.rt.writes.close(ctx)
 }
 

@@ -476,7 +476,7 @@ func (s *Server) gooLoopItem(c *gin.Context, p *gooProduct, i, cols int) string 
 		b.WriteString(`<span class="onsale">Sale!</span>`)
 	}
 	b.WriteString(s.gooImageHTML(ctx, p.ImageID, "medium", "attachment-woocommerce_thumbnail size-woocommerce_thumbnail"))
-	b.WriteString(`<h2 class="woocommerce-loop-product__title">` + gooEsc(p.Name) + `</h2>`)
+	b.WriteString(`<h2 class="woocommerce-loop-product__title">` + s.pllUC(c, gooEsc(p.Name), 0) + `</h2>`)
 	if s.gooOptBool("enable_review_rating") {
 		b.WriteString(gooRatingHTML(p.AverageRating, 0))
 	}

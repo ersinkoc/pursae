@@ -119,6 +119,27 @@ chars, values ≤1 MiB) in the site's transients table, scoped to the plugin and
 | `HTTPGet(url) (*HTTPResponse, error)` — `Status`, `Header`, `Body` (≤1 MiB; a larger body is an error, not truncated), 8 s timeout, private and loopback addresses are blocked | `http_get` | `http:outbound` |
 | `AdminNotice(kind, message) error` — kinds `NoticeInfo/Success/Warning/Error`, plain text ≤2000 chars, only meaningful inside an `admin_notices` callback | `add_admin_notice` | `admin:notices` |
 
+## Translation
+
+| SDK | Host import | Permission |
+|-----|-------------|------------|
+| `T(text) string`, `X(text, context) string` — the text in the language of the current request | `translate` | none |
+
+With Pursae Multi Language on, a string a plugin passes to `T` or `X` is listed on
+**Languages › Translations** under "Plugin: *name*" (domain = the plugin's slug, `X`'s context is
+the gettext context) and comes back translated into the visitor's language: the site's own
+translation first, then an installed language pack, else unchanged. With the plugin off, on a
+request without a language (cron, admin) or on an older host, the text comes back as it is, so
+calling `T` is always safe. Text ≤10000 bytes, context ≤200 bytes. Pass whole sentences (not
+fragments you concatenate) and keep placeholders like `%s` inside the string:
+
+```go
+wpgo.AddFilter("the_content", 10, func(html string) (string, error) {
+	return html + "<p>" + wpgo.T("Thanks for reading!") + "</p>", nil
+})
+label := wpgo.X("Post", "noun")
+```
+
 ## The wire format
 
 For other languages, or curiosity: every import takes `(ptr, len)` of a UTF-8 JSON request in

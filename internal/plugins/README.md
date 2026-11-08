@@ -162,6 +162,14 @@ The import returns `0` if no response could be delivered.
 | `transient_delete` | `{"key":"…"}` | – | `storage` |
 | `enqueue_style` | `{"handle","src":"style.css","deps":[…],"where":"front\|admin\|both","media"}` | – | `content:filter`; `src` must be a package asset |
 | `enqueue_script` | `{"handle","src":"app.js","deps":[…],"where","in_footer":bool}` | – | `content:filter` |
+| `translate` | `{"text":"…","context":"…"}` | `{"text":"…"}` | none; text ≤10000 bytes, context ≤200 |
+
+`translate` returns the text in the language of the current request when the
+Host implements the optional `Translator` interface (the core does, through Pursae
+Multi Language: the site's string translations, then the language packs; the
+domain is forced to the plugin's slug and the string is listed under
+"Plugin: *name*" on Languages › Translations). Any other host returns the text
+unchanged, so the import is always safe to call.
 
 Post objects are `{"id","title","content","excerpt","status","type","slug","date","modified","author","link","terms":{"category":[…],"post_tag":[…]},"meta":{…}}`.
 Settings fields are `{"id","label","type":"text\|textarea\|number\|checkbox\|select","description","placeholder","default","options":[{"value","label"}],"min","max","rows"}`;

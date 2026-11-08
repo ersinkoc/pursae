@@ -7,10 +7,12 @@ import (
 	"fmt"
 	"html"
 	"html/template"
+	"log/slog"
 	"regexp"
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -333,14 +335,19 @@ var pllLangAttr = regexp.MustCompile(`\slang="[^"]*"`)
 // golylangHTML finishes a front-end page: <html lang> (and dir) of the current language, and the
 // hreflang links before </head>.
 func (s *Server) golylangHTML(c *gin.Context, page []byte) []byte {
+	// Every return below goes through pllUCFinish: no user content sentinel (golylang_uc.go) is
+	// ever written; the string pass must run before it. Sentinels are only emitted under the
+	// condition of this first return (pllUCOn), so a page without the plugin stays as it is; the
+	// first return still strips them (one bytes.Contains) in case the plugin was turned off while
+	// this page rendered.
 	r := pllFrom(c)
 	if r == nil || !r.Front || r.Lang == nil || !s.golylangOn() {
-		return page
+		return pllUCFinish(page, false)
 	}
 	l := r.Lang
 	loc := pllHTMLTag.FindIndex(page)
 	if loc == nil {
-		return page
+		return s.pllFinishPage(c, page, l)
 	}
 	tag := string(page[loc[0]:loc[1]])
 	attr := ` lang="` + html.EscapeString(l.W3C()) + `"`
@@ -372,7 +379,18 @@ func (s *Server) golylangHTML(c *gin.Context, page []byte) []byte {
 		}
 	}
 	out.Write(rest)
-	return out.Bytes()
+	return s.pllFinishPage(c, out.Bytes(), l)
+}
+
+// pllFinishPage is the end of golylangHTML: visual translation mode takes the page over; otherwise
+// the string pass (golylang_apply.go) and the removal of the user content sentinels.
+func (s *Server) pllFinishPage(c *gin.Context, page []byte, l *pllLanguage) []byte {
+	if pllVisualPage != nil {
+		if p, ok := pllVisualPage(s, c, page, l); ok {
+			return p
+		}
+	}
+	return pllUCFinish(s.pllApplyStrings(c, page, l, nil), false)
 }
 
 // pllHreflang drops the region of a locale unless two languages share the primary subtag (fr, en-GB/en-US).
@@ -406,71 +424,25 @@ func (s *Server) golylangURL(c *gin.Context, link string) string {
 type pllRegistered struct {
 	Name, String, Group string
 	Multiline           bool
+	// Context is the gettext context (_x): the string is translated under Key(). Source is the
+	// pll_string_sources source of a recorded string ("" for the built-in ones).
+	Context, Source string
+}
+
+// Key is the pll_strings.original the string is translated under.
+func (r pllRegistered) Key() string {
+	if r.Context == "" {
+		return r.String
+	}
+	return r.Context + "\x04" + r.String
 }
 
 var (
 	pllStringsMu    sync.Mutex
 	pllStringsCache = map[*Server]map[string]map[string]string{} // server => lang => original => translation
-	pllThemeSeen    sync.Map                                     // strings already registered by pll__
 )
 
-// pllStrings lists the registered strings: WordPress options, URL slugs (Translate slugs) and the strings
-// themes passed to pll__ / pll_e / pll_register_string.
-func (s *Server) pllStrings(ctx context.Context) []pllRegistered {
-	out := []pllRegistered{
-		{"Site Title", s.settings.String("blogname"), "WordPress", false},
-		{"Tagline", s.settings.String("blogdescription"), "WordPress", false},
-	}
-	out = append(out, s.gooPllStrings()...) // Goocommerce: store notice, e-mails, payment and shipping titles (goo_golylang.go)
-	if s.pllOpts().TranslateSlugs {
-		for _, b := range s.pllSlugBases() {
-			out = append(out, pllRegistered{b[0], b[1], "URL slugs", false})
-		}
-	}
-	if raw, ok := s.settings.Get("golylang_strings").([]any); ok {
-		for _, v := range raw {
-			if m, ok := v.(map[string]any); ok {
-				r := pllRegistered{}
-				r.Name, _ = m["name"].(string)
-				r.String, _ = m["string"].(string)
-				r.Group, _ = m["context"].(string)
-				r.Multiline, _ = m["multiline"].(bool)
-				if r.String != "" {
-					out = append(out, r)
-				}
-			}
-		}
-	}
-	return out
-}
-
-// pllRegisterString is pll_register_string(): it is remembered once, in the option golylang_strings.
-func (s *Server) pllRegisterString(ctx context.Context, name, str, group string, multiline bool) {
-	if str == "" {
-		return
-	}
-	if group == "" {
-		group = "Pursae Multi Language"
-	}
-	key := fmt.Sprintf("%p|%s|%s", s, group, str)
-	if _, seen := pllThemeSeen.LoadOrStore(key, true); seen {
-		return
-	}
-	for _, r := range s.pllStrings(ctx) {
-		if r.String == str && r.Group == group {
-			return
-		}
-	}
-	list, _ := s.settings.Get("golylang_strings").([]any)
-	if name == "" {
-		name = str
-		if len(name) > 40 {
-			name = name[:40]
-		}
-	}
-	list = append(list, map[string]any{"name": name, "string": str, "context": group, "multiline": multiline})
-	_ = s.settings.Set(ctx, map[string]any{"golylang_strings": list})
-}
+// pllStrings and pllRegisterString: golylang_strtable.go.
 
 // pllTranslate is pll_translate_string(): the translation of a string in a language, the string itself
 // when it has none.
@@ -479,38 +451,67 @@ func (s *Server) pllTranslate(ctx context.Context, str, lang string) string {
 		return str
 	}
 	if t := s.pllStringMap(ctx, lang)[str]; t != "" {
+		pllMarkKnown(ctx, t, str) // visual translation mode: the page shows t, the string is str
 		return t
 	}
 	return str
 }
 
 func (s *Server) pllStringMap(ctx context.Context, lang string) map[string]string {
+	m, _ := s.pllStringMapOK(ctx, lang)
+	return m
+}
+
+// pllStringsGen counts pllFlushStrings calls (guarded by pllStringsMu): a table built from the
+// strings must not be stored once a flush happened while it was built.
+var pllStringsGen uint64
+
+// pllStringMapOK is pllStringMap; ok is false when the strings could not be loaded (the result is
+// then empty and nothing is cached, so the next call loads again). The load does not follow the
+// request's cancellation: a visitor closing the tab must not leave every language untranslated.
+func (s *Server) pllStringMapOK(ctx context.Context, lang string) (map[string]string, bool) {
 	pllStringsMu.Lock()
 	defer pllStringsMu.Unlock()
-	byLang := pllStringsCache[s]
-	if byLang == nil {
-		byLang = map[string]map[string]string{}
-		rows, err := s.store.Pool.Query(ctx, `SELECT lang, original, translation FROM pll_strings`)
-		if err == nil {
-			for rows.Next() {
-				var l, o, t string
-				if rows.Scan(&l, &o, &t) == nil {
-					if byLang[l] == nil {
-						byLang[l] = map[string]string{}
-					}
-					byLang[l][o] = t
-				}
-			}
-			rows.Close()
-		}
-		pllStringsCache[s] = byLang
+	if byLang := pllStringsCache[s]; byLang != nil {
+		return byLang[lang], true
 	}
-	return byLang[lang]
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	lctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 15*time.Second)
+	defer cancel()
+	byLang := map[string]map[string]string{}
+	rows, err := s.store.Pool.Query(lctx, `SELECT lang, original, translation FROM pll_strings`)
+	if err != nil {
+		slog.Warn("golylang: loading string translations", "err", err)
+		return nil, false
+	}
+	for rows.Next() {
+		var l, o, t string
+		if err := rows.Scan(&l, &o, &t); err != nil {
+			rows.Close()
+			slog.Warn("golylang: loading string translations", "err", err)
+			return nil, false
+		}
+		if byLang[l] == nil {
+			byLang[l] = map[string]string{}
+		}
+		byLang[l][o] = t
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		slog.Warn("golylang: loading string translations", "err", err)
+		return nil, false
+	}
+	pllStringsCache[s] = byLang
+	return byLang[lang], true
 }
 
 func (s *Server) pllFlushStrings() {
 	pllStringsMu.Lock()
 	delete(pllStringsCache, s)
+	delete(pllFrontTables, s) // the page string pass tables (golylang_apply.go)
+	pllStringsGen++
 	pllStringsMu.Unlock()
 }
 
@@ -580,7 +581,7 @@ func (s *Server) golylangTemplateFuncs() template.FuncMap {
 		}
 		return l.Slug
 	}
-	return template.FuncMap{
+	m := template.FuncMap{
 		"pll_current_language": func(v *siteView, f ...string) string { return field(s.pllCurrent(ctxOf(v)), f) },
 		"pll_default_language": func(v *siteView, f ...string) string {
 			if !s.golylangOn() {
@@ -657,16 +658,27 @@ func (s *Server) golylangTemplateFuncs() template.FuncMap {
 			return template.HTML(s.pllSwitcherHTML(rc.c, v.Q, a, "lang_choice_"+rc.uniqueID("")))
 		},
 	}
+	for k, f := range s.pllGettextFuncs() { // __, _e, _x, _n, esc_html__, … (golylang_gettext.go)
+		m[k] = f
+	}
+	return m
 }
 
-// pllThemeString is pll__(): registered on first use, translated into the current language.
+// pllThemeString is pll__(): registered on first use (under the active theme), translated into the
+// current language.
 func (s *Server) pllThemeString(ctx context.Context, str string) string {
-	if !s.golylangOn() {
+	if !s.golylangOn() || str == "" {
 		return str
 	}
-	s.pllRegisterString(ctx, "", str, "Theme", false)
+	source := "core"
+	if t := s.activeTheme(); t != nil {
+		source = "theme:" + t.Slug
+	}
+	s.pllCaptureString(ctx, str, "", pllDomainRegistered, source, pllRequestPath(ctx))
 	if l := s.pllCurrent(ctx); l != nil {
-		return s.pllTranslate(ctx, str, l.Slug)
+		tr := s.pllTranslate(ctx, str, l.Slug)
+		pllMarkKnown(ctx, tr, str)
+		return tr
 	}
 	return str
 }

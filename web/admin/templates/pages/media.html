@@ -62,7 +62,7 @@
 </div>
 <h2 class="screen-reader-text">Media items list</h2>
 <table class="wp-list-table widefat fixed striped table-view-list media">
-	<thead>{{template "media-head" true}}</thead>
+	<thead>{{template "media-head" (dict "Top" true "Heads" .PluginHeads)}}</thead>
 	<tbody id="the-list">
 	{{range .Rows}}<tr id="post-{{.ID}}" class="author-self status-inherit">
 		<th scope="row" class="check-column">{{if .CanEdit}}<input type="checkbox" name="media[]" id="cb-select-{{.ID}}" value="{{.ID}}" /><label for="cb-select-{{.ID}}"><span class="screen-reader-text">Select {{.Title}}</span></label>{{end}}</th>
@@ -74,13 +74,14 @@
 		</td>
 		<td class="author column-author" data-colname="Author"><a href="{{.AuthorURL}}">{{.Author}}</a></td>
 		<td class="parent column-parent" data-colname="Uploaded to">{{if .ParentTitle}}<strong><a href="{{.ParentURL}}">{{.ParentTitle}}</a></strong>{{else}}(Unattached){{end}}</td>
+		{{range .PluginCols}}{{.}}{{end}}
 		<td class="comments column-comments" data-colname="Comments"><div class="post-com-count-wrapper"><span aria-hidden="true">&#8212;</span><span class="screen-reader-text">No comments</span></div></td>
 		<td class="date column-date" data-colname="Date">{{.Date}}</td>
 	</tr>
-	{{else}}<tr class="no-items"><td class="colspanchange" colspan="6">No media files found.</td></tr>
+	{{else}}<tr class="no-items"><td class="colspanchange" colspan="{{.ColSpan}}">No media files found.</td></tr>
 	{{end}}
 	</tbody>
-	<tfoot>{{template "media-head" false}}</tfoot>
+	<tfoot>{{template "media-head" (dict "Top" false "Heads" .PluginHeads)}}</tfoot>
 </table>
 <div class="tablenav bottom">
 	<div class="alignleft actions bulkactions">
@@ -96,12 +97,13 @@
 {{end}}{{template "admin-footer" .}}{{end}}
 
 {{define "media-head"}}<tr>
-	<td{{if .}} id="cb"{{end}} class="manage-column column-cb check-column"><input id="cb-select-all-{{if .}}1{{else}}2{{end}}" type="checkbox" /><label for="cb-select-all-{{if .}}1{{else}}2{{end}}"><span class="screen-reader-text">Select All</span></label></td>
-	<th scope="col"{{if .}} id="title"{{end}} class="manage-column column-title column-primary">File</th>
-	<th scope="col"{{if .}} id="author"{{end}} class="manage-column column-author">Author</th>
-	<th scope="col"{{if .}} id="parent"{{end}} class="manage-column column-parent">Uploaded to</th>
-	<th scope="col"{{if .}} id="comments"{{end}} class="manage-column column-comments num"><span class="vers comment-grey-bubble" title="Comments" aria-hidden="true"></span><span class="screen-reader-text">Comments</span></th>
-	<th scope="col"{{if .}} id="date"{{end}} class="manage-column column-date">Date</th>
+	<td{{if .Top}} id="cb"{{end}} class="manage-column column-cb check-column"><input id="cb-select-all-{{if .Top}}1{{else}}2{{end}}" type="checkbox" /><label for="cb-select-all-{{if .Top}}1{{else}}2{{end}}"><span class="screen-reader-text">Select All</span></label></td>
+	<th scope="col"{{if .Top}} id="title"{{end}} class="manage-column column-title column-primary">File</th>
+	<th scope="col"{{if .Top}} id="author"{{end}} class="manage-column column-author">Author</th>
+	<th scope="col"{{if .Top}} id="parent"{{end}} class="manage-column column-parent">Uploaded to</th>
+	{{range .Heads}}{{.}}{{end}}
+	<th scope="col"{{if .Top}} id="comments"{{end}} class="manage-column column-comments num"><span class="vers comment-grey-bubble" title="Comments" aria-hidden="true"></span><span class="screen-reader-text">Comments</span></th>
+	<th scope="col"{{if .Top}} id="date"{{end}} class="manage-column column-date">Date</th>
 </tr>{{end}}
 
 {{define "admin/media-new"}}{{template "admin-header" .}}{{with .Data}}
@@ -203,6 +205,7 @@
 </div>
 </div>
 </div>
+{{if .PluginBoxes}}<div id="postbox-container-2" class="postbox-container"><div id="normal-sortables" class="meta-box-sortables">{{.PluginBoxes}}</div></div>{{end}}
 </div>
 <br class="clear" />
 </div>

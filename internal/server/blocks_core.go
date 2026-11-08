@@ -352,17 +352,20 @@ func renderLatestComments(ctx context.Context, b *blocks.Block, _ string) string
 				authorURL = rc.lb.AuthorLink(u.ID, u.Nicename)
 			}
 		}
+		// Commenter names, titles and comment text are user content (Pursae Multi Language): never
+		// page strings to translate or record.
+		uc := func(h string) string { return rc.s.pllUC(ctx, h, 0) }
 		if authorURL != "" {
-			fmt.Fprintf(&items, `<a class="wp-block-latest-comments__comment-author" href="%s">%s</a>`, html.EscapeString(authorURL), html.EscapeString(name))
+			fmt.Fprintf(&items, `<a class="wp-block-latest-comments__comment-author" href="%s">%s</a>`, html.EscapeString(authorURL), uc(html.EscapeString(name)))
 		} else {
-			fmt.Fprintf(&items, `<span class="wp-block-latest-comments__comment-author">%s</span>`, html.EscapeString(name))
+			fmt.Fprintf(&items, `<span class="wp-block-latest-comments__comment-author">%s</span>`, uc(html.EscapeString(name)))
 		}
 		title := p.Title
 		if strings.TrimSpace(title) == "" {
 			title = "(no title)"
 		}
 		fmt.Fprintf(&items, ` on <a class="wp-block-latest-comments__comment-link" href="%s">%s</a>`,
-			html.EscapeString(rc.lb.Permalink(p)+"#comment-"+itoa64(cm.ID)), wp.Texturize(wp.EscText(title)))
+			html.EscapeString(rc.lb.Permalink(p)+"#comment-"+itoa64(cm.ID)), uc(wp.Texturize(wp.EscText(title))))
 		if showDate {
 			t := cm.CreatedAt.In(loc)
 			fmt.Fprintf(&items, `<time datetime="%s" class="wp-block-latest-comments__comment-date">%s</time>`, t.Format(time.RFC3339), wp.FormatDate(t, rc.s.settings.String("date_format")))
@@ -370,9 +373,9 @@ func renderLatestComments(ctx context.Context, b *blocks.Block, _ string) string
 		items.WriteString(`</footer>`)
 		switch display {
 		case "full":
-			fmt.Fprintf(&items, `<div class="wp-block-latest-comments__comment-excerpt">%s</div>`, wp.Autop(commentText(cm.Content)))
+			fmt.Fprintf(&items, `<div class="wp-block-latest-comments__comment-excerpt">%s</div>`, uc(wp.Autop(commentText(cm.Content))))
 		case "excerpt":
-			fmt.Fprintf(&items, `<div class="wp-block-latest-comments__comment-excerpt">%s</div>`, wp.Autop(wp.TrimWords(cm.Content, 20, "&hellip;")))
+			fmt.Fprintf(&items, `<div class="wp-block-latest-comments__comment-excerpt">%s</div>`, uc(wp.Autop(wp.TrimWords(cm.Content, 20, "&hellip;"))))
 		}
 		items.WriteString(`</article></li>`)
 	}

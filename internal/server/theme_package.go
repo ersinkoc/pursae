@@ -897,12 +897,16 @@ func themeTemplateFuncs() template.FuncMap {
 		},
 		"is_active_sidebar": func(v *siteView, id string) bool { return v.Areas[id] != "" },
 		"theme_mod": func(v *siteView, id string) any {
+			val := v.ThemeMods[id]
 			if m, ok := v.Data["Settings"].(map[string]any); ok {
-				if val, ok := m[id]; ok {
-					return val
+				if sv, ok := m[id]; ok {
+					val = sv
 				}
 			}
-			return v.ThemeMods[id]
+			if themeModFilter != nil { // Pursae Multi Language: text settings in the current language
+				return themeModFilter(v, id, val)
+			}
+			return val
 		},
 	}
 }

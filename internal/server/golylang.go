@@ -69,11 +69,20 @@ type pllOptions struct {
 	MediaDuplicate bool `json:"media_duplicate"` // create all media translations at upload
 	ShareSlugs     bool `json:"share_slugs"`     // translations may share a slug (golylang_slugs.go)
 	TranslateSlugs bool `json:"translate_slugs"` // translated category, tag and author bases
+	// Strings found on pages (golylang_capture.go) and machine translation (golylang_mt.go).
+	StringCapture bool   `json:"string_capture"`      // record untranslated page strings for logged-in managers and visual mode
+	MT            bool   `json:"machine_translation"` // the Machine translation module
+	MTProvider    string `json:"mt_provider"`         // deepl, google or openai (OpenAI-compatible)
+	MTKey         string `json:"mt_key"`              // sealed API key (pllSealMTKey); never rendered back
+	MTEndpoint    string `json:"mt_endpoint"`         // OpenAI-compatible base URL, https only
+	MTModel       string `json:"mt_model"`            // OpenAI-compatible model
+	MTFormality   string `json:"mt_formality"`        // DeepL formality: default, more, less, prefer_more, prefer_less
 }
 
 func pllDefaultOptions() pllOptions {
 	return pllOptions{ForceLang: 1, HideDefault: true, Rewrite: true, Sync: []string{}, PostTypes: []string{}, Taxonomies: []string{},
-		Domains: map[string]string{}, NavMenus: map[string]map[string]map[string]int64{}}
+		Domains: map[string]string{}, NavMenus: map[string]map[string]map[string]int64{},
+		StringCapture: true, MTProvider: "deepl", MTModel: "gpt-4o-mini", MTFormality: "default"}
 }
 
 // pllOpts reads the option; missing keys keep Polylang's defaults.
@@ -538,7 +547,8 @@ func (s *Server) golylangRequest() gin.HandlerFunc {
 }
 
 // pllAdminFiltered are the admin screens whose lists follow the admin bar language filter.
-var pllAdminFiltered = map[string]bool{"/wp-admin/edit": true, "/wp-admin/edit-tags": true, "/wp-admin/upload": true, "/wp-admin/nav-menus": true}
+// The Media Library is not filtered: a media item is one row for every language (golylang_media.go).
+var pllAdminFiltered = map[string]bool{"/wp-admin/edit": true, "/wp-admin/edit-tags": true, "/wp-admin/nav-menus": true}
 
 // pllDetect sets the request language; false when it answered (a redirect).
 func (s *Server) pllDetect(c *gin.Context) bool {

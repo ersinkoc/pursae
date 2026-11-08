@@ -58,7 +58,7 @@ func (s *Server) gooProductBody(c *gin.Context, p *gooProduct, showTitle bool) s
 	b.WriteString(s.gooGalleryHTML(c, p))
 	b.WriteString(`<div class="summary entry-summary">`)
 	if showTitle {
-		b.WriteString(`<h1 class="product_title entry-title">` + gooEsc(p.Name) + `</h1>`)
+		b.WriteString(`<h1 class="product_title entry-title">` + s.pllUC(c, gooEsc(p.Name), 0) + `</h1>`)
 	}
 	if s.gooOptBool("enable_review_rating") && p.RatingCount > 0 {
 		b.WriteString(`<div class="woocommerce-product-rating">` + gooRatingHTML(p.AverageRating, p.RatingCount))
@@ -664,7 +664,7 @@ func (s *Server) gooReviewsHTML(c *gin.Context, p *gooProduct) string {
 			if r.Status == "pending" {
 				b.WriteString(`<p class="meta"><em class="woocommerce-review__awaiting-approval">Your review is awaiting approval</em></p>`)
 			} else {
-				b.WriteString(`<p class="meta"><strong class="woocommerce-review__author">` + gooEsc(r.AuthorName) + ` </strong>`)
+				b.WriteString(`<p class="meta"><strong class="woocommerce-review__author">` + s.pllUC(c, gooEsc(r.AuthorName), 0) + ` </strong>`)
 				if v, _ := r.Meta["verified"].(bool); v && s.gooOptBool("review_rating_verification_label") {
 					b.WriteString(`<em class="woocommerce-review__verified verified">(verified owner)</em> `)
 				}

@@ -112,6 +112,9 @@ func (s *Server) wbThemeParts(c *gin.Context, v *siteView) *wbThemeParts {
 		case webbuilder.LocationFooter:
 			out.view.Footer = h
 		default:
+			if !p.template { // the page's own doc: Multi Language user content (golylang_uc.go)
+				h = template.HTML(s.pllUC(c, p.filled.html, p.id))
+			}
 			if p.draftNewer {
 				h = template.HTML(wbDraftNotice(s, c)) + h
 			}

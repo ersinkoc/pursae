@@ -64,6 +64,7 @@ type postRow struct {
 	IsTrash              bool
 	ViewLabel            string
 	BuilderURL           string // "Edit with Pursae Web Builder" (webbuilder_admin.go)
+	TranslateURL         string // "Translate visually" (golylang_visual.go)
 	Excerpt              string // shown in the Extended view
 	Inline               inlineData
 	PluginCols           []template.HTML // cells of plugin columns (Golylang's languages), before Comments

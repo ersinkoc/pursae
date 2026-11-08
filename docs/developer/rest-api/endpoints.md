@@ -23,7 +23,7 @@ ones; `HEAD` works wherever `GET` does and `PUT`/`PATCH` wherever `POST` does.
 | Route | Methods | Notes |
 |-------|---------|-------|
 | `/media` | GET, POST | upload with `multipart/form-data` (`file`) or a raw body with `Content-Disposition: attachment; filename=…`; image sizes are generated (in the format of Settings › Media › Image output format) |
-| `/media/{id}` | GET, POST, DELETE | `title`, `caption`, `alt_text`, `description`, `post` |
+| `/media/{id}` | GET, POST, DELETE | `title`, `caption`, `alt_text`, `description`, `post`; with Pursae Multi Language and its Media module on: `?lang=` returns that language's texts, `context=edit` adds `pll_i18n` (per-language overrides) and updates accept it |
 | `/media/{id}/post-process` | POST | |
 
 ## Terms
@@ -95,5 +95,9 @@ The routes AI agents and scripts use to run a site. Each checks the capability o
 | `/batch/v1` | POST | up to 25 requests in one call |
 | `/oembed/1.0/proxy` | GET | `url=` — fetches the provider's oEmbed for the editor |
 | `/wp-block-editor/v1/url-details` | GET | `url=` — title, icon, description of a link |
+| `/pll/v1/languages`, `/pll/v1/languages/{id or code}`, `/pll/v1/settings` | GET, POST, DELETE | Pursae Multi Language (Polylang's routes); only while the plugin is on |
+| `/pll/v1/media/{id}/i18n` | GET, POST | per-language `alt_text`, `title`, `caption`, `description` of a media item: `{"fr":{"alt_text":"…"}}`, null or blank falls back to the item; `upload_files` plus own item or `edit_others_posts`; 404 while the Media module is off |
+| `/pll/v1/translate`, `/pll/v1/translate/test` | POST | machine translation proxy: `{texts[], target, source?, html?}` → `{translations, target}`; `manage_options`, cookie auth with the `wp_rest` nonce, 60 calls per user per minute, 200 texts / 200 KB, never saves |
+| `/pll/v1/visual/strings` | POST | saves string translations `{lang, items:[{original, translation}]}` (visual translation); `manage_options` and the `wp_rest` nonce, ≤200 items |
 | `/web-builder/v2/…` | various | Pursae Web Builder: `documents/{id}` (load, autosave, publish, lock, revisions), `library`, `prefs`, `fonts/css2` and the public `forms/{id}/{section}`; only while the builder is on. Requests and errors are in the [contract](../web-builder-contract.md#3-rest-namespace-web-builderv2) |
 | `/<plugin-slug>/v1/…` | as registered | [plugin routes](plugin-routes.md) |

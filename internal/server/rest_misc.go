@@ -1139,6 +1139,7 @@ func (s *Server) restMedia(c *gin.Context, a *store.Attachment, ctxName string) 
 		"source_url": url, "missing_image_sizes": []any{},
 		"_links": restLinks(home+"/wp-json/wp/v2/media/"+itoa64(a.ID), home+"/wp-json/wp/v2/media", nil),
 	}
+	s.golylangMediaREST(c, a, ctxName, out) // pll_i18n in context=edit
 	if ctxName == "embed" {
 		return map[string]any{"id": a.ID, "date": out["date"], "slug": a.Slug, "type": "attachment", "link": out["link"], "title": out["title"],
 			"author": a.UploaderID, "caption": out["caption"], "alt_text": a.Alt, "media_type": mediaType, "mime_type": a.Mime,
@@ -1279,8 +1280,15 @@ func (api *restAPI) updateMedia(c *gin.Context, r *restRequest) {
 	if v, ok := r.Int(c, "post"); ok {
 		a.PostID = v
 	}
+	pllPatches, ok := s.golylangMediaRESTParse(c, r) // pll_i18n: checked before anything is saved
+	if !ok {
+		return
+	}
 	if err := s.store.UpdateAttachment(c, a); err != nil {
 		restErr(c, http.StatusInternalServerError, "rest_cannot_edit", err.Error())
+		return
+	}
+	if !s.golylangMediaRESTSave(c, a, pllPatches) { // per-language texts
 		return
 	}
 	restJSON(c, http.StatusOK, s.restMedia(c, a, "edit"))

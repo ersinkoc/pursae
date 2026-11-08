@@ -142,6 +142,9 @@ func hostEnqueueStyle(ptr, size uint32) uint64
 //go:wasmimport wpgo enqueue_script
 func hostEnqueueScript(ptr, size uint32) uint64
 
+//go:wasmimport wpgo translate
+func hostTranslate(ptr, size uint32) uint64
+
 var imports = map[string]func(ptr, size uint32) uint64{
 	"add_hook":               hostAddHook,
 	"get_option":             hostGetOption,
@@ -166,6 +169,7 @@ var imports = map[string]func(ptr, size uint32) uint64{
 	"transient_delete":       hostTransientDelete,
 	"enqueue_style":          hostEnqueueStyle,
 	"enqueue_script":         hostEnqueueScript,
+	"translate":              hostTranslate,
 }
 
 func invokeHost(name string, body []byte) ([]byte, error) {

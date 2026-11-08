@@ -128,7 +128,7 @@
 	<td class="plugin-title column-primary"><strong>{{.Title}}</strong>{{if .Pro}} <span class="post-state">Pro</span>{{end}}
 		<div class="row-actions visible">
 		{{if .Unavailable}}<span class="description">Not available</span>{{else}}
-		{{if or (eq .Key "url") (eq .Key "cpt") (eq .Key "sync") (and (eq .Key "media") .Active)}}<span class="configure"><a href="/wp-admin/admin?page=mlang_settings&amp;module={{.Key}}#pll-module-{{.Key}}" class="pll-configure-link" data-module="{{.Key}}" title="Configure this module">Settings</a>{{if .Toggle}} | {{end}}</span>{{end}}
+		{{if or (eq .Key "url") (eq .Key "cpt") (eq .Key "sync") (eq .Key "machine-translation") (and (eq .Key "media") .Active)}}<span class="configure"><a href="/wp-admin/admin?page=mlang_settings&amp;module={{.Key}}#pll-module-{{.Key}}" class="pll-configure-link" data-module="{{.Key}}" title="Configure this module">Settings</a>{{if .Toggle}} | {{end}}</span>{{end}}
 		{{if .Toggle}}{{if .Active}}<span class="deactivate"><a href="/wp-admin/admin?page=mlang_settings&amp;pll_action=deactivate&amp;module={{.Key}}&amp;_wpnonce={{$d.Nonce}}">Deactivate</a></span>{{else}}<span class="activate"><a href="/wp-admin/admin?page=mlang_settings&amp;pll_action=activate&amp;module={{.Key}}&amp;_wpnonce={{$d.Nonce}}">Activate</a></span>{{end}}{{end}}
 		{{end}}
 		</div></td>
@@ -183,6 +183,51 @@
 	<ul class="pll-inline-block-list">{{range $d.SyncItems}}<li style="display:inline-block;min-width:14em"><label><input name="sync[{{.Value}}]" type="checkbox" value="1"{{if .Checked}} checked="checked"{{end}} /> {{.Label}}</label></li>{{end}}</ul>
 	<p class="submit"><a class="button pll-cancel" href="/wp-admin/admin?page=mlang_settings">Cancel</a> <input type="submit" class="button button-primary" value="Save Changes" /></p>
 	</form>
+{{else if eq .Key "machine-translation"}}
+	<form method="post" action="/wp-admin/admin?page=mlang_settings" id="pll-mt-form">
+	<input type="hidden" name="module" value="machine-translation" /><input type="hidden" name="_wpnonce" value="{{$d.Nonce}}" />
+	<table class="form-table" role="presentation">
+	<tr><th scope="row"><label for="pll-mt-provider">Service</label></th>
+		<td><select name="mt_provider" id="pll-mt-provider">{{range $d.MT.Providers}}<option value="{{index . 0}}"{{if eq (index . 0) $d.O.MTProvider}} selected="selected"{{end}}>{{index . 1}}</option>{{end}}</select></td></tr>
+	<tr><th scope="row"><label for="pll-mt-key">API key</label></th>
+		<td><input type="password" name="mt_key" id="pll-mt-key" class="regular-text code" value="" autocomplete="new-password" spellcheck="false"{{if $d.MT.HasKey}} placeholder="•••••••• (saved)"{{end}} />
+		{{if $d.MT.HasKey}}<label><input type="checkbox" name="mt_key_remove" value="1" /> Remove</label>{{end}}
+		<p class="description">The key is stored encrypted and never shown again. Leave the field empty to keep the saved key. DeepL API Free keys end with <code>:fx</code>.</p></td></tr>
+	<tr class="pll-mt-openai"><th scope="row"><label for="pll-mt-endpoint">API endpoint</label></th>
+		<td><input type="url" name="mt_endpoint" id="pll-mt-endpoint" class="regular-text code" value="{{$d.O.MTEndpoint}}" placeholder="{{$d.MT.OpenAIBase}}" />
+		<p class="description">Base URL of an OpenAI-compatible API (<code>/chat/completions</code> is added). https only; private network addresses are refused.</p></td></tr>
+	<tr class="pll-mt-openai"><th scope="row"><label for="pll-mt-model">Model</label></th>
+		<td><input type="text" name="mt_model" id="pll-mt-model" class="regular-text code" value="{{$d.O.MTModel}}" /></td></tr>
+	<tr class="pll-mt-formality"><th scope="row"><label for="pll-mt-formality">Formality</label></th>
+		<td><select name="mt_formality" id="pll-mt-formality">{{range $d.MT.Formality}}<option value="{{index . 0}}"{{if eq (index . 0) $d.O.MTFormality}} selected="selected"{{end}}>{{index . 1}}</option>{{end}}</select>
+		<p class="description">Used for the languages that support it.</p></td></tr>
+	</table>
+	<p class="description">Text is sent to the chosen service only when you ask for a translation: in Languages &gt; Translations, in the visual translation editor and when a new translation is machine translated. Visitors never trigger a request.</p>
+	<p class="submit"><a class="button pll-cancel" href="/wp-admin/admin?page=mlang_settings">Cancel</a> <input type="submit" class="button button-primary" value="Save Changes" />
+		<button type="button" class="button" id="pll-mt-test">Test connection</button> <span class="spinner" id="pll-mt-spinner" style="float:none"></span> <span id="pll-mt-test-result" role="status"></span></p>
+	</form>
+	<script>
+	(function(){
+		var sel = document.getElementById('pll-mt-provider');
+		function sync(){
+			var v = sel.value;
+			document.querySelectorAll('#pll-mt-form .pll-mt-openai').forEach(function(r){ r.style.display = v === 'openai' ? '' : 'none'; });
+			document.querySelectorAll('#pll-mt-form .pll-mt-formality').forEach(function(r){ r.style.display = v === 'google' ? 'none' : ''; });
+		}
+		sel.addEventListener('change', sync); sync();
+		var btn = document.getElementById('pll-mt-test'), out = document.getElementById('pll-mt-test-result'), spin = document.getElementById('pll-mt-spinner');
+		btn.addEventListener('click', function(){
+			btn.disabled = true; spin.classList.add('is-active'); out.textContent = ''; out.style.color = '';
+			fetch('/wp-json/pll/v1/translate/test', {method: 'POST', credentials: 'same-origin', headers: {'X-WP-Nonce': {{$d.MT.RESTNonce}}, 'Content-Type': 'application/json'}, body: '{}'})
+			.then(function(r){ return r.json().then(function(j){ return {ok: r.ok, j: j}; }); })
+			.then(function(res){
+				if (res.ok) { out.textContent = 'Connection works. "Hello, world!" in ' + res.j.language + ': ' + res.j.sample; out.style.color = '#008a20'; }
+				else { out.textContent = (res.j && res.j.message) || 'The test failed.'; out.style.color = '#d63638'; }
+			}).catch(function(){ out.textContent = 'The test failed.'; out.style.color = '#d63638'; })
+			.then(function(){ btn.disabled = false; spin.classList.remove('is-active'); });
+		});
+	})();
+	</script>
 {{end}}
 </td></tr>
 {{end}}
@@ -204,6 +249,7 @@ document.querySelectorAll('.pll-configure-link').forEach(function(a){
 {{define "admin/golylang-strings"}}{{template "admin-header" .}}{{with .Data}}{{$d := .}}
 <div class="wrap">
 <h1 class="wp-heading-inline">Languages</h1>
+{{if .Visual}}<a href="/wp-admin/admin?page=mlang_visual&amp;url=%2F" class="page-title-action">Translate visually</a>{{end}}
 <hr class="wp-header-end">
 {{template "golylang-tabs" .Tabs}}
 {{template "notices" $}}
@@ -224,6 +270,16 @@ document.querySelectorAll('.pll-configure-link').forEach(function(a){
 	<br class="clear" />
 </div>
 </form>
+{{if .MT.Enabled}}<form method="post" action="/wp-admin/admin?page=mlang_strings" id="pll-mt-fill">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="pll_action" value="mt_fill" />
+<div class="tablenav top"><div class="alignleft actions">
+	<label for="pll-mt-lang">Machine translation</label>
+	<select name="mt_lang" id="pll-mt-lang">{{range .Langs}}{{if not .IsDefault}}<option value="{{.Slug}}">{{.Name}}</option>{{end}}{{end}}{{range .Langs}}{{if .IsDefault}}<option value="{{.Slug}}">{{.Name}}</option>{{end}}{{end}}</select>
+	<button type="button" class="button" id="pll-mt-page">Translate empty strings on this page</button>
+	<input type="submit" class="button" id="pll-mt-all" value="Translate all empty strings" />
+	<span class="spinner" id="pll-mt-spinner" style="float:none"></span> <span id="pll-mt-status" role="status"></span>
+</div><br class="clear" /></div>
+</form>{{end}}
 <form id="string-translation" method="post" action="/wp-admin/admin?page=mlang_strings">
 <input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
 <input type="hidden" name="group" value="{{.Group}}" />
@@ -245,17 +301,63 @@ document.querySelectorAll('.pll-configure-link').forEach(function(a){
 </tr></thead>
 <tbody id="the-list">
 {{range .Rows}}<tr>
-	<th scope="row" class="check-column">{{if .Deletable}}<input type="checkbox" name="strings[]" value="{{.String}}" id="cb-string-{{.Index}}" /><label for="cb-string-{{.Index}}"><span class="screen-reader-text">Select {{.Name}}</span></label>{{else}}<input type="checkbox" disabled="disabled" />{{end}}</th>
-	<td class="string column-string column-primary" data-colname="String">{{.String}}<input type="hidden" name="original[{{.Index}}]" value="{{.String}}" /><button type="button" class="toggle-row"><span class="screen-reader-text">Show more details</span></button></td>
+	<th scope="row" class="check-column">{{if .Deletable}}<input type="checkbox" name="strings[]" value="{{.Key}}" id="cb-string-{{.Index}}" /><label for="cb-string-{{.Index}}"><span class="screen-reader-text">Select {{.Name}}</span></label>{{else}}<input type="checkbox" disabled="disabled" />{{end}}</th>
+	<td class="string column-string column-primary" data-colname="String">{{.String}}<input type="hidden" name="original[{{.Index}}]" value="{{.Key}}" /><button type="button" class="toggle-row"><span class="screen-reader-text">Show more details</span></button></td>
 	<td class="name column-name" data-colname="Name">{{.Name}}</td>
 	<td class="context column-context" data-colname="Group">{{.Group}}</td>
-	<td class="translations column-translations" data-colname="Translations">{{$i := .Index}}{{$ml := .Multiline}}{{range .Translations}}<div class="translation"><label for="pll-tr-{{.Lang.Slug}}-{{$i}}">{{.Lang.FlagHTML}} {{.Lang.Name}}</label>{{if $ml}}<textarea name="translation[{{.Lang.Slug}}][{{$i}}]" id="pll-tr-{{.Lang.Slug}}-{{$i}}" rows="3">{{.Value}}</textarea>{{else}}<input type="text" name="translation[{{.Lang.Slug}}][{{$i}}]" id="pll-tr-{{.Lang.Slug}}-{{$i}}" value="{{.Value}}" />{{end}}</div>{{end}}</td>
+	<td class="translations column-translations" data-colname="Translations">{{$i := .Index}}{{$ml := .Multiline}}{{$nomt := eq .Group "URL slugs"}}{{range .Translations}}<div class="translation"><label for="pll-tr-{{.Lang.Slug}}-{{$i}}">{{.Lang.FlagHTML}} {{.Lang.Name}}</label>{{if $ml}}<textarea name="translation[{{.Lang.Slug}}][{{$i}}]" id="pll-tr-{{.Lang.Slug}}-{{$i}}" rows="3"{{if $nomt}} data-pll-no-mt="1"{{end}}>{{.Value}}</textarea>{{else}}<input type="text" name="translation[{{.Lang.Slug}}][{{$i}}]" id="pll-tr-{{.Lang.Slug}}-{{$i}}" value="{{.Value}}"{{if $nomt}} data-pll-no-mt="1"{{end}} />{{end}}{{if and $d.MT.Enabled (not $nomt)}}<button type="button" class="button-link pll-mt-suggest" data-lang="{{.Lang.Slug}}" data-index="{{$i}}">Suggest<span class="screen-reader-text"> a machine translation in {{.Lang.Name}}</span></button>{{end}}</div>{{end}}</td>
 </tr>{{else}}<tr class="no-items"><td class="colspanchange" colspan="5">No string translation found.</td></tr>{{end}}
 </tbody>
 </table>
 <p><label><input name="clean" type="checkbox" value="1" /> Clean strings translation database</label><br /><span class="description">Use this to remove unused strings from database, for example after a plugin has been uninstalled.</span></p>
 <p class="submit"><input type="submit" name="submit" class="button button-primary" value="Save changes" /></p>
 </form>
+{{if .MT.Enabled}}<script>
+(function(){
+	var nonce = {{.MT.RESTNonce}}, status = document.getElementById('pll-mt-status'), spin = document.getElementById('pll-mt-spinner');
+	function say(msg, err){ status.textContent = msg; status.style.color = err ? '#d63638' : ''; }
+	function translate(texts, lang){
+		return fetch('/wp-json/pll/v1/translate', {method: 'POST', credentials: 'same-origin',
+			headers: {'X-WP-Nonce': nonce, 'Content-Type': 'application/json'}, body: JSON.stringify({texts: texts, target: lang})})
+		.then(function(r){ return r.json().then(function(j){
+			if (!r.ok) { throw new Error((j && j.message) || 'Machine translation failed.'); }
+			return j.translations;
+		}); });
+	}
+	// original is the text of row i (its key is "context\x04text" for strings with a gettext context).
+	function original(i){ var o = document.querySelector('#string-translation input[name="original[' + i + ']"]'), v = o ? o.value : ''; return v.slice(v.indexOf('\x04') + 1); }
+	function field(lang, i){ return document.getElementById('pll-tr-' + lang + '-' + i); }
+	function busy(on){ spin.classList.toggle('is-active', on); }
+	document.getElementById('pll-mt-page').addEventListener('click', function(){
+		var lang = document.getElementById('pll-mt-lang').value, texts = [], fields = [];
+		document.querySelectorAll('#string-translation [name^="translation[' + lang + ']["]').forEach(function(f){
+			var m = /\[(\d+)\]$/.exec(f.name);
+			if (m && !f.hasAttribute('data-pll-no-mt') && f.value.trim() === '' && original(m[1]).trim() !== '') { texts.push(original(m[1])); fields.push(f); }
+		});
+		if (!texts.length) { say('There are no empty strings on this page in this language.'); return; }
+		var btn = this; btn.disabled = true; busy(true); say('');
+		translate(texts, lang).then(function(res){
+			res.forEach(function(t, k){ if (t && t !== texts[k]) { fields[k].value = t; fields[k].classList.add('pll-mt-filled'); } });
+			say(res.length + ' strings filled. Check them, then press Save changes.');
+		}).catch(function(e){ say(e.message, true); }).then(function(){ btn.disabled = false; busy(false); });
+	});
+	document.getElementById('pll-mt-fill').addEventListener('submit', function(e){
+		var sel = document.getElementById('pll-mt-lang');
+		if (!window.confirm('Translate every string without a translation in ' + sel.options[sel.selectedIndex].text + ' with the machine translation service and save the results?')) { e.preventDefault(); return; }
+		busy(true);
+	});
+	document.addEventListener('click', function(e){
+		var b = e.target.closest && e.target.closest('.pll-mt-suggest');
+		if (!b) { return; }
+		var f = field(b.getAttribute('data-lang'), b.getAttribute('data-index')), text = original(b.getAttribute('data-index'));
+		if (!f || !text) { return; }
+		b.disabled = true; busy(true);
+		translate([text], b.getAttribute('data-lang')).then(function(res){ f.value = res[0]; f.classList.add('pll-mt-filled'); f.focus(); say(''); })
+		.catch(function(err){ say(err.message, true); }).then(function(){ b.disabled = false; busy(false); });
+	});
+})();
+</script>
+<style>.pll-mt-suggest{margin-left:4px}.pll-mt-filled{background:#fcf9e8}#pll-mt-fill .tablenav{height:auto}</style>{{end}}
 
 <div id="pll-import-export" class="metabox-holder">
 <div class="postbox"><div class="postbox-header"><h2 class="hndle">Export translations</h2></div><div class="inside">
@@ -282,3 +384,527 @@ document.querySelectorAll('.pll-configure-link').forEach(function(a){
 </div>
 </div>
 {{end}}{{template "admin-footer" .}}{{end}}
+
+{{define "admin/golylang-visual"}}<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>{{.Title}} &lsaquo; {{.SiteName}} &#8212; Pursae</title>
+<link rel="stylesheet" href="/wp-includes/css/dashicons.min.css">
+<link rel="stylesheet" href="/wp-includes/css/buttons.min.css">
+<link rel="stylesheet" href="/wp-admin/css/common.min.css">
+<link rel="stylesheet" href="/wp-admin/css/forms.min.css">
+<style>
+html, body { height: 100%; margin: 0; overflow: hidden; background: #f0f0f1; }
+#pll-visual { position: fixed; inset: 0; display: flex; }
+#pll-visual-panel { width: 340px; min-width: 300px; max-width: 360px; display: flex; flex-direction: column; background: #f0f0f1; border-right: 1px solid #dcdcde; box-sizing: border-box; }
+#pll-visual-panel header { display: flex; align-items: center; gap: 8px; height: 46px; padding: 0 12px 0 0; border-bottom: 1px solid #dcdcde; background: #fff; }
+#pll-visual-close { display: flex; align-items: center; justify-content: center; width: 46px; height: 46px; border-right: 1px solid #dcdcde; color: #3c434a; text-decoration: none; }
+#pll-visual-close:hover, #pll-visual-close:focus { background: #f6f7f7; color: #2271b1; }
+#pll-visual-close .dashicons { font-size: 22px; width: 22px; height: 22px; }
+#pll-visual-panel header h1 { flex: 1; margin: 0; font-size: 14px; font-weight: 600; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#pll-visual-panel header select { max-width: 140px; }
+.pll-v-scroll { flex: 1; overflow-y: auto; padding: 12px; }
+.pll-v-box { background: #fff; border: 1px solid #dcdcde; padding: 12px; margin: 0 0 12px; }
+.pll-v-box h2 { font-size: 13px; margin: 0 0 8px; }
+.pll-v-box .description { margin: 4px 0 8px; }
+.pll-v-original { background: #f6f7f7; border: 1px solid #dcdcde; padding: 6px 8px; white-space: pre-wrap; word-break: break-word; max-height: 140px; overflow: auto; }
+.pll-v-box textarea { width: 100%; min-height: 72px; box-sizing: border-box; }
+.pll-v-actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 8px; }
+.pll-v-status { color: #646970; font-size: 12px; }
+.pll-v-status.is-error { color: #d63638; }
+.pll-v-status.is-ok { color: #008a20; }
+#pll-v-filters { display: flex; gap: 6px; margin-bottom: 8px; }
+#pll-v-filters input { flex: 1; min-width: 0; }
+#pll-v-list { list-style: none; margin: 0; padding: 0; border: 1px solid #dcdcde; background: #fff; max-height: 46vh; overflow-y: auto; }
+#pll-v-list li { margin: 0; border-bottom: 1px solid #f0f0f1; }
+#pll-v-list button { display: block; width: 100%; text-align: left; border: 0; background: none; padding: 7px 10px 7px 28px; cursor: pointer; position: relative; font: inherit; color: #1d2327; }
+#pll-v-list button:hover, #pll-v-list button:focus { background: #f6f7f7; }
+#pll-v-list button.is-current { background: #f0f6fc; box-shadow: inset 3px 0 0 #2271b1; }
+#pll-v-list button::before { content: ""; position: absolute; left: 10px; top: 12px; width: 8px; height: 8px; border-radius: 50%; background: #dba617; }
+#pll-v-list button.is-translated::before { background: #00a32a; }
+#pll-v-list .pll-v-o { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#pll-v-list .pll-v-t { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #646970; font-size: 12px; }
+#pll-v-count { margin: 6px 0 0; color: #646970; font-size: 12px; }
+#pll-visual-preview { flex: 1; position: relative; background: #fff; }
+#pll-visual-preview iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.pll-v-notice { border-left: 4px solid #72aee6; background: #fff; padding: 8px 12px; margin: 0 0 12px; box-shadow: 0 1px 1px rgba(0,0,0,.04); }
+.pll-v-notice.is-warning { border-left-color: #dba617; }
+.pll-v-hidden { display: none !important; }
+.pll-v-langs { display: flex; flex-wrap: wrap; gap: 6px; }
+@media (max-width: 782px) {
+	#pll-visual { flex-direction: column; }
+	#pll-visual-panel { width: 100%; max-width: none; height: 48%; border-right: 0; border-bottom: 1px solid #dcdcde; }
+}
+</style>
+</head>
+<body class="wp-core-ui js admin-color-modern">
+{{if .Error}}
+<div class="wrap" style="max-width:640px;margin:60px auto;"><div class="pll-v-notice is-warning"><p>{{.Error}}</p><p><a class="button" href="/wp-admin/admin?page=mlang">Languages</a> <a class="button" href="{{.Close}}">Back to the page</a></p></div></div>
+{{else}}
+<div id="pll-visual" data-lang="{{.Lang.Slug}}">
+<aside id="pll-visual-panel" aria-label="Translation panel">
+	<header>
+		<a id="pll-visual-close" href="{{.Close}}" title="Close"><span class="dashicons dashicons-no-alt" aria-hidden="true"></span><span class="screen-reader-text">Close the visual translation and go back to the page</span></a>
+		<h1 id="pll-v-title">Translate visually</h1>
+		<label class="screen-reader-text" for="pll-v-lang">Language</label>
+		<select id="pll-v-lang">{{range .Langs}}<option value="{{.Slug}}"{{if eq .Slug $.Lang.Slug}} selected{{end}}>{{.Name}}</option>{{end}}</select>
+	</header>
+	<div class="pll-v-scroll">
+		<div id="pll-v-loading" class="pll-v-notice"><p>Loading the page&hellip;</p></div>
+		<div id="pll-v-default" class="pll-v-notice is-warning pll-v-hidden"><p>This page is in the default language ({{.DefaultLangName}}): its texts are the originals. Open a translation of the page to translate it.</p><div class="pll-v-langs" id="pll-v-alts"></div></div>
+		<div id="pll-v-help" class="pll-v-notice pll-v-hidden"><p>Click a text, an image or a post on the page to translate it. Shift+click follows a link.</p></div>
+
+		<div id="pll-v-editor" class="pll-v-box pll-v-hidden" aria-live="polite">
+			<h2>Translate string</h2>
+			<div class="pll-v-original" id="pll-v-original"></div>
+			<p class="description" id="pll-v-meta"></p>
+			<label for="pll-v-translation"><strong id="pll-v-tr-label">Translation</strong></label>
+			<textarea id="pll-v-translation" lang="{{.Lang.W3C}}"{{if .Lang.RTL}} dir="rtl"{{end}}></textarea>
+			<div class="pll-v-actions">
+				<button type="button" class="button button-primary" id="pll-v-save">Save translation</button>
+				{{if .MT}}<button type="button" class="button" id="pll-v-suggest">Suggest</button>{{end}}
+				<button type="button" class="button-link" id="pll-v-revert">Discard changes</button>
+				<span class="pll-v-status" id="pll-v-status" role="status"></span>
+			</div>
+		</div>
+
+		<div id="pll-v-image" class="pll-v-box pll-v-hidden">
+			<h2>Image</h2>
+			{{if .Media}}
+			<p class="description">Alternative text in the default language:</p>
+			<div class="pll-v-original" id="pll-v-img-base"></div>
+			<p><label for="pll-v-img-alt"><strong>Alternative text in <span class="pll-v-langname">{{.Lang.Name}}</span></strong></label>
+			<textarea id="pll-v-img-alt" lang="{{.Lang.W3C}}"{{if .Lang.RTL}} dir="rtl"{{end}}></textarea></p>
+			<p class="description">Leave it empty to use the default language text.</p>
+			<div class="pll-v-actions">
+				<button type="button" class="button button-primary" id="pll-v-img-save">Save alternative text</button>
+				{{if .MT}}<button type="button" class="button" id="pll-v-img-suggest">Suggest</button>{{end}}
+				<span class="pll-v-status" id="pll-v-img-status" role="status"></span>
+			</div>
+			{{else}}
+			<p>Image texts are translated per language when the Media module is active. <a href="/wp-admin/admin?page=mlang_settings" target="_blank" rel="noopener">Languages &rsaquo; Settings</a></p>
+			{{end}}
+		</div>
+
+		<div id="pll-v-post" class="pll-v-box pll-v-hidden">
+			<h2>Content</h2>
+			<p id="pll-v-post-info"></p>
+			<p class="description">Post content is translated in the post's translation, not as strings.</p>
+			<div class="pll-v-actions" id="pll-v-post-actions"></div>
+		</div>
+
+		<div class="pll-v-box">
+			<h2>Strings on this page</h2>
+			<div id="pll-v-filters">
+				<label class="screen-reader-text" for="pll-v-search">Search strings</label>
+				<input type="search" id="pll-v-search" placeholder="Search strings">
+				<label class="screen-reader-text" for="pll-v-filter">Show</label>
+				<select id="pll-v-filter"><option value="">All</option><option value="untranslated">Untranslated</option><option value="translated">Translated</option></select>
+			</div>
+			<ul id="pll-v-list"></ul>
+			<p id="pll-v-count"></p>
+		</div>
+	</div>
+</aside>
+<main id="pll-visual-preview">
+	<iframe id="pll-v-frame" title="Page preview" src="{{.Frame}}"></iframe>
+</main>
+</div>
+<script>
+( function() {
+	'use strict';
+	var cfg = { lang: {{.Lang.Slug}}, langName: {{.Lang.Name}}, rtl: {{.Lang.RTL}}, param: {{.Param}}, token: {{.Token}}, nonce: {{.RESTNonce}}, mt: {{.MT}}, media: {{.Media}} };
+	var $ = function( id ) { return document.getElementById( id ); };
+	var frame = $( 'pll-v-frame' ), data = null, items = {}, current = null, first = true, pageURL = '', pageLang = null, imageID = 0, imageBase = '';
+
+	function api( method, path, body ) {
+		var opts = { method: method, credentials: 'same-origin', headers: { 'X-WP-Nonce': cfg.nonce, 'X-Pll-Page': pageURL } };
+		if ( body ) {
+			opts.headers[ 'Content-Type' ] = 'application/json';
+			opts.body = JSON.stringify( body );
+		}
+		return fetch( '/wp-json' + path, opts ).then( function( r ) {
+			return r.json().catch( function() { return {}; } ).then( function( j ) {
+				if ( ! r.ok ) {
+					throw new Error( ( j && j.message ) || ( 'Error ' + r.status ) );
+				}
+				return j;
+			} );
+		} );
+	}
+	function status( el, text, kind ) {
+		el.textContent = text;
+		el.className = 'pll-v-status' + ( kind ? ' is-' + kind : '' );
+	}
+	function post( msg ) {
+		if ( frame.contentWindow ) {
+			frame.contentWindow.postMessage( msg, location.origin );
+		}
+	}
+	function show( id, on ) {
+		$( id ).classList.toggle( 'pll-v-hidden', ! on );
+	}
+	function frameURL( path ) {
+		var u;
+		try {
+			u = new URL( String( path ), location.origin );
+		} catch ( e ) {
+			u = new URL( '/', location.origin );
+		}
+		// Same-origin site pages only (never an admin path, never a network-path reference).
+		if ( u.origin !== location.origin || /^\/\//.test( u.pathname ) || u.pathname.indexOf( '\\' ) !== -1 || /^\/(wp-admin|wp-login|wp-json|xmlrpc)/.test( u.pathname ) ) {
+			u = new URL( '/', location.origin );
+		}
+		u.searchParams.set( cfg.param, cfg.token );
+		return u.pathname + u.search;
+	}
+	// adminURL keeps a same-origin /wp-admin/ link (the edit and create links of a post region).
+	function adminURL( href ) {
+		var u;
+		try {
+			u = new URL( String( href ), location.origin );
+		} catch ( e ) {
+			return '';
+		}
+		return u.origin === location.origin && u.pathname.indexOf( '/wp-admin/' ) === 0 ? u.pathname + u.search : '';
+	}
+	function editable() {
+		return pageLang && ! pageLang[ 'default' ];
+	}
+	function fallback( it ) {
+		return it.base;
+	}
+
+	// The string list.
+	function renderList() {
+		var ul = $( 'pll-v-list' ), q = $( 'pll-v-search' ).value.toLowerCase(), f = $( 'pll-v-filter' ).value, n = 0, total = 0;
+		ul.textContent = '';
+		( data ? data.strings : [] ).forEach( function( it ) {
+			total++;
+			var done = !! it.translation;
+			if ( ( f === 'translated' && ! done ) || ( f === 'untranslated' && done ) ) {
+				return;
+			}
+			if ( q && it.original.toLowerCase().indexOf( q ) < 0 && ( it.translation || '' ).toLowerCase().indexOf( q ) < 0 ) {
+				return;
+			}
+			n++;
+			var li = document.createElement( 'li' ), b = document.createElement( 'button' ), o = document.createElement( 'span' ), t = document.createElement( 'span' );
+			b.type = 'button';
+			b.className = ( done ? 'is-translated' : '' ) + ( current === it ? ' is-current' : '' );
+			b.setAttribute( 'data-m', it.m );
+			o.className = 'pll-v-o';
+			o.textContent = it.original;
+			t.className = 'pll-v-t';
+			t.textContent = done ? it.translation : 'Not translated';
+			if ( editable() ) {
+				t.lang = pageLang.w3c;
+				if ( pageLang.rtl ) {
+					t.dir = 'rtl';
+				}
+			}
+			b.appendChild( o );
+			b.appendChild( t );
+			b.addEventListener( 'click', function() {
+				pick( it );
+				post( { pllVisual: 'focus', m: it.m } );
+			} );
+			li.appendChild( b );
+			ul.appendChild( li );
+		} );
+		$( 'pll-v-count' ).textContent = n === total ? total + ' strings' : n + ' of ' + total + ' strings';
+	}
+
+	function hideEditors() {
+		show( 'pll-v-editor', false );
+		show( 'pll-v-image', false );
+		show( 'pll-v-post', false );
+	}
+
+	function pick( it ) {
+		if ( current && current !== it ) {
+			preview( current, current.translation || fallback( current ) );
+		}
+		current = it;
+		hideEditors();
+		show( 'pll-v-editor', true );
+		$( 'pll-v-original' ).textContent = it.original;
+		var meta = [];
+		if ( it.context ) {
+			meta.push( 'Context: ' + it.context );
+		}
+		it.attrs.forEach( function( a ) {
+			meta.push( a ? 'Attribute: ' + a : 'Text' );
+		} );
+		$( 'pll-v-meta' ).textContent = meta.join( ' · ' );
+		$( 'pll-v-tr-label' ).textContent = editable() ? 'Translation in ' + pageLang.name : 'Translation';
+		var ta = $( 'pll-v-translation' );
+		if ( pageLang ) {
+			ta.lang = pageLang.w3c;
+			ta.dir = pageLang.rtl ? 'rtl' : 'ltr';
+		}
+		ta.value = it.translation || '';
+		ta.disabled = ! editable();
+		$( 'pll-v-save' ).disabled = ! editable();
+		if ( $( 'pll-v-suggest' ) ) {
+			$( 'pll-v-suggest' ).disabled = ! editable();
+		}
+		status( $( 'pll-v-status' ), '' );
+		renderList();
+		if ( editable() ) {
+			ta.focus();
+		}
+	}
+	function preview( it, text ) {
+		post( { pllVisual: 'update', m: it.m, text: text, attrs: it.attrs.filter( function( a ) { return a; } ) } );
+	}
+
+	$( 'pll-v-translation' ).addEventListener( 'input', function() {
+		if ( current ) {
+			preview( current, this.value.trim() || fallback( current ) );
+		}
+	} );
+	$( 'pll-v-revert' ).addEventListener( 'click', function() {
+		if ( current ) {
+			$( 'pll-v-translation' ).value = current.translation || '';
+			preview( current, current.translation || fallback( current ) );
+			status( $( 'pll-v-status' ), '' );
+		}
+	} );
+	$( 'pll-v-save' ).addEventListener( 'click', function() {
+		var it = current, val = $( 'pll-v-translation' ).value, st = $( 'pll-v-status' ), btn = this;
+		if ( ! it || ! editable() ) {
+			return;
+		}
+		btn.disabled = true;
+		status( st, 'Saving…' );
+		api( 'POST', '/pll/v1/visual/strings', { lang: pageLang.slug, items: [ { original: it.key, translation: val } ] } ).then( function( r ) {
+			it.translation = ( r.items && r.items[ 0 ] && r.items[ 0 ].translation ) || '';
+			$( 'pll-v-translation' ).value = it.translation;
+			preview( it, it.translation || fallback( it ) );
+			status( st, 'Saved.', 'ok' );
+			renderList();
+		} ).catch( function( e ) {
+			status( st, e.message, 'error' );
+		} ).then( function() {
+			btn.disabled = false;
+		} );
+	} );
+	function suggest( text, html ) {
+		return api( 'POST', '/pll/v1/translate', { texts: [ text ], target: pageLang.slug, html: !! html } ).then( function( r ) {
+			return ( r.translations && r.translations[ 0 ] ) || '';
+		} );
+	}
+	if ( $( 'pll-v-suggest' ) ) {
+		$( 'pll-v-suggest' ).addEventListener( 'click', function() {
+			var it = current, st = $( 'pll-v-status' );
+			if ( ! it || ! editable() ) {
+				return;
+			}
+			status( st, 'Translating…' );
+			suggest( it.original, false ).then( function( t ) {
+				$( 'pll-v-translation' ).value = t;
+				preview( it, t || fallback( it ) );
+				status( st, 'Suggestion added. Check it, then save.' );
+			} ).catch( function( e ) {
+				status( st, e.message, 'error' );
+			} );
+		} );
+	}
+
+	// Images (Media module).
+	function pickImage( id, alt ) {
+		hideEditors();
+		show( 'pll-v-image', true );
+		imageID = id;
+		if ( ! cfg.media ) {
+			return;
+		}
+		var ta = $( 'pll-v-img-alt' ), st = $( 'pll-v-img-status' );
+		if ( pageLang ) {
+			ta.lang = pageLang.w3c;
+			ta.dir = pageLang.rtl ? 'rtl' : 'ltr';
+		}
+		ta.value = '';
+		ta.disabled = ! editable();
+		$( 'pll-v-img-save' ).disabled = true;
+		$( 'pll-v-img-base' ).textContent = '';
+		document.querySelectorAll( '.pll-v-langname' ).forEach( function( el ) {
+			el.textContent = pageLang ? pageLang.name : cfg.langName;
+		} );
+		status( st, 'Loading…' );
+		api( 'GET', '/pll/v1/media/' + id + '/i18n' ).then( function( r ) {
+			if ( imageID !== id ) {
+				return;
+			}
+			imageBase = ( r.base && r.base.alt_text ) || '';
+			$( 'pll-v-img-base' ).textContent = imageBase || '(empty)';
+			var mine = r.i18n && pageLang && r.i18n[ pageLang.slug ];
+			ta.value = ( mine && mine.alt_text ) || '';
+			$( 'pll-v-img-save' ).disabled = ! editable();
+			status( st, editable() ? '' : 'Open a translation of the page to translate this image.' );
+		} ).catch( function( e ) {
+			status( st, e.message, 'error' );
+		} );
+	}
+	if ( cfg.media ) {
+		$( 'pll-v-img-alt' ).addEventListener( 'input', function() {
+			post( { pllVisual: 'alt', id: imageID, alt: this.value.trim() || imageBase } );
+		} );
+		$( 'pll-v-img-save' ).addEventListener( 'click', function() {
+			var id = imageID, v = $( 'pll-v-img-alt' ).value, st = $( 'pll-v-img-status' ), body = {};
+			if ( ! id || ! editable() ) {
+				return;
+			}
+			body[ pageLang.slug ] = { alt_text: v };
+			status( st, 'Saving…' );
+			api( 'POST', '/pll/v1/media/' + id + '/i18n', body ).then( function() {
+				post( { pllVisual: 'alt', id: id, alt: v.trim() || imageBase } );
+				status( st, 'Saved.', 'ok' );
+			} ).catch( function( e ) {
+				status( st, e.message, 'error' );
+			} );
+		} );
+		if ( $( 'pll-v-img-suggest' ) ) {
+			$( 'pll-v-img-suggest' ).addEventListener( 'click', function() {
+				var st = $( 'pll-v-img-status' );
+				if ( ! imageBase || ! editable() ) {
+					return;
+				}
+				status( st, 'Translating…' );
+				suggest( imageBase, false ).then( function( t ) {
+					$( 'pll-v-img-alt' ).value = t;
+					post( { pllVisual: 'alt', id: imageID, alt: t || imageBase } );
+					status( st, 'Suggestion added. Check it, then save.' );
+				} ).catch( function( e ) {
+					status( st, e.message, 'error' );
+				} );
+			} );
+		}
+	}
+
+	// Post content regions.
+	function link( label, href, primary ) {
+		var a = document.createElement( 'a' );
+		a.className = 'button' + ( primary ? ' button-primary' : '' );
+		a.href = adminURL( href ) || '#';
+		a.target = '_blank';
+		a.rel = 'noopener';
+		a.textContent = label;
+		return a;
+	}
+	function pickPost( id ) {
+		var p = null, box = $( 'pll-v-post-actions' ), info = $( 'pll-v-post-info' );
+		( data.posts || [] ).forEach( function( x ) {
+			if ( x.id === id ) {
+				p = x;
+			}
+		} );
+		hideEditors();
+		show( 'pll-v-post', true );
+		box.textContent = '';
+		if ( ! p ) {
+			info.textContent = 'You cannot edit this content.';
+			return;
+		}
+		info.textContent = '“' + ( p.title || '(no title)' ) + '” is in ' + ( p.lang_name || p.lang ) + '.';
+		if ( p.lang === p.target ) {
+			if ( p.edit_url ) {
+				box.appendChild( link( 'Edit translation in Pursae Editor', p.edit_url, true ) );
+			}
+			if ( p.builder_url ) {
+				box.appendChild( link( 'Edit in Web Builder', p.builder_url, false ) );
+			}
+		} else if ( p.tr_id ) {
+			if ( p.tr_edit_url ) {
+				box.appendChild( link( 'Edit the ' + p.target_name + ' translation in Pursae Editor', p.tr_edit_url, true ) );
+			}
+			if ( p.tr_builder_url ) {
+				box.appendChild( link( 'Edit the ' + p.target_name + ' translation in Web Builder', p.tr_builder_url, false ) );
+			}
+		} else if ( p.create_url ) {
+			box.appendChild( link( 'Create the ' + p.target_name + ' translation', p.create_url, true ) );
+		}
+		if ( ! box.firstChild ) {
+			info.textContent += ' You cannot edit it.';
+		}
+	}
+
+	// Messages of the page.
+	window.addEventListener( 'message', function( e ) {
+		var d = e.data;
+		if ( e.origin !== location.origin || e.source !== frame.contentWindow || ! d || typeof d !== 'object' ) {
+			return;
+		}
+		if ( d.pllVisual === 'ready' && d.data ) {
+			data = d.data;
+			pageLang = data.lang || null;
+			pageURL = d.url || '/';
+			if ( first && pageLang && pageLang.slug !== cfg.lang && data.alternates && data.alternates[ cfg.lang ] ) {
+				first = false;
+				frame.src = frameURL( data.alternates[ cfg.lang ] );
+				return;
+			}
+			first = false;
+			items = {};
+			( data.strings || [] ).forEach( function( it ) {
+				it.base = it.translation ? it.original : it.shown;
+				items[ it.m ] = it;
+			} );
+			current = null;
+			hideEditors();
+			$( 'pll-visual-close' ).href = pageURL;
+			$( 'pll-v-title' ).textContent = d.title || 'Translate visually';
+			show( 'pll-v-loading', false );
+			show( 'pll-v-help', editable() );
+			show( 'pll-v-default', ! editable() );
+			var sel = $( 'pll-v-lang' );
+			if ( editable() && pageLang.slug !== sel.value ) {
+				sel.value = pageLang.slug;
+			}
+			var alts = $( 'pll-v-alts' );
+			alts.textContent = '';
+			Object.keys( data.alternates || {} ).forEach( function( slug ) {
+				if ( pageLang && slug === pageLang.slug ) {
+					return;
+				}
+				var b = document.createElement( 'button' ), opt = sel.querySelector( 'option[value="' + slug.replace( /[^a-z0-9_-]/gi, '' ) + '"]' );
+				if ( ! opt ) {
+					return;
+				}
+				b.type = 'button';
+				b.className = 'button';
+				b.textContent = opt.textContent;
+				b.addEventListener( 'click', function() {
+					frame.src = frameURL( data.alternates[ slug ] );
+				} );
+				alts.appendChild( b );
+			} );
+			renderList();
+		} else if ( d.pllVisual === 'select' && data ) {
+			if ( ( d.kind === 'string' || d.kind === 'attr' ) && items[ d.m ] ) {
+				pick( items[ d.m ] );
+			} else if ( d.kind === 'image' ) {
+				pickImage( parseInt( d.id, 10 ), d.alt || '' );
+			} else if ( d.kind === 'post' ) {
+				pickPost( parseInt( d.id, 10 ) );
+			}
+		}
+	} );
+	$( 'pll-v-search' ).addEventListener( 'input', renderList );
+	$( 'pll-v-filter' ).addEventListener( 'change', renderList );
+	$( 'pll-v-lang' ).addEventListener( 'change', function() {
+		var u = new URL( location.href );
+		u.searchParams.set( 'lang', this.value );
+		u.searchParams.set( 'url', pageURL || u.searchParams.get( 'url' ) || '/' );
+		location.href = u.pathname + u.search;
+	} );
+} )();
+</script>
+{{end}}
+</body>
+</html>
+{{end}}

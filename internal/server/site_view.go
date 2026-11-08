@@ -276,7 +276,7 @@ func (s *Server) buildSiteView(c *gin.Context, q *siteQuery) (*siteView, error) 
 	if u != nil {
 		bodyClasses = append(bodyClasses, "logged-in")
 	}
-	showBar := u != nil && cs == nil // the Customizer preview has no toolbar
+	showBar := u != nil && cs == nil && !s.pllVisualOn(c) // the Customizer preview and visual translation (golylang_visual.go) have no toolbar
 	if u != nil {
 		if b, ok := u.Meta["show_admin_bar_front"].(bool); ok && !b {
 			showBar = false // the user's "Show Toolbar" choice can hide it, never bring it back into a preview
@@ -313,7 +313,7 @@ func (s *Server) buildSiteView(c *gin.Context, q *siteQuery) (*siteView, error) 
 		v.Footer += template.HTML(v.Theme.Footer(s, c, v))
 	}
 	if showBar {
-		v.AdminBar = s.frontAdminBar(c, q, lb, u)
+		v.AdminBar = template.HTML(s.pllUC(c, string(s.frontAdminBar(c, q, lb, u)), 0)) // the toolbar is no page text (golylang_uc.go)
 	}
 	s.customizeFinish(c, v, cs)
 	return v, nil
@@ -395,11 +395,11 @@ func (s *Server) postNavigation(ctx context.Context, p *store.Post, lb *links.Bu
 	var sb strings.Builder
 	if prev != nil {
 		fmt.Fprintf(&sb, `<div class="nav-previous"><a href="%s" rel="prev"><span class="meta-nav" aria-hidden="true">Previous</span> <span class="screen-reader-text">Previous post:</span> <span class="post-title">%s</span></a></div>`,
-			html.EscapeString(lb.Permalink(prev)), wp.Texturize(wp.EscText(prev.Title)))
+			html.EscapeString(lb.Permalink(prev)), s.pllUC(ctx, wp.Texturize(wp.EscText(prev.Title)), 0))
 	}
 	if next != nil {
 		fmt.Fprintf(&sb, `<div class="nav-next"><a href="%s" rel="next"><span class="meta-nav" aria-hidden="true">Next</span> <span class="screen-reader-text">Next post:</span> <span class="post-title">%s</span></a></div>`,
-			html.EscapeString(lb.Permalink(next)), wp.Texturize(wp.EscText(next.Title)))
+			html.EscapeString(lb.Permalink(next)), s.pllUC(ctx, wp.Texturize(wp.EscText(next.Title)), 0))
 	}
 	return template.HTML(`
 	<nav class="navigation post-navigation" aria-label="Posts">
@@ -527,11 +527,11 @@ func (s *Server) theExcerpt(p *store.Post, lb *links.Builder) string {
 }
 
 func (s *Server) postView(ctx context.Context, c *gin.Context, p *store.Post, singular bool, lb *links.Builder, u *store.User) *postView {
-	pv := &postView{ID: p.ID, Type: p.Type, Title: template.HTML(theTitle(p)), Permalink: lb.Permalink(p), Sticky: p.Sticky}
-	pv.Content = template.HTML(s.theContent(ctx, c, p, singular, lb))
+	pv := &postView{ID: p.ID, Type: p.Type, Title: template.HTML(s.pllUC(ctx, theTitle(p), 0)), Permalink: lb.Permalink(p), Sticky: p.Sticky}
+	pv.Content = template.HTML(s.pllUC(ctx, s.theContent(ctx, c, p, singular, lb), p.ID)) // Multi Language user content (golylang_uc.go)
 	pv.ShowExcerpt = p.Excerpt != "" || (renderFrom(ctx) != nil && renderFrom(ctx).search != "")
 	if pv.ShowExcerpt {
-		pv.Excerpt = template.HTML(s.theExcerpt(p, lb))
+		pv.Excerpt = template.HTML(s.pllUC(ctx, s.theExcerpt(p, lb), 0))
 	}
 
 	cats, tags := s.postTerms(ctx, p.ID, "category"), s.postTerms(ctx, p.ID, "post_tag") // request memo (site_memo.go)

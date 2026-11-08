@@ -233,7 +233,7 @@ func (s *Server) tt5Prepare(c *gin.Context, v *siteView) {
 
 	// comments.php: the comments block's title, 50px avatars and the post-comments-form wrapper.
 	if cv := v.Comments; cv != nil {
-		title := theTitle(v.Post.Post)
+		title := s.pllUC(ctx, theTitle(v.Post.Post), 0) // Multi Language user content
 		if cv.Count == 1 {
 			cv.Title = template.HTML("One response to &#8220;" + title + "&#8221;")
 		} else {
@@ -402,12 +402,12 @@ func (s *Server) tt5PostNav(ctx context.Context, p *store.Post, lb *links.Builde
 	<nav class="wp-block-group alignwide is-content-justification-space-between is-nowrap is-layout-flex wp-container-core-group-is-layout-878fe601 wp-block-group-is-layout-flex" aria-label="Post navigation" style="border-top-color:var(--wp--preset--color--accent-6);border-top-width:1px;padding-top:var(--wp--preset--spacing--40);padding-bottom:var(--wp--preset--spacing--40)">
 		<div class="post-navigation-link-previous wp-block-post-navigation-link">`)
 	if prev != nil {
-		sb.WriteString(`<span class="wp-block-post-navigation-link__arrow-previous is-arrow-arrow" aria-hidden="true">←</span><a href="` + html.EscapeString(lb.Permalink(prev)) + `" rel="prev">` + wp.Texturize(wp.EscText(prev.Title)) + `</a>`)
+		sb.WriteString(`<span class="wp-block-post-navigation-link__arrow-previous is-arrow-arrow" aria-hidden="true">←</span><a href="` + html.EscapeString(lb.Permalink(prev)) + `" rel="prev">` + s.pllUC(ctx, wp.Texturize(wp.EscText(prev.Title)), 0) + `</a>`)
 	}
 	sb.WriteString(`</div>
 		<div class="post-navigation-link-next wp-block-post-navigation-link">`)
 	if next != nil {
-		sb.WriteString(`<a href="` + html.EscapeString(lb.Permalink(next)) + `" rel="next">` + wp.Texturize(wp.EscText(next.Title)) + `</a><span class="wp-block-post-navigation-link__arrow-next is-arrow-arrow" aria-hidden="true">→</span>`)
+		sb.WriteString(`<a href="` + html.EscapeString(lb.Permalink(next)) + `" rel="next">` + s.pllUC(ctx, wp.Texturize(wp.EscText(next.Title)), 0) + `</a><span class="wp-block-post-navigation-link__arrow-next is-arrow-arrow" aria-hidden="true">→</span>`)
 	}
 	sb.WriteString(`</div>
 	</nav>
@@ -434,7 +434,7 @@ func (s *Server) tt5MorePosts(ctx context.Context, lb *links.Builder, u *store.U
 				<h3 class="wp-block-post-title has-large-font-size"><a href="%s" target="_self">%s</a></h3>
 				<div class="has-text-align-right wp-block-post-date"><a href="%s"><time datetime="%s">%s</time></a></div>
 			</div>
-		</li>`, p.ID, defaultStr(p.Format, "standard"), link, theTitle(p), link, date.Format("2006-01-02T15:04:05-07:00"), html.EscapeString(wp.FormatDate(date, df)))
+		</li>`, p.ID, defaultStr(p.Format, "standard"), link, s.pllUC(ctx, theTitle(p), 0), link, date.Format("2006-01-02T15:04:05-07:00"), html.EscapeString(wp.FormatDate(date, df)))
 	}
 	return template.HTML(sb.String())
 }

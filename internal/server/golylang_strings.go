@@ -20,6 +20,7 @@ import (
 
 type pllStringRow struct {
 	Index        int
+	Key          string // the pll_strings.original it is translated under (pllRegistered.Key)
 	Name, String string
 	Group        string
 	Multiline    bool
@@ -42,6 +43,8 @@ type pllStringsData struct {
 	Nonce      string
 	IENonce    string
 	Pagination pagination
+	MT         pllMTView // Machine translation (golylang_mt.go)
+	Visual     bool      // "Translate visually" link (golylang_visual.go)
 }
 
 const pllStringsPerPage = 20
@@ -54,13 +57,15 @@ func (s *Server) pllStringsScreen(c *gin.Context) {
 			s.pllExportPO(c)
 		case "import":
 			s.pllImportPO(c)
+		case "mt_fill":
+			s.pllMTStringsFill(c)
 		default:
 			s.pllStringsSave(c)
 		}
 		return
 	}
-	d := pllStringsData{Tabs: pllTabs("mlang_strings"), Group: c.Query("group"), Search: strings.TrimSpace(c.Query("s")),
-		Nonce: s.nonce(c, "string-translation"), IENonce: s.nonce(c, "pll-import-export")}
+	d := pllStringsData{Visual: s.pllVisualSupported(), Tabs: pllTabs("mlang_strings"), Group: c.Query("group"), Search: strings.TrimSpace(c.Query("s")),
+		Nonce: s.nonce(c, "string-translation"), IENonce: s.nonce(c, "pll-import-export"), MT: s.pllMTViewFor(c)}
 	langs := s.pllLanguages(ctx)
 	d.Langs = langs
 	if cur := s.pllCurrent(c); cur != nil { // the admin bar filter shows one language
@@ -75,7 +80,7 @@ func (s *Server) pllStringsScreen(c *gin.Context) {
 		if d.Group != "" && r.Group != d.Group {
 			continue
 		}
-		if q != "" && !strings.Contains(strings.ToLower(r.String+" "+r.Name), q) {
+		if q != "" && !strings.Contains(strings.ToLower(r.String), q) && !strings.Contains(strings.ToLower(r.Name), q) {
 			continue
 		}
 		list = append(list, r)
@@ -96,11 +101,15 @@ func (s *Server) pllStringsScreen(c *gin.Context) {
 	if end > len(list) {
 		end = len(list)
 	}
+	trs := make([]map[string]string, len(d.Langs))
+	for j, l := range d.Langs {
+		trs[j] = s.pllStringMap(ctx, l.Slug)
+	}
 	for i, r := range list[start:end] {
-		row := pllStringRow{Index: i, Name: r.Name, String: r.String, Group: r.Group, Multiline: r.Multiline || strings.Contains(r.String, "\n"),
-			Deletable: r.Group != "WordPress" && r.Group != "URL slugs"}
-		for _, l := range d.Langs {
-			row.Translations = append(row.Translations, pllStringTr{l, s.pllStringMap(ctx, l.Slug)[r.String]})
+		row := pllStringRow{Index: i, Key: r.Key(), Name: r.Name, String: r.String, Group: r.Group, Multiline: r.Multiline || strings.Contains(r.String, "\n"),
+			Deletable: r.Source != ""}
+		for j, l := range d.Langs {
+			row.Translations = append(row.Translations, pllStringTr{l, trs[j][row.Key]})
 		}
 		d.Rows = append(d.Rows, row)
 	}
@@ -110,6 +119,8 @@ func (s *Server) pllStringsScreen(c *gin.Context) {
 		notices = append(notices, notice{Type: "success", Message: "Translations updated.", Dismissible: true})
 	case "imported":
 		notices = append(notices, notice{Type: "success", Message: template.HTML(template.HTMLEscapeString(c.Query("n")) + " translations imported."), Dismissible: true})
+	case "mt_filled":
+		notices = append(notices, notice{Type: "success", Message: template.HTML(template.HTMLEscapeString(c.Query("n")) + " strings translated by machine translation."), Dismissible: true})
 	case "import_error":
 		notices = append(notices, notice{Type: "error", Message: template.HTML(template.HTMLEscapeString(c.Query("err"))), Dismissible: true})
 	}
@@ -125,26 +136,7 @@ func (s *Server) pllStringsSave(c *gin.Context) {
 		return
 	}
 	if c.PostForm("action") == "delete" || c.PostForm("action2") == "delete" {
-		del := map[string]bool{}
-		for _, v := range c.PostFormArray("strings[]") {
-			del[v] = true
-		}
-		var keep []any
-		if list, ok := s.settings.Get("golylang_strings").([]any); ok {
-			for _, v := range list {
-				if m, ok := v.(map[string]any); ok {
-					if str, _ := m["string"].(string); del[str] {
-						continue
-					}
-				}
-				keep = append(keep, v)
-			}
-		}
-		if keep == nil {
-			keep = []any{}
-		}
-		_ = s.settings.Set(ctx, map[string]any{"golylang_strings": keep})
-		pllThemeSeen.Range(func(k, _ any) bool { pllThemeSeen.Delete(k); return true })
+		_ = s.pllDeleteStrings(ctx, c.PostFormArray("strings[]")) // golylang_strtable.go
 	}
 	for i := 0; ; i++ {
 		orig, ok := c.GetPostForm("original[" + strconv.Itoa(i) + "]")
@@ -160,11 +152,7 @@ func (s *Server) pllStringsSave(c *gin.Context) {
 		}
 	}
 	if c.PostForm("clean") == "1" {
-		var origs []string
-		for _, r := range s.pllStrings(ctx) {
-			origs = append(origs, r.String)
-		}
-		_, _ = s.store.Pool.Exec(ctx, `DELETE FROM pll_strings WHERE NOT (original = ANY($1))`, origs)
+		_ = s.pllCleanStrings(ctx) // golylang_strtable.go
 	}
 	s.pllFlushStrings()
 	s.purgeAll(ctx)
@@ -210,7 +198,11 @@ func (s *Server) pllExportPO(c *gin.Context) {
 		if group != "" && r.Group != group {
 			continue
 		}
-		fmt.Fprintf(&b, "#. %s\nmsgctxt \"%s\"\nmsgid \"%s\"\nmsgstr \"%s\"\n\n", strings.ReplaceAll(r.Name, "\n", " "), poEscape(r.Group), poEscape(r.String), poEscape(tr[r.String]))
+		ctxt := r.Group // the group; a gettext context (_x) is the msgctxt of its string
+		if r.Context != "" {
+			ctxt = r.Context
+		}
+		fmt.Fprintf(&b, "#. %s\nmsgctxt \"%s\"\nmsgid \"%s\"\nmsgstr \"%s\"\n\n", strings.ReplaceAll(r.Name, "\n", " "), poEscape(ctxt), poEscape(r.String), poEscape(tr[r.Key()]))
 	}
 	c.Header("Content-Disposition", `attachment; filename="`+strings.ReplaceAll(l.Locale, `"`, "")+`.po"`)
 	c.Data(http.StatusOK, "text/x-gettext-translation; charset=UTF-8", b.Bytes())
@@ -254,12 +246,22 @@ func (s *Server) pllImportPO(c *gin.Context) {
 		fail("The language of the file is not one of the site's languages.")
 		return
 	}
+	withCtx := map[string]bool{} // the context\x04string keys of strings with a gettext context
+	for _, r := range s.pllStrings(ctx) {
+		if r.Context != "" {
+			withCtx[r.Key()] = true
+		}
+	}
 	n := 0
 	for _, e := range entries {
 		if e.id == "" || e.str == "" {
 			continue
 		}
-		if s.pllSetString(ctx, l.Slug, e.id, e.str) == nil {
+		key := e.id
+		if k := e.ctx + "\x04" + e.id; e.ctx != "" && withCtx[k] {
+			key = k
+		}
+		if s.pllSetString(ctx, l.Slug, key, e.str) == nil {
 			n++
 		}
 	}
