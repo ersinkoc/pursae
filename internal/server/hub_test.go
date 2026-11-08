@@ -212,6 +212,26 @@ func TestHubMarketplaceAndUpdates(t *testing.T) {
 		t.Fatalf("pings: %d", len(*pings))
 	}
 	p := (*pings)[0]
+	// The ping remembers the version it reported; a start with another version (after a core
+	// update) queues one extra check a minute later.
+	oneOff := func() int {
+		var n int
+		srv.store.Pool.QueryRow(ctx, `SELECT count(*) FROM jobs WHERE name = 'wpgo_hub_check' AND recurrence = '' AND status = 'queued'`).Scan(&n)
+		return n
+	}
+	if got := srv.settings.String(hubReportedVersionOption); got != Version {
+		t.Errorf("reported version %q, want %s", got, Version)
+	}
+	srv.ensureEvents(ctx)
+	if n := oneOff(); n != 0 {
+		t.Errorf("an extra check was queued for an already reported version: %d", n)
+	}
+	srv.settings.Set(ctx, map[string]any{hubReportedVersionOption: "0.0.1"})
+	srv.ensureEvents(ctx)
+	srv.ensureEvents(ctx)
+	if n := oneOff(); n != 1 {
+		t.Errorf("after a version change %d extra checks are queued, want 1", n)
+	}
 	if p["url"] != base || p["version"] != Version || p["os"] != runtime.GOOS || p["arch"] != runtime.GOARCH || p["locale"] != "en_US" ||
 		p["license"] != "" || p["theme"] != srv.activeTheme().Slug || len(p) != 9 {
 		t.Errorf("ping payload %v", p)

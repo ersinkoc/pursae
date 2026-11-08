@@ -380,6 +380,10 @@ func (s *Server) hubInstallPlugin(ctx context.Context, slug string) (*plugins.Ma
 // hubPing is the daily wpgo_hub_check event (WordPress does the same against api.wordpress.org): it
 // sends the Manager the site's version and inventory (hubPingBody), flushes the queued events and
 // refreshes the cached index.
+// hubReportedVersionOption is the core version the last successful ping reported; a start with
+// another version (after a core update) pings again right away (ensureEvents).
+const hubReportedVersionOption = "wpgo_hub_reported_version"
+
 func (s *Server) hubPing(ctx context.Context) error {
 	base := s.hubBase()
 	if base == "" || s.sandbox != nil {
@@ -398,6 +402,9 @@ func (s *Server) hubPing(ctx context.Context) error {
 	resp.Body.Close()
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusTooManyRequests {
 		return fmt.Errorf("hub: ping: HTTP %d", resp.StatusCode)
+	}
+	if resp.StatusCode == http.StatusOK && s.settings.String(hubReportedVersionOption) != Version {
+		_ = s.settings.Set(ctx, map[string]any{hubReportedVersionOption: Version})
 	}
 	s.hubFlushEvents(ctx)
 	_, err = s.hubFetchIndex(ctx)

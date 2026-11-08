@@ -169,6 +169,12 @@ func (s *Server) ensureEvents(ctx context.Context) {
 		_, _ = s.store.Pool.Exec(ctx, `INSERT INTO jobs(name, run_at, recurrence)
 			SELECT $1, now() + interval '1 minute', $2 WHERE NOT EXISTS (SELECT 1 FROM jobs WHERE name = $1 AND recurrence <> '')`, e.Name, e.Recurrence)
 	}
+	// A version the Manager has not heard of yet (the first start after a core update): ping it
+	// in a minute instead of at the next daily check, so its Sites screen shows the new version.
+	if s.hubBase() != "" && s.settings.String(hubReportedVersionOption) != Version {
+		_, _ = s.store.Pool.Exec(ctx, `INSERT INTO jobs(name, run_at)
+			SELECT 'wpgo_hub_check', now() + interval '1 minute' WHERE NOT EXISTS (SELECT 1 FROM jobs WHERE name = 'wpgo_hub_check' AND recurrence = '' AND status = 'queued')`)
+	}
 }
 
 // Scheduler timing. A running job's locked_at is refreshed every jobHeartbeatEvery; a row still
