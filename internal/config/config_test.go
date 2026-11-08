@@ -28,3 +28,13 @@ func TestLoadTrimsTrailingSlashes(t *testing.T) {
 		t.Errorf("SiteURL = %q", c.SiteURL)
 	}
 }
+
+func TestHubOff(t *testing.T) {
+	for v, off := range map[string]bool{"": false, "on": false, "https://x.example": false, "off": true, "OFF": true, " none ": true, "0": true, "false": true, "no": true} {
+		t.Setenv("WPGO_HUB", v)
+		c := Load()
+		if c.HubOff != off || (off && c.HubURL != "off") || (!off && c.HubURL == "off") {
+			t.Errorf("WPGO_HUB=%q: HubOff=%v HubURL=%q", v, c.HubOff, c.HubURL)
+		}
+	}
+}

@@ -69,6 +69,7 @@ inspect them. See [Mail](mail.md).
 | `WPGO_TRUST_DEV_KEY` | unset (`1` in compose) | trust the `dev-key.pub` found in the market directory. **Development only** |
 | `WPGO_EXPOSE_USERS` | unset | `1` lets visitors list accounts (public REST users, `/?author=N`, users sitemap). Off by default because those routes disclose account names |
 | `WPGO_TRUSTED_PROXIES` | loopback and private ranges | proxies (comma separated IPs or CIDRs) whose `X-Forwarded-For` / `X-Real-IP` is believed when deriving the visitor address; `none` trusts no proxy ([reverse proxy](reverse-proxy-and-tls.md)) |
+| `WPGO_HUB` | unset (on) | `off` switches Pursae Manager (hub.pursae.com) off in any build: the site sends nothing, and gets no update notices or one-click updates, no marketplace and no licenses. Every admin page then shows a warning (to users who may update) until `WPGO_HUB` is removed and Pursae restarted. **Not recommended** |
 | `WPGO_DEV_HUB_URL` | unset (`http://pursae-manager.test:8090` in the development compose file) | **devhub builds only**: the Manager to use instead of `https://hub.pursae.com` (https, or http on localhost / `*.localhost` / `*.test`); `off` disables it. Production binaries ignore it ([development builds](#development-builds-devhub)) |
 | `WPGO_TRUST_HUB_KEYS` | unset (`1` in the development compose file) | **devhub builds only**: `1` trusts every key the Manager lists, endorsed by the release root or not ([root of trust](../hub/index.md#root-of-trust)). Production binaries ignore it |
 

@@ -107,3 +107,36 @@ func TestValidReleaseVersion(t *testing.T) {
 		}
 	}
 }
+
+// WPGO_HUB=off: every admin page tells those who may update that updates are off and how to turn
+// them back on; nobody else sees it, and nothing is announced.
+func TestHubOffNotice(t *testing.T) {
+	ts, c, srv := testServerBuilderOff(t)
+	base := ts.URL
+	installAndLogin(t, ts, c)
+	const want = "To get updates, remove <code>WPGO_HUB</code> from the environment and restart Pursae."
+	if _, body, _ := get(t, c, base+"/wp-admin/"); strings.Contains(body, want) {
+		t.Fatal("the hub-off notice shows while the Manager is on")
+	}
+	srv.cfg.HubOff, srv.cfg.HubURL = true, "off"
+	srv.settings.Set(context.Background(), map[string]any{coreLatestOption: "9.9.9"})
+	for _, path := range []string{"/wp-admin/", "/wp-admin/edit", "/wp-admin/plugins", "/wp-admin/update-core"} {
+		_, body, _ := get(t, c, base+path)
+		if !strings.Contains(body, want) || !strings.Contains(body, "Pursae updates are off.") {
+			t.Errorf("%s lacks the hub-off notice", path)
+		}
+		if strings.Contains(body, "update-nag") {
+			t.Errorf("%s announces a release with the Manager off", path)
+		}
+	}
+	hash, _ := auth.HashPassword("sub password")
+	if _, err := srv.store.CreateUser(context.Background(), store.NewUser{Login: "sub", Email: "sub@example.test", PasswordHash: hash, Role: "subscriber"}); err != nil {
+		t.Fatal(err)
+	}
+	jar, _ := cookiejar.New(nil)
+	sub := &http.Client{Jar: jar, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+	post(t, sub, base+"/wp-login", url.Values{"log": {"sub"}, "pwd": {"sub password"}})
+	if _, body, _ := get(t, sub, base+"/wp-admin/profile"); strings.Contains(body, "Pursae updates are off.") {
+		t.Error("a subscriber sees the hub-off notice")
+	}
+}

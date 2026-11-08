@@ -44,6 +44,7 @@ type adminView struct {
 	CoreUpdate    string // a newer Pursae release for the "is available" notice (core_update_nag.go)
 	FooterUpdate  string // the same release for the footer's "Get Version X"
 	CanUpdateCore bool   // the user may run the update (update_core)
+	HubOff        bool   // WPGO_HUB=off: the "updates are off" notice for those who may update
 }
 
 type notice struct {
@@ -364,6 +365,7 @@ func (s *Server) adminPage(c *gin.Context, screen, title, bodyClass, tmpl string
 	v.Menu = s.adminsecMenu(c, v.Menu, screen)
 	v.Notices = append(v.Notices, s.adminsecNotices(c)...)
 	s.coreUpdateChrome(v, tmpl) // a newer Pursae release: notice, Updates count, footer link
+	v.HubOff = s.cfg.HubOff && tmpl != "admin/block-editor" && v.User.Can("update_core", nil)
 	a := s.pageAssets(c)
 	a.Script("common", "admin-bar", "utils", "svg-painter")
 	v.ExtraStyles = s.styleTags(a) + s.pluginStyleTags("admin")

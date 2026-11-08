@@ -256,11 +256,11 @@ What a site gets back:
 - **Themes**: the theme library with demo content, checked against their SHA-256.
 - **Licenses** for pro and beta packages, and the product logo.
 
-**Turning it off.** Release binaries always use hub.pursae.com. Pursae is open source (GPL), so you
-can build it without the Hub: `go build -tags devhub ./cmd/wpgo` and run it with
-`WPGO_DEV_HUB_URL=off`; such a site sends nothing. **We do not recommend it**: the site then gets no
-update notices or one-click updates — security fixes included —, no marketplace, no signed plugins
-and no licenses, and you have to replace the binary yourself for every release.
+**Turning it off.** Set `WPGO_HUB=off` in the environment (with Docker: in `docker/.env`) and restart;
+the site then sends nothing to hub.pursae.com. **We do not recommend it**: the site gets no update
+notices or one-click updates — security fixes included —, no marketplace, no signed plugins and no
+licenses, and you have to replace the binary yourself for every release. While it is off, every admin
+page says so; remove `WPGO_HUB` and restart to get updates again.
 
 ## 🛠️ Build on it
 

@@ -78,7 +78,7 @@ var _wpColorScheme = {{.Color.Icons}};
 		<button type="button" id="contextual-help-link" class="button button-compact show-settings" aria-controls="contextual-help-wrap" aria-expanded="false">Help</button>
 	</div>
 {{end}}</div>
-{{end}}{{with .CoreUpdate}}<div class="update-nag notice notice-warning inline"><strong>Pursae {{.}}</strong> is available! {{if $.CanUpdateCore}}<a href="/wp-admin/update-core" aria-label="Please update Pursae now">Please update now</a>.{{else}}Please notify the site administrator.{{end}}</div>
+{{end}}{{if .HubOff}}<div class="notice notice-warning"><p><strong>Pursae updates are off.</strong> This site runs with <code>WPGO_HUB=off</code>: it does not contact hub.pursae.com, so it gets no update notices or one-click updates (security fixes included), no plugin and theme marketplace and no licenses. To get updates, remove <code>WPGO_HUB</code> from the environment and restart Pursae.</p></div>{{end}}{{with .CoreUpdate}}<div class="update-nag notice notice-warning inline"><strong>Pursae {{.}}</strong> is available! {{if $.CanUpdateCore}}<a href="/wp-admin/update-core" aria-label="Please update Pursae now">Please update now</a>.{{else}}Please notify the site administrator.{{end}}</div>
 {{end}}{{end}}
 
 {{define "notices"}}{{range .Notices}}<div class="notice notice-{{.Type}}{{if .Dismissible}} is-dismissible{{end}}"><p>{{.Message}}</p></div>

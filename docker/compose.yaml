@@ -42,6 +42,8 @@ services:
       WPGO_DEV_HUB_URL: ${WPGO_DEV_HUB_URL:-http://pursae-manager.test:8090}
       # Proxies whose X-Forwarded-For is believed (empty: loopback and private networks; "none": nobody).
       WPGO_TRUSTED_PROXIES: ${WPGO_TRUSTED_PROXIES:-}
+      # off: never contact hub.pursae.com (no updates, marketplace or licenses; not recommended).
+      WPGO_HUB: ${WPGO_HUB:-}
       # Development only (devhub builds): trust every key the Manager lists, endorsed by the release
       # root or not, so a local Manager's throwaway key verifies updates (internal/server/hub_trust.go).
       WPGO_TRUST_HUB_KEYS: ${WPGO_TRUST_HUB_KEYS:-1}

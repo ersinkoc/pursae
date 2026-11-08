@@ -110,7 +110,7 @@ func (s *Server) hubBase() string {
 	return strings.TrimRight(u, "/")
 }
 
-// errHubOff: only a devhub build (WPGO_DEV_HUB_URL=off) or a test has no Manager; the message keeps
+// errHubOff: WPGO_HUB=off, a devhub build with WPGO_DEV_HUB_URL=off or a test has no Manager; the message keeps
 // its translated wording.
 var errHubOff = errors.New("Pursae Manager is switched off (WPGO_HUB_URL)")
 

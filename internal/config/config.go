@@ -18,8 +18,11 @@ type Config struct {
 	WebDir      string // when set, web assets and templates are read from this directory and reloaded per request
 	// HubURL is Pursae Manager (marketplace, licenses, release checks, statistics): always DefaultHubURL.
 	// Only a development build (-tags devhub) can point it elsewhere, with WPGO_DEV_HUB_URL
-	// (config_devhub.go); "off" there disables it. A production binary has no switch for it.
+	// (config_devhub.go); "off" there disables it.
 	HubURL string
+	// HubOff (WPGO_HUB=off) switches Pursae Manager off in any build: the site sends nothing and gets
+	// no updates, marketplace or licenses; every admin page then says how to turn it back on.
+	HubOff bool
 	// ThemeLibraryDir (WPGO_THEME_LIBRARY_DIR) serves the theme library from a directory of theme package
 	// directories (development, offline sites, tests) instead of Pursae Manager.
 	ThemeLibraryDir string
@@ -48,6 +51,7 @@ func Load() Config {
 		Secret:          os.Getenv("WPGO_SECRET"),
 		WebDir:          os.Getenv("WPGO_WEB_DIR"),
 		HubURL:          hubURL(),
+		HubOff:          hubOff(os.Getenv("WPGO_HUB")),
 		ThemeLibraryDir: os.Getenv("WPGO_THEME_LIBRARY_DIR"),
 		TrustedProxies:  os.Getenv("WPGO_TRUSTED_PROXIES"),
 		ExposeUsers:     os.Getenv("WPGO_EXPOSE_USERS") == "1",
@@ -60,6 +64,9 @@ func Load() Config {
 		MailFrom:        os.Getenv("WPGO_MAIL_FROM"),
 		MailDir:         os.Getenv("WPGO_MAIL_DIR"),
 	}
+	if c.HubOff {
+		c.HubURL = "off" // hubBase() treats it as no Manager
+	}
 	return c
 }
 
@@ -68,4 +75,13 @@ func env(key, def string) string {
 		return v
 	}
 	return def
+}
+
+// hubOff reports whether WPGO_HUB asks to switch Pursae Manager off.
+func hubOff(v string) bool {
+	switch strings.ToLower(strings.TrimSpace(v)) {
+	case "off", "none", "0", "false", "no":
+		return true
+	}
+	return false
 }
