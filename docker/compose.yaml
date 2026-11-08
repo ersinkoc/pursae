@@ -8,7 +8,8 @@ services:
       POSTGRES_USER: wpgo
       POSTGRES_PASSWORD: wpgo
     ports:
-      - "${WPGO_DB_PORT:-5432}:5432"
+      # Development: published on this machine only (tests and `make dev` use localhost:5432).
+      - "127.0.0.1:${WPGO_DB_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -44,6 +45,13 @@ services:
       # Development only (devhub builds): trust every key the Manager lists, endorsed by the release
       # root or not, so a local Manager's throwaway key verifies updates (internal/server/hub_trust.go).
       WPGO_TRUST_HUB_KEYS: ${WPGO_TRUST_HUB_KEYS:-1}
+      # Outgoing mail (password resets, notifications). Without WPGO_SMTP_HOST messages are only
+      # written as .eml files to /data/mail.
+      WPGO_SMTP_HOST: ${WPGO_SMTP_HOST:-}
+      WPGO_SMTP_PORT: ${WPGO_SMTP_PORT:-587}
+      WPGO_SMTP_USER: ${WPGO_SMTP_USER:-}
+      WPGO_SMTP_PASS: ${WPGO_SMTP_PASS:-}
+      WPGO_MAIL_FROM: ${WPGO_MAIL_FROM:-}
     extra_hosts:
       - "host.docker.internal:host-gateway"
       # The host's Pursae Manager under a *.test name, so the site's http rule accepts it.
@@ -59,6 +67,8 @@ services:
       - themes:/data/themes # files edited in Appearance › Theme File Editor
       - pagecache:/data/wpgo-cache # Pursae Cache disk persistence (survives rebuilds)
       - languages:/data/languages # language packs downloaded from WordPress.org (Settings › General › Site Language)
+      - backups:/data/backups # Tools › Backups archives (scheduled and manual)
+      - mail:/data/mail # .eml files of messages sent without SMTP
 
   # Runs the Go test suite against the same Postgres: docker compose --profile test run --rm test
   test:
@@ -87,5 +97,7 @@ volumes:
   themes:
   pagecache:
   languages:
+  backups:
+  mail:
   gocache:
   gomod:

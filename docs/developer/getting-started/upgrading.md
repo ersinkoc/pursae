@@ -5,8 +5,10 @@ weight: 50
 section: getting-started
 ---
 
-A connected site can update itself from Dashboard › Updates (below); otherwise you replace the
-binary (or rebuild the image) and start it. Database migrations run automatically on start, before
+A production site updates itself from Dashboard › Updates in one click (below); when a newer release
+exists, every admin page says *Pursae X is available! Please update now.* Otherwise you replace the
+binary (or rebuild the image) and start it. Development builds (`make docker-up`, `make dev`) do not
+talk to `https://hub.pursae.com` and get no updates from it. Database migrations run automatically on start, before
 the server listens.
 
 ## From Dashboard › Updates
@@ -58,10 +60,13 @@ version than the installed one, `launch` installs the image's. A rebuilt image t
 same version (development builds without `VERSION`) also wins when its binary differs from the
 installed copy; an installed binary with a higher version (an admin update) is kept.
 
+On a production stack (`make prod-up`) use Dashboard › Updates. To update from source instead:
+
 ```bash
-git pull
-make docker-up            # rebuilds the image; migrations run on start
+git pull && make prod-up  # rebuilds the image; migrations run on start
 ```
+
+A development stack is updated the same way with `git pull && make docker-up`.
 
 ## Binary
 

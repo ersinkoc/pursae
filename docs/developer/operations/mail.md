@@ -20,6 +20,10 @@ WPGO_SMTP_PASS=…
 WPGO_MAIL_FROM='Example Blog <no-reply@example.com>'
 ```
 
+With Docker, `docker/compose.yaml` passes these variables through to the server. For `make prod-up`
+put them in `docker/.env` (copied from `docker/.env.example`) and run `make prod-up` again to apply
+a change.
+
 Without `WPGO_MAIL_FROM` the sender is `<Site title> <wordpress@host>`, the host taken from the
 site URL — set a real address so receiving servers accept the mail (and set up SPF/DKIM for it).
 
@@ -29,7 +33,7 @@ marked failed and shows up in Tools › Site Health.
 ## Development: .eml files
 
 Without `WPGO_SMTP_HOST` every message is written as an `.eml` file to `WPGO_MAIL_DIR` (default:
-`mail/` next to the uploads directory, `/data/mail` in Docker). Open the file in a mail client or
+`mail/` next to the uploads directory, `/data/mail` in Docker, kept in the `mail` volume). Open the file in a mail client or
 read it as text to see the password reset link.
 
 ```bash

@@ -1,7 +1,7 @@
 /**
  * Pursae additions to plugin-install.php. Layout comes from WordPress's own
  * list-tables.css / themes.css; this only styles what WordPress gets from the
- * plugin directory (icons) and wpgo's fan-made demo listings.
+ * plugin directory (icons).
  */
 
 /* Generated icon in place of the directory's 128x128 icon image. */
@@ -33,52 +33,6 @@
 }
 .wpgo-plugin-tab-intro {
 	margin: 16px 0 0;
-}
-
-/* —— Fan-made demos: intentionally different from installable cards —— */
-.wpgo-demo-notice {
-	margin: 16px 0 0;
-}
-.plugin-card.wpgo-plugin-card-demo {
-	position: relative;
-	overflow: hidden;
-	background: repeating-linear-gradient(-45deg, #fff, #fff 12px, #fbfbfc 12px, #fbfbfc 24px);
-	border-style: dashed;
-	border-color: #a7aaad;
-}
-.plugin-card.wpgo-plugin-card-demo .plugin-card-bottom {
-	background: transparent;
-	border-top-style: dashed;
-}
-.wpgo-plugin-icon-demo {
-	background: #f0f0f1 !important;
-	color: #8c8f94 !important;
-	border: 1px dashed #c3c4c7;
-	box-sizing: border-box;
-}
-.wpgo-demo-ribbon {
-	position: absolute;
-	top: 14px;
-	right: -34px;
-	z-index: 1;
-	width: 120px;
-	padding: 3px 0;
-	transform: rotate(45deg);
-	background: #dba617;
-	color: #1d2327;
-	font-size: 11px;
-	font-weight: 600;
-	letter-spacing: 0.08em;
-	text-align: center;
-	text-transform: uppercase;
-	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
-}
-.wpgo-plugin-card-demo .plugin-action-buttons {
-	margin-right: 18px;
-}
-.wpgo-demo-status {
-	color: #646970;
-	font-style: italic;
 }
 
 /* Pursae Manager access and channel badges (Pro, Private, Beta) */

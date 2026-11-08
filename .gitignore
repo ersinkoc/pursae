@@ -5,3 +5,6 @@ web/editor/build/
 .DS_Store
 __pycache__/
 *.pyc
+
+# Production settings (make prod-up)
+/docker/.env

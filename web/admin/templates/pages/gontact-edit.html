@@ -58,7 +58,7 @@
 		<div class="inside">
 			<p>Here are some available options to help solve your problems.</p>
 			<ol>
-				<li><a href="https://contactform7.com/faq/" target="_blank" rel="noopener">FAQ</a> and <a href="https://contactform7.com/docs/" target="_blank" rel="noopener">docs</a></li>
+				<li><a href="https://pursae.com/docs/built-in-plugins/gontact-form/" target="_blank" rel="noopener">FAQ</a> and <a href="https://pursae.com/docs/" target="_blank" rel="noopener">docs</a></li>
 				<li>The Pursae Contact Form feature list ships with Pursae (docs/gontact-form-features.md).</li>
 			</ol>
 		</div>
@@ -77,7 +77,7 @@
 <section class="contact-form-editor-panel" id="form-panel" role="tabpanel" aria-labelledby="form-panel-tab">
 	<h2>Form</h2>
 	<fieldset>
-		<legend>You can edit the form template here. For details, see <a href="https://contactform7.com/editing-form-template/" target="_blank" rel="noopener">Editing form template</a>.</legend>
+		<legend>You can edit the form template here. For details, see <a href="https://pursae.com/docs/built-in-plugins/gontact-form/" target="_blank" rel="noopener">Editing form template</a>.</legend>
 		<span id="tag-generator-list" class="hide-if-no-js">{{range .TagGenerators}}<button type="button" class="button" data-taggen="open-dialog" data-type="{{.Type}}" title="Form-tag Generator: {{.Label}}">{{.Label}}</button> {{end}}</span>
 		<textarea id="wpcf7-form" name="wpcf7-form" cols="100" rows="24" class="large-text code" data-config-field="form.body">{{.Form.Form}}</textarea>
 	</fieldset>
@@ -92,7 +92,7 @@
 <section class="contact-form-editor-panel" id="messages-panel" role="tabpanel" aria-labelledby="messages-panel-tab">
 	<h2>Messages</h2>
 	<fieldset>
-		<legend>You can edit messages used in various situations here. For details, see <a href="https://contactform7.com/editing-messages/" target="_blank" rel="noopener">Editing messages</a>.</legend>
+		<legend>You can edit messages used in various situations here. For details, see <a href="https://pursae.com/docs/built-in-plugins/gontact-form/" target="_blank" rel="noopener">Editing messages</a>.</legend>
 		{{range .Messages}}<p class="description">
 			<label for="wpcf7-message-{{.Key}}">{{.Description}}<br />
 			<input type="text" id="wpcf7-message-{{.Key}}" name="wpcf7-messages[{{.Key}}]" class="large-text" size="70" value="{{.Value}}" data-config-field="messages.{{.Key}}" /></label>
@@ -104,7 +104,7 @@
 <section class="contact-form-editor-panel" id="additional-settings-panel" role="tabpanel" aria-labelledby="additional-settings-panel-tab">
 	<h2>Additional Settings</h2>
 	<fieldset>
-		<legend>You can add customization code snippets here. For details, see <a href="https://contactform7.com/additional-settings/" target="_blank" rel="noopener">Additional settings</a>.</legend>
+		<legend>You can add customization code snippets here. For details, see <a href="https://pursae.com/docs/built-in-plugins/gontact-form/" target="_blank" rel="noopener">Additional settings</a>.</legend>
 		{{range index .Warnings "additional_settings"}}<p class="config-error"><span class="icon-in-circle" aria-hidden="true">!</span> {{.}}</p>{{end}}
 		<textarea id="wpcf7-additional-settings" name="wpcf7-additional-settings" cols="100" rows="8" class="large-text" data-config-field="additional_settings.body">{{.Form.Additional}}</textarea>
 		<p class="description">Available: <code>demo_mode: on</code>, <code>skip_mail: on</code>, <code>subscribers_only: true</code>, <code>acceptance_as_validation: on</code>, <code>do_not_store: true</code>.</p>
@@ -126,7 +126,7 @@
 	{{if $.Second}}<label for="{{$id}}-active"><input type="checkbox" id="{{$id}}-active" name="{{$id}}[active]" class="toggle-form-table" value="1"{{if .Active}} checked="checked"{{end}} /> Use Mail (2)</label>
 	<p class="description">Mail (2) is an additional mail template often used as an autoresponder.</p>{{end}}
 	<fieldset{{if $.Second}} data-toggle="{{$id}}-active"{{end}}>
-		<legend>You can edit the mail template here. For details, see <a href="https://contactform7.com/setting-up-mail/" target="_blank" rel="noopener">Setting up mail</a>.<br />
+		<legend>You can edit the mail template here. For details, see <a href="https://pursae.com/docs/built-in-plugins/gontact-form/" target="_blank" rel="noopener">Setting up mail</a>.<br />
 		In the following fields, you can use these mail-tags:<br />{{range $.Tags}}<span class="mailtag code used">{{.}}</span> {{end}}</legend>
 		{{range $.Warnings}}<p class="config-error"><span class="icon-in-circle" aria-hidden="true">!</span> {{.}}</p>{{end}}
 		<table class="form-table"><tbody>

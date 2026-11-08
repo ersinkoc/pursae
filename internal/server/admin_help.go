@@ -11,7 +11,8 @@ type helpTab struct {
 }
 
 // screenHelp maps the adminpage global (body class, e.g. "edit-php") to its help tab. The texts
-// follow WordPress's own help tabs, adapted to WordPress Go.
+// follow WordPress's own help tabs, adapted to Pursae. Screens that work as in WordPress link to the
+// WordPress documentation; Pursae-specific screens (themes, plugins, updates) link to the Pursae docs.
 var screenHelp = map[string]helpTab{
 	"edit-php": {`<p>This screen provides access to all of your posts. You can customize the display of this screen to suit your workflow.</p><p>You can narrow the list by post status using the text links above the posts list, refine it by date or category with the drop-downs and the Filter button, and search the list with the search box.</p><p>Hovering over a row in the posts list will display action links that allow you to manage your post. You can perform the following actions:</p><ul><li><strong>Edit</strong> takes you to the editing screen for that post. You can also reach that screen by clicking on the post title.</li><li><strong>Quick Edit</strong> provides inline access to the metadata of your post, allowing you to update post details without leaving this screen.</li><li><strong>Trash</strong> removes your post from this list and places it in the Trash, from which you can permanently delete it.</li><li><strong>Preview</strong> will show you what your draft post will look like if you publish it. <strong>View</strong> will take you to your live site to view the post. Which link is available depends on your post&#8217;s status.</li></ul><p>You can also edit or move multiple posts to the Trash at once. Select the posts you want to act on using the checkboxes, then select the action you want to take from the Bulk actions menu and click Apply.</p><p>Use the Screen Options tab to choose which columns to show and how many items to list per page.</p>`,
 		"Documentation on Managing Posts", "https://wordpress.org/documentation/article/posts-screen/"},
@@ -42,15 +43,15 @@ var screenHelp = map[string]helpTab{
 	"user-edit-php": {`<p>This screen shows the profile of another user. You can change their name, contact information, role and password.</p>`,
 		"Documentation on User Profiles", "https://wordpress.org/documentation/article/users-your-profile-screen/"},
 	"themes-php": {`<p>This screen is used for managing your installed themes. Aside from the default theme(s) included with Pursae, themes can be generated with Pursae Web Builder&#8217;s Theme Builder.</p><p>From this screen you can activate a theme, preview it with Live Preview, or open the Customizer for the active theme. Hover or tap to see Activate and Live Preview buttons; click the theme to see its details.</p>`,
-		"Documentation on Using Themes", "https://wordpress.org/documentation/article/work-with-themes/"},
+		"Documentation on Pursae Themes", "https://pursae.com/docs/themes/"},
 	"theme-install-php": {`<p>You can add themes to your site here. Besides the themes compiled into Pursae (and the ones Pursae Web Builder&#8217;s Theme Builder generates), a theme can be installed as a package: a zip of <code>theme.json</code>, <code>templates/</code> and <code>assets/</code> with no code in it. Click <strong>Upload Theme</strong>, choose the zip and click Install Now; the theme then appears on the Themes screen, where you can activate, customize or delete it.</p><p>A package with the slug of an installed package replaces it when its version is newer. Use the filter links or the search box to narrow the list.</p>`,
-		"Documentation on Adding New Themes", "https://wordpress.org/documentation/article/appearance-themes-screen/"},
+		"Documentation on Pursae Themes", "https://pursae.com/docs/themes/"},
 	"nav-menus-php": {`<p>This screen is used for managing your navigation menus.</p><p>Menus can be displayed in locations defined by your theme. You can add pages, posts, categories, tags and custom links to a menu and drag them into the order you prefer.</p><p>To create a new menu, click on the create a new menu link. Give the menu a name and click Create Menu, then add items from the column on the left.</p>`,
 		"Documentation on Menus", "https://wordpress.org/documentation/article/appearance-menus-screen/"},
 	"plugins-php": {`<p>Plugins extend and expand the functionality of Pursae. Once a plugin is installed, you may activate it or deactivate it here.</p><p>Native plugins are compiled into Pursae. Other plugins are signed WebAssembly packages that run in a sandbox with only the permissions they declare.</p>`,
-		"Documentation on Managing Plugins", "https://wordpress.org/documentation/article/manage-plugins/"},
-	"plugin-install-php": {`<p>Plugins hook into Pursae to extend its functionality with custom features. The Featured tab lists signed WebAssembly plugins you can install, Native Plugins lists the plugins built into Pursae, and Fan-made Demos shows concepts that are not available yet.</p><p>If you have a plugin package (.zip) you can upload it with the Upload Plugin button.</p>`,
-		"Documentation on Installing Plugins", "https://wordpress.org/documentation/article/manage-plugins/#installing-plugins-1"},
+		"Documentation on Pursae Plugins", "https://pursae.com/docs/plugins/"},
+	"plugin-install-php": {`<p>Plugins hook into Pursae to extend its functionality with custom features. The Featured tab lists the signed WebAssembly plugins published on Pursae Hub, and Native Plugins lists the plugins built into Pursae.</p><p>If you have a plugin package (.zip) you can upload it with the Upload Plugin button.</p>`,
+		"Documentation on the Pursae Hub Marketplace", "https://pursae.com/docs/hub/marketplace/"},
 	"options-general-php": {`<p>The fields on this screen determine some of the basics of your site setup.</p><p>Most themes show the site title at the top of every page, in the title bar of the browser, and as the identifying name for syndicated feeds. Many themes also show the tagline.</p><p>You must click the Save Changes button at the bottom of the screen for new settings to take effect.</p>`,
 		"Documentation on General Settings", "https://wordpress.org/documentation/article/settings-general-screen/"},
 	"options-writing-php": {`<p>You can submit content in several different ways; this screen holds the settings for all of them, including the default category and post format, and which editor Classic Editor uses.</p><p>You must click the Save Changes button at the bottom of the screen for new settings to take effect.</p>`,
@@ -78,11 +79,11 @@ var screenHelp = map[string]helpTab{
 	"erase-personal-data-php": {`<p>This screen is where you manage requests to erase personal data.</p><p>Privacy Laws around the world require businesses and online services to delete, anonymize, or forget the data they collect about an individual.</p>`,
 		"Documentation on Erase Personal Data", "https://wordpress.org/documentation/article/tools-erase-personal-data-screen/"},
 	"theme-editor-php": {`<p>You can browse the files that make up your themes here. Pursae compiles theme files into the binary, so the file editor is read-only.</p><p>Begin by choosing a theme in the dropdown menu and clicking the Select button. A list then appears of the theme&#8217;s template files. Clicking once on any file name causes the file to appear in the large viewer.</p>`,
-		"Documentation on Theme Development", "https://developer.wordpress.org/themes/"},
+		"Documentation on Theme Development", "https://pursae.com/docs/themes/"},
 	"plugin-editor-php": {`<p>You can browse the files inside your installed plugin packages here. Plugins are signed WebAssembly packages, so the file editor is read-only.</p><p>Choose a plugin to view from the dropdown menu and click the Select button. Click once on any file name in the file tree on the right to view it.</p>`,
-		"Documentation on Editing Plugins", "https://developer.wordpress.org/plugins/"},
-	"update-core-php": {`<p>On this screen, you can check which version of Pursae you are running. Pursae is a single compiled binary: updating means replacing the binary and restarting it.</p>`,
-		"Documentation on Updating WordPress", "https://wordpress.org/documentation/article/dashboard-updates-screen/"},
+		"Documentation on Plugin Development", "https://pursae.com/docs/plugins/"},
+	"update-core-php": {`<p>On this screen, you can check which version of Pursae you are running. Pursae is a single compiled binary. When a newer release is published on Pursae Hub, Update Now downloads it, verifies its signature, replaces the binary and restarts the site; development builds do not receive updates from Pursae Hub.</p>`,
+		"Documentation on Updating Pursae", "https://pursae.com/docs/getting-started/upgrading/"},
 }
 
 // helpFor returns the help tab for an admin page, or nil when the screen has none (or prints its own).

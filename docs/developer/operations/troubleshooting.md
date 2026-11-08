@@ -13,20 +13,22 @@ that `DATABASE_URL` points to the database you installed into.
 daemon restarts. Start them again — data is kept:
 
 ```bash
-docker compose -f docker/compose.yaml up -d
+docker compose -f docker/compose.yaml up -d   # production: make prod-up
 ```
 
 **Links or assets point at the wrong address (old IP or port).** The site URL was stored at
 install time. Change it under Settings › General, or start over with the right `WPGO_SITE_URL`.
 
-**Start from scratch.** This **deletes** the database, uploads, plugins and edited themes:
+**Start from scratch.** This **deletes** every volume: the database, uploads, plugins, edited
+themes, backups and the updated binary:
 
 ```bash
 docker compose -f docker/compose.yaml down -v
 make docker-up
 ```
 
-**Port 8088 or 5432 is already in use.** Pick other host ports:
+**Port 8088 or 5432 is already in use.** (The development file publishes PostgreSQL on
+`127.0.0.1:5432`; the production file does not publish it.) Pick other host ports:
 
 ```bash
 WPGO_PORT=9000 WPGO_DB_PORT=5433 WPGO_SITE_URL=http://localhost:9000 make docker-up
@@ -56,5 +58,11 @@ check the server log and Tools › Site Health for failed jobs ([cron](cron.md))
 back a broken save automatically and shows the error; if you edited files on disk under
 `WPGO_THEMES_DIR`, fix the file or delete it to fall back to the embedded copy.
 
-**Where are the logs?** Standard output of the process: `docker compose logs -f wpgo` or your
-service manager's journal. Every request is logged with status and duration.
+**`make prod-up` says "Create docker/.env first" or "set WPGO_DB_PASSWORD".** Copy the template
+(`cp docker/.env.example docker/.env`) and fill in `WPGO_DB_PASSWORD` and `WPGO_SITE_URL`.
+
+**Dashboard › Updates never offers a new version.** A development build (`make docker-up`,
+`make dev`) does not talk to `https://hub.pursae.com`; run the production build (`make prod-up`).
+
+**Where are the logs?** Standard output of the process: `docker compose logs -f wpgo`
+(`make prod-logs` on a production stack) or your service manager's journal. Every request is logged with status and duration.

@@ -37,8 +37,11 @@ section: operations
 
 1. Terminate TLS in a proxy and set `WPGO_SITE_URL` to the `https://` address
    ([reverse proxy and TLS](reverse-proxy-and-tls.md)).
-2. Start with `docker/compose.prod.yaml` (see [Docker](docker.md#production-changes)): it takes the
-   database password from `WPGO_DB_PASSWORD`, does not publish port 5432 and sets `WPGO_TRUST_DEV_KEY=0`.
+2. Start with `make prod-up` and settings in `docker/.env` (it adds `docker/compose.prod.yaml`, see
+   [Docker](docker.md#production-changes)): it takes the database password from `WPGO_DB_PASSWORD`,
+   does not publish port 5432, sets `WPGO_TRUST_DEV_KEY=0` and builds the production binary that gets
+   core updates from `https://hub.pursae.com`. Run the installer right after the site goes live:
+   until then anyone who reaches it can.
 3. List your own plugin signing keys in `WPGO_PLUGIN_KEYS` or the `plugin_trusted_keys` option; leave
    `plugin_allow_unsigned` off and never trust the public demo key (`WPGO_TRUST_DEV_KEY` must stay `0`).
 4. Set `WPGO_SECRET` yourself when running several instances, and keep it secret.

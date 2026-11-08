@@ -92,7 +92,7 @@ It reads `WPGO_DEV_HUB_URL` (the development compose file defaults to the Manage
 `http://pursae-manager.test:8090`, an `extra_hosts` alias for the host gateway: plain http is
 only accepted for `localhost`, `*.localhost` and `*.test` names) and `WPGO_TRUST_HUB_KEYS=1`, so the local Manager's throwaway
 signing key verifies releases and plugins. The production compose file builds without the tag
-(`GO_TAGS=""`) and drops both variables. Never ship a devhub binary.
+(`GO_TAGS=""`, `make prod-up`) and drops both variables. Never ship a devhub binary.
 
 ## Built-in plugins
 
@@ -106,11 +106,15 @@ which is not shipped (its upstream modules are stubbed); setting them has no eff
 
 ## Compose only
 
+`make prod-up` reads these, `WPGO_SITE_URL`, the mail settings and `WPGO_PLUGIN_KEYS` /
+`WPGO_TRUSTED_PROXIES` from `docker/.env` (template: `docker/.env.example`).
+
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `WPGO_PORT` | `8088` | host port for the site |
-| `WPGO_BIND` | `127.0.0.1` | host address the site is published on, with `compose.prod.yaml` only (the development file publishes on every interface) |
-| `WPGO_DB_PORT` | `5432` | host port for PostgreSQL |
+| `WPGO_BIND` | `127.0.0.1` | host address the site is published on, with `compose.prod.yaml` only (the development file publishes the site on every interface) |
+| `WPGO_DB_PORT` | `5432` | host port for PostgreSQL, published on `127.0.0.1` by the development file only; `compose.prod.yaml` does not publish PostgreSQL |
+| `WPGO_DB_PASSWORD` | — (required) | database password, with `compose.prod.yaml` only (the development file uses `wpgo`); applied when the `pgdata` volume is created |
 
 ## Test suite
 

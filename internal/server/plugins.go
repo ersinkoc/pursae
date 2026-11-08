@@ -1000,7 +1000,6 @@ type marketItem struct {
 	Permissions                              []permRow
 	Installed                                bool
 	InstallURL                               string
-	Demo                                     bool
 	Icon                                     string
 	IconColor                                string // wpgo-plugin-icon-<color> background for the generated icon
 	// Marketplace (Hub) listings.
@@ -1023,6 +1022,7 @@ type pluginInstallData struct {
 	Items       []marketItem
 	Counts      map[string]int
 	UploadNonce string
+	HubEnabled  bool // this build talks to a Pursae Hub (drives the empty-marketplace message)
 }
 
 // pluginInstall is plugin-install.php: a small marketplace and the zip upload form.
@@ -1166,26 +1166,14 @@ func (s *Server) pluginInstall(c *gin.Context) {
 		}
 		return featured[i].Name < featured[j].Name
 	})
-	// Fan-made concept listings: not real packages, shown on their own tab so they never look installable.
-	demos := []marketItem{
-		{Name: "GoForms", Description: "Drag-and-drop contact forms with spam protection, stored submissions and e-mail notifications.", Author: "Pursae fans", Icon: "dashicons-feedback"},
-		{Name: "SEO Gopher", Description: "Meta titles, Open Graph tags, XML sitemaps and redirects, written as a sandboxed Wasm plugin.", Author: "Pursae fans", Icon: "dashicons-search"},
-		{Name: "Gopher Shop", Description: "Products, carts and checkout for small stores. Payments through Stripe and PayPal.", Author: "Pursae fans", Icon: "dashicons-cart"},
-		{Name: "Backup Burrow", Description: "Scheduled database and uploads backups to S3-compatible storage.", Author: "Pursae fans", Icon: "dashicons-backup"},
-	}
-	for i := range demos {
-		demos[i].Demo = true
-		demos[i].Slug = strings.ToLower(strings.ReplaceAll(demos[i].Name, " ", "-"))
-	}
-	d.Counts = map[string]int{"featured": len(featured), "native": len(native), "demos": len(demos)}
+	d.HubEnabled = s.hubBase() != ""
+	d.Counts = map[string]int{"featured": len(featured), "native": len(native)}
 	switch d.Tab {
 	case "native":
 		d.Items = native
-	case "demos":
-		d.Items = demos
 	case "search":
 		q := strings.ToLower(d.Search)
-		for _, it := range append(append(append([]marketItem{}, featured...), native...), demos...) {
+		for _, it := range append(append([]marketItem{}, featured...), native...) {
 			if q == "" || strings.Contains(strings.ToLower(it.Name+" "+it.Description+" "+it.Author), q) {
 				d.Items = append(d.Items, it)
 			}

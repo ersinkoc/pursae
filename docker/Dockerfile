@@ -20,7 +20,7 @@ RUN CGO_ENABLED=0 go build -trimpath -buildmode=exe -tags "nodynamic $GO_TAGS" -
 
 FROM alpine:3.22
 RUN apk add --no-cache ca-certificates tzdata && adduser -D -u 10001 wpgo \
-	&& mkdir -p /data/uploads /data/plugins /data/plugin-cache /data/mail /data/themes /data/wpgo-cache /data/languages /data/bin \
+	&& mkdir -p /data/uploads /data/plugins /data/plugin-cache /data/mail /data/themes /data/wpgo-cache /data/languages /data/bin /data/backups \
 	&& chown -R wpgo /data
 # The image's binary; `wpgo launch` installs it into /data/bin (a volume) and runs it from there, so
 # Dashboard › Updates can replace it and the update survives restarts, while a newer image still wins.

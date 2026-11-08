@@ -29,13 +29,26 @@ One binary · PostgreSQL · the admin you already know · 16 built-in plugins.</
 
 ## ⚡ Quick start
 
+You need Docker (with Compose v2), git and make.
+
+**On a server** (production build, updates from hub.pursae.com, behind your TLS proxy):
+
 ```sh
 git clone https://github.com/pursae/pursae-dev.git && cd pursae-dev
-make docker-up            # → http://localhost:8088
+cp docker/.env.example docker/.env    # set WPGO_DB_PASSWORD, WPGO_SITE_URL (https://…), SMTP
+make prod-up                          # → 127.0.0.1:8088; point Caddy or nginx at it
 ```
 
-Open the site, finish the five-minute installer, sign in. Ports, env vars, production setup:
-**[docs/GUIDE.md](docs/GUIDE.md)**.
+Open your `https://` address right away and finish the installer: until then anyone who reaches the
+site can run it. Updates arrive in **Dashboard › Updates** (one click); data lives in Docker volumes.
+
+**On your machine** (development build to try it out; it does not talk to hub.pursae.com):
+
+```sh
+make docker-up                        # → http://localhost:8088
+```
+
+Ports, env vars, proxies, backups: **[docs/GUIDE.md](docs/GUIDE.md)**.
 
 ## ✨ Why Pursae
 

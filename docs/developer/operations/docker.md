@@ -10,8 +10,9 @@ section: operations
 `docker/Dockerfile` is a two-stage build: `golang:1.27-alpine` compiles a static binary, the
 final stage is `alpine:3.22` with `ca-certificates` and `tzdata`, an unprivileged user `wpgo`
 (uid 10001) and the data directories `/data/uploads`, `/data/plugins`, `/data/plugin-cache`,
-`/data/mail` and `/data/themes`. The entrypoint is `wpgo`, the default command `serve`, the
-exposed port 8080. Example plugin packages from `examples/plugins/dist` are copied to
+`/data/mail`, `/data/themes`, `/data/wpgo-cache`, `/data/languages`, `/data/bin` and `/data/backups`.
+The entrypoint is `wpgo launch` (it installs the binary into `/data/bin` and runs it from there, see
+[upgrading](../getting-started/upgrading.md#docker)), the default command `serve`, the exposed port 8080. Example plugin packages from `examples/plugins/dist` are copied to
 `/usr/share/wpgo/plugins` if they exist.
 
 ```bash
@@ -30,8 +31,8 @@ docker run --rm -p 8080:8080 \
 
 | Service | Purpose |
 |---------|---------|
-| `db` | `postgres:17-alpine`, database `wpgo`, user and password `wpgo`, health-checked with `pg_isready` |
-| `wpgo` | the site, built from the Dockerfile, waits for the database to be healthy |
+| `db` | `postgres:17-alpine`, database `wpgo`, user and password `wpgo`, health-checked with `pg_isready`, published on `127.0.0.1:${WPGO_DB_PORT:-5432}` |
+| `wpgo` | the site, built from the Dockerfile (`GO_TAGS=devhub`), waits for the database to be healthy, `restart: unless-stopped` |
 | `test` | profile `test`: runs `go test ./...` in a Go container against the same database (`make docker-test`) |
 
 Environment of the `wpgo` service:
@@ -41,32 +42,49 @@ DATABASE_URL: postgres://wpgo:wpgo@db:5432/wpgo?sslmode=disable
 WPGO_SITE_URL: ${WPGO_SITE_URL:-http://localhost:8088}
 WPGO_UPLOADS_DIR: /data/uploads
 WPGO_TRUST_DEV_KEY: ${WPGO_TRUST_DEV_KEY:-1}   # demo only
+WPGO_DEV_HUB_URL: ${WPGO_DEV_HUB_URL:-http://pursae-manager.test:8090}   # devhub builds only
+WPGO_TRUST_HUB_KEYS: ${WPGO_TRUST_HUB_KEYS:-1}                           # devhub builds only
+WPGO_TRUSTED_PROXIES: ${WPGO_TRUSTED_PROXIES:-}
+WPGO_SMTP_HOST: ${WPGO_SMTP_HOST:-}      # outgoing mail; without a host: .eml files in /data/mail
+WPGO_SMTP_PORT: ${WPGO_SMTP_PORT:-587}
+WPGO_SMTP_USER: ${WPGO_SMTP_USER:-}
+WPGO_SMTP_PASS: ${WPGO_SMTP_PASS:-}
+WPGO_MAIL_FROM: ${WPGO_MAIL_FROM:-}
 ```
 
-Add anything from the [configuration reference](configuration.md) there, for example the SMTP
-settings or `WPGO_PLUGIN_KEYS`.
+Volumes: `pgdata`, `bin` (`/data/bin`), `uploads`, `plugins`, `themes`, `pagecache` (`/data/wpgo-cache`),
+`languages`, `backups` and `mail` (each under `/data/<name>` unless noted). Add anything else from the
+[configuration reference](configuration.md) to the environment, for example `WPGO_PLUGIN_KEYS`.
 
 ## Production changes
 
-`compose.yaml` is the development setup (demo database password, PostgreSQL published on the host, the
-demo plugin signing key trusted). For production add the override `compose.prod.yaml`, which fixes all of
-that and refuses to start until the secrets are set:
+`compose.yaml` is the development setup (demo database password, PostgreSQL published on
+`127.0.0.1`, the demo plugin signing key trusted, a `devhub` build that looks for a local Pursae
+Manager instead of `https://hub.pursae.com`). For production `make prod-up` adds the override
+`compose.prod.yaml`, which fixes all of that, with the settings from `docker/.env` (copy
+`docker/.env.example`; the file is git-ignored). It refuses to start until `WPGO_DB_PASSWORD` and
+`WPGO_SITE_URL` are set:
 
 ```bash
-WPGO_DB_PASSWORD=<strong password> WPGO_SITE_URL=https://example.com \
-  docker compose -f docker/compose.yaml -f docker/compose.prod.yaml up -d --build
+cp docker/.env.example docker/.env   # set WPGO_DB_PASSWORD, WPGO_SITE_URL, WPGO_SMTP_*, WPGO_MAIL_FROM
+make prod-up                         # make prod-logs, make prod-down
+# without make:
+docker compose --env-file docker/.env -f docker/compose.yaml -f docker/compose.prod.yaml up -d --build
 ```
 
-It takes the database password from `WPGO_DB_PASSWORD` (used for `POSTGRES_PASSWORD` and the
-`DATABASE_URL`), does not publish PostgreSQL, publishes the site on `127.0.0.1:8088` only (for a TLS proxy
-on the same host; `WPGO_BIND` changes the address), sets `WPGO_TRUST_DEV_KEY=0` and passes
-`WPGO_PLUGIN_KEYS` and `WPGO_TRUSTED_PROXIES` through. `POSTGRES_PASSWORD` only applies when the `pgdata` volume is first created; on
+It builds without the `devhub` tag (the binary talks only to `https://hub.pursae.com`, so core updates
+come from Dashboard › Updates, and `WPGO_DEV_HUB_URL` / `WPGO_TRUST_HUB_KEYS` are removed), takes the
+database password from `WPGO_DB_PASSWORD` (used for `POSTGRES_PASSWORD` and the `DATABASE_URL`), does
+not publish PostgreSQL, publishes the site on `127.0.0.1:8088` only (for a TLS proxy on the same host;
+`WPGO_BIND` changes the address), sets `WPGO_TRUST_DEV_KEY=0`, passes `WPGO_PLUGIN_KEYS` and
+`WPGO_TRUSTED_PROXIES` through and restarts both services unless stopped. `POSTGRES_PASSWORD` only applies when the `pgdata` volume is first created; on
 an existing database change the password first (`ALTER USER wpgo PASSWORD '...'`).
 
 Also:
 
 - Put a TLS-terminating proxy in front and set `WPGO_SITE_URL` to the `https://` address
   ([reverse proxy and TLS](reverse-proxy-and-tls.md)).
+- Finish the installer right after the site goes live: until then anyone who reaches it can run it.
 - Set `WPGO_SECRET` explicitly if you run more than one `wpgo` replica.
 
 ## Health checks
@@ -100,10 +118,11 @@ one); the access log line ends with `id=<request id>`.
 ## Logs and restarts
 
 ```bash
-docker compose -f docker/compose.yaml logs -f wpgo
+docker compose -f docker/compose.yaml logs -f wpgo   # production: make prod-logs
 docker compose -f docker/compose.yaml restart wpgo
 ```
 
-Containers do not always come back after the Docker daemon restarts; `docker compose up -d`
-starts them again with their data intact. Add `restart: unless-stopped` to both services if you
-want that automatically.
+The `wpgo` service has `restart: unless-stopped` (it also brings back a core update that did not
+start, see [upgrading](../getting-started/upgrading.md)); `compose.prod.yaml` adds it to `db` too.
+If containers still do not come back after the Docker daemon restarts, `docker compose up -d`
+(or `make prod-up`) starts them again with their data intact.

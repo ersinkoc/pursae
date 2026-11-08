@@ -1,6 +1,8 @@
 COMPOSE = docker compose -f docker/compose.yaml
+# Production: the development file plus compose.prod.yaml, settings from docker/.env (see docker/.env.example).
+PROD = docker compose $(if $(wildcard docker/.env),--env-file docker/.env) -f docker/compose.yaml -f docker/compose.prod.yaml
 
-.PHONY: dev db test docker-up docker-down docker-test build publish-themes builder builder-watch builder-test builder-parity builder-bump
+.PHONY: dev db test docker-up docker-down prod-up prod-down prod-logs docker-test build publish-themes builder builder-watch builder-test builder-parity builder-bump
 
 ## dev: run Postgres in Docker and the app locally, reading templates from ./web
 dev: db
@@ -23,6 +25,17 @@ docker-up:
 
 docker-down:
 	$(COMPOSE) down
+
+## prod-up: production build (updates from hub.pursae.com), settings from docker/.env, on 127.0.0.1 behind your TLS proxy
+prod-up:
+	@test -f docker/.env || { echo "Create docker/.env first: cp docker/.env.example docker/.env (set WPGO_DB_PASSWORD and WPGO_SITE_URL)"; exit 1; }
+	$(PROD) up -d --build
+
+prod-down:
+	$(PROD) down
+
+prod-logs:
+	$(PROD) logs -f wpgo
 
 ## docker-test: run the whole test suite inside a Go container next to Postgres
 docker-test:

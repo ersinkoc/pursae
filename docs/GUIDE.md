@@ -21,14 +21,19 @@ The full guide behind the [README](../README.md).
 
 ## Quick start (Docker)
 
-The fastest way to try Pursae. You only need **Docker** (Docker Desktop on macOS/Windows,
-Docker Engine + Compose v2 on Linux) and **git**.
+The fastest way to try Pursae on your own machine. You only need **Docker** (Docker Desktop on
+macOS/Windows, Docker Engine + Compose v2 on Linux) and **git**.
 
 ```sh
 git clone https://github.com/pursae/pursae-dev.git
 cd pursae-dev
 make docker-up
 ```
+
+`make docker-up` is the **local development build**: it does not talk to `https://hub.pursae.com`
+(no core updates from Dashboard › Updates; it looks for a local Pursae Manager instead), uses the test
+database password `wpgo` and trusts the demo plugin signing key. **For a server use the
+[production setup](#production-checklist)** (`make prod-up`).
 
 No `make`? Run the same thing directly:
 
@@ -41,8 +46,8 @@ When it finishes, open **http://localhost:8088** — you will land on the instal
 
 | Service | What it is | Host port |
 |---------|------------|-----------|
-| `wpgo`  | The Pursae server | `8088` |
-| `db`    | PostgreSQL 17 | `5432` |
+| `wpgo`  | The Pursae server | `8088` (production: `127.0.0.1:8088`, behind your TLS proxy) |
+| `db`    | PostgreSQL 17 | `127.0.0.1:5432` in development; not published in production |
 
 ### Use another port or address
 
@@ -70,7 +75,9 @@ WordPress' five-minute install:
 4. Whether to ask search engines not to index the site
 
 The installer creates "Hello world!", its first comment, the Sample Page, a draft Privacy
-Policy page and the default sidebar widgets. Then sign in at `/wp-login` and you are in the
+Policy page and the default sidebar widgets. On a server, run the installer **right after the site
+goes live**: until it is done, anyone who reaches the site can run it and become its administrator.
+Then sign in at `/wp-login` and you are in the
 admin (`/wp-admin/`).
 
 > Admin URLs have no `.php` suffix (`/wp-admin/edit`, `/wp-login`). The WordPress spellings
@@ -120,14 +127,17 @@ Everything is configured with environment variables.
 | `WPGO_TRANSLATIONS_API` | `https://api.wordpress.org/translations` | Where language packs are downloaded from |
 | `WPGO_BIN_DIR` | `/data/bin` in the image | Where `wpgo launch` keeps the (self-updated) binary |
 
-**Compose-only**
+**Compose-only** (`make prod-up` reads these from `docker/.env`)
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `WPGO_PORT` | `8088` | Host port for the site |
-| `WPGO_DB_PORT` | `5432` | Host port for PostgreSQL |
+| `WPGO_BIND` | `127.0.0.1` | Host address the site is published on (production file only) |
+| `WPGO_DB_PORT` | `5432` | Host port for PostgreSQL, on `127.0.0.1` (development file only; production does not publish it) |
+| `WPGO_DB_PASSWORD` | — | Database password (production file only, required) |
 
 **Mail** — without an SMTP host, messages are written as `.eml` files so you can inspect them.
+The compose file passes these through; for `make prod-up` set them in `docker/.env`.
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
@@ -170,11 +180,17 @@ Compose keeps state in named volumes, so `docker compose down` does not lose any
 | Volume | Mounted at | Contains |
 |--------|------------|----------|
 | `pgdata` | `/var/lib/postgresql/data` | The database |
+| `bin` | `/data/bin` | The running binary; Dashboard › Updates replaces it |
 | `uploads` | `/data/uploads` | Media library files |
 | `plugins` | `/data/plugins` | Installed plugin packages |
-| `themes` | `/data/themes` | Theme files you edited in the admin |
+| `themes` | `/data/themes` | Theme packages and files you edited in the admin |
+| `pagecache` | `/data/wpgo-cache` | Pursae Cache disk copy (can be rebuilt) |
+| `languages` | `/data/languages` | Downloaded language packs |
+| `backups` | `/data/backups` | Tools › Backups archives (scheduled and manual) |
+| `mail` | `/data/mail` | `.eml` files of messages sent without SMTP |
 
-Back up the database:
+Back up the database (on a production stack add `-f docker/compose.prod.yaml` after
+`-f docker/compose.yaml`):
 
 ```sh
 docker compose -f docker/compose.yaml exec db pg_dump -U wpgo -Fc wpgo > wpgo.dump
@@ -186,11 +202,16 @@ Restore it:
 docker compose -f docker/compose.yaml exec -T db pg_restore -U wpgo -d wpgo --clean --if-exists < wpgo.dump
 ```
 
+Archives in the `backups` volume stay on the same server; copy them elsewhere too.
+
 ## Everyday commands
 
 ```sh
-make docker-up          # build and start everything in the background
+make docker-up          # development: build and start everything in the background
 make docker-down        # stop (data is kept)
+make prod-up            # production: build and start with docker/.env
+make prod-down          # stop the production stack (data is kept)
+make prod-logs          # follow the production server log
 make test               # unit tests + PostgreSQL integration tests
 make docker-test        # the same suite inside a Go container
 make build              # compile bin/wpgo
@@ -204,12 +225,15 @@ docker compose -f docker/compose.yaml logs -f wpgo
 docker compose -f docker/compose.yaml restart wpgo
 ```
 
-Update to a newer version:
+Update to a newer version: a production site shows *Pursae X is available! Please update now.* on
+every admin page and updates from **Dashboard › Updates** in one click (the new binary goes into
+the `bin` volume and survives restarts; migrations run on start). The from-source alternative:
 
 ```sh
-git pull
-make docker-up          # rebuilds the image; migrations run on start
+git pull && make prod-up    # rebuilds the image; migrations run on start
 ```
+
+A development stack (`make docker-up`) gets no updates from `hub.pursae.com`: `git pull && make docker-up`.
 
 ## Editing theme files
 
@@ -221,7 +245,7 @@ override. Set `WPGO_DISALLOW_FILE_EDIT=1` to turn editing off.
 
 Themes can also be installed as code-free **theme packages** (`theme.json`, Go templates, assets)
 through Appearance › Themes › Add Theme; the format is in [docs/theme-package.md](./theme-package.md)
-and the theme developer guide at [/docs/themes/](https://wordpressgo.dev/docs/themes/).
+and the theme developer guide at [/docs/themes/](https://pursae.com/docs/themes/).
 
 ## Plugins
 
@@ -232,7 +256,7 @@ namespace, read and write posts, declare a settings page under Settings, schedul
 data in transients and ship CSS/JS assets. The Go SDK lives in `sdk/go/wpgo`; examples are in
 `examples/plugins` (`hello-gopher`, `word-counter` and `shortcode-demo`, which uses every SDK
 feature); the ABI is documented in [internal/plugins/README.md](../internal/plugins/README.md) and
-the plugin developer guide at [/docs/plugins/](https://wordpressgo.dev/docs/plugins/).
+the plugin developer guide at [/docs/plugins/](https://pursae.com/docs/plugins/).
 
 ```sh
 tools/build-plugins.sh      # builds the example plugins into examples/plugins/dist
@@ -265,17 +289,30 @@ Back up the database first; see [Upgrading](./developer/getting-started/upgradin
 
 - Put Pursae behind a TLS-terminating reverse proxy and set `WPGO_SITE_URL` to the
   `https://` address.
-- Start with the production override, which sets the database password from `WPGO_DB_PASSWORD`,
-  does not publish PostgreSQL and does not trust the public demo plugin key (`WPGO_TRUST_DEV_KEY=0`):
+- Put your settings in `docker/.env` (git-ignored) and start the production build:
 
   ```sh
-  WPGO_DB_PASSWORD=... WPGO_SITE_URL=https://example.com \
-    docker compose -f docker/compose.yaml -f docker/compose.prod.yaml up -d --build
+  cp docker/.env.example docker/.env   # set WPGO_DB_PASSWORD, WPGO_SITE_URL (https://…), SMTP
+  make prod-up
+  ```
+
+  It adds `docker/compose.prod.yaml`, which builds without the `devhub` tag (updates come only from
+  `https://hub.pursae.com`), sets the database password from `WPGO_DB_PASSWORD`, does not publish
+  PostgreSQL, publishes the site on `127.0.0.1:8088` only and does not trust the public demo plugin
+  key (`WPGO_TRUST_DEV_KEY=0`). Without `make`:
+
+  ```sh
+  docker compose --env-file docker/.env -f docker/compose.yaml -f docker/compose.prod.yaml up -d --build
   ```
 
   For real plugins list your own signing keys in `WPGO_PLUGIN_KEYS`.
-- Configure SMTP (`WPGO_SMTP_*`) so password resets and notifications are delivered.
-- Back up the `pgdata` and `uploads` volumes.
+- Open the `https://` address and finish the installer **right away**: until then anyone who
+  reaches the site can run it.
+- Configure SMTP (`WPGO_SMTP_*` and `WPGO_MAIL_FROM` in `docker/.env`) so password resets and
+  notifications are delivered.
+- Back up the `pgdata`, `uploads`, `plugins` and `themes` volumes, and copy the `backups` volume
+  off the server.
+- Update from Dashboard › Updates when the admin says a new version is available.
 - Pick a strong admin password; Pursae never calls Gravatar or other third-party
   services on its own.
 
@@ -289,14 +326,19 @@ a different one is being used. Check that the `pgdata` volume still exists
 daemon restarts. Start them again — data is kept:
 
 ```sh
-docker compose -f docker/compose.yaml up -d
+make prod-up                                   # production (compose.prod.yaml + docker/.env)
+docker compose -f docker/compose.yaml up -d    # local development stack
 ```
+
+Use the command your stack was started with: the development file alone on a production server
+brings the containers back with the development settings and the wrong database password.
 
 **Links or assets point at the wrong address (old IP or port).** The site URL was stored at
 install time. Either change it in Settings › General, or start over with the right
 `WPGO_SITE_URL` (see the next item).
 
-**Start from scratch.** This **deletes** the database, uploads, plugins and edited themes:
+**Start from scratch.** This **deletes** every volume: the database, uploads, plugins, edited
+themes, backups and the updated binary:
 
 ```sh
 docker compose -f docker/compose.yaml down -v
@@ -363,7 +405,7 @@ Open gaps are tracked in the project notes.
 ```
 builder/            Pursae Web Builder editor sources: upstream submodule, patches, host adapter (Node)
 cmd/wpgo            entry point (serve, migrate, version)
-docker/             Dockerfile and compose.yaml
+docker/             Dockerfile, compose.yaml, compose.prod.yaml, .env.example
 internal/blocks     block parser, renderer, serializer
 internal/store      data access (pgx)
 internal/server     routes, admin screens, REST API, editors, themes, cron, mail glue

@@ -17,12 +17,11 @@
 </div>
 {{if ne .Tab "upload"}}
 <h2 class="screen-reader-text">Filter plugins list</h2>
-<p>Plugins extend and expand the functionality of Pursae. Plugins are written in Go (or any language that compiles to WebAssembly), run in a sandbox and must be signed. Install them from the Pursae Hub marketplace below, or upload a plugin package in .zip format by clicking the button above. <a href="https://wordpressgo.dev/docs/plugins/">Learn how to build one</a>.</p>
+<p>Plugins extend and expand the functionality of Pursae. Plugins are written in Go (or any language that compiles to WebAssembly), run in a sandbox and must be signed. Install them from the Pursae Hub marketplace below, or upload a plugin package in .zip format by clicking the button above. <a href="https://pursae.com/docs/plugins/">Learn how to build one</a>.</p>
 <div class="wp-filter">
 	<ul class="filter-links">
 		<li class="plugin-install-featured"><a href="/wp-admin/plugin-install?tab=featured"{{if eq .Tab "featured"}} class="current" aria-current="page"{{end}}>Featured <span class="count">({{index .Counts "featured"}})</span></a> </li>
-		<li class="plugin-install-native"><a href="/wp-admin/plugin-install?tab=native"{{if eq .Tab "native"}} class="current" aria-current="page"{{end}}>Native Plugins <span class="count">({{index .Counts "native"}})</span></a> </li>
-		<li class="plugin-install-demos"><a href="/wp-admin/plugin-install?tab=demos"{{if eq .Tab "demos"}} class="current" aria-current="page"{{end}}>Fan-made Demos <span class="count">({{index .Counts "demos"}})</span></a></li>
+		<li class="plugin-install-native"><a href="/wp-admin/plugin-install?tab=native"{{if eq .Tab "native"}} class="current" aria-current="page"{{end}}>Native Plugins <span class="count">({{index .Counts "native"}})</span></a></li>
 	</ul>
 	<form class="search-form search-plugins" method="get" action="/wp-admin/plugin-install">
 		<input type="hidden" name="tab" value="search" />
@@ -32,28 +31,25 @@
 	</form>
 </div>
 {{if eq .Tab "native"}}<p class="wpgo-plugin-tab-intro">Native plugins are compiled into Pursae. They are always installed; switch them on or off from <a href="/wp-admin/plugins">Installed Plugins</a> and configure them from their settings screens.</p>
-{{else if eq .Tab "demos"}}<div class="notice notice-info inline wpgo-demo-notice"><p><strong>Fan-made demos.</strong> These listings are concepts imagined by the community to show what Pursae plugins could look like. They are not packages yet and cannot be installed.</p></div>
 {{end}}
 <br>
 <form id="plugin-filter" method="post">
-<div class="wp-list-table widefat plugin-install{{if eq .Tab "demos"}} wpgo-plugin-demos{{end}}">
+<div class="wp-list-table widefat plugin-install">
 	<h2 class="screen-reader-text">Plugins list</h2>
 	<div id="the-list">
 	{{range .Items}}
-	<div class="plugin-card plugin-card-{{.Slug}}{{if .Demo}} wpgo-plugin-card-demo{{end}}{{if .Native}} wpgo-plugin-card-native{{end}}">
-		{{if .Demo}}<span class="wpgo-demo-ribbon" aria-hidden="true">Demo</span>{{end}}
+	<div class="plugin-card plugin-card-{{.Slug}}{{if .Native}} wpgo-plugin-card-native{{end}}">
 		<div class="plugin-card-top">
 			<div class="name column-name">
 				<h3>
 					{{if .Homepage}}<a href="{{.Homepage}}" target="_blank" rel="noopener">{{.Name}}</a>{{else}}{{.Name}}{{end}}
 					{{if eq .Access "pro"}}<span class="wpgo-badge wpgo-badge-pro" title="Needs a Pro license">Pro</span>{{else if eq .Access "private"}}<span class="wpgo-badge wpgo-badge-private" title="Granted to your license">Private</span>{{end}}{{if eq .Channel "beta"}}<span class="wpgo-badge wpgo-badge-beta" title="A beta version">Beta</span>{{end}}
-					{{if .IconURL}}<img src="{{.IconURL}}" class="plugin-icon" alt="" width="128" height="128">{{else}}<span class="plugin-icon wpgo-plugin-icon wpgo-plugin-icon-{{if .Demo}}demo{{else}}{{.IconColor}}{{end}}" aria-hidden="true"><span class="dashicons {{.Icon}}"></span></span>{{end}}
+					{{if .IconURL}}<img src="{{.IconURL}}" class="plugin-icon" alt="" width="128" height="128">{{else}}<span class="plugin-icon wpgo-plugin-icon wpgo-plugin-icon-{{.IconColor}}" aria-hidden="true"><span class="dashicons {{.Icon}}"></span></span>{{end}}
 				</h3>
 			</div>
 			<div class="action-links">
 				<ul class="plugin-action-buttons">
-				{{if .Demo}}<li><button type="button" class="button button-disabled button-compact" disabled="disabled">Coming Soon</button></li>
-				{{else if .Native}}{{if .Active}}<li><button type="button" class="button button-disabled button-compact" disabled="disabled">Active</button></li>{{else if .ActivateURL}}<li><a class="button activate-now button-primary button-compact" href="{{.ActivateURL}}" aria-label="Activate {{.Name}}">Activate</a></li>{{end}}
+				{{if .Native}}{{if .Active}}<li><button type="button" class="button button-disabled button-compact" disabled="disabled">Active</button></li>{{else if .ActivateURL}}<li><a class="button activate-now button-primary button-compact" href="{{.ActivateURL}}" aria-label="Activate {{.Name}}">Activate</a></li>{{end}}
 				{{if .SettingsURL}}<li><a href="{{.SettingsURL}}" aria-label="{{.Name}} settings">Settings</a></li>{{end}}
 				{{else if .Installed}}<li><button type="button" class="button button-disabled button-compact" disabled="disabled">Installed</button></li><li><a href="/wp-admin/plugins">Manage</a></li>
 				{{else}}<li><a class="install-now button button-compact" data-slug="{{.Slug}}" href="{{.InstallURL}}" aria-label="Install {{.Name}} {{.Version}} now" data-name="{{.Name}} {{.Version}}" role="button">Install Now</a></li>{{end}}
@@ -65,10 +61,7 @@
 			</div>
 		</div>
 		<div class="plugin-card-bottom">
-		{{if .Demo}}
-			<div class="vers column-rating"><span class="wpgo-demo-status">Concept &middot; not yet available</span></div>
-			<div class="column-updated"><strong>Status:</strong> Fan-made demo</div>
-		{{else if .Native}}
+		{{if .Native}}
 			<div class="vers column-rating"><span class="dashicons dashicons-yes-alt" aria-hidden="true"></span> {{.NativeKind}}</div>
 			<div class="column-updated"><strong>Version:</strong> {{.Version}}</div>
 			<div class="column-downloaded">{{if .Active}}Active on this site{{else}}Installed, inactive{{end}}</div>
@@ -82,7 +75,11 @@
 		</div>
 	</div>
 	{{else}}
-	<div class="no-plugin-results">No plugins found. Try a different search.</div>
+	{{if eq $.Data.Tab "search"}}<div class="no-plugin-results">No plugins found. Try a different search.</div>
+	{{else if eq $.Data.Tab "native"}}<div class="no-plugin-results">No native plugins found.</div>
+	{{else if $.Data.HubEnabled}}<div class="no-plugin-results">No plugins are published on Pursae Hub yet. If you have a plugin package (.zip), you can install it with the Upload Plugin button above.</div>
+	{{else}}<div class="no-plugin-results">This build does not connect to Pursae Hub, so no marketplace plugins are listed. If you have a plugin package (.zip), you can install it with the Upload Plugin button above.</div>
+	{{end}}
 	{{end}}
 	</div>
 </div>
