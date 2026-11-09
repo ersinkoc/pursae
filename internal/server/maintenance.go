@@ -322,7 +322,8 @@ func (s *Server) maintenanceServe(w http.ResponseWriter, r *http.Request) bool {
 
 // maintRESTCredentials reports whether a REST request carries credentials a REST layer validates: Basic
 // (Application Passwords, Commerce ck_/cs_ keys) or Bearer (OAuth/MCP, Headless API tokens) authorization, or
-// Commerce consumer_key query parameters on a store route. A bad credential is refused there with 401, so
+// Commerce consumer_key query parameters on a management API route (wc/v3, the only routes that validate them;
+// on the public Store API they are ignored). A bad credential is refused there with 401, so
 // letting it through exposes nothing; an unknown scheme would be treated as anonymous, so it is not let through.
 func maintRESTCredentials(r *http.Request) bool {
 	h := strings.TrimSpace(r.Header.Get("Authorization"))
@@ -337,7 +338,7 @@ func maintRESTCredentials(r *http.Request) bool {
 	if q.Has("rest_route") {
 		route = q.Get("rest_route")
 	}
-	return gooKeyRoute(route)
+	return gooQueryKeyRoute(route)
 }
 
 // maintAlwaysOpen are the paths the gate never closes: wp-admin, the login screen, uploads and

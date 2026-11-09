@@ -224,8 +224,15 @@ func TestMaintenanceGate(t *testing.T) {
 		}
 	}
 	if !maintRESTCredentials(httptest.NewRequest("GET", "/wp-json/wc/v3/orders?consumer_key=ck_x&consumer_secret=cs_y", nil)) ||
-		maintRESTCredentials(httptest.NewRequest("GET", "/wp-json/wp/v2/posts?consumer_key=ck_x", nil)) {
-		t.Error("consumer_key credentials: only on store routes")
+		!maintRESTCredentials(httptest.NewRequest("GET", "/?rest_route=/wc/v3/orders&consumer_key=ck_x", nil)) ||
+		maintRESTCredentials(httptest.NewRequest("GET", "/wp-json/wp/v2/posts?consumer_key=ck_x", nil)) ||
+		maintRESTCredentials(httptest.NewRequest("GET", "/wp-json/wc/store/v1/products?consumer_key=x", nil)) ||
+		maintRESTCredentials(httptest.NewRequest("POST", "/wp-json/wc/store/v1/checkout?consumer_key=x", nil)) {
+		t.Error("consumer_key credentials: only on wc/v3 routes, which validate them")
+	}
+	// The public Store API ignores query keys: a fake one must not open it during maintenance.
+	if r := anonGet(t, base+"/wp-json/wc/store/v1/products?consumer_key=x"); r.StatusCode != http.StatusServiceUnavailable {
+		t.Errorf("Store API with a fake consumer_key: %d, want 503", r.StatusCode)
 	}
 	// Always reachable: the login screen, wp-admin (its login redirect), assets, robots.txt.
 	if r := anonGet(t, base+"/wp-login"); r.StatusCode != http.StatusOK {
