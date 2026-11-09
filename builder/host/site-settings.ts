@@ -169,7 +169,14 @@ export class SiteSettingsController {
     this.set({ saving: true, error: '', saved: false })
     try {
       const r = await this.d.rest.request<SiteSettings>('PUT', siteSettingsRoute(), { json: body })
-      this.set({ saving: false, saved: true, data: r.data, draft: draftOf(r.data) })
+      const next = draftOf(r.data)
+      const latest = this.state.draft
+      if (latest) {
+        for (const key of Object.keys(draft) as (keyof SiteDraft)[]) {
+          if (latest[key] !== draft[key]) Object.assign(next, { [key]: latest[key] })
+        }
+      }
+      this.set({ saving: false, saved: true, data: r.data, draft: next })
     } catch (e) {
       this.set({ saving: false, error: errorText(e, t('The site settings could not be saved.')) })
     }

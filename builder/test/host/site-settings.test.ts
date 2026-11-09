@@ -111,3 +111,31 @@ describe('SiteSettingsController', () => {
     expect(c.getState().open).toBe(false)
   })
 })
+
+it('preserves edits typed while a save is in flight', async () => {
+  let release!: () => void
+  const gate = new Promise<void>((resolve) => { release = resolve })
+  let current = base()
+  const rest = fakeRest(async (method, _route, body) => {
+    if (method === 'PUT') {
+      await gate
+      current = { ...current, ...(body as object), blogdescription: 'Normalized tagline' }
+    }
+    return current
+  })
+  const c = new SiteSettingsController({ rest })
+  await c.load()
+  c.edit({ blogname: 'Sent title' })
+  const saving = c.save()
+  c.edit({ blogname: 'Newer title', custom_css: 'p { color: red; }' })
+  release()
+  await saving
+  expect(c.getState().data?.blogname).toBe('Sent title')
+  expect(c.getState().draft?.blogname).toBe('Newer title')
+  expect(c.getState().draft?.custom_css).toBe('p { color: red; }')
+  expect(c.getState().draft?.blogdescription).toBe('Normalized tagline')
+  expect(c.dirty).toBe(true)
+  await c.save()
+  expect(c.getState().data?.blogname).toBe('Newer title')
+  expect(c.dirty).toBe(false)
+})
