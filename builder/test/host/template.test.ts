@@ -94,6 +94,15 @@ describe('preview model', () => {
     expect(previewKinds('archive', plain)).not.toContain('type')
   })
 
+  it('offers store previews for the Pursae Commerce types', () => {
+    expect(previewKinds('single-product', SITE)).toEqual(['latest', 'entry'])
+    expect(previewKinds('product-archive', SITE)).toEqual(['type', 'product_cat', 'product_tag'])
+    const kinds = previewKinds('product-archive', SITE)
+    expect(parsePreview('term:product_cat:7', kinds)).toEqual({ kind: 'product_cat', id: '7', text: '' })
+    expect(previewObject({ kind: 'product_tag', id: '9', text: '' })).toBe('term:product_tag:9')
+    expect(previewObject({ kind: 'product_cat', id: '0', text: '' })).toBeNull()
+  })
+
   it('object <-> choice', () => {
     const kinds = previewKinds('archive', SITE)
     expect(parsePreview('term:category:4', kinds)).toEqual({ kind: 'category', id: '4', text: '' })

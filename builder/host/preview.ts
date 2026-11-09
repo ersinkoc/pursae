@@ -8,11 +8,11 @@ import type { PreviewObject, SiteBoot, TemplateType } from './contract'
 import { t } from './i18n'
 
 /** Picker kinds; 'page' and 'entry' are post:<id> objects searched in another collection. */
-export type PreviewKind = 'latest' | 'front' | 'home' | 'post' | 'page' | 'entry' | 'category' | 'post_tag' | 'author' | 'type' | 'search' | '404'
+export type PreviewKind = 'latest' | 'front' | 'home' | 'post' | 'page' | 'entry' | 'category' | 'post_tag' | 'author' | 'type' | 'search' | '404' | 'product_cat' | 'product_tag'
 
 export interface PreviewChoice {
   kind: PreviewKind
-  /** id for post / page / entry / category / post_tag / author */
+  /** id for post / page / entry / category / post_tag / author / product_cat / product_tag */
   id: string
   /** post type for 'type', query for 'search' */
   text: string
@@ -47,6 +47,12 @@ export function previewKinds(type: TemplateType, site: Pick<SiteBoot, 'postTypes
     case 'error-404':
       kinds = ['404']
       break
+    case 'single-product':
+      kinds = ['latest', 'entry']
+      break
+    case 'product-archive':
+      kinds = ['type', 'product_cat', 'product_tag']
+      break
     default:
       kinds = ALL
   }
@@ -79,6 +85,10 @@ export function kindLabel(k: PreviewKind): string {
       return t('Search results')
     case '404':
       return t('404 page')
+    case 'product_cat':
+      return t('A product category (by ID)')
+    case 'product_tag':
+      return t('A product tag (by ID)')
   }
 }
 
@@ -95,8 +105,10 @@ export function previewLabel(label: string): string {
       return t('Posts Page')
     case '404 Page':
       return t('404 Page')
+    case 'Shop':
+      return t('Shop')
   }
-  const m = /^(Post|Page|Posts Page|Category|Tag|Author|Archive|Search): ([\s\S]*)$/.exec(label)
+  const m = /^(Post|Page|Posts Page|Category|Tag|Author|Archive|Search|Product|Product category|Product tag): ([\s\S]*)$/.exec(label)
   if (!m) return label
   const name = m[2]
   switch (m[1]) {
@@ -114,6 +126,12 @@ export function previewLabel(label: string): string {
       return t('Author: {name}', { name })
     case 'Archive':
       return t('Archive: {name}', { name })
+    case 'Product':
+      return t('Product: {name}', { name })
+    case 'Product category':
+      return t('Product category: {name}', { name })
+    case 'Product tag':
+      return t('Product tag: {name}', { name })
     default:
       return t('Search: {name}', { name })
   }
@@ -135,6 +153,8 @@ export function kindIdSource(k: PreviewKind): IdSearchKind | null | undefined {
     case 'author':
       return 'users'
     case 'entry':
+    case 'product_cat':
+    case 'product_tag':
       return null
     default:
       return undefined // no id
@@ -153,7 +173,7 @@ export function parsePreview(object: PreviewObject, kinds: PreviewKind[]): Previ
     const k = (['post', 'page', 'entry'] as PreviewKind[]).find((x) => kinds.includes(x)) ?? 'post'
     return pick(k, value)
   }
-  if (kind === 'term' && (rest[0] === 'category' || rest[0] === 'post_tag')) return pick(rest[0], rest[1] ?? '')
+  if (kind === 'term' && (rest[0] === 'category' || rest[0] === 'post_tag' || rest[0] === 'product_cat' || rest[0] === 'product_tag')) return pick(rest[0], rest[1] ?? '')
   if (kind === 'author') return pick('author', value)
   if (kind === 'type') return pick('type', '', value)
   if (kind === 'search') return pick('search', '', value)
@@ -174,6 +194,8 @@ export function previewObject(c: PreviewChoice): PreviewObject | null {
       return ID_RE.test(c.id) ? `post:${c.id}` : null
     case 'category':
     case 'post_tag':
+    case 'product_cat':
+    case 'product_tag':
       return ID_RE.test(c.id) ? `term:${c.kind}:${c.id}` : null
     case 'author':
       return ID_RE.test(c.id) ? `author:${c.id}` : null

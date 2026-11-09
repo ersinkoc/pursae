@@ -1,0 +1,1342 @@
+diff --git a/src/builder/StudioPanel.tsx b/src/builder/StudioPanel.tsx
+index d87fcda..bf031d2 100644
+--- a/src/builder/StudioPanel.tsx
++++ b/src/builder/StudioPanel.tsx
+@@ -34,6 +34,7 @@ import { RichField, richKind } from './RichText'
+ import { isRich } from './rich'
+ import { parentSelection, restoreEl, toggleHideSelection } from './selectionActions'
+ import { hostTemplate } from './host'
++import { useDynamic } from './dynamic/ctx'
+ import { CardContentTab } from './CardInspector'
+ import { DesignRow, LibraryButton } from './variants/VariantControls'
+ import { useB } from './store'
+@@ -128,6 +129,7 @@ function useDragAdd() {
+ function Widgets() {
+   // Post, Archive and Search widgets need a template's view to mean anything; Site widgets fit any page.
+   const template = !!hostTemplate()
++  const shop = !!useDynamic().shop
+   const [q, setQ] = useState('')
+   const [closed, setClosed] = useState<string[]>([])
+   const drag = useDragAdd()
+@@ -140,7 +142,14 @@ function Widgets() {
+           <input id="widget-search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('Search widgets…')} className="w-full bg-transparent text-[12px] text-ink-100 outline-none placeholder:text-ink-500" />
+         </label>
+       </div>
+-      {WIDGET_GROUPS.filter((g) => !g.dynamic || g.dynamic === 'site' || template).map((g) => {
++      {WIDGET_GROUPS.filter((g) => {
++        // Shop and Product widgets need Pursae Commerce (a product widget can show a chosen product on any page);
++        // Product archive widgets, like Post / Archive / Search, a template's view.
++        if (!g.dynamic || g.dynamic === 'site') return true
++        if (g.dynamic === 'shop' || g.dynamic === 'product') return shop
++        if (g.dynamic === 'shop-archive') return shop && template
++        return template
++      }).map((g) => {
+         const items = g.items.filter((w) => w.label.toLocaleLowerCase(intlLocale()).includes(query))
+         if (!items.length) return null
+         const isClosed = closed.includes(g.title) && !query
+diff --git a/src/builder/dynamic/inspector.tsx b/src/builder/dynamic/inspector.tsx
+index 47bae7b..acd0bf8 100644
+--- a/src/builder/dynamic/inspector.tsx
++++ b/src/builder/dynamic/inspector.tsx
+@@ -6,7 +6,8 @@ import { Ctl, Panel, Select, Slider, inputCls } from '../StudioPanel'
+ import { t } from '../i18n'
+ import { useDynamic } from './ctx'
+ import { CONTENT_LOGO_SOURCE, CONTENT_MENU } from './menu'
+-import { BURGER_WIDTHS, DYN_DEFS, burgerWidth, isDynWidget, loopQuery } from './model'
++import { BURGER_WIDTHS, DYN_DEFS, burgerWidth, isDynWidget, isShopWidget, loopQuery } from './model'
++import { ShopCellPanel } from './shop-inspector'
+ import { DATE_FORMAT_RE } from './format'
+ 
+ /* Studio inspector panels of the Theme Builder: dynamic widget settings, the loop query and the nav / footer binding. */
+@@ -32,6 +33,7 @@ export function DynCellPanel({ s, item }: { s: Section; item: Item }) {
+   const b = useB()
+   const ctx = useDynamic()
+   if (!isDynWidget(item.title)) return null
++  if (isShopWidget(item.title) || item.title === 'language-switcher') return <ShopCellPanel s={s} item={item} />
+   const w = item.title
+   const d: DynSettings = { ...DYN_DEFS[w].defaults, ...item.dyn }
+   const set = (patch: Partial<DynSettings>, key?: string) => b.dispatch({ type: 'dyn', id: s.id, itemId: item.id, patch, key })
+diff --git a/src/builder/dynamic/model.ts b/src/builder/dynamic/model.ts
+index e6c73c7..3c4fed0 100644
+--- a/src/builder/dynamic/model.ts
++++ b/src/builder/dynamic/model.ts
+@@ -25,6 +25,25 @@ import {
+   User,
+   UserSquare,
+   Hexagon,
++  BadgePercent,
++  Bell,
++  BookOpen,
++  Boxes,
++  CreditCard,
++  Images,
++  Languages,
++  LayoutGrid,
++  Package,
++  PackageCheck,
++  ReceiptText,
++  ShoppingBag,
++  ShoppingCart,
++  Star,
++  Store,
++  Tag,
++  Waypoints,
++  Gift,
++  Layers,
+   type LucideIcon,
+ } from 'lucide-react'
+ import type { CellType, DynSettings, DynWidget, LoopContent, Payload } from '../types'
+@@ -35,15 +54,24 @@ export const DYN_WIDGETS: readonly DynWidget[] = [
+   'site-logo', 'site-title', 'site-tagline', 'nav-menu', 'search-form', 'copyright',
+   'post-title', 'post-content', 'post-excerpt', 'post-image', 'post-meta', 'post-terms', 'post-date', 'post-author', 'author-box', 'post-nav', 'post-comments',
+   'archive-title', 'archive-desc', 'search-query', 'pagination',
++  'language-switcher',
++  'shop-products', 'shop-categories', 'shop-add-to-cart', 'shop-cart', 'shop-mini-cart', 'shop-notices', 'shop-cart-page', 'shop-checkout-page',
++  'product-title', 'product-images', 'product-price', 'product-add-to-cart', 'product-rating', 'product-stock', 'product-meta', 'product-short-desc', 'product-content', 'product-tabs', 'product-related', 'product-upsells', 'product-sale-badge',
++  'shop-archive-products', 'shop-archive-title', 'shop-archive-desc', 'shop-breadcrumb',
+ ]
+ 
++/** Pursae Commerce widgets (contract §11.12): the server reads their settings from the stored doc (data-wb-item). */
++export const SHOP_WIDGETS: readonly DynWidget[] = DYN_WIDGETS.filter((w) => w.startsWith('shop-') || w.startsWith('product-'))
++const SHOP_SET = new Set<string>(SHOP_WIDGETS)
++export const isShopWidget = (v: string | undefined | null): boolean => !!v && SHOP_SET.has(v)
++
+ const DYN_SET = new Set<string>(DYN_WIDGETS)
+ /** Dynamic cells have no text (CELL_DEFAULTS entries). */
+ export const DYN_CELL_TEXT = Object.fromEntries(DYN_WIDGETS.map((w) => [w, ''])) as Record<DynWidget, ''>
+ export const isDynWidget = (v: string | undefined | null): v is DynWidget => !!v && DYN_SET.has(v)
+ 
+ /** Widget panel group of a dynamic widget (template mode decides which groups show, patch 0009). */
+-export type DynGroup = 'site' | 'post' | 'archive' | 'search'
++export type DynGroup = 'site' | 'post' | 'archive' | 'search' | 'shop' | 'product' | 'shop-archive'
+ 
+ export interface DynWidgetDef {
+   label: string
+@@ -75,12 +103,43 @@ export const DYN_DEFS: Record<DynWidget, DynWidgetDef> = {
+   'archive-desc': { label: t('Archive description'), icon: AlignLeft, group: 'archive', defaults: {} },
+   'search-query': { label: t('Search query'), icon: SearchCheck, group: 'search', defaults: { tag: 'h1', prefix: 'Search results for:' } },
+   pagination: { label: t('Pagination'), icon: ListOrdered, group: 'archive', defaults: {} },
++  'language-switcher': { label: t('Language switcher'), icon: Languages, group: 'site', defaults: { names: true, flags: false, dropdown: false } },
++  'shop-products': { label: t('Products'), icon: LayoutGrid, group: 'shop', defaults: { source: 'recent', columns: 4, limit: 8, orderBy: 'date', order: 'desc' } },
++  'shop-categories': { label: t('Product categories'), icon: Boxes, group: 'shop', defaults: { columns: 4, hideEmpty: true, parent: '0' } },
++  'shop-add-to-cart': { label: t('Add to cart button'), icon: ShoppingBag, group: 'shop', defaults: { showPrice: false } },
++  'shop-cart': { label: t('Cart icon'), icon: ShoppingCart, group: 'shop', defaults: { showTotal: false, dropdown: true } },
++  'shop-mini-cart': { label: t('Mini cart'), icon: ShoppingBag, group: 'shop', defaults: {} },
++  'shop-notices': { label: t('Store notices'), icon: Bell, group: 'shop', defaults: {} },
++  'shop-cart-page': { label: t('Cart'), icon: ShoppingCart, group: 'shop', defaults: {} },
++  'shop-checkout-page': { label: t('Checkout'), icon: CreditCard, group: 'shop', defaults: {} },
++  'product-title': { label: t('Product title'), icon: Heading1, group: 'product', defaults: { tag: 'h1', link: false } },
++  'product-images': { label: t('Product images'), icon: Images, group: 'product', defaults: { gallery: true, size: 'large' } },
++  'product-price': { label: t('Product price'), icon: Tag, group: 'product', defaults: {} },
++  'product-add-to-cart': { label: t('Add to cart'), icon: ShoppingCart, group: 'product', defaults: {} },
++  'product-rating': { label: t('Product rating'), icon: Star, group: 'product', defaults: {} },
++  'product-stock': { label: t('Stock'), icon: PackageCheck, group: 'product', defaults: {} },
++  'product-meta': { label: t('Product meta'), icon: Info, group: 'product', defaults: {} },
++  'product-short-desc': { label: t('Short description'), icon: AlignLeft, group: 'product', defaults: {} },
++  'product-content': { label: t('Product description'), icon: FileText, group: 'product', defaults: {} },
++  'product-tabs': { label: t('Product tabs'), icon: BookOpen, group: 'product', defaults: {} },
++  'product-related': { label: t('Related products'), icon: Layers, group: 'product', defaults: {} },
++  'product-upsells': { label: t('Upsells'), icon: Gift, group: 'product', defaults: {} },
++  'product-sale-badge': { label: t('Sale badge'), icon: BadgePercent, group: 'product', defaults: {} },
++  'shop-archive-products': { label: t('Archive products'), icon: Package, group: 'shop-archive', defaults: {} },
++  'shop-archive-title': { label: t('Archive title'), icon: Store, group: 'shop-archive', defaults: { tag: 'h1' } },
++  'shop-archive-desc': { label: t('Archive description'), icon: ReceiptText, group: 'shop-archive', defaults: {} },
++  'shop-breadcrumb': { label: t('Breadcrumb'), icon: Waypoints, group: 'shop-archive', defaults: {} },
+ }
+ 
+ export const dynLabel = (w: DynWidget) => DYN_DEFS[w].label
+ 
+ /** Widgets that fill their grid cell like an empty or container cell (blocks, not text runs). */
+-const BLOCK_WIDGETS = new Set<string>(['post-content', 'post-image', 'author-box', 'post-nav', 'post-comments', 'search-form', 'pagination'])
++const BLOCK_WIDGETS = new Set<string>([
++  'post-content', 'post-image', 'author-box', 'post-nav', 'post-comments', 'search-form', 'pagination',
++  'shop-products', 'shop-categories', 'shop-mini-cart', 'shop-notices', 'shop-cart-page', 'shop-checkout-page',
++  'product-images', 'product-add-to-cart', 'product-short-desc', 'product-content', 'product-tabs', 'product-related', 'product-upsells', 'product-meta',
++  'shop-archive-products', 'shop-archive-desc',
++])
+ export const isBlockWidget = (v: string) => BLOCK_WIDGETS.has(v)
+ 
+ /** Settings of a new dynamic cell (a fresh copy). */
+@@ -109,10 +168,18 @@ const entry = (w: DynWidget): DynWidgetEntry => ({
+ 
+ const LOOP_ENTRY: DynWidgetEntry = { id: 'loop', label: t('Posts'), icon: Repeat, payload: { kind: 'loop', label: t('Posts') } }
+ 
+-export const DYN_GROUP_LABELS: Record<DynGroup, string> = { site: t('Site'), post: t('Post'), archive: t('Archive'), search: t('Search') }
++export const DYN_GROUP_LABELS: Record<DynGroup, string> = {
++  site: t('Site'),
++  post: t('Post'),
++  archive: t('Archive'),
++  search: t('Search'),
++  shop: t('Shop'),
++  product: t('Product'),
++  'shop-archive': t('Product archive'),
++}
+ 
+ /** Widget panel groups of the Theme Builder, in order; `dynamic` names the group (data.ts WIDGET_GROUPS). */
+-export const DYN_WIDGET_GROUPS: { title: string; dynamic: DynGroup; items: DynWidgetEntry[] }[] = (['site', 'post', 'archive', 'search'] as DynGroup[]).map((g) => ({
++export const DYN_WIDGET_GROUPS: { title: string; dynamic: DynGroup; items: DynWidgetEntry[] }[] = (['site', 'post', 'archive', 'search', 'shop', 'product', 'shop-archive'] as DynGroup[]).map((g) => ({
+   title: DYN_GROUP_LABELS[g],
+   dynamic: g,
+   items: [
+diff --git a/src/builder/dynamic/sample.ts b/src/builder/dynamic/sample.ts
+index cb1d16d..c60ab26 100644
+--- a/src/builder/dynamic/sample.ts
++++ b/src/builder/dynamic/sample.ts
+@@ -4,7 +4,7 @@
+  * (BuilderHost.dynamic). Document-like content, so plain English and not translated.
+  */
+ import { IMAGES } from '../data'
+-import type { DynContext, DynImage, DynMenuItem, DynPost } from './types'
++import type { DynContext, DynImage, DynMenuItem, DynPost, DynProduct, DynShop } from './types'
+ 
+ const HOME = 'https://pursae.dev'
+ 
+@@ -60,6 +60,51 @@ const POSTS: DynPost[] = [
+ 
+ const menu = (labels: [string, string][]): DynMenuItem[] => labels.map(([label, path], i) => ({ id: 900 + i, label, url: `${HOME}${path}`, current: i === 0, children: [] }))
+ 
++const money = (n: number) => `<span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">&#36;</span>${n.toFixed(2)}</bdi></span>`
++
++function product(id: number, title: string, price: number, sale: number | null, img: number, cats: number[]): DynProduct {
++  return {
++    id,
++    type: 'simple',
++    title,
++    url: `${HOME}/product/${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}/`,
++    sku: `SKU-${id}`,
++    priceHtml: sale ? `<del aria-hidden="true">${money(price)}</del> <ins aria-hidden="true">${money(sale)}</ins>` : money(price),
++    onSale: !!sale,
++    inStock: true,
++    stockHtml: '',
++    rating: 4,
++    ratingCount: 3,
++    shortHtml: '<p>Soft organic cotton, cut for every day.</p>',
++    contentHtml: '<p>Made from organic cotton and finished by hand. Machine washable.</p>',
++    image: image(img),
++    gallery: [image((img + 1) % IMAGES.length), image((img + 2) % IMAGES.length)],
++    categories: cats,
++    addToCartText: 'Add to cart',
++  }
++}
++
++const PRODUCTS: DynProduct[] = [
++  product(201, 'Linen Shirt', 49, 39, 0, [301]),
++  product(202, 'Canvas Tote', 25, null, 1, [302]),
++  product(203, 'Wool Beanie', 19, null, 2, [301]),
++  product(204, 'Ceramic Mug', 14, null, 4, [302]),
++]
++
++/** Shop sample of the standalone app and the fixtures. */
++export const SAMPLE_SHOP: DynShop = {
++  product: PRODUCTS[0],
++  products: PRODUCTS,
++  categories: [
++    { id: 301, name: 'Clothing', url: `${HOME}/product-category/clothing/`, count: 2, parent: 0, image: null },
++    { id: 302, name: 'Home', url: `${HOME}/product-category/home/`, count: 2, parent: 0, image: null },
++  ],
++  cart: { count: 0, subtotalHtml: money(0) },
++  shopUrl: `${HOME}/shop/`,
++  cartUrl: `${HOME}/cart/`,
++  checkoutUrl: `${HOME}/checkout/`,
++}
++
+ /** The standalone default: a blog with a few posts, two menus and no custom logo. */
+ export const SAMPLE_DYNAMIC: DynContext = {
+   object: 'front',
+@@ -86,6 +131,11 @@ export const SAMPLE_DYNAMIC: DynContext = {
+   post: POSTS[0],
+   posts: POSTS,
+   pagination: { current: 1, total: 3 },
++  shop: SAMPLE_SHOP,
++  languages: [
++    { slug: 'en', name: 'English', flag: '🇺🇸', url: `${HOME}/`, current: true },
++    { slug: 'de', name: 'Deutsch', flag: '🇩🇪', url: `${HOME}/de/`, current: false },
++  ],
+ }
+ 
+ /** No data at all (a host that has nothing to show yet). */
+diff --git a/src/builder/dynamic/shop-inspector.tsx b/src/builder/dynamic/shop-inspector.tsx
+new file mode 100644
+index 0000000..8e0cb2e
+--- /dev/null
++++ b/src/builder/dynamic/shop-inspector.tsx
+@@ -0,0 +1,232 @@
++import { useEffect, useState, type ReactNode } from 'react'
++import { useB } from '../store'
++import type { DynSettings, Item, Section } from '../types'
++import { Toggle, cn } from '../ui'
++import { Ctl, Panel, Select, Slider, inputCls } from '../StudioPanel'
++import { t } from '../i18n'
++import { useDynamic } from './ctx'
++import { DYN_DEFS, isDynWidget } from './model'
++
++/* Inspector of the Pursae Commerce widgets and the language switcher (contract §11.12). */
++
++const TAGS = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'div', 'span'] as const
++const IDS_RE = /^[1-9][0-9]{0,18}(,[1-9][0-9]{0,18}){0,23}$/
++
++function Hint({ children }: { children: ReactNode }) {
++  return <p className="text-[11px] leading-relaxed text-ink-500">{children}</p>
++}
++
++/** A comma-separated id list, written when the field loses focus (at most 24 ids). */
++function IdList({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
++  const [draft, setDraft] = useState(value)
++  useEffect(() => setDraft(value), [value])
++  const commit = () => {
++    const v = draft.split(/[^0-9]+/).filter((x) => /^[1-9][0-9]{0,18}$/.test(x)).slice(0, 24).join(',')
++    setDraft(v)
++    if (v !== value) onChange(v)
++  }
++  return (
++    <input
++      value={draft}
++      maxLength={480}
++      placeholder={placeholder}
++      onChange={(e) => setDraft(e.target.value)}
++      onBlur={commit}
++      onKeyDown={(e) => e.key === 'Enter' && commit()}
++      className={cn(inputCls, 'w-[150px]')}
++    />
++  )
++}
++
++const PRODUCT_WIDGETS = new Set(['shop-add-to-cart', 'product-title', 'product-images', 'product-price', 'product-add-to-cart', 'product-rating', 'product-stock', 'product-meta', 'product-short-desc', 'product-content', 'product-tabs', 'product-related', 'product-upsells', 'product-sale-badge'])
++
++/** Settings of a cell holding a shop, product or language-switcher widget. */
++export function ShopCellPanel({ s, item }: { s: Section; item: Item }) {
++  const b = useB()
++  const ctx = useDynamic()
++  if (!isDynWidget(item.title)) return null
++  const w = item.title
++  const d: DynSettings = { ...DYN_DEFS[w].defaults, ...item.dyn }
++  const set = (patch: Partial<DynSettings>, key?: string) => b.dispatch({ type: 'dyn', id: s.id, itemId: item.id, patch, key })
++  const shop = ctx.shop ?? null
++  const cats = shop?.categories ?? []
++  const ids = (csv: string | undefined) => (csv && IDS_RE.test(csv) ? csv.split(',') : [])
++  return (
++    <Panel title={DYN_DEFS[w].label}>
++      {w === 'language-switcher' && (
++        <>
++          <Ctl label={t('Dropdown')}>
++            <Toggle on={!!d.dropdown} onChange={(v) => set({ dropdown: v })} />
++          </Ctl>
++          <Ctl label={t('Show flags')}>
++            <Toggle on={!!d.flags} onChange={(v) => set({ flags: v })} />
++          </Ctl>
++          <Ctl label={t('Show names')}>
++            <Toggle on={d.names !== false} onChange={(v) => set({ names: v })} />
++          </Ctl>
++          <Ctl label={t('Hide the current language')}>
++            <Toggle on={!!d.hideCurrent} onChange={(v) => set({ hideCurrent: v })} />
++          </Ctl>
++          <Hint>{t('Links to this page in each language of Pursae Multi Language.')}</Hint>
++        </>
++      )}
++      {w === 'shop-products' && (
++        <>
++          <Ctl label={t('Source')}>
++            <Select
++              value={d.source ?? 'recent'}
++              onChange={(v) => set({ source: v })}
++              options={[
++                { value: 'recent', label: t('Latest products') },
++                { value: 'featured', label: t('Featured products') },
++                { value: 'sale', label: t('On sale') },
++                { value: 'best-selling', label: t('Best selling') },
++                { value: 'top-rated', label: t('Top rated') },
++                { value: 'ids', label: t('Chosen products') },
++              ]}
++            />
++          </Ctl>
++          {d.source === 'ids' && (
++            <Ctl label={t('Product IDs')}>
++              <IdList value={d.ids ?? ''} placeholder="12,34" onChange={(v) => set({ ids: v || undefined })} />
++            </Ctl>
++          )}
++          <Ctl label={t('Columns')}>
++            <Slider value={d.columns ?? 4} min={1} max={6} unit="" onChange={(v) => set({ columns: v }, 'cols')} />
++          </Ctl>
++          <Ctl label={t('Products')}>
++            <Slider value={d.limit ?? 8} min={1} max={24} unit="" onChange={(v) => set({ limit: v }, 'limit')} />
++          </Ctl>
++          {d.source !== 'best-selling' && d.source !== 'top-rated' && (
++            <>
++              <Ctl label={t('Order by')}>
++                <Select
++                  value={d.orderBy ?? 'date'}
++                  onChange={(v) => set({ orderBy: v })}
++                  options={[
++                    { value: 'date', label: t('Date') },
++                    { value: 'title', label: t('Title') },
++                    { value: 'price', label: t('Price') },
++                    { value: 'popularity', label: t('Popularity') },
++                    { value: 'rating', label: t('Rating') },
++                    { value: 'menu_order', label: t('Menu order') },
++                    { value: 'rand', label: t('Random') },
++                  ]}
++                />
++              </Ctl>
++              <Ctl label={t('Order')}>
++                <Select
++                  value={d.order ?? 'desc'}
++                  onChange={(v) => set({ order: v })}
++                  options={[
++                    { value: 'desc', label: t('Descending') },
++                    { value: 'asc', label: t('Ascending') },
++                  ]}
++                />
++              </Ctl>
++            </>
++          )}
++          <Ctl label={t('Paginate')}>
++            <Toggle on={!!d.paginate} onChange={(v) => set({ paginate: v })} />
++          </Ctl>
++        </>
++      )}
++      {w === 'shop-categories' && (
++        <>
++          <Ctl label={t('Columns')}>
++            <Slider value={d.columns ?? 4} min={1} max={6} unit="" onChange={(v) => set({ columns: v }, 'cols')} />
++          </Ctl>
++          <Ctl label={t('Show')}>
++            <Select
++              value={d.parent ?? ''}
++              onChange={(v) => set({ parent: v })}
++              options={[{ value: '', label: t('All categories') }, { value: '0', label: t('Top level only') }, ...cats.map((c) => ({ value: String(c.id), label: t('Children of {name}', { name: c.name }) }))]}
++            />
++          </Ctl>
++          <Ctl label={t('Hide empty categories')}>
++            <Toggle on={d.hideEmpty !== false} onChange={(v) => set({ hideEmpty: v })} />
++          </Ctl>
++        </>
++      )}
++      {(w === 'shop-products' || w === 'shop-categories') && cats.length > 0 && (
++        <Ctl label={w === 'shop-products' ? t('Only from these categories') : t('Only these categories')} stack>
++          <div className="grid max-h-[180px] grid-cols-2 gap-1.5 overflow-y-auto">
++            {cats.map((c) => {
++              const cur = ids(d.cats)
++              const on = cur.includes(String(c.id))
++              return (
++                <label key={c.id} className="flex items-center gap-2 text-[12px] text-ink-200">
++                  <input
++                    type="checkbox"
++                    checked={on}
++                    onChange={() => set({ cats: (on ? cur.filter((x) => x !== String(c.id)) : [...cur, String(c.id)].slice(0, 20)).join(',') })}
++                    className="accent-[var(--color-accent)]"
++                  />
++                  <span className="truncate">{c.name}</span>
++                </label>
++              )
++            })}
++          </div>
++        </Ctl>
++      )}
++      {w === 'shop-products' && (
++        <Ctl label={t('Tag IDs')}>
++          <IdList value={d.tags ?? ''} onChange={(v) => set({ tags: v || undefined })} />
++        </Ctl>
++      )}
++      {PRODUCT_WIDGETS.has(w) && (
++        <>
++          <Ctl label={t('Product')}>
++            <Select
++              value={d.product ?? 0}
++              onChange={(v) => set({ product: Number(v) || undefined })}
++              options={[{ value: 0, label: t('Current product') }, ...(shop?.products ?? []).map((p) => ({ value: p.id, label: p.title }))]}
++            />
++          </Ctl>
++          <Ctl label={t('Product ID')}>
++            <input value={d.product ? String(d.product) : ''} maxLength={19} placeholder={t('Current')} onChange={(e) => set({ product: Number(e.target.value.replace(/\D+/g, '')) || undefined }, 'pid')} className={cn(inputCls, 'w-[110px]')} />
++          </Ctl>
++          <Hint>{t('Current product: the product being viewed (Single Product templates). Pick a product to show it anywhere.')}</Hint>
++        </>
++      )}
++      {w === 'shop-add-to-cart' && (
++        <Ctl label={t('Show the price')}>
++          <Toggle on={!!d.showPrice} onChange={(v) => set({ showPrice: v })} />
++        </Ctl>
++      )}
++      {(w === 'product-title' || w === 'shop-archive-title') && (
++        <Ctl label={t('HTML tag')}>
++          <Select value={d.tag ?? 'h1'} w={90} onChange={(v) => set({ tag: v })} options={TAGS.map((v) => ({ value: v, label: v.toUpperCase() }))} />
++        </Ctl>
++      )}
++      {w === 'product-title' && (
++        <Ctl label={t('Link to the product')}>
++          <Toggle on={!!d.link} onChange={(v) => set({ link: v })} />
++        </Ctl>
++      )}
++      {w === 'product-images' && (
++        <Ctl label={t('Gallery')}>
++          <Toggle on={d.gallery !== false} onChange={(v) => set({ gallery: v })} />
++        </Ctl>
++      )}
++      {w === 'shop-cart' && (
++        <>
++          <Ctl label={t('Show the subtotal')}>
++            <Toggle on={!!d.showTotal} onChange={(v) => set({ showTotal: v })} />
++          </Ctl>
++          <Ctl label={t('Mini cart on click')}>
++            <Toggle on={d.dropdown !== false} onChange={(v) => set({ dropdown: v })} />
++          </Ctl>
++          <Hint>{t('The count stays right on cached pages: the store updates it in the browser.')}</Hint>
++        </>
++      )}
++      {w === 'shop-cart-page' && <Hint>{t('Shows the cart on the Cart page only. Design the Cart page around it.')}</Hint>}
++      {w === 'shop-checkout-page' && <Hint>{t('Shows the checkout form on the Checkout page only. Design the Checkout page around it.')}</Hint>}
++      {w === 'shop-notices' && <Hint>{t('Shows the store messages, such as "added to your cart".')}</Hint>}
++      {(w === 'shop-archive-products' || w === 'shop-archive-title' || w === 'shop-archive-desc' || w === 'shop-breadcrumb') && (
++        <Hint>{t('Shows the shop or product category being viewed (Product Archive templates).')}</Hint>
++      )}
++      {!shop && w !== 'language-switcher' && <Hint>{t('Turn on Pursae Commerce to use the shop widgets.')}</Hint>}
++    </Panel>
++  )
++}
+diff --git a/src/builder/dynamic/shop.tsx b/src/builder/dynamic/shop.tsx
+new file mode 100644
+index 0000000..6d5565f
+--- /dev/null
++++ b/src/builder/dynamic/shop.tsx
+@@ -0,0 +1,432 @@
++import { createElement, useMemo, type CSSProperties, type ReactNode } from 'react'
++import { Image as ImageIcon, Minus, Plus, ShoppingCart, Star } from 'lucide-react'
++import type { DynSettings, DynWidget } from '../types'
++import { cn } from '../ui'
++import { liveHref } from '../live/ctx'
++import { LiveMenu } from '../live/ui'
++import { t } from '../i18n'
++import type { DynMode } from './ctx'
++import { cleanHtml } from './format'
++import type { DynLanguage, DynProduct, DynShop } from './types'
++
++/*
++ * Pursae Commerce widgets and the language switcher (contract §11.12). One element tree per
++ * widget, like widgets.tsx: the editor draws it from the shop sample (DynContext.shop); the
++ * published snapshot carries placeholders only: data-wb-slot plus data-wb-item (the cell id), and
++ * the server fills every slot with the store's own markup, reading the cell's settings from the
++ * stored doc. Store forms, prices and buttons therefore never sit in the snapshot.
++ */
++
++type P = Record<string, unknown>
++
++const MUTED: CSSProperties = { color: 'var(--muted)' }
++const PRIMARY: CSSProperties = { background: 'var(--btn-bg)', color: 'var(--btn-fg)', borderRadius: 'var(--r-btn)' }
++const SOFT: CSSProperties = { background: 'color-mix(in srgb, var(--fg) 5%, transparent)', borderRadius: 'var(--r-card)' }
++const DASHED: CSSProperties = { border: '1.5px dashed var(--line)', borderRadius: 'var(--r-card)' }
++
++/** Store markup inside a widget (the server fills it with Commerce's own classes). */
++const SHOP = 'wb-shop'
++/** The language switcher's list or select (pll_the_languages markup). */
++const LANGS =
++  '[&_ul]:m-0 [&_ul]:flex [&_ul]:list-none [&_ul]:flex-wrap [&_ul]:items-center [&_ul]:gap-x-4 [&_ul]:gap-y-1 [&_ul]:p-0 [&_li]:list-none [&_a]:inline-flex [&_a]:items-center [&_a]:gap-1.5 [&_a]:transition-opacity [&_a:hover]:opacity-70 [&_.current-lang_a]:font-semibold [&_select]:h-10 [&_select]:rounded-[min(var(--r-btn),10px)] [&_select]:border [&_select]:border-(--line) [&_select]:bg-transparent [&_select]:px-3'
++
++const tagOf = (d: DynSettings, fallback: string) => (d.tag && /^(h[1-6]|p|div|span)$/.test(d.tag) ? d.tag : fallback)
++const clamp = (v: number | undefined, lo: number, hi: number, d: number) => (v && v >= lo && v <= hi ? Math.round(v) : d)
++const ids = (csv: string | undefined) => (csv && /^[1-9][0-9]{0,18}(,[1-9][0-9]{0,18}){0,23}$/.test(csv) ? csv.split(',').map(Number) : [])
++
++/** The product a product widget shows in the editor: the cell's own product, else the preview product. */
++function productOf(shop: DynShop | null | undefined, d: DynSettings): DynProduct | null {
++  if (!shop) return null
++  if (d.product && d.product > 0) return shop.products.find((p) => p.id === d.product) ?? (shop.product?.id === d.product ? shop.product : null)
++  return shop.product ?? shop.products[0] ?? null
++}
++
++/** Products a shop-products cell shows in the editor (the server runs the real query). */
++function productsOf(shop: DynShop | null | undefined, d: DynSettings): DynProduct[] {
++  if (!shop) return []
++  let list = [...shop.products]
++  const source = d.source ?? 'recent'
++  if (source === 'sale') list = list.filter((p) => p.onSale)
++  if (source === 'ids') {
++    const want = ids(d.ids)
++    list = want.map((id) => list.find((p) => p.id === id)).filter((p): p is DynProduct => !!p)
++  }
++  if (source === 'top-rated') list.sort((a, b) => b.rating - a.rating)
++  const cats = ids(d.cats)
++  if (cats.length) list = list.filter((p) => p.categories.some((c) => cats.includes(c)))
++  if (source !== 'ids' && source !== 'top-rated') {
++    if (d.orderBy === 'title') list.sort((a, b) => a.title.localeCompare(b.title))
++    if (d.order === 'asc' && (d.orderBy ?? 'date') === 'date') list.reverse()
++    if (d.order === 'desc' && d.orderBy === 'title') list.reverse()
++  }
++  return list.slice(0, clamp(d.limit, 1, 24, 8))
++}
++
++const Price = ({ html, className }: { html: string; className?: string }) => {
++  const safe = useMemo(() => cleanHtml(html), [html])
++  return <span className={cn('wb-price [&_del]:mr-1.5 [&_del]:opacity-60 [&_ins]:no-underline', className)} dangerouslySetInnerHTML={{ __html: safe }} />
++}
++
++function Pic({ p, className, style }: { p: DynProduct | null; className?: string; style?: CSSProperties }) {
++  if (p?.image) return <img src={p.image.url} alt={p.image.alt} width={p.image.width} height={p.image.height} loading="lazy" className={cn('block w-full object-cover', className)} style={style} />
++  return (
++    <div className={cn('grid w-full place-items-center', className)} style={{ background: 'color-mix(in srgb, var(--fg) 6%, transparent)', color: 'var(--muted)', ...style }}>
++      <ImageIcon size={26} strokeWidth={1.4} aria-hidden />
++    </div>
++  )
++}
++
++function Button({ children }: { children: ReactNode }) {
++  return (
++    <span className="inline-flex h-10 items-center justify-center px-4 text-[14px] font-semibold" style={PRIMARY}>
++      {children}
++    </span>
++  )
++}
++
++function Card({ p }: { p: DynProduct }) {
++  return (
++    <div className="flex min-w-0 flex-col gap-2.5">
++      <div className="relative">
++        <Pic p={p} className="aspect-square" style={{ borderRadius: 'var(--r-card)' }} />
++        {p.onSale && <SaleBadge className="absolute left-2 top-2" />}
++      </div>
++      <p className="truncate text-[15px] font-semibold">{p.title}</p>
++      <Price html={p.priceHtml} className="text-[14.5px]" />
++      <span>
++        <Button>{p.addToCartText || t('Add to cart')}</Button>
++      </span>
++    </div>
++  )
++}
++
++function Grid({ items, cols }: { items: DynProduct[]; cols: number }) {
++  return (
++    <div className="grid gap-6" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
++      {items.map((p) => (
++        <Card key={p.id} p={p} />
++      ))}
++    </div>
++  )
++}
++
++function SaleBadge({ className }: { className?: string }) {
++  return (
++    <span className={cn('inline-flex items-center px-2.5 py-1 text-[12px] font-bold uppercase tracking-wide', className)} style={{ ...PRIMARY, borderRadius: 999 }}>
++      {t('Sale!')}
++    </span>
++  )
++}
++
++function Stars({ value }: { value: number }) {
++  return (
++    <span className="inline-flex items-center gap-0.5" aria-hidden>
++      {[1, 2, 3, 4, 5].map((i) => (
++        <Star key={i} size={15} strokeWidth={1.6} fill={i <= Math.round(value) ? 'currentColor' : 'none'} />
++      ))}
++    </span>
++  )
++}
++
++/** A language-neutral stand-in for store markup the editor cannot draw (cart, checkout, notices). */
++function StandIn({ title, hint, lines = 3 }: { title: string; hint: string; lines?: number }) {
++  return (
++    <div className="p-6" style={DASHED}>
++      <p className="flex items-center gap-2 text-[16px] font-semibold">
++        <ShoppingCart size={17} aria-hidden />
++        {title}
++      </p>
++      {Array.from({ length: lines }, (_, i) => (
++        <div key={i} aria-hidden className="mt-3 h-2.5 rounded-full" style={{ width: `${[78, 62, 70, 55][i % 4]}%`, background: 'color-mix(in srgb, var(--fg) 8%, transparent)' }} />
++      ))}
++      <p className="mt-3 text-[12.5px]" style={MUTED}>
++        {hint}
++      </p>
++    </div>
++  )
++}
++
++function NoProduct({ editing }: { editing: boolean }) {
++  if (!editing) return null
++  return (
++    <p className="px-3 py-2 text-[13px]" style={{ ...MUTED, ...DASHED }}>
++      {t('No product to preview. Pick one in the widget settings, or preview the template with a product.')}
++    </p>
++  )
++}
++
++/** A shop or product widget. `itemId` is the cell id the server reads the settings by. */
++export function ShopWidget({ w, d, m, editing, itemId }: { w: DynWidget; d: DynSettings; m: DynMode; editing: boolean; itemId: string }) {
++  const shop = m.ctx.shop ?? null
++  /** Placeholder attributes of a slot element (published snapshot only). */
++  const ph = (slot: string, extra: P = {}): P => (m.ph ? { 'data-wb-slot': slot, 'data-wb-item': itemId, ...extra } : {})
++  if (!m.ph && !shop) {
++    return editing ? (
++      <p className="px-3 py-2 text-[13px]" style={{ ...MUTED, ...DASHED }}>
++        {t('Turn on Pursae Commerce to use the shop widgets.')}
++      </p>
++    ) : null
++  }
++  const product = productOf(shop, d)
++  switch (w) {
++    case 'shop-products': {
++      if (m.ph) return <div className={cn(SHOP, 'wb-products')} {...ph('shop.products')} />
++      const items = productsOf(shop, d)
++      return items.length ? <Grid items={items} cols={clamp(d.columns, 1, 6, 4)} /> : <p style={MUTED}>{t('No products were found matching your selection.')}</p>
++    }
++    case 'shop-categories': {
++      if (m.ph) return <div className={cn(SHOP, 'wb-categories')} {...ph('shop.categories')} />
++      const only = ids(d.cats)
++      const cats = (shop?.categories ?? []).filter(
++        (c) => (!only.length || only.includes(c.id)) && (d.parent === undefined || d.parent === '' || String(c.parent) === d.parent) && (d.hideEmpty === false || c.count > 0),
++      )
++      const n = clamp(d.limit, 1, 24, cats.length || 1)
++      return (
++        <div className="grid gap-5" style={{ gridTemplateColumns: `repeat(${clamp(d.columns, 1, 6, 4)}, minmax(0, 1fr))` }}>
++          {cats.slice(0, n).map((c) => (
++            <div key={c.id} className="flex flex-col gap-2">
++              <div className="grid aspect-square place-items-center" style={SOFT}>
++                {c.image ? <img src={c.image.url} alt={c.image.alt} className="size-full object-cover" style={{ borderRadius: 'var(--r-card)' }} /> : <ImageIcon size={24} strokeWidth={1.4} aria-hidden style={MUTED} />}
++              </div>
++              <p className="text-[15px] font-semibold">
++                {c.name} <span style={MUTED}>({c.count})</span>
++              </p>
++            </div>
++          ))}
++        </div>
++      )
++    }
++    case 'shop-add-to-cart':
++      if (m.ph)
++        return (
++          <div className={cn(SHOP, 'wb-add-to-cart flex flex-wrap items-center gap-3')}>
++            {d.showPrice && <span className="price wb-product-price" {...ph('product.price')} />}
++            <span {...ph('product.add-to-cart-button')} />
++          </div>
++        )
++      if (!product) return <NoProduct editing={editing} />
++      return (
++        <div className="flex flex-wrap items-center gap-3">
++          {d.showPrice && <Price html={product.priceHtml} className="text-[16px] font-semibold" />}
++          <Button>{product.addToCartText || t('Add to cart')}</Button>
++        </div>
++      )
++    case 'shop-cart':
++      return <CartIcon m={m} d={d} shop={shop} ph={ph} />
++    case 'shop-mini-cart':
++      if (m.ph) return <div className={cn(SHOP, 'widget_shopping_cart wb-mini-cart')} {...ph('shop.mini-cart')} />
++      return <p className="text-[14px]" style={MUTED}>{t('No products in the cart.')}</p>
++    case 'shop-notices':
++      if (m.ph) return <div className={cn(SHOP, 'wb-notices')} {...ph('shop.notices')} />
++      return editing ? <p className="px-3 py-2 text-[13px]" style={{ ...MUTED, ...DASHED }}>{t('Store messages (added to cart, errors) show here.')}</p> : null
++    case 'shop-cart-page':
++      if (m.ph) return <div className={cn(SHOP, 'wb-cart-page')} {...ph('shop.cart-page')} />
++      return <StandIn title={t('Cart')} hint={t('The cart shows here when this is the Cart page.')} lines={4} />
++    case 'shop-checkout-page':
++      if (m.ph) return <div className={cn(SHOP, 'wb-checkout-page')} {...ph('shop.checkout-page')} />
++      return <StandIn title={t('Checkout')} hint={t('The checkout form shows here when this is the Checkout page.')} lines={4} />
++    case 'product-title': {
++      const tag = tagOf(d, 'h1')
++      const cls = 'product_title entry-title'
++      if (m.ph) {
++        if (!d.link) return createElement(tag, { className: cls, ...ph('product.title') })
++        return createElement(tag, { className: cls }, <a key="a" {...ph('product.url')}><span {...ph('product.title')} /></a>)
++      }
++      if (!product) return <NoProduct editing={editing} />
++      return createElement(tag, { className: cls }, d.link ? <a key="a" href={liveHref(product.url)}>{product.title}</a> : product.title)
++    }
++    case 'product-images': {
++      const gallery = d.gallery !== false
++      if (m.ph) {
++        if (gallery) return <div className={cn(SHOP, 'wb-product-gallery')} {...ph('product.gallery')} />
++        const size = d.size && ['thumbnail', 'medium', 'large', 'full'].includes(d.size) ? d.size : 'large'
++        return <img alt="" loading="lazy" className="block h-auto w-full" style={{ borderRadius: 'var(--r-card)' }} {...ph('product.image', { 'data-wb-size': size })} />
++      }
++      if (!product) return <NoProduct editing={editing} />
++      return (
++        <div className="flex flex-col gap-3">
++          <Pic p={product} className="aspect-square" style={{ borderRadius: 'var(--r-card)' }} />
++          {gallery && product.gallery.length > 0 && (
++            <div className="grid grid-cols-4 gap-3">
++              {product.gallery.slice(0, 4).map((g, i) => (
++                <img key={i} src={g.url} alt={g.alt} className="aspect-square w-full object-cover" style={{ borderRadius: 'min(var(--r-card), 10px)' }} />
++              ))}
++            </div>
++          )}
++        </div>
++      )
++    }
++    case 'product-price':
++      if (m.ph) return <p className="price wb-product-price" {...ph('product.price')} />
++      if (!product) return <NoProduct editing={editing} />
++      return (
++        <p className="price wb-product-price">
++          <Price html={product.priceHtml} />
++        </p>
++      )
++    case 'product-add-to-cart':
++      if (m.ph) return <div className={cn(SHOP, 'wb-product-add-to-cart')} {...ph('product.add-to-cart')} />
++      if (!product) return <NoProduct editing={editing} />
++      return (
++        <div className="flex flex-wrap items-center gap-3">
++          <span className="inline-flex h-10 items-center gap-3 px-3" style={{ border: '1px solid var(--line)', borderRadius: 'min(var(--r-btn), 10px)' }}>
++            <Minus size={14} aria-hidden />1<Plus size={14} aria-hidden />
++          </span>
++          <Button>{product.addToCartText || t('Add to cart')}</Button>
++        </div>
++      )
++    case 'product-rating':
++      if (m.ph) return <div className={cn(SHOP, 'wb-product-rating')} {...ph('product.rating', { 'data-wb-if': 'product.rating' })} />
++      if (!product || (!product.ratingCount && !editing)) return null
++      return (
++        <p className="flex items-center gap-2 text-[14px]">
++          <Stars value={product.rating || 0} />
++          <span style={MUTED}>({product.ratingCount})</span>
++        </p>
++      )
++    case 'product-stock':
++      if (m.ph) return <div className={cn(SHOP, 'wb-product-stock')} {...ph('product.stock')} />
++      if (!product) return <NoProduct editing={editing} />
++      return product.stockHtml ? <div className="text-[14px]" dangerouslySetInnerHTML={{ __html: cleanHtml(product.stockHtml) }} /> : <p className="text-[14px]" style={MUTED}>{product.inStock ? t('In stock') : t('Out of stock')}</p>
++    case 'product-meta':
++      if (m.ph) return <div className={cn(SHOP, 'wb-product-meta')} {...ph('product.meta')} />
++      if (!product) return <NoProduct editing={editing} />
++      return (
++        <p className="text-[13.5px]" style={MUTED}>
++          {product.sku ? `${t('SKU:')} ${product.sku}` : t('SKU, categories and tags')}
++        </p>
++      )
++    case 'product-short-desc':
++    case 'product-content': {
++      const slot = w === 'product-content' ? 'product.description' : 'product.short-description'
++      if (m.ph) return <div className={cn(SHOP, 'wb-product-text')} {...ph(slot)} />
++      if (!product) return <NoProduct editing={editing} />
++      const raw = w === 'product-content' ? product.contentHtml : product.shortHtml
++      return raw ? <ProductText raw={raw} /> : editing ? <p style={MUTED}>{t('This product has no text here yet.')}</p> : null
++    }
++    case 'product-tabs':
++      if (m.ph) return <div className={cn(SHOP, 'wb-product-tabs')} {...ph('product.tabs')} />
++      return (
++        <div>
++          <div className="flex gap-5 border-b text-[14.5px] font-semibold" style={{ borderColor: 'var(--line)' }}>
++            {[t('Description'), t('Additional information'), t('Reviews')].map((x, i) => (
++              <span key={x} className="-mb-px pb-2" style={i === 0 ? { borderBottom: '2px solid var(--fg)' } : MUTED}>
++                {x}
++              </span>
++            ))}
++          </div>
++          {product?.contentHtml ? <ProductText raw={product.contentHtml} className="mt-4" /> : <StandIn title={t('Description')} hint={t('The product tabs show here.')} lines={2} />}
++        </div>
++      )
++    case 'product-related':
++    case 'product-upsells': {
++      const slot = w === 'product-related' ? 'product.related' : 'product.upsells'
++      if (m.ph) return <div className={cn(SHOP, 'wb-product-list')} {...ph(slot)} />
++      const items = (shop?.products ?? []).filter((p) => p.id !== product?.id).slice(0, 4)
++      return (
++        <div className="flex flex-col gap-4">
++          <p className="text-[20px] font-semibold">{w === 'product-related' ? t('Related products') : t('You may also like…')}</p>
++          <Grid items={items} cols={4} />
++        </div>
++      )
++    }
++    case 'product-sale-badge':
++      if (m.ph) return <span className="onsale wb-onsale" {...ph('product.on-sale', { 'data-wb-if': 'product.on-sale' })} />
++      if (!product || (!product.onSale && !editing)) return null
++      return <SaleBadge />
++    case 'shop-archive-products':
++      if (m.ph) return <div className={cn(SHOP, 'wb-archive-products')} {...ph('shop.archive')} />
++      return <Grid items={(shop?.products ?? []).slice(0, 8)} cols={4} />
++    case 'shop-archive-title': {
++      const tag = tagOf(d, 'h1')
++      if (m.ph) return createElement(tag, { className: 'woocommerce-products-header__title page-title', ...ph('shop.archive-title') })
++      return createElement(tag, { className: 'woocommerce-products-header__title page-title' }, m.ctx.post?.title || t('Shop'))
++    }
++    case 'shop-archive-desc':
++      if (m.ph) return <div className={cn(SHOP, 'wb-archive-desc')} {...ph('shop.archive-desc')} />
++      return m.ctx.post?.excerpt ? <p>{m.ctx.post.excerpt}</p> : editing ? <p style={MUTED}>{t('The category description shows here.')}</p> : null
++    case 'shop-breadcrumb':
++      if (m.ph) return <nav className={cn(SHOP, 'wb-breadcrumb')} aria-label="Breadcrumb" {...ph('shop.breadcrumb')} />
++      return (
++        <nav aria-label="Breadcrumb" className="text-[13.5px]" style={MUTED}>
++          {t('Home')} / {m.ctx.post?.title || t('Shop')}
++        </nav>
++      )
++  }
++  return null
++}
++
++function ProductText({ raw, className }: { raw: string; className?: string }) {
++  const safe = useMemo(() => cleanHtml(raw), [raw])
++  return <div className={cn('text-[16px] leading-[1.7] [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_p]:my-3 [&_ul]:list-disc [&_ul]:pl-6', className)} dangerouslySetInnerHTML={{ __html: safe }} />
++}
++
++function CartIcon({ m, d, shop, ph }: { m: DynMode; d: DynSettings; shop: DynShop | null; ph: (slot: string, extra?: P) => P }) {
++  const count = (
++    <span className="wb-cart-count inline-grid min-w-5 place-items-center rounded-full px-1.5 text-[11.5px] font-bold leading-5" style={{ background: 'var(--btn-bg)', color: 'var(--btn-fg)' }} {...(m.ph ? ph('shop.cart-count') : { children: shop?.cart.count ?? 0 })} />
++  )
++  const total = d.showTotal ? <span className="text-[14px] font-semibold" {...(m.ph ? ph('shop.cart-subtotal') : { dangerouslySetInnerHTML: { __html: cleanHtml(shop?.cart.subtotalHtml ?? '') } })} /> : null
++  const icon = (
++    <>
++      <ShoppingCart size={22} aria-hidden />
++      {count}
++      {total}
++    </>
++  )
++  if (d.dropdown !== false && m.live)
++    return (
++      <LiveMenu
++        label={t('Cart')}
++        className="wb-cart-menu relative inline-block"
++        summaryClass="inline-flex items-center gap-2"
++        panelClass="absolute right-0 top-full z-50 mt-2 w-[320px] max-w-[90vw] p-5 shadow-[0_30px_40px_-30px_rgba(0,0,0,.35)]"
++        panelStyle={{ background: 'var(--bg)', color: 'var(--fg)', borderRadius: 'min(var(--r-card), 14px)' }}
++        icon={icon}
++      >
++        {m.ph ? <div className="wb-shop widget_shopping_cart wb-mini-cart" {...ph('shop.mini-cart')} /> : <p className="text-[14px]" style={MUTED}>{t('No products in the cart.')}</p>}
++      </LiveMenu>
++    )
++  return (
++    <a className="wb-cart inline-flex items-center gap-2" aria-label={t('Cart')} {...(m.ph ? ph('shop.cart-url') : { href: liveHref(shop?.cartUrl) })}>
++      {icon}
++    </a>
++  )
++}
++
++/** The Pursae Multi Language switcher: the languages as links (or a select), filled by the server. */
++export function LanguageSwitcher({ d, m, editing, itemId }: { d: DynSettings; m: DynMode; editing: boolean; itemId: string }) {
++  if (m.ph) return <div className={cn('wb-langs', LANGS)} data-wb-slot="site.languages" data-wb-item={itemId} />
++  const langs: DynLanguage[] = (m.ctx.languages ?? []).filter((l) => !(d.hideCurrent && l.current))
++  if (!langs.length)
++    return editing ? (
++      <p className="px-3 py-2 text-[13px]" style={{ ...MUTED, ...DASHED }}>
++        {t('Turn on Pursae Multi Language and add languages to show the switcher.')}
++      </p>
++    ) : null
++  const label = (l: DynLanguage) => [d.flags && l.flag ? l.flag : '', d.names !== false || !d.flags || !l.flag ? l.name : ''].filter(Boolean).join(' ')
++  if (d.dropdown)
++    return (
++      <div className={cn('wb-langs', LANGS)}>
++        <select value={langs.find((l) => l.current)?.slug} disabled={editing} onChange={() => {}} aria-label={t('Language')}>
++          {langs.map((l) => (
++            <option key={l.slug} value={l.slug}>
++              {label(l)}
++            </option>
++          ))}
++        </select>
++      </div>
++    )
++  return (
++    <div className={cn('wb-langs', LANGS)}>
++      <ul>
++        {langs.map((l) => (
++          <li key={l.slug} className={l.current ? 'current-lang' : undefined}>
++            <a href={liveHref(l.url)} aria-current={l.current ? 'true' : undefined}>
++              {label(l)}
++            </a>
++          </li>
++        ))}
++      </ul>
++    </div>
++  )
++}
+diff --git a/src/builder/dynamic/starters.ts b/src/builder/dynamic/starters.ts
+index 84c0b81..7b64aeb 100644
+--- a/src/builder/dynamic/starters.ts
++++ b/src/builder/dynamic/starters.ts
+@@ -9,7 +9,7 @@ import { dynDefaults } from './model'
+ import type { StarterId, TemplateType } from './types'
+ 
+ export type { StarterId } from './types'
+-export const STARTER_IDS = ['blank', 'header', 'footer', 'single', 'archive', 'search'] as const satisfies readonly StarterId[]
++export const STARTER_IDS = ['blank', 'header', 'footer', 'single', 'archive', 'search', 'product', 'product-archive'] as const satisfies readonly StarterId[]
+ 
+ /** The starter a template type gets when the host names none (contract DEFAULT_STARTERS). */
+ export const DEFAULT_STARTER: Record<TemplateType, StarterId> = {
+@@ -22,6 +22,8 @@ export const DEFAULT_STARTER: Record<TemplateType, StarterId> = {
+   archive: 'archive',
+   'search-results': 'search',
+   'error-404': 'blank',
++  'single-product': 'product',
++  'product-archive': 'product-archive',
+ }
+ 
+ /** A boxed one-column grid of dynamic widgets, top to bottom. */
+@@ -103,6 +105,41 @@ function search(): Section[] {
+   ]
+ }
+ 
++/** A nested one-column grid of widgets (a cell of a two-column layout). */
++function column(cells: [DynWidget, DynSettings?][], gap: number): Section {
++  const s = createLayout('grid', 'g3r', { nested: true })
++  s.items = cells.map(([w, dyn]) => ({ id: uid('c'), title: w, text: '', dyn: { ...dynDefaults(w), ...dyn } }))
++  s.box = { ...defaultBox(s), ...s.box, gridCols: 1, gridRows: s.items.length, gapX: gap, gapY: gap }
++  return s
++}
++
++/** A single product: the images beside the summary, then the tabs, upsells and related products. */
++function product(): Section[] {
++  const top = createLayout('grid', 'g3r')
++  top.name = 'Product'
++  const images = column([['shop-breadcrumb'], ['product-images']], 16)
++  const summary = column([['product-sale-badge'], ['product-title', { tag: 'h1' }], ['product-rating'], ['product-price'], ['product-short-desc'], ['product-add-to-cart'], ['product-meta']], 14)
++  top.items = [
++    { id: uid('c'), title: 'layout', text: '', sub: images },
++    { id: uid('c'), title: 'layout', text: '', sub: summary },
++  ]
++  top.box = { ...defaultBox(top), gridCols: 2, gridRows: 1, width: 1160, gapX: 48, gapY: 32, stackMobile: true, padding: { t: 48, r: 40, b: 32, l: 40 } }
++  const notices = stack([['shop-notices']], { width: 1160, padT: 24, padB: 0 })
++  notices.name = 'Notices'
++  const more = stack([['product-tabs'], ['product-upsells'], ['product-related']], { width: 1160, padT: 16, padB: 96, gap: 48 })
++  more.name = 'Details'
++  return [notices, top, more]
++}
++
++/** The shop and product categories: the title and description above the store's own product grid. */
++function productArchive(): Section[] {
++  const head = stack([['shop-breadcrumb'], ['shop-archive-title', { tag: 'h1' }], ['shop-archive-desc']], { width: 1160, padB: 24, gap: 12 })
++  head.name = 'Archive header'
++  const grid = stack([['shop-archive-products']], { width: 1160, padT: 0, padB: 96 })
++  grid.name = 'Products'
++  return [head, grid]
++}
++
+ /**
+  * The sections of a starter (fresh ids on every call). `type` adapts a starter to the template
+  * type it is loaded for: 'single' on a Single Page template leaves out the post-only widgets.
+@@ -119,6 +156,10 @@ export function starterSections(id: StarterId, type?: TemplateType): Section[] {
+       return archive()
+     case 'search':
+       return search()
++    case 'product':
++      return product()
++    case 'product-archive':
++      return productArchive()
+     default:
+       return []
+   }
+diff --git a/src/builder/dynamic/types.ts b/src/builder/dynamic/types.ts
+index 2dab580..e31dfac 100644
+--- a/src/builder/dynamic/types.ts
++++ b/src/builder/dynamic/types.ts
+@@ -60,14 +60,71 @@ export interface DynContext {
+   post: DynPost | null
+   posts: DynPost[]
+   pagination: { current: number; total: number }
++  /** Pursae Commerce sample data; null (or absent) while it is off. */
++  shop?: DynShop | null
++  /** Pursae Multi Language languages; [] (or absent) while it is off. */
++  languages?: DynLanguage[] | null
++}
++
++export interface DynLanguage {
++  slug: string
++  name: string
++  /** emoji, '' without one */
++  flag: string
++  url: string
++  current: boolean
++}
++
++export interface DynProduct {
++  id: number
++  type: string
++  title: string
++  url: string
++  sku: string
++  /** the store's price markup (trusted) */
++  priceHtml: string
++  onSale: boolean
++  inStock: boolean
++  stockHtml: string
++  rating: number
++  ratingCount: number
++  /** UGC-sanitized */
++  shortHtml: string
++  /** UGC-sanitized */
++  contentHtml: string
++  image: DynImage | null
++  gallery: DynImage[]
++  /** product_cat ids */
++  categories: number[]
++  addToCartText: string
++}
++
++export interface DynProductCat {
++  id: number
++  name: string
++  url: string
++  count: number
++  parent: number
++  image: DynImage | null
++}
++
++export interface DynShop {
++  /** the preview product (single-product template, product doc), null elsewhere */
++  product: DynProduct | null
++  products: DynProduct[]
++  categories: DynProductCat[]
++  cart: { count: number; subtotalHtml: string }
++  shopUrl: string
++  cartUrl: string
++  checkoutUrl: string
+ }
+ 
+ /* ---------- Template mode (contract §11.7, TemplateBoot) ---------- */
+ 
+-export type TemplateType = 'header' | 'footer' | 'single-post' | 'single-page' | 'single' | 'front-page' | 'archive' | 'search-results' | 'error-404'
++export type TemplateType = 'header' | 'footer' | 'single-post' | 'single-page' | 'single' | 'single-product' | 'front-page' | 'archive' | 'product-archive' | 'search-results' | 'error-404'
+ 
+ /** Starter design of a new template (dynamic/starters.ts STARTER_IDS). */
+-export type StarterId = 'blank' | 'header' | 'footer' | 'single' | 'archive' | 'search'
++export type StarterId = 'blank' | 'header' | 'footer' | 'single' | 'archive' | 'search' | 'product' | 'product-archive'
+ 
+ export interface TemplatePreview {
+   object: PreviewObject
+diff --git a/src/builder/dynamic/widgets.tsx b/src/builder/dynamic/widgets.tsx
+index 56593b1..5b9bdbc 100644
+--- a/src/builder/dynamic/widgets.tsx
++++ b/src/builder/dynamic/widgets.tsx
+@@ -7,7 +7,8 @@ import { cn } from '../ui'
+ import { liveHref } from '../live/ctx'
+ import { LiveMenu } from '../live/ui'
+ import { t } from '../i18n'
+-import { DYN_DEFS, burgerWidth } from './model'
++import { DYN_DEFS, burgerWidth, isShopWidget } from './model'
++import { LanguageSwitcher, ShopWidget } from './shop'
+ import { When, attr, html, txt, useDyn, type DynMode } from './ctx'
+ import { DATE_FORMAT_RE, cleanHtml, formatDate, paginationHtml, postNavHtml, termsHtml, trimWords } from './format'
+ import type { DynMenuItem } from './types'
+@@ -45,7 +46,16 @@ function baseStyle(w: DynWidget, title: CSSProperties, body: CSSProperties): { s
+     case 'post-title':
+     case 'archive-title':
+     case 'search-query':
++    case 'product-title':
++    case 'shop-archive-title':
+       return { style: title, kind: 'heading' }
++    case 'product-price':
++      return { style: { fontSize: 20, fontWeight: 600 }, kind: 'text' }
++    case 'product-meta':
++    case 'product-stock':
++    case 'shop-breadcrumb':
++    case 'language-switcher':
++      return { style: { fontSize: 14.5 }, kind: 'text' }
+     case 'site-title':
+       return { style: { fontFamily: 'var(--f-head)', fontWeight: 600, fontSize: 22, lineHeight: 1.2, letterSpacing: '-0.01em' }, kind: 'heading' }
+     case 'site-tagline':
+@@ -91,7 +101,7 @@ export function DynWidgetView({ s, item, title, body }: { s: Section; item: Item
+       style={{ ...base.style, ...elCss(es, base.kind) }}
+       onClickCapture={m.live ? undefined : stopLinks}
+     >
+-      <Widget w={w} d={d} m={m} editing={!m.live && !b.preview} />
++      <Widget w={w} d={d} m={m} editing={!m.live && !b.preview} itemId={item.id} />
+     </div>
+   )
+ }
+@@ -101,10 +111,13 @@ const tagOf = (d: DynSettings, fallback: string) => (d.tag && /^(h[1-6]|p|div|sp
+ /** <Tag> with the given props: the root's typography comes from the widget root. */
+ const mk = (tag: string, props: P, ...children: ReactNode[]) => createElement(tag, props, ...children)
+ 
+-function Widget({ w, d, m, editing }: { w: DynWidget; d: DynSettings; m: DynMode; editing: boolean }) {
++function Widget({ w, d, m, editing, itemId }: { w: DynWidget; d: DynSettings; m: DynMode; editing: boolean; itemId: string }) {
+   const site = m.ctx.site
+   const post = m.post
++  if (isShopWidget(w)) return <ShopWidget w={w} d={d} m={m} editing={editing} itemId={itemId} />
+   switch (w) {
++    case 'language-switcher':
++      return <LanguageSwitcher d={d} m={m} editing={editing} itemId={itemId} />
+     case 'site-logo':
+       return <SiteLogo m={m} link={d.link !== false} />
+     case 'site-title': {
+diff --git a/src/builder/i18n/tr.ts b/src/builder/i18n/tr.ts
+index 83109f1..3c6b45a 100644
+--- a/src/builder/i18n/tr.ts
++++ b/src/builder/i18n/tr.ts
+@@ -1487,6 +1487,92 @@ const tr: Record<string, string> = {
+   'This page has unpublished changes. They stay saved as a draft.': 'Bu sayfada yayımlanmamış değişiklikler var. Taslak olarak kayıtlı kalırlar.',
+   'This template has unpublished changes. They stay saved as a draft.': 'Bu şablonda yayımlanmamış değişiklikler var. Taslak olarak kayıtlı kalırlar.',
+   'Opening {title}…': '{title} açılıyor…',
++  'Add to cart': 'Sepete ekle',
++  'Add to cart button': 'Sepete ekle düğmesi',
++  'Additional information': 'Ek bilgi',
++  'All categories': 'Tüm kategoriler',
++  'Archive products': 'Arşiv ürünleri',
++  'Ascending': 'Artan',
++  'Best selling': 'En çok satanlar',
++  'Breadcrumb': 'Sayfa yolu',
++  'Cart': 'Sepet',
++  'Cart icon': 'Sepet simgesi',
++  'Checkout': 'Ödeme',
++  'Children of {name}': '{name} alt kategorileri',
++  'Chosen products': 'Seçilen ürünler',
++  'Current product': 'Geçerli ürün',
++  'Current product: the product being viewed (Single Product templates). Pick a product to show it anywhere.': 'Geçerli ürün: görüntülenen ürün (Tek ürün şablonları). Herhangi bir yerde göstermek için bir ürün seçin.',
++  'Descending': 'Azalan',
++  'Dropdown': 'Açılır liste',
++  'Featured products': 'Öne çıkan ürünler',
++  'Gallery': 'Galeri',
++  'Hide empty categories': 'Boş kategorileri gizle',
++  'Hide the current language': 'Geçerli dili gizle',
++  'Home': 'Ana sayfa',
++  'In stock': 'Stokta',
++  'Language': 'Dil',
++  'Language switcher': 'Dil değiştirici',
++  'Latest products': 'En yeni ürünler',
++  'Link to the product': 'Ürüne bağlantı ver',
++  'Links to this page in each language of Pursae Multi Language.': 'Pursae Multi Language dillerinin her birinde bu sayfaya bağlantılar.',
++  'Mini cart': 'Mini sepet',
++  'Mini cart on click': 'Tıklayınca mini sepet',
++  'No product to preview. Pick one in the widget settings, or preview the template with a product.': 'Önizlenecek ürün yok. Bileşen ayarlarından bir ürün seçin ya da şablonu bir ürünle önizleyin.',
++  'No products in the cart.': 'Sepette ürün yok.',
++  'No products were found matching your selection.': 'Seçiminize uyan ürün bulunamadı.',
++  'On sale': 'İndirimde',
++  'Only from these categories': 'Yalnızca bu kategorilerden',
++  'Only these categories': 'Yalnızca bu kategoriler',
++  'Out of stock': 'Stokta yok',
++  'Paginate': 'Sayfalara böl',
++  'Popularity': 'Popülerlik',
++  'Price': 'Fiyat',
++  'Product': 'Ürün',
++  'Product ID': 'Ürün ID',
++  'Product IDs': 'Ürün ID\'leri',
++  'Product archive': 'Ürün arşivi',
++  'Product categories': 'Ürün kategorileri',
++  'Product description': 'Ürün açıklaması',
++  'Product images': 'Ürün görselleri',
++  'Product meta': 'Ürün bilgileri',
++  'Product price': 'Ürün fiyatı',
++  'Product rating': 'Ürün puanı',
++  'Product tabs': 'Ürün sekmeleri',
++  'Product title': 'Ürün başlığı',
++  'Products': 'Ürünler',
++  'Rating': 'Puan',
++  'Related products': 'İlgili ürünler',
++  'Reviews': 'Değerlendirmeler',
++  'SKU, categories and tags': 'Stok kodu, kategoriler ve etiketler',
++  'SKU:': 'Stok kodu:',
++  'Sale badge': 'İndirim rozeti',
++  'Sale!': 'İndirim!',
++  'Shop': 'Mağaza',
++  'Short description': 'Kısa açıklama',
++  'Show flags': 'Bayrakları göster',
++  'Show names': 'Adları göster',
++  'Show the price': 'Fiyatı göster',
++  'Show the subtotal': 'Ara toplamı göster',
++  'Shows the cart on the Cart page only. Design the Cart page around it.': 'Sepeti yalnızca Sepet sayfasında gösterir. Sepet sayfasını bunun etrafında tasarlayın.',
++  'Shows the checkout form on the Checkout page only. Design the Checkout page around it.': 'Ödeme formunu yalnızca Ödeme sayfasında gösterir. Ödeme sayfasını bunun etrafında tasarlayın.',
++  'Shows the shop or product category being viewed (Product Archive templates).': 'Görüntülenen mağazayı ya da ürün kategorisini gösterir (Ürün arşivi şablonları).',
++  'Shows the store messages, such as "added to your cart".': '"Sepetinize eklendi" gibi mağaza mesajlarını gösterir.',
++  'Stock': 'Stok',
++  'Store messages (added to cart, errors) show here.': 'Mağaza mesajları (sepete eklendi, hatalar) burada görünür.',
++  'Store notices': 'Mağaza bildirimleri',
++  'Tag IDs': 'Etiket ID\'leri',
++  'The cart shows here when this is the Cart page.': 'Bu sayfa Sepet sayfası olduğunda sepet burada görünür.',
++  'The category description shows here.': 'Kategori açıklaması burada görünür.',
++  'The checkout form shows here when this is the Checkout page.': 'Bu sayfa Ödeme sayfası olduğunda ödeme formu burada görünür.',
++  'The count stays right on cached pages: the store updates it in the browser.': 'Sayı önbelleğe alınmış sayfalarda da doğru kalır: mağaza onu tarayıcıda günceller.',
++  'The product tabs show here.': 'Ürün sekmeleri burada görünür.',
++  'This product has no text here yet.': 'Bu ürünün burada henüz metni yok.',
++  'Top level only': 'Yalnızca üst düzey',
++  'Top rated': 'En yüksek puanlılar',
++  'Turn on Pursae Commerce to use the shop widgets.': 'Mağaza bileşenlerini kullanmak için Pursae Commerce\'i açın.',
++  'Turn on Pursae Multi Language and add languages to show the switcher.': 'Dil değiştiriciyi göstermek için Pursae Multi Language\'ı açın ve dil ekleyin.',
++  'Upsells': 'Yukarı satışlar',
++  'You may also like…': 'Bunları da beğenebilirsiniz…',
+ }
+ 
+ export default tr
+diff --git a/src/builder/live/site.css b/src/builder/live/site.css
+index 1716058..249e580 100644
+--- a/src/builder/live/site.css
++++ b/src/builder/live/site.css
+@@ -18,6 +18,45 @@
+ @source '../dynamic/widgets.tsx';
+ @source '../dynamic/loop.tsx';
+ @source '../dynamic/menu.tsx';
++@source '../dynamic/shop.tsx';
+ 
+ /* Per-device hiding (hideOnClass in sections.tsx). */
+ @source inline('@max-[640px]:hidden! @min-[640px]:@max-[1024px]:hidden! @min-[1024px]:hidden!');
++
++/* Pursae Commerce markup inside Web Builder widgets (dynamic/shop.tsx): the store's own stylesheet
++ * also loads; this layer only makes buttons, grids and the cart badge follow the page design. */
++@layer components {
++  .wb-shop a.button,
++  .wb-shop button.button,
++  .wb-shop .button.alt {
++    background: var(--btn-bg);
++    color: var(--btn-fg);
++    border-radius: var(--r-btn);
++  }
++  .wb-shop ul.products {
++    display: grid;
++    grid-template-columns: repeat(var(--wb-cols, 4), minmax(0, 1fr));
++    gap: 1.5rem;
++    margin: 0;
++    padding: 0;
++  }
++  .wb-shop ul.products::before,
++  .wb-shop ul.products::after {
++    content: none;
++  }
++  .wb-shop ul.products li.product {
++    width: auto !important;
++    margin: 0 !important;
++    float: none !important;
++  }
++  .wb-shop .columns-1 { --wb-cols: 1; }
++  .wb-shop .columns-2 { --wb-cols: 2; }
++  .wb-shop .columns-3 { --wb-cols: 3; }
++  .wb-shop .columns-5 { --wb-cols: 5; }
++  .wb-shop .columns-6 { --wb-cols: 6; }
++  @media (max-width: 640px) {
++    .wb-shop ul.products { --wb-cols: 2; }
++  }
++  .wb-shop ul.products.columns-1 { --wb-cols: 1; }
++  .wb-cart-count-n { font: inherit; }
++}
+diff --git a/src/builder/types.ts b/src/builder/types.ts
+index 2f77f3e..25c3ee8 100644
+--- a/src/builder/types.ts
++++ b/src/builder/types.ts
+@@ -256,6 +256,10 @@ export type DynWidget =
+   | 'site-logo' | 'site-title' | 'site-tagline' | 'nav-menu' | 'search-form' | 'copyright'
+   | 'post-title' | 'post-content' | 'post-excerpt' | 'post-image' | 'post-meta' | 'post-terms' | 'post-date' | 'post-author' | 'author-box' | 'post-nav' | 'post-comments'
+   | 'archive-title' | 'archive-desc' | 'search-query' | 'pagination'
++  | 'language-switcher'
++  | 'shop-products' | 'shop-categories' | 'shop-add-to-cart' | 'shop-cart' | 'shop-mini-cart' | 'shop-notices' | 'shop-cart-page' | 'shop-checkout-page'
++  | 'product-title' | 'product-images' | 'product-price' | 'product-add-to-cart' | 'product-rating' | 'product-stock' | 'product-meta' | 'product-short-desc' | 'product-content' | 'product-tabs' | 'product-related' | 'product-upsells' | 'product-sale-badge'
++  | 'shop-archive-products' | 'shop-archive-title' | 'shop-archive-desc' | 'shop-breadcrumb'
+ 
+ export interface DynSettings {
+   tag?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'p' | 'div' | 'span'
+@@ -280,6 +284,38 @@ export interface DynSettings {
+   button?: string
+   /** ≤ 200 characters */
+   empty?: string
++  /** language-switcher: a select; shop-cart: the mini cart in a disclosure panel */
++  dropdown?: boolean
++  /** language-switcher */
++  flags?: boolean
++  /** language-switcher (default true) */
++  names?: boolean
++  /** language-switcher */
++  hideCurrent?: boolean
++  /** shop-products */
++  source?: 'recent' | 'featured' | 'sale' | 'best-selling' | 'top-rated' | 'ids'
++  /** 1…6 */
++  columns?: number
++  /** 1…24 */
++  limit?: number
++  orderBy?: 'date' | 'title' | 'price' | 'price-desc' | 'popularity' | 'rating' | 'rand' | 'menu_order'
++  order?: 'desc' | 'asc'
++  /** product_cat ids, SHOP_IDS_PATTERN */
++  cats?: string
++  /** product_tag ids */
++  tags?: string
++  /** product ids (source 'ids') */
++  ids?: string
++  /** product.* widgets, shop-add-to-cart: a product id; 0 / absent = the current product */
++  product?: number
++  paginate?: boolean
++  showPrice?: boolean
++  hideEmpty?: boolean
++  /** shop-categories: '' every level, '0' top level, or a category id */
++  parent?: string
++  showTotal?: boolean
++  /** product-images: false = the featured image only */
++  gallery?: boolean
+ }
+ 
+ /** Section.content keys of a 'loop' section (all strings); card = items[0].sub, grid = section.grid. */
