@@ -31,6 +31,9 @@ func (s *Server) acfgoRESTFields(ctx context.Context, sc *acfScreen) []acfField 
 func (s *Server) acfgoRESTValues(c *gin.Context, o *acfObject, fields []acfField) map[string]any {
 	ctx := c.Request.Context()
 	standard := c.Query("acf_format") == "standard"
+	if standard { // formatted related posts and users are filtered for the requester (acfgoRESTViewerFrom)
+		ctx = context.WithValue(ctx, acfgoRESTViewerKey{}, &acfgoRESTViewer{u: restCurrent(c)})
+	}
 	out := map[string]any{}
 	for _, f := range fields {
 		if standard {
@@ -44,6 +47,23 @@ func (s *Server) acfgoRESTValues(c *gin.Context, o *acfObject, fields []acfField
 		}
 	}
 	return out
+}
+
+// acfgoRESTViewerKey marks a context that formats values for a REST response (?acf_format=standard). Unlike
+// get_field() in a theme, related posts the requester may not read and private user columns are left out there,
+// as the core REST API does.
+type acfgoRESTViewerKey struct{}
+
+type acfgoRESTViewer struct{ u *store.User } // u is nil for an anonymous request
+
+func acfgoRESTViewerFrom(ctx context.Context) *acfgoRESTViewer {
+	v, _ := ctx.Value(acfgoRESTViewerKey{}).(*acfgoRESTViewer)
+	return v
+}
+
+// canReadPost is the core REST rule (rest_posts.go): published posts, or read_post on the post.
+func (v *acfgoRESTViewer) canReadPost(p *store.Post) bool {
+	return p.Status == "publish" || (v.u != nil && v.u.Can("read_post", p))
 }
 
 // acfgoLight is ACF's "light" REST format of a stored value: numbers, booleans and IDs typed.
