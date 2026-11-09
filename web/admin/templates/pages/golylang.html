@@ -309,7 +309,7 @@ document.querySelectorAll('.pll-configure-link').forEach(function(a){
 </tr>{{else}}<tr class="no-items"><td class="colspanchange" colspan="5">No string translation found.</td></tr>{{end}}
 </tbody>
 </table>
-<p><label><input name="clean" type="checkbox" value="1" /> Clean strings translation database</label><br /><span class="description">Use this to remove unused strings from database, for example after a plugin has been uninstalled.</span></p>
+<p><label><input name="clean" type="checkbox" value="1" /> Clean strings translation database</label><br /><span class="description">Use this to remove unused strings from database, for example after a plugin has been uninstalled. It also removes untranslated page text recorded on pages of other languages.</span></p>
 <p class="submit"><input type="submit" name="submit" class="button button-primary" value="Save changes" /></p>
 </form>
 {{if .MT.Enabled}}<script>

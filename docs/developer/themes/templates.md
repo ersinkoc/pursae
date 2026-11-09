@@ -164,7 +164,8 @@ else left as it is. html/template escapes the result for its context, so `esc_ht
 read with `theme_mod` are translated the same way (listed with the setting id as their name).
 
 Text the theme prints without these functions is still found on the page: with "Record strings on
-pages" on, an administrator's visit lists it under "Page text", and its translation replaces the
+pages" on, an administrator's visit to a page of the default language lists it under "Page text"
+(pages of other languages and the language switcher record nothing), and its translation replaces the
 exact text on pages of that language. Post content, titles and comments are never treated as
 strings — translate the posts themselves.
 

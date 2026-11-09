@@ -10,6 +10,8 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+
+	"wpgo/internal/store"
 )
 
 // pllSourceRow reads one pll_string_sources row ("" source when it does not exist).
@@ -50,7 +52,13 @@ func TestGolylangStringCapture(t *testing.T) {
 	if src, dom, _, _ := pllSourceRow(t, srv, "Skip to content"); src != "theme:twentytwentyfive" || dom != "twentytwentyfive" {
 		t.Errorf("Skip to content: source %q domain %q", src, dom)
 	}
-	if src, _, _, u := pllSourceRow(t, srv, "Designed with"); src != "page" || u != "/fr/" {
+	// Page text is recorded on pages of the default language only: the French page records none.
+	if src, _, _, u := pllSourceRow(t, srv, "Designed with"); src != "" {
+		t.Errorf("the French page recorded page text: source %q url %q", src, u)
+	}
+	_, _, _ = get(t, c, base+"/")
+	srv.pllCaptureFlush(ctx)
+	if src, _, _, u := pllSourceRow(t, srv, "Designed with"); src != "page" || u != "/" {
 		t.Errorf("Designed with: source %q url %q", src, u)
 	}
 	for _, s := range []string{"Skip to toolbar", "Twenty Twenty-Five body"} { // the toolbar and post content are not page text
@@ -62,8 +70,8 @@ func TestGolylangStringCapture(t *testing.T) {
 	// Anonymous visitors never record page text.
 	_, _ = srv.store.Pool.Exec(ctx, `DELETE FROM pll_string_sources WHERE source = 'page'`)
 	srv.pllCaptureForget()
-	_, _, _ = get(t, anon, base+"/fr/")
-	_, _, _ = get(t, anon, base+"/fr/?s=injected+search+text")
+	_, _, _ = get(t, anon, base+"/")
+	_, _, _ = get(t, anon, base+"/?s=injected+search+text")
 	srv.pllCaptureFlush(ctx)
 	var pageRows int
 	_ = srv.store.Pool.QueryRow(ctx, `SELECT count(*) FROM pll_string_sources WHERE source = 'page'`).Scan(&pageRows)
@@ -71,7 +79,7 @@ func TestGolylangStringCapture(t *testing.T) {
 		t.Errorf("anonymous visits recorded %d page strings", pageRows)
 	}
 	// Search results are not recorded for admins either.
-	_, _, _ = get(t, c, base+"/fr/?s=injected+search+text")
+	_, _, _ = get(t, c, base+"/?s=injected+search+text")
 	srv.pllCaptureFlush(ctx)
 	if src, _, _, _ := pllSourceRow(t, srv, "injected search text"); src != "" {
 		t.Error("search text was recorded")
@@ -123,7 +131,7 @@ func TestGolylangStringCapture(t *testing.T) {
 	}
 
 	// Strings screen: groups, the context row, keys.
-	_, _, _ = get(t, c, base+"/fr/") // records the French page's untranslated text again
+	_, _, _ = get(t, c, base+"/") // records the English page's text again
 	srv.pllCaptureFlush(ctx)
 	_, body, _ := get(t, c, base+"/wp-admin/admin?page=mlang_strings&group="+url.QueryEscape("Theme: Twenty Twenty-Five"))
 	if !strings.Contains(body, "Skip to content") || !strings.Contains(body, `value="Aller au contenu"`) {
@@ -194,5 +202,117 @@ func TestGolylangStringCapture(t *testing.T) {
 	if !strings.Contains(out, `<pll-t data-pll-s="m1">Aller au contenu</pll-t>`) || !strings.Contains(out, `<p>Skip to content</p>`) ||
 		!strings.Contains(out, `alt="Aller au contenu"`) || !strings.Contains(out, `data-pll-a-alt="m2"`) {
 		t.Errorf("visual pass: %s", out)
+	}
+}
+
+// TestGolylangCaptureDefaultLanguageOnly: page text is recorded on pages of the default language
+// only (a translated page shows its own text, which is no source string), the language switcher's
+// names are never page text, and Clean removes such rows recorded by earlier versions.
+func TestGolylangCaptureDefaultLanguageOnly(t *testing.T) {
+	ts, c, srv := testServerBuilderOff(t)
+	base := ts.URL
+	installAndLogin(t, ts, c)
+	ctx := context.Background()
+	golylangToggle(t, c, base, "activate")
+	pllAddLanguage(t, c, base, "English", "en_US", "en", "us")
+	pllAddLanguage(t, c, base, "Türkçe", "tr_TR", "tr", "tr")
+	if def := srv.pllDefault(ctx); def == nil || def.Slug != "en" {
+		t.Fatalf("default language: %+v", def)
+	}
+
+	// The string pass itself: an administrator's page in Turkish records nothing, in English it does.
+	admin, _ := srv.store.UserByID(ctx, 1)
+	page := []byte(`<html><body><p>Öne çıkanlar listesi</p><p>Visible footer text</p></body></html>`)
+	for _, tc := range []struct {
+		lang, path string
+		want       bool
+	}{{"tr", "/tr/highlights/", false}, {"en", "/highlights/", true}} {
+		_, _ = srv.store.Pool.Exec(ctx, `DELETE FROM pll_string_sources WHERE source = 'page'`)
+		srv.pllCaptureForget()
+		gc, _ := gin.CreateTestContext(httptest.NewRecorder())
+		gc.Request = httptest.NewRequest(http.MethodGet, tc.path, nil)
+		gc.Set(ctxUser, admin)
+		pllSet(gc, &pllReq{srv: srv, Lang: srv.pllLang(ctx, tc.lang), Front: true, Path: tc.path})
+		for _, visual := range []func(string, string) string{nil, func(string, string) string { return "m" }} {
+			_ = srv.pllApplyStrings(gc, page, srv.pllLang(ctx, tc.lang), visual)
+		}
+		srv.pllCaptureFlush(ctx)
+		for _, s := range []string{"Öne çıkanlar listesi", "Visible footer text"} {
+			src, _, _, u := pllSourceRow(t, srv, s)
+			if got := src == "page"; got != tc.want {
+				t.Errorf("%s page: %q recorded=%v (url %q), want %v", tc.lang, s, got, u, tc.want)
+			}
+		}
+	}
+
+	// Settings > General with a non-default language selected points to Languages > Translations.
+	hint := `translate it in <a href="/wp-admin/admin?page=mlang_strings&amp;group=WordPress">`
+	if _, body, _ := get(t, c, base+"/wp-admin/options-general?lang=tr"); strings.Count(body, hint) != 2 || !strings.Contains(body, "Tagline in Türkçe") {
+		t.Error("Settings > General (Türkçe) lacks the Site Title and Tagline hints")
+	}
+	if _, body, _ := get(t, c, base+"/wp-admin/options-general?lang=en"); strings.Contains(body, hint) {
+		t.Error("Settings > General (English) shows the translation hint")
+	}
+
+	// Real pages with the switcher in the menu: neither /tr/ nor the English page records language
+	// names, and /tr/ records no page text at all.
+	if err := srv.wbSetActive(ctx, true); err != nil { // Hello Pursae prints the classic menu markup
+		t.Fatal(err)
+	}
+	menu, err := srv.store.CreateMenu(ctx, "Main")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := srv.store.AddMenuItem(ctx, &store.EditItem{MenuID: menu, Kind: "custom", Object: "custom", URL: "#pll_switcher", Label: "Languages",
+		Classes: "pll-show-flags", Status: "publish"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := srv.store.SetMenuLocations(ctx, map[string]int64{"primary": menu}); err != nil {
+		t.Fatal(err)
+	}
+	o := srv.pllOpts() // the same menu in both languages' primary location
+	o.NavMenus["hello-pursae"] = map[string]map[string]int64{"primary": {"en": menu, "tr": menu}}
+	if err := srv.pllSaveOpts(ctx, o); err != nil {
+		t.Fatal(err)
+	}
+	pllCreatePost(t, c, base, "?lang=tr", "Öne çıkanlar")
+	pllCreatePost(t, c, base, "?lang=en", "Highlights")
+	_, _ = srv.store.Pool.Exec(ctx, `DELETE FROM pll_string_sources WHERE source = 'page'`)
+	srv.pllCaptureForget()
+	srv.purgeAll(ctx)
+	_, trHome, _ := get(t, c, base+"/tr/")
+	if !strings.Contains(trHome, "English") || !strings.Contains(trHome, "Türkçe") {
+		t.Fatalf("the Turkish home has no language switcher: %s", trHome)
+	}
+	_, _, _ = get(t, c, base+"/")
+	srv.pllCaptureFlush(ctx)
+	var trRows, nameRows, enRows int
+	_ = srv.store.Pool.QueryRow(ctx, `SELECT count(*) FILTER (WHERE url LIKE '/tr%'),
+		count(*) FILTER (WHERE original ~ '(English|Türkçe)'), count(*) FILTER (WHERE url = '/')
+		FROM pll_string_sources WHERE source = 'page'`).Scan(&trRows, &nameRows, &enRows)
+	if trRows != 0 || nameRows != 0 {
+		t.Errorf("page rows: %d from /tr/, %d language names", trRows, nameRows)
+	}
+	if enRows == 0 {
+		t.Error("the English home recorded no page text")
+	}
+
+	// Clean removes untranslated page text from other-language URLs and language names; translated
+	// rows and English page text stay.
+	_, _ = srv.store.Pool.Exec(ctx, `INSERT INTO pll_string_sources (original, source, url) VALUES
+		('Junk Turkish text', 'page', '/tr/highlights/'), ('Junk language root', 'page', '/tr'),
+		('Junk old URL form', 'page', '/language/tr/projects/'), ('English', 'page', '/tr/projects/'),
+		('Türkçe', 'page', '/'), ('Translated on tr', 'page', '/tr/x/'), ('Normal English text', 'page', '/trips/'),
+		('Theme text', 'theme:x', '/tr/')`)
+	_ = srv.pllSetString(ctx, "tr", "Translated on tr", "Çevrildi")
+	_, body, _ := get(t, c, base+"/wp-admin/admin?page=mlang_strings")
+	if code, _, _ := post(t, c, base+"/wp-admin/admin?page=mlang_strings", url.Values{"_wpnonce": {formNonce(t, body)}, "clean": {"1"}}); code != http.StatusFound {
+		t.Fatalf("clean: %d", code)
+	}
+	for s, keep := range map[string]bool{"Junk Turkish text": false, "Junk language root": false, "Junk old URL form": false, "English": false,
+		"Türkçe": false, "Translated on tr": true, "Normal English text": true, "Theme text": true} {
+		if src, _, _, _ := pllSourceRow(t, srv, s); (src != "") != keep {
+			t.Errorf("after Clean %q: source %q, want kept=%v", s, src, keep)
+		}
 	}
 }

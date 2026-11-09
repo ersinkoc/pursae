@@ -70,6 +70,9 @@ type optionsData struct {
 	// PendingAdminEmail is the new_admin_email option: a change of the admin address awaiting confirmation.
 	PendingAdminEmail string
 	DismissURL        string
+	// PllLang is the non-default language the Multi Language admin filter shows (?lang=): Site Title
+	// and Tagline are translated on Languages > Translations, not here.
+	PllLang string
 	// Site Language: installed and downloadable languages, and a failed download.
 	LangInstalled, LangAvailable []langChoice
 	LangError                    bool
@@ -124,6 +127,9 @@ func (s *Server) optionsScreen(page string) gin.HandlerFunc {
 			if ne := s.settings.String("new_admin_email"); ne != "" && ne != s.settings.String("admin_email") {
 				d.PendingAdminEmail = ne
 				d.DismissURL = "/wp-admin/options?dismiss=new_admin_email&_wpnonce=" + s.nonce(c, "dismiss-1-new_admin_email")
+			}
+			if l := s.pllCurrent(c); l != nil && !l.IsDefault {
+				d.PllLang = l.Name
 			}
 		case "writing":
 			d.Categories, _ = s.store.HierarchicalTerms(ctx, "category", false)

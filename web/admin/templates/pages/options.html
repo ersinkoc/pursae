@@ -18,10 +18,12 @@
 
 {{define "options-general"}}<table class="form-table" role="presentation">
 <tr><th scope="row"><label for="blogname">Site Title</label></th>
-<td><input name="blogname" type="text" id="blogname" value="{{settingStr "blogname"}}" class="regular-text" /></td></tr>
+<td><input name="blogname" type="text" id="blogname" value="{{settingStr "blogname"}}" class="regular-text" />
+{{if .PllLang}}<p class="description">To show the Site Title in {{.PllLang}}, translate it in <a href="/wp-admin/admin?page=mlang_strings&amp;group=WordPress">Languages &rsaquo; Translations</a>.</p>{{end}}</td></tr>
 <tr><th scope="row"><label for="blogdescription">Tagline</label></th>
 <td><input name="blogdescription" type="text" id="blogdescription" aria-describedby="tagline-description" value="{{settingStr "blogdescription"}}" class="regular-text" placeholder="" />
-<p class="description" id="tagline-description">In a few words, explain what this site is about. Example: &#8220;Just another WordPress site.&#8221;</p></td></tr>
+<p class="description" id="tagline-description">In a few words, explain what this site is about. Example: &#8220;Just another WordPress site.&#8221;</p>
+{{if .PllLang}}<p class="description">To show the Tagline in {{.PllLang}}, translate it in <a href="/wp-admin/admin?page=mlang_strings&amp;group=WordPress">Languages &rsaquo; Translations</a>.</p>{{end}}</td></tr>
 <tr><th scope="row"><label for="siteurl">WordPress Address (URL)</label></th>
 <td><input name="siteurl" type="url" id="siteurl" value="{{settingStr "siteurl"}}" class="regular-text code" /></td></tr>
 <tr><th scope="row"><label for="home">Site Address (URL)</label></th>

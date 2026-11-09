@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"log/slog"
+	"net/url"
 	"strings"
 	"sync"
 )
@@ -225,9 +226,66 @@ func (s *Server) pllDeleteStrings(ctx context.Context, keys []string) error {
 	return err
 }
 
-// pllCleanStrings is "Clean strings translations database": recorded strings not seen for 30 days
-// that were never translated are removed, then the translations of strings no longer listed.
+// pllCleanForeignPageStrings removes untranslated page text that is no source string: rows
+// recorded on a page of a non-default language (URL /<slug>/… or /language/<slug>/…, under the
+// home path; versions before 0.1.9 recorded those) and language names (the switcher). Rows with a
+// translation stay: the visual editor lists a string it translated on any page.
+func (s *Server) pllCleanForeignPageStrings(ctx context.Context) error {
+	langs := s.pllLanguages(ctx)
+	var prefixes []string
+	base := ""
+	if u, err := url.Parse(s.links(ctx).Home); err == nil {
+		base = strings.TrimRight(u.Path, "/")
+	}
+	for _, l := range langs {
+		if l.IsDefault || l.Slug == "" {
+			continue
+		}
+		prefixes = append(prefixes, base+"/"+l.Slug, base+"/language/"+l.Slug)
+	}
+	names := pllLanguageLabels(langs)
+	rows, err := s.store.Pool.Query(ctx, `SELECT `+pllKeySQL+`, original, url FROM pll_string_sources ss WHERE source = 'page'
+		AND NOT EXISTS (SELECT 1 FROM pll_strings t WHERE t.original = (CASE WHEN ss.context <> '' AND ss.domain <> 'pll'
+			THEN ss.context || chr(4) || ss.original ELSE ss.original END))`)
+	if err != nil {
+		return err
+	}
+	var keys []string
+	for rows.Next() {
+		var k, orig, u string
+		if rows.Scan(&k, &orig, &u) != nil {
+			continue
+		}
+		junk := names[pllCollapseWS(strings.TrimSpace(orig))]
+		for _, p := range prefixes {
+			if junk = junk || u == p || strings.HasPrefix(u, p+"/"); junk {
+				break
+			}
+		}
+		if junk {
+			keys = append(keys, k)
+		}
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	if len(keys) == 0 {
+		return nil
+	}
+	_, err = s.store.Pool.Exec(ctx, `DELETE FROM pll_string_sources WHERE source = 'page' AND `+pllKeySQL+` = ANY($1)`, keys)
+	s.pllCaptureForget()
+	return err
+}
+
+// pllCleanStrings is "Clean strings translations database": untranslated page text recorded on
+// pages of other languages and language names are removed (pllCleanForeignPageStrings), then
+// recorded strings not seen for 30 days that were never translated, then the translations of
+// strings no longer listed.
 func (s *Server) pllCleanStrings(ctx context.Context) error {
+	if err := s.pllCleanForeignPageStrings(ctx); err != nil {
+		return err
+	}
 	if _, err := s.store.Pool.Exec(ctx, `DELETE FROM pll_string_sources ss WHERE ss.last_seen < now() - interval '30 days'
 		AND NOT EXISTS (SELECT 1 FROM pll_strings t WHERE t.original = (CASE WHEN ss.context <> '' AND ss.domain <> 'pll'
 			THEN ss.context || chr(4) || ss.original ELSE ss.original END))`); err != nil {

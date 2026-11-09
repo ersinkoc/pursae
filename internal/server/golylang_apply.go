@@ -21,7 +21,7 @@ import (
 // anonymous page costs one walk per cache miss.
 //
 // String capture: while "Record strings on pages" is on, the pass records the strings it finds
-// with no translation in pll_string_sources (source "page") — only for a user who can
+// on pages of the default language in pll_string_sources (source "page") — only for a user who can
 // manage_options, or in visual translation mode, never for anonymous visitors (pages echo
 // request data: ?s=, 404 paths). Search results, 404s, previews and Customizer previews never
 // record.
@@ -112,7 +112,10 @@ func (s *Server) pllApplyStrings(c *gin.Context, page []byte, l *pllLanguage, vi
 		ctx = context.Background()
 	}
 	t := s.pllFrontTableFor(ctx, l.Slug)
-	capture := s.pllCaptureAllowed(c, visit != nil)
+	// Only a page of the default language records: originals are default-language text. A page of
+	// another language shows its own text (a translated post's blocks or fields, the switcher's
+	// language names), which is no source string.
+	capture := l.IsDefault && s.pllCaptureAllowed(c, visit != nil)
 	if len(t.tr) == 0 && !capture && visit == nil {
 		return page
 	}
@@ -124,16 +127,37 @@ func (s *Server) pllApplyStrings(c *gin.Context, page []byte, l *pllLanguage, vi
 			path = c.Request.URL.Path
 		}
 	}
+	var names map[string]bool // language names and slugs (switchers, hreflang labels): never page text
+	if capture {
+		names = pllLanguageLabels(s.pllLanguages(ctx))
+	}
 	lookup := func(k string, record bool) (string, bool) {
 		if v, ok := t.tr[k]; ok {
 			return v, true
 		}
-		if record && capture && !t.rev[k] && !pllKnown(r, k) {
+		if record && capture && !t.rev[k] && !names[k] && !pllKnown(r, k) {
 			s.pllCaptureQueue(ctx, k, "", "", "page", path)
 		}
 		return "", false
 	}
 	return i18n.TranslateFrontWith(page, lookup, visit)
+}
+
+// pllLanguageLabels are the texts a language switcher shows for langs: names, slugs and names
+// with the flag emoji, whitespace collapsed.
+func pllLanguageLabels(langs []*pllLanguage) map[string]bool {
+	out := make(map[string]bool, 3*len(langs))
+	for _, l := range langs {
+		for _, v := range []string{l.Name, l.Slug} {
+			if v = pllCollapseWS(strings.TrimSpace(v)); v != "" {
+				out[v] = true
+				if f := l.FlagEmoji(); f != "" {
+					out[f+" "+v] = true
+				}
+			}
+		}
+	}
+	return out
 }
 
 // pllVisualPage is set by visual translation mode (golylang_visual.go). golylangHTML calls it with

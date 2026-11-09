@@ -160,6 +160,11 @@ func (s *Server) pllSwitcherItems(c *gin.Context, q *siteQuery, a pllSwitcherArg
 		if a.DisplayNamesAs == "slug" {
 			it.Label = l.Slug
 		}
+		// Language names are no page text: known (not recorded, not listed in visual translation).
+		pllMarkKnown(c, it.Label, "")
+		if f := l.FlagEmoji(); f != "" {
+			pllMarkKnown(c, f+" "+it.Label, "")
+		}
 		cls := []string{"lang-item", "lang-item-" + itoa64(l.ID), "lang-item-" + l.Slug}
 		if isCur {
 			cls = append(cls, "current-lang")

@@ -76,7 +76,7 @@ translation](#machine-translation) with DeepL, Google or an OpenAI-compatible AP
 | Feature | |
 |---|---|
 | Table with checkbox, String, Name, Group, Translations (one input or textarea per language), search "Search translations", "Filter by group" ("View all groups"), pagination | ✅ |
-| Built-in strings: Site Title and Tagline (group WordPress) | ✅ translated on the front end |
+| Built-in strings: Site Title and Tagline (group WordPress) | ✅ translated on the front end; Settings › General with a non-default language selected in the admin bar links each field to Languages › Translations |
 | Date Format and Time Format strings | ✗ Pursae formats dates without a request context, so there is no place to apply them |
 | Widget titles and text (legacy widgets) | ✗ Pursae only has block widgets |
 | Strings registered by themes (`pll_register_string`, `pll__`, `pll_e`) | ✅ registered on first use, kept in the table `pll_string_sources` (the old option `golylang_strings` is still read and copied into the table once) |
@@ -86,7 +86,7 @@ translation](#machine-translation) with DeepL, Google or an OpenAI-compatible AP
 | Group labels | "WordPress" (Site Title, Tagline), "URL slugs", "Pursae" (core text), "Theme: *name*", "Plugin: *name*", "Page text", or the group given to `pll_register_string`. A string listed by several sources shows once; a theme or plugin source wins over page text |
 | Strings with a gettext context (`_x`) | ✅ translated separately per context; PO export writes the context as `msgctxt` and import reads it back |
 | Bulk Delete for registered strings (WordPress and URL slugs strings are greyed) | ✅ |
-| "Clean strings translation database" | ✅ removes recorded strings not seen for 30 days that were never translated, then translations whose string is no longer listed anywhere |
+| "Clean strings translation database" | ✅ removes recorded strings not seen for 30 days that were never translated, untranslated page text recorded on pages of other languages or naming a language, then translations whose string is no longer listed anywhere |
 | Admin language filter limits the columns to one language | ✅ |
 | Pro: export (Target language, group, Download) and import (Upload) | ✅ in PO format, with the `Language` and `Site-Reference` headers; XLIFF is left out |
 | Machine translation on the screen (Pursae) | ✅ while the module is on: a "Suggest" button per input, "Translate empty strings on this page" (fills the inputs; nothing is saved until **Save Changes**) and "Translate all empty strings" (server side, at most 1000 strings per run, after a confirmation). URL slug strings are never sent |
@@ -209,11 +209,12 @@ TranslatePress does it, and the strings are found for you.
 | Page string pass: on every page of a non-default language, each text node and translatable attribute whose exact text (whitespace collapsed, entities decoded) has a translation on Languages › Translations is replaced | ✅ exact matches only: no patterns, no dates, no partial text |
 | Left alone: post content, titles, excerpts and comments (marked as user content while the page renders and translated per post instead), `script`, `style`, `textarea`, `pre`, `code`, `svg`, `math`, `translate="no"` | ✅ |
 | Theme and plugin strings (`__`, `_x`, `_n`, theme mods, `wpgo.T`) are listed the first time a page uses them, under "Theme: *name*" or "Plugin: *name*" | ✅ always, whether **Record strings on pages** is on or off |
-| **Record strings on pages** (module, on by default): other text found on pages is listed under "Page text" with the URL it was first seen on | ✅ only while an administrator (`manage_options`) browses the site or in visual translation; on a non-default language, text with no translation is listed too |
+| **Record strings on pages** (module, on by default): other text found on pages is listed under "Page text" with the URL it was first seen on | ✅ only on pages of the default language (pages of other languages show their own text, which is no source string), while an administrator (`manage_options`) browses the site or in visual translation |
+| Language switcher output (language names, with or without flag) | ✅ never recorded as page text |
 | Visitors never record page text; search results, 404 pages, previews and Customizer previews never record | ✅ pages echo request data (`?s=`, 404 paths) |
 | Limits | at most 500 new strings per request and 5000 per minute per server, strings up to 2000 characters; theme and plugin strings seen by visitors are capped at 200 new per source per hour. Strings are written in batches in the background, never while the page renders |
 | Cost for visitors | nothing while the plugin is off or the language has no string translation; otherwise one walk over the page, cached by Pursae Cache. No markup is added: only the text changes |
-| **Clean strings translation database** | removes page strings not seen for 30 days that were never translated |
+| **Clean strings translation database** | removes page strings not seen for 30 days that were never translated, and untranslated page strings recorded on a page of another language (URL `/<slug>/…` or `/language/<slug>/…`, recorded before 0.1.9) or that are a language name |
 | Not marked as user content yet | the blog title of Twenty Twenty-Five and the aria-label "Reply to *name*" of comment reply links: an administrator's visit can list them as page text |
 
 ## Machine translation
