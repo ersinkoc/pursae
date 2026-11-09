@@ -780,6 +780,25 @@ func TestWebBuilderRESTPublishKeepsSEO(t *testing.T) {
 	if d, n := meta(); d != "C" || n != "noindex" {
 		t.Errorf("hidden by a REST client: %q %q", d, n)
 	}
+	// A session autosaves (C / hidden as loaded), Pursae SEO then writes D + indexable, and the
+	// editor reopens on the restored draft: publishing it keeps D / indexable.
+	session = boot()
+	if code, v, _ := admin.do(http.MethodPut, wbrDocPath(page.ID, "/autosave"), map[string]any{"doc": doc, "page": session, "baseRev": 5}, nil); code != http.StatusOK {
+		t.Fatalf("autosave: %d %v", code, v)
+	}
+	if _, err := srv.store.Pool.Exec(ctx, `UPDATE posts SET meta = (meta - $3::text) || jsonb_build_object($2::text, 'D') WHERE id = $1`,
+		page.ID, seogoKey("description"), seogoKey("noindex")); err != nil {
+		t.Fatal(err)
+	}
+	_, v, _ := admin.do(http.MethodGet, wbrDocPath(page.ID, ""), nil, nil)
+	draft := wbrObj(wbrObj(wbrObj(v)["draft"])["page"])
+	if l := wbrObj(draft["_loaded"]); draft["description"] != "C" || l["description"] != "C" || l["indexable"] != false || l["rev"] != float64(5) {
+		t.Fatalf("restored draft page: %v", draft)
+	}
+	publish(5, draft)
+	if d, n := meta(); d != "D" || n == "noindex" {
+		t.Errorf("restored draft overwrote Pursae SEO: %q %q, want D, indexable", d, n)
+	}
 }
 
 func TestWebBuilderPageOverlay(t *testing.T) {

@@ -189,6 +189,7 @@ func (s *Server) wbDocumentFor(ctx context.Context, p *store.Post, u *store.User
 		// does not detach) must not be reverted by the next builder publish.
 		d.Page = wbPageOverlay(row.Page, postPage)
 	}
+	var draftLoaded *wbPageLoaded
 	if u != nil {
 		dr, err := wb.Draft(ctx, p.ID, u.ID)
 		switch {
@@ -200,6 +201,10 @@ func (s *Server) wbDocumentFor(ctx context.Context, p *store.Post, u *store.User
 			if dr.UpdatedAt.Before(p.ModifiedAt) {
 				// The post changed after the draft was saved: its own fields win.
 				page = wbPageOverlay(page, postPage)
+			} else if l, ok := wbPageLoadedOf(page); ok && l.Rev == dr.BaseRev {
+				// The draft keeps what its own session loaded (autosave stores it): a Pursae SEO
+				// edit made since is not mistaken for a builder change of the draft's old values.
+				draftLoaded = &l
 			}
 			d.Draft = &wbDraft{Doc: dr.Doc, Page: page, BaseRev: dr.BaseRev,
 				SavedAt: dr.UpdatedAt.UTC().Format(time.RFC3339)}
@@ -213,9 +218,26 @@ func (s *Server) wbDocumentFor(ctx context.Context, p *store.Post, u *store.User
 	loaded := wbPageLoaded{Rev: d.Rev, Description: ps.Description, Indexable: ps.Indexable}
 	d.Page = wbPageStamp(d.Page, loaded)
 	if d.Draft != nil {
+		if draftLoaded != nil {
+			loaded = *draftLoaded
+		}
 		d.Draft.Page = wbPageStamp(d.Draft.Page, loaded)
 	}
 	return d, nil
+}
+
+// wbPageLoadedOf is the _loaded key of a page object, if it has a valid one.
+func wbPageLoadedOf(raw json.RawMessage) (wbPageLoaded, bool) {
+	var obj map[string]json.RawMessage
+	var l wbPageLoaded
+	if json.Unmarshal(raw, &obj) != nil {
+		return l, false
+	}
+	v, ok := obj[wbPageLoadedKey]
+	if !ok || json.Unmarshal(v, &l) != nil {
+		return l, false
+	}
+	return l, true
 }
 
 // wbPageStamp is the page object raw with its _loaded key set to l.

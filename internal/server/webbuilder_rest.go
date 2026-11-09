@@ -260,7 +260,8 @@ func wbPage(raw json.RawMessage) (webbuilder.PageSettings, json.RawMessage) {
 
 // wbPageLoadedKey is the page object key the editor's boot page carries (wbDocumentFor) and the
 // editor sends back unchanged: the post's description and indexable flag as that session loaded
-// them, and the rev it loaded. It is never stored.
+// them, and the rev it loaded. It is never stored with a published doc or a revision; the user's
+// own draft keeps it (autosave) so a restored draft is compared with its session's values.
 const wbPageLoadedKey = "_loaded"
 
 type wbPageLoaded struct {
@@ -304,7 +305,7 @@ func wbPageMissing(raw json.RawMessage) bool {
 }
 
 func wbPageMerge(obj map[string]any, ps webbuilder.PageSettings) json.RawMessage {
-	delete(obj, wbPageLoadedKey) // boot-only, never stored
+	delete(obj, wbPageLoadedKey) // boot-only; autosave alone puts it back (the draft keeps it)
 	obj["title"], obj["slug"], obj["description"], obj["indexable"] = ps.Title, ps.Slug, ps.Description, ps.Indexable
 	b, _ := json.Marshal(obj)
 	return b
@@ -386,6 +387,12 @@ func (s *Server) wbRESTAutosave(c *gin.Context, r *restRequest) {
 		return
 	}
 	_, pageJSON := wbPage(body.Page)
+	if l, ok := wbPageLoadedOf(body.Page); ok {
+		// The draft keeps what its session loaded, so a restored draft is compared with that on
+		// publish (wbPageChanged), not with the post as it is when the editor reopens.
+		l.Description = wbClip(strings.TrimSpace(l.Description), wbDescriptionMax)
+		pageJSON = wbPageStamp(pageJSON, l)
+	}
 	wb := s.store.WebBuilder()
 	d := &store.WebBuilderDraft{PostID: p.ID, UserID: u.ID, Doc: res.JSON, Page: pageJSON, BaseRev: body.BaseRev}
 	if err := wb.SaveDraft(c, d); err != nil {
