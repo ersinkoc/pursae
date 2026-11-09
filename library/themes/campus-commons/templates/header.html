@@ -22,7 +22,7 @@
 					{{template "menu-toggle" .}}
 					<div id="primary-menu-wrap" class="menu-wrap">{{nav_menu . "primary"}}</div>
 				</nav><!-- #site-navigation -->{{end}}
-				<form role="search" method="get" class="cc-navsearch" action="{{.HomeURL}}"><label><span class="screen-reader-text">Search</span><input type="search" name="s" placeholder="Search…" value="{{.SearchQuery}}" /></label></form>
+				<form role="search" method="get" class="cc-navsearch" action="{{.SearchAction}}">{{.SearchHidden}}<label><span class="screen-reader-text">Search</span><input type="search" name="s" placeholder="Search…" value="{{.SearchQuery}}" /></label></form>
 			</div>
 		</div>
 	</header><!-- #masthead -->

@@ -38,7 +38,7 @@
 				<button type="button" class="menu-toggle" aria-controls="hd-nav-panel" aria-expanded="false"><span class="menu-toggle__bars" aria-hidden="true"></span>Sections</button>
 				<div id="hd-nav-panel" class="hd-nav-panel">
 					{{if has_nav_menu . "primary"}}{{nav_menu . "primary"}}{{else}}<ul class="primary-menu"><li class="menu-item"><a href="{{.HomeURL}}">Front page</a></li></ul>{{end}}
-					<div class="hd-nav-search">{{template "searchform" (dict "HomeURL" .HomeURL "SearchQuery" .SearchQuery "ID" "nav")}}</div>
+					<div class="hd-nav-search">{{template "searchform" (dict "HomeURL" .HomeURL "SearchAction" .SearchAction "SearchHidden" .SearchHidden "SearchQuery" .SearchQuery "ID" "nav")}}</div>
 				</div>
 			</nav><!-- #site-navigation -->
 		</div>

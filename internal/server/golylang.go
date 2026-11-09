@@ -422,15 +422,28 @@ func (s *Server) pllSetLang(ctx context.Context, k pllKind, id int64, lang strin
 		ON CONFLICT (`+col+`) DO UPDATE SET lang = EXCLUDED.lang,
 		grp = CASE WHEN EXISTS (SELECT 1 FROM `+tbl+` o WHERE o.grp = `+tbl+`.grp AND o.lang = EXCLUDED.lang AND o.`+col+` <> $1)
 			THEN EXCLUDED.grp ELSE `+tbl+`.grp END`, id, lang)
-	pllClearCache(ctx) // the object's language, and translation maps it may have left
+	pllForget(ctx, k, id) // the object's language, and translation maps it may have left
 	return err
 }
 
-// pllClearCache empties the request's language cache after a write to languages or translation groups.
-func pllClearCache(ctx context.Context) {
-	if r := pllFrom(ctx); r != nil {
-		r.cache.Range(func(key, _ any) bool { r.cache.Delete(key); return true })
+// pllForget drops what the request cache knows about the languages and translation groups of the given
+// objects after a write: their "<kind>:<id>" language keys and the cached front page translations
+// ("fronttr:"). Other request state in the cache (gettext "known:" strings, the string capture counter,
+// media translations) is left alone, so a lazy language assignment mid-render does not reset it.
+func pllForget(ctx context.Context, k pllKind, ids ...int64) {
+	r := pllFrom(ctx)
+	if r == nil {
+		return
 	}
+	for _, id := range ids {
+		r.cache.Delete(string(k) + ":" + strconv.FormatInt(id, 10))
+	}
+	r.cache.Range(func(key, _ any) bool {
+		if ks, _ := key.(string); strings.HasPrefix(ks, "fronttr:") {
+			r.cache.Delete(key)
+		}
+		return true
+	})
 }
 
 // pllSaveTranslations is pll_save_post_translations(): the given objects (language => id) become one group.
@@ -466,17 +479,18 @@ func (s *Server) pllSaveTranslations(ctx context.Context, k pllKind, m map[strin
 			return err
 		}
 	}
-	if r := pllFrom(ctx); r != nil {
-		r.cache.Range(func(key, _ any) bool { r.cache.Delete(key); return true })
+	if err := tx.Commit(ctx); err != nil {
+		return err
 	}
-	return tx.Commit(ctx)
+	pllForget(ctx, k, ids...)
+	return nil
 }
 
 // pllUnlink takes an object out of its translation group.
 func (s *Server) pllUnlink(ctx context.Context, k pllKind, id int64) error {
 	tbl, col := k.table()
 	_, err := s.store.Pool.Exec(ctx, `UPDATE `+tbl+` SET grp = nextval('pll_translation_groups') WHERE `+col+` = $1`, id)
-	pllClearCache(ctx)
+	pllForget(ctx, k, id)
 	return err
 }
 
@@ -696,6 +710,45 @@ func (s *Server) pllEditorLang(c *gin.Context, r *pllReq) {
 			r.Lang, r.Filter = l, true
 		}
 	}
+}
+
+// postTermIDsByNames is the tag box of a post save (classic editor, Quick Edit, Bulk Edit, product
+// editor): names resolve among the terms of the post's language and new terms get that language, as
+// Polylang's tag box does. Without Multi Language, or for untranslated types and taxonomies, it is
+// store.TermIDsByNames.
+func (s *Server) postTermIDsByNames(ctx context.Context, p *store.Post, tax string, names []string) []int64 {
+	if p == nil || !s.golylangOn() || !s.pllTranslatedType(p.Type) || !s.pllTranslatedTaxonomy(tax) || len(s.pllLanguages(ctx)) == 0 {
+		ids, _ := s.store.TermIDsByNames(ctx, tax, names)
+		return ids
+	}
+	l := s.pllLang(ctx, s.pllObjLang(ctx, pllPost, p.ID))
+	if l == nil {
+		ids, _ := s.store.TermIDsByNames(ctx, tax, names)
+		return ids
+	}
+	ids, _ := s.store.TermIDsByNames(context.WithValue(ctx, pllCtxKey{}, &pllReq{srv: s, Lang: l, Filter: true}), tax, names)
+	if len(ids) == 0 {
+		return ids
+	}
+	// Terms without a language row are the ones just made (or, in the default language, terms from
+	// before Multi Language, which count as default anyway).
+	rows, err := s.store.Pool.Query(ctx, `SELECT id FROM unnest($1::bigint[]) AS t(id)
+		WHERE NOT EXISTS (SELECT 1 FROM pll_term_langs l WHERE l.term_id = t.id)`, ids)
+	if err != nil {
+		return ids
+	}
+	var bare []int64
+	for rows.Next() {
+		var id int64
+		if rows.Scan(&id) == nil {
+			bare = append(bare, id)
+		}
+	}
+	rows.Close()
+	for _, id := range bare {
+		_ = s.pllSetLang(ctx, pllTerm, id, l.Slug)
+	}
+	return ids
 }
 
 // pllUserFilter is the user's admin language filter (user meta pll_filter_content), "" for all languages.

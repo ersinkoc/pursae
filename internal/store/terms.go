@@ -86,7 +86,7 @@ func (s *Store) TermBySlug(ctx context.Context, taxonomy, slug string) (*Term, e
 }
 
 func (s *Store) TermByName(ctx context.Context, taxonomy, name string) (*Term, error) {
-	return scanTerm(s.Pool.QueryRow(ctx, `SELECT `+termCols+` FROM terms WHERE taxonomy = $1 AND lower(name) = lower($2)`, taxonomy, name))
+	return scanTerm(s.Pool.QueryRow(ctx, `SELECT `+termCols+` FROM terms WHERE taxonomy = $1 AND lower(name) = lower($2) ORDER BY id LIMIT 1`, taxonomy, name))
 }
 
 type TermQuery struct {
@@ -375,6 +375,8 @@ func (s *Store) TermsForPosts(ctx context.Context, postIDs []int64, taxonomy str
 }
 
 // TermIDsByNames resolves comma-separated tag names, creating missing ones (the tag box behaviour).
+// Under a QueryFilter (Golylang's language filter) only terms of the request language match; the caller
+// gives new terms their language (Server.postTermIDsByNames).
 func (s *Store) TermIDsByNames(ctx context.Context, taxonomy string, names []string) ([]int64, error) {
 	var ids []int64
 	seen := map[int64]bool{}
@@ -383,7 +385,11 @@ func (s *Store) TermIDsByNames(ctx context.Context, taxonomy string, names []str
 		if n == "" {
 			continue
 		}
-		t, err := s.TermByName(ctx, taxonomy, n)
+		// The lookup follows QueryFilter (the request language), like InsertTerm's duplicate check: a
+		// translated post's tag box resolves names among the terms of its language.
+		args := []any{taxonomy, n}
+		t, err := scanTerm(s.Pool.QueryRow(ctx, `SELECT `+termCols+` FROM terms WHERE taxonomy = $1 AND lower(name) = lower($2)`+
+			QueryFilter.cond(ctx, "term", &args)+` ORDER BY id LIMIT 1`, args...))
 		if errors.Is(err, ErrNotFound) {
 			t = &Term{Taxonomy: taxonomy, Name: n}
 			err = s.InsertTerm(ctx, t)

@@ -81,6 +81,7 @@ Every template receives the same **site view** (`.`):
 | `.PostNav` | HTML | previous/next links on singular views |
 | `.ArchiveTitle`, `.ArchiveDesc` | HTML | `get_the_archive_title()` / description |
 | `.SearchQuery` | string | `get_search_query()` |
+| `.SearchAction`, `.SearchHidden` | string, HTML | `get_search_form()`'s action: the home of the current language (Pursae Multi Language), and the hidden inputs that carry `?lang=` when languages travel in the query string. Write search forms as `<form role="search" method="get" action="{{.SearchAction}}">{{.SearchHidden}}…`, not with `.HomeURL` |
 | `.Comments` | comments | nil when comments are not shown; else `.Title`, `.List` (HTML), `.Count`, `.Open`, `.ClosedNotice`, `.Form` (HTML) |
 | `.PrivacyLink` | HTML | `the_privacy_policy_link()` |
 | `.CanPublish` | bool | the viewer may publish posts |

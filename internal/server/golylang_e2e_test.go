@@ -54,6 +54,14 @@ func TestGolylangEndToEnd(t *testing.T) {
 		t.Errorf("a Turkish tag named like an English one: %d %v", code, same)
 	}
 
+	// A term translation link only joins a term of the same taxonomy.
+	if code, odd, _ := pllREST(t, c, base, http.MethodPost, "/wp-json/wp/v2/tags", map[string]any{"name": "Gezi", "lang": "tr",
+		"translations": map[string]any{"en": newsID}}); code != http.StatusCreated {
+		t.Errorf("create Gezi: %d", code)
+	} else if tr, _ := odd["translations"].(map[string]any); tr["en"] != nil {
+		t.Errorf("a tag was linked to a category as its translation: %v", tr)
+	}
+
 	// Posts: an English post and its Turkish translation, lang and translations in the JSON body.
 	switcher := `<!-- wp:polylang/language-switcher {"show_names":true} /-->`
 	code, en, _ := pllREST(t, c, base, http.MethodPost, "/wp-json/wp/v2/posts", map[string]any{"title": "Hello Travellers", "status": "publish",
@@ -170,6 +178,26 @@ func TestGolylangEndToEnd(t *testing.T) {
 	if !strings.Contains(ed, `id="in-category-`+itoa64(newsID)+`"`) || strings.Contains(ed, `id="in-category-`+itoa64(haberID)+`"`) {
 		t.Error("the classic editor of the English post does not list the English categories only")
 	}
+	// A classic editor save resolves typed tags among the post's language: the Turkish "Travel" (not
+	// the English one with the same name), and a new tag gets the post's language.
+	_, ed, _ = get(t, c, base+"/wp-admin/post?post="+itoa64(trID)+"&action=edit")
+	if code, _, _ := post(t, c, base+"/wp-admin/post", url.Values{"_wpnonce": {formNonce(t, ed)}, "action": {"editpost"}, "visibility": {"public"},
+		"post_ID": {itoa64(trID)}, "post_type": {"post"}, "post_title": {"Merhaba Gezginler"}, "content": {"<p>Turkish body</p>"}, "post_status": {"publish"},
+		"save": {"Update"}, "post_category[]": {itoa64(haberID)}, "tax_input[post_tag]": {"Seyahat, Travel, Tarifler"}}); code != http.StatusFound {
+		t.Fatalf("classic save of the Turkish post: %d", code)
+	}
+	trTags, _ := srv.store.TermsForPosts(ctx, []int64{trID}, "post_tag")
+	if len(trTags[trID]) != 3 {
+		t.Fatalf("the Turkish post has %d tags after a classic save, want 3", len(trTags[trID]))
+	}
+	for _, tg := range trTags[trID] {
+		if tg.ID == tagID {
+			t.Error("a classic save gave the Turkish post the English tag Travel")
+		}
+		if l := srv.pllObjLang(context.Background(), pllTerm, tg.ID); l != "tr" {
+			t.Errorf("tag %s of the Turkish post is in %q, want tr", tg.Name, l)
+		}
+	}
 	_ = srv.settings.Set(ctx, map[string]any{"classic-editor-replace": "block"})
 
 	// Commerce: a product's Turkish translation lives under /tr/ and renders in Turkish.
@@ -189,6 +217,23 @@ func TestGolylangEndToEnd(t *testing.T) {
 	if !strings.Contains(prod, `hreflang="en"`) {
 		t.Error("the Turkish product has no hreflang link to the English one")
 	}
+	// The product editor of a Turkish translation keeps a selected attribute term that has no Turkish
+	// translation (here a term from before Multi Language), and saving keeps the attribute.
+	gomlek := gooPllTranslate(t, c, base, srv, f.shirt, "tr", "Gomlek")
+	if len(gomlek.Attributes) == 0 || len(gomlek.Attributes[0].Options) == 0 || gomlek.Attributes[0].Options[0] != "red" {
+		t.Fatalf("the Turkish shirt's attributes: %+v", gomlek.Attributes)
+	}
+	gid, nonce, ged := gooCatEditor(t, c, base+"/wp-admin/post?post="+itoa64(gomlek.ID)+"&action=edit")
+	sel := regexp.MustCompile(`<option value="(\d+)" selected="selected">Red</option>`).FindStringSubmatch(ged)
+	if sel == nil {
+		t.Fatal("the Turkish product editor drops the selected untranslated attribute term Red")
+	}
+	gooCatSave(t, c, base, gid, nonce, url.Values{"post_title": {"Gomlek"}, "product-type": {"simple"}, "_regular_price": {"40"},
+		"attribute_names[0]": {"pa_color"}, "attribute_values[0][]": {sel[1]}, "attribute_visibility[0]": {"1"}, "attribute_position[0]": {"0"}})
+	if g, err := srv.gooGetProduct(ctx, gid); err != nil || len(g.Attributes) != 1 || len(g.Attributes[0].Options) != 1 || g.Attributes[0].Options[0] != "red" {
+		t.Errorf("saving the Turkish product lost its color: %+v %v", g.Attributes, err)
+	}
+
 	// An English product or product category under /tr/ goes to its own URL, as posts do.
 	mp, _ := srv.store.GetPost(ctx, f.mug.ID)
 	mugLink := srv.links(ctx).Permalink(mp)
@@ -327,6 +372,10 @@ func TestGolylangContentModeCookie(t *testing.T) {
 	if r := anonGet(t, trLink, &http.Cookie{Name: pllCookie, Value: "tr"}); strings.Contains(strings.Join(r.Header.Values("Set-Cookie"), "\n"), pllCookie+"=") {
 		t.Error("reading a Turkish post resets the Turkish language cookie")
 	}
+	// The Atom feed of a Turkish request keeps a valid xml:base (the unfiltered root, not "/?lang=tr").
+	if _, atom, _ := get(t, c, base+"/feed/atom/?lang=tr"); !strings.Contains(atom, `xml:base="`+base+`/wp-atom.php"`) {
+		t.Errorf("Atom xml:base in query mode:\n%s", firstMatch(atom, `xml:base="[^"]*"`))
+	}
 	// The search form in query mode keeps the language in a hidden field.
 	_, search, _ := get(t, c, base+"/?lang=tr&s=Merhaba")
 	if !strings.Contains(search, `<input type="hidden" name="lang" value="tr" />`) {
@@ -357,4 +406,20 @@ func firstMatch(s, expr string) string {
 		return s[:400]
 	}
 	return s
+}
+
+// TestPllForgetKeepsRequestState: a language write drops only language and translation keys from the
+// request cache, never the gettext, string capture or media state of the page being rendered.
+func TestPllForgetKeepsRequestState(t *testing.T) {
+	r := &pllReq{}
+	ctx := context.WithValue(context.Background(), pllCtxKey{}, r)
+	for _, k := range []string{"post:5", "post:6", "term:5", "fronttr:9", "known:Hello", "capture:n", "pll:mi18n:tr:5"} {
+		r.cache.Store(k, "x")
+	}
+	pllForget(ctx, pllPost, 5)
+	for k, want := range map[string]bool{"post:5": false, "fronttr:9": false, "post:6": true, "term:5": true, "known:Hello": true, "capture:n": true, "pll:mi18n:tr:5": true} {
+		if _, ok := r.cache.Load(k); ok != want {
+			t.Errorf("%s kept = %v, want %v", k, ok, want)
+		}
+	}
 }

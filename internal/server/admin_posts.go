@@ -802,7 +802,7 @@ func (s *Server) bulkEditPosts(c *gin.Context, typ string) {
 		id, _ := strconv.ParseInt(raw, 10, 64)
 		indeterminate[id] = true
 	}
-	newTags, _ := s.store.TermIDsByNames(ctx, "post_tag", strings.Split(c.Query("tax_input[post_tag]"), ","))
+	newTagNames := strings.Split(c.Query("tax_input[post_tag]"), ",")
 	for _, raw := range q["post[]"] {
 		id, _ := strconv.ParseInt(raw, 10, 64)
 		p, err := s.store.GetPost(ctx, id)
@@ -876,7 +876,7 @@ func (s *Server) bulkEditPosts(c *gin.Context, typ string) {
 				}
 				_ = s.store.SetPostTerms(ctx, p.ID, "category", ids)
 			}
-			if len(newTags) > 0 {
+			if newTags := s.postTermIDsByNames(ctx, p, "post_tag", newTagNames); len(newTags) > 0 {
 				tags, _ := s.store.TermsForPosts(ctx, []int64{p.ID}, "post_tag")
 				ids := []int64{}
 				for _, tg := range tags[p.ID] {
@@ -995,7 +995,7 @@ func (s *Server) inlineSave(c *gin.Context) {
 			catIDs = []int64{int64(s.settings.Int("default_category"))}
 		}
 		_ = s.store.SetPostTerms(ctx, p.ID, "category", catIDs)
-		tagIDs, _ := s.store.TermIDsByNames(ctx, "post_tag", strings.Split(c.PostForm("tax_input[post_tag]"), ","))
+		tagIDs := s.postTermIDsByNames(ctx, p, "post_tag", strings.Split(c.PostForm("tax_input[post_tag]"), ","))
 		_ = s.store.SetPostTerms(ctx, p.ID, "post_tag", tagIDs)
 	}
 	s.afterPostSave(ctx, p)
@@ -2022,7 +2022,7 @@ func (s *Server) postSave(c *gin.Context) {
 			catIDs = []int64{int64(s.settings.Int("default_category"))}
 		}
 		_ = s.store.SetPostTerms(ctx, p.ID, "category", catIDs)
-		tagIDs, _ := s.store.TermIDsByNames(ctx, "post_tag", strings.Split(c.PostForm("tax_input[post_tag]"), ","))
+		tagIDs := s.postTermIDsByNames(ctx, p, "post_tag", strings.Split(c.PostForm("tax_input[post_tag]"), ","))
 		_ = s.store.SetPostTerms(ctx, p.ID, "post_tag", tagIDs)
 	}
 

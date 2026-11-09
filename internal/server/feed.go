@@ -198,7 +198,7 @@ func (s *Server) rssFeed(ctx context.Context, c *gin.Context, q *siteQuery, lb *
 // atomFeed is feed-atom.php.
 func (s *Server) atomFeed(ctx context.Context, c *gin.Context, q *siteQuery, lb *links.Builder) string {
 	posts := s.feedPosts(ctx, q)
-	home := lb.Front()
+	home := lb.Front() // the language home; xml:base keeps the unfiltered root (bloginfo_rss('url'))
 	var sb strings.Builder
 	sb.WriteString(xml.Header)
 	fmt.Fprintf(&sb, `<feed
@@ -217,7 +217,7 @@ func (s *Server) atomFeed(ctx context.Context, c *gin.Context, q *siteQuery, lb 
 	<link rel="self" type="application/atom+xml" href="%s" />
 
 	<generator uri="https://wordpress.org/" version="wpgo-%s">WordPress</generator>
-`, html.EscapeString(s.feedLanguage(ctx)), html.EscapeString(strings.TrimSuffix(home, "/")), s.feedTitle(ctx, q), html.EscapeString(s.feedBlogInfo(ctx, "blogdescription")), feedBuildDate(posts).Format(atomTime),
+`, html.EscapeString(s.feedLanguage(ctx)), html.EscapeString(strings.TrimSuffix(lb.HomeURL("/"), "/")), s.feedTitle(ctx, q), html.EscapeString(s.feedBlogInfo(ctx, "blogdescription")), feedBuildDate(posts).Format(atomTime),
 		html.EscapeString(home), html.EscapeString(lb.FeedLink("atom")), html.EscapeString(lb.HomeURL(c.Request.URL.RequestURI())), s.publicVersion())
 	for _, p := range posts {
 		name, authorURL := s.postAuthorName(ctx, p)

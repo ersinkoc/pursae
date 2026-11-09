@@ -14,7 +14,7 @@
 		<div class="fx-topbar">
 			<div class="fx-wrap fx-topbar__inner">
 				<span class="fx-topbar__issue">{{with theme_mod . "issue_line"}}{{.}}{{end}}</span>
-				<form role="search" method="get" class="fx-topbar__search" action="{{.HomeURL}}">
+				<form role="search" method="get" class="fx-topbar__search" action="{{.SearchAction}}">{{.SearchHidden}}
 					<label><span class="screen-reader-text">Search for:</span><input type="search" name="s" value="{{.SearchQuery}}" placeholder="Search films, series, festivals" /></label>
 				</form>
 			</div>

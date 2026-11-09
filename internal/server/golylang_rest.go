@@ -118,12 +118,31 @@ func (s *Server) golylangRESTSaved(c *gin.Context, k pllKind, id int64) {
 	if m := pllRESTTranslations(c); len(m) > 0 {
 		tr := s.pllTranslations(c, k, id)
 		for lang, oid := range m {
-			if s.pllObjLang(c, k, oid) == lang {
+			if s.pllObjLang(c, k, oid) == lang && s.pllRESTLinkable(c, k, id, oid) {
 				tr[lang] = oid
 			}
 		}
 		_ = s.pllSaveTranslations(c, k, tr)
 	}
+}
+
+// pllRESTLinkable reports whether oid may join the translation group of the saved object id: for a term,
+// a term of the same taxonomy that the user may edit (edit_term maps to manage_categories), as
+// golylangSaved requires of posts.
+func (s *Server) pllRESTLinkable(c *gin.Context, k pllKind, id, oid int64) bool {
+	if k != pllTerm {
+		return true
+	}
+	u := restCurrent(c)
+	if u == nil || !u.Can("manage_categories", nil) {
+		return false
+	}
+	saved, err := s.store.GetTerm(c, id)
+	if err != nil {
+		return false
+	}
+	t, err := s.store.GetTerm(c, oid)
+	return err == nil && t.Taxonomy == saved.Taxonomy
 }
 
 // pllObjLangRow is the stored language of an object, "" when it has none.
