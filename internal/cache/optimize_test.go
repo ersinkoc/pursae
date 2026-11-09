@@ -131,3 +131,17 @@ func TestOptimizeDisabledAndMalformed(t *testing.T) {
 		t.Fatalf("content after unterminated script modified: %s", got)
 	}
 }
+
+func TestLazyImagesSkipsQuotedMarkup(t *testing.T) {
+	for _, attribute := range []string{
+		`title="<img src='fake'>"`,
+		`title='<IMG src="fake">'`,
+		`data-template="<iframe src='fake'></iframe>"`,
+	} {
+		doc := `<body><div ` + attribute + `>label</div><img src="real"></body>`
+		got := opt(doc, OptimizeConfig{LazyImages: true, LazySkipFirst: 1})
+		if !strings.Contains(got, attribute) || !strings.Contains(got, `src="real" fetchpriority="high"`) {
+			t.Errorf("quoted markup was treated as an image: %s", got)
+		}
+	}
+}

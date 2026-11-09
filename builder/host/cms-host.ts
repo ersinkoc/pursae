@@ -285,6 +285,7 @@ export class Autosaver {
   private timer: unknown = null
   private lastStart = -Infinity
   private failures = 0
+  private generation = 0
   private held = false
   private readonly min: number
   private readonly now: () => number
@@ -326,6 +327,7 @@ export class Autosaver {
 
   /** Drops the pending change and waits for a request in flight (before deleting the draft). */
   async cancel(): Promise<void> {
+    this.generation++
     this.clearTimer()
     this.latest = null
     for (const w of this.waiters.splice(0)) w.resolve()
@@ -362,10 +364,15 @@ export class Autosaver {
     }
     this.latest = null
     const batch = this.waiters.splice(0)
+    const generation = this.generation
     this.lastStart = this.now()
     const task = (async () => {
       try {
         const r = await rest.request<AutosaveResponse>('PUT', routes.autosave(postId), { json: { doc: item.doc, page: item.page, baseRev: session.baseRev }, keepalive })
+        if (generation !== this.generation) {
+          for (const w of batch) w.resolve()
+          return
+        }
         session.lastSavedJson = json
         this.failures = 0
         if (typeof r.data?.rev === 'number' && r.data.rev > session.baseRev && !session.newerRevNotified) {
@@ -379,6 +386,10 @@ export class Autosaver {
         }
         for (const w of batch) w.resolve()
       } catch (e) {
+        if (generation !== this.generation) {
+          for (const w of batch) w.resolve()
+          return
+        }
         if (isRestError(e, ERR.apiMismatch)) {
           session.stop('api')
           ui.showReload()
@@ -463,7 +474,12 @@ export class HostStorage implements BuilderHostStorage {
     const [prefs, lib] = await Promise.allSettled([rest.request<Prefs>('GET', routes.prefs()), rest.request<LibraryItem[]>('GET', routes.library())])
     if (prefs.status === 'fulfilled' && prefs.value.data && typeof prefs.value.data === 'object' && !Array.isArray(prefs.value.data)) {
       this.prefs = { ...prefs.value.data }
+      for (const [key, value] of this.dirty) {
+        if (value === null) delete this.prefs[key]
+        else this.prefs[key] = value
+      }
       this.prefsOk = true
+      if (this.dirty.size) this.schedulePrefs()
     }
     const items = lib.status === 'fulfilled' && Array.isArray(lib.value.data) ? lib.value.data.filter((x) => x && x.section) : null
     if (!items) return // this.saved already holds the localStorage copy

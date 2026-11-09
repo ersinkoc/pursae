@@ -102,3 +102,18 @@ func TestParseAuthorization(t *testing.T) {
 		t.Errorf("parse: %v %q %q %q", ok, c, sh, sig)
 	}
 }
+
+func TestCanonicalQuerySortsEncodedNames(t *testing.T) {
+	for _, tc := range []struct {
+		query url.Values
+		want  string
+	}{
+		{url.Values{"é": {"value"}, "z": {"last"}}, "%C3%A9=value&z=last"},
+		{url.Values{"aé": {"x"}, "a~": {"y"}}, "a%C3%A9=x&a~=y"},
+		{url.Values{"a": {"2", "1"}, "b": {""}}, "a=1&a=2&b="},
+	} {
+		if got := CanonicalQuery(tc.query); got != tc.want {
+			t.Errorf("CanonicalQuery(%v) = %q, want %q", tc.query, got, tc.want)
+		}
+	}
+}

@@ -99,7 +99,7 @@ func ParseImageParams(q url.Values) (ImageParams, error) {
 
 // HasImageParams reports whether a query asks for a transformation.
 func HasImageParams(q url.Values) bool {
-	for _, k := range []string{"w", "h", "fit", "q", "fm", "width", "height", "quality", "format"} {
+	for _, k := range []string{"w", "h", "fit", "q", "fm", "f", "width", "height", "quality", "format"} {
 		if q.Has(k) {
 			return true
 		}

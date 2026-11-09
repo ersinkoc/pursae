@@ -132,3 +132,16 @@ func TestTransformAndEncode(t *testing.T) {
 		t.Error("unknown format accepted")
 	}
 }
+
+func TestImageFormatAliasesAreDetected(t *testing.T) {
+	for _, key := range []string{"fm", "format", "f"} {
+		q := url.Values{key: {"webp"}}
+		p, err := ParseImageParams(q)
+		if err != nil || p.Format != "webp" || !HasImageParams(q) {
+			t.Errorf("format alias %s: %+v, %v, detected=%v", key, p, err, HasImageParams(q))
+		}
+	}
+	if HasImageParams(url.Values{"ver": {"1"}}) || HasImageParams(nil) {
+		t.Fatal("unrelated query classified as transformation")
+	}
+}
