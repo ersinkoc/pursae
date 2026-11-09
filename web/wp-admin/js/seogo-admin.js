@@ -12,6 +12,21 @@
 		( root || document ).querySelectorAll( '.seogo-pick-image' ).forEach( function ( btn ) {
 			if ( btn.dataset.bound ) { return; }
 			btn.dataset.bound = '1';
+			var field = btn.parentNode.querySelector( 'input' );
+			var preview = btn.parentNode.querySelector( '.seogo-image-preview' );
+			if ( preview ) {
+				var img = preview.querySelector( 'img' );
+				// The preview follows the field: a picked image or a typed / pasted URL.
+				var show = function () {
+					var v = field.value.trim();
+					preview.hidden = ! v;
+					if ( v ) { img.src = v; } else { img.removeAttribute( 'src' ); }
+				};
+				img.addEventListener( 'error', function () { preview.hidden = true; } );
+				img.addEventListener( 'load', function () { preview.hidden = ! field.value.trim(); } );
+				field.addEventListener( 'input', show );
+				field.addEventListener( 'change', show );
+			}
 			btn.addEventListener( 'click', function () {
 				var input = btn.parentNode.querySelector( 'input' );
 				if ( ! window.wp || ! wp.media ) {

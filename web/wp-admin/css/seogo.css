@@ -45,6 +45,9 @@
 .seogo-bulk input.widefat, .seogo-bulk textarea.widefat { font-size: 13px; }
 .seogo-score-num { display: inline-flex; align-items: center; gap: 4px; }
 .seogo-image-field { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.seogo-image-preview { flex-basis: 100%; display: block; margin-top: 4px; }
+.seogo-image-preview[hidden] { display: none; }
+.seogo-image-preview img { display: block; max-width: 300px; max-height: 160px; width: auto; height: auto; border: 1px solid #dcdcde; border-radius: 2px; background: #fff; }
 
 /* Setup wizard */
 .seogo-wizard { max-width: 860px; }

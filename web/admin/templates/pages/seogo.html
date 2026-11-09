@@ -193,8 +193,8 @@
 <input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
 <table class="form-table" role="presentation">
 <tr><th scope="row">Open Graph</th><td><label><input type="checkbox" name="opengraph" value="1"{{if .Opts.OpenGraph}} checked{{end}} /> Add Open Graph meta data (Facebook, LinkedIn, WhatsApp, Slack…)</label></td></tr>
-<tr><th scope="row">X (Twitter) cards</th><td><label><input type="checkbox" name="twitter_cards" value="1"{{if .Opts.TwitterCards}} checked{{end}} /> Add X card meta data</label><br />
-	<select name="twitter_card"><option value="summary_large_image"{{if ne .Opts.TwitterCard "summary"}} selected{{end}}>Summary with large image</option><option value="summary"{{if eq .Opts.TwitterCard "summary"}} selected{{end}}>Summary</option></select></td></tr>
+<tr><th scope="row">X (Twitter) cards</th><td><label><input type="checkbox" name="twitter_cards" value="1"{{if .Opts.TwitterCards}} checked{{end}} /> Add X card meta data</label>
+	<p><label for="twitter_card" class="screen-reader-text">X card type</label><select name="twitter_card" id="twitter_card"><option value="summary_large_image"{{if ne .Opts.TwitterCard "summary"}} selected{{end}}>Summary with large image</option><option value="summary"{{if eq .Opts.TwitterCard "summary"}} selected{{end}}>Summary</option></select></p></td></tr>
 <tr><th scope="row"><label for="default_image">Default image</label></th><td>{{template "seogo-image" dict "Name" "default_image" "Value" .Opts.DefaultImage}}<p class="description">Used when a page has no image of its own.</p></td></tr>
 <tr><th scope="row"><label for="home_og_image">Homepage image</label></th><td>{{template "seogo-image" dict "Name" "home_og_image" "Value" .Opts.HomeOGImage}}</td></tr>
 <tr><th scope="row"><label for="facebook_url">Facebook page URL</label></th><td><input name="facebook_url" id="facebook_url" type="url" class="regular-text" value="{{.Opts.FacebookURL}}" /></td></tr>
@@ -413,7 +413,8 @@
 {{define "seogo-score"}}{{if eq . ""}}<span class="seogo-bullet na" title="Not analyzed"></span>{{else}}{{$n := printf "%s" .}}<span class="seogo-score-num" data-score="{{$n}}"><span class="seogo-bullet"></span> {{$n}}</span>{{end}}{{end}}
 
 {{define "seogo-image"}}<span class="seogo-image-field"><input name="{{.Name}}" id="{{.Name}}" type="url" class="regular-text code" value="{{.Value}}" />
-<button type="button" class="button seogo-pick-image" data-target="{{.Name}}">Select image</button></span>{{end}}
+<button type="button" class="button seogo-pick-image" data-target="{{.Name}}">Select image</button>
+<span class="seogo-image-preview"{{if not .Value}} hidden{{end}}><img src="{{.Value}}" alt="" /></span></span>{{end}}
 
 {{define "seogo-separators"}}{{$cur := .}}<fieldset class="seogo-separators"><legend class="screen-reader-text">Title separator</legend>
 {{range list "-" "–" "—" ":" "·" "•" "*" "⋆" "|" "~" "«" "»" "<" ">"}}<label><input type="radio" name="separator" value="{{.}}"{{if eq . $cur}} checked{{end}} /><span>{{.}}</span></label>{{end}}</fieldset>{{end}}
