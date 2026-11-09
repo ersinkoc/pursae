@@ -9,3 +9,6 @@ __pycache__/
 
 # Production settings (make prod-up)
 /docker/.env
+
+# Local build output
+/wpgo
