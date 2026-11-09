@@ -187,7 +187,10 @@ func (c *Client) Copy(ctx context.Context, srcBucket, srcKey, key string, o PutO
 // errorInBody reads a 200 answer that may still carry an <Error> (CompleteMultipartUpload,
 // CopyObject).
 func errorInBody(resp *http.Response) error {
-	data, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	data, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	if err != nil {
+		return err
+	}
 	if !strings.Contains(string(data), "<Error>") {
 		return nil
 	}
