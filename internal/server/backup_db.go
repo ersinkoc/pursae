@@ -276,6 +276,11 @@ func bmgrRestoreDB(ctx context.Context, tx pgx.Tx, sc *bmgrSchema, o bmgrRestore
 	for _, k := range bmgrKeepSettings {
 		keep[k] = true
 	}
+	// An archive made before menu_locations existed (0.1.7 and older) holds each menu's location in a
+	// menus.location column: it is collected while the menus are read and becomes menu_locations below.
+	legacyLocs := o.Tables["menu_locations"] && contains(o.Columns["menus"], "location")
+	var menuLocs []bmgrLegacyMenuLoc
+	inArchive := map[string]bool{}
 
 	for i, t := range tables {
 		if o.Progress != nil {
@@ -291,6 +296,7 @@ func bmgrRestoreDB(ctx context.Context, tx pgx.Tx, sc *bmgrSchema, o bmgrRestore
 		if r == nil {
 			continue
 		}
+		inArchive[t] = true
 		cols := bmgrWritableColumns(sc, t, o.Columns[t])
 		if len(cols) == 0 {
 			continue
@@ -327,6 +333,12 @@ func bmgrRestoreDB(ctx context.Context, tx pgx.Tx, sc *bmgrSchema, o bmgrRestore
 						line = ""
 					}
 				}
+				if line != "" && t == "menus" && legacyLocs {
+					var m bmgrLegacyMenuLoc
+					if json.Unmarshal([]byte(line), &m) == nil && strings.TrimSpace(m.Location) != "" {
+						menuLocs = append(menuLocs, m)
+					}
+				}
 				if line != "" {
 					batch = append(batch, rewrite(line))
 					size += len(line)
@@ -345,6 +357,12 @@ func bmgrRestoreDB(ctx context.Context, tx pgx.Tx, sc *bmgrSchema, o bmgrRestore
 			}
 		}
 		if err := flush(); err != nil {
+			return err
+		}
+	}
+
+	if legacyLocs && !inArchive["menu_locations"] && len(menuLocs) > 0 {
+		if err := bmgrRestoreLegacyMenuLocations(ctx, tx, menuLocs); err != nil {
 			return err
 		}
 	}
@@ -429,4 +447,23 @@ func bmgrWritableColumns(sc *bmgrSchema, table string, archive []string) []strin
 		}
 	}
 	return out
+}
+
+// bmgrLegacyMenuLoc is a menus row of an archive from before menu_locations: its single location.
+type bmgrLegacyMenuLoc struct {
+	ID       int64  `json:"id"`
+	Location string `json:"location"`
+}
+
+// bmgrRestoreLegacyMenuLocations maps the old menus.location column into menu_locations, as migration
+// 0038 does: a location claimed by several menus goes to the oldest one.
+func bmgrRestoreLegacyMenuLocations(ctx context.Context, tx pgx.Tx, locs []bmgrLegacyMenuLoc) error {
+	sort.SliceStable(locs, func(i, j int) bool { return locs[i].ID < locs[j].ID })
+	for _, l := range locs {
+		if _, err := tx.Exec(ctx, `INSERT INTO menu_locations (location, menu_id) SELECT $1, id FROM menus WHERE id = $2
+			ON CONFLICT (location) DO NOTHING`, strings.TrimSpace(l.Location), l.ID); err != nil {
+			return fmt.Errorf("restoring the menu locations: %w", err)
+		}
+	}
+	return nil
 }

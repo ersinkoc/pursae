@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
+	"encoding/json"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -329,5 +330,120 @@ func TestBmgrPartialRestoreKeepsLinks(t *testing.T) {
 	if err := pool.QueryRow(ctx, `SELECT pg_get_constraintdef(oid) FROM pg_constraint WHERE conname = 'media_post_fk'`).Scan(&def); err != nil ||
 		!strings.Contains(def, "ON DELETE SET NULL") || strings.Contains(def, "DEFERRABLE") {
 		t.Errorf("media_post_fk after the restores: %q %v", def, err)
+	}
+}
+
+// An archive from 0.1.7 keeps each menu's location in menus.location and has no menu_locations table:
+// restoring it maps the column into menu_locations instead of emptying the locations.
+func TestBmgrRestoreLegacyMenuLocations(t *testing.T) {
+	ts, c, srv := testServerBuilderOff(t)
+	installAndLogin(t, ts, c)
+	ctx := context.Background()
+	if err := srv.bmgrPluginAction(ctx, "activate"); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("WPGO_BACKUPS_DIR", t.TempDir())
+	pool := srv.store.Pool
+	mainID, err := srv.store.CreateMenu(ctx, "Main")
+	if err != nil {
+		t.Fatal(err)
+	}
+	footID, err := srv.store.CreateMenu(ctx, "Foot")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var archive string
+	bmgrRun(t, srv, "backup", func(j *bmgrJob) (err error) {
+		archive, err = srv.bmgrRunBackup(ctx, j, bmgrSelection{Categories: []string{"content"}, UserMode: "all"})
+		return err
+	})
+
+	// Rewrite the archive the way 0.1.7 wrote it: menus carry a location column, no menu_locations.
+	legacy := map[int64]string{mainID: "primary", footID: "footer"}
+	src, err := zip.OpenReader(filepath.Join(srv.bmgrDir(), archive))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var buf bytes.Buffer
+	zw := zip.NewWriter(&buf)
+	for _, f := range src.File {
+		if f.Name == "database/menu_locations.jsonl" {
+			continue
+		}
+		rc, err := f.Open()
+		if err != nil {
+			t.Fatal(err)
+		}
+		data, _ := io.ReadAll(rc)
+		rc.Close()
+		switch f.Name {
+		case "manifest.json":
+			var m map[string]any
+			if err := json.Unmarshal(data, &m); err != nil {
+				t.Fatal(err)
+			}
+			m["schema"], m["version"] = "0036_golylang_translate", "0.1.7"
+			var tables []any
+			for _, raw := range m["tables"].([]any) {
+				tb := raw.(map[string]any)
+				switch tb["name"] {
+				case "menu_locations":
+					continue
+				case "menus":
+					tb["columns"] = append(tb["columns"].([]any), "location")
+				}
+				tables = append(tables, tb)
+			}
+			m["tables"] = tables
+			data, _ = json.Marshal(m)
+		case "database/menus.jsonl":
+			var out []string
+			for _, line := range strings.Split(strings.TrimSpace(string(data)), "\n") {
+				var row map[string]any
+				if err := json.Unmarshal([]byte(line), &row); err != nil {
+					t.Fatal(err)
+				}
+				row["location"] = legacy[int64(row["id"].(float64))]
+				b, _ := json.Marshal(row)
+				out = append(out, string(b))
+			}
+			data = []byte(strings.Join(out, "\n") + "\n")
+		}
+		w, err := zw.Create(f.Name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, _ = w.Write(data)
+	}
+	src.Close()
+	if err := zw.Close(); err != nil {
+		t.Fatal(err)
+	}
+	old := "legacy-017.zip"
+	if err := os.WriteFile(filepath.Join(srv.bmgrDir(), old), buf.Bytes(), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	// The site lost its locations since; the old archive brings them back.
+	if _, err := pool.Exec(ctx, `DELETE FROM menu_locations`); err != nil {
+		t.Fatal(err)
+	}
+	bmgrRun(t, srv, "restore", func(j *bmgrJob) error {
+		return srv.bmgrRunRestore(ctx, j, bmgrRestoreReq{File: old, Categories: []string{"content"}, Me: 1})
+	})
+	got := map[string]int64{}
+	rows, err := pool.Query(ctx, `SELECT location, menu_id FROM menu_locations`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for rows.Next() {
+		var l string
+		var id int64
+		_ = rows.Scan(&l, &id)
+		got[l] = id
+	}
+	rows.Close()
+	if len(got) != 2 || got["primary"] != mainID || got["footer"] != footID {
+		t.Errorf("menu locations after restoring a 0.1.7 archive: %v, want primary=%d footer=%d", got, mainID, footID)
 	}
 }

@@ -511,6 +511,9 @@ func (s *Server) bmgrMakePlan(ctx context.Context, m *bmgrManifest, cats []strin
 		if inArchive[t] {
 			plan.Tables[t] = true
 			plan.Notes = append(plan.Notes, t+" is restored too: it depends on a table you selected")
+		} else if t == "menu_locations" && bmgrLegacyMenuLocations(m) {
+			plan.Tables[t] = true // filled from the old menus.location column (bmgrRestoreLegacyMenuLocations)
+			plan.Notes = append(plan.Notes, "menu locations are taken from the menus of this older backup")
 		} else {
 			plan.Tables[t] = true // emptied by the cascade anyway; nothing to put back
 			plan.Notes = append(plan.Notes, t+" is not in the backup and is emptied: it depends on a table you selected")
@@ -526,6 +529,21 @@ func (s *Server) bmgrMakePlan(ctx context.Context, m *bmgrManifest, cats []strin
 		}
 	}
 	return plan, sc, nil
+}
+
+// bmgrLegacyMenuLocations reports whether the archive predates menu_locations and keeps each menu's
+// location in a menus.location column (0.1.7 and older).
+func bmgrLegacyMenuLocations(m *bmgrManifest) bool {
+	legacy := false
+	for _, t := range m.Tables {
+		switch t.Name {
+		case "menu_locations":
+			return false
+		case "menus":
+			legacy = contains(t.Columns, "location")
+		}
+	}
+	return legacy
 }
 
 // bmgrRunRestore restores the chosen parts of an archive.
