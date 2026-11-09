@@ -69,6 +69,7 @@ func Restart(exe string, drainFor time.Duration) error {
 	if tl, ok := ln.(*net.TCPListener); ok {
 		f, err := tl.File() // a duplicate: closing the server's listener leaves the socket open
 		if err == nil {
+			defer f.Close() // exec inherits it on success; a failed exec must release it
 			if err := keepOnExec(f.Fd()); err == nil {
 				env = append(withoutListenEnv(env), listenEnv+"="+strconv.Itoa(int(f.Fd())))
 				restarting.Store(true)

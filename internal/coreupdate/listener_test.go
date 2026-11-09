@@ -25,8 +25,19 @@ func TestRestartHandsOverTheSocket(t *testing.T) {
 	drained := false
 	Serving(ln, func(context.Context) error { drained = true; return ln.Close() })
 	var env []string
+	var got net.Listener
 	old := execFn
-	execFn = func(path string, argv, e []string) error { env = e; return nil }
+	execFn = func(path string, argv, e []string) error {
+		env = e
+		for _, entry := range env {
+			if v, ok := strings.CutPrefix(entry, listenEnv+"="); ok {
+				t.Setenv(listenEnv, v)
+			}
+		}
+		var err error
+		got, err = Listen("127.0.0.1:0")
+		return err
+	}
 	defer func() { execFn = old }()
 
 	_ = Restart("/bin/true", time.Second)
@@ -53,10 +64,8 @@ func TestRestartHandsOverTheSocket(t *testing.T) {
 	}
 	defer conn.Close()
 	// The new binary picks the socket up from the environment.
-	t.Setenv(listenEnv, fdv)
-	got, err := Listen("127.0.0.1:0")
-	if err != nil {
-		t.Fatal(err)
+	if got == nil {
+		t.Fatal("the new binary did not inherit the socket")
 	}
 	defer got.Close()
 	if got.Addr().String() != addr {
@@ -88,5 +97,43 @@ func TestRestartFailureWithoutListenerKeepsServing(t *testing.T) {
 	}
 	if Stopped() || Restarting() {
 		t.Error("server reported stopped although it never was")
+	}
+}
+
+func TestRestartFailureClosesDuplicate(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("unix only")
+	}
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer ln.Close()
+	Serving(ln, nil)
+	t.Cleanup(func() { Serving(nil, nil) })
+	old := execFn
+	defer func() { execFn = old }()
+	var inherited *os.File
+	execFn = func(_ string, _, env []string) error {
+		for _, entry := range env {
+			if value, ok := strings.CutPrefix(entry, listenEnv+"="); ok {
+				fd, err := strconv.Atoi(value)
+				if err != nil {
+					t.Fatal(err)
+				}
+				inherited = os.NewFile(uintptr(fd), "inherited-listener")
+			}
+		}
+		return os.ErrPermission
+	}
+	if err := Restart("/unused", time.Second); err == nil {
+		t.Fatal("expected exec failure")
+	}
+	if inherited == nil {
+		t.Fatal("exec did not receive a listener")
+	}
+	defer inherited.Close()
+	if _, err := inherited.Stat(); err == nil {
+		t.Fatal("failed exec left the duplicated listener open")
 	}
 }
