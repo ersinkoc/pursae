@@ -336,3 +336,24 @@ func TestWebBuilderOff(t *testing.T) {
 		}
 	}
 }
+
+// A doc stored with empty site settings (REST or MCP) reaches the editor with the defaults; a
+// complete doc is passed through byte for byte.
+func TestWBDocSiteDefaults(t *testing.T) {
+	got := string(wbDocSiteDefaults(json.RawMessage(`{"site":{},"sections":[]}`)))
+	for _, want := range []string{`"corners":"soft"`, `"fontPair":"elegant"`, `"brand":"#4058e3"`, `"sections":[]`} {
+		if !strings.Contains(got, want) {
+			t.Errorf("missing %s in %s", want, got)
+		}
+	}
+	if got := string(wbDocSiteDefaults(json.RawMessage(`{"sections":[]}`))); !strings.Contains(got, `"corners":"soft"`) {
+		t.Errorf("site missing: %s", got)
+	}
+	full := `{"site":{"brand":"#000","fontPair":"modern","corners":"round"},"sections":[]}`
+	if got := string(wbDocSiteDefaults(json.RawMessage(full))); got != full {
+		t.Errorf("complete doc changed: %s", got)
+	}
+	if got := wbDocSiteDefaults(nil); got != nil {
+		t.Errorf("nil doc changed: %s", got)
+	}
+}

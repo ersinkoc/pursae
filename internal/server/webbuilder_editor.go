@@ -222,8 +222,47 @@ func (s *Server) wbDocumentFor(ctx context.Context, p *store.Post, u *store.User
 			loaded = *draftLoaded
 		}
 		d.Draft.Page = wbPageStamp(d.Draft.Page, loaded)
+		d.Draft.Doc = wbDocSiteDefaults(d.Draft.Doc)
 	}
+	d.Doc = wbDocSiteDefaults(d.Doc)
 	return d, nil
+}
+
+// wbSiteDefaults are the editor's initialDoc.site values. A doc written through REST or MCP may
+// leave site settings out ("site": {} validates), and the editor cannot draw a doc without them.
+var wbSiteDefaults = map[string]string{"brand": "#4058e3", "fontPair": "elegant", "corners": "soft"}
+
+// wbDocSiteDefaults fills empty or missing site settings of a stored doc with wbSiteDefaults;
+// any other doc is returned unchanged.
+func wbDocSiteDefaults(raw json.RawMessage) json.RawMessage {
+	var doc map[string]json.RawMessage
+	if len(raw) == 0 || json.Unmarshal(raw, &doc) != nil || doc == nil {
+		return raw
+	}
+	site := map[string]any{}
+	if v, ok := doc["site"]; ok && string(v) != "null" && json.Unmarshal(v, &site) != nil {
+		return raw
+	}
+	changed := false
+	for k, def := range wbSiteDefaults {
+		if v, _ := site[k].(string); v == "" {
+			site[k] = def
+			changed = true
+		}
+	}
+	if !changed {
+		return raw
+	}
+	b, err := json.Marshal(site)
+	if err != nil {
+		return raw
+	}
+	doc["site"] = b
+	out, err := json.Marshal(doc)
+	if err != nil {
+		return raw
+	}
+	return out
 }
 
 // wbPageLoadedOf is the _loaded key of a page object, if it has a valid one.

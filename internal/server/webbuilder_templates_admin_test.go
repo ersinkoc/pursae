@@ -523,3 +523,12 @@ func TestWBTemplatesCoreScreensNeedThemeCap(t *testing.T) {
 		t.Errorf("admin inline-save on a template: status %s", got)
 	}
 }
+
+// Every starter the Add New dialog can list has a name and a description.
+func TestWBTBStarterLabelsComplete(t *testing.T) {
+	for _, id := range webbuilder.StarterIDs {
+		if l := wbTBStarterLabels[id]; l[0] == "" || l[1] == "" {
+			t.Errorf("starter %q has no label in wbTBStarterLabels", id)
+		}
+	}
+}

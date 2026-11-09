@@ -50,12 +50,14 @@ var (
 
 // wbTBStarterLabels describe the starter designs of the Add New dialog.
 var wbTBStarterLabels = map[webbuilder.StarterID][2]string{
-	webbuilder.StarterBlank:   {"Blank", "An empty template."},
-	webbuilder.StarterHeader:  {"Header", "Logo, site title and the primary menu."},
-	webbuilder.StarterFooter:  {"Footer", "Footer menu, tagline and copyright."},
-	webbuilder.StarterSingle:  {"Single", "Title, meta, featured image, content and comments."},
-	webbuilder.StarterArchive: {"Archive", "Archive title, a post grid and pagination."},
-	webbuilder.StarterSearch:  {"Search Results", "Search form, results grid and pagination."},
+	webbuilder.StarterBlank:          {"Blank", "An empty template."},
+	webbuilder.StarterHeader:         {"Header", "Logo, site title and the primary menu."},
+	webbuilder.StarterFooter:         {"Footer", "Footer menu, tagline and copyright."},
+	webbuilder.StarterSingle:         {"Single", "Title, meta, featured image, content and comments."},
+	webbuilder.StarterArchive:        {"Archive", "Archive title, a post grid and pagination."},
+	webbuilder.StarterSearch:         {"Search Results", "Search form, results grid and pagination."},
+	webbuilder.StarterProduct:        {"Single Product", "Gallery, title, price, add to cart, tabs and related products."},
+	webbuilder.StarterProductArchive: {"Product Archive", "Archive title, description and the store's product grid."},
 }
 
 // wbTemplatesPage runs the Theme Builder screen when the Themes request asks for it
@@ -381,6 +383,10 @@ func (s *Server) wbTemplatesDialogs(c *gin.Context, d *wbTemplatesData, site web
 		}
 	}
 	for _, id := range webbuilder.StarterIDs {
+		if id == webbuilder.StarterProduct && !s.wbTemplateTypeOffered(webbuilder.TemplateSingleProduct) ||
+			id == webbuilder.StarterProductArchive && !s.wbTemplateTypeOffered(webbuilder.TemplateProductArchive) {
+			continue // the store starters come with their template types (Pursae Commerce on)
+		}
 		l := wbTBStarterLabels[id]
 		d.Starters = append(d.Starters, wbTBStarter{ID: string(id), Label: l[0], Description: l[1]})
 	}
