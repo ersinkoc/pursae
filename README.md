@@ -62,57 +62,6 @@ Ports, env vars, proxies, backups: **[docs/GUIDE.md](docs/GUIDE.md)**.
 </tr>
 </table>
 
-## 🔁 WordPress compatibility
-
-- **Admin**: the WordPress admin markup and CSS 1:1 under `/wp-admin/` (old `.php` URLs still work).
-- **Editors**: the real block editor (`@wordpress/*` bundles) and a built-in Classic Editor.
-- **REST API**: `wp/v2` with cookie + nonce and Application Passwords; `wc/v3` with Commerce on — [REST docs](docs/developer/rest-api/index.md).
-- **Content**: WXR import and export under Tools; WooCommerce's product CSV under Products.
-- **Not supported**: PHP plugins and PHP themes (themes are Go templates with a [`theme.json` manifest](docs/developer/themes/theme-json.md)) and multisite.
-
-## 🐹 Go architecture
-
-- One static binary (`CGO_ENABLED=0`) with the admin, the editors and the bundled themes embedded.
-- [gin](https://github.com/gin-gonic/gin) for HTTP, [pgx](https://github.com/jackc/pgx) on PostgreSQL 17 (14+ works); migrations run on start.
-- Plugins run as WebAssembly in [wazero](https://wazero.io) — no cgo, no separate runtime.
-- Details: [What is Pursae](docs/developer/getting-started/index.md) · [binary install](docs/developer/getting-started/install-binary.md).
-
-## 🧩 The WordPress ecosystem without PHP
-
-- **Plugins** are Go compiled to signed Wasm, sandboxed and permission-gated — [plugin docs](docs/developer/plugins/index.md), [signing](docs/developer/plugins/packaging-and-signing.md).
-- **Built in**: Commerce, Web Builder, SEO, Cache, Security, CDN, Headless, Cookie, Pixel, SMTP, Custom Fields, Multi Language, Contact Form, Maintenance, Backup Manager, Classic Editor ([table below](#-built-in-plugins); [what each replaces](docs/developer/benchmarks.md#whats-built-in)).
-- **Themes** are zip packages of templates and assets with no code in them — [theme packages](docs/theme-package.md); a marketplace of both on the [Hub](docs/developer/hub/index.md).
-
-## 📊 Performance benchmarks
-
-Same content (1000 posts, 200 products), Twenty Twenty-Five, same container limits; WordPress 7.1.4 + PHP 8.3 OPcache
-against Pursae 0.1.9, Apple M2 Pro under Docker, 2026-11-09:
-
-| | WordPress | Pursae |
-|---|---:|---:|
-| Single post, no page cache | 58 req/s | **394 req/s** |
-| Single post with the usual plugins (Woo, Yoast, Polylang, ACF, Elementor, CF7 vs built-ins) | 19 req/s | **232 req/s** |
-| DB queries, home page with those plugins | 139 | **16** |
-| Memory idle, whole stack | 233 MiB | **95 MiB** |
-| Lighthouse, home (mobile) | 96 | **100** |
-
-Cached pages tie (WP Super Cache + nginx ≈ Pursae Cache), cold start is the same, and WordPress' page cache serves
-search while Pursae's does not. Method, every config, all tables and `make bench`: [benchmarks](docs/developer/benchmarks.md).
-
-## 🛡️ Security
-
-- Core secure by default: argon2id, login throttling, nonces, CSP and security headers, no account enumeration, sandboxed uploads — [security](docs/developer/operations/security.md).
-- Plugins are signed and sandboxed; a site installs only packages whose signature it trusts.
-- Multi-role users: capabilities are the union of the roles, with per-user allow and deny — deny wins.
-- **Pursae Security** adds 2FA, lockouts, a custom login URL and an activity log — [features](docs/adminsecgo-features.md).
-
-## 📦 Installation & migration
-
-- **Docker** ([Quick start](#-quick-start)) or **one binary** against your own PostgreSQL — [install the binary](docs/developer/getting-started/install-binary.md).
-- **From WordPress**: export with Tools › Export (WXR), import with Tools › Import here — posts, pages, terms, comments, menus, and media fetched from their public URLs. Products move with WooCommerce's product CSV.
-- Users' passwords, settings, PHP plugins and themes do not move — [content export and import](docs/developer/operations/backups.md#content-export).
-- **Pursae to Pursae**: Backup Manager moves a whole site in one archive — [Backup Manager](docs/backup-manager-features.md).
-
 ## 🧭 Tour
 
 <table>
@@ -281,6 +230,57 @@ Native, off on a fresh install, one click under **Plugins**. Click a row to open
 <td width="50%"><img src="docs/readme/backup.webp" alt="Backup Manager"><p align="center"><a href="docs/backup-manager-features.md">Backup Manager →</a></p></td>
 </tr></table>
 </details>
+
+## 🔁 WordPress compatibility
+
+- **Admin**: the WordPress admin markup and CSS 1:1 under `/wp-admin/` (old `.php` URLs still work).
+- **Editors**: the real block editor (`@wordpress/*` bundles) and a built-in Classic Editor.
+- **REST API**: `wp/v2` with cookie + nonce and Application Passwords; `wc/v3` with Commerce on — [REST docs](docs/developer/rest-api/index.md).
+- **Content**: WXR import and export under Tools; WooCommerce's product CSV under Products.
+- **Not supported**: PHP plugins and PHP themes (themes are Go templates with a [`theme.json` manifest](docs/developer/themes/theme-json.md)) and multisite.
+
+## 🐹 Go architecture
+
+- One static binary (`CGO_ENABLED=0`) with the admin, the editors and the bundled themes embedded.
+- [gin](https://github.com/gin-gonic/gin) for HTTP, [pgx](https://github.com/jackc/pgx) on PostgreSQL 17 (14+ works); migrations run on start.
+- Plugins run as WebAssembly in [wazero](https://wazero.io) — no cgo, no separate runtime.
+- Details: [What is Pursae](docs/developer/getting-started/index.md) · [binary install](docs/developer/getting-started/install-binary.md).
+
+## 🧩 The WordPress ecosystem without PHP
+
+- **Plugins** are Go compiled to signed Wasm, sandboxed and permission-gated — [plugin docs](docs/developer/plugins/index.md), [signing](docs/developer/plugins/packaging-and-signing.md).
+- **Built in**: Commerce, Web Builder, SEO, Cache, Security, CDN, Headless, Cookie, Pixel, SMTP, Custom Fields, Multi Language, Contact Form, Maintenance, Backup Manager, Classic Editor ([table below](#-built-in-plugins); [what each replaces](docs/developer/benchmarks.md#whats-built-in)).
+- **Themes** are zip packages of templates and assets with no code in them — [theme packages](docs/theme-package.md); a marketplace of both on the [Hub](docs/developer/hub/index.md).
+
+## 📊 Performance benchmarks
+
+Same content (1000 posts, 200 products), Twenty Twenty-Five, same container limits; WordPress 7.1.4 + PHP 8.3 OPcache
+against Pursae 0.1.9, Apple M2 Pro under Docker, 2026-11-09:
+
+| | WordPress | Pursae |
+|---|---:|---:|
+| Single post, no page cache | 58 req/s | **394 req/s** |
+| Single post with the usual plugins (Woo, Yoast, Polylang, ACF, Elementor, CF7 vs built-ins) | 19 req/s | **232 req/s** |
+| DB queries, home page with those plugins | 139 | **16** |
+| Memory idle, whole stack | 233 MiB | **95 MiB** |
+| Lighthouse, home (mobile) | 96 | **100** |
+
+Cached pages tie (WP Super Cache + nginx ≈ Pursae Cache), cold start is the same, and WordPress' page cache serves
+search while Pursae's does not. Method, every config, all tables and `make bench`: [benchmarks](docs/developer/benchmarks.md).
+
+## 🛡️ Security
+
+- Core secure by default: argon2id, login throttling, nonces, CSP and security headers, no account enumeration, sandboxed uploads — [security](docs/developer/operations/security.md).
+- Plugins are signed and sandboxed; a site installs only packages whose signature it trusts.
+- Multi-role users: capabilities are the union of the roles, with per-user allow and deny — deny wins.
+- **Pursae Security** adds 2FA, lockouts, a custom login URL and an activity log — [features](docs/adminsecgo-features.md).
+
+## 📦 Installation & migration
+
+- **Docker** ([Quick start](#-quick-start)) or **one binary** against your own PostgreSQL — [install the binary](docs/developer/getting-started/install-binary.md).
+- **From WordPress**: export with Tools › Export (WXR), import with Tools › Import here — posts, pages, terms, comments, menus, and media fetched from their public URLs. Products move with WooCommerce's product CSV.
+- Users' passwords, settings, PHP plugins and themes do not move — [content export and import](docs/developer/operations/backups.md#content-export).
+- **Pursae to Pursae**: Backup Manager moves a whole site in one archive — [Backup Manager](docs/backup-manager-features.md).
 
 ## 🔒 What Pursae sends to hub.pursae.com
 
