@@ -76,3 +76,21 @@ func TestCheckPasswordCtxWaitsForSlot(t *testing.T) {
 	}
 	CheckDummyPassword(context.Background(), "anything") // must not panic or block
 }
+
+func TestCheckPasswordRejectsInvalidArgonParameters(t *testing.T) {
+	h, err := HashPassword("pw")
+	if err != nil {
+		t.Fatal(err)
+	}
+	parts := strings.Split(h, "$")
+	parts[5] = ""
+	for _, bad := range []string{
+		strings.Replace(h, ",t=3,", ",t=0,", 1),
+		strings.Replace(h, ",p=2$", ",p=0$", 1),
+		strings.Join(parts, "$"),
+	} {
+		if ok, err := CheckPassword("pw", bad); ok || err == nil {
+			t.Errorf("invalid hash: got %v, %v; want false and error", ok, err)
+		}
+	}
+}

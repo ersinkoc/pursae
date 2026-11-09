@@ -74,7 +74,7 @@ func CheckPasswordCtx(ctx context.Context, password, encoded string) (bool, erro
 	}
 	var mem, t uint32
 	var p uint8
-	if _, err := fmt.Sscanf(parts[3], "m=%d,t=%d,p=%d", &mem, &t, &p); err != nil {
+	if _, err := fmt.Sscanf(parts[3], "m=%d,t=%d,p=%d", &mem, &t, &p); err != nil || t == 0 || p == 0 {
 		return false, errBadHash
 	}
 	b64 := base64.RawStdEncoding
@@ -83,7 +83,7 @@ func CheckPasswordCtx(ctx context.Context, password, encoded string) (bool, erro
 		return false, errBadHash
 	}
 	want, err := b64.DecodeString(parts[5])
-	if err != nil {
+	if err != nil || len(want) == 0 {
 		return false, errBadHash
 	}
 	got, err := argonIDKey(ctx, []byte(password), salt, t, mem, p, uint32(len(want)))
