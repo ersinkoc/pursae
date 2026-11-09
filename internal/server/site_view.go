@@ -734,7 +734,11 @@ func renderMenu(items []*store.MenuItem, container, class, before, after string)
 	var walk func(list []*store.MenuItem, depth int)
 	walk = func(list []*store.MenuItem, depth int) {
 		for _, it := range list {
-			classes := "menu-item menu-item-type-" + it.Kind + " menu-item-object-" + it.Object + " menu-item-" + itoa64(it.ID)
+			key := it.Key
+			if key == "" {
+				key = itoa64(it.ID)
+			}
+			classes := "menu-item menu-item-type-" + it.Kind + " menu-item-object-" + it.Object + " menu-item-" + html.EscapeString(key)
 			if it.Current {
 				classes += " current-menu-item"
 				if it.Kind == "post_type" {
@@ -750,7 +754,7 @@ func renderMenu(items []*store.MenuItem, container, class, before, after string)
 			if it.Classes != "" {
 				classes = it.Classes + " " + classes
 			}
-			fmt.Fprintf(&sb, `<li id="menu-item-%d" class="%s"><a href="%s"`, it.ID, classes, html.EscapeString(it.URL))
+			fmt.Fprintf(&sb, `<li id="menu-item-%s" class="%s"><a href="%s"`, html.EscapeString(key), classes, html.EscapeString(it.URL))
 			if it.Target != "" {
 				fmt.Fprintf(&sb, ` target="%s"`, html.EscapeString(it.Target))
 			}

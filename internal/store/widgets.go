@@ -59,6 +59,9 @@ type MenuItem struct {
 	Label    string
 	Target   string
 	Classes  string
+	// Key, when set, replaces ID in the item's markup (id="menu-item-…", class menu-item-…): items expanded
+	// from one row, such as the Language switcher's item per language, need distinct ids ("4-en").
+	Key      string
 	Children []*MenuItem
 	// Current and CurrentAncestor are set by the core for the page being viewed (current-menu-item).
 	Current, CurrentAncestor bool
