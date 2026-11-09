@@ -876,13 +876,17 @@ func TestAdminSecParallelGuessesLimited(t *testing.T) {
 		}
 		b, _ := io.ReadAll(resp.Body)
 		resp.Body.Close()
-		return !strings.Contains(string(b), "Too many failed login attempts")
+		return !strings.Contains(string(b), "Too many")
 	})
 	if n > 3 {
 		t.Errorf("wp-login: %d parallel passwords checked, limit 3", n)
 	}
-	if asCount(t, `SELECT count(*) FROM adminsec_lockouts WHERE kind = 'ip' AND NOT released AND until > now()`) == 0 {
-		t.Error("no lockout after the burst")
+	// Requests refused unchecked are no guesses; the checked ones are failures, and reaching the limit locks.
+	if failed := asCount(t, `SELECT count(*) FROM login_attempts WHERE NOT success AND NOT pending`); failed != n {
+		t.Errorf("%d completed failures, want %d", failed, n)
+	}
+	if n == 3 && asCount(t, `SELECT count(*) FROM adminsec_lockouts WHERE kind = 'ip' AND NOT released AND until > now()`) == 0 {
+		t.Error("no lockout after 3 checked wrong passwords")
 	}
 	_, _ = getPool(t).Exec(context.Background(), `UPDATE adminsec_lockouts SET released = true; DELETE FROM login_attempts`)
 	n = burst(func() bool {
@@ -897,6 +901,77 @@ func TestAdminSecParallelGuessesLimited(t *testing.T) {
 	})
 	if n > 3 {
 		t.Errorf("REST Basic: %d parallel passwords checked, limit 3", n)
+	}
+}
+
+// Parallel requests with a correct Application Password are no guesses: their in-flight attempts must not
+// lock the IP or the user out, and once the password has matched, a burst larger than the limit all succeeds.
+func TestAdminSecParallelValidAppPassword(t *testing.T) {
+	base, c, srv := asStart(t)
+	_, body, _ := get(t, c, base+"/wp-admin/profile")
+	_, body, _ = post(t, c, base+"/wp-admin/profile", url.Values{"_wpnonce": {formNonce(t, body)}, "do_new_application_password": {"1"}, "new_application_password_name": {"Deploy"}})
+	shown := regexp.MustCompile(`id="new-application-password-value" type="text" class="code" readonly="readonly" value="([^"]+)"`).FindStringSubmatch(body)
+	if shown == nil {
+		t.Fatal("no application password")
+	}
+	asConfigure(t, srv, func(st *asSettings) { st.IPMaxFailures, st.UserMaxFailures, st.LockoutMinutes = 3, 3, 20 })
+	_, _ = getPool(t).Exec(context.Background(), `DELETE FROM login_attempts`)
+	call := func() int {
+		req, _ := http.NewRequest("GET", base+"/wp-json/wp/v2/users/me", nil)
+		req.SetBasicAuth("admin", shown[1])
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			return 0
+		}
+		resp.Body.Close()
+		return resp.StatusCode
+	}
+	burst := func(n int) (ok int) {
+		var wg sync.WaitGroup
+		var mu sync.Mutex
+		for i := 0; i < n; i++ {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				if call() == http.StatusOK {
+					mu.Lock()
+					ok++
+					mu.Unlock()
+				}
+			}()
+		}
+		wg.Wait()
+		return ok
+	}
+	// Cold: some requests may be refused while others are still being checked, but nobody is locked out.
+	appPassCache.Lock()
+	appPassCache.m = map[[32]byte]appPassHit{}
+	appPassCache.Unlock()
+	burst(8)
+	if n := asCount(t, `SELECT count(*) FROM adminsec_lockouts WHERE NOT released AND until > now()`); n != 0 {
+		t.Fatalf("parallel valid requests created %d lockouts", n)
+	}
+	if n := asCount(t, `SELECT count(*) FROM login_attempts WHERE NOT success`); n != 0 {
+		t.Errorf("%d failures left by valid requests", n)
+	}
+	// Warm: the password matched once, so a burst over the limit all succeeds.
+	if code := call(); code != http.StatusOK {
+		t.Fatalf("valid request: %d", code)
+	}
+	if ok := burst(12); ok != 12 {
+		t.Errorf("warm burst: %d of 12 succeeded", ok)
+	}
+	if n := asCount(t, `SELECT count(*) FROM adminsec_lockouts WHERE NOT released AND until > now()`); n != 0 {
+		t.Errorf("warm burst created %d lockouts", n)
+	}
+	// A wrong password while valid requests are in flight counts only itself: no lockout below the limit.
+	req, _ := http.NewRequest("GET", base+"/wp-json/wp/v2/users/me", nil)
+	req.SetBasicAuth("admin", "wrong wrong wrong")
+	if resp, err := http.DefaultClient.Do(req); err == nil {
+		resp.Body.Close()
+	}
+	if n := asCount(t, `SELECT count(*) FROM adminsec_lockouts WHERE NOT released AND until > now()`); n != 0 {
+		t.Errorf("one wrong password created %d lockouts", n)
 	}
 }
 

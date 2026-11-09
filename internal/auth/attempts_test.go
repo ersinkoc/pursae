@@ -147,3 +147,31 @@ func TestBeginAttemptPerLogin(t *testing.T) {
 		t.Errorf("attempt not marked as success: %v %v", ok, err)
 	}
 }
+
+// An attempt still being checked is pending: it counts against parallel requests (BeginAttempt) but is no
+// completed failure (Throttled) until AttemptFailed marks it so.
+func TestPendingAttemptIsNoFailure(t *testing.T) {
+	m := attemptsManager(t)
+	ctx := context.Background()
+	const ip = "198.51.100.30"
+	var ids []int64
+	for i := 0; i < MaxFailedLogins; i++ {
+		id, throttled, err := m.BeginAttempt(ctx, ip, "dave")
+		if err != nil || throttled {
+			t.Fatalf("attempt %d: throttled %v, %v", i, throttled, err)
+		}
+		ids = append(ids, id)
+	}
+	if _, throttled, _ := m.BeginAttempt(ctx, ip, "dave"); !throttled {
+		t.Error("in-flight attempts did not count against a parallel one")
+	}
+	if throttled, _ := m.Throttled(ctx, ip); throttled {
+		t.Error("pending attempts counted as completed failures")
+	}
+	for _, id := range ids {
+		m.AttemptFailed(ctx, id)
+	}
+	if throttled, _ := m.Throttled(ctx, ip); !throttled {
+		t.Error("failed attempts not counted after AttemptFailed")
+	}
+}

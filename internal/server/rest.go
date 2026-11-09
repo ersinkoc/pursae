@@ -201,12 +201,19 @@ func (s *Server) restAuthUser(c *gin.Context, route, method string) (*store.User
 		if s.adminsecRESTLocked(c, user) { // AdminSecGo: block list and lockouts apply to the API too
 			return nil, errors.New("adminsec_locked")
 		}
+		u, err := s.store.UserByLoginOrEmail(c, user)
+		if err == nil && appPassKnown(u.ID, pass) {
+			// A password that matched recently is not a guess: no throttle row, so parallel requests of a
+			// working client cannot count against the limits. checkAppPassword still confirms it is stored.
+			if s.checkAppPassword(c, u, pass) {
+				return scopedUser(u, restScopes(c)), nil
+			}
+		}
 		// The login throttle applies to Basic auth too, counted before any hashing (app_password_auth.go).
 		attemptID, refused := s.restBeginAttempt(c, user)
 		if refused {
 			return nil, errors.New("adminsec_locked")
 		}
-		u, err := s.store.UserByLoginOrEmail(c, user)
 		if err != nil {
 			auth.CheckDummyPassword(c.Request.Context(), pass) // no timing difference for unknown users
 			s.restLoginFailed(c, user, nil, "Unknown user (REST API).", attemptID)

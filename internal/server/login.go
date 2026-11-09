@@ -145,6 +145,8 @@ func (s *Server) login(c *gin.Context) {
 		auth.CheckDummyPassword(c.Request.Context(), pass) // same argon2 work as a wrong password: no timing difference
 		if secOn {
 			s.adminsecLoginFailed(c, login, nil, "Unknown username or e-mail address.", attemptID)
+		} else {
+			s.auth.AttemptFailed(c, attemptID)
 		}
 		if msg, ok := s.adminsecGenericError(); ok {
 			fail(string(msg))
@@ -163,6 +165,8 @@ func (s *Server) login(c *gin.Context) {
 	if !ok {
 		if secOn {
 			s.adminsecLoginFailed(c, login, u, "Wrong password.", attemptID)
+		} else {
+			s.auth.AttemptFailed(c, attemptID)
 		}
 		if msg, ok := s.adminsecGenericError(); ok {
 			fail(string(msg))

@@ -377,6 +377,8 @@ func (s *Server) gooLoginPost(c *gin.Context) {
 				uu = u
 			}
 			s.adminsecLoginFailed(c, login, uu, "Wrong username or password.", attemptID)
+		} else {
+			s.auth.AttemptFailed(c, attemptID)
 		}
 		if errors.Is(err, store.ErrNotFound) {
 			if strings.Contains(login, "@") {
