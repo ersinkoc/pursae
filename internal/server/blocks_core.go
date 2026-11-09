@@ -220,8 +220,9 @@ func renderSearchBlock(ctx context.Context, b *blocks.Block, _ string) string {
 		labelClass += " screen-reader-text"
 	}
 	var sb strings.Builder
+	action, hidden := searchFormAction(rc.lb) // the language home; ?lang= as a hidden input in query mode
 	fmt.Fprintf(&sb, `<form role="search" method="get" action="%s" %s><label class="%s" for="%s">%s</label><div class="wp-block-search__inside-wrapper">`,
-		html.EscapeString(rc.lb.HomeURL("/")), wrapperClass(b, strings.Join(classes, " ")), labelClass, id, html.EscapeString(label))
+		html.EscapeString(action), wrapperClass(b, strings.Join(classes, " ")), labelClass, id, html.EscapeString(label))
 	fmt.Fprintf(&sb, `<input class="wp-block-search__input" id="%s" placeholder="%s" value="%s" type="search" name="s" required />`,
 		id, html.EscapeString(placeholder), html.EscapeString(rc.search))
 	if position != "no-button" {
@@ -233,7 +234,7 @@ func renderSearchBlock(ctx context.Context, b *blocks.Block, _ string) string {
 		}
 		fmt.Fprintf(&sb, `<button aria-label="%s" class="%s wp-element-button" type="submit">%s</button>`, html.EscapeString(buttonText), btnClass, inner)
 	}
-	sb.WriteString(`</div></form>`)
+	sb.WriteString(`</div>` + string(hidden) + `</form>`)
 	return sb.String()
 }
 

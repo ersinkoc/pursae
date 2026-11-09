@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"encoding/json"
-	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -24,13 +23,44 @@ func pllMetaSkipped(key string) bool {
 	return strings.HasPrefix(key, "_wp_trash_meta") || strings.HasPrefix(key, "_pll") || strings.HasPrefix(key, "_web_builder")
 }
 
+// pllSEOTranslatedFields are the Pursae SEO fields each translation writes in its own language (Polylang's
+// Yoast integration leaves them out of the custom fields synchronization). Robots, cornerstone,
+// primary category, schema types and images keep syncing.
+var pllSEOTranslatedFields = []string{"title", "description", "focus", "canonical", "og_title", "og_description",
+	"tw_title", "tw_description", "bc_title", "schema_custom", "seo_score", "read_score"}
+
+// pllSEOKeys are the meta keys of those fields: _seogo_* and the Yoast and Rank Math keys they read
+// (seogoFields). rank_math_robots and rank_math_advanced_robots hold robots settings shared with
+// fields that keep syncing, so they never appear here.
+var pllSEOKeys = func() map[string]bool {
+	m := map[string]bool{}
+	for _, f := range pllSEOTranslatedFields {
+		m[seogoKey(f)] = true
+		for _, k := range seogoFields[f] {
+			if k != "" && k != "rank_math_robots" && k != "rank_math_advanced_robots" {
+				m[k] = true
+			}
+		}
+	}
+	return m
+}()
+
+// pllSEOTranslatable reports whether a meta key holds translated SEO text (pllSEOKeys).
+func pllSEOTranslatable(key string) bool { return pllSEOKeys[key] }
+
+// pllSEOCanonical reports whether a meta key is a custom canonical URL: a new translation never starts
+// out canonicalised to its source.
+func pllSEOCanonical(key string) bool {
+	return key == seogoKey("canonical") || key == seogoFields["canonical"][0] || key == seogoFields["canonical"][1]
+}
+
 // pllCopyForTranslation fills a new translation from its source like Polylang: terms (translated), featured
 // image, custom fields, page order, template, parent (translated), format and discussion settings are always
 // copied; title, content and excerpt too when Duplicate content is on (Pro).
 func (s *Server) pllCopyForTranslation(ctx context.Context, src, dst *store.Post, l *pllLanguage, duplicate bool) {
 	meta := map[string]any{}
 	for k, v := range src.Meta {
-		if !pllMetaSkipped(k) {
+		if !pllMetaSkipped(k) && !pllSEOCanonical(k) {
 			meta[k] = v
 		}
 	}
@@ -122,14 +152,13 @@ func (s *Server) golylangSaved(ctx context.Context, p *store.Post) {
 		return
 	}
 	if gc, ok := ctx.(*gin.Context); ok && pllIsREST(gc) {
-		if l := s.pllLang(ctx, gc.Query("lang")); l != nil {
+		if l := s.pllLang(ctx, pllRESTLang(gc)); l != nil {
 			_ = s.pllSetLang(ctx, pllPost, p.ID, l.Slug)
 		}
-		if m := gc.QueryMap("translations"); len(m) > 0 {
+		if m := pllRESTTranslations(gc); len(m) > 0 {
 			u := pllActor(ctx)
 			tr := s.pllTranslations(ctx, pllPost, p.ID)
-			for lang, v := range m {
-				id, _ := strconv.ParseInt(v, 10, 64)
+			for lang, id := range m {
 				// Linking moves the other post into this translation group (and under its
 				// synchronization): only for posts the user may edit, as the admin-ajax linking checks.
 				if t, err := s.store.GetPost(ctx, id); err == nil && t.Type == p.Type && s.pllObjLang(ctx, pllPost, id) == lang && u != nil && u.Can("edit_post", t) {
@@ -209,14 +238,14 @@ func (s *Server) pllSync(ctx context.Context, p *store.Post) {
 		}
 		if o.syncs("post_meta") {
 			for k := range t.Meta {
-				if !pllMetaSkipped(k) {
+				if !pllMetaSkipped(k) && !pllSEOTranslatable(k) {
 					if _, ok := p.Meta[k]; !ok {
 						delete(t.Meta, k)
 					}
 				}
 			}
 			for k, v := range p.Meta {
-				if !pllMetaSkipped(k) {
+				if !pllMetaSkipped(k) && !pllSEOTranslatable(k) {
 					t.Meta[k] = v
 				}
 			}

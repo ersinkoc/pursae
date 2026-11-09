@@ -921,7 +921,7 @@ func (s *Server) gooBreadcrumb(c *gin.Context, fv *gooFrontView) string {
 	ctx := c.Request.Context()
 	lb := s.links(ctx)
 	type crumb struct{ name, url string }
-	crumbs := []crumb{{"Home", lb.HomeURL("/")}}
+	crumbs := []crumb{{"Home", lb.Front()}} // the language home (Golylang)
 	shop := func() {
 		if id := s.gooPageIDIn(ctx, "shop"); id > 0 && int64(s.settings.Int("page_on_front")) != s.gooPageID("shop") {
 			if pg, err := s.store.GetPost(ctx, id); err == nil {
@@ -1276,8 +1276,9 @@ func (s *Server) gooWidgetCategories(c *gin.Context, title string, count, hideEm
 // gooProductSearchForm is get_product_search_form().
 func (s *Server) gooProductSearchForm(c *gin.Context) string {
 	id := "woocommerce-product-search-field-" + gooRandomKey(6)
-	return `<form role="search" method="get" class="woocommerce-product-search" action="` + gooEsc(s.links(c.Request.Context()).HomeURL("/")) + `">` +
+	action, hidden := searchFormAction(s.links(c.Request.Context())) // Golylang: the language home
+	return `<form role="search" method="get" class="woocommerce-product-search" action="` + gooEsc(action) + `">` +
 		`<label class="screen-reader-text" for="` + id + `">Search for:</label>` +
 		`<input type="search" id="` + id + `" class="search-field" placeholder="Search products&hellip;" value="` + gooEsc(c.Query("s")) + `" name="s" />` +
-		`<button type="submit" value="Search" class="">Search</button><input type="hidden" name="post_type" value="product" /></form>`
+		`<button type="submit" value="Search" class="">Search</button><input type="hidden" name="post_type" value="product" />` + string(hidden) + `</form>`
 }

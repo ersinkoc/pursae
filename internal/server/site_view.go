@@ -43,6 +43,8 @@ type siteView struct {
 	ArchiveTitle   template.HTML
 	ArchiveDesc    template.HTML
 	SearchQuery    string
+	SearchAction   string        // search form action: the home of the current language (searchFormAction)
+	SearchHidden   template.HTML // hidden inputs of the search form (?lang= in query mode)
 	Posts          []*postView
 	Post           *postView
 	Pagination     template.HTML
@@ -155,6 +157,7 @@ func (s *Server) buildSiteView(c *gin.Context, q *siteQuery) (*siteView, error) 
 	}
 
 	s.golylangView(c, q, v, lb) // Golylang: strings, menus and widgets of the current language
+	v.SearchAction, v.SearchHidden = searchFormAction(lb)
 	primary, social := v.Menus["primary"], v.Menus["social"]
 	if len(primary) > 0 {
 		v.PrimaryMenu = renderMenu(primary, "menu-primary-menu-container", "primary-menu", "", "")
@@ -349,7 +352,7 @@ func (s *Server) archiveBase(q *siteQuery, lb *links.Builder) string {
 	if q.PostsPage != nil {
 		return lb.Permalink(q.PostsPage)
 	}
-	return lb.HomeURL("/")
+	return lb.Front() // the language home with Pursae Multi Language: /tr/page/2/
 }
 
 // paginateLinks is the_posts_pagination() with mid_size 1 and end_size 1 (theme packages print it).

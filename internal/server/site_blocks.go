@@ -501,6 +501,7 @@ func renderPageListBlock(ctx context.Context, b *blocks.Block, _ string) string 
 	if err != nil || len(pages) == 0 {
 		return ""
 	}
+	rc.s.pllPrimePosts(ctx, pages) // Golylang: every page link's language in one query
 	sort.SliceStable(pages, func(i, j int) bool {
 		if pages[i].MenuOrder != pages[j].MenuOrder {
 			return pages[i].MenuOrder < pages[j].MenuOrder

@@ -729,6 +729,10 @@ func (s *Server) gooServeProduct(c *gin.Context, id int64) bool {
 	if denied, handled := s.gooGuardProduct(c, p.ID); denied { // Memberships: hidden / redirected products
 		return handled
 	}
+	if s.gooPllObjectLang(c, pllPost, p.ID) { // Golylang: the product's language (or its own URL)
+		return true
+	}
+	ctx = c.Request.Context()
 	fv := &gooFrontView{Kind: "product", Product: p}
 	c.Set(gooCtxView, fv)
 	body := s.gooSingleProductHTML(c, p)
@@ -740,6 +744,9 @@ func (s *Server) gooServeProduct(c *gin.Context, id int64) bool {
 
 // gooServeTerm renders a product category / tag / attribute archive.
 func (s *Server) gooServeTerm(c *gin.Context, t *store.Term, paged int) bool {
+	if s.pllTranslatedTaxonomy(t.Taxonomy) && s.gooPllObjectLang(c, pllTerm, t.ID) { // Golylang: the term's language (or its own URL)
+		return true
+	}
 	kind := "product_attr"
 	switch t.Taxonomy {
 	case "product_cat":
