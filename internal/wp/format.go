@@ -2,10 +2,12 @@ package wp
 
 import (
 	"html"
+	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
 	"unicode"
+	"unicode/utf8"
 
 	"golang.org/x/text/unicode/norm"
 )
@@ -16,16 +18,23 @@ var accentMap = map[rune]string{
 	'đ': "d", 'Đ': "D", 'ł': "l", 'Ł': "L", 'þ': "th", 'Þ': "TH", 'ð': "d", 'Ð': "D",
 }
 
-// RemoveAccents is remove_accents(): maps accented Latin letters to ASCII.
+// RemoveAccents is remove_accents(): maps accented Latin letters to ASCII. Only marks on Latin letters
+// are dropped; other scripts keep theirs (a Devanagari vowel sign or virama is part of the letter).
 func RemoveAccents(s string) string {
 	var sb strings.Builder
+	var base rune
 	for _, r := range norm.NFD.String(s) {
 		if rep, ok := accentMap[r]; ok {
 			sb.WriteString(rep)
+			base = 'a'
 			continue
 		}
 		if unicode.Is(unicode.Mn, r) {
-			continue
+			if base < 0x80 || unicode.Is(unicode.Latin, base) {
+				continue
+			}
+		} else {
+			base = r
 		}
 		sb.WriteRune(r)
 	}
@@ -33,20 +42,40 @@ func RemoveAccents(s string) string {
 }
 
 var (
-	tagRe         = regexp.MustCompile(`<[^>]*>`)
-	entityRe      = regexp.MustCompile(`&[^;\s]+;`)
-	slugInvalidRe = regexp.MustCompile(`[^a-z0-9_\-]+`)
-	dashesRe      = regexp.MustCompile(`-+`)
+	tagRe       = regexp.MustCompile(`<[^>]*>`)
+	entityRe    = regexp.MustCompile(`&[^;\s]+;`)
+	dashesRe    = regexp.MustCompile(`-+`)
+	pctOctetRe  = regexp.MustCompile(`%[0-9A-Fa-f]{2}`)
+	slugReplace = strings.NewReplacer(".", "-", "/", "-", " ", "-", "\u00a0", "-", "–", "-", "—", "-")
 )
 
-// SanitizeTitle is sanitize_title(): a lowercase, dash-separated slug.
+// SanitizeTitle is sanitize_title_with_dashes(): a lowercase, dash-separated slug. Latin accents become
+// ASCII; letters, digits and combining marks of other scripts are kept (Cyrillic, Greek, Arabic, CJK …).
+// WordPress stores those as lowercase %xx octets; Pursae stores the decoded UTF-8, which is what the
+// router sees after the request path is unescaped, and the link builders escape it again. Existing %xx
+// sequences (WXR post_name, category_nicename) are decoded first.
 func SanitizeTitle(title string) string {
 	s := StripTags(title)
 	s = entityRe.ReplaceAllString(s, "")
+	if pctOctetRe.MatchString(s) {
+		if dec, err := url.PathUnescape(s); err == nil && utf8.ValidString(dec) {
+			s = dec
+		}
+	}
 	s = RemoveAccents(s)
 	s = strings.ToLower(s)
-	s = strings.NewReplacer(".", "-", "/", "-", " ", "-", " ", "-", "–", "-", "—", "-").Replace(s)
-	s = slugInvalidRe.ReplaceAllString(s, "")
+	s = slugReplace.Replace(s)
+	s = strings.Map(func(r rune) rune {
+		switch {
+		case r >= 'a' && r <= 'z', r >= '0' && r <= '9', r == '_', r == '-':
+			return r
+		case r < 0x80:
+			return -1
+		case unicode.IsLetter(r), unicode.IsNumber(r), unicode.In(r, unicode.Mn, unicode.Mc):
+			return r
+		}
+		return -1
+	}, s)
 	s = dashesRe.ReplaceAllString(s, "-")
 	return strings.Trim(s, "-")
 }

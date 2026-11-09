@@ -593,7 +593,13 @@ func (s *Server) gooGenerateUsername(ctx context.Context, email, first, last str
 		base, _, _ = strings.Cut(email, "@")
 		base = wp.SanitizeTitle(base)
 	}
-	base = strings.ReplaceAll(base, "-", "")
+	// sanitize_user( $username, true ): logins stay ASCII even when the slug keeps other scripts.
+	base = strings.Map(func(r rune) rune {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '_' {
+			return r
+		}
+		return -1
+	}, base)
 	if base == "" {
 		base = "customer"
 	}

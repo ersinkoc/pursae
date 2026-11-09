@@ -162,3 +162,27 @@ func TestPermalinkLookupsOnlyWhenUsed(t *testing.T) {
 		t.Errorf("permalink %s, %d category and %d author lookups", got, cats, authors)
 	}
 }
+
+// TestNonLatinSlugLinks: slugs stored as UTF-8 come out percent-encoded, ASCII slugs unchanged, and the
+// %postname% placeholder of the REST permalink template is not escaped.
+func TestNonLatinSlugLinks(t *testing.T) {
+	date := time.Date(2026, 10, 3, 12, 0, 0, 0, time.UTC)
+	b := &Builder{Home: "http://ex.test", Structure: "/%postname%/", Loc: time.UTC}
+	ru := &store.Post{ID: 9, Type: "post", Slug: "мир", Status: "publish", PublishedAt: &date}
+	if got := b.Permalink(ru); got != "http://ex.test/%D0%BC%D0%B8%D1%80/" {
+		t.Errorf("cyrillic permalink = %s", got)
+	}
+	if got := b.PermalinkTemplate(ru); got != "http://ex.test/%postname%/" {
+		t.Errorf("permalink template = %s", got)
+	}
+	if got := b.TermLink(&store.Term{Taxonomy: "post_tag", Slug: "日本"}); got != "http://ex.test/tag/%E6%97%A5%E6%9C%AC/" {
+		t.Errorf("tag link = %s", got)
+	}
+	if got := (&Builder{Home: "http://ex.test"}).TermLink(&store.Term{Taxonomy: "post_tag", Slug: "日本"}); got != "http://ex.test/?tag=%E6%97%A5%E6%9C%AC" {
+		t.Errorf("plain tag link = %s", got)
+	}
+	page := &store.Post{ID: 10, Type: "page", Slug: "hello-world", Status: "publish"}
+	if got := b.Permalink(page); got != "http://ex.test/hello-world/" {
+		t.Errorf("ascii page = %s", got)
+	}
+}

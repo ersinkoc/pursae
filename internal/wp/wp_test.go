@@ -28,6 +28,16 @@ func TestSanitizeTitle(t *testing.T) {
 		"Çılgın Şeyler Öğrendik":   "cilgin-seyler-ogrendik",
 		"  <b>Tags</b> &amp; Co. ": "tags-co",
 		"a -- b":                   "a-b",
+		"Новости":                  "новости",
+		"Привет мир":               "привет-мир",
+		"Ελληνικά Νέα":             "ελληνικά-νέα",
+		"日本語のタイトル":                 "日本語のタイトル",
+		"مرحبا بالعالم":            "مرحبا-بالعالم",
+		"हिन्दी समाचार":            "हिन्दी-समाचार",
+		"%d0%bf%d1%80%d0%b8%d0%b2%d0%b5%d1%82-%d0%bc%d0%b8%d1%80": "привет-мир",
+		"100% pure":    "100-pure",
+		"Café ☕ Crème": "cafe-creme",
+		"!!!":          "",
 	}
 	for in, want := range cases {
 		if got := SanitizeTitle(in); got != want {

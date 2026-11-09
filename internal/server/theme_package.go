@@ -932,6 +932,11 @@ func themeTemplateCandidates(q *siteQuery) []string {
 			return []string{"tag-" + q.Term.Slug, "tag", "archive", "index"}
 		}
 		return []string{"tag", "archive", "index"}
+	case "taxonomy":
+		if q.Term != nil {
+			return []string{"taxonomy-" + q.Term.Taxonomy + "-" + q.Term.Slug, "taxonomy-" + q.Term.Taxonomy, "taxonomy", "archive", "index"}
+		}
+		return []string{"taxonomy", "archive", "index"}
 	case "author":
 		return []string{"author", "archive", "index"}
 	case "date":

@@ -221,6 +221,12 @@ func (s *Server) buildSiteView(c *gin.Context, q *siteQuery) (*siteView, error) 
 		if err != nil {
 			return nil, err
 		}
+		// WP::handle_404(): an empty date archive, or any paged archive past its last page, is a 404
+		// (status, noindex, the Pursae SEO 404 monitor). Page 1 of other archives stays a 200.
+		if len(posts) == 0 && (q.Kind == "date" || q.Paged > 1) {
+			*q = siteQuery{Kind: "404"}
+			return s.buildSiteView(c, q)
+		}
 		s.prefetchPosts(ctx, posts) // the loop's terms, authors, featured images and avatars in one query each
 		for _, p := range posts {
 			pv := s.postView(ctx, c, p, false, lb, u)
@@ -259,6 +265,11 @@ func (s *Server) buildSiteView(c *gin.Context, q *siteQuery) (*siteView, error) 
 				bodyClasses = append(bodyClasses, "category", "category-"+q.Term.Slug, "category-"+itoa64(q.Term.ID))
 			case "tag":
 				bodyClasses = append(bodyClasses, "tag", "tag-"+q.Term.Slug, "tag-"+itoa64(q.Term.ID))
+			case "taxonomy":
+				bodyClasses = append(bodyClasses, "tax", "tax-"+q.Term.Taxonomy, "term-"+q.Term.Slug)
+				if q.Term.ID != 0 {
+					bodyClasses = append(bodyClasses, "term-"+itoa64(q.Term.ID))
+				}
 			case "author":
 				bodyClasses = append(bodyClasses, "author", "author-"+q.Author.Nicename, "author-"+itoa64(q.Author.ID))
 			case "date":
@@ -327,7 +338,7 @@ func (s *Server) multiAuthor(ctx context.Context) (bool, error) {
 
 func (s *Server) archiveBase(q *siteQuery, lb *links.Builder) string {
 	switch q.Kind {
-	case "category", "tag":
+	case "category", "tag", "taxonomy":
 		return lb.TermLink(q.Term)
 	case "author":
 		return lb.AuthorLink(q.Author.ID, q.Author.Nicename)

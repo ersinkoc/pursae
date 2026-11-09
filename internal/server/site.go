@@ -23,7 +23,7 @@ import (
 
 // siteQuery is the parsed main query (WP_Query's query vars and conditionals).
 type siteQuery struct {
-	Kind      string // home, front-page, single, page, category, tag, author, date, search, post-type-archive, 404, feed
+	Kind      string // home, front-page, single, page, category, tag, taxonomy, author, date, search, post-type-archive, 404, feed
 	PostType  string // the post type of a post-type-archive view
 	Post      *store.Post
 	Term      *store.Term
@@ -50,10 +50,12 @@ type siteQuery struct {
 }
 
 var (
-	pagedRe       = regexp.MustCompile(`^(.*?)/?page/(\d+)$`)
-	feedRe        = regexp.MustCompile(`^(.*?)/?feed(?:/(rss2|rss|atom|rdf))?$`)
+	// The keyword has to be a whole path segment, like WordPress' rewrite rules ((.+?)/feed/…, (.+?)/page/…):
+	// "chicken-feed" or "front-page/2" are slugs, not feeds or paged archives.
+	pagedRe       = regexp.MustCompile(`^(?:(.*)/)?page/(\d+)$`)
+	feedRe        = regexp.MustCompile(`^(?:(.*)/)?feed(?:/(rss2|rss|atom|rdf))?$`)
 	dateRe        = regexp.MustCompile(`^(\d{4})(?:/(\d{1,2}))?(?:/(\d{1,2}))?$`)
-	commentPageRe = regexp.MustCompile(`^(.*?)/?comment-page-(\d+)$`)
+	commentPageRe = regexp.MustCompile(`^(?:(.*)/)?comment-page-(\d+)$`)
 	singlePageRe  = regexp.MustCompile(`^(.+)/(\d+)$`)
 )
 
@@ -202,6 +204,23 @@ func (s *Server) resolve(c *gin.Context, path string) (*siteQuery, error) {
 		return nil, errNotFound
 	}
 
+	// "/page/N/" and "/feed/" with no slug before them belong to whatever the query
+	// vars select ("/page/2/?taxonomy=genre&term=fiction" is links.Builder.Paged of a
+	// query-var archive), so apply them before the query-var switch returns.
+	if m := feedRe.FindStringSubmatch(path); m != nil && m[1] == "" {
+		path = ""
+		if q.Feed == "" {
+			q.Feed = "rss2"
+			if m[2] == "atom" {
+				q.Feed = "atom"
+			}
+		}
+	}
+	if m := pagedRe.FindStringSubmatch(path); m != nil && m[1] == "" {
+		path = ""
+		q.Paged, _ = strconv.Atoi(m[2])
+	}
+
 	// Query-var URLs (plain permalinks).
 	switch {
 	case v.Get("p") != "" || v.Get("page_id") != "":
@@ -236,6 +255,20 @@ func (s *Server) resolve(c *gin.Context, path string) (*siteQuery, error) {
 			return nil, errNotFound
 		}
 		q.Kind, q.Author = "author", u
+		return q, nil
+	case v.Get("post_format") != "":
+		t := postFormatTerm(v.Get("post_format"))
+		if t == nil {
+			return nil, errNotFound
+		}
+		q.Kind, q.Term = "taxonomy", t
+		return q, nil
+	case v.Get("taxonomy") != "" && v.Get("term") != "" && siteTaxonomy(v.Get("taxonomy")) != nil:
+		t, err := s.store.TermBySlug(ctx, v.Get("taxonomy"), v.Get("term"))
+		if err != nil {
+			return nil, errNotFound
+		}
+		q.Kind, q.Term = "taxonomy", t
 		return q, nil
 	case path == "" && v.Get("post_type") != "" && siteArchiveType(v.Get("post_type")) != nil:
 		q.Kind, q.PostType = "post-type-archive", v.Get("post_type")
@@ -322,6 +355,13 @@ func (s *Server) resolvePretty(c *gin.Context, q *siteQuery, path string) (*site
 			return nil, errNotFound
 		}
 		q.Kind, q.Term = "tag", t
+		return q, nil
+	case strings.HasPrefix(path, "type/"): // post format archives (the post_format rewrite base)
+		t := postFormatTerm(strings.TrimPrefix(path, "type/"))
+		if t == nil {
+			return nil, errNotFound
+		}
+		q.Kind, q.Term = "taxonomy", t
 		return q, nil
 	case strings.HasPrefix(path, "author/"):
 		u, err := s.store.UserByNicename(ctx, strings.TrimPrefix(path, "author/"))
@@ -622,24 +662,11 @@ func (s *Server) mainPosts(ctx context.Context, q *siteQuery, u *store.User) ([]
 	case "home":
 		// handled below
 	case "category":
-		// Category archives include child categories, like WP_Query's category__in with include_children.
-		ids := []int64{q.Term.ID}
-		all, _ := s.store.HierarchicalTerms(ctx, "category", false)
-		parent := map[int64]int64{}
-		for _, t := range all {
-			parent[t.ID] = t.ParentID
-		}
-		for _, t := range all {
-			for p := t.ParentID; p != 0; p = parent[p] {
-				if p == q.Term.ID {
-					ids = append(ids, t.ID)
-					break
-				}
-			}
-		}
-		pq.TermIDs = ids
+		pq.TermIDs = s.categoryWithDescendants(ctx, q.Term.ID)
 	case "tag":
 		pq.TermIDs = []int64{q.Term.ID}
+	case "taxonomy":
+		s.taxonomyQuery(ctx, q.Term, &pq)
 	case "author":
 		pq.AuthorID = q.Author.ID
 	case "date":
@@ -649,6 +676,9 @@ func (s *Server) mainPosts(ctx context.Context, q *siteQuery, u *store.User) ([]
 	case "search":
 		pq.Types = siteSearchTypes()
 		pq.Search = q.Search
+		// WP_Query::parse_search(): logged-out visitors do not search password-protected posts, or
+		// search would reveal the hidden text word by word.
+		pq.ExcludePassworded = u == nil
 		if q.Search == "" {
 			return nil, 0, perPage, nil
 		}
@@ -659,6 +689,101 @@ func (s *Server) mainPosts(ctx context.Context, q *siteQuery, u *store.User) ([]
 		posts, err = s.prependSticky(ctx, posts, pq)
 	}
 	return posts, total, perPage, err
+}
+
+// taxonomyQuery narrows an archive query to a term of a taxonomy other than category and post_tag:
+// a post format (posts.format) or a term of a public Pursae Custom Fields taxonomy, listing the
+// routed post types the taxonomy is registered for (hierarchical ones include child terms).
+func (s *Server) taxonomyQuery(ctx context.Context, t *store.Term, pq *store.PostQuery) {
+	if t.Taxonomy == "post_format" {
+		pq.Format = strings.TrimPrefix(t.Slug, "post-format-")
+		return
+	}
+	tx := siteTaxonomy(t.Taxonomy)
+	if tx == nil {
+		pq.IDs = []int64{0} // no longer registered: nothing
+		return
+	}
+	var types []string
+	for _, typ := range tx.ObjectTypes {
+		if typ == "post" || typ == "page" || siteCPT(typ) != nil {
+			types = append(types, typ)
+		}
+	}
+	if len(types) == 0 {
+		types = []string{"post"}
+	}
+	pq.Types = types
+	ids := []int64{t.ID}
+	if tx.Hierarchical {
+		all, _ := s.store.HierarchicalTerms(ctx, t.Taxonomy, false)
+		parent := map[int64]int64{}
+		for _, x := range all {
+			parent[x.ID] = x.ParentID
+		}
+		for _, x := range all {
+			for p, n := x.ParentID, 0; p != 0 && n < 100; p, n = parent[p], n+1 {
+				if p == t.ID {
+					ids = append(ids, x.ID)
+					break
+				}
+			}
+		}
+	}
+	pq.TermIDs = ids
+}
+
+// siteTaxonomy is a public taxonomy registered in Pursae Custom Fields that the front end routes
+// (/?taxonomy=…&term=…), or nil. The core and Pursae Commerce taxonomies have their own routes.
+func siteTaxonomy(tax string) *acfgoTaxonomyDef {
+	switch tax {
+	case "", "category", "post_tag", "post_format", "nav_menu", "product_cat", "product_tag":
+		return nil
+	}
+	if strings.HasPrefix(tax, "pa_") {
+		return nil
+	}
+	acfgoRegistry.RLock()
+	tx := acfgoRegistry.taxes[tax]
+	acfgoRegistry.RUnlock()
+	if tx == nil || !tx.Public {
+		return nil
+	}
+	return tx
+}
+
+// postFormatTerm is the post_format term of a format slug ("aside" or "post-format-aside"), or nil for
+// "standard" and unknown formats: post formats live in posts.format, so the term is synthetic (id 0).
+func postFormatTerm(slug string) *store.Term {
+	f := strings.TrimPrefix(strings.Trim(slug, "/"), "post-format-")
+	if f == "standard" || postFormatLabels[f] == "" {
+		return nil
+	}
+	return &store.Term{Taxonomy: "post_format", Slug: "post-format-" + f, Name: postFormatLabels[f]}
+}
+
+// postFormatPlurals are the archive titles of post formats (get_the_archive_title()).
+var postFormatPlurals = map[string]string{"aside": "Asides", "gallery": "Galleries", "image": "Images", "video": "Videos",
+	"quote": "Quotes", "link": "Links", "status": "Statuses", "audio": "Audio", "chat": "Chats"}
+
+// categoryWithDescendants is a category id plus every descendant: category archives and feeds include
+// child categories, like WP_Query's category__in with include_children.
+func (s *Server) categoryWithDescendants(ctx context.Context, id int64) []int64 {
+	ids := []int64{id}
+	all, _ := s.store.HierarchicalTerms(ctx, "category", false)
+	parent := map[int64]int64{}
+	for _, t := range all {
+		parent[t.ID] = t.ParentID
+	}
+	for _, t := range all {
+		for p, n := t.ParentID, 0; p != 0 && n < 100; p, n = parent[p], n+1 {
+			if p == id {
+				ids = append(ids, t.ID)
+				break
+			}
+		}
+	}
+	return ids
 }
 
 // prependSticky moves sticky posts to the top of the first blog page, adding the ones that are not on
@@ -679,7 +804,7 @@ func (s *Server) prependSticky(ctx context.Context, posts []*store.Post, pq stor
 	if len(ids) == 0 {
 		return posts, nil
 	}
-	sticky, _, err := s.store.QueryPosts(ctx, store.PostQuery{IDs: ids, Types: []string{"post"}, Statuses: pq.Statuses, PerPage: -1, Page: 1, Loc: pq.Loc})
+	sticky, _, err := s.store.QueryPosts(ctx, store.PostQuery{IDs: ids, ExcludeID: pq.ExcludeID, Types: []string{"post"}, Statuses: pq.Statuses, PerPage: -1, Page: 1, Loc: pq.Loc})
 	if err != nil {
 		return posts, err
 	}
@@ -823,6 +948,16 @@ func (q *siteQuery) archiveTitle() (string, string) {
 		default:
 			return "Year: <span>" + itoa(q.Year) + "</span>", itoa(q.Year)
 		}
+	case "taxonomy":
+		if q.Term.Taxonomy == "post_format" {
+			t := postFormatPlurals[strings.TrimPrefix(q.Term.Slug, "post-format-")]
+			return html.EscapeString(t), html.EscapeString(t)
+		}
+		label := q.Term.Taxonomy
+		if tx := siteTaxonomy(q.Term.Taxonomy); tx != nil && tx.label("singular_name") != "" {
+			label = tx.label("singular_name")
+		}
+		return html.EscapeString(label) + ": <span>" + html.EscapeString(q.Term.Name) + "</span>", html.EscapeString(q.Term.Name)
 	case "post-type-archive":
 		name := q.PostType
 		if pt := siteCPT(q.PostType); pt != nil && pt.label("name") != "" {

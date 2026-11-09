@@ -348,6 +348,7 @@ func (api *restAPI) listPosts(c *gin.Context, r *restRequest, typ string) {
 		forbidden(c, "rest_forbidden_context", "Sorry, you are not allowed to edit posts in this post type.")
 		return
 	}
+	q.ExcludePassworded = q.Search != "" && u == nil // WP_Query::parse_search() for logged-out requests
 	statuses := strings.Split(c.DefaultQuery("status", "publish"), ",")
 	for _, st := range statuses {
 		if st != "publish" && (u == nil || !u.Can("edit_"+plural, nil)) {
