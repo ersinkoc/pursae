@@ -331,6 +331,11 @@ func (s *Server) wbTemplatePreview(c *gin.Context, location string) (*store.WebB
 	if err != nil || t.Status == "trash" || t.Type == "" || webbuilder.TemplateLocation(t.Type) != location {
 		return nil, 0, false
 	}
+	// The store gate also holds for a previewed main template: a generic type never replaces a
+	// store view (the checkout form), a store type never shows off the store.
+	if q := siteQueryFrom(c); location == webbuilder.LocationMain && q != nil && !webbuilder.StoreGateOK(t.Type, wbFactsOf(q)) {
+		return nil, 0, false
+	}
 	d, err := s.store.WebBuilder().Doc(ctx, id)
 	if err != nil || d.HTML == "" {
 		return nil, 0, false
@@ -470,7 +475,7 @@ func (s *Server) wbTranslatedTerms(ctx context.Context, terms map[string][]int64
 
 // wbFactsOf maps a siteQuery to QueryFacts (no database access).
 func wbFactsOf(q *siteQuery) webbuilder.QueryFacts {
-	f := webbuilder.QueryFacts{Store: q.Store != ""}
+	f := webbuilder.QueryFacts{Store: q.Store != "", StoreKind: q.Store}
 	singular := func(p *store.Post) {
 		f.View, f.PostType, f.PostID, f.ParentID, f.AuthorID = webbuilder.ViewSingular, p.Type, p.ID, p.ParentID, p.AuthorID
 	}
@@ -543,6 +548,12 @@ func (s *Server) wbEditable(u *store.User, p *store.Post) bool {
 		return u.Can(webbuilder.TemplateCap, nil)
 	}
 	return s.wbEnabledType(p.Type) && u.Can("edit_post", p)
+}
+
+// wbTemplateTypeOffered: the store types (single-product, product-archive) exist only while
+// Pursae Commerce is on.
+func (s *Server) wbTemplateTypeOffered(t webbuilder.TemplateType) bool {
+	return !webbuilder.IsStoreTemplate(t) || s.gooOn()
 }
 
 // wbIsTemplate reports whether p is a Theme Builder template.

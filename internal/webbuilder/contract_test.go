@@ -188,6 +188,22 @@ func TestTSThemeBuilderInSync(t *testing.T) {
 	eqList("SLOT_ATTRS", tsList(t, ts, "SLOT_ATTRS"), SlotAttrs)
 	eqList("RESERVED_SINGULAR_WORDS", tsList(t, ts, "RESERVED_SINGULAR_WORDS"), ReservedSingularWords)
 	eqList("RESERVED_ARCHIVE_WORDS", tsList(t, ts, "RESERVED_ARCHIVE_WORDS"), ReservedArchiveWords)
+	eqList("SHOP_SOURCES", tsList(t, ts, "SHOP_SOURCES"), ShopSources)
+	eqList("SHOP_ORDER_BYS", tsList(t, ts, "SHOP_ORDER_BYS"), ShopOrderBys)
+	var shop []string
+	for _, v := range ShopWidgets {
+		shop = append(shop, string(v))
+	}
+	eqList("SHOP_WIDGETS", tsList(t, ts, "SHOP_WIDGETS"), shop)
+	sm := regexp.MustCompile(`(?s)export const STORE_TEMPLATE_KINDS[^=]*= \{(.*?)\n\}`).FindStringSubmatch(ts)
+	if sm == nil {
+		t.Fatal("contract.ts has no STORE_TEMPLATE_KINDS")
+	}
+	for typ, kinds := range StoreTemplateKinds {
+		if !strings.Contains(sm[1], "'"+string(typ)+"': ['"+strings.Join(kinds, "', '")+"']") {
+			t.Errorf("STORE_TEMPLATE_KINDS lacks %s: %v", typ, kinds)
+		}
+	}
 
 	labels := tsObject(t, ts, "TEMPLATE_TYPE_LABELS")
 	starterMap := tsObject(t, ts, "DEFAULT_STARTERS")
@@ -225,7 +241,7 @@ func TestTSThemeBuilderInSync(t *testing.T) {
 	}
 
 	attrs := tsObject(t, ts, "DYN_ATTR")
-	for _, a := range []string{AttrSlot, AttrIf, AttrIfNot, AttrLoop, AttrLoopItem, AttrLoopEmpty, AttrMenuLoc, AttrLoopPart, AttrFormat, AttrSize, AttrTax, AttrSep, AttrWords, AttrSearch} {
+	for _, a := range []string{AttrSlot, AttrIf, AttrIfNot, AttrLoop, AttrLoopItem, AttrLoopEmpty, AttrMenuLoc, AttrLoopPart, AttrFormat, AttrSize, AttrTax, AttrSep, AttrWords, AttrSearch, AttrItem} {
 		found := false
 		for _, v := range attrs {
 			found = found || v == a
@@ -234,12 +250,12 @@ func TestTSThemeBuilderInSync(t *testing.T) {
 			t.Errorf("DYN_ATTR lacks %s", a)
 		}
 	}
-	if len(attrs) != 14 {
-		t.Errorf("DYN_ATTR has %d entries, want 14", len(attrs))
+	if len(attrs) != 15 {
+		t.Errorf("DYN_ATTR has %d entries, want 15", len(attrs))
 	}
 
 	// Regular expressions: the TS literal equals the Go pattern once "\/" is unescaped.
-	for name, want := range map[string]string{"CONDITION_PATTERN": ConditionPattern, "DYN_FORMAT_PATTERN": DynFormatPattern} {
+	for name, want := range map[string]string{"CONDITION_PATTERN": ConditionPattern, "DYN_FORMAT_PATTERN": DynFormatPattern, "SHOP_IDS_PATTERN": ShopIDsPattern} {
 		m := regexp.MustCompile(`export const ` + name + ` =\s*/(.*)/\n`).FindStringSubmatch(ts)
 		if m == nil || strings.ReplaceAll(m[1], `\/`, "/") != want {
 			t.Errorf("contract.ts %s = %v, Go %q", name, m, want)
@@ -259,7 +275,8 @@ func TestTSThemeBuilderInSync(t *testing.T) {
 	}
 	lim := map[string]int{"maxConditions": MaxConditions, "maxConditionBytes": MaxConditionBytes, "priorityMin": PriorityMin, "priorityMax": PriorityMax,
 		"maxPerPage": MaxLoopPerPage, "maxTerms": MaxLoopTerms, "maxOffset": MaxLoopOffset, "maxDepth": MaxLoopDepth, "maxIterations": MaxLoopIterations,
-		"maxSepRunes": MaxDynSepRunes, "maxEmptyRunes": MaxDynEmptyRunes, "minWords": MinDynWords, "maxWords": MaxDynWords}
+		"maxSepRunes": MaxDynSepRunes, "maxEmptyRunes": MaxDynEmptyRunes, "minWords": MinDynWords, "maxWords": MaxDynWords,
+		"maxColumns": MaxShopColumns, "maxLimit": MaxShopLimit, "maxIds": MaxShopIDs}
 	for k, v := range lim {
 		if !regexp.MustCompile(`\b` + k + `: ` + regexp.QuoteMeta(strconv.Itoa(v)) + `\b`).MatchString(ts) {
 			t.Errorf("contract.ts lacks %s: %d", k, v)
@@ -356,7 +373,7 @@ func TestTemplateTypesComplete(t *testing.T) {
 // runtime's menu feature detection (" data-wb-menu=").
 func TestDynAttrNames(t *testing.T) {
 	keep := regexp.MustCompile(`^data-wb-[a-z0-9-]{1,40}$`)
-	for _, a := range []string{AttrSlot, AttrIf, AttrIfNot, AttrLoop, AttrLoopItem, AttrLoopEmpty, AttrMenuLoc, AttrLoopPart, AttrFormat, AttrSize, AttrTax, AttrSep, AttrWords, AttrSearch} {
+	for _, a := range []string{AttrSlot, AttrIf, AttrIfNot, AttrLoop, AttrLoopItem, AttrLoopEmpty, AttrMenuLoc, AttrLoopPart, AttrFormat, AttrSize, AttrTax, AttrSep, AttrWords, AttrSearch, AttrItem} {
 		if !keep.MatchString(a) {
 			t.Errorf("%s would be dropped by the sanitizer", a)
 		}
@@ -365,7 +382,7 @@ func TestDynAttrNames(t *testing.T) {
 		}
 	}
 	for name := range Slots {
-		if !regexp.MustCompile(`^(site|menu|post|archive|search|loop)\.[a-z-]{1,20}$`).MatchString(string(name)) {
+		if !regexp.MustCompile(`^(site|menu|post|archive|search|loop|shop|product)\.[a-z-]{1,20}$`).MatchString(string(name)) {
 			t.Errorf("bad slot name %q", name)
 		}
 	}
@@ -417,7 +434,7 @@ func TestBootThemeBuilderShape(t *testing.T) {
 		}
 	}
 	d, _ := json.Marshal(DynContext{})
-	for _, k := range []string{`"object":`, `"site":`, `"locations":`, `"menus":`, `"view":`, `"post":null`, `"posts":`, `"pagination":`} {
+	for _, k := range []string{`"object":`, `"site":`, `"locations":`, `"menus":`, `"view":`, `"post":null`, `"posts":`, `"pagination":`, `"shop":null`} {
 		if !strings.Contains(string(d), k) {
 			t.Errorf("DynContext lacks %s: %s", k, d)
 		}

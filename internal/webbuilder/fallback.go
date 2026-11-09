@@ -373,7 +373,18 @@ func (f *fallback) layout(s *Section, depth int) {
 			f.section(it.Sub, depth+1, false)
 			continue
 		}
-		if !shown(s, "items."+it.ID+".text") || IsDynWidget(it.Title) {
+		if !shown(s, "items."+it.ID+".text") {
+			continue
+		}
+		switch DynWidget(it.Title) {
+		case DynShopCartPage: // the page keeps working as the store's Cart / Checkout without the builder
+			f.w("[goocommerce_cart]\n")
+			continue
+		case DynShopCheckoutPage:
+			f.w("[goocommerce_checkout]\n")
+			continue
+		}
+		if IsDynWidget(it.Title) {
 			continue // dynamic cells are filled per request
 		}
 		text := strings.TrimSpace(it.Text)

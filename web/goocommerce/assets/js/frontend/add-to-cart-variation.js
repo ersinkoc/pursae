@@ -48,7 +48,7 @@
 		if (this.sku && !this.sku.hasAttribute('data-o_content')) {
 			this.sku.setAttribute('data-o_content', this.sku.textContent);
 		}
-		this.price = product ? product.querySelector('.summary > p.price') : null;
+		this.price = product ? product.querySelector('.summary > p.price, .wb-product-price') : null;
 		var self = this;
 		this.selects.forEach(function (s) {
 			s.addEventListener('change', function () { self.update(); });

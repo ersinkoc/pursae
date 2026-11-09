@@ -508,7 +508,7 @@ export const THEME_BUILDER_PAGE = 'web-builder-templates'
 export const MENU_LOCATION_PRIMARY = 'primary'
 export const MENU_LOCATION_FOOTER = 'footer'
 
-export const TEMPLATE_TYPES = ['header', 'footer', 'single-post', 'single-page', 'single', 'front-page', 'archive', 'search-results', 'error-404'] as const
+export const TEMPLATE_TYPES = ['header', 'footer', 'single-post', 'single-page', 'single', 'single-product', 'front-page', 'archive', 'product-archive', 'search-results', 'error-404'] as const
 export type TemplateType = (typeof TEMPLATE_TYPES)[number]
 
 export const TEMPLATE_TYPE_LABELS: Record<TemplateType, string> = {
@@ -521,7 +521,17 @@ export const TEMPLATE_TYPE_LABELS: Record<TemplateType, string> = {
   archive: 'Archive',
   'search-results': 'Search Results',
   'error-404': '404 Page',
+  'single-product': 'Single Product',
+  'product-archive': 'Product Archive',
 }
+
+/** Main template types of Pursae Commerce store views, with the store view kinds each renders on
+ * (generic main types never render on a store view; the cart, checkout and account get none). */
+export const STORE_TEMPLATE_KINDS: Partial<Record<TemplateType, readonly string[]>> = {
+  'single-product': ['product'],
+  'product-archive': ['shop', 'product_cat', 'product_tag', 'product_attr'],
+}
+export const isStoreTemplate = (t: TemplateType) => t in STORE_TEMPLATE_KINDS
 
 export type TemplateLocation = 'header' | 'main' | 'footer'
 export const templateLocation = (t: TemplateType): TemplateLocation => (t === 'header' ? 'header' : t === 'footer' ? 'footer' : 'main')
@@ -536,9 +546,11 @@ export const DEFAULT_CONDITIONS: Partial<Record<TemplateType, readonly string[]>
   archive: ['include/archive'],
   'search-results': ['include/archive/search'],
   'error-404': ['include/404'],
+  'single-product': ['include/singular/product'],
+  'product-archive': ['include/archive/type/product', 'include/archive/product_cat', 'include/archive/product_tag'],
 }
 
-export const STARTER_IDS = ['blank', 'header', 'footer', 'single', 'archive', 'search'] as const
+export const STARTER_IDS = ['blank', 'header', 'footer', 'single', 'archive', 'search', 'product', 'product-archive'] as const
 export type StarterId = (typeof STARTER_IDS)[number]
 
 export const DEFAULT_STARTERS: Record<TemplateType, StarterId> = {
@@ -551,6 +563,8 @@ export const DEFAULT_STARTERS: Record<TemplateType, StarterId> = {
   archive: 'archive',
   'search-results': 'search',
   'error-404': 'blank',
+  'single-product': 'product',
+  'product-archive': 'product-archive',
 }
 
 /** Display conditions: "<include|exclude>/<scope>", grammar in §11.2. */
@@ -572,6 +586,8 @@ export const DEFAULT_PREVIEWS: Record<TemplateType, PreviewObject> = {
   archive: 'home',
   'search-results': 'search:a',
   'error-404': '404',
+  'single-product': 'latest',
+  'product-archive': 'type:product',
 }
 
 /** PageSettings.layout (upstream PageSettings gains it in patch 0008). '' / absent = defaultPageLayout. */
@@ -585,8 +601,19 @@ export const DYN_WIDGETS = [
   'site-logo', 'site-title', 'site-tagline', 'nav-menu', 'search-form', 'copyright',
   'post-title', 'post-content', 'post-excerpt', 'post-image', 'post-meta', 'post-terms', 'post-date', 'post-author', 'author-box', 'post-nav', 'post-comments',
   'archive-title', 'archive-desc', 'search-query', 'pagination',
+  'language-switcher',
+  'shop-products', 'shop-categories', 'shop-add-to-cart', 'shop-cart', 'shop-mini-cart', 'shop-notices', 'shop-cart-page', 'shop-checkout-page',
+  'product-title', 'product-images', 'product-price', 'product-add-to-cart', 'product-rating', 'product-stock', 'product-meta', 'product-short-desc', 'product-content', 'product-tabs', 'product-related', 'product-upsells', 'product-sale-badge',
+  'shop-archive-products', 'shop-archive-title', 'shop-archive-desc', 'shop-breadcrumb',
 ] as const
 export type DynWidget = (typeof DYN_WIDGETS)[number]
+
+/** Pursae Commerce widgets (contract §11.12); their settings are read from the stored doc via data-wb-item. */
+export const SHOP_WIDGETS = [
+  'shop-products', 'shop-categories', 'shop-add-to-cart', 'shop-cart', 'shop-mini-cart', 'shop-notices', 'shop-cart-page', 'shop-checkout-page',
+  'product-title', 'product-images', 'product-price', 'product-add-to-cart', 'product-rating', 'product-stock', 'product-meta', 'product-short-desc', 'product-content', 'product-tabs', 'product-related', 'product-upsells', 'product-sale-badge',
+  'shop-archive-products', 'shop-archive-title', 'shop-archive-desc', 'shop-breadcrumb',
+] as const satisfies readonly DynWidget[]
 export type CellType = '' | 'heading' | 'text' | 'button' | 'image' | 'layout' | DynWidget
 
 export interface DynSettings {
@@ -612,7 +639,44 @@ export interface DynSettings {
   button?: string
   /** ≤ 200 characters */
   empty?: string
+  /** language-switcher: a select; shop-cart: the mini cart in a disclosure panel */
+  dropdown?: boolean
+  /** language-switcher */
+  flags?: boolean
+  /** language-switcher (default true) */
+  names?: boolean
+  /** language-switcher */
+  hideCurrent?: boolean
+  /** shop-products */
+  source?: (typeof SHOP_SOURCES)[number]
+  /** 1…6 */
+  columns?: number
+  /** 1…24 */
+  limit?: number
+  orderBy?: (typeof SHOP_ORDER_BYS)[number]
+  order?: 'desc' | 'asc'
+  /** product_cat ids, SHOP_IDS_PATTERN */
+  cats?: string
+  /** product_tag ids */
+  tags?: string
+  /** product ids (source 'ids') */
+  ids?: string
+  /** product.* widgets, shop-add-to-cart: a product id; 0 / absent = the current product */
+  product?: number
+  paginate?: boolean
+  showPrice?: boolean
+  hideEmpty?: boolean
+  /** shop-categories: '' every level, '0' top level, or a category id */
+  parent?: string
+  showTotal?: boolean
+  /** product-images: false = the featured image only */
+  gallery?: boolean
 }
+
+export const SHOP_SOURCES = ['recent', 'featured', 'sale', 'best-selling', 'top-rated', 'ids'] as const
+export const SHOP_ORDER_BYS = ['date', 'title', 'price', 'price-desc', 'popularity', 'rating', 'rand', 'menu_order'] as const
+export const SHOP_LIMITS = { maxColumns: 6, maxLimit: 24, maxIds: 24 } as const
+export const SHOP_IDS_PATTERN = /^[1-9][0-9]{0,18}(,[1-9][0-9]{0,18}){0,23}$/
 
 export const DYN_LIMITS = { maxSepRunes: 8, maxEmptyRunes: 200, minWords: 5, maxWords: 100, minRatio: 0.2, maxRatio: 5 } as const
 export const DYN_FORMAT_PATTERN = /^[A-Za-z ,.:/-]{1,32}$/
@@ -660,6 +724,7 @@ export const DYN_ATTR = {
   sep: 'data-wb-sep',
   words: 'data-wb-words',
   search: 'data-wb-search',
+  item: 'data-wb-item',
 } as const
 
 export const CLASS_CURRENT = 'is-current'
@@ -695,6 +760,38 @@ export const SLOTS = {
   'search.query': 'text',
   'search.count': 'text',
   'loop.pagination': 'html',
+  'site.languages': 'html',
+  'shop.archive-title': 'text',
+  'shop.cart-url': 'attr',
+  'shop.checkout-url': 'attr',
+  'shop.products': 'html',
+  'shop.categories': 'html',
+  'shop.archive': 'html',
+  'shop.archive-desc': 'html',
+  'shop.breadcrumb': 'html',
+  'shop.notices': 'html',
+  'shop.cart-count': 'html',
+  'shop.cart-subtotal': 'html',
+  'shop.mini-cart': 'html',
+  'shop.cart-page': 'html',
+  'shop.checkout-page': 'html',
+  'product.title': 'text',
+  'product.on-sale': 'text',
+  'product.sku': 'text',
+  'product.url': 'attr',
+  'product.image': 'attr',
+  'product.gallery': 'html',
+  'product.price': 'html',
+  'product.rating': 'html',
+  'product.short-description': 'html',
+  'product.description': 'html',
+  'product.add-to-cart': 'html',
+  'product.add-to-cart-button': 'html',
+  'product.meta': 'html',
+  'product.stock': 'html',
+  'product.tabs': 'html',
+  'product.related': 'html',
+  'product.upsells': 'html',
 } as const satisfies Record<string, SlotMode>
 export type SlotName = keyof typeof SLOTS
 // HTML attribute names, not UI text. i18n-ignore
@@ -755,6 +852,66 @@ export interface DynContext {
   post: DynPost | null
   posts: DynPost[]
   pagination: { current: number; total: number }
+  /** Pursae Commerce sample data; null (or absent from older servers) while it is off. */
+  shop?: DynShop | null
+  /** Pursae Multi Language languages; [] (or absent) while it is off. */
+  languages?: DynLanguage[] | null
+}
+
+export interface DynLanguage {
+  slug: string
+  name: string
+  /** emoji, '' without one */
+  flag: string
+  url: string
+  current: boolean
+}
+
+export interface DynProduct {
+  id: number
+  /** simple | variable | grouped | external */
+  type: string
+  title: string
+  url: string
+  sku: string
+  /** the store's price markup (trusted) */
+  priceHtml: string
+  onSale: boolean
+  inStock: boolean
+  stockHtml: string
+  rating: number
+  ratingCount: number
+  /** UGC-sanitized */
+  shortHtml: string
+  /** UGC-sanitized */
+  contentHtml: string
+  image: DynImage | null
+  gallery: DynImage[]
+  /** product_cat ids */
+  categories: number[]
+  addToCartText: string
+}
+
+export interface DynProductCat {
+  id: number
+  name: string
+  url: string
+  count: number
+  parent: number
+  image: DynImage | null
+}
+
+export interface DynShop {
+  /** the preview product (single-product template, product doc), null elsewhere */
+  product: DynProduct | null
+  /** newest catalog products, ≤ 24 */
+  products: DynProduct[]
+  /** product_cat, ≤ 100 */
+  categories: DynProductCat[]
+  cart: { count: number; subtotalHtml: string }
+  shopUrl: string
+  cartUrl: string
+  checkoutUrl: string
 }
 
 /* ---------- Boot additions ---------- */

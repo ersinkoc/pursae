@@ -51,7 +51,7 @@ func TestWBTemplateFactsOf(t *testing.T) {
 		got := wbFactsOf(tc.q)
 		if got.View != tc.want.View || got.FrontPage != tc.want.FrontPage || got.Store != tc.want.Store || got.PostType != tc.want.PostType ||
 			got.PostID != tc.want.PostID || got.ParentID != tc.want.ParentID || got.AuthorID != tc.want.AuthorID ||
-			got.Archive != tc.want.Archive || got.Taxonomy != tc.want.Taxonomy || got.TermID != tc.want.TermID {
+			got.Archive != tc.want.Archive || got.Taxonomy != tc.want.Taxonomy || got.TermID != tc.want.TermID || got.StoreKind != tc.q.Store {
 			t.Errorf("%d (%s): %+v, want %+v", i, tc.q.Kind, got, tc.want)
 		}
 	}

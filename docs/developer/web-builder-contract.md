@@ -811,6 +811,8 @@ single template never renders an archive, even with `include/general`.
 | `archive` | Archive | main | archive | `include/archive` | `archive` | `home` |
 | `search-results` | Search Results | main | archive (search only) | `include/archive/search` | `search` | `search:a` |
 | `error-404` | 404 Page | main | 404 | `include/404` | `blank` | `404` |
+| `single-product` | Single Product | main | singular (store product views only) | `include/singular/product` | `product` | `latest` |
+| `product-archive` | Product Archive | main | archive (store shop and product taxonomy views only) | `include/archive/type/product`, `include/archive/product_cat`, `include/archive/product_tag` | `product-archive` | `type:product` |
 
 Views: **singular** = a single post, page or custom post type entry (a static front page too);
 **archive** = the posts index, a term, author, date or post type archive, search results;
@@ -819,11 +821,27 @@ Views: **singular** = a single post, page or custom post type entry (a static fr
 with `include/archive` or `include/general` it never renders a term, date, author or post type
 archive.
 
-Starters (`blank header footer single archive search`, upstream `dynamic/starters.ts`) are loaded
-by the editor when a template's doc is empty; `blank` is an empty doc.
+Starters (`blank header footer single archive search product product-archive`, upstream
+`dynamic/starters.ts`) are loaded by the editor when a template's doc is empty; `blank` is an
+empty doc.
 
-Goocommerce store views (`q.Store`: shop, product, cart, checkout, account) never get a main
-template; header and footer still apply.
+**Store gate** (`StoreTemplateKinds`, `webbuilder.StoreGateOK`): Pursae Commerce store views
+(`q.Store` / `QueryFacts.StoreKind`: `product`, `shop`, `product_cat`, `product_tag`,
+`product_attr`, `cart`, `checkout`, `myaccount`) only take the store main types, and those types
+render nowhere else: `single-product` on `product`, `product-archive` on `shop`, `product_cat`,
+`product_tag` and `product_attr` (the attribute archive needs its own `archive/pa_<x>` rule). A
+generic main type (`single-page`, `archive`, …) never renders on a store view, whatever its
+rules; the cart, checkout and account pages get no main template. Header and footer apply
+everywhere. The gate also holds for `?wb_template_preview`. The two store types are offered (Add
+New, `POST templates`) only while Pursae Commerce is on; otherwise `POST templates` answers 422
+`wb_bad_template`.
+
+**Store pages' own docs**: the shop page, product taxonomy archives (whose synthetic post id is a
+term id), the account page and the cart / checkout pages never render their page's own builder
+doc, so a store page designed in the builder cannot replace the store (and a term id never loads
+the doc of the post with the same id). Exceptions: a single product keeps its own doc (the
+synthetic id is the real product id), and the Cart / Checkout page keeps it when the doc shows
+the `shop-cart-page` / `shop-checkout-page` widget.
 
 ### 11.3 Display conditions
 
@@ -857,8 +875,10 @@ A rule is `<mode>/<scope>`, mode `include` or `exclude`. Scopes:
   express this; the parser (`internal/webbuilder/conditions.go`) rejects them.
 - v1 resolves the taxonomies `category` and `post_tag`, the types `post`, `page` and public
   Pursae Custom Fields types; other names are valid rules that match nothing (custom taxonomy
-  archives and sub-menus come later without a grammar change). `wb_template` and `product`
-  never match.
+  archives and sub-menus come later without a grammar change). With Pursae Commerce on, `product`,
+  `product_cat` and `product_tag` resolve too (`singular/product`, `singular/product/in/product_cat/<id>`,
+  `archive/type/product`, `archive/product_cat[/<id>]`); main templates on store views still pass
+  the store gate (§11.2). `wb_template` never matches.
 - At most **50** rules per template, **200** bytes per rule. An invalid rule answers **422**
   `wb_bad_condition` with `data.errors: ValidationError[]` (`path: /conditions/<i>`,
   `code: bad_condition`). Rules are trimmed; duplicates are dropped, order is kept.
@@ -972,6 +992,7 @@ existing elements with `data-wb-*` attributes, so the sanitizer allowlist of §8
 | `data-wb-loop-part="1/2"` \| `"2/2"` | a `data-wb-menu-loc` list | first / second half of the items (split-logo navs) |
 | `data-wb-format`, `data-wb-size`, `data-wb-tax`, `data-wb-sep`, `data-wb-words` | a slot element | `Item.dyn` values; the server re-validates them (§11.4 rules) |
 | `data-wb-search` | `<form method="get" action="<home>/">` | search form; one `<input type="search" name="s">` |
+| `data-wb-item="<item id>"` | a slot element of a Commerce or language-switcher widget | the cell whose `Item.dyn` the server reads from the **stored** doc (§11.12); an id the doc does not have gets the widget defaults |
 
 The menu binding is **not** `data-wb-menu`: that name is the runtime's disclosure menu
 (`<details data-wb-menu>`, §5) and its feature detection.
@@ -986,7 +1007,8 @@ Slots:
 | Slot | Mode | Value |
 |------|------|-------|
 | `site.title`, `site.tagline` | text | `blogname`, `blogdescription` |
-| `site.url` | attr | `href` = home URL |
+| `site.url` | attr | `href` = the home page in the request language (`links.Front()`: `/fr/` with Pursae Multi Language) |
+| `site.languages` | html | the Pursae Multi Language switcher (§11.12); empty while it is off |
 | `site.logo` | attr | `img` attributes of `custom_logo` (`attachmentImage`) |
 | `site.year` | text | current year in the site time zone |
 | `menu.label` | text | menu item label |
@@ -1010,6 +1032,7 @@ Slots:
 | `search.query` | text | the search query |
 | `search.count` | text | posts found (`v.TotalPosts`) |
 | `loop.pagination` | html | `paginateLinks` of the main query (main loops only) |
+| `shop.*`, `product.*` | text / attr / html | Pursae Commerce widgets, §11.12 |
 
 - `post.*` resolves to the nearest loop item, else the main post on a singular view, else empty.
 - **text** slots replace the element's content with `html.EscapeString(value)`; **html** slots
@@ -1038,6 +1061,8 @@ The editor shows real content, never invented samples. `GET preview-context?obje
 | `post` | DynPost \| null | the singular post |
 | `posts` | DynPost[] | the main query's posts, ≤ 24; on a singular view (which lists none) the recent published entries of its type with the current one, then recent posts when the type is another one, ≤ 24 per type |
 | `pagination` | `{current, total}` | |
+| `shop` | DynShop \| null | Pursae Commerce sample (§11.12); `null` while it is off. Optional for the editor (older servers omit it) |
+| `languages` | `{slug, name, flag, url, current}[]` | Pursae Multi Language languages with the object's URL in each; `[]` while it is off |
 
 DynPost: `{id, type, title, url, excerpt, contentHtml, date, dateText, modified, modifiedText,
 author: {name, url, avatar, bio}, image: DynImage | null, terms: Record<tax, {name, url}[]>,
@@ -1059,7 +1084,11 @@ Preview objects (≤ 200 bytes):
 | `front` | the site's front page (`/`) |
 | `home` | the posts index (`is_home`) |
 | `404` | the 404 view |
-| `latest` | template-relative: single-post → newest post; single-page → static front page, else newest page; single → newest entry of the template's post type (its first `include/singular/<ptype>` rule); elsewhere `front` |
+| `latest` | template-relative: single-post → newest post; single-page → static front page, else newest page; single → newest entry of the template's post type (its first `include/singular/<ptype>` rule); single-product → newest product; elsewhere `front` |
+
+With Pursae Commerce on, `post:<product id>` resolves to the store's product view, `type:product`
+to the shop and `term:product_cat:<id>` / `term:product_tag:<id>` to the product taxonomy
+archives (labels "Product: X", "Shop", "Product category: X", "Product tag: X").
 
 A malformed object answers **422** `wb_bad_preview`; one that names nothing answers **404**
 `wb_not_found`.
@@ -1081,8 +1110,9 @@ A malformed object answers **422** `wb_bad_preview`; one that names nothing answ
 menus, themeParts, postTypes: {slug, label, archive, hierarchical}[], taxonomies: {slug, label,
 types}[]}`. `themeParts` is true while Hello Pursae is active (pages may then use
 `layout: 'site'`); `postTypes` lists the viewable types (post, page, public custom types; never
-`wb_template`, `product`), `archive` is the archive URL or `""`; `taxonomies` is `category` and
-`post_tag` in v1.
+`wb_template`), `archive` is the archive URL or `""`; `taxonomies` is `category` and
+`post_tag`. With Pursae Commerce on, `postTypes` also has `product` (archive = the shop URL) and
+`taxonomies` `product_cat` and `product_tag` (types `["product"]`).
 
 For a template: `links.exit` = the Theme Builder screen, `links.preview` and `links.permalink` =
 `template.preview.url`, `links.editPost` = `""`, `caps.publish` = `edit_theme_options` (true).
@@ -1181,6 +1211,64 @@ Where the design left a choice, the contract fixed it as follows:
 - `SiteBoot.postTypes[].hierarchical` tells the conditions dialog where `child_of` applies.
 - `loop` joins the accepted section kinds together with its validation (package TA); until then
   the Go `SectionKinds` list, and so validation, is unchanged.
+- Commerce widgets are dynamic cells whose settings the server reads from the stored doc by
+  `data-wb-item` (never from snapshot attributes), and whose markup is the store's own (the
+  snapshot carries no store forms; the sanitizer would strip them anyway).
+- A product's own builder doc is kept on its product view; every other store page's doc is not,
+  except the Cart / Checkout page with its cart / checkout widget (§11.2).
 - TS: the doc model additions (`DynSettings`, `CellType`, `LoopContent`, `PageLayout`) are
   declared in `host/contract.ts` until patch 0008 adds the same shapes to upstream `types.ts`;
   from then on they must stay identical.
+
+### 11.12 Commerce and language widgets
+
+Patch `0015-commerce.patch`. Dynamic widgets (§11.4) whose slot elements carry
+`data-wb-item="<cell id>"`; the server reads that cell's `Item.dyn` from the **stored** doc
+(`wbCellDefs`, cached per doc revision) and fills every slot with Pursae Commerce's own markup
+(`internal/server/webbuilder_shop.go`). All of them render empty while Pursae Commerce (or, for
+the switcher, Pursae Multi Language) is off. Widget panel groups: `site` (language switcher),
+`shop` and `product` (any page, while Commerce is on: a product widget can show a chosen
+product), `shop-archive` (templates only).
+
+| Widget | Group | Slots | Settings (`Item.dyn`) |
+|--------|-------|-------|-----------------------|
+| `language-switcher` | site | `site.languages` | `dropdown`, `flags`, `names` (default true), `hideCurrent` |
+| `shop-products` | shop | `shop.products` (`[products]`) | `source` (`recent featured sale best-selling top-rated ids`), `columns` 1…6 (4), `limit` 1…24 (8), `orderBy` (`date title price price-desc popularity rating rand menu_order`), `order`, `cats`, `tags`, `ids`, `paginate` |
+| `shop-categories` | shop | `shop.categories` (`[product_categories]`) | `columns`, `limit`, `hideEmpty` (true), `parent` (`""` all, `"0"` top level, or an id), `cats` |
+| `shop-add-to-cart` | shop | `product.add-to-cart-button`, `product.price` | `product`, `showPrice` |
+| `shop-cart` | shop | `shop.cart-url`, `shop.cart-count`, `shop.cart-subtotal`, `shop.mini-cart` | `showTotal`, `dropdown` (mini cart in a `<details data-wb-menu>` panel, default true) |
+| `shop-mini-cart` | shop | `shop.mini-cart` | |
+| `shop-notices` | shop | `shop.notices` | |
+| `shop-cart-page`, `shop-checkout-page` | shop | `shop.cart-page`, `shop.checkout-page` | rendered only on the Cart / Checkout store view (no-store responses); the fallback HTML is `[goocommerce_cart]` / `[goocommerce_checkout]` |
+| `product-title` | product | `product.title`, `product.url` | `product`, `tag`, `link` |
+| `product-images` | product | `product.gallery`, or `product.image` (+ `data-wb-size`) with `gallery: false` | `product`, `gallery`, `size` |
+| `product-price`, `product-add-to-cart`, `product-rating`, `product-stock`, `product-meta`, `product-short-desc`, `product-content`, `product-tabs`, `product-related`, `product-upsells`, `product-sale-badge` | product | `product.price`, `.add-to-cart`, `.rating`, `.stock`, `.meta`, `.short-description`, `.description`, `.tabs`, `.related`, `.upsells`, `.on-sale` | `product` |
+| `shop-archive-products`, `shop-archive-title`, `shop-archive-desc`, `shop-breadcrumb` | shop-archive | `shop.archive` (the store's own archive markup of the view, no second query), `shop.archive-title`, `shop.archive-desc`, `shop.breadcrumb` | `tag` (title) |
+
+Slot modes: text `shop.archive-title product.title product.on-sale product.sku`; attr
+`shop.cart-url shop.checkout-url product.url product.image`; every other `shop.*` / `product.*`
+slot and `site.languages` is html (generated by the store or the switcher, localized with the
+store's strings).
+
+- **Product resolution** (`product.*`): `dyn.product` (an id, mapped to its translation in the
+  request language; only a published, non-variation product the visitor may see, Memberships
+  included), else the product being viewed (store product view), else empty.
+- **Ids** (`cats`, `tags`, `ids`): `^[1-9][0-9]{0,18}(,[1-9][0-9]{0,18}){0,23}$` (`SHOP_IDS_PATTERN`),
+  at most 24; category and tag ids are mapped to the request language.
+- **Single product views**: the main part (template or the product's own doc) is wrapped in
+  `div.woocommerce.wb-shop > div#product-<id>.<product classes>` (gallery, tabs and variation
+  scripts look for it); notices the store body already took are printed before it unless
+  `shop-notices` shows them. On archive views `shop.archive` carries them.
+- **Assets**: a part with a store slot other than the cart icon's (`shop.cart-url`,
+  `shop.checkout-url`, `shop.cart-count`, `shop.cart-subtotal`) prints the store's stylesheets and
+  scripts (canvas: through `wp_head`/`wp_footer`; Hello Pursae: added after the parts are filled).
+- **Cache**: parts that show catalog data add the cache tag `goo:shop` (purged on product saves).
+  Cart slots render the visitor's cart: cart holders bypass Pursae Cache and `cart-fragments.js`
+  refreshes `[data-goo-cart-count]` / `[data-goo-cart-subtotal]` on cached pages (fragments
+  `span.goo-cart-count`, `span.goo-cart-subtotal`).
+- **DynShop** (`DynContext.shop`): `{product: DynProduct | null, products: DynProduct[] (≤ 24
+  newest catalog products), categories: {id, name, url, count, parent, image}[] (≤ 100), cart:
+  {count, subtotalHtml}, shopUrl, cartUrl, checkoutUrl}`. DynProduct: `{id, type, title, url, sku,
+  priceHtml, onSale, inStock, stockHtml, rating, ratingCount, shortHtml, contentHtml, image,
+  gallery, categories: number[], addToCartText}`; `shortHtml`, `contentHtml` and `gallery` only
+  for the preview product.

@@ -44,8 +44,8 @@ const (
 	ArchivePostType = "type"   // a post type archive (QueryFacts.PostType)
 )
 
-// neverMatchTypes are post types no rule ever matches (templates themselves, store products).
-var neverMatchTypes = map[string]bool{TemplatePostType: true, "product": true}
+// neverMatchTypes are post types no rule ever matches (templates themselves).
+var neverMatchTypes = map[string]bool{TemplatePostType: true}
 
 var (
 	reservedSingular = toSet(ReservedSingularWords)
@@ -300,7 +300,8 @@ func (c Condition) Score() int {
 type QueryFacts struct {
 	View      string // ViewSingular, ViewArchive or View404
 	FrontPage bool   // is_front_page: the static front page, or the posts index on the front
-	Store     bool   // a Pursae Commerce store view: no main template
+	Store     bool   // a Pursae Commerce store view: only store main templates (StoreTemplateKinds)
+	StoreKind string // the store view kind (siteQuery.Store: product, shop, product_cat, …; "" off the store)
 
 	// Singular: the entry. Post type archive: PostType is the archived type.
 	PostType string
@@ -507,7 +508,7 @@ func TemplateScore(c *TemplateCandidate, q QueryFacts) (int, bool) {
 	if !ViewAllowed(c.Type, q.View) || (q.View == ViewArchive && !ArchiveAllowed(c.Type, q.Archive)) {
 		return 0, false
 	}
-	if q.Store && TemplateLocation(c.Type) == LocationMain {
+	if !StoreGateOK(c.Type, q) {
 		return 0, false
 	}
 	s, ok := ScoreConditions(c.Conditions, q)
@@ -518,6 +519,20 @@ func TemplateScore(c *TemplateCandidate, q QueryFacts) (int, bool) {
 		s += SearchTypeBonus
 	}
 	return s, true
+}
+
+// StoreGateOK is the store gate of main templates: generic main types never render on a Pursae
+// Commerce store view, store types (StoreTemplateKinds) only on their store view kinds. Header
+// and footer templates render everywhere.
+func StoreGateOK(t TemplateType, q QueryFacts) bool {
+	if TemplateLocation(t) != LocationMain {
+		return true
+	}
+	kinds, storeType := StoreTemplateKinds[t]
+	if !storeType {
+		return !q.Store
+	}
+	return q.Store && slices.Contains(kinds, q.StoreKind)
 }
 
 // PickTemplate returns the index of the winning candidate for location (LocationHeader,
@@ -560,6 +575,9 @@ func beats(a *TemplateCandidate, as int, b *TemplateCandidate, bs int) bool {
 func TemplatesConflict(a, b *TemplateCandidate) bool {
 	if a.ID == b.ID || TemplateLocation(a.Type) != TemplateLocation(b.Type) {
 		return false
+	}
+	if TemplateLocation(a.Type) == LocationMain && IsStoreTemplate(a.Type) != IsStoreTemplate(b.Type) {
+		return false // a store type and a generic type never render on the same view
 	}
 	for _, view := range []string{ViewSingular, ViewArchive, View404} {
 		if !ViewAllowed(a.Type, view) || !ViewAllowed(b.Type, view) {

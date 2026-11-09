@@ -133,7 +133,7 @@ func (s *Server) wbEditorButton(c *gin.Context, p *store.Post, block bool) {
 // wbAdminBarNode is the site toolbar's "Edit with Pursae Web Builder" on a builder page: the
 // singular post of the view has a builder document and the user may edit it.
 func (s *Server) wbAdminBarNode(c *gin.Context, q *siteQuery, u *store.User) string {
-	if q == nil || q.Post == nil || !s.wbCanBuild(u, q.Post) || !s.wbDocIDs(c.Request.Context(), []int64{q.Post.ID})[q.Post.ID] {
+	if q == nil || q.Post == nil || wbStoreView(q) || !s.wbCanBuild(u, q.Post) || !s.wbDocIDs(c.Request.Context(), []int64{q.Post.ID})[q.Post.ID] {
 		return ""
 	}
 	return `<li role='group' id='wp-admin-bar-web_builder_edit_page'><a class='ab-item' role="menuitem" href='` +

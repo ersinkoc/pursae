@@ -3,6 +3,7 @@ package webbuilder
 import (
 	"fmt"
 	"math"
+	"regexp"
 	"strconv"
 	"strings"
 	"unicode/utf8"
@@ -21,6 +22,43 @@ var dynWidgetSet = func() map[string]bool {
 
 // IsDynWidget reports whether a layout cell type (Item.Title) is a dynamic widget.
 func IsDynWidget(cell string) bool { return dynWidgetSet[cell] }
+
+var shopWidgetSet = func() map[string]bool {
+	m := map[string]bool{}
+	for _, w := range ShopWidgets {
+		m[string(w)] = true
+	}
+	return m
+}()
+
+// IsShopWidget reports whether a layout cell type is a Pursae Commerce widget (ShopWidgets).
+func IsShopWidget(cell string) bool { return shopWidgetSet[cell] }
+
+// IsItemWidget reports whether the server reads a cell's settings from the stored doc through
+// data-wb-item (Commerce widgets and the language switcher).
+func IsItemWidget(cell string) bool {
+	return shopWidgetSet[cell] || cell == string(DynLanguageSwitcher)
+}
+
+var shopIDsRE = regexp.MustCompile(ShopIDsPattern)
+
+// ParseShopIDs parses a ShopIDsPattern list (nil when empty or invalid; at most max ids).
+func ParseShopIDs(s string, max int) []int64 {
+	if s == "" || !shopIDsRE.MatchString(s) {
+		return nil
+	}
+	parts := strings.Split(s, ",")
+	if len(parts) > max {
+		parts = parts[:max]
+	}
+	out := make([]int64, 0, len(parts))
+	for _, p := range parts {
+		if id, ok := parseID(p); ok {
+			out = append(out, id)
+		}
+	}
+	return out
+}
 
 // IsCellType reports whether cell is a known layout cell type (static or dynamic).
 func IsCellType(cell string) bool {
@@ -277,5 +315,26 @@ func (v *validator) dyn(d *DynSettings, path string) {
 	}
 	if utf8.RuneCountInString(d.Empty) > MaxDynEmptyRunes {
 		v.add(ptr(path, "empty"), VErrTooLong, fmt.Sprintf("longer than %d characters", MaxDynEmptyRunes))
+	}
+	v.enum(ptr(path, "source"), "shopSource", d.Source)
+	v.enum(ptr(path, "orderBy"), "shopOrderBy", d.OrderBy)
+	v.enum(ptr(path, "order"), "loopOrder", d.Order)
+	num := func(key string, f *float64, lo, hi float64) {
+		if f != nil && *f != 0 && (math.IsNaN(*f) || *f < lo || *f > hi || *f != math.Trunc(*f)) {
+			v.add(ptr(path, key), VErrEnum, fmt.Sprintf("%s must be a whole number %v…%v", key, lo, hi))
+		}
+	}
+	num("columns", d.Columns, 1, MaxShopColumns)
+	num("limit", d.Limit, 1, MaxShopLimit)
+	num("product", d.Product, 1, 9e15)
+	for key, ids := range map[string]string{"cats": d.Cats, "tags": d.Tags, "ids": d.IDs} {
+		if ids != "" && !shopIDsRE.MatchString(ids) {
+			v.add(ptr(path, key), VErrEnum, fmt.Sprintf("%s must be up to %d comma-separated ids", key, MaxShopIDs))
+		}
+	}
+	if d.Parent != "" && d.Parent != "0" {
+		if _, ok := parseID(d.Parent); !ok {
+			v.add(ptr(path, "parent"), VErrEnum, `parent must be "", "0" or a category id`)
+		}
 	}
 }

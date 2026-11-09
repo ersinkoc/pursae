@@ -64,6 +64,13 @@
 				el.textContent = count.textContent;
 			});
 		}
+		// Web Builder cart widgets mark the subtotal with data-goo-cart-subtotal: set its price markup.
+		var subtotal = fragments['span.goo-cart-subtotal'] && store.html(fragments['span.goo-cart-subtotal']);
+		if (subtotal) {
+			document.querySelectorAll('[data-goo-cart-subtotal]').forEach(function (el) {
+				el.innerHTML = subtotal.innerHTML;
+			});
+		}
 		store.trigger('wc_fragments_loaded', { fragments: fragments });
 	};
 
@@ -121,7 +128,7 @@
 	function init() {
 		var hasItems = store.cookie(params.items_cookie || 'goocommerce_items_in_cart') !== '';
 		var hash = store.cookie(params.hash_cookie || 'goocommerce_cart_hash');
-		var needs = document.querySelector('.widget_shopping_cart_content, a.cart-contents, .goo-cart-count');
+		var needs = document.querySelector('.widget_shopping_cart_content, a.cart-contents, .goo-cart-count, [data-goo-cart-count], [data-goo-cart-subtotal]');
 		if (!needs) {
 			return;
 		}

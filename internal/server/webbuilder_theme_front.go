@@ -55,8 +55,9 @@ func (s *Server) wbThemeParts(c *gin.Context, v *siteView) *wbThemeParts {
 	q := v.Q
 	out := &wbThemeParts{view: &wbThemePartsView{}}
 	var main *wbPart
-	// A main template previewed by ?wb_template_preview=<id> wins even over the post's own doc.
-	if q.Store == "" && s.wbTemplatePreviewing(c) {
+	// A main template previewed by ?wb_template_preview=<id> wins even over the post's own doc
+	// (wbTemplatePreview applies the store gate: a store view only shows a store type).
+	if s.wbTemplatePreviewing(c) {
 		if d, id, ok := s.wbTemplatePreview(c, webbuilder.LocationMain); ok {
 			main = &wbPart{loc: webbuilder.LocationMain, id: id, template: true, doc: d}
 		}
@@ -76,7 +77,9 @@ func (s *Server) wbThemeParts(c *gin.Context, v *siteView) *wbThemeParts {
 			out.canvas = webbuilder.EffectivePageLayout(ps, &ds) == webbuilder.PageLayoutCanvas
 		}
 	}
-	if main == nil && q.Store == "" {
+	// Store views take only store types (single-product, product-archive: the store gate of
+	// webbuilder.TemplateScore); the cart, checkout and account pages none.
+	if main == nil {
 		if d, id := s.wbPickTemplate(c, webbuilder.LocationMain, q); d != nil {
 			main = &wbPart{loc: webbuilder.LocationMain, id: id, template: true, doc: d}
 		}
@@ -115,6 +118,11 @@ func (s *Server) wbThemeParts(c *gin.Context, v *siteView) *wbThemeParts {
 			if !p.template { // the page's own doc: Multi Language user content (golylang_uc.go)
 				h = template.HTML(s.pllUC(c, p.filled.html, p.id))
 			}
+			if fv := gooViewFrom(c); fv != nil && fv.Kind == webbuilder.StoreKindProduct && fv.Product != nil && q.Store == webbuilder.StoreKindProduct {
+				h = template.HTML(s.wbProductWrap(c, fv.Product, string(h)))
+			} else if p.template && wbStoreArchive(fv) && q.Store != "" {
+				h = template.HTML(s.wbArchiveNotices(c, string(h)))
+			}
 			if p.draftNewer {
 				h = template.HTML(wbDraftNotice(s, c)) + h
 			}
@@ -132,6 +140,7 @@ func (s *Server) wbThemeParts(c *gin.Context, v *siteView) *wbThemeParts {
 // wbRenderTheme renders the request with Hello Pursae and its Theme Builder parts. false (nothing
 // written) when no location has a part: the theme renders the view as usual.
 func (s *Server) wbRenderTheme(c *gin.Context, v *siteView, status int) bool {
+	wasStore := s.gooIsStorePage(c, v.Q) // the head and footer already carry the store assets
 	tp := s.wbThemeParts(c, v)
 	if tp == nil {
 		return false
@@ -142,7 +151,7 @@ func (s *Server) wbRenderTheme(c *gin.Context, v *siteView, status int) bool {
 	var fonts []webbuilder.FontNeed
 	feats := map[string]bool{}
 	var css strings.Builder
-	loops := false
+	loops, shop, catalog := false, false, false
 	var bodies []string
 	for _, p := range tp.parts {
 		var needs []webbuilder.FontNeed
@@ -160,6 +169,8 @@ func (s *Server) wbRenderTheme(c *gin.Context, v *siteView, status int) bool {
 			return err == nil && post.Status == "publish" && post.Password == ""
 		}))
 		loops = loops || p.filled.loops
+		shop = shop || p.filled.shop
+		catalog = catalog || p.filled.catalog
 		bodies = append(bodies, p.filled.html)
 	}
 	site, err := s.wbSiteAssets()
@@ -174,6 +185,12 @@ func (s *Server) wbRenderTheme(c *gin.Context, v *siteView, status int) bool {
 		head.WriteString("<script>document.documentElement.classList.add('" + webbuilder.ClassJS + "')</script>\n")
 	}
 	head.WriteString(string(v.Head))
+	// Commerce widgets on a page that is not a store view: the store's styles and scripts
+	// (wp_head and wp_footer ran before the parts were filled).
+	storeAssets := shop && !wasStore && s.gooOn()
+	if storeAssets {
+		head.WriteString(gooStyleTags())
+	}
 	if site.CSS != "" {
 		fmt.Fprintf(&head, "<link rel='stylesheet' id='web-builder-css' href='%s' media='all' />\n",
 			html.EscapeString(lb.HomeURL(webbuilder.SiteAssetsPath+site.CSS)))
@@ -185,6 +202,9 @@ func (s *Server) wbRenderTheme(c *gin.Context, v *siteView, status int) bool {
 	}
 	head.WriteString(css.String())
 	v.Head = template.HTML(head.String())
+	if storeAssets {
+		v.Footer += template.HTML(s.gooStoreScripts(c, v.Q))
+	}
 	if runtime {
 		v.Footer += template.HTML(fmt.Sprintf("<script defer src=\"%s\" id=\"web-builder-runtime-js\"></script>\n",
 			html.EscapeString(lb.HomeURL(webbuilder.SiteAssetsPath+site.Runtime))))
@@ -194,6 +214,9 @@ func (s *Server) wbRenderTheme(c *gin.Context, v *siteView, status int) bool {
 	}
 	wbEmbedCSP(c, strings.Join(bodies, "\n"))
 	wbAddCacheTags(c, true, loops)
+	if catalog {
+		wbAddTags(c, "goo:shop")
+	}
 	s.renderSiteTemplate(c, v, status)
 	return true
 }
@@ -207,9 +230,30 @@ func wbAddCacheTags(c *gin.Context, theme, loops bool) {
 	if loops {
 		add = append(add, webbuilder.CacheTagLoop)
 	}
+	wbAddTags(c, add...)
+}
+
+// wbAddTags adds cache tags to the response (once each).
+func wbAddTags(c *gin.Context, add ...string) {
 	if len(add) == 0 {
 		return
 	}
+	cur0 := c.Writer.Header().Get(cache.HeaderTags)
+	have := map[string]bool{}
+	for _, t := range strings.Split(cur0, ",") {
+		have[strings.TrimSpace(t)] = true
+	}
+	var fresh []string
+	for _, t := range add {
+		if !have[t] {
+			have[t] = true
+			fresh = append(fresh, t)
+		}
+	}
+	if len(fresh) == 0 {
+		return
+	}
+	add = fresh
 	cur := c.Writer.Header().Get(cache.HeaderTags)
 	if cur != "" {
 		cur += ","

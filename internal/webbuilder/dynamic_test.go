@@ -329,12 +329,12 @@ func TestDynamicMenu(t *testing.T) {
 
 func TestDynamicSlotArgs(t *testing.T) {
 	r := &fakeResolver{}
-	run(t, `<div><span data-wb-slot="post.date" data-wb-format="j F Y" data-wb-size="large" data-wb-tax="post_tag" data-wb-sep=" · " data-wb-words="20"></span>`+
-		`<span data-wb-slot="post.date" data-wb-format="&lt;script&gt;" data-wb-size="huge" data-wb-tax="Bad Tax" data-wb-sep="123456789" data-wb-words="500"></span></div>`, r)
+	run(t, `<div><span data-wb-slot="post.date" data-wb-format="j F Y" data-wb-size="large" data-wb-tax="post_tag" data-wb-sep=" · " data-wb-words="20" data-wb-item="c-1_x"></span>`+
+		`<span data-wb-slot="post.date" data-wb-format="&lt;script&gt;" data-wb-size="huge" data-wb-tax="Bad Tax" data-wb-sep="123456789" data-wb-words="500" data-wb-item="bad id!"></span></div>`, r)
 	if len(r.args) != 2 {
 		t.Fatalf("args %v", r.args)
 	}
-	if got := r.args[0]; got != (SlotArgs{Tag: "span", Format: "j F Y", Size: "large", Tax: "post_tag", Sep: " · ", Words: 20}) {
+	if got := r.args[0]; got != (SlotArgs{Tag: "span", Format: "j F Y", Size: "large", Tax: "post_tag", Sep: " · ", Words: 20, Item: "c-1_x"}) {
 		t.Errorf("valid args %+v", got)
 	}
 	if got := r.args[1]; got != (SlotArgs{Tag: "span"}) {

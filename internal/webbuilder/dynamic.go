@@ -46,6 +46,7 @@ type SlotArgs struct {
 	Tax    string // data-wb-tax, SlugPattern; "" = category
 	Sep    string // data-wb-sep, ≤ MaxDynSepRunes runes; "" = the resolver's default
 	Words  int    // data-wb-words, MinDynWords…MaxDynWords; 0 = not set
+	Item   string // data-wb-item, IDPattern: the cell whose stored DynSettings apply; "" = none
 }
 
 // Resolver supplies slot values for one scope (the request, a loop item or a menu item). Item
@@ -92,6 +93,16 @@ type SlotSet map[SlotName]bool
 
 // Has reports whether the set contains slot.
 func (s SlotSet) Has(slot SlotName) bool { return s[slot] }
+
+// HasPrefix reports whether the set contains a slot whose name starts with p ("shop.").
+func (s SlotSet) HasPrefix(p string) bool {
+	for k := range s {
+		if strings.HasPrefix(string(k), p) {
+			return true
+		}
+	}
+	return false
+}
 
 // Program is a compiled snapshot. It is immutable and safe for concurrent Exec.
 type Program struct {
@@ -389,7 +400,7 @@ func (c *compiler) roleSeg(n *html.Node, role segRole) seg {
 	return seg{el: c.element(n), role: role}
 }
 
-// slotArgs reads and validates the data-wb-format|size|tax|sep|words settings of n.
+// slotArgs reads and validates the data-wb-format|size|tax|sep|words|item settings of n.
 func slotArgs(n *html.Node) SlotArgs {
 	a := SlotArgs{Tag: strings.ToLower(n.Data)}
 	if v, ok := getAttr(n, AttrFormat); ok && dynFormatRE.MatchString(v) {
@@ -403,6 +414,9 @@ func slotArgs(n *html.Node) SlotArgs {
 	}
 	if v, ok := getAttr(n, AttrSep); ok && utf8.ValidString(v) && utf8.RuneCountInString(v) <= MaxDynSepRunes {
 		a.Sep = v
+	}
+	if v, ok := getAttr(n, AttrItem); ok && idPatternRE.MatchString(v) {
+		a.Item = v
 	}
 	if v, ok := getAttr(n, AttrWords); ok {
 		if w, err := strconv.Atoi(strings.TrimSpace(v)); err == nil && w >= MinDynWords && w <= MaxDynWords {

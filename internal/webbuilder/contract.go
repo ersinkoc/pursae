@@ -1004,16 +1004,47 @@ const (
 	TemplateArchive    TemplateType = "archive"
 	TemplateSearch     TemplateType = "search-results"
 	Template404        TemplateType = "error-404"
+	// Pursae Commerce store views (StoreTemplateKinds); offered only while Pursae Commerce is on.
+	TemplateSingleProduct  TemplateType = "single-product"
+	TemplateProductArchive TemplateType = "product-archive"
 )
 
 // TemplateTypes in display order (Theme Builder tabs, Add New select).
-var TemplateTypes = []TemplateType{TemplateHeader, TemplateFooter, TemplateSinglePost, TemplateSinglePage, TemplateSingle, TemplateFrontPage, TemplateArchive, TemplateSearch, Template404}
+var TemplateTypes = []TemplateType{TemplateHeader, TemplateFooter, TemplateSinglePost, TemplateSinglePage, TemplateSingle, TemplateSingleProduct, TemplateFrontPage, TemplateArchive, TemplateProductArchive, TemplateSearch, Template404}
 
 // TemplateTypeLabels are the English UI labels (the admin and the editor badge).
 var TemplateTypeLabels = map[TemplateType]string{
 	TemplateHeader: "Header", TemplateFooter: "Footer", TemplateSinglePost: "Single Post",
 	TemplateSinglePage: "Single Page", TemplateSingle: "Single", TemplateFrontPage: "Front Page",
 	TemplateArchive: "Archive", TemplateSearch: "Search Results", Template404: "404 Page",
+	TemplateSingleProduct: "Single Product", TemplateProductArchive: "Product Archive",
+}
+
+// StoreTemplateKinds are the main template types that render on Pursae Commerce store views, with
+// the store view kinds (QueryFacts.StoreKind: siteQuery.Store) each may render on. Every other
+// main type never renders on a store view, and these types never render anywhere else; the cart,
+// checkout and account pages get no main template.
+var StoreTemplateKinds = map[TemplateType][]string{
+	TemplateSingleProduct:  {StoreKindProduct},
+	TemplateProductArchive: {StoreKindShop, StoreKindProductCat, StoreKindProductTag, StoreKindProductAttr},
+}
+
+// Store view kinds (siteQuery.Store) of the Pursae Commerce front.
+const (
+	StoreKindProduct     = "product"
+	StoreKindShop        = "shop"
+	StoreKindProductCat  = "product_cat"
+	StoreKindProductTag  = "product_tag"
+	StoreKindProductAttr = "product_attr"
+	StoreKindCart        = "cart"
+	StoreKindCheckout    = "checkout"
+	StoreKindAccount     = "myaccount"
+)
+
+// IsStoreTemplate reports whether t is a store main template type (StoreTemplateKinds).
+func IsStoreTemplate(t TemplateType) bool {
+	_, ok := StoreTemplateKinds[t]
+	return ok
 }
 
 // Template locations: header and footer types fill their own location, every other type fills
@@ -1055,13 +1086,17 @@ var TemplateTypeViews = map[TemplateType][]string{
 	TemplateArchive:    {ViewArchive},
 	TemplateSearch:     {ViewArchive},
 	Template404:        {View404},
+
+	TemplateSingleProduct:  {ViewSingular},
+	TemplateProductArchive: {ViewArchive},
 }
 
 // TemplateTypeArchives narrows the archive view gate: a type listed here renders on the archive
 // view only for these archive kinds (QueryFacts.Archive). search-results never renders a term,
 // date, author or post type archive, whatever its rules say.
 var TemplateTypeArchives = map[TemplateType][]string{
-	TemplateSearch: {ArchiveSearch},
+	TemplateSearch:         {ArchiveSearch},
+	TemplateProductArchive: {ArchivePostType, ArchiveTerm},
 }
 
 // DefaultConditions are written when a template is created. TemplateSingle has none here: its
@@ -1075,6 +1110,9 @@ var DefaultConditions = map[TemplateType][]string{
 	TemplateArchive:    {"include/archive"},
 	TemplateSearch:     {"include/archive/search"},
 	Template404:        {"include/404"},
+
+	TemplateSingleProduct:  {"include/singular/product"},
+	TemplateProductArchive: {"include/archive/type/product", "include/archive/product_cat", "include/archive/product_tag"},
 }
 
 // SearchTypeBonus is added to a search-results template's score on a search view, so it beats
@@ -1091,15 +1129,19 @@ const (
 	StarterSingle  StarterID = "single"
 	StarterArchive StarterID = "archive"
 	StarterSearch  StarterID = "search"
+
+	StarterProduct        StarterID = "product"
+	StarterProductArchive StarterID = "product-archive"
 )
 
-var StarterIDs = []StarterID{StarterBlank, StarterHeader, StarterFooter, StarterSingle, StarterArchive, StarterSearch}
+var StarterIDs = []StarterID{StarterBlank, StarterHeader, StarterFooter, StarterSingle, StarterArchive, StarterSearch, StarterProduct, StarterProductArchive}
 
 // DefaultStarters: the starter a create request without `starter` gets.
 var DefaultStarters = map[TemplateType]StarterID{
 	TemplateHeader: StarterHeader, TemplateFooter: StarterFooter, TemplateSinglePost: StarterSingle,
 	TemplateSinglePage: StarterSingle, TemplateSingle: StarterSingle, TemplateFrontPage: StarterBlank,
 	TemplateArchive: StarterArchive, TemplateSearch: StarterSearch, Template404: StarterBlank,
+	TemplateSingleProduct: StarterProduct, TemplateProductArchive: StarterProductArchive,
 }
 
 // Display conditions. A rule is "<mode>/<scope>"; see the grammar in the contract doc §11.2.
@@ -1141,7 +1183,8 @@ const (
 // latest. front is the site's front page ("/"), home the posts index (is_home), type:<ptype>
 // the post type archive. latest is template-relative: single-post → the newest published post,
 // single-page → the static front page or else the newest page, single → the newest entry of
-// the template's post type (the first include/singular/<ptype> rule); elsewhere it is front.
+// the template's post type (the first include/singular/<ptype> rule), single-product → the newest
+// published product; elsewhere it is front.
 const (
 	PreviewPost   = "post:"
 	PreviewTerm   = "term:"
@@ -1162,6 +1205,7 @@ var DefaultPreviews = map[TemplateType]string{
 	TemplateHeader: PreviewFront, TemplateFooter: PreviewFront, TemplateSinglePost: PreviewLatest,
 	TemplateSinglePage: PreviewLatest, TemplateSingle: PreviewLatest, TemplateFrontPage: PreviewFront,
 	TemplateArchive: PreviewHome, TemplateSearch: PreviewSearch + "a", Template404: Preview404,
+	TemplateSingleProduct: PreviewLatest, TemplateProductArchive: PreviewType + "product",
 }
 
 // Page layout (PageSettings.Layout) while Hello Pursae renders the front.
@@ -1211,9 +1255,51 @@ const (
 	DynArchiveDesc  DynWidget = "archive-desc"
 	DynSearchQuery  DynWidget = "search-query"
 	DynPagination   DynWidget = "pagination"
+	// DynLanguageSwitcher is the Pursae Multi Language switcher (site group; empty while the
+	// plugin is off). Its settings come from the stored doc through data-wb-item.
+	DynLanguageSwitcher DynWidget = "language-switcher"
+
+	// Pursae Commerce widgets (§11.12): empty while Pursae Commerce is off. Their settings come
+	// from the stored doc through data-wb-item, never from the snapshot.
+	DynShopProducts     DynWidget = "shop-products"
+	DynShopCategories   DynWidget = "shop-categories"
+	DynShopAddToCart    DynWidget = "shop-add-to-cart"
+	DynShopCart         DynWidget = "shop-cart"
+	DynShopMiniCart     DynWidget = "shop-mini-cart"
+	DynShopNotices      DynWidget = "shop-notices"
+	DynShopCartPage     DynWidget = "shop-cart-page"
+	DynShopCheckoutPage DynWidget = "shop-checkout-page"
+
+	DynProductTitle     DynWidget = "product-title"
+	DynProductImages    DynWidget = "product-images"
+	DynProductPrice     DynWidget = "product-price"
+	DynProductAddToCart DynWidget = "product-add-to-cart"
+	DynProductRating    DynWidget = "product-rating"
+	DynProductStock     DynWidget = "product-stock"
+	DynProductMeta      DynWidget = "product-meta"
+	DynProductShortDesc DynWidget = "product-short-desc"
+	DynProductContent   DynWidget = "product-content"
+	DynProductTabs      DynWidget = "product-tabs"
+	DynProductRelated   DynWidget = "product-related"
+	DynProductUpsells   DynWidget = "product-upsells"
+	DynProductSaleBadge DynWidget = "product-sale-badge"
+
+	DynShopArchiveProducts DynWidget = "shop-archive-products"
+	DynShopArchiveTitle    DynWidget = "shop-archive-title"
+	DynShopArchiveDesc     DynWidget = "shop-archive-desc"
+	DynShopBreadcrumb      DynWidget = "shop-breadcrumb"
 )
 
-var DynWidgets = []DynWidget{DynSiteLogo, DynSiteTitle, DynSiteTagline, DynNavMenu, DynSearchForm, DynCopyright, DynPostTitle, DynPostContent, DynPostExcerpt, DynPostImage, DynPostMeta, DynPostTerms, DynPostDate, DynPostAuthor, DynAuthorBox, DynPostNav, DynPostComments, DynArchiveTitle, DynArchiveDesc, DynSearchQuery, DynPagination}
+var DynWidgets = []DynWidget{DynSiteLogo, DynSiteTitle, DynSiteTagline, DynNavMenu, DynSearchForm, DynCopyright, DynPostTitle, DynPostContent, DynPostExcerpt, DynPostImage, DynPostMeta, DynPostTerms, DynPostDate, DynPostAuthor, DynAuthorBox, DynPostNav, DynPostComments, DynArchiveTitle, DynArchiveDesc, DynSearchQuery, DynPagination,
+	DynLanguageSwitcher,
+	DynShopProducts, DynShopCategories, DynShopAddToCart, DynShopCart, DynShopMiniCart, DynShopNotices, DynShopCartPage, DynShopCheckoutPage,
+	DynProductTitle, DynProductImages, DynProductPrice, DynProductAddToCart, DynProductRating, DynProductStock, DynProductMeta, DynProductShortDesc, DynProductContent, DynProductTabs, DynProductRelated, DynProductUpsells, DynProductSaleBadge,
+	DynShopArchiveProducts, DynShopArchiveTitle, DynShopArchiveDesc, DynShopBreadcrumb}
+
+// ShopWidgets are the Pursae Commerce widgets (§11.12).
+var ShopWidgets = []DynWidget{DynShopProducts, DynShopCategories, DynShopAddToCart, DynShopCart, DynShopMiniCart, DynShopNotices, DynShopCartPage, DynShopCheckoutPage,
+	DynProductTitle, DynProductImages, DynProductPrice, DynProductAddToCart, DynProductRating, DynProductStock, DynProductMeta, DynProductShortDesc, DynProductContent, DynProductTabs, DynProductRelated, DynProductUpsells, DynProductSaleBadge,
+	DynShopArchiveProducts, DynShopArchiveTitle, DynShopArchiveDesc, DynShopBreadcrumb}
 
 // StaticCellTypes are the upstream CellType values ("" is a plain text cell); a layout cell's
 // Title is one of these or one of DynWidgets.
@@ -1238,7 +1324,43 @@ type DynSettings struct {
 	Placeholder string   `json:"placeholder,omitempty"` // search-form input placeholder
 	Button      string   `json:"button,omitempty"`      // search-form button label, "" = icon only
 	Empty       string   `json:"empty,omitempty"`       // text when the value is empty, ≤ MaxDynEmptyRunes
+
+	// language-switcher
+	Dropdown    *bool `json:"dropdown,omitempty"`    // language-switcher: a select; shop-cart: the mini cart in a disclosure panel
+	Flags       *bool `json:"flags,omitempty"`       // language-switcher: show flags
+	Names       *bool `json:"names,omitempty"`       // language-switcher: show names (default true)
+	HideCurrent *bool `json:"hideCurrent,omitempty"` // language-switcher: leave out the current language
+
+	// Pursae Commerce widgets (§11.12).
+	Source    string   `json:"source,omitempty"`    // shop-products: ShopSources, default recent
+	Columns   *float64 `json:"columns,omitempty"`   // shop-products, shop-categories: 1…MaxShopColumns
+	Limit     *float64 `json:"limit,omitempty"`     // shop-products, shop-categories: 1…MaxShopLimit
+	OrderBy   string   `json:"orderBy,omitempty"`   // shop-products: ShopOrderBys
+	Order     string   `json:"order,omitempty"`     // shop-products: LoopOrders
+	Cats      string   `json:"cats,omitempty"`      // product_cat ids, ShopIDsPattern (≤ MaxShopIDs)
+	Tags      string   `json:"tags,omitempty"`      // product_tag ids, ShopIDsPattern
+	IDs       string   `json:"ids,omitempty"`       // shop-products source ids: product ids, ShopIDsPattern
+	Product   *float64 `json:"product,omitempty"`   // product.* widgets, shop-add-to-cart: a product id; 0 / absent = the current product
+	Paginate  *bool    `json:"paginate,omitempty"`  // shop-products: ?product-page= paging
+	ShowPrice *bool    `json:"showPrice,omitempty"` // shop-add-to-cart: the price before the button
+	HideEmpty *bool    `json:"hideEmpty,omitempty"` // shop-categories: leave out empty categories
+	Parent    string   `json:"parent,omitempty"`    // shop-categories: "" every level, "0" top level, or a category id
+	ShowTotal *bool    `json:"showTotal,omitempty"` // shop-cart: the subtotal after the count
+	Gallery   *bool    `json:"gallery,omitempty"`   // product-images: false = the featured image only
 }
+
+// Pursae Commerce widget settings.
+var (
+	ShopSources  = []string{"recent", "featured", "sale", "best-selling", "top-rated", "ids"}
+	ShopOrderBys = []string{"date", "title", "price", "price-desc", "popularity", "rating", "rand", "menu_order"}
+)
+
+const (
+	MaxShopColumns = 6
+	MaxShopLimit   = 24
+	MaxShopIDs     = 24
+	ShopIDsPattern = `^[1-9][0-9]{0,18}(,[1-9][0-9]{0,18}){0,23}$`
+)
 
 var (
 	DynTags        = []string{"h1", "h2", "h3", "h4", "h5", "h6", "p", "div", "span"}
@@ -1319,6 +1441,10 @@ const (
 	AttrSep      = "data-wb-sep"       // DynSettings.Sep
 	AttrWords    = "data-wb-words"     // DynSettings.Words
 	AttrSearch   = "data-wb-search"    // on the search <form method="get" action="<home>/"> with <input type="search" name="s">
+	// AttrItem is the Item.id of the cell a slot element belongs to (IDPattern). Commerce and
+	// language-switcher slots read that cell's DynSettings from the STORED doc by this id; an id
+	// the doc does not have gets the widget defaults.
+	AttrItem = "data-wb-item"
 	// SearchInputName / SearchInputType: the only field of a data-wb-search form (sanitizer
 	// exception, package TA; InputTypes stays as is for every other form).
 	SearchInputName = "s"
@@ -1360,6 +1486,42 @@ const (
 	SlotSearchQuery        SlotName = "search.query"
 	SlotSearchCount        SlotName = "search.count"
 	SlotLoopPagination     SlotName = "loop.pagination"
+
+	SlotSiteLanguages SlotName = "site.languages" // Pursae Multi Language switcher (html)
+
+	// Pursae Commerce (§11.12).
+	SlotShopArchiveTitle SlotName = "shop.archive-title"
+	SlotShopCartURL      SlotName = "shop.cart-url"
+	SlotShopCheckoutURL  SlotName = "shop.checkout-url"
+	SlotShopProducts     SlotName = "shop.products"
+	SlotShopCategories   SlotName = "shop.categories"
+	SlotShopArchive      SlotName = "shop.archive"
+	SlotShopArchiveDesc  SlotName = "shop.archive-desc"
+	SlotShopBreadcrumb   SlotName = "shop.breadcrumb"
+	SlotShopNotices      SlotName = "shop.notices"
+	SlotShopCartCount    SlotName = "shop.cart-count"
+	SlotShopCartSubtotal SlotName = "shop.cart-subtotal"
+	SlotShopMiniCart     SlotName = "shop.mini-cart"
+	SlotShopCartPage     SlotName = "shop.cart-page"
+	SlotShopCheckoutPage SlotName = "shop.checkout-page"
+
+	SlotProductTitle           SlotName = "product.title"
+	SlotProductOnSale          SlotName = "product.on-sale"
+	SlotProductSKU             SlotName = "product.sku"
+	SlotProductURL             SlotName = "product.url"
+	SlotProductImage           SlotName = "product.image"
+	SlotProductGallery         SlotName = "product.gallery"
+	SlotProductPrice           SlotName = "product.price"
+	SlotProductRating          SlotName = "product.rating"
+	SlotProductShortDesc       SlotName = "product.short-description"
+	SlotProductDescription     SlotName = "product.description"
+	SlotProductAddToCart       SlotName = "product.add-to-cart"
+	SlotProductAddToCartButton SlotName = "product.add-to-cart-button"
+	SlotProductMeta            SlotName = "product.meta"
+	SlotProductStock           SlotName = "product.stock"
+	SlotProductTabs            SlotName = "product.tabs"
+	SlotProductRelated         SlotName = "product.related"
+	SlotProductUpsells         SlotName = "product.upsells"
 )
 
 // SlotMode says how a slot fills its element.
@@ -1386,6 +1548,16 @@ var Slots = map[SlotName]SlotMode{
 	SlotPostCommentsCount: SlotText, SlotPostCommentsURL: SlotAttr, SlotPostNav: SlotHTML, SlotPostComments: SlotHTML,
 	SlotArchiveTitle: SlotHTML, SlotArchiveDescription: SlotHTML, SlotSearchQuery: SlotText, SlotSearchCount: SlotText,
 	SlotLoopPagination: SlotHTML,
+	SlotSiteLanguages:  SlotHTML,
+
+	SlotShopArchiveTitle: SlotText, SlotShopCartURL: SlotAttr, SlotShopCheckoutURL: SlotAttr,
+	SlotShopProducts: SlotHTML, SlotShopCategories: SlotHTML, SlotShopArchive: SlotHTML, SlotShopArchiveDesc: SlotHTML,
+	SlotShopBreadcrumb: SlotHTML, SlotShopNotices: SlotHTML, SlotShopCartCount: SlotHTML, SlotShopCartSubtotal: SlotHTML,
+	SlotShopMiniCart: SlotHTML, SlotShopCartPage: SlotHTML, SlotShopCheckoutPage: SlotHTML,
+	SlotProductTitle: SlotText, SlotProductOnSale: SlotText, SlotProductSKU: SlotText, SlotProductURL: SlotAttr, SlotProductImage: SlotAttr,
+	SlotProductGallery: SlotHTML, SlotProductPrice: SlotHTML, SlotProductRating: SlotHTML, SlotProductShortDesc: SlotHTML,
+	SlotProductDescription: SlotHTML, SlotProductAddToCart: SlotHTML, SlotProductAddToCartButton: SlotHTML, SlotProductMeta: SlotHTML,
+	SlotProductStock: SlotHTML, SlotProductTabs: SlotHTML, SlotProductRelated: SlotHTML, SlotProductUpsells: SlotHTML,
 }
 
 // SlotAttrs are the only attributes an attr slot (or a text slot on <time>) may write.
@@ -1491,6 +1663,64 @@ type DynContext struct {
 	Post       *DynPost                 `json:"post"`  // the singular post, null elsewhere
 	Posts      []DynPost                `json:"posts"` // the main query's posts (archives), ≤ MaxLoopPerPage
 	Pagination DynPaging                `json:"pagination"`
+	Shop       *DynShop                 `json:"shop"`      // Pursae Commerce sample data, null while it is off
+	Languages  []DynLanguage            `json:"languages"` // Pursae Multi Language languages, [] while it is off
+}
+
+// DynLanguage is one language of the language switcher's sample.
+type DynLanguage struct {
+	Slug    string `json:"slug"`
+	Name    string `json:"name"`
+	Flag    string `json:"flag"` // emoji, "" without one
+	URL     string `json:"url"`
+	Current bool   `json:"current"`
+}
+
+// DynProduct is one Pursae Commerce product as the editor draws it.
+type DynProduct struct {
+	ID            int64      `json:"id"`
+	Type          string     `json:"type"` // simple, variable, grouped, external
+	Title         string     `json:"title"`
+	URL           string     `json:"url"`
+	SKU           string     `json:"sku"`
+	PriceHTML     string     `json:"priceHtml"` // the store's price markup (trusted)
+	OnSale        bool       `json:"onSale"`
+	InStock       bool       `json:"inStock"`
+	StockHTML     string     `json:"stockHtml"`
+	Rating        float64    `json:"rating"`
+	RatingCount   int        `json:"ratingCount"`
+	ShortHTML     string     `json:"shortHtml"`   // UGC-sanitized
+	ContentHTML   string     `json:"contentHtml"` // UGC-sanitized
+	Image         *DynImage  `json:"image"`
+	Gallery       []DynImage `json:"gallery"`
+	Categories    []int64    `json:"categories"` // product_cat ids
+	AddToCartText string     `json:"addToCartText"`
+}
+
+// DynProductCat is one product category.
+type DynProductCat struct {
+	ID     int64     `json:"id"`
+	Name   string    `json:"name"`
+	URL    string    `json:"url"`
+	Count  int       `json:"count"`
+	Parent int64     `json:"parent"`
+	Image  *DynImage `json:"image"`
+}
+
+type DynCart struct {
+	Count        int    `json:"count"`
+	SubtotalHTML string `json:"subtotalHtml"`
+}
+
+// DynShop is the Pursae Commerce part of DynContext.
+type DynShop struct {
+	Product     *DynProduct     `json:"product"`    // the preview product (single-product template, product doc), null elsewhere
+	Products    []DynProduct    `json:"products"`   // newest catalog products, ≤ MaxShopLimit
+	Categories  []DynProductCat `json:"categories"` // product_cat, ≤ 100
+	Cart        DynCart         `json:"cart"`
+	ShopURL     string          `json:"shopUrl"`
+	CartURL     string          `json:"cartUrl"`
+	CheckoutURL string          `json:"checkoutUrl"`
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -1534,8 +1764,8 @@ type SiteBoot struct {
 	Locations  []MenuLocation           `json:"locations"`
 	Menus      map[string][]DynMenuItem `json:"menus"`
 	ThemeParts bool                     `json:"themeParts"` // Hello Pursae is active: pages may use layout "site"
-	PostTypes  []PostTypeInfo           `json:"postTypes"`  // viewable types: post, page, public custom types
-	Taxonomies []TaxonomyInfo           `json:"taxonomies"` // v1: category, post_tag
+	PostTypes  []PostTypeInfo           `json:"postTypes"`  // viewable types: post, page, public custom types, product (Pursae Commerce)
+	Taxonomies []TaxonomyInfo           `json:"taxonomies"` // category, post_tag; product_cat, product_tag with Pursae Commerce
 }
 
 // ---------------------------------------------------------------------------------------------
