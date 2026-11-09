@@ -104,6 +104,9 @@ func (s *Server) navMenus(c *gin.Context) {
 		c.Redirect(http.StatusFound, "/wp-admin/nav-menus?deleted=1")
 		return
 	}
+	// Drafts abandoned more than a day ago (added, menu never saved) are dropped instead of coming back
+	// on the screen and being published by whoever saves next (_wp_delete_orphaned_draft_menu_items).
+	_ = s.store.DeleteOrphanedDraftMenuItems(ctx)
 	menus, _ := s.store.Menus(ctx)
 	d := navMenusData{Menus: menus, Tab: "edit", ColumnNonce: s.nonce(c, "add-menu_item"), UpdateNonce: s.nonce(c, "update-nav_menu"),
 		LocationsNon: s.nonce(c, "save-menu-locations")}
@@ -142,7 +145,7 @@ func (s *Server) navMenus(c *gin.Context) {
 	if d.Selected != nil {
 		_ = s.setUserMeta(c, u, "nav_menu_recently_edited", d.Selected.ID)
 		d.DeleteURL = "/wp-admin/nav-menus?action=delete&menu=" + itoa64(d.Selected.ID) + "&_wpnonce=" + s.nonce(c, "delete-nav_menu-"+itoa64(d.Selected.ID))
-		items, _ := s.store.MenuItems(ctx, d.Selected.ID)
+		items, _ := s.store.AllMenuItems(ctx, d.Selected.ID) // pending (draft) items too, like wp_get_nav_menu_to_edit()
 		d.Rows = s.menuEditRows(ctx, items)
 	}
 	for _, loc := range theme.MenuLocations {

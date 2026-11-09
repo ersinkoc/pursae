@@ -154,6 +154,13 @@ func defaultStatus(v string) string {
 	return v
 }
 
+// DeleteOrphanedDraftMenuItems deletes menu items added more than a day ago that were never saved into
+// their menu (still draft), like WordPress' _wp_delete_orphaned_draft_menu_items() on nav-menus load.
+func (s *Store) DeleteOrphanedDraftMenuItems(ctx context.Context) error {
+	_, err := s.Pool.Exec(ctx, `DELETE FROM menu_items WHERE status = 'draft' AND created_at < now() - interval '1 day'`)
+	return err
+}
+
 // AllMenuItems returns a menu's items of every status in order (the REST menu-items collection).
 func (s *Store) AllMenuItems(ctx context.Context, menuID int64) ([]*EditItem, error) {
 	q := `SELECT ` + editItemCols + ` FROM menu_items ORDER BY menu_id, sort_order, id`

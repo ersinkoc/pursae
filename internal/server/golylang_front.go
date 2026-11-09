@@ -263,7 +263,8 @@ func (s *Server) pllExpandSwitcher(c *gin.Context, q *siteQuery, items []*store.
 						label = li.Lang.FlagEmoji()
 					}
 				}
-				out = append(out, &store.MenuItem{ID: it.ID, ParentID: it.ParentID, Kind: "custom", Object: "custom", URL: li.URL, Label: label,
+				// One item per language, each with its own id (Polylang: "<item id>-<slug>").
+				out = append(out, &store.MenuItem{ID: it.ID, Key: itoa64(it.ID) + "-" + li.Lang.Slug, ParentID: it.ParentID, Kind: "custom", Object: "custom", URL: li.URL, Label: label,
 					Classes: strings.TrimSpace(li.Classes + " " + strings.TrimSpace(strings.NewReplacer("pll-show-flags", "", "pll-hide-names", "", "pll-hide-current", "", "pll-force-home", "", "pll-hide-if-no-translation", "").Replace(it.Classes)))})
 			}
 			continue
