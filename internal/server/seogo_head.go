@@ -149,7 +149,7 @@ func (sc *seogoCtx) url() string {
 			return lb.Paged(base, sc.Paged)
 		}
 		return base
-	case "category", "tag":
+	case "category", "tag", "taxonomy":
 		if sc.Paged > 1 {
 			return lb.Paged(lb.TermLink(sc.Term), sc.Paged)
 		}

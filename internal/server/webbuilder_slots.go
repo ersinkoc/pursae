@@ -424,7 +424,7 @@ func wbArchiveView(v *siteView) bool {
 		return false
 	}
 	switch v.Q.Kind {
-	case "home", "category", "tag", "author", "date", "search", "post-type-archive":
+	case "home", "category", "tag", "taxonomy", "author", "date", "search", "post-type-archive":
 		return true
 	}
 	return false

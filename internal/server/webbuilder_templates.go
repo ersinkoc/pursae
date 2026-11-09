@@ -372,7 +372,7 @@ func wbFactsOf(q *siteQuery) webbuilder.QueryFacts {
 	case "home":
 		f.View, f.Archive, f.FrontPage = webbuilder.ViewArchive, webbuilder.ArchiveHome, q.PostsPage == nil
 		return f
-	case "category", "tag":
+	case "category", "tag", "taxonomy":
 		f.View, f.Archive = webbuilder.ViewArchive, webbuilder.ArchiveTerm
 		if q.Term != nil {
 			f.Taxonomy, f.TermID = q.Term.Taxonomy, q.Term.ID

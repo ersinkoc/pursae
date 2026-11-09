@@ -216,9 +216,10 @@ func (s *Server) tt5Prepare(c *gin.Context, v *siteView) {
 	}
 
 	// Titles of the home, archive and search templates.
-	d["BlogTitle"] = "Blog"
+	// theTitle is already escaped and texturized: hand it to the template as HTML, not as text to escape again.
+	d["BlogTitle"] = template.HTML("Blog")
 	if q.PostsPage != nil && q.PostsPage.Title != "" {
-		d["BlogTitle"] = theTitle(q.PostsPage)
+		d["BlogTitle"] = template.HTML(s.pllUC(ctx, theTitle(q.PostsPage), 0))
 	}
 	if q.Kind == "search" {
 		d["QueryTitle"] = template.HTML("Search results for: &#8220;" + esc(q.Search) + "&#8221;")

@@ -112,7 +112,7 @@ func (s *Store) PostBySlug(ctx context.Context, typ, slug string) (*Post, error)
 	args := []any{typ, slug}
 	prefer := slugPrefer(ctx, "post", &args)
 	return scanPost(s.Pool.QueryRow(ctx, `SELECT `+postCols+` FROM posts
-		WHERE type = $1 AND slug = $2 AND status NOT IN ('auto-draft','trash')
+		WHERE type = $1 AND slug = $2 AND slug <> '' AND status NOT IN ('auto-draft','trash')
 		ORDER BY `+prefer+`(status = 'publish') DESC, id LIMIT 1`, args...))
 }
 
@@ -235,6 +235,9 @@ type PostQuery struct {
 	// WordPress' perm=readable, used by the list screens for users who cannot edit others' posts.
 	ReadableBy      int64
 	ReadablePrivate bool
+	// ExcludePassworded leaves out password-protected posts (WP_Query::parse_search() for logged-out
+	// visitors: searching their hidden text would reveal it).
+	ExcludePassworded bool
 }
 
 func (q *PostQuery) where(args *[]any) string {
@@ -272,6 +275,9 @@ func (q *PostQuery) where(args *[]any) string {
 	}
 	if q.Search != "" {
 		conds = append(conds, "(search @@ plainto_tsquery('simple', "+add(q.Search)+") OR title ILIKE "+add("%"+q.Search+"%")+")")
+	}
+	if q.ExcludePassworded {
+		conds = append(conds, "coalesce(password, '') = ''")
 	}
 	if len(q.TermIDs) > 0 {
 		conds = append(conds, "id IN (SELECT post_id FROM post_terms WHERE term_id = ANY("+add(q.TermIDs)+"))")
@@ -523,7 +529,7 @@ func prepareIn(ctx context.Context, q DBTX, p *Post) ([]byte, error) {
 	if p.Status != "auto-draft" && p.Status != "draft" && p.Status != "pending" {
 		if p.Slug == "" {
 			p.Slug = wp.SanitizeTitle(p.Title)
-			if p.Slug == "" {
+			if p.Slug == "" && p.ID != 0 { // a new post gets its id as slug once inserted (InsertPost)
 				p.Slug = strconv.FormatInt(p.ID, 10)
 			}
 		}
@@ -571,12 +577,26 @@ func (s *Store) InsertPost(ctx context.Context, p *Post) error {
 		return err
 	}
 	meta, _ := json.Marshal(p.Meta)
-	return s.Pool.QueryRow(ctx, `INSERT INTO posts(type, author_id, parent_id, slug, title, excerpt, content, blocks,
+	if err := s.Pool.QueryRow(ctx, `INSERT INTO posts(type, author_id, parent_id, slug, title, excerpt, content, blocks,
 		status, password, published_at, featured_media_id, menu_order, comment_status, ping_status, sticky, format, meta)
 		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18) RETURNING id, created_at, modified_at`,
 		p.Type, nullable(p.AuthorID), nullable(p.ParentID), p.Slug, p.Title, p.Excerpt, p.Content, tree,
 		p.Status, p.Password, p.PublishedAt, nullable(p.FeaturedMediaID), p.MenuOrder, p.CommentStatus, p.PingStatus,
-		p.Sticky, p.Format, meta).Scan(&p.ID, &p.CreatedAt, &p.ModifiedAt)
+		p.Sticky, p.Format, meta).Scan(&p.ID, &p.CreatedAt, &p.ModifiedAt); err != nil {
+		return err
+	}
+	if p.Slug == "" && p.Status != "auto-draft" && p.Status != "draft" && p.Status != "pending" {
+		// A title with nothing slug-worthy: wp_insert_post() falls back to the post id.
+		slug, err := uniqueSlug(ctx, s.Pool, p.Type, p.ParentID, strconv.FormatInt(p.ID, 10), p.ID)
+		if err != nil {
+			return err
+		}
+		if _, err := s.Pool.Exec(ctx, `UPDATE posts SET slug = $2 WHERE id = $1`, p.ID, slug); err != nil {
+			return err
+		}
+		p.Slug = slug
+	}
+	return nil
 }
 
 // UpdatePost writes every editable field and stores a revision of the previous content when it changed.
@@ -611,6 +631,15 @@ func UpdatePostTx(ctx context.Context, tx pgx.Tx, p *Post, editorID int64) error
 		p.PingStatus, p.Sticky, p.Format, meta)
 	if err != nil {
 		return err
+	}
+	// terms.post_count counts published posts only: moving in or out of "publish" changes the
+	// count of every term the post has (wp_transition_post_status → _update_term_count_on_transition_post_status).
+	if (old.Status == "publish") != (p.Status == "publish") {
+		if _, err = tx.Exec(ctx, `UPDATE terms t SET post_count = (SELECT count(*) FROM post_terms pt
+			JOIN posts p ON p.id = pt.post_id WHERE pt.term_id = t.id AND p.status = 'publish')
+			WHERE t.id IN (SELECT term_id FROM post_terms WHERE post_id = $1)`, p.ID); err != nil {
+			return err
+		}
 	}
 	changed := old.Title != p.Title || old.Content != p.Content || old.Excerpt != p.Excerpt
 	if changed && old.Status != "auto-draft" {
@@ -680,9 +709,12 @@ func (s *Store) PostByOldSlug(ctx context.Context, slug string, year, month, day
 	if slug == "" {
 		return nil, ErrNotFound
 	}
-	args := []any{slug}
+	// A containment test the posts_meta GIN index serves: every 404 runs this lookup, so it must not
+	// scan the table. recordOldSlug always writes an array, and {"k":["x"]} only matches an array holding "x".
+	probe, _ := json.Marshal(map[string]any{OldSlugMeta: []string{slug}})
+	args := []any{string(probe)}
 	sql := `SELECT ` + postCols + ` FROM posts WHERE type IN ('post','page') AND status = 'publish'
-		AND jsonb_typeof(meta->'_wp_old_slug') = 'array' AND jsonb_exists(meta->'_wp_old_slug', $1)`
+		AND meta @> $1::jsonb`
 	if year != 0 {
 		args = append(args, PGZone(loc), year)
 		local := "(published_at AT TIME ZONE $2)"

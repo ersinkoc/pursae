@@ -512,19 +512,39 @@ func renderPageListBlock(ctx context.Context, b *blocks.Block, _ string) string 
 		queried = rc.q.Post.ID
 	}
 	items := map[int64]*pageListItem{}
+	for _, p := range pages {
+		items[p.ID] = &pageListItem{page: p, active: p.ID == queried}
+	}
+	// The parent chain of every listed page is in items: walk it in memory instead of one GetPost per
+	// level and page (links.Builder.Ancestors → store.Ancestors). A parent that is not published falls
+	// back to the store.
+	lb := *rc.lb
+	lb.Ancestors = func(p *store.Post) []*store.Post {
+		var chain []*store.Post
+		cur := p
+		for i := 0; cur.ParentID != 0 && i < 20; i++ {
+			par, ok := items[cur.ParentID]
+			if !ok {
+				if rc.lb.Ancestors != nil {
+					return rc.lb.Ancestors(p)
+				}
+				return nil
+			}
+			chain = append([]*store.Post{par.page}, chain...)
+			cur = par.page
+		}
+		return chain
+	}
 	var top []*pageListItem
 	withChildren := map[int64][]*pageListItem{}
 	ancestors := map[int64]bool{}
 	for _, p := range pages {
-		it := &pageListItem{page: p, active: p.ID == queried}
+		it := items[p.ID]
 		if it.active {
-			if chain, err := rc.s.store.Ancestors(ctx, p); err == nil {
-				for _, a := range chain {
-					ancestors[a.ID] = true
-				}
+			for _, a := range lb.Ancestors(p) {
+				ancestors[a.ID] = true
 			}
 		}
-		items[p.ID] = it
 		if p.ParentID != 0 {
 			withChildren[p.ParentID] = append(withChildren[p.ParentID], it)
 		} else {
@@ -569,7 +589,7 @@ func renderPageListBlock(ctx context.Context, b *blocks.Block, _ string) string 
 			}
 			title := wp.KsesPost(it.page.Title)
 			fmt.Fprintf(&sb, `<li class="wp-block-pages-list__item%s"><a class="wp-block-pages-list__item__link" href="%s"%s>%s</a>`,
-				html.EscapeString(class), html.EscapeString(rc.lb.Permalink(it.page)), aria, title)
+				html.EscapeString(class), html.EscapeString(lb.Permalink(it.page)), aria, title)
 			if len(it.children) > 0 {
 				sb.WriteString(`<ul class="wp-block-navigation__submenu-container">` + render(it.children, depth+1) + `</ul>`)
 			}

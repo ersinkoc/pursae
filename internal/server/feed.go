@@ -34,7 +34,7 @@ func (s *Server) feedTitle(q *siteQuery) string {
 	switch q.Kind {
 	case "search":
 		title = "Search Results for &#8220;" + html.EscapeString(q.Search) + "&#8221;"
-	case "category", "tag", "author", "date":
+	case "category", "tag", "taxonomy", "author", "date":
 		_, title = q.archiveTitle()
 	case "home":
 		if q.PostsPage != nil {
@@ -84,8 +84,12 @@ func (s *Server) feedPosts(ctx context.Context, q *siteQuery) []*store.Post {
 	pq := store.PostQuery{Types: []string{"post"}, Statuses: []string{"publish"}, PerPage: s.settings.Int("posts_per_rss"), Loc: s.loc()}
 	pq.ExcludeID = s.gooListingExclude(ctx, "post") // Goocommerce Memberships
 	switch q.Kind {
-	case "category", "tag":
+	case "category":
+		pq.TermIDs = s.categoryWithDescendants(ctx, q.Term.ID)
+	case "tag":
 		pq.TermIDs = []int64{q.Term.ID}
+	case "taxonomy":
+		s.taxonomyQuery(ctx, q.Term, &pq)
 	case "author":
 		pq.AuthorID = q.Author.ID
 	case "date":
@@ -98,6 +102,7 @@ func (s *Server) feedPosts(ctx context.Context, q *siteQuery) []*store.Post {
 		}
 		pq.Search = q.Search
 		pq.Types = siteSearchTypes()
+		pq.ExcludePassworded = true // feeds are anonymous (WP_Query::parse_search())
 	}
 	posts, _, _ := s.store.QueryPosts(ctx, pq)
 	return posts

@@ -194,7 +194,8 @@ func TestGooExtMembershipsRestrictionModes(t *testing.T) {
 	}
 	gooMakeSimple(t, srv, "Open Teapot", 10, nil)
 	vip := gooMakeSimple(t, srv, "Velvet Teapot", 30, nil)
-	news := &store.Post{Type: "post", Title: "Zebra members digest", Slug: "zebra-digest", Content: "<p>Inside.</p>", Status: "publish", AuthorID: 1, Meta: map[string]any{}}
+	// Sticky: the blog's first page adds sticky posts in a query of its own, which must honour the exclusion too.
+	news := &store.Post{Type: "post", Title: "Zebra members digest", Slug: "zebra-digest", Content: "<p>Inside.</p>", Status: "publish", AuthorID: 1, Sticky: true, Meta: map[string]any{}}
 	public := &store.Post{Type: "post", Title: "Zebra public notes", Slug: "zebra-public", Content: "<p>Hello.</p>", Status: "publish", AuthorID: 1, Meta: map[string]any{}}
 	join := &store.Post{Type: "page", Title: "Join us", Slug: "join-us", Content: "<p>Become a member.</p>", Status: "publish", AuthorID: 1, Meta: map[string]any{}}
 	for _, p := range []*store.Post{news, public, join} {

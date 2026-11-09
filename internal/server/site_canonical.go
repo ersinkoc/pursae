@@ -93,6 +93,9 @@ func (s *Server) canonicalRedirect(c *gin.Context, q *siteQuery, requestPath str
 	if q.Kind == "post-type-archive" || (q.Post != nil && siteCPT(q.Post.Type) != nil) {
 		consumed = append(consumed, "post_type") // ?post_type=book is the plain archive link (and ?p=ID&post_type=book a single)
 	}
+	if q.Kind == "taxonomy" && q.Term != nil && q.Term.Taxonomy == "post_format" {
+		consumed = append(consumed, "post_format") // ?post_format=aside is /type/aside/
+	}
 	usedQueryVars := false
 	for _, k := range consumed {
 		if v.Has(k) {
@@ -113,6 +116,11 @@ func (s *Server) canonicalRedirect(c *gin.Context, q *siteQuery, requestPath str
 			base = lb.Permalink(q.PostsPage)
 		}
 	case "category", "tag":
+		base = lb.TermLink(q.Term)
+	case "taxonomy":
+		if q.Term.Taxonomy != "post_format" {
+			return "" // Pursae Custom Fields taxonomies only have the ?taxonomy=…&term=… link
+		}
 		base = lb.TermLink(q.Term)
 	case "post-type-archive":
 		if base = lb.PostTypeArchiveLink(q.PostType); base == "" {

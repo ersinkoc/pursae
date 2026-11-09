@@ -186,9 +186,11 @@ func (s *Server) cacheTags(c *gin.Context, q *siteQuery) {
 				tags = append(tags, "home")
 			}
 		}
-	case "category", "tag":
-		if q.Term != nil {
+	case "category", "tag", "taxonomy":
+		if q.Term != nil && q.Term.ID != 0 {
 			tags = append(tags, "term:"+itoa64(q.Term.ID))
+		} else {
+			tags = append(tags, "archive:post") // post formats: any post change may move it in or out
 		}
 	case "author":
 		if q.Author != nil {

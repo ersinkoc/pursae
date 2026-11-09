@@ -203,10 +203,10 @@ func (s *Server) exportScreen(c *gin.Context) {
 			for _, t := range terms {
 				if tax == "category" {
 					fmt.Fprintf(&b, "\t<wp:category><wp:term_id>%d</wp:term_id><wp:category_nicename>%s</wp:category_nicename><wp:category_parent>%s</wp:category_parent><wp:cat_name>%s</wp:cat_name>%s</wp:category>\n",
-						t.ID, cdata(t.Slug), cdata(termSlugs[t.ParentID]), cdata(t.Name), optDesc("wp:category_description", t.Description))
+						t.ID, cdata(wxrSlug(t.Slug)), cdata(wxrSlug(termSlugs[t.ParentID])), cdata(t.Name), optDesc("wp:category_description", t.Description))
 				} else {
 					fmt.Fprintf(&b, "\t<wp:tag><wp:term_id>%d</wp:term_id><wp:tag_slug>%s</wp:tag_slug><wp:tag_name>%s</wp:tag_name>%s</wp:tag>\n",
-						t.ID, cdata(t.Slug), cdata(t.Name), optDesc("wp:tag_description", t.Description))
+						t.ID, cdata(wxrSlug(t.Slug)), cdata(t.Name), optDesc("wp:tag_description", t.Description))
 				}
 			}
 		}
@@ -266,7 +266,7 @@ func (s *Server) exportScreen(c *gin.Context) {
 						}
 					}
 					fmt.Fprintf(&b, "\t<wp:category><wp:term_id>%d</wp:term_id><wp:category_nicename>%s</wp:category_nicename><wp:category_parent>%s</wp:category_parent><wp:cat_name>%s</wp:cat_name>%s</wp:category>\n",
-						t.ID, cdata(t.Slug), cdata(parent), cdata(t.Name), optDesc("wp:category_description", t.Description))
+						t.ID, cdata(wxrSlug(t.Slug)), cdata(wxrSlug(parent)), cdata(t.Name), optDesc("wp:category_description", t.Description))
 				}
 				for _, t := range tags[p.ID] {
 					if seen[t.ID] {
@@ -274,7 +274,7 @@ func (s *Server) exportScreen(c *gin.Context) {
 					}
 					seen[t.ID] = true
 					fmt.Fprintf(&b, "\t<wp:tag><wp:term_id>%d</wp:term_id><wp:tag_slug>%s</wp:tag_slug><wp:tag_name>%s</wp:tag_name>%s</wp:tag>\n",
-						t.ID, cdata(t.Slug), cdata(t.Name), optDesc("wp:tag_description", t.Description))
+						t.ID, cdata(wxrSlug(t.Slug)), cdata(t.Name), optDesc("wp:tag_description", t.Description))
 				}
 			}
 		}
@@ -290,12 +290,12 @@ func (s *Server) exportScreen(c *gin.Context) {
 			fmt.Fprintf(&b, "\t\t<wp:post_id>%d</wp:post_id>\n\t\t<wp:post_date>%s</wp:post_date>\n\t\t<wp:post_date_gmt>%s</wp:post_date_gmt>\n\t\t<wp:post_modified>%s</wp:post_modified>\n\t\t<wp:post_modified_gmt>%s</wp:post_modified_gmt>\n",
 				p.ID, cdata(wpDate(p.Date())), cdata(gmt), cdata(wpDate(p.ModifiedAt)), cdata(p.ModifiedAt.UTC().Format("2006-01-02 15:04:05")))
 			fmt.Fprintf(&b, "\t\t<wp:comment_status>%s</wp:comment_status>\n\t\t<wp:ping_status>%s</wp:ping_status>\n\t\t<wp:post_name>%s</wp:post_name>\n\t\t<wp:status>%s</wp:status>\n\t\t<wp:post_parent>%d</wp:post_parent>\n\t\t<wp:menu_order>%d</wp:menu_order>\n\t\t<wp:post_type>%s</wp:post_type>\n\t\t<wp:post_password>%s</wp:post_password>\n\t\t<wp:is_sticky>%d</wp:is_sticky>\n",
-				cdata(p.CommentStatus), cdata(p.PingStatus), cdata(p.Slug), cdata(p.Status), p.ParentID, p.MenuOrder, cdata(p.Type), cdata(p.Password), map[bool]int{true: 1}[p.Sticky])
+				cdata(p.CommentStatus), cdata(p.PingStatus), cdata(wxrSlug(p.Slug)), cdata(p.Status), p.ParentID, p.MenuOrder, cdata(p.Type), cdata(p.Password), map[bool]int{true: 1}[p.Sticky])
 			for _, t := range cats[p.ID] {
-				fmt.Fprintf(&b, "\t\t<category domain=\"category\" nicename=\"%s\">%s</category>\n", xmlEsc(t.Slug), cdata(t.Name))
+				fmt.Fprintf(&b, "\t\t<category domain=\"category\" nicename=\"%s\">%s</category>\n", xmlEsc(wxrSlug(t.Slug)), cdata(t.Name))
 			}
 			for _, t := range tags[p.ID] {
-				fmt.Fprintf(&b, "\t\t<category domain=\"post_tag\" nicename=\"%s\">%s</category>\n", xmlEsc(t.Slug), cdata(t.Name))
+				fmt.Fprintf(&b, "\t\t<category domain=\"post_tag\" nicename=\"%s\">%s</category>\n", xmlEsc(wxrSlug(t.Slug)), cdata(t.Name))
 			}
 			if p.Format != "" && p.Format != "standard" {
 				fmt.Fprintf(&b, "\t\t<category domain=\"post_format\" nicename=\"post-format-%s\">%s</category>\n", xmlEsc(p.Format), cdata(strings.ToUpper(p.Format[:1])+p.Format[1:]))
@@ -1090,4 +1090,19 @@ func wxrURLReplacer(urlMap map[string]string) *strings.Replacer {
 		pairs = append(pairs, k, m[k])
 	}
 	return strings.NewReplacer(pairs...)
+}
+
+// wxrSlug writes a slug the way WordPress stores post_name and term slugs: non-ASCII letters as
+// lowercase %xx octets (sanitize_title_with_dashes()), so the file imports into WordPress unchanged.
+// Pursae keeps the decoded UTF-8 and wp.SanitizeTitle decodes it again on import.
+func wxrSlug(slug string) string {
+	var b strings.Builder
+	for i := 0; i < len(slug); i++ {
+		if c := slug[i]; c >= 0x80 {
+			fmt.Fprintf(&b, "%%%02x", c)
+		} else {
+			b.WriteByte(c)
+		}
+	}
+	return b.String()
 }

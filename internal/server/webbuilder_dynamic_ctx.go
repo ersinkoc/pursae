@@ -252,6 +252,8 @@ func (s *Server) wbPreviewLabel(q *siteQuery) string {
 		return "Category: " + q.Term.Name
 	case "tag":
 		return "Tag: " + q.Term.Name
+	case "taxonomy":
+		return "Term: " + q.Term.Name
 	case "author":
 		return "Author: " + q.Author.DisplayName
 	case "post-type-archive":
@@ -284,7 +286,7 @@ func (s *Server) wbPreviewURL(lb *links.Builder, q *siteQuery, templateID int64)
 		} else {
 			u = lb.HomeURL("/")
 		}
-	case "category", "tag":
+	case "category", "tag", "taxonomy":
 		u = lb.TermLink(q.Term)
 	case "author":
 		u = lb.AuthorLink(q.Author.ID, q.Author.Nicename)

@@ -24,6 +24,7 @@ first template the package has. Only `index.html` is required.
 | a custom post type archive | `archive-<type>.html`, `archive.html`, `index.html` |
 | category archive | `category.html`, `archive.html`, `index.html` |
 | tag archive | `tag.html`, `archive.html`, `index.html` |
+| post format or custom taxonomy archive | `taxonomy-<taxonomy>-<term>.html`, `taxonomy-<taxonomy>.html`, `taxonomy.html`, `archive.html`, `index.html` |
 | author archive | `author.html`, `archive.html`, `index.html` |
 | date archive | `date.html`, `archive.html`, `index.html` |
 | search results | `search.html`, `index.html` |
@@ -35,6 +36,13 @@ archive, the archive at `/<archive slug>/` (also `?post_type=<type>`), with pagi
 Search results cover posts, pages and the public custom types not marked *Exclude From Search*.
 Bundled themes render the archive with `theme/archive`; the view has `.ArchiveTitle`
 ("Archives: <plural name>") and the body classes `post-type-archive post-type-archive-<type>`.
+
+Post format archives live at `/type/<format>/` (`?post_format=<format>`), with the term
+`post-format-<format>` and the title "Asides", "Galleries", …. A public Pursae Custom Fields
+taxonomy lists its terms at `?taxonomy=<taxonomy>&term=<slug>` over the routed post types it is
+registered for (child terms included for hierarchical ones), titled "<singular label>: <term>". Both
+are `.Q.Kind` `taxonomy` with `.Q.Term` set, and carry the body classes `tax tax-<taxonomy> term-<slug>`.
+Empty date archives and any paged archive past its last page answer 404, like `WP::handle_404()`.
 
 With Pursae Web Builder on and the bundled Hello Pursae theme active, Theme Builder templates can
 replace a view's header, main content and footer; theme packages never receive them
@@ -55,7 +63,7 @@ Every template receives the same **site view** (`.`):
 | Field | Type | Meaning |
 |-------|------|---------|
 | `.Template` | string | `index`, `single`, `page`, `archive`, `search`, `404` |
-| `.Q` | query | the main query: `.Q.Kind` (`home`, `front-page`, `single`, `page`, `category`, `tag`, `author`, `date`, `search`, `404`), `.Q.Post`, `.Q.Term`, `.Q.Author`, `.Q.Year/.Month/.Day`, `.Q.Search`, `.Q.Paged`, `.Q.Preview` |
+| `.Q` | query | the main query: `.Q.Kind` (`home`, `front-page`, `single`, `page`, `category`, `tag`, `taxonomy`, `author`, `date`, `search`, `post-type-archive`, `404`), `.Q.Post`, `.Q.Term`, `.Q.Author`, `.Q.Year/.Month/.Day`, `.Q.Search`, `.Q.Paged`, `.Q.Preview` |
 | `.DocumentTitle` | HTML | `wp_get_document_title()` with separator and site name |
 | `.Head` | HTML | `wp_head()`: feeds, styles, scripts, Customizer CSS, plugin assets. Print it before `</head>` |
 | `.Footer` | HTML | `wp_footer()`: scripts. Print it before `</body>` |

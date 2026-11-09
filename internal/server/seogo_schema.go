@@ -104,7 +104,7 @@ func (s *Server) seogoGraph(sc *seogoCtx, title, desc string) []ldNode {
 	}
 	pageType := "WebPage"
 	switch sc.Kind {
-	case "category", "tag", "date":
+	case "category", "tag", "taxonomy", "date":
 		pageType = "CollectionPage"
 	case "home":
 		if sc.Post == nil {

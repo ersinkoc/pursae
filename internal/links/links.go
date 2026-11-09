@@ -109,10 +109,10 @@ func (b *Builder) typeLink(p *store.Post, base string) string {
 	parts := []string{base}
 	if b.Ancestors != nil && p.ParentID != 0 && b.TypeHierarchical != nil && b.TypeHierarchical(p.Type) {
 		for _, a := range b.Ancestors(p) {
-			parts = append(parts, a.Slug)
+			parts = append(parts, escPath(a.Slug))
 		}
 	}
-	parts = append(parts, p.Slug)
+	parts = append(parts, escPath(p.Slug))
 	return b.HomeURL(b.trailing("/" + strings.Join(parts, "/")))
 }
 
@@ -146,10 +146,10 @@ func (b *Builder) pageLink(p *store.Post) string {
 	var parts []string
 	if b.Ancestors != nil {
 		for _, a := range b.Ancestors(p) {
-			parts = append(parts, a.Slug)
+			parts = append(parts, escPath(a.Slug))
 		}
 	}
-	parts = append(parts, p.Slug)
+	parts = append(parts, escPath(p.Slug))
 	return b.HomeURL(b.trailing("/" + strings.Join(parts, "/")))
 }
 
@@ -161,10 +161,10 @@ func (b *Builder) postLink(p *store.Post) string {
 	// %category% and %author% cost a lookup each: resolve them only when the structure uses them.
 	category, author := "", ""
 	if strings.Contains(b.Structure, "%category%") {
-		category = b.postCategoryPath(p)
+		category = escPath(b.postCategoryPath(p))
 	}
 	if strings.Contains(b.Structure, "%author%") {
-		author = b.authorSlug(p.AuthorID)
+		author = escPath(b.authorSlug(p.AuthorID))
 	}
 	r := strings.NewReplacer(
 		"%year%", strconv.Itoa(t.Year()),
@@ -174,7 +174,7 @@ func (b *Builder) postLink(p *store.Post) string {
 		"%minute%", fmt.Sprintf("%02d", t.Minute()),
 		"%second%", fmt.Sprintf("%02d", t.Second()),
 		"%post_id%", strconv.FormatInt(p.ID, 10),
-		"%postname%", p.Slug,
+		"%postname%", escPath(p.Slug),
 		"%category%", category,
 		"%author%", author,
 	)
@@ -233,6 +233,22 @@ func (b *Builder) authorSlug(id int64) string {
 	return b.AuthorSlug(id)
 }
 
+// escPath percent-encodes each segment of a slug path. Slugs keep non-Latin letters as UTF-8
+// (wp.SanitizeTitle); WordPress emits them as %xx in links. ASCII slugs come out unchanged, and a
+// segment that already holds a '%' (a %postname% placeholder, a pre-encoded slug) is left as is.
+func escPath(p string) string {
+	if p == "" {
+		return p
+	}
+	parts := strings.Split(p, "/")
+	for i, seg := range parts {
+		if !strings.ContainsRune(seg, '%') {
+			parts[i] = url.PathEscape(seg)
+		}
+	}
+	return strings.Join(parts, "/")
+}
+
 // TermLink is get_term_link().
 func (b *Builder) TermLink(t *store.Term) string { return b.filter("term", t, b.termLink(t)) }
 
@@ -250,16 +266,16 @@ func (b *Builder) termLink(t *store.Term) string {
 		if b.CategoryPath != nil {
 			path = b.CategoryPath(t)
 		}
-		return b.HomeURL(b.trailing("/" + strings.Trim(base, "/") + "/" + path))
+		return b.HomeURL(b.trailing("/" + strings.Trim(base, "/") + "/" + escPath(path)))
 	case "post_tag":
 		if !b.Pretty() {
-			return b.HomeURL("/?tag=" + t.Slug)
+			return b.HomeURL("/?tag=" + url.QueryEscape(t.Slug))
 		}
 		base := b.TagBase
 		if base == "" {
 			base = "tag"
 		}
-		return b.HomeURL(b.trailing("/" + strings.Trim(base, "/") + "/" + t.Slug))
+		return b.HomeURL(b.trailing("/" + strings.Trim(base, "/") + "/" + escPath(t.Slug)))
 	case "post_format":
 		if !b.Pretty() {
 			return b.HomeURL("/?post_format=" + strings.TrimPrefix(t.Slug, "post-format-"))
@@ -278,7 +294,7 @@ func (b *Builder) authorLink(id int64, nicename string) string {
 	if !b.Pretty() {
 		return b.HomeURL("/?author=" + strconv.FormatInt(id, 10))
 	}
-	return b.HomeURL(b.trailing("/author/" + nicename))
+	return b.HomeURL(b.trailing("/author/" + escPath(nicename)))
 }
 
 func (b *Builder) YearLink(y int) string { return b.filter("home", nil, b.yearLink(y)) }

@@ -309,6 +309,7 @@ func (api *restAPI) listPosts(c *gin.Context, r *restRequest, typ string) {
 	if q.OrderBy == "include" || q.OrderBy == "relevance" {
 		q.OrderBy = "date"
 	}
+	q.ExcludePassworded = q.Search != "" && u == nil // WP_Query::parse_search() for logged-out requests
 	statuses := strings.Split(c.DefaultQuery("status", "publish"), ",")
 	for _, st := range statuses {
 		if st != "publish" && (u == nil || !u.Can("edit_"+restBaseFor(typ), nil)) {

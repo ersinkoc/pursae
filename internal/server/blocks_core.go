@@ -282,7 +282,16 @@ func renderLatestPosts(ctx context.Context, b *blocks.Block, _ string) string {
 				t.Format(time.RFC3339), wp.FormatDate(t, rc.s.settings.String("date_format")))
 		}
 		if attrBool(b, "displayPostContent", false) {
-			if attrStr(b, "displayPostContentRadio", "excerpt") == "excerpt" {
+			// post_password_required(): a protected post shows a notice, never its excerpt or body.
+			// No request context (rendered outside a page view) fails closed.
+			locked := p.Password != "" && (rc.c == nil || rc.s.passwordRequired(rc.c, p))
+			if locked {
+				class := "wp-block-latest-posts__post-excerpt"
+				if attrStr(b, "displayPostContentRadio", "excerpt") != "excerpt" {
+					class = "wp-block-latest-posts__post-full-content"
+				}
+				fmt.Fprintf(&items, `<div class="%s">This content is password protected.</div>`, class)
+			} else if attrStr(b, "displayPostContentRadio", "excerpt") == "excerpt" {
 				ex := wp.KsesPost(p.Excerpt) // excerpts saved before excerpt_save_pre sanitizing existed
 				if ex == "" {
 					ex = wp.TrimWords(stripBlocks(p.Content), attrInt(b, "excerptLength", 55),
