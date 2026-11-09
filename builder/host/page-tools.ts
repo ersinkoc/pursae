@@ -421,7 +421,14 @@ export class PageToolsController {
     this.setSeo({ saving: true, error: '', saved: false })
     try {
       const r = await this.d.rest.request<SeoMeta>('POST', routes.seoMeta(this.d.postId), { json: { fields } })
-      this.setSeo({ saving: false, saved: true, data: r.data, draft: seoDraftOf(r.data.fields) })
+      const next = seoDraftOf(r.data.fields)
+      const latest = this.state.seo.draft
+      if (latest) {
+        for (const key of Object.keys(draft) as (keyof SeoDraft)[]) {
+          if (latest[key] !== draft[key]) Object.assign(next, { [key]: latest[key] })
+        }
+      }
+      this.setSeo({ saving: false, saved: true, data: r.data, draft: next })
     } catch (e) {
       this.setSeo({ saving: false, error: errorText(e, t('The SEO settings could not be saved.')) })
     }

@@ -185,7 +185,7 @@ func CanonicalQuery(q url.Values) string {
 	for k := range q {
 		keys = append(keys, k)
 	}
-	sort.Strings(keys)
+	sort.Slice(keys, func(i, j int) bool { return uriEncode(keys[i], true) < uriEncode(keys[j], true) })
 	var parts []string
 	for _, k := range keys {
 		vs := append([]string(nil), q[k]...)

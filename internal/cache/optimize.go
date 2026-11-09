@@ -151,9 +151,8 @@ func isTagAt(lc string, i int, name string) bool {
 
 // findTag returns the index of the first opening tag <name in lc at or after from.
 func findTag(lc, name string, from int) int {
-	needle := "<" + name
 	for from < len(lc) {
-		j := strings.Index(lc[from:], needle)
+		j := strings.IndexByte(lc[from:], '<')
 		if j < 0 {
 			return -1
 		}
@@ -161,7 +160,11 @@ func findTag(lc, name string, from int) int {
 		if isTagAt(lc, at, name) {
 			return at
 		}
-		from = at + len(needle)
+		end := tagEnd(lc, at)
+		if end < 0 {
+			return -1
+		}
+		from = end + 1
 	}
 	return -1
 }

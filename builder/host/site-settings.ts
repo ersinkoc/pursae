@@ -102,6 +102,7 @@ export function diffDraft(data: SiteSettings, draft: SiteDraft): Record<string, 
 
 export class SiteSettingsController {
   private state: SiteSettingsState = INITIAL
+  private loadSeq = 0
   private listeners = new Set<() => void>()
 
   constructor(private d: SiteSettingsDeps) {}
@@ -140,11 +141,14 @@ export class SiteSettingsController {
   }
 
   async load() {
+    const seq = ++this.loadSeq
     this.set({ loading: true, error: '' })
     try {
       const r = await this.d.rest.request<SiteSettings>('GET', siteSettingsRoute())
+      if (seq !== this.loadSeq) return
       this.set({ loading: false, data: r.data, draft: draftOf(r.data) })
     } catch (e) {
+      if (seq !== this.loadSeq) return
       this.set({ loading: false, data: null, draft: null, error: errorText(e, t('The site settings could not be loaded.')) })
     }
   }
