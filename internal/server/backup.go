@@ -54,7 +54,7 @@ type bmgrCategory struct {
 // bmgrCategories are the selectable parts, in screen order. Tables no category names fall into "other".
 var bmgrCategories = []bmgrCategory{
 	{Key: "content", Label: "Posts, pages & taxonomy", Desc: "Posts, pages, custom content, revisions, categories, tags, comments, menus and widgets.",
-		Tables: []string{"posts", "post_revisions", "post_terms", "terms", "taxonomies", "content_types", "comments", "menus", "menu_items", "widget_areas", "widgets"}},
+		Tables: []string{"posts", "post_revisions", "post_terms", "terms", "taxonomies", "content_types", "comments", "menus", "menu_items", "menu_locations", "widget_areas", "widgets"}},
 	{Key: "media", Label: "Media library", Desc: "The media records and every uploaded file (images, videos, documents).",
 		Tables: []string{"media", "media_variants"}, Files: "uploads"},
 	{Key: "users", Label: "Users & roles", Desc: "Accounts, roles, capabilities and application passwords. You can pick which users go.",
