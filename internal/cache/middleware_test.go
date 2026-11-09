@@ -529,3 +529,19 @@ func TestSearchTTLCapped(t *testing.T) {
 		t.Fatalf("page entry: ok=%v expires in %s", ok, e.Expires.Sub(now))
 	}
 }
+
+func TestRepeatedQueryValueOrder(t *testing.T) {
+	c := New(DefaultConfig(), Options{})
+	h := c.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		io.WriteString(w, r.URL.Query().Get("s"))
+	}))
+	for _, query := range []string{"s=z&s=a", "s=a&s=z", "s=&s=x", "s=x&s="} {
+		r := httptest.NewRequest("GET", "http://example.com/?"+query, nil)
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, r)
+		if got, want := w.Body.String(), r.URL.Query().Get("s"); got != want {
+			t.Errorf("%s: got %q, want %q", query, got, want)
+		}
+	}
+}

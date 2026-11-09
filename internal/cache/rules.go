@@ -6,7 +6,6 @@ import (
 	"mime"
 	"net/http"
 	"net/url"
-	"sort"
 	"strings"
 )
 
@@ -156,10 +155,7 @@ func (c *Cache) keyQuery(raw string) (string, bool) {
 			return "", false
 		}
 	}
-	for _, vs := range keep {
-		sort.Strings(vs)
-	}
-	return keep.Encode(), true // Encode sorts by key
+	return keep.Encode(), true // Sort keys, preserving value order used by Query().Get.
 }
 
 func (c *Cache) dropped(name string) bool {
