@@ -103,7 +103,7 @@ func (s *Server) seogoRenderPartial(name string, data any) template.HTML {
 
 // seogoEditor adds the Pursae SEO box to the classic editor or Gotenberg (renderEdit).
 func (s *Server) seogoEditor(c *gin.Context, p *store.Post, block bool) {
-	if !s.seogoOn() || p == nil || (p.Type != "post" && p.Type != "page") || !s.seogoCan(currentUser(c), "seogo_onpage_general") {
+	if !s.seogoOn() || p == nil || (p.Type != "post" && p.Type != "page" && p.Type != "product" && siteCPT(p.Type) == nil) || !s.seogoCan(currentUser(c), "seogo_onpage_general") {
 		return
 	}
 	d := s.seogoBoxFor(c, p.Meta, p.Type)
@@ -535,7 +535,7 @@ func (s *Server) seogoHeadJSON(sc *seogoCtx, title string) map[string]any {
 			rm[d] = d
 		}
 	}
-	out := map[string]any{"title": title, "robots": rm, "og_locale": s.seogoLocale(), "og_title": title, "og_site_name": s.settings.String("blogname"),
+	out := map[string]any{"title": title, "robots": rm, "og_locale": s.seogoLocale(sc.ctx), "og_title": title, "og_site_name": s.seogoSiteName(sc.ctx),
 		"twitter_card": o.TwitterCard}
 	if desc != "" {
 		out["description"], out["og_description"] = desc, desc

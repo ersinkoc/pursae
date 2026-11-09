@@ -22,8 +22,11 @@ func (s *Server) wpHead(c *gin.Context, q *siteQuery, lb *links.Builder, adminBa
 	sb.WriteString(s.gooHead(c, q))   // Goocommerce: store styles (goo_front.go)
 	sb.WriteString(v.Theme.HeadTop)
 	seo := s.seogoHead(c, q, lb) // Pursae SEO replaces the robots meta and the canonical link (seogo_head.go)
+	storePrivate := q.Store == "cart" || q.Store == "checkout" || q.Store == "myaccount"
 	if seo != "" {
 		sb.WriteString(seo)
+	} else if storePrivate && s.settings.Bool("blog_public") && !q.Preview {
+		sb.WriteString("<meta name='robots' content='noindex, follow' />\n") // Pursae Commerce: wc_page_noindex
 	} else if s.settings.Bool("blog_public") && q.Kind != "404" && !q.Preview {
 		sb.WriteString("<meta name='robots' content='max-image-preview:large' />\n")
 	} else {
@@ -70,12 +73,27 @@ func (s *Server) wpHead(c *gin.Context, q *siteQuery, lb *links.Builder, adminBa
 	if !s.asHideVersion() {                     // AdminSecGo can hide the version
 		sb.WriteString("<meta name=\"generator\" content=\"Pursae " + Version + "\" />\n")
 	}
-	if (q.Kind == "single" || q.Kind == "page" || q.Kind == "front-page") && q.Post != nil {
+	storeArchive := q.Store == "shop" || q.Store == "product_cat" || q.Store == "product_tag" || q.Store == "product_attr"
+	switch {
+	case storeArchive:
+		// A store archive is a synthetic page whose id may be a term id: its canonical is the store URL.
+		if seo == "" && q.StoreURL != "" {
+			u := q.StoreURL
+			if q.Paged > 1 {
+				u = lb.Paged(u, q.Paged)
+			}
+			fmt.Fprintf(&sb, "<link rel=\"canonical\" href=\"%s\" />\n", html.EscapeString(u))
+		}
+	case (q.Kind == "single" || q.Kind == "page" || q.Kind == "front-page") && q.Post != nil:
 		if seo == "" {
-			fmt.Fprintf(&sb, "<link rel=\"canonical\" href=\"%s\" />\n", html.EscapeString(lb.Permalink(q.Post)))
+			can := lb.Permalink(q.Post)
+			if q.Store == "product" && q.StoreURL != "" {
+				can = q.StoreURL
+			}
+			fmt.Fprintf(&sb, "<link rel=\"canonical\" href=\"%s\" />\n", html.EscapeString(can))
 		}
 		short := "/?p="
-		if q.Post.Type == "page" {
+		if q.Post.Type == "page" && q.Store != "product" {
 			short = "/?page_id="
 		}
 		fmt.Fprintf(&sb, "<link rel='shortlink' href='%s' />\n", html.EscapeString(lb.HomeURL(short+itoa64(q.Post.ID))))

@@ -815,6 +815,12 @@ func (s *Server) gooRenderSynthetic(c *gin.Context, post *store.Post, body strin
 		if fv.Term != nil {
 			q.StoreTax, q.StoreTerm = fv.Term.Taxonomy, fv.Term.ID
 		}
+		switch {
+		case fv.Product != nil:
+			q.StoreURL = s.gooPermalink(c.Request.Context(), fv.Product)
+		case fv.Search == "":
+			q.StoreURL = fv.BaseURL
+		}
 		if fv.Search != "" {
 			c.Header("Cache-Control", "no-cache, must-revalidate, max-age=0")
 		}

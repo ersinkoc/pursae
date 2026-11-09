@@ -1,9 +1,11 @@
 package server
 
 import (
+	"context"
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
+	"html"
 	"regexp"
 	"strconv"
 	"strings"
@@ -20,27 +22,29 @@ import (
 
 type ldNode = map[string]any
 
-func (s *Server) seogoOrgName() string {
+func (s *Server) seogoOrgName(ctx context.Context) string {
 	if n := strings.TrimSpace(s.seogoOpts().KGName); n != "" {
 		return n
 	}
-	return s.settings.String("blogname")
+	return s.seogoSiteName(ctx)
 }
 
+// personID is the @id of a user's Person node. It hashes the user id, never the login: an unsalted
+// hash of the login lets anyone confirm a guessed login name offline (Yoast salts it with wp_hash).
 func personID(home string, u *store.User) string {
-	sum := md5.Sum([]byte(u.Login + "user"))
+	sum := md5.Sum([]byte(strconv.FormatInt(u.ID, 10) + "user"))
 	return home + "#/schema/person/" + hex.EncodeToString(sum[:])
 }
 
-func (s *Server) seogoLanguage() string {
-	return strings.ReplaceAll(s.seogoLocale(), "_", "-")
+func (s *Server) seogoLanguage(ctx context.Context) string {
+	return strings.ReplaceAll(s.seogoLocale(ctx), "_", "-")
 }
 
 // seogoGraph builds the @graph of a context.
 func (s *Server) seogoGraph(sc *seogoCtx, title, desc string) []ldNode {
 	o := s.seogoOpts()
 	home := sc.lb.HomeURL("/")
-	lang := s.seogoLanguage()
+	lang := s.seogoLanguage(sc.ctx)
 	websiteID := home + "#website"
 	var graph []ldNode
 
@@ -54,12 +58,12 @@ func (s *Server) seogoGraph(sc *seogoCtx, title, desc string) []ldNode {
 	}
 	if publisherID == "" {
 		publisherID = home + "#organization"
-		org := ldNode{"@type": "Organization", "@id": publisherID, "name": s.seogoOrgName(), "url": home}
+		org := ldNode{"@type": "Organization", "@id": publisherID, "name": s.seogoOrgName(sc.ctx), "url": home}
 		if o.KGAltName != "" {
 			org["alternateName"] = o.KGAltName
 		}
 		if o.KGLogo != "" {
-			org["logo"] = ldNode{"@type": "ImageObject", "inLanguage": lang, "@id": home + "#/schema/logo/image/", "url": o.KGLogo, "contentUrl": o.KGLogo, "caption": s.seogoOrgName()}
+			org["logo"] = ldNode{"@type": "ImageObject", "inLanguage": lang, "@id": home + "#/schema/logo/image/", "url": o.KGLogo, "contentUrl": o.KGLogo, "caption": s.seogoOrgName(sc.ctx)}
 			org["image"] = ldNode{"@id": home + "#/schema/logo/image/"}
 		}
 		var same []string
@@ -83,11 +87,11 @@ func (s *Server) seogoGraph(sc *seogoCtx, title, desc string) []ldNode {
 		graph = append(graph, org)
 	}
 
-	website := ldNode{"@type": "WebSite", "@id": websiteID, "url": home, "name": s.settings.String("blogname"),
+	website := ldNode{"@type": "WebSite", "@id": websiteID, "url": sc.homeURL(), "name": s.seogoSiteName(sc.ctx),
 		"publisher": ldNode{"@id": publisherID}, "inLanguage": lang,
 		"potentialAction": []ldNode{{"@type": "SearchAction", "target": ldNode{"@type": "EntryPoint", "urlTemplate": home + "?s={search_term_string}"},
 			"query-input": ldNode{"@type": "PropertyValueSpecification", "valueRequired": true, "valueName": "search_term_string"}}}}
-	if d := s.settings.String("blogdescription"); d != "" {
+	if d := s.seogoSiteDesc(sc.ctx); d != "" {
 		website["description"] = d
 	}
 	if o.KGAltName != "" {
@@ -104,7 +108,7 @@ func (s *Server) seogoGraph(sc *seogoCtx, title, desc string) []ldNode {
 	}
 	pageType := "WebPage"
 	switch sc.Kind {
-	case "category", "tag", "date":
+	case "category", "tag", "date", "taxonomy", "post-type-archive":
 		pageType = "CollectionPage"
 	case "home":
 		if sc.Post == nil {
@@ -140,7 +144,7 @@ func (s *Server) seogoGraph(sc *seogoCtx, title, desc string) []ldNode {
 		primaryImg = s.seogoAttachmentImage(sc.ctx, p.FeaturedMediaID)
 		if primaryImg == nil {
 			if m := seogoImgSrcRe.FindStringSubmatch(p.Content); m != nil {
-				primaryImg = &seogoImage{URL: m[1]}
+				primaryImg = &seogoImage{URL: sc.absURL(html.UnescapeString(m[1]))}
 			}
 		}
 		if primaryImg != nil {
@@ -187,7 +191,7 @@ func (s *Server) seogoGraph(sc *seogoCtx, title, desc string) []ldNode {
 	var faqQuestions []ldNode
 	var howtos []ldNode
 	if sc.singular() {
-		faqQuestions, howtos = seogoBlockSchema(sc.Post.Content, url)
+		faqQuestions, howtos = seogoBlockSchema(sc.Post.Content, url, lang)
 	}
 	if len(faqQuestions) > 0 {
 		page["@type"] = []string{pageType, "FAQPage"}
@@ -286,7 +290,7 @@ func (s *Server) seogoPersonNode(sc *seogoCtx, u *store.User, home string, publi
 		img = sc.lb.HomeURL(img)
 	}
 	if img != "" {
-		n["image"] = ldNode{"@type": "ImageObject", "inLanguage": s.seogoLanguage(), "@id": home + "#/schema/person/image/", "url": img, "contentUrl": img, "caption": u.DisplayName}
+		n["image"] = ldNode{"@type": "ImageObject", "inLanguage": s.seogoLanguage(sc.ctx), "@id": home + "#/schema/person/image/", "url": img, "contentUrl": img, "caption": u.DisplayName}
 	}
 	if d := u.Profile["description"]; d != "" {
 		n["description"] = d
@@ -435,7 +439,7 @@ func textOf(v any) string {
 }
 
 // seogoBlockSchema reads the FAQ and HowTo blocks of the content (Pursae SEO's, Yoast's and Rank Math's).
-func seogoBlockSchema(content, url string) (questions, howtos []ldNode) {
+func seogoBlockSchema(content, url, lang string) (questions, howtos []ldNode) {
 	if !strings.Contains(content, "<!-- wp:") {
 		return nil, nil
 	}
@@ -472,7 +476,7 @@ func seogoBlockSchema(content, url string) (questions, howtos []ldNode) {
 						continue
 					}
 					questions = append(questions, ldNode{"@type": "Question", "@id": url + "#" + id, "position": len(questions) + 1, "url": url + "#" + id,
-						"name": name, "answerCount": 1, "acceptedAnswer": ldNode{"@type": "Answer", "text": strings.TrimSpace(ans), "inLanguage": "en-US"}, "inLanguage": "en-US"})
+						"name": name, "answerCount": 1, "acceptedAnswer": ldNode{"@type": "Answer", "text": strings.TrimSpace(ans), "inLanguage": lang}, "inLanguage": lang})
 				}
 			case "seogo/howto", "yoast/how-to-block", "rank-math/howto-block":
 				h := ldNode{"@type": "HowTo", "@id": url + "#howto-" + strconv.Itoa(len(howtos)+1), "name": textOf(b.Attrs["title"])}
@@ -520,7 +524,7 @@ func seogoBlockSchema(content, url string) (questions, howtos []ldNode) {
 					list = append(list, step)
 				}
 				h["step"] = list
-				h["inLanguage"] = "en-US"
+				h["inLanguage"] = lang
 				howtos = append(howtos, h)
 			}
 			walk(b.InnerBlocks)

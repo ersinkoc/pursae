@@ -28,13 +28,16 @@ func (sc *seogoCtx) title() string {
 	case sc.singular():
 		tpl = seogoMeta(sc.Post.Meta, "title")
 		if tpl == "" && sc.Kind == "front-page" {
-			tpl = o.Types["home"].Title
+			tpl = sc.s.seogoTr(sc.ctx, o.Types["home"].Title)
 		}
 	case sc.Term != nil:
 		tpl = seogoMeta(sc.Term.Meta, "title")
 	}
 	if tpl == "" {
-		tpl = o.Types[sc.typeKey()].Title
+		tpl = sc.s.seogoTr(sc.ctx, o.Types[sc.typeKey()].Title)
+	}
+	if tpl == "" && sc.Kind == "post-type-archive" {
+		tpl = "%pt_plural% Archive %page% %sep% %sitename%" // Rank Math's default
 	}
 	if tpl == "" {
 		tpl = "%title% %page% %sep% %sitename%"
@@ -49,13 +52,13 @@ func (sc *seogoCtx) description() string {
 	case sc.singular():
 		tpl = seogoMeta(sc.Post.Meta, "description")
 		if tpl == "" && sc.Kind == "front-page" {
-			tpl = o.Types["home"].Description
+			tpl = sc.s.seogoTr(sc.ctx, o.Types["home"].Description)
 		}
 	case sc.Term != nil:
 		tpl = seogoMeta(sc.Term.Meta, "description")
 	}
 	if tpl == "" {
-		tpl = o.Types[sc.typeKey()].Description
+		tpl = sc.s.seogoTr(sc.ctx, o.Types[sc.typeKey()].Description)
 	}
 	return cut(sc.replace(tpl), 320)
 }
@@ -99,6 +102,11 @@ func (sc *seogoCtx) robots(preview bool) []string {
 	if sc.Kind == "404" || sc.Kind == "search" {
 		noindex = true
 	}
+	// Pursae Commerce: Cart, Checkout and My account are never indexed (wc_page_noindex); a store
+	// search (a shop view without a canonical URL) is a search result.
+	if sc.storePrivate() || (sc.storeArchive() && sc.StoreURL == "") {
+		noindex = true
+	}
 	out := []string{map[bool]string{true: "noindex", false: "index"}[noindex], map[bool]string{true: "nofollow", false: "follow"}[nofollow]}
 	for _, d := range strings.Split(adv, ",") {
 		if d = strings.TrimSpace(d); d == "noarchive" || d == "nosnippet" || d == "noimageindex" {
@@ -131,7 +139,27 @@ func (sc *seogoCtx) robots(preview bool) []string {
 // url is the canonical URL of the context ("" for search results and 404s).
 func (sc *seogoCtx) url() string {
 	lb := sc.lb
+	switch {
+	case sc.Store == "product" && sc.StoreURL != "":
+		return sc.StoreURL
+	case sc.storeArchive():
+		// Never the synthetic page's permalink: its id may be a term id (?page_id=<term>, or the home
+		// URL when it equals page_on_front).
+		if sc.StoreURL == "" {
+			return ""
+		}
+		if sc.Paged > 1 {
+			return lb.Paged(sc.StoreURL, sc.Paged)
+		}
+		return sc.StoreURL
+	}
 	switch sc.Kind {
+	case "post-type-archive":
+		u := lb.PostTypeArchiveLink(sc.PostType)
+		if u != "" && sc.Paged > 1 {
+			return lb.Paged(u, sc.Paged)
+		}
+		return u
 	case "single", "page":
 		u := lb.Permalink(sc.Post)
 		if sc.Page > 1 {
@@ -178,6 +206,14 @@ func (sc *seogoCtx) url() string {
 		return u
 	}
 	return ""
+}
+
+// absURL makes a site-relative URL (/wp-content/…) absolute: og:image and schema URLs must be.
+func (sc *seogoCtx) absURL(u string) string {
+	if strings.HasPrefix(u, "/") && !strings.HasPrefix(u, "//") {
+		return sc.lb.HomeURL(u)
+	}
+	return u
 }
 
 // homeURL is the site home of the request language (Pursae Multi Language), else the site root.
@@ -237,7 +273,7 @@ func (sc *seogoCtx) image(field string) *seogoImage {
 			return img
 		}
 		if m := seogoImgSrcRe.FindStringSubmatch(sc.Post.Content); m != nil {
-			return &seogoImage{URL: html.UnescapeString(m[1])}
+			return &seogoImage{URL: sc.absURL(html.UnescapeString(m[1]))}
 		}
 	}
 	o := s.seogoOpts()
@@ -271,11 +307,31 @@ func readingTime(text string) int {
 	return m
 }
 
-func (s *Server) seogoLocale() string {
+// seogoLocale is the og:locale of a request: the Pursae Multi Language language, else the site language.
+func (s *Server) seogoLocale(ctx context.Context) string {
+	if l := s.pllCurrent(ctx); l != nil && l.Locale != "" {
+		return l.Locale
+	}
 	if l := s.settings.String("WPLANG"); l != "" {
 		return l
 	}
 	return "en_US"
+}
+
+// localeAlternates are the og:locale:alternate values: the other languages the page exists in
+// (Pursae Multi Language's hreflang links), the way Polylang extends Yoast.
+func (sc *seogoCtx) localeAlternates(current string) []string {
+	r := pllFrom(sc.ctx)
+	if r == nil || !sc.s.golylangOn() {
+		return nil
+	}
+	var out []string
+	for _, a := range r.alternates {
+		if a.Lang != nil && a.Lang.Locale != "" && a.Lang.Locale != current {
+			out = append(out, a.Lang.Locale)
+		}
+	}
+	return out
 }
 
 // seogoHead is the Pursae SEO block of wp_head (empty while the plugin is off).
@@ -325,7 +381,7 @@ func (s *Server) seogoHeadFor(sc *seogoCtx, preview bool) string {
 		fmt.Fprintf(&sb, "<link rel=\"canonical\" href=\"%s\" />\n", esc(canonical))
 	}
 	// rel prev/next on paginated archives
-	if (!sc.singular() || sc.Kind == "home") && sc.Paged > 1 {
+	if (!sc.singular() || sc.Kind == "home" || sc.storeArchive()) && sc.Paged > 1 {
 		paged := sc.Paged
 		sc.Paged--
 		if prev := sc.url(); prev != "" {
@@ -338,10 +394,16 @@ func (s *Server) seogoHeadFor(sc *seogoCtx, preview bool) string {
 		url = canonical
 	}
 	if o.OpenGraph {
-		fmt.Fprintf(&sb, "<meta property=\"og:locale\" content=\"%s\" />\n", esc(s.seogoLocale()))
+		locale := s.seogoLocale(sc.ctx)
+		fmt.Fprintf(&sb, "<meta property=\"og:locale\" content=\"%s\" />\n", esc(locale))
+		for _, alt := range sc.localeAlternates(locale) {
+			fmt.Fprintf(&sb, "<meta property=\"og:locale:alternate\" content=\"%s\" />\n", esc(alt))
+		}
 		typ := "website"
 		if sc.singular() && sc.Kind != "front-page" && sc.Kind != "home" && sc.Post.Type == "post" {
 			typ = "article"
+		} else if sc.Store == "product" && sc.singular() {
+			typ = "product"
 		} else if sc.Kind == "author" {
 			typ = "profile"
 		}
@@ -362,7 +424,7 @@ func (s *Server) seogoHeadFor(sc *seogoCtx, preview bool) string {
 		if url != "" {
 			fmt.Fprintf(&sb, "<meta property=\"og:url\" content=\"%s\" />\n", esc(url))
 		}
-		fmt.Fprintf(&sb, "<meta property=\"og:site_name\" content=\"%s\" />\n", esc(s.settings.String("blogname")))
+		fmt.Fprintf(&sb, "<meta property=\"og:site_name\" content=\"%s\" />\n", esc(s.seogoSiteName(sc.ctx)))
 		if typ == "article" {
 			if o.FacebookURL != "" {
 				fmt.Fprintf(&sb, "<meta property=\"article:publisher\" content=\"%s\" />\n", esc(o.FacebookURL))

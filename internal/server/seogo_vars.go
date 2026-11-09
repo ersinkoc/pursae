@@ -5,6 +5,7 @@ import (
 	"html"
 	"path"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -38,18 +39,75 @@ type seogoCtx struct {
 	Day    int
 	Focus  string // the focus keyphrase while the editor previews unsaved values
 	cats   []*store.Term
+
+	PostType string // the post type of a post-type-archive view
+
+	// Pursae Commerce views (siteQuery.Store): the store renders them as synthetic pages; these say
+	// what they really are. Store is product, shop, product_cat, product_tag, product_attr, cart,
+	// checkout or myaccount; StoreTax the archived taxonomy; StoreURL the unpaged canonical URL.
+	Store    string
+	StoreTax string
+	StoreURL string
 }
 
 func (s *Server) seogoCtxFor(ctx context.Context, q *siteQuery) *seogoCtx {
 	sc := &seogoCtx{s: s, ctx: ctx, lb: s.links(ctx), Kind: q.Kind, Post: q.Post, Term: q.Term, Author: q.Author,
-		Search: q.Search, Paged: q.Paged, Page: q.Page, Year: q.Year, Month: q.Month, Day: q.Day}
+		Search: q.Search, Paged: q.Paged, Page: q.Page, Year: q.Year, Month: q.Month, Day: q.Day,
+		PostType: q.PostType, Store: q.Store, StoreTax: q.StoreTax, StoreURL: q.StoreURL}
 	if q.Kind == "home" && q.PostsPage != nil {
 		sc.Post = q.PostsPage
+	}
+	if q.Store != "" {
+		s.seogoStoreCtx(sc, q)
 	}
 	if sc.Post != nil {
 		sc.Pages = len(splitPages(sc.Post.Content))
 	}
 	return sc
+}
+
+// seogoStoreCtx gives a Pursae Commerce view the object behind its synthetic page: a product's own
+// meta, featured image, description and excerpt; a product term archive its term; the shop its page.
+func (s *Server) seogoStoreCtx(sc *seogoCtx, q *siteQuery) {
+	ctx := gooPllUnfiltered(sc.ctx) // the object is asked for by id, whatever its language
+	switch {
+	case q.StoreTerm > 0:
+		if t, err := s.store.GetTerm(ctx, q.StoreTerm); err == nil {
+			sc.Kind, sc.Term, sc.Post = "taxonomy", t, nil
+		}
+	case (q.Store == "product" || q.Store == "shop") && q.Post != nil && q.Post.ID > 0:
+		real, err := s.store.GetPost(ctx, q.Post.ID)
+		if err != nil {
+			return
+		}
+		cp := *q.Post
+		meta := map[string]any{}
+		for k, v := range real.Meta {
+			meta[k] = v
+		}
+		for k, v := range q.Post.Meta {
+			meta[k] = v
+		}
+		cp.Meta, cp.FeaturedMediaID = meta, real.FeaturedMediaID
+		if q.Store == "product" {
+			cp.Type, cp.Content = "product", real.Content
+			if cp.Excerpt == "" {
+				cp.Excerpt = real.Excerpt
+			}
+		}
+		sc.Post = &cp
+	}
+}
+
+// storeArchive reports whether the context is the shop or a product taxonomy archive.
+func (sc *seogoCtx) storeArchive() bool {
+	return sc.Store == "shop" || sc.Store == "product_cat" || sc.Store == "product_tag" || sc.Store == "product_attr"
+}
+
+// storePrivate reports whether the context is the Cart, Checkout or My account page (never indexed,
+// like WooCommerce's wc_page_noindex).
+func (sc *seogoCtx) storePrivate() bool {
+	return sc.Store == "cart" || sc.Store == "checkout" || sc.Store == "myaccount"
 }
 
 // singular reports whether the context describes one post or page.
@@ -68,6 +126,13 @@ func (sc *seogoCtx) typeKey() string {
 		return "category"
 	case "tag":
 		return "post_tag"
+	case "taxonomy":
+		if sc.Term != nil {
+			return sc.Term.Taxonomy
+		}
+		return sc.StoreTax
+	case "post-type-archive":
+		return "pta_" + sc.PostType
 	case "front-page", "home":
 		if sc.Kind == "home" && sc.Post != nil {
 			return "page"
@@ -186,9 +251,9 @@ func (sc *seogoCtx) variable(name string) (string, bool) {
 	case "sep":
 		return s.seogoOpts().Separator, true
 	case "sitename":
-		return s.settings.String("blogname"), true
+		return s.seogoSiteName(sc.ctx), true
 	case "sitedesc", "tagline":
-		return s.settings.String("blogdescription"), true
+		return s.seogoSiteDesc(sc.ctx), true
 	case "title", "seo_title":
 		switch {
 		case sc.Post != nil:
@@ -197,6 +262,8 @@ func (sc *seogoCtx) variable(name string) (string, bool) {
 			return sc.Term.Name, true
 		case sc.Kind == "author" && sc.author() != nil:
 			return sc.author().DisplayName, true
+		case sc.Kind == "post-type-archive" && sc.PostType != "":
+			return seogoTypeLabels(sc.PostType).Name, true
 		}
 		return "", true
 	case "parent_title":
@@ -319,8 +386,12 @@ func (sc *seogoCtx) variable(name string) (string, bool) {
 		}
 		return "", true
 	case "pt_single", "pt_plural":
+		typ := sc.PostType
 		if sc.Post != nil {
-			l := labelsFor(sc.Post.Type)
+			typ = sc.Post.Type
+		}
+		if typ != "" {
+			l := seogoTypeLabels(typ)
 			if name == "pt_single" {
 				return l.Singular, true
 			}
@@ -328,12 +399,15 @@ func (sc *seogoCtx) variable(name string) (string, bool) {
 		}
 		return "", true
 	case "url", "permalink":
+		if sc.Store != "" && sc.StoreURL != "" {
+			return sc.StoreURL, true
+		}
 		if sc.Post != nil && sc.Post.Status != "auto-draft" {
 			return sc.lb.Permalink(sc.Post), true
 		}
-		return sc.lb.HomeURL("/"), true
+		return sc.homeURL(), true
 	case "org_name":
-		return s.seogoOrgName(), true
+		return s.seogoOrgName(sc.ctx), true
 	case "filename":
 		return "", true
 	}
@@ -385,3 +459,63 @@ func (sc *seogoCtx) imageText(tpl, src string) string {
 }
 
 var scaledSuffixRe = regexp.MustCompile(`(?i)\s+(\d+x\d+|scaled)$`)
+
+// seogoSiteName is the site title in the request language (Pursae Multi Language strings).
+func (s *Server) seogoSiteName(ctx context.Context) string {
+	return s.seogoTr(ctx, s.settings.String("blogname"))
+}
+
+// seogoSiteDesc is the tagline in the request language.
+func (s *Server) seogoSiteDesc(ctx context.Context) string {
+	return s.seogoTr(ctx, s.settings.String("blogdescription"))
+}
+
+// seogoTr translates a site-wide text (the site title, a Search Appearance template) into the
+// request language; the text itself outside a language.
+func (s *Server) seogoTr(ctx context.Context, str string) string {
+	if str == "" {
+		return str
+	}
+	if l := s.pllCurrent(ctx); l != nil {
+		return s.pllTranslate(ctx, str, l.Slug)
+	}
+	return str
+}
+
+// seogoTypeLabels are the labels of a post type (products included).
+func seogoTypeLabels(typ string) typeLabels {
+	if typ == "product" {
+		return typeLabels{Type: "product", Name: "Products", Singular: "Product"}
+	}
+	return labelsFor(typ)
+}
+
+// seogoPllStrings are Pursae SEO's site-wide texts listed in Languages › Translations (group
+// Pursae SEO): the Search Appearance title and description templates and the breadcrumb labels.
+func (s *Server) seogoPllStrings() []pllRegistered {
+	if !s.seogoOn() {
+		return nil
+	}
+	o := s.seogoOpts()
+	var out []pllRegistered
+	add := func(name, str string) {
+		if strings.TrimSpace(str) != "" {
+			out = append(out, pllRegistered{Name: name, String: str, Group: "Pursae SEO"})
+		}
+	}
+	keys := make([]string, 0, len(o.Types))
+	for k := range o.Types {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		add("Title: "+k, o.Types[k].Title)
+		add("Description: "+k, o.Types[k].Description)
+	}
+	add("Breadcrumbs: home", o.BCHome)
+	add("Breadcrumbs: prefix", o.BCPrefix)
+	add("Breadcrumbs: archive prefix", o.BCArchive)
+	add("Breadcrumbs: search prefix", o.BCSearch)
+	add("Breadcrumbs: 404", o.BC404)
+	return out
+}

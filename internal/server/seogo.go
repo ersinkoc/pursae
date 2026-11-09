@@ -188,8 +188,8 @@ func seogoDefaults() *seogoOptions {
 			"indexnow": false, "role_manager": true},
 		Separator: "-",
 		Types: map[string]seogoTypeOpts{
-			"post":     {Title: "%title% %page% %sep% %sitename%", Sitemap: true, SchemaPage: "WebPage", SchemaArt: "Article"},
-			"page":     {Title: "%title% %page% %sep% %sitename%", Sitemap: true, SchemaPage: "WebPage", SchemaArt: "None"},
+			"post":     {Title: "%title% %page% %sep% %sitename%", Description: "%excerpt%", Sitemap: true, SchemaPage: "WebPage", SchemaArt: "Article"},
+			"page":     {Title: "%title% %page% %sep% %sitename%", Description: "%excerpt%", Sitemap: true, SchemaPage: "WebPage", SchemaArt: "None"},
 			"category": {Title: "%term_title% Archives %page% %sep% %sitename%", Description: "%term_description%", Sitemap: true},
 			"post_tag": {Title: "%term_title% Archives %page% %sep% %sitename%", Description: "%term_description%", Sitemap: true},
 			"author":   {Title: "%name%, Author at %sitename% %page%", Sitemap: true},
@@ -197,6 +197,10 @@ func seogoDefaults() *seogoOptions {
 			"search":   {Title: "You searched for %searchphrase% %page% %sep% %sitename%", Noindex: true},
 			"404":      {Title: "Page not found %sep% %sitename%", Noindex: true},
 			"home":     {Title: "%sitename% %page% %sep% %sitedesc%"},
+			// Pursae Commerce (Goocommerce publishes its own Product JSON-LD, so no schema type here)
+			"product":     {Title: "%title% %page% %sep% %sitename%", Description: "%excerpt%", Sitemap: true, SchemaPage: "WebPage", SchemaArt: "None"},
+			"product_cat": {Title: "%term_title% Archives %page% %sep% %sitename%", Description: "%term_description%", Sitemap: true},
+			"product_tag": {Title: "%term_title% Archives %page% %sep% %sitename%", Description: "%term_description%", Sitemap: true},
 		},
 		NoindexEmptyTerms: true,
 		RobotsDefaults:    "max-snippet:-1, max-image-preview:large, max-video-preview:-1",
@@ -249,6 +253,16 @@ func (s *Server) seogoOpts() *seogoOptions {
 		_ = json.Unmarshal(raw, o)
 	}
 	def := seogoDefaults()
+	// A stored JSON null (a partial import, a REST patch) wipes a default map; never write into nil.
+	if o.Types == nil {
+		o.Types = map[string]seogoTypeOpts{}
+	}
+	if o.Modules == nil {
+		o.Modules = map[string]bool{}
+	}
+	if o.Roles == nil {
+		o.Roles = map[string][]string{}
+	}
 	for k, v := range def.Types { // types added later keep their defaults
 		if _, ok := o.Types[k]; !ok {
 			o.Types[k] = v
@@ -267,6 +281,15 @@ func (s *Server) seogoOpts() *seogoOptions {
 	}
 	rt.raw, rt.opts = string(raw), o
 	return o
+}
+
+// seogoType is the Search Appearance entry of a key; a type without one (a custom post type, a
+// product attribute) is indexed and in the sitemaps.
+func (o *seogoOptions) seogoType(key string) seogoTypeOpts {
+	if t, ok := o.Types[key]; ok {
+		return t
+	}
+	return seogoTypeOpts{Sitemap: true}
 }
 
 // seogoClone is a deep copy of the options for editing.
