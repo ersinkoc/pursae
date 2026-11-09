@@ -778,13 +778,63 @@ func (s *Server) pixelOrderCreated(ctx context.Context, o *gooOrder) {
 	if gc == nil || gc.Request == nil {
 		return
 	}
-	snap := map[string]any{"ip": clientIP(gc), "ua": gc.Request.UserAgent(), "cookies": s.pixelRequestCookies(gc), "platforms": s.pixelAllowed(gc, &st, ready),
+	// JSON-shaped values ([]any, map[string]any), the same types a reload from the database gives: the payment
+	// can complete in this same request on this same *gooOrder (free orders, the test gateway, card gateways).
+	plats := []any{}
+	for _, k := range s.pixelAllowed(gc, &st, ready) {
+		plats = append(plats, k)
+	}
+	cks := map[string]any{}
+	for k, v := range s.pixelRequestCookies(gc) {
+		cks[k] = v
+	}
+	snap := map[string]any{"ip": clientIP(gc), "ua": gc.Request.UserAgent(), "cookies": cks, "platforms": plats,
 		"url": s.links(gc).HomeURL("/")}
 	if o.Meta == nil {
 		o.Meta = map[string]any{}
 	}
 	o.Meta[pixelOrderMeta] = snap
 	_ = s.gooSaveOrder(ctx, o, false)
+}
+
+// pixelSnapStrings reads a string list of the order snapshot, stored as []any (from the database) or []string.
+func pixelSnapStrings(v any) []string {
+	var out []string
+	switch l := v.(type) {
+	case []string:
+		for _, k := range l {
+			if k != "" {
+				out = append(out, k)
+			}
+		}
+	case []any:
+		for _, p := range l {
+			if k, _ := p.(string); k != "" {
+				out = append(out, k)
+			}
+		}
+	}
+	return out
+}
+
+// pixelSnapStringMap reads a string map of the order snapshot, stored as map[string]any or map[string]string.
+func pixelSnapStringMap(v any) map[string]string {
+	out := map[string]string{}
+	switch m := v.(type) {
+	case map[string]string:
+		for k, sv := range m {
+			if sv != "" {
+				out[k] = sv
+			}
+		}
+	case map[string]any:
+		for k, x := range m {
+			if sv, _ := x.(string); sv != "" {
+				out[k] = sv
+			}
+		}
+	}
+	return out
 }
 
 // pixelPaymentComplete sends the Purchase of a paid order to the server-side platforms the visitor allowed.
@@ -800,12 +850,7 @@ func (s *Server) pixelPaymentComplete(ctx context.Context, o *gooOrder) {
 	snap, _ := o.Meta[pixelOrderMeta].(map[string]any)
 	var platforms []string
 	if s.pixelConsentOn(&st) {
-		list, _ := snap["platforms"].([]any) // no snapshot, no consent evidence: nothing is sent
-		for _, p := range list {
-			if k, _ := p.(string); k != "" {
-				platforms = append(platforms, k)
-			}
-		}
+		platforms = pixelSnapStrings(snap["platforms"]) // no snapshot, no consent evidence: nothing is sent
 	} else {
 		for _, d := range ready {
 			platforms = append(platforms, d.Key)
@@ -824,12 +869,8 @@ func (s *Server) pixelPaymentComplete(ctx context.Context, o *gooOrder) {
 			ev.UA = v
 		}
 		ev.URL, _ = snap["url"].(string)
-		if ck, ok := snap["cookies"].(map[string]any); ok {
-			for k, v := range ck {
-				if sv, _ := v.(string); sv != "" {
-					ev.Cookies[k] = sv
-				}
-			}
+		for k, v := range pixelSnapStringMap(snap["cookies"]) {
+			ev.Cookies[k] = v
 		}
 	}
 	if o.CustomerID > 0 {
